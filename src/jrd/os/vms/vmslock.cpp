@@ -30,6 +30,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"
 
 typedef int PTR;
@@ -108,7 +109,7 @@ int LOCK_deq(PTR lock_id)
 {
 /**************************************
  *
- *	L O C K _ d e q
+ *	L O C K _ d e q 
  *
  **************************************
  *
@@ -360,4 +361,4 @@ static SLONG write_data(SLONG lock_id, SLONG data) {
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
 	return 0;
 }
-
+			   

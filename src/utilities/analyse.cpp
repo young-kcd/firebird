@@ -21,13 +21,15 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
 #include "../jrd/common.h"
 
-#ifdef HAVE_TIMES
+#ifdef VMS
+#include "firebird.h"
+#include <types.h>
+#include "times.h"
+#else
 #include <sys/types.h>
 #include <sys/times.h>
-#endif
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -38,29 +40,20 @@
 #  include <time.h>
 # endif
 #endif
-
-#ifdef WIN_NT
-#include <io.h> // open, close
 #endif
 
 #include <stdio.h>
 #include <errno.h>
-#include "../jrd/jrd.h"
-#include "../jrd/ods.h"
-#include "../jrd/perf.h"
-
-#ifndef HAVE_TIMES
-static time_t times(struct tms*);
-#endif
-
-
-using namespace Ods;
+#include "jrd.h"
+#include "ods.h"
 
 static void analyse(int, const SCHAR*, const pag*, int);
 static SLONG get_long(void);
+#ifdef VMS
 static void db_error(int);
-static void db_open(const char*, USHORT);
+static void db_open(const UCHAR*, USHORT);
 static PAG db_read(SLONG);
+#endif
 
 static FILE *trace;
 static int file;
@@ -75,7 +68,9 @@ const SSHORT trace_write	= 5;
 const SSHORT trace_close	= 6;
 
 static USHORT page_size;
-static pag* global_buffer;
+static int map_length, map_base, map_count;
+static PAG global_buffer;
+static UCHAR *map_region;
 
 const int MAX_PAGES	= 50000;
 
@@ -94,46 +89,42 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
-	SLONG n;
-	SCHAR string[128] = "";
+	SLONG reads, writes, n, length;
+	SCHAR string[128], *p;
+	struct tms after, before;
 
 	bool detail = true;
 
 	char** end;
-	for (end = argv + argc, ++argv; argv < end; argv++)
-	{
-		const char* s = *argv;
-		if (*s++ == '-')
-		{
-			if (UPPER(*s) == 'S')
+	for (end = argv + argc, ++argv; argv < end; argv++) {
+		p = *argv;
+		if (*p++ == '-')
+			switch (UPPER(*p)) {
+			case 'S':
 				detail = false;
-		}
+				break;
+			}
 	}
 
-	SLONG reads = 0, writes = 0;
+
+	reads = writes = 0;
 	trace = fopen("trace.log", "r");
 	page_size = 1024;
 	SLONG sequence = 0;
 
-	struct tms before;
-	time_t elapsed = times(&before);
+	SLONG elapsed = times(&before);
 
 	const pag* page;
 	SSHORT event;
 	while ((event = getc(trace)) != trace_close && event != EOF)
-	{
-		switch (event)
-		{
+		switch (event) {
 		case trace_open:
-			{
-				const SLONG length = getc(trace);
-				n = length;
-				SCHAR* p = string;
-				while (--n >= 0)
-					*p++ = getc(trace);
-				*p = 0;
-				db_open(string, length);
-			}
+			n = length = getc(trace);
+			p = string;
+			while (--n >= 0)
+				*p++ = getc(trace);
+			*p = 0;
+			db_open(string, length);
 			break;
 
 		case trace_page_size:
@@ -144,9 +135,7 @@ void main( int argc, char **argv)
 
 		case trace_read:
 			n = get_long();
-			if (n < MAX_PAGES)
-				++read_counts[n];
-
+			++read_counts[n];
 			if (detail && (page = db_read(n)))
 				analyse(n, "Read", page, ++sequence);
 			reads++;
@@ -154,9 +143,7 @@ void main( int argc, char **argv)
 
 		case trace_write:
 			n = get_long();
-			if (n < MAX_PAGES)
-				++write_counts[n];
-
+			++write_counts[n];
 			if (detail && (page = db_read(n)))
 				analyse(n, "Write", page, ++sequence);
 			writes++;
@@ -166,9 +153,7 @@ void main( int argc, char **argv)
 			printf("don't understand event %d\n", event);
 			abort();
 		}
-	}
 
-	struct tms after;
 	elapsed = times(&after) - elapsed;
 	const SLONG cpu = after.tms_utime - before.tms_utime;
 	const SLONG system = after.tms_stime - before.tms_stime;
@@ -227,12 +212,12 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 
 	case pag_pointer:
 		printf("Pointer page, relation %d, sequence %d\n",
-				  ((pointer_page*) page)->ppg_relation, ((pointer_page*) page)->ppg_sequence);
+				  ((PPG) page)->ppg_relation, ((PPG) page)->ppg_sequence);
 		break;
 
 	case pag_data:
 		printf("Data page, relation %d, sequence %d\n",
-				  ((data_page*) page)->dpg_relation, ((data_page*) page)->dpg_sequence);
+				  ((DPG) page)->dpg_relation, ((DPG) page)->dpg_sequence);
 		break;
 
 	case pag_root:
@@ -242,15 +227,16 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 
 	case pag_index:
 		printf("B-Tree page, relation %d, index %d, level %d\n",
-				  ((btree_page*) page)->btr_relation, ((btree_page*) page)->btr_id,
-				  ((btree_page*) page)->btr_level);
+				  ((BTR) page)->btr_relation, ((BTR) page)->btr_id,
+				  ((BTR) page)->btr_level);
 		break;
 
 	case pag_blob:
-		printf(
-			"Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
-			page->pag_flags, ((blob_page*) page)->blp_lead_page,
-			((blob_page*) page)->blp_sequence, ((blob_page*) page)->blp_length);
+		printf
+			("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
+			 page->pag_flags, ((BLP) page)->blp_lead_page,
+			 ((BLP) page)->blp_sequence, ((BLP) page)->blp_length);
+
 		break;
 
 	default:
@@ -276,24 +262,24 @@ static SLONG get_long(void)
 		SSHORT i;
 		SCHAR c;
 	} value;
+	SLONG i, x;
 
 	SCHAR* p = (SCHAR *) & value.l;
-	SLONG i = getc(trace);
-	const SLONG x = i;
+	x = i = getc(trace);
 
 	while (--i >= 0)
 		*p++ = getc(trace);
 
 	if (x == 1)
 		return value.c;
-
-	if (x == 2)
+	else if (x == 2)
 		return value.i;
-
-	return value.l;
+	else
+		return value.l;
 }
 
 
+#ifdef VMS
 static void db_error( int status)
 {
 /**************************************
@@ -311,7 +297,7 @@ static void db_error( int status)
 }
 
 
-static void db_open( const char* file_name, USHORT file_length)
+static void db_open( const UCHAR* file_name, USHORT file_length)
 {
 /**************************************
  *
@@ -345,7 +331,7 @@ static PAG db_read( SLONG page_number)
 	FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
 
 	if (!global_buffer)
-		global_buffer = (pag*) malloc(page_size);
+		global_buffer = malloc(page_size);
 
 	if (lseek (file, offset, 0) == -1)
 		db_error(errno);
@@ -355,23 +341,5 @@ static PAG db_read( SLONG page_number)
 
 	return global_buffer;
 }
-
-
-#ifndef HAVE_TIMES
-static time_t times(struct tms* buffer)
-{
-/**************************************
- *
- *	t i m e s
- *
- **************************************
- *
- * Functional description
- *	Emulate the good old unix call "times".  Only both with user time.
- *
- **************************************/
-
-	buffer->tms_utime = clock();
-	return buffer->tms_utime;
-}
 #endif
+

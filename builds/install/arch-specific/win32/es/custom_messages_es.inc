@@ -43,7 +43,7 @@ es.InstalledProducts=El análisis de pre-instalación indica que se ha(n) encontra
 es.InstalledProdCountSingular=versión
 es.InstalledProdCountPlural=versiones
 
-es.FbRunning1=Una instancia del servidor Firebird %s se está ejecutando.
+es.FbRunning1=Una instancia del servidor %s se está ejecutando.
 es.FbRunning2= Debe cerrar esta aplicación o detener el servicio
 es.FbRunning3=             antes de continuar.
 

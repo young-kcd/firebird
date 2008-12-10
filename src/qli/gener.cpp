@@ -19,8 +19,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
  */
+/*
+$Id: gener.cpp,v 1.37 2005-05-27 22:44:54 asfernandes Exp $
+*/
 
 #include "firebird.h"
 #include <stdio.h>
@@ -40,8 +42,8 @@
 #include "../jrd/gds_proto.h"
 
 #ifdef DEV_BUILD
-static void explain(DBB db, const UCHAR*);
-static void explain_index_tree(DBB db, SSHORT, const TEXT*, const UCHAR**, SSHORT*);
+static void explain(const UCHAR*);
+static void explain_index_tree(SSHORT, const TEXT*, const SCHAR**, SSHORT*);
 static void explain_printf(SSHORT, const TEXT*, const TEXT*);
 #endif
 
@@ -94,7 +96,7 @@ qli_nod* GEN_generate( qli_nod* node)
 }
 
 
-void GEN_release()
+void GEN_release(void)
 {
 /**************************************
  *
@@ -137,19 +139,19 @@ qli_rlb* GEN_rlb_extend(qli_rlb* rlb)
 	if (!rlb)
 		rlb = (qli_rlb*) ALLOCD(type_rlb);
 
-	UCHAR* const old_string = rlb->rlb_base;
-	const ULONG len = rlb->rlb_data - rlb->rlb_base;
+	const UCHAR* old_string = rlb->rlb_base;
+	const ULONG l = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 	rlb->rlb_length += RLB_BUFFER_SIZE;
 	UCHAR* new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
 	if (old_string) {
-		memcpy(new_string, old_string, len);
-		ALLQ_free(old_string);
+		MOVQ_fast((SCHAR*) old_string, (SCHAR*) new_string, l);
+		ALLQ_free((SCHAR*) old_string);
 	}
 	rlb->rlb_base = new_string;
-	rlb->rlb_data = new_string + len;
+	rlb->rlb_data = new_string + l;
 	rlb->rlb_limit = rlb->rlb_data + RLB_BUFFER_SIZE - RLB_SAFETY_MARGIN;
 
-	return rlb;
+	return (rlb);
 }
 
 
@@ -173,7 +175,7 @@ void GEN_rlb_release( qli_rlb* rlb)
 		return;
 
 	if (rlb->rlb_base) {
-		ALLQ_free(rlb->rlb_base);
+		ALLQ_free((SCHAR*) rlb->rlb_base);
 		rlb->rlb_base = NULL;
 		rlb->rlb_length = 0;
 		rlb->rlb_data = NULL;
@@ -183,7 +185,7 @@ void GEN_rlb_release( qli_rlb* rlb)
 
 
 #ifdef DEV_BUILD
-static void explain(DBB db, const UCHAR* explain_buffer)
+static void explain(const UCHAR* explain_buffer)
 {
 /**************************************
  *
@@ -249,7 +251,9 @@ static void explain(DBB db, const UCHAR* explain_buffer)
 			case isc_info_rsb_indexed:
 				printf("isc_info_rsb_indexed,\n");
 				level++;
-				explain_index_tree(db, level, relation_name, &explain_buffer, &buffer_length);
+				explain_index_tree(level, relation_name,
+					reinterpret_cast<const SCHAR**>(&explain_buffer),
+					&buffer_length);
 				level--;
 				break;
 
@@ -269,7 +273,9 @@ static void explain(DBB db, const UCHAR* explain_buffer)
 			case isc_info_rsb_navigate:
 				printf("isc_info_rsb_navigate,\n");
 				level++;
-				explain_index_tree(db, level, relation_name, &explain_buffer, &buffer_length);
+				explain_index_tree(level, relation_name,
+					reinterpret_cast<const SCHAR**>(&explain_buffer),
+					&buffer_length);
 				level--;
 				break;
 
@@ -350,10 +356,10 @@ static void explain(DBB db, const UCHAR* explain_buffer)
 
 
 #ifdef DEV_BUILD
-static void explain_index_tree(DBB db,
+static void explain_index_tree(
 							   SSHORT level,
 							   const TEXT* relation_name,
-							   const UCHAR** explain_buffer_ptr,
+							   const SCHAR** explain_buffer_ptr,
 							   SSHORT* buffer_length)
 {
 /**************************************
@@ -370,7 +376,7 @@ static void explain_index_tree(DBB db,
 	SCHAR index_info[256];
 	SSHORT length;
 
-	const UCHAR* explain_buffer = *explain_buffer_ptr;
+	const SCHAR* explain_buffer = *explain_buffer_ptr;
 
 	(*buffer_length)--;
 
@@ -378,16 +384,20 @@ static void explain_index_tree(DBB db,
 	case isc_info_rsb_and:
 		explain_printf(level, "isc_info_rsb_and,\n", 0);
 		level++;
-		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
-		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
+		explain_index_tree(level, relation_name, &explain_buffer,
+						   buffer_length);
+		explain_index_tree(level, relation_name, &explain_buffer,
+						   buffer_length);
 		level--;
 		break;
 
 	case isc_info_rsb_or:
 		explain_printf(level, "isc_info_rsb_or,\n", 0);
 		level++;
-		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
-		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
+		explain_index_tree(level, relation_name, &explain_buffer,
+						   buffer_length);
+		explain_index_tree(level, relation_name, &explain_buffer,
+						   buffer_length);
 		level--;
 		break;
 
@@ -400,13 +410,13 @@ static void explain_index_tree(DBB db,
 		(*buffer_length)--;
 
 		length = (SSHORT) *explain_buffer++;
-		memcpy(index_name, explain_buffer, length);
+		strncpy(index_name, explain_buffer, length);
 		index_name[length] = 0;
 
 		*buffer_length -= length;
 		explain_buffer += length;
 
-		MET_index_info(db, relation_name, index_name, index_info, sizeof(index_info));
+		MET_index_info(relation_name, index_name, index_info);
 		printf("%s\n", index_info);
 		break;
 	}
@@ -594,14 +604,14 @@ static void gen_compile( qli_req* request)
 	if (QLI_blr)
 		gds__print_blr(rlb->rlb_base, 0, 0, 0);
 
-	const USHORT length = rlb->rlb_data - rlb->rlb_base;
+	const USHORT length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 
 	DBB dbb = request->req_database;
 
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_compile_request(status_vector, &dbb->dbb_handle, &request->req_handle, length,
-							 (const char*) rlb->rlb_base))
-	{
+	if (isc_compile_request(status_vector, &dbb->dbb_handle,
+							 &request->req_handle, length,
+							 (const char*) rlb->rlb_base)) {
 		GEN_rlb_release (rlb);
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -613,7 +623,7 @@ static void gen_compile( qli_req* request)
 						   sizeof(explain_info), explain_info,
 						   sizeof(explain_buffer), explain_buffer))
 	{
-		explain(dbb, (UCHAR*) explain_buffer);
+			explain((UCHAR*) explain_buffer);
 	}
 #endif
 
@@ -657,12 +667,12 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		STUFF(blr_short);
 		STUFF(desc->dsc_scale);
 		break;
-
+   
 	case dtype_int64:
 		STUFF(blr_int64);
 		STUFF(desc->dsc_scale);
 		break;
-
+	
 	case dtype_long:
 		STUFF(blr_long);
 		STUFF(desc->dsc_scale);
@@ -673,6 +683,7 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		STUFF(blr_quad);
 		STUFF(desc->dsc_scale);
 		break;
+
 
 	case dtype_real:
 		STUFF(blr_float);
@@ -775,7 +786,8 @@ static void gen_expression(qli_nod* node, qli_req* request)
 		{
 			qli_map* map = (qli_map*) node->nod_arg[e_map_map];
 			const qli_ctx* context = (qli_ctx*) node->nod_arg[e_map_context];
-			if (context->ctx_request != request && map->map_node->nod_type == nod_field)
+			if (context->ctx_request != request &&
+				map->map_node->nod_type == nod_field) 
 			{
 				gen_field(map->map_node, request);
 				return;
@@ -997,7 +1009,8 @@ static void gen_field( qli_nod* node, qli_req* request)
 		if (args) {
 			STUFF(args->nod_count);
 			qli_nod** ptr = args->nod_arg;
-			for (const qli_nod* const* const end = ptr + args->nod_count; ptr < end; ++ptr)
+			for (const qli_nod* const* const end = ptr + args->nod_count;
+				ptr < end; ++ptr)
 			{
 				gen_expression(*ptr, request);
 			}
@@ -1053,7 +1066,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 	gen_rse(node->nod_arg[e_for_rse], request);
 	STUFF(blr_begin);
 
-// If data is to be received (included EOF), build a send
+// If data is to be received (included EOF), build a send 
 
 	const qli_par* eof = 0;
 	dsc desc;
@@ -1066,7 +1079,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 		// Build assigments for all values referenced.
 
 		for (const qli_par* parameter = message->msg_parameters; parameter;
-			parameter = parameter->par_next)
+			 parameter = parameter->par_next)
 		{
 			if (parameter->par_value) {
 				STUFF(blr_assignment);
@@ -1310,21 +1323,17 @@ static void gen_map(qli_map* map, qli_req* request)
 
 	USHORT count = 0;
 	for (temp = map; temp; temp = temp->map_next)
-	{
 		if (temp->map_node->nod_type != nod_function)
 			temp->map_position = count++;
-	}
 
 	STUFF(blr_map);
 	STUFF_WORD(count);
 
 	for (temp = map; temp; temp = temp->map_next)
-	{
 		if (temp->map_node->nod_type != nod_function) {
 			STUFF_WORD(temp->map_position);
 			gen_expression(temp->map_node, request);
 		}
-	}
 }
 
 
@@ -1462,7 +1471,8 @@ static void gen_request( qli_req* request)
 
 // Build declarations for all messages.
 
-	for (qli_msg* message = request->req_messages; message; message = message->msg_next)
+	for (qli_msg* message = request->req_messages; message;
+		message = message->msg_next)
 	{
 		message->msg_length = 0;
 		for (param = message->msg_parameters; param; param = param->par_next) {
@@ -1470,13 +1480,15 @@ static void gen_request( qli_req* request)
 			param->par_parameter = message->msg_parameter++;
 			const USHORT alignment = type_alignments[desc->dsc_dtype];
 			if (alignment)
-				message->msg_length = FB_ALIGN(message->msg_length, alignment);
+				message->msg_length =
+					FB_ALIGN(message->msg_length, alignment);
 			param->par_offset = message->msg_length;
 			message->msg_length += desc->dsc_length;
 			qli_par* missing_param = param->par_missing;
 			if (missing_param) {
 				missing_param->par_parameter = message->msg_parameter++;
-				message->msg_length = FB_ALIGN(message->msg_length, sizeof(USHORT));
+				message->msg_length =
+					FB_ALIGN(message->msg_length, sizeof(USHORT));
 				desc = &missing_param->par_desc;
 				missing_param->par_offset = message->msg_length;
 				message->msg_length += desc->dsc_length;
@@ -1534,7 +1546,8 @@ static void gen_rse( qli_nod* node, qli_req* request)
 			request->req_flags |= REQ_group_by;
 			STUFF(list->nod_count);
 			qli_nod** ptr = list->nod_arg;
-			for (const qli_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr)
+			for (const qli_nod* const* const end = ptr + list->nod_count;
+				ptr < end; ++ptr)
 			{
 				gen_expression(*ptr, request);
 			}
@@ -1640,7 +1653,8 @@ static void gen_sort( qli_nod* node, qli_req* request, const UCHAR operatr)
 
 	request->req_flags |= REQ_project;
 	qli_nod** ptr = node->nod_arg;
-	for (qli_nod** const end = ptr + node->nod_count * 2; ptr < end; ptr += 2)
+	for (qli_nod** const end = ptr + node->nod_count * 2; ptr < end;
+		ptr += 2)
 	{
 		if (operatr == blr_sort)
 			STUFF((ptr[1]) ? blr_descending : blr_ascending);
@@ -1690,7 +1704,8 @@ static void gen_statement( qli_nod* node, qli_req* request)
 	case nod_list:
 	    {
 	        qli_nod** ptr = node->nod_arg;
-			for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
+			for (const qli_nod* const* const end = ptr + node->nod_count;
+				ptr < end; ++ptr)
 			{
 				gen_statement(*ptr, request);
 			}

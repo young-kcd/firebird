@@ -3,25 +3,25 @@
  *	MODULE:			install.cpp
  *	DESCRIPTION:	Functions which help installing components to WinSysDir
  *
- *  The contents of this file are subject to the Initial Developer's
- *  Public License Version 1.0 (the "License"); you may not use this
- *  file except in compliance with the License. You may obtain a copy
+ *  The contents of this file are subject to the Initial Developer's 
+ *  Public License Version 1.0 (the "License"); you may not use this 
+ *  file except in compliance with the License. You may obtain a copy 
  *  of the License here:
  *
  *    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl.
  *
- *  Software distributed under the License is distributed on an "AS
- *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  Software distributed under the License is distributed on an "AS 
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or 
  *  implied. See the License for the specific language governing rights
  *  and limitations under the License.
  *
  *  The Original Code is (C) 2003 Olivier Mascia.
- *
+ *  
  *  The Initial Developer of the Original Code is Olivier Mascia.
  *
  *  All Rights Reserved.
- *
- *  Contributor(s): ______________________________________.
+ *  
+ *  Contributor(s): ______________________________________. 
  *
  */
 
@@ -71,18 +71,18 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
  *	Depending on the USHORT client parameter, installs FBCLIENT.DLL or
  *	GDS32.DLL in the Windows System directory.
  *
- *	When installing and -force is NOT used then
- *
+ *	When installing and -force is NOT used then 
+ * 
  *		test for existence of client library
  *		if earlier version then copy, increment shared library count
  *		if same version then do nothing
  *		if later version then do nothing
  *
  *	If -force is supplied then
- *
+ * 
  *		test for existence of client library
  *		if the version doesn't match then copy, increment shared library count
- *		else do nothing
+ *		else do nothing 
  *
  **************************************/
 
@@ -96,8 +96,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	// number that we intend to install to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-//	lstrcat(fbdll, "\\bin\\");
-	lstrcat(fbdll, "\\");
+	lstrcat(fbdll, "\\bin\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD newverMS = 0, newverLS = 0;
@@ -121,16 +120,16 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	status = GetVersion(target, targetverMS, targetverLS, err_handler);
 	if (client == CLIENT_GDS)
 	{
-		//Our patching logic is to only change the Major.minor version
+		//Our patching logic is to only change the Major.minor version 
 		//number from A.B to 6.3. This leaves the release.build number
 		//intact. Ie, after patching v1.5.3.3106 it will return v6.3.3.3106
 		//This means that when considering whether to install our new patched
 		//version our initial comparison of (newverMS =targetverMS) will always
-		//be true. So, we are left with comparing targetverLS against newverLS.
-		//However, a gds32 installed from 1.5.3 is going to leave us with
-		//a point release greater than the point release in v2.0.0 so our
-		//comparison will fail and the new library will not be copied. To
-		//avoind this we must mask out the point release and just work
+		//be true. So, we are left with comparing targetverLS against newverLS. 
+		//However, a gds32 installed from 1.5.3 is going to leave us with 
+		//a point release greater than the point release in v2.0.0 so our 
+		//comparison will fail and the new library will not be copied. To 
+		//avoind this we must mask out the point release and just work 
 		//on the build number when comparing the gds32 version.
 		//
 		//This solution will be fine as long as we don't reset the build number
@@ -164,7 +163,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	lstrcpy(workfile, sysdir);
 	lstrcat(workfile, "\\_");
 	lstrcat(workfile, FBCLIENT_NAME);
-
+	
 	if (CopyFile(fbdll, workfile, FALSE) == 0)
 	{
 		return (*err_handler) (GetLastError(),
@@ -187,9 +186,10 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		if (werr != ERROR_ALREADY_EXISTS)
 		{
 			DeleteFile(workfile);
-			return (*err_handler) (werr, "MoveFile(_FBCLIENT.DLL, 'target')");
+			return (*err_handler) (werr,
+				"MoveFile(_FBCLIENT.DLL, 'target')");
 		}
-
+		
 		// Failed moving because a destination target file already exists
 		// Let's try again by attempting a remove of the destination
 		if (DeleteFile(target) != 0)
@@ -202,7 +202,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 				return FB_SUCCESS;
 			}
 		}
-
+		
 		// Deleting the target failed OR moving after target delete failed.
 		// Let's try once more using reboot-time update.
 		HMODULE kernel32 = LoadLibrary("KERNEL32.DLL");
@@ -231,7 +231,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 					DeleteFile(workfile);
 					return (*err_handler) (werr, "MoveFileEx(replace 'target')");
 				}
-
+					
 				FreeLibrary(kernel32);
 				IncrementSharedCount(target, err_handler);
 				return FB_INSTALL_COPY_REQUIRES_REBOOT;
@@ -252,7 +252,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		lstrcpy(sworkfile, ssysdir);
 		lstrcat(sworkfile, "\\_");
 		lstrcat(sworkfile, FBCLIENT_NAME);
-
+		
 		TEXT starget[MAXPATHLEN];
 		lstrcpy(starget, ssysdir);
 		lstrcat(starget, "\\");
@@ -263,7 +263,8 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			ULONG werr = GetLastError();
 			DeleteFile(workfile);
-			return (*err_handler) (werr, "WritePrivateProfileString(delete 'target')");
+			return (*err_handler) (werr,
+				"WritePrivateProfileString(delete 'target')");
 		}
 
 		if (WritePrivateProfileString("rename", starget, sworkfile,
@@ -271,16 +272,19 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			ULONG werr = GetLastError();
 			DeleteFile(workfile);
-			return (*err_handler) (werr, "WritePrivateProfileString(replace 'target')");
+			return (*err_handler) (werr,
+				"WritePrivateProfileString(replace 'target')");
 		}
 
 		IncrementSharedCount(target, err_handler);
 		return FB_INSTALL_COPY_REQUIRES_REBOOT;
 	}
-
-	// Straight plain MoveFile succeeded immediately.
-	IncrementSharedCount(target, err_handler);
-	return FB_SUCCESS;
+	else
+	{
+		// Straight plain MoveFile succeeded immediately.
+		IncrementSharedCount(target, err_handler);
+		return FB_SUCCESS;
+	}
 }
 
 USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
@@ -297,12 +301,12 @@ USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
  *	from the Windows System directory.
  *
  *	when removing and -force is NOT used
- *
+ *     
  *		test for existence of client library
  *		if version matches then decrement shared library count
- *			if count=0 then delete library, remove entry from shared library
+ *			if count=0 then delete library, remove entry from shared library 
  *		if version doesn't match then do nothing. It is not ours.
- *
+ *	
  *	when removing and -force IS used
  *
  *		test for existence of client library
@@ -321,8 +325,7 @@ USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
 	// number that we could have installed to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-//	lstrcat(fbdll, "\\bin\\");
-	lstrcat(fbdll, "\\");
+	lstrcat(fbdll, "\\bin\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD ourverMS = 0, ourverLS = 0;
@@ -404,8 +407,13 @@ USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 
 	DWORD type, size = sizeof(sharedCount);
 	sharedCount = 0;
-	RegQueryValueEx(hkey, target, NULL, &type,
+	keystatus = RegQueryValueEx(hkey, target, NULL, &type,
 		reinterpret_cast<BYTE*>(&sharedCount), &size);
+	if (keystatus != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkey);
+		return (*err_handler) (keystatus, "RegQueryValueEx");
+	}
 	RegCloseKey(hkey);
 
 	return FB_SUCCESS;
@@ -440,7 +448,7 @@ USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS,
 
 	// We'll keep hfile opened until we have read version so that the file
 	// can't be deleted between check for existence and version read.
-
+	
 	DWORD dwUnused;
 	DWORD rsize = GetFileVersionInfoSize(const_cast<TEXT*>(filename), &dwUnused);
 	if (rsize == 0)
@@ -548,7 +556,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		}
 		else i = 0;
 	}
-
+	
 	if (p >= end)
 	{
 		UnmapViewOfFile(mem);
@@ -571,14 +579,14 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	printf("ProductVersionMS : %8.8x\n", ffi->dwProductVersionMS);
 	printf("ProductVersionLS : %8.8x\n", ffi->dwProductVersionLS);
 	*/
-
+	
 	/*
 	// The start of the full VS_VERSIONINFO pseudo structure is located 6 bytes
 	// before the above "lookup" value. This "vi" (versioninfo) pointer points
 	// to the same block of bytes that would have been returned by the
 	// GetFileVersionInfo API.
 	BYTE* vi = p - sizeof(lookup) - 6;
-
+	
 	// The first WORD of this pseudo structure is its byte length
 	WORD viLength = *(WORD*)vi;
 
@@ -612,7 +620,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		else i = 0;
 	}
 	*/
-
+	
 	/*
 	// Let's patch the ProductVersion strings.
 	// This patch assumes the original version string has a major version and
@@ -644,7 +652,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 		else i = 0;
 	}
 	*/
-
+	
 	UnmapViewOfFile(mem);
 	CloseHandle(hmap);
 	CloseHandle(hfile);
@@ -749,16 +757,17 @@ USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
 		RegCloseKey(hkey);
 		return FB_SUCCESS;
 	}
-
-	status = RegDeleteValue(hkey, filename);
-	if (status != ERROR_SUCCESS)
+	else
 	{
+		status = RegDeleteValue(hkey, filename);
+		if (status != ERROR_SUCCESS)
+		{
+			RegCloseKey(hkey);
+			return (*err_handler) (status, "RegDeleteValue");
+		}
 		RegCloseKey(hkey);
-		return (*err_handler) (status, "RegDeleteValue");
+		return FB_INSTALL_SHARED_COUNT_ZERO;
 	}
-
-	RegCloseKey(hkey);
-	return FB_INSTALL_SHARED_COUNT_ZERO;
 }
 
 }	// namespace { }

@@ -22,14 +22,17 @@
  */
 
 
-USHORT famasc_key_length(texttype* obj, USHORT inLen);
-USHORT famasc_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
+USHORT famasc_key_length(TEXTTYPE obj, USHORT inLen);
+USHORT famasc_string_to_key(TEXTTYPE obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT partial);
-SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
+SSHORT famasc_compare(TEXTTYPE obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
 	INTL_BOOL* error_flag);
 
-ULONG cp1251_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
-ULONG cp1251_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
+ULONG famasc_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
+ULONG famasc_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
+
+ULONG cp1251_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
+ULONG cp1251_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE* pOutStr);
 
 /*
  * Generic base for InterBase 4.0 Language Driver - ASCII family (binary

@@ -25,7 +25,6 @@
  *
  */
 
-#include "firebird.h"
 #include "../jrd/os/mod_loader.h"
 #include "../../common.h"
 #ifdef HAVE_UNISTD_H
@@ -43,7 +42,7 @@ public:
 	DlfcnModule(void *m) : module(m) {}
 	~DlfcnModule();
 	void *findSymbol(const Firebird::string&);
-
+	
 private:
 	void *module;
 };
@@ -73,7 +72,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	void* module = dlopen(modPath.c_str(), RTLD_LAZY);
 	if (module == NULL)
 		return 0;
-
+	
 	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }
 

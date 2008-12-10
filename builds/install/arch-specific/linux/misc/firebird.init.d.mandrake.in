@@ -5,63 +5,51 @@
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird database server daemon 
+# Firebird/interbase database server daemon 
 
-# Source function library - RedHat or Mandriva specific
-# functions actually used: checkpid success failure
+
+# This init script contains functions specific for redhat
+# and mandrake init scripts.
+
+# Source function library.
 . /etc/rc.d/init.d/functions
 
-# To run more instances of firebird:
-#   Copy @prefix@ somewhere
-#   Copy this script under a new name
-#   Change at least INSTANCE and FIREBIRD below
-#   Edit the copied firebird.conf to change at least RemoteServicePort
-#   Optionally run chkconfig to autostart the new service
-INSTANCE=default
+
 FIREBIRD=@prefix@
-
-# No changes needed below for multiple instances
 FBRunUser=firebird
-pidfile=/var/run/firebird/$INSTANCE.pid
-FULLNAME="Firebird server [$INSTANCE]"
-LD_LIBRARY_PATH=$FIREBIRD/lib
+pidfile=/var/run/firebird/`basename $0`.pid
 
-export FIREBIRD LD_LIBRARY_PATH
+export FIREBIRD 
 
-GUARDIAN=$FIREBIRD/bin/fbguard
+
+# Check the file is there and is executable.
+[ -x $FIREBIRD/bin/fbmgr ] || exit 1
+
+
 
 # See how we were called.
 case "$1" in
   start)
-	echo -n "Starting $FULLNAME "
+	echo -n "Starting Firebird server: "
 
-#	runuser -s /bin/bash $FBRunUser -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
-	su -l $FBRunUser -s /bin/sh -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
+	daemon --user $FBRunUser $FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever
 	RETVAL=$?
-	[ $RETVAL -eq 0 ] && success || failure
 	echo
 	;;
   stop)
-	echo -n "Stopping $FULLNAME "
+	echo -n "Stopping Firebird server: "
 
 	if [ -f $pidfile ]
 	then
 	    kill `cat $pidfile`
 	fi
 	RETVAL=$?
-	[ $RETVAL -eq 0 ] && success || failure
-	echo
+#	echo
+#	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;
   status)
-	if [ -f $pidfile ]
-	then
-		pid=`cat $pidfile`
-		checkpid $pid
-		RETVAL=$?
-		[ $RETVAL -eq 0 ] && echo "$FULLNAME is running (pid $pid)" || echo "$FULLNAME is dead but pid file exists"
-	else
-		echo "$FULLNAME is stopped"
-	fi
+	status fbserver
+	RETVAL=$?
 	;;
   restart|reload)
 	$0 stop

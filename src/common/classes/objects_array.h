@@ -27,7 +27,7 @@
 
 #ifndef CLASSES_OBJECTS_ARRAY_H
 #define CLASSES_OBJECTS_ARRAY_H
-
+ 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
@@ -40,7 +40,7 @@ namespace Firebird
 		typedef A inherited;
 	public:
 		class const_iterator; // fwd decl.
-
+		
 		class iterator
 		{
 			friend class ObjectsArray<T, A>;
@@ -58,38 +58,32 @@ namespace Firebird
 				pos = 0;
 			}
  */
-			iterator& operator++()
-			{
+			iterator& operator++() {
 				++pos;
 				return (*this);
 			}
-			iterator operator++(int)
-			{
+			iterator operator++(int) {
 				iterator tmp = *this;
 				++pos;
 				 return tmp;
 			}
-			iterator& operator--()
-			{
+			iterator& operator--() {
 				fb_assert(pos > 0);
 				--pos;
 				return (*this);
 			}
-			iterator operator--(int)
-			{
+			iterator operator--(int) {
 				fb_assert(pos > 0);
 				iterator tmp = *this;
 				--pos;
 				 return tmp;
 			}
-			T* operator->()
-			{
+			T* operator->() {
 				fb_assert(lst);
 				T* pointer = lst->getPointer(pos);
 				return pointer;
 			}
-			T& operator*()
-			{
+			T& operator*() {
 				fb_assert(lst);
 				T* pointer = lst->getPointer(pos);
 				return *pointer;
@@ -116,7 +110,6 @@ namespace Firebird
 		public:
 			const_iterator() : lst(0), pos(0) { }
 			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
-			explicit const_iterator(iterator& it) : lst(it.lst), pos(it.pos) {}
 /*
 			const_iterator& operator=(const ObjectsArray& a)
 			{
@@ -124,38 +117,32 @@ namespace Firebird
 				pos = 0;
 			}
  */
-			const_iterator& operator++()
-			{
+			const_iterator& operator++() {
 				++pos;
 				return (*this);
 			}
-			const_iterator operator++(int)
-			{
+			const_iterator operator++(int) {
 				const_iterator tmp = *this;
 				++pos;
 				 return tmp;
 			}
-			const_iterator& operator--()
-			{
+			const_iterator& operator--() {
 				fb_assert(pos > 0);
 				--pos;
 				return (*this);
 			}
-			const_iterator operator--(int)
-			{
+			const_iterator operator--(int) {
 				fb_assert(pos > 0);
 				const_iterator tmp = *this;
 				--pos;
 				 return tmp;
 			}
-			const T* operator->()
-			{
+			const T* operator->() {
 				fb_assert(lst);
 				const T* pointer = lst->getPointer(pos);
 				return pointer;
 			}
-			const T& operator*()
-			{
+			const T& operator*() {
 				fb_assert(lst);
 				const T* pointer = lst->getPointer(pos);
 				return *pointer;
@@ -185,184 +172,129 @@ namespace Firebird
 		};
 
 	public:
-		void insert(size_t index, const T& item)
-		{
+		void insert(size_t index, const T& item) {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
-		size_t add(const T& item)
-		{
+		size_t add(const T& item) {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			return inherited::add(dataL);
 		}
-		T& add()
-		{
+		T& add() {
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
 			inherited::add(dataL);
 			return *dataL;
 		}
-		void push(const T& item)
-		{
+		void push(const T& item) {
 			add(item);
 		}
-		T pop()
-		{
+		T pop() {
 			T* pntr = inherited::pop();
 			T rc = *pntr;
 			delete pntr;
 			return rc;
 		}
-		void remove(size_t index)
-		{
+		void remove(size_t index) {
 			fb_assert(index < getCount());
 			delete getPointer(index);
 			inherited::remove(index);
 		}
-		void remove(iterator itr)
-		{
+		void remove(iterator itr) {
   			fb_assert(itr.lst == this);
 			remove(itr.pos);
 		}
-		void shrink(size_t newCount)
-		{
+		void shrink(size_t newCount) {
 			for (size_t i = newCount; i < getCount(); i++) {
 				delete getPointer(i);
 			}
 			inherited::shrink(newCount);
 		}
-		iterator begin()
-		{
+		iterator begin() {
 			return iterator(this, 0);
 		}
-		iterator end()
-		{
+		iterator end() {
 			return iterator(this, getCount());
 		}
-		iterator back()
-		{
+		iterator back() {
   			fb_assert(getCount() > 0);
 			return iterator(this, getCount() - 1);
 		}
-		const_iterator begin() const
-		{
+		const_iterator begin() const {
 			return const_iterator(this, 0);
 		}
-		const_iterator end() const
-		{
+		const_iterator end() const {
 			return const_iterator(this, getCount());
 		}
-		const T& operator[](size_t index) const
-		{
+		const T& operator[](size_t index) const {
   			return *getPointer(index);
 		}
-		const T* getPointer(size_t index) const
-		{
+		const T* getPointer(size_t index) const {
   			return inherited::getElement(index);
 		}
-		T& operator[](size_t index)
-		{
+		T& operator[](size_t index) {
   			return *getPointer(index);
 		}
-		T* getPointer(size_t index)
-		{
+		T* getPointer(size_t index) {
   			return inherited::getElement(index);
 		}
 		explicit ObjectsArray(MemoryPool& p) : A(p) { }
 		ObjectsArray() : A() { }
-		~ObjectsArray()
-		{
+		~ObjectsArray() {
 			for (size_t i = 0; i < getCount(); i++) {
 				delete getPointer(i);
 			}
 		}
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
-		void clear()
-		{
+		void clear() { 
 			for (size_t i = 0; i < getCount(); i++) {
 				delete getPointer(i);
 			}
-			inherited::clear();
-		}
-		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L)
-		{
-			while (this->count > L.count)
-			{
-				delete inherited::pop();
-			}
-			for (size_t i = 0; i < L.count; i++)
-			{
-				if (i < this->count)
-				{
-					(*this)[i] = L[i];
-				}
-				else
-				{
-					add(L[i]);
-				}
-			}
-			return *this;
+			inherited::clear(); 
 		}
 	};
 
 	// Template to convert object value to index directly
 	template <typename T>
-	class ObjectKeyValue
-	{
+	class ObjectKeyValue {
 	public:
 		static const T& generate(const void* sender, const T* Item) { return Item; }
 	};
 
-	// Template for default value comparator
+	// Template for default value comparsion
 	template <typename T>
-	class ObjectComparator
-	{
+	class ObjectComparator {
 	public:
-		static bool greaterThan(const T i1, const T i2)
-		{
+		static bool greaterThan(const T i1, const T i2) {
 			return *i1 > *i2;
 		}
 	};
 
 	// Dynamic sorted array of simple objects
 	template <typename ObjectValue,
-		typename ObjectStorage = InlineStorage<ObjectValue*, 32>,
-		typename ObjectKey = ObjectValue,
-		typename ObjectKeyOfValue = DefaultKeyValue<ObjectValue*>,
+		typename ObjectStorage = InlineStorage<ObjectValue*, 32>, 
+		typename ObjectKey = ObjectValue, 
+		typename ObjectKeyOfValue = DefaultKeyValue<ObjectValue*>, 
 		typename ObjectCmp = ObjectComparator<const ObjectKey*> >
-	class SortedObjectsArray : public ObjectsArray<ObjectValue,
-			SortedArray <ObjectValue*, ObjectStorage, const ObjectKey*,
+	class SortedObjectsArray : public ObjectsArray<ObjectValue, 
+			SortedArray <ObjectValue*, ObjectStorage, const ObjectKey*, 
 			ObjectKeyOfValue, ObjectCmp> >
 	{
 	private:
-		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
+		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp> > inherited;
-
 	public:
-		explicit SortedObjectsArray(MemoryPool& p) :
-			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
+		explicit SortedObjectsArray(MemoryPool& p) : 
+			ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp> >(p) { }
-		bool find(const ObjectKey& item, size_t& pos) const
-		{
+		bool find(const ObjectKey& item, size_t& pos) const {
 			const ObjectKey* const pItem = &item;
-			return static_cast<const SortedArray<ObjectValue*,
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
+			return static_cast<const SortedArray<ObjectValue*, 
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
-		bool exist(const ObjectKey& item) const
-		{
-			size_t pos;
-			return find(item, pos);
-		}
-		size_t add(const ObjectValue& item)
-		{
-			return inherited::add(item);
-		}
-
-	private:
-		ObjectValue& add();	// Unusable when sorted
 	};
 
 } // namespace Firebird

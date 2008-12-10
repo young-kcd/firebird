@@ -1,27 +1,27 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	C preprocessor
 //		MODULE:		cmp.cpp
 //		DESCRIPTION:	Request compiler
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
-//
+//  
 //
 //____________________________________________________________
 //
@@ -84,46 +84,49 @@ static ULONG next_ident;
 const int MAX_TPB = 4000;
 
 //____________________________________________________________
-//
+//  
 //		Check to make sure that generated blr string is not about to
 //		over the memory allocated for it.  If so, allocate an extra
 //		couple of hundred bytes to be safe.
-//
+//  
 
 void CMP_check( gpre_req* request, SSHORT min_reqd)
 {
 	int length = request->req_blr - request->req_base;
-	if (!min_reqd && (length < request->req_length - 100))
+	if (!(min_reqd) && (length < request->req_length - 100))
 		return;
 
 	const int n = ((length + min_reqd + 100) > request->req_length * 2) ?
 		length + min_reqd + 100 : request->req_length * 2;
 
 	UCHAR* const old = request->req_base;
-	UCHAR* p = MSC_alloc(n);
+	const UCHAR* q = old;
+	UCHAR* p = (UCHAR *) MSC_alloc(n);
 	request->req_base = p;
 	request->req_length = n;
 	request->req_blr = request->req_base + length;
 
-	memcpy(p, old, length);
+	do {
+		*p++ = *q++;
+	} while (--length);
 
 	MSC_free(old);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Compile a single request, but do not generate any text.
 //		Generate port blocks, assign parameter numbers, message
 //		numbers, and internal idents.  Compute length of request.
-//
+//  
 
 void CMP_compile_request( gpre_req* request)
 {
 //  if there isn't a request handle specified, make one!
 
 	if (!request->req_handle && (request->req_type != REQ_procedure)) {
-		request->req_handle = (TEXT*) MSC_alloc(20);
+		request->req_handle = (TEXT *) MSC_alloc(20);
 		sprintf(request->req_handle, gpreGlob.ident_pattern, CMP_next_ident());
 	}
 
@@ -135,7 +138,7 @@ void CMP_compile_request( gpre_req* request)
 
 	request->req_ident = CMP_next_ident();
 
-//  If this is an SQL blob cursor, compile the blob and get out fast.
+//  If this is an SQL blob cursor, compile the blob and get out fast. 
 
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create)) {
 		for (blb* blob = request->req_blobs; blob; blob = blob->blb_next)
@@ -144,7 +147,7 @@ void CMP_compile_request( gpre_req* request)
 	}
 
 //  Before we get too far, make sure an eof field has been
-//  constructed.  If not, do so now.
+//  constructed.  If not, do so now. 
 
 	ref* reference;
 	if (!eof_field) {
@@ -162,7 +165,7 @@ void CMP_compile_request( gpre_req* request)
 		lit1 = MSC_unary(nod_literal, (GPRE_NOD) reference);
 	}
 
-//  Handle different request types differently
+//  Handle different request types differently 
 
 	switch (request->req_type) {
 	case REQ_create_database:
@@ -180,14 +183,14 @@ void CMP_compile_request( gpre_req* request)
 		cmp_procedure(request);
 		return;
 	}
-//  expand any incomplete references or values
+//  expand any incomplete references or values 
 
 	expand_references(request->req_references);
 	expand_references(request->req_values);
 
-//  Initialize the blr string
+//  Initialize the blr string 
 
-	request->req_blr = request->req_base = MSC_alloc(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 	if (request->req_flags & REQ_blr_version4)
 		request->add_byte(blr_version4);
@@ -195,13 +198,13 @@ void CMP_compile_request( gpre_req* request)
 		request->add_byte(blr_version5);
 
 //  If there are values to be transmitted, make a port
-//  to hold them
+//  to hold them 
 
 	if (request->req_values)
 		request->req_vport = make_port(request, request->req_values);
 
 #ifdef SCROLLABLE_CURSORS
-//  If there is an asynchronous message to be sent, make a port for it
+//  If there is an asynchronous message to be sent, make a port for it 
 
 	if (request->req_flags & REQ_sql_cursor &&
 		request->req_database->dbb_base_level >= 5)
@@ -221,7 +224,7 @@ void CMP_compile_request( gpre_req* request)
 #endif
 
 //  If this is a FOR type request, an eof field reference needs
-//  to be generated.  Do it.
+//  to be generated.  Do it. 
 
 	if (request->req_type == REQ_for ||
 		request->req_type == REQ_cursor || request->req_type == REQ_any)
@@ -238,7 +241,7 @@ void CMP_compile_request( gpre_req* request)
 	else
 		reference = request->req_references;
 
-//  Assume that a general port needs to be constructed.
+//  Assume that a general port needs to be constructed. 
 
 	gpre_port* port;
 	if ((request->req_type != REQ_insert) && (request->req_type != REQ_store2)
@@ -249,7 +252,7 @@ void CMP_compile_request( gpre_req* request)
 
 //  Loop thru actions looking for something interesting to do.  Not
 //  all action types are "interesting", so don't worry about missing
-//  ones.
+//  ones. 
 
 	upd* update;
 	for (act* action = request->req_actions; action; action = action->act_next)
@@ -286,12 +289,12 @@ void CMP_compile_request( gpre_req* request)
 	cmp_blr(request);
 	request->add_byte(blr_eoc);
 
-//  Compute out final blr lengths
+//  Compute out final blr lengths 
 
 	request->req_length = request->req_blr - request->req_base;
 	request->req_blr = request->req_base;
 
-//  Finally, assign identifiers to any blobs that may have been referenced
+//  Finally, assign identifiers to any blobs that may have been referenced 
 
 	for (blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		cmp_blob(blob, false);
@@ -299,12 +302,12 @@ void CMP_compile_request( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Stuff field datatype info into request.
 //		Text fields are not remapped to process text type.
 //		This is used by the CAST & COLLATE operators to
 //		indicate cast datatypes.
-//
+//  
 
 void CMP_external_field( gpre_req* request, const gpre_fld* field)
 {
@@ -336,10 +339,10 @@ void CMP_external_field( gpre_req* request, const gpre_fld* field)
 
 
 //____________________________________________________________
-//
+//  
 //		Initialize (or re-initialize) for request compilation.  This is
 //		called at most once per module.
-//
+//  
 
 void CMP_init(void)
 {
@@ -351,9 +354,9 @@ void CMP_init(void)
 
 
 //____________________________________________________________
-//
+//  
 //		Give out next identifier.
-//
+//  
 
 ULONG CMP_next_ident(void)
 {
@@ -362,9 +365,9 @@ ULONG CMP_next_ident(void)
 
 
 //____________________________________________________________
-//
+//  
 //		Stuff a symbol.
-//
+//  
 
 void CMP_stuff_symbol( gpre_req* request, const gpre_sym* symbol)
 {
@@ -376,17 +379,17 @@ void CMP_stuff_symbol( gpre_req* request, const gpre_sym* symbol)
 
 
 //____________________________________________________________
-//
+//  
 //		Take a transaction block with (potentially) a
 //		lot of relation lock blocks, and generate TPBs
-//
+//  
 //		We'll always generate TPB's, and link them
 //		into the DBB for that database so they get
 //		generated.  If there's no lock list, we generate
-//		a simple TPB for every database in the program.
+//		a simple TPB for every database in the program.  
 //		If there is a lock list, we generate a more complex
 //		TPB for each database referenced.
-//
+//  
 
 void CMP_t_start( gpre_tra* trans)
 {
@@ -394,7 +397,7 @@ void CMP_t_start( gpre_tra* trans)
 	char tpb_buffer[MAX_TRA_OPTIONS + 1];
 
 //  fill out a standard tpb buffer ahead of time so we know
-//  how large it is
+//  how large it is 
 
 	char* text = tpb_buffer;
 	*text++ = isc_tpb_version1;
@@ -421,7 +424,7 @@ void CMP_t_start( gpre_tra* trans)
 
 	for (dbb* database = gpreGlob.isc_databases; database; database = database->dbb_next)
 	{
-		/*
+		/* 
 		 * figure out if this is a simple transaction or a reserving
 		 * transaction.  Allocate a TPB of the right size in either
 		 * case.
@@ -459,7 +462,7 @@ void CMP_t_start( gpre_tra* trans)
 			new_tpb->tpb_length = buff_len + tpb_len;
 			database->dbb_rrls = NULL;
 		}
-		else					// this database isn't referenced
+		else					// this database isn't referenced 
 			continue;
 
 		/* link this into the TPB chains (gpre_tra and DBB)   */
@@ -471,7 +474,7 @@ void CMP_t_start( gpre_tra* trans)
 		trans->tra_tpb = new_tpb;
 		trans->tra_db_count++;
 
-		// fill in the standard TPB and concatenate the relation names
+		// fill in the standard TPB and concatenate the relation names 
 
 		new_tpb->tpb_ident = CMP_next_ident();
 
@@ -485,9 +488,9 @@ void CMP_t_start( gpre_tra* trans)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate blr tree for free standing ANY expression.
-//
+//  
 
 static void cmp_any( gpre_req* request)
 {
@@ -502,7 +505,7 @@ static void cmp_any( gpre_req* request)
 
 	gpre_nod* value = MSC_unary(nod_value, (GPRE_NOD) port->por_references);
 
-//  Make a send to signal end of file
+//  Make a send to signal end of file 
 
 	request->add_byte(blr_assignment);
 	CME_expr(lit1, request);
@@ -526,9 +529,9 @@ static void cmp_any( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Compile a build assignment statement.
-//
+//  
 
 static void cmp_assignment( GPRE_NOD node, gpre_req* request)
 {
@@ -540,9 +543,9 @@ static void cmp_assignment( GPRE_NOD node, gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Compile a blob parameter block, if required.
-//
+//  
 
 static void cmp_blob(blb* blob,
 					 bool sql_flag)
@@ -588,7 +591,7 @@ static void cmp_blob(blb* blob,
 	}
 
 	if (blob->blb_from_charset) {
-		// create bpb instruction for source character set
+		// create bpb instruction for source character set 
 
 		*p++ = isc_bpb_source_interp;
 		*p++ = 2;
@@ -598,7 +601,7 @@ static void cmp_blob(blb* blob,
 
 	if (blob->blb_to_charset) {
 
-		// create bpb instruction for target character set
+		// create bpb instruction for target character set 
 
 		*p++ = isc_bpb_target_interp;
 		*p++ = 2;
@@ -611,21 +614,21 @@ static void cmp_blob(blb* blob,
 
 
 //____________________________________________________________
-//
+//  
 //		Build a request tree for a request.
-//
+//  
 
 static void cmp_blr( gpre_req* request)
 {
 	request->add_byte(blr_begin);
 
-//  build message definition for each port
+//  build message definition for each port 
 
 	gpre_port* port;
 	for (port = request->req_ports; port; port = port->por_next)
 		cmp_port(port, request);
 
-//  See if there is a receive to be built
+//  See if there is a receive to be built 
 
 	if ((request->req_type == REQ_store) || (request->req_type == REQ_store2))
 		port = request->req_primary;
@@ -635,7 +638,7 @@ static void cmp_blr( gpre_req* request)
 	if (port)
 		make_receive(port, request);
 
-//  Compile up request
+//  Compile up request 
 
 	switch (request->req_type) {
 	case REQ_cursor:
@@ -670,9 +673,9 @@ static void cmp_blr( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate blr for ERASE action.
-//
+//  
 
 static void cmp_erase( act* action, gpre_req* request)
 {
@@ -689,11 +692,11 @@ static void cmp_erase( act* action, gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Go over an SQL fetch list and expand
 //		references to indicator variables.
 //		Not tough.
-//
+//  
 
 static void cmp_fetch( act* action)
 {
@@ -717,9 +720,9 @@ static void cmp_fetch( act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Stuff field datatype info into request.
-//
+//  
 
 static void cmp_field( gpre_req* request, const gpre_fld* field,
 	const ref* reference)
@@ -736,12 +739,12 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 
 	switch (field->fld_dtype) {
 	case dtype_cstring:
-		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
+		if (!(field->fld_flags & FLD_charset)) {
 			request->add_byte(blr_cstring);
 			request->add_word(field->fld_length);
 		}
 		else {
-			// 3.2j has new, tagged blr instruction for cstring
+			// 3.2j has new, tagged blr instruction for cstring 
 
 			request->add_byte(blr_cstring2);
 			request->add_word(field->fld_ttype);
@@ -750,12 +753,12 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 		break;
 
 	case dtype_text:
-		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
+		if (!(field->fld_flags & FLD_charset)) {
 			request->add_byte(blr_text);
 			request->add_word(field->fld_length);
 		}
 		else {
-			// 3.2j has new, tagged blr instruction for text too
+			// 3.2j has new, tagged blr instruction for text too 
 
 			request->add_byte(blr_text2);
 			request->add_word(field->fld_ttype);
@@ -764,12 +767,12 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 		break;
 
 	case dtype_varying:
-		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
+		if (!(field->fld_flags & FLD_charset)) {
 			request->add_byte(blr_varying);
 			request->add_word(field->fld_length);
 		}
 		else {
-			// 3.2j has new, tagged blr instruction for varying also
+			// 3.2j has new, tagged blr instruction for varying also 
 
 			request->add_byte(blr_varying2);
 			request->add_word(field->fld_ttype);
@@ -834,9 +837,9 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate blr tree for for statement
-//
+//  
 
 static void cmp_for( gpre_req* request)
 {
@@ -863,7 +866,7 @@ static void cmp_for( gpre_req* request)
 	CME_rse(request->req_rse, request);
 
 //  Loop thru actions looking for primary port.  While we're at it,
-//  count the number of update actions.
+//  count the number of update actions. 
 
 	bool updates = false;
 
@@ -877,11 +880,11 @@ static void cmp_for( gpre_req* request)
 			break;
 		}
 	}
-
+	
 	if (updates)
 		request->add_byte(blr_begin);
 
-//  Build the primary send statement
+//  Build the primary send statement 
 
 	gpre_port* port = request->req_primary;
 	make_send(port, request);
@@ -916,7 +919,7 @@ static void cmp_for( gpre_req* request)
 	}
 	request->add_byte(blr_end);
 
-//  If there are any actions, handle them here
+//  If there are any actions, handle them here 
 
 	if (updates) {
 		request->add_byte(blr_label);
@@ -943,7 +946,7 @@ static void cmp_for( gpre_req* request)
 		request->add_byte(blr_end);
 	}
 
-//  Make a send to signal end of file
+//  Make a send to signal end of file 
 
 	make_send(port, request);
 	request->add_byte(blr_assignment);
@@ -956,9 +959,9 @@ static void cmp_for( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Compile a mass looping update statement.
-//
+//  
 
 static void cmp_loop( gpre_req* request)
 {
@@ -972,7 +975,7 @@ static void cmp_loop( gpre_req* request)
 	for (ref* reference = primary->por_references; reference;
 		 reference = reference->ref_next)
 	{
-		if (reference->ref_field == count_field)
+		if (reference->ref_field == count_field) 
 			counter->nod_arg[0] = (GPRE_NOD) reference;
 	}
 
@@ -1041,9 +1044,9 @@ static void cmp_loop( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a receive and modify tree for a modify action.
-//
+//  
 
 static void cmp_modify( act* action, gpre_req* request)
 {
@@ -1058,7 +1061,7 @@ static void cmp_modify( act* action, gpre_req* request)
 	request->add_byte(update->upd_source->ctx_internal);
 	request->add_byte(update->upd_update->ctx_internal);
 
-//  count the references and build an assignment block
+//  count the references and build an assignment block 
 
 	gpre_nod* list = update->upd_assignments;
 	request->add_byte(blr_begin);
@@ -1078,9 +1081,9 @@ static void cmp_modify( act* action, gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Build a request tree for a request.
-//
+//  
 
 static void cmp_port( gpre_port* port, gpre_req* request)
 {
@@ -1100,9 +1103,9 @@ static void cmp_port( gpre_port* port, gpre_req* request)
 
 
 //____________________________________________________________
-//
-//		Compile a EXECUTE PROCEDURE request.
-//
+//  
+//		Compile a EXECUTE PROCEDURE request.  
+//  
 
 static void cmp_procedure( gpre_req* request)
 {
@@ -1111,7 +1114,7 @@ static void cmp_procedure( gpre_req* request)
 
 //  Remember the order of the references.  The exec_proc blr verb
 //  requires parameters to be in parameter order which may be changed
-//  when there references are expanded.
+//  when there references are expanded. 
 
 	gpre_lls* outputs = NULL;
 	ref* reference = request->req_references;
@@ -1122,12 +1125,12 @@ static void cmp_procedure( gpre_req* request)
 		}
 	}
 
-//  Expand any incomplete references or values.
+//  Expand any incomplete references or values. 
 
 	expand_references(request->req_values);
 	expand_references(request->req_references);
 
-	request->req_blr = request->req_base = MSC_alloc(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 	if (request->req_flags & REQ_blr_version4)
 		request->add_byte(blr_version4);
@@ -1144,7 +1147,7 @@ static void cmp_procedure( gpre_req* request)
 	request->req_primary = make_port(request, request->req_references);
 	request->req_references = request->req_primary->por_references;
 
-//  build message definition for each port
+//  build message definition for each port 
 
 	for (gpre_port* port = request->req_ports; port; port = port->por_next)
 		cmp_port(port, request);
@@ -1196,10 +1199,10 @@ static void cmp_procedure( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate parameter buffer for READY with
 //       buffercount.
-//
+//  
 
 static void cmp_ready( gpre_req* request)
 {
@@ -1241,10 +1244,10 @@ static void cmp_ready( gpre_req* request)
 		request->add_byte(4);
 		request->add_long(db->dbb_users);
 	}
-
+	
 	const TEXT* p;
 	SSHORT l;
-
+	
 	if (db->dbb_c_user && !db->dbb_r_user) {
 		request->add_byte(isc_dpb_user_name);
 		l = strlen(db->dbb_c_user);
@@ -1273,7 +1276,7 @@ static void cmp_ready( gpre_req* request)
 	}
 
 	if (db->dbb_c_lc_messages && !db->dbb_r_lc_messages) {
-		// Language must be an ASCII string
+		// Language must be an ASCII string 
 		request->add_byte(isc_dpb_lc_messages);
 		l = strlen(db->dbb_c_lc_messages);
 		request->add_byte(l);
@@ -1283,7 +1286,7 @@ static void cmp_ready( gpre_req* request)
 	}
 
 	if (db->dbb_c_lc_ctype && !db->dbb_r_lc_ctype) {
-		// Character Format must be an ASCII string
+		// Character Format must be an ASCII string 
 		request->add_byte(isc_dpb_lc_ctype);
 		l = strlen(db->dbb_c_lc_ctype);
 		request->add_byte(l);
@@ -1301,10 +1304,10 @@ static void cmp_ready( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Build in a fudge to bias the language specific subscript to the
 //		declared array subscript [i.e. C subscripts are zero based].
-//
+//  
 
 static void cmp_sdl_fudge( gpre_req* request, SLONG lower_bound)
 {
@@ -1329,11 +1332,11 @@ static void cmp_sdl_fudge( gpre_req* request, SLONG lower_bound)
 }
 
 //____________________________________________________________
-//
+//  
 //		Build an SDL loop for GET_SLICE/PUT_SLICE unless the upper and
 //		lower bounds are constant.  Return true if a loop has been built,
 //		otherwise false.
-//
+//  
 
 static bool cmp_sdl_loop(gpre_req* request,
 						 USHORT index,
@@ -1361,10 +1364,10 @@ static bool cmp_sdl_loop(gpre_req* request,
 
 
 //____________________________________________________________
-//
+//  
 //		Write the number in the 'smallest'
 //       form possible to the SDL string.
-//
+//  
 
 static void cmp_sdl_number( gpre_req* request, SLONG number)
 {
@@ -1385,10 +1388,10 @@ static void cmp_sdl_number( gpre_req* request, SLONG number)
 
 
 //____________________________________________________________
-//
+//  
 //		Build an SDL loop for GET_SLICE/PUT_SLICE unless the upper and
 //		lower bounds are constant.
-//
+//  
 
 static void cmp_sdl_subscript(gpre_req* request, USHORT index, const slc* slice,
 	const ary* array)
@@ -1407,9 +1410,9 @@ static void cmp_sdl_subscript(gpre_req* request, USHORT index, const slc* slice,
 
 
 //____________________________________________________________
-//
+//  
 //		Stuff a slice description language value.
-//
+//  
 
 static void cmp_sdl_value( gpre_req* request, const gpre_nod* node)
 {
@@ -1432,9 +1435,9 @@ static void cmp_sdl_value( gpre_req* request, const gpre_nod* node)
 
 
 //____________________________________________________________
-//
+//  
 //		generate blr for set generator
-//
+//  
 
 static void cmp_set_generator( gpre_req* request)
 {
@@ -1467,8 +1470,8 @@ static void cmp_set_generator( gpre_req* request)
 
 
 //____________________________________________________________
-//
-//
+//  
+//  
 
 static void cmp_slice( gpre_req* request)
 {
@@ -1478,7 +1481,7 @@ static void cmp_slice( gpre_req* request)
 	gpre_fld* element = field->fld_array;
 	const ary* array = field->fld_array_info;
 
-//  Process variable references
+//  Process variable references 
 
 	for (ref* reference = request->req_values; reference;
 		 reference = reference->ref_next)
@@ -1486,7 +1489,7 @@ static void cmp_slice( gpre_req* request)
 		reference->ref_id = slice->slc_parameters++;
 	}
 
-	request->req_blr = request->req_base = MSC_alloc(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 
 	request->add_byte(isc_sdl_version1);
@@ -1500,14 +1503,13 @@ static void cmp_slice( gpre_req* request)
 	request->add_byte(isc_sdl_field);
 	CMP_stuff_symbol(request, field->fld_symbol);
 
-	bool loop_flags[MAX_ARRAY_DIMENSIONS];
+	bool loop_flags[16];
 	{ // scope block
-		fb_assert(slice->slc_dimensions <= MAX_ARRAY_DIMENSIONS);
-		USHORT n = 0;
-		for (bool* p = loop_flags; n < slice->slc_dimensions; n++, p++)
-			*p = cmp_sdl_loop(request, n, slice, array);
+	USHORT n = 0;
+	for (bool* p = loop_flags; n < slice->slc_dimensions; n++, p++)
+		*p = cmp_sdl_loop(request, n, slice, array);
 	} // end scope block
-
+	
 	request->add_byte(isc_sdl_element);
 	request->add_byte(1);
 	request->add_byte(isc_sdl_scalar);
@@ -1529,9 +1531,9 @@ static void cmp_slice( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate blr for a store request.
-//
+//  
 
 static void cmp_store( gpre_req* request)
 {
@@ -1544,7 +1546,7 @@ static void cmp_store( gpre_req* request)
 
 	CME_relation(request->req_contexts, request);
 
-//  Make an assignment list
+//  Make an assignment list 
 
 	gpre_nod* list = request->req_node;
 	request->add_byte(blr_begin);
@@ -1559,7 +1561,7 @@ static void cmp_store( gpre_req* request)
 	request->add_byte(blr_end);
 
 	if (request->req_type == REQ_store2) {
-		// whip through actions to find return list
+		// whip through actions to find return list 
 
 		act* action;
 		for (action = request->req_actions;; action = action->act_next) {
@@ -1585,13 +1587,13 @@ static void cmp_store( gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		During the parsing of an SQL statement
 //		we may have run into an indicator variable.
 //		If so, all we've got now is its name, and
 //		we really ought to build a full reference
 //		block for it before we forget.
-//
+//  
 
 static void expand_references( REF reference)
 {
@@ -1609,10 +1611,10 @@ static void expand_references( REF reference)
 
 
 //____________________________________________________________
-//
+//  
 //		Make up a port block and process a linked list
 //		of field references.
-//
+//  
 
 static gpre_port* make_port( gpre_req* request, REF reference)
 {
@@ -1622,8 +1624,8 @@ static gpre_port* make_port( gpre_req* request, REF reference)
 	port->por_next = request->req_ports;
 	request->req_ports = port;
 
-//  Hmmm -- no references.  Not going to fly.
-//  Make up a dummy reference.
+//  Hmmm -- no references.  Not going to fly.  
+//  Make up a dummy reference. 
 
 	if (!reference) {
 		reference = (REF) MSC_alloc(REF_LEN);
@@ -1684,9 +1686,9 @@ static gpre_port* make_port( gpre_req* request, REF reference)
 
 
 //____________________________________________________________
-//
+//  
 //		Make a receive node for a given port.
-//
+//  
 
 static void make_receive( gpre_port* port, gpre_req* request)
 {
@@ -1696,9 +1698,9 @@ static void make_receive( gpre_port* port, gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Make a receive node for a given port.
-//
+//  
 
 static void make_send( gpre_port* port, gpre_req* request)
 {
@@ -1708,10 +1710,10 @@ static void make_send( gpre_port* port, gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		where a duplicate reference list is used
 //		to build the port, fix request_references
-//
+//  
 
 static void update_references( REF references)
 {

@@ -35,21 +35,18 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 							 USHORT* err_code,
 							 ULONG* err_position)
 {
-	fb_assert(obj != NULL);
-
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
-
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVGB_gb2312_to_unicode);
-	fb_assert(impl->csconvert_datatable != NULL);
-	fb_assert(impl->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-	// See if we're only after a length estimate
+/* See if we're only after a length estimate */
 	if (p_dest_ptr == NULL)
 		return (src_len * sizeof(USHORT));
 
@@ -88,8 +85,9 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 		}
 
 		/* Convert from GB2312 to UNICODE */
-		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
-			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
+		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT) wide / 256]
+			 + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
@@ -113,19 +111,16 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 							 const UCHAR* p_unicode_str,
 							 ULONG gb_len,
 							 UCHAR* gb_str,
-							 USHORT* err_code,
+							 USHORT* err_code, 
 							 ULONG* err_position)
 {
-	fb_assert(obj != NULL);
-
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
-
 	fb_assert(p_unicode_str != NULL || gb_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVGB_unicode_to_gb2312);
-	fb_assert(impl->csconvert_datatable != NULL);
-	fb_assert(impl->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -142,8 +137,10 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		/* Convert from UNICODE to GB2312 code */
 		const USHORT wide = *unicode_str++;
 
-		const USHORT gb_ch = ((const USHORT*) impl->csconvert_datatable)
-			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+		const USHORT gb_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+					[(USHORT)wide / 256]
+				 + (wide % 256)];
 		if ((gb_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -152,9 +149,6 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		const int tmp1 = gb_ch / 256;
 		const int tmp2 = gb_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
-
-			fb_assert((UCHAR(tmp2) & 0x80) == 0);
-
 			*gb_str++ = tmp2;
 			gb_len--;
 			unicode_len -= sizeof(*unicode_str);
@@ -186,44 +180,31 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
 /**************************************
  * Functional description
  *      Make sure that the GB2312 string does not have any truncated 2 byte
- *      character at the end.
- * If we have a truncated character then,
- *          return false.
+ *      character at the end. 
+ * If we have a truncated character then, 
+ *          return false.  
  *          else return(true);
  **************************************/
-	const UCHAR* gb_str_start = gb_str;
+	const UCHAR *gb_str_start = gb_str;
 
-	while (gb_len--)
-	{
+	while (gb_len--) {
 		const UCHAR c1 = *gb_str;
-
-		if (c1 & 0x80)	// it is not an ASCII char
-		{
-			if (GB1(c1))	// first byte is GB2312
-			{
-				if (gb_len == 0 ||		// truncated GB2312
-					!GB2(gb_str[1]))	// bad second byte
-				{
-					if (offending_position)
-						*offending_position = gb_str - gb_str_start;
-
-					return false;
-				}
-
-				gb_str += 2;
-				gb_len -= 1;
-			}
-			else	// bad first byte
+		if (GB1(c1)) {			/* Is it  GB2312 */
+			if (gb_len == 0)	/* truncated GB2312 */
 			{
 				if (offending_position)
 					*offending_position = gb_str - gb_str_start;
-
-				return false;
+				return (false);
+			}
+			else {
+				gb_str += 2;
+				gb_len -= 1;
 			}
 		}
-		else	// it is an ASCII char
-			gb_str++;
-	}
+		else {					/* it is a ASCII */
 
-	return true;
+			gb_str++;
+		}
+	}
+	return (true);
 }

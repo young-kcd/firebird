@@ -11,35 +11,33 @@ set ERRLEV=0
 @call setenvvar.bat
 @if errorlevel 1 (goto :END)
 
-@call set_build_target.bat %*
-
+::===========
+:: Read input values
+@set DBG=
+@set DBG_DIR=release
+@set CLEAN=/build
+@if "%1"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+@if "%2"=="DEBUG" ((set DBG=TRUE) && (set DBG_DIR=debug))
+@if "%1"=="CLEAN" (set CLEAN=/rebuild)
+@if "%2"=="CLEAN" (set CLEAN=/rebuild)
 
 ::===========
 :MAIN
 @echo.
 @echo Copy autoconfig.h
-@del %FB_ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
-@copy %FB_ROOT_PATH%\src\include\gen\autoconfig_msvc.h %FB_ROOT_PATH%\src\include\gen\autoconfig.h > nul
+@del %ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
+@copy %ROOT_PATH%\src\include\gen\autoconfig_msvc.h %ROOT_PATH%\src\include\gen\autoconfig.h > nul
 @echo Creating directories
-@rmdir /s /q %FB_GEN_DIR% 2>nul
+@rmdir /s /q %ROOT_PATH%\gen 2>nul
 :: Remove previously generated output, and recreate the directory hierarchy. Note the exceptions to the rule!
 for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples ) do (
-  if NOT "%%v"=="journal" (@mkdir %FB_GEN_DIR%\%%v )
+  if NOT "%%v"=="journal" (@mkdir %ROOT_PATH%\gen\%%v 2>nul)
 )
 
-@rmdir /s /q %FB_GEN_DIR%\utilities 2>nul
-@mkdir %FB_GEN_DIR%\utilities 2>nul
-@mkdir %FB_GEN_DIR%\utilities\gstat 2>nul
-@mkdir %FB_GEN_DIR%\utilities\gsec 2>nul
-
-::=======
-call :btyacc
-if "%ERRLEV%"=="1" goto :END
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\btyacc.exe %FB_GEN_DIR%\ > nul
-
-@echo Generating DSQL parser...
-@call parse.bat
-if "%ERRLEV%"=="1" goto :END
+@rmdir /s /q %ROOT_PATH%\gen\utilities 2>nul
+@mkdir %ROOT_PATH%\gen\utilities 2>nul
+@mkdir %ROOT_PATH%\gen\utilities\gstat 2>nul
+@mkdir %ROOT_PATH%\gen\utilities\gsec 2>nul
 
 ::=======
 @echo.
@@ -47,31 +45,40 @@ if "%ERRLEV%"=="1" goto :END
 @call blrtable.bat
 
 ::=======
-call :gpre_boot
+@if "%DBG%"=="" (
+	call :gpre_boot_release
+) else (
+	call :gpre_boot_debug
+)
 if "%ERRLEV%"=="1" goto :END
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gpre_boot.exe %FB_GEN_DIR% > nul
-
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_boot.exe %ROOT_PATH%\gen\ > nul
 ::=======
 @echo Preprocessing the source files needed to build gbak_embed, gpre_embed and isql_embed...
 @call preprocess.bat BOOT
 ::=======
-call :gbak_embed
-if "%ERRLEV%"=="1" goto :END
-
-call :gpre_embed
-if "%ERRLEV%"=="1" goto :END
-
-call :isql_embed
-if "%ERRLEV%"=="1" goto :END
-
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gbak_embed.exe %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gpre_embed.exe %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\isql_embed.exe %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\fbembed.dll %FB_GEN_DIR% > nul
-
-for %%v in ( icuuc30 icudt30 icuin30 ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_GEN_DIR% >nul 2>&1
+@if "%DBG%"=="" (
+	call :gbak_embed_release
+	if "%ERRLEV%"=="1" goto :END
+	call :gpre_embed_release
+	if "%ERRLEV%"=="1" goto :END
+	call :isql_embed_release
+	if "%ERRLEV%"=="1" goto :END
+) else (
+	call :gbak_embed_debug
+	if "%ERRLEV%"=="1" goto :END
+	call :gpre_embed_debug
+	if "%ERRLEV%"=="1" goto :END
+	call :isql_embed_debug
+	if "%ERRLEV%"=="1" goto :END
 )
+
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gbak_embed.exe %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\gpre_embed.exe %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\isql_embed.exe %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\temp\%DBG_DIR%\firebird\bin\fbembed.dll %ROOT_PATH%\gen > nul
+@copy %ROOT_PATH%\extern\icu\bin\icuuc30.dll %ROOT_PATH%\gen >nul
+@copy %ROOT_PATH%\extern\icu\bin\icudt30.dll %ROOT_PATH%\gen >nul
+@copy %ROOT_PATH%\extern\icu\bin\icuin30.dll %ROOT_PATH%\gen >nul
 
 ::=======
 @call :databases
@@ -84,27 +91,37 @@ if "%ERRLEV%"=="1" goto :END
 @call :codes
 if "%ERRLEV%"=="1" goto :END
 ::=======
-@call create_msgs.bat msg
+@echo Building message file and codes header...
+@%ROOT_PATH%\gen\build_msg -f %DB_PATH%/gen/firebird.msg -D %DB_PATH%/gen/dbs/msg.fdb
+@%ROOT_PATH%\gen\codes %ROOT_PATH%\src\include\gen %ROOT_PATH%\lang_helpers
 ::=======
 @call :NEXT_STEP
-@goto :END
+@goto END:
 
 
 ::===================
-:: BUILD btyacc
-:btyacc
+:: BUILD gpre_boot_release
+:gpre_boot_release
 @echo.
-@echo Building btyacc (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot btyacc_%FB_TARGET_PLATFORM%.log btyacc
-if errorlevel 1 call :boot2 btyacc
+@echo Building gpre_boot (release)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_boot - Win32 Release"  %CLEAN% /OUT gpre_boot.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_boot %CLEAN% release /OUT gpre_boot.log
+)
+if errorlevel 1 goto :gpre_boot2
 goto :EOF
 
 ::===================
-:: BUILD gpre_boot
-:gpre_boot
+:: BUILD gpre_boot_debug
+:gpre_boot_debug
 @echo.
-@echo Building gpre_boot (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gpre_boot_%FB_TARGET_PLATFORM%.log gpre_boot
+@echo Building gpre_boot (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_boot - Win32 Debug"  %CLEAN% /OUT gpre_boot.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_boot %CLEAN% debug /OUT gpre_boot.log
+)
 if errorlevel 1 goto :gpre_boot2
 goto :EOF
 
@@ -112,44 +129,98 @@ goto :EOF
 :: Error gpre_boot
 :gpre_boot2
 echo.
-echo Error building gpre_boot, see gpre_boot_%FB_TARGET_PLATFORM%.log
+echo Error building gpre_boot, see gpre_boot.log
 echo.
 set ERRLEV=1
 goto :EOF
 
 
 ::===================
-:: BUILD gbak_embed
-:gbak_embed
+:: BUILD gbak_embed_release
+:gbak_embed_release
 @echo.
-@echo Building gbak_embed (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gbak_embed_%FB_TARGET_PLATFORM%.log gbak_embed
+@echo Building gbak_embed (release)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gbak_embed - Win32 Release"  %CLEAN% /OUT gbak_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gbak_embed %CLEAN% release /OUT gbak_embed.log
+)
 if errorlevel 1 call :boot2 gbak_embed
 @goto :EOF
 
 ::===================
-:: BUILD gpre_embed
-:gpre_embed
+:: BUILD gbak_embed_debug
+:gbak_embed_debug
 @echo.
-@echo Building gpre_embed (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot gpre_embed_%FB_TARGET_PLATFORM%.log gpre_embed
+@echo Building gbak_embed (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gbak_embed - Win32 Debug"  %CLEAN% /OUT gbak_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gbak_embed %CLEAN% debug /OUT gbak_embed.log
+)
+if errorlevel 1 call :boot2 gbak_embed
+@goto :EOF
+
+
+::===================
+:: BUILD gpre_embed_release
+:gpre_embed_release
+@echo.
+@echo Building gpre_embed (release)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_embed - Win32 Release"  %CLEAN% /OUT gpre_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_embed %CLEAN% release /OUT gpre_embed.log
+)
 if errorlevel 1 call :boot2 gpre_embed
 @goto :EOF
 
 ::===================
-:: BUILD isql_embed
-:isql_embed
+:: BUILD gpre_embed_debug
+:gpre_embed_debug
 @echo.
-@echo Building isql_embed (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot isql_embed_%FB_TARGET_PLATFORM%.log isql_embed
+@echo Building gpre_embed (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "gpre_embed - Win32 Debug"  %CLEAN% /OUT gpre_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project gpre_embed %CLEAN% debug /OUT gpre_embed.log
+)
+if errorlevel 1 call :boot2 gpre_embed
+@goto :EOF
+
+
+::===================
+:: BUILD isql_embed_release
+:isql_embed_release
+@echo.
+@echo Building isql_embed (release)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "isql_embed - Win32 Release"  %CLEAN% /OUT isql_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project isql_embed %CLEAN% release /OUT isql_embed.log
+)
 if errorlevel 1 call :boot2 isql_embed
 @goto :EOF
+
+::===================
+:: BUILD isql_embed_debug
+:isql_embed_debug
+@echo.
+@echo Building isql_embed (debug)...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "isql_embed - Win32 Debug"  %CLEAN% /OUT isql_embed.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project isql_embed %CLEAN% debug /OUT isql_embed.log
+)
+if errorlevel 1 call :boot2 isql_embed
+@goto :EOF
+
 
 ::===================
 :: ERROR boot
 :boot2
 echo.
-echo Error building %1, see %1_%FB_TARGET_PLATFORM%.log
+echo Error building %1, see %1.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -159,14 +230,18 @@ goto :EOF
 :: BUILD messages
 :msgs
 @echo.
-@echo Building build_msg (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot build_msg_%FB_TARGET_PLATFORM%.log build_msg
+@echo Building build_msg...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "build_msg - Win32 Release" /OUT build_msg.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project build_msg %CLEAN% release /OUT build_msg.log
+)
 if errorlevel 1 goto :msgs2
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\build_msg\build_msg.exe   %FB_GEN_DIR%\ > nul
+@copy %ROOT_PATH%\temp\release\build_msg\build_msg.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 :msgs2
 echo.
-echo Error building build_msg, see build_msg_%FB_TARGET_PLATFORM%.log
+echo Error building build_msg, see build_msg.log
 echo.
 set ERRLEV=1
 goto :EOF
@@ -175,32 +250,54 @@ goto :EOF
 :: BUILD codes
 :codes
 @echo.
-@echo Building codes (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot codes_%FB_TARGET_PLATFORM%.log codes
+@echo Building codes...
+if "%VS_VER%"=="msvc6" (
+	@msdev %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.dsw /MAKE "codes - Win32 Release" /OUT codes.log
+) else (
+	@devenv %ROOT_PATH%\builds\win32\%VS_VER%\Firebird2Boot2.sln /project codes %CLEAN% release /OUT codes.log
+)
 if errorlevel 1 goto :codes2
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\codes\codes.exe   %FB_GEN_DIR%\ > nul
+@copy %ROOT_PATH%\temp\release\codes\codes.exe   %ROOT_PATH%\gen\ > nul
 @goto :EOF
 :codes2
 echo.
-echo Error building codes, see codes_%FB_TARGET_PLATFORM%.log
+echo Error building codes, see codes.log
 echo.
 set ERRLEV=1
 goto :EOF
 
 ::==============
 :databases
-@rmdir /s /q %FB_GEN_DIR%\dbs 2>nul
-@mkdir %FB_GEN_DIR%\dbs 2>nul
+@rmdir /s /q %ROOT_PATH%\gen\dbs 2>nul
+@mkdir %ROOT_PATH%\gen\dbs 2>nul
 
-@echo create database '%FB_GEN_DB_DIR%\dbs\security2.fdb'; | "%FB_GEN_DIR%\isql_embed" -q
-@"%FB_GEN_DIR%\isql_embed" -q %FB_GEN_DB_DIR%/dbs/security2.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
+@echo create database '%DB_PATH%\gen\dbs\security2.fdb'; | "%ROOT_PATH%\gen\isql_embed" -q
+@"%ROOT_PATH%\gen\isql_embed" -q %DB_PATH%\gen\dbs\security2.fdb -i %ROOT_PATH%\src\dbs\security.sql
 
-@%FB_GEN_DIR%\gbak_embed -r %FB_ROOT_PATH%\builds\misc\metadata.gbak %FB_GEN_DB_DIR%/dbs/metadata.fdb
+@%ROOT_PATH%\gen\gbak_embed -r %ROOT_PATH%\builds\misc\metadata.gbak %DB_PATH%\gen\dbs\metadata.fdb
 
-@call create_msgs.bat db
+@echo create database '%DB_PATH%\gen\dbs\msg.fdb'; | "%ROOT_PATH%\gen\isql_embed" -q
+@set MSG_ISQL=@"%ROOT_PATH%\gen\isql_embed" -q %DB_PATH%\gen\dbs\msg.fdb -i %ROOT_PATH%\src\msgs\
+@%MSG_ISQL%msg.sql
+@%MSG_ISQL%facilities.sql
+@echo.
+@echo loading locales
+@%MSG_ISQL%locales.sql
+@echo loading history
+@%MSG_ISQL%history.sql
+@echo loading messages
+@%MSG_ISQL%messages.sql
+@echo loading symbols
+@%MSG_ISQL%symbols.sql
+@echo loading system errors
+@%MSG_ISQL%system_errors.sql
+@echo loading French translation
+@%MSG_ISQL%transmsgs.fr_FR.sql
+@echo loading German translation
+@%MSG_ISQL%transmsgs.de_DE.sql
 
-@%FB_GEN_DIR%\gbak_embed -r %FB_ROOT_PATH%\builds\misc\help.gbak %FB_GEN_DB_DIR%/dbs/help.fdb
-@copy %FB_GEN_DIR%\dbs\metadata.fdb %FB_GEN_DIR%\dbs\yachts.lnk > nul
+@%ROOT_PATH%\gen\gbak_embed -r %ROOT_PATH%\builds\misc\help.gbak %DB_PATH%\gen\dbs\help.fdb
+@copy %ROOT_PATH%\gen\dbs\metadata.fdb %ROOT_PATH%\gen\dbs\yachts.lnk > nul
 
 @goto :EOF
 

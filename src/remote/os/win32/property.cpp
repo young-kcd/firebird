@@ -48,6 +48,7 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
+#include "../jrd/svc_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
 #include "../remote/os/win32/ibconfig.h"
@@ -57,7 +58,7 @@
 #include "../remote/os/win32/ibsvrhlp.h"
 #include "../remote/os/win32/chop_proto.h"
 
-#include "../common/thd.h"			/* get jrd_proto.h to declare the function */
+#include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
 #include <stdio.h>				/* sprintf() */
 
@@ -171,7 +172,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *  Description: This is the window procedure for the "General" page dialog
  *               of the property sheet dialog box. All the Property Sheet
  *               related events are passed as WM_NOTIFY messages and they
- *               are identified within the LPARAM which will be pointer to
+ *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
 
@@ -234,7 +235,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			{
 				WinHelp(static_cast<HWND>(lphi->hItemHandle),
 						"IBSERVER.HLP",
-						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
+						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs);
 			}
 		}
 		return TRUE;
@@ -242,7 +243,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		{
 			WinHelp((HWND) wParam,
 					"IBSERVER.HLP",
-					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
+					HELP_CONTEXTMENU, (DWORD) (LPVOID) aMenuHelpIDs);
 		}
 		return TRUE;
 	case WM_COMMAND:
@@ -255,7 +256,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_NOTIFY:
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
-			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 		case PSN_HELP:
 			HelpCmd(hDlg, hInstance, ibsp_Server_Information_Properties);
@@ -323,11 +324,11 @@ static void RefreshUserCount(HWND hDlg)
  *  Description: This method calls the JRD_num_attachments() function to get
  *               the number of active attachments to the server.
  *****************************************************************************/
-	ULONG num_att = 0;
-	ULONG num_dbs = 0;
+	USHORT num_att = 0;
+	USHORT num_dbs = 0;
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
+	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 
 	char szText[MSG_STRINGLEN];
 	sprintf(szText, "%d", num_att);

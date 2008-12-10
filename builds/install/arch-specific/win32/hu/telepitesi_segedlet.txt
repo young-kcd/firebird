@@ -1,16 +1,5 @@
-Firebird Adatbázis Szerver 2.5 pre alpha
+Firebird Adatbázis Szerver 2.0.5
 ===================================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
-
-
------------------
-Az alábbi információk a Firebird 2.1 verziójára
-vontakozik. A Firebird 2.5 verzióával kaqpcsolatos
-telepítési segédlet még nem készült el.
 
   ** FONTOS **
 
@@ -21,31 +10,22 @@ telepítési segédlet még nem készült el.
 
   ** ****** **
 
-Ez a dokumentum egy telepítési segédlet a Windows
-platformon mûködõ Firebird 2.1 telepítéséhez.
+Ez a dokumentum egy telepítési segédlet a Win32
+platformon mûködõ Firebird 2.0.5 telepítéséhez.
 A telepítési segédlet elsõsorban a telepítés menetét
-írja le, s nem a Firebird 2.1-ról szól
+írja le, s nem a Firebird 2.0.5-rõl szól
 általánosságban.
-
-A dokumentáció azoknak a felhasználóknak szól, akik
-már járatosak a Fitrebird 2.0 alkalmazásában. Amennyiben
-a Firebird 2.1 verzióra a Firebird 1.5 verzióról szeretne
-frissíteni, kérjük olvssa el a Firebird 2.0
-dokumentációját is, hogy megtudja, milyen újdonságok
-várják a 2.0 verzióban.
 
 
 Tartalomjegyzék
 ---------------
 
 o Mielõtt telepítené
-o MS VC programkönyvtárakkal kapcsolatos problémák
 o Az új OSD 11.0-ról
 o Telepítés meglévõ Firebird 1.5 mellé
 o Telepítés már meglévõ Firebird 2.0 esetén
 o A telepítõ új szolgáltatásai
 o Ismert telepítési problémák
-o A telepítõ megszüntetett szolgáltatásai
 o Eltávolítás
 o Megjegyzések
 o Telepítés kötegelt (batch) fájlból
@@ -59,23 +39,6 @@ ELTÁVOLÍTANI a Firebird illetve az InterBase összes
 elõzõ verzióját. Különösen fontos és ellenõrizendõ,
 hogy a fbclient.dll és gds32.dll fájlok eltávolításra
 kerüljenek a <system32> mappából.
-
-
-MS VC programkönyvtárakkal kapcsolatos problémák
-------------------------------------------------
-
-Rengeteg energiát fektettünk bele, hogy a Microsoft Visual C
-futásidejû programkönyvtárakat tökéletesen telepítse a
-Firebird telepítõje. Ennek ellenére, probléma esetén
-célszerû kézi telepítést végezni a hivatalos vcredist.exe
-telepítésével. A legjobban megfelelõ változatokat az alábbi
-weboldalról töltheti le:
-
-http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
-
-  x64-es rendszeréhez pedig innen:
-
-http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Az új OSD 11-ról
@@ -153,63 +116,11 @@ o A telepítõ immáron számos nyelven használható. A
   európai Windows felhasználója számára nem érhetõ el
   például a szláv nyelvû telepítés.
 
-A telepítõ megszüntetett szolgáltatásai
----------------------------------------
-
-o A Firebird 1.0 fenntartott egy regisztrációs-adatbázis
-  bejegyzést saját használatra. Ez a következõ volt:
-
-	HKLM\SOFTWARE\FirebirdSQL
-
-  Ez mostantól megszûnt és a telepítõ automatikusan
-  törli ezt a bejegyzést. Ha olyan alkalmazásai
-  vannak, amelyek igénylik ezt a bejegyzést, akkor
-  ezt Önnek kézzel kell visszaírnia. Mindamellett
-  ajánlott az Ön programját az új feltételeknek
-  megfelelõen újrafordítani, hogy az új bejegyzést
-  használja.
-
-o A korábbi Firebird 1.5 kiadás elõtti változatai, az
-  fbclient.dll kliens könyvtárat a <system> mappában
-  helyezték el. Ez a gyakorlat mostanra megszûnt. A
-  telepítõben lévõ: "Az fbclient.dll másolása a <system>
-  mappába." opció segítségével a telepítés ideje
-  alatt helyezhet el egy példányt a <system> mappában.
-  Mindamellett ajánlott az Ön programját az új
-  feltételeknek megfelelõen újrafordítani, hogy az új
-  gyakorlat szerint használja az fbclient.dll fájlt.
-
 
 Ismert telepítési problémák
 ---------------------------
 
-o A telepítõ segítségével csak az alapértelmezett példányt
-  telepítheti a Firebird 2.1 adatbáziskezelõbõl. Amennyiben
-  további példányokat szeretne telepíteni, eltérõ néven, az
-  a zip-tömörített állományból teheti meg kézileg telepítve.
-
-o Sajnálatos módon a telepítõ nem képes megbízhatóan érzékelni
-  a már telepített és éppen futó Firebird Classic adatbázis-
-  szervert.
-
-o Néhány ismert terület ahol a 32 bites és 64 bites verziók
-  ütközhetnek:
-
-  - A szolgáltatás-telepítõ (instsvc) ugyanazt az alapértelmezett
-	példánynevet használja, mind 32 bites, mind 64 bites tele-
-	pítésekhez. Ez a helyzet a tervezésmódból fakad. A szolgál-
-	tatások azonos nevtéren léteznek.
-
-  - Ha a 32 bites és a 64 bites Vezérlõpult program telepítve
-	van akkor mindkettõ ugyanarra az alapértelmezett példányra
-	mutat.
-
-o Amikor Vista alá telepíti a Firebird adatbáziskezelõt, gyõzõdjön
-  meg róla, hogy rendszergazdaként van bejelentkezve. Például
-  jobb gombbal a telepítõre kattintva válassza ki a "Futtatás
-  Rendszergazdaként" lehetõséget. Ellenkezõ esetben a telepítõ
-  nem lesz képes elindítani a Firebird szolgáltatást a telepítés
-  végén.
+Jelenleg nincsen ismert telepítési probléma.
 
 
 Eltávolítás
@@ -244,18 +155,6 @@ o Az eltávolítási eljárás az alábbi fájlokat hagyja a
   a Firebird újratelepítése során. Amennyiben nincs
   szüksége ezekre a fájlokra, úgy le is törölheti
   õket.
-
-o Az eltávolító alkalmazás új szolgáltatása, hogy a
-  /CLEAN paraméterrel indítva a program ellenõrzi a
-  megosztott programkönyvtárak számlálóit és ahol
-  lehetséges törli a már szükségtelen megosztott
-  programkönyvtárakat.
-
-o Az eltávolítás során a Microsoft Visual C (MSVC)
-  programkönyvtárak nem kerülnek eltávolításra. Ezeket
-  eltávolíthatja a Programok hozzáadása és eltávolítása
-  program segítségével a Vezérlõpulton. Erre azonban a
-  normális ügymenet során nincs szükség.
 
 
 Megjegyzések

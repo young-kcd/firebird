@@ -50,8 +50,10 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/tra.h"
+#include "../jrd/sort_mem.h"
 #include "gen/iberror.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
@@ -66,8 +68,8 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/rse_proto.h"
 #include "../jrd/sort_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/VirtualTable.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -78,14 +80,13 @@
 #endif
 
 using namespace Jrd;
-using namespace Firebird;
 
 static void close_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void close_procedure(thread_db*, RecordSource*);
 static SSHORT compare(thread_db*, jrd_nod*, jrd_nod*);
 static SSHORT compare_longs(const SLONG*, const SLONG*, USHORT);
 #ifdef SCROLLABLE_CURSORS
-static bool fetch_record(thread_db*, RecordSource*, USHORT, RSE_GET_MODE);
+static bool fetch_record(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *,
@@ -94,7 +95,7 @@ static UCHAR *get_sort(thread_db*, RecordSource*, RSE_GET_MODE);
 static void resynch_merge(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static void unget_sort(thread_db*, RecordSource*, UCHAR *);
 #else
-static bool fetch_record(thread_db*, RecordSource*, USHORT);
+static bool fetch_record(thread_db*, RecordSource*, SSHORT);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *);
@@ -109,13 +110,12 @@ static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_param*);
 static bool get_record(thread_db*, RecordSource*, RecordSource*, RSE_GET_MODE);
 static bool get_union(thread_db*, RecordSource*, IRSB);
-static void invalidate_child_rpbs(thread_db*, RecordSource*);
 static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
-static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
+static void map_sort_data(jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
 static void open_sort(thread_db*, RecordSource*, irsb_sort*, FB_UINT64);
-static void proc_assignment(thread_db*, const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
+static void proc_assignment(const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, RecordSource*);
 static void push_rpbs(thread_db*, jrd_req*, RecordSource*);
 static ULONG read_merge_block(thread_db*, merge_file*, ULONG);
@@ -124,7 +124,12 @@ static void restore_record(record_param*);
 static void save_record(thread_db*, record_param*);
 static void write_merge_block(thread_db*, merge_file*, ULONG);
 
-static const char* SCRATCH = "fb_merge_";
+#ifdef SMALL_FILE_NAMES
+static const char* SCRATCH		= "fb_m";
+#else
+static const char* SCRATCH		= "fb_merge_";
+#endif
+
 
 
 void RSE_close(thread_db* tdbb, RecordSource* rsb)
@@ -140,10 +145,8 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	invalidate_child_rpbs(tdbb, rsb);
-
 	while (true) {
-		irsb_sort* impure = (irsb_sort*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
+		irsb_sort* impure = (irsb_sort*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 		if (!(impure->irsb_flags & irsb_open))
 			return;
 
@@ -156,13 +159,11 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 
 		case rsb_sequential:
 			{
-				jrd_req* request = tdbb->getRequest();
+				jrd_req* request = tdbb->tdbb_request;
 				record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-				if (rpb->getWindow(tdbb).win_flags & WIN_large_scan &&
+				if (rpb->rpb_window.win_flags & WIN_large_scan &&
 					rpb->rpb_relation->rel_scan_count)
-				{
-					--rpb->rpb_relation->rel_scan_count;
-				}
+						--rpb->rpb_relation->rel_scan_count;
 				return;
 			}
 
@@ -198,7 +199,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			return;
 
 		case rsb_sort:
-			SORT_fini(impure->irsb_sort_handle, tdbb->getAttachment());
+			SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
 			impure->irsb_sort_handle = NULL;
 			rsb = rsb->rsb_next;
 			break;
@@ -212,18 +213,10 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			}
 			break;
 
-		case rsb_recurse:
-			RSBRecurse::close(tdbb, rsb, (irsb_recurse*)impure);
-			return;
-
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
 			EXT_close(rsb);
-			return;
-
-		case rsb_virt_sequential:
-			VirtualTable::close(tdbb, rsb);
 			return;
 
 		default:
@@ -249,8 +242,8 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
-	IRSB impure = (IRSB) ((UCHAR*) request + rsb->rsb_impure);
+	jrd_req* request = tdbb->tdbb_request;
+	IRSB impure = (IRSB) ((UCHAR *) request + rsb->rsb_impure);
 
 #ifdef SCROLLABLE_CURSORS
 /* The mode RSE_get_next is a generic mode which requests that
@@ -265,8 +258,6 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 	}
 	request->req_flags &= ~req_fetch_required;
 #endif
-
-	impure->irsb_flags |= irsb_eof;
 
 /* Turn off the flag so that records at a
    lower level will not be counted. */
@@ -298,22 +289,18 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 				table_rsb->rsb_type != rsb_indexed &&
 				table_rsb->rsb_type != rsb_navigate)
 			{
-				ERR_post(Arg::Gds(isc_record_lock_not_supp));
+				ERR_post(isc_record_lock_not_supp, isc_arg_end);
 			}
 
-			record_param* org_rpb = &request->req_rpb[table_rsb->rsb_stream];
+			record_param* org_rpb = request->req_rpb + table_rsb->rsb_stream;
 			jrd_rel* relation = org_rpb->rpb_relation;
 
 			// Raise error if we cannot lock this kind of stream
-			if (!relation ||
-				relation->rel_view_rse ||
-				relation->rel_file ||
-				relation->isVirtual())
-			{
-				ERR_post(Arg::Gds(isc_record_lock_not_supp));
+			if (!relation || relation->rel_view_rse || relation->rel_file) {
+				ERR_post(isc_record_lock_not_supp, isc_arg_end);
 			}
 
-			RLCK_reserve_relation(tdbb, transaction, relation, true);
+			RLCK_reserve_relation(tdbb, transaction, relation, true, true);
 
 			// Fetch next record if current was deleted before being locked
 			if (!VIO_writelock(tdbb, org_rpb, rsb, transaction)) {
@@ -325,8 +312,6 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 			request->req_records_selected++;
 			request->req_records_affected.bumpFetched();
 		}
-
-		impure->irsb_flags &= ~irsb_eof;
 		break;
 	}
 
@@ -356,7 +341,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 	// Initialize dependent invariants if any
 	if (rsb->rsb_invariants) {
@@ -371,13 +356,14 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 	while (true) {
 		irsb_index* impure = (irsb_index*) ((SCHAR *) request + rsb->rsb_impure);
 		impure->irsb_flags |= irsb_first | irsb_open;
-		impure->irsb_flags &= ~(irsb_singular_processed | irsb_checking_singular | irsb_eof);
+		impure->irsb_flags &=
+			~(irsb_singular_processed | irsb_checking_singular);
 		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-		rpb->getWindow(tdbb).win_flags = 0;
+		rpb->rpb_window.win_flags = 0;
 
 		switch (rsb->rsb_type) {
 		case rsb_indexed:
-			impure->irsb_bitmap = EVL_bitmap(tdbb, (jrd_nod*) rsb->rsb_arg[0], NULL);
+			impure->irsb_bitmap = EVL_bitmap(tdbb, (jrd_nod*) rsb->rsb_arg[0]);
 			impure->irsb_prefetch_number = -1;
 
 		case rsb_navigate:
@@ -389,14 +375,14 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			}
 #endif
 			if (rsb->rsb_type == rsb_sequential) {
-				Database* dbb = tdbb->getDatabase();
+				Database* dbb = tdbb->tdbb_database;
 				BufferControl* bcb = dbb->dbb_bcb;
 
 				/* Unless this is the only attachment, limit the cache flushing
 				   effect of large sequential scans on the page working sets of
 				   other attachments. */
 
-				Attachment* attachment = tdbb->getAttachment();
+				Attachment* attachment = tdbb->tdbb_attachment;
 				if (attachment &&
 					(attachment != dbb->dbb_attachments
 					 || attachment->att_next))
@@ -412,9 +398,9 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 
 					if (attachment->att_flags & ATT_gbak_attachment ||
 						DPM_data_pages(tdbb,
-							rpb->rpb_relation) > (SLONG) bcb->bcb_count)
+									   rpb->rpb_relation) > (SLONG) bcb->bcb_count)
 					{
-						rpb->getWindow(tdbb).win_flags = WIN_large_scan;
+						rpb->rpb_window.win_flags = WIN_large_scan;
 						rpb->rpb_org_scans =
 							rpb->rpb_relation->rel_scan_count++;
 					}
@@ -422,7 +408,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			}
 
 			RLCK_reserve_relation(tdbb, request->req_transaction,
-								  rpb->rpb_relation, false);
+								  rpb->rpb_relation, false, true);
 
 			rpb->rpb_number.setValue(BOF_NUMBER);
 			return;
@@ -457,7 +443,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					MOV_get_int64(desc, 0) : 0;
 
 	            if (first_records < 0)
-		            ERR_post(Arg::Gds(isc_bad_limit_param));
+		            ERR_post(isc_bad_limit_param, isc_arg_end);
 
 				((irsb_first_n*) impure)->irsb_count = first_records;
 				rsb = rsb->rsb_next;
@@ -471,7 +457,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					MOV_get_int64(desc, 0) : 0;
 
 	            if (skip_records < 0)
-		            ERR_post(Arg::Gds(isc_bad_skip_param));
+		            ERR_post(isc_bad_skip_param, isc_arg_end);
 
 				((irsb_skip_n*) impure)->irsb_count = skip_records + 1;
 				rsb = rsb->rsb_next;
@@ -500,10 +486,6 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			}
 			break;
 
-		case rsb_recurse:
-			RSBRecurse::open(tdbb, rsb, (irsb_recurse*)impure);
-			return;
-
 		case rsb_aggregate:
 			((IRSB) impure)->irsb_count = 3;
 			VIO_record(tdbb, rpb, rsb->rsb_format, tdbb->getDefaultPool());
@@ -516,11 +498,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 		case rsb_ext_sequential:
 		case rsb_ext_indexed:
 		case rsb_ext_dbkey:
-			EXT_open(tdbb, rsb);
-			return;
-
-		case rsb_virt_sequential:
-			VirtualTable::open(tdbb, rsb);
+			EXT_open(rsb);
 			return;
 
 		case rsb_left_cross:
@@ -581,10 +559,16 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		   if one exists. */
 
 		merge_file* mfb = &tail->irsb_mrg_file;
-		TempSpace* space = mfb->mfb_space;
-		if (space) {
-			delete space;
-			mfb->mfb_space = NULL;
+		sort_work_file* sfb = mfb->mfb_sfb;
+		if (sfb) {
+			if (sfb->sfb_file_name) {
+				close(sfb->sfb_file);
+				unlink(sfb->sfb_file_name);
+				delete[] sfb->sfb_file_name;
+			}
+			delete sfb->sfb_mem;
+			delete sfb;
+			mfb->mfb_sfb = 0;
 		}
 		if (mfb->mfb_block_data) {
 			delete[] mfb->mfb_block_data;
@@ -608,7 +592,7 @@ static void close_procedure(thread_db* tdbb, RecordSource* rsb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	irsb_procedure* impure = (irsb_procedure*) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
 	if (proc_request) {
@@ -642,7 +626,7 @@ static SSHORT compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	jrd_nod* const* ptr1 = node1->nod_arg;
 	jrd_nod* const* ptr2 = node2->nod_arg;
 	for (const jrd_nod* const* const end = ptr1 + node1->nod_count;
@@ -651,25 +635,23 @@ static SSHORT compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 		const dsc* desc1 = EVL_expr(tdbb, *ptr1);
 		const ULONG flags = request->req_flags;
 		const dsc* desc2 = EVL_expr(tdbb, *ptr2);
-		if (flags & req_null)
-		{
+		if (flags & req_null) {
 			if (!(request->req_flags & req_null)) {
 				return -1;
 			}
-
-			// AB: When both expression evaluated NULL then
-			// we return 0 ( (NULL = NULL) = true).
-			//
-			// Currently this (0 and higher) isn't used by the
-			// MERGE procedure, but when we allow MERGE to
-			// handle outer-joins we must not forget this one !!!
-			return 0;
+			else {
+				// AB: When both expression evaluated NULL then
+				// we return 0 ( (NULL = NULL) = true).
+				//
+				// Currently this (0 and higher) isn't used by the
+				// MERGE procedure, but when we allow MERGE to
+				// handle outer-joins we must not forget this one !!!
+				return 0;
+			}
 		}
-
-		if (request->req_flags & req_null) {
+		else if (request->req_flags & req_null) {
 			return 1;
 		}
-
 		// AB: MOV_compare can't handle NULL parameters
 		// therefore check before passing all null flags.
 		const SSHORT result = MOV_compare(desc1, desc2);
@@ -695,18 +677,16 @@ static SSHORT compare_longs(const SLONG* p, const SLONG* q, USHORT count)
  *
  **************************************/
 	for (; count; p++, q++, --count)
-	{
 		if (*p > *q)
 			return 1;
-		if (*p < *q)
+		else if (*p < *q)
 			return -1;
-	}
 
 	return 0;
 }
 
 
-static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
+static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n
 #ifdef SCROLLABLE_CURSORS
 							, RSE_GET_MODE mode
 #endif
@@ -728,8 +708,6 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
  **************************************/
 	SET_TDBB(tdbb);
 
-	fb_assert(rsb->rsb_type == rsb_cross);
-
 	RecordSource* sub_rsb = rsb->rsb_arg[n];
 
 	if (get_record(tdbb, sub_rsb, NULL
@@ -743,9 +721,9 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
 		return true;
 	}
 
-	// We have exhausted this stream, so close it; if there is
-	// another candidate record from the n-1 streams to the left,
-	// then reopen the stream and start again from the beginning.
+/* we have exhausted this stream, so close it; if there is
+   another candidate record from the n-1 streams to the left,
+   then reopen the stream and start again from the beginning */
 
 	while (true)
 	{
@@ -797,8 +775,6 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
  **************************************/
 	SET_TDBB(tdbb);
 
-	fb_assert(rsb->rsb_type == rsb_left_cross);
-
 /* loop through the outer join in either the forward or the backward direction;
    the various modes indicate what state of the join we are in */
 
@@ -814,9 +790,11 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				{
 					if (mode == RSE_get_backward)
 						return false;
-
-					if (!rsb->rsb_left_inner_streams)
-						return false;
+					else
+					{
+						if (!rsb->rsb_arg[RSB_LEFT_inner_streams])
+							return false;
+					}
 
 					/* We have a full outer join.  Open up the inner stream
 					   one more time. */
@@ -830,7 +808,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 				/* check if the outer record qualifies for the boolean */
 
 				if (rsb->rsb_arg[RSB_LEFT_boolean] &&
-					!EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
+					!EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_boolean]))
 				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
@@ -848,7 +826,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL, mode))
 			{
 				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
-					EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
+					EVL_boolean(tdbb, rsb->rsb_arg[RSB_LEFT_inner_boolean]))
 				{
 					impure->irsb_flags |= irsb_joined;
 					return true;
@@ -885,8 +863,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 					if (!get_record(tdbb, full, NULL, mode)) {
 						if (mode == RSE_get_forward)
 							return false;
-
-						goto return_to_outer;
+						else
+							goto return_to_outer;
 					}
 
 					RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
@@ -894,19 +872,24 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 						   get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer],
 									  NULL, mode))
 					{
-						if (
-							(!rsb->rsb_arg[RSB_LEFT_boolean]
-							 || EVL_boolean(tdbb,
-											(jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
-							&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
-								|| EVL_boolean(tdbb,
-											   (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
-							&& (full == rsb->rsb_arg[RSB_LEFT_inner]
-								|| EVL_boolean(tdbb,
-											   (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner]->rsb_arg[0])))
-						{
-							break;
-						}
+							if (
+								(!rsb->rsb_arg[RSB_LEFT_boolean]
+								 || EVL_boolean(tdbb,
+												rsb->
+												rsb_arg[RSB_LEFT_boolean]))
+								&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
+									|| EVL_boolean(tdbb,
+												   rsb->rsb_arg
+												   [RSB_LEFT_inner_boolean]))
+								&& (full == rsb->rsb_arg[RSB_LEFT_inner]
+									|| EVL_boolean(tdbb,
+												   rsb->
+												   rsb_arg
+												   [RSB_LEFT_inner]->rsb_arg
+												   [0])))
+							{
+								break;
+							}
 					}
 					RSE_close(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
 				} while (found);
@@ -915,8 +898,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 			{
 				if (mode == RSE_get_forward)
 					return false;
-
-				goto return_to_outer;
+				else
+					goto return_to_outer;
 			}
 
 			join_to_nulls(tdbb, rsb, rsb->rsb_left_inner_streams);
@@ -1111,7 +1094,7 @@ static bool get_merge_fetch(
  **************************************/
 	SET_TDBB(tdbb);
 
-	irsb_mrg* impure = (irsb_mrg*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
+	irsb_mrg* impure = (irsb_mrg*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt + stream;
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = impure->irsb_mrg_rpt + m;
@@ -1185,7 +1168,7 @@ static bool get_merge_fetch(
 	current record in the record parameter block */
 
 	merge_file* mfb = &tail->irsb_mrg_file;
-	map_sort_data(tdbb, tdbb->getRequest(), (SortMap*) sub_rsb->rsb_arg[0],
+	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 			  get_merge_data(tdbb, mfb, record));
 
 	return true;
@@ -1206,7 +1189,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
  **************************************/
 	SET_TDBB(tdbb);
 
-	irsb_mrg* impure = (irsb_mrg*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
+	irsb_mrg* impure = (irsb_mrg*) ((UCHAR *) tdbb->tdbb_request + rsb->rsb_impure);
 	irsb_mrg::irsb_mrg_repeat* tail = impure->irsb_mrg_rpt + stream;
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = impure->irsb_mrg_rpt + m;
@@ -1224,7 +1207,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
 	tail->irsb_mrg_equal_current = record;
 
 	merge_file* mfb = &tail->irsb_mrg_file;
-	map_sort_data(tdbb, tdbb->getRequest(), (SortMap*) sub_rsb->rsb_arg[0],
+	map_sort_data(tdbb->tdbb_request, (SortMap*) sub_rsb->rsb_arg[0],
 				  get_merge_data(tdbb, mfb, record));
 
 	return true;
@@ -1238,7 +1221,7 @@ static bool get_merge_join(
 {
 /**************************************
  *
- *	g e t _ m e r g e _ j o i n
+ *	g e t _ m e r g e _ j o i n ( I B _ V 4 _ 1 )
  *
  **************************************
  *
@@ -1248,7 +1231,7 @@ static bool get_merge_join(
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	const RecordSource* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
 
 /* If there is a group of equivalent records already formed,
@@ -1296,11 +1279,11 @@ static bool get_merge_join(
 		if (record >= 0)
 		{
 			tail->irsb_mrg_last_fetched = -1;
-			const UCHAR* const last_data = get_merge_data(tdbb, mfb, record);
+			const UCHAR* last_data = get_merge_data(tdbb, mfb, record);
 			mfb->mfb_current_block = 0;
-			UCHAR* const first_data = get_merge_data(tdbb, mfb, 0);
+			UCHAR* first_data = get_merge_data(tdbb, mfb, 0);
 			if (first_data != last_data)
-				memcpy(first_data, last_data, map->smb_length);
+				MOVE_FASTER(last_data, first_data, map->smb_length);
 			mfb->mfb_equal_records = 1;
 			record = 0;
 		}
@@ -1314,8 +1297,8 @@ static bool get_merge_join(
 
 		/* Map data into target records and do comparison */
 
-		map_sort_data(tdbb, request, map, get_merge_data(tdbb, mfb, record));
-		const int result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]);
+		map_sort_data(request, map, get_merge_data(tdbb, mfb, record));
+		const int result = compare(tdbb, highest_ptr[1], ptr[1]);
 		if (ptr != highest_ptr)
 		{
 			if (((result > 0) && (impure->irsb_flags & irsb_backwards)) ||
@@ -1337,7 +1320,7 @@ static bool get_merge_join(
 			if (highest_ptr != ptr)
 			{
 				int result;
-				while (result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]))
+				while (result = compare(tdbb, highest_ptr[1], ptr[1]))
 				{
 					if (((result > 0)
 						 && (impure->irsb_flags & irsb_backwards))
@@ -1359,7 +1342,7 @@ static bool get_merge_join(
 						get_merge_record(tdbb, sort_rsb, tail, mode);
 					if (record < 0)
 						return false;
-					map_sort_data(tdbb, request, (SortMap*) sort_rsb->rsb_arg[0],
+					map_sort_data(request, (SortMap*) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
 			}
@@ -1374,13 +1357,18 @@ static bool get_merge_join(
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
 		 ptr += 2, tail++)
 	{
+		ULONG key[32];
+
 		RecordSource* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
-		Firebird::HalfStaticArray<ULONG, 64> key;
-		ULONG* const first_data = key.getBuffer(map->smb_key_length);
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
-		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
+		UCHAR* first_data;
+		if (key_length > sizeof(key))
+			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
+		else
+			first_data = (UCHAR *) key;
+		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
 
 		SLONG record;
 		while ((record = get_merge_record(tdbb, sort_rsb, tail, mode)) >= 0)
@@ -1396,6 +1384,8 @@ static bool get_merge_join(
 			tail->irsb_mrg_equal_end = record;
 		}
 
+		if (first_data != (UCHAR *) key)
+			delete[] first_data;
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1413,7 +1403,7 @@ static bool get_merge_join(
 		 tail < tail_end; tail++)
 	{
 		ULONG most_blocks = 0;
-		irsb_mrg::irsb_mrg_repeat* best_tail = NULL;
+		irsb_mrg::irsb_mrg_repeat* best_tail = 0;
 		for (irsb_mrg::irsb_mrg_repeat* tail2 = impure->irsb_mrg_rpt;
 			tail2 < tail_end; tail2++)
 		{
@@ -1463,7 +1453,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	const RecordSource* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
 
 /* If there is a record group already formed, fetch the next combination */
@@ -1496,11 +1486,11 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		SLONG record = tail->irsb_mrg_last_fetched;
 		if (record >= 0) {
 			tail->irsb_mrg_last_fetched = -1;
-			const UCHAR* const last_data = get_merge_data(tdbb, mfb, record);
+			const UCHAR* last_data = get_merge_data(tdbb, mfb, record);
 			mfb->mfb_current_block = 0;
-			UCHAR* const first_data = get_merge_data(tdbb, mfb, 0);
+			UCHAR* first_data = get_merge_data(tdbb, mfb, 0);
 			if (first_data != last_data)
-				memcpy(first_data, last_data, map->smb_length);
+				MOVE_FASTER(last_data, first_data, map->smb_length);
 			mfb->mfb_equal_records = 1;
 			record = 0;
 		}
@@ -1513,7 +1503,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 
 		/* Map data into target records and do comparison */
 
-		map_sort_data(tdbb, request, map, get_merge_data(tdbb, mfb, record));
+		map_sort_data(request, map, get_merge_data(tdbb, mfb, record));
 		if (ptr != highest_ptr &&
 			compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]) < 0)
 		{
@@ -1547,7 +1537,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 					const SLONG record = get_merge_record(tdbb, sort_rsb, tail);
 					if (record < 0)
 						return false;
-					map_sort_data(tdbb, request, (SortMap*) sort_rsb->rsb_arg[0],
+					map_sort_data(request, (SortMap*) sort_rsb->rsb_arg[0],
 								  get_merge_data(tdbb, mfb, record));
 				}
 			}
@@ -1561,13 +1551,18 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	for (ptr = rsb->rsb_arg, tail = impure->irsb_mrg_rpt; ptr < end;
 		 ptr += 2, tail++)
 	{
+		ULONG key[64];
+
 		RecordSource* sort_rsb = *ptr;
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
-		Firebird::HalfStaticArray<ULONG, 64> key;
-		ULONG* const first_data = key.getBuffer(map->smb_key_length);
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
-		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
+		UCHAR* first_data;
+		if (key_length > sizeof(key))
+			first_data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
+		else
+			first_data = (UCHAR *) key;
+		MOVE_FASTER(get_merge_data(tdbb, mfb, 0), first_data, key_length);
 
 		SLONG record;
 		while ((record = get_merge_record(tdbb, sort_rsb, tail)) >= 0)
@@ -1583,6 +1578,8 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 			tail->irsb_mrg_equal_end = record;
 		}
 
+		if (first_data != (UCHAR *) key)
+			delete[] first_data;
 		if (mfb->mfb_current_block)
 			write_merge_block(tdbb, mfb, mfb->mfb_current_block);
 	}
@@ -1599,7 +1596,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 	for (const irsb_mrg::irsb_mrg_repeat* const tail_end = tail + rsb->rsb_count;
 		 tail < tail_end; tail++)
 	{
-		irsb_mrg::irsb_mrg_repeat* best_tail = NULL;
+		irsb_mrg::irsb_mrg_repeat* best_tail = 0;
 
 		ULONG most_blocks = 0;
 		for (irsb_mrg::irsb_mrg_repeat* tail2 = impure->irsb_mrg_rpt;
@@ -1683,7 +1680,7 @@ static SLONG get_merge_record(
 		(record % mfb->mfb_blocking_factor) * mfb->mfb_record_size;
 	UCHAR* merge_data = mfb->mfb_block_data + merge_offset;
 
-	memcpy(merge_data, sort_data, map->smb_length);
+	MOVE_FASTER(sort_data, merge_data, map->smb_length);
 	++mfb->mfb_equal_records;
 
 #ifdef SCROLLABLE_CURSORS
@@ -1714,7 +1711,7 @@ static bool get_procedure(thread_db*			tdbb,
 	SET_TDBB(tdbb);
 
 	jrd_prc* procedure = rsb->rsb_procedure;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	impure = (irsb_procedure*) ((UCHAR *) request + rsb->rsb_impure);
 	jrd_req* proc_request = impure->irsb_req_handle;
 	Format* rec_format = procedure->prc_format;
@@ -1722,12 +1719,14 @@ static bool get_procedure(thread_db*			tdbb,
 	const Format* msg_format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)
 	{
-		const SLONG size = msg_format->fmt_length + FB_ALIGNMENT;
+		const SLONG size = msg_format->fmt_length + ALIGNMENT;
 		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) VaryingString();
 		impure->irsb_message->str_length = size;
 	}
-	UCHAR* om = (UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data, FB_ALIGNMENT);
-	USHORT oml = impure->irsb_message->str_length - FB_ALIGNMENT;
+	UCHAR* om =
+		(UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data,
+						   ALIGNMENT);
+	USHORT oml = impure->irsb_message->str_length - ALIGNMENT;
 
 	Record* record;
 	if (!rpb->rpb_record) {
@@ -1742,7 +1741,7 @@ static bool get_procedure(thread_db*			tdbb,
 	try {
 		EXE_receive(tdbb, proc_request, 1, oml, om);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		close_procedure(tdbb, rsb);
 		throw;
 	}
@@ -1757,14 +1756,13 @@ static bool get_procedure(thread_db*			tdbb,
 	eos_desc.dsc_sub_type = 0;
 	eos_desc.dsc_flags = 0;
 	eos_desc.dsc_address = (UCHAR *) & eos;
-	MOV_move(tdbb, &desc, &eos_desc);
+	MOV_move(&desc, &eos_desc);
 	if (!eos)
 		return false;
 
 	for (int i = 0; i < rec_format->fmt_count; i++)
 	{
-		proc_assignment(tdbb,
-						&msg_format->fmt_desc[2 * i],
+		proc_assignment(&msg_format->fmt_desc[2 * i],
 						&msg_format->fmt_desc[2 * i + 1],
 						om,
 						&rec_format->fmt_desc[i],
@@ -1797,11 +1795,13 @@ static bool get_record(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 
 	if (--tdbb->tdbb_quantum < 0)
+	{
 		JRD_reschedule(tdbb, 0, true);
+	}
 
 /* check request flags for special processing */
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	if (request->req_flags & req_abort)
 	{
 		return false;
@@ -1816,14 +1816,13 @@ static bool get_record(thread_db*	tdbb,
 		return false;
 	}
 
-	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 
 #ifdef SCROLLABLE_CURSORS
 /* do bof and eof handling for streams which may be navigated */
 
 	if (rsb->rsb_type == rsb_sequential ||
-		rsb->rsb_type == rsb_navigate ||
-		rsb->rsb_type == rsb_sort)
+		rsb->rsb_type == rsb_navigate || rsb->rsb_type == rsb_sort)
 	{
 		if (((mode == RSE_get_forward) && (impure->irsb_flags & irsb_eof)) ||
 			((mode == RSE_get_backward) && (impure->irsb_flags & irsb_bof)))
@@ -1855,20 +1854,15 @@ static bool get_record(thread_db*	tdbb,
 #endif
 							false))
 		{
-			rpb->rpb_number.setValid(false);
-			return false;
+			 return false;
 		}
-		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_indexed:
 		{
 			RecordBitmap **pbitmap = ((irsb_index*) impure)->irsb_bitmap, *bitmap;
 			if (!pbitmap || !(bitmap = *pbitmap))
-			{
-				rpb->rpb_number.setValid(false);
 				return false;
-			}
 
 			bool result = false;
 
@@ -1876,10 +1870,8 @@ static bool get_record(thread_db*	tdbb,
 			// while (SBM_next(*bitmap, &rpb->rpb_number, mode))
 			// We assume mode = RSE_get_forward because we do not support
 			// scrollable cursors at the moment.
-			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext())
-			{
-				do
-				{
+			if (rpb->rpb_number.isBof() ? bitmap->getFirst() : bitmap->getNext()) 
+				do {
 					rpb->rpb_number.setValue(bitmap->current());
 #ifdef SUPERSERVER_V2
 					/* Prefetch next set of data pages from bitmap. */
@@ -1900,15 +1892,9 @@ static bool get_record(thread_db*	tdbb,
 						break;
 					}
 				} while (bitmap->getNext());
-			}
 
 			if (result)
-			{
-				rpb->rpb_number.setValid(true);
 				break;
-			}
-
-			rpb->rpb_number.setValid(false);
 			return false;
 		}
 
@@ -1916,15 +1902,13 @@ static bool get_record(thread_db*	tdbb,
 #ifdef SCROLLABLE_CURSORS
 		if (impure->irsb_flags & irsb_bof)
 		{
-			rpb->rpb_number.setValue(BOF_NUMBER);
+			rpb->rpb_number = -1;
 		}
 #endif
 		if (!NAV_get_record(tdbb, rsb, (IRSB_NAV) impure, rpb, mode))
 		{
-			rpb->rpb_number.setValid(false);
 			return false;
 		}
-		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_boolean:
@@ -2030,10 +2014,7 @@ static bool get_record(thread_db*	tdbb,
 					if (any_null || any_true)
 						result = true;
 					else
-					{
-						invalidate_child_rpbs(tdbb, rsb);
 						return false;
-					}
 					break;
 				}
 				else
@@ -2054,8 +2035,6 @@ static bool get_record(thread_db*	tdbb,
 					request->req_flags &= ~req_null;
 					if (result)
 						break;
-
-					invalidate_child_rpbs(tdbb, rsb);
 					return false;
 				}
 			}
@@ -2103,11 +2082,7 @@ static bool get_record(thread_db*	tdbb,
 					}
 					request->req_flags &= ~req_null;
 					if (any_false)
-					{
-						invalidate_child_rpbs(tdbb, rsb);
 						return false;
-					}
-
 					result = true;
 					break;
 				}
@@ -2150,11 +2125,7 @@ static bool get_record(thread_db*	tdbb,
 					}
 					request->req_flags &= ~req_null;
 					if (any_false)
-					{
-						invalidate_child_rpbs(tdbb, rsb);
 						return false;
-					}
-
 					result = true;
 					break;
 				}
@@ -2179,8 +2150,6 @@ static bool get_record(thread_db*	tdbb,
 					request->req_flags |= req_null;
 				if (result)
 					break;
-
-				invalidate_child_rpbs(tdbb, rsb);
 				return false;
 			}
 		}
@@ -2203,10 +2172,7 @@ static bool get_record(thread_db*	tdbb,
 		switch (mode) {
 		case RSE_get_forward:
 			if (((irsb_first_n*) impure)->irsb_count <= 0)
-			{
-				invalidate_child_rpbs(tdbb, rsb);
 				return false;
-			}
 			((irsb_first_n*) impure)->irsb_count--;
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
@@ -2215,10 +2181,7 @@ static bool get_record(thread_db*	tdbb,
 #ifdef SCROLLABLE_CURSORS
 		case RSE_get_current:
 			if (((irsb_first_n*) impure)->irsb_count <= 0)
-			{
-				invalidate_child_rpbs(tdbb, rsb);
 				return false;
-			}
 			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 				return false;
 			break;
@@ -2233,52 +2196,39 @@ static bool get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_skip:
-		{
-			irsb_skip_n* skip = (irsb_skip_n*) impure;
-
-			switch (mode)
-			{
-	#ifdef SCROLLABLE_CURSORS
-			case RSE_get_backward:
-				if (skip->irsb_count > 0)
-				{
-					invalidate_child_rpbs(tdbb, rsb);
-					return false;
-				}
-				if (skip->irsb_count == 0)
-				{
-					skip->irsb_count++;
-					if (get_record(tdbb, rsb->rsb_next, NULL, mode))
-						invalidate_child_rpbs(tdbb, rsb);
-					return false;
-				}
-				skip->irsb_count++;
-				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-					return false;
-				break;
-
-			case RSE_get_current:
-				if (skip->irsb_count >= 1)
-				{
-					invalidate_child_rpbs(tdbb, rsb);
-					return false;
-				}
-				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-					return false;
-				break;
-	#endif
-
-			case RSE_get_forward:
-				while (skip->irsb_count > 1) {
-					skip->irsb_count--;
-					if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-						return false;
-				}
-				skip->irsb_count--;
-				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
-					return false;
-				break;
+		switch (mode) {
+#ifdef SCROLLABLE_CURSORS
+		case RSE_get_backward:
+			if (((irsb_skip_n*) impure)->irsb_count > 0)
+				return false;
+			if (((irsb_skip_n*) impure)->irsb_count == 0) {
+				((irsb_skip_n*) impure)->irsb_count++;
+				get_record(tdbb, rsb->rsb_next, NULL, mode);
+				return false;
 			}
+			((irsb_skip_n*) impure)->irsb_count++;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return false;
+			break;
+
+		case RSE_get_current:
+			if (((irsb_skip_n*) impure)->irsb_count >= 1)
+				return false;
+			else if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return false;
+			break;
+#endif
+
+		case RSE_get_forward:
+			while (((irsb_skip_n*) impure)->irsb_count > 1) {
+				((irsb_skip_n*) impure)->irsb_count--;
+				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+					return false;
+			}
+			((irsb_skip_n*) impure)->irsb_count--;
+			if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
+				return false;
+			break;
 		}
 		break;
 
@@ -2288,18 +2238,12 @@ static bool get_record(thread_db*	tdbb,
 							, mode
 #endif
 			))
-		{
 			return false;
-		}
 		break;
 
 	case rsb_procedure:
 		if (!get_procedure(tdbb, rsb, (irsb_procedure*) impure, rpb))
-		{
-			rpb->rpb_number.setValid(false);
 			return false;
-		}
-		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_sort:
@@ -2327,7 +2271,7 @@ static bool get_record(thread_db*	tdbb,
 				return false;
 			}
 
-			map_sort_data(tdbb, request, (SortMap*) rsb->rsb_arg[0], data);
+			map_sort_data(request, (SortMap*) rsb->rsb_arg[0], data);
 
 #ifdef SCROLLABLE_CURSORS
 			/* fix up the sort data in case we need to retrieve it again */
@@ -2339,16 +2283,16 @@ static bool get_record(thread_db*	tdbb,
 
 	case rsb_cross:
 		if (impure->irsb_flags & irsb_first) {
-			for (USHORT i = 0; i < rsb->rsb_count; i++) {
+			SSHORT i;
+
+			for (i = 0; i < (SSHORT) rsb->rsb_count; i++) {
 				RSE_open(tdbb, rsb->rsb_arg[i]);
 				if (!fetch_record(tdbb, rsb, i
 #ifdef SCROLLABLE_CURSORS
 								  , mode
 #endif
 					))
-				{
 					return false;
-				}
 			}
 			impure->irsb_flags &= ~irsb_first;
 			break;
@@ -2364,25 +2308,15 @@ static bool get_record(thread_db*	tdbb,
 							  , mode
 #endif
 				))
-			{
 				return false;
-			}
 		}
-
-		// hvlad: self referenced members are removed from recursive SELECT's
-		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other
-		// members in such SELECT then rsb_count will be zero. Handle it
-		else if (rsb->rsb_count == 0)
-			return false;
 
 		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1
 #ifdef SCROLLABLE_CURSORS
 							   , mode
 #endif
 				 ))
-		{
 			return false;
-		}
 		break;
 
 	case rsb_union:
@@ -2390,38 +2324,17 @@ static bool get_record(thread_db*	tdbb,
 			return false;
 		break;
 
-	case rsb_recurse:
-		if (!RSBRecurse::get(tdbb, rsb, (irsb_recurse*)impure))
-			return false;
-		break;
-
 	case rsb_aggregate:
 		if ( (impure->irsb_count = EVL_group(tdbb, rsb->rsb_next,
 										   (jrd_nod*) rsb->rsb_arg[0],
-										   impure->irsb_count)) )
-		{
-			break;
-		}
+										   impure->irsb_count)) ) break;
 		return false;
 
 	case rsb_ext_sequential:
 	case rsb_ext_indexed:
 	case rsb_ext_dbkey:
-		if (!EXT_get(tdbb, rsb))
-		{
-			rpb->rpb_number.setValid(false);
+		if (!EXT_get(rsb))
 			return false;
-		}
-		rpb->rpb_number.setValid(true);
-		break;
-
-	case rsb_virt_sequential:
-		if (!VirtualTable::get(tdbb, rsb))
-		{
-			rpb->rpb_number.setValid(false);
-			return false;
-		}
-		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_left_cross:
@@ -2430,9 +2343,7 @@ static bool get_record(thread_db*	tdbb,
 						, mode
 #endif
 			))
-		{
 			return false;
-		}
 		break;
 
 	default:
@@ -2456,7 +2367,7 @@ static bool get_record(thread_db*	tdbb,
 		impure->irsb_flags |= irsb_checking_singular;
 		if (get_record(tdbb, rsb, parent_rsb, mode)) {
 			impure->irsb_flags &= ~irsb_checking_singular;
-			ERR_post(Arg::Gds(isc_sing_select_err));
+			ERR_post(isc_sing_select_err, isc_arg_end);
 		}
 		pop_rpbs(request, rsb);
 		impure->irsb_flags &= ~irsb_checking_singular;
@@ -2486,7 +2397,7 @@ static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	irsb_sort* impure = (irsb_sort*) ((UCHAR *) request + rsb->rsb_impure);
 
 /* Get address of record from sort.  If the address if null, we
@@ -2494,9 +2405,11 @@ static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb
 
 	ULONG* data = 0;
 #ifdef SCROLLABLE_CURSORS
-	SORT_get(tdbb, impure->irsb_sort_handle, &data, mode);
+	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
+			 &data, mode);
 #else
-	SORT_get(tdbb, impure->irsb_sort_handle, &data);
+	SORT_get(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
+			 &data);
 #endif
 
 	return reinterpret_cast<UCHAR*>(data);
@@ -2541,100 +2454,6 @@ static bool get_union(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 }
 
 
-static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
-{
-/**************************************
- *
- *	i n v a l i d a t e _ c h i l d _ r p b s
- *
- **************************************
- *
- * Functional description
- *  Mark child RPBs as invalid.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	while (true)
-	{
-		jrd_req* request = tdbb->getRequest();
-		record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-
-		switch (rsb->rsb_type)
-		{
-			case rsb_indexed:
-			case rsb_navigate:
-			case rsb_sequential:
-			case rsb_ext_sequential:
-			case rsb_ext_indexed:
-			case rsb_ext_dbkey:
-			case rsb_virt_sequential:
-			case rsb_procedure:
-				rpb->rpb_number.setValid(false);
-				return;
-
-			case rsb_first:
-			case rsb_skip:
-			case rsb_boolean:
-			case rsb_aggregate:
-			case rsb_sort:
-				rsb = rsb->rsb_next;
-				break;
-
-			case rsb_cross:
-				{
-					RecordSource** ptr = rsb->rsb_arg;
-					for (const RecordSource* const* const end = ptr + rsb->rsb_count;
-						ptr < end; ptr++)
-					{
-						invalidate_child_rpbs(tdbb, *ptr);
-					}
-					return;
-				}
-
-			case rsb_left_cross:
-				invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
-				invalidate_child_rpbs(tdbb, rsb->rsb_arg[RSB_LEFT_inner]);
-				return;
-
-			case rsb_merge:
-				{
-					RecordSource** ptr = rsb->rsb_arg;
-
-					for (const RecordSource* const* const end = ptr + rsb->rsb_count * 2;
-						ptr < end; ptr += 2)
-					{
-						invalidate_child_rpbs(tdbb, *ptr);
-					}
-				}
-				return;
-
-			case rsb_union:
-				{
-					RecordSource** ptr = rsb->rsb_arg;
-
-					for (const RecordSource* const* end = ptr + rsb->rsb_count; ptr < end; ptr += 2)
-						invalidate_child_rpbs(tdbb, *ptr);
-				}
-				return;
-
-			case rsb_recurse:
-				{
-					// hvlad: recursive CTE is always a 'union all' of
-					// exactly two members.
-					// see also comments for RSBRecurse::open
-					invalidate_child_rpbs(tdbb, rsb->rsb_arg[0]);
-					invalidate_child_rpbs(tdbb, rsb->rsb_arg[2]);
-				}
-				return;
-
-			default:
-				BUGCHECK(166);		/* msg 166 invalid rsb type */
-		}
-	}
-}
-
-
 static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* stream)
 {
 /**************************************
@@ -2650,13 +2469,11 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	for (StreamStack::iterator stack(*stream);
 		stack.hasData(); ++stack)
 	{
 		record_param* rpb = &request->req_rpb[stack.object()];
-
-		rpb->rpb_number.setValid(false);
 
 		/* Make sure a record block has been allocated.  If there isn't
 		   one, first find the format, then allocate the record block */
@@ -2680,7 +2497,7 @@ static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* strea
 }
 
 
-static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR * data)
+static void map_sort_data(jrd_req* request, SortMap* map, UCHAR * data)
 {
 /**************************************
  *
@@ -2724,36 +2541,26 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 		const SSHORT id = item->smb_field_id;
 		if (id < 0)
 		{
-			switch (id)
-			{
-			case SMB_TRANS_ID:
-				rpb->rpb_transaction_nr = *reinterpret_cast<SLONG*>(from.dsc_address);
-				break;
-			case SMB_DBKEY:
-				rpb->rpb_number.setValue(*reinterpret_cast<SINT64*>(from.dsc_address));
-				break;
-			case SMB_DBKEY_VALID:
-				rpb->rpb_number.setValid(*from.dsc_address != 0);
-				break;
-			default:
-				fb_assert(false);
-			}
+			if (id == SMB_TRANS_ID)
+				rpb->rpb_transaction_nr = *(SLONG *) (from.dsc_address);
+			else
+				rpb->rpb_number.setValue(*(SINT64 *) (from.dsc_address));
 			rpb->rpb_stream_flags |= RPB_s_refetch;
 			continue;
 		}
 		Record* record = rpb->rpb_record;
 
-		if (record && !flag && !record->rec_format) {
+        if (record && !flag && !record->rec_format) {
 			fb_assert(record->rec_fmt_bk);
 			record->rec_format = record->rec_fmt_bk; // restore the format
-		}
+        }
 
 		EVL_field(0, record, id, &to);
 
 		if (flag)
 			SET_NULL(record, id);
 		else {
-			MOV_move(tdbb, &from, &to);
+			MOV_move(&from, &to);
 			CLEAR_NULL(record, id);
 		}
 	}
@@ -2801,14 +2608,12 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		merge_file* mfb = &tail->irsb_mrg_file;
 		mfb->mfb_equal_records = 0;
 		mfb->mfb_current_block = 0;
-		mfb->mfb_record_size = ROUNDUP(map->smb_length, FB_ALIGNMENT);
+		mfb->mfb_record_size = ROUNDUP(map->smb_length, ALIGNMENT);
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
-		{
 			mfb->mfb_block_data =
-				FB_NEW(*tdbb->getRequest()->req_pool) UCHAR[mfb->mfb_block_size];
-		}
+				FB_NEW(*tdbb->tdbb_request->req_pool) UCHAR[mfb->mfb_block_size];
 	}
 }
 
@@ -2829,11 +2634,11 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 
 	jrd_nod* inputs = (jrd_nod*) rsb->rsb_arg[RSB_PRC_inputs];
 	jrd_prc* procedure = rsb->rsb_procedure;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 /* get rid of any lingering record */
 
-	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	record_param* rpb = request->req_rpb + rsb->rsb_stream;
 	if (rpb->rpb_record) {
 		delete rpb->rpb_record;
 		rpb->rpb_record = NULL;
@@ -2877,7 +2682,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 			EXE_send(tdbb, proc_request, 0, iml, im);
 		}
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		close_procedure(tdbb, rsb);
 		throw;
 	}
@@ -2900,7 +2705,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
  *
  **************************************/
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 	RSE_open(tdbb, rsb->rsb_next);
 	SortMap* map = (SortMap*) rsb->rsb_arg[0];
@@ -2911,23 +2716,26 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 	if (impure->irsb_sort_handle &&
 		impure->irsb_sort_handle->scb_impure == impure)
 	{
-		SORT_fini(impure->irsb_sort_handle, tdbb->getAttachment());
+		SORT_fini(impure->irsb_sort_handle, tdbb->tdbb_attachment);
 	}
 
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
-	impure->irsb_sort_handle =
-		SORT_init(tdbb, map->smb_length, map->smb_keys,
-				  map->smb_keys, map->smb_key_desc,
-         		  ((map->smb_flags & SMB_project) ? reject : NULL),
-				  0, max_records);
+	sort_context* handle = SORT_init(tdbb->tdbb_status_vector,
+						   map->smb_length,
+						   map->smb_keys,
+						   map->smb_keys,
+						   map->smb_key_desc,
+         				   ((map->smb_flags & SMB_project) ? reject : NULL), 0,
+						   tdbb->tdbb_attachment, max_records);
+
+	if (!(impure->irsb_sort_handle = handle))
+		ERR_punt();
 
 	// Mark sort_context with the impure area pointer
 
-	impure->irsb_sort_handle->scb_impure = impure;
-
-	try {
+	handle->scb_impure = impure;
 
 	// Pump the input stream dry while pushing records into sort. For
 	// each record, map all fields into the sort record. The reverse
@@ -2942,7 +2750,8 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 		// to build a record.
 
 		UCHAR* data = 0;
-		SORT_put(tdbb, impure->irsb_sort_handle, reinterpret_cast<ULONG**>(&data));
+		SORT_put(tdbb->tdbb_status_vector, impure->irsb_sort_handle,
+				(ULONG **) &data);
 
 		// Zero out the sort key. This solve a multitude of problems.
 
@@ -2966,20 +2775,10 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 				from = &temp;
 				record_param* rpb = &request->req_rpb[item->smb_stream];
 				if (item->smb_field_id < 0) {
-					switch (item->smb_field_id)
-					{
-					case SMB_TRANS_ID:
-						*reinterpret_cast<SLONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
-						break;
-					case SMB_DBKEY:
-						*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_number.getValue();
-						break;
-					case SMB_DBKEY_VALID:
-						*to.dsc_address = (UCHAR) rpb->rpb_number.isValid();
-						break;
-					default:
-						fb_assert(false);
-					}
+					if (item->smb_field_id == SMB_TRANS_ID)
+						*(SLONG *) (to.dsc_address) = rpb->rpb_transaction_nr;
+					else
+						*(SINT64 *) (to.dsc_address) = rpb->rpb_number.getValue();
 					continue;
 				}
 				if (!EVL_field
@@ -2998,24 +2797,17 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 					(USHORT)(IPTR) item->smb_desc.dsc_address <
 					map->smb_key_length * sizeof(ULONG))
 				{
-					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc), from, &to,
-						(map->smb_flags & SMB_unique_sort ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
+					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc),
+									   from, &to, INTL_KEY_SORT);
 				}
 				else
-					MOV_move(tdbb, from, &to);
+					MOV_move(from, &to);
 			}
 		}
 	}
 
-	SORT_sort(tdbb, impure->irsb_sort_handle);
-
-	}
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SORT_fini(impure->irsb_sort_handle, tdbb->getAttachment());
-		impure->irsb_sort_handle = NULL;
+	if (!SORT_sort(tdbb->tdbb_status_vector, impure->irsb_sort_handle))
 		ERR_punt();
-	}
 
 	// For the sake of prudence, set all record parameter blocks to contain
 	// the most recent format. This is will guarentee that all fields mapped
@@ -3041,7 +2833,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 }
 
 
-static void proc_assignment(thread_db* tdbb,
+static void proc_assignment(
 							const dsc* from_desc,
 							const dsc* flag_desc,
 							UCHAR* msg, // this param is logically const
@@ -3069,7 +2861,7 @@ static void proc_assignment(thread_db* tdbb,
 	dsc desc1;
 	desc1 = *flag_desc;
 	desc1.dsc_address = msg + (IPTR) flag_desc->dsc_address;
-	MOV_move(tdbb, &desc1, &desc2);
+	MOV_move(&desc1, &desc2);
 	if (indicator) {
 		SET_NULL(record, to_id);
 		const USHORT l = to_desc->dsc_length;
@@ -3097,7 +2889,7 @@ static void proc_assignment(thread_db* tdbb,
 			break;
 
 		case dtype_varying:
-			*reinterpret_cast<SSHORT*>(p) = 0;
+			*(SSHORT *) p = 0;
 			break;
 
 		default:
@@ -3113,26 +2905,26 @@ static void proc_assignment(thread_db* tdbb,
 		desc1.dsc_address = msg + (IPTR) desc1.dsc_address;
 		desc2 = *to_desc;
 		desc2.dsc_address = record->rec_data + (IPTR) desc2.dsc_address;
-		if (!DSC_EQUIV(&desc1, &desc2, false))
-		{
-			MOV_move(tdbb, &desc1, &desc2);
-			return;
-		}
+		if (!DSC_EQUIV((&desc1), (&desc2), false))
+			MOV_move(&desc1, &desc2);
 
-		switch (desc1.dsc_dtype)
+		else if (desc1.dsc_dtype == dtype_short)
+			*((SSHORT *) desc2.dsc_address) = *((SSHORT *) desc1.dsc_address);
+
+		else if (desc1.dsc_dtype == dtype_long)
+			*((SLONG *) desc2.dsc_address) = *((SLONG *) desc1.dsc_address);
+
+		else if (desc1.dsc_dtype == dtype_int64)
+			*((SINT64 *) desc2.dsc_address) = *((SINT64 *) desc1.dsc_address);
+
+		else if (((U_IPTR) desc1.dsc_address & (ALIGNMENT - 1)) ||
+				 ((U_IPTR) desc2.dsc_address & (ALIGNMENT - 1)))
 		{
-		case dtype_short:
-			*reinterpret_cast<SSHORT*>(desc2.dsc_address) = *reinterpret_cast<SSHORT*>(desc1.dsc_address);
-			break;
-		case dtype_long:
-			*reinterpret_cast<SLONG*>(desc2.dsc_address) = *reinterpret_cast<SLONG*>(desc1.dsc_address);
-			break;
-		case dtype_int64:
-			*reinterpret_cast<SINT64*>(desc2.dsc_address) = *reinterpret_cast<SINT64*>(desc1.dsc_address);
-			break;
-		default:
-			memcpy(desc2.dsc_address, desc1.dsc_address, desc1.dsc_length);
+			MOVE_FAST(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
 		}
+		else
+			MOVE_FASTER(desc1.dsc_address, desc2.dsc_address,
+						desc1.dsc_length);
 	}
 }
 
@@ -3161,11 +2953,9 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_ext_dbkey:
 	case rsb_navigate:
 	case rsb_union:
-	case rsb_recurse:
 	case rsb_aggregate:
-	case rsb_virt_sequential:
 		{
-			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			restore_record(rpb);
 			break;
 		}
@@ -3184,7 +2974,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = &request->req_rpb[i];
+					record_param* rpb = request->req_rpb + i;
 					restore_record(rpb);
 				}
 			}
@@ -3211,7 +3001,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = &request->req_rpb[i];
+					record_param* rpb = request->req_rpb + i;
 					restore_record(rpb);
 				}
 			}
@@ -3276,11 +3066,9 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_ext_dbkey:
 	case rsb_navigate:
 	case rsb_union:
-	case rsb_recurse:
 	case rsb_aggregate:
-	case rsb_virt_sequential:
 		{
-			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+			record_param* rpb = request->req_rpb + rsb->rsb_stream;
 			save_record(tdbb, rpb);
 			break;
 		}
@@ -3299,7 +3087,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = &request->req_rpb[i];
+					record_param* rpb = request->req_rpb + i;
 					save_record(tdbb, rpb);
 				}
 			}
@@ -3326,7 +3114,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = &request->req_rpb[i];
+					record_param* rpb = request->req_rpb + i;
 					save_record(tdbb, rpb);
 				}
 			}
@@ -3380,12 +3168,12 @@ static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  *
  **************************************/
 
-	fb_assert(mfb->mfb_space);
+	fb_assert(mfb->mfb_sfb && mfb->mfb_sfb->sfb_file_name);
 
-	SORT_read_block(tdbb->tdbb_status_vector, mfb->mfb_space,
-					mfb->mfb_block_size * block,
-					mfb->mfb_block_data,
-					mfb->mfb_block_size);
+	mfb->mfb_sfb->sfb_mem->read(tdbb->tdbb_status_vector,
+								mfb->mfb_block_size * block,
+								reinterpret_cast<char*>(mfb->mfb_block_data),
+								mfb->mfb_block_size);
 
 	return block;
 }
@@ -3420,31 +3208,27 @@ static void restore_record(record_param* rpb)
  *	Restore record to prior state
  *
  **************************************/
+	Record* rec_copy;
 	SaveRecordParam* rpb_copy = rpb->rpb_copy;
-	if (rpb_copy)
-	{
+	if (rpb_copy && (rec_copy = rpb_copy->srpb_rpb->rpb_record)) {
 		Record* record = rpb->rpb_record;
-		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
+		const USHORT size = rec_copy->rec_length;
+		if (!record || size > record->rec_length)
+			/* msg 284 cannot restore singleton select data */
+			BUGCHECK(284);
+		record->rec_format = rec_copy->rec_format;
+		record->rec_number = rec_copy->rec_number;
+		MOVE_FAST(rec_copy->rec_data, record->rec_data, size);
 
-		if (rec_copy)
-		{
-			const USHORT size = rec_copy->rec_length;
-			if (!record || size > record->rec_length)
-				BUGCHECK(284);	// msg 284 cannot restore singleton select data
-			record->rec_format = rec_copy->rec_format;
-			record->rec_number = rec_copy->rec_number;
-			memcpy(record->rec_data, rec_copy->rec_data, size);
-
-			delete rec_copy;
-		}
-
-		memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-
+		MOVE_FAST(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
 		rpb->rpb_record = record;
 
-		delete rpb_copy;
-		rpb->rpb_copy = NULL;
+		delete rec_copy;
 	}
+	if (rpb_copy)
+		delete rpb_copy;
+
+	rpb->rpb_copy = NULL;
 }
 
 
@@ -3468,7 +3252,7 @@ static void resynch_merge(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 	const RecordSource* const* const end = rsb->rsb_arg + rsb->rsb_count * 2;
 	RecordSource** ptr = rsb->rsb_arg;
@@ -3493,7 +3277,7 @@ static void resynch_merge(
 
 			UCHAR* data = get_sort(tdbb, sort_rsb, mode);
 			if (!data)
-				ERR_post(Arg::Gds(isc_stream_eof));
+				ERR_post(isc_stream_eof, isc_arg_end);
 
 			/* do an "unget" to fix up the sort record for re-retrieval */
 
@@ -3524,33 +3308,27 @@ static void save_record(thread_db* tdbb, record_param* rpb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	SaveRecordParam* rpb_copy = rpb->rpb_copy;
-	if (rpb_copy)
-	{
-		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
-		if (rec_copy)
-			delete rec_copy;
-	}
-	else
-		rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
-
-	memcpy(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
-
 	Record* record = rpb->rpb_record;
-
-	if (record)
-	{
+	if (record) {
 		const SLONG size = record->rec_length;
+		SaveRecordParam* rpb_copy = rpb->rpb_copy;
+		if (rpb_copy) {
+			Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
+			if (rec_copy)
+				delete rec_copy;
+		}
+		else
+			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
+
+		MOVE_FAST(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
 		Record* rec_copy = FB_NEW_RPT(*tdbb->getDefaultPool(), size) Record(*tdbb->getDefaultPool());
 		rpb_copy->srpb_rpb->rpb_record = rec_copy;
 
 		rec_copy->rec_length = size;
 		rec_copy->rec_format = record->rec_format;
 		rec_copy->rec_number = record->rec_number;
-		memcpy(rec_copy->rec_data, record->rec_data, size);
+		MOVE_FAST(record->rec_data, rec_copy->rec_data, size);
 	}
-	else
-		rpb_copy->srpb_rpb->rpb_record = NULL;
 }
 
 
@@ -3571,7 +3349,7 @@ static void unget_sort(thread_db* tdbb, RecordSource* rsb, UCHAR* data)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 	irsb_sort* impure = (irsb_sort*) ((UCHAR *) request + rsb->rsb_impure);
 
@@ -3593,197 +3371,28 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
  *	the file doesn't exist, by all means, create one.
  *
  **************************************/
-	if (!mfb->mfb_space) {
-		MemoryPool& pool = *getDefaultMemoryPool();
-		mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+	sort_work_file* sfb = mfb->mfb_sfb;
+	if (!sfb) {
+		sfb = mfb->mfb_sfb = FB_NEW(*getDefaultMemoryPool()) sort_work_file;
+		memset(sfb, 0, sizeof(sort_work_file));
+	}
+	if (!sfb->sfb_file_name) {
+		TEXT file_name[MAXPATHLEN];
+
+		// Cast is ok because stdio_flag is false
+		sfb->sfb_file = (int) (IPTR) gds__temp_file(FALSE, SCRATCH, file_name);
+		if (sfb->sfb_file == -1)
+			SORT_error(tdbb->tdbb_status_vector, sfb, "open", isc_io_error,
+					   errno);
+		sfb->sfb_file_name =
+			FB_NEW(*getDefaultMemoryPool()) char[strlen(file_name) + 1];
+		strcpy(sfb->sfb_file_name, file_name);
+
+		sfb->sfb_mem = FB_NEW (*getDefaultMemoryPool()) SortMem(sfb, mfb->mfb_block_size);
 	}
 
-	SORT_write_block(tdbb->tdbb_status_vector, mfb->mfb_space,
-					 mfb->mfb_block_size * block,
-					 mfb->mfb_block_data,
-					 mfb->mfb_block_size);
-}
-
-
-const USHORT RSBRecurse::MAX_RECURSE_LEVEL = 1024;
-
-
-// hvlad:
-// values of rsb_arg's:
-//	0 - 1st stream
-//	1 - 1st stream map
-//	2 - 2nd stream
-//	3 - 2nd stream map
-//	4 - count of the streams that make up the union
-//	5..5+rsb_arg[4]-1	- numbers of the streams that make up the union
-//	5+rsb_arg[4]		- inner impure area size
-//	6+rsb_arg[4]		- number of stream for next level record
-void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
-{
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
-	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-	VIO_record(tdbb, rpb, rsb->rsb_format, request->req_pool);
-
-	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const USHORT map_stream = (USHORT)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 2];
-	rpb = &request->req_rpb[map_stream];
-	VIO_record(tdbb, rpb, rsb->rsb_format, request->req_pool);
-
-	// Set up our instance data
-	irsb->irsb_mode  = root;
-	irsb->irsb_level = 1;
-	irsb->irsb_stack = NULL;
-	irsb->irsb_data  = NULL;
-
-	// Initialize the record number for both <root> and <child> stream
-	RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-	const RecordSource* const* end = ptr + streams;
-	for (; ptr < end; ptr++)
-	{
-		const USHORT stream = (USHORT)(U_IPTR) *ptr;
-		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
-	}
-	RSE_open(tdbb, rsb->rsb_arg[0]);
-}
-
-
-bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
-{
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
-
-	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
-	const ULONG rpbs_size = sizeof(record_param) * streams;
-	const USHORT map_stream = (USHORT)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 2];
-	RecordSource** rsb_ptr;
-
-	Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
-	Record* map_record = request->req_rpb[map_stream].rpb_record;
-
-	switch (irsb->irsb_mode)
-	{
-	case root:
-		rsb_ptr = &rsb->rsb_arg[0];
-		break;
-
-	case recurse:
-		{
-			// Stop infinite recursion of bad queries
-			if (irsb->irsb_level > MAX_RECURSE_LEVEL)
-				ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
-
-			// Save where we are
-			char* tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];
-			memcpy(tmp, irsb, inner_size);
-
-			char* p = tmp + inner_size;
-			RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-			const RecordSource* const* end = ptr + streams;
-			for (; ptr < end; ptr++)
-			{
-				const record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
-				memmove(p, rpb, sizeof(record_param));
-				p += sizeof(record_param);
-			}
-			irsb->irsb_stack = tmp;
-
-			irsb->irsb_data = FB_NEW(*request->req_pool) char[record->rec_length];
-			memcpy(irsb->irsb_data, record->rec_data, record->rec_length);
-
-			irsb_recurse r = *irsb;
-			memset(irsb, 0, inner_size);
-			*irsb = r;
-
-			// (Re-)Open a new child stream & reset record number
-			rsb_ptr = &rsb->rsb_arg[2];
-			RSE_open(tdbb, *rsb_ptr);
-
-			irsb->irsb_level++;
-		}
-		break;
-
-	default:
-		fb_assert(false);
-	}
-
-	// Get the data -- if there is none go back one level and when
-	// there isn't a previous level, we're done
-	while (!get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
-	{
-		if (irsb->irsb_level == 1)
-		{
-			return false;
-		}
-
-		RSE_close(tdbb, *rsb_ptr);
-		delete[] irsb->irsb_data;
-
-		char* tmp = irsb->irsb_stack;
-		memcpy(irsb, tmp, inner_size);
-
-		char* p = tmp + inner_size;
-		RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-		const RecordSource* const* end = ptr + streams;
-		for (; ptr < end; ptr++)
-		{
-			record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
-			Record* rec = rpb->rpb_record;
-			memmove(rpb, p, sizeof(record_param));
-			p += sizeof(record_param);
-
-			if (rec)
-			{
-				rpb->rpb_record = rec;
-			}
-		}
-		delete[] tmp;
-
-		if (irsb->irsb_level > 1)
-		{
-			rsb_ptr = &rsb->rsb_arg[2];
-
-			// Reset our record data so that recursive WHERE clauses work
-			memcpy(record->rec_data, irsb->irsb_data, record->rec_length);
-		}
-		else
-		{
-			rsb_ptr = &rsb->rsb_arg[0];
-		}
-	}
-	irsb->irsb_mode = recurse;
-
-	// We've got a record, map it into the target record
-	jrd_nod* map = (jrd_nod*) rsb_ptr[1];
-	jrd_nod** ptr = map->nod_arg;
-	const jrd_nod *const *end = ptr + map->nod_count;
-	for (; ptr < end; ptr++) {
-		EXE_assignment(tdbb, *ptr);
-	}
-	// copy target (next level) record into main (current level) record
-	memcpy(record->rec_data, map_record->rec_data, record->rec_length);
-
-	return true;
-}
-
-
-void RSBRecurse::close(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
-{
-	SET_TDBB(tdbb);
-	jrd_req* request = tdbb->getRequest();
-	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
-
-	while (irsb->irsb_level > 1)
-	{
-		RSE_close(tdbb, rsb->rsb_arg[2]);
-
-		delete[] irsb->irsb_data;
-
-		char* tmp = irsb->irsb_stack;
-		memcpy(irsb, tmp, inner_size);
-		delete[] tmp;
-	}
-    RSE_close(tdbb, rsb->rsb_arg[0]);
+	sfb->sfb_mem->write(tdbb->tdbb_status_vector,
+						 mfb->mfb_block_size * block,
+						 reinterpret_cast<char*>(mfb->mfb_block_data),
+						 mfb->mfb_block_size);
 }

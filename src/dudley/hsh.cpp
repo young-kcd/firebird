@@ -173,7 +173,7 @@ struct word {
 //		{KW_RAW, "RAW"},
 //		{KW_RAW_PARTITIONS, "RAW_PARTITIONS"},
 		{KW_REFERENCE, "REFERENCE"},
-    	{KW_RELATION, "RELATION"},
+    	{KW_RELATION, "RELATION"}, 
         {KW_RETURN_ARGUMENT, "RETURN_ARGUMENT"},	/* function argument return_mode */
 		{KW_RETURN_VALUE, "RETURN_VALUE"},	/* function argument return_mode */
 		{KW_REVOKE, "REVOKE"},
@@ -250,8 +250,8 @@ struct word {
 		{KW_MAX, "MAX"},
 		{KW_TO, "TO"},
 		{KW_TOTAL, "TOTAL"},
-    	{KW_UNIQUE, "UNIQUE"},
-		{KW_UPPERCASE, "UPPERCASE"},
+    	{KW_UNIQUE, "UNIQUE"}, 
+		{KW_UPPERCASE, "UPPERCASE"}, 
 		{KW_WITH, "WITH"}
 };
 
@@ -300,10 +300,12 @@ void HSH_insert( SYM symbol)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
+	USHORT h;
+	SYM old;
 
-	for (SYM old = hash_table[h]; old; old = old->sym_collision)
-	{
+	h = hash(symbol->sym_string, symbol->sym_length);
+
+	for (old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
 					 old->sym_string, old->sym_length))
 		{
@@ -311,7 +313,6 @@ void HSH_insert( SYM symbol)
 			old->sym_homonym = symbol;
 			return;
 		}
-	}
 
 	symbol->sym_collision = hash_table[h];
 	hash_table[h] = symbol;
@@ -330,11 +331,13 @@ SYM HSH_lookup(const SCHAR* string, USHORT length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	for (SYM symbol = hash_table[hash(string, length)]; symbol; symbol = symbol->sym_collision)
-	{
-		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
-			return symbol;
-	}
+	SYM symbol;
+
+	for (symbol = hash_table[hash(string, length)]; symbol;
+		 symbol = symbol->sym_collision)
+			if (scompare
+				(string, length, symbol->sym_string,
+				 symbol->sym_length)) return symbol;
 
 	return NULL;
 }
@@ -344,7 +347,7 @@ void HSH_remove( SYM symbol)
 {
 /**************************************
  *
- *	H S H _ r e m o v e
+ *	H S H _ r e m o v e 
  *
  **************************************
  *
@@ -375,7 +378,7 @@ void HSH_remove( SYM symbol)
 					return;
 				}
 
-	DDL_err(280);	/* msg 280: HSH_remove failed  */
+	DDL_err(280, NULL, NULL, NULL, NULL, NULL);	/* msg 280: HSH_remove failed  */
 }
 
 

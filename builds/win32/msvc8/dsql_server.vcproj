@@ -1,16 +1,13 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="dsql_server"
-	ProjectGUID="{520DF501-5775-44FD-BDC6-37753A17696A}"
+	ProjectGUID="{2200CB02-7AED-423E-9484-9D149FD79B24}"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
-		/>
-		<Platform
-			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -18,8 +15,10 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\release\dsql_server_ss"
+			IntermediateDirectory="..\..\..\temp\release\dsql_server_ss"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -41,11 +40,25 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32"
+				OmitFramePointers="true"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,_X86_"
+				ExceptionHandling="0"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				PrecompiledHeaderFile="..\..\..\temp\release\dsql_server_ss/dsql_server.pch"
+				AssemblerListingLocation="..\..\..\temp\release\dsql_server_ss/"
+				ObjectFile="..\..\..\temp\release\dsql_server_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\release\dsql_server_ss/"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -60,68 +73,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
+				OutputFile="..\..\..\temp\release\dsql_server_ss\dsql_server.lib"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -141,8 +94,10 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\debug\dsql_server_ss"
+			IntermediateDirectory="..\..\..\temp\debug\dsql_server_ss"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -164,8 +119,22 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;_LIB;_WINDOWS;SUPERSERVER;WIN32;DEV_BUILD"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="DEBUG,_DEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32,DEV_BUILD,_X86_"
+				ExceptionHandling="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="true"
+				PrecompiledHeaderFile="..\..\..\temp\debug\dsql_server_ss/dsql_server.pch"
+				AssemblerListingLocation="..\..\..\temp\debug\dsql_server_ss/"
+				ObjectFile="..\..\..\temp\debug\dsql_server_ss/"
+				ProgramDataBaseFileName="..\..\..\temp\debug\dsql_server_ss/"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -180,66 +149,8 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug|x64"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				PreprocessorDefinitions="DEBUG;_DEBUG;_LIB;_WINDOWS;SUPERSERVER;WIN32;DEV_BUILD"
-				Detect64BitPortabilityProblems="true"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
+				OutputFile="..\..\..\temp\debug\dsql_server_ss\dsql_server.lib"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -265,6 +176,10 @@
 			Name="DSQL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
+			<File
+				RelativePath="..\..\..\src\dsql\alld.cpp"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\ddl.cpp"
 				>
@@ -306,19 +221,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Parser.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\pass1.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\preparse.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.cpp"
 				>
 			</File>
 			<File
@@ -342,10 +249,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\dsql\DdlNodes.epp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\dsql\metd.epp"
 					>
 				</File>
@@ -354,19 +257,15 @@
 				Name="Generated files"
 				>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\array.cpp"
+					RelativePath="..\..\..\gen\dsql\array.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\blob.cpp"
+					RelativePath="..\..\..\gen\dsql\blob.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\DdlNodes.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\metd.cpp"
+					RelativePath="..\..\..\gen\dsql\metd.cpp"
 					>
 				</File>
 			</Filter>
@@ -385,7 +284,19 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath="..\..\..\src\dsql\all.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\alld_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\array_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\blk.h"
 				>
 			</File>
 			<File
@@ -398,10 +309,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\ddl_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DdlNodes.h"
 				>
 			</File>
 			<File
@@ -449,15 +356,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Nodes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\parse_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Parser.h"
 				>
 			</File>
 			<File
@@ -466,10 +365,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\prepa_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.h"
 				>
 			</File>
 			<File

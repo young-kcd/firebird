@@ -31,6 +31,8 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: postInstall.sh.in,v 1.1.2.4 2008-09-03 10:04:41 paulbeach Exp $
+# 
 
 # The post install script for Firebird Classic
 
@@ -104,7 +106,6 @@
     # Correct a couple of minor issues set via FilePermissions
     chmod 660 security2.fdb
     chmod 666 isc_lock1.`hostname`
-    echo "Updating Lock Manager"
     cd $FBBin
     for i in fb_lock_mgr
     do

@@ -24,21 +24,23 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
+#include <stdarg.h>
+#ifndef REQUESTER
 #include "../jrd/jrd.h"
+#endif
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/err_proto.h"
 
 const int COMPILE_SIZE	= 256;
 
 using namespace Jrd;
-using namespace Firebird;
 
 struct sdl_arg {
+	//USHORT sdl_arg_mode; // unused
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
@@ -48,7 +50,7 @@ struct sdl_arg {
 	ISC_STATUS* sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR* sdl_arg_next;
-	const IPTR* sdl_arg_end;
+	IPTR* sdl_arg_end;
 };
 
 /* Structure to computes ranges */
@@ -63,7 +65,7 @@ struct array_range {
 };
 
 static const UCHAR* compile(const UCHAR*, sdl_arg*);
-static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v);
+static ISC_STATUS error(ISC_STATUS*, ...);
 static bool execute(sdl_arg*);
 static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
 
@@ -106,9 +108,9 @@ const int op_scalar		= 12;
 /*
    The structure for a loop is:
 
-	<upper_bound> <increment> <initial_value>
-	<loop> <iterate> <variable> <exit_address>
-	[body]
+	<upper_bound> <increment> <initial_value> 
+	<loop> <iterate> <variable> <exit_address> 
+	[body] 
 	<goto> <iterate_address>
 	[exit]
 */
@@ -149,12 +151,13 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
  *
  * Functional description
  *	Collapse a multi-dimension array reference into a vector
- *	reference.
+ *	reference. 
  *
  **************************************/
 	if (dimensions != desc->iad_dimensions) {
-		error(status_vector, Arg::Gds(isc_invalid_dimension) << Arg::Num(desc->iad_dimensions) <<
-																Arg::Num(dimensions));
+		error(status_vector, isc_invalid_dimension,
+			  isc_arg_number, (SLONG) desc->iad_dimensions,
+			  isc_arg_number, (SLONG) dimensions, isc_arg_end);
 		return -1;
 	}
 
@@ -166,7 +169,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 	{
 		const SLONG n = *subscripts++;
 		if (n < range->iad_lower || n > range->iad_upper) {
-			error(status_vector, Arg::Gds(isc_out_of_bounds));
+			error(status_vector, isc_out_of_bounds, isc_arg_end);
 			return -1;
 		}
 		subscript += (n - range->iad_lower) * range->iad_length;
@@ -198,17 +201,20 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 	info->sdl_info_relation = info->sdl_info_field = "";
 
 	if (*p++ != isc_sdl_version1)
-		return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(0));
+		return error(status_vector, isc_invalid_sdl,
+					 isc_arg_number, (SLONG) 0, isc_arg_end);
 
 	for (;;)
 		switch (*p++) {
 		case isc_sdl_struct:
 			n = *p++;
 			if (n != 1)
-				return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(p - sdl - 1));
+				return error(status_vector, isc_invalid_sdl,
+							 isc_arg_number, (SLONG) (p - sdl - 1), isc_arg_end);
 			offset = p - sdl;
 			if (!(p = sdl_desc(p, &info->sdl_info_element)))
-				return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(offset));
+				return error(status_vector, isc_invalid_sdl,
+							 isc_arg_number, (SLONG) offset, isc_arg_end);
 			info->sdl_info_element.dsc_address = 0;
 			break;
 
@@ -329,6 +335,7 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
+		//bool mode, // Unused, always got true, passed to sdl_arg_mode that's unused
 		UCHAR* array,
 		Ods::InternalArrayDesc* array_desc,
 		SLONG* variables,
@@ -342,13 +349,14 @@ int	SDL_walk(ISC_STATUS* status_vector,
  **************************************
  *
  * Functional description
- *	Walk a slice.
+ *	Walk a slice.  
  *
  **************************************/
 	DSC junk;
 	USHORT n, offset;
 	sdl_arg arg;
 
+	//arg.sdl_arg_mode = mode ? TRUE: FALSE; // Unused
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;
@@ -363,8 +371,9 @@ int	SDL_walk(ISC_STATUS* status_vector,
 		case isc_sdl_struct:
 			for (n = *p++; n; --n) {
 				offset = p - sdl - 1;
-				if (!(p = sdl_desc(p, &junk)))
-					return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(offset));
+				if (!(p = sdl_desc(p, &junk))) 
+					return error(status_vector, isc_invalid_sdl,
+								 isc_arg_number, (SLONG) offset, isc_arg_end);
 			}
 			break;
 
@@ -415,7 +424,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
  **************************************/
 	SLONG n, count, variable, value, sdl_operator;
 	IPTR* label;
-	const UCHAR* expressions[MAX_ARRAY_DIMENSIONS];
+	const UCHAR* expressions[16];
 	const UCHAR** expr;
 
 #define STUFF(word, arg)	if (!stuff ((IPTR) word, arg)) return NULL
@@ -508,9 +517,9 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		op = *p++;
 		count = *p++;
 		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
-			error(arg->sdl_arg_status_vector,
-				  Arg::Gds(isc_invalid_dimension) << Arg::Num(arg->sdl_arg_desc->iad_dimensions) <<
-													 Arg::Num(count));
+			error(arg->sdl_arg_status_vector, isc_invalid_dimension,
+				  isc_arg_number, (SLONG) arg->sdl_arg_desc->iad_dimensions,
+				  isc_arg_number, (SLONG) count, isc_arg_end);
 			return NULL;
 		}
 		expr = expressions;
@@ -529,7 +538,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 	case isc_sdl_element:
 		count = *p++;
 		if (arg && count != 1) {
-			error(arg->sdl_arg_status_vector, Arg::Gds(isc_datnotsup));
+			error(arg->sdl_arg_status_vector, isc_datnotsup, isc_arg_end);
 			/* Msg107: "data operation not supported" (arrays of structures) */
 			return NULL;
 		}
@@ -546,13 +555,14 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		return p;
 
 	default:
-		error(arg->sdl_arg_status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(p - arg->sdl_arg_sdl - 1));
+		error(arg->sdl_arg_status_vector, isc_invalid_sdl,
+			  isc_arg_number, (SLONG) (p - arg->sdl_arg_sdl - 1), isc_arg_end);
 		return NULL;
 	}
 }
 
 
-static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 {
 /**************************************
  *
@@ -566,9 +576,54 @@ static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
  *	trick to get the address of the argument vector.
  *
  **************************************/
-	v.copyTo(status_vector);
-	StringsBuffer::makeEnginePermanentVector(status_vector);
+	va_list args;
+	ISC_STATUS *p;
+	int type;
 
+/* Get the addresses of the argument vector and the status vector, and do
+   word-wise copy. */
+
+	va_start(args, status_vector);
+	p = status_vector;
+
+/* Copy first argument */
+
+	*p++ = isc_arg_gds;
+	*p++ = va_arg(args, ISC_STATUS);
+
+/* Pick up remaining args */
+
+	while (*p++ = type = va_arg(args, int))
+		switch (type) {
+		case isc_arg_gds:
+			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
+			break;
+
+		case isc_arg_string:
+		case isc_arg_interpreted:
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			break;
+
+/****
+	case isc_arg_cstring:
+	    *p++ = (ISC_STATUS) va_arg (args, int);
+	    *p++ = (ISC_STATUS) va_arg (args, TEXT*);
+	    break;
+****/
+
+		case isc_arg_number:
+			*p++ = va_arg(args, SLONG);
+			break;
+
+		default:
+			fb_assert_continue(FALSE);
+		case isc_arg_vms:
+		case isc_arg_unix:
+			*p++ = va_arg(args, int);
+			break;
+		}
+		
+	va_end(args);
 	return status_vector[1];
 }
 
@@ -591,7 +646,7 @@ static bool execute(sdl_arg* arg)
 	dsc element_desc;
 
 	Ods::InternalArrayDesc* array_desc = arg->sdl_arg_desc;
-	const Ods::InternalArrayDesc::iad_repeat* const range_end =
+	const Ods::InternalArrayDesc::iad_repeat* const range_end = 
 		array_desc->iad_rpt + array_desc->iad_dimensions;
 	SLONG* variables = arg->sdl_arg_variables;
 	const IPTR* next = arg->sdl_arg_compiled;
@@ -664,7 +719,7 @@ static bool execute(sdl_arg* arg)
 				{
 					const SLONG n = *stack_ptr++;
 					if (n < range->iad_lower || n > range->iad_upper) {
-						error(arg->sdl_arg_status_vector, Arg::Gds(isc_out_of_bounds));
+						error(arg->sdl_arg_status_vector, isc_out_of_bounds, isc_arg_end);
 						return false;
 					}
 					subscript += (n - range->iad_lower) * range->iad_length;
@@ -723,7 +778,7 @@ static bool execute(sdl_arg* arg)
 }
 
 
-static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
+static const UCHAR* get_range(const UCHAR* sdl, array_range* arg, 
 							  SLONG* min, SLONG* max)
 {
 /**************************************
@@ -924,10 +979,19 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_dtype = dtype_d_float;
+		desc->dsc_length = sizeof(double);
+		break;
+#endif
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
@@ -988,7 +1052,7 @@ static IPTR* stuff(IPTR value, sdl_arg* arg)
 		return (IPTR*) TRUE;
 
 	if (arg->sdl_arg_next >= arg->sdl_arg_end)
-		error(arg->sdl_arg_status_vector, Arg::Gds(isc_virmemexh));
+		error(arg->sdl_arg_status_vector, isc_virmemexh, isc_arg_end);
 	/* unable to allocate memory from operating system */
 
 	*(arg->sdl_arg_next)++ = value;

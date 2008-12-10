@@ -24,13 +24,14 @@
 #ifndef UTILITIES_GSEC_H
 #define UTILITIES_GSEC_H
 
-#include "../jrd/ThreadData.h"
+#include "../jrd/ibsetjmp.h"
+#include "../jrd/thd.h"
 #include "../jrd/jrd_pwd.h"
 
 const USHORT GSEC_MSG_FAC	= 18;
 const int MSG_LENGTH		= 128;
 //#define QUERY_LENGTH	256
-
+ 
 /* structure to hold information from the command line, including the
    operation to perform and any parameters entered (sizes are determined
    by the size of the fields in the USERS relation in USERINFO.GDB) */
@@ -49,6 +50,15 @@ const int NAME_LEN		= 33;
 const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
+
+#if !(defined REMOTE_REMOTE_H || defined JRD_JRD_H)
+#ifndef INCLUDE_FB_BLK
+#include "../include/fb_blk.h"
+#endif
+#endif
+
+#include "../jrd/svc.h"
+#include "../jrd/svc_proto.h"
 
 struct internal_user_data {
 	int		operation;		/* what's to be done */
@@ -81,10 +91,6 @@ struct internal_user_data {
 	TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
 	bool	dba_user_name_entered;	/* user name entered flag */
 	bool	dba_user_name_specified;/* database specified flag */
-	TEXT	dba_trust_user_name [USER_NAME_LEN];	/* the trusted dba user's name */
-	bool	dba_trust_user_name_entered;	/* trusted dba user name entered flag */
-	bool	dba_trust_user_name_specified;/* trusted dba user name specified flag */
-	bool	trusted_role;	/* use trusted role to authenticate */
 	TEXT	dba_password [NAME_LEN];	/* the user's name */
 	bool	dba_password_entered;	/* user name entered flag */
 	bool	dba_password_specified;	/* database specified flag */
@@ -94,51 +100,71 @@ struct internal_user_data {
 	TEXT	database_name [DATABASE_LEN];	/* database to manage name */
 	bool	database_name_entered;		/* database entered flag */
 	bool	database_name_specified;		/* database specified flag */
-#ifdef TRUSTED_AUTH
-	bool	trusted_auth;	/* use trusted authentication */
-#endif
 
 	// force NULLs in this ugly structure to avoid foolish bugs
-	internal_user_data()
+	internal_user_data() 
 	{
 		memset(this, 0, sizeof *this);
 	}
 };
 
-namespace Firebird
-{
-	class UtilSvc;
-}
+#ifndef SERVICE_THREAD
+class tsec;
+extern tsec* gdsec;
+#endif
 
 class tsec : public ThreadData
 {
 public:
-	explicit tsec(Firebird::UtilSvc* uf)
-		: ThreadData(ThreadData::tddSEC), utilSvc(uf),
-		tsec_user_data(0), tsec_exit_code(0), tsec_throw(false),
-		tsec_interactive(false), tsec_sw_version(false)
+	tsec(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
+		: ThreadData(ThreadData::tddSEC), 
+		tsec_output_proc(outProc), tsec_output_data(outData)
 	{
+		tsec_user_data = 0;
+		tsec_exit_code = 0;
+		tsec_throw = false;
+		tsec_status = tsec_status_vector;
+		tsec_interactive = false;
+		tsec_sw_version = false;
+		tsec_service_gsec = false;
+		tsec_service_thd = false;
+		tsec_output_file = 0;
+		tsec_service_blk = 0;
 	}
 
-	Firebird::UtilSvc*	utilSvc;
 	internal_user_data*	tsec_user_data;
 	int					tsec_exit_code;
 	bool				tsec_throw;
+	ISC_STATUS*			tsec_status;
+	ISC_STATUS_ARRAY	tsec_status_vector;
 	bool				tsec_interactive;
 	bool				tsec_sw_version;
-
-	static inline tsec* getSpecific()
-	{
+	bool				tsec_service_gsec;
+	bool				tsec_service_thd;
+	Jrd::pfn_svc_output	tsec_output_proc;
+	Jrd::Service*		tsec_output_data;
+	FILE*				tsec_output_file;
+	Jrd::Service*		tsec_service_blk;
+#ifdef SERVICE_THREAD
+	static inline tsec* getSpecific() {
 		return (tsec*) ThreadData::getSpecific();
 	}
-	static inline void putSpecific(tsec* tdsec)
-	{
+	static inline void putSpecific(tsec* tdsec) {
 		tdsec->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific()
-	{
+	static inline void restoreSpecific() {
 		ThreadData::restoreSpecific();
 	}
+#else
+	static inline tsec* getSpecific() {
+		return gdsec;
+	}
+	static inline void putSpecific(tsec* tdsec) {
+		gdsec = tdsec;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 };
 
 
@@ -156,13 +182,13 @@ const USHORT GsecMsg9	= 9;	/* GID          user's group ID */
 const USHORT GsecMsg10	= 10;	/* PROJ         user's project name */
 const USHORT GsecMsg11	= 11;	/* ORG          user's organization name */
 const USHORT GsecMsg12	= 12;	/* FNAME        user's first name */
-const USHORT GsecMsg13	= 13;	/* MNAME        user's middle name/initial */
+const USHORT GsecMsg13	= 13;	/* MNAME        user's middle name/initial */   
 const USHORT GsecMsg14	= 14;	/* LNAME        user's last name */
 const USHORT GsecMsg15	= 15;	/* gsec - unable to open database */
 const USHORT GsecMsg16	= 16;	/* gsec - error in switch specifications */
 const USHORT GsecMsg17	= 17;	/* gsec - no operation specified */
 const USHORT GsecMsg18	= 18;	/* gsec - no user name specified */
-const USHORT GsecMsg19	= 19;	/* gsec - add record error */
+const USHORT GsecMsg19	= 19;	/* gsec - add record error */ 
 const USHORT GsecMsg20	= 20;	/* gsec - modify record error */
 const USHORT GsecMsg21	= 21;	/* gsec - find/modify record error */
 const USHORT GsecMsg22	= 22;	/* gsec - record not found for user: */
@@ -234,12 +260,6 @@ const USHORT GsecMsg87	= 87;	/* -database <security database> */
 const USHORT GsecMsg88	= 88;	/* -z */
 const USHORT GsecMsg89	= 89;	/* displaying version number: */
 const USHORT GsecMsg90	= 90;	/* z (interactive only) */
-const USHORT GsecMsg91	= 91;	/* -trusted (use trusted authentication) */
-const USHORT GsecMsg92	= 92;	/* invalid switch specified in interactive mode */
-const USHORT GsecMsg93	= 93;	/* error closing security database */
-const USHORT GsecMsg94	= 94;	/* error releasing request in security database */
-const USHORT GsecMsg95	= 95;	/* -fe(tch_password) fetch password from file */
-const USHORT GsecMsg96	= 96;	/* error fetching password from file */
 
 #endif /* UTILITIES_GSEC_H */
 

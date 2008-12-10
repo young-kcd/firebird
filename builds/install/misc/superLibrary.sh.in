@@ -1,52 +1,74 @@
 #!/bin/sh
-#
-#  The contents of this file are subject to the Initial
-#  Developer's Public License Version 1.0 (the "License");
-#  you may not use this file except in compliance with the
-#  License. You may obtain a copy of the License at
-#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
-#
-#  Software distributed under the License is distributed AS IS,
-#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
-#  See the License for the specific language governing rights
-#  and limitations under the License.
-#
-#  The Original Code was created by Mark O'Donohue
-#  for the Firebird Open Source RDBMS project.
-#
-#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#  and all contributors signed below.
-#
-#  All Rights Reserved.
-#  Contributor(s): ______________________________________.
-#		Alex Peshkoff
-#
 
 #------------------------------------------------------------------------
 # init defaults
 DefaultLibrary=libfbclient
 
-
 #------------------------------------------------------------------------
-#  For security reasons most files in firebird installation are
-#  root-owned and world-readable(executable) only (including firebird).
+#  fixFilePermissions
+#  Change the permissions to restrict access to server programs to 
+#  firebird group only.  This is MUCH better from a saftey point of 
+#  view than installing as root user, even if it requires a little 
+#  more work.
 
-#  For some files RunUser (firebird)
-#  must have write access - lock and log for examples.
+fixFilePermissions() {
+    # For security reasons initially force all root:root non-writable
+    chown -R root:root $FBRootDir
+    chmod -R uga-w $FBRootDir
 
-MakeFileFirebirdWritable() {
-    FileName=$1
-    chown $RunUser:$RunGroup $FileName
-    chmod u=rw,go= $FileName
-}
+    # Prepare bin
+    cd $FBBin
 
+    # Everyone may execute clients
+    chmod 0555 *
 
-#------------------------------------------------------------------------
-#  fixArcSpecificPermissions
-#  Change the permissions specific for CS
+    # Shell scripts changing security attributes are for root only
+    chmod 0500 *.sh
+    
+    # Lock files
+    cd $FBRootDir
 
-fixArcSpecificPermissions() {
-    # No such permissions for SS
+    for i in isc_init1 isc_lock1 isc_event1 isc_guard1
+    do
+        FileName=$i.`hostname`
+        touch $FileName
+        MakeFileFirebirdWritable $FileName
+    done
+
+    touch firebird.log
+    MakeFileFirebirdWritable firebird.log
+    
+    # Security database
+    # Nobody besides firebird permitted to even read this file
+    chown $RunUser:$RunUser $SecurityDatabase
+    chmod 0600 $SecurityDatabase
+
+	# fix up examples' permissions
+    cd examples
+
+    # set a default of read all files in examples
+    for i in `find . -name '*' -type f -print`
+    do
+         chmod a=r $i
+    done
+
+    # set a default of read&search all dirs in examples
+    for i in `find . -name '*' -type d -print`
+    do
+         chmod a=rx $i
+    done
+
+    # make examples db's writable by group
+    for i in `find . -name '*.fdb' -print`
+    do
+		chown $RunUser:$RunUser $i
+        chmod ug=rw,o= $i
+    done
+
+	# fix up doc permissions
+	fixDocPermissions
+
+	cd $FBRootDir
 }
 
 

@@ -1,19 +1,19 @@
 /*
+ *  
+ *     The contents of this file are subject to the Initial 
+ *     Developer's Public License Version 1.0 (the "License"); 
+ *     you may not use this file except in compliance with the 
+ *     License. You may obtain a copy of the License at 
+ *     http://www.ibphoenix.com/idpl.html. 
  *
- *     The contents of this file are subject to the Initial
- *     Developer's Public License Version 1.0 (the "License");
- *     you may not use this file except in compliance with the
- *     License. You may obtain a copy of the License at
- *     http://www.ibphoenix.com/idpl.html.
- *
- *     Software distributed under the License is distributed on
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
- *     express or implied.  See the License for the specific
+ *     Software distributed under the License is distributed on 
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
+ *     express or implied.  See the License for the specific 
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever
- *     without the express prior written permission of the original
+ *     may not be distributed under any other license whatsoever 
+ *     without the express prior written permission of the original 
  *     author.
  *
  *
@@ -35,39 +35,33 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "../common/classes/alloc.h"
-
 START_NAMESPACE
 
 class InputFile;
 
-class InputStream : public Firebird::GlobalStorage
+class InputStream  
 {
 public:
-	explicit InputStream (const char* stuff);
-	InputStream();
-	virtual ~InputStream();
-
 	virtual InputFile* getInputFile();
-	virtual const char* getFileName() const;
+	virtual const char* getFileName();
 	void init();
 	void release();
 	virtual void addRef();
-
+	InputStream (const char *stuff);
 	virtual void close();
 	virtual const char* getEnd();
-	virtual int getOffset (const char* ptr);
+	virtual int getOffset (const char *ptr);
 	virtual const char* getSegment();
+	InputStream();
+	virtual ~InputStream();
 
-	int				lineNumber;
-	const char*		segment;
-	const char*		ptr;
-	InputStream*	prior;
-protected:
-	int				segmentLength; // used by InputFile
-private:
-	int				segmentOffset;
-	int				useCount;
+	int			segmentLength;
+	int			segmentOffset;
+	int			lineNumber;
+	const char	*segment;
+	const char	*ptr;
+	InputStream	*prior;
+	int			useCount;
 };
 
 END_NAMESPACE

@@ -38,7 +38,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GPRE_Other_Sources = jrd/dsc.cpp jrd/path_utils.cpp common/cvt.cpp
+GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \
@@ -61,7 +61,7 @@ Dependencies = $(AllObjects:.o=.d)
 gpre : $(LIBFBEMBED_SO) $(GPRE)
 
 $(GPRE):	$(GPRE_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

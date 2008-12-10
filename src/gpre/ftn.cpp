@@ -1,26 +1,26 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	General preprocessor
 //		MODULE:		ftn.cpp
 //		DESCRIPTION:	Fortran text generator
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//
+//  
 //
 //____________________________________________________________
 //
@@ -43,6 +43,7 @@
 #include "../gpre/lang_proto.h"
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../gpre/msc_proto.h"
 #include "../common/utils_proto.h"
 
@@ -158,7 +159,23 @@ static TEXT output_buffer[512];
 static bool global_first_flag = false;
 static adl* array_decl_list;
 
-#if (defined AIX || defined AIX_PPC)
+#ifdef VMS
+const char* const INCLUDE_ISC_FTN	= "       include  'interbase:[syslib]gds.for\' \n\n";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "%VAL(";
+const char* const I2CONST_2			= ")";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "%VAL(";
+const char* const VAL_2				= ")";
+const char* const REF_1				= "%REF(";
+const char* const REF_2				= ")";
+const char* const I4CONST_1			= "%VAL(";
+const char* const I4CONST_2			= ")";
+const char* const COMMENT			= "C     ";
+const char* const INLINE_COMMENT	= "!";
+const char* const COMMA				= ",";
+#elif (defined AIX || defined AIX_PPC)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -193,7 +210,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif defined(LINUX)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -227,7 +244,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif (defined FREEBSD || defined NETBSD)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -308,12 +325,16 @@ const char* const ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
 const char* const DSQL_I2CONST_1			= I2CONST_1;
 const char* const DSQL_I2CONST_2			= I2CONST_2;
 
+#ifdef VMS
+const char* const NULL_SQLDA	= "%VAL(0)";
+#else
 const char* const NULL_SQLDA	= "0";
+#endif
 
 
 //____________________________________________________________
-//
-//
+//  
+//  
 
 void FTN_action(const act* action, int column)
 {
@@ -517,9 +538,6 @@ void FTN_action(const act* action, int column)
 	case ACT_rollback:
 		gen_trans(action);
 		break;
-	case ACT_rollback_retain_context:
-		gen_trans(action);
-		break;
 	case ACT_routine:
 		gen_routine(action);
 		return;
@@ -572,12 +590,12 @@ void FTN_action(const act* action, int column)
 
 
 //____________________________________________________________
-//
-//       Create a block data module at the
+//  
+//       Create a block data module at the 
 //       head of a preprocessed fortran file
 //       containing the initializations for
 //       all databases not declared as extern
-//
+//  
 
 void FTN_fini(void)
 {
@@ -586,7 +604,7 @@ void FTN_fini(void)
 
 	fprintf(gpreGlob.out_file, "\n");
 	printa(COLUMN, "BLOCK DATA");
-
+	
 	const dbd* db_list = gpreGlob.global_db_list;
 	for (const dbd* const end = gpreGlob.global_db_list + gpreGlob.global_db_count;
 		 db_list < end; ++db_list)
@@ -605,10 +623,10 @@ void FTN_fini(void)
 
 
 //____________________________________________________________
-//
+//  
 //		Print a statment, breaking it into
 //       reasonable 72 character hunks.
-//
+//  
 
 void FTN_print_buffer( TEXT* output_bufferL)
 {
@@ -650,14 +668,14 @@ void FTN_print_buffer( TEXT* output_bufferL)
 }
 
 
-//  RRK_?: copy align from c_cxx
+//  RRK_?: copy align from c_cxx 
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment from a host language variable to
 //		a port variable.
-//
+//  
 
 static void asgn_from(const act* action, const ref* reference)
 {
@@ -676,7 +694,7 @@ static void asgn_from(const act* action, const ref* reference)
 		if (!reference->ref_source && !reference->ref_value)
 			continue;
 		gen_name(variable, reference, true);
-
+		
 		const TEXT* value;
 		if (reference->ref_source)
 			value = gen_name(temp, reference->ref_source, true);
@@ -711,10 +729,10 @@ static void asgn_from(const act* action, const ref* reference)
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment to a host language variable from
 //		a port variable.
-//
+//  
 
 static void asgn_to(const act* action, const ref* reference)
 {
@@ -740,7 +758,7 @@ static void asgn_to(const act* action, const ref* reference)
 				COLUMN, reference->ref_value, s);
 	FTN_print_buffer(output_buffer);
 
-//  Pick up NULL value if one is there
+//  Pick up NULL value if one is there 
 
 	if (reference = reference->ref_null) {
 		sprintf(output_buffer, "%s%s = %s\n",
@@ -751,10 +769,10 @@ static void asgn_to(const act* action, const ref* reference)
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment to a host language variable from
 //		a port variable.
-//
+//  
 
 static void asgn_to_proc( const ref* reference)
 {
@@ -780,9 +798,9 @@ static void asgn_to_proc( const ref* reference)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code for AT END clause of FETCH.
-//
+//  
 
 static void gen_at_end(const act* action)
 {
@@ -796,9 +814,9 @@ static void gen_at_end(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a BASED ON <field name> clause.
-//
+//  
 
 static void gen_based(const act* action)
 {
@@ -858,7 +876,7 @@ static void gen_based(const act* action)
 		}
 	}
 
-//  print the first variable, then precede the rest with commas
+//  print the first variable, then precede the rest with commas 
 
 	bool first = true;
 
@@ -869,7 +887,7 @@ static void gen_based(const act* action)
 		fprintf(gpreGlob.out_file, "%s", variable);
 		first = false;
 		if (field->fld_array_info && !(based_on->bas_flags & BAS_segment)) {
-			//  Print out the dimension part of the declaration
+			//  Print out the dimension part of the declaration  
 			fprintf(gpreGlob.out_file, "(");
 
 			for (dim* dimension = field->fld_array_info->ary_dimension; dimension;
@@ -905,9 +923,9 @@ static void gen_based(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Make a blob FOR loop.
-//
+//  
 
 static void gen_blob_close(const act* action)
 {
@@ -935,9 +953,9 @@ static void gen_blob_close(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		End a blob FOR loop.
-//
+//  
 
 static void gen_blob_end(const act* action)
 {
@@ -954,9 +972,9 @@ static void gen_blob_end(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Make a blob FOR loop.
-//
+//  
 
 static void gen_blob_for(const act* action)
 {
@@ -977,9 +995,9 @@ static void gen_blob_for(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the call to open (or create) a blob.
-//
+//  
 
 static void gen_blob_open(const act* action)
 {
@@ -1023,7 +1041,7 @@ static void gen_blob_open(const act* action)
 	}
 
     const USHORT column = 6;
-
+    
 	if (args.pat_value1 = blob->blb_bpb_length)
 		PATTERN_expand(column, pattern1, &args);
 	else
@@ -1049,9 +1067,9 @@ static void gen_blob_open(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Callback routine for BLR pretty printer.
-//
+//  
 
 static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
@@ -1076,9 +1094,9 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile a request.
-//
+//  
 
 static void gen_compile(const act* action)
 {
@@ -1086,17 +1104,17 @@ static void gen_compile(const act* action)
 	DBB db = request->req_database;
 	const gpre_sym* symbol = db->dbb_name;
 
-//  generate automatic ready if appropriate
+//  generate automatic ready if appropriate 
 
 	if (gpreGlob.sw_auto)
 		t_start_auto(request, status_vector(action), action, true);
 
-//
+//  
 //  always generate a compile, a test for the success of the compile,
 //  and an end to the 'if not compiled test
-//
+//  
 
-//  generate an 'if not compiled'
+//  generate an 'if not compiled' 
 
 	if (gpreGlob.sw_auto && (action->act_error || (action->act_flags & ACT_sql)))
 		printa(COLUMN, "IF (%s .EQ. 0 .AND. %s .NE. 0) THEN",
@@ -1115,7 +1133,7 @@ static void gen_compile(const act* action)
 	printa(COLUMN, "END IF");
 
 //  If blobs are present, zero out all of the blob handles.  After this
-//  point, the handles are the user's responsibility
+//  point, the handles are the user's responsibility 
 
 	blb* blob = request->req_blobs;
 	if (blob) {
@@ -1130,9 +1148,9 @@ static void gen_compile(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to create a database.
-//
+//  
 
 static void gen_create_database(const act* action)
 {
@@ -1227,13 +1245,13 @@ static void gen_create_database(const act* action)
 		sprintf(output_buffer, "%sCALL ISC_FREE (%s)\n", COLUMN, s2);
 		FTN_print_buffer(output_buffer);
 
-		// reset the length of the dpb
+		// reset the length of the dpb 
 
 		sprintf(output_buffer, "%s%s = %d\n", COLUMN, s1,
 				request->req_length);
 		FTN_print_buffer(output_buffer);
 	}
-
+	
 	const bool save_sw_auto = gpreGlob.sw_auto;
 	gpreGlob.sw_auto = true;
 	printa(COLUMN, "IF (isc_status(2) .eq. 0) THEN");
@@ -1245,9 +1263,9 @@ static void gen_create_database(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STREAM.
-//
+//  
 
 static void gen_cursor_close(const act* action, const gpre_req* request)
 {
@@ -1261,14 +1279,14 @@ static void gen_cursor_close(const act* action, const gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to initialize a cursor.
-//
+//  
 
 static void gen_cursor_init(const act* action)
 {
 //  If blobs are present, zero out all of the blob handles.  After this
-//  point, the handles are the user's responsibility
+//  point, the handles are the user's responsibility 
 
 	if (action->act_request->
 		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
@@ -1279,9 +1297,9 @@ static void gen_cursor_init(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to open an embedded SQL cursor.
-//
+//  
 
 static void gen_cursor_open(const act* action, const gpre_req* request)
 {
@@ -1336,9 +1354,9 @@ static void gen_cursor_open(const act* action, const gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate insertion text for the database statement.
-//
+//  
 
 static void gen_database(const act* action)
 {
@@ -1358,15 +1376,15 @@ static void gen_database(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate insertion text for global DATA statements.
-//
+//  
 
 static void gen_database_data(const act* action)
 {
 	TEXT include_buffer[MAXPATHLEN];
 
-	gds__prefix(include_buffer, INCLUDE_FTN_FILE);
+	ISC_prefix(include_buffer, INCLUDE_FTN_FILE);
 	sprintf(output_buffer, INCLUDE_ISC_FTN, include_buffer);
 
 	FTN_print_buffer(output_buffer);
@@ -1408,10 +1426,10 @@ static void gen_database_data(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate insertion text for global
 //       data declarations.
-//
+//  
 
 static void gen_database_decls(const act* action)
 {
@@ -1428,7 +1446,7 @@ static void gen_database_decls(const act* action)
 			   "%sINTEGER*4  ISC_STATUS2(20)   %s{ status vector }\n", COLUMN,
 			   INLINE_COMMENT);
 
-//  added for 3.3 compatibility
+//  added for 3.3 compatibility 
 	fprintf(gpreGlob.out_file,
 			   "%sINTEGER*4  GDS__STATUS(20)    %s{ status vector }\n",
 			   COLUMN, INLINE_COMMENT);
@@ -1438,7 +1456,7 @@ static void gen_database_decls(const act* action)
 
 	printa(COLUMN, "EQUIVALENCE    (ISC_STATUS(20), GDS__STATUS(20)) ");
 	printa(COLUMN, "EQUIVALENCE    (ISC_STATUS2(20), GDS__STATUS2(20)) ");
-//  end of code added for 3.3 compatibility
+//  end of code added for 3.3 compatibility 
 
 	fprintf(gpreGlob.out_file,
 			   "%sINTEGER*4  ISC_NULL          %s{ dummy status vector }\n",
@@ -1477,7 +1495,7 @@ static void gen_database_decls(const act* action)
 		}
 
 #ifdef HPUX
-		// build fields to handle start_multiple
+		// build fields to handle start_multiple 
 
 		count++;
 		fprintf(gpreGlob.out_file,
@@ -1495,7 +1513,7 @@ static void gen_database_decls(const act* action)
 	}
 
 #ifdef HPUX
-//  declare array and set up equivalence for start_multiple vector
+//  declare array and set up equivalence for start_multiple vector 
 
 	const SSHORT length = 12;
 	fprintf(gpreGlob.out_file,
@@ -1537,7 +1555,7 @@ static void gen_database_decls(const act* action)
 					   COLUMN, blob->blb_len_ident, INLINE_COMMENT);
 		}
 
-		//  Array declarations
+		//  Array declarations  
 
 		if (port = request->req_primary)
 			for (const ref* reference = port->por_references; reference;
@@ -1548,12 +1566,12 @@ static void gen_database_decls(const act* action)
 			}
 	}
 
-//  Declare DATA statement index variable
+//  Declare DATA statement index variable 
 
 	if (dcl_ndx_var || gpreGlob.requests)
 		printa(COLUMN, "INTEGER ISC_I");
 
-//  generate event parameter block for each event in module
+//  generate event parameter block for each event in module 
 
 	SSHORT max_count = 0;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
@@ -1576,9 +1594,9 @@ static void gen_database_decls(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to update metadata.
-//
+//  
 
 static void gen_ddl(const act* action)
 {
@@ -1587,7 +1605,7 @@ static void gen_ddl(const act* action)
 		printa(COLUMN, "if (gds__trans .ne. 0) then");
 	}
 
-//  Set up command type for call to RDB_DDL
+//  Set up command type for call to RDB_DDL 
 
 	const gpre_req* request = action->act_request;
 
@@ -1614,9 +1632,9 @@ static void gen_ddl(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to create a database.
-//
+//  
 
 static void gen_drop_database(const act* action)
 {
@@ -1634,9 +1652,9 @@ static void gen_drop_database(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_close(const act* action)
 {
@@ -1651,9 +1669,9 @@ static void gen_dyn_close(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_declare(const act* action)
 {
@@ -1670,9 +1688,9 @@ static void gen_dyn_declare(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_describe(const act* action,
 							 bool bind_flag)
@@ -1692,9 +1710,9 @@ static void gen_dyn_describe(const act* action,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_execute(const act* action)
 {
@@ -1751,16 +1769,16 @@ static void gen_dyn_execute(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_fetch(const act* action)
 {
 	const dyn* statement = (const dyn*) action->act_object;
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef HPUX
+#ifdef HPUX 
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1782,9 +1800,9 @@ static void gen_dyn_fetch(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code for an EXECUTE IMMEDIATE dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_immediate(const act* action)
 {
@@ -1845,9 +1863,9 @@ static void gen_dyn_immediate(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_insert(const act* action)
 {
@@ -1875,9 +1893,9 @@ static void gen_dyn_insert(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_open(const act* action)
 {
@@ -1934,9 +1952,9 @@ static void gen_dyn_open(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_prepare(const act* action)
 {
@@ -1988,9 +2006,9 @@ static void gen_dyn_prepare(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_MODIFY.
-//
+//  
 
 static void gen_emodify(const act* action)
 {
@@ -2024,16 +2042,16 @@ static void gen_emodify(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STORE.
-//
+//  
 
 static void gen_estore(const act* action)
 {
 	const gpre_req* request = action->act_request;
 
 //  if this is a store...returning_values (aka store2)
-//  we already executed the store, so go home quietly
+//  we already executed the store, so go home quietly 
 
 	if (request->req_type == REQ_store2)
 		return;
@@ -2045,10 +2063,10 @@ static void gen_estore(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate an END IF for the IF generated for
 //		the AT_END clause.
-//
+//  
 
 static void gen_end_fetch(void)
 {
@@ -2057,9 +2075,9 @@ static void gen_end_fetch(void)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_endfor(const act* action)
 {
@@ -2074,9 +2092,9 @@ static void gen_endfor(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for ERASE.
-//
+//  
 
 static void gen_erase(const act* action)
 {
@@ -2086,10 +2104,10 @@ static void gen_erase(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate event parameter blocks for use
 //		with a particular call to isc_event_wait.
-//
+//  
 
 static SSHORT gen_event_block(const act* action)
 {
@@ -2109,9 +2127,9 @@ static SSHORT gen_event_block(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for EVENT_INIT.
-//
+//  
 
 static void gen_event_init(const act* action)
 {
@@ -2140,7 +2158,7 @@ static void gen_event_init(const act* action)
 	args.pat_string3 = I2_1;
 	args.pat_string4 = I2_2;
 
-//  generate call to dynamically generate event blocks
+//  generate call to dynamically generate event blocks 
 
 	TEXT variable[MAX_REF_SIZE];
 	SSHORT count = 0;
@@ -2170,14 +2188,14 @@ static void gen_event_init(const act* action)
 	}
 
 	const SSHORT column = 6;
-
+	
 	PATTERN_expand(column, pattern1, &args);
 
-//  generate actual call to event_wait
+//  generate actual call to event_wait 
 
 	PATTERN_expand(column, pattern2, &args);
 
-//  get change in event counts, copying event parameter block for reuse
+//  get change in event counts, copying event parameter block for reuse 
 
 	PATTERN_expand(column, pattern3, &args);
 	status_and_stop(action);
@@ -2185,9 +2203,9 @@ static void gen_event_init(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for EVENT_WAIT.
-//
+//  
 
 static void gen_event_wait(const act* action)
 {
@@ -2199,7 +2217,7 @@ static void gen_event_wait(const act* action)
 	const gpre_sym* event_name = (const gpre_sym*) action->act_object;
 
 //  go through the stack of gpreGlob.events, checking to see if the
-//  event has been initialized and getting the event identifier
+//  event has been initialized and getting the event identifier 
 
 	int ident = -1;
 	DBB database =  NULL;
@@ -2227,7 +2245,7 @@ static void gen_event_wait(const act* action)
 	args.pat_string1 = ISC_EVENT_WAIT;
 	args.pat_string2 = ISC_EVENT_COUNTS;
 
-//  generate calls to wait on the event and to fill out the gpreGlob.events array
+//  generate calls to wait on the event and to fill out the gpreGlob.events array 
 
 	const SSHORT column = 6;
 
@@ -2238,11 +2256,11 @@ static void gen_event_wait(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate replacement text for the SQL FETCH statement.  The
 //		epilog FETCH statement is handled by GEN_S_FETCH (generate
 //		stream fetch).
-//
+//  
 
 static void gen_fetch(const act* action)
 {
@@ -2258,7 +2276,7 @@ static void gen_fetch(const act* action)
 	printa(COLUMN, "IF (%s .NE. 0) THEN",
 		   gen_name(s, request->req_eof, true));
 	printa(COLUMN, "SQLCODE = 0");
-
+	
 	GPRE_NOD var_list = (GPRE_NOD) action->act_object;
 	if (var_list) {
 		for (int i = 0; i < var_list->nod_count; i++) {
@@ -2275,9 +2293,9 @@ static void gen_fetch(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FINISH
-//
+//  
 
 static void gen_finish(const act* action)
 {
@@ -2294,7 +2312,7 @@ static void gen_finish(const act* action)
 		printa(COLUMN, "END IF");
 	}
 
-//  the user supplied one or more db_handles
+//  the user supplied one or more db_handles 
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
@@ -2325,9 +2343,9 @@ static void gen_finish(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FOR statement.
-//
+//  
 
 static void gen_for(const act* action)
 {
@@ -2340,7 +2358,7 @@ static void gen_for(const act* action)
 			   request->req_btm_label);
 
 	printa("", "%-6dCONTINUE", request->req_top_label);
-
+	
 	SCHAR s[MAX_REF_SIZE];
 	gen_receive(action, request->req_primary);
 	if (action->act_error || (action->act_flags & ACT_sql))
@@ -2355,7 +2373,7 @@ static void gen_for(const act* action)
 		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-			if (reference->ref_flags & REF_fetch_array)
+			if (reference-> ref_flags & REF_fetch_array)
 				gen_get_or_put_slice(action, reference, true);
 		}
 	}
@@ -2363,10 +2381,10 @@ static void gen_for(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to isc_get_slice
 //       or isc_put_slice for an array.
-//
+//  
 
 static void gen_get_or_put_slice(const act* action,
 								 const ref* reference,
@@ -2452,9 +2470,9 @@ static void gen_get_or_put_slice(const act* action,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the code to do a get segment.
-//
+//  
 
 static void gen_get_segment(const act* action)
 {
@@ -2499,10 +2517,10 @@ static void gen_get_segment(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile and start a stream.  This is
 //		used both by START_STREAM and FOR
-//
+//  
 
 static void gen_loop(const act* action)
 {
@@ -2521,10 +2539,10 @@ static void gen_loop(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a name for a reference.  Name is constructed from
 //		port and parameter idents.
-//
+//  
 
 static TEXT* gen_name(SCHAR* const string,
 					  const ref* reference,
@@ -2541,9 +2559,9 @@ static TEXT* gen_name(SCHAR* const string,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a block to handle errors.
-//
+//  
 
 static void gen_on_error(const act* action)
 {
@@ -2561,9 +2579,9 @@ static void gen_on_error(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code for an EXECUTE PROCEDURE.
-//
+//  
 
 static void gen_procedure(const act* action)
 {
@@ -2579,7 +2597,7 @@ static void gen_procedure(const act* action)
 	args.pat_request = request;
 	args.pat_port = in_port;
 	args.pat_port2 = out_port;
-
+	
 	const TEXT* pattern;
 	if (in_port && in_port->por_length)
 		pattern =
@@ -2588,16 +2606,16 @@ static void gen_procedure(const act* action)
 		pattern =
 			"CALL ISC_TRANSACT_REQUEST (%V1, %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RI, %VF0%VE, 0, %VF%QL%VE, %RF%QI%RE)\n";
 
-//  Get database attach and transaction started
+//  Get database attach and transaction started 
 
 	if (gpreGlob.sw_auto)
 		t_start_auto(0, status_vector(action), action, true);
 
-//  Move in input values
+//  Move in input values 
 
 	asgn_from(action, request->req_values);
 
-//  Execute the procedure
+//  Execute the procedure 
 
 	const USHORT column = 6;
 
@@ -2607,7 +2625,7 @@ static void gen_procedure(const act* action)
 
 	printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
 
-//  Move out output values
+//  Move out output values 
 
 	asgn_to_proc(request->req_references);
 	printa(COLUMN, "END IF");
@@ -2615,9 +2633,9 @@ static void gen_procedure(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the code to do a put segment.
-//
+//  
 
 static void gen_put_segment(const act* action)
 {
@@ -2647,9 +2665,9 @@ static void gen_put_segment(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate BLR in raw, numeric form.  Ughly but dense.
-//
+//  
 
 static void gen_raw(
 			   const UCHAR* blr,
@@ -2663,7 +2681,7 @@ static void gen_raw(
 
 	blr = blr + begin_c;
 	int blr_length = end_c - begin_c + 1;
-
+	
 	TEXT buffer[80];
 	TEXT* p = buffer;
 
@@ -2706,9 +2724,9 @@ static void gen_raw(
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for READY
-//
+//  
 
 static void gen_ready(const act* action)
 {
@@ -2730,9 +2748,9 @@ static void gen_ready(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a send or receive call for a port.
-//
+//  
 
 static void gen_receive(const act* action, const gpre_port* port)
 {
@@ -2752,7 +2770,7 @@ static void gen_receive(const act* action, const gpre_port* port)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for RELEASE_REQUESTS
 //       For active databases, call isc_release_request.
 //       for all others, just zero the handle.  For the
@@ -2760,7 +2778,7 @@ static void gen_receive(const act* action, const gpre_port* port)
 //       are likely if the request was compiled on a database
 //       which has been released and re-readied.  If there is
 //       a serious error, it will be caught on the next statement.
-//
+//  
 
 static void gen_release(const act* action)
 {
@@ -2781,20 +2799,20 @@ static void gen_release(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_request_data( const gpre_req* request)
 {
 	int begin_i, end_i;
 
-//  gpreGlob.requests are generated as raw BLR in longword chunks
+//  gpreGlob.requests are generated as raw BLR in longword chunks 
 //  because FORTRAN is a miserable excuse for a language
 //  and doesn't allow byte value assignments to character
-//  fields.
+//  fields. 
 
-	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open
+	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open 
 		| REQ_sql_blob_create)) &&
 		request->req_type != REQ_slice && request->req_type != REQ_procedure)
 	{
@@ -2816,11 +2834,11 @@ static void gen_request_data( const gpre_req* request)
 //   Changed termination test in for-loop from <= to < to fix bug#840.
 //   We were generating data statements with bad bounds on the last data
 //   statement if the data size was divisible by 75.  mao 4/3/89
-//
+//  
 	if ((request->req_type == REQ_ready) ||
 		(request->req_type == REQ_create_database))
 	{
-		if (request->req_length || request->req_flags & REQ_extend_dpb)
+		if (request->req_length || request->req_flags & REQ_extend_dpb) 
 		{
 			fprintf(gpreGlob.out_file,
 					   "%sDATA isc_%dl /%d/               %s{ request length }\n\n",
@@ -2841,7 +2859,7 @@ static void gen_request_data( const gpre_req* request)
 			gen_raw(request->req_blr, request->req_type, request->req_length,
 					begin_i, end_i);
 		}
-
+		
 		const TEXT* string_type;
 		if (!gpreGlob.sw_raw) {
 			printa(COMMENT, " ");
@@ -2895,15 +2913,15 @@ static void gen_request_data( const gpre_req* request)
 			   string_type, request->req_ident);
 	}
 
-//   Print out slice description language if there are arrays associated with request
+//   Print out slice description language if there are arrays associated with request  
 
 	for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 		for (const ref* reference = port->por_references; reference;
-			 reference = reference->ref_next)
+			 reference = reference->ref_next) 
 		{
 			if (reference->ref_sdl) {
 				for (begin_i = 0; begin_i < reference->ref_sdl_length;
-					 begin_i = begin_i + (75 * sizeof(SLONG)))
+					 begin_i = begin_i + (75 * sizeof(SLONG))) 
 				{
 					end_i = MIN(reference->ref_sdl_length - 1,
 							begin_i + (SLONG)(75 * sizeof(SLONG)) - 1);
@@ -2914,7 +2932,7 @@ static void gen_request_data( const gpre_req* request)
 					gen_raw(reference->ref_sdl, REQ_slice,
 							reference->ref_sdl_length, begin_i, end_i);
 				}
-				if (!gpreGlob.sw_raw) {
+				if (!(gpreGlob.sw_raw)) {
 					printa(COMMENT, " ");
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 						CPR_error("internal error during SDL generation");
@@ -2925,12 +2943,12 @@ static void gen_request_data( const gpre_req* request)
 			}
 		}
 
-//  Print out any blob parameter blocks required
+//  Print out any blob parameter blocks required 
 
 	for (blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		if (blob->blb_bpb_length) {
 			for (begin_i = 0; begin_i < blob->blb_bpb_length;
-				 begin_i = begin_i + (75 * sizeof(SLONG)))
+				 begin_i = begin_i + (75 * sizeof(SLONG))) 
 			{
 				end_i = MIN(blob->blb_bpb_length - 1,
 							begin_i + (SLONG)(75 * sizeof(SLONG)) - 1);
@@ -2947,9 +2965,9 @@ static void gen_request_data( const gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_request_decls( const gpre_req* request)
 {
@@ -2961,7 +2979,7 @@ static void gen_request_decls( const gpre_req* request)
 				   "%sINTEGER*4  %s             %s{ request handle }\n\n",
 				   COLUMN, request->req_handle, INLINE_COMMENT);
 	}
-//  generate the request as BLR long words
+//  generate the request as BLR long words 
 
 	const int rlength = (request->req_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
 	if (rlength)
@@ -2971,7 +2989,7 @@ static void gen_request_decls( const gpre_req* request)
 				   COLUMN, request->req_ident, rlength, INLINE_COMMENT);
 	}
 
-//   Generate declarations for the slice description language
+//   Generate declarations for the slice description language  
 
 	for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 		for (const ref* reference = port->por_references; reference;
@@ -2988,7 +3006,7 @@ static void gen_request_decls( const gpre_req* request)
 			}
 		}
 
-//  Print out any blob parameter block variable declarations required
+//  Print out any blob parameter block variable declarations required 
 	for (blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		if (blob->blb_const_from_type) {
 			const int blength =
@@ -3012,7 +3030,7 @@ static void gen_request_decls( const gpre_req* request)
 	}
 
 
-//  If this is a GET_SLICE/PUT_slice, allocate some variables
+//  If this is a GET_SLICE/PUT_slice, allocate some variables 
 
 	if (request->req_type == REQ_slice) {
 		printa(COLUMN, "INTEGER*4 isc_%dv (%d)", request->req_ident,
@@ -3023,10 +3041,10 @@ static void gen_request_decls( const gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate receive call for a port
 //		in a store2 statement.
-//
+//  
 
 static void gen_return_value(const act* action)
 {
@@ -3043,10 +3061,10 @@ static void gen_return_value(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Process routine head.  If there are gpreGlob.requests in the
 //		routine, insert local definitions.
-//
+//  
 
 static void gen_routine(const act* action)
 {
@@ -3072,9 +3090,9 @@ static void gen_routine(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STREAM.
-//
+//  
 
 static void gen_s_end(const act* action)
 {
@@ -3097,9 +3115,9 @@ static void gen_s_end(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FETCH.
-//
+//  
 
 static void gen_s_fetch(const act* action)
 {
@@ -3112,10 +3130,10 @@ static void gen_s_fetch(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile and start a stream.  This is
 //		used both by START_STREAM and FOR
-//
+//  
 
 static void gen_s_start(const act* action)
 {
@@ -3148,9 +3166,9 @@ static void gen_s_start(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a segment, segment length, or blob handle.
-//
+//  
 
 static void gen_segment(const act* action)
 {
@@ -3166,8 +3184,8 @@ static void gen_segment(const act* action)
 
 
 //____________________________________________________________
-//
-//
+//  
+//  
 
 static void gen_select(const act* action)
 {
@@ -3205,9 +3223,9 @@ static void gen_select(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a send call for a port.
-//
+//  
 
 static void gen_send(const act* action, const gpre_port* port)
 {
@@ -3226,9 +3244,9 @@ static void gen_send(const act* action, const gpre_port* port)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate support for get/put slice statement.
-//
+//  
 
 static void gen_slice(const act* action)
 {
@@ -3244,7 +3262,7 @@ static void gen_slice(const act* action)
 	slc* slice = (slc*) action->act_object;
 	const gpre_req* parent_request = slice->slc_parent_request;
 
-//  Compute array size
+//  Compute array size 
 
 	sprintf(buffer, "isc_%ds = %d", request->req_ident,
 			slice->slc_field->fld_array->fld_length);
@@ -3266,7 +3284,7 @@ static void gen_slice(const act* action)
 	}
 	printa(COLUMN, buffer);
 
-//  Make assignments to variable vector
+//  Make assignments to variable vector 
 
 	const ref* reference;
 	for (reference = request->req_values; reference;
@@ -3280,16 +3298,16 @@ static void gen_slice(const act* action)
 
 	PAT args;
 	args.pat_reference = slice->slc_field_ref;
-	args.pat_request = parent_request;	// blob id request
-	args.pat_vector1 = status_vector(action);	// status vector
-	args.pat_database = parent_request->req_database;	// database handle
-	args.pat_string1 = action->act_request->req_trans;	// transaction handle
-	args.pat_value1 = request->req_length;	// slice descr. length
-	args.pat_ident1 = request->req_ident;	// request name
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length
+	args.pat_request = parent_request;	// blob id request 
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = parent_request->req_database;	// database handle 
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle 
+	args.pat_value1 = request->req_length;	// slice descr. length 
+	args.pat_ident1 = request->req_ident;	// request name 
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length 
 
 	reference = (const ref*) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	// array name
+	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = "isc_array_length";
 
 	const SSHORT column = 6;
@@ -3301,10 +3319,10 @@ static void gen_slice(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate either a START or START_AND_SEND depending
 //		on whether or a not a port is present.
-//
+//  
 
 static void gen_start(const act* action, const gpre_port* port)
 {
@@ -3314,7 +3332,7 @@ static void gen_start(const act* action, const gpre_port* port)
 	if (port) {
 		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next)
-		{
+		{	
 			if (reference->ref_field-> fld_array_info)
 					gen_get_or_put_slice(action, reference, false);
 		}
@@ -3341,10 +3359,10 @@ static void gen_start(const act* action, const gpre_port* port)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text for STORE statement.  This includes the compile
 //		call and any variable initialization required.
-//
+//  
 
 static void gen_store(const act* action)
 {
@@ -3355,11 +3373,11 @@ static void gen_store(const act* action)
 	if (action->act_error || (action->act_flags & ACT_sql))
 		make_ok_test(action, request);
 
-//  Initialize any blob fields
+//  Initialize any blob fields 
 
 	const gpre_port* port = request->req_primary;
 	for (const ref* reference = port->por_references; reference;
-		 reference = reference->ref_next)
+		 reference = reference->ref_next) 
 	{
 		const gpre_fld* field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
@@ -3370,9 +3388,9 @@ static void gen_store(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for START_TRANSACTION.
-//
+//  
 
 static void gen_t_start(const act* action)
 {
@@ -3383,7 +3401,7 @@ static void gen_t_start(const act* action)
 		return;
 	}
 
-//  build a complete statement, including tpb's.  Ready db's as req.
+//  build a complete statement, including tpb's.  Ready db's as req. 
 
 	const tpb* tpb_iterator;
 	if (gpreGlob.sw_auto)
@@ -3402,8 +3420,8 @@ static void gen_t_start(const act* action)
 		}
 
 #ifdef HPUX
-//  If this is HPUX we should be building a teb vector here
-//  with the tpb address and length specified
+//  If this is HPUX we should be building a teb vector here 
+//  with the tpb address and length specified 
 
 	int count = 0;
 	for (tpb_iterator = trans->tra_tpb;
@@ -3447,9 +3465,9 @@ static void gen_t_start(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Initialize a TPB in the output file
-//
+//  
 
 static void gen_tpb_data(const tpb* tpb_buffer)
 {
@@ -3458,12 +3476,12 @@ static void gen_tpb_data(const tpb* tpb_buffer)
 		SLONG longword_tpb;
 	} tpb_hunk;
 
-//
-//  TPBs are generated as raw BLR in longword chunks
+//  
+//  TPBs are generated as raw BLR in longword chunks 
 //  because FORTRAN is a miserable excuse for a language
 //  and doesn't allow byte value assignments to character
 //  fields.
-//
+//  
 
 	int length = (tpb_buffer->tpb_length + (sizeof(SLONG) - 1)) / sizeof(SLONG);
 
@@ -3472,16 +3490,16 @@ static void gen_tpb_data(const tpb* tpb_buffer)
 	const UCHAR* text = tpb_buffer->tpb_string;
 	length = tpb_buffer->tpb_length;
 	strcpy(output_buffer, CONTINUE);
-
+	
 	TEXT* p;
 	for (p = output_buffer; *p; p++);
 
 	while (length) {
 		for (UCHAR* c = tpb_hunk.bytewise_tpb;
-			 c < tpb_hunk.bytewise_tpb + sizeof(SLONG); c++)
+			 c < tpb_hunk.bytewise_tpb + sizeof(SLONG); c++) 
 		{
 			*c = *text++;
-			if (!--length)
+			if (!(--length))
 				break;
 		}
 		if (length)
@@ -3499,10 +3517,10 @@ static void gen_tpb_data(const tpb* tpb_buffer)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the declaration for a
 //       TPB in the output file
-//
+//  
 
 static void gen_tpb_decls(const tpb* tpb_buffer)
 {
@@ -3514,25 +3532,18 @@ static void gen_tpb_decls(const tpb* tpb_buffer)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for COMMIT, ROLLBACK, PREPARE, and SAVE
-//
+//  
 
 static void gen_trans(const act* action)
 {
-	if (action->act_type == ACT_commit_retain_context) {
+	if (action->act_type == ACT_commit_retain_context)
 		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)",
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		printa(COLUMN, "CALL ISC_ROLLBACK_RETAINING (%s, %s)",
-			   status_vector(action),
-			   (action->act_object) ?
-			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-	else {
+	else
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3540,17 +3551,15 @@ static void gen_trans(const act* action)
 				status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-
 	status_and_stop(action);
 
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for UPDATE ... WHERE CURRENT OF ...
-//
+//  
 
 static void gen_update(const act* action)
 {
@@ -3562,9 +3571,9 @@ static void gen_update(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a variable reference.
-//
+//  
 
 static void gen_variable(const act* action)
 {
@@ -3579,9 +3588,9 @@ static void gen_variable(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate tests for any WHENEVER clauses that may have been declared.
-//
+//  
 
 static void gen_whenever(const swe* label)
 {
@@ -3608,10 +3617,10 @@ static void gen_whenever(const swe* label)
 }
 
 //____________________________________________________________
-//
+//  
 //		Generate a declaration of an array in the
 //       output file.
-//
+//  
 
 static void make_array_declaration( const ref* reference)
 {
@@ -3619,7 +3628,7 @@ static void make_array_declaration( const ref* reference)
 	const SCHAR* const name = field->fld_symbol->sym_string;
 
 //   Check to see if the array already has been
-//   declared in this routine or subroutine
+//   declared in this routine or subroutine  
 	if (array_decl_list) {
 		for (adl* loop_array = array_decl_list; loop_array;
 			 loop_array = loop_array->adl_next)
@@ -3631,7 +3640,7 @@ static void make_array_declaration( const ref* reference)
         }
     }
 
-//   If not, add it to the "declared" list and declare it
+//   If not, add it to the "declared" list and declare it  
 	adl* this_array = (adl*) MSC_alloc(ADL_LEN);
 	this_array->adl_gds_ident = field->fld_array_info->ary_ident;
 	if (array_decl_list)
@@ -3677,12 +3686,12 @@ static void make_array_declaration( const ref* reference)
 		}
 	}
 
-//   Print out the dimension part of the declaration
+//   Print out the dimension part of the declaration  
 	fprintf(gpreGlob.out_file, "isc_%d", field->fld_array_info->ary_ident);
 	fprintf(gpreGlob.out_file, "(");
 
 	for (dim* dimension = field->fld_array_info->ary_dimension; dimension;
-		 dimension = dimension->dim_next)
+		 dimension = dimension->dim_next) 
 	{
 		if (dimension->dim_lower != 1)
 			fprintf(gpreGlob.out_file, "%"SLONGFORMAT":", dimension->dim_lower);
@@ -3695,16 +3704,16 @@ static void make_array_declaration( const ref* reference)
 	if (field->fld_dtype == dtype_quad || field->fld_dtype == dtype_date)
 		fprintf(gpreGlob.out_file, ",2");
 
-//   Print out the database field
+//   Print out the database field  
 
 	fprintf(gpreGlob.out_file, ")        %s{ %s }\n", INLINE_COMMENT, name);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Turn a symbol into a varying string.
-//
+//  
 
 static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 {
@@ -3716,10 +3725,10 @@ static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code to test existence of compiled request with
 //		active transaction
-//
+//  
 
 static void make_ok_test(const act* action, const gpre_req* request)
 {
@@ -3732,9 +3741,9 @@ static void make_ok_test(const act* action, const gpre_req* request)
 
 
 //____________________________________________________________
-//
+//  
 //		Insert a port record description in output.
-//
+//  
 
 static void make_port( const gpre_port* port)
 {
@@ -3743,7 +3752,7 @@ static void make_port( const gpre_port* port)
 
 	const ref* reference;
 	for (reference = port->por_references; reference;
-		 reference = reference->ref_next)
+		 reference = reference->ref_next) 
 	{
 		const gpre_fld* field = reference->ref_field;
 		const gpre_sym* symbol = field->fld_symbol;
@@ -3816,9 +3825,9 @@ static void make_port( const gpre_port* port)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the actual ready call.
-//
+//  
 
 static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 	const gpre_req* request)
@@ -3833,7 +3842,7 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 		else
 			sprintf(s2, "isc_%d", request->req_ident);
 		/* if the dpb needs to be extended at runtime to include items
-		   in host variables, do so here; this assumes that there is
+		   in host variables, do so here; this assumes that there is 
 		   always a request generated for runtime variables */
 
 		if (request->req_flags & REQ_extend_dpb) {
@@ -3842,7 +3851,7 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 						COLUMN, s2, request->req_ident);
 				FTN_print_buffer(output_buffer);
 			}
-//  MMM
+//  MMM 
 			else {
 				sprintf(output_buffer, "%s%s = 0\n", COLUMN, s2);
 				FTN_print_buffer(output_buffer);
@@ -3928,7 +3937,7 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 		sprintf(output_buffer, "%sCALL ISC_FREE (%s)\n", COLUMN, s2);
 		FTN_print_buffer(output_buffer);
 
-		// reset the length of the dpb
+		// reset the length of the dpb 
 
 		sprintf(output_buffer, "%s%s = %d\n", COLUMN, s1,
 				request->req_length);
@@ -3938,17 +3947,16 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 
 
 //____________________________________________________________
-//
+//  
 //		Looks at the label bitmap and allocates
 //       an unused label.  Marks the current
 //       label as used.
-//
+//  
 
 static USHORT next_label(void)
 {
-	UCHAR* byte = gpreGlob.fortran_labels;
-	while (*byte == 255)
-		++byte;
+	UCHAR* byte;
+	for (byte = gpreGlob.fortran_labels; *byte == 255; byte++);
 
 	USHORT label = ((byte - gpreGlob.fortran_labels) << 3);
 
@@ -3962,9 +3970,9 @@ static USHORT next_label(void)
 
 
 //____________________________________________________________
-//
+//  
 //		Print a fixed string at a particular COLUMN.
-//
+//  
 
 static void printa(const TEXT* column, const TEXT* string, ...)
 {
@@ -3982,9 +3990,9 @@ static void printa(const TEXT* column, const TEXT* string, ...)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the appropriate transaction handle.
-//
+//  
 
 static const TEXT* request_trans(const act* action, const gpre_req* request)
 {
@@ -3994,17 +4002,17 @@ static const TEXT* request_trans(const act* action, const gpre_req* request)
 			trname = "GDS__TRANS";
 		return trname;
 	}
-
-	return (request) ? request->req_trans : "GDS__TRANS";
+	else
+		return (request) ? request->req_trans : "GDS__TRANS";
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Do the error handling ourselves
 //       until we figure out how to use the
 //       ISC_NULL from FORTRAN
-//
+//  
 
 static void status_and_stop(const act* action)
 {
@@ -4020,25 +4028,25 @@ static void status_and_stop(const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the appropriate status vector parameter for a gds
 //		call depending on where or not the action has an error clause.
-//
+//  
 
 static const TEXT* status_vector(const act* action)
 {
 	return "ISC_STATUS";
-//  return (!action || !action->act_error) ? "ISC_NULL" : "ISC_STATUS";
+//  return (!action || !action->act_error) ? "ISC_NULL" : "ISC_STATUS"; 
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for START_TRANSACTION,
 //       when it's being generated automatically by a compile
 //       call or one of the DDL commands.  Be careful not to
 //		continue after errors as that destroys evidence.
-//
+//  
 
 static void t_start_auto(const gpre_req* request,
 						 const TEXT* vector,
@@ -4049,7 +4057,7 @@ static void t_start_auto(const gpre_req* request,
 	buffer[0] = 0;
 	const TEXT* trname = request_trans(action, request);
 
-//  this is a default transaction, make sure all databases are ready
+//  this is a default transaction, make sure all databases are ready 
 
 	int count = 0;
 	for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next) {
@@ -4115,10 +4123,10 @@ static void t_start_auto(const gpre_req* request,
 #ifdef NOT_USED_OR_REPLACED							/* RRK_?: this column stuff was not used in 3.3
 								   may be should not bother with it now */
 //____________________________________________________________
-//
+//  
 //		Align output to a specific column for output.  If the
 //		column is negative, don't do anything.
-//
+//  
 
 static void align( int column)
 {
@@ -4137,10 +4145,10 @@ static void align( int column)
 #endif /* RRK_?: end of comment out */
 
 //____________________________________________________________
-//
+//  
 //		Generate a function call for free standing ANY.  Somebody else
 //		will need to generate the actual function.
-//
+//  
 
 static void gen_any(const act* action)
 {
@@ -4162,9 +4170,9 @@ static void gen_any(const act* action)
 }
 
 //____________________________________________________________
-//
+//  
 //		Zap all know handles.
-//
+//  
 
 static void gen_clear_handles(const act* action)
 {
@@ -4176,9 +4184,9 @@ static void gen_clear_handles(const act* action)
 
 #ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
-//
+//  
 //		Generate a symbol to ease compatibility with V3.
-//
+//  
 
 static void gen_compatibility_symbol(
 									const TEXT* symbol,
@@ -4193,9 +4201,9 @@ static void gen_compatibility_symbol(
 #endif
 
 //____________________________________________________________
-//
+//  
 //		Generate a function for free standing ANY or statistical.
-//
+//  
 
 static void gen_function(const act* function)
 {
@@ -4227,18 +4235,18 @@ static void gen_function(const act* function)
 	if (port)
 	{
 		for (const ref* reference = port->por_references; reference;
-			 reference = reference->ref_next)
+			 reference = reference->ref_next) 
 		{
 			const gpre_fld* field = reference->ref_field;
 			const TEXT* dtype;
-
+			
 			switch (field->fld_dtype) {
 			case dtype_short:
 				dtype = "short";
 				break;
 
 			case dtype_long:
-//  RRK_?:		dtype = DCL_LONG;
+//  RRK_?:		dtype = DCL_LONG;  
 				break;
 
 			case dtype_cstring:
@@ -4247,7 +4255,7 @@ static void gen_function(const act* function)
 				break;
 
 			case dtype_quad:
-//			dtype = DCL_QUAD;
+//			dtype = DCL_QUAD;	 
 				break;
 
 			case dtype_date:
@@ -4283,7 +4291,7 @@ static void gen_function(const act* function)
 	for (port = request->req_ports; port; port = port->por_next)
 	{
 		for (const ref* reference = port->por_references; reference;
-			 reference = reference->ref_next)
+			 reference = reference->ref_next) 
 		{
 			if (reference->ref_field-> fld_array_info)
 				gen_get_or_put_slice(action, reference, true);
@@ -4296,9 +4304,9 @@ static void gen_function(const act* function)
 }
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a variable reference.
-//
+//  
 
 static void gen_type(const act* action)
 {
@@ -4308,9 +4316,9 @@ static void gen_type(const act* action)
 
 #ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
-//
+//  
 //		Print a fixed string at a particular column.
-//
+//  
 
 static void printb(const TEXT* string, ...)
 {

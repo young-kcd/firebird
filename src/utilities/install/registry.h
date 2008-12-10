@@ -3,7 +3,7 @@
  *	MODULE:		registry.h
  *	DESCRIPTION:	Defines for the registry
  *
- * The contents of this file are subject to the Independant Developers
+ * The contents of this file are subject to the Independant Developers 
  * Public License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
  * of the License at http://www.ibphoenix.com/IDPL.html
@@ -28,6 +28,7 @@
 static const char* REG_KEY_ROOT_COMPANY	= "SOFTWARE\\Firebird Project";
 static const char* REG_KEY_ROOT_PRODUCT	= "SOFTWARE\\Firebird Project\\Firebird Server";
 static const char* REG_KEY_ROOT_INSTANCES	= "SOFTWARE\\Firebird Project\\Firebird Server\\Instances";
+static const char* FB_DEFAULT_INSTANCE		= "DefaultInstance";
 
 #endif // REGISTRY_DEFINES_H
 

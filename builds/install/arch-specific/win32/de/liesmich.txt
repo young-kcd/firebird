@@ -1,95 +1,117 @@
 
-========================================
-Firebird 2.5.0 Pre-alpha (Windows Build)
-========================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+==================================
+Firebird 2.0.5       (Win32 Build)
+==================================
 
 o Einführung
 o Verwendungszweck
-o Bekannte Probleme
 o Features in diesem Release (alle Plattformen)
+o Beseitigte Fehler in diesem Release (alle Plattformen)
 o Installation
-o Bugs berichten
+o Bekannte Probleme
+o Probleme melden
+o Neue Features vorschlagen
 
 
 Einführung
 ==========
 
-Willkommen zu Firebird 2.1.
+Willkommen zu Firebird 2.0.5
 
 
 Verwendungszweck
 ================
 
-Dieser Release Candidate ist für erfahrene Firebird Benutzer
-bestimmt. Dieser wurde angemessen getestet und alle neue
-Features sollten nun entsprechend dokumentiert sein.
+Firebird 2.0.5 wurde intensiven Tests unterzogen und ist nun für
+die breite Verwendung in Produktionsumgebungen bestimmt. Dennoch
+wird darauf hingewiesen, dass eine Standardvorgehen eingehalten
+wird, das wie folgt aussehen kann.
 
-Verwenden Sie dieses Release nicht in Produktionsumgebungen.
+ o Lesen Sie die Installation Liesmich und die Release
+   Notes.
+
+ o Wenn Sie wichtige Daten haben, vergessen Sie nicht,
+   vor dem Einsatz dieses Release ein Backup durchzuführen.
+
+ o Es wird empfohlen, dass eine frühere Version vor der
+   Installation entfernt wird. Die Deinstallation entfernt
+   keine Konfigurations- oder Log-Dateien.
+
+ o Es wird empfohlen, dass Sie eigene Tests in einer
+   Entwicklungsumgebung durchführen, bevor es an eine
+   Produktionsumgebung weitergegeben wird.
+
+
+
+
+Features in diesem Release (alle Plattformen)
+=============================================
+
+Nähere Informationen finden Sie in doc/Firebird_v2.0.5.ReleaseNotes.pdf.
+
+
+Beseitigte Fehler in diesem Release (alle Plattformen)
+======================================================
+
+Nähere Informationen finden Sie in doc/Firebird_v2.0.5.ReleaseNotes.pdf.
+
+
+Installation der selbst-installierenden Datei
+=============================================
+
+Führen Sie die ausführbare Datei aus und befolgen Sie die
+begleitenden Hinweise im Setup-Wizard.
 
 
 Bekannte Probleme
 =================
 
-Windows Vista - Die Setuproutine kann Firebird nicht als
-Dienst starten, jedoch wird der Dienst nach einem Neustart
-korrekt gestartet. Als Workaround können Sie auf dem Firebird
-Systemsteuerungs-Applet mit einem SHIFT-Rechtsklick 'Ausführen
-als...' auswählen und den Dienst von dort aus starten.
+ o Die Sicherheitsdatenbank hat sich geändert! Nähere Informationen
+   zu diesem Thema finden Sie im DOC Verzeichnis. Benutzer, die eine
+   bestehende Sicherheitsdatenbank migrieren möchten, können dazu
+   das Skript in misc/upgrade/security verwenden.
 
 
-Features in diesem Release
-==========================
+Probleme melden
+===============
 
-Nähere Informationen dazu finden Sie in den Release Notes.
+o Sind Sie sicher, dass Sie verstehen, wie Firebird arbeitet?
 
+  Vielleicht handelt es sich hierbei um ein korrektes
+  Verhalten und Sie haben genau genommen eine Supportanfrage.
+  In diesem Fall, kontaktieren Sie die firebird-support
+  Liste.
 
-Installation
-============
+  Dieser können Sie hier beitreten:
 
-Die Installationsthemen werden im Detail in der Installations-
-anleitung, die nach der Installation im doc Verzeichnis verfügbar
-ist, diskutiert. Eine kurze Zusammenfassung dieser Themen finden
-Sie auch in der installation_liesmich.txt. Diese Datei finden
-Sie ebenfalls im doc Verzeichnis nach der Installation.
+	mailto:firebird-support-subscribe@yahoogroups.com
 
+o Denken Sie nach wie vor, dass es sich um einen Fehler handelt?
 
-Bugs berichten
-==============
+  Überprüfen Sie die Liste der offenen Fehler. Diese kann hier
+  gefunden werden:
 
-Bevor Sie einen Bug berichten:
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
- o Stellen Sie sicher, dass Sie verstehen, wie Firebird arbeitet.
-   Womöglich handelt es sich um gar kein Problem.
+Verwenden Sie bitte den Issue Tracker nicht dazu, um technische
+Unterstützung zu erhalten. Wenn Sie sich nicht sicher sind, so
+treten Sie der Support-Liste bei:
 
- o Vielleicht hat jemand bereits das selbe Problem berichtet? Sie
-   können existierende Problemberichte hier einsehen:
-   http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+  mailto:firebird-support-subscribe@yahoogroups.com
 
- o Falls Sie sich nicht sicher sind, diskutieren Sie das
-   Problem am besten vorab in der Firebird-devel Liste.
-   Dieser Liste können Sie hier beitreten:
-
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
-
-   Diese Liste ist auch über ein Newsgroup-Interface hier
-   einsehbar:
-
-	news://news.atkin.com/
+und stellen Sie Ihre Fragen dort.
 
 
-Verwenden Sie bitte die Firebird-devel Liste nicht für
-technische Supportanfragen, solange es sich bei Ihrer
-Anfrage nicht um ein spezifisches Firebird 2.1 Feature
-handelt.
+Neue Features vorschlagen
+=========================
 
+Bevor Sie ein neues Feature vorschlagen, überprüfen
+Sie die existierende Funktionalitätsanforderungsliste.
+Die Chancen stehen gut, dass jemand bereits die selbe
+Idee hatte. Verwenden Sie diesen Link, um die aktuelle
+Liste einzusehen:
 
-Happy Testing!
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
 
-Ihr Firebird Team.
 
 

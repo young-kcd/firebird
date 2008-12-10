@@ -34,12 +34,11 @@
 #endif
 
 static int ast(void*);
-static int lookup_agg(const UCHAR*);
-static int lookup_lock(const UCHAR*);
-static void print_help();
+static int lookup_agg(UCHAR *);
+static int lookup_lock(UCHAR *);
+static void print_help(void);
 
-static const struct tbl
-{
+static struct tbl {
 	const char* tbl_string;
 	SSHORT tbl_code;
 } types[] = {
@@ -52,8 +51,7 @@ static const struct tbl
 	{NULL, LCK_none}
 	};
 
-static const struct tagg
-{
+static struct tagg {
 	const char* tagg_string;
 	SSHORT tagg_code;
 } aggs[] = {
@@ -63,7 +61,7 @@ static const struct tagg
 	{"sum", LCK_SUM},
 	{"avg", LCK_AVG},
 	{"any", LCK_ANY},
-	{NULL, 0}
+	{NULL, NULL}
 	};
 
 static int wait, sw_release, locks[100], levels[100];
@@ -74,7 +72,7 @@ void main( int argc, char **argv)
 {
 /**************************************
  *
- *	m a i n
+ *	m a i n 
  *
  **************************************
  *
@@ -83,8 +81,8 @@ void main( int argc, char **argv)
  *
  **************************************/
 	UCHAR op[500], arg[500];
-	SSHORT type;
-	SLONG lock;
+	SSHORT type, n, agg;
+	SLONG lock, data;
 	ISC_STATUS_ARRAY status_vector;
 
 	printf("\nStand alone Lock Manager driver program.\n");
@@ -92,7 +90,8 @@ void main( int argc, char **argv)
 	printf("pid = %d\n\n", getpid());
 	printf("\n");
 
-	if (LOCK_init(status_vector, getpid(), 1, &lck_owner_handle)) {
+	if (LOCK_init(status_vector, true,
+				  getpid(), 1, &lck_owner_handle)) {
 		printf("LOCK_init failed\n");
 		isc_print_status(status_vector);
 		exit(0);
@@ -104,25 +103,22 @@ void main( int argc, char **argv)
 
 /* Force a dummy parent lock to test query data functionality */
 
-	const SLONG parent = LOCK_enq(NULL,		/* prior request */
-							NULL,		/* parent request */
-							0,		/* series */
-							"parent",	/* value */
-							strlen("parent"),	/* length of key */
-							LCK_SR,	/* lock type */
-							NULL, NULL,	/* AST and argument */
-							0, wait, status_vector, lck_owner_handle);
+	SLONG parent = LOCK_enq(NULL,		/* prior request */
+					  NULL,		/* parent request */
+					  0,		/* series */
+					  "parent",	/* value */
+					  strlen("parent"),	/* length of key */
+					  LCK_SR,	/* lock type */
+					  NULL, NULL,	/* AST and argument */
+					  0, wait, status_vector, lck_owner_handle);
 
-	while (true)
-	{
+	while (true) {
 		printf("Request: ");
 		ISC_STATUS status = scanf("%s%s", op, arg);
 		if (status == EOF)
 			continue;
-
-		if (!strcmp(op, "rel"))
-		{
-			const SSHORT n = atoi(arg);
+		if (!strcmp(op, "rel")) {
+			n = atoi(arg);
 			if (n < slot && (lock = locks[n])) {
 				LOCK_deq(lock);
 				locks[n] = 0;
@@ -131,58 +127,51 @@ void main( int argc, char **argv)
 				printf("*** BAD LOCK\n");
 			continue;
 		}
-		if (!strcmp(op, "ar"))
-		{
+		else if (!strcmp(op, "ar")) {
 			sw_release = atoi(arg);
 			continue;
 		}
-		if (!strcmp(op, "w"))
-		{
+		else if (!strcmp(op, "w")) {
 			wait = atoi(arg);
 			continue;
 		}
-		if (!strcmp(op, "q"))
+		else if (!strcmp(op, "q"))
 			exit(0);
-		if (!strcmp(op, "rd"))
-		{
-			const SSHORT n = atoi(arg);
+		else if (!strcmp(op, "rd")) {
+			n = atoi(arg);
 			if (n >= slot || !(lock = locks[n])) {
 				printf("bad lock\n");
 				continue;
 			}
-			SLONG data = LOCK_read_data(lock);
+			data = LOCK_read_data(lock);
 			printf("lock data = %d\n", data);
 			continue;
 		}
-		if (!strcmp(op, "wd"))
-		{
-			const SSHORT n = atoi(arg);
+		else if (!strcmp(op, "wd")) {
+			n = atoi(arg);
 			if (n >= slot || !(lock = locks[n])) {
 				printf("bad lock\n");
 				continue;
 			}
 			scanf("%s", arg);
-			SLONG data = atoi(arg);
+			data = atoi(arg);
 			LOCK_write_data(lock, data);
 			continue;
 		}
-		if (!strcmp(op, "qd"))
-		{
-			const SSHORT agg = lookup_agg(arg);
-			if (!agg) {
+		else if (!strcmp(op, "qd")) {
+			if (!(agg = lookup_agg(arg))) {
 				printf("bad query aggregate\n");
 				continue;
 			}
-			SLONG data = LOCK_query_data(parent, 0, agg);
+			data = LOCK_query_data(parent, 0, agg);
 			if (agg == LCK_ANY)
 				printf("%s = %s\n", arg, ((data) ? "true" : "false"));
 			else
 				printf("%s = %d\n", arg, data);
 			continue;
 		}
-		if (!strcmp(op, "cvt"))
-		{
-			const SSHORT n = atoi(arg);
+		else if (!strcmp(op, "cvt")) {
+			n = atoi(arg);
 			scanf("%s", op);
 			if (!(type = lookup_lock(op))) {
 				printf("bad lock type\n");
@@ -214,8 +203,7 @@ void main( int argc, char **argv)
 			}
 			continue;
 		}
-		if (type = lookup_lock(op))
-		{
+		else if (type = lookup_lock(op)) {
 			lock = LOCK_enq(NULL,	/* prior request */
 							parent,	/* parent request */
 							0,	/* series */
@@ -230,25 +218,21 @@ void main( int argc, char **argv)
 				locks[slot++] = lock;
 			}
 			else {
-				printf("*** LOCK REJECTED: status_vector[1] = %d", status_vector[1]);
-				switch (status_vector[1])
-				{
-				case isc_lock_timeout:
+				printf("*** LOCK REJECTED: status_vector[1] = %d",
+						  status_vector[1]);
+				if (status_vector[1] == isc_lock_timeout)
 					printf(" (isc_lock_timeout)\n");
-					break;
-				case isc_lock_conflict:
+				else if (status_vector[1] == isc_lock_conflict)
 					printf(" (isc_lock_conflict)\n");
-					break;
-				case isc_deadlock:
+				else if (status_vector[1] == isc_deadlock)
 					printf(" (isc_deadlock)\n");
-					break;
-				default:
+				else
 					printf("\n");
-				}
 			}
 		}
 		else {
 			print_help();
+			continue;
 		}
 	}
 
@@ -269,7 +253,7 @@ static int ast(void* slot_void)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	int sw_release_use = sw_release;
-
+	
 	const int slot = (int)(IPTR) slot_void; // static cast
 
 	printf("*** blocking AST for lock# %d ", slot);
@@ -298,7 +282,7 @@ static int ast(void* slot_void)
 }
 
 
-static int lookup_agg(const UCHAR* string)
+static lookup_agg( UCHAR * string)
 {
 /**************************************
  *
@@ -310,17 +294,15 @@ static int lookup_agg(const UCHAR* string)
  *
  **************************************/
 
-	for (const tagg* ptr = aggs; ptr->tagg_string; ptr++)
-	{
-		if (strcmp(ptr->tagg_string, reinterpret_cast<const char*>(string)) == 0)
+	for (tagg* ptr = aggs; ptr->tagg_string; ptr++)
+		if (strcmp(ptr->tagg_string, string) == 0)
 			return ptr->tagg_code;
-	}
 
-	return 0;
+	return NULL;
 }
 
 
-static int lookup_lock(const UCHAR* string)
+static lookup_lock( UCHAR * string)
 {
 /**************************************
  *
@@ -332,20 +314,18 @@ static int lookup_lock(const UCHAR* string)
  *
  **************************************/
 
-	for (const tbl* ptr = types; ptr->tbl_string; ptr++)
-	{
+	for (tbl* ptr = types; ptr->tbl_string; ptr++)
 		if (strcmp(ptr->tbl_string, string) == 0)
 			return ptr->tbl_code;
-	}
 
 	return LCK_none;
 }
 
 
-static void print_help()
+static void print_help(void)
 {
 /**************************************
-*
+*                                                       
 *      p r i n t _ h e l p
 *
 **************************************
@@ -391,4 +371,19 @@ static void print_help()
 	printf("\tV4_LOCK_GRANT_ORDER {0 | 1}\n");
 	printf("\t\t\t0 = disable lock-grant-order (no lock-fairness)\n");
 	printf("\t\t\t1 = enable lock-grant-order [default]\n");
+}
+
+
+SCH_ast(void)
+{
+/**************************************
+ *
+ *	S C H _ a s t 
+ *
+ **************************************
+ *
+ * Functional description
+ *	Stub to prevent link error
+ *
+ **************************************/
 }

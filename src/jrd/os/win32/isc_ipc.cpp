@@ -45,6 +45,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/thd.h"
 
 #include <windows.h>
 #include <process.h>
@@ -63,10 +64,16 @@
 #define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
+#ifndef REQUESTER
 static USHORT initialized_signals = FALSE;
 static SLONG volatile overflow_count = 0;
 
+static MUTX_T sig_mutex;
+
 static int process_id = 0;
+
+#endif /* of ifndef REQUESTER */
+
 
 const USHORT MAX_OPN_EVENTS	= 40;
 
@@ -85,9 +92,9 @@ static ULONG opn_event_clock;
 
 static void (*system_overflow_handler)(int);
 static void cleanup(void *);
-static void overflow_handler(int, int);
+static void overflow_handler(int, int) throw();
 
-// Not thread-safe
+// Not thread-safe 
 
 ULONG isc_enter_count = 0;
 
@@ -102,7 +109,7 @@ void ISC_enter(void)
  * Functional description
  *	Enter ISC world from caller.
  *
- **************************************/
+ **************************************/  
 /* Setup overflow handler - with chaining to any user handler */
 	void (*temp)(int) = signal(SIGFPE,
 		reinterpret_cast<void(*)(int)>(overflow_handler));
@@ -208,6 +215,7 @@ void ISC_signal_init(void)
  *
  **************************************/
 
+#ifndef REQUESTER
 	if (initialized_signals)
 		return;
 
@@ -221,10 +229,13 @@ void ISC_signal_init(void)
 	system_overflow_handler =
 		signal(SIGFPE, reinterpret_cast<void(*)(int)>(overflow_handler));
 
+#endif /* REQUESTER */
+
 	ISC_get_security_desc();
 }
 
 
+#ifndef REQUESTER
 static void cleanup(void *arg)
 {
 /**************************************
@@ -246,8 +257,10 @@ static void cleanup(void *arg)
 
 	initialized_signals = FALSE;
 }
+#endif
 
-static void overflow_handler(int signal, int code)
+#ifndef REQUESTER
+static void overflow_handler(int signal, int code) throw()
 {
 /**************************************
  *
@@ -289,3 +302,5 @@ static void overflow_handler(int signal, int code)
 		}
 	}
 }
+#endif
+

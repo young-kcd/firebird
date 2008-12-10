@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.static.isql,v 1.11 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -43,8 +44,7 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-ISQL_Files = extract.epp isql.epp show.epp Extender.cpp InputDevices.cpp \
-    ColList.cpp OptionsBase.cpp
+ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files))
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
@@ -59,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql_static : $(ISQL_STATIC)
 
 $(ISQL_STATIC):	$(ISQL_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(STATICEXE_LINK) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LIBEDITLINE) $(LINK_LIBS) $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $(ISQL_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

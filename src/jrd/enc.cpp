@@ -9,9 +9,6 @@
 #include "../jrd/common.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/gdsassert.h"
-#include "../common/classes/locks.h"
-#include "../common/classes/alloc.h"
-#include "../common/classes/init.h"
 
 /*
 #ifdef HAVE_UNISTD_H
@@ -429,19 +426,17 @@ static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
 
 /* ==================================== */
 
-static Firebird::GlobalPtr<Firebird::Mutex> cryptMutex;
 
 static C_block constdatablock;	/* encryption constant */
 const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
 #define _PASSWORD_EFMT1 '#'
 /*
- * Create data consisting of the "setting" followed by
+ * Create data consisting of the "setting" followed by 
  * an encryption produced by the "key" and "setting".
  */
 void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 {
 	fb_assert(bufSize >= RESULT_SIZE);
-	Firebird::MutexLockGuard guard(cryptMutex);
 
 	SLONG i;
 	int t;
@@ -655,7 +650,7 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 
 	C_block *kp;
 	int ks_inc;
-
+	
 	if (num_iter >= 0) {		/* encryption */
 		kp = &KS[0];
 		ks_inc = sizeof(*kp);
@@ -825,7 +820,7 @@ STATIC void init_des()
 	 * SPE table
 	 */
 	static unsigned char tmp32[32];	/* "static" for speed */
-
+	
 	for (i = 0; i < 48; i++)
 		perm[i] = P32Tr[ExpandTr[i] - 1];
 	for (int tableno = 0; tableno < 8; tableno++) {

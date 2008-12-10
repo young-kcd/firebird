@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gstat/"
 				ObjectFile="..\..\..\temp\debug\gstat/"
@@ -94,7 +94,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gstat/gstat.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gstat/"
 				ObjectFile="..\..\..\temp\release\gstat/"
@@ -152,9 +152,6 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\gstatMain.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
 			</File>
 		</Filter>
@@ -163,9 +160,6 @@
 			Filter="h;hpp;hxx;hm;inl">
 			<File
 				RelativePath="..\..\..\src\jrd\btn.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gstat\dbaswi.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\enc_proto.h">
@@ -203,10 +197,10 @@
 				RelativePath="..\..\..\src\jrd\btn.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\enc.cpp">
+				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
+				RelativePath="..\..\..\src\jrd\enc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
@@ -217,8 +211,15 @@
 			<File
 				RelativePath="..\..\..\src\jrd\ods.cpp">
 			</File>
+		</Filter>
+		<Filter
+			Name="COMMON files"
+			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+				RelativePath="..\..\..\src\common\config\config.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
 		</Filter>
 	</Files>

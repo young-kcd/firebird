@@ -2,7 +2,7 @@
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		dtr.cpp
  *	DESCRIPTION:	Top level driving module
- *
+ *                         
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
@@ -55,18 +55,24 @@
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
 
-using MsgFormat::SafeArg;
+#ifdef VMS
+const char* STARTUP_FILE	= "QLI_STARTUP";
+#else
+const char* STARTUP_FILE	= "HOME";	// Assume its Unix 
+#endif
 
-
-const char* STARTUP_FILE	= "HOME";	// Assume its Unix
+#ifndef SIGQUIT
+#define SIGQUIT		SIGINT
+#define SIGPIPE		SIGINT
+#endif
 
 
 extern TEXT *QLI_prompt;
 
-static void enable_signals();
+static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static int async_quit(const int, const int, void*);
+static void CLIB_ROUTINE signal_quit(void);
 static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
@@ -77,8 +83,8 @@ struct answer_t {
 static bool yes_no_loaded = false;
 static answer_t answer_table[] =
 {
-	{ "NO", false },					// NO
-	{ "YES", true },					// YES
+	{ "NO", false },					// NO   
+	{ "YES", true },					// YES  
 	{ "", false }
 };
 
@@ -92,16 +98,17 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.
+ *	Top level routine.  
  *
  **************************************/
+	jmp_buf env;
 
-// Look at options, if any
+// Look at options, if any 
 
 	Firebird::PathName startup_file = STARTUP_FILE;
 
 #ifdef UNIX
-// If a Unix system, get home directory from environment
+// If a Unix system, get home directory from environment 
 	SCHAR home_directory[MAXPATHLEN];
 	if (!fb_utils::readenv("HOME", startup_file))
 		startup_file = ".qli_startup";
@@ -117,10 +124,11 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
-// Let's define the default number of columns on a machine by machine basis
+// Let's define the default number of columns on a machine by machine basis 
+#ifdef VMS
 	QLI_columns = 80;
-#ifdef TRUSTED_AUTH
-	QLI_trusted = false;
+#else
+	QLI_columns = 80;
 #endif
 	QLI_lines = 60;
 	QLI_name_columns = 0;
@@ -132,6 +140,10 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef DEV_BUILD
 	QLI_hex_output = false;
+#endif
+
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
 #endif
 
 	SLONG debug_value; // aparently unneeded, see usage below.
@@ -151,7 +163,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			switch (UPPER(c)) {
 			case 'A':
 				if (argv >= arg_end) {
-					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name
+					ERRQ_msg_put(23, NULL, NULL, NULL, NULL, NULL);	// Msg23 Please retry, supplying an application script file name  
 					exit(FINI_ERROR);
 				}
 
@@ -163,17 +175,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 					sw_buffers = atoi(*argv++);
 				break;
 
-			case 'F':		// fetch password
-				{
-					if (argv >= arg_end || **argv == '-')
-						break;
-					const char* pwd = NULL;
-					if (fb_utils::fetchPassword(*argv++, pwd) != fb_utils::FETCH_PASS_OK)
-						break;
-					fb_utils::copy_terminate(QLI_default_password, pwd, sizeof(QLI_default_password));
-				}
-				break;
-
 			case 'I':
 				if (argv >= arg_end || **argv == '-')
 					startup_file = "";
@@ -181,32 +182,37 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 					startup_file = *argv++;
 				break;
 
-#ifdef TRUSTED_AUTH
-			case 'K':
-				QLI_trusted = true;
-				break;
-#endif
-
 			case 'N':
 				banner_flag = false;
 				break;
 
 			case 'P':
-				if (argv >= arg_end || **argv == '-')
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					TEXT* r = QLI_default_password;
+					const TEXT* const end = r + sizeof(QLI_default_password) - 1;
+					for (const TEXT* q = *argv++; *q && r < end;)
+						*r++ = *q++;
+					*r = 0;
 					break;
-				fb_utils::copy_terminate(QLI_default_password, fb_utils::get_passwd(*argv++),
-					sizeof(QLI_default_password));
-				break;
+				}
 
 			case 'T':
 				sw_trace = true;
 				break;
 
 			case 'U':
-				if (argv >= arg_end || **argv == '-')
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					TEXT* r = QLI_default_user;
+					const TEXT* const end = r + sizeof(QLI_default_user) - 1;
+					for (const TEXT* q = *argv++; *q && r < end;)
+						*r++ = *q++;
+					*r = 0;
 					break;
-				fb_utils::copy_terminate(QLI_default_user, *argv++, sizeof(QLI_default_user));
-				break;
+				}
 
 			case 'V':
 				sw_verify = true;
@@ -217,7 +223,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				isc_set_debug(debug_value);
 				break;
 
-				/* This switch's name is arbitrary; since it is an internal
+				/* This switch's name is arbitrary; since it is an internal 
 				   mechanism it can be changed at will */
 
 			case 'Y':
@@ -229,8 +235,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				ERRQ_msg_put(469, SafeArg() << c);
-				// Msg469 qli: ignoring unknown switch %c
+				ERRQ_msg_put(469, (TEXT *)(IPTR) c, NULL, NULL, NULL, NULL);	
+				// Msg469 qli: ignoring unknown switch %c 
 				break;
 			}
 	}
@@ -238,10 +244,10 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	enable_signals();
 
 	if (banner_flag)
-		ERRQ_msg_put(24);	// Msg24 Welcome to QLI Query Language Interpreter
+		ERRQ_msg_put(24, NULL, NULL, NULL, NULL, NULL);	// Msg24 Welcome to QLI Query Language Interpreter 
 
 	if (version_flag)
-		ERRQ_msg_put(25, SafeArg() << GDS_VERSION);	// Msg25 qli version %s
+		ERRQ_msg_put(25, GDS_VERSION, NULL, NULL, NULL, NULL);	// Msg25 qli version %s 
 
 	if (application_file)
 		LEX_push_file(application_file, true);
@@ -249,21 +255,37 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	if (startup_file.length())
 		LEX_push_file(startup_file.c_str(), false);
 
+#ifdef VMS
+	bool vms_tryagain_flag = false;
+	if (startup_file.length())
+		vms_tryagain_flag = LEX_push_file(startup_file.c_str(), false);
+
+/* If default value of startup file wasn't altered by the use of -i,
+   and LEX returned false (above), try the old logical name, QLI_INIT */
+
+	if (!vms_tryagain_flag && startup_file == STARTUP_FILE)
+	{
+		LEX_push_file("QLI_INIT", false);
+	}
+#endif
+
 	for (bool got_started = false; !got_started;)
 	{
 		got_started = true;
 		try {
+			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
-		catch (const Firebird::Exception&) {
-			// try again
+		catch (const std::exception&) {
+			// try again 
 			got_started = false;
 			ERRQ_pending();
 		}
 	}
+	memset(QLI_env, 0, sizeof(QLI_env));
 	QLI_error = NULL;
 
-// Loop until end of file or forced exit
+// Loop until end of file or forced exit 
 
 	while (QLI_line) {
 		plb* temp = QLI_default_pool = ALLQ_pool();
@@ -276,7 +298,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	LEX_fini();
 	ALLQ_fini();
 #ifdef DEBUG_GDS_ALLOC
-/* Report any memory leaks noticed.
+/* Report any memory leaks noticed.  
  * We don't particularly care about QLI specific memory leaks, so all
  * QLI allocations have been marked as "don't report".  However, much
  * of the test-base uses QLI so having a report when QLI finishes
@@ -288,7 +310,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 }
 
 
-static void enable_signals()
+static void enable_signals(void)
 {
 /**************************************
  *
@@ -302,13 +324,9 @@ static void enable_signals()
  **************************************/
 	typedef void (*new_handler) (int);
 
-#ifdef SIGQUIT
-	signal(SIGQUIT, SIG_IGN);
-#endif
-	fb_shutdown_callback(0, async_quit, fb_shut_confirmation, 0);
-#ifdef SIGPIPE
-	signal(SIGPIPE, SIG_IGN);
-#endif
+	signal(SIGQUIT, (new_handler) signal_quit);
+	signal(SIGINT, (new_handler) signal_quit);
+	signal(SIGPIPE, (new_handler) signal_quit);
 	signal(SIGFPE, (new_handler) signal_arith_excp);
 }
 
@@ -327,15 +345,17 @@ static bool process_statement(bool flush_flag)
  *
  **************************************/
 	DBB dbb;
+	jmp_buf env;
 
-// Clear database active flags in preparation for a new statement
+// Clear database active flags in preparation for a new statement 
 
 	QLI_abort = false;
+	blk* execution_tree = NULL;
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
 
-// If the last statement wrote out anything to the terminal, skip a line
+// If the last statement wrote out anything to the terminal, skip a line 
 
 	if (QLI_skip_line) {
 		printf("\n");
@@ -348,9 +368,11 @@ static bool process_statement(bool flush_flag)
 
 	enable_signals();
 
-// Enable error unwinding and enable the unwinding environment
+// Enable error unwinding and enable the unwinding environment 
 
 	try {
+
+	memcpy(QLI_env, env, sizeof(QLI_env));
 
 /* Set up the appropriate prompt and get the first significant token.  If
    we don't get one, we're at end of file */
@@ -360,7 +382,7 @@ static bool process_statement(bool flush_flag)
 /* This needs to be done after setting QLI_prompt to prevent
  * and infinite loop in LEX/next_line.
  */
-// If there was a prior syntax error, flush the token stream
+// If there was a prior syntax error, flush the token stream 
 
 	if (flush_flag)
 		LEX_flush();
@@ -391,66 +413,60 @@ static bool process_statement(bool flush_flag)
 
 	EXEC_poll_abort();
 
-// If the statement was EXIT, force end of file on command input
+// If the statement was EXIT, force end of file on command input 
 
 	if (syntax_tree->syn_type == nod_exit) {
 		QLI_line = NULL;
 		return false;
 	}
 
-// If the statement was quit, ask the user if he want to rollback
+// If the statement was quit, ask the user if he want to rollback 
 
 	if (syntax_tree->syn_type == nod_quit) {
 		QLI_line = NULL;
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
-		{
 			if ((dbb->dbb_transaction) && (dbb->dbb_flags & DBB_updates))
-			{
 				if (yes_no(460, dbb->dbb_symbol->sym_string))	/* Msg460 Do you want to rollback updates for <dbb>? */
 					MET_transaction(nod_rollback, dbb);
 				else
 					MET_transaction(nod_commit, dbb);
-			}
-		}
 		return false;
 	}
 
 /* Expand the statement.  It will return NULL is the statement was
    a command.  An error will be unwound */
 
-	qli_nod* expanded_tree = EXP_expand(syntax_tree);
+	blk* expanded_tree = (BLK) EXP_expand(syntax_tree);
 	if (!expanded_tree)
 		return false;
 
-// Compile the statement
+// Compile the statement 
 
-	qli_nod* execution_tree = CMPQ_compile(expanded_tree);
-	if (!execution_tree)
+	if (!(execution_tree = (BLK) CMPQ_compile((qli_nod*) expanded_tree)))
 		return false;
 
-// Generate any BLR needed to support the request
+// Generate any BLR needed to support the request 
 
-	if (!GEN_generate(execution_tree))
+	if (!GEN_generate(( (qli_nod*) execution_tree)))
 		return false;
 
 	if (QLI_statistics)
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
-			if (dbb->dbb_flags & DBB_active)
-			{
-				if (!dbb->dbb_statistics)
-				{
-					dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF));
+			if (dbb->dbb_flags & DBB_active) {
+				if (!dbb->dbb_statistics) {
+					dbb->dbb_statistics =
+						(int *) gds__alloc((SLONG) sizeof(PERF));
 #ifdef DEBUG_GDS_ALLOC
-					// We don't care about QLI specific memory leaks for V4.0
-					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
+					// We don't care about QLI specific memory leaks for V4.0 
+					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care 
 #endif
 				}
 				perf_get_info(&dbb->dbb_handle, (perf *)dbb->dbb_statistics);
 			}
 
-// Execute the request, for better or worse
+// Execute the request, for better or worse 
 
-	EXEC_top(execution_tree);
+	EXEC_top((qli_nod*) execution_tree);
 
 	if (QLI_statistics)
 	{
@@ -458,32 +474,31 @@ static bool process_statement(bool flush_flag)
 		TEXT buffer[512], report[256];
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		{
-			report[0] = 0;
 			if (dbb->dbb_flags & DBB_active)
 			{
-				ERRQ_msg_get(505, report, sizeof(report));
-				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n"
-				size_t used_len = strlen(report);
-				ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
-				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
+				ERRQ_msg_get(505, report);
+				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" 
+				ERRQ_msg_get(506, report + strlen(report));
+				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" 
 				perf_get_info(&dbb->dbb_handle, &statistics);
-				perf_format((perf*) dbb->dbb_statistics, &statistics, report, buffer, 0);
-				ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);	// Msg26 Statistics for database %s %s
+				perf_format((perf*) dbb->dbb_statistics, &statistics,
+							report, buffer, 0);
+				ERRQ_msg_put(26, dbb->dbb_filename, buffer, NULL, NULL, NULL);	// Msg26 Statistics for database %s %s  
 				QLI_skip_line = true;
 			}
 		}
 	}
 
-// Release resources associated with the request
+// Release resources associated with the request 
 
 	GEN_release();
 
 	return false;
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::status_exception& e) {
 		GEN_release();
-		return true;
+		return e.value();
 	}
 }
 
@@ -510,48 +525,48 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 	switch (code) {
 #ifdef FPE_INOVF_TRAP
 	case FPE_INTOVF_TRAP:
-		msg_number = 14;		// Msg14 integer overflow
+		msg_number = 14;		// Msg14 integer overflow 
 		break;
 #endif
 
 #ifdef FPE_INTDIV_TRAP
 	case FPE_INTDIV_TRAP:
-		msg_number = 15;		// Msg15 integer division by zero
+		msg_number = 15;		// Msg15 integer division by zero 
 		break;
 #endif
 
 #ifdef FPE_FLTOVF_TRAP
 	case FPE_FLTOVF_TRAP:
-		msg_number = 16;		// Msg16 floating overflow trap
+		msg_number = 16;		// Msg16 floating overflow trap 
 		break;
 #endif
 
 #ifdef FPE_FLTDIV_TRAP
 	case FPE_FLTDIV_TRAP:
-		msg_number = 17;		// Msg17 floating division by zero
+		msg_number = 17;		// Msg17 floating division by zero 
 		break;
 #endif
 
 #ifdef FPE_FLTUND_TRAP
 	case FPE_FLTUND_TRAP:
-		msg_number = 18;		// Msg18 floating underflow trap
+		msg_number = 18;		// Msg18 floating underflow trap 
 		break;
 #endif
 
 #ifdef FPE_FLTOVF_FAULT
 	case FPE_FLTOVF_FAULT:
-		msg_number = 19;		// Msg19 floating overflow fault
+		msg_number = 19;		// Msg19 floating overflow fault 
 		break;
 #endif
 
 #ifdef FPE_FLTUND_FAULT
 	case FPE_FLTUND_FAULT:
-		msg_number = 20;		// Msg20 floating underflow fault
+		msg_number = 20;		// Msg20 floating underflow fault 
 		break;
 #endif
 
 	default:
-		msg_number = 21;		// Msg21 arithmetic exception
+		msg_number = 21;		// Msg21 arithmetic exception 
 	}
 #else
 	msg_number = 21;
@@ -563,7 +578,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 }
 
 
-static int async_quit(const int reason, const int, void*)
+static void CLIB_ROUTINE signal_quit(void)
 {
 /**************************************
  *
@@ -575,12 +590,12 @@ static int async_quit(const int reason, const int, void*)
  *	Stop whatever we happened to be doing.
  *
  **************************************/
-	if (reason == fb_shutrsn_signal)
-	{
-		EXEC_abort();
-		return FB_FAILURE;
-	}
-	return FB_SUCCESS;
+	//void (*prev_handler) ();
+
+	signal(SIGQUIT, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+
+	EXEC_abort();
 }
 
 
@@ -600,16 +615,13 @@ static bool yes_no(USHORT number, const TEXT* arg1)
  **************************************/
 	TEXT prompt[256];
 
-	ERRQ_msg_format(number, sizeof(prompt), prompt, SafeArg() << arg1);
-
+	ERRQ_msg_format(number, sizeof(prompt), prompt, arg1, NULL, NULL, NULL,
+					NULL);
 	if (!yes_no_loaded) {
 		yes_no_loaded = true;
-		// Msg498 NO
-		if (!ERRQ_msg_get(498, answer_table[0].answer, sizeof(answer_table[0].answer)))
-			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails
-
-		// Msg497 YES
-		if (!ERRQ_msg_get(497, answer_table[1].answer, sizeof(answer_table[1].answer)))
+		if (!ERRQ_msg_get(498, answer_table[0].answer))	// Msg498 NO    
+			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails 
+		if (!ERRQ_msg_get(497, answer_table[1].answer))	// Msg497 YES   
 			strcpy(answer_table[1].answer, "YES");
 	}
 
@@ -618,7 +630,8 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 			return true;
-		for (const answer_t* response = answer_table; *response->answer != '\0'; response++)
+		for (answer_t* response = answer_table; *response->answer != '\0';
+			response++)
 		{
 			const TEXT* p = buffer;
 			while (*p == ' ')

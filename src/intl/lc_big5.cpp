@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	InterBase International support
  *	MODULE:		lc_big5.cpp
- *	DESCRIPTION:	Language Drivers in the BIG5 family.
+ *	DESCRIPTION:	Language Drivers in the BIG5 family.  
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -28,7 +28,7 @@
 #include "lc_big5.h"
 #include "ld_proto.h"
 
-static inline bool FAMILY_MULTIBYTE(texttype* cache,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
@@ -69,7 +69,7 @@ TEXTTYPE_ENTRY(BIG5_init)
 /*
  *	Note: This function expects Multibyte input
  */
-static ULONG big5_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+static ULONG big5_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	bool waiting_for_big52 = false;
 
@@ -102,7 +102,7 @@ static ULONG big5_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 /*
  *	Note: This function expects Multibyte input
  */
-static ULONG big5_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+static ULONG big5_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	bool waiting_for_big52 = false;
 

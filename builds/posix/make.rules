@@ -26,24 +26,43 @@
 #   Contributor(s):
 #
 #
+#   $Id: make.rules,v 1.28.4.4 2008-01-04 13:31:49 alexpeshkoff Exp $
 #
 
 #____________________________________________________________________________
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan -DNAMESPACE=Vulcan $(THR_FLAGS)
-ifeq ($(STD_ICU),false)
-  CFLAGS:= $(CFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
-endif
+CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n -DNAMESPACE=Vulcan
 
 ifeq ($(IsProdTypeBuild),Y)
-  CFLAGS:= $(CFLAGS) $(PROD_FLAGS)
+  CFLAGS:= $(CFLAGS) $(PROD_FLAGS) -DPROD_BUILD
 else
   CFLAGS:= $(CFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif
 
 CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
+
+CC =	@CC@
+CXX =	@CXX@
+LD =	@CXX@
+
+#
+# LIBTOOL ISSUES
+#
+# Most of the libraries and programs are linked using the dynamic linker
+# We default to using the dynamic linker and have a special link macros for
+# using the static linker.
+#
+# Also libtool looks like the future in cross platform shared object compile
+# and linking, but unfortunately it does not yet work for us, as a
+# libtool gcc -o $(BIN)/fred fred.o libzzz.la
+# command will generate incorrect relative addresses in the wrapper script in
+# $(BIN)/fred as it required the exe file fred to be in the directory from
+# which the command is run from.
+# One other issue is that libtool puts a -DPIC onto the compile line.  While
+# nice it conflicts with a struct in the file qli/format.h
+# MOD 26-July-2001.
 
 # Here we have definitions for using the preprocessor.
 
@@ -64,7 +83,7 @@ CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
 GPRE_FLAGS=	-r -m -z -n
 JRD_GPRE_FLAGS = -n -z -gds_cxx -raw -ids
-DSQL_GPRE_FLAGS = -r -m -z -n
+DSQL_GPRE_FLAGS =  -lang_internal -r -m -z -n
 
 
 .SUFFIXES: .c .e .epp .cpp
@@ -73,14 +92,16 @@ DSQL_GPRE_FLAGS = -r -m -z -n
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 
-$(OBJ)/jrd/%.cpp: $(SRC_ROOT)/jrd/%.epp 
-	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $(firstword $<) $@
+.epp.cpp:
+	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
-$(OBJ)/dsql/%.cpp: $(SRC_ROOT)/dsql/%.epp
+
+$(SRC_ROOT)/jrd/%.cpp:: $(SRC_ROOT)/jrd/%.epp 
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
+
+
+$(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp 
 	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
-
-$(OBJ)/%.cpp: $(SRC_ROOT)/%.epp 
-	$(GPRE_CURRENT) $(GPRE_FLAGS) $(firstword $<) $@
 
 
 .SUFFIXES: .lo .o .cpp .c
@@ -98,11 +119,9 @@ ifneq ($(strip $(PLATFORM_FALLBACK)),)
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 endif
-$(OBJ)/%.o: $(SRC_ROOT)/%.c 
-	$(CC) $(CFLAGS) -c $(firstword $<) -o $@
 
-$(OBJ)/%.o: $(OBJ)/%.cpp 
-	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+$(OBJ)/%.o: $(SRC_ROOT)/%.c 
+	$(CC) $(CXXFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@

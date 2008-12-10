@@ -28,38 +28,35 @@
 
 namespace Jrd {
 	class thread_db;
-	class Lock;
 }
 
 struct dsc;
 struct SubtypeInfo;
 
 CHARSET_ID	INTL_charset(Jrd::thread_db*, USHORT);
-int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, ErrorFunction);
+int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, FPTR_ERROR);
 ULONG		INTL_convert_bytes(Jrd::thread_db*, CHARSET_ID, UCHAR*, ULONG, CHARSET_ID,
-								const BYTE*, ULONG, ErrorFunction);
+								const BYTE*, ULONG, FPTR_ERROR);
 Jrd::CsConvert	INTL_convert_lookup(Jrd::thread_db*, CHARSET_ID, CHARSET_ID);
-int			INTL_convert_string(dsc*, const dsc*, ErrorFunction);
+int			INTL_convert_string(dsc*, const dsc*, FPTR_ERROR);
 int			INTL_data(const dsc*);
 int			INTL_data_or_binary(const dsc*);
-bool		INTL_defined_type(Jrd::thread_db*, USHORT);
+bool		INTL_defined_type(Jrd::thread_db*, SSHORT);
 void		INTL_init(Jrd::thread_db*);
 USHORT		INTL_key_length(Jrd::thread_db*, USHORT, USHORT);
-Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, USHORT parm1);
-Jrd::Collation*	INTL_texttype_lookup(Jrd::thread_db* tdbb, USHORT parm1);
-void		INTL_texttype_unload(Jrd::thread_db*, USHORT);
+Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, SSHORT parm1);
+Jrd::TextType*	INTL_texttype_lookup(Jrd::thread_db* tdbb, SSHORT parm1);
 bool		INTL_texttype_validate(Jrd::thread_db*, const SubtypeInfo*);
 void		INTL_pad_spaces(Jrd::thread_db*, dsc*, UCHAR*, ULONG);
 USHORT		INTL_string_to_key(Jrd::thread_db*, USHORT, const dsc*, dsc*, USHORT);
+int			INTL_str_to_upper(Jrd::thread_db*, dsc*);
+int			INTL_str_to_lower(Jrd::thread_db*, dsc*);
 
 // Built-in charsets/texttypes interface
-INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, const ASCII* config_info);
+INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name);
 INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 									   USHORT attributes, const UCHAR* specific_attributes,
-									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
-									   const ASCII* config_info);
-ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* charSetName,
-	const ASCII* configInfo, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
+									   ULONG specific_attributes_length, INTL_BOOL ignore_attributes);
 
 #endif // JRD_INTL_PROTO_H
 

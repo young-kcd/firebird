@@ -36,10 +36,10 @@ static void get_set_generator(STR, DUDLEY_NOD);
 
 static inline void check_blr(str* blr, const int l)
 {
-	if (!(blr->str_current - blr->str_start + l <= blr->str_length)
+	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
 		&& !TRN_get_buffer(blr, l) )
 	{
-		DDL_err(289);
+		DDL_err (289, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -76,10 +76,8 @@ int GENERATE_acl( SCL sec_class, UCHAR * buffer)
 		*p++ = priv_end;
 		*p++ = ACL_priv_list;
 		for (i = 0; i < priv_max; i++)
-		{
 			if (item->sce_privileges & (1 << i))
 				*p++ = i;
-		}
 		*p++ = id_end;
 	}
 
@@ -283,7 +281,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		case dtype_sql_time:
 		case dtype_sql_date:
 		default:
-			DDL_err(95);
+			DDL_err(95, NULL, NULL, NULL, NULL, NULL);
 			// msg 95: GENERATE_blr: dtype not supported
 		}
 		p = (const char*) constant->con_data;
@@ -538,11 +536,11 @@ static void generate( STR blr, DUDLEY_NOD node)
 		operatr = blr_matching2;
 		break;
 //	case nod_substr:
-//		operatr = blr_substring;
+//		operatr = blr_substring; 
 //		break;
 
 	default:
-		DDL_err(96);
+		DDL_err(96, NULL, NULL, NULL, NULL, NULL);
 		// msg 96: GENERATE_blr: node not supported
 		return;
 	}

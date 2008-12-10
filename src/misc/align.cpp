@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 			rule->rule_length == length && rule->rule_faults == faults)
 		{
 			printf("\n/* %s */\n\n", rule->rule_system);
-			printf("#define FB_ALIGNMENT\t%d\n", rule->rule_base_align);
-			printf("#define FB_DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
+			printf("#define ALIGNMENT\t%d\n", rule->rule_base_align);
+			printf("#define DOUBLE_ALIGN\t%d\n", rule->rule_double_align);
 			printf("#define FB_ALIGN(n, b)\t%s\n", rule->rule_rule);
 			check_byte_order();
 			printf("\n");
@@ -121,7 +121,7 @@ static int check_double(void)
 		*p = 3;
 		*p *= 2.5;
 	}
-	catch (const Firebird::Exception&) {
+	catch(const std::exception&) {
 		return 1;
 	}
 

@@ -27,8 +27,6 @@
 
 void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::Global*,
 			const Firebird::MetaName&, const Firebird::MetaName&);
-bool	DYN_UTIL_find_field_source(Jrd::thread_db* tdbb, Jrd::Global* gbl, const Firebird::MetaName& view_name,
-			USHORT context, const TEXT* local_name, TEXT* output_field_name);
 bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::Global*, const SCHAR*,
 			const SCHAR*, Jrd::SecurityClass::flags_t*);
 void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
@@ -38,7 +36,8 @@ void	DYN_UTIL_generate_field_position(Jrd::thread_db*, Jrd::Global*,
 void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, TEXT*);
 void	DYN_UTIL_generate_field_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
 void	DYN_UTIL_generate_constraint_name(Jrd::thread_db*, Jrd::Global*, Firebird::MetaName&);
-SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT, const char*);
+SINT64	DYN_UTIL_gen_unique_id(Jrd::thread_db*, Jrd::Global*, SSHORT,
+			const SCHAR*, BLK*);
 bool    DYN_UTIL_is_array(Jrd::thread_db*, Jrd::Global*, const Firebird::MetaName&);
 void	DYN_UTIL_copy_domain(Jrd::thread_db*, Jrd::Global* gbl,
 			const Firebird::MetaName&, const Firebird::MetaName&);

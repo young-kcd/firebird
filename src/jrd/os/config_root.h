@@ -27,9 +27,7 @@
 #define CONFIG_ROOT_H
 
 #include "fb_types.h"
-#include "../common/classes/init.h"
 #include "../common/classes/fb_string.h"
-#include "../common/config/config.h"
 
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
@@ -60,14 +58,7 @@ class ConfigRoot : public Firebird::PermanentStorage
 	typedef Firebird::PathName string;
 
 private:
-	void GetRoot()
-	{
-		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
-		if (clRoot) {
-			root_dir = *clRoot;
-			addSlash();
-			return;
-		}
+	void GetRoot() {
 #ifdef DEV_BUILD
 		if (getRootFromEnvironment("FIREBIRD_DEV")) {
 			return;
@@ -80,52 +71,40 @@ private:
 	}
 
 public:
-	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), config_file(getPool())
+	ConfigRoot(MemoryPool& p) : PermanentStorage(p),
+		install_dir(getPool()), root_dir(getPool()), config_file(getPool()) 
 	{
 		GetRoot();
+		install_dir = root_dir;
 		config_file = root_dir + string(CONFIG_FILE);
 	}
 
+
 	virtual ~ConfigRoot() {}
 
-	const char* getInstallDirectory()
-	{
-		osConfigRoot();
-		return install_dir().c_str();
+	const char *getInstallDirectory() const {
+		return install_dir.c_str();
 	}
 
-	static void setInstallDirectory(const char* dir)
-	{
-		fb_assert(!initialized);
-		install_dir() = dir;
-		initialized = true;
-	}
-
-	const char *getRootDirectory() const
-	{
+	const char *getRootDirectory() const {
 		return root_dir.c_str();
 	}
 
+
 protected:
-	const char *getConfigFilePath() const
-	{
+	const char *getConfigFilePath() const {
 		return config_file.c_str();
 	}
 
+	
 private:
-	static bool initialized;
-	static Firebird::InitInstance<string> install_dir;
-	string root_dir, config_file;
-
-	void addSlash()
-	{
+	string install_dir, root_dir, config_file;
+	void addSlash() {
 		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
 		{
 			root_dir += PathUtils::dir_sep;
 		}
 	}
-
 	bool getRootFromEnvironment(const char* envName)
 	{
 		string envValue;
@@ -136,7 +115,6 @@ private:
 		addSlash();
 		return true;
 	}
-
 	void osConfigRoot();
 
 	// copy prohibition

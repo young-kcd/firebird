@@ -26,19 +26,29 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
+#include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
+#include "../jrd/req.h"
+#include "gen/iberror.h"
+#include "../jrd/all.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/isc_proto.h"
+
 #include "../jrd/lck_proto.h"
 #include "../jrd/rlck_proto.h"
+#include "../jrd/thd.h"
+#include "../jrd/vio_proto.h"
 
 using namespace Jrd;
-using namespace Firebird;
+
+static Lock* allocate_relation_lock(MemoryPool*, jrd_rel*);
+
 
 Lock* RLCK_reserve_relation(thread_db* tdbb,
-							jrd_tra* transaction,
-							jrd_rel* relation,
-							bool write_flag)
+						  jrd_tra* transaction,
+						  jrd_rel* relation, bool write_flag, bool error_flag)
 {
 /**************************************
  *
@@ -51,19 +61,15 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
  *	is already locked at a lower level, upgrade the lock.
  *
  **************************************/
-	SET_TDBB(tdbb);
-
 	if (transaction->tra_flags & TRA_system)
 		return NULL;
-	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only))
-		ERR_post(Arg::Gds(isc_read_only_database));
+	if (write_flag && (tdbb->tdbb_database->dbb_flags & DBB_read_only))
+		ERR_post(isc_read_only_database, isc_arg_end);
 	if (write_flag && (transaction->tra_flags & TRA_readonly))
-		ERR_post(Arg::Gds(isc_read_only_trans));
-
-	Lock* lock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
-
-	// Next, figure out what kind of lock we need
-
+		ERR_post(isc_read_only_trans, isc_arg_end);
+	Lock* lock = RLCK_transaction_relation_lock(transaction, relation);
+	
+/* Next, figure out what kind of lock we need */
 	USHORT level;
 	if (transaction->tra_flags & TRA_degree3) {
 		if (write_flag)
@@ -78,28 +84,38 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 			level = LCK_none;
 	}
 
-	// If the lock is already "good enough", we're done
+/* If the lock is already "good enough", we're done */
 
 	if (level <= lock->lck_logical)
 		return lock;
 
-	// Get lock
+	/* Nobody activates it. Same in FB1.
+	if (transaction->tra_flags & TRA_reserving)
+	{
+		ERR_post(isc_unres_rel, isc_arg_string, 
+				relation->rel_name.c_str(), isc_arg_end);
+	}
+	*/
 
+/* get lock */
 	USHORT result;
 	if (lock->lck_logical)
-		result = LCK_convert(tdbb, lock, level, transaction->getLockWait());
+		result = LCK_convert_non_blocking(NULL, lock, level,
+										  transaction->getLockWait());
 	else
-		result = LCK_lock(tdbb, lock, level, transaction->getLockWait());
-	if (!result)
-		ERR_punt();
-
-	return lock;
+		result = LCK_lock_non_blocking(NULL, lock, level,
+									   transaction->getLockWait());
+	if (result)
+		return lock;
+	else {
+		if (error_flag)
+			ERR_punt();
+		return NULL;
+	}
 }
 
 
-Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
-									 jrd_tra* transaction,
-									 jrd_rel* relation)
+Lock* RLCK_transaction_relation_lock(jrd_tra* transaction, jrd_rel* relation)
 {
 /**************************************
  *
@@ -112,8 +128,6 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
  *	a transaction.
  *
  **************************************/
-	SET_TDBB(tdbb);
-
 	Lock* lock;
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector &&
@@ -126,28 +140,50 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
 	vector = transaction->tra_relation_locks =
 		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
 					   relation->rel_id + 1);
+	
+	if ( (lock = (*vector)[relation->rel_id]) )
+		return lock;
 
-	const SSHORT relLockLen = relation->getRelLockKeyLength();
-	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock();
-	lock->lck_dbb = tdbb->getDatabase();
-	lock->lck_length = relLockLen;
-	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
-	lock->lck_type = LCK_relation;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_parent = tdbb->getDatabase()->dbb_lock;
-	// the lck_object is used here to find the relation
-	// block from the lock block
-	lock->lck_object = relation;
-	// enter all relation locks into the intra-process lock manager and treat
-	// them as compatible within the attachment according to IPLM rules
-	lock->lck_compatible = tdbb->getAttachment();
-	// for relations locked within a transaction, add a second level of
-	// compatibility within the intra-process lock manager which specifies
-	// that relation locks are incompatible with locks taken out by other
-	// transactions, if a transaction is specified
+	lock = allocate_relation_lock(transaction->tra_pool, relation);
+	lock->lck_owner = transaction;
+/* for relations locked within a transaction, add a second level of
+   compatibility within the intra-process lock manager which specifies
+   that relation locks are incompatible with locks taken out by other
+   transactions, if a transaction is specified */
 	lock->lck_compatible2 = transaction;
-
 	(*vector)[relation->rel_id] = lock;
 
 	return lock;
 }
+
+
+static Lock* allocate_relation_lock(MemoryPool* pool, jrd_rel* relation)
+{
+/**************************************
+ *
+ *	a l l o c a t e _ r e l a t i o n _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Allocate a lock block for a relation lock.
+ *
+ **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->tdbb_database;
+	Lock* lock = FB_NEW_RPT(*pool, sizeof(SLONG)) Lock();
+	lock->lck_dbb = dbb;
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_key.lck_long = relation->rel_id;
+	lock->lck_type = LCK_relation;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = dbb->dbb_lock;
+/* enter all relation locks into the intra-process lock manager and treat
+   them as compatible within the attachment according to IPLM rules */
+	lock->lck_compatible = tdbb->tdbb_attachment;
+/* the lck_object is used here to find the relation
+   block from the lock block */
+	lock->lck_object = relation;
+	return lock;
+}
+

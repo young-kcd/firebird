@@ -44,7 +44,7 @@ struct dsc
 	typedef SSHORT sub_type_t;
 	typedef USHORT flags_t;
 	typedef UCHAR* address_t;
-
+	
 	dsc()
 	:	dsc_dtype(0),
 		dsc_scale(0),
@@ -53,17 +53,17 @@ struct dsc
 		dsc_flags(0),
 		dsc_address(0)
 	{}
-
+	
 	explicit dsc(const dtype_t dtype) :
 		dsc_dtype(dtype), dsc_scale(0),  dsc_length(0), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(0)
-	{}
-
+	{};
+	
 	dsc(const dtype_t dtype, const scale_t scale, const length_t length = 0,
 	    const address_t address = 0) :
 		dsc_dtype(dtype), dsc_scale(scale), dsc_length(length), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(address)
-	{}
+	{};
 
 	dtype_t		dsc_dtype;
 	scale_t		dsc_scale;
@@ -130,6 +130,9 @@ struct dsc
 	GDS_QUAD	asQuad() const;
 	float		asReal() const;
 	double		asDouble() const;
+#ifdef VMS
+	double		asDFloat() const;
+#endif
 	GDS_DATE	asSqlDate() const;
 	GDS_TIME	asSqlTime() const;
 	GDS_TIMESTAMP asSqlTimestamp() const;
@@ -219,7 +222,7 @@ inline bool dsc::isEmpty() const
 
 
 // Overload text typing information into the dsc_sub_type field.
-//   See intl.h for definitions of text types
+//   See intl.h for definitions of text types 
 
 inline dsc::sub_type_t dsc::getTextType() const
 {
@@ -264,7 +267,7 @@ struct alt_dsc
 };
 
 
-//#define DSC_EQUIV(d1,d2) ((((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type) &&
+//#define DSC_EQUIV(d1,d2) ((((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type) && 
 //			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
 
 inline bool dsc::isDscEquiv(const dsc* d2) const
@@ -312,7 +315,7 @@ dsc::length_t dsc::getTextLen(bool validate) const
 			return len2;
 		return len;
 	}
-
+	
 	switch (dsc_dtype) {
 	case dtype_text: return dsc_length;
 	case dtype_cstring: return dsc_length - 1;
@@ -395,8 +398,8 @@ inline bool dsc::isUserDefinedBlob() const
 
 // Exact numeric?
 
-//#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) ||
-//				 ((d) == dtype_long)  ||
+//#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || 
+//				 ((d) == dtype_long)  || 
 //				 ((d) == dtype_short))
 
 inline bool dsc::isExact() const
@@ -424,14 +427,23 @@ inline bool dsc::isSqlDecimal() const
 
 // Floating point types?
 
-//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) ||
+#ifdef VMS
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				 ((d) == dtype_real)  || 
+//				 ((d) == dtype_d_float))
+#else
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
 //				  ((d) == dtype_real))
+#endif
 
 inline bool dsc::isApprox() const
 {
 	switch (dsc_dtype) {
 	case dtype_real:
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		return true;
 	default:
 		return false;
@@ -442,15 +454,19 @@ inline bool dsc::isApprox() const
 // Beware, this is not SQL numeric(p, s), but a test for number data types
 // Strangely, the original macro doesn't test for VMS even though
 // the dtype_d_float follows dtype_double.
-//#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) &&
-//				  ((d) <= dtype_d_float)) ||
+//#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && 
+//				  ((d) <= dtype_d_float)) || 
 //				 ((d)  == dtype_int64))
 
 // To avoid confusion, the new function was renamed.
 inline bool dsc::isANumber() const
 {
 	return dsc_dtype >= dtype_byte
+#ifdef VMS
+		&& dsc_dtype <= dtype_d_float
+#else
 		&& dsc_dtype <= dtype_double
+#endif
 		|| dsc_dtype == dtype_int64;
 }
 
@@ -631,6 +647,15 @@ inline double dsc::asDouble() const
 		return *reinterpret_cast<double*>(dsc_address);
 	return 0;
 }
+
+#ifdef VMS
+inline double dsc::asDFloat() const
+{
+	if (dsc_dtype == dtype_d_float)
+		return *reinterpret_cast<double*>(dsc_address);
+	return 0;
+}
+#endif
 
 inline GDS_DATE dsc::asSqlDate() const
 {

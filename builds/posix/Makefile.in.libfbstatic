@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.libfbstatic,v 1.8 2005-05-27 22:16:09 asfernandes Exp $
 #
 ROOT=..
 ObjModuleType=boot
@@ -40,14 +41,10 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-DSQL_GPRE_FLAGS += -lang_internal
-
 AllObjects= $(LIBFBSTATIC_Objects)
 Dependancies=$(AllObjects:.o=.d)
 
-# added here to force creation of dsql.tab.h
-PARSE = parse.cpp
-PARSE_Sources = $(addprefix $(SRC_ROOT)/dsql/, $(PARSE))
+
 
 
 .PHONY: libfbstatic
@@ -57,7 +54,7 @@ PARSE_Sources = $(addprefix $(SRC_ROOT)/dsql/, $(PARSE))
 # will not be different from the above fbmem_boot.a library
 # compile time macros being the main (if there) difference
 
-libfbstatic: $(PARSE_Sources) $(LIB)/libfbstatic.a
+libfbstatic: $(LIB)/libfbstatic.a
 
 $(LIB)/libfbstatic.a:	$(LIBFBSTATIC_Objects)
 	-$(RM) $@

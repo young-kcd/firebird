@@ -24,24 +24,11 @@
 #ifndef JRD_FUN_PROTO_H
 #define JRD_FUN_PROTO_H
 
-namespace Jrd
-{
-	class CompilerScratch;
-}
+class Jrd::CompilerScratch;
 
-class IbUtil
-{
-public:
-	static void initialize();
-
-	static void* alloc(long size);
-	static bool free(void* ptr);
-};
-
-
-void FUN_evaluate(Jrd::thread_db*, Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
-Jrd::UserFunction* FUN_lookup_function(Jrd::thread_db*, const Firebird::MetaName&, bool ShowAccessError);
-Jrd::UserFunction* FUN_resolve(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::UserFunction*, Jrd::jrd_nod*);
+void		FUN_evaluate(Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
+Jrd::UserFunction*	FUN_lookup_function(const Firebird::MetaName&, bool ShowAccessError);
+Jrd::UserFunction*	FUN_resolve(Jrd::CompilerScratch*, Jrd::UserFunction*, Jrd::jrd_nod*);
 
 #endif // JRD_FUN_PROTO_H
 

@@ -33,12 +33,12 @@ void	PRO_edit_procedure(dbb*, const TEXT*);
 FB_API_HANDLE	PRO_fetch_procedure(dbb*, const TEXT*);
 bool	PRO_get_line (FB_API_HANDLE, TEXT*, USHORT);
 void	PRO_invoke(dbb*, const TEXT*);
-FB_API_HANDLE	PRO_open_blob(dbb*, ISC_QUAD&);
+FB_API_HANDLE	PRO_open_blob(dbb*, ISC_QUAD*);
 int		PRO_rename_procedure(dbb*, const TEXT*, const TEXT*);
 void	PRO_rollback(dbb*);
 
 typedef void (*extract_fn_t)(void* file, const TEXT* name,
-							  USHORT length, DBB database, ISC_QUAD& blob_id);
+							  USHORT length, DBB database, ISC_QUAD* blob_id);
 void	PRO_scan(dbb*, extract_fn_t, void*);
 
 void	PRO_setup(dbb*);

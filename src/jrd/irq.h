@@ -27,135 +27,92 @@
 #ifndef JRD_IRQ_H
 #define JRD_IRQ_H
 
-#define REQUEST(irt) dbb->dbb_internal[irt]
+#define REQUEST(irt) (*dbb->dbb_internal)[irt]
 
-enum irq_type_t
-{
-	irq_s_pages,			// store PAGES
-	irq_r_pages,			// read PAGES
-	irq_l_field,			// lookup field name
-	irq_l_relation,			// lookup relation name
-	irq_c_relation,			// create new relation
-	irq_format1,			// make a new format for a record
-	irq_format2,			// make a new format for a record
-	irq_format3,			// make a new format for a record
-	irq_r_format,			// read a format
-	irq_r_relation,			// pick up view definition
-	irq_c_index,			// create index
-	irq_c_index_m,			// create index - modify ID.NULL
-	irq_m_fields,			// process a modification of RDB$FIELDS
-	irq_m_index,			// modify index id
-	irq_r_fields,			// pick up field expressions
-	irq_l_security,			// lookup security_classes
-	irq_v_security,			// verify security for relation
-	irq_l_index,			// lookup index id
-	irq_l_functions,		// lookup function
-	irq_l_args,				// lookup function arguments
-	irq_s_triggers,			// scan triggers
-	irq_s_triggers2,		// scan triggers
-	irq_s_msgs,				// search for message
-	irq_grant1,				// process grant option
-	irq_grant2,				// process grant option
-	irq_grant3,				// process grant option
-	irq_grant4,				// process grant option
-	irq_format4,			// make a new format for a record
-	irq_s_trans,			// store RDB$TRANSACTIONS
-	irq_m_trans,			// erase RDB$TRANSACTIONS
-	irq_e_trans,			// store RDB$TRANSACTIONS
-	irq_revoke1,			// check revokee for residual privileges
-	irq_revoke2,			// recursive revoke
-	irq_grant5,				// check for "PUBLIC" in processing grant options
-	irq_r_filters,			// read RDB$BLOB_FILTERS
-	irq_c_trigger,			// check for dependencies when creating a trigger
-	irq_s_deps,				// store RDB$DEPENDENCIES
-	irq_d_deps,				// delete RDB$DEPENDENCIES
-	irq_r_fld_dim,			// read RDB$FIELD_DIMENSIONS
-	irq_r_gen_id,			// read RDB$GENERATORS, lookup by name.
-	irq_s_gen_id,			// store RDB$GENERATORS
-	irq_ch_f_dpd,			// check object field dependencies
-	irq_ch_dpd,				// check object dependencies
-	irq_ch_cmp_dpd,			// check computed field dependencies
-	irq_grant6,				// get field-level security class
-	irq_grant7,				// update field-level security classes
-	irq_grant8,				// purge out field-level security classes
-	irq_foreign1,			// purge out field-level security classes
-	irq_foreign2,			// purge out field-level security classes
-	irq_format5,			// make a new format for a record
+const int irq_s_pages		= 0;		/* store PAGES */
+const int irq_r_pages		= 1;		/* read PAGES */
+const int irq_l_field		= 2;		/* lookup field name */
+const int irq_l_relation	= 3;		/* lookup relation name */
+const int irq_c_relation	= 4;		/* create new relation */
+const int irq_format1		= 5;		/* make a new format for a record */
+const int irq_format2		= 6;		/* make a new format for a record */
+const int irq_format3		= 7;		/* make a new format for a record */
+const int irq_r_format		= 8;		/* read a format */
+const int irq_r_relation	= 9;		/* pick up view definition */
+const int irq_c_index		= 10;		/* create index */
+const int irq_m_fields		= 11;		/* process a modification of RDB$FIELDS */
+const int irq_m_index		= 12;		/* modify index id */
+const int irq_r_fields		= 13;		/* pick up field expressions */
+const int irq_l_security	= 14;		/* lookup security_classes */
+const int irq_v_security	= 15;		/* verify security for relation */
+const int irq_l_index		= 16;		/* lookup index id */
+const int irq_l_functions	= 17;		/* lookup function */
+const int irq_l_args		= 18;		/* lookup function arguments */
+const int irq_s_triggers	= 19;		/* scan triggers */
+const int irq_s_triggers2	= 20;		/* scan triggers */
+const int irq_s_msgs		= 21;		/* search for message */
+const int irq_grant1		= 22;		/* process grant option */
+const int irq_grant2		= 23;		/* process grant option */
+const int irq_grant3		= 24;		/* process grant option */
+const int irq_grant4		= 25;		/* process grant option */
+const int irq_format4		= 26;		/* make a new format for a record */
+const int irq_s_trans		= 27;		/* store RDB$TRANSACTIONS */
+const int irq_m_trans		= 28;		/* erase RDB$TRANSACTIONS */
+const int irq_e_trans		= 29;		/* store RDB$TRANSACTIONS */
+const int irq_revoke1		= 30;		/* check revokee for residual privileges */
+const int irq_revoke2		= 31;		/* recursive revoke */
+const int irq_grant5		= 32;		/* check for "PUBLIC" in processing grant options */
+const int irq_r_filters		= 33;		/* read RDB$BLOB_FILTERS */
+const int irq_c_trigger		= 34;		/* check for dependencies when creating a trigger */
+const int irq_s_deps		= 35;		/* store RDB$DEPENDENCIES */
+const int irq_d_deps		= 36;		/* delete RDB$DEPENDENCIES */
+const int irq_r_fld_dim		= 37;		/* read RDB$FIELD_DIMENSIONS */
+const int irq_r_gen_id		= 38;		/* read RDB$GENERATORS, lookup by name. */
+const int irq_s_gen_id		= 39;		/* store RDB$GENERATORS */
+const int irq_ch_f_dpd		= 40;		/* check object field dependencies */
+const int irq_ch_dpd		= 41;		/* check object dependencies */
+const int irq_ch_cmp_dpd	= 42;		/* check computed field dependencies */
+const int irq_grant6		= 43;		/* get field-level security class */
+const int irq_grant7		= 44;		/* update field-level security classes */
+const int irq_grant8		= 45;		/* purge out field-level security classes */
+const int irq_foreign1		= 46;		/* purge out field-level security classes */
+const int irq_foreign2		= 47;		/* purge out field-level security classes */
+const int irq_format5		= 48;		/* make a new format for a record */
 
-	irq_c_exp_index,		// create expression index
-	irq_l_exp_index,		// lookup expression index
+const int irq_c_exp_index	= 49;		/* create expression index */
+const int irq_l_exp_index	= 50;		/* lookup expression index */
 
-	irq_l_rel_id,			// lookup relation id
-	irq_l_procedure,		// lookup procedure name
-	irq_l_proc_id,			// lookup procedure id
-	irq_r_params,			// scan procedure parameters
+const int irq_l_rel_id		= 51;		/* lookup relation id */
+const int irq_l_procedure	= 52;		/* lookup procedure name */
+const int irq_l_proc_id		= 53;		/* lookup procedure id */
+const int irq_r_params		= 54;		/* scan procedure parameters */
 
-	irq_r_procedure,		// scan procedure
-	irq_p_security,			// verify security for procedure
-	irq_c_prc_dpd,			// create procedure dependencies for delete
+const int irq_r_procedure	= 55;		/* scan procedure */
+const int irq_p_security	= 56;		/* verify security for procedure */
+const int irq_c_prc_dpd		= 57;		/* create procedure dependencies for delete */
 
-	irq_c_deps,				// check relation dependency
-	irq_c_deps_f,			// check relation.field dependency
-	irq_l_exception,		// lookup exception by number
-	irq_l_except_no,		// lookup exception by name
-	irq_grant9,				// process grant option
-	irq_l_index_name,		// lookup index by name
-	irq_view_context,		// lookup view context
-	irq_l_cnstrt,			// lookup constraint for index
-	irq_l_check,			// lookup check constraint for trigger
-	irq_l_check2,			// lookup constraint for index
-	irq_c_trg_perm,			// check if trig can ignore perm. checks
-	irq_get_role_mem,		// get SQL role membership
-	irq_get_role_name,		// get SQL role name
-	irq_format6,			// make a new format for a record
-	irq_r_gen_id_num,		// lookup generator by ID.
-	irq_verify_role_name,	// ensure role exists in roles & user_privileges.
-	irq_l_relation_defsec,	// check the default sec class name against rel.
-	irq_m_index_seg,		// modify per-segment index selectivity
+const int irq_c_deps		= 58;		/* check relation dependency */
+const int irq_c_deps_f		= 59;		/* check relation.field dependency */
+const int irq_l_exception	= 60;		/* lookup exception by number */
+const int irq_l_except_no	= 61;		/* lookup exception by name */
+const int irq_grant9		= 62;		/* process grant option */
+const int irq_l_index_name	= 63;		/* lookup index by name */
+const int irq_view_context	= 64;		/* lookup view context */
+const int irq_l_cnstrt		= 65;		/* lookup constraint for index */
+const int irq_l_check		= 66;		/* lookup check constraint for trigger */
+const int irq_l_check2		= 67;		/* lookup constraint for index */
+const int irq_c_trg_perm	= 68;		/* check if trig can ignore perm. checks */
+const int irq_get_role_mem	= 69;		/* get SQL role membership */
+const int irq_get_role_name	= 70;		/* get SQL role name */
+const int irq_format6		= 71;		/* make a new format for a record */
+const int irq_r_gen_id_num	= 72;		/* lookup generator by ID. */
+const int irq_verify_role_name	= 73;	/* ensure role exists in roles & user_privileges. */
+const int irq_l_relation_defsec	= 74;	/* check the default sec class name against rel. */
+const int irq_m_index_seg		= 75;	/* modify per-segment index selectivity */
 
-	irq_l_subtype,			// lookup subtype (charset/collation)
-	irq_c_relation2,		// create new relation
-	irq_r_type,				// lookup relation type
-	irq_p_type,				// lookup procedure type
-	irq_prc_validate,		// procedure blr validate
-	irq_trg_validate,		// trigger blr validate
-	irq_l_domain,			// lookup a domain
-	irq_m_fields2,			// process a modification of RDB$FIELDS for procedures (ODS 11.1)
-	irq_m_fields3,			// process a modification of RDB$FIELDS for triggers (ODS 11.1)
-	irq_m_fields4,			// process a modification of RDB$FIELDS for procedures (TYPE OF COLUMN)
-	irq_m_fields5,			// process a modification of RDB$FIELDS for triggers (TYPE OF COLUMN)
-	irq_r_params2,			// scan procedure parameters (ODS 11.1)
-	irq_l_trg_dbg,			// lookup trigger debug_info (ODS 11.1)
-	irq_l_colls,			// lookup collations
-	irq_l_relfield,			// lookup a relation field
-	irq_verify_trusted_role, // ensure trusted role exists
+const int irq_l_subtype		= 76;		/* lookup subtype (charset/collation) */
+const int irq_c_relation2	= 77;		/* create new relation */
 
-    irq_relation,			// lookup a relation
-    irq_fields,				// lookup a relation's fields
-    irq_dimensions,			// lookup a field's dimensions
-    irq_primary_key,		// lookup a primary key
-    irq_view,				// lookup a view's base relations
-    irq_view_base,			// lookup a view's base relations
-    irq_view_base_flds,		// lookup a view's base fields
-    irq_function,			// lookup a user defined function
-    irq_func_return,		// lookup a function's return argument
-    irq_procedure,			// lookup a stored procedure
-    irq_parameters,			// lookup a procedure's parameters
-    irq_parameters2,		// lookup a procedure's parameters (ODS 11.1)
-    irq_collation,			// lookup a collation name
-    irq_charset,			// lookup a character set
-    irq_trigger,			// lookup a trigger
-    irq_domain,				// lookup a domain
-    irq_type,				// lookup a symbolic name in RDB$TYPES
-    irq_col_default,		// lookup default for a column
-    irq_domain_2,			// lookup a domain
-    irq_exception,			// lookup an exception
-	irq_cs_name,			// lookup a charset name
-	irq_default_cs,			// lookup the default charset
-	irq_rel_ids,			// check relation/field ids
-	irq_comp_circ_dpd,		// check computed circular dependencies
+const int irq_MAX			= 78;
 
-	irq_MAX
-};
-
-#endif // JRD_IRQ_H
+#endif /* JRD_IRQ_H */

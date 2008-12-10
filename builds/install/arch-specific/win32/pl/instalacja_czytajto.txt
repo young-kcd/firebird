@@ -1,165 +1,152 @@
 ==================================================
-Serwer Baz Danych Firebird 2.5.0 pre alpha
+Serwer Baz Danych Firebird 2.0.5
 ==================================================
 
+  ** WA¯NE **
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+  ODS (On Disc Strukture - struktura bazy na dysku) zosta³a zmieniona
+  w stosunku do Firebird 1.5. Zobaczmy poni¿sze informacje dotycz¹ce
+  nowego ODS i instalacji na systemach ze starszymi wersjami Firebird'a.
 
+  ** ********* **
 
-Ten dokument jest przewodnikiem instalacji serwera
-baz danych Firebird 2.1 na systemach Windows.
-Poni¿sze informacje dotycz¹ tego wydania serwera,
-a nie ogólnie serii wydañ Firebird'a 2.1. Informacje s¹
-przeznaczone dla u¿ytkowników uruchamiaj¹cych program
-instalatora.
-
-
-Przyjêto, ¿e czytelnicy orientuj¹ siê w dzia³aniu
-poprzedniej wersji serwera - Firebird 2.0. Jeœli ta
-instalacja Firebird'a 2.1 jest czêœci¹ migracji
-z Firebird'a 1.5, to nale¿y wczeœniej zapoznaæ siê
-z dokumentacj¹ Firebird'a 2.0, aby zrozumieæ wprowadzone
-ró¿nice pomiêdzy wersjami 1.5 oraz 2.0, a tak¿e wykonaæ
-dodatkowe, niezbêdne czynnoœci.
-
+Ten dokument jest przewodnikiem instalacji Firebird 2.0.5
+na platformie Win32. Poni¿sze informacje dotycz¹
+tego pakietu instalacyjnego, a nie ogólnie Firebird'a 2.0.5 .
 
 
 Spis treœci
---------
+-----------
 
 o Przed instalacj¹
-o Problemy z instalacj¹ bibliotek wykonawczych MS VC
-o Inne znane problemy wystêpuj¹ce podczas instalacji
+o Nowy ODS 11.0
+o Instalacja w systemach z Firebird 1.5
+o Instalacja w systemach z Firebird 2.0
+o Nowe funkcjonalnoœci instalatora
+o Znane problemy podczas instalacji
 o Deinstalacja
 o Pozosta³e informacje
 o Instalacja z pliku wsadowego
 
 
 Przed instalacj¹
--------------------
+----------------
 
-Przed instalacj¹ tego serwera, zalecana jest DEINSTALACJA
-wszystkich wczeœniejszych wersji Firebird'a lub InterBase'a.
-Szczególnie wa¿ne jest zweryfikowanie, czy w katalogu
-<system32> nie znajduj¹ siê poprzednie wersje bibliotek
-fbclient.dll i gds32.dll .
-
-
-Problemy z instalacj¹ bibliotek wykonawczych MS VC
------------------------------------------------------
-
-Do³o¿ono wszelkich starañ w celu wykrycia prawid³owej
-instalacji wymaganych bibliotek wykonawczych MS Visual C.
-Jednak w przypadku problemów, mo¿e byæ konieczna
-instalacja dodatkowego pakietu vcredist.exe. W³aœciwe
-wersje pakietów dla tego wydania Firebird'a mo¿na pobraæ
-ze stron:
-
-	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
-
-  dla systemów x64:
-
-	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+Zalecana jest DEINSTALACJA wszystkich wczeœniejszych
+wersji Firebird'a lub InterBase'a przed instalacj¹ tego pakietu.
+Szczególnie wa¿ne jest zweryfikowanie czy fbclient.dll
+i gds32.dll s¹ usuniête z <system32>.
 
 
-Inne znane problemy wystêpuj¹ce podczas instalacji
----------------------------------
+Nowy ODS 11.0
+-------------
 
-o Program instalatora umo¿liwia instalacjê domyœlnej
-  instancji Firebird 2.1. W celu instalacji dodatkowych
-  instancji, nale¿y pobraæ spakowan¹ wersjê obrazu
-  Firebird'a w formacie zip i dokonaæ tego rêcznie.
+Firebird 2.0 wprowadza nowy ODS 11.0, który jest zupe³nie
+niekompatybilny z ODS 11.0 u¿ywanym przez poprzednie wersje
+Alpha.
 
-o Niestety program instalatora nie potrafi wykryæ,
-  czy uruchomiona jest poprzednia wersja Firebird Classic.
+Jeœli instalujemy tê wersjê Firebird 2.0 pierwszy raz, a posiadamy
+wczeœniej zainstalowanego Firebird 2.0, zaleca siê instalacjê
+do nowego katalogu, poniewa¿ deinstalacja zachowuje istniej¹c¹
+bazê security2. Wczeœniejsze wersje u¿ywa³y niekompatybilnego ODS
+i nie moglibyœmy po³¹czyæ siê do serwera.
 
-o Znane s¹ obszary pokrywania siê instalacji
-  dla wersji 32 i 64 bitowych:
 
-  - Instalator us³ugi (instsvc) u¿ywa tej samej,
-	domyœlnej nazwy instancji dla 32 i 64 bitowych
-	wersji instalacji. Trwaj¹ nad tym prace. Us³ugi
-	istniej¹ w jednej przestrzeni nazw.
+Instalacja w systemach z Firebird 1.5
+-------------------------------------------------
 
-  - Jeœli zainstalowane s¹ aplety w Panelu sterowania
-	dla 32 i 64 bitowych wersji, to oba wskazuj¹
-	na tê sam¹, domyœln¹ instancjê bazy.
+Baza danych bezpieczeñstwa zosta³a zmieniona. Nowa baza nazywa siê
+security2.fdb i u¿ywa wzmocnionego algorytmu szyfrowania hase³.
+Mo¿emy uzyskaæ dodatkowe informacje na temat nowych zabezpieczeñ
+w pliku doc/README.sh1.txt.
 
-o W systemie Vista nale¿y przeprowadziæ instalacjê
-  z konta administratora np. klikaj¹c prawym przyciskiem
-  myszy na pliku instalatora i wybieraj¹c opcjê
-  'Uruchom jako Administrator'. W przeciwnym przypadku
-  instalator nie bêdzie móg³ prawid³owo uruchomiæ us³ugi
-  Firebird przed zakoñczeniem instalacji.
+Nowa struktura bazy oraz zmienione zabezpieczenia powoduj¹
+wiele problemów zwi¹zanych z migracj¹ danych w bazach, w których
+wystêpuje wielu u¿ytkowników. Instalator nie dba o przeniesienie
+tych danych. Dla wersji pierwszej Alpha trzeba to zrobiæ samodzielnie.
+Jedna z metod migracji znajduje siê w misc/upgrade/security/.
+Przysz³e wydania testowe bêd¹ rozwi¹zywa³y ten problem w szerszym
+zakresie.
+
+
+Instalacja w systemach z Firebird 2.0
+----------------------------------------------
+
+Oprócz zmian w ODS nale¿y wzi¹æ pod uwagê, ¿e instalator
+nie potrafi automatycznie wykryæ, czy w systemie jest
+uruchomiony serwer Firebird 2.0 Beta 1. Tak wiêc, nie pojawi
+siê ¿adne ostrze¿enie, dopóki nie nast¹pi próba nadpisania
+otwartego pliku. Unikniemy tego, jeœli instalujemy serwer
+po raz pierwszy.
+
+
+Nowe funkcjonalnoœci instalatora
+-----------------------------------------------
+
+o Jeœli zostanie wykryty plik firebird.conf to
+  instalator zainstaluje domyœlny plik konfiguracyjny jako:
+
+  firebird.conf.default .
+
+  Istniej¹cy firebird.conf nie bêdzie modyfikowany.
+  Zapewnia to zachowanie ograniczeñ dostêpu po aktualizacji.
+
+o Dodano do instalatora obs³ugê kilku jêzyków.
+  Jest to obs³uga TYLKO na etapie instalacji.
+
+Znane problemy podczas instalacji
+-------------------------
+
+Obecnie nie ma ¿adnych znanych problemów z instalacj¹.
 
 
 Deinstalacja
 --------------
 
-o Zaleca siê, aby odinstalowywaæ tê aplikacjê za pomoc¹
-  dostarczonego programu deinstalatora. Mo¿na go uruchomiæ
-  w Panelu sterowania -> Dodaj lub usuñ programy.
-  Inn¹ metod¹ jest uruchomienie pliku unins000.exe
-  bezpoœrednio w katalogu z instalacj¹ Firebird'a.
+o Zaleca siê, aby odinstalowywaæ ten pakiet u¿ywaj¹c dostarczonej
+  aplikacji. Mo¿na j¹ wywo³aæ z Panelu Sterowania. Alternatywn¹
+  metod¹ jest uruchomienie pliku unins000.exe bezpoœrednio w
+  katalogu z instalacj¹.
 
-o Jeœli Firebird jest uruchomiony w trybie aplikacji
-  (a nie us³ugi systemowej), to przed uruchomieniem
-  programu deinstalatora zalecane jest rêczne
-  zatrzymanie serwera, poniewa¿ deinstalator sam nie
-  potrafi zatrzymaæ tak uruchomionego serwera.
-  W przypadku gdy serwer jest uruchomiony w czasie
-  procesu deinstalacji, to zakoñczy siê ona z b³êdami.
-  Pozostan¹ pliki u¿ywane w danej chwili przez system,
-  które trzeba bêdzie usun¹æ rêcznie, ale dopiero po
-  zakoñczeniu ich dzia³ania.
+o Jeœli Firebird jest uruchamiany jako aplikacja (a nie jako
+  us³uga systemowa) zalecane jest rêczne wy³¹czenie serwera
+  przed procesem deinstalacji. Jest tak, poniewa¿ instalator
+  nie potrafi zatrzymaæ uruchomionej aplikacji. Jeœli serwer
+  bêdzie uruchomiony w czasie procesu odinstalowywania, deinstalator
+  zakoñczy pracê z b³êdami. Bêdziemy musieli skasowaæ pozosta³e
+  pliki rêcznie.
 
-o Deinstalator pozostawia cztery pliki w katalogu
-  instalacyjnym:
+o Deinstalator pozostawia cztery pliki w katalogu instalacyjnym:
 
   - aliases.conf
   - firebird.conf
   - firebird.log
   - security2.fdb
 
-  To jest zamierzone dzia³anie. Te pliki s¹ modyfikowane
-  przez u¿ytkowników i mog¹ byæ wymagane, jeœli Firebird
-  zostanie ponownie zainstalowany. Pliki mo¿na usun¹æ
-  rêcznie, jeœli nie bêd¹ w przysz³oœci potrzebne.
+  To jest zamierzone dzia³anie. Te pliki s¹ modyfikowane przez
+  u¿ytkowników i mog¹ byæ wymagane, jeœli Firebird zostanie
+  ponownie zainstalowany. Pliki mo¿emy usun¹æ rêcznie,
+  jeœli nie bêd¹ nam ju¿ wiêcej potrzebne.
 
-o Now¹ mo¿liwoœci¹ instalatora jest parametr /CLEAN
-  sprawdzaj¹cy, czy powi¹zane z Firebirdem pliki nie
-  s¹ wspó³dzielone z innymi aplikacjami. Jeœli jakieœ
-  pliki nie s¹ wspó³dzielone, to zostan¹ usuniête
-  wraz z Firebird'em ( gdy¿ nie bêd¹ ju¿ u¿ywane
-  przez ¿adne inne programy).
-
-o Deinstalacja nie usuwa z systemu bibliotek
-  wykonawczych MS VC. Mo¿na je odinstalowaæ rêcznie
-  przez Panel sterowania, ale nie jest to wymagane.
 
 Pozosta³e informacje
------------
+--------------------
 
-  Firebird wymaga bibliotek WinSock2. Wszystkie systemy
-  Win32 powinny j¹ posiadaæ w katalogach systemowych,
-  z wyj¹tkiem Win95. Podczas instalacji sprawdzana jest
-  obecnoœæ bibliotek WinSock2. Jeœli biblioteki nie
-  zostan¹ znalezione, wówczas instalator nie zainstaluje
-  Firebird'a. Na poni¿szej stronie mo¿na zaczerpn¹æ
-  informacji, w jaki sposób nale¿y zainstalowaæ te biblioteki:
+  Firebird wymaga bibliotek WinSock2. Wszystkie platformy Win32 powinny
+  j¹ posiadaæ w systemie, z wyj¹tkiem Win95. Podczas instalacji sprawdzana
+  jest obecnoœæ bibliotek WinSock2. Jeœli nie zostanie znaleziona
+  instalator nie zainstaluje Firebird'a. Na poni¿szej stronie
+  mo¿emy siê dowiedzieæ jak zainstalowaæ wymagane biblioteki:
 
 	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
 
 Instalacja z pliku wsadowego
-------------------------------
+----------------------------
 
 Program instalatora mo¿e zostaæ uruchomiony z pliku wsadowego.
-W celu uzyskania dodatkowych informacji nale¿y zapoznaæ siê
-z zawartoœci¹ dokumentu:
+Nale¿y przeczytaæ ten dokument:
 
 	installation_scripted.txt
 
+w celu uzyskania dodatkowych informacji.

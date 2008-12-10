@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.firebird,v 1.67.4.3 2007-05-02 13:30:25 paulbeach Exp $
 #
 
 ROOT=..
@@ -50,7 +51,6 @@ LD_LIBRARY_PATH=$(LIB)
 #export ISC_PASSWORD
 #export INTERBASE
 export FIREBIRD
-export DYLD_FRAMEWORK_PATH
 export LD_LIBRARY_PATH
 
 ######################################################################
@@ -130,7 +130,7 @@ export LD_LIBRARY_PATH
 # MOD 28-July-2002)
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
-.PHONY: firebird_super firebird_classic btyacc_binary
+.PHONY: firebird_super firebird_classic
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -154,7 +154,7 @@ firebird_super firebird_server: firebird_basic super_targets
 # some complications particularly for super in needing to start the server
 # that you are currently building. MOD 28-July-2002
 
-firebird_basic: btyacc_binary external_libraries firebird_boot basic_targets
+firebird_basic: external_libraries firebird_boot basic_targets
 
 firebird_boot: updateBuildNum boot_phase1 boot_phase2 
 
@@ -185,19 +185,10 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 # 
 
 external_libraries:
-ifeq ($(STD_ICU),false)
-	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.icu
-endif
-ifeq ($(STD_EDITLINE),false)
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
 ifeq ($(EDITLINE_FLG),Y)
-	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.editline
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
 endif
-endif
-
-btyacc_binary: $(BTYACC)
-
-$(BTYACC): 
-	$(MAKE) -C $(ROOT)/extern/btyacc
 
 #---------------------------------------------------------------------------
 # Phase1: make a gpre_static from scratch so we can parse .e and .epp files
@@ -222,7 +213,7 @@ boot_phase1: $(GPRE_STATIC)
 $(GPRE_STATIC):
 	$(MAKE) boot_phase1_build
 
-boot_phase1_build: gpre_boot libfbstatic gpre_static
+boot_phase1_build: gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
 
 
 gpre_boot:
@@ -233,6 +224,10 @@ libfbstatic:
 
 gpre_static:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gpre $@
+
+                             # The lock manager for classic (embedded) 
+lock_mgr :
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.lockmgr $@
 
 
 
@@ -256,16 +251,19 @@ gpre_static:
 
 boot_phase2 : libfbstatic $(ISC_GDB)
 
-$(ISC_GDB): create_db empty_db gbak_static isql_static ref_databases
+$(ISC_GDB):
+	$(MAKE) boot_phase2_build
 
-create_db:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(CREATE_DB)
+boot_phase2_build: $(CREATE_DB) empty_db $(GBAK_STATIC) $(ISQL_STATIC)
 
-gbak_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak
+$(CREATE_DB):
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $@
 
-isql_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql
+$(GBAK_STATIC): @MANAGER_PROCESS_TARGET@
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak $@
+
+$(ISQL_STATIC): 
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql $@
 
 empty_db :
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
@@ -327,20 +325,17 @@ otherfiles: misc_files
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
 
-.PHONY: libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql 
+.PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql \
-	embed_gpre libfbclient embed_util embed_gdef embed_qli embed_fbudf $(PLAT_CLASSIC_POST_TARGET)
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
+	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
 
 inet_server:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.inet_server
-
-fb_smp_server:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.smp_server
 
 embed_gfix:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gfix
@@ -433,13 +428,13 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 # All these files are #includes in ibase.h here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
-IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
+IBASE_ExtraFiles = include/types_pub.h dsql/sqlda_pub.h jrd/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h 
 SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
 MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
 MAKE_HEADER_Bin = ./makeHeader
 
 $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
-	$(STATICEXE_LINK) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
+	$(CXX) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
 	$(CP) $^ .
 	$(MAKE_HEADER_Bin) <ibase.h >$@
 	$(RM) -f ibase.h
@@ -449,6 +444,7 @@ $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
 
 OtherDistribHeaders = extlib/ib_util.h \
 	               jrd/perf.h  \
+	               jrd/blr.h \
 	               include/gen/iberror.h
 
 SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
@@ -523,7 +519,7 @@ $(SrcTarFile) :
 
 
 clean: clean_objects clean_dependancies clean_extern_objects clean_build \
-		clean_yacc_gen clean_gpre_gen clean_icu clean_dbs clean_examples
+		clean_gpre_gen clean_icu clean_dbs clean_examples
 
 ifeq ($(EDITLINE_FLG),Y)
 clean: clean_editline
@@ -535,22 +531,13 @@ clean_config clean_all: clean clean_makefiles
 	$(RM) $(ROOT)/config.log
 	$(RM) $(ROOT)/config.status
 	$(RM) $(ROOT)/libtool
-	$(RM_R) $(ROOT)/autom4te.cache
-	-make -C $(ROOT)/extern/editline distclean
-	-make -C $(ROOT)/extern/icu/source distclean
-	-make -C $(ROOT)/extern/btyacc distclean
 
 clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
 	$(RM) yachts.lnk
 
-
-# The examples are a bit different, since the makefile is included in the directory
-# and not in the gen directory, deleting it means, make clean; make doesnt work correctly
-# so the code below deletes all the other stuff but not the Makefile.examples MOD Nov-2007
- 
 clean_examples:
-	$(RM) `find $(GEN_ROOT)/examples/ -type f ! -name 'Make*'`
+	$(RM) $(GEN_ROOT)/examples/*
 
 clean_editline:
 	-make -C $(ROOT)/extern/editline clean
@@ -584,15 +571,12 @@ clean_build:
 clean_makefiles:
 	$(RM) $(GEN_ROOT)/Make*
 	$(RM) $(GEN_ROOT)/make*
-	-$(RM) $(GEN_ROOT)/examples/Make*
 	$(RM) $(ROOT)/Makefile
 	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
-
+	
 clean_gpre_gen:
 	-$(RM) `find $(SRC_ROOT) -type f -name '*.epp' -print | sed 's/epp$$/cpp/'`
-
-clean_yacc_gen:
-	$(RM) $(ROOT)/src/dsql/parse.cpp $(ROOT)/src/dsql/dsql.tab.h
+	
 
 #___________________________________________________________________________
 # Extra platform specific targets

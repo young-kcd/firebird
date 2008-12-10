@@ -48,12 +48,6 @@
 #include <io.h> // isatty
 #endif
 
-#include "../common/classes/MsgPrint.h"
-#include "../common/utils_proto.h"
-
-using MsgFormat::SafeArg;
-
-
 DudleyGlobals dudleyGlob;
 
 static dudley_lls* free_stack;
@@ -80,11 +74,7 @@ enum in_sw_values
 	IN_SW_GDEF_ADA = 14,	// source is ada
 	IN_SW_GDEF_CXX,			// source is C++
 	IN_SW_GDEF_USER = 17,	// user name for PC security
-	IN_SW_GDEF_PASSWORD,	// password for PC security
-#ifdef TRUSTED_AUTH
-	IN_SW_GDEF_TRUSTED,		// trusted auth
-#endif
-	IN_SW_GDEF_FETCH_PASS	// fetch password from file
+	IN_SW_GDEF_PASSWORD		// password for PC security
 };
 
 static const in_sw_tab_t gdef_in_sw_table[] =
@@ -108,12 +98,6 @@ static const in_sw_tab_t gdef_in_sw_table[] =
 		"\t\tuser name to use in attaching database" },
 	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, FALSE, 0, 0,
 		"\t\tpassword to use with user name" },
-	{ IN_SW_GDEF_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, FALSE, 0, 0,
-		"\t\tfetch password from file" },
-#ifdef TRUSTED_AUTH
-	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, FALSE, 0, 0,
-		"\t\tuse trusted authentication" },
-#endif
 	{ IN_SW_GDEF_Z, 0, "Z", 0, 0, 0, FALSE, 0, 0, "\t\tprint version number" },
 	{ IN_SW_GDEF_0, 0, NULL, 0, 0, 0, FALSE, 0, 0, NULL }
 };
@@ -133,9 +117,13 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	command line.
  *
  **************************************/
+	//TEXT buffer[256];
 
-// CVC: Notice that gdef is NEVER run as a service! It doesn't make sense.
-/* Perform some special handling when run as a Firebird service.  The
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
+
+/* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
@@ -177,9 +165,6 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	dudleyGlob.DDL_dynamic = false;
 	dudleyGlob.DDL_trace = false;
 	dudleyGlob.DDL_version = false;
-#ifdef TRUSTED_AUTH
-	dudleyGlob.DDL_trusted = false;
-#endif
 	dudleyGlob.DDL_default_user = NULL;
 	dudleyGlob.DDL_default_password = NULL;
 
@@ -281,23 +266,13 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			break;
 
 		case IN_SW_GDEF_Z:
-			DDL_msg_put(0, SafeArg() << GDS_VERSION);	/* msg 0: gdef version %s\n */
+			DDL_msg_put(0, GDS_VERSION, 0, 0, 0, 0);	/* msg 0: gdef version %s\n */
 			dudleyGlob.DDL_version = true;
 			break;
 
 		case IN_SW_GDEF_PASSWORD:
 			if (argc > 1) {
-				dudleyGlob.DDL_default_password = fb_utils::get_passwd(*++argv);
-				argc--;
-			}
-
-		case IN_SW_GDEF_FETCH_PASS:
-			if (argc > 1) {
-				if (fb_utils::fetchPassword(*++argv, dudleyGlob.DDL_default_password) != fb_utils::FETCH_PASS_OK)
-				{
-					DDL_msg_put(345);	// msg 4: gdef: Error fetching password from file
-					DDL_exit(FINI_ERROR);
-				}
+				dudleyGlob.DDL_default_password = *++argv;
 				argc--;
 			}
 			break;
@@ -309,22 +284,16 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			}
 			break;
 
-#ifdef TRUSTED_AUTH
-		case IN_SW_GDEF_TRUSTED:
-			dudleyGlob.DDL_trusted = true;
-			break;
-#endif
-
 		case IN_SW_GDEF_0:
 			if (*string != '?')
-				DDL_msg_put(1, SafeArg() << string);	/* msg 1: gdef: unknown switch %s */
-			DDL_msg_put(2);	/* msg 2: \tlegal switches are: */
+				DDL_msg_put(1, string, 0, 0, 0, 0);	/* msg 1: gdef: unknown switch %s */
+			DDL_msg_put(2, 0, 0, 0, 0, 0);	/* msg 2: \tlegal switches are: */
 			for (const in_sw_tab_t* in_sw_tab = gdef_in_sw_table;
 				in_sw_tab->in_sw; in_sw_tab++)
 			{
 				if (in_sw_tab->in_sw_text) {
-					DDL_msg_put(3, SafeArg() << in_sw_tab->in_sw_name <<
-								in_sw_tab->in_sw_text);	/* msg 3: %s%s */
+					DDL_msg_put(3, in_sw_tab->in_sw_name,
+								in_sw_tab->in_sw_text, 0, 0, 0);	/* msg 3: %s%s */
 				}
 			}
 			DDL_exit(FINI_ERROR);
@@ -332,12 +301,12 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	}
 
 	FILE* input_file;
-
+	
 	if (dudleyGlob.DDL_extract) {
 		strcpy(dudleyGlob.DB_file_string, file_name_1);
 		strcpy(dudleyGlob.DDL_file_string, file_name_2);
 		if (!*dudleyGlob.DB_file_string) {
-			DDL_msg_put(4);	/* msg 4: gdef: Database name is required for extract */
+			DDL_msg_put(4, 0, 0, 0, 0, 0);	/* msg 4: gdef: Database name is required for extract */
 			DDL_exit(FINI_ERROR);
 		}
 		dudleyGlob.DB_file_name = dudleyGlob.DB_file_string;
@@ -355,8 +324,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		dudleyGlob.DDL_interactive = dudleyGlob.DDL_service || isatty(0);
 	}
 	else {
-		/*
-		   * try to open the input DDL file.
+		/* 
+		   * try to open the input DDL file.  
 		   * If it already has a .GDL extension, just try to open it.
 		   * Otherwise, add the extension, try, remove the extension,
 		   * and try again.
@@ -379,8 +348,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 				if (!*p) {
 					input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
 					if (!input_file) {
-						DDL_msg_put(5, SafeArg() << dudleyGlob.DDL_file_name);
-						/* msg 5: gdef: can't open %s */
+						DDL_msg_put(5, dudleyGlob.DDL_file_name, 0, 0, 0, 0);	/* msg 5: gdef: can't open %s */
 						DDL_exit(FINI_ERROR);
 					}
 				}
@@ -397,7 +365,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 			else {
 				input_file = fopen(dudleyGlob.DDL_file_name, FOPEN_INPUT_TYPE);
 				if (!input_file)
-					DDL_msg_put(6, SafeArg() << dudleyGlob.DDL_file_name << file_name_1);
+					DDL_msg_put(6, dudleyGlob.DDL_file_name, file_name_1, 0, 0, 0);
 				/* msg 6: gdef: can't open %s or %s */
 			}
 		}
@@ -414,12 +382,13 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (dudleyGlob.DDL_actions && ((dudleyGlob.DDL_errors && dudleyGlob.DDL_interactive) || dudleyGlob.DDL_quit)) {
 		rewind(stdin);
+		//*buffer = 0;
 		if (dudleyGlob.DDL_errors > 1)
-			DDL_msg_partial(7, SafeArg() << dudleyGlob.DDL_errors);	/* msg 7: \n%d errors during input. */
+			DDL_msg_partial(7, (TEXT *) (IPTR) dudleyGlob.DDL_errors, 0, 0, 0, 0);	/* msg 7: \n%d errors during input. */
 		else if (dudleyGlob.DDL_errors)
-			DDL_msg_partial(9);	/* msg 9: \n1 error during input. */
+			DDL_msg_partial(9, 0, 0, 0, 0, 0);	/* msg 9: \n1 error during input. */
 		else
-			DDL_msg_partial(8);	/* msg 8: \nNo errors. */
+			DDL_msg_partial(8, 0, 0, 0, 0, 0);	/* msg 8: \nNo errors. */
 		if (DDL_yes_no(10)) { // msg 10 : save changes before exiting?
 			dudleyGlob.DDL_quit = false;
 			dudleyGlob.DDL_errors = 0;
@@ -448,9 +417,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (dudleyGlob.DDL_actions && (dudleyGlob.DDL_errors || dudleyGlob.DDL_quit))
 		if (dudleyGlob.DDL_errors)
-			DDL_msg_put(307);	/* msg 307: Ceasing processing because of errors. */
+			DDL_msg_put(307, 0, 0, 0, 0, 0);	/* msg 307: Ceasing processing because of errors. */
 		else
-			DDL_msg_put(308);	/* msg 308: Ceasing processing. */
+			DDL_msg_put(308, 0, 0, 0, 0, 0);	/* msg 308: Ceasing processing. */
 
 	EXE_fini(dudleyGlob.database);
 
@@ -492,7 +461,7 @@ UCHAR *DDL_alloc(int size)
 #endif
 
 	if (!p)
-		DDL_err(14);	/* msg 14: memory exhausted */
+		DDL_err(14, 0, 0, 0, 0, 0);	/* msg 14: memory exhausted */
 	else
 		do {
 			*p++ = 0;
@@ -502,9 +471,12 @@ UCHAR *DDL_alloc(int size)
 }
 
 
-int DDL_db_error(ISC_STATUS* status_vector,
+int DDL_db_error(
+				 ISC_STATUS* status_vector,
 				 USHORT number,
-				 const SafeArg& arg)
+				 const TEXT* arg1,
+				 const TEXT* arg2, const TEXT* arg3,
+				 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -519,12 +491,14 @@ int DDL_db_error(ISC_STATUS* status_vector,
 
 	gds__print_status(status_vector);
 
-	return DDL_err(number, arg);
+	return DDL_err(number, arg1, arg2, arg3, arg4, arg5);
 }
 
 
-int DDL_err(USHORT number,
-			const SafeArg& arg)
+int DDL_err(
+			USHORT number,
+			const TEXT* arg1, const TEXT* arg2, const TEXT* arg3,
+			const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -537,13 +511,11 @@ int DDL_err(USHORT number,
  *
  **************************************/
 
-	SafeArg temp;
-	DDL_msg_partial(15, temp << dudleyGlob.DDL_file_name << dudleyGlob.DDL_line);	/*msg 15: %s:%d: */
-	DDL_msg_put(number, arg);
+	DDL_msg_partial(15, dudleyGlob.DDL_file_name, (TEXT *) (IPTR) dudleyGlob.DDL_line, 0, 0, 0);	/*msg 15: %s:%d: */
+	DDL_msg_put(number, arg1, arg2, arg3, arg4, arg5);
 	if (dudleyGlob.DDL_errors++ > MAX_ERRORS) {
-		temp.clear();
-		DDL_msg_put(16, temp << MAX_ERRORS);	/* msg 16: error count exceeds limit (%d) */
-		DDL_msg_put(17);	/* msg 17: what we have here is a failure to communicate! */
+		DDL_msg_put(16, (TEXT *) (SLONG) MAX_ERRORS, 0, 0, 0, 0);	/* msg 16: error count exceeds limit (%d) */
+		DDL_msg_put(17, 0, 0, 0, 0, 0);	/* msg 17: what we have here is a failure to communicate! */
 		if (dudleyGlob.database && (dudleyGlob.database->dbb_flags & DBB_create_database))
 			unlink(dudleyGlob.DB_file_name);
 		DDL_exit(FINI_ERROR);
@@ -553,9 +525,12 @@ int DDL_err(USHORT number,
 }
 
 
-void DDL_error_abort(ISC_STATUS* status_vector,
+void DDL_error_abort(
+					 ISC_STATUS* status_vector,
 					 USHORT number,
-					 const SafeArg& arg)
+					 const TEXT* arg1,
+					 const TEXT* arg2, const TEXT* arg3, 
+					 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -572,7 +547,7 @@ void DDL_error_abort(ISC_STATUS* status_vector,
 	if (status_vector)
 		gds__print_status(status_vector);
 
-	DDL_err(number, arg);
+	DDL_err(number, arg1, arg2, arg3, arg4, arg5);
 	DDL_exit(FINI_ERROR);
 }
 
@@ -595,8 +570,11 @@ void DDL_exit( int stat)
 }
 
 
-void DDL_msg_partial(USHORT number,
-					 const SafeArg& arg)
+void DDL_msg_partial(
+					 USHORT number,
+					 const TEXT* arg1,
+					 const TEXT* arg2, const TEXT* arg3,
+					 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -610,13 +588,17 @@ void DDL_msg_partial(USHORT number,
  *
  **************************************/
 
-	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message, arg);
+	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
+					arg1, arg2, arg3, arg4, arg5);
 	printf("%s", DDL_message);
 }
 
 
-void DDL_msg_put(USHORT number,
-				 const SafeArg& arg)
+void DDL_msg_put(
+				 USHORT number,
+				 const TEXT* arg1,
+				 const TEXT* arg2, const TEXT* arg3,
+				 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -629,7 +611,8 @@ void DDL_msg_put(USHORT number,
  *
  **************************************/
 
-	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message, arg);
+	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(DDL_message), DDL_message,
+					arg1, arg2, arg3, arg4, arg5);
 	printf("%s\n", DDL_message);
 }
 
@@ -697,22 +680,23 @@ bool DDL_yes_no( USHORT number)
  **************************************/
 	TEXT prompt[128], reprompt[128], yes_ans[128], no_ans[128];
 
-	static const SafeArg dummy;
-
-	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, dummy);
+	gds__msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, NULL,
+					NULL, NULL, NULL, NULL);
 
 	USHORT yes_num = 342;				/* Msg342 YES   */
 	USHORT no_num = 343;				/* Msg343 NO    */
 	USHORT re_num = 344;				/* Msg344 Please respond with YES or NO. */
 	reprompt[0] = '\0';
 
-	if (fb_msg_format
-		(0, DDL_MSG_FAC, no_num, sizeof(no_ans), no_ans, dummy) <= 0)
+	if (gds__msg_format
+		(0, DDL_MSG_FAC, no_num, sizeof(no_ans), no_ans, NULL, NULL, NULL,
+		 NULL, NULL) <= 0)
 	{
 		strcpy(no_ans, "NO");	/* default if msg_format fails */
 	}
-	if (fb_msg_format
-		(0, DDL_MSG_FAC, yes_num, sizeof(yes_ans), yes_ans, dummy) <= 0)
+	if (gds__msg_format
+		(0, DDL_MSG_FAC, yes_num, sizeof(yes_ans), yes_ans, NULL, NULL, NULL,
+		 NULL, NULL) <= 0)
 	{
 		strcpy(yes_ans, "YES");
 	}
@@ -738,8 +722,8 @@ bool DDL_yes_no( USHORT number)
 		if (UPPER(c) == UPPER(no_ans[0]))
 			return false;
 		if (!reprompt
-			&& fb_msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
-							   reprompt, dummy) <= 0)
+			&& gds__msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
+							   reprompt, NULL, NULL, NULL, NULL, NULL) <= 0)
 		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
 		}

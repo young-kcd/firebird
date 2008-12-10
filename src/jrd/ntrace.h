@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ntrace.h,v 1.4 2008-12-05 00:56:04 asfernandes Exp $
+ *  $Id: ntrace.h,v 1.3 2004-06-30 01:38:57 skidder Exp $
  *
  */
 
@@ -93,39 +93,39 @@ typedef char* (*ntrace_get_error_t)(ntrace_object_t tpl_object);
 typedef void (*ntrace_finalize_t)(ntrace_object_t tpl_object);
 
 /* Create/close attachment */
-typedef ntrace_boolean_t (*ntrace_event_attach_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_attach_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection, ntrace_size_t dpb_length, const ntrace_byte_t *dpb);
-typedef ntrace_boolean_t (*ntrace_event_detach_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_detach_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection);
 
 /* Start/end transaction */
-typedef ntrace_boolean_t (*ntrace_event_transaction_start_t)(ntrace_object_t tpl_object,
-	ntrace_connection_t connection, ntrace_transaction_t transaction,
+typedef ntrace_boolean_t (*ntrace_event_transaction_start_t)(ntrace_object_t tpl_object, 
+	ntrace_connection_t connection, ntrace_transaction_t transaction, 
 	ntrace_size_t tpb_length, const ntrace_byte_t* tpb);
 typedef ntrace_boolean_t (*ntrace_event_transaction_end_t)(ntrace_object_t tpl_object,
-	ntrace_connection_t connection, ntrace_transaction_t transaction,
+	ntrace_connection_t connection, ntrace_transaction_t transaction, 
 	ntrace_boolean_t commit, ntrace_boolean_t retain_context);
 
 /* DSQL statement lifecycle */
-typedef ntrace_boolean_t (*ntrace_event_dsql_prepare_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_dsql_prepare_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection, ntrace_transaction_t transaction,
 	ntrace_statement_t statement, const char* sql, ntrace_counter_t time_millis,
 	ntrace_size_t access_path_length, const ntrace_byte_t* access_path);
-typedef ntrace_boolean_t (*ntrace_event_dsql_execute_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_dsql_execute_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection, ntrace_transaction_t transaction,
-	ntrace_statement_t statement, ntrace_size_t paramcount, struct paramdsc* parameters,
+	ntrace_statement_t statement, ntrace_size_t paramcount, struct paramdsc* parameters, 
     PerformanceInfo *info);
-typedef ntrace_boolean_t (*ntrace_event_dsql_fetch_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_dsql_fetch_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection, ntrace_transaction_t transaction,
 	ntrace_statement_t statement, PerformanceInfo *info, ntrace_counter_t records_fetched);
-typedef ntrace_boolean_t (*ntrace_event_dsql_free_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_dsql_free_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection, ntrace_transaction_t transaction,
 	ntrace_statement_t statement, unsigned short option);
 
 /* Procedure execution */
-typedef ntrace_boolean_t (*ntrace_event_proc_execute_t)(ntrace_object_t tpl_object,
+typedef ntrace_boolean_t (*ntrace_event_proc_execute_t)(ntrace_object_t tpl_object, 
 	ntrace_connection_t connection, ntrace_transaction_t transaction,
-	ntrace_procedure_t procedure, ntrace_size_t argcount, struct paramdsc* arguments,
+	ntrace_procedure_t procedure, ntrace_size_t argcount, struct paramdsc* arguments, 
 	PerformanceInfo *info);
 
 /* API of trace plugin. Used to deliver notifications for each database */

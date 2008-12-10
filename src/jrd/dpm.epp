@@ -51,10 +51,10 @@
 #include "../jrd/cch.h"
 #include "../jrd/pag.h"
 #include "../jrd/rse.h"
-#include "../jrd/val.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
 #endif
+#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -64,7 +64,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/sqz_proto.h"
-#include "../common/StatusArg.h"
+#include "../jrd/thd.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/dbg_proto.h"
@@ -79,15 +79,14 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
 using namespace Ods;
-using namespace Firebird;
 
-static void delete_tail(thread_db*, rhdf*, const USHORT, USHORT);
+static void delete_tail(thread_db*, RHDF, USHORT);
 static void fragment(thread_db*, record_param*, SSHORT, DataComprControl*, SSHORT, const jrd_tra*);
 static void extend_relation(thread_db*, jrd_rel*, WIN *);
 static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static bool get_header(WIN *, SSHORT, record_param*);
-static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN *, USHORT, USHORT);
-static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
+static pointer_page* get_pointer_page(thread_db*, jrd_rel*, WIN *, USHORT, USHORT);
+static RHD locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
 static void mark_full(thread_db*, record_param*);
 static void release_dcc(DataComprControl*);
 static void store_big_record(thread_db*, record_param*, PageStack&, DataComprControl*, USHORT);
@@ -106,13 +105,13 @@ PAG DPM_allocate(thread_db* tdbb, WIN* window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf("DPM_allocate (window page %"SLONGFORMAT")\n",
-				  window ? window->win_page.getPageNum() : 0);
+				  window ? window->win_page : 0);
 	}
 #endif
 
@@ -136,7 +135,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -152,14 +151,14 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 	}
 #endif
 
-	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
-	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
+	CCH_MARK(tdbb, &rpb->rpb_window);
+	data_page* page = (data_page*) rpb->rpb_window.win_buffer;
 	data_page::dpg_repeat* index1 = page->dpg_rpt + rpb->rpb_line;
 	data_page::dpg_repeat* index2 = page->dpg_rpt + rpb->rpb_b_line;
 	*index1 = *index2;
 	index2->dpg_offset = index2->dpg_length = 0;
 
-	rhd* header = (rhd*) ((SCHAR *) page + index1->dpg_offset);
+	rhd* header = (RHD) ((SCHAR *) page + index1->dpg_offset);
 	header->rhd_flags &= ~(rhd_chain | rhd_gc_active);
 
 #ifdef VIO_DEBUG
@@ -186,7 +185,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 		printf("    new dpg_count %d\n", page->dpg_count);
 #endif
 
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	CCH_RELEASE(tdbb, &rpb->rpb_window);
 }
 
 
@@ -203,7 +202,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	// Estimated number of total records for this relation, 
 	// we assume that the records are compressed to 50%
@@ -223,10 +222,10 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 	// from the data-page.
 
 	if (dataPages == 1) {
-		RelationPages* relPages = relation->getPages(tdbb);
-		vcl* vector = relPages->rel_pages;
+		vcl* vector = relation->rel_pages;
 		if (vector) {
-			WIN window(relPages->rel_pg_space_id, (*vector)[0]);
+			WIN window(-1);
+			window.win_page = (*vector)[0];
 			Ods::pointer_page* ppage = 
 				(Ods::pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
 			USHORT recordCount = 0;
@@ -273,7 +272,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -320,7 +319,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		temp.rpb_b_page != org_rpb->rpb_b_page ||
 		temp.rpb_b_line != org_rpb->rpb_b_line)
 	{
-		CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &org_rpb->rpb_window);
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
 			printf("    record changed in DPM_chain\n");
@@ -334,7 +333,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		org_rpb->rpb_prior = temp.rpb_prior;
 	}
 	else if (org_rpb->rpb_flags & rpb_delta) {
-		CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &org_rpb->rpb_window);
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
 			printf("    record delta state changed\n");
@@ -343,12 +342,12 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		return false;
 	}
 
-	data_page* page = (data_page*) org_rpb->getWindow(tdbb).win_buffer;
+	data_page* page = (data_page*) org_rpb->rpb_window.win_buffer;
 
 /* If the record obviously isn't going to fit, don't even try */
 
 	if (size > dbb->dbb_page_size - (sizeof(data_page) + RHD_SIZE)) {
-		CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &org_rpb->rpb_window);
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
 			printf("    insufficient room found in DPM_chain\n");
@@ -398,7 +397,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 /* If the record doesn't fit, punt */
 
 	if (length > available) {
-		CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &org_rpb->rpb_window);
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
 			printf("    compressed page doesn't have room in DPM_chain\n");
@@ -407,8 +406,8 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		return false;
 	}
 
-	CCH_precedence(tdbb, &org_rpb->getWindow(tdbb), -org_rpb->rpb_transaction_nr);
-	CCH_MARK(tdbb, &org_rpb->getWindow(tdbb));
+	CCH_precedence(tdbb, &org_rpb->rpb_window, -org_rpb->rpb_transaction_nr);
+	CCH_MARK(tdbb, &org_rpb->rpb_window);
 
 /* Record fits, in theory.  Check to see if the page needs compression */
 
@@ -429,14 +428,14 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	new_rpb->rpb_line = org_rpb->rpb_line;
 
 	data_page::dpg_repeat* index2 = page->dpg_rpt + org_rpb->rpb_line;
-	rhd* header = (rhd*) ((SCHAR *) page + index2->dpg_offset);
+	rhd* header = (RHD) ((SCHAR *) page + index2->dpg_offset);
 	header->rhd_flags |= rhd_chain;
 	page->dpg_rpt[slot] = *index2;
 
 	index2->dpg_offset = space;
 	index2->dpg_length = RHD_SIZE + size + fill;
 
-	header = (rhd*) ((SCHAR *) page + space);
+	header = (RHD) ((SCHAR *) page + space);
 	header->rhd_flags = new_rpb->rpb_flags;
 	header->rhd_transaction = new_rpb->rpb_transaction_nr;
 	header->rhd_format = new_rpb->rpb_format_number;
@@ -450,7 +449,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		memset(header->rhd_data + size, 0, fill);
 	}
 
-	CCH_RELEASE(tdbb, &org_rpb->getWindow(tdbb));
+	CCH_RELEASE(tdbb, &org_rpb->rpb_window);
 
 	return true;
 }
@@ -469,7 +468,7 @@ int DPM_compress( thread_db* tdbb, data_page* page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -494,12 +493,14 @@ int DPM_compress( thread_db* tdbb, data_page* page)
 			// This should also work just a little bit faster too.
 			const SSHORT l = ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
 			space -= l;
-			memcpy(temp_page + space, (UCHAR *) page + index->dpg_offset, l);
+			MOVE_FAST((UCHAR *) page + index->dpg_offset, temp_page + space,
+					  l);
 			index->dpg_offset = space;
 		}
 	}
 
-	memcpy((UCHAR *) page + space, temp_page + space, dbb->dbb_page_size - space);
+	MOVE_FASTER(temp_page + space,
+				(UCHAR *) page + space, dbb->dbb_page_size - space);
 
 	if (page->dpg_header.pag_type != pag_data) {
 		BUGCHECK(251);			/* msg 251 damaged data page */
@@ -522,7 +523,7 @@ void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -530,25 +531,8 @@ void DPM_create_relation( thread_db* tdbb, jrd_rel* relation)
 		printf("DPM_create_relation (relation %d)\n", relation->rel_id);
 #endif
 
-	RelationPages* relPages = relation->getBasePages();
-	DPM_create_relation_pages(tdbb, relation, relPages);
-
-/* Store page numbers in RDB$PAGES */
-	DPM_pages(tdbb, relation->rel_id, pag_pointer, (ULONG) 0,
-			  (*relPages->rel_pages)[0] /*window.win_page*/);
-	DPM_pages(tdbb, relation->rel_id, pag_root, (ULONG) 0,
-			  relPages->rel_index_root /*root_window.win_page*/);
-}
-
-
-void DPM_create_relation_pages(thread_db* tdbb, jrd_rel* relation, RelationPages* relPages)
-{
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
 /* Allocate first pointer page */
-	WIN window(relPages->rel_pg_space_id, -1);
+	WIN window(-1);
 	pointer_page* page = (pointer_page*) DPM_allocate(tdbb, &window);
 	page->ppg_header.pag_type = pag_pointer;
 	page->ppg_relation = relation->rel_id;
@@ -558,33 +542,38 @@ void DPM_create_relation_pages(thread_db* tdbb, jrd_rel* relation, RelationPages
 /* If this is relation 0 (RDB$PAGES), update the header */
 
 	if (relation->rel_id == 0) {
-		WIN root_window(HEADER_PAGE_NUMBER);
+		WIN root_window(HEADER_PAGE);
 		header_page* header =
 			(header_page*) CCH_FETCH(tdbb, &root_window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &root_window);
-		header->hdr_PAGES = window.win_page.getPageNum();
+		header->hdr_PAGES = window.win_page;
 
 		CCH_RELEASE(tdbb, &root_window);
 	}
 
 /* Keep track in memory of the first pointer page */
 
-	if (!relPages->rel_pages) {
-		vcl* vector = vcl::newVector(*dbb->dbb_permanent, 1);
-		relPages->rel_pages = vector;
-	}
-	(*relPages->rel_pages)[0] = window.win_page.getPageNum();
+	vcl* vector = vcl::newVector(*dbb->dbb_permanent, 1);
+	relation->rel_pages = vector;
+	(*vector)[0] = window.win_page;
 
 	// CVC: AFAIK, DPM_allocate calls PAG_allocate and neither of them cares about win_page.
 	// Therefore, I decided that the root_window in the if() above and this one aren't related.
 /* Create an index root page */
-	WIN root_window(relPages->rel_pg_space_id, -1);
+	WIN root_window(-1);
 	index_root_page* root = (index_root_page*) DPM_allocate(tdbb, &root_window);
 	root->irt_header.pag_type = pag_root;
 	root->irt_relation = relation->rel_id;
 /*root->irt_count = 0;*/
 	CCH_RELEASE(tdbb, &root_window);
-	relPages->rel_index_root = root_window.win_page.getPageNum();
+	relation->rel_index_root = root_window.win_page;
+
+/* Store page numbers in RDB$PAGES */
+
+	DPM_pages(tdbb, relation->rel_id, pag_pointer, (ULONG) 0,
+			  window.win_page);
+	DPM_pages(tdbb, relation->rel_id, pag_root, (ULONG) 0,
+			  root_window.win_page);
 }
 
 
@@ -609,13 +598,12 @@ SLONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 		printf("DPM_data_pages (relation %d)\n", relation->rel_id);
 #endif
 
-	RelationPages* relPages = relation->getPages(tdbb);
-	SLONG pages = relPages->rel_data_pages;
+	SLONG pages = relation->rel_data_pages;
 	if (!pages) {
-		WIN window(relPages->rel_pg_space_id, -1);
+		WIN window(-1);
 		for (USHORT sequence = 0; true; sequence++) {
 			const pointer_page* ppage =
-				get_pointer_page(tdbb, relation, relPages, &window, sequence, LCK_read);
+				get_pointer_page(tdbb, relation, &window, sequence, LCK_read);
 			if (!ppage) {
 				 BUGCHECK(243);
 				 /* msg 243 missing pointer page in DPM_data_pages */
@@ -635,7 +623,7 @@ SLONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 
 		CCH_RELEASE(tdbb, &window);
 #ifdef SUPERSERVER
-		relPages->rel_data_pages = pages;
+		relation->rel_data_pages = pages;
 #endif
 	}
 
@@ -664,8 +652,14 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
  *	page when we're done.
  *
  **************************************/
+	pointer_page* ppage;
+	SSHORT slot, count;
+	USHORT pp_sequence;
+	SLONG *ptr;
+	jrd_rel* relation;
+
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -683,7 +677,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 	}
 #endif
 
-	WIN* window = &rpb->getWindow(tdbb);
+	WIN* window = &rpb->rpb_window;
 	data_page* page = (data_page*) window->win_buffer;
 	SLONG sequence = page->dpg_sequence;
 	data_page::dpg_repeat* index = &page->dpg_rpt[rpb->rpb_line];
@@ -717,7 +711,6 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 			break;
 	}
 
-	USHORT count;
 	page->dpg_count = count = index - page->dpg_rpt;
 
 /* If the page is not empty and used to be marked as full, change the
@@ -754,22 +747,16 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 		return;
 	}
 
-	// Data page has gone empty.  Refetch page thru pointer page.  If it's
-	// still empty, remove page from relation.
-	
-	pointer_page* ppage;
-	SSHORT slot;
-	USHORT pp_sequence;
-	SLONG *ptr;
+/* Data page has gone empty.  Refetch page thru pointer page.  If it's
+   still empty, remove page from relation. */
 
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
 retry_after_latch_timeout:
-	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb, rpb->rpb_transaction_nr);
-	WIN pwindow(relPages->rel_pg_space_id, -1);
+	WIN pwindow(-1);
 	if (!
 		(ppage =
-		 get_pointer_page(tdbb, rpb->rpb_relation, relPages, &pwindow, pp_sequence,
+		 get_pointer_page(tdbb, rpb->rpb_relation, &pwindow, pp_sequence,
 						  LCK_write))) 
 			BUGCHECK(245);	/* msg 245 pointer page disappeared in DPM_delete */
 
@@ -803,7 +790,7 @@ retry_after_latch_timeout:
 		printf
 			("\tDPM_delete:  page %"SLONGFORMAT
 			 " is empty and about to be released from relation %d\n",
-			 window->win_page.getPageNum(), rpb->rpb_relation->rel_id);
+			 window->win_page, rpb->rpb_relation->rel_id);
 	}
 #endif
 
@@ -826,11 +813,10 @@ retry_after_latch_timeout:
 		count--;
 	}
 	ppage->ppg_min_space = MIN(ppage->ppg_min_space, count);
-	//jrd_rel* relation = rpb->rpb_relation;
-
-	relPages->rel_slot_space = MIN(relPages->rel_slot_space, pp_sequence);
-	if (relPages->rel_data_pages) {
-		--relPages->rel_data_pages;
+	relation = rpb->rpb_relation;
+	relation->rel_slot_space = MIN(relation->rel_slot_space, pp_sequence);
+	if (relation->rel_data_pages) {
+		--relation->rel_data_pages;
 	}
 
 	CCH_RELEASE(tdbb, &pwindow);
@@ -856,30 +842,8 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	RelationPages* relPages = relation->getBasePages();
-	DPM_delete_relation_pages(tdbb, relation, relPages);
-
-/* Next, cancel out stuff from RDB$PAGES */
-
-	jrd_req* handle = NULL;
-
-	FOR(REQUEST_HANDLE handle) X IN RDB$PAGES WITH
-		X.RDB$RELATION_ID EQ relation->rel_id
-			ERASE X;
-	END_FOR;
-
-	CMP_release(tdbb, handle);
-	CCH_flush(tdbb, FLUSH_ALL, 0);
-}
-
-
-void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd::RelationPages* relPages)
-{
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	WIN window(relPages->rel_pg_space_id, -1), data_window(relPages->rel_pg_space_id, -1);
+	Database* dbb = tdbb->tdbb_database;
+	WIN window(-1), data_window(-1);
 	window.win_flags = data_window.win_flags = WIN_large_scan;
 	window.win_scans = data_window.win_scans = 1;
 
@@ -893,7 +857,7 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd
 	for (USHORT sequence = 0; true; sequence++)
 	{
 		const pointer_page* ppage =
-			get_pointer_page(tdbb, relation, relPages, &window, sequence, LCK_read);
+			get_pointer_page(tdbb, relation, &window, sequence, LCK_read);
 		if (!ppage)
 		{
 			 BUGCHECK(246);	/* msg 246 pointer page lost from DPM_delete_relation */
@@ -916,37 +880,47 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd
 				{
 					if (line->dpg_length)
 					{
-						rhd* header = (rhd*) ((UCHAR *) dpage + line->dpg_offset);
+						rhd* header = (RHD) ((UCHAR *) dpage + line->dpg_offset);
 						if (header->rhd_flags & rhd_large)
 						{
-							delete_tail(tdbb, (rhdf*)header, relPages->rel_pg_space_id, 
-								line->dpg_length);
+							delete_tail(tdbb, (RHDF)header, line->dpg_length);
 						}
 					}
 				}
 				CCH_RELEASE_TAIL(tdbb, &data_window);
 			}
-			PAG_release_page(PageNumber(relPages->rel_pg_space_id, *page), ZERO_PAGE_NUMBER);
+			PAG_release_page(*page, 0);
 		}
 		const UCHAR pag_flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE_TAIL(tdbb, &window);
-		PAG_release_page(window.win_page, ZERO_PAGE_NUMBER);
+		PAG_release_page(window.win_page, 0);
 		if (pag_flags & ppg_eof)
 		{
 			break;
 		}
 	}
 
-	delete relPages->rel_pages;
-	relPages->rel_pages = NULL;
-	relPages->rel_data_pages = 0;
+	delete relation->rel_pages;
+	relation->rel_pages = NULL;
+	relation->rel_data_pages = 0;
 
 /* Now get rid of the index root page */
 
-	PAG_release_page(
-		PageNumber(relPages->rel_pg_space_id, relPages->rel_index_root), ZERO_PAGE_NUMBER);
-	relPages->rel_index_root = 0;
+	PAG_release_page(relation->rel_index_root, 0);
+	relation->rel_index_root = 0;
+
+/* Next, cancel out stuff from RDB$PAGES */
+
+	jrd_req* handle = NULL;
+
+	FOR(REQUEST_HANDLE handle) X IN RDB$PAGES WITH
+		X.RDB$RELATION_ID EQ relation->rel_id ERASE X;
+	END_FOR;
+
+	CMP_release(tdbb, handle);
+	CCH_flush(tdbb, FLUSH_ALL, 0);
 }
+
 
 bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 {
@@ -977,12 +951,11 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 #endif
 
 	const RecordNumber number = rpb->rpb_number;
-	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
-	rpb->getWindow(tdbb).win_page = PageNumber(relPages->rel_pg_space_id, rpb->rpb_page);
-	CCH_FETCH(tdbb, &rpb->getWindow(tdbb), lock, pag_data);
+	rpb->rpb_window.win_page = rpb->rpb_page;
+	CCH_FETCH(tdbb, &rpb->rpb_window, lock, pag_data);
 
-	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_line, rpb)) {
-		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	if (!get_header(&rpb->rpb_window, rpb->rpb_line, rpb)) {
+		CCH_RELEASE(tdbb, &rpb->rpb_window);
 		return false;
 	}
 
@@ -1049,7 +1022,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 /* Possibly allow a latch timeout to occur.  Return error if that is the case. */
 
 	if (!(CCH_HANDOFF_TIMEOUT(tdbb,
-								&rpb->getWindow(tdbb),
+								&rpb->rpb_window,
 								rpb->rpb_b_page,
 								lock,
 								pag_data,
@@ -1061,9 +1034,9 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 	const RecordNumber number = rpb->rpb_number;
 	rpb->rpb_page = rpb->rpb_b_page;
 	rpb->rpb_line = rpb->rpb_b_line;
-	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_line, rpb))
+	if (!get_header(&rpb->rpb_window, rpb->rpb_line, rpb))
 	{
-		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &rpb->rpb_window);
 		BUGCHECK(291);			/* msg 291 cannot find record back version */
 	}
 
@@ -1115,10 +1088,10 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 	const RecordNumber number = rpb->rpb_number;
 	rpb->rpb_page = rpb->rpb_f_page;
 	rpb->rpb_line = rpb->rpb_f_line;
-	CCH_HANDOFF(tdbb, &rpb->getWindow(tdbb), rpb->rpb_page, lock, pag_data);
+	CCH_HANDOFF(tdbb, &rpb->rpb_window, rpb->rpb_page, lock, pag_data);
 
-	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_line, rpb)) {
-		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	if (!get_header(&rpb->rpb_window, rpb->rpb_line, rpb)) {
+		CCH_RELEASE(tdbb, &rpb->rpb_window);
 		BUGCHECK(248);			/* msg 248 cannot find record fragment */
 	}
 
@@ -1151,7 +1124,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
  *      The resulting value is the result of the function.
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1161,10 +1134,10 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	}
 #endif
 
-	const USHORT sequence = generator / dbb->dbb_page_manager.gensPerPage;
-	const USHORT offset = generator % dbb->dbb_page_manager.gensPerPage;
+	const USHORT sequence = generator / dbb->dbb_pcontrol->pgc_gpg;
+	const USHORT offset = generator % dbb->dbb_pcontrol->pgc_gpg;
 
-	WIN window(DB_PAGE_SPACE, -1);
+	WIN window(-1);
 	vcl* vector = dbb->dbb_gen_id_pages;
 	if (!vector || (sequence >= vector->count()) || !((*vector)[sequence]))
 	{
@@ -1177,11 +1150,11 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 			page->gpg_sequence = sequence;
 			CCH_must_write(&window);
 			CCH_RELEASE(tdbb, &window);
-			DPM_pages(tdbb, 0, pag_ids, (ULONG) sequence, window.win_page.getPageNum());
+			DPM_pages(tdbb, 0, pag_ids, (ULONG) sequence, window.win_page);
 			vector = dbb->dbb_gen_id_pages =
 				vcl::newVector(*dbb->dbb_permanent, dbb->dbb_gen_id_pages,
 							   sequence + 1);
-			(*vector)[sequence] = window.win_page.getPageNum();
+			(*vector)[sequence] = window.win_page;
 		}
 	}
 
@@ -1214,7 +1187,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	if (val || initialize) {
 		if (dbb->dbb_flags & DBB_read_only) {
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(Arg::Gds(isc_read_only_database));
+			ERR_post(isc_read_only_database, isc_arg_end);
 		}
 		CCH_MARK_SYSTEM(tdbb, &window);
 
@@ -1239,8 +1212,8 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 			*lptr += (SLONG) val;
 		}
 
-		if (tdbb->getTransaction()) {
-			tdbb->getTransaction()->tra_flags |= TRA_write;
+		if (tdbb->tdbb_transaction) {
+			tdbb->tdbb_transaction->tra_flags |= TRA_write;
 		}
 	}
 
@@ -1280,7 +1253,7 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1290,7 +1263,7 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 	}
 #endif
 
-	WIN* window = &rpb->getWindow(tdbb);
+	WIN* window = &rpb->rpb_window;
 	rpb->rpb_prior = NULL;
 
 /* Find starting point */
@@ -1304,8 +1277,8 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 	}
 
 /* Find the next pointer page, data page, and record */
-	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation, 
-		rpb->rpb_relation->getPages(tdbb), window, pp_sequence, LCK_read);
+	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation, window, pp_sequence,
+						  LCK_read);
 	if (!page) {
 		return false;
 	}
@@ -1351,12 +1324,11 @@ ULONG DPM_get_blob(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 	
 	record_param rpb;
-	rpb.rpb_relation = blob->blb_relation;
-	rpb.getWindow(tdbb).win_flags = WIN_secondary;
+	rpb.rpb_window.win_flags = WIN_secondary;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS) {
@@ -1378,7 +1350,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
    let somebody else complain.  */
 
 	pointer_page* ppage = get_pointer_page(tdbb, blob->blb_relation,
-		blob->blb_relation->getPages(tdbb), &rpb.getWindow(tdbb), pp_sequence, LCK_read);
+									&rpb.rpb_window, pp_sequence, LCK_read);
 	if (!ppage) {
 		blob->blb_flags |= BLB_damaged;
 		return 0UL;
@@ -1387,108 +1359,108 @@ ULONG DPM_get_blob(thread_db* tdbb,
 	// Do not delete this scope. It makes goto compatible with variables
 	// defined in their minimal scope.
 	{
-		const SLONG page_number = ppage->ppg_page[slot];
-		if (!page_number)
-		{
-			goto punt;
-		}
+	const SLONG page_number = ppage->ppg_page[slot];
+	if (!page_number)
+	{
+		goto punt;
+	}
 
-		data_page* page = (data_page*) CCH_HANDOFF(tdbb,
-							&rpb.getWindow(tdbb),
+	data_page* page = (data_page*) CCH_HANDOFF(tdbb,
+							&rpb.rpb_window,
 							page_number,
 							(SSHORT)((delete_flag) ? LCK_write : LCK_read),
 							pag_data);
-		if (line >= page->dpg_count) {
-			goto punt;
-		}
+	if (line >= page->dpg_count) {
+		goto punt;
+	}
 
-		data_page::dpg_repeat* index = &page->dpg_rpt[line];
-		if (index->dpg_offset == 0) {
-			goto punt;
-		}
+	data_page::dpg_repeat* index = &page->dpg_rpt[line];
+	if (index->dpg_offset == 0) {
+		goto punt;
+	}
 
-		blh* header = (blh*) ((SCHAR *) page + index->dpg_offset);
-		if (!(header->blh_flags & rhd_blob)) {
-			goto punt;
-		}
+	blh* header = (BLH) ((SCHAR *) page + index->dpg_offset);
+	if (!(header->blh_flags & rhd_blob)) {
+		goto punt;
+	}
 
-		// We've got the blob header and everything looks ducky.  Get the header
-		// fields.
+/* We've got the blob header and everything looks ducky.  Get the header
+   fields. */
 
-		blob->blb_lead_page = header->blh_lead_page;
-		blob->blb_max_sequence = header->blh_max_sequence;
-		blob->blb_count = header->blh_count;
-		blob->blb_length = header->blh_length;
-		blob->blb_max_segment = header->blh_max_segment;
-		blob->blb_level = header->blh_level;
-		blob->blb_sub_type = header->blh_sub_type;
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-			blob->blb_charset = header->blh_charset;
+	blob->blb_lead_page = header->blh_lead_page;
+	blob->blb_max_sequence = header->blh_max_sequence;
+	blob->blb_count = header->blh_count;
+	blob->blb_length = header->blh_length;
+	blob->blb_max_segment = header->blh_max_segment;
+	blob->blb_level = header->blh_level;
+	blob->blb_sub_type = header->blh_sub_type;
 
-		// Unless this is the only attachment, don't allow the sequential scan
-		// of very large blobs to flush pages used by other attachments.
+/* Unless this is the only attachment, don't allow the sequential scan
+   of very large blobs to flush pages used by other attachments. */
 
-		Attachment* attachment = tdbb->getAttachment();
-		if (attachment &&
-			(attachment != dbb->dbb_attachments || attachment->att_next))
+	Attachment* attachment = tdbb->tdbb_attachment;
+	if (attachment &&
+		(attachment != dbb->dbb_attachments || attachment->att_next))
+	{
+		/* If the blob has more pages than the page buffer cache then mark
+		   it as large. If this is a database backup then mark any blob as
+		   large as the cumulative effect of scanning many small blobs is
+		   equivalent to scanning single large blobs. */
+
+		if (blob->blb_max_sequence > dbb->dbb_bcb->bcb_count ||
+			attachment->att_flags & ATT_gbak_attachment)
 		{
-			/* If the blob has more pages than the page buffer cache then mark
-			   it as large. If this is a database backup then mark any blob as
-			   large as the cumulative effect of scanning many small blobs is
-			   equivalent to scanning single large blobs. */
-
-			if (blob->blb_max_sequence > dbb->dbb_bcb->bcb_count ||
-				attachment->att_flags & ATT_gbak_attachment)
-			{
-				blob->blb_flags |= BLB_large_scan;
-			}
+			blob->blb_flags |= BLB_large_scan;
 		}
+	}
 
-		if (header->blh_flags & rhd_stream_blob) {
-			blob->blb_flags |= BLB_stream;
+	if (header->blh_flags & rhd_stream_blob) {
+		blob->blb_flags |= BLB_stream;
+	}
+
+	if (header->blh_flags & rhd_damaged) {
+		goto punt;
+	}
+
+/* Retrieve the data either into page clump (level 0) or page vector (levels
+   1 and 2). */
+
+	const USHORT length = index->dpg_length - BLH_SIZE;
+	const UCHAR* q = (UCHAR *) header->blh_page;
+
+	if (blob->blb_level == 0) {
+		blob->blb_space_remaining = length;
+		UCHAR* p = blob->blb_data;
+		if (length) {
+			MOVE_FASTER(q, p, length);
 		}
-
-		if (header->blh_flags & rhd_damaged) {
-			goto punt;
+	}
+	else {
+		vcl* vector = blob->blb_pages;
+		if (!vector) {
+			vector = blob->blb_pages =
+				vcl::newVector(*blob->blb_transaction->tra_pool, 0);
 		}
+		vector->resize(length / sizeof(SLONG));
+		MOVE_FASTER(q, vector->memPtr(), length);
+	}
 
-		// Retrieve the data either into page clump (level 0) or page vector (levels
-		// 1 and 2).
+	if (!delete_flag) {
+		CCH_RELEASE(tdbb, &rpb.rpb_window);
+		return 0UL;
+	}
 
-		const USHORT length = index->dpg_length - BLH_SIZE;
-		const UCHAR* q = (UCHAR *) header->blh_page;
+/* We've been asked (nicely) to delete the blob.  So do so. */
 
-		if (blob->blb_level == 0) {
-			blob->blb_space_remaining = length;
-			if (length)
-				memcpy(blob->getBuffer(), q, length);
-		}
-		else {
-			vcl* vector = blob->blb_pages;
-			if (!vector) {
-				vector = blob->blb_pages =
-					vcl::newVector(*blob->blb_transaction->tra_pool, 0);
-			}
-			vector->resize(length / sizeof(SLONG));
-			memcpy(vector->memPtr(), q, length);
-		}
-
-		if (!delete_flag) {
-			CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
-			return 0UL;
-		}
-
-		// We've been asked (nicely) to delete the blob.  So do so.
-
-		rpb.rpb_relation = blob->blb_relation;
-		rpb.rpb_page = rpb.getWindow(tdbb).win_page.getPageNum();
-		rpb.rpb_line = line;
-		DPM_delete(tdbb, &rpb, prior_page);
-		return rpb.rpb_page;
+	rpb.rpb_relation = blob->blb_relation;
+	rpb.rpb_page = rpb.rpb_window.win_page;
+	rpb.rpb_line = line;
+	DPM_delete(tdbb, &rpb, prior_page);
+	return rpb.rpb_page;
 	} // scope
 
 punt:
-	CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+	CCH_RELEASE(tdbb, &rpb.rpb_window);
 	blob->blb_flags |= BLB_damaged;
 	return 0UL;
 }
@@ -1509,7 +1481,7 @@ bool DPM_next(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1517,9 +1489,7 @@ bool DPM_next(thread_db* tdbb,
 		printf("DPM_next (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 #endif
 
-	WIN* window = &rpb->getWindow(tdbb);
-	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
-
+	WIN* window = &rpb->rpb_window;
 	if (window->win_flags & WIN_large_scan) {
 		/* Try to account for staggered execution of large sequential scans. */
 
@@ -1550,7 +1520,7 @@ bool DPM_next(thread_db* tdbb,
 	    to keep apprised of when a pointer page gets added **/
 
 			DPM_scan_pages(tdbb);
-			const vcl* vector = relPages->rel_pages;
+			const vcl* vector = rpb->rpb_relation->rel_pages;
 			if (!vector) {
 				return false;
 			}
@@ -1578,11 +1548,10 @@ bool DPM_next(thread_db* tdbb,
 
 	while (true) {
 		const pointer_page* ppage = get_pointer_page(tdbb, rpb->rpb_relation,
-							relPages, window, pp_sequence, LCK_read);
+							window, pp_sequence, LCK_read);
 		if (!ppage) {
 				BUGCHECK(249);	/* msg 249 pointer page vanished from DPM_next */
 		}
-
 		if (backwards && slot >= ppage->ppg_count) {
 			slot = ppage->ppg_count - 1;
 		}
@@ -1656,7 +1625,7 @@ bool DPM_next(thread_db* tdbb,
 
 				if (!
 					(ppage =
-					 get_pointer_page(tdbb, rpb->rpb_relation, relPages, window,
+					 get_pointer_page(tdbb, rpb->rpb_relation, window,
 									  pp_sequence, LCK_read))) 
 						BUGCHECK(249);	/* msg 249 pointer page vanished from DPM_next */
 			}
@@ -1676,7 +1645,7 @@ bool DPM_next(thread_db* tdbb,
 			}
 		}
 
-		const UCHAR flags = ppage->ppg_header.pag_flags;
+		const SSHORT flags = ppage->ppg_header.pag_flags;
 		if (backwards) {
 			pp_sequence--;
 			slot = ppage->ppg_count - 1;
@@ -1715,7 +1684,7 @@ void DPM_pages(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
@@ -1728,8 +1697,7 @@ void DPM_pages(
 	jrd_req* request = CMP_find_request(tdbb, irq_s_pages, IRQ_REQUESTS);
 
 	STORE(REQUEST_HANDLE request)
-		X IN RDB$PAGES
-		X.RDB$RELATION_ID = rel_id;
+		X IN RDB$PAGES X.RDB$RELATION_ID = rel_id;
 		X.RDB$PAGE_TYPE = type;
 		X.RDB$PAGE_SEQUENCE = sequence;
 		X.RDB$PAGE_NUMBER = page;
@@ -1764,7 +1732,7 @@ SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, PageBitmap* bitmap
 		return number;
 	}
 
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	WIN window(-1);
 	SLONG pages[PREFETCH_MAX_PAGES];
 
@@ -1818,7 +1786,7 @@ void DPM_scan_pages( thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -1830,12 +1798,10 @@ void DPM_scan_pages( thread_db* tdbb)
    has been extended with another pointer page. */
 
 	jrd_rel* relation = MET_relation(tdbb, 0);
-	RelationPages* relPages = relation->getBasePages();
-
-	vcl** address = &relPages->rel_pages;
+	vcl** address = &relation->rel_pages;
 	vcl* vector = *address;
 	size_t sequence = vector->count() - 1;
-	WIN window(relPages->rel_pg_space_id, (*vector)[sequence]);
+	WIN window((*vector)[sequence]);
 	pointer_page* ppage = (pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
 
 	while (ppage->ppg_next) {
@@ -1856,15 +1822,14 @@ void DPM_scan_pages( thread_db* tdbb)
 		if (!REQUEST(irq_r_pages))
 			REQUEST(irq_r_pages) = request;
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		relPages = relation->getBasePages();
 		sequence = X.RDB$PAGE_SEQUENCE;
 		switch (X.RDB$PAGE_TYPE) {
 		case pag_root:
-			relPages->rel_index_root = X.RDB$PAGE_NUMBER;
+			relation->rel_index_root = X.RDB$PAGE_NUMBER;
 			continue;
 
 		case pag_pointer:
-			address = &relPages->rel_pages;
+			address = &relation->rel_pages;
 			break;
 
 		case pag_transactions:
@@ -1902,7 +1867,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -1966,7 +1931,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 		 memset(header->rhd_data + size, 0, fill);
 	}
 
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	CCH_RELEASE(tdbb, &rpb->rpb_window);
 }
 
 
@@ -1983,11 +1948,11 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	record_param rpb;
-	//rpb.getWindow(tdbb).win_flags = 0; redundant.
+	//rpb.rpb_window.win_flags = 0; redundant.
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
@@ -2000,38 +1965,17 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	USHORT length;
 	const UCHAR* q;
 	PageStack stack;
-	Firebird::Array<UCHAR> buffer;
 
-	if (blob->blb_level == 0)
-	{
+	if (blob->blb_level == 0) {
 		length = blob->blb_clump_size - blob->blb_space_remaining;
-
-		if (!blob->hasBuffer())
-		{
-			if (blob->blb_temp_size > 0)
-			{
-				blob->blb_transaction->getBlobSpace()->read(
-					blob->blb_temp_offset, buffer.getBuffer(blob->blb_temp_size),
-					blob->blb_temp_size);
-				q = buffer.begin();
-			}
-			else
-			{
-				fb_assert(length == 0);
-				q = NULL;
-			}
-		}
-		else
-			q = blob->getBuffer();
-
-		if (q)
-			q = (UCHAR*) ((blob_page*) q)->blp_page;
+		q = (UCHAR *) ((blob_page*) blob->blb_data)->blp_page;
 	}
-	else
-	{
+	else {
 		vector = blob->blb_pages;
 		length = vector->count() * sizeof(SLONG);
-		q = (UCHAR *) (vector->begin());
+		// JMB: Not such a good thing with std::vector
+		q = (UCHAR *) &*(vector->begin());
+//		q = (UCHAR *) &(vector->[0]);
 		/* Figure out precedence pages, if any */
 		vcl::iterator ptr, end;
 		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr) {
@@ -2043,7 +1987,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 /* Locate space to store blob */
 
 	rpb.rpb_relation = blob->blb_relation;
-	blh* header = (blh*) locate_space(tdbb,
+	blh* header = (BLH) locate_space(tdbb,
 								&rpb,
 								(SSHORT)(BLH_SIZE + length),
 								stack,
@@ -2066,19 +2010,19 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	header->blh_length = blob->blb_length;
 	header->blh_level = blob->blb_level;
 	header->blh_sub_type = blob->blb_sub_type;
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		header->blh_charset = blob->blb_charset;
+	UCHAR* p = (UCHAR *) header->blh_page;
 
-	if (length)
-		memcpy(header->blh_page, q, length);
+	if (length) {
+		MOVE_FASTER(q, p, length);
+	}
 
-	data_page* page = (data_page*) rpb.getWindow(tdbb).win_buffer;
+	data_page* page = (data_page*) rpb.rpb_window.win_buffer;
 	if (blob->blb_level && !(page->dpg_header.pag_flags & dpg_large)) {
 		page->dpg_header.pag_flags |= dpg_large;
 		mark_full(tdbb, &rpb);
 	}
 	else {
-		CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+		CCH_RELEASE(tdbb, &rpb.rpb_window);
 	}
 
 	return rpb.rpb_number;
@@ -2099,7 +2043,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2109,9 +2053,9 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 		printf("    record  %"SLONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
 #endif
 
-	WIN* window = &rpb->getWindow(tdbb);
+	WIN* window = &rpb->rpb_window;
 	data_page* page = (data_page*) window->win_buffer;
-	rhd* header = (rhd*) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_line].dpg_offset);
+	rhd* header = (RHD) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_line].dpg_offset);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -2150,7 +2094,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2176,13 +2120,13 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	{
 		while (stack->hasData()) 
 		{
-			CCH_precedence(tdbb, &rpb->getWindow(tdbb), stack->pop());
+			CCH_precedence(tdbb, &rpb->rpb_window, stack->pop());
 		}
 	}
 
-	CCH_precedence(tdbb, &rpb->getWindow(tdbb), -rpb->rpb_transaction_nr);
-	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
-	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
+	CCH_precedence(tdbb, &rpb->rpb_window, -rpb->rpb_transaction_nr);
+	CCH_MARK(tdbb, &rpb->rpb_window);
+	data_page* page = (data_page*) rpb->rpb_window.win_buffer;
 	DataComprControl dcc;
 	const USHORT size =
 		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, (int) rpb->rpb_length, &dcc);
@@ -2230,7 +2174,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	page->dpg_rpt[slot].dpg_offset = space;
 	page->dpg_rpt[slot].dpg_length = RHD_SIZE + size + fill;
 
-	rhd* header = (rhd*) ((SCHAR *) page + space);
+	rhd* header = (RHD) ((SCHAR *) page + space);
 	header->rhd_flags = rpb->rpb_flags;
 	header->rhd_transaction = rpb->rpb_transaction_nr;
 	header->rhd_format = rpb->rpb_format_number;
@@ -2256,11 +2200,11 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 		memset(header->rhd_data + size, 0, fill);
 	}
 
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	CCH_RELEASE(tdbb, &rpb->rpb_window);
 }
 
 
-static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, USHORT length)
+static void delete_tail( thread_db* tdbb, RHDF header, USHORT length)
 {
 /**************************************
  *
@@ -2287,7 +2231,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 	}
 #endif
 
-	WIN window(page_space, -1);
+	WIN window(-1);
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
@@ -2298,11 +2242,11 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 		while (true) {
 			window.win_page = page_number;
 			data_page* dpage = (data_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_data);
-			header = (rhdf*) ((UCHAR *) dpage + dpage->dpg_rpt[0].dpg_offset);
+			header = (RHDF) ((UCHAR *) dpage + dpage->dpg_rpt[0].dpg_offset);
 			const USHORT flags = header->rhdf_flags;
 			page_number = header->rhdf_f_page;
 			CCH_RELEASE_TAIL(tdbb, &window);
-			PAG_release_page(window.win_page, ZERO_PAGE_NUMBER);
+			PAG_release_page(window.win_page, 0);
 			if (!(flags & rhd_incomplete)) {
 				break;
 			}
@@ -2312,7 +2256,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 
 /* Object is a blob, and a big one at that */
 
-	blh* blob = (blh*) header;
+	blh* blob = (BLH) header;
 	const SLONG* page1 = blob->blh_page;
 	const SLONG* const end1 = page1 + (length - BLH_SIZE) / sizeof(SLONG);
 
@@ -2324,11 +2268,11 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 			const SLONG* const end2 =
 				page2 + ((bpage->blp_length - BLP_SIZE) / sizeof(SLONG));
 			while (page2 < end2) {
-				PAG_release_page(PageNumber(page_space, *page2++), ZERO_PAGE_NUMBER);
+				PAG_release_page(*page2++, 0);
 			}
 			CCH_RELEASE_TAIL(tdbb, &window);
 		}
-		PAG_release_page(PageNumber(page_space, *page1), ZERO_PAGE_NUMBER);
+		PAG_release_page(*page1, 0);
 	}
 }
 
@@ -2396,7 +2340,7 @@ static void fragment(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -2426,26 +2370,26 @@ static void fragment(
    that others may reconstruct it during fragmentation of the
    new version. */
 
-	WIN* window = &rpb->getWindow(tdbb);
+	WIN* window = &rpb->rpb_window;
 	data_page* page = (data_page*) window->win_buffer;
 	const SSHORT line = rpb->rpb_line;
 
 	rhdf* header;
 	if (transaction->tra_number != rpb->rpb_transaction_nr) {
-		header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
+		header = (RHDF) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 		header->rhdf_transaction = transaction->tra_number;
 		header->rhdf_flags |= rhd_gc_active;
 		page->dpg_rpt[line].dpg_length = available_space = length;
 	}
 	else {
 		if (rpb->rpb_flags & rpb_delta) {
-			header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
+			header = (RHDF) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 			header->rhdf_flags |= rpb_delta;
 			page->dpg_rpt[line].dpg_length = available_space = length;
 		}
 		else {
 			const SSHORT space = DPM_compress(tdbb, page) - available_space;
-			header = (rhdf*) ((SCHAR *) page + space);
+			header = (RHDF) ((SCHAR *) page + space);
 			header->rhdf_flags = rhd_deleted;
 			header->rhdf_f_page = header->rhdf_f_line = 0;
 			page->dpg_rpt[line].dpg_offset = space;
@@ -2462,7 +2406,7 @@ static void fragment(
 			("    rhdf_transaction %"SLONGFORMAT", window record %"SLONGFORMAT
 			 ":%d, available_space %d, rhdf_flags %d, rhdf_f record %"
 			 SLONGFORMAT":%d, rhdf_b record %"SLONGFORMAT":%d\n",
-			 header->rhdf_transaction, window->win_page.getPageNum(), line,
+			 header->rhdf_transaction, window->win_page, line,
 			 available_space, header->rhdf_flags, header->rhdf_f_page,
 			 header->rhdf_f_line, header->rhdf_b_page, header->rhdf_b_line);
 	}
@@ -2485,7 +2429,7 @@ static void fragment(
 	tail_rpb.rpb_b_line = 0;
 	tail_rpb.rpb_address = rpb->rpb_address + pre_header_length;
 	tail_rpb.rpb_length = rpb->rpb_length - pre_header_length;
-	tail_rpb.getWindow(tdbb).win_flags = 0;
+	tail_rpb.rpb_window.win_flags = 0;
 
 	PageStack stack;
 
@@ -2503,7 +2447,7 @@ static void fragment(
 	CCH_precedence(tdbb, window, tail_rpb.rpb_page);
 	CCH_MARK(tdbb, window);
 
-	header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
+	header = (RHDF) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 	header->rhdf_flags = rhd_incomplete | rpb->rpb_flags;
 	header->rhdf_transaction = rpb->rpb_transaction_nr;
 	header->rhdf_format = rpb->rpb_format_number;
@@ -2527,7 +2471,7 @@ static void fragment(
 			("    rhdf_trans %"SLONGFORMAT", window record %"SLONGFORMAT
 			 ":%d, dpg_length %d\n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
-			 header->rhdf_transaction, window->win_page.getPageNum(), line,
+			 header->rhdf_transaction, window->win_page, line,
 			 page->dpg_rpt[line].dpg_length, header->rhdf_flags,
 			 header->rhdf_f_page, header->rhdf_f_line, header->rhdf_b_page,
 			 header->rhdf_b_line);
@@ -2561,11 +2505,9 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
-	RelationPages* relPages = relation->getPages(tdbb);
-	WIN pp_window(relPages->rel_pg_space_id, -1), 
-		new_pp_window(relPages->rel_pg_space_id, -1);
+	WIN pp_window(-1), new_pp_window(-1);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -2595,10 +2537,10 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 
   retry_after_latch_timeout:
 
-	for (pp_sequence = relPages->rel_slot_space;; pp_sequence++) {
+	for (pp_sequence = relation->rel_slot_space;; pp_sequence++) {
 		if (!
 			(ppage =
-			 get_pointer_page(tdbb, relation, relPages, &pp_window, pp_sequence,
+			 get_pointer_page(tdbb, relation, &pp_window, pp_sequence,
 							  LCK_write)))
 		{
 			BUGCHECK(253);	/* msg 253 pointer page vanished from extend_relation */
@@ -2628,23 +2570,22 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 			CCH_must_write(&new_pp_window);
 			CCH_RELEASE(tdbb, &new_pp_window);
 
-			vcl* vector = relPages->rel_pages =
-				vcl::newVector(*dbb->dbb_permanent, relPages->rel_pages,
+			vcl* vector = relation->rel_pages =
+				vcl::newVector(*dbb->dbb_permanent, relation->rel_pages,
 							   pp_sequence + 1);
-			(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
+			(*vector)[pp_sequence] = new_pp_window.win_page;
 
-			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
-			if (relation->rel_id && (relPages->rel_instance_id == 0))
+			if (relation->rel_id)
 				DPM_pages(tdbb, relation->rel_id, pag_pointer,
-						  (SLONG) pp_sequence, new_pp_window.win_page.getPageNum());
-			relPages->rel_slot_space = pp_sequence;
+						  (SLONG) pp_sequence, new_pp_window.win_page);
+			relation->rel_slot_space = pp_sequence;
 
 			ppage = (pointer_page*) pp_window.win_buffer;
 			CCH_MARK(tdbb, &pp_window);
 			ppage->ppg_header.pag_flags &= ~ppg_eof;
-			ppage->ppg_next = new_pp_window.win_page.getPageNum();
+			ppage->ppg_next = new_pp_window.win_page;
 			ppage =
-				(pointer_page*) CCH_HANDOFF(tdbb, &pp_window, new_pp_window.win_page.getPageNum(),
+				(pointer_page*) CCH_HANDOFF(tdbb, &pp_window, new_pp_window.win_page,
 								  LCK_write, pag_pointer);
 			break;
 		}
@@ -2676,19 +2617,19 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 	dpage->dpg_sequence = (SLONG) pp_sequence *dbb->dbb_dp_per_pp + slot;
 	dpage->dpg_relation = relation->rel_id;
 	dpage->dpg_header.pag_type = pag_data;
-	relPages->rel_data_space = pp_sequence;
+	relation->rel_data_space = pp_sequence;
 
 	CCH_RELEASE(tdbb, window);
 
 	CCH_precedence(tdbb, &pp_window, window->win_page);
 	CCH_MARK_SYSTEM(tdbb, &pp_window);
-	ppage->ppg_page[slot] = window->win_page.getPageNum();
+	ppage->ppg_page[slot] = window->win_page;
 	ppage->ppg_min_space = MIN(ppage->ppg_min_space, slot);
 	ppage->ppg_count = MAX(ppage->ppg_count, slot + 1);
 	UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 	bits[slot >> 2] &= ~(1 << ((slot & 3) << 1));
-	if (relPages->rel_data_pages) {
-		++relPages->rel_data_pages;
+	if (relation->rel_data_pages) {
+		++relation->rel_data_pages;
 	}
 
 	*window = pp_window;
@@ -2697,7 +2638,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf("   extended_relation (relation %d, window_page %"SLONGFORMAT")\n",
-				  relation->rel_id, window->win_page.getPageNum());
+				  relation->rel_id, window->win_page);
 	}
 #endif
 }
@@ -2727,11 +2668,11 @@ static UCHAR* find_space(thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	const SSHORT aligned_size = ROUNDUP(size, ODS_ALIGNMENT);
-	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
+	data_page* page = (data_page*) rpb->rpb_window.win_buffer;
 
 /* Scan allocated lines looking for an empty slot, the high water mark,
    and the amount of space potentially available on the page */
@@ -2739,28 +2680,28 @@ static UCHAR* find_space(thread_db*	tdbb,
 	SSHORT space = dbb->dbb_page_size;
 	SSHORT slot = 0;
 	SSHORT used = HIGH_WATER(page->dpg_count);
+	SSHORT reserving = !(dbb->dbb_flags & DBB_no_reserve);
 
 	{ // scope
-		const bool reserving = !(dbb->dbb_flags & DBB_no_reserve);
-		const data_page::dpg_repeat* index = page->dpg_rpt;
-		for (SSHORT i = 0; i < page->dpg_count; i++, index++) {
-			if (index->dpg_offset) {
-				space = MIN(space, index->dpg_offset);
-				used += ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
-				if (type == DPM_primary && reserving) {
-					const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
-					if (!header->rhd_b_page &&
-						!(header->rhd_flags & (rhd_chain | rhd_blob |
-											   rhd_deleted | rhd_fragment)))
-					{
-						used += SPACE_FUDGE;
-					}
+	const data_page::dpg_repeat* index = page->dpg_rpt;
+	for (SSHORT i = 0; i < page->dpg_count; i++, index++) {
+		if (index->dpg_offset) {
+			space = MIN(space, index->dpg_offset);
+			used += ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
+			if (type == DPM_primary && reserving) {
+				const rhd* header = (RHD) ((SCHAR *) page + index->dpg_offset);
+				if (!header->rhd_b_page &&
+					!(header->rhd_flags & (rhd_chain | rhd_blob |
+										   rhd_deleted | rhd_fragment)))
+				{
+					used += SPACE_FUDGE;
 				}
 			}
-			else if (!slot) {
-				slot = i;
-			}
 		}
+		else if (!slot) {
+			slot = i;
+		}
+	}
 	} // scope
 
 	if (!slot) {
@@ -2770,7 +2711,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 /* If there isn't space, give up */
 
 	if (aligned_size > (int) dbb->dbb_page_size - used) {
-		CCH_MARK(tdbb, &rpb->getWindow(tdbb));
+		CCH_MARK(tdbb, &rpb->rpb_window);
 		page->dpg_header.pag_flags |= dpg_full;
 		mark_full(tdbb, rpb);
 		return NULL;
@@ -2780,9 +2721,9 @@ static UCHAR* find_space(thread_db*	tdbb,
    If the page need to be compressed, compress it. */
 
 	while (stack.hasData()) {
-		CCH_precedence(tdbb, &rpb->getWindow(tdbb), stack.pop());
+		CCH_precedence(tdbb, &rpb->rpb_window, stack.pop());
 	}
-	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
+	CCH_MARK(tdbb, &rpb->rpb_window);
 
 	{ // scope
 		const USHORT rec_segments = page->dpg_count + ((slot) ? 0 : 1);
@@ -2799,7 +2740,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 	data_page::dpg_repeat* index = &page->dpg_rpt[slot];
 	index->dpg_length = size;
 	index->dpg_offset = space;
-	rpb->rpb_page = rpb->getWindow(tdbb).win_page.getPageNum();
+	rpb->rpb_page = rpb->rpb_window.win_page;
 	rpb->rpb_line = slot;
 	rpb->rpb_number.setValue(((SINT64) page->dpg_sequence) * dbb->dbb_max_records + slot);
 
@@ -2834,8 +2775,8 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 		return false;
 	}
 
-	rhdf* header = (rhdf*) ((SCHAR *) page + index->dpg_offset);
-	rpb->rpb_page = window->win_page.getPageNum();
+	rhdf* header = (RHDF) ((SCHAR *) page + index->dpg_offset);
+	rpb->rpb_page = window->win_page;
 	rpb->rpb_line = line;
 	rpb->rpb_flags = header->rhdf_flags;
 
@@ -2853,7 +2794,7 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 		rpb->rpb_length = index->dpg_length - RHDF_SIZE;
 	}
 	else {
-		rpb->rpb_address = ((rhd*) header)->rhd_data;
+		rpb->rpb_address = ((RHD) header)->rhd_data;
 		rpb->rpb_length = index->dpg_length - RHD_SIZE;
 	}
 
@@ -2863,7 +2804,7 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 
 static pointer_page* get_pointer_page(
 							thread_db* tdbb,
-							jrd_rel* relation, RelationPages* relPages,
+							jrd_rel* relation,
 							WIN * window, USHORT sequence, USHORT lock)
 {
 /**************************************
@@ -2881,12 +2822,12 @@ static pointer_page* get_pointer_page(
  **************************************/
 	SET_TDBB(tdbb);
 
-	vcl* vector = relPages->rel_pages;
+	vcl* vector = relation->rel_pages;
 	if (!vector || sequence >= vector->count()) {
 		for (;;) {
 			DPM_scan_pages(tdbb);
 			/* If the relation is gone, then we can't do anything anymore. */
-			if ((!relation) || (!(vector = relPages->rel_pages))) {
+			if ((!relation) || (!(vector = relation->rel_pages))) {
 				return NULL;
 			}
 			if (sequence < vector->count()) {
@@ -2898,11 +2839,8 @@ static pointer_page* get_pointer_page(
 			CCH_RELEASE(tdbb, window);
 			if (!next_ppg)
 				return NULL;
-
-			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
-			if (relPages->rel_instance_id == 0)
-				DPM_pages(tdbb, relation->rel_id, pag_pointer, vector->count(),
-						  next_ppg);
+			DPM_pages(tdbb, relation->rel_id, pag_pointer, vector->count(),
+					  next_ppg);
 		}
 	}
 
@@ -2919,7 +2857,7 @@ static pointer_page* get_pointer_page(
 }
 
 
-static rhd* locate_space(
+static RHD locate_space(
 						thread_db* tdbb,
 						record_param* rpb,
 						SSHORT size, PageStack& stack, Record* record, USHORT type)
@@ -2937,12 +2875,11 @@ static rhd* locate_space(
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	jrd_rel* relation = rpb->rpb_relation;
-	RelationPages* relPages = relation->getPages(tdbb, rpb->rpb_transaction_nr);
-	WIN* window = &rpb->getWindow(tdbb);
+	WIN* window = &rpb->rpb_window;
 
 /* If there is a preferred page, try there first */
 
@@ -2950,7 +2887,7 @@ static rhd* locate_space(
 		USHORT pp_sequence;
 		SSHORT slot, line;
 		rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
-		const pointer_page* ppage = get_pointer_page(tdbb, relation, relPages, window, pp_sequence,
+		const pointer_page* ppage = get_pointer_page(tdbb, relation, window, pp_sequence,
 									   LCK_read);
 		if (ppage)
 		{
@@ -2961,7 +2898,7 @@ static rhd* locate_space(
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
-					return (rhd*) space;
+					return (RHD) space;
 			}
 			else {
 				CCH_RELEASE(tdbb, window);
@@ -2971,15 +2908,15 @@ static rhd* locate_space(
 
 /* Look for space anywhere */
 
-	for (USHORT pp_sequence = relPages->rel_data_space;; pp_sequence++) {
-		relPages->rel_data_space = pp_sequence;
+	for (USHORT pp_sequence = relation->rel_data_space;; pp_sequence++) {
+		relation->rel_data_space = pp_sequence;
 		const pointer_page* ppage =
-			 get_pointer_page(tdbb, relation, relPages, window, pp_sequence, LCK_read);
+			 get_pointer_page(tdbb, relation, window, pp_sequence, LCK_read);
 		if (!ppage) {
 				BUGCHECK(254);
 				/* msg 254 pointer page vanished from relation list in locate_space */
 		}
-		const SLONG pp_number = window->win_page.getPageNum();
+		const SLONG pp_number = window->win_page;
 		const UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 		for (USHORT slot = ppage->ppg_min_space; slot < ppage->ppg_count; slot++)
 		{
@@ -2988,7 +2925,7 @@ static rhd* locate_space(
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
-					return (rhd*) space;
+					return (RHD) space;
 				window->win_page = pp_number;
 				ppage = (pointer_page*) CCH_FETCH(tdbb, window, LCK_read, pag_pointer);
 			}
@@ -3005,8 +2942,8 @@ static rhd* locate_space(
    locked, then give up on the assumption that things 
    are really screwed up. */
 	UCHAR* space = 0;
-	int i;
-	for (i = 0; i < 20; ++i) {
+	USHORT i;
+	for (i = 0; i < 20; i++) {
 		DPM_allocate(tdbb, window);
 		extend_relation(tdbb, relation, window);
 		space = find_space(tdbb, rpb, size, stack, record, type);
@@ -3019,17 +2956,17 @@ static rhd* locate_space(
 	}
 
 	if (record) {
-		record->rec_precedence.push(window->win_page.getPageNum());
+		record->rec_precedence.push(window->win_page);
 	}
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
 		printf("    extended relation %d with page %"SLONGFORMAT" to get %d bytes\n",
-				  relation->rel_id, window->win_page.getPageNum(), size);
+				  relation->rel_id, window->win_page, size);
 	}
 #endif
 
-	return (rhd*) space;
+	return (RHD) space;
 }
 
 
@@ -3047,8 +2984,9 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
+	WIN pp_window(-1);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -3060,14 +2998,11 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
    and re-fetch the data page.  If the data page is still empty, set
    it's "full" bit on the pointer page. */
 
-	data_page* dpage = (data_page*) rpb->getWindow(tdbb).win_buffer;
+	data_page* dpage = (data_page*) rpb->rpb_window.win_buffer;
 	const SLONG sequence = dpage->dpg_sequence;
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	CCH_RELEASE(tdbb, &rpb->rpb_window);
 
 	jrd_rel* relation = rpb->rpb_relation;
-	RelationPages* relPages = relation->getPages(tdbb);
-	WIN pp_window(relPages->rel_pg_space_id, -1);
-
 	USHORT slot, pp_sequence;
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
@@ -3079,7 +3014,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 
 	pointer_page* ppage = 0;
 	do {
-		ppage = get_pointer_page(tdbb, relation, relPages, &pp_window, pp_sequence,
+		ppage = get_pointer_page(tdbb, relation, &pp_window, pp_sequence,
 							  LCK_write);
 		if (!ppage)
 				BUGCHECK(256);	/* msg 256 pointer page vanished from mark_full */
@@ -3087,7 +3022,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 		/* If data page has been deleted from relation then there's nothing
 		   left to do. */
 		if (slot >= ppage->ppg_count ||
-			rpb->getWindow(tdbb).win_page.getPageNum() != ppage->ppg_page[slot])
+			rpb->rpb_window.win_page != ppage->ppg_page[slot])
 		{
 			CCH_RELEASE(tdbb, &pp_window);
 			return;
@@ -3095,7 +3030,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 
 		/* Fetch the data page, but timeout after 1 second to break a possible deadlock. */
 		dpage =
-			(data_page*) CCH_FETCH_TIMEOUT(tdbb, &rpb->getWindow(tdbb), LCK_read,
+			(data_page*) CCH_FETCH_TIMEOUT(tdbb, &rpb->rpb_window, LCK_read,
 									pag_data, -1);
 
 		/* In case of a latch timeout, release the latch on the pointer page and retry. */
@@ -3106,9 +3041,9 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 
 
 	const UCHAR flags = dpage->dpg_header.pag_flags;
-	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+	CCH_RELEASE(tdbb, &rpb->rpb_window);
 
-	CCH_precedence(tdbb, &pp_window, rpb->getWindow(tdbb).win_page);
+	CCH_precedence(tdbb, &pp_window, rpb->rpb_window.win_page);
 	CCH_MARK(tdbb, &pp_window);
 
 	UCHAR bit = 1 << ((slot & 3) << 1);
@@ -3121,7 +3056,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 	else {
 		*byte &= ~bit;
 		ppage->ppg_min_space = MIN(slot, ppage->ppg_min_space);
-		relPages->rel_data_space = MIN(pp_sequence, relPages->rel_data_space);
+		relation->rel_data_space = MIN(pp_sequence, relation->rel_data_space);
 	}
 
 /* Next, handle the "large object" bit */
@@ -3174,7 +3109,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -3184,14 +3119,12 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 
 /* Start by finding the last data compression control block and set up
     to start decompression from the end. */
-	DataComprControl* dcc = head_dcc;
-	while (dcc->dcc_next)
-		dcc = dcc->dcc_next;
+	DataComprControl* dcc;
+	for (dcc = head_dcc; dcc->dcc_next; dcc = dcc->dcc_next);
 
 	const SCHAR* control = dcc->dcc_end;
 	const SCHAR* in = (SCHAR *) rpb->rpb_address + rpb->rpb_length;
-	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
-	PageNumber prior(relPages->rel_pg_space_id, 0);
+	SLONG prior = 0;
 	SCHAR count = 0;
 	const USHORT max_data = dbb->dbb_page_size - (sizeof(data_page) + RHDF_SIZE);
 
@@ -3201,17 +3134,17 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	while (size > max_data) {
 		/* Allocate and format data page and fragment header */
 
-		data_page* page = (data_page*) DPM_allocate(tdbb, &rpb->getWindow(tdbb));
+		data_page* page = (data_page*) DPM_allocate(tdbb, &rpb->rpb_window);
 		page->dpg_header.pag_type = pag_data;
 		page->dpg_header.pag_flags = dpg_orphan | dpg_full;
 		page->dpg_relation = rpb->rpb_relation->rel_id;
 		page->dpg_count = 1;
-		rhdf* header = (rhdf*) & page->dpg_rpt[1];
+		rhdf* header = (RHDF) & page->dpg_rpt[1];
 		page->dpg_rpt[0].dpg_offset = (UCHAR *) header - (UCHAR *) page;
 		page->dpg_rpt[0].dpg_length = max_data + RHDF_SIZE;
-		header->rhdf_flags = (prior.getPageNum()) ?
+		header->rhdf_flags = (prior) ?
 			rhd_fragment | rhd_incomplete : rhd_fragment;
-		header->rhdf_f_page = prior.getPageNum();
+		header->rhdf_f_page = prior;
 		USHORT length = max_data;
 		size -= length;
 		SCHAR* out = (SCHAR *) header->rhdf_data + length;
@@ -3257,23 +3190,23 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 		else if (count > 0) {
 			++size;
 		}
-		if (prior.getPageNum()) {
-			CCH_precedence(tdbb, &rpb->getWindow(tdbb), prior);
+		if (prior) {
+			CCH_precedence(tdbb, &rpb->rpb_window, prior);
 		}
 
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO) {
 			printf("    back portion\n");
 			printf
-				("    getWindow(tdbb) page %"SLONGFORMAT
+				("    rpb_window page %"SLONGFORMAT
 				 ", max_data %d, \n\trhdf_flags %d, prior %"SLONGFORMAT"\n",
-				 rpb->getWindow(tdbb).win_page.getPageNum(), max_data, header->rhdf_flags,
-				 prior.getPageNum());
+				 rpb->rpb_window.win_page, max_data, header->rhdf_flags,
+				 prior);
 		}
 #endif
 
-		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-		prior = rpb->getWindow(tdbb).win_page;
+		CCH_RELEASE(tdbb, &rpb->rpb_window);
+		prior = rpb->rpb_window.win_page;
 	}
 
 /* What's left fits on a page.  Luckily, we don't have to store it
@@ -3283,7 +3216,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	size =
 		SQZ_length(tdbb, (SCHAR*) rpb->rpb_address, in - (SCHAR *) rpb->rpb_address,
 				   head_dcc);
-	rhdf* header = (rhdf*)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack,
+	rhdf* header = (RHDF)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack,
 								NULL, DPM_other);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;
@@ -3291,12 +3224,12 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 	header->rhdf_format = rpb->rpb_format_number;
 	header->rhdf_b_page = rpb->rpb_b_page;
 	header->rhdf_b_line = rpb->rpb_b_line;
-	header->rhdf_f_page = prior.getPageNum();
+	header->rhdf_f_page = prior;
 	header->rhdf_f_line = 0;
 	SQZ_fast(head_dcc, (SCHAR*) rpb->rpb_address, (SCHAR*) header->rhdf_data);
 	release_dcc(head_dcc->dcc_next);
 
-	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
+	data_page* page = (data_page*) rpb->rpb_window.win_buffer;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -3305,7 +3238,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 			("    rhdf_trans %"SLONGFORMAT", rpb_window record %"SLONGFORMAT
 			 ":%d, dpg_length %d \n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
-			 header->rhdf_transaction, rpb->getWindow(tdbb).win_page.getPageNum(),
+			 header->rhdf_transaction, rpb->rpb_window.win_page,
 			 rpb->rpb_line, page->dpg_rpt[rpb->rpb_line].dpg_length,
 			 header->rhdf_flags, header->rhdf_f_page, header->rhdf_f_line,
 			 header->rhdf_b_page, header->rhdf_b_line);
@@ -3317,6 +3250,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 		mark_full(tdbb, rpb);
 	}
 	else {
-		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+		CCH_RELEASE(tdbb, &rpb->rpb_window);
 	}
 }
+

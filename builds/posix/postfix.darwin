@@ -15,6 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	DARWIN
+#$Id: postfix.darwin,v 1.1.4.9 2008-12-03 14:33:53 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -81,13 +82,13 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_lock_mgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
@@ -101,7 +102,7 @@ darwin_finish_cs_framework:
 			$(FB_FW)/Resources/English.lproj/var/aliases.conf
 
 darwin_finish_ss_framework: FB_FW = ../gen/firebird/frameworks/FirebirdSS.framework
-darwin_finish_ss_framework:
+darwin_finish_ss_framework: 
 	-$(RM) -rf $(FB_FW)
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
 	mkdir -p $(FB_FW)/Versions/A/Libraries
@@ -150,7 +151,6 @@ darwin_finish_ss_framework:
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \

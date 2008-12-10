@@ -31,7 +31,7 @@
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER,BOOT_BUILD"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile=".\..\..\..\temp\release\common_static/common_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\release\common_static/"
 				ObjectFile=".\..\..\..\temp\release\common_static/"
@@ -81,7 +81,7 @@
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER,BOOT_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\..\..\..\temp\debug\common_static/common_static.pch"
 				AssemblerListingLocation=".\..\..\..\temp\debug\common_static/"
@@ -138,9 +138,6 @@
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusHolder.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="CONFIG files"
@@ -162,9 +159,6 @@
 			Name="OTHER files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\common\classes\BaseStream.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletReader.cpp">
 			</File>
 			<File
@@ -180,37 +174,19 @@
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\MsgPrint.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\SafeArg.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\UserBlob.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\utils.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\UtilSvc.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -221,9 +197,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\array.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\BaseStream.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletReader.h">
@@ -256,19 +229,7 @@
 				RelativePath="..\..\..\src\common\classes\MetaName.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\MsgPrint.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\SafeArg.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusHolder.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\UserBlob.h">
 			</File>
 		</Filter>
 	</Files>

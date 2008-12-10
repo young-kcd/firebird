@@ -34,8 +34,7 @@
 
 namespace Firebird {
 
-struct BitmapTypes_32
-{
+struct BitmapTypes_32 {
 	typedef ULONG BUNCH_T;
 	enum {
 		LOG2_BUNCH_BITS = 7,
@@ -43,8 +42,7 @@ struct BitmapTypes_32
 	};
 };
 
-struct BitmapTypes_64
-{
+struct BitmapTypes_64 {
 	typedef FB_UINT64 BUNCH_T;
 	enum {
 		LOG2_BUNCH_BITS = 8,
@@ -55,37 +53,47 @@ struct BitmapTypes_64
 #define BUNCH_ONE  ((BUNCH_T)1)
 
 template <typename T, typename InternalTypes = BitmapTypes_64>
-class SparseBitmap : public AutoStorage
-{
+class SparseBitmap : public AutoStorage {
 public:
 	// Default constructor, stack placement
-	SparseBitmap() :
+	SparseBitmap() : 
 		singular(false), singular_value(0), tree(&getPool()), defaultAccessor(this)
 	{ }
 
 	// Pooled constructor
-	explicit SparseBitmap(MemoryPool& p) :
+	SparseBitmap(MemoryPool& p) : 
 		AutoStorage(p), singular(false), singular_value(0), tree(&getPool()), defaultAccessor(this)
 	{ }
 
 	// Default accessor methods
-	bool locate(T key) { return defaultAccessor.locate(locEqual, key); }
+	bool locate(T key) {
+		return defaultAccessor.locate(locEqual, key);
+	}
+	
+	bool locate(LocType lt, T key) {
+		return defaultAccessor.locate(lt, key);
+	}
 
-	bool locate(LocType lt, T key) { return defaultAccessor.locate(lt, key); }
+	bool getFirst() {
+		return defaultAccessor.getFirst();
+	}
 
-	bool getFirst() { return defaultAccessor.getFirst(); }
+	bool getLast() {
+		return defaultAccessor.getLast();
+	}
 
-	bool getLast() { return defaultAccessor.getLast(); }
+	bool getNext() {
+		return defaultAccessor.getNext();
+	}
 
-	bool getNext() { return defaultAccessor.getNext(); }
-
-	bool getPrev() { return defaultAccessor.getPrev(); }
+	bool getPrev() {
+		return defaultAccessor.getPrev();
+	}
 
 	T current() const { return defaultAccessor.current(); }
 
 	// Set bit
-	void set(T value)
-	{
+	void set(T value) {
 		if (singular) {
 			// If we are trying to set the same bit as already set - do nothing
 			if (singular_value == value)
@@ -100,7 +108,7 @@ public:
 			bucket.start_value = singular_value & ~(T) (BUNCH_BITS - 1);
 			bucket.bits = BUNCH_ONE << (singular_value - bucket.start_value);
 			tree.add(bucket);
-		}
+		} 
 		else {
 			if (tree.isEmpty()) {
 				singular = true;
@@ -109,21 +117,20 @@ public:
 			}
 		}
 
-		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 
 		Bucket bucket;
 		bucket.start_value = val_aligned;
 		bucket.bits = bit_mask;
-		if (tree.isPositioned(val_aligned) || !tree.add(bucket))
+		if (!tree.add(bucket))
 		{
-			fb_assert(tree.isPositioned(val_aligned));
 			tree.current().bits |= bit_mask;
 		}
+									
 	}
 
-	bool clear(T value)
-	{
+	bool clear(T value) {
 		if (singular) {
 			fb_assert(tree.isEmpty());
 
@@ -134,9 +141,9 @@ public:
 			return false;
 		}
 
-		const T val_aligned = value & ~(T)(BUNCH_BITS - 1);
-		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
-			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		T val_aligned = value & ~(T)(BUNCH_BITS-1);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		if (tree.locate(val_aligned)) {
 			Bucket *current_bucket = &tree.current();
 			if (current_bucket->bits & bit_mask) {
 				current_bucket->bits &= ~bit_mask;
@@ -148,48 +155,44 @@ public:
 		return false;
 	}
 
-	bool test(T value)
-	{
+	bool test(T value) {
 		if (singular) {
 			fb_assert(tree.isEmpty());
-			return (value == singular_value);
+			return value == singular_value;
 		}
 
-		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
-			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
-			return tree.current().bits & bit_mask;
+		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		BitmapTreeAccessor i(&tree); // Use accessor to be const-correct
+		if (i.locate(val_aligned)) {
+			return i.current().bits & bit_mask;
 		}
 		return false;
 	}
 
-	static bool test(SparseBitmap* bitmap, T value)
-	{
+	static bool test(SparseBitmap* bitmap, T value) {
 		if (!bitmap)
 			return false;
 		return bitmap->test(value);
 	}
 
 	// Clear bitmap if it is not NULL
-	static void reset(SparseBitmap* bitmap)
-	{
+	static void reset(SparseBitmap* bitmap) {
 		if (bitmap)
 			bitmap->clear();
 	}
 
-	size_t approxSize() const
-	{
+	size_t approxSize() const {
 		return sizeof(*this) + tree.approxSize();
 	}
 
 	// Make bitmap empty
-	void clear()
-	{
+	void clear() {
 		singular = false;
 		tree.clear();
 	}
 
- 	// Compute the union of two bitmaps.
+ 	// Compute the union of two bitmaps. 
 	// Note: this method uses one of the bitmaps to return result
 	static SparseBitmap** bit_or(SparseBitmap** bitmap1, SparseBitmap** bitmap2);
 
@@ -206,12 +209,10 @@ protected:
 	};
 
 	// Bucket with bits
-	struct Bucket
-	{
+	struct Bucket {
 		T start_value; // starting value, BUNCH_BITS-aligned
 		BUNCH_T bits;  // bits data
-		inline static const T& generate(const void* sender, const Bucket& i)
-		{
+		inline static const T& generate(const void* sender, const Bucket& i) {
 			return i.start_value;
 		}
 	};
@@ -230,21 +231,18 @@ private:
 	SparseBitmap& operator =(const SparseBitmap& from); // Assignment operator. Not implemented for now.
 
 public:
-	class Accessor
-	{
+	class Accessor {
 	public:
-		Accessor(SparseBitmap* _bitmap) :
+		Accessor(SparseBitmap* _bitmap) : 
 			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(BUNCH_ONE), current_value(0) {}
-
-		bool locate(T key)
-		{
+	
+		bool locate(T key) {
 			return locate(locEqual, key);
 		}
-
+	
 		// Position accessor on item having LocType relationship with given key
 		// If method returns false position of accessor is not defined.
-		bool locate(LocType lt, T key)
-		{
+		bool locate(LocType lt, T key) {
 			// Small convenience related to fact engine likes to use NULL SparseBitmap pointers
 			if (!bitmap)
 				return false;
@@ -258,7 +256,7 @@ public:
 				current_value = bitmap->singular_value;
 
 				switch (lt) {
-				case locEqual:
+				case locEqual: 
 					return current_value == key;
 				case locGreatEqual:
 					return current_value >= key;
@@ -300,13 +298,12 @@ public:
 					current_value = key;
 					bit_mask = BUNCH_ONE << (key - key_aligned);
 					return treeAccessor.current().bits & bit_mask;
-				case locGreatEqual:
-				{
+				case locGreatEqual: {
 					// Initialize bit_mask
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
 						bit_mask = BUNCH_ONE << (key - key_aligned);
-					}
+					} 
 					else {
 						current_value = treeAccessor.current().start_value;
 						bit_mask = BUNCH_ONE;
@@ -339,13 +336,12 @@ public:
 					// Bucket must contain one bit at least
 					fb_assert(false);
 				}
-				case locLessEqual:
-				{
+				case locLessEqual: {
 					// Initialize bit_mask
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
 						bit_mask = BUNCH_ONE << (key - key_aligned);
-					}
+					} 
 					else {
 						current_value = treeAccessor.current().start_value;
 						bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
@@ -380,13 +376,11 @@ public:
 				}
 			}
 			fb_assert(false); // Invalid constant is used ?
-			return false;
 		}
 
-		// If method returns false it means list is empty and
+		// If method returns false it means list is empty and 
 		// position of accessor is not defined.
-		bool getFirst()
-		{
+		bool getFirst() {
 			// Small convenience related to fact engine likes to use NULL SparseBitmap pointers
 			if (!bitmap)
 				return false;
@@ -396,8 +390,7 @@ public:
 				return true;
 			}
 
-			if (!treeAccessor.getFirst())
-				return false;
+			if (!treeAccessor.getFirst()) return false;
 
 			BUNCH_T tree_bits = treeAccessor.current().bits;
 			bit_mask = BUNCH_ONE;
@@ -414,10 +407,9 @@ public:
 			return false;
 		}
 
-		// If method returns false it means list is empty and
+		// If method returns false it means list is empty and 
 		// position of accessor is not defined.
-		bool getLast()
-		{
+		bool getLast() {
 			// Small convenience related to fact engine likes to use NULL SparseBitmap pointers
 			if (!bitmap)
 				return false;
@@ -444,10 +436,9 @@ public:
 			fb_assert(false);
 		}
 
-		// Accessor position must be establised via successful call to getFirst(),
+		// Accessor position must be establised via successful call to getFirst(), 
 		// getLast() or locate() before you can call this method
-		bool getNext()
-		{
+		bool getNext() {
 			if (bitmap->singular)
 				return false;
 
@@ -490,14 +481,13 @@ public:
 			} while (try_mask);
 
 			// Bucket must contain one bit at least
-			fb_assert(false);
+			fb_assert(false); 
 			return false; // Absence of this statement makes GCC 3.4 generate wrong code here
 		}
 
-		// Accessor position must be establised via successful call to getFirst(),
+		// Accessor position must be establised via successful call to getFirst(), 
 		// getLast() or locate() before you can call this method
-		bool getPrev()
-		{
+		bool getPrev() {
 			if (bitmap->singular)
 				return false;
 
@@ -559,10 +549,10 @@ private:
 template <typename T, typename InternalTypes>
 SparseBitmap<T, InternalTypes>**
 SparseBitmap<T, InternalTypes>::bit_or(
-	SparseBitmap<T, InternalTypes>** bitmap1,
+	SparseBitmap<T, InternalTypes>** bitmap1, 
 	SparseBitmap<T, InternalTypes>** bitmap2
-)
-{
+) 
+{	
 	SparseBitmap *map1, *map2;
 
 	// Handle the case when one or the other of the bitmaps is NULL
@@ -590,13 +580,13 @@ SparseBitmap<T, InternalTypes>::bit_or(
 	}
 
 	SparseBitmap *source, *dest, **result;
-
+	
 	// If second bitmap seems larger then use it as a target
 	if (map2->tree.seemsBiggerThan(map1->tree)) {
 		dest = map2;
 		source = map1;
 		result = bitmap2;
-	}
+	} 
 	else {
 		dest = map1;
 		source = map2;
@@ -615,7 +605,7 @@ SparseBitmap<T, InternalTypes>::bit_or(
 	if (!destFound) {
 		return result;
 	}
-
+		
 	T destValue = dest->tree.current().start_value;
 	T sourceValue = source->tree.current().start_value;
 
@@ -656,7 +646,7 @@ SparseBitmap<T, InternalTypes>::bit_or(
 					break;
 				}
 			}
-		}
+		} 
 		else {
 			// Add remaining buckets to destination tree and get out
 			do {
@@ -665,17 +655,17 @@ SparseBitmap<T, InternalTypes>::bit_or(
 
 			break;
 		}
-	}
+	} 
 
 	return result;
 }
 
 template <typename T, typename InternalTypes>
-SparseBitmap<T, InternalTypes>**
+SparseBitmap<T, InternalTypes>** 
 SparseBitmap<T, InternalTypes>::bit_and(
-	SparseBitmap<T, InternalTypes>** bitmap1,
+	SparseBitmap<T, InternalTypes>** bitmap1, 
 	SparseBitmap<T, InternalTypes>** bitmap2
-)
+) 
 {
 	SparseBitmap *map1, *map2;
 
@@ -691,16 +681,16 @@ SparseBitmap<T, InternalTypes>::bit_and(
 	if (map1->singular) {
 		if (map2->test(map1->singular_value))
 			return bitmap1;
-
-		return NULL;
+		else
+			return NULL;
 	}
 
 	// Second bitmap is singular. Test appropriate bit in first and return second
 	if (map2->singular) {
 		if (map1->test(map2->singular_value))
 			return bitmap2;
-
-		return NULL;
+		else
+			return NULL;
 	}
 
 	SparseBitmap *source, *dest, **result;
@@ -710,7 +700,7 @@ SparseBitmap<T, InternalTypes>::bit_and(
 		dest = map2;
 		source = map1;
 		result = bitmap2;
-	}
+	} 
 	else {
 		dest = map1;
 		source = map2;
@@ -722,7 +712,7 @@ SparseBitmap<T, InternalTypes>::bit_and(
 	// Destination bitmap is empty. We have nothing to do thus return.
 	if (!destFound)
 		return result;
-
+		
 	bool sourceFound = source->tree.getFirst();
 
 	// Both source and destination are empty. Return destination FWIW.
@@ -764,10 +754,10 @@ SparseBitmap<T, InternalTypes>::bit_and(
 			// if (sourceValue > destValue)
 			if ((destFound = dest->tree.fastRemove()))
 				destValue = dest->tree.current().start_value;
-		}
+		} 
 		else {
 			// Trim out remaining values from destination list and get out
-			while (dest->tree.fastRemove())
+			while (dest->tree.fastRemove()) 
 			{ }
 			break;
 		}

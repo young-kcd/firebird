@@ -27,7 +27,7 @@
 #include "lc_narrow.h"
 #include "ld_proto.h"
 
-static inline bool FAMILY1(texttype* cache,
+static inline bool FAMILY1(TEXTTYPE cache,
 							SSHORT country,
 							USHORT flags,
 							const SortOrderTblEntry* NoCaseOrderTbl,
@@ -44,8 +44,6 @@ static inline bool FAMILY1(texttype* cache,
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
 
-	TextTypeImpl* impl = new TextTypeImpl;
-
 	cache->texttype_version			= TEXTTYPE_VERSION_1;
 	cache->texttype_name			= POSIX;
 	cache->texttype_country			= country;
@@ -56,13 +54,13 @@ static inline bool FAMILY1(texttype* cache,
 	cache->texttype_fn_str_to_upper = fam1_str_to_upper;
 	cache->texttype_fn_str_to_lower = fam1_str_to_lower;
 	cache->texttype_fn_destroy		= LC_NARROW_destroy;
-	cache->texttype_impl 			= impl;
-	impl->texttype_collation_table	= (const BYTE*) NoCaseOrderTbl;
-	impl->texttype_toupper_table	= ToUpperConversionTbl;
-	impl->texttype_tolower_table	= ToLowerConversionTbl;
-	impl->texttype_compress_table	= (const BYTE*) CompressTbl;
-	impl->texttype_expand_table		= (const BYTE*) ExpansionTbl;
-	impl->texttype_flags			= ((flags) & REVERSE) ? (TEXTTYPE_reverse_secondary | TEXTTYPE_ignore_specials) : 0;
+	cache->texttype_impl			= new TextTypeImpl;
+	cache->texttype_impl->texttype_collation_table = (const BYTE*) NoCaseOrderTbl;
+	cache->texttype_impl->texttype_toupper_table	= ToUpperConversionTbl;
+	cache->texttype_impl->texttype_tolower_table	= ToLowerConversionTbl;
+	cache->texttype_impl->texttype_compress_table	= (const BYTE*) CompressTbl;
+	cache->texttype_impl->texttype_expand_table		= (const BYTE*) ExpansionTbl;
+	cache->texttype_impl->texttype_flags			= ((flags) & REVERSE) ? (TEXTTYPE_reverse_secondary | TEXTTYPE_ignore_specials) : 0;
 
 	return true;
 }
@@ -531,17 +529,16 @@ TEXTTYPE_ENTRY(CYRL_c2_init)
  */
 
 
-#define	LOCALE_UPPER(ch)	\
-	(static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_toupper_table[(unsigned)(ch)])
-#define	LOCALE_LOWER(ch)	\
-	(static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_tolower_table[(unsigned)(ch)])
+#define	LOCALE_UPPER(ch)	(obj->texttype_impl->texttype_toupper_table [(unsigned)(ch)])
+#define	LOCALE_LOWER(ch)	(obj->texttype_impl->texttype_tolower_table [(unsigned)(ch)])
+
 
 
 
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-ULONG fam1_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG fam1_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);
@@ -562,7 +559,7 @@ ULONG fam1_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutL
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
  */
-ULONG fam1_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+ULONG fam1_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	fb_assert(pStr != NULL);
 	fb_assert(pOutStr != NULL);

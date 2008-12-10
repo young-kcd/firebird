@@ -28,6 +28,7 @@ int			MOVQ_compare(const dsc*, const dsc*);
 double		MOVQ_date_to_double(const dsc*);
 int			MOVQ_decompose (const TEXT*, USHORT, SLONG *);
 void		MOVQ_double_to_date (double, SLONG [2]);
+void		MOVQ_fast (const SCHAR*, SCHAR*, ULONG);
 double		MOVQ_get_double(const dsc*);
 SLONG		MOVQ_get_long(const dsc*, SSHORT);
 int			MOVQ_get_string(const dsc*, const TEXT**, vary*, USHORT);

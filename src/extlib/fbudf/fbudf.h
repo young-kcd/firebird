@@ -20,10 +20,10 @@
  */
 
 
-// The following ifdef block is the standard way of creating macros which make exporting
+// The following ifdef block is the standard way of creating macros which make exporting 
 // from a DLL simpler. All files within this DLL are compiled with the FBUDF_EXPORTS
 // symbol defined on the command line. This symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see
+// that uses this DLL. This way any other project whose source files include this file see 
 // FBUDF_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
@@ -59,26 +59,26 @@ FBUDF_API paramdsc* dNullIf(paramdsc* v, paramdsc* v2);
 FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc);
 // END DEPRECATED FUNCTIONS.
 
-FBUDF_API void DOW(const ISC_TIMESTAMP* v, paramvary* rc);
-FBUDF_API void SDOW(const ISC_TIMESTAMP* v, paramvary* rc);
+FBUDF_API void DOW(const ISC_TIMESTAMP* v, char* rc);
+FBUDF_API void SDOW(const ISC_TIMESTAMP* v, char* rc);
 
-FBUDF_API void right(const paramdsc* v, const ISC_SHORT& rl, paramdsc* rc);
+FBUDF_API void right(const paramdsc* v, const short& rl, paramdsc* rc);
 
-FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const ISC_LONG& ndays);
-FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const ISC_LONG& ndays, ISC_TIMESTAMP* v);
-FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const ISC_LONG& nweeks);
-FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const ISC_LONG& nmonths);
-FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const ISC_LONG& nyears);
+FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const int& ndays);
+FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const int& ndays, ISC_TIMESTAMP* v);
+FBUDF_API ISC_TIMESTAMP* addWeek(ISC_TIMESTAMP* v, const int& nweeks);
+FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const int& nmonths);
+FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, const int& nyears);
 
-FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, const ISC_LONG& nmseconds);
-FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, const ISC_LONG& nseconds);
-FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const ISC_LONG& nminutes);
-FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const ISC_LONG& nhours);
+FBUDF_API ISC_TIMESTAMP* addMilliSecond(ISC_TIMESTAMP* v, const int& nmseconds);
+FBUDF_API ISC_TIMESTAMP* addSecond(ISC_TIMESTAMP* v, const int& nseconds);
+FBUDF_API ISC_TIMESTAMP* addMinute(ISC_TIMESTAMP* v, const int& nminutes);
+FBUDF_API ISC_TIMESTAMP* addHour(ISC_TIMESTAMP* v, const int& nhours);
 
 FBUDF_API void getExactTimestamp(ISC_TIMESTAMP* rc);
 FBUDF_API void getExactTimestampUTC(ISC_TIMESTAMP* rc);
 
-FBUDF_API ISC_LONG isLeapYear(const ISC_TIMESTAMP* v);
+FBUDF_API int isLeapYear(const ISC_TIMESTAMP* v);
 
 FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc);
 FBUDF_API void fbround(const paramdsc* v, paramdsc* rc);

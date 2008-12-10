@@ -567,7 +567,7 @@ static const ExpandChar ExpansionTbl[NUM_EXPAND_CHARS + 1] = {
 };
 
 static const CompressPair CompressTbl[NUM_COMPRESS_CHARS + 1] = {
-
+	
 		{{99, 104},
 	 {FIRST_PRIMARY + 14, FIRST_SECONDARY + 0, FIRST_TERTIARY + 0, 0, 0},
 		 {FIRST_PRIMARY + 14, FIRST_SECONDARY + 0, FIRST_TERTIARY + 0, 0, 0}},	/* ch */

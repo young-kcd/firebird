@@ -32,21 +32,22 @@
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
-#include <limits.h>
-
-#if SIZEOF_LONG == 8
+/* Nickolay: it is easier to assume that integer is at least 32-bit.
+ * This comes from limitation that we cannot reliably detect datatype size at
+ *  compile time in cases when we do not control compilation (public headers) 
+ *  We are not going to support 16-bit platforms, right?
+ *
+ * Temporarly restrict new definition until ULONG clash with Windows
+ * type is solved. Win64 port is not possible before that point.
+ * Cannot use SIZEOF_LONG define here because we are in a public header
+ */
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
 	typedef unsigned int ULONG;
-	const SLONG SLONG_MIN = INT_MIN;
-	const SLONG SLONG_MAX = INT_MAX;
-#elif SIZEOF_LONG == 4
+#else
 	typedef long SLONG;
 	typedef unsigned long ULONG;
-	const SLONG SLONG_MIN = LONG_MIN;
-	const SLONG SLONG_MAX = LONG_MAX;
-#else
-#error compile_time_failure: SIZEOF_LONG not specified
 #endif
 
 typedef struct {
@@ -75,7 +76,7 @@ typedef USHORT ISC_USHORT;
 typedef SLONG ISC_LONG;
 typedef ULONG ISC_ULONG;
 
-#include "types_pub.h"
+#include <types_pub.h>
 
 /*
  * TMN: some misc data types from all over the place
@@ -99,8 +100,8 @@ typedef char TEXT;				/* To be expunged over time */
 typedef unsigned char UTEXT;	Unsigned text - not used */
 typedef unsigned char BYTE;		/* Unsigned byte - common */
 /*typedef char SBYTE;			Signed byte - not used */
-typedef intptr_t IPTR;
-typedef uintptr_t U_IPTR;
+typedef long IPTR;
+typedef unsigned long U_IPTR;
 
 typedef void (*FPTR_VOID) ();
 typedef void (*FPTR_VOID_PTR) (void*);
@@ -115,17 +116,11 @@ typedef void (*FPTR_EVENT_CALLBACK)(void*, USHORT, const UCHAR*);
 /* The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
  * REMOTE's move_error & GPRE's post_error.
  */
-namespace Firebird {
-	namespace Arg {
-		class StatusVector;
-	}
-}
-typedef void (*ErrorFunction) (const Firebird::Arg::StatusVector& v);
-// kept for backward compatibility with old private API (CVT_move())
 typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
+typedef IPTR LOCK_OWNER_T; /* Data type for the Owner ID for the lock manager */
 /* CVC: internal usage. I suspect the only reason to return int is that
 vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
 but our code never uses the return value. */
@@ -137,9 +132,5 @@ typedef IPTR FB_THREAD_ID;
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
 #define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
 
-// Intl types
-typedef SSHORT CHARSET_ID;
-typedef SSHORT COLLATE_ID;
-typedef USHORT TTYPE_ID;
-
 #endif /* INCLUDE_FB_TYPES_H */
+

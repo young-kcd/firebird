@@ -59,7 +59,7 @@ Dependencies = $(AllObjects:.o=.d)
 
 .PHONY: libfbembed
 
-libfbembed : $(LIBIBUTIL_SO) $(LIBFBEMBED_SONAME)
+libfbembed : $(LIBFBEMBED_SONAME)
 
 $(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
 ifeq ($(PLATFORM),DARWIN)

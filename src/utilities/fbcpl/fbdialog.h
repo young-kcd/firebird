@@ -4,25 +4,25 @@
  *	DESCRIPTION:	Main file to provide GUI based server control functions
  *					for Firebird 2.0
  *
- *  The contents of this file are subject to the Initial Developer's
- *  Public License Version 1.0 (the "License"); you may not use this
- *  file except in compliance with the License. You may obtain a copy
+ *  The contents of this file are subject to the Initial Developer's 
+ *  Public License Version 1.0 (the "License"); you may not use this 
+ *  file except in compliance with the License. You may obtain a copy 
  *  of the License here:
  *
  *    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl.
  *
- *  Software distributed under the License is distributed on an "AS
- *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  Software distributed under the License is distributed on an "AS 
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or 
  *  implied. See the License for the specific language governing rights
  *  and limitations under the License.
- *
+ *  
  *  The Initial Developer of the Original Code is Paul Reeves.
  *
  *  The Original Code is (C) 2003 Paul Reeves .
  *
  *  All Rights Reserved.
- *
- *  Contributor(s): ______________________________________.
+ *  
+ *  Contributor(s): ______________________________________. 
  *
  */
 
@@ -96,7 +96,7 @@ protected:
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
 	afx_msg void OnButtonStop();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTimer(UINT nIDEvent);
 	afx_msg void OnDestroy();
 	afx_msg void OnService();
 	afx_msg void OnManualStart();
@@ -111,7 +111,7 @@ protected:
 
 //========= End of MSVC specific stuff
 
-//Our Stuff
+//Our Stuff 
 public:
 	CString m_SS_Server_Name;
 	CString m_Guardian_Name;
@@ -142,21 +142,21 @@ public:
 		bool UseGuardian;
 		bool ServicesAvailable;		// Set via UpdateServerStatus()
 		int  ServerStatus;
-		bool UseService;			// This is a convenience. It is set when
-									// ServiceStatus is checked and saves trying
-									// to do the more complex evaluation of
+		bool UseService;			// This is a convenience. It is set when 
+									// ServiceStatus is checked and saves trying 
+									// to do the more complex evaluation of 
 									// ServiceStatus
 		bool AutoStart;
-		bool WasRunning;			// Set via UpdateServerStatus(). Allows us
-									// to check if server was running before we
+		bool WasRunning;			// Set via UpdateServerStatus(). Allows us 
+									// to check if server was running before we 
 									// updated our settings.
-		bool SystemLogin;			// Are we using LocalSystem to control the
+		bool SystemLogin;			// Are we using LocalSystem to control the 
 									// service
 		bool SufficientUserRights;	// Does user have sufficient rights to change service
 
 		CString ServerName;			// Initially set by call to ViewRegistryEntries
 		CString ServiceExecutable;	// Initially set by call to ViewRegistryEntries
-
+								
 	} 	fb_status;
 
 
@@ -172,7 +172,6 @@ public:
 
 //Get Stuff
 
-	CString GetServiceName(const char* name) const;
 	HWND GetSuperServerHandle() const;
 #ifdef MANAGE_CLASSIC
 	HWND GetClassicServerHandle() const;
@@ -201,7 +200,7 @@ public:
 	bool UpdateFirebirdConf(CString option, CString value);
 #endif
 
-
+	
 //Do stuff
 	void ApplyChanges();
 	bool AppInstall( CFBDialog::STATUS status );

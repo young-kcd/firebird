@@ -31,6 +31,8 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: install.sh.in,v 1.9 2005-05-27 22:14:45 asfernandes Exp $
+# 
 
 #  Install script for FirebirdSQL database engine
 
@@ -257,7 +259,7 @@ cd $InstallFirebirdPrefix
 
 # Lock files
 
-for i in isc_init1 isc_lock1 isc_event1 isc_monitor1
+for i in isc_init1 isc_lock1 isc_event1
 do
 	FileName=$i.`hostname`
 	touch $FileName
@@ -292,7 +294,7 @@ mv /etc/inetd.conf.new /etc/inetd.conf
 
 # add the gds service and restart inetd
 cat >>/etc/services <<EOF
-gds_db		3050/tcp  #Firebird Database Remote Protocol
+gds_db		3050/tcp  #InterBase Database Remote Protocol
 EOF
 cat >>/etc/inetd.conf <<EOF
 gds_db	stream	tcp	nowait	firebird	$InstallFirebirdPrefix/bin/fb_inet_server  fb_inet_server

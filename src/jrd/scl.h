@@ -24,39 +24,20 @@
 #ifndef JRD_SCL_H
 #define JRD_SCL_H
 
-#include "../common/classes/MetaName.h"
-#include "../common/classes/tree.h"
-
 namespace Jrd {
 
 const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; /* used to read/write acl blob */
 
-// Security class definition
+/* Security class definition */
 
-class SecurityClass
+class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
 {
-public:
+    public:
     typedef USHORT flags_t;
-
-	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name) :
-		scl_flags(0), scl_name(pool, name) {}
-
-	flags_t scl_flags;			// Access permissions
-	const Firebird::MetaName scl_name;
-
-	static const Firebird::MetaName& generate(const void*, const SecurityClass* item)
-	{
-		return item->scl_name;
-	}
+	SecurityClass* scl_next;	/* Next security class in system */
+	flags_t scl_flags;			/* Access permissions */
+	TEXT scl_name[2];
 };
-
-typedef Firebird::BePlusTree<
-	SecurityClass*,
-	Firebird::MetaName,
-	Firebird::MemoryPool,
-	SecurityClass
-> SecurityClassList;
-
 
 const SecurityClass::flags_t SCL_read			= 1;		/* Read access */
 const SecurityClass::flags_t SCL_write			= 2;		/* Write access */
@@ -80,8 +61,6 @@ const SecurityClass::flags_t SCL_execute		= 8192;
 const USHORT USR_locksmith	= 1;		/* User has great karma */
 const USHORT USR_dba		= 2;		/* User has DBA privileges */
 const USHORT USR_owner		= 4;		/* User owns database */
-const USHORT USR_trole		= 8;		/* Role was set by trusted auth */
-
 
 class UserId
 {
@@ -98,20 +77,20 @@ public:
 
 	bool locksmith() const
 	{
-		return usr_flags & (USR_locksmith | USR_owner | USR_dba);
+		return usr_flags & (USR_locksmith | USR_owner);
 	}
 
-	UserId() :	usr_user_id(0), usr_group_id(0),
+	UserId() :	usr_user_id(0), usr_group_id(0), 
 				usr_node_id(0), usr_flags(0) { }
 
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
-		: usr_user_name(p, ui.usr_user_name),
+		: usr_user_name(p, ui.usr_user_name), 
 		  usr_sql_role_name(p, ui.usr_sql_role_name),
-		  usr_project_name(p, ui.usr_project_name),
+		  usr_project_name(p, ui.usr_project_name), 
 		  usr_org_name(p, ui.usr_org_name),
-		  usr_user_id(ui.usr_user_id),
-		  usr_group_id(ui.usr_group_id),
-		  usr_node_id(ui.usr_node_id),
+		  usr_user_id(ui.usr_user_id), 
+		  usr_group_id(ui.usr_group_id), 
+		  usr_node_id(ui.usr_node_id), 
 		  usr_flags(ui.usr_flags) { }
 
 	UserId& operator=(const UserId& ui)
@@ -129,19 +108,26 @@ public:
 	}
 
 	UserId(const UserId& ui)
-		: usr_user_name(ui.usr_user_name),
+		: usr_user_name(ui.usr_user_name), 
 		  usr_sql_role_name(ui.usr_sql_role_name),
-		  usr_project_name(ui.usr_project_name),
+		  usr_project_name(ui.usr_project_name), 
 		  usr_org_name(ui.usr_org_name),
-		  usr_user_id(ui.usr_user_id),
-		  usr_group_id(ui.usr_group_id),
-		  usr_node_id(ui.usr_node_id),
+		  usr_user_id(ui.usr_user_id), 
+		  usr_group_id(ui.usr_group_id), 
+		  usr_node_id(ui.usr_node_id), 
 		  usr_flags(ui.usr_flags) { }
 };
 
-const char* const object_table		= "TABLE";
-const char* const object_procedure	= "PROCEDURE";
-const char* const object_column		= "COLUMN";
+/*
+ * User name assigned to any user granted USR_locksmith rights.
+ * If this name is changed, modify also the trigger in 
+ * jrd/grant.gdl (which turns into jrd/trig.h.
+ */
+static const char* SYSDBA_USER_NAME	= "SYSDBA";
+
+static const char* object_table		= "TABLE";
+static const char* object_procedure	= "PROCEDURE";
+static const char* object_column	= "COLUMN";
 
 } //namespace Jrd
 

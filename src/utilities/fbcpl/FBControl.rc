@@ -8,7 +8,7 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "afxres.h"
-#include "../../jrd/build_no.h"
+#include "../../jrd/version.rc"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -29,8 +29,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION     FILE_VER_NUMBER
- PRODUCTVERSION  FILE_VER_NUMBER
+ FILEVERSION 2,0,0,0
+ PRODUCTVERSION 2,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -48,15 +48,15 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "IBPhoenix\0"
             VALUE "FileDescription", "Firebird 2 Control Panel Applet - for Firebird 1.5 and beyond.\0"
-		    VALUE "FileVersion", FILE_VER_STRING
+            VALUE "FileVersion", "2, 0, 0, 0\0"
             VALUE "InternalName", "FB2Control\0"
             VALUE "LegalCopyright", "Copyright (C) 2003\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Firebird2Control.DLL\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Firebird Control Panel Applet\0"
-		    VALUE "ProductVersion", PRODUCT_VER_STRING
-			VALUE "SpecialBuild", FB_BUILD_SUFFIX
+            VALUE "ProductVersion", "1, 5, 0, 0\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"

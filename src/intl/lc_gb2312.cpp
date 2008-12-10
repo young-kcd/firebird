@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	InterBase International support
  *	MODULE:		lc_gb2312.cpp
- *	DESCRIPTION:	Language Drivers in the GB2312 family.
+ *	DESCRIPTION:	Language Drivers in the GB2312 family.  
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -33,7 +33,7 @@
 #include "lc_ascii.h"
 #include "cv_gb2312.h"
 
-static inline bool FAMILY_MULTIBYTE(texttype* cache,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,

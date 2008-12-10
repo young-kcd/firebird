@@ -32,17 +32,12 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2004.01.16 Vlad Horsun: added support for default parameters and
  *   EXECUTE BLOCK statement
- * Adriano dos Santos Fernandes
  */
 
 #ifndef DSQL_NODE_H
 #define DSQL_NODE_H
 
-#include "../dsql/dsql.h"
-
 // an enumeration of the possible node types in a syntax tree
-
-namespace Dsql {
 
 enum nod_t
 {
@@ -76,70 +71,70 @@ enum nod_t
 	nod_def_procedure,
 	nod_mod_procedure,
 	nod_del_procedure,
-	nod_def_exception,
+	nod_def_exception,  // 30
 	nod_mod_exception,
 	nod_del_exception,
-	nod_def_generator, //30
+	nod_def_generator,
 	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
 	nod_def_shadow,
 	nod_del_shadow,
 	nod_def_udf,
-	nod_del_udf,
+	nod_del_udf,    // 40
 	nod_grant,
 	nod_revoke,
-	nod_rel_constraint, // 40
+	nod_rel_constraint,
 	nod_delete_rel_constraint,
 	nod_primary,
 	nod_foreign,
 	nod_abort,
 	nod_references,
 	nod_proc_obj,
-	nod_trig_obj,
+	nod_trig_obj, // 50
 	nod_view_obj,
 	nod_list,	// SQL statements, mapped into GDML statements
-	nod_select, // 50
+	nod_select,
 	nod_insert,
 	nod_delete,
 	nod_update,
 	nod_close,
 	nod_open,
 	nod_all,	// ALL privileges
-	nod_execute,	// EXECUTE privilege
+	nod_execute, // 60 		// EXECUTE privilege
 	nod_store,
 	nod_modify,
-	nod_erase, // 60
+	nod_erase,
 	nod_assign,
 	nod_exec_procedure,
 	nod_return,	// Procedure statements
 	nod_exit,
 	nod_while,
 	nod_if,
-	nod_for_select,
+	nod_for_select, // 70
 	nod_erase_current,
 	nod_modify_current,
-	nod_post, // 70
+	nod_post,
 	nod_block,
 	nod_on_error,
 	nod_sqlcode,
 	nod_gdscode,
 	nod_exception,
 	nod_exception_stmt,
-	nod_default,
+	nod_default, // 80
 	nod_start_savepoint,
 	nod_end_savepoint,
-	nod_cursor,	//80	// used to create record streams
+	nod_cursor,	// used to create record streams
 	nod_relation,
 	nod_relation_name,
 	nod_procedure_name,
 	nod_rel_proc_name,
 	nod_rse,
 	nod_select_expr,
-	nod_union,
+	nod_union,                  // 90
 	nod_aggregate,
 	nod_order,
-	nod_flag, // 90
+	nod_flag,
 	nod_join,
 /* NOTE: when adding an expression node, be sure to
    test various combinations; in particular, think
@@ -152,10 +147,10 @@ enum nod_t
 	nod_gtr,
 	nod_geq,
 	nod_leq,
-	nod_lss,
+	nod_lss,         // 100
 	nod_between,
 	nod_like,
-	nod_missing, // 100
+	nod_missing,
 	nod_and,
 	nod_or,
 	nod_any,
@@ -165,7 +160,7 @@ enum nod_t
 	nod_starting,
 	nod_via,
 	nod_field,	// values
-	nod_dom_value, // 110
+	nod_dom_value,
 	nod_field_name,
 	nod_parameter,
 	nod_constant,
@@ -175,7 +170,7 @@ enum nod_t
 	nod_user_group,
 	nod_variable,
 	nod_var_name,
-	nod_array, // 120
+	nod_array,
 	nod_add,	// functions
 	nod_subtract,
 	nod_multiply,
@@ -185,7 +180,7 @@ enum nod_t
 	nod_substr,
 	nod_null,
 	nod_dbkey,
-	nod_udf, // 130
+	nod_udf,
 	nod_cast,
 	nod_upcase,
 	nod_lowcase,
@@ -195,18 +190,18 @@ enum nod_t
 	nod_subtract2,
 	nod_multiply2,
 	nod_divide2,
-	nod_gen_id2, // 140
+	nod_gen_id2,
 	nod_average,	// aggregates
 	nod_from,
 	nod_max,
 	nod_min,
 	nod_total,
-	//nod_count,    // obsolete
+	nod_count,
 	nod_exists,
 	nod_singular,
 	nod_agg_average,
 	nod_agg_max,
-	nod_agg_min, // 150
+	nod_agg_min,
 	nod_agg_total,
 	nod_agg_count,
 	nod_agg_average2,
@@ -216,7 +211,7 @@ enum nod_t
 	nod_join_inner,	// join types
 	nod_join_left,
 	nod_join_right,
-	nod_join_full, // 160
+	nod_join_full,
 	nod_join_cross,
 	// sql transaction support
 	nod_access,
@@ -228,7 +223,7 @@ enum nod_t
 	nod_reserve,
 	nod_retain,
 	// sql database stmts support
-	nod_page_size, // 170
+	nod_page_size,
 	nod_file_length,
 	nod_file_desc,
 	nod_dfl_charset,
@@ -242,7 +237,7 @@ enum nod_t
 	// access plan stuff
 	nod_plan_expr,
 	nod_plan_item,
-	nod_merge_plan, // 180
+	nod_merge,
 	nod_natural,
 	nod_index,
 	nod_index_order,
@@ -254,7 +249,7 @@ enum nod_t
 	nod_idx_inactive,
 		// drop behaviour
 	nod_restrict,
-	nod_cascade, // 190
+	nod_cascade,
 	// set statistics
 	nod_set_statistics,
 	// record version
@@ -268,7 +263,7 @@ enum nod_t
 	nod_leq_any,
 	nod_lss_any,
 	// ALL keyword used
-	nod_ansi_all, // 200
+	nod_ansi_all,
 	nod_eql_all,
 	nod_neq_all,
 	nod_gtr_all,
@@ -280,7 +275,7 @@ enum nod_t
 	nod_ref_trig_action,
 	// SQL role support
 	nod_def_role,
-	nod_role_name, // 210
+	nod_role_name,
 	nod_grant_admin,
 	nod_del_role,
 	// SQL time & date support
@@ -292,7 +287,7 @@ enum nod_t
 	nod_mod_domain_type,
 	nod_mod_field_name,
 	nod_mod_field_type,
-	nod_mod_field_pos, // 220
+	nod_mod_field_pos,
 
 	// CVC: SQL requires that DROP VIEW and DROP table are independent.
 	nod_del_view,
@@ -304,7 +299,7 @@ enum nod_t
 	nod_redef_procedure, // allows silent creation/overwriting of a procedure.
 	nod_exec_sql, // EXECUTE STATEMENT
 	nod_internal_info, // internal engine info
-	nod_searched_case, // 230	// searched CASE function
+	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
 	nod_mod_view, // ALTER VIEW
@@ -314,10 +309,9 @@ enum nod_t
 	nod_redef_view, // allows silent creation/overwriting of a view
 	nod_for_update, // FOR UPDATE clause
 	nod_user_savepoint, // savepoints support
-	nod_release_savepoint, // 240
+	nod_release_savepoint,
 	nod_undo_savepoint,
 	nod_label, // label support
-	// CVC: This node seems obsolete.
 	nod_exec_into, // EXECUTE STATEMENT INTO
 	nod_difference_file,
 	nod_drop_difference,
@@ -325,7 +319,7 @@ enum nod_t
 	nod_end_backup,
 	nod_derived_table, // Derived table support
 	nod_derived_field,  // Derived table support
-	nod_cursor_open, // 250
+	nod_cursor_open,
 	nod_cursor_fetch,
 	nod_cursor_close,
 	nod_fetch_seek,
@@ -335,47 +329,106 @@ enum nod_t
 	nod_query_spec,
 	nod_equiv,  // IS DISTINCT FROM
 	nod_redef_exception, // RECREATE EXCEPTION
-	nod_replace_exception, // 260	// CREATE OR ALTER EXCEPTION
+	nod_replace_exception, // CREATE OR ALTER EXCEPTION
 	nod_comment,
 	nod_mod_udf,
-	nod_def_collation,
-	nod_del_collation,
+    nod_def_collation,
 	nod_collation_from,
-	nod_collation_from_external,
 	nod_collation_attr,
 	nod_collation_specific_attr,
 	nod_strlen,
-	nod_trim, // 270
+	nod_trim,
 	nod_returning,
 	nod_redef_trigger,
 	nod_tra_misc,
-	nod_lock_timeout,
-	nod_agg_list,
-	nod_src_info,
-	nod_with,
-	nod_update_or_insert,
-	nod_merge,
-	nod_merge_when, // 280
-	nod_merge_update,
-	nod_merge_insert,
-	nod_sys_function,
-	nod_similar,
-	nod_mod_role,
-	nod_add_user,
-	nod_mod_user,
-	nod_del_user,
-	nod_exec_stmt,
-	nod_exec_stmt_inputs,	// 290
-	nod_exec_stmt_datasrc,
-	nod_exec_stmt_user,
-	nod_exec_stmt_pwd,
-	nod_exec_stmt_privs,
-	nod_tran_params,
-	nod_named_param,
-	nod_dfl_collate,
-	nod_class_node,
-	nod_hidden_var
+	nod_lock_timeout
 };
+
+typedef nod_t NOD_TYPE;
+
+/* definition of a syntax node created both
+   in parsing and in context recognition */
+
+class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
+{
+public:
+	NOD_TYPE nod_type;			// Type of node
+	DSC nod_desc;				// Descriptor
+	USHORT nod_line;			// Source line of the statement.
+	USHORT nod_column;			// Source column of the statement.
+	USHORT nod_count;			// Number of arguments
+	USHORT nod_flags;
+	dsql_nod* nod_arg[1];
+
+	dsql_nod() : nod_type(nod_unknown_type), nod_count(0), nod_flags(0) {}
+	SLONG getSlong() const
+	{
+		fb_assert(nod_type == nod_constant);
+		fb_assert(nod_desc.dsc_dtype == dtype_long);
+		return *((SLONG*) nod_arg);
+	}
+};
+
+// values of flags
+enum nod_flags_vals {
+	NOD_AGG_DISTINCT		= 1, // nod_agg_...
+
+	NOD_UNION_ALL			= 1, // nod_list
+
+	NOD_READ_ONLY			= 1, // nod_access
+	NOD_READ_WRITE			= 2,
+
+	NOD_WAIT				= 1, // nod_wait
+	NOD_NO_WAIT				= 2,
+
+	NOD_VERSION				= 1, // nod_version
+	NOD_NO_VERSION			= 2,
+
+	NOD_CONCURRENCY			= 1, // nod_isolation
+	NOD_CONSISTENCY			= 2,
+	NOD_READ_COMMITTED		= 4,
+
+	NOD_SHARED				= 1, // nod_lock_mode
+	NOD_PROTECTED			= 2,
+	NOD_READ				= 4,
+	NOD_WRITE				= 8,
+	
+	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
+	NOD_IGNORE_LIMBO        = 2,
+	NOD_RESTART_REQUESTS    = 4,
+
+	NOD_NULLS_FIRST			= 1, // nod_order
+	NOD_NULLS_LAST			= 2,
+
+	REF_ACTION_CASCADE		= 1, // nod_ref_trig_action
+	REF_ACTION_SET_DEFAULT	= 2,
+	REF_ACTION_SET_NULL		= 4,
+	REF_ACTION_NONE			= 8,
+	// Node flag indicates that this node has a different type or result
+	// depending on the SQL dialect.
+	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
+
+	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
+	NOD_SELECT_EXPR_VALUE		= 2,
+
+	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
+	NOD_CURSOR_FOR			= 2,
+	NOD_CURSOR_ALL			= USHORT(-1U),
+
+	NOD_DT_IGNORE_COLUMN_CHECK = 1 // nod_cursor, see pass1_cursor_name
+};
+
+// Parameters to MAKE_constant
+enum dsql_constant_type {
+	CONSTANT_STRING		= 0, // stored as a string
+//	CONSTANT_SLONG		= 1, // stored as a SLONG
+	CONSTANT_DOUBLE		= 2, // stored as a string
+	CONSTANT_DATE		= 3, // stored as a SLONG
+	CONSTANT_TIME		= 4, // stored as a ULONG
+	CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
+	CONSTANT_SINT64		= 6 // stored as a SINT64
+};
+
 
 /* enumerations of the arguments to a node, offsets
    within the variable tail nod_arg */
@@ -436,27 +489,6 @@ enum node_args {
 	e_exec_into_label,
 	e_exec_into_count,
 
-	e_exec_stmt_sql = 0,	// nod_exec_stmt
-	e_exec_stmt_inputs,
-	e_exec_stmt_outputs,
-	e_exec_stmt_proc_block,
-	e_exec_stmt_label,
-	e_exec_stmt_options,
-	e_exec_stmt_data_src,
-	e_exec_stmt_user,
-	e_exec_stmt_pwd,
-	e_exec_stmt_tran,
-	e_exec_stmt_privs,
-	e_exec_stmt_count,
-
-	e_exec_stmt_inputs_sql = 0,	// nod_exec_stmt_inputs
-	e_exec_stmt_inputs_params,
-	e_exec_stmt_inputs_count,
-
-	e_named_param_name = 0,	// nod_named_param
-	e_named_param_expr,
-	e_named_param_count,
-
 	e_internal_info = 0,	// nod_internal_info
 	e_internal_info_count,
 
@@ -501,8 +533,7 @@ enum node_args {
 	e_rows_length,
 	e_rows_count,
 
-	e_par_index = 0,		// nod_parameter
-	e_par_parameter,
+	e_par_parameter = 0,	// nod_parameter
 	e_par_count,
 
 	e_flp_select = 0,		// nod_for_select
@@ -541,10 +572,13 @@ enum node_args {
 	e_prm_val_val,
 	e_prm_val_count,
 
+	e_msg_number = 0,		// nod_message
+	e_msg_text,
+	e_msg_count,
+
 	e_sel_query_spec = 0,	// nod_select_expr
 	e_sel_order,
 	e_sel_rows,
-	e_sel_with_list,
 	e_sel_count,
 
 	e_qry_limit = 0,		// nod_query_spec
@@ -564,35 +598,11 @@ enum node_args {
 	e_ins_return,
 	e_ins_count,
 
-	e_mrg_relation = 0,		// nod_merge
-	e_mrg_using,
-	e_mrg_condition,
-	e_mrg_when,
-	e_mrg_count,
-
-	e_mrg_when_matched = 0,	// nod_merge_when
-	e_mrg_when_not_matched,
-	e_mrg_when_count,
-
-	e_mrg_update_statement = 0,	// nod_merge_update
-	e_mrg_update_count,
-
-	e_mrg_insert_fields = 0,	// nod_merge_insert
-	e_mrg_insert_values,
-	e_mrg_insert_count,
-
 	e_sto_relation = 0,		// nod_store
 	e_sto_statement,
 	e_sto_rse,
 	e_sto_return,
 	e_sto_count,
-
-	e_upi_relation = 0,		// nod_update_or_insert
-	e_upi_fields,
-	e_upi_values,
-	e_upi_matching,
-	e_upi_return,
-	e_upi_count,
 
 	e_del_relation = 0,		// nod_delete
 	e_del_boolean,
@@ -600,33 +610,24 @@ enum node_args {
 	e_del_sort,
 	e_del_rows,
 	e_del_cursor,
-	e_del_return,
 	e_del_count,
 
 	e_era_relation = 0,		// nod_erase
 	e_era_rse,
-	e_era_return,
 	e_era_count,
 
-	e_asgn_value = 0,       // nod_assign
-	e_asgn_field,
-	e_asgn_count,
-
 	e_erc_context = 0,		// nod_erase_current
-	e_erc_return,
 	e_erc_count,
 
 	e_mod_source = 0,		// nod_modify
 	e_mod_update,
 	e_mod_statement,
 	e_mod_rse,
-	e_mod_return,
 	e_mod_count,
 
 	e_mdc_context = 0,		// nod_modify_current
 	e_mdc_update,
 	e_mdc_statement,
-	e_mdc_return,
 	e_mdc_count,
 
 	e_upd_relation = 0,		// nod_update
@@ -636,8 +637,6 @@ enum node_args {
 	e_upd_sort,
 	e_upd_rows,
 	e_upd_cursor,
-	e_upd_return,
-	e_upd_rse_flags,
 	e_upd_count,
 
 	e_map_context = 0,		// nod_map
@@ -672,17 +671,17 @@ enum node_args {
 	e_join_boolean,
 	e_join_count,
 
-	e_via_rse = 0, 			// nod_via
+	e_via_rse = 0, 			//
 	e_via_value_1,
 	e_via_value_2,
 	e_via_count,
 
-	e_if_condition = 0,		// nod_if
+	e_if_condition = 0,		//
 	e_if_true,
 	e_if_false,
 	e_if_count,
 
-	e_while_cond = 0,		// nod_while
+	e_while_cond = 0,		//
 	e_while_action,
 	e_while_label,
 	e_while_count,
@@ -698,12 +697,14 @@ enum node_args {
 
 	e_dom_name = 0,			// nod_def_domain
 	e_dom_default,
+	e_dom_default_source,
 	e_dom_constraint,
 	e_dom_collate,
 	e_dom_count,
 
 	e_dfl_field = 0,		// nod_def_field
 	e_dfl_default,
+	e_dfl_default_source,
 	e_dfl_constraint,
 	e_dfl_collate,
 	e_dfl_domain,
@@ -725,12 +726,10 @@ enum node_args {
 	e_grant_table,
 	e_grant_users,
 	e_grant_grant,
-	e_grant_grantor,
 	e_grant_count,
 
 	e_alias_value = 0,		// nod_alias
 	e_alias_alias,
-	e_alias_imp_join,
 	e_alias_count,
 
 	e_rct_name = 0,			// nod_rel_constraint
@@ -751,7 +750,7 @@ enum node_args {
 	e_ref_del,
 	e_ref_upd_del_count,
 
-	e_ref_trig_action_count = 0,	// nod_ref_trig_action
+	e_ref_trig_action_count = 0,	//
 
 	e_cnstr_table = 0,		// nod_def_constraint
 	e_cnstr_type,
@@ -882,7 +881,6 @@ enum node_args {
 	e_mod_fld_type_field = 0,				// nod_mod_field_type
 	e_mod_fld_type_dom_name,
 	e_mod_fld_type_default,
-	e_mod_fld_type_computed,
 	e_mod_fld_type_count,
 
 	e_mod_fld_pos_orig_name = 0,	// nod_mod_field_position
@@ -915,7 +913,6 @@ enum node_args {
 	e_simple_case_case_operand = 0,	// 1 value
 	e_simple_case_when_operands,	// list
 	e_simple_case_results,			// list including else_result
-	e_simple_case_case_operand2,	// operand for use after the first test
 
 	// CASE {WHEN <search_condition> THEN <when_result>}.. [ELSE <else_result>] END
 	// Node-constants for after pass1
@@ -930,14 +927,12 @@ enum node_args {
 	e_derived_table_rse = 0,		// Contains select_expr
 	e_derived_table_alias,			// Alias name for derived table
 	e_derived_table_column_alias,	// List with alias names from derived table columns
-	e_derived_table_context,		// Context for derived table
 	e_derived_table_count,
 
 	e_derived_field_value = 0,		// Contains the source expression
 	e_derived_field_name,			// Name for derived table field
 	e_derived_field_scope,			// Scope-level
-	e_derived_field_context,		// context of derived table
-	e_derived_field_count,
+	e_derived_field_count = 4,
 
 	e_cur_stmt_id = 0,
 	e_cur_stmt_seek,
@@ -945,7 +940,6 @@ enum node_args {
 	e_cur_stmt_count,
 
 	e_agg_function_expression = 0,
-	e_agg_function_delimiter,
 	e_agg_function_scope_level,
 	e_agg_function_count,
 
@@ -955,7 +949,7 @@ enum node_args {
 	e_comment_string,
 	e_comment_count,
 
-	e_mod_udf_name = 0,				// nod_mod_udf
+	e_mod_udf_name = 0,
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
 	e_mod_udf_count,
@@ -967,147 +961,14 @@ enum node_args {
 	e_def_coll_specific_attributes,
 	e_def_coll_count,
 
-	e_del_coll_name = 0,
-	e_del_coll_count,
-
 	e_strlen_type = 0,				// constant representing type of length
 	e_strlen_value,
 	e_strlen_count,
 
 	e_ret_source = 0,				// nod_returning
 	e_ret_target,
-	e_ret_count,
-
-	e_sysfunc_name = 0,				// nod_sys_function
-	e_sysfunc_args,
-	e_sysfunc_count,
-
-	e_similar_value = 0,
-	e_similar_pattern,
-	e_similar_escape,
-	e_similar_count,
-
-	e_src_info_line = 0,			// nod_src_info
-	e_src_info_column,
-	e_src_info_stmt,
-	e_src_info_count,
-
-	e_mod_role_os_name = 0,			// nod_mod_role
-	e_mod_role_db_name,
-	e_mod_role_action,				// 0 - drop, 1 - add
-	e_mod_role_count,
-
-	e_del_user_name = 0,			// nod_del_user
-	e_del_user_count,
-
-	e_user_name = 0, 				// nod_add(mod)_user
-	e_user_passwd,
-	e_user_first,
-	e_user_middle,
-	e_user_last,
-	e_user_count,
-
-	e_hidden_var_expr = 0,			// nod_hidden_var
-	e_hidden_var_var,
-	e_hidden_var_count
+	e_ret_count
 };
-
-} // namespace
-
-namespace Jrd {
-
-typedef Dsql::nod_t NOD_TYPE;
-
-// definition of a syntax node created both in parsing and in context recognition
-
-class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
-{
-public:
-	NOD_TYPE nod_type;			// Type of node
-	DSC nod_desc;				// Descriptor
-	USHORT nod_line;			// Source line of the statement.
-	USHORT nod_column;			// Source column of the statement.
-	USHORT nod_count;			// Number of arguments
-	USHORT nod_flags;
-	dsql_nod* nod_arg[1];
-
-	dsql_nod() : nod_type(Dsql::nod_unknown_type), nod_count(0), nod_flags(0) {}
-
-	SLONG getSlong() const
-	{
-		fb_assert(nod_type == Dsql::nod_constant);
-		fb_assert(nod_desc.dsc_dtype == dtype_long);
-		fb_assert((void*) nod_desc.dsc_address == (void*) nod_arg);
-		return *((SLONG*) nod_arg);
-	}
-
-};
-
-// values of flags
-enum nod_flags_vals {
-	NOD_AGG_DISTINCT		= 1, // nod_agg_...
-
-	NOD_UNION_ALL			= 1, // nod_list
-	NOD_UNION_RECURSIVE 	= 2,
-	NOD_SIMPLE_LIST			= 4,	// no need to enclose with blr_begin ... blr_end
-
-	NOD_READ_ONLY			= 1, // nod_access
-	NOD_READ_WRITE			= 2,
-
-	NOD_WAIT				= 1, // nod_wait
-	NOD_NO_WAIT				= 2,
-
-	NOD_VERSION				= 1, // nod_version
-	NOD_NO_VERSION			= 2,
-
-	NOD_CONCURRENCY			= 1, // nod_isolation
-	NOD_CONSISTENCY			= 2,
-	NOD_READ_COMMITTED		= 4,
-
-	NOD_SHARED				= 1, // nod_lock_mode
-	NOD_PROTECTED			= 2,
-	NOD_READ				= 4,
-	NOD_WRITE				= 8,
-
-	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
-	NOD_IGNORE_LIMBO        = 2,
-	NOD_RESTART_REQUESTS    = 4,
-
-	NOD_NULLS_FIRST			= 1, // nod_order
-	NOD_NULLS_LAST			= 2,
-
-	REF_ACTION_CASCADE		= 1, // nod_ref_trig_action
-	REF_ACTION_SET_DEFAULT	= 2,
-	REF_ACTION_SET_NULL		= 4,
-	REF_ACTION_NONE			= 8,
-	// Node flag indicates that this node has a different type or result
-	// depending on the SQL dialect.
-	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
-
-	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
-	NOD_SELECT_EXPR_VALUE		= 2,
-	NOD_SELECT_EXPR_RECURSIVE	= 4, // recursive member of recursive CTE
-	NOD_SELECT_VIEW_FIELDS		= 8, // view's field list
-
-	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
-	NOD_CURSOR_FOR			= 2,
-	NOD_CURSOR_ALL			= USHORT(-1U),
-
-	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
-	NOD_DT_CTE_USED			= 2,		// nod_derived_table
-
-	NOD_PERMANENT_TABLE			= 1, // nod_def_relation
-	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
-	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
-
-	NOD_SPECIAL_SYNTAX		= 1,	// nod_sys_function
-
-	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
-	NOD_TRAN_COMMON = 2,
-	NOD_TRAN_2PC = 3,
-	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON
-};
-
-} // namespace
 
 #endif // DSQL_NODE_H
+

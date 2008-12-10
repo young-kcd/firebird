@@ -25,7 +25,7 @@
  *
  *
  */
-
+ 
 #ifndef CLASSES_FB_TLS_H
 #define CLASSES_FB_TLS_H
 
@@ -36,7 +36,16 @@
 //
 // TLS variable type should be smaller than size of pointer to stay portable
 
-#if defined(HAVE___THREAD)
+#ifdef SOLARIS_MT
+#undef HAVE___THREAD
+#endif
+
+#if !defined(MULTI_THREAD)
+// Single-threaded case
+# define TLS_DECLARE(TYPE, NAME) TYPE NAME
+# define TLS_GET(NAME) NAME
+# define TLS_SET(NAME, VALUE) NAME = (VALUE)
+#elif defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
@@ -46,34 +55,29 @@
 namespace Firebird {
 
 template <typename T>
-class Win32Tls
-{
+class Win32Tls {
 public:
-	Win32Tls()
-	{
+	Win32Tls() {
 		if ((key = TlsAlloc()) == 0xFFFFFFFF)
 			system_call_failed::raise("TlsAlloc");
 	}
-	const T get()
-	{
+	const T get() {
 	 	LPVOID value = TlsGetValue(key);
 		if ((value == NULL) && (GetLastError() != NO_ERROR))
 			system_call_failed::raise("TlsGetValue");
 //		return reinterpret_cast<T>(value);
 		return (T)value;
 	}
-	void set(const T value)
-	{
+	void set(const T value) {
 		if (TlsSetValue(key, (LPVOID)value) == 0)
 			system_call_failed::raise("TlsSetValue");
 	}
-	~Win32Tls()
-	{
+	~Win32Tls() {
 		if (TlsFree(key) == 0)
 			system_call_failed::raise("TlsFree");
 	}
 private:
-	DWORD key;
+	DWORD key;	
 };
 } // namespace Firebird
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
@@ -83,9 +87,9 @@ private:
 // 14-Jul-2004 Nickolay Samofatov.
 //
 // Unfortunately, compiler-assisted TLS doesn't work with dynamic link libraries
-// loaded via LoadLibrary - it intermittently crashes and these crashes are
+// loaded via LoadLibrary - it intermittently crashes and these crashes are 
 // documented by MS. We may still use it for server binaries, but it requires
-// some changes in build environment. Let's defer this till later point and
+// some changes in build environment. Let's defer this till later point and 
 // think of reliable mean to prevent linking of DLL with code below (if enabled).
 //
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
@@ -101,32 +105,27 @@ namespace Firebird {
 
 
 template <typename T>
-class TlsValue
-{
+class TlsValue {
 public:
-	TlsValue()
-	{
+	TlsValue() {
 		if (pthread_key_create(&key, NULL))
 			system_call_failed::raise("pthread_key_create");
 	}
-	const T get()
-	{
+	const T get() {
 		// We use double C-style cast to allow using scalar datatypes
 		// with sizes up to size of pointer without warnings
 		return (T)(IPTR)pthread_getspecific(key);
 	}
-	void set(const T value)
-	{
+	void set(const T value) {
 		if (pthread_setspecific(key, (void*)(IPTR)value))
 			system_call_failed::raise("pthread_setspecific");
 	}
-	~TlsValue()
-	{
+	~TlsValue() {
 		if (pthread_key_delete(key))
 			system_call_failed::raise("pthread_key_delete");
 	}
 private:
-	pthread_key_t key;
+	pthread_key_t key;	
 };
 #else //SOLARIS_MT
 #include <thread.h>
@@ -136,45 +135,39 @@ namespace Firebird {
 
 
 template <typename T>
-class TlsValue
-{
+class TlsValue {
 public:
-	static void  TlsV_on_thread_exit (void * pval)
-	{
+	static void  TlsV_on_thread_exit (void * pval) {
 	/* Usually should delete pval like this
-		T* ptempT = (T*) pval;
+		T * ptempT= (T*) pval ;
 		delete ptempT;
 	*/
 
 	}
 
-	TlsValue()
-	{
+	TlsValue() {
 		if (thr_keycreate(&key, TlsV_on_thread_exit) )
 			system_call_failed::raise("thr_key_create");
 	}
-	const T get()
-	{
+	const T get() {
 		// We use double C-style cast to allow using scalar datatypes
 		// with sizes up to size of pointer without warnings
-		T* valuep;
+		T  * valuep;
 		if (thr_getspecific(key, (void **) &valuep) == 0)
-			return (T)(IPTR) valuep ;
-
-		system_call_failed::raise("thr_getspecific");
-		return (T) NULL;
+			return (T)(IPTR) (valuep) ;
+		else
+			system_call_failed::raise("thr_getspecific");
+			return (T)NULL;
 	}
-	void set(const T value)
-	{
+	void set(const T value) {
 		if (thr_setspecific(key, (void*)(IPTR)value))
 			system_call_failed::raise("thr_setspecific");
 	}
-	~TlsValue()
-	{
+	~TlsValue() {
 		/* Do nothing if no pthread_key_delete */
 	}
 private:
-	thread_key_t key;
+	thread_key_t key;	
 };
 
 

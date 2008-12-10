@@ -11,13 +11,13 @@
 # The Original Code was created by Inprise Corporation
 # and its predecessors. Portions created by Inprise Corporation are
 # Copyright (C) Inprise Corporation.
-#
-# All Rights Reserved.
 # Contributor(s): Konstantin Kuznetsov
 #			Neil McCalden
 #			Paul Beach
 #			Nickolay Samofatov
 # This file can be used to build Firebird on Solaris 10 using gcc
+#
+# $Id: prefix.solx86gcc,v 1.19.4.6 2008-09-16 09:23:13 robocop Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 
@@ -28,11 +28,10 @@ SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-ifeq ($(ObjModuleType),superserver)
 ifdef SFIO
 COMM_SOLX_FLAGS+=$(SFIO_FLAGS) 
 endif
-endif
+
 
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
@@ -59,9 +58,7 @@ LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print fbsvcmgr
-CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
-
-UNDEF_PLATFORM = -Wl,-z,defs

@@ -30,24 +30,25 @@
 #include <ntsecapi.h>
 #include <aclapi.h>
 #include "../jrd/common.h"
+//#include "../jrd/license.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"
 
+/* Defines */
+const char* RUNAS_SERVICE = " -s";
 
 USHORT SERVICES_install(SC_HANDLE manager,
 						const char* service_name,
 						const char* display_name,
 						const char* display_description,
 						const char* executable,
-						const char* directory,
-						const char* switches,
-						const char* dependencies,
+						const TEXT* directory,
+						const TEXT* dependencies,
 						USHORT sw_startup,
-						const char* nt_user_name,
-						const char* nt_user_password,
+						const TEXT* nt_user_name,
+						const TEXT* nt_user_password,
 						bool interactive_mode,
-						bool auto_restart,
 						pfnSvcError err_handler)
 {
 /**************************************
@@ -60,31 +61,20 @@ USHORT SERVICES_install(SC_HANDLE manager,
  *	Install a service in the service control panel.
  *
  **************************************/
+	TEXT path_name[MAXPATHLEN];
 
-	char exe_name[MAX_PATH];
-	int len = strlen(directory);
-	const char last_char = len ? directory[len - 1] : '\\';
-	const char* exe_format =
-		(last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
-
-	len = snprintf(exe_name, sizeof(exe_name), exe_format, directory, executable);
-	if (len == sizeof(exe_name) || len < 0) {
-		return (*err_handler) (0, "service executable path name is too long", 0);
-	}
-
-	char path_name[MAX_PATH * 2];
-	const char* path_format = (strchr(exe_name, ' ') ? "\"%s\"" : "%s");
-	sprintf(path_name, path_format, exe_name);
-
-	if (switches)
+	// No check made on directory length?
+	strcpy(path_name, directory);
+	USHORT len = strlen(path_name);
+	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
 	{
-		len = sizeof(path_name) - strlen(path_name) - 1;
-		if (len < strlen(switches) + 1) {
-			return (*err_handler) (0, "service command line is too long", 0);
-		}
-		strcat(path_name, " ");
-		strcat(path_name, switches);
+		path_name[len++] = '\\';
+		path_name[len] = 0;
 	}
+
+	strcpy(path_name + len, executable);
+	strcat(path_name, ".exe");
+	strcat(path_name, RUNAS_SERVICE);
 
 	DWORD dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	if (nt_user_name != 0)
@@ -100,7 +90,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	SC_HANDLE service = CreateService(manager,
 							service_name,
 							display_name,
-							SERVICE_CHANGE_CONFIG,
+							SERVICE_ALL_ACCESS,
 							dwServiceType,
 							(sw_startup ==
 							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
@@ -113,43 +103,24 @@ USHORT SERVICES_install(SC_HANDLE manager,
 		DWORD errnum = GetLastError();
 		if (errnum == ERROR_DUP_NAME || errnum == ERROR_SERVICE_EXISTS)
 			return IB_SERVICE_ALREADY_DEFINED;
-
-		return (*err_handler) (errnum, "CreateService", NULL);
+		else
+			return (*err_handler) (errnum, "CreateService", NULL);
 	}
 
-	// Now enter the description string and failure actions into the service
-	// config, if this is available on the current platform.
+	// Now enter the description string into the service config, if this is
+	// available on the current platform.
 	HMODULE advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (advapi32 != 0)
 	{
 		typedef BOOL __stdcall proto_config2(SC_HANDLE, DWORD, LPVOID);
-
-		proto_config2* const config2 =
+		proto_config2* config2 =
 			(proto_config2*)GetProcAddress(advapi32, "ChangeServiceConfig2A");
-
 		if (config2 != 0)
 		{
 			// This system supports the ChangeServiceConfig2 API.
 			// LPSTR descr = display_description;
 			//(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &descr);
 			(*config2)(service, SERVICE_CONFIG_DESCRIPTION, &display_description);
-
-			if (auto_restart)
-			{
-				SERVICE_FAILURE_ACTIONS fa;
-				SC_ACTION	acts;
-
-				memset(&fa, 0, sizeof(fa));
-				fa.dwResetPeriod = 0;
-				fa.cActions = 1;
-				fa.lpsaActions = &acts;
-
-				memset(&acts, 0, sizeof(acts));
-				acts.Delay = 0;
-				acts.Type = SC_ACTION_RESTART;
-
-				(*config2)(service, SERVICE_CONFIG_FAILURE_ACTIONS, &fa);
-			}
 		}
 		FreeLibrary(advapi32);
 	}
@@ -177,9 +148,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
  **************************************/
 	SERVICE_STATUS service_status;
 
-	SC_HANDLE service = OpenService(manager,
-									service_name,
-									SERVICE_QUERY_STATUS | DELETE);
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -206,8 +175,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 			if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
 				break;
 		}
-		else
-			CloseServiceHandle(service);
+		else CloseServiceHandle(service);
 
 		Sleep(100);	// A small nap is always good for health :)
 	}
@@ -232,10 +200,9 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *	Start an installed service.
  *
  **************************************/
-	const SC_HANDLE service = OpenService(manager,
-	                                      service_name,
-	                                      SERVICE_START | SERVICE_QUERY_STATUS);
+	SERVICE_STATUS service_status;
 
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -259,13 +226,11 @@ USHORT SERVICES_start(SC_HANDLE manager,
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_ALREADY_RUNNING)
 			return FB_SUCCESS;
-
-		return (*err_handler) (errnum, "StartService", NULL);
+		else
+			return (*err_handler) (errnum, "StartService", NULL);
 	}
 
 	/* Wait for the service to actually start before returning. */
-	SERVICE_STATUS service_status;
-
 	do
 	{
 		if (!QueryServiceStatus(service, &service_status))
@@ -298,14 +263,11 @@ USHORT SERVICES_stop(SC_HANDLE manager,
  *	Stop a running service.
  *
  **************************************/
-	const SC_HANDLE service = OpenService(manager,
-	                                      service_name,
-	                                      SERVICE_STOP | SERVICE_QUERY_STATUS);
+	SERVICE_STATUS service_status;
 
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
-
-	SERVICE_STATUS service_status;
 
 	if (!ControlService(service, SERVICE_CONTROL_STOP, &service_status))
 	{
@@ -313,8 +275,8 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_NOT_ACTIVE)
 			return FB_SUCCESS;
-
-		return (*err_handler) (errnum, "ControlService", NULL);
+		else
+			return (*err_handler) (errnum, "ControlService", NULL);
 	}
 
 	/* Wait for the service to actually stop before returning. */
@@ -566,20 +528,6 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	}
 
 	return FB_SUCCESS;
-}
-
-//
-// Until the fb_assert could be converted to a function/object linked with each module
-// we need this ugly workaround.
-//
-extern "C" void API_ROUTINE gds__log(const TEXT* text, ...)
-{
-	va_list ptr;
-
-	va_start(ptr, text);
-	vprintf(text, ptr);
-	va_end(ptr);
-	printf("\n\n");
 }
 
 //

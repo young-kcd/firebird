@@ -31,18 +31,16 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
+#include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../dsql/blob_proto.h"
 #include "../dsql/utld_proto.h"
-#include "../common/StatusArg.h"
-
-using namespace Firebird;
 
 DATABASE DB = STATIC "yachts.lnk";
 
 static void copy_exact_name (const UCHAR*, UCHAR*, SSHORT);
-static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v);
+static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
 
 
 void API_ROUTINE isc_blob_default_desc(
@@ -97,7 +95,9 @@ ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
  *
  **************************************/
 	if (bpb_buffer_length < 17)
-		return error(status, Arg::Gds(isc_random) << Arg::Str("BPB buffer too small"));
+		return error(status, 3, (ISC_STATUS) isc_random,
+					 (ISC_STATUS) isc_arg_string,
+					 (ISC_STATUS) "BPB buffer too small");
 
 	UCHAR* p = bpb_buffer;
 	*p++ = isc_bpb_version1;
@@ -120,7 +120,7 @@ ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
 
 	*bpb_length = p - bpb_buffer;
 
-	return error(status, Arg::Gds(FB_SUCCESS));
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
@@ -148,7 +148,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
  ***********************************************/
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = 0;
+	isc_req_handle handle = NULL;
 
     copy_exact_name (field_name, desc->blob_desc_field_name, 
                      sizeof(desc->blob_desc_field_name));
@@ -173,7 +173,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
                              sizeof(Y.RDB$FIELD_NAME));
         }
 	END_FOR 
-    ON_ERROR
+    ON_ERROR 
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
@@ -183,7 +183,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 
 	if (!flag)
 	{
-		handle = 0;
+		handle = NULL;
 
 		FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE *trans_handle)
 			X IN RDB$PROCEDURE_PARAMETERS CROSS Y IN RDB$FIELDS
@@ -201,7 +201,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 								sizeof(Y.RDB$FIELD_NAME));
 			}
 		END_FOR 
-		ON_ERROR
+		ON_ERROR 
 			ISC_STATUS_ARRAY temp_status;
 			isc_release_request(temp_status, &handle);
 			return UTLD_copy_status(isc_status, status);
@@ -211,10 +211,13 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 	}
 	
 	if (!flag)
-		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str((const char *)(desc->blob_desc_field_name)) << 
-														Arg::Str((const char *)(desc->blob_desc_relation_name)));
+		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
+					 (ISC_STATUS) isc_arg_string,
+					 (ISC_STATUS) desc->blob_desc_field_name,
+					 (ISC_STATUS) isc_arg_string,
+					 (ISC_STATUS) desc->blob_desc_relation_name);
 
-	return error(status, Arg::Gds(FB_SUCCESS));
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
@@ -250,7 +253,7 @@ ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
 	desc->blob_desc_charset = charset;
 	desc->blob_desc_segment_size = segment_size;
 
-	return error(status, Arg::Gds(FB_SUCCESS));
+	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
 }
 
 
@@ -284,7 +287,7 @@ static void copy_exact_name (
 }
 
 
-static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
+static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
 {
 /**************************************
  *
@@ -296,6 +299,19 @@ static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
  *	Stuff a status vector.
  *
  **************************************/
-	return v.copyTo(status);
+	ISC_STATUS *stat;
+	va_list ptr;
+
+	va_start(ptr, count);
+	stat = status;
+	*stat++ = isc_arg_gds;
+
+	for (; count; --count)
+		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
+
+	va_end(ptr);
+	*stat = isc_arg_end;
+
+	return status[1];
 }
 

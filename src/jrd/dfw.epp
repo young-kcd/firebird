@@ -39,24 +39,12 @@
  *
  * 2001.10.18 Ann Harrison: some cleanup of trigger & constraint handling.
  *   it now appears to work correctly on new Firebird databases with lots
- *   of system types and on InterBase databases, without checking for
+ *   of system types and on InterBase databases, without checking for 
  *   missing source.
  *
  * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
  *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
- *
- * Adriano dos Santos Fernandes
- *
- * 2008-03-16 Alex Peshkoff - avoid most of data modifications in system transaction.
- *	Problems took place when same data was modified in user transaction, and later - 
- *	in system transaction. System transaction always performs updates in place, 
- *	but when between RPB setup and actual modification garbage was collected (this 
- *	was noticed with GC thread active, but may happen due to any read of the record),
- *	BUGCHECK(291) took place. To avoid that issue, it was decided not to modify data
- *	in system transaction. An exception is RDB$FORMATS relation, which is always modified
- *	by transaction zero. Also an aspect of 'dirty' access from system transaction was 
- *	taken into an account in add_file(), make_version() and create_index().
  *
  */
 
@@ -65,6 +53,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
+#include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -81,10 +70,12 @@
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/flags.h"
+#include "../jrd/all.h"
 #include "../jrd/intl.h"
 #include "../intl/charsets.h"
 #include "../jrd/align.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
@@ -108,14 +99,14 @@
 #include "../jrd/pcmet_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/rlck_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
 #include "../jrd/trig.h"
-#include "../jrd/IntlManager.h"
-#include "../jrd/UserManagement.h"
 #include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
@@ -138,22 +129,20 @@ const int WAIT_PERIOD	= -1;
 DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
-using namespace Firebird;
 
 /*==================================================================
- *
- * NOTE:
- *
- *	The following functions required the same number of
- *	parameters to be passed.
- *
- *==================================================================
- */
+**
+** NOTE:
+**
+**	The following functions required the same number of
+**	parameters to be passed.
+**
+**==================================================================
+*/
 static bool add_file(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool add_shadow(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_shadow(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool compute_security(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool modify_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_index(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_procedure(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -165,15 +154,11 @@ static bool scan_relation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool create_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_udf(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool create_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool modify_field(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_global(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_parameter(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_rfr(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -182,33 +167,29 @@ static bool add_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
 
-static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
-	const Firebird::MetaName& fieldName);
-static void check_dependencies(thread_db*, const TEXT*, const TEXT*, int, jrd_tra*);
+static void check_dependencies(thread_db*, const TEXT*, const TEXT*, USHORT, jrd_tra*);
 static void check_filename(const Firebird::string&, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
-static void get_procedure_dependencies(DeferredWork*, bool, jrd_tra*);
-static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
+static void get_procedure_dependencies(DeferredWork*);
+static void get_trigger_dependencies(DeferredWork*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t,
 	const dsc*, USHORT);
-static void put_summary_blob(blb*, enum rsr_t, bid*, jrd_tra*);
+static void put_summary_blob(blb*, enum rsr_t, bid*);
 static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
-static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*, bool);
+static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
+	const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
-static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
-static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
 
 static const UCHAR nonnull_validation_blr[] =
@@ -220,32 +201,29 @@ static const UCHAR nonnull_validation_blr[] =
 	blr_eoc
 };
 
-typedef bool (*dfw_task_routine) (thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 struct deferred_task
 {
 	enum dfw_t task_type;
-	dfw_task_routine task_routine;
+	bool (*task_routine) (thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 };
 
 static const deferred_task task_table[] =
 {
 	{ dfw_add_file, add_file },
 	{ dfw_add_shadow, add_shadow },
-	{ dfw_delete_index, modify_index },
-	{ dfw_delete_expression_index, modify_index },
+	{ dfw_delete_index, delete_index },
+	{ dfw_delete_expression_index, delete_index },
 	{ dfw_delete_rfr, delete_rfr },
 	{ dfw_delete_relation, delete_relation },
 	{ dfw_delete_shadow, delete_shadow },
-	{ dfw_create_field, create_field },
 	{ dfw_delete_field, delete_field },
-	{ dfw_modify_field, modify_field },
 	{ dfw_delete_global, delete_global },
 	{ dfw_create_relation, create_relation },
 	{ dfw_update_format, make_version },
 	{ dfw_scan_relation, scan_relation },
 	{ dfw_compute_security, compute_security },
-	{ dfw_create_index, modify_index },
-	{ dfw_create_expression_index, modify_index },
+	{ dfw_create_index, create_index },
+	{ dfw_create_expression_index, PCMET_expression_index },
 	{ dfw_grant, GRANT_privileges },
 	{ dfw_create_trigger, create_trigger },
 	{ dfw_delete_trigger, delete_trigger },
@@ -254,23 +232,19 @@ static const deferred_task task_table[] =
 	{ dfw_delete_procedure, delete_procedure },
 	{ dfw_modify_procedure, modify_procedure },
 	{ dfw_delete_prm, delete_parameter },
-	{ dfw_create_collation, create_collation },
-	{ dfw_delete_collation, delete_collation },
 	{ dfw_delete_exception, delete_exception },
-	{ dfw_delete_generator, delete_generator },
-	{ dfw_modify_generator, modify_generator },
-	{ dfw_delete_udf, delete_udf },
+    { dfw_delete_generator, delete_generator },
+    { dfw_modify_generator, modify_generator },
+    { dfw_delete_udf, delete_udf },
 	{ dfw_add_difference, add_difference },
 	{ dfw_delete_difference, delete_difference },
 	{ dfw_begin_backup, begin_backup },
 	{ dfw_end_backup, end_backup },
-	{ dfw_user_management, user_management },
 	{ dfw_null, NULL }
 };
 
 
-USHORT DFW_assign_index_type(thread_db* tdbb,
-	DeferredWork* work, SSHORT field_type, SSHORT ttype)
+USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype)
 {
 /**************************************
  *
@@ -283,7 +257,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb,
  * 	on the field's type and subtype.
  *
  **************************************/
-	SET_TDBB(tdbb);
+	thread_db* tdbb = JRD_get_thread_data();
 
 	if (field_type == dtype_varying ||
 		field_type == dtype_cstring ||
@@ -309,8 +283,9 @@ USHORT DFW_assign_index_type(thread_db* tdbb,
 		if (INTL_defined_type(tdbb, ttype))
 			return INTL_TEXT_TO_INDEX(ttype);
 
-		ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
+		ERR_post_nothrow(isc_no_meta_update,
+				 isc_arg_gds, isc_random, isc_arg_string,
+				 ERR_cstring(work->dfw_name), isc_arg_end);
 		INTL_texttype_lookup(tdbb, ttype);	// should punt
 		ERR_punt(); // if INTL_texttype_lookup hasn't punt
 	}
@@ -341,7 +316,7 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
  **************************************
  *
  * Functional description
- *	Get rid of work deferred that was to be done at
+ *	Get rid of work deferred that was to be done at 
  *	COMMIT time as the statement has been rolled back.
  *
  *	if (sav_number == -1), then  remove all entries.
@@ -374,35 +349,6 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
 
 	if (!deferred_meta) {
 		transaction->tra_flags &= ~TRA_deferred_meta;
-	}
-}
-
-
-DeferredWork::~DeferredWork()
-{
-	if (dfw_args)
-	{
-		if (dfw_type == dfw_user_management)
-		{
-			UserManagement* sec = reinterpret_cast<UserManagement*>(dfw_args);
-			delete sec;
-		}
-		else
-		{
-			DeferredWork* tmp = dfw_args;
-			while (tmp)
-			{
-				DeferredWork* next = tmp->dfw_next;
-				delete tmp;
-				tmp = next;
-			}
-		}
-	}
-
-	if (dfw_lock)
-	{
-		LCK_release(JRD_get_thread_data(), dfw_lock);
-		delete dfw_lock;
 	}
 }
 
@@ -476,7 +422,7 @@ void DFW_merge_work(jrd_tra* transaction,
 }
 
 
-void DFW_perform_system_work(thread_db* tdbb)
+void DFW_perform_system_work(void)
 {
 /**************************************
  *
@@ -489,16 +435,13 @@ void DFW_perform_system_work(thread_db* tdbb)
  *	system transaction.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = GET_DBB();
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
-
-	DFW_perform_work(tdbb, dbb->dbb_sys_trans);
+	DFW_perform_work(dbb->dbb_sys_trans);
 }
 
 
-void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
+void DFW_perform_work(jrd_tra* transaction)
 {
 /**************************************
  *
@@ -511,6 +454,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
  *	come.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* If no deferred work or it's all deferred event posting
    don't bother */
@@ -521,7 +465,6 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 		return;
 	}
 
-	SET_TDBB(tdbb);
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Loop for as long as any of the deferred work routines says that it has
@@ -540,8 +483,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	{
 		more = false;
 		try {
-			tdbb->tdbb_flags |= (TDBB_dont_post_dfw | TDBB_use_db_page_space);
-			for (const deferred_task* task = task_table;
+			for (const deferred_task* task = task_table; 
 				task->task_type != dfw_null; ++task)
 			{
 				for (DeferredWork* work = transaction->tra_deferred_work;
@@ -562,16 +504,13 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 				}
 			}
 			if (!phase) {
-				Firebird::stuff_exception(tdbb->tdbb_status_vector,
+				Firebird::stuff_exception(tdbb->tdbb_status_vector, 
 					Firebird::status_exception(err_status, true));
 				ERR_punt();
 			}
 			++phase;
-			tdbb->tdbb_flags &= ~(TDBB_dont_post_dfw | TDBB_use_db_page_space);
-		}
-		catch (const Firebird::Exception& ex) {
-			tdbb->tdbb_flags &= ~(TDBB_dont_post_dfw | TDBB_use_db_page_space);
-
+		}	
+		catch (const std::exception& ex) {
 			/* Do any necessary cleanup */
 			if (!phase) {
 				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -671,28 +610,8 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 }
 
 
-DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* desc, USHORT id)
-{
-/**************************************
- *
- *	D F W _ p o s t _ s y s t e m _ w o r k
- *
- **************************************
- *
- * Functional description
- *	Post work to be done in the context of system transaction.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
-
-	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id);
-}
-
-
-DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc, USHORT id)
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc,
+	USHORT id)
 {
 /**************************************
  *
@@ -744,7 +663,7 @@ DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const
 }
 
 
-void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& selectivity, jrd_tra* transaction)
+void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& selectivity)
 {
 /**************************************
  *
@@ -758,17 +677,17 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version >= ODS_VERSION11) {
 
 		jrd_req* request = CMP_find_request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FOR(REQUEST_HANDLE request)
 			SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name
 				SORTED BY SEG.RDB$FIELD_POSITION
-			if (!REQUEST(irq_m_index_seg))
-				REQUEST(irq_m_index_seg) = request;
+	        if (!REQUEST(irq_m_index_seg))
+		        REQUEST(irq_m_index_seg) = request;
 			MODIFY SEG USING
 				SEG.RDB$STATISTICS = selectivity[SEG.RDB$FIELD_POSITION];
 			END_MODIFY;
@@ -780,10 +699,10 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
 
 	jrd_req* request = CMP_find_request(tdbb, irq_m_index, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+	FOR(REQUEST_HANDLE request)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
-		if (!REQUEST(irq_m_index))
-			REQUEST(irq_m_index) = request;
+        if (!REQUEST(irq_m_index))
+            REQUEST(irq_m_index) = request;
 		MODIFY IDX USING
 			IDX.RDB$INDEX_ID = id + 1;
 			IDX.RDB$STATISTICS = selectivity.back();
@@ -815,7 +734,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	SLONG start, max;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -829,50 +748,52 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+		{
 			return true;
-
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_lock_timeout) <<
-				 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
-		return false;
-
+		}
+		else
+		{
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_lock_timeout,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(dbb->dbb_file->fil_string),
+					 isc_arg_end);
+			return false;
+		}
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0L);
-		max = PageSpace::maxAlloc(dbb) + 1;
+		max = PIO_max_alloc(dbb) + 1;
 		jrd_req* handle = 0;
 		jrd_req* handle2 = 0;
 
-		// Check the file name for node name. This has already
-		// been done for shadows in add_shadow()
+		/* Check the file name for node name. This has already 
+		 * been done for shadows in add_shadow() */
 
 		if (work->dfw_type != dfw_add_shadow) {
 			check_filename(work->dfw_name, true);
 		}
 
-		// User transaction may be safely used instead of system, cause 
-		// we requested and got exclusive database access. AP-2008.
+		/* get any files to extend into */
 
-		// get any files to extend into
-
-		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) X IN RDB$FILES
+		FOR(REQUEST_HANDLE handle) X IN RDB$FILES
 			WITH X.RDB$FILE_NAME EQ work->dfw_name.c_str()
-				/* First expand the file name This has already been done
+				/* First expand the file name This has already been done 
 				   ** for shadows in add_shadow ()) */
 			if (work->dfw_type != dfw_add_shadow)
 			{
 				MODIFY X USING
-					ISC_expand_filename(X.RDB$FILE_NAME, 0,
+					ISC_expand_filename(X.RDB$FILE_NAME, 0, 
 						X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME), false);
 				END_MODIFY;
 			}
 
 			/* If there is no starting position specified, or if it is
-			   too low a value, make a stab at assigning one based on
+			   too low a value, make a stab at assigning one based on 
 			   the indicated preference for the previous file length. */
 
 			if ((start = X.RDB$FILE_START) < max)
 			{
-				FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
+				FOR(REQUEST_HANDLE handle2)
 					FIRST 1 Y IN RDB$FILES
 						WITH Y.RDB$SHADOW_NUMBER EQ X.RDB$SHADOW_NUMBER
 						AND Y.RDB$FILE_SEQUENCE NOT MISSING
@@ -906,7 +827,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		{
 			handle = NULL;
 			section--;
-			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) X IN RDB$FILES
+			FOR(REQUEST_HANDLE handle) X IN RDB$FILES
 				WITH X.RDB$FILE_SEQUENCE EQ section
 					AND X.RDB$SHADOW_NUMBER EQ shadow_number
 				MODIFY X USING
@@ -950,7 +871,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	Firebird::PathName expanded_fname;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -966,7 +887,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	case 4:
 		check_filename(work->dfw_name, false);
 
-		/* could have two cases:
+		/* could have two cases: 
 		   1) this shadow has already been written to, so add this file using
 		   the standard routine to extend a database
 		   2) this file is part of a newly added shadow which has already been
@@ -975,7 +896,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		finished = false;
 		handle = NULL;
-		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		FOR(REQUEST_HANDLE handle)
 			F IN RDB$FILES
 				WITH F.RDB$FILE_NAME EQ work->dfw_name.c_str()
 
@@ -993,7 +914,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					if (F.RDB$FILE_FLAGS & FILE_shadow)
 					{
 						/* This is the case of a bogus duplicate posted
-						 * work when we added a multi-file shadow
+						 * work when we added a multi-file shadow 
 						 */
 						finished = true;
 					}
@@ -1005,8 +926,14 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						 * no SQL syntax that supports this, but there
 						 * may be GDML
 						 */
-						add_file(tdbb, 3, work, transaction);
-						add_file(tdbb, 4, work, transaction);
+						if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+							ERR_post(isc_no_meta_update,
+									 isc_arg_gds, isc_lock_timeout,
+									 isc_arg_gds, isc_obj_in_use,
+									 isc_arg_string,
+									 ERR_cstring(dbb->dbb_file->fil_string),
+									 isc_arg_end);
+						add_file(tdbb, phase, work, NULL);
 						finished = true;
 					}
 					else
@@ -1014,8 +941,11 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						/* We cannot add a file to a shadow that is still
 						 * in the process of being created.
 						 */
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
+						ERR_post(isc_no_meta_update,
+								 isc_arg_gds, isc_obj_in_use,
+								 isc_arg_string,
+								 ERR_cstring(dbb->dbb_file->fil_string),
+								 isc_arg_end);
 					}
 					break;
 				}
@@ -1041,7 +971,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		min_page = 0;
 		shadow = NULL;
 		handle = NULL;
-		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		FOR(REQUEST_HANDLE handle)
 			X IN RDB$FILES CROSS
 				Y IN RDB$FILES
 				OVER RDB$SHADOW_NUMBER
@@ -1113,10 +1043,10 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
+		ERR_post(isc_wish_list, isc_arg_end);
 
 	switch (phase)
 	{
@@ -1127,15 +1057,20 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	case 2:
 		return true;
 	case 3:
-		{
-			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
+		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
+		try {
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_wrong_backup_state));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_wrong_backup_state, isc_arg_end);
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+		}
+		catch (const std::exception&) {
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+			throw;
 		}
 
 		return false;
@@ -1161,10 +1096,10 @@ static bool delete_difference(	thread_db*	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
+		ERR_post(isc_wish_list, isc_arg_end);
 
 	switch (phase)
 	{
@@ -1174,17 +1109,20 @@ static bool delete_difference(	thread_db*	tdbb,
 	case 2:
 		return true;
 	case 3:
-		{
-			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
-
+		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
+		try {
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_wrong_backup_state));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_wrong_backup_state, isc_arg_end);
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		}
-
+		catch (const std::exception&) {
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+			throw;
+		}
 		return false;
 	}
 
@@ -1207,10 +1145,10 @@ static bool begin_backup(	thread_db*	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
+		ERR_post(isc_wish_list, isc_arg_end);
 
 	switch (phase)
 	{
@@ -1243,10 +1181,10 @@ static bool end_backup(	thread_db*	tdbb,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(Arg::Gds(isc_wish_list));
+		ERR_post(isc_wish_list, isc_arg_end);
 
 	switch (phase)
 	{
@@ -1264,115 +1202,10 @@ static bool end_backup(	thread_db*	tdbb,
 	return false;
 }
 
-static bool user_management(thread_db*		tdbb,
-							SSHORT			phase,
-							DeferredWork*	work,
-							jrd_tra*		transaction)
-{
-/**************************************
- *
- *	u s e r _ m a n a g e m e n t
- *
- **************************************
- *
- * Commit in security database
- *
- **************************************/
-
-	UserManagement* sec;
-
-	switch (phase)
-	{
-	case 0:
-		return false;
-	case 1:
-	case 2:
-		return true;
-	case 3:
-		// Commit
-		sec = reinterpret_cast<UserManagement*>(work->dfw_args);
-		if (sec)
-		{
-			sec->commit();
-		}
-		return false;
-	}
-
-	return false;
-}
-
-
-static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
-	const Firebird::MetaName& fieldName)
-{
-/**************************************
- *
- *	c h e c k _ c o m p u t e d _ d e p e n d e n c i e s
- *
- **************************************
- *
- * Functional description
- *	Checks if a computed field has circular dependencies.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	bool err = false;
-	Firebird::SortedObjectsArray<Firebird::MetaName> sortedNames(*tdbb->getDefaultPool());
-	Firebird::ObjectsArray<Firebird::MetaName> names;
-
-	sortedNames.add(fieldName);
-	names.add(fieldName);
-
-	for (size_t pos = 0; !err && pos < names.getCount(); ++pos)
-	{
-		jrd_req* request = CMP_find_request(tdbb, irq_comp_circ_dpd, IRQ_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-			DEP IN RDB$DEPENDENCIES CROSS
-			RFL IN RDB$RELATION_FIELDS WITH
-				DEP.RDB$DEPENDENT_NAME EQ names[pos].c_str() AND
-				DEP.RDB$DEPENDENT_TYPE EQ obj_computed AND
-				DEP.RDB$DEPENDED_ON_TYPE = obj_relation AND
-				RFL.RDB$RELATION_NAME = DEP.RDB$DEPENDED_ON_NAME AND
-				RFL.RDB$FIELD_NAME = DEP.RDB$FIELD_NAME
-		{
-			if (!REQUEST(irq_comp_circ_dpd))
-				REQUEST(irq_comp_circ_dpd) = request;
-
-			Firebird::MetaName fieldSource(RFL.RDB$FIELD_SOURCE);
-
-			if (fieldName == fieldSource)
-			{
-				err = true;
-				break;
-			}
-
-			if (!sortedNames.exist(fieldSource))
-			{
-				sortedNames.add(fieldSource);
-				names.add(fieldSource);
-			}
-		}
-		END_FOR;
-
-		if (!REQUEST(irq_comp_circ_dpd))
-			REQUEST(irq_comp_circ_dpd) = request;
-	}
-
-	if (err)
-	{
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_circular_computed));
-	}
-}
-
-
 static void check_dependencies(thread_db* tdbb,
 							   const TEXT* dpdo_name,
 							   const TEXT* field_name,
-							   int dpdo_type,
+							   USHORT dpdo_type,
 							   jrd_tra* transaction)
 {
 /**************************************
@@ -1387,11 +1220,11 @@ static void check_dependencies(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
-	int i;
-	SLONG dep_counts[obj_type_MAX];
-	for (i = 0; i < obj_type_MAX; i++)
+	USHORT i;
+	USHORT dep_counts[obj_type_MAX];
+	for (i = 0; i < (USHORT) obj_type_MAX; i++)
 		dep_counts[i] = 0;
 
 	if (field_name)
@@ -1403,8 +1236,8 @@ static void check_dependencies(thread_db* tdbb,
 				WITH DEP.RDB$DEPENDED_ON_NAME EQ dpdo_name
 				AND DEP.RDB$DEPENDED_ON_TYPE = dpdo_type
 				AND DEP.RDB$FIELD_NAME EQ field_name
-				REDUCED TO DEP.RDB$DEPENDENT_NAME
-			if (!REQUEST(irq_ch_f_dpd))
+				REDUCED TO DEP.RDB$DEPENDENT_NAME 
+            if (!REQUEST(irq_ch_f_dpd))
 				REQUEST(irq_ch_f_dpd) = request;
 
 			/* If the found object is also being deleted, there's no dependency */
@@ -1415,7 +1248,7 @@ static void check_dependencies(thread_db* tdbb,
 									0,
 									transaction))
 			{
-				++dep_counts[DEP.RDB$DEPENDENT_TYPE];
+				dep_counts[DEP.RDB$DEPENDENT_TYPE]++;
 			}
 		END_FOR;
 
@@ -1430,9 +1263,9 @@ static void check_dependencies(thread_db* tdbb,
 			DEP IN RDB$DEPENDENCIES
 				WITH DEP.RDB$DEPENDED_ON_NAME EQ dpdo_name
 				AND DEP.RDB$DEPENDED_ON_TYPE = dpdo_type
-				REDUCED TO DEP.RDB$DEPENDENT_NAME
+				REDUCED TO DEP.RDB$DEPENDENT_NAME 
 
-			if (!REQUEST(irq_ch_dpd))
+            if (!REQUEST(irq_ch_dpd))
 				REQUEST(irq_ch_dpd) = request;
 
 			/* If the found object is also being deleted, there's no dependency */
@@ -1443,7 +1276,7 @@ static void check_dependencies(thread_db* tdbb,
 									0,
 									transaction))
 			{
-				++dep_counts[DEP.RDB$DEPENDENT_TYPE];
+				dep_counts[DEP.RDB$DEPENDENT_TYPE]++;
 			}
 		END_FOR;
 
@@ -1451,63 +1284,53 @@ static void check_dependencies(thread_db* tdbb,
 			REQUEST(irq_ch_dpd) = request;
 	}
 
-	SLONG total = 0;
-	for (i = 0; i < obj_type_MAX; i++)
-		total += dep_counts[i];
-
-	if (!total)
-		return;
-
-	if (field_name)
-	{
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_no_delete) <<						/* Msg353: can not delete */
-				 Arg::Gds(isc_field_name) << Arg::Str(field_name) <<
-				 Arg::Gds(isc_dependency) << Arg::Num(total));	/* Msg310: there are %ld dependencies */
-	}
-	else
-	{
-		ISC_STATUS obj_type;
-		switch (dpdo_type)
+	for (i = 0; i < obj_type_MAX; i++) {
+		if (dep_counts[i])
 		{
-		case obj_relation:
-			obj_type = isc_table_name;
-			break;
-		/* Currently we don't get this type due to an internal bug.
-		case obj_view:
-			obj_type = isc_view_name;
-			break;
-		*/
-		case obj_procedure:
-			obj_type = isc_proc_name;
-			break;
-		case obj_collation:
-			obj_type = isc_collation_name;
-			break;
-		case obj_exception:
-			obj_type = isc_exception_name;
-			break;
-		case obj_field:
-			obj_type = isc_domain_name;
-			break;
-		case obj_generator:
-			obj_type = isc_generator_name;
-			break;
-		case obj_udf:
-			obj_type = isc_udf_name;
-			break;
-		case obj_index:
-			obj_type = isc_index_name;
-			break;
-		default:
-			fb_assert(FALSE);
-			break;
+            ISC_STATUS obj_type;
+			switch (dpdo_type)
+			{
+			case obj_relation:
+				obj_type = isc_table_name;
+				break;
+			case obj_procedure:
+				obj_type = isc_proc_name;
+				break;
+			case obj_exception:
+				obj_type = isc_exception_name;
+				break;
+			case obj_generator:
+				obj_type = isc_generator_name;
+				break;
+			case obj_udf:
+				obj_type = isc_udf_name;
+				break;
+			case obj_index:
+				obj_type = isc_index_name;
+				break;
+			default:
+				fb_assert(FALSE);
+				break;
+			}
+			if (field_name) {
+				ERR_post(	isc_no_meta_update,
+							isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
+							isc_arg_gds, isc_field_name,
+							isc_arg_string, ERR_cstring(field_name),
+							isc_arg_gds, isc_dependency,
+							isc_arg_number, (SLONG) dep_counts[i],
+							isc_arg_end);	/* Msg310: there are %ld dependencies */
+			}
+			else {
+				ERR_post(	isc_no_meta_update,
+							isc_arg_gds, isc_no_delete,	/* can not delete */
+							isc_arg_gds, obj_type,
+							isc_arg_string, ERR_cstring(dpdo_name),
+							isc_arg_gds, isc_dependency,
+							isc_arg_number, (SLONG) dep_counts[i],
+							isc_arg_end);	/* there are %ld dependencies */
+			}
 		}
-
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_no_delete) <<						/* can not delete */
-				 Arg::Gds(obj_type) << Arg::Str(dpdo_name) <<
-				 Arg::Gds(isc_dependency) << Arg::Num(total));	/* there are %ld dependencies */
 	}
 }
 
@@ -1529,14 +1352,15 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
 	const bool valid = file_name.find("::") == Firebird::PathName::npos;
 
 	if (!valid || ISC_check_if_remote(file_name, shareExpand)) {
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_node_name_err));
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, isc_arg_end);
 		/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 	}
 
-	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
-													 Arg::Str(name));
+	if (!ISC_verify_database_access(file_name)) {
+		ERR_post(isc_conf_access_denied,
+			isc_arg_string, "additional database file",
+			isc_arg_string, ERR_cstring(name),
+			isc_arg_end);
 	}
 }
 
@@ -1546,11 +1370,15 @@ static void check_system_generator(const TEXT* gen_name, const dfw_t action)
 	// CVC: Replace this with a call to SCL when we have ACL's for gens.
 	for (const gen* generator = generators; generator->gen_name; generator++)
 		if (!strcmp(generator->gen_name, gen_name)) // did we find a sys gen?
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(action == dfw_delete_generator ? isc_no_delete : isc_no_update) <<
-												   // Msg353: can not delete   Msg520: can not update
-					 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
-					 Arg::Gds(isc_random) << Arg::Str("This is a system generator."));
+			ERR_post(isc_no_meta_update,
+				isc_arg_gds, action == dfw_delete_generator ?
+					isc_no_delete // Msg353: can not delete
+					: isc_no_update, // Msg520: can not update
+				isc_arg_gds, isc_generator_name,
+				isc_arg_string, ERR_cstring(gen_name),
+				isc_arg_gds, isc_random,
+				isc_arg_string, "This is a system generator.",
+				isc_arg_end);
 }
 
 
@@ -1576,12 +1404,12 @@ static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 
 	while (old_desc != old_end)
 	{
-		if ((old_desc->dsc_dtype != new_desc->dsc_dtype) ||
-			(old_desc->dsc_scale != new_desc->dsc_scale) ||
-			(old_desc->dsc_length != new_desc->dsc_length) ||
-			(old_desc->dsc_sub_type != new_desc->dsc_sub_type) ||
-			(old_desc->dsc_flags != new_desc->dsc_flags) ||
-			(old_desc->dsc_address != new_desc->dsc_address))
+		if ((old_desc->dsc_dtype != new_desc->dsc_dtype)
+			|| (old_desc->dsc_scale != new_desc->dsc_scale)
+			|| (old_desc->dsc_length != new_desc->dsc_length)
+			|| (old_desc->dsc_sub_type != new_desc->dsc_sub_type)
+			|| (old_desc->dsc_flags != new_desc->dsc_flags)
+			|| (old_desc->dsc_address != new_desc->dsc_address))
 		{
 			return false;
 		}
@@ -1611,7 +1439,7 @@ static bool compute_security(	thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1629,7 +1457,7 @@ static bool compute_security(	thread_db*	tdbb,
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 			WITH X.RDB$SECURITY_CLASS EQ work->dfw_name.c_str()
 
-			tdbb->getAttachment()->att_security_class = s_class;
+            tdbb->tdbb_attachment->att_security_class = s_class;
 
 		END_FOR;
 		CMP_release(tdbb, handle);
@@ -1638,108 +1466,6 @@ static bool compute_security(	thread_db*	tdbb,
 	}
 
 	return false;
-}
-
-static bool modify_index(	thread_db*	tdbb,
-							SSHORT	phase,
-							DeferredWork*		work,
-							jrd_tra*		transaction)
-{
-/**************************************
- *
- *	m o d i f y _ i n d e x
- *
- **************************************
- *
- * Functional description
- *	Create\drop an index or change the state of an index between active/inactive.
- *	If index owns by global temporary table with on commit preserve rows scope
- *	change index instance for this temporary table too. For "create index" work
- *	item create base index instance before temp index instance. For index
- *	deletion delete temp index instance first to release index usage counter
- *	before deletion of base index instance.
- **************************************/
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	const bool have_gtt =
-		(ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version) >= ODS_11_1);
-
-	bool is_create = true;
-	dfw_task_routine task_routine = NULL;
-
-	switch (work->dfw_type)
-	{
-		case dfw_create_index :
-			task_routine = create_index;
-			break;
-
-		case dfw_create_expression_index :
-			task_routine = PCMET_expression_index;
-			break;
-
-		case dfw_delete_index :
-		case dfw_delete_expression_index :
-			task_routine = delete_index;
-			is_create = false;
-			break;
-	};
-	fb_assert(task_routine);
-
-	bool more = false, more2 = false;
-
-	if (is_create) {
-		more = (*task_routine)(tdbb, phase, work, transaction);
-	}
-
-	if (have_gtt)
-	{
-		bool gtt_preserve = false;
-		jrd_rel* relation = NULL;
-
-		if (is_create)
-		{
-			jrd_req* request = NULL;
-
-			FOR(REQUEST_HANDLE request)
-				IDX IN RDB$INDICES CROSS
-				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
-					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-				gtt_preserve = (REL.RDB$RELATION_TYPE == rel_global_temp_preserve);
-				relation = MET_lookup_relation(tdbb, REL.RDB$RELATION_NAME);
-			END_FOR;
-
-			CMP_release(tdbb, request);
-		}
-		else
-		{
-			relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-			gtt_preserve = (relation) && (relation->rel_flags & REL_temp_conn);
-		}
-
-		if (gtt_preserve && relation)
-		{
-			tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
-			try {
-				if (relation->getPages(tdbb, -1, false)) {
-					more2 = (*task_routine) (tdbb, phase, work, transaction);
-				}
-				tdbb->tdbb_flags |= TDBB_use_db_page_space;
-			}
-			catch (...)
-			{
-				tdbb->tdbb_flags |= TDBB_use_db_page_space;
-				throw;
-			}
-		}
-	}
-
-	if (!is_create) {
-		more = (*task_routine)(tdbb, phase, work, transaction);
-	}
-
-	return (more || more2);
 }
 
 
@@ -1766,7 +1492,7 @@ static bool create_index(	thread_db*	tdbb,
 	jrd_req* handle;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -1774,7 +1500,7 @@ static bool create_index(	thread_db*	tdbb,
 		handle = NULL;
 
 		/* Drop those indices at clean up time. */
-		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) IDXN IN RDB$INDICES CROSS
+		FOR(REQUEST_HANDLE handle) IDXN IN RDB$INDICES CROSS
 			IREL IN RDB$RELATIONS OVER RDB$RELATION_NAME
 				WITH IDXN.RDB$INDEX_NAME EQ work->dfw_name.c_str()
 				/* Views do not have indices */
@@ -1782,41 +1508,19 @@ static bool create_index(	thread_db*	tdbb,
 			{
 				relation = MET_lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
 
-				RelationPages* relPages = relation->getPages(tdbb, -1, false);
-				if (!relPages) {
-					return false;
-				}
-
-				// we need to special handle temp tables with ON PRESERVE ROWS only
-				const bool isTempIndex = (relation->rel_flags & REL_temp_conn) &&
-					(relPages->rel_instance_id != 0);
-
 				/* Fetch the root index page and mark MUST_WRITE, and then
 				   delete the index. It will also clean the index slot. Note
 				   that the previous fixed definition of MAX_IDX (64) has been
 				   dropped in favor of a computed value saved in the Database */
-				if (relPages->rel_index_root)
+				if (relation->rel_index_root)
 				{
 					if (work->dfw_id != dbb->dbb_max_idx)
 					{
-						WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
+						WIN window(relation->rel_index_root);
 						CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 						CCH_MARK_MUST_WRITE(tdbb, &window);
-						const bool tree_exists = BTR_delete_index(tdbb, &window, work->dfw_id);
-
-						if (!isTempIndex) {
-							work->dfw_id = dbb->dbb_max_idx;
-						}
-						else if (tree_exists)
-						{
-							IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, work->dfw_id);
-							if (idx_lock)
-							{
-								if (!--idx_lock->idl_count) {
-									LCK_release(tdbb, idx_lock->idl_lock);
-								}
-							}
-						}
+						BTR_delete_index(tdbb, &window, work->dfw_id);
+						work->dfw_id = dbb->dbb_max_idx;
 					}
 					if (!IDXN.RDB$INDEX_ID.NULL)
 					{
@@ -1840,15 +1544,9 @@ static bool create_index(	thread_db*	tdbb,
 		relation = NULL;
 		idx.idx_flags = 0;
 
-		// Here we need dirty reads from database (first of all from 
-		// RDB$RELATION_FIELDS and RDB$FIELDS - tables not directly related
-		// with index to be created and it's dfw_name. Missing it breaks gbak, 
-		// and appears can break other applications. Modification of 
-		// record in RDB$INDICES was moved into separate request. AP-2008.
-
-		// Fetch the information necessary to create the index.  On the first
-		// time thru, check to see if the index already exists.  If so, delete
-		// it.  If the index inactive flag is set, don't create the index
+		/* Fetch the information necessary to create the index.  On the first
+		   time thru, check to see if the index already exists.  If so, delete
+		   it.  If the index inactive flag is set, don't create the index */
 
 		request = CMP_find_request(tdbb, irq_c_index, IRQ_REQUESTS);
 
@@ -1861,9 +1559,9 @@ static bool create_index(	thread_db*	tdbb,
 				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
 					FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE AND
 					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-
-			if (!REQUEST(irq_c_index))
-				REQUEST(irq_c_index) = request;
+            
+            if (!REQUEST(irq_c_index))
+                REQUEST(irq_c_index) = request;
 
 			if (!relation)
 			{
@@ -1872,53 +1570,30 @@ static bool create_index(	thread_db*	tdbb,
 				if (!relation)
 				{
 					EXE_unwind(tdbb, request);
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_idx_create_err,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_end);
 					/* Msg308: can't create index %s */
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
-					// we need to know if this relation is temporary or not
-					MET_scan_relation(tdbb, relation);
+					SelectivityList selectivity(*tdbb->getDefaultPool());
+					const USHORT id = IDX.RDB$INDEX_ID - 1;
+					IDX_statistics(tdbb, relation, id, selectivity);
+					DFW_update_index(work->dfw_name.c_str(), id, selectivity);
 
-					// no need to recalculate statistics for base instance of GTT 
-					RelationPages* relPages = relation->getPages(tdbb, -1, false);
-					const bool isTempInstance = relation->isTemporary() && 
-						relPages && (relPages->rel_instance_id != 0);
-					
-					if (isTempInstance || !relation->isTemporary())
-					{
-						SelectivityList selectivity(*tdbb->getDefaultPool());
-						const USHORT id = IDX.RDB$INDEX_ID - 1;
-						IDX_statistics(tdbb, relation, id, selectivity);
-						DFW_update_index(work->dfw_name.c_str(), id, selectivity, transaction);
-
-						EXE_unwind(tdbb, request);
-					}
+					EXE_unwind(tdbb, request);
 					return false;
 				}
-
 				if (IDX.RDB$INDEX_ID)
 				{
 					IDX_delete_index(	tdbb,
 										relation,
 										(USHORT)(IDX.RDB$INDEX_ID - 1));
-
-					jrd_req* request2 = CMP_find_request(tdbb, irq_c_index_m, IRQ_REQUESTS);
-
-			        FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
-						IDXM IN RDB$INDICES WITH IDXM.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-
-						if (!REQUEST(irq_c_index_m))
-							REQUEST(irq_c_index_m) = request2;
-
-						MODIFY IDXM
-							IDXM.RDB$INDEX_ID.NULL = TRUE;
-						END_MODIFY;
-					END_FOR;
-
-					if (!REQUEST(irq_c_index_m))
-						REQUEST(irq_c_index_m) = request2;
+					MODIFY IDX
+						IDX.RDB$INDEX_ID.NULL = TRUE;
+					END_MODIFY;
 				}
 				if (IDX.RDB$INDEX_INACTIVE)
 				{
@@ -1930,17 +1605,17 @@ static bool create_index(	thread_db*	tdbb,
 				{
 					EXE_unwind(tdbb, request);
 					if (!idx.idx_count)
-					{
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_idx_seg_err) << Arg::Str(work->dfw_name));
-						/* Msg304: segment count of 0 defined for index %s */
-					}
+						ERR_post(isc_no_meta_update,
+								 isc_arg_gds, isc_idx_seg_err,
+								 isc_arg_string, ERR_cstring(work->dfw_name),
+								 isc_arg_end);
+					/* Msg304: segment count of 0 defined for index %s */
 					else
-					{
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
-						/* Msg311: too many keys defined for index %s */
-					}
+						ERR_post(isc_no_meta_update,
+								 isc_arg_gds, isc_idx_key_err,
+								 isc_arg_string, ERR_cstring(work->dfw_name),
+								 isc_arg_end);
+					/* Msg311: too many keys defined for index %s */
 				}
 				if (IDX.RDB$UNIQUE_FLAG)
 					idx.idx_flags |= idx_unique;
@@ -1951,7 +1626,7 @@ static bool create_index(	thread_db*	tdbb,
 
 				jrd_req* rc_request = NULL;
 
-				FOR(REQUEST_HANDLE rc_request TRANSACTION_HANDLE transaction)
+				FOR(REQUEST_HANDLE rc_request)
 					RC IN RDB$RELATION_CONSTRAINTS WITH
 					RC.RDB$INDEX_NAME EQ work->dfw_name.c_str() AND
 					RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY
@@ -1969,34 +1644,33 @@ static bool create_index(	thread_db*	tdbb,
 				!FLD.RDB$DIMENSIONS.NULL)
 			{
 				EXE_unwind(tdbb, request);
-
 				if (key_count > idx.idx_count)
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
-					/* Msg311: too many keys defined for index %s */
-				}
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_idx_key_err,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_end);
+				/* Msg311: too many keys defined for index %s */
 				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
-				{
-					fb_utils::exact_name(RFR.RDB$FIELD_NAME);
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_inval_key_posn) <<
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_inval_key_posn,
 							 /* Msg358: invalid key position */
-							 Arg::Gds(isc_field_name) << Arg::Str(RFR.RDB$FIELD_NAME) <<
-							 Arg::Gds(isc_index_name) << Arg::Str(work->dfw_name));
-				}
+							 isc_arg_gds, isc_field_name,
+							 isc_arg_string, ERR_cstring(RFR.RDB$FIELD_NAME),
+							 isc_arg_gds, isc_index_name,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_end);
 				else if (FLD.RDB$FIELD_TYPE == blr_blob)
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_blob_idx_err) << Arg::Str(work->dfw_name));
-					/* Msg350: attempt to index blob column in index %s */
-				}
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_blob_idx_err,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_end);
+				/* Msg350: attempt to index blob column in index %s */
 				else
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_array_idx_err) << Arg::Str(work->dfw_name));
-					/* Msg351: attempt to index array column in index %s */
-				}
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_array_idx_err,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+							 isc_arg_end);
+				/* Msg351: attempt to index array column in index %s */
 			}
 
 			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_field = RFR.RDB$FIELD_ID;
@@ -2015,7 +1689,7 @@ static bool create_index(	thread_db*	tdbb,
 			const SSHORT text_type =
 				INTL_CS_COLL_TO_TTYPE(FLD.RDB$CHARACTER_SET_ID, collate);
 			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_itype =
-				DFW_assign_index_type(tdbb, work,
+				DFW_assign_index_type(work,
 									  gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE],
 									  text_type);
 
@@ -2027,39 +1701,42 @@ static bool create_index(	thread_db*	tdbb,
 			REQUEST(irq_c_index) = request;
 
 		if (key_count != idx.idx_count)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_key_field_err) << Arg::Str(work->dfw_name));
-			/* Msg352: too few key columns found for index %s (incorrect column name?) */
-		}
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_key_field_err,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
+		/* Msg352: too few key columns found for index %s (incorrect column name?) */
 		if (!relation)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-			/* Msg308: can't create index %s */
-		}
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_idx_create_err,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
+		/* Msg308: can't create index %s */
 
 		/* Make sure the relation info is all current */
 
 		MET_scan_relation(tdbb, relation);
 
 		if (relation->rel_view_rse)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-			/* Msg308: can't create index %s */
-		}
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_idx_create_err,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
+		/* Msg308: can't create index %s */
 
 		/* Actually create the index */
 
 		Lock *relationLock = NULL, *partnerLock = NULL;
 		bool releaseRelationLock = false, releasePartnerLock = false;
 		partner_relation = NULL;
-		try
+		try	
 		{
 			// Protect relation from modification to create consistent index
-			relationLock =
-				protect_relation(tdbb, transaction, relation, releaseRelationLock);
+
+			if (!(idx.idx_flags & idx_foreign)) {
+				relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+								releaseRelationLock);
+			}
 
 			if (idx.idx_flags & idx_foreign)
 			{
@@ -2067,7 +1744,7 @@ static bool create_index(	thread_db*	tdbb,
 
 				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
 				{
-					partner_relation =
+					partner_relation = 
 						MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true);
 				}
 
@@ -2075,22 +1752,36 @@ static bool create_index(	thread_db*	tdbb,
 				{
 					Firebird::MetaName constraint_name;
 					MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
-					ERR_post(Arg::Gds(isc_partner_idx_not_found) << Arg::Str(constraint_name));
+					ERR_post(isc_partner_idx_not_found,
+							 isc_arg_string, ERR_cstring(constraint_name), isc_arg_end);
 				}
 
 				// Get an protected_read lock on the both relations if the index being
 				// defined enforces a foreign key constraint. This will prevent
-				// the constraint from being violated during index construction.
-
-				partnerLock =
-					protect_relation(tdbb, transaction,
-									 partner_relation, releasePartnerLock);
-
+				// the constraint from being violated during index construction. 
+				
+				if (relation->rel_id < partner_relation->rel_id) 
+				{
+					relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+									releaseRelationLock);
+					partnerLock = DFW_protect_relation(tdbb, transaction, partner_relation, 
+									releasePartnerLock);
+				}
+				else
+				{
+					partnerLock = DFW_protect_relation(tdbb, transaction, partner_relation, 
+									releasePartnerLock);
+					relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+									releaseRelationLock);
+				}
+				
 				int bad_segment;
 				if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
 				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_partner_idx_incompat_type) << Arg::Num(bad_segment + 1));
+					ERR_post(isc_no_meta_update,
+							isc_arg_gds, isc_partner_idx_incompat_type, 
+							isc_arg_number, bad_segment + 1,
+							isc_arg_end);
 				}
 
 /* hvlad: this code was never called but i preserve it for Claudio review and decision
@@ -2100,13 +1791,13 @@ static bool create_index(	thread_db*	tdbb,
 				// The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
 				// to ANSI SQL rules for REFERENCES rights.
 				// For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
-				// carried using internal metadata structures that are refreshed from system tables.
+				// carried using internal metadata structures that are refreshed from system tables. 
 
 				// Don't bother if the master's owner is the same than the detail's owner.
 				// If both tables aren't defined in the same session, partner_relation->rel_owner_name
-				// won't be loaded hence, we need to be careful about null pointers.
+				// won't be loaded hence, we need to be careful about null pointers. 
 
-				if (relation->rel_owner_name.length() == 0 ||
+				if (relation->rel_owner_name.length() == 0 || 
 					partner_relation->rel_owner_name.length() == 0 ||
 					relation->rel_owner_name != partner_relation->rel_owner_name)
 				{
@@ -2116,41 +1807,43 @@ static bool create_index(	thread_db*	tdbb,
 */
 			}
 
-			fb_assert(work->dfw_id <= dbb->dbb_max_idx);
-			idx.idx_id = work->dfw_id;
+			fb_assert(work->dfw_id == dbb->dbb_max_idx);
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
 							&work->dfw_id, transaction, selectivity);
 			fb_assert(work->dfw_id == idx.idx_id);
-			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
+			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
 
 			if (partner_relation)
 			{
-				// signal to other processes about new constraint
 				relation->rel_flags |= REL_check_partners;
-				LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+
+				// signal to other processes about new constraint
+				LCK_convert_non_blocking(tdbb, relation->rel_partners_lock,
+										 LCK_EX, LCK_WAIT);
 				LCK_release(tdbb, relation->rel_partners_lock);
 
 				if (relation != partner_relation) {
 					partner_relation->rel_flags |= REL_check_partners;
-					LCK_lock(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+					LCK_convert_non_blocking(tdbb, partner_relation->rel_partners_lock,
+											 LCK_EX, LCK_WAIT);
 					LCK_release(tdbb, partner_relation->rel_partners_lock);
 				}
 			}
 			if (relationLock && releaseRelationLock) {
-				release_protect_lock(tdbb, transaction, relationLock);
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
 			}
 			if (partnerLock && releasePartnerLock) {
-				release_protect_lock(tdbb, transaction, partnerLock);
+				DFW_release_protect_lock(tdbb, transaction, partnerLock);
 			}
 		}
-		catch (const Firebird::Exception&)
+		catch(const std::exception&) 
 		{
 			if (relationLock && releaseRelationLock) {
-				release_protect_lock(tdbb, transaction, relationLock);
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
 			}
 			if (partnerLock && releasePartnerLock) {
-				release_protect_lock(tdbb, transaction, partnerLock);
+				DFW_release_protect_lock(tdbb, transaction, partnerLock);
 			}
 			throw;
 		}
@@ -2187,13 +1880,8 @@ static bool create_procedure(	thread_db*	tdbb,
 
 	case 3:
 		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			get_procedure_dependencies(work, arg == NULL, transaction);
-
-			jrd_prc* procedure = MET_lookup_procedure(tdbb, work->dfw_name, (arg ? false : true));
+			get_procedure_dependencies(work);
+			jrd_prc* procedure = MET_lookup_procedure(tdbb, work->dfw_name, false);
 			if (!procedure) {
 				return false;
 			}
@@ -2227,12 +1915,12 @@ static bool create_relation(thread_db*	tdbb,
 	USHORT rel_id, external_flag;
 	bid blob_id;
 	jrd_req* handle;
-	Lock* lock;
+	Lock* lock;	
 
 	blob_id.clear();
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
@@ -2268,8 +1956,9 @@ static bool create_relation(thread_db*	tdbb,
 		lock->lck_type = LCK_relation;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
+		lock->lck_owner = tdbb->tdbb_attachment;
 
-		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_lock_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
 
 		/* Assign a relation ID and dbkey length to the new relation.
 		   Probe the candidate relation ID returned from the system
@@ -2281,7 +1970,7 @@ static bool create_relation(thread_db*	tdbb,
 		rel_id = 0;
 		request = CMP_find_request(tdbb, irq_c_relation, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FOR(REQUEST_HANDLE request)
 			X IN RDB$DATABASE CROSS Y IN RDB$RELATIONS WITH
 				Y.RDB$RELATION_NAME EQ work->dfw_name.c_str()
 			if (!REQUEST(irq_c_relation))
@@ -2309,9 +1998,11 @@ static bool create_relation(thread_db*	tdbb,
 					if (rel_id == X.RDB$RELATION_ID)
 					{
 						EXE_unwind(tdbb, request);
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
-								 Arg::Gds(isc_imp_exc));
+						ERR_post(isc_no_meta_update,
+								 isc_arg_gds, isc_table_name,
+								 isc_arg_string, ERR_cstring(work->dfw_name),
+								 isc_arg_gds, isc_imp_exc,
+								 isc_arg_end);
 					}
 				}
 				X.RDB$RELATION_ID = (rel_id > MAX_RELATION_ID) ?
@@ -2347,7 +2038,7 @@ static bool create_relation(thread_db*	tdbb,
 
 		if (!REQUEST(irq_c_relation))
 			REQUEST(irq_c_relation) = request;
-
+			
 		/* if this is not a view, create the relation */
 
 		if (rel_id && blob_id.isEmpty() && !external_flag)
@@ -2358,7 +2049,7 @@ static bool create_relation(thread_db*	tdbb,
 
 		return true;
 
-	case 4:
+	case 4:			
 
 		/* get the relation and flag it to check for dependencies
 		   in the view blr (if it exists) and any computed fields */
@@ -2396,7 +2087,7 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 {
 /**************************************
  *
- *	c r e a t e _ t r i g g e r
+ *	c r e a t e _ t r i g g e r 
  *
  **************************************
  *
@@ -2414,212 +2105,8 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			get_trigger_dependencies(work, arg == NULL, transaction);
-			return true;
-		}
-
-	case 4:
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_rel_name))
-				arg = arg->dfw_next;
-
-			if (!arg)
-			{
-				arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_trg_type))
-					arg = arg->dfw_next;
-
-				fb_assert(arg);
-
-				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
-				{
-					MET_load_trigger(tdbb, NULL, work->dfw_name,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
-				}
-			}
-		}
+		get_trigger_dependencies(work);
 		break;
-	}
-
-	return false;
-}
-
-
-static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
-	jrd_tra* transaction)
-{
-/**************************************
- *
- *	c r e a t e _ c o l l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Get collation id or setup specific attributes.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	switch (phase)
-	{
-	case 0:
-		return false;
-
-	case 1:
-		{
-			const USHORT charSetId = TTYPE_TO_CHARSET(work->dfw_id);
-			jrd_req* handle = NULL;
-
-			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-				COLL IN RDB$COLLATIONS
-				CROSS CS IN RDB$CHARACTER_SETS
-					OVER RDB$CHARACTER_SET_ID
-				WITH COLL.RDB$COLLATION_NAME EQ work->dfw_name.c_str() AND
-					 COLL.RDB$CHARACTER_SET_ID EQ charSetId
-
-				if (COLL.RDB$COLLATION_ID.NULL)
-				{
-					// ASF: User collations are created with the last number available,
-					// to minimize the possibility of conflicts with future system collations.
-					// The greater available number is 126 to avoid signed/unsigned problems.
-
-					SSHORT id = 126;
-
-					jrd_req* request = CMP_find_request(tdbb, irq_l_colls, IRQ_REQUESTS);
-
-					FOR(REQUEST_HANDLE request)
-						Y IN RDB$COLLATIONS
-						WITH Y.RDB$CHARACTER_SET_ID = COLL.RDB$CHARACTER_SET_ID
-						SORTED BY DESCENDING Y.RDB$COLLATION_ID
-
-						if (!REQUEST(irq_l_colls))
-							REQUEST(irq_l_colls) = request;
-
-						if (!COLL.RDB$COLLATION_ID.NULL)
-						{
-							EXE_unwind(tdbb, request);
-							break;
-						}
-
-						if (Y.RDB$COLLATION_ID + 1 <= id)
-							COLL.RDB$COLLATION_ID.NULL = FALSE;
-						else
-							id = Y.RDB$COLLATION_ID - 1;
-
-					END_FOR
-
-					if (!REQUEST(irq_l_colls))
-						REQUEST(irq_l_colls) = request;
-
-					if (COLL.RDB$COLLATION_ID.NULL)
-					{
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_max_coll_per_charset));
-					}
-					else
-					{
-						MODIFY COLL USING
-							COLL.RDB$COLLATION_ID = id;
-						END_MODIFY
-					}
-				}
-				else
-				{
-					SLONG length = 0;
-					Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-
-					if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
-					{
-						blb* blob = BLB_open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
-						length = blob->blb_length + 10;
-						length = BLB_get_data(tdbb, blob, buffer.getBuffer(length), length);
-					}
-
-					const Firebird::string specificAttributes((const char*) buffer.begin(), length);
-					Firebird::string newSpecificAttributes;
-
-					// ASF: If setupCollationAttributes fail we store the original
-					// attributes. This should be what we want for new databases
-					// and restores. CREATE COLLATION will fail in DYN.
-					if (IntlManager::setupCollationAttributes(
-							fb_utils::exact_name(COLL.RDB$BASE_COLLATION_NAME.NULL ?
-								COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
-							fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
-							specificAttributes, newSpecificAttributes))
-					{
-						// if nothing changed, we do nothing
-						if (newSpecificAttributes != specificAttributes)
-						{
-							MODIFY COLL USING
-								if (newSpecificAttributes.isEmpty())
-									COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
-								else
-								{
-									COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-
-									blb* blob = BLB_create(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
-									BLB_put_segment(tdbb, blob,
-										(const UCHAR*) newSpecificAttributes.begin(),
-										newSpecificAttributes.length());
-									BLB_close(tdbb, blob);
-								}
-							END_MODIFY;
-						}
-					}
-				}
-
-			END_FOR;
-			CMP_release(tdbb, handle);
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-
-static bool delete_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
-	jrd_tra* transaction)
-{
-/**************************************
- *
- *	d e l e t e _ c o l l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Check if it is allowable to delete
- *	a collation, and if so, clean up after it.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	switch (phase)
-	{
-	case 0:
-		return false;
-
-	case 1:
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
-						   obj_collation, transaction);
-		return true;
-
-	case 2:
-		return true;
-
-	case 3:
-		INTL_texttype_unload(tdbb, work->dfw_id);
-		return true;
 	}
 
 	return false;
@@ -2695,7 +2182,7 @@ static bool delete_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		case 1:
 			check_system_generator(gen_name, dfw_delete_generator);
 			check_dependencies(tdbb, gen_name, 0,
-							   obj_generator, transaction);
+							   obj_generator, transaction); 
 			return true;
 		case 2:
 			return true;
@@ -2736,9 +2223,12 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		case 1:
 			check_system_generator(gen_name, dfw_modify_generator);
 			if (work->dfw_id) // != 0 means not only the desc was changed.
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
-						 Arg::Gds(isc_random) << Arg::Str("Only can modify description for user generators."));
+				ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_generator_name,
+					 isc_arg_string, ERR_cstring(gen_name),
+					 isc_arg_gds, isc_random,
+					 isc_arg_string, "Only can modify description for user generators.",
+					 isc_arg_end);
 
 			return true;
 		case 2:
@@ -2773,12 +2263,12 @@ static bool delete_udf(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	SET_TDBB(tdbb);
 
 	switch (phase)
-	{
+    {
 		case 0:
 			return false;
 		case 1:
 			check_dependencies(tdbb, work->dfw_name.c_str(), 0,
-							   obj_udf, transaction);
+							   obj_udf, transaction); 
 			return true;
 		case 2:
 			return true;
@@ -2786,71 +2276,7 @@ static bool delete_udf(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			return true;
 		case 4:
 			break;
-	}
-
-	return false;
-}
-
-
-static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	c r e a t e _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Store dependencies of a field.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	switch (phase)
-	{
-	case 0:
-		return false;
-
-	case 1:
-		{
-			Firebird::MetaName depName(work->dfw_name);
-			jrd_req* handle = NULL;
-			bid validation;
-			validation.clear();
-
-			FOR(REQUEST_HANDLE handle)
-				FLD IN RDB$FIELDS WITH
-					FLD.RDB$FIELD_NAME EQ depName.c_str()
-
-				if (!FLD.RDB$VALIDATION_BLR.NULL)
-					validation = FLD.RDB$VALIDATION_BLR;
-			END_FOR;
-
-			CMP_release(tdbb, handle);
-
-			if (!validation.isEmpty())
-			{
-				MemoryPool* new_pool = dbb->createPool();
-				Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
-					NULL, NULL, depName, obj_validation, 0, transaction, depName);
-
-				dbb->deletePool(new_pool);
-			}
-		}
-		// fall through
- 
-	case 2:
-	case 3:
-		return true;
-
-	case 4:	// after scan_relation (phase 3)
-		check_computed_dependencies(tdbb, transaction, work->dfw_name);
-		break;
-	}
+    }
 
 	return false;
 }
@@ -2867,7 +2293,7 @@ static bool delete_field(	thread_db*	tdbb,
  *
  **************************************
  *
- * Functional description
+ * Functional description 
  *	This whole routine exists just to
  *	return an error if someone attempts to
  *	delete a global field that is in use
@@ -2878,7 +2304,7 @@ static bool delete_field(	thread_db*	tdbb,
 	jrd_req* handle;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -2907,96 +2333,19 @@ static bool delete_field(	thread_db*	tdbb,
 		CMP_release(tdbb, handle);
 
 		if (field_count)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_no_delete) <<								/* Msg353: can not delete */
-					 Arg::Gds(isc_domain_name) << Arg::Str(work->dfw_name) <<
-					 Arg::Gds(isc_dependency) << Arg::Num(field_count)); 	/* Msg310: there are %ld dependencies */
-		}
-
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
-						   obj_field, transaction);
+			ERR_post(isc_no_meta_update,
+					isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
+					isc_arg_gds, isc_field_name,
+					isc_arg_string, ERR_cstring(work->dfw_name),
+					isc_arg_gds, isc_dependency,
+					isc_arg_number, (SLONG) field_count,
+					isc_arg_end);	/* Msg310: there are %ld dependencies */
 
 	case 2:
 		return true;
 
 	case 3:
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_computed, transaction);
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_validation, transaction);
-		break;
-	}
-
-	return false;
-}
-
-
-static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
-{
-/**************************************
- *
- *	m o d i f y _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Handle constraint dependencies of a field.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	switch (phase)
-	{
-	case 0:
-		return false;
-
-	case 1:
-		{
-			Firebird::MetaName depName(work->dfw_name);
-			jrd_req* handle = NULL;
-			bid validation;
-			validation.clear();
-
-			FOR(REQUEST_HANDLE handle)
-				FLD IN RDB$FIELDS WITH
-					FLD.RDB$FIELD_NAME EQ depName.c_str()
-
-				if (!FLD.RDB$VALIDATION_BLR.NULL)
-					validation = FLD.RDB$VALIDATION_BLR;
-			END_FOR;
-
-			CMP_release(tdbb, handle);
-
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_new_name))
-				arg = arg->dfw_next;
-
-			// ASF: If there are procedures depending on the domain, it can't be renamed.
-			if (arg && depName != arg->dfw_name.c_str())
-				check_dependencies(tdbb, depName.c_str(), NULL, obj_field, transaction);
-
-			MET_delete_dependencies(tdbb, depName, obj_validation, transaction);
-
-			if (!validation.isEmpty())
-			{
-				MemoryPool* new_pool = dbb->createPool();
-				Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
-					NULL, NULL, depName, obj_validation, 0, transaction, depName);
-
-				dbb->deletePool(new_pool);
-			}
-		}
-		// fall through
- 
-	case 2:
-	case 3:
-		return true;
-
-	case 4:	// after scan_relation (phase 3)
-		check_computed_dependencies(tdbb, transaction, work->dfw_name);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
 		break;
 	}
 
@@ -3023,7 +2372,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -3039,7 +2388,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				FLD.RDB$FIELD_NAME EQ work->dfw_name.c_str() AND
 				FLD.RDB$COMPUTED_BLR NOT MISSING
 
-				MET_delete_dependencies(tdbb, work->dfw_name, obj_computed, transaction);
+            MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
 
 		END_FOR;
 		CMP_release(tdbb, handle);
@@ -3064,7 +2413,7 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
  * Used when FK index was dropped
  *
  **************************************/
-	const Database* dbb = tdbb->getDatabase();
+	const Database* dbb = tdbb->tdbb_database;
 	vec<jrd_rel*>* relations = dbb->dbb_relations;
 
 	fb_assert(relations);
@@ -3073,7 +2422,7 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
 	jrd_rel *relation = (*relations)[rel_id];
 	fb_assert(relation);
 
-	LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+	LCK_lock_non_blocking(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
 	LCK_release(tdbb, relation->rel_partners_lock);
 	relation->rel_flags |= REL_check_partners;
 }
@@ -3091,36 +2440,20 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  * Functional description
  *
  **************************************/
-	IndexLock* index = NULL;
+	IndexLock* index;
+	jrd_rel* relation;
+	USHORT id;
 
 	SET_TDBB(tdbb);
-
-	const DeferredWork* arg = work->dfw_args;
-	while (arg && (arg->dfw_type != dfw_arg_index_name))
-		arg = arg->dfw_next;
-
-	fb_assert(arg);
-	const USHORT id = arg->dfw_id - 1;
-
-	// Look up the relation.  If we can't find the relation,
-	// don't worry about the index.
-
-	jrd_rel* relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-	if (!relation) {
-		return false;
-	}
-
-	RelationPages* relPages = relation->getPages(tdbb, -1, false);
-	if (!relPages) {
-		return false;
-	}
-	// we need to special handle temp tables with ON PRESERVE ROWS only
-	const bool isTempIndex = (relation->rel_flags & REL_temp_conn) &&
-		(relPages->rel_instance_id != 0);
 
 	switch (phase)
 	{
 	case 0:
+		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		if (!relation) {
+			return false;
+		}
+		id = work->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index) {
 			if (!index->idl_count) {
@@ -3130,80 +2463,84 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return false;
 
 	case 1:
+	{
+		const DeferredWork* arg = work->dfw_args;
+		while (arg && (arg->dfw_type != dfw_arg_index_name)) 
+			arg = arg->dfw_next;
+
+		fb_assert(arg);
+
 		check_dependencies(tdbb, arg->dfw_name.c_str(), NULL,
 						   obj_index, transaction);
 		return true;
+	}
 
 	case 2:
 		return true;
 
 	case 3:
-		// Make sure nobody is currently using the index
+		/* Look up the relation.  If we can't find the relation,
+		   don't worry about the index. */
 
-		// If we about to delete temp index instance then usage counter
-		// will remains 1 and will be decremented by IDX_delete_index at
-		// phase 4
+		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		if (!relation) {
+			return false;
+		}
 
+		/* Make sure nobody is currently using the index */
+
+		id = work->dfw_id - 1;
 		index = CMP_get_index_lock(tdbb, relation, id);
 		if (index)
 		{
-			// take into account lock probably used by temp index instance
-			bool temp_lock_released = false;
-			if (isTempIndex && (index->idl_count == 1))
-			{
-				index_desc idx;
-				if (BTR_lookup(tdbb, relation, id, &idx, relPages) == FB_SUCCESS)
-				{
-					index->idl_count--;
-					LCK_release(tdbb, index->idl_lock);
-					temp_lock_released = true;
-				}
-			}
-
 			// Try to clear trigger cache to release lock
 			if (index->idl_count)
 				MET_clear_cache(tdbb);
-
-			if (!isTempIndex)
+			if (index->idl_count ||
+				!LCK_lock_non_blocking(tdbb, index->idl_lock, LCK_EX,
+									   transaction->getLockWait()))
 			{
-				if (index->idl_count ||
-					!LCK_lock(tdbb, index->idl_lock, LCK_EX,
-							  transaction->getLockWait()))
-				{
-					// restore lock used by temp index instance
-					if (temp_lock_released)
-					{
-						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
-						index->idl_count++;
-					}
-
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str("INDEX"));
-				}
-				index->idl_count++;
+				ERR_post(isc_no_meta_update,
+						  isc_arg_gds, isc_obj_in_use,
+						  isc_arg_string, "INDEX",
+						  isc_arg_end);
 			}
+			index->idl_count++;
 		}
 
 		return true;
 
 	case 4:
-		index = CMP_get_index_lock(tdbb, relation, id);
-		if (isTempIndex && index)
-			index->idl_count++;
-		IDX_delete_index(tdbb, relation, id);
-
-		if (isTempIndex)
+		relation = MET_lookup_relation(tdbb, work->dfw_name);
+		if (!relation) {
 			return false;
-
-		if (work->dfw_type == dfw_delete_expression_index)
-		{
-			MET_delete_dependencies(tdbb, arg->dfw_name, obj_expression_index, transaction);
 		}
 
-		// if index was bound to deleted FK constraint
+		id = work->dfw_id - 1;
+		index = CMP_get_index_lock(tdbb, relation, id);
+		IDX_delete_index(tdbb, relation, id);
+		if (work->dfw_type == dfw_delete_expression_index)
+		{
+			// for expression index there are dependencies  
+			// therefore work->dfw_args was set in VIO_erase
+			// to let us know that expression index name
+			fb_assert(work->dfw_args);
+
+			const DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_arg_index_name)) 
+			{
+				arg = arg->dfw_next;
+			}
+
+			fb_assert(arg);
+			MET_delete_dependencies(tdbb,
+				arg->dfw_name, obj_expression_index);
+		}
+
+		// if index was bound to deleted FK constraint 
 		// then work->dfw_args was set in VIO_erase
-		arg = work->dfw_args;
-		while (arg && (arg->dfw_type != dfw_arg_partner_rel_id))
+		const DeferredWork* arg = work->dfw_args;
+		while (arg && (arg->dfw_type != dfw_arg_partner_rel_id)) 
 		{
 			arg = arg->dfw_next;
 		}
@@ -3225,10 +2562,10 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (index)
 		{
 			/* in order for us to have gotten the lock in phase 3
-			* idl_count HAD to be 0, therefore after having incremented
-			* it for the exclusive lock it would have to be 1.
-			* IF now it is NOT 1 then someone else got a lock to
-			* the index and something is seriously wrong */
+			   * idl_count HAD to be 0, therefore after having incremented
+			   * it for the exclusive lock it would have to be 1.
+			   * IF now it is NOT 1 then someone else got a lock to
+			   * the index and something is seriously wrong */
 			fb_assert(index->idl_count == 1);
 			if (!--index->idl_count)
 			{
@@ -3255,7 +2592,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				for (IndexBlock** iptr = &relation->rel_index_blocks;
 					*iptr;
-					iptr = &(*iptr)->idb_next)
+					 iptr = &(*iptr)->idb_next)
 				{
 					if ((*iptr)->idb_id == id)
 					{
@@ -3290,7 +2627,7 @@ static bool delete_parameter(	thread_db*	tdbb,
  *
  **************************************
  *
- * Functional description
+ * Functional description 
  *	Return an error if someone attempts to
  *	delete a field from a procedure and it is
  *	used by a view or procedure.
@@ -3304,7 +2641,7 @@ static bool delete_parameter(	thread_db*	tdbb,
 	case 1:
 /* hvlad: temporary disable procedure parameters dependency check
 		  until proper solution (something like dyn_mod_parameter)
-		  will be implemented. This check never worked properly
+		  will be implemented. This check was never worked properly
 		  so no harm is done
 
 		if (MET_lookup_procedure_id(tdbb, work->dfw_id, false, true, 0))
@@ -3312,7 +2649,7 @@ static bool delete_parameter(	thread_db*	tdbb,
 			const DeferredWork* arg = work->dfw_args;
 			fb_assert(arg && (arg->dfw_type == dfw_arg_proc_name));
 
-			check_dependencies(tdbb, arg->dfw_name.c_str(),
+			check_dependencies(tdbb, arg->dfw_name.c_str(), 
 							   work->dfw_name.c_str(),
 							   obj_procedure, transaction);
 		}
@@ -3359,8 +2696,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			LCK_convert(tdbb, procedure->prc_existence_lock, LCK_SR,
-						transaction->getLockWait());
+			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+									 LCK_SR, transaction->getLockWait());
 		}
 		return false;
 
@@ -3377,11 +2714,13 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX,
-							 transaction->getLockWait()))
+			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+										  LCK_EX, transaction->getLockWait()))
 			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						 isc_arg_end);
 			}
 		}
 
@@ -3404,17 +2743,19 @@ static bool delete_procedure(	thread_db*	tdbb,
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
 			/*
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 			}
-			(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
+			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] = NULL;
 			return false;
 		}
 
@@ -3425,8 +2766,10 @@ static bool delete_procedure(	thread_db*	tdbb,
 			if (CMP_clone_is_active(procedure->prc_request))
 			{
 				procedure->prc_flags = old_flags;
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						 isc_arg_end);
 			}
 
 			CMP_release(tdbb, procedure->prc_request);
@@ -3435,7 +2778,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		/* delete dependency lists */
 
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
 
 		if (procedure->prc_existence_lock) {
 			LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3468,7 +2811,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	bool adjusted;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -3480,12 +2823,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_existence_lock)
 		{
-			LCK_convert(tdbb, relation->rel_existence_lock, LCK_SR,
-						transaction->getLockWait());
+			LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
+									 LCK_SR, transaction->getLockWait());
 		}
 
 		relation->rel_flags &= ~REL_deleting;
-		relation->rel_flags &= ~REL_check_existence;
 		return false;
 
 	case 1:
@@ -3508,11 +2850,13 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (view_count)
 		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_no_delete) << /* Msg353: can not delete */
-					 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
-					 Arg::Gds(isc_dependency) << Arg::Num(view_count));
-					 /* Msg310: there are %ld dependencies */
+			ERR_post(isc_no_meta_update,
+					isc_arg_gds, isc_no_delete, /* Msg353: can not delete */
+					isc_arg_gds, isc_table_name,
+					isc_arg_string, ERR_cstring(work->dfw_name),
+					isc_arg_gds, isc_dependency,
+					isc_arg_number, (SLONG) view_count,
+					isc_arg_end);	/* Msg310: there are %ld dependencies */
 		}
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_relation, transaction);
@@ -3542,20 +2886,19 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_use_count)
 			MET_clear_cache(tdbb);
-
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
-				!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX,
-							 transaction->getLockWait())))
+			 !LCK_convert_non_blocking(tdbb, relation->rel_existence_lock,
+									   LCK_EX, transaction->getLockWait())))
 		{
 			if (adjusted) {
 				++relation->rel_use_count;
 			}
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
 		}
-
-		relation->rel_flags |= REL_check_existence;
 		return true;
 
 	case 3:
@@ -3584,18 +2927,22 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				break;
 			}
 
-			Database::Checkout dcoHolder(dbb);
+			THREAD_EXIT();
 			THREAD_SLEEP(1 * 1000);
+			THREAD_ENTER();
 		}
 
 		if (relation->rel_sweep_count)
 		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
 		}
 
 #ifdef GARBAGE_THREAD
-		// Free any memory associated with the relation's garbage collection bitmap
+		/* Free any memory associated with the relation's
+		   garbage collection bitmap. */
 
 		if (relation->rel_gc_bitmap)
 		{
@@ -3610,49 +2957,44 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 #endif
 		if (relation->rel_file) {
-		    EXT_fini (relation, false);
+		    EXT_fini (relation);
 		}
 
-		RelationPages* relPages = relation->getBasePages();
-		if (relPages->rel_index_root) {
-			IDX_delete_indices(tdbb, relation, relPages);
+		if (relation->rel_index_root) {
+			IDX_delete_indices(tdbb, relation);
 		}
 
-		if (relPages->rel_pages) {
+		if (relation->rel_pages) {
 			DPM_delete_relation(tdbb, relation);
 		}
 
-		// if this is a view (or even if we don't know), delete dependency lists
+		/* if this is a view (or even if we don't know),
+		   delete dependency lists */
 
 		if (relation->rel_view_rse || !(relation->rel_flags & REL_scanned)) {
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_view, transaction);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
 		}
 
-		// Now that the data, pointer, and index pages are gone,
-		// get rid of the relation itself
+		/* Now that the data, pointer, and index pages are gone,
+		   get rid of formats as well */
 
-		request = NULL;
-
-		FOR(REQUEST_HANDLE request) X IN RDB$FORMATS WITH
-			X.RDB$RELATION_ID EQ relation->rel_id
-			ERASE X;
-		END_FOR;
-
-		CMP_release(tdbb, request);
-
-		// Release relation locks
 		if (relation->rel_existence_lock) {
 			LCK_release(tdbb, relation->rel_existence_lock);
 		}
 		if (relation->rel_partners_lock) {
 			LCK_release(tdbb, relation->rel_partners_lock);
 		}
+		request = NULL;
 
-		// Mark relation in the cache as dropped
+		FOR(REQUEST_HANDLE request) X IN RDB$FORMATS WITH
+			X.RDB$RELATION_ID EQ relation->rel_id 
+            ERASE X;
+		END_FOR;
+
+		relation->rel_name = "";
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
-		relation->rel_flags &= ~REL_check_existence;
-
+		
 		// Release relation triggers
 		MET_release_triggers(tdbb, &relation->rel_pre_store);
 		MET_release_triggers(tdbb, &relation->rel_post_store);
@@ -3660,7 +3002,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		MET_release_triggers(tdbb, &relation->rel_post_erase);
 		MET_release_triggers(tdbb, &relation->rel_pre_modify);
 		MET_release_triggers(tdbb, &relation->rel_post_modify);
-
+	
+		CMP_release(tdbb, request);
 		break;
 	}
 
@@ -3677,22 +3020,22 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *
  **************************************
  *
- * Functional description
+ * Functional description 
  *	This whole routine exists just to
  *	return an error if someone attempts to
  *	1. delete a field from a relation if the relation
  *		is used in a view and the field is referenced in
- *		the view.
+ *		the view.  
  *	2. drop the last column of a table
  *
  **************************************/
-	int rel_exists, field_count;
+	int rel_exists, field_count, id;
 	jrd_req* handle;
 	Firebird::MetaName f;
 	jrd_rel* relation;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	switch (phase)
 	{
@@ -3720,11 +3063,13 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		CMP_release(tdbb, handle);
 
 		if (field_count)
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_no_delete) <<	/* Msg353: can not delete */
-					 Arg::Gds(isc_field_name) << Arg::Str(f) <<
-					 Arg::Gds(isc_dependency) << Arg::Num(field_count));
-					 /* Msg310: there are %ld dependencies */
+			ERR_post(isc_no_meta_update,
+					isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
+					 isc_arg_gds, isc_field_name,
+					 isc_arg_string, ERR_cstring(f),
+					 isc_arg_gds, isc_dependency,
+					 isc_arg_number, (SLONG) field_count,
+					 isc_arg_end);	/* Msg310: there are %ld dependencies */
 
 		/* now check if there are any dependencies generated through the blr
 		   that defines the relation */
@@ -3739,7 +3084,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		rel_exists = 0;
 		FOR(REQUEST_HANDLE handle)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ work->dfw_id
-			rel_exists++;
+            rel_exists++;
 		END_FOR;
 		if (handle)
 			CMP_release(tdbb, handle);
@@ -3755,7 +3100,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				REL IN RDB$RELATIONS CROSS
 					RFLD IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 					WITH REL.RDB$RELATION_ID EQ work->dfw_id
-				field_count++;
+                field_count++;
 			END_FOR;
 			if (handle)
 			{
@@ -3764,8 +3109,9 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			if (!field_count)
 			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_del_last_field));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_del_last_field,
+						 isc_arg_end);
 				/* Msg354: last column in a relation cannot be deleted */
 			}
 		}
@@ -3780,7 +3126,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		if (relation)
 		{
-			const int id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
+			id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
 			if (id >= 0)
 			{
 				vec<jrd_fld*>* vector = relation->rel_fields;
@@ -3810,8 +3156,8 @@ static bool delete_shadow(	thread_db*	tdbb,
  *
  **************************************
  *
- * Functional description
- *	Provide deferred work interface to
+ * Functional description 
+ *	Provide deferred work interface to 
  *	MET_delete_shadow.
  *
  **************************************/
@@ -3840,7 +3186,7 @@ static bool delete_trigger(	thread_db*	tdbb,
 {
 /**************************************
  *
- *	d e l e t e _ t r i g g e r
+ *	d e l e t e _ t r i g g e r 
  *
  **************************************
  *
@@ -3859,31 +3205,8 @@ static bool delete_trigger(	thread_db*	tdbb,
 
 	case 3:
 		/* get rid of dependencies */
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger, transaction);
-		return true;
 
-	case 4:
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_rel_name))
-				arg = arg->dfw_next;
-
-			if (!arg)
-			{
-				arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_trg_type))
-					arg = arg->dfw_next;
-
-				fb_assert(arg);
-
-				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
-				{
-					MET_release_trigger(tdbb,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
-						work->dfw_name);
-				}
-			}
-		}
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
 		break;
 	}
 
@@ -3910,7 +3233,7 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	fb_utils::exact_name(object_name);
 	enum dfw_t dfw_type;
@@ -3925,9 +3248,6 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 	case obj_computed:
 		dfw_type = (rel_id) ? dfw_delete_rfr : dfw_delete_global;
 		break;
-	case obj_validation:
-		dfw_type = dfw_delete_global;
-		break;
 	case obj_procedure:
 		dfw_type = dfw_delete_procedure;
 		break;
@@ -3941,29 +3261,17 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 
 /* Look to see if an object of the desired type is being deleted. */
 
-	for (const DeferredWork* work = transaction->tra_deferred_work; work;
+	for (DeferredWork* work = transaction->tra_deferred_work; work;
 		work = work->dfw_next)
 	{
-		if ((work->dfw_type == dfw_type ||
-			 (work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure)) &&
+		if (work->dfw_type == dfw_type &&
 			work->dfw_name == object_name &&
 			(!rel_id || rel_id == work->dfw_id))
 		{
-			if (work->dfw_type == dfw_modify_procedure)
-			{
-				// Don't consider that procedure is in DFW if we are only checking the BLR
-				const DeferredWork* arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_check_blr))
-					arg = arg->dfw_next;
-
-				if (!arg)
-					return true;
-			}
-			else
-				return true;
+			return true;
 		}
 
-		if (work->dfw_type == dfw_type &&
+		if (work->dfw_type == dfw_type && 
 			dfw_type == dfw_delete_expression_index)
 		{
 			const DeferredWork* arg = work->dfw_args;
@@ -3981,62 +3289,40 @@ static bool find_depend_in_dfw(	thread_db*	tdbb,
 
 	if (dfw_type == dfw_delete_global)
 	{
-		if (dep_type == obj_computed)
-		{
-			// Computed fields are more complicated.  If the global field isn't being
-			// deleted, see if all of the fields it is the source for, are.
+		/* Computed fields are more complicated.  If the global field isn't being
+		   deleted, see if all of the fields it is the source for, are. */
 
-			jrd_req* request = CMP_find_request(tdbb, irq_ch_cmp_dpd, IRQ_REQUESTS);
+		jrd_req* request = CMP_find_request(tdbb, irq_ch_cmp_dpd, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE request)
-				FLD IN RDB$FIELDS CROSS
-					RFR IN RDB$RELATION_FIELDS CROSS
-					REL IN RDB$RELATIONS
-					WITH FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-					AND FLD.RDB$FIELD_NAME EQ object_name
-					AND REL.RDB$RELATION_NAME EQ RFR.RDB$RELATION_NAME
-				if (!REQUEST(irq_ch_cmp_dpd))
-					REQUEST(irq_ch_cmp_dpd) = request;
-
-				if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed,
-						REL.RDB$RELATION_ID, transaction))
-				{
-					EXE_unwind(tdbb, request);
-					return false;
-				}
-			END_FOR;
-
-			if (!REQUEST(irq_ch_cmp_dpd)) {
-				REQUEST(irq_ch_cmp_dpd) = request;
+		FOR(REQUEST_HANDLE request)
+			FLD IN RDB$FIELDS CROSS
+				RFR IN RDB$RELATION_FIELDS CROSS
+				REL IN RDB$RELATIONS
+				WITH FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
+				AND FLD.RDB$FIELD_NAME EQ object_name
+				AND REL.RDB$RELATION_NAME EQ RFR.RDB$RELATION_NAME
+            if (!REQUEST(irq_ch_cmp_dpd))
+                REQUEST(irq_ch_cmp_dpd) = request;
+            if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed,
+                                    REL.RDB$RELATION_ID, transaction))
+			{
+				EXE_unwind(tdbb, request);
+				return false;
 			}
+		END_FOR;
 
-			return true;
+		if (!REQUEST(irq_ch_cmp_dpd)) {
+			REQUEST(irq_ch_cmp_dpd) = request;
 		}
-		else if (dep_type == obj_validation)
-		{
-			// Maybe it's worth caching in the future?
-			jrd_req* request = NULL;
 
-			FOR(REQUEST_HANDLE request)
-				FLD IN RDB$FIELDS WITH
-					FLD.RDB$FIELD_NAME EQ object_name
-
-				if (!FLD.RDB$VALIDATION_BLR.NULL)
-				{
-					EXE_unwind(tdbb, request);
-					return false;
-				}
-			END_FOR;
-
-			return true;
-		}
+		return true;
 	}
 
 	return false;
 }
 
 
-static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
+static void get_array_desc(thread_db* tdbb, const TEXT* field_name, 
 	Ods::InternalArrayDesc* desc)
 {
 /**************************************
@@ -4050,16 +3336,16 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
 
 	Ods::InternalArrayDesc::iad_repeat* ranges = 0;
 	FOR (REQUEST_HANDLE request)
 		D IN RDB$FIELD_DIMENSIONS WITH D.RDB$FIELD_NAME EQ field_name
-		if (!REQUEST(irq_r_fld_dim))
+        if (!REQUEST(irq_r_fld_dim))
 		{
-			REQUEST(irq_r_fld_dim) = request;
+            REQUEST(irq_r_fld_dim) = request;
 		}
 		if (D.RDB$DIMENSION >= 0 && D.RDB$DIMENSION < desc->iad_dimensions)
 		{
@@ -4091,7 +3377,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
 }
 
 
-static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
+static void get_procedure_dependencies(DeferredWork* work)
 {
 /**************************************
  *
@@ -4106,10 +3392,9 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
-	if (compile)
-		compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
+	const bool gbak = (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment);
 
 	jrd_prc* procedure = NULL;
 	bid blob_id;
@@ -4120,16 +3405,16 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$PROCEDURES WITH
 			X.RDB$PROCEDURE_NAME EQ work->dfw_name.c_str()
-		if (!REQUEST(irq_c_prc_dpd))
-			REQUEST(irq_c_prc_dpd) = handle;
-		blob_id = X.RDB$PROCEDURE_BLR;
-		procedure = MET_lookup_procedure(tdbb, work->dfw_name, !compile);
+        if (!REQUEST(irq_c_prc_dpd)) 
+            REQUEST(irq_c_prc_dpd) = handle;
+        blob_id = X.RDB$PROCEDURE_BLR;
+		procedure = MET_lookup_procedure(tdbb, work->dfw_name, false);
 
 	END_FOR;
 
 	if (!REQUEST(irq_c_prc_dpd))
 		REQUEST(irq_c_prc_dpd) = handle;
-
+	
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
 #endif
@@ -4140,23 +3425,26 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 	{
 		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		MemoryPool* new_pool = dbb->createPool();
+		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 		// block is used to ensure MET_verify_cache
 		// works in not deleted context
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 			Firebird::MetaName depName(work->dfw_name);
-			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id,
-							compile ? &request : NULL,
-							NULL, depName, obj_procedure, 0, transaction);
-
+			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, 
+							gbak ? NULL : &request,
+							NULL, depName, obj_procedure, 0);
 			if (request)
+			{
 				CMP_release(tdbb, request);
+			}
 			else
-				dbb->deletePool(new_pool);
+			{
+				JrdMemoryPool::deletePool(new_pool);
+			}
 		}
-
+	
 #ifdef DEV_BUILD
 		MET_verify_cache(tdbb);
 #endif
@@ -4164,7 +3452,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 }
 
 
-static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
+static void get_trigger_dependencies( DeferredWork* work)
 {
 /**************************************
  *
@@ -4179,26 +3467,25 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
-	if (compile)
-		compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
+	const bool gbak = (tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment);
 
 	jrd_rel* relation = NULL;
 	bid blob_id;
 	blob_id.clear();
 
-	USHORT type = 0;
+	UCHAR type = 0;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_c_trigger, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$TRIGGERS WITH
-			X.RDB$TRIGGER_NAME EQ work->dfw_name.c_str()
-		if (!REQUEST(irq_c_trigger))
-			REQUEST(irq_c_trigger) = handle;
+			X.RDB$TRIGGER_NAME EQ work->dfw_name.c_str() 
+        if (!REQUEST(irq_c_trigger))
+            REQUEST(irq_c_trigger) = handle;
 		blob_id = X.RDB$TRIGGER_BLR;
-		type = (USHORT) X.RDB$TRIGGER_TYPE;
+		type = (UCHAR) X.RDB$TRIGGER_TYPE;
 		relation = MET_lookup_relation(tdbb, X.RDB$RELATION_NAME);
 
 	END_FOR;
@@ -4208,25 +3495,27 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 /* get any dependencies now by parsing the blr */
 
-	if ((relation || (type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB) &&
-		!blob_id.isEmpty())
+	if (relation && !blob_id.isEmpty())
 	{
 		jrd_req* request = NULL;
 		/* Nickolay Samofatov: allocate statement memory pool... */
-		MemoryPool* new_pool = dbb->createPool();
+		JrdMemoryPool* new_pool = JrdMemoryPool::createPool();
 		const USHORT par_flags = (USHORT)
 			(type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		Firebird::MetaName depName(work->dfw_name);
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
-							 compile ? &request : NULL,
-							 NULL, depName, obj_trigger, par_flags, transaction);
-
+							 gbak ? NULL : &request,
+							 NULL, depName, obj_trigger, par_flags);
 		if (request)
+		{
 			CMP_release(tdbb, request);
+		}
 		else
-			dbb->deletePool(new_pool);
+		{
+			JrdMemoryPool::deletePool(new_pool);
+		}
 	}
 }
 
@@ -4240,9 +3529,9 @@ static void load_trigs(thread_db* tdbb, jrd_rel* relation, trig_vec** triggers)
  **************************************
  *
  * Functional description
- *	We have just loaded the triggers onto the local vector
- *      triggers. Its now time to place them at their rightful
- *      place ie the relation block.
+ *	We have just loaded the triggers onto the local vector 
+ *      triggers. Its now time to place them at their rightful 
+ *      place ie the relation block. 
  *
  **************************************/
 	trig_vec* tmp_vector;
@@ -4289,7 +3578,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	TemporaryField* tfb;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 /* Figure out the highest field id and allocate a format block */
 
@@ -4298,7 +3587,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		count = MAX(count, tfb->tfb_id);
 
 	Format* format = Format::newFormat(*dbb->dbb_permanent, count + 1);
-	format->fmt_version = version ? *version : 0;
+	if (version)
+		format->fmt_version = *version;
 
 /* Fill in the format block from the temporary field blocks */
 
@@ -4351,21 +3641,24 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	if (offset > MAX_FORMAT_SIZE)
 	{
 		delete format;
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_rec_size_err) << Arg::Num(offset) <<
-				 Arg::Gds(isc_table_name) << Arg::Str(relation->rel_name));
+		ERR_post(isc_no_meta_update,
+				 isc_arg_gds, isc_rec_size_err,
+				 isc_arg_number, (SLONG) offset,
+				 isc_arg_gds, isc_table_name,
+				 isc_arg_string, ERR_cstring(relation->rel_name),
+				 isc_arg_end);
 		/* Msg361: new record size of %ld bytes is too big */
 	}
 
 	Format* old_format;
 	if ((format->fmt_version)
-		&& (old_format = MET_format(tdbb, relation, (format->fmt_version - 1)))
+		&& (old_format = MET_format(tdbb, relation, (format->fmt_version - 1)))    
 		&& (formatsAreEqual(old_format, format)))
 	{
 		delete format;
 		*version = old_format->fmt_version;
 		return old_format;
-	}
+    }
 
 /* Link the format block into the world */
 
@@ -4380,8 +3673,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 
 	STORE(REQUEST_HANDLE request)
 		FMTS IN RDB$FORMATS
-		if (!REQUEST(irq_format3))
-			REQUEST(irq_format3) = request;
+        if (!REQUEST(irq_format3))
+            REQUEST(irq_format3) = request;
 		FMTS.RDB$FORMAT = format->fmt_version;
 		FMTS.RDB$RELATION_ID = relation->rel_id;
 		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &FMTS.RDB$DESCRIPTOR);
@@ -4393,24 +3686,24 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 							blob,
 							reinterpret_cast<const UCHAR*>(&(format->fmt_desc[0])),
 							(USHORT)(format->fmt_count * sizeof(dsc)));
-		}
+		} 
 		else {
 			// Use generic representation of formats with 32-bit offsets
-
+			
 			Firebird::Array<Ods::Descriptor> odsDescs;
 			Ods::Descriptor *odsDesc = odsDescs.getBuffer(format->fmt_count);
-
+		
 			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
 				 desc < format->fmt_desc.end(); ++desc, ++odsDesc)
 			{
 				*odsDesc = *desc;
 			}
-
+		
 			BLB_put_segment(tdbb, blob,
 			  (UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
 		}
 		BLB_close(tdbb, blob);
-	END_STORE;
+    END_STORE;
 
 	if (!REQUEST(irq_format3))
 		REQUEST(irq_format3) = request;
@@ -4449,7 +3742,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	trig_vec* triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	bool null_view;
 
 	switch (phase)
@@ -4469,13 +3762,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		jrd_req* request_fmt1 = CMP_find_request(tdbb, irq_format1, IRQ_REQUESTS);
 
-		// User transaction may be safely used instead of system cause 
-		// all required dirty reads are performed in metadata cache. AP-2008.
-
-		FOR(REQUEST_HANDLE request_fmt1 TRANSACTION_HANDLE transaction)
+		FOR(REQUEST_HANDLE request_fmt1)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ work->dfw_name.c_str()
-			if (!REQUEST(irq_format1)) {
-				REQUEST(irq_format1) = request_fmt1;
+            if (!REQUEST(irq_format1)) {
+                REQUEST(irq_format1) = request_fmt1;
 			}
 			relation =
 				 MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
@@ -4487,19 +3777,22 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			const bid blob_id = REL.RDB$VIEW_BLR;
 			null_view = blob_id.isEmpty();
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
-			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
+			if (REL.RDB$FORMAT == 255)
 			{
 				EXE_unwind(tdbb, request_fmt1);
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
-						 Arg::Gds(isc_version_err));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_table_name,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						 isc_arg_gds, isc_version_err,
+						 isc_arg_end);
 				/* Msg357: too many versions */
 			}
 			MODIFY REL USING
-				blb* blob = BLB_create(tdbb, transaction, &REL.RDB$RUNTIME);
+				blb* blob = BLB_create(tdbb,
+								dbb->dbb_sys_trans,
+								&REL.RDB$RUNTIME);
 				jrd_req* request_fmtx = CMP_find_request(tdbb, irq_format2, IRQ_REQUESTS);
-
-				FOR(REQUEST_HANDLE request_fmtx TRANSACTION_HANDLE transaction)
+				FOR(REQUEST_HANDLE request_fmtx)
 					RFR IN RDB$RELATION_FIELDS CROSS
 						FLD IN RDB$FIELDS WITH
 						RFR.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
@@ -4507,55 +3800,54 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					/* Update RFR to reflect new fields id */
 
-					if (!RFR.RDB$FIELD_ID.NULL && RFR.RDB$FIELD_ID >= REL.RDB$FIELD_ID)
-						REL.RDB$FIELD_ID = RFR.RDB$FIELD_ID + 1;
+					if (!RFR.RDB$FIELD_ID.NULL &&
+						RFR.RDB$FIELD_ID >= REL.RDB$FIELD_ID)
+							REL.RDB$FIELD_ID = RFR.RDB$FIELD_ID + 1;
 
 					if (RFR.RDB$FIELD_ID.NULL || RFR.RDB$UPDATE_FLAG.NULL)
-					{
-						MODIFY RFR USING
-							if (RFR.RDB$FIELD_ID.NULL)
+					MODIFY RFR USING
+						if (RFR.RDB$FIELD_ID.NULL)
+						{
+							if (external_flag)
 							{
-								if (external_flag)
-								{
-									RFR.RDB$FIELD_ID = RFR.RDB$FIELD_POSITION;
-									/* RFR.RDB$FIELD_POSITION.NULL is
-									   needed to be referenced in the
-									   code somewhere for GPRE to include
-									   this field in the structures that
-									   it generates at the top of this func. */
-									RFR.RDB$FIELD_ID.NULL =
-										RFR.RDB$FIELD_POSITION.NULL;
-								}
-								else
-								{
-									RFR.RDB$FIELD_ID = REL.RDB$FIELD_ID;
-									RFR.RDB$FIELD_ID.NULL = FALSE;
-								}
-								REL.RDB$FIELD_ID++;
+								RFR.RDB$FIELD_ID = RFR.RDB$FIELD_POSITION;
+								/* RFR.RDB$FIELD_POSITION.NULL is
+								   needed to be referenced in the
+								   code somewhere for GPRE to include
+								   this field in the structures that
+								   it generates at the top of this func. */
+								RFR.RDB$FIELD_ID.NULL =
+									RFR.RDB$FIELD_POSITION.NULL;
 							}
-							if (RFR.RDB$UPDATE_FLAG.NULL)
+							else
 							{
-								RFR.RDB$UPDATE_FLAG.NULL = FALSE;
-								RFR.RDB$UPDATE_FLAG = 1;
-								if (!FLD.RDB$COMPUTED_BLR.isEmpty())
-								{
-									RFR.RDB$UPDATE_FLAG = 0;
-									computed_field = true;
-								}
-								if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
-								{
-									jrd_req* temp = NULL;
-									RFR.RDB$UPDATE_FLAG = 0;
-									FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
-										X.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
-											X.RDB$TRIGGER_TYPE EQ 1
-										RFR.RDB$UPDATE_FLAG = 1;
-									END_FOR;
-									CMP_release(tdbb, temp);
-								}
+								RFR.RDB$FIELD_ID = REL.RDB$FIELD_ID;
+								RFR.RDB$FIELD_ID.NULL = FALSE;
 							}
-						END_MODIFY;
-					}
+							REL.RDB$FIELD_ID++;
+						}
+						if (RFR.RDB$UPDATE_FLAG.NULL)
+						{
+							RFR.RDB$UPDATE_FLAG.NULL = FALSE;
+							RFR.RDB$UPDATE_FLAG = 1;
+							if (!FLD.RDB$COMPUTED_BLR.isEmpty())
+							{
+								RFR.RDB$UPDATE_FLAG = 0;
+								computed_field = true;
+							}
+							if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
+							{
+								jrd_req* temp = NULL;
+								RFR.RDB$UPDATE_FLAG = 0;
+								FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
+									X.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
+										X.RDB$TRIGGER_TYPE EQ 1
+									RFR.RDB$UPDATE_FLAG = 1;
+								END_FOR;
+								CMP_release(tdbb, temp);
+							}
+						}
+					END_MODIFY;
 
 					/* Store stuff in field summary */
 
@@ -4569,7 +3861,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						put_summary_blob(blob,
 										RSR_computed_blr,
-										&FLD.RDB$COMPUTED_BLR, transaction);
+										&FLD.RDB$COMPUTED_BLR);
 					}
 					else if (!null_view)
 					{
@@ -4583,13 +3875,13 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 										   fb_utils::name_length(RFR.RDB$BASE_FIELD));
 					}
 					put_summary_blob(blob, RSR_missing_value,
-									 &FLD.RDB$MISSING_VALUE, transaction);
+									 &FLD.RDB$MISSING_VALUE);
 					put_summary_blob(blob, RSR_default_value,
 								(RFR.RDB$DEFAULT_VALUE.isEmpty() ?
 									&FLD.RDB$DEFAULT_VALUE :
-									&RFR.RDB$DEFAULT_VALUE), transaction);
+									&RFR.RDB$DEFAULT_VALUE));
 					put_summary_blob(blob, RSR_validation_blr,
-									 &FLD.RDB$VALIDATION_BLR, transaction);
+									 &FLD.RDB$VALIDATION_BLR);
 					if (FLD.RDB$NULL_FLAG || RFR.RDB$NULL_FLAG)
 					{
 						put_summary_record(blob,
@@ -4629,25 +3921,19 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
-						if (REL.RDB$FORMAT.NULL)
-						{
-							DPM_delete_relation(tdbb, relation);
-						}
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
+						ERR_post(isc_no_meta_update,
+								 isc_arg_gds, isc_random,
+								 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
 					}
 
 					/* Make sure the text type specified is implemented */
-					if (!(validate_text_type(tdbb, tfb)))
+				    if (!(validate_text_type(tdbb, tfb)))
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
-						if (REL.RDB$FORMAT.NULL)
-						{
-							DPM_delete_relation(tdbb, relation);
-						}
-						ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
-										 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
+						ERR_post_nothrow(isc_no_meta_update,
+								 isc_arg_gds, isc_random,
+								 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
 						INTL_texttype_lookup(tdbb,
 							(DTYPE_IS_TEXT(tfb->tfb_desc.dsc_dtype) ?
 								tfb->tfb_desc.dsc_ttype() : tfb->tfb_desc.dsc_blob_ttype()));	// should punt
@@ -4682,27 +3968,24 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				if (!REQUEST(irq_format2))
 					REQUEST(irq_format2) = request_fmtx;
-
-				if (null_view && !physical_fields)
+					
+				if (!physical_fields)
 				{
 					EXE_unwind(tdbb, request_fmt1);
-					if (REL.RDB$FORMAT.NULL)
-					{
-						DPM_delete_relation(tdbb, relation);
-					}
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
-			 				 Arg::Gds(isc_must_have_phys_field));
+					ERR_post(isc_no_meta_update,
+							 isc_arg_gds, isc_table_name,
+							 isc_arg_string, ERR_cstring(work->dfw_name),
+			 				 isc_arg_gds, isc_must_have_phys_field,
+							 isc_arg_end);
 				}
 
 				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
 				BLB_close(tdbb, blob);
-				USHORT version = REL.RDB$FORMAT.NULL ? 0 : REL.RDB$FORMAT;
+				USHORT version = REL.RDB$FORMAT;
 				version++;
 				relation->rel_current_format = make_format(tdbb, relation,
 														   &version, stack);
-				REL.RDB$FORMAT.NULL = FALSE;
 				REL.RDB$FORMAT = version;
 			END_MODIFY;
 		END_FOR;
@@ -4724,19 +4007,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		   and setting a flag for MET_scan_relation to find the new ones */
 
 		if (!null_view)
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_view, transaction);
-
-		{ // begin scope
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_force_computed))
-				arg = arg->dfw_next;
-
-			if (arg && arg->dfw_type == dfw_arg_force_computed)
-			{
-				computed_field = true;
-				MET_delete_dependencies(tdbb, arg->dfw_name, obj_computed, transaction);
-			}
-		} // end scope
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
 
 		if (!null_view || computed_field)
 			relation->rel_flags |= REL_get_dependencies;
@@ -4746,8 +4017,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			jrd_req* temp = NULL;
 			FOR(REQUEST_HANDLE temp) FMTS IN RDB$FORMATS WITH
 				FMTS.RDB$RELATION_ID EQ relation->rel_id AND
-				FMTS.RDB$FORMAT EQ 0
-				ERASE FMTS;
+                FMTS.RDB$FORMAT EQ 0
+                ERASE FMTS;
 			END_FOR;
 			CMP_release(tdbb, temp);
 			make_format(tdbb, relation, 0, external);
@@ -4755,7 +4026,6 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		relation->rel_flags &= ~REL_scanned;
 		DFW_post_work(transaction, dfw_scan_relation, NULL, relation->rel_id);
-
 		break;
 	}
 
@@ -4781,7 +4051,6 @@ static bool modify_procedure(	thread_db*	tdbb,
 	jrd_prc* procedure;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -4798,8 +4067,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			LCK_convert(tdbb, procedure->prc_existence_lock, LCK_SR,
-						transaction->getLockWait());
+			LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+									 LCK_SR, transaction->getLockWait());
 		}
 		return false;
 	}
@@ -4817,13 +4086,15 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 		if (procedure->prc_existence_lock)
 		{
-			/* Let procedure be deleted if only this transaction is using it */
+			/* Let relation be deleted if only this transaction is using it */
 
-			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX,
-							 transaction->getLockWait()))
+			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
+										  LCK_EX, transaction->getLockWait()))
 			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						isc_arg_end);
 			}
 		}
 
@@ -4839,130 +4110,119 @@ static bool modify_procedure(	thread_db*	tdbb,
 			return false;
 		}
 
-		{ // guard scope
-			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
+		try {
 
-			// Do not allow to modify procedure used by user requests
-			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
+#ifdef SUPERSERVER
+		if (!(tdbb->tdbb_database->dbb_flags & DBB_sp_rec_mutex_init))
+		{
+			THD_rec_mutex_init(&tdbb->tdbb_database->dbb_sp_rec_mutex);
+			tdbb->tdbb_database->dbb_flags |= DBB_sp_rec_mutex_init;
+		}
+		THREAD_EXIT();
+		if (THD_rec_mutex_lock(&tdbb->tdbb_database->dbb_sp_rec_mutex))
+		{
+			THREAD_ENTER();
+			return false;
+		}
+		THREAD_ENTER();
+#endif /* SUPERSERVER */
+		// Do not allow to modify procedure used by user requests
+		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
+		{
+			/*
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_cstring(work->dfw_name),
+					 isc_arg_end);
+			*/
+			gds__log("Modifying procedure %s which is currently in use by active user requests",
+					 work->dfw_name.c_str());
+
+			USHORT prc_alter_count = procedure->prc_alter_count;
+			if (prc_alter_count > MAX_PROC_ALTER)
 			{
-				/*
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-				*/
-				gds__log("Modifying procedure %s which is currently in use by active user requests",
-						 work->dfw_name.c_str());
-
-				USHORT prc_alter_count = procedure->prc_alter_count;
-				if (prc_alter_count > MAX_PROC_ALTER)
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_proc_name) << Arg::Str(work->dfw_name) <<
-							 Arg::Gds(isc_version_err));
-					/* Msg357: too many versions */
-				}
-
-				if (procedure->prc_existence_lock) {
-					LCK_release(tdbb, procedure->prc_existence_lock);
-				}
-				(*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] = NULL;
-
-				if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false,
-														  true, PRC_being_altered)))
-				{
-					return false;
-				}
-				procedure->prc_alter_count = ++prc_alter_count;
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_proc_name,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						 isc_arg_gds, isc_version_err,
+						 isc_arg_end);
+				/* Msg357: too many versions */
 			}
-
-			procedure->prc_flags |= PRC_being_altered;
-			if (procedure->prc_request)
-			{
-				if (CMP_clone_is_active(procedure->prc_request))
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-
-				/* release the request */
-
-				CMP_release(tdbb, procedure->prc_request);
-				procedure->prc_request = 0;
-			}
-
-			/* delete dependency lists */
-
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
-
-			/* the procedure has just been scanned by MET_lookup_procedure_id
-			   and its PRC_scanned flag is set. We are going to reread it
-			   from file (create all new dependencies) and do not want this
-			   flag to be set. That is why we do not add PRC_obsolete and
-			   PRC_being_altered flags, we set only these two flags
-			 */
-			procedure->prc_flags = (PRC_obsolete | PRC_being_altered);
 
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
 			}
+			(*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id] = NULL;
 
-			/* remove procedure from cache */
-
-			MET_remove_procedure(tdbb, work->dfw_id, NULL);
-
-			/* Now handle the new definition */
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			get_procedure_dependencies(work, arg == NULL, transaction);
-
-			procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
-		}
-		return true;
-
-	case 5:
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			if (arg && arg->dfw_type == dfw_arg_check_blr)
+			if (!(procedure = MET_lookup_procedure_id(tdbb,
+													  work->dfw_id,
+													  false,
+													  true,
+													  PRC_being_altered)))
 			{
-				SSHORT valid_blr = FALSE;
-
-				MemoryPool* new_pool = dbb->createPool();
-				try
-				{
-					Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-					// compile the procedure to know if the BLR is still valid
-					if (MET_procedure(tdbb, work->dfw_id, false, 0))
-						valid_blr = TRUE;
-				}
-				catch (const Firebird::Exception&)
-				{
-				}
-
-				dbb->deletePool(new_pool);
-
-				jrd_req* request = CMP_find_request(tdbb, irq_prc_validate, IRQ_REQUESTS);
-
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-					PRC IN RDB$PROCEDURES WITH
-						PRC.RDB$PROCEDURE_ID EQ work->dfw_id
-
-					if (!REQUEST(irq_prc_validate))
-						REQUEST(irq_prc_validate) = request;
-
-					MODIFY PRC USING
-						PRC.RDB$VALID_BLR = valid_blr;
-						PRC.RDB$VALID_BLR.NULL = FALSE;
-					END_MODIFY;
-				END_FOR;
-
-				if (!REQUEST(irq_prc_validate))
-					REQUEST(irq_prc_validate) = request;
+#ifdef SUPERSERVER
+				THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
+#endif
+				return false;
 			}
+			procedure->prc_alter_count = ++prc_alter_count;
 		}
+
+		procedure->prc_flags |= PRC_being_altered;
+		if (procedure->prc_request)
+		{
+			if (CMP_clone_is_active(procedure->prc_request))
+				ERR_post(isc_no_meta_update,
+						 isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, ERR_cstring(work->dfw_name),
+						 isc_arg_end);
+
+			/* release the request */
+
+			CMP_release(tdbb, procedure->prc_request);
+			procedure->prc_request = 0;
+		}
+
+		/* delete dependency lists */
+
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
+
+		/* the procedure has just been scanned by MET_lookup_procedure_id
+		   and its PRC_scanned flag is set. We are going to reread it
+		   from file (create all new dependencies) and do not want this
+		   flag to be set. That is why we do not add PRC_obsolete and
+		   PRC_being_altered flags, we set only these two flags
+		 */
+		procedure->prc_flags = (PRC_obsolete | PRC_being_altered);
+
+		if (procedure->prc_existence_lock) {
+			LCK_release(tdbb, procedure->prc_existence_lock);
+		}
+
+		/* remove procedure from cache */
+
+		MET_remove_procedure(tdbb, work->dfw_id, NULL);
+
+		/* Now handle the new definition */
+
+		get_procedure_dependencies(work);
+
+		procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
+
+		}	// try
+		catch (const std::exception& ex)
+		{
+			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+#ifdef SUPERSERVER
+			THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
+#endif
+			ERR_punt();
+		}
+
+#ifdef SUPERSERVER
+		THD_rec_mutex_unlock(&tdbb->tdbb_database->dbb_sp_rec_mutex);
+#endif
+
 		break;
 	}
 
@@ -4975,7 +4235,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 {
 /**************************************
  *
- *	m o d i f y _ t r i g g e r
+ *	m o d i f y _ t r i g g e r 
  *
  **************************************
  *
@@ -4985,7 +4245,6 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -4994,122 +4253,10 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
+		/* get rid of old dependencies, bring in the new */
 
-			/* get rid of old dependencies, bring in the new */
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger, transaction);
-			get_trigger_dependencies(work, arg == NULL, transaction);
-		}
-		return true;
-
-	case 4:
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_rel_name))
-				arg = arg->dfw_next;
-
-			if (!arg)
-			{
-				arg = work->dfw_args;
-				while (arg && (arg->dfw_type != dfw_arg_trg_type))
-					arg = arg->dfw_next;
-
-				fb_assert(arg);
-
-				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
-				{
-					MET_release_trigger(tdbb,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
-						work->dfw_name);
-
-					MET_load_trigger(tdbb, NULL, work->dfw_name,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
-				}
-			}
-		}
-
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		{
-			const DeferredWork* arg = work->dfw_args;
-			while (arg && (arg->dfw_type != dfw_arg_check_blr))
-				arg = arg->dfw_next;
-
-			if (arg)
-			{
-				const Firebird::MetaName relation_name(arg->dfw_name);
-				SSHORT valid_blr = FALSE;
-
-				try
-				{
-					jrd_rel* relation = MET_lookup_relation(tdbb, relation_name);
-
-					if (relation)
-					{
-						// remove cached triggers from relation
-						relation->rel_flags &= ~REL_scanned;
-						MET_scan_relation(tdbb, relation);
-
-						trig_vec* triggers[TRIGGER_MAX];
-						int i;
-
-						for (i = 0; i < TRIGGER_MAX; ++i)
-							triggers[i] = NULL;
-
-						MemoryPool* new_pool = dbb->createPool();
-						try
-						{
-							Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-							MET_load_trigger(tdbb, relation, work->dfw_name, triggers);
-
-							for (i = 0; i < TRIGGER_MAX; ++i)
-							{
-								if (triggers[i])
-								{
-									for (size_t j = 0; j < triggers[i]->getCount(); ++j)
-										(*triggers[i])[j].compile(tdbb);
-
-									MET_release_triggers(tdbb, &triggers[i]);
-								}
-							}
-
-							valid_blr = TRUE;
-						}
-						catch (const Firebird::Exception&)
-						{
-							dbb->deletePool(new_pool);
-							throw;
-						}
-
-						dbb->deletePool(new_pool);
-					}
-				}
-				catch (const Firebird::Exception&)
-				{
-				}
-
-				jrd_req* request = CMP_find_request(tdbb, irq_trg_validate, IRQ_REQUESTS);
-
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-					TRG IN RDB$TRIGGERS WITH
-						TRG.RDB$TRIGGER_NAME EQ work->dfw_name.c_str()
-
-					if (!REQUEST(irq_trg_validate))
-						REQUEST(irq_trg_validate) = request;
-
-					MODIFY TRG USING
-						TRG.RDB$VALID_BLR = valid_blr;
-						TRG.RDB$VALID_BLR.NULL = FALSE;
-					END_MODIFY;
-				END_FOR;
-
-				if (!REQUEST(irq_trg_validate))
-					REQUEST(irq_trg_validate) = request;
-			}
-		}
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
+		get_trigger_dependencies(work);
 		break;
 	}
 
@@ -5171,7 +4318,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 
 	DeferredWork* work;
 	DeferredWork** ptr;
-
+	
 	// Check to see if work is already posted
 
 	for (ptr = list; (work = *ptr); ptr = &(*ptr)->dfw_next)
@@ -5192,7 +4339,12 @@ static DeferredWork* post_work(jrd_tra* transaction,
 
 	// Not already posted, so do so now.
 
-	*ptr = FB_NEW(*transaction->tra_pool) DeferredWork(*transaction->tra_pool, type, id, sav_number, string, length);
+	*ptr = work = FB_NEW(*transaction->tra_pool) DeferredWork(*transaction->tra_pool);
+	work->dfw_type = type;
+	work->dfw_id = id;
+	work->dfw_count = 1;
+	work->dfw_sav_number = sav_number;
+	work->dfw_name.assign(string, length);
 
 	if (type != dfw_post_event)
 		transaction->tra_flags |= TRA_deferred_meta;
@@ -5203,7 +4355,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 }
 
 
-static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* transaction)
+static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 {
 /**************************************
  *
@@ -5219,7 +4371,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* trans
 	UCHAR temp[128];
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb  = tdbb->getDatabase();
+	Database* dbb  = tdbb->tdbb_database;
 
 	/* If blob is null, don't bother */
 
@@ -5227,7 +4379,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* trans
 		return;
 
 	// Go ahead and open blob
-	blb* blr = BLB_open(tdbb, transaction, blob_id);
+	blb* blr = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	fb_assert(blr->blb_length <= MAX_USHORT);
 	USHORT length = (USHORT)blr->blb_length;
 	UCHAR* const buffer = (length > sizeof(temp)) ?
@@ -5236,7 +4388,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* trans
 		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
 		put_summary_record(blob, type, buffer, length);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (buffer != temp)
 			delete[] buffer;
 		throw;
@@ -5247,43 +4399,47 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* trans
 }
 
 
-static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool& releaseLock)
+Lock* DFW_protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool& releaseLock)
 {
 /**************************************
- *
- * p r o t e c t _ r e l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Lock relation with protected_read level or raise existing relation lock
- * to this level to ensure nobody can write to this relation.
- * Used when new index is built.
- * releaseLock set to true if there was no existing lock before
- *
- **************************************/
-	Lock* relLock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
-
-	releaseLock = (relLock->lck_logical == LCK_none);
-
+*
+* p r o t e c t _ r e l a t i o n
+*
+**************************************
+*
+* Functional description
+*	Lock relation with protected_read level or raise existing relation lock 
+* to this level to ensure nobody can write to this relation. 
+* Used when new index is built. 
+* releaseLock set to true if there was no existing lock before
+*
+**************************************/
+	Lock* relLock = RLCK_transaction_relation_lock(transaction, relation);
+	
+	releaseLock = (relLock->lck_logical == LCK_none); 
+	
 	bool inUse = false;
 
 	if (!releaseLock) {
 		if ( (relLock->lck_logical < LCK_PR) &&
-			!LCK_convert(tdbb, relLock, LCK_PR, transaction->getLockWait()) )
+			!LCK_convert_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) )
 		{
 			inUse = true;
 		}
 	}
 	else {
-		if (!LCK_lock(tdbb, relLock, LCK_PR, transaction->getLockWait())) {
+		if ( !LCK_lock_non_blocking(tdbb, relLock, LCK_PR, transaction->getLockWait()) ) {
 			inUse = true;
 		}
 	}
 
-	if (inUse ) {
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_obj_in_use) << Arg::Str(relation->rel_name));
+	if (inUse ) 
+	{
+		releaseLock = false;
+		ERR_post(isc_no_meta_update,
+				isc_arg_gds, isc_obj_in_use,
+				isc_arg_string, relation->rel_name.c_str(),
+				isc_arg_end);
 	}
 
 	return relLock;
@@ -5320,7 +4476,7 @@ static void put_summary_record(blb*		blob,
 	try {
 		BLB_put_segment(tdbb, blob, buffer, length + 1);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 		if (buffer != temp)
 			delete[] buffer;
 		throw;
@@ -5331,12 +4487,13 @@ static void put_summary_record(blb*		blob,
 }
 
 
-static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
+void DFW_release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
 {
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector) {
 		vec<Lock*>::iterator lock = vector->begin();
-		for (ULONG i = 0; i < vector->count(); ++i, ++lock)
+		for (ULONG i = 0; i < vector->count();
+			++i, ++lock)
 		{
 			if (*lock == relLock)
 			{
@@ -5359,7 +4516,7 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************
  *
  * Functional description
- *	Call MET_scan_relation with the appropriate
+ *	Call MET_scan_relation with the appropriate 
  *	relation.
  *
  **************************************/
@@ -5398,19 +4555,19 @@ static bool shadow_defined(thread_db* tdbb)
  **************************************
  *
  * Functional description
- *	Return TRUE if any shadows have been has been defined
+ *	Return TRUE if any shadows have been has been defined 
  *      for the database else return false.
  *
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	bool result = false;
 	jrd_req*  handle = NULL;
 
-	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$FILES
-		WITH X.RDB$SHADOW_NUMBER > 0
+	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$FILES 
+        WITH X.RDB$SHADOW_NUMBER > 0
 		result = true;
 	END_FOR
 
@@ -5463,35 +4620,35 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
  *
  *	Get the triggers in the right order, which appears
  *      to be system triggers first, then user triggers,
- *      then triggers that implement check constraints.
+ *      then triggers that implement check constraints. 
  *
  * BUG #8458: Check constraint triggers have to be loaded
- *	      (and hence executed) after the user-defined
+ *	      (and hence executed) after the user-defined 
  *	      triggers because user-defined triggers can modify
  *	      the values being inserted or updated so that
  *	      the end values stored in the database don't
- *	      fulfill the check constraint.
+ *	      fulfill the check constraint.     .
  *
  **************************************/
 	if (!relation)
 		return blob;
 
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 
 	/* system triggers */
 
 	jrd_req* request_fmtx = CMP_find_request(tdbb, irq_format4, IRQ_REQUESTS);
 
-	FOR (REQUEST_HANDLE request_fmtx)
-		TRG IN RDB$TRIGGERS
+	FOR (REQUEST_HANDLE request_fmtx) 
+		TRG IN RDB$TRIGGERS 
 		WITH TRG.RDB$RELATION_NAME = relation->rel_name.c_str()
-			AND TRG.RDB$SYSTEM_FLAG = 1
+			AND TRG.RDB$SYSTEM_FLAG = 1 
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation, blob, triggers,
-								  TRG.RDB$TRIGGER_NAME, null_view);
+			setup_trigger_details(tdbb, relation,  blob,  triggers,  
+				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format4))
@@ -5506,7 +4663,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		TRG IN RDB$TRIGGERS
 		WITH TRG.RDB$RELATION_NAME EQ relation->rel_name.c_str()
 		AND (TRG.RDB$SYSTEM_FLAG = 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
-		AND (NOT ANY
+		AND (NOT ANY 
 			CHK IN RDB$CHECK_CONSTRAINTS CROSS
 			RCN IN RDB$RELATION_CONSTRAINTS
 			WITH TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
@@ -5515,10 +4672,10 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 			    OR RCN.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY)
 			)
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
-
+    
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation, blob, triggers,
-								  TRG.RDB$TRIGGER_NAME, null_view);
+			setup_trigger_details(tdbb, relation,  blob,  triggers,  
+			    TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format5))
@@ -5536,7 +4693,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		WITH TRG.RDB$RELATION_NAME = relation->rel_name.c_str()
 		AND (TRG.RDB$SYSTEM_FLAG BT fb_sysflag_check_constraint AND fb_sysflag_view_check
 			OR ((TRG.RDB$SYSTEM_FLAG = 0 OR TRG.RDB$SYSTEM_FLAG MISSING)
-				AND ANY
+				AND ANY 
 			CHK IN RDB$CHECK_CONSTRAINTS CROSS
 			RCN IN RDB$RELATION_CONSTRAINTS
 				WITH TRG.RDB$TRIGGER_NAME EQ CHK.RDB$TRIGGER_NAME
@@ -5548,9 +4705,9 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation, blob, triggers,
-								  TRG.RDB$TRIGGER_NAME, null_view);
-	END_FOR;
+			setup_trigger_details(tdbb, relation,  blob,  triggers,  
+				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+    END_FOR;
 
 	if (!REQUEST(irq_format6))
 		REQUEST(irq_format6) = request_fmtx;
@@ -5564,6 +4721,7 @@ static void setup_trigger_details(thread_db* tdbb,
 								  blb* blob,
 								  trig_vec** triggers,
 								  const TEXT* trigger_name,
+								  const TEXT* relation_name,
 								  bool null_view)
 {
 /**************************************
@@ -5575,20 +4733,22 @@ static void setup_trigger_details(thread_db* tdbb,
  * Functional description
  *	Stuff trigger details in places.
  *
- * for a view, load the trigger temporarily --
+ * for a view, load the trigger temporarily -- 
  * this is inefficient since it will just be reloaded
  *  in MET_scan_relation () but it needs to be done
- *  in case the view would otherwise be non-updatable
+ *  in case the view would otherwise be non-updatable 
  *
  **************************************/
 
-	put_summary_record(blob, RSR_trigger_name,
+	put_summary_record(blob, RSR_trigger_name, 
 		(const UCHAR*) trigger_name, fb_utils::name_length(trigger_name));
 
 	if (!null_view) {
+		if (relation->rel_name.length() == 0)
+			relation->rel_name = relation_name;
 		MET_load_trigger(tdbb, relation, trigger_name, triggers);
 	}
-}
+}	
 
 
 static bool validate_text_type(thread_db* tdbb,
@@ -5601,20 +4761,22 @@ static bool validate_text_type(thread_db* tdbb,
  **************************************
  *
  * Functional description
- *	Make sure the text type specified is implemented
+ *	Make sure the text type specified is implemented 
  *
  **************************************/
 
 	if ((DTYPE_IS_TEXT (tfb->tfb_desc.dsc_dtype) &&
 		!INTL_defined_type(tdbb, tfb->tfb_desc.dsc_ttype()))
 		||
-		(tfb->tfb_desc.dsc_dtype == dtype_blob &&
-		tfb->tfb_desc.dsc_sub_type == isc_blob_text &&
+		(tfb->tfb_desc.dsc_dtype == dtype_blob && 
+		tfb->tfb_desc.dsc_sub_type == isc_blob_text && 
 		!INTL_defined_type(tdbb, tfb->tfb_desc.dsc_blob_ttype())))
 	{
 		return false;
 	}
-
-	return true;
+	else {
+		return true;
+	}
 }
+
 

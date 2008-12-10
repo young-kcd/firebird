@@ -46,19 +46,21 @@
 #include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/gdsassert.h"
+#ifndef SERVICE_THREAD
 #include "../utilities/gstat/ppg_proto.h"
+#endif
 #include "../utilities/gstat/dbaswi.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
-#include "../common/thd.h"
+#include "../jrd/thd.h"
 #include "../jrd/enc_proto.h"
+#ifdef SERVICE_THREAD
+#include "../utilities/common/cmd_util_proto.h"
+#endif
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/constants.h"
 #include "../jrd/ods_proto.h"
-#include "../common/classes/MsgPrint.h"
-
-using MsgFormat::SafeArg;
 
 
 #ifdef HAVE_UNISTD_H
@@ -67,6 +69,7 @@ using MsgFormat::SafeArg;
 
 #ifdef WIN_NT
 #include <io.h>
+#include "../jrd/jrd_pwd.h"
 #endif
 
 using namespace Ods;
@@ -82,8 +85,7 @@ DATABASE DB = STATIC "yachts.lnk";
 const SSHORT BUCKETS	= 5;
 //#define WINDOW_SIZE	(1 << 17)
 
-struct dba_idx
-{
+struct dba_idx {
 	dba_idx* idx_next;
 	SSHORT idx_id;
 	SSHORT idx_depth;
@@ -93,11 +95,10 @@ struct dba_idx
 	ULONG idx_nodes;
 	FB_UINT64 idx_data_length;
 	SLONG idx_fill_distribution[BUCKETS];
-	SCHAR idx_name[MAX_SQL_IDENTIFIER_SIZE];
+	SCHAR idx_name[32];
 };
 
-struct dba_rel
-{
+struct dba_rel {
 	dba_rel* rel_next;
 	dba_idx* rel_indexes;
 	SLONG rel_index_root;
@@ -112,13 +113,12 @@ struct dba_rel
 	SLONG rel_fill_distribution[BUCKETS];
 	FB_UINT64 rel_total_space;
 	SSHORT rel_id;
-	SCHAR rel_name[MAX_SQL_IDENTIFIER_SIZE];
+	SCHAR rel_name[32];
 };
 
 /* kidnapped from jrd/pio.h and abused */
 
-struct dba_fil
-{
+struct dba_fil {
 	dba_fil* fil_next;	/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -132,7 +132,14 @@ struct dba_fil
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 
-static char* alloc(size_t);
+// CVC: I need to compile in MSVC6 that doesn't accept FB_UINT64 to double conversion.
+#if defined(_WIN32) && defined(_MSC_VER) && _MSC_VER == 1200
+#define CAST64 (SINT64)
+#else
+#define CAST64
+#endif
+
+static SCHAR* alloc(size_t);
 static void analyze_data(dba_rel*, bool);
 static bool analyze_data_page(dba_rel*, const data_page*, bool);
 static ULONG analyze_fragments(const dba_rel*, const rhdf*);
@@ -147,32 +154,37 @@ static void db_error(int);
 
 static dba_fil* db_open(const char*, USHORT);
 static const pag* db_read(SLONG);
-#ifdef WIN_NT
-static void db_close(void* file_desc);
-#else
+#ifdef SERVICE_THREAD
 static void db_close(int);
 #endif
+static void move(const SCHAR*, SCHAR*, SSHORT);
 static void print_distribution(const SCHAR*, const SLONG*);
-static void dba_error(USHORT, const SafeArg& arg = SafeArg());
-static void dba_print(USHORT, const SafeArg& arg = SafeArg());
+static void dba_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+static void dba_print(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
+
+#ifndef INCLUDE_FB_BLK
+#include "../include/fb_blk.h"
+#endif
 
 #include "../jrd/db_alias.h"
+#include "../jrd/svc.h"
+#include "../jrd/svc_proto.h"
 
+#ifdef SERVICE_THREAD
 #include <fcntl.h>
 #if (defined WIN_NT)
 #include <share.h>
 #endif
 
 #include "../jrd/jrd_pwd.h"
-#include "../utilities/gstat/dba_proto.h"
+#include "../utilities/gstat/ppg_proto.h"
 
-struct open_files
-{
-#ifdef WIN_NT
-	void* desc;
-#else
+#define FPRINTF		SVC_fprintf
+
+struct open_files {
 	int desc;
-#endif
 	struct open_files *open_files_next;
 };
 
@@ -180,14 +192,24 @@ struct dba_mem {
 	char *memory;
 	struct dba_mem *mem_next;
 };
+#endif
+
+#ifndef FPRINTF
+#define FPRINTF 	fprintf
+#endif
 
 /* threading declarations for thread data */
+
+#ifndef SERVICE_THREAD
+class tdba;
+static tdba* gddba;
+#endif
 
 class tdba : public ThreadData 
 {
 public:
-	explicit tdba(Firebird::UtilSvc* us)
-		: ThreadData(tddDBA), uSvc(us)
+	tdba()
+		: ThreadData(tddDBA) 
 	{
 		//dba_throw = false;
 		files = 0;
@@ -198,14 +220,19 @@ public:
 		buffer2 = 0;
 		global_buffer = 0;
 		exit_code = 0;
+#ifdef SERVICE_THREAD
+		sw_outfile = 0;
 		head_of_mem_list = 0;
 		head_of_files_list = 0;
+		dba_service_blk = 0;
+#else
+		sw_outfile = 0;
+#endif
 		memset(dba_status_vector, 0, sizeof (dba_status_vector));
 		dba_status = dba_status_vector;
 	}
 
 	//bool dba_throw;
-	Firebird::UtilSvc* uSvc;
 	dba_fil* files;
 	dba_rel* relations;
 	SSHORT page_size;
@@ -214,24 +241,39 @@ public:
 	pag* buffer2;
 	pag* global_buffer;
 	int exit_code;
+#ifdef SERVICE_THREAD
+	Jrd::Service* sw_outfile;
 	dba_mem *head_of_mem_list;
 	open_files *head_of_files_list;
+	Jrd::Service* dba_service_blk;
+#else
+	FILE* sw_outfile;
+#endif
 	ISC_STATUS *dba_status;
 	ISC_STATUS_ARRAY dba_status_vector;
 
-	static inline tdba* getSpecific()
-	{
+#ifdef SERVICE_THREAD
+	static inline tdba* getSpecific() {
 		return (tdba*) ThreadData::getSpecific();
 	}
-	static inline void putSpecific(tdba* &tddba, tdba* thd_context)
-	{
+	static inline void putSpecific(tdba* &tddba, tdba* thd_context) {
 		tddba = thd_context;
 		tddba->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific()
-	{
+	static inline void restoreSpecific() {
 		ThreadData::restoreSpecific();
 	}
+#else
+	static inline tdba* getSpecific() {
+		return gddba;
+	}
+	static inline void putSpecific(tdba* &tddba, tdba* thd_context) {
+		tddba = thd_context;
+		gddba = tddba;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 };
 
 
@@ -240,44 +282,30 @@ void inline dba_exit(int code, tdba* tddba)
 	tddba->exit_code = code;
 	// Throw this kind of exception, because gstat uses status vector (and stuff_exception) to
     // handle errors
-	Firebird::LongJump::raise();
+	Firebird::status_exception::raise();
 }
 
 const USHORT GSTAT_MSG_FAC	= 21;
 
+#if defined (WIN95)
+#define TRANSLATE_CP(a) if (!fAnsiCP) CharToOem(a, a)
+#else
+#define TRANSLATE_CP(a)
+#endif
 
+
+
+
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
-{
-/**********************************************
- *
- *    m a i n _ g s t a t
- *
- **********************************************
- * Functional Description:
- *   Entrypoint for GSTAT via the services manager
- **********************************************/
-	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	int exit_code = FINI_OK;
+#else
 
-	try {
-		exit_code = gstat(uSvc);
-	}
-	catch (const Firebird::Exception& e)
-	{
-		e.stuff_exception(uSvc->getStatus());
-		exit_code = FB_FAILURE;
-	}
-
-	uSvc->finish();
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
-}
-
-
-int gstat(Firebird::UtilSvc* uSvc)
+int CLIB_ROUTINE main(int argc, char** argv)
+#endif
 {
 /**************************************
  *
- *	g s t a t
+ *	m a i n
  *
  **************************************
  *
@@ -292,169 +320,203 @@ int gstat(Firebird::UtilSvc* uSvc)
 	bool sw_index = false;
 	bool sw_version = false;
 	bool sw_header = false;
-	//bool sw_log = false;
+//	bool sw_log = false;
 	bool sw_record = false;
 	bool sw_relation = false;
 	bool sw_nocreation = false;
 	isc_db_handle db_handle = 0;
 	UCHAR buf[256];
+	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username =
+		user_buff;
 
-	TEXT pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
-	MOVE_CLEAR(user_buff, sizeof(user_buff));
-	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
-
-	TEXT tr_buff[128], *tr_user = tr_buff;
-	MOVE_CLEAR(tr_buff, sizeof(tr_buff));
-	bool trusted_role = false;
-
-#ifdef TRUSTED_AUTH
-	bool trusted_auth = false;
-#endif
-
-	tdba thd_context(uSvc), *tddba;
+	tdba thd_context, *tddba;
 	tdba::putSpecific(tddba, &thd_context);
-	int exit_code = FINI_OK;
+	//tddba->dba_throw = true;
 
-	int argc = uSvc->argv.getCount();
-	const char** argv = uSvc->argv.begin();
+#ifdef SERVICE_THREAD
+/* Reinitialize static variables for multi-threading */
+	Jrd::Service* service = (Jrd::Service*)arg;
+	int argc = service->svc_argc;
+	char** argv = service->svc_argv;
+#endif
 
 	ISC_STATUS* status_vector = NULL;
 
 	try {
 
+#ifdef SERVICE_THREAD
+	Jrd::Service* sw_outfile = tddba->sw_outfile = service;
+#else
+	FILE* sw_outfile = tddba->sw_outfile = stdout;
+#endif
+
+#if defined (WIN95) && !defined (SERVICE_THREAD)
+	bool fAnsiCP = false;
+#endif
+
+/* Perform some special handling when run as an Interbase service.  The
+   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 	tddba->dba_status = tddba->dba_status_vector;
 	status_vector = tddba->dba_status;
 
+	bool called_as_service = false;
+
+	if (argc > 1 && !strcmp(argv[1], "-svc")) {
+		called_as_service = true;
+		argv++;
+		argc--;
+	}
+#ifdef SERVICE_THREAD
+	else if (!strcmp(argv[1], "-svc_thd")) {
+		called_as_service = true;
+		tddba->dba_service_blk = service;
+		tddba->dba_status = service->svc_status;
+		argv++;
+		argc--;
+	}
+#endif
+	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
+		called_as_service = true;
+		long redir_in = atol(argv[2]);
+		long redir_out = atol(argv[3]);
+		long redir_err = atol(argv[4]);
+#ifdef WIN_NT
+#if defined (WIN95) && !defined (SERVICE_THREAD)
+		fAnsiCP = true;
+#endif
+		redir_in = _open_osfhandle(redir_in, 0);
+		redir_out = _open_osfhandle(redir_out, 0);
+		redir_err = _open_osfhandle(redir_err, 0);
+#endif
+		if (redir_in != 0)
+			if (dup2((int) redir_in, 0))
+				close((int) redir_in);
+		if (redir_out != 1)
+			if (dup2((int) redir_out, 1))
+				close((int) redir_out);
+		if (redir_err != 2)
+			if (dup2((int) redir_err, 2))
+				close((int) redir_err);
+		argv += 4;
+		argc -= 4;
+	}
 	const char* name = NULL;
+
+	MOVE_CLEAR(user_buff, sizeof(user_buff));
+	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
 
 	const TEXT* const* const end = argv + argc;
 	++argv;
 	while (argv < end) {
 		const TEXT* str = *argv++;
-		if (*str != '-')
-		{
-			name = str;
-			continue;
-		}
-
-		if (!str[1])
-			str = "-*NONE*";
-		const in_sw_tab_t* in_sw_tab;
-		const TEXT* q;
-		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
-		{
-			TEXT c;
-			for (const TEXT* p = str + 1; c = *p++;) {
-				if (UPPER(c) != *q++)
+		if (*str == '-') {
+			if (!str[1])
+				str = "-*NONE*";
+			in_sw_tab_t* in_sw_tab;
+			const TEXT* q;
+			for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name;
+				 in_sw_tab++)
+			{
+				TEXT c;
+				for (const TEXT* p = str + 1; c = *p++;) {
+					if (UPPER(c) != *q++)
+						break;
+				}
+				if (!c)
 					break;
 			}
-			if (!c)
-				break;
-		}
-		//in_sw_tab->in_sw_state = true;
-		
-		switch (in_sw_tab->in_sw)
-		{
-		case 0:
-			dba_print(20, SafeArg() << (str + 1));	/* msg 20: unknown switch "%s" */
-			dba_print(21);	/* msg 21: Available switches: */
-			for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
+			in_sw_tab->in_sw_state = TRUE;
+			
+			switch (in_sw_tab->in_sw)
 			{
-				if (in_sw_tab->in_sw_msg)
-					dba_print(in_sw_tab->in_sw_msg);
-			}
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg());
-			dba_error(1);	/* msg 1: found unknown switch */
-			break;
-		case IN_SW_DBA_USERNAME:
-			if (argv < end)
-				fb_utils::copy_terminate(username, *argv++, sizeof(user_buff));
-			break;
-		case IN_SW_DBA_PASSWORD:
-			if (argv < end)
-			{
-				uSvc->hidePasswd(uSvc->argv, argv - uSvc->argv.begin());
-				fb_utils::copy_terminate(password, *argv++, sizeof(pass_buff));
-			}
-			break;
-		case IN_SW_DBA_FETCH_PASS:
-			if (argv < end)
-			{
-				const char* passwd = NULL;
-				if (fb_utils::fetchPassword(*argv++, passwd) == fb_utils::FETCH_PASS_OK)
+			case 0:
+				dba_print(20, str + 1, 0, 0, 0, 0);	/* msg 20: unknown switch "%s" */
+				dba_print(21, 0, 0, 0, 0, 0);	/* msg 21: Available switches: */
+				for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw;
+					 in_sw_tab++)
 				{
-					fb_utils::copy_terminate(password, passwd, sizeof(pass_buff));
+					if (in_sw_tab->in_sw_msg)
+						dba_print(in_sw_tab->in_sw_msg, 0, 0, 0, 0, 0);
 				}
-			}
-			break;
-		case IN_SW_DBA_TRUSTEDUSER:
-			uSvc->checkService();
-			if (argv < end)
-				fb_utils::copy_terminate(tr_user, *argv++, sizeof(tr_buff));
-			break;
-		case IN_SW_DBA_TRUSTEDROLE:
-			uSvc->checkService();
-			trusted_role = true;
-			break;
-#ifdef TRUSTED_AUTH
-		case IN_SW_DBA_TRUSTEDAUTH:
-			trusted_auth = true;
-			break;
+#ifdef SERVICE_THREAD
+				CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+										GSTAT_MSG_FAC, 1,
+										0, NULL,
+										0, NULL, 0, NULL, 0, NULL, 0, NULL);
 #endif
-		case IN_SW_DBA_SYSTEM:
-			sw_system = true;
-			break;
-		case IN_SW_DBA_DATA:
-			sw_data = true;
-			break;
-		case IN_SW_DBA_INDEX:
-			sw_index = true;
-			break;
-		case IN_SW_DBA_VERSION:
-			sw_version = true;
-			break;
-		case IN_SW_DBA_HEADER:
-			sw_header = true;
-			break;
+				dba_error(1, 0, 0, 0, 0, 0);	/* msg 1: found unknown switch */
+				break;
+			case IN_SW_DBA_USERNAME:
+				if (argv < end)
+					strcpy((char*) username, *argv++);
+				break;
+			case IN_SW_DBA_PASSWORD:
+				if (argv < end)
+					strcpy((char*) password, *argv++);
+				break;
+			case IN_SW_DBA_SYSTEM:
+				sw_system = true;
+				break;
+			case IN_SW_DBA_DATA:
+				sw_data = true;
+				break;
+			case IN_SW_DBA_INDEX:
+				sw_index = true;
+				break;
+			case IN_SW_DBA_VERSION:
+				sw_version = true;
+				break;
+			case IN_SW_DBA_HEADER:
+				sw_header = true;
+				break;
 //			case IN_SW_DBA_LOG:
 //				sw_log = true;
 //				break;
-		case IN_SW_DBA_DATAIDX:
-			sw_index = sw_data = true;
-			break;
-		case IN_SW_DBA_RECORD:
-			sw_record = true;
-			break;
-		case IN_SW_DBA_RELATION:
-			sw_relation = true;
-			while (argv < end && **argv != '-') {
-				if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
-					argv++;
-					continue;
+			case IN_SW_DBA_DATAIDX:
+				sw_index = sw_data = true;
+				break;
+			case IN_SW_DBA_RECORD:
+				sw_record = true;
+				break;
+			case IN_SW_DBA_RELATION:
+				sw_relation = true;
+				while (argv < end && **argv != '-') {
+					if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
+						argv++;
+						continue;
+					}
+					dba_rel* relation = (dba_rel*) alloc(sizeof(struct dba_rel));
+					strcpy(relation->rel_name, *argv++);
+					fb_utils::exact_name(relation->rel_name);
+					relation->rel_id = -1;
+					dba_rel** next = &tddba->relations;
+					while (*next) {
+						next = &(*next)->rel_next;
+					}
+					*next = relation;
 				}
-				dba_rel* relation = (dba_rel*) alloc(sizeof(struct dba_rel));
-				strcpy(relation->rel_name, *argv++);
-				fb_utils::exact_name(relation->rel_name);
-				relation->rel_id = -1;
-				dba_rel** next = &tddba->relations;
-				while (*next) {
-					next = &(*next)->rel_next;
-				}
-				*next = relation;
+				break;
+			case IN_SW_DBA_NOCREATION:
+				sw_nocreation = true;
+				break;
 			}
-			break;
-		case IN_SW_DBA_NOCREATION:
-			sw_nocreation = true;
-			break;
+		} // if (*str == '-')
+		else {
+			name = str;
 		}
 	}
 
 	if (sw_version)
-		dba_print(5, SafeArg() << GDS_VERSION);	/* msg 5: gstat version %s */
+		dba_print(5, GDS_VERSION, 0, 0, 0, 0);	/* msg 5: gstat version %s */
 
 	if (!name) {
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 2, SafeArg());
-		dba_error(2);	/* msg 2: please retry, giving a database name */
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 2,
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+#endif
+		dba_error(2, 0, 0, 0, 0, 0);	/* msg 2: please retry, giving a database name */
 	}
 
 	if (!sw_data && !sw_index)
@@ -462,6 +524,19 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (sw_record && !sw_data)
 		sw_data = true;
+
+#if defined (WIN95) && !defined (SERVICE_THREAD)
+	if (!fAnsiCP) {
+		const ULONG ulConsoleCP = GetConsoleCP();
+		if (ulConsoleCP == GetACP())
+			fAnsiCP = true;
+		else if (ulConsoleCP != GetOEMCP()) {
+			FPRINTF(sw_outfile,
+					"WARNING: The current codepage is not supported.  Any use of any\n"
+					"         extended characters may result in incorrect file names.\n");
+		}
+	}
+#endif
 
 /* Open database and go to work */
 
@@ -494,22 +569,32 @@ int gstat(Firebird::UtilSvc* uSvc)
 	tddba->page_number = -1;
 	const header_page* header = (const header_page*) db_read((SLONG) 0);
 
-	uSvc->started();
+#ifdef SERVICE_THREAD
+	service->svc_started();
+#endif
 
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 3,
-								SafeArg() << ODS_VERSION <<
-								(header->hdr_ods_version & ~ODS_FIREBIRD_FLAG));
-		dba_error(3, SafeArg() << ODS_VERSION <<
-					(header->hdr_ods_version & ~ODS_FIREBIRD_FLAG));
-		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 3,
+								isc_arg_number, (void*)(IPTR) ODS_VERSION,
+								isc_arg_number, (void*)(IPTR) (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG),
+								0, NULL, 0, NULL, 0, NULL);
+#endif
+		dba_error(3, (TEXT *)(IPTR) ODS_VERSION, (TEXT *)(IPTR) (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG),
+				  0, 0, 0);		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
 	}
 
 	char file_name[1024];
-	fileName.copyTo(file_name, sizeof(file_name));
+#if defined (WIN95) && !defined (SERVICE_THREAD)
+	if (!fAnsiCP)
+		AnsiToOem(fileName.c_str(), file_name);
+	else
+#endif
+		strcpy(file_name, fileName.c_str());
 
-	dba_print(6, SafeArg() << file_name);	/* msg 6: \nDatabase \"%s\"\n */
+	dba_print(6, file_name, 0, 0, 0, 0);	/* msg 6: \nDatabase \"%s\"\n */
 
 	tddba->page_size = header->hdr_page_size;
 	tddba->buffer1 = (pag*) alloc(tddba->page_size);
@@ -524,7 +609,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
 		do {
-			header = (const header_page*) db_read(page);
+			header = (const header_page*) db_read((SLONG) page);
 			if (current != tddba->files)
 				current->fil_fudge = 1;	/* ignore header page once read it */
 			*file_name = '\0';
@@ -535,6 +620,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 				if (*vp == HDR_file) {
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
+#if defined (WIN95) && !defined (SERVICE_THREAD)
+					if (!fAnsiCP)
+						AnsiToOem(file_name, file_name);
+#endif
 				}
 				if (*vp == HDR_last_page) {
 					memcpy(&current->fil_max_page, vp + 2,
@@ -549,8 +638,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	page = HEADER_PAGE;
 	do {
-		header = (const header_page*) db_read(page);
-		PPG_print_header(header, page, sw_nocreation, uSvc);
+		header = (const header_page*) db_read((SLONG) page);
+		PPG_print_header(header, page, sw_nocreation, sw_outfile);
 		page = header->hdr_next_page;
 	} while (page);
 
@@ -559,49 +648,31 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 /* print continuation file sequence */
 
-	dba_print(7);
+	dba_print(7, 0, 0, 0, 0, 0);
 	// msg 7: \n\nDatabase file sequence: 
 	for (current = tddba->files; current->fil_next; current = current->fil_next)
 	{
-		dba_print(8, SafeArg() << current->fil_string << current->fil_next->fil_string);
+		dba_print(8, current->fil_string, current->fil_next->fil_string, 0, 0, 0);
 		//* msg 8: File %s continues as file %s
 	}
-	dba_print(9, SafeArg() << current->fil_string <<
-		 ((current == tddba->files) ? "only" : "last"));
+	dba_print(9, current->fil_string,
+		 (const TEXT*)((current == tddba->files) ? "only" : "last"), 0, 0, 0);
 		 // msg 9: File %s is the %s file\n
 
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
 	
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	uSvc->getAddressPath(dpb);
 	dpb.insertTag(isc_dpb_gstat_attach);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
 
-	if (*username) 
-	{
-		dpb.insertString(isc_dpb_user_name, username, strlen(username));
+	if (*username) {
+		dpb.insertBytes(isc_dpb_user_name, username, strlen((char*) username));
 	}
-	if (*password) 
-	{
-		dpb.insertString(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							password, strlen(password));
+	if (*password) {
+		dpb.insertBytes(called_as_service ? isc_dpb_password_enc : isc_dpb_password,
+							password, strlen((char*) password));
 	}
-	if (*tr_user) 
-	{
-		uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth, tr_user, strlen(tr_user));
-		if (trusted_role)
-		{
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-		}
-	}
-#ifdef TRUSTED_AUTH
-	if (trusted_auth)
-	{
-		dpb.insertTag(isc_dpb_trusted_auth);
-	}
-#endif
 
 	isc_attach_database(status_vector, 0, connName.c_str(), &DB, dpb.getBufferLength(), 
 						reinterpret_cast<const char*>(dpb.getBuffer()));
@@ -714,9 +785,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 		dba_exit(FINI_ERROR, tddba);
 	END_ERROR
 
-	dba_print(10);
+	dba_print(10, 0, 0, 0, 0, 0);
 	// msg 10: \nAnalyzing database pages ...\n 
 
+	{ // scope for MSVC6
 	for (dba_rel* relation = tddba->relations; relation;
 		relation = relation->rel_next)
 	{
@@ -732,6 +804,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			analyze_index(relation, index);
 		}
 	}
+	} // scope for MSVC6
 
 /* Print results */
 
@@ -741,88 +814,103 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (relation->rel_id == -1) {
 			continue;
 		}
-		uSvc->printf("%s (%d)\n", relation->rel_name,
+		FPRINTF(sw_outfile, "%s (%d)\n", relation->rel_name,
 				relation->rel_id);
 		if (sw_data)
 		{
-			dba_print(11, SafeArg() << relation->rel_pointer_page <<
-					  relation->rel_index_root);
+			dba_print(11, (TEXT *)(IPTR) relation->rel_pointer_page,
+					  (TEXT *)(IPTR) relation->rel_index_root, 0, 0, 0);
 			// msg 11: "    Primary pointer page: %ld, Index root page: %ld" 
 			if (sw_record) {
 				double average = (relation->rel_records) ?
-					(double) relation->rel_record_space /
+					(double) CAST64 relation->rel_record_space /
 					relation->rel_records : 0.0;
 				sprintf((char*) buf, "%.2f", average);
-				uSvc->printf(
+				FPRINTF(sw_outfile,
 						"    Average record length: %s, total records: %ld\n",
 						buf, relation->rel_records);
-				// dba_print(18, SafeArg() << buf << relation->rel_records);
+				// dba_print(18, buf, relation->rel_records, 0, 0, 0);
 				// msg 18: "    Average record length: %s, total records: %ld 
 				average = (relation->rel_versions) ?
-					(double) relation->rel_version_space /
+					(double) CAST64 relation->rel_version_space /
 					relation->rel_versions : 0.0;
 				sprintf((char*) buf, "%.2f", average);
-				uSvc->printf(
+				FPRINTF(sw_outfile,
 						"    Average version length: %s, total versions: %ld, max versions: %ld\n",
 						buf, relation->rel_versions,
 						relation->rel_max_versions);
-				// dba_print(19, SafeArg() << buf << relation->rel_versions <<
-				//			 relation->rel_max_versions);
+				// dba_print(19, buf, relation->rel_versions, 
+				//			 relation->rel_max_versions, 0, 0);
 				// msg 19: " Average version length: %s, total versions: %ld, max versions: %ld 
 			}
 
 			const double average = (relation->rel_data_pages) ?
-				(double) relation->rel_total_space * 100 /
+				(double) CAST64 relation->rel_total_space * 100 /
 				((double) relation->rel_data_pages *
 				 (tddba->page_size - DPG_SIZE)) : 0.0;
 			sprintf((char*) buf, "%.0f%%", average);
-			dba_print(12, SafeArg() << relation->rel_data_pages <<
-					  relation->rel_slots << buf);	
-			/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
-			dba_print(13);	/* msg 13: "    Fill distribution:" */
+			dba_print(12, (TEXT*)(IPTR) relation->rel_data_pages,
+					  (TEXT*)(IPTR) relation->rel_slots,
+					  (TEXT*) buf, 0, 0);	/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
+			dba_print(13, 0, 0, 0, 0, 0);	/* msg 13: "    Fill distribution:" */
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
-		uSvc->printf("\n");
+		FPRINTF(sw_outfile, "\n");
 		
 		for (const dba_idx* index = relation->rel_indexes; index; index = index->idx_next)
 		{
-			dba_print(14, SafeArg() << index->idx_name << index->idx_id);
+			dba_print(14, index->idx_name, (TEXT *)(IPTR) index->idx_id, 0, 0, 0);
 			// msg 14: "    Index %s (%d)" 
-			dba_print(15, SafeArg() << index->idx_depth <<
-					  index->idx_leaf_buckets <<  index->idx_nodes);
+			dba_print(15, (TEXT *)(IPTR) index->idx_depth,
+					  (TEXT *)(IPTR) index->idx_leaf_buckets,
+					  (TEXT *)(IPTR) index->idx_nodes, 0, 0);
 			// msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld 
 			const double average = (index->idx_nodes) ?
-				(double) index->idx_data_length / index->idx_nodes : 0;
+				(double) CAST64 index->idx_data_length / index->idx_nodes : 0;
 			sprintf((char*) buf, "%.2f", average);
-			dba_print(16, SafeArg() << buf << index->idx_total_duplicates <<
-					  index->idx_max_duplicates);
+			dba_print(16, (TEXT*) buf, (TEXT*)(IPTR) index->idx_total_duplicates,
+					  (TEXT*)(IPTR) index->idx_max_duplicates, 0, 0);
 			// msg 16: \tAverage data length: %s, total dup: %ld, max dup: %ld"
-			dba_print(17);
+			dba_print(17, 0, 0, 0, 0, 0);
 			// msg 17: \tFill distribution:
 			print_distribution("\t    ", index->idx_fill_distribution);
-			uSvc->printf("\n");
+			FPRINTF(sw_outfile, "\n");
 		}
 	}
 
 	dba_exit(FINI_OK, tddba);
 
 	}	// try
-	catch (const Firebird::Exception& ex)
+	catch (const std::exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
 		/* free mem */
 
 		if (status_vector[1])
 		{
-			tddba->uSvc->setServiceStatus(status_vector);
+#ifdef SERVICE_THREAD
+			ISC_STATUS* status = tddba->dba_service_blk->svc_status;
+			if (status != status_vector)
+			{
+			    int i = 0;
+				while (*status && (++i < ISC_STATUS_LENGTH)) {
+					status++;
+				}
+				for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH);
+					 j++, i++)
+				{
+					*status++ = status_vector[j];
+				}
+			}
+#endif
 			const ISC_STATUS* vector = status_vector;
 			SCHAR s[1024];
 			if (fb_interpret(s, sizeof(s), &vector))
 			{
-				tddba->uSvc->printf("%s\n", s);
+				FPRINTF(tddba->sw_outfile, "%s\n", s);
 				s[0] = '-';
 				while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
-					tddba->uSvc->printf("%s\n", s);
+					FPRINTF(tddba->sw_outfile, "%s\n", s);
 				}
 			}
 		}
@@ -832,7 +920,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 		 */
 		FINISH;
 
-		uSvc->started();
+#ifdef SERVICE_THREAD
+		service->svc_started();
 		dba_mem* alloced = tddba->head_of_mem_list;
 		while (alloced != 0) {
 			delete[] alloced->memory;
@@ -860,16 +949,24 @@ int gstat(Firebird::UtilSvc* uSvc)
 			delete tmp2;
 		}
 
-		exit_code = tddba->exit_code;
+		/* Mark service thread as finished and cleanup memory being
+		 * used by service in case if client detached from the service
+		 */
+
+		SVC_finish(service, Jrd::SVC_finished);
+#endif
+
+		int exit_code = tddba->exit_code;
 		tdba::restoreSpecific();
+
+#ifdef SERVICE_THREAD
+		return (THREAD_ENTRY_RETURN)(IPTR)(exit_code);
+#else
+		exit(exit_code);
+#endif
 	}
 
-	if ((exit_code != FINI_OK) && uSvc->isService())
-    {
-        memcpy(uSvc->getStatus(), tddba->dba_status, sizeof (ISC_STATUS_ARRAY));
-	}
-
-	return exit_code;
+	return 0;
 }
 
 
@@ -885,20 +982,27 @@ static char* alloc(size_t size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
+#ifdef SERVICE_THREAD
 	tdba* tddba = tdba::getSpecific();
 	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
-
+#else
+	char* const block = (char*) gds__alloc(size);
+#endif
 	if (!block) {
 		/* NOMEM: return error */
-		dba_error(31);
+		dba_error(31, 0, 0, 0, 0, 0);
 	}
+/* note: shouldn't we check for the NULL?? */
+	char* p = block;
+	do {
+		*p++ = 0;
+	} while (--size);
 
-	memset(block, 0, size);
-
+#ifdef SERVICE_THREAD
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list) {
 		/* NOMEM: return error */
-		dba_error(31);
+		dba_error(31, 0, 0, 0, 0, 0);
 	}
 	mem_list->memory = block;
 	mem_list->mem_next = 0;
@@ -909,6 +1013,7 @@ static char* alloc(size_t size)
 		mem_list->mem_next = tddba->head_of_mem_list;
 		tddba->head_of_mem_list = mem_list;
 	}
+#endif
 
 	return block;
 }
@@ -933,7 +1038,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 	for (SLONG next_pp = relation->rel_pointer_page; next_pp;
 		 next_pp = ptr_page->ppg_next)
 	{
-		memcpy(ptr_page, (const SCHAR*) db_read(next_pp), tddba->page_size);
+		move((const SCHAR*) db_read(next_pp), (SCHAR*) ptr_page, tddba->page_size);
 		const SLONG* ptr = ptr_page->ppg_page;
 		for (const SLONG* const end = ptr + ptr_page->ppg_count;
 			ptr < end; ptr++)
@@ -943,7 +1048,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 				++relation->rel_data_pages;
 				if (!analyze_data_page(relation, (const data_page*) db_read(*ptr), sw_record))
 				{
-					dba_print(18, SafeArg() << *ptr);
+					dba_print(18, (TEXT*)(IPTR) *ptr, 0, 0, 0, 0);
 					// msg 18: "    Expected data on page %ld" */
 				}
 			}
@@ -970,7 +1075,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 		return false;
 
 	if (sw_record) {
-		memcpy(tddba->buffer2, (const SCHAR*) page, tddba->page_size);
+		move((const SCHAR*) page, (SCHAR*) tddba->buffer2, tddba->page_size);
 		page = (const data_page*) tddba->buffer2;
 	}
 
@@ -1095,7 +1200,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 
 	bool firstLeafNode = true;
 	SLONG number;
-	ULONG duplicates = 0;
+	SLONG duplicates = 0;
 	// AB: In fact length for KEY should be MAX_KEY (1/4 of used page-size)
 	// This value should be kept equal with size declared in btr.h
 	//UCHAR key[4096];
@@ -1117,7 +1222,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 
 			++index->idx_nodes;
 			index->idx_data_length += node.length;
-			const USHORT l = node.length + node.prefix;
+			USHORT l = node.length + node.prefix;
 			
 			bool dup;
 			if (node.nodePointer == firstNode) {
@@ -1142,8 +1247,13 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 			}
 
 			key_length = l;
-			if (node.length) {
-				memcpy(key + node.prefix, node.data, node.length);
+			l = node.length;
+			if (l) {
+				UCHAR* p = key + node.prefix;
+				const UCHAR* q = node.data;
+				do {
+					*p++ = *q++;
+				} while (--l);
 			}
 		}
 
@@ -1166,7 +1276,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		page = bucket->btr_sibling;
 		bucket = (const btree_page*) db_read(page);
 		if (bucket->btr_header.pag_type != pag_index) {
-			dba_print(19, SafeArg() << page << number);
+			dba_print(19, (const TEXT*)(IPTR) page, (const TEXT*)(IPTR) number, 0, 0, 0);
 			// mag 19: "    Expected b-tree bucket on page %ld from %ld"
 			break;
 		}
@@ -1224,7 +1334,8 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 
 
 #ifdef WIN_NT
-static void db_close(void* file_desc)
+#ifdef SERVICE_THREAD
+static void db_close( int file_desc)
 {
 /**************************************
  *
@@ -1236,8 +1347,9 @@ static void db_close(void* file_desc)
  *    Close an open file
  *
  **************************************/
-	CloseHandle(file_desc);
+	CloseHandle((HANDLE) file_desc);
 }
+#endif
 
 static void db_error( SLONG status)
 {
@@ -1255,14 +1367,14 @@ static void db_error( SLONG status)
 	tdba* tddba = tdba::getSpecific();
 	tddba->page_number = -1;
 
-	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+	if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 						NULL,
 						status,
 						GetUserDefaultLangID(),
 						s,
 						sizeof(s),
 						NULL)
-		&& !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+		&& !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 						NULL,
 						status,
 						0, // TMN: Fallback to system known language
@@ -1273,7 +1385,7 @@ static void db_error( SLONG status)
 		sprintf(s, "unknown Windows NT error %ld", status);
 	}
 	
-	tddba->uSvc->printf("%s\n", s);
+	FPRINTF(tddba->sw_outfile, "%s\n", s);
 	dba_exit(FINI_ERROR, tddba);
 }
 
@@ -1328,17 +1440,23 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (fil->fil_desc  == INVALID_HANDLE_VALUE)
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 29,
+								isc_arg_string, file_name,
+								0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 29: Can't open database file %s
+#endif
 		db_error(GetLastError());
 	}
 
+#ifdef SERVICE_THREAD
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
 		/* NOMEM: return error */
-		dba_error(31);
+		dba_error(31, 0, 0, 0, 0, 0);
 	}
-	file_list->desc = fil->fil_desc;
+	file_list->desc = reinterpret_cast<int>(fil->fil_desc);
 	file_list->open_files_next = 0;
 
 	if (tddba->head_of_files_list == 0)
@@ -1347,6 +1465,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		file_list->open_files_next = tddba->head_of_files_list;
 		tddba->head_of_files_list = file_list;
 	}
+#endif
 
 	return fil;
 }
@@ -1390,8 +1509,12 @@ static const pag* db_read( SLONG page_number)
 		int lastError = GetLastError();
 		if (lastError != NO_ERROR)
 		{
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
+#ifdef SERVICE_THREAD
+			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+									GSTAT_MSG_FAC, 30,
+									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 30: Can't read a database page
+#endif
 			db_error(lastError);
 		}
 	}
@@ -1403,13 +1526,21 @@ static const pag* db_read( SLONG page_number)
 					reinterpret_cast<LPDWORD>(&actual_length),
 					NULL))
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 30,
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 30: Can't read a database page 
+#endif
 		db_error(GetLastError());
 	}
 	if (actual_length != tddba->page_size) {
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
-		dba_error(4);
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 4,
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
+#endif
+		dba_error(4, 0, 0, 0, 0, 0);
 		// msg 4: Unexpected end of database file. 
 	}
 
@@ -1419,6 +1550,7 @@ static const pag* db_read( SLONG page_number)
 
 
 #ifndef WIN_NT
+#ifdef SERVICE_THREAD
 static void db_close( int file_desc)
 {
 /**************************************
@@ -1433,6 +1565,7 @@ static void db_close( int file_desc)
  **************************************/
 	close(file_desc);
 }
+#endif
 
 static void db_error( int status)
 {
@@ -1451,7 +1584,20 @@ static void db_error( int status)
 	/* FIXME: The strerror() function returns the appropriate description
 	   string, or an unknown error message if the error code is unknown.
 	   EKU: p cannot be NULL! */
-	tddba->uSvc->printf("%s\n", strerror(status));
+#if 1
+	FPRINTF(tddba->sw_outfile, "%s\n", strerror(status));
+#else
+	/* EKU: Old code */
+#ifndef VMS
+	FPRINTF(tddba->sw_outfile, "%s\n", strerror(status));
+#else
+	const char* p;
+	if ((p = strerror(status)) || (p = strerror(EVMSERR, status)))
+		FPRINTF(tddba->sw_outfile, "%s\n", p);
+	else
+		FPRINTF(tddba->sw_outfile, "uninterpreted code %x\n", status);
+#endif
+#endif
 	dba_exit(FINI_ERROR, tddba);
 }
 
@@ -1497,15 +1643,21 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if ((fil->fil_desc = open(file_name, O_RDONLY)) == -1)
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 29,
+								isc_arg_string, file_name,
+								0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 29: Can't open database file %s 
+#endif
 		db_error(errno);
 	}
 
+#ifdef SERVICE_THREAD
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
 		/* NOMEM: return error */
-		dba_error(31);
+		dba_error(31, 0, 0, 0, 0, 0);
 	}
 	file_list->desc = fil->fil_desc;
 	file_list->open_files_next = 0;
@@ -1516,6 +1668,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		file_list->open_files_next = tddba->head_of_files_list;
 		tddba->head_of_files_list = file_list;
 	}
+#endif
 
 	return fil;
 }
@@ -1550,8 +1703,12 @@ static const pag* db_read( SLONG page_number)
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1) {
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
+#ifdef SERVICE_THREAD
+		CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+								GSTAT_MSG_FAC, 30,
+								0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
 		// msg 30: Can't read a database page 
+#endif
 		db_error(errno);
 	}
 
@@ -1560,13 +1717,22 @@ static const pag* db_read( SLONG page_number)
 	{
 		const SSHORT l = read(fil->fil_desc, p, length);
 		if (l < 0) {
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
+#ifdef SERVICE_THREAD
+			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+									GSTAT_MSG_FAC, 30,
+									0, NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL);
 			// msg 30: Can't read a database page 
+#endif
 			db_error(errno);
 		}
 		if (!l) {
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
-			dba_error(4);
+#ifdef SERVICE_THREAD
+			CMD_UTIL_put_svc_status(tddba->dba_service_blk->svc_status,
+									GSTAT_MSG_FAC, 4,
+									0, NULL,
+									0, NULL, 0, NULL, 0, NULL, 0, NULL);
+#endif
+			dba_error(4, 0, 0, 0, 0, 0);
 			// msg 4: Unexpected end of database file. 
 		}
 		p += l;
@@ -1578,8 +1744,11 @@ static const pag* db_read( SLONG page_number)
 #endif
 
 
-static void dba_error(USHORT errcode,
-					  const SafeArg& arg)
+static void dba_error(
+					  USHORT errcode,
+					  const TEXT* arg1,
+					  const TEXT* arg2, const TEXT* arg3,
+					  const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -1594,14 +1763,16 @@ static void dba_error(USHORT errcode,
 	tdba* tddba = tdba::getSpecific();
 	tddba->page_number = -1;
 
-	dba_print(errcode, arg);
+	dba_print(errcode, arg1, arg2, arg3, arg4, arg5);
 	dba_exit(FINI_ERROR, tddba);
 }
 
 
 static void dba_print(
 					  USHORT number,
-					  const SafeArg& arg)
+					  const TEXT* arg1,
+					  const TEXT* arg2, const TEXT* arg3,
+					  const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -1616,8 +1787,27 @@ static void dba_print(
 	TEXT buffer[256];
 	tdba* tddba = tdba::getSpecific();
 
-	fb_msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	tddba->uSvc->printf("%s\n", buffer);
+	gds__msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer,
+					arg1, arg2, arg3, arg4, arg5);
+	TRANSLATE_CP(buffer);
+	FPRINTF(tddba->sw_outfile, "%s\n", buffer);
+}
+
+
+static void move(const SCHAR* from, SCHAR* to, SSHORT length)
+{
+/**************************************
+ *
+ *	m o v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move some stuff.
+ *
+ **************************************/
+
+	memcpy(to, from, (int) length);
 }
 
 
@@ -1636,7 +1826,7 @@ static void print_distribution(const SCHAR* prefix, const SLONG* vector)
 	tdba* tddba = tdba::getSpecific();
 
 	for (SSHORT n = 0; n < BUCKETS; n++) {
-		tddba->uSvc->printf("%s%2d - %2d%% = %ld\n",
+		FPRINTF(tddba->sw_outfile, "%s%2d - %2d%% = %ld\n",
 				prefix,
 				n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}

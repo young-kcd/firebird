@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		canonical.cpp
- *	DESCRIPTION:
+ *	DESCRIPTION:	
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -200,7 +200,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 		}
 	}
 
-// Next, get null flags
+// Next, get null flags 
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -405,7 +405,7 @@ static bool_t burp_putlong(XDR* xdrs, const SLONG* lp)
  **************************************/
 	SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<char*>(&l),
+									   reinterpret_cast<char*>(AOF32L(l)),
 									   4);
 }
 
@@ -442,7 +442,7 @@ static bool_t expand_buffer(XDR* xdrs)
  *
  * Functional description
  *	Allocate a new, larger buffer, copy
- *	everything we've got, and release the
+ *	everything we've got, and release the 
  *	old one.
  *
  **************************************/
@@ -654,7 +654,7 @@ static bool_t xdr_slice(XDR* xdrs,
 	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&slice->lstr_length)))
 		  return FALSE;
 
-// Handle operation specific stuff, particularly memory allocation/deallocation
+// Handle operation specific stuff, particularly memory allocation/deallocation 
 
 	switch (xdrs->x_op)
 	{
@@ -692,7 +692,7 @@ static bool_t xdr_slice(XDR* xdrs,
 		return FALSE;
 	}
 
-// Get descriptor of array element
+// Get descriptor of array element 
 
 	ISC_STATUS_ARRAY status_vector;
 	sdl_info info;

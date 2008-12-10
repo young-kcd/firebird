@@ -25,10 +25,7 @@
 #define JRD_PAG_PROTO_H
 
 namespace Jrd {
-	class thread_db;
 	class Database;
-	class PageNumber;
-	class PageSpace;
 	struct win;
 }
 namespace Ods {
@@ -38,40 +35,28 @@ namespace Ods {
 
 void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
 USHORT	PAG_add_file(const TEXT*, SLONG);
-int		PAG_add_header_entry(Ods::header_page*, USHORT, USHORT, const UCHAR*);
-void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
-int		PAG_replace_entry_first(Ods::header_page*, USHORT, USHORT, const UCHAR*);
+int		PAG_add_header_entry(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
+int		PAG_replace_entry_first(Ods::header_page*, USHORT, SSHORT, const UCHAR*);
 Ods::pag*	PAG_allocate(Jrd::win *);
-SLONG	PAG_attachment_id(Jrd::thread_db*);
+SLONG	PAG_attachment_id(void);
 int		PAG_delete_clump_entry(SLONG, USHORT);
-void	PAG_format_header(Jrd::thread_db*);
-void	PAG_format_log(Jrd::thread_db*);
-void	PAG_format_pip(Jrd::thread_db*, Jrd::PageSpace& pageSpace);
+void	PAG_format_header(void);
+void	PAG_format_log(void);
+void	PAG_format_pip(void);
 bool	PAG_get_clump(SLONG, USHORT, USHORT*, UCHAR*);
-void	PAG_header(Jrd::thread_db*, bool);
-void	PAG_header_init(Jrd::thread_db*);
-void	PAG_init(Jrd::thread_db*);
-void	PAG_init2(Jrd::thread_db*, USHORT);
-SLONG	PAG_last_page();
-void	PAG_release_page(const Jrd::PageNumber&, const Jrd::PageNumber&);
-void	PAG_set_force_write(Jrd::Database*, bool);
-void	PAG_set_no_reserve(Jrd::Database*, bool);
+void	PAG_header(bool);
+void	PAG_header_init();
+void	PAG_init(void);
+void	PAG_init2(USHORT);
+SLONG	PAG_last_page(void);
+void	PAG_release_page(SLONG, SLONG);
+void	PAG_set_force_write(Jrd::Database*, SSHORT);
+void	PAG_set_no_reserve(Jrd::Database*, USHORT);
 void	PAG_set_db_readonly(Jrd::Database*, bool);
 void	PAG_set_db_SQL_dialect(Jrd::Database*, SSHORT);
 void	PAG_set_page_buffers(ULONG);
 void	PAG_sweep_interval(SLONG);
 //int		PAG_unlicensed(void);
-
-namespace Jrd {
-	class PageCountCallback
-	{
-	public:
-//		PageCountCallback() { }
-		virtual void newPage(const SLONG, Ods::pag*) = 0;
-//		virtual ~PageCountCallback();
-	};
-}
-ULONG	PAG_page_count(Jrd::Database*, Jrd::PageCountCallback*);
 
 #endif // JRD_PAG_PROTO_H
 

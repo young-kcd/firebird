@@ -3,25 +3,25 @@
  *	MODULE:			install_client.cpp
  *	DESCRIPTION:	Program which install the FBCLIENT.DLL or GDS32.DLL
  *
- *  The contents of this file are subject to the Initial Developer's
- *  Public License Version 1.0 (the "License"); you may not use this
- *  file except in compliance with the License. You may obtain a copy
+ *  The contents of this file are subject to the Initial Developer's 
+ *  Public License Version 1.0 (the "License"); you may not use this 
+ *  file except in compliance with the License. You may obtain a copy 
  *  of the License here:
  *
  *    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl.
  *
- *  Software distributed under the License is distributed on an "AS
- *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  Software distributed under the License is distributed on an "AS 
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or 
  *  implied. See the License for the specific language governing rights
  *  and limitations under the License.
  *
  *  The Original Code is (C) 2003 Olivier Mascia.
- *
+ *  
  *  The Initial Developer of the Original Code is Olivier Mascia.
  *
  *  All Rights Reserved.
- *
- *  Contributor(s): ______________________________________.
+ *  
+ *  Contributor(s): ______________________________________. 
  *
  */
 
@@ -94,11 +94,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	TEXT* p = directory + len;
 	do {--p;} while (*p != '\\');
 
-/*	Instclient no longer strips the bin\\ part. This section can be removed after fb2.1.0 beta2
 	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
 	// There is always an additional '\' OR a ':'.
 	do {--p;} while (*p != '\\' && *p != ':');
-*/
 	*p = '\0';
 
 	const TEXT* const* const end = argv + argc;
@@ -176,7 +174,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT status;
 	switch (sw_command)
 	{
-
+		
 		case COMMAND_INSTALL:
 			status = CLIENT_install(directory, sw_client, sw_force, inst_error);
 			switch (status)
@@ -237,22 +235,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						clientname);
 					break;
 				case FB_SUCCESS :
-					if (sharedCount)
-					{
-						printf("Installed %s version : %u.%u.%u.%u "
-							"(shared DLL count %d)\n",
-							clientname,
-							verMS >> 16, verMS & 0x0000ffff,
-							verLS >> 16, verLS & 0x0000ffff,
-							sharedCount);
-					}
-					else
-					{
-						printf("Installed %s version : %u.%u.%u.%u\n",
-							clientname,
-							verMS >> 16, verMS & 0x0000ffff,
-							verLS >> 16, verLS & 0x0000ffff);
-					}
+					printf("Installed %s version : %u.%u.%u.%u "
+						"(shared DLL count %d)\n", clientname,
+						verMS >> 16, verMS & 0x0000ffff,
+						verLS >> 16, verLS & 0x0000ffff,
+						sharedCount);
 					break;
 			}
 			break;

@@ -30,32 +30,22 @@
 
 #include <string.h>
 #include "../common/classes/fb_string.h"
-#include "gen/iberror.h"
+
 
 namespace fb_utils
 {
-	char* copy_terminate(char* dest, const char* src, size_t bufsize);
 	char* exact_name(char* const str);
 	inline void exact_name(Firebird::string& str)
 	{
 		str.rtrim();
 	}
 	char* exact_name_limit(char* const str, size_t bufsize);
-	bool implicit_domain(const char* domain_name);
-	bool implicit_integrity(const char* integ_name);
-	bool implicit_pk(const char* pk_name);
 	int name_length(const TEXT* const name);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
-	char* cleanup_passwd(char* arg);
-	inline char* get_passwd(char* arg)
-	{
-		return cleanup_passwd(arg);
-	}
-	typedef char* arg_string;
 
-	// Warning: Only wrappers:
+// Warning: Only wrappers:
 
 	// ********************
 	// s t r i c m p
@@ -91,29 +81,8 @@ namespace fb_utils
 	}
 
 #ifdef WIN_NT
-	bool prefix_kernel_object_name(char* name, size_t bufsize);
-#endif
-
-	Firebird::PathName get_process_name();
-	SLONG genUniqueId();
-
-	void getCwd(Firebird::PathName& pn);
-
-	void inline init_status(ISC_STATUS* status)
-	{
-		status[0] = isc_arg_gds;
-		status[1] = 0;
-		status[2] = isc_arg_end;
-	}
-
-	enum FetchPassResult {
-		FETCH_PASS_OK,
-		FETCH_PASS_FILE_OPEN_ERROR,
-		FETCH_PASS_FILE_READ_ERROR,
-		FETCH_PASS_FILE_EMPTY
-	};
-	FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password);
-
+	void prefix_kernel_object_name(char*, size_t);
+#endif 
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

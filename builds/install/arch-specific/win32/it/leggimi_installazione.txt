@@ -1,11 +1,6 @@
-Firebird Database Server 2.5
-============================
-
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+==============================
+Firebird Database Server 2.0.5
+==============================
 
   ** IMPORTANTE **
 
@@ -14,13 +9,13 @@ Documentation for Firebird 2.5 is not yet available.
   in merito alla nuova versione ODS e
   all'aggiornamento da versioni precedenti di
   Firebird.
-  
+
   ** ********** **
 
 Questo documento contiene istruzioni per
-l'installazione di Firebird 2.0 su piattaforma
+l'installazione di Firebird 2.0.5 su piattaforma
 Win32. Questa documentazione si riferisce dunque al
-solo processo di installazione, e non a Firebird 2.0
+solo processo di installazione, e non a Firebird 2.0.5
 in generale.
 
 
@@ -168,8 +163,8 @@ Altre informazioni
   la presenza di Winsock 2 e termina con un errore in
   caso di esito negativo. In questo caso si consiglia
   di visitare questo sito:
-  
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   per maggiori informazioni su come aggiornare
   Winsock.
@@ -182,6 +177,6 @@ Il programma di installazione può essere eseguito come
 parte di un file di comandi. Per maggiori
 informazioni, potete fare riferimento al file:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 non disponibile in italiano.

@@ -33,10 +33,6 @@
 #include "../dudley/extra_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
-#include "../common/classes/MsgPrint.h"
-
-using MsgFormat::SafeArg;
-
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk" RUNTIME dudleyGlob.DB_file_name;
 
@@ -153,7 +149,7 @@ void DDL_ext(void)
 
 	if (*dudleyGlob.DDL_file_name) {
 		if (!(output_file = fopen(dudleyGlob.DDL_file_name, FOPEN_WRITE_TYPE))) {
-			DDL_err(248, SafeArg() << dudleyGlob.DDL_file_name);
+			DDL_err(248, dudleyGlob.DDL_file_name, NULL, NULL, NULL, NULL);
 			/* msg 248: ddl: can't open %s */
 			DDL_exit(FINI_ERROR);
 		}
@@ -161,25 +157,15 @@ void DDL_ext(void)
 	else
 		output_file = stdout;
 
-	if (!(dudleyGlob.DDL_default_user || dudleyGlob.DDL_default_password)) 
-	{
-#ifdef TRUSTED_AUTH
-		if (dudleyGlob.DDL_trusted)
-		{
-			char dpb[] = {isc_dpb_version1, isc_dpb_trusted_auth, 0};
-			isc_attach_database (NULL, 0, dudleyGlob.DB_file_name, &DB, sizeof dpb, dpb);
-		}
-		else
-#endif
-			READY DB;
-	}
-	else
+	if (dudleyGlob.DDL_default_user || dudleyGlob.DDL_default_password)
 		READY DB USER dudleyGlob.DDL_default_user PASSWORD dudleyGlob.DDL_default_password;
+	else
+		READY DB;
 
 /* the database version number is useful during extract - this goes
    to stdout, not to the output_file */
 	if (dudleyGlob.DDL_version) {
-		DDL_msg_put(249, SafeArg() << dudleyGlob.DB_file_name);	/* msg 249: Version(s) for database \"%s\" */
+		DDL_msg_put(249, dudleyGlob.DB_file_name, NULL, NULL, NULL, NULL);	/* msg 249: Version(s) for database \"%s\" */
 		isc_version(&DB, NULL, NULL);
 	}
 
@@ -289,8 +275,6 @@ static void decompile_blr_literal(const SCHAR* string)
 		return;
 	}
 
-	static const SafeArg dummy;
-	
 	TEXT* b = buffer;
 
 	switch (*p++) {
@@ -317,7 +301,8 @@ static void decompile_blr_literal(const SCHAR* string)
 		break;
 
 	default:
-		fb_msg_format(NULL, DDL_MSG_FAC, 250, sizeof(buffer), buffer, dummy);
+		gds__msg_format(NULL, DDL_MSG_FAC, 250, sizeof(buffer), buffer,
+						NULL, NULL, NULL, NULL, NULL);
 		/* msg 250: **** unable to decompile missing value *** */
 	}
 
@@ -1827,7 +1812,7 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
 						bpb))
 	{
 		gds__print_status(status_vector);
-		DDL_err(269);
+		DDL_err(269, NULL, NULL, NULL, NULL, NULL);	
 		/* msg 269: isc_open_blob failed */
 		return;
 	}
@@ -1881,13 +1866,13 @@ static void print_blob(ISC_QUAD* blob_id, TEXT type)
 
 	if (status_vector[1] != isc_segstr_eof) {
 		gds__print_status(status_vector);
-		DDL_err(271);	/* msg 271: isc_get_segment failed  */
+		DDL_err(271, NULL, NULL, NULL, NULL, NULL);	/* msg 271: isc_get_segment failed  */
 		return;
 	}
 
 	if (isc_close_blob(status_vector, &blob)) {
 		gds__print_status(status_vector);
-		DDL_err(272);	/* msg 272: isc_close_blob failed */
+		DDL_err(272, NULL, NULL, NULL, NULL, NULL);	/* msg 272: isc_close_blob failed */
 		return;
 	}
 
@@ -1914,14 +1899,14 @@ static void put_comment(USHORT number)
  *
  **************************************/
 	TEXT message[256];
-	static const SafeArg dummy;
 
-	fb_msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message, dummy);
+	gds__msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
+					NULL, NULL, NULL, NULL, NULL);
 	fprintf(output_file, "%s\n\n", message);
 }
 
 
-static void put_error(USHORT number, const TEXT* arg1)
+static void put_error(USHORT number, const TEXT * arg1)
 {
 /**************************************
  *
@@ -1937,8 +1922,8 @@ static void put_error(USHORT number, const TEXT* arg1)
  **************************************/
 	TEXT message[256];
 
-	fb_msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
-					SafeArg() << arg1);
+	gds__msg_format(NULL, DDL_MSG_FAC, number, sizeof(message), message,
+					arg1, NULL, NULL, NULL, NULL);
 	fprintf(output_file, "%s\n\n", message);
 	printf("%s\n", message);
 }
@@ -2111,7 +2096,7 @@ static void view_fields(const TEXT * view_name)
                 VR2.RDB$VIEW_CONTEXT = VR.RDB$VIEW_CONTEXT
                 name_trunc(VR2.RDB$CONTEXT_NAME, context);
             END_FOR;
-            if (!strcmp(RFR.RDB$FIELD_NAME, RFR.RDB$BASE_FIELD))
+            if (!(strcmp(RFR.RDB$FIELD_NAME, RFR.RDB$BASE_FIELD)))
                 fprintf(output_file, "    %s.%s", context, s);
             else {
                 name_trunc(RFR.RDB$BASE_FIELD, temp);

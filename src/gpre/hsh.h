@@ -15,13 +15,10 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
- * Stephen W. Boyd						- Added support for new features.
  */
-
 /* Sort this file with "sort -b +1 +0" */
 
-	{"ABNORMAL", KW_ABNORMAL},
+{"ABNORMAL", KW_ABNORMAL},
 #ifdef SCROLLABLE_CURSORS
 	{"ABSOLUTE", KW_ABSOLUTE},
 #endif
@@ -143,7 +140,6 @@
 	{"ENTRY_POINT", KW_ENTRY_POINT},
 	{"==", KW_EQ},
 	{"EQ", KW_EQ},
-	{"EQUIV", KW_EQUIV},
 	{"=", KW_EQUALS},
 	{"ERASE", KW_ERASE},
 	{"ERROR", KW_ERROR},
@@ -216,7 +212,7 @@
 	{"INTO", KW_INTO},
 	{"IS", KW_IS},
 	{"ISO", KW_ISOLATION},
-	{"ISOLATION", KW_ISOLATION},
+	{"ISOLATION", KW_ISOLATION}, 
 	{"JOIN", KW_JOIN},
 	{"KEY", KW_KEY},
 #ifdef SCROLLABLE_CURSORS
@@ -274,7 +270,6 @@
 	{"NO_WAIT", KW_NO_WAIT},
 	{"NO_WAIT", KW_NO_WAIT},
 	{"NULL", KW_NULL},
-	{"NULLIF", KW_NULLIF},
 	{"NUMERIC", KW_NUMERIC},
 	{"NUM_LOG_BUFFERS", KW_NUM_LOG_BUFS},
 	{"OF", KW_OF},
@@ -447,16 +442,6 @@
 	{"WHERE", KW_WITH},
 	{"WITH", KW_WITH},
 	{"WORK", KW_WORK},
-	{"WRITE", KW_WRITE},
+	{"WRITE", KW_WRITE}, 
 	{"YEAR", KW_YEAR},
-    {"YEARDAY", KW_YEARDAY},
-	{"SKIP", KW_SKIP},
-	{"CURRENT_CONNECTION", KW_CURRENT_CONNECTION},
-	{"CURRENT_ROLE", KW_CURRENT_ROLE},
-	{"CURRENT_TRANSACTION", KW_CURRENT_TRANSACTION},
-	{"CURRENT_USER", KW_CURRENT_USER},
-	{"COALESCE", KW_COALESCE},
-	{"WHEN", KW_WHEN},
-	{"THEN", KW_THEN},
-	{"SUBSTRING", KW_SUBSTRING}
-
+        {"YEARDAY", KW_YEARDAY}

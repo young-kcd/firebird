@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\remote_ss/"
 				ObjectFile="..\..\..\temp\debug\remote_ss/"
@@ -85,7 +85,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\remote_ss/remote.pch"
 				AssemblerListingLocation="..\..\..\temp\release\remote_ss/"
 				ObjectFile="..\..\..\temp\release\remote_ss/"
@@ -128,6 +128,9 @@
 		<Filter
 			Name="REMOTE files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\..\..\src\remote\allr.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\remote\os\win32\chop.cpp">
 			</File>
@@ -181,6 +184,9 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
+				RelativePath="..\..\..\src\remote\allr_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\remote\inet_proto.h">
 			</File>
 			<File
@@ -212,16 +218,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\xnet_proto.h">
-			</File>
-		</Filter>
-		<Filter
-			Name="AuthSspi"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
 			</File>
 		</Filter>
 	</Files>

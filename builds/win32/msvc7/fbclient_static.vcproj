@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386,_X86_=1,WIN32,_X86_,_LIB,NDEBUG,BOOT_BUILD"
+				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,GOVERNOR,I386,_X86_=1,WIN32,_X86_,_LIB,NDEBUG,BOOT_BUILD"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
@@ -74,7 +74,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386,_X86_=1,WIN32,_X86_,_LIB,BOOT_BUILD,DEV_BUILD"
+				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,GOVERNOR,I386,_X86_=1,WIN32,_X86_,_LIB,BOOT_BUILD,DEV_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
@@ -144,6 +144,9 @@
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\dls_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.h">
 			</File>
 			<File
@@ -177,16 +180,19 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sch_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdl.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\thd.h">
+				RelativePath="..\..\..\src\jrd\thd.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\thd_priority.h">
+				RelativePath="..\..\..\src\jrd\thd_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl_proto.h">
@@ -198,6 +204,9 @@
 		<Filter
 			Name="REMOTE files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\remote\allr.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
 			</File>
@@ -258,6 +267,9 @@
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
 			</File>
 			<File
@@ -285,6 +297,9 @@
 				RelativePath="..\..\..\src\jrd\perf.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sch.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdl.cpp">
 			</File>
 			<File
@@ -303,6 +318,9 @@
 				RelativePath="..\..\..\src\jrd\why.cpp">
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\defs\fbclient.def">
+		</File>
 		<File
 			RelativePath="..\defs\fbclient.def">
 		</File>

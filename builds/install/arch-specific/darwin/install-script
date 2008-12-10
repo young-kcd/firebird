@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# $Id: install-script,v 1.1.2.16 2008-09-05 10:59:08 paulbeach Exp $
+#
 # Script args:
 # $0: full path to script
 # $1: full path to top level package dir, no trailing slash
@@ -146,8 +148,8 @@ echo "Remove all traces of Classic first"
 if [ -f /etc/inetd.conf ]; then
 	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
 	if test $? != 0 ; then
-		cat /etc/inetd.conf | grep -v gds_db > /etc/.firebird.temp.install.inetd.conf
-		mv /etc/.firebird.temp.install.inetd.conf /etc/inetd.conf
+		cat /etc/inetd.conf | grep -v gds_db > /etc/.interbase.temp.install.inetd.conf
+		mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
 		HUPNEEDED='y'
 	fi
 fi
@@ -180,8 +182,8 @@ echo "Test inetd"
 if [ -f /var/run/inetd.pid -a -d /etc/inetd.d ]; then
 	if [ -f /etc/inetd.conf ]; then
 	echo "gds_db stream  tcp     nowait  root $FB_FW/Resources/bin/fb_inet_server fb_inet_server" > /etc/.fb.inetd.conf.entry
-	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.firebird.temp.install.inetd.conf
-	mv /etc/.firebird.temp.install.inetd.conf /etc/inetd.conf
+	cat /etc/inetd.conf /etc/.fb.inetd.conf.entry > /etc/.interbase.temp.install.inetd.conf
+	mv /etc/.interbase.temp.install.inetd.conf /etc/inetd.conf
         rm -f /etc/.fb.inetd.conf.entry
 	HUPNEEDED='y'
 	fi
@@ -256,7 +258,7 @@ cp $file "$FB_RES/English.lproj/var/UDF/$return"
 rm $file
 done
 
-#If classic, add libfbclient to dynamic loader search path
+#If classic add libfbclient to dynamic loader search path
 echo "Add libfbclient to dynamic loader search path"
 if [ ! -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
 ln -s "$FB_FW/Libraries/libfbclient.dylib" /usr/local/lib/libfbclient.dylib

@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Remote Server
+ *	PROGRAM:	JRD Remote Server 
  *	MODULE:		xdr_proto.h
  *	DESCRIPTION:	Prototype Header file for xdr.cpp
  *
@@ -27,7 +27,7 @@
 #include "../remote/xdr.h"
 
 // 15 Jan 2003. Nickolay Samofatov
-// Functions below need to have C++ linkage to avoid name clash with
+// Lower functions need to have C++ linkage to avoid name clash with
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
 bool_t	xdr_bool (XDR *, int *);
@@ -48,7 +48,6 @@ bool_t	xdr_u_short (XDR *, u_short *);
 int		xdr_union (XDR *, enum xdr_op *, SCHAR *, struct xdr_discrim *, xdrproc_t);
 bool_t	xdr_wrapstring (XDR *, SCHAR **);
 bool_t	xdr_hyper(XDR *, void *);
-SLONG	getOperation(const void* data, size_t size);
 
 #endif	/* REMOTE_XDR_PROTO_H */
 

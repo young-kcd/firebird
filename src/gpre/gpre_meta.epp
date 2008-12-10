@@ -146,10 +146,12 @@ bool MET_database(dbb* database, bool print_version)
 	 */
 	UCHAR sql_buffer[sizeof(sql_version_info) * (1 + 2 + 4)];
 
+#ifndef REQUESTER
 	if (gpreGlob.sw_language == lang_internal) {
 		JRDMET_init(database);
 		return true;
 	}
+#endif
 
 	DB = 0;
 
@@ -171,11 +173,6 @@ bool MET_database(dbb* database, bool print_version)
 	if ((p = database->dbb_c_password)) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
-#ifdef TRUSTED_AUTH
-	if (gpreGlob.trusted_auth) {
-		dpb.insertTag(isc_dpb_trusted_auth);
-	}
-#endif
 
 	if (isc_attach_database(gds_status, 0, database->dbb_filename, &DB, 
 							dpb.getBufferLength(), 
@@ -488,8 +485,7 @@ bool MET_get_domain_default(dbb* database,
 			}
 			// fetch segments. Assume buffer is big enough.  
 			TEXT* ptr_in_buffer = buffer;
-			while (true)
-			{
+			while (true) {
 				SSHORT length;
 				stat = isc_get_segment(status_vect, &blob_handle, (USHORT*) &length,
 									   buff_length, ptr_in_buffer);
@@ -498,12 +494,13 @@ bool MET_get_domain_default(dbb* database,
 
 				if (!stat)
 					continue;
-				if (stat == isc_segstr_eof) {
+				else if (stat == isc_segstr_eof) {
 					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
-				CPR_exit(FINI_ERROR);
+				else
+					CPR_exit(FINI_ERROR);
 			}
 			isc_close_blob(status_vect, &blob_handle);
 
@@ -597,8 +594,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 
 			// fetch segments. Assuming here that the buffer is big enough. 
 			TEXT* ptr_in_buffer = buffer;
-			while (true)
-			{
+			while (true) {
 				SSHORT length;
 				stat = isc_get_segment(status_vect, &blob_handle,
 									   (USHORT*)&length, buff_length, ptr_in_buffer);
@@ -606,12 +602,13 @@ bool MET_get_column_default(const gpre_rel* relation,
 				buff_length = buff_length - length;
 				if (!stat)
 					continue;
-				if (stat == isc_segstr_eof) {
+				else if (stat == isc_segstr_eof) {
 					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
-				CPR_exit(FINI_ERROR);
+				else
+					CPR_exit(FINI_ERROR);
 			}
 			isc_close_blob(status_vect, &blob_handle);
 
@@ -709,19 +706,17 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 	gpre_fld* field = NULL;
 	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-	{
 		if (symbol->sym_type == SYM_keyword &&
 			symbol->sym_keyword == (int) KW_DBKEY)
 		{
 			return relation->rel_dbkey;
 		}
-		if (symbol->sym_type == SYM_field &&
+		else if (symbol->sym_type == SYM_field &&
 				 (field = (gpre_fld*) symbol->sym_object) &&
 				 field->fld_relation == relation)
 		{
 			return field;
 		}
-	}
 
 	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
@@ -1244,14 +1239,9 @@ udf* MET_get_udf(dbb* database, const TEXT* string)
 	
 	udf* the_udf = NULL;
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-	{
 		if (symbol->sym_type == SYM_udf &&
 			(the_udf = (udf*) symbol->sym_object) && the_udf->udf_database == database)
-		{
 			break;
-		}
-	}
-
 	if (!the_udf)
 		return NULL;
 
@@ -1448,10 +1438,8 @@ void MET_load_hash_table(dbb* database)
 		return;
 
 	if (!database->dbb_handle)
-	{
 		if (!MET_database(database, false))
 			CPR_exit(FINI_ERROR);
-	}
 
 	if (database->dbb_transaction) {
 		// we must have already loaded this one 
@@ -2068,13 +2056,15 @@ static bool get_intl_char_subtype(
 		return resolve_charset_and_collation(id, period + 1, buffer);
 	}
 
-	// Is it a character set name (implying charset default collation sequence)
-	bool res = resolve_charset_and_collation(id, buffer, NULL);
-	if (!res) {
-		// Is it a collation name (implying implementation-default character set)
-		res = resolve_charset_and_collation(id, NULL, buffer);
+	else {
+		/* Is it a character set name (implying charset default collation sequence) */
+		bool res = resolve_charset_and_collation(id, buffer, NULL);
+		if (!res) {
+			/* Is it a collation name (implying implementation-default character set) */
+			res = resolve_charset_and_collation(id, NULL, buffer);
+		}
+		return res;
 	}
-	return res;
 }
 
 
@@ -2160,8 +2150,7 @@ static bool resolve_charset_and_collation(
 
 		return found;
 	}
-
-	if (charset == NULL) {
+	else if (charset == NULL) {
 		FOR(REQUEST_HANDLE request)
 			FIRST 1 CS IN RDB$CHARACTER_SETS
 			CROSS COLL IN RDB$COLLATIONS

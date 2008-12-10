@@ -43,7 +43,7 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
  *
  *	Both szName and szShort name can be the same pointer.
  *
- *  Inputs:
+ *  Inputs: 
  *           szName - Null terminated input path/filename.
  *           szShortName - Output buffer for truncated path/filename.
  *           dwLen - Length to truncate to.

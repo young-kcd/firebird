@@ -55,6 +55,7 @@ on Leopard (MacOS 10.5). Due to UNIX2003 support included
 in MacOS 10.5 */
 #undef _XOPEN_SOURCE
 #endif
+
 /* Define __USE_POSIX and __USE_XOPEN for Linux and glibc. */
 #ifndef __USE_POSIX
 #define __USE_POSIX
@@ -1258,8 +1259,8 @@ uprv_tzname(int n)
     }
 #endif
 
-#ifdef U_TZNAME
-	return U_TZNAME[n];
+#if U_TZNAME + 1 != 1
+    return U_TZNAME[n];
 #else
     return "";
 #endif

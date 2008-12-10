@@ -1,26 +1,4 @@
 #!/bin/sh
-#
-#  The contents of this file are subject to the Initial
-#  Developer's Public License Version 1.0 (the "License");
-#  you may not use this file except in compliance with the
-#  License. You may obtain a copy of the License at
-#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
-#
-#  Software distributed under the License is distributed AS IS,
-#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
-#  See the License for the specific language governing rights
-#  and limitations under the License.
-#
-#  The Original Code was created by Mark O'Donohue
-#  for the Firebird Open Source RDBMS project.
-#
-#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#  and all contributors signed below.
-#
-#  All Rights Reserved.
-#  Contributor(s): ______________________________________.
-#		Alex Peshkoff
-#
 
 
 #------------------------------------------------------------------------
@@ -44,7 +22,7 @@ export ArchiveMainFile
 # Create temporary file. In case mktemp failed, do something...
 
 MakeTemp() {
-	TmpFile=`mktemp -q /tmp/firebird_install.XXXXXX`
+	TmpFile=`mktemp /tmp/firebird_install.XXXXXX`
 	if [ $? -ne 0 ]
 	then
 		TmpFile=/tmp/firebird_install
@@ -190,26 +168,13 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
-	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
-    if [ ! -z "$checkString" ]
-	then
-		serverMode=super
-	fi
-
     stopSuperServerIfRunning
 
 
 # Check is server is being actively used.
 
-    checkString=`ps -eaf | egrep "\b(fb_smp_server)\b" |grep -v grep`
-    if [ ! -z "$checkString" ]
-    then
-        echo "An instance of the Firebird SuperClassic server seems to be running."
-        echo "Please quit all Firebird applications and then proceed."
-        exit 1
-    fi
-
     checkString=`ps -eaf | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -218,6 +183,7 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -eaf | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -229,6 +195,7 @@ checkIfServerRunning() {
 # The following check for running interbase or firebird 1.0 servers.
 
     checkString=`ps -eaf | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
@@ -238,6 +205,7 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -eaf | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Classic server seems to be running." 
@@ -247,6 +215,13 @@ checkIfServerRunning() {
     fi
 
 	removeInetdServiceEntry
+	
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -eaf | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+	do
+        kill $i
+	done
 
 }
 
@@ -384,7 +359,7 @@ EOT
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
-# @prefix@/bin/gsec utility.
+# @prefix@/bin/changeDBAPassword.sh script
 EOT
 
     chmod u=r,go= $DBAPasswordFile
@@ -413,6 +388,39 @@ changeDBAPassword() {
 
 
 #------------------------------------------------------------------------
+# UpdateHostsDotEquivFile
+# The /etc/hosts.equiv file is needed to allow local access for super server
+# from processes on the machine to port 3050 on the local machine.
+# The two host names that are needed there are 
+# localhost.localdomain and whatever hostname returns.
+
+# Automatically adding /etc/hosts.equiv file was security risk,
+# therefore it was disabled. But in order to let anonymous
+# services operate, we need /etc/gds_hosts.equiv instead.
+# I hope nobody except firebird understands it.
+
+updateHostsDotFile() {
+	hostEquivFile=/etc/gds_hosts.equiv
+
+	if [ ! -f $hostEquivFile ]
+	then
+		touch $hostEquivFile
+		chown root:root $hostEquivFile
+		chmod u=rw,go=r $hostEquivFile
+	fi
+
+	newLine="localhost"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+
+	newLine="localhost.localdomain"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+
+	newLine="`hostname`"
+	replaceLineInFile "$hostEquivFile" "$newLine" "^$newLine\$"
+}
+
+
+#------------------------------------------------------------------------
 #  buildUninstallFile
 #  This will work only for the .tar.gz install and it builds an
 #  uninstall shell script.  The RPM system, if present, takes care of it's own.
@@ -429,8 +437,6 @@ buildUninstallFile() {
 
     cp -r scripts $FBRootDir/misc/
     cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
-
-	cd $FBRootDir
 }
 
 
@@ -474,7 +480,6 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
-	cd $FBRootDir
 	if [ "$1" ]
 	then
 		# Use library name from parameter
@@ -497,6 +502,20 @@ createLinksForBackCompatibility() {
 removeLinksForBackCompatibility() {
     removeIfOnlyAlink @libdir@/libgds.so
     removeIfOnlyAlink @libdir@/libgds.so.0
+}
+
+
+#------------------------------------------------------------------------
+#  For security reasons most files in firebird installation are
+#  root-owned and world-readable(executable) only (including firebird).
+
+#  For some files RunUser (firebird) must have write access - 
+#  lock and log for examples.
+
+MakeFileFirebirdWritable() {
+    FileName=$1
+    chown $RunUser:$RunUser $FileName
+    chmod 0644 $FileName
 }
 
 
@@ -718,84 +737,3 @@ removeEmptyDirs() {
 
       done
 }
-
-
-#------------------------------------------------------------------------
-#  fixFilePermissions
-#  Change the permissions to restrict access to server programs to 
-#  firebird group only.  This is MUCH better from a saftey point of 
-#  view than installing as root user, even if it requires a little 
-#  more work.
-
-fixFilePermissions() {
-    cd $FBRootDir
-
-    # For security reasons initially force all root:root non-writable
-    chown -R root:root $FBRootDir
-    chmod -R uga-w $FBRootDir
-
-	# Set up configuration files - make them root-writable
-    cd $FBRootDir
-	chmod u+w *.conf
-
-    # Prepare bin
-    cd $FBBin
-
-    # Everyone may execute clients
-    chmod a=rx *
-
-    # Shell scripts changing security attributes are for root only
-    chmod u=rx,go= *.sh
-    
-    # Lock files
-    cd $FBRootDir
-    for i in init1 lock1 event1 guard1 monitor1 sem1
-    do
-        FileName=isc_$i.`hostname`
-        touch $FileName
-        MakeFileFirebirdWritable $FileName
-    done
-
-	# Log file
-    touch firebird.log
-    MakeFileFirebirdWritable firebird.log
-    
-    # Security database
-    MakeFileFirebirdWritable $SecurityDatabase
-
-	# set up libraries - everyone may use them
-	cd $FBRootDir/lib
-	chmod a=rx lib*
-
-	# set up include files - everyone may use them
-	cd $FBRootDir/include
-	chmod a=r *
-
-	# fix up examples' permissions
-    cd $FBRootDir/examples
-    # set a default of read all files in examples
-    for i in `find . -name '*' -type f -print`
-    do
-         chmod a=r $i
-    done
-    # set a default of read&search all dirs in examples
-    for i in `find . -name '*' -type d -print`
-    do
-         chmod a=rx $i
-    done
-    # make examples DB(s) writable
-    for i in `find . -name '*.fdb' -print`
-    do
-		MakeFileFirebirdWritable $i
-    done
-
-	# fix up doc permissions
-	cd $FBRootDir
-	fixDocPermissions
-
-	# Architecture (CS/SS) specific permissions
-	cd $FBRootDir
-	fixArcSpecificPermissions
-	cd $FBRootDir
-}
-

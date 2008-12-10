@@ -22,10 +22,10 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
-
-
-
+ 
+ 
+ 
+ 
 
 #ifndef MEMORY_ROUTINES_H
 #define MEMORY_ROUTINES_H
@@ -39,7 +39,7 @@ inline void copy_toptr(void* to, const T from)
 #else
          *((T*) to) = from;
 #endif
-}
+} 
 
 template <typename T>
 inline void copy_fromptr(T& to, const void* from)
@@ -49,7 +49,7 @@ inline void copy_fromptr(T& to, const void* from)
 #else
          to = *(T*) from;
 #endif
-}
+} 
 
 
 
@@ -179,68 +179,6 @@ inline void put_long(UCHAR* p, SLONG value)
   p[1] = temp.c[1];
   p[2] = temp.c[2];
   p[3] = temp.c[3];
-#endif
-}
-
-inline void put_vax_short(UCHAR* p, USHORT value)
-{
-/**************************************
- *
- *      p u t _ v a x _ s h o r t
- *
- **************************************
- *
- * Functional description
- *    Store one unsigned short int as
- *    two chars in VAX format
- *
- **************************************/
-#ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(USHORT));
-#else
-  // big-endian
-  union {
-    USHORT n;
-    UCHAR c[2];
-  } temp;
-
-  temp.n = value;
-
-  p[0] = temp.c[1];
-  p[1] = temp.c[0];
-#endif
-}
-
-inline void put_vax_long(UCHAR* p, SLONG value)
-{
-/**************************************
- *
- *      p u t _ v a x _ l o n g
- *
- **************************************
- *
- * Functional description
- *    Store one signed long int as
- *    four chars in VAX format
- *
- **************************************/
-#ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(SLONG));
-#else
-  // big-endian
-  union {
-    SLONG n;
-    UCHAR c[4];
-  } temp;
-
-  temp.n = value;
-
-  p[0] = temp.c[3];
-  p[1] = temp.c[2];
-  p[2] = temp.c[1];
-  p[3] = temp.c[0];
 #endif
 }
 

@@ -34,7 +34,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../common/classes/init.h"
 
 #include <stdarg.h>
 #include "../jrd/ibase.h"
@@ -48,9 +47,8 @@
 
 #include "../jrd/event.h"
 #include "../jrd/alt_proto.h"
-#include "../jrd/constants.h"
 
-#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
+#if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
 #if !defined(BOOT_BUILD)
 static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
 #endif // BOOT_BUILD
@@ -78,7 +76,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 
 	va_start(ptr, count);
 
-/* calculate length of event parameter block,
+/* calculate length of event parameter block, 
    setting initial length to include version
    and counts for each argument */
 
@@ -119,9 +117,8 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 		const char* q = va_arg(ptr, SCHAR *);
 
 		/* Strip the blanks from the ends */
-		const char* end = q + strlen(q);
-		while (--end >= q && *end == ' ')
-			;
+		const char* end;
+		for (end = q + strlen(q); --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -142,7 +139,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
 {
 /**************************************
  *
- *	i s c _ e v e n t _ b l o c k _ a
+ *	i s c _ e v e n t _ b l o c k _ a 
  *
  **************************************
  *
@@ -155,7 +152,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
  **************************************/
 const int MAX_NAME_LENGTH		= 31;
 
-/* calculate length of event parameter block,
+/* calculate length of event parameter block, 
    setting initial length to include version
    and counts for each argument */
 
@@ -166,9 +163,8 @@ const int MAX_NAME_LENGTH		= 31;
 		const TEXT* const q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			;
+		const char* end;
+		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		length += end - q + 1 + 5;
 	}
 
@@ -200,9 +196,8 @@ const int MAX_NAME_LENGTH		= 31;
 		const TEXT* q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const char* end = q + MAX_NAME_LENGTH;
-		while (--end >= q && *end == ' ')
-			;
+		const char* end;
+		for (end = q + MAX_NAME_LENGTH; --end >= q && *end == ' ';);
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -244,17 +239,20 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 												 FB_API_HANDLE* tra_handle,
 												 SSHORT count, ...)
 {
-	// This infamous structure is defined several times in different places
-	struct teb_t {
-		FB_API_HANDLE* teb_database;
-		int teb_tpb_length;
-		UCHAR* teb_tpb;
-	};
+// This infamous structure is defined several times in different places/
+struct teb_t {
+	FB_API_HANDLE* teb_database;
+	int teb_tpb_length;
+	UCHAR* teb_tpb;
+};
 
 	teb_t tebs[16];
-	teb_t* teb = tebs;
+	teb_t* teb;
+	va_list ptr;
 
-	if (count > FB_NELEM(tebs))
+	if (count <= FB_NELEM(tebs))
+		teb = tebs;
+	else
 		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
 	/* FREE: later in this module */
 
@@ -266,7 +264,6 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(
 	}
 
 	const teb_t* const end = teb + count;
-	va_list ptr;
 	va_start(ptr, count);
 
 	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {
@@ -357,7 +354,7 @@ ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS* status_vector,
 									FB_API_HANDLE* tra_handle,
 									FB_API_HANDLE* blob_handle, GDS_QUAD* blob_id)
 {
-	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle,
+	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle, 
 						   blob_id);
 }
 
@@ -385,7 +382,7 @@ ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
 
 ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * status_vector,
 										FB_API_HANDLE* db_handle,
-										AttachmentCleanupRoutine *routine, void* arg)
+										AttachmentCleanupRoutine* routine, void* arg)
 {
 
 	return isc_database_cleanup(status_vector, db_handle, routine, arg);
@@ -484,7 +481,7 @@ ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS* status_vector,
 								  const SLONG* parameters,
 								  SLONG slice_length, void* slice)
 {
-	return isc_put_slice(status_vector, db_handle, tra_handle, array_id,
+	return isc_put_slice(status_vector, db_handle, tra_handle, array_id, 
 						 sdl_length, sdl, parameters_leng, parameters,
 						 slice_length, reinterpret_cast<SCHAR*>(slice));
 }
@@ -557,8 +554,8 @@ ISC_STATUS API_ROUTINE gds__send(ISC_STATUS* status_vector,
 							 SSHORT msg_length, const void* msg,
 							 SSHORT req_level)
 {
-	return isc_send(status_vector, req_handle, msg_type, msg_length,
-					static_cast<const SCHAR*>(msg), req_level);
+	return isc_send(status_vector, req_handle, msg_type, msg_length, 
+					(const SCHAR*) msg, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS* status_vector,
@@ -576,7 +573,7 @@ ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS * status_vector,
 									   FB_API_HANDLE* tra_handle,
 									   SSHORT db_count, void *teb_vector)
 {
-	return isc_start_multiple(status_vector, tra_handle, db_count,
+	return isc_start_multiple(status_vector, tra_handle, db_count, 
 							  (SCHAR *) teb_vector);
 }
 
@@ -702,6 +699,7 @@ SLONG API_ROUTINE isc_vax_integer(const SCHAR* input, SSHORT length)
 	return gds__vax_integer(reinterpret_cast<const UCHAR*>(input), length);
 }
 
+#ifndef REQUESTER
 ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 									  FB_API_HANDLE* db_handle,
 									  SSHORT events_length,
@@ -711,6 +709,7 @@ ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 	return isc_wait_for_event(status_vector, db_handle, events_length,
 						   events, events_update);
 }
+#endif
 
 /* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
 SLONG API_ROUTINE isc_interprete(SCHAR* buffer, ISC_STATUS** status_vector_p)
@@ -729,7 +728,9 @@ int API_ROUTINE gds__version(
 void API_ROUTINE gds__set_debug(int flag)
 {
 #ifndef SUPERCLIENT
+#ifndef REQUESTER
 	isc_set_debug(flag);
+#endif
 #endif
 }
 
@@ -836,30 +837,9 @@ int API_ROUTINE isc_blob_load(
 					  name_length);
 }
 
-void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
-// I believe noone could use this private API in his routines.
-// This requires knowledge about our descriptors, which are hardly usable
-// outside Firebird,	AP-2008.
-{
-	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
-}
-
-#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
-// AP: isc_*_user entrypoints are used only in any kind of embedded
+#if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
+// AP: isc_*_user entrypoints are used only in any kind of embedded 
 // server (both posix and windows) and fbclient
-
-#ifndef BOOT_BUILD
-namespace {
-	ISC_STATUS user_error(ISC_STATUS* vector, ISC_STATUS code)
-	{
-		vector[0] = isc_arg_gds;
-		vector[1] = code;
-		vector[2] = isc_arg_end;
-
-		return vector[1];
-	}
-}
-#endif // BOOT_BUILD
 
 // CVC: Who was the genius that named the input param "user_data" when the
 // function uses "struct user_data userInfo" to define a different variable type
@@ -888,7 +868,10 @@ return 1;
 
 	if (input_user_data->user_name) {
 		if (strlen(input_user_data->user_name) > 31) {
-			return user_error(status, isc_usrname_too_long);
+			status[0] = isc_arg_gds;
+			status[1] = isc_usrname_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
 		}
 		size_t l;
 		for (l = 0;
@@ -902,12 +885,18 @@ return 1;
 		userInfo.user_name_entered = true;
 	}
 	else {
-		return user_error(status, isc_usrname_required);
+		status[0] = isc_arg_gds;
+		status[1] = isc_usrname_required;
+		status[2] = isc_arg_end;
+		return status[1];
 	}
 
 	if (input_user_data->password) {
 		if (strlen(input_user_data->password) > 8) {
-			return user_error(status, isc_password_too_long);
+			status[0] = isc_arg_gds;
+			status[1] = isc_password_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
 		}
 		size_t l;
 		for (l = 0;
@@ -922,7 +911,10 @@ return 1;
 		userInfo.password_specified = true;
 	}
 	else {
-		return user_error(status, isc_password_required);
+		status[0] = isc_arg_gds;
+		status[1] = isc_password_required;
+		status[2] = isc_arg_end;
+		return status[1];
 	}
 
 
@@ -1026,7 +1018,10 @@ return 1;
 
 	if (input_user_data->user_name) {
 		if (strlen(input_user_data->user_name) > 32) {
-			return user_error(status, isc_usrname_too_long);
+			status[0] = isc_arg_gds;
+			status[1] = isc_usrname_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
 		}
 		size_t l;
 		for (l = 0;
@@ -1040,7 +1035,10 @@ return 1;
 		userInfo.user_name_entered = true;
 	}
 	else {
-		return user_error(status, isc_usrname_required);
+		status[0] = isc_arg_gds;
+		status[1] = isc_usrname_required;
+		status[2] = isc_arg_end;
+		return status[1];
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
@@ -1071,7 +1069,10 @@ return 1;
 
 	if (input_user_data->user_name) {
 		if (strlen(input_user_data->user_name) > 32) {
-			return user_error(status, isc_usrname_too_long);
+			status[0] = isc_arg_gds;
+			status[1] = isc_usrname_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
 		}
 		size_t l;
 		for (l = 0;
@@ -1085,12 +1086,18 @@ return 1;
 		userInfo.user_name_entered = true;
 	}
 	else {
-		return user_error(status, isc_usrname_required);
+		status[0] = isc_arg_gds;
+		status[1] = isc_usrname_required;
+		status[2] = isc_arg_end;
+		return status[1];
 	}
 
 	if (input_user_data->sec_flags & sec_password_spec) {
 		if (strlen(input_user_data->password) > 8) {
-			return user_error(status, isc_password_too_long);
+			status[0] = isc_arg_gds;
+			status[1] = isc_password_too_long;
+			status[2] = isc_arg_end;
+			return status[1];
 		}
 		size_t l;
 		for (l = 0;
@@ -1207,19 +1214,16 @@ static ISC_STATUS executeSecurityCommand(
 				status,
 				input_user_data->dba_user_name,
 				input_user_data->dba_password,
-				false,
-				input_user_data->protocol,
+				input_user_data->protocol, 
 				input_user_data->server);
 	if (handle)
 	{
-		static Firebird::GlobalPtr<Firebird::Mutex> secExecMutex;
-		static Firebird::GlobalPtr<Firebird::CircularStringsBuffer<1024> > secExecBuf;
-
 		callRemoteServiceManager(status, handle, userInfo, 0, 0);
-
-		{	// scope for MutexLockGuard
+		static Firebird::CircularStringsBuffer<1024> secExecBuf;
+		static Firebird::Mutex secExecMutex;
+		{
 			Firebird::MutexLockGuard lockMutex(secExecMutex);
-			secExecBuf->makePermanentVector(status, status);
+			secExecBuf.makePermanentVector(status, status);
 		}
 
 		ISC_STATUS_ARRAY user_status;
@@ -1231,4 +1235,4 @@ static ISC_STATUS executeSecurityCommand(
 
 #endif // BOOT_BUILD
 
-#endif // !defined(SUPERSERVER) || defined(SUPERCLIENT)
+#endif // !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)

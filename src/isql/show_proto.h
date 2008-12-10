@@ -27,12 +27,11 @@
 void	SHOW_comments(bool force);
 bool	SHOW_dbb_parameters (FB_API_HANDLE, SCHAR*, const SCHAR*, USHORT, bool);
 processing_state	SHOW_grants (const SCHAR*, const SCHAR*, USHORT);
-processing_state	SHOW_grants2 (const SCHAR*, const SCHAR*, USHORT, const TEXT*, bool);
+processing_state	SHOW_grants2 (const SCHAR*, const SCHAR*, USHORT, const TEXT*);
 void	SHOW_grant_roles (const SCHAR*, bool*);
-void	SHOW_grant_roles2 (const SCHAR*, bool*, const TEXT*, bool);
+void	SHOW_grant_roles2 (const SCHAR*, bool*, const TEXT*);
 void	SHOW_print_metadata_text_blob(FILE*, ISC_QUAD*, bool escape_squote = false);
 processing_state	SHOW_metadata(const SCHAR* const*, SCHAR**);
-void	SHOW_read_owner();
 
 #endif // ISQL_SHOW_PROTO_H
 

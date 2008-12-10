@@ -1,7 +1,7 @@
 /*
  *
- *	PROGRAM:		Firebird server manager
- *	MODULE:			ibmgr.cpp
+ *	PROGRAM:	InterBase server manager
+ *	MODULE:		ibmgr.cpp
  *	DESCRIPTION:	Main routine and parser
  *
  * The contents of this file are subject to the Interbase Public
@@ -71,9 +71,9 @@ const SSHORT ACT_PROMPT	= 2;
 
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);
-static SSHORT get_switches(int argc, TEXT** argv, const in_sw_tab_t* in_sw_table,
-						   ibmgr_data_t* ibmgr_data, bool* quitflag, bool zapPasswd);
-static SSHORT parse_cmd_line(int, TEXT**, bool);
+static SSHORT get_switches(int, const TEXT* const*, const in_sw_tab_t*,
+	ibmgr_data_t*, bool*);
+static SSHORT parse_cmd_line(int, const TEXT* const*);
 static void print_config(void);
 static void print_help(void);
 
@@ -95,16 +95,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	the specified argc/argv to IBMGR_exec_line (see below).
  *
  **************************************/
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
-	fprintf(stderr, "*** fbmgr is deprecated, will be removed soon ***\n");
-	gds__log("*** fbmgr is deprecated, will be removed soon ***");
 
 /* Let's see if we have something in
    environment variables
 */
 	Firebird::string user, password;
-	fb_utils::readenv(ISC_USER, user);
-	fb_utils::readenv(ISC_PASSWORD, password);
+	fb_utils::readenv("ISC_USER", user);
+	fb_utils::readenv("ISC_PASSWORD", password);
 
 	Firebird::string host;
 /* MMM - do not allow to change host now
@@ -155,7 +156,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 
 /* Shutdown is not in progress and we are not attached to service yet.
-   But obviously we will need attachment.
+   But obviously we will need attachment. 
 */
 	ibmgr_data.shutdown = false;
 	ibmgr_data.attached = 0;
@@ -173,13 +174,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (argc == 2 &&
 		*argv[1] == '-' && (argv[1][1] == 'Z' || argv[1][1] == 'z'))
 	{
-		parse_cmd_line(argc, argv, false);
+		parse_cmd_line(argc, argv);
 		argc--;
 	}
 
 	SSHORT ret;
 	if (argc > 1) {
-		ret = parse_cmd_line(argc, argv, true);
+		ret = parse_cmd_line(argc, argv);
 		if (ret == FB_SUCCESS) {
 			ret = SRVRMGR_exec_line(&ibmgr_data);
 			if (ret) {
@@ -201,12 +202,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	int local_argc;
 	SCHAR* local_argv[MAXARGS];
 	TEXT stuff[MAXSTUFF];
-
+	
 	for (;;) {
 		if (get_line(&local_argc, local_argv, stuff))
 			break;
 		if (local_argc > 1) {
-			ret = parse_cmd_line(local_argc, local_argv, false);
+			ret = parse_cmd_line(local_argc, local_argv);
 			if (ret == ACT_QUIT)
 				break;
 			if (ret == FB_SUCCESS) {
@@ -284,7 +285,8 @@ if (sw_service_gsec)
 				errno = 0;
 				continue;
 			}
-			return true;
+			else
+				return true;
 		}
 	}
 
@@ -295,9 +297,9 @@ if (sw_service_gsec)
 
 static SSHORT get_switches(
 						   int argc,
-						   TEXT** argv,
+						   const TEXT* const* argv,
 						   const in_sw_tab_t* in_sw_table,
-						   ibmgr_data_t* ibmgr_data, bool * quitflag, bool zapPasswd)
+						   ibmgr_data_t* ibmgr_data, bool * quitflag)
 {
 /**************************************
  *
@@ -323,7 +325,7 @@ static SSHORT get_switches(
 	*quitflag = false;
 	USHORT last_sw = IN_SW_IBMGR_0;
 	for (--argc; argc > 0; argc--) {
-		TEXT* string = *++argv;
+		const TEXT* string = *++argv;
 		if (*string == '?')
 			ibmgr_data->operation = OP_HELP;
 		else if (*string != '-') {
@@ -359,10 +361,6 @@ static SSHORT get_switches(
 
 				/* If the password is the same, do nothing
 				 */
-				if (zapPasswd)
-				{
-					string = fb_utils::get_passwd(string);
-				}
 				if (strcmp(ibmgr_data->password, string)) {
 					strcpy(ibmgr_data->password, string);
 					ibmgr_data->reattach |= REA_PASSWORD;
@@ -390,7 +388,7 @@ static SSHORT get_switches(
 				pf.copyTo(ibmgr_data->pidfile, sizeof(ibmgr_data->pidfile));
 				break;
 			}
-
+			
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVPAR, msg);
 				fprintf(OUTFILE, "%s\n", msg);
@@ -529,7 +527,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_HOST:
 
 				/* The above switches are separate case: they can be
-				   used as operation or parameter switches. If an
+				   used as operation or parameter switches. If an 
 				   operation has already been specified, we assume it
 				   is a switch else we set an implied operation type
 				   OP_SET.
@@ -592,7 +590,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_IGNORE:
 			case IN_SW_IBMGR_POOL:
 
-				/* These switches are operation modifiers or
+				/* These switches are operation modifiers or 
 				   suboperations. Each of them makes sense only
 				   in a contex of certain operation. So, let's
 				   make sure it is a right contex.
@@ -622,7 +620,7 @@ static SSHORT get_switches(
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-
+					
 					switch (in_sw)
 					{
 					case IN_SW_IBMGR_ONCE:
@@ -645,7 +643,7 @@ static SSHORT get_switches(
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-
+					
 					switch (in_sw)
 					{
 					case IN_SW_IBMGR_NOW:
@@ -681,7 +679,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_Z:
 
 				/* This is also a separate case - it could be
-				   operation switch or just switch. Also,
+				   operation switch or just switch. Also, 
 				   does not matter how many times version switch
 				   was specified, we output version only once
 				 */
@@ -702,17 +700,6 @@ static SSHORT get_switches(
 				SRVRMGR_msg_get(MSG_AMBSW, msg);
 				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
-
-			case IN_SW_IBMGR_PIDFILE:
-			{
-				if (ibmgr_data->pidfile[0])
-				{
-					SRVRMGR_msg_get(MSG_INVSWSW, msg);
-					fprintf(OUTFILE, "%s\n", msg);
-					return ERR_SYNTAX;
-				}
-				break;
-			}
 
 			default:
 #ifdef DEV_BUILD
@@ -823,7 +810,7 @@ static void print_help(void)
 }
 
 
-static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
+static SSHORT parse_cmd_line( int argc, const TEXT* const* argv)
 {
 /**************************************
  *
@@ -839,7 +826,7 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
  *
  *	returns:
  *
- *	    FB_SUCCESS   on normal completion,
+ *	    FB_SUCCESS   on normal completion, 
  *	    ACT_QUIT  if user chooses to quit
  *	    ACT_PROMT used by main() to switch into
  *	              the prompt mode
@@ -856,7 +843,7 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 	ibmgr_data.par_entered = 0;
 
 	SSHORT ret =
-		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
+		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag);
 	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);

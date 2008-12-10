@@ -28,7 +28,7 @@
 
 const int MAXSYMLEN	= 256;
 
-// Keywords
+// Keywords 
 
 typedef enum kwwords {
     KW_none = 0,
@@ -36,12 +36,12 @@ typedef enum kwwords {
     KW_continuation
 } KWWORDS;
 
-// Token block, used to hold a lexical token.
+// Token block, used to hold a lexical token. 
 
 typedef enum tok_t {
-    tok_ident,
-    tok_number,
-    tok_quoted,
+    tok_ident, 
+    tok_number, 
+    tok_quoted, 
     tok_punct,
     tok_eol,
     tok_eof
@@ -49,24 +49,24 @@ typedef enum tok_t {
 
 struct qli_tok {
     blk			tok_header;
-    TOK_T 		tok_type;		// type of token
-    qli_symbol*	tok_symbol;		// hash block if recognized
-    KWWORDS		tok_keyword;	// keyword number, if recognized
-    SLONG		tok_position;	// byte number in input stream
+    TOK_T 		tok_type;		// type of token 
+    qli_symbol*	tok_symbol;		// hash block if recognized 
+    KWWORDS		tok_keyword;	// keyword number, if recognized 
+    SLONG		tok_position;	// byte number in input stream 
     USHORT		tok_length;
-    //qli_tok*	tok_next;
-    //qli_tok*	tok_prior;
+    qli_tok*	tok_next;
+    qli_tok*	tok_prior;
     TEXT		tok_string [2];
 };
 
-// Input line control
+// Input line control 
 
 enum line_t {
     line_stdin,
     line_blob,
     line_file,
-    line_string
-    //, line_edit
+    line_string,
+    line_edit
 };
 
 struct qli_line {
@@ -79,7 +79,7 @@ struct qli_line {
     SLONG		line_position;
     FB_API_HANDLE line_source_blob;			// Blob handle
 	FILE*		line_source_file;			// File handle
-	line_t		line_type;
+    enum line_t	line_type;
     TEXT		line_data[256];
     TEXT		line_source_name[2];
 };

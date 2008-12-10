@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/** Added Jan 23 2003 Blas Rodriguez Somoza
+/** Added Jan 23 2003 Blas Rodriguez Somoza 
 CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 */
 #ifndef INTL_CHARSETS_H
@@ -90,12 +90,10 @@ CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 #define   CS_KOI8R              63	/* Russian KOI8R */
 #define   CS_KOI8U              64	/* Ukrainian KOI8U */
 
-#define   CS_WIN1258            65	/* Windows cp 1258  */
-
-#define   CS_TIS620             66	/* TIS620 */
-#define   CS_GBK                67	/* GBK */
-#define   CS_CP943C             68	/* CP943C */
+#define   CS_WIN1258            65	/* Windows cp 1257  */
 
 #define   CS_dynamic           127	/* Pseudo number for runtime charset */
+
+#define   CS_MAX_CS_NUMBER      65
 
 #endif /* INTL_CHARSETS_H */

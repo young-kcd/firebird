@@ -40,8 +40,8 @@ static const struct
 	USHORT code;
 } commands[] =
 {
-	{"INSTALL", 1, COMMAND_INSTALL},
-	{"REMOVE", 1, COMMAND_REMOVE},
+	{"INSTALL", 1, COMMAND_INSTALL}, 
+	{"REMOVE", 1, COMMAND_REMOVE}, 
 	{NULL, 0, 0}
 };
 
@@ -55,7 +55,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
  **************************************
  *
  * Functional description
- *	Install or remove Firebird.
+ *	Install or remove InterBase.
  *
  **************************************/
 	TEXT directory[MAXPATHLEN];

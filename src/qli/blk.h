@@ -43,7 +43,7 @@ BLKDEF (type_con, qli_const, 1)			// Constant block
 BLKDEF (type_itm, qli_print_item, 0)	// Print item
 BLKDEF (type_par, qli_par, 0)			// Parameter block
 BLKDEF (type_line, qli_line, 1)			// Input line block
-BLKDEF (type_brk, qli_brk, 0)
+BLKDEF (type_brk, qli_brk, 0) 
 BLKDEF (type_rpt, qli_rpt, 0)
 BLKDEF (type_pic, pics, 0)
 BLKDEF (type_prt, qli_prt, 0)

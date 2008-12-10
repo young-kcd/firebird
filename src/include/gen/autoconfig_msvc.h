@@ -66,6 +66,10 @@
 #pragma warning(disable:4996)  // 'identificator' was declared deprecated
 
 
+#ifndef _X86_
+#define _X86_
+#endif
+
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
 /* Headers */
@@ -89,7 +93,6 @@
 #define HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_PARAM_H
 #undef HAVE_SYS_IOCTL_H
-#define HAVE_LIMITS_H
 #define HAVE_SETJMP_H
 #define HAVE_STDARG_H
 #define HAVE_STDLIB_H
@@ -100,14 +103,14 @@
 #undef HAVE_EDITLINE_H
 #undef HAVE_TERMIO_H
 #undef HAVE_TERMIOS_H
-#undef HAVE_DIRENT_H
-#undef HAVE_SYS_NDIR_H
-#undef HAVE_SYS_DIR_H
-#undef HAVE_NDIR_H
+#undef HAVE_DIRENT_H 
+#undef HAVE_SYS_NDIR_H 
+#undef HAVE_SYS_DIR_H 
+#undef HAVE_NDIR_H 
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
-#undef HAVE_CRYPT_H
+#undef HAVE_CRYPT_H 
 #undef HAVE_NETCONFIG_H
 #undef HAVE_NETINET_IN_H
 #undef HAVE_RPC_RPC_H
@@ -137,12 +140,13 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
+#define vsnprintf _vsnprintf
 #define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB
 #undef HAVE_MMAP
 #undef HAVE_WORKING_VFORK
-#undef HAVE_SETPGRP
+#undef HAVE_SETPGRP 
 #undef HAVE_SETPGID
 #undef HAVE_GETPGRP
 #undef SETPGRP_VOID
@@ -165,14 +169,9 @@
 #undef HAVE_LOCALTIME_R
 #undef HAVE_GMTIME_R
 
-#if defined _MSC_VER && _MSC_VER < 1500
-#define vsnprintf _vsnprintf
-#endif
-
 
 /* Types */
 #undef HAVE_SOCKLEN_T
-#undef HAVE_INFINITY
 
 /* gettimeofday accepts second (timezone) argument */
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE
@@ -181,33 +180,21 @@
 #undef _FILE_OFFSET_BITS
 #undef _LARGE_FILES
 
-/* target architecture */
-#if defined(_M_IX86)
-/* sizeof(void *) */
+/* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
 #define SIZEOF_VOID_P 4
-/* alignment of long */
-#define FB_ALIGNMENT 4
-#elif defined(_M_AMD64)
-#define AMD64
-/* sizeof(void *) */
-#define SIZEOF_VOID_P 8
-/* alignment of long */
-#define FB_ALIGNMENT 8
-#else
-#error unknown target platform
-#endif
-
-/* sizeof(long) */
 #define SIZEOF_LONG 4
-
-/* alignment of double */
-#define FB_DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
 
 /* Is struct xdr_ops defined? */
 #undef HAVE_STRUCT_XDR_OPS
+
+/* alignment of long */
+#define ALIGNMENT 4
+
+/* alignment of double */
+#define DOUBLE_ALIGN 8
 
 /* Functions */
 #define snprintf _snprintf

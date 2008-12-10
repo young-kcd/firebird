@@ -25,32 +25,41 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../remote/remote.h"
-#include "../jrd/ThreadStart.h"
+#include "../jrd/thd.h"
 #include "../utilities/install/install_nt.h"
-#include "../remote/serve_proto.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../common/classes/init.h"
 
 #ifdef WIN_NT
 #include <windows.h>
 #endif
 
-const unsigned int SHUTDOWN_TIMEOUT = 10 * 1000;	// 10 seconds
+const int ERROR_BUFFER_LENGTH	= 1024;
+
+typedef struct thread {
+	struct thread *thread_next;
+	HANDLE thread_handle;
+} *THREAD;
 
 static void WINAPI control_thread(DWORD);
+static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
 
+static void parse_switch(const TEXT*, int*);
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
+static DWORD current_state;
 static ThreadEntryPoint* main_handler;
-static SERVICE_STATUS_HANDLE service_handle;
-static Firebird::GlobalPtr<Firebird::string> service_name;
-static Firebird::GlobalPtr<Firebird::string> mutex_name;
+static SERVICE_STATUS_HANDLE global_service_handle;
+static const TEXT* global_service_name;
 static HANDLE stop_event_handle;
+static MUTX_T thread_mutex[1];
+static THREAD threads;
 static HANDLE hMutex = NULL;
+static bool bGuarded = false;
 
 
 void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
@@ -66,8 +75,37 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	service_name->printf(REMOTE_SERVICE, name);
-	mutex_name->printf(GUARDIAN_MUTEX, name);
+	global_service_name = name;
+}
+
+
+void *CNTL_insert_thread(void)
+{
+/**************************************
+ *
+ *	C N T L _ i n s e r t _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	THREAD_ENTER();
+	THREAD new_thread = (THREAD) ALLR_alloc((SLONG) sizeof(struct thread));
+/* NOMEM: ALLR_alloc() handled */
+/* FREE:  in CTRL_remove_thread() */
+
+	THREAD_EXIT();
+	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
+					DUPLICATE_SAME_ACCESS);
+
+	THD_mutex_lock(thread_mutex);
+	new_thread->thread_next = threads;
+	threads = new_thread;
+	THD_mutex_unlock(thread_mutex);
+
+	return new_thread;
 }
 
 
@@ -82,9 +120,26 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * Functional description
  *
  **************************************/
-	service_handle = RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
-	if (!service_handle)
+	global_service_handle =
+		RegisterServiceCtrlHandler(global_service_name, control_thread);
+	if (!global_service_handle)
 		return;
+
+#if (defined SUPERCLIENT || defined SUPERSERVER)
+	int flag = SRVR_multi_client;
+#else
+	int flag = 0;
+#endif
+
+/* Parse the command line looking for any additional arguments. */
+
+	argv++;
+
+	while (--argc) {
+		const TEXT* p = *argv++;
+		if (*p++ == '-') // replaced assignment by comparison
+			parse_switch(p, &flag);
+	}
 
 	int status = 1;
 	DWORD temp = 0;
@@ -92,7 +147,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(main_handler, NULL, 0, 0, 0)
+		!gds__thread_start(main_handler, (void *) flag, 0, 0, 0)
 		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		status = 0;
@@ -105,12 +160,64 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 
 	if (stop_event_handle)
 		CloseHandle(stop_event_handle);
+/* set the status with the timer, start the cleanup thread and wait for the
+ * cleanup thread to exit or the timer to expire, once we reach the max number
+ * of loops or the thread exits set the state to shutdown and exit */
+	HANDLE cleanup_thread_handle;
+	if (gds__thread_start(cleanup_thread, NULL, THREAD_medium, 0, 
+		&cleanup_thread_handle) != 0) 
+	{
+		last_error = GetLastError();
+		report_status(SERVICE_STOPPED, last_error, 0, 0);
+		return;
+	}
 
-	report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, SHUTDOWN_TIMEOUT);
+	DWORD count = 1;
+	DWORD return_from_wait;
 
-	fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_svc_stopped);
+	do {
+		count++;
+		report_status(SERVICE_STOP_PENDING, NO_ERROR, count, 60000);
+		return_from_wait = WaitForSingleObject(cleanup_thread_handle, 50000);
+	} while (count < 10 && return_from_wait == WAIT_TIMEOUT);
+/* loop for 10 times about 7 minutes should be enough time for the server to
+ * cleanup */
+
+/* TMN 29 Jul 2000 - close the thread handle */
+	CloseHandle(cleanup_thread_handle);
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
+}
+
+
+void CNTL_remove_thread( void *thread)
+{
+/**************************************
+ *
+ *	C N T L _ r e m o v e _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	THD_mutex_lock(thread_mutex);
+	for (THREAD* thread_ptr = &threads;
+		 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
+	{
+		if (*thread_ptr == (THREAD) thread) {
+			*thread_ptr = ((THREAD) thread)->thread_next;
+			break;
+		}
+	}
+	THD_mutex_unlock(thread_mutex);
+
+	THREAD this_thread = (THREAD) thread;
+	CloseHandle(this_thread->thread_handle);
+
+	THREAD_ENTER();
+	ALLR_free(thread);
+	THREAD_EXIT();
 }
 
 
@@ -127,10 +234,10 @@ void CNTL_shutdown_service( const TEXT* message)
  **************************************/
 	const char* strings[2];
 
-	char buffer[BUFFER_LARGE];
-	sprintf(buffer, "%s error: %lu", service_name->c_str(), GetLastError());
+	char buffer[BUFFER_SMALL];
+	sprintf(buffer, "%s error: %lu", REMOTE_SERVICE, GetLastError());
 
-	HANDLE event_source = RegisterEventSource(NULL, service_name->c_str());
+	HANDLE event_source = RegisterEventSource(NULL, REMOTE_SERVICE);
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
@@ -166,9 +273,8 @@ static void WINAPI control_thread( DWORD action)
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
-	case SERVICE_CONTROL_SHUTDOWN:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
-		if (hMutex)
+		if (bGuarded == true)
 			ReleaseMutex(hMutex);
 		SetEvent(stop_event_handle);
 		return;
@@ -176,15 +282,18 @@ static void WINAPI control_thread( DWORD action)
 	case SERVICE_CONTROL_INTERROGATE:
 		break;
 
+#if (defined SUPERCLIENT || defined SUPERSERVER)
 	case SERVICE_CREATE_GUARDIAN_MUTEX:
-		hMutex = OpenMutex(SYNCHRONIZE, FALSE, mutex_name->c_str());
+		hMutex = OpenMutex(SYNCHRONIZE, FALSE, GUARDIAN_MUTEX);
 		if (hMutex) {
 			UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 				SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
 			SetErrorMode(error_mode);
+			bGuarded = true;
 			WaitForSingleObject(hMutex, INFINITE);
 		}
 		break;
+#endif
 
 	default:
 		break;
@@ -192,6 +301,101 @@ static void WINAPI control_thread( DWORD action)
 
 	report_status(state, NO_ERROR, 0, 0);
 }
+
+static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
+{
+/**************************************
+ *
+ *	c l e a n u p _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	This thread is responsible for the cleanup.
+ *
+ **************************************/
+	USHORT attach_count, database_count;
+	TEXT return_buffer[ERROR_BUFFER_LENGTH], *buff_ptr = return_buffer;
+
+// find out if we have any attachments 
+// if we do then log a message to the log file
+	JRD_num_attachments(return_buffer, ERROR_BUFFER_LENGTH, JRD_info_dbnames,
+						&attach_count, &database_count);
+
+// if we have active attachments then log messages
+	if (attach_count > 0) {
+		TEXT print_buffer[ERROR_BUFFER_LENGTH], *print_ptr;
+		sprintf(print_buffer,
+				"Shutting down the Firebird service with %d active connection(s) to %d database(s)",
+				attach_count, database_count);
+		gds__log(print_buffer);
+
+		TEXT out_message[ERROR_BUFFER_LENGTH + 100];
+		// just get the ushort value and increment it by a ushort length
+		const USHORT num_databases = * (USHORT *) buff_ptr;
+		buff_ptr += sizeof(USHORT);
+		for (USHORT i = 0; i < num_databases; i++) {
+			const USHORT database_name_length = * (USHORT *) buff_ptr;
+			buff_ptr += sizeof(USHORT);
+			print_ptr = print_buffer;
+			for (USHORT j = 0; j < database_name_length; j++)
+				*print_ptr++ = *buff_ptr++;
+			*print_ptr = '\0';
+			sprintf(out_message,
+					"The database %s was being accessed when the server was shutdown",
+					print_buffer);
+			gds__log(out_message);
+		}
+	}
+
+	JRD_shutdown_all(false);
+	return 0;
+}
+
+
+static void parse_switch( const TEXT* switches, int* flag)
+{
+/**************************************
+ *
+ *	p a r s e _ s w i t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	TEXT c;
+
+	while (c = *switches++)
+		switch (UPPER(c)) {
+		case 'B':
+			*flag |= SRVR_high_priority;
+			break;
+
+		case 'I':
+			*flag |= SRVR_inet;
+			break;
+
+		case 'R':
+			*flag &= ~SRVR_high_priority;
+			break;
+
+		case 'W':
+			*flag |= SRVR_wnet;
+			break;
+
+		case 'X':
+			*flag |= SRVR_xnet;
+			break;
+		}
+
+#if (defined SUPERCLIENT || defined SUPERSERVER)
+	*flag |= SRVR_multi_client;
+#else
+	*flag &= ~SRVR_multi_client;
+#endif
+}
+
 
 static USHORT report_status(
 							DWORD state,
@@ -217,14 +421,15 @@ static USHORT report_status(
 	else
 		status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
 
-	status.dwCurrentState = state;
+	status.dwCurrentState = current_state = state;
 	status.dwWin32ExitCode = exit_code;
 	status.dwCheckPoint = checkpoint;
 	status.dwWaitHint = hint;
 
-	const USHORT ret = SetServiceStatus(service_handle, &status);
+	const USHORT ret = SetServiceStatus(global_service_handle, &status);
 	if (!ret)
 		CNTL_shutdown_service("SetServiceStatus");
 
 	return ret;
 }
+

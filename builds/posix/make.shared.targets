@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: make.shared.targets,v 1.21 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 
 
@@ -40,11 +41,18 @@
 # MOD 07-Oct-2002
 
 # This rule creates parse.cpp from parse.y 
+# The intermediate files dsql.tab.c dsql.tab.h and parse.cpp are generated 
+# and are also stored in the CVS tree. MOD 7-Oct-2002
 
-$(SRC_ROOT)/dsql/parse.cpp $(SRC_ROOT)/dsql/dsql.tab.h: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
-	$(BTYACC) -l -d -S $(SRC_ROOT)/dsql/btyacc_fb.ske $<
-	$(MV) $(GEN_ROOT)/y_tab.c $(SRC_ROOT)/dsql/parse.cpp
-	$(MV) $(GEN_ROOT)/y_tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+$(SRC_ROOT)/dsql/parse.cpp: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/parse.sed
+	$(YACC) -l -d $<
+	$(MV) $(GEN_ROOT)/y.tab.c $(SRC_ROOT)/dsql/dsql.tab.c
+	$(MV) $(GEN_ROOT)/y.tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+	sed -e 's/\\r//g' $(SRC_ROOT)/dsql/parse.sed > $(SRC_ROOT)/dsql/parse2.sed
+	sed -f $(SRC_ROOT)/dsql/parse2.sed <$(SRC_ROOT)/dsql/dsql.tab.c > $@  
+	-$(RM) $(SRC_ROOT)/dsql/parse2.sed
+
+
 
 
 # gpre_meta needs a special boot build since there is no database.
@@ -67,27 +75,20 @@ help.fdb:
 
 
 # These need to change to $(GEN_SRC) at some stage
-#$(SRC_ROOT)/dudley/exe.cpp $(SRC_ROOT)/dudley/extract.epp:      yachts.lnk
+$(SRC_ROOT)/dudley/exe.cpp $(SRC_ROOT)/dudley/extract.epp:      yachts.lnk
 
-#$(SRC_ROOT)/qli/meta.cpp $(SRC_ROOT)/qli/proc.cpp $(SRC_ROOT)/qli/show.cpp: yachts.lnk
-#$(SRC_ROOT)/qli/help.cpp:        help.fdb
+$(SRC_ROOT)/qli/meta.cpp $(SRC_ROOT)/qli/proc.cpp $(SRC_ROOT)/qli/show.cpp: yachts.lnk
+$(SRC_ROOT)/qli/help.cpp:        help.fdb
 
 # Explicit dependence on generated header
 $(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
-
-# Special cases for building cpp from epp
-$(OBJ)/dsql/metd.cpp: $(SRC_ROOT)/dsql/metd.epp
-	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) -cxx $< $@
-
-$(OBJ)/dsql/DdlNodes.cpp: $(SRC_ROOT)/dsql/DdlNodes.epp
-	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
 
 # Rebuild blrtable.h
 $(SRC_ROOT)/include/gen/blrtable.h: $(BLRTABLE)
 	$(BLRTABLE) > $(SRC_ROOT)/include/gen/blrtable.h
 
 $(BLRTABLE): $(BLRTABLE_Objects)
-	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	$(CXX) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 
 # Adding resources as prerequisite for some files
 

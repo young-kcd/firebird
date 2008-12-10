@@ -28,6 +28,7 @@
 
 // This is really funny: class rse is not defined here but in exe.h!!!
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../common/classes/array.h"
@@ -36,8 +37,6 @@
 #include "../jrd/dsc.h"
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
-
-#include "../jrd/RecordBuffer.h"
 
 struct dsc;
 
@@ -73,9 +72,7 @@ enum rsb_t
 	rsb_ext_dbkey,						// external DB_KEY access
 	rsb_navigate,						// navigational walk on an index
 	rsb_left_cross,						// left outer join as a nested loop
-	rsb_procedure,						// stored procedure
-	rsb_virt_sequential,				// sequential access to a virtual table
-	rsb_recurse							// Recursive union
+	rsb_procedure						// stored procedure
 };
 
 
@@ -144,7 +141,7 @@ const int RSB_LEFT_count			= 4;
 // Merge (equivalence) file block
 
 struct merge_file {
-	TempSpace*	mfb_space;				// merge file uses SORT I/O routines
+	sort_work_file*	mfb_sfb;			// merge file uses SORT I/O routines
 	ULONG mfb_equal_records;			// equality group cardinality
 	ULONG mfb_record_size;				// matches sort map length
 	ULONG mfb_current_block;			// current merge block in buffer
@@ -155,84 +152,50 @@ struct merge_file {
 
 const ULONG MERGE_BLOCK_SIZE	= 65536;
 
-// forward declaration
-struct irsb_recurse;
-
-class RSBRecurse
-{
-public:
-	static void open(thread_db*, RecordSource*, irsb_recurse*);
-	static bool get(thread_db*, RecordSource*, irsb_recurse*);
-	static void close(thread_db*, RecordSource*, irsb_recurse*);
-
-	enum mode {
-		root,
-		recurse
-	};
-
-	static const USHORT MAX_RECURSE_LEVEL;
-};
 
 // Impure area formats for the various RecordSource types
 
-struct irsb
-{
+struct irsb {
 	ULONG irsb_flags;
 	USHORT irsb_count;
 };
 
 typedef irsb *IRSB;
 
-struct irsb_recurse
-{
-	ULONG	irsb_flags;
-	USHORT	irsb_level;
-	RSBRecurse::mode irsb_mode;
-	char*	irsb_stack;
-	char*	irsb_data;
-};
-
-struct irsb_first_n
-{
+struct irsb_first_n {
 	ULONG irsb_flags;
 	//SLONG irsb_number;
     SINT64 irsb_count;
 };
 
-struct irsb_skip_n
-{
+struct irsb_skip_n {
     ULONG irsb_flags;
     //SLONG irsb_number;
     SINT64 irsb_count;
 };
 
-struct irsb_index
-{
+struct irsb_index {
 	ULONG irsb_flags;
 	//SLONG irsb_number;
 	SLONG irsb_prefetch_number;
 	RecordBitmap**	irsb_bitmap;
 };
 
-struct irsb_sort
-{
+struct irsb_sort {
 	ULONG irsb_flags;
 	sort_context*	irsb_sort_handle;
 };
 
-struct irsb_procedure
-{
+struct irsb_procedure {
 	ULONG 		irsb_flags;
 	jrd_req*	irsb_req_handle;
 	VaryingString*		irsb_message;
 };
 
-struct irsb_mrg
-{
+struct irsb_mrg {
 	ULONG irsb_flags;
 	USHORT irsb_mrg_count;				// next stream in group
-	struct irsb_mrg_repeat
-	{
+	struct irsb_mrg_repeat {
 		SLONG irsb_mrg_equal;			// queue of equal records
 		SLONG irsb_mrg_equal_end;		// end of the equal queue
 		SLONG irsb_mrg_equal_current;	// last fetched record from equal queue
@@ -242,15 +205,8 @@ struct irsb_mrg
 	} irsb_mrg_rpt[1];
 };
 
-struct irsb_virtual
-{
-	ULONG irsb_flags;
-	RecordBuffer* irsb_record_buffer;
-};
-
 /* CVC: Unused as of Nov-2005.
-struct irsb_sim
-{
+struct irsb_sim {
 	ULONG irsb_flags;
 	USHORT irsb_sim_rid;				// next relation id
 	USHORT irsb_sim_fid;				// next field id
@@ -264,11 +220,10 @@ const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
 */
 
 // impure area format for navigational rsb type,
-// which holds information used to get back to
+// which holds information used to get back to 
 // the current location within an index
 
-struct irsb_nav
-{
+struct irsb_nav {
 	ULONG irsb_flags;
 	SLONG irsb_nav_expanded_offset;			// page offset of current index node on expanded index page
 	RecordNumber irsb_nav_number;			// last record number
@@ -303,18 +258,17 @@ const ULONG irsb_singular_processed = 256;	// singleton stream already delivered
 const ULONG irsb_last_backwards = 512;		// rsb was last scrolled in the backward direction
 const ULONG irsb_bof = 1024;				// rsb is at beginning of stream
 const ULONG irsb_eof = 2048;				// rsb is at end of stream
+// Obsolete: they belonged to PC_ENGINE.
+//const ULONG irsb_crack = 4096;				// the record at our current position is missing
+//const ULONG irsb_forced_crack = 8192;		// the above-mentioned crack was forced by user
+//const ULONG irsb_refresh = 16384;			// enter records into refresh range
 #endif
-const ULONG irsb_key_changed = 4096;		// key has changed since record last returned from rsb
-// The below flag duplicates the one from the disabled SCROLLABLE_CURSORS
-// implementation, but it's used slightly differently (at the top RSB levels).
-// To be renamed if the SCROLLABLE_CURSORS code will ever be enabled.
-const ULONG irsb_eof = 8192;				// rsb is at end of stream
+const ULONG irsb_key_changed = 32768;		// key has changed since record last returned from rsb
 
 
 // Sort map block
 
-struct smb_repeat
-{
+struct smb_repeat {
 	DSC smb_desc;				// relative descriptor
 	USHORT smb_flag_offset;		// offset of missing flag
 	USHORT smb_stream;			// stream for field id
@@ -336,19 +290,17 @@ public:
 
 // values for smb_field_id
 
-const SSHORT SMB_DBKEY = -1;		// dbkey value
-const SSHORT SMB_DBKEY_VALID = -2;	// dbkey valid flag
-const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
+const SSHORT SMB_DBKEY = -1;	// dbkey value
+const SSHORT SMB_TRANS_ID = -2;	// transaction id of record
 
 // bits for the smb_flags field
 
-const USHORT SMB_project = 1;		// sort is really a project
-//const USHORT SMB_tag = 2;			// beast is a tag sort. What is this?
-const USHORT SMB_unique_sort = 4;	// sorts using unique key - for distinct and group by
+const USHORT SMB_project = 1;	// sort is really a project
+//const USHORT SMB_tag = 2;		// beast is a tag sort. What is this?
 
 
 // Blocks used to compute optimal join order:
-// indexed relationships block (IRL) holds
+// indexed relationships block (IRL) holds 
 // information about potential join orders
 
 class IndexedRelationship : public pool_alloc<type_irl>
@@ -377,7 +329,7 @@ const int MAX_STREAMS	= 255;
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
 const int OPT_STREAM_BITS	= 8;
 
-// Number of streams, conjuncts, indices that will be statically allocated
+// Number of streams, conjuncts, indices that will be statically allocated 
 // in various arrays. Larger numbers will have to be allocated dynamically
 const int OPT_STATIC_ITEMS = 16;
 
@@ -397,25 +349,22 @@ public:
 	//USHORT opt_g_flags;						// global flags
 	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
 	// This is nothing compared to original Firebird 1.5 OptimizerBlk structure size of ~180k
-	// All other arrays had been converted to dynamic to preserve memory
+	// All other arrays had been converted to dynamic to preserve memory 
 	// and improve performance
-	struct opt_segment
-	{
+	struct opt_segment {
 		// Index segments and their options
 		jrd_nod* opt_lower;			// lower bound on index value
 		jrd_nod* opt_upper;			// upper bound on index value
 		jrd_nod* opt_match;			// conjunct which matches index segment
 	} opt_segments[MAX_INDEX_SEGMENTS];
-	struct opt_conjunct
-	{
+	struct opt_conjunct {
 		// Conjunctions and their options
 		jrd_nod* opt_conjunct_node;	// conjunction
 		// Stream dependencies to compute conjunct
 		ULONG opt_dependencies[(MAX_STREAMS + 1) / 32];
 		UCHAR opt_conjunct_flags;
 	};
-	struct opt_stream
-	{
+	struct opt_stream {
 		// Streams and their options
 		IndexedRelationship* opt_relationships;	// streams directly reachable by index
 		double opt_best_stream_cost;			// best cost of retrieving first n = streams
@@ -425,7 +374,7 @@ public:
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
-	OptimizerBlk(MemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
+	OptimizerBlk(JrdMemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
 };
 
 // values for opt_stream_flags
@@ -459,8 +408,7 @@ public:
 
 // types for navigating through a stream
 
-enum rse_get_mode
-{
+enum rse_get_mode {
 	RSE_get_forward
 #ifdef SCROLLABLE_CURSORS
 	,

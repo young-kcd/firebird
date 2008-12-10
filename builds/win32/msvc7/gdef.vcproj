@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gdef/gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gdef/"
 				ObjectFile="..\..\..\temp\debug\gdef/"
@@ -94,7 +94,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gdef\gdef.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gdef/"
 				ObjectFile="..\..\..\temp\release\gdef/"
@@ -182,6 +182,9 @@
 		<Filter
 			Name="JRD files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\jrd\iberr.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>

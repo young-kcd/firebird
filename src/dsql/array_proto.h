@@ -53,7 +53,7 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS*, const SCHAR*, const SCHAR
 #ifdef __cplusplus
 }   /* extern "C"  */
 #endif
-
+											
 
 #endif // DSQL_ARRAY_PROTO_H
 

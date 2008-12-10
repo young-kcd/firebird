@@ -24,15 +24,18 @@
 #ifndef DUDLEY_DDL_PROTO_H
 #define DUDLEY_DDL_PROTO_H
 
-#include "../common/classes/SafeArg.h"
-
 UCHAR*		DDL_alloc(int);
-int			DDL_db_error(ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-int			DDL_err(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void		DDL_error_abort(ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+int			DDL_db_error(ISC_STATUS*, USHORT, const TEXT*, const TEXT*,
+						 const TEXT*, const TEXT*, const TEXT*);
+int			DDL_err(USHORT, const TEXT*, const TEXT*, const TEXT*, 
+					const TEXT*, const TEXT*);
+void		DDL_error_abort(ISC_STATUS*, USHORT, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*, const TEXT*);
 void		DDL_exit(int);
-void		DDL_msg_partial(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void		DDL_msg_put(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+void		DDL_msg_partial(USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
+void		DDL_msg_put(USHORT, const TEXT*, const TEXT*, const TEXT*,
+						const TEXT*, const TEXT*);
 DUDLEY_NOD	DDL_pop(dudley_lls**);
 void		DDL_push(DUDLEY_NOD, dudley_lls**);
 bool		DDL_yes_no(USHORT);

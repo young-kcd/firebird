@@ -1,110 +1,201 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="8,00"
 	Name="gpre_static"
 	ProjectGUID="{ED16DC25-8671-4898-B28C-64BFD44D0EF8}"
-	SccProjectName=""
-	SccLocalPath="">
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory=".\..\..\..\temp\release\gpre_static"
+			IntermediateDirectory=".\..\..\..\temp\release\gpre_static"
 			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName=".\..\..\..\temp\release\gpre_static/gpre_static.tlb"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHc- "
 				Optimization="4"
-				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="TRUE"
+				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
-				RuntimeTypeInfo="TRUE"
-				BrowseInformation="1"/>
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				PrecompiledHeaderFile=".\..\..\..\temp\release\gpre_static/gpre_static.pch"
+				AssemblerListingLocation=".\..\..\..\temp\release\gpre_static/"
+				ObjectFile=".\..\..\..\temp\release\gpre_static/"
+				ProgramDataBaseFileName=".\..\..\..\temp\release\gpre_static/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1053"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\release\firebird/bin/gpre_static.exe"
 				LinkIncremental="1"
-				SubSystem="1"/>
-			<Tool
-				Name="VCMIDLTool"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile=".\..\..\..\temp\release\gpre_static/gpre_static.pdb"
+				SubSystem="1"
 			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCWebDeploymentTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory=".\..\..\..\temp\debug\gpre_static"
+			IntermediateDirectory=".\..\..\..\temp\debug\gpre_static"
 			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName=".\..\..\..\temp\debug\gpre_static/gpre_static.tlb"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
-				RuntimeTypeInfo="TRUE"
-				BrowseInformation="1"/>
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				RuntimeTypeInfo="true"
+				PrecompiledHeaderFile=".\..\..\..\temp\debug\gpre_static/gpre_static.pch"
+				AssemblerListingLocation=".\..\..\..\temp\debug\gpre_static/"
+				ObjectFile=".\..\..\..\temp\debug\gpre_static/"
+				ProgramDataBaseFileName=".\..\..\..\temp\debug\gpre_static/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1053"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\debug\firebird/bin/gpre_static.exe"
 				LinkIncremental="1"
-				SubSystem="1"/>
-			<Tool
-				Name="VCMIDLTool"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=".\..\..\..\temp\debug\gpre_static/gpre_static.pdb"
+				SubSystem="1"
 			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCWebDeploymentTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -112,203 +203,266 @@
 	<Files>
 		<Filter
 			Name="COMMON files"
-			Filter="cpp;c">
+			Filter="cpp;c"
+			>
 			<File
-				RelativePath="..\..\..\src\common\utils.cpp">
+				RelativePath="..\..\..\src\common\utils.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="GPRE files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+			>
 			<File
-				RelativePath="..\..\..\src\gpre\ada.cpp">
+				RelativePath="..\..\..\src\gpre\ada.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\c_cxx.cpp">
+				RelativePath="..\..\..\src\gpre\c_cxx.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cmd.cpp">
+				RelativePath="..\..\..\src\gpre\cmd.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cme.cpp">
+				RelativePath="..\..\..\src\gpre\cme.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cmp.cpp">
+				RelativePath="..\..\..\src\gpre\cmp.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cob.cpp">
+				RelativePath="..\..\..\src\gpre\cob.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\exp.cpp">
+				RelativePath="..\..\..\src\gpre\exp.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\ftn.cpp">
+				RelativePath="..\..\..\src\gpre\ftn.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\gpre.cpp">
+				RelativePath="..\..\..\src\gpre\gpre.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\hsh.cpp">
+				RelativePath="..\..\..\src\gpre\hsh.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\int_cxx.cpp">
+				RelativePath="..\..\..\src\gpre\int_cxx.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\jrdmet.cpp">
+				RelativePath="..\..\..\src\gpre\jrdmet.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\movg.cpp">
+				RelativePath="..\..\..\src\gpre\movg.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\msc.cpp">
+				RelativePath="..\..\..\src\gpre\msc.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\par.cpp">
+				RelativePath="..\..\..\src\gpre\par.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\pas.cpp">
+				RelativePath="..\..\..\src\gpre\pas.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\pat.cpp">
+				RelativePath="..\..\..\src\gpre\pat.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\pretty.cpp">
+				RelativePath="..\..\..\src\gpre\pretty.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\sqe.cpp">
+				RelativePath="..\..\..\src\gpre\sqe.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\sql.cpp">
+				RelativePath="..\..\..\src\gpre\sql.cpp"
+				>
 			</File>
 			<Filter
 				Name="epp files"
-				Filter="epp">
+				Filter="epp"
+				>
 				<File
-					RelativePath="..\..\..\src\gpre\gpre_meta.epp">
+					RelativePath="..\..\..\src\gpre\gpre_meta.epp"
+					>
 				</File>
 			</Filter>
 			<Filter
 				Name="Generated files"
-				Filter="">
+				>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\gpre\gpre_meta.cpp">
+					RelativePath="..\..\..\gen\gpre\gpre_meta.cpp"
+					>
 				</File>
 			</Filter>
 		</Filter>
 		<Filter
 			Name="JRD files"
-			Filter="h;c">
+			Filter="h;c"
+			>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc.cpp">
+				RelativePath="..\..\..\src\jrd\dsc.cpp"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc.h">
+				RelativePath="..\..\..\src\jrd\dsc.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc_pub.h">
+				RelativePath="..\..\..\src\jrd\dsc_pub.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\isc.cpp">
+				RelativePath="..\..\..\src\jrd\isc.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
-			Filter="h;hpp;hxx;hm;inl">
+			Filter="h;hpp;hxx;hm;inl"
+			>
 			<File
-				RelativePath="..\..\..\src\gpre\cdbtable.h">
+				RelativePath="..\..\..\src\gpre\cdbtable.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cmd_proto.h">
+				RelativePath="..\..\..\src\gpre\cmd_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cme_proto.h">
+				RelativePath="..\..\..\src\gpre\cme_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\cmp_proto.h">
+				RelativePath="..\..\..\src\gpre\cmp_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\dyntable.h">
+				RelativePath="..\..\..\src\gpre\dyntable.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\exp_proto.h">
+				RelativePath="..\..\..\src\gpre\exp_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\gpre.h">
+				RelativePath="..\..\..\src\gpre\gpre.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\gpre_meta.h">
+				RelativePath="..\..\..\src\gpre\gpre_meta.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\gpre_proto.h">
+				RelativePath="..\..\..\src\gpre\gpre_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\gpreswi.h">
+				RelativePath="..\..\..\src\gpre\gpreswi.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\hsh.h">
+				RelativePath="..\..\..\src\gpre\hsh.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\hsh_proto.h">
+				RelativePath="..\..\..\src\gpre\hsh_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\jrdme_proto.h">
+				RelativePath="..\..\..\src\gpre\jrdme_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\lang_proto.h">
+				RelativePath="..\..\..\src\gpre\lang_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\movg_proto.h">
+				RelativePath="..\..\..\src\gpre\movg_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\msc_proto.h">
+				RelativePath="..\..\..\src\gpre\msc_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\par_proto.h">
+				RelativePath="..\..\..\src\gpre\par_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\parse.h">
+				RelativePath="..\..\..\src\gpre\parse.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\pat.h">
+				RelativePath="..\..\..\src\gpre\pat.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\pat_proto.h">
+				RelativePath="..\..\..\src\gpre\pat_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\prett_proto.h">
+				RelativePath="..\..\..\src\gpre\prett_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\sdltable.h">
+				RelativePath="..\..\..\src\gpre\sdltable.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\sqe_proto.h">
+				RelativePath="..\..\..\src\gpre\sqe_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\sql_proto.h">
+				RelativePath="..\..\..\src\gpre\sql_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\utils_proto.h">
+				RelativePath="..\..\..\src\common\utils_proto.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\gpre\words.h">
+				RelativePath="..\..\..\src\gpre\words.h"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource files"
-			Filter="">
+			>
 			<File
-				RelativePath="..\..\..\src\jrd\version.rc">
+				RelativePath="..\..\..\src\jrd\version.rc"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\progs\firebird\firebird2\src\jrd;$(NoInherit)"/>
+						AdditionalIncludeDirectories="\progs\firebird\firebird2\src\jrd;$(NoInherit)"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\progs\firebird\firebird2\src\jrd;$(NoInherit)"/>
+						AdditionalIncludeDirectories="\progs\firebird\firebird2\src\jrd;$(NoInherit)"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>

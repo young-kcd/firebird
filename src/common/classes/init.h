@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	Common Access Method
+ *	PROGRAM:	JRD Access Method
  *	MODULE:		init.h
  *	DESCRIPTION:	InitMutex, InitInstance - templates to help with initialization
  *
@@ -27,137 +27,80 @@
 #ifndef CLASSES_INIT_INSTANCE_H
 #define CLASSES_INIT_INSTANCE_H
 
-#include "fb_types.h"
-#include "../common/classes/alloc.h"
-
 namespace Firebird {
-
-// Support for common mutex for various inits
-
-class StaticMutex
-{
-protected:
-	static Mutex* mutex;
-public:
-	static void create();
-	static void release();
-};
-
-// InstanceControl - interface for almost all global variables
-
-class InstanceControl : private StaticMutex
-{
-public:
-	InstanceControl();
-	static void destructors();
-	static void registerGdsCleanup(FPTR_VOID cleanup);
-	static void registerShutdown(FPTR_VOID shutdown);
-protected:
-	virtual void dtor() = 0;
-private:
-	static InstanceControl* instanceList;
-	static FPTR_VOID gdsCleanup;
-	static FPTR_VOID gdsShutdown;
-	InstanceControl* next;
-};
-
-// GlobalPtr - template to help declaring global varables
-
-template <typename T>
-class GlobalPtr : private InstanceControl
-{
-private:
-	T* instance;
-	void dtor()
-	{
-		delete instance;
-		instance = 0;
-	}
-public:
-	GlobalPtr()
-		: InstanceControl()
-	{
-		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
-		// This means - for objects with ctors/dtors that want to be global,
-		// provide ctor with MemoryPool& parameter. Even if it is ignored!
-	}
-	T* operator->() throw()
-	{
-		return instance;
-	}
-	operator T&() throw()
-	{
-		return *instance;
-	}
-	T* operator&() throw()
-	{
-		return instance;
-	}
-};
 
 // InitMutex - executes static void C::init() once and only once
 
 template <typename C>
-class InitMutex : private StaticMutex
-{
+class InitMutex : private Mutex {
 private:
 	volatile bool flag;
 public:
-	InitMutex()
-		: flag(false) { }
-	void init()
-	{
+	InitMutex() : flag(false) { }
+	void init() {
 		if (!flag) {
-			MutexLockGuard guard(*mutex);
-			if (!flag) {
-				C::init();
-				flag = true;
+			try {
+				enter();
+				if (!flag) {
+					C::init();
+					flag = true;
+				}
+			} catch(const std::exception&) {
+				leave();
+				throw;
 			}
+			leave();
 		}
-	}
-	void cleanup()
-	{
+	} 
+	void cleanup() {
 		if (flag) {
-			MutexLockGuard guard(*mutex);
-			if (flag) {
-				C::cleanup();
-				flag = false;
+			try {
+				enter();
+				if (flag) {
+					C::cleanup();
+					flag = false;
+				}
+			} catch(const std::exception&) {
+				leave();
+				throw;
 			}
+			leave();
 		}
-	}
+	} 
 };
 
 // InitInstance - initialize pointer to class once and only once,
 // DefaultInit uses default memory pool for it.
 
 template <typename T>
-class DefaultInit
-{
+class DefaultInit {
 public:
-	static T* init()
-	{
+	static T* init() {
 		return FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 	}
 };
 
-template <typename T,
-	typename I = DefaultInit<T> >
-class InitInstance : private StaticMutex
-{
+template <typename T, 
+	typename C = DefaultInit<T> >
+class InitInstance : private Mutex {
 private:
 	T* instance;
 	volatile bool flag;
 public:
-	InitInstance()
-		: flag(false) { }
-	T& operator()()
-	{
+	InitInstance<T, C>() : flag(false) { }
+	T& operator()() {
 		if (!flag) {
-			MutexLockGuard guard(*mutex);
-			if (!flag) {
-				instance = I::init();
-				flag = true;
+			try {
+				enter();
+				if (!flag) {
+					instance = C::init();
+					flag = true;
+				}
+			} catch(const std::exception&) {
+				leave();
+				throw;
 			}
+			leave();
 		}
 		return *instance;
 	}

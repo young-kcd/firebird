@@ -42,17 +42,17 @@ class ParsedPath : public ObjectsArray<PathName>
 public:
 	explicit ParsedPath(MemoryPool& p) : ObjectsArray<PathName>(p) { }
 	ParsedPath(MemoryPool& p, const PathName& path)
-		: ObjectsArray<PathName>(p)
-	{
+		: ObjectsArray<PathName>(p) 
+	{ 
 		parse(path);
 	}
 	ParsedPath() : ObjectsArray<PathName>() { }
 	explicit ParsedPath(const PathName& path)
-		: ObjectsArray<PathName>()
-	{
+		: ObjectsArray<PathName>() 
+	{ 
 		parse(path);
 	}
-	// Take new path inside
+		// Take new path inside
 	void parse(const PathName& path);
 	// Convert internal representation to traditional one
 	operator PathName() const;
@@ -66,74 +66,98 @@ public:
 	// possible symbolic links.
 	bool contains(const ParsedPath& pPath) const;
 	// Returns path, containing elements from 0 to n-1
-	PathName subPath(size_t n) const;
+	PathName subPath(int n) const;
 };
 
-
-class DirectoryList : public ObjectsArray<ParsedPath>
-{
+	
+class DirectoryList : public ObjectsArray<ParsedPath> {
 private:
 	typedef ObjectsArray<ParsedPath> inherited;
 	// ListMode must be changed together with ListKeys in dir_list.cpp
-	enum ListMode {NotInitialized = -1,
+	enum ListMode {NotInitialized = -1, 
 		None = 0, Restrict = 1, Full = 2, SimpleList = 3};
 	ListMode mode;
-	// Check, whether Value begins with Key,
+	// Check, whether Value begins with Key, 
 	// followed by any character from Next.
 	// If Next is empty, Value shoult exactly match Key.
 	// If Key found, sets Mode to KeyMode and returns true.
-	bool keyword(const ListMode keyMode, PathName& value,
+	bool keyword(const ListMode keyMode, PathName& value, 
 		PathName key, PathName next);
 protected:
 	// Clear allocated memory and reinitialize
-	void clear(void)
-	{
-		((inherited*) this)->clear();
+	void clear(void) {
+		((inherited*)this)->clear();
 		mode = NotInitialized;
 	}
-	// Used for various configuration parameters -
+	// Used for various configuration parameters - 
 	// returns parameter PathName from Config Manager.
 	virtual const PathName getConfigString(void) const = 0;
 	// Initialize loads data from Config Manager.
-	// With simple mutex add-on may be easily used to
+	// With simple mutex add-on may be easily used to 
 	// load them dynamically. Now called locally
 	// when IsPathInList() invoked first time.
 	void initialize(bool simple_mode = false);
 public:
-	explicit DirectoryList(MemoryPool& p)
+	explicit DirectoryList(MemoryPool& p) 
 		: ObjectsArray<ParsedPath>(p), mode(NotInitialized) { }
-	DirectoryList()
+	DirectoryList() 
 		: ObjectsArray<ParsedPath>(), mode(NotInitialized) { }
 	virtual ~DirectoryList() {clear();}
 
 	// Check, whether Path is inside this DirectoryList
 	bool isPathInList(const PathName& path) const;
 
-	// Search for file Name in all directories of DirectoryList.
-	// If found, return full path to it in Path.
+	// Search for file Name in all direcories of DirectoryList.
+	// If found, return full path to it in Path. 
 	// Otherwise Path = Name.
-	bool expandFileName(PathName& path, const PathName& name) const;
+	bool expandFileName(PathName& path, 
+						const PathName& name) const;
 
 	// Use first directory in this directory list
 	// to build default full name for a file
-	bool defaultName(PathName& path, const PathName& name) const;
+	bool defaultName(PathName& path, 
+						const PathName& name) const;
 };
 
-class TempDirectoryList : public DirectoryList {
+class TempDirectoryList : protected DirectoryList {
+	typedef DirectoryList inherited;
 public:
-	explicit TempDirectoryList(MemoryPool& p)
-		: DirectoryList(p)
+	// directory list item(s)
+	typedef Pair<Left<PathName, size_t> > Item;
+	typedef ObjectsArray<Item> Items;
+
+	// public functions
+	const Item& operator[](size_t i) const
 	{
-		initialize(true);
+		return items[i];
+	}
+	int Count() const
+	{
+		return items.getCount();
+	}
+
+	explicit TempDirectoryList(MemoryPool& p) 
+		: DirectoryList(p), items(p)
+	{
+		initTemp();
 	}
 	TempDirectoryList()
 	{
-		initialize(true);
+		initTemp();
+	}
+	~TempDirectoryList() {
+		items.clear();
 	}
 
 private:
 	// implementation of the inherited function
 	const PathName getConfigString() const;
+	
+	// private data
+	Items items;
+
+	// load items from DirectoryList
+	void initTemp();
 };
 
 } //namespace Firebird

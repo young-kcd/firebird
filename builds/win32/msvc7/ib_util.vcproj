@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IB_UTIL_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\release\ib_util/"
 				ObjectFile="..\..\..\temp\release\ib_util/"
@@ -98,7 +98,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\ib_util/ib_util.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\ib_util/"
 				ObjectFile="..\..\..\temp\debug\ib_util/"
@@ -156,7 +156,7 @@
 			Name="EXTLIB files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\extlib\ib_util.cpp">
+				RelativePath="..\..\..\src\extlib\ib_util.c">
 			</File>
 		</Filter>
 		<Filter

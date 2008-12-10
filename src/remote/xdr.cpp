@@ -29,9 +29,27 @@
 #include "../remote/remote.h"
 #include "../remote/xdr.h"
 #include "../jrd/common.h"
+#include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
+
+// 30 Dec 2002. Nickolay Samofatov 
+// This needs to be checked for all supported platforms
+// The simpliest way to check it is to issue
+// "select abs(2.0/3.0) from rdb$database" from correct client
+// It will return big strange value in case of invalid define
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64)
+#define		SWAP_DOUBLE
+#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX)
+#undef		SWAP_DOUBLE
+#else
+#error "Define SWAP_DOUBLE for your platform correctly !"
+#endif
+
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
+#endif
 
 #ifdef BURP
 #include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
@@ -65,9 +83,8 @@ inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULON
 #endif /* DEBUG_XDR_MEMORY */
 
 /* Sun's XDR documentation says this should be "MAXUNSIGNED", but
-   for Firebird purposes, limiting strings to 65K is more than
+   for InterBase purposes, limiting strings to 65K is more than
    sufficient. */
-// This setting may be related to our max DSQL statement size.
 
 const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 
@@ -207,7 +224,7 @@ bool_t xdr_bytes(XDR * xdrs,
 {
 /**************************************
  *
- *	x d r _ b y t e s
+ *	x d r _ b y t e s 
  *
  **************************************
  *
@@ -275,30 +292,71 @@ bool_t xdr_double(XDR * xdrs, double *ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+#ifdef VAX_FLOAT
+	SSHORT t1;
+#endif
 	union {
 		double temp_double;
 		SLONG temp_long[2];
+		SSHORT temp_short[4];
 	} temp;
-
-	fb_assert(sizeof(double) == sizeof(temp));
 
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
-		if (PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) &&
-			PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
+#ifdef VAX_FLOAT
+		if (temp.temp_double != 0)
+			temp.temp_short[0] -= 0x20;
+		t1 = temp.temp_short[0];
+		temp.temp_short[0] = temp.temp_short[1];
+		temp.temp_short[1] = t1;
+		t1 = temp.temp_short[2];
+		temp.temp_short[2] = temp.temp_short[3];
+		temp.temp_short[3] = t1;
+#endif
+#ifdef SWAP_DOUBLE
+		if (PUTLONG(xdrs, &temp.temp_long[1]) &&
+			PUTLONG(xdrs, &temp.temp_long[0]))
 		{
 			return TRUE;
 		}
 		return FALSE;
+#else
+		if (PUTLONG(xdrs, &temp.temp_long[0]) &&
+			PUTLONG(xdrs, &temp.temp_long[1]))
+		{
+			return TRUE;
+		}
+		return FALSE;
+#endif
 
 	case XDR_DECODE:
-		if (!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) ||
-			!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
+#ifdef SWAP_DOUBLE
+		if (!GETLONG(xdrs, &temp.temp_long[1]) ||
+			!GETLONG(xdrs, &temp.temp_long[0]))
 		{
 			return FALSE;
 		}
+#else
+		if (!GETLONG(xdrs, &temp.temp_long[0]) ||
+			!GETLONG(xdrs, &temp.temp_long[1]))
+		{
+			return FALSE;
+		}
+#endif
+#ifdef VAX_FLOAT
+		t1 = temp.temp_short[0];
+		temp.temp_short[0] = temp.temp_short[1];
+		temp.temp_short[1] = t1;
+		t1 = temp.temp_short[2];
+		temp.temp_short[2] = temp.temp_short[3];
+		temp.temp_short[3] = t1;
+		if (!temp.temp_long[1] && !(temp.temp_long[0] ^ 0x8000))
+			temp.temp_long[0] = 0;
+		else if (temp.temp_long[1] || temp.temp_long[0])
+			temp.temp_short[0] += 0x20;
+#endif
 		*ip = temp.temp_double;
 		return TRUE;
 
@@ -308,6 +366,42 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 
 	return FALSE;
 }
+
+
+#ifdef VMS
+bool_t xdr_d_float(xdrs, ip)
+	 XDR *xdrs;
+	 double *ip;
+{
+/**************************************
+ *
+ *	x d r _ d _ f l o a t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map from external to internal representation (or vice versa).
+ *
+ **************************************/
+	double temp;
+
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		temp = MTH$CVT_D_G(ip);
+		return xdr_double(xdrs, &temp);
+
+	case XDR_DECODE:
+		if (!xdr_double(xdrs, ip))
+			return FALSE;
+		*ip = MTH$CVT_G_D(ip);
+		return TRUE;
+
+	case XDR_FREE:
+		return TRUE;
+	}
+}
+#endif
 
 
 bool_t xdr_enum(XDR * xdrs, enum_t * ip)
@@ -356,14 +450,51 @@ bool_t xdr_float(XDR * xdrs, float *ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+#ifdef VAX_FLOAT
+	SSHORT t1;
+	union {
+		float temp_float;
+		SLONG temp_long;
+		USHORT temp_short[2];
+	} temp;
+#endif
+
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
+#ifdef VAX_FLOAT
+		temp.temp_float = *ip;
+		if (temp.temp_float)
+		{
+			t1 = temp.temp_short[0];
+			temp.temp_short[0] = temp.temp_short[1];
+			temp.temp_short[1] = t1 - 0x100;
+		}
+		if (!PUTLONG(xdrs, &temp))
+			return FALSE;
+		return TRUE;
+#else
 		return PUTLONG(xdrs, reinterpret_cast<SLONG*>(ip));
+#endif
 
 	case XDR_DECODE:
+#ifdef VAX_FLOAT
+		if (!GETLONG(xdrs, &temp))
+			return FALSE;
+		if (!(temp.temp_long ^ 0x80000000))
+			temp.temp_long = 0;
+		else if (temp.temp_long)
+		{
+			t1 = temp.temp_short[1];
+			temp.temp_short[1] = temp.temp_short[0];
+			temp.temp_short[0] = t1 + 0x100;
+		}
+		*ip = temp.temp_float;
+		return TRUE;
+#else
 #pragma FB_COMPILER_MESSAGE("BUGBUG! No way float* and SLONG* are compatible!")
 		return GETLONG(xdrs, reinterpret_cast<SLONG*>(ip));
+#endif
 
 	case XDR_FREE:
 		return TRUE;
@@ -716,7 +847,7 @@ int xdr_union(	XDR*			xdrs,
 	// can have any size.
 	int enum_value = *dscmp;
 	const bool_t bOK = xdr_int(xdrs, &enum_value);
-	*dscmp = static_cast<enum_t>(enum_value);
+	*dscmp = static_cast < enum_t >(enum_value);
 
 	if (!bOK)
 	{
@@ -853,28 +984,6 @@ static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
 	xdrs->x_private = (SCHAR *) p;
 
 	return TRUE;
-}
-
-
-SLONG getOperation(const void* data, size_t size)
-{
-/**************************************
- *
- *	g e t O p e r a t i o n
- *
- **************************************
- *
- * Functional description
- *	Fetch an operation from buffer in network format
- *
- **************************************/
-	if (size < sizeof(SLONG))
-	{
-		return op_void;
-	}
-
-	const SLONG* p = (SLONG*) data;
-	return ntohl(*p);
 }
 
 

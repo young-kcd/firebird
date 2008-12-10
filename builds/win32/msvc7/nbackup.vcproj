@@ -28,7 +28,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\nbackup/nbackup.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\nbackup/"
 				ObjectFile="..\..\..\temp\debug\nbackup/"
@@ -95,7 +95,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,SUPERCLIENT,CLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\nbackup/nbackup.pch"
 				AssemblerListingLocation="..\..\..\temp\release\nbackup/"
 				ObjectFile="..\..\..\temp\release\nbackup/"
@@ -178,6 +178,16 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="COMMON files"
+			Filter="">
+			<File
+				RelativePath="..\..\..\src\common\config\config.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\config\config_file.cpp">
 			</File>
 		</Filter>
 	</Files>

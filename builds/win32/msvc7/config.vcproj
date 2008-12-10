@@ -33,7 +33,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB;NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\config/common.pch"
 				AssemblerListingLocation="..\..\..\temp\release\config/"
 				ObjectFile="..\..\..\temp\release\config/"
@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\debug\config/config.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\config/"
@@ -180,6 +180,9 @@
 			Name="Vulcan files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\vulcan\JString.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\vulcan\PathName.cpp">
 			</File>
 			<File
@@ -189,6 +192,9 @@
 		<Filter
 			Name="Header files"
 			Filter="h">
+			<File
+				RelativePath="..\..\..\src\vulcan\JString.h">
+			</File>
 			<File
 				RelativePath="..\..\..\src\vulcan\PathName.h">
 			</File>

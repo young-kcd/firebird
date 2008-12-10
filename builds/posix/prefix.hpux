@@ -19,7 +19,7 @@
 #
 # compile flags for GCC compiler
 
-PROD_FLAGS= -pipe -fPIC -O3 -MMD -DNDEBUG -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED -D_REENTRANT -march=2.0
+PROD_FLAGS= -pipe -fPIC -O3 -MMD -DNDEBUG -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED -march=2.0
 DEV_FLAGS= -ggdb -pipe -fPIC -MMD -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED -D_REENTRANT -march=2.0 
 #Extra modules needed on this platform during bootstrap
 JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
@@ -31,11 +31,10 @@ LIB_LINK_RPATH:=  -Wl,+b
 LIB_LINK_SONAME:= -Wl,+h
 LIB_LINK_MAPFILE= -Wl,-c
 LINK_FBINTL_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.hpux.vers
-LINK_IBUTIL_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.hpux.vers
 LINK_FIREBIRD_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.hpux.vers
 
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fbguard fb_lock_print fbsvcmgr
-CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec nbackup fbguard fbmgr_bin fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec nbackup fbguard fbmgr_bin fb_lock_print
 
 Physical_IO_Module=unix.cpp
 

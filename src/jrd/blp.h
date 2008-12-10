@@ -17,7 +17,6 @@
  * Contributor(s): ______________________________________.
  *
  * 2001.07.28: John Bellardo: Added skip and current_role to table.
- * Adriano dos Santos Fernandes
  */
 static const struct
 {
@@ -71,7 +70,7 @@ static const struct
 	{"via", three},
 	{"user_name", zero},
 	{"null", zero},
-	{"equiv", two},
+	{NULL, NULL},
 	{"eql", two},
 	{"neq", two},
 	{"gtr", two},
@@ -196,15 +195,11 @@ static const struct
 	{"cursor_stmt", cursor_stmt},
 	{"current_timestamp2", byte},
 	{"current_time2", byte},
-	{"agg_list", two}, // 170
-	{"agg_list_distinct", two},
-	/***
 	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
-	{"gen_id2", gen_id},
+	{"agg_average_distinct2", one},	// 170
+	{"average2", two}, 
+	{"gen_id2", gen_id}, 
 	{"set_generator2", gen_id},
-	***/
-	{"modify2", modify2},
-	{NULL, NULL},
 	// New BLR in FB1
 	{"current_role", zero},
 	{"skip", one},
@@ -217,16 +212,6 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
-	// New BLR in FB2.1
-	{"init_variable", variable},
-	{"recurse", union_ops},
-	{"sys_function", function},
-	// New BLR in FB2.5
-	{"auto_trans", byte_verb},
-	{"similar", similar},
-	{"exec_stmt", exec_stmt},
-	{"stmt_expr", two},
-	{"derived_expr", derived_expr},
 	{0, 0}
 };
 

@@ -28,8 +28,9 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
+#include "../jrd/smp_impl.h"
+#include "../jrd/thd.h"
 #include "../jrd/sha.h"
-#include "gen/iberror.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -40,12 +41,9 @@ const size_t MAX_PASSWORD_LENGTH = 64;		// used to store passwords internally
 static const char* PASSWORD_SALT  = "9z";	// for old ENC_crypt()
 const size_t SALT_LENGTH = 12;				// measured after base64 coding
 
-namespace Jrd {
-
 class SecurityDatabase
 {
-	struct user_record
-	{
+	struct user_record {
 		SLONG gid;
 		SLONG uid;
 		SSHORT flag;
@@ -53,9 +51,16 @@ class SecurityDatabase
 	};
 
 public:
+
 	static void getPath(TEXT* path_buffer)
 	{
-		static const char* USER_INFO_NAME = "security2.fdb";
+		static const char* USER_INFO_NAME =
+#ifdef VMS
+					"[sysmgr]security2.fdb";
+#else
+					"security2.fdb";
+#endif
+
 		gds__prefix(path_buffer, USER_INFO_NAME);
 	}
 
@@ -64,8 +69,8 @@ public:
 	static void verifyUser(Firebird::string&, const TEXT*, const TEXT*, const TEXT*,
 		int*, int*, int*, const Firebird::string&);
 
-	static void hash(Firebird::string& h,
-					 const Firebird::string& userName,
+	static void hash(Firebird::string& h, 
+					 const Firebird::string& userName, 
 					 const TEXT* passwd)
 	{
 		Firebird::string salt;
@@ -73,8 +78,8 @@ public:
 		hash(h, userName, passwd, salt);
 	}
 
-	static void hash(Firebird::string& h,
-					 const Firebird::string& userName,
+	static void hash(Firebird::string& h, 
+					 const Firebird::string& userName, 
 					 const TEXT* passwd,
 					 const Firebird::string& oldHash)
 	{
@@ -88,69 +93,49 @@ public:
 	}
 
 private:
+
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	Firebird::Mutex mutex;
+	V4Mutex mutex;
 
 	ISC_STATUS_ARRAY status;
 
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;
 
+	static const bool is_cached;
+
 	int counter;
 
 	void fini();
 	void init();
 	bool lookup_user(const TEXT*, int*, int*, TEXT*);
-	void prepare();
-	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
+	bool prepare();
 
 	static SecurityDatabase instance;
 
-	SecurityDatabase()
-		: lookup_db(0), lookup_req(0), counter(0)
-	{}
-
-public:
-	// Shuts SecurityDatabase in case of errors during attach or create.
-	// When attachment is created, control is passed to it using clear.
-	class InitHolder
+	SecurityDatabase() 
 	{
-	public:
-		InitHolder()
-			: shutdown(true)
-		{
-			SecurityDatabase::initialize();
-		}
-
-		void clear()
-		{
-			shutdown = false;
-		}
-
-		~InitHolder()
-		{
-			if (shutdown)
-			{
-				SecurityDatabase::shutdown();
-			}
-		}
-
-	private:
-		bool shutdown;
-	};
+		lookup_db = 0;
+	}
 };
 
-class DelayFailedLogin : public Firebird::Exception
+namespace Jrd {
+
+class DelayFailedLogin : public Firebird::status_exception
 {
 private:
 	int seconds;
-
 public:
-	explicit DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
-
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer* sb = NULL) const throw();
+	explicit DelayFailedLogin(int sec) throw()
+		: Firebird::status_exception(), seconds(sec) 
+	{
+		ISC_STATUS temp[] = {isc_arg_gds, 
+							isc_login,
+							isc_arg_end};
+		set_status(temp, false);
+	}
 	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
 	static void raise(int sec);
 	void sleep() const;
@@ -159,4 +144,4 @@ public:
 
 } // namespace Jrd
 
-#endif // JRD_PWD_H
+#endif /* JRD_PWD_H */

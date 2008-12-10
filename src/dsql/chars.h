@@ -29,9 +29,7 @@ const SCHAR CHR_WHITE		= 16;
 const SCHAR CHR_HEX			= 32;
 const SCHAR CHR_INTRODUCER	= 64;
 
-// Use the functions at the end of this file; do not reference the array directly.
-
-static const SCHAR classes_array[] = {
+static const SCHAR classes[] = {
 /* 000     */ 0,
 /* 001     */ 0,
 /* 002     */ 0,
@@ -289,14 +287,4 @@ static const SCHAR classes_array[] = {
 /* 254     */ 0,
 /* 255     */ 0
 };
-
-inline SCHAR classes(int idx)
-{
-	return classes_array[(UCHAR) idx];
-}
-
-inline SCHAR classes(UCHAR idx)
-{
-	return classes_array[idx];
-}
 

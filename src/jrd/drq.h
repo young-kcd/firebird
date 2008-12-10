@@ -44,7 +44,7 @@
 #ifndef JRD_DRQ_H
 #define JRD_DRQ_H
 
-#define DYN_REQUEST(drt) dbb->dbb_dyn_req[drt]
+#define DYN_REQUEST(drt) (*dbb->dbb_dyn_req)[drt]
 
 const int drq_l_prot_mask	= 0;	/* lookup protection mask */
 const int drq_l_user_name	= 1;	/* lookup user name */
@@ -131,13 +131,13 @@ const int drq_e_prcs			= 81;	/* erase procedure */
 const int drq_e_prms			= 82;	/* erase all of procedure's parameters */
 const int drq_s_prm_src		= 83;	/* store parameter global field */
 const int drq_s_intl_info	= 84;	/* store RDB$CHARACTER_FIELDS */
-const int drq_m_prcs		= 85;	/* modify procedure */
+const int drq_m_prcs			= 85;	/* modify procedure */
 const int drq_s_log_files	= 86;	/* store log files */
 const int drq_s_cache		= 87;	/* store cache  */
 const int drq_e_prm			= 88;	/* erase a procedure parameter */
 const int drq_s_xcp			= 89;	/* store an exception */
 const int drq_m_xcp			= 90;	/* modify an exception */
-const int drq_e_prc_prvs	= 91;	/* erase user privileges on procedure */
+const int drq_e_prc_prvs		= 91;	/* erase user privileges on procedure */
 const int drq_e_prc_prv		= 92;	/* erase procedure's privileges  */
 const int drq_e_trg_prv		= 93;	/* erase trigger's privileges */
 const int drq_d_log			= 94;	/* drop log */
@@ -163,18 +163,18 @@ const int drq_gcg2			= 113;	/* grantor_can_grant */
 const int drq_gcg3			= 114;	/* grantor_can_grant */
 const int drq_gcg4			= 115;	/* grantor_can_grant */
 const int drq_gcg5			= 116;	/* grantor_can_grant */
-const int drq_l_view_idx	= 117;	/* table is view? */
+const int drq_l_view_idx		= 117;	/* table is view? */
 const int drq_role_gens		= 118;	/* store SQL role */
 const int drq_get_role_nm	= 119;	/* get SQL role */
 const int drq_get_role_au	= 120;	/* get SQL role auth */
-const int drq_del_role_1	= 121;	/* delete SQL role from rdb$user_privilege */
+const int drq_del_role_1		= 121;	/* delete SQL role from rdb$user_privilege */
 const int drq_drop_role		= 122;	/* delete SQL role from rdb$roles */
 const int drq_get_rel_owner	= 123;	/* get the owner of any relations */
 const int drq_get_user_priv	= 124;	/* get the grantor of user privileges or
 										the user who was granted the privileges */
 const int drq_g_rel_constr_nm= 125;	/* get relation constraint name */
 const int drq_e_rel_const	= 126;	/* erase relation constraints */
-const int drq_e_gens		= 127;	/* erase generators */
+const int drq_e_gens			= 127;	/* erase generators */
 const int drq_s_f_class		= 128;	/* set the security class name for a field */
 const int drq_s_u_class		= 129;	/* find a unique security class name for a field */
 const int drq_l_difference	= 130;	/* Look up a backup difference file */
@@ -191,31 +191,9 @@ const int drq_m_gen         = 140;  // modify generator
 const int drq_m_prm         = 141;  // modify procedure's parameter
 const int drq_m_rol         = 142;  // modify sql role
 const int drq_m_view        = 143;  // modify view
-const int drq_s_colls		= 144;  // store collations
-const int drq_l_charset		= 145;	// lookup charset
-const int drq_dom_is_array 	= 146;  // lookup domain to see if it's an array
-const int drq_l_rel_info	= 147;	// lookup name and flags of one master relation
-const int drq_l_rel_info2	= 148;	// lookup names and flags of all master relations
-const int drq_l_rel_type	= 149;	// lookup relation type
-const int drq_e_colls		= 150;	// erase collations
-const int drq_l_rfld_coll	= 151;	// lookup relation field collation
-const int drq_l_fld_coll	= 152;	// lookup field collation
-const int drq_l_prp_src		= 153;	// lookup a procedure parameter source
-const int drq_s_prms2		= 154;	// store parameters (ODS 11.1)
-const int drq_l_prm_coll	= 155;	// lookup procedure parameter collation
-const int drq_s_prms3		= 156;	// store parameters (ODS 11.2)
-const int drq_d_gfields2	= 157;	// drop a global field for procedure param (ODS 11.2)
-const int drq_m_map			= 158;  // modify os=>db names mapping
-const int drq_l_idx_name	= 159;	// lookup index name
-const int drq_l_collation	= 160;	// lookup character set
-const int drq_m_charset		= 161;	// modify character set
-const int drq_g_nxt_gen_id	= 162;	// generate next generator id
-const int drq_g_nxt_prc_id	= 163;	// generate next procedure id
-const int drq_g_nxt_xcp_id	= 164;	// generate next exception id
-const int drq_l_xcp_name	= 165;	// lookup exception name
-const int drq_l_gen_name	= 166;	// lookup generator name
-const int drq_e_grant3		= 167;	// revoke all on all
-const int drq_MAX			= 168;
+const int drq_s_colls		= 144;  /* store collations */
+const int drq_l_colls		= 145;	/* lookup collations */
+const int drq_dom_is_array  = 146;  // lookup domain to see if it's an array
+const int drq_MAX			= 147;
 
 #endif /* JRD_DRQ_H */
-

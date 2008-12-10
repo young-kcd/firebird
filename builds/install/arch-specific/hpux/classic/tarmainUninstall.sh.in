@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarmainUninstall.sh.in,v 1.2 2008-01-07 12:25:47 paulbeach Exp $
+#   $Id: tarmainUninstall.sh.in,v 1.1.2.1 2008-01-07 11:29:35 paulbeach Exp $
 # 
 
 #  Install script for FirebirdSQL database engine

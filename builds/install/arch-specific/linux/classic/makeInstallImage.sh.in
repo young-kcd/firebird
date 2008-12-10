@@ -1,26 +1,37 @@
 #!/bin/sh
+#  This library is part of the FirebirdSQL project
 #
-#  The contents of this file are subject to the Initial
-#  Developer's Public License Version 1.0 (the "License");
-#  you may not use this file except in compliance with the
-#  License. You may obtain a copy of the License at
-#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
-#
-#  Software distributed under the License is distributed AS IS,
-#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
-#  See the License for the specific language governing rights
-#  and limitations under the License.
-#
-#  The Original Code was created by Mark O'Donohue
-#  for the Firebird Open Source RDBMS project.
-#
-#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#  and all contributors signed below.
-#
-#  All Rights Reserved.
-#  Contributor(s): ______________________________________.
-#		Alex Peshkoff
-#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#  You may obtain a copy of the Licence at
+#  http://www.gnu.org/licences/lgpl.html
+#  
+#  As a special exception this file can also be included in modules
+#  with other source code as long as that source code has been 
+#  released under an Open Source Initiative certificed licence.  
+#  More information about OSI certification can be found at: 
+#  http://www.opensource.org 
+#  
+#  This module is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public Licence for more details.
+#  
+#  This module was created by members of the firebird development 
+#  team.  All individual contributions remain the Copyright (C) of 
+#  those individuals and all rights are reserved.  Contributors to 
+#  this file are either listed below or can be obtained from a CVS 
+#  history command.
+# 
+#   Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+# 
+#   Contributor(s):
+#  
+# 
+#   $Id: makeInstallImage.sh.in,v 1.18 2005-10-27 13:51:27 alexpeshkoff Exp $
+# 
 
 # Script to copy install files from the build/transport area
 
@@ -104,10 +115,7 @@ copyFiles() {
     mkdir $DestDir/doc/sql.extensions 
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
-    mkdir $DestDir/misc/upgrade
-	for i in ib_udf metadata security; do
-		mkdir $DestDir/misc/upgrade/$i
-	done
+	mkdir $DestDir/upgrade
 	
 #    mkdir $TargetDir/etc 
 #    mkdir $TargetDir/etc/init.d
@@ -119,21 +127,21 @@ copyFiles() {
     mkdir -p $TargetDir@libdir@
     mkdir -p $TargetDir/usr/include
 
-    cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server
-    cp -f $BuiltFBDir/bin/fb_smp_server $DestDir/bin/fb_smp_server
-	cp -f $BuiltFBDir/bin/fbguard $DestDir/bin/fbguard
+    cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
 
     cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
     cp $BuiltFBDir/bin/gdef $DestDir/bin/gdef 
     cp $BuiltFBDir/bin/gds_drop $DestDir/bin/gds_drop 
+    copyIfExists $BuiltFBDir/bin/fb_lock_mgr $DestDir/bin/fb_lock_mgr 
     copyIfExists $BuiltFBDir/bin/fb_lock_print $DestDir/bin/fb_lock_print 
+    copyIfExists $BuiltFBDir/bin/gds_pipe $DestDir/bin/gds_pipe 
     cp $BuiltFBDir/bin/gfix $DestDir/bin/gfix 
     cp $BuiltFBDir/bin/gpre $DestDir/bin/gpre 
     cp $BuiltFBDir/bin/gsec $DestDir/bin/gsec 
     cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup 
     copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
-    copyIfExists $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr
+    copyIfExists $BuiltFBDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
@@ -141,7 +149,6 @@ copyFiles() {
     addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh $DestDir/bin
     addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh $DestDir/bin
     addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh $DestDir/bin
-    addLibs $BuildRootDir/gen/firebird/bin changeMultiConnectMode.sh $DestDir/bin
     addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh $DestDir/bin
     addLibs $BuildRootDir/gen/firebird/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
     addLibs $BuildRootDir/gen/firebird/bin tarinstall.sh $BuildRootDir/gen/install/scripts
@@ -206,18 +213,14 @@ copyFiles() {
     cp $BuildRootDir/doc/README.user $DestDir/README
     
 #	Copy various upgrade stuff
-    cp $BuildRootDir/src/misc/intl.sql							$DestDir/misc/
-    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				$DestDir/misc/upgrade/ib_udf/
-    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		$DestDir/misc/upgrade/security/
-    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	$DestDir/misc/upgrade/metadata/
+    cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
 
 #	Misc. config files
     cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/fbintl.conf $DestDir/intl/
-	cp $BuildRootDir/gen/install/misc/firebird.init.d.* $DestDir/misc/
-	cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
+
 
 # Create links from @libdir@ to install area.
 

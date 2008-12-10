@@ -24,21 +24,39 @@
 #ifndef JRD_ISC_PROTO_H
 #define JRD_ISC_PROTO_H
 
+#include "../jrd/isc.h"
 #include "../common/classes/fb_string.h"
 
-bool	ISC_check_process_existence(SLONG);
+void	ISC_ast_enter(void);
+void	ISC_ast_exit(void);
+bool	ISC_check_process_existence(SLONG, SLONG, bool);
+// There's no body for those functions.
+//void	ISC_get_config(TEXT *, struct ipccfg *);
+//int		ISC_set_config(TEXT *, struct ipccfg *);
 TEXT*	ISC_get_host(TEXT *, USHORT);
-const TEXT*	ISC_get_host(Firebird::string&);
-bool	ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
+const TEXT*   ISC_get_host(Firebird::string&);
+bool  ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
-SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
+void	ISC_set_user(const TEXT*);
+SLONG	ISC_get_prefix(const TEXT*);
+void	ISC_prefix(TEXT*, const TEXT*);
+void	ISC_prefix_lock(TEXT*, const TEXT*);
+void	ISC_prefix_msg(TEXT*, const TEXT*);
 
-// Does not add word "Database" in the beginning like gds__log_status
-void	iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector);
-void	iscLogException(const TEXT* text, const Firebird::Exception& e);
+#ifdef VMS
+int		ISC_expand_logical_once(const TEXT*, USHORT, TEXT*, USHORT);
+int		ISC_make_desc(const TEXT*, struct dsc$descriptor*, USHORT);
+void	ISC_wait(SSHORT *, SLONG);
+void	ISC_wake(SLONG);
+void	ISC_wake_init(void);
+#endif
 
 #ifdef WIN_NT
+bool	ISC_is_WinNT();
 struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
+/* Disabled. Not found anywhere.
+TEXT*	ISC_prefix_interbase(TEXT*, TEXT*);
+*/
 #endif
 
 #endif // JRD_ISC_PROTO_H

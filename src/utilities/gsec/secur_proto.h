@@ -25,10 +25,8 @@
 #define UTILITIES_SECUR_PROTO_H
 
 typedef void (*FPTR_SECURITY_CALLBACK)(void*, const internal_user_data*, bool);
-SSHORT	SECURITY_exec_line (ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
-							internal_user_data* io_user_data, FPTR_SECURITY_CALLBACK display_func, void* callback_arg);
-SSHORT	SECURITY_exec_line (ISC_STATUS* isc_status, FB_API_HANDLE DB,
-							internal_user_data* io_user_data, FPTR_SECURITY_CALLBACK display_func, void* callback_arg);
+SSHORT	SECURITY_exec_line (ISC_STATUS*, FB_API_HANDLE, internal_user_data*,
+									FPTR_SECURITY_CALLBACK, void*);
 
 #endif // UTILITIES_SECUR_PROTO_H
 

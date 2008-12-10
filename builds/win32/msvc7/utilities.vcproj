@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\utilities_ss/utilities.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\utilities_ss/"
 				ObjectFile="..\..\..\temp\debug\utilities_ss/"
@@ -85,7 +85,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\utilities_ss/utilities.pch"
 				AssemblerListingLocation="..\..\..\temp\release\utilities_ss/"
 				ObjectFile="..\..\..\temp\release\utilities_ss/"
@@ -132,6 +132,9 @@
 				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
 			</File>
 			<Filter
@@ -161,6 +164,9 @@
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="..\..\..\src\utilities\common\cmd_util_proto.h">
+			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
 			</File>

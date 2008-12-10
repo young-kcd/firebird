@@ -19,7 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -71,8 +70,8 @@
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
-#ifdef HP11
-#define FB_PLATFORM     "HU"
+#ifdef HP11 
+#define FB_PLATFORM "HU"
 #endif /* HP11 */
 #endif
 
@@ -95,13 +94,21 @@
 #endif
 #endif /* sun */
 
-#ifdef AIX
-#ifdef AIX_PPC
-#define FB_PLATFORM	"PA"
+#ifdef VMS
+#ifdef __ALPHA
+#define FB_PLATFORM     "AV"
 #else
+#define FB_PLATFORM	"VM"
+#endif
+#endif
+
+#ifdef AIX
 #define FB_PLATFORM	"IA"
 #endif
-#endif /* aix */
+
+#ifdef AIX_PPC
+#define FB_PLATFORM	"PA"
+#endif
 
 #ifdef WIN_NT
 #ifdef i386
@@ -124,13 +131,13 @@
 #endif
 
 #ifdef DARWIN
-#if defined(i386) || defined(__x86_64__)
-#define FB_PLATFORM		"UI"	/* Darwin/Intel */
+#ifdef i386
+#define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
-#if defined(__ppc__) || defined(__ppc64__)
+#endif
+#if defined (DARWIN) && defined (__ppc__)
 #define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
-#endif	// DARWIN
 
 #ifndef FB_VERSION
 #define FB_VERSION      FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX

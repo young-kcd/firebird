@@ -27,6 +27,7 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.examples,v 1.8.4.2 2008-09-02 13:22:20 paulbeach Exp $
 #
 ROOT=../..
 ObjModuleType=std

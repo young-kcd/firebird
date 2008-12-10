@@ -1,163 +1,32 @@
 #ifndef INCLUDE_FB_BLK
 #define INCLUDE_FB_BLK
 
+#include <vector>
 #include "../common/classes/alloc.h"
 
-enum BlockType
+struct blk
 {
-	type_unknown = 0,
-
-	type_vec,
-	type_dbb,
-	type_bcb,
-	type_bdb,
-	type_pre,
-	type_lck,
-	type_fil,
-	type_pgc,
-	type_rel,
-	type_fmt,
-	type_vcl,
-	type_req,
-	type_tra,
-	type_nod,
-	type_csb,
-	type_lls,
-	type_rec,
-	type_rsb,
-	type_bms,
-	type_dfw,
-	type_tfb,
-	type_str,
-	type_dcc,
-	type_smb,
-	type_blb,
-	type_irb,
-	type_scl,
-	type_fld,
-	type_ext,
-	type_mfb,
-	type_riv,
-	type_usr,
-	type_att,
-	type_sym,
-	type_fun,
-	type_irl,
-	type_acc,
-	type_idl,
-	type_rsc,
-	type_sdw,
-	type_vct,
-	type_blf,
-	type_arr,
-	type_map,
-	type_log,
-	type_dls,
-	type_prc,
-	type_prm,
-	type_sav,
-	type_xcp,
-	type_idb,
-	type_tpc,
-	type_svc,
-	type_lwt,
-	type_vcx,
-	type_srpb,
-	type_opt,
-	type_prf,
-	type_rse,
-	type_lit,
-	type_asb,
-	type_ctl,
-
-	type_PageSpace,
-	type_PageManager,
-
-	dsql_type_ctx,
-	dsql_type_par,
-	dsql_type_map,
-	dsql_type_req,
-	dsql_type_dbb,
-	dsql_type_rel,
-	dsql_type_fld,
-	dsql_type_fil,
-	dsql_type_nod,
-	dsql_type_msg,
-	dsql_type_lls,
-	dsql_type_str,
-	dsql_type_sym,
-	dsql_type_err,
-	dsql_type_tra,
-	dsql_type_udf,
-	dsql_type_var,
-	dsql_type_blb,
-	dsql_type_prc,
-	dsql_type_intlsym,
-	dsql_type_vec,
-	dsql_type_imp_join,
-
-	alice_type_frb,
-	alice_type_hnk,
-	alice_type_plb,
-	alice_type_vec,
-	alice_type_vcl,
-	alice_type_tdr,
-	alice_type_str,
-	alice_type_lls,
-
-	rem_type_rdb,
-	rem_type_rrq,
-	rem_type_rtr,
-	rem_type_rbl,
-	rem_type_rsr
 };
+typedef blk* BLK;
 
 
-template<BlockType BLOCK_TYPE>
-class TypedHandle
-{
-public:
-	TypedHandle() : blockType(BLOCK_TYPE) {}
+//typedef PtrWrapper<BLK> BlkPtr;
+typedef blk* BlkPtr;
 
-	TypedHandle<BLOCK_TYPE>& operator= (const TypedHandle<BLOCK_TYPE>& from)
-	{
-		blockType = from.blockType;
-		return *this;
-	}
-
-	BlockType getType() const
-	{
-		return blockType;
-	}
-
-	bool checkHandle() const
-	{
-		if (!this)
-		{
-			return false;
-		}
-
-		return (blockType == BLOCK_TYPE);
-	}
-
-private:
-	BlockType blockType;
-};
-
-template<BlockType BLOCK_TYPE = type_unknown>
-class pool_alloc : public TypedHandle<BLOCK_TYPE>
+template<SSHORT BLOCK_TYPE = 0>
+class pool_alloc : public blk
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, const char* file, int line)
-            { return p.calloc(s, file, line); }
-        void* operator new[](size_t s, MemoryPool& p, const char* file, int line)
-            { return p.calloc(s, file, line); }
+        void* operator new(size_t s, MemoryPool& p, char* file, int line)
+            { return p.calloc(s, BLOCK_TYPE, file, line); }
+        void* operator new[](size_t s, MemoryPool& p, char* file, int line)
+            { return p.calloc(s, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p )
-            { return p.calloc(s); }
+            { return p.calloc(s, BLOCK_TYPE); }
         void* operator new[](size_t s, MemoryPool& p)
-            { return p.calloc(s); }
+            { return p.calloc(s, BLOCK_TYPE); }
 #endif
 
         void operator delete(void* mem, MemoryPool& p)
@@ -174,17 +43,17 @@ private:
     void* operator new[](size_t s) { return 0; }
 };
 
-template<typename RPT, BlockType BLOCK_TYPE = type_unknown>
-class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
+template<typename RPT, SSHORT BLOCK_TYPE = 0>
+class pool_alloc_rpt : public blk
 {
     public:
 		typedef RPT blk_repeat_type;
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, int rpt, const char* file, int line)
-            { return p.calloc(s + sizeof(RPT) * rpt, file, line); }
+        void* operator new(size_t s, MemoryPool& p, int rpt, char* file, int line)
+            { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p, int rpt)
-            { return p.calloc(s + sizeof(RPT) * rpt); }
+            { return p.calloc(s + sizeof(RPT) * rpt, BLOCK_TYPE); }
 #endif
         void operator delete(void* mem, MemoryPool& p, int rpt)
             { if (mem) p.deallocate(mem); }
@@ -204,4 +73,20 @@ private:
     void* operator new[](size_t s) { return 0; }
 };
 
+/* template<class BASE, class RPT, UCHAR BLOCK_TYPE>
+class vector_rpt : public BASE
+{
+    private:
+        MemoryPool::allocator<RPT> rptAllocator;
+        vector_rpt(int size, MemoryPool& pool)
+          : rptAllocator(pool, BLOCK_TYPE), rpt(size, rptAllocator) {}
+
+    public:
+        std::vector<RPT> rpt;
+
+        static vector_rpt<BASE, RPT, BLOCK_TYPE>* allocate(int size, MemoryPool& p)
+            { return new(p) vector_rpt<BASE, RPT, BLOCK_TYPE>(size, p); }
+}; */
+
 #endif	/* INCLUDE_FB_BLK */
+

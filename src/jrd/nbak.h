@@ -26,7 +26,7 @@
  *
  *
  */
-
+ 
 #ifndef JRD_NBAK_H
 #define JRD_NBAK_H
 
@@ -60,19 +60,17 @@ class thread_db;
 class Database;
 class jrd_file;
 
-class AllocItem
-{
+class AllocItem {
 public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
 	Record* rec_data;
-    static const ULONG& generate(const void *sender, const AllocItem& item)
-	{
+    static const ULONG& generate(const void *sender, const AllocItem& item) {
 		return item.db_page;
     }
-	AllocItem() {}
-	AllocItem(ULONG db_pageL, ULONG diff_pageL)
-	{
+	AllocItem() {
+	}
+	AllocItem(ULONG db_pageL, ULONG diff_pageL) {
 		this->db_page = db_pageL;
 		this->diff_page = diff_pageL;
 	}
@@ -84,11 +82,9 @@ typedef Firebird::BePlusTree<AllocItem, ULONG, MemoryPool, AllocItem> AllocItemT
 class NBackupState: public GlobalRWLock
 {
 public:
-	ULONG flags;
+	ULONG flags; 
 
 	NBackupState(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
-	virtual ~NBackupState() { }
-
 protected:
 	BackupManager *backup_manager;
 	virtual void blockingAstHandler(thread_db* tdbb);
@@ -101,7 +97,6 @@ class NBackupAlloc: public GlobalRWLock
 {
 public:
 	NBackupAlloc(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
-	virtual ~NBackupAlloc() { }
 
 protected:
 	BackupManager *backup_manager;
@@ -127,7 +122,7 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
  *  4. to mark pages written by the engine with the current SCN [System Change
  *  Number] counter value for the database
  *  5. to increment SCN on each change of backup state
- *
+ *  
  *  The backup state cycle is:
  *  nbak_state_normal -> nbak_state_stalled -> nbak_state_merge -> nbak_state_normal
  *  - In normal state writes go directly to the main database files.
@@ -136,71 +131,49 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
  *  - In merge state new pages are not allocated from difference files. Writes go to
  *  the main database files. Reads of mapped pages compare both page versions and
  *  return the version which is fresher, because we don't know if it is merged or not.
- *
+ *  
  *  For synchronization NBAK uses 3 lock types via Firebird::GlobalRWLock:
  *  LCK_backup_database, LCK_backup_alloc, LCK_backup_end.
- *
+ *  
  *  LCK_backup_database protects "clean" state of database. Database is meant to be
  *  clean when it has no dirty pages. When attachment needs to mark a page as dirty
  *  (via CCH_mark) it needs to obtain READ (LCK_PR) lock of this kind. WRITE
  *  (LCK_EX) lock forces flush of all caches leaving no dirty pages to be written to
  *  database.
- *
+ *  
  *  Modification process of a page is as follows:
  *  CCH_fetch -> CCH_mark -> CCH_release -> write_page
- *
+ *  
  *  The dirty page is owned by the ATTACHMENT between CCH_mark and CCH_release and
  *  by DATABASE until write_page happens. Each dirty page owns the logical lock on
  *  LCK_backup_database that reflects this cycle.
- *
+ *  
  *  Header page is the special case in the above logic and needs to be locked during
  *  CCH_fetch(LCK_EX) phase because it needs to be modified during state transition
  *  and taking the lock later would cause deadlocks.
- *
+ *  
  *  AST on LCK_backup_database forces all dirty pages owned by DATABASE to be
  *  written to disk via write_page. Since finalizing processing of the pages owned
  *  by attachment may require taking new locks BDB_must_write is set for them to
  *  ensure that LCK_backup_database lock is released as soon as possible.
- *
+ *  
  *  To change backup state, engine takes LCK_backup_database lock first, forcing all
  *  dirty pages to the disk, modifies the header page reflecting the state change,
- *  and releases the lock allowing transaction processing to continue.
- *
+ *  and releases the lock allowing transation processing to continue.
+ *  
  *  LCK_backup_alloc is used to protect mapping table between difference file
  *  (.delta) and the database. To add new page to the mapping attachment needs to
  *  take WRITE lock of this kind. READ lock is necessary to read the table.
- *
+ *  
  *  LCK_backup_end is used to ensure reliable execution of state transition from
  *  nbak_state_merge to nbak_state_normal (MERGE process). Taking of WRITE (LCK_EX)
  *  lock of this kind is needed to perform the MERGE. Every new attachment attempts
  *  to finalize incomplete merge if the database is in nbak_state_merge mode and
- *  this lock is not taken.
+ *  this lock is not taken. 
  */
 
-class BackupManager
-{
+class BackupManager {
 public:
-	class SharedDatabaseHolder
-	{
-	public:
-		explicit SharedDatabaseHolder(thread_db* atdbb, BackupManager* bm)
-			: backupManager(bm), tdbb(atdbb)
-		{
-			backupManager->lock_shared_database(tdbb, true);
-		}
-		~SharedDatabaseHolder()
-		{
-			backupManager->unlock_shared_database(tdbb);
-		}
-	private:
-		// copying is prohibited
-		SharedDatabaseHolder(const SharedDatabaseHolder&);
-		SharedDatabaseHolder& operator =(const SharedDatabaseHolder&);
-
-		BackupManager* backupManager;
-		thread_db* tdbb;
-	};
-
 	// Set when db is creating. Default = false
 	bool dbCreating;
 
@@ -210,47 +183,51 @@ public:
 	// Release locks in response to shutdown AST
 	void shutdown_locks(thread_db* tdbb);
 
-	// Set difference file name in header.
+	// Set difference file name in header. 
 	// State must be locked and equal to nbak_state_normal to call this method
 	void set_difference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
-	int get_state() const
-	{
+	int get_state() const {
 		return backup_state;
 	}
 	// Sets current backup state
-	void set_state(int new_state)
-	{
+	void set_state(int new_state) {
 		backup_state = new_state;
 	}
 
 	// Return current SCN for database
-	ULONG get_current_scn() const
-	{
+	ULONG get_current_scn() const {
 		return current_scn;
 	}
 
 	// Initialize and open difference file for writing
 	void begin_backup(thread_db* tdbb);
 
-	// Merge difference file to main files (if needed) and unlink() difference
-	// file then. If merge is already in progress method silently returns false and
-	// does nothing (so it can be used for recovery on database startup).
+	// Merge difference file to main files (if needed) and unlink() difference 
+	// file then. If merge is already in progress method silently returns false and 
+	// does nothing (so it can be used for recovery on database startup). 
 	void end_backup(thread_db* tdbb, bool recover);
+
+	// Function for force all connections to flush their caches
+	// and prevent them from marking new dirty pages
+	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
+	void unlock_clean_database(thread_db* tdbb);
 
 	void lock_shared_database(thread_db* tdbb, SSHORT wait);
 	void unlock_shared_database(thread_db* tdbb);
 
 	// Prevent allocation table from modification by other threads/processes
+	// You may or may not call unlock function in case this functions fail
 	void lock_alloc(thread_db* tdbb, SSHORT wait);
-	void unlock_alloc(thread_db* tdbb);
-
 	void lock_alloc_write(thread_db* tdbb, SSHORT wait);
+
+	// Remove our interest in static allocation table
+	void unlock_alloc(thread_db* tdbb);
 	void unlock_alloc_write(thread_db* tdbb);
 
-	// Return page index in difference file that can be used in
-	// write_difference call later.
+	// Return page index in difference file that can be used in 
+	// write_difference call later. 
 	ULONG get_page_index(thread_db* tdbb, ULONG db_page);
 
 	// Return next page index in the difference file to be allocated
@@ -265,20 +242,17 @@ public:
 	void release_dirty_page(thread_db* tdbb, SLONG owner_handle);
 	void change_dirty_page_owner(thread_db* tdbb, SLONG from_handle, SLONG to_handle);
 
-	// Returns difference owner handles for locks
-	static SLONG database_lock_handle(thread_db* tdbb)
-	{
+	// Returns difference owner handles for locks 
+	static SLONG database_lock_handle(thread_db* tdbb) {
 		return LCK_get_owner_handle_by_type(tdbb, LCK_OWNER_database);
 	}
-	static SLONG attachment_lock_handle(thread_db* tdbb)
-	{
+	static SLONG attachment_lock_handle(thread_db* tdbb) {
 		return LCK_get_owner_handle_by_type(tdbb, LCK_OWNER_attachment);
 	}
 
 	void shutdown(thread_db* tdbb);
 
-	bool database_flush_in_progress() const
-	{
+	bool database_flush_in_progress() const {
 //		NBAK_TRACE(("NBAK_state_blocking=%i", database_lock->flags & NBAK_state_blocking));
 		return database_lock->flags & NBAK_state_blocking;
 	}
@@ -286,9 +260,6 @@ public:
 	// Make appropriate information up-to-date
 	bool actualize_state(thread_db* tdbb);
 	bool actualize_alloc(thread_db* tdbb);
-
-	// Get size (in pages) of locked database file
-	ULONG getPageCount();
 
 	// Subsystem finalization. Called from shutdown()
 	~BackupManager();
@@ -309,33 +280,6 @@ private:
 	NBackupState* database_lock;
 
 	void generate_filename();
-
-	// Function for force all connections to flush their caches
-	// and prevent them from marking new dirty pages
-	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
-	void unlock_clean_database(thread_db* tdbb);
-
-	class CleanDatabaseHolder
-	{
-	public:
-		explicit CleanDatabaseHolder(thread_db* atdbb, BackupManager* bm,
-			SSHORT wait, Jrd::WIN* window)
-			: backupManager(bm), tdbb(atdbb)
-		{
-			backupManager->lock_clean_database(tdbb, wait, window);
-		}
-		~CleanDatabaseHolder()
-		{
-			backupManager->unlock_clean_database(tdbb);
-		}
-	private:
-		// copying is prohibited
-		CleanDatabaseHolder(const CleanDatabaseHolder&);
-		CleanDatabaseHolder& operator =(const CleanDatabaseHolder&);
-
-		BackupManager* backupManager;
-		thread_db* tdbb;
-	};
 };
 
 } //namespace Jrd

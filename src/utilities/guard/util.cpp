@@ -1,5 +1,5 @@
 /*
- *      PROGRAM:        Firebird Utility programs
+ *      PROGRAM:        InterBase Utility programs
  *      MODULE:         util.cpp
  *      DESCRIPTION:    Utility routines for fbguard & fbserver
  *
@@ -66,7 +66,7 @@
 #include "../jrd/isc_proto.h"
 
 
-pid_t UTIL_start_process(const char* process, const char* process2, char** argv, const char* prog_name)
+pid_t UTIL_start_process(const char* process, char** argv)
 {
 /**************************************
  *
@@ -75,15 +75,15 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
  **************************************
  *
  * Functional description
- *
- *     This function is used to create the specified process,
+ *      
+ *     This function is used to create the specified process, 
  *
  * Returns Codes:
  *	-1		Process spawn failed.
- *	pid		Successful creation. PID is returned.
- *
- *     Note: Make sure that the argument list ends with a null
- *     and the first argument is large enough to hold the complete
+ *	pid		Successful creation. PID is returned. 
+ *      
+ *     Note: Make sure that the argument list ends with a null  
+ *     and the first argument is large enough to hold the complete 
  *     expanded process name. (MAXPATHLEN recommended)
  *
  **************************************/
@@ -92,16 +92,8 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
-	// prepend Firebird home directory to the program name
-	// choose correct (super/superclassic) image - to be removed in 3.0
+/* prepend Firebird home directory to the program name */
 	gds__prefix(string, process);
-	if (access(string, X_OK) < 0) {
-		gds__prefix(string, process2);
-	}
-	if (prog_name) {
-		gds__log("%s: guardian starting %s\n",
-                 prog_name, string);
-	}
 
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
@@ -128,7 +120,7 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 }
 
 
-int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_down)
+int UTIL_wait_for_child( pid_t child_pid)
 {
 /**************************************
  *
@@ -137,13 +129,12 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
  **************************************
  *
  * Functional description
- *
+ *      
  *     This function is used to wait for the child specified by child_pid
  *
  * Return code:
  *	0	Normal exit
  *	-1	Abnormal exit - unknown reason.
- *	-2	TERM signal caught
  *	Other	Abnormal exit - process error code returned.
  *
  **************************************/
@@ -154,86 +145,27 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 /* wait for the child process with child_pid to exit */
 
 	while (waitpid(child_pid, &child_exit_status, 0) == -1)
-	{
 		if (SYSCALL_INTERRUPTED(errno))
-		{
-			if (shutting_down)
-				return -2;
 			continue;
-		}
-		return (errno);
+		else
+			return (errno);
+
+/* Check for very specific conditions before we assume the child
+   did a normal exit. */
+
+	if (WIFEXITED(child_exit_status) && (WEXITSTATUS(child_exit_status) != 0))
+		return (WEXITSTATUS(child_exit_status));
+
+	if (
+#ifndef AIX_PPC
+		   WCOREDUMP(child_exit_status) ||
+#endif
+		   WIFSIGNALED(child_exit_status) || !WIFEXITED(child_exit_status))
+	{
+		return (-1);
 	}
 
-	if (WIFEXITED(child_exit_status))
-		return WEXITSTATUS(child_exit_status);
-
-	return -1;
-}
-
-
-void alrm_handler(int)
-{
-	// handler for SIGALRM
-	// doesn't do anything, just interrupts a syscall
-}
-
-
-int UTIL_shutdown_child(pid_t child_pid,
-	unsigned timeout_term, unsigned timeout_kill)
-{
-/**************************************
- *
- *      U T I L _ s h u t d o w n _ c h i l d
- *
- **************************************
- *
- * Functional description
- *
- *     Terminates child using TERM signal, then KILL if it does not finish
- *     within specified timeout
- *
- * Return code:
- *	0	Child finished cleanly (TERM)
- *	1	Child killed (KILL)
- *	2	Child not killed by KILL
- *	-1	Syscall failed
- *
- **************************************/
-
-	int r = kill(child_pid, SIGTERM);
-
-	if (r < 0)
-		return ((errno == ESRCH) ? 0 : -1);
-
-	if (UTIL_set_handler(SIGALRM, alrm_handler, false) < 0)
-		return -1;
-
-	alarm(timeout_term);
-
-	int child_status;
-	r = waitpid(child_pid, &child_status, 0);
-
-	if ((r < 0) && !SYSCALL_INTERRUPTED(errno))
-		return -1;
-
-	if (r == child_pid)
-		return 0;
-
-	r = kill(child_pid, SIGKILL);
-
-	if (r < 0)
-		return ((errno == ESRCH) ? 0 : -1);
-
-	alarm(timeout_kill);
-	r = waitpid(child_pid, &child_status, 0);
-
-	if ((r < 0) && !SYSCALL_INTERRUPTED(errno))
-		return -1;
-
-	if (r == child_pid)
-		return 1;
-
-	return 2;
+	return (0);
 }
 
 
@@ -241,12 +173,12 @@ int UTIL_ex_lock(const TEXT* file)
 {
 /**************************************
  *
- *      U T I L _ e x _ l o c k
+ *      U T I L _ e x _ l o c k              
  *
  **************************************
  *
  * Functional description
- *
+ *  
  *     This function is used to exclusively lock a file.
  *
  * Return Codes:
@@ -295,12 +227,12 @@ void UTIL_ex_unlock( int fd_file)
 {
 /**************************************
  *
- *      U T I L _ e x _ l o c k
+ *      U T I L _ e x _ l o c k              
  *
  **************************************
  *
  * Functional description
- *
+ *  
  *     This function is used to unlock the exclusive file.
  *
  **************************************/
@@ -322,35 +254,3 @@ void UTIL_ex_unlock( int fd_file)
 	close(fd_file);
 }
 
-
-int UTIL_set_handler(int sig, void (*handler) (int), bool restart)
-{
-/**************************************
- *
- *      U T I L _ s e t _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *
- *     This function sets signal handler
- *
- **************************************/
-
-#if defined(HAVE_SIGACTION)
-	struct sigaction sig_action;
-	if (sigaction(sig, NULL, &sig_action) < 0)
-		return -1;
-	sig_action.sa_handler = handler;
-	if (restart)
-		sig_action.sa_flags |= SA_RESTART;
-	else
-		sig_action.sa_flags &= ~SA_RESTART;
-	if (sigaction(sig, &sig_action, NULL) < 0)
-		return -1;
-#else
-	if (signal(sig, handler) == SIG_ERR)
-		return -1;
-#endif
-	return 0;
-}

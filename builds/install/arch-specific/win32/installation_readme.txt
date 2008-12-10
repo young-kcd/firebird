@@ -1,24 +1,30 @@
-Firebird Database Server 2.5 Alpha 1
+
+==================================================
+Firebird Database Server 2.0.5
 ==================================================
 
-This document is a guide to installing this package of
-Firebird 2.5 on the Windows platform. These notes refer
-to the installation package itself, rather than
-Firebird 2.5 in general. In addition, these notes are
-primarily aimed at users of the binary installer.
+  ** IMPORTANT **
 
-It is assumed that readers of this document are already
-familiar with Firebird 2.1. If you are evaluating
-Firebird 2.5 as part of a migration from FB 2.1 you are
-advised to review the FB 2.1 documentation to
-understand the changes made between 2.1 and 2.5.
+  The ODS has changed since Firebird 1.5. See the notes
+  below regarding the new ODS and installation over
+  older versions of Firebird.
+
+  ** ********* **
+
+This document is a guide to installing this package of
+Firebird 2.0.5 on the Win32 platform. These notes refer
+to the installation package itself, rather than
+Firebird 2.0.5 in general.
 
 
 Contents
 --------
 
 o Before installation
-o Problems with installation of MS VC runtime libraries
+o New ODS 11.0
+o Installation on systems with Firebird 1.5
+o Installing on systems with Firebird 2.0
+o New features of the installer
 o Known installation problems
 o Uninstallation
 o Other Notes
@@ -34,53 +40,79 @@ this package. It is especially important to verify that
 fbclient.dll and gds32.dll are removed from <system32>.
 
 
-Problems with installation of MS VC runtime libraries
------------------------------------------------------
+New ODS 11.0
+------------
 
-Much work has been done to ensure that the MS Visual
-C runtime libraries are correctly installed by the
-binary installer. However, in case of problems it may
-be necessary to deploy the official vcredist.exe. The
-correct versions for this build of Firebird can be
-found here:
+Firebird 2.0 features a new ODS 11.0 which is wholly
+incompatible with the ODS 11.0 used by the previous
+alpha releases.
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+If you are installing this release of Firebird 2.0 for
+the first time over a previously installed Firebird 2
+alpha it is recommended that you install into a fresh
+directory. This is because an uninstall will preserve
+the existing security2 database. However this older
+version uses an incompatible ODS so you will be unable
+to connect to the server.
 
-  and x64 here:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+Installation on systems with Firebird 1.5
+-----------------------------------------
+
+The security database has been changed. The new
+database is called security2.fdb and uses a
+strengthened password encryption algorithm. You can
+find out more info about the new security features in
+the release notes.
+
+The new database structure and the changed encryption
+presents several migration problems for sites that have
+many user ids. The installer makes no attempt to carry
+out this migration.  This must be done manually. A
+possible migration technique is available in
+misc/upgrade/security/.
 
 
-Other Known installation problems
----------------------------------
+Installing on systems with Firebird 2.0
+---------------------------------------
 
-o It is only possible to use the binary installer
-  to install the default instance of Firebird 2.1. If
-  you wish to install additional, named instances you
-  should manually install them with the zipped install
-  image.
+In addition to the ODS change please note that the
+installer cannot automatically detect if a
+Firebird 2.0 Alpha or Beta server is running
+as a service. Therefore you will receive no warning
+until the installer attempts to overwrite an active
+file. This can be avoided if you uninstall first.
 
-o Unfortunately, the installer cannot reliably detect
-  if a previous version of Firebird Classic server
-  is running.
 
-o There are known areas of overlap between the
-  32-bit and 64-bit installs:
+New features of the installer
+-----------------------------
 
-  - The service installer (instsvc) uses the same
-    default instance name for 32-bit and 64-bit
-    installations. This is by design. Services exist
-    in a single name space.
+o If an existing firebird.conf is detected the
+  installer will install the default conf file
+  as:
 
-  - If the 32-bit and 64-bit control panel applets are
-    installed they will both point to the same default
-    instance.
+  firebird.conf.default.
 
-o When installing under Vista be sure to install as an
-  administrator. ie, if using the binary installer
-  right click and choose 'Run as administrator'.
-  Otherwise the installer will be unable to start the
-  Firebird service at the end of installation.
+  The existing firebird.conf file will be untouched.
+  This is to ensure that access restrictions are
+  maintained after an upgrade.
+
+
+o Support for several languages has been added to the
+  installer. This support extends ONLY to the
+  installation process.
+
+  NOTE: The available languages are determined by
+  the localized version of Windows that you are
+  running. This means, for example, that Western
+  European users will not normally see the slavic
+  languages available.
+
+
+Known installation problems
+---------------------------
+
+None are known at this time.
 
 
 Uninstallation
@@ -114,16 +146,6 @@ o Uninstallation leaves four files in the install
   if Firebird is re-installed in the future. They can
   be deleted if no longer required.
 
-o A new feature of the uninstaller is an option to
-  run it with the /CLEAN parameter. This will check
-  the shared file count of each of the above files. If
-  possible it will delete them.
-
-o Uninstallation will not remove the MS VC runtime
-  libraries from the system directory. These can be
-  removed manually via the control panel, but this
-  should not be required under normal circumstances.
-
 
 Other Notes
 -----------
@@ -134,7 +156,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -145,7 +167,7 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 for full details.
 

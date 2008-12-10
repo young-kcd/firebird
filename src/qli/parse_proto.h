@@ -24,11 +24,11 @@
 #ifndef QLI_PARSE_PROTO_H
 #define QLI_PARSE_PROTO_H
 
-qli_syntax*	PARQ_parse();
+qli_syntax*	PARQ_parse(void);
 bool	PAR_match (KWWORDS);
-void	PAR_real ();
-void	PAR_real_token ();
-void	PAR_token ();
+void	PAR_real (void);
+void	PAR_real_token (void);
+void	PAR_token (void);
 
 #endif // QLI_PARSE_PROTO_H
 

@@ -1,100 +1,112 @@
 
-========================================
-Firebird 2.5.0 pre Alpha (Windows Build)
 ==================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
-
+Firebird 2.0.5       (Win32 Build)
+==================================
 
 o Uvod
 o Kome je namjenjen?
-o Poznati nedostaci
 o Odlike ovog release-a (sve platforme)
+o Popravljeni bug-ovi u ovom release-u
 o Instalacija
+o Poznati nedostatci
 o Prijavljivanje Bug-ova
+o Zahtjev novih mogucnosti
 
 
 Uvod
 ============
 
-Dobrodosli u Firebird 2.1.
+Dobrodosli u Firebird 2.0.5
 
 
 Kome je namjenjen?
 ============================
 
-Ovaj release candidate je namjenjen naprednim korisnicima
-Firebird-a. On je poprilicno dobro istestiran i sve nove
-mogucnosti bi trebale biti lijepo dokumentovane.
+Firebird 2.0.5 je prosao kroz opsezan proces testiranja
+i namjenjen je za siroku upotrebu u produkciji. Svakako,
+korisnicima je preporuceno da prate standardne procedure
+prije deploy-a ovog release-a na produkcioni server. tj:
 
-Nemojte koristiti ovu verziju u produkcionom okruzenju.
+ o Molimo procitajte dokumente vezane za instalaciju i
+   release notes.
 
+ o Ako imate podatke od vaznosti napravite backup prije
+   instalacije ovog release-a.
 
-Poznati nedostatci
-============
+ o Preporuceno je da uklonite sve prethodne verzije prije
+   instalacije. Deinstalacije ce sacuvati configuracione
+   datoteke i log datoteke.
 
-Windows Vista - Binarni installer ne uspjeva pokrenuti
-Firebird kao service prilikom instalacije, medjutim,
-service se ispravno pokrece nakon restarta racunara. Kao
-workaround, mozete uraditi sljedece: shift-right click na
-Firebird control panel applet, izabrati 'Run as...' i
-pokrenuti service odatle.
+ o Preporucuje se da sami odradite testiranje u
+   razvojnom okruzenju prije deploymenta u produkciju.
 
 
 Odlike ovog release-a (sve platforme)
 ========================================
 
-Pogledajte Release Notes za vise
+Pogledajte doc/Firebird_v2.0.5.ReleaseNotes.pdf za vise
 informacija.
 
 
-Instalacija
+Popravljeni bug-ovi u ovom release-u (all platforms)
+==========================================
+
+Pogledajte doc/Firebird_v2.0.5.ReleaseNotes.pdf za vise
+informacija.
+
+
+Instalacija iz samoraspakujuce datoteke
+=========================================
+
+Molimo pokrenite izvrsnu datoteku i procitajte prilozene
+instrukcije za instalaciju koji su ukljuceni u
+setup wizard.
+
+
+Poznati nedostatci
 ============
 
-Problemi prilikom instalacije su pokriveni u detalje u
-Installation Guide-u koji je dostupanu doc directoriju nakon
-instalacije. Kratak sadržaj instalacionih problema se moze
-naci i u installation_readme.txt, koji je takodje
-dostupan u doc directoriju nakon instalacije.
-
+ o Sigurnosna baza podataka je promijenjena! Pogledajte DOC
+   direktorij za vise detalja. Korisnici kjoji zele da
+   migriraju staru security bazu u novi format mogu koristiti
+   upgrade script-u koja se nalazi u misc/upgrade/security
 
 Prijavljivanje Bug-ova
 ==============
 
-Prije nego prijavite bug:
+o Jeste li sigurni da razumijete kako Firebird radi?
 
- o Jeste li sigurni da razumijete kako Firebird radi?
-  Mozda ustvari vidite ispravno ponasanje koje nije bug.
-
- o Mozda je neko vec prijavio bug? Pogledajte
-   postojece prijave bugova ovdje:
-
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+  Mozda ustvari vidite ispravno ponasanje i ustvari
+  imate pitanje za support. U ovom slucaju kontaktirajte
+  firebird-support list server.
 
   Mozete se prijaviti ovdje:
 
 	mailto:firebird-support-subscribe@yahoogroups.com
 
 
- o Ako ste u dilemi zasto ne diskutujete o problemu na
-   Firebird-devel listi? Mozete se prijaviti ovdje:
+o I dalje mislite da je bug u pitanju?
 
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+  Prvo provjerite issue tracker ovdje:
 
-   i listu je moguce pogledati kroz newsgroup interface ovdje:
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-	news://news.atkin.com/
+Molimo da ne koristite issue tracker za tehnicku
+podrsku. Ako niste sigurni, prvo se prijavite na support listu
+
+  mailto:firebird-support-subscribe@yahoogroups.com
+
+i postavite vase pitanje tu.
 
 
-Molimo da ne koristite Firebird-devel listu za tehnicku podrsku
-osim ako je pitanje specificno vezano za nove mogucnosti
-u Firebird-u 2.1
 
+Zahtjev novih mogucnosti
+=======================
 
-Sretno testiranje!
+Prije dostavljanja zahtjeva za nove mogucnosti, molimo pogledajte
+postojecu listu zahtjeva. Postoje izgledi da je neko vec
+mislio o tome. Listu postojecih zahtjeva mozete naci ovdje:
 
-Firebird team.
+  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
+
 

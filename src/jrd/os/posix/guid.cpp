@@ -26,9 +26,9 @@
  *
  */
 
-#include "firebird.h"
 #include "../jrd/os/guid.h"
 
+#include "firebird.h"
 #include "fb_exception.h"
 #include <unistd.h>
 #include <sys/types.h>
@@ -63,25 +63,22 @@ void GenerateRandomBytes(void* buffer, size_t size)
 		if (errno != EINTR)
 			Firebird::system_call_failed::raise("close");
 		// In case when close() is interrupted by a signal,
-		// the state of fd is unspecified - give up and return success.
+		// the state of fd is unspecified - give up and return success. 
 	}
 }
 
-void GenerateGuid(FB_GUID* guid)
-{
+void GenerateGuid(FB_GUID* guid) {
 	GenerateRandomBytes(guid, sizeof(FB_GUID));
 }
 
-void GuidToString(char* buffer, const FB_GUID* guid)
-{
-	sprintf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}",
+void GuidToString(char* buffer, const FB_GUID* guid) {
+	sprintf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
 		guid->data[0], guid->data[1], guid->data[2], guid->data[3],
 		guid->data[4], guid->data[5], guid->data[6], guid->data[7]);
 }
 
-void StringToGuid(FB_GUID* guid, const char* buffer)
-{
-	sscanf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}",
+void StringToGuid(FB_GUID* guid, const char* buffer) {
+	sscanf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
 		&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
 		&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
 }

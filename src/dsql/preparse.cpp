@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		preparse.cpp
- *	DESCRIPTION:	Dynamic SQL pre parser / parser on client side.
+ *	DESCRIPTION:	Dynamic SQL pre parser / parser on client side. 
  *			This module will probably change to a YACC parser.
  *
  * The contents of this file are subject to the Interbase Public
@@ -33,7 +33,6 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/StatusArg.h"
 
 enum pp_vals {
 	PP_CREATE = 0,
@@ -51,7 +50,7 @@ enum pp_vals {
 };
 
 
-const size_t MAX_TOKEN_SIZE = 1024;
+const int MAX_TOKEN_SIZE = 1024;
 static void generate_error(ISC_STATUS*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
 static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
@@ -59,7 +58,7 @@ static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
 
 struct pp_table {
 	SCHAR symbol[10];
-	USHORT length;
+	SSHORT length;
 	SSHORT code;
 };
 
@@ -79,7 +78,7 @@ static const pp_table pp_symbols[] = {
 	{"", 0, 0}
 };
 
-// define the tokens
+// define the tokens 
 
 enum token_vals {
 	NO_MORE_TOKENS = -1,
@@ -91,13 +90,10 @@ enum token_vals {
 	SYMBOL = 259
 };
 
-using namespace Firebird;
-
-
 /**
-
+  
  	PREPARSE_execute
-
+  
     @brief
 
     @param user_status
@@ -119,23 +115,18 @@ bool PREPARSE_execute(
 		USHORT dialect)
 {
 	// no use creating separate pool for a couple of strings
-	ContextPoolHolder context(getDefaultMemoryPool());
+	Firebird::ContextPoolHolder context(getDefaultMemoryPool());
 
 	try
 	{
-		if (!stmt)
-		{
-			Arg::Gds(isc_command_end_err).raise();
-		}
-
 		if (!stmt_length)
 			stmt_length = strlen(stmt);
 		const char* const stmt_end = stmt + stmt_length;
-		string token;
+		Firebird::string token;
 
 		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
 			token.length() != pp_symbols[PP_CREATE].length ||
-			token != pp_symbols[PP_CREATE].symbol)
+			token != pp_symbols[PP_CREATE].symbol) 
 		{
 			return false;
 		}
@@ -144,7 +135,7 @@ bool PREPARSE_execute(
 			(token.length() != pp_symbols[PP_DATABASE].length &&
 			 token.length() != pp_symbols[PP_SCHEMA].length) ||
 			(token != pp_symbols[PP_DATABASE].symbol &&
-			 token != pp_symbols[PP_SCHEMA].symbol))
+			 token != pp_symbols[PP_SCHEMA].symbol)) 
 		{
 			return false;
 		}
@@ -154,9 +145,9 @@ bool PREPARSE_execute(
 			return true;
 		}
 
-		PathName file_name(token.ToPathName());
+		Firebird::PathName file_name(token.ToPathName());
 		*stmt_eaten = false;
-		ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 		dpb.insertByte(isc_dpb_overwrite, 0);
 		dpb.insertInt(isc_dpb_sql_dialect, dialect);
@@ -175,7 +166,7 @@ bool PREPARSE_execute(
 			matched = false;
 			for (int i = 3; pp_symbols[i].length && !matched; i++) {
 				if (token.length() == pp_symbols[i].length &&
-					token == pp_symbols[i].symbol)
+					token == pp_symbols[i].symbol) 
 				{
 					bool get_out = false;
 					// CVC: What's strange, this routine doesn't check token.length()
@@ -232,7 +223,7 @@ bool PREPARSE_execute(
 						break;
 
 					case PP_LENGTH:
-						// Skip a token for value
+						// Skip a token for value 
 
 						if (get_token(user_status, '=', true, &stmt, stmt_end, token) ||
 							get_token(user_status, NUMERIC, false, &stmt, stmt_end, token))
@@ -258,10 +249,10 @@ bool PREPARSE_execute(
 
 		} while (matched);
 
-// This code is because 3.3 server does not recognize isc_dpb_overwrite.
+// This code is because 3.3 server does not recognize isc_dpb_overwrite. 
 		FB_API_HANDLE temp_db_handle = 0;
-		if (!isc_attach_database(user_status, 0, file_name.c_str(),
-				&temp_db_handle, dpb.getBufferLength(),
+		if (!isc_attach_database(user_status, 0, file_name.c_str(), 
+				&temp_db_handle, dpb.getBufferLength(), 
 				reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
 					user_status[1] != isc_io_error)
 			{
@@ -287,12 +278,12 @@ bool PREPARSE_execute(
 
 		isc_create_database(user_status, 0, file_name.c_str(),
 							(db_handle), dpb.getBufferLength(),
-							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()),
+							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()), 
 							0);
 	}
-	catch (const Exception& ex)
+	catch(const std::exception& ex)
 	{
-		ex.stuff_exception(user_status);
+		Firebird::stuff_exception(user_status, ex);
 		return true;
 	}
 
@@ -301,9 +292,9 @@ bool PREPARSE_execute(
 
 
 /**
-
+  
  	generate_error
-
+  
     @brief
 
     @param user_status
@@ -312,10 +303,11 @@ bool PREPARSE_execute(
     @param result
 
  **/
-static void generate_error(ISC_STATUS* user_status,
-						   const string& token, SSHORT error, SSHORT result)
+static void generate_error(
+						   ISC_STATUS* user_status,
+						   const Firebird::string& token, SSHORT error, SSHORT result)
 {
-	string err_string;
+	Firebird::string err_string;
 
 	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_sqlerr;
@@ -351,9 +343,9 @@ static void generate_error(ISC_STATUS* user_status,
 
 
 /**
-
+  
  	get_next_token
-
+  
     @brief
 
     @param stmt
@@ -361,11 +353,12 @@ static void generate_error(ISC_STATUS* user_status,
     @param token
 
  **/
-static SSHORT get_next_token(const SCHAR** stmt,
+static SSHORT get_next_token(
+							 const SCHAR** stmt,
 							 const SCHAR* stmt_end,
-							 string& token)
+							 Firebird::string& token)
 {
-	UCHAR c, char_class = 0;
+	UCHAR c, char_class;
 
 	token.erase();
 	const SCHAR* s = *stmt;
@@ -400,7 +393,7 @@ static SSHORT get_next_token(const SCHAR** stmt,
 			continue;
 		}
 		// CVC: End modification.
-		char_class = classes(c);
+		char_class = classes[c];
 		if (!(char_class & CHR_WHITE))
 			break;
 	}
@@ -426,7 +419,7 @@ static SSHORT get_next_token(const SCHAR** stmt,
 		}
 		*stmt = s;
 		if (token.length() > MAX_TOKEN_SIZE) {
-			// '=' used as then there is no place for null termination
+			// '=' used as then there is no place for null termination 
 			token.erase(MAX_TOKEN_SIZE);
 			return TOKEN_TOO_LONG;
 		}
@@ -436,9 +429,8 @@ static SSHORT get_next_token(const SCHAR** stmt,
 /* Is it an integer? */
 
 	if (char_class & CHR_DIGIT) {
-		for (; s < stmt_end && (classes(c = *s) & CHR_DIGIT); ++s); // empty body
-		fb_assert(s >= start_of_token);
-		const size_t length = (s - start_of_token);
+		for (; s < stmt_end && (classes[c = *s] & CHR_DIGIT); ++s); // empty body
+		const ptrdiff_t length = (s - start_of_token);
 		*stmt = s;
 		if (length > MAX_TOKEN_SIZE) {
 			token.assign(start_of_token, MAX_TOKEN_SIZE);
@@ -448,11 +440,11 @@ static SSHORT get_next_token(const SCHAR** stmt,
 		return NUMERIC;
 	}
 
-// Is is a symbol
+// Is is a symbol 
 
 	if (char_class & CHR_LETTER) {
 		token += UPPER(c);
-		for (; s < stmt_end && (classes(*s) & CHR_IDENT); s++) {
+		for (; s < stmt_end && (classes[static_cast<UCHAR>(*s)] & CHR_IDENT); s++) {
 			token += UPPER(*s);
 		}
 
@@ -473,9 +465,9 @@ static SSHORT get_next_token(const SCHAR** stmt,
 
 
 /**
-
+  
  	get_token
-
+  
     @brief
 
     @param status
@@ -491,7 +483,7 @@ static SSHORT get_token(ISC_STATUS* status,
 						bool optional,
 						const SCHAR** stmt,
 						const SCHAR* const stmt_end,
-						string& token)
+						Firebird::string& token)
 {
 	const SCHAR* temp_stmt = *stmt;
 	const SSHORT result = get_next_token(&temp_stmt, stmt_end, token);
@@ -506,13 +498,13 @@ static SSHORT get_token(ISC_STATUS* status,
 	case TOKEN_TOO_LONG:
 		*stmt = temp_stmt;
 
-		// generate error here
+		// generate error here 
 
 		generate_error(status, token, result, 0);
 		return FB_FAILURE;
 	}
 
-// Some token was found
+// Some token was found 
 
 	if (result == token_type) {
 		*stmt = temp_stmt;

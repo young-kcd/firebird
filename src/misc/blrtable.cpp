@@ -21,7 +21,6 @@
  * Contributor(s): ______________________________________.
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -69,7 +68,7 @@ struct VERB {
 	const SCHAR* sub_type;
 };
 
-static const VERB verbs[] =
+static const VERB verbs[] = 
 {
 	PAIR(nod_assignment, blr_assignment, e_asgn_length, 2, STATEMENT, VALUE),
 	PAIR(nod_erase, blr_erase, e_erase_length, 0, STATEMENT, OTHER),
@@ -84,7 +83,6 @@ static const VERB verbs[] =
 	PAIR(nod_loop, blr_loop, 1, 1, STATEMENT, STATEMENT),
 	PAIR(nod_message, blr_message, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_modify, blr_modify, 0, 0, STATEMENT, STATEMENT),
-	PAIR(nod_modify, blr_modify2, 0, 0, STATEMENT, STATEMENT),
 	PAIR(nod_user_savepoint, blr_user_savepoint, e_sav_length, 0, STATEMENT, OTHER),
 	PAIR(nod_receive, blr_receive, e_send_length, 1, STATEMENT, STATEMENT),
 	PAIR(nod_select, blr_select, 0, 0, STATEMENT, STATEMENT),
@@ -95,7 +93,6 @@ static const VERB verbs[] =
 	PAIR(nod_post, blr_post_arg, 2, 2, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
 	PAIR(nod_exec_into, blr_exec_into, 0, 0, STATEMENT, OTHER),
-	PAIR(nod_exec_stmt, blr_exec_stmt, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_internal_info, blr_internal_info, 1, 1, VALUE, VALUE),
 	PAIR2(nod_add, blr_add, 2, 2, VALUE, VALUE),
 	PAIR(nod_agg_count, blr_agg_count, 1, 0, VALUE, VALUE),
@@ -107,8 +104,6 @@ static const VERB verbs[] =
 	PAIR2(nod_agg_total_distinct, blr_agg_total_distinct, 2, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average, blr_agg_average, 1, 1, VALUE, VALUE),
 	PAIR2(nod_agg_average_distinct, blr_agg_average_distinct, 2, 1, VALUE, VALUE),
-	PAIR(nod_agg_list, blr_agg_list, 2, 2, VALUE, VALUE),
-	PAIR(nod_agg_list_distinct, blr_agg_list_distinct, 3, 2, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter2, e_arg_length, 0, VALUE, VALUE),
 	PAIR(nod_argument, blr_parameter3, e_arg_length, 0, VALUE, VALUE),
@@ -169,7 +164,6 @@ static const VERB verbs[] =
 
 	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_union, blr_union, 0, 0, RELATION, OTHER),
-	PAIR(nod_union, blr_recurse, 0, 0, RELATION, OTHER),
 	PAIR(nod_aggregate, blr_aggregate, e_agg_length, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_relation, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid, 0, 0, RELATION, OTHER),
@@ -194,7 +188,6 @@ static const VERB verbs[] =
 	PAIR(nod_navigational, blr_navigational, 1, 1, ACCESS_TYPE, VALUE),
 	PAIR(nod_indices, blr_indices, 1, 0, ACCESS_TYPE, VALUE),
 	PAIR(nod_retrieve, blr_retrieve, 2, 0, ACCESS_TYPE, VALUE),
-
 	PAIR(nod_relation, blr_relation2, 0, 0, RELATION, OTHER),
 	PAIR(nod_relation, blr_rid2, 0, 0, RELATION, OTHER),
 	PAIR2(nod_set_generator, blr_set_generator, e_gen_length, 1, STATEMENT, VALUE),
@@ -211,19 +204,12 @@ static const VERB verbs[] =
 	PAIR(nod_current_time, blr_current_time2, e_current_time_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp, e_current_timestamp_length, 0, VALUE, OTHER),
 	PAIR(nod_current_timestamp, blr_current_timestamp2, e_current_timestamp_length, 0, VALUE, OTHER),
-
 	PAIR(nod_current_role, blr_current_role, 1, 0, VALUE, VALUE),
 	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cursor_length, 2, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
 	PAIR(nod_lowcase, blr_lowcase, 1, 1, VALUE, VALUE),
 	PAIR(nod_strlen, blr_strlen, e_strlen_length, e_strlen_count, VALUE, VALUE),
 	PAIR(nod_trim, blr_trim, e_trim_length, e_trim_count, VALUE, VALUE),
-	PAIR(nod_init_variable, blr_init_variable, e_init_var_length, 0, STATEMENT, OTHER),
-	PAIR(nod_sys_function, blr_sys_function, e_sysfun_length, e_sysfun_count, VALUE, VALUE),
-	PAIR(nod_class_node_jrd, blr_auto_trans, 1, 0, STATEMENT, STATEMENT),
-	PAIR(nod_similar, blr_similar, 3, 3, TYPE_BOOL, VALUE),
-	PAIR(nod_stmt_expr, blr_stmt_expr, e_stmt_expr_length, 2, VALUE, OTHER),
-	PAIR(nod_derived_expr, blr_derived_expr, e_derived_expr_length, e_derived_expr_count, VALUE, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

@@ -19,8 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Modified to support RM/Cobol
- * Stephen W. Boyd 31.Aug.06
  */
 
 #ifndef GPRE_LANG_PROTO_H
@@ -40,8 +38,6 @@ void	INT_action(const act*, int);
 void	INT_CXX_action(const act*, int);
 void	PAS_action(const act*, int);
 //int		PLI_action(ACT, int);
-void	RMC_action(const act*, int);
-void	RMC_print_buffer(TEXT*, bool);
 
 #endif // GPRE_LANG_PROTO_H
 

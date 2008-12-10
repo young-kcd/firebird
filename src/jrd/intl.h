@@ -24,8 +24,6 @@
 #ifndef JRD_INTL_H
 #define JRD_INTL_H
 
-#include "../jrd/dsc.h"
-#include "../jrd/ibase.h"
 #include "../intl/charsets.h"
 
 #define ASCII_SPACE     32		/* ASCII code for space */
@@ -61,7 +59,7 @@
 #define ttype_sort_key			ttype_binary
 #define	ttype_metadata			ttype_unicode_fss
 
-/* Note:
+/* Note: 
  * changing the value of ttype_metadata is an ODS System Metadata change
  * changing the value of CS_METADATA    is an ODS System Metadata change
  */
@@ -80,8 +78,8 @@
 #define INTL_GET_TTYPE(dsc)   \
 	  ((dsc)->dsc_sub_type)
 
-#define INTL_GET_CHARSET(dsc)	((UCHAR)((dsc)->dsc_sub_type & 0x00FF))
-#define INTL_GET_COLLATE(dsc)	((UCHAR)((dsc)->dsc_sub_type >> 8))
+#define INTL_GET_CHARSET(dsc)	((SCHAR)((dsc)->dsc_sub_type & 0x00FF))
+#define INTL_GET_COLLATE(dsc)	((SCHAR)((dsc)->dsc_sub_type >> 8))
 
 
 /* Define tests for international data */
@@ -94,27 +92,14 @@
 #define IS_INTL_DATA(d)		((d)->dsc_dtype <= dtype_any_text &&    \
 				 (((USHORT)((d)->dsc_ttype())) > ttype_last_internal))
 
-inline USHORT INTL_TEXT_TYPE(const dsc& desc)
-{
-	if (DTYPE_IS_TEXT(desc.dsc_dtype))
-		return INTL_TTYPE(&desc);
-	else if (desc.dsc_dtype == dtype_blob || desc.dsc_dtype == dtype_quad)
-	{
-		if (desc.dsc_sub_type == isc_blob_text)
-			return desc.dsc_blob_ttype();
-		else
-			return ttype_binary;
-	}
-	else
-		return ttype_ascii;
-}
+#define INTL_TEXT_TYPE(desc)    ((DTYPE_IS_TEXT((desc).dsc_dtype)) ? INTL_TTYPE (&(desc)) : ttype_ascii)
 
 #define INTL_DYNAMIC_CHARSET(desc)	(INTL_GET_CHARSET(desc) == CS_dynamic)
 
 
 
 /*
- * There are several ways text types are used internally to Firebird
+ * There are several ways text types are used internally to InterBase
  *  1) As a CHARACTER_SET_ID & COLLATION_ID pair (in metadata).
  *  2) As a CHARACTER_SET_ID (when collation isn't relevent, like UDF parms)
  *  3) As an index type - (btr.h)
@@ -130,16 +115,16 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
  */
 
 /* There must be a 1-1 mapping between index types and International text
- * subtypes -
+ * subtypes - 
  * Index-to-subtype: to compute a KEY from a Text string we must know both
  *	the TEXT format and the COLLATE routine to use (eg: the subtype info).
  * 	We need the text-format as the datavalue for key creation may not
- * 	match that needed for the index.
+ * 	match that needed for the index. 
  * Subtype-to-index: When creating indices, they are assigned an
  *	Index type, which is derived from the datatype of the target.
  *
  */
-#define INTL_INDEX_TO_TEXT(idxType) ((USHORT)((idxType) - idx_offset_intl_range))
+#define INTL_INDEX_TO_TEXT(idxType) ((SSHORT)((idxType) - idx_offset_intl_range))
 
 /* Maps a text_type to an index ID */
 #define INTL_TEXT_TO_INDEX(tType)   ((USHORT)((tType)   + idx_offset_intl_range))
@@ -147,15 +132,13 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
 #define MAP_CHARSET_TO_TTYPE(cs)	(cs & 0x00FF)
 
 #define	INTL_RES_TTYPE(desc)	(INTL_DYNAMIC_CHARSET(desc) ?\
-			MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset) :\
+			MAP_CHARSET_TO_TTYPE(tdbb->tdbb_attachment->att_charset) :\
 		 	INTL_GET_TTYPE (desc))
 
 #define INTL_INDEX_TYPE(desc)	INTL_TEXT_TO_INDEX (INTL_RES_TTYPE (desc))
 
 /* Maps a Character_set_id & collation_id to a text_type (driver ID) */
-#define INTL_CS_COLL_TO_TTYPE(cs, coll)	((USHORT)((coll) << 8 | ((cs) & 0x00FF)))
+#define INTL_CS_COLL_TO_TTYPE(cs, coll)	((SSHORT)((coll) << 8 | ((cs) & 0x00FF)))
 
-#define TTYPE_TO_CHARSET(tt)    ((USHORT)((tt) & 0x00FF))
-#define TTYPE_TO_COLLATION(tt)  ((USHORT)((tt) >> 8))
+#endif /* JRD_INTL_H */
 
-#endif	// JRD_INTL_H

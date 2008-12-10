@@ -55,15 +55,15 @@ USHORT KANJI_check_euc(const UCHAR* euc_str, USHORT euc_len)
 {
 /**************************************
  *
- *      K A N J I _ c h e c k _ e u c
+ *      K A N J I _ c h e c k _ e u c 
  *
  **************************************
  *
  * Functional description
  *	This is a cousin of the KANJI_check_sjis routine.
  *      Make sure that the euc string does not have any truncated 2 byte
- *      character at the end. * If we have a truncated character then,
- *          return 1.
+ *      character at the end. * If we have a truncated character then, 
+ *          return 1.  
  *          else return(0);
  **************************************/
 	while (euc_len--) {
@@ -71,9 +71,10 @@ USHORT KANJI_check_euc(const UCHAR* euc_str, USHORT euc_len)
 			if (euc_len == 0) {	/* truncated kanji */
 				return (1);
 			}
-
-			euc_str += 2;
-			euc_len -= 1;
+			else {
+				euc_str += 2;
+				euc_len -= 1;
+			}
 		}
 		else {					/* it is a ASCII */
 			euc_str++;
@@ -93,9 +94,9 @@ USHORT KANJI_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
  *
  * Functional description
  *	This is a cousin of the KANJI_check_euc routine.
- *      Make sure that the sjis string does not have any truncated 2 byte
+ *      Make sure that the sjis string does not have any truncated 2 byte 
  *	character at the end. *	If we have a truncated character then,
- *	    return 1.
+ *	    return 1. 
  *	    else return(0);
  **************************************/
 	while (sjis_len--) {
@@ -104,9 +105,10 @@ USHORT KANJI_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 				if (sjis_len == 0) {	/* truncated KANJI */
 					return (1);
 				}
-
-				sjis_str += 2;
-				sjis_len -= 1;
+				else {
+					sjis_str += 2;
+					sjis_len -= 1;
+				}
 			}
 			else {				/*It is a KANA */
 				sjis_str++;

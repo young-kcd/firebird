@@ -19,7 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #ifndef _INTL_LD_PROTO_H_
@@ -29,17 +28,19 @@
 extern "C" {
 #endif
 
-extern USHORT version;
+#ifdef DEV_BUILD
+void FB_DLL_EXPORT LD_assert(const SCHAR*, int);
+#endif
 
-INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const ASCII* config_info);
+INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name);
 INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 										   USHORT attributes, const UCHAR* specific_attributes,
-										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes,
-										   const ASCII* config_info);
-void FB_DLL_EXPORT LD_version(USHORT* version);
-ULONG FB_DLL_EXPORT LD_setup_attributes(
-	const ASCII* textTypeName, const ASCII* charSetName, const ASCII* configInfo,
-	ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
+										   ULONG specific_attributes_length, INTL_BOOL ignore_attributes);
+
+INTL_BOOL FB_DLL_EXPORT LD2_lookup_charset(charset* cs, const ASCII* name);
+INTL_BOOL FB_DLL_EXPORT LD2_lookup_texttype(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
+											USHORT attributes, const UCHAR* specific_attributes,
+											ULONG specific_attributes_length, INTL_BOOL ignore_attributes);
 
 #ifdef __cplusplus
 } /* extern "C" */

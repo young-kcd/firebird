@@ -64,11 +64,13 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>sed unix utility</li>
 </ul>
 
+<p>If you intend to modify the dsql parser file (parse.y) you will need a parser generator, bison or byacc (Berkeley yacc). At this time byacc 1.9 is the official parser generator although in the future it will be switched to bison. The tested versions of byacc are 1.9 or newer and for bison 1.28 or newer.</p>
 <p>If you intend to prepare an installable build, you will need innosetup.</p>
 <p>To download the utilities use the following links</p>
 <ul>
 <li>My Inno setup extensions 3.0.6.2 <a href="http://www.wintax.nl/isx/">http://www.wintax.nl/isx/</a></li>
-<li>Sed <a href="http://gnuwin32.sourceforge.net/">http://gnuwin32.sourceforge.net/</a></li>
+<li>Sed and Bison 1.35 <a href="http://gnuwin32.sourceforge.net/">http://gnuwin32.sourceforge.net/</a></li>
+<li>Byacc 1.9 <a href="ftp://garbo.uwasa.fi/pc/unix/">ftp://garbo.uwasa.fi/pc/unix/</a></li>
 </ul>
 
 </blockquote>
@@ -83,7 +85,7 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 </li>
 </ol>
 
-<h4>2.2.-Sed</h4>
+<h4>2.2.-Sed and bison</h4>
 
 <h4>2.3.-Inno setup</h4>
 
@@ -107,7 +109,8 @@ Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 <li>To make a clean build from scratch after making changes to the code use the clean_all.bat script</li>
 </ul>
 <h4>4.2.-Parser rebuild</h4>
-<p>If you change parser.y you will need to rebuild parser.cpp, to do so use parse.bat</p>
+<p>Remember, you need sed and bison or yacc in the path to rebuild the parser</p>
+<p>If you change parser.y or parser.sed you will need to rebuild parser.cpp, to do so use parse.bat</p>
 <h4>4.3.-Examples build</h4>
 <p>The examples build prepare two databases that will be needed to compile the examples in a distribution. If you intend to prepare a distribution then run the examples batch before:</p>
 <ol>

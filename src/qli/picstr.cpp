@@ -86,12 +86,10 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
  *
  **************************************/
 	if (!string)
-	{
 		if (!desc)
 			return NULL;
-
-		string = default_edit_string(desc, NULL);
-	}
+		else
+			string = default_edit_string(desc, NULL);
 
 	pics* picture = (pics*) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
@@ -257,24 +255,35 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		picture->pic_floats +
 		picture->pic_literals +
 		picture->pic_decimals +
-		picture->pic_months + picture->pic_days + picture->pic_weekdays + picture->pic_years +
-		picture->pic_nmonths + picture->pic_julians +
+		picture->pic_months +
+		picture->pic_days +
+		picture->pic_weekdays +
+		picture->pic_years +
+		picture->pic_nmonths +
+		picture->pic_julians +
 		picture->pic_brackets +
 		picture->pic_exponents +
 		picture->pic_float_digits +
-		picture->pic_hours + picture->pic_minutes + picture->pic_seconds +
-		picture->pic_meridian;
+		picture->pic_hours +
+		picture->pic_minutes + picture->pic_seconds + picture->pic_meridian;
 
 
 	if (picture->pic_missing) {
-		picture->pic_length = MAX(picture->pic_print_length, picture->pic_missing->pic_print_length);
+		picture->pic_length =
+			MAX(picture->pic_print_length,
+				picture->pic_missing->pic_print_length);
 		picture->pic_missing->pic_length = picture->pic_length;
 	}
 	else
 		picture->pic_length = picture->pic_print_length;
 
-	if (picture->pic_days || picture->pic_weekdays || picture->pic_months || picture->pic_nmonths ||
-		picture->pic_years || picture->pic_hours || picture->pic_julians)
+	if (picture->pic_days ||
+		picture->pic_weekdays ||
+		picture->pic_months ||
+		picture->pic_nmonths ||
+		picture->pic_years ||
+		picture->pic_hours ||
+		picture->pic_julians) 
 	{
 		picture->pic_type = pic_date;
 	}
@@ -352,7 +361,8 @@ void PIC_missing( qli_const* constant, pics* picture)
 
     pics* missing_picture = PIC_analyze(scratch->str_data, desc);
 	picture->pic_missing = missing_picture;
-	picture->pic_length = MAX(picture->pic_print_length, missing_picture->pic_print_length);
+	picture->pic_length =
+		MAX(picture->pic_print_length, missing_picture->pic_print_length);
 	missing_picture->pic_length = picture->pic_length;
 }
 
@@ -438,9 +448,9 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 		break;
 
 	case dtype_int64:
-        /* replace 16 with 20 later
+        /* replace 16 with 20 later 
 		   (as soon as I have sorted out the rounding issues)
-		   FSG*/
+		   FSG*/ 
 		if (!scale)
 			return "-(16)9";
 		if (scale < 0 && scale > -16)
@@ -706,6 +716,9 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	bool negative = false;
 	USHORT l, width, decimal_digits, w_digits, f_digits;
 
+#ifdef VMS
+	bool hack_for_vms_flag = false;
+#endif
 #ifdef WIN_NT
 	bool hack_for_nt_flag = false;
 #endif
@@ -722,9 +735,15 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
    (G-format is untrustworthy.) */
 
 	if (picture->pic_exponents) {
-		width = picture->pic_print_length - picture->pic_floats - picture->pic_literals;
+		width =
+			picture->pic_print_length - picture->pic_floats -
+			picture->pic_literals;
 		decimal_digits = picture->pic_fractions;
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
+#ifdef VMS
+		if (!decimal_digits)
+			hack_for_vms_flag = true;
+#endif
 #ifdef WIN_NT
 		hack_for_nt_flag = true;
 #endif
@@ -745,8 +764,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 				++p;
 			*p = 0;				// move the end
 		}
-		if ((w_digits > width) || (!f_digits && w_digits == 1 && temp[0] == '0'))
-		{
+		if ((w_digits > width)
+			|| (!f_digits && w_digits == 1 && temp[0] == '0')) {
 			/* if the number doesn't fit in the default window, revert
 			   to exponential notation; displaying the maximum number of
 			   mantissa digits. */
@@ -756,12 +775,30 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			else
 				decimal_digits = (width > 7) ? width - 7 : 0;
 			sprintf(temp, "%.*e", decimal_digits, number);
+#ifdef VMS
+			if (!decimal_digits)
+				hack_for_vms_flag = true;
+#endif
 #ifdef WIN_NT
 			hack_for_nt_flag = true;
 #endif
 		}
 	}
 
+#ifdef VMS
+/* If precision of 0 is specified to e- or f-format in VMS, the dec point
+   is printed regardless.  On no other platform is this the case; so take
+   it out here.  When/if this is ever fixed, ALL LINES IN THIS ROUTINE
+   THAT RELATED TO 'hack_for_vms_flag' MAY BE DELETED. */
+
+	if (hack_for_vms_flag) {
+		TEXT* p = temp;
+		while (*p != '.')
+			++p;
+		while (*p = *(p + 1))
+			++p;
+	}
+#endif
 #ifdef WIN_NT
 /* On Windows NT exponents have three digits regardless of the magnitude
    of the number being formatted.  To maintain compatiblity with other
@@ -788,7 +825,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		*out++ = ' ';
 
 	bool is_signed = false;
-
+	
 	for (;;) {
 		const TEXT e = generate(picture);
 		TEXT c = e;
@@ -821,16 +858,16 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		case '9':
 		case 'Z':
 			{
-				if (!(*p) || *p > '9' || *p < '0')
-					break;
-				TEXT d = *p++;
-				if (c == '9' && d == ' ')
-					d = '0';
-				else if (c == 'Z' && d == '0')
-					d = ' ';
-				*out++ = d;
-			}
+			if (!(*p) || *p > '9' || *p < '0')
+				break;
+			TEXT d = *p++;
+			if (c == '9' && d == ' ')
+				d = '0';
+			else if (c == 'Z' && d == '0')
+				d = ' ';
+			*out++ = d;
 			break;
+			}
 
 		case '.':
 			*out++ = (*p == c) ? *p++ : c;

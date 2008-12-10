@@ -1,6 +1,6 @@
 /*
- *	PROGRAM:		JRD Message Facility
- *	MODULE:			build_file.epp
+ *	PROGRAM:	JRD Message Facility
+ *	MODULE:		build_file.epp
  *	DESCRIPTION:	Build message file
  *
  * The contents of this file are subject to the Interbase Public
@@ -47,7 +47,6 @@ typedef msgnod* msgnod_ptr_array[max_levels];
 DATABASE DB = "msg.fdb";
 
 static void ascii_str_to_upper(TEXT*);
-static char* copy_terminate(char* dest, const char* src, size_t bufsize);
 static USHORT do_msgs(const TEXT*, const TEXT*, bool);
 static void propagate(msgnod**, msgnod**, ULONG, ULONG);
 static SLONG write_bucket(const msgnod*, USHORT);
@@ -62,18 +61,23 @@ static int global_file;
 
 #ifdef WIN_NT
 #include <io.h> // open, lseek, write, close
+const char* const locale_pattern = "%.8s.msg";
 const char path_separator = '\\';
 #else
+const char* const locale_pattern = "%.10s.msg";
 const char path_separator = '/';
 #endif
 
-const char* const locale_pattern = "%.10s.msg";
 const char* const FILENAME	= "firebird.msg";
 
+#ifdef VMS
+#include <file.h>
+#else
 #include <sys/types.h>
 #ifndef WIN_NT
 #include <sys/file.h>
 #endif
+#endif  /* VMS */
 
 #ifndef O_RDWR
 #include <fcntl.h>
@@ -116,34 +120,23 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		{
 			switch (UPPER(p[1])) {
 			case 'D':
-				if (argv >= end_args)
-					sw_bad = true;
-				else
-					copy_terminate(db_file, *argv++, MAXPATHLEN);
+				strncpy(db_file, *argv++, MAXPATHLEN);
+				db_file[MAXPATHLEN - 1] = 0;
 				break;
 
 			case 'F':
-				if (argv >= end_args)
-					sw_bad = true;
-				else
-					copy_terminate(filename, *argv++, MAXPATHLEN);
+				strncpy(filename, *argv++, MAXPATHLEN);
+				filename[MAXPATHLEN - 1] = 0;
 				break;
 
 			case 'P':
-				if (argv >= end_args)
-					sw_bad = true;
-				else
-				{
-					copy_terminate(pathbuffer, *argv++, MAXPATHLEN);
-					pathname = pathbuffer;
-				}
+				strncpy(pathbuffer, *argv++, MAXPATHLEN);
+				pathbuffer[MAXPATHLEN - 1] = 0;
+				pathname = pathbuffer;
 				break;
 
 			case 'L':
-				if (argv >= end_args)
-					sw_bad = true;
-				else
-					locale = *argv++;
+				locale = *argv++;
 				break;
 
 			case 'W':
@@ -180,9 +173,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			pathname[len + 1] = 0;
 		}
 	}
-	
-	const size_t separator_pos = pathname ? strlen(pathname) : 0;
-	
+
 /* check for the locale option  */
 
 	if (!locale) {				// no locale given: do the regular US msgs
@@ -225,12 +216,12 @@ int CLIB_ROUTINE main( int argc, char** argv)
 						strcat(pathname, filename);
 						printf(" to file %s\n", pathname);
 						do_msgs(pathname, this_locale, sw_warning);
-						pathname[separator_pos] = 0; // for the next iteration.
 					}
 					else {
 						printf(" to file %s\n", filename);
 						do_msgs(filename, this_locale, sw_warning);
 					}
+					pathname = NULL;
 				END_FOR;
 			}
 			else {
@@ -272,29 +263,6 @@ static void ascii_str_to_upper( TEXT* s)
 		*s >= 'a' && *s <= 'z' ? *s &= 0xDF : *s;
 		*s++;
 	}
-}
-
-
-static char* copy_terminate(char* dest, const char* src, size_t bufsize)
-{
-/**************************************
- *
- * c o p y _ t e r m i n a t e
- *
- **************************************
- *
- * Functional description
- *	Do the same as strncpy but ensure the null terminator is written.
- *	To avoid putting here #include "../common/utils_proto.h"
- *
- **************************************/
-	if (!bufsize) // Was it a joke?
-		return dest;
-
-	--bufsize;
-	strncpy(dest, src, bufsize);
-	dest[bufsize] = 0;
-	return dest;
 }
 
 
@@ -381,15 +349,20 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 			propagate(buckets, nodes, prior_code, position);
 			leaf_node = leaf;
 		}
-		leaf_node->msgrec_code = prior_code = MSG_NUMBER(X.FAC_CODE, X.NUMBER);
+		leaf_node->msgrec_code = prior_code =
+			MSG_NUMBER(X.FAC_CODE, X.NUMBER);
 
 		leaf_node->msgrec_length = len;
-		// Let's not store trash in flags.
-		leaf_node->msgrec_flags = X.FLAGS.NULL ? 0 : X.FLAGS;
-		//n = OFFSETA(MSGREC, msgrec_text) + len; // useless? See assignment below.
+		leaf_node->msgrec_flags = X.FLAGS;
+		n = OFFSETA(MSGREC, msgrec_text) + len; // useless? See assignment below.
 		TEXT* p = leaf_node->msgrec_text;
-		memcpy(p, msg_text, len);
-		n = p + len - (SCHAR*) leaf; // For the next iteration.
+		if (len) {
+			const TEXT* q = msg_text;
+			do {
+				*p++ = *q++;
+			} while (--len);
+		}
+		n = p - (SCHAR *) leaf;
 		leaf_node = NEXT_LEAF(leaf_node);
 	END_FOR;
 
@@ -402,7 +375,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 		leaf_node = leaf;
 	}
 
-	leaf_node->msgrec_code = ~0;
+	leaf_node->msgrec_code = -1UL;
 	leaf_node->msgrec_length = 0;
 	leaf_node->msgrec_flags = 0;
 	n = (SCHAR *) leaf_node - (SCHAR *) leaf;
@@ -414,7 +387,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	for (msgnod** ptr = nodes, **ptr2 = buckets; *ptr; ptr++, ptr2++) {
 		msgnod* node = *ptr;
-		node->msgnod_code = ~0;
+		node->msgnod_code = -1UL;
 		node->msgnod_seek = position;
 		n = (SCHAR *) (node + 1) - (SCHAR *) * ptr2;
 		position = write_bucket(*ptr2, n);
@@ -500,7 +473,7 @@ static SLONG write_bucket( const msgnod* bucket, USHORT length)
 		exit(FINI_ERROR);
 	}
 	
-	const SLONG zero_bytes = 0;
+	SLONG zero_bytes = 0;
 	n = write(global_file, &zero_bytes, padded_length - length);
 	if (n == -1) {
 		fprintf(stderr, "IO error on write()\n");
@@ -522,12 +495,14 @@ static void sanitize( TEXT* locale)
  *
  * Functional description
  *	Clean up a locale to make it acceptable for use in file names
- *	  for Windows NT: replace any period with '_'
+ *	  for Windows NT, PC and mpexl: remove any '.' or '_' for mpexl,
+ *	replace any period with '_' for NT or PC.
  *	  Keep this in sync with gds.cpp
  *
  **************************************/
 	while (*locale) {
-		if (*locale == '.')
+		const SSHORT ch = *locale;
+		if (ch == '.')
 			*locale = '_';
 		locale++;
 	}

@@ -14,22 +14,22 @@
 *       20841   klaus   12-JAN-1996
 *       Add interprocess comm under remote component
 *
-*       20804   RCURRY  9-JAN-1996
+*       20804   RCURRY  9-JAN-1996 
 *       Change priority for NP threads to normal
 *
 *       20768   klaus   20-DEC-1995
 *       More xnet driver work
 *
-*       20729   klaus   8-DEC-1995
+*       20729   klaus   8-DEC-1995 
 *       Begin adding xnet protocol
 *
-*       20716   jmayer  6-DEC-1995
+*       20716   jmayer  6-DEC-1995 
 *       Update to not show NamedPipes as supported on Win95.
 *
-*       20690   jmayer  4-DEC-1995
+*       20690   jmayer  4-DEC-1995 
 *       Change to start the IPC protocol when running as a service.
 *
-*       20682   jmayer  3-DEC-1995
+*       20682   jmayer  3-DEC-1995 
 *       Update to write to logfile and display msg box as a non-service.
 *
 *       20373   RCURRY  24-OCT-1995
@@ -87,7 +87,7 @@
 #include "../remote/remote.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
-#include "../jrd/ThreadStart.h"
+#include "../jrd/thd.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../remote/inet_proto.h"
@@ -97,20 +97,21 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/xnet_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
+#include "../jrd/svc_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"
-#include "../common/utils_proto.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM);
 static HANDLE parse_args(LPCSTR, USHORT*);
 static void service_connection(rem_port*);
 
@@ -118,8 +119,18 @@ static HINSTANCE hInst;
 
 static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
-static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
+
+static const SERVICE_TABLE_ENTRY service_table[] =
+{
+	{const_cast<TEXT*>(REMOTE_SERVICE), CNTL_main_thread},
+	{NULL, NULL}
+};
+
+static const int SIGSHUT = 666;
+static int shutdown_pid = 0;
+
+//const char* const FBCLIENTDLL = "fbclient.dll";
 
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
@@ -141,27 +152,28 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	hInst = hThisInst;
 
 	// We want server to crash without waiting for feedback from the user
-	try
+	try 
 	{
 		if (!Config::getBugcheckAbort())
 			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 	}
-	catch (Firebird::fatal_exception& e)
+	catch(Firebird::fatal_exception& e)
 	{
-		MessageBox(NULL, e.what(), "Firebird server failure",
+		MessageBox(NULL, e.what(), "Firebird server failure", 
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
-	catch (Firebird::status_exception& e)
+	catch(Firebird::status_exception& e)
 	{
-		TEXT buffer[BUFFER_LARGE];
-		const ISC_STATUS* vector = e.value();
-		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
+		TEXT buffer[1024];
+        const ISC_STATUS* vector = 0;
+		if (! (e.status_known() && (vector = e.value()) &&
+			  fb_interpret(buffer, sizeof(buffer), &vector)))
 		{
 			strcpy(buffer, "Unknown internal failure");
 		}
 
-		MessageBox(NULL, buffer, "Firebird server failure",
+		MessageBox(NULL, buffer, "Firebird server failure", 
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
@@ -174,15 +186,55 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 #endif
 
 #ifdef SUPERSERVER
-	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
+	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
+
+		/* CVC: This operating system call doesn't exist for W9x. */
+		typedef BOOL (__stdcall *PSetProcessAffinityMask)(HANDLE, DWORD);
+		PSetProcessAffinityMask SetProcessAffinityMask;
+
+		SetProcessAffinityMask = (PSetProcessAffinityMask)
+			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
+		if (SetProcessAffinityMask) {
+			/* Mike Nordell - 11 Jun 2001: CPU affinity. */
+			(*SetProcessAffinityMask)(GetCurrentProcess(),
+				static_cast<DWORD>(Config::getCpuAffinityMask()));
+		}
+	}
+	else {
+		server_flag |= SRVR_non_service;
+	}
 #endif
+
+	if (server_flag & SRVR_multi_client) {
+		gds__thread_enable(-1);
+	}
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
 
-	strcpy(instance, FB_DEFAULT_INSTANCE);
-
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
+/*
+	if (shutdown_pid) {
+		int rc = ISC_kill(shutdown_pid, SIGSHUT, 0);
+		if (rc < 0)
+		{
+			char buffer[100];
+			sprintf(buffer, "Cannot terminate process with pid = %d", shutdown_pid);
+			MessageBox(NULL, buffer,
+				"Firebird server failure", 
+				MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
+			return STARTUP_ERROR; // see /jrd/common.h
+		}
+		return 0;
+	}
+*/
+	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
+
+		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
+			server_flag |= SRVR_wnet;
+		server_flag |= SRVR_inet;
+		server_flag |= SRVR_xnet;
+	}
 
 #ifdef SUPERSERVER
 	// get priority class from the config file
@@ -202,62 +254,42 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 #endif
 
-	TEXT mutex_name[MAXPATHLEN];
-	fb_utils::_snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
-	fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
-	CreateMutex(ISC_get_security_desc(), FALSE, mutex_name);
+	CreateMutex(ISC_get_security_desc(), FALSE, SERVER_MUTEX);
 
-	// Initialize the service
-
+/* Initialize the service and
+   Setup sig_mutex for the process
+*/
 	ISC_signal_init();
+
+#ifdef SUPERSERVER
 	ISC_enter();
+#endif
 
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
-	fb_utils::init_status(status_vector);
 
-	if (connection_handle != INVALID_HANDLE_VALUE)
+	if (connection_handle != INVALID_HANDLE_VALUE) 
 	{
 		rem_port* port = 0;
-
+		THREAD_ENTER();
 		if (server_flag & SRVR_inet)
-		{
 			port = INET_reconnect(connection_handle, status_vector);
-
-			if (port)
-			{
-				SRVR_multi_thread(port, server_flag);
-				port = NULL;
-			}
-		}
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_xnet)
 			port = XNET_reconnect((ULONG) connection_handle, status_vector);
-
+		THREAD_EXIT();
 		if (port) {
 			service_connection(port);
 		}
-		else if (status_vector[1])
-			gds__log_status(0, status_vector);
-
-		fb_shutdown(0, fb_shutrsn_no_connection);
 	}
-	else if (!(server_flag & SRVR_non_service))
+	else if (!(server_flag & SRVR_non_service)) 
 	{
-		Firebird::string service_name;
-		service_name.printf(REMOTE_SERVICE, instance);
-
-		CNTL_init(start_connections_thread, instance);
-
-		const SERVICE_TABLE_ENTRY service_table[] =
-		{
-			{const_cast<char*>(service_name.c_str()), CNTL_main_thread},
-			{NULL, NULL}
-		};
-
-		// BRS There is a error in MinGW (3.1.0) headers
-		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+		CNTL_init(start_connections_thread, REMOTE_SERVICE);
+//
+// BRS There is a error in MinGW (3.1.0) headers 
+// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+//
 #if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 #else
@@ -269,9 +301,21 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			server_flag |= SRVR_non_service;
 		}
 	}
-	else
+	else 
 	{
-		start_connections_thread(0);
+		if (server_flag & SRVR_inet) {
+			gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0,
+							  0);
+		}
+		if (server_flag & SRVR_wnet) {
+			gds__thread_start(wnet_connect_wait_thread, 0, THREAD_medium, 0,
+							  0);
+		}
+		if (server_flag & SRVR_xnet) {
+			gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0,
+							  0);
+		}
+		// No need to waste a thread if we are running as a window
 		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 	}
 
@@ -305,7 +349,15 @@ THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
  * Functional description
  *
  **************************************/
+	void *thread = NULL; // silence non initialized warning
+
+	if (!(server_flag & SRVR_non_service)) {
+		thread = CNTL_insert_thread();
+	}
 	service_connection((rem_port*)arg);
+	if (!(server_flag & SRVR_non_service)) {
+		CNTL_remove_thread(thread);
+	}
 	return 0;
 }
 
@@ -321,16 +373,19 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
+	void *thread = NULL; // silence non initialized warning
+	if (!(server_flag & SRVR_non_service))
+		thread = CNTL_insert_thread();
+
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
-
+		THREAD_ENTER();
+		rem_port* port =
+			INET_connect(protocol_inet, NULL, status_vector, server_flag, 0, 0);
+		THREAD_EXIT();
 		if (!port) {
-			if (status_vector[1]) {
-				gds__log_status(0, status_vector);
-			}
+			gds__log_status(0, status_vector);
 			break;
 		}
 		if (server_flag & SRVR_multi_client) {
@@ -338,9 +393,13 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			break;
 		}
 		else {
-			gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
+			gds__thread_start(process_connection_thread, port,
+							  THREAD_medium, 0, 0);
 		}
 	}
+
+	if (!(server_flag & SRVR_non_service))
+		CNTL_remove_thread(thread);
 	return 0;
 }
 
@@ -356,29 +415,35 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
+	void *thread = NULL; // silence non initialized warning
+
+	if (!(server_flag & SRVR_non_service)) {
+		thread = CNTL_insert_thread();
+	}
+
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
-
-		if (!port)
-		{
-			const ISC_STATUS err = status_vector[1];
-			if (err)
+		THREAD_ENTER();
+		rem_port* port =
+			WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
+		THREAD_EXIT();
+		if (!port) {
+			if (status_vector[1] != isc_io_error ||
+				status_vector[6] != isc_arg_win32 ||
+				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED)
 			{
-				if (err == isc_net_server_shutdown)
-					break;
 				gds__log_status(0, status_vector);
 			}
+			break;
 		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
-		{
-			gds__log("WNET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
-		}
+		gds__thread_start(process_connection_thread, port,
+						  THREAD_medium, 0, 0);
 	}
 
+	if (!(server_flag & SRVR_non_service)) {
+		CNTL_remove_thread(thread);
+	}
 	return 0;
 }
 
@@ -395,34 +460,33 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *   Starts xnet server side interprocess thread
  *
  **************************************/
+	void *thread = NULL; // silence non initialized warning
+
+	if (!(server_flag & SRVR_non_service))
+		thread = CNTL_insert_thread();
+
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = XNET_connect(NULL, NULL, status_vector, server_flag);
-
-		if (!port)
-		{
-			const ISC_STATUS err = status_vector[1];
-			if (err)
-			{
-				if (err == isc_net_server_shutdown)
-					break;
-				gds__log_status(0, status_vector);
-			}
+		THREAD_ENTER();
+		rem_port* port =
+			XNET_connect(NULL, NULL, status_vector, server_flag);
+		THREAD_EXIT();
+		if (!port) {
+			gds__log_status(0, status_vector);
+			break;
 		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
-		{
-			gds__log("XNET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
-		}
+		gds__thread_start(process_connection_thread, port,
+						  THREAD_medium, 0, 0);
 	}
 
+	if (!(server_flag & SRVR_non_service))
+		CNTL_remove_thread(thread);
 	return 0;
 }
 
 
-static void service_connection(rem_port* port)
+static void service_connection( rem_port* port)
 {
 /**************************************
  *
@@ -434,7 +498,7 @@ static void service_connection(rem_port* port)
  *
  **************************************/
 
-	SRVR_main(port, server_flag & ~SRVR_multi_client);
+	SRVR_main(port, (USHORT) (server_flag & ~SRVR_multi_client));
 }
 
 
@@ -463,7 +527,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
+static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 {
 /**************************************
  *
@@ -480,20 +544,16 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
  *      INVALID_HANDLE_VALUE otherwise.
  *
  **************************************/
-	bool delimited = false;
+	TEXT buffer[32];
 
 	HANDLE connection_handle = INVALID_HANDLE_VALUE;
 
 	const TEXT* p = lpszArgs;
-	while (*p)
-	{
+	while (*p) {
 		TEXT c;
 		if (*p++ == '-')
-		{
 			while ((*p) && (c = *p++) && (c != ' '))
-			{
-				switch (UPPER(c))
-				{
+				switch (UPPER(c)) {
 				case 'A':
 					*pserver_flag |= SRVR_non_service;
 					break;
@@ -511,10 +571,10 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					while (*p && *p == ' ')
 						p++;
 					if (*p) {
-						TEXT buffer[32];
-						char* pp = buffer;
-						while (*p && *p != ' ' && (pp - buffer < sizeof(buffer) - 1))
+						char *pp = buffer;
+						while (*p && *p != ' ') {
 							*pp++ = *p++;
+						}
 						*pp++ = '\0';
 						connection_handle = (HANDLE) atol(buffer);
 					}
@@ -525,8 +585,17 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					*pserver_flag |= SRVR_inet;
 					break;
 
-				case 'M':
-					*pserver_flag |= SRVR_multi_client;
+				case 'K':
+					while (*p && *p == ' ')
+						p++;
+					if (*p) {
+						char *pp = buffer;
+						while (*p && *p != ' ') {
+							*pp++ = *p++;
+						}
+						*pp++ = '\0';
+						shutdown_pid = atoi(buffer);
+					}
 					break;
 
 				case 'N':
@@ -537,24 +606,16 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					while (*p && *p == ' ')
 						p++;
 					if (*p) {
-						// Assumed the buffer size for both protocols may differ
-						// in the future, hence I did generic code.
-						char* pi = protocol_inet;
-						const char* piend = protocol_inet + sizeof(protocol_inet) - 1;
-						char* pw = protocol_wnet;
-						const char* pwend = protocol_wnet + sizeof(protocol_wnet) - 1;
+						char *pi = protocol_inet, *pw = protocol_wnet;
 
 						*pi++ = '/';
 						*pw++ = '\\';
 						*pw++ = '\\';
 						*pw++ = '.';
 						*pw++ = '@';
-						while (*p && *p != ' ')
-						{
-							if (pi < piend)
-								*pi++ = *p;
-							if (pw < pwend)
-								*pw++ = *p++;
+						while (*p && *p != ' ') {
+							*pi++ = *p;
+							*pw++ = *p++;
 						}
 						*pi++ = '\0';
 						*pw++ = '\0';
@@ -563,36 +624,6 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 
 				case 'R':
 					*pserver_flag &= ~SRVR_high_priority;
-					break;
-
-				case 'S':
-					delimited = false;
-					while (*p && *p == ' ')
-						p++;
-					if (*p && *p == '"') {
-						p++;
-						delimited = true;
-					}
-					if (delimited) {
-						char* pi = instance;
-						const char* pend = instance + sizeof(instance) - 1;
-						while (*p && *p != '"' && pi < pend) {
-							*pi++ = *p++;
-						}
-						*pi++ = '\0';
-						if (*p && *p == '"')
-							p++;
-					}
-					else {
-						if (*p && *p != '-') {
-							char* pi = instance;
-							const char* pend = instance + sizeof(instance) - 1;
-							while (*p && *p != ' ' && pi < pend) {
-								*pi++ = *p++;
-							}
-							*pi++ = '\0';
-						}
-					}
 					break;
 
 				case 'W':
@@ -606,7 +637,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 				case 'Z':
 					// CVC: printf doesn't work because we don't have a console attached.
 					//printf("Firebird remote server version %s\n",  FB_VERSION);
-					MessageBox(NULL, FB_VERSION, "Firebird server version",
+					MessageBox(NULL, FB_VERSION, "Firebird server version", 
 						MB_OK | MB_ICONINFORMATION | MB_TOPMOST | MB_DEFAULT_DESKTOP_ONLY);
 					exit(FINI_OK);
 
@@ -616,15 +647,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					 * of p. */
 					break;
 				}
-			}
-		}
 	}
-
-	if ((*pserver_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
-		*pserver_flag |= SRVR_wnet;
-		*pserver_flag |= SRVR_inet;
-		*pserver_flag |= SRVR_xnet;
-	}
-
 	return connection_handle;
 }
+

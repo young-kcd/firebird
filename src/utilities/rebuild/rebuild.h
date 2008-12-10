@@ -31,7 +31,7 @@ typedef struct fil {
 } *FIL;
 
 typedef struct rbdb {
-    ULONG	rbdb_map_length;
+    ULONG	rbdb_map_length; 
     int		rbdb_map_base;
     int		rbdb_map_count;
     SCHAR	*rbdb_map_region;
@@ -45,7 +45,7 @@ typedef struct rbdb {
     struct fil	rbdb_file;
 } *RBDB;
 
-typedef struct swc {
+typedef struct swc { 
     SCHAR    swc_switch;
     SCHAR    swc_comma;
     TEXT    *swc_string;

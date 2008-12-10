@@ -24,22 +24,23 @@
 #ifndef QLI_ERR_PROTO_H
 #define QLI_ERR_PROTO_H
 
-#include "../common/classes/SafeArg.h"
-
 void	ERRQ_bugcheck(USHORT);
 void	ERRQ_database_error(dbb*, ISC_STATUS*);
-void	ERRQ_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ERRQ_error(USHORT, const char* str);
-void	ERRQ_error_format(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+void	ERRQ_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+					const TEXT*, const TEXT*);
+void	ERRQ_error_format(USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
 void	ERRQ_exit (int);
-void	ERRQ_msg_format(USHORT, USHORT, TEXT*, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-int		ERRQ_msg_get(USHORT, TEXT*, size_t s_size);
-void	ERRQ_msg_partial (USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ERRQ_msg_put (USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ERRQ_msg_put(USHORT number, const char* str);
-void	ERRQ_pending ();
-void	ERRQ_print_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ERRQ_print_error(USHORT number, const char* str);
+void	ERRQ_msg_format(USHORT, USHORT, TEXT*, const TEXT*, const TEXT*,
+						const TEXT*, const TEXT*, const TEXT*);
+int		ERRQ_msg_get (USHORT, TEXT*);
+void	ERRQ_msg_partial (USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
+void	ERRQ_msg_put (USHORT, const TEXT*, const TEXT*, const TEXT*,
+						const TEXT*, const TEXT*);
+void	ERRQ_pending (void);
+void	ERRQ_print_error (USHORT, const TEXT*, const TEXT*, const TEXT*,
+							const TEXT*, const TEXT*);
 void	ERRQ_syntax (USHORT);
 
 #endif // QLI_ERR_PROTO_H

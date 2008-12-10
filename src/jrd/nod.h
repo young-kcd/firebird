@@ -20,14 +20,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * Adriano dos Santos Fernandes
  */
 
 NODE(nod_asn_list, asn_list, "")
 	NODE(nod_assignment, assignment, "")
 	NODE(nod_dcl_variable, declare, "")
 	NODE(nod_erase, erase, "")
-	NODE(nod_user_savepoint, user_savepoint, "SAVEPOINT")
+	NODE(nod_user_savepoint, user_savepoint, "SAVEPOINT")	
 	NODE(nod_fetch, fetch, "")
 	NODE(nod_for, for, "")
 	NODE(nod_handler, handler, "")
@@ -87,7 +86,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_matches, matches, "")
 			NODE(nod_sleuth, sleuth, "")
 			NODE(nod_like, like, " LIKE ")
-			NODE(nod_similar, similar, " SIMILAR TO ")
 			NODE(nod_contains, contains, "")
 			NODE(nod_missing, missing, " IS NULL")
 			NODE(nod_between, between, "")
@@ -110,8 +108,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_agg_count_distinct, agg_count_distinct, "")
 			NODE(nod_agg_total_distinct, agg_total_distinct, "")
 			NODE(nod_agg_average_distinct, agg_average_distinct, "")
-			NODE(nod_agg_list, agg_list, "")
-			NODE(nod_agg_list_distinct, agg_list_distinct, "")
 			NODE(nod_asb, AggregateSort, "")
 			NODE(nod_relation, relation, "")
 			NODE(nod_rse, RecordSelExpr, "")
@@ -177,15 +173,14 @@ NODE(nod_asn_list, asn_list, "")
           NODE(nod_current_role, current_role, "")
           NODE(nod_breakleave, breakleave, "")
 
-/* EXECUTE STATEMENT */
-		  NODE(nod_exec_sql, exec_sql, "EXECUTE STATEMENT")
+/* EXECUTE VARCHAR */
+		  NODE(nod_exec_sql, exec_sql, "EXECUTE VARCHAR")
 
 /* Internal engine info */
 		  NODE(nod_internal_info, internal_info, "INTERNAL INFO")
 
 /* EXECUTE VARCHAR INTO ...*/
 		  NODE(nod_exec_into, exec_sql_into, "EXECUTE VARCHAR INTO")
-		  NODE(nod_exec_stmt, exec_stmt, "EXECUTE STATEMENT")
 
 		  NODE(nod_dcl_cursor, declare_cursor, "DECLARE CURSOR")
 		  NODE(nod_cursor_stmt, cursor_stmt, "CURSOR STATEMENT")
@@ -193,11 +188,3 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_equiv, equiv, " == ")
 
 		  NODE(nod_strlen, strlen, "STRLEN")
-
-		  NODE(nod_src_info, source_info, "")
-		  NODE(nod_init_variable, init_variable, "")
-		  NODE(nod_domain_validation, domain_validation, "")
-		  NODE(nod_sys_function, sys_function, "")
-		  NODE(nod_class_node_jrd, class_node_jrd, "class_node_jrd")
-		  NODE(nod_stmt_expr, stmt_expr, "stmt_expr")
-  		  NODE(nod_derived_expr, derived_expr, "derived_expr")

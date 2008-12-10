@@ -26,18 +26,26 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_EXE_H
 #define JRD_EXE_H
 
-#include "../jrd/blb.h"
-#include "../jrd/Relation.h"
+#include "../jrd/jrd_blks.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 
 #include "gen/iberror.h"
+
+#define NODE(type, name, keyword) type,
+
+enum nod_t {
+#include "../jrd/nod.h"
+	nod_MAX
+#undef NODE
+};
+
+typedef nod_t NOD_T;
 
 #include "../jrd/dsc.h"
 #include "../jrd/rse.h"
@@ -45,8 +53,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/scl.h"
 #include "../jrd/sbm.h"
-
-#include "../jrd/DebugInterface.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -63,22 +69,11 @@ struct dsc;
 
 namespace Jrd {
 
-#define NODE(type, name, keyword) type,
-
-enum nod_t {
-#include "../jrd/nod.h"
-	nod_MAX
-#undef NODE
-};
-
-typedef nod_t NOD_T;
-
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
 template <typename T> class vec;
 class jrd_prc;
-class Collation;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
@@ -92,7 +87,7 @@ public:
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
-	USHORT	nod_flags;
+	UCHAR	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
 };
@@ -123,8 +118,7 @@ const int nod_value		= 16;		/* full value area required in impure space */
 const int nod_deoptimize	= 32;	/* boolean which requires deoptimization */
 const int nod_agg_dbkey	= 64;		/* dbkey of an aggregate */
 const int nod_invariant	= 128;		/* node is recognized as being invariant */
-const int nod_recurse	= 256;		/* union node is a recursive union */
-const int nod_unique_sort	= 512;	// sorts using unique key - for distinct and group by
+
 
 /* Special RecordSelExpr node */
 
@@ -134,11 +128,9 @@ public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		/* inner, left, full */
 	bool		rse_writelock;
-#ifdef SCROLLABLE_CURSORS
 	RecordSource*	rse_rsb;
-#endif
 	jrd_nod*	rse_first;
-	jrd_nod*	rse_skip;
+    jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
 	jrd_nod*	rse_sorted;
 	jrd_nod*	rse_projection;
@@ -190,8 +182,6 @@ public:
 	SCHAR	nod_scale;
 	USHORT	nod_count;
 	dsc		asb_desc;
-	USHORT	asb_length;
-	bool	asb_intl;
 	sort_key_def* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };
@@ -201,19 +191,15 @@ const size_t asb_delta	= ((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jr
 
 /* Various structures in the impure area */
 
-struct impure_state
-{
+struct impure_state {
 	SSHORT sta_state;
 };
 
-struct impure_value
-{
+struct impure_value {
 	dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
 	VaryingString* vlu_string;
-	union
-	{
-		UCHAR vlu_uchar;
+	union {
 		SSHORT vlu_short;
 		SLONG vlu_long;
 		SINT64 vlu_int64;
@@ -224,60 +210,29 @@ struct impure_value
 		GDS_TIMESTAMP vlu_timestamp;
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
-		bid vlu_bid;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
-
-	void make_long(const SLONG val, const signed char scale = 0);
-	void make_int64(const SINT64 val, const signed char scale = 0);
-
 };
 
-// Do not use these methods where dsc_sub_type is not explicitly set to zero.
-inline void impure_value::make_long(const SLONG val, const signed char scale)
-{
-	this->vlu_misc.vlu_long = val;
-	this->vlu_desc.dsc_dtype = dtype_long;
-	this->vlu_desc.dsc_length = sizeof(SLONG);
-	this->vlu_desc.dsc_scale = scale;
-	this->vlu_desc.dsc_sub_type = 0;
-	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_long);
-}
-
-inline void impure_value::make_int64(const SINT64 val, const signed char scale)
-{
-	this->vlu_misc.vlu_int64 = val;
-	this->vlu_desc.dsc_dtype = dtype_int64;
-	this->vlu_desc.dsc_length = sizeof(SINT64);
-	this->vlu_desc.dsc_scale = scale;
-	this->vlu_desc.dsc_sub_type = 0;
-	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_int64);
-}
-
-
-struct impure_value_ex : public impure_value
-{
+struct impure_value_ex : public impure_value {
 	SLONG vlux_count;
-	blb* vlu_blob;
 };
 
 
-const int VLU_computed	= 1;	// An invariant sub-query has been computed
-const int VLU_null		= 2;	// An invariant sub-query computed to null
-const int VLU_checked	= 4;	// Constraint already checked in first read or assignment to argument/variable
+const int VLU_computed	= 1;		/* An invariant sub-query has been computed */
+const int VLU_null		= 2;		/* An invariant sub-query computed to null */
+
 
 /* Inversion (i.e. nod_index) impure area */
 
-struct impure_inversion
-{
+struct impure_inversion {
 	RecordBitmap* inv_bitmap;
 };
 
 
 /* AggregateSort impure area */
 
-struct impure_agg_sort
-{
+struct impure_agg_sort {
 	sort_context* iasb_sort_handle;
 };
 
@@ -294,20 +249,17 @@ const int e_arg_flag		= 0;
 const int e_arg_indicator	= 1;
 const int e_arg_message		= 2;
 const int e_arg_number		= 3;
-const int e_arg_info		= 4;
-const int e_arg_length		= 5;
+const int e_arg_length		= 4;
 
-const int e_msg_number			= 0;
-const int e_msg_format			= 1;
-const int e_msg_next			= 2;
-const int e_msg_impure_flags	= 3;
-const int e_msg_length			= 4;
+const int e_msg_number		= 0;
+const int e_msg_format		= 1;
+const int e_msg_next		= 2;
+const int e_msg_length		= 3;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
-const int e_fld_format		= 2;		// relation or procedure latest format when compiling
-const int e_fld_default_value	= 3;	// hold column default value info if any, (Literal*)
-const int e_fld_length		= 4;
+const int e_fld_default_value	= 2;	// hold column default value info if any, (Literal*)
+const int e_fld_length		= 3;
 
 const int e_sto_statement	= 0;
 const int e_sto_statement2	= 1;
@@ -327,14 +279,13 @@ const int e_sav_name		= 1;
 const int e_sav_length		= 2;
 
 const int e_mod_statement	= 0;
-const int e_mod_statement2	= 1;
-const int e_mod_sub_mod		= 2;
-const int e_mod_validate	= 3;
-const int e_mod_map_view	= 4;
-const int e_mod_org_stream	= 5;
-const int e_mod_new_stream	= 6;
-const int e_mod_rsb			= 7;
-const int e_mod_length		= 8;
+const int e_mod_sub_mod		= 1;
+const int e_mod_validate	= 2;
+const int e_mod_map_view	= 3;
+const int e_mod_org_stream	= 4;
+const int e_mod_new_stream	= 5;
+const int e_mod_rsb			= 6;
+const int e_mod_length		= 7;
 
 const int e_send_statement	= 0;
 const int e_send_message	= 1;
@@ -375,8 +326,7 @@ const int e_val_length		= 2;
 
 const int e_uni_stream		= 0;	// Stream for union
 const int e_uni_clauses		= 1;	// RecordSelExpr's for union
-const int e_uni_map_stream	= 2;	// stream for next level record of recursive union
-const int e_uni_length		= 3;
+const int e_uni_length		= 2;
 
 const int e_agg_stream		= 0;
 const int e_agg_rse			= 1;
@@ -438,8 +388,7 @@ const int e_xcp_length		= 2;
 
 const int e_var_id			= 0;
 const int e_var_variable	= 1;
-const int e_var_info		= 2;
-const int e_var_length		= 3;
+const int e_var_length		= 2;
 
 const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
@@ -466,8 +415,7 @@ const int e_err_length		= 2;
 
 const int e_cast_source		= 0;
 const int e_cast_fmt		= 1;
-const int e_cast_iteminfo	= 2;
-const int e_cast_length		= 3;
+const int e_cast_length		= 2;
 
 
 // CVC: These belong to SCROLLABLE_CURSORS, but I can't mark them with the macro
@@ -522,55 +470,6 @@ const int e_trim_specification	= 2;
 const int e_trim_count			= 2;
 const int e_trim_length			= 3;
 
-// nod_src_info
-const int e_src_info_line		= 0;
-const int e_src_info_col		= 1;
-const int e_src_info_node		= 2;
-const int e_src_info_length		= 3;
-
-// nod_init_variable
-const int e_init_var_id			= 0;
-const int e_init_var_variable	= 1;
-const int e_init_var_info		= 2;
-const int e_init_var_length		= 3;
-
-// nod_domain_validation
-const int e_domval_desc			= 0;
-const int e_domval_length		= sizeof (DSC) / sizeof(::Jrd::jrd_nod*);	// Room for descriptor
-
-// System function expression
-const int e_sysfun_args		= 0;
-const int e_sysfun_function	= 1;
-const int e_sysfun_count	= 1;
-const int e_sysfun_length	= 2;
-
-// nod_exec_stmt
-const int e_exec_stmt_stmt_sql		= 0;
-const int e_exec_stmt_data_src		= 1;
-const int e_exec_stmt_user			= 2;
-const int e_exec_stmt_password		= 3;
-const int e_exec_stmt_proc_block	= 4;
-const int e_exec_stmt_fixed_count	= 5;
-
-const int e_exec_stmt_extra_inputs		= 0;
-const int e_exec_stmt_extra_input_names	= 1;
-const int e_exec_stmt_extra_outputs		= 2;
-const int e_exec_stmt_extra_tran		= 3;
-const int e_exec_stmt_extra_privs		= 4;
-const int e_exec_stmt_extra_count		= 5;
-
-// nod_stmt_expr
-const int e_stmt_expr_stmt		= 0;
-const int e_stmt_expr_expr		= 1;
-const int e_stmt_expr_length	= 2;
-
-// nod_derived_expr
-const int e_derived_expr_expr			= 0;
-const int e_derived_expr_stream_count	= 1;
-const int e_derived_expr_stream_list	= 2;
-const int e_derived_expr_count			= 1;
-const int e_derived_expr_length			= 3;
-
 // Request resources
 
 struct Resource
@@ -579,19 +478,16 @@ struct Resource
 	{
 		rsc_relation,
 		rsc_procedure,
-		rsc_index,
-		rsc_collation
+		rsc_index
 	};
 
 	enum rsc_s	rsc_type;
 	USHORT		rsc_id;			/* Id of the resource */
 	jrd_rel*	rsc_rel;		/* Relation block */
 	jrd_prc*	rsc_prc;		/* Procedure block */
-	Collation*	rsc_coll;		/* Collation block */
 
-	static bool greaterThan(const Resource& i1, const Resource& i2)
-	{
-		// A few places of the engine depend on fact that rsc_type
+	static bool greaterThan(const Resource& i1, const Resource& i2) {
+		// A few places of the engine depend on fact that rsc_type 
 		// is the first field in ResourceList ordering
 		if (i1.rsc_type != i2.rsc_type)
 			return i1.rsc_type > i2.rsc_type;
@@ -603,11 +499,11 @@ struct Resource
 		return i1.rsc_id > i2.rsc_id;
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll) :
-		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll) { }
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc) :
+		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc) { }
 };
 
-typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
+typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
 	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
 
 // Access items
@@ -618,17 +514,16 @@ struct AccessItem
 {
 	Firebird::MetaName		acc_security_name;
 	SLONG					acc_view_id;
-	Firebird::MetaName		acc_name, acc_r_name;
+	Firebird::MetaName		acc_name;
 	const TEXT*				acc_type;
 	SecurityClass::flags_t	acc_mask;
 
-	static bool greaterThan(const AccessItem& i1, const AccessItem& i2)
-	{
+	static bool greaterThan(const AccessItem& i1, const AccessItem& i2) {
 		int v;
 
 		// Relations and procedures should be sorted before
 		// columns, hence such a tricky inverted condition
-		if ((v = -strcmp(i1.acc_type, i2.acc_type)) != 0)
+		if ((v = -strcmp(i1.acc_type, i2.acc_type)) != 0) 
 			return v > 0;
 
 		if ((v = i1.acc_security_name.compare(i2.acc_security_name)) != 0)
@@ -643,28 +538,23 @@ struct AccessItem
 		if ((v = i1.acc_name.compare(i2.acc_name)) != 0)
 			return v > 0;
 
-		if ((v = i1.acc_r_name.compare(i2.acc_r_name)) != 0)
-			return v > 0;
-
 		return false; // Equal
 	}
 
-	AccessItem(const Firebird::MetaName& security_name, SLONG view_id,
-		const Firebird::MetaName& name, const TEXT* type,
-		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
+	AccessItem(const Firebird::MetaName& security_name, SLONG view_id, 
+		const Firebird::MetaName& name, const TEXT* type, SecurityClass::flags_t mask)
 	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
-		acc_r_name(relName), acc_type(type), acc_mask(mask)
+		acc_type(type), acc_mask(mask)
 	{}
 };
 
-typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>,
+typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>, 
 	AccessItem, Firebird::DefaultKeyValue<AccessItem>, AccessItem> AccessItemList;
 
 // Triggers and procedures the request accesses
 struct ExternalAccess
 {
-	enum exa_act
-	{
+	enum exa_act {
 		exa_procedure,
 		exa_insert,
 		exa_update,
@@ -676,7 +566,7 @@ struct ExternalAccess
 	USHORT exa_view_id;
 
 	// Procedure
-	ExternalAccess(USHORT prc_id) :
+	ExternalAccess(USHORT prc_id) : 
 		exa_action(exa_procedure), exa_prc_id(prc_id), exa_rel_id(0), exa_view_id(0)
 	{ }
 
@@ -685,8 +575,7 @@ struct ExternalAccess
 		exa_action(action), exa_prc_id(0), exa_rel_id(rel_id), exa_view_id(view_id)
 	{ }
 
-	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2)
-	{
+	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2) {
 		if (i1.exa_action != i2.exa_action)
 			return i1.exa_action > i2.exa_action;
 		if (i1.exa_prc_id != i2.exa_prc_id)
@@ -699,98 +588,8 @@ struct ExternalAccess
 	}
 };
 
-typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>,
+typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
 	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
-
-// The three structs below are used for domains DEFAULT and constraints in PSQL
-struct Item
-{
-	Item(NOD_T aType, UCHAR aSubType, USHORT aIndex)
-		: type(aType),
-		  subType(aSubType),
-		  index(aIndex)
-	{
-	}
-
-	Item(NOD_T aType, USHORT aIndex = 0)
-		: type(aType),
-		  subType(0),
-		  index(aIndex)
-	{
-	}
-
-	NOD_T type;
-	UCHAR subType;
-	USHORT index;
-
-	bool operator >(const Item& x) const
-	{
-		if (type == x.type)
-		{
-			if (subType == x.subType)
-				return index > x.index;
-
-			return subType > x.subType;
-		}
-
-		return type > x.type;
-	}
-};
-
-struct FieldInfo
-{
-	FieldInfo()
-		: nullable(false), defaultValue(0), validation(0)
-	{}
-
-	bool nullable;
-	jrd_nod* defaultValue;
-	jrd_nod* validation;
-};
-
-struct ItemInfo
-{
-	ItemInfo(MemoryPool& p, const ItemInfo& o)
-		: name(p, o.name),
-		  field(p, o.field),
-		  nullable(o.nullable),
-		  explicitCollation(o.explicitCollation),
-		  fullDomain(o.fullDomain)
-	{
-	}
-
-	explicit ItemInfo(MemoryPool& p)
-		: name(p),
-		  field(p),
-		  nullable(true),
-		  explicitCollation(false),
-		  fullDomain(false)
-	{
-	}
-
-	ItemInfo()
-		: name(),
-		  field(),
-		  nullable(true),
-		  explicitCollation(false),
-		  fullDomain(false)
-	{
-	}
-
-	bool isSpecial() const
-	{
-		return !nullable || fullDomain;
-	}
-
-	Firebird::MetaName name;
-	Firebird::MetaName field;
-	bool nullable;
-	bool explicitCollation;
-	bool fullDomain;
-};
-
-typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaName, FieldInfo> > > MapFieldInfo;
-typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > MapItemInfo;
 
 // Compile scratch block
 
@@ -805,7 +604,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > 
 class CompilerScratch : public pool_alloc<type_csb>
 {
 public:
-	CompilerScratch(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
+	CompilerScratch(MemoryPool& p, size_t len)
 	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
@@ -829,28 +628,17 @@ public:
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
-		csb_dbg_info(p),
-		csb_map_field_info(p),
-		csb_map_item_info(p),
-		csb_domain_validation(domain_validation),
 		csb_rpt(p, len)
 	{}
 
-	static CompilerScratch* newCsb(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
-	{
-		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
-	}
-
-	UCHAR getBlrByte()
-	{
-		return *csb_running++;
-	}
+	static CompilerScratch* newCsb(MemoryPool& p, size_t len)
+		{ return FB_NEW(p) CompilerScratch(p, len); }
 
 	int nextStream(bool check = true)
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
 		{
-			ERR_post(Firebird::Arg::Gds(isc_too_many_contexts));
+			ERR_post(isc_too_many_contexts, isc_arg_end);
 		}
 		return csb_n_stream++;
 	}
@@ -864,7 +652,7 @@ public:
 	ResourceList	csb_resources;		/* Resources (relations and indexes) */
 	NodeStack		csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
-	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
+    Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
@@ -876,19 +664,9 @@ public:
 	USHORT			csb_msg_number;		/* Highest used message number */
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
-	MemoryPool&		csb_pool;			// Memory pool to be used by csb
-	Firebird::DbgInfo	csb_dbg_info;			// Debug information
-	MapFieldInfo		csb_map_field_info;		// Map field name to field info
-	MapItemInfo			csb_map_item_info;		// Map item to item info
-	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
+	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
 
-	// used in cmp.cpp/pass1
-	jrd_rel*	csb_view;
-	USHORT		csb_view_stream;
-	bool		csb_validate_expr;
-	USHORT		csb_remap_variable;
-
-	struct csb_repeat
+    struct csb_repeat
 	{
 		// We must zero-initialize this one
 		csb_repeat()
@@ -943,7 +721,7 @@ const int csb_blr_version4		= 8;	// the BLR is of version 4
 const int csb_pre_trigger		= 16;	// this is a BEFORE trigger
 const int csb_post_trigger		= 32;	// this is an AFTER trigger
 const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
-const int csb_reuse_context		= 128;	// allow context reusage
+const int csb_no_context_check	= 128;	// don't validate context usage
 
 const int csb_active		= 1;		// stream is active
 const int csb_used			= 2;		// context has already been defined (BLR parsing only)
@@ -960,17 +738,16 @@ const int csb_made_river	= 2048;		// stream has been included in a river
 
 // Exception condition list
 
-struct xcp_repeat
-{
+struct xcp_repeat {
 	SSHORT xcp_type;
 	SLONG xcp_code;
 };
 
 class PsqlException : public pool_alloc_rpt<xcp_repeat, type_xcp>
 {
-public:
+    public:
 	SLONG xcp_count;
-	xcp_repeat xcp_rpt[1];
+    xcp_repeat xcp_rpt[1];
 };
 
 const int xcp_sql_code	= 1;
@@ -978,8 +755,7 @@ const int xcp_gds_code	= 2;
 const int xcp_xcp_code	= 3;
 const int xcp_default	= 4;
 
-class StatusXcp
-{
+class StatusXcp {
 	ISC_STATUS_ARRAY status;
 
 public:
@@ -993,7 +769,7 @@ public:
 	SLONG as_sqlcode() const;
 };
 
-// must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE
+// must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE 
 // minus size of vary::vary_length (USHORT) since RDB$MESSAGE
 // declared as varchar
 const int XCP_MESSAGE_LENGTH	= 1023 - sizeof(USHORT);

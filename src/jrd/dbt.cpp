@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include "../jrd/ibase.h"
 // Those includes until the END comment comes from everything.h and was moved
-// here when the file was removed.
+// here when the file was removed. 
 // Most probably only a few of the includes are needed
 #include "../jrd/common.h"
 #include "../jrd/isc.h"
@@ -33,6 +33,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch.h"
+#include "../jrd/all.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
@@ -49,6 +50,9 @@
 #include "../jrd/ext.h"
 #include "../jrd/met.h"
 #include "../jrd/sdw.h"
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#include "../jrd/log.h"
+#endif
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/fil.h"
@@ -75,7 +79,7 @@ TEXT_PTR dbt_window[] = {
 },
 dbt_record_param[] = {
 	FLD(record_param*, "Relation %x", rpb_relation),
-	FLD(record_param*, "Number %"SQUADFORMAT, rpb_number.getValue()),
+	FLD(record_param*, "Number %"QUADFORMAT"d", rpb_number.getValue()),
 	FLD(record_param*, "Trans %ld", rpb_transaction_nr),
 	FLD(record_param*, "Page %ld", rpb_page),
 	FLD(record_param*, "Line %x", rpb_line),
@@ -352,9 +356,13 @@ static TEXT_PTR IndexLock[] = {	"INDEX LOCK", 0};
 static TEXT_PTR Shadow[] = {	"SHADOW", 0};
 static TEXT_PTR Savepoint[] = {	"SAVE POINT", 0};
 static TEXT_PTR VerbAction[] = {	"VERB", 0};
+static TEXT_PTR BlockingThread[] = {	"BLOCKED THREAD", 0};
 static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
+#endif
 static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {
@@ -485,3 +493,24 @@ TEXT* dbt_blocks[] =
 	0
 };
 #undef BLKDEF
+
+
+
+const char* DBT_jrd_type_map(int type)
+{
+#define BLKDEF(enum_c, str_c, ext) case enum_c: return str_c[0];
+	switch (type)
+	{
+	#include "../jrd/blk.h"
+	default:
+		break;
+	}
+#undef BLKDEF
+	return "Uknown Jrd Obj";
+}
+
+void MP_GDB_print(MemoryPool *p)
+{
+	p->print_contents(stdout, DBT_jrd_type_map);
+}
+

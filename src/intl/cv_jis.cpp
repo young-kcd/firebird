@@ -33,27 +33,24 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 							ULONG src_len,
 							const UCHAR* src_ptr,
 							ULONG dest_len,
-							UCHAR* p_dest_ptr,
-							USHORT* err_code,
-							ULONG* err_position)
+							UCHAR *p_dest_ptr,
+							USHORT *err_code,
+							ULONG *err_position)
 {
-	fb_assert(obj != NULL);
-
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
-
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_eucj_to_unicode);
-	fb_assert(impl->csconvert_datatable != NULL);
-	fb_assert(impl->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
 	if (p_dest_ptr == NULL)
-		return sizeof(USHORT) * src_len;
+		return (src_len);
 
 	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
 	USHORT* dest_ptr = d;
@@ -74,7 +71,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 			/* Step 2: Convert from ASCII to UNICODE */
 			ch = ch1;
 		}
-		else if (src_len == 1 || !(*src_ptr & 0x80)) {
+		else if (!src_len || !(*src_ptr & 0x80)) {
 			/* We received a multi-byte indicator, but either
 			   there isn't a 2nd byte or the 2nd byte isn't marked */
 			*err_code = CS_BAD_INPUT;
@@ -85,9 +82,10 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 			this_len = 2;
 
 			/* Step 2: Convert from JIS to UNICODE */
-			ch = ((const USHORT*) impl->csconvert_datatable)
-				[((const USHORT*) impl->csconvert_misc)
-					[(USHORT)wide /	256] + (wide % 256)];
+			ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+					[(USHORT)wide /	256]
+				 + (wide % 256)];
 		}
 
 
@@ -133,20 +131,17 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 							ULONG sjis_len,
 							const UCHAR* sjis_str,
 							ULONG dest_len,
-							UCHAR* p_dest_ptr,
-							USHORT* err_code,
-							ULONG* err_position)
+							UCHAR *p_dest_ptr,
+							USHORT *err_code,
+							ULONG *err_position)
 {
-	fb_assert(obj != NULL);
-
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
-
 	fb_assert(sjis_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_sjis_to_unicode);
-	fb_assert(impl->csconvert_datatable != NULL);
-	fb_assert(impl->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = sjis_len;
 	*err_code = 0;
@@ -162,7 +157,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 	USHORT this_len;
 	USHORT wide;
 	const USHORT* const start = dest_ptr;
-	while (sjis_len && dest_len > 1) {
+	while ((sjis_len) && (dest_len > 1)) {
 		/* Step 1: Convert from SJIS to JIS code */
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
 			const UCHAR c1 = *sjis_str++;
@@ -207,9 +202,10 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 		/* Step 2: Convert from JIS code (in wide) to UNICODE */
 		USHORT ch;
 		if (table == 1)
-			ch = ((const USHORT*) impl->csconvert_datatable)
-				[((const USHORT*) impl->csconvert_misc)
-					[(USHORT)wide /	256] + (wide % 256)];
+			ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+					[(USHORT)wide /	256]
+				 + (wide % 256)];
 		else {
 			fb_assert(table == 2);
 			fb_assert(wide <= 255);
@@ -241,7 +237,7 @@ Received: by dbase.a-t.com (/\==/\ Smail3.1.21.1 #21.5)
 	id <m0kjfXI-0004qKC@dbase.a-t.com>; Tue, 19 Nov 91 16:11 PST
 Received: by tate.a-t.com (/\==/\ Smail3.1.21.1 #21.1)
 	id <m0kjfPU-000Gf0C@tate.a-t.com>; Tue, 19 Nov 91 16:03 PST
-Received: from Sun.COM by relay1.UU.NET with SMTP
+Received: from Sun.COM by relay1.UU.NET with SMTP 
 	(5.61/UUNET-internet-primary) id AA21144; Tue, 19 Nov 91 18:45:19 -0500
 Received: from Eng.Sun.COM (zigzag-bb.Corp.Sun.COM) by Sun.COM (4.1/SMI-4.1)
 	id AA04289; Tue, 19 Nov 91 15:40:59 PST
@@ -287,20 +283,18 @@ static void seven2eight(USHORT *p1, USHORT *p2)
 		*p2 += 31;
 	else
 		*p2 += 126;
-
 	if ((*p2 >= 127) && (*p2 < 158))
 		(*p2)++;
-
 	if ((*p1 >= 33) && (*p1 <= 94)) {
 		if (isodd(*p1))
 			*p1 = ((*p1 - 1) / 2) + 113;
-		else
+		else if (!isodd(*p1))
 			*p1 = (*p1 / 2) + 112;
 	}
 	else if ((*p1 >= 95) && (*p1 <= 126)) {
 		if (isodd(*p1))
 			*p1 = ((*p1 - 1) / 2) + 177;
-		else
+		else if (!isodd(*p1))
 			*p1 = (*p1 / 2) + 176;
 	}
 }
@@ -350,7 +344,7 @@ STEPS:
 
 EX: JIS 1st is in the range 33-94, so we execute step 3(a). JIS 1st = 76
     (is NOT odd), so JIS 2nd = 150 ((76/2) + 112)
-
+   
 JIS 1st:  150
 JIS 2nd:  162
 
@@ -396,19 +390,16 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 							const UCHAR* p_unicode_str,
 							ULONG sjis_len,
 							UCHAR* sjis_str,
-							USHORT* err_code,
-							ULONG* err_position)
+							USHORT *err_code,
+							ULONG *err_position)
 {
-	fb_assert(obj != NULL);
-
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
-
 	fb_assert(p_unicode_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_unicode_to_sjis);
-	fb_assert(impl->csconvert_datatable != NULL);
-	fb_assert(impl->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -425,8 +416,8 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 		/* Step 1: Convert from UNICODE to JIS code */
 		const USHORT wide = *unicode_str++;
 
-		USHORT jis_ch = ((const USHORT*) impl->csconvert_datatable)
-			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+		USHORT jis_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 
@@ -477,24 +468,21 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 
 
 ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_unicode_str,
-							ULONG eucj_len, UCHAR* eucj_str,
-							USHORT* err_code, ULONG* err_position)
+							ULONG eucj_len, UCHAR *eucj_str,
+							USHORT *err_code, ULONG *err_position)
 {
-	fb_assert(obj != NULL);
-
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
-
 	fb_assert(p_unicode_str != NULL || eucj_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
+	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_unicode_to_eucj);
-	fb_assert(impl->csconvert_datatable != NULL);
-	fb_assert(impl->csconvert_misc != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-	// See if we're only after a length estimate
+/* See if we're only after a length estimate */
 	if (eucj_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
 
@@ -511,9 +499,10 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 		if (wide <= 0x007F)
 			jis_ch = wide;
 		else
-			jis_ch = ((const USHORT*) impl->csconvert_datatable)
-					[((const USHORT*) impl->csconvert_misc)
-						[(USHORT)wide /	256] + (wide % 256)];
+			jis_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
+					[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+						[(USHORT)wide /	256]
+					 + (wide % 256)];
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -549,87 +538,79 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 	return ((eucj_str - start) * sizeof(*eucj_str));
 }
 
-
-INTL_BOOL CVJIS_check_euc(charset* cs, ULONG euc_len, const UCHAR* euc_str, ULONG* offending_position)
+#ifdef NOT_USED_OR_REPLACED
+static USHORT CVJIS_check_euc(const UCHAR* euc_str, USHORT euc_len)
 {
 /**************************************
  *
- *      C V J I S _ c h e c k _ e u c
+ *      K A N J I _ c h e c k _ e u c 
  *
  **************************************
  *
  * Functional description
  *	This is a cousin of the KANJI_check_sjis routine.
  *      Make sure that the euc string does not have any truncated 2 byte
- *      character at the end. * If we have a truncated character then,
- *          return false.
- *          else return true;
+ *      character at the end. * If we have a truncated character then, 
+ *          return 1.  
+ *          else return(0);
  **************************************/
-	const UCHAR* start = euc_str;
-
-	while (euc_len--)
-	{
-		if (*euc_str & 0x80)	// Is it EUC
-		{
-			if (euc_len == 0)	// truncated kanji
-			{
-				*offending_position = euc_str - start;
-				return false;
+	while (euc_len--) {
+		if (*euc_str & 0x80) {	/* Is it  EUC */
+			if (euc_len == 0) {	/* truncated kanji */
+				return (1);
 			}
-
-			euc_str += 2;
-			euc_len -= 1;
+			else {
+				euc_str += 2;
+				euc_len -= 1;
+			}
 		}
-		else	// it is a ASCII
+		else {					/* it is a ASCII */
 			euc_str++;
+		}
 	}
-
-	return true;
+	return (0);
 }
 
 
-INTL_BOOL CVJIS_check_sjis(charset* cs, ULONG sjis_len, const UCHAR* sjis_str, ULONG* offending_position)
+
+static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 {
 /**************************************
  *
- *      C V J I S _ c h e c k _ s j i s
+ *      K A N J I _ c h e c k _ s j i s
  *
  **************************************
  *
  * Functional description
  *	This is a cousin of the KANJI_check_euc routine.
- *      Make sure that the sjis string does not have any truncated 2 byte
+ *      Make sure that the sjis string does not have any truncated 2 byte 
  *	character at the end. *	If we have a truncated character then,
- *	    return 1.
+ *	    return 1. 
  *	    else return(0);
  **************************************/
-	const UCHAR* start = sjis_str;
-
-	while (sjis_len--)
-	{
-		if (*sjis_str & 0x80)	// Is it SJIS
-		{
+	while (sjis_len--) {
+		if (*sjis_str & 0x80) {	/* Is it  SJIS */
 			const UCHAR c1 = *sjis_str;
-			if (SJIS1(c1))	// It is a KANJI
-			{
-				if (sjis_len == 0)	// truncated KANJI
-				{
-					*offending_position = sjis_str - start;
-					return false;
+			if (SJIS1(c1)) {	/* It is a KANJI */
+				if (sjis_len == 0) {	/* truncated KANJI */
+					return (1);
 				}
-
-				sjis_str += 2;
-				sjis_len -= 1;
+				else {
+					sjis_str += 2;
+					sjis_len -= 1;
+				}
 			}
-			else	// It is a KANA
+			else {				/*It is a KANA */
 				sjis_str++;
+			}
 		}
-		else	// it is a ASCII
+		else {					/* it is a ASCII */
 			sjis_str++;
+		}
 	}
-
-	return true;
+	return (0);
 }
+#endif
 
 
 #ifdef NOT_USED_OR_REPLACED

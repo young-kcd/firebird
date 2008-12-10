@@ -15,21 +15,15 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#
+#$Id: prefix.linux_amd64,v 1.4 2004-03-25 23:12:31 skidder Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
-COMMON_FLAGS=-ggdb -DFB_SEND_FLAGS=MSG_NOSIGNAL -DLINUX -DAMD64 -pipe -MMD -fPIC -fmessage-length=0
-OPTIMIZE_FLAGS=-O3 -fno-omit-frame-pointer 
-WARN_FLAGS=-Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable
-CXXFLAGS:= $(CXXFLAGS) -fno-rtti
-
-PROD_FLAGS=-DNDEBUG $(COMMON_FLAGS) $(OPTIMIZE_FLAGS)
-#DEV_FLAGS=-DUSE_VALGRIND $(COMMON_FLAGS) $(WARN_FLAGS)
-DEV_FLAGS=$(COMMON_FLAGS) $(WARN_FLAGS)
+PROD_FLAGS=-ggdb -O3 -fno-omit-frame-pointer -DNDEBUG -DLINUX -DAMD64 -pipe -MMD -fPIC -fmessage-length=0
+DEV_FLAGS=-ggdb -DLINUX -DAMD64 -pipe -MMD -p -fPIC -Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable -fmessage-length=0
 
 OS_ServerFiles=inet_server.cpp
 
-EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print fbsvcmgr
-CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp

@@ -29,9 +29,9 @@
 
 /* BLOb Subtype definitions */
 
-/* Subtypes < 0  are user defined
- * Subtype  0    means "untyped"
- * Subtypes > 0  are Firebird defined
+/* Subtypes < 0  are user defined 
+ * Subtype  0    means "untyped" 
+ * Subtypes > 0  are InterBase defined 
  */
 
 // BRS 29-Apr-2004
@@ -62,25 +62,7 @@ const size_t MAX_SQL_IDENTIFIER_SIZE = 32;
 const size_t MAX_SQL_IDENTIFIER_LEN = MAX_SQL_IDENTIFIER_SIZE - 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
-const char* const NULL_STRING_MARK = "*** null ***";
-const char* const UNKNOWN_STRING_MARK = "*** unknown ***";
-
-const char* const ISC_USER = "ISC_USER";
-const char* const ISC_PASSWORD = "ISC_PASSWORD";
-
 const char* const NULL_ROLE = "NONE";
-const char* const ADMIN_ROLE = "RDB$ADMIN";
-
-// User name assigned to any user granted USR_locksmith rights.
-// If this name is changed, modify also the trigger in
-// jrd/grant.gdl (which turns into jrd/trig.h.
-const char* const SYSDBA_USER_NAME = "SYSDBA";
-
-// This temporary set of flags is needed to implement minimum form of
-// ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
-// Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.
-const SSHORT ROLE_FLAG_MAY_TRUST	= 2;
-const SSHORT ROLE_FLAG_DBO			= 4;
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
 const char* const FOREIGN_KEY		= "FOREIGN KEY";
@@ -88,9 +70,6 @@ const char* const UNIQUE_CNSTRT		= "UNIQUE";
 const char* const CHECK_CNSTRT		= "CHECK";
 const char* const NOT_NULL_CNSTRT	= "NOT NULL";
 
-const char* const REL_SCOPE_PERSISTENT		= "persistent table \"%s\"";
-const char* const REL_SCOPE_GTT_PRESERVE	= "global temporary table \"%s\" of type ON COMMIT PRESERVE ROWS";
-const char* const REL_SCOPE_GTT_DELETE		= "global temporary table \"%s\" of type ON COMMIT DELETE ROWS";
 
 /* literal strings in rdb$ref_constraints to be used to identify
    the cascade actions for referential constraints. Used
@@ -102,22 +81,11 @@ const char* const RI_ACTION_DEFAULT = "SET DEFAULT";
 const char* const RI_ACTION_NONE    = "NO ACTION";
 const char* const RI_RESTRICT       = "RESTRICT";
 
-// Automatically created domains for fields with direct data type.
-// Also, automatically created indices that are unique or non-unique, but not PK.
 const char* const IMPLICIT_DOMAIN_PREFIX = "RDB$";
 const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
 
-// Automatically created indices for PKs.
-const char* const IMPLICIT_PK_PREFIX = "RDB$PRIMARY";
-const int IMPLICIT_PK_PREFIX_LEN = 11;
-
-// Automatically created security classes for SQL objects.
 const char* const SQL_SECCLASS_PREFIX = "SQL$";
 const int SQL_SECCLASS_PREFIX_LEN = 4;
-
-// Automatically created check constraints for unnamed PRIMARY and UNIQUE declarations.
-const char* const IMPLICIT_INTEGRITY_PREFIX = "INTEG_";
-const int IMPLICIT_INTEGRITY_PREFIX_LEN = 6;
 
 
 /******************************************/
@@ -145,13 +113,28 @@ const int PRETTY_BUFFER_SIZE = 1024;
 const int MAX_INDEX_SEGMENTS = 16;
 
 // Maximum index key length
-// AB: If the maximum key-size will change, don't forget dyn.h and dba.epp
+// AB: If the maximum key-size will change, don't forget dyn.h and dba.epp 
 // which cannot use these defines.
-const ULONG MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
+const int MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
 const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
 const USHORT SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
 const USHORT SQL_MATCH_ANY_CHARS	= '%';	/* Not translatable */
+
+static const USHORT GDML_MATCH_ONE	= '?';
+static const USHORT GDML_MATCH_ANY	= '*';
+
+static const USHORT GDML_QUOTE		= '@';
+static const USHORT GDML_NOT		= '~';
+static const USHORT GDML_RANGE		= '-';
+static const USHORT GDML_CLASS_START= '[';
+static const USHORT GDML_CLASS_END	= ']';
+static const USHORT GDML_SUBSTITUTE	= '=';
+static const USHORT GDML_FLAG_SET	= '+';
+static const USHORT GDML_FLAG_CLEAR	= '-';
+static const USHORT GDML_COMMA		= ',';
+static const USHORT GDML_LPAREN		= '(';
+static const USHORT GDML_RPAREN		= ')';
 
 const size_t MAX_CONTEXT_VARS	= 1000;		// Maximum number of context variables allowed for a single object
 
@@ -164,107 +147,5 @@ const size_t MAX_TIME_PRECISION			= 3;
 const size_t DEFAULT_TIME_PRECISION		= 0;
 // Should be 6 as per SQL spec
 const size_t DEFAULT_TIMESTAMP_PRECISION	= 3;
-
-const size_t MAX_ARRAY_DIMENSIONS = 16;
-
-const size_t MAX_SORT_ITEMS = 255; // ORDER BY f1,...,f255
-
-const int MAX_TABLE_VERSIONS = 255; // maybe this should be in ods.h.
-
-const size_t MAX_DB_PER_TRANS = 256; // A multi-db txn can span up to 256 dbs
-
-// relation types
-
-enum rel_t {
-	rel_persistent = 0,
-	rel_view = 1,
-	rel_external = 2,
-	rel_virtual = 3,
-	rel_global_temp_preserve = 4,
-	rel_global_temp_delete = 5
-};
-
-// procedure types
-
-enum prc_t {
-	prc_legacy = 0,
-	prc_selectable = 1,
-	prc_executable = 2
-};
-
-// procedure parameter mechanism
-
-enum prm_mech_t {
-	prm_mech_normal = 0,
-	prm_mech_type_of = 1
-};
-
-// states
-
-enum mon_state_t {
-	mon_state_idle = 0,
-	mon_state_active = 1,
-	mon_state_stalled = 2
-};
-
-// shutdown modes
-
-enum shut_mode_t {
-	shut_mode_online = 0,
-	shut_mode_multi = 1,
-	shut_mode_single = 2,
-	shut_mode_full = 3
-};
-
-// backup states
-
-enum backup_state_t {
-	backup_state_normal = 0,
-	backup_state_stalled = 1,
-	backup_state_merge = 2
-};
-
-// transaction isolation levels
-
-enum tra_iso_mode_t {
-	iso_mode_consistency = 0,
-	iso_mode_concurrency = 1,
-	iso_mode_rc_version = 2,
-	iso_mode_rc_no_version = 3
-};
-
-// statistics groups
-
-enum stat_group_t {
-	stat_database = 0,
-	stat_attachment = 1,
-	stat_transaction = 2,
-	stat_statement = 3,
-	stat_call = 4
-};
-
-const int TRIGGER_TYPE_SHIFT		= 13;
-const int TRIGGER_TYPE_MASK			= (0x3 << TRIGGER_TYPE_SHIFT);
-
-const int TRIGGER_TYPE_DML			= (0 << TRIGGER_TYPE_SHIFT);
-const int TRIGGER_TYPE_DB			= (1 << TRIGGER_TYPE_SHIFT);
-//const int TRIGGER_TYPE_DDL		= (2 << TRIGGER_TYPE_SHIFT);
-
-const int DB_TRIGGER_CONNECT		= 0;
-const int DB_TRIGGER_DISCONNECT		= 1;
-const int DB_TRIGGER_TRANS_START	= 2;
-const int DB_TRIGGER_TRANS_COMMIT	= 3;
-const int DB_TRIGGER_TRANS_ROLLBACK	= 4;
-const int DB_TRIGGER_MAX			= 5;
-
-// that's how database trigger action types are encoded
-//    (TRIGGER_TYPE_DB | type)
-
-// switches for username and password used when an username and/or password
-// is specified by the client application
-#define USERNAME_SWITCH "USER"
-#define PASSWORD_SWITCH "PASSWORD"
-#define TRUSTED_USER_SWITCH "TRUSTED_SVC"
-#define TRUSTED_ROLE_SWITCH "TRUSTED_ROLE"
 
 #endif // JRD_CONSTANTS_H

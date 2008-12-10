@@ -46,11 +46,11 @@ Exception re-raise semantics (FB 1.5)
   Example(s):
     BEGIN
       ...
-    WHEN SQLCODE -802 DO
+    WHEN SQLCODE -802 THEN
       EXCEPTION E_ARITH_EXCEPT;
-    WHEN SQLCODE -802 DO
+    WHEN SQLCODE -802 THEN
       EXCEPTION E_KEY_VIOLATION;
-    WHEN ANY DO
+    WHEN ANY THEN
       EXCEPTION;
     END
 

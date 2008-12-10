@@ -44,6 +44,7 @@
 #include <stdlib.h>
 
 #include "../jrd/common.h"
+#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
@@ -53,14 +54,16 @@
 #include "../jrd/flags.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
+#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
-#include "../jrd/ini.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/dls_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
 #include "../jrd/dyn_ut_proto.h"
@@ -71,19 +74,15 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
 #include "../jrd/IntlManager.h"
-#include "../jrd/IntlUtil.h"
-
-using MsgFormat::SafeArg;
 
 using namespace Jrd;
-using namespace Firebird;
-
 
 typedef Firebird::ObjectsArray<Firebird::MetaName> MetaNameArray;
 
@@ -118,14 +117,11 @@ static const UCHAR who_blr[] =
 };
 
 
-static void check_unique_name(thread_db*, Global*, const Firebird::MetaName&, int);
+static void check_unique_name(thread_db*, Global*, const Firebird::MetaName&, bool);
+static bool find_field_source(thread_db*, Global*, const Firebird::MetaName&, USHORT, const TEXT*, TEXT*);
 static bool get_who(thread_db*, Global*, Firebird::MetaName&);
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
-
-static rel_t get_relation_type(thread_db*, Global*, const Firebird::MetaName&);
-static void check_foreign_key_temp_scope(thread_db*, Global*, const TEXT*, const TEXT*);
-static void check_relation_temp_scope(thread_db*, Global*, const TEXT*, const rel_t);
-static void make_relation_scope_name(const TEXT*, const rel_t, Firebird::string&);
+static USHORT skip_blr_blob(const UCHAR** ptr);
 
 
 void DYN_define_collation( Global* gbl, const UCHAR** ptr)
@@ -142,16 +138,16 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_11_0)
 	{
-		DYN_error_punt(false, 220);
-		// msg 220: "CREATE COLLATION statement is not supported in older versions of the database.
-		//			 A backup and restore is required."
+		DYN_error_punt(false, 220, NULL, NULL, NULL, NULL, NULL);
+		/* msg 220: "CREATE COLLATION statement is not supported in older versions of the database.
+					 A backup and restore is required." */
 	}
 
 	Firebird::MetaName collation_name;
@@ -160,7 +156,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 	GET_STRING(ptr, collation_name);
 
 	if (!collation_name.length())
-		DYN_error_punt(false, 212);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_colls, DYN_REQUESTS);
@@ -172,12 +168,12 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$COLLATIONS
 
-			CharSet* cs = NULL;
 			SubtypeInfo info;
 			USHORT attributes_on = 0;
 			USHORT attributes_off = 0;
 			SSHORT specific_attributes_charset = CS_NONE;
-			Firebird::UCharBuffer specific_attributes;
+
+			info.attributes = 0;
 
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -192,58 +188,62 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 					{
 						X.RDB$CHARACTER_SET_ID.NULL = FALSE;
 						X.RDB$CHARACTER_SET_ID = DYN_get_number(ptr);
-						
-						cs = INTL_charset_lookup(tdbb, X.RDB$CHARACTER_SET_ID);
 
-						jrd_req* request2 = CMP_find_request(tdbb, drq_l_charset, DYN_REQUESTS);
+						// ASF: User collations are created with the last number available,
+						// to minimize the possibility of conflicts with future system collations.
+						// The greater available number is 126 to avoid signed/unsigned problems.
+
+						X.RDB$COLLATION_ID.NULL = FALSE;
+						X.RDB$COLLATION_ID = 126;
+
+						jrd_req* request2 = CMP_find_request(tdbb, drq_l_colls, DYN_REQUESTS);
+						bool found = false;
 
 						FOR(REQUEST_HANDLE request2
 							TRANSACTION_HANDLE gbl->gbl_transaction)
+							Y IN RDB$COLLATIONS CROSS
 							CS IN RDB$CHARACTER_SETS
-							WITH CS.RDB$CHARACTER_SET_ID EQ X.RDB$CHARACTER_SET_ID
+							WITH Y.RDB$CHARACTER_SET_ID = X.RDB$CHARACTER_SET_ID AND
+								 CS.RDB$CHARACTER_SET_ID EQ Y.RDB$CHARACTER_SET_ID
+							SORTED BY DESCENDING Y.RDB$COLLATION_ID
 
-							if (!DYN_REQUEST(drq_l_charset))
-								DYN_REQUEST(drq_l_charset) = request2;
+							if (!DYN_REQUEST(drq_l_colls))
+								DYN_REQUEST(drq_l_colls) = request2;
 
-							charsetName = CS.RDB$CHARACTER_SET_NAME;
+							if (found) {
+								EXE_unwind(tdbb, request2);
+								break;
+							}
+
+							if (Y.RDB$COLLATION_ID + 1 <= X.RDB$COLLATION_ID)
+							{
+								found = true;
+								charsetName = CS.RDB$CHARACTER_SET_NAME;
+							}
+							else
+								X.RDB$COLLATION_ID = Y.RDB$COLLATION_ID - 1;
 
 						END_FOR
 
-						if (!DYN_REQUEST(drq_l_charset))
-							DYN_REQUEST(drq_l_charset) = request2;
+						if (!DYN_REQUEST(drq_l_colls))
+							DYN_REQUEST(drq_l_colls) = request2;
+
+						if (!found)
+						{
+							DYN_error_punt(false, 221, NULL, NULL, NULL, NULL, NULL);
+							/* msg 221: "Maximum number of collations per character set exceeded" */
+						}
 
 						break;
 					}
 
 					case isc_dyn_coll_from:
-						if (!MET_get_char_coll_subtype_info(tdbb, DYN_get_number(ptr), &info))
-							break;
-
-						fb_assert(cs);
-						if (cs)
-						{
-							if (info.specificAttributes.getCount() != 0)
-							{
-								Firebird::UCharBuffer temp;
-								ULONG size = info.specificAttributes.getCount() * cs->maxBytesPerChar();
-
-								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
-														temp.getBuffer(size), size,
-														CS_METADATA, info.specificAttributes.begin(),
-														info.specificAttributes.getCount(), ERR_post);
-								temp.shrink(size);
-								info.specificAttributes = temp;
-							}
-						}
+						//// TODO: verify return value
+						MET_get_char_coll_subtype_info(tdbb, DYN_get_number(ptr), &info);
 
 						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
 						strcpy(X.RDB$BASE_COLLATION_NAME, info.baseCollationName.c_str());
 
-						break;
-
-					case isc_dyn_coll_from_external:
-						GET_STRING(ptr, X.RDB$BASE_COLLATION_NAME);
-						X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
 						break;
 
 					case isc_dyn_coll_attribute:
@@ -274,26 +274,24 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						break;
 
 					case isc_dyn_coll_specific_attributes:
-						GET_STRING(ptr, specific_attributes);
+					{
+						UCHAR bpb[] = {isc_bpb_version1,
+									   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
+									   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
 
-						fb_assert(cs);
-						if (cs)
-						{
-							if (specific_attributes.getCount() != 0)
-							{
-								Firebird::UCharBuffer temp;
-								ULONG size = specific_attributes.getCount() * cs->maxBytesPerChar();
+						bpb[6] = specific_attributes_charset;	// from charset
+						bpb[12] = CS_METADATA;					// to charset
 
-								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
-														temp.getBuffer(size), size,
-														specific_attributes_charset, specific_attributes.begin(),
-														specific_attributes.getCount(), ERR_post);
-								temp.shrink(size);
-								specific_attributes = temp;
-							}
-						}
+						X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+						DYN_put_text_blob(gbl, ptr, &X.RDB$SPECIFIC_ATTRIBUTES, sizeof(bpb), bpb);
+
+						// ASF: retrieve RDB$SPECIFIC_ATTRIBUTES with UNICODE_FSS character set
+						blb* blob = BLB_open(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES);
+						BLB_get_data(tdbb, blob, info.specificAttributes.getBuffer(blob->blb_length),
+									 blob->blb_length);
 
 						break;
+					}
 
 					default:
 						DYN_unsupported_verb();
@@ -301,6 +299,20 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			}
 
 			strcpy(X.RDB$COLLATION_NAME, collation_name.c_str());
+			X.RDB$COLLATION_ATTRIBUTES = (info.attributes | attributes_on) & (~attributes_off);
+
+			// If isc_dyn_coll_specific_attributes is not provided, then inherit from the base collation
+			if (X.RDB$SPECIFIC_ATTRIBUTES.NULL && info.specificAttributes.getCount() != 0)
+			{
+				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+
+				// ASF: Transliteration should not occur here because
+				// info.specificAttributes and X.RDB$SPECIFIC_ATTRIBUTES
+				// are already in UNICODE_FSS character set.
+				blb* blob = BLB_create(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES);
+				BLB_put_segment(tdbb, blob, info.specificAttributes.begin(), info.specificAttributes.getCount());
+				BLB_close(tdbb, blob);
+			}
 
 			info.charsetName = charsetName.c_str();
 			info.collationName = X.RDB$COLLATION_NAME;
@@ -308,69 +320,19 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				info.baseCollationName = info.collationName;
 			else
 				info.baseCollationName = X.RDB$BASE_COLLATION_NAME;
+			info.attributes = X.RDB$COLLATION_ATTRIBUTES;
 			info.ignoreAttributes = false;
 
-			if (!IntlManager::collationInstalled(info.baseCollationName.c_str(),
-					info.charsetName.c_str()))
+			if (!IntlManager::collationInstalled(info.baseCollationName, info.charsetName))
 			{
-				DYN_error_punt(false, 223,
-					SafeArg() << info.baseCollationName.c_str() << info.charsetName.c_str());
-				// msg: 223: "Collation @1 not installed for character set @2"
+				DYN_error_punt(false, 223, info.baseCollationName.c_str(), info.charsetName.c_str(), NULL, NULL, NULL);
+				/* msg: 223: "Collation %s not installed for character set %s" */
 			}
 
-			fb_assert(cs);
-			if (cs)
-			{
-				Firebird::IntlUtil::SpecificAttributesMap map;
-
-				if (!Firebird::IntlUtil::parseSpecificAttributes(
-						cs, info.specificAttributes.getCount(), info.specificAttributes.begin(), &map) ||
-					!Firebird::IntlUtil::parseSpecificAttributes(
-						cs, specific_attributes.getCount(), specific_attributes.begin(), &map))
-				{
-					DYN_error_punt(false, 222);
-					// msg: 222: "Invalid collation attributes"
-				}
-
-				const Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs, map);
-				Firebird::string newSpecificAttributes;
-				
-				if (!IntlManager::setupCollationAttributes(
-						info.baseCollationName.c_str(), info.charsetName.c_str(), s,
-						newSpecificAttributes))
-				{
-					DYN_error_punt(false, 222);
-					// msg: 222: "Invalid collation attributes"
-				}
-
-				memcpy(info.specificAttributes.getBuffer(newSpecificAttributes.length()),
-					newSpecificAttributes.begin(), newSpecificAttributes.length());
-			}
-
-			info.attributes = (info.attributes | attributes_on) & (~attributes_off);
-			X.RDB$COLLATION_ATTRIBUTES = info.attributes;
-			
-			if (info.specificAttributes.getCount() != 0)
-			{
-				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-
-				UCHAR bpb[] = {isc_bpb_version1,
-							   isc_bpb_source_type, 1, isc_blob_text, isc_bpb_source_interp, 1, 0,
-							   isc_bpb_target_type, 1, isc_blob_text, isc_bpb_target_interp, 1, 0};
-
-				bpb[6] = X.RDB$CHARACTER_SET_ID;	// from charset
-				bpb[12] = CS_METADATA;				// to charset
-
-				blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, &X.RDB$SPECIFIC_ATTRIBUTES, sizeof(bpb), bpb);
-				BLB_put_segment(tdbb, blob, info.specificAttributes.begin(), info.specificAttributes.getCount());
-				BLB_close(tdbb, blob);
-			}
-
-			// Do not allow invalid attributes here.
 			if (!INTL_texttype_validate(tdbb, &info))
 			{
-				DYN_error_punt(false, 222);
-				// msg: 222: "Invalid collation attributes"
+				DYN_error_punt(false, 222, NULL, NULL, NULL, NULL, NULL);
+				/* msg: 222: "Invalid collation attributes" */
 			}
 
 			b_ending_store = true;
@@ -380,13 +342,12 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_s_colls))
 			DYN_REQUEST(drq_s_colls) = request;
 	}
-	catch (const Firebird::Exception& ex)
-	{
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_colls);
-			DYN_error_punt(true, 219);
-			// msg 219: "DEFINE COLLATION failed"
+			DYN_error_punt(true, 219, NULL, NULL, NULL, NULL, NULL);
+			/* msg 219: "DEFINE COLLATION failed" */
 		}
 		throw;
 	}
@@ -414,11 +375,13 @@ void DYN_define_constraint(Global*		gbl,
 	Firebird::MetaName constraint_name, index_name, referred_index_name;
 	Firebird::MetaName null_field_name, trigger_name;
 	MetaNameArray field_list;
+	int list_index = -1;
+	int all_count, unique_count;
 	bool primary_flag = false, foreign_flag = false;
 	UCHAR ri_action = 0;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, constraint_name);
 	if (constraint_name.length() == 0)
@@ -427,8 +390,8 @@ void DYN_define_constraint(Global*		gbl,
 	}
 	if (constraint_name.length() == 0)
 	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -482,12 +445,6 @@ void DYN_define_constraint(Global*		gbl,
 			strcpy(CRT.RDB$INDEX_NAME, index_name.c_str());
 			CRT.RDB$INDEX_NAME.NULL = FALSE;
 
-			SSHORT old_id = id;
-			id = drq_l_rel_info;
-			check_foreign_key_temp_scope(tdbb, gbl, 
-				relation_name->c_str(), referred_index_name.c_str());
-			id = old_id;
-
 			/* check that we have references permissions on the table and
 			   fields that the index:referred_index_name is on. */
 
@@ -501,7 +458,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
@@ -509,38 +466,24 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 124: "A column name is repeated in the definition of constraint: %s"
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
-		// msg 232: "%s cannot reference %s"
 		switch (id) {
-			case drq_s_rel_con:
-				number = 121;
-				local_id = id;
-				break;
-			case drq_s_ref_con:
-				number = 127;
-				local_id = id;
-				break;
-			case drq_c_unq_nam:
-				number = 121;
-				break;
-			case drq_n_idx_seg:
-				number = 124;
-				break;
-			case drq_c_dup_con:
-				number = 125;
-				break;
-			case drq_l_rel_info:
-				number = 232;
-				break;
-			default:
-				number = 125;
-				break;
+			case drq_s_rel_con:	number = 121;	local_id = id;	break;
+			case drq_s_ref_con:	number = 127;	local_id = id;	break;
+			case drq_c_unq_nam:	number = 121;					break;
+			case drq_n_idx_seg:	number = 124;					break;
+			case drq_c_dup_con:	number = 125;					break;
+			default:			number = 125;					break;
 		}
 
 		DYN_rundown_request(request, local_id);
 
 		DYN_error_punt(true,
 						number,
-						number == 124 ? constraint_name.c_str() : NULL);
+						number == 124 ? constraint_name.c_str() : NULL,
+						NULL,
+						NULL,
+						NULL,
+						NULL);
 	}
 
 	if (verb == isc_dyn_def_trigger)
@@ -578,7 +521,7 @@ void DYN_define_constraint(Global*		gbl,
 	id = drq_c_unq_nam;
 
 	bool not_null = true;
-	int all_count = 0, unique_count = 0;
+	all_count = unique_count = 0;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDS IN RDB$INDEX_SEGMENTS
 			CROSS RFR IN RDB$RELATION_FIELDS
@@ -611,7 +554,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	if (!not_null) {
-		DYN_error_punt(false, 123, null_field_name.c_str());
+		DYN_error_punt(false, 123, null_field_name.c_str(), NULL, NULL, NULL, NULL);
 		/* msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY constraint definition" */
 	}
 
@@ -643,7 +586,7 @@ void DYN_define_constraint(Global*		gbl,
 		id = drq_c_dup_con;
 
 		index_name = "";
-		int list_index = -1;
+		list_index = -1;
 		bool found  = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			CRT IN RDB$RELATION_CONSTRAINTS CROSS
@@ -761,7 +704,7 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
@@ -770,44 +713,34 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
 		switch (id) {
-			case drq_s_rel_con:
-				number = 121;
-				local_id = id;
-				break;
-			case drq_s_ref_con:
-				number = 127;
-				local_id = id;
-				break;
-			case drq_c_unq_nam:
-				number = 121;
-				break;
-			case drq_n_idx_seg:
-				number = 124;
-				break;
-			case drq_c_dup_con:
-				number = 125;
-				break;
-			default:
-				number = 125;
-				break;
+			case drq_s_rel_con:	number = 121;	local_id = id;	break;
+			case drq_s_ref_con:	number = 127;	local_id = id;	break;
+			case drq_c_unq_nam:	number = 121;					break;
+			case drq_n_idx_seg:	number = 124;					break;
+			case drq_c_dup_con:	number = 125;					break;
+			default:			number = 125;					break;
 		}
 
 		DYN_rundown_request(request, local_id);
 
 		DYN_error_punt(true,
 						number,
-						number == 124 ? constraint_name.c_str() : NULL);
+						number == 124 ? constraint_name.c_str() : NULL,
+						NULL,
+						NULL,
+						NULL,
+						NULL);
 	}
 
 	return;
 
 dyn_punt_false_124:
-	DYN_error_punt(false, 124, constraint_name.c_str());
+	DYN_error_punt(false, 124, constraint_name.c_str(), NULL, NULL, NULL, NULL);
 	/* msg 124: "A column name is repeated in the definition of constraint: %s" */
 	return;
 
 dyn_punt_false_126:
-	DYN_error_punt(false, 126);
+	DYN_error_punt(false, 126, NULL, NULL, NULL, NULL, NULL);
 	/* msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY and/or UNIQUE constraint definition" */
 }
 
@@ -830,7 +763,7 @@ void DYN_define_dimension(Global*		gbl,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = CMP_find_request(tdbb, drq_s_dims, DYN_REQUESTS);
 
 	bool b_ending_store = false;
@@ -877,11 +810,11 @@ void DYN_define_dimension(Global*		gbl,
 	END_STORE;
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
-			DYN_error_punt(true, 3);
+			DYN_error_punt(true, 3, NULL, NULL, NULL, NULL, NULL);
 			/* msg 3: "STORE RDB$FIELD_DIMENSIONS failed" */
 		}
 		throw;
@@ -908,102 +841,57 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName exception_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, exception_name);
 
 	if (exception_name.length() == 0) {
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
+
+	jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
 	try {
 
-	check_unique_name(tdbb, gbl, exception_name, obj_exception);
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$EXCEPTIONS
+			strcpy(X.RDB$EXCEPTION_NAME, exception_name.c_str());
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			X.RDB$MESSAGE.NULL = TRUE;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
-
-	const UCHAR* message_ptr = NULL;
-
-	UCHAR verb;
-	while ((verb = *(*ptr)++) != isc_dyn_end)
-	{
-		switch (verb)
-		{
-		case isc_dyn_xcp_msg:
-			message_ptr = *ptr;
-			DYN_skip_attribute(ptr);
-			break;
-
-		default:
-			DYN_unsupported_verb();
-		}
-	}
-
-	int faults = 0;
-
-	while (true)
-	{
-		try
-		{
-			SINT64 xcp_id =
-				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_xcp_id, "RDB$EXCEPTIONS");
-
-			xcp_id %= (MAX_SSHORT + 1);
-
-			if (!xcp_id)
-				continue;
-
-			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				X IN RDB$EXCEPTIONS
-
-				X.RDB$EXCEPTION_NUMBER = xcp_id;
-				strcpy(X.RDB$EXCEPTION_NAME, exception_name.c_str());
-
-				X.RDB$SYSTEM_FLAG = 0;
-				X.RDB$SYSTEM_FLAG.NULL = FALSE;
-				X.RDB$MESSAGE.NULL = TRUE;
-
-				if (message_ptr) {
+			UCHAR verb;
+			while ((verb = *(*ptr)++) != isc_dyn_end)
+			{
+				switch (verb)
+				{
+				case isc_dyn_xcp_msg:
+					GET_STRING_2(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
-					const UCHAR* temp_ptr = message_ptr;
-					GET_BYTES(&temp_ptr, X.RDB$MESSAGE);
+					break;
+
+				default:
+					DYN_unsupported_verb();
 				}
+			}
 
-				b_ending_store = true;
+			b_ending_store = true;
 
-			END_STORE;
+		END_STORE;
 
-			break;
-		}
-		catch (const Firebird::status_exception& ex)
-		{
-			if (b_ending_store)
-				DYN_rundown_request(request, drq_s_xcp);
-
-			if (ex.value()[1] != isc_no_dup)
-				throw;
-
-			if (++faults > MAX_SSHORT)
-				throw;
-
-			b_ending_store = false;
-			fb_utils::init_status(tdbb->tdbb_status_vector);
+		if (!DYN_REQUEST(drq_s_xcp)) {
+			DYN_REQUEST(drq_s_xcp) = request;
 		}
 	}
-
-	if (!DYN_REQUEST(drq_s_xcp)) {
-		DYN_REQUEST(drq_s_xcp) = request;
-	}
-
-	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
-			DYN_error_punt(true, 142);
-			// msg 142: "DEFINE EXCEPTION failed"
+			DYN_rundown_request(request, drq_s_trg_msgs);
+			DYN_error_punt(true, 142, NULL, NULL, NULL, NULL, NULL);
+			/* msg 142: "DEFINE EXCEPTION failed" */
 		}
 		throw;
 	}
@@ -1032,50 +920,32 @@ void DYN_define_file(Global*		gbl,
 	SSHORT id;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	if (!tdbb->getAttachment()->locksmith())
-	{
-		ERR_post(Arg::Gds(isc_adm_task_denied));
-	}
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
 
 	try {
 
 	id = -1;
-	Firebird::PathName temp_f;
-	GET_STRING(ptr, temp_f);
-	if (!ISC_expand_filename(temp_f, false))
-	{
-		DYN_error_punt(false, 231);
-		// File name is invalid.
-	}
 
 	request = CMP_find_request(tdbb, id = drq_l_files, DYN_REQUESTS);
 
+	Firebird::PathName temp_f;
+	GET_STRING(ptr, temp_f);
+	ISC_expand_filename(temp_f, false);
 	if (dbb->dbb_filename == temp_f) {
-		DYN_error_punt(false, 166);
+		DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	}
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1 X IN RDB$FILES WITH X.RDB$FILE_NAME EQ temp_f.c_str()
-			if (!DYN_REQUEST(drq_l_files))
-				DYN_REQUEST(drq_l_files) = request;
-
-			DYN_error_punt(false, 166);
+			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 	END_FOR;
-	
-	if (!DYN_REQUEST(drq_l_files))
-		DYN_REQUEST(drq_l_files) = request;
 
 	request = CMP_find_request(tdbb, id = drq_s_files, DYN_REQUESTS);
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FILES
-		if (!DYN_REQUEST(drq_s_files))
-			DYN_REQUEST(drq_s_files) = request;
-
 		temp_f.copyTo(X.RDB$FILE_NAME, sizeof(X.RDB$FILE_NAME));
 		X.RDB$SHADOW_NUMBER = (SSHORT)shadow_number;
 		X.RDB$FILE_FLAGS = 0;
@@ -1122,19 +992,17 @@ void DYN_define_file(Global*		gbl,
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_l_files)
 		{
 			DYN_rundown_request(request, drq_l_files);
-			DYN_error_punt(false, 166);
+			DYN_error_punt(false, 166, NULL, NULL, NULL, NULL, NULL);
 		}
 		else
 		{
-			if (id != -1)
-				DYN_rundown_request(request, drq_s_files);
-
-			DYN_error_punt(true, msg);
+			DYN_rundown_request(request, drq_s_files);
+			DYN_error_punt(true, msg, NULL, NULL, NULL, NULL, NULL);
 		}
 	}
 
@@ -1157,13 +1025,8 @@ void DYN_define_difference(Global*		gbl,
 	SSHORT id = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = NULL;
-
-	if (!tdbb->getAttachment()->locksmith())
-	{
-		ERR_post(Arg::Gds(isc_adm_task_denied));
-	}
 
 	try {
 
@@ -1203,18 +1066,18 @@ void DYN_define_difference(Global*		gbl,
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_difference)
 		{
 			DYN_rundown_request(request, drq_s_difference);
-			DYN_error_punt(true, 150);
+			DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
 			/* msg 150: STORE RDB$FILES failed */
 		}
 		else
 		{
 			DYN_rundown_request(request, drq_l_difference);
-			DYN_error_punt(true, 156);
+			DYN_error_punt(true, 156, NULL, NULL, NULL, NULL, NULL);
 			/* msg 156: Difference file lookup failed */
 		}
 	}
@@ -1222,7 +1085,7 @@ void DYN_define_difference(Global*		gbl,
 	return;
 
 dyn_punt_216:
-	DYN_error_punt(false, 216);
+	DYN_error_punt(false, 216, NULL, NULL, NULL, NULL, NULL);
 	/* msg 216: "Difference file is already defined" */
 }
 
@@ -1241,13 +1104,13 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName filter_name;
 	GET_STRING(ptr, filter_name);
 
 	if (filter_name.length() == 0) {
-		DYN_error_punt(false, 212);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -1309,11 +1172,11 @@ void DYN_define_filter( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_filters) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_filters);
-			DYN_error_punt(true, 7);
+			DYN_error_punt(true, 7, NULL, NULL, NULL, NULL, NULL);
 			/* msg 7: "DEFINE BLOB FILTER failed" */
 		}
 		throw;
@@ -1335,16 +1198,14 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName function_name;
 	GET_STRING(ptr, function_name);
 
 	if (function_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		// msg 212: "Zero length identifiers not allowed"
-	}
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_funcs, DYN_REQUESTS);
 
@@ -1372,8 +1233,8 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 					X.RDB$RETURN_ARGUMENT = (SSHORT)DYN_get_number(ptr);
 					X.RDB$RETURN_ARGUMENT.NULL = FALSE;
 					if (X.RDB$RETURN_ARGUMENT > MAX_UDF_ARGUMENTS)
-						DYN_error_punt(true, 10);
-						/* msg 10: "DEFINE FUNCTION failed" */
+						DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
+					/* msg 10: "DEFINE FUNCTION failed" */
 					break;
 
 				case isc_dyn_func_module_name:
@@ -1410,11 +1271,11 @@ void DYN_define_function( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_funcs) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_funcs);
-			DYN_error_punt(true, 10);
+			DYN_error_punt(true, 10, NULL, NULL, NULL, NULL, NULL);
 			/* msg 10: "DEFINE FUNCTION failed" */
 		}
 		throw;
@@ -1438,7 +1299,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	jrd_req* request = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1452,8 +1313,8 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		X.RDB$ARGUMENT_POSITION = (SSHORT)DYN_get_number(ptr);
 
 		if (X.RDB$ARGUMENT_POSITION > MAX_UDF_ARGUMENTS)
-			DYN_error_punt(true, 12);
-			/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
+			DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
+		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 
 		if (function_name) {
 			strcpy(X.RDB$FUNCTION_NAME, function_name->c_str());
@@ -1468,7 +1329,6 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 		X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
 		X.RDB$FIELD_PRECISION.NULL = TRUE;
-		X.RDB$CHARACTER_LENGTH.NULL = TRUE;
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1541,12 +1401,12 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, drq_s_func_args);
 		}
-		DYN_error_punt(true, 12);
+		DYN_error_punt(true, 12, NULL, NULL, NULL, NULL, NULL);
 		/* msg 12: "DEFINE FUNCTION ARGUMENT failed" */
 	}
 }
@@ -1566,78 +1426,40 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName generator_name;
 	GET_STRING(ptr, generator_name);
 
 	if (generator_name.length() == 0) {
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
+
+	jrd_req* request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
 
 	bool b_ending_store = false;
 
 	try {
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$GENERATORS
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
+			strcpy(X.RDB$GENERATOR_NAME, generator_name.c_str());
 
-	check_unique_name(tdbb, gbl, generator_name, obj_generator);
+			b_ending_store = true;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
+		END_STORE;
 
-	int faults = 0;
-
-	while (true)
-	{
-		try
-		{
-			SINT64 gen_id =
-				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_gen_id, "RDB$GENERATORS");
-
-			gen_id %= (MAX_SSHORT + 1);
-
-			if (!gen_id)
-				continue;
-
-			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				X IN RDB$GENERATORS
-
-				X.RDB$GENERATOR_ID = gen_id;
-				strcpy(X.RDB$GENERATOR_NAME, generator_name.c_str());
-
-				X.RDB$SYSTEM_FLAG = 0;
-				X.RDB$SYSTEM_FLAG.NULL = FALSE;
-
-				b_ending_store = true;
-
-			END_STORE;
-
-			break;
-		}
-		catch (const Firebird::status_exception& ex)
-		{
-			if (b_ending_store)
-				DYN_rundown_request(request, drq_s_gens);
-
-			if (ex.value()[1] != isc_no_dup)
-				throw;
-
-			if (++faults > MAX_SSHORT)
-				throw;
-
-			b_ending_store = false;
-			fb_utils::init_status(tdbb->tdbb_status_vector);
+		if (!DYN_REQUEST(drq_s_gens)) {
+			DYN_REQUEST(drq_s_gens) = request;
 		}
 	}
-
-	if (!DYN_REQUEST(drq_s_gens)) {
-		DYN_REQUEST(drq_s_gens) = request;
-	}
-
-	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
-			DYN_error_punt(true, 8);
+			DYN_rundown_request(request, drq_s_gens);
+			DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
 			/* msg 8: "DEFINE GENERATOR failed" */
 		}
 		throw;
@@ -1645,7 +1467,7 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 
 	if (*(*ptr)++ != isc_dyn_end)
 	{
-		DYN_error_punt(true, 9);
+		DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
 		/* msg 9: "DEFINE GENERATOR unexpected dyn verb" */
 	}
 }
@@ -1668,7 +1490,7 @@ void DYN_define_global_field(Global*		gbl,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	UCHAR verb;
 	Firebird::MetaName global_field_name;
@@ -1682,8 +1504,8 @@ void DYN_define_global_field(Global*		gbl,
 	}
 	if (global_field_name.length() == 0)
 	{
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_gfields, DYN_REQUESTS);
@@ -1838,7 +1660,7 @@ void DYN_define_global_field(Global*		gbl,
 			case isc_dyn_fld_default_value:
 				if (has_dimensions)
 				{
-					DYN_error_punt(false, 226, global_field_name.c_str());
+					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				has_default = true;
@@ -1849,7 +1671,7 @@ void DYN_define_global_field(Global*		gbl,
 			case isc_dyn_fld_default_source:
 				if (has_dimensions)
 				{
-					DYN_error_punt(false, 226, global_field_name.c_str());
+					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				has_default = true;
@@ -1880,7 +1702,7 @@ void DYN_define_global_field(Global*		gbl,
 			case isc_dyn_fld_dimensions:
 				if (has_default)
 				{
-					DYN_error_punt(false, 226, global_field_name.c_str());
+					DYN_error_punt(false, 226, global_field_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				has_dimensions = true;
@@ -1907,11 +1729,11 @@ void DYN_define_global_field(Global*		gbl,
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_gfields);
-			DYN_error_punt(true, 13);
+			DYN_error_punt(true, 13, NULL, NULL, NULL, NULL, NULL);
 			/* msg 13: "STORE RDB$FIELDS failed" */
 		}
 		throw;
@@ -1942,7 +1764,10 @@ void DYN_define_index(Global*		gbl,
 	Firebird::MetaName index_name;
 	Firebird::MetaName referenced_relation;
 	UCHAR verb;
+	UCHAR fld_count, seg_count;
 	MetaNameArray field_list, seg_list;
+	int list_index = -1;
+	USHORT key_length, length, referred_cols = 0;
 	Firebird::MetaName trigger_name;
 
 	if (ri_actionP != NULL) {
@@ -1950,7 +1775,7 @@ void DYN_define_index(Global*		gbl,
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, index_name);
 
@@ -1959,8 +1784,8 @@ void DYN_define_index(Global*		gbl,
 		DYN_UTIL_generate_index_name(tdbb, gbl, index_name, index_type);
 	}
 	if (index_name.length() == 0) {
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -1968,13 +1793,10 @@ void DYN_define_index(Global*		gbl,
 
 	try {
 
-	id = drq_l_idx_name;
-	check_unique_name(tdbb, gbl, index_name, obj_index);
-
 	request = CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
 
-	ULONG key_length = 0;
+	key_length = 0;
 	jrd_req* old_request = NULL;
 
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1986,7 +1808,7 @@ void DYN_define_index(Global*		gbl,
 		IDX.RDB$FOREIGN_KEY.NULL = TRUE;
 		IDX.RDB$EXPRESSION_SOURCE.NULL = TRUE;
 		IDX.RDB$EXPRESSION_BLR.NULL = TRUE;
-		ULONG fld_count = 0, seg_count = 0;
+		fld_count = seg_count = 0;
 		strcpy(IDX.RDB$INDEX_NAME, index_name.c_str());
 		if (new_index_name)
 			*new_index_name = IDX.RDB$INDEX_NAME;
@@ -1995,8 +1817,8 @@ void DYN_define_index(Global*		gbl,
 		else if (*(*ptr)++ == isc_dyn_rel_name)
 			GET_STRING(ptr, IDX.RDB$RELATION_NAME);
 		else
-			DYN_error_punt(false, 14);
-			/* msg 14: "No relation specified for index" */
+			DYN_error_punt(false, 14, NULL, NULL, NULL, NULL, NULL);
+		/* msg 14: "No relation specified for index" */
 
 		IDX.RDB$RELATION_NAME.NULL = FALSE;
 		IDX.RDB$SYSTEM_FLAG = 0;
@@ -2008,17 +1830,13 @@ void DYN_define_index(Global*		gbl,
 		SSHORT old_id = id;
 		request = CMP_find_request(tdbb, drq_l_view_idx, DYN_REQUESTS);
 		id = drq_l_view_idx;
-		
+
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			VREL IN RDB$RELATIONS
 			WITH VREL.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
-			
-			if (!DYN_REQUEST(drq_l_view_idx))
-				DYN_REQUEST(drq_l_view_idx) = request;
-				
 			if (!VREL.RDB$VIEW_BLR.NULL)
-				DYN_error_punt(false, 181);
-				/* msg 181: "attempt to index a view" */
+				DYN_error_punt(false, 181, NULL, NULL, NULL, NULL, NULL);
+			/* msg 181: "attempt to index a view" */
 
 		END_FOR;
 		if (!DYN_REQUEST(drq_l_view_idx))
@@ -2027,7 +1845,7 @@ void DYN_define_index(Global*		gbl,
 		request = old_request;
 		id = old_id;
 
-		/* The previous 2 lines and the next two lines can be
+		/* The previous 2 lines and the next two lines can
 		 * deleted as long as no code is added in the middle.
 		 */
 
@@ -2035,8 +1853,6 @@ void DYN_define_index(Global*		gbl,
 		old_id = id;
 		request = CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
 		id = drq_l_lfield;
-		
-		ULONG referred_cols = 0;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 			switch (verb)
@@ -2057,99 +1873,89 @@ void DYN_define_index(Global*		gbl,
 				break;
 
 			case isc_dyn_fld_name:
-				{
-					Firebird::MetaName& str = seg_list.add();
-					GET_STRING(ptr, str);
-					// The famous brute force approach.
-					for (ULONG iter = 0; iter < seg_count; ++iter)
+			{
+				Firebird::MetaName& str = seg_list.add();
+				GET_STRING(ptr, str);
+				seg_count++;
+
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+					F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
+						WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
+						F.RDB$FIELD_NAME EQ str.c_str() AND
+						IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
+					if (!DYN_REQUEST(drq_l_lfield))
 					{
-						if (seg_list[iter] == str)
+						DYN_REQUEST(drq_l_lfield) = request;
+					}
+
+					fld_count++;
+					if (GF.RDB$FIELD_TYPE == blr_blob)
+					{
+						DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME, NULL,
+									   NULL, NULL, NULL);
+						/* msg 116 "attempt to index blob field in index %s" */
+					}
+					else if (!GF.RDB$DIMENSIONS.NULL)
+					{
+						DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME, NULL,
+									   NULL, NULL, NULL);
+						/* msg 117 "attempt to index array field in index %s" */
+					}
+					else if (!GF.RDB$COMPUTED_BLR.NULL)
+					{
+						DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME, NULL,
+									   NULL, NULL, NULL);
+						/* msg 179 "attempt to index COMPUTED BY field in index %s" */
+					}
+					else if (GF.RDB$FIELD_TYPE == blr_varying ||
+							 GF.RDB$FIELD_TYPE == blr_text)
+					{
+						/* Compute the length of the key segment allowing
+						   for international information.  Note that we
+						   must convert a <character set, collation> type
+						   to an index type in order to compute the length */
+						if (!F.RDB$COLLATION_ID.NULL)
 						{
-							DYN_error_punt(false, 240, SafeArg() << str.c_str() <<
-								IDX.RDB$INDEX_NAME);
-								// msg 240 "Field %s cannot be used twice in index %s"
+							length =
+								INTL_key_length(tdbb,
+									INTL_TEXT_TO_INDEX(
+										INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
+															  F.RDB$COLLATION_ID)),
+									GF.RDB$FIELD_LENGTH);
+						}
+						else if (!GF.RDB$COLLATION_ID.NULL)
+						{
+							length =
+								INTL_key_length(tdbb,
+									INTL_TEXT_TO_INDEX(
+										INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
+											GF.RDB$COLLATION_ID)),
+									GF.RDB$FIELD_LENGTH);
+						}
+						else
+						{
+							length = GF.RDB$FIELD_LENGTH;
 						}
 					}
-						
-					seg_count++;
-
-					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-						F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
-							WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-							F.RDB$FIELD_NAME EQ str.c_str() AND
-							IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
-
-						ULONG length = 0;
-						if (!DYN_REQUEST(drq_l_lfield))
-						{
-							DYN_REQUEST(drq_l_lfield) = request;
-						}
-
-						fld_count++;
-						if (GF.RDB$FIELD_TYPE == blr_blob)
-						{
-							DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME);
-							/* msg 116 "attempt to index blob field in index %s" */
-						}
-						else if (!GF.RDB$DIMENSIONS.NULL)
-						{
-							DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME);
-							/* msg 117 "attempt to index array field in index %s" */
-						}
-						else if (!GF.RDB$COMPUTED_BLR.NULL)
-						{
-							DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME);
-							/* msg 179 "attempt to index COMPUTED BY field in index %s" */
-						}
-						else if (GF.RDB$FIELD_TYPE == blr_varying ||
-								 GF.RDB$FIELD_TYPE == blr_text)
-						{
-							/* Compute the length of the key segment allowing
-							   for international information.  Note that we
-							   must convert a <character set, collation> type
-							   to an index type in order to compute the length */
-							if (!F.RDB$COLLATION_ID.NULL)
-							{
-								length =
-									INTL_key_length(tdbb,
-										INTL_TEXT_TO_INDEX(
-											INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
-																  F.RDB$COLLATION_ID)),
-										GF.RDB$FIELD_LENGTH);
-							}
-							else if (!GF.RDB$COLLATION_ID.NULL)
-							{
-								length =
-									INTL_key_length(tdbb,
-										INTL_TEXT_TO_INDEX(
-											INTL_CS_COLL_TO_TTYPE(GF.RDB$CHARACTER_SET_ID,
-												GF.RDB$COLLATION_ID)),
-										GF.RDB$FIELD_LENGTH);
-							}
-							else
-							{
-								length = GF.RDB$FIELD_LENGTH;
-							}
-						}
-						else
-						{
-							length = sizeof(double);
-						}
-						if (key_length)
-						{
-							key_length += ((length + STUFF_COUNT - 1) /
-										   (unsigned) STUFF_COUNT) *
-											(STUFF_COUNT + 1);
-						}
-						else
-						{
-							key_length = length;
-						}
-					END_FOR;
-					if (!DYN_REQUEST(drq_l_lfield))
-						DYN_REQUEST(drq_l_lfield) = request;
-					break;
-				}
+					else
+					{
+						length = sizeof(double);
+					}
+					if (key_length)
+					{
+						key_length += ((length + STUFF_COUNT - 1) /
+									   (unsigned) STUFF_COUNT) *
+										(STUFF_COUNT + 1);
+					}
+					else
+					{
+						key_length = length;
+					}
+				END_FOR;
+				if (!DYN_REQUEST(drq_l_lfield))
+					DYN_REQUEST(drq_l_lfield) = request;
+				break;
+			}
 
 				/* for expression indices, store the BLR and the source string */
 
@@ -2168,8 +1974,8 @@ void DYN_define_index(Global*		gbl,
 			case isc_dyn_idx_foreign_key:
 				GET_STRING(ptr, referenced_relation);
 				if (referenced_relation.length() == 0) {
-					DYN_error_punt(false, 212);
-					/* msg 212: "Zero length identifiers not allowed" */
+					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+				/* msg 212: "Zero length identifiers not allowed" */
 				}
 				break;
 
@@ -2297,13 +2103,15 @@ void DYN_define_index(Global*		gbl,
 
 		key_length = ROUNDUP(key_length, sizeof(SLONG));
 		if (key_length >= MAX_KEY)
-			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME);
-			/* msg 118 "key size too big for index %s" */
+			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
+						   NULL);
+		/* msg 118 "key size too big for index %s" */
 
 		if (seg_count) {
 			if (seg_count != fld_count)
-				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME);
-				/* msg 118 "Unknown fields in index %s" */
+				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME, NULL, NULL,
+							   NULL, NULL);
+			/* msg 118 "Unknown fields in index %s" */
 
 			old_request = request;
 			old_id = id;
@@ -2324,17 +2132,16 @@ void DYN_define_index(Global*		gbl,
 			id = old_id;
 		}
 		else if (IDX.RDB$EXPRESSION_BLR.NULL)
-		{
-			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME);
-			// msg 119 "no keys for index %s"
-		}
+			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME, NULL, NULL, NULL,
+						   NULL);
+		/* msg 119 "no keys for index %s" */
 
 		if (field_list.getCount()) {
 			/* If referring columns count <> referred columns return error */
 
 			if (seg_count != referred_cols)
-				DYN_error_punt(true, 133);
-				/* msg 133: "Number of referencing columns do not equal number of referenced columns */
+				DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
+			/* msg 133: "Number of referencing columns do not equal number of referenced columns */
 
 			/* lookup a unique index in the referenced relation with the
 			   referenced fields mentioned */
@@ -2345,23 +2152,26 @@ void DYN_define_index(Global*		gbl,
 			id = drq_l_unq_idx;
 
 			index_name = "";
-			int list_index = -1;
+			list_index = -1;
 			bool found = false;
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			    RC IN RDB$RELATION_CONSTRAINTS CROSS
-				IND IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
-					ISEG IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
-					IND.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
-				    IND.RDB$UNIQUE_FLAG NOT MISSING AND
-					(RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
-					RC.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
-					SORTED BY IND.RDB$INDEX_NAME,
-					DESCENDING ISEG.RDB$FIELD_POSITION
+			    X IN RDB$RELATION_CONSTRAINTS CROSS
+				Y IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
+					Z IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
+					Y.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
+				    Y.RDB$UNIQUE_FLAG NOT MISSING AND
+					(X.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
+					X.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
+					SORTED BY Y.RDB$INDEX_NAME,
+					DESCENDING Z.RDB$FIELD_POSITION
 
 				if (!DYN_REQUEST(drq_l_unq_idx))
 					DYN_REQUEST(drq_l_unq_idx) = request;
 
-				if (index_name != IND.RDB$INDEX_NAME) {
+				/* create a control break on index name, in which we set up
+				   to handle a new index, assuming it is the right one */
+
+				if (index_name != Y.RDB$INDEX_NAME) {
 					if (list_index >= 0)
 						found = false;
 					if (found) {
@@ -2369,7 +2179,7 @@ void DYN_define_index(Global*		gbl,
 						break;
 					}
 					list_index = field_list.getCount() - 1;
-					index_name = IND.RDB$INDEX_NAME;
+					index_name = Y.RDB$INDEX_NAME;
 					found = true;
 				}
 
@@ -2377,8 +2187,8 @@ void DYN_define_index(Global*		gbl,
 				   match, then this is not the correct index */
 
 				if (list_index >= 0) {
-					fb_utils::exact_name_limit(ISEG.RDB$FIELD_NAME, sizeof(ISEG.RDB$FIELD_NAME));
-					if (field_list[list_index--] != ISEG.RDB$FIELD_NAME)
+					fb_utils::exact_name_limit(Z.RDB$FIELD_NAME, sizeof(Z.RDB$FIELD_NAME));
+					if (field_list[list_index--] != Z.RDB$FIELD_NAME)
 					{
 						found = false;
 					}
@@ -2403,35 +2213,8 @@ void DYN_define_index(Global*		gbl,
 				}
 			}
 			else {
-				jrd_req* request2 = NULL;
-				found = false;
-				bool isView = false;
-
-				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-					X IN RDB$RELATIONS
-						WITH X.RDB$RELATION_NAME EQ referenced_relation.c_str()
-					found = true;
-					isView = !X.RDB$VIEW_BLR.NULL;
-				END_FOR
-				
-				CMP_release(tdbb, request2);
-
-				if (isView)
-				{
-					DYN_error_punt(false, 242, referenced_relation.c_str());
-					// msg 242: "attempt to reference a view (%s) in a foreign key"
-				}
-
-				if (found)
-				{
-					DYN_error_punt(false, 18, referenced_relation.c_str());
-					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint in table %s with specified columns"
-				}
-				else
-				{
-					DYN_error_punt(false, 241, referenced_relation.c_str());
-					// msg 241: "Table %s not found"
-				}
+				DYN_error_punt(false, 18, NULL, NULL, NULL, NULL, NULL);
+			/* msg 18: "could not find unique index with specified fields" */
 			}
 		}
 		else if (referenced_relation.length()) {
@@ -2452,9 +2235,8 @@ void DYN_define_index(Global*		gbl,
 				/* Number of columns in referred index should be same as number
 				   of columns in referring index */
 
-				fb_assert(IND.RDB$SEGMENT_COUNT >= 0);
-				if (seg_count != ULONG(IND.RDB$SEGMENT_COUNT))
-					DYN_error_punt(true, 133);
+				if (seg_count != IND.RDB$SEGMENT_COUNT)
+					DYN_error_punt(true, 133, NULL, NULL, NULL, NULL, NULL);
 				/* msg 133: "Number of referencing columns do not equal number of referenced columns" */
 
 				fb_utils::exact_name_limit(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
@@ -2470,10 +2252,8 @@ void DYN_define_index(Global*		gbl,
 			id = old_id;
 
 			if (IDX.RDB$FOREIGN_KEY.NULL)
-			{
-				DYN_error_punt(false, 20, referenced_relation.c_str());
-				// msg 20: "could not find PRIMARY KEY index in specified table %s"
-			}
+				DYN_error_punt(false, 20, NULL, NULL, NULL, NULL, NULL);
+			/* msg 20: "could not find primary key index in specified relation" */
 		}
 
 		IDX.RDB$SEGMENT_COUNT = seg_count;
@@ -2484,45 +2264,38 @@ void DYN_define_index(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 21);
+			DYN_error_punt(true, 21, NULL, NULL, NULL, NULL, NULL);
 			/* msg 21: "STORE RDB$INDICES failed" */
 		}
 		else if (id == drq_s_idx_segs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 15);
-			/* msg 15: "STORE RDB$INDEX_SEGMENTS failed" */
+			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
+			/* msg 15: "STORE RDB$INDICES failed" */
 		}
 
 		DYN_rundown_request(request, -1);
-
 		switch (id)
 		{
-		case drq_l_idx_name:
-			DYN_error_punt(true, 21);
-			/* msg 21: "STORE RDB$INDICES failed" */
-			break;
 		case drq_l_lfield:
-			DYN_error_punt(true, 15);
-			/* msg 15: "STORE RDB$INDEX_SEGMENTS failed" */
+			DYN_error_punt(true, 15, NULL, NULL, NULL, NULL, NULL);
+			/* msg 15: "STORE RDB$INDICES failed" */
 			break;
 		case drq_l_unq_idx:
-			DYN_error_punt(true, 17);
+			DYN_error_punt(true, 17, NULL, NULL, NULL, NULL, NULL);
 			/* msg 17: "Primary Key field lookup failed" */
 			break;
 		case drq_l_view_idx:
-			DYN_error_punt(true, 180);
+			DYN_error_punt(true, 180, NULL, NULL, NULL, NULL, NULL);
 			/* msg 180: "Table Name lookup failed" */
 			break;
-		case drq_l_primary:
-			DYN_error_punt(true, 19);
+		default:
+			DYN_error_punt(true, 19, NULL, NULL, NULL, NULL, NULL);
 			/* msg 19: "Primary Key lookup failed" */
 			break;
-		default:
-			fb_assert(false);
 		}
 	}
 }
@@ -2550,14 +2323,14 @@ void DYN_define_local_field(Global*		gbl,
 	SLONG fld_pos;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName local_field_name;
 	GET_STRING(ptr, local_field_name);
 
 	if (local_field_name.length() == 0) {
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -2687,6 +2460,7 @@ void DYN_define_local_field(Global*		gbl,
 				DYN_put_blr_blob(gbl, ptr, &RFR.RDB$DEFAULT_VALUE);
 				break;
 
+
 			case isc_dyn_fld_default_source:
 				has_default = true;
 				RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
@@ -2749,7 +2523,7 @@ void DYN_define_local_field(Global*		gbl,
 
 		if (has_default && DYN_UTIL_is_array(tdbb, gbl, RFR.RDB$FIELD_SOURCE))
 		{
-			DYN_error_punt(false, 226, RFR.RDB$FIELD_SOURCE);
+			DYN_error_punt(false, 226, RFR.RDB$FIELD_SOURCE, NULL, NULL, NULL, NULL);
 			// msg 226: "Default value is not allowed for array type in domain %s"
 		}
 
@@ -2772,16 +2546,12 @@ void DYN_define_local_field(Global*		gbl,
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				FLD IN RDB$FIELDS
-				
-				FLD.RDB$SYSTEM_FLAG = 0;
-				FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 				strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
 				DYN_put_blr_blob(gbl, &blr, &FLD.RDB$COMPUTED_BLR);
 				if (source) {
 					DYN_put_text_blob(gbl, &source, &FLD.RDB$COMPUTED_SOURCE);
 				}
 				FLD.RDB$FIELD_TYPE = dtype;
-				FLD.RDB$FIELD_TYPE.NULL = FALSE;
 				if (lflag) {
 					FLD.RDB$FIELD_LENGTH = length;
 					FLD.RDB$FIELD_LENGTH.NULL = FALSE;
@@ -2836,8 +2606,8 @@ void DYN_define_local_field(Global*		gbl,
 		if (!RFR.RDB$VIEW_CONTEXT.NULL)
 		{
 			fb_assert(relation_name);
-			DYN_UTIL_find_field_source(tdbb, gbl, *relation_name, RFR.RDB$VIEW_CONTEXT,
-				RFR.RDB$BASE_FIELD, RFR.RDB$FIELD_SOURCE);
+			find_field_source(tdbb, gbl, *relation_name, RFR.RDB$VIEW_CONTEXT,
+							  RFR.RDB$BASE_FIELD, RFR.RDB$FIELD_SOURCE);
 		}
 	END_STORE;
 
@@ -2846,16 +2616,16 @@ void DYN_define_local_field(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_lfields) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 23);
+			DYN_error_punt(true, 23, NULL, NULL, NULL, NULL, NULL);
 			/* msg 23: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 22);
+			DYN_error_punt(true, 22, NULL, NULL, NULL, NULL, NULL);
 			/* msg 22: "STORE RDB$FIELDS failed" */
 		}
 	}
@@ -2877,23 +2647,22 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	// Leave these as USHORT. Don't convert the *_null ones to bool.
 	USHORT f_length, f_type, f_charlength, f_seg_length,
 		f_scale_null, f_subtype_null, f_seg_length_null,
-		f_charlength_null, f_precision_null, f_charset_null, f_collation_null, f_notnull_null;
+		f_charlength_null, f_precision_null, f_charset_null, f_collation_null;
 	SSHORT id;
 	SSHORT f_subtype, f_scale, f_precision;
 	SSHORT f_charset, f_collation;
-	USHORT f_notnull;
 	const UCHAR* default_value_ptr = NULL;
 	const UCHAR* default_source_ptr = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName parameter_name;
 	GET_STRING(ptr, parameter_name);
 
 	if (parameter_name.length() == 0) {
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_prms, DYN_REQUESTS);
@@ -2904,23 +2673,16 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 	f_length = f_type = f_subtype = f_charlength = f_scale = f_seg_length = 0;
 	f_charset = f_collation = f_precision = 0;
-	f_notnull = FALSE;
 	f_scale_null = f_subtype_null = f_charlength_null = f_seg_length_null =
 		TRUE;
-	f_precision_null = f_charset_null = f_collation_null = f_notnull_null = TRUE;
+	f_precision_null = f_charset_null = f_collation_null = TRUE;
 	id = drq_s_prms;
-
-	Firebird::MetaName prc_name, rel_name, fld_name;
-	prm_mech_t mechanism = prm_mech_normal;
-	bool explicit_domain = false;
-
 	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURE_PARAMETERS USING
 		strcpy(P.RDB$PARAMETER_NAME, parameter_name.c_str());
 		if (procedure_name) {
 			P.RDB$PROCEDURE_NAME.NULL = FALSE;
 			strcpy(P.RDB$PROCEDURE_NAME, procedure_name->c_str());
-			prc_name = *procedure_name;
 		}
 		else
 			P.RDB$PROCEDURE_NAME.NULL = TRUE;
@@ -2933,7 +2695,6 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
-		{
 			switch (verb)
 			{
 			case isc_dyn_system_flag:
@@ -2954,25 +2715,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			case isc_dyn_prc_name:
 				GET_STRING(ptr, P.RDB$PROCEDURE_NAME);
 				P.RDB$PROCEDURE_NAME.NULL = FALSE;
-				prc_name = P.RDB$PROCEDURE_NAME;
-				break;
-
-			case isc_dyn_fld_not_null:
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
-				{
-					// Feature not supported on ODS version older than %d.%d
-					ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << 
-																			 Arg::Num(1));
-				}
-
-				f_notnull = TRUE;
-				f_notnull_null = FALSE;
 				break;
 
 			case isc_dyn_fld_source:
 				GET_STRING(ptr, P.RDB$FIELD_SOURCE);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;
-				explicit_domain = true;
 				break;
 
 			case isc_dyn_fld_length:
@@ -3051,47 +2798,24 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 			case isc_dyn_fld_default_value:
 				default_value_ptr = *ptr;
-				DYN_skip_attribute(ptr);
+				skip_blr_blob(ptr);
 				break;
 
 			case isc_dyn_fld_default_source:
 				default_source_ptr = *ptr;
-				DYN_skip_attribute(ptr);
-				break;
-
-			case isc_dyn_prm_mechanism:
-				mechanism = (prm_mech_t) DYN_get_number(ptr);
-				break;
- 
-			case isc_dyn_rel_name:
-				GET_STRING(ptr, rel_name);
-				break;
-
-			case isc_dyn_fld_name:
-				GET_STRING(ptr, fld_name);
+				skip_blr_blob(ptr);
 				break;
 
 			default:
 				--(*ptr);
 				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, procedure_name);
 			}
-		}
-
 		if (P.RDB$FIELD_SOURCE.NULL) {
 			/* Need to store dummy global field */
-			jrd_req* old_request = request;
 			id = drq_s_prm_src;
-			request = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
-
-			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
+			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
-
-				// ODS_11_1
-				P.RDB$NULL_FLAG.NULL = f_notnull_null;
-				P.RDB$NULL_FLAG = f_notnull;
-
-				PS.RDB$SYSTEM_FLAG = 0;
-				PS.RDB$SYSTEM_FLAG.NULL = FALSE;
 				DYN_UTIL_generate_field_name(tdbb, gbl, PS.RDB$FIELD_NAME);
 				strcpy(P.RDB$FIELD_SOURCE, PS.RDB$FIELD_NAME);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;
@@ -3109,7 +2833,6 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				PS.RDB$CHARACTER_LENGTH.NULL = f_charlength_null;
 				PS.RDB$CHARACTER_SET_ID = f_charset;
 				PS.RDB$CHARACTER_SET_ID.NULL = f_charset_null;
-
 				PS.RDB$COLLATION_ID = f_collation;
 				PS.RDB$COLLATION_ID.NULL = f_collation_null;
 
@@ -3122,11 +2845,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				if (default_source_ptr) {
 					DYN_put_text_blob(gbl, &default_source_ptr, &PS.RDB$DEFAULT_SOURCE);
 				}
+
 			END_STORE;
 			if (!DYN_REQUEST(drq_s_prm_src))
-				DYN_REQUEST(drq_s_prm_src) = request;
+				DYN_REQUEST(drq_s_prm_src) = request2;
 			id = drq_s_prms;
-			request = old_request;
 		}
 	END_STORE;
 
@@ -3134,112 +2857,25 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		DYN_REQUEST(drq_s_prms) = request;
 	}
 
-	request = NULL;
-	id = -1;
-
-	if (explicit_domain)
-	{
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		{
-			request = CMP_find_request(tdbb, drq_s_prms2, DYN_REQUESTS);
-			id = drq_s_prms2;
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				P IN RDB$PROCEDURE_PARAMETERS WITH
-					P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
-					P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
-
-				if (!DYN_REQUEST(drq_s_prms2))
-					DYN_REQUEST(drq_s_prms2) = request;
-
-				MODIFY P USING
-					P.RDB$COLLATION_ID.NULL = f_collation_null;
-					P.RDB$COLLATION_ID = f_collation;
-
-					P.RDB$DEFAULT_VALUE.NULL = (default_value_ptr == NULL) ? TRUE : FALSE;
-					if (default_value_ptr)
-						DYN_put_blr_blob(gbl, &default_value_ptr, &P.RDB$DEFAULT_VALUE);
-
-					P.RDB$DEFAULT_SOURCE.NULL = (default_source_ptr == NULL) ? TRUE : FALSE;
-					if (default_source_ptr)
-						DYN_put_text_blob(gbl, &default_source_ptr, &P.RDB$DEFAULT_SOURCE);
-
-					P.RDB$NULL_FLAG.NULL = f_notnull_null;
-					P.RDB$NULL_FLAG = f_notnull;
-
-					P.RDB$PARAMETER_MECHANISM.NULL = FALSE;
-					P.RDB$PARAMETER_MECHANISM = (USHORT) mechanism;
-				END_MODIFY
-			END_FOR
-
-			if (!DYN_REQUEST(drq_s_prms2))
-				DYN_REQUEST(drq_s_prms2) = request;
-		}
-		else
-		{
-			// Feature not supported on ODS version older than %d.%d
-			ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << 
-																	 Arg::Num(1));
-		}
 	}
-
-	if (rel_name.hasData() && fld_name.hasData())
-	{
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
-		{
-			request = CMP_find_request(tdbb, drq_s_prms3, DYN_REQUESTS);
-			id = drq_s_prms3;
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				P IN RDB$PROCEDURE_PARAMETERS WITH
-					P.RDB$PROCEDURE_NAME EQ prc_name.c_str() AND
-					P.RDB$PARAMETER_NAME EQ parameter_name.c_str()
-
-				if (!DYN_REQUEST(drq_s_prms3))
-					DYN_REQUEST(drq_s_prms3) = request;
-
-				MODIFY P USING
-					P.RDB$RELATION_NAME.NULL = FALSE;
-					strcpy(P.RDB$RELATION_NAME, rel_name.c_str());
-
-					P.RDB$FIELD_NAME.NULL = FALSE;
-					strcpy(P.RDB$FIELD_NAME, fld_name.c_str());
-				END_MODIFY
-			END_FOR
-
-			if (!DYN_REQUEST(drq_s_prms3))
-				DYN_REQUEST(drq_s_prms3) = request;
-		}
-		else
-		{
-			request = NULL;
-			id = -1;
-
-			ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << 
-																	 Arg::Num(2));
-		}
-	}
-
-	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-
-		if (id == -1 || id == drq_s_prms || id == drq_s_prm_src ||
-			id == drq_s_prms2 || id == drq_s_prms3)
-		{
-			if (id != -1)
-				DYN_rundown_request(request, id);
-
-			DYN_error_punt(true, 136);
-			// msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed"
+		if (id == drq_s_prms) {
+			DYN_rundown_request(request, drq_s_prms);
+			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
+			/* msg 163: "STORE RDB$PROCEDURE_PARAMETERS failed" */
 		}
-
+		else if (id == drq_s_prm_src) {
+			DYN_rundown_request(request, drq_s_prm_src);
+			DYN_error_punt(true, 136, NULL, NULL, NULL, NULL, NULL);
+			/* msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed" */
+		}
 		DYN_rundown_request(request, -1);
 
 		/* Control should never reach this point,
 		   because id should always have one of the values tested above.  */
 		fb_assert(0);
-		DYN_error_punt(true, 0);
+		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -3259,13 +2895,13 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName procedure_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, procedure_name);
 
 	if (procedure_name.length() == 0)
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
@@ -3273,188 +2909,83 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	try {
 
 	id = drq_l_prc_name;
-	check_unique_name(tdbb, gbl, procedure_name, obj_procedure);
-
+	check_unique_name(tdbb, gbl, procedure_name, true);
 	bool sql_prot = false;
-	prc_t prc_type = prc_legacy;
-	SSHORT sys_flag = 0, inputs = -1, outputs = -1;
-	const UCHAR* blr_ptr = NULL;
-	const UCHAR* description_ptr = NULL;
-	const UCHAR* source_ptr = NULL;
-	const UCHAR* debug_info_ptr = NULL;
-	Firebird::MetaName security_class;
-
-	UCHAR verb;
-	while ((verb = *(*ptr)++) != isc_dyn_end)
-	{
-		switch (verb)
-		{
-		case isc_dyn_system_flag:
-			sys_flag = (SSHORT) DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_prc_blr:
-			blr_ptr = *ptr;
-			DYN_skip_attribute(ptr);
-			break;
-
-		case isc_dyn_description:
-			description_ptr = *ptr;
-			DYN_skip_attribute(ptr);
-			break;
-
-		case isc_dyn_prc_source:
-			source_ptr = *ptr;
-			DYN_skip_attribute(ptr);
-			break;
-
-		case isc_dyn_prc_inputs:
-			inputs = (SSHORT) DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_prc_outputs:
-			outputs = (SSHORT) DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_prc_type:
-			prc_type = (prc_t) DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_security_class:
-			GET_STRING(ptr, security_class);
-			break;
-
-		case isc_dyn_rel_sql_protection:
-			sql_prot = (bool) DYN_get_number(ptr);
-			break;
-
-		case isc_dyn_debug_info:
-			debug_info_ptr = *ptr;
-			DYN_skip_attribute(ptr);
-			break;
-
-		default:
-			--(*ptr);
-			DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
-		}
-	}
 
 	request = CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
 
-	int faults = 0;
-	const UCHAR* temp_ptr;
 
-	while (true)
-	{
-		try
-		{
-			SINT64 prc_id =
-				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_prc_id, "RDB$PROCEDURES");
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		P IN RDB$PROCEDURES
+		strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
+		P.RDB$SYSTEM_FLAG = 0;
+		P.RDB$SYSTEM_FLAG.NULL = FALSE;
+		P.RDB$PROCEDURE_BLR.NULL = TRUE;
+		P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
+		P.RDB$SECURITY_CLASS.NULL = TRUE;
+		P.RDB$DESCRIPTION.NULL = TRUE;
+		P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+		P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
 
-			prc_id %= (MAX_SSHORT + 1);
-
-			if (!prc_id)
-				continue;
-
-			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				P IN RDB$PROCEDURES
-
-				P.RDB$PROCEDURE_ID = prc_id;
-				strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
-
-				P.RDB$PROCEDURE_BLR.NULL = TRUE;
-				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-				P.RDB$SECURITY_CLASS.NULL = TRUE;
-				P.RDB$DESCRIPTION.NULL = TRUE;
-				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-				P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
-
+		UCHAR verb;
+		while ((verb = *(*ptr)++) != isc_dyn_end)
+			switch (verb)
+			{
+			case isc_dyn_system_flag:
+				P.RDB$SYSTEM_FLAG = (SSHORT)DYN_get_number(ptr);
 				P.RDB$SYSTEM_FLAG.NULL = FALSE;
-				P.RDB$SYSTEM_FLAG = sys_flag;
-		
-				if (blr_ptr) {
-					P.RDB$PROCEDURE_BLR.NULL = FALSE;
-					temp_ptr = blr_ptr;
-					DYN_put_blr_blob(gbl, &temp_ptr, &P.RDB$PROCEDURE_BLR);
-				}
+				break;
 
-				if (source_ptr) {
-					P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-					temp_ptr = source_ptr;
-					DYN_put_text_blob(gbl, &temp_ptr, &P.RDB$PROCEDURE_SOURCE);
-				}
+			case isc_dyn_prc_blr:
+				P.RDB$PROCEDURE_BLR.NULL = FALSE;
+				DYN_put_blr_blob(gbl, ptr, &P.RDB$PROCEDURE_BLR);
+				break;
 
-				if (description_ptr) {
-					P.RDB$DESCRIPTION.NULL = FALSE;
-					temp_ptr = description_ptr;
-					DYN_put_text_blob(gbl, &temp_ptr, &P.RDB$DESCRIPTION);
-				}
+			case isc_dyn_description:
+				DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION);
+				P.RDB$DESCRIPTION.NULL = FALSE;
+				break;
 
-				if (inputs >= 0) {
-					P.RDB$PROCEDURE_INPUTS.NULL = FALSE;
-					P.RDB$PROCEDURE_INPUTS = inputs;
-				}
+			case isc_dyn_prc_source:
+				DYN_put_text_blob(gbl, ptr, &P.RDB$PROCEDURE_SOURCE);
+				P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+				break;
 
-				if (outputs >= 0) {
-					P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
-					P.RDB$PROCEDURE_OUTPUTS = outputs;
-				}
+			case isc_dyn_prc_inputs:
+				P.RDB$PROCEDURE_INPUTS = (SSHORT)DYN_get_number(ptr);
+				P.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+				break;
 
-				if (security_class.length()) {
-					P.RDB$SECURITY_CLASS.NULL = FALSE;
-					GET_STRING(security_class.c_str(), P.RDB$SECURITY_CLASS);
-				}
+			case isc_dyn_prc_outputs:
+				P.RDB$PROCEDURE_OUTPUTS = (SSHORT)DYN_get_number(ptr);
+				P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
+				break;
 
-			END_STORE;
+			case isc_dyn_security_class:
+				GET_STRING(ptr, P.RDB$SECURITY_CLASS);
+				P.RDB$SECURITY_CLASS.NULL = FALSE;
+				break;
 
-			break;
-		}
-		catch (const Firebird::status_exception& ex)
-		{
-			DYN_rundown_request(request, id);
+			case isc_dyn_rel_sql_protection:
+				sql_prot = (bool) DYN_get_number(ptr);
+				break;
 
-			if (ex.value()[1] != isc_no_dup)
-				throw;
+			default:
+				--(*ptr);
+				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
+			}
 
-			if (++faults > MAX_SSHORT)
-				throw;
-
-			fb_utils::init_status(tdbb->tdbb_status_vector);
-		}
-	}
+	END_STORE;
 
 	if (!DYN_REQUEST(drq_s_prcs))
 		DYN_REQUEST(drq_s_prcs) = request;
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-	{
-		jrd_req* sub_request = NULL;
-
-		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-			P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME EQ procedure_name.c_str()
-
-			MODIFY P USING
-				P.RDB$PROCEDURE_TYPE = prc_type;
-				P.RDB$PROCEDURE_TYPE.NULL = FALSE;
-
-				P.RDB$VALID_BLR = TRUE;
-				P.RDB$VALID_BLR.NULL = FALSE;
-
-				P.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
-				if (debug_info_ptr)
-					DYN_put_blr_blob(gbl, &debug_info_ptr, &P.RDB$DEBUG_INFO);
-			END_MODIFY;
-		END_FOR;
-
-		CMP_release(tdbb, sub_request);
-	}
-
 	if (sql_prot) {
 		Firebird::MetaName owner_name;
 		if (!get_who(tdbb, gbl, owner_name))
-			DYN_error_punt(true, 134);
-			/* msg 134: "STORE RDB$PROCEDURES failed" */
+			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
+		/* msg 134: "STORE RDB$PROCEDURES failed" */
 
 		for (const TEXT* p = ALL_PROC_PRIVILEGES; *p; p++) {
 			request = CMP_find_request(tdbb, drq_s_prc_usr_prvs, DYN_REQUESTS);
@@ -3476,30 +3007,29 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 134);
+			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 		else if (id == drq_s_prc_usr_prvs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 25);
+			DYN_error_punt(true, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
 		DYN_rundown_request(request, -1);
-
 		if (id == drq_l_prc_name) {
-			DYN_error_punt(true, 134);
+			DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
 		}
 
 		/* Control should never reach this point, because id should have
 		   one of the values tested-for above. */
-		fb_assert(false);
-		DYN_error_punt(true, 0);
+		fb_assert(0);
+		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -3520,14 +3050,14 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName field_name; // unused, only passed empty to DYN_execute again.
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, relation_name);
 
 	if (relation_name.length() == 0)
 	{
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -3538,9 +3068,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	try {
 
 	id = drq_l_rel_name;
-	check_unique_name(tdbb, gbl, relation_name, obj_relation);
-	bool sql_prot = false;
-	rel_t rel_type = rel_persistent;
+	check_unique_name(tdbb, gbl, relation_name, false);
+	bool sql_prot = false, is_a_view = false;
 
 	request = CMP_find_request(tdbb, drq_s_rels, DYN_REQUESTS);
 	id = drq_s_rels;
@@ -3560,7 +3089,6 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
-		{
 			switch (verb)
 			{
 			case isc_dyn_system_flag:
@@ -3574,7 +3102,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 			case isc_dyn_view_blr:
 				REL.RDB$VIEW_BLR.NULL = FALSE;
-				rel_type = rel_view;
+				is_a_view = true;
 				DYN_put_blr_blob(gbl, ptr, &REL.RDB$VIEW_BLR);
 				break;
 
@@ -3596,7 +3124,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 			case isc_dyn_rel_ext_file:
 				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
 				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, false))
-					DYN_error_punt(true, 163);
+					DYN_error_punt(true, 163, NULL, NULL, NULL, NULL, NULL);
 
 				// Check for any path, present in filename.
 				// If miss it, file will be searched in External Tables Dirs,
@@ -3611,7 +3139,6 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 										false);
 				}
 				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
-				rel_type = rel_external;
 				break;
 
 			case isc_dyn_rel_sql_protection:
@@ -3619,48 +3146,20 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				sql_prot = (bool) DYN_get_number(ptr);
 				break;
 
-			case isc_dyn_rel_temporary:
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
-				{
-					// msg 248: "Feature ''@1'' is not supported in ODS @2.@3"
-					DYN_error_punt(false, 248, SafeArg() << "GLOBAL TEMPORARY TABLE" << 
-						dbb->dbb_ods_version << dbb->dbb_minor_original);
-				}
-				switch (DYN_get_number(ptr))
-				{
-					case isc_dyn_rel_temp_global_preserve:
-						rel_type = rel_global_temp_preserve;
-						break;
-
-					case isc_dyn_rel_temp_global_delete:
-						rel_type = rel_global_temp_delete;
-						break;
-
-					default:
-						fb_assert(false);
-				}
-				break;
-
 			default:
 				--(*ptr);
 				MetaTmp(REL.RDB$RELATION_NAME)
 					DYN_execute(gbl, ptr, &tmp, &field_name, NULL, NULL, NULL);
 			}
-		}
 
-		SSHORT old_id = id;
-		id = drq_l_rel_info2;
-		check_relation_temp_scope(tdbb, gbl, REL.RDB$RELATION_NAME, rel_type);
-		id = old_id;
-		
 		if (sql_prot) {
 			if (!get_who(tdbb, gbl, owner_name))
-				DYN_error_punt(true, 115);
+				DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
 			/* msg 115: "CREATE VIEW failed" */
 
-			if (rel_type == rel_view) {
+			if (is_a_view) {
 				jrd_req* old_request = request;
-				const SSHORT old_id2 = id;
+				const SSHORT old_id = id;
 				request = CMP_find_request(tdbb, drq_l_view_rels, DYN_REQUESTS);
 				id = drq_l_view_rels;
 
@@ -3681,19 +3180,27 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 						{
 							// I think this should be the responsability of DFW
 							// or the user will find ways to circumvent DYN.
-							DYN_error_punt(true, 115);
+							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
+										   NULL);
 							/* msg 115: "CREATE VIEW failed" */
 						}
 
 						if (!(priv & SCL_read)) {
 							ISC_STATUS* s = tdbb->tdbb_status_vector;
-							ERR_post_nothrow(Arg::Gds(isc_no_priv) << Arg::Str("SELECT") <<		//	Non-Translatable
-															// Remember, a view may be based on a view.
-																	  Arg::Str("TABLE/VIEW") <<	//  Non-Translatable
-															// We want to print the name of the base table or view.
-																	  Arg::Str(PREL.RDB$RELATION_NAME));
+							*s++ = isc_arg_gds;
+							*s++ = isc_no_priv;
+							*s++ = isc_arg_string;
+							*s++ = (ISC_STATUS) "SELECT";	/* Non-Translatable */
+							*s++ = isc_arg_string;
+							// Remember, a view may be based on a view.
+							*s++ = (ISC_STATUS) "TABLE/VIEW";	/* Non-Translatable */
+							*s++ = isc_arg_string;
+							// We want to print the name of the base table or view.
+							*s++ = (ISC_STATUS) ERR_cstring(PREL.RDB$RELATION_NAME);
+							*s = 0;
 							/* msg 32: no permission for %s access to %s %s */
-							DYN_error_punt(true, 115);
+							DYN_error_punt(true, 115, NULL, NULL, NULL, NULL,
+										   NULL);
 							/* msg 115: "CREATE VIEW failed" */
 						}
 					}
@@ -3701,29 +3208,13 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 				if (!DYN_REQUEST(drq_l_view_rels))
 					DYN_REQUEST(drq_l_view_rels) = request;
 				request = old_request;
-				id = old_id2;
+				id = old_id;
 			}
 		}
 	END_STORE;
 
 	if (!DYN_REQUEST(drq_s_rels))
 		DYN_REQUEST(drq_s_rels) = request;
-
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-	{
-		jrd_req* sub_request = NULL;
-
-		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name.c_str()
-
-			MODIFY REL USING
-				REL.RDB$RELATION_TYPE = rel_type;
-				REL.RDB$RELATION_TYPE.NULL = FALSE;
-			END_MODIFY;
-		END_FOR;
-
-		CMP_release(tdbb, sub_request);
-	}
 
 	if (sql_prot)
 		for (const TEXT* p = ALL_PRIVILEGES; *p; p++) {
@@ -3746,34 +3237,31 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 24);
+			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
 			/* msg 24: "STORE RDB$RELATIONS failed" */
 		}
 		else if (id == drq_s_usr_prvs) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 25);
+			DYN_error_punt(true, 25, NULL, NULL, NULL, NULL, NULL);
 			/* msg 25: "STORE RDB$USER_PRIVILEGES failed defining a relation" */
 		}
 
 		DYN_rundown_request(request, -1);
-
 		if (id == drq_l_rel_name)
-			DYN_error_punt(true, 24);
-			/* msg 24: "STORE RDB$RELATIONS failed" */
+			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
+		/* msg 24: "STORE RDB$RELATIONS failed" */
 		else if (id == drq_l_view_rels)
-			DYN_error_punt(true, 115);
-			/* msg 115: "CREATE VIEW failed" */
-		else if (id == drq_l_rel_info2)
-			ERR_punt();
+			DYN_error_punt(true, 115, NULL, NULL, NULL, NULL, NULL);
+		/* msg 115: "CREATE VIEW failed" */
 
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
-		fb_assert(false);
-		DYN_error_punt(true, 0);
+		fb_assert(0);
+		DYN_error_punt(true, 0, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -3795,17 +3283,18 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 	jrd_req* request = NULL;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 	{
-		DYN_error_punt(false, 196);
+		DYN_error(false, 196, NULL, NULL, NULL, NULL, NULL);
+		ERR_punt();
 	}
 
-	Firebird::MetaName owner_name(tdbb->getAttachment()->att_user->usr_user_name);
+	Firebird::MetaName owner_name = tdbb->tdbb_attachment->att_user->usr_user_name;
 	owner_name.upper7();
 
 	Firebird::MetaName role_name;
@@ -3817,7 +3306,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		** user name could not be used for SQL role
 		**
 		*************************************************/
-		DYN_error(false, 193, SafeArg() << owner_name.c_str());
+		DYN_error(false, 193, owner_name.c_str(), NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
@@ -3827,7 +3316,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 		** keyword NONE could not be used as SQL role name
 		**
 		*************************************************/
-		DYN_error(false, 195, SafeArg() << role_name.c_str());
+		DYN_error(false, 195, role_name.c_str(), NULL, NULL, NULL, NULL);
 		ERR_punt();
 	}
 
@@ -3839,7 +3328,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			** user name could not be used for SQL role
 			**
 			*************************************************/
-			DYN_error(false, 193, SafeArg() << role_name.c_str());
+			DYN_error(false, 193, role_name.c_str(), NULL, NULL, NULL, NULL);
 			goto do_err_punt;
 		}
 
@@ -3850,7 +3339,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			** SQL role already exist
 			**
 			*************************************************/
-			DYN_error(false, 194, SafeArg() << role_name.c_str());
+			DYN_error(false, 194, role_name.c_str(), NULL, NULL, NULL, NULL);
 			goto do_err_punt;
 		}
 
@@ -3883,12 +3372,12 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 			goto do_error_punt_9;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, drq_role_gens);
 		}
-		DYN_error_punt(true, 8);
+		DYN_error_punt(true, 8, NULL, NULL, NULL, NULL, NULL);
 		/* msg 8: "DEFINE ROLE failed" */
 	}
 
@@ -3899,7 +3388,7 @@ do_err_punt:
 	return;
 
 do_error_punt_9:
-	DYN_error_punt(true, 9);
+	DYN_error_punt(true, 9, NULL, NULL, NULL, NULL, NULL);
 	/* msg 9: "DEFINE ROLE unexpected dyn verb" */
 }
 
@@ -3918,7 +3407,7 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	jrd_req* request = CMP_find_request(tdbb, drq_s_classes, DYN_REQUESTS);
 
 	bool b_ending_store = false;
@@ -3959,11 +3448,11 @@ void DYN_define_security_class( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_s_classes) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_classes);
-			DYN_error_punt(true, 27);
+			DYN_error_punt(true, 27, NULL, NULL, NULL, NULL, NULL);
 			/* msg 27: "STORE RDB$RELATIONS failed" */
 		}
 		throw;
@@ -3992,14 +3481,14 @@ void DYN_define_sql_field(Global*		gbl,
 	SLONG fld_pos;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName sql_field_name;
 	GET_STRING(ptr, sql_field_name);
 
 	if (sql_field_name.length() == 0) {
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	jrd_req* request = NULL;
@@ -4119,7 +3608,7 @@ void DYN_define_sql_field(Global*		gbl,
 				case isc_dyn_fld_default_value:
 					if (has_dimensions)
 					{
-						DYN_error_punt(false, 225, sql_field_name.c_str());
+						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					has_default = true;
@@ -4130,7 +3619,7 @@ void DYN_define_sql_field(Global*		gbl,
 				case isc_dyn_fld_default_source:
 					if (has_dimensions)
 					{
-						DYN_error_punt(false, 225, sql_field_name.c_str());
+						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					has_default = true;
@@ -4221,7 +3710,7 @@ void DYN_define_sql_field(Global*		gbl,
 				case isc_dyn_fld_dimensions:
 					if (has_default)
 					{
-						DYN_error_punt(false, 225, sql_field_name.c_str());
+						DYN_error_punt(false, 225, sql_field_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					has_dimensions = true;
@@ -4264,16 +3753,16 @@ void DYN_define_sql_field(Global*		gbl,
 		DYN_REQUEST(drq_s_sql_lfld) = request;
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_sql_lfld) {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 29);
+			DYN_error_punt(true, 29, NULL, NULL, NULL, NULL, NULL);
 			/* msg 29: "STORE RDB$RELATION_FIELDS failed" */
 		}
 		else {
 			DYN_rundown_request(request, id);
-			DYN_error_punt(true, 28);
+			DYN_error_punt(true, 28, NULL, NULL, NULL, NULL, NULL);
 			/* msg 28: "STORE RDB$FIELDS failed" */
 		}
 	}
@@ -4294,7 +3783,7 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	bool found = false;
 
@@ -4316,15 +3805,16 @@ void DYN_define_shadow( Global* gbl, const UCHAR** ptr)
 			DYN_REQUEST(drq_l_shadow) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_shadow);
-		DYN_error_punt(true, 164);
+		DYN_error_punt(true, 164, NULL, NULL, NULL, NULL, NULL);
 		/* msg 164: "Shadow lookup failed" */
 	}
 
 	if (found) {
-		DYN_error_punt(false, 165, SafeArg() << shadow_number);
+		DYN_error_punt(false, 165, (TEXT*)(IPTR)shadow_number, NULL, NULL, NULL,
+					   NULL);
 		/* msg 165: "Shadow %ld already exists" */
 	}
 
@@ -4370,7 +3860,7 @@ void DYN_define_trigger(Global*						gbl,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	Firebird::MetaName t;
 
@@ -4382,8 +3872,8 @@ void DYN_define_trigger(Global*						gbl,
 
 	if (t.length() == 0)
 	{
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
 	if (trigger_name) {
@@ -4393,7 +3883,6 @@ void DYN_define_trigger(Global*						gbl,
 	jrd_req* request = CMP_find_request(tdbb, drq_s_triggers, DYN_REQUESTS);
 
 	bool b_ending_store = false;
-	const UCHAR* debug_info_ptr = NULL;
 
 	try {
 
@@ -4487,20 +3976,12 @@ void DYN_define_trigger(Global*						gbl,
 					&& X.RDB$SYSTEM_FLAG == fb_sysflag_referential_constraint); */
 				break;
 
-			case isc_dyn_debug_info:
-				debug_info_ptr = *ptr;
-				DYN_skip_attribute(ptr);
-				break;
-
 			default:
 				--(*ptr);
 				MetaTmp(X.RDB$RELATION_NAME)
 					DYN_execute(gbl, ptr, &tmp, NULL, &t, NULL, NULL);
 			}
 		}
-
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(Arg::Gds(isc_adm_task_denied));
 
 		b_ending_store = true;
 
@@ -4520,32 +4001,12 @@ void DYN_define_trigger(Global*						gbl,
 		DYN_REQUEST(drq_s_triggers) = request;
 	}
 
-	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-	{
-		jrd_req* sub_request = NULL;
-
-		FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-			TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ t.c_str()
-
-			MODIFY TRG USING
-				TRG.RDB$VALID_BLR = TRUE;
-				TRG.RDB$VALID_BLR.NULL = FALSE;
-
-				TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
-				if (debug_info_ptr)
-					DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
-			END_MODIFY;
-		END_FOR;
-
-		CMP_release(tdbb, sub_request);
 	}
-
-	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_triggers);
-			DYN_error_punt(true, 31);
+			DYN_error_punt(true, 31, NULL, NULL, NULL, NULL, NULL);
 			/* msg 31: "DEFINE TRIGGER failed" */
 		}
 		throw;
@@ -4567,7 +4028,7 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const Firebird::Meta
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_trg_msgs, DYN_REQUESTS);
 
@@ -4615,11 +4076,11 @@ void DYN_define_trigger_msg(Global* gbl, const UCHAR** ptr, const Firebird::Meta
 			DYN_REQUEST(drq_s_trg_msgs) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_trg_msgs);
-			DYN_error_punt(true, 33);
+			DYN_error_punt(true, 33, NULL, NULL, NULL, NULL, NULL);
 			/* msg 33: "DEFINE TRIGGER MESSAGE failed" */
 		}
 		throw;
@@ -4641,11 +4102,11 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	fb_assert(view);
 	if (view->length() == 0) {
-		DYN_error_punt(false, 212);
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 	/* msg 212: "Zero length identifiers not allowed" */
 	}
 
@@ -4701,10 +4162,6 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 				case isc_dyn_view_context_name:
 					GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
 					VRL.RDB$CONTEXT_NAME.NULL = FALSE;
-
-					if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_2) {
-						VRL.RDB$CONTEXT_NAME[31] = 0;
-					}
 					break;
 
 				default:
@@ -4721,18 +4178,18 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			DYN_REQUEST(drq_s_view_rels) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, id);
 			if (id == drq_s_view_rels)
 			{
-				DYN_error_punt(true, 34);
+				DYN_error_punt(true, 34, NULL, NULL, NULL, NULL, NULL);
 				/* msg 34: "STORE RDB$VIEW_RELATIONS failed" */
 			}
 			else if (id == drq_e_view_rels)
 			{
-				DYN_error_punt(true, 59);
+				DYN_error_punt(true, 59, NULL, NULL, NULL, NULL, NULL);
 				/* msg 59: "ERASE RDB$VIEW_RELATIONS failed" */
 			}
 		}
@@ -4741,10 +4198,10 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 }
 
 
-static void check_unique_name(thread_db* tdbb,
-							  Global* gbl,
-							  const Firebird::MetaName& object_name,
-							  int object_type)
+static void check_unique_name(	thread_db*	tdbb,
+								Global*		gbl,
+								const Firebird::MetaName&	object_name,
+								bool		proc_flag)
 {
 /**************************************
  *
@@ -4753,114 +4210,159 @@ static void check_unique_name(thread_db* tdbb,
  **************************************
  *
  * Functional description
- *	Check if an object already exists.
+ *	Check if a procedure, view or relation by
+ *	name of object_name already exists.
  *	If yes then return error.
  *
  **************************************/
 
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	bool found = false;
 
-	USHORT error_code = 0;
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
 	jrd_req* request = NULL;
 
-	try
-	{
-		if (object_type == obj_relation || object_type == obj_procedure)
+	try {
+
+		request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
+
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name.c_str()
+			if (!DYN_REQUEST(drq_l_rel_name)) {
+				DYN_REQUEST(drq_l_rel_name) = request;
+			}
+			found = true;
+		END_FOR;
+		if (!DYN_REQUEST(drq_l_rel_name))
+			DYN_REQUEST(drq_l_rel_name) = request;
+
+		if (found) {
+			goto local_punt_false_132;
+		}
+
+		request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
+
+		found = false;
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name.c_str()
+			if (!DYN_REQUEST(drq_l_prc_name)) {
+				DYN_REQUEST(drq_l_prc_name) = request;
+			}
+			found = true;
+		END_FOR;
+		if (!DYN_REQUEST(drq_l_prc_name)) {
+			DYN_REQUEST(drq_l_prc_name) = request;
+		}
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, -1);
+		if (!proc_flag)
+			DYN_error_punt(true, 24, NULL, NULL, NULL, NULL, NULL);
+		/* msg 24: "STORE RDB$RELATIONS failed" */
+		DYN_error_punt(true, 134, NULL, NULL, NULL, NULL, NULL);
+	}
+
+	if (found) {
+		DYN_error_punt(false, 135, object_name.c_str(), NULL, NULL, NULL, NULL);
+	}
+
+	return;
+
+local_punt_false_132:
+	DYN_error_punt(false, 132, object_name.c_str(), NULL, NULL, NULL, NULL);
+}
+
+
+static bool find_field_source(thread_db*	tdbb,
+								 Global*	gbl,
+								 const Firebird::MetaName& view_name,
+								 USHORT	context,
+								 const TEXT* local_name,
+								 TEXT* output_field_name)
+{
+/**************************************
+ *
+ *	f i n d _ f i e l d _ s o u r c e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the original source for a view field.
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->tdbb_database;
+
+	jrd_req* request = NULL;
+
+	/* CVC: It seems the logic of this function was changed over time. It's unlikely
+	it will cause a failure that leads to call DYN_error_punt(), unless the request finds
+	problems due to database corruption or unexpected ODS changes. Under normal
+	circumstances, it will return either true or false. When true, we found a field source
+	for the view's name/context/field and are loading this value in the last parameter,
+	that can be used against rdb$fields' rdb$field_name. */
+
+	bool found = false;
+
+	try {
+		request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			VRL IN RDB$VIEW_RELATIONS CROSS
+				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
+				WITH VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
+				VRL.RDB$VIEW_CONTEXT EQ context AND
+				RFR.RDB$FIELD_NAME EQ local_name
+
+			if (!DYN_REQUEST(drq_l_fld_src2)) {
+				DYN_REQUEST(drq_l_fld_src2) = request;
+			}
+
+			found = true;
+			fb_utils::exact_name_limit(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
+			strcpy(output_field_name, RFR.RDB$FIELD_SOURCE);
+		END_FOR;
+		if (!DYN_REQUEST(drq_l_fld_src2)) {
+			DYN_REQUEST(drq_l_fld_src2) = request;
+		}
+
+		if (!found)
 		{
-			request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
+			request = CMP_find_request(tdbb, drq_l_fld_src3, DYN_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name.c_str()
+				VRL IN RDB$VIEW_RELATIONS CROSS
+					PPR IN RDB$PROCEDURE_PARAMETERS
+					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
+					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
+					VRL.RDB$VIEW_CONTEXT EQ context AND
+					PPR.RDB$PARAMETER_NAME EQ local_name
 
-				if (!DYN_REQUEST(drq_l_rel_name))
-					DYN_REQUEST(drq_l_rel_name) = request;
+				if (!DYN_REQUEST(drq_l_fld_src3)) {
+					DYN_REQUEST(drq_l_fld_src3) = request;
+				}
 
-				error_code = 132;
+				found = true;
+				fb_utils::exact_name_limit(PPR.RDB$FIELD_SOURCE, sizeof(PPR.RDB$FIELD_SOURCE));
+				strcpy(output_field_name, PPR.RDB$FIELD_SOURCE);
 			END_FOR;
-
-			if (!DYN_REQUEST(drq_l_rel_name))
-				DYN_REQUEST(drq_l_rel_name) = request;
-
-			if (!error_code)
-			{
-				request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
-
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-					EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name.c_str()
-
-					if (!DYN_REQUEST(drq_l_prc_name))
-						DYN_REQUEST(drq_l_prc_name) = request;
-
-					error_code = 135;
-				END_FOR;
-
-				if (!DYN_REQUEST(drq_l_prc_name))
-					DYN_REQUEST(drq_l_prc_name) = request;
+			if (!DYN_REQUEST(drq_l_fld_src3)) {
+				DYN_REQUEST(drq_l_fld_src3) = request;
 			}
 		}
-		else if (object_type == obj_index)
-		{
-			request = CMP_find_request(tdbb, drq_l_idx_name, DYN_REQUESTS);
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				EIDX IN RDB$INDICES WITH EIDX.RDB$INDEX_NAME EQ object_name.c_str()
-
-				if (!DYN_REQUEST(drq_l_idx_name))
-					DYN_REQUEST(drq_l_idx_name) = request;
-
-				error_code = 251;
-			END_FOR;
-
-			if (!DYN_REQUEST(drq_l_idx_name))
-				DYN_REQUEST(drq_l_idx_name) = request;
-		}
-		else if (object_type == obj_exception)
-		{
-			request = CMP_find_request(tdbb, drq_l_xcp_name, DYN_REQUESTS);
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				EXCP IN RDB$EXCEPTIONS WITH EXCP.RDB$EXCEPTION_NAME EQ object_name.c_str()
-
-				if (!DYN_REQUEST(drq_l_xcp_name))
-					DYN_REQUEST(drq_l_xcp_name) = request;
-
-				error_code = 253;
-			END_FOR;
-
-			if (!DYN_REQUEST(drq_l_xcp_name))
-				DYN_REQUEST(drq_l_xcp_name) = request;
-		}
-		else if (object_type == obj_generator)
-		{
-			request = CMP_find_request(tdbb, drq_l_gen_name, DYN_REQUESTS);
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				EGEN IN RDB$GENERATORS WITH EGEN.RDB$GENERATOR_NAME EQ object_name.c_str()
-
-				if (!DYN_REQUEST(drq_l_gen_name))
-					DYN_REQUEST(drq_l_gen_name) = request;
-
-				error_code = 254;
-			END_FOR;
-
-			if (!DYN_REQUEST(drq_l_gen_name))
-				DYN_REQUEST(drq_l_gen_name) = request;
-		}
-		else
-		{
-			fb_assert(false);
-		}
 	}
-	catch (const Firebird::Exception&)
-	{
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		throw;
+		DYN_error_punt(true, 80, NULL, NULL, NULL, NULL, NULL);
+		/* msg 80: "Specified domain or source field does not exist" */
 	}
 
-	if (error_code) {
-		DYN_error_punt(false, error_code, object_name.c_str());
-	}
+	return found;
 }
 
 
@@ -4892,7 +4394,7 @@ static bool get_who( thread_db* tdbb, Global* gbl, Firebird::MetaName& output_na
 
 		DYN_rundown_request(request, drq_l_user_name);
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_l_user_name);
 		return false;
@@ -4920,7 +4422,7 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 	USHORT request_id;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	bool found = false;
 
 	try {
@@ -4965,7 +4467,7 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 			DYN_REQUEST(drq_get_rel_owner) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request) {
 			DYN_rundown_request(request, request_id);
@@ -4977,200 +4479,29 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 }
 
 
-static rel_t get_relation_type(thread_db* tdbb, Global* gbl,
-							   const Firebird::MetaName& rel_name)
+static USHORT skip_blr_blob(const UCHAR** ptr)
 {
-	Database* dbb = tdbb->getDatabase();
-
-	const USHORT major_version  = dbb->dbb_ods_version;
-	const USHORT minor_original = dbb->dbb_minor_original;
-
-	rel_t rel_type = rel_persistent;
-
-	if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
-	{
-		jrd_req* request = CMP_find_request(tdbb, drq_l_rel_type, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			REL IN RDB$RELATIONS
-			WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
-			  AND REL.RDB$RELATION_TYPE NOT MISSING
-
-			if (!DYN_REQUEST(drq_l_rel_type))
-				DYN_REQUEST(drq_l_rel_type) = request;
-
-			rel_type = (rel_t) REL.RDB$RELATION_TYPE;
-
-		END_FOR;
-
-		if (!DYN_REQUEST(drq_l_rel_type))
-			DYN_REQUEST(drq_l_rel_type) = request;
-	}
-
-	return rel_type;
-}
-
-
-static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl, 
-				const TEXT*	child_rel_name, const TEXT* master_index_name)
-{
-/**********************************************************
+/**************************************
  *
- *	c h e c k _ f o r e i g n _ k e y _ t e m p _ s c o p e
+ *	s k i p _ b l r _ b l o b
  *
- **********************************************************
+ **************************************
  *
  * Functional description
- *	Check temporary table reference rules between given child 
- *	relation and master relation (owner of given PK\UK index)
+ *	Skip a blr blob.
  *
- **********************************************************/
-	Database* dbb = tdbb->getDatabase();
+ **************************************/
+	const UCHAR* p = *ptr;
+	USHORT length = *p++;
+	length |= (*p++) << 8;
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info, DYN_REQUESTS);
-	bool bErr = false;
-	Firebird::string sMaster, sChild;
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RLC_M IN RDB$RELATION_CONSTRAINTS CROSS
-		REL_C IN RDB$RELATIONS CROSS
-		REL_M IN RDB$RELATIONS 
-		WITH (RLC_M.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT OR 
-			  RLC_M.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY)
-		 AND RLC_M.RDB$INDEX_NAME EQ master_index_name
-		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
-		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
-
-		if (!DYN_REQUEST(drq_l_rel_info))
-			DYN_REQUEST(drq_l_rel_info) = request;
-
-		const rel_t master_type =
-			get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
-		fb_assert(master_type == rel_persistent ||
-				  master_type == rel_global_temp_preserve ||
-				  master_type == rel_global_temp_delete);
-
-		const rel_t child_type =
-			get_relation_type(tdbb, gbl, REL_C.RDB$RELATION_NAME);
-		fb_assert(child_type == rel_persistent ||
-				  child_type == rel_global_temp_preserve ||
-				  child_type == rel_global_temp_delete);
-
-		bErr = (master_type != child_type) &&
-				!( (master_type == rel_global_temp_preserve) && 
-					(child_type == rel_global_temp_delete) );
-
-		if (bErr)
-		{
-			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
-			fb_utils::exact_name_limit(REL_C.RDB$RELATION_NAME, sizeof(REL_C.RDB$RELATION_NAME));
-
-			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
-			make_relation_scope_name(REL_C.RDB$RELATION_NAME, child_type, sChild);
-		}
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_rel_info))
-		DYN_REQUEST(drq_l_rel_info) = request;
-
-	if (bErr) {
-		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			SafeArg() << sChild.c_str() << sMaster.c_str());
-	}
-}
-
-
-static void check_relation_temp_scope(thread_db* tdbb, Global* gbl, 
-				const TEXT*	child_rel_name, const rel_t child_type)
-{
-/****************************************************
- *
- *	c h e c k _ r e l a t i o n _ t e m p _ s c o p e
- *
- ****************************************************
- *
- * Functional description
- *	Check temporary table reference rules between just
- *	created child relation and all its master relations
- *
- ****************************************************/
-	Database* dbb = tdbb->getDatabase();
-
-	if (child_type != rel_persistent &&
-		child_type != rel_global_temp_preserve &&
-		child_type != rel_global_temp_delete)
-	{
-		return;
+	if (!length) {
+		*ptr = p;
+		return length;
 	}
 
-	jrd_req* request = CMP_find_request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
-	bool bErr = false;
-	Firebird::string sMaster, sChild;
+	*ptr = p + length;
 
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RLC_C IN RDB$RELATION_CONSTRAINTS CROSS
-		IND_C IN RDB$INDICES CROSS
-		IND_M IN RDB$INDICES CROSS
-		REL_M IN RDB$RELATIONS 
-		WITH RLC_C.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY
-		 AND RLC_C.RDB$RELATION_NAME EQ child_rel_name
-		 AND IND_C.RDB$INDEX_NAME EQ RLC_C.RDB$INDEX_NAME
-		 AND IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY
-		 AND IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
-
-		if (!DYN_REQUEST(drq_l_rel_info2))
-			DYN_REQUEST(drq_l_rel_info2) = request;
-
-		const rel_t master_type =
-			get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
-		fb_assert(master_type == rel_persistent ||
-				  master_type == rel_global_temp_preserve ||
-				  master_type == rel_global_temp_delete);
-
-		bErr = (master_type != child_type) &&
-				!( (master_type == rel_global_temp_preserve) && 
-					(child_type == rel_global_temp_delete) );
-
-		if (bErr)
-		{
-			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
-
-			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
-			make_relation_scope_name(child_rel_name, child_type, sChild);
-		}
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_l_rel_info2))
-		DYN_REQUEST(drq_l_rel_info2) = request;
-
-	if (bErr) {
-		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			SafeArg() << sChild.c_str() << sMaster.c_str());
-	}
+	return length;
 }
 
-
-static void make_relation_scope_name(const TEXT* rel_name, 
-	const rel_t rel_type, Firebird::string& str)
-{
-/**************************************************
- *
- *	m a k e _ r e l a t i o n _ s c o p e _ n a m e
- *
- **************************************************
- *
- * Functional description
- *	Make string with relation name and type 
- *	of its temporary scope
- *
- **************************************************/
-	const char *scope = NULL;
-	if (rel_type == rel_global_temp_preserve)
-		scope = REL_SCOPE_GTT_PRESERVE;
-	else if (rel_type == rel_global_temp_delete)
-		scope = REL_SCOPE_GTT_DELETE;
-	else
-		scope = REL_SCOPE_PERSISTENT;
-
-	str.printf(scope, rel_name);
-}

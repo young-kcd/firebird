@@ -29,10 +29,8 @@
 #ifndef JRD_PIO_H
 #define JRD_PIO_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#include "../jrd/thread_proto.h"
-#include "../common/classes/rwlock.h"
-#include "../common/classes/array.h"
 
 namespace Jrd {
 
@@ -40,21 +38,44 @@ namespace Jrd {
 
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 {
-public:
+    public:
 	jrd_file*	fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
 	int fil_desc;
-	//int *fil_trace;				/* Trace file, if any */
-	Firebird::Mutex fil_mutex;
+	int *fil_trace;				/* Trace file, if any */
+	Firebird::Mutex fil_mutex[1];
 	USHORT fil_flags;
+	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 
 #endif
 
+
+#ifdef VMS
+
+class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
+	jrd_file*	fil_next;		/* Next file in database */
+	ULONG fil_min_page;			/* Minimum page number in file */
+	ULONG fil_max_page;			/* Maximum page number in file */
+	USHORT fil_sequence;		/* Sequence number of file */
+	USHORT fil_fudge;			/* Fudge factor for page relocation */
+	int fil_desc;
+	int fil_trace;				/* Trace file, if any */
+	Firebird::Mutex fil_mutex[1];
+	USHORT fil_length;			/* Length of expanded file name */
+	USHORT fil_fid[3];			/* File id */
+	USHORT fil_did[3];			/* Directory id */
+	USHORT fil_flags;
+	SCHAR fil_string[1];		/* Expanded file name */
+};
+
+#endif
 
 #ifdef WIN_NT
 #ifdef SUPERSERVER_V2
@@ -63,26 +84,21 @@ const int MAX_FILE_IO	= 32;			/* Maximum "allocated" overlapped I/O events */
 
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 {
-public:
-
-	~jrd_file()
-	{
-		delete fil_ext_lock;
-	}
-
+    public:
 	jrd_file*	fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_sequence;		/* Sequence number of file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
-	HANDLE fil_desc;			// File descriptor
-	//int *fil_trace;				/* Trace file, if any */
-	Firebird::Mutex fil_mutex;
-	Firebird::RWLock* fil_ext_lock;	// file extend lock
+	SLONG fil_desc;
+	SLONG fil_force_write_desc;	/* Handle of force write open */
+	int *fil_trace;				/* Trace file, if any */
+	Firebird::Mutex fil_mutex[1];
 #ifdef SUPERSERVER_V2
 	void* fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
 #endif
 	USHORT fil_flags;
+	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 
@@ -90,8 +106,8 @@ public:
 
 
 const USHORT FIL_force_write		= 1;
-const USHORT FIL_no_fs_cache		= 2;	// not using file system cache
-const USHORT FIL_readonly			= 4;	// file opened in readonly mode
+const USHORT FIL_force_write_init	= 2;
+const USHORT FIL_readonly			= 4;
 
 /* Physical IO trace events */
 
@@ -104,9 +120,7 @@ const SSHORT trace_close	= 6;
 
 // Physical I/O status block, used only in SS v2 for Win32
 
-#ifdef SUPERSERVER_V2
-struct phys_io_blk
-{
+struct phys_io_blk {
 	jrd_file* piob_file;				/* File being read/written */
 	SLONG piob_desc;			/* File descriptor */
 	SLONG piob_io_length;		/* Requested I/O transfer length */
@@ -120,26 +134,6 @@ struct phys_io_blk
 const UCHAR PIOB_error		= 1;	/* I/O error occurred */
 const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
 const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
-#endif
-
-static const int ZERO_BUF_SIZE = 1024 * 128;
-
-class HugeStaticBuffer
-{
-public:
-	explicit HugeStaticBuffer(MemoryPool& p)
-		: zeroArray(p),
-		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE))
-	{
-		memset(zeroBuff, 0, ZERO_BUF_SIZE);
-	}
-
-	const char* get() const { return zeroBuff; }
-
-private:
-	Firebird::Array<char> zeroArray;
-	char* const zeroBuff;
-};
 
 } //namespace Jrd
 

@@ -2,7 +2,7 @@
  *	PROGRAM:	InterBase Access Method
  *	MODULE:		builtin.cpp
  *	DESCRIPTION:	Entry points for builtin UDF library
- *
+ *			
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -20,7 +20,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: builtin.cpp,v 1.9 2004-05-24 17:28:32 brodsom Exp $
  */
 
 #include "firebird.h"
@@ -38,8 +38,8 @@ struct FN {
 
 static const FN isc_builtin_functions[] = {
 /*    Internal functions available for QA testing only */
-/*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,
-
+/*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,  
+ 
 and so shall it be, *NEVER* include this in a production build
 removed this ugly security hole
 FSG 18.Dez.2000
@@ -64,12 +64,12 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
  *	entrypoint names are null terminated, but may contain
  *	insignificant trailing blanks.
  *
- *	Builtin functions may reside under the Firebird install
- *	location.  The module name may be prefixed with $FIREBIRD.
+ *	Builtin functions may reside under the InterBase install
+ *	location.  The module name may be prefixed with $INTERBASE.
  *
  **************************************/
 
-/* Strip off any preceeding $FIREBIRD path location from the
+/* Strip off any preceeding $INTERBASE path location from the 
  * requested module name.
  */
 

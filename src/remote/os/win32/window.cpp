@@ -31,8 +31,9 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
-#include "../jrd/svc.h"
-#include "../common/thd.h"
+#include "../jrd/svc_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../remote/os/win32/window_proto.h"
@@ -50,10 +51,9 @@
 #include "../common/config/config.h"
 
 
-static HWND hPSDlg = NULL;
+HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
-static HWND hMainWnd = NULL;
 
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
@@ -63,9 +63,9 @@ static char *MakeVersionString(char *, int, USHORT);
 static BOOL CanEndServer(HWND, bool);
 
 // Window Procedure
+void WINDOW_shutdown(ULONG);
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
-static int fb_shutdown_cb(const int, const int, void*);
 
 int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 {
@@ -89,8 +89,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	HWND hWnd = NULL;
 	hInstance = hThisInst;
 	usServerFlags = usServerFlagMask;
-
-	fb_shutdown_callback(0, fb_shutdown_cb, fb_shut_postproviders, 0);
 
 /* initialize main window */
 
@@ -117,7 +115,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 		return 0;
 	}
 
-	hMainWnd = hWnd = CreateWindowEx(0,
+	hWnd = CreateWindowEx(0,
 						  szClassName,
 						  APP_NAME,
 						  WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -125,7 +123,9 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  CW_USEDEFAULT,
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
-
+#ifdef SERVER_SHUTDOWN
+	SVC_shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
+#endif
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.
 
@@ -172,10 +172,10 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
  *          lParam - LPARAM parameter for the message
  *
  *  Return: FALSE indicates that the message has not been handled
- *          TRUE indicates the message has been handled
+ *          TRUE indicates the message has been handled 
  *
- *  Description: This is main window procedure for the Firebird server. This
- *               traps all the Firebird significant messages and processes
+ *  Description: This is main window procedure for the Interbase server. This
+ *               traps all the interbase significant messages and processes
  *               them.
  *****************************************************************************/
 	static ULONG ulLastMask = 0L;
@@ -185,15 +185,15 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	ULONG ulInUseMask = 0L;
 	PDEV_BROADCAST_VOLUME pdbcv;
 	char szDrives[DRV_STRINGLEN];
-	ULONG num_att = 0;
-	ULONG num_dbs = 0;
+	USHORT num_att = 0;
+	USHORT num_dbs = 0;
 
 	switch (message) {
 	case WM_QUERYENDSESSION:
 		/* If we are running as a non-service server, then query the user
 		 * to determine if we should end the session.  Otherwise, assume that
 		 * the server is a service  and could be servicing remote clients and
-		 * therefore should not be shut down.
+		 * therefore should not be shut down.  
 		 */
 		if (usServerFlags & SRVR_non_service) {
 			return CanEndServer(hWnd, true);
@@ -207,16 +207,23 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		 * the server is a service  and could be servicing remote clients and
 		 * therefore should not be shut down.  The DestroyWindow() will destroy
 		 * the hidden window created by the server for IPC.  This should get
-		 * destroyed when the user session ends.
+		 * destroyed when the user session ends. 
 		 */
 		if (usServerFlags & SRVR_non_service) {
 			if (CanEndServer(hWnd, false)) {
-				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
+				if (GetPriorityClass(GetCurrentProcess()) !=
+					NORMAL_PRIORITY_CLASS)
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-				fb_shutdown(0, fb_shutrsn_app_stopped);
-				//DestroyWindow(hWnd);
+#ifdef DEBUG_GDS_ALLOC
+				//gds_alloc_report(ALLOC_verbose, "from server", 0);
+				char fn[] = __FILE__;
+				fn[strlen(fn) - 19] = 0; // all remote files
+				gds_alloc_report(ALLOC_verbose, fn, 0);
+#endif
+				JRD_shutdown_all(false);
+				DestroyWindow(hWnd);
 			}
 		}
 		break;
@@ -225,7 +232,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		switch (wParam) {
 		case IDM_CANCEL:
 			if ((usServerFlags & SRVR_non_service)
-				&& (!(usServerFlags & SRVR_no_icon)))
+				&& (!(usServerFlags & SRVR_no_icon))) 
 			{
 				ShowWindow(hWnd, bInTaskBar ? SW_HIDE : SW_MINIMIZE);
 			}
@@ -300,7 +307,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			break;
 
 		case WM_RBUTTONUP:
-			// The TrackPopupMenu() is inconsistant if called from here?
+			// The TrackPopupMenu() is inconsistant if called from here? 
 			// This is the only way I could make it work.
 			PostMessage(hWnd, WM_COMMAND, (WPARAM) IDM_OPENPOPUP, 0);
 			break;
@@ -309,7 +316,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 	case WM_CREATE:
 		if ((usServerFlags & SRVR_non_service)
-			&& (!(usServerFlags & SRVR_no_icon)))
+			&& (!(usServerFlags & SRVR_no_icon))) 
 		{
 			HICON hIcon = (HICON) LoadImage(hInstance,
 									  MAKEINTRESOURCE(IDI_IBSVR_SMALL),
@@ -324,7 +331,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			nid.hIcon = hIcon;
 			lstrcpy(nid.szTip, GDS_VERSION);
 
-			// This will be true in the explorer interface
+			// This will be true in the explorer interface 
 			bInTaskBar = Shell_NotifyIcon(NIM_ADD, &nid);
 
 			if (hIcon)
@@ -390,7 +397,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
-		JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
+		JRD_num_attachments(reinterpret_cast<char*>(&ulInUseMask),
 							sizeof(ULONG), JRD_info_drivemask, &num_att,
 							&num_dbs);
 
@@ -427,13 +434,13 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 						return FALSE;
 					}
 
-					fb_shutdown(0, fb_shutrsn_device_removed);
-					//DestroyWindow(hWnd);
+					JRD_shutdown_all(false);
+					PostMessage(hWnd, WM_DESTROY, 0, 0);
 					return TRUE;
 				}
 			/* Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
 			   * same device twice.  This will occur if we say yes to the removal
-			   * of a controller.  The OS will prompt for the removal of all
+			   * of a controller.  The OS will prompt for the removal of all 
 			   * devices connected to that controller.  If you respond no, the
 			   * OS will prompt you again, and then remove the device anyway...
 			 */
@@ -449,8 +456,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
+				JRD_shutdown_all(false);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
-				fb_shutdown(0, fb_shutrsn_device_removed);
 			}
 			return TRUE;
 
@@ -472,6 +479,25 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return FALSE;
+}
+
+
+void WINDOW_shutdown(ULONG hWnd)
+{
+/******************************************************************************
+ *
+ *  W I N D O W _ s h u t d o w n
+ *
+ ******************************************************************************
+ *
+ *  Input:  hWnd - Handle to the window
+ *
+ *  Return: none
+ *
+ *  Description: This is a callback function which is called at shutdown time.
+ *               This function post the WM_DESTROY message in appl. queue.
+ *****************************************************************************/
+	PostMessage(reinterpret_cast < HWND > (hWnd), WM_DESTROY, 0, 0);
 }
 
 
@@ -522,9 +548,9 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
  *  Description: This function displays a message mox and queries the user if
  *               the server can be shutdown.
  *****************************************************************************/
-	ULONG usNumAtt;
-	ULONG usNumDbs;
-	JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs);
+	USHORT usNumAtt;
+	USHORT usNumDbs;
+	JRD_num_attachments(NULL, 0, 0, &usNumAtt, &usNumDbs);
 
 	char szMsgString[MSG_STRINGLEN];
 	sprintf(szMsgString, "%u ", usNumAtt);
@@ -538,11 +564,3 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 
-
-static int fb_shutdown_cb(const int, const int, void*)
-{
-	if (hMainWnd)
-		DestroyWindow(hMainWnd);
-
-	return 0;
-}

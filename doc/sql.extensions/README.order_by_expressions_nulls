@@ -18,7 +18,7 @@ nulls_placement : NULLS FIRST | NULLS LAST;
    it is interpreted as column number. The nulls_placement clause
    controls ordering of nulls in result set. They can be sorted
    either above (NULLS FIRST) or below (NULLS LAST) of all other values.
-   Behaviour when nulls_placement is unspecified is NULLS FIRST.   
+   Behaviour when nulls_placement is unspecified is NULLS LAST.   
 
 Author:
    Nickolay Samofatov <skidder@bssys.com>
@@ -27,10 +27,8 @@ Author:
 N O T E S
 =========
 
- - If you override the default nulls placement, no index can be used
-   for sorting. That is, no index will be used for an ASCENDING sort
-   if NULLS LAST is specified, nor for a DESCENDING sort
-   if NULLS FIRST is specified.
+ - Index is never used for ordering if you specify NULLS FIRST
+   as a nulls_placement
  - Results are undefined if you ask engine to sort results using 
    non-deterministic UDF or stored procedure.
  - Amount of procedure invocations is undefined if you ask engine to 

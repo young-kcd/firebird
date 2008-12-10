@@ -27,29 +27,11 @@
 #ifndef INCLUDE_TYPES_PUB_H
 #define INCLUDE_TYPES_PUB_H
 
-#include <stddef.h>
-
-#if defined(__GNUC__)
-#include <inttypes.h>
-#else
-
-#if !defined(_INTPTR_T_DEFINED)
-#if defined(_WIN64)
-typedef __int64 intptr_t;
-typedef unsigned __int64 uintptr_t;
-#else
-typedef long intptr_t;
-typedef unsigned long uintptr_t;
-#endif
-#endif
-
-#endif
-
 /******************************************************************/
 /* API handles                                                    */
 /******************************************************************/
 
-#if defined(_LP64) || defined(__LP64__) || defined(__arch64__) || defined(_WIN64)
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
 typedef unsigned int	FB_API_HANDLE;
 #else
 typedef void*		FB_API_HANDLE;
@@ -59,14 +41,10 @@ typedef void*		FB_API_HANDLE;
 /* Status vector                                                  */
 /******************************************************************/
 
-typedef intptr_t ISC_STATUS;
+typedef long ISC_STATUS;
 
 #define ISC_STATUS_LENGTH	20
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
-
-/* SQL State as defined in the SQL Standard. */
-#define FB_SQLSTATE_SIZE   6
-typedef char FB_SQLSTATE_STRING[FB_SQLSTATE_SIZE];
 
 /******************************************************************/
 /* Define type, export and other stuff based on c/c++ and Windows */
@@ -144,6 +122,4 @@ typedef struct GDS_QUAD_t ISC_QUAD;
 #define	isc_quad_high	gds_quad_high
 #define	isc_quad_low	gds_quad_low
 
-typedef int (*FB_SHUTDOWN_CALLBACK)(const int reason, const int mask, void* arg);
-
-#endif /* INCLUDE_TYPES_PUB_H */
+#endif // INCLUDE_TYPES_PUB_H

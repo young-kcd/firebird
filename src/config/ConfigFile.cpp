@@ -1,19 +1,19 @@
 /*
+ *  
+ *     The contents of this file are subject to the Initial 
+ *     Developer's Public License Version 1.0 (the "License"); 
+ *     you may not use this file except in compliance with the 
+ *     License. You may obtain a copy of the License at 
+ *     http://www.ibphoenix.com/idpl.html. 
  *
- *     The contents of this file are subject to the Initial
- *     Developer's Public License Version 1.0 (the "License");
- *     you may not use this file except in compliance with the
- *     License. You may obtain a copy of the License at
- *     http://www.ibphoenix.com/idpl.html.
- *
- *     Software distributed under the License is distributed on
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
- *     express or implied.  See the License for the specific
+ *     Software distributed under the License is distributed on 
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
+ *     express or implied.  See the License for the specific 
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever
- *     without the express prior written permission of the original
+ *     may not be distributed under any other license whatsoever 
+ *     without the express prior written permission of the original 
  *     author.
  *
  *
@@ -24,13 +24,11 @@
  *  All Rights Reserved.
  */
 
-#include "firebird.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
-#include "../common/classes/alloc.h"
+#include "firebird.h"
 #include "ConfigFile.h"
 #include "ConfObject.h"
 #include "InputFile.h"
@@ -46,25 +44,23 @@
 
 #ifndef strcasecmp
 #define strcasecmp		stricmp
-//#define strncasecmp		strnicmp
+#define strncasecmp		strnicmp
 #endif
 
-//#define KEY		"SOFTWARE\\Firebird Project\\Firebird Server\\Instances"
-//#define SUB_KEY	NULL
-//#define PATH_KEY "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\Firebird"
+#define KEY		"SOFTWARE\\Firebird Project\\Firebird Server\\Instances"
+#define SUB_KEY	NULL
+#define PATH_KEY "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\Firebird"
 
 #else
 #define IS_SEPARATOR(c)		(c == '/')
 
 #endif
 
-ConfigFile::ConfigFile(const LEX_flags configFlags) :
-	Lex ("/<>=", configFlags),
-	rootDirectory(getPool()), installDirectory(getPool()), currentDirectory(getPool())
+ConfigFile::ConfigFile(int configFlags) : Lex ("/<>=", configFlags)
 {
 	init (configFlags);
 	InputFile *inputFile = openConfigFile();
-
+	
 	if (!inputFile)
 		return;
 
@@ -73,25 +69,23 @@ ConfigFile::ConfigFile(const LEX_flags configFlags) :
 }
 
 
-ConfigFile::ConfigFile(const char* configFile, const LEX_flags configFlags) :
-	Lex ("/<>=", configFlags),
-	rootDirectory(getPool()), installDirectory(getPool()), currentDirectory(getPool())
+ConfigFile::ConfigFile(const char* configFile, int configFlags) : Lex ("/<>=", configFlags)
 {
 	init (configFlags);
 	InputFile *inputFile = new InputFile;
-	Firebird::PathName expandedFile (expand (configFile));
-
-	if (!inputFile->openInputFile(expandedFile.c_str()))
-	{
+	JString expandedFile = expand (configFile);
+	
+	if (!inputFile->openInputFile(expandedFile))
+		{
 		delete inputFile;
 		throw AdminException ("can't open configuration file \"%s\"", configFile);
-	}
+		}
 
 	pushStream (inputFile);
 	parse();
 }
 
-void ConfigFile::init(const LEX_flags configFlags)
+void ConfigFile::init(int configFlags)
 {
 	flags = configFlags;
 	setLineComment ("#");
@@ -100,100 +94,98 @@ void ConfigFile::init(const LEX_flags configFlags)
 	memset (hashTable, 0, sizeof (hashTable));
 }
 
-ConfigFile::~ConfigFile()
+ConfigFile::~ConfigFile(void)
 {
 	if (objects)
 		delete objects;
 
 	for (int n = 0; n < HASH_SIZE; ++n)
-	{
 		for (Element *element; element = hashTable [n];)
-		{
+			{
 			hashTable [n] = element->sibling;
 			delete element;
-		}
-	}
+			}
 }
 
-InputFile* ConfigFile::openConfigFile()
+InputFile* ConfigFile::openConfigFile(void)
 {
 	fb_assert(false);
 	// Vulcan specific code removed
 	return NULL;
 }
 
-void ConfigFile::parse()
+void ConfigFile::parse(void)
 {
 	objects = new Element ("ConfObjects");
 	getToken();
 
 	while (tokenType != END_OF_STREAM)
-	{
-		while (match ("include"))
 		{
-			Firebird::PathName fileName = expand (reparseFilename());
-			if (fileName.find('*') != Firebird::PathName::npos)
-				wildCardInclude(fileName.c_str());
+		while (match ("include"))
+			{
+			JString fileName = expand (reparseFilename());
+			if (strchr(fileName, '*'))
+				wildCardInclude(fileName);
 			else
-				pushStream (new InputFile (fileName.c_str()));
+				pushStream (new InputFile (fileName));
 			getToken();
-		}
+			}
 		if (match ("<"))
 			objects->addChild (parseObject());
 		else
-		{
+			{
 			Element *element = parseAttribute();
-			const int slot = element->name.hash (HASH_SIZE);
+			int slot = element->name.hash (HASH_SIZE);
 			element->sibling = hashTable [slot];
 			hashTable [slot] = element;
+			}
 		}
-	}
-
+	
 }
 
-Element* ConfigFile::parseObject()
+Element* ConfigFile::parseObject(void)
 {
-	const Firebird::string name = getName();
+	JString name = getName();
 	Element *element = new Element (name);
 	element->setSource (priorLineNumber, priorInputStream);
 
 	while (!match (">"))
-	{
-		element->addAttribute (new Element (reparseFilename().ToString()));
+		{
+		element->addAttribute (new Element (reparseFilename()));
 		getToken();
-	}
+		}
 
 	for (;;)
-	{
-		if (match ("<"))
 		{
-			if (match ("/"))
+		if (match ("<"))
 			{
-				if (!match (element->name.c_str()))
+			if (match ("/"))
+				{
+				if (!match (element->name))
 					syntaxError ("closing element");
 				if (!match (">"))
 					syntaxError ("\">\"");
 				element->numberLines = priorLineNumber - element->lineNumber + 1;
 				return element;
-			}
+				}
 			element->addChild (parseObject());
-		}
+			}
 		else
 			element->addChild (parseAttribute());
-	}
+		}
 }
 
-Element* ConfigFile::parseAttribute()
+Element* ConfigFile::parseAttribute(void)
 {
 	Element *element = new Element (getName());
 	element->setSource (priorLineNumber, priorInputStream);
 	match ("=");
 
 	while (!eol)
-	{
-		element->addAttribute (new Element (reparseFilename().ToString()));
+		{
+		element->addAttribute (new Element (reparseFilename()));
 		getToken();
-	}
+		}
 
 	element->numberLines = priorLineNumber - element->lineNumber + 1;
 
@@ -206,19 +198,17 @@ ConfObject* ConfigFile::findObject(const char* objectType, const char* objectNam
 		return NULL;
 
 	ConfObject *object = new ConfObject (this);
-
+	
 	for (Element *child = objects->children; child; child = child->sibling)
-	{
 		if (object->matches (child, objectType, objectName))
 			return object;
-	}
-
+	
 	object->release();
-
+	
 	return NULL;
 }
 
-const char* ConfigFile::getRootDirectory()
+const char* ConfigFile::getRootDirectory(void)
 {
 	return Config::getRootDirectory();
 }
@@ -230,118 +220,92 @@ ConfObject* ConfigFile::getObject(const char* objectType)
 
 Element* ConfigFile::findGlobalAttribute(const char *attributeName)
 {
-	for (Element *element = hashTable [Firebird::string::hash (attributeName, HASH_SIZE)]; element; element = element->sibling)
-	{
+	for (Element *element = hashTable [JString::hash (attributeName, HASH_SIZE)]; element; element = element->sibling)
 		if (element->name == attributeName)
 			return element;
-	}
-
+			
 	return NULL;
 }
 
-const char* ConfigFile::getInstallDirectory()
+const char* ConfigFile::getInstallDirectory(void)
 {
 	return Config::getInstallDirectory();
 }
 
-Firebird::PathName ConfigFile::expand(const Firebird::PathName& rawString)
+JString ConfigFile::expand(JString rawString)
 {
-	const char* const errstr = "filename expansion reached implementation limit at %d";
 	char temp [1024];
-	char* p = temp;
-	const char* const temp_end = temp + sizeof(temp) - 1;
+	char *p = temp, *end = temp + sizeof(temp) - 1;
 	bool change = false;
-
-	for (const char *s = rawString.c_str(); *s;)
-	{
+	
+	for (const char *s = rawString; *s;)
+		{
 		char c = *s++;
 		if (c == '$')
-		{
-			if (*s == '(')
 			{
+			if (*s == '(')
+				{
 				++s;
 				change = true;
-				char name [256];
-				const char* const name_end = name + sizeof(name) - 1;
-				char* n = name;
-				bool overflow = false;
-				while (*s && (c = *s++) != ')' && !overflow)
-				{
-					if (n < name_end)
-						*n++ = c;
-					else
-						overflow = true;
-				}
+				char name [256], *n = name;
+				while (*s && (c = *s++) != ')' && n < name + sizeof(name) - 1)
+					*n++ = c;
 				*n = 0;
-				if (overflow)
-				{
-					n[-3] = n[-2] = n[-1] = '.';
-					throw AdminException("name to be substituted \"%s\" is too long", name);
-				}
 				const char *subst = translate (name, NULL);
 				if (!subst)
 					throw AdminException ("can't substitute for \"%s\"", name);
-				for (const char *t = subst; *t;)
-				{
-					if (p < temp_end)
-						*p++ = *t++;
-					else
-						throw AdminException(errstr, sizeof(temp) - 1);
+				for (const char *t = subst; *t && p < end;)
+					*p++ = *t++;					
 				}
 			}
-		}
-		else if (p < temp_end)
+		else if (p < end)
 			*p++ = c;
-		else
-			throw AdminException(errstr, sizeof(temp) - 1);
-	}
-
+		}
+	
 	if (!change)
 		return rawString;
-
+		
 	*p = 0;
-
-	return temp;
+	
+	return temp;	
 }
 
-const char* ConfigFile::translate(const char* value, const Element* object)
+const char* ConfigFile::translate(const char *value, Element *object)
 {
 	if (strcasecmp (value, "root") == 0)
 		return getRootDirectory();
-
+		
 	if (strcasecmp (value, "install") == 0)
 		return getInstallDirectory();
 
 	if (strcasecmp (value, "this") == 0)
-	{
+		{
 		const char *source = NULL;
-
+		
 		if (object && object->inputStream)
 			source = object->inputStream->getFileName();
-
+		
 		if (!source && inputStream)
 			source = inputStream->getFileName();
-
+		
 		if (!source)
 			throw AdminException("no context for $(this)");
-
-		const Firebird::PathName currentFile = expand (source);
-		const char *fileName = currentFile.c_str();
+			
+		JString currentFile = expand (source);
+		const char *fileName = currentFile;
 		const char *p = NULL;
-
+		
 		for (const char *q = fileName; *q; ++q)
-		{
 			if (IS_SEPARATOR(*q))
 				p = q;
-		}
 
 		if (p)
-			currentDirectory = Firebird::PathName(fileName, p - fileName);
+			currentDirectory = JString(fileName, p - fileName);
 		else
 			currentDirectory = ".";
-
-		return currentDirectory.c_str();
-	}
+		
+		return currentDirectory;
+		}
 
 	return NULL;
 }
@@ -350,19 +314,15 @@ const char* ConfigFile::translate(const char* value, const Element* object)
 void ConfigFile::wildCardInclude(const char* fileName)
 {
 	char directory [256];
-
-	if (strlen(fileName) >= sizeof(directory))
-		throw AdminException("Too long filename in wildCardInclude()");
-
 	strcpy (directory, fileName);
 	const char *wildcard = fileName;
 	char *p = strrchr (directory, '/');
 
 	if (p)
-	{
+		{
 		*p = 0;
 		wildcard = p + 1;
-	}
+		}
 	else
 		directory [0] = 0;
 
@@ -372,4 +332,5 @@ void ConfigFile::wildCardInclude(const char* fileName)
 
 	while (scanDir.next())
 		pushStream (new InputFile (scanDir.getFilePath()));
+
 }

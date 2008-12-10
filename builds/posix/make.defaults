@@ -26,6 +26,7 @@
 #   Contributor(s):
 # 
 # 
+#   $Id: make.defaults,v 1.44.4.9 2008-09-04 11:50:16 paulbeach Exp $
 # 
 
 
@@ -74,17 +75,6 @@ GEN_SRC=$(OBJ)
 RealFirebirdPath = @NEW_FIREBIRD_DIR@
 
 #____________________________________________________________________________
-# From here we may set some global options to both compiler and linker.
-
-# Use configure's CFLAGS as global options for all compilers and linkers
-GLOB_OPTIONS=@CFLAGS@
-
-# Possible use - profiling.
-#GLOB_OPTIONS+= -pg
-
-CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
-
-#____________________________________________________________________________
 
 IsProdTypeBuild = @PROD_BUILD_FLG@
                            # If this is defined then we are building a production
@@ -96,6 +86,7 @@ FirebirdInstallPrefix =
 else
 FirebirdInstallPrefix = @prefix@
 endif
+
 CpuType=@CPU_TYPE@
 
 PLATFORM=@PLATFORM@
@@ -109,18 +100,12 @@ SFIO_EXAMPLES=@SFIO_EXAMPLES@
 
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
-STD_EDITLINE=@STD_EDITLINE@
-STD_ICU=@STD_ICU@
 
-# threading options - set by configure
-THR_FLAGS=@PTHREAD_CFLAGS@
-THR_LIBS=@PTHREAD_LIBS@
 
 # Default programs and tools to be used in the build process
 
 SH=			sh -c
 RM=			rm -f
-RM_R=		rm -rf
 CHMOD=			chmod
 CHMOD_6=		chmod 666
 CHMOD_7=		chmod 777
@@ -135,42 +120,7 @@ CAT=			cat
 AR=			ar crsu
 LN=			@LN_S@
 RANLIB=			@RANLIB@
-BTYACC=$(ROOT)/extern/btyacc/btyacc
-
-CC =	@CC@
-CXX =	@CXX@
-LD =	@CXX@
-
-#
-# LIBTOOL ISSUES
-#
-# Most of the libraries and programs are linked using the dynamic linker
-# We default to using the dynamic linker and have a special link macros for
-# using the static linker.
-#
-# Also libtool looks like the future in cross platform shared object compile
-# and linking, but unfortunately it does not yet work for us, as a
-# libtool gcc -o $(BIN)/fred fred.o libzzz.la
-# command will generate incorrect relative addresses in the wrapper script in
-# $(BIN)/fred as it required the exe file fred to be in the directory from
-# which the command is run from.
-# One other issue is that libtool puts a -DPIC onto the compile line.  While
-# nice it conflicts with a struct in the file qli/format.h
-# MOD 26-July-2001.
-
-# LINKER COMMANDS
-# Alternatively we may use libtool here.
-
-LIB_LINK:= @CXX@ $(GLOB_OPTIONS)
-STATICLIB_LINK:= ar cruvs
-CLIENTLIB_LINK:= @CC@ $(GLOB_OPTIONS)
-EXE_LINK:= @CXX@ $(GLOB_OPTIONS)
-STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS)
-
-LINK_LIBS = @LIBS@ $(THR_LIBS)
-ICU_LIBS = -licuuc -licudata -licui18n
-STATICLINK_LIBS = @LIBS@ $(THR_LIBS)
-SO_LINK_LIBS = @LIBS@ $(THR_LIBS)
+YACC=			@YACC@
 
 # Default extensions
 
@@ -178,7 +128,6 @@ ARCH_EXT=		.a
 EXEC_EXT=		@EXEEXT@
 SHRLIB_EXT=@SHRLIB_EXT@
 LIB_PREFIX=		lib
-SHRLIB_FOREIGN_EXT=	$(SHRLIB_EXT)
 
 #_____________________________________________________________________________
 
@@ -201,6 +150,7 @@ vpath %.dll $(LIB)
 
 # From jrd
 
+JRD_BOOT=		$(LIB)/jrd_boot.a
 BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
@@ -210,7 +160,7 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 # 
 
 SharedLibraryName=libfbembed.${SHRLIB_EXT}.${FirebirdVersion}
-SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}.${MinorVer}
+SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}
 SharedLibraryBaseName=libfbembed.${SHRLIB_EXT}
 
 LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
@@ -236,60 +186,54 @@ LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
 
 LIBFBSTATIC_A = $(LIB)/libfbstatic.a
-
-ifeq ($(EDITLINE_FLG),Y)
-  ifeq ($(STD_EDITLINE), true)
-	LIBEDITLINE := -leditline
-  else
-	LIBEDITLINE := $(LIB)/libeditline.a
-  endif
-endif
-
-LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icudata.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icui18n.$(SHRLIB_FOREIGN_EXT)
+LIBEDITLINE_A = $(LIB)/libeditline.a
+LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_EXT) \
+			$(LIB)/$(LIB_PREFIX)icudata.$(SHRLIB_EXT) \
+			$(LIB)/$(LIB_PREFIX)icui18n.$(SHRLIB_EXT)
 
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = $(LIB_PREFIX)ib_util.$(SHRLIB_EXT)
 LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 
+# LINKER COMMANDS
+# Alternatively we may use libtool here.
+
+LIB_LINK:= @CXX@
+STATICLIB_LINK:= ar cruvs
+CLIENTLIB_LINK:= @CC@
+EXE_LINK:= @CXX@
+STATICEXE_LINK:= @CXX@
+
+LINK_LIBS = @EDITLINE_A@ @LIBS@
+ICU_LIBS = -licuuc -licudata -licui18n
+STATICLINK_LIBS = @EDITLINE_A@ @LIBS@
+SO_LINK_LIBS = @LIBS@
+
 # LINKER OPTIONS
 #
 
-UNDEF_PLATFORM = -Wl,--no-undefined
-ifneq ($(IsProdTypeBuild),Y)
-  UNDEF_FLAGS = $(UNDEF_PLATFORM)
-endif
-
-LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
-LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
-LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.vers
-
-LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-
-LINK_OPTS = $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
-LIB_LINK_OPTIONS = $(LDFLAGS) $(THR_FLAGS) -shared
-
+LINK_OPTS = $(LDFLAGS) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
+LIB_LINK_OPTIONS = $(LDFLAGS) -shared
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
 FBEMBED_LINK= -L$(LIB) -lfbembed
 
+LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
+
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
-FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
-
-STATIC_CXXSUPPORT_LIB = -lsupc++ -lgcc_eh
 
 # From utilities 
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
-FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
 GSTAT		= $(BIN)/gstat$(EXEC_EXT)
 NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
 LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
 GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
+GFIX_STATIC	= $(BIN)/gfix_static$(EXEC_EXT)
 GDS_REBUILD	= $(BIN)/gds_rebuild$(EXEC_EXT)
 GDS_RELAY	= $(BIN)/gds_relay$(EXEC_EXT)
 GDS_INSTALL	= $(BIN)/gds_install$(EXEC_EXT)

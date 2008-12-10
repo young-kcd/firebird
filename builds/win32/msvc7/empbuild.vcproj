@@ -44,8 +44,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
-				AdditionalLibraryDirectories="..\..\..\temp\$(ConfigurationName)\fbclient"
+				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient_ms.lib"
 				OutputFile=".\..\..\..\temp\release\examples/empbuild.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -104,8 +103,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
-				AdditionalLibraryDirectories="..\..\..\temp\$(ConfigurationName)\fbclient"
+				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient_ms.lib"
 				OutputFile=".\..\..\..\temp\debug\examples/empbuild.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"

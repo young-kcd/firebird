@@ -33,8 +33,7 @@
 #define isc_info_truncated		2
 #define isc_info_error			3
 #define isc_info_data_not_ready	          4
-#define isc_info_length			126
-#define isc_info_flag_end		127
+#define isc_info_flag_end		  127
 
 /******************************/
 /* Database information items */
@@ -105,12 +104,12 @@ enum db_info_types
 	isc_info_tpage_errors = 60,
 
 	isc_info_set_page_buffers = 61,
-	isc_info_db_sql_dialect = 62,
+	isc_info_db_sql_dialect = 62,   
 	isc_info_db_read_only = 63,
 	isc_info_db_size_in_pages = 64,
 
 	/* Values 65 -100 unused to avoid conflict with InterBase */
-
+	
 	frb_info_att_charset = 101,
 	isc_info_db_class = 102,
 	isc_info_firebird_version = 103,
@@ -122,8 +121,6 @@ enum db_info_types
 	isc_info_active_transactions = 109,
 	isc_info_active_tran_count = 110,
 	isc_info_creation_date = 111,
-	isc_info_db_file_size = 112,
-	fb_info_page_contents = 113,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };
@@ -151,7 +148,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_sun_68k = 28,
 	isc_info_db_impl_isc_os2 = 29,
 	isc_info_db_impl_isc_sun4 = 30,	   /* 30 */
-
+	
 	isc_info_db_impl_isc_hp_ux = 31,
 	isc_info_db_impl_isc_sun_386i = 32,
 	isc_info_db_impl_isc_vms_orcl = 33,
@@ -177,7 +174,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_epson = 51,
 	isc_info_db_impl_alpha_osf = 52,
 	isc_info_db_impl_alpha_vms = 53,
-	isc_info_db_impl_netware_386 = 54,
+	isc_info_db_impl_netware_386 = 54, 
 	isc_info_db_impl_win_only = 55,
 	isc_info_db_impl_ncr_3000 = 56,
 	isc_info_db_impl_winnt_ppc = 57,
@@ -192,24 +189,15 @@ enum  info_db_implementations
 
 	isc_info_db_impl_linux_sparc = 65,
 	isc_info_db_impl_linux_amd64 = 66,
-
+	
 	isc_info_db_impl_freebsd_amd64 = 67,
 
 	isc_info_db_impl_winnt_amd64 = 68,
-
 	isc_info_db_impl_linux_ppc = 69,
 	isc_info_db_impl_darwin_x86 = 70,
-	isc_info_db_impl_linux_mipsel = 71,
-	isc_info_db_impl_linux_mips = 72,
-	isc_info_db_impl_darwin_x64 = 73,
-	isc_info_db_impl_sun_amd64 = 74,
+	isc_info_db_impl_sun_amd64 = 71,
 
-	isc_info_db_impl_linux_arm = 75,
-	isc_info_db_impl_linux_ia64 = 76,
-
-	isc_info_db_impl_darwin_ppc64 = 77,
-
-	isc_info_db_impl_last_value   // Leave this LAST!
+	isc_info_db_impl_last_value   /* Leave this LAST! */
 };
 
 #define isc_info_db_impl_isc_a            isc_info_db_impl_isc_apl_68K
@@ -302,8 +290,6 @@ enum info_db_provider
 #define isc_info_rsb_once		20
 #define isc_info_rsb_procedure		21
 #define isc_info_rsb_skip		22
-#define isc_info_rsb_virt_sequential	23
-#define isc_info_rsb_recursive	24
 
 /**********************/
 /* Bitmap expressions */

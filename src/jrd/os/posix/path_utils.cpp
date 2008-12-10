@@ -25,7 +25,6 @@
  *
  */
 
-#include "firebird.h"
 #include "../jrd/os/path_utils.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -54,7 +53,7 @@ public:
 	const PosixDirItr& operator++();
 	const Firebird::PathName& operator*() { return file; }
 	operator bool() { return !done; }
-
+	
 private:
 	DIR *dir;
 	Firebird::PathName file;
@@ -110,7 +109,7 @@ void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName&
 		file = orgPath;
 		return;
 	}
-
+	
 	path.erase();
 	path.append(orgPath, 0, pos);	// skip the directory separator
 	file.erase();
@@ -131,7 +130,7 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		result = second;
 		return;
 	}
-
+	
 	if (first[first.length() - 1] != dir_sep &&
 		second[0] != dir_sep)
 	{
@@ -145,18 +144,8 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		result.append(second, 1, second.length() - 1);
 		return;
 	}
-
+	
 	result = first + second;
-}
-
-// We don't work correctly with MBCS.
-void PathUtils::ensureSeparator(Firebird::PathName& in_out)
-{
-	if (in_out.length() == 0)
-		in_out = PathUtils::dir_sep;
-
-	if (in_out[in_out.length() - 1] != PathUtils::dir_sep)
-		in_out += PathUtils::dir_sep;
 }
 
 bool PathUtils::isRelative(const Firebird::PathName& path)

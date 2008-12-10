@@ -29,20 +29,9 @@
 
 typedef USHORT (*pfnSvcError)(SLONG, const TEXT*, SC_HANDLE);
 
-USHORT SERVICES_install(SC_HANDLE manager,
-						const char* service_name,
-						const char* display_name,
-						const char* display_description,
-						const char* executable,
-						const char* directory,
-						const char* switches,
-						const char* dependencies,
-						USHORT		sw_startup,
-						const char* nt_user_name,
-						const char* nt_user_password,
-						bool		interactive_mode,
-						bool		auto_restart,
-						pfnSvcError err_handler);
+USHORT	SERVICES_install(SC_HANDLE, const char*, const char*, const char*,
+	const TEXT*, const TEXT*, const TEXT*, USHORT, const TEXT*, const TEXT*,
+	bool, pfnSvcError);
 
 USHORT	SERVICES_remove(SC_HANDLE, const char*, const char*, pfnSvcError);
 

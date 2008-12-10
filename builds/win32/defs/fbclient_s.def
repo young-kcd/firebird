@@ -18,9 +18,6 @@
 EXPORTS
 
 	fb_interpret@12				PRIVATE
-	fb_sqlstate@8				PRIVATE
-	fb_cancel_operation@12		PRIVATE
-	fb_shutdown_callback@16		PRIVATE
 
 	isc_attach_database@24		PRIVATE
 	isc_blob_default_desc@12	PRIVATE
@@ -101,13 +98,14 @@ EXPORTS
 	gds__get_prefix@8			PRIVATE
 	gds__log@0					PRIVATE
 	gds__msg_format@40			PRIVATE
-	gds__msg_lookup@24			PRIVATE
 	gds__prefix@8				PRIVATE
 	gds__prefix_lock@8			PRIVATE
 	gds__prefix_msg@8			PRIVATE
 	gds__print_blr@16			PRIVATE
 	gds__print_status@4			PRIVATE
 	gds__register_cleanup@8		PRIVATE
+	gds__temp_dir@4				PRIVATE
+	gds__temp_file@20			PRIVATE
 	gds__thread_start@20		PRIVATE
 	gds__vax_integer@8			PRIVATE
 	gds__vtov@12				PRIVATE
@@ -115,12 +113,9 @@ EXPORTS
 	perf_format@20				PRIVATE
 	perf_get_info@8				PRIVATE
 
-	Bopen@16					PRIVATE
-	BLOB_close@4				PRIVATE
 	BLOB_dump@16				PRIVATE
 	BLOB_edit@16				PRIVATE
 	BLOB_load@16				PRIVATE
-	BLOB_put@8					PRIVATE
 	BLOB_text_load@16			PRIVATE
 
 	_ZN6Config17getGuardianOptionEv PRIVATE

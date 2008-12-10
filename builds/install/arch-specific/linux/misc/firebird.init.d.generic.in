@@ -1,56 +1,42 @@
 #!/bin/sh
 
+# chkconfig: 345 20 80
 # description: Start/Stop firebird database server
+#
+# This file belongs in /etc/init.d where it will be run
+# on system startup and shutdown to start the background
+# Firebird/interbase database server daemon 
 
-# To run more instances of firebird:
-#   Copy @prefix@ somewhere
-#   Copy this script under a new name
-#   Change INSTANCE and FIREBIRD below (all instance names should be unique)
-#   Edit the copied firebird.conf to change at least RemoteServicePort
-INSTANCE=default
+
+
 FIREBIRD=@prefix@
-
-# No changes needed below for multiple instances
 FBRunUser=firebird
-pidfile=/var/run/firebird/$INSTANCE.pid
-FULLNAME="Firebird server [$INSTANCE]"
-LD_LIBRARY_PATH=$FIREBIRD/lib
+pidfile=/var/run/firebird/`basename $0`.pid
+export FIREBIRD 
 
-export FIREBIRD LD_LIBRARY_PATH
 
-GUARDIAN=$FIREBIRD/bin/fbguard
+# Check the file is there and is executable.
+[ -x $FIREBIRD/bin/fbmgr ] || exit 0
+
+
 
 # See how we were called.
 case "$1" in
   start)
-	echo -n "Starting $FULLNAME: "
-	echo "$GUARDIAN -pidfile $pidfile -daemon -forever" | su $FBRunUser
+	echo -n "Starting Firebird server: "
+	echo '$FIREBIRD/bin/fbmgr -pidfile $pidfile -start -forever' | su $FBRunUser
 	RETVAL=$?
 	;;
   stop)
-	echo -n "Stopping $FULLNAME: "
+	echo -n "Stopping Firebird server: "
 	if [ -f $pidfile ]
 	then
 		kill `cat $pidfile`
 	fi
-	echo "stopped."
 	RETVAL=$?
 	;;
   status)
-	if [ -f $pidfile ]
-	then
-		pid=`cat $pidfile`
-    	ps -p $pid >/dev/null 2>&1
-		RETVAL=$?
-	else
-		RETVAL=1
-	fi
-	if [ $RETVAL -eq 0 ]
-	then
-		echo "$FULLNAME is running, pid $pid"
-	else
-		echo "$FULLNAME is stopped."
-	fi
+	RETVAL=0
 	;;
   restart|reload)
 	$0 stop

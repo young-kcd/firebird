@@ -22,7 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
+ * 
  *
  */
 
@@ -45,8 +45,7 @@ const int LOCK_WRITER_OFFSET = 50000;
 
 // Should work pretty fast if atomic operations are native.
 // This is not the case for Win95
-class RWLock
-{
+class RWLock {
 private:
 	AtomicCounter lock; // This is the actual lock
 	           // -50000 - writer is active
@@ -57,30 +56,23 @@ private:
 	Mutex blockedReadersLock;
 	HANDLE writers_event, readers_semaphore;
 
-	void init()
-	{
-		lock = 0;
-		blockedReaders = 0;
-		blockedWriters = 0;
-		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/,
-			INT_MAX, NULL);
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
+public:
+	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
+	{ 
+		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
+			INT_MAX, NULL); 
 		if (readers_semaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
 		if (writers_event == NULL)
 			system_call_failed::raise("CreateEvent");
 	}
-
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (readers_semaphore && !CloseHandle(readers_semaphore))
-			system_call_failed::raise("CloseHandle");
+			system_call_failed::raise("CloseHandle");		
 		if (writers_event && !CloseHandle(writers_event))
 			system_call_failed::raise("CloseHandle");
 	}
@@ -111,7 +103,7 @@ public:
 			return false;
 		if (++lock > 0)
 			return true;
-		// We stepped on writer's toes. Fix our mistake
+		// We stepped on writer's toes. Fix our mistake 
 		if (--lock == 0)
 			unblockWaiting();
 		return false;
@@ -129,14 +121,12 @@ public:
 	}
 	void beginRead()
 	{
-		if (!tryBeginRead())
-		{
+		if (!tryBeginRead()) {
 			{ // scope block
 				MutexLockGuard guard(blockedReadersLock);
 				++blockedReaders;
 			}
-			while (!tryBeginRead())
-			{
+			while (!tryBeginRead()) {
 				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
 			}
@@ -148,14 +138,11 @@ public:
 	}
 	void beginWrite()
 	{
-		if (!tryBeginWrite())
-		{
+		if (!tryBeginWrite()) {
 			++blockedWriters;
 			while (!tryBeginWrite())
-			{
 				if (WaitForSingleObject(writers_event, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
-			}
 			--blockedWriters;
 		}
 	}
@@ -176,6 +163,8 @@ public:
 
 #else
 
+#ifdef MULTI_THREAD
+
 #ifdef SOLARIS_MT
 
 #include <thread.h>
@@ -191,18 +180,14 @@ private:
 	rwlock_t lock;
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-
-	void init()
-	{
+public:
+	RWLock()
+	{		
 		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
 		{
 			system_call_failed::raise("rwlock_init");
 		}
 	}
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (rwlock_destroy(&lock))
@@ -210,7 +195,7 @@ public:
 	}
 	void beginRead()
 	{
-		if (rw_rdlock(&lock))
+		if (rw_rdlock(&lock))	
 			system_call_failed::raise("rw_rdlock");
 	}
 	bool tryBeginRead()
@@ -224,7 +209,7 @@ public:
 	}
 	void endRead()
 	{
-		if (rw_unlock(&lock))
+		if (rw_unlock(&lock))	
 			system_call_failed::raise("rw_unlock");
 	}
 	bool tryBeginWrite()
@@ -238,12 +223,12 @@ public:
 	}
 	void beginWrite()
 	{
-		if (rw_wrlock(&lock))
+		if (rw_wrlock(&lock))	
 			system_call_failed::raise("rw_wrlock");
 	}
 	void endWrite()
 	{
-		if (rw_unlock(&lock))
+		if (rw_unlock(&lock))	
 			system_call_failed::raise("rw_unlock");
 	}
 };
@@ -261,17 +246,14 @@ public:
 namespace Firebird
 {
 
-class MemoryPool;
-
 class RWLock
 {
 private:
 	pthread_rwlock_t lock;
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-
-	void init()
-	{
+public:
+	RWLock() {		
 #if defined(LINUX) && !defined(USE_VALGRIND)
 		pthread_rwlockattr_t attr;
 		if (pthread_rwlockattr_init(&attr))
@@ -287,10 +269,6 @@ private:
 			system_call_failed::raise("pthread_rwlock_init");
 #endif
 	}
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(class MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (pthread_rwlock_destroy(&lock))
@@ -298,7 +276,7 @@ public:
 	}
 	void beginRead()
 	{
-		if (pthread_rwlock_rdlock(&lock))
+		if (pthread_rwlock_rdlock(&lock))	
 			system_call_failed::raise("pthread_rwlock_rdlock");
 	}
 	bool tryBeginRead()
@@ -312,7 +290,7 @@ public:
 	}
 	void endRead()
 	{
-		if (pthread_rwlock_unlock(&lock))
+		if (pthread_rwlock_unlock(&lock))	
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 	bool tryBeginWrite()
@@ -326,12 +304,12 @@ public:
 	}
 	void beginWrite()
 	{
-		if (pthread_rwlock_wrlock(&lock))
+		if (pthread_rwlock_wrlock(&lock))	
 			system_call_failed::raise("pthread_rwlock_wrlock");
 	}
 	void endWrite()
 	{
-		if (pthread_rwlock_unlock(&lock))
+		if (pthread_rwlock_unlock(&lock))	
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 };
@@ -340,26 +318,41 @@ public:
 
 #endif /*solaris threading (not posix)*/
 
+#else
+
+namespace Firebird {
+
+// Non-threaded version
+class RWLock
+{
+private:
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
+public:
+	RWLock() {		
+	}
+	~RWLock() {	}
+	void beginRead() { }
+	bool tryBeginRead() { return true; }
+	void endRead() { }
+	bool tryBeginWrite() { return true; }
+	void beginWrite() {	}
+	void endWrite() { }
+};
+
+} // namespace Firebird
+
+#endif /*MULTI_THREAD*/
+
 #endif /*!WIN_NT*/
 
 namespace Firebird {
 
 // RAII holder of read lock
-class ReadLockGuard
-{
+class ReadLockGuard {
 public:
 	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
-	~ReadLockGuard() { release(); }
-
-	void release()
-	{
-		if (lock)
-		{
-			lock->endRead();
-			lock = NULL;
-		}
-	}
-
+	~ReadLockGuard() { lock->endRead(); }
 private:
 	// Forbid copy constructor
 	ReadLockGuard(const ReadLockGuard& source);
@@ -367,21 +360,10 @@ private:
 };
 
 // RAII holder of write lock
-class WriteLockGuard
-{
+class WriteLockGuard {
 public:
 	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
-	~WriteLockGuard() { release(); }
-
-	void release()
-	{
-		if (lock)
-		{
-			lock->endWrite();
-			lock = NULL;
-		}
-	}
-
+	~WriteLockGuard() { lock->endWrite(); }
 private:
 	// Forbid copy constructor
 	WriteLockGuard(const WriteLockGuard& source);

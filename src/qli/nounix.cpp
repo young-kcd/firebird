@@ -23,12 +23,12 @@
 
 #include "firebird.h"
 
-int pipe()
+int pipe(void)
 {
 	return -1;
 }
 
-int vfork()
+int vfork(void)
 {
 	return -1;
 }

@@ -10,7 +10,7 @@ product
 tag Firebird
 title "Firebird Database for HP-UX"
 description "Firebird Relational Database Classic"
-revision 2.1.0
+revision 2.0.3
 category database
 category_title Database
 preinstall install/scripts/preInstall.sh
@@ -75,7 +75,7 @@ file -u 0755 -g firebird -o firebird firebird/bin/qli /opt/firebird/bin/qli
 # From 2.0
 file -u 0755 -g firebird -o firebird firebird/bin/nbackup /opt/firebird/bin/nbackup
 # From 2.1
-file -u 0755 -g firebird -o firebird firebird/bin/fbsvcmgr /opt/firebird/bin/fbsvcmgr
+# file -u 0755 -g firebird -o firebird firebird/bin/fbsvcmgr /opt/firebird/bin/fbsvcmgr
 end
 fileset
 tag upgrade
@@ -84,9 +84,9 @@ file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/ib_udf_params.txt /o
 file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/ib_udf_upgrade.sql /opt/firebird/upgrade/ib_udf_upgrade.sql
 file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/security_database.sql /opt/firebird/upgrade/security_database.sql
 file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2/security_database.txt /opt/firebird/upgrade/security_database.txt
-file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset.txt /opt/firebird/upgrade/metadata_charset.txt
-file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset_create.sql /opt/firebird/upgrade/metadata_charset_create.sql
-file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset_drop.sql /opt/firebird/upgrade/metadata_charset_drop.sql
+# file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset.txt /opt/firebird/upgrade/metadata_charset.txt
+# file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset_create.sql /opt/firebird/upgrade/metadata_charset_create.sql
+# file -u 0644 -g firebird -o firebird ../src/misc/upgrade/v2.1/metadata_charset_drop.sql /opt/firebird/upgrade/metadata_charset_drop.sql
 end
 fileset 
 tag examples
@@ -112,8 +112,8 @@ file *
 end
 fileset
 tag lib
-file -u 0755 -g firebird -o firebird firebird/lib/libfbclient.sl.2.1.0 /opt/firebird/lib/libfbclient.sl.2.1.0
-file -u 0755 -g firebird -o firebird firebird/lib/libfbembed.sl.2.1.0 /opt/firebird/lib/libfbembed.sl.2.1.0
+file -u 0755 -g firebird -o firebird firebird/lib/libfbclient.sl.2.0.3 /opt/firebird/lib/libfbclient.sl.2.0.3
+file -u 0755 -g firebird -o firebird firebird/lib/libfbembed.sl.2.0.3 /opt/firebird/lib/libfbembed.sl.2.0.3
 file -u 0755 -g firebird -o firebird firebird/lib/libib_util.sl /opt/firebird/lib/libib_util.sl
 file -u 0755 -g firebird -o firebird firebird/lib/libicudata.sl.30.0 /opt/firebird/lib/libicudata.sl.30.0
 file -u 0755 -g firebird -o firebird firebird/lib/libicui18n.sl.30.0 /opt/firebird/lib/libicui18n.sl.30.0
@@ -121,7 +121,7 @@ file -u 0755 -g firebird -o firebird firebird/lib/libicuuc.sl.30.0 /opt/firebird
 end
 fileset
 tag help
-file -u 0755 -g firebird -o firebird firebird/help/help.fdb /opt/firebird/help/help.fdb
+file -u 0444 -g firebird -o firebird firebird/help/help.fdb /opt/firebird/help/help.fdb
 end
 fileset
 tag messages

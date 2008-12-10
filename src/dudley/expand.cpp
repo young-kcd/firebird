@@ -31,13 +31,10 @@
 #include "../dudley/hsh_proto.h"
 #include "../dudley/parse_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/classes/SafeArg.h"
-
-using MsgFormat::SafeArg;
-
 
 static void expand_action(ACT);
-static void expand_error(USHORT, const SafeArg& arg);
+static void expand_error(USHORT, const TEXT*, const TEXT*, const TEXT*,
+	const TEXT*, const TEXT*);
 static void expand_field(DUDLEY_FLD);
 static void expand_global_field(DUDLEY_FLD);
 static void expand_index(ACT);
@@ -50,7 +47,7 @@ static DUDLEY_FLD lookup_field(DUDLEY_FLD);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static DUDLEY_REL lookup_relation(DUDLEY_REL);
 static DUDLEY_TRG lookup_trigger(DUDLEY_TRG);
-static DUDLEY_CTX make_context(const TEXT *, DUDLEY_REL, USHORT);
+static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL, USHORT);
 static DUDLEY_NOD resolve(DUDLEY_NOD, dudley_lls*, dudley_lls*);
 static void resolve_rse(DUDLEY_NOD, dudley_lls**);
 
@@ -69,7 +66,7 @@ void EXP_actions(void)
  *	Expand the output of the parser.
  *	Look for field references and put
  *	them in appropriate context.
- *
+ *   
  **************************************/
 	ACT action;
 
@@ -184,11 +181,11 @@ static void expand_action( ACT action)
 		break;
 
 	default:
-		DDL_msg_put(97);	/* msg 97: object can not be resolved */
+		DDL_msg_put(97, NULL, NULL, NULL, NULL, NULL);	/* msg 97: object can not be resolved */
 	}
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const std::exception&) {
 	}
 
 	return;
@@ -197,7 +194,9 @@ static void expand_action( ACT action)
 
 static void expand_error(
 						 USHORT number,
-						 const SafeArg& arg)
+						 const TEXT* arg1,
+						 const TEXT* arg2, const TEXT* arg3,
+						 const TEXT* arg4, const TEXT* arg5)
 {
 /**************************************
  *
@@ -210,8 +209,8 @@ static void expand_error(
  *
  **************************************/
 
-	DDL_err(number, arg);
-	Firebird::LongJump::raise();
+	DDL_err(number, arg1, arg2, arg3, arg4, arg5);
+	Firebird::status_exception::raise();
 }
 
 
@@ -235,7 +234,7 @@ static void expand_field( DUDLEY_FLD field)
 		if (!(field->fld_source = HSH_typed_lookup(name->sym_string,
 												   name->sym_length,
 												   SYM_global)))
-				expand_error(98, SafeArg() << name->sym_string);	/* msg 98: Global field %s is not defined */
+				expand_error(98, name->sym_string, 0, 0, 0, 0);	/* msg 98: Global field %s is not defined */
 	}
 
 	if (!field->fld_source_field)
@@ -398,11 +397,11 @@ static DUDLEY_FLD field_context( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_C
  *
  * Functional description
  *	Lookup a field reference, guessing the
- *	context.  Since by now all field references
+ *	context.  Since by now all field references 
  *	ought to be entered in the hash table, this is
  *	pretty easy.  We may be looking up a global
  *	field reference, in which case the context
- *	relation will be null.
+ *	relation will be null. 
  *
  *
  **************************************/
@@ -443,11 +442,11 @@ static DUDLEY_FLD field_context( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_C
 	}
 
 	if (context->ctx_relation)
-		expand_error(99, SafeArg() << name->sym_string <<
-					 context->ctx_relation->rel_name->sym_string);
+		expand_error(99, name->sym_string,
+					 context->ctx_relation->rel_name->sym_string, 0, 0, 0);
 	/* msg 99: field %s doesn't exist in relation %s */
 	else
-		expand_error(100, SafeArg() << name->sym_string);
+		expand_error(100, name->sym_string, 0, 0, 0, 0);
 	/* msg 100: field %s doesn't exist */
 
 	return NULL;
@@ -468,7 +467,7 @@ static DUDLEY_FLD field_search( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CT
  *	iteratively.  The context indicated is
  *	the current context.  Get to there, then
  *	work backward.
- *
+ * 
  **************************************/
 	DUDLEY_FLD field;
 	DUDLEY_CTX context, old_context;
@@ -505,7 +504,7 @@ static DUDLEY_FLD field_search( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CT
 		}
 	}
 
-	expand_error(101, SafeArg() << name->sym_string);	/* msg 101: field %s can't be resolved */
+	expand_error(101, name->sym_string, 0, 0, 0, 0);	/* msg 101: field %s can't be resolved */
 	return NULL;
 }
 
@@ -542,8 +541,8 @@ static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 
 	for (; contexts; contexts = contexts->lls_next) {
 		context = (DUDLEY_CTX) contexts->lls_object;
-		if ((name = context->ctx_name) && !strcmp(name->sym_string, symbol->sym_string))
-			return context;
+		if ((name = context->ctx_name) &&
+			!strcmp(name->sym_string, symbol->sym_string)) return context;
 	}
 
 	return NULL;
@@ -562,7 +561,7 @@ static DUDLEY_FLD lookup_field( DUDLEY_FLD old_field)
  *	Lookup a field reference, from a modify or
  *	delete field statement, and make sure we
  *	found the thing originally.
- *	context.  Since by now all field references
+ *	context.  Since by now all field references 
  *	ought to be entered in the hash table, this is
  *	pretty easy.
  *
@@ -586,7 +585,8 @@ static DUDLEY_FLD lookup_field( DUDLEY_FLD old_field)
 				return field;
 		}
 
-	expand_error(102, SafeArg() << name->sym_string << relation->rel_name->sym_string);
+	expand_error(102, name->sym_string, relation->rel_name->sym_string, 0, 0,
+				 0);
 	/* msg 102: field %s isn't defined in relation %s */
 
 	return NULL;
@@ -609,10 +609,11 @@ static DUDLEY_FLD lookup_global_field( DUDLEY_FLD field)
 /* Find symbol */
 
 	name = (field->fld_source) ? field->fld_source : field->fld_name;
-	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_global)))
-		return (DUDLEY_FLD) symbol->sym_object;
+	if (symbol =
+		HSH_typed_lookup(name->sym_string, name->sym_length,
+						 SYM_global)) return (DUDLEY_FLD) symbol->sym_object;
 
-	expand_error(103, SafeArg() << name->sym_string);	/* msg 103: global field %s isn't defined */
+	expand_error(103, name->sym_string, 0, 0, 0, 0);	/* msg 103: global field %s isn't defined */
 
 	return NULL;
 }
@@ -634,13 +635,12 @@ static DUDLEY_REL lookup_relation( DUDLEY_REL relation)
 /* Find symbol */
 
 	name = (relation->rel_name);
-	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation)) &&
-		symbol->sym_object)
-	{
-		return (DUDLEY_REL) symbol->sym_object;
-	}
+	if (
+		(symbol =
+		 HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation))
+		&& symbol->sym_object) return (DUDLEY_REL) symbol->sym_object;
 
-	expand_error(104, SafeArg() << name->sym_string);	/* msg 104: relation %s isn't defined */
+	expand_error(104, name->sym_string, 0, 0, 0, 0);	/* msg 104: relation %s isn't defined */
 
 	return NULL;
 }
@@ -650,7 +650,7 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
- *	l o o k u p _ t r i g g e r
+ *	l o o k u p _ t r i g g e r 
  *
  **************************************
  *
@@ -662,16 +662,17 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 /* Find symbol */
 
 	name = (trigger->trg_name);
-	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_trigger)))
-		return (DUDLEY_TRG) symbol->sym_object;
+	if (symbol =
+		HSH_typed_lookup(name->sym_string, name->sym_length,
+						 SYM_trigger)) return (DUDLEY_TRG) symbol->sym_object;
 
-	expand_error(105, SafeArg() << name->sym_string);	/* msg 105: trigger %s isn't defined */
+	expand_error(105, name->sym_string, 0, 0, 0, 0);	/* msg 105: trigger %s isn't defined */
 
 	return NULL;
 }
 
 
-static DUDLEY_CTX make_context( const TEXT * string, DUDLEY_REL relation, USHORT id)
+static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -732,7 +733,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 		break;
 
 	case nod_rse:
-		expand_error(106, SafeArg());	// msg 106: bugcheck
+		expand_error(106, 0, 0, 0, 0, 0);	// msg 106: bugcheck
 		return node;
 
 	case nod_field:
@@ -768,7 +769,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 		context->ctx_context_id = ++context_id;
 		name = context->ctx_relation->rel_name;
 		if (!HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation))
-			expand_error(107, SafeArg() << name->sym_string);
+			expand_error(107, name->sym_string, 0, 0, 0, 0);
 			// msg 107: relation %s is not defined */
 		LLS_PUSH((DUDLEY_NOD) context, &left);
 		sub = PARSE_make_node(nod_context, 1);
@@ -780,14 +781,14 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 	case nod_erase:
 		symbol = (SYM) node->nod_arg[0];
 		if (!(node->nod_arg[0] = (DUDLEY_NOD) lookup_context(symbol, right)))
-			expand_error(108, SafeArg() << symbol->sym_string);
+			expand_error(108, symbol->sym_string, 0, 0, 0, 0);
 			// msg 108: context %s is not defined
 		return node;
 
 	case nod_modify:
 		symbol = (SYM) node->nod_arg[s_mod_old_ctx];
 		if (!(old_context = lookup_context(symbol, right)))
-			expand_error(108, SafeArg() << symbol->sym_string);
+			expand_error(108, symbol->sym_string, 0, 0, 0, 0);
 			// msg 108: context %s is not defined
 		node->nod_arg[s_mod_old_ctx] = (DUDLEY_NOD) old_context;
 		context = (DUDLEY_CTX) DDL_alloc(sizeof(dudley_ctx));
@@ -870,7 +871,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 	}
 
 	p[-1] = 0;
-	expand_error(109, SafeArg() << name_string);
+	expand_error(109, name_string, 0, 0, 0, 0);
 	// msg 109:  Can't resolve field \"%s\"
 
 	return node;
@@ -886,7 +887,7 @@ static void resolve_rse( DUDLEY_NOD rse, dudley_lls** stack)
  **************************************
  *
  * Functional description
- *	Resolve record selection expression, augmenting
+ *	Resolve record selection expression, augmenting 
  *	context stack.  At the same time, put a context
  *	node in front of every context and build a list
  *	out of the whole thing;
@@ -914,7 +915,7 @@ static void resolve_rse( DUDLEY_NOD rse, dudley_lls** stack)
 										SYM_relation);
 		if (!symbol || !symbol->sym_object)
 		{
-			expand_error(110, SafeArg() << name->sym_string);
+			expand_error(110, name->sym_string, 0, 0, 0, 0);
 			// msg 110: relation %s is not defined
 		}
 		else

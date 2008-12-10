@@ -1,26 +1,26 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	ADA preprocesser
 //		MODULE:		ada.cpp
 //		DESCRIPTION:	Inserted text generator for ADA
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//
+//  
 //
 //____________________________________________________________
 //
@@ -133,15 +133,15 @@ static bool first_flag = false;
 static const char* const COMMENT = "--- ";
 const int INDENT	= 3;
 
-static const char* const BYTE_DCL			= "firebird.isc_byte";
-static const char* const BYTE_VECTOR_DCL	= "firebird.isc_vector_byte";
-static const char* const SHORT_DCL		= "firebird.isc_short";
-static const char* const USHORT_DCL		= "firebird.isc_ushort";
-static const char* const LONG_DCL			= "firebird.isc_long";
-static const char* const LONG_VECTOR_DCL	= "firebird.isc_vector_long";
-static const char* const EVENT_LIST_DCL	= "firebird.event_list";
-static const char* const REAL_DCL			= "firebird.isc_float";
-static const char* const DOUBLE_DCL		= "firebird.isc_double";
+static const char* const BYTE_DCL			= "interbase.isc_byte";
+static const char* const BYTE_VECTOR_DCL	= "interbase.isc_vector_byte";
+static const char* const SHORT_DCL		= "interbase.isc_short";
+static const char* const USHORT_DCL		= "interbase.isc_ushort";
+static const char* const LONG_DCL			= "interbase.isc_long";
+static const char* const LONG_VECTOR_DCL	= "interbase.isc_vector_long";
+static const char* const EVENT_LIST_DCL	= "interbase.event_list";
+static const char* const REAL_DCL			= "interbase.isc_float";
+static const char* const DOUBLE_DCL		= "interbase.isc_double";
 
 static inline void endif(const int column)
 {
@@ -161,14 +161,14 @@ static inline void endp(const int column)
 static inline void set_sqlcode(const act* action, const int column)
 {
 	if (action->act_flags & ACT_sql)
-		printa(column, "SQLCODE := firebird.sqlcode(isc_status);");
+		printa(column, "SQLCODE := interbase.sqlcode(isc_status);");
 }
 
 //____________________________________________________________
-//
+//  
 //		Code generator for ADA.  Not to be confused with
-//
-//
+//  
+//  
 
 void ADA_action( const act* action, int column)
 {
@@ -371,9 +371,6 @@ void ADA_action( const act* action, int column)
 	case ACT_rollback:
 		gen_trans(action, column);
 		break;
-	case ACT_rollback_retain_context:
-		gen_trans(action, column);
-		break;
 	case ACT_routine:
 		gen_routine(action, column);
 		return;
@@ -420,7 +417,7 @@ void ADA_action( const act* action, int column)
 		return;
 	}
 
-//  Put in a trailing brace for those actions still with us
+//  Put in a trailing brace for those actions still with us 
 
 	if (action->act_flags & ACT_sql)
 		gen_whenever(action->act_whenever, column);
@@ -428,10 +425,10 @@ void ADA_action( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Print a statment, breaking it into
 //       reasonable 120 character hunks.
-//
+//  
 
 void ADA_print_buffer( TEXT* output_bufferL, const int column)
 {
@@ -474,9 +471,9 @@ void ADA_print_buffer( TEXT* output_bufferL, const int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Align output to a specific column for output.
-//
+//  
 
 static void align( int column)
 {
@@ -495,10 +492,10 @@ static void align( int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment from a host language variable to
 //		a port variable.
-//
+//  
 
 static void asgn_from( const act* action, REF reference, int column)
 {
@@ -508,7 +505,7 @@ static void asgn_from( const act* action, REF reference, int column)
 		const gpre_fld* field = reference->ref_field;
 		if (field->fld_array_info)
 			if (!(reference->ref_flags & REF_array_elem)) {
-				printa(column, "%s := firebird.null_blob;",
+				printa(column, "%s := interbase.null_blob;",
 					   gen_name(name, reference, true));
 				gen_get_or_put_slice(action, reference, false, column);
 				continue;
@@ -536,10 +533,10 @@ static void asgn_from( const act* action, REF reference, int column)
 }
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment to a host language variable from
 //		a port variable.
-//
+//  
 
 static void asgn_to( const act* action, REF reference, int column)
 {
@@ -551,20 +548,20 @@ static void asgn_to( const act* action, REF reference, int column)
 		gen_get_or_put_slice(action, source, true, column);
 		return;
 	}
-//
+//  
 //if (field && (field->fld_flags & FLD_text))
-//   printa (column, "firebird.isc_ftof (%s, %d, %s, sizeof (%s));",
+//   printa (column, "interbase.isc_ftof (%s, %d, %s, sizeof (%s));", 
 // gen_name (s, source, true),
 // field->fld_length,
 // reference->ref_value,
 // reference->ref_value);
 //else
-//
+//  
 	TEXT s[MAX_REF_SIZE];
 	printa(column, "%s := %s;", reference->ref_value,
 		   gen_name(s, source, true));
 
-//  Pick up NULL value if one is there
+//  Pick up NULL value if one is there 
 	if (reference = reference->ref_null)
 		printa(column, "%s := %s;", reference->ref_value,
 			   gen_name(s, reference, true));
@@ -572,10 +569,10 @@ static void asgn_to( const act* action, REF reference, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Build an assignment to a host language variable from
 //		a port variable.
-//
+//  
 
 static void asgn_to_proc( REF reference, int column)
 {
@@ -591,10 +588,10 @@ static void asgn_to_proc( REF reference, int column)
 
 
 //____________________________________________________________
-//
+//  
 //       Generate a function call for free standing ANY.  Somebody else
 //       will need to generate the actual function.
-//
+//  
 
 static void gen_any( const act* action, int column)
 {
@@ -618,9 +615,9 @@ static void gen_any( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //       Generate code for AT END clause of FETCH.
-//
+//  
 
 static void gen_at_end( const act* action, int column)
 {
@@ -632,9 +629,9 @@ static void gen_at_end( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a BASED ON <field name> clause.
-//
+//  
 
 static void gen_based( const act* action, int column)
 {
@@ -651,10 +648,10 @@ static void gen_based( const act* action, int column)
 		sprintf(s, "array (");
 		for (q = s; *q; q++);
 
-		//  Print out the dimension part of the declaration
+		//  Print out the dimension part of the declaration  
 		const dim* dimension = field->fld_array_info->ary_dimension;
 		for (SSHORT i = 1; i < field->fld_array_info->ary_dimension_count;
-			 dimension = dimension->dim_next, i++)
+			 dimension = dimension->dim_next, i++) 
 		{
 			sprintf(s2, "%s range %"SLONGFORMAT"..%"SLONGFORMAT
 					",\n                            ",
@@ -685,7 +682,7 @@ static void gen_based( const act* action, int column)
 	case dtype_date:
 	case dtype_blob:
 	case dtype_quad:
-		sprintf(s2, "firebird.quad");
+		sprintf(s2, "interbase.quad");
 		break;
 
 	case dtype_text:
@@ -698,7 +695,7 @@ static void gen_based( const act* action, int column)
 				sprintf(s2, "%s (1..%d)", BYTE_VECTOR_DCL, length);
 		}
 		else if (length == 1)
-			sprintf(s2, "firebird.isc_character");
+			sprintf(s2, "interbase.isc_character");
 		else
 			sprintf(s2, "string (1..%d)", length);
 		break;
@@ -715,7 +712,7 @@ static void gen_based( const act* action, int column)
 		sprintf(s2, "datatype %d unknown\n", field->fld_dtype);
 		return ;
 	}
-
+	
 	for (p = s2; *p; p++, q++)
 		*q = *p;
 	if (!strcmp(based_on->bas_terminator, ";"))
@@ -726,9 +723,9 @@ static void gen_based( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Make a blob FOR loop.
-//
+//  
 
 static void gen_blob_close( const act* action, USHORT column)
 {
@@ -743,7 +740,7 @@ static void gen_blob_close( const act* action, USHORT column)
 
 	const TEXT* command = (action->act_type == ACT_blob_cancel) ?
 		"CANCEL" : "CLOSE";
-	printa(column, "firebird.%s_BLOB (%s isc_%d);",
+	printa(column, "interbase.%s_BLOB (%s isc_%d);",
 		   command, status_vector(action), blob->blb_ident);
 
 	if (action->act_flags & ACT_sql) {
@@ -756,9 +753,9 @@ static void gen_blob_close( const act* action, USHORT column)
 
 
 //____________________________________________________________
-//
+//  
 //		End a blob FOR loop.
-//
+//  
 
 static void gen_blob_end( const act* action, USHORT column)
 {
@@ -766,18 +763,18 @@ static void gen_blob_end( const act* action, USHORT column)
 	printa(column, "end loop;");
 
 	if (action->act_error)
-		printa(column, "firebird.CLOSE_BLOB (isc_status2, isc_%d);",
+		printa(column, "interbase.CLOSE_BLOB (isc_status2, isc_%d);",
 			   blob->blb_ident);
 	else
-		printa(column, "firebird.CLOSE_BLOB (%s isc_%d);",
+		printa(column, "interbase.CLOSE_BLOB (%s isc_%d);",
 			   status_vector(0), blob->blb_ident);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Make a blob FOR loop.
-//
+//  
 
 static void gen_blob_for( const act* action, USHORT column)
 {
@@ -788,7 +785,7 @@ static void gen_blob_for( const act* action, USHORT column)
 	printa(column, "loop");
 	gen_get_segment(action, column + INDENT);
 	printa(column + INDENT,
-		   "exit when (isc_status(1) /= 0 and isc_status(1) /= firebird.isc_segment);");
+		   "exit when (isc_status(1) /= 0 and isc_status(1) /= interbase.isc_segment);");
 }
 
 
@@ -797,19 +794,19 @@ static void gen_blob_for( const act* action, USHORT column)
 //  for unknown reasons it contains a core dump.  The V3.3 version of
 //  this function appears to work fine, so we are using it instead.
 //  Ravi Kumar
-//
+//  
 //____________________________________________________________
-//
+//  
 //		Generate the call to open (or create) a blob.
-//
+//  
 
 static gen_blob_open( const act* action, USHORT column)
 {
 	TEXT s[MAX_REF_SIZE];
 	const TEXT* pattern1 =
-		"firebird.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, %N1, %I1);";
+		"interbase.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, %N1, %I1);";
 	const TEXT* pattern2 =
-		"firebird.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, 0, isc_null_bpb);";
+		"interbase.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, 0, isc_null_bpb);";
 
 	REF reference = 0;
 	blb* blob;
@@ -858,18 +855,18 @@ static gen_blob_open( const act* action, USHORT column)
 //  has a core drop.
 //  Ravi Kumar
 // CVC: no surprise, since "reference" was left uninitialized in one execution path!
-//
+//  
 //____________________________________________________________
-//
+//  
 //       Generate the call to open (or create) a blob.
-//
+//  
 
 static void gen_blob_open( const act* action, USHORT column)
 {
 	const TEXT* pattern1 =
-		"firebird.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, %N1, %I1);";
+		"interbase.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, %N1, %I1);";
 	const TEXT* pattern2 =
-		"firebird.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, 0, isc_null_bpb);";
+		"interbase.%IFCREATE%ELOPEN%EN_BLOB2 (%V1 %RF%DH, %RF%RT, %RF%BH, %RF%FR, 0, isc_null_bpb);";
 
 	blb* blob = (blb*) action->act_object;
 	PAT args;
@@ -890,9 +887,9 @@ static void gen_blob_open( const act* action, USHORT column)
 
 
 //____________________________________________________________
-//
+//  
 //		Callback routine for BLR pretty printer.
-//
+//  
 
 static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
@@ -917,9 +914,9 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 
 
 //____________________________________________________________
-//
+//  
 //       Zap all know handles.
-//
+//  
 
 static void gen_clear_handles( const act* action, int column)
 {
@@ -932,9 +929,9 @@ static void gen_clear_handles( const act* action, int column)
 
 #ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
-//
+//  
 //       Generate a symbol to ease compatibility with V3.
-//
+//  
 
 static void gen_compatibility_symbol(
 									 const TEXT* symbol,
@@ -949,9 +946,9 @@ static void gen_compatibility_symbol(
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile a request.
-//
+//  
 
 static void gen_compile( const act* action, int column)
 {
@@ -971,7 +968,7 @@ static void gen_compile( const act* action, int column)
 
 	column += INDENT;
 #ifdef NOT_USED_OR_REPLACED
-	printa(column, "firebird.COMPILE_REQUEST%s (%s %s%s, %s%s, %d, isc_%d);",
+	printa(column, "interbase.COMPILE_REQUEST%s (%s %s%s, %s%s, %d, isc_%d);",
 		   (request->req_flags & REQ_exp_hand) ? "" : "2",
 		   status_vector(action),
 		   gpreGlob.ada_package, symbol->sym_string,
@@ -979,7 +976,7 @@ static void gen_compile( const act* action, int column)
 		   (request->req_flags & REQ_exp_hand) ? "" : "'address",
 		   request->req_length, request->req_ident);
 #endif
-	printa(column, "firebird.COMPILE_REQUEST%s (%s %s%s, %s%s, %d, isc_%d);",
+	printa(column, "interbase.COMPILE_REQUEST%s (%s %s%s, %s%s, %d, isc_%d);",
 		   (request->req_flags & REQ_exp_hand) ? "" : "2",
 		   status_vector(action),
 		   gpreGlob.ada_package, symbol->sym_string,
@@ -999,9 +996,9 @@ static void gen_compile( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to create a database.
-//
+//  
 
 static void gen_create_database( const act* action, int column)
 {
@@ -1019,11 +1016,11 @@ static void gen_create_database( const act* action, int column)
 				   request->req_ident);
 		if (db->dbb_r_user)
 			printa(column,
-				   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_user_name, %s, %d);\n",
+				   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_user_name, %s, %d);\n",
 				   s2, s1, db->dbb_r_user, (strlen(db->dbb_r_user) - 2));
 		if (db->dbb_r_password)
 			printa(column,
-				   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_password, %s, %d);\n",
+				   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_password, %s, %d);\n",
 				   s2, s1, db->dbb_r_password,
 				   (strlen(db->dbb_r_password) - 2));
 		/*
@@ -1035,18 +1032,18 @@ static void gen_create_database( const act* action, int column)
 		 */
 		if (db->dbb_r_sql_role)
 			printa(column,
-				   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_sql_role_name, %s, %d);\n",
+				   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_sql_role_name, %s, %d);\n",
 				   s2, s1, db->dbb_r_sql_role,
 				   (strlen(db->dbb_r_sql_role) - 2));
 
 		if (db->dbb_r_lc_messages)
 			printa(column,
-				   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_lc_messages, %s, %d);\n",
+				   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_lc_messages, %s, %d);\n",
 				   s2, s1, db->dbb_r_lc_messages,
 				   (strlen(db->dbb_r_lc_messages) - 2));
 		if (db->dbb_r_lc_ctype)
 			printa(column,
-				   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_lc_ctype, %s, %d);\n",
+				   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_lc_ctype, %s, %d);\n",
 				   s2, s1, db->dbb_r_lc_ctype,
 				   (strlen(db->dbb_r_lc_ctype) - 2));
 
@@ -1056,14 +1053,14 @@ static void gen_create_database( const act* action, int column)
 
 	if (request->req_length)
 		printa(column,
-			   "firebird.CREATE_DATABASE (%s %d, \"%s\", %s%s, %s, %s, 0);",
+			   "interbase.CREATE_DATABASE (%s %d, \"%s\", %s%s, %s, %s, 0);",
 			   status_vector(action),
 			   strlen(db->dbb_filename),
 			   db->dbb_filename,
 			   gpreGlob.ada_package, db->dbb_name->sym_string, s1, s2);
 	else
 		printa(column,
-			   "firebird.CREATE_DATABASE (%s %d, \"%s\", %s%s, 0, firebird.null_dpb, 0);",
+			   "interbase.CREATE_DATABASE (%s %d, \"%s\", %s%s, 0, interbase.null_dpb, 0);",
 			   status_vector(action),
 			   strlen(db->dbb_filename),
 			   db->dbb_filename, gpreGlob.ada_package, db->dbb_name->sym_string);
@@ -1072,9 +1069,9 @@ static void gen_create_database( const act* action, int column)
 		if (request->req_length)
 			printa(column, "if (%s != isc_%d)", s2, request->req_ident);
 		printa(column + (request->req_length ? 4 : 0),
-			   "firebird.FREE (%s);", s2);
+			   "interbase.FREE (%s);", s2);
 
-		// reset the length of the dpb
+		// reset the length of the dpb 
 		if (request->req_length)
 			printa(column, "%s = %d;", s1, request->req_length);
 	}
@@ -1095,9 +1092,9 @@ static void gen_create_database( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STREAM.
-//
+//  
 
 static int gen_cursor_close( const act* action, gpre_req* request, int column)
 {
@@ -1107,29 +1104,29 @@ static int gen_cursor_close( const act* action, gpre_req* request, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to initialize a cursor.
-//
+//  
 
 static void gen_cursor_init( const act* action, int column)
 {
 
 //  If blobs are present, zero out all of the blob handles.  After this
-//int, the handles are the user's responsibility
+//int, the handles are the user's responsibility 
 
 	if (action->act_request->
 		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
 	{
-		printa(column, "gds_%d := 0;",
+		printa(column, "gds_%d := 0;", 
 			action->act_request->req_blobs->blb_ident);
 	}
 }
 
 #ifdef NOT_USED_OR_REPLACED
 //____________________________________________________________
-//
+//  
 //		Generate text to open an embedded SQL cursor.
-//
+//  
 
 static int gen_cursor_open( const act* action, gpre_req* request, int column)
 {
@@ -1139,11 +1136,11 @@ static int gen_cursor_open( const act* action, gpre_req* request, int column)
 #endif
 
 //____________________________________________________________
-//
+//  
 //		Generate insertion text for the database statement,
 //		including the definitions of all gpreGlob.requests, and blob
 //		and port declarations for gpreGlob.requests in the main routine.
-//
+//  
 
 static void gen_database( const act* action, int column)
 {
@@ -1170,7 +1167,7 @@ static void gen_database( const act* action, int column)
 
 		for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next) {
 			printa(column,
-				   "isc_%d\t: firebird.blob_handle;\t-- blob handle --",
+				   "isc_%d\t: interbase.blob_handle;\t-- blob handle --",
 				   blob->blb_ident);
 			SSHORT blob_subtype = blob->blb_const_to_type;
 			if (!blob_subtype)
@@ -1197,7 +1194,7 @@ static void gen_database( const act* action, int column)
 		}
 	}
 
-//  generate event parameter block for each event in module
+//  generate event parameter block for each event in module 
 
 	USHORT max_count = 0;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
@@ -1213,7 +1210,7 @@ static void gen_database( const act* action, int column)
 	for (request = gpreGlob.requests; request; request = request->req_next) {
 		gen_request(request, column);
 
-		//  Array declarations
+		//  Array declarations  
 		const gpre_port* port = request->req_primary;
 		if (port)
 			for (REF reference = port->por_references; reference;
@@ -1234,21 +1231,21 @@ static void gen_database( const act* action, int column)
 	}
 
 	printa(column,
-		   "isc_null_bpb\t: firebird.blr (1..1);\t-- null blob parameter block --");
+		   "isc_null_bpb\t: interbase.blr (1..1);\t-- null blob parameter block --");
 
 	if (!gpreGlob.ada_package[0])
 		printa(column,
-			   "gds_trans\t: firebird.transaction_handle := 0;\t-- default transaction --");
+			   "gds_trans\t: interbase.transaction_handle := 0;\t-- default transaction --");
 	printa(column,
-		   "isc_status\t: firebird.status_vector;\t-- status vector --");
+		   "isc_status\t: interbase.status_vector;\t-- status vector --");
 	printa(column,
-		   "isc_status2\t: firebird.status_vector;\t-- status vector --");
+		   "isc_status2\t: interbase.status_vector;\t-- status vector --");
 	printa(column, "SQLCODE\t: %s := 0;\t\t\t-- SQL status code --",
 		   LONG_DCL);
 	if (!gpreGlob.ada_package[0]) {
 		for (const dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 			printa(column,
-				   "%s\t\t: firebird.database_handle%s;-- database handle --",
+				   "%s\t\t: interbase.database_handle%s;-- database handle --",
 				   db->dbb_name->sym_string,
 				   (db->dbb_scope == DBB_EXTERN) ? "" : " := 0");
 	}
@@ -1263,7 +1260,7 @@ static void gen_database( const act* action, int column)
 	}
 
 	printa(column,
-		   "isc_teb\t: array (1..%d) of firebird.isc_teb_t;\t-- transaction vector ",
+		   "isc_teb\t: array (1..%d) of interbase.isc_teb_t;\t-- transaction vector ",
 		   count);
 
 	printa(column, "----- end of GPRE definitions ");
@@ -1271,17 +1268,17 @@ static void gen_database( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to update metadata.
-//
+//  
 
 static void gen_ddl( const act* action, int column)
 {
-//  Set up command type for call to RDB$DDL
+//  Set up command type for call to RDB$DDL 
 
 	const gpre_req* request = action->act_request;
 
-//  Generate a call to RDB$DDL to perform action
+//  Generate a call to RDB$DDL to perform action 
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(action, 0, status_vector(action), column, true);
@@ -1289,7 +1286,7 @@ static void gen_ddl( const act* action, int column)
 		column += INDENT;
 	}
 
-	printa(column, "firebird.DDL (%s %s%s, %s%s, %d, isc_%d'address);",
+	printa(column, "interbase.DDL (%s %s%s, %s%s, %d, isc_%d'address);",
 		   status_vector(action),
 		   gpreGlob.ada_package, request->req_database->dbb_name->sym_string,
 		   gpreGlob.ada_package, request->req_trans,
@@ -1298,11 +1295,11 @@ static void gen_ddl( const act* action, int column)
 	if (gpreGlob.sw_auto) {
 		printa(column, "if %sisc_status(1) = 0 then", gpreGlob.ada_package);
 		printa(column + INDENT,
-			   "firebird.commit_TRANSACTION (%s %sgds_trans);",
+			   "interbase.commit_TRANSACTION (%s %sgds_trans);",
 			   status_vector(action), gpreGlob.ada_package);
 		printa(column, "else", gpreGlob.ada_package);
 		printa(column + INDENT,
-			   "firebird.rollback_TRANSACTION (%sgds_trans);", gpreGlob.ada_package);
+			   "interbase.rollback_TRANSACTION (%sgds_trans);", gpreGlob.ada_package);
 		endif(column);
 		column -= INDENT;
 		endif(column);
@@ -1313,9 +1310,9 @@ static void gen_ddl( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to create a database.
-//
+//  
 
 static void gen_drop_database( const act* action, int column)
 {
@@ -1323,7 +1320,7 @@ static void gen_drop_database( const act* action, int column)
 	gpre_req* request = action->act_request;
 
 	printa(column,
-		   "firebird.DROP_DATABASE (%s %d, \"%s\", RDBK_DB_TYPE_GDS);",
+		   "interbase.DROP_DATABASE (%s %d, \"%s\", RDBK_DB_TYPE_GDS);",
 		   status_vector(action), strlen(db->dbb_filename), db->dbb_filename);
 
 	set_sqlcode(action, column);
@@ -1331,9 +1328,9 @@ static void gen_drop_database( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_close( const act* action, int column)
 {
@@ -1341,16 +1338,16 @@ static void gen_dyn_close( const act* action, int column)
 
 	const dyn* statement = (DYN) action->act_object;
 	printa(column,
-		   "firebird.embed_dsql_close (%s %s);",
+		   "interbase.embed_dsql_close (%s %s);",
 		   status_vector(action), make_name(s, statement->dyn_cursor_name));
 	set_sqlcode(action, column);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_declare( const act* action, int column)
 {
@@ -1358,7 +1355,7 @@ static void gen_dyn_declare( const act* action, int column)
 
 	const dyn* statement = (DYN) action->act_object;
 	printa(column,
-		   "firebird.embed_dsql_declare (%s %s, %s);",
+		   "interbase.embed_dsql_declare (%s %s, %s);",
 		   status_vector(action),
 		   make_name(s1, statement->dyn_statement_name),
 		   make_name(s2, statement->dyn_cursor_name));
@@ -1367,9 +1364,9 @@ static void gen_dyn_declare( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_describe(const act* action,
 							 int column,
@@ -1379,7 +1376,7 @@ static void gen_dyn_describe(const act* action,
 
 	const dyn* statement = (DYN) action->act_object;
 	printa(column,
-		   "firebird.embed_dsql_describe%s (%s %s, %d, %s'address);",
+		   "interbase.embed_dsql_describe%s (%s %s, %d, %s'address);",
 		   input_flag ? "_bind" : "",
 		   status_vector(action),
 		   make_name(s, statement->dyn_statement_name),
@@ -1389,9 +1386,9 @@ static void gen_dyn_describe(const act* action,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_execute( const act* action, int column)
 {
@@ -1419,7 +1416,7 @@ static void gen_dyn_execute( const act* action, int column)
 	TEXT s[MAX_CURSOR_SIZE];
 	if (statement->dyn_sqlda2)
 		printa(column,
-			   "firebird.embed_dsql_execute2 (isc_status, %s%s, %s, %d, %s'address);",
+			   "interbase.embed_dsql_execute2 (isc_status, %s%s, %s, %d, %s'address);",
 			   gpreGlob.ada_package, transaction,
 			   make_name(s, statement->dyn_statement_name),
 			   gpreGlob.sw_sql_dialect,
@@ -1428,13 +1425,13 @@ static void gen_dyn_execute( const act* action, int column)
 			   statement->dyn_sqlda2);
 	else if (statement->dyn_sqlda)
 		printa(column,
-			   "firebird.embed_dsql_execute (isc_status, %s%s, %s, %d, %s'address);",
+			   "interbase.embed_dsql_execute (isc_status, %s%s, %s, %d, %s'address);",
 			   gpreGlob.ada_package, transaction,
 			   make_name(s, statement->dyn_statement_name),
 			   gpreGlob.sw_sql_dialect, statement->dyn_sqlda);
 	else
 		printa(column,
-			   "firebird.embed_dsql_execute (isc_status, %s%s, %s, %d);",
+			   "interbase.embed_dsql_execute (isc_status, %s%s, %s, %d);",
 			   gpreGlob.ada_package, transaction,
 			   make_name(s, statement->dyn_statement_name),
 			   gpreGlob.sw_sql_dialect);
@@ -1449,9 +1446,9 @@ static void gen_dyn_execute( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_fetch( const act* action, int column)
 {
@@ -1460,24 +1457,24 @@ static void gen_dyn_fetch( const act* action, int column)
 	const dyn* statement = (DYN) action->act_object;
 	if (statement->dyn_sqlda)
 		printa(column,
-			   "firebird.embed_dsql_fetch (isc_status, SQLCODE, %s, %d, %s'address);",
+			   "interbase.embed_dsql_fetch (isc_status, SQLCODE, %s, %d, %s'address);",
 			   make_name(s, statement->dyn_cursor_name),
 			   gpreGlob.sw_sql_dialect, statement->dyn_sqlda);
 	else
 		printa(column,
-			   "firebird.embed_dsql_fetch (isc_status, SQLCODE, %s, %d);",
+			   "interbase.embed_dsql_fetch (isc_status, SQLCODE, %s, %d);",
 			   make_name(s, statement->dyn_cursor_name), gpreGlob.sw_sql_dialect);
 
 	printa(column, "if SQLCODE /= 100 then");
-	printa(column + INDENT, "SQLCODE := firebird.sqlcode (isc_status);");
+	printa(column + INDENT, "SQLCODE := interbase.sqlcode (isc_status);");
 	endif(column);
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code for an EXECUTE IMMEDIATE dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_immediate( const act* action, int column)
 {
@@ -1505,7 +1502,7 @@ static void gen_dyn_immediate( const act* action, int column)
 	}
 
 	printa(column,
-		   "firebird.embed_dsql_execute_immed (isc_status, %s%s, %s%s, %s'length(1), %s, %d);",
+		   "interbase.embed_dsql_execute_immed (isc_status, %s%s, %s%s, %s'length(1), %s, %d);",
 		   gpreGlob.ada_package, database->dbb_name->sym_string,
 		   gpreGlob.ada_package, transaction,
 		   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect);
@@ -1520,9 +1517,9 @@ static void gen_dyn_immediate( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_insert( const act* action, int column)
 {
@@ -1531,12 +1528,12 @@ static void gen_dyn_insert( const act* action, int column)
 	const dyn* statement = (DYN) action->act_object;
 	if (statement->dyn_sqlda)
 		printa(column,
-			   "firebird.embed_dsql_insert (isc_status, %s, %d, %s'address);",
+			   "interbase.embed_dsql_insert (isc_status, %s, %d, %s'address);",
 			   make_name(s, statement->dyn_cursor_name),
 			   gpreGlob.sw_sql_dialect, statement->dyn_sqlda);
 	else
 		printa(column,
-			   "firebird.embed_dsql_insert (isc_status, %s, %d);",
+			   "interbase.embed_dsql_insert (isc_status, %s, %d);",
 			   make_name(s, statement->dyn_cursor_name), gpreGlob.sw_sql_dialect);
 
 	set_sqlcode(action, column);
@@ -1544,9 +1541,9 @@ static void gen_dyn_insert( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_open( const act* action, int column)
 {
@@ -1576,12 +1573,12 @@ static void gen_dyn_open( const act* action, int column)
 
 	if (statement->dyn_sqlda)
 		printa(column,
-			   "firebird.embed_dsql_open (isc_status, %s%s, %s, %d, %s'address);",
+			   "interbase.embed_dsql_open (isc_status, %s%s, %s, %d, %s'address);",
 			   gpreGlob.ada_package, transaction,
 			   s, gpreGlob.sw_sql_dialect, statement->dyn_sqlda);
 	else
 		printa(column,
-			   "firebird.embed_dsql_open (isc_status, %s%s, %s, %d);",
+			   "interbase.embed_dsql_open (isc_status, %s%s, %s, %d);",
 			   gpreGlob.ada_package, transaction, s, gpreGlob.sw_sql_dialect);
 
 	if (gpreGlob.sw_auto) {
@@ -1594,9 +1591,9 @@ static void gen_dyn_open( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a dynamic SQL statement.
-//
+//  
 
 static void gen_dyn_prepare( const act* action, int column)
 {
@@ -1626,14 +1623,14 @@ static void gen_dyn_prepare( const act* action, int column)
 	TEXT s[MAX_CURSOR_SIZE];
 	if (statement->dyn_sqlda)
 		printa(column,
-			   "firebird.embed_dsql_prepare (isc_status, %s%s, %s%s, %s, %s'length(1), %s, %d, %s'address);",
+			   "interbase.embed_dsql_prepare (isc_status, %s%s, %s%s, %s, %s'length(1), %s, %d, %s'address);",
 			   gpreGlob.ada_package, database->dbb_name->sym_string, gpreGlob.ada_package,
 			   transaction, make_name(s, statement->dyn_statement_name),
 			   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect,
 			   statement->dyn_sqlda);
 	else
 		printa(column,
-			   "firebird.embed_dsql_prepare (isc_status, %s%s, %s%s, %s, %s'length(1), %s, %d);",
+			   "interbase.embed_dsql_prepare (isc_status, %s%s, %s%s, %s, %s'length(1), %s, %d);",
 			   gpreGlob.ada_package, database->dbb_name->sym_string, gpreGlob.ada_package,
 			   transaction, make_name(s, statement->dyn_statement_name),
 			   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect);
@@ -1648,9 +1645,9 @@ static void gen_dyn_prepare( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_MODIFY.
-//
+//  
 
 static void gen_emodify( const act* action, int column)
 {
@@ -1659,7 +1656,7 @@ static void gen_emodify( const act* action, int column)
 	upd* modify = (upd*) action->act_object;
 
 	for (REF reference = modify->upd_port->por_references; reference;
-		 reference = reference->ref_next)
+		 reference = reference->ref_next) 
 	{
 		REF source = reference->ref_source;
 		if (!source)
@@ -1676,16 +1673,16 @@ static void gen_emodify( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STORE.
-//
+//  
 
 static void gen_estore( const act* action, int column)
 {
 	gpre_req* request = action->act_request;
 
 //  if we did a store ... returning_values aka store2
-//  just wrap up any dangling error handling
+//  just wrap up any dangling error handling 
 	if (request->req_type == REQ_store2) {
 		if (action->act_error)
 			endif(column);
@@ -1699,9 +1696,9 @@ static void gen_estore( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_endfor( const act* action, int column)
 {
@@ -1718,9 +1715,9 @@ static void gen_endfor( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for ERASE.
-//
+//  
 
 static void gen_erase( const act* action, int column)
 {
@@ -1730,12 +1727,12 @@ static void gen_erase( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate event parameter blocks for use
 //		with a particular call to isc_event_wait.
 //		For languages too dim to deal with variable
 //		arg lists, set up a vector for the event names.
-//
+//  
 
 static SSHORT gen_event_block( const act* action)
 {
@@ -1756,7 +1753,7 @@ static SSHORT gen_event_block( const act* action)
 	printa(0, "isc_%dl\t\t: %s;\t\t-- length of event parameter block --\n",
 		   ident, USHORT_DCL);
 	printa(0,
-		   "isc_%dv\t\t: firebird.isc_el_t (1..%d);\t\t-- vector for initialization --\n",
+		   "isc_%dv\t\t: interbase.isc_el_t (1..%d);\t\t-- vector for initialization --\n",
 		   ident, list->nod_count);
 
 	return list->nod_count;
@@ -1764,18 +1761,18 @@ static SSHORT gen_event_block( const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for EVENT_INIT.
-//
+//  
 
 static void gen_event_init( const act* action, int column)
 {
 	const TEXT* pattern1 =
-		"isc_%N1l := firebird.event_block (%RFisc_%N1a'address, %RFisc_%N1b'address, isc_%N1c, %RFisc_%N1v);";
+		"isc_%N1l := interbase.event_block (%RFisc_%N1a'address, %RFisc_%N1b'address, isc_%N1c, %RFisc_%N1v);";
 	const TEXT *pattern2 =
-		"firebird.event_wait (%V1 %RF%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"interbase.event_wait (%V1 %RF%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
 	const TEXT* pattern3 =
-		"firebird.event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"interbase.event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
 
 	if (action->act_error)
 		begin(column);
@@ -1789,7 +1786,7 @@ static void gen_event_init( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 
-//  generate call to dynamically generate event blocks
+//  generate call to dynamically generate event blocks 
 
 	TEXT variable[MAX_REF_SIZE];
 	USHORT count = 0;
@@ -1813,11 +1810,11 @@ static void gen_event_init( const act* action, int column)
 		   (int) event_list->nod_count);
 	PATTERN_expand(column, pattern1, &args);
 
-//  generate actual call to event_wait
+//  generate actual call to event_wait 
 
 	PATTERN_expand(column, pattern2, &args);
 
-//  get change in event counts, copying event parameter block for reuse
+//  get change in event counts, copying event parameter block for reuse 
 
 	PATTERN_expand(column, pattern3, &args);
 
@@ -1827,16 +1824,16 @@ static void gen_event_init( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for EVENT_WAIT.
-//
+//  
 
 static void gen_event_wait( const act* action, int column)
 {
 	const TEXT* pattern1 =
-		"firebird.event_wait (%V1 %RF%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"interbase.event_wait (%V1 %RF%DH, isc_%N1l, isc_%N1a, isc_%N1b);";
 	const TEXT* pattern2 =
-		"firebird.event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
+		"interbase.event_counts (isc_events, isc_%N1l, isc_%N1a, isc_%N1b);";
 
 	if (action->act_error)
 		begin(column);
@@ -1845,7 +1842,7 @@ static void gen_event_wait( const act* action, int column)
 	gpre_sym* event_name = (gpre_sym*) action->act_object;
 
 //  go through the stack of gpreGlob.events, checking to see if the
-//  event has been initialized and getting the event identifier
+//  event has been initialized and getting the event identifier 
 
 	int ident = -1;
 	DBB database;
@@ -1872,7 +1869,7 @@ static void gen_event_wait( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = ident;
 
-//  generate calls to wait on the event and to fill out the gpreGlob.events array
+//  generate calls to wait on the event and to fill out the gpreGlob.events array 
 
 	PATTERN_expand(column, pattern1, &args);
 	PATTERN_expand(column, pattern2, &args);
@@ -1884,11 +1881,11 @@ static void gen_event_wait( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate replacement text for the SQL FETCH statement.  The
 //		epilog FETCH statement is handled by GEN_S_FETCH (generate
 //		stream fetch).
-//
+//  
 
 static void gen_fetch( const act* action, int column)
 {
@@ -1897,36 +1894,36 @@ static void gen_fetch( const act* action, int column)
 #ifdef SCROLLABLE_CURSORS
 	gpre_port* port = request->req_aport;
 	if (port) {
-		/* set up the reference to point to the correct value
-		   in the linked list of values, and prepare for the
+		/* set up the reference to point to the correct value 
+		   in the linked list of values, and prepare for the 
 		   next FETCH statement if applicable */
 
 		REF reference;
 		for (reference = port->por_references; reference;
-			 reference = reference->ref_next)
+			 reference = reference->ref_next) 
 		{
 			VAL value = reference->ref_values;
 			reference->ref_value = value->val_value;
 			reference->ref_values = value->val_next;
 		}
 
-		// find the direction and offset parameters
+		// find the direction and offset parameters 
 
 		reference = port->por_references;
 		const TEXT* offset = reference->ref_value;
 		reference = reference->ref_next;
 		const TEXT* direction = reference->ref_value;
 
-		/* the direction in which the engine will scroll is sticky, so check to see
-		   the last direction passed to the engine; if the direction is the same and
-		   the offset is 1, then there is no need to pass the message; this prevents
+		/* the direction in which the engine will scroll is sticky, so check to see 
+		   the last direction passed to the engine; if the direction is the same and 
+		   the offset is 1, then there is no need to pass the message; this prevents 
 		   extra packets and allows for batch fetches in either direction */
 
 		printa(column, "if isc_%ddirection MOD 2 /= %s or %s /= 1 then",
 			   request->req_ident, direction, offset);
 		column += INDENT;
 
-		/* assign the direction and offset parameters to the appropriate message,
+		/* assign the direction and offset parameters to the appropriate message, 
 		   then send the message to the engine */
 
 		asgn_from(action, port->por_references, column);
@@ -1986,38 +1983,38 @@ static void gen_fetch( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FINISH.
-//
+//  
 
 static void gen_finish( const act* action, int column)
 {
 	DBB db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) &&
-					(action->act_type != ACT_disconnect)))
+					(action->act_type != ACT_disconnect))) 
 	{
 		printa(column, "if %sgds_trans /= 0 then", gpreGlob.ada_package);
-		printa(column + INDENT, "firebird.%s_TRANSACTION (%s %sgds_trans);",
+		printa(column + INDENT, "interbase.%s_TRANSACTION (%s %sgds_trans);",
 			   (action->act_type != ACT_rfinish) ? "COMMIT" : "ROLLBACK",
 			   status_vector(action), gpreGlob.ada_package);
 		endif(column);
 	}
 
-//  the user supplied one or more db_handles
+//  the user supplied one or more db_handles 
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
 		if (action->act_error || (action->act_flags & ACT_sql))
 			printa(column, "if %s%s /= 0 then", gpreGlob.ada_package,
 				   db->dbb_name->sym_string);
-		printa(column, "firebird.DETACH_DATABASE (%s %s%s);",
+		printa(column, "interbase.DETACH_DATABASE (%s %s%s);",
 			   status_vector(action), gpreGlob.ada_package, db->dbb_name->sym_string);
 		if (action->act_error || (action->act_flags & ACT_sql))
 			endif(column);
 	}
 
-//  no hanbdles, so we finish all known databases
+//  no hanbdles, so we finish all known databases 
 
 	if (!db) {
 		if (action->act_error || (action->act_flags & ACT_sql))
@@ -2035,7 +2032,7 @@ static void gen_finish( const act* action, int column)
 				printa(column, "if %s%s /= 0 then", gpreGlob.ada_package,
 					   db->dbb_name->sym_string);
 			column += INDENT;
-			printa(column, "firebird.DETACH_DATABASE (%s %s%s);",
+			printa(column, "interbase.DETACH_DATABASE (%s %s%s);",
 				   status_vector(action),
 				   gpreGlob.ada_package, db->dbb_name->sym_string);
 			for (gpre_req* request = gpreGlob.requests; request;
@@ -2061,9 +2058,9 @@ static void gen_finish( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FOR statement.
-//
+//  
 
 static void gen_for( const act* action, int column)
 {
@@ -2098,9 +2095,9 @@ static void gen_for( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //       Generate a function for free standing ANY or statistical.
-//
+//  
 
 static void gen_function( const act* function, int column)
 {
@@ -2130,7 +2127,7 @@ static void gen_function( const act* function, int column)
 
 	if (port) {
 		for (REF reference = port->por_references; reference;
-			 reference = reference->ref_next)
+			 reference = reference->ref_next) 
 		{
 			const gpre_fld* field = reference->ref_field;
 			const TEXT* dtype;
@@ -2199,10 +2196,10 @@ static void gen_function( const act* function, int column)
 }
 
 //____________________________________________________________
-//
+//  
 //		Generate a call to isc_get_slice
 //       or isc_put_slice for an array.
-//
+//  
 
 static void gen_get_or_put_slice(const act* action,
 								 REF reference,
@@ -2210,36 +2207,36 @@ static void gen_get_or_put_slice(const act* action,
 								 int column)
 {
 	const TEXT* pattern1 =
-		"firebird.GET_SLICE (%V1 %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5, %S6);";
+		"interbase.GET_SLICE (%V1 %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5, %S6);";
 	const TEXT* pattern2 =
-		"firebird.PUT_SLICE (%V1 %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5);";
+		"interbase.PUT_SLICE (%V1 %RF%DH%RE, %RF%S1%RE, %S2, %N1, %S3, %N2, %S4, %L1, %S5);";
 
 	if (!(reference->ref_flags & REF_fetch_array))
 		return;
 
 	PAT args;
-	args.pat_vector1 = status_vector(action);	// status vector
-	args.pat_database = action->act_request->req_database;	// database handle
-	args.pat_string1 = action->act_request->req_trans;	// transaction handle
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = action->act_request->req_database;	// database handle 
+	args.pat_string1 = action->act_request->req_trans;	// transaction handle 
 
 	TEXT s1[MAX_REF_SIZE];
 	gen_name(s1, reference, true);	// blob handle
 	args.pat_string2 = s1;
 
-	args.pat_value1 = reference->ref_sdl_length;	// slice descr. length
+	args.pat_value1 = reference->ref_sdl_length;	// slice descr. length 
 
 	TEXT s2[25];
-	sprintf(s2, "isc_%d", reference->ref_sdl_ident);	// slice description
+	sprintf(s2, "isc_%d", reference->ref_sdl_ident);	// slice description 
 	args.pat_string3 = s2;
 
-	args.pat_value2 = 0;		// parameter length
+	args.pat_value2 = 0;		// parameter length 
 
 	TEXT s3[25];
-	sprintf(s3, "isc_null_vector_l");	// parameter block init
+	sprintf(s3, "isc_null_vector_l");	// parameter block init 
 	args.pat_string4 = s3;
 
 	args.pat_long1 = reference->ref_field->fld_array_info->ary_size;
-	//  slice size
+	//  slice size 
 	TEXT s4[25];
 	if (action->act_flags & ACT_sql) {
 		sprintf(s4, "%s'address", reference->ref_value);
@@ -2249,9 +2246,9 @@ static void gen_get_or_put_slice(const act* action,
 				reference->ref_field->fld_array_info->ary_ident);
 
 	}
-	args.pat_string5 = s4;		// array name
+	args.pat_string5 = s4;		// array name 
 
-	args.pat_string6 = "isc_array_length";	// return length
+	args.pat_string6 = "isc_array_length";	// return length 
 
 	if (get)
 		PATTERN_expand(column, pattern1, &args);
@@ -2261,9 +2258,9 @@ static void gen_get_or_put_slice(const act* action,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the code to do a get segment.
-//
+//  
 
 static void gen_get_segment( const act* action, int column)
 {
@@ -2275,13 +2272,13 @@ static void gen_get_segment( const act* action, int column)
 
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(column,
-			   "firebird.ISC_GET_SEGMENT (isc_status, isc_%d, isc_%d, %d, isc_%d'address);",
+			   "interbase.ISC_GET_SEGMENT (isc_status, isc_%d, isc_%d, %d, isc_%d'address);",
 			   blob->blb_ident,
 			   blob->blb_len_ident,
 			   blob->blb_seg_length, blob->blb_buff_ident);
 	else
 		printa(column,
-			   "firebird.ISC_GET_SEGMENT (isc_status(1), isc_%d, isc_%d, %d, isc_%d'address);",
+			   "interbase.ISC_GET_SEGMENT (isc_status(1), isc_%d, isc_%d, %d, isc_%d'address);",
 			   blob->blb_ident,
 			   blob->blb_len_ident,
 			   blob->blb_seg_length, blob->blb_buff_ident);
@@ -2301,10 +2298,10 @@ static void gen_get_segment( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code to drive a mass update.  Just start a request
 //		and get the result.
-//
+//  
 
 static void gen_loop( const act* action, int column)
 {
@@ -2326,10 +2323,10 @@ static void gen_loop( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a name for a reference.  Name is constructed from
 //		port and parameter idents.
-//
+//  
 
 static TEXT* gen_name(TEXT* const string,
 					  const ref* reference,
@@ -2348,9 +2345,9 @@ static TEXT* gen_name(TEXT* const string,
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a block to handle errors.
-//
+//  
 
 static void gen_on_error( const act* action, USHORT column)
 {
@@ -2360,7 +2357,7 @@ static void gen_on_error( const act* action, USHORT column)
 		(err_action->act_type == ACT_endblob))
 	{
 			printa(column,
-				   "if (isc_status (1) /= 0) and (isc_status(1) /= firebird.isc_segment) and (isc_status(1) /= firebird.isc_segstr_eof) then");
+				   "if (isc_status (1) /= 0) and (isc_status(1) /= interbase.isc_segment) and (isc_status(1) /= interbase.isc_segstr_eof) then");
 	}
 	else
 		printa(column, "if (isc_status (1) /= 0) then");
@@ -2368,9 +2365,9 @@ static void gen_on_error( const act* action, USHORT column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code for an EXECUTE PROCEDURE.
-//
+//  
 
 static void gen_procedure( const act* action, int column)
 {
@@ -2391,22 +2388,22 @@ static void gen_procedure( const act* action, int column)
 	const TEXT* pattern;
 	if (in_port && in_port->por_length)
 		pattern =
-			"firebird.gds_transact_request (%V1 %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RF%RI%RE, %VF%PL%VE, %PI'address, %VF%QL%VE, %QI'address);\n";
+			"interbase.gds_transact_request (%V1 %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RF%RI%RE, %VF%PL%VE, %PI'address, %VF%QL%VE, %QI'address);\n";
 	else
 		pattern =
-			"firebird.gds_transact_request (%V1 %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RF%RI%RE, %VF0%VE, %S2, %VF%QL%VE, %QI'address);\n";
+			"interbase.gds_transact_request (%V1 %RF%DH%RE, %RF%RT%RE, %VF%RS%VE, %RF%RI%RE, %VF0%VE, %S2, %VF%QL%VE, %QI'address);\n";
 
 
-//  Get database attach and transaction started
+//  Get database attach and transaction started 
 
 	if (gpreGlob.sw_auto)
 		t_start_auto(action, 0, status_vector(action), column, true);
 
-//  Move in input values
+//  Move in input values 
 
 	asgn_from(action, request->req_values, column);
 
-//  Execute the procedure
+//  Execute the procedure 
 
 	PATTERN_expand(column, pattern, &args);
 
@@ -2414,7 +2411,7 @@ static void gen_procedure( const act* action, int column)
 
 	printa(column, "if SQLCODE = 0 then");
 
-//  Move out output values
+//  Move out output values 
 
 	asgn_to_proc(request->req_references, column);
 	endif(column);
@@ -2422,9 +2419,9 @@ static void gen_procedure( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the code to do a put segment.
-//
+//  
 
 static void gen_put_segment( const act* action, int column)
 {
@@ -2441,7 +2438,7 @@ static void gen_put_segment( const act* action, int column)
 		blob = (blb*) action->act_object;
 
 	printa(column,
-		   "firebird.ISC_PUT_SEGMENT (%s isc_%d, isc_%d, isc_%d'address);",
+		   "interbase.ISC_PUT_SEGMENT (%s isc_%d, isc_%d, isc_%d'address);",
 		   status_vector(action),
 		   blob->blb_ident, blob->blb_len_ident, blob->blb_buff_ident);
 
@@ -2450,9 +2447,9 @@ static void gen_put_segment( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate BLR in raw, numeric form.  Ugly but dense.
-//
+//  
 
 static void gen_raw(
 			   const UCHAR* blr,
@@ -2463,7 +2460,7 @@ static void gen_raw(
 	TEXT* p = buffer;
 	const TEXT* const limit = buffer + 60;
 
-	for (const UCHAR* const end = blr + request_length - 1; blr <= end; ++blr)
+	for (const UCHAR* const end = blr + request_length - 1; blr <= end; ++blr) 
 	{
 		const UCHAR c = *blr;
 		sprintf(p, "%d", c);
@@ -2484,9 +2481,9 @@ static void gen_raw(
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for READY
-//
+//  
 
 static void gen_ready( const act* action, int column)
 {
@@ -2514,14 +2511,14 @@ static void gen_ready( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate receive call for a port.
-//
+//  
 
 static void gen_receive( const act* action, int column, gpre_port* port)
 {
 	const gpre_req* request = action->act_request;
-	printa(column, "firebird.RECEIVE (%s %s, %d, %d, isc_%d'address, %s);",
+	printa(column, "interbase.RECEIVE (%s %s, %d, %d, isc_%d'address, %s);",
 		   status_vector(action),
 		   request->req_handle,
 		   port->por_msg_number,
@@ -2532,7 +2529,7 @@ static void gen_receive( const act* action, int column, gpre_port* port)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for RELEASE_REQUESTS
 //       For active databases, call isc_release_request.
 //       for all others, just zero the handle.  For the
@@ -2540,7 +2537,7 @@ static void gen_receive( const act* action, int column, gpre_port* port)
 //       are likely if the request was compiled on a database
 //       which has been released and re-readied.  If there is
 //       a serious error, it will be caught on the next statement.
-//
+//  
 
 static void gen_release( const act* action, int column)
 {
@@ -2554,7 +2551,7 @@ static void gen_release( const act* action, int column)
 			printa(column, "if %s%s /= 0 then", gpreGlob.ada_package,
 				   db->dbb_name->sym_string);
 			printa(column + INDENT,
-				   "firebird.release_request (isc_status, %s);",
+				   "interbase.release_request (isc_status, %s);",
 				   request->req_handle);
 			endif(column);
 			printa(column, "%s := 0;", request->req_handle);
@@ -2564,19 +2561,19 @@ static void gen_release( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate definitions associated with a single request.
-//
+//  
 
 static void gen_request( gpre_req* request, int column)
 {
-//  generate request handle, blob handles, and ports
+//  generate request handle, blob handles, and ports 
 
 	if (!(request->req_flags &
 		  (REQ_exp_hand  | REQ_sql_blob_open | REQ_sql_blob_create)) &&
-		request->req_type != REQ_slice && request->req_type != REQ_procedure)
+		request->req_type != REQ_slice && request->req_type != REQ_procedure) 
 	{
-		printa(column, "%s\t: firebird.request_handle := 0;-- request handle --",
+		printa(column, "%s\t: interbase.request_handle := 0;-- request handle --",
 			   request->req_handle);
 	}
 
@@ -2585,20 +2582,20 @@ static void gen_request( gpre_req* request, int column)
 			   request->req_ident, SHORT_DCL);
 
 //  check the case where we need to extend the dpb dynamically at runtime,
-//  in which case we need dpb length and a pointer to be defined even if
-//  there is no static dpb defined
+//  in which case we need dpb length and a pointer to be defined even if 
+//  there is no static dpb defined 
 
 	if (request->req_flags & REQ_extend_dpb) {
 		printa(column,
-			   "isc_%dp\t: firebird.dpb_ptr := 0;\t-- db parameter block --",
+			   "isc_%dp\t: interbase.dpb_ptr := 0;\t-- db parameter block --",
 			   request->req_ident);
 		if (!request->req_length)
 			printa(column,
-				   "isc_%dl\t: firebird.isc_ushort := 0;\t-- db parameter block --",
+				   "isc_%dl\t: interbase.isc_ushort := 0;\t-- db parameter block --",
 				   request->req_ident);
 	}
 
-//  generate actual BLR string
+//  generate actual BLR string 
 
 	if (request->req_length) {
 		const SSHORT length = request->req_length;
@@ -2606,15 +2603,15 @@ static void gen_request( gpre_req* request, int column)
 		case REQ_create_database:
 			if (gpreGlob.ada_flags & gpreGlob.ADA_create_database) {
 				printa(column,
-					   "function isc_to_dpb_ptr is new unchecked_conversion (system.address, firebird.dpb_ptr);");
+					   "function isc_to_dpb_ptr is new unchecked_conversion (system.address, interbase.dpb_ptr);");
 				gpreGlob.ada_flags &= ~gpreGlob.ADA_create_database;
 			}
-			// fall into ...
+			// fall into ... 
 		case REQ_ready:
 			printa(column,
-				   "isc_%dl\t: firebird.isc_ushort := %d;\t-- db parameter block --",
+				   "isc_%dl\t: interbase.isc_ushort := %d;\t-- db parameter block --",
 				   request->req_ident, length);
-			printa(column, "isc_%d\t: CONSTANT firebird.dpb (1..%d) := (",
+			printa(column, "isc_%d\t: CONSTANT interbase.dpb (1..%d) := (",
 				   request->req_ident, length);
 			break;
 
@@ -2625,10 +2622,10 @@ static void gen_request( gpre_req* request, int column)
 #ifdef SCROLLABLE_CURSORS
 			if (request->req_flags & REQ_scroll)
 				printa(column,
-					   "isc_%ddirection\t: firebird.isc_ushort := 0;\t-- last direction sent to engine --",
+					   "isc_%ddirection\t: interbase.isc_ushort := 0;\t-- last direction sent to engine --",
 					   request->req_ident);
 #endif
-			printa(column, "isc_%d\t: CONSTANT firebird.blr (1..%d) := (",
+			printa(column, "isc_%d\t: CONSTANT interbase.blr (1..%d) := (",
 				   request->req_ident, length);
 		}
 		gen_raw(request->req_blr, request->req_type, request->req_length,
@@ -2690,14 +2687,14 @@ static void gen_request( gpre_req* request, int column)
 			   string_type, request->req_ident, request->req_length);
 	}
 
-//   Print out slice description language if there are arrays associated with request
+//   Print out slice description language if there are arrays associated with request  
 	for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
 			if (reference->ref_sdl) {
 				printa(column,
-					   "isc_%d\t: CONSTANT firebird.blr (1..%d) := (",
+					   "isc_%d\t: CONSTANT interbase.blr (1..%d) := (",
 					   reference->ref_sdl_ident, reference->ref_sdl_length);
 				gen_raw(reference->ref_sdl, REQ_slice,
 						reference->ref_sdl_length, column);
@@ -2715,18 +2712,18 @@ static void gen_request( gpre_req* request, int column)
 			}
 		}
 
-//  Print out any blob parameter blocks required
+//  Print out any blob parameter blocks required 
 
 	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		if (blob->blb_bpb_length) {
-			printa(column, "isc_%d\t: CONSTANT firebird.blr (1..%d) := (",
+			printa(column, "isc_%d\t: CONSTANT interbase.blr (1..%d) := (",
 				   blob->blb_bpb_ident, blob->blb_bpb_length);
 			gen_raw(blob->blb_bpb, request->req_type, blob->blb_bpb_length,
 					column);
 			printa(INDENT, ");\n");
 		}
 
-//  If this is a GET_SLICE/PUT_slice, allocate some variables
+//  If this is a GET_SLICE/PUT_slice, allocate some variables 
 
 	if (request->req_type == REQ_slice) {
 		printa(INDENT, "isc_%ds\t: %s;\t\t", request->req_ident, LONG_DCL);
@@ -2737,10 +2734,10 @@ static void gen_request( gpre_req* request, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate receive call for a port
 //		in a store2 statement.
-//
+//  
 
 static void gen_return_value( const act* action, int column)
 {
@@ -2757,17 +2754,17 @@ static void gen_return_value( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Process routine head.  If there are gpreGlob.requests in the
 //		routine, insert local definitions.
-//
+//  
 
 static void gen_routine( const act* action, int column)
 {
 	column += INDENT;
 
 	for (gpre_req* request = (gpre_req*) action->act_object; request;
-		 request = request->req_routine)
+		 request = request->req_routine) 
 	{
 		gpre_port* port;
 		for (port = request->req_ports; port; port = port->por_next)
@@ -2778,10 +2775,10 @@ static void gen_routine( const act* action, int column)
 
 		for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next) {
 			printa(column,
-				   "isc_%d\t: firebird.blob_handle;\t-- blob handle --",
+				   "isc_%d\t: interbase.blob_handle;\t-- blob handle --",
 				   blob->blb_ident);
 			SSHORT blob_subtype = blob->blb_const_to_type;
-			if (!blob_subtype) {
+			if (!(blob_subtype)) {
 				const ref* reference = blob->blb_reference;
 				if (reference) {
 					const gpre_fld* field = reference->ref_field;
@@ -2806,9 +2803,9 @@ static void gen_routine( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for END_STREAM.
-//
+//  
 
 static void gen_s_end( const act* action, int column)
 {
@@ -2819,7 +2816,7 @@ static void gen_s_end( const act* action, int column)
 		column += INDENT;
 	}
 
-	printa(column, "firebird.UNWIND_REQUEST (%s %s, %s);",
+	printa(column, "interbase.UNWIND_REQUEST (%s %s, %s);",
 		   status_vector(action),
 		   request->req_handle, request->req_request_level);
 
@@ -2836,9 +2833,9 @@ static void gen_s_end( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for FETCH.
-//
+//  
 
 static void gen_s_fetch( const act* action, int column)
 {
@@ -2851,10 +2848,10 @@ static void gen_s_fetch( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text to compile and start a stream.  This is
 //		used both by START_STREAM and FOR
-//
+//  
 
 static void gen_s_start( const act* action, int column)
 {
@@ -2890,9 +2887,9 @@ static void gen_s_start( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a segment, segment length, or blob handle.
-//
+//  
 
 static void gen_segment( const act* action, int column)
 {
@@ -2906,9 +2903,9 @@ static void gen_segment( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code for standalone SELECT statement.
-//
+//  
 
 static void gen_select( const act* action, int column)
 {
@@ -2946,14 +2943,14 @@ static void gen_select( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a send or receive call for a port.
-//
+//  
 
 static void gen_send( const act* action, gpre_port* port, int column)
 {
 	const gpre_req* request = action->act_request;
-	printa(column, "firebird.SEND (%s %s, %d, %d, isc_%d'address, %s);",
+	printa(column, "interbase.SEND (%s %s, %d, %d, isc_%d'address, %s);",
 		   status_vector(action),
 		   request->req_handle,
 		   port->por_msg_number,
@@ -2964,24 +2961,24 @@ static void gen_send( const act* action, gpre_port* port, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate support for get/put slice statement.
-//
+//  
 
 static void gen_slice( const act* action, int column)
 {
 	const TEXT* pattern1 =
-		"firebird.GET_SLICE (%V1 %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
+		"interbase.GET_SLICE (%V1 %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
 %I1, %N2, %I1v, %I1s, %RF%S5'address%RE, %RF%S6%RE);";
 	const TEXT* pattern2 =
-		"firebird.PUT_SLICE (%V1 %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
+		"interbase.PUT_SLICE (%V1 %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
 %I1, %N2, %I1v, %I1s, %RF%S5'address%RE);";
 
 	gpre_req* request = action->act_request;
 	slc* slice = (slc*) action->act_object;
 	gpre_req* parent_request = slice->slc_parent_request;
 
-//  Compute array size
+//  Compute array size 
 
 	printa(column, "isc_%ds := %d", request->req_ident,
 		   slice->slc_field->fld_array->fld_length);
@@ -3003,27 +3000,27 @@ static void gen_slice( const act* action, int column)
 
 	fprintf(gpreGlob.out_file, ";");
 
-//  Make assignments to variable vector
+//  Make assignments to variable vector 
 
 	REF reference;
 	for (reference = request->req_values; reference;
 		 reference = reference->ref_next)
 	{
-		printa(column, "isc_%dv (%d) := %s;", request->req_ident,
+		printa(column, "isc_%dv (%d) := %s;", request->req_ident, 
 			reference->ref_id + 1, reference->ref_value);
 	}
 
 	PAT args;
 	args.pat_reference = slice->slc_field_ref;
-	args.pat_request = parent_request;	// blob id request
-	args.pat_vector1 = status_vector(action);	// status vector
-	args.pat_database = parent_request->req_database;	// database handle
-	args.pat_value1 = request->req_length;	// slice descr. length
-	args.pat_ident1 = request->req_ident;	// request name
-	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length
+	args.pat_request = parent_request;	// blob id request 
+	args.pat_vector1 = status_vector(action);	// status vector 
+	args.pat_database = parent_request->req_database;	// database handle 
+	args.pat_value1 = request->req_length;	// slice descr. length 
+	args.pat_ident1 = request->req_ident;	// request name 
+	args.pat_value2 = slice->slc_parameters * sizeof(SLONG);	// parameter length 
 
 	reference = (REF) slice->slc_array->nod_arg[0];
-	args.pat_string5 = reference->ref_value;	// array name
+	args.pat_string5 = reference->ref_value;	// array name 
 	args.pat_string6 = "isc_array_length";
 
 	PATTERN_expand(column,
@@ -3033,10 +3030,10 @@ static void gen_slice( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate either a START or START_AND_SEND depending
 //		on whether or a not a port is present.
-//
+//  
 
 static void gen_start( const act* action, gpre_port* port, int column)
 {
@@ -3053,14 +3050,14 @@ static void gen_start( const act* action, gpre_port* port, int column)
 		}
 
 		printa(column,
-			   "firebird.START_AND_SEND (%s %s, %s%s, %d, %d, isc_%d'address, %s);",
+			   "interbase.START_AND_SEND (%s %s, %s%s, %d, %d, isc_%d'address, %s);",
 			   vector, request->req_handle, gpreGlob.ada_package, request_trans(action,
 																	   request),
 			   port->por_msg_number, port->por_length, port->por_ident,
 			   request->req_request_level);
 	}
 	else
-		printa(column, "firebird.START_REQUEST (%s %s, %s%s, %s);",
+		printa(column, "interbase.START_REQUEST (%s %s, %s%s, %s);",
 			   vector,
 			   request->req_handle,
 			   gpreGlob.ada_package, request_trans(action, request),
@@ -3071,10 +3068,10 @@ static void gen_start( const act* action, gpre_port* port, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate text for STORE statement.  This includes the compile
 //		call and any variable initialization required.
-//
+//  
 
 static void gen_store( const act* action, int column)
 {
@@ -3083,30 +3080,30 @@ static void gen_store( const act* action, int column)
 	if (action->act_error || (action->act_flags & ACT_sql))
 		make_ok_test(action, request, column);
 
-//  Initialize any blob fields
+//  Initialize any blob fields 
 	TEXT name[MAX_REF_SIZE];
 	const gpre_port* port = request->req_primary;
 	for (const ref* reference = port->por_references; reference;
-		 reference = reference->ref_next)
+		 reference = reference->ref_next) 
 	{
 		const gpre_fld* field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
-			printa(column, "%s := firebird.null_blob;",
+			printa(column, "%s := interbase.null_blob;",
 				   gen_name(name, reference, true));
 	}
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for START_TRANSACTION.
-//
+//  
 
 static void gen_t_start( const act* action, int column)
 {
 //  for automatically generated transactions, and transactions that are
 //  explicitly started, but don't have any arguments so don't get a TPB,
-//  generate something plausible.
+//  generate something plausible. 
 
 	const gpre_tra* trans;
 	if (!action || !(trans = (gpre_tra*) action->act_object)) {
@@ -3116,7 +3113,7 @@ static void gen_t_start( const act* action, int column)
 
 //  build a complete statement, including tpb's.
 //  first generate any appropriate ready statements,
-//  and fill in the tpb vector (aka TEB).
+//  and fill in the tpb vector (aka TEB). 
 
 	int count = 0;
 	for (const tpb* tpb_iterator = trans->tra_tpb; tpb_iterator;
@@ -3143,7 +3140,7 @@ static void gen_t_start( const act* action, int column)
 			   count, gpreGlob.ada_package, db->dbb_name->sym_string);
 	}
 
-	printa(column, "firebird.start_multiple (%s %s%s, %d, isc_teb'address);",
+	printa(column, "interbase.start_multiple (%s %s%s, %d, isc_teb'address);",
 		   status_vector(action),
 		   gpreGlob.ada_package,
 		   (trans->tra_handle) ? (const char*) trans->tra_handle : "gds_trans",
@@ -3154,13 +3151,13 @@ static void gen_t_start( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a TPB in the output file
-//
+//  
 
 static void gen_tpb(const tpb* tpb_buffer, int column)
 {
-	printa(column, "isc_tpb_%d\t: CONSTANT firebird.tpb (1..%d) := (",
+	printa(column, "isc_tpb_%d\t: CONSTANT interbase.tpb (1..%d) := (",
 		   tpb_buffer->tpb_ident, tpb_buffer->tpb_length);
 
 	int length = tpb_buffer->tpb_length;
@@ -3180,7 +3177,7 @@ static void gen_tpb(const tpb* tpb_buffer, int column)
 		}
 	}
 
-//  handle the last character
+//  handle the last character 
 
 	const TEXT c = *text++;
 	sprintf(p, "%d", c);
@@ -3190,36 +3187,27 @@ static void gen_tpb(const tpb* tpb_buffer, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for COMMIT, ROLLBACK, PREPARE, and SAVE
-//
+//  
 
 static void gen_trans( const act* action, int column)
 {
 
-	if (action->act_type == ACT_commit_retain_context) {
-		printa(column, "firebird.COMMIT_RETAINING (%s %s%s);",
+	if (action->act_type == ACT_commit_retain_context)
+		printa(column, "interbase.COMMIT_RETAINING (%s %s%s);",
 			   status_vector(action),
 			   gpreGlob.ada_package,
 			   (action->act_object) ?
 			   		(const TEXT*) action->act_object : "gds_trans");
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		printa(column, "firebird.ROLLBACK_RETAINING (%s %s%s);",
-			   status_vector(action),
-			   gpreGlob.ada_package,
-			   (action->act_object) ?
-			   		(const TEXT*) action->act_object : "gds_trans");
-	}
-	else {
-		printa(column, "firebird.%s_TRANSACTION (%s %s%s);",
+	else
+		printa(column, "interbase.%s_TRANSACTION (%s %s%s);",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
 					   "ROLLBACK" : "PREPARE",
 			   status_vector(action), gpreGlob.ada_package,
 			   (action->act_object) ?
 			   		(const TEXT*) action->act_object : "gds_trans");
-	}
 
 	set_sqlcode(action, column);
 }
@@ -3227,9 +3215,9 @@ static void gen_trans( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //       Substitute for a variable reference.
-//
+//  
 
 static void gen_type( const act* action, int column)
 {
@@ -3240,9 +3228,9 @@ static void gen_type( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for UPDATE ... WHERE CURRENT OF ...
-//
+//  
 
 static void gen_update( const act* action, int column)
 {
@@ -3254,9 +3242,9 @@ static void gen_update( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Substitute for a variable reference.
-//
+//  
 
 static void gen_variable( const act* action, int column)
 {
@@ -3267,9 +3255,9 @@ static void gen_variable( const act* action, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate tests for any WHENEVER clauses that may have been declared.
-//
+//  
 
 static void gen_whenever(const swe* label, int column)
 {
@@ -3297,17 +3285,17 @@ static void gen_whenever(const swe* label, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate a declaration of an array in the
 //       output file.
-//
+//  
 
 static void make_array_declaration( REF reference, int column)
 {
 	gpre_fld* field = reference->ref_field;
 	const TEXT* name = field->fld_symbol->sym_string;
 
-//  Don't generate multiple declarations for the array.  V3 Bug 569.
+//  Don't generate multiple declarations for the array.  V3 Bug 569.  
 
 	if (field->fld_array_info->ary_declared)
 		return;
@@ -3315,7 +3303,7 @@ static void make_array_declaration( REF reference, int column)
 	field->fld_array_info->ary_declared = true;
 
 	if ((field->fld_array->fld_dtype <= dtype_varying)
-		&& (field->fld_array->fld_length != 1))
+		&& (field->fld_array->fld_length != 1)) 
 	{
 		if (field->fld_array->fld_sub_type == 1)
 			fprintf(gpreGlob.out_file, "subtype isc_%d_byte is %s(1..%d);\n",
@@ -3330,7 +3318,7 @@ static void make_array_declaration( REF reference, int column)
 	fprintf(gpreGlob.out_file, "type isc_%dt is array (",
 			   field->fld_array_info->ary_ident);
 
-//   Print out the dimension part of the declaration
+//   Print out the dimension part of the declaration  
 	const dim* dimension = field->fld_array_info->ary_dimension;
 	for (int i = 1;
 		 i < field->fld_array_info->ary_dimension_count;
@@ -3360,7 +3348,7 @@ static void make_array_declaration( REF reference, int column)
 			if (field->fld_array->fld_sub_type == 1)
 				fprintf(gpreGlob.out_file, BYTE_DCL);
 			else
-				fprintf(gpreGlob.out_file, "firebird.isc_character");
+				fprintf(gpreGlob.out_file, "interbase.isc_character");
 		}
 		else {
 			if (field->fld_array->fld_sub_type == 1)
@@ -3374,7 +3362,7 @@ static void make_array_declaration( REF reference, int column)
 
 	case dtype_date:
 	case dtype_quad:
-		fprintf(gpreGlob.out_file, "firebird.quad");
+		fprintf(gpreGlob.out_file, "interbase.quad");
 		break;
 
 	case dtype_real:
@@ -3393,7 +3381,7 @@ static void make_array_declaration( REF reference, int column)
 
 	fprintf(gpreGlob.out_file, ";\n");
 
-//   Print out the database field
+//   Print out the database field  
 
 	fprintf(gpreGlob.out_file, "isc_%d : isc_%dt;\t--- %s\n\n",
 			   field->fld_array_info->ary_ident,
@@ -3402,12 +3390,12 @@ static void make_array_declaration( REF reference, int column)
 
 
 //____________________________________________________________
-//
-//     Generate code to test existence
+//  
+//     Generate code to test existence 
 //     of open cursor and do the right thing:
 //     if type == ACT_open && isc_nl, error
 //     if type == ACT_close && !isc_nl, error
-//
+//  
 
 static void make_cursor_open_test( enum act_t type, gpre_req* request, int column)
 {
@@ -3425,9 +3413,9 @@ static void make_cursor_open_test( enum act_t type, gpre_req* request, int colum
 
 
 //____________________________________________________________
-//
+//  
 //		Turn a symbol into a varying string.
-//
+//  
 
 static TEXT* make_name(TEXT* const string, const gpre_sym* symbol)
 {
@@ -3438,10 +3426,10 @@ static TEXT* make_name(TEXT* const string, const gpre_sym* symbol)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate code to test existence of
 //		compiled request with active transaction.
-//
+//  
 
 static void make_ok_test( const act* action, gpre_req* request, int column)
 {
@@ -3455,9 +3443,9 @@ static void make_ok_test( const act* action, gpre_req* request, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Insert a port record description in output.
-//
+//  
 
 static void make_port( const gpre_port* port, int column)
 {
@@ -3466,7 +3454,7 @@ static void make_port( const gpre_port* port, int column)
 	const ref* reference;
 
 	for (reference = port->por_references; reference;
-		 reference = reference->ref_next)
+		 reference = reference->ref_next) 
 	{
 		const gpre_fld* field = reference->ref_field;
 		const TEXT* name;
@@ -3502,7 +3490,7 @@ static void make_port( const gpre_port* port, int column)
 		case dtype_date:
 		case dtype_quad:
 		case dtype_blob:
-			printa(column + INDENT, "isc_%d\t: firebird.quad;\t-- %s --",
+			printa(column + INDENT, "isc_%d\t: interbase.quad;\t-- %s --",
 				   reference->ref_ident, name);
 			break;
 
@@ -3521,7 +3509,7 @@ static void make_port( const gpre_port* port, int column)
 				else {
 					if (field->fld_length == 1)
 						printa(column + INDENT,
-							   "isc_%d\t: firebird.isc_character;\t-- %s --",
+							   "isc_%d\t: interbase.isc_character;\t-- %s --",
 							   reference->ref_ident, name);
 					else
 						printa(column + INDENT,
@@ -3549,7 +3537,7 @@ static void make_port( const gpre_port* port, int column)
 
 	int pos = 0;
 	for (reference = port->por_references; reference;
-		 reference = reference->ref_next)
+		 reference = reference->ref_next) 
 	{
 		const gpre_fld* field = reference->ref_field;
 		if (reference->ref_value && field->fld_array_info)
@@ -3564,10 +3552,10 @@ static void make_port( const gpre_port* port, int column)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the actual insertion text for a
 //       ready;
-//
+//  
 
 static void make_ready(const dbb* db,
 					   const TEXT* filename,
@@ -3582,7 +3570,7 @@ static void make_ready(const dbb* db,
 		sprintf(s2, "isc_%d", request->req_ident);
 
 		/* if the dpb needs to be extended at runtime to include items
-		   in host variables, do so here; this assumes that there is
+		   in host variables, do so here; this assumes that there is 
 		   always a request generated for runtime variables */
 
 		if (request->req_flags & REQ_extend_dpb) {
@@ -3591,11 +3579,11 @@ static void make_ready(const dbb* db,
 				printa(column, "%s = isc_%d;", s2, request->req_ident);
 			if (db->dbb_r_user)
 				printa(column,
-					   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_user_name, %s, %d);\n",
+					   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_user_name, %s, %d);\n",
 					   s2, s1, db->dbb_r_user, (strlen(db->dbb_r_user) - 2));
 			if (db->dbb_r_password)
 				printa(column,
-					   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_password, %s, %d);\n",
+					   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_password, %s, %d);\n",
 					   s2, s1, db->dbb_r_password,
 					   (strlen(db->dbb_r_password) - 2));
 			/*
@@ -3607,18 +3595,18 @@ static void make_ready(const dbb* db,
 			 */
 			if (db->dbb_r_sql_role)
 				printa(column,
-					   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_sql_role_name, %s, %d);\n",
+					   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_sql_role_name, %s, %d);\n",
 					   s2, s1, db->dbb_r_sql_role,
 					   (strlen(db->dbb_r_sql_role) - 2));
 
 			if (db->dbb_r_lc_messages)
 				printa(column,
-					   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_lc_messages, %s, %d);\n",
+					   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_lc_messages, %s, %d);\n",
 					   s2, s1, db->dbb_r_lc_messages,
 					   (strlen(db->dbb_r_lc_messages) - 2));
 			if (db->dbb_r_lc_ctype)
 				printa(column,
-					   "firebird.MODIFY_DPB (%s, %s, firebird.isc_dpb_lc_ctype, %s, %d);\n",
+					   "interbase.MODIFY_DPB (%s, %s, interbase.isc_dpb_lc_ctype, %s, %d);\n",
 					   s2, s1, db->dbb_r_lc_ctype,
 					   (strlen(db->dbb_r_lc_ctype) - 2));
 		}
@@ -3627,30 +3615,30 @@ static void make_ready(const dbb* db,
 	if (filename)
 		if (*filename == '"')
 			printa(column,
-				   "firebird.ATTACH_DATABASE (%s %d, %s, %s%s, %s, %s);",
+				   "interbase.ATTACH_DATABASE (%s %d, %s, %s%s, %s, %s);",
 				   vector, strlen(filename) - 2, filename, gpreGlob.ada_package,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
-				   (request ? s2 : "firebird.null_dpb"));
+				   (request ? s2 : "interbase.null_dpb"));
 		else
 			printa(column,
-				   "firebird.ATTACH_DATABASE (%s %s'length(1), %s, %s%s, %s, %s);",
+				   "interbase.ATTACH_DATABASE (%s %s'length(1), %s, %s%s, %s, %s);",
 				   vector, filename, filename, gpreGlob.ada_package,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
-				   (request ? s2 : "firebird.null_dpb"));
+				   (request ? s2 : "interbase.null_dpb"));
 	else
 		printa(column,
-			   "firebird.ATTACH_DATABASE (%s %d, \"%s\", %s%s, %s, %s);",
+			   "interbase.ATTACH_DATABASE (%s %d, \"%s\", %s%s, %s, %s);",
 			   vector, strlen(db->dbb_filename), db->dbb_filename,
 			   gpreGlob.ada_package, db->dbb_name->sym_string, (request ? s1 : "0"),
-			   (request ? s2 : "firebird.null_dpb"));
+			   (request ? s2 : "interbase.null_dpb"));
 
 	if (request && request->req_flags & REQ_extend_dpb) {
 		if (request->req_length)
 			printa(column, "if (%s != isc_%d)", s2, request->req_ident);
 		printa(column + (request->req_length ? 4 : 0),
-			   "firebird.FREE (%s);", s2);
+			   "interbase.FREE (%s);", s2);
 
-		// reset the length of the dpb
+		// reset the length of the dpb 
 		if (request->req_length)
 			printa(column, "%s = %d;", s1, request->req_length);
 	}
@@ -3658,9 +3646,9 @@ static void make_ready(const dbb* db,
 
 
 //____________________________________________________________
-//
+//  
 //		Print a fixed string at a particular column.
-//
+//  
 
 static void printa( int column, const TEXT* string, ...)
 {
@@ -3675,9 +3663,9 @@ static void printa( int column, const TEXT* string, ...)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the appropriate transaction handle.
-//
+//  
 
 static const TEXT* request_trans( const act* action, const gpre_req* request)
 {
@@ -3687,16 +3675,16 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 			trname = "gds_trans";
 		return trname;
 	}
-
-	return (request) ? request->req_trans : "gds_trans";
+	else
+		return (request) ? request->req_trans : "gds_trans";
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Generate the appropriate status vector parameter for a gds
 //		call depending on where or not the action has an error clause.
-//
+//  
 
 static const TEXT* status_vector( const act* action)
 {
@@ -3708,9 +3696,9 @@ static const TEXT* status_vector( const act* action)
 
 
 //____________________________________________________________
-//
+//  
 //		Generate substitution text for START_TRANSACTION.
-//
+//  
 
 static void t_start_auto(const act* action,
 						 const gpre_req* request,
@@ -3758,13 +3746,13 @@ static void t_start_auto(const act* action,
 	for (const dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		count++;
 		printa(column, "isc_teb(%d).tpb_len:= 0;", count);
-		printa(column, "isc_teb(%d).tpb_ptr := firebird.null_tpb'address;",
+		printa(column, "isc_teb(%d).tpb_ptr := interbase.null_tpb'address;",
 			   count);
 		printa(column, "isc_teb(%d).dbb_ptr := %s%s'address;", count,
 			   gpreGlob.ada_package, db->dbb_name->sym_string);
 	}
 
-	printa(column, "firebird.start_multiple (%s %s%s, %d, isc_teb'address);",
+	printa(column, "interbase.start_multiple (%s %s%s, %d, isc_teb'address);",
 		   vector, gpreGlob.ada_package, trname, count);
 
 	if (gpreGlob.sw_auto) {

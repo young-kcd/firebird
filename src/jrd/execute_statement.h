@@ -22,43 +22,38 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_EXECUTE_STATEMENT_H
 #define JRD_EXECUTE_STATEMENT_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
-#include "../jrd/PreparedStatement.h"
-#include "../jrd/ResultSet.h"
+#include "../include/fb_vector.h"
 #include "../jrd/exe.h"
 #include "../jrd/ibase.h"
 
 const int MAX_CALLBACKS	= 50;
 
-namespace Jrd {
-
-
-class ExecuteStatement
-{
-public:
-	static void execute(Jrd::thread_db* tdbb, Jrd::jrd_req* request, DSC* desc);
-	void open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool singleton);
-	bool fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** jrdVar);
-	void close(Jrd::thread_db* tdbb);
-
-	static void getString(Jrd::thread_db* tdbb, Firebird::string& sql, const dsc* desc,
-		const Jrd::jrd_req* request);
-
+class ExecuteStatement {
 private:
-	PreparedStatement* stmt;
-	ResultSet* resultSet;
-	int varCount;
-	bool singleMode;
-	TEXT startOfSqlOperator[32];
+	FB_API_HANDLE Attachment;
+	FB_API_HANDLE Transaction;
+	FB_API_HANDLE Statement;
+	XSQLDA	* Sqlda;
+	SCHAR	* Buffer;
+	bool	SingleMode;
+	TEXT	StartOfSqlOperator[32];
+private:
+	XSQLDA*	MakeSqlda(Jrd::thread_db* tdbb, SSHORT n);
+	ISC_STATUS	ReMakeSqlda(ISC_STATUS *vector, Jrd::thread_db* tdbb);
+	ULONG	ParseSqlda(void);
+public:
+	void Open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
+	bool Fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
+	void Close(Jrd::thread_db* tdbb);
+	static void getString(Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
 };
 
-
-} // namespace
-
 #endif // JRD_EXECUTE_STATEMENT_H
+

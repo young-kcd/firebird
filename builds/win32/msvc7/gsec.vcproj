@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gsec/gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gsec/"
 				ObjectFile="..\..\..\temp\release\gsec/"
@@ -93,7 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gsec\gsec.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gsec/"
 				ObjectFile="..\..\..\temp\debug\gsec/"
@@ -143,19 +143,13 @@
 	</References>
 	<Files>
 		<Filter
-			Name="UTILITIES files"
+			Name="UTILITITES files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsecMain.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -165,32 +159,17 @@
 				RelativePath="..\..\..\src\jrd\enc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sha.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsecswi.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\secur_proto.h">

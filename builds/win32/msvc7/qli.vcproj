@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\qli/qli.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\qli/"
 				ObjectFile="..\..\..\temp\debug\qli/"
@@ -94,7 +94,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\qli/qli.pch"
 				AssemblerListingLocation="..\..\..\temp\release\qli/"
 				ObjectFile="..\..\..\temp\release\qli/"
@@ -231,6 +231,9 @@
 			Filter="">
 			<File
 				RelativePath="..\..\..\src\jrd\dsc.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\iberr.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">

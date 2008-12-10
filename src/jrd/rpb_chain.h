@@ -19,7 +19,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
+ 
 #ifndef JRD_RPB_CHAIN_H
 #define JRD_RPB_CHAIN_H
 
@@ -39,16 +39,16 @@ class traRpbListElement
 public:
 	record_param* lr_rpb;
 	int level;
-	traRpbListElement(record_param* r, USHORT l) :
+	traRpbListElement(record_param* r, USHORT l) : 
 			lr_rpb(r), level(l) {}
 	traRpbListElement() {}
 
 	static inline const bool greaterThan(const traRpbListElement& i1, const traRpbListElement& i2)
 	{
-		return i1.lr_rpb->rpb_relation->rel_id != i2.lr_rpb->rpb_relation->rel_id ?
+		return i1.lr_rpb->rpb_relation->rel_id != i2.lr_rpb->rpb_relation->rel_id ? 
 			   i1.lr_rpb->rpb_relation->rel_id > i2.lr_rpb->rpb_relation->rel_id :
 			   i1.lr_rpb->rpb_number != i2.lr_rpb->rpb_number ?
-			   i1.lr_rpb->rpb_number > i2.lr_rpb->rpb_number :
+			   i1.lr_rpb->rpb_number > i2.lr_rpb->rpb_number : 
 			   i1.level > i2.level;
 	}
 
@@ -59,14 +59,14 @@ public:
 };
 
 
-typedef Firebird::SortedArray<traRpbListElement,
-	Firebird::InlineStorage<traRpbListElement, 16>, traRpbListElement,
+typedef Firebird::SortedArray<traRpbListElement, 
+	Firebird::InlineStorage<traRpbListElement, 16>, traRpbListElement, 
 	traRpbListElement, traRpbListElement> traRpbArray;
 class traRpbList : public traRpbArray
 {
 public:
-	explicit traRpbList(Firebird::MemoryPool& p) :
-		traRpbArray(p) {}
+	traRpbList(Firebird::MemoryPool& p) : 
+		traRpbArray(p, 16) {}
 	int PushRpb(record_param* value);
 	bool PopRpb(record_param* value, int Level);
 };

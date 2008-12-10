@@ -15,7 +15,7 @@
 #include "../common/classes/array.h"
 #include "../jrd/os/guid.h"
 
-namespace
+namespace 
 {
 
 /* Useful defines & typedefs */
@@ -86,7 +86,6 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 #define f3(x,y,z)	((x & y) | (x & z) | (y & z))
 #define f4(x,y,z)	(x ^ y ^ z)
 
-
 /* SHA constants */
 
 #define CONST1		0x5a827999L
@@ -134,7 +133,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 static void sha_transform(SHA_INFO *sha_info)
 {
     int i;
-    LONG W[80];
+    LONG T, W[80];
 
     const BYTE* dp = sha_info->data;
 
@@ -149,17 +148,17 @@ nether regions of the anatomy...
 #if (SHA_BYTE_ORDER == 1234)
 #define SWAP_DONE
     for (i = 0; i < 16; ++i) {
-		const LONG T = *((LONG *) dp);
-		dp += 4;
-		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
-			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
+	T = *((LONG *) dp);
+	dp += 4;
+	W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
+		((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
     }
 #endif /* SHA_BYTE_ORDER == 1234 */
 
 #if (SHA_BYTE_ORDER == 4321)
 #define SWAP_DONE
 	for (i = 0; i < 16; ++i) {
-		const LONG T = *((LONG *) dp);
+		T = *((LONG *) dp);
 		dp += 4;
 		W[i] = T32(T);
 	}
@@ -168,7 +167,7 @@ nether regions of the anatomy...
 #if (SHA_BYTE_ORDER == 12345678)
 #define SWAP_DONE
 	for (i = 0; i < 16; i += 2) {
-		LONG T = *((LONG *) dp);
+		T = *((LONG *) dp);
 		dp += 8;
 		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
 			((T >>  8) & 0x0000ff00) | ((T >> 24) & 0x000000ff);
@@ -181,7 +180,7 @@ nether regions of the anatomy...
 #if (SHA_BYTE_ORDER == 87654321)
 #define SWAP_DONE
 	for (i = 0; i < 16; i += 2) {
-		const LONG T = *((LONG *) dp);
+		T = *((LONG *) dp);
 		dp += 8;
 		W[i] = T32(T >> 32);
 		W[i + 1] = T32(T);
@@ -204,7 +203,6 @@ nether regions of the anatomy...
     LONG D = sha_info->digest[3];
     LONG E = sha_info->digest[4];
     const LONG* WP = W;
-	LONG T;
 #ifdef UNRAVEL
     FA(1); FB(1); FC(1); FD(1); FE(1); FT(1); FA(1); FB(1); FC(1); FD(1);
     FE(1); FT(1); FA(1); FB(1); FC(1); FD(1); FE(1); FT(1); FA(1); FB(1);
@@ -340,7 +338,7 @@ void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
     digest[19] = (unsigned char) ((sha_info->digest[4]      ) & 0xff);
 }
 
-inline char conv_bin2ascii(ULONG l)
+char conv_bin2ascii(ULONG l)
 {
 	return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[l & 0x3f];
 }
@@ -350,7 +348,7 @@ typedef Firebird::HalfStaticArray<unsigned char, SHA_DIGESTSIZE> BinHash;
 void base64(Firebird::string& b64, const BinHash& bin)
 {
 	b64.erase();
-	const unsigned char* f =
+	const unsigned char* f = 
 		reinterpret_cast<const unsigned char*>(bin.begin());
 	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
 	{

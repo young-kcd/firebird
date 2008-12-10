@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
+ *  $Id: vector.h,v 1.15.4.2 2007-08-13 03:47:10 dimitr Exp $
  *
  */
 
@@ -37,84 +38,56 @@ namespace Firebird {
 
 // Very fast static array of simple types
 template <typename T, size_t Capacity>
-class Vector
-{
+class Vector {
 public:
 	Vector() : count(0) {}
 
-	T& operator[](size_t index)
-	{
+	T& operator[](size_t index) {
   		fb_assert(index < count);
   		return data[index];
 	}
-
-	const T& operator[](size_t index) const
-	{
+	const T& operator[](size_t index) const {
   		fb_assert(index < count);
   		return data[index];
 	}
-
 	T* begin() { return data; }
 	T* end() { return data + count; }
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return Capacity; }
-	void clear() { count = 0; }
 
-	void insert(size_t index, const T& item)
-	{
+	void clear() { count = 0; }
+	void insert(size_t index, const T& item) {
 	  fb_assert(index <= count);
 	  fb_assert(count < Capacity);
 	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
 	}
-
-	size_t add(const T& item)
-	{
+	size_t add(const T& item) {
 		fb_assert(count < Capacity);
-		data[count] = item;
-  		return ++count;
+		data[count++] = item;
+  		return count;
 	}
-
-	T* remove(size_t index)
-	{
+	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
-
-	void shrink(size_t newCount)
-	{
+	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
 		count = newCount;
 	}
-
-	void join(const Vector<T, Capacity>& L)
-	{
+	void join(const Vector<T, Capacity>& L) {
 		fb_assert(count + L.count <= Capacity);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
 
 	// prepare vector to be used as a buffer of capacity items
-	T* getBuffer(size_t capacityL)
-	{
+	T* getBuffer(size_t capacityL) {
 		fb_assert(capacityL <= Capacity);
 		count = capacityL;
 		return data;
-	}
-
-	void push(const T& item)
-	{
-		add(item);
-	}
-
-	T pop()
-	{
-		fb_assert(count > 0);
-		count--;
-		return data[count];
 	}
 
 protected:
@@ -124,19 +97,16 @@ protected:
 
 // Template for default value comparsion
 template <typename T>
-class DefaultComparator
-{
+class DefaultComparator {
 public:
-	static bool greaterThan(const T& i1, const T& i2)
-	{
+	static bool greaterThan(const T& i1, const T& i2) {
 	    return i1 > i2;
 	}
 };
 
 // Template to convert value to index directly
 template <typename T>
-class DefaultKeyValue
-{
+class DefaultKeyValue {
 public:
 	static const T& generate(const void* sender, const T& Item) { return Item; }
 };
@@ -146,12 +116,10 @@ public:
 template <typename Value, size_t Capacity, typename Key = Value,
 	typename KeyOfValue = DefaultKeyValue<Value>,
 	typename Cmp = DefaultComparator<Key> >
-class SortedVector : public Vector<Value, Capacity>
-{
+class SortedVector : public Vector<Value, Capacity> {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
-	bool find(const Key& item, size_t& pos) const
-	{
+	bool find(const Key& item, size_t& pos) const {
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
 			const size_t temp = (highBound + lowBound) >> 1;
@@ -164,8 +132,7 @@ public:
 		return highBound != this->count &&
 			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
-	size_t add(const Value& item)
-	{
+	size_t add(const Value& item) {
 	    size_t pos;
   	    find(KeyOfValue::generate(this, item), pos);
 		insert(pos, item);

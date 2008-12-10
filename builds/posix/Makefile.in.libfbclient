@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.libfbclient,v 1.29.4.2 2007-05-02 13:30:25 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT
+CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -55,13 +56,15 @@ unexport ISC_PASSWORD
 SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
 SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
 
+JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles))
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
 
 DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))
 DSQL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_ClientSources))))
 
 
-REMOTE_ClientObjects = $(INTERFACE_Objects)
+REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
+REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
 
 
 GPRELIB_ClientSources = $(addprefix gpre/, $(GPRELIB_ClientFiles))
@@ -75,6 +78,12 @@ SECURITY_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECUR
 FBUTIL_ClientSources = $(addprefix fbutil/, $(FBUTIL_ClientFiles))
 FBUTIL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_ClientSources))))
 
+FBCOMMON_ClientSources = $(addprefix common/, $(FBCOMMON_ClientFiles))
+FBCOMMON_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCOMMON_ClientSources))))
+
+FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
+FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
+
 
 FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(DSQL_ClientObjects) \
@@ -82,9 +91,8 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 					$(GPRELIB_ClientObjects) \
 					$(SECURITY_ClientObjects) \
 					$(FBUTIL_ClientObjects) \
-					$(FBCOMMON_Objects)\
+					$(FBCOMMON_ClientObjects)\
 					$(FBCLASSES_ClientObjects)\
-					$(FBCLASSES_MsgObjects)\
 					$(OS_SPECIFIC_Objects)\
 					$(FBCONFIG_Objects) \
 					$(CLUMPLETS_Objects) \
@@ -108,13 +116,13 @@ endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
+	$(LIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME) \
--o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
+-o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
-	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
+	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
 $(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
--o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
+-o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 
 AllObjects = $(FBCLIENT_Objects)

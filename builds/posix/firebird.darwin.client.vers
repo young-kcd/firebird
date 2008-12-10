@@ -104,6 +104,7 @@
 	_gds__start_multiple
 	_gds__start_request
 	_gds__start_transaction
+	_gds__temp_dir
 	_gds__temp_file
 	_gds__thread_enable
 	_gds__thread_enter

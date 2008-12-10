@@ -102,6 +102,7 @@ EXPORTS
 	gds__start_multiple	@73
 	gds__start_request	@74
 	gds__start_transaction	@75
+	gds__temp_dir
 	gds__temp_file	@231
 	gds__thread_enable	@76
 	gds__thread_enter	@77
@@ -123,10 +124,6 @@ EXPORTS
 
     gds_alloc_flag_unfreed
     gds_alloc_report
-
-	fb_shutdown
-	fb_shutdown_callback
-	fb_cancel_operation
 
 	perf_format	@100
 	perf_get_info	@101
@@ -235,7 +232,6 @@ EXPORTS
 	isc_embed_dsql_open2	@214
 	isc_embed_dsql_prepare	@215
 	isc_embed_dsql_release	@216
-	isc_embed_dsql_length	@273
 
 	; Error-handling functions
 
@@ -245,8 +241,6 @@ EXPORTS
 	isc_print_status	@151
 	isc_sqlcode	@165
 	isc_sql_interprete	@164
-	isc_sqlcode_s		@278
-	fb_sqlstate			@279
 
 	; Event functions
 
@@ -255,8 +249,6 @@ EXPORTS
 	isc_event_counts	@131
 	isc_que_events	@155
 	isc_wait_for_event	@177
-	isc_event_block_a	@274
-	isc_event_block_s	@275
 
 	; Security functions
 
@@ -337,8 +329,6 @@ EXPORTS
 	isc_to_sqlda	@170
 	isc_vtof	@175
 	isc_vtov	@176
-	isc_baddress	@276
-	isc_baddress_s	@277
 
 	_isc_start_transaction=isc_start_transaction
 	_isc_expand_dpb=isc_expand_dpb

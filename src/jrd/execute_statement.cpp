@@ -22,197 +22,331 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
+#include "fb_types.h"
 #include "gen/iberror.h"
 
 #include "../jrd/common.h"
+#include <string.h>
+#include <math.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
+#include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/execute_statement.h"
-#include "../dsql/dsql.h"
-#include "../common/classes/auto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
+#define	WHY_NO_API 
+#include "../jrd/why_proto.h"
+#include "../jrd/y_handle.h"
 
-#include <string.h>
-#include <math.h>
+#include "../jrd/align.h"
+#include "../jrd/execute_statement.h"
+#include "../common/classes/GenericMap.h"
+#include "../common/classes/init.h"
 
 using namespace Jrd;
 using namespace Firebird;
-using Firebird::AutoPtr;
 
+YValve::Attachment* GetWhyAttachment(ISC_STATUS*, Attachment*);
 
-void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc)
+static const SSHORT sqlType[] =
+ {
+/* dtype_unknown	*/ -1,
+/* dtype_text		*/ SQL_TEXT,
+/* dtype_cstring	*/ -1,
+/* dtype_varying	*/ SQL_VARYING,
+/* dtype_none1		*/ -1,
+/* dtype_none2		*/ -1,
+/* dtype_packed		*/ -1,
+/* dtype_byte		*/ -1,
+/* dtype_short		*/ SQL_SHORT,
+/* dtype_long		*/ SQL_LONG,
+/* dtype_quad		*/ SQL_QUAD,
+/* dtype_real		*/ SQL_FLOAT,
+/* dtype_double		*/ SQL_DOUBLE,
+/* dtype_d_float	*/ -1,				// Fix to use in VMS
+/* dtype_sql_date	*/ SQL_TYPE_DATE,
+/* dtype_sql_time	*/ SQL_TYPE_TIME,
+/* dtype_timestamp	*/ SQL_TIMESTAMP,
+/* dtype_blob		*/ SQL_BLOB,
+/* dtype_array		*/ SQL_ARRAY,		// Not supported for a while
+/* dtype_int64		*/ SQL_INT64
+ };
+
+static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
+
+void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool SingleTon)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* attachment = tdbb->getAttachment();
-	jrd_tra* const transaction = tdbb->getTransaction();
-
-	if (transaction->tra_callback_count >= MAX_CALLBACKS)
+	// initialize sqlTypeToDscType in the first call to this function
+	// non-thread safe, require mutex in Fb3
+	if (sqlTypeToDscType().count() == 0)
 	{
-		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
+		for (int i = 0; i < FB_NELEM(sqlType); ++i)
+			sqlTypeToDscType().put(sqlType[i], static_cast<UCHAR>(i));
 	}
 
-	Firebird::string sqlStatementText;
-	getString(tdbb, sqlStatementText, desc, request);
-
-	transaction->tra_callback_count++;
-
-	try
-	{
-		AutoPtr<PreparedStatement> stmt(attachment->prepareStatement(
-			tdbb, *tdbb->getDefaultPool(), transaction, sqlStatementText));
-
-		// Other requests appear to be incorrect in this context
-		const long requests =
-			(1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE) |
-			(1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE) |
-			(1 << REQ_EXEC_BLOCK);
-
-		if (!((1 << stmt->getRequest()->req_type) & requests))
-		{
-			ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(-902) <<
-					 Arg::Gds(isc_exec_sql_invalid_req) << Arg::Str(sqlStatementText));
-		}
-
-		stmt->execute(tdbb, transaction);
-
-		fb_assert(transaction == tdbb->getTransaction());
-	}
-	catch (const Firebird::Exception&)
-	{
-		transaction->tra_callback_count--;
-		throw;
+	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
+		tdbb->tdbb_status_vector[0] = isc_arg_gds;
+		tdbb->tdbb_status_vector[1] = isc_exec_sql_max_call_exceeded;
+		tdbb->tdbb_status_vector[2] = isc_arg_end;
+		ERR_punt();
 	}
 
-	transaction->tra_callback_count--;
+	Sqlda = 0;
+	Transaction = 0;
+	Buffer = 0;
+	SingleMode = SingleTon;
+
+	fb_assert(tdbb->tdbb_transaction->tra_pool);
+	Firebird::string SqlText;
+	getString(SqlText, EVL_expr(tdbb, sql), tdbb->tdbb_request);
+	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
+	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
+
+	YValve::Attachment* temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
+								  tdbb->tdbb_attachment);
+	if (!temp_dbb)
+		ERR_punt();
+
+	Attachment = temp_dbb->public_handle;
+
+	YValve::Transaction* temp_tra = new YValve::Transaction(tdbb->tdbb_transaction, &Transaction, temp_dbb);
+
+	Statement = 0;
+	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
+    Sqlda->sqln = nVars;
+    Sqlda->version = 1;
+
+	tdbb->tdbb_transaction->tra_callback_count++;
+	THREAD_EXIT();
+
+	// For normal diagnostic
+	const int max_diag_len = 50;
+
+	// this check uses local error handler for local status vector
+	ISC_STATUS_ARRAY local;
+	ISC_STATUS *status = local;
+	memset(local, 0, sizeof(local));
+#	define Chk(x) if ((x) != 0) goto err_handler
+
+	Chk(isc_dsql_allocate_statement(status, &Attachment, &Statement));
+
+	Chk(isc_dsql_prepare(status, &Transaction, &Statement,
+		SqlText.length(), SqlText.c_str(), SQL_DIALECT_CURRENT, Sqlda));
+    if (! Sqlda->sqld) {  // Non-select statement - reject for a while
+		/*Chk(isc_dsql_execute(status, &Transaction,
+               &Statement, SQLDA_VERSION1, 0)); */
+		Chk(isc_dsql_free_statement(status, &Statement, DSQL_drop));
+		Statement = 0;
+		status[0] = isc_arg_gds;
+		status[1] = isc_exec_sql_invalid_req;
+		status[2] = isc_arg_string;
+		status[3] = (ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
+		status[4] = isc_arg_end;
+		Chk(status[1]);
+	}
+	else {
+		Chk(ReMakeSqlda(status, tdbb));
+		Chk(isc_dsql_describe(status, &Statement,
+                        SQLDA_VERSION1, Sqlda));
+		Buffer = 0;		// Buffer is used in ParseSqlda
+						// First dummy parse - to define buffer size
+		Buffer = FB_NEW(*tdbb->tdbb_transaction->tra_pool) 
+			SCHAR[XSQLDA_LENGTH(ParseSqlda())];
+		ParseSqlda();
+		Chk(isc_dsql_execute(status, &Transaction,
+                &Statement, SQLDA_VERSION1, 0));
+	}
+
+#	undef Chk
+err_handler:
+	THREAD_ENTER();
+	tdbb->tdbb_transaction->tra_callback_count--;
+	if (status[0] == 1 && status[1]) {
+		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+	}
 }
 
-
-void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool singleton)
+bool ExecuteStatement::Fetch(thread_db* tdbb, jrd_nod** JrdVar)
 {
-	SET_TDBB(tdbb);
-
-	Attachment* const attachment = tdbb->getAttachment();
-	jrd_tra* transaction = tdbb->getTransaction();
-
-	if (transaction->tra_callback_count >= MAX_CALLBACKS)
-	{
-		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
-	}
-
-	varCount = nVars;
-	singleMode = singleton;
-
-	Firebird::string sqlText;
-	getString(tdbb, sqlText, EVL_expr(tdbb, sql), tdbb->getRequest());
-	memcpy(startOfSqlOperator, sqlText.c_str(), sizeof(startOfSqlOperator) - 1);
-	startOfSqlOperator[sizeof(startOfSqlOperator) - 1] = 0;
-
-	transaction->tra_callback_count++;
-
-	try
-	{
-		stmt = attachment->prepareStatement(tdbb, *tdbb->getDefaultPool(), transaction, sqlText);
-
-		if (stmt->getResultCount() == 0)
-		{
-			delete stmt;
-			stmt = NULL;
-
-			ERR_post(Arg::Gds(isc_exec_sql_invalid_req) << Arg::Str(startOfSqlOperator));
-		}
-
-		if (stmt->getResultCount() != varCount)
-		{
-			delete stmt;
-			stmt = NULL;
-
-			ERR_post(Arg::Gds(isc_wronumarg));
-		}
-
-		resultSet = stmt->executeQuery(tdbb, transaction);
-
-		fb_assert(transaction == tdbb->getTransaction());
-	}
-	catch (const Firebird::Exception&)
-	{
-		transaction->tra_callback_count--;
-		throw;
-	}
-
-	transaction->tra_callback_count--;
-}
-
-
-bool ExecuteStatement::fetch(thread_db* tdbb, jrd_nod** jrdVar)
-{
-	if (!resultSet->fetch(tdbb))
-	{
-		delete resultSet;
-		resultSet = NULL;
-		delete stmt;
-		stmt = NULL;
+	// If already bugged - we should never get here
+	fb_assert(! (tdbb->tdbb_status_vector[0] == 1 && 
+			  tdbb->tdbb_status_vector[1] != 0));
+	if (! Statement)
 		return false;
+
+	ISC_STATUS_ARRAY local;
+	ISC_STATUS *status = local;
+	memset(local, 0, sizeof(local));
+	status = local;
+	tdbb->tdbb_transaction->tra_callback_count++;
+	THREAD_EXIT();
+    if (isc_dsql_fetch(status, &Statement,
+                SQLDA_VERSION1, Sqlda) == 100)
+	{
+		isc_dsql_free_statement(status, &Statement, DSQL_drop);
+		THREAD_ENTER();
+		tdbb->tdbb_transaction->tra_callback_count--;
+		Statement = 0;
+		return false;
+    }
+	THREAD_ENTER();
+	tdbb->tdbb_transaction->tra_callback_count--;
+	if (status[0] == 1 && status[1]) {
+		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
 
-	for (int i = 0; i < varCount; i++)
-	{
-		dsc& desc = resultSet->getDesc(i + 1);
-		bool nullFlag = resultSet->isNull(i + 1);
-		EXE_assignment(tdbb, jrdVar[i], &desc, nullFlag, NULL, NULL);
-	}
-
-	if (singleMode)
-	{
-		if (!resultSet->fetch(tdbb))
+	const XSQLVAR *var = Sqlda->sqlvar;
+	for (int i = 0; i < Sqlda->sqld; i++, var++, JrdVar++) {
+		dsc* d = EVL_assign_to(tdbb, *JrdVar);
+		if (d->dsc_dtype >= FB_NELEM(sqlType))
 		{
-			delete resultSet;
-			resultSet = NULL;
-			delete stmt;
-			stmt = NULL;
+rec_err:
+			tdbb->tdbb_status_vector[0] = isc_arg_gds;
+			tdbb->tdbb_status_vector[1] = isc_exec_sql_invalid_var;
+			tdbb->tdbb_status_vector[2] = isc_arg_number;
+			tdbb->tdbb_status_vector[3] = i + 1;
+			tdbb->tdbb_status_vector[4] = isc_arg_string;
+			tdbb->tdbb_status_vector[5] = 
+				(ISC_STATUS)(U_IPTR) ERR_cstring(StartOfSqlOperator);
+			tdbb->tdbb_status_vector[6] = isc_arg_end;
+			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+		}
+
+		if (sqlType[d->dsc_dtype] < 0)
+			goto rec_err;
+
+		// build the src descriptor
+		dsc src;
+		memset(&src, 0, sizeof(src));
+		sqlTypeToDscType().get((var->sqltype & ~1), src.dsc_dtype);
+		src.dsc_length = var->sqllen;
+		src.dsc_scale = var->sqlscale;
+		src.dsc_sub_type = var->sqlsubtype;
+		src.dsc_address = (UCHAR*) var->sqldata;
+
+		if ((var->sqltype & ~1) == SQL_VARYING)
+		{
+			src.dsc_length += sizeof(SSHORT);
+		}
+
+		// and assign to the target
+		EXE_assignment(tdbb, *JrdVar, &src, (var->sqltype & 1) && (*var->sqlind < 0), NULL, NULL);
+    }
+
+	if (SingleMode) {
+		tdbb->tdbb_transaction->tra_callback_count++;
+		THREAD_EXIT();
+		if (isc_dsql_fetch(status, &Statement,
+                SQLDA_VERSION1, Sqlda) == 100)
+		{
+			isc_dsql_free_statement(status, &Statement, DSQL_drop);
+			THREAD_ENTER();
+			tdbb->tdbb_transaction->tra_callback_count--;
+			Statement = 0;
 			return false;
 		}
-
-		ERR_post(Arg::Gds(isc_sing_select_err));
+		THREAD_ENTER();
+		tdbb->tdbb_transaction->tra_callback_count--;
+		if (! (status[0] == 1 && status[1])) {
+			status[0] = isc_arg_gds;
+			status[1] = isc_sing_select_err;
+			status[2] = isc_arg_end;
+		}
+		memcpy(tdbb->tdbb_status_vector, status, sizeof(local));
+		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 	}
-
-	return true;
+    return true;
 }
 
-
-void ExecuteStatement::close(thread_db* tdbb)
+void ExecuteStatement::Close(thread_db* tdbb)
 {
-	delete resultSet;
-	resultSet = NULL;
-	delete stmt;
-	stmt = NULL;
+	if (Statement) {
+		tdbb->tdbb_transaction->tra_callback_count++;
+		THREAD_EXIT();
+		// for a while don't check for errors while freeing statement
+		isc_dsql_free_statement(0, &Statement, DSQL_drop);
+		THREAD_ENTER();
+		tdbb->tdbb_transaction->tra_callback_count--;
+		Statement = 0;
+	}
+	char* p = reinterpret_cast<char*>(Sqlda);
+	delete[] p;
+	Sqlda = 0;
+	if (Transaction) {
+		delete YValve::translate<YValve::Transaction>(&Transaction);
+		Transaction = 0;
+	}
+	delete[] Buffer;
+	Buffer = 0;
 }
 
-
-void ExecuteStatement::getString(thread_db* tdbb,
-								 Firebird::string& sql,
-								 const dsc* desc,
-								 const jrd_req* request)
+XSQLDA* ExecuteStatement::MakeSqlda(thread_db* tdbb, short n)
 {
-	MoveBuffer buffer;
+	return (XSQLDA *)
+		(FB_NEW(*tdbb->tdbb_transaction->tra_pool) char[XSQLDA_LENGTH(n)]);
+}
 
-	UCHAR* ptr = NULL;
+ISC_STATUS ExecuteStatement::ReMakeSqlda(ISC_STATUS* svector, thread_db* tdbb)
+{
+	if (Sqlda->sqln != Sqlda->sqld) {
+		svector[0] = isc_arg_gds;
+		svector[1] = isc_wronumarg;
+		svector[2] = isc_arg_end;
+	}
+	return svector[1];
+}
 
-	const SSHORT len = (desc && !(request->req_flags & req_null)) ?
-		MOV_make_string2(tdbb, desc, desc->getTextType(), &ptr, buffer) : 0; // !!! How call Msgs ?
-
-	if (!ptr)
+ULONG ExecuteStatement::ParseSqlda(void)
+{
+    ULONG offset = 0;
+    int i = 0;
+	UCHAR dscType;
+    for (XSQLVAR* var = Sqlda->sqlvar;
+                        i < Sqlda->sqld; var++, i++)
 	{
-		ERR_post(Arg::Gds(isc_exec_sql_invalid_arg));
+        USHORT length = var->sqllen;
+        const int type = var->sqltype & (~1);
+		sqlTypeToDscType().get(type, dscType);
+        if (type == SQL_VARYING)
+            length += sizeof (SSHORT);
+
+		const USHORT align = type_alignments[dscType];
+		if (align) {
+			offset = FB_ALIGN(offset, align);
+		}
+        var->sqldata = &Buffer[offset];
+        offset += length;
+
+		offset = FB_ALIGN(offset, sizeof(short));
+        var->sqlind = (short*) (&Buffer[offset]);
+        offset += sizeof (short);
+    }
+    return offset;
+}
+
+void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_req* r)
+{
+	char buffer[BUFFER_LARGE + sizeof(vary)];
+	vary* v = reinterpret_cast<vary*>(buffer);
+	v->vary_length = BUFFER_LARGE;
+
+	UCHAR* p = 0;
+	const SSHORT l = (d && !(r->req_flags & req_null)) ?
+		MOV_get_string(d, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
+	if (! p) {
+		ERR_post(isc_exec_sql_invalid_arg, isc_arg_end);
 	}
 
-	sql.assign((const char*) ptr, len);
+	s.assign((const char*)p, l);
 }

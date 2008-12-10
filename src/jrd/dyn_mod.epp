@@ -41,6 +41,7 @@
 #include <string.h>
 
 #include "../jrd/common.h"
+#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/scl.h"
@@ -48,12 +49,13 @@
 #include "../jrd/flags.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
+#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
-#include "../jrd/ini.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 #include "../jrd/ods.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"
@@ -67,17 +69,12 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../common/utils_proto.h"
-#include "../dsql/DdlNodes.h"
-#include "../dsql/metd_proto.h"
-
-using MsgFormat::SafeArg;
 
 using namespace Jrd;
-using namespace Firebird;
-
 
 DATABASE DB = STATIC "ODS.RDB";
 
@@ -91,19 +88,18 @@ static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
 static void change_backup_mode(Global*, UCHAR verb);
 
 static void modify_lfield_position(thread_db*, Database*, Global*,
-	const MetaName&, const MetaName&, USHORT, USHORT);
+	const Firebird::MetaName&, const Firebird::MetaName&, USHORT, USHORT);
 static bool check_view_dependency(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&);
 static bool check_sptrig_dependency(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&);
 static void modify_lfield_index(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
 static bool field_exists(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&);
-static bool domain_exists(thread_db*, Database*, Global*, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&);
+static bool domain_exists(thread_db*, Database*, Global*, const Firebird::MetaName&);
 static void get_domain_type(thread_db*, Database*, Global*, dyn_fld&);
 static ULONG check_update_fld_type(const dyn_fld&, const dyn_fld&);
-static ULONG check_update_numeric_type(const dyn_fld&, const dyn_fld&);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
 
 
@@ -114,7 +110,7 @@ static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
 void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_chset, DYN_REQUESTS);
 	bool found = false;
@@ -128,7 +124,7 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 			X IN RDB$CHARACTER_SETS
 				WITH X.RDB$CHARACTER_SET_NAME EQ t
 
-			if (!DYN_REQUEST(drq_m_chset))
+	        if (!DYN_REQUEST(drq_m_chset))
 				DYN_REQUEST(drq_m_chset) = request;
 
 			found = true;
@@ -155,16 +151,16 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_chset))
 			DYN_REQUEST(drq_m_chset) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 85);
+		DYN_error_punt(true, 85, NULL, NULL, NULL, NULL, NULL);
 		// msg 85: "MODIFY RDB$CHARACTER_SETS failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 151, t);
+		DYN_error_punt(false, 151, t, NULL, NULL, NULL, NULL);
 		// msg 151: "Character set %s not found"
 	}
 }
@@ -177,7 +173,7 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_coll, DYN_REQUESTS);
 	bool found = false;
@@ -191,7 +187,7 @@ void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 			X IN RDB$COLLATIONS
 				WITH X.RDB$COLLATION_NAME EQ t
 
-			if (!DYN_REQUEST(drq_m_coll))
+	        if (!DYN_REQUEST(drq_m_coll))
 				DYN_REQUEST(drq_m_coll) = request;
 
 			found = true;
@@ -218,16 +214,16 @@ void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_coll))
 			DYN_REQUEST(drq_m_coll) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 86);
+		DYN_error_punt(true, 86, NULL, NULL, NULL, NULL, NULL);
 		// msg 86: "MODIFY RDB$COLLATIONS failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 152, t);
+		DYN_error_punt(false, 152, t, NULL, NULL, NULL, NULL);
 		// msg 152: "Collation %s not found"
 	}
 }
@@ -248,7 +244,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 	UCHAR s[128];
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
 
@@ -269,8 +265,8 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		DBB IN RDB$DATABASE 
 
-		if (!DYN_REQUEST(drq_m_database))
-			DYN_REQUEST(drq_m_database) = request;
+        if (!DYN_REQUEST(drq_m_database))
+            DYN_REQUEST(drq_m_database) = request;
 
 		MODIFY DBB USING
 			UCHAR verb;
@@ -311,20 +307,6 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 						DBB.RDB$CHARACTER_SET_NAME.NULL = TRUE;
 					break;
 
-				case isc_dyn_fld_collation:
-					{
-						MetaName collation;
-						GET_STRING(ptr, collation);
-
-						if (!DBB.RDB$CHARACTER_SET_NAME.NULL)
-						{
-							AlterCharSetNode node(*tdbb->getDefaultPool(),
-								DBB.RDB$CHARACTER_SET_NAME, collation);
-							node.execute(tdbb, gbl->gbl_transaction);
-						}
-					}
-					break;
-
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, NULL);
@@ -336,17 +318,17 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_database) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 84);
+		DYN_error_punt(true, 84, NULL, NULL, NULL, NULL, NULL);
 		// msg 84: "MODIFY DATABASE failed"
 	}
 
 	return;
 
 dyn_punt_84:
-	DYN_error_punt(true, 84);
+	DYN_error_punt(true, 84, NULL, NULL, NULL, NULL, NULL);
 	// msg 84: "MODIFY DATABASE failed"
 }
 
@@ -364,14 +346,14 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_xcp, DYN_REQUESTS);
 	bool found = false;
 
 	try {
 
-	MetaName t;
+	Firebird::MetaName t;
 	GET_STRING(ptr, t);
 
 	found = false;
@@ -379,7 +361,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		X IN RDB$EXCEPTIONS
 			WITH X.RDB$EXCEPTION_NAME EQ t.c_str()
 
-		if (!DYN_REQUEST(drq_m_xcp))
+        if (!DYN_REQUEST(drq_m_xcp))
 			DYN_REQUEST(drq_m_xcp) = request;
 
 		found = true;
@@ -388,7 +370,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_xcp_msg:
-					GET_BYTES(ptr, X.RDB$MESSAGE);
+					GET_STRING(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
 					break;
 
@@ -409,16 +391,16 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_xcp) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 145);
+		DYN_error_punt(true, 145, NULL, NULL, NULL, NULL, NULL);
 		// msg 145: "MODIFY EXCEPTION failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 144);
+		DYN_error_punt(false, 144, NULL, NULL, NULL, NULL, NULL);
 		// msg 144: "Exception not found"
 	}
 }
@@ -431,7 +413,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_bfil, DYN_REQUESTS);
 	bool found = false;
@@ -445,7 +427,7 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 			X IN RDB$FILTERS
 				WITH X.RDB$FUNCTION_NAME EQ t
 
-			if (!DYN_REQUEST(drq_m_bfil))
+	        if (!DYN_REQUEST(drq_m_bfil))
 				DYN_REQUEST(drq_m_bfil) = request;
 
 			found = true;
@@ -473,16 +455,16 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_bfil))
 			DYN_REQUEST(drq_m_bfil) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 88);
+		DYN_error_punt(true, 88, NULL, NULL, NULL, NULL, NULL);
 		// msg 88: "MODIFY RDB$BLOB_FILTERS failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 37, t);
+		DYN_error_punt(false, 37, t, NULL, NULL, NULL, NULL);
 		// msg 37: "Blob Filter %s not found"
 	}
 }
@@ -496,7 +478,7 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_fun, DYN_REQUESTS);
 	bool found = false;
@@ -510,7 +492,7 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 			X IN RDB$FUNCTIONS
 				WITH X.RDB$FUNCTION_NAME EQ t
 
-			if (!DYN_REQUEST(drq_m_fun))
+	        if (!DYN_REQUEST(drq_m_fun))
 				DYN_REQUEST(drq_m_fun) = request;
 
 			found = true;
@@ -547,16 +529,16 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_fun))
 			DYN_REQUEST(drq_m_fun) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 92);
+		DYN_error_punt(true, 92, NULL, NULL, NULL, NULL, NULL);
 		// msg 92: "MODIFY RDB$FUNCTIONS failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 41, t);
+		DYN_error_punt(false, 41, t, NULL, NULL, NULL, NULL);
 		// msg 41: "Function %s not found"
 	}
 }
@@ -569,7 +551,7 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_gen, DYN_REQUESTS);
 	bool found = false;
@@ -582,7 +564,7 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 			X IN RDB$GENERATORS
 				WITH X.RDB$GENERATOR_NAME EQ t
 
-			if (!DYN_REQUEST(drq_m_gen))
+	        if (!DYN_REQUEST(drq_m_gen))
 				DYN_REQUEST(drq_m_gen) = request;
 
 			found = true;
@@ -609,16 +591,16 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_gen))
 			DYN_REQUEST(drq_m_gen) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 94);
+		DYN_error_punt(true, 94, NULL, NULL, NULL, NULL, NULL);
 		// msg 94: "MODIFY GENERATOR failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 214, t);
+		DYN_error_punt(false, 214, t, NULL, NULL, NULL, NULL);
 		// msg 214: "Generator %s not found"
 	}
 }
@@ -626,8 +608,8 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 
 void DYN_modify_global_field(Global* gbl,
 							 const UCHAR** ptr,
-							 const MetaName* relation_name, 
-							 MetaName* field_name)
+							 const Firebird::MetaName* relation_name, 
+							 Firebird::MetaName* field_name)
 {
 /**************************************
  *
@@ -641,7 +623,7 @@ void DYN_modify_global_field(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_gfield, DYN_REQUESTS);
 	bool found = false;
@@ -674,8 +656,8 @@ void DYN_modify_global_field(Global* gbl,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ orig_dom.dyn_fld_name.c_str()
 
-		if (!DYN_REQUEST(drq_m_gfield))
-			DYN_REQUEST(drq_m_gfield) = request;
+        if (!DYN_REQUEST(drq_m_gfield))
+            DYN_REQUEST(drq_m_gfield) = request;
 
 		found = true;
 
@@ -701,7 +683,7 @@ void DYN_modify_global_field(Global* gbl,
 			has_dimensions = true;
 		}
 
-		bool single_validate = false;
+        bool single_validate = false;
 
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -710,7 +692,7 @@ void DYN_modify_global_field(Global* gbl,
 			{
 			case isc_dyn_fld_name:
 				{
-					MetaName newfld;
+					Firebird::MetaName newfld;
 
 					if (GET_STRING(ptr, newfld))
 					{
@@ -754,14 +736,14 @@ void DYN_modify_global_field(Global* gbl,
 						}
 						else
 						{
-							DYN_error_punt(false, 204, SafeArg() << orig_dom.dyn_fld_name.c_str() <<
-										   newfld.c_str());
+							DYN_error_punt(false, 204, orig_dom.dyn_fld_name.c_str(),
+										   newfld.c_str(), NULL, NULL, NULL);
 							/* msg 204: Cannot rename domain %s to %s.  A domain with that name already exists. */
 						}
 					}
 					else
 					{
-						DYN_error_punt(false, 212);
+						DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 						/* msg 212: "Zero length identifiers not allowed" */
 					}
 					break;
@@ -781,7 +763,7 @@ void DYN_modify_global_field(Global* gbl,
 				if (++field_adjusted_count > 2)
 				{
 					EXE_unwind(tdbb, request);
-					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str());
+					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
 				switch (new_dom.dyn_dtype) {
@@ -806,7 +788,7 @@ void DYN_modify_global_field(Global* gbl,
 				if (++field_adjusted_count > 2)
 				{
 					EXE_unwind(tdbb, request);
-					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str());
+					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
 
@@ -907,23 +889,24 @@ void DYN_modify_global_field(Global* gbl,
 			case isc_dyn_single_validation:
 				if (single_validate) {
 					EXE_unwind(tdbb, request);
-					DYN_error_punt(false, 160);
+					DYN_error_punt(false, 160, NULL, NULL, NULL, NULL, NULL);
 					/* msg 160: "Only one constraint allowed for a domain" */
 					break;
 				}
-
-				single_validate = true;
+				else
+					single_validate = true;
 				break;
 
 			case isc_dyn_fld_validation_blr:
 				if (single_validate && (!FLD.RDB$VALIDATION_BLR.NULL)) {
 					EXE_unwind(tdbb, request);
-					DYN_error_punt(false, 160);
+					DYN_error_punt(false, 160, NULL, NULL, NULL, NULL, NULL);
 					/* msg 160: "Only one constraint allowed for a domain" */
 					break;
 				}
+				else
+					single_validate = true;
 
-				single_validate = true;
 				fldvald = *ptr;
 				bfldvald = true;
 				DYN_skip_attribute(ptr);
@@ -952,7 +935,7 @@ void DYN_modify_global_field(Global* gbl,
 			case isc_dyn_fld_default_value:
 				if (has_dimensions)
 				{
-					DYN_error_punt(false, 226, orig_dom.dyn_fld_name.c_str());
+					DYN_error_punt(false, 226, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				flddftval = *ptr;
@@ -963,7 +946,7 @@ void DYN_modify_global_field(Global* gbl,
 			case isc_dyn_fld_default_source:
 				if (has_dimensions)
 				{
-					DYN_error_punt(false, 226, orig_dom.dyn_fld_name.c_str());
+					DYN_error_punt(false, 226, orig_dom.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 					// msg 226: "Default value is not allowed for array type in domain %s"
 				}
 				flddfltsrc = *ptr;
@@ -991,7 +974,7 @@ void DYN_modify_global_field(Global* gbl,
 		}
 
 
-		/* Now that we have all of the information needed, let's check to see if the field type can be modifed.
+	    /* Now that we have all of the information needed, let's check to see if the field type can be modifed.
 		 * Only do this, however, if we are actually modifying the datatype of the domain.
 		 */
 
@@ -1003,7 +986,7 @@ void DYN_modify_global_field(Global* gbl,
 								new_dom.dyn_dsc.dsc_sub_type,
 								new_dom.dyn_charset, 
 								new_dom.dyn_collation);
-			const ULONG retval = check_update_fld_type(orig_dom, new_dom);
+            const ULONG retval = check_update_fld_type(orig_dom, new_dom);
 			if (retval != FB_SUCCESS)
 				modify_err_punt(tdbb, retval, orig_dom, new_dom);
 		}
@@ -1019,11 +1002,11 @@ void DYN_modify_global_field(Global* gbl,
 				request = NULL;
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					DOM IN RDB$RELATION_FIELDS 
-					WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
-					modify_lfield_index(tdbb, dbb, gbl,
-										DOM.RDB$RELATION_NAME,
-										DOM.RDB$FIELD_NAME,
-										DOM.RDB$FIELD_NAME);
+                    WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
+                    modify_lfield_index(tdbb, dbb, gbl,
+                                        DOM.RDB$RELATION_NAME,
+                                        DOM.RDB$FIELD_NAME,
+                                        DOM.RDB$FIELD_NAME);
 				END_FOR;
 
 				CMP_release(tdbb, request);
@@ -1048,16 +1031,6 @@ void DYN_modify_global_field(Global* gbl,
 			if (charlen) {
 				FLD.RDB$CHARACTER_LENGTH = new_dom.dyn_charlen;
 				FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
-			}
-
-			if (charset) {
-				FLD.RDB$CHARACTER_SET_ID = new_dom.dyn_charset;
-				FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
-			}
-
-			if (collation) {
-				FLD.RDB$COLLATION_ID = new_dom.dyn_collation;
-				FLD.RDB$COLLATION_ID.NULL = FALSE;
 			}
 
 			if (fldlen) {
@@ -1152,16 +1125,16 @@ void DYN_modify_global_field(Global* gbl,
 		DYN_REQUEST(drq_m_gfield) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 87);
+		DYN_error_punt(true, 87, NULL, NULL, NULL, NULL, NULL);
 		/* msg 87: "MODIFY RDB$FIELDS failed" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 89);
+		DYN_error_punt(false, 89, NULL, NULL, NULL, NULL, NULL);
 		/* msg 89: "Global field not found" */
 	}
 }
@@ -1179,10 +1152,10 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
  *	Modify an existing index
  *
  **************************************/
-	MetaName name;
+	Firebird::MetaName name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_index, DYN_REQUESTS);
 	bool found = false;
@@ -1195,7 +1168,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name.c_str()
 
-		if (!DYN_REQUEST(drq_m_index))
+        if (!DYN_REQUEST(drq_m_index))
 			DYN_REQUEST(drq_m_index) = request;
 
 		found = true;
@@ -1237,24 +1210,25 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_index) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 91);
+		DYN_error_punt(true, 91, NULL, NULL, NULL, NULL, NULL);
 		// msg 91: "MODIFY RDB$INDICES failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 48);
+		DYN_error_punt(false, 48, NULL, NULL, NULL, NULL, NULL);
 		/* msg 48: "Index not found" */
 	}
 }
 
 
-void DYN_modify_local_field(Global* gbl,
+void DYN_modify_local_field(
+							Global* gbl,
 							const UCHAR** ptr,
-							const MetaName* relation_name)
+							const Firebird::MetaName* relation_name)
 {
 /**************************************
  *
@@ -1267,17 +1241,14 @@ void DYN_modify_local_field(Global* gbl,
  *
  **************************************/
 	USHORT position;
-	MetaName f, r;
-	const UCHAR* query_name;
-	const UCHAR* edit_string;
-	const UCHAR* security_class;
-	const UCHAR* new_name;
-	const UCHAR* query_header;
-	const UCHAR* description;
-	const UCHAR* new_source = NULL;
+	Firebird::MetaName f, r;
+	TEXT *query_name, *edit_string,
+		*security_class, *new_name;
+		
+	const UCHAR *query_header, *description;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, f);
 	
@@ -1304,13 +1275,13 @@ void DYN_modify_local_field(Global* gbl,
 			break;
 
 		case isc_dyn_new_fld_name:
-			new_name = *ptr;
+			new_name = (TEXT*) * ptr;
 			nnflag = true;
 			DYN_skip_attribute(ptr);
 			break;
 
 		case isc_dyn_fld_query_name:
-			query_name = *ptr;
+			query_name = (TEXT*) * ptr;
 			qnflag = true;
 			DYN_skip_attribute(ptr);
 			break;
@@ -1322,19 +1293,14 @@ void DYN_modify_local_field(Global* gbl,
 			break;
 
 		case isc_dyn_fld_edit_string:
-			edit_string = *ptr;
+			edit_string = (TEXT*) * ptr;
 			esflag = true;
 			DYN_skip_attribute(ptr);
 			break;
 
 		case isc_dyn_security_class:
-			security_class = *ptr;
+			security_class = (TEXT*) * ptr;
 			scflag = true;
-			DYN_skip_attribute(ptr);
-			break;
-
-		case isc_dyn_fld_source:
-			new_source = *ptr;
 			DYN_skip_attribute(ptr);
 			break;
 
@@ -1361,8 +1327,8 @@ void DYN_modify_local_field(Global* gbl,
 			WITH FLD.RDB$FIELD_NAME EQ f.c_str() 
 			 AND FLD.RDB$RELATION_NAME EQ r.c_str()
 
-		if (!DYN_REQUEST(drq_m_lfield))
-			DYN_REQUEST(drq_m_lfield) = request;
+        if (!DYN_REQUEST(drq_m_lfield))
+            DYN_REQUEST(drq_m_lfield) = request;
 
 		found = true;
 
@@ -1382,13 +1348,11 @@ void DYN_modify_local_field(Global* gbl,
 			}
 
 			if (nnflag) {
-				MetaName new_fld;
+				Firebird::MetaName new_fld;
 				GET_STRING(&new_name, new_fld);
 				if (new_fld.length() == 0)
-				{
-					DYN_error_punt(false, 212);
+					DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 					/* msg 212: "Zero length identifiers not allowed" */
-				}
 
 				check_view_dependency(tdbb, dbb, gbl, r, f);
 				check_sptrig_dependency(tdbb, dbb, gbl, r, f);
@@ -1398,8 +1362,7 @@ void DYN_modify_local_field(Global* gbl,
 										FLD.RDB$FIELD_NAME);
 				}
 				else {
-					DYN_error_punt(false, 205, SafeArg() << f.c_str() << new_fld.c_str() <<
-									r.c_str());
+					DYN_error_punt(false, 205, f.c_str(), new_fld.c_str(), r.c_str(), NULL, NULL);
 					/* msg 205: Cannot rename field %s to %s.  A field with that name already exists in table %s. */
 				}
 			}
@@ -1422,10 +1385,6 @@ void DYN_modify_local_field(Global* gbl,
 				else
 					FLD.RDB$SECURITY_CLASS.NULL = TRUE;
 			}
-
-			if (new_source)
-				GET_STRING(&new_source, FLD.RDB$FIELD_SOURCE);
-
 			if (dflag) {
 				if (DYN_put_text_blob(gbl, &description, &FLD.RDB$DESCRIPTION))
 					FLD.RDB$DESCRIPTION.NULL = FALSE;
@@ -1439,19 +1398,22 @@ void DYN_modify_local_field(Global* gbl,
 		DYN_REQUEST(drq_m_lfield) = request;
 
 	if (npflag && found && position != existing_position)
-		modify_lfield_position(tdbb, dbb, gbl, r, f, position, existing_position);
-	} // try
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+		modify_lfield_position(tdbb, dbb, gbl, r, f, position,
+							   existing_position);
+
+
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 95);
+		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 176, SafeArg() << f.c_str() << r.c_str());
-		// msg 176: "column %s does not exist in table/view %s"
+		DYN_error_punt(false, 96, f.c_str(), NULL, NULL, NULL, NULL);
+		/* msg 96: "Local column %s not found" */
 	}
 }
 
@@ -1464,7 +1426,7 @@ void DYN_modify_local_field(Global* gbl,
 void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_prm, DYN_REQUESTS);
 	bool found = false;
@@ -1480,7 +1442,7 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 			GET_STRING(ptr, p);
 		}
 		else
-			DYN_unsupported_verb();
+		    DYN_unsupported_verb();
 
 		found = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1488,7 +1450,7 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 			WITH X.RDB$PARAMETER_NAME EQ t
 			AND X.RDB$PROCEDURE_NAME EQ p
 
-			if (!DYN_REQUEST(drq_m_prm))
+	        if (!DYN_REQUEST(drq_m_prm))
 				DYN_REQUEST(drq_m_prm) = request;
 
 			found = true;
@@ -1515,16 +1477,16 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_prm))
 			DYN_REQUEST(drq_m_prm) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 100);
+		DYN_error_punt(true, 100, NULL, NULL, NULL, NULL, NULL);
 		// msg 100: "MODIFY RDB$PROCEDURE_PARAMETERS failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 146, SafeArg() << t << p);
+		DYN_error_punt(false, 146, t, p, NULL, NULL, NULL);
 		// msg : "Parameter %s in procedure %s not found"
 	}
 }
@@ -1542,16 +1504,15 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	MetaName procedure_name;
+	Firebird::MetaName procedure_name;
 
 	GET_STRING(ptr, procedure_name);
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = NULL;
 	bool found = false;
-	bool only_description = false;
 
 	try {
 
@@ -1561,19 +1522,20 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_NAME = procedure_name.c_str()
 
-		if (!DYN_REQUEST(drq_m_prcs))
+        if (!DYN_REQUEST(drq_m_prcs))
 			DYN_REQUEST(drq_m_prcs) = request;
 			
 		found = true;
+		bool only_description = false;
 
 		/* Set NULL flags to TRUE only for fields which must be specified in the DYN string.
 		   Retain existing values on other fields (RDB$DESCRIPTION, RDB$SECURITY_CLASS),
 		   unless explicitly changed in the DYN string */
 		MODIFY P
-
+		
 			if (**ptr == isc_dyn_description)
 			{
-				++*ptr;
+			    ++*ptr;
 				if (DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION))
 					P.RDB$DESCRIPTION.NULL = FALSE;
 				else
@@ -1591,15 +1553,6 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 				P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
-
-				// ODS_11_1 fields
-				P.RDB$DEBUG_INFO.NULL = TRUE;
-
-				P.RDB$PROCEDURE_TYPE = prc_legacy;
-				P.RDB$PROCEDURE_TYPE.NULL = FALSE;
-
-				P.RDB$VALID_BLR = TRUE;
-				P.RDB$VALID_BLR.NULL = FALSE;
 			}
 
 			UCHAR verb;
@@ -1646,15 +1599,6 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 					P.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
-				case isc_dyn_debug_info:
-					DYN_put_blr_blob(gbl, ptr, &P.RDB$DEBUG_INFO);	// ODS_11_1 field
-					P.RDB$DEBUG_INFO.NULL = FALSE;
-					break;
-
-				case isc_dyn_prc_type:
-					P.RDB$PROCEDURE_TYPE = DYN_get_number(ptr);	// ODS_11_1 field
-					break;
-
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
@@ -1665,16 +1609,17 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 	if (!DYN_REQUEST(drq_m_prcs))
 		DYN_REQUEST(drq_m_prcs) = request;
+
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 141);
+		DYN_error_punt(true, 141, NULL, NULL, NULL, NULL, NULL);
 		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 140, procedure_name.c_str());
+		DYN_error_punt(false, 140, procedure_name.c_str(), NULL, NULL, NULL, NULL);
 		/* msg 140: "Procedure %s not found" */
 	}
 }
@@ -1692,10 +1637,10 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
  *	Modify an existing relation
  *
  **************************************/
-	MetaName name, field_name;
+	Firebird::MetaName name, field_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	GET_STRING(ptr, name);
 
@@ -1708,11 +1653,11 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ name.c_str()
 
-		if (!DYN_REQUEST(drq_m_relation))
-			DYN_REQUEST(drq_m_relation) = request;
+        if (!DYN_REQUEST(drq_m_relation))
+            DYN_REQUEST(drq_m_relation) = request;
 
 		if (!REL.RDB$VIEW_BLR.NULL)
-			DYN_error_punt(false, 177);
+			DYN_error_punt(false, 177, NULL, NULL, NULL, NULL, NULL);
 			
 		found = true;
 		MODIFY REL USING
@@ -1734,12 +1679,14 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 				case isc_dyn_rel_ext_file:
 					if (REL.RDB$EXTERNAL_FILE.NULL) {
 						DYN_rundown_request(request, -1);
-						DYN_error_punt(false, 97);
+						DYN_error_punt(false, 97, NULL, NULL, NULL, NULL,
+									   NULL);
 						/* msg 97: "add EXTERNAL FILE not allowed" */
 					}
 					if (!GET_STRING(ptr, REL.RDB$EXTERNAL_FILE)) {
 						DYN_rundown_request(request, -1);
-						DYN_error_punt(false, 98);
+						DYN_error_punt(false, 98, NULL, NULL, NULL, NULL,
+									   NULL);
 						/* msg 98: "drop EXTERNAL FILE not allowed" */
 					}
 					break;
@@ -1762,16 +1709,16 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 99);
+		DYN_error_punt(true, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 101);
+		DYN_error_punt(false, 101, NULL, NULL, NULL, NULL, NULL);
 		/* msg 101: "Relation field not found" */
 	}
 }
@@ -1784,7 +1731,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_rol, DYN_REQUESTS);
 	bool found = false;
@@ -1797,7 +1744,7 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 			X IN RDB$ROLES
 				WITH X.RDB$ROLE_NAME EQ t
 
-			if (!DYN_REQUEST(drq_m_rol))
+	        if (!DYN_REQUEST(drq_m_rol))
 				DYN_REQUEST(drq_m_rol) = request;
 
 			found = true;
@@ -1824,16 +1771,16 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_rol))
 			DYN_REQUEST(drq_m_rol) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 158);
+		DYN_error_punt(true, 158, NULL, NULL, NULL, NULL, NULL);
 		// msg 158: "MODIFY RDB$ROLES failed"
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, 155, t);
+		DYN_error_punt(false, 155, t, NULL, NULL, NULL, NULL);
 		// msg 155: "Role %s not found"
 	}
 }
@@ -1851,32 +1798,27 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
  *	Modify a trigger for a relation.
  *
  **************************************/
-	MetaName trigger_name;
+	Firebird::MetaName trigger_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trigger, DYN_REQUESTS);
 	bool found = false;
-	bool only_description = false;
 
 	try {
 
 	GET_STRING(ptr, trigger_name);
 	const UCHAR* source = NULL;
 	const UCHAR* blr = NULL;
-	const UCHAR* debug_info_ptr = NULL;
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ trigger_name.c_str()
 
-		if (!DYN_REQUEST(drq_m_trigger)) {
-			DYN_REQUEST(drq_m_trigger) = request;
+        if (!DYN_REQUEST(drq_m_trigger)) {
+            DYN_REQUEST(drq_m_trigger) = request;
 		}
-
-		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(Arg::Gds(isc_adm_task_denied));
 
 		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
 		// Why would a user want to fiddle with triggers that were generated automatically?
@@ -1888,7 +1830,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 			case fb_sysflag_check_constraint:
 			case fb_sysflag_referential_constraint:
 			case fb_sysflag_view_check:
-				DYN_error_punt(false, 109);
+				DYN_error_punt(false, 109, NULL, NULL, NULL, NULL, NULL);
 				// msg 109: "Triggers created automatically cannot be modified"
 				break;
 			default:
@@ -1900,27 +1842,15 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		
 		MODIFY X
 
-			if (**ptr == isc_dyn_description)
-			{
-				++*ptr;
-				if (DYN_put_text_blob(gbl, ptr, &X.RDB$DESCRIPTION))
-					X.RDB$DESCRIPTION.NULL = FALSE;
-				else
-					X.RDB$DESCRIPTION.NULL = TRUE;
-
-				if (**ptr == isc_dyn_end)
-					only_description = true;
-			}
-
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
 				switch (verb) {
 				case isc_dyn_trg_name:
 					{
-						MetaName new_trigger_name;
+						Firebird::MetaName new_trigger_name;
 						GET_STRING(ptr, new_trigger_name);
 						if (new_trigger_name.length() == 0)
-							DYN_error_punt(false, 212);
+							DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
 							// msg 212: "Zero length identifiers not allowed"
 					    strcpy (X.RDB$TRIGGER_NAME, new_trigger_name.c_str());
 					}
@@ -1971,11 +1901,6 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 						X.RDB$DESCRIPTION.NULL = TRUE;
 					break;
 
-				case isc_dyn_debug_info:
-					debug_info_ptr = *ptr;
-					DYN_skip_attribute(ptr);
-					break;
-
 				default:
 					--(*ptr);
 					DYN_execute(gbl, ptr, NULL, NULL, &trigger_name, NULL, NULL);
@@ -1986,45 +1911,22 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_trigger))
 		DYN_REQUEST(drq_m_trigger) = request;
 
-	if (!only_description)
-	{
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-		{
-			jrd_req* sub_request = NULL;
-
-			FOR(REQUEST_HANDLE sub_request TRANSACTION_HANDLE gbl->gbl_transaction)
-				TRG IN RDB$TRIGGERS WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
-
-				MODIFY TRG USING
-					TRG.RDB$VALID_BLR = TRUE;
-					TRG.RDB$VALID_BLR.NULL = FALSE;
-
-					TRG.RDB$DEBUG_INFO.NULL = (debug_info_ptr == NULL) ? TRUE : FALSE;
-					if (debug_info_ptr)
-						DYN_put_blr_blob(gbl, &debug_info_ptr, &TRG.RDB$DEBUG_INFO);
-				END_MODIFY;
-			END_FOR;
-
-			CMP_release(tdbb, sub_request);
-		}
 	}
-
-	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 102);
+		DYN_error_punt(true, 102, NULL, NULL, NULL, NULL, NULL);
 		/* msg 102: "MODIFY TRIGGER failed" */
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 147, trigger_name.c_str());
+		DYN_error_punt(false, 147, trigger_name.c_str(), NULL, NULL, NULL, NULL);
 		/* msg 147: "Trigger %s not found" */
 	}
 }
 
 
-void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_name)
+void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName* trigger_name)
 {
 /**************************************
  *
@@ -2036,10 +1938,10 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
  *	Modify a trigger message.
  *
  **************************************/
-	MetaName t;
+	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_m_trg_msg, DYN_REQUESTS);
 
@@ -2051,15 +1953,15 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
 	else if (*(*ptr)++ == isc_dyn_trg_name)
 		GET_STRING(ptr, t);
 	else
-		DYN_error_punt(false, 103);
+		DYN_error_punt(false, 103, NULL, NULL, NULL, NULL, NULL);
 	/* msg 103: "TRIGGER NAME expected" */
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGER_MESSAGES
 			WITH X.RDB$MESSAGE_NUMBER EQ number AND X.RDB$TRIGGER_NAME EQ t.c_str()
 
-		if (!DYN_REQUEST(drq_m_trg_msg))
-			DYN_REQUEST(drq_m_trg_msg) = request;
+        if (!DYN_REQUEST(drq_m_trg_msg))
+            DYN_REQUEST(drq_m_trg_msg) = request;
 
 		MODIFY X
 			UCHAR verb;
@@ -2085,10 +1987,10 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 105);
+		DYN_error_punt(true, 105, NULL, NULL, NULL, NULL, NULL);
 		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
 	}
 }
@@ -2107,16 +2009,14 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
-	MetaName view_name;
+	Firebird::MetaName view_name;
 	GET_STRING(ptr, view_name);
 
 	if (view_name.length() == 0)
-	{
-		DYN_error_punt(false, 212);
-		/* msg 212: "Zero length identifiers not allowed" */
-	}
+		DYN_error_punt(false, 212, NULL, NULL, NULL, NULL, NULL);
+	/* msg 212: "Zero length identifiers not allowed" */
 	
 	jrd_req* request = NULL;
 	bool found = false;
@@ -2131,7 +2031,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 			WITH REL.RDB$RELATION_NAME EQ view_name.c_str()
 				AND REL.RDB$VIEW_BLR NOT MISSING
 
-		if (!DYN_REQUEST(drq_m_view))
+        if (!DYN_REQUEST(drq_m_view))
 			DYN_REQUEST(drq_m_view) = request;
 
 		found = true;
@@ -2141,7 +2041,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 
 			if (**ptr == isc_dyn_description)
 			{
-				++*ptr;
+			    ++*ptr;
 				if (DYN_put_text_blob(gbl, ptr, &REL.RDB$DESCRIPTION))
 					REL.RDB$DESCRIPTION.NULL = FALSE;
 				else
@@ -2158,18 +2058,6 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 				REL.RDB$VIEW_BLR.NULL = TRUE;
 				REL.RDB$VIEW_SOURCE.NULL = TRUE;
 				REL.RDB$SECURITY_CLASS.NULL = TRUE;
-
-				jrd_req* request2 = NULL;
-
-				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-					VR IN RDB$VIEW_RELATIONS
-					WITH VR.RDB$VIEW_NAME EQ view_name.c_str()
-				{
-					ERASE VR;
-				}
-				END_FOR;
-
-				CMP_release(tdbb, request2);
 			}
 
 			UCHAR verb;
@@ -2219,15 +2107,15 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_view) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 99);
+		DYN_error_punt(true, 99, NULL, NULL, NULL, NULL, NULL);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
 	}
 
 	if (!found) {
-		DYN_error_punt(false, 54, view_name.c_str());
+		DYN_error_punt(false, 54, view_name.c_str(), NULL, NULL, NULL, NULL);
 		/* msg 54: "View %s not found" */
 	}
 }
@@ -2249,12 +2137,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 	bool invalid_state = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	if (!tdbb->getAttachment()->locksmith())
-	{
-		ERR_post(Arg::Gds(isc_adm_task_denied));
-	}
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
 	bool found = false;
@@ -2305,51 +2188,51 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 	}
 	
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_difference); 
-		DYN_error_punt(true, 63);
+		DYN_error_punt(true, 63, NULL, NULL, NULL, NULL, NULL);
 		/* msg 63: ERASE RDB$FILE failed */
 	}
 	
-	if (!found && verb == isc_dyn_begin_backup) {
-		try {
-			request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
-			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				X IN RDB$FILES 
-				X.RDB$FILE_NAME.NULL = TRUE;
-				X.RDB$FILE_FLAGS.NULL = FALSE;
-				X.RDB$FILE_FLAGS = FILE_difference | FILE_backing_up;
-				X.RDB$FILE_START = 0;
-				X.RDB$FILE_START.NULL = FALSE;
-				X.RDB$FILE_LENGTH.NULL = TRUE;
-				X.RDB$SHADOW_NUMBER.NULL = TRUE;
-			END_STORE;
-			
-			found = true;
+	if (!found && verb == isc_dyn_begin_backup) try {
+		request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			X IN RDB$FILES 
+			X.RDB$FILE_NAME.NULL = TRUE;
+			X.RDB$FILE_FLAGS.NULL = FALSE;
+			X.RDB$FILE_FLAGS = FILE_difference | FILE_backing_up;
+			X.RDB$FILE_START = 0;
+			X.RDB$FILE_START.NULL = FALSE;
+			X.RDB$FILE_LENGTH.NULL = TRUE;
+			X.RDB$SHADOW_NUMBER.NULL = TRUE;
+		END_STORE;
+		
+		found = true;
 
-			if (!DYN_REQUEST(drq_s_difference))
-			{
-				DYN_REQUEST(drq_s_difference) = request;
-			}		
-		}
-		catch (const Exception& ex) {
-			stuff_exception(tdbb->tdbb_status_vector, ex);
-			DYN_rundown_request(request, drq_s_difference);
-			DYN_error_punt(true, 150);
-			/* msg 150: STORE RDB$FILES failed */
-		}
+		if (!DYN_REQUEST(drq_s_difference))
+		{
+			DYN_REQUEST(drq_s_difference) = request;
+		}		
+	}
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_rundown_request(request, drq_s_difference);
+		DYN_error_punt(true, 150, NULL, NULL, NULL, NULL, NULL);
+		/* msg 150: STORE RDB$FILES failed */
 	}
 	
 	if (invalid_state) {
-		DYN_error_punt(false, verb == isc_dyn_begin_backup ? 217 : 218);
+		DYN_error_punt(false, verb == isc_dyn_begin_backup ? 217 : 218,
+					   NULL, NULL, NULL, NULL, NULL);
 		/* msg 217: "Database is already in the physical backup mode" */
 		/* msg 218: "Database is not in the physical backup mode" */
 	}
 
 	if (!found)
 	{
-		DYN_error_punt(false, verb == isc_dyn_end_backup ? 218 : 215);
+		DYN_error_punt(false, verb == isc_dyn_end_backup ? 218 : 215,
+					   NULL, NULL, NULL, NULL, NULL);
 		/* msg 218: "Database is not in the physical backup mode" */
 		/* msg 215: "Difference file is not defined" */
 	}
@@ -2359,8 +2242,8 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 static void modify_lfield_position(thread_db* tdbb,
 								   Database* dbb,
 								   Global* gbl,
-								   const MetaName& relation_name,
-								   const MetaName& field_name,
+								   const Firebird::MetaName& relation_name,
+								   const Firebird::MetaName& field_name,
 								   USHORT new_position,
 								   USHORT existing_position)
 {
@@ -2413,9 +2296,9 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$RELATION_FIELDS 
-		WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND
-		FLD.RDB$FIELD_POSITION >= MIN(new_position, existing_position) AND
-		FLD.RDB$FIELD_POSITION <= MAX(new_position, existing_position)
+        WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND 
+        FLD.RDB$FIELD_POSITION >= MIN(new_position, existing_position) AND 
+        FLD.RDB$FIELD_POSITION <= MAX(new_position, existing_position)
 		MODIFY FLD USING
 			/* If the field is the one we want, change the position, otherwise
 			 * increase the value of RDB$FIELD_POSITION
@@ -2451,7 +2334,7 @@ static void modify_lfield_position(thread_db* tdbb,
 		FLD IN RDB$RELATION_FIELDS WITH FLD.RDB$RELATION_NAME EQ relation_name.c_str()
 			SORTED BY ASCENDING FLD.RDB$FIELD_POSITION
 
-		if (FLD.RDB$FIELD_POSITION != new_pos) {
+        if (FLD.RDB$FIELD_POSITION != new_pos) {
 			MODIFY FLD USING
 				FLD.RDB$FIELD_POSITION = new_pos;
 			END_MODIFY;
@@ -2461,9 +2344,9 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	CMP_release(tdbb, request);
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 95);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
 }
@@ -2472,8 +2355,8 @@ static void modify_lfield_position(thread_db* tdbb,
 static bool check_view_dependency(thread_db* tdbb,
 									 Database* dbb,
 									 Global* gbl,
-									 const MetaName& relation_name,
-									 const MetaName& field_name)
+									 const Firebird::MetaName& relation_name,
+									 const Firebird::MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2488,7 +2371,7 @@ static bool check_view_dependency(thread_db* tdbb,
  ***********************************************************/
 	jrd_req* request = NULL;
 	bool retval = false;
-	MetaName view_name;
+	Firebird::MetaName view_name;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
@@ -2501,15 +2384,15 @@ static bool check_view_dependency(thread_db* tdbb,
 			Y.RDB$RELATION_NAME EQ Z.RDB$VIEW_NAME AND
 			X.RDB$RELATION_NAME EQ Z.RDB$RELATION_NAME AND
 			Y.RDB$VIEW_CONTEXT EQ Z.RDB$VIEW_CONTEXT 
-		retval = true;
+        retval = true;
 		view_name = Z.RDB$VIEW_NAME;
 	END_FOR;
 
 	CMP_release(tdbb, request);
 
 	if (retval)
-		DYN_error_punt(false, 206, SafeArg() << field_name.c_str() << 
-						relation_name.c_str() << view_name.c_str());
+		DYN_error_punt(false, 206, field_name.c_str(), relation_name.c_str(), view_name.c_str(), NULL,
+					   NULL);
 	/* msg 206: Column %s from table %s is referenced in  %s. */
 
 	return retval;
@@ -2519,8 +2402,8 @@ static bool check_view_dependency(thread_db* tdbb,
 static bool check_sptrig_dependency(thread_db* tdbb,
 									   Database* dbb,
 									   Global* gbl,
-									   const MetaName& relation_name,
-									   const MetaName& field_name)
+									   const Firebird::MetaName& relation_name,
+									   const Firebird::MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2529,39 +2412,39 @@ static bool check_sptrig_dependency(thread_db* tdbb,
  *
  *  Functional Description:
  *	Checks to see if the given field is referenced in a stored procedure
- *	or trigger.  If the field is referenced, return true, else return
+ *	or trigger.  If the field is refereneced, return true, else return
  *  false, but true causes the function to punt instead.
  ***********************************************************/
 	jrd_req* request = NULL;
 	bool retval = false;
-	MetaName dep_name;
+	Firebird::MetaName dep_name;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
 			DEP IN RDB$DEPENDENCIES WITH
 			DEP.RDB$DEPENDED_ON_NAME EQ relation_name.c_str() AND
 			DEP.RDB$FIELD_NAME EQ field_name.c_str() 
-		retval = true;
+        retval = true;
 		dep_name = DEP.RDB$DEPENDENT_NAME;
 	END_FOR;
 
 	CMP_release(tdbb, request);
 
 	if (retval)
-		DYN_error_punt(false, 206, SafeArg() << field_name.c_str() <<
-						relation_name.c_str() << dep_name.c_str());
+		DYN_error_punt(false, 206, field_name.c_str(), relation_name.c_str(), dep_name.c_str(), NULL,
+					   NULL);
 	/* msg 206: Column %s from table %s is referenced in %s. */
 
 	return retval;
 }
 
 
-static void modify_lfield_index(thread_db* tdbb,
-								Database* dbb,
-								Global* gbl,
-								const MetaName&	relation_name,
-								const MetaName&	field_name,
-								const MetaName&	new_fld_name)
+static void modify_lfield_index(thread_db*	tdbb,
+								Database*	dbb,
+								Global*		gbl,
+								const Firebird::MetaName&	relation_name,
+								const Firebird::MetaName&	field_name,
+								const Firebird::MetaName&	new_fld_name)
 {
 /***********************************************************
  *
@@ -2582,14 +2465,14 @@ static void modify_lfield_index(thread_db* tdbb,
 			IDXS.RDB$FIELD_NAME EQ field_name.c_str()
 			/* Change the name of the field in the index */
 		MODIFY IDXS USING
-			memcpy(IDXS.RDB$FIELD_NAME, new_fld_name.c_str(), sizeof(IDXS.RDB$FIELD_NAME));
+			MOVE_FASTER(new_fld_name.c_str(), IDXS.RDB$FIELD_NAME,
+						sizeof(IDXS.RDB$FIELD_NAME));
 		END_MODIFY;
 
 		/* Set the index name to itself to tell the index to rebuild */
 		MODIFY IDX USING
-			// This is to fool both gpre and gcc.
-			char* p = IDX.RDB$INDEX_NAME;
-			p[MAX_SQL_IDENTIFIER_LEN] = 0;
+			MOVE_FASTER(IDX.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME,
+						sizeof(IDX.RDB$INDEX_NAME));
 		END_MODIFY;
 	END_FOR;
 
@@ -2597,11 +2480,11 @@ static void modify_lfield_index(thread_db* tdbb,
 }
 
 
-static bool field_exists(thread_db* tdbb,
-						 Database* dbb,
-						 Global* gbl,
-						 const MetaName& relation_name,
-						 const MetaName& field_name)
+static bool field_exists(thread_db*					tdbb,
+						 Database*					dbb,
+						 Global*					gbl,
+						 const Firebird::MetaName&	relation_name,
+						 const Firebird::MetaName&	field_name)
 {
 /***********************************************************
  *
@@ -2618,7 +2501,7 @@ static bool field_exists(thread_db* tdbb,
 		FLD IN RDB$RELATION_FIELDS WITH
 			FLD.RDB$RELATION_NAME EQ relation_name.c_str() AND
 			FLD.RDB$FIELD_NAME EQ field_name.c_str()
-		retval = true;
+        retval = true;
 	END_FOR;
 
 	CMP_release(tdbb, request);
@@ -2626,10 +2509,10 @@ static bool field_exists(thread_db* tdbb,
 }
 
 
-static bool domain_exists(thread_db* tdbb, 
-						  Database* dbb, 
-						  Global* gbl, 
-						  const MetaName& field_name)
+static bool domain_exists(thread_db*				tdbb, 
+						  Database*					dbb, 
+						  Global*					gbl, 
+						  const Firebird::MetaName&	field_name)
 {
 /***********************************************************
  *
@@ -2644,7 +2527,7 @@ static bool domain_exists(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ field_name.c_str()
-		retval = true;
+        retval = true;
 	END_FOR;
 
 	CMP_release(tdbb, request);
@@ -2652,9 +2535,9 @@ static bool domain_exists(thread_db* tdbb,
 }
 
 
-void DYN_modify_sql_field(Global* gbl,
-						  const UCHAR** ptr,
-						  const MetaName* relation_name)
+void DYN_modify_sql_field(Global*					gbl,
+						  const UCHAR**				ptr,
+						  const Firebird::MetaName*	relation_name)
 {
 /**************************************
  *
@@ -2700,7 +2583,7 @@ void DYN_modify_sql_field(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	
 	dyn_fld orig_fld, new_fld, dom_fld;
 
@@ -2711,11 +2594,8 @@ void DYN_modify_sql_field(Global* gbl,
 	// Check to see if the field being altered is involved in any type of dependency.
 	// If there is a dependency, call DYN_error_punt (inside the function).
 	fb_assert(relation_name);
-
-	// ASF: check disabled to allow change of field type to be used
-	// with TYPE OF COLUMN table.column feature.
-	//check_sptrig_dependency(tdbb, dbb, gbl, *relation_name,
-	//						orig_fld.dyn_fld_name);
+	check_sptrig_dependency(tdbb, dbb, gbl, *relation_name,
+							orig_fld.dyn_fld_name);
 
 	jrd_req* request = NULL;
 	jrd_req* first_request = NULL;
@@ -2724,52 +2604,39 @@ void DYN_modify_sql_field(Global* gbl,
 		charset;
 	dtype = scale = prec = subtype = charlen = collation = fldlen = nullflg =
 		charset = false;
-
+		
 	int field_adjusted_count = 0;
-
+	
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RFR IN RDB$RELATION_FIELDS CROSS
-		REL IN RDB$RELATIONS WITH
-			REL.RDB$RELATION_NAME = RFR.RDB$RELATION_NAME AND
-			RFR.RDB$RELATION_NAME = relation_name->c_str() AND
-			RFR.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
-		first_request = request;
+		RFR IN RDB$RELATION_FIELDS WITH RFR.RDB$RELATION_NAME = relation_name->c_str()
+			AND RFR.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
+        first_request = request;
 		request = NULL;
 
 		found = true;
-		bool is_view = !REL.RDB$VIEW_BLR.NULL;
 		bool has_dimensions = false;
 		bool update_domain = false;
 		bool domain_has_default = false;
-		bool domain_is_computed = false;
-		SSHORT fld_position = 0;
-		bool fld_position_change = false;
-		SSHORT view_context = 0;
-		bool view_context_change = false;
-		MetaName fld_base_field;
-		bool fld_base_field_change = false;
-		bool orig_computed = false;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
-			// Get information about the original field type.  If a conversion
-			// can not be at any time made between the two datatypes, error.
-			DSC_make_descriptor(&orig_fld.dyn_dsc,
-								FLD.RDB$FIELD_TYPE,
-								FLD.RDB$FIELD_SCALE,
-								FLD.RDB$FIELD_LENGTH,
-								FLD.RDB$FIELD_SUB_TYPE,
-								FLD.RDB$CHARACTER_SET_ID,
-								FLD.RDB$COLLATION_ID);
+				// Get information about the original field type.  If a conversion
+				// can not be at any time made between the two datatypes, error.
+				DSC_make_descriptor(&orig_fld.dyn_dsc,
+									FLD.RDB$FIELD_TYPE,
+									FLD.RDB$FIELD_SCALE,
+									FLD.RDB$FIELD_LENGTH,
+									FLD.RDB$FIELD_SUB_TYPE,
+									FLD.RDB$CHARACTER_SET_ID,
+									FLD.RDB$COLLATION_ID);
 
-			orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
+	        orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH; 
 			orig_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
 			orig_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
 			orig_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 			orig_fld.dyn_collation = FLD.RDB$COLLATION_ID;
 			orig_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
 			orig_fld.dyn_fld_source = RFR.RDB$FIELD_SOURCE;
-			orig_computed = !FLD.RDB$COMPUTED_BLR.NULL;
 
 			// If the original field type is an array, force its blr type to blr_blob
 			if (FLD.RDB$DIMENSIONS != 0)
@@ -2779,17 +2646,16 @@ void DYN_modify_sql_field(Global* gbl,
 			}
 			
 			domain_has_default = !FLD.RDB$DEFAULT_VALUE.NULL;
-			domain_is_computed = !FLD.RDB$COMPUTED_BLR.NULL;
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end) {
 				switch (verb) {
 				case isc_dyn_fld_source:
 					GET_STRING(ptr, dom_fld.dyn_fld_source);
-					if (fb_utils::implicit_domain(dom_fld.dyn_fld_source.c_str()))
+					if (!strncmp(dom_fld.dyn_fld_source.c_str(),
+						IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN))
 					{
-						DYN_error_punt(false, 224, SafeArg() << dom_fld.dyn_fld_source.c_str() <<
-										orig_fld.dyn_fld_name.c_str());
+						DYN_error_punt(false, 224, dom_fld.dyn_fld_source.c_str(), orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL);
 						// msg 224: "Cannot use the internal domain %s as new type for field %s".
 					}
 					get_domain_type(tdbb, dbb, gbl, dom_fld);
@@ -2804,10 +2670,8 @@ void DYN_modify_sql_field(Global* gbl,
 					fldlen = true;
 					new_fld.dyn_dsc.dsc_length = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
-					{
-						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str());
+						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 149: "Only one data type change to the field %s allowed at a time"
-					}
 
 					switch (new_fld.dyn_dtype)
 					{
@@ -2829,10 +2693,8 @@ void DYN_modify_sql_field(Global* gbl,
 					dtype = true;
 					new_fld.dyn_dtype = DYN_get_number(ptr);
 					if (++field_adjusted_count > 2)
-					{
-						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str());
+						DYN_error_punt(false, 149, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 149: "Only one data type change to the field %s allowed at a time"
-					}
 
 					switch (new_fld.dyn_dtype) {
 					case blr_text:
@@ -2908,37 +2770,6 @@ void DYN_modify_sql_field(Global* gbl,
 					new_fld.dyn_dtype = blr_blob;
 					break;
 
-				case isc_dyn_fld_position:
-					fld_position = DYN_get_number(ptr);
-					fld_position_change = true;
-					break;
-
-				case isc_dyn_fld_base_fld:
-					GET_STRING(ptr, fld_base_field);
-					fld_base_field_change = true;
-					break;
-
-				case isc_dyn_view_context:
-					view_context = DYN_get_number(ptr);
-					view_context_change = true;
-					break;
-
-				case isc_dyn_fld_computed_blr:
-					domain_is_computed = true;
-					new_fld.dyn_computed_val = *ptr;
-					DYN_skip_attribute(ptr);
-					break;
-
-				case isc_dyn_fld_computed_source:
-					new_fld.dyn_computed_src = *ptr;
-					DYN_skip_attribute(ptr);
-					break;
-
-				case isc_dyn_del_computed:
-					domain_is_computed = false;
-					new_fld.dyn_drop_computed = true;
-					break;
-
 				case isc_dyn_del_default:
 					new_fld.dyn_drop_default = true;
 					break;
@@ -2946,7 +2777,7 @@ void DYN_modify_sql_field(Global* gbl,
 				case isc_dyn_fld_default_value:
 					if (has_dimensions)
 					{
-						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str());
+						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					new_fld.dyn_default_val = *ptr;
@@ -2956,15 +2787,16 @@ void DYN_modify_sql_field(Global* gbl,
 				case isc_dyn_fld_default_source:
 					if (has_dimensions)
 					{
-						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str());
+						DYN_error_punt(false, 225, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 						// msg 225: "Default value is not allowed for array type in field %s"
 					}
 					new_fld.dyn_default_src = *ptr;
 					DYN_skip_attribute(ptr);
 					break;
 
-				// These should only be defined for BLOB types and should not come through with
-				// any other types.  BLOB types are detected above
+					// These should only be defined for BLOB types and should not come through with
+					// any other types.  BLOB types are detected above
+
 				case isc_dyn_fld_segment_length:
 					DYN_get_number(ptr);
 					break;
@@ -2975,44 +2807,17 @@ void DYN_modify_sql_field(Global* gbl,
 						DYN_execute(gbl, ptr, relation_name, &tmp, NULL, NULL, NULL);
 				}
 			}
-
-			if (fld_base_field_change && view_context_change)
-			{
-				fb_assert(is_view);
-
-				if (fld_base_field.hasData())
-				{
-					char field_name[MAX_SQL_IDENTIFIER_SIZE];
-					DYN_UTIL_find_field_source(tdbb, gbl, RFR.RDB$RELATION_NAME, view_context,
-						fld_base_field.c_str(), field_name);
-					dom_fld.dyn_fld_source = field_name;
-					update_domain = true;
-				}
-				else
-					DYN_UTIL_generate_field_name(tdbb, gbl, new_fld.dyn_fld_source);
-			}
 		END_FOR; // FLD in RDB$FIELDS
 		CMP_release(tdbb, request);
 		request = NULL;
 
-		if (!is_view &&
-			((new_fld.dyn_computed_val && !orig_computed) ||
-			 (!new_fld.dyn_computed_val && orig_computed)))
-		{
-			// Cannot add or remove COMPUTED from column @1
-			DYN_error_punt(false, 249,
-				SafeArg() << orig_fld.dyn_fld_name.c_str());
-		}
-
-		const bool sourceIsInternalDomain =
-			fb_utils::implicit_domain(orig_fld.dyn_fld_source.c_str()) && RFR.RDB$BASE_FIELD.NULL;
-		const bool changeComputed = new_fld.dyn_computed_val || new_fld.dyn_drop_computed;
-
+		const bool sourceIsInternalDomain = !strncmp(orig_fld.dyn_fld_source.c_str(),
+			IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
+					
 		// Now that we have all of the information needed, let's check to see
-		// if the field type can be modified
+		// if the field type can be modifed
 
-		if (update_domain)
-		{
+		if (update_domain) {
 			// a1. Internal domain -> domain.
 			// a2. Domain -> domain.
 			
@@ -3027,12 +2832,9 @@ void DYN_modify_sql_field(Global* gbl,
 								dom_fld.dyn_charset, dom_fld.dyn_collation);
 			*/
 
-			if (!domain_is_computed && !is_view)
-			{
-				const ULONG retval = check_update_fld_type(orig_fld, dom_fld);
-				if (retval != FB_SUCCESS)
-					modify_err_punt(tdbb, retval, orig_fld, dom_fld);
-			}
+			const ULONG retval = check_update_fld_type(orig_fld, dom_fld);
+			if (retval != FB_SUCCESS)
+				modify_err_punt(tdbb, retval, orig_fld, dom_fld);
 
 			// If the original definition was a base field type, remove the entries from RDB$FIELDS
 			if (sourceIsInternalDomain)
@@ -3041,7 +2843,7 @@ void DYN_modify_sql_field(Global* gbl,
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS
 					WITH FLD.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
-					ERASE FLD;
+                    ERASE FLD;
 				END_FOR;
 
 				CMP_release(tdbb, request);
@@ -3051,33 +2853,11 @@ void DYN_modify_sql_field(Global* gbl,
 			MODIFY RFR USING
 				strcpy(RFR.RDB$FIELD_SOURCE, dom_fld.dyn_fld_source.c_str());
 				RFR.RDB$FIELD_SOURCE.NULL = FALSE;
-				if (domain_is_computed)
-				{
-					RFR.RDB$UPDATE_FLAG.NULL = FALSE;
-					RFR.RDB$UPDATE_FLAG = 1;
-				}
 			END_MODIFY;
 			first_request = request;
 			request = NULL;
-
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
-			{
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-					PRM IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM.RDB$RELATION_NAME = relation_name->c_str() AND
-						 PRM.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
-
-					MODIFY PRM USING
-						strcpy(PRM.RDB$FIELD_SOURCE, dom_fld.dyn_fld_source.c_str());
-					END_MODIFY;
-				END_FOR;
-
-				CMP_release(tdbb, request);
-				request = NULL;
-			}
 		}
-		else
-		{
+		else {
 			// b1. Domain -> internal domain.
 			// b2. Internal domain -> internal domain.
 
@@ -3085,21 +2865,9 @@ void DYN_modify_sql_field(Global* gbl,
 			const UCHAR* defSrc = new_fld.dyn_default_src;
 			const bool dropDefault = new_fld.dyn_drop_default;
 			const bool changeDefault = defVal || defSrc || dropDefault;
-
 			// If we are altering only the default, we need the old field settings.
 			if (changeDefault && !new_fld.dyn_dsc.dsc_dtype)
-			{
 				new_fld = orig_fld;
-				// We already called DSC_make_descriptor on orig_fld, so fix new_fld.
-				switch (new_fld.dyn_dtype)
-				{
-				case blr_text:
-				case blr_varying:
-				case blr_cstring:
-				    new_fld.dyn_dsc.dsc_length = DSC_string_length(&orig_fld.dyn_dsc);
-					break;
-				}
-			}
 
 			DSC_make_descriptor(&new_fld.dyn_dsc,
 								new_fld.dyn_dtype,
@@ -3107,13 +2875,9 @@ void DYN_modify_sql_field(Global* gbl,
 								new_fld.dyn_dsc.dsc_length,
 								new_fld.dyn_dsc.dsc_sub_type,
 								new_fld.dyn_charset, new_fld.dyn_collation);
-
-			if (!changeComputed && !orig_computed && !is_view)
-			{
-				const ULONG retval = check_update_fld_type(orig_fld, new_fld);
-				if (retval != FB_SUCCESS)
-					modify_err_punt(tdbb, retval, orig_fld, new_fld);
-			}
+			const ULONG retval = check_update_fld_type(orig_fld, new_fld);
+			if (retval != FB_SUCCESS)
+				modify_err_punt(tdbb, retval, orig_fld, new_fld);
 
 			// Check to see if the original data type for the field was based on a domain.  If it
 			// was (and now it isn't), remove the domain information and replace it with a generated
@@ -3122,10 +2886,11 @@ void DYN_modify_sql_field(Global* gbl,
 			if (!changeDefault && !sourceIsInternalDomain)
 			{
 				// b1. Domain -> internal domain. Not for changing DEFAULT value.
-
+				
 				request = first_request;
 				MODIFY RFR USING
-					DYN_UTIL_generate_field_name(tdbb, gbl, RFR.RDB$FIELD_SOURCE);
+					DYN_UTIL_generate_field_name(tdbb, gbl,
+												 RFR.RDB$FIELD_SOURCE);
 					new_fld.dyn_fld_source = RFR.RDB$FIELD_SOURCE;
 				END_MODIFY;
 				first_request = request;
@@ -3133,8 +2898,8 @@ void DYN_modify_sql_field(Global* gbl,
 
 				STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					FLD IN RDB$FIELDS 
-					FLD.RDB$SYSTEM_FLAG = 0;
-					FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
+                    FLD.RDB$SYSTEM_FLAG = 0;
+                    FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 					FLD.RDB$FIELD_SCALE.NULL = TRUE;
 					FLD.RDB$FIELD_PRECISION.NULL = TRUE;
 					FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
@@ -3178,16 +2943,6 @@ void DYN_modify_sql_field(Global* gbl,
 						FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 					}
 
-					if (charset) {
-						FLD.RDB$CHARACTER_SET_ID = new_fld.dyn_charset;
-						FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					}
-
-					if (collation) {
-						FLD.RDB$COLLATION_ID = new_fld.dyn_collation;
-						FLD.RDB$COLLATION_ID.NULL = FALSE;
-					}
-
 					if (fldlen) {
 						// CVC: Rescue from the wrong field_length with a helper.
 						if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
@@ -3196,41 +2951,13 @@ void DYN_modify_sql_field(Global* gbl,
 							FLD.RDB$FIELD_LENGTH = new_fld.dyn_dsc.dsc_length;
 						FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 					}
-
-					if (new_fld.dyn_computed_val)
-					{
-						DYN_put_blr_blob(gbl, &new_fld.dyn_computed_val, &FLD.RDB$COMPUTED_BLR);
-						FLD.RDB$COMPUTED_BLR.NULL = FALSE;
-					}
-
-					if (new_fld.dyn_computed_src)
-					{
-						DYN_put_text_blob(gbl, &new_fld.dyn_computed_src, &FLD.RDB$COMPUTED_SOURCE);
-						FLD.RDB$COMPUTED_SOURCE.NULL = FALSE;
-					}
-
+					
 					// Copy the field name into RDB$FIELDS
 					strcpy(FLD.RDB$FIELD_NAME, new_fld.dyn_fld_source.c_str());
 				END_STORE;
 
 				CMP_release(tdbb, request);
 				request = NULL;
-
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
-				{
-					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-						PRM IN RDB$PROCEDURE_PARAMETERS
-						WITH PRM.RDB$RELATION_NAME = relation_name->c_str() AND
-							 PRM.RDB$FIELD_NAME = orig_fld.dyn_fld_name.c_str()
-
-						MODIFY PRM USING
-							strcpy(PRM.RDB$FIELD_SOURCE, new_fld.dyn_fld_source.c_str());
-						END_MODIFY;
-					END_FOR;
-
-					CMP_release(tdbb, request);
-					request = NULL;
-				}
 			}
 			else if (changeDefault)
 			{
@@ -3241,16 +2968,11 @@ void DYN_modify_sql_field(Global* gbl,
 						if (RFR.RDB$DEFAULT_VALUE.NULL)
 						{
 							if (sourceIsInternalDomain || !domain_has_default)
-							{
-								DYN_error_punt(false, 229, orig_fld.dyn_fld_name.c_str());
+								DYN_error_punt(false, 229, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
 								// msg 229: "Local column %s doesn't have a default"
-							}
 							else if (domain_has_default)
-							{
-								DYN_error_punt(false, 230, SafeArg() << orig_fld.dyn_fld_name.c_str() <<
-												orig_fld.dyn_fld_source.c_str());
+								DYN_error_punt(false, 230, orig_fld.dyn_fld_name.c_str(), orig_fld.dyn_fld_source.c_str(), NULL, NULL, NULL);
 								// msg 230: "Local column %s default belongs to domain %s"
-							}
 						}
 						else
 						{
@@ -3260,11 +2982,6 @@ void DYN_modify_sql_field(Global* gbl,
 					}
 					else
 					{
-						if (domain_is_computed)
-						{
-							DYN_error_punt(false, 233, orig_fld.dyn_fld_name.c_str());
-							// msg 233: "Local column %s is computed, cannot set a default value"
-						}
 						if (defVal)
 						{
 							const UCHAR* p = defVal;
@@ -3321,16 +3038,6 @@ void DYN_modify_sql_field(Global* gbl,
 							FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
 						}
 
-						if (charset) {
-							FLD.RDB$CHARACTER_SET_ID = new_fld.dyn_charset;
-							FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
-						}
-
-						if (collation) {
-							FLD.RDB$COLLATION_ID = new_fld.dyn_collation;
-							FLD.RDB$COLLATION_ID.NULL = FALSE;
-						}
-
 						if (fldlen) {
 							// CVC: Rescue from the wrong field_length with a helper.
 							if (new_fld.dyn_dsc.dsc_dtype <= dtype_varying && new_fld.dyn_charbytelen)
@@ -3340,145 +3047,33 @@ void DYN_modify_sql_field(Global* gbl,
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 						}
 
-						if (changeComputed)
-						{
-							FLD.RDB$DEFAULT_SOURCE.NULL = TRUE;
-							FLD.RDB$DEFAULT_VALUE.NULL = TRUE;
-
-							if (new_fld.dyn_computed_val)
-							{
-								DYN_put_blr_blob(gbl, &new_fld.dyn_computed_val, &FLD.RDB$COMPUTED_BLR);
-								FLD.RDB$COMPUTED_BLR.NULL = FALSE;
-							}
-
-							if (new_fld.dyn_computed_src)
-							{
-								DYN_put_text_blob(gbl, &new_fld.dyn_computed_src, &FLD.RDB$COMPUTED_SOURCE);
-								FLD.RDB$COMPUTED_SOURCE.NULL = FALSE;
-							}
-						}
-
 					END_MODIFY;
 				END_FOR; // FLD in RDB$FIELDS
 				CMP_release(tdbb, request);
-				if (domain_is_computed)
-				{
-					request = first_request;
-					MODIFY RFR USING
-						RFR.RDB$UPDATE_FLAG.NULL = FALSE;
-						RFR.RDB$UPDATE_FLAG = 1;
-					END_MODIFY;
-					first_request = request;
-				}
-				
 				request = NULL;
 			}
 		} // else not a domain
-
 		request = first_request;
-
-		if (fld_position_change || view_context_change || fld_base_field_change)
-		{
-			MODIFY RFR USING
-				if (fld_position_change)
-					RFR.RDB$FIELD_POSITION = fld_position;
-				if (view_context_change)
-					RFR.RDB$VIEW_CONTEXT = view_context;
-				if (fld_base_field_change)
-				{
-					RFR.RDB$BASE_FIELD.NULL = fld_base_field.isEmpty();
-					strcpy(RFR.RDB$BASE_FIELD, fld_base_field.c_str());
-				}
-			END_MODIFY;
-		}
 	END_FOR; // RFR IN RDB$RELATION_FIELDS
 	CMP_release(tdbb, request);
 	request = NULL;
 
 	if (!found)
-	{
-		DYN_error_punt(false, 176, SafeArg() << orig_fld.dyn_fld_name.c_str() <<
-						relation_name->c_str());
-		// msg 176: "column %s does not exist in table/view %s"
-	}
+		DYN_error_punt(false, 96, orig_fld.dyn_fld_name.c_str(), NULL, NULL, NULL, NULL);
+		// msg 96: "Local column %s not found"
 
 	// Update any indices that exist
 	modify_lfield_index(tdbb, dbb, gbl, *relation_name, orig_fld.dyn_fld_name,
 						orig_fld.dyn_fld_name);
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 95);
+	catch (const std::exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
 	}
 }
 
-
-// *************************************
-// D Y N _ m o d i f y _ m a p p i n g
-// *************************************
-// It's purpose is to add/drop mapping from OS security name
-// to DB security object
-void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = CMP_find_request(tdbb, drq_m_map, DYN_REQUESTS);
-	bool found = false;
-
-	string osName, dbName;
-	GET_STRING(ptr, osName);
-	const UCHAR op = *(*ptr)++;
-	GET_STRING(ptr, dbName);
-
-	// This is FB 2.5 limited implementation!
-	// Later it should work with new system table, something like RDB$MAPPING.
-
-	if (dbName != ADMIN_ROLE)
-	{
-		status_exception::raise(Arg::Gds(isc_no_meta_update) << Arg::Gds(isc_wish_list));
-	}
-
-	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
-		ERR_post(Arg::Gds(isc_adm_task_denied));
-
-	found = false;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		X IN RDB$ROLES
-			WITH X.RDB$ROLE_NAME EQ dbName.c_str()
-
-		if (!DYN_REQUEST(drq_m_map))
-			DYN_REQUEST(drq_m_map) = request;
-
-		found = true;
-		MODIFY X
-			switch (op)
-			{
-			case isc_dyn_automap_role:
-				X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO | ROLE_FLAG_MAY_TRUST;
-				break;
-
-			case isc_dyn_autounmap_role:
-				X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;
-				break;
-
-			default:
-				DYN_unsupported_verb();
-			}
-		END_MODIFY;
-	END_FOR;
-
-	if (!DYN_REQUEST(drq_m_map))
-		DYN_REQUEST(drq_m_map) = request;
-
-	if (!found)
-	{
-		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_random) << Arg::Str("Missing RDB$ADMIN role in the database"));
-	}
-}
 
 void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_fld)
 {
@@ -3583,19 +3178,18 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_cstring:
 			{
 				/* CVC: Because our caller invoked DSC_make_descriptor() on new_fld previously,
-						we should have the added bytes for varchar. For cstring, we are done, since
+						we should have the added bytes for varchar. For cstring, we are used, since
 						DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor). */
 
 				const USHORT maxflen = DSC_string_length(&orig_fld.dyn_dsc);
 
 				/* We can have this assertion since this case is for both string fields. */
-				const ULONG new_len = DSC_string_length(&new_fld.dyn_dsc);
-				fb_assert(new_len - maxflen ==
-					new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
+				fb_assert(DSC_string_length(&new_fld.dyn_dsc) - maxflen
+					== new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
-				if (new_len < maxflen)
+				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
-				// msg 208: New size specified for column %s must be at least %d characters.
+				/* New size specified for column %s must be greater than %d characters. */
 			}
 			break;
 
@@ -3611,6 +3205,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		return isc_dyn_dtype_invalid;
 		/* Cannot change datatype for column %s.
 		   The operation cannot be performed on BLOB, or ARRAY columns. */
+		break;
 
 /* DATE types */
 	case blr_sql_date:
@@ -3648,9 +3243,9 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 				// CVC: Solve bug #910423, missing DSC_string_length call.
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
-				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
+                if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
-				// msg 208: New size specified for column %s must be at least %d characters.
+				/* New size specified for column %s must be greater than %d characters. */
 			}
 
 			break;
@@ -3674,6 +3269,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			return isc_dyn_dtype_invalid;
 			/* Cannot change datatype for column %s.
 			   The operation cannot be performed on BLOB, or ARRAY columns. */
+			break;
 
 		case blr_sql_date:
 		case blr_sql_time:
@@ -3687,8 +3283,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 		case blr_short:
 			switch (orig_fld.dyn_dtype) {
 			case blr_short:
-				return check_update_numeric_type(orig_fld, new_fld);
-				
+				break;
 			default:
 				return isc_dyn_invalid_dtype_conversion;
 				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
@@ -3699,8 +3294,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			switch (orig_fld.dyn_dtype) {
 			case blr_long:
 			case blr_short:
-				return check_update_numeric_type(orig_fld, new_fld);
-				
+				break;
 			default:
 				return isc_dyn_invalid_dtype_conversion;
 				/* Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported. */
@@ -3724,7 +3318,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			case blr_int64:
 			case blr_long:
 			case blr_short:
-				return check_update_numeric_type(orig_fld, new_fld);
+				break;
 
 			default:
 				return isc_dyn_invalid_dtype_conversion;
@@ -3758,9 +3352,9 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 				// CVC: Solve bug #910423, missing DSC_string_length call.
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
-				if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
+                if (DSC_string_length(&new_fld.dyn_dsc) < maxflen)
 					return isc_dyn_char_fld_too_small;
-				// msg 208: New size specified for column %s must be at least %d characters.
+				/* New size specified for column %s must be greater than %d characters. */
 			}
 			break;
 
@@ -3773,38 +3367,6 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 	default:
 		fb_assert(FALSE);
 		return 87;				/* MODIFY RDB$FIELDS FAILED */
-	}
-	return FB_SUCCESS;
-}
-
-
-static ULONG check_update_numeric_type(const dyn_fld& orig_fld,
-										const dyn_fld& new_fld)
-{
-/**************************************
- *
- *	c h e c k _ u p d a t e _ n u m e r i c _ t y p e
- *
- **************************************
- *
- * Functional description
- *	Compare the original field type with the new field type to
- *      determine if the original type can be changed to the new type.
- *  The types should be integral, since it tests only numeric/decimal subtypes
- *      to ensure the scale is not being widened at the expense of the precision,
- *      because the old stored values should fit in the new definition.
- *
- *  This function returns an error code if the conversion can not be
- *  made.  If the conversion can be made, FB_SUCCESS is returned.
- **************************************/
-
- 	// Since dsc_scale is negative, the sum of precision and scale produces
-	// the width of the integral part.
-	if (orig_fld.dyn_dsc.dsc_sub_type && new_fld.dyn_dsc.dsc_sub_type &&
-		orig_fld.dyn_precision + orig_fld.dyn_dsc.dsc_scale >
-		new_fld.dyn_precision + new_fld.dyn_dsc.dsc_scale)
-	{
-		return isc_dyn_scale_too_big;
 	}
 	return FB_SUCCESS;
 }
@@ -3829,44 +3391,29 @@ static void modify_err_punt(thread_db* tdbb,
  *	DYN_modify_sql_field
  **************************************/
 
-	switch (errorcode)
-	{
+	switch (errorcode) {
 	case isc_dyn_dtype_invalid:
-		DYN_error_punt(false, errorcode, orig_fld_def.dyn_fld_name.c_str());
+		DYN_error_punt(false, 207, orig_fld_def.dyn_fld_name.c_str(), NULL, NULL,
+					   NULL, NULL);
 		/* Cannot change datatype for column %s.The operation cannot be performed on DATE, BLOB, or ARRAY columns. */
 		break;
 
 	case isc_dyn_dtype_conv_invalid:
-		DYN_error_punt(false, errorcode, orig_fld_def.dyn_fld_name.c_str());
+		DYN_error_punt(false, 210, orig_fld_def.dyn_fld_name.c_str(), NULL, NULL,
+					   NULL, NULL);
 		/* Cannot convert column %s from character to non-character data. */
 		break;
 
 	case isc_dyn_char_fld_too_small:
+		/* TMN: Bad, bad, bad cast. int -> TEXT* */
 		DYN_error_punt(false,
-						errorcode,
-						SafeArg() << orig_fld_def.dyn_fld_name.c_str() <<
-						DSC_string_length(&orig_fld_def.dyn_dsc));
-		// msg 208: New size specified for column %s must be at least %d characters.
-		break;
-		
-	case isc_dyn_scale_too_big:
-		{
-			int code = errorcode;
-			int diff = new_fld_def.dyn_precision -
-				(orig_fld_def.dyn_precision + orig_fld_def.dyn_dsc.dsc_scale);
-			if (diff < 0)
-			{
-				// If new scale becomes negative externally, the message is useless for the user.
-				// (The scale is always zero or negative for us but externally is non-negative.)
-				// Let's ask the user to widen the precision, then. Example: numeric(4, 0) -> numeric(1, 1).
-				code = isc_dyn_precision_too_small;
-				diff = new_fld_def.dyn_precision - new_fld_def.dyn_dsc.dsc_scale - diff;
-			}
-			DYN_error_punt(false, code,
-							SafeArg() << orig_fld_def.dyn_fld_name.c_str() << diff);
-			// scale_too_big: New scale specified for column @1 must be at most @2.
-			// precision_too_small: New precision specified for column @1 must be at least @2.
-		}
+						208,
+						orig_fld_def.dyn_fld_name.c_str(),
+						(TEXT*)(IPTR)DSC_string_length(&orig_fld_def.dyn_dsc),
+						NULL,
+						NULL,
+						NULL);
+		/* msg 208: New size specified for column %s must be greater than %d characters. */
 		break;
 
 	case isc_dyn_invalid_dtype_conversion:
@@ -3878,15 +3425,15 @@ static void modify_err_punt(thread_db* tdbb,
 			DSC_get_dtype_name(&new_fld_def.dyn_dsc, new_type,
 							   sizeof(new_type));
 
-			DYN_error_punt(false, errorcode,
-							SafeArg() << orig_fld_def.dyn_fld_name.c_str() <<
-							orig_type << new_type);
-			// Cannot change datatype for @1.  Conversion from base type @2 to @3 is not supported.
+			DYN_error_punt(false, 209, orig_fld_def.dyn_fld_name.c_str(), orig_type,
+						   new_type, NULL, NULL);
+			/* Cannot convert base type %s to base type %s. */
+			break;
 		}
-		break;
 
 	default:
-		DYN_error_punt(true, 95);
+		DYN_error_punt(true, 95, NULL, NULL, NULL, NULL, NULL);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
 }
+

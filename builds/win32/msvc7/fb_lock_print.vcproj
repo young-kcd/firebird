@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,CLIENT,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\fb_lock_print/fb_lock_print.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fb_lock_print/"
 				ObjectFile="..\..\..\temp\release\fb_lock_print/"
@@ -93,7 +93,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fb_lock_print/fb_lock_print.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fb_lock_print/"
 				ObjectFile="..\..\..\temp\debug\fb_lock_print/"
@@ -153,6 +153,9 @@
 			Name="JRD files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
@@ -163,6 +166,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 		</Filter>
 		<Filter

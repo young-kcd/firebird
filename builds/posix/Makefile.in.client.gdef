@@ -27,6 +27,8 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.client.gdef,v 1.14 2005-12-20 12:14:52 alexpeshkoff Exp $
+#
 ROOT=..
 ObjModuleType=std
 
@@ -63,7 +65,8 @@ all:	gdef
 gdef:   $(GDEF)
 
 $(GDEF): $(GDEF_Objects) $(LIBFBCLIENT_SO) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) 
+	$(LD) $(LINK_OPTS) $(GDEF_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbclient \
+$(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 

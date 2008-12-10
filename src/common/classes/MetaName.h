@@ -25,7 +25,7 @@
  *
  *
  */
-
+ 
 #ifndef METANAME_H
 #define METANAME_H
 
@@ -34,21 +34,20 @@
 
 namespace Firebird {
 
-class MetaName
-{
+class MetaName {
 private:
 	char data[MAX_SQL_IDENTIFIER_SIZE];
 	unsigned int count;
-
+	
 	void init()
 	{
 		memset(data, 0, MAX_SQL_IDENTIFIER_SIZE);
 	}
 	MetaName& set(const MetaName& m)
 	{
-		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE);
+		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE); 
 		count = m.count;
-		return *this;
+		return *this; 
 	}
 
 public:
@@ -62,18 +61,16 @@ public:
 	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
 	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
-
+	
 	MetaName& assign(const char* s, size_t l);
 	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
 	MetaName& operator=(const string& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
-	char* getBuffer(const size_t l);
+	char* getBuffer(size_t l);
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }
-	bool isEmpty() const { return count == 0; }
-	bool hasData() const { return count != 0; }
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
@@ -102,10 +99,10 @@ class LoopMetaName : public Firebird::MetaName
 	bool flag;
 	char* target;
 public:
-	LoopMetaName(char* s) : Firebird::MetaName(s),
+	LoopMetaName(char* s) : Firebird::MetaName(s), 
 		flag(true), target(s) { }
 	~LoopMetaName() { strcpy(target, c_str()); }
-	operator bool() const { return flag; }
+	operator bool() { return flag; }
 	void stop() { flag = false; }
 };
 #define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())

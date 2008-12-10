@@ -34,13 +34,15 @@
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
-#include "../common/classes/timestamp.h"
+//#include "../common/classes/timestamp.h"
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dmp_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../jrd/thd.h"
+
 
 
 void (*dbg_block) (const BufferDesc*);
@@ -519,11 +521,11 @@ static void dmp_data(const data_page* page)
 			fprintf(dbg_file, "\n\t%d - (empty)\n", i);
 			continue;
 		}
-		const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
-		const rhdf* fragment = (rhdf*) header;
+		const rhd* header = (RHD) ((SCHAR *) page + index->dpg_offset);
+		const rhdf* fragment = (RHDF) header;
 		if (header->rhd_flags & rhd_blob)
 		{
-			const blh* blob = (blh*) header;
+			const blh* blob = (BLH) header;
 			fprintf(dbg_file,
 					   "\n\t%d - (blob) offset: %d, length: %d, flags: %x\n",
 					   i, index->dpg_offset, index->dpg_length,
@@ -546,12 +548,12 @@ static void dmp_data(const data_page* page)
 			{
 				if (header->rhd_flags & rhd_incomplete)
 				{
-					length = index->dpg_length - OFFSETA(rhdf*, rhdf_data);
-					p = (SCHAR *) ((rhdf*) header)->rhdf_data;
+					length = index->dpg_length - OFFSETA(RHDF, rhdf_data);
+					p = (SCHAR *) ((RHDF) header)->rhdf_data;
 				}
 				else
 				{
-					length = index->dpg_length - OFFSETA(rhd*, rhd_data);
+					length = index->dpg_length - OFFSETA(RHD, rhd_data);
 					p = (SCHAR *) header->rhd_data;
 				}
 				const char* q = p;
@@ -660,14 +662,11 @@ static void dmp_header(const header_page* page)
 	fprintf(dbg_file,
 			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d(%d), pages: %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
-			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG,
+			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG, 
 			   minor_version, page->hdr_ods_minor_original, page->hdr_PAGES);
 
-	const Firebird::TimeStamp ts(*((GDS_TIMESTAMP *) page->hdr_creation_date));
-
 	struct tm time;
-	ts.decode(&time);
-
+	isc_decode_timestamp((GDS_TIMESTAMP *) page->hdr_creation_date, &time);
 	fprintf(dbg_file, "\tCreation date:\t%s %d, %d %d:%02d:%02d\n",
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
@@ -781,7 +780,7 @@ static void dmp_index(const btree_page* page, USHORT page_size)
 			(USHORT)((ULONG) ((page_size - OFFSETA(pointer_page*, ppg_page)) * 8) /
 						(BITS_PER_LONG + 2));
 	const USHORT max_records = (page_size - sizeof(data_page)) /
-								(sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data));
+								(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 
 	const btree_nod* const end  = (btree_nod*) ((UCHAR *) page + page->btr_length);
 	btree_nod* node = (btree_nod*) page->btr_nodes;
@@ -895,18 +894,16 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
 
 	for (int n = 0; n < control->pgc_ppp;) {
 		while (n < control->pgc_ppp)
-		{
 			if (BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d - ", n);
 		while (n < control->pgc_ppp)
-		{
 			if (!BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d, ", n - 1);
 	}
 
@@ -964,7 +961,7 @@ static void dmp_root(const index_root_page* page)
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
 			   page->irt_relation, page->irt_count);
 	const bool ods11plus =
-		(JRD_get_thread_data()->getDatabase()->dbb_ods_version >= ODS_VERSION11);
+		(JRD_get_thread_data()->tdbb_database->dbb_ods_version >= ODS_VERSION11);
 	USHORT i = 0;
 	for (const index_root_page::irt_repeat* desc = page->irt_rpt;
 		i < page->irt_count; i++, desc++)
@@ -992,7 +989,7 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 {
 /**************************************
  *
- *	d m p _ t r a n s a c t i o n
+ *	d m p _ t r a n s a c t i o n 
  *
  **************************************
  *
@@ -1000,18 +997,16 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const ULONG transactions_per_tip = dbb->dbb_pcontrol->pgc_tpt;
 
 	fprintf(dbg_file,
 			   "Transaction Inventory Page\t checksum %d\t generation %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation);
-	if (tdbb->getTransaction())
-	{
+	if (tdbb->tdbb_transaction)
 		fprintf(dbg_file, "\tCurrent transaction %d",
-				   tdbb->getTransaction()->tra_number);
-	}
+				   tdbb->tdbb_transaction->tra_number);
 	else
 		fprintf(dbg_file, "\tCurrent transaction (NULL)");
 	if (sequence)

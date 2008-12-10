@@ -1,31 +1,30 @@
-Firebird Database Server 2.5.0 pre alpha
+Firebird Database Server 2.0.5
 ==================================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+  ** IMPORTANTE **
 
+  La estructura en disco de los archivos Firebird 
+  (ODS) ha cambiado respecto a la versión 1.5. Lea
+  las siguientes notas relacionadas con la nueva 
+  estructura y su instalación sobre versiones 
+  anteriores de Firebird.
+
+  ** ********** **
+  
 Este documento es una guía para instalar este paquete
-de Firebird 2.1 en la plataforma Windows. Estas notas
+de Firebird 2.0.5 en la plataforma Win32. Estas notas
 hacen referencia al paquete de instalación en sí, más
-que a Firebird 2.1 en general. Además, estas notas
-están destinadas principalmente a usuarios del
-programa de instalación.
-
-Se supone que los lectores de este documento se
-encuentran familiarizados con Firebird 2.0. Si Ud. se
-encuentra evaluando Firebird 2.1 como parte de la
-migración desde Fb 1.5, le recomendamos revisar la
-documentación de Fb 2.0 para tener una idea de los
-cambios realizados entre 1.5 y 2.0.
+que a Firebird 2.0.5 en general.
 
 
 Contenido
 ---------
 
 o Antes de instalar
-o Problemas con la instalación de las bibliotecas de MS VC
+o Nueva ODS 11.0
+o Instalación en sistemas con Firebird 1.5
+o Instalación en sistemas con Firebird 2.0
+o Nuevas características del instalador
 o Problemas conocidos relacionados con la instalación
 o Desinstalación
 o Otras notas
@@ -35,73 +34,98 @@ o Instalación desde un archivo batch
 Antes de instalar
 -----------------
 
-Se recomienda que DESINSTALE cualquier versión anterior
-de Firebird o Interbase antes de instalar este paquete.
-Es particularmente importante que verifique que
-fbclient.dll y gds32.dll hayan sido eliminados de
-<system32>.
+Se recomienda que DESINSTALE cualquier versión
+anterior de Firebird o Interbase antes de 
+instalar este paquete. Es particularmente
+importante que verifique que fbclient.dll y gds32.dll
+hayan sido eliminados de <system32>. 
 
 
-Problemas con la instalación de las bibliotecas de MS VC
---------------------------------------------------------
+Nueva ODS 11.0
+--------------
 
-Se ha realizado un gran esfuerzo para asegurar que las
-bibliotecas en tiempo de ejecución de MS Visual C sean
-instaladas correctamente por el programa de
-instalación. No obstante, en caso de problemas, puede
-ser necesario instalar el vcredist.exe oficial. Las
-versiones correctas para esta compilación de Firebird
-pueden encontrarse aquí:
+Firebird 2.0 introduce una nueva versión (11.0) 
+de la estructura en disco de archivos Firebird (ODS),
+que es completamente incompatible con la versión 11.0
+utilizada en las versiones alpha.
 
-	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+Si está instalando esta versión de Firebird 2.0 por
+primera vez sobre una instalación previa de Firebird 2 
+alpha se recomienda que lo haga en una carpeta 
+diferente. Aunque la desinstalación no elimina
+la base de datos de seguridad existente, ésta 
+utiliza una estructura (ODS) incompatible, y no
+podrá conectarse al servidor.
 
-  y aquí para x64:
 
-	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+Instalación en sistemas con Firebird 1.5
+----------------------------------------
+La base de datos de seguridad ha cambiado. La nueva
+base de datos se llama security2.fdb y usa un 
+algoritmo de encriptación de contraseñas mejorado. 
+Puede obtener más información sobre las nuevas
+características de seguridad en las notas de la 
+versión.
+
+La nueva estructura de bases de datos y los cambios
+en la encriptación generan varios problemas 
+relacionados con la migración de sitios que tengan
+muchos identificadores de usuario (user ids).
+El instalador no intentará realizar esta migración, 
+la cual debe ser realizada manualmente. Una posible
+técnica se describe en misc/upgrade/security/. 
 
 
-Otros problemas conocidos relacionados con la instalación
----------------------------------------------------------
+Instalación en sistemas con Firebird 2.0
+----------------------------------------
 
-o Sólo es posible utilizar el programa de instalación
-  para instalar la instancia por defecto de Firebird 2.1.
-  Si desea instalar instancias adicionales, con nombre,
-  debería realizar la instalación manualmente desde el
-  paquete ZIP de instalación.
+Adicionalmente al cambio de la estructura en disco 
+(ODS), tenga en cuenta que el instalador no puede
+detectar automáticamente si una versión Alfa o Beta
+de Firebird 2.0 se está ejecutando como servicio.
+Por lo tanto, no recibirá ninguna advertencia hasta
+que el instalador intente reemplazar el archivo
+en uso. Esto puede evitarse mediante una desinstalación 
+previa.
 
-o Desafortunadamente, el instalador no puede detectar
-  con certeza si una versión de Firebird Classic server
-  se encuentra en ejecución.
 
-o Existen areas conocidas de superposición entre las
-  instalaciones de de 32 y de 64 bits:
+Nuevas características del instalador
+-------------------------------------
 
-  - El instalador de servicios (instsvc) utiliza la
-	misma instancia por defecto para las instalaciones de
-	32 y de 64 bits. Esto ocurre "by design" (por
-	diseño). Los servicios existen en un único espacio de
-	nombres.
+o Si se encuentra el archivo firebird.conf el 
+  instalador instalará el archivo de configuración
+  por defecto como:
 
-  - Si se instalan los applets del panel de control de
-	32 y de 64 bits, ambos apuntarán a la misma instancia
-	por defecto .
+  firebird.conf.default.
 
-o Al realizar una instalación en Vista asegúrese de
-  hacerlo como administrador. Es decir, si usa el
-  programa de instalación, haga click derecho sobre el
-  mismo y seleccione "Ejecutar como administrador". De
-  otra manera el instalador no será capaz de iniciar
-  Firebird al finalizar la instalación..
+  El archivo firebird.conf existente no se modificará.
+  Esto busca asegurar que las restricciones de
+  acceso se mantengan luego de una actualización.
+
+
+o El instalador soporta ahora varios lenguajes,
+  pero SOLO durante el proceso de instalación en sí.
+  
+  NOTA: Los lenguajes disponibles están determinados
+  por la versión de Windows que utiliza. Esto
+  significa que, por ejemplo, los usuarios del oeste
+  de Europa no verán los lenguajes eslavos disponibles.
+  
+
+Problemas conocidos relacionados con la instalación
+---------------------------------------------------
+
+Ninguno conocido en este momento.
 
 
 Desinstalación
 --------------
 
 o Es recomendable que este paquete sea correctamente
-  desinstalado utilizando el desinstalador provisto,
+  desinstalado utilizando el desinstalador provisto, 
   que puede ser utilizado desde el Panel de Control.
   Como alternativa, puede ser desinstalado ejecutando
-  unins000.exe directamente desde la carpeta de
+  unins000.exe directamente desde la carpeta de 
   instalación.
 
 o Si Firebird se está ejecutando como una aplicación
@@ -109,11 +133,11 @@ o Si Firebird se está ejecutando como una aplicación
   detener el servidor manualmente antes de ejecutar
   el desinstalador, debido a que este último no puede
   detener una aplicación en ejecución.
-  Si el servidor estuviera ejecutándose durante el
+  Si el servidor estuviera ejecutándose durante el 
   proceso de desinstalación, éste no se completará
   correctamente. Deberá eliminar los remanentes
   manualmente.
-
+ 
 o El proceso de desinstalación dejará cuatro archivos
   en la carpeta de instalación:
 
@@ -124,45 +148,33 @@ o El proceso de desinstalación dejará cuatro archivos
 
   Esto es intencional. Estos archivos son potencialmente
   modificables por los usuarios y podrían necesitarse
-  si Firebird es reinstalado en el futuro. Pueden
+  si Firebird es reinstalado en el futuro. Pueden 
   eliminarse si no son necesarios.
 
-o Una nueva característica del programa de
-  desinstalación es la opción de ejecutarlo con el
-  parámetro /CLEAN. Esto verificará el contador de uso
-  de los archivos compartidos mencionados antes y los
-  eliminará si es posible.
 
-o La desinstalación no eliminará las bibliotecas en
-  tiempo de ejecución de MS VC de la carpeta de sistema.
-  Las mismas pueden ser eliminadas manualmente mediante
-  el panel de control, pero este proceso no es requerido
-  en circunstancias normales.
-
-
-Otras Notas
+Otras notas
 -----------
 
   Firebird requiere WinSock2. Todas las plataformas
-  Win32 deberían tenerlo, con excepción de Win95.
+  Win32 deberían tenerlo, con excepción de Win95. 
   Durante la instalación se realiza una verificación
   de la librería Winsock2. Si la misma no se encuentra,
   la instalación fallará. Puede visitar el siguiente
   enlace:
 
-	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
-  para obtener información sobre cómo realizar la
+  para obtener información sobre cómo realizar la 
   actualización.
 
 
-o Instalación desde un archivo batch
-------------------------------------
+Instalación desde un archivo batch
+----------------------------------
 
 El programa de instalación puede ser ejecutado desde
 un archivo batch.
 Por favor lea el siguiente documento:
 
-	installation_scripted.txt
+    installation_scripted.txt
 
 para tener todos los detalles.

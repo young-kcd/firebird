@@ -1,29 +1,29 @@
-Firebird Database Server 2.5 pre alpha
+==================================================
+Firebird Database Server 2.0.5
 ==================================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+** VAZNO **
+
+  ODS je promijenjen u odnosu na Firebird 1.5.
+  Pogledajte dole u vezi novog ODS-a i instalacije
+  preko starije verzije Firebird -a
+
+  ** ********* **
 
 Ovaj dokument je vodic za instalaciju ovog paketa
-Firebird-a 2.1 za Windows platformu. Ovaj tekst
-se odnosi na instalacioni paket, a ne na Firebird 2.1
-u generalnom smislu. Kao dodatak, ovaj tekst je
-primarno namijenjen korisnicima binarne instalacije.
-
-Pretpostavljamo da citaoci ovog dokumenta su vec
-upoznati sa Firebird-om 2.0. Ako evaluirate
-Firebird 2.1 kao dio migracione strategije sa Fb 1.5
-preporucujemo vam da pogledate Fb 2.0 dokumentaciju kako
-bi razumjeli promjene napravljene uzmedju 1.5 i 2.0.
+Firebird-a 2.0.5 za Win32 platformu. Ovaj tekst
+se odnosi na instalacioni paket, a ne na Firebird 2.0.5
+u generalnom smislu.
 
 
 Sadrzaj
 --------
 
 o Prije instalacije
-o Problemi sa instalacijom MS VC runtime biblioteka
+o Novi ODS 11.0
+o Instalacija na sisteme sa Firebird-om 1.5
+o Instalacija na sisteme sa Firebird-om 2.0
+o Nove opcije installer-a
 o Poznati problemi u vezi s instalacijom
 o Deinstalacija
 o Druge biljeske
@@ -33,59 +33,84 @@ o Instalacija batch datotekom
 Prije instalacije
 -------------------
 
-Preporucuje se DEINSTALIRATI sve prethodne
-verzije Firebird-a ili InterBase-a prije instalacije
-ovog paketa. Veoma je vazno provjeriti da su
-fbclient.dll i gds32.dll uklonjeni iz <system32>.
+Preporucuje se DEINSTALIRATI prethodne
+verzije Firebird-a ili InterBase-a
+prije instalacije ovog paketa. Veoma je
+vazno provjeriti da su fbclient.dll i
+gds32.dll uklonjeni iz <system32>.
 
 
-Problemi sa instalacijom MS VC runtime biblioteka
------------------------------------------------------
+New ODS 11.0
+------------
 
-Dosta posla je uradjeno da osigura da MS Visual
-C runtime biblioteke se ispravno instalirane putem
-instalacionog programa. Medjutim, u slucaju problema moze
-biti potrebno uraditi deploy oficijelnog vcredist.exe.
-Ispravne verzije za ovaj build Firebird-a mogu se
-naci ovdje:
+Firebird 2.0 donosi novi ODS 11.0 koji je potpuno
+nekompatibilan sa ODS 11.0 koji je koristen
+u prethodnim alpha verzijama.
 
-	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+Ako instalirate ovaj release Firebird-a 2.0 prvi put
+i vec imate Firebird 2 alpha instaliran, preporucuje se da
+instalirate u novi direktorij.
+Ovo je zbog toga sto ce uninstal sacuvati postojecu
+security2 bazu. Kako god, ova starija verzija koristi
+nekompatibilni ODS pa se necete moci konektovati
+na server.
 
-  i za x64 ovdje:
 
-	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+Instalacija na sisteme sa Firebird-om 1.5
+------------------------------------------
+
+Sigurnosna baza je promijenjena. Nova baza se
+zove security2.fdb i koristi pojacani password encryption
+algoritam. Vise o novim sigurnosnim opcijama mozete
+naci u release notes-u.
+
+Nova struktura baze i promijenjena enkripcija
+predstavlja nekoliko problema u migraciji za site-ove koji
+imaju puno user-a. Instaler ne pokusava da uradi ovu
+migraciju.  Zato se to mora uraditi rucno.
+Moguca tehnika za migraciju je dostupna u
+misc/upgrade/security/.
 
 
-Drugi poznati problemi vezani za instalaciju
----------------------------------
+Instalacija na sisteme sa Firebird-om 2.0
+------------------------------------------
 
-o Moguce je jedino koristiti instalacioni program
-  za instalaciju default-ne instance Firebird-a 2.1.
-  Ako zelite da instalirate dodatne, named instance,
-  trebate ih rucno instalirati iz zip datoteke.
+Kao dodatak ODS promjeni molimo primjetite da
+instaler ne moze automatski detektovati da li je
+Firebird 2.0 Alpha 1 ili Beta server pokrenut
+kao NT service. Zbog toga necete dobiti upozorenje
+sve dok instaler ne pokusa da prepise aktivnu datoteku.
+Ovo se moze izbjeci ako prvo deinstalirate Firebird.
 
-o Nazalost, instalacioni program ne moze pouzdano
-  detektovati da li je prethodna verzija Firebird
-  Classic server-a pokrenuta.
 
-o Poznate su zone preklapanja izmedju
-  32-bit i 64-bit instalacija:
+Nove opcije Installer-a
+------------------------
 
-  - Service installer (instsvc) koristi isto
-	default instance ime za 32-bit i 64-bit
-	instalacije. To je "by design". Servisi postoje
-	u jedinstvenom "name space-u".
+o Ako je postojeci firebird.conf detektovan,
+  instaler ce instalirati default-nu conf datoteku
+  kao:
 
-  - Ako su 32-bit i 64-bit control panel applet-i
-	instalirani, oba ce pokazivati na istu default
-	instancu.
+  firebird.conf.default.
 
-o Kada se instalira pod Vista-om budite sigurni da
-  instalirate kao administrator. tj, ako koristite
-  instalacioni program uradite sljedece:
-  desni click i izaberite 'Run as administrator'.
-  U suprotnom instalacioni program nece biti sposoban
-  da pokrene Firebird service na kraju instalacije.
+  Postojeca firebird.conf datoteka ce biti nedirnuta.
+  Ovo je zato da se osigura da su access restrikcije
+  zadrzane nakon upgrade-a.
+
+
+o Podrska za nekoliko jezika je dodana u
+  installer. Ova podrska se odnosi SAMO na
+  proces instalacije.
+
+  NOTE: Dostupni jezici su odredjeni lokalizovanom
+  verzijom Windows-a koji koristite. Ovo znaci, npr.
+  da korisnici Western European verzije normalno nece
+  vidjeti slovenske jezike kao dostupne jezike.
+
+
+Poznati problemi u vezi s instalacijom
+---------------------------------------
+
+Trenutno nema poznatih problema.
 
 
 Deinstalacija
@@ -119,17 +144,6 @@ o Deinstalacija ostavlja 4 datoteke u install
   biti potrebne ako ce Firebird biti re-instaliran u
   buducnosti. One mogu biti izbrisane ako vise nisu
   potrebne.
-
-o Novi feature deinstalacionog programa je opcija da se
-  pokrene sa /CLEAN parametrom. Ovo ce provjeriti
-  broj dijeljenih datoteka svake od gore navedenih
-  datoteka. Ako je moguce onda ce ih pobrisati.
-
-o Deinstalacija nece ukloniti MS VC runtime
-  biblioteke iz system-skog direktorija. One mogu
-  biti uklonjene rucno kroz control panel, ali ovo
-  ne bi trebalo biti potrebno u normalnim okolnostima.
-
 
 Druge biljeske
 ---------------

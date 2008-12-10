@@ -29,38 +29,19 @@ namespace Jrd {
 	class CompilerScratch;
 	class jrd_rel;
 	class jrd_req;
-	class thread_db;
-	struct ItemInfo;
-	class DmlNode;
 }
-
-/* blr type classes */
-
-const int OTHER			= 0;
-const int STATEMENT		= 1;
-const int TYPE_BOOL		= 2;
-const int VALUE			= 3;
-const int TYPE_RSE		= 4;
-const int RELATION		= 5;
-const int ACCESS_TYPE	= 6;
 
 struct dsc;
 
 Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, Jrd::CompilerScratch*,
 					Jrd::CompilerScratch**, Jrd::jrd_req**, const bool, USHORT);
-USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
+USHORT			PAR_desc(Jrd::CompilerScratch*, dsc*);
 Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
 Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::MetaName&);
 Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, Jrd::NodeStack&);
 Jrd::jrd_nod*	PAR_make_node(Jrd::thread_db*, int);
-Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR*, USHORT, USHORT = 0, const UCHAR* = NULL);
-SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
-
-typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool, Jrd::CompilerScratch* csb);
-
-Jrd::jrd_nod* PAR_parse_node(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, USHORT expected,
-	USHORT expected_optional = 0);
-void PAR_register(UCHAR blr, NodeParseFunc parseFunc);
-void PAR_syntax_error(Jrd::CompilerScratch* csb, const TEXT* string);
+Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR*, USHORT);
+SLONG			PAR_symbol_to_gdscode(const Firebird::MetaName&);
 
 #endif // JRD_PAR_PROTO_H
+

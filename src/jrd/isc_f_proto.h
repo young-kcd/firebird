@@ -38,25 +38,28 @@ bool		ISC_analyze_xnet(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_check_if_remote(const Firebird::PathName&, bool);
 enum		iscProtocol {ISC_PROTOCOL_LOCAL, ISC_PROTOCOL_TCPIP, ISC_PROTOCOL_WLAN};
 iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
-bool		ISC_expand_filename(Firebird::PathName&, bool);
+void		ISC_expand_filename(Firebird::PathName&, bool);
 
 // This form of ISC_expand_filename makes epp files happy
-inline bool	ISC_expand_filename(const TEXT* unexpanded,
-								USHORT len_unexpanded,
-								TEXT* expanded,
-								size_t len_expanded,
-								bool expand_share)
+inline int	ISC_expand_filename(const TEXT* unexpanded, 
+								USHORT len_unexpanded, 
+								TEXT* expanded, 
+								size_t len_expanded, 
+								bool expand_share) 
 {
-	Firebird::PathName pn(unexpanded,
+	Firebird::PathName pn(unexpanded, 
 			len_unexpanded ? len_unexpanded : strlen(unexpanded));
 	ISC_expand_filename(pn, expand_share);
-	// What do I return here if the previous call returns false?
-	return (pn.copyTo(expanded, len_expanded) != 0);
+	return pn.copyTo(expanded, len_expanded);
 }
 
+#ifdef VMS
+int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
+#endif
 void		ISC_expand_share(Firebird::PathName&);
 int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
+bool		ISC_verify_database_access(const Firebird::PathName&);
 
 #endif // JRD_ISC_FILE_PROTO_H
 

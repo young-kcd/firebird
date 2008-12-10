@@ -29,6 +29,7 @@
 
 #include "../jrd/constants.h"
 #include "../common/classes/array.h"
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */
@@ -45,7 +46,6 @@ struct dsc;
 namespace Jrd {
 
 class jrd_rel;
-class jrd_tra;
 template <typename T> class vec;
 class jrd_req;
 struct temporary_key;
@@ -60,8 +60,7 @@ enum idx_null_state {
 
 /* Index descriptor block -- used to hold info from index root page */
 
-struct index_desc
-{
+struct index_desc {
 	SLONG	idx_root;				/* Index root */
 	float	idx_selectivity;		/* selectivity of index */
 	USHORT	idx_id;
@@ -77,16 +76,14 @@ struct index_desc
 	dsc		idx_expression_desc;	/* descriptor for expression result */
 	jrd_req* idx_expression_request;	/* stored request for expression evaluation */
 	// This structure should exactly match IRTD structure for current ODS
-	struct idx_repeat
-	{
+	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
 		float idx_selectivity;	/* segment selectivity */
 	} idx_rpt[MAX_INDEX_SEGMENTS];
 };
 
-struct IndexDescAlloc : public pool_alloc_rpt<index_desc>
-{
+struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
 	index_desc items[1];
 };
 
@@ -132,8 +129,7 @@ const int idx_marker		= 128;	/* marker used in procedure sort_indices */
 
 /* Index insertion block -- parameter block for index insertions */
 
-struct index_insertion
-{
+struct index_insertion {
 	RecordNumber iib_number;		/* record number (or lower level page) */
 	SLONG iib_sibling;				/* right sibling page */
 	index_desc*	iib_descriptor;		/* index descriptor */
@@ -152,19 +148,18 @@ const int key_all_nulls	= 2;	/* All key fields are nulls */
 
 /* Temporary key block */
 
-struct temporary_key
-{
+struct temporary_key {
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
-	USHORT key_null_segment;	// index of first encountered null segment.
-		// Evaluated in BTR_key only and used in IDX_create_index for better
+	USHORT key_null_segment;	// index of first encountered null segment. 
+		// Evaluated in BTR_key only and used in IDX_create_index for better 
 		// error diagnostics
 
  /* AB: I don't see the use of multiplying with 2 anymore. */
-	//UCHAR key_data[MAX_KEY * 2];
-		// This needs to be on a SHORT boundary.
-		// This is because key_data is complemented as
+	//UCHAR key_data[MAX_KEY * 2];	
+		// This needs to be on a SHORT boundary. 
+		// This is because key_data is complemented as 
 		// (SSHORT *) if value is negative.
 		//  See compress() (JRD/btr.cpp) for more details
 };
@@ -172,22 +167,13 @@ struct temporary_key
 
 /* Index Sort Record -- fix part of sort record for index fast load */
 
-// hvlad: index_sort_record structure is stored in sort scratch file so we
-// don't want to grow sort file with padding added by compiler to please
-// alignment rules.
-// #pragma pack is supported at least by MSVC and GCC. Don't know about
-// other compilers, sorry
-
-#pragma pack(push, 1)
-struct index_sort_record
-{
+struct index_sort_record {
 	// RecordNumber should be at the first place, because it's used
 	// for determing sort by creating index (see idx.cpp)
-	SINT64 isr_record_number;
+	RecordNumber isr_record_number;
 	USHORT isr_key_length;
 	USHORT isr_flags;
 };
-#pragma pack(pop)
 
 const int ISR_secondary	= 1;	// Record is secondary version
 const int ISR_null		= 2;	// Record consists of NULL values only
@@ -198,7 +184,7 @@ const int ISR_null		= 2;	// Record consists of NULL values only
 
 class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 {
-public:
+    public:
 	index_desc irb_desc;				/* Index descriptor */
 	USHORT irb_index;			/* Index id */
 	USHORT irb_generic;			/* Flags for generic search */

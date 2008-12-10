@@ -1,30 +1,30 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	BLR Pretty Printer
 //		MODULE:		dyntable.cpp
 //		DESCRIPTION:	Dynamic DDL to internal conversion table generator
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//
+//  
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.11 2008-12-05 01:19:48 asfernandes Exp $
+//	$Id: dyntable.cpp,v 1.10 2005-05-27 22:42:14 asfernandes Exp $
 //
 // CVC: Strange, this file is only referenced in a MacOsX project and gpre
 // works directly with dyntable.h.
@@ -117,9 +117,9 @@ struct dyn {
 
 
 //____________________________________________________________
-//
+//  
 //		Spit out a conversion table.
-//
+//  
 
 int main()
 {

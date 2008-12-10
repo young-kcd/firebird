@@ -29,37 +29,33 @@
 namespace Jrd {
 	class jrd_file;
 	class Database;
-	class BufferDesc;
+	class Jrd::BufferDesc;
 }
-
-namespace Ods {
-	struct pag;
-}
+struct Ods::pag;
+struct blk;
 
 int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const Firebird::PathName&, SLONG);
 void	PIO_close(Jrd::jrd_file*);
-Jrd::jrd_file*	PIO_create(Jrd::Database*, const Firebird::PathName&,
-							const bool, const bool, const bool);
-bool	PIO_expand(const TEXT*, USHORT, TEXT*, size_t);
-void	PIO_extend(Jrd::Database*, Jrd::jrd_file*, const ULONG, const USHORT);
-void	PIO_flush(Jrd::Database*, Jrd::jrd_file*);
-void	PIO_force_write(Jrd::jrd_file*, const bool, const bool);
-ULONG	PIO_get_number_of_pages(const Jrd::jrd_file*, const USHORT);
-void	PIO_get_unique_file_id(const Jrd::jrd_file*, Firebird::UCharBuffer&);
+Jrd::jrd_file*	PIO_create(Jrd::Database*, const Firebird::PathName&, bool, bool);
+int		PIO_connection(const Firebird::PathName&);
+int		PIO_expand(const TEXT*, USHORT, TEXT*, size_t);
+void	PIO_flush(Jrd::jrd_file*);
+void	PIO_force_write(Jrd::jrd_file*, bool);
 void	PIO_header(Jrd::Database*, SCHAR*, int);
-USHORT	PIO_init_data(Jrd::Database*, Jrd::jrd_file*, ISC_STATUS*, ULONG, USHORT);
-Jrd::jrd_file*	PIO_open(Jrd::Database*, const Firebird::PathName&,
-						 const Firebird::PathName&, const bool);
+SLONG	PIO_max_alloc(Jrd::Database*);
+SLONG	PIO_act_alloc(Jrd::Database*);
+Jrd::jrd_file*	PIO_open(Jrd::Database*, const Firebird::PathName&, bool,
+							blk*, const Firebird::PathName&, bool);
 bool	PIO_read(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
-bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG,
+bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG, 
 				   struct Jrd::phys_io_blk*, ISC_STATUS*);
-bool	PIO_status(Jrd::Database*, struct Jrd::phys_io_blk*, ISC_STATUS*);
+bool	PIO_status(struct Jrd::phys_io_blk*, ISC_STATUS*);
 #endif
 
 #ifdef SUPPORT_RAW_DEVICES
-bool	PIO_on_raw_device(const Firebird::PathName&);
+bool    PIO_on_raw_device(const Firebird::PathName&);
 int		PIO_unlink(const Firebird::PathName&);
 #endif
 bool	PIO_write(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);

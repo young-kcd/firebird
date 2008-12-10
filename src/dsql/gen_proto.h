@@ -24,19 +24,17 @@
 #ifndef DSQL_GEN_PROTO_H
 #define DSQL_GEN_PROTO_H
 
-void	GEN_descriptor(Jrd::CompiledStatement* statement, const dsc* desc, bool texttype);
-void	GEN_expr(Jrd::CompiledStatement*, Jrd::dsql_nod*);
-void	GEN_hidden_variables(Jrd::CompiledStatement* statement, bool inExpression);
-void	GEN_port(Jrd::CompiledStatement*, Jrd::dsql_msg*);
-void	GEN_request(Jrd::CompiledStatement*, Jrd::dsql_nod*);
-void	GEN_return(Jrd::CompiledStatement*, const Jrd::dsql_nod*, bool);
-void	GEN_start_transaction(Jrd::CompiledStatement*, const Jrd::dsql_nod*);
-void	GEN_statement(Jrd::CompiledStatement*, Jrd::dsql_nod*);
+void	GEN_expr(dsql_req*, dsql_nod*);
+void	GEN_port(dsql_req*, dsql_msg*);
+void	GEN_request(dsql_req*, dsql_nod*);
+void	GEN_return(dsql_req*, const dsql_nod*, bool);
+void	GEN_start_transaction(dsql_req*, const dsql_nod*);
+void	GEN_statement(dsql_req*, dsql_nod*);
 
-// CVC: I think this can be replaced by statement->append_uchar(byte) in the calling code.
-inline void stuff(Jrd::CompiledStatement* statement, const UCHAR byte)
+inline UCHAR stuff(dsql_req* request, const UCHAR byte)
 {
-	statement->req_blr_data.add(byte);
+	request->req_blr_data.add(byte);
+	return byte;
 }
 
 #endif //  DSQL_GEN_PROTO_H

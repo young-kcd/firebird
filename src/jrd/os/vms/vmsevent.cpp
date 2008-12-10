@@ -24,10 +24,12 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
+#include "../jrd/thd.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/sch_proto.h"
 
 #include descrip
 #include lckdef
@@ -605,7 +607,7 @@ static void deliver(EVNT event)
 	event->evnt_count = event->evnt_lksb.lksb_value[0];
 
 	for (RINT interest = event->evnt_interests; interest;
-		 interest = interest->rint_evnt_interests)
+		 interest = interest->rint_evnt_interests) 
 	{
 		if (VMS_REQ request = interest->rint_request)
 			if (request->req_ast && request_completed(request))
@@ -642,7 +644,7 @@ static void deliver_request(VMS_REQ request)
    stuff */
 
 	for (RINT interest = request->req_interests; interest;
-		 interest = interest->rint_req_interests)
+		 interest = interest->rint_req_interests) 
 	{
 		EVNT event = interest->rint_event;
 		if (end < p + event->evnt_length + 5) {
@@ -694,7 +696,7 @@ static void delivery_thread(void)
 			for (VMS_REQ request = session->ses_requests; request;
 				 request = request->req_next)
 			{
-				if (request->req_ast && request_completed(request))
+				if (request->req_ast && request_completed(request)) 
 				{
 					deliver_request(request);
 					request->req_ast = NULL;
@@ -749,7 +751,7 @@ static ISC_STATUS error(ISC_STATUS * status_vector,
 
 static EVNT find_event(USHORT length,
 					   const TEXT* string,
-					   EVNT parent)
+					   EVNT parent) 
 {
 /**************************************
  *
@@ -789,7 +791,7 @@ static void free(SCHAR * block) {
 
 
 static RINT historical_interest(SES session,
-								EVNT event)
+								EVNT event) 
 {
 /**************************************
  *
@@ -806,7 +808,7 @@ static RINT historical_interest(SES session,
 		 ptr = &(*ptr)->rint_req_interests)
 	{
 		if (interest->rint_event == event)
-			return interest;
+			return interest; 
 	}
 	return NULL;
 }
@@ -814,7 +816,7 @@ static RINT historical_interest(SES session,
 
 static EVNT make_event(USHORT length,
 					   const TEXT* string,
-					   EVNT parent)
+					   EVNT parent) 
 {
 /**************************************
  *
@@ -827,8 +829,8 @@ static EVNT make_event(USHORT length,
  *
  **************************************/
 	EVNT event = (EVNT) alloc(sizeof(struct evnt) + length);
-	if (!event)
-		return NULL;
+	if (!event) 
+		return NULL; 
 
 	EVNT* ptr;
 	SLONG parent_id;
@@ -838,7 +840,7 @@ static EVNT make_event(USHORT length,
 	}
 	else
 	{
-		ptr = &global_parent_events;
+		ptr = &global_parent_events; 
 		parent_id = 0;
 	}
 
@@ -850,7 +852,7 @@ static EVNT make_event(USHORT length,
 /* Request VMS lock on event */
 	struct dsc$descriptor desc;
 	ISC_make_desc(string, &desc, length);
-	lock_status* lksb = &event->evnt_lksb;
+	lock_status* lksb = &event->evnt_lksb; 
 	int status = sys$enqw(0,	/* event flag */
 							LCK$K_PRMODE,	/* lock mode */
 							lksb,	/* Lock status block */
@@ -896,7 +898,7 @@ static EVNT make_event(USHORT length,
 }
 
 
-static void poke_ast(POKE poke)
+static void poke_ast(POKE poke) 
 {
 /**************************************
  *
@@ -930,10 +932,10 @@ static bool request_completed(VMS_REQ request)
  *
  **************************************/
 	for (RINT interest = request->req_interests; interest;
-		 interest = interest->rint_req_interests)
+		 interest = interest->rint_req_interests) 
 	{
 		EVNT event = interest->rint_event;
-		if (interest->rint_count <= event->evnt_count)
+		if (interest->rint_count <= event->evnt_count) 
 			return true;
 	}
 
@@ -956,7 +958,7 @@ static int return_ok(ISC_STATUS * status_vector)
 
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = 0;
-	*status_vector = isc_arg_end;
+	*status_vector = isc_arg_end; 
 	return 0;
 }
 

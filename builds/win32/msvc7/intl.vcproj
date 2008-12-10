@@ -28,11 +28,11 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\intl/intl.pch"
 				AssemblerListingLocation="..\..\..\temp\release\intl/"
 				ObjectFile="..\..\..\temp\release\intl/"
@@ -47,11 +47,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="..\..\..\temp\release\firebird\intl\fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				ProgramDatabaseFile="..\..\..\temp\release\intl\fbintl.pdb"
 				ImportLibrary="..\..\..\temp\release\intl\fbintl.lib"/>
 			<Tool
@@ -94,12 +93,12 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_;DEV_BUILD"
+				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\intl/intl.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\intl/"
 				ObjectFile="..\..\..\temp\debug\intl/"
@@ -114,11 +113,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="..\..\..\temp\debug\firebird\intl\fbintl.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="../../../extern/icu/lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="..\..\..\temp\debug\intl\fbintl.pdb"
 				ImportLibrary="..\..\..\temp\debug\intl\fbintl.lib"/>
@@ -158,16 +156,10 @@
 			Name="INTL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\jrd\CharSet.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\cs_big5.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cs_gb2312.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cs_icu.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cs_jis.cpp">
@@ -189,9 +181,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cv_gb2312.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_icu.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\cv_jis.cpp">
@@ -216,9 +205,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\lc_gb2312.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\lc_icu.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\lc_iso8859_1.cpp">
@@ -312,9 +298,6 @@
 				RelativePath="..\..\..\src\intl\collations\blNEXTus0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\CharSet.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets.h">
 			</File>
 			<File
@@ -357,9 +340,6 @@
 				RelativePath="..\..\..\src\intl\charsets\cs_gb2312.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\cs_icu.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_iso8859_1.h">
 			</File>
 			<File
@@ -397,9 +377,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\charsets\cs_w1254.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\cv_icu.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\db437de0.h">
@@ -489,9 +466,6 @@
 				RelativePath="..\..\..\src\intl\collations\db866ru0.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\IntlUtil.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\kanji.h">
 			</File>
 			<File
@@ -507,9 +481,6 @@
 				RelativePath="..\..\..\src\intl\langdrv.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\intl\lc_icu.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\intl\ld.h">
 			</File>
 			<File
@@ -517,9 +488,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\ldcommon.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\mod_loader.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\pd437intl.h">
@@ -606,7 +574,10 @@
 				RelativePath="..\..\..\src\intl\collations\undef.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\unicode_util.h">
+				RelativePath="..\..\..\src\intl\collations\win_cz.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\intl\collations\win_cz_ci_ai.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\win1251_ua.h">
@@ -619,12 +590,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\win1257_lv.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\collations\win_cz.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\intl\collations\win_cz_ci_ai.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\intl\collations\xx885913lt.h">
@@ -656,41 +621,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="COMMON files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp">
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			Filter="">
-			<File
-				RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\unicode_util.cpp">
 			</File>
 		</Filter>
 		<File

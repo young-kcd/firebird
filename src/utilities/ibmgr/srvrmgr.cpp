@@ -1,6 +1,6 @@
 /*
  *
- *      PROGRAM:        Firebird server manager
+ *      PROGRAM:        InterBase server manager
  *      MODULE:         ibmgr.cpp
  *      DESCRIPTION:    server manager's routines
  *
@@ -105,7 +105,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 
 /* If reattach is true and we currently attached, then we
    will detach from service. This is potentially dangerous
-   situation, because if shutdown is true (server shutdown
+   situation, because if shutdown is true (server shutdown 
    was initiated) server will be shutdowned.
    I do not check the shutdown flag here because reattach
    could be true only if shutdown has not been initiated.
@@ -118,14 +118,14 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 				/* Attached flag should be NULL after detach_service
 				 */
 				detach_service(data);
-			if (!attach_service(data))
+			if (attach_service(data) == false)
 				return MSG_ATTFAIL;
 			data->reattach = 0;
 		}
 
 	switch (data->operation) {
 	case OP_START:
-		if (!start_server(data))
+		if (start_server(data) == false)
 			return MSG_STARTFAIL;
 		break;
 
@@ -134,7 +134,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
-			if (!start_shutdown(data)) {
+			if (start_shutdown(data) == false) {
 				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
@@ -163,7 +163,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 	case OP_PRINT:
 		switch (data->suboperation) {
 		case SOP_PRINT_POOL:
-			if (!print_pool(data))
+			if (print_pool(data) == false)
 				return MSG_PRPOOLFAIL;
 			return MSG_PRPOOLOK;
 		}
@@ -197,13 +197,12 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 
 /* The following line will be the future of this function
 
-	static const SafeArg arg;
-	fb_msg_format (0, MSG_FAC, number, MSG_LEN, msg, arg);
-
+gds__msg_format (0, MSG_FAC, number, MSG_LEN, msg,
+    NULL, NULL, NULL, NULL, NULL);
 */
 
 	const char* rs = 0;
-
+	
 	switch (number) {
 	case MSG_PROMPT:
 		rs = "FBMGR>";
@@ -298,7 +297,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 	default:
 		rs = "can not get an error message";
 	}
-
+	
 	strcpy(msg, rs);
 }
 
@@ -466,7 +465,7 @@ static bool start_server( ibmgr_data_t* data)
 
 /* Let's see if server is already running, try to attach to it
 */
-	if (server_is_up(data)) {
+	if (server_is_up(data) == true) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
@@ -477,7 +476,7 @@ static bool start_server( ibmgr_data_t* data)
 */
 	TEXT path[MAXPATHLEN];
 	gds__prefix(path, SERVER_GUARDIAN);
-
+	
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]
 	// that may not be accepted by execv().
@@ -557,11 +556,11 @@ static bool start_server( ibmgr_data_t* data)
 					|| WIFSIGNALED(exit_status)))
 		{
 			printf("Guardian process %ld terminated with code %ld\n",
-				pid, WEXITSTATUS(exit_status));
+				pid, WEXITSTATUS(exit_status)); 
 			break;
 		}
 
-#else
+#else		 
 
 
 		if (ret_value == pid) {
@@ -582,7 +581,7 @@ static bool start_server( ibmgr_data_t* data)
 #ifdef DEBUG
 		printf("Attach retries left: %d\n", retry);
 #endif
-		if (server_is_up(data)) {
+		if (server_is_up(data) == true) {
 			SRVRMGR_msg_get(MSG_SRVUPOK, msg);
 			fprintf(OUTFILE, "%s\n", msg);
 			return true;
@@ -635,7 +634,10 @@ static bool server_is_up( ibmgr_data_t* data)
 		   other reasons. For example, attach could return
 		   not enough memory error. Let's take care of it.
 		 */
-		up = (status[1] == isc_virmemexh);
+		if (status[1] == isc_virmemexh)
+			up = true;
+		else
+			up = false;
 	}
 	isc_service_detach(status, &svc_handle);
 	return up;

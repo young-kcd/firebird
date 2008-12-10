@@ -29,10 +29,10 @@
 #include "cv_jis.h"
 #include "ld_proto.h"
 
-//static ULONG sjis_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
-//static ULONG sjis_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+//static ULONG sjis_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
+//static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 
-static inline bool FAMILY_MULTIBYTE(texttype* cache,
+static inline bool FAMILY_MULTIBYTE(TEXTTYPE cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
@@ -65,8 +65,8 @@ TEXTTYPE_ENTRY(JIS220_init)
 		//cache->texttype_fn_str_to_lower = sjis_str_to_lower;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -80,8 +80,8 @@ TEXTTYPE_ENTRY(JIS230_init)
 		//cache->texttype_fn_str_to_lower = famasc_str_to_lower;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -92,7 +92,7 @@ TEXTTYPE_ENTRY(JIS230_init)
 /*
  *	Note: This function expects Multibyte input
  */
-static ULONG sjis_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+static ULONG sjis_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	bool waiting_for_sjis2 = false;
 
@@ -125,7 +125,7 @@ static ULONG sjis_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 /*
  *	Note: This function expects Multibyte input
  */
-static ULONG sjis_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
+static ULONG sjis_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
 {
 	bool waiting_for_sjis2 = false;
 

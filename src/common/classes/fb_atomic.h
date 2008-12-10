@@ -22,9 +22,12 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ * 
+ *
+ *  $Id: fb_atomic.h,v 1.4 2004-06-30 01:26:06 skidder Exp $
  *
  */
-
+ 
 #ifndef CLASSES_FB_ATOMIC_H
 #define CLASSES_FB_ATOMIC_H
 
@@ -40,34 +43,34 @@ class AtomicCounter
 {
 public:
 	typedef LONG counter_type;
-
+	
 	AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
-
+			
 	counter_type exchangeAdd(counter_type val) {
 		return InterlockedExchangeAdd(&counter, val);
 	}
-
+	
 	counter_type operator +=(counter_type val) {
 		return exchangeAdd(val) + val;
 	}
-
+	
 	counter_type operator -=(counter_type val) {
 		return exchangeAdd(-val) - val;
 	}
-
+	
 	counter_type operator ++() {
 		return InterlockedIncrement(&counter);
 	}
-
+	
 	counter_type operator --() {
 		return InterlockedDecrement(&counter);
 	}
-
+	
 	counter_type value() const { return counter; }
-
+	
 private:
-# if defined(MINGW)
+# if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
 	counter_type counter;
 # else
 	volatile counter_type counter;
@@ -76,19 +79,17 @@ private:
 
 } // namespace Firebird
 
-#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
-
-namespace Firebird {
+#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64))
 
 // Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class AtomicCounter
 {
 public:
 	typedef int counter_type;
-
+	
 	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-
+			
 	counter_type exchangeAdd(counter_type value) {
 		register counter_type result;
 		__asm __volatile (
@@ -97,30 +98,28 @@ public:
 			 : "0" (value), "m" (counter));
 		return result;
 	}
-
+	
 	counter_type operator +=(counter_type value) {
 		return exchangeAdd(value) + value;
 	}
-
+	
 	counter_type operator -=(counter_type value) {
 		return exchangeAdd(-value) - value;
 	}
-
+	
 	counter_type operator ++() {
 		return exchangeAdd(1) + 1;
 	}
-
+	
 	counter_type operator --() {
 		return exchangeAdd(-1) - 1;
 	}
-
+	
 	counter_type value() const { return counter; }
-
+	
 private:
 	volatile counter_type counter;
 };
-
-} // namespace Firebird
 
 #else
 
@@ -129,56 +128,52 @@ private:
 namespace Firebird {
 
 // Highly inefficient, but safe and portable implementation
-// We keep it for DEV build to start doing ports, but should be avoided in release
-#ifndef DEV_BUILD
-#pragma FB_COMPILER_MESSAGE("Generic AtomicCounter: implement appropriate code for your platform!"
-#endif
 class AtomicCounter
 {
 public:
 	typedef int counter_type;
-
+	
 	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-
+			
 	counter_type exchangeAdd(counter_type value) {
 		lock.enter();
 		counter_type temp = counter;
 		counter += value;
 		lock.leave();
-		return temp;
+		return temp;		
 	}
-
+	
 	counter_type operator +=(counter_type value) {
 		lock.enter();
 		counter_type temp = counter += value;
 		lock.leave();
 		return temp;
 	}
-
+	
 	counter_type operator -=(counter_type value) {
 		lock.enter();
 		counter_type temp = counter -= value;
 		lock.leave();
 		return temp;
 	}
-
+	
 	counter_type operator ++() {
 		lock.enter();
 		counter_type temp = counter++;
 		lock.leave();
 		return temp;
 	}
-
+	
 	counter_type operator --() {
 		lock.enter();
 		counter_type temp = counter--;
 		lock.leave();
 		return temp;
 	}
-
+	
 	counter_type value() const { return counter; }
-
+	
 private:
 	volatile counter_type counter;
 	Mutex lock;

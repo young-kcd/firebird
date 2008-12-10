@@ -31,6 +31,7 @@
 #   Contributor(s):
 #  	James K. Lowden <jklowden@schemamania.org>
 # 
+#   $Id: install.sh.in,v 1.3 2005-05-27 22:15:16 asfernandes Exp $
 # 
 
 #  Install script for FirebirdSQL database engine
@@ -264,7 +265,7 @@ cd @prefix@
 
 # Lock files
 
-for i in isc_init1 isc_lock1 isc_event1 isc_monitor1
+for i in isc_init1 isc_lock1 isc_event1
 do
 	FileName=$i.`hostname`
 	touch $FileName
@@ -294,9 +295,9 @@ chmod ug=rw,o= help/*.fdb || exit
 #
 if ! grep ^gds_db /etc/services
 then
-echo Adding Firebird Database Remote Protocol to /etc/services
+echo Adding InterBase Database Remote Protocol to /etc/services
 cat >>/etc/services <<EOF
-gds_db		3050/tcp  #Firebird Database Remote Protocol
+gds_db		3050/tcp  #InterBase Database Remote Protocol
 EOF
 fi
 
