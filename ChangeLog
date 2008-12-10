@@ -1,3 +1,16 @@
+2008-12-10 16:15  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.72):
+
+	AIX port
+
+2008-12-10 15:42  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.266):
+
+	Fixed CORE-2230 - Implement domain check of input parameters of
+	execute block
+
 2008-12-09 19:33  dimitr
 
 	* firebird2/src/jrd/dyn_def.epp (1.173):
