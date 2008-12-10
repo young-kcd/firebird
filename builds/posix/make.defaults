@@ -245,9 +245,9 @@ ifeq ($(EDITLINE_FLG),Y)
   endif
 endif
 
-LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icudata.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icui18n.$(SHRLIB_FOREIGN_EXT)
+LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc*.$(SHRLIB_FOREIGN_EXT) \
+			$(LIB)/$(LIB_PREFIX)icudata*.$(SHRLIB_FOREIGN_EXT) \
+			$(LIB)/$(LIB_PREFIX)icui18n*.$(SHRLIB_FOREIGN_EXT)
 
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = $(LIB_PREFIX)ib_util.$(SHRLIB_EXT)
