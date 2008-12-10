@@ -2722,8 +2722,7 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 	}
 
 	// Set up parameter to handle EOF
-	dsql_par* param =
-		MAKE_parameter(statement->req_receive, false, false, 0, NULL);
+	dsql_par* param = MAKE_parameter(statement->req_receive, false, false, 0, NULL);
 	statement->req_eof = param;
 	param->par_desc.dsc_dtype = dtype_short;
 	param->par_desc.dsc_scale = 0;
@@ -2739,6 +2738,32 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 	}
 
 	statement->append_uchar(blr_begin);
+
+	if (parameters = node->nod_arg[e_exe_blk_inputs])
+	{
+		dsql_nod** ptr = parameters->nod_arg;
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
+		{
+			const dsql_nod* parameter = *ptr;
+			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
+			const dsql_fld* field = variable->var_field;
+
+			if (field->fld_full_domain || field->fld_not_nullable)
+			{
+				// ASF: Validation of execute block input parameters is different than procedure
+				// parameters, because we can't generate messages using the domains due to the
+				// connection charset influence. So to validate, we cast them and assign to null.
+				statement->append_uchar(blr_assignment);
+				statement->append_uchar(blr_cast);
+				put_dtype(statement, field, true);
+				statement->append_uchar(blr_parameter2);
+				statement->append_uchar(0);
+				statement->append_ushort(variable->var_msg_item);
+				statement->append_ushort(variable->var_msg_item + 1);
+				statement->append_uchar(blr_null);
+			}
+		}
+	}
 
 	if (outputs)
 	{
