@@ -42,9 +42,9 @@ include     $(ROOT)/gen/make.shared.variables
 QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp jrd/path_utils.cpp
 
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
-		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
-		hsh.cpp lex.cpp meta.cpp mov.cpp parse.cpp picstr.cpp proc.cpp \
-		report.cpp show.cpp
+		expand.cpp exe.cpp format.cpp gener.cpp help.epp \
+		hsh.cpp lex.cpp meta.epp mov.cpp parse.cpp picstr.cpp proc.epp \
+		report.cpp show.epp
 QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 

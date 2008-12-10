@@ -1741,7 +1741,7 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 	else {
 		stuff(request, blr_field);
 		stuff_context(request, context);
-		stuff_cstring(request, field->fld_name);
+		stuff_meta_string(request, field->fld_name);
 	}
 
 	if (indices) {
