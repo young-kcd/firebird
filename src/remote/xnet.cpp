@@ -66,7 +66,7 @@ static rem_port* connect_server(ISC_STATUS*, USHORT);
 static void disconnect(rem_port*);
 static void force_close(rem_port*);
 static void exit_handler(rem_port*);
-static int shut_main_port(const int, const int, void* arg);
+static int cleanup_ports(const int, const int, void* arg);
 
 static rem_port* receive(rem_port*, PACKET *);
 static int send_full(rem_port*, PACKET *);
@@ -141,6 +141,7 @@ static char xnet_endpoint[BUFFER_TINY] = "";
 static bool xnet_initialized = false;
 static bool xnet_shutdown = false;
 static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
+static Firebird::GlobalPtr<PortsCleanup>	xnet_ports;
 static ULONG xnet_next_free_map_num = 0;
 
 static bool connect_init(ISC_STATUS* status);
@@ -1073,10 +1074,15 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	return NULL;
 #endif
 
-	if (!xnet_initialized) {
-		xnet_initialized = true;
-		current_process_id = getpid();
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
+	if (!xnet_initialized) 
+	{
+		Firebird::MutexLockGuard guard(xnet_mutex);
+		if (!xnet_initialized)
+		{
+			xnet_initialized = true;
+			current_process_id = getpid();
+			gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
+		}
 	}
 
 	// set up for unavailable server
@@ -1481,7 +1487,10 @@ static void disconnect(rem_port* port)
 #endif
 	}
 
-	gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler), port);
+	if (port->port_flags & PORT_server)
+		xnet_ports->unRegisterPort(port);
+	else
+		gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler), port);
 
 	cleanup_port(port);
 }
@@ -1499,8 +1508,15 @@ static void force_close(rem_port* port)
  *	Forcibly close remote connection.
  *
  **************************************/
+	if (port->port_state != rem_port::PENDING || !port->port_xcc)
+		return;
+
+	port->port_state = rem_port::BROKEN;
 
 	XCC xcc = (XCC) port->port_xcc;
+
+	if (!xcc)
+		return;
 
 	if (xcc->xcc_event_send_channel_filled) {
 		CloseHandle(xcc->xcc_event_send_channel_filled);
@@ -1542,10 +1558,23 @@ static void exit_handler(rem_port* main_port)
 	}
 }
 
-static int shut_main_port(const int, const int, void* arg)
+static int cleanup_ports(const int, const int, void* arg)
 {
+/**************************************
+ *
+ *	c l e a n u p _ p o r t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown all active connections
+ *	to allow correct shutdown.
+ *
+ **************************************/
 	xnet_shutdown = true;
+
 	SetEvent(xnet_connect_event);
+	xnet_ports->closePorts();
 
 	return 0;
 }
@@ -2343,7 +2372,7 @@ static bool server_init(ISC_STATUS* status, USHORT flag)
 
 	xnet_initialized = true;
 	gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
-	fb_shutdown_callback(0, shut_main_port, fb_shut_postproviders, 0);
+	fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
 
 	return true;
 }
@@ -2587,13 +2616,14 @@ static rem_port* get_server_port(ULONG client_pid,
 
 		port->port_xcc = (void *) xcc;
 		port->port_server_flags |= SRVR_server;
+		port->port_flags |= PORT_server;
 
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = FB_SUCCESS;
 		status_vector[2] = isc_arg_end;
 		port->port_status_vector = status_vector;
 
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
+		xnet_ports->registerPort(port);
 	}
 	catch (const Firebird::Exception&) {
 		if (port)

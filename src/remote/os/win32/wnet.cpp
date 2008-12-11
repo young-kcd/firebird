@@ -44,6 +44,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/init.h"
 
 #include <stdarg.h>
 
@@ -56,6 +57,9 @@ const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
 Firebird::AtomicCounter event_counter;
+
+static Firebird::GlobalPtr<PortsCleanup> wnet_ports;
+static bool wnet_initialized = false;
 static bool wnet_shutdown = false;
 
 static int		accept_connection(rem_port*, const P_CNCT*);
@@ -91,6 +95,7 @@ static int		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(rem_port*, const SCHAR*, SSHORT);
 static void		wnet_make_file_name(TEXT *, DWORD);
 
+static int		cleanup_ports(const int, const int, void*);
 
 static xdr_t::xdr_ops wnet_ops =
 {
@@ -359,6 +364,7 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 
+	wnet_ports->registerPort(port);
 	while (!wnet_shutdown)
 	{
 		port->port_handle =
@@ -386,7 +392,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		}
 
 		if (!connect_client(port))
-			return NULL;
+			break;
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
@@ -395,7 +401,7 @@ rem_port* WNET_connect(const TEXT*		name,
 			{
 				port->port_server_flags |= SRVR_multi_client;
 			}
-			gds__register_cleanup(exit_handler, port);
+
 			return port;
 		}
 
@@ -425,6 +431,10 @@ rem_port* WNET_connect(const TEXT*		name,
 			CloseHandle(pi.hProcess);
 		}
 		CloseHandle(port->port_handle);
+
+		if (wnet_shutdown) {
+			disconnect(port);
+		}
 	}
 
 	if (wnet_shutdown)
@@ -551,6 +561,13 @@ static rem_port* alloc_port( rem_port* parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
+
+	if (!wnet_initialized)
+	{
+		wnet_initialized = true;
+		fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
+	}
+
 	rem_port* port = new rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
 
 	TEXT buffer[BUFFER_TINY];
@@ -735,12 +752,18 @@ static bool connect_client(rem_port *port)
 			break;
 
 		case ERROR_IO_PENDING:
-			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0)
-				break;
-			err = GetLastError(); // fall thru
+			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0) 
+			{
+				if (!wnet_shutdown)
+					break;
+			}
+			else
+				err = GetLastError(); // fall thru
 
 		default:
-			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, err);
+			if (!wnet_shutdown) {
+				wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, err);
+			}
 			disconnect(port);
 			return false;
 		}
@@ -809,7 +832,8 @@ static void disconnect(rem_port* port)
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
-	gds__unregister_cleanup(exit_handler, port);
+	
+	wnet_ports->unRegisterPort(port);
 	port->release();
 }
 
@@ -832,7 +856,7 @@ static void force_close(rem_port* port)
 		port->port_state = rem_port::BROKEN;
 
 		SetEvent(port->port_event);
-		fb_assert(port->port_handle);
+		//fb_assert(port->port_handle);
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
@@ -1564,4 +1588,23 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 			*p++ = '\\';
 	}
 	*p++ = 0;
+}
+
+static int cleanup_ports(const int, const int, void*)
+{
+/**************************************
+ *
+ *	c l e a n u p _ p o r t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown all active connections
+ *	to allow correct shutdown.
+ *
+ **************************************/
+	wnet_shutdown = true;
+
+	wnet_ports->closePorts();
+	return 0;
 }

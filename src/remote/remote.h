@@ -919,4 +919,33 @@ public:
 	{ }
 };
 
+
+// contains ports which must be closed at engine shutdown
+class PortsCleanup
+{
+public:
+	PortsCleanup() :
+	  m_ports(NULL),
+	  m_mutex()
+	{}
+
+	explicit PortsCleanup(MemoryPool&) :
+	  m_ports(NULL),
+	  m_mutex()
+	{}
+
+	~PortsCleanup() 
+	{}
+
+	void registerPort(rem_port *);
+	void unRegisterPort(rem_port *);
+
+	void closePorts();
+
+private:
+	typedef Firebird::SortedArray<rem_port*> PortsArray;
+	PortsArray		*m_ports;
+	Firebird::Mutex	m_mutex;
+};
+
 #endif // REMOTE_REMOTE_H

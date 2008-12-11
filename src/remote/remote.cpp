@@ -725,3 +725,46 @@ ServerAuth::~ServerAuth()
 	delete authSspi;
 }
 #endif // TRUSTED_AUTH
+
+void PortsCleanup::registerPort(rem_port *port)
+{
+	Firebird::MutexLockGuard guard(m_mutex);
+	if (!m_ports)
+	{
+		Firebird::MemoryPool &pool = *getDefaultMemoryPool();
+		m_ports = FB_NEW (pool) PortsArray(pool);
+	}
+		
+	m_ports->add(port);
+}
+
+void PortsCleanup::unRegisterPort(rem_port *port)
+{
+	Firebird::MutexLockGuard guard(m_mutex);
+
+	if (m_ports)
+	{
+		size_t i;
+		const bool found = m_ports->find(port, i);
+		fb_assert(found);
+		if (found)
+			m_ports->remove(i);
+	}
+}
+
+void PortsCleanup::closePorts()
+{
+	Firebird::MutexLockGuard guard(m_mutex);
+	
+	if (m_ports)
+	{
+		rem_port *const *ptr = m_ports->begin();
+		const rem_port *const *end = m_ports->end();
+		for (; ptr < end; ptr++) {
+			(*ptr)->force_close();
+		}
+
+		delete m_ports;
+		m_ports = NULL;
+	}
+}

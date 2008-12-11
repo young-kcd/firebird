@@ -102,8 +102,10 @@
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
+#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
+#include "../../../common/classes/semaphore.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -113,6 +115,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM);
 static HANDLE parse_args(LPCSTR, USHORT*);
 static void service_connection(rem_port*);
+static int wait_threads(const int reason, const int mask, void* arg);
 
 static HINSTANCE hInst;
 
@@ -120,6 +123,38 @@ static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
 static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
+static bool server_shutdown = false;
+
+class ThreadCounter
+{
+public:
+	ThreadCounter() 
+	{
+		++m_count;
+	}
+
+	~ThreadCounter() 	
+	{
+		--m_count;
+		m_semaphore.release();
+	}
+
+	static bool wait() 
+	{
+		while (m_count.value() > 0)
+			if (!m_semaphore.tryEnter(10))
+				break; 
+		
+		return (m_count.value() == 0);
+	}
+
+private:
+	static Firebird::AtomicCounter m_count;
+	static Firebird::Semaphore m_semaphore;
+};
+
+Firebird::AtomicCounter ThreadCounter::m_count;
+Firebird::Semaphore ThreadCounter::m_semaphore;
 
 
 int WINAPI WinMain(HINSTANCE	hThisInst,
@@ -171,11 +206,17 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	server_flag = SRVR_multi_client;
 #else
 	server_flag = 0;
+	
+	//MessageBox(NULL, "debug", "me", MB_OK);
 #endif
 
 #ifdef SUPERSERVER
 	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
 #endif
+
+	//const DWORD mask = static_cast<DWORD>(Config::getCpuAffinityMask());
+	//if (mask)
+	//	SetProcessAffinityMask(GetCurrentProcess(), mask);
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
@@ -215,6 +256,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
 	fb_utils::init_status(status_vector);
+
+	fb_shutdown_callback(0, wait_threads, fb_shut_finish, NULL);
 
 	if (connection_handle != INVALID_HANDLE_VALUE)
 	{
@@ -305,6 +348,8 @@ THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
  * Functional description
  *
  **************************************/
+	ThreadCounter counter;
+
 	service_connection((rem_port*)arg);
 	return 0;
 }
@@ -321,8 +366,10 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
+	ThreadCounter counter;
+
 	ISC_STATUS_ARRAY status_vector;
-	while (true)
+	while (!server_shutdown)
 	{
 		fb_utils::init_status(status_vector);
 		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
@@ -337,8 +384,10 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			SRVR_multi_thread(port, server_flag);
 			break;
 		}
-		else {
-			gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
+		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+		{
+			gds__log("INET: can't start worker thread, connection terminated");
+			port->disconnect(NULL, NULL);
 		}
 	}
 	return 0;
@@ -356,8 +405,10 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
+	ThreadCounter counter;
+
 	ISC_STATUS_ARRAY status_vector;
-	while (true)
+	while (!server_shutdown)
 	{
 		fb_utils::init_status(status_vector);
 		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
@@ -395,8 +446,10 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *   Starts xnet server side interprocess thread
  *
  **************************************/
+	ThreadCounter counter;
+
 	ISC_STATUS_ARRAY status_vector;
-	while (true)
+	while (!server_shutdown)
 	{
 		fb_utils::init_status(status_vector);
 		rem_port* port = XNET_connect(NULL, NULL, status_vector, server_flag);
@@ -449,6 +502,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
+	ThreadCounter counter;
 
 	if (server_flag & SRVR_inet) {
 		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
@@ -627,4 +681,15 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 	}
 
 	return connection_handle;
+}
+
+static int wait_threads(const int, const int, void*)
+{
+	server_shutdown = true;
+
+	if (!ThreadCounter::wait()) {
+		gds__log("Timeout expired during remote server shutdown");
+	}
+
+	return FB_SUCCESS;
 }

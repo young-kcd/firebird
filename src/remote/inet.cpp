@@ -254,7 +254,7 @@ static unsigned int procCount = 0;
 
 static void		disconnect(rem_port*);
 static void		force_close(rem_port*);
-static void		closePortsExitHandler(void*);
+static int		cleanup_ports(const int, const int, void*);
 
 #ifdef NO_FORK
 static int		fork(void);
@@ -382,6 +382,7 @@ static rem_port* inet_async_receive = NULL;
 
 
 static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
+static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
 
 
 rem_port* INET_analyze(const Firebird::PathName& file_name,
@@ -868,6 +869,8 @@ rem_port* INET_connect(const TEXT* name,
 		return NULL;
 	}
 
+	inet_ports->registerPort(port);
+
 	if (flag & SRVR_multi_client) {
 		/* Prevent the generation of dummy keepalive packets on the
 		   connect port. */
@@ -876,7 +879,6 @@ rem_port* INET_connect(const TEXT* name,
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
 
-		gds__register_cleanup(closePortsExitHandler, port);
 		return port;
 	}
 
@@ -1257,7 +1259,7 @@ static rem_port* alloc_port( rem_port* parent)
 			gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
 #endif
 
-			fb_shutdown_callback(0, shut_postproviders, fb_shut_postproviders, 0);
+			fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
 
 			INET_initialized = true;
 
@@ -1719,7 +1721,7 @@ static void disconnect( rem_port* port)
 		port->port_async->port_flags |= PORT_disconnect;
 	}
 
-	gds__unregister_cleanup(closePortsExitHandler, port);
+	inet_ports->unRegisterPort(port);
 
 	if (port->port_handle) {
 		SOCLOSE((SOCKET) port->port_handle);
@@ -1758,6 +1760,11 @@ static void force_close(rem_port* port)
  *
  **************************************/
 
+	if (port->port_state != rem_port::PENDING)
+		return;
+
+	port->port_state = rem_port::BROKEN;
+
 #ifdef WIN_NT
 	SOCKET handle = (SOCKET) port->port_handle;
 	port->port_handle = 0;
@@ -1780,32 +1787,25 @@ static void force_close(rem_port* port)
 }
 
 
-static void closePortsExitHandler(void* arg)
+static int cleanup_ports(const int, const int, void* arg)
 {
 /**************************************
  *
- *	c l o s e P o r t s E x i t H a n d l e r
+ *	c l e a n u p _ p o r t s
  *
  **************************************
  *
  * Functional description
  *	Shutdown all active connections
- *	to allow restart.
+ *	to allow correct shutdown.
  *
  **************************************/
+	INET_shutting_down = true;
 
-	rem_port* main_port = (rem_port*) arg;
-
-	for (rem_port* port = main_port; port; port = port->port_next)
-	{
-		if (port->port_state != rem_port::BROKEN)
-		{
-			port->port_state = rem_port::BROKEN;
-			shutdown((int) port->port_handle, 2);
-			SOCLOSE((SOCKET) port->port_handle);
-		}
-	}
+	inet_ports->closePorts();
+	return 0;
 }
+
 
 #ifdef NO_FORK
 static int fork(void)
@@ -2342,6 +2342,7 @@ static rem_port* select_accept( rem_port* main_port)
 
 	rem_port* port = alloc_port(main_port);
 	socklen_t l = sizeof(address);
+	inet_ports->registerPort(port);
 
 	port->port_handle = (HANDLE) accept((SOCKET) main_port->port_handle,
 										(struct sockaddr *) &address, &l);
@@ -3618,10 +3619,4 @@ void setStopMainThread(FPTR_INT func)
  *
  **************************************/
 	tryStopMainThread = func;
-}
-
-static int shut_postproviders(const int, const int, void*)
-{
-	INET_shutting_down = true;
-	return 0;
 }
