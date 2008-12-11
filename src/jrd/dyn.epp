@@ -133,8 +133,9 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	Database* dbb = tdbb->getDatabase();
 
 	try {
-
-		dbb->dbb_mutexes[DBB_MUTX_dyn].enter();
+		THREAD_EXIT();
+		Firebird::MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_dyn]);
+		THREAD_ENTER();
 
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
@@ -142,8 +143,6 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		DYN_execute(&gbl, &ptr, NULL, NULL, NULL, NULL, NULL);
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
-
-		dbb->dbb_mutexes[DBB_MUTX_dyn].leave();
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -158,12 +157,10 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 				VIO_verb_cleanup(tdbb, transaction);
 			}
 			catch (const Firebird::Exception&) {
-				dbb->dbb_mutexes[DBB_MUTX_dyn].leave();
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
 
-		dbb->dbb_mutexes[DBB_MUTX_dyn].leave();
 		JrdMemoryPool::deletePool(tempPool);
 		ERR_punt();
 	}
