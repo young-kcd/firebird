@@ -206,17 +206,11 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	server_flag = SRVR_multi_client;
 #else
 	server_flag = 0;
-	
-	//MessageBox(NULL, "debug", "me", MB_OK);
 #endif
 
 #ifdef SUPERSERVER
 	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
 #endif
-
-	//const DWORD mask = static_cast<DWORD>(Config::getCpuAffinityMask());
-	//if (mask)
-	//	SetProcessAffinityMask(GetCurrentProcess(), mask);
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
