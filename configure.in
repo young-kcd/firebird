@@ -1126,14 +1126,14 @@ case "$PLATFORM" in
     HP_INSTALL_SRC_DIR=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
     gen/firebirdCS.psf:${HP_INSTALL_SRC_DIR}/firebirdCS.psf.in
-    gen/firebird/bin/preInstall.sh:${HP_INSTALL_SRC_DIR}/preInstall.sh.in
-    gen/firebird/bin/tarInstall.sh:${HP_INSTALL_SRC_DIR}/tarInstall.sh.in
-    gen/firebird/bin/tarmainInstall.sh:${HP_INSTALL_SRC_DIR}/tarmainInstall.sh.in
-    gen/firebird/bin/tarUninstall.sh:${HP_INSTALL_SRC_DIR}/tarUninstall.sh.in
-    gen/firebird/bin/tarmainUninstall.sh:${HP_INSTALL_SRC_DIR}/tarmainUninstall.sh.in
-    gen/firebird/bin/postInstall.sh:${HP_INSTALL_SRC_DIR}/postInstall.sh.in
-    gen/firebird/bin/preUninstall.sh:${HP_INSTALL_SRC_DIR}/preUninstall.sh.in
-    gen/firebird/bin/postUninstall.sh:${HP_INSTALL_SRC_DIR}/postUninstall.sh.in
+    gen/install/scripts/preInstall.sh:${HP_INSTALL_SRC_DIR}/preInstall.sh.in
+    gen/install/scripts/tarInstall.sh:${HP_INSTALL_SRC_DIR}/tarInstall.sh.in
+    gen/install/scripts/tarmainInstall.sh:${HP_INSTALL_SRC_DIR}/tarmainInstall.sh.in
+    gen/install/scripts/tarUninstall.sh:${HP_INSTALL_SRC_DIR}/tarUninstall.sh.in
+    gen/install/scripts/tarmainUninstall.sh:${HP_INSTALL_SRC_DIR}/tarmainUninstall.sh.in
+    gen/install/scripts/postInstall.sh:${HP_INSTALL_SRC_DIR}/postInstall.sh.in
+    gen/install/scripts/preUninstall.sh:${HP_INSTALL_SRC_DIR}/preUninstall.sh.in
+    gen/install/scripts/postUninstall.sh:${HP_INSTALL_SRC_DIR}/postUninstall.sh.in
     gen/install/misc/firebird.init.d.hpux:builds/install/arch-specific/hpux/misc/firebird.init.d.hpux.in
     gen/install/misc/rc.config.firebird.hpux:builds/install/arch-specific/hpux/misc/rc.config.firebird.hpux.in
     gen/firebird/bin/changedbaPassword.sh:builds/install/arch-specific/hpux/misc/changedbaPassword.sh.in

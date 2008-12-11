@@ -55,6 +55,7 @@ on Leopard (MacOS 10.5). Due to UNIX2003 support included
 in MacOS 10.5 */
 #undef _XOPEN_SOURCE
 #endif
+
 /* Define __USE_POSIX and __USE_XOPEN for Linux and glibc. */
 #ifndef __USE_POSIX
 #define __USE_POSIX
@@ -202,6 +203,14 @@ static double * const fgInf = &gInf;
 #if U_HAVE_NL_LANGINFO_CODESET
 #include <langinfo.h>
 #endif
+
+#if defined(U_HPUX)
+/* This 2 symbols are defined as empty strings for this platform */
+/* Have to undefine them to avoid syntax errors */
+#undef U_TZSET
+#undef U_TZNAME
+#endif
+
 
 /* Utilities to get the bits from a double */
 static char*

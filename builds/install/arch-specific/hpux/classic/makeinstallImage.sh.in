@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeinstallImage.sh.in,v 1.2 2008-01-07 12:25:43 paulbeach Exp $
+#   $Id: makeinstallImage.sh.in,v 1.3 2008-12-11 10:59:22 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -57,10 +57,12 @@ DestDir=$TargetDir/$FBRootDir
 # Place it to target directory
 
 addLibs() {
+	libTmp=/tmp/fbbuildsh
 	libSdir=$1
 	libScript=$2
 	libTdir=$3
-	libTarget=$libTdir/$libScript
+	libTarget=$libTmp
+	finalTarget=$libTdir/$libScript
 
 	rm -f $libTarget
 	touch $libTarget
@@ -71,6 +73,7 @@ addLibs() {
 		echo "" >>$libTarget	# avoid missing linefeed
 	done
 	cat $libSdir/$libScript >>$libTarget
+	mv $libTarget $finalTarget
 }
 
 
@@ -145,26 +148,26 @@ copyFiles() {
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
 # Append libraries to scripts
-addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh $BuildRootDir/gen/install/bin
-addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh $BuildRootDir/gen/install/bin
-addLibs $BuildRootDir/gen/firebird/bin changedbaPassword.sh $BuildRootDir/gen/install/bin
-addLibs $BuiltFBDir/bin changegdslibrarycompatibleLink.sh $BuildRootDir/gen/install/bin
-addLibs $BuildRootDir/gen/firebird/bin tarmainInstall.sh $BuildRootDir/gen/install/scripts
-addLibs $BuildRootDir/gen/firebird/bin tarInstall.sh $BuildRootDir/gen/install/scripts
-addLibs $BuildRootDir/gen/firebird/bin preInstall.sh $BuildRootDir/gen/install/scripts
-addLibs $BuildRootDir/gen/firebird/bin postInstall.sh $BuildRootDir/gen/install/scripts
-addLibs $BuildRootDir/gen/firebird/bin preUninstall.sh $BuildRootDir/gen/install/scripts
-addLibs $BuildRootDir/gen/firebird/bin postUninstall.sh $BuildRootDir/gen//install/scripts
-addLibs $BuildRootDir/gen/firebird/bin tarUninstall.sh $BuildRootDir/gen/install/scripts
-addLibs $BuildRootDir/gen/firebird/bin tarmainUninstall.sh $BuildRootDir/gen/install/scripts
-mv $BuildRootDir/gen/install/scripts/tarmainUninstall.sh $BuildRootDir/gen/install/scripts/tarMainUninstall.sh
-cp $BuildRootDir/gen/firebird/bin/createaliasDB.sh $BuildRootDir/gen/install/bin/createaliasDB.sh
-rm $BuildRootDir/gen/firebird/bin/*.sh
-cp $BuildRootDir/gen/install/bin/changeRunUser.sh $DestDir/bin
-cp $BuildRootDir/gen/install/bin/restoreRootRunUser.sh $DestDir/bin
-cp $BuildRootDir/gen/install/bin/changedbaPassword.sh $DestDir/bin
-cp $BuildRootDir/gen/install/bin/changegdslibrarycompatibleLink.sh $DestDir/bin
-cp $BuildRootDir/gen/install/bin/createaliasDB.sh $DestDir/bin
+addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh $BuildRootDir/gen/firebird/bin
+addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh $BuildRootDir/gen/firebird/bin
+addLibs $BuildRootDir/gen/firebird/bin changedbaPassword.sh $BuildRootDir/gen/firebird/bin
+addLibs $BuiltFBDir/bin changegdslibrarycompatibleLink.sh $BuildRootDir/gen/firebird/bin
+
+cp $BuildRootDir/gen/firebird/bin/*Library.sh $BuildRootDir/gen/install/scripts
+
+addLibs $BuildRootDir/gen/install/scripts tarmainInstall.sh $BuildRootDir/gen/install/scripts
+addLibs $BuildRootDir/gen/install/scripts tarInstall.sh $BuildRootDir/gen/install/scripts
+addLibs $BuildRootDir/gen/install/scripts preInstall.sh $BuildRootDir/gen/install/scripts
+addLibs $BuildRootDir/gen/install/scripts postInstall.sh $BuildRootDir/gen/install/scripts
+addLibs $BuildRootDir/gen/install/scripts preUninstall.sh $BuildRootDir/gen/install/scripts
+addLibs $BuildRootDir/gen/install/scripts postUninstall.sh $BuildRootDir/gen//install/scripts
+addLibs $BuildRootDir/gen/install/scripts tarUninstall.sh $BuildRootDir/gen/install/scripts
+addLibs $BuildRootDir/gen/install/scripts tarmainUninstall.sh $BuildRootDir/gen/install/scripts
+cp $BuildRootDir/gen/firebird/bin/changeRunUser.sh $DestDir/bin
+cp $BuildRootDir/gen/firebird/bin/restoreRootRunUser.sh $DestDir/bin
+cp $BuildRootDir/gen/firebird/bin/changedbaPassword.sh $DestDir/bin
+cp $BuildRootDir/gen/firebird/bin/changegdslibrarycompatibleLink.sh $DestDir/bin
+cp $BuildRootDir/gen/firebird/bin/createaliasDB.sh $DestDir/bin
 # These scripts do not need libraries
     cp $BuiltFBDir/bin/fb_config $DestDir/bin
     cp $BuildRootDir/gen/install/misc/firebird.init.d.hpux $DestDir/misc
@@ -218,7 +221,7 @@ cp $BuildRootDir/gen/install/bin/createaliasDB.sh $DestDir/bin
     cp $BuildRootDir/doc/README.user $DestDir/README
 
 #   Misc config files
-    cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
+    cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/fbintl.conf $DestDir/intl/
 

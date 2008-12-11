@@ -172,7 +172,7 @@ static const TEXT* const impl_implementation[] =
 	"Firebird/sun",		/* 28 */
 	NULL, // "Firebird/OS2",        /* 29 */
 	"Firebird/sun4",		/* 30 */
-	NULL, // "Firebird/hpux800",	/* 31 */
+	"Firebird/hpux",		/* 31 */
 	"Firebird/sun386",		/* 32 */
 	"Firebird:ORACLE/vms",	/* 33 */
 	NULL, // "Firebird/mac/aux",    /* 34 */

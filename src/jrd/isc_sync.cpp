@@ -104,7 +104,7 @@ static UCHAR *next_shared_memory;
 #include <sys/shm.h>
 #include <sys/sem.h>
 
-#ifndef O_RDWR
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 

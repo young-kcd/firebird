@@ -247,7 +247,7 @@ public:
 	static void initMutexes();
 };
 
-#ifndef DARWIN
+#if !(defined(DARWIN) || defined(HPUX))
 class Spinlock
 {
 private:
@@ -279,7 +279,9 @@ public:
 			system_call_failed::raise("pthread_spin_unlock");
 	}
 };
-#endif //DARWIN
+#else // have spinlocks
+typedef Mutex Spinlock;
+#endif // have spinlocks
 
 #endif //SOLARIS_MT
 
