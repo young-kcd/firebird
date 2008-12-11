@@ -139,7 +139,7 @@ public:
 	}
 };
 
-#if !(defined(DARWIN) | defined(HPUX))
+#if !(defined(DARWIN) || defined(HPUX))
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
