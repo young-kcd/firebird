@@ -442,14 +442,12 @@ const int DBB_max_count				= 8;
 // Database mutexes
 //
 const int DBB_MUTX_init_fini		= 0;	// During startup and shutdown
-//const int DBB_MUTX_statistics		= 1;	// Memory size and counts
-//const int DBB_MUTX_replay			= 2;	// Replay logging
-const int DBB_MUTX_dyn				= 3;	// Dynamic ddl
-//const int DBB_MUTX_cache			= 4;	// Process-private cache management
-const int DBB_MUTX_clone			= 5;	// Request cloning
-const int DBB_MUTX_cmp_clone		= 6;	// Compiled request cloning
-const int DBB_MUTX_flush_count		= 7;	// flush count/time
-const int DBB_MUTX_max				= 8;
+const int DBB_MUTX_dyn				= 1;	// Dynamic ddl
+const int DBB_MUTX_clone			= 2;	// Request cloning
+const int DBB_MUTX_cmp_clone		= 3;	// Compiled request cloning
+const int DBB_MUTX_flush_count		= 4;	// flush count/time
+const int DBB_MUTX_sys_dfw			= 5;	// system deferred work
+const int DBB_MUTX_max				= 6;
 
 //
 // Flags to indicate normal internal requests vs. dyn internal requests

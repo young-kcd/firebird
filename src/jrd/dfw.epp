@@ -434,7 +434,7 @@ void DFW_merge_work(jrd_tra* transaction,
 }
 
 
-void DFW_perform_system_work(void)
+void DFW_perform_system_work(thread_db* tdbb)
 {
 /**************************************
  *
@@ -447,7 +447,12 @@ void DFW_perform_system_work(void)
  *	system transaction.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	THREAD_EXIT();
+	Firebird::MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_sys_dfw]);
+	THREAD_ENTER();
 
 	DFW_perform_work(dbb->dbb_sys_trans);
 }
@@ -626,8 +631,30 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 }
 
 
-DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc,
-	USHORT id)
+DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* desc, USHORT id)
+{
+/**************************************
+ *
+ *	D F W _ p o s t _ s y s t e m _ w o r k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post work to be deferred to commit time.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	THREAD_EXIT();
+	Firebird::MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_sys_dfw]);
+	THREAD_ENTER();
+
+	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id);
+}
+
+
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc, USHORT id)
 {
 /**************************************
  *
