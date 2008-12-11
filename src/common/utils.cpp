@@ -669,9 +669,7 @@ Firebird::PathName get_process_name()
 
 SLONG genUniqueId()
 {
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
-	static SLONG cnt = 0;
+	static Firebird::AtomicCounter cnt;
 	return ++cnt;
 }
 
