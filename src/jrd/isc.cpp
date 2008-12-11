@@ -201,15 +201,16 @@ bool ISC_check_process_existence(SLONG pid)
  **************************************/
 
 #ifdef WIN_NT
-	const HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
+	const HANDLE handle = OpenProcess(SYNCHRONIZE, FALSE, (DWORD) pid);
 
-	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
+	if (!handle)
 	{
-		return false;
+		return (GetLastError() == ERROR_ACCESS_DENIED);
 	}
 
+	const bool alive = (WaitForSingleObject(handle, 0) != WAIT_OBJECT_0);
 	CloseHandle(handle);
-	return true;
+	return alive;
 #else
 	return (kill((int) pid, 0) == -1 &&	errno == ESRCH) ? false : true;
 #endif
