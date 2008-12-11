@@ -196,15 +196,16 @@ bool ISC_check_process_existence(SLONG	pid,
 	return (lib$getjpi(&item, &pid, NULL, NULL, NULL, NULL) == SS$_NONEXPR) ?
 		false : true;
 #elif defined(WIN_NT)
-	HANDLE handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, (DWORD) pid);
+	HANDLE handle = OpenProcess(SYNCHRONIZE, FALSE, (DWORD) pid);
 
-	if (!handle && GetLastError() != ERROR_ACCESS_DENIED)
+	if (!handle)
 	{
-		return false;
+		return (GetLastError() == ERROR_ACCESS_DENIED);
 	}
 
+	const bool alive = (WaitForSingleObject(handle, 0) != WAIT_OBJECT_0);
 	CloseHandle(handle);
-	return true;
+	return alive;
 #else
 	return true;
 #endif
