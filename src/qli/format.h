@@ -75,8 +75,8 @@ typedef enum pic_t {
     pic_alpha = 1,
     pic_numeric,
     pic_date,
-    pic_float,
-    // pic_text // unused
+    pic_float
+    // , pic_text // unused
 } PIC_T;
 
 // Picture string handling block

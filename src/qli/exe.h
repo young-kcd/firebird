@@ -182,9 +182,9 @@ struct qli_print_item {
     USHORT		itm_print_length;
     USHORT		itm_header_offset;
     USHORT		itm_header_length;
-    //USHORT		itm_header_segments;
+    //USHORT	itm_header_segments;
     USHORT		itm_count;			// Number of lines to skip
-    //USHORT		itm_column;			// Logical column number
+    //USHORT	itm_column;			// Logical column number
     FB_API_HANDLE itm_stream;
     //USHORT		itm_kanji_fragment;	// JPN: last kanji on line border
     //ISC_STATUS	itm_blob_status;	// JPN: status of the last blob fetch

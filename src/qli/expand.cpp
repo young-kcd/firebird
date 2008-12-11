@@ -1799,8 +1799,10 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 		node->nod_arg[e_rse_reduced] = expand_sort(input->syn_arg[e_rse_reduced], new_stack, 0);
 
 	if (input->syn_arg[s_rse_group_by])
+	{
 		parent_rse->nod_arg[e_rse_group_by] =
 			expand_group_by(input->syn_arg[s_rse_group_by], new_stack, parent_context);
+	}
 
 	node->nod_arg[e_rse_join_type] = (qli_nod*) input->syn_arg[s_rse_join_type];
 

@@ -1594,7 +1594,7 @@ static int show_insecure_fields(
 	return count;
 }
 
-/*
+#ifdef NOT_USED_OR_REPLACED
 static void show_forms_db( DBB database)
 {
 /**************************************
@@ -1607,12 +1607,12 @@ static void show_forms_db( DBB database)
  *	Show what we know about forms
  *	for one database.
  *
- **************************************./
+ **************************************/
 
 	ERRQ_msg_put(120, database->dbb_symbol->sym_string);
 	// Msg120 There are no forms defined for database %s
 }
-*/
+#endif	// NOT_USED_OR_REPLACED
 
 static void show_gbl_field( qli_syntax* field_node)
 {

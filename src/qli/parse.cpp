@@ -1940,7 +1940,7 @@ static qli_syntax* parse_in( qli_syntax* value, NOD_T operatr, bool all_flag)
 /**************************************
  *
  *	p a r s e _ i n
- *n
+ *
  **************************************
  *
  * Functional description

@@ -326,7 +326,7 @@ const ULONG DBB_cap_security		= 4;	// Firebird style security classes
 const ULONG DBB_cap_idx_inactive	= 16;	// Firebird index inactive flag
 const ULONG DBB_cap_multi_trans		= 32;	// Database supports multiple transactions
 const ULONG DBB_cap_single_trans	= 64;	// Database supports only a single transaction
-//const ULONG DBB_cap_dudley			= 128;	// We're authorized for meta-data updates. Unused
+//const ULONG DBB_cap_dudley		= 128;	// We're authorized for meta-data updates. Unused
 const ULONG DBB_cap_functions		= 256;	// The DBMS knows about function
 const ULONG DBB_cap_new_triggers	= 512;	// triggers (new V3 style)
 const ULONG DBB_cap_shadowing		= 1024;	// Database supports shadowing
@@ -373,7 +373,7 @@ struct qli_fld {
     USHORT		fld_segment_length;	// Segment length for blobs
     SSHORT		fld_scale;			// Scale factor of field
     qli_syntax*		fld_validation;		// Validation expression
-    //qli_syntax*		fld_computed;		// Computed by expression. Unused
+    //qli_syntax*	fld_computed;		// Computed by expression. Unused
     qli_const*	fld_missing;		// Missing value defined in system relation
     SSHORT		fld_sub_type;		// Subtype for blobs, text and EXACT_NUMERICs.
     SSHORT		fld_sub_type_missing;	// Subtype missing flag
@@ -390,7 +390,7 @@ const USHORT FLD_modify		= 4;
 const USHORT FLD_missing	= 8;
 const USHORT FLD_not_null	= 16;
 const USHORT FLD_add		= 32;
-//const USHORT FLD_unique		= 64; Unused
+//const USHORT FLD_unique	= 64;	// Unused
 const USHORT FLD_array		= 128;
 
 // Privileges for SQL metadata
@@ -461,7 +461,7 @@ struct qli_fun {
     qli_symbol*	fun_symbol;		// Associated symbol block
     qli_symbol*	fun_query_name;
     dsc			fun_return;		// Return descriptor
-    //USHORT		fun_args;		// Number of arguments. Unused
+    //USHORT	fun_args;		// Number of arguments. Unused
     dsc			fun_arg[1];		/* Data type of arguments
 							   If you change this change blk.h too */
 };

@@ -95,7 +95,7 @@ enum show_t {
 enum set_t {
     set_blr,
     set_statistics,
-    //set_epilog	// Unused
+    //set_epilog,	// Unused
     set_columns,
     set_lines,
     set_semi,
