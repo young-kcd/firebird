@@ -56,6 +56,7 @@
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/PublicHandle.h"
 #include "../common/classes/semaphore.h"
+#include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
@@ -312,8 +313,7 @@ public:
 
 	static ULONG getLockOwnerId()
 	{
-		static Firebird::AtomicCounter counter;
-		return ++counter;
+		return fb_utils::genUniqueId();
 	}
 
 	bool checkHandle() const
@@ -336,8 +336,7 @@ public:
 	BufferControl*	dbb_bcb;			// Buffer control block
 	vec<jrd_rel*>*	dbb_relations;		// relation vector
 	vec<jrd_prc*>*	dbb_procedures;		// scanned procedures
-	FB_GUID		dbb_guid;				// dbb instance identifier
-	Lock*		dbb_instance_lock;		// dbb instance lock
+	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
 	Lock*		dbb_sh_counter_lock;	// lock which holds shared counter value
 	SLONG		dbb_sh_counter_curr;	// current value of shared counter lock

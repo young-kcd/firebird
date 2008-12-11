@@ -24,6 +24,7 @@
 #define JRD_DATABASE_SNAPSHOT_H
 
 #include "../common/classes/array.h"
+#include "../common/classes/init.h"
 #include "../common/classes/ClumpletReader.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -39,35 +40,55 @@ class DatabaseSnapshot
 
 	class SharedMemory
 	{
-		static const size_t VERSION;
-		static const size_t DEFAULT_SIZE;
+		static const ULONG VERSION;
+		static const ULONG DEFAULT_SIZE;
 
 		struct Header
 		{
-			size_t version;
-			size_t used;
-			size_t allocated;
+			ULONG version;
+			ULONG used;
+			ULONG allocated;
 #ifndef WIN_NT
 			struct mtx mutex;
 #endif
 		};
 
+		class DumpGuard {
+		public:
+			explicit DumpGuard(SharedMemory* ptr)
+				: dump(ptr)
+			{
+				dump->acquire();
+			}
+
+			~DumpGuard()
+			{
+				dump->release();
+			}
+
+		private:
+			DumpGuard(const DumpGuard&);
+			DumpGuard& operator=(const DumpGuard&);
+
+			SharedMemory* dump;
+		};
+
 	public:
 		SharedMemory();
+		explicit SharedMemory(MemoryPool&);
 		~SharedMemory();
 
 		void acquire();
 		void release();
 
-		Firebird::ClumpletReader* readData(thread_db*);
-		void writeData(thread_db*, Firebird::ClumpletWriter&);
+		UCHAR* readData(MemoryPool&, ULONG&);
+		void writeData(thread_db*, ULONG, const UCHAR*);
 
 	private:
 		// copying is prohibited
 		SharedMemory(const SharedMemory&);
 		SharedMemory& operator =(const SharedMemory&);
 
-		void garbageCollect(thread_db*, bool);
 		void extend();
 
 		static void checkMutex(const TEXT*, int);
@@ -80,25 +101,10 @@ class DatabaseSnapshot
 		Header* base;
 	};
 
-	class DumpGuard
-	{
-	public:
-		explicit DumpGuard(SharedMemory* ptr)
-			: dump(ptr)
-		{
-			dump->acquire();
-		}
-
-		~DumpGuard()
-		{
-			dump->release();
-		}
-
-	private:
-		DumpGuard(const DumpGuard&);
-		DumpGuard& operator=(const DumpGuard&);
-
-		SharedMemory* dump;
+	struct Element {
+		ULONG processId;
+		ULONG localId;
+		ULONG length;
 	};
 
 public:
@@ -115,15 +121,12 @@ protected:
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	void clearRecord(Record*);
-	void putField(Record*, int, const Firebird::ClumpletReader*, bool);
+	void putField(Record*, int, const Firebird::ClumpletReader&, bool);
 
-	static Firebird::ClumpletReader* dumpData(thread_db*, bool);
+	static void dumpData(thread_db*);
 	static const char* checkNull(int, int, const char*, size_t);
 
-	static SINT64 getGlobalId(int value)
-	{
-		return ((SINT64) pid << BITS_PER_LONG) + value;
-	}
+	static SINT64 getGlobalId(int);
 
 	static void putDatabase(const Database*, Firebird::ClumpletWriter&, int);
 	static void putAttachment(const Attachment*, Firebird::ClumpletWriter&, int);
@@ -134,9 +137,7 @@ private:
 	static void putContextVars(Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
 	static void putMemoryUsage(const Firebird::MemoryStats&, Firebird::ClumpletWriter&, int, int);
 
-	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
-	static SharedMemory* dump;
-	static int pid;
+	static Firebird::InitInstance<SharedMemory> dump;
 
 	Firebird::Array<RelationData> snapshot;
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;

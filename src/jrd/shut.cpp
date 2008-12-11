@@ -594,8 +594,6 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 
 	if (!shut_attachment) {
 		CCH_shutdown_database(dbb);
-		if (dbb->dbb_instance_lock)
-			LCK_release(tdbb, dbb->dbb_instance_lock);
 		if (dbb->dbb_monitor_lock)
 			LCK_release(tdbb, dbb->dbb_monitor_lock);
 		if (dbb->dbb_shadow_lock)
