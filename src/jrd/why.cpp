@@ -6048,6 +6048,12 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		{
 			rc = FB_FAILURE;
 		}
+
+		// Finish shutdown 
+		if (ShutChain::run(fb_shut_finish, reason) != FB_SUCCESS)
+		{
+			rc = FB_FAILURE;
+		}
 	}
 	catch (const Exception& e)
 	{
