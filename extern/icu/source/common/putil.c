@@ -1173,7 +1173,7 @@ U_CAPI void U_EXPORT2
 uprv_tzset()
 {
 #ifdef U_TZSET
-    U_TZSET;
+    U_TZSET();
 #else
     /* no initialization*/
 #endif
@@ -1267,8 +1267,8 @@ uprv_tzname(int n)
     }
 #endif
 
-#if U_TZNAME + 1 != 1
-    return U_TZNAME[n];
+#ifdef U_TZNAME
+	return U_TZNAME[n];
 #else
     return "";
 #endif
