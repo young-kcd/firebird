@@ -7024,11 +7024,11 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
  **************************************/
 	Rdb* rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rem_port* port = rdb->rdb_port;
+	RemPortPtr port(rdb->rdb_port);
 
 	if (kind == fb_cancel_abort)
 	{
-		rdb->rdb_port->force_close();
+		port->force_close();
 
 		user_status[0] = isc_arg_gds;
 		user_status[1] = FB_SUCCESS;

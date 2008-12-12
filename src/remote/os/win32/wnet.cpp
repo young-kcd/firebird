@@ -59,6 +59,7 @@ const char* EVENT_PIPE_SUFFIX	= "event";
 Firebird::AtomicCounter event_counter;
 
 static Firebird::GlobalPtr<PortsCleanup> wnet_ports;
+static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static bool wnet_initialized = false;
 static bool wnet_shutdown = false;
 
@@ -564,8 +565,12 @@ static rem_port* alloc_port( rem_port* parent)
 
 	if (!wnet_initialized)
 	{
-		wnet_initialized = true;
-		fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
+		Firebird::MutexLockGuard guard(init_mutex);
+		if (!wnet_initialized)
+		{
+			wnet_initialized = true;
+			fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
+		}
 	}
 
 	rem_port* port = new rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
