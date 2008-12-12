@@ -39,6 +39,7 @@
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
+#include "../common/classes/fb_atomic.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
