@@ -5091,6 +5091,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
 
+	DatabaseSnapshot::cleanup(tdbb);
+
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 

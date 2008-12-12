@@ -232,6 +232,34 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ULONG length, co
 }
 
 
+void DatabaseSnapshot::SharedMemory::cleanup(thread_db* tdbb)
+{
+	fb_assert(tdbb);
+
+	const Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+
+	DumpGuard guard(this);
+
+	// Remove information about our dbb
+	for (ULONG offset = sizeof(Header); offset < base->used;)
+	{
+		UCHAR* const ptr = (UCHAR*) base + offset;
+		const Element* const element = (Element*) ptr;
+		const ULONG length = sizeof(Element) + element->length;
+
+		if (element->processId == getpid() &&
+			element->localId == dbb->dbb_monitoring_id)
+		{
+			memmove(ptr, ptr + length, base->used - offset - length);
+			base->used -= length;
+		}
+
+		offset += length;
+	}
+}
+
+
 void DatabaseSnapshot::SharedMemory::extend()
 {
 	const ULONG newSize = handle.sh_mem_length_mapped + DEFAULT_SIZE;
@@ -314,6 +342,13 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 	return transaction->tra_db_snapshot;
 }
 
+
+void DatabaseSnapshot::cleanup(thread_db* tdbb)
+{
+	SET_TDBB(tdbb);
+
+	dump().cleanup(tdbb);
+}
 
 int DatabaseSnapshot::blockingAst(void* ast_object)
 {

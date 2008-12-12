@@ -84,6 +84,8 @@ class DatabaseSnapshot
 		UCHAR* readData(MemoryPool&, ULONG&);
 		void writeData(thread_db*, ULONG, const UCHAR*);
 
+		void cleanup(thread_db*);
+
 	private:
 		// copying is prohibited
 		SharedMemory(const SharedMemory&);
@@ -113,6 +115,7 @@ public:
 	RecordBuffer* getData(const jrd_rel*) const;
 
 	static DatabaseSnapshot* create(thread_db*);
+	static void cleanup(thread_db*);
 	static int blockingAst(void*);
 
 protected:
