@@ -47,6 +47,7 @@ MakeFileFirebirdWritable() {
 
 fixArcSpecificPermissions() {
     # No such permissions for SS
+	return 0
 }
 
 
