@@ -78,6 +78,8 @@ private:
 
 #elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
 
+namespace Firebird {
+
 // Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class AtomicCounter
 {
@@ -117,6 +119,8 @@ public:
 private:
 	volatile counter_type counter;
 };
+
+} // namespace Firebird
 
 #else
 
