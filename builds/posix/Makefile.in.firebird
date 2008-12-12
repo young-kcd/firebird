@@ -560,7 +560,6 @@ clean_icu:
 
 clean_objects:
 	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`
-	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`
 	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
 
 clean_extern_objects:

@@ -937,14 +937,14 @@ public:
 	~PortsCleanup() 
 	{}
 
-	void registerPort(rem_port *);
-	void unRegisterPort(rem_port *);
+	void registerPort(rem_port*);
+	void unRegisterPort(rem_port*);
 
 	void closePorts();
 
 private:
 	typedef Firebird::SortedArray<rem_port*> PortsArray;
-	PortsArray		*m_ports;
+	PortsArray*		m_ports;
 	Firebird::Mutex	m_mutex;
 };
 

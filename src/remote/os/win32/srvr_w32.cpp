@@ -142,9 +142,11 @@ public:
 	static bool wait() 
 	{
 		while (m_count.value() > 0)
+		{
 			if (!m_semaphore.tryEnter(10))
 				break; 
-		
+		}
+
 		return (m_count.value() == 0);
 	}
 
@@ -344,7 +346,7 @@ THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
  **************************************/
 	ThreadCounter counter;
 
-	service_connection((rem_port*)arg);
+	service_connection((rem_port*) arg);
 	return 0;
 }
 

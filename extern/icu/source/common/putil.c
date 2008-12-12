@@ -205,7 +205,7 @@ static double * const fgInf = &gInf;
 #endif
 
 #if defined(U_HPUX)
-/* This 2 symbols are defined as empty strings for this platform */
+/* These 2 symbols are defined as empty strings for this platform */
 /* Have to undefine them to avoid syntax errors */
 #undef U_TZSET
 #undef U_TZNAME
