@@ -529,7 +529,6 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 #endif
 	switch (lock_type) {
 	case LCK_database:
-	case LCK_instance:
 	case LCK_bdb:
 	case LCK_rel_exist:
 	case LCK_rel_partners:

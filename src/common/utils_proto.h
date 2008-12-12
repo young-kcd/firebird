@@ -102,6 +102,7 @@ namespace fb_utils
 #endif 
 
 	Firebird::PathName get_process_name();
+	SLONG genUniqueId();
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

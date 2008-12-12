@@ -89,6 +89,8 @@
 /* Pick up relation ids */
 #include "../jrd/ini.h"
 
+#include "../common/utils_proto.h"
+
 /* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value
@@ -515,7 +517,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
-	clone->req_id = dbb->generateId();
+	clone->req_id = fb_utils::genUniqueId();
 
 	// We are cloning full lists here, not assigning pointers
 	clone->req_invariants = request->req_invariants;
@@ -2088,7 +2090,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
 	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
-	request->req_id = dbb->generateId();
+	request->req_id = fb_utils::genUniqueId();
 
 	// CVC: Unused.
 	//request->req_variables = csb->csb_variables;

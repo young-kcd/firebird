@@ -212,8 +212,7 @@ public:
 	BufferControl*	dbb_bcb;			// Buffer control block
 	vec<jrd_rel*>*	dbb_relations;		// relation vector
 	vec<jrd_prc*>*	dbb_procedures;		// scanned procedures
-	FB_GUID		dbb_guid;				// dbb instance identifier
-	Lock*		dbb_instance_lock;		// dbb instance lock
+	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
 	void*		dbb_btr_page_locks;		// per page locks for BTR
 	jrd_tra*	dbb_sys_trans;			// system transaction
@@ -318,11 +317,6 @@ public:
 	BackupManager *dbb_backup_manager;	// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; // creation date
 	Symbol*	dbb_hash_table[HASH_SIZE];	// keep this at the end
-
-	ULONG generateId()
-	{
-		return ++dbb_current_id;
-	}
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice();

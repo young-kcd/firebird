@@ -649,4 +649,10 @@ Firebird::PathName get_process_name()
 	return buffer;
 }
 
+SLONG genUniqueId()
+{
+	static Firebird::AtomicCounter cnt;
+	return ++cnt;
+}
+
 } // namespace fb_utils

@@ -123,6 +123,7 @@
 #include "../jrd/why_proto.h"
 #include "../jrd/flags.h"
 
+#include "../common/utils_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/plugin_manager.h"
@@ -5925,7 +5926,7 @@ static Database* init(thread_db*	tdbb,
 	dbb->dbb_flags |= DBB_exclusive;
 	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
-	GenerateGuid(&dbb->dbb_guid);
+	dbb->dbb_monitoring_id = fb_utils::genUniqueId();
 
 	// set a garbage collection policy
 
@@ -6016,17 +6017,6 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	lock->lck_dbb = dbb;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
 	lock->lck_ast = DatabaseSnapshot::blockingAst;
-	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
-
-	// Lock that identifies a dbb instance
-	const size_t key_length = sizeof(FB_GUID);
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock();
-	dbb->dbb_instance_lock = lock;
-	lock->lck_type = LCK_instance;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_length = key_length;
-	memcpy(lock->lck_key.lck_string, &dbb->dbb_guid, key_length);
-	lock->lck_dbb = dbb;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 }
 
@@ -6411,9 +6401,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 	// FUN_fini(tdbb);
-
-	if (dbb->dbb_instance_lock)
-		LCK_release(tdbb, dbb->dbb_instance_lock);
 
 	if (dbb->dbb_monitor_lock)
 		LCK_release(tdbb, dbb->dbb_monitor_lock);
