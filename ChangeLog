@@ -1,3 +1,45 @@
+2008-12-12 17:04  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.75),
+	DatabaseSnapshot.h (1.21), jrd.cpp (1.493):
+
+	Fixed the issue reported by Philippe. To be backported after more
+	testing.
+
+2008-12-12 15:16  alexpeshkoff
+
+	* firebird2/builds/install/misc/superLibrary.sh.in (1.8):
+
+	Misc - thanks to Philippe
+
+2008-12-12 14:53  alexpeshkoff
+
+	* firebird2/: configure.in (1.304),
+	builds/install/arch-specific/hpux/Makefile.in (1.6),
+	builds/install/arch-specific/hpux/classic/firebirdCS.psf.in (1.4),
+	builds/install/arch-specific/hpux/classic/makeinstallImage.sh.in
+	(1.5):
+
+	HPUX port
+
+2008-12-12 11:06  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.199), os/win32/wnet.cpp
+	(1.64):
+
+	Some thread safety
+
+2008-12-12 01:54  asfernandes
+
+	* firebird2/: builds/install/arch-specific/hpux/Makefile.in (1.5),
+	builds/install/arch-specific/hpux/classic/makeinstallImage.sh.in
+	(1.4), builds/posix/Makefile.in.firebird (1.90),
+	extern/icu/source/common/putil.c (1.8), src/remote/remote.cpp
+	(1.75), src/remote/remote.h (1.86),
+	src/remote/os/win32/srvr_w32.cpp (1.64):
+
+	Misc
+
 2008-12-11 12:58  dimitr
 
 	* firebird2/src/jrd/: lck.cpp (1.91), lck.h (1.46):
