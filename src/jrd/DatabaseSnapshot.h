@@ -53,7 +53,8 @@ class DatabaseSnapshot
 #endif
 		};
 
-		class DumpGuard {
+		class DumpGuard
+		{
 		public:
 			explicit DumpGuard(SharedMemory* ptr)
 				: dump(ptr)
