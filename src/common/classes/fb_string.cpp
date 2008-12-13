@@ -153,8 +153,8 @@ namespace Firebird {
 			return baseAppend(n);
 		}
 		reserveBuffer(stringLength + n);
-		memmove(stringBuffer + p0 + n, stringBuffer + p0,
-				stringLength - p0 + 1); // Do not forget to move null terminator too
+		// Do not forget to move null terminator, too
+		memmove(stringBuffer + p0 + n, stringBuffer + p0, stringLength - p0 + 1);
 		stringLength += n;
 		return stringBuffer + p0;
 	}
@@ -162,8 +162,7 @@ namespace Firebird {
 	void AbstractString::baseErase(size_type p0, size_type n)
 	{
 		adjustRange(length(), p0, n);
-		memmove(stringBuffer + p0,
-				stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
+		memmove(stringBuffer + p0, stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
 		stringLength -= n;
 		shrinkBuffer();
 	}
@@ -321,7 +320,7 @@ extern "C" {
 	void AbstractString::upper()
 	{
 #ifdef WIN_NT
-			CharUpperBuffA(modify(), length());
+		CharUpperBuffA(modify(), length());
 #else  // WIN_NT
 		for (pointer p = modify(); *p; p++) {
 			*p = toupper(*p);
@@ -332,7 +331,7 @@ extern "C" {
 	void AbstractString::lower()
 	{
 #ifdef WIN_NT
-			CharLowerBuffA(modify(), length());
+		CharLowerBuffA(modify(), length());
 #else  // WIN_NT
 		for (pointer p = modify(); *p; p++) {
 			*p = tolower(*p);

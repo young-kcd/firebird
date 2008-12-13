@@ -39,8 +39,7 @@ public:
 		init(directory, prefix);
 	}
 
-	TempFile(const Firebird::PathName& prefix,
-			 bool do_unlink = true)
+	TempFile(const Firebird::PathName& prefix, bool do_unlink = true)
 		: position(0), size(0), doUnlink(do_unlink)
 	{
 		init("", prefix);

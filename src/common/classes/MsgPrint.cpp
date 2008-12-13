@@ -301,8 +301,7 @@ int MsgPrint(const char* format)
 
 // Shortcut version to format a string with arguments on a string output
 // of a given size.
-int MsgPrint(char* plainstring, unsigned int s_size,
-			 const char* format, const SafeArg& arg)
+int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg)
 {
 	StringStream st(plainstring, s_size);
 	return MsgPrint(st, format, arg);

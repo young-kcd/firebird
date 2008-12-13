@@ -45,7 +45,8 @@ using namespace Firebird;
 const SSHORT SHUT_WAIT_TIME	= 5;
 
 // Shutdown lock data
-union shutdown_data {
+union shutdown_data
+{
 	struct {
 		SSHORT flag;
 		SSHORT delay;
@@ -92,7 +93,8 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 		dbb->dbb_ast_flags &=
 			~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force |
 			  DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
-		switch (flag & isc_dpb_shut_mode_mask) {
+		switch (flag & isc_dpb_shut_mode_mask)
+		{
 		case isc_dpb_shut_normal:
 			break;
 		case isc_dpb_shut_multi:
@@ -171,8 +173,7 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		break;
 	case isc_dpb_shut_multi:
-		if ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
-			(dbb->dbb_ast_flags & DBB_shutdown_single))
+		if ((dbb->dbb_ast_flags & DBB_shutdown_full) || (dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
 			return bad_mode(tdbb, false);
 		}
@@ -198,8 +199,7 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	// Reject exclusive and single-user shutdown attempts
 	// for a physically locked database
 
-	if (shut_mode == isc_dpb_shut_full ||
-		shut_mode == isc_dpb_shut_single)
+	if (shut_mode == isc_dpb_shut_full || shut_mode == isc_dpb_shut_single)
 	{
 		check_backup_state(tdbb);
 	}
@@ -227,17 +227,14 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 		for (; timeout >= 0; timeout -= SHUT_WAIT_TIME)
 		{
 			if ((exclusive = notify_shutdown(tdbb, flag, timeout)) ||
-				!(dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran |
-										DBB_shut_force)))
+				!(dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran | DBB_shut_force)))
 			{
 				break;
 			}
 		}
 	}
 
-	if (!exclusive && (timeout > 0 ||
-					   flag & (isc_dpb_shut_attachment |
-							   isc_dpb_shut_transaction)))
+	if (!exclusive && (timeout > 0 || flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction)))
 	{
 		notify_shutdown(tdbb, 0, 0);	/* Tell everyone we're giving up */
 		SHUT_blocking_ast(tdbb);
@@ -278,8 +275,7 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	++dbb->dbb_use_count;
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
 	WIN window(HEADER_PAGE_NUMBER);
-	Ods::header_page* header =
-		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
@@ -363,8 +359,7 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 	case isc_dpb_shut_multi:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
 			return bad_mode(tdbb, false); // normal -> multi
-		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) &&
-		    !(dbb->dbb_ast_flags & DBB_shutdown_single))
+		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) && !(dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
 			return bad_mode(tdbb, IGNORE_SAME_MODE); // multi -> multi
 		}
@@ -390,8 +385,7 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 	// Reject exclusive and single-user shutdown attempts
 	// for a physically locked database
 
-	if (shut_mode == isc_dpb_shut_full ||
-		shut_mode == isc_dpb_shut_single)
+	if (shut_mode == isc_dpb_shut_full || shut_mode == isc_dpb_shut_single)
 	{
 		check_backup_state(tdbb);
 	}
@@ -445,7 +439,8 @@ static bool bad_mode(thread_db* tdbb, bool ignore)
 	if (!ignore) {
 		Database* dbb = tdbb->getDatabase();
 
-		ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
+		ERR_build_status(tdbb->tdbb_status_vector,
+			Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}
 	return ignore;
 }
@@ -499,8 +494,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	if ((flag & isc_dpb_shut_force) && !delay) {
 		return shutdown_locks(tdbb, flag);
 	}
-	if ((flag & isc_dpb_shut_transaction) &&
-		!(TRA_active_transactions(tdbb, dbb)))
+	if ((flag & isc_dpb_shut_transaction) && !(TRA_active_transactions(tdbb, dbb)))
 	{
 		return true;
 	}
@@ -546,8 +540,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 
 	Attachment* attachment;
 
-	for (attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (!(attachment->att_flags & ATT_shutdown_manager))
 			attachment->att_flags |= ATT_shutdown;
@@ -567,8 +560,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 
 	const Attachment* shut_attachment = NULL;
 
-	for (attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (attachment->att_flags & ATT_shutdown_manager) {
 			shut_attachment = attachment;

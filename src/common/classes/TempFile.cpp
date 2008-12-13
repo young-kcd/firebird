@@ -126,8 +126,7 @@ Firebird::PathName TempFile::create(const Firebird::PathName& prefix)
 // Creates temporary file with a unique filename
 //
 
-void TempFile::init(const Firebird::PathName& directory,
-				    const Firebird::PathName& prefix)
+void TempFile::init(const Firebird::PathName& directory, const Firebird::PathName& prefix)
 {
 	// set up temporary directory, if not specified
 	filename = directory;
@@ -238,8 +237,8 @@ void TempFile::seek(const offset_t offset)
 #if defined(WIN_NT)
 	LARGE_INTEGER liOffset;
 	liOffset.QuadPart = offset;
-	const DWORD seek_result = SetFilePointer(handle, (LONG) liOffset.LowPart,
-									  &liOffset.HighPart, FILE_BEGIN);
+	const DWORD seek_result =
+		SetFilePointer(handle, (LONG) liOffset.LowPart, &liOffset.HighPart, FILE_BEGIN);
 	if (seek_result == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 	{
 		Firebird::system_call_failed::raise("SetFilePointer");

@@ -144,7 +144,8 @@ class PreparedStatement;
 
 // Relation trigger definition
 
-class Trigger {
+class Trigger
+{
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
 	bid			dbg_blob_id;					// RDB$DEBUG_INFO
@@ -158,8 +159,11 @@ public:
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
-	explicit Trigger(MemoryPool& p) : blr(p), name(p)
-	{ dbg_blob_id.clear(); }
+	explicit Trigger(MemoryPool& p)
+		: blr(p), name(p)
+	{
+		dbg_blob_id.clear();
+	}
 };
 
 
@@ -505,9 +509,15 @@ public:
 
 protected:
 	vec_base(MemoryPool& p, int len)
-		: v(p, len) { v.resize(len); }
+		: v(p, len)
+	{
+		v.resize(len);
+	}
 	vec_base(MemoryPool& p, const vec_base& base)
-		: v(p) { v = base.v; }
+		: v(p)
+	{
+		v = base.v;
+	}
 
 private:
 	Firebird::Array<T> v;
@@ -571,7 +581,8 @@ private:
 //
 // Transaction element block
 //
-struct teb {
+struct teb
+{
 	Attachment** teb_database;
 	int teb_tpb_length;
 	const UCHAR* teb_tpb;
@@ -584,7 +595,8 @@ typedef teb TEB;
 // and reside in ods.h, although I watched a place with 1 and others with members
 // of a struct.
 
-struct win {
+struct win
+{
 	PageNumber win_page;
 	Ods::pag* win_buffer;
 	exp_index_buf* win_expanded_buffer;
@@ -891,11 +903,12 @@ public:
 #if defined(DEV_BUILD)
 #include "../jrd/err_proto.h"
 
-inline Jrd::thread_db* JRD_get_thread_data() {
+inline Jrd::thread_db* JRD_get_thread_data()
+{
 	ThreadData* p1 = ThreadData::getSpecific();
 	if (p1 && p1->getType() == ThreadData::tddDBB)
 	{
-		Jrd::thread_db* p2 = (Jrd::thread_db*)p1;
+		Jrd::thread_db* p2 = (Jrd::thread_db*) p1;
 		if (p2->getDatabase() && !p2->getDatabase()->checkHandle())
 		{
 			BUGCHECK(147);
@@ -903,40 +916,53 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 	}
 	return (Jrd::thread_db*) p1;
 }
-inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
+
+inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
+{
 	fb_assert(tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
 		(!tdbb->getDatabase() || tdbb->getDatabase()->checkHandle()));
 }
-inline void CHECK_DBB(const Jrd::Database* dbb) {
+
+inline void CHECK_DBB(const Jrd::Database* dbb)
+{
 	fb_assert(dbb->checkHandle());
 }
 
 #else // PROD_BUILD
 
-inline Jrd::thread_db* JRD_get_thread_data() {
+inline Jrd::thread_db* JRD_get_thread_data()
+{
 	return (Jrd::thread_db*) ThreadData::getSpecific();
 }
-inline void CHECK_DBB(const Jrd::Database* dbb) {
+
+inline void CHECK_DBB(const Jrd::Database* dbb)
+{
 }
-inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
+
+inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
+{
 }
 
 #endif
 
-inline Jrd::Database* GET_DBB() {
+inline Jrd::Database* GET_DBB()
+{
 	return JRD_get_thread_data()->getDatabase();
 }
 
 /*-------------------------------------------------------------------------*
  * macros used to set thread_db and Database pointers when there are not set already *
  *-------------------------------------------------------------------------*/
-inline void SET_TDBB(Jrd::thread_db* &tdbb) {
+inline void SET_TDBB(Jrd::thread_db* &tdbb)
+{
 	if (tdbb == NULL) {
 		tdbb = JRD_get_thread_data();
 	}
 	CHECK_TDBB(tdbb);
 }
-inline void SET_DBB(Jrd::Database* &dbb) {
+
+inline void SET_DBB(Jrd::Database* &dbb)
+{
 	if (dbb == NULL) {
 		dbb = GET_DBB();
 	}
@@ -949,8 +975,7 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 extern int debug;
 
 namespace Jrd {
-	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool>
-		ContextPoolHolder;
+	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool> ContextPoolHolder;
 }
 
 #endif // JRD_JRD_H

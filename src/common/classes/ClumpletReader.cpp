@@ -60,13 +60,11 @@ public:
 protected:
 	virtual void usage_mistake(const char* what) const
 	{
-		fatal_exception::raiseFmt(
-		        "Internal error when using clumplet API: %s", what);
+		fatal_exception::raiseFmt("Internal error when using clumplet API: %s", what);
 	}
 	virtual void invalid_structure(const char* what) const
 	{
-		fatal_exception::raiseFmt(
-				"Invalid clumplet buffer structure: %s", what);
+		fatal_exception::raiseFmt("Invalid clumplet buffer structure: %s", what);
 	}
 };
 
@@ -123,8 +121,7 @@ void ClumpletReader::usage_mistake(const char* what) const
 #ifdef DEBUG_CLUMPLETS
 	dump();
 #endif
-	fatal_exception::raiseFmt(
-		"Internal error when using clumplet API: %s", what);
+	fatal_exception::raiseFmt("Internal error when using clumplet API: %s", what);
 }
 
 void ClumpletReader::invalid_structure(const char* what) const
@@ -132,8 +129,7 @@ void ClumpletReader::invalid_structure(const char* what) const
 #ifdef DEBUG_CLUMPLETS
 	dump();
 #endif
-	fatal_exception::raiseFmt(
-		"Invalid clumplet buffer structure: %s", what);
+	fatal_exception::raiseFmt("Invalid clumplet buffer structure: %s", what);
 }
 
 UCHAR ClumpletReader::getBufferTag() const
@@ -455,8 +451,7 @@ void ClumpletReader::rewind()
 	}
 	if (kind == UnTagged || kind == WideUnTagged || kind == SpbStart || kind == SpbItems)
 		cur_offset = 0;
-	else if (kind == SpbAttach && getBufferLength() > 0
-						 && getBuffer()[0] != isc_spb_version1)
+	else if (kind == SpbAttach && getBufferLength() > 0 && getBuffer()[0] != isc_spb_version1)
 		cur_offset = 2;
 	else
 		cur_offset = 1;

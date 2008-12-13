@@ -234,7 +234,9 @@ public:
 	{
 	public:
 		Accessor(SparseBitmap* _bitmap) :
-			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(BUNCH_ONE), current_value(0) {}
+			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(BUNCH_ONE),
+			current_value(0)
+		{}
 
 		bool locate(T key)
 		{

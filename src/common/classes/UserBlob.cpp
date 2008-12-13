@@ -120,8 +120,7 @@ bool UserBlob::getSegment(size_t len, void* buffer, size_t& real_len)
 	USHORT olen = 0;
 	USHORT ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<USHORT>(len);
 	char* buf2 = static_cast<char*>(buffer);
-	if (!isc_get_segment(m_status, &m_blob, &olen, ilen, buf2)
-		|| m_status[1] == isc_segment)
+	if (!isc_get_segment(m_status, &m_blob, &olen, ilen, buf2) || m_status[1] == isc_segment)
 	{
 		real_len = olen;
 		return true;
@@ -145,8 +144,7 @@ bool UserBlob::getData(size_t len, void* buffer, size_t& real_len,
 	{
 		USHORT olen = 0;
 		USHORT ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<USHORT>(len);
-		if (!isc_get_segment(m_status, &m_blob, &olen, ilen, buf2)
-			|| m_status[1] == isc_segment)
+		if (!isc_get_segment(m_status, &m_blob, &olen, ilen, buf2) || m_status[1] == isc_segment)
 		{
 			len -= olen;
 			buf2 += olen;

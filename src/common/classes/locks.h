@@ -91,7 +91,8 @@ public:
 	{
 		InitializeCriticalSection(&spinlock);
 	}
-	explicit Mutex(MemoryPool&) {
+	explicit Mutex(MemoryPool&)
+	{
 		InitializeCriticalSection(&spinlock);
 	}
 

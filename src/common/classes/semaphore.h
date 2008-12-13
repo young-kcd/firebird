@@ -66,8 +66,7 @@ public:
 	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
 		milliseconds += seconds * 1000;
-		DWORD result = WaitForSingleObject(
-			hSemaphore, milliseconds >= 0 ? milliseconds : INFINITE);
+		DWORD result = WaitForSingleObject(hSemaphore, milliseconds >= 0 ? milliseconds : INFINITE);
 		if (result == WAIT_FAILED)
 			system_call_failed::raise("WaitForSingleObject");
 		return result != WAIT_TIMEOUT;
