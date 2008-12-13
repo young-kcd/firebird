@@ -52,7 +52,7 @@ struct BitmapTypes_64
 	};
 };
 
-#define BUNCH_ONE  ((BUNCH_T)1)
+#define BUNCH_ONE  ((BUNCH_T) 1)
 
 template <typename T, typename InternalTypes = BitmapTypes_64>
 class SparseBitmap : public AutoStorage
@@ -401,7 +401,7 @@ public:
 			if (!treeAccessor.getFirst())
 				return false;
 
-			BUNCH_T tree_bits = treeAccessor.current().bits;
+			const BUNCH_T tree_bits = treeAccessor.current().bits;
 			bit_mask = BUNCH_ONE;
 			current_value = treeAccessor.current().start_value;
 			do {
@@ -432,7 +432,7 @@ public:
 			if (!treeAccessor.getLast())
 				return false;
 
-			BUNCH_T tree_bits = treeAccessor.current().bits;
+			const BUNCH_T tree_bits = treeAccessor.current().bits;
 			bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
 			current_value = treeAccessor.current().start_value + BUNCH_BITS - 1;
 			do {
@@ -745,7 +745,7 @@ SparseBitmap<T, InternalTypes>::bit_and(
 
 			// Positions of our trees match
 			if (sourceValue == destValue) {
-				BUNCH_T bits = dest->tree.current().bits &= source->tree.current().bits;
+				const BUNCH_T bits = dest->tree.current().bits &= source->tree.current().bits;
 
 				// Move to the next item of destination tree
 				if (bits)
