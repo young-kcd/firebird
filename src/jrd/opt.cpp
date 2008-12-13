@@ -2388,13 +2388,19 @@ static bool dump_rsb(const jrd_req* request,
 	}
 
 	MoveBuffer nameBuffer;
-	nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
-		CS_METADATA, tdbb->getAttachment()->att_charset));
 
-	if (name) {
-		length = INTL_convert_bytes(tdbb,
-			tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
-			CS_METADATA, (const BYTE*) name, length, ERR_post);
+	if (name)
+	{
+		if (tdbb->getAttachment()->att_charset != CS_METADATA)
+		{
+			nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(length, CS_METADATA,
+				tdbb->getAttachment()->att_charset));
+
+			length = INTL_convert_bytes(tdbb,
+				tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+				CS_METADATA, (const BYTE*) name, length, ERR_post);
+			name = reinterpret_cast<SCHAR*>(nameBuffer.begin());
+		}
 
 		*buffer_length -= 2 + length;
 		if (*buffer_length < 0) {
@@ -2402,7 +2408,7 @@ static bool dump_rsb(const jrd_req* request,
 		}
 		*buffer++ = isc_info_rsb_relation;
 		*buffer++ = (SCHAR) length;
-		memcpy(buffer, nameBuffer.begin(), length);
+		memcpy(buffer, name, length);
 		buffer += length;
 	}
 
@@ -2475,9 +2481,21 @@ static bool dump_rsb(const jrd_req* request,
 		{
 			const Firebird::MetaName& n = procedure->prc_name;
 
-			length = INTL_convert_bytes(tdbb,
-				tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
-				CS_METADATA, (const BYTE*) n.c_str(), n.length(), ERR_post);
+			if (tdbb->getAttachment()->att_charset != CS_METADATA)
+			{
+				nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(n.length(), CS_METADATA,
+					tdbb->getAttachment()->att_charset));
+
+				length = INTL_convert_bytes(tdbb,
+					tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+					CS_METADATA, (const BYTE*) n.c_str(), n.length(), ERR_post);
+				name = reinterpret_cast<SCHAR*>(nameBuffer.begin());
+			}
+			else
+			{
+				name = n.c_str();
+				length = n.length();
+			}
 
 			*buffer_length -= 6 + length;
             if (*buffer_length < 0) {
@@ -2486,7 +2504,7 @@ static bool dump_rsb(const jrd_req* request,
             *buffer++ = isc_info_rsb_begin;
             *buffer++ = isc_info_rsb_relation;
 			*buffer++ = (SCHAR) length;
-			memcpy(buffer, nameBuffer.begin(), length);
+			memcpy(buffer, name, length);
 			buffer += length;
             *buffer++ = isc_info_rsb_type;
             *buffer++ = isc_info_rsb_sequential;
