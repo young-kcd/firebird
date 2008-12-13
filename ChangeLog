@@ -1,3 +1,57 @@
+2008-12-13 19:25  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.327):
+
+	Fixed CORE-2237 - Assertion at src\jrd\intl.cpp 569
+
+2008-12-13 18:46  asfernandes
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.77):
+
+	Fix syntax error
+
+2008-12-13 10:41  robocop
+
+	* firebird2/src/common/classes/sparse_bitmap.h (1.26):
+
+	Misc.
+
+2008-12-13 10:25  robocop
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.33),
+	common/classes/MsgPrint.cpp (1.8), common/classes/MsgPrint.h (1.4),
+	common/classes/TempFile.cpp (1.16), common/classes/TempFile.h
+	(1.10), common/classes/UserBlob.cpp (1.11),
+	common/classes/fb_string.cpp (1.42), common/classes/locks.cpp
+	(1.19), common/classes/locks.h (1.53), common/classes/semaphore.h
+	(1.62), common/classes/sparse_bitmap.h (1.25), jrd/jrd.h (1.256),
+	jrd/shut.cpp (1.64):
+
+	Style.
+
+2008-12-13 10:19  robocop
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.76),
+	DatabaseSnapshot.h (1.22):
+
+	Style, assertions and some minor fixed. To be reviewed by Dmitry.
+
+2008-12-13 10:19  robocop
+
+	* firebird2/src/: common/classes/fb_atomic.h (1.14),
+	common/classes/rwlock.h (1.38), remote/remote.cpp (1.76):
+
+	Before I put the "explicit" modifier on AtomicCounter's
+	constructor, the compiler was generating a temporary AtomicCounter
+	on the fly and later assigning it to the target AtomicCounter
+	instance to satisfy an assignment of an integer to an
+	AtomicCounter. I'm not sure we want to allow (and worse, foster)
+	the copying of AtomicCounter instances or temporaries created by
+	the compiler, hence I implemented a new method and fixed the code,
+	but I don't know how to write the best code for one group of
+	platforms in fb_atomic.h, hence I wrote the method with a syntax
+	problem to be caught by someone who knows better.
+
 2008-12-12 17:04  dimitr
 
 	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.75),
