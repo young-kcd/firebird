@@ -446,7 +446,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	// Read the shared memory
 	ULONG dataSize = 0;
-	AutoPtr<UCHAR, ArrayDelete<UCHAR>> data(dump().readData(pool, dataSize));
+	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump().readData(pool, dataSize));
 	fb_assert(dataSize);
 
 	ClumpletReader reader(ClumpletReader::WideUnTagged, data, dataSize);
