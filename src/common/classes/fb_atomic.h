@@ -41,30 +41,40 @@ class AtomicCounter
 public:
 	typedef LONG counter_type;
 
-	AtomicCounter(counter_type val = 0) : counter(val) {}
+	explicit AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
 
-	counter_type exchangeAdd(counter_type val) {
+	counter_type exchangeAdd(counter_type val)
+	{
 		return InterlockedExchangeAdd(&counter, val);
 	}
 
-	counter_type operator +=(counter_type val) {
+	counter_type operator +=(counter_type val)
+	{
 		return exchangeAdd(val) + val;
 	}
 
-	counter_type operator -=(counter_type val) {
+	counter_type operator -=(counter_type val)
+	{
 		return exchangeAdd(-val) - val;
 	}
 
-	counter_type operator ++() {
+	counter_type operator ++()
+	{
 		return InterlockedIncrement(&counter);
 	}
 
-	counter_type operator --() {
+	counter_type operator --()
+	{
 		return InterlockedDecrement(&counter);
 	}
 
 	counter_type value() const { return counter; }
+
+	counter_type setValue(counter_type val)
+	{
+		return InterlockedExchange(&counter, val);
+	}
 
 private:
 # if defined(MINGW)
@@ -86,10 +96,11 @@ class AtomicCounter
 public:
 	typedef int counter_type;
 
-	AtomicCounter(counter_type value = 0) : counter(value) {}
+	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
-	counter_type exchangeAdd(counter_type value) {
+	counter_type exchangeAdd(counter_type value)
+	{
 		register counter_type result;
 		__asm __volatile (
 			"lock; xaddl %0, %1"
@@ -98,23 +109,32 @@ public:
 		return result;
 	}
 
-	counter_type operator +=(counter_type value) {
+	counter_type operator +=(counter_type value)
+	{
 		return exchangeAdd(value) + value;
 	}
 
-	counter_type operator -=(counter_type value) {
+	counter_type operator -=(counter_type value)
+	{
 		return exchangeAdd(-value) - value;
 	}
 
-	counter_type operator ++() {
+	counter_type operator ++()
+	{
 		return exchangeAdd(1) + 1;
 	}
 
-	counter_type operator --() {
+	counter_type operator --()
+	{
 		return exchangeAdd(-1) - 1;
 	}
 
 	counter_type value() const { return counter; }
+
+	counter_type setValue(counter_type val)
+	{
+		return ...
+	}
 
 private:
 	volatile counter_type counter;
@@ -138,10 +158,11 @@ class AtomicCounter
 public:
 	typedef int counter_type;
 
-	AtomicCounter(counter_type value = 0) : counter(value) {}
+	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
-	counter_type exchangeAdd(counter_type value) {
+	counter_type exchangeAdd(counter_type value)
+	{
 		lock.enter();
 		counter_type temp = counter;
 		counter += value;
@@ -149,28 +170,32 @@ public:
 		return temp;
 	}
 
-	counter_type operator +=(counter_type value) {
+	counter_type operator +=(counter_type value)
+	{
 		lock.enter();
 		counter_type temp = counter += value;
 		lock.leave();
 		return temp;
 	}
 
-	counter_type operator -=(counter_type value) {
+	counter_type operator -=(counter_type value)
+	{
 		lock.enter();
 		counter_type temp = counter -= value;
 		lock.leave();
 		return temp;
 	}
 
-	counter_type operator ++() {
+	counter_type operator ++()
+	{
 		lock.enter();
 		counter_type temp = counter++;
 		lock.leave();
 		return temp;
 	}
 
-	counter_type operator --() {
+	counter_type operator --()
+	{
 		lock.enter();
 		counter_type temp = counter--;
 		lock.leave();
@@ -178,6 +203,15 @@ public:
 	}
 
 	counter_type value() const { return counter; }
+
+	counter_type setValue(counter_type val)
+	{
+		lock.enter();
+		const counter_type temp = counter;
+		counter = val;
+		lock.leave();
+		return temp;
+	}
 
 private:
 	volatile counter_type counter;

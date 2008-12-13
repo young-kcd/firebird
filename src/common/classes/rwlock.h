@@ -59,11 +59,10 @@ private:
 
 	void init()
 	{
-		lock = 0;
+		lock.setValue(0);
 		blockedReaders = 0;
-		blockedWriters = 0;
-		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/,
-			INT_MAX, NULL);
+		blockedWriters.setValue(0);
+		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
 		if (readers_semaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
@@ -98,8 +97,7 @@ public:
 		}
 		else if (blockedReaders) {
 			MutexLockGuard guard(blockedReadersLock);
-			if (blockedReaders &&
-				!ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
+			if (blockedReaders && !ReleaseSemaphore(readers_semaphore, blockedReaders, NULL))
 			{
 				system_call_failed::raise("ReleaseSemaphore");
 			}
@@ -348,7 +346,11 @@ namespace Firebird {
 class ReadLockGuard
 {
 public:
-	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
+	ReadLockGuard(RWLock &alock)
+		: lock(&alock)
+	{
+		lock->beginRead();
+	}
 	~ReadLockGuard() { release(); }
 
 	void release()
@@ -370,7 +372,11 @@ private:
 class WriteLockGuard
 {
 public:
-	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
+	WriteLockGuard(RWLock &alock)
+		: lock(&alock)
+	{
+		lock->beginWrite();
+	}
 	~WriteLockGuard() { release(); }
 
 	void release()

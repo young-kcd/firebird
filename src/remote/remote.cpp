@@ -37,7 +37,7 @@
 #include "../common/classes/init.h"
 
 #ifdef DEV_BUILD
-Firebird::AtomicCounter rem_port::portCounter = 0;
+Firebird::AtomicCounter rem_port::portCounter(0);
 #endif
 
 #ifdef REMOTE_DEBUG
@@ -734,7 +734,7 @@ void PortsCleanup::registerPort(rem_port* port)
 		Firebird::MemoryPool& pool = *getDefaultMemoryPool();
 		m_ports = FB_NEW (pool) PortsArray(pool);
 	}
-		
+
 	m_ports->add(port);
 }
 
@@ -755,7 +755,7 @@ void PortsCleanup::unRegisterPort(rem_port* port)
 void PortsCleanup::closePorts()
 {
 	Firebird::MutexLockGuard guard(m_mutex);
-	
+
 	if (m_ports)
 	{
 		rem_port* const* ptr = m_ports->begin();
