@@ -1063,7 +1063,7 @@ void SDW_start(
 			 database_header->hdr_creation_date[0])
 			|| (shadow_header->hdr_creation_date[1] !=
 				database_header->hdr_creation_date[1])
-			|| (!shadow_header->hdr_flags & hdr_active_shadow))
+			|| !(shadow_header->hdr_flags & hdr_active_shadow))
 			ERR_punt();
 
 		CCH_RELEASE(tdbb, &window);
