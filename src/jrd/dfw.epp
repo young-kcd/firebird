@@ -49,13 +49,13 @@
  * Adriano dos Santos Fernandes
  *
  * 2008-03-16 Alex Peshkoff - avoid most of data modifications in system transaction.
- *	Problems took place when same data was modified in user transaction, and later - 
- *	in system transaction. System transaction always performs updates in place, 
- *	but when between RPB setup and actual modification garbage was collected (this 
+ *	Problems took place when same data was modified in user transaction, and later -
+ *	in system transaction. System transaction always performs updates in place,
+ *	but when between RPB setup and actual modification garbage was collected (this
  *	was noticed with GC thread active, but may happen due to any read of the record),
  *	BUGCHECK(291) took place. To avoid that issue, it was decided not to modify data
  *	in system transaction. An exception is RDB$FORMATS relation, which is always modified
- *	by transaction zero. Also an aspect of 'dirty' access from system transaction was 
+ *	by transaction zero. Also an aspect of 'dirty' access from system transaction was
  *	taken into an account in add_file(), make_version() and create_index().
  *
  */
@@ -515,8 +515,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 /* If no deferred work or it's all deferred event posting
    don't bother */
 
-	if (!transaction->tra_deferred_work ||
-		!(transaction->tra_flags & TRA_deferred_meta))
+	if (!transaction->tra_deferred_work || !(transaction->tra_flags & TRA_deferred_meta))
 	{
 		return;
 	}
@@ -593,8 +592,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	DeferredWork* work;
 	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
-		if ((work->dfw_type == dfw_post_event) ||
-			(work->dfw_type == dfw_delete_shadow))
+		if ((work->dfw_type == dfw_post_event) || (work->dfw_type == dfw_delete_shadow))
 		{
 			ptr = &(*ptr)->dfw_next;
 		}
@@ -608,7 +606,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	transaction->tra_flags &= ~TRA_deferred_meta;
 
 	if (dump_shadow) {
-		SDW_dump_pages();
+		SDW_dump_pages(tdbb);
 	}
 }
 
@@ -849,7 +847,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			check_filename(work->dfw_name, true);
 		}
 
-		// User transaction may be safely used instead of system, cause 
+		// User transaction may be safely used instead of system, cause
 		// we requested and got exclusive database access. AP-2008.
 
 		// get any files to extend into
@@ -884,9 +882,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			start = MAX(max, start);
 			shadow_number = X.RDB$SHADOW_NUMBER;
 			if ((shadow_number &&
-				(section = SDW_add_file(X.RDB$FILE_NAME,
-										start,
-										shadow_number))) ||
+				(section = SDW_add_file(tdbb, X.RDB$FILE_NAME, start, shadow_number))) ||
 				(section = PAG_add_file(X.RDB$FILE_NAME, start)))
 			{
 				MODIFY X USING
@@ -925,8 +921,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 
 
-static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
-	jrd_tra* transaction)
+static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1050,14 +1045,12 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				/* for the first file, create a brand new shadow; for secondary
 				   files that have a starting page specified, add a file */
 			if (!sequence)
-				  SDW_add(Y.RDB$FILE_NAME, Y.RDB$SHADOW_NUMBER, Y.RDB$FILE_FLAGS);
+				  SDW_add(tdbb, Y.RDB$FILE_NAME, Y.RDB$SHADOW_NUMBER, Y.RDB$FILE_FLAGS);
 			else if (Y.RDB$FILE_START)
 			{
 				if (!shadow)
 				{
-					for (shadow = dbb->dbb_shadow;
-						 shadow;
-						 shadow = shadow->sdw_next)
+					for (shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 					{
 						if ((Y.RDB$SHADOW_NUMBER == shadow->sdw_number) &&
 							!(shadow->sdw_flags & SDW_IGNORE))
@@ -1071,10 +1064,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					BUGCHECK(203);	/* msg 203 shadow block not found for extend file */
 
 				min_page = MAX((min_page + 1), (ULONG) Y.RDB$FILE_START);
-				add_sequence =
-					SDW_add_file(Y.RDB$FILE_NAME,
-								 min_page,
-								 Y.RDB$SHADOW_NUMBER);
+				add_sequence = SDW_add_file(tdbb, Y.RDB$FILE_NAME, min_page, Y.RDB$SHADOW_NUMBER);
 			}
 
 			/* update the sequence number and bless the file entry as being
@@ -1535,7 +1525,7 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
 	}
 
 	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") <<
 													 Arg::Str(name));
 	}
 }
@@ -1840,10 +1830,10 @@ static bool create_index(	thread_db*	tdbb,
 		relation = NULL;
 		idx.idx_flags = 0;
 
-		// Here we need dirty reads from database (first of all from 
+		// Here we need dirty reads from database (first of all from
 		// RDB$RELATION_FIELDS and RDB$FIELDS - tables not directly related
-		// with index to be created and it's dfw_name. Missing it breaks gbak, 
-		// and appears can break other applications. Modification of 
+		// with index to be created and it's dfw_name. Missing it breaks gbak,
+		// and appears can break other applications. Modification of
 		// record in RDB$INDICES was moved into separate request. AP-2008.
 
 		// Fetch the information necessary to create the index.  On the first
@@ -1881,11 +1871,11 @@ static bool create_index(	thread_db*	tdbb,
 					// we need to know if this relation is temporary or not
 					MET_scan_relation(tdbb, relation);
 
-					// no need to recalculate statistics for base instance of GTT 
+					// no need to recalculate statistics for base instance of GTT
 					RelationPages* relPages = relation->getPages(tdbb, -1, false);
-					const bool isTempInstance = relation->isTemporary() && 
+					const bool isTempInstance = relation->isTemporary() &&
 						relPages && (relPages->rel_instance_id != 0);
-					
+
 					if (isTempInstance || !relation->isTemporary())
 					{
 						SelectivityList selectivity(*tdbb->getDefaultPool());
@@ -2842,7 +2832,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			}
 		}
 		// fall through
- 
+
 	case 2:
 	case 3:
 		return true;
@@ -2990,7 +2980,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			}
 		}
 		// fall through
- 
+
 	case 2:
 	case 3:
 		return true;
@@ -4469,7 +4459,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		jrd_req* request_fmt1 = CMP_find_request(tdbb, irq_format1, IRQ_REQUESTS);
 
-		// User transaction may be safely used instead of system cause 
+		// User transaction may be safely used instead of system cause
 		// all required dirty reads are performed in metadata cache. AP-2008.
 
 		FOR(REQUEST_HANDLE request_fmt1 TRANSACTION_HANDLE transaction)

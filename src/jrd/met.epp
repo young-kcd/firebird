@@ -346,7 +346,7 @@ Firebird::MetaName MET_get_relation_field(thread_db* tdbb,
 
 	if (!found)
 	{
-		ERR_post(Arg::Gds(isc_dyn_column_does_not_exist) << Arg::Str(fieldName) << 
+		ERR_post(Arg::Gds(isc_dyn_column_does_not_exist) << Arg::Str(fieldName) <<
 															Arg::Str(relationName));
 	}
 
@@ -834,7 +834,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 		INTL_ASSIGN_DSC(&relation_name, CS_METADATA, COLLATE_NONE);
 		relation_name.dsc_length = sizeof(X.RDB$RELATION_NAME);
 		relation_name.dsc_address = (UCHAR *) X.RDB$RELATION_NAME;
-		SCL_check_relation(&relation_name, SCL_control);
+		SCL_check_relation(tdbb, &relation_name, SCL_control);
 		dw = DFW_post_work(transaction, dfw_update_format, &relation_name, 0);
 	END_FOR;
 
@@ -1080,7 +1080,7 @@ void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
 
 /* notify other processes to check for shadow deletion */
 	if (SDW_lck_update(tdbb, 0)) {
-		SDW_notify();
+		SDW_notify(tdbb);
 	}
 }
 
@@ -1210,7 +1210,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 					break;
 				}
 			}
-		} 
+		}
 		else {
 			// Use generic representation of formats with 32-bit offsets
 
@@ -1531,8 +1531,7 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
             !(X.RDB$FILE_FLAGS & FILE_inactive))
 		{
 			const USHORT file_flags = X.RDB$FILE_FLAGS;
-			SDW_start(X.RDB$FILE_NAME, X.RDB$SHADOW_NUMBER, file_flags,
-					  delete_files);
+			SDW_start(tdbb, X.RDB$FILE_NAME, X.RDB$SHADOW_NUMBER, file_flags, delete_files);
 
 			/* if the shadow exists, mark the appropriate shadow
 			   block as found for the purposes of this routine;
@@ -1567,7 +1566,7 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 		}
 	}
 
-	SDW_check();
+	SDW_check(tdbb);
 }
 
 
@@ -1603,7 +1602,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 
 	FOR(REQUEST_HANDLE trigger_request)
 		TRG IN RDB$TRIGGERS
-		WITH TRG.RDB$RELATION_NAME MISSING AND 
+		WITH TRG.RDB$RELATION_NAME MISSING AND
 			 TRG.RDB$TRIGGER_TYPE EQ encoded_type AND
 			 TRG.RDB$TRIGGER_INACTIVE EQ 0
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
@@ -1659,10 +1658,10 @@ void MET_load_trigger(thread_db* tdbb,
 		FOR(REQUEST_HANDLE debug_info_req)
 			TRG IN RDB$TRIGGERS
 			WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
-		
+
 			if (!REQUEST(irq_l_trg_dbg))
 				REQUEST(irq_l_trg_dbg) = debug_info_req;
-				
+
 			if (TRG.RDB$DEBUG_INFO.NULL == FALSE)
 				debug_blob_id = TRG.RDB$DEBUG_INFO;
 		END_FOR;
@@ -3302,7 +3301,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				}
 
 				procedure->prc_type = prc_type;
-				
+
 				// Now, check the result of this function here! Null pointer means failure.
 				// Or should parse_procedure_blr and its callee throw exceptions instead?
 				if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
@@ -3316,7 +3315,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					else {
 						dbb->deletePool(csb_pool);
 					}
-					
+
 					ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->prc_name));
 				}
 
@@ -3546,7 +3545,7 @@ void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
 		if (relation->rel_flags & REL_blocking) {
 			LCK_re_post(tdbb, relation->rel_existence_lock);
 		}
-		
+
 		if (relation->rel_file) {
 			// close external file
 			EXT_fini(relation, true);
@@ -3919,7 +3918,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					field->fld_source =
 						PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
 					const Firebird::MetaName depName(REL.RDB$RELATION_NAME);
-					store_dependencies(tdbb, csb, 0, depName, obj_view, depTrans); 
+					store_dependencies(tdbb, csb, 0, depName, obj_view, depTrans);
 				}
 				else {
 					field->fld_source =
@@ -4002,7 +4001,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	delete csb;
 
 	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
-	{	
+	{
 		jrd_req* sub_request =
 			CMP_find_request(tdbb, irq_r_type, IRQ_REQUESTS);
 
@@ -4035,7 +4034,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 						break;
 					default:
 						fb_assert(false);
-				} 
+				}
 			}
 
 		END_FOR;
@@ -4311,7 +4310,7 @@ static int blocking_ast_procedure(void* ast_object)
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 		tdbb->setAttachment(procedure->prc_existence_lock->lck_attachment);
-	
+
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		if (procedure->prc_existence_lock) {
@@ -4353,7 +4352,7 @@ static int blocking_ast_relation(void* ast_object)
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 		tdbb->setAttachment(relation->rel_existence_lock->lck_attachment);
-	
+
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		if (relation->rel_use_count) {
@@ -4503,7 +4502,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
         if (!REQUEST(irq_view_context))
             REQUEST(irq_view_context) = request;
 
-		// trim trailing spaces 
+		// trim trailing spaces
 		fb_utils::exact_name_limit(V.RDB$CONTEXT_NAME,
 			sizeof(V.RDB$CONTEXT_NAME));
 
@@ -4522,7 +4521,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 }
 
 
-static void make_relation_scope_name(const TEXT* rel_name, 
+static void make_relation_scope_name(const TEXT* rel_name,
 	const USHORT rel_flags, Firebird::string& str)
 {
 /**************************************
@@ -4532,7 +4531,7 @@ static void make_relation_scope_name(const TEXT* rel_name,
  **************************************
  *
  * Functional description
- *	Make string with relation name and type 
+ *	Make string with relation name and type
  *	of its temporary scope
  *
  **************************************/
@@ -4989,7 +4988,7 @@ static void store_dependencies(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	const Trigger* t = 0;
-	const bool checkTableScope = 
+	const bool checkTableScope =
 		(dependency_type == obj_computed) ||
 		(dependency_type == obj_trigger) &&
 		(dep_rel != 0) && (
@@ -4998,7 +4997,7 @@ static void store_dependencies(thread_db* tdbb,
 			(t = findTrigger(dep_rel->rel_pre_store, object_name)) ||
 			(t = findTrigger(dep_rel->rel_post_erase, object_name)) ||
 			(t = findTrigger(dep_rel->rel_post_modify, object_name)) ||
-			(t = findTrigger(dep_rel->rel_post_store, object_name)) 
+			(t = findTrigger(dep_rel->rel_post_store, object_name))
 		) && t && (t->sys_trigger);
 
 	while (csb->csb_dependencies.hasData())
@@ -5012,7 +5011,7 @@ static void store_dependencies(thread_db* tdbb,
 		jrd_prc* procedure = NULL;
 		const Firebird::MetaName* dpdo_name = 0;
 		SubtypeInfo info;
-        
+
 		switch (dpdo_type) {
 		case obj_relation:
 			relation = (jrd_rel*) node->nod_arg[e_dep_object];
@@ -5020,25 +5019,25 @@ static void store_dependencies(thread_db* tdbb,
 
 			fb_assert(checkTableScope && dep_rel || !checkTableScope);
 
-			if (checkTableScope && 
+			if (checkTableScope &&
 				( (dep_rel->rel_flags & (REL_temp_tran | REL_temp_conn)) !=
 				  (relation->rel_flags & (REL_temp_tran | REL_temp_conn)) ))
 			{
 				if ( !( // master is ON COMMIT PRESERVE, detail is ON COMMIT DELETE
 						(dep_rel->rel_flags & REL_temp_tran) && (relation->rel_flags & REL_temp_conn) ||
-						// computed field of a view 
-						(dependency_type == obj_computed) && (dep_rel->rel_view_rse != NULL) 
+						// computed field of a view
+						(dependency_type == obj_computed) && (dep_rel->rel_view_rse != NULL)
 					   ))
 				{
 					Firebird::string sMaster, sChild;
 
-					make_relation_scope_name(relation->rel_name.c_str(), 
+					make_relation_scope_name(relation->rel_name.c_str(),
 						relation->rel_flags, sMaster);
-					make_relation_scope_name(dep_rel->rel_name.c_str(), 
+					make_relation_scope_name(dep_rel->rel_name.c_str(),
 						dep_rel->rel_flags, sChild);
 
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_met_wrong_gtt_scope) << Arg::Str(sChild) << 
+							 Arg::Gds(isc_met_wrong_gtt_scope) << Arg::Str(sChild) <<
 																  Arg::Str(sMaster));
 				}
 			}

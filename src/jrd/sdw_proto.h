@@ -28,20 +28,20 @@ namespace Jrd {
 	class Shadow;
 }
 
-void	SDW_add(const TEXT*, USHORT, USHORT);
-int		SDW_add_file(const TEXT*, SLONG, USHORT);
-void	SDW_check(void);
-bool	SDW_check_conditional(void);
-void	SDW_close(void);
-void	SDW_dump_pages(void);
-void	SDW_get_shadows(void);
-void	SDW_init(bool, bool);
+void	SDW_add(Jrd::thread_db* tdbb, const TEXT*, USHORT, USHORT);
+int		SDW_add_file(Jrd::thread_db* tdbb, const TEXT*, SLONG, USHORT);
+void	SDW_check(Jrd::thread_db* tdbb);
+bool	SDW_check_conditional(Jrd::thread_db* tdbb);
+void	SDW_close();
+void	SDW_dump_pages(Jrd::thread_db* tdbb);
+void	SDW_get_shadows(Jrd::thread_db* tdbb);
+void	SDW_init(Jrd::thread_db* tdbb, bool, bool);
 bool	SDW_lck_update(Jrd::thread_db*, SLONG);
-void	SDW_notify(void);
-bool	SDW_rollover_to_shadow(Jrd::jrd_file*, const bool);
+void	SDW_notify(Jrd::thread_db* tdbb);
+bool	SDW_rollover_to_shadow(Jrd::thread_db* tdbb, Jrd::jrd_file*, const bool);
 // It's never called directly, but through SDW_check().
 //void	SDW_shutdown_shadow(Jrd::Shadow*);
-void	SDW_start(const TEXT*, USHORT, USHORT, bool);
+void	SDW_start(Jrd::thread_db* tdbb, const TEXT*, USHORT, USHORT, bool);
 
 #endif // JRD_SDW_PROTO_H
 

@@ -1213,7 +1213,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_relations:
 			if (EVL_field(0, rpb->rpb_record, f_rel_name, &desc))
 			{
-				SCL_check_relation(&desc, SCL_delete);
+				SCL_check_relation(tdbb, &desc, SCL_delete);
 			}
 			if (EVL_field(0, rpb->rpb_record, f_rel_id, &desc2))
 			{
@@ -1230,7 +1230,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_procedures:
 			if (EVL_field(0, rpb->rpb_record, f_prc_name, &desc))
 			{
-				SCL_check_procedure(&desc, SCL_delete);
+				SCL_check_procedure(tdbb, &desc, SCL_delete);
 			}
 			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
 			id = MOV_get_long(&desc2, 0);
@@ -1266,7 +1266,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_indices:
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
-			SCL_check_relation(&desc, SCL_control);
+			SCL_check_relation(tdbb, &desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
 			if ( (id = MOV_get_long(&desc2, 0)) )
 			{
@@ -1323,7 +1323,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_rfr:
 			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
-			SCL_check_relation(&desc, SCL_control);
+			SCL_check_relation(tdbb, &desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
 			EVL_field(0, rpb->rpb_record, f_rfr_fname, &desc2);
 			MOV_get_metadata_str(&desc, relation_name, sizeof(relation_name));
@@ -1338,7 +1338,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_prc_prms:
 			EVL_field(0, rpb->rpb_record, f_prm_procedure, &desc);
-			SCL_check_procedure(&desc, SCL_control);
+			SCL_check_procedure(tdbb, &desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_prm_name, &desc2);
 			MOV_get_metadata_str(&desc, procedure_name, sizeof(procedure_name));
 			if ( (procedure = MET_lookup_procedure(tdbb, procedure_name, true)) )
@@ -1396,7 +1396,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 			/* check if this  request go through without checking permissions */
 			if (!(request->req_flags & req_ignore_perm)) {
-				SCL_check_relation(&desc, SCL_control);
+				SCL_check_relation(tdbb, &desc, SCL_control);
 			}
 
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc2);
@@ -2190,14 +2190,14 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 		case rel_relations:
 			EVL_field(0, org_rpb->rpb_record, f_rel_name, &desc1);
-			SCL_check_relation(&desc1, SCL_protect);
+			SCL_check_relation(tdbb, &desc1, SCL_protect);
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_rel_class);
 			DFW_post_work(transaction, dfw_update_format, &desc1, 0);
 			break;
 
 		case rel_procedures:
 			EVL_field(0, org_rpb->rpb_record, f_prc_name, &desc1);
-			SCL_check_procedure(&desc1, SCL_protect);
+			SCL_check_procedure(tdbb, &desc1, SCL_protect);
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_prc_class);
 			EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
 			{ // scope
@@ -2259,7 +2259,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 		case rel_indices:
 			EVL_field(0, new_rpb->rpb_record, f_idx_relation, &desc1);
-			SCL_check_relation(&desc1, SCL_control);
+			SCL_check_relation(tdbb, &desc1, SCL_control);
 			EVL_field(0, new_rpb->rpb_record, f_idx_name, &desc1);
 			if (dfw_should_know(org_rpb, new_rpb, f_idx_desc, true))
 			{
@@ -2277,7 +2277,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		case rel_triggers:
 			{
 				EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
-				SCL_check_relation(&desc1, SCL_control);
+				SCL_check_relation(tdbb, &desc1, SCL_control);
 				EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
 				DFW_post_work(transaction, dfw_update_format, &desc1, 0);
 				EVL_field(0, org_rpb->rpb_record, f_trg_rname, &desc1);
@@ -2660,7 +2660,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_indices:
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
-			SCL_check_relation(&desc, SCL_control);
+			SCL_check_relation(tdbb, &desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_idx_name, &desc);
 			if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2)) {
 				DFW_post_work(transaction, dfw_create_expression_index, &desc,
@@ -2674,7 +2674,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_rfr:
 			EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
-			SCL_check_relation(&desc, SCL_control);
+			SCL_check_relation(tdbb, &desc, SCL_control);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
 			set_system_flag(tdbb, rpb, f_rfr_sys_flag, 0);
 			break;
@@ -2728,7 +2728,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 			/* check if this  request go through without checking permissions */
 			if (!(request->req_flags & req_ignore_perm)) {
-				SCL_check_relation(&desc, SCL_control);
+				SCL_check_relation(tdbb, &desc, SCL_control);
 			}
 
 			if (EVL_field(0, rpb->rpb_record, f_trg_rname, &desc2))
@@ -3334,7 +3334,7 @@ static void check_rel_field_class(thread_db* tdbb,
 		// he may have access to relation as whole.
 		try
 		{
-			SCL_check_access(s_class, 0, NULL, NULL, flags, "", "");
+			SCL_check_access(tdbb, s_class, 0, NULL, NULL, flags, "", "");
 		}
 		catch (const Firebird::Exception&)
 		{
@@ -3345,7 +3345,7 @@ static void check_rel_field_class(thread_db* tdbb,
 	EVL_field(0, rpb->rpb_record, f_rfr_rname, &desc);
 	if (! okField)
 	{
-		SCL_check_relation(&desc, flags);
+		SCL_check_relation(tdbb, &desc, flags);
 	}
 	DFW_post_work(transaction, dfw_update_format, &desc, 0);
 }
@@ -3376,7 +3376,7 @@ static void check_class(thread_db* tdbb,
 
 	Attachment* attachment = tdbb->getAttachment();
 
-	SCL_check_access(attachment->att_security_class,
+	SCL_check_access(tdbb, attachment->att_security_class,
 					 0, NULL, NULL, SCL_protect, "DATABASE", NULL);
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
 }
@@ -3399,7 +3399,7 @@ static void check_control(thread_db* tdbb)
 
 	Attachment* attachment = tdbb->getAttachment();
 
-	SCL_check_access(attachment->att_security_class,
+	SCL_check_access(tdbb, attachment->att_security_class,
 					 0, NULL, NULL, SCL_control, "DATABASE", NULL);
 }
 

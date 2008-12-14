@@ -3813,7 +3813,7 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	request->req_flags &= ~req_null;
 
 	// SecurityClass::flags_t is USHORT for now, so it fits in vlu_long.
-	impure->make_long(SCL_get_mask(p1, p2));
+	impure->make_long(SCL_get_mask(tdbb, p1, p2));
 	return &impure->vlu_desc;
 }
 

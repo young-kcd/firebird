@@ -690,7 +690,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
    find it before we grant any more write locks */
 
 	if (dbb->dbb_ast_flags & DBB_get_shadows) {
-		SDW_get_shadows();
+		SDW_get_shadows(tdbb);
 	}
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page, LATCH_exclusive, latch_wait);
@@ -889,7 +889,7 @@ SSHORT CCH_fetch_lock(
    find it before we grant any more write locks */
 
 	if (dbb->dbb_ast_flags & DBB_get_shadows) {
-		SDW_get_shadows();
+		SDW_get_shadows(tdbb);
 	}
 
 /* Look for the page in the cache. */
@@ -1005,7 +1005,7 @@ void CCH_fetch_page(
 					break;
 				}
 
-				if (!CCH_rollover_to_shadow(dbb, file, false)) {
+				if (!CCH_rollover_to_shadow(tdbb, dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					CCH_unwind(tdbb, true);
 				}
@@ -1014,8 +1014,7 @@ void CCH_fetch_page(
 				}
 				else {
 					if (retryCount++ == 3) {
-						fprintf(stderr,
-								   "IO error loop Unwind to avoid a hang\n");
+						fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
 						CCH_unwind(tdbb, true);
 					}
@@ -1041,7 +1040,7 @@ void CCH_fetch_page(
 						break;
 					}
 
-					if (!CCH_rollover_to_shadow(dbb, file, false)) {
+					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false)) {
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
 						CCH_unwind(tdbb, true);
 					}
@@ -1421,7 +1420,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
    in cache to check that the shadow(s) have not been
    scheduled for shutdown or deletion */
 
-	SDW_check();
+	SDW_check(tdbb);
 }
 
 void CCH_flush_ast(thread_db* tdbb)
@@ -2263,7 +2262,7 @@ void CCH_release_exclusive(thread_db* tdbb)
 }
 
 
-bool CCH_rollover_to_shadow(Database* dbb, jrd_file* file, const bool inAst)
+bool CCH_rollover_to_shadow(thread_db* tdbb, Database* dbb, jrd_file* file, const bool inAst)
 {
 /**************************************
  *
@@ -2277,7 +2276,10 @@ bool CCH_rollover_to_shadow(Database* dbb, jrd_file* file, const bool inAst)
  *	the shadow file.
  *
  **************************************/
-/* Is the shadow subsystem yet initialized */
+
+	SET_TDBB(tdbb);
+
+	// Is the shadow subsystem yet initialized
 	if (!dbb->dbb_shadow_lock) {
 		return false;
 	}
@@ -2289,9 +2291,9 @@ bool CCH_rollover_to_shadow(Database* dbb, jrd_file* file, const bool inAst)
 		return false;
 	}
 
-/* notify other process immediately to ensure all read from sdw
-   file instead of db file */
-	return SDW_rollover_to_shadow(file, inAst);
+	// notify other process immediately to ensure all read from sdw
+	// file instead of db file
+	return SDW_rollover_to_shadow(tdbb, file, inAst);
 }
 
 
@@ -2554,11 +2556,11 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 			}
 			else {
 				sdw->sdw_flags |= SDW_delete;
-				if (!inAst && SDW_check_conditional()) {
+				if (!inAst && SDW_check_conditional(tdbb)) {
 					if (SDW_lck_update(tdbb, 0)) {
-						SDW_notify();
+						SDW_notify(tdbb);
 						CCH_unwind(tdbb, false);
-						SDW_dump_pages();
+						SDW_dump_pages(tdbb);
 						ERR_post(Arg::Gds(isc_deadlock));
 					}
 				}
@@ -6378,8 +6380,7 @@ static bool write_page(
 			if (!isTempPage && backup_state == nbak_state_stalled) {
 				// We finished. Adjust transaction accounting and get ready for exit
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-					dbb->dbb_last_header_write =
-						((header_page*) page)->hdr_next_transaction;
+					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
 				}
 			}
 			else {
@@ -6388,7 +6389,7 @@ static bool write_page(
 				jrd_file* file = pageSpace->file;
 				while (!PIO_write(file, bdb, page, status)) {
 
-					if (isTempPage || !CCH_rollover_to_shadow(dbb, file, inAst))
+					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
 					{
 						bdb->bdb_flags |= BDB_io_error;
 						dbb->dbb_flags |= DBB_suspend_bgio;
@@ -6399,12 +6400,10 @@ static bool write_page(
 				}
 
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-					dbb->dbb_last_header_write =
-						((header_page*) page)->hdr_next_transaction;
+					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
 				}
 				if (dbb->dbb_shadow && !isTempPage) {
-					result =
-						CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
+					result = CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
 				}
 			}
 		}

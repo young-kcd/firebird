@@ -901,7 +901,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		// initialize shadowing as soon as the database is ready for it
 		// but before any real work is done
-		SDW_init(options.dpb_activate_shadow, options.dpb_delete_shadow);
+		SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 	}
 	else
 	{
@@ -1026,7 +1026,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	options.dpb_sql_dialect = 0;
 
-	SCL_init(false, userId, tdbb);
+	SCL_init(tdbb, false, userId);
 
 	initing_security = false;
 
@@ -1810,7 +1810,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	PAG_init(tdbb);
 	initing_security = true;
 
-    SCL_init(true, userId, tdbb);
+    SCL_init(tdbb, true, userId);
 
 	initing_security = false;
 
@@ -1914,7 +1914,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	// initialize shadowing semaphore as soon as the database is ready for it
 	// but before any real work is done
 
-	SDW_init(options.dpb_activate_shadow, options.dpb_delete_shadow);
+	SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 
 #ifdef GARBAGE_THREAD
 	VIO_init(tdbb);

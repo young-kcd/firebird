@@ -758,6 +758,8 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 		return true;
 	}
 
+	SET_TDBB(tdbb);
+
 	ISC_STATUS *status = tdbb->tdbb_status_vector;
 
 	// Read original page from database file or shadows.
@@ -771,7 +773,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	fb_assert(pageSpace);
 	jrd_file* file = pageSpace->file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
-		if (!CCH_rollover_to_shadow(database, file, false)) {
+		if (!CCH_rollover_to_shadow(tdbb, database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
 			return false;
 		}
@@ -787,8 +789,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 
 	const int new_backup_state =
 		(database->dbb_ods_version >= ODS_VERSION11) ?
-		header->hdr_flags & Ods::hdr_backup_mask :
-		nbak_state_normal;
+		header->hdr_flags & Ods::hdr_backup_mask : nbak_state_normal;
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
 	// our allocation table and file handle

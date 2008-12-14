@@ -342,6 +342,8 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 		return;
 	}
 
+	SET_TDBB(tdbb);
+
 	for (size_t i = 0; i < triggers->getCount(); i++)
 	{
 		Trigger& t = (*triggers)[i];
@@ -380,9 +382,8 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 
 			// a direct access to an object from this trigger
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-			SCL_check_access(sec_class,
-							(access->acc_view_id) ? access->acc_view_id :
-								(view ? view->rel_id : 0),
+			SCL_check_access(tdbb, sec_class,
+							(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
 							t.request->req_trg_name, NULL, access->acc_mask,
 							access->acc_type, access->acc_name, access->acc_r_name);
 		}
@@ -404,6 +405,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
  *
  **************************************/
 
+	SET_TDBB(tdbb);
+
 	ExternalAccessList external;
 	build_external_access(tdbb, external, request);
 
@@ -418,8 +421,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 				 access++)
 			{
 				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, access->acc_mask,
-								 access->acc_type, access->acc_name, access->acc_r_name);
+				SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL, prc->prc_name,
+								access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 			}
 		}
 		else {
@@ -470,7 +473,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 		Firebird::MetaName prcName(exec_stmt_caller && exec_stmt_caller->req_procedure ?
 			exec_stmt_caller->req_procedure->prc_name : NULL);
 
-		SCL_check_access(sec_class, access->acc_view_id, trgName, prcName,
+		SCL_check_access(tdbb, sec_class, access->acc_view_id, trgName, prcName,
 			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 	}
 }
@@ -517,7 +520,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 				(procedure->prc_security_name.length() > 0 ?
 				procedure->prc_security_name.c_str() : NULL);
 			const SecurityClass* sec_class = SCL_get_class(tdbb, prc_sec_name);
-			SCL_check_access(sec_class, 0, NULL, NULL, SCL_execute,
+			SCL_check_access(tdbb, sec_class, 0, NULL, NULL, SCL_execute,
 							 object_procedure, procedure->prc_name);
 		}
 
