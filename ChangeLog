@@ -1,3 +1,46 @@
+2008-12-14 11:28  robocop
+
+	* firebird2/src/jrd/sdw.cpp (1.86):
+
+	Fix for random failure when shadowing is started (don't know how to
+	reproduce it, but the error is evident in the source code).
+
+2008-12-14 11:19  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.184), btr.cpp (1.219), cch.cpp
+	(1.216), dfw.epp (1.254), dpm.epp (1.81), jrd.cpp (1.495), nbak.cpp
+	(1.87), pag.cpp (1.195), pag_proto.h (1.22), sdw.cpp (1.85):
+
+	Promote thread_data* as function argument.
+
+2008-12-14 10:28  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.215), cch_proto.h (1.31), cmp.cpp
+	(1.326), dfw.epp (1.253), evl.cpp (1.281), jrd.cpp (1.494), met.epp
+	(1.266), nav.cpp (1.74), nbak.cpp (1.86), scl.epp (1.102),
+	scl_proto.h (1.30), sdw.cpp (1.84), sdw_proto.h (1.17), vio.cpp
+	(1.232):
+
+	Promote thread_data* as function argument. Only exception where
+	both tdbb and dbb were left together as arguments is nbak.cpp's
+	call to CCH_rollover_to_shadow to avoid any side effect in the
+	changed code, but anyway, that function calls
+	SDW_rollover_to_shadow that takes the dbb from the tdbb and not
+	explicitly.
+
+2008-12-14 09:58  robocop
+
+	* firebird2/src/jrd/flu.cpp (1.68):
+
+	Style.
+
+2008-12-14 09:55  robocop
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.78),
+	DatabaseSnapshot.h (1.23):
+
+	Make the common code a new member function.
+
 2008-12-13 19:25  asfernandes
 
 	* firebird2/src/jrd/opt.cpp (1.327):
