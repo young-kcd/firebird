@@ -243,9 +243,9 @@ else
 		header->hdr_end = HDR_SIZE;
 		header->hdr_next_page = 0;
 
-		PAG_add_header_entry(header, HDR_file, strlen(file_name),
+		PAG_add_header_entry(tdbb, header, HDR_file, strlen(file_name),
 							 reinterpret_cast<const UCHAR*>(file_name));
-		PAG_add_header_entry(header, HDR_last_page, sizeof(start),
+		PAG_add_header_entry(tdbb, header, HDR_last_page, sizeof(start),
 							 reinterpret_cast<const UCHAR*>(&start));
 		file->fil_fudge = 0;
 		temp_bdb.bdb_page = file->fil_min_page;
@@ -447,7 +447,7 @@ void SDW_dump_pages(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	gds__log("conditional shadow dumped for database %s", dbb->dbb_filename.c_str());
-	const SLONG max = PAG_last_page();
+	const SLONG max = PAG_last_page(tdbb);
 
 /* mark the first shadow in the list because we don't
    want to start shadowing to any files that are added

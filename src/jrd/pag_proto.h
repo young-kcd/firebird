@@ -36,31 +36,31 @@ namespace Ods {
 	struct header_page;
 }
 
-void	PAG_add_clump(SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
-USHORT	PAG_add_file(const TEXT*, SLONG);
-int		PAG_add_header_entry(Ods::header_page*, USHORT, USHORT, const UCHAR*);
+void	PAG_add_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
+USHORT	PAG_add_file(Jrd::thread_db* tdbb, const TEXT*, SLONG);
+int		PAG_add_header_entry(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
 void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
-int		PAG_replace_entry_first(Ods::header_page*, USHORT, USHORT, const UCHAR*);
-Ods::pag*	PAG_allocate(Jrd::win *);
+int		PAG_replace_entry_first(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
+Ods::pag*	PAG_allocate(Jrd::thread_db* tdbb, Jrd::win*);
 SLONG	PAG_attachment_id(Jrd::thread_db*);
-int		PAG_delete_clump_entry(SLONG, USHORT);
+int		PAG_delete_clump_entry(Jrd::thread_db* tdbb, SLONG, USHORT);
 void	PAG_format_header(Jrd::thread_db*);
 void	PAG_format_log(Jrd::thread_db*);
 void	PAG_format_pip(Jrd::thread_db*, Jrd::PageSpace& pageSpace);
-bool	PAG_get_clump(SLONG, USHORT, USHORT*, UCHAR*);
+bool	PAG_get_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT*, UCHAR*);
 void	PAG_header(Jrd::thread_db*, bool);
 void	PAG_header_init(Jrd::thread_db*);
 void	PAG_init(Jrd::thread_db*);
 void	PAG_init2(Jrd::thread_db*, USHORT);
-SLONG	PAG_last_page();
-void	PAG_release_page(const Jrd::PageNumber&, const Jrd::PageNumber&);
-void	PAG_set_force_write(Jrd::Database*, bool);
-void	PAG_set_no_reserve(Jrd::Database*, bool);
-void	PAG_set_db_readonly(Jrd::Database*, bool);
-void	PAG_set_db_SQL_dialect(Jrd::Database*, SSHORT);
-void	PAG_set_page_buffers(ULONG);
-void	PAG_sweep_interval(SLONG);
-//int		PAG_unlicensed(void);
+SLONG	PAG_last_page(Jrd::thread_db* tdbb);
+void	PAG_release_page(Jrd::thread_db* tdbb, const Jrd::PageNumber&, const Jrd::PageNumber&);
+void	PAG_set_force_write(Jrd::thread_db* tdbb, bool);
+void	PAG_set_no_reserve(Jrd::thread_db* tdbb, bool);
+void	PAG_set_db_readonly(Jrd::thread_db* tdbb, bool);
+void	PAG_set_db_SQL_dialect(Jrd::thread_db* tdbb, SSHORT);
+void	PAG_set_page_buffers(Jrd::thread_db* tdbb, ULONG);
+void	PAG_sweep_interval(Jrd::thread_db* tdbb, SLONG);
+//int		PAG_unlicensed(Jrd::thread_db* tdbb);
 
 namespace Jrd {
 	class PageCountCallback

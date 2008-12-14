@@ -1174,23 +1174,23 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_set_db_sql_dialect) {
 		validateAccess(attachment);
-		PAG_set_db_SQL_dialect(dbb, options.dpb_set_db_sql_dialect);
+		PAG_set_db_SQL_dialect(tdbb, options.dpb_set_db_sql_dialect);
 	}
 
 	if (options.dpb_sweep_interval != -1) {
 		validateAccess(attachment);
-		PAG_sweep_interval(options.dpb_sweep_interval);
+		PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
 	if (options.dpb_set_force_write) {
 		validateAccess(attachment);
-		PAG_set_force_write(dbb, options.dpb_force_write);
+		PAG_set_force_write(tdbb, options.dpb_force_write);
 	}
 
 	if (options.dpb_set_no_reserve) {
 		validateAccess(attachment);
-		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
+		PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 	}
 
 	if (options.dpb_set_page_buffers) {
@@ -1199,7 +1199,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 #else
 		if (attachment->locksmith())
 #endif
-			PAG_set_page_buffers(options.dpb_page_buffers);
+			PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
 	}
 
 	if (options.dpb_set_db_readonly) {
@@ -1208,7 +1208,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			ERR_post(Arg::Gds(isc_lock_timeout) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 		}
-		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
+		PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
 	}
 
 	PAG_attachment_id(tdbb);
@@ -1880,10 +1880,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	PAG_format_pip(tdbb, *pageSpace);
 
 	if (options.dpb_set_page_buffers)
-		PAG_set_page_buffers(options.dpb_page_buffers);
+		PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
 
 	if (options.dpb_set_no_reserve)
-		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
+		PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 
 	INI_format(attachment->att_user->usr_user_name.c_str(),
 			   options.dpb_set_db_charset.c_str());
@@ -1904,12 +1904,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (options.dpb_sweep_interval != -1) {
-		PAG_sweep_interval(options.dpb_sweep_interval);
+		PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
 	if (options.dpb_set_force_write)
-		PAG_set_force_write(dbb, options.dpb_force_write);
+		PAG_set_force_write(tdbb, options.dpb_force_write);
 
 	// initialize shadowing semaphore as soon as the database is ready for it
 	// but before any real work is done
@@ -1925,7 +1925,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
             ERR_post(Arg::Gds(isc_lock_timeout) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 
-        PAG_set_db_readonly(dbb, options.dpb_db_readonly);
+        PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
     }
 
 	PAG_attachment_id(tdbb);

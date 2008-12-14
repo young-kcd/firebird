@@ -116,7 +116,7 @@ PAG DPM_allocate(thread_db* tdbb, WIN* window)
 	}
 #endif
 
-	pag* page = PAG_allocate(window);
+	pag* page = PAG_allocate(tdbb, window);
 
 	return page;
 }
@@ -167,7 +167,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 		printf
 			("    old record %"SLONGFORMAT":%d, new record %"SLONGFORMAT
 			":%d, old dpg_count %d, ",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_b_page, 
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_b_page,
 			 rpb->rpb_b_line, page->dpg_count);
 	}
 #endif
@@ -205,7 +205,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	// Estimated number of total records for this relation, 
+	// Estimated number of total records for this relation,
 	// we assume that the records are compressed to 50%
 	// Every record has also a header and a jump section (13 + 4)
 
@@ -218,8 +218,8 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 
 	SLONG dataPages = DPM_data_pages(tdbb, relation);
 
-	// AB: If we have only 1 data-page then the cardinality calculation 
-	// is to worse to be usefull, therefore rely on the record count 
+	// AB: If we have only 1 data-page then the cardinality calculation
+	// is to worse to be usefull, therefore rely on the record count
 	// from the data-page.
 
 	if (dataPages == 1) {
@@ -227,7 +227,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 		vcl* vector = relPages->rel_pages;
 		if (vector) {
 			WIN window(relPages->rel_pg_space_id, (*vector)[0]);
-			Ods::pointer_page* ppage = 
+			Ods::pointer_page* ppage =
 				(Ods::pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
 			USHORT recordCount = 0;
 			const SLONG* page = ppage->ppg_page;
@@ -245,7 +245,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 		format = relation->rel_current_format;
 	}
 
-	return (double) dataPages * (dbb->dbb_page_size - DPG_SIZE) / 
+	return (double) dataPages * (dbb->dbb_page_size - DPG_SIZE) /
 		(minRecordSize + (format->fmt_length * 0.5));
 }
 
@@ -259,7 +259,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
  **************************************
  *
  * Functional description
- *	Start here with a plausible, but non-active record_param. 
+ *	Start here with a plausible, but non-active record_param.
  *
  *	We need to create a new version of a record.  If the new version
  *	fits on the same page as the old record, things are simple and
@@ -267,9 +267,9 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
  *
  *	Note that we also return false if the record fetched doesn't
  *	match the state of the input rpb, or if there is no record for
- *	that record number.  The caller has to check the results to 
+ *	that record number.  The caller has to check the results to
  *	see what failed if FALSE is returned.  At the moment, there is
- *	only one caller, VIO_erase. 
+ *	only one caller, VIO_erase.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -724,7 +724,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
    state of both the page and the appropriate pointer page. */
 
 	if (count && (page->dpg_header.pag_flags & dpg_full)) {
-		DEBUG 
+		DEBUG
 		page->dpg_header.pag_flags &= ~dpg_full;
 		mark_full(tdbb, rpb);
 
@@ -750,13 +750,13 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 		   which the first fragment is deleted.
 		   The resulting 'must-be-written-after' graph is:
 		   pip --> deallocated page --> prior_page */
-		PAG_release_page(window->win_page, window->win_page);
+		PAG_release_page(tdbb, window->win_page, window->win_page);
 		return;
 	}
 
 	// Data page has gone empty.  Refetch page thru pointer page.  If it's
 	// still empty, remove page from relation.
-	
+
 	pointer_page* ppage;
 	SSHORT slot;
 	USHORT pp_sequence;
@@ -770,7 +770,7 @@ retry_after_latch_timeout:
 	if (!
 		(ppage =
 		 get_pointer_page(tdbb, rpb->rpb_relation, relPages, &pwindow, pp_sequence,
-						  LCK_write))) 
+						  LCK_write)))
 			BUGCHECK(245);	/* msg 245 pointer page disappeared in DPM_delete */
 
 
@@ -839,7 +839,7 @@ retry_after_latch_timeout:
 /* Make sure that the page inventory page is written after the pointer page.
    Earlier, we make sure that the pointer page is written after the data
    page being released. */
-	PAG_release_page(window->win_page, pwindow.win_page);
+	PAG_release_page(tdbb, window->win_page, pwindow.win_page);
 }
 
 
@@ -919,18 +919,18 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd
 						rhd* header = (rhd*) ((UCHAR *) dpage + line->dpg_offset);
 						if (header->rhd_flags & rhd_large)
 						{
-							delete_tail(tdbb, (rhdf*)header, relPages->rel_pg_space_id, 
+							delete_tail(tdbb, (rhdf*)header, relPages->rel_pg_space_id,
 								line->dpg_length);
 						}
 					}
 				}
 				CCH_RELEASE_TAIL(tdbb, &data_window);
 			}
-			PAG_release_page(PageNumber(relPages->rel_pg_space_id, *page), ZERO_PAGE_NUMBER);
+			PAG_release_page(tdbb, PageNumber(relPages->rel_pg_space_id, *page), ZERO_PAGE_NUMBER);
 		}
 		const UCHAR pag_flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE_TAIL(tdbb, &window);
-		PAG_release_page(window.win_page, ZERO_PAGE_NUMBER);
+		PAG_release_page(tdbb, window.win_page, ZERO_PAGE_NUMBER);
 		if (pag_flags & ppg_eof)
 		{
 			break;
@@ -943,7 +943,7 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd
 
 /* Now get rid of the index root page */
 
-	PAG_release_page(
+	PAG_release_page(tdbb,
 		PageNumber(relPages->rel_pg_space_id, relPages->rel_index_root), ZERO_PAGE_NUMBER);
 	relPages->rel_index_root = 0;
 }
@@ -969,7 +969,7 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
 	{
-		printf("DPM_fetch (record_param %"QUADFORMAT"d, lock %d)\n", 
+		printf("DPM_fetch (record_param %"QUADFORMAT"d, lock %d)\n",
 			rpb->rpb_number.getValue(), lock);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
@@ -1034,7 +1034,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
 	{
-		printf("DPM_fetch_back (record_param %"QUADFORMAT"d, lock %d)\n", 
+		printf("DPM_fetch_back (record_param %"QUADFORMAT"d, lock %d)\n",
 			rpb->rpb_number.getValue(), lock);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
@@ -1102,7 +1102,7 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS)
-		printf("DPM_fetch_fragment (record_param %"QUADFORMAT"d, lock %d)\n", 
+		printf("DPM_fetch_fragment (record_param %"QUADFORMAT"d, lock %d)\n",
 			rpb->rpb_number.getValue(), lock);
 	if (debug_flag > DEBUG_READS_INFO) {
 		printf("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
@@ -1146,8 +1146,8 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
  *
  * Functional description
  *	Generate relation specific value.
- *      If initialize is set then value of generator is made 
- *      equal to val else generator is incremented by val. 
+ *      If initialize is set then value of generator is made
+ *      equal to val else generator is incremented by val.
  *      The resulting value is the result of the function.
  **************************************/
 	SET_TDBB(tdbb);
@@ -1285,7 +1285,7 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_READS) {
-		printf("DPM_get (record_param %"QUADFORMAT"d, lock type %d)\n", 
+		printf("DPM_get (record_param %"QUADFORMAT"d, lock type %d)\n",
 			rpb->rpb_number.getValue(), lock_type);
 	}
 #endif
@@ -1304,7 +1304,7 @@ bool DPM_get( thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 	}
 
 /* Find the next pointer page, data page, and record */
-	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation, 
+	pointer_page* page = get_pointer_page(tdbb, rpb->rpb_relation,
 		rpb->rpb_relation->getPages(tdbb), window, pp_sequence, LCK_read);
 	if (!page) {
 		return false;
@@ -1343,7 +1343,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
  *
  * Functional description
  *	Given a blob block, find the associated blob.  If blob is level 0,
- *	get the data clump, otherwise get the vector of pointers.  
+ *	get the data clump, otherwise get the vector of pointers.
  *
  *	If the delete flag is set, delete the blob header after access
  *	and return the page number.  This is a kludge, but less code
@@ -1353,7 +1353,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
-	
+
 	record_param rpb;
 	rpb.rpb_relation = blob->blb_relation;
 	rpb.getWindow(tdbb).win_flags = WIN_secondary;
@@ -1371,7 +1371,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 	USHORT pp_sequence;
 	SSHORT slot, line;
 
-	record_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);	
+	record_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 
 /* Find the next pointer page, data page, and record.  If the page or
    record doesn't exist, or the record isn't a blob, give up and
@@ -1542,7 +1542,7 @@ bool DPM_next(thread_db* tdbb,
 		}
 		else {
 			/*  if the stream was just opened, assume we want to start
-			   at the end of the stream, so compute the last theoretically 
+			   at the end of the stream, so compute the last theoretically
 			   possible rpb_number and go down from there */
 	/** for now, we must force a scan to make sure that we get
 	    the last pointer page: this should be changed to use
@@ -1657,7 +1657,7 @@ bool DPM_next(thread_db* tdbb,
 				if (!
 					(ppage =
 					 get_pointer_page(tdbb, rpb->rpb_relation, relPages, window,
-									  pp_sequence, LCK_read))) 
+									  pp_sequence, LCK_read)))
 						BUGCHECK(249);	/* msg 249 pointer page vanished from DPM_next */
 			}
 
@@ -2174,7 +2174,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 	DEBUG
 	if (stack)
 	{
-		while (stack->hasData()) 
+		while (stack->hasData())
 		{
 			CCH_precedence(tdbb, &rpb->getWindow(tdbb), stack->pop());
 		}
@@ -2302,7 +2302,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 			const USHORT flags = header->rhdf_flags;
 			page_number = header->rhdf_f_page;
 			CCH_RELEASE_TAIL(tdbb, &window);
-			PAG_release_page(window.win_page, ZERO_PAGE_NUMBER);
+			PAG_release_page(tdbb, window.win_page, ZERO_PAGE_NUMBER);
 			if (!(flags & rhd_incomplete)) {
 				break;
 			}
@@ -2324,11 +2324,11 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 			const SLONG* const end2 =
 				page2 + ((bpage->blp_length - BLP_SIZE) / sizeof(SLONG));
 			while (page2 < end2) {
-				PAG_release_page(PageNumber(page_space, *page2++), ZERO_PAGE_NUMBER);
+				PAG_release_page(tdbb, PageNumber(page_space, *page2++), ZERO_PAGE_NUMBER);
 			}
 			CCH_RELEASE_TAIL(tdbb, &window);
 		}
-		PAG_release_page(PageNumber(page_space, *page1), ZERO_PAGE_NUMBER);
+		PAG_release_page(tdbb, PageNumber(page_space, *page1), ZERO_PAGE_NUMBER);
 	}
 }
 
@@ -2360,7 +2360,7 @@ static void fragment(
  *	messing with the head until we get back, and, if possible, we'd
  *	like to keep as much space on the original page as we can get.
  *	Making matters worse, we may be storing a new version of the
- *	record or we may be backing out an old one and replacing it 
+ *	record or we may be backing out an old one and replacing it
  *	with one older still (replacing a dead rolled back record with
  *	the preceding version).
  *
@@ -2378,7 +2378,7 @@ static void fragment(
  *	id.  Applying deltas to the expanded form of the same version of the
  *	record is a no-op -- but it doesn't cost much and the case is rare.
  *
- *	If we're backing out a rolled back version, we've got another 
+ *	If we're backing out a rolled back version, we've got another
  *	problem.  The rpb we've got is for record version n - 1, not version
  *	n + 1.  (e.g. I'm transaction 32 removing the rolled back record
  *	created by transaction 28 and reinstating the committed version
@@ -2556,7 +2556,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
  * Functional description
  *	Extend a relation with a given page.  The window points to an
  *	already allocated, fetched, and marked data page to be inserted
- *	into the pointer pages for a given relation. 
+ *	into the pointer pages for a given relation.
  *	This routine returns a window on the datapage locked for write
  *
  **************************************/
@@ -2564,7 +2564,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	RelationPages* relPages = relation->getPages(tdbb);
-	WIN pp_window(relPages->rel_pg_space_id, -1), 
+	WIN pp_window(relPages->rel_pg_space_id, -1),
 		new_pp_window(relPages->rel_pg_space_id, -1);
 
 #ifdef VIO_DEBUG
@@ -2589,7 +2589,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 	an exlusive latch.
    This might cause a deadlock.  Fortunately, pointer pages don't need to be
    allocated often. */
-   
+
 	pointer_page* ppage = 0;
 	USHORT pp_sequence, slot = 0;
 
@@ -2723,7 +2723,7 @@ static UCHAR* find_space(thread_db*	tdbb,
  *	data page, and return a pointer to the space.
  *
  *	To maintain page precedence when objects point to objects, a stack
- *	of pages of high precedence may be passed in.  
+ *	of pages of high precedence may be passed in.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -3001,8 +3001,8 @@ static rhd* locate_space(
 	}
 
 /* Sigh.  No space.  Extend relation. Try for a while
-   in case someone grabs the page before we can get it 
-   locked, then give up on the assumption that things 
+   in case someone grabs the page before we can get it
+   locked, then give up on the assumption that things
    are really screwed up. */
 	UCHAR* space = 0;
 	int i;
@@ -3072,7 +3072,7 @@ static void mark_full( thread_db* tdbb, record_param* rpb)
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
 /* Fetch the pointer page, then the data page.  Since this is a case of
-   fetching a second page after having fetched the first page with an 
+   fetching a second page after having fetched the first page with an
    exclusive latch, care has to be taken to prevent a deadlock.  This
    is accomplished by timing out the second latch request and retrying
    the whole thing. */
@@ -3160,7 +3160,7 @@ static void release_dcc( DataComprControl* dcc)
 
 
 static void store_big_record(thread_db* tdbb, record_param* rpb,
-							 PageStack& stack, 
+							 PageStack& stack,
 							 DataComprControl* head_dcc, USHORT size)
 {
 /**************************************

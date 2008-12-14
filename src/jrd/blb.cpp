@@ -2097,7 +2097,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	if (blob->blb_level == 1) {
 		for (; ptr < end; ++ptr) {
 			if (*ptr) {
-				PAG_release_page(PageNumber(pageSpaceID, *ptr), prior);
+				PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr), prior);
 			}
 		}
 		return;
@@ -2122,14 +2122,14 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			CCH_RELEASE_TAIL(tdbb, &window);
 
 			const PageNumber page1(pageSpaceID, *ptr);
-			PAG_release_page(page1, prior);
+			PAG_release_page(tdbb, page1, prior);
 			page = (blob_page*) buffer;
 			const SLONG* ptr2 = page->blp_page;
 			for (const SLONG* const end2 = ptr2 + blob->blb_pointers;
 				 ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
-					PAG_release_page(PageNumber(pageSpaceID, *ptr2), page1);
+					PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr2), page1);
 				}
 			}
 		}

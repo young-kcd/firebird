@@ -883,7 +883,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			shadow_number = X.RDB$SHADOW_NUMBER;
 			if ((shadow_number &&
 				(section = SDW_add_file(tdbb, X.RDB$FILE_NAME, start, shadow_number))) ||
-				(section = PAG_add_file(X.RDB$FILE_NAME, start)))
+				(section = PAG_add_file(tdbb, X.RDB$FILE_NAME, start)))
 			{
 				MODIFY X USING
 					X.RDB$FILE_SEQUENCE = section;

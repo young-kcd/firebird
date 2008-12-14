@@ -238,6 +238,8 @@ void BackupManager::begin_backup(thread_db* tdbb)
 {
 	NBAK_TRACE(("begin_backup"));
 
+	SET_TDBB(tdbb);
+
 	// Check for raw device
 	if ((!explicit_diff_name) && database->onRawDevice()) {
 		ERR_post(Arg::Gds(isc_need_difference));
@@ -301,7 +303,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		int newState = nbak_state_stalled;
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | newState;
 		const ULONG adjusted_scn = ++header->hdr_header.pag_scn; // Generate new SCN
-		PAG_replace_entry_first(header, Ods::HDR_backup_guid, sizeof(guid),
+		PAG_replace_entry_first(tdbb, header, Ods::HDR_backup_guid, sizeof(guid),
 			reinterpret_cast<const UCHAR*>(&guid));
 
 		header_locked = false;
@@ -730,19 +732,21 @@ BackupManager::~BackupManager()
 
 void BackupManager::set_difference(thread_db* tdbb, const char* filename)
 {
+	SET_TDBB(tdbb);
+
 	if (filename) {
 		WIN window(HEADER_PAGE_NUMBER);
 		Ods::header_page* header =
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
-		PAG_replace_entry_first(header, Ods::HDR_difference_file,
+		PAG_replace_entry_first(tdbb, header, Ods::HDR_difference_file,
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		diff_name = filename;
 		explicit_diff_name = true;
 	}
 	else {
-		PAG_delete_clump_entry(HEADER_PAGE, Ods::HDR_difference_file);
+		PAG_delete_clump_entry(tdbb, HEADER_PAGE, Ods::HDR_difference_file);
 		generate_filename();
 	}
 }

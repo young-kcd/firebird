@@ -1862,7 +1862,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 		// so that we're not pointing to a released page
 		CCH_RELEASE(tdbb, root_window);
 		CCH_RELEASE(tdbb, &window);
-		PAG_release_page(window.win_page, root_window->win_page);
+		PAG_release_page(tdbb, window.win_page, root_window->win_page);
 	}
 
 	if (window.win_bdb) {
@@ -3122,7 +3122,7 @@ static void delete_tree(thread_db* tdbb,
 		// go through all the sibling pages on this level and release them
 		next = page->btr_sibling;
 		CCH_RELEASE_TAIL(tdbb, &window);
-		PAG_release_page(window.win_page, prior);
+		PAG_release_page(tdbb, window.win_page, prior);
 		prior = window.win_page;
 
 		// if we are at end of level, go down to the next level
@@ -5327,7 +5327,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 	// finally, release the page, and indicate that we should write the
 	// previous page out before we write the TIP page out
 	CCH_RELEASE(tdbb, window);
-	PAG_release_page(window->win_page, left_page ? left_window.win_page :
+	PAG_release_page(tdbb, window->win_page, left_page ? left_window.win_page :
 		right_page ? right_window.win_page : parent_window.win_page);
 
 	// if the parent page needs to be garbage collected, that means we need to
