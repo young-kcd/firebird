@@ -1,3 +1,9 @@
+2008-12-14 11:30  robocop
+
+	* firebird2/src/jrd/sdw.cpp (1.60.4.3):
+
+	Backport fix for random failure when shadowing is started.
+
 2008-12-10 10:17  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.8.4.20):
