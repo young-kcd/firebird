@@ -165,9 +165,7 @@ namespace Jrd
 	}
 
 
-	FPTR_INT Module::lookup(const TEXT* module,
-							const TEXT* name,
-							DatabaseModules& interest)
+	FPTR_INT Module::lookup(const TEXT* module, const TEXT* name, DatabaseModules& interest)
 	{
 		FPTR_INT function = FUNCTIONS_entrypoint(module, name);
 		if (function)
@@ -196,8 +194,7 @@ namespace Jrd
 		return (FPTR_INT)rc;
 	}
 
-	FPTR_INT Module::lookup(const TEXT* module,
-							const TEXT* name)
+	FPTR_INT Module::lookup(const TEXT* module, const TEXT* name)
 	{
 		FPTR_INT function = FUNCTIONS_entrypoint(module, name);
 		if (function)
@@ -266,8 +263,7 @@ namespace Jrd
 				// Search for module name in UdfAccess restricted
 				// paths list
 				PathUtils::splitLastComponent(path, relative, fixedModule);
-				if (path.length() == 0 &&
-						PathUtils::isRelative(fixedModule))
+				if (path.length() == 0 && PathUtils::isRelative(fixedModule))
 				{
 					path = fixedModule;
 					if (! iUdfDirectoryList().expandFileName(fixedModule, path))
@@ -289,8 +285,7 @@ namespace Jrd
 				if (mlm)
 				{
 					im = FB_NEW(*getDefaultMemoryPool())
-						InternalModule(*getDefaultMemoryPool(), mlm,
-							initialModule, fixedModule);
+						InternalModule(*getDefaultMemoryPool(), mlm, initialModule, fixedModule);
 					loadedModules().add(im);
 					return Module(im);
 				}
@@ -302,8 +297,7 @@ namespace Jrd
 				if (mlm)
 				{
 					im = FB_NEW(*getDefaultMemoryPool())
-						InternalModule(*getDefaultMemoryPool(), mlm,
-							initialModule, fixedModule);
+						InternalModule(*getDefaultMemoryPool(), mlm, initialModule, fixedModule);
 					loadedModules().add(im);
 					im->acquire();	// make permanent
 					return Module(im);
