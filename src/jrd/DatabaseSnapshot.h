@@ -92,6 +92,7 @@ class DatabaseSnapshot
 		SharedMemory(const SharedMemory&);
 		SharedMemory& operator =(const SharedMemory&);
 
+		void doCleanup(const Database* const dbb);
 		void extend();
 
 		static void checkMutex(const TEXT*, int);
@@ -104,7 +105,8 @@ class DatabaseSnapshot
 		Header* base;
 	};
 
-	struct Element {
+	struct Element
+	{
 		ULONG processId;
 		ULONG localId;
 		ULONG length;

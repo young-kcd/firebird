@@ -202,21 +202,7 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ULONG length, co
 	DumpGuard guard(this);
 
 	// Remove old copies of our element, if any
-	for (ULONG offset = sizeof(Header); offset < base->used;)
-	{
-		UCHAR* const ptr = (UCHAR*) base + offset;
-		const Element* const element = (Element*) ptr;
-		const ULONG length = sizeof(Element) + element->length;
-
-		if (element->processId == getpid() && element->localId == dbb->dbb_monitoring_id)
-		{
-			fb_assert(base->used >= offset + length);
-			memmove(ptr, ptr + length, base->used - offset - length);
-			base->used -= length;
-		}
-		else
-			offset += length;
-	}
+	doCleanup(dbb);
 
 	// Do we need to extend the allocated memory?
 	while (base->used + sizeof(Element) + length > base->allocated)
@@ -245,14 +231,19 @@ void DatabaseSnapshot::SharedMemory::cleanup(thread_db* tdbb)
 	DumpGuard guard(this);
 
 	// Remove information about our dbb
+	doCleanup(dbb);
+}
+
+
+void DatabaseSnapshot::SharedMemory::doCleanup(const Database* const dbb)
+{
 	for (ULONG offset = sizeof(Header); offset < base->used;)
 	{
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
 
-		if (element->processId == getpid() &&
-			element->localId == dbb->dbb_monitoring_id)
+		if (element->processId == getpid() && element->localId == dbb->dbb_monitoring_id)
 		{
 			memmove(ptr, ptr + length, base->used - offset - length);
 			base->used -= length;
@@ -862,8 +853,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			{
 				request->adjustCallerStats();
 
-				if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
-					request->req_caller)
+				if (!(request->req_flags & (req_internal | req_sys_trigger)) && request->req_caller)
 				{
 					putCall(request, writer, fb_utils::genUniqueId());
 				}
