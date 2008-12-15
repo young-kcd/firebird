@@ -485,7 +485,7 @@ void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR target
 
 	*p++ = isc_bpb_source_type;
 	*p++ = 2;
-	put_short(p, source);
+	put_vax_short(p, source);
 	p += 2;
 	if (source == isc_blob_text)
 	{
@@ -496,7 +496,7 @@ void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR target
 
 	*p++ = isc_bpb_target_type;
 	*p++ = 2;
-	put_short(p, target);
+	put_vax_short(p, target);
 	p += 2;
 	if (target == isc_blob_text)
 	{
