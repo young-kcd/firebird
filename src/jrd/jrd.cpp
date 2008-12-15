@@ -410,6 +410,7 @@ public:
 	bool	dpb_no_db_triggers;
 	bool	dpb_gbak_attach;
 	bool	dpb_trusted_role;
+	bool	dpb_utf8_filename;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
 	// here begin compound objects
@@ -696,19 +697,38 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	const PathName file_name = options.dpb_org_filename.hasData() ?
+	PathName file_name = options.dpb_org_filename.hasData() ?
 		options.dpb_org_filename : filename;
+
+	if (options.dpb_utf8_filename)
+		ISC_utf8ToSystem(file_name);
+	else
+	{
+		ISC_systemToUtf8(file_name);
+		ISC_unescape(file_name);
+		ISC_utf8ToSystem(file_name);
+	}
+
 	PathName expanded_name;
 
 	// Resolve given alias name
 	const bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
 	if (is_alias)
 	{
+		ISC_systemToUtf8(expanded_name);
+		ISC_unescape(expanded_name);
+		ISC_utf8ToSystem(expanded_name);
 		ISC_expand_filename(expanded_name, false);
 	}
 	else
 	{
 		expanded_name = filename;
+
+		if (!options.dpb_utf8_filename)
+			ISC_systemToUtf8(expanded_name);
+
+		ISC_unescape(expanded_name);
+		ISC_utf8ToSystem(expanded_name);
 	}
 
 	// Check database against conf file.
@@ -1670,18 +1690,37 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	const PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
+	PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
+
+	if (options.dpb_utf8_filename)
+		ISC_utf8ToSystem(file_name);
+	else
+	{
+		ISC_systemToUtf8(file_name);
+		ISC_unescape(file_name);
+		ISC_utf8ToSystem(file_name);
+	}
+
 	PathName expanded_name;
 
 	// Resolve given alias name
 	const bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
 	if (is_alias)
 	{
+		ISC_systemToUtf8(expanded_name);
+		ISC_unescape(expanded_name);
+		ISC_utf8ToSystem(expanded_name);
 		ISC_expand_filename(expanded_name, false);
 	}
 	else
 	{
 		expanded_name = filename;
+
+		if (!options.dpb_utf8_filename)
+			ISC_systemToUtf8(expanded_name);
+
+		ISC_unescape(expanded_name);
+		ISC_utf8ToSystem(expanded_name);
 	}
 
 	// Check database against conf file.
@@ -4518,6 +4557,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_org_filename:
 			rdr.getPath(dpb_org_filename);
+			break;
+
+		case isc_dpb_utf8_filename:
+			dpb_utf8_filename = true;
 			break;
 
 		default:

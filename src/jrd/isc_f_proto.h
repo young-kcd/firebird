@@ -39,6 +39,10 @@ bool		ISC_check_if_remote(const Firebird::PathName&, bool);
 enum		iscProtocol {ISC_PROTOCOL_LOCAL, ISC_PROTOCOL_TCPIP, ISC_PROTOCOL_WLAN};
 iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
 bool		ISC_expand_filename(Firebird::PathName&, bool);
+void		ISC_systemToUtf8(Firebird::PathName& pathName);
+void		ISC_utf8ToSystem(Firebird::PathName& pathName);
+void		ISC_escape(Firebird::PathName& pathName);
+void		ISC_unescape(Firebird::PathName& pathName);
 
 // This form of ISC_expand_filename makes epp files happy
 inline bool	ISC_expand_filename(const TEXT* unexpanded,

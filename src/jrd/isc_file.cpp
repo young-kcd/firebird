@@ -45,6 +45,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
@@ -158,6 +159,8 @@ extern "C" int mntctl(int, size_t, void*);
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
 #endif
+
+using namespace Firebird;
 
 namespace {
     typedef Firebird::PathName tstring;
@@ -1807,3 +1810,114 @@ static void share_name_from_unc(tstring& file_name,
 }
 #endif /* WIN_NT */
 
+
+// Converts a PathName from the system charset to UTF-8.
+void ISC_systemToUtf8(Firebird::PathName& pathName)
+{
+#ifdef WIN_NT
+	WCHAR utf16Buffer[MAX_PATH];
+	int len = MultiByteToWideChar(CP_ACP, 0, pathName.c_str(), pathName.length(),
+		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
+
+	if (len == 0)
+		status_exception::raise(Arg::Gds(isc_transliteration_failed));
+
+	char utf8Buffer[MAX_PATH];
+	len = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len, utf8Buffer, sizeof(utf8Buffer),
+		NULL, NULL);
+
+	pathName.assign(utf8Buffer, len);
+#endif
+}
+
+
+// Converts a PathName from UTF-8 to the system charset.
+void ISC_utf8ToSystem(Firebird::PathName& pathName)
+{
+#ifdef WIN_NT
+	WCHAR utf16Buffer[MAX_PATH];
+	int len = MultiByteToWideChar(CP_UTF8, 0, pathName.c_str(), pathName.length(),
+		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
+
+	if (len == 0)
+		status_exception::raise(Arg::Gds(isc_transliteration_failed));
+
+	char ansiBuffer[MAX_PATH];
+	BOOL defaultCharUsed;
+	len = WideCharToMultiByte(CP_ACP, 0, utf16Buffer, len, ansiBuffer, sizeof(ansiBuffer),
+		NULL, &defaultCharUsed);
+
+	if (len == 0 || defaultCharUsed)
+		status_exception::raise(Arg::Gds(isc_transliteration_failed));
+
+	pathName.assign(ansiBuffer, len);
+#endif
+}
+
+
+// Escape Unicode characters from a PathName
+void ISC_escape(PathName& pathName)
+{
+	size_t pos = 0;
+	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
+	{
+		pathName.insert(pos, "#");
+		pos += 2;
+	}
+}
+
+
+// Unescape Unicode characters from a PathName
+void ISC_unescape(PathName& pathName)
+{
+// Macro copied from ICU headers.
+#define U8_APPEND_UNSAFE(s, i, c) { \
+    if((unsigned int)(c)<=0x7f) { \
+        (s)[(i)++]=(unsigned char)(c); \
+    } else { \
+        if((unsigned int)(c)<=0x7ff) { \
+            (s)[(i)++]=(unsigned char)(((c)>>6)|0xc0); \
+        } else { \
+            if((unsigned int)(c)<=0xffff) { \
+                (s)[(i)++]=(unsigned char)(((c)>>12)|0xe0); \
+            } else { \
+                (s)[(i)++]=(unsigned char)(((c)>>18)|0xf0); \
+                (s)[(i)++]=(unsigned char)((((c)>>12)&0x3f)|0x80); \
+            } \
+            (s)[(i)++]=(unsigned char)((((c)>>6)&0x3f)|0x80); \
+        } \
+        (s)[(i)++]=(unsigned char)(((c)&0x3f)|0x80); \
+    } \
+}
+
+	size_t pos = 0;
+	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
+	{
+		const char* p = pathName.c_str() + pos;
+
+		if (pos + 5 <= pathName.length() &&
+			((p[1] >= '0' && p[1] <= '9') || (toupper(p[1]) >= 'A' && toupper(p[1]) <= 'F')) &&
+			((p[2] >= '0' && p[2] <= '9') || (toupper(p[2]) >= 'A' && toupper(p[2]) <= 'F')) &&
+			((p[3] >= '0' && p[3] <= '9') || (toupper(p[3]) >= 'A' && toupper(p[3]) <= 'F')) &&
+			((p[4] >= '0' && p[4] <= '9') || (toupper(p[4]) >= 'A' && toupper(p[4]) <= 'F')))
+		{
+			char sCode[5];
+			memcpy(sCode, p + 1, 4);
+			sCode[4] = '\0';
+			int code = strtol(sCode, NULL, 16);
+
+			char unicode[4];
+			int len = 0;
+			U8_APPEND_UNSAFE(unicode, len, code);
+
+			pathName.replace(pos, 5, PathName(unicode, len));
+			pos += len;
+		}
+		else if (pos + 2 <= pathName.length() && p[1] == '#')
+			pathName.erase(pos++, 1);
+		else
+			status_exception::raise(Arg::Gds(isc_transliteration_failed));
+	}
+
+#undef U8_APPEND_UNSAFE
+}

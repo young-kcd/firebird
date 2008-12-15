@@ -5727,6 +5727,21 @@ static bool init(ISC_STATUS* user_status,
 	}
 #endif //TRUSTED_AUTH
 
+	if (port->port_protocol < PROTOCOL_VERSION12)
+	{
+		dpb.deleteWithTag(isc_dpb_utf8_filename);
+		ISC_utf8ToSystem(file_name);
+
+		if (dpb.find(isc_dpb_org_filename))
+		{
+			PathName orgFilename;
+			dpb.getPath(orgFilename);
+			ISC_utf8ToSystem(orgFilename);
+			dpb.deleteClumplet();
+			dpb.insertPath(isc_dpb_org_filename, orgFilename);
+		}
+	}
+
 	// Make attach packet
 
 	P_ATCH* attach = &packet->p_atch;
