@@ -25,7 +25,17 @@
 #include <windows.h>
 
 
-BOOL WINAPI DllMain(HINSTANCE /*h*/, DWORD /*reason*/, LPVOID /*reserved*/)
+BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 {
+	if (reason == DLL_PROCESS_ATTACH)
+	{
+#ifdef EMBEDDED
+		extern HINSTANCE hDllInst;
+		extern BOOL bEmbedded;
+
+		hDllInst = h;
+		bEmbedded = true;
+#endif
+	}
 	return TRUE;
 }
