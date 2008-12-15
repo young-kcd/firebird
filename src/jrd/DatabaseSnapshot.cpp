@@ -188,7 +188,7 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(MemoryPool& pool, ULONG& resultS
 	}
 
 	fb_assert(buffer + resultSize == bufferPtr);
-	return bufferPtr;
+	return buffer;
 }
 
 
