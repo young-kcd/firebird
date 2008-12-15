@@ -1,3 +1,30 @@
+2008-12-15 19:08  alexpeshkoff
+
+	* firebird2/src/jrd/: blb.cpp (1.185), dyn.epp (1.137):
+
+	Frontported fix for CORE-2242: Engine incorrectly fills BPB
+
+2008-12-15 19:03  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_atomic.h (1.15):
+
+	fixed posix/intel build
+
+2008-12-15 15:59  asfernandes
+
+	* firebird2/src/: include/consts_pub.h (1.29), jrd/isc_f_proto.h
+	(1.26), jrd/isc_file.cpp (1.121), jrd/jrd.cpp (1.496), jrd/why.cpp
+	(1.221), remote/interface.cpp (1.200):
+
+	Fixed CORE-316 - Can't open database with MBCS/Extended characters
+	in name.  Documentation soon.
+
+2008-12-15 07:11  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.79):
+
+	Correction to my own code.
+
 2008-12-14 11:28  robocop
 
 	* firebird2/src/jrd/sdw.cpp (1.86):
