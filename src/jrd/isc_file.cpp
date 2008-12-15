@@ -1820,11 +1820,14 @@ void ISC_systemToUtf8(Firebird::PathName& pathName)
 		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
 
 	if (len == 0)
-		status_exception::raise(Arg::Gds(isc_transliteration_failed));
+		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
 	char utf8Buffer[MAX_PATH];
 	len = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len, utf8Buffer, sizeof(utf8Buffer),
 		NULL, NULL);
+
+	if (len == 0)
+		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
 	pathName.assign(utf8Buffer, len);
 #endif
@@ -1840,7 +1843,7 @@ void ISC_utf8ToSystem(Firebird::PathName& pathName)
 		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
 
 	if (len == 0)
-		status_exception::raise(Arg::Gds(isc_transliteration_failed));
+		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
 	char ansiBuffer[MAX_PATH];
 	BOOL defaultCharUsed;
@@ -1848,7 +1851,7 @@ void ISC_utf8ToSystem(Firebird::PathName& pathName)
 		NULL, &defaultCharUsed);
 
 	if (len == 0 || defaultCharUsed)
-		status_exception::raise(Arg::Gds(isc_transliteration_failed));
+		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
 	pathName.assign(ansiBuffer, len);
 #endif
@@ -1916,7 +1919,7 @@ void ISC_unescape(PathName& pathName)
 		else if (pos + 2 <= pathName.length() && p[1] == '#')
 			pathName.erase(pos++, 1);
 		else
-			status_exception::raise(Arg::Gds(isc_transliteration_failed));
+			status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_escape_invalid));
 	}
 
 #undef U8_APPEND_UNSAFE

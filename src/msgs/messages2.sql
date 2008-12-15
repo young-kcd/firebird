@@ -756,6 +756,7 @@ Data source : @4', NULL, NULL)
 ('sysf_binuuid_wrongsize', 'evlUuidToChar', 'evl.cpp', NULL, 0, 649, NULL, 'Binary UUID argument for @2 must use @1 bytes', NULL, NULL)
 ('missing_required_spb', 'process_switches', 'svc.cpp', NULL, 0, 650, NULL, 'Missing required item @1 in service parameter block', NULL, NULL)
 ('net_server_shutdown', NULL, NULL, NULL, 0, 651, NULL, '@1 server is shutdown', NULL, NULL)
+('bad_conn_str', NULL, NULL, NULL, 0, 652, NULL, 'Invalid connection string', NULL, NULL);
 --('', '', 'evl.cpp', NULL, 0, , NULL, '', NULL, NULL)
 -- End of extras for isc_expression_eval_err
 -- QLI
