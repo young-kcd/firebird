@@ -133,7 +133,12 @@ public:
 
 	counter_type setValue(counter_type val)
 	{
-		return ...
+		register counter_type result;
+		__asm __volatile (
+			"lock; xchg %0, %1"
+			 : "=r" (result), "=m" (counter)
+			 : "0" (val), "m" (counter));
+		return result;
 	}
 
 private:
