@@ -177,7 +177,8 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(MemoryPool& pool, ULONG& resultS
 		}
 	}
 
-	UCHAR* buffer = FB_NEW(pool) UCHAR[resultSize];
+	UCHAR* const buffer = FB_NEW(pool) UCHAR[resultSize];
+	UCHAR* bufferPtr(buffer);
 
 	// Second pass
 	for (ULONG offset = sizeof(Header); offset < base->used;)
@@ -186,12 +187,12 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(MemoryPool& pool, ULONG& resultS
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
 
-		memcpy(buffer, ptr + sizeof(Element), element->length);
-		buffer += element->length;
+		memcpy(bufferPtr, ptr + sizeof(Element), element->length);
+		bufferPtr += element->length;
 		offset += length;
 	}
-
-	return buffer - resultSize;
+	fb_assert(buffer + resultSize == bufferPtr);
+	return buffer;
 }
 
 
@@ -217,8 +218,8 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ULONG length, co
 			memmove(ptr, ptr + length, base->used - offset);
 			base->used -= length;
 		}
-
-		offset += length;
+		else
+			offset += length;
 	}
 
 	// Do we need to extend the allocated memory?
@@ -410,7 +411,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	// Read the shared memory
 	ULONG dataSize = 0;
-	AutoPtr<UCHAR> data(dump().readData(pool, dataSize));
+	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump().readData(pool, dataSize));
 	fb_assert(dataSize);
 
 	ClumpletReader reader(ClumpletReader::WideUnTagged, data, dataSize);
