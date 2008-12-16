@@ -38,6 +38,12 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	{
 		case DLL_PROCESS_ATTACH:
 		{
+			extern HINSTANCE hDllInst;
+			extern BOOL bEmbedded;
+	
+			hDllInst = h;
+			bEmbedded = true;
+
 			char filename[MAX_PATH];
 			GetModuleFileName(h, filename, sizeof(filename));
 

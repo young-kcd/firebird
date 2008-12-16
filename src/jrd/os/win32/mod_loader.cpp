@@ -3,6 +3,9 @@
  *
  */
 
+// required to use activation context API structures
+#define _WIN32_WINNT 0x0501
+
 #include "firebird.h"
 #include "../jrd/os/mod_loader.h"
 #include <windows.h>
@@ -11,6 +14,131 @@ typedef Firebird::string string;
 typedef Firebird::PathName PathName;
 
 /// This is the Win32 implementation of the mod_loader abstraction.
+
+HINSTANCE hDllInst = 0;
+BOOL bEmbedded = false;
+
+/// activation context API prototypes
+typedef HANDLE (WINAPI * PFN_CAC)(PCACTCTXA pActCtx);
+
+typedef BOOL (WINAPI * PFN_FINDAC)(DWORD dwFlags, 
+								   const GUID *lpExtensionGuid, 
+								   ULONG ulSectionId, 
+								   LPCSTR lpStringToFind, 
+								   PACTCTX_SECTION_KEYED_DATA ReturnedData);
+
+typedef void (WINAPI * PFN_RAC)(HANDLE hActCtx);
+
+typedef BOOL (WINAPI * PFN_AAC)(HANDLE hActCtx, ULONG_PTR *lpCookie);
+
+typedef BOOL (WINAPI * PFN_DAC)(DWORD dwFlags, ULONG_PTR ulCookie);
+/// end of activation context API prototypes
+
+
+template <typename PFN>
+class WinApiFunction
+{
+public:
+	WinApiFunction(const char *dllName, const char *fnName)
+	{
+		m_ptr = NULL;
+		const HMODULE hDll = GetModuleHandle(dllName);
+		if (hDll)
+			m_ptr = (PFN) GetProcAddress(hDll, fnName);
+	}
+
+	~WinApiFunction()
+	{}
+
+	PFN operator* () const
+	{ return m_ptr; }
+
+	operator bool() const
+	{ return (m_ptr != NULL); }
+
+private:
+	PFN m_ptr;
+};
+
+const char* sKernel32 = "kernel32.dll";
+
+
+class ContextActivator
+{
+public:
+	ContextActivator() :
+	  mFindActCtxSectionString(sKernel32, "FindActCtxSectionStringA"),
+	  mCreateActCtx(sKernel32, "CreateActCtxA"),
+	  mReleaseActCtx(sKernel32, "ReleaseActCtx"),
+	  mActivateActCtx(sKernel32, "ActivateActCtx"),
+	  mDeactivateActCtx(sKernel32, "DeactivateActCtx")
+	{
+		hActCtx = INVALID_HANDLE_VALUE;
+
+// if we don't use MSVC then we don't use MS CRT ?
+#ifndef _MSC_VER
+		return;
+#endif
+
+		if (!bEmbedded || !mCreateActCtx)
+			return;
+
+		ACTCTX_SECTION_KEYED_DATA ackd;
+		memset(&ackd, 0, sizeof(ackd));
+		ackd.cbSize = sizeof(ackd);
+
+		// if CRT already present in some activation context then nothing to do
+		if ((*mFindActCtxSectionString) 
+				(0, NULL, 
+				ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION, 
+#if _MSC_VER == 1400
+				"msvcr80.dll",
+#else
+				#error Specify CRT DLL name here !
+#endif
+				&ackd))
+			return;
+
+		// create and use activation context from our own manifest
+		ACTCTXA actCtx;
+		memset(&actCtx, 0, sizeof(actCtx));
+		actCtx.cbSize = sizeof(actCtx);
+		actCtx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID;
+		actCtx.lpResourceName = ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
+		actCtx.hModule = hDllInst; 
+
+		if (actCtx.hModule)
+		{
+			char name[1024];
+			GetModuleFileName(actCtx.hModule, name, sizeof(name));
+			actCtx.lpSource = name;
+
+			hActCtx = (*mCreateActCtx) (&actCtx);
+			if (hActCtx != INVALID_HANDLE_VALUE)
+				(*mActivateActCtx) (hActCtx, &mCookie);
+		}
+	}
+
+	~ContextActivator()
+	{
+		if (hActCtx != INVALID_HANDLE_VALUE)
+		{
+			(*mDeactivateActCtx)(0, mCookie);
+			(*mReleaseActCtx)(hActCtx);
+		}
+	}
+
+private:
+	WinApiFunction<PFN_FINDAC> mFindActCtxSectionString;
+	WinApiFunction<PFN_CAC> mCreateActCtx;
+	WinApiFunction<PFN_RAC> mReleaseActCtx;
+	WinApiFunction<PFN_AAC> mActivateActCtx;
+	WinApiFunction<PFN_DAC> mDeactivateActCtx;
+	
+	HANDLE		hActCtx;
+	ULONG_PTR	mCookie;
+};
+
 
 class Win32Module : public ModuleLoader::Module
 {
@@ -25,6 +153,8 @@ private:
 
 bool ModuleLoader::isLoadableModule(const PathName& module)
 {
+	ContextActivator ctx;
+
 	LPCSTR pszName = module.c_str();
 	HINSTANCE hMod = LoadLibraryEx(pszName, 0,
 		LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
@@ -45,6 +175,8 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
+	ContextActivator ctx;
+
 	HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
 	if (!module)
 		return 0;
