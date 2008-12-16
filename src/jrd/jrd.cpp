@@ -6398,9 +6398,11 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 #endif
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
+
+	DatabaseSnapshot::cleanup(tdbb);
+
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
-	// FUN_fini(tdbb);
 
 	if (dbb->dbb_monitor_lock)
 		LCK_release(tdbb, dbb->dbb_monitor_lock);

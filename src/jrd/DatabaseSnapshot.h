@@ -71,7 +71,6 @@ class DatabaseSnapshot {
 
 	public:
 		SharedMemory();
-		explicit SharedMemory(MemoryPool&);
 		~SharedMemory();
 
 		void acquire();
@@ -80,11 +79,14 @@ class DatabaseSnapshot {
 		UCHAR* readData(MemoryPool&, ULONG&);
 		void writeData(thread_db*, ULONG, const UCHAR*);
 
+		void cleanup(thread_db*);
+
 	private:
 		// copying is prohibited
 		SharedMemory(const SharedMemory&);
 		SharedMemory& operator =(const SharedMemory&);
 
+		void doCleanup(const Database*);
 		void extend();
 
 		static void checkMutex(const TEXT*, int);
@@ -109,7 +111,13 @@ public:
 	RecordBuffer* getData(const jrd_rel*) const;
 
 	static DatabaseSnapshot* create(thread_db*);
+	static void cleanup(thread_db*);
 	static int blockingAst(void*);
+
+	static void init() // for InitMutex
+	{
+		dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
+	}
 
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);
@@ -131,7 +139,8 @@ private:
 	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putStatistics(const RuntimeStatistics*, Firebird::ClumpletWriter&, int, int);
 
-	static Firebird::InitInstance<DatabaseSnapshot::SharedMemory> dump;
+	static SharedMemory* dump;
+	static Firebird::InitMutex<DatabaseSnapshot> startup;
 
 	Firebird::Array<RelationData> snapshot;
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
