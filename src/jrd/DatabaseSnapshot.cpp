@@ -245,11 +245,14 @@ void DatabaseSnapshot::SharedMemory::doCleanup(const Database* const dbb)
 
 		if (element->processId == getpid() && element->localId == dbb->dbb_monitoring_id)
 		{
+			fb_assert(base->used >= offset + length);
 			memmove(ptr, ptr + length, base->used - offset - length);
 			base->used -= length;
 		}
 		else
+		{
 			offset += length;
+		}
 	}
 }
 
