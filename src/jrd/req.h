@@ -301,7 +301,8 @@ public:
 	{
 		if (req_caller)
 		{
-			req_caller->req_stats += req_stats - req_base_stats;
+			req_caller->req_stats -= req_base_stats;
+			req_caller->req_stats += req_stats;
 		}
 		req_base_stats = req_stats;
 	}

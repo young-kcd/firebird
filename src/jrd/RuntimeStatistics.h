@@ -78,11 +78,21 @@ public:
 	bool operator==(const RuntimeStatistics& other) const;
 	bool operator!=(const RuntimeStatistics& other) const;
 
-	RuntimeStatistics& operator+=(const RuntimeStatistics& other);
-	RuntimeStatistics& operator-=(const RuntimeStatistics& other);
+	RuntimeStatistics& operator+=(const RuntimeStatistics& other)
+	{
+		for (size_t i = 0; i < TOTAL_ITEMS; ++i)
+			values[i] += other.values[i];
 
-	RuntimeStatistics operator+(const RuntimeStatistics& other) const;
-	RuntimeStatistics operator-(const RuntimeStatistics& other) const;
+		return *this;
+	}
+
+	RuntimeStatistics& operator-=(const RuntimeStatistics& other)
+	{
+		for (size_t i = 0; i < TOTAL_ITEMS; ++i)
+			values[i] -= other.values[i];
+
+		return *this;
+	}
 
 	static RuntimeStatistics* getDummy()
 	{

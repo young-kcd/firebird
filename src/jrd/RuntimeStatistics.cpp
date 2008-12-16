@@ -45,30 +45,4 @@ bool RuntimeStatistics::operator!=(const RuntimeStatistics& other) const
 	return !(*this == other);
 }
 
-RuntimeStatistics& RuntimeStatistics::operator+=(const RuntimeStatistics& other)
-{
-	for (size_t i = 0; i < TOTAL_ITEMS; ++i)
-		values[i] += other.values[i];
-
-	return *this;
-}
-
-RuntimeStatistics& RuntimeStatistics::operator-=(const RuntimeStatistics& other)
-{
-	for (size_t i = 0; i < TOTAL_ITEMS; ++i)
-		values[i] -= other.values[i];
-
-	return *this;
-}
-
-RuntimeStatistics RuntimeStatistics::operator+(const RuntimeStatistics& other) const
-{
-	return RuntimeStatistics(*this) += other;
-}
-
-RuntimeStatistics RuntimeStatistics::operator-(const RuntimeStatistics& other) const
-{
-	return RuntimeStatistics(*this) -= other;
-}
-
 } // namespace
