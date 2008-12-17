@@ -97,12 +97,6 @@ DatabaseSnapshot::SharedMemory::SharedMemory()
 }
 
 
-DatabaseSnapshot::SharedMemory::SharedMemory(MemoryPool&)
-{
-	new (this) SharedMemory;
-}
-
-
 DatabaseSnapshot::SharedMemory::~SharedMemory()
 {
 	ISC_STATUS_ARRAY statusVector;
@@ -318,7 +312,8 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 
 // DatabaseSnapshot class
 
-InitInstance<DatabaseSnapshot::SharedMemory> DatabaseSnapshot::dump;
+DatabaseSnapshot::SharedMemory* DatabaseSnapshot::dump = NULL;
+InitMutex<DatabaseSnapshot> DatabaseSnapshot::startup;
 
 
 DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
@@ -344,7 +339,10 @@ void DatabaseSnapshot::cleanup(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	dump().cleanup(tdbb);
+	if (dump)
+	{
+		dump->cleanup(tdbb);
+	}
 }
 
 int DatabaseSnapshot::blockingAst(void* ast_object)
@@ -439,8 +437,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	dbb->dbb_ast_flags |= DBB_monitor_off;
 
 	// Read the shared memory
+	fb_assert(dump);
 	ULONG dataSize = 0;
-	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump().readData(pool, dataSize));
+	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump->readData(pool, dataSize));
 	fb_assert(dataSize);
 
 	ClumpletReader reader(ClumpletReader::WideUnTagged, data, dataSize);
@@ -874,7 +873,10 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 		}
 	}
 
-	dump().writeData(tdbb, writer.getBufferLength(), writer.getBuffer());
+	startup.init();
+
+	fb_assert(dump);
+	dump->writeData(tdbb, writer.getBufferLength(), writer.getBuffer());
 }
 
 

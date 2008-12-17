@@ -76,7 +76,6 @@ class DatabaseSnapshot
 
 	public:
 		SharedMemory();
-		explicit SharedMemory(MemoryPool&);
 		~SharedMemory();
 
 		void acquire();
@@ -121,6 +120,11 @@ public:
 	static void cleanup(thread_db*);
 	static int blockingAst(void*);
 
+	static void init()
+	{
+		dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
+	}
+
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);
 
@@ -143,7 +147,8 @@ private:
 	static void putContextVars(Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
 	static void putMemoryUsage(const Firebird::MemoryStats&, Firebird::ClumpletWriter&, int, int);
 
-	static Firebird::InitInstance<SharedMemory> dump;
+	static SharedMemory* dump;
+	static Firebird::InitMutex<DatabaseSnapshot> startup;
 
 	Firebird::Array<RelationData> snapshot;
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
