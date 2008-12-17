@@ -1,3 +1,10 @@
+2008-12-17 13:08  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.81),
+	DatabaseSnapshot.h (1.24):
+
+	Sync with B2_1_Release.
+
 2008-12-16 16:17  roman-simakov
 
 	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.7),
