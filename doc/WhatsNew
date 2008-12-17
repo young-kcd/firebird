@@ -2,6 +2,11 @@
   * v2.1.2
   ***************************
 
+    * Fixed unregistered bug
+        Issue with @prefix@ in aliases.conf on MacOS
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
     * Bugfix CORE-2242
         The engine incorrectly fills BPB
       Contributor(s):
