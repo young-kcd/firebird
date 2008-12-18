@@ -60,7 +60,7 @@ private:
 	PFN m_ptr;
 };
 
-const char* KERNEL32_DLL = "kernel32.dll";
+const char* const KERNEL32_DLL = "kernel32.dll";
 
 
 class ContextActivator
