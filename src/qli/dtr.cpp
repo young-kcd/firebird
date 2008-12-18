@@ -54,6 +54,7 @@
 #include "../jrd/perf_proto.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
+#include "../jrd/align.h"
 
 using MsgFormat::SafeArg;
 
@@ -662,3 +663,14 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 	}
 }
 
+#ifdef DEV_BUILD
+void QLI_validate_desc(const dsc* d)
+{
+    fb_assert(d->dsc_dtype > dtype_unknown);
+    fb_assert(d->dsc_dtype < DTYPE_TYPE_MAX);
+    ULONG addr = (ULONG) (U_IPTR) (d->dsc_address);	// safely ignore higher bits even if present
+    USHORT ta = type_alignments[d->dsc_dtype];
+    if (ta > 1)
+	fb_assert((addr & (ta - 1)) == 0);
+}
+#endif

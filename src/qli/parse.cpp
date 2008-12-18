@@ -591,6 +591,7 @@ static qli_const* make_numeric_constant(const TEXT* string, USHORT length)
 		while (--length)
 			*p++ = *string++;
 	}
+	QLI_validate_desc(constant->con_desc);
 
 	return constant;
 }
@@ -2207,6 +2208,7 @@ static qli_const* parse_literal(void)
 		constant = (qli_const*) ALLOCDV(type_con, l);
 		constant->con_desc.dsc_dtype = dtype_text;
 		UCHAR* p = constant->con_desc.dsc_address = constant->con_data;
+		QLI_validate_desc(constant->con_desc);
 		if (constant->con_desc.dsc_length = l)
 			do {
 				*p++ = *q++;

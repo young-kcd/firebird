@@ -401,6 +401,7 @@ qli_nod* FMT_list(qli_nod* list)
 				value->nod_desc.dsc_length = name->sym_length;
 				value->nod_desc.dsc_address = (UCHAR *) name->sym_string;
 			}
+			QLI_validate_desc(value->nod_desc);
 			column = MAX(column, value->nod_desc.dsc_length);
 			new_item->itm_picture = PIC_analyze(0, &value->nod_desc);
 		}

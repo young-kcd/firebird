@@ -536,5 +536,12 @@ EXTERN qli_req*	QLI_requests;			// Requests in statement
 
 #include "../qli/all_proto.h"
 
+#ifdef DEV_BUILD
+void QLI_validate_desc(const dsc*);
+#else
+inline void QLI_validate_desc(const dsc*) { }
+#endif
+inline void QLI_validate_desc(const dsc& d) { QLI_validate_desc(&d); }
+
 #endif // QLI_DTR_H
 

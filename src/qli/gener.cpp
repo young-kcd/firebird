@@ -498,6 +498,7 @@ static void gen_any( qli_nod* node, qli_req* request)
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
 		desc.dsc_address = (UCHAR*) &value;
+		QLI_validate_desc(desc);
 
 		STUFF(blr_assignment);
 		value = TRUE;
@@ -1094,6 +1095,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
 		desc.dsc_address = (UCHAR*) &value;
+		QLI_validate_desc(desc);
 
 		STUFF(blr_assignment);
 		value = FALSE;
@@ -1497,8 +1499,8 @@ static void gen_request( qli_req* request)
 		STUFF(message->msg_number);
 		STUFF_WORD(message->msg_parameter);
 
-		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length);
-		message->msg_buffer = (UCHAR*) string->str_data;
+		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length + DOUBLE_ALIGN - 1);
+		message->msg_buffer = (UCHAR*) FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), DOUBLE_ALIGN);
 
 		for (param = message->msg_parameters; param; param = param->par_next) {
 			gen_descriptor(&param->par_desc, request);
