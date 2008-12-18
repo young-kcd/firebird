@@ -45,7 +45,7 @@ int main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.  
+ *	Top level routine.
  *
  **************************************/
 	SCHAR facility[20], newtext[256];
