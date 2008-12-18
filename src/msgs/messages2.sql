@@ -754,11 +754,10 @@ Data source : @4', NULL, NULL)
 ('sysf_argmustbe_nonneg', 'evlSqrt', 'evl.cpp', NULL, 0, 647, NULL, 'Argument for @1 must be zero or positive', NULL, NULL)
 ('sysf_binuuid_mustbe_str', 'evlUuidToChar', 'evl.cpp', NULL, 0, 648, NULL, 'Binary UUID argument for @1 must be of string type', NULL, NULL)
 ('sysf_binuuid_wrongsize', 'evlUuidToChar', 'evl.cpp', NULL, 0, 649, NULL, 'Binary UUID argument for @2 must use @1 bytes', NULL, NULL)
+-- End of extras for isc_expression_eval_err
 ('missing_required_spb', 'process_switches', 'svc.cpp', NULL, 0, 650, NULL, 'Missing required item @1 in service parameter block', NULL, NULL)
 ('net_server_shutdown', NULL, NULL, NULL, 0, 651, NULL, '@1 server is shutdown', NULL, NULL)
 ('bad_conn_str', NULL, NULL, NULL, 0, 652, NULL, 'Invalid connection string', NULL, NULL);
---('', '', 'evl.cpp', NULL, 0, , NULL, '', NULL, NULL)
--- End of extras for isc_expression_eval_err
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
