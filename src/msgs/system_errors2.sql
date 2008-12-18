@@ -653,7 +653,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-833, '42', '000', 0, 649, 'sysf_binuuid_wrongsize', NULL, NULL)
 (-902, 'HY', '000', 0, 650, 'missing_required_spb', NULL, NULL)
 (-902, '08', '006', 0, 651, 'net_server_shutdown', NULL, NULL)
-(-924, 'HY', '000', 0, 652, 'bad_conn_str', NULL, NULL)
+(-924, '08', '001', 0, 652, 'bad_conn_str', NULL, NULL)
 -- End of expression_eval_err subcodes
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
