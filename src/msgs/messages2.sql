@@ -3031,8 +3031,6 @@ Fetches = !f', NULL, NULL);
 ('USAGE_NODBTRIGGERS', 'ISQL_main', 'isql.epp', NULL, 17, 154, NULL, '	-nod(btriggers)         do not run database triggers', NULL, NULL);
 ('USAGE_TRUSTED', 'ISQL_main', 'isql.epp', NULL, 17, 155, NULL, '	-tr(usted)              use Windows trusted authentication', NULL, NULL);
 ('BULK_PROMPT', 'bulk_insert_hack', 'isql.epp', NULL, 17, 156, NULL, 'BULK> ', NULL, NULL);
--- Do not change the arguments of the previous ISQL messages.
--- Write the new ISQL messages here.
 ('NO_CONNECTED_USERS', 'SHOW_metadata', 'show.epp', NULL, 17, 157, NULL, 'There are no connected users', NULL, NULL);
 ('USERS_IN_DB', 'SHOW_metadata', 'show.epp', NULL, 17, 158, NULL, 'Users in the database', NULL, NULL);
 ('OUTPUT_TRUNCATED', 'SHOW_metadata', 'show.epp', NULL, 17, 159, NULL, 'Output was truncated', NULL, NULL);
@@ -3041,6 +3039,9 @@ Fetches = !f', NULL, NULL);
 ('PASS_FILE_OPEN', 'ISQL_main', 'isql.epp', NULL, 17, 162, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 ('PASS_FILE_READ', 'ISQL_main', 'isql.epp', NULL, 17, 163, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 ('EMPTY_PASS', 'ISQL_main', 'isql.epp', NULL, 17, 164, NULL, 'empty password file @1', NULL, NULL);
+('HLP_SETROWCOUNT', 'help', 'isql.epp', NULL, 17, 165, NULL, '    SET ROWCOUNT [<n>]     -- limit select stmt to <n> rows , zero is no limit', NULL, NULL);
+-- Do not change the arguments of the previous ISQL messages.
+-- Write the new ISQL messages here.
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
