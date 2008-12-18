@@ -138,6 +138,7 @@ const int HLP_SET					= 30;		// \tSET -- Display current options \n
 const int HLP_SETAUTO				= 31;		// \tSET AUTOcommit  -- toggle autocommit of DDL statments\n
 const int HLP_SETBLOB				= 32;		// \tSET BLOBdisplay [ALL|N]-- Display blobs of type N\n\t SET BLOB turns off blob display\n
 const int HLP_SETCOUNT				= 33;		// \tSET COUNT  -- toggle count of selected rows on/off \n
+const int HLP_SETROWCOUNT			= 165;		// \tSET ROWCOUNT [N] -- limits the number of rows returned, zero is no limit \n
 const int HLP_SETECHO				= 34;		// \tSET ECHO  -- toggle command echo on/off \n
 const int HLP_SETSTAT				= 35;		// \tSET STATs -- toggles performance statistics display\n
 const int HLP_SETTERM				= 36;		// \tSET TERM <string> -- changes termination character\n

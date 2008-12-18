@@ -335,6 +335,7 @@ static processing_state newdb(TEXT*, const TEXT*, const TEXT*, int, const TEXT*,
 static processing_state newinput(const TEXT*);
 static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
+static processing_state newRowCount(const TEXT* newRowCountStr);
 static processing_state newtrans(const TEXT*);
 static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
 #ifdef DEV_BUILD
@@ -412,6 +413,7 @@ static SLONG fetch_offset = 1;
 static int Doblob = 1;		// Default to printing only text types
 static bool List = false;
 static bool Docount = false;
+static size_t rowCount = 0;
 static bool Plan = false;
 static bool Planonly = false;
 static bool Heading = true;
@@ -4947,7 +4949,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			sqlda_display,
 //#endif
 			sql, warning, generator, statistics, heading, bail,
-			bulk_insert, wrong
+			bulk_insert, wrong, rowcount
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -4983,6 +4985,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::heading, "HEADING", 0},
 		{SetOptions::bail, "BAIL", 0},
 		{SetOptions::bulk_insert, "BULK_INSERT", 0},
+		{SetOptions::rowcount, "ROWCOUNT", 0},
 	};
 
 	// Display current set options
@@ -5129,6 +5132,10 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			ret = ps_ERR;
 		break;
 		
+	case SetOptions::rowcount:
+		ret = newRowCount((*lparms[2]) ? lparms[2] : "0");
+		break;
+
 	default:
 		{
 			TEXT msg_string[MSG_LENGTH];
@@ -6018,7 +6025,9 @@ static processing_state print_sets()
 	print_set("Print statistics:", Stats);
 	print_set("Echo commands:", Echo);
 	print_set("List format:", List);
-	print_set("Row Count:", Docount);
+	print_set("List Row Count:", Docount);
+	//print_set("Row Count:", Docount);   // Changed print to the above to avoid confusion with next one
+	isqlGlob.printf("%-25s%lu%s", "Select rowcount limit:", rowCount, NEWLINE);
 	print_set("Autocommit DDL:", Autocommit);
 #ifdef SCROLLABLE_CURSORS
 	print_set("Autofetch records:", Autofetch);
@@ -6110,6 +6119,7 @@ static processing_state help(const TEXT* what)
 		HLP_SETBLOB,			//	SET BLOB [ALL|<n>]		-- display BLOBS of subtype <n> or ALL
 		HLP_SETBLOB2,			//	SET BLOB				-- turn off BLOB display
 		HLP_SETCOUNT,			//	SET COUNT				-- toggle count of selected rows on/off
+		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n> zero is no limit
 		HLP_SETECHO,			//	SET ECHO				-- toggle command echo on/off
 		HLP_SETHEADING,			//  SET HEADING 	        -- toggle column titles display on/off
 		HLP_SETLIST,			//	SET LIST				-- toggle column or table display format
@@ -6565,6 +6575,58 @@ static processing_state newsize(const TEXT* colname,
 
 	// We don't care if it was insertion or replacement.
 	global_Cols.put(colname, size);
+	return SKIP;
+}
+
+static processing_state newRowCount(const TEXT* newRowCountStr)
+{
+/**************************************
+ *
+ *	newRowCount
+ *
+ **************************************
+ *
+ * Functional description
+ *	Add a column name and print width to collist
+ *
+ **************************************/
+
+	char*p;
+
+	errno =0;
+	const long newRowCount = strtol(newRowCountStr, &p, 0);
+	// I was going to use this one, but "-1" parses as max ulong without error and it would be politer to give an error.
+	//const ULONG newRowCount = strtoul(newRowCountStr, &p, 0);
+
+	if (newRowCount < 0)
+	{
+		isqlGlob.printf("The value (%s) for rowcount must be zero or greater", newRowCountStr);
+	        isqlGlob.printf(NEWLINE);
+		return ps_ERR;
+	}
+
+	if (errno)
+	{
+		switch (errno)
+		{
+		case ERANGE:
+			isqlGlob.printf("Unable to convert %s to a number for rowcount ", newRowCountStr);
+	        	isqlGlob.printf(NEWLINE);
+			break;
+		case EINVAL:
+			isqlGlob.printf("Value %s for rowcount is out of range max value is %l", newRowCountStr,LLONG_MAX );
+	        	isqlGlob.printf(NEWLINE);
+			break;
+		default:
+			isqlGlob.printf("Unable to process %s as new limit for rowcount", newRowCountStr);
+	        	isqlGlob.printf(NEWLINE);
+			break;
+		}
+
+		return ps_ERR;
+	}
+
+	rowCount = newRowCount;
 	return SKIP;
 }
 
@@ -8488,6 +8550,10 @@ static int process_statement(const TEXT* string,
 		const bool printHead = !List && Heading;
 		unsigned int lines;
 		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines) {
+
+			// Check if exceeded rowCount value
+			if (rowCount != 0 && lines >= rowCount)
+				break;
 
 			// Fetch the current cursor 
 
