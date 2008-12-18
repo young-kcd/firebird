@@ -34,6 +34,7 @@
 #include "../qli/forma_proto.h"
 #include "../qli/meta_proto.h"
 #include "../jrd/dsc_proto.h"
+#include "../jrd/align.h"
 
 const USHORT PROMPT_LENGTH	= 80;
 
@@ -114,8 +115,10 @@ void CMP_alloc_temp(qli_nod* node)
 	if (node->nod_desc.dsc_address)
 		return;
 
-	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length);
-	node->nod_desc.dsc_address = (UCHAR *) string->str_data;
+	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length + 
+					     type_alignments[node->nod_desc.dsc_dtype]);
+	node->nod_desc.dsc_address = (UCHAR *) FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), type_alignments[node->nod_desc.dsc_dtype]);
+	QLI_validate_desc(node->nod_desc);
 }
 
 
@@ -432,6 +435,7 @@ static qli_nod* compile_edit( qli_nod* node, qli_req* request)
 	node->nod_desc.dsc_dtype = dtype_blob;
 	node->nod_desc.dsc_length = 8;
 	node->nod_desc.dsc_address = (UCHAR *) & node->nod_arg[e_edt_id1];
+	QLI_validate_desc(node->nod_desc);
 
 	return node;
 }
@@ -667,6 +671,7 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	case nod_variable:
 		field = (qli_fld*) node->nod_arg[e_fld_field];
 		node->nod_desc.dsc_address = field->fld_data;
+		QLI_validate_desc(node->nod_desc);
 		make_descriptor(node, &node->nod_desc);
 		if (internal_flag)
 		{
@@ -1125,6 +1130,7 @@ static qli_nod* compile_prompt( qli_nod* node)
 	node->nod_desc.dsc_dtype = dtype_varying;
 	node->nod_desc.dsc_length = prompt_length;
 	node->nod_desc.dsc_address = (UCHAR *) string->str_data;
+	QLI_validate_desc(node->nod_desc);
 
 	return node;
 }

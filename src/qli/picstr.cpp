@@ -575,6 +575,7 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	temp_desc.dsc_sub_type = 0;
 	temp_desc.dsc_length = sizeof(date);
 	temp_desc.dsc_address = (UCHAR *) date;
+	QLI_validate_desc(temp_desc);
 	MOVQ_move(desc, &temp_desc);
 
     tm times;

@@ -2766,6 +2766,7 @@ static qli_nod* possible_literal(qli_syntax* input,
 	constant->con_desc.dsc_dtype = dtype_text;
 	constant->con_desc.dsc_length = l;
 	constant->con_desc.dsc_address = constant->con_data;
+	QLI_validate_desc(constant->con_desc);
 	TEXT* p = (TEXT*) constant->con_data;
 	const TEXT* q = name->nam_string;
 

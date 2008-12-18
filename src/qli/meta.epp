@@ -3248,6 +3248,7 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		constant->con_desc.dsc_scale = scale;
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = p = constant->con_data;
+		QLI_validate_desc(constant->con_desc);
 		if (dtype == dtype_text)
 			while (l--)
 				*p++ = BLR_BYTE;
