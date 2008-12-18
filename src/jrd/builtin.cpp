@@ -107,8 +107,7 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 /* Scan the list for a matching (module, entrypoint) name */
 
 	for (const FN* function = isc_builtin_functions; function->fn_module; ++function) {
-		if (!strcmp(temp, function->fn_module)
-			&& !strcmp(ep, function->fn_entrypoint))
+		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
 		}

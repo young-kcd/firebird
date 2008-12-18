@@ -47,8 +47,7 @@ void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& d
 	const UCHAR* const end = data + length;
 	bool bad_format = false;
 
-	if ((*data++ != fb_dbg_version) ||
-		(end[-1] != fb_dbg_end)		||
+	if ((*data++ != fb_dbg_version) || (end[-1] != fb_dbg_end) ||
 		(*data++ != CURRENT_DBG_INFO_VERSION))
 	{
 		bad_format = true;

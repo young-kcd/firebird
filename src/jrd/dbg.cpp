@@ -431,8 +431,7 @@ int DBG_block(BLK block)
 	}
 
 	/*
-	if (block->blk_type <= (SCHAR) type_MIN
-		|| block->blk_type >= (SCHAR) type_MAX)
+	if (block->blk_type <= (SCHAR) type_MIN || block->blk_type >= (SCHAR) type_MAX)
 	{
 		fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block,
 				   block->blk_type);
@@ -576,11 +575,9 @@ int DBG_check(int pool_id)
 					++corrupt;
 					break;
 				}
-				if (block->blk_type <= (SCHAR) type_MIN
-					|| block->blk_type >= (SCHAR) type_MAX)
+				if (block->blk_type <= (SCHAR) type_MIN || block->blk_type >= (SCHAR) type_MAX)
 				{
-					fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n",
-							   block, block->blk_type);
+					fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block, block->blk_type);
 					++corrupt;
 					break;
 				}

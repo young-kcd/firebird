@@ -377,9 +377,8 @@ inline bool dsc::isTextBlob() const
 
 inline bool dsc::isMetadataBlob() const
 {
-	return isBlob()
-		&& dsc_sub_type >= isc_blob_blr
-		&& dsc_sub_type < isc_blob_max_predefined_subtype;
+	return isBlob() && dsc_sub_type >= isc_blob_blr &&
+		dsc_sub_type < isc_blob_max_predefined_subtype;
 }
 
 inline bool dsc::isReservedBlob() const
@@ -449,9 +448,7 @@ inline bool dsc::isApprox() const
 // To avoid confusion, the new function was renamed.
 inline bool dsc::isANumber() const
 {
-	return dsc_dtype >= dtype_byte
-		&& dsc_dtype <= dtype_double
-		|| dsc_dtype == dtype_int64;
+	return dsc_dtype >= dtype_byte && dsc_dtype <= dtype_double || dsc_dtype == dtype_int64;
 }
 
 
