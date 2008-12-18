@@ -1143,8 +1143,8 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 		const USHORT impl_class_nr = *implementations++;
 		const int l = *versions++; // it was UCHAR
 		const TEXT* implementation_string;
-		if (implementation_nr >= FB_NELEM(impl_implementation)
-			|| !(implementation_string = impl_implementation[implementation_nr]))
+		if (implementation_nr >= FB_NELEM(impl_implementation) ||
+			!(implementation_string = impl_implementation[implementation_nr]))
 		{
 			implementation_string = "**unknown**";
 		}

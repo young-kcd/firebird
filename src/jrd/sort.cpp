@@ -814,8 +814,8 @@ void SORT_put(thread_db* tdbb, sort_context* scb, ULONG ** record_address)
 	// Check that we are not at the beginning of the buffer in addition
 	// to checking for space for the record. This avoids the pointer
 	// record from underflowing in the second condition.
-	if ((BLOB_PTR *) record < (BLOB_PTR *) (scb->scb_memory + scb->scb_longs)
-		|| (BLOB_PTR *) NEXT_RECORD(record) <= (BLOB_PTR *) (scb->scb_next_pointer + 1))
+	if ((BLOB_PTR *) record < (BLOB_PTR *) (scb->scb_memory + scb->scb_longs) ||
+		(BLOB_PTR *) NEXT_RECORD(record) <= (BLOB_PTR *) (scb->scb_next_pointer + 1))
 	{
 		put_run(scb);
 		while (true) {
@@ -1630,10 +1630,8 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			// check for end-of-file condition in either direction
 
 #ifdef SCROLLABLE_CURSORS
-			if (
-				(mode == RSE_get_backward
-				 && run->run_records >= run->run_max_records - 1)
-				|| (mode == RSE_get_forward && run->run_records == 0))
+			if ((mode == RSE_get_backward && run->run_records >= run->run_max_records - 1) ||
+				(mode == RSE_get_forward && run->run_records == 0))
 #else
 			if (run->run_records == 0)
 #endif
