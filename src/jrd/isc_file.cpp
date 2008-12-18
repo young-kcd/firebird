@@ -163,10 +163,10 @@ extern "C" int mntctl(int, size_t, void*);
 using namespace Firebird;
 
 namespace {
-    typedef Firebird::PathName tstring;
-    typedef tstring::size_type size;
-    typedef tstring::iterator iter;
-    const size npos = tstring::npos;
+	typedef Firebird::PathName tstring;
+	typedef tstring::size_type size;
+	typedef tstring::iterator iter;
+	const size npos = tstring::npos;
 
 #ifndef NO_NFS
 	class osMtab
@@ -250,8 +250,8 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
  *
  **************************************/
 
-    // If we are ignoring NFS remote mounts then do not bother checking here
-    // and pretend it's only local. MOD 16-Nov-2002
+	// If we are ignoring NFS remote mounts then do not bother checking here
+	// and pretend it's only local. MOD 16-Nov-2002
 
 	if (Config::getRemoteFileOpenAbility()) {
 		return false;
@@ -274,9 +274,9 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		// if the whole mount point is not contained in the expanded_filename
 		// or the mount point is not a valid pathname in the expanded_filename,
 		// skip it
-		if (expanded_filename.length() <= mount.mount.length()
-			|| expanded_filename.compare(0, mount.mount.length(), mount.mount) != 0
-			|| expanded_filename[mount.mount.length()] != '/')
+		if (expanded_filename.length() <= mount.mount.length() ||
+			expanded_filename.compare(0, mount.mount.length(), mount.mount) != 0 ||
+			expanded_filename[mount.mount.length()] != '/')
 		{
 			if (mount.mount == "/" && mount.path.hasData())
 			{
@@ -1652,7 +1652,7 @@ bool Mnt::get()
 		   NFS mount points */
 
 /****
-    if (strcmp (type, "nfs"))
+	if (strcmp (type, "nfs"))
 	continue;
 ****/
 
@@ -1761,8 +1761,8 @@ static void share_name_from_resource(tstring& file_name,
 		\\NODE and it contains a ':', then it's probably an NFS mounted drive.
 		Therefore we must convert any back slashes to forward slashes. */
 
-		if ((file_name[0] != '\\' || file_name[1] != '\\')
-			&& (file_name.find(INET_FLAG) != npos))
+		if ((file_name[0] != '\\' || file_name[1] != '\\') &&
+			(file_name.find(INET_FLAG) != npos))
 		{
 			for (q = file_name.begin(); q < file_name.end(); ++q)
 			{
@@ -1870,28 +1870,34 @@ void ISC_escape(PathName& pathName)
 }
 
 
+// Adapted from macro in ICU headers.
+static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
+{
+	if ((unsigned int) c <= 0x7f) {
+		s[i++] = (unsigned char) c;
+	}
+	else {
+		if ((unsigned int) c <= 0x7ff) {
+			s[i++] = (unsigned char) ((c >> 6) | 0xc0);
+		}
+		else {
+			if ((unsigned int) c <= 0xffff) {
+				s[i++] = (unsigned char) ((c >> 12) | 0xe0);
+			}
+			else {
+				s[i++] = (unsigned char) ((c >> 18) | 0xf0);
+				s[i++] = (unsigned char) (((c >> 12) & 0x3f) | 0x80);
+			}
+			s[i++] = (unsigned char) (((c >> 6) & 0x3f) | 0x80);
+		}
+		s[i++] = (unsigned char) ((c & 0x3f) | 0x80);
+	}
+}
+
+
 // Unescape Unicode characters from a PathName
 void ISC_unescape(PathName& pathName)
 {
-// Macro copied from ICU headers.
-#define U8_APPEND_UNSAFE(s, i, c) { \
-    if((unsigned int)(c)<=0x7f) { \
-        (s)[(i)++]=(unsigned char)(c); \
-    } else { \
-        if((unsigned int)(c)<=0x7ff) { \
-            (s)[(i)++]=(unsigned char)(((c)>>6)|0xc0); \
-        } else { \
-            if((unsigned int)(c)<=0xffff) { \
-                (s)[(i)++]=(unsigned char)(((c)>>12)|0xe0); \
-            } else { \
-                (s)[(i)++]=(unsigned char)(((c)>>18)|0xf0); \
-                (s)[(i)++]=(unsigned char)((((c)>>12)&0x3f)|0x80); \
-            } \
-            (s)[(i)++]=(unsigned char)((((c)>>6)&0x3f)|0x80); \
-        } \
-        (s)[(i)++]=(unsigned char)(((c)&0x3f)|0x80); \
-    } \
-}
 
 	size_t pos = 0;
 	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
@@ -1907,11 +1913,11 @@ void ISC_unescape(PathName& pathName)
 			char sCode[5];
 			memcpy(sCode, p + 1, 4);
 			sCode[4] = '\0';
-			int code = strtol(sCode, NULL, 16);
+			const int code = strtol(sCode, NULL, 16);
 
 			char unicode[4];
 			int len = 0;
-			U8_APPEND_UNSAFE(unicode, len, code);
+			FB_U8_APPEND_UNSAFE(unicode, len, code);
 
 			pathName.replace(pos, 5, PathName(unicode, len));
 			pos += len;

@@ -1271,8 +1271,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	}
 
 /* If hdr_read_only is not set... */
-	if (!(header->hdr_flags & hdr_read_only)
-		&& (dbb->dbb_flags & DBB_being_opened_read_only))
+	if (!(header->hdr_flags & hdr_read_only) && (dbb->dbb_flags & DBB_being_opened_read_only))
 	{
 		/* Looks like the Header page says, it is NOT ReadOnly!! But the database
 		 * file system permission gives only ReadOnly access. Punt out with

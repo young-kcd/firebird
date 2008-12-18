@@ -2248,10 +2248,8 @@ static jrd_nod* par_relation(
 
 /* Scan the relation if it hasn't already been scanned for meta data */
 
-	if ((!(relation->rel_flags & REL_scanned)
-		 || (relation->rel_flags & REL_being_scanned))
-		&& ((relation->rel_flags & REL_force_scan)
-			|| !(csb->csb_g_flags & csb_internal)))
+	if ((!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned)) &&
+		((relation->rel_flags & REL_force_scan) || !(csb->csb_g_flags & csb_internal)))
 	{
 		relation->rel_flags &= ~REL_force_scan;
 		MET_scan_relation(tdbb, relation);
@@ -2349,9 +2347,8 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			{
 				const USHORT jointype = (USHORT) BLR_BYTE;
 				rse->rse_jointype = jointype;
-				if (jointype != blr_inner
-					&& jointype != blr_left && jointype != blr_right
-					&& jointype != blr_full)
+				if (jointype != blr_inner && jointype != blr_left && jointype != blr_right &&
+					jointype != blr_full)
 				{
 					PAR_syntax_error(csb, "join type clause");
 				}

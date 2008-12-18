@@ -1265,8 +1265,8 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 		tail < opt_end; tail++)
 	{
 		jrd_nod* node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-			&& OPT_computable(csb, node, -1, true, false))
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(csb, node, -1, true, false))
 		{
 			n += match_index(tdbb, opt, stream, node, idx);
 		}
@@ -1560,12 +1560,10 @@ static void check_sorts(RecordSelExpr* rse)
 			const jrd_nod* const* const project_end = project_ptr + sort->nod_count;
 			for (; project_ptr < project_end; project_ptr++)
 			{
-				if ((*sort_ptr)->nod_type == nod_field
-					&& (*project_ptr)->nod_type == nod_field
-					&& (*sort_ptr)->nod_arg[e_fld_stream] ==
-					(*project_ptr)->nod_arg[e_fld_stream]
-					&& (*sort_ptr)->nod_arg[e_fld_id] ==
-					(*project_ptr)->nod_arg[e_fld_id])
+				if ((*sort_ptr)->nod_type == nod_field &&
+					(*project_ptr)->nod_type == nod_field &&
+					(*sort_ptr)->nod_arg[e_fld_stream] == (*project_ptr)->nod_arg[e_fld_stream] &&
+					(*sort_ptr)->nod_arg[e_fld_id] == (*project_ptr)->nod_arg[e_fld_id])
 				{
 					break;
 				}
@@ -3848,8 +3846,7 @@ static bool form_river(thread_db*		tdbb,
 	}
 
 	// determine whether the rsb we just made should be marked as a projection.
-	if (rsb && rsb->rsb_arg[0]
-		&& ((RecordSource*) rsb->rsb_arg[0])->rsb_flags & rsb_project)
+	if (rsb && rsb->rsb_arg[0] && ((RecordSource*) rsb->rsb_arg[0])->rsb_flags & rsb_project)
 	{
 		rsb->rsb_flags |= rsb_project;
 	}
@@ -4429,21 +4426,20 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 			if (!OPT_expression_equal(tdbb, opt, idx, node, stream))
 				return NULL;
 		}
-		else if (node->nod_type != nod_field
-			|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
-			|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field )
+		else if (node->nod_type != nod_field ||
+			(USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream ||
+			(USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field )
 		{
 			return NULL;
 		}
 
 		const IPTR temp = reinterpret_cast<IPTR>(ptr[2 * sort->nod_count]);
 		// for ODS11 default nulls placement always may be matched to index
-		if (
-			(dbb->dbb_ods_version >= ODS_VERSION11 && (
-			  (temp == rse_nulls_first && ptr[sort->nod_count])
-			    || (temp == rse_nulls_last && !ptr[sort->nod_count])))
+		if ((dbb->dbb_ods_version >= ODS_VERSION11 &&
+			((temp == rse_nulls_first && ptr[sort->nod_count]) ||
+			    (temp == rse_nulls_last && !ptr[sort->nod_count]))) ||
 			// for ODS10 and earlier indices always placed nulls at the end of dataset
-			|| (dbb->dbb_ods_version < ODS_VERSION11 && temp == rse_nulls_first)
+			(dbb->dbb_ods_version < ODS_VERSION11 && temp == rse_nulls_first)
 #ifndef SCROLLABLE_CURSORS
 			|| (ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
 			|| (!ptr[sort->nod_count] && (idx->idx_flags & idx_descending))
@@ -4457,10 +4453,9 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 		// determine whether we ought to navigate backwards or forwards through
 		// the index--we can't allow navigating one index in two different directions
 		// on two different fields at the same time!
-		mode = ((ptr[sort->nod_count] && !(idx->idx_flags & idx_descending))
-				|| (!ptr[sort->nod_count]
-					&& (idx->idx_flags & idx_descending))) ?
-						RSE_get_backward : RSE_get_forward;
+		mode = ((ptr[sort->nod_count] && !(idx->idx_flags & idx_descending)) ||
+				(!ptr[sort->nod_count] && (idx->idx_flags & idx_descending))) ?
+					RSE_get_backward : RSE_get_forward;
 		if (last_mode == RSE_get_next) {
 			last_mode = mode;
 		}
@@ -5124,8 +5119,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (!relation->rel_file && !relation->isVirtual()) {
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-			&& OPT_computable(csb, node, -1, false, false))
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(csb, node, -1, false, false))
 		{
 			// Don't waste time trying to match OR to available indices
 			// if we already have an excellent match
@@ -5316,9 +5311,9 @@ static RecordSource* gen_sort(thread_db* tdbb,
 				for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++)
 				{
 					jrd_nod* node = *node_ptr;
-					if (node->nod_type == nod_field
-						&& (USHORT)(IPTR) node->nod_arg[e_fld_stream] == *ptr
-						&& (USHORT)(IPTR) node->nod_arg[e_fld_id] == id)
+					if (node->nod_type == nod_field &&
+						(USHORT)(IPTR) node->nod_arg[e_fld_stream] == *ptr &&
+						(USHORT)(IPTR) node->nod_arg[e_fld_id] == id)
 					{
 						dsc* desc = &descriptor;
 						CMP_get_desc(tdbb, csb, node, desc);
@@ -5641,8 +5636,8 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 				if (river_reference(river2, node2)) {
 					for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 					{
-						if (node_equality(node1, classes[river1->riv_number])
-							|| node_equality(node2, classes[river2->riv_number]))
+						if (node_equality(node1, classes[river1->riv_number]) ||
+							node_equality(node2, classes[river2->riv_number]))
 						{
 							break;
 						}
@@ -6239,8 +6234,8 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++)
 		{
 			jrd_nod* node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used)
-				&& OPT_computable(csb, node, -1, false, false))
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				OPT_computable(csb, node, -1, false, false))
 			{
 				// AB: Why only check for AND structures ?
 				// Added match_indices for support of "OR" with INNER JOINs */
@@ -6735,22 +6730,21 @@ static jrd_nod* make_starts(thread_db* tdbb,
 		if (value->nod_type == nod_literal)
 		{
 			const dsc* literal_desc = &((Literal*) value)->lit_desc;
-			if ((literal_desc->dsc_dtype == dtype_text &&
-				 literal_desc->dsc_length == 0) ||
+			if ((literal_desc->dsc_dtype == dtype_text && literal_desc->dsc_length == 0) ||
 				(literal_desc->dsc_dtype == dtype_varying &&
-				 literal_desc->dsc_length == sizeof(USHORT)))
+				literal_desc->dsc_length == sizeof(USHORT)))
 			{
 				return NULL;
 			}
 		}
 
 		if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
-			(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field
-			|| !(idx->idx_rpt[0].idx_itype == idx_string
-				 || idx->idx_rpt[0].idx_itype == idx_byte_array
-				 || idx->idx_rpt[0].idx_itype == idx_metadata
-				 || idx->idx_rpt[0].idx_itype >= idx_first_intl_string)
-			|| !OPT_computable(opt->opt_csb, value, stream, false, false))
+			(USHORT)(IPTR) field->nod_arg[e_fld_id] != idx->idx_rpt[0].idx_field ||
+			!(idx->idx_rpt[0].idx_itype == idx_string ||
+				idx->idx_rpt[0].idx_itype == idx_byte_array ||
+				idx->idx_rpt[0].idx_itype == idx_metadata ||
+				idx->idx_rpt[0].idx_itype >= idx_first_intl_string) ||
+			!OPT_computable(opt->opt_csb, value, stream, false, false))
 		{
 			return NULL;
 		}
@@ -6816,13 +6810,13 @@ static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const jrd_no
 		if (map_from->nod_type != nod_field || map_to->nod_type != nod_field) {
 			continue;
 		}
-		if (field1->nod_arg[e_fld_stream] != map_from->nod_arg[e_fld_stream]
-			|| field1->nod_arg[e_fld_id] != map_from->nod_arg[e_fld_id])
+		if (field1->nod_arg[e_fld_stream] != map_from->nod_arg[e_fld_stream] ||
+			field1->nod_arg[e_fld_id] != map_from->nod_arg[e_fld_id])
 		{
 			continue;
 		}
-		if (field2->nod_arg[e_fld_stream] != map_to->nod_arg[e_fld_stream]
-			|| field2->nod_arg[e_fld_id] != map_to->nod_arg[e_fld_id])
+		if (field2->nod_arg[e_fld_stream] != map_to->nod_arg[e_fld_stream] ||
+			field2->nod_arg[e_fld_id] != map_to->nod_arg[e_fld_id])
 		{
 			continue;
 		}
@@ -7154,17 +7148,17 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 	}
 	switch (node1->nod_type) {
 		case nod_field:
-			return (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream]
-					&& node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]);
+			return (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream] &&
+					node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]);
 		case nod_equiv:
 		case nod_eql:
-			if (node_equality(node1->nod_arg[0], node2->nod_arg[0])
-				&& node_equality(node1->nod_arg[1], node2->nod_arg[1]))
+			if (node_equality(node1->nod_arg[0], node2->nod_arg[0]) &&
+				node_equality(node1->nod_arg[1], node2->nod_arg[1]))
 			{
 				return true;
 			}
-			if (node_equality(node1->nod_arg[0], node2->nod_arg[1])
-				&& node_equality(node1->nod_arg[1], node2->nod_arg[0]))
+			if (node_equality(node1->nod_arg[0], node2->nod_arg[1]) &&
+				 node_equality(node1->nod_arg[1], node2->nod_arg[0]))
 			{
 				return true;
 			}
@@ -7647,12 +7641,10 @@ static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause,
 		for (const jrd_nod* const* const to_end =
 			 to_ptr + from_clause->nod_count; to_ptr < to_end; to_ptr++)
 		{
-			if ((map && map_equal(*to_ptr, *from_ptr, map))
-				|| (!map
-					&& (*from_ptr)->nod_arg[e_fld_stream] ==
-					(*to_ptr)->nod_arg[e_fld_stream]
-					&& (*from_ptr)->nod_arg[e_fld_id] ==
-					(*to_ptr)->nod_arg[e_fld_id]))
+			if ((map && map_equal(*to_ptr, *from_ptr, map)) ||
+				(!map &&
+					(*from_ptr)->nod_arg[e_fld_stream] == (*to_ptr)->nod_arg[e_fld_stream] &&
+					(*from_ptr)->nod_arg[e_fld_id] == (*to_ptr)->nod_arg[e_fld_id]))
 			{
 				jrd_nod* swap = *to_swap;
 				*to_swap = *to_ptr;

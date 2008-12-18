@@ -1397,22 +1397,24 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 					break;
 				}
 			}
-			else if (node->nod_type != nod_field
-				|| (USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream
-				|| (USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field)
+			else if (node->nod_type != nod_field ||
+				(USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream ||
+				(USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field)
 			{
 				usableIndex = false;
 				break;
 			}
 
-			if ((ptr[sortPtr->nod_count] && !(idx->idx_flags & idx_descending))
-				|| (!ptr[sortPtr->nod_count] && (idx->idx_flags & idx_descending))
+			if ((ptr[sortPtr->nod_count] && !(idx->idx_flags & idx_descending)) ||
+				(!ptr[sortPtr->nod_count] && (idx->idx_flags & idx_descending)) ||
 				// for ODS11 default nulls placement always may be matched to index
-				|| (database->dbb_ods_version >= ODS_VERSION11 && (
-					(reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first && ptr[sortPtr->nod_count])
-					|| (reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last && !ptr[sortPtr->nod_count])))
+				(database->dbb_ods_version >= ODS_VERSION11 &&
+					((reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first &&
+						ptr[sortPtr->nod_count]) ||
+						(reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last &&
+						!ptr[sortPtr->nod_count]))) ||
 				// for ODS10 and earlier indices always placed nulls at the end of dataset
-				|| (database->dbb_ods_version < ODS_VERSION11 &&
+				(database->dbb_ods_version < ODS_VERSION11 &&
 					reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first) )
 			{
 				usableIndex = false;
@@ -2801,8 +2803,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 		// don't bother using an index in that case.
 		if (value->nod_type == nod_literal) {
 			const dsc* literal_desc = &((Literal*) value)->lit_desc;
-			if ((literal_desc->dsc_dtype == dtype_text &&
-				literal_desc->dsc_length == 0) ||
+			if ((literal_desc->dsc_dtype == dtype_text && literal_desc->dsc_length == 0) ||
 				(literal_desc->dsc_dtype == dtype_varying &&
 				literal_desc->dsc_length == sizeof(USHORT)))
 			{
@@ -2813,12 +2814,12 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 		// AB: Check if the index-segment is usable for using starts.
 		// Thus it should be of type string, etc...
 		if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
-			(USHORT)(IPTR) field->nod_arg[e_fld_id] != indexScratch->idx->idx_rpt[segment].idx_field
-			|| !(indexScratch->idx->idx_rpt[segment].idx_itype == idx_string
-				|| indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array
-				|| indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata
-				|| indexScratch->idx->idx_rpt[segment].idx_itype >= idx_first_intl_string)
-			|| !OPT_computable(optimizer->opt_csb, value, stream, false, false))
+			(USHORT)(IPTR) field->nod_arg[e_fld_id] != indexScratch->idx->idx_rpt[segment].idx_field ||
+			!(indexScratch->idx->idx_rpt[segment].idx_itype == idx_string ||
+				indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array ||
+				indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata ||
+				indexScratch->idx->idx_rpt[segment].idx_itype >= idx_first_intl_string) ||
+			!OPT_computable(optimizer->opt_csb, value, stream, false, false))
 		{
 			return false;
 		}
