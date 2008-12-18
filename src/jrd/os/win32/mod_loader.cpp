@@ -92,9 +92,11 @@ public:
 				(0, NULL, 
 				ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION, 
 #if _MSC_VER == 1400
-				"msvcr80.dll",
+                    "msvcr80.dll",
+#elif _MSC_VER == 1500
+                    "msvcr90.dll",
 #else
-				#error Specify CRT DLL name here !
+                    #error Specify CRT DLL name here !
 #endif
 				&ackd))
 		{
