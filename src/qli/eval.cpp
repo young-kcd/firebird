@@ -331,6 +331,7 @@ dsc* EVAL_parameter(qli_par* parameter)
 	}
 
 	desc->dsc_address = message->msg_buffer + parameter->par_offset;
+	QLI_validate_desc(desc);
 
 	return desc;
 }

@@ -1042,6 +1042,7 @@ static void map_data( qli_msg* message)
 	{
 		dsc* desc = &parameter->par_desc;
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
+		QLI_validate_desc(desc);
 		qli_par* missing_parameter = parameter->par_missing;
 		if (missing_parameter) {
 			USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);

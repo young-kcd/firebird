@@ -325,6 +325,7 @@ double MOVQ_date_to_double(const dsc* desc)
 		temp_desc.dsc_sub_type = 0;
 		date = temp;
 		temp_desc.dsc_address = (UCHAR *) date;
+		QLI_validate_desc(temp_desc);
 		MOVQ_move(desc, &temp_desc);
 	}
 
@@ -657,6 +658,7 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp,
 	temp_desc.dsc_scale = 0;
 	temp_desc.dsc_dtype = dtype_varying;
 	temp_desc.dsc_sub_type = ttype_ascii;
+	QLI_validate_desc(temp_desc);
 	MOVQ_move(desc, &temp_desc);
 	*address = temp->vary_string;
 
@@ -1031,6 +1033,7 @@ static void sql_date_to_text( const SLONG date[1], DSC* to)
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
+	QLI_validate_desc(desc);
 
 	MOVQ_move(&desc, to);
 }
@@ -1070,6 +1073,7 @@ static void sql_time_to_text( const ULONG date[1], DSC* to)
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
+	QLI_validate_desc(desc);
 
 	MOVQ_move(&desc, to);
 }
@@ -1111,6 +1115,7 @@ static void timestamp_to_text( const SLONG date[2], DSC* to)
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
+	QLI_validate_desc(desc);
 
 	MOVQ_move(&desc, to);
 }
@@ -1202,6 +1207,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	intermediate.dsc_scale = scale;
 	intermediate.dsc_sub_type = 0;
 	intermediate.dsc_address = (UCHAR *) &n;
+	QLI_validate_desc(intermediate);
 
 	MOVQ_move(from, &intermediate);
 
