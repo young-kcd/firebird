@@ -69,7 +69,7 @@ void Spinlock::init()
 			return;
 		}
 		SetCriticalSectionSpinCount =
-			(tSetCriticalSectionSpinCount *) GetProcAddress(kernel32, "SetCriticalSectionSpinCount");
+			(tSetCriticalSectionSpinCount*) GetProcAddress(kernel32, "SetCriticalSectionSpinCount");
 		if (!SetCriticalSectionSpinCount) {
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;

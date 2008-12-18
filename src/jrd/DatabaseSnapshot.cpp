@@ -345,6 +345,7 @@ void DatabaseSnapshot::cleanup(thread_db* tdbb)
 	}
 }
 
+
 int DatabaseSnapshot::blockingAst(void* ast_object)
 {
 	Database* dbb = static_cast<Database*>(ast_object);

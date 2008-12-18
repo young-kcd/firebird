@@ -697,8 +697,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	PathName file_name = options.dpb_org_filename.hasData() ?
-		options.dpb_org_filename : filename;
+	PathName file_name = options.dpb_org_filename.hasData() ? options.dpb_org_filename : filename;
 
 	if (options.dpb_utf8_filename)
 		ISC_utf8ToSystem(file_name);
@@ -1690,7 +1689,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
+	PathName file_name = options.dpb_org_filename.hasData() ? options.dpb_org_filename : filename;
 
 	if (options.dpb_utf8_filename)
 		ISC_utf8ToSystem(file_name);

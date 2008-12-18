@@ -34,7 +34,7 @@ namespace MsgFormat
 {
 class BaseStream;
 
-// Here we have to routines that print a message that contains placeholders for
+// Here we have routines that print a message that contains placeholders for
 // the parameters in a SafeArg object. The placeholders are @n where n can go
 // from 1 to 7. Since the schema is positional, the same parameter can be
 // referenced as many times as needed inside a format message.

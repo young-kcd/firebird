@@ -186,7 +186,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 	// And why doesn't the code check that the allocation succeeds?
 
 	SCHAR* spare_page =
-		(SCHAR *) (((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) & ~((U_IPTR) MIN_PAGE_SIZE - 1));
+		(SCHAR*) (((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) & ~((U_IPTR) MIN_PAGE_SIZE - 1));
 
 	try {
 
@@ -206,7 +206,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 	temp_bdb.bdb_dbb = dbb;
 	temp_bdb.bdb_buffer = (PAG) header;
 	header->hdr_header.pag_checksum = CCH_checksum(&temp_bdb);
-	if (!PIO_write(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+	if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 	{
 		if (spare_buffer)
 			delete[] spare_buffer;

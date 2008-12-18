@@ -60,18 +60,18 @@ private:
 	PFN m_ptr;
 };
 
-const char* sKernel32 = "kernel32.dll";
+const char* KERNEL32_DLL = "kernel32.dll";
 
 
 class ContextActivator
 {
 public:
 	ContextActivator() :
-	  mFindActCtxSectionString(sKernel32, "FindActCtxSectionStringA"),
-	  mCreateActCtx(sKernel32, "CreateActCtxA"),
-	  mReleaseActCtx(sKernel32, "ReleaseActCtx"),
-	  mActivateActCtx(sKernel32, "ActivateActCtx"),
-	  mDeactivateActCtx(sKernel32, "DeactivateActCtx")
+	  mFindActCtxSectionString(KERNEL32_DLL, "FindActCtxSectionStringA"),
+	  mCreateActCtx(KERNEL32_DLL, "CreateActCtxA"),
+	  mReleaseActCtx(KERNEL32_DLL, "ReleaseActCtx"),
+	  mActivateActCtx(KERNEL32_DLL, "ActivateActCtx"),
+	  mDeactivateActCtx(KERNEL32_DLL, "DeactivateActCtx")
 	{
 		hActCtx = INVALID_HANDLE_VALUE;
 
@@ -97,7 +97,9 @@ public:
 				#error Specify CRT DLL name here !
 #endif
 				&ackd))
+		{
 			return;
+		}
 
 		// create and use activation context from our own manifest
 		ACTCTXA actCtx;

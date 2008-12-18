@@ -5729,6 +5729,8 @@ static bool init(ISC_STATUS* user_status,
 
 	if (port->port_protocol < PROTOCOL_VERSION12)
 	{
+		// This is FB < 2.5. Lets remove that not recognized DPB and convert the filename
+		// to the OS codepage.
 		dpb.deleteWithTag(isc_dpb_utf8_filename);
 		ISC_utf8ToSystem(file_name);
 

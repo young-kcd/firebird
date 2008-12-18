@@ -791,8 +791,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 		}
 	}
 
-	const int new_backup_state =
-		(database->dbb_ods_version >= ODS_VERSION11) ?
+	const int new_backup_state = (database->dbb_ods_version >= ODS_VERSION11) ?
 		header->hdr_flags & Ods::hdr_backup_mask : nbak_state_normal;
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
