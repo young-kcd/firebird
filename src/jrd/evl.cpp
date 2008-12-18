@@ -2615,10 +2615,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
    because nod_date is set in the nod_flags we know we're supposed
    to use some form of date arithmetic */
 
-	if (((node->nod_type == nod_subtract)
-		 || (node->nod_type == nod_subtract2))
-		&& ((desc->dsc_dtype == dtype_timestamp)
-			|| DTYPE_IS_TEXT(desc->dsc_dtype)))
+	if (((node->nod_type == nod_subtract) || (node->nod_type == nod_subtract2)) &&
+		((desc->dsc_dtype == dtype_timestamp) || DTYPE_IS_TEXT(desc->dsc_dtype)))
 	{
 
 		/* Handle cases of
@@ -2701,8 +2699,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		// Coerce operand1 to a count of microseconds
 
 		bool op1_is_timestamp = false;
-		if ((value->vlu_desc.dsc_dtype == dtype_timestamp)
-			|| (DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
+		if ((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
+			(DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
 		{
 			op1_is_timestamp = true;
 		}
@@ -2710,8 +2708,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		// Coerce operand2 to a count of microseconds
 
 		bool op2_is_timestamp = false;
-		if ((desc->dsc_dtype == dtype_timestamp)
-			|| (DTYPE_IS_TEXT(desc->dsc_dtype)))
+		if ((desc->dsc_dtype == dtype_timestamp) || (DTYPE_IS_TEXT(desc->dsc_dtype)))
 		{
 			op2_is_timestamp = true;
 		}

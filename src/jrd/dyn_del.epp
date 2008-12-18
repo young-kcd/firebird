@@ -68,7 +68,7 @@ DATABASE DB = STATIC "ODS.RDB";
 
 static bool delete_constraint_records(Global*, const Firebird::MetaName&, const Firebird::MetaName&);
 static bool delete_dimension_records(Global*, const Firebird::MetaName&);
-static void delete_f_key_constraint(thread_db*, Global*, 
+static void delete_f_key_constraint(thread_db*, Global*,
 									const Firebird::MetaName&, const Firebird::MetaName&,
 									const Firebird::MetaName&, const Firebird::MetaName&);
 static void delete_gfield_for_lfield(Global*, const Firebird::MetaName&);
@@ -93,10 +93,10 @@ void DYN_delete_collation(Global* gbl, const UCHAR** ptr)
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
-	
+
 	bool found = false;
 	Firebird::MetaName collName;
-	
+
 	try
 	{
         GET_STRING(ptr, collName);
@@ -258,7 +258,7 @@ void DYN_delete_constraint (Global* gbl, const UCHAR** ptr, const Firebird::Meta
 
 void DYN_delete_dimensions(Global* gbl,
 						   const UCHAR** ptr,
-						   const Firebird::MetaName* relation_name, 
+						   const Firebird::MetaName* relation_name,
 						   Firebird::MetaName* field_name)
 {
 /**************************************
@@ -320,7 +320,7 @@ void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$EXCEPTIONS
         WITH X.RDB$EXCEPTION_NAME EQ t.c_str()
-        if (!DYN_REQUEST(drq_e_xcp)) 
+        if (!DYN_REQUEST(drq_e_xcp))
             DYN_REQUEST(drq_e_xcp) = request;
 
 		found = true;
@@ -370,7 +370,7 @@ void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 
 	Firebird::MetaName f;
 	GET_STRING(ptr, f);
-	
+
 	try {
 
 	found = false;
@@ -421,7 +421,7 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_func_args, DYN_REQUESTS);
 	USHORT id = drq_e_func_args;
-	
+
 	bool found = false;
 	Firebird::MetaName f;
 	GET_STRING(ptr, f);
@@ -443,7 +443,7 @@ void DYN_delete_function( Global* gbl, const UCHAR** ptr)
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$FUNCTIONS WITH X.RDB$FUNCTION_NAME EQ f.c_str()
-        if (!DYN_REQUEST(drq_e_funcs)) 
+        if (!DYN_REQUEST(drq_e_funcs))
             DYN_REQUEST(drq_e_funcs) = request;
 
 		ERASE X;
@@ -497,11 +497,11 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL;
-	
+
 	bool found = false;
 	Firebird::MetaName t;
     GET_STRING(ptr, t);
-	
+
 	try {
         request = CMP_find_request(tdbb, drq_e_gens, DYN_REQUESTS);
 
@@ -554,7 +554,7 @@ void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_fld_src, DYN_REQUESTS);
-	
+
 	bool found = false;
 
 	try {
@@ -701,7 +701,7 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 
 void DYN_delete_local_field(Global* gbl,
 							const UCHAR** ptr,
-							const Firebird::MetaName* relation_name, 
+							const Firebird::MetaName* relation_name,
 							Firebird::MetaName* field_name)
 {
 /**************************************
@@ -715,13 +715,13 @@ void DYN_delete_local_field(Global* gbl,
  *	statement.
  *
  *  The rules for dropping a regular column:
- *  
+ *
  *    1. the column is not referenced in any views.
  *    2. the column is not part of any user defined indexes.
  *    3. the column is not used in any SQL statements inside of store
  *         procedures or triggers
  *    4. the column is not part of any check-constraints
- *  
+ *
  *  The rules for dropping a column that was created as primary key:
  *
  *    1. the column is not defined as any foreign keys
@@ -757,7 +757,7 @@ void DYN_delete_local_field(Global* gbl,
 
 	jrd_req* request = CMP_find_request(tdbb, drq_l_dep_flds, DYN_REQUESTS);
 	USHORT id = drq_l_dep_flds;
-	
+
 	bool found;
 
 	try {
@@ -783,8 +783,7 @@ void DYN_delete_local_field(Global* gbl,
             DYN_REQUEST(drq_l_dep_flds) = request;
 
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(false, 52, SafeArg() << col_nm.c_str() << tbl_nm.c_str() <<
-						Y.RDB$RELATION_NAME);
+		DYN_error_punt(false, 52, SafeArg() << col_nm.c_str() << tbl_nm.c_str() << Y.RDB$RELATION_NAME);
 		/* msg 52: "field %s from relation %s is referenced in view %s" */
 	END_FOR;
 	if (!DYN_REQUEST(drq_l_dep_flds))
@@ -821,8 +820,7 @@ void DYN_delete_local_field(Global* gbl,
 			constraint = REL_CONST.RDB$CONSTRAINT_NAME;
 			index_name = IDX.RDB$INDEX_NAME;
 
-			delete_f_key_constraint(tdbb, gbl, tbl_nm, col_nm,
-									constraint, index_name);
+			delete_f_key_constraint(tdbb, gbl, tbl_nm, col_nm, constraint, index_name);
 		}
 		else {
 			DYN_rundown_request(request, -1);
@@ -842,7 +840,7 @@ void DYN_delete_local_field(Global* gbl,
 **  ==  make sure that column is not referenced in any user-defined indexes
 **  ==
 **  ==  NOTE: You still could see the system generated indices even though
-**  ==        they were already been deleted when dropping column that was 
+**  ==        they were already been deleted when dropping column that was
 **  ==        used as foreign key before "commit".
 **  ==
 **  ================================================================
@@ -861,7 +859,7 @@ void DYN_delete_local_field(Global* gbl,
 				REL_CONST IN RDB$RELATION_CONSTRAINTS
 				WITH REL_CONST.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
 				AND REL_CONST.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME
-        if (!DYN_REQUEST(drq_e_l_idx)) 
+        if (!DYN_REQUEST(drq_e_l_idx))
             DYN_REQUEST(drq_e_l_idx) = request;
 
 		DYN_rundown_request(request, -1);
@@ -885,8 +883,8 @@ void DYN_delete_local_field(Global* gbl,
 
 		ERASE RFR;
 
-		if (!RFR.RDB$SECURITY_CLASS.NULL
-			&& !strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		if (!RFR.RDB$SECURITY_CLASS.NULL &&
+			!strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
 		{
 			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
 		}
@@ -911,7 +909,7 @@ void DYN_delete_local_field(Global* gbl,
 		PRIV IN RDB$USER_PRIVILEGES WITH
 			PRIV.RDB$RELATION_NAME EQ tbl_nm.c_str() AND
 			PRIV.RDB$FIELD_NAME EQ col_nm.c_str() AND
-            PRIV.RDB$OBJECT_TYPE = obj_relation 
+            PRIV.RDB$OBJECT_TYPE = obj_relation
 
         if (!DYN_REQUEST(drq_e_fld_prvs))
 			DYN_REQUEST(drq_e_fld_prvs) = request;
@@ -948,8 +946,8 @@ void DYN_delete_local_field(Global* gbl,
 }
 
 
-void DYN_delete_parameter(Global* gbl, 
-						  const UCHAR** ptr, 
+void DYN_delete_parameter(Global* gbl,
+						  const UCHAR** ptr,
 						  Firebird::MetaName* proc_name)
 {
 /**************************************
@@ -977,7 +975,7 @@ void DYN_delete_parameter(Global* gbl,
 	USHORT id = drq_e_prms;
 
 	bool found = false;
-	
+
 	try {
 
 	jrd_req* old_request = NULL;
@@ -1100,9 +1098,9 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	USHORT id = drq_e_prms;
 
 	try {
-	
+
     jrd_req* old_request = NULL;
-    
+
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PP IN RDB$PROCEDURE_PARAMETERS WITH PP.RDB$PROCEDURE_NAME EQ name.c_str()
 
@@ -1224,7 +1222,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		
+
 		switch (id)
 		{
 		case drq_e_prms:
@@ -1285,7 +1283,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 	jrd_req* req2 = 0;
 	jrd_req* request = CMP_find_request(tdbb, drq_e_rel_con2, DYN_REQUESTS);
 	USHORT id = drq_e_rel_con2;
-	
+
 	try {
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1368,8 +1366,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 
 		ERASE RFR;
 
-		if (!RFR.RDB$SECURITY_CLASS.NULL
-			&& !strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		if (!RFR.RDB$SECURITY_CLASS.NULL &&
+			!strncmp(RFR.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
 		{
 			delete_security_class2(gbl, RFR.RDB$SECURITY_CLASS);
 		}
@@ -1406,8 +1404,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 
 		ERASE R;
 
-		if (!R.RDB$SECURITY_CLASS.NULL
-			&& !strncmp(R.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		if (!R.RDB$SECURITY_CLASS.NULL &&
+			!strncmp(R.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
 		{
 			delete_security_class2(gbl, R.RDB$SECURITY_CLASS);
 		}
@@ -1453,7 +1451,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 
 		if (!DYN_REQUEST(drq_e_trg_prv))
 			DYN_REQUEST(drq_e_trg_prv) = req2;
-			
+
 		id = drq_e_trigger2;
 
 	END_FOR;
@@ -1467,7 +1465,7 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PRIV IN RDB$USER_PRIVILEGES WITH
 			PRIV.RDB$RELATION_NAME EQ relation_name.c_str() AND
-            PRIV.RDB$OBJECT_TYPE = obj_relation 
+            PRIV.RDB$OBJECT_TYPE = obj_relation
 
         if (!DYN_REQUEST(drq_e_usr_prvs))
 			DYN_REQUEST(drq_e_usr_prvs) = request;
@@ -1570,7 +1568,7 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
  *
  * Functional description
  *
- *	Execute a dynamic ddl statement that deletes a role with all its 
+ *	Execute a dynamic ddl statement that deletes a role with all its
  *      members of the role.
  *
  **************************************/
@@ -1601,12 +1599,12 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 
 		request = CMP_find_request(tdbb, drq_drop_role, DYN_REQUESTS);
 		id = drq_drop_role;
-		
+
 		bool del_role_ok = true;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			XX IN RDB$ROLES WITH
-				XX.RDB$ROLE_NAME EQ role_name.c_str() 
+				XX.RDB$ROLE_NAME EQ role_name.c_str()
 
 			if (!DYN_REQUEST(drq_drop_role))
 				DYN_REQUEST(drq_drop_role) = request;
@@ -1793,7 +1791,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	try {
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		TM IN RDB$TRIGGER_MESSAGES
-		CROSS TR IN RDB$TRIGGERS 
+		CROSS TR IN RDB$TRIGGERS
 		WITH TM.RDB$TRIGGER_NAME EQ t.c_str() AND
 			 TR.RDB$TRIGGER_NAME EQ TM.RDB$TRIGGER_NAME
 
@@ -1813,7 +1811,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	id = drq_e_trigger;
 
 	Firebird::MetaName r;
-	
+
 	bool found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ t.c_str()
@@ -2053,7 +2051,7 @@ static bool delete_constraint_records(Global*	gbl,
 }
 
 
-static bool delete_dimension_records(Global* gbl, 
+static bool delete_dimension_records(Global* gbl,
 									 const Firebird::MetaName& field_name)
 {
 /**************************************
@@ -2071,7 +2069,7 @@ static bool delete_dimension_records(Global* gbl,
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_dims, DYN_REQUESTS);
-	
+
 	bool found = false;
 
 	try {
@@ -2118,25 +2116,25 @@ static void delete_f_key_constraint(thread_db*	tdbb,
  * Functional description
  *	Execute a dynamic ddl statement that
  *	deletes a record from RDB$RELATION_CONSTRAINTS based on a constraint_nm
- *  
+ *
  *      On deleting from RDB$RELATION_CONSTRAINTS, 2 system triggers fire:
- *  
+ *
  *      (A) pre delete trigger: pre_delete_constraint, will:
- *  
+ *
  *        1. delete a record first from RDB$REF_CONSTRAINTS where
- *           RDB$REF_CONSTRAINTS.RDB$CONSTRAINT_NAME =  
+ *           RDB$REF_CONSTRAINTS.RDB$CONSTRAINT_NAME =
  *                               RDB$RELATION_CONSTRAINTS.RDB$CONSTRAINT_NAME
- *  
+ *
  *      (B) post delete trigger: post_delete_constraint will:
- *  
+ *
  *        1. also delete a record from RDB$INDICES where
  *           RDB$INDICES.RDB$INDEX_NAME =
  *                               RDB$RELATION_CONSTRAINTS.RDB$INDEX_NAME
- *  
+ *
  *        2. also delete a record from RDB$INDEX_SEGMENTS where
  *           RDB$INDEX_SEGMENTS.RDB$INDEX_NAME =
  *                               RDB$RELATION_CONSTRAINTS.RDB$INDEX_NAME
- *  
+ *
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -2219,7 +2217,7 @@ static void delete_gfield_for_lfield( Global* gbl, const Firebird::MetaName& lfi
 }
 
 
-static bool delete_index_segment_records(Global* gbl, 
+static bool delete_index_segment_records(Global* gbl,
 										 const Firebird::MetaName& index_name)
 {
 /**************************************
@@ -2237,7 +2235,7 @@ static bool delete_index_segment_records(Global* gbl,
 	Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_idx_segs, DYN_REQUESTS);
-	
+
 	bool found = false;
 
 	try {

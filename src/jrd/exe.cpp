@@ -3050,8 +3050,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 				VIO_modify(tdbb, org_rpb, new_rpb, transaction);
 				const IDX_E error_code =
-					IDX_modify(tdbb, org_rpb, new_rpb, transaction,
-							&bad_relation, &bad_index);
+					IDX_modify(tdbb, org_rpb, new_rpb, transaction, &bad_relation, &bad_index);
 
 				if (error_code) {
 					ERR_duplicate_error(error_code, bad_relation, bad_index);
@@ -3062,8 +3061,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			new_rpb->rpb_number.setValid(true);
 
 			jrd_req* trigger;
-			if (relation->rel_post_modify &&
-				which_trig != PRE_TRIG &&
+			if (relation->rel_post_modify && which_trig != PRE_TRIG &&
 				(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
 											org_rpb, new_rpb, jrd_req::req_trigger_update, POST_TRIG)))
 			{
@@ -3074,9 +3072,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			have fired.  This is required for cascading referential integrity,
 			which can be implemented as post_erase triggers */
 
-			if (!relation->rel_file &&
-				!relation->rel_view_rse &&
-				!relation->isVirtual())
+			if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 			{
 				USHORT bad_index;
 				jrd_rel* bad_relation = 0;
@@ -3174,9 +3170,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			 */
 			CLEAR_NULL(new_record, i);
 			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc)) {
-				if (EVL_field
-					(org_rpb->rpb_relation, org_record, i,
-					 &org_desc))
+				if (EVL_field(org_rpb->rpb_relation, org_record, i, &org_desc))
 				{
 					MOV_move(tdbb, &org_desc, &new_desc);
 				}
@@ -3362,8 +3356,7 @@ static jrd_nod* seek_rse(thread_db* tdbb, jrd_req* request, jrd_nod* node)
 			MOV_get_long(desc, 0) : MAX_USHORT;
 
 		desc = EVL_expr(tdbb, node->nod_arg[e_seek_offset]);
-		const SLONG offset = (desc && !(request->req_flags & req_null)) ?
-			MOV_get_long(desc, 0) : 0;
+		const SLONG offset = (desc && !(request->req_flags & req_null)) ? MOV_get_long(desc, 0) : 0;
 
 		RecordSelExpr* rse = (RecordSelExpr*) node->nod_arg[e_seek_rse];
 
@@ -3405,8 +3398,7 @@ static void seek_rsb(
 
 		/* set the backwards flag */
 
-		const irsb* next_impure =
-			(IRSB) ((UCHAR *) request + rsb->rsb_next->rsb_impure);
+		const irsb* next_impure = (IRSB) ((UCHAR *) request + rsb->rsb_next->rsb_impure);
 
 		if (next_impure->irsb_flags & irsb_last_backwards)
 			impure->irsb_flags |= irsb_last_backwards;

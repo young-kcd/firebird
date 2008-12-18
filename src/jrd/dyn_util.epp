@@ -61,7 +61,8 @@ using namespace Jrd;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static const SCHAR gen_id_blr1[] = {
+static const SCHAR gen_id_blr1[] =
+{
 	blr_version5,
 	blr_begin,
 	blr_message, 0, 1, 0,
@@ -73,12 +74,14 @@ static const SCHAR gen_id_blr1[] = {
 	blr_gen_id
 };
 
-static const SCHAR gen_id_blr2[] = {
+static const SCHAR gen_id_blr2[] =
+{
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc
 };
 
-static const UCHAR prot_blr[] = {
+static const UCHAR prot_blr[] =
+{
 	blr_version5,
 	blr_begin,
 	blr_message, 1, 1, 0,
@@ -186,13 +189,10 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	try {
 
 	bool found = false;
-	
+
 	do {
 		buffer.printf("INTEG_%" SQUADFORMAT,
-				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
-												gbl,
-												drq_g_nxt_con,
-												"RDB$CONSTRAINT_NAME"));
+				(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_con, "RDB$CONSTRAINT_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
@@ -257,17 +257,14 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 
 	jrd_req* request = NULL;
 	SSHORT id = -1;
-	
+
 	try {
-	
+
 	bool found = false;
 
 	do {
 		buffer.printf("RDB$%" SQUADFORMAT,
-				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
-												gbl,
-												drq_g_nxt_fld,
-												"RDB$FIELD_NAME"));
+				(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_fld, "RDB$FIELD_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
@@ -296,8 +293,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 }
 
 
-void DYN_UTIL_generate_field_position(
-									  thread_db* tdbb,
+void DYN_UTIL_generate_field_position(thread_db* tdbb,
 									  Global* gbl,
 									  const Firebird::MetaName& relation_name,
 									  SLONG* field_pos)
@@ -348,7 +344,7 @@ void DYN_UTIL_generate_field_position(
 }
 
 
-void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl, 
+void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 								  Firebird::MetaName& buffer, UCHAR verb)
 {
 /**************************************
@@ -381,10 +377,7 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 			format = "RDB$%" SQUADFORMAT;
 
 		buffer.printf(format,
-				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
-												gbl,
-												drq_g_nxt_idx,
-												"RDB$INDEX_NAME"));
+				(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_idx, "RDB$INDEX_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
@@ -431,15 +424,12 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 	SSHORT id = -1;
 
 	try {
-	
+
 	bool found = false;
 
 	do {
 		buffer.printf("CHECK_%" SQUADFORMAT,
-				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
-												gbl,
-												drq_g_nxt_trg,
-												"RDB$TRIGGER_NAME"));
+				(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_trg, "RDB$TRIGGER_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;
@@ -666,24 +656,24 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	
+
 	jrd_req* request = CMP_find_request(tdbb, drq_dom_is_array, DYN_REQUESTS);
-	
+
 	try
 	{
 		bool rc;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ domain_name.c_str()
-			
+
 			if (!DYN_REQUEST(drq_dom_is_array))
 				DYN_REQUEST(drq_dom_is_array) = request;
-				
+
 			rc = !X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0;
 		END_FOR
-	
+
 		if (!DYN_REQUEST(drq_dom_is_array))
 			DYN_REQUEST(drq_dom_is_array) = request;
-			
+
 		return rc;
 	}
 	catch (const Firebird::Exception& ex)
@@ -710,9 +700,9 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 //
 //***************************************
 void DYN_UTIL_copy_domain(thread_db* tdbb,
-					   Global* gbl,
-					   const Firebird::MetaName& org_name,
-					   const Firebird::MetaName& new_name)
+						  Global* gbl,
+						  const Firebird::MetaName& org_name,
+						  const Firebird::MetaName& new_name)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -730,107 +720,107 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 
 			if (!X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0)
 				ERR_punt();
-				
+
 			STORE(REQUEST_HANDLE req2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				X2 IN RDB$FIELDS
-				
+
 				X2.RDB$FIELD_NAME.NULL = FALSE;
 				strcpy(X2.RDB$FIELD_NAME, new_name.c_str());
-				
+
 				X2.RDB$QUERY_NAME.NULL = X.RDB$QUERY_NAME.NULL;
 				if (!X.RDB$QUERY_NAME.NULL)
 					strcpy(X2.RDB$QUERY_NAME, X.RDB$QUERY_NAME);
-					
+
 				// The following fields may require blob copying:
 				// rdb$validation_blr, rdb$validation_source,
 				// rdb$computed_blr, rdb$computed_source,
 				// rdb$default_value, rdb$default_source,
 				// rdb$missing_value,  rdb$missing_source,
 				// rdb$description and rdb$query_header.
-					
+
 				X2.RDB$VALIDATION_BLR.NULL    = X.RDB$VALIDATION_BLR.NULL;
 				X2.RDB$VALIDATION_BLR         = X.RDB$VALIDATION_BLR;
-				
+
 				X2.RDB$VALIDATION_SOURCE.NULL = X.RDB$VALIDATION_SOURCE.NULL;
 				X2.RDB$VALIDATION_SOURCE      = X.RDB$VALIDATION_SOURCE;
-				
+
 				X2.RDB$COMPUTED_BLR.NULL      = X.RDB$COMPUTED_BLR.NULL;
 				X2.RDB$COMPUTED_BLR           = X.RDB$COMPUTED_BLR;
-				
+
 				X2.RDB$COMPUTED_SOURCE.NULL   = X.RDB$COMPUTED_SOURCE.NULL;
 				X2.RDB$COMPUTED_SOURCE        = X.RDB$COMPUTED_SOURCE;
-				
+
 				//X2.RDB$DEFAULT_VALUE.NULL     = X.RDB$DEFAULT_VALUE.NULL;
 				//X2.RDB$DEFAULT_VALUE          = X.RDB$DEFAULT_VALUE;
-				
+
 				//X2.RDB$DEFAULT_SOURCE.NULL    = X.RDB$DEFAULT_SOURCE.NULL;
 				//X2.RDB$DEFAULT_SOURCE         = X.RDB$DEFAULT_SOURCE;
-				
+
 				X2.RDB$FIELD_LENGTH.NULL      = X.RDB$FIELD_LENGTH.NULL;
 				X2.RDB$FIELD_LENGTH           = X.RDB$FIELD_LENGTH;
-				
+
 				X2.RDB$FIELD_SCALE.NULL       = X.RDB$FIELD_SCALE.NULL;
 				X2.RDB$FIELD_SCALE            = X.RDB$FIELD_SCALE;
-				
+
 				X2.RDB$FIELD_TYPE.NULL        = X.RDB$FIELD_TYPE.NULL;
 				X2.RDB$FIELD_TYPE             = X.RDB$FIELD_TYPE;
-				
+
 				X2.RDB$FIELD_SUB_TYPE.NULL    = X.RDB$FIELD_SUB_TYPE.NULL;
 				X2.RDB$FIELD_SUB_TYPE         = X.RDB$FIELD_SUB_TYPE;
-				
+
 				X2.RDB$MISSING_VALUE.NULL     = X.RDB$MISSING_VALUE.NULL;
 				X2.RDB$MISSING_VALUE          = X.RDB$MISSING_VALUE;
-				
+
 				X2.RDB$MISSING_SOURCE.NULL    = X.RDB$MISSING_SOURCE.NULL;
 				X2.RDB$MISSING_SOURCE         = X.RDB$MISSING_SOURCE;
-				
+
 				X2.RDB$DESCRIPTION.NULL       = X.RDB$DESCRIPTION.NULL;
 				X2.RDB$DESCRIPTION            = X.RDB$DESCRIPTION;
-				
+
 				X2.RDB$SYSTEM_FLAG.NULL       = X.RDB$SYSTEM_FLAG.NULL;
 				X2.RDB$SYSTEM_FLAG            = X.RDB$SYSTEM_FLAG;
-				
+
 				X2.RDB$QUERY_HEADER.NULL      = X.RDB$QUERY_HEADER.NULL;
 				X2.RDB$QUERY_HEADER           = X.RDB$QUERY_HEADER;
-				
+
 				X2.RDB$SEGMENT_LENGTH.NULL    = X.RDB$SEGMENT_LENGTH.NULL;
 				X2.RDB$SEGMENT_LENGTH         = X.RDB$SEGMENT_LENGTH;
-				
+
 				X2.RDB$EDIT_STRING.NULL       = X.RDB$EDIT_STRING.NULL;
 				if (!X.RDB$EDIT_STRING.NULL)
 					strcpy(X2.RDB$EDIT_STRING, X.RDB$EDIT_STRING);
-				
+
 				X2.RDB$EXTERNAL_LENGTH.NULL   = X.RDB$EXTERNAL_LENGTH.NULL;
 				X2.RDB$EXTERNAL_LENGTH        = X.RDB$EXTERNAL_LENGTH;
-				
+
 				X2.RDB$EXTERNAL_SCALE.NULL    = X.RDB$EXTERNAL_SCALE.NULL;
 				X2.RDB$EXTERNAL_SCALE         = X.RDB$EXTERNAL_SCALE;
-				
+
 				X2.RDB$EXTERNAL_TYPE.NULL     = X.RDB$EXTERNAL_TYPE.NULL;
 				X2.RDB$EXTERNAL_TYPE          = X.RDB$EXTERNAL_TYPE;
-				
+
 				X2.RDB$DIMENSIONS.NULL        = X.RDB$DIMENSIONS.NULL;
 				X2.RDB$DIMENSIONS             = X.RDB$DIMENSIONS;
-				
+
 				X2.RDB$NULL_FLAG.NULL         = X.RDB$NULL_FLAG.NULL;
 				X2.RDB$NULL_FLAG              = X.RDB$NULL_FLAG;
-				
+
 				X2.RDB$CHARACTER_LENGTH.NULL  = X.RDB$CHARACTER_LENGTH.NULL;
 				X2.RDB$CHARACTER_LENGTH       = X.RDB$CHARACTER_LENGTH;
-				
+
 				X2.RDB$COLLATION_ID.NULL      = X.RDB$COLLATION_ID.NULL;
 				X2.RDB$COLLATION_ID           = X.RDB$COLLATION_ID;
-				
+
 				X2.RDB$CHARACTER_SET_ID.NULL  = X.RDB$CHARACTER_SET_ID.NULL;
 				X2.RDB$CHARACTER_SET_ID       = X.RDB$CHARACTER_SET_ID;
-				
+
 				X2.RDB$FIELD_PRECISION.NULL   = X.RDB$FIELD_PRECISION.NULL;
 				X2.RDB$FIELD_PRECISION        = X.RDB$FIELD_PRECISION;
 			END_STORE
 			CMP_release(tdbb, req2);
 			req2 = NULL;
 		END_FOR
-		
+
 		CMP_release(tdbb, request);
 		request = NULL;
 		// For now, CMP_release used instead of this:

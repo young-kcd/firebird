@@ -554,8 +554,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			/* if control buffer cannot accommodate what needs to be saved, free
 			   the control buffer */
 
-			if (control->ctl_data[1]
-				&& (control->ctl_data[0] > control->ctl_data[3]))
+			if (control->ctl_data[1] && (control->ctl_data[0] > control->ctl_data[3]))
 			{
 				gds__free((void*) control->ctl_data[1]);
 				control->ctl_data[1] = 0;
@@ -565,8 +564,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			/* if there is no control buffer allocate one */
 
 			if (!control->ctl_data[1]) {
-				control->ctl_data[1] =
-					(IPTR) gds__alloc((SLONG) control->ctl_buffer_length);
+				control->ctl_data[1] = (IPTR) gds__alloc((SLONG) control->ctl_buffer_length);
 				/* FREE: above & isc_blob_filter_close in this procedure */
 				if (!control->ctl_data[1])	/* NOMEM: */
 					return isc_virmemexh;

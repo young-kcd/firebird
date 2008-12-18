@@ -90,7 +90,8 @@ void	DYN_error(bool, USHORT, const MsgFormat::SafeArg& sarg = MsgFormat::SafeArg
 void	DYN_error_punt(bool, USHORT, const MsgFormat::SafeArg& arg);
 void	DYN_error_punt(bool, USHORT, const char* str);
 void	DYN_error_punt(bool, USHORT);
-void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
+void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*,
+	Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);

@@ -2489,8 +2489,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 			TEXT* p = path + strlen(path);
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
 				p[-1] = 0;
-			if ((EXPAND_PATH(path, abs_path))
-				&& (!COMPARE_PATH(abs_path, abs_module_path)))
+			if ((EXPAND_PATH(path, abs_path)) && (!COMPARE_PATH(abs_path, abs_module_path)))
 			{
 				strncpy(resolved_module, abs_module, length);
 				resolved_module[length - 1] = 0;

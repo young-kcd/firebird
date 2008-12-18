@@ -131,8 +131,7 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 	*p = 0;
 
 	for (const FN* function = isc_functions; function->fn_module; ++function) {
-		if (!strcmp(temp, function->fn_module)
-			&& !strcmp(ep, function->fn_entrypoint))
+		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
 		}

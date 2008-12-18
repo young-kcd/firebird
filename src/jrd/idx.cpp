@@ -881,8 +881,8 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 	while (BTR_next_index
 		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
-		if (!(idx.idx_flags & (idx_primary | idx_unique))
-			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
+		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
+			!MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
 		{
 				continue;
 		}
@@ -890,20 +890,17 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 		*bad_relation = new_rpb->rpb_relation;
 		if (
 			(error_code =
-			 BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx,
-					 &key1, 0, false))
-			|| (error_code =
-				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record,
-						&idx, &key2, 0, false)))
+			 BTR_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record, &idx, &key1, 0, false)) ||
+			(error_code =
+				BTR_key(tdbb, org_rpb->rpb_relation, org_rpb->rpb_record, &idx, &key2, 0, false)))
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
 		}
 		if (!key_equal(&key1, &key2)) {
 			error_code =
-				check_foreign_key(tdbb, org_rpb->rpb_record,
-								  org_rpb->rpb_relation, transaction, &idx,
-								  bad_relation, bad_index);
+				check_foreign_key(tdbb, org_rpb->rpb_record, org_rpb->rpb_relation, transaction,
+								  &idx, bad_relation, bad_index);
 			if (idx_e_ok != error_code) {
 				CCH_RELEASE(tdbb, &window);
 				return error_code;
@@ -1037,11 +1034,9 @@ static IDX_E check_duplicates(
 
 		rpb.rpb_number.setValue(accessor.current());
 
-		if (rpb.rpb_number != insertion->iib_number
-			&& VIO_get_current(tdbb, &old_rpb, &rpb, insertion->iib_transaction,
-							   tdbb->getDefaultPool(),
-							   is_fk,
-							   has_old_values) )
+		if (rpb.rpb_number != insertion->iib_number &&
+			VIO_get_current(tdbb, &old_rpb, &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
+							   is_fk, has_old_values) )
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place
 			//		   inside the lock manager. Namely, they are: isc_deadlock,

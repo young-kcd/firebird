@@ -274,10 +274,8 @@ EVH EVENT_init(ISC_STATUS* status_vector)
 	gds__prefix_lock(buffer, EVENT_FILE);
 	const TEXT* event_file = buffer;
 
-	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
-											event_file,
-											init, 0, Config::getEventMemSize(),
-											&EVENT_data)))
+	if (!(EVENT_header = (EVH) ISC_map_file(status_vector, event_file, init, 0,
+											Config::getEventMemSize(), &EVENT_data)))
 	{
 		return NULL;
 	}
@@ -315,8 +313,7 @@ int EVENT_post(ISC_STATUS * status_vector,
 
 	EVNT event;
 	EVNT parent = find_event(major_length, major_code, 0);
-	if (parent &&
-		(event = find_event(minor_length, minor_code, parent)))
+	if (parent && (event = find_event(minor_length, minor_code, parent)))
 	{
 		event->evnt_count += count;
 		srq* event_srq;
@@ -401,8 +398,7 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 		const USHORT len = find_end - p + 1;
 		EVNT event = find_event(len, reinterpret_cast<const char*>(p), parent);
 		if (!event) {
-			event =
-				make_event(len, reinterpret_cast<const char*>(p), parent_offset);
+			event = make_event(len, reinterpret_cast<const char*>(p), parent_offset);
 			parent = (EVNT) SRQ_ABS_PTR(parent_offset);
 			session = (SES) SRQ_ABS_PTR(session_id);
 			request = (EVT_REQ) SRQ_ABS_PTR(request_offset);
@@ -424,8 +420,7 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 			}
 		}
 		else {
-			interest =
-				(RINT) alloc_global(type_rint, (SLONG) sizeof(req_int), false);
+			interest = (RINT) alloc_global(type_rint, (SLONG) sizeof(req_int), false);
 			event = (EVNT) SRQ_ABS_PTR(event_offset);
 			insert_tail(&event->evnt_interests, &interest->rint_interests);
 			interest->rint_event = event_offset;
@@ -544,7 +539,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	SRQ_PTR* best = NULL;
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) SRQ_ABS_PTR(*ptr)) && *ptr;
-		 ptr = &free->frb_next)
+		ptr = &free->frb_next)
 	{
 		const SLONG tail = free->frb_header.hdr_length - length;
 		if (tail >= 0 && (!best || tail < best_tail)) {
@@ -583,17 +578,14 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 		EVH header = 0;
 #if !((defined SUPERSERVER) && (defined HAVE_MMAP))
 		ISC_STATUS_ARRAY status_vector;
-		header =
-			reinterpret_cast<EVH>
-			(ISC_remap_file(status_vector, &EVENT_data, ev_length, true));
+		header = reinterpret_cast<EVH>(ISC_remap_file(status_vector, &EVENT_data, ev_length, true));
 #endif
 		if (header) {
 			free = (FRB) ((UCHAR *) header + old_length);
 /**
 	free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
 **/
-			free->frb_header.hdr_length =
-				EVENT_data.sh_mem_length_mapped - old_length;
+			free->frb_header.hdr_length = EVENT_data.sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
 
@@ -627,8 +619,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 		free->frb_header.hdr_length = length;
 	}
 
-	memset((UCHAR*) free + sizeof(event_hdr), 0,
-		   free->frb_header.hdr_length - sizeof(event_hdr));
+	memset((UCHAR*) free + sizeof(event_hdr), 0, free->frb_header.hdr_length - sizeof(event_hdr));
 	free->frb_header.hdr_type = type;
 
 	return free;
@@ -660,9 +651,7 @@ static SLONG create_process(void)
 
 #ifdef SOLARIS_MT
 	ISC_STATUS_ARRAY local_status;
-	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data,
-										 EVENT_process_offset,
-										 sizeof(prb));
+	EVENT_process = (PRB) ISC_map_object(local_status, &EVENT_data, EVENT_process_offset, sizeof(prb));
 #endif
 
 	process->prb_process_id = getpid();
@@ -718,9 +707,7 @@ static void delete_process(SLONG process_offset)
 /* Delete any open sessions */
 
 	while (!SRQ_EMPTY(process->prb_sessions)) {
-		SES session =
-			(SES) ((UCHAR *) SRQ_NEXT(process->prb_sessions) -
-				   OFFSET(SES, ses_sessions));
+		SES session = (SES) ((UCHAR *) SRQ_NEXT(process->prb_sessions) - OFFSET(SES, ses_sessions));
 		delete_session(SRQ_REL_PTR(session));
 	}
 
@@ -821,8 +808,7 @@ static void delete_session(SLONG session_id)
 
 	while (!SRQ_EMPTY(session->ses_requests)) {
 		srq requests = session->ses_requests;
-		EVT_REQ request =
-			(EVT_REQ) ((UCHAR *) SRQ_NEXT(requests) - OFFSET(EVT_REQ, req_requests));
+		EVT_REQ request = (EVT_REQ) ((UCHAR *) SRQ_NEXT(requests) - OFFSET(EVT_REQ, req_requests));
 		delete_request(request);
 	}
 
@@ -1017,8 +1003,7 @@ static EVNT find_event(USHORT length, const TEXT* string, EVNT parent)
 	srq* event_srq;
 	SRQ_LOOP(EVENT_header->evh_events, event_srq) {
 		EVNT event = (EVNT) ((UCHAR *) event_srq - OFFSET(EVNT, evnt_events));
-		if (event->evnt_parent == parent_offset &&
-			event->evnt_length == length &&
+		if (event->evnt_parent == parent_offset && event->evnt_length == length &&
 			!memcmp(string, event->evnt_name, length))
 		{
 			return event;
@@ -1056,8 +1041,7 @@ static void free_global(FRB block)
 	}
 
 	if (offset <= 0 || offset > EVENT_header->evh_length ||
-		(prior
-		 && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
+		(prior && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
 	{
 		punt("free_global: bad block");
 		return;
@@ -1148,8 +1132,7 @@ static void init(void* arg, SH_MEM shmem_data, bool initialize)
 #endif
 
 	FRB free = (FRB) ((UCHAR*) EVENT_header + sizeof(evh));
-	free->frb_header.hdr_length =
-		EVENT_data.sh_mem_length_mapped - sizeof(evh);
+	free->frb_header.hdr_length = EVENT_data.sh_mem_length_mapped - sizeof(evh);
 	free->frb_header.hdr_type = type_frb;
 	free->frb_next = 0;
 
@@ -1190,8 +1173,7 @@ static EVNT make_event(USHORT length, const TEXT* string, SLONG parent_offset)
  *	Allocate an link in an event.
  *
  **************************************/
-	EVNT event =
-		(EVNT) alloc_global(type_evnt, (SLONG) (sizeof(evnt) + length), false);
+	EVNT event = (EVNT) alloc_global(type_evnt, (SLONG) (sizeof(evnt) + length), false);
 	insert_tail(&EVENT_header->evh_events, &event->evnt_events);
 	SRQ_INIT(event->evnt_interests);
 
@@ -1406,8 +1388,8 @@ static int validate(void)
 		offset += block->frb_header.hdr_length)
 	{
 		const event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
-		if (!block->frb_header.hdr_length || !block->frb_header.hdr_type
-			|| block->frb_header.hdr_type >= type_max)
+		if (!block->frb_header.hdr_length || !block->frb_header.hdr_type ||
+			block->frb_header.hdr_type >= type_max)
 		{
 			punt("bad block length or type");
 			break;

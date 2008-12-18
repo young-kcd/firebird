@@ -220,8 +220,7 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 			TempSpace* const tempSpace = transaction->getBlobSpace();
 
 			blob->blb_temp_offset = tempSpace->allocateSpace(blob->blb_temp_size);
-			tempSpace->write(blob->blb_temp_offset,
-				blob->getBuffer(), blob->blb_temp_size);
+			tempSpace->write(blob->blb_temp_offset, blob->getBuffer(), blob->blb_temp_size);
 		}
 	}
 	else if (blob->blb_level >= 1 &&
@@ -366,8 +365,7 @@ blb* BLB_create2(thread_db* tdbb,
 // in case of big stacks garbage collection speed may become
 // real problem. Stacks should be sorted before run?
 // 2006.03.17 hvlad: it is sorted now
-void BLB_garbage_collect(
-						 thread_db* tdbb,
+void BLB_garbage_collect(thread_db* tdbb,
 						 RecordStack& going,
 						 RecordStack& staying,
 						 SLONG prior_page, jrd_rel* relation)
@@ -411,8 +409,7 @@ void BLB_garbage_collect(
 		for (USHORT id = 0; id < format->fmt_count; id++)
 		{
 			DSC desc;
-			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) &&
-				EVL_field(0, rec, id, &desc))
+			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) && EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
 				if (!blob->isEmpty())
@@ -451,8 +448,7 @@ void BLB_garbage_collect(
 		for (USHORT id = 0; id < format->fmt_count; id++)
 		{
 			DSC desc;
-			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) &&
-				EVL_field(0, rec, id, &desc))
+			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) && EVL_field(0, rec, id, &desc))
 			{
 				const bid* blob = (bid*) desc.dsc_address;
 				if (!blob->isEmpty())
@@ -846,14 +842,10 @@ SLONG BLB_get_slice(thread_db* tdbb,
    to fetch only stuff we really care about */
 
 	if (info.sdl_info_dimensions) {
-		const SLONG from =
-			SDL_compute_subscript(tdbb->tdbb_status_vector, desc,
-								  info.sdl_info_dimensions,
-								  info.sdl_info_lower);
-		const SLONG to =
-			SDL_compute_subscript(tdbb->tdbb_status_vector, desc,
-								  info.sdl_info_dimensions,
-								  info.sdl_info_upper);
+		const SLONG from = SDL_compute_subscript(tdbb->tdbb_status_vector, desc,
+								  				 info.sdl_info_dimensions, info.sdl_info_lower);
+		const SLONG to = SDL_compute_subscript(tdbb->tdbb_status_vector, desc,
+								  			   info.sdl_info_dimensions, info.sdl_info_upper);
 		if (from != -1 && to != -1) {
 			if (from) {
 				offset = from * desc->iad_element_length;
@@ -875,13 +867,8 @@ SLONG BLB_get_slice(thread_db* tdbb,
 	arg.slice_high_water = data + length;
 	arg.slice_base = data + offset;
 
-	ISC_STATUS status = SDL_walk(tdbb->tdbb_status_vector,
-					  sdl,
-					  data,
-					  desc,
-					  variables,
-					  slice_callback,
-					  &arg);
+	ISC_STATUS status = SDL_walk(tdbb->tdbb_status_vector, sdl,
+								 data, desc, variables, slice_callback, &arg);
 
 	if (status) {
 		ERR_punt();
@@ -952,8 +939,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (to_desc->dsc_dtype == dtype_array)
 	{
 		// only array->array conversions are allowed
-		if (from_desc->dsc_dtype != dtype_array &&
-			from_desc->dsc_dtype != dtype_quad)
+		if (from_desc->dsc_dtype != dtype_array && from_desc->dsc_dtype != dtype_quad)
 		{
 			ERR_post(Arg::Gds(isc_array_convert_error));
 		}
@@ -985,8 +971,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			case nod_field:
 				// We should not materialize the blob if the destination field
 				// stream (nod_union, for example) doesn't have a relation.
-				simpleMove = tdbb->getRequest()->
-					req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
+				simpleMove =
+					tdbb->getRequest()->req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
 			case nod_argument:
 			case nod_variable:
@@ -1004,12 +990,11 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		return;
 
 	const bool needFilter =
-		(from_desc->dsc_sub_type != isc_blob_untyped &&
-		 to_desc->dsc_sub_type != isc_blob_untyped &&
-		 (from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
-		 (from_desc->dsc_sub_type == isc_blob_text &&
-		   from_desc->dsc_scale != to_desc->dsc_scale &&
-		   to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)));
+		(from_desc->dsc_sub_type != isc_blob_untyped && to_desc->dsc_sub_type != isc_blob_untyped &&
+			(from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
+		 		(from_desc->dsc_sub_type == isc_blob_text &&
+		 		from_desc->dsc_scale != to_desc->dsc_scale &&
+				to_desc->dsc_scale != CS_NONE && to_desc->dsc_scale != CS_BINARY)));
 
 	if (!needFilter && to_desc->isBlob() &&
 		(from_desc->getCharSet() == CS_NONE || from_desc->getCharSet() == CS_BINARY))
@@ -1093,11 +1078,10 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (source->bid_internal.bid_relation_id || needFilter)
 		{
 			blob = copy_blob(tdbb, source, destination,
-				bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
+							 bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
 		}
-		else if ((to_desc->dsc_dtype == dtype_array) &&
-				 (array = find_array(transaction, source)) &&
-				 (blob = store_array(tdbb, transaction, source)))
+		else if ((to_desc->dsc_dtype == dtype_array) && (array = find_array(transaction, source)) &&
+			(blob = store_array(tdbb, transaction, source)))
 		{
 			materialized_blob = true;
 		}
@@ -1132,8 +1116,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 					ERR_post(Arg::Gds(isc_bad_segstr_id));
 				}
 
-				if (blob->blb_level &&
-					(blob->blb_pg_space_id != relPages->rel_pg_space_id))
+				if (blob->blb_level && (blob->blb_pg_space_id != relPages->rel_pg_space_id))
 				{
 					const ULONG oldTempID = blob->blb_temp_id;
 					blb* newBlob = copy_blob(tdbb, source, destination,
@@ -1376,8 +1359,7 @@ blb* BLB_open2(thread_db* tdbb,
 
 	UCharBuffer new_bpb;
 
-	if (external_call &&
-		ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	if (external_call && ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 	{
 		if (!from_type_specified)
 			from = blob->blb_sub_type;
@@ -1422,14 +1404,8 @@ blb* BLB_open2(thread_db* tdbb,
 	if (filter_required)
 	{
 		BlobControl* control = 0;
-		BLF_open_blob(tdbb,
-					  transaction,
-					  &control,
-					  blob_id,
-					  bpb_length,
-					  bpb,
-					  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
-					  filter);
+		BLF_open_blob(tdbb, transaction, &control, blob_id, bpb_length, bpb,
+					  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter), filter);
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;
@@ -1462,7 +1438,7 @@ void BLB_put_data(thread_db* tdbb, blb* blob, const UCHAR* buffer, SLONG length)
 		// ASF: the comment below was copied from BLB_get_data
 		// I have no idea why this limit is 32768 instead of 32767
 		// 1994-August-12 David Schnepper
-		USHORT n = (USHORT) MIN(length, (SLONG) 32768);
+		const USHORT n = (USHORT) MIN(length, (SLONG) 32768);
 		BLB_put_segment(tdbb, blob, p, n);
 		p += n;
 		length -= n;
@@ -1677,8 +1653,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	{
 		for (array = transaction->tra_arrays; array; array = array->arr_next)
 		{
-			if (array->arr_blob &&
-				array->arr_blob->blb_blob_id == *blob_id)
+			if (array->arr_blob && array->arr_blob->blb_blob_id == *blob_id)
 			{
 				break;
 			}
@@ -1694,10 +1669,8 @@ void BLB_put_slice(	thread_db*	tdbb,
 			Ods::InternalArrayDesc* p_ads = reinterpret_cast<Ods::InternalArrayDesc*>(temp);
 			blb* blob = BLB_get_array(tdbb, transaction, blob_id, p_ads);
 			array =	alloc_array(transaction, p_ads);
-			array->arr_effective_length =
-				blob->blb_length - array->arr_desc.iad_length;
-			BLB_get_data(tdbb, blob, array->arr_data,
-						 array->arr_desc.iad_total_length);
+			array->arr_effective_length = blob->blb_length - array->arr_desc.iad_length;
+			BLB_get_data(tdbb, blob, array->arr_data, array->arr_desc.iad_total_length);
 			arg.slice_high_water = array->arr_data + array->arr_effective_length;
 			array->arr_blob = allocate_blob(tdbb, transaction);
 			(array->arr_blob)->blb_blob_id = *blob_id;
@@ -1730,13 +1703,8 @@ void BLB_put_slice(	thread_db*	tdbb,
 	SLONG variables[64];
 	memcpy(variables, param, MIN(sizeof(variables), param_length));
 
-	if (SDL_walk(tdbb->tdbb_status_vector,
-				 sdl,
-				 array->arr_data,
-				 &array_desc->arr_desc,
-				 variables,
-				 slice_callback,
-				 &arg))
+	if (SDL_walk(tdbb->tdbb_status_vector, sdl, array->arr_data, &array_desc->arr_desc,
+				 variables, slice_callback, &arg))
 	{
 		ERR_punt();
 	}
@@ -1769,8 +1737,7 @@ void BLB_release_array(ArrayField* array)
 	jrd_tra* transaction = array->arr_transaction;
 	if (transaction)
 	{
-		for (ArrayField** ptr = &transaction->tra_arrays; *ptr;
-			ptr = &(*ptr)->arr_next)
+		for (ArrayField** ptr = &transaction->tra_arrays; *ptr; ptr = &(*ptr)->arr_next)
 		{
 			if (*ptr == array) {
 				*ptr = array->arr_next;
@@ -1811,13 +1778,10 @@ void BLB_scalar(thread_db*		tdbb,
 // We need DOUBLE_ALIGNed buffer, that's why some tricks
 	HalfStaticArray<double, 64> temp;
 	dsc desc = array_desc->iad_rpt[0].iad_desc;
-	desc.dsc_address = reinterpret_cast<UCHAR*>
-		(temp.getBuffer((desc.dsc_length / sizeof(double)) +
-			(desc.dsc_length % sizeof(double) ? 1 : 0)));
+	desc.dsc_address = reinterpret_cast<UCHAR*>(temp.getBuffer((desc.dsc_length / sizeof(double)) +
+												(desc.dsc_length % sizeof(double) ? 1 : 0)));
 
-	const SLONG number =
-		SDL_compute_subscript(tdbb->tdbb_status_vector, array_desc, count,
-							  subscripts);
+	const SLONG number = SDL_compute_subscript(tdbb->tdbb_status_vector, array_desc, count, subscripts);
 	if (number < 0) {
 		BLB_close(tdbb, blob);
 		ERR_punt();
@@ -1923,10 +1887,10 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-static ISC_STATUS blob_filter(	USHORT	action,
-							BlobControl*	control,
-							SSHORT	mode,
-							SLONG	offset)
+static ISC_STATUS blob_filter(USHORT	action,
+							  BlobControl*	control,
+							  SSHORT	mode,
+							  SLONG	offset)
 {
 /**************************************
  *
@@ -1967,8 +1931,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 	case isc_blob_filter_get_segment:
 		blob = control->source_handle;
 		control->ctl_segment_length =
-			BLB_get_segment(tdbb, blob, control->ctl_buffer,
-							control->ctl_buffer_length);
+			BLB_get_segment(tdbb, blob, control->ctl_buffer, control->ctl_buffer_length);
 		if (blob->blb_flags & BLB_eof) {
 			return isc_segstr_eof;
 		}
@@ -1978,14 +1941,12 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		return FB_SUCCESS;
 
 	case isc_blob_filter_create:
-		control->source_handle =
-			BLB_create2(tdbb, transaction, blob_id, 0, NULL);
+		control->source_handle = BLB_create2(tdbb, transaction, blob_id, 0, NULL);
 		return FB_SUCCESS;
 
 	case isc_blob_filter_put_segment:
 		blob = control->source_handle;
-		BLB_put_segment(tdbb, blob, control->ctl_buffer,
-						control->ctl_buffer_length);
+		BLB_put_segment(tdbb, blob, control->ctl_buffer, control->ctl_buffer_length);
 		return FB_SUCCESS;
 
 	case isc_blob_filter_close:
@@ -2042,8 +2003,7 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 	UCHAR* buff = buffer.getBuffer(input->blb_max_segment);
 
 	while (true) {
-		const USHORT length =
-			BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
+		const USHORT length = BLB_get_segment(tdbb, input, buff, input->blb_max_segment);
 		if (input->blb_flags & BLB_eof) {
 			break;
 		}
@@ -2125,8 +2085,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			PAG_release_page(tdbb, page1, prior);
 			page = (blob_page*) buffer;
 			const SLONG* ptr2 = page->blp_page;
-			for (const SLONG* const end2 = ptr2 + blob->blb_pointers;
-				 ptr2 < end2; ptr2++)
+			for (const SLONG* const end2 = ptr2 + blob->blb_pointers; ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
 					PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr2), page1);
@@ -2148,7 +2107,7 @@ static void delete_blob_id(
  **************************************
  *
  * Functional description
- *      Delete an existing blob for purposed of garbage collection.
+ *      Delete an existing blob for purpose of garbage collection.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -2168,9 +2127,7 @@ static void delete_blob_id(
 	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
 	blob->blb_relation = relation;
 	blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
-	prior_page =
-		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true,
-					 prior_page);
+	prior_page = DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), true, prior_page);
 
 	if (!(blob->blb_flags & BLB_damaged))
 		delete_blob(tdbb, blob, prior_page);
@@ -2275,11 +2232,9 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 		if (!(blob->blb_sequence % dbb->dbb_prefetch_sequence)) {
 			USHORT sequence = blob->blb_sequence;
 			USHORT i = 0;
-			while (i < dbb->dbb_prefetch_pages &&
-				sequence <= blob->blb_max_sequence)
+			while (i < dbb->dbb_prefetch_pages && sequence <= blob->blb_max_sequence)
 			{
-				 pages[i++] =
-					(*vector)[sequence++];
+				 pages[i++] = (*vector)[sequence++];
 			}
 
 			CCH_PREFETCH(tdbb, pages, i);
@@ -2289,8 +2244,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 	}
 	else {
-		window->win_page =
-			(*vector)[blob->blb_sequence / blob->blb_pointers];
+		window->win_page = (*vector)[blob->blb_sequence / blob->blb_pointers];
 		page = (blob_page*) CCH_FETCH(tdbb, window, LCK_read, pag_blob);
 #ifdef SUPERSERVER_V2
 		/* Perform prefetch of blob level 2 data pages. */
@@ -2300,9 +2254,8 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 		{
 			ULONG abs_sequence = blob->blb_sequence;
 			USHORT i = 0;
-			while (i < dbb->dbb_prefetch_pages &&
-						sequence < blob->blb_pointers &&
-						abs_sequence <= blob->blb_max_sequence)
+			while (i < dbb->dbb_prefetch_pages && sequence < blob->blb_pointers &&
+				abs_sequence <= blob->blb_max_sequence)
 			{
 				pages[i++] = page->blp_page[sequence++];
 				abs_sequence++;
@@ -2311,12 +2264,9 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 			CCH_PREFETCH(tdbb, pages, i);
 		}
 #endif
-		page = (blob_page*)CCH_HANDOFF(tdbb,
-								window,
-								 page->blp_page[blob->blb_sequence %
-												blob->blb_pointers],
-								LCK_read,
-								 pag_blob);
+		page = (blob_page*) CCH_HANDOFF(tdbb, window,
+										page->blp_page[blob->blb_sequence % blob->blb_pointers],
+										LCK_read, pag_blob);
 	}
 
 	if (page->blp_sequence != (SLONG) blob->blb_sequence)
@@ -2453,7 +2403,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
  **************************************/
 	SET_TDBB (tdbb);
 
-	UCHAR charSet = INTL_GET_CHARSET(from_desc);
+	const UCHAR charSet = INTL_GET_CHARSET(from_desc);
 	blb* blob = 0;
 	UCHAR *fromstr = 0;
 	bid temp_bid;
@@ -2463,7 +2413,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 
 	MoveBuffer buffer;
 	int length = MOV_make_string2(tdbb, from_desc, charSet, &fromstr, buffer);
-	UCHAR toCharSet = to_desc->getCharSet();
+	const UCHAR toCharSet = to_desc->getCharSet();
 
 	if ((charSet == CS_NONE || charSet == CS_BINARY || charSet == toCharSet) &&
 		toCharSet != CS_NONE && toCharSet != CS_BINARY)
@@ -2502,7 +2452,8 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	// variables. - 2007-03-24
 
 	jrd_tra* transaction = tdbb->getRequest()->req_transaction;
-	if (transaction->tra_blobs->locate(blob_temp_id)) {
+	if (transaction->tra_blobs->locate(blob_temp_id))
+	{
 		BlobIndex* current = &transaction->tra_blobs->current();
 		if (current->bli_materialized) {
 			// Delete BLOB from request owned blob list
@@ -2573,15 +2524,14 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	CharSet* toCharSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&blobAsText));
 
 	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) *
-		toCharSet->maxBytesPerChar());
-	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
+	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) * toCharSet->maxBytesPerChar());
+	const ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
 		ERR_post(Arg::Gds(isc_arith_except) << Arg::Gds(isc_blob_truncation));
 
 	blobAsText.dsc_address = buffer.begin();
-	blobAsText.dsc_length = (USHORT)len;
+	blobAsText.dsc_length = (USHORT) len;
 
 	MOV_move(tdbb, &blobAsText, toDesc);
 }
@@ -2641,8 +2591,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 
 	if ((blob->blb_flags & BLB_temporary) && blob->blb_temp_size > 0)
 	{
-		blob->blb_transaction->getBlobSpace()->releaseSpace(
-			blob->blb_temp_offset, blob->blb_temp_size);
+		blob->blb_transaction->getBlobSpace()->releaseSpace(blob->blb_temp_offset, blob->blb_temp_size);
 	}
 
 	delete blob;
@@ -2665,8 +2614,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 
 	dsc* array_desc = descriptors;
 	dsc* slice_desc = &arg->slice_desc;
-	BLOB_PTR* const next =
-		slice_desc->dsc_address + arg->slice_element_length;
+	BLOB_PTR* const next = slice_desc->dsc_address + arg->slice_element_length;
 
 	if (next > arg->slice_end)
 		ERR_post(Arg::Gds(isc_out_of_bounds));
@@ -2696,8 +2644,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 
 		if (array_desc->dsc_dtype == dtype_varying &&
 			(U_IPTR) array_desc->dsc_address !=
-			FB_ALIGN((U_IPTR) array_desc->dsc_address,
-					 (MIN(sizeof(USHORT), FB_ALIGNMENT))))
+				FB_ALIGN((U_IPTR) array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
 		{
 			/* Note: cannot remove this JRD_get_thread_data without api change
 			   to slice callback routines */
@@ -2706,11 +2653,8 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 			HalfStaticArray<char, 1024> tmp_buffer;
 			const USHORT tmp_len = array_desc->dsc_length;
 			const char* p;
-			const USHORT len = MOV_make_string(slice_desc,
-								  INTL_TEXT_TYPE(*array_desc),
-								  &p,
-								  reinterpret_cast<vary*>(tmp_buffer.getBuffer(tmp_len)),
-								  tmp_len);
+			const USHORT len = MOV_make_string(slice_desc, INTL_TEXT_TYPE(*array_desc), &p,
+									reinterpret_cast<vary*>(tmp_buffer.getBuffer(tmp_len)), tmp_len);
 			memcpy(array_desc->dsc_address, &len, sizeof(USHORT));
 			memcpy(array_desc->dsc_address + sizeof(USHORT), p, (int) len);
 		}
@@ -2718,8 +2662,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		{
 			MOV_move(tdbb, slice_desc, array_desc);
 		}
-		const BLOB_PTR* const end =
-			array_desc->dsc_address + array_desc->dsc_length;
+		const BLOB_PTR* const end = array_desc->dsc_address + array_desc->dsc_length;
 		if (end > arg->slice_high_water)
 			arg->slice_high_water = end;
 	}
@@ -2737,8 +2680,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 
 			if (array_desc->dsc_dtype == dtype_varying &&
 				(U_IPTR) array_desc->dsc_address !=
-				FB_ALIGN((U_IPTR) array_desc->dsc_address,
-						 (MIN(sizeof(USHORT), FB_ALIGNMENT))))
+					FB_ALIGN((U_IPTR) array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
 			{
 			    // temp_desc will vanish at the end of the block, but it's used
 			    // only as a way to transfer blocks of memory.
@@ -2748,8 +2690,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 				temp_desc.dsc_scale = array_desc->dsc_scale;
 				temp_desc.dsc_flags = array_desc->dsc_flags;
 				memcpy(&temp_desc.dsc_length, array_desc->dsc_address, sizeof(USHORT));
-				temp_desc.dsc_address =
-					array_desc->dsc_address + sizeof(USHORT);
+				temp_desc.dsc_address = array_desc->dsc_address + sizeof(USHORT);
 				MOV_move(tdbb, &temp_desc, slice_desc);
 			}
 			else
@@ -2794,8 +2735,7 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 /* Write out array descriptor */
 
-	BLB_put_segment(tdbb, blob,
-					reinterpret_cast<const UCHAR*>(&array->arr_desc),
+	BLB_put_segment(tdbb, blob, reinterpret_cast<const UCHAR*>(&array->arr_desc),
 					array->arr_desc.iad_length);
 
 /* Write out actual array */
