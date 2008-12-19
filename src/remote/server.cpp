@@ -4974,25 +4974,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 					if (request->req_port->port_state != rem_port::DISCONNECTED)
 					{
-						rem_port* parent_port = request->req_port->port_server->srvr_parent_port;
-
-						if (parent_port == request->req_port)
-						{
-							process_packet(parent_port, &request->req_send,
-										   &request->req_receive, &port);
-						}
-						else
-						{
-							for (port = parent_port->port_clients; port; port = port->port_next)
-							{
-								if (port == request->req_port)
-								{
-									process_packet(port, &request->req_send,
-												   &request->req_receive, &port);
-									break;
-								}
-							}
-						}
+						process_packet(request->req_port, &request->req_send, &request->req_receive, &port);
 					}
 					else
 					{
