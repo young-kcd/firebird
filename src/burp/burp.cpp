@@ -562,7 +562,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// find optional BURP_SW_OVERWRITE parameter
 				Firebird::string next(argv[itr + 1]);
 				next.upper();
-				if (next == BURP_SW_OVERWRITE)
+				if (strstr(BURP_SW_OVERWRITE, next.c_str()) == BURP_SW_OVERWRITE)
 				{
 					real_sw = IN_SW_BURP_R;
 					itr++;
