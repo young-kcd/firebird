@@ -1,3 +1,66 @@
+2008-12-19 15:58  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.84):
+
+	Fix for big-endian machines, it follows Alex's set of fixes.
+
+2008-12-19 15:56  dimitr
+
+	* firebird2/src/: common/classes/GenericMap.h (1.20),
+	jrd/DatabaseSnapshot.cpp (1.83), jrd/IntlManager.cpp (1.32),
+	jrd/IntlUtil.cpp (1.22), jrd/cmp.cpp (1.328), jrd/jrd.cpp (1.498),
+	jrd/jrd.h (1.257), jrd/met.epp (1.268), jrd/unicode_util.cpp
+	(1.42):
+
+	Use explicit iterators instead of the implicit (built-in) ones due
+	to the thread-safety requirements.  This change affects GenericMap
+	only, as it's used globally in a few places and we have a proven
+	crash there.  I have a more complete solution (total cleanup of
+	default accessors from BePlusTree and SparseBitmap) in my local
+	tree (thanks to Dmitry Kovalenko), but it's incomplete (requires
+	more changes inside the engine) and IMHO risky (~20 core modules
+	are affected), so I'd like to defer finalization of this cleanup
+	till v3.0.  All objects of these types seem being protected by
+	dbb_sync, so they shouldn't cause us any problems currently.
+
+2008-12-19 13:43  hvlad
+
+	* firebird2/src/burp/burp.cpp (1.156):
+
+	Restore ability to specify few starting chars (i.e. not full word)
+	of optional switch OVERWRITE in gbak (it was accidentally brocken
+	before 2.5 alpha1)
+
+2008-12-19 12:12  robocop
+
+	* firebird2/src/jrd/: rse.cpp (1.162), sdl.cpp (1.54),
+	validation.cpp (1.42), vio.cpp (1.233):
+
+	Style.
+
+2008-12-19 10:01  hvlad
+
+	* firebird2/src/remote/server.cpp (1.228):
+
+	Fixed bug CORE-2248 : AV in server.cpp\loopThread() Removed not
+	needed check for request's port in parent port clients list as a)
+	this check not needed anymore b) this loop is performance killer
+
+2008-12-18 23:24  skywalker
+
+	* firebird2/src/msgs/messages2.sql (1.75):
+
+	Message for SET ROWCOUNT <n> new ISQL command
+
+2008-12-18 23:19  skywalker
+
+	* firebird2/src/isql/: isql.epp (1.254), isql.h (1.70):
+
+	Added isql command SET ROWCOUNT <n>   it is a local isql command
+	that limits the number of rows returned in processing.	It is a
+	feature of a number of other databases, but in our case its main
+	use is for convenience for running the TPC-X tests,
+
 2008-12-18 15:51  alexpeshkoff
 
 	* firebird2/src/qli/: compile.cpp (1.32), dtr.cpp (1.61), dtr.h
