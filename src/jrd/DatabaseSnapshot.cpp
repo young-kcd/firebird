@@ -706,7 +706,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const Firebird::Clumplet
 
 			*p++ = isc_bpb_source_type;
 			*p++ = 2;
-			put_short(p, isc_blob_text);
+			put_vax_short(p, isc_blob_text);
 			p += 2;
 			*p++ = isc_bpb_source_interp;
 			*p++ = 1;
@@ -714,7 +714,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const Firebird::Clumplet
 
 			*p++ = isc_bpb_target_type;
 			*p++ = 2;
-			put_short(p, isc_blob_text);
+			put_vax_short(p, isc_blob_text);
 			p += 2;
 			*p++ = isc_bpb_target_interp;
 			*p++ = 1;
