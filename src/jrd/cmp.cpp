@@ -2031,26 +2031,27 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	csb->csb_node = CMP_pass1(tdbb, csb, csb->csb_node);
 
 	// Copy and compile (pass1) domains DEFAULT and constraints.
-	bool found = csb->csb_map_field_info.getFirst();
-	while (found)
 	{
-		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
-		UCHAR local_map[MAP_LENGTH];
+		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
 
-		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
-			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+		{
+			FieldInfo& fieldInfo = accessor.current()->second;
+			UCHAR local_map[MAP_LENGTH];
 
-		fieldInfo.defaultValue = copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
+			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
+			fieldInfo.defaultValue = copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
 
-		fieldInfo.validation = copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
+			csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-		fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
-		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
+			fieldInfo.validation = copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
 
-		found = csb->csb_map_field_info.getNext();
-	}
+			fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
+			fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
+		}
+	} // scope
 
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
@@ -2058,16 +2059,17 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
 
 	// Compile (pass2) domains DEFAULT and constraints
-	found = csb->csb_map_field_info.getFirst();
-	while (found)
 	{
-		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
+		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
 
-		fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
-		fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
+		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+		{
+			FieldInfo& fieldInfo = accessor.current()->second;
 
-		found = csb->csb_map_field_info.getNext();
-	}
+			fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
+			fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
+		}
+	} // scope
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded

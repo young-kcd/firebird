@@ -1210,7 +1210,9 @@ void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
 									  Firebird::ClumpletWriter& writer,
 									  int object_id, bool is_attachment)
 {
-	for (bool found = variables.getFirst(); found; found = variables.getNext())
+	StringMap::Accessor accessor(&variables);
+
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
 		writer.insertByte(TAG_RECORD, rel_mon_ctx_vars);
 
@@ -1219,8 +1221,8 @@ void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
 		else
 			writer.insertInt(f_mon_ctx_var_tra_id, object_id);
 
-		writer.insertString(f_mon_ctx_var_name, variables.current()->first);
-		writer.insertString(f_mon_ctx_var_value, variables.current()->second);
+		writer.insertString(f_mon_ctx_var_name, accessor.current()->first);
+		writer.insertString(f_mon_ctx_var_value, accessor.current()->second);
 	}
 }
 

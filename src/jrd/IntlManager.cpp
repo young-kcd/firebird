@@ -58,10 +58,10 @@ namespace
 		~ModulesMap()
 		{
 			// unload modules
-			for (bool found = getFirst(); found; found = getNext())
+			Accessor accessor(this);
+			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 			{
-				ModuleLoader::Module* module = current()->second;
-				delete module;
+				delete accessor.current()->second;
 			}
 		}
 	};

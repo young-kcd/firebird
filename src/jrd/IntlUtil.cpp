@@ -77,7 +77,9 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src,
 string IntlUtil::generateSpecificAttributes(
 	Jrd::CharSet* cs, SpecificAttributesMap& map)
 {
-	bool found = map.getFirst();
+	SpecificAttributesMap::Accessor accessor(&map);
+
+	bool found = accessor.getFirst();
 	string s;
 
 	while (found)
@@ -85,7 +87,7 @@ string IntlUtil::generateSpecificAttributes(
 		UCHAR c[sizeof(ULONG)];
 		ULONG size;
 
-		SpecificAttribute* attribute = map.current();
+		SpecificAttribute* attribute = accessor.current();
 
 		s += escapeAttribute(cs, attribute->first);
 
@@ -99,7 +101,7 @@ string IntlUtil::generateSpecificAttributes(
 
 		s += escapeAttribute(cs, attribute->second);
 
-		found = map.getNext();
+		found = accessor.getNext();
 
 		if (found)
 		{
@@ -420,7 +422,9 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 
 	IntlUtil::SpecificAttributesMap map16;
 
-	bool found = map.getFirst();
+	SpecificAttributesMap::Accessor accessor(&map);
+
+	bool found = accessor.getFirst();
 
 	while (found)
 	{
@@ -429,20 +433,20 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 		ULONG errPosition;
 
 		s1.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, map.current()->first.length(), NULL, 0, NULL, &errCode, &errPosition));
+			&cs->charset_to_unicode, accessor.current()->first.length(), NULL, 0, NULL, &errCode, &errPosition));
 		s1.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, map.current()->first.length(), (UCHAR*) map.current()->first.c_str(),
+			&cs->charset_to_unicode, accessor.current()->first.length(), (UCHAR*) accessor.current()->first.c_str(),
 			s1.getCapacity(), s1.begin(), &errCode, &errPosition));
 
 		s2.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, map.current()->second.length(), NULL, 0, NULL, &errCode, &errPosition));
+			&cs->charset_to_unicode, accessor.current()->second.length(), NULL, 0, NULL, &errCode, &errPosition));
 		s2.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, map.current()->second.length(), (UCHAR*) map.current()->second.c_str(),
+			&cs->charset_to_unicode, accessor.current()->second.length(), (UCHAR*) accessor.current()->second.c_str(),
 			s2.getCapacity(), s2.begin(), &errCode, &errPosition));
 
 		map16.put(string((char*) s1.begin(), s1.getCount()), string((char*) s2.begin(), s2.getCount()));
 
-		found = map.getNext();
+		found = accessor.getNext();
 	}
 
 	UnicodeUtil::Utf16Collation* collation =

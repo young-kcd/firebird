@@ -117,6 +117,8 @@ public:
 // cache ICU module instances to not load and unload many times
 class UnicodeUtil::ICUModules
 {
+	typedef GenericMap<Pair<Left<string, ICU*> > > ModulesMap;
+
 public:
 	explicit ICUModules(MemoryPool&)
 	{
@@ -124,11 +126,12 @@ public:
 
 	~ICUModules()
 	{
-		for (bool found = modules().getFirst(); found; found = modules().getNext())
-			delete modules().current()->second;
+		ModulesMap::Accessor modulesAccessor(&modules());
+		for (bool found = modulesAccessor.getFirst(); found; found = modulesAccessor.getNext())
+			delete modulesAccessor.current()->second;
 	}
 
-	InitInstance<GenericMap<Pair<Left<string, ICU*> > > > modules;
+	InitInstance<ModulesMap> modules;
 	RWLock lock;
 };
 

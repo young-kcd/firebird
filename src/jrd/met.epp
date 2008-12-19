@@ -4192,7 +4192,9 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Fireb
 		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
 	}
 	else
-		item = &attachment->att_dsql_cache.current()->second;
+	{
+		item = attachment->att_dsql_cache.get(key);
+	}
 
 	return item;
 }

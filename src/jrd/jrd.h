@@ -228,6 +228,9 @@ struct DSqlCacheItem
 	bool obsolete;
 };
 
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+	Firebird::string, DSqlCacheItem> > > DSqlCache;
+
 
 //
 // the attachment block; one is created for each attachment to a database
@@ -330,8 +333,7 @@ public:
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
 #endif
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
+	DSqlCache att_dsql_cache;	// DSQL cache locks
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	Firebird::Mutex att_mutex;				// attachment mutex

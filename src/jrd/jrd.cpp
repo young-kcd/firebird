@@ -4888,10 +4888,10 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	if (attachment->att_temp_pg_lock)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
 
-	for (bool getResult = attachment->att_dsql_cache.getFirst(); getResult;
-			  getResult = attachment->att_dsql_cache.getNext())
+	DSqlCache::Accessor accessor(&attachment->att_dsql_cache);
+	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
 	{
-		LCK_release(tdbb, attachment->att_dsql_cache.current()->second.lock);
+		LCK_release(tdbb, accessor.current()->second.lock);
 	}
 #endif
 

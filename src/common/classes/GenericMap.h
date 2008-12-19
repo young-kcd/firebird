@@ -57,9 +57,32 @@ public:
 	typedef typename KeyValuePair::first_type KeyType;
 	typedef typename KeyValuePair::second_type ValueType;
 
+	typedef BePlusTree<KeyValuePair*, KeyType, MemoryPool, FirstObjectKey<KeyValuePair>, KeyComparator> ValuesTree;
+
+	class Accessor
+	{
+	public:
+		Accessor(GenericMap* map) : m_Accessor(&map->tree) {}
+
+		KeyValuePair* current() const { return m_Accessor.current(); }			
+
+		bool getFirst() { return m_Accessor.getFirst(); }
+		bool getNext() { return m_Accessor.getNext(); }
+
+	private:
+		Accessor(const Accessor&);
+		Accessor& operator=(const Accessor&);
+
+		typename ValuesTree::Accessor m_Accessor;
+	};
+
+	friend class Accessor;
+
 	GenericMap() : tree(&getPool()), mCount(0) { }
+
 	explicit GenericMap(MemoryPool& a_pool)
 		: AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
+
 	~GenericMap()
 	{
 		clear();
@@ -69,23 +92,29 @@ public:
 	{
 		clear();
 
-		for (bool found = v.getFirst(); found; found = v.getNext())
+		GenericMap::Accessor accessor(&v);
+
+		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 		{
-			KeyValuePair* current_pair = v.current();
+			const KeyValuePair* const current_pair = accessor.current();
 			put(current_pair->first, current_pair->second);
 		}
 	}
 
 	void takeOwnership(GenericMap& from)
 	{
+		fb_assert(this != &from);
+
 		clear();
 
 		tree = from.tree;
 		mCount = from.mCount;
 
-		if (from.tree.getFirst()) {
+		ValuesTree::Accessor treeAccessor(&from.tree);
+
+		if (treeAccessor.getFirst()) {
 			while (true) {
-				bool haveMore = from.tree.fastRemove();
+				bool haveMore = treeAccessor.fastRemove();
 				if (!haveMore)
 					break;
 			}
@@ -97,10 +126,12 @@ public:
 	// Clear the map
 	void clear()
 	{
-		if (tree.getFirst()) {
+		ValuesTree::Accessor treeAccessor(&tree);
+
+		if (treeAccessor.getFirst()) {
 			while (true) {
-				KeyValuePair* temp = tree.current();
-				bool haveMore = tree.fastRemove();
+				KeyValuePair* temp = treeAccessor.current();
+				bool haveMore = treeAccessor.fastRemove();
 				delete temp;
 				if (!haveMore)
 					break;
@@ -113,9 +144,11 @@ public:
 	// Returns true if value existed
 	bool remove(const KeyType& key)
 	{
-		if (tree.locate(key)) {
-			KeyValuePair* var = tree.current();
-			tree.fastRemove();
+		ValuesTree::Accessor treeAccessor(&tree);
+
+		if (treeAccessor.locate(key)) {
+			KeyValuePair* var = treeAccessor.current();
+			treeAccessor.fastRemove();
 			delete var;
 			mCount--;
 			return true;
@@ -127,8 +160,10 @@ public:
 	// Returns true if value existed previously
 	bool put(const KeyType& key, const ValueType& value)
 	{
-		if (tree.locate(key)) {
-			tree.current()->second = value;
+		ValuesTree::Accessor treeAccessor(&tree);
+
+		if (treeAccessor.locate(key)) {
+			treeAccessor.current()->second = value;
 			return true;
 		}
 
@@ -141,8 +176,10 @@ public:
 	// Returns pointer to the added empty value or null when key already exists
 	ValueType* put(const KeyType& key)
 	{
-		if (tree.locate(key)) {
-			return 0;
+		ValuesTree::Accessor treeAccessor(&tree);
+
+		if (treeAccessor.locate(key)) {
+			return NULL;
 		}
 
 		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool());
@@ -155,32 +192,35 @@ public:
 	// Returns true if value is found
 	bool get(const KeyType& key, ValueType& value)
 	{
-		if (tree.locate(key)) {
-			value = tree.current()->second;
+		ValuesTree::Accessor treeAccessor(&tree);
+
+		if (treeAccessor.locate(key)) {
+			value = treeAccessor.current()->second;
 			return true;
 		}
 
 		return false;
 	}
 
-	bool getFirst() { return tree.getFirst(); }
+	// Returns pointer to the found value or null otherwise
+	ValueType* get(const KeyType& key)
+	{
+		ValuesTree::Accessor treeAccessor(&tree);
 
-	bool getLast() { return tree.getLast(); }
+		if (treeAccessor.locate(key)) {
+			return &treeAccessor.current()->second;
+		}
 
-	bool getNext() { return tree.getNext(); }
-
-	bool getPrev() { return tree.getPrev(); }
-
-	KeyValuePair* current() const { return tree.current(); }
+		return NULL;
+	}
 
 	bool exist(const KeyType& key)
 	{
-		return tree.locate(key);
+		return ValuesTree::Accessor(&tree).locate(key);
 	}
 
 	size_t count() const { return mCount; }
 
-	typedef BePlusTree<KeyValuePair*, KeyType, MemoryPool, FirstObjectKey<KeyValuePair>, KeyComparator> ValuesTree;
 private:
 	ValuesTree tree;
 	size_t mCount;
