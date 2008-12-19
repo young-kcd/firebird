@@ -802,7 +802,7 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
 static FETCH_CODE fetch_page(thread_db* tdbb,
 							 vdr* control,
 							 SLONG page_number,
-							 USHORT type, WIN * window, void *page_pointer)
+							 USHORT type, WIN* window, void *page_pointer)
 {
 /**************************************
  *
@@ -825,11 +825,11 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 	window->win_page = page_number;
 	window->win_flags = 0;
-	*(PAG *) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
+	*(PAG*) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
 
-	if ((*(PAG *) page_pointer)->pag_type != type) {
-		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE,
-				0, page_number, type, (*(PAG *) page_pointer)->pag_type);
+	if ((*(PAG*) page_pointer)->pag_type != type) {
+		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type,
+				(*(PAG*) page_pointer)->pag_type);
 		return fetch_type;
 	}
 
@@ -961,25 +961,16 @@ static void print_rhd(USHORT length, const rhd* header)
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
 		if (header->rhd_flags & rhd_incomplete) {
 			rhdf* fragment = (rhdf*) header;
-			fprintf(stdout, "FP %d/%d ",
-					   fragment->rhdf_f_page, fragment->rhdf_f_line);
+			fprintf(stdout, "FP %d/%d ", fragment->rhdf_f_page, fragment->rhdf_f_line);
 		}
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_deleted) ? "DEL" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_chain) ? "CHN" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_fragment) ? "FRG" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_incomplete) ? "INC" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_blob) ? "BLB" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_delta) ? "DLT" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_large) ? "LRG" : "   ");
-		fprintf(stdout, "%s ",
-				   (header->rhd_flags & rhd_damaged) ? "DAM" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_deleted) ? "DEL" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_chain) ? "CHN" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_fragment) ? "FRG" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_incomplete) ? "INC" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_blob) ? "BLB" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_delta) ? "DLT" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_large) ? "LRG" : "   ");
+		fprintf(stdout, "%s ", (header->rhd_flags & rhd_damaged) ? "DAM" : "   ");
 		fprintf(stdout, "\n");
 	}
 }
@@ -1042,13 +1033,10 @@ static RTN walk_blob(thread_db* tdbb,
 			const SLONG* const end2 = pages2 + (page1->blp_length >> SHIFTLONG);
 			for (; pages2 < end2; pages2++, sequence++) {
 				blob_page* page2 = 0;
-				fetch_page(tdbb, control, *pages2, pag_blob, &window2,
-						   &page2);
-				if (page2->blp_lead_page != header->blh_lead_page
-					|| page2->blp_sequence != sequence)
+				fetch_page(tdbb, control, *pages2, pag_blob, &window2, &page2);
+				if (page2->blp_lead_page != header->blh_lead_page || page2->blp_sequence != sequence)
 				{
-					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation,
-							number);
+					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number);
 					CCH_RELEASE(tdbb, &window1);
 					CCH_RELEASE(tdbb, &window2);
 					return rtn_corrupt;
@@ -1100,15 +1088,13 @@ static RTN walk_chain(thread_db* tdbb,
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		header = (rhd*) ((UCHAR *) page + line->dpg_offset);
-		if (page->dpg_count <= line_number ||
-			!line->dpg_length ||
+		if (page->dpg_count <= line_number || !line->dpg_length ||
 			(header->rhd_flags & (rhd_blob | rhd_fragment)) ||
 			walk_record(tdbb, control, relation, header, line->dpg_length,
 						head_number, delta_flag) != rtn_ok)
 		{
 			CCH_RELEASE(tdbb, &window);
-			return corrupt(tdbb, control, VAL_REC_CHAIN_BROKEN,
-						   relation, head_number);
+			return corrupt(tdbb, control, VAL_REC_CHAIN_BROKEN, relation, head_number);
 		}
 		page_number = header->rhd_b_page;
 		line_number = header->rhd_b_line;
@@ -1145,8 +1131,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	DPM_scan_pages(tdbb);
 	WIN window(DB_PAGE_SPACE, -1);
 	header_page* page = 0;
-	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window,
-			   &page);
+	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window, &page);
 	control->vdr_max_transaction = page->hdr_next_transaction;
 
 	walk_header(tdbb, control, page->hdr_next_page);
@@ -1200,13 +1185,11 @@ static RTN walk_data_page(thread_db* tdbb,
 	}
 #endif
 
-	if (page->dpg_relation != relation->rel_id
-		|| page->dpg_sequence != sequence)
+	if (page->dpg_relation != relation->rel_id || page->dpg_sequence != sequence)
 	{
 		++control->vdr_errors;
 		CCH_RELEASE(tdbb, &window);
-		return corrupt(tdbb, control, VAL_DATA_PAGE_CONFUSED,
-					   relation, page_number, sequence);
+		return corrupt(tdbb, control, VAL_DATA_PAGE_CONFUSED, relation, page_number, sequence);
 	}
 
 /* Walk records */
@@ -1215,8 +1198,7 @@ static RTN walk_data_page(thread_db* tdbb,
 	const data_page::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
 	SLONG number = sequence * dbb->dbb_max_records;
 
-	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end;
-		line++, number++)
+	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end; line++, number++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
@@ -1227,13 +1209,11 @@ static RTN walk_data_page(thread_db* tdbb,
 #endif
 		if (line->dpg_length) {
 			rhd* header = (rhd*) ((UCHAR *) page + line->dpg_offset);
-			if ((UCHAR *) header < (UCHAR *) end ||
-				(UCHAR *) header + line->dpg_length > end_page)
+			if ((UCHAR *) header < (UCHAR *) end || (UCHAR *) header + line->dpg_length > end_page)
 			{
 				CCH_RELEASE(tdbb, &window);
-				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR,
-							   relation, page_number, sequence,
-							   (SLONG) (line - page->dpg_rpt));
+				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR, relation, page_number,
+								sequence, (SLONG) (line - page->dpg_rpt));
 			}
 			if (header->rhd_flags & rhd_chain)
 				control->vdr_rel_backversion_counter++;
@@ -1255,8 +1235,7 @@ static RTN walk_data_page(thread_db* tdbb,
 					if (header->rhd_transaction < dbb->dbb_oldest_transaction)
 						state = tra_committed;
 					else
-						state =
-							TRA_fetch_state(tdbb, header->rhd_transaction);
+						state = TRA_fetch_state(tdbb, header->rhd_transaction);
 					if (state == tra_committed || state == tra_limbo)
 						RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
 				}
@@ -1273,16 +1252,12 @@ static RTN walk_data_page(thread_db* tdbb,
 			}
 #endif
 			if (!(header->rhd_flags & rhd_chain) &&
-				((header->rhd_flags & rhd_large) ||
-				 (control->vdr_flags & vdr_records)))
+				((header->rhd_flags & rhd_large) || (control->vdr_flags & vdr_records)))
 			{
 				const RTN result = (header->rhd_flags & rhd_blob) ?
-					walk_blob(tdbb, control, relation, (blh*) header,
-							  line->dpg_length, number) :
-					walk_record(tdbb, control, relation, header,
-								line->dpg_length, number, false);
-				if ((result == rtn_corrupt)
-					&& (control->vdr_flags & vdr_repair))
+					walk_blob(tdbb, control, relation, (blh*) header, line->dpg_length, number) :
+					walk_record(tdbb, control, relation, header, line->dpg_length, number, false);
+				if ((result == rtn_corrupt) && (control->vdr_flags & vdr_repair))
 				{
 					CCH_MARK(tdbb, &window);
 					header->rhd_flags |= rhd_damaged;
@@ -1445,11 +1420,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		visited_pages.set(next);
 
 		if ((next != page_number) &&
-			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
-			(flags & BTR_FLAG_COPY_MASK))
+			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-				id + 1, next, page->btr_level, __FILE__, __LINE__);
+					id + 1, next, page->btr_level, __FILE__, __LINE__);
 		}
 		flags = page->btr_header.pag_flags;
 		const bool leafPage = (page->btr_level == 0);
@@ -1459,8 +1433,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (!useAllRecordNumbers)
 			nullKeyHandled = true;
 
-		if (page->btr_relation != relation->rel_id ||
-			page->btr_id != (UCHAR) (id % 256))
+		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next, page->btr_level, __FILE__, __LINE__);
@@ -1478,7 +1451,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				(jumpInfo.firstNodeOffset > page->btr_length))
 			{
 				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-					id + 1, next, page->btr_level, __FILE__, __LINE__);
+						id + 1, next, page->btr_level, __FILE__, __LINE__);
 			}
 
 			USHORT n = jumpInfo.jumpers;
@@ -1493,15 +1466,14 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					(jumpNode.offset > page->btr_length))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 				else {
 					// Check if jump node has same length as data node prefix.
-					BTreeNode::readNode(&checknode,
-						(UCHAR*)page + jumpNode.offset, flags, leafPage);
+					BTreeNode::readNode(&checknode, (UCHAR*)page + jumpNode.offset, flags, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 				n--;
@@ -1524,7 +1496,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 
 			// make sure the current key is not less than the previous key
 			bool duplicateNode = !firstNode && !node.isEndLevel &&
-					(key.key_length == (node.length + node.prefix));
+				(key.key_length == (node.length + node.prefix));
 			q = node.data;
 			p = key.key_data + node.prefix;
 			l = MIN(node.length, (USHORT) (key.key_length - node.prefix));
@@ -1545,8 +1517,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				nullKeyNode = false;
 			}
 
-			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) &&
-				!firstNode && !node.isEndLevel)
+			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) && !firstNode &&
+				!node.isEndLevel)
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
@@ -1555,7 +1527,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 						(node.recordNumber < lastNode.recordNumber))
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 
@@ -1598,8 +1570,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				// mark it when we visit it for real later on
 				WIN down_window(DB_PAGE_SPACE, -1);
 				btree_page* down_page = 0;
-				fetch_page(tdbb, 0, down_number, pag_index, &down_window,
-					&down_page);
+				fetch_page(tdbb, 0, down_number, pag_index, &down_window, &down_page);
 				const bool downLeafPage = (down_page->btr_level == 0);
 
 				// make sure the initial key is greater than the pointer key
@@ -1614,7 +1585,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				for (; l; l--, p++, q++) {
 					if (*p < *q) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 					else if (*p > *q) {
 						break;
@@ -1636,7 +1607,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 						(downNode.recordNumber < down_record_number))
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 
@@ -1657,8 +1628,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
-					corrupt(tdbb, control, VAL_INDEX_ORPHAN_CHILD, relation,
-							id + 1, next);
+					corrupt(tdbb, control, VAL_INDEX_ORPHAN_CHILD, relation, id + 1, next);
 				}
 				previous_number = down_number;
 
@@ -1674,8 +1644,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (next == down) {
 			if (page->btr_level) {
 				IndexNode newPageNode;
-				BTreeNode::readNode(&newPageNode,
-					BTreeNode::getPointerFirstNode(page), flags, false);
+				BTreeNode::readNode(&newPageNode, BTreeNode::getPointerFirstNode(page), flags, false);
 				down = newPageNode.pageNumber;
 			}
 			else {
@@ -1695,8 +1664,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		// check for circular referenes
 		if (next && visited_pages.test(next))
 		{
-			corrupt(tdbb, control, VAL_INDEX_CYCLE, relation,
-					id + 1, next);
+			corrupt(tdbb, control, VAL_INDEX_CYCLE, relation, id + 1, next);
 			next = 0;
 		}
 		CCH_RELEASE(tdbb, &window);
@@ -1711,8 +1679,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			do {
 				SINT64 next_number = accessor.current();
 				if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
-					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
-								   relation, id + 1);
+					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS, relation, id + 1);
 				}
 			} while (accessor.getNext());
 	}
@@ -1783,10 +1750,10 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 	}
 }
 
-static RTN walk_pointer_page(	thread_db*	tdbb,
-								vdr*		control,
-								jrd_rel*		relation,
-								int		sequence)
+static RTN walk_pointer_page(thread_db*	tdbb,
+							vdr*		control,
+							jrd_rel*		relation,
+							int		sequence)
 {
 /**************************************
  *
@@ -1811,12 +1778,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 
 	pointer_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
-	fetch_page(	tdbb,
-				control,
-				(*vector)[sequence],
-				pag_pointer,
-				&window,
-				&page);
+	fetch_page(tdbb, control, (*vector)[sequence], pag_pointer, &window, &page);
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -1827,8 +1789,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 
 /* Give the page a quick once over */
 
-	if (page->ppg_relation != relation->rel_id ||
-		page->ppg_sequence != sequence)
+	if (page->ppg_relation != relation->rel_id || page->ppg_sequence != sequence)
 	{
 		CCH_RELEASE(tdbb, &window);
 		return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation, sequence);
@@ -1839,8 +1800,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 	SLONG seq = (SLONG) sequence *dbb->dbb_dp_per_pp;
 
 	USHORT slot = 0;
-	for (SLONG* pages = page->ppg_page; slot < page->ppg_count;
-		 slot++, pages++, seq++)
+	for (SLONG* pages = page->ppg_page; slot < page->ppg_count; slot++, pages++, seq++)
 	{
 		if (*pages) {
 			const RTN result = walk_data_page(tdbb, control, relation, *pages, seq);
@@ -1864,11 +1824,7 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 		(page->ppg_next && page->ppg_next != (*vector)[sequence]))
 	{
 		CCH_RELEASE(tdbb, &window);
-		return corrupt(	tdbb,
-						control,
-						VAL_P_PAGE_INCONSISTENT,
-						relation,
-						sequence);
+		return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation, sequence);
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -1911,8 +1867,7 @@ static RTN walk_record(thread_db* tdbb,
 
 	if (control && header->rhd_transaction > control->vdr_max_transaction)
 	{
-		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number,
-				header->rhd_transaction);
+		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number, header->rhd_transaction);
 	}
 
 /* If there's a back pointer, verify that it's good */
@@ -1927,8 +1882,7 @@ static RTN walk_record(thread_db* tdbb,
    chasing records, skip the record */
 
 	if (header->rhd_flags & (rhd_fragment | rhd_deleted) ||
-		!((header->rhd_flags & rhd_large) ||
-		  (control && (control->vdr_flags & vdr_records))))
+		!((header->rhd_flags & rhd_large) || (control && (control->vdr_flags & vdr_records))))
 	{
 		return rtn_ok;
 	}
@@ -1940,18 +1894,18 @@ static RTN walk_record(thread_db* tdbb,
 	const char* p;
 	const char* end;
 	if (header->rhd_flags & rhd_incomplete) {
-		p = (SCHAR *) fragment->rhdf_data;
+		p = (SCHAR*) fragment->rhdf_data;
 		end = p + length - OFFSETA(rhdf*, rhdf_data);
 	}
 	else {
-		p = (SCHAR *) header->rhd_data;
+		p = (SCHAR*) header->rhd_data;
 		end = p + length - OFFSETA(rhd*, rhd_data);
 	}
 
 	USHORT record_length = 0;
 
 	while (p < end) {
-		const char c = *p++;
+		const signed char c = *p++;
 		if (c >= 0) {
 			record_length += c;
 			p += c;
@@ -1976,16 +1930,14 @@ static RTN walk_record(thread_db* tdbb,
 		if (page->dpg_relation != relation->rel_id ||
 			line_number >= page->dpg_count || !(length = line->dpg_length))
 		{
-			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation,
-					number);
+			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation, number);
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
 		fragment = (rhdf*) ((UCHAR *) page + line->dpg_offset);
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
-			fprintf(stdout, "fragment: pg %d/%d ",
-					   page_number, line_number);
+			fprintf(stdout, "fragment: pg %d/%d ", page_number, line_number);
 			print_rhd(line->dpg_length, (rhd*) fragment);
 		}
 #endif
@@ -2044,8 +1996,7 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 	// If relation hasn't been scanned, do so now
 
-	if (!(relation->rel_flags & REL_scanned) ||
-		(relation->rel_flags & REL_being_scanned))
+	if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
 	{
 		MET_scan_relation(tdbb, relation);
 	}
@@ -2091,13 +2042,9 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 	// See if the counts of backversions match
 	if (control && (control->vdr_flags & vdr_records) &&
-		(control->vdr_rel_backversion_counter !=
-		 control->vdr_rel_chain_counter))
+		(control->vdr_rel_backversion_counter != control->vdr_rel_chain_counter))
 	{
-		 return corrupt(tdbb,
-						control,
-						VAL_REL_CHAIN_ORPHANS,
-						relation,
+		 return corrupt(tdbb, control, VAL_REL_CHAIN_ORPHANS, relation,
 						control->vdr_rel_backversion_counter - control-> vdr_rel_chain_counter,
 						control-> vdr_rel_chain_counter);
 	}
@@ -2146,8 +2093,7 @@ static RTN walk_root(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 	index_root_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
-	fetch_page(tdbb, control, relPages->rel_index_root, pag_root, &window,
-			   &page);
+	fetch_page(tdbb, control, relPages->rel_index_root, pag_root, &window, &page);
 
 	for (USHORT i = 0; i < page->irt_count; i++) {
 		walk_index(tdbb, control, relation, *page, i);
@@ -2193,17 +2139,11 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 		}
 
 		WIN window(DB_PAGE_SPACE, -1);
-		fetch_page(	tdbb,
-					control,
-					(*vector)[sequence],
-					pag_transactions,
-					&window,
-					&page);
+		fetch_page(tdbb, control, (*vector)[sequence], pag_transactions, &window, &page);
 
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			fprintf(stdout, "walk_tip: page %d next %d\n",
-					   (*vector)[sequence], page->tip_next);
+			fprintf(stdout, "walk_tip: page %d next %d\n", (*vector)[sequence], page->tip_next);
 #endif
 		if (page->tip_next && page->tip_next != (*vector)[sequence + 1])
 		{

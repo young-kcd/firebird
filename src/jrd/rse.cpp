@@ -895,15 +895,12 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
 									  NULL, mode))
 					{
 						if (
-							(!rsb->rsb_arg[RSB_LEFT_boolean]
-							 || EVL_boolean(tdbb,
-											(jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
-							&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
-								|| EVL_boolean(tdbb,
-											   (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
-							&& (full == rsb->rsb_arg[RSB_LEFT_inner]
-								|| EVL_boolean(tdbb,
-											   (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner]->rsb_arg[0])))
+							(!rsb->rsb_arg[RSB_LEFT_boolean] ||
+								EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean])) &&
+							(!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
+								EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean])) &&
+							(full == rsb->rsb_arg[RSB_LEFT_inner] ||
+								EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner]->rsb_arg[0])))
 						{
 							break;
 						}
@@ -996,10 +993,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 			while (get_record(tdbb, rsb->rsb_arg[RSB_LEFT_inner], NULL,
 					RSE_get_forward))
 			{
-				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
-						|| EVL_boolean(tdbb,
-									   (jrd_nod*)
-									   rsb->rsb_arg[RSB_LEFT_inner_boolean]))
+				if (!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
+					EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean]))
 				{
 					impure->irsb_flags |= irsb_joined;
 					return true;
@@ -1033,24 +1028,14 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 			if (!get_record(tdbb, full, NULL, RSE_get_forward))
 				return false;
 			RSE_open(tdbb, rsb->rsb_arg[RSB_LEFT_outer]);
-			while ( (found =
-				   get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL,
-							  RSE_get_forward)) )
+			while ( (found = get_record(tdbb, rsb->rsb_arg[RSB_LEFT_outer], NULL, RSE_get_forward)) )
 			{
-				if (
-					(!rsb->rsb_arg[RSB_LEFT_boolean]
-					 || EVL_boolean(tdbb,
-									(jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean]))
-					&& (!rsb->rsb_arg[RSB_LEFT_inner_boolean]
-						|| EVL_boolean(tdbb,
-									   (jrd_nod*)
-									   rsb->rsb_arg
-									   [RSB_LEFT_inner_boolean]))
-					&& (full == rsb->rsb_arg[RSB_LEFT_inner]
-						|| EVL_boolean(tdbb,
-									   (jrd_nod*)
-									   rsb->rsb_arg
-									   [RSB_LEFT_inner]->rsb_arg[0])))
+				if ((!rsb->rsb_arg[RSB_LEFT_boolean] ||
+						EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_boolean])) &&
+					(!rsb->rsb_arg[RSB_LEFT_inner_boolean] ||
+						EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner_boolean])) &&
+					(full == rsb->rsb_arg[RSB_LEFT_inner] ||
+						EVL_boolean(tdbb, (jrd_nod*) rsb->rsb_arg[RSB_LEFT_inner]->rsb_arg[0])))
 				{
 					break;
 				}
@@ -1121,9 +1106,8 @@ static bool get_merge_fetch(
 
 	SLONG record = tail->irsb_mrg_equal_current;
 
-	if (((mode == RSE_get_backward) && !(impure->irsb_flags & irsb_backwards))
-		|| ((mode == RSE_get_forward)
-			&& (impure->irsb_flags & irsb_backwards)))
+	if (((mode == RSE_get_backward) && !(impure->irsb_flags & irsb_backwards)) ||
+		((mode == RSE_get_forward) && (impure->irsb_flags & irsb_backwards)))
 	{
 		--record;
 	}
@@ -1146,10 +1130,8 @@ static bool get_merge_fetch(
 			   it, we have a problem; the sort streams are positioned at the other
 			   end of the equivalence group, so we need to resynch them */
 
-			if (((mode == RSE_get_backward)
-				 && !(impure->irsb_flags & irsb_backwards))
-				|| ((mode == RSE_get_forward)
-					&& (impure->irsb_flags & irsb_backwards)))
+			if (((mode == RSE_get_backward) && !(impure->irsb_flags & irsb_backwards)) ||
+				((mode == RSE_get_forward) && (impure->irsb_flags & irsb_backwards)))
 			{
 				resynch_merge(tdbb, rsb, impure, mode);
 			}
@@ -1167,9 +1149,8 @@ static bool get_merge_fetch(
 		   so we need to start at the beginning (or end) of this stream
 		   (and recursively all the streams to the right of this one) */
 
-		if (((mode == RSE_get_backward) && !(impure->irsb_flags & irsb_backwards))
-			|| ((mode == RSE_get_forward)
-				&& (impure->irsb_flags & irsb_backwards)))
+		if (((mode == RSE_get_backward) && !(impure->irsb_flags & irsb_backwards)) ||
+			((mode == RSE_get_forward) && (impure->irsb_flags & irsb_backwards)))
 		{
 			record = tail->irsb_mrg_equal_end;
 		}
@@ -1339,10 +1320,8 @@ static bool get_merge_join(
 				int result;
 				while (result = compare(tdbb, (jrd_nod*) highest_ptr[1], (jrd_nod*) ptr[1]))
 				{
-					if (((result > 0)
-						 && (impure->irsb_flags & irsb_backwards))
-						|| ((result < 0)
-							&& ~(impure->irsb_flags & irsb_backwards)))
+					if (((result > 0) && (impure->irsb_flags & irsb_backwards)) ||
+						((result < 0) && ~(impure->irsb_flags & irsb_backwards)))
 					{
 						highest_ptr = ptr;
 						goto recycle;
@@ -1355,8 +1334,7 @@ static bool get_merge_join(
 					/* get the new record, which is both the beginning and end of
 					   the equal queue for the moment */
 
-					const SLONG record =
-						get_merge_record(tdbb, sort_rsb, tail, mode);
+					const SLONG record = get_merge_record(tdbb, sort_rsb, tail, mode);
 					if (record < 0)
 						return false;
 					map_sort_data(tdbb, request, (SortMap*) sort_rsb->rsb_arg[0],

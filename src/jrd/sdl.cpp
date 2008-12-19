@@ -239,8 +239,7 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 				memcpy(range.rng_maxima, vector, sizeof(range.rng_maxima));
 				range.rng_info = info;
 				SLONG min = -1, max = -1;
-				if (!(p = get_range(p - 1, &range, &min, &max))
-					|| (*p != isc_sdl_eoc))
+				if (!(p = get_range(p - 1, &range, &min, &max)) || (*p != isc_sdl_eoc))
 				{
 					info->sdl_info_dimensions = 0;
 				}
@@ -381,8 +380,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 
 		default:
 			/* Check that element is in range of valid SDL */
-			fb_assert_continue(*(p - 1) >= isc_sdl_version1
-								&& *(p - 1) <= isc_sdl_element);
+			fb_assert_continue(*(p - 1) >= isc_sdl_version1 && *(p - 1) <= isc_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
 			arg.sdl_arg_end = arg.sdl_arg_compiled + COMPILE_SIZE;
@@ -670,17 +668,13 @@ static bool execute(sdl_arg* arg)
 					subscript += (n - range->iad_lower) * range->iad_length;
 				}
 				element_desc = array_desc->iad_rpt[value].iad_desc;
-				element_desc.dsc_address = arg->sdl_arg_array +
-					(IPTR) element_desc.dsc_address +
+				element_desc.dsc_address = arg->sdl_arg_array + (IPTR) element_desc.dsc_address +
 					(array_desc->iad_element_length * subscript);
 
 				/* Is this element within the array bounds? */
-				fb_assert_continue(element_desc.dsc_address >=
-									arg->sdl_arg_array);
-				fb_assert_continue(element_desc.dsc_address +
-									element_desc.dsc_length <=
-									arg->sdl_arg_array +
-									array_desc->iad_total_length);
+				fb_assert_continue(element_desc.dsc_address >= arg->sdl_arg_array);
+				fb_assert_continue(element_desc.dsc_address + element_desc.dsc_length <=
+									arg->sdl_arg_array + array_desc->iad_total_length);
 				}
 			break;
 
@@ -689,25 +683,19 @@ static bool execute(sdl_arg* arg)
 			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array) {
 				/* Storing INTO array */
 
-				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument,
-										count,
-										&element_desc);
+				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
 			}
 			else {
 				/* Fetching FROM array */
 
-				if (element_desc.dsc_address <
-					arg->sdl_arg_argument->slice_high_water)
+				if (element_desc.dsc_address < arg->sdl_arg_argument->slice_high_water)
 				{
 
-					(*arg->sdl_arg_callback) (arg->sdl_arg_argument,
-										count,
-										&element_desc);
+					(*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
 				}
 				else {
 					dsc* slice_desc = &arg->sdl_arg_argument->slice_desc;
-					slice_desc->dsc_address +=
-						arg->sdl_arg_argument->slice_element_length;
+					slice_desc->dsc_address += arg->sdl_arg_argument->slice_element_length;
 				}
 			}
 			break;
