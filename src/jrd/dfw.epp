@@ -3194,8 +3194,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 						/* Lock was released in IDX_delete_index(). */
 
-						if (index_block->idb_lock)
-							delete index_block->idb_lock;
+						delete index_block->idb_lock;
 						delete index_block;
 						break;
 					}
@@ -3519,17 +3518,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 #ifdef GARBAGE_THREAD
 		// Free any memory associated with the relation's garbage collection bitmap
 
-		if (relation->rel_gc_bitmap)
-		{
-			delete relation->rel_gc_bitmap;
-			relation->rel_gc_bitmap = 0;
-		}
+		delete relation->rel_gc_bitmap;
+		relation->rel_gc_bitmap = 0;
 
-		if (relation->rel_garbage)
-		{
-		    delete relation->rel_garbage;
-		    relation->rel_garbage = 0;
-		}
+	    delete relation->rel_garbage;
+	    relation->rel_garbage = 0;
 #endif
 		if (relation->rel_file) {
 		    EXT_fini (relation, false);

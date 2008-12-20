@@ -2583,11 +2583,8 @@ static void release_blob(blb* blob, const bool purge_flag)
 		}
 	}
 
-	if (blob->blb_pages)
-	{
-		delete blob->blb_pages;
-		blob->blb_pages = NULL;
-	}
+	delete blob->blb_pages;
+	blob->blb_pages = NULL;
 
 	if ((blob->blb_flags & BLB_temporary) && blob->blb_temp_size > 0)
 	{

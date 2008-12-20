@@ -2460,12 +2460,9 @@ static dsql_nod* ambiguity_check(CompiledStatement* statement, dsql_nod* node,
 	}
 
 	if (statement->req_client_dialect >= SQL_DIALECT_V6) {
-		if (node) {
-			delete node;
-		}
+		delete node;
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-				  Arg::Gds(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) <<
-															 Arg::Str(++p) <<
+				  Arg::Gds(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) << Arg::Str(++p) <<
 				  Arg::Gds(isc_random) << Arg::Str(name->str_data));
 		return NULL;
 	}

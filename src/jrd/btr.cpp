@@ -2970,9 +2970,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
 		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
-			if (walkJumpNode[i].data) {
-				delete[] walkJumpNode[i].data;
-			}
+			delete[] walkJumpNode[i].data;
 		}
 		jumpNodes->clear();
 		delete jumpNodes;
@@ -3436,9 +3434,7 @@ static SLONG fast_load(thread_db* tdbb,
 					// Clear jumplist.
 					IndexJumpNode* walkJumpNode = leafJumpNodes->begin();
 					for (size_t i = 0; i < leafJumpNodes->getCount(); i++) {
-						if (walkJumpNode[i].data) {
-							delete[] walkJumpNode[i].data;
-						}
+						delete[] walkJumpNode[i].data;
 					}
 					leafJumpNodes->clear();
 				}
@@ -3738,9 +3734,7 @@ static SLONG fast_load(thread_db* tdbb,
 						// Clear jumplist.
 						IndexJumpNode* walkJumpNode = pageJumpNodes->begin();
 						for (size_t i = 0; i < pageJumpNodes->getCount(); i++) {
-							if (walkJumpNode[i].data) {
-								delete[] walkJumpNode[i].data;
-							}
+							delete[] walkJumpNode[i].data;
 						}
 						pageJumpNodes->clear();
 					}
@@ -3864,9 +3858,7 @@ static SLONG fast_load(thread_db* tdbb,
 			jumpNodeList* freeJumpNodes = *itr;
 			IndexJumpNode* walkJumpNode = freeJumpNodes->begin();
 			for (size_t i = 0; i < freeJumpNodes->getCount(); i++) {
-				if (walkJumpNode[i].data) {
-					delete[] walkJumpNode[i].data;
-				}
+				delete[] walkJumpNode[i].data;
 			}
 			freeJumpNodes->clear();
 			delete freeJumpNodes;
@@ -5053,9 +5045,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 			}
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
 			for (size_t i = 0; i < jumpNodes->getCount(); i++) {
-				if (walkJumpNode[i].data) {
-					delete[] walkJumpNode[i].data;
-				}
+				delete[] walkJumpNode[i].data;
 			}
 			jumpNodes->clear();
 			delete jumpNodes;
@@ -5117,9 +5107,7 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 			// Update offset to real position with new jump nodes.
 			walkJumpNode[i].offset += jumpersNewSize;
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags2);
-			if (walkJumpNode[i].data) {
-				delete[] walkJumpNode[i].data;
-			}
+			delete[] walkJumpNode[i].data;
 		}
 		// Copy data.
 		memcpy(pointer, (UCHAR*) newBucket + headerSize, newBucket->btr_length - headerSize);
@@ -5738,9 +5726,7 @@ static SLONG insert_node(thread_db* tdbb,
 				walkJumpNode[i].offset += jumpersNewSize - jumpersOriginalSize;
 				pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
 				if (fragmentedOffset) {
-					if (walkJumpNode[i].data) {
-						delete[] walkJumpNode[i].data;
-					}
+					delete[] walkJumpNode[i].data;
 				}
 			}
 			pointer = (UCHAR*)bucket + jumpInfo.firstNodeOffset;
@@ -5834,9 +5820,7 @@ static SLONG insert_node(thread_db* tdbb,
 					memcpy(newData, new_key->key_data, walkJumpNode[i].prefix);
 					memcpy(newData + walkJumpNode[i].prefix, walkJumpNode[i].data,
 						walkJumpNode[i].length);
-					if (walkJumpNode[i].data) {
-						delete[] walkJumpNode[i].data;
-					}
+					delete[] walkJumpNode[i].data;
 					walkJumpNode[i].prefix = 0;
 					walkJumpNode[i].length = length;
 					walkJumpNode[i].data = newData;
@@ -6006,9 +5990,7 @@ static SLONG insert_node(thread_db* tdbb,
 		if (fragmentedOffset) {
 			IndexJumpNode* walkJumpNode2 = jumpNodes->begin();
 			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++) {
-				if (walkJumpNode2[i].data) {
-					delete[] walkJumpNode2[i].data;
-				}
+				delete[] walkJumpNode2[i].data;
 			}
 		}
 	}

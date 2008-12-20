@@ -1136,10 +1136,8 @@ void CCH_fini(thread_db* tdbb)
 				for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count; tail < end; tail++)
 				{
 					BufferDesc* bdb = tail->bcb_bdb;
-					if (bdb->bdb_expanded_buffer) {
-						delete bdb->bdb_expanded_buffer;
-						bdb->bdb_expanded_buffer = NULL;
-					}
+					delete bdb->bdb_expanded_buffer;
+					bdb->bdb_expanded_buffer = NULL;
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
 			}
@@ -3423,7 +3421,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		BUGCHECK(211);
 	}
 
-/* delete node */
+	// delete node
 
 	if (!bdb->bdb_right || !bdb->bdb_left)
 	{
@@ -4896,10 +4894,8 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			/* if the page has an expanded index buffer, release it */
 
-			if (bdb->bdb_expanded_buffer) {
-				delete bdb->bdb_expanded_buffer;
-				bdb->bdb_expanded_buffer = NULL;
-			}
+			delete bdb->bdb_expanded_buffer;
+			bdb->bdb_expanded_buffer = NULL;
 
 			/* Cleanup any residual precedence blocks.  Unless something is
 			   screwed up, the only precedence blocks that can still be hanging

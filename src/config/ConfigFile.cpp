@@ -102,8 +102,7 @@ void ConfigFile::init(const LEX_flags configFlags)
 
 ConfigFile::~ConfigFile()
 {
-	if (objects)
-		delete objects;
+	delete objects;
 
 	for (int n = 0; n < HASH_SIZE; ++n)
 	{
