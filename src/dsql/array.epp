@@ -26,7 +26,7 @@
  *   could be returned or a lookup for a blob field could fail. In addition,
  *   a possible buffer overrun due to unchecked bounds was closed. The fc
  *   get_name() as been renamed copy_exact_name().
- * 
+ *
  * 2002-02-24 Sean Leyne - Code Cleanup of old Win 3.1 port (WINDOWS_ONLY)
  *
  *
@@ -102,17 +102,17 @@ ISC_STATUS API_ROUTINE isc_array_gen_sdl(ISC_STATUS* status,
   * Functional description
   *
   **************************************/
- 
+
  	return gen_sdl(status, desc, sdl_buffer_length, &sdl_buffer, sdl_length, false);
 }
- 
- 
+
+
 ISC_STATUS API_ROUTINE isc_array_get_slice(ISC_STATUS* status,
 									   FB_API_HANDLE* db_handle,
 									   FB_API_HANDLE* trans_handle,
 									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
-									   void* array, 
+									   void* array,
 									   SLONG* slice_length)
 {
 /**************************************
@@ -182,8 +182,8 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
         tail->array_bound_lower = (SSHORT)X.RDB$LOWER_BOUND;
 	    tail->array_bound_upper = (SSHORT)X.RDB$UPPER_BOUND;
         ++tail;
-	END_FOR 
-    ON_ERROR 
+	END_FOR
+    ON_ERROR
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
@@ -221,7 +221,7 @@ ISC_STATUS API_ROUTINE isc_array_put_slice(ISC_STATUS* status,
 									   FB_API_HANDLE* trans_handle,
 									   ISC_QUAD* array_id,
 									   const ISC_ARRAY_DESC* desc,
-									   void* array, 
+									   void* array,
 									   SLONG* slice_length)
 {
 /**************************************
@@ -273,7 +273,7 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
                      sizeof(desc->array_desc_field_name));
     copy_exact_name (relation_name, desc->array_desc_relation_name,
                      sizeof(desc->array_desc_relation_name));
- 
+
 
 	desc->array_desc_flags = 0;
 	desc->array_desc_dimensions = *dimensions;
@@ -320,7 +320,7 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 		desc->array_desc_dtype = blr_quad;
 		break;
 	default:
-		return error(status, Arg::Gds(isc_sqlerr) << Arg::Num(-804) << 
+		return error(status, Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 							 Arg::Gds(isc_random) << Arg::Str("data type not understood"));
 	}
 
@@ -342,7 +342,7 @@ static void adjust_length( ISC_ARRAY_DESC* desc)
  **************************************/
 }
 
-static void copy_exact_name ( 
+static void copy_exact_name (
     const char* from,
     char* to,
     SSHORT bsize)
@@ -353,7 +353,7 @@ static void copy_exact_name (
  *
  **************************************
  *
- * Functional description 
+ * Functional description
  *  Copy null terminated name ot stops at bsize - 1.
  *  CVC: This is just another fc like DYN_terminate.
  *
@@ -374,7 +374,7 @@ static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
 {
 /**************************************
  *
- *	e r r o r	
+ *	e r r o r
  *
  **************************************
  *
@@ -535,9 +535,9 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
         if (global) {
             copy_exact_name (Y.RDB$FIELD_NAME, global, sizeof(Y.RDB$FIELD_NAME));
         }
- 
-	END_FOR 
-    ON_ERROR 
+
+	END_FOR
+    ON_ERROR
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
 		return UTLD_copy_status(isc_status, status);
@@ -546,7 +546,7 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
     isc_release_request(isc_status, &handle);
 
 	if (!flag)
-		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str(desc->array_desc_field_name) << 
+		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str(desc->array_desc_field_name) <<
 							 Arg::Str(desc->array_desc_relation_name));
 
 	return error(status, Arg::Gds(FB_SUCCESS));
@@ -573,7 +573,7 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 			return error(gen->gen_status, Arg::Gds(isc_misc_interpreted) << Arg::Str("SDL buffer overflow"));
 		}
 
-		// The sdl buffer is too small.  Allocate a larger one. 
+		// The sdl buffer is too small.  Allocate a larger one.
 
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);

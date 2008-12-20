@@ -180,9 +180,9 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			pathname[len + 1] = 0;
 		}
 	}
-	
+
 	const size_t separator_pos = pathname ? strlen(pathname) : 0;
-	
+
 /* check for the locale option  */
 
 	if (!locale) {				// no locale given: do the regular US msgs
@@ -337,7 +337,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 	write_bucket((msgnod*) &header, sizeof(header));
 
 	// Write out messages building B-tree
-	
+
 	int warning_counter = 0;
 	USHORT n = 0;
 	ULONG position = 0, prior_code = 0;
@@ -499,7 +499,7 @@ static SLONG write_bucket( const msgnod* bucket, USHORT length)
 		fprintf(stderr, "IO error on write()\n");
 		exit(FINI_ERROR);
 	}
-	
+
 	const SLONG zero_bytes = 0;
 	n = write(global_file, &zero_bytes, padded_length - length);
 	if (n == -1) {

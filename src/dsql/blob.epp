@@ -91,7 +91,7 @@ ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
  * Functional description
  *
  *  	This function will generate a bpb
- *	given a to_desc and a from_desc 
+ *	given a to_desc and a from_desc
  *	which contain the subtype and
  *	character set information.
  *
@@ -143,16 +143,16 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
  *	character set and segment size information
  *	from the metadata, given a relation/procedure name
  *	and column/parameter name.  it will fill in the information
- *	in the BLOB_DESC.	
+ *	in the BLOB_DESC.
  *
  ***********************************************/
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
 	isc_req_handle handle = 0;
 
-    copy_exact_name (field_name, desc->blob_desc_field_name, 
+    copy_exact_name (field_name, desc->blob_desc_field_name,
                      sizeof(desc->blob_desc_field_name));
-    copy_exact_name (relation_name, desc->blob_desc_relation_name, 
+    copy_exact_name (relation_name, desc->blob_desc_relation_name,
                      sizeof(desc->blob_desc_relation_name));
 
 	bool flag = false;
@@ -172,7 +172,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
             copy_exact_name ((UCHAR*) Y.RDB$FIELD_NAME, global,
                              sizeof(Y.RDB$FIELD_NAME));
         }
-	END_FOR 
+	END_FOR
     ON_ERROR
 		ISC_STATUS_ARRAY temp_status;
 		isc_release_request(temp_status, &handle);
@@ -200,7 +200,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 				copy_exact_name ((UCHAR*) Y.RDB$FIELD_NAME, global,
 								sizeof(Y.RDB$FIELD_NAME));
 			}
-		END_FOR 
+		END_FOR
 		ON_ERROR
 			ISC_STATUS_ARRAY temp_status;
 			isc_release_request(temp_status, &handle);
@@ -209,9 +209,9 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 
 		isc_release_request(isc_status, &handle);
 	}
-	
+
 	if (!flag)
-		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str((const char *)(desc->blob_desc_field_name)) << 
+		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str((const char *)(desc->blob_desc_field_name)) <<
 														Arg::Str((const char *)(desc->blob_desc_relation_name)));
 
 	return error(status, Arg::Gds(FB_SUCCESS));
@@ -241,9 +241,9 @@ ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
  *
  **************************************/
 
-    copy_exact_name (field_name, desc->blob_desc_field_name, 
+    copy_exact_name (field_name, desc->blob_desc_field_name,
                      sizeof(desc->blob_desc_field_name));
-    copy_exact_name (relation_name, desc->blob_desc_relation_name, 
+    copy_exact_name (relation_name, desc->blob_desc_relation_name,
                      sizeof(desc->blob_desc_relation_name));
 
 	desc->blob_desc_subtype = subtype;
@@ -256,7 +256,7 @@ ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
 
 
 
-static void copy_exact_name ( 
+static void copy_exact_name (
     const UCHAR* from,
     UCHAR* to,
     SSHORT bsize)
@@ -267,7 +267,7 @@ static void copy_exact_name (
  *
  **************************************
  *
- * Functional description 
+ * Functional description
  *  Copy null terminated name ot stops at bsize - 1.
  *  CVC: This is just another fc like DYN_terminate.
  *
@@ -288,7 +288,7 @@ static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
 {
 /**************************************
  *
- *	e r r o r	
+ *	e r r o r
  *
  **************************************
  *

@@ -64,7 +64,7 @@ int main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.  
+ *	Top level routine.
  *
  **************************************/
 	char facility[20], text[256], module[32], routine[32];

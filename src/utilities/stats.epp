@@ -135,7 +135,7 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 
 	if (isc_database_info(status_vector, db_handle, sizeof(info_request),
 						   info_request, sizeof(info_buffer),
-						   info_buffer)) 
+						   info_buffer))
 	{
 		return status_vector[1];
 	}
@@ -152,7 +152,7 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 		status_vector[2] = isc_arg_end;
 		return status_vector[1];
 	}
-	
+
 	const SCHAR* const end = info_buffer + sizeof(info_buffer);
 	for (const SCHAR* p = info_buffer; p < end && *p != isc_info_end;) {
 		const SSHORT length = gds__vax_integer(p + 1, 2);
@@ -352,7 +352,7 @@ static int zap_longs(SLONG* ptr, SSHORT count)
 			*ptr++ = 0;
 		} while (--count);
 	}
-		
+
 	return 0;
 }
 

@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h>				// isdigit 
+#include <ctype.h>				// isdigit
 #include "../jrd/common.h"
 #include "../jrd/constants.h"
 #include "../jrd/ibase.h"
@@ -336,7 +336,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		END_ERROR;
 	}
 
-// Query to obtain relation detail information 
+// Query to obtain relation detail information
 
 	FOR REL IN RDB$RELATIONS CROSS
 		RFR IN RDB$RELATION_FIELDS CROSS
@@ -352,7 +352,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		if (first)
 		{
 			first = false;
-			// Do we need to print domains 
+			// Do we need to print domains
 			if (domain_flag)
 				list_domain_table (relation_name, default_char_set_id);
 
@@ -362,7 +362,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					 relation_name,
 					 REL.RDB$OWNER_NAME,
 					 NEWLINE);
-					 
+
 			if (rel_type == rel_global_temp_preserve ||
 				rel_type == rel_global_temp_delete)
 			{
@@ -372,7 +372,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			{
 				isqlGlob.printf("CREATE TABLE ");
 			}
-			
+
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				if (new_name)
@@ -381,11 +381,11 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					ISQL_copy_SQL_id (relation_name, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("%s ", SQL_identifier);
 			}
-			else 
+			else
 			{
 				isqlGlob.printf("%s ", new_name ? new_name : relation_name);
 			}
-			
+
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
 				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2,
@@ -447,7 +447,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		}
 		else
 		{
-			// Look through types array 
+			// Look through types array
 			for (int i = 0; Column_types[i].type; i++)
 			{
 				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
@@ -456,7 +456,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 					if (isqlGlob.major_ods >= ODS_VERSION10)
 					{
-						// Handle Integral subtypes NUMERIC and DECIMAL 
+						// Handle Integral subtypes NUMERIC and DECIMAL
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 							(FLD.RDB$FIELD_TYPE == INTEGER)  ||
 							(FLD.RDB$FIELD_TYPE == BIGINT))
@@ -489,7 +489,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					if (!precision_known)
 					{
 
-						// Take a stab at numerics and decimals 
+						// Take a stab at numerics and decimals
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
 							(FLD.RDB$FIELD_SCALE < 0))
 						{
@@ -530,7 +530,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				}
 			}
 
-			// Catch arrays after printing the type  
+			// Catch arrays after printing the type
 
 			if (!FLD.RDB$DIMENSIONS.NULL)
 				ISQL_array_dimensions (FLD.RDB$FIELD_NAME);
@@ -549,14 +549,14 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 						 (USHORT) FLD.RDB$SEGMENT_LENGTH);
 			}
 
-			// International character sets 
+			// International character sets
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR ||
 				 FLD.RDB$FIELD_TYPE == BLOB) &&
 				!FLD.RDB$CHARACTER_SET_ID.NULL)
 			{
 				char_sets[0] = '\0';
 
-				// Override rdb$fields id with relation_fields if present 
+				// Override rdb$fields id with relation_fields if present
 
 				if (!RFR.RDB$COLLATION_ID.NULL)
 					collation = RFR.RDB$COLLATION_ID;
@@ -577,7 +577,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		}
 
 
-		// Handle defaults for columns 
+		// Handle defaults for columns
 
 		if (!RFR.RDB$DEFAULT_SOURCE.NULL)
 		{
@@ -711,7 +711,7 @@ static bool extract_rel_constraints(const char* relation_name)
 			isqlGlob.printf("PRIMARY KEY (%s)", collist);
 		else //if (!strncmp (RELC.RDB$CONSTRAINT_TYPE, "UNIQUE", 6)) // redundant
 			isqlGlob.printf("UNIQUE (%s)", collist);
-			
+
 		// Yes, the same RDB$... naming convention is used for both domains and indices.
 		const bool explicit_index = (isPK && !fb_utils::implicit_pk(IDX.RDB$INDEX_NAME) ||
 			!isPK && !fb_utils::implicit_domain(IDX.RDB$INDEX_NAME)) &&
@@ -734,7 +734,7 @@ static bool extract_rel_constraints(const char* relation_name)
 		ISQL_errmsg(gds_status);
 		return false;
 	END_ERROR;
-	
+
 	return true;
 }
 
@@ -754,7 +754,7 @@ static void get_procedure_args(const char* proc_name)
  **************************************/
 	SCHAR char_sets[86];
 
-// query to retrieve the parameters. 
+// query to retrieve the parameters.
 
 
 /* placed the two identical code blocks into one
@@ -762,8 +762,8 @@ static void get_procedure_args(const char* proc_name)
    FSG 18.Nov.2000
 */
 
-	//  Parameter types 0 = input  
-	//  Parameter types 1 = return 
+	//  Parameter types 0 = input
+	//  Parameter types 1 = return
 
 	for (SSHORT ptype = 0; ptype < 2; ptype++)
 	{
@@ -804,7 +804,7 @@ static void get_procedure_args(const char* proc_name)
 
 					if (!PRM2.RDB$PARAMETER_MECHANISM.NULL)
 						prm_mech = (prm_mech_t) PRM2.RDB$PARAMETER_MECHANISM;
-				END_FOR 
+				END_FOR
 			}
 
 			char relationName[BUFFER_LENGTH128] = "";
@@ -834,18 +834,18 @@ static void get_procedure_args(const char* proc_name)
 							strcpy(relationField, PRM2.RDB$FIELD_NAME);
 					}
 
-				END_FOR 
+				END_FOR
 			}
 
 			if (first_time)
 			{
 				first_time = false;
 				if (ptype == 0)
-				{ // this is the input part 
+				{ // this is the input part
 					isqlGlob.printf("(");
 				}
 				else
-				{ // we are in the output part 
+				{ // we are in the output part
 					isqlGlob.printf("RETURNS (");
 				}
 			}
@@ -856,7 +856,7 @@ static void get_procedure_args(const char* proc_name)
 
 			fb_utils::exact_name(PRM.RDB$PARAMETER_NAME);
 
-			// CVC: Parameter names need check for dialect 3, too. 
+			// CVC: Parameter names need check for dialect 3, too.
 
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				ISQL_copy_SQL_id (PRM.RDB$PARAMETER_NAME, SQL_identifier, DBL_QUOTE);
@@ -908,7 +908,7 @@ static void get_procedure_args(const char* proc_name)
 			}
 			else
 			{
-				// Get column type name to print 
+				// Get column type name to print
 				for (int i = 0; Column_types[i].type; i++)
 				{
 					if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
@@ -917,7 +917,7 @@ static void get_procedure_args(const char* proc_name)
 
 						if (isqlGlob.major_ods >= ODS_VERSION10)
 						{
-							// Handle Integral subtypes NUMERIC and DECIMAL 
+							// Handle Integral subtypes NUMERIC and DECIMAL
 							if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 								(FLD.RDB$FIELD_TYPE == INTEGER) ||
 								(FLD.RDB$FIELD_TYPE == BIGINT))
@@ -949,7 +949,7 @@ static void get_procedure_args(const char* proc_name)
 						}
 						if (!precision_known)
 						{
-							// Take a stab at numerics and decimals 
+							// Take a stab at numerics and decimals
 							if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
 								(FLD.RDB$FIELD_SCALE < 0))
 							{
@@ -996,7 +996,7 @@ static void get_procedure_args(const char* proc_name)
 					}
 				}
 
-				// Show international character sets and collations 
+				// Show international character sets and collations
 				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
 				{
 					char_sets[0] = 0;
@@ -1040,14 +1040,14 @@ static void get_procedure_args(const char* proc_name)
 			return;
 		END_ERROR;
 
-		// If there was at least one param, close parens 
+		// If there was at least one param, close parens
 
 		if (!first_time)
 		{
 			isqlGlob.printf(")%s", NEWLINE);
 		}
 
-	}						// end for ptype 
+	}						// end for ptype
 	isqlGlob.printf("AS %s", NEWLINE);
 }
 
@@ -1087,7 +1087,7 @@ static processing_state list_all_grants2(bool show_role_list,
  **************************************/
 	bool first_role = true;
 	TEXT prev_owner[44];
-	
+
 	// Only extract (not show) wants the role list and with escaped quoted identifiers.
 	const bool mangle = show_role_list;
 
@@ -1100,14 +1100,14 @@ static processing_state list_all_grants2(bool show_role_list,
 			SORTED BY XX.RDB$ROLE_NAME
 
 			bool system_flag = false;
-			if (isqlGlob.major_ods >= ODS_VERSION11) 
+			if (isqlGlob.major_ods >= ODS_VERSION11)
 			{
 				FOR SF IN RDB$ROLES
-					WITH SF.RDB$ROLE_NAME = XX.RDB$ROLE_NAME 
+					WITH SF.RDB$ROLE_NAME = XX.RDB$ROLE_NAME
 					 AND SF.RDB$SYSTEM_FLAG > 0
-					 
+
 					system_flag = true;
-					
+
 				END_FOR
 			}
 
@@ -1156,7 +1156,7 @@ static processing_state list_all_grants2(bool show_role_list,
 
 	// This version of cursor gets only sql tables identified by security class
 	// and misses views, getting only null view_source
-	
+
 	char banner[100];
 	sprintf(banner, "%s/* Grant permissions for this database */%s",
 					 NEWLINE,
@@ -1317,7 +1317,7 @@ static void list_all_procs()
 					 PRC.RDB$PROCEDURE_NAME);
 		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
 
-		// Print the procedure body 
+		// Print the procedure body
 
 		if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
@@ -1367,10 +1367,10 @@ static void list_all_tables(LegacyTables flag,
 		REL.RDB$VIEW_BLR MISSING
 		SORTED BY REL.RDB$RELATION_NAME
 
-		// If this is not an SQL table and we aren't doing ALL objects 
+		// If this is not an SQL table and we aren't doing ALL objects
 		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) && (flag != ALL_objects) )
 			continue;
-		// Null terminate name string 
+		// Null terminate name string
 
 		fb_utils::exact_name(REL.RDB$RELATION_NAME);
 
@@ -1423,7 +1423,7 @@ static void list_all_triggers()
 		if (TRG.RDB$TRIGGER_INACTIVE.NULL)
 			TRG.RDB$TRIGGER_INACTIVE = 0;
 
-		//  If trigger is not SQL put it in comments 
+		//  If trigger is not SQL put it in comments
 		if (!(TRG.RDB$FLAGS & TRG_sql))
 			isqlGlob.printf("/* ");
 
@@ -1478,7 +1478,7 @@ static void list_all_triggers()
 		if (TRG.RDB$TRIGGER_INACTIVE.NULL)
 			TRG.RDB$TRIGGER_INACTIVE = 0;
 
-		//  If trigger is not SQL put it in comments 
+		//  If trigger is not SQL put it in comments
 		if (!(TRG.RDB$FLAGS & TRG_sql))
 			isqlGlob.printf("/* ");
 
@@ -1537,7 +1537,7 @@ static void list_check()
  *
  **************************************/
 
-	// Query gets the check clauses for triggers stored for check constraints 
+	// Query gets the check clauses for triggers stored for check constraints
 
 	FOR TRG IN RDB$TRIGGERS CROSS
 		CHK IN RDB$CHECK_CONSTRAINTS WITH
@@ -1792,7 +1792,7 @@ static void list_create_db()
 	}
 	isqlGlob.printf("CREATE DATABASE '%s'", isqlGlob.global_Target_db);
 
-	// Get the page size from db_info call 
+	// Get the page size from db_info call
 	SCHAR info_buf[20];
 	// CVC: Finally I got the idea: translate is associated with WISQL that
 	// no longer exists. Localizing the messages means also not printing
@@ -1824,10 +1824,10 @@ static void list_create_db()
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	}
 
-// List secondary files and shadows as alter db and create shadow in comment 
+// List secondary files and shadows as alter db and create shadow in comment
 
 	bool first = true;
-	
+
 	FOR FIL IN RDB$FILES
 		SORTED BY FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_SEQUENCE
 
@@ -1839,7 +1839,7 @@ static void list_create_db()
 		}
 
 		first = false;
-		// reset nulls to zero 
+		// reset nulls to zero
 
 		if (FIL.RDB$FILE_FLAGS.NULL)
 			FIL.RDB$FILE_FLAGS = 0;
@@ -1851,7 +1851,7 @@ static void list_create_db()
 			FIL.RDB$FILE_START = 0;
 		fb_utils::exact_name(FIL.RDB$FILE_NAME);
 
-		// Pure secondary files 
+		// Pure secondary files
 		if (FIL.RDB$FILE_FLAGS == 0)
 		{
 			isqlGlob.printf("%sALTER DATABASE ADD FILE '%s'",
@@ -1969,7 +1969,7 @@ static void list_domain_table(const SCHAR* table_name,
 
 				if (isqlGlob.major_ods >= ODS_VERSION10)
 				{
-					// Handle Integral subtypes NUMERIC and DECIMAL 
+					// Handle Integral subtypes NUMERIC and DECIMAL
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
 						(FLD.RDB$FIELD_TYPE == BIGINT))
@@ -2001,7 +2001,7 @@ static void list_domain_table(const SCHAR* table_name,
 
 				if (!precision_known)
 				{
-					// Take a stab at numerics and decimals 
+					// Take a stab at numerics and decimals
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
 					{
 						sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
@@ -2042,7 +2042,7 @@ static void list_domain_table(const SCHAR* table_name,
 
 		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
-			// Length for chars 
+			// Length for chars
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 		}
 
@@ -2080,7 +2080,7 @@ static void list_domain_table(const SCHAR* table_name,
 		if (FLD.RDB$NULL_FLAG == 1)
 			isqlGlob.printf(" NOT NULL");
 
-		// Bug 8261:  Now show the collation order information 
+		// Bug 8261:  Now show the collation order information
 		/* Show the collation order if one has been specified.  If the collation
 		   order is the default for the character set being used, then no collation
 		   order will be shown ( because it isn't needed ).
@@ -2152,7 +2152,7 @@ static void list_domains(SSHORT default_char_set_id)
 
 				if (isqlGlob.major_ods >= ODS_VERSION10)
 				{
-					// Handle Integral subtypes NUMERIC and DECIMAL 
+					// Handle Integral subtypes NUMERIC and DECIMAL
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
 						(FLD.RDB$FIELD_TYPE == BIGINT))
@@ -2184,7 +2184,7 @@ static void list_domains(SSHORT default_char_set_id)
 
 				if (!precision_known)
 				{
-					// Take a stab at numerics and decimals 
+					// Take a stab at numerics and decimals
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
 					{
 						sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
@@ -2225,7 +2225,7 @@ static void list_domains(SSHORT default_char_set_id)
 
 		else if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 		{
-			// Length for chars 
+			// Length for chars
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
 		}
 
@@ -2262,7 +2262,7 @@ static void list_domains(SSHORT default_char_set_id)
 		if (FLD.RDB$NULL_FLAG == 1)
 			isqlGlob.printf(" NOT NULL");
 
-		// Bug 8261:  Now show the collation order information 
+		// Bug 8261:  Now show the collation order information
 		/* Show the collation order if one has been specified.  If the collation
 		   order is the default for the character set being used, then no collation
 		   order will be shown ( because it isn't needed
@@ -2465,13 +2465,13 @@ static void list_foreign()
 					 collist,
 					 RELC2.RDB$RELATION_NAME);
 
-		// Get the column list for the primary key 
+		// Get the column list for the primary key
 
 		ISQL_get_index_segments (collist, sizeof(collist), RELC2.RDB$INDEX_NAME, true);
 
 		isqlGlob.printf("(%s)", collist);
 
-		// Add the referential actions, if any 
+		// Add the referential actions, if any
 		if (!REFC.RDB$UPDATE_RULE.NULL)
 		{
 			ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
@@ -2539,7 +2539,7 @@ static void list_functions()
 		else
 			strcpy(SQL_identifier, FUN.RDB$FUNCTION_NAME);
 
-		// Start new function declaration 
+		// Start new function declaration
 		isqlGlob.printf("DECLARE EXTERNAL FUNCTION %s%s", SQL_identifier, NEWLINE);
 
 		bool firstarg = true;
@@ -2548,12 +2548,12 @@ static void list_functions()
 			FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME
 			SORTED BY FNA.RDB$ARGUMENT_POSITION
 
-			// Find parameter type 
+			// Find parameter type
 			int i = 0;
 			while (FNA.RDB$FIELD_TYPE != Column_types[i].type)
 				i++;
 
-			// Print length where appropriate 
+			// Print length where appropriate
 			if ((FNA.RDB$FIELD_TYPE == T_CHAR)   ||
 				(FNA.RDB$FIELD_TYPE == VARCHAR) ||
 				(FNA.RDB$FIELD_TYPE == CSTRING))
@@ -2605,7 +2605,7 @@ static void list_functions()
 										-FNA1.RDB$FIELD_SCALE);
 								precision_known = true;
 							}
-						} // if field_precision is not null 
+						} // if field_precision is not null
 					END_FOR
 					ON_ERROR
 						ISQL_errmsg (isc_status);
@@ -2615,7 +2615,7 @@ static void list_functions()
 
 				if (!precision_known)
 				{
-					// Take a stab at numerics and decimals 
+					// Take a stab at numerics and decimals
 					if ((FNA.RDB$FIELD_TYPE == SMALLINT) &&
 						(FNA.RDB$FIELD_SCALE < 0))
 					{
@@ -2637,10 +2637,10 @@ static void list_functions()
 					else
 						sprintf (type_buffer, "%s",
 								 Column_types[i].type_name);
-				} // if !precision_known 
-			} // if T_CHAR or VARCHAR or CSTRING ... else 
+				} // if !precision_known
+			} // if T_CHAR or VARCHAR or CSTRING ... else
 
-			// If a return argument, save it for the end, otherwise print 
+			// If a return argument, save it for the end, otherwise print
 
 			/*
 			 * Changed the following to not return a BLOB by value.
@@ -2674,7 +2674,7 @@ static void list_functions()
 			}
 
 			if (printarg) {
-				// First arg needs no comma 
+				// First arg needs no comma
 				isqlGlob.printf("%s%s%s", (firstarg ? "" : ", "), type_buffer,
 						 UDF_param_types[ptype]);
 				firstarg = false;
@@ -2686,13 +2686,13 @@ static void list_functions()
 			return;
 		END_ERROR;
 
-		// Print the return type -- All functions return a type 
+		// Print the return type -- All functions return a type
 		isqlGlob.printf("%s%s%s",
 				 NEWLINE,
 				 return_buffer,
 				 NEWLINE);
 
-		// Print out entrypoint information 
+		// Print out entrypoint information
 		ISQL_copy_SQL_id(FUN.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
 		ISQL_copy_SQL_id(FUN.RDB$MODULE_NAME, SQL_identifier2, SINGLE_QUOTE);
 
@@ -2782,7 +2782,7 @@ static void list_index()
 	char collist[BUFFER_LENGTH512 * 2];
 
 	bool first = true;
-	
+
 	FOR IDX IN RDB$INDICES CROSS RELC IN RDB$RELATIONS
 		OVER RDB$RELATION_NAME
 		WITH (RELC.RDB$SYSTEM_FLAG NE 1 OR RELC.RDB$SYSTEM_FLAG MISSING)
@@ -2820,7 +2820,7 @@ static void list_index()
 					IDX.RDB$INDEX_NAME,
 					IDX.RDB$RELATION_NAME);
 
-		// Get index expression or column names 
+		// Get index expression or column names
 
 		if (!IDX.RDB$EXPRESSION_BLR.NULL)
 		{
@@ -2857,7 +2857,7 @@ static void list_views()
  *
  **************************************/
 
-// If this is a view, use print_blob to print the view text 
+// If this is a view, use print_blob to print the view text
 
 	FOR REL IN RDB$RELATIONS WITH
 		(REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
@@ -2882,7 +2882,7 @@ static void list_views()
 				 NEWLINE);
 		isqlGlob.printf("CREATE VIEW %s (", SQL_identifier);
 
-		// Get column list 
+		// Get column list
 		FOR RFR IN RDB$RELATION_FIELDS WITH
 			RFR.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
 			SORTED BY RFR.RDB$FIELD_POSITION

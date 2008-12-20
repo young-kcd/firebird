@@ -68,7 +68,7 @@ int main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.  
+ *	Top level routine.
  *
  **************************************/
 
@@ -338,7 +338,7 @@ static bool get_sql_code( SSHORT * sql_code)
 		if (sql_num < 0) {
 			srch_num = 1000 + sql_num;
 			FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
-				AND M.NUMBER = srch_num 
+				AND M.NUMBER = srch_num
 
                 got_it = true;
 			END_FOR;
@@ -346,7 +346,7 @@ static bool get_sql_code( SSHORT * sql_code)
 		else {
 			srch_num = sql_num;
 			FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
-				AND M.NUMBER = srch_num 
+				AND M.NUMBER = srch_num
 
                 got_it = true;
 			END_FOR;

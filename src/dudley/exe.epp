@@ -194,8 +194,8 @@ void EXE_create_database( DBB dbb)
 
 	const TEXT* file_name = dbb->dbb_name->sym_string;
 
-	const SLONG result = isc_attach_database(gds_status, 0, file_name, 
-		&DB, dpb.getBufferLength(), 
+	const SLONG result = isc_attach_database(gds_status, 0, file_name,
+		&DB, dpb.getBufferLength(),
 		reinterpret_cast<const char*>(dpb.getBuffer()));
 	if (!dudleyGlob.DDL_replace) {
 		if (!result) {
@@ -250,8 +250,8 @@ void EXE_create_database( DBB dbb)
 		dpb.insertInt(isc_dpb_wal_grp_cmt_wait, len);
 	}
 
-	if (isc_create_database(gds_status, 0, file_name, &DB, 
-			dpb.getBufferLength(), 
+	if (isc_create_database(gds_status, 0, file_name, &DB,
+			dpb.getBufferLength(),
 			reinterpret_cast<const char*>(dpb.getBuffer()), 0))
 	{
 		DDL_error_abort(gds_status, 21, SafeArg() << file_name);
@@ -301,12 +301,12 @@ void EXE_create_database( DBB dbb)
 
 /* If there is a description of the database, store it now */
 
-	FOR D IN RDB$DATABASE 
-		MODIFY D USING 
+	FOR D IN RDB$DATABASE
+		MODIFY D USING
 		if (dbb->dbb_description) {
 			store_text(dbb->dbb_description, &D.RDB$DESCRIPTION);
 			D.RDB$DESCRIPTION.NULL = FALSE;
-		} 
+		}
 		if (dbb->dbb_security_class) {
 			MOVE_SYMBOL(dbb->dbb_security_class, D.RDB$SECURITY_CLASS);
 			D.RDB$SECURITY_CLASS.NULL = FALSE;
@@ -365,8 +365,8 @@ void EXE_drop_database( DBB dbb)
 	}
 #endif
 
-	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, 
-				&DB, dpb.getBufferLength(), 
+	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string,
+				&DB, dpb.getBufferLength(),
 				reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		DDL_error_abort(gds_status, 25);
@@ -707,8 +707,8 @@ void EXE_modify_database( DBB dbb)
 	}
 */
 
-	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, 
-				&DB, dpb.getBufferLength(), 
+	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string,
+				&DB, dpb.getBufferLength(),
 				reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		DDL_error_abort(gds_status, 29, SafeArg() << dbb->dbb_name->sym_string);
@@ -798,7 +798,7 @@ void EXE_modify_database( DBB dbb)
 
 		FOR X IN RDB$LOG_FILES
 			DDL_error_abort(NULL, 333);
-			// msg 333: Cannot modify log file specification.  Drop and redefine log files 
+			// msg 333: Cannot modify log file specification.  Drop and redefine log files
 		END_FOR;
 
 		// add the new log files.
@@ -889,7 +889,7 @@ static void add_cache( DBB dbb)
 // **************************************
 	bool result = false;
 
-	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
+	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache
 		result = true;
 		DDL_err(323, SafeArg() << FIL.RDB$FILE_NAME);
 		// msg 323: a shared cache file %s already exists
@@ -900,7 +900,7 @@ static void add_cache( DBB dbb)
 
 	FIL file = dbb->dbb_cache_file;
 
-	STORE FIL IN RDB$FILES 
+	STORE FIL IN RDB$FILES
 		MOVE_SYMBOL(file->fil_name, FIL.RDB$FILE_NAME);
 		FIL.RDB$FILE_START = 0;
 		FIL.RDB$FILE_LENGTH = file->fil_length;
@@ -1000,7 +1000,7 @@ static void add_files( DBB dbb, FIL files)
  **************************************
  *
  * Functional description
- *	Add a file to an existing database.  
+ *	Add a file to an existing database.
  *
  **************************************/
 	FIL file, next;
@@ -1018,11 +1018,11 @@ static void add_files( DBB dbb, FIL files)
    against the user given maximum length (if given). */
 
 	SLONG length = 0, start = 0;
-	
+
 	if (dbb) {
 		TEXT s[128];
 		if (isc_database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
-							   sizeof(s), s) || s[0] != isc_info_allocation) 
+							   sizeof(s), s) || s[0] != isc_info_allocation)
 		{
 			DDL_err(38);
 			/* msg 38: isc_database_info failed */
@@ -1333,7 +1333,7 @@ static void add_index( DUDLEY_IDX index)
 
 	if (!if_any) {
 		DDL_err(43, SafeArg() << index->idx_relation->sym_string);
-		// msg 43: relation %s doesn't exist 
+		// msg 43: relation %s doesn't exist
 		return;
 	}
 
@@ -1402,7 +1402,7 @@ static void add_index( DUDLEY_IDX index)
 /* if there wasn't an index record, clean up any orphan index segments */
 
 	FOR X IN RDB$INDEX_SEGMENTS
-		WITH X.RDB$INDEX_NAME = index->idx_name->sym_string 
+		WITH X.RDB$INDEX_NAME = index->idx_name->sym_string
 		ERASE X;
 	END_FOR;
 
@@ -1558,7 +1558,7 @@ static void add_security_class( SCL sec_class)
 
 	SYM name = sec_class->scl_name;
 
-	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string 
+	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string
 		if_any = true;
 		DDL_err(50, SafeArg() << name->sym_string);
 		/* msg 50: security class %s already exists */
@@ -1567,7 +1567,7 @@ static void add_security_class( SCL sec_class)
 	if (if_any)
 		return;
 
-	STORE X IN RDB$SECURITY_CLASSES 
+	STORE X IN RDB$SECURITY_CLASSES
 		MOVE_SYMBOL(name, X.RDB$SECURITY_CLASS);
 		if (sec_class->scl_description) {
 			store_text(sec_class->scl_description, &X.RDB$DESCRIPTION);
@@ -1597,12 +1597,12 @@ static void add_trigger( DUDLEY_TRG trigger)
 	FOR F IN RDB$RELATION_FIELDS CROSS V IN RDB$VIEW_RELATIONS WITH
 		F.RDB$RELATION_NAME = V.RDB$VIEW_NAME AND
 		F.RDB$RELATION_NAME = relation->rel_name->sym_string
-		MODIFY F USING 
+		MODIFY F USING
 			F.RDB$UPDATE_FLAG = TRUE;
 		END_MODIFY;
 	END_FOR;
 
-	STORE X IN RDB$TRIGGERS 
+	STORE X IN RDB$TRIGGERS
 		X.RDB$TRIGGER_SOURCE.NULL = TRUE;
 		X.RDB$TRIGGER_BLR.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
@@ -1617,12 +1617,12 @@ static void add_trigger( DUDLEY_TRG trigger)
 			X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 			store_text(trigger->trg_source, &X.RDB$TRIGGER_SOURCE);
 		}
-		
+
 		if (trigger->trg_statement) {
 			X.RDB$TRIGGER_BLR.NULL = FALSE;
 			store_blr(trigger->trg_statement, &X.RDB$TRIGGER_BLR, NULL);
 		}
-		
+
 		if (trigger->trg_description) {
 			X.RDB$DESCRIPTION.NULL = FALSE;
 			store_text(trigger->trg_description, &X.RDB$DESCRIPTION);
@@ -1668,7 +1668,7 @@ static void add_type( TYP fldtype)
  *
  **************************************/
 
-	STORE X IN RDB$TYPES 
+	STORE X IN RDB$TYPES
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		MOVE_SYMBOL(fldtype->typ_field_name, X.RDB$FIELD_NAME);
 		MOVE_SYMBOL(fldtype->typ_name, X.RDB$TYPE_NAME);
@@ -1702,7 +1702,7 @@ static void add_user_privilege( USERPRIV upriv)
 
 /* rdb$owner_name doesn't get filled in until we store the relation */
 
-	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ upriv->userpriv_relation->sym_string 
+	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ upriv->userpriv_relation->sym_string
 		strcpy(grantor, X.RDB$OWNER_NAME);
 		if_any = true;
 	END_FOR;
@@ -1718,7 +1718,7 @@ static void add_user_privilege( USERPRIV upriv)
    loop for each privilege, and if update privilege, loop for each field */
 
 	for (usr = upriv->userpriv_userlist; usr; usr = usr->usre_next) {
-		/* start with a fresh copy of privflag and erase each 
+		/* start with a fresh copy of privflag and erase each
 		   privilege as we take care of it */
 
 		privflag = upriv->userpriv_flags & ~USERPRIV_grant;
@@ -1815,7 +1815,7 @@ static void add_view( DUDLEY_REL relation)
 
 	contexts = rse->nod_arg[s_rse_contexts];
 	for (i = 0; i < contexts->nod_count; i++) {
-		STORE X IN RDB$VIEW_RELATIONS 
+		STORE X IN RDB$VIEW_RELATIONS
 			context = (DUDLEY_CTX) contexts->nod_arg[i]->nod_arg[0];
 			target = context->ctx_relation;
 			MOVE_SYMBOL(relation->rel_name, X.RDB$VIEW_NAME);
@@ -1833,7 +1833,7 @@ static void add_view( DUDLEY_REL relation)
 					relation->rel_name->sym_string);
 		/* msg 56: field %s already exists in relation %s */
 
-		STORE X IN RDB$RELATION_FIELDS 
+		STORE X IN RDB$RELATION_FIELDS
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 			X.RDB$FIELD_POSITION.NULL = TRUE;
 			X.RDB$DESCRIPTION.NULL = TRUE;
@@ -1860,7 +1860,7 @@ static void add_view( DUDLEY_REL relation)
 							target->rel_name->sym_string <<
 							field->fld_name->sym_string);
 				/* msg 57: field %s doesn't exist in relation %s as referenced in view field %s */
-				
+
 				X.RDB$VIEW_CONTEXT = context->ctx_context_id;
 				FOR RFR IN RDB$RELATION_FIELDS WITH
 					RFR.RDB$RELATION_NAME EQ target->rel_name->sym_string AND
@@ -1948,7 +1948,7 @@ static DUDLEY_FLD check_field( SYM relation, SYM field)
 			SYM symbol = HSH_typed_lookup(X.RDB$FIELD_SOURCE, (USHORT) 0, SYM_global);
 			if (symbol)
 				return (DUDLEY_FLD) symbol->sym_object;
-		} 
+		}
 	END_FOR;
 
 	return NULL;
@@ -1964,7 +1964,7 @@ static bool check_function( SYM name)
  **************************************
  *
  * Functional description
- *	Check function for existence.  
+ *	Check function for existence.
  *
  **************************************/
 	bool if_any = false;
@@ -1981,7 +1981,7 @@ static bool check_range(DUDLEY_FLD field)
 {
 /**************************************
  *
- *	c h e c k _ r a n g e 
+ *	c h e c k _ r a n g e
  *
  **************************************
  *
@@ -2003,7 +2003,7 @@ static bool check_range(DUDLEY_FLD field)
 // existance: if neither is an array, life is good
 // else if there are dimensions they'd better match
 
-	FOR X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name 
+	FOR X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name
 		if (!dims) {
 			if (!X.RDB$DIMENSIONS.NULL)
 				DDL_err(302, SafeArg() << name);
@@ -2045,7 +2045,7 @@ static bool check_relation( SYM name)
  **************************************
  *
  * Functional description
- *	Check relation for existence.  
+ *	Check relation for existence.
  *
  **************************************/
 	bool if_any = false;
@@ -2121,7 +2121,7 @@ static void drop_cache( DBB dbb)
 // **************************************
 	bool found = false;
 
-	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache 
+	FOR FIL IN RDB$FILES WITH FIL.RDB$FILE_FLAGS EQ FILE_cache
 		ERASE FIL;
 		found = true;
 	END_FOR;
@@ -2131,8 +2131,8 @@ static void drop_cache( DBB dbb)
 		// msg 325: no shared cache file exists to drop
 
 	if (!dudleyGlob.DDL_errors) {
-		COMMIT 
-		ON_ERROR 
+		COMMIT
+		ON_ERROR
 			DDL_db_error(gds_status, 326);
 			// msg 326: error commiting deletion of shared cache file
 			ROLLBACK;
@@ -2155,9 +2155,9 @@ static void drop_field( DUDLEY_FLD field)
  *	Drop a field from a relation.  First
  *	check that it's not referenced in a
  *	view (other that the current one, if the
- *	current relation happens to be a view).  
+ *	current relation happens to be a view).
  *	If the field is computed, and
- *	the current reference is not a view, 
+ *	the current reference is not a view,
  *	erase the artificially named source field.
  *
  **************************************/
@@ -2174,7 +2174,7 @@ static void drop_field( DUDLEY_FLD field)
 		X.RDB$FIELD_SOURCE = Y.RDB$FIELD_SOURCE AND
 		Y.RDB$RELATION_NAME EQ Z.RDB$VIEW_NAME AND
 		X.RDB$RELATION_NAME EQ Z.RDB$RELATION_NAME AND
-		Y.RDB$VIEW_CONTEXT EQ Z.RDB$VIEW_CONTEXT 
+		Y.RDB$VIEW_CONTEXT EQ Z.RDB$VIEW_CONTEXT
 
 		DDL_err(60, SafeArg() << field->fld_name->sym_string <<
 				relation->rel_name->sym_string <<
@@ -2192,12 +2192,12 @@ static void drop_field( DUDLEY_FLD field)
 		FOR Y IN RDB$RELATION_FIELDS WITH
 			Y.RDB$FIELD_NAME = X.RDB$BASE_FIELD
 			if_any = true;
-		END_FOR 
+		END_FOR
 
 		if (!if_any) {
 			FOR Z IN RDB$FIELDS WITH
 				Z.RDB$FIELD_NAME = X.RDB$FIELD_SOURCE
-				AND NOT(Z.RDB$COMPUTED_BLR MISSING) 
+				AND NOT(Z.RDB$COMPUTED_BLR MISSING)
 				ERASE Z;
 			END_FOR;
 		}
@@ -2226,7 +2226,7 @@ static void drop_filter( FILTER filter)
  **************************************/
 	bool if_any = false;
 
-	FOR F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME EQ filter->filter_name->sym_string 
+	FOR F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME EQ filter->filter_name->sym_string
 		ERASE F;
 		if_any = true;
 	END_FOR;
@@ -2260,7 +2260,7 @@ static void drop_function( FUNC function)
 		ERASE FUNCARG;
 	END_FOR;
 
-	FOR FUNC IN RDB$FUNCTIONS WITH FUNC.RDB$FUNCTION_NAME EQ name 
+	FOR FUNC IN RDB$FUNCTIONS WITH FUNC.RDB$FUNCTION_NAME EQ name
 		ERASE FUNC;
 		if_any = true;
 	END_FOR;
@@ -2308,21 +2308,21 @@ static void drop_global_field( DUDLEY_FLD field)
 		return;
 
 	FOR X IN RDB$TYPES WITH
-		X.RDB$FIELD_NAME EQ field->fld_name->sym_string 
+		X.RDB$FIELD_NAME EQ field->fld_name->sym_string
 		ERASE X;
 	END_FOR;
 
 	FOR X IN RDB$FIELD_DIMENSIONS WITH
-		X.RDB$FIELD_NAME EQ field->fld_name->sym_string 
+		X.RDB$FIELD_NAME EQ field->fld_name->sym_string
 		ERASE X;
 	END_FOR;
 
 	FOR X IN RDB$FIELDS WITH
-		X.RDB$FIELD_NAME EQ field->fld_name->sym_string 
+		X.RDB$FIELD_NAME EQ field->fld_name->sym_string
 		ERASE X;
 	if_any = true;
-	END_FOR 
-	
+	END_FOR
+
 	if (!if_any)
 		DDL_err(65, SafeArg() << field->fld_name->sym_string);
 		/* msg 65: field %s doesn't exist */
@@ -2347,11 +2347,11 @@ static void drop_index( DUDLEY_IDX index)
 
 /* Clean out index segments first.  */
 
-	FOR SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name 
+	FOR SEG IN RDB$INDEX_SEGMENTS WITH SEG.RDB$INDEX_NAME EQ name
 		ERASE SEG;
 	END_FOR;
 
-	FOR IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name 
+	FOR IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ name
 		ERASE IDX;
 		if_any = true;
 	END_FOR;
@@ -2389,7 +2389,7 @@ static void drop_relation( DUDLEY_REL relation)
 	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name
 		if (X.RDB$SYSTEM_FLAG == 1) {
 			DDL_err(68, SafeArg() << name);
-			// msg 68: can't drop system relation %s 
+			// msg 68: can't drop system relation %s
 			return;
 		}
 		if_any = true;
@@ -2403,35 +2403,35 @@ static void drop_relation( DUDLEY_REL relation)
 
 /* First, get rid of the relation itself.  This will speed things later on. */
 
-	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name 
+	FOR X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name
 		ERASE X;
 	END_FOR;
 
 /* Clean out RDB$INDICES, RDB$VIEW_RELATIONS and RDB$RELATION_FIELDS */
 
 	FOR IDX IN RDB$INDICES WITH IDX.RDB$RELATION_NAME EQ name
-		FOR SEG IN RDB$INDEX_SEGMENTS WITH 
-			SEG.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME 
+		FOR SEG IN RDB$INDEX_SEGMENTS WITH
+			SEG.RDB$INDEX_NAME EQ IDX.RDB$INDEX_NAME
 			ERASE SEG;
 		END_FOR;
 		ERASE IDX;
 	END_FOR;
 
-	FOR X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ name 
+	FOR X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ name
 		ERASE X;
 	END_FOR;
 
-	FOR X IN RDB$RELATION_FIELDS WITH X.RDB$RELATION_NAME EQ name 
+	FOR X IN RDB$RELATION_FIELDS WITH X.RDB$RELATION_NAME EQ name
 		ERASE X;
 	END_FOR;
 
 /* Finally, get rid of any user privileges */
 
 	FOR PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name AND
-		PRIV.RDB$OBJECT_TYPE = obj_relation 
+		PRIV.RDB$OBJECT_TYPE = obj_relation
 		ERASE PRIV;
-	END_FOR 
-	ON_ERROR 
+	END_FOR
+	ON_ERROR
 	END_ERROR;
 }
 
@@ -2452,7 +2452,7 @@ static void drop_security_class( SCL scl_class)
 
 	SYM name = scl_class->scl_name;
 
-	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string 
+	FOR X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ name->sym_string
 		ERASE X;
 		if_any = true;
 	END_FOR;
@@ -2480,7 +2480,7 @@ static void drop_shadow( SLONG shadow_number)
 	dudley_lls* first_file = NULL;
 
 	FOR FIL IN RDB$FILES WITH
-		FIL.RDB$SHADOW_NUMBER EQ shadow_number 
+		FIL.RDB$SHADOW_NUMBER EQ shadow_number
 		ERASE FIL;
 		SYM string = (SYM) DDL_alloc(SYM_LEN + strlen(FIL.RDB$FILE_NAME));
 		strcpy(string->sym_name, FIL.RDB$FILE_NAME);
@@ -2494,8 +2494,8 @@ static void drop_shadow( SLONG shadow_number)
 		/* msg 71: shadow %ld doesn't exist */
 
 	if (!dudleyGlob.DDL_errors) {
-		COMMIT 
-		ON_ERROR 
+		COMMIT
+		ON_ERROR
 			DDL_db_error(gds_status, 72);
 			/* msg 72: error commiting deletion of shadow */
 			ROLLBACK;
@@ -2528,7 +2528,7 @@ static void drop_trigger( DUDLEY_TRG trigger)
 
 /* Clean out possible trigger messages first. */
 
-	FOR TM IN RDB$TRIGGER_MESSAGES WITH TM.RDB$TRIGGER_NAME EQ name 
+	FOR TM IN RDB$TRIGGER_MESSAGES WITH TM.RDB$TRIGGER_NAME EQ name
 		ERASE TM;
 	END_FOR;
 
@@ -2547,14 +2547,14 @@ static void drop_trigger( DUDLEY_TRG trigger)
 		WITH V.RDB$VIEW_NAME = relation_name
 		FOR F IN RDB$RELATION_FIELDS CROSS T IN RDB$TRIGGERS OVER
 			RDB$RELATION_NAME WITH
-			F.RDB$RELATION_NAME = V.RDB$VIEW_NAME 
+			F.RDB$RELATION_NAME = V.RDB$VIEW_NAME
 			others = true;
 		END_FOR;
 
 		if (!others) {
 			FOR F IN RDB$RELATION_FIELDS
 				WITH F.RDB$RELATION_NAME = V.RDB$VIEW_NAME
-					MODIFY F USING 
+					MODIFY F USING
 						F.RDB$UPDATE_FLAG = FALSE;
 					END_MODIFY;
 			END_FOR;
@@ -2609,7 +2609,7 @@ static void drop_type( TYP fldtype)
 		!strncmp(fldtype->typ_name->sym_string, "ALL", 3))
 	{
 		FOR X IN RDB$TYPES WITH
-			X.RDB$FIELD_NAME EQ fldtype->typ_field_name->sym_string 
+			X.RDB$FIELD_NAME EQ fldtype->typ_field_name->sym_string
 			ERASE X;
 		END_FOR;
 
@@ -2618,7 +2618,7 @@ static void drop_type( TYP fldtype)
 
 	FOR X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ fldtype->typ_field_name->sym_string AND
-		X.RDB$TYPE_NAME EQ fldtype->typ_name->sym_string 
+		X.RDB$TYPE_NAME EQ fldtype->typ_name->sym_string
 		ERASE X;
 		if_any = true;
 	END_FOR;
@@ -2640,7 +2640,7 @@ static void drop_user_privilege( USERPRIV upriv)
  **************************************
  *
  * Functional description
- *	Find and delete as many rdb$user_privilege entries 
+ *	Find and delete as many rdb$user_privilege entries
  *	as needed for the REVOKE statement.
  *
  **************************************/
@@ -2655,7 +2655,7 @@ static void drop_user_privilege( USERPRIV upriv)
    field entries */
 
 	for (usr = upriv->userpriv_userlist; usr; usr = usr->usre_next) {
-		/* start with a fresh copy of privflag and erase each 
+		/* start with a fresh copy of privflag and erase each
 		   privilege as we take care of it */
 
 		privflag = upriv->userpriv_flags & ~USERPRIV_grant;
@@ -2726,7 +2726,7 @@ static void erase_userpriv( USERPRIV upriv, TEXT * priv, USRE usr, UPFE upf)
 			X.RDB$PRIVILEGE EQ priv AND
 			X.RDB$FIELD_NAME EQ fldname AND
 			X.RDB$RELATION_NAME EQ relname AND
-			X.RDB$OBJECT_TYPE EQ obj_relation 
+			X.RDB$OBJECT_TYPE EQ obj_relation
 
 			ERASE X;
 			if_any = true;
@@ -2741,7 +2741,7 @@ static void erase_userpriv( USERPRIV upriv, TEXT * priv, USRE usr, UPFE upf)
 			X.RDB$USER_TYPE EQ obj_user AND
 			X.RDB$PRIVILEGE EQ priv AND
 			X.RDB$RELATION_NAME EQ relname AND
-			X.RDB$OBJECT_TYPE EQ obj_relation 
+			X.RDB$OBJECT_TYPE EQ obj_relation
 
 			ERASE X;
 			if_any = true;
@@ -2831,7 +2831,7 @@ static void get_relations( DBB databaseL)
 	DUDLEY_FLD field;
 	SYM symbol;
 
-	FOR R IN RDB$RELATIONS 
+	FOR R IN RDB$RELATIONS
 		relation = (DUDLEY_REL) DDL_alloc(sizeof(dudley_rel));
 		relation->rel_name = symbol =
 			get_symbol(SYM_relation, R.RDB$RELATION_NAME, (DUDLEY_CTX) relation);
@@ -2840,8 +2840,8 @@ static void get_relations( DBB databaseL)
 		relation->rel_next = dudleyGlob.database->dbb_relations;
 		dudleyGlob.database->dbb_relations = relation;
 		relation->rel_system = R.RDB$SYSTEM_FLAG;
-		FOR RFR IN RDB$RELATION_FIELDS WITH 
-			RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME 
+		FOR RFR IN RDB$RELATION_FIELDS WITH
+			RFR.RDB$RELATION_NAME = R.RDB$RELATION_NAME
 
 			field = (DUDLEY_FLD) DDL_alloc(sizeof(dudley_fld));
 			field->fld_name = get_symbol(SYM_field, RFR.RDB$FIELD_NAME, (DUDLEY_CTX) field);
@@ -2967,8 +2967,8 @@ static void get_triggers( DBB databaseL)
 	DUDLEY_TRG trigger;
 	SYM symbol, rel_name;
 
-	FOR T IN RDB$TRIGGERS WITH T.RDB$SYSTEM_FLAG MISSING OR 
-		T.RDB$SYSTEM_FLAG = 0 
+	FOR T IN RDB$TRIGGERS WITH T.RDB$SYSTEM_FLAG MISSING OR
+		T.RDB$SYSTEM_FLAG = 0
 
 		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
 		trigger->trg_name = symbol =
@@ -3016,8 +3016,8 @@ static void get_udfs( DBB dbb)
 		arg->funcarg_length = ARG.RDB$FIELD_LENGTH;
 		arg->funcarg_sub_type = ARG.RDB$FIELD_SUB_TYPE;
 		arg->funcarg_has_sub_type = !(ARG.RDB$FIELD_SUB_TYPE.NULL);
-	END_FOR 
-	ON_ERROR 
+	END_FOR
+	ON_ERROR
 	END_ERROR;
 }
 
@@ -3345,10 +3345,10 @@ static void modify_field( DUDLEY_FLD field)
 	relation = field->fld_relation;
 	SYM name = field->fld_name;
 
-	FOR FIRST 1 X IN RDB$RELATION_FIELDS WITH 
-		X.RDB$FIELD_NAME EQ name->sym_string AND 
-		X.RDB$RELATION_NAME EQ relation->rel_name->sym_string 
-		MODIFY X USING 
+	FOR FIRST 1 X IN RDB$RELATION_FIELDS WITH
+		X.RDB$FIELD_NAME EQ name->sym_string AND
+		X.RDB$RELATION_NAME EQ relation->rel_name->sym_string
+		MODIFY X USING
 			if (field->fld_flags & fld_null_description)
 				X.RDB$DESCRIPTION.NULL = TRUE;
 			if (field->fld_flags & fld_null_security_class)
@@ -3368,7 +3368,7 @@ static void modify_field( DUDLEY_FLD field)
 
 			if (field->fld_source)
 				MOVE_SYMBOL(field->fld_source, X.RDB$FIELD_SOURCE);
-			
+
 			if (field->fld_security_class) {
 				MOVE_SYMBOL(field->fld_security_class, X.RDB$SECURITY_CLASS);
 				X.RDB$SECURITY_CLASS.NULL = FALSE;
@@ -3394,9 +3394,9 @@ static void modify_field( DUDLEY_FLD field)
 				X.RDB$QUERY_HEADER.NULL = FALSE;
 			}
 
-		END_MODIFY 
+		END_MODIFY
 		if_any = true;
-	END_FOR 
+	END_FOR
 	if (!if_any)
 		DDL_err(82, SafeArg() << name->sym_string);
 		/* msg 82: field %s doesn't exist */
@@ -3420,7 +3420,7 @@ static void modify_global_field( DUDLEY_FLD field)
 	SYM name = field->fld_name;
 
 	FOR FIRST 1 X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ name->sym_string
-		MODIFY X USING 
+		MODIFY X USING
 			if (field->fld_dtype) {
 				if ((X.RDB$FIELD_TYPE != blr_blob) && (field->fld_dtype != blr_blob)) {
 					if ((check_range(field))) {
@@ -3429,7 +3429,7 @@ static void modify_global_field( DUDLEY_FLD field)
 						X.RDB$FIELD_SCALE = field->fld_scale;
 					}
 				}
-				else if (field->fld_dtype != X.RDB$FIELD_TYPE) 
+				else if (field->fld_dtype != X.RDB$FIELD_TYPE)
 					DDL_err(83, SafeArg() << name->sym_name);
 				/* msg 83: Unauthorized attempt to change field %s to or from blob */
 			}
@@ -3438,37 +3438,37 @@ static void modify_global_field( DUDLEY_FLD field)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
 			else
 				X.RDB$SYSTEM_FLAG = 0;
-			
+
 			if (field->fld_flags & fld_null_description)
 				X.RDB$DESCRIPTION.NULL = TRUE;
-			
+
 			if (field->fld_flags & fld_null_missing_value)
 				X.RDB$MISSING_VALUE.NULL = TRUE;
-			
+
 			if (field->fld_flags & fld_null_query_name)
 				X.RDB$QUERY_NAME.NULL = TRUE;
-			
+
 			if (field->fld_flags & fld_null_query_header)
 				X.RDB$QUERY_HEADER.NULL = TRUE;
-			
+
 			if (field->fld_flags & fld_null_edit_string)
 				X.RDB$EDIT_STRING.NULL = TRUE;
-			
+
 			if (field->fld_flags & fld_null_validation) {
 				X.RDB$VALIDATION_BLR.NULL = TRUE;
 				X.RDB$VALIDATION_SOURCE.NULL = TRUE;
 			}
-			
+
 			if (field->fld_segment_length) {
 				X.RDB$SEGMENT_LENGTH = field->fld_segment_length;
 				X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 			}
-			
+
 			if (field->fld_has_sub_type) {
 				X.RDB$FIELD_SUB_TYPE = field->fld_sub_type;
 				X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 			}
-			
+
 			if (field->fld_missing) {
 				store_blr(field->fld_missing, &X.RDB$MISSING_VALUE, NULL);
 				X.RDB$MISSING_VALUE.NULL = FALSE;
@@ -3495,10 +3495,10 @@ static void modify_global_field( DUDLEY_FLD field)
 				store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 				X.RDB$QUERY_HEADER.NULL = FALSE;
 			}
-		END_MODIFY 
+		END_MODIFY
 		if_any = true;
-	END_FOR 
-	
+	END_FOR
+
 	if (!if_any)
 		DDL_err(84, SafeArg() << name->sym_string);
 		/* msg 84: field %s doesn't exist */
@@ -3521,7 +3521,7 @@ static void modify_index( DUDLEY_IDX index)
 	bool if_any = false;
 
 	FOR X IN RDB$INDICES WITH X.RDB$INDEX_NAME = index->idx_name->sym_string
-		MODIFY X USING 
+		MODIFY X USING
 			if (index->idx_flags & IDX_active_flag) {
 				X.RDB$INDEX_INACTIVE = (index->idx_inactive) ? TRUE : FALSE;
 				if (index->idx_flags & IDX_unique_flag)
@@ -3570,9 +3570,9 @@ static void modify_relation( DUDLEY_REL relation)
 	}
 	SYM name = relation->rel_name;
 
-	FOR FIRST 1 X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->sym_string 
-		MODIFY X USING 
-			if (relation->rel_flags & rel_null_security_class) 
+	FOR FIRST 1 X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->sym_string
+		MODIFY X USING
+			if (relation->rel_flags & rel_null_security_class)
 				X.RDB$SECURITY_CLASS.NULL = TRUE;
 			if (relation->rel_security_class) {
 				MOVE_SYMBOL(relation->rel_security_class, X.RDB$SECURITY_CLASS);
@@ -3589,16 +3589,16 @@ static void modify_relation( DUDLEY_REL relation)
 				X.RDB$SYSTEM_FLAG = relation->rel_system;
 			else
 				X.RDB$SYSTEM_FLAG = 0;
-				
+
 			if (relation->rel_filename) {
 				if (X.RDB$EXTERNAL_FILE.NULL)
 					DDL_err(86, SafeArg() << name->sym_string);
 					/* msg 86: relation %s is not external */
 				MOVE_SYMBOL(relation->rel_filename, X.RDB$EXTERNAL_FILE);
 			}
-		END_MODIFY 
+		END_MODIFY
 		if_any = true;
-	END_FOR 
+	END_FOR
 
 	if (!if_any)
 		DDL_err(87, SafeArg() << name->sym_string);
@@ -3624,7 +3624,7 @@ static void modify_trigger( DUDLEY_TRG trigger)
 
 	FOR FIRST 1 X IN RDB$TRIGGERS WITH
 		X.RDB$TRIGGER_NAME EQ trigger->trg_name->sym_string
-		MODIFY X USING 
+		MODIFY X USING
 			if (relation = trigger->trg_relation) {
 				TEXT* p = buffer;
 				for (const TEXT* q = X.RDB$RELATION_NAME; *q && *q != ' ';)
@@ -3633,7 +3633,7 @@ static void modify_trigger( DUDLEY_TRG trigger)
 				if (strcmp(relation->rel_name->sym_string, buffer))
 					DDL_err(88, SafeArg() << trigger->trg_name->sym_string);
 				/* msg 88: Invalid attempt to assign trigger %s to a new relation */
-			} 
+			}
 			if (trigger->trg_mflag & trg_mflag_onoff)
 				X.RDB$TRIGGER_INACTIVE = trigger->trg_inactive;
 			if (trigger->trg_mflag & trg_mflag_type)
@@ -3645,12 +3645,12 @@ static void modify_trigger( DUDLEY_TRG trigger)
 				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
 				store_text(trigger->trg_source, &X.RDB$TRIGGER_SOURCE);
 			}
-			
+
 			if (trigger->trg_statement) {
 				X.RDB$TRIGGER_BLR.NULL = FALSE;
 				store_blr(trigger->trg_statement, &X.RDB$TRIGGER_BLR, NULL);
 			}
-			
+
 			if (trigger->trg_description) {
 				X.RDB$DESCRIPTION.NULL = FALSE;
 				store_text(trigger->trg_description, &X.RDB$DESCRIPTION);
@@ -3682,7 +3682,7 @@ static void modify_trigger_msg( TRGMSG trigmsg)
 	FOR FIRST 1 X IN RDB$TRIGGER_MESSAGES WITH
 		X.RDB$TRIGGER_NAME EQ trigmsg->trgmsg_trg_name->sym_string AND
 		X.RDB$MESSAGE_NUMBER = trigmsg->trgmsg_number;
-		MODIFY X USING 
+		MODIFY X USING
 			MOVE_SYMBOL(trigmsg->trgmsg_text, X.RDB$MESSAGE);
 		END_MODIFY;
 		if_any = true;
@@ -3710,7 +3710,7 @@ static void modify_type( TYP fldtype)
 	FOR FIRST 1 X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ fldtype->typ_field_name->sym_string AND
 		X.RDB$TYPE_NAME EQ fldtype->typ_name->sym_string;
-		MODIFY X USING 
+		MODIFY X USING
 			X.RDB$TYPE = fldtype->typ_type;
 			if (fldtype->typ_description) {
 				X.RDB$DESCRIPTION.NULL = FALSE;
@@ -3918,7 +3918,7 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 	ISC_STATUS_ARRAY status_vector;
 	FB_API_HANDLE handle;
 
-	blr.str_current = blr.str_start = 
+	blr.str_current = blr.str_start =
 		reinterpret_cast<UCHAR*>(gds__alloc(4096));
 	if (!blr.str_current)
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
@@ -3987,7 +3987,7 @@ static void store_range( DUDLEY_FLD field)
 {
 /**************************************
  *
- *	s t o r e _ r a n g e 
+ *	s t o r e _ r a n g e
  *
  **************************************
  *
@@ -4009,7 +4009,7 @@ static void store_range( DUDLEY_FLD field)
 	for (range = field->fld_ranges, n = 0; n < field->fld_dimension;
 		 range += 2, ++n)
 	{
-		STORE X IN RDB$FIELD_DIMENSIONS 
+		STORE X IN RDB$FIELD_DIMENSIONS
 			strcpy(X.RDB$FIELD_NAME, name);
 			X.RDB$DIMENSION = n;
 			X.RDB$LOWER_BOUND = range[0];
@@ -4057,7 +4057,7 @@ static void store_userpriv(USERPRIV upriv,
  *
  **************************************/
 
-	STORE X IN RDB$USER_PRIVILEGES USING 
+	STORE X IN RDB$USER_PRIVILEGES USING
 		X.RDB$FIELD_NAME.NULL = TRUE;
 
 		MOVE_SYMBOL(usr->usre_name, X.RDB$USER);

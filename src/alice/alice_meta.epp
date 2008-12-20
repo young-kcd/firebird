@@ -2,28 +2,28 @@
  * tab=4
  *
  *____________________________________________________________
- *  
+ *
  *		PROGRAM:	Alice (All Else) Utility
  *		MODULE:		alice_meta.epp
  *		DESCRIPTION:	Metadata lookup routines
- *  
+ *
  *  The contents of this file are subject to the Interbase Public
  *  License Version 1.0 (the "License"); you may not use this file
  *  except in compliance with the License. You may obtain a copy
  *  of the License at http://www.Inprise.com/IPL.html
- *  
+ *
  *  Software distributed under the License is distributed on an
  *  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
  *  or implied. See the License for the specific language governing
  *  rights and limitations under the License.
- *  
+ *
  *  The Original Code was created by Inprise Corporation
  *  and its predecessors. Portions created by Inprise Corporation are
  *  Copyright (C) Inprise Corporation.
- *  
+ *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  
+ *
  *
  *____________________________________________________________
  *
@@ -60,9 +60,9 @@ static void parse_fullpath(TDR);
 static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
 
 
-/* 
-   table used to determine capabilities, checking for specific 
-   fields in system relations 
+/*
+   table used to determine capabilities, checking for specific
+   fields in system relations
 */
 
 struct rfr_tab_t {
@@ -83,10 +83,10 @@ static inline void return_error(const ISC_STATUS* user_status)
 }
 
 /*____________________________________________________________
- *  
+ *
  *		Disable WAL for the database forcibly.
  *		Drop all the entries from RDB$LOG_FILES
- */  
+ */
 
 void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 {
@@ -96,15 +96,15 @@ void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 	if (!(DB = handle))
 		return;
 
-	START_TRANSACTION 
-	ON_ERROR 
-		return_error(user_status); 
+	START_TRANSACTION
+	ON_ERROR
+		return_error(user_status);
 	END_ERROR;
 	FOR(REQUEST_HANDLE request)
 	X IN RDB$LOG_FILES
 		ERASE X;
-	END_FOR 
-	COMMIT 
+	END_FOR
+	COMMIT
 	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
@@ -112,11 +112,11 @@ void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Get the state of a transaction,
  *		assuming that the database has
  *		already been attached.
- */  
+ */
 
 void MET_get_state(ISC_STATUS* user_status, TDR trans)
 {
@@ -129,17 +129,17 @@ void MET_get_state(ISC_STATUS* user_status, TDR trans)
 		return;
 	}
 
-	START_TRANSACTION 
-	ON_ERROR 
-		return_error(user_status); 
+	START_TRANSACTION
+	ON_ERROR
+		return_error(user_status);
 	END_ERROR;
 
 	FOR(REQUEST_HANDLE request)
 	TRA IN RDB$TRANSACTIONS WITH
 		TRA.RDB$TRANSACTION_ID = trans->tdr_id
 		trans->tdr_state = TRA.RDB$TRANSACTION_STATE;
-	END_FOR 
-	ON_ERROR 
+	END_FOR
+	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
 
@@ -148,19 +148,19 @@ void MET_get_state(ISC_STATUS* user_status, TDR trans)
 		return_error(user_status);
 	}
 
-	ROLLBACK 
-	ON_ERROR 
+	ROLLBACK
+	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
 }
 
 
 /*____________________________________________________________
- *  
+ *
  *		Get the description of a transaction in
  *		limbo, including all associated transactions
  *		in other databases.
- */  
+ */
 
 TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 {
@@ -171,8 +171,8 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 	if (!(DB = handle))
 		return 0;
 
-	START_TRANSACTION 
-	ON_ERROR 
+	START_TRANSACTION
+	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
 
@@ -184,8 +184,8 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 			TRA.RDB$TRANSACTION_ID = id AND
 			TRA.RDB$TRANSACTION_DESCRIPTION NOT MISSING
 			trans = get_description(&TRA.RDB$TRANSACTION_DESCRIPTION);
-		END_FOR 
-		ON_ERROR 
+		END_FOR
+		ON_ERROR
 			return_error(user_status);
 		END_ERROR;
 
@@ -195,9 +195,9 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 		}
 	}
 
-	ROLLBACK 
-	ON_ERROR 
-		return_error(user_status); 
+	ROLLBACK
+	ON_ERROR
+		return_error(user_status);
 	END_ERROR;
 
 	if (trans)
@@ -208,10 +208,10 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Get the capabilities associated with
  *		the database for a particular transaction.
- */  
+ */
 
 void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
 {
@@ -220,24 +220,24 @@ void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
 	if (!(DB = trans->tdr_db_handle))
 		return;
 
-	START_TRANSACTION 
-	ON_ERROR 
+	START_TRANSACTION
+	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
 
 	trans->tdr_db_caps = get_capabilities(user_status);
 
-	ROLLBACK 
-	ON_ERROR 
+	ROLLBACK
+	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
 }
 
 
 /*____________________________________________________________
- *  
+ *
  *		Eat a string with a byte-encoded length.
- */  
+ */
 
 static alice_str* alloc_string(const TEXT** ptr)
 {
@@ -262,17 +262,17 @@ static alice_str* alloc_string(const TEXT** ptr)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Get the capabilities associated with
  *		the database for a particular transaction.
- */  
+ */
 
 static USHORT get_capabilities(ISC_STATUS* user_status)
 {
 	USHORT capabilities = CAP_none;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-//  Look for desired fields in system relations 
+//  Look for desired fields in system relations
 	FB_API_HANDLE req = 0;
 
 	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
@@ -282,8 +282,8 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 			WITH x.RDB$RELATION_NAME = rel_field_table->relation
 			AND x.RDB$FIELD_NAME = rel_field_table->field
 			capabilities |= rel_field_table->bit_mask;
-		END_FOR 
-		ON_ERROR 
+		END_FOR
+		ON_ERROR
 			return_error(user_status);
 		END_ERROR;
 	}
@@ -298,11 +298,11 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Get the description of a transaction in
  *		limbo, including all associated transactions
  *		in other databases.
- */  
+ */
 
 static TDR get_description(ISC_QUAD* blob_id)
 {
@@ -329,9 +329,9 @@ static TDR get_description(ISC_QUAD* blob_id)
 	alice_str* host_site = NULL;
 	alice_str* database_path = NULL;
 
-//  skip version number 
+//  skip version number
 	++p;
-	
+
 	TDR ptr = NULL; // silence uninitialized warning
 	SLONG id_length, id;
 
@@ -383,16 +383,16 @@ static TDR get_description(ISC_QUAD* blob_id)
 
 
 /*____________________________________________________________
- *  
- *		Take apart a full remote path specification, 
+ *
+ *		Take apart a full remote path specification,
  *		finding the filename and the remote site.
- */  
+ */
 
 static void parse_fullpath(TDR trans)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-//  start at the end of the full pathname 
+//  start at the end of the full pathname
 
  	const TEXT* p = (TEXT*) trans->tdr_fullpath->str_data;
 	const TEXT* const start = p;
@@ -400,7 +400,7 @@ static void parse_fullpath(TDR trans)
 		p++;
 	const TEXT* const end = p;
 
-//  Check for a named pipes name - \\node\path\db or //node/path/db 
+//  Check for a named pipes name - \\node\path\db or //node/path/db
 	while (p > start &&
 		   !(*p == '/' && *(p - 1) == '/') &&
 		   !(*p == '\\' && *(p - 1) == '\\'))
@@ -426,7 +426,7 @@ static void parse_fullpath(TDR trans)
 	else {
 		p = end;
 
-		/* If not named pipes, check the other protocols 
+		/* If not named pipes, check the other protocols
 		 * work backwards until we find a remote protocol specifier
 		 */
 
@@ -438,11 +438,11 @@ static void parse_fullpath(TDR trans)
 			p -= 2;
 		trans->tdr_filename = p + 1;
 
-		// now find the last remote node in the chain 
+		// now find the last remote node in the chain
 
 		while (p > start && (*p == ':' || *p == '^' || *p == '@'))
 			p--;
-			
+
 		USHORT length = 0;
 		for (; p >= start && (*p != '^' && *p != ':' && *p != '@'); ++length)
 			--p;
@@ -460,11 +460,11 @@ static void parse_fullpath(TDR trans)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Get a blob into a buffer, returning the
- *		size of the blob if the passed buffer 
+ *		size of the blob if the passed buffer
  *		is not big enough.
- */  
+ */
 
 static USHORT snarf_blob(ISC_QUAD* blob_id,
 						 USHORT buffer_length, TEXT* buffer)
@@ -483,7 +483,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 		return 0;
 	}
 
-//  get the blob into the buffer, if it fits 
+//  get the blob into the buffer, if it fits
 
 	TEXT* ptr = buffer;
 	const TEXT* const end = buffer + buffer_length;
@@ -500,7 +500,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 		ptr += returned_length;
 	}
 
-//  snarf failed, get length of blob for retry 
+//  snarf failed, get length of blob for retry
 
 	if (!buffer_length)
 	{

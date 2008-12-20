@@ -61,7 +61,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
  *	This is used to add and delete users from the user information
  *	database (security2.fdb).   It also displays information
  *	about current users and allows modification of current
- *	users' parameters.   
+ *	users' parameters.
  *	Returns 0 on success, otherwise returns a Gsec message number
  *	and the status vector containing the error info.
  *	The syntax is:
@@ -189,7 +189,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		   changes the current value to the null value */
 
 		found = false;
-		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS 
+		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
 				WITH U.USER_NAME EQ io_user_data->user_name
 			found = true;
 			MODIFY U USING
@@ -257,7 +257,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		if (!fb_utils::stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else {
-			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS 
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
 					WITH U.USER_NAME EQ io_user_data->user_name
 				found = true;
 				ERASE U
@@ -354,7 +354,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 	SSHORT ret = SECURITY_exec_line(isc_status, DB, gds_trans, io_user_data, display_func, callback_arg);
 
-	// rollback if we have an error using tmp_status to avoid 
+	// rollback if we have an error using tmp_status to avoid
 	// overwriting the error status which the caller wants to see
 
 	if (ret) {
