@@ -1490,7 +1490,7 @@ static void gen_request( qli_req* request)
 		STUFF_WORD(message->msg_parameter);
 
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length + FB_DOUBLE_ALIGN - 1);
-		message->msg_buffer = (UCHAR*) FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), FB_DOUBLE_ALIGN);
+		message->msg_buffer = (UCHAR*) FB_ALIGN((FB_UINT64)(U_IPTR) string->str_data, FB_DOUBLE_ALIGN);
 
 		for (param = message->msg_parameters; param; param = param->par_next) {
 			gen_descriptor(&param->par_desc, request);

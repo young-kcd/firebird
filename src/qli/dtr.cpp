@@ -641,6 +641,6 @@ void QLI_validate_desc(const dsc* d)
     ULONG addr = (ULONG) (U_IPTR) (d->dsc_address);	// safely ignore higher bits even if present
     USHORT ta = type_alignments[d->dsc_dtype];
     if (ta > 1)
-	fb_assert((addr & (ta - 1)) == 0);
+		fb_assert((addr & (ta - 1)) == 0);
 }
 #endif
