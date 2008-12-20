@@ -1,3 +1,51 @@
+2008-12-20 16:17  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.256):
+
+	Correction
+
+2008-12-20 16:16  asfernandes
+
+	* firebird2/src/common/classes/GenericMap.h (1.22):
+
+	Fix GCC build
+
+2008-12-20 09:18  robocop
+
+	* firebird2/src/dsql/metd.epp (1.136):
+
+	My dear trailing spaces. :-)
+
+2008-12-20 09:16  robocop
+
+	* firebird2/src/: config/ConfigFile.cpp (1.14), dsql/pass1.cpp
+	(1.426), jrd/blb.cpp (1.187), jrd/btr.cpp (1.221), jrd/cch.cpp
+	(1.218), jrd/dfw.epp (1.256):
+
+	There's no need to check whether a pointer is null before applying
+	delete or delete[].
+
+2008-12-20 09:12  robocop
+
+	* firebird2/src/: common/classes/GenericMap.h (1.21), isql/isql.epp
+	(1.255), jrd/DatabaseSnapshot.cpp (1.85), jrd/GlobalRWLock.cpp
+	(1.25), jrd/IntlManager.cpp (1.33), jrd/IntlUtil.cpp (1.23),
+	jrd/IntlUtil.h (1.11), jrd/enc.cpp (1.28), jrd/err.cpp (1.87),
+	jrd/evl.cpp (1.283), jrd/evl_string.h (1.31),
+	jrd/evl_string_test.cpp (1.12), jrd/exe.cpp (1.280), jrd/exe.h
+	(1.131), jrd/ext.cpp (1.84), jrd/fil.h (1.19), jrd/filters.cpp
+	(1.68), jrd/flags.h (1.8), jrd/flu.h (1.16), jrd/fun.epp (1.110),
+	jrd/functions.cpp (1.38), jrd/gds.cpp (1.268), jrd/gds_proto.h
+	(1.50), jrd/grant.epp (1.69), jrd/idx.cpp (1.146), jrd/idx.h
+	(1.20), jrd/idx_proto.h (1.27), jrd/inf.cpp (1.90), jrd/ini.epp
+	(1.106), jrd/intl.cpp (1.114), jrd/intl.h (1.20),
+	jrd/intl_builtin.cpp (1.44), jrd/intlobj_new.h (1.21), jrd/isc.cpp
+	(1.86), jrd/isc.h (1.38), jrd/isc_f_proto.h (1.27),
+	jrd/isc_file.cpp (1.124), jrd/isc_sync.cpp (1.164), jrd/jrd.cpp
+	(1.499), msgs/messages2.sql (1.76):
+
+	Style.
+
 2008-12-19 15:58  dimitr
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.84):
