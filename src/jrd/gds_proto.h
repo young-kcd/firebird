@@ -105,21 +105,16 @@ ISC_STATUS	API_ROUTINE gds__print_status(const ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, const UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, const UCHAR*, SSHORT*, SSHORT*,
 	USHORT*, USHORT*, bool*, bool*, bool*, bool*);
-SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*,
-							   const USHORT length2);
-int		API_ROUTINE gds__print_blr(const UCHAR*,
-							FPTR_PRINT_CALLBACK,
-							void*, SSHORT);
+SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*, const USHORT length2);
+int		API_ROUTINE gds__print_blr(const UCHAR*, FPTR_PRINT_CALLBACK, void*, SSHORT);
 void	API_ROUTINE gds__put_error(const TEXT*);
 void	API_ROUTINE gds__qtoq(const void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(const ISC_STATUS*);
 void	API_ROUTINE gds__sqlcode_s(const ISC_STATUS*, ULONG*);
-void*	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
-	BOOLEAN = FALSE);
+void*	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL, BOOLEAN = FALSE);
 void	API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
-BOOLEAN	API_ROUTINE gds__validate_lib_path(const TEXT*, const TEXT*, TEXT*,
-											  SLONG);
+BOOLEAN	API_ROUTINE gds__validate_lib_path(const TEXT*, const TEXT*, TEXT*, SLONG);
 SLONG	API_ROUTINE gds__vax_integer(const UCHAR*, SSHORT);
 void	API_ROUTINE gds__vtof(const SCHAR*, SCHAR*, USHORT);
 void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);

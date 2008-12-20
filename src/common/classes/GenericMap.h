@@ -62,7 +62,7 @@ public:
 	class Accessor
 	{
 	public:
-		Accessor(GenericMap* map) : m_Accessor(&map->tree) {}
+		explicit Accessor(GenericMap* map) : m_Accessor(&map->tree) {}
 
 		KeyValuePair* current() const { return m_Accessor.current(); }			
 

@@ -464,8 +464,7 @@ void INF_database_info(const SCHAR* items,
 		case isc_info_limbo:
 			if (!transaction)
 				transaction = TRA_start(tdbb, 0, NULL);
-			for (id = transaction->tra_oldest;
-				 id < transaction->tra_number; id++)
+			for (id = transaction->tra_oldest; id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
 					TRA_wait(tdbb, transaction, id, jrd_tra::tra_wait) == tra_limbo)
@@ -484,8 +483,7 @@ void INF_database_info(const SCHAR* items,
 		case isc_info_active_transactions:
 			if (!transaction)
 				transaction = TRA_start(tdbb, 0, NULL);
-			for (id = transaction->tra_oldest_active;
-				 id < transaction->tra_number; id++)
+			for (id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
 					length = INF_convert(id, buffer);
@@ -504,8 +502,7 @@ void INF_database_info(const SCHAR* items,
 				transaction = TRA_start(tdbb, 0, NULL);
 			{ // scope
 				SLONG cnt = 0;
-				for (id = transaction->tra_oldest_active;
-					id < transaction->tra_number; id++)
+				for (id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 				{
 					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
 						cnt++;
@@ -526,7 +523,8 @@ void INF_database_info(const SCHAR* items,
 			// Assumes user names will be smaller than sizeof(buffer) - 1.
 			if (!(tdbb->getAttachment()->locksmith())) {
 				const UserId* user = tdbb->getAttachment()->att_user;
-				const char* uname = (user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>";
+				const char* uname = (user && user->usr_user_name.hasData()) ?
+					user->usr_user_name.c_str() : "<Unknown>";
 				const SSHORT len = strlen(uname);
 				*p++ = len;
 				memcpy(p, uname, len);
@@ -668,8 +666,7 @@ void INF_database_info(const SCHAR* items,
 			   **        under which SQL dialect.
 			   **
 			 */
-			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original)
-				>= ODS_10_0)
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_10_0)
 			{
 				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
 					/*
@@ -934,7 +931,7 @@ void INF_request_info(const jrd_req* request,
 					state = isc_info_req_receive;
 			}
 			else if ((request->req_operation == jrd_req::req_return) &&
-					 (request->req_flags & req_stall))
+				(request->req_flags & req_stall))
 			{
 				state = isc_info_req_sql_stall;
 			}
@@ -947,7 +944,7 @@ void INF_request_info(const jrd_req* request,
 		case isc_info_message_size:
 			if (!(request->req_flags & req_active) ||
 				(request->req_operation != jrd_req::req_receive &&
-				request->req_operation != jrd_req::req_send))
+					request->req_operation != jrd_req::req_send))
 			{
 				buffer_ptr[0] = item;
 				item = isc_info_error;
@@ -1130,8 +1127,8 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
 	const UCHAR* const end = p + length - 6;
 
 	USHORT relation_id = 0;
-	for (vcl::const_iterator ptr = vector->begin();
-		 relation_id < vector->count() && p < end; ++relation_id)
+	for (vcl::const_iterator ptr = vector->begin(); relation_id < vector->count() && p < end;
+		++relation_id)
 	{
 		const SLONG n = *ptr++;
 		if (n) {

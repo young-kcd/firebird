@@ -74,8 +74,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src,
 	ULONG dstLen, UCHAR* dst);
 
 
-string IntlUtil::generateSpecificAttributes(
-	Jrd::CharSet* cs, SpecificAttributesMap& map)
+string IntlUtil::generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributesMap& map)
 {
 	SpecificAttributesMap::Accessor accessor(&map);
 
@@ -94,8 +93,7 @@ string IntlUtil::generateSpecificAttributes(
 		const USHORT equalChar = '=';
 
 		size = cs->getConvFromUnicode().convert(
-			sizeof(equalChar), (const UCHAR*) &equalChar,
-			sizeof(c), c);
+			sizeof(equalChar), (const UCHAR*) &equalChar, sizeof(c), c);
 
 		s += string((const char*) &c, size);
 
@@ -117,8 +115,8 @@ string IntlUtil::generateSpecificAttributes(
 }
 
 
-bool IntlUtil::parseSpecificAttributes(
-	Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map)
+bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR* s,
+									   SpecificAttributesMap* map)
 {
 	// Note that the map isn't cleared.
 	// Old attributes will be combined with the new ones.
@@ -132,7 +130,7 @@ bool IntlUtil::parseSpecificAttributes(
 	while (p < end)
 	{
 		while (p < end && size == cs->getSpaceLength() &&
-			   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+			memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 		{
 			if (!readAttributeChar(cs, &p, end, &size, true))
 				return true;
@@ -148,9 +146,9 @@ bool IntlUtil::parseSpecificAttributes(
 			uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
 			if (uSize == 2 &&
-					 ((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
-					  (*(USHORT*)uc >= 'a' && *(USHORT*)uc <= 'z') ||
-					  *(USHORT*)uc == '-' || *(USHORT*)uc == '_'))
+				((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
+					(*(USHORT*)uc >= 'a' && *(USHORT*)uc <= 'z') ||
+					*(USHORT*)uc == '-' || *(USHORT*)uc == '_'))
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -166,7 +164,7 @@ bool IntlUtil::parseSpecificAttributes(
 		name = unescapeAttribute(cs, name);
 
 		while (p < end && size == cs->getSpaceLength() &&
-			   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+			memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 		{
 			if (!readAttributeChar(cs, &p, end, &size, true))
 				return false;
@@ -182,7 +180,7 @@ bool IntlUtil::parseSpecificAttributes(
 		if (readAttributeChar(cs, &p, end, &size, true))
 		{
 			while (p < end && size == cs->getSpaceLength() &&
-				   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+				 memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -197,7 +195,7 @@ bool IntlUtil::parseSpecificAttributes(
 				if (uSize != 2 || *(USHORT*)uc != ';')
 				{
 					if (!(size == cs->getSpaceLength() &&
-						  memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
+						memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
 					{
 						endNoSpace = p + size;
 					}
@@ -209,8 +207,7 @@ bool IntlUtil::parseSpecificAttributes(
 					break;
 			}
 
-			value = unescapeAttribute(cs,
-				string((const char*)start, endNoSpace - start));
+			value = unescapeAttribute(cs, string((const char*)start, endNoSpace - start));
 
 			if (p < end)
 				readAttributeChar(cs, &p, end, &size, true);	// skip the semicolon
@@ -576,7 +573,7 @@ string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 	{
 		UCHAR uc[sizeof(ULONG)];
 
-		ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
+		const ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
 		if (uSize == 2)
 		{
@@ -616,7 +613,7 @@ string IntlUtil::unescapeAttribute(Jrd::CharSet* cs, const string& s)
 bool IntlUtil::isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size)
 {
 	UCHAR uc[sizeof(ULONG)];
-	ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
+	const ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
 
 	return (uSize == 2 && *(USHORT*) uc == '\\');
 }
@@ -732,7 +729,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 				&errorCode,
 				&offendingPos));
 
-		ULONG utf16Len1 = cs->charset_to_unicode.csconvert_fn_convert(
+		const ULONG utf16Len1 = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			len1,
 			str1,
@@ -751,7 +748,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 				&errorCode,
 				&offendingPos));
 
-		ULONG utf16Len2 = cs->charset_to_unicode.csconvert_fn_convert(
+		const ULONG utf16Len2 = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			len2,
 			str2,
@@ -793,7 +790,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 				&errorCode,
 				&offendingPos));
 
-		ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
+		const ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			srcLen,
 			src,

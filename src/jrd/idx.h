@@ -32,13 +32,15 @@
 /* Maxinum number of segments in any existing system index */
 const int  INI_IDX_MAX_SEGMENTS		= 2;
 
-struct ini_idx_t {
+struct ini_idx_t
+{
 	UCHAR ini_idx_index_id;
 	UCHAR ini_idx_version_flag;
 	UCHAR ini_idx_relid;
 	UCHAR ini_idx_flags;
 	UCHAR ini_idx_segment_count;
-	struct ini_idx_segment_t {
+	struct ini_idx_segment_t
+	{
 		UCHAR ini_idx_rfld_id;
 		UCHAR ini_idx_type;
 	} ini_idx_segment[INI_IDX_MAX_SEGMENTS];
@@ -54,7 +56,8 @@ using Jrd::idx_descending;
 #define INDEX(id,flag,rel,unique,count) {(id),(flag),(UCHAR) (rel),(unique),(count),{
 #define SEGMENT(fld,type) {(fld),(type)}
 
-static const struct ini_idx_t indices[] = {
+static const struct ini_idx_t indices[] =
+{
 
 /*	define index RDB$INDEX_0 for RDB$RELATIONS unique RDB$RELATION_NAME; */
 	INDEX(0, ODS_8_0, rel_relations, idx_unique, 1)

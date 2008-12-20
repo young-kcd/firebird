@@ -229,9 +229,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> global_msg_mutex;
 static gds_msg* global_default_msg = NULL;
 static bool volatile initialized = false;
 
-void* API_ROUTINE gds__alloc_debug(SLONG size_request,
-                                   const TEXT* filename,
-                                   ULONG lineno)
+void* API_ROUTINE gds__alloc_debug(SLONG size_request, const TEXT* filename, ULONG lineno)
 {
 	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
@@ -918,20 +916,11 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 	case isc_arg_win32:
 #ifdef WIN_NT
-		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-										 NULL,
-										 code,
-										 GetUserDefaultLangID(),
-										 s,
-										 bufsize,
-										 NULL)
-		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-										 NULL,
-										 code,
-										 0, // TMN: Fallback to system known language
-										 s,
-										 bufsize,
-										 NULL))
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, code,
+						   GetUserDefaultLangID(), s, bufsize, NULL) &&
+			!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, code,
+						   0, // TMN: Fallback to system known language
+						   s, bufsize, NULL))
 #endif
 		{
 			sprintf(s, "unknown Win32 error %ld", code);	// TXNN
@@ -976,8 +965,7 @@ static void safe_strncpy(char* target, const char* source, size_t bs)
 
 /* CVC: This special function for ADA has been restored to non-const vector,
  too, in case its usage was broken. */
-void API_ROUTINE gds__interprete_a(
-								   SCHAR* s,
+void API_ROUTINE gds__interprete_a(SCHAR* s,
 								   SSHORT* length,
 								   ISC_STATUS* vector, SSHORT* offset)
 {
@@ -1208,8 +1196,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
-		fprintf(file, "\n%s%s\t%.25s\t",
-				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
+		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
@@ -1258,8 +1245,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
-		fprintf(file, "\n%s%s\t%.25s\t",
-				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
+		fprintf(file, "\n%s%s\t%.25s\t", ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
 		va_end(ptr);
@@ -1277,8 +1263,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 }
 
 
-void API_ROUTINE gds__log_status(const TEXT* database,
-	const ISC_STATUS* status_vector)
+void API_ROUTINE gds__log_status(const TEXT* database, const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1455,8 +1440,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 		Firebird::string p;
 		if (!fb_utils::readenv("ISC_MSGS", p) ||
-			(status =
-			 gds__msg_open(reinterpret_cast<void**>(&messageL), p.c_str())))
+			(status = gds__msg_open(reinterpret_cast<void**>(&messageL), p.c_str())))
 		{
 			TEXT translated_msg_file[sizeof(MSG_FILE_LANG) + LOCALE_MAX + 1];
 
@@ -1482,9 +1466,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				fb_utils::snprintf(translated_msg_file,
 					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
 				gds__prefix_msg(msg_file, translated_msg_file);
-				status =
-					gds__msg_open(reinterpret_cast<void**>(&messageL),
-								  msg_file);
+				status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
 			}
 			else
 				status = 1;
@@ -1493,9 +1475,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				/* Default to standard message file */
 
 				gds__prefix_msg(msg_file, MSG_FILE);
-				status =
-					gds__msg_open(reinterpret_cast<void**>(&messageL),
-								  msg_file);
+				status = gds__msg_open(reinterpret_cast<void**>(&messageL), msg_file);
 			}
 			gds__free(msg_file);
 		}
@@ -1509,16 +1489,14 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 /* Search down index levels to the leaf.  If we get lost, punt */
 
 	const ULONG code = MSG_NUMBER(facility, number);
-	const msgnod* const end =
-		(msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
+	const msgnod* const end = (msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
 	ULONG position = messageL->msg_top_tree;
 
 	status = 0;
 	for (USHORT n = 1; !status; n++) {
 		if (lseek(messageL->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
 			status = -6;
-		else if (read(messageL->msg_file, messageL->msg_bucket,
-					  messageL->msg_bucket_size) < 0)
+		else if (read(messageL->msg_file, messageL->msg_bucket, messageL->msg_bucket_size) < 0)
 			status = -7;
 		else if (n == messageL->msg_levels)
 			break;
@@ -1538,8 +1516,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	if (!status) {
 		/* Search the leaf */
-		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status;
-			 leaf = NEXT_LEAF(leaf))
+		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = NEXT_LEAF(leaf))
 		{
 			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code) {
 				status = -1;
@@ -1597,9 +1574,7 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 		return -4;
 	}
 
-	gds_msg* messageL =
-		(gds_msg*) gds__alloc((SLONG) sizeof(gds_msg) +
-							   header.msghdr_bucket_size - 1);
+	gds_msg* messageL = (gds_msg*) gds__alloc((SLONG) sizeof(gds_msg) + header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
 	if (!messageL) {				/* NOMEM: return non-open error */
 		close(n);
@@ -1643,8 +1618,8 @@ void API_ROUTINE gds__msg_put(void* handle,
  **************************************/
 	TEXT formatted[BUFFER_MEDIUM];
 
-	gds__msg_format(handle, facility, number, sizeof(formatted),
-					formatted, arg1, arg2, arg3, arg4, arg5);
+	gds__msg_format(handle, facility, number, sizeof(formatted), formatted,
+					arg1, arg2, arg3, arg4, arg5);
 	gds__put_error(formatted);
 }
 
@@ -1970,8 +1945,7 @@ SLONG API_ROUTINE gds__ftof(const SCHAR* string,
 }
 
 
-int API_ROUTINE gds__print_blr(
-							   const UCHAR* blr,
+int API_ROUTINE gds__print_blr(const UCHAR* blr,
 							   FPTR_PRINT_CALLBACK routine,
 							   void* user_arg, SSHORT language)
 {
@@ -1987,42 +1961,39 @@ int API_ROUTINE gds__print_blr(
  **************************************/
 	try {
 
-	gds_ctl ctl;
-	gds_ctl* control = &ctl;
+		gds_ctl ctl;
+		gds_ctl* control = &ctl;
 
-	if (!routine) {
-		routine = gds__default_printer;
-		user_arg = NULL;
-	}
+		if (!routine) {
+			routine = gds__default_printer;
+			user_arg = NULL;
+		}
 
-	control->ctl_routine = routine;
-	control->ctl_user_arg = user_arg;
-	control->ctl_blr = control->ctl_blr_start = blr;
-	control->ctl_language = language;
+		control->ctl_routine = routine;
+		control->ctl_user_arg = user_arg;
+		control->ctl_blr = control->ctl_blr_start = blr;
+		control->ctl_language = language;
 
-	const SSHORT version = BLR_BYTE;
+		const SSHORT version = BLR_BYTE;
 
-	if ((version != blr_version4) && (version != blr_version5))
-		blr_error(control, "*** blr version %d is not supported ***",
-				  (int) version);
+		if ((version != blr_version4) && (version != blr_version5))
+			blr_error(control, "*** blr version %d is not supported ***", (int) version);
 
-	blr_format(control,
-			   (version == blr_version4) ? "blr_version4," : "blr_version5,");
+		blr_format(control, (version == blr_version4) ? "blr_version4," : "blr_version5,");
 
-	SSHORT level = 0;
-	SLONG offset = 0;
-	blr_print_line(control, (SSHORT) offset);
-	blr_print_verb(control, level);
+		SSHORT level = 0;
+		SLONG offset = 0;
+		blr_print_line(control, (SSHORT) offset);
+		blr_print_verb(control, level);
 
-	offset = control->ctl_blr - control->ctl_blr_start;
-	const SCHAR eoc = BLR_BYTE;
+		offset = control->ctl_blr - control->ctl_blr_start;
+		const SCHAR eoc = BLR_BYTE;
 
-	if (eoc != blr_eoc)
-		blr_error(control, "*** expected end of command, encounted %d ***",
-				  (int) eoc);
+		if (eoc != blr_eoc)
+			blr_error(control, "*** expected end of command, encounted %d ***", (int) eoc);
 
-	blr_format(control, "blr_eoc");
-	blr_print_line(control, (SSHORT) offset);
+		blr_format(control, "blr_eoc");
+		blr_print_line(control, (SSHORT) offset);
 
 	}	// try
 	catch (const Firebird::LongJump&) {
@@ -2350,9 +2321,8 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 }
 
 
-void* API_ROUTINE gds__temp_file(
-					 BOOLEAN stdio_flag, const TEXT* string,
-					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
+void* API_ROUTINE gds__temp_file(BOOLEAN stdio_flag, const TEXT* string, TEXT* expanded_string,
+								 TEXT* dir, BOOLEAN unlink_flag)
 {
 /**************************************
  *
@@ -2419,11 +2389,9 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 
-	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
-		 clean_ptr = &clean->clean_next)
+	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr; clean_ptr = &clean->clean_next)
 	{
-        if (clean->clean_routine == routine
-            && clean->clean_arg == arg)
+        if (clean->clean_routine == routine && clean->clean_arg == arg)
 		{
 			*clean_ptr = clean->clean_next;
 			gds__free(clean);
@@ -2466,8 +2434,10 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		/* Extract the path from the absolute module name */
 		const TEXT* q = NULL;
 		for (const TEXT* mp = abs_module; *mp; mp++)
+		{
 			if ((*mp == '\\') || (*mp == '/'))
 				q = mp;
+		}
 
 		TEXT abs_module_path[MAXPATHLEN];
 		memset(abs_module_path, 0, MAXPATHLEN);
@@ -2528,8 +2498,7 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 }
 
 
-void API_ROUTINE gds__vtof(
-						   const SCHAR* string,
+void API_ROUTINE gds__vtof(const SCHAR* string,
 						   SCHAR* fieldL, USHORT length)
 {
 /**************************************
@@ -2602,9 +2571,7 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 	while (*p)
 		p++;
 
-	isc_sql_interprete(sqlcode, p,
-					   (SSHORT) (sizeof(error_buffer) - (p - error_buffer) -
-								 2));
+	isc_sql_interprete(sqlcode, p, (SSHORT) (sizeof(error_buffer) - (p - error_buffer) - 2));
 	while (*p)
 		p++;
 
@@ -2619,8 +2586,7 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 }
 
 
-void API_ROUTINE isc_sql_interprete(
-									SSHORT sqlcode,
+void API_ROUTINE isc_sql_interprete(SSHORT sqlcode,
 									TEXT* buffer, SSHORT length)
 {
 /**************************************
@@ -2728,11 +2694,9 @@ static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
  **************************************/
 	const char* p;
 
-	if (blr_operator > FB_NELEM(blr_table) ||
-		!(p = blr_table[blr_operator].blr_string))
+	if (blr_operator > FB_NELEM(blr_table) || !(p = blr_table[blr_operator].blr_string))
 	{
-		blr_error(control, "*** blr operator %d is undefined ***",
-				  (int) blr_operator);
+		blr_error(control, "*** blr operator %d is undefined ***", (int) blr_operator);
 	}
 
 	blr_format(control, "blr_%s, ", p);
@@ -2752,8 +2716,7 @@ static SCHAR blr_print_byte(gds_ctl* control)
  *
  **************************************/
 	const UCHAR v = BLR_BYTE;
-	blr_format(control, (control->ctl_language) ? "chr(%d), " : "%d, ",
-			   (int) v);
+	blr_format(control, (control->ctl_language) ? "chr(%d), " : "%d, ", (int) v);
 
 	return v;
 }
@@ -2775,11 +2738,8 @@ static SCHAR blr_print_char(gds_ctl* control)
 	UCHAR v;
 
 	v = c = BLR_BYTE;
-	const bool printable = (c >= 'a' && c <= 'z') ||
-		(c >= 'A' && c <= 'Z') ||
-	    (c >= '0' && c <= '9') ||
-	     c == '$' ||
-	     c == '_';
+	const bool printable = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9') || c == '$' || c == '_';
 
 	if (printable)
 		blr_format(control, "'%c',", (char) c);
@@ -3266,9 +3226,11 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			blr_print_blr(control, blr_operator);
 			// Strange message. Notice that blr_lock_relation was part of PC_ENGINE.
 			if (blr_operator != blr_relation && blr_operator != blr_rid)
+			{
 				blr_error(control,
 						  "*** blr_relation or blr_rid must be object of blr_lock_relation, %d found ***",
 						  (int) blr_operator);
+			}
 
 			if (blr_operator == blr_relation) {
 				n = blr_print_byte(control);
@@ -3439,9 +3401,7 @@ static int blr_print_word(gds_ctl* control)
  **************************************/
 	const UCHAR v1 = BLR_BYTE;
 	const UCHAR v2 = BLR_BYTE;
-	blr_format(control,
-			   (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ",
-			   (int) v1, (int) v2);
+	blr_format(control, (control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ", (int) v1, (int) v2);
 
 	return (v2 << 8) | v1;
 }

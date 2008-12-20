@@ -288,8 +288,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	jrd_req* handle2 = NULL;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-			 fld += RFLD_F_LENGTH)
+		for (n = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
 			if (!fld[RFLD_F_MINOR])
 			{
@@ -482,7 +481,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	USHORT length = string.length();
 	if (length > MAX_UCHAR)
 		length = MAX_UCHAR;
-		
+
 	*acl++ = (UCHAR)length;
 	if (length)
 	{
@@ -563,8 +562,7 @@ void INI_init(thread_db* tdbb)
 		relation->rel_flags |= REL_system;
 		relation->rel_name = names[relfld[RFLD_R_NAME]];
 		int n = 0;
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-			fld += RFLD_F_LENGTH)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
 			n++;
 		}
@@ -591,8 +589,7 @@ void INI_init(thread_db* tdbb)
 		(*formats)[0] = format;
 		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-			 fld += RFLD_F_LENGTH, ++desc, ++itr)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH, ++desc, ++itr)
 		{
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
@@ -663,8 +660,7 @@ void INI_init2(thread_db* tdbb)
 			Format* format = relation->rel_current_format;
 
 			int n = 0;
-			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-				 fld += RFLD_F_LENGTH)
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 			{
 				/* If the ODS is less than 10, then remove all fields named
 				 * RDB$FIELD_PRECISION and field RDB$CHARACTER_LENGTH from
@@ -672,77 +668,66 @@ void INI_init2(thread_db* tdbb)
 				 * in < 10 ODS
 				 */
 				if (fld[RFLD_F_NAME] == nam_f_precision ||
-					(fld[RFLD_F_NAME] == nam_char_length &&
-					 relfld[RFLD_R_NAME] == nam_args))
+					(fld[RFLD_F_NAME] == nam_char_length && relfld[RFLD_R_NAME] == nam_args))
 				{
 					if (major_version >= ODS_VERSION10)
 						n = init2_helper(fld, n, relation);
 				}
-				else if (fld[RFLD_F_NAME] == nam_statistics &&
-					 relfld[RFLD_R_NAME] == nam_i_segments)
+				else if (fld[RFLD_F_NAME] == nam_statistics && relfld[RFLD_R_NAME] == nam_i_segments)
 				{
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
-				else if ((fld[RFLD_F_NAME] == nam_description ||
-					fld[RFLD_F_NAME] == nam_sys_flag) &&
+				else if ((fld[RFLD_F_NAME] == nam_description || fld[RFLD_F_NAME] == nam_sys_flag) &&
 					relfld[RFLD_R_NAME] == nam_roles)
 				{
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
-				else if (fld[RFLD_F_NAME] == nam_description &&
-					relfld[RFLD_R_NAME] == nam_gens)
+				else if (fld[RFLD_F_NAME] == nam_description && relfld[RFLD_R_NAME] == nam_gens)
 				{
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
 				else if ((fld[RFLD_F_NAME] == nam_base_collation_name ||
-						  fld[RFLD_F_NAME] == nam_specific_attr) &&
-						 relfld[RFLD_R_NAME] == nam_collations)
+						fld[RFLD_F_NAME] == nam_specific_attr) &&
+					relfld[RFLD_R_NAME] == nam_collations)
 				{
 					if (major_version >= ODS_VERSION11)
 						n = init2_helper(fld, n, relation);
 				}
-				else if (fld[RFLD_F_NAME] == nam_r_type &&
-						 relfld[RFLD_R_NAME] == nam_relations)
+				else if (fld[RFLD_F_NAME] == nam_r_type && relfld[RFLD_R_NAME] == nam_relations)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
-				else if (fld[RFLD_F_NAME] == nam_valid_blr &&
-						 relfld[RFLD_R_NAME] == nam_trgs)
+				else if (fld[RFLD_F_NAME] == nam_valid_blr && relfld[RFLD_R_NAME] == nam_trgs)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
-				else if ((fld[RFLD_F_NAME] == nam_prc_type ||
-						  fld[RFLD_F_NAME] == nam_valid_blr) &&
-						 relfld[RFLD_R_NAME] == nam_procedures)
+				else if ((fld[RFLD_F_NAME] == nam_prc_type || fld[RFLD_F_NAME] == nam_valid_blr) &&
+					relfld[RFLD_R_NAME] == nam_procedures)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
 				else if (fld[RFLD_F_NAME] == nam_debug_info &&
-						 (relfld[RFLD_R_NAME] == nam_trgs ||
-						  relfld[RFLD_R_NAME] == nam_procedures))
+					(relfld[RFLD_R_NAME] == nam_trgs || relfld[RFLD_R_NAME] == nam_procedures))
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
-				else if ((fld[RFLD_F_NAME] == nam_default ||
-						  fld[RFLD_F_NAME] == nam_d_source ||
-						  fld[RFLD_F_NAME] == nam_collate_id ||
-						  fld[RFLD_F_NAME] == nam_null_flag ||
-						  fld[RFLD_F_NAME] == nam_prm_mechanism) &&
-						 relfld[RFLD_R_NAME] == nam_proc_parameters)
+				else if ((fld[RFLD_F_NAME] == nam_default || fld[RFLD_F_NAME] == nam_d_source ||
+						fld[RFLD_F_NAME] == nam_collate_id || fld[RFLD_F_NAME] == nam_null_flag ||
+						fld[RFLD_F_NAME] == nam_prm_mechanism) &&
+					relfld[RFLD_R_NAME] == nam_proc_parameters)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
-				else if ((fld[RFLD_F_NAME] == nam_f_name ||
-						  fld[RFLD_F_NAME] == nam_r_name) &&
-						 relfld[RFLD_R_NAME] == nam_proc_parameters)
+				else if ((fld[RFLD_F_NAME] == nam_f_name || fld[RFLD_F_NAME] == nam_r_name) &&
+					relfld[RFLD_R_NAME] == nam_proc_parameters)
 				{
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_2)
 						n = init2_helper(fld, n, relation);
@@ -755,8 +740,7 @@ void INI_init2(thread_db* tdbb)
 			format->fmt_count = n; // We are using less than the allocated members.
 			format->fmt_length = (USHORT)FLAG_BYTES(n);
 			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
-			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-				 fld += RFLD_F_LENGTH, ++desc)
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH, ++desc)
 			{
 				if (n-- > 0)
 				{
@@ -764,8 +748,7 @@ void INI_init2(thread_db* tdbb)
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 
 					// In ODS11 length of RDB$MESSAGE was enlarged from 80 to 1023 bytes
-					if ((fld[RFLD_F_NAME] == nam_msg) &&
-						(major_version < ODS_VERSION11))
+					if ((fld[RFLD_F_NAME] == nam_msg) && (major_version < ODS_VERSION11))
 					{
 						desc->dsc_length = 80 + sizeof(USHORT);
 					}
@@ -823,11 +806,9 @@ static void add_index_set(Database*	dbb,
 
 		/* For minor ODS updates, only add indices newer than on-disk ODS */
 		if (update_ods &&
-			((index->ini_idx_version_flag <=
-				ENCODE_ODS(major_version, minor_version)) ||
-			 (index->ini_idx_version_flag > ODS_CURRENT_VERSION) ||
-			 (((USHORT) DECODE_ODS_MAJOR(index->ini_idx_version_flag)) !=
-			  major_version)))
+			((index->ini_idx_version_flag <= ENCODE_ODS(major_version, minor_version)) ||
+				(index->ini_idx_version_flag > ODS_CURRENT_VERSION) ||
+			 	(((USHORT) DECODE_ODS_MAJOR(index->ini_idx_version_flag)) != major_version)))
 		{
 			/* The DECODE_ODS_MAJOR() is used (in this case) to instruct the server
 			   to perform updates for minor ODS versions only within a major ODS */
@@ -854,11 +835,9 @@ static void add_index_set(Database*	dbb,
 
 			/* Store each segment for the index */
 			index_desc::idx_repeat* tail = idx.idx_rpt;
-			for (USHORT position = 0;
-				 position < index->ini_idx_segment_count; position++, tail++)
+			for (USHORT position = 0; position < index->ini_idx_segment_count; position++, tail++)
 			{
-				const ini_idx_t::ini_idx_segment_t* segment =
-					&index->ini_idx_segment[position];
+				const ini_idx_t::ini_idx_segment_t* segment = &index->ini_idx_segment[position];
 				STORE(REQUEST_HANDLE handle2) Y IN RDB$INDEX_SEGMENTS
 					jrd_fld* field = (*relation->rel_fields)[segment->ini_idx_rfld_id];
 
@@ -873,8 +852,7 @@ static void add_index_set(Database*	dbb,
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
-			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL, NULL,
-							 selectivity);
+			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL, NULL, selectivity);
 			X.RDB$INDEX_ID = idx.idx_id + 1;
 		END_STORE;
 
@@ -914,16 +892,13 @@ static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		int n = 0;
-		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME];
-			 n++, fld += RFLD_F_LENGTH)
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; n++, fld += RFLD_F_LENGTH)
 		{
-			if (minor_version < fld[RFLD_F_MINOR] ||
-				minor_version < fld[RFLD_F_UPD_MINOR])
+			if (minor_version < fld[RFLD_F_MINOR] || minor_version < fld[RFLD_F_UPD_MINOR])
 			{
 				if (minor_version < fld[RFLD_F_MINOR])
 				{
-					store_relation_field(tdbb, fld, relfld, n, &s_handle,
-										 false);
+					store_relation_field(tdbb, fld, relfld, n, &s_handle, false);
 				}
 				else
 				{
@@ -993,8 +968,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	BLB_close(tdbb, blob);
 
 	default_class.printf("%s%" SQUADFORMAT, DEFAULT_CLASS,
-			DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS),
-					   false, (SINT64) 1));
+						 DPM_gen_id(tdbb, MET_lookup_generator(tdbb, DEFAULT_CLASS), false, 1));
 
 	jrd_req* handle1 = NULL;
 
@@ -1049,8 +1023,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS,
-				sizeof(CLS.RDB$SECURITY_CLASS));
+		jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_1;
 	END_STORE;
 
@@ -1060,8 +1033,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
-				sizeof(CLS.RDB$SECURITY_CLASS));
+		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS, sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
 
@@ -1073,8 +1045,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		WITH REL.RDB$RELATION_NAME EQ rel_name
 		MODIFY REL USING
 			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
-			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
-					sizeof(REL.RDB$DEFAULT_CLASS));
+			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS, sizeof(REL.RDB$DEFAULT_CLASS));
 		END_MODIFY;
 
 	END_FOR;
@@ -1316,7 +1287,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			fb_assert(FALSE);
 			break;
 		}
-		
+
 		/* For the next ODS change, when we'll have not NULL sys fields
 		X.RDB$NULL_FLAG.NULL = FALSE;
 		X.RDB$NULL_FLAG = gfield->gfld_null_flag;
@@ -1399,9 +1370,8 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	handle = NULL;
 }
 
-static void store_function_argument(
-	thread_db* tdbb, Database* dbb,
-	jrd_req*& handle,
+
+static void store_function_argument(thread_db* tdbb, Database* dbb, jrd_req*& handle,
 	const char* function_name, SLONG argument_position, SLONG mechanism, SLONG type, SLONG scale,
 	SLONG length, SLONG sub_type, SLONG charset, SLONG precision, SLONG char_length)
 {
@@ -1420,9 +1390,7 @@ static void store_function_argument(
 	END_STORE;
 }
 
-static void store_function(
-	thread_db* tdbb, Database* dbb,
-	jrd_req*& handle,
+static void store_function(thread_db* tdbb, Database* dbb, jrd_req*& handle,
 	const char* function_name, const char* module, const char* entrypoint, SLONG argument)
 {
 	STORE(REQUEST_HANDLE handle) F IN RDB$FUNCTIONS
@@ -1440,6 +1408,7 @@ static void store_function(
 		F.RDB$SYSTEM_FLAG.NULL            = FALSE;
 	END_STORE;
 }
+
 
 static void store_functions(thread_db* tdbb, Database* dbb)
 {
@@ -1572,10 +1541,7 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
 		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &X.RDB$TRIGGER_BLR);
-		BLB_put_segment(tdbb,
-						blob,
-						trigger->trg_blr,
-						trigger->trg_length);
+		BLB_put_segment(tdbb, blob, trigger->trg_blr, trigger->trg_length);
 		BLB_close(tdbb, blob);
 	END_STORE;
 }

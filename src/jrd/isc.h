@@ -43,7 +43,8 @@
 #ifdef SOLARIS_MT
 #include <thread.h>
 
-struct mtx {
+struct mtx
+{
 	mutex_t mtx_mutex[1];
 };
 
@@ -111,7 +112,7 @@ typedef sh_mem *SH_MEM;
 #ifdef WIN_NT
 #include <windows.h>
 
-typedef struct _FAST_MUTEX_SHARED_SECTION
+struct FAST_MUTEX_SHARED_SECTION
 {
 	SLONG   fInitialized;
 	SLONG   lSpinLock;
@@ -120,15 +121,15 @@ typedef struct _FAST_MUTEX_SHARED_SECTION
 #ifdef _DEBUG
 	DWORD  dwThreadId;
 #endif
-} FAST_MUTEX_SHARED_SECTION;
+};
 
-typedef struct _FAST_MUTEX
+struct FAST_MUTEX
 {
 	HANDLE hEvent;
 	HANDLE hFileMap;
 	SLONG  lSpinCount;
 	volatile FAST_MUTEX_SHARED_SECTION* lpSharedInfo;
-} FAST_MUTEX;
+};
 
 struct mtx
 {

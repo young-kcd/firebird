@@ -313,10 +313,9 @@ static void finish_security_class(Acl& acl, SecurityClass::flags_t public_priv)
 }
 
 
-static SecurityClass::flags_t get_public_privs(
-							   thread_db* tdbb,
-							   const TEXT* object_name,
-							   SSHORT obj_type)
+static SecurityClass::flags_t get_public_privs(thread_db* tdbb,
+											   const TEXT* object_name,
+											   SSHORT obj_type)
 {
 /**************************************
  *
@@ -615,10 +614,10 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 
 
 static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
-									Acl& relation_acl,
-									const TEXT* relation_name,
-									const Firebird::MetaName& owner,
-									SecurityClass::flags_t public_priv)
+													Acl& relation_acl,
+													const TEXT* relation_name,
+													const Firebird::MetaName& owner,
+													SecurityClass::flags_t public_priv)
 {
 /**************************************
  *
@@ -902,9 +901,7 @@ static SecurityClass::flags_t trans_sql_priv(const TEXT* privileges)
 }
 
 
-static SecurityClass::flags_t squeeze_acl(Acl& acl,
-						 const Firebird::MetaName& user,
-						 SSHORT user_type)
+static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& user, SSHORT user_type)
 {
 /**************************************
  *

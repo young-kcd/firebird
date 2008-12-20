@@ -65,15 +65,13 @@ namespace Jrd
 						   const Firebird::PathName& on,
 						   const Firebird::PathName& ln)
 				: useCount(0), handle(h),
-				originalName(p, on), loadName(p, ln) { }
+					originalName(p, on), loadName(p, ln)
+			{ }
 
 			~InternalModule()
 			{
 				fb_assert(useCount == 0);
-				if (handle)
-				{
-					delete handle;
-				}
+				delete handle;
 			}
 
 			bool operator==(const Firebird::PathName &pn) const

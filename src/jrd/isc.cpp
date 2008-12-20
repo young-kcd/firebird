@@ -79,8 +79,7 @@ public:
 		// Ensure that our process has the SYNCHRONIZE privilege granted to everyone
 		PSECURITY_DESCRIPTOR pOldSD = NULL;
 		PACL pOldACL = NULL;
-		GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
-						DACL_SECURITY_INFORMATION,
+		GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
 						NULL, NULL, &pOldACL, NULL, &pOldSD);
 
 		// NULL pOldACL means all privileges. If we assign pNewACL in this case
@@ -104,8 +103,7 @@ public:
 			PACL pNewACL = NULL;
 			SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
 
-			SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
-							DACL_SECURITY_INFORMATION,
+			SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
 							NULL, NULL, pNewACL, NULL);
 
 			if (pSID) {

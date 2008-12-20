@@ -111,8 +111,7 @@ namespace {
 			// could not open the file as read write attempt as read only
 			if (!(ext_file->ext_ifi = fopen(file_name, FOPEN_READ_ONLY)))
 			{
-				ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fopen") <<
-												   Arg::Str(file_name) <<
+				ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fopen") << Arg::Str(file_name) <<
 						 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 			}
 			else {
@@ -196,8 +195,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 		file_name = Path.c_str();
 	}
 
-	ExternalFile* file =
-		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
+	ExternalFile* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
 	relation->rel_file = file;
 	strcpy(file->ext_filename, file_name);
 	file->ext_flags = 0;
@@ -270,11 +268,10 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 	// call it if it is not necessary. Note that we must flush file buffer if we
 	// do read after write
 	if (file->ext_ifi == NULL ||
-		( (ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
-		 (fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
+		((ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
+			(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") <<
-										   Arg::Str(file->ext_filename) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
@@ -294,7 +291,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 
     SSHORT i = 0;
 	for (vec<jrd_fld*>::iterator itr = relation->rel_fields->begin();
-			i < format->fmt_count; ++i, ++itr, ++desc_ptr)
+		i < format->fmt_count; ++i, ++itr, ++desc_ptr)
 	{
 	    const jrd_fld* field = *itr;
 		SET_NULL(record, i);
@@ -396,27 +393,24 @@ SSHORT		i, size;
    inversion component of the boolean. */
 
 /*
-inversion = NULL;
-opt_end = opt->opt_rpt + opt->opt_count;
+	inversion = NULL;
+	opt_end = opt->opt_rpt + opt->opt_count;
 
-if (opt->opt_count)
-    for (i = 0; i < csb_tail->csb_indices; i++)
-	{
-	clear_bounds (opt, idx);
-	for (tail = opt->opt_rpt; tail < opt_end; tail++)
-	    {
-	    node = tail->opt_conjunct;
-	    if (!(tail->opt_flags & opt_used) &&
-		OPT_computable(csb, node, -1))
-		match (opt, stream, node, idx);
-	    if (node->nod_type == nod_starts)
-		compose (&inversion,
-			 make_starts (opt, node, stream, idx), nod_bit_and);
-	    }
-	compose (&inversion, make_index (opt, relation, idx),
-		nod_bit_and);
-	idx = idx->idx_rpt + idx->idx_count;
-	}
+	if (opt->opt_count)
+	    for (i = 0; i < csb_tail->csb_indices; i++)
+		{
+			clear_bounds (opt, idx);
+			for (tail = opt->opt_rpt; tail < opt_end; tail++)
+			{
+			    node = tail->opt_conjunct;
+			    if (!(tail->opt_flags & opt_used) && OPT_computable(csb, node, -1))
+					match (opt, stream, node, idx);
+			    if (node->nod_type == nod_starts)
+					compose (&inversion, make_starts (opt, node, stream, idx), nod_bit_and);
+			}
+			compose (&inversion, make_index (opt, relation, idx), nod_bit_and);
+			idx = idx->idx_rpt + idx->idx_count;
+		}
 */
 
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
@@ -477,8 +471,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		if (dbb->dbb_flags & DBB_read_only)
 			ERR_post(Arg::Gds(isc_read_only_database));
 		else {
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("insert") <<
-											   Arg::Str(file->ext_filename) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("insert") << Arg::Str(file->ext_filename) <<
 					 Arg::Gds(isc_io_write_err) <<
 					 Arg::Gds(isc_ext_readonly_err));
 		}
@@ -491,10 +484,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	for (USHORT i = 0; i < format->fmt_count; ++i, ++field_ptr, ++desc_ptr)
 	{
 		const jrd_fld* field = *field_ptr;
-		if (field &&
-			!field->fld_computation &&
-			desc_ptr->dsc_length &&
-			TEST_NULL(record, i))
+		if (field && !field->fld_computation && desc_ptr->dsc_length && TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
 			Literal* literal = (Literal*) field->fld_missing_value;
@@ -520,15 +510,13 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (file->ext_ifi == NULL ||
 		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") <<
-										   Arg::Str(file->ext_filename) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
 	if (!fwrite(p, l, 1, file->ext_ifi))
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fwrite") <<
-										   Arg::Str(file->ext_filename) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fwrite") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 

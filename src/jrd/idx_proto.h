@@ -48,17 +48,14 @@ void IDX_create_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, const TE
 Jrd::IndexBlock* IDX_create_index_block(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 void IDX_delete_index(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 void IDX_delete_indices(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::RelationPages*);
-Jrd::idx_e IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**,
-							USHORT*);
+Jrd::idx_e IDX_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT*);
 void IDX_garbage_collect(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordStack&, Jrd::RecordStack&);
 Jrd::idx_e IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
 							 Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT *);
 Jrd::idx_e IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*,
-											  Jrd::jrd_tra*, Jrd::jrd_rel**,
-											  USHORT *);
+											  Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT*);
 void IDX_statistics(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
-Jrd::idx_e IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*,
-							Jrd::jrd_rel**, USHORT*);
+Jrd::idx_e IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, Jrd::jrd_rel**, USHORT*);
 void IDX_modify_flag_uk_modified(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 
 

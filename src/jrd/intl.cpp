@@ -148,8 +148,10 @@ public:
 	{
 		cs->destroy();
 		for (size_t i = 0; i < charset_collations.getCount(); i++)
+		{
 			if (charset_collations[i])
 				charset_collations[i]->destroy();
+		}
 	}
 
 	CharSet* getCharSet() { return cs; }
@@ -510,17 +512,13 @@ int INTL_compare(thread_db* tdbb,
 				   sense if the string cannot be expressed...
 				 */
 
-				length2 = INTL_convert_bytes(tdbb, cs1,
-											 buffer, sizeof(buffer),
-											 cs2, p2, length2, err);
+				length2 = INTL_convert_bytes(tdbb, cs1, buffer, sizeof(buffer), cs2, p2, length2, err);
 				p2 = buffer;
 			}
 			else {
 				/* convert pText1 to pText2's type, if possible */
 
-				length1 = INTL_convert_bytes(tdbb, cs2,
-											 buffer, sizeof(buffer),
-											 cs1, p1, length1, err);
+				length1 = INTL_convert_bytes(tdbb, cs2, buffer, sizeof(buffer), cs1, p1, length1, err);
 				p1 = buffer;
 			}
 		}
@@ -574,10 +572,8 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 	const UCHAR* const start_dest_ptr = dest_ptr;
 
-	if ((dest_type == CS_BINARY) ||
-		(dest_type == CS_NONE) ||
-		(src_type == CS_BINARY) ||
-		(src_type == CS_NONE))
+	if ((dest_type == CS_BINARY) || (dest_type == CS_NONE) ||
+		(src_type == CS_BINARY) || (src_type == CS_NONE))
 	{
 		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
@@ -691,8 +687,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	UCHAR* from_ptr;
 	USHORT from_type;
-	const USHORT from_len =
-		CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
+	const USHORT from_len = CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
 
 	ULONG to_size, to_len, to_fill;
 	to_size = to_len = TEXT_LEN(to);
@@ -704,7 +699,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	switch (to->dsc_dtype) {
 	case dtype_text:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE))
+		{
 
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
@@ -733,7 +729,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 
 	case dtype_cstring:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE))
+		{
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
@@ -757,7 +754,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 
 	case dtype_varying:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE))
+		{
 
 			to_len =
 				INTL_convert_bytes(tdbb, to_cs,
@@ -1092,8 +1090,8 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	fb_assert(idxType >= idx_first_intl_string || idxType == idx_string
-		   || idxType == idx_byte_array || idxType == idx_metadata);
+	fb_assert(idxType >= idx_first_intl_string || idxType == idx_string ||
+			  idxType == idx_byte_array || idxType == idx_metadata);
 	fb_assert(pString != NULL);
 	fb_assert(pByte != NULL);
 	fb_assert(pString->dsc_address != NULL);
@@ -1159,10 +1157,9 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
-static bool all_spaces(
-						  thread_db* tdbb,
-						  CHARSET_ID charset,
-						  const BYTE* ptr, ULONG len, ULONG offset)
+static bool all_spaces(thread_db* tdbb,
+					   CHARSET_ID charset,
+					   const BYTE* ptr, ULONG len, ULONG offset)
 {
 /**************************************
  *

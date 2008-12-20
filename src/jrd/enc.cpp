@@ -512,8 +512,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	}
 	encp += salt_size;
 	C_block rsltblock;
-	if (des_cipher((const char*) &constdatablock, (char*) &rsltblock,
-				   salt, num_iter))
+	if (des_cipher((const char*) &constdatablock, (char*) &rsltblock, salt, num_iter))
 	{
 		buf[0] = 0;
 		return;

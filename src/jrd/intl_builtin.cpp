@@ -99,7 +99,8 @@ struct Byte_Mask_Table
 	SLONG lval;
 };
 
-static const Byte_Mask_Table tab[] = {
+static const Byte_Mask_Table tab[] =
+{
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
 	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
 	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
@@ -415,10 +416,9 @@ static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src
 	return dst - dstStart;
 }
 
-static ULONG internal_str_copy(
-								texttype* obj,
-								ULONG inLen,
-								const UCHAR* src, ULONG outLen, UCHAR* dest)
+static ULONG internal_str_copy(texttype* obj,
+							   ULONG inLen,
+							   const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -453,13 +453,12 @@ static USHORT internal_keylength(texttype* obj, USHORT iLength)
 	return (iLength);
 }
 
-static USHORT internal_string_to_key(
-									 texttype* obj,
+static USHORT internal_string_to_key(texttype* obj,
 									 USHORT inLen,
 									 const UCHAR* src,
 									 USHORT outLen,
-									UCHAR* dest,
-									USHORT key_type) // unused
+									 UCHAR* dest,
+									 USHORT key_type) // unused
 {
 /**************************************
  *
@@ -479,17 +478,18 @@ static USHORT internal_string_to_key(
 	{
 		/* strip off ending pad characters */
 		while (dest > pStart)
+		{
 			if (*(dest - 1) == pad_char)
 				dest--;
 			else
 				break;
+		}
 	}
 
 	return (dest - pStart);
 }
 
-static SSHORT internal_compare(
-							   texttype* obj,
+static SSHORT internal_compare(texttype* obj,
 							   ULONG length1,
 							   const UCHAR* p1, ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
 {
@@ -508,18 +508,20 @@ static SSHORT internal_compare(
 		if (length2)
 			do {
 				if (*p1++ != *p2++)
+				{
 					if (p1[-1] > p2[-1])
 						return 1;
-					else
-						return -1;
+					return -1;
+				}
 			} while (--length2);
 		if (fill > 0)
 			do {
 				if (!obj->texttype_pad_option || *p1++ != pad)
+				{
 					if (p1[-1] > pad)
 						return 1;
-					else
-						return -1;
+					return -1;
+				}
 			} while (--fill);
 		return 0;
 	}
@@ -527,28 +529,29 @@ static SSHORT internal_compare(
 	if (length1)
 		do {
 			if (*p1++ != *p2++)
+			{
 				if (p1[-1] > p2[-1])
 					return 1;
-				else
-					return -1;
+				return -1;
+			}
 		} while (--length1);
 
 	do {
 		if (!obj->texttype_pad_option || *p2++ != pad)
+		{
 			if (pad > p2[-1])
 				return 1;
-			else
-				return -1;
+			return -1;
+		}
 	} while (++fill);
 
 	return 0;
 }
 
 
-static ULONG internal_str_to_upper(
-									texttype* obj,
-									ULONG inLen,
-									const UCHAR* src, ULONG outLen, UCHAR* dest)
+static ULONG internal_str_to_upper(texttype* obj,
+								   ULONG inLen,
+								   const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -570,10 +573,9 @@ static ULONG internal_str_to_upper(
 }
 
 
-static ULONG internal_str_to_lower(
-									texttype* obj,
-									ULONG inLen,
-									const UCHAR* src, ULONG outLen, UCHAR* dest)
+static ULONG internal_str_to_lower(texttype* obj,
+								   ULONG inLen,
+								   const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -637,8 +639,7 @@ void padUtf16(const USHORT* text, U& len)
 }
 } //namespace
 
-static USHORT utf16_string_to_key(
-								  texttype* obj,
+static USHORT utf16_string_to_key(texttype* obj,
 								  USHORT srcLen,
 								  const UCHAR* src,
 								  USHORT dstLen,
@@ -667,8 +668,7 @@ static USHORT utf16_string_to_key(
 	return UnicodeUtil::utf16ToKey(srcLen, alSrc, dstLen, dst, key_type);
 }
 
-static SSHORT utf16_compare(
-							texttype* obj,
+static SSHORT utf16_compare(texttype* obj,
 							ULONG len1,
 							const UCHAR* str1,
 							ULONG len2,
@@ -700,8 +700,7 @@ static SSHORT utf16_compare(
 	return UnicodeUtil::utf16Compare(len1, al1, len2, al2, error_flag);
 }
 
-static ULONG utf16_upper(
-						 texttype* obj,
+static ULONG utf16_upper(texttype* obj,
 						 ULONG srcLen,
 						 const UCHAR* src,
 						 ULONG dstLen,
@@ -724,8 +723,7 @@ static ULONG utf16_upper(
 		dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), NULL);
 }
 
-static ULONG utf16_lower(
-						 texttype* obj,
+static ULONG utf16_lower(texttype* obj,
 						 ULONG srcLen,
 						 const UCHAR* src,
 						 ULONG dstLen,
@@ -763,8 +761,7 @@ static USHORT utf32_keylength(texttype* obj, USHORT len)
 	return len;
 }
 
-static USHORT utf32_string_to_key(
-								  texttype* obj,
+static USHORT utf32_string_to_key(texttype* obj,
 								  USHORT srcLen,
 								  const UCHAR* src,
 								  USHORT dstLen,
@@ -1671,12 +1668,12 @@ INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, co
 	if (strcmp(charset_name, "NONE") == 0)
 		func = cs_none_init;
 	else if (strcmp(charset_name, "ASCII") == 0 || strcmp(charset_name, "USASCII") == 0 ||
-			 strcmp(charset_name, "ASCII7") == 0)
+		strcmp(charset_name, "ASCII7") == 0)
 	{
 		func = cs_ascii_init;
 	}
 	else if (strcmp(charset_name, "UNICODE_FSS") == 0 || strcmp(charset_name, "UTF_FSS") == 0 ||
-			 strcmp(charset_name, "SQL_TEXT") == 0)
+		strcmp(charset_name, "SQL_TEXT") == 0)
 	{
 		func = cs_unicode_fss_init;
 	}
@@ -1693,8 +1690,8 @@ INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, co
 
 	if (func)
 		return func(cs, charset_name, config_info);
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -1721,19 +1718,19 @@ INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name,
 	else if (strcmp(texttype_name, "OCTETS") == 0)
 		func = ttype_binary_init;
 	else if (strcmp(texttype_name, "UTF8") == 0 ||
-			 (strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+		(strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
 		func = ttype_utf8_init;
 	}
 	else if ((strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UNICODE") == 0))
 		func = ttype_unicode8_init;
 	else if (strcmp(texttype_name, "UTF16") == 0 ||
-			 (strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+		(strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
 		func = ttype_utf16_init;
 	}
 	else if (strcmp(texttype_name, "UTF32") == 0 ||
-			 (strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+		(strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
 		func = ttype_utf32_init;
 	}
@@ -1743,8 +1740,8 @@ INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name,
 		return func(tt, texttype_name, charset_name, attributes,
 			specific_attributes, specific_attributes_length, ignore_attributes, config_info);
 	}
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -1771,13 +1768,14 @@ ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* char
 		{
 			if (dstLen == 0)
 				return newSpecificAttributes.length();
-			else if (newSpecificAttributes.length() <= dstLen)
+
+			if (newSpecificAttributes.length() <= dstLen)
 			{
 				memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
 				return newSpecificAttributes.length();
 			}
-			else
-				return INTL_BAD_STR_LENGTH;
+
+			return INTL_BAD_STR_LENGTH;
 		}
 	}
 

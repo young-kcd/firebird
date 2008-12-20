@@ -98,15 +98,16 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
 {
 	if (DTYPE_IS_TEXT(desc.dsc_dtype))
 		return INTL_TTYPE(&desc);
-	else if (desc.dsc_dtype == dtype_blob || desc.dsc_dtype == dtype_quad)
+
+	if (desc.dsc_dtype == dtype_blob || desc.dsc_dtype == dtype_quad)
 	{
 		if (desc.dsc_sub_type == isc_blob_text)
 			return desc.dsc_blob_ttype();
-		else
-			return ttype_binary;
+
+		return ttype_binary;
 	}
-	else
-		return ttype_ascii;
+
+	return ttype_ascii;
 }
 
 #define INTL_DYNAMIC_CHARSET(desc)	(INTL_GET_CHARSET(desc) == CS_dynamic)

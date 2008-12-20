@@ -6591,9 +6591,9 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
  *
  **************************************/
 
-	char*p;
+	char* p;
 
-	errno =0;
+	errno = 0;
 	const long newRowCount = strtol(newRowCountStr, &p, 0);
 	// I was going to use this one, but "-1" parses as max ulong without error and it would be politer to give an error.
 	//const ULONG newRowCount = strtoul(newRowCountStr, &p, 0);
@@ -6601,7 +6601,7 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
 	if (newRowCount < 0)
 	{
 		isqlGlob.printf("The value (%s) for rowcount must be zero or greater", newRowCountStr);
-	        isqlGlob.printf(NEWLINE);
+		isqlGlob.printf(NEWLINE);
 		return ps_ERR;
 	}
 
@@ -6611,15 +6611,15 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
 		{
 		case ERANGE:
 			isqlGlob.printf("Unable to convert %s to a number for rowcount ", newRowCountStr);
-	        	isqlGlob.printf(NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			break;
 		case EINVAL:
 			isqlGlob.printf("Value %s for rowcount is out of range max value is %l", newRowCountStr,LLONG_MAX );
-	        	isqlGlob.printf(NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			break;
 		default:
 			isqlGlob.printf("Unable to process %s as new limit for rowcount", newRowCountStr);
-	        	isqlGlob.printf(NEWLINE);
+			isqlGlob.printf(NEWLINE);
 			break;
 		}
 

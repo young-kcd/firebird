@@ -169,8 +169,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, Attachment* const attachment)
 	{
-		if (!attachment->checkHandle() ||
-			!attachment->att_database->checkHandle())
+		if (!attachment->checkHandle() || !attachment->att_database->checkHandle())
 		{
 			status_exception::raise(Arg::Gds(isc_bad_db_handle));
 		}
@@ -300,8 +299,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		// Allocate statement memory pool
 		MemoryPool* new_pool = dbb->createPool();
 		// Trigger request is not compiled yet. Lets do it now
-		USHORT par_flags = (USHORT)
-			(flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
+		USHORT par_flags = (USHORT) (flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
 		if (type & 1)
 			par_flags |= csb_pre_trigger;
 		else
@@ -357,8 +355,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 void Jrd::Trigger::release(thread_db* tdbb)
 {
-	if (blr.getCount() == 0 ||	//sys_trigger
-		!request || CMP_clone_is_active(request))
+	if (blr.getCount() == 0 || !request || CMP_clone_is_active(request))
 	{
 		return; // FALSE;
 	}
@@ -437,8 +434,7 @@ public:
 	DatabaseOptions()
 	{
 		memset(this, 0,
-			reinterpret_cast<char*>(&this->dpb_sys_user_name) -
-			reinterpret_cast<char*>(this));
+			reinterpret_cast<char*>(&this->dpb_sys_user_name) - reinterpret_cast<char*>(this));
 	}
 	void get(const UCHAR*, USHORT, bool&);
 };
@@ -1006,7 +1002,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			{
 				if (userId.usr_sql_role_name.hasData() &&
 					(userId.usr_sql_role_name[0] == DBL_QUOTE ||
-					 userId.usr_sql_role_name[0] == SINGLE_QUOTE))
+						userId.usr_sql_role_name[0] == SINGLE_QUOTE))
 				{
 					const char end_quote = userId.usr_sql_role_name[0];
 					// remove the delimited quotes and escape quote
@@ -1017,8 +1013,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 					{
 						if (*p == end_quote)
 						{
-							if (++p < userId.usr_sql_role_name.end() &&
-								*p == end_quote)
+							if (++p < userId.usr_sql_role_name.end() && *p == end_quote)
 							{
 								// skip the escape quote here
 								userId.usr_sql_role_name.erase(p--);
@@ -1026,8 +1021,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 							else
 							{
 								// delimited done
-								userId.usr_sql_role_name.erase(--p,
-									userId.usr_sql_role_name.end());
+								userId.usr_sql_role_name.erase(--p, userId.usr_sql_role_name.end());
 							}
 						}
 					}
@@ -1172,15 +1166,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
  */
 
 	if (((attachment->att_flags & ATT_gbak_attachment) ||
-		 (attachment->att_flags & ATT_gfix_attachment) ||
-		 (attachment->att_flags & ATT_gstat_attachment)) &&
+			(attachment->att_flags & ATT_gfix_attachment) ||
+			(attachment->att_flags & ATT_gstat_attachment)) &&
 		!attachment->locksmith())
 	{
 		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
 	if (((attachment->att_flags & ATT_gfix_attachment) ||
-		 (attachment->att_flags & ATT_gstat_attachment)))
+		(attachment->att_flags & ATT_gstat_attachment)))
 	{
 		options.dpb_no_db_triggers = true;
 	}
@@ -1338,7 +1332,7 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
+ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 {
 /**************************************
  *
@@ -1461,7 +1455,7 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
+ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 {
 /**************************************
  *
@@ -1494,7 +1488,7 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 }
 
 
-ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, jrd_tra** tra_handle)
+ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -1526,7 +1520,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, jrd_tra** tra_handle)
 }
 
 
-ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, jrd_tra** tra_handle)
+ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -1583,9 +1577,8 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_compile(tdbb, attachment, req_handle,
-			blr_length, reinterpret_cast<const UCHAR*>(blr),
-			0, NULL, 0, NULL);
+		JRD_compile(tdbb, attachment, req_handle, blr_length, reinterpret_cast<const UCHAR*>(blr),
+					0, NULL, 0, NULL);
 	}
 	catch (const Exception& ex)
 	{
@@ -1834,8 +1827,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			break;
 	}
 
-	dbb->dbb_page_size =
-		(page_size > MAX_PAGE_SIZE) ? MAX_PAGE_SIZE : page_size;
+	dbb->dbb_page_size = (page_size > MAX_PAGE_SIZE) ? MAX_PAGE_SIZE : page_size;
 
 	LCK_init(tdbb, LCK_OWNER_attachment);	// For the attachment
 	attachment->att_flags |= ATT_lck_init_done;
@@ -1923,8 +1915,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_set_no_reserve)
 		PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 
-	INI_format(attachment->att_user->usr_user_name.c_str(),
-			   options.dpb_set_db_charset.c_str());
+	INI_format(attachment->att_user->usr_user_name.c_str(), options.dpb_set_db_charset.c_str());
 
 	// There is no point to move database online at database creation since it is online by default.
 	// We do not allow to create database that is fully shut down.
@@ -1932,8 +1923,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(file_name));
 
 	if (options.dpb_shutdown) {
-		if (!SHUT_database(tdbb, options.dpb_shutdown,
-						   options.dpb_shutdown_delay))
+		if (!SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay))
 		{
 			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
 											  Arg::Str("database") <<
@@ -1960,8 +1950,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
     if (options.dpb_set_db_readonly) {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
+        {
             ERR_post(Arg::Gds(isc_lock_timeout) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
+		}
 
         PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
     }
@@ -2112,8 +2104,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 				Database* dbb = tdbb->getDatabase();
 
 				// if this is the last attachment, mark dbb as not in use
-				if (dbb->dbb_attachments == attachment &&
-					!attachment->att_next &&
+				if (dbb->dbb_attachments == attachment && !attachment->att_next &&
 					!(dbb->dbb_flags & DBB_being_opened))
 				{
 					dbb->dbb_flags |= DBB_not_in_use;
@@ -2342,13 +2333,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 			*return_length = 0;
 		}
 		else {
-			*return_length = BLB_get_slice(tdbb,
-									   transaction,
-									   reinterpret_cast<bid*>(array_id),
-									   sdl,
-									   param_length,
-									   param,
-									   slice_length, slice);
+			*return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+										   sdl, param_length, param, slice_length, slice);
 		}
 	}
 	catch (const Exception& ex)
@@ -2404,7 +2390,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
+ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
 						jrd_tra** tra_handle,
 						USHORT length,
 						const UCHAR* msg)
@@ -2507,12 +2493,8 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 
 		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		BLB_put_slice(tdbb,
-				  transaction,
-				  reinterpret_cast<bid*>(array_id),
-				  sdl,
-				  param_length,
-				  reinterpret_cast<const SLONG*>(param), slice_length, slice);
+		BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
+					  sdl, param_length, reinterpret_cast<const SLONG*>(param), slice_length, slice);
 	}
 	catch (const Exception& ex)
 	{
@@ -2559,9 +2541,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
-		*id = EVENT_que(user_status,
-						attachment->att_event_session,
-						lock->lck_length,
+		*id = EVENT_que(user_status, attachment->att_event_session, lock->lck_length,
 						(const TEXT*) &lock->lck_key, length, items, ast, arg);
 	}
 	catch (const Exception& ex)
@@ -2573,7 +2553,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
+ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 						jrd_req** req_handle,
 						USHORT msg_type,
 						USHORT msg_length,
@@ -2605,8 +2585,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		JRD_receive(tdbb, request, msg_type, msg_length,
-			reinterpret_cast<UCHAR*>(msg), level
+		JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level
 #ifdef SCROLLABLE_CURSORS
 			, direction, offset
 #endif
@@ -2661,7 +2640,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
 {
 /**************************************
  *
@@ -2732,7 +2711,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
+ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
 									jrd_tra** tra_handle)
 {
 /**************************************
@@ -2765,7 +2744,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
+ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, jrd_tra** tra_handle)
 {
 /**************************************
  *
@@ -2797,7 +2776,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
 }
 
 
-ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
+ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 						blb** blob_handle,
 						SSHORT mode,
 						SLONG offset,
@@ -2833,7 +2812,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
+ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 					jrd_req** req_handle,
 					USHORT msg_type,
 					USHORT msg_length,
@@ -3098,7 +3077,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_START(ISC_STATUS * user_status,
+ISC_STATUS GDS_START(ISC_STATUS* user_status,
 					jrd_req** req_handle,
 					jrd_tra** tra_handle,
 					SSHORT level)
@@ -3191,7 +3170,7 @@ int GDS_SHUTDOWN(unsigned int timeout)
 }
 
 
-ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
+ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status,
 							jrd_tra** tra_handle,
 							USHORT count,
 							TEB * vector)
@@ -3221,7 +3200,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 								jrd_tra** tra_handle,
 								SSHORT count,
 								...)
@@ -3438,7 +3417,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
+ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status,
 						jrd_req** req_handle,
 						SSHORT level)
 {

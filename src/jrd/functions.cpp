@@ -84,7 +84,8 @@ static const char
 #define END_FUNCTION
 #define FUNCTION_ARGUMENT(MECHANISM, TYPE, SCALE, LENGTH, SUB_TYPE, CHARSET, PRECISION, CHAR_LENGTH)
 
-static const FN isc_functions[] = {
+static const FN isc_functions[] =
+{
 #ifndef DECLARE_EXAMPLE_IUDF_AUTOMATICALLY
 	{"test_module", "test_function", (FPTR_INT) test}, // see functions.h
 #endif
@@ -140,14 +141,16 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 	return 0;
 }
 
-static vary* make_result_str(const char* str, size_t str_len) {
+static vary* make_result_str(const char* str, size_t str_len)
+{
 	vary *result_vary = (vary*) IbUtil::alloc(str_len + 2);
 	result_vary->vary_length = str_len;
 	memcpy(result_vary->vary_string, str, result_vary->vary_length);
 	return result_vary;
 }
 
-static vary* make_result_str(const Firebird::string& str) {
+static vary* make_result_str(const Firebird::string& str)
+{
 	return make_result_str(str.c_str(), str.length());
 }
 
@@ -283,8 +286,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	}
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) <<
-													Arg::Str(RDB_GET_CONTEXT));
+	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << Arg::Str(RDB_GET_CONTEXT));
 	return NULL;
 }
 
@@ -350,8 +352,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	}
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) <<
-													Arg::Str(RDB_SET_CONTEXT));
+	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << Arg::Str(RDB_SET_CONTEXT));
 	return 0;
 }
 

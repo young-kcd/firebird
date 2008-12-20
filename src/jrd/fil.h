@@ -35,7 +35,8 @@
 
 /* Temporary workfile directory list. */
 
-struct dir_list {
+struct dir_list
+{
 	SLONG dls_header;           // Never referenced directly.
 	dir_list* dls_next;
 	ULONG dls_size;				/* Maximum size in the directory */
@@ -43,17 +44,20 @@ struct dir_list {
 	TEXT dls_directory[2];		/* Directory name */
 };
 
-struct mutexed_dir_list {
+struct mutexed_dir_list
+{
 	dir_list* mdls_dls;			/* Pointer to the directory list */
 	Firebird::Mutex mdls_mutex;	/* Mutex for directory list. Must
 								   be locked before list operations */
 	mutexed_dir_list()
-		: mdls_dls(NULL) {}
+		: mdls_dls(NULL)
+	{}
 };
 
 /* external function directory list */
 /* OBSOLETE.
-struct function_dir_list {
+struct function_dir_list
+{
 	function_dir_list* fdls_next;
 	TEXT fdls_directory[1];
 };
@@ -61,11 +65,12 @@ struct function_dir_list {
 
 /* external file directory list */
 /* OBSOLETE
-struct extfile_dir_list {
+struct extfile_dir_list
+{
     extfile_dir_list* edls_next;
     TEXT edls_directory[1];
 };
 */
 
-#endif /* JRD_FIL_H */
+#endif // JRD_FIL_H
 

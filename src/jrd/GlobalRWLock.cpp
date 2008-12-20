@@ -228,7 +228,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 			Lock* const old_lock = cached_lock;
 			cached_lock = newLock;
 			delete old_lock;
-			if (!LCK_set_owner_handle(tdbb, cached_lock, LCK_get_owner_handle_by_type(tdbb, physicalLockOwner)))
+			if (!LCK_set_owner_handle(tdbb, cached_lock,
+									  LCK_get_owner_handle_by_type(tdbb, physicalLockOwner)))
 			{
 				COS_TRACE(("Error: set owner handle for captured lock, type=%i", cached_lock->lck_type));
 				LCK_release(tdbb, cached_lock);

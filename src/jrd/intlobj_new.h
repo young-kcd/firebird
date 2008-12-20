@@ -134,7 +134,8 @@ typedef void (*pfn_INTL_tt_destroy) (
                                       but accent-sensitive */
 
 
-struct texttype {
+struct texttype
+{
 	/* Data which needs to be initialized by collation driver */
 	USHORT texttype_version;	/* version ID of object */
 	void* texttype_impl;		/* collation object implemented in driver */
@@ -210,7 +211,8 @@ typedef void (*pfn_INTL_cv_destroy) (
 /* csconvert version */
 #define CSCONVERT_VERSION_1	1
 
-struct csconvert {
+struct csconvert
+{
 	USHORT csconvert_version;
 	void* csconvert_impl;
 

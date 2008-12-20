@@ -603,8 +603,9 @@ struct Resource
 		return i1.rsc_id > i2.rsc_id;
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll) :
-		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll) { }
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll)
+		: rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll)
+	{ }
 };
 
 typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
@@ -652,8 +653,8 @@ struct AccessItem
 	AccessItem(const Firebird::MetaName& security_name, SLONG view_id,
 		const Firebird::MetaName& name, const TEXT* type,
 		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
-	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
-		acc_r_name(relName), acc_type(type), acc_mask(mask)
+		: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
+			acc_r_name(relName), acc_type(type), acc_mask(mask)
 	{}
 };
 

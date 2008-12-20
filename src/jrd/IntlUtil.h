@@ -46,8 +46,7 @@ public:
 	typedef GenericMap<SpecificAttribute> SpecificAttributesMap;
 
 public:
-	static string generateSpecificAttributes(
-		Jrd::CharSet* cs, SpecificAttributesMap& map);
+	static string generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributesMap& map);
 	static bool parseSpecificAttributes(
 		Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
 
@@ -81,7 +80,8 @@ private:
 
 	static bool isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size);
 
-	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape);
+	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size,
+		bool returnEscape);
 };
 
 }	// namespace Firebird

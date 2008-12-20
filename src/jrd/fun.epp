@@ -203,7 +203,8 @@ class OwnedBlobStack : public Stack<blb*>
 {
 public:
 	OwnedBlobStack(thread_db* in_tdbb) :
-		m_blob_created(0), m_tdbb(in_tdbb) {}
+		m_blob_created(0), m_tdbb(in_tdbb)
+	{}
 	~OwnedBlobStack();
 	void close();
 	void setBlobCreated(blb* b)
@@ -579,9 +580,8 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 					length = sizeof(udf_blob);
 					if (tail == return_ptr)
 					{
-						blob =
-							BLB_create(tdbb, tdbb->getRequest()->req_transaction,
-									   (bid*) &value->vlu_misc);
+						blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
+										  (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
 						blob_stack.setBlobCreated(blob);
 					}
@@ -594,8 +594,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 						}
 						else
 						{
-							if (input->dsc_dtype != dtype_quad &&
-								input->dsc_dtype != dtype_blob)
+							if (input->dsc_dtype != dtype_quad && input->dsc_dtype != dtype_blob)
 							{
 								ERR_post(Arg::Gds(isc_wish_list) <<
 										 Arg::Gds(isc_blobnotsup) << Arg::Str("conversion"));
@@ -644,8 +643,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	// Did the udf send an ill-formed descriptor back?
 	UdfError udfError = UeNone;
 
-	invoke(tdbb, function, return_ptr, value, args, return_blob_struct,
-		result_was_null, udfError);
+	invoke(tdbb, function, return_ptr, value, args, return_blob_struct, result_was_null, udfError);
 
 	switch (udfError)
 	{
@@ -782,8 +780,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool Sh
 		// Try the list of internally implemented functions.
 		if (!function->fun_entrypoint)
 		{
-			function->fun_entrypoint =
-				BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+			function->fun_entrypoint = BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
 		}
 
 		// ASF: All the places handling fun_homonym is something that doesn't work really.
@@ -843,8 +840,7 @@ UserFunction* FUN_resolve(thread_db* tdbb, CompilerScratch* csb, UserFunction* f
 				CMP_get_desc(tdbb, csb, *ptr, &arg);
 				if (tail->fun_mechanism == FUN_descriptor)
 					score += 10;
-				else if (tail->fun_desc.dsc_dtype == dtype_blob ||
-						 arg.dsc_dtype == dtype_blob)
+				else if (tail->fun_desc.dsc_dtype == dtype_blob || arg.dsc_dtype == dtype_blob)
 				{
 					score = 0;
 					break;
@@ -907,10 +903,7 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
 }
 
 
-static SSHORT blob_get_segment(
-							   blb* blob,
-							   UCHAR* buffer,
-							   USHORT length, USHORT* return_length)
+static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* return_length)
 {
 /**************************************
  *
@@ -965,10 +958,8 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 
 	SLONG stuff[IAD_LEN(16) / 4];
 	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
-	blb* blob = BLB_get_array(tdbb,
-						tdbb->getRequest()->req_transaction,
-						(bid*)value->dsc_address,
-						array_desc);
+	blb* blob = BLB_get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
+							  array_desc);
 
 	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->iad_total_length];
 	BLB_get_data(tdbb, blob, data, array_desc->iad_total_length);
@@ -991,7 +982,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		try
 		{
 			for (; n; --n, to.dsc_address += to.dsc_length,
-				 from.dsc_address += array_desc->iad_element_length)
+				from.dsc_address += array_desc->iad_element_length)
 			{
 				MOV_move(tdbb, &from, &to);
 			}
@@ -1023,8 +1014,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		tail2->sad_lower = tail1->iad_lower;
 	}
 
-	return sizeof(scalar_array_desc) +
-		(dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
+	return sizeof(scalar_array_desc) + (dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 
 
@@ -1077,8 +1067,7 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a LONG.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_short = (SSHORT)
-				CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_real:
@@ -1086,8 +1075,7 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a DOUBLE.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_float = (float)
-				CALL_UDF<double>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_int64:
@@ -1179,8 +1167,7 @@ static void invoke(thread_db* tdbb,
 					// the string after the first zero octet copied.
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length =
-						strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
+					temp_desc.dsc_length = strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
 					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
 						udfError = UeMove;
 					break;
@@ -1188,8 +1175,7 @@ static void invoke(thread_db* tdbb,
 				case dtype_varying:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length =
-						reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
+					temp_desc.dsc_length = reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
 					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
 						udfError = UeMove;
 					break;

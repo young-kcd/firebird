@@ -138,7 +138,7 @@ union semun
 #endif
 
 #ifndef HAVE_GETPAGESIZE
-static size_t getpagesize(void)
+static size_t getpagesize()
 {
 	return PAGESIZE;
 }
@@ -342,11 +342,13 @@ namespace {
 	private:
 		int lastSet;
 
-		struct {
+		struct
+		{
 			char name[MAXPATHLEN];
 		} filesTable[N_FILES];
 
-		struct {
+		struct
+		{
 			key_t semKey;
 			int fileNum;
 			SLONG mask;
@@ -531,7 +533,7 @@ namespace {
 
 		static SharedFile* locate(void* s)
 		{
-			int n = getByAddress((UCHAR*) s);
+			const int n = getByAddress((UCHAR*) s);
 			return n >= 0 ? &sharedFiles[n] : 0;
 		}
 
@@ -1346,7 +1348,6 @@ int ISC_event_post(event_t* event)
 	PTHREAD_ERROR(pthread_mutex_unlock(event->event_mutex));
 	if (ret)
 #ifdef HP10
-
 	{
 		fb_assert(ret == -1);
 		gds__log ("ISC_event_post: pthread_cond_broadcast failed with errno = %d", errno);
@@ -1844,11 +1845,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 
 
 #ifdef WIN_NT
-void *ISC_make_signal(
-	  bool create_flag,
-	  bool manual_reset,
-	  int process_idL,
-	  int signal_number)
+void *ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
 {
 /**************************************
  *
@@ -1905,8 +1902,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
  *
  **************************************/
 	TEXT expanded_filename[MAXPATHLEN], hostname[64];
-	sprintf(expanded_filename, filename,
-			ISC_get_host(hostname, sizeof(hostname)));
+	sprintf(expanded_filename, filename, ISC_get_host(hostname, sizeof(hostname)));
 
 /* make the complete filename for the init file this file is to be used as a
    master lock to eliminate possible race conditions with just a single file
@@ -1982,7 +1978,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif
 
 /* open the file to be inited */
-	int fd = open(expanded_filename, O_RDWR | O_CREAT, 0666);
+	const int fd = open(expanded_filename, O_RDWR | O_CREAT, 0666);
 	umask(oldmask);
 	if (fd == -1) {
 		error(status_vector, "open", errno);
@@ -2010,8 +2006,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	}
 
 /* map file to memory */
-	UCHAR* address =
-		(UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	UCHAR* address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);
 		return NULL;
@@ -2120,8 +2115,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	strcpy(expanded_filename, filename);
 #else
 	TEXT hostname[64];
-	sprintf(expanded_filename, filename,
-			ISC_get_host(hostname, sizeof(hostname)));
+	sprintf(expanded_filename, filename, ISC_get_host(hostname, sizeof(hostname)));
 #endif
 	const int oldmask = umask(0);
 	bool init_flag = false;
@@ -2165,8 +2159,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 /* Create the shared memory region if it doesn't already exist. */
 
 	struct shmid_ds buf;
-	SLONG shmid;
-	if ((shmid = shmget(key, length, IPC_CREAT | PRIV)) == -1)
+	SLONG shmid = shmget(key, length, IPC_CREAT | PRIV);
+	if (shmid == -1)
 #ifdef SUPERSERVER
 		if (errno == EINVAL) {
 			/* There are two cases when shmget() returns EINVAL error:
@@ -2277,8 +2271,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 				return NULL;
 			}
 
-			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) ==
-				-1)
+			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) == -1)
 			{
 				error(status_vector, "shmget", errno);
 				fclose(fp);
@@ -2691,9 +2684,7 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 	const SLONG length = end - start;
 	int fd = shmem_data->sh_mem_handle;
 
-	UCHAR* address =
-		(UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-					   start);
+	UCHAR* address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, start);
 
 	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);
@@ -2708,9 +2699,9 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 }
 
 
-void ISC_unmap_object(ISC_STATUS * status_vector,
-						 SH_MEM shmem_data,
-						 UCHAR ** object_pointer, SLONG object_length)
+void ISC_unmap_object(ISC_STATUS* status_vector,
+					  SH_MEM shmem_data,
+					  UCHAR** object_pointer, SLONG object_length)
 {
 /**************************************
  *
@@ -2744,9 +2735,7 @@ void ISC_unmap_object(ISC_STATUS * status_vector,
 
 	UCHAR* start = (UCHAR *) ((U_IPTR) * object_pointer & ~(page_size - 1));
 	const UCHAR* end =
-		(UCHAR
-		 *) ((U_IPTR) ((*object_pointer + object_length) +
-					   (page_size - 1)) & ~(page_size - 1));
+		(UCHAR*) ((U_IPTR) ((*object_pointer + object_length) + (page_size - 1)) & ~(page_size - 1));
 	const SLONG length = end - start;
 
 	if (munmap((char *) start, length) == -1) {
@@ -3087,7 +3076,7 @@ int ISC_mutex_init(struct mtx* mutex)
 	}
 #ifdef HP10
 	if (state != 0)
-    		state = errno;
+    	state = errno;
 #endif
 	return state;
 }
@@ -3470,10 +3459,7 @@ static bool openFastMutex(FAST_MUTEX* lpMutex, DWORD DesiredAccess, LPCSTR lpNam
 		if (lpName)
 			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
 
-		lpMutex->hFileMap = OpenFileMapping(
-			FILE_MAP_ALL_ACCESS,
-			FALSE,
-			name);
+		lpMutex->hFileMap = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, name);
 
 		dwLastError = GetLastError();
 
@@ -3555,7 +3541,7 @@ int ISC_mutex_lock(struct mtx* mutex)
 
 	const DWORD status = (mutex->mtx_fast.lpSharedInfo) ?
 		enterFastMutex(&mutex->mtx_fast, INFINITE) :
-		WaitForSingleObject(mutex->mtx_fast.hEvent, INFINITE);
+			WaitForSingleObject(mutex->mtx_fast.hEvent, INFINITE);
 
     return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? FB_SUCCESS : FB_FAILURE;
 }
@@ -3575,8 +3561,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  **************************************/
 
 	const DWORD status = (mutex->mtx_fast.lpSharedInfo) ?
-		enterFastMutex(&mutex->mtx_fast, 0) :
-		WaitForSingleObject (mutex->mtx_fast.hEvent, 0L);
+		enterFastMutex(&mutex->mtx_fast, 0) : WaitForSingleObject(mutex->mtx_fast.hEvent, 0L);
 
     return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? FB_SUCCESS : FB_FAILURE;
 }
@@ -3631,9 +3616,8 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 	if (flag)
 		ftruncate(shmem_data->sh_mem_handle, new_length);
 
-	UCHAR* address =
-		(UCHAR *) mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED,
-					   shmem_data->sh_mem_handle, 0);
+	UCHAR* address = (UCHAR*)
+		mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, shmem_data->sh_mem_handle, 0);
 	if ((U_IPTR) address == (U_IPTR) -1)
 		return NULL;
 
@@ -3679,8 +3663,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 	if (flag)
 	{
-		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL,
-				FILE_BEGIN) == 0xFFFFFFFF ||
+		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL, FILE_BEGIN) == 0xFFFFFFFF ||
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
 			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
@@ -3782,8 +3765,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 
 #if (defined UNIX)
-void ISC_reset_timer(
-					 FPTR_VOID_PTR timeout_handler,
+void ISC_reset_timer(FPTR_VOID_PTR timeout_handler,
 					 void *timeout_arg,
 					 SLONG * client_timer, void **client_handler)
 {
@@ -3814,8 +3796,7 @@ void ISC_reset_timer(
 
 
 #if (defined UNIX)
-void ISC_set_timer(
-				   SLONG micro_seconds,
+void ISC_set_timer(SLONG micro_seconds,
 				   FPTR_VOID_PTR timeout_handler,
 				   void *timeout_arg,
 				   SLONG * client_timer, void **client_handler)
@@ -3837,16 +3818,14 @@ void ISC_set_timer(
 
 	timerclear(&internal_timer.it_interval);
 	timerclear(&internal_timer.it_value);
-	setitimer(ITIMER_REAL, &internal_timer,
-			  (struct itimerval *) client_timer);
+	setitimer(ITIMER_REAL, &internal_timer, (struct itimerval *) client_timer);
 
 /* Now clear the signal handler while saving the existing one */
 
 	internal_handler.sa_handler = SIG_DFL;
 	sigemptyset(&internal_handler.sa_mask);
 	internal_handler.sa_flags = SA_RESTART;
-	sigaction(SIGALRM, &internal_handler,
-			  (struct sigaction *) client_handler);
+	sigaction(SIGALRM, &internal_handler, (struct sigaction *) client_handler);
 
 	if (!micro_seconds)
 		return;
@@ -3943,8 +3922,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 	--sharedCount;
 #endif
 
-	munmap((char *) shmem_data->sh_mem_address,
-		   shmem_data->sh_mem_length_mapped);
+	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
 
 	close(shmem_data->sh_mem_handle);
 }
@@ -4021,8 +3999,7 @@ static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS stat
 
 #ifdef USE_SYS5SEMAPHORE
 
-static SLONG create_semaphores(
-							 ISC_STATUS * status_vector,
+static SLONG create_semaphores(ISC_STATUS* status_vector,
 							 SLONG key, int semaphores)
 {
 /**************************************
@@ -4163,11 +4140,9 @@ static SLONG find_key(ISC_STATUS* status_vector, const TEXT* filename)
 
 
 #ifdef WIN_NT
-static bool make_object_name(
-			     TEXT* buffer,
-				 size_t bufsize,
-			     const TEXT* object_name,
-			     const TEXT* object_type)
+static bool make_object_name(TEXT* buffer, size_t bufsize,
+							 const TEXT* object_name,
+							 const TEXT* object_type)
 {
 /**************************************
  *

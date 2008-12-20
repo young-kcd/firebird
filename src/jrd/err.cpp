@@ -55,8 +55,7 @@ using namespace Firebird;
 //#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
-static void internal_error(ISC_STATUS status, int number,
-						   const TEXT* file = NULL, int line = 0);
+static void internal_error(ISC_STATUS status, int number, const TEXT* file = NULL, int line = 0);
 static void internal_post(const ISC_STATUS* status_vector);
 
 
@@ -120,9 +119,7 @@ void ERR_corrupt(int number)
 }
 
 
-void ERR_duplicate_error(IDX_E	code,
-						const jrd_rel*		relation,
-						USHORT index_number)
+void ERR_duplicate_error(IDX_E code, const jrd_rel* relation, USHORT index_number)
 {
 /**************************************
  *
@@ -279,7 +276,7 @@ bool ERR_post_warning(const Arg::StatusVector& v)
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning))
+			status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector */
 		fb_utils::init_status(status_vector);
@@ -413,7 +410,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning))
+			status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector just stuff the status */
 		memcpy(status_vector, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
@@ -434,11 +431,9 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		if (i && i == warning_indx)
 			break;				/* vector has no more errors */
 
-		if (status_vector[i] == tmp_status[1] && i &&
-			status_vector[i - 1] != isc_arg_warning &&
+		if (status_vector[i] == tmp_status[1] && i && status_vector[i - 1] != isc_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
-			(memcmp(&status_vector[i], &tmp_status[1],
-					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
+			(memcmp(&status_vector[i], &tmp_status[1], sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
 			/* duplicate found */
 			return;
@@ -464,8 +459,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
    and first warning */
 
 	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
-		memcpy(&status_vector[err_status_len], tmp_status,
-					sizeof(ISC_STATUS) * tmp_status_len);
+		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
 			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);

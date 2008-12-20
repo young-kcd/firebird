@@ -182,8 +182,14 @@ namespace {
 #else
 		FILE* mtab;
 
-		osMtab() : mtab(MTAB_OPEN(MTAB, "r")) { }
-		~osMtab() { if (mtab) MTAB_CLOSE(mtab); }
+		osMtab()
+			: mtab(MTAB_OPEN(MTAB, "r"))
+		{ }
+		~osMtab()
+		{
+			if (mtab)
+				MTAB_CLOSE(mtab);
+		}
 		bool ok() const { return mtab; }
 #endif
 	};
@@ -355,7 +361,7 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 		return false;
 	}
 
-	size p = expanded_name.find_first_of("\\/", 2);
+	const size p = expanded_name.find_first_of("\\/", 2);
 	if (p == npos)
 		return false;
 
@@ -797,7 +803,7 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 
 	if ((file_name.length() >= 2) &&
 		((file_name[0] == '\\' && file_name[1] == '\\') ||
-		 (file_name[0] == '/' && file_name[1] == '/')))
+			(file_name[0] == '/' && file_name[1] == '/')))
 	{
 		file_name = temp;
 
@@ -941,8 +947,7 @@ void ISC_expand_share(tstring& file_name)
 	}
 
 	HANDLE handle;
-	if (WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, &handle)
-		!= NO_ERROR)
+	if (WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, &handle) != NO_ERROR)
 	{
 		return;
 	}
@@ -984,9 +989,7 @@ void ISC_expand_share(tstring& file_name)
 	if (i == nument) {
 		device += ':';
 		LPREMOTE_NAME_INFO res2 = (LPREMOTE_NAME_INFO) resources;
-		ret =
-			WNetGetUniversalName(device.c_str(),
-					REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
+		ret = WNetGetUniversalName(device.c_str(), REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
 		if (ret == ERROR_MORE_DATA) {
 			gds__free(resources);
 			resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
@@ -995,8 +998,7 @@ void ISC_expand_share(tstring& file_name)
 				return;
 			}
 			res2 = (LPREMOTE_NAME_INFO) resources;
-			ret = WNetGetUniversalName(device.c_str(),
-					REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
+			ret = WNetGetUniversalName(device.c_str(), REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
 		}
 		if (ret == NO_ERROR)
 		{
@@ -1088,8 +1090,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring q;
 		while (*from && *from != '/')
 			q += *from++;
-		const struct passwd* password =
-			q.hasData() ? getpwnam(q.c_str()) : getpwuid(geteuid());
+		const struct passwd* password = q.hasData() ? getpwnam(q.c_str()) : getpwuid(geteuid());
 		if (password)
 		{
 			buff = password->pw_dir;
@@ -1236,8 +1237,7 @@ static void expand_share_name(tstring& share_name)
 	}
 
 	HKEY hkey;
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-					 "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
 					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
 	{
 		return;
@@ -1248,8 +1248,7 @@ static void expand_share_name(tstring& share_name)
 	DWORD type_code;
 	LPBYTE data = data_buf;
 
-	DWORD ret =
-		RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
+	DWORD ret = RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	if (ret == ERROR_MORE_DATA) {
 		d_size++;
 		data = (LPBYTE) gds__alloc((SLONG) d_size);
@@ -1258,13 +1257,12 @@ static void expand_share_name(tstring& share_name)
 			RegCloseKey(hkey);
 			return;				// Error not really handled
 		}
-		ret =
-			RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
+		ret = RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	}
 
 	if (ret == ERROR_SUCCESS) {
 		for (const TEXT* s = reinterpret_cast<const TEXT*>(data); s && *s;
-			 s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
+			s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
 		{
 			if (!strnicmp(s, "path", 4)) {
 				// CVC: Paranoid protection against buffer overrun.
@@ -1500,9 +1498,8 @@ bool Mnt::get()
 	for (;;) {
 		/* Sake of argument, inverted the mount_point, device */
 
-		int n =
-			fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
-					  foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
+		int n = fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
+					   foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
 		if (!strcmp(rw, "read"))
 			n = fscanf(file, "%s", foo1);
 
@@ -1639,8 +1636,7 @@ bool Mnt::get()
 	TEXT* p = buffer;
 
 	for (;;) {
-		const int n =
-			fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+		const int n = fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
 #ifdef SOLARIS
 		if (n != 5)
 #else
@@ -1761,8 +1757,7 @@ static void share_name_from_resource(tstring& file_name,
 		\\NODE and it contains a ':', then it's probably an NFS mounted drive.
 		Therefore we must convert any back slashes to forward slashes. */
 
-		if ((file_name[0] != '\\' || file_name[1] != '\\') &&
-			(file_name.find(INET_FLAG) != npos))
+		if ((file_name[0] != '\\' || file_name[1] != '\\') && (file_name.find(INET_FLAG) != npos))
 		{
 			for (q = file_name.begin(); q < file_name.end(); ++q)
 			{

@@ -82,11 +82,7 @@ DatabaseSnapshot::SharedMemory::SharedMemory()
 	gds__prefix_lock(filename, MONITOR_FILE);
 
 	ISC_STATUS_ARRAY statusVector;
-	base = (Header*) ISC_map_file(statusVector,
-								  filename,
-								  init, this,
-								  DEFAULT_SIZE,
-								  &handle);
+	base = (Header*) ISC_map_file(statusVector, filename, init, this, DEFAULT_SIZE, &handle);
 	if (!base)
 	{
 		iscLogStatus("Cannot initialize the shared memory region", statusVector);
@@ -118,10 +114,10 @@ void DatabaseSnapshot::SharedMemory::acquire()
 		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false);
 		if (!base)
 		{
-			Firebird::status_exception::raise(statusVector);
+			status_exception::raise(statusVector);
 		}
 #else
-		Firebird::status_exception::raise(Arg::Gds(isc_montabexh));
+		status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
 	}
 }
@@ -260,11 +256,11 @@ void DatabaseSnapshot::SharedMemory::extend()
 	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
 	if (!base)
 	{
-		Firebird::status_exception::raise(statusVector);
+		status_exception::raise(statusVector);
 	}
 	base->allocated = handle.sh_mem_length_mapped;
 #else
-	Firebird::status_exception::raise(Arg::Gds(isc_montabexh));
+	status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
 }
 
@@ -360,7 +356,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 		tdbb->setDatabase(lock->lck_dbb);
 		tdbb->setAttachment(lock->lck_attachment);
 
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+		ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 		{
@@ -377,7 +373,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 			}
 		}
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{} // no-op
 
 	return 0;
@@ -615,7 +611,7 @@ void DatabaseSnapshot::clearRecord(Record* record)
 }
 
 
-void DatabaseSnapshot::putField(Record* record, int id, const Firebird::ClumpletReader& reader, bool makeNull)
+void DatabaseSnapshot::putField(Record* record, int id, const ClumpletReader& reader, bool makeNull)
 {
 	fb_assert(record);
 
@@ -829,8 +825,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	// Attachment information
 
-	for (Attachment* attachment = dbb->dbb_attachments;
-		attachment; attachment = attachment->att_next)
+	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		putAttachment(attachment, writer, fb_utils::genUniqueId());
 		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
@@ -887,9 +882,7 @@ SINT64 DatabaseSnapshot::getGlobalId(int value)
 }
 
 
-void DatabaseSnapshot::putDatabase(const Database* database,
-								   ClumpletWriter& writer,
-								   int stat_id)
+void DatabaseSnapshot::putDatabase(const Database* database, ClumpletWriter& writer, int stat_id)
 {
 	fb_assert(database);
 
@@ -979,9 +972,7 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 }
 
 
-void DatabaseSnapshot::putAttachment(const Attachment* attachment,
-									 ClumpletWriter& writer,
-									 int stat_id)
+void DatabaseSnapshot::putAttachment(const Attachment* attachment, ClumpletWriter& writer, int stat_id)
 {
 	fb_assert(attachment);
 
@@ -1033,9 +1024,7 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 }
 
 
-void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
-									  ClumpletWriter& writer,
-									  int stat_id)
+void DatabaseSnapshot::putTransaction(const jrd_tra* transaction, ClumpletWriter& writer, int stat_id)
 {
 	fb_assert(transaction);
 
@@ -1176,7 +1165,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request, ClumpletWriter& writer, i
 }
 
 void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
-									 Firebird::ClumpletWriter& writer,
+									 ClumpletWriter& writer,
 									 int stat_id,
 									 int stat_group)
 {
@@ -1206,8 +1195,8 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
 	writer.insertBigInt(f_mon_rec_expunges, statistics.getValue(RuntimeStatistics::RECORD_EXPUNGES));
 }
 
-void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
-									  Firebird::ClumpletWriter& writer,
+void DatabaseSnapshot::putContextVars(StringMap& variables,
+									  ClumpletWriter& writer,
 									  int object_id, bool is_attachment)
 {
 	StringMap::Accessor accessor(&variables);
@@ -1226,8 +1215,8 @@ void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
 	}
 }
 
-void DatabaseSnapshot::putMemoryUsage(const Firebird::MemoryStats& stats,
-									  Firebird::ClumpletWriter& writer,
+void DatabaseSnapshot::putMemoryUsage(const MemoryStats& stats,
+									  ClumpletWriter& writer,
 									  int stat_id,
 									  int stat_group)
 {

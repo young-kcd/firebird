@@ -141,8 +141,7 @@ public:
 		if (!result || offset >= pattern_len)
 			return false;
 
-		const SLONG comp_length =
-			data_len < pattern_len - offset ? data_len : pattern_len - offset;
+		const SLONG comp_length = data_len < pattern_len - offset ? data_len : pattern_len - offset;
 		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0)
 		{
 			result = false;
@@ -399,8 +398,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		switch (itemL->type) {
 		case piEscapedString: {
 			const CharType *curPos = itemL->str.data;
-			itemL->str.data =
-				static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
+			itemL->str.data = static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
 			for (SLONG j = 0; j < itemL->str.length; j++) {
 				if (use_escape && *curPos == escape_char)
 					curPos++;

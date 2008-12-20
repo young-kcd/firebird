@@ -457,8 +457,7 @@ bool IntlManager::initialize()
 
 						if (!modules->exist(filename))
 						{
-							ModuleLoader::Module* mod =
-								ModuleLoader::loadModule(filename);
+							ModuleLoader::Module* mod = ModuleLoader::loadModule(filename);
 							if (!mod)
 							{
 								ModuleLoader::doctorModuleExtention(filename);
