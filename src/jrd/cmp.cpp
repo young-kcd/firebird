@@ -377,7 +377,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 				if (!strcmp(access->acc_type, object_column) &&
 					(MET_lookup_field(tdbb, owner_relation, access->acc_name,
 						&access->acc_security_name) >= 0 ||
-					MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
+					 MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
 				{
 					continue;
 				}
@@ -1094,7 +1094,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				dtype2 = dtype_double;
 			}
 
-			if ((dtype1 == dtype_text) || (dtype2 == dtype_text)) {
+			if (dtype1 == dtype_text || dtype2 == dtype_text) {
 				dtype = MAX(MAX(dtype1, dtype2), (UCHAR) DEFAULT_DOUBLE);
 			}
 			else {
@@ -1105,8 +1105,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			case dtype_short:
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
-				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
-					DTYPE_IS_TEXT(desc2.dsc_dtype))
+				if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 				{
 					desc->dsc_scale = 0;
 				}
@@ -1154,11 +1153,11 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 						else if (dtype1 == dtype2) {
 							dtype = dtype1;
 						}
-						else if ((dtype1 == dtype_timestamp) && (dtype2 == dtype_sql_date))
+						else if (dtype1 == dtype_timestamp && dtype2 == dtype_sql_date)
 						{
 							dtype = dtype_timestamp;
 						}
-						else if ((dtype2 == dtype_timestamp) && (dtype1 == dtype_sql_date))
+						else if (dtype2 == dtype_timestamp && dtype1 == dtype_sql_date)
 						{
 							dtype = dtype_timestamp;
 						}
@@ -2031,27 +2030,25 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	csb->csb_node = CMP_pass1(tdbb, csb, csb->csb_node);
 
 	// Copy and compile (pass1) domains DEFAULT and constraints.
+	MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
+
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
+		FieldInfo& fieldInfo = accessor.current()->second;
+		UCHAR local_map[MAP_LENGTH];
 
-		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-		{
-			FieldInfo& fieldInfo = accessor.current()->second;
-			UCHAR local_map[MAP_LENGTH];
+		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
-				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+		fieldInfo.defaultValue = copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
 
-			fieldInfo.defaultValue = copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
+		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-			csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
+		fieldInfo.validation = copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
 
-			fieldInfo.validation = copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
-
-			fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
-			fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
-		}
-	} // scope
+		fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
+		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
+	}
 
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
@@ -2059,17 +2056,13 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
 
 	// Compile (pass2) domains DEFAULT and constraints
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
+		FieldInfo& fieldInfo = accessor.current()->second;
 
-		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-		{
-			FieldInfo& fieldInfo = accessor.current()->second;
-
-			fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
-			fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
-		}
-	} // scope
+		fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
+		fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
+	}
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded

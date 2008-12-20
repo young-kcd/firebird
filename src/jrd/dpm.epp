@@ -771,7 +771,6 @@ retry_after_latch_timeout:
 		BUGCHECK(245);	/* msg 245 pointer page disappeared in DPM_delete */
 	}
 
-
 	if (slot >= ppage->ppg_count || !(window->win_page = ppage->ppg_page[slot]))
 	{
 		CCH_RELEASE(tdbb, &pwindow);
@@ -2775,7 +2774,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 		record->rec_precedence.push(rpb->rpb_page);
 	}
 
-	return (UCHAR *) page + space;
+	return (UCHAR*) page + space;
 }
 
 

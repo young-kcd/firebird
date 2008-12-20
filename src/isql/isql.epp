@@ -6119,7 +6119,7 @@ static processing_state help(const TEXT* what)
 		HLP_SETBLOB,			//	SET BLOB [ALL|<n>]		-- display BLOBS of subtype <n> or ALL
 		HLP_SETBLOB2,			//	SET BLOB				-- turn off BLOB display
 		HLP_SETCOUNT,			//	SET COUNT				-- toggle count of selected rows on/off
-		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n> (zero is no limit)
+		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n>, zero is no limit
 		HLP_SETECHO,			//	SET ECHO				-- toggle command echo on/off
 		HLP_SETHEADING,			//  SET HEADING 	        -- toggle column titles display on/off
 		HLP_SETLIST,			//	SET LIST				-- toggle column or table display format

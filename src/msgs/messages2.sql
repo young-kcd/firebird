@@ -3041,7 +3041,7 @@ Fetches = !f', NULL, NULL);
 ('PASS_FILE_OPEN', 'ISQL_main', 'isql.epp', NULL, 17, 162, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 ('PASS_FILE_READ', 'ISQL_main', 'isql.epp', NULL, 17, 163, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 ('EMPTY_PASS', 'ISQL_main', 'isql.epp', NULL, 17, 164, NULL, 'empty password file @1', NULL, NULL);
-('HLP_SETROWCOUNT', 'help', 'isql.epp', NULL, 17, 165, NULL, '    SET ROWCOUNT [<n>]     -- limit select stmt to <n> rows , zero is no limit', NULL, NULL);
+('HLP_SETROWCOUNT', 'help', 'isql.epp', NULL, 17, 165, NULL, '    SET ROWCOUNT [<n>]     -- limit select stmt to <n> rows, zero is no limit', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);

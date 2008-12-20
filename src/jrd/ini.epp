@@ -1390,6 +1390,7 @@ static void store_function_argument(thread_db* tdbb, Database* dbb, jrd_req*& ha
 	END_STORE;
 }
 
+
 static void store_function(thread_db* tdbb, Database* dbb, jrd_req*& handle,
 	const char* function_name, const char* module, const char* entrypoint, SLONG argument)
 {

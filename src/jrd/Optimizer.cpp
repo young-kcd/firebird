@@ -2805,7 +2805,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 			const dsc* literal_desc = &((Literal*) value)->lit_desc;
 			if ((literal_desc->dsc_dtype == dtype_text && literal_desc->dsc_length == 0) ||
 				(literal_desc->dsc_dtype == dtype_varying &&
-				literal_desc->dsc_length == sizeof(USHORT)))
+				 literal_desc->dsc_length == sizeof(USHORT)))
 			{
 				return false;
 			}

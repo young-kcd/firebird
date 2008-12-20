@@ -727,7 +727,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		aux->ctlaux_buffer1_len = MAX(aux->ctlaux_buffer1_len, 80);
 		fb_assert(aux->ctlaux_buffer1_len != 0);
 
-		aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) aux->ctlaux_buffer1_len);
+		aux->ctlaux_buffer1 = (BYTE*) gds__alloc((SLONG) aux->ctlaux_buffer1_len);
 		/* FREE: on isc_blob_filter_close in this procedure */
 		if (!aux->ctlaux_buffer1)	/* NOMEM: */
 			return isc_virmemexh;
@@ -1214,4 +1214,3 @@ static void string_put(BlobControl* control, const char* line)
 	control->ctl_total_length += len;
 	control->ctl_max_segment = MAX(control->ctl_max_segment, len);
 }
-

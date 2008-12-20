@@ -471,7 +471,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	switch (level) {
 	case LCK_PW:
-		if ((lock->lck_physical >= LCK_PW) || LCK_convert(tdbb, lock, LCK_PW, wait_flag))
+		if (lock->lck_physical >= LCK_PW || LCK_convert(tdbb, lock, LCK_PW, wait_flag))
 		{
 			return true;
 		}
@@ -2446,7 +2446,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			header->hdr_next_page = 0;
 
 			PAG_add_header_entry(tdbb, header, HDR_root_file_name,
-								(USHORT) strlen((const char*) q), q);
+								 (USHORT) strlen((const char*) q), q);
 
 			jrd_file* next_file = shadow_file->fil_next;
 			if (next_file) {
@@ -2465,7 +2465,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 
 	-Sudesh 07/10/95
 */
-		if ((sdw->sdw_flags & SDW_conditional) && (bdb->bdb_page != HEADER_PAGE_NUMBER))
+		if ((sdw->sdw_flags & SDW_conditional) && bdb->bdb_page != HEADER_PAGE_NUMBER)
 		{
 			continue;
 		}
@@ -3355,8 +3355,8 @@ static void btc_remove_balanced(BufferDesc* bdb)
 //	BTC_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
 
-	if ((!bcb->bcb_btree) ||
-		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && (bcb->bcb_btree != bdb)))
+	if (!bcb->bcb_btree ||
+		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && bcb->bcb_btree != bdb))
 	{
 		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
 		{
@@ -3794,8 +3794,8 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 
 //	BTC_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
-	if ((!bcb->bcb_btree) ||
-		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && (bcb->bcb_btree != bdb)))
+	if (!bcb->bcb_btree ||
+		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && bcb->bcb_btree != bdb))
 	{
 		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
 		{
@@ -3954,13 +3954,13 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 				/* If the cache writer or garbage collector is idle, put
 				   them to work prefetching pages. */
 #ifdef CACHE_WRITER
-				if (bcb->bcb_flags & BCB_cache_writer && !(bcb->bcb_flags & BCB_writer_active))
+				if ((bcb->bcb_flags & BCB_cache_writer) && !(bcb->bcb_flags & BCB_writer_active))
 				{
 					dbb_writer_sem.release();
 				}
 #endif
 #ifdef GARBAGE_THREAD
-				if (dbb->dbb_flags & DBB_garbage_collector && !(dbb->dbb_flags & DBB_gc_active))
+				if ((dbb->dbb_flags & DBB_garbage_collector) && !(dbb->dbb_flags & DBB_gc_active))
 				{
 					dbb->dbb_gc_sem.release();
 				}
@@ -4100,13 +4100,13 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				/* If the cache reader or garbage collector is idle, put
 				   them to work freeing pages. */
 #ifdef CACHE_READER
-				if (bcb->bcb_flags & BCB_cache_reader && !(bcb->bcb_flags & BCB_reader_active))
+				if ((bcb->bcb_flags & BCB_cache_reader) && !(bcb->bcb_flags & BCB_reader_active))
 				{
 					dbb->dbb_reader_sem.post();
 				}
 #endif
 #ifdef GARBAGE_THREAD
-				if (dbb->dbb_flags & DBB_garbage_collector && !(dbb->dbb_flags & DBB_gc_active))
+				if ((dbb->dbb_flags & DBB_garbage_collector) && !(dbb->dbb_flags & DBB_gc_active))
 				{
 					dbb->dbb_gc_sem.release();
 				}
@@ -4481,14 +4481,14 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
    blocks. */
 
 	for (que_inst = bdb->bdb_lower.que_forward; que_inst != &bdb->bdb_lower;
-		que_inst = que_inst->que_forward)
+		 que_inst = que_inst->que_forward)
 	{
 		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
 		BufferDesc* blocking_bdb = precedence->pre_low;
 		if (bdb->bdb_flags & BDB_not_valid)
 			blocking_bdb->bdb_flags |= BDB_not_valid;
 		precedence->pre_flags |= PRE_cleared;
-		if (blocking_bdb->bdb_flags & BDB_not_valid || blocking_bdb->bdb_ast_flags & BDB_blocking)
+		if ((blocking_bdb->bdb_flags & BDB_not_valid) || (blocking_bdb->bdb_ast_flags & BDB_blocking))
 		{
 			down_grade(tdbb, blocking_bdb);
 		}
@@ -4683,7 +4683,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			QUE mod_que = &bcb->bcb_rpt[page.getPageNum() % bcb->bcb_count].bcb_page_mod;
 			for (que_inst = mod_que->que_forward; que_inst != mod_que;
-				que_inst = que_inst->que_forward)
+				 que_inst = que_inst->que_forward)
 			{
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
 				if (bdb->bdb_page == page) {
@@ -4722,7 +4722,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
 				if (page == FREE_PAGE)
 				{
-					if (bdb->bdb_use_count || bdb->bdb_flags & BDB_free_pending)
+					if (bdb->bdb_use_count || (bdb->bdb_flags & BDB_free_pending))
 					{
 						continue;
 					}
@@ -4843,7 +4843,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #ifdef CACHE_WRITER
 			if (oldest->bdb_flags & (BDB_dirty | BDB_db_dirty)) {
 				bcb->bcb_flags |= BCB_free_pending;
-				if (bcb->bcb_flags & BCB_cache_writer && !(bcb->bcb_flags & BCB_writer_active))
+				if ((bcb->bcb_flags & BCB_cache_writer) && !(bcb->bcb_flags & BCB_writer_active))
 				{
 					dbb->dbb_writer_sem.release();
 				}

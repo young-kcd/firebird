@@ -198,7 +198,7 @@ static void get_procedure_dependencies(DeferredWork*, bool, jrd_tra*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
-static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t, const dsc*, USHORT);
+static DeferredWork* post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t, const dsc*, USHORT);
 static void put_summary_blob(blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
@@ -1506,6 +1506,7 @@ static void check_system_generator(const TEXT* gen_name, const dfw_t action)
 {
 	// CVC: Replace this with a call to SCL when we have ACL's for gens.
 	for (const gen* generator = generators; generator->gen_name; generator++)
+	{
 		if (!strcmp(generator->gen_name, gen_name)) // did we find a sys gen?
 		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
@@ -1514,6 +1515,7 @@ static void check_system_generator(const TEXT* gen_name, const dfw_t action)
 					 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
 					 Arg::Gds(isc_random) << Arg::Str("This is a system generator."));
 		}
+	}
 }
 
 
@@ -2502,7 +2504,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
 							fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
 							specificAttributes, newSpecificAttributes) &&
-						(newSpecificAttributes != specificAttributes)) // if nothing changed, we do nothing
+						newSpecificAttributes != specificAttributes) // if nothing changed, we do nothing
 					{
 						MODIFY COLL USING
 							if (newSpecificAttributes.isEmpty())
@@ -3519,10 +3521,10 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		// Free any memory associated with the relation's garbage collection bitmap
 
 		delete relation->rel_gc_bitmap;
-		relation->rel_gc_bitmap = 0;
+		relation->rel_gc_bitmap = NULL;
 
 	    delete relation->rel_garbage;
-	    relation->rel_garbage = 0;
+	    relation->rel_garbage = NULL;
 #endif
 		if (relation->rel_file) {
 		    EXT_fini (relation, false);
@@ -4260,7 +4262,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	}
 
 	Format* old_format;
-	if ((format->fmt_version) &&
+	if (format->fmt_version &&
 		(old_format = MET_format(tdbb, relation, (format->fmt_version - 1))) &&
 		(formatsAreEqual(old_format, format)))
 	{

@@ -43,7 +43,7 @@ class StringLikeEvaluator : public LikeEvaluator<char>
 {
 public:
 	StringLikeEvaluator(MemoryPool *pool, const char *pattern, char escape_char)
-		: LikeEvaluator<char>(*pool, pattern, (SSHORT)strlen(pattern), escape_char, '%', '_')
+		: LikeEvaluator<char>(*pool, pattern, (SSHORT) strlen(pattern), escape_char, '%', '_')
 	{}
 
 	void process(const char *data, bool more, bool result)

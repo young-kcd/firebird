@@ -3490,7 +3490,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		case blr_extract_minute:
 		case blr_extract_second:
 		case blr_extract_millisecond:
-			Firebird::TimeStamp::decode_time(*(GDS_TIME *) value->dsc_address,
+			Firebird::TimeStamp::decode_time(*(GDS_TIME*) value->dsc_address,
 										 &times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
 			break;
 		default:
@@ -3510,12 +3510,12 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 						Arg::Gds(isc_invalid_extractpart_date));
 			break;
 		default:
-			Firebird::TimeStamp::decode_date(*(GDS_DATE *) value->dsc_address, &times);
+			Firebird::TimeStamp::decode_date(*(GDS_DATE*) value->dsc_address, &times);
 		}
 		break;
 
 	case dtype_timestamp:
-		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP *) value->dsc_address,
+		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP*) value->dsc_address,
 											  &times, &fractions);
 		break;
 

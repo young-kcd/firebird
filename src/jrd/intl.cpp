@@ -572,8 +572,8 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 	const UCHAR* const start_dest_ptr = dest_ptr;
 
-	if ((dest_type == CS_BINARY) || (dest_type == CS_NONE) ||
-		(src_type == CS_BINARY) || (src_type == CS_NONE))
+	if (dest_type == CS_BINARY || dest_type == CS_NONE ||
+		src_type == CS_BINARY || src_type == CS_NONE)
 	{
 		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
@@ -699,7 +699,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	switch (to->dsc_dtype) {
 	case dtype_text:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE))
+		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
 
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
@@ -729,7 +729,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 
 	case dtype_cstring:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE))
+		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
@@ -754,7 +754,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 
 	case dtype_varying:
-		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE))
+		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
 
 			to_len =

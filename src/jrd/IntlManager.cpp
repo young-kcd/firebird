@@ -60,9 +60,7 @@ namespace
 			// unload modules
 			Accessor accessor(this);
 			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-			{
 				delete accessor.current()->second;
-			}
 		}
 	};
 }

@@ -146,9 +146,9 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 			uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
 			if (uSize == 2 &&
-				((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
-					(*(USHORT*)uc >= 'a' && *(USHORT*)uc <= 'z') ||
-					*(USHORT*)uc == '-' || *(USHORT*)uc == '_'))
+				((*(USHORT*) uc >= 'A' && *(USHORT*) uc <= 'Z') ||
+				 (*(USHORT*) uc >= 'a' && *(USHORT*) uc <= 'z') ||
+				 *(USHORT*) uc == '-' || *(USHORT*) uc == '_'))
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -180,7 +180,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 		if (readAttributeChar(cs, &p, end, &size, true))
 		{
 			while (p < end && size == cs->getSpaceLength() &&
-				 memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+				memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -195,7 +195,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 				if (uSize != 2 || *(USHORT*)uc != ';')
 				{
 					if (!(size == cs->getSpaceLength() &&
-						memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
+						  memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
 					{
 						endNoSpace = p + size;
 					}
@@ -577,9 +577,9 @@ string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 
 		if (uSize == 2)
 		{
-			if (*(USHORT*)uc == '\\' || *(USHORT*)uc == '=' || *(USHORT*)uc == ';')
+			if (*(USHORT*) uc == '\\' || *(USHORT*) uc == '=' || *(USHORT*) uc == ';')
 			{
-				*(USHORT*)uc = '\\';
+				*(USHORT*) uc = '\\';
 				UCHAR bytes[sizeof(ULONG)];
 
 				ULONG bytesSize = cs->getConvFromUnicode().convert(

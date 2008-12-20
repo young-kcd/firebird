@@ -1192,7 +1192,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	try {
 
 	request = CMP_find_request(tdbb,
-			(USHORT)(field.length() > 0 ? drq_l_grant1 : drq_l_grant2), DYN_REQUESTS);
+		(USHORT) (field.length() > 0 ? drq_l_grant1 : drq_l_grant2), DYN_REQUESTS);
 	for (const TEXT* pr = privileges; *pr; pr++)
 	{
 		bool duplicate = false;

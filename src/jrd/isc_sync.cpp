@@ -2684,7 +2684,7 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 	const SLONG length = end - start;
 	int fd = shmem_data->sh_mem_handle;
 
-	UCHAR* address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, start);
+	UCHAR* address = (UCHAR*) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, start);
 
 	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);

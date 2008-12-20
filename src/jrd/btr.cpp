@@ -689,7 +689,7 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 					// compound keys) and we passed lower key completely then p pointed
 					// us to the next segment number and we can use this fact to calculate
 					// how many segments is equal to lower key
-					const USHORT segnum = idx.idx_count - (UCHAR)(descending ? ((*p) ^ -1) : *p);
+					const USHORT segnum = idx.idx_count - (UCHAR) (descending ? ((*p) ^ -1) : *p);
 
 					if (segnum < retrieval->irb_lower_count) {
 						skipLowerKey = false;
@@ -839,7 +839,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 			if (retrieval->irb_lower_count) {
 				errorCode = BTR_make_key(tdbb, retrieval->irb_lower_count,
 										 retrieval->irb_value, &retrieval->irb_desc, lower,
-										(retrieval->irb_generic & irb_starting) != 0);
+										 (retrieval->irb_generic & irb_starting) != 0);
 			}
 		}
 
@@ -1478,7 +1478,7 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 		return FB_FAILURE;
 	}
 
-	if ((id >= root->irt_count) || !BTR_description(tdbb, relation, root, buffer, id))
+	if (id >= root->irt_count || !BTR_description(tdbb, relation, root, buffer, id))
 	{
 		CCH_RELEASE(tdbb, &window);
 		return FB_FAILURE;
@@ -1910,7 +1910,7 @@ retry:
 		}
 		if (!root_idx->irt_root && !slot && !(root_idx->irt_flags & irt_in_progress))
 		{
-			if (!use_idx_id || ((root_idx - root->irt_rpt) == idx->idx_id))
+			if (!use_idx_id || (root_idx - root->irt_rpt) == idx->idx_id)
 			{
 				slot = root_idx;
 			}
@@ -3920,7 +3920,7 @@ static SLONG fast_load(thread_db* tdbb,
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		// CVC: I don't understand this condition, because "error" is a local var,
-		// not a parameter by reference. I has no effect setting error to true here.
+		// not a parameter by reference. It has no effect setting error to true here.
 		// In practice, it means that without error, we return pageNumber being -1.
 #pragma FB_COMPILER_MESSAGE("Strange logic here, please review")
 		if (!error) {
@@ -4986,16 +4986,16 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 		IndexJumpInfo jumpInfo;
 		UCHAR* pointer = BTreeNode::getPointerFirstNode(left_page, &jumpInfo);
-		const USHORT headerSize = (pointer - (UCHAR*)left_page);
+		const USHORT headerSize = (pointer - (UCHAR*) left_page);
 		const USHORT jumpersOriginalSize = jumpInfo.firstNodeOffset - headerSize;
 
 		// Copy header and data
 		memcpy(newBucket, left_page, headerSize);
-		memcpy((UCHAR*)newBucket + headerSize, (UCHAR*)left_page + jumpInfo.firstNodeOffset,
+		memcpy((UCHAR*) newBucket + headerSize, (UCHAR*) left_page + jumpInfo.firstNodeOffset,
 			left_page->btr_length - jumpInfo.firstNodeOffset);
 
 		// Update leftPointer to scratch page.
-		leftPointer = (UCHAR*)newBucket + (leftPointer - (UCHAR*)left_page) - jumpersOriginalSize;
+		leftPointer = (UCHAR*) newBucket + (leftPointer - (UCHAR*) left_page) - jumpersOriginalSize;
 		const UCHAR flags2 = newBucket->btr_header.pag_flags;
 		gcPointer = BTreeNode::getPointerFirstNode(gc_page);
 		//
@@ -5335,7 +5335,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 				*splitPrefix += node.prefix;
 			}
 
-			if ((node.nodePointer > newAreaPosition) && (node.nodePointer != excludePointer))
+			if (node.nodePointer > newAreaPosition && node.nodePointer != excludePointer)
 			{
 				// Create a jumpnode, but it may not point to the new
 				// insert pointer or any MARKER else we make split
@@ -6665,8 +6665,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 			if (ignoreNulls) {
 				ignore = false;
 				if (descending) {
-					if ((node->btn_prefix == 0) && (node->btn_length >= 1) &&
-						(node->btn_data[0] == 255))
+					if (node->btn_prefix == 0 && node->btn_length >= 1 &&
+						node->btn_data[0] == 255)
 					{
 						return false;
 					}

@@ -504,8 +504,10 @@ static SSHORT internal_compare(texttype* obj,
  **************************************/
 	const UCHAR pad = static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_pad_char;
 	SLONG fill = length1 - length2;
-	if (length1 >= length2) {
+	if (length1 >= length2)
+	{
 		if (length2)
+		{
 			do {
 				if (*p1++ != *p2++)
 				{
@@ -514,7 +516,9 @@ static SSHORT internal_compare(texttype* obj,
 					return -1;
 				}
 			} while (--length2);
+		}
 		if (fill > 0)
+		{
 			do {
 				if (!obj->texttype_pad_option || *p1++ != pad)
 				{
@@ -523,10 +527,12 @@ static SSHORT internal_compare(texttype* obj,
 					return -1;
 				}
 			} while (--fill);
+		}
 		return 0;
 	}
 
 	if (length1)
+	{
 		do {
 			if (*p1++ != *p2++)
 			{
@@ -535,6 +541,7 @@ static SSHORT internal_compare(texttype* obj,
 				return -1;
 			}
 		} while (--length1);
+	}
 
 	do {
 		if (!obj->texttype_pad_option || *p2++ != pad)

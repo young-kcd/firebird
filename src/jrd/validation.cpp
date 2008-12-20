@@ -2154,4 +2154,3 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 
 	return rtn_ok;
 }
-

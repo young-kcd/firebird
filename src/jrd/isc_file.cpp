@@ -185,11 +185,13 @@ namespace {
 		osMtab()
 			: mtab(MTAB_OPEN(MTAB, "r"))
 		{ }
+
 		~osMtab()
 		{
 			if (mtab)
 				MTAB_CLOSE(mtab);
 		}
+
 		bool ok() const { return mtab; }
 #endif
 	};
