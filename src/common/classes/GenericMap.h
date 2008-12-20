@@ -58,6 +58,7 @@ public:
 	typedef typename KeyValuePair::second_type ValueType;
 
 	typedef BePlusTree<KeyValuePair*, KeyType, MemoryPool, FirstObjectKey<KeyValuePair>, KeyComparator> ValuesTree;
+	typedef typename ValuesTree::Accessor TreeAccessor;
 
 	class Accessor
 	{
@@ -73,7 +74,7 @@ public:
 		Accessor(const Accessor&);
 		Accessor& operator=(const Accessor&);
 
-		typename ValuesTree::Accessor m_Accessor;
+		TreeAccessor m_Accessor;
 	};
 
 	friend class Accessor;
@@ -92,7 +93,7 @@ public:
 	{
 		clear();
 
-		GenericMap::Accessor accessor(&v);
+		Accessor accessor(&v);
 
 		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 		{
@@ -110,7 +111,7 @@ public:
 		tree = from.tree;
 		mCount = from.mCount;
 
-		ValuesTree::Accessor treeAccessor(&from.tree);
+		TreeAccessor treeAccessor(&from.tree);
 
 		if (treeAccessor.getFirst()) {
 			while (true) {
@@ -126,7 +127,7 @@ public:
 	// Clear the map
 	void clear()
 	{
-		ValuesTree::Accessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.getFirst()) {
 			while (true) {
@@ -144,7 +145,7 @@ public:
 	// Returns true if value existed
 	bool remove(const KeyType& key)
 	{
-		ValuesTree::Accessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			KeyValuePair* var = treeAccessor.current();
@@ -160,7 +161,7 @@ public:
 	// Returns true if value existed previously
 	bool put(const KeyType& key, const ValueType& value)
 	{
-		ValuesTree::Accessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			treeAccessor.current()->second = value;
@@ -176,7 +177,7 @@ public:
 	// Returns pointer to the added empty value or null when key already exists
 	ValueType* put(const KeyType& key)
 	{
-		ValuesTree::Accessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			return NULL;
@@ -192,7 +193,7 @@ public:
 	// Returns true if value is found
 	bool get(const KeyType& key, ValueType& value)
 	{
-		ValuesTree::Accessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			value = treeAccessor.current()->second;
@@ -205,7 +206,7 @@ public:
 	// Returns pointer to the found value or null otherwise
 	ValueType* get(const KeyType& key)
 	{
-		ValuesTree::Accessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			return &treeAccessor.current()->second;
@@ -216,7 +217,7 @@ public:
 
 	bool exist(const KeyType& key)
 	{
-		return ValuesTree::Accessor(&tree).locate(key);
+		return TreeAccessor(&tree).locate(key);
 	}
 
 	size_t count() const { return mCount; }
