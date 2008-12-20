@@ -4949,7 +4949,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			sqlda_display,
 //#endif
 			sql, warning, generator, statistics, heading, bail,
-			bulk_insert, wrong, rowcount
+			bulk_insert, rowcount, wrong
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -6119,7 +6119,7 @@ static processing_state help(const TEXT* what)
 		HLP_SETBLOB,			//	SET BLOB [ALL|<n>]		-- display BLOBS of subtype <n> or ALL
 		HLP_SETBLOB2,			//	SET BLOB				-- turn off BLOB display
 		HLP_SETCOUNT,			//	SET COUNT				-- toggle count of selected rows on/off
-		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n> zero is no limit
+		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n> (zero is no limit)
 		HLP_SETECHO,			//	SET ECHO				-- toggle command echo on/off
 		HLP_SETHEADING,			//  SET HEADING 	        -- toggle column titles display on/off
 		HLP_SETLIST,			//	SET LIST				-- toggle column or table display format
@@ -6587,7 +6587,6 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
  **************************************
  *
  * Functional description
- *	Add a column name and print width to collist
  *
  **************************************/
 
@@ -6614,7 +6613,7 @@ static processing_state newRowCount(const TEXT* newRowCountStr)
 			isqlGlob.printf(NEWLINE);
 			break;
 		case EINVAL:
-			isqlGlob.printf("Value %s for rowcount is out of range max value is %l", newRowCountStr,LLONG_MAX );
+			isqlGlob.printf("Value %s for rowcount is out of range. Max value is %ld", newRowCountStr, SLONG_MAX);
 			isqlGlob.printf(NEWLINE);
 			break;
 		default:
