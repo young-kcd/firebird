@@ -82,6 +82,7 @@
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
 #include "../jrd/execute_statement.h"
+#include "../jrd/Optimizer.h"
 
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
@@ -5417,33 +5418,22 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 	for (const jrd_nod* const* const end = ptr + rse->rse_count;
 		 ptr < end; ptr++)
 	{
-		jrd_nod* node = *ptr;
+		jrd_nod* const node = *ptr;
+
 		switch (node->nod_type)
 		{
-		case nod_relation:
-		{
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
-			csb->csb_rpt[stream].csb_flags |= csb_active;
-			pass2(tdbb, csb, node, (jrd_nod*) rse);
-			break;
-		}
 		case nod_rse:
 			pass2_rse(tdbb, csb, (RecordSelExpr*) node);
 			break;
+		case nod_relation:
 		case nod_procedure:
-		{
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
-			csb->csb_rpt[stream].csb_flags |= csb_active;
-			pass2(tdbb, csb, node, (jrd_nod*) rse);
-			break;
-		}
 		case nod_aggregate:
+		case nod_union:
 		{
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags |= csb_active;
-			pass2(tdbb, csb, node, (jrd_nod*) rse);
-			break;
+			// FALL INTO
 		}
 		default:
 			pass2(tdbb, csb, node, (jrd_nod*) rse);
@@ -5831,17 +5821,14 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 	for (const jrd_nod* const* const end = ptr + rse->rse_count;
 		 ptr < end; ptr++)
 	{
-		jrd_nod* node = *ptr;
-		if (node->nod_type == nod_relation) {
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
-			csb->csb_rpt[stream].csb_flags &= ~csb_active;
-		}
-		else if (node->nod_type == nod_procedure) {
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_prc_stream];
-			csb->csb_rpt[stream].csb_flags &= ~csb_active;
-		}
-		else if (node->nod_type == nod_aggregate) {
-			const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
+		const jrd_nod* const node = *ptr;
+
+		if (node->nod_type == nod_relation ||
+			node->nod_type == nod_procedure ||
+			node->nod_type == nod_aggregate ||
+			node->nod_type == nod_union)
+		{
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
