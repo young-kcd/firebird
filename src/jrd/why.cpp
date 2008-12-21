@@ -1918,7 +1918,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				expanded_filename = org_filename;
 				ISC_unescape(expanded_filename);
 				ISC_utf8ToSystem(expanded_filename);
-	            ISC_expand_filename(expanded_filename, true);
+				ISC_expand_filename(expanded_filename, true);
 				ISC_systemToUtf8(expanded_filename);
 #endif
 

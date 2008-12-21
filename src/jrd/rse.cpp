@@ -585,7 +585,7 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		mfb->mfb_space = NULL;
 
 		delete[] mfb->mfb_block_data;
-		mfb->mfb_block_data = 0;
+		mfb->mfb_block_data = NULL;
 	}
 }
 
@@ -3496,10 +3496,7 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 
 	SaveRecordParam* rpb_copy = rpb->rpb_copy;
 	if (rpb_copy)
-	{
-		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
-		delete rec_copy;
-	}
+		delete rpb_copy->srpb_rpb->rpb_record;
 	else
 		rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
 

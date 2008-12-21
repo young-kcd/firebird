@@ -799,10 +799,10 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
-	
+
 		if (!DSQL_REQUEST(irq_domain_2))
 			DSQL_REQUEST(irq_domain_2) = handle;
-	
+
 		bid* blob_id;
 		if (!FLD.RDB$DEFAULT_VALUE.NULL) {
 			blob_id = &FLD.RDB$DEFAULT_VALUE;
@@ -810,21 +810,21 @@ USHORT METD_get_domain_default(dsql_req* request,
 		}
 		else
 			*has_default = false;
-	
+
 		if (*has_default) {
 			ISC_STATUS stat = 0;
 			blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
 										 sizeof(blr_bpb), blr_bpb, true);
-	
+
 			// fetch segments. Assume buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
 			while (true) {
 				const USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
-	
+
 				ptr_in_buffer += length;
 				buff_length -= length;
 				result += length;
-	
+
 				if (blob_handle->blb_flags & BLB_eof)
 				{
 					// null terminate the buffer
@@ -956,7 +956,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 		userFunc->udf_next = dbb->dbb_functions;
 		dbb->dbb_functions = userFunc;
 		*/
-	
+
 		userFunc->udf_name = name->str_data;
 		return_arg = X.RDB$RETURN_ARGUMENT;
 
@@ -981,15 +981,15 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
 		X.RDB$FUNCTION_NAME EQ name->str_data
 		SORTED BY X.RDB$ARGUMENT_POSITION
-	
+
 		if (!DSQL_REQUEST(irq_func_return))
 			DSQL_REQUEST(irq_func_return) = handle2;
-	
+
 		if (X.RDB$ARGUMENT_POSITION == return_arg) {
 			userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
 				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
 			userFunc->udf_scale = X.RDB$FIELD_SCALE;
-	
+
 			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
 				userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
 			}
@@ -1027,7 +1027,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 				d.dsc_length += sizeof(USHORT);
 			}
 			d.dsc_address = NULL;
-	
+
 			if (!X.RDB$CHARACTER_SET_ID.NULL) {
 				if (d.dsc_dtype != dtype_blob) {
 					d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
@@ -1036,12 +1036,12 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 					d.dsc_scale = X.RDB$CHARACTER_SET_ID;
 				}
 			}
-	
+
 			if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
 			{
 				d.dsc_flags = DSC_nullable;
 			}
-	
+
 			userFunc->udf_arguments.add(d);
 		}
 
@@ -1158,7 +1158,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 	// see if the procedure is the one currently being defined in this statement
 
 	dsql_prc* temp = statement->req_procedure;
-	if ((temp != NULL) && temp->prc_name == name->str_data)
+	if (temp != NULL && temp->prc_name == name->str_data)
 	{
 		return temp;
 	}
@@ -1378,7 +1378,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	// See if the relation is the one currently being defined in this statement
 
 	dsql_rel* temp = statement->req_relation;
-	if (((temp) != NULL) && temp->rel_name == name->str_data)
+	if (temp != NULL && temp->rel_name == name->str_data)
 	{
 		return temp;
 	}
@@ -2017,10 +2017,10 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_intlsym* intlSym = 0;
-	dsql_prc* procedure = 0;
-	dsql_rel* relation = 0;
-	dsql_udf* userFunc = 0;
+	dsql_intlsym* intlSym = NULL;
+	dsql_prc* procedure = NULL;
+	dsql_rel* relation = NULL;
+	dsql_udf* userFunc = NULL;
 
 	dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
 

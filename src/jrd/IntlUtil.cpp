@@ -195,7 +195,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 				if (uSize != 2 || *(USHORT*)uc != ';')
 				{
 					if (!(size == cs->getSpaceLength() &&
-						memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
+							memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
 					{
 						endNoSpace = p + size;
 					}
