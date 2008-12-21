@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:	Dynamic SQL runtime support
- *	MODULE:		metd.epp
- *	DESCRIPTION:	Meta-data interface
+ *  PROGRAM:    Dynamic SQL runtime support
+ *  MODULE:     metd.epp
+ *  DESCRIPTION:    Meta-data interface
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -59,8 +59,8 @@ using namespace Jrd;
 using namespace Firebird;
 
 /* NOTE: The static definition of DB and gds_trans by gpre will not
-         be used by the meta data routines.  Each of those routines has
-         its own local definition of these variables. */
+		 be used by the meta data routines.  Each of those routines has
+		 its own local definition of these variables. */
 
 DATABASE DB = STATIC "yachts.lnk";
 
@@ -85,8 +85,7 @@ namespace {
 	{
 	public:
 		explicit MutexHolder(dsql_req* request)
-			: CheckoutLockGuard(request->req_dbb->dbb_database,
-								request->req_dbb->dbb_cache_mutex)
+			: CheckoutLockGuard(request->req_dbb->dbb_database, request->req_dbb->dbb_cache_mutex)
 		{}
 
 	private:
@@ -109,23 +108,23 @@ void METD_drop_charset(dsql_req* request, const MetaName& name)
 {
 /**************************************
  *
- *	M E T D _ d r o p _ c h a r s e t
+ *  M E T D _ d r o p _ c h a r s e t
  *
  **************************************
  *
  * Functional description
- *	Drop a character set from our metadata, and the next caller who wants it will
- *	look up the new version.
- *	Dropping will be achieved by marking the character set
- *	as dropped.  Anyone with current access can continue
- *	accessing it.
+ *  Drop a character set from our metadata, and the next caller who wants it will
+ *  look up the new version.
+ *  Dropping will be achieved by marking the character set
+ *  as dropped.  Anyone with current access can continue
+ *  accessing it.
  *
  **************************************/
 	MutexHolder holder(request);
 
 	// If the symbol wasn't defined, we've got nothing to do
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name.length(), name.c_str(),
-		SYM_intlsym_charset, 0);
+									 SYM_intlsym_charset, 0);
 
 	if (symbol)
 	{
@@ -134,8 +133,7 @@ void METD_drop_charset(dsql_req* request, const MetaName& name)
 	}
 
 	// mark other potential candidates as maybe dropped
-	HSHD_set_flag(request->req_dbb, name.c_str(), name.length(),
-		SYM_intlsym_charset, INTLSYM_dropped);
+	HSHD_set_flag(request->req_dbb, name.c_str(), name.length(), SYM_intlsym_charset, INTLSYM_dropped);
 }
 
 
@@ -143,18 +141,18 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ d r o p _ c o l l a t i o n
+ *  M E T D _ d r o p _ c o l l a t i o n
  *
  **************************************
  *
  * Functional description
- *	Drop a collation from our metadata, and
- *	the next caller who wants it will
- *	look up the new version.
+ *  Drop a collation from our metadata, and
+ *  the next caller who wants it will
+ *  look up the new version.
  *
- *	Dropping will be achieved by marking the collation
- *	as dropped.  Anyone with current access can continue
- *	accessing it.
+ *  Dropping will be achieved by marking the collation
+ *  as dropped.  Anyone with current access can continue
+ *  accessing it.
  *
  **************************************/
 	MutexHolder holder(request);
@@ -169,8 +167,7 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
 	}
 
 	// mark other potential candidates as maybe dropped
-	HSHD_set_flag(request->req_dbb,
-				  reinterpret_cast<const TEXT*>(name->str_data),
+	HSHD_set_flag(request->req_dbb, reinterpret_cast<const TEXT*>(name->str_data),
 				  name->str_length, SYM_intlsym_collation, INTLSYM_dropped);
 }
 
@@ -179,35 +176,34 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ d r o p _ f u n c t i o n
+ *  M E T D _ d r o p _ f u n c t i o n
  *
  **************************************
  *
  * Functional description
- *	Drop a user defined function from our metadata, and
- *	the next caller who wants it will
- *	look up the new version.
+ *  Drop a user defined function from our metadata, and
+ *  the next caller who wants it will
+ *  look up the new version.
  *
- *	Dropping will be achieved by marking the function
- *	as dropped.  Anyone with current access can continue
- *	accessing it.
+ *  Dropping will be achieved by marking the function
+ *  as dropped.  Anyone with current access can continue
+ *  accessing it.
  *
  **************************************/
 	MutexHolder holder(request);
 
-    // If the symbol wasn't defined, we've got nothing to do
+	// If the symbol wasn't defined, we've got nothing to do
 
-    dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
+	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
 
-    if (symbol) {
-        dsql_udf* userFunc = (dsql_udf*) symbol->sym_object;
-        userFunc->udf_flags |= UDF_dropped;
-    }
+	if (symbol) {
+		dsql_udf* userFunc = (dsql_udf*) symbol->sym_object;
+		userFunc->udf_flags |= UDF_dropped;
+	}
 
-    // mark other potential candidates as maybe dropped
+	// mark other potential candidates as maybe dropped
 
-    HSHD_set_flag(request->req_dbb,
-				  reinterpret_cast<const TEXT*>(name->str_data),
+	HSHD_set_flag(request->req_dbb, reinterpret_cast<const TEXT*>(name->str_data),
 				  name->str_length, SYM_udf, UDF_dropped);
 
 }
@@ -217,18 +213,18 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ d r o p _ p r o c e d u r e
+ *  M E T D _ d r o p _ p r o c e d u r e
  *
  **************************************
  *
  * Functional description
- *	Drop a procedure from our metadata, and
- *	the next caller who wants it will
- *	look up the new version.
+ *  Drop a procedure from our metadata, and
+ *  the next caller who wants it will
+ *  look up the new version.
  *
- *	Dropping will be achieved by marking the procedure
- *	as dropped.  Anyone with current access can continue
- *	accessing it.
+ *  Dropping will be achieved by marking the procedure
+ *  as dropped.  Anyone with current access can continue
+ *  accessing it.
  *
  **************************************/
 	MutexHolder holder(request);
@@ -254,14 +250,14 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ d r o p _ r e l a t i o n
+ *  M E T D _ d r o p _ r e l a t i o n
  *
  **************************************
  *
  * Functional description
- *	Drop a relation from our metadata, and
- *	rely on the next guy who wants it to
- *	look up the new version.
+ *  Drop a relation from our metadata, and
+ *  rely on the next guy who wants it to
+ *  look up the new version.
  *
  *      Dropping will be achieved by marking the relation
  *      as dropped.  Anyone with current access can continue
@@ -281,7 +277,7 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 
 	// mark other potential candidates as maybe dropped
 
-	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
+	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length, 
 				  SYM_relation, REL_dropped);
 
 }
@@ -293,13 +289,13 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 {
 /**************************************
  *
- *	M E T D _ g e t _ c o l l a t i o n
+ *  M E T D _ g e t _ c o l l a t i o n
  *
  **************************************
  *
  * Functional description
- *	Look up an international text type object.
- *	If it doesn't exist, return NULL.
+ *  Look up an international text type object.
+ *  If it doesn't exist, return NULL.
  *
  **************************************/
 	MutexHolder holder(request);
@@ -336,8 +332,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
 		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
 		iname->intlsym_ttype =
-			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id,
-								  iname->intlsym_collate_id);
+			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id, iname->intlsym_collate_id);
 		iname->intlsym_bytes_per_char =
 			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
@@ -395,7 +390,7 @@ USHORT METD_get_col_default(dsql_req* request,
 
 	bid* blob_id;
 
-	USHORT length, result = 0;
+	USHORT result = 0;
 	blb* blob_handle = 0;
 
 	*has_default = false;
@@ -426,13 +421,13 @@ USHORT METD_get_col_default(dsql_req* request,
 		if (*has_default)
 		{
 			blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
-				sizeof(blr_bpb), blr_bpb, true);
+									sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assuming here that the buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
 			while (true)
 			{
-				length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
+				const USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
 
 				ptr_in_buffer += length;
 				buff_length -= length;
@@ -488,13 +483,13 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 {
 /**************************************
  *
- *	M E T D _ g e t _ c h a r s e t
+ *  M E T D _ g e t _ c h a r s e t
  *
  **************************************
  *
  * Functional description
- *	Look up an international text type object.
- *	If it doesn't exist, return NULL.
+ *  Look up an international text type object.
+ *  If it doesn't exist, return NULL.
  *
  **************************************/
 	MutexHolder holder(request);
@@ -528,16 +523,15 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 		if (!DSQL_REQUEST(irq_charset))
 			DSQL_REQUEST(irq_charset) = handle;
 
-	    iname = FB_NEW_RPT(dbb->dbb_pool, length) dsql_intlsym;
-	    strcpy(iname->intlsym_name, name);
-	    iname->intlsym_flags = 0;
-	    iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
-	    iname->intlsym_collate_id = X.RDB$COLLATION_ID;
-	    iname->intlsym_ttype =
-	        INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id,
-	                              iname->intlsym_collate_id);
-	    iname->intlsym_bytes_per_char =
-	        (Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
+		iname = FB_NEW_RPT(dbb->dbb_pool, length) dsql_intlsym;
+		strcpy(iname->intlsym_name, name);
+		iname->intlsym_flags = 0;
+		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
+		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
+		iname->intlsym_ttype =
+			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id, iname->intlsym_collate_id);
+		iname->intlsym_bytes_per_char =
+			(Y.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (Y.RDB$BYTES_PER_CHARACTER);
 
 	END_FOR
 
@@ -567,16 +561,16 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 {
 /**************************************
  *
- *	M E T D _ g e t _ c h a r s e t _ b p c
+ *  M E T D _ g e t _ c h a r s e t _ b p c
  *
  **************************************
  *
  * Functional description
- *	Look up an international text type object.
- *	If it doesn't exist, return NULL.
- *	Go directly to system tables & return only the
- *	number of bytes per character. Lookup by
- *	charset' id, not by name.
+ *  Look up an international text type object.
+ *  If it doesn't exist, return NULL.
+ *  Go directly to system tables & return only the
+ *  number of bytes per character. Lookup by
+ *  charset' id, not by name.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -607,24 +601,22 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 {
 /**************************************
  *
- *	M E T D _ g e t _ c h a r s e t _ n a m e
+ *  M E T D _ g e t _ c h a r s e t _ n a m e
  *
  **************************************
  *
  * Functional description
- *	Look up an international text type object.
- *	If it doesn't exist, return empty string.
- *	Go directly to system tables & return only the
- *	name.
+ *  Look up an international text type object.
+ *  If it doesn't exist, return empty string.
+ *  Go directly to system tables & return only the
+ *  name.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-    MetaName name;
+	dsql_dbb* dbb = request->req_dbb;
 
-    dsql_dbb* dbb = request->req_dbb;
-
-    if (charset_id == CS_dynamic)
+	if (charset_id == CS_dynamic)
 		charset_id = tdbb->getAttachment()->att_charset;
 
 	size_t pos = 0;
@@ -634,12 +626,14 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 	}
 
 	validateTransaction(request);
-
+	
+	MetaName name;
+	
 	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
-	    Y IN RDB$CHARACTER_SETS
-	    WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
+		Y IN RDB$CHARACTER_SETS
+		WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
 
 		if (!DSQL_REQUEST(irq_cs_name))
 			DSQL_REQUEST(irq_cs_name) = handle;
@@ -654,7 +648,7 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 	// put new charset into hash table if needed
 	METD_get_charset(request, name.length(), name.c_str());
 
-    return name;
+	return name;
 }
 
 
@@ -662,12 +656,12 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 {
 /**************************************
  *
- *	M E T D _ g e t _ d e f a u l t _ c h a r s e t
+ *  M E T D _ g e t _ d e f a u l t _ c h a r s e t
  *
  **************************************
  *
  * Functional description
- *	Find the default character set for a database
+ *  Find the default character set for a database
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -692,12 +686,12 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 		if (!DSQL_REQUEST(irq_default_cs))
 			DSQL_REQUEST(irq_default_cs) = handle;
 
-	    // Terminate ASCIIZ string on first trailing blank
-	    fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
-	    const USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
-	    dbb->dbb_dfl_charset = FB_NEW_RPT(dbb->dbb_pool, length) dsql_str;
-	    dbb->dbb_dfl_charset->str_length = length;
-	    dbb->dbb_dfl_charset->str_charset = NULL;
+		// Terminate ASCIIZ string on first trailing blank
+		fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
+		const USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
+		dbb->dbb_dfl_charset = FB_NEW_RPT(dbb->dbb_pool, length) dsql_str;
+		dbb->dbb_dfl_charset->str_length = length;
+		dbb->dbb_dfl_charset->str_charset = NULL;
 		memcpy(dbb->dbb_dfl_charset->str_data, DBB.RDB$CHARACTER_SET_NAME, length);
 
 	END_FOR
@@ -716,12 +710,12 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 {
 /**************************************
  *
- *	M E T D _ g e t _ d o m a i n
+ *  M E T D _ g e t _ d o m a i n
  *
  **************************************
  *
  * Functional description
- *	Fetch domain information for field defined as 'name'
+ *  Fetch domain information for field defined as 'name'
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -735,37 +729,37 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
-	    FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name
+		FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name
 
 		if (!DSQL_REQUEST(irq_domain))
 			DSQL_REQUEST(irq_domain) = handle;
 
 		found = true;
-	    field->fld_length = FLX.RDB$FIELD_LENGTH;
-	    field->fld_scale = FLX.RDB$FIELD_SCALE;
-	    field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+		field->fld_length = FLX.RDB$FIELD_LENGTH;
+		field->fld_scale = FLX.RDB$FIELD_SCALE;
+		field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
 
-	    field->fld_character_set_id = 0;
-	    if (!FLX.RDB$CHARACTER_SET_ID.NULL)
-	        field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
-	    field->fld_collation_id = 0;
-	    if (!FLX.RDB$COLLATION_ID.NULL)
-	        field->fld_collation_id = FLX.RDB$COLLATION_ID;
-	    field->fld_character_length = 0;
-	    if (!FLX.RDB$CHARACTER_LENGTH.NULL)
-	        field->fld_character_length = FLX.RDB$CHARACTER_LENGTH;
-
-	    if (!FLX.RDB$COMPUTED_BLR.NULL)
-	        field->fld_flags |= FLD_computed;
-
+		field->fld_character_set_id = 0;
+		if (!FLX.RDB$CHARACTER_SET_ID.NULL)
+			field->fld_character_set_id = FLX.RDB$CHARACTER_SET_ID;
+		field->fld_collation_id = 0;
+		if (!FLX.RDB$COLLATION_ID.NULL)
+			field->fld_collation_id = FLX.RDB$COLLATION_ID;
+		field->fld_character_length = 0;
+		if (!FLX.RDB$CHARACTER_LENGTH.NULL)
+			field->fld_character_length = FLX.RDB$CHARACTER_LENGTH;
+	
+		if (!FLX.RDB$COMPUTED_BLR.NULL)
+			field->fld_flags |= FLD_computed;
+	
 		if (FLX.RDB$SYSTEM_FLAG == 1)
 			field->fld_flags |= FLD_system;
-
-	    convert_dtype(field, FLX.RDB$FIELD_TYPE);
-
-	    if (FLX.RDB$FIELD_TYPE == blr_blob) {
-	        field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
-	    }
+	
+		convert_dtype(field, FLX.RDB$FIELD_TYPE);
+	
+		if (FLX.RDB$FIELD_TYPE == blr_blob) {
+			field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
+		}
 
 	END_FOR
 
@@ -804,33 +798,33 @@ USHORT METD_get_domain_default(dsql_req* request,
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain_2, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
-	    FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
-
+		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
+	
 		if (!DSQL_REQUEST(irq_domain_2))
 			DSQL_REQUEST(irq_domain_2) = handle;
-
-	    bid* blob_id;
+	
+		bid* blob_id;
 		if (!FLD.RDB$DEFAULT_VALUE.NULL) {
-	        blob_id = &FLD.RDB$DEFAULT_VALUE;
-	        *has_default = true;
-	    }
-	    else
-	        *has_default = false;
-
-	    if (*has_default) {
-		    ISC_STATUS stat = 0;
-		    blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
-				sizeof(blr_bpb), blr_bpb, true);
-
-	        // fetch segments. Assume buffer is big enough.
-	        UCHAR* ptr_in_buffer = buffer;
-	        while (true) {
-	            USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
-
-	            ptr_in_buffer += length;
-	            buff_length -= length;
+			blob_id = &FLD.RDB$DEFAULT_VALUE;
+			*has_default = true;
+		}
+		else
+			*has_default = false;
+	
+		if (*has_default) {
+			ISC_STATUS stat = 0;
+			blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
+										 sizeof(blr_bpb), blr_bpb, true);
+	
+			// fetch segments. Assume buffer is big enough.
+			UCHAR* ptr_in_buffer = buffer;
+			while (true) {
+				const USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
+	
+				ptr_in_buffer += length;
+				buff_length -= length;
 				result += length;
-
+	
 				if (blob_handle->blb_flags & BLB_eof)
 				{
 					// null terminate the buffer
@@ -841,7 +835,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 					status_exception::raise(Arg::Gds(isc_segment));
 				else
 					continue;
-	        }
+			}
 
 			try
 			{
@@ -854,19 +848,19 @@ USHORT METD_get_domain_default(dsql_req* request,
 			{
 			}
 
-	        /* the default string must be of the form:
-	           blr_version4 blr_literal ..... blr_eoc  */
-	        fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
-	        fb_assert(buffer[1] == blr_literal);
-	    }
-	    else {
-	        if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
-	            buffer[0] = blr_version5;
-	        else
-	            buffer[0] = blr_version4;
-	        buffer[1] = blr_eoc;
+			/* the default string must be of the form:
+			   blr_version4 blr_literal ..... blr_eoc  */
+			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
+			fb_assert(buffer[1] == blr_literal);
+		}
+		else {
+			if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
+				buffer[0] = blr_version5;
+			else
+				buffer[0] = blr_version4;
+			buffer[1] = blr_eoc;
 			result = 2;
-	    }
+		}
 
 	END_FOR
 
@@ -881,12 +875,12 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ g e t _ e x c e p t i o n
+ *  M E T D _ g e t _ e x c e p t i o n
  *
  **************************************
  *
  * Functional description
- *	Look up an exception.
+ *  Look up an exception.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -920,13 +914,13 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ g e t _ f u n c t i o n
+ *  M E T D _ g e t _ f u n c t i o n
  *
  **************************************
  *
  * Functional description
- *	Look up a user defined function.  If it doesn't exist,
- *	return NULL.
+ *  Look up a user defined function.  If it doesn't exist,
+ *  return NULL.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -937,7 +931,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_udf);
 	if (symbol)
-        return (dsql_udf*) symbol->sym_object;
+		return (dsql_udf*) symbol->sym_object;
 
 	// Now see if it is in the database
 
@@ -945,7 +939,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	dsql_dbb* dbb = request->req_dbb;
 	dsql_udf* userFunc = NULL;
-    USHORT return_arg;
+	USHORT return_arg = 0;
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
 
@@ -957,14 +951,14 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 			DSQL_REQUEST(irq_function) = handle1;
 
 		userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
-	    /* Moved below as still can't say for sure it will be stored.
-	       Following the same logic for MET_get_procedure and MET_get_relation
-	    userFunc->udf_next = dbb->dbb_functions;
-	    dbb->dbb_functions = userFunc;
-	    */
-
-	    userFunc->udf_name = name->str_data;
-	    return_arg = X.RDB$RETURN_ARGUMENT;
+		/* Moved below as still can't say for sure it will be stored.
+		   Following the same logic for MET_get_procedure and MET_get_relation
+		userFunc->udf_next = dbb->dbb_functions;
+		dbb->dbb_functions = userFunc;
+		*/
+	
+		userFunc->udf_name = name->str_data;
+		return_arg = X.RDB$RETURN_ARGUMENT;
 
 	END_FOR
 
@@ -973,7 +967,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	if (!userFunc) {
 		return NULL;
-    }
+	}
 
 	// Note: The following two requests differ in the fields which are
 	// new since ODS7 (DBB_v3 flag).  One of the two requests
@@ -985,71 +979,71 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
-	    X.RDB$FUNCTION_NAME EQ name->str_data
-	    SORTED BY X.RDB$ARGUMENT_POSITION
-
+		X.RDB$FUNCTION_NAME EQ name->str_data
+		SORTED BY X.RDB$ARGUMENT_POSITION
+	
 		if (!DSQL_REQUEST(irq_func_return))
 			DSQL_REQUEST(irq_func_return) = handle2;
-
-	    if (X.RDB$ARGUMENT_POSITION == return_arg) {
-	        userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-	            gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
-	        userFunc->udf_scale = X.RDB$FIELD_SCALE;
-
-	        if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-	            userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
-	        }
-	        else {
-	            userFunc->udf_sub_type = 0;
-	        }
-	        /* CVC: We are overcoming a bug in ddl.c:put_field()
-	           when any field is defined: the length is not given for blobs. */
-	        if (X.RDB$FIELD_TYPE == blr_blob)
-	            userFunc->udf_length = sizeof(ISC_QUAD);
-	        else
-	            userFunc->udf_length = X.RDB$FIELD_LENGTH;
-
-	        if (!X.RDB$CHARACTER_SET_ID.NULL) {
-	            userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
-	        }
-	    }
-	    else {
-	        DSC d;
-	        d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
-	            gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+	
+		if (X.RDB$ARGUMENT_POSITION == return_arg) {
+			userFunc->udf_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
+			userFunc->udf_scale = X.RDB$FIELD_SCALE;
+	
+			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+				userFunc->udf_sub_type = X.RDB$FIELD_SUB_TYPE;
+			}
+			else {
+				userFunc->udf_sub_type = 0;
+			}
+			/* CVC: We are overcoming a bug in ddl.c:put_field()
+			   when any field is defined: the length is not given for blobs. */
+			if (X.RDB$FIELD_TYPE == blr_blob)
+				userFunc->udf_length = sizeof(ISC_QUAD);
+			else
+				userFunc->udf_length = X.RDB$FIELD_LENGTH;
+	
+			if (!X.RDB$CHARACTER_SET_ID.NULL) {
+				userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
+			}
+		}
+		else {
+			DSC d;
+			d.dsc_dtype = (X.RDB$FIELD_TYPE != blr_blob) ?
+				gds_cvt_blr_dtype[X.RDB$FIELD_TYPE] : dtype_blob;
 			// dimitr: adjust the UDF arguments for CSTRING
 			if (d.dsc_dtype == dtype_cstring) {
 				d.dsc_dtype = dtype_text;
 			}
-	        d.dsc_scale = X.RDB$FIELD_SCALE;
-	        if (!X.RDB$FIELD_SUB_TYPE.NULL) {
-	            d.dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
-	        }
-	        else {
-	            d.dsc_sub_type = 0;
-	        }
-	        d.dsc_length = X.RDB$FIELD_LENGTH;
-	        if (d.dsc_dtype == dtype_varying) {
-	            d.dsc_length += sizeof(USHORT);
-	        }
-	        d.dsc_address = NULL;
-
-	        if (!X.RDB$CHARACTER_SET_ID.NULL) {
-	            if (d.dsc_dtype != dtype_blob) {
-	                d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
-	            }
-	            else {
-	                d.dsc_scale = X.RDB$CHARACTER_SET_ID;
-	            }
-	        }
-
-	        if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
+			d.dsc_scale = X.RDB$FIELD_SCALE;
+			if (!X.RDB$FIELD_SUB_TYPE.NULL) {
+				d.dsc_sub_type = X.RDB$FIELD_SUB_TYPE;
+			}
+			else {
+				d.dsc_sub_type = 0;
+			}
+			d.dsc_length = X.RDB$FIELD_LENGTH;
+			if (d.dsc_dtype == dtype_varying) {
+				d.dsc_length += sizeof(USHORT);
+			}
+			d.dsc_address = NULL;
+	
+			if (!X.RDB$CHARACTER_SET_ID.NULL) {
+				if (d.dsc_dtype != dtype_blob) {
+					d.dsc_ttype() = X.RDB$CHARACTER_SET_ID;
+				}
+				else {
+					d.dsc_scale = X.RDB$CHARACTER_SET_ID;
+				}
+			}
+	
+			if (X.RDB$MECHANISM != FUN_value && X.RDB$MECHANISM != FUN_reference)
 			{
-	            d.dsc_flags = DSC_nullable;
-	        }
-
-	        userFunc->udf_arguments.add(d);
-	    }
+				d.dsc_flags = DSC_nullable;
+			}
+	
+			userFunc->udf_arguments.add(d);
+		}
 
 	END_FOR
 
@@ -1072,13 +1066,13 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_udf)))
 	{
 		// Get rid of all the stuff we just read in. Use existing one
-	    delete userFunc;
+		delete userFunc;
 		return (dsql_udf*) symbol->sym_object;
-    }
+	}
 
-    // Add udf in the front of the list.
-    userFunc->udf_next = dbb->dbb_functions;
-    dbb->dbb_functions = userFunc;
+	// Add udf in the front of the list.
+	userFunc->udf_next = dbb->dbb_functions;
+	dbb->dbb_functions = userFunc;
 
 	// Store in the symbol table
 	// The UDF_new_udf flag is not used, so nothing extra to check.
@@ -1099,14 +1093,14 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 {
 /**************************************
  *
- *	M E T D _ g e t _ p r i m a r y _ k e y
+ *  M E T D _ g e t _ p r i m a r y _ k e y
  *
  **************************************
  *
  * Functional description
- *	Lookup the fields for the primary key
- *	index on a relation, returning a list
- *	node of the fields.
+ *  Lookup the fields for the primary key
+ *  index on a relation, returning a list
+ *  node of the fields.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1132,7 +1126,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 		if (!DSQL_REQUEST(irq_primary_key))
 			DSQL_REQUEST(irq_primary_key) = handle;
 
-	    stack.push(MAKE_field_name(Y.RDB$FIELD_NAME));
+		stack.push(MAKE_field_name(Y.RDB$FIELD_NAME));
 
 	END_FOR
 
@@ -1147,28 +1141,24 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ g e t _ p r o c e d u r e
+ *  M E T D _ g e t _ p r o c e d u r e
  *
  **************************************
  *
  * Functional description
- *	Look up a procedure.  If it doesn't exist, return NULL.
- *	If it does, fetch field information as well.
- *	If it is marked dropped, try to read from system tables
+ *  Look up a procedure.  If it doesn't exist, return NULL.
+ *  If it does, fetch field information as well.
+ *  If it is marked dropped, try to read from system tables
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_dbb* dbb = statement->req_dbb;
-	dsql_fld* parameter;
-	dsql_fld** ptr;
-	dsql_prc* temp;
-	SSHORT type, count, defaults;
 
 	// see if the procedure is the one currently being defined in this statement
 
-	if (((temp = statement->req_procedure) != NULL) &&
-		temp->prc_name == name->str_data)
+	dsql_prc* temp = statement->req_procedure;
+	if ((temp != NULL) && temp->prc_name == name->str_data)
 	{
 		return temp;
 	}
@@ -1198,11 +1188,11 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 
 		fb_utils::exact_name(X.RDB$OWNER_NAME);
 
-	    procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
-	    procedure->prc_id = X.RDB$PROCEDURE_ID;
+		procedure = FB_NEW(dbb->dbb_pool) dsql_prc(dbb->dbb_pool);
+		procedure->prc_id = X.RDB$PROCEDURE_ID;
 
-	    procedure->prc_name = name->str_data;
-	    procedure->prc_owner = X.RDB$OWNER_NAME;
+		procedure->prc_name = name->str_data;
+		procedure->prc_owner = X.RDB$OWNER_NAME;
 
 	END_FOR
 
@@ -1215,14 +1205,15 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 
 	// Lookup parameter stuff
 
-	for (type = 0; type < 2; type++)
+	for (int type = 0; type < 2; type++)
 	{
+		dsql_fld** ptr; 		
 		if (type)
 			ptr = &procedure->prc_outputs;
 		else
 			ptr = &procedure->prc_inputs;
 
-		count = defaults = 0;
+		SSHORT count = 0, defaults = 0;
 
 		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
 
@@ -1279,7 +1270,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 			fb_utils::exact_name(PR.RDB$PARAMETER_NAME);
 			fb_utils::exact_name(PR.RDB$FIELD_SOURCE);
 
-			parameter = FB_NEW(dbb->dbb_pool) dsql_fld(dbb->dbb_pool);
+			dsql_fld* parameter = FB_NEW(dbb->dbb_pool) dsql_fld(dbb->dbb_pool);
 			parameter->fld_next = *ptr;
 			*ptr = parameter;
 
@@ -1317,8 +1308,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 
 			if (type == 0 &&
 				(!pr_default_value_null ||
-				 (fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) &&
-				  !FLD.RDB$DEFAULT_VALUE.NULL)))
+					(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && !FLD.RDB$DEFAULT_VALUE.NULL)))
 			{
 				defaults++;
 			}
@@ -1372,26 +1362,23 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 {
 /**************************************
  *
- *	M E T D _ g e t _ r e l a t i o n
+ *  M E T D _ g e t _ r e l a t i o n
  *
  **************************************
  *
  * Functional description
- *	Look up a relation.  If it doesn't exist, return NULL.
- *	If it does, fetch field information as well.
+ *  Look up a relation.  If it doesn't exist, return NULL.
+ *  If it does, fetch field information as well.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_dbb* dbb = statement->req_dbb;
-	dsql_fld* field;
-	dsql_fld** ptr;
-	dsql_rel* temp;
 
 	// See if the relation is the one currently being defined in this statement
 
-	if (((temp = statement->req_relation) != NULL) &&
-		temp->rel_name == name->str_data)
+	dsql_rel* temp = statement->req_relation;
+	if (((temp) != NULL) && temp->rel_name == name->str_data)
 	{
 		return temp;
 	}
@@ -1446,31 +1433,31 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 		fb_utils::exact_name(X.RDB$OWNER_NAME);
 
-	    // Allocate from default or permanent pool as appropriate
-
-	    if (!X.RDB$RELATION_ID.NULL) {
-	        relation = FB_NEW(pool) dsql_rel(pool);
-	        relation->rel_id = X.RDB$RELATION_ID;
-	    }
-	    else if (!DDL_ids(statement)) {
-	        relation = FB_NEW(pool) dsql_rel(pool);
-	    }
-
-	    // fill out the relation information
-
-	    if (relation) {
-	        relation->rel_name = name->str_data;
-	        relation->rel_owner = X.RDB$OWNER_NAME;
-	        if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
-	            relation->rel_dbkey_length = 8;
-	        // CVC: let's see if this is a table or a view.
-	        if (!X.RDB$VIEW_BLR.NULL) {
-	            relation->rel_flags |= REL_view;
-	        }
+		// Allocate from default or permanent pool as appropriate
+	
+		if (!X.RDB$RELATION_ID.NULL) {
+			relation = FB_NEW(pool) dsql_rel(pool);
+			relation->rel_id = X.RDB$RELATION_ID;
+		}
+		else if (!DDL_ids(statement)) {
+			relation = FB_NEW(pool) dsql_rel(pool);
+		}
+	
+		// fill out the relation information
+	
+		if (relation) {
+			relation->rel_name = name->str_data;
+			relation->rel_owner = X.RDB$OWNER_NAME;
+			if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
+				relation->rel_dbkey_length = 8;
+			// CVC: let's see if this is a table or a view.
+			if (!X.RDB$VIEW_BLR.NULL) {
+				relation->rel_flags |= REL_view;
+			}
 			if (!X.RDB$EXTERNAL_FILE.NULL) {
 				relation->rel_flags |= REL_external;
 			}
-	    }
+		}
 
 	END_FOR
 
@@ -1483,7 +1470,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 	// Lookup field stuff
 
-	ptr = &relation->rel_fields;
+	dsql_fld** ptr = &relation->rel_fields;
 
 	jrd_req* handle3 = CMP_find_request(tdbb, irq_fields, IRQ_REQUESTS);
 
@@ -1503,16 +1490,16 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 		fb_utils::exact_name(RFR.RDB$FIELD_SOURCE);
 		const int length = strlen(RFR.RDB$FIELD_NAME) + strlen(RFR.RDB$FIELD_SOURCE);
 
-	    // Allocate from default or permanent pool as appropriate
-
-		field = NULL;
-
-	    if (!RFR.RDB$FIELD_ID.NULL) {
-	        field = FB_NEW(pool) dsql_fld(pool);
+		// Allocate from default or permanent pool as appropriate
+	
+		dsql_fld* field = NULL;
+	
+		if (!RFR.RDB$FIELD_ID.NULL) {
+			field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
-	    }
-	    else if (!DDL_ids(statement))
-	        field = FB_NEW(pool) dsql_fld(pool);
+		}
+		else if (!DDL_ids(statement))
+			field = FB_NEW(pool) dsql_fld(pool);
 
 		if (field) {
 			*ptr = field;
@@ -1553,14 +1540,13 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 			else if (!FLX.RDB$COLLATION_ID.NULL)
 				field->fld_collation_id = FLX.RDB$COLLATION_ID;
 
-			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG) ||
-				(relation->rel_flags & REL_view))
+			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG) || (relation->rel_flags & REL_view))
 			{
 				field->fld_flags |= FLD_nullable;
 			}
 
-	        if (RFR.RDB$SYSTEM_FLAG == 1 || FLX.RDB$SYSTEM_FLAG == 1)
-	            field->fld_flags |= FLD_system;
+			if (RFR.RDB$SYSTEM_FLAG == 1 || FLX.RDB$SYSTEM_FLAG == 1)
+				field->fld_flags |= FLD_system;
 		}
 
 	END_FOR
@@ -1602,12 +1588,12 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
 {
 /**************************************
  *
- *	M E T D _ g e t _ t r i g g e r
+ *  M E T D _ g e t _ t r i g g e r
  *
  **************************************
  *
  * Functional description
- *	Look up a trigger's relation and it's current type
+ *  Look up a trigger's relation and it's current type
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1654,12 +1640,12 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, S
 {
 /**************************************
  *
- *	M E T D _ g e t _ t y p e
+ *  M E T D _ g e t _ t y p e
  *
  **************************************
  *
  * Functional description
- *	Look up a symbolic name in RDB$TYPES
+ *  Look up a symbolic name in RDB$TYPES
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1691,17 +1677,17 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, S
 
 
 dsql_rel* METD_get_view_base(CompiledStatement* statement,
-							 const char* view_name,	// UTF-8
+							 const char* view_name, // UTF-8
 							 MetaNamePairMap& fields)
 {
 /**************************************
  *
- *	M E T D _ g e t _ v i e w _ b a s e
+ *  M E T D _ g e t _ v i e w _ b a s e
  *
  **************************************
  *
  * Functional description
- *	Return the base table of a view or NULL if there
+ *  Return the base table of a view or NULL if there
  *  is more than one.
  *  If there is only one base, put in fields a map of
  *  top view field name / bottom base field name.
@@ -1744,8 +1730,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			fb_utils::exact_name(X.RDB$CONTEXT_NAME);
 			fb_utils::exact_name(X.RDB$RELATION_NAME);
 
-			dsql_str* relation_name =
-				MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
+			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
 			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 
@@ -1840,14 +1825,14 @@ dsql_rel* METD_get_view_relation(CompiledStatement* statement,
 {
 /**************************************
  *
- *	M E T D _ g e t _ v i e w _ r e l a t i o n
+ *  M E T D _ g e t _ v i e w _ r e l a t i o n
  *
  **************************************
  *
  * Functional description
- *	Return TRUE if the passed view_name represents a
- *	view with the passed relation as a base table
- *	(the relation could be an alias).
+ *  Return TRUE if the passed view_name represents a
+ *  view with the passed relation as a base table
+ *  (the relation could be an alias).
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1872,15 +1857,13 @@ dsql_rel* METD_get_view_relation(CompiledStatement* statement,
 		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
-			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME,
-										strlen(X.RDB$RELATION_NAME));
+			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
 			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 			return relation;
 		}
 
-		relation =
-			METD_get_view_relation(statement, X.RDB$RELATION_NAME, relation_or_alias);
+		relation = METD_get_view_relation(statement, X.RDB$RELATION_NAME, relation_or_alias);
 		if (relation) {
 			return relation;
 		}
@@ -1898,31 +1881,32 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
 {
 /**************************************
  *
- *	c o n v e r t _ d t y p e
+ *  c o n v e r t _ d t y p e
  *
  **************************************
  *
  * Functional description
- *	Convert from the blr_<type> stored in system metadata
- *	to the internal dtype_* descriptor.  Also set field
- *	length.
+ *  Convert from the blr_<type> stored in system metadata
+ *  to the internal dtype_* descriptor.  Also set field
+ *  length.
  *
  **************************************/
 
 // fill out the type descriptor
-
-	if (field_type == blr_text) {
+	switch (field_type)
+	{
+	case blr_text:
 		field->fld_dtype = dtype_text;
-	}
-	else if (field_type == blr_varying) {
+		break;
+	case blr_varying:
 		field->fld_dtype = dtype_varying;
 		field->fld_length += sizeof(USHORT);
-	}
-	else if (field_type == blr_blob) {
+		break;
+	case blr_blob:
 		field->fld_dtype = dtype_blob;
 		field->fld_length = type_lengths[field->fld_dtype];
-	}
-	else {
+		break;
+	default:
 		field->fld_dtype = gds_cvt_blr_dtype[field_type];
 		field->fld_length = type_lengths[field->fld_dtype];
 
@@ -1935,27 +1919,26 @@ static void free_procedure(dsql_prc* procedure)
 {
 /**************************************
  *
- *	f r e e _ p r o c e d u r e
+ *  f r e e _ p r o c e d u r e
  *
  **************************************
  *
  * Functional description
- *	Free memory allocated for a procedure block and params
+ *  Free memory allocated for a procedure block and params
  *
  **************************************/
 	dsql_fld* param;
-	dsql_fld* temp;
 
 /* release the input & output parameter blocks */
 
 	for (param = procedure->prc_inputs; param;) {
-		temp = param;
+		dsql_fld* temp = param;
 		param = param->fld_next;
 		delete temp;
 	}
 
 	for (param = procedure->prc_outputs; param;) {
-		temp = param;
+		dsql_fld* temp = param;
 		param = param->fld_next;
 		delete temp;
 	}
@@ -1970,21 +1953,20 @@ static void free_relation(dsql_rel* relation)
 {
 /**************************************
  *
- *	f r e e _ r e l a t i o n
+ *  f r e e _ r e l a t i o n
  *
  **************************************
  *
  * Functional description
- *	Free memory allocated for a relation block and fields
+ *  Free memory allocated for a relation block and fields
  *
  **************************************/
-	dsql_fld* field;
-	dsql_fld* temp;
 
 // release the field blocks
 
-	for (field = relation->rel_fields; field;) {
-		temp = field;
+	for (dsql_fld* field = relation->rel_fields; field;) 
+	{
+		dsql_fld* temp = field;
 		field = field->fld_next;
 		delete temp;
 	}
@@ -1999,13 +1981,13 @@ static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
 {
 /**************************************
  *
- *	i n s e r t _ s y m b o l
+ *  i n s e r t _ s y m b o l
  *
  **************************************
  *
  * Functional description
- *	Insert a symbol in the hash table and
- *	inform the engine that we're using it.
+ *  Insert a symbol in the hash table and
+ *  inform the engine that we're using it.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -2021,64 +2003,60 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
 {
 /**************************************
  *
- *	l o o k u p _ s y m b o l
+ *  l o o k u p _ s y m b o l
  *
  **************************************
  *
  * Functional description
- *	Lookup a symbol in the hash table and
- *	inform the engine that we're using it.
+ *  Lookup a symbol in the hash table and
+ *  inform the engine that we're using it.
  *  The engine may inform that the symbol
- *	is obsolete, in this case mark it as
- *	dropped and return NULL.
+ *  is obsolete, in this case mark it as
+ *  dropped and return NULL.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_intlsym* intlSym;
-	dsql_prc* procedure;
-	dsql_rel* relation;
-	dsql_udf* userFunc;
+	dsql_intlsym* intlSym = 0;
+	dsql_prc* procedure = 0;
+	dsql_rel* relation = 0;
+	dsql_udf* userFunc = 0;
 
-    dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
+	dsql_sym* symbol = HSHD_lookup(dbb, name, length, type, 0);
 
-    for (; symbol; symbol = symbol->sym_homonym)
-    {
-        if (symbol->sym_type == type)
+	for (; symbol; symbol = symbol->sym_homonym)
+	{
+		if (symbol->sym_type == type)
 		{
-			if (type == SYM_intlsym_charset &&
-				(intlSym = (dsql_intlsym*) symbol->sym_object) &&
+			if (type == SYM_intlsym_charset && (intlSym = (dsql_intlsym*) symbol->sym_object) &&
 				!(intlSym->intlsym_flags & INTLSYM_dropped))
 			{
 				break;
 			}
-			else if (type == SYM_intlsym_collation &&
-					 (intlSym = (dsql_intlsym*) symbol->sym_object) &&
-					 !(intlSym->intlsym_flags & INTLSYM_dropped) &&
-					 (charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
+			else if (type == SYM_intlsym_collation && 
+				(intlSym = (dsql_intlsym*) symbol->sym_object) &&
+				!(intlSym->intlsym_flags & INTLSYM_dropped) &&
+				(charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
 			{
 				break;
 			}
-			else if (type == SYM_procedure &&
-					 (procedure = (dsql_prc*) symbol->sym_object) &&
-					 !(procedure->prc_flags & PRC_dropped))
+			else if (type == SYM_procedure && (procedure = (dsql_prc*) symbol->sym_object) &&
+				!(procedure->prc_flags & PRC_dropped))
 			{
 				break;
 			}
-			else if (type == SYM_relation &&
-					 (relation = (dsql_rel*) symbol->sym_object) &&
-					 !(relation->rel_flags & REL_dropped))
+			else if (type == SYM_relation && (relation = (dsql_rel*) symbol->sym_object) &&
+				!(relation->rel_flags & REL_dropped))
 			{
 				break;
 			}
-			else if (type == SYM_udf &&
-					 (userFunc = (dsql_udf*) symbol->sym_object) &&
-					 !(userFunc->udf_flags & UDF_dropped))
+			else if (type == SYM_udf && (userFunc = (dsql_udf*) symbol->sym_object) &&
+				!(userFunc->udf_flags & UDF_dropped))
 			{
 				break;
 			}
 		}
-    }
+	}
 
 	if (symbol)
 	{
@@ -2121,12 +2099,12 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, const dsql_str* name, SYM_TYPE typ
 {
 /**************************************
  *
- *	l o o k u p _ s y m b o l
+ *  l o o k u p _ s y m b o l
  *
  **************************************
  *
  * Functional description
- *	Wrapper for the above function.
+ *  Wrapper for the above function.
  *
  **************************************/
 	return lookup_symbol(dbb, name->str_length,

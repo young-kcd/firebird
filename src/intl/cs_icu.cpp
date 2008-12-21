@@ -33,8 +33,8 @@
 
 static void charset_destroy(charset* cs)
 {
-	delete [] const_cast<ASCII*>(cs->charset_name);
-	delete [] const_cast<BYTE*>(cs->charset_space_character);
+	delete[] const_cast<ASCII*>(cs->charset_name);
+	delete[] const_cast<BYTE*>(cs->charset_space_character);
 }
 
 

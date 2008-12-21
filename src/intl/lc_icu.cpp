@@ -39,7 +39,7 @@ using namespace Firebird;
 
 static void texttype_destroy(texttype* tt)
 {
-	delete [] const_cast<ASCII*>(tt->texttype_name);
+	delete[] const_cast<ASCII*>(tt->texttype_name);
 }
 
 

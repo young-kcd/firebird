@@ -79,9 +79,9 @@ Parser::~Parser()
 		yyFreeState(p);
 	}
 
-	delete [] yylvals;
-	delete [] yylpsns;
-	delete [] yylexemes;
+	delete[] yylvals;
+	delete[] yylpsns;
+	delete[] yylexemes;
 }
 
 
