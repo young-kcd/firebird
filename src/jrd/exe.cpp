@@ -2719,18 +2719,10 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 #endif
 
 		case nod_set_generator:
+		case nod_set_generator2:		
 			if (request->req_operation == jrd_req::req_evaluate) {
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id], true, MOV_get_int64(desc, 0));
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_set_generator2:
-			if (request->req_operation == jrd_req::req_evaluate) {
-				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
-				DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id], true,  MOV_get_int64(desc, 0));
 				request->req_operation = jrd_req::req_return;
 			}
 			node = node->nod_parent;
