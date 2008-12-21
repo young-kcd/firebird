@@ -1,3 +1,92 @@
+2008-12-21 11:57  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.281):
+
+	Collapse two cases being exactly the same.
+
+2008-12-21 11:49  robocop
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.29):
+
+	Simplification.
+
+2008-12-21 07:29  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.330):
+
+	Fixed CORE-1607: Correlated subquery is optimized badly if it
+	depends on the union stream.
+
+2008-12-21 07:13  robocop
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.40):
+
+	There's no need to check whether a pointer is null before applying
+	delete or delete[].
+
+2008-12-21 07:12  robocop
+
+	* firebird2/src/: jrd/IntlUtil.cpp (1.25), jrd/ini.h (1.30),
+	utilities/install/install.cpp (1.14):
+
+	Style.
+
+2008-12-21 04:50  robocop
+
+	* firebird2/src/jrd/: Relation.cpp (1.17), idx.cpp (1.147), jrd.cpp
+	(1.500), pag.cpp (1.197), plugin_manager.cpp (1.26), rse.cpp
+	(1.163), sdw.cpp (1.88), vio.cpp (1.234):
+
+	There's no need to check whether a pointer is null before applying
+	delete or delete[].
+
+2008-12-21 04:37  robocop
+
+	* firebird2/src/: dsql/Parser.cpp (1.4), dsql/metd.epp (1.137),
+	intl/cs_icu.cpp (1.3), intl/lc_icu.cpp (1.13):
+
+	Style.
+
+2008-12-21 04:31  robocop
+
+	* firebird2/src/jrd/why.cpp (1.223):
+
+	Restore Adriano's code.
+
+2008-12-21 00:50  asfernandes
+
+	* firebird2/src/: alice/alice_meta.epp (1.53), burp/backup.epp
+	(1.113), burp/restore.epp (1.150), dsql/array.epp (1.41),
+	dsql/blob.epp (1.25), dudley/exe.epp (1.69), dudley/extract.epp
+	(1.48), gpre/gpre_meta.epp (1.58), isql/extract.epp (1.95),
+	isql/isql.epp (1.258), isql/show.epp (1.135), msgs/build_file.epp
+	(1.34), msgs/change_msgs.epp (1.21), msgs/check_msgs.epp (1.15),
+	msgs/enter_msgs.epp (1.17), utilities/stats.epp (1.13),
+	utilities/gsec/security.epp (1.23), utilities/gstat/dba.epp
+	(1.104):
+
+	Remove trailing spaces from epp files - I had forgot them
+
+2008-12-21 00:47  asfernandes
+
+	* firebird2/src/qli/: dtr.cpp (1.62), gener.cpp (1.45):
+
+	Misc
+
+2008-12-20 20:57  asfernandes
+
+	* firebird2/src/: isql/isql.epp (1.257), jrd/IntlManager.cpp
+	(1.34), jrd/IntlUtil.cpp (1.24), jrd/Optimizer.cpp (1.103),
+	jrd/btr.cpp (1.222), jrd/cch.cpp (1.219), jrd/cmp.cpp (1.329),
+	jrd/dfw.epp (1.257), jrd/dpm.epp (1.83), jrd/dyn.epp (1.139),
+	jrd/dyn_util.epp (1.56), jrd/evl.cpp (1.284),
+	jrd/evl_string_test.cpp (1.13), jrd/filters.cpp (1.69), jrd/ini.epp
+	(1.107), jrd/intl.cpp (1.115), jrd/intl_builtin.cpp (1.45),
+	jrd/isc_file.cpp (1.125), jrd/isc_sync.cpp (1.165),
+	jrd/validation.cpp (1.43), msgs/messages2.sql (1.77):
+
+	Misc
+
 2008-12-20 16:17  asfernandes
 
 	* firebird2/src/isql/isql.epp (1.256):
