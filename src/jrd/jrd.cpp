@@ -323,10 +323,9 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 		catch (const Exception&)
 		{
 			compile_in_progress = false;
-			if (csb) {
-				delete csb;
-				csb = NULL;
-			}
+			delete csb;
+			csb = NULL;
+
 			if (request) {
 				CMP_release(tdbb, request);
 				request = NULL;
@@ -4877,19 +4876,14 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	for (vcl** vector = attachment->att_counts;
 		 vector < attachment->att_counts + DBB_max_count; ++vector)
 	{
-		if (*vector)
-		{
-			delete *vector;
-			*vector = 0;
-		}
+		delete *vector;
+		*vector = 0;
 	}
 
 	// Release any validation error vector allocated
 
-	if (attachment->att_val_errors) {
-		delete attachment->att_val_errors;
-		attachment->att_val_errors = NULL;
-	}
+	delete attachment->att_val_errors;
+	attachment->att_val_errors = NULL;
 
 	detachLocksFromAttachment(attachment);
 

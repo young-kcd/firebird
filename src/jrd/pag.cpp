@@ -1639,12 +1639,10 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 		file->fil_sequence = sequence++;
 	}
 
-	if (temp_buffer)
-		delete[] temp_buffer;
+	delete[] temp_buffer;
 	}	// try
 	catch (const Firebird::Exception&) {
-		if (temp_buffer)
-			delete[] temp_buffer;
+		delete[] temp_buffer;
 		throw;
 	}
 }

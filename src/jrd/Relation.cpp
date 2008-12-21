@@ -290,8 +290,8 @@ SSHORT jrd_rel::getRelLockKeyLength() const
 
 void jrd_rel::cleanUp()
 {
-	if (rel_pages_inst)
-		delete rel_pages_inst;
+	delete rel_pages_inst;
+	rel_pages_inst = NULL;
 }
 
 

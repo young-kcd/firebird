@@ -3122,9 +3122,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 						} while (accessor.getNext());
 				}
 
-				if (rpb.rpb_record) {
-					delete rpb.rpb_record;
-				}
+				delete rpb.rpb_record;
 			}
 			RecordBitmap::reset(action->vct_records);
 			if (action->vct_undo) {

@@ -290,8 +290,7 @@ void *PluginManager::PluginModule::lookupSymbol(const Firebird::string& symbol)
 
 void PluginManager::PluginModule::unload_module()
 {
-	if (module != 0)
-		delete module;
+	delete module;
 	module = 0;
 }
 

@@ -1157,11 +1157,9 @@ static IDX_E check_duplicates(thread_db* tdbb,
 		}
 	} while (accessor.getNext());
 
-	if (rpb.rpb_record)
-		delete rpb.rpb_record;
+	delete rpb.rpb_record;
 
-	if (old_rpb.rpb_record)
-		delete old_rpb.rpb_record;
+	delete old_rpb.rpb_record;
 
 	if (local_status[1]) {
 		local_status.copyToOriginal();

@@ -581,15 +581,11 @@ static void close_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		   if one exists. */
 
 		merge_file* mfb = &tail->irsb_mrg_file;
-		TempSpace* space = mfb->mfb_space;
-		if (space) {
-			delete space;
-			mfb->mfb_space = NULL;
-		}
-		if (mfb->mfb_block_data) {
-			delete[] mfb->mfb_block_data;
-			mfb->mfb_block_data = 0;
-		}
+		delete mfb->mfb_space;
+		mfb->mfb_space = NULL;
+
+		delete[] mfb->mfb_block_data;
+		mfb->mfb_block_data = 0;
 	}
 }
 
@@ -618,10 +614,8 @@ static void close_procedure(thread_db* tdbb, RecordSource* rsb)
 		proc_request->req_attachment = NULL;
 	}
 
-	if (impure->irsb_message) {
-		delete impure->irsb_message;
-		impure->irsb_message = NULL;
-	}
+	delete impure->irsb_message;
+	impure->irsb_message = NULL;
 }
 
 
@@ -2812,10 +2806,8 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 /* get rid of any lingering record */
 
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
-	if (rpb->rpb_record) {
-		delete rpb->rpb_record;
-		rpb->rpb_record = NULL;
-	}
+	delete rpb->rpb_record;
+	rpb->rpb_record = NULL;
 
 	USHORT iml;
 	UCHAR* im;
@@ -3506,8 +3498,7 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 	if (rpb_copy)
 	{
 		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
-		if (rec_copy)
-			delete rec_copy;
+		delete rec_copy;
 	}
 	else
 		rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
