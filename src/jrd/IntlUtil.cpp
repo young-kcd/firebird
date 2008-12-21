@@ -147,8 +147,8 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 
 			if (uSize == 2 &&
 				((*(USHORT*) uc >= 'A' && *(USHORT*) uc <= 'Z') ||
-				 (*(USHORT*) uc >= 'a' && *(USHORT*) uc <= 'z') ||
-				 *(USHORT*) uc == '-' || *(USHORT*) uc == '_'))
+					(*(USHORT*) uc >= 'a' && *(USHORT*) uc <= 'z') ||
+					*(USHORT*) uc == '-' || *(USHORT*) uc == '_'))
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -195,7 +195,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 				if (uSize != 2 || *(USHORT*)uc != ';')
 				{
 					if (!(size == cs->getSpaceLength() &&
-						  memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
+						memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
 					{
 						endNoSpace = p + size;
 					}
@@ -649,7 +649,7 @@ bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR*
 
 static void unicodeDestroy(texttype* tt)
 {
-	delete [] const_cast<ASCII*>(tt->texttype_name);
+	delete[] const_cast<ASCII*>(tt->texttype_name);
 	delete static_cast<TextTypeImpl*>(tt->texttype_impl);
 }
 

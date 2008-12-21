@@ -454,7 +454,7 @@ USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS,
 	if (! GetFileVersionInfo(const_cast<TEXT*>(filename), 0, rsize, hver))
 	{
 		ULONG werr = GetLastError();
-		delete [] hver;
+		delete[] hver;
 		CloseHandle(hfile);
 		return (*err_handler) (werr, "GetFileVersionInfo()");
 	}
@@ -465,14 +465,14 @@ USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS,
 	if (! VerQueryValue(hver, "\\", (void**)&ffi, &uiUnused))
 	{
 		ULONG werr = GetLastError();
-		delete [] hver;
+		delete[] hver;
 		return (*err_handler) (werr, "VerQueryValue()");
 	}
 
 	verMS = ffi->dwFileVersionMS;
 	verLS = ffi->dwFileVersionLS;
 
-	delete [] hver;
+	delete[] hver;
 	return FB_SUCCESS;
 }
 

@@ -40,9 +40,9 @@
 
 #define NAME(name, id) id,
 
-typedef enum nam_i { nam_MIN,
+enum name_ids { nam_MIN,
 #include "../jrd/names.h"
-nam_MAX} name_ids;
+nam_MAX};
 
 #undef NAME
 
