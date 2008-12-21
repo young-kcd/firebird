@@ -1299,20 +1299,37 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
    utilities can modify it */
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+
+		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
+
+		if (utfFilename)
+			ISC_utf8ToSystem(org_filename);
+		else
+			newDpb.insertTag(isc_dpb_utf8_filename);
+
+		setLogin(newDpb);
 		org_filename.rtrim();
 
 		PathName expanded_filename;
+		bool unescaped = false;
 
 		if (!set_path(org_filename, expanded_filename))
 		{
 			expanded_filename = org_filename;
+			ISC_systemToUtf8(expanded_filename);
+			ISC_unescape(expanded_filename);
+			unescaped = true;
+			ISC_utf8ToSystem(expanded_filename);
 			ISC_expand_filename(expanded_filename, true);
 		}
 
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		ISC_systemToUtf8(org_filename);
+		ISC_systemToUtf8(expanded_filename);
 
-		setLogin(newDpb);
+		if (unescaped)
+			ISC_escape(expanded_filename);
 
 		if (org_filename != expanded_filename && !newDpb.find(isc_dpb_org_filename))
 		{
@@ -1356,10 +1373,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DETACH, n) (temp, handle);
 		}
-		if (attachment)
-		{
-			delete attachment;
-		}
+		delete attachment;
 
   		e.stuff_exception(status);
 	}
@@ -1856,20 +1870,37 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
    utilities can modify it */
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+
+		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
+
+		if (utfFilename)
+			ISC_utf8ToSystem(org_filename);
+		else
+			newDpb.insertTag(isc_dpb_utf8_filename);
+
+		setLogin(newDpb);
 		org_filename.rtrim();
 
 		PathName expanded_filename;
+		bool unescaped = false;
 
 		if (!set_path(org_filename, expanded_filename))
 		{
 			expanded_filename = org_filename;
+			ISC_systemToUtf8(expanded_filename);
+			ISC_unescape(expanded_filename);
+			unescaped = true;
+			ISC_utf8ToSystem(expanded_filename);
 			ISC_expand_filename(expanded_filename, true);
 		}
 
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+		ISC_systemToUtf8(org_filename);
+		ISC_systemToUtf8(expanded_filename);
 
-		setLogin(newDpb);
+		if (unescaped)
+			ISC_escape(expanded_filename);
 
 		if (org_filename != expanded_filename && !newDpb.find(isc_dpb_org_filename))
 		{
@@ -1885,7 +1916,10 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 #ifdef WIN_NT
             	// Now we can expand, the file exists
 				expanded_filename = org_filename;
+				ISC_unescape(expanded_filename);
+				ISC_utf8ToSystem(expanded_filename);
 	            ISC_expand_filename(expanded_filename, true);
+				ISC_systemToUtf8(expanded_filename);
 #endif
 
 				attachment = new Attachment(handle, public_handle, n);
@@ -1913,10 +1947,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		{
 			CALL(PROC_DROP_DATABASE, n) (temp, handle);
 		}
-		if (attachment)
-		{
-			delete attachment;
-		}
+		delete attachment;
 	}
 
 	SUBSYSTEM_USAGE_DECR;
