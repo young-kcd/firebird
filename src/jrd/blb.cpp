@@ -1585,7 +1585,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 					bid*		blob_id,
 					const UCHAR*	sdl,
 					USHORT	param_length,
-					const SLONG*	param,
+					const UCHAR*	param,
 					SLONG	slice_length,
 					UCHAR*	slice_addr)
 {

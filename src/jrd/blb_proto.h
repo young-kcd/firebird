@@ -53,7 +53,7 @@ Jrd::blb* BLB_open2(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, con
 void BLB_put_data(Jrd::thread_db*, Jrd::blb*, const UCHAR*, SLONG);
 void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const UCHAR*, USHORT);
 void BLB_put_slice(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, const UCHAR*, USHORT,
-	const SLONG*, SLONG, UCHAR*);
+	const UCHAR*, SLONG, UCHAR*);
 void BLB_release_array(Jrd::ArrayField*);
 void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const SLONG*, Jrd::impure_value*);
 
