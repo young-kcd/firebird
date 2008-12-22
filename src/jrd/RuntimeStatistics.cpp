@@ -61,14 +61,4 @@ RuntimeStatistics& RuntimeStatistics::operator-=(const RuntimeStatistics& other)
 	return *this;
 }
 
-RuntimeStatistics RuntimeStatistics::operator+(const RuntimeStatistics& other) const
-{
-	return RuntimeStatistics(*this) += other;
-}
-
-RuntimeStatistics RuntimeStatistics::operator-(const RuntimeStatistics& other) const
-{
-	return RuntimeStatistics(*this) -= other;
-}
-
 } // namespace

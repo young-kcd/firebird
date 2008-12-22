@@ -80,9 +80,6 @@ public:
 	RuntimeStatistics& operator+=(const RuntimeStatistics& other);
 	RuntimeStatistics& operator-=(const RuntimeStatistics& other);
 
-	RuntimeStatistics operator+(const RuntimeStatistics& other) const;
-	RuntimeStatistics operator-(const RuntimeStatistics& other) const;
-
 	static RuntimeStatistics* getDummy()
 	{
 		return &dummy;
