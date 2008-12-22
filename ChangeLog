@@ -1,3 +1,10 @@
+2008-12-22 18:34  dimitr
+
+	* firebird2/src/jrd/validation.cpp (1.16.2.5):
+
+	Backported CORE-1961: Bugcheck 210 (page in use during flush) is
+	thrown during database validation.
+
 2008-12-18 15:52  alexpeshkoff
 
 	* firebird2/src/qli/: compile.cpp (1.26.4.1), dtr.cpp (1.40.4.1),
