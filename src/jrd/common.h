@@ -355,6 +355,7 @@
 #define QUADCONST(n) (n##LL)
 
 #define RISC_ALIGNMENT
+#define HAV_MMAP
 
 #endif /* HPUX */
 
