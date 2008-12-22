@@ -1227,6 +1227,7 @@ static RTN walk_data_page(thread_db* tdbb,
 			if ((UCHAR *) header < (UCHAR *) end ||
 				(UCHAR *) header + line->dpg_length > end_page)
 			{
+				CCH_RELEASE(tdbb, &window);
 				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR,
 							   relation, page_number, sequence,
 							   (SLONG) (line - page->dpg_rpt));
@@ -1827,8 +1828,8 @@ static RTN walk_pointer_page(	thread_db*	tdbb,
 	if (page->ppg_relation != relation->rel_id ||
 		page->ppg_sequence != sequence)
 	{
-			return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation,
-						   sequence);
+		CCH_RELEASE(tdbb, &window);
+		return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation, sequence);
 	}
 
 /* Walk the data pages (someday we may optionally walk pages with "large objects" */
