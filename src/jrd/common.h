@@ -422,6 +422,7 @@
 #define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #define RISC_ALIGNMENT
+#define HAV_MMAP
 
 #endif /* HPUX */
 
