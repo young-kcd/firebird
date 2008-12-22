@@ -204,7 +204,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			idx->idx_root = 0;
 			SelectivityList selectivity(*pool);
 			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL,
-				tdbb->getTransaction(), selectivity);
+							 tdbb->getTransaction(), selectivity);
 
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_WRITES)
@@ -309,7 +309,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 				relPages->addRef();
 			}
 			else if ((rel_flags & REL_temp_conn) &&
-					 (PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id))
+				(PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id))
 			{
 				snapshot.add(relPages);
 				relPages->addRef();
@@ -335,7 +335,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 void jrd_rel::RelPagesSnapshot::clear()
 {
 #ifdef DEV_BUILD
-	thread_db* tdbb = 0;;
+	thread_db* tdbb = 0;
 	SET_TDBB(tdbb);
 	fb_assert(tdbb == spt_tdbb);
 #endif

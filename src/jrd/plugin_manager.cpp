@@ -78,8 +78,7 @@ void PluginManager::loadAllPlugins()
 			checkDir = pathItr->first;
 		}
 
-		PathUtils::dir_iterator *dirItr =
-			PathUtils::newDirItr(getPool(), checkDir);
+		PathUtils::dir_iterator *dirItr = PathUtils::newDirItr(getPool(), checkDir);
 		while (*dirItr)
 		{
 			// See if we have already loaded this module
@@ -99,7 +98,7 @@ void PluginManager::loadAllPlugins()
 				Firebird::PathName pathComponent, modName;
 				PathUtils::splitLastComponent(pathComponent, modName, **dirItr);
 				for (Firebird::ObjectsArray<Firebird::PathName>::iterator itr2 = ignoreModules.begin();
-						itr2 != ignoreModules.end(); ++itr2)
+					itr2 != ignoreModules.end(); ++itr2)
 				{
 					if (modName == *itr2)
 					{
@@ -190,8 +189,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 			// OK, the module has the correct prefix path, lets try to load it.
 			if (ModuleLoader::isLoadableModule(name))
 			{
-				return FB_NEW(getPool()) PluginModule(getPool(), name,
-						ModuleLoader::loadModule(name));
+				return FB_NEW(getPool()) PluginModule(getPool(), name, ModuleLoader::loadModule(name));
 			}
 			checkPath = name;
 			ModuleLoader::doctorModuleExtention(checkPath);

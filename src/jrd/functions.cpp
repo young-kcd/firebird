@@ -36,7 +36,8 @@
 using namespace Jrd;
 using namespace Firebird;
 
-struct FN {
+struct FN 
+{
 	const char* fn_module;
 	const char* fn_entrypoint;
 	FPTR_INT fn_function;

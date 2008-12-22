@@ -102,7 +102,8 @@ const SLONG NO_SPLIT	= 0;
 //Debug page numbers into log file
 //#define DEBUG_BTR_PAGES
 
-struct INT64_KEY {
+struct INT64_KEY 
+{
 	double d_part;
 	SSHORT s_part;
 };
@@ -120,7 +121,8 @@ static const double pow10_table[] =
 
 #define powerof10(s) ((s) <= 0 ? pow10_table[-(s)] : 1. / pow10_table[-(s)])
 
-static const struct {			/* Used in make_int64_key() */
+static const struct 
+{			/* Used in make_int64_key() */
 	FB_UINT64 limit;
 	SINT64 factor;
 	SSHORT scale_change;

@@ -66,9 +66,11 @@ public:
 	Firebird::string	ctl_exception_message;	/* Message to use in case of filter exception */
 public:
 	explicit BlobControl(MemoryPool& p)
-		: ctl_exception_message(p) { }
+		: ctl_exception_message(p) 
+	{ }
 	BlobControl()
-		: ctl_exception_message() { }
+		: ctl_exception_message() 
+	{ }
 };
 
 
@@ -84,7 +86,9 @@ class BlobFilter : public pool_alloc<type_blf>
 	FPTR_BFILTER_CALLBACK	blf_filter;	/* Entrypoint of filter */
 	Firebird::string	blf_exception_message;	/* message to be used in case of filter exception */
     public:
-	BlobFilter(MemoryPool& p) : blf_exception_message(p) { }
+	BlobFilter(MemoryPool& p) 
+		: blf_exception_message(p) 
+	{ }
 };
 
 // BRS 29-Apr-2004

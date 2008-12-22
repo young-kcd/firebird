@@ -38,7 +38,8 @@ const int COMPILE_SIZE	= 256;
 using namespace Jrd;
 using namespace Firebird;
 
-struct sdl_arg {
+struct sdl_arg 
+{
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
@@ -56,7 +57,8 @@ struct sdl_arg {
 // Let's stop this insanity! The header rng.h defined rng for the purposes
 // of refresh range and emulation of file-based data formats like Pdx.
 // Therefore, I renamed this struct array_range.
-struct array_range {
+struct array_range 
+{
 	SLONG rng_minima[64];
 	SLONG rng_maxima[64];
 	sdl_info* rng_info;

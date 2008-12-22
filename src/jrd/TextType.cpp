@@ -161,12 +161,12 @@ TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 	};
 
 	const Conversion2 conversions2[] =
-		{
-			{"0123456789", reinterpret_cast<UCHAR*>(canonicalNumbers)},
-			{"abcdefghijklmnopqrstuvwxyz", reinterpret_cast<UCHAR*>(canonicalLowerLetters)},
-			{"ABCDEFGHIJKLMNOPQRSTUVWXYZ", reinterpret_cast<UCHAR*>(canonicalUpperLetters)},
-			{" \t\v\r\n\f", reinterpret_cast<UCHAR*>(canonicalWhiteSpaces)}
-		};
+	{
+		{"0123456789", reinterpret_cast<UCHAR*>(canonicalNumbers)},
+		{"abcdefghijklmnopqrstuvwxyz", reinterpret_cast<UCHAR*>(canonicalLowerLetters)},
+		{"ABCDEFGHIJKLMNOPQRSTUVWXYZ", reinterpret_cast<UCHAR*>(canonicalUpperLetters)},
+		{" \t\v\r\n\f", reinterpret_cast<UCHAR*>(canonicalWhiteSpaces)}
+	};
 
 	for (i = 0; i < FB_NELEM(conversions2); i++)
 	{

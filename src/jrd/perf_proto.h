@@ -31,8 +31,7 @@ extern "C" {
 int		API_ROUTINE perf_format(const struct perf*, const struct perf*,
 								const SCHAR*, SCHAR*, SSHORT*);
 void	API_ROUTINE perf_get_info(FB_API_HANDLE*, struct perf*);
-void	API_ROUTINE perf_report(const struct perf*, const struct perf*, SCHAR*,
-									SSHORT*);
+void	API_ROUTINE perf_report(const struct perf*, const struct perf*, SCHAR*, SSHORT*);
 
 #ifdef __cplusplus
 } /* extern "C" */

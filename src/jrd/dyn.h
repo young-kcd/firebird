@@ -46,7 +46,9 @@ class jrd_tra;
 class Global
 {
 public:
-	explicit Global(jrd_tra* t) : gbl_transaction(t) { }
+	explicit Global(jrd_tra* t) 
+		: gbl_transaction(t) 
+	{ }
 	jrd_tra* gbl_transaction;
 };
 

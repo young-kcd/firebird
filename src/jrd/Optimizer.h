@@ -68,10 +68,8 @@ class OptimizerBlk;
 class jrd_rel;
 
 bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
-bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
-							 jrd_nod*, USHORT);
-bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
-							  jrd_nod*, USHORT);
+bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
+bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
@@ -254,8 +252,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-		RiverStack& river_stack, jrd_nod** sort_clause,
-		jrd_nod** project_clause, jrd_nod* plan_clause);
+		RiverStack& river_stack, jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -265,12 +262,10 @@ protected:
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
 		IndexRelationship* withRelationship) const;
-	void estimateCost(USHORT stream, double *cost,
-		double *resulting_cardinality) const;
+	void estimateCost(USHORT stream, double *cost, double *resulting_cardinality) const;
 	void findBestOrder(int position, InnerJoinStreamInfo* stream,
 		IndexedRelationships* processList, double cost, double cardinality);
-	void getIndexedRelationship(InnerJoinStreamInfo* baseStream,
-		InnerJoinStreamInfo* testStream);
+	void getIndexedRelationship(InnerJoinStreamInfo* baseStream, InnerJoinStreamInfo* testStream);
 	InnerJoinStreamInfo* getStreamInfo(int stream);
 #ifdef OPT_DEBUG
 	void printBestOrder() const;

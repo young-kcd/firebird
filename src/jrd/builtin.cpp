@@ -30,13 +30,15 @@
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 
-struct FN {
+struct FN 
+{
 	const TEXT* fn_module;
 	const TEXT* fn_entrypoint;
 	FPTR_INT fn_function;
 };
 
-static const FN isc_builtin_functions[] = {
+static const FN isc_builtin_functions[] = 
+{
 /*    Internal functions available for QA testing only */
 /*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,
 

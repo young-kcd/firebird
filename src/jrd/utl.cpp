@@ -107,7 +107,8 @@ static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
 /* Blob info stuff */
 
-static const char blob_items[] = {
+static const char blob_items[] = 
+{
 	isc_info_blob_max_segment, isc_info_blob_num_segments,
 	isc_info_blob_total_length
 };

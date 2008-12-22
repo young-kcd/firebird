@@ -117,7 +117,8 @@ typedef struct sr
 
 /* The sort memory pool is laid out as follows during sorting:
 
-struct sort_memory {
+struct sort_memory 
+{
         struct sr       *records [X1];
         ULONG           empty [X2];
         struct sr       data [X1];

@@ -35,7 +35,8 @@
 typedef int PTR;
 const SLONG EVENT_FLAG	= 15;
 
-static SCHAR lock_types[] = {
+static SCHAR lock_types[] = 
+{
 	0,
 	LCK$K_NLMODE,
 	LCK$K_CRMODE,
@@ -46,7 +47,8 @@ static SCHAR lock_types[] = {
 };
 
 // Conflict with isc.h or redefinition???
-struct lock_status {
+struct lock_status 
+{
 	SSHORT lksb_status;
 	SSHORT lksb_reserved;
 	SLONG lksb_lock_id;

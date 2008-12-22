@@ -158,9 +158,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 			return -1;
 
 #ifdef WIN_NT
-		desc =
-			(HANDLE) ((file->fil_flags & FIL_force_write) ?
-					  file->fil_force_write_desc : file->fil_desc);
+		desc = (HANDLE) ((file->fil_flags & FIL_force_write) ?
+			file->fil_force_write_desc : file->fil_desc);
 
 		CloseHandle(desc);
 #else
@@ -184,12 +183,11 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 			return -1;
 
 		for (; shadow; shadow = shadow->sdw_next)
+		{
 			if (shadow->sdw_number == *(ULONG *) arg1) {
 #ifdef WIN_NT
-				desc =
-					(HANDLE) ((shadow->sdw_file->fil_flags & FIL_force_write) ?
-							  shadow->sdw_file->fil_force_write_desc :
-							  shadow->sdw_file->fil_desc);
+				desc = (HANDLE) ((shadow->sdw_file->fil_flags & FIL_force_write) ?
+							shadow->sdw_file->fil_force_write_desc : shadow->sdw_file->fil_desc);
 
 				CloseHandle(desc);
 #else
@@ -203,6 +201,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 #endif
 				return 0;
 			}
+		}
 		return -2;
 
 	case QATEST_exit:
@@ -213,10 +212,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		return 0;
 
 	default:
-		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
-				*function);
-		ERR_post(isc_random,
-				 isc_arg_string, ERR_cstring(filename), isc_arg_end);
+		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */ *function);
+		ERR_post(isc_random, isc_arg_string, ERR_cstring(filename), isc_arg_end);
 		return 0;
 	}
 }

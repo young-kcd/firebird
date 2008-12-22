@@ -56,7 +56,8 @@ static SLONG get_parameter(const SCHAR**);
 static void times(struct tms*);
 #endif
 
-static const SCHAR items[] = {
+static const SCHAR items[] = 
+{
 	isc_info_reads,
 	isc_info_writes,
 	isc_info_fetches,
@@ -65,8 +66,7 @@ static const SCHAR items[] = {
 	isc_info_current_memory, isc_info_max_memory
 };
 
-static const SCHAR* report =
-	"elapsed = !e cpu = !u reads = !r writes = !w fetches = !f marks = !m$";
+static const SCHAR* report = "elapsed = !e cpu = !u reads = !r writes = !w fetches = !f marks = !m$";
 
 #if defined(WIN_NT) && !defined(CLOCKS_PER_SEC)
 #define TICK	100
@@ -82,10 +82,8 @@ static const SCHAR* report =
 #endif
 
 
-int API_ROUTINE perf_format(
-						const PERF* before,
-						const PERF* after,
-						const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
+int API_ROUTINE perf_format(const PERF* before, const PERF* after,
+							const SCHAR* string, SCHAR* buffer, SSHORT* buf_len)
 {
 /**************************************
  *
@@ -123,8 +121,7 @@ int API_ROUTINE perf_format(
 				delta = after->perf_marks - before->perf_marks;
 				break;
 			case 'd':
-				delta =
-					after->perf_current_memory - before->perf_current_memory;
+				delta = after->perf_current_memory - before->perf_current_memory;
 				break;
 			case 'p':
 				delta = after->perf_page_size;
@@ -142,12 +139,10 @@ int API_ROUTINE perf_format(
 				delta = after->perf_elapsed - before->perf_elapsed;
 				break;
 			case 'u':
-				delta = after->perf_times.tms_utime -
-					before->perf_times.tms_utime;
+				delta = after->perf_times.tms_utime - before->perf_times.tms_utime;
 				break;
 			case 's':
-				delta = after->perf_times.tms_stime -
-					before->perf_times.tms_stime;
+				delta = after->perf_times.tms_stime - before->perf_times.tms_stime;
 				break;
 			default:
 				sprintf(p, "?%c?", c);
@@ -172,8 +167,7 @@ int API_ROUTINE perf_format(
 
 			case 'u':
 			case 's':
-				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / TICK,
-						(delta % TICK) * 100 / TICK);
+				sprintf(p, "%"SLONGFORMAT".%.2"SLONGFORMAT, delta / TICK, (delta % TICK) * 100 / TICK);
 				while (*p)
 					p++;
 				break;
@@ -234,8 +228,7 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 	perf->perf_elapsed = tp.tv_sec * 100 + tp.tv_usec / 10000;
 #else
 	ftime(&time_buffer);
-	perf->perf_elapsed =
-		(time_buffer.time - LARGE_NUMBER) * 100 + (time_buffer.millitm / 10);
+	perf->perf_elapsed = (time_buffer.time - LARGE_NUMBER) * 100 + (time_buffer.millitm / 10);
 #endif
 
 	if (!*handle)
@@ -244,9 +237,7 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 	SCHAR buffer[256];
 	buffer_length = sizeof(buffer);
 	item_length = sizeof(items);
-	isc_database_info(jrd_status,
-					  handle,
-					  item_length, items, buffer_length, buffer);
+	isc_database_info(jrd_status, handle, item_length, items, buffer_length, buffer);
 
 	const char* p = buffer;
 
@@ -317,8 +308,7 @@ void API_ROUTINE perf_get_info(FB_API_HANDLE* handle, PERF* perf)
 }
 
 
-void API_ROUTINE perf_report(
-							 const PERF* before,
+void API_ROUTINE perf_report(const PERF* before,
 							 const PERF* after, SCHAR* buffer, SSHORT* buf_len)
 {
 /**************************************

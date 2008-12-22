@@ -240,7 +240,8 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS* status_vector,
 													 SSHORT count, ...)
 {
 	// This infamous structure is defined several times in different places
-	struct teb_t {
+	struct teb_t 
+	{
 		FB_API_HANDLE* teb_database;
 		int teb_tpb_length;
 		UCHAR* teb_tpb;

@@ -70,7 +70,8 @@ static int process_id = 0;
 
 const USHORT MAX_OPN_EVENTS	= 40;
 
-struct opn_event {
+struct opn_event 
+{
 	SLONG opn_event_pid;
 	SLONG opn_event_signal;		/* pseudo-signal number */
 	HANDLE opn_event_lhandle;	/* local handle to foreign event */

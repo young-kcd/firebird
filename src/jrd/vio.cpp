@@ -131,7 +131,9 @@ static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, record_param
 #include "../jrd/ini.h"
 
 #ifdef GARBAGE_THREAD
-static const UCHAR gc_tpb[] = { isc_tpb_version1, isc_tpb_read,
+static const UCHAR gc_tpb[] =
+{ 
+	isc_tpb_version1, isc_tpb_read,
 	isc_tpb_read_committed, isc_tpb_rec_version,
 	isc_tpb_ignore_limbo
 };

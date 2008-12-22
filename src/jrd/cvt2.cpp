@@ -70,7 +70,9 @@ using namespace Firebird;
    returns the relative priority of types for use when different types
    are compared.
    */
-static const BYTE compare_priority[] = { dtype_unknown,	/* dtype_unknown through dtype_varying  */
+static const BYTE compare_priority[] = 
+{ 
+	dtype_unknown,				/* dtype_unknown through dtype_varying  */
 	dtype_text,					/* have their natural values stored  */
 	dtype_cstring,				/* in the table.                     */
 	dtype_varying,

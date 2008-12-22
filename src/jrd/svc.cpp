@@ -122,7 +122,8 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 namespace {
 
 	// Option block for service parameter block
-	struct Options {
+	struct Options 
+	{
 		string spb_sys_user_name;
 		string spb_user_name;
 		string spb_password;
@@ -2316,7 +2317,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					spb.getString(s);
 					switches += s;
 					switches += ' ';
-				};
+				}
 				break;
 
 			default:

@@ -76,33 +76,41 @@ static void set_lock_attachment(Lock*, Attachment*);
 
 #ifdef SUPERSERVER
 
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) 
+{
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) 
+{
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getAttachment()->att_lock_owner_id;
 }
 
-inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
+inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) 
+{
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
+inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) 
+{
 	return &tdbb->getAttachment()->att_lock_owner_handle;
 }
 
 #else	// SUPERSERVER
 
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) {
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) 
+{
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) {
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) 
+{
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
 
-inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) {
+inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) 
+{
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) {
+inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) 
+{
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
 
@@ -158,7 +166,7 @@ inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 {
 	Database* const dbb = tdbb->getDatabase();
 
-	return (lock->lck_compatible) ?
+	return (lock->lck_compatible) ? 
 		internal_downgrade(tdbb, lock) :
 		dbb->dbb_lock_mgr->downgrade(tdbb, lock->lck_id);
 }
@@ -183,9 +191,7 @@ JMB: As part of the c++ conversion I removed the check for Lock block type.
 
 inline bool checkLock(const Lock* l)
 {
-	return (l != NULL &&
-			l->lck_length <= MAX_UCHAR &&
-			l->lck_dbb != NULL &&
+	return (l != NULL && l->lck_length <= MAX_UCHAR && l->lck_dbb != NULL &&
 			(l->lck_id || l->lck_physical == LCK_none));
 }
 
@@ -220,8 +226,7 @@ void LCK_assert(thread_db* tdbb, Lock* lock)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	if (lock->lck_logical == lock->lck_physical ||
-		lock->lck_logical == LCK_none)
+	if (lock->lck_logical == lock->lck_physical || lock->lck_logical == LCK_none)
 	{
 		return;
 	}
@@ -648,10 +653,9 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 #else
 	Lock* parent = lock->lck_parent;
 	const SLONG data =
-		dbb->dbb_lock_mgr->readData2(parent ? parent->lck_id : 0,
+		dbb->dbb_lock_mgr->readData2(parent ? parent->lck_id : 0, 
 									 lock->lck_type,
-									 (UCHAR*) &lock->lck_key,
-									 lock->lck_length,
+									 (UCHAR*) &lock->lck_key, lock->lck_length,
 									 lock->lck_owner_handle);
 #endif
 
@@ -784,16 +788,13 @@ static bool compatible(const Lock* lock1, const Lock* lock2, USHORT level2)
 /* if the locks have the same compatibility block,
    they are always compatible regardless of level */
 
-	if (lock1->lck_compatible &&
-		lock2->lck_compatible &&
-		lock1->lck_compatible == lock2->lck_compatible)
+	if (lock1->lck_compatible && lock2->lck_compatible && lock1->lck_compatible == lock2->lck_compatible)
 	{
 		/* check for a second level of compatibility as well:
 		   if a second level was specified, the locks must
 		   also be compatible at the second level */
 
-		if (!lock1->lck_compatible2 ||
-			!lock2->lck_compatible2 ||
+		if (!lock1->lck_compatible2 || !lock2->lck_compatible2 ||
 			lock1->lck_compatible2 == lock2->lck_compatible2)
 		{
 			return true;
@@ -957,8 +958,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (!att->att_compatibility_table)
 		hash_allocate(lock);
 
-	const USHORT hash_value =
-		hash_func((UCHAR *) & lock->lck_key, lock->lck_length);
+	const USHORT hash_value = hash_func((UCHAR *) & lock->lck_key, lock->lck_length);
 
 	if (hash_slot)
 		*hash_slot = hash_value;
@@ -1123,9 +1123,7 @@ static void internal_ast(Lock* lock)
 
 		/* don't deliver the ast to any locks which are already compatible */
 
-		if ((match != lock) &&
-			!compatible(match, lock, lock->lck_logical) &&
-			match->lck_ast)
+		if ((match != lock) && !compatible(match, lock, lock->lck_logical) && match->lck_ast)
 		{
 			(*match->lck_ast)(match->lck_object);
 		}
@@ -1255,12 +1253,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 
 	if (level < first->lck_physical)
 	{
-		if (dbb->dbb_lock_mgr->convert(tdbb,
-									   first->lck_id,
-									   level,
-									   LCK_NO_WAIT,
-									   external_ast,
-									   first))
+		if (dbb->dbb_lock_mgr->convert(tdbb, first->lck_id, level, LCK_NO_WAIT, external_ast, first))
 		{
 			for (lock = first; lock; lock = lock->lck_identical)
 			{
@@ -1275,11 +1268,10 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 }
 
 
-static bool internal_enqueue(
-								thread_db* tdbb,
-								Lock* lock,
-								USHORT level,
-								SSHORT wait, bool convert_flg)
+static bool internal_enqueue(thread_db* tdbb,
+							Lock* lock,
+							USHORT level,
+							SSHORT wait, bool convert_flg)
 {
 /**************************************
  *

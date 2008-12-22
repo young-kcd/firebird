@@ -1734,7 +1734,7 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 
 	page_inv_page* page = 0;
 
-	for (USHORT sequence = 0;; sequence++) {
+	for (USHORT sequence = 0; true; sequence++) {
 		const SLONG page_number =
 			(sequence) ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
 #ifdef DEBUG_VAL_VERBOSE

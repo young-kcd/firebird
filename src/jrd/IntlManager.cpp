@@ -739,16 +739,14 @@ bool IntlManager::validateCharSet(const Firebird::string& charSetName, charset* 
 	if (!(cs->charset_flags & CHARSET_ASCII_BASED))
 	{
 		valid = false;
-		s.printf("%s. Only ASCII-based character sets are supported yet.",
-			unsupportedMsg.c_str());
+		s.printf("%s. Only ASCII-based character sets are supported yet.", unsupportedMsg.c_str());
 		gds__log(s.c_str());
 	}
 
 	if (cs->charset_min_bytes_per_char != 1)
 	{
 		valid = false;
-		s.printf("%s. Wide character sets are not supported yet.",
-			unsupportedMsg.c_str());
+		s.printf("%s. Wide character sets are not supported yet.", unsupportedMsg.c_str());
 		gds__log(s.c_str());
 	}
 
@@ -764,8 +762,7 @@ bool IntlManager::validateCharSet(const Firebird::string& charSetName, charset* 
 	if (cs->charset_space_length != 1)
 	{
 		valid = false;
-		s.printf("%s. Wide space is not supported yet.",
-			unsupportedMsg.c_str());
+		s.printf("%s. Wide space is not supported yet.", unsupportedMsg.c_str());
 		gds__log(s.c_str());
 	}
 

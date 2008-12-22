@@ -43,7 +43,8 @@ const int EVENT_HASH_SIZE		= 7;
 const int EVENT_DEFAULT_SIZE	= 32768;
 const int EVENT_EXTEND_SIZE		= 32768;
 
-struct evh {
+struct evh 
+{
 	SLONG evh_length;				// Current length of global section
 	UCHAR evh_version;				// Version number of global section
 	srq evh_events;					// Known events
@@ -104,7 +105,8 @@ const int PRB_exiting	= 16;		// Process is exiting
 
 // Session block
 
-struct ses {
+struct ses 
+{
 	event_hdr ses_header;
 	srq ses_sessions;				// Sessions within process
 	srq ses_requests;				// Outstanding requests
@@ -118,7 +120,8 @@ const int SES_purge			= 2;	// delete session after delivering an event
 
 // Event block
 
-struct evnt {
+struct evnt 
+{
 	event_hdr evnt_header;
 	srq evnt_events;				// System event que (owned by header)
 	srq evnt_interests;				// Que of request interests in event
@@ -131,7 +134,8 @@ typedef evnt *EVNT;
 
 // Request block
 
-struct evt_req {
+struct evt_req 
+{
 	event_hdr req_header;
 	srq req_requests;				// Request que owned by session block
 	SRQ_PTR req_process;			// Parent process block
@@ -145,7 +149,8 @@ typedef evt_req *EVT_REQ;
 
 // Request interest block
 
-struct req_int {
+struct req_int 
+{
 	event_hdr rint_header;
 	srq rint_interests;				// Que owned by event
 	SRQ_PTR rint_event;				// Event of interest

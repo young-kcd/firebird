@@ -84,7 +84,8 @@
 
 //#define LOCAL_SEMAPHORES 4
 
-struct sig {
+struct sig 
+{
 	struct sig* sig_next;
 	int sig_signal;
 	union {

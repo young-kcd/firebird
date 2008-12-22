@@ -64,9 +64,7 @@ public:
 	static void verifyUser(Firebird::string&, const TEXT*, const TEXT*, const TEXT*,
 		int*, int*, int*, const Firebird::string&);
 
-	static void hash(Firebird::string& h,
-					 const Firebird::string& userName,
-					 const TEXT* passwd)
+	static void hash(Firebird::string& h, const Firebird::string& userName, const TEXT* passwd)
 	{
 		Firebird::string salt;
 		Jrd::CryptSupport::random(salt, SALT_LENGTH);

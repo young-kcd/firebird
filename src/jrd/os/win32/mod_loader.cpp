@@ -50,11 +50,9 @@ public:
 	~WinApiFunction()
 	{}
 
-	PFN operator* () const
-	{ return m_ptr; }
+	PFN operator* () const { return m_ptr; }
 
-	operator bool() const
-	{ return (m_ptr != NULL); }
+	operator bool() const { return (m_ptr != NULL); }
 
 private:
 	PFN m_ptr;

@@ -167,15 +167,17 @@ void IscConnection::doDetach(thread_db *tdbb)
 		m_handle = h;
 	}
 
-	if (status[1])
+	switch (status[1])
 	{
-		 if (status[1] == isc_att_shutdown || status[1] == isc_network_error ||
-			 status[1] == isc_net_read_err || status[1] == isc_net_write_err)
-		 {
-			m_handle = 0;
-			return;
-		 }
-
+	case 0: // nothing to do
+		break;
+	case isc_att_shutdown:
+	case isc_network_error:
+	case isc_net_read_err:
+	case isc_net_write_err:
+		m_handle = 0;
+		break;
+	default:
 		raise(status, tdbb, "detach");
 	}
 }
@@ -208,8 +210,7 @@ bool IscConnection::isAvailable(thread_db *tdbb, TraScope traScope) const
 	if (m_used_stmts && !(flags & prvMultyStmts))
 		return false;
 
-	if (m_transactions.getCount() && !(flags & prvMultyTrans) &&
-		!findTransaction(tdbb, traScope))
+	if (m_transactions.getCount() && !(flags & prvMultyTrans) && !findTransaction(tdbb, traScope))
 	{
 		return false;
 	}

@@ -54,8 +54,7 @@ using namespace Firebird;
 DATABASE DB = FILENAME "ODS.RDB";
 
 
-bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
-							jrd_tra* transaction)
+bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -311,8 +310,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	if (csb)
 	{
-		CMP_get_desc(tdbb, csb, idx->idx_expression,
-					 &idx->idx_expression_desc);
+		CMP_get_desc(tdbb, csb, idx->idx_expression, &idx->idx_expression_desc);
 	}
 	delete csb;
 

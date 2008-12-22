@@ -91,7 +91,8 @@ private:
 		///  is 1, to indicate that the PluginManager itself has a reference.  This is
 		///  verified in debug builds in the PluginManager destructor.
 		Module(MemoryPool& p, const Firebird::PathName& nameL)
-			: refCnt(1), module_name(p, nameL), prev(0), next(0) {}
+			: refCnt(1), module_name(p, nameL), prev(0), next(0) 
+		{}
 		/// The destructor is responsible for removing the module from the array.
 		virtual ~Module();
 		/// acquire indicates the interest of a particular piece of engine code in
@@ -127,8 +128,10 @@ public:
 	friend class Plugin;
 	friend class iterator;
 
-	explicit PluginManager(MemoryPool& p) : Firebird::PermanentStorage(p),
-		moduleList(0), searchPaths(getPool()), ignoreModules(getPool()) {}
+	explicit PluginManager(MemoryPool& p) 
+		: Firebird::PermanentStorage(p), moduleList(0), searchPaths(getPool()), 
+		ignoreModules(getPool()) 
+	{}
 	~PluginManager();
 
 	/** The Plugin class encapsulates the various operations that are available
@@ -143,8 +146,11 @@ public:
 	{
 	public:
 		friend class PluginManager;
-		Plugin() : module(0) {}
-		Plugin(const Plugin& src) : module(src.module)
+		Plugin() 
+			: module(0) 
+		{}
+		Plugin(const Plugin& src) 
+			: module(src.module)
 		{
 			if (module)
 				module->acquire();
@@ -222,8 +228,7 @@ public:
 	/// Adds a module to the ignore list.  Ignored modules are not loaded automatically
 	///  when a directory is scanned, but may be loaded manually via the findPlugin
 	///  function.
-	void addIgnoreModule(const Firebird::PathName &mod)
-		{ ignoreModules.push(mod); }
+	void addIgnoreModule(const Firebird::PathName &mod) { ignoreModules.push(mod); }
 	/// Loads all the plugins found in the current set of search paths, except those that
 	///  have been ignored.  This function must be called after adding all the needed search paths,
 	///  and before iterating through the plugins.
@@ -251,7 +256,8 @@ private:
 	{
 	public:
 		BuiltinModule(MemoryPool& p, const Firebird::PathName& nameL)
-			: Module(p, nameL), symbols(p) {}
+			: Module(p, nameL), symbols(p) 
+		{}
 
 	private:
 		typedef Firebird::Pair<Firebird::Left<Firebird::string, void*> > PMSymbol;
@@ -268,7 +274,8 @@ private:
 	{
 	public:
 		PluginModule(MemoryPool& p, const Firebird::PathName &nameL, ModuleLoader::Module *mod)
-			: Module(p, nameL), module(mod) {}
+			: Module(p, nameL), module(mod) 
+		{}
 
 	private:
 		ModuleLoader::Module *module;

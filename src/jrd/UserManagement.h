@@ -47,6 +47,6 @@ public:
 	void commit();
 };
 
-};
+}
 
 #endif // JRD_USER_MANAGEMENT_H

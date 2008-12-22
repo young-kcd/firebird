@@ -999,35 +999,33 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		case SQL_DIALECT_V6_TRANSITION:
 		case SQL_DIALECT_V6:
 			{
-				if (userId.usr_sql_role_name.hasData() &&
-					(userId.usr_sql_role_name[0] == DBL_QUOTE ||
-						userId.usr_sql_role_name[0] == SINGLE_QUOTE))
+				string& role = userId.usr_sql_role_name;
+				if (role.hasData() && (role[0] == DBL_QUOTE || role[0] == SINGLE_QUOTE))
 				{
-					const char end_quote = userId.usr_sql_role_name[0];
+					const char end_quote = role[0];
 					// remove the delimited quotes and escape quote
 					// from ROLE name
-					userId.usr_sql_role_name.erase(0, 1);
-					for (string::iterator p = userId.usr_sql_role_name.begin();
-						 p < userId.usr_sql_role_name.end(); ++p)
+					role.erase(0, 1);
+					for (string::iterator p = role.begin(); p < role.end(); ++p)
 					{
 						if (*p == end_quote)
 						{
-							if (++p < userId.usr_sql_role_name.end() && *p == end_quote)
+							if (++p < role.end() && *p == end_quote)
 							{
 								// skip the escape quote here
-								userId.usr_sql_role_name.erase(p--);
+								role.erase(p--);
 							}
 							else
 							{
 								// delimited done
-								userId.usr_sql_role_name.erase(--p, userId.usr_sql_role_name.end());
+								role.erase(--p, role.end());
 							}
 						}
 					}
 				}
 				else
 				{
-					userId.usr_sql_role_name.upper();
+					role.upper();
 				}
 			}
 			break;
@@ -1044,8 +1042,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_shutdown)
 	{
-		if (!SHUT_database(tdbb, options.dpb_shutdown,
-						   options.dpb_shutdown_delay))
+		if (!SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay))
 		{
 			if (user_status[1] != FB_SUCCESS)
 				ERR_punt();
@@ -2840,8 +2837,7 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 
 		verify_request_synchronization(request, level);
 
-		EXE_send(tdbb, request, msg_type, msg_length,
-				reinterpret_cast<UCHAR*>(msg));
+		EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
 
 		check_autocommit(request, tdbb);
 
@@ -3221,7 +3217,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 		if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
 		{
 			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) <<
-				Arg::Num(MAX_DB_PER_TRANS));
+									Arg::Num(MAX_DB_PER_TRANS));
 		}
 
 		HalfStaticArray<TEB, 16> tebs;
@@ -3361,8 +3357,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		}
 
 		if (out_msg_length) {
-			memcpy(out_msg, (SCHAR*) request + out_message->nod_impure,
-				   out_msg_length);
+			memcpy(out_msg, (SCHAR*) request + out_message->nod_impure, out_msg_length);
 		}
 
 		check_autocommit(request, tdbb);
@@ -3404,8 +3399,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		INF_transaction_info(transaction, items, item_length, buffer,
-						 buffer_length);
+		INF_transaction_info(transaction, items, item_length, buffer, buffer_length);
 	}
 	catch (const Exception& ex)
 	{
@@ -3566,8 +3560,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		return DSQL_fetch(tdbb, statement,
-						  blr_length, reinterpret_cast<const UCHAR*>(blr),
+		return DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
 						  msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
 #ifdef SCROLLABLE_CURSORS
 						  , direction, offset
@@ -3624,8 +3617,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_insert(tdbb, statement,
-					blr_length, reinterpret_cast<const UCHAR*>(blr),
+		DSQL_insert(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
 					msg_type, msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
 	}
 	catch (const Exception& ex)
@@ -3655,8 +3647,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_prepare(tdbb, *tra_handle, stmt_handle,
-					 length, string, dialect,
+		DSQL_prepare(tdbb, *tra_handle, stmt_handle, length, string, dialect,
 					 item_length, reinterpret_cast<const UCHAR*>(items),
 					 buffer_length, reinterpret_cast<UCHAR*>(buffer));
 	}
@@ -3746,22 +3737,18 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 
 	if (mesg)
 		fputs(mesg, fptr);
-	fprintf(fptr,
-			   "Prc Name      , prc id , flags  ,  Use Count , Alter Count\n");
+	fprintf(fptr, "Prc Name      , prc id , flags  ,  Use Count , Alter Count\n");
 
 	vec<jrd_prc*>* procedures = tdbb->getDatabase()->dbb_procedures;
 	if (procedures) {
 		vec<jrd_prc*>::iterator ptr, end;
-		for (ptr = procedures->begin(), end = procedures->end();
-					ptr < end; ++ptr)
+		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ++ptr)
 		{
 			const jrd_prc* procedure = *ptr;
 			if (procedure)
 				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
-							(procedure->prc_name->hasData()) ?
-								procedure->prc_name->c_str() : "NULL",
-							procedure->prc_id,
-							procedure->prc_flags, procedure->prc_use_count,
+							(procedure->prc_name->hasData()) ? procedure->prc_name->c_str() : "NULL",
+							procedure->prc_id, procedure->prc_flags, procedure->prc_use_count,
 							0); // procedure->prc_alter_count
 		}
 	}
@@ -3809,8 +3796,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 		if (attachment)
 		{
-			if (dbb->dbb_ast_flags & DBB_shutdown &&
-				attachment->att_flags & ATT_shutdown)
+			if (dbb->dbb_ast_flags & DBB_shutdown && attachment->att_flags & ATT_shutdown)
 			{
 				const PathName& file_name = attachment->att_filename;
 				if (punt)
@@ -3825,8 +3811,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					return true;
 				}
 			}
-			else if (attachment->att_flags & ATT_shutdown &&
-				!(tdbb->tdbb_flags & TDBB_shutdown_manager))
+			else if (attachment->att_flags & ATT_shutdown && !(tdbb->tdbb_flags & TDBB_shutdown_manager))
 			{
 				if (punt)
 				{
@@ -3835,8 +3820,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				}
 				else
 				{
-					ERR_build_status(tdbb->tdbb_status_vector,
-									 Arg::Gds(isc_att_shutdown));
+					ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_att_shutdown));
 					return true;
 				}
 			}
@@ -3849,7 +3833,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				!(attachment->att_flags & ATT_cancel_disable))
 			{
 				if ((!request ||
-					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+					!(request->req_flags & (req_internal | req_sys_trigger))) &&
 					(!transaction || !(transaction->tra_flags & TRA_system)))
 				{
 					attachment->att_flags &= ~ATT_cancel_raise;
@@ -3970,9 +3954,8 @@ static void check_database(thread_db* tdbb)
 	}
 
 	if (attachment->att_flags & ATT_shutdown ||
-		((dbb->dbb_ast_flags & DBB_shutdown) &&
-		 ((dbb->dbb_ast_flags & DBB_shutdown_full) ||
-		 !attachment->locksmith())))
+		((dbb->dbb_ast_flags & DBB_shutdown) && 
+			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
 		{
@@ -3985,8 +3968,7 @@ static void check_database(thread_db* tdbb)
 		}
 	}
 
-	if ((attachment->att_flags & ATT_cancel_raise) &&
-		!(attachment->att_flags & ATT_cancel_disable))
+	if ((attachment->att_flags & ATT_cancel_raise) && !(attachment->att_flags & ATT_cancel_disable))
 	{
 		attachment->att_flags &= ~ATT_cancel_raise;
 		status_exception::raise(Arg::Gds(isc_cancelled));
@@ -4049,8 +4031,7 @@ static void commit(thread_db* tdbb,
 
 	const Attachment* const attachment = tdbb->getAttachment();
 
-	if (!(attachment->att_flags & ATT_no_db_triggers) &&
-		!(transaction->tra_flags & TRA_prepared))
+	if (!(attachment->att_flags & ATT_no_db_triggers) && !(transaction->tra_flags & TRA_prepared))
 	{
 		// run ON TRANSACTION COMMIT triggers
 		run_commit_triggers(tdbb, transaction);
@@ -4157,12 +4138,10 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 
 	USHORT id;
 
-	const UCHAR* lc_ctype =
-		reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
+	const UCHAR* lc_ctype = reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
 
 	if (MET_get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
-		INTL_defined_type(tdbb, id & 0xFF) &&
-		((id & 0xFF) != CS_BINARY))
+		INTL_defined_type(tdbb, id & 0xFF) && ((id & 0xFF) != CS_BINARY))
 	{
 		attachment->att_charset = id & 0xFF;
 	}
@@ -4229,8 +4208,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		case isc_dpb_set_page_buffers:
 			dpb_page_buffers = rdr.getInt();
 			if (dpb_page_buffers &&
-				(dpb_page_buffers < MIN_PAGE_BUFFERS ||
-				 dpb_page_buffers > MAX_PAGE_BUFFERS))
+				(dpb_page_buffers < MIN_PAGE_BUFFERS || dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
 				ERR_post(Arg::Gds(isc_bad_dpb_content));
 			}
@@ -4494,14 +4472,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		case isc_dpb_address_path:
 			{
 				ClumpletReader address_stack(ClumpletReader::UnTagged,
-					rdr.getBytes(), rdr.getClumpLength());
+											 rdr.getBytes(), rdr.getClumpLength());
 				while (!address_stack.isEof()) {
 					if (address_stack.getClumpTag() != isc_dpb_address) {
 						address_stack.moveNext();
 						continue;
 					}
 					ClumpletReader address(ClumpletReader::UnTagged,
-						address_stack.getBytes(), address_stack.getClumpLength());
+										   address_stack.getBytes(), address_stack.getClumpLength());
 					while (!address.isEof()) {
 						switch (address.getClumpTag()) {
 							case isc_dpb_addr_protocol:
@@ -4611,7 +4589,7 @@ static Database* init(thread_db* tdbb,
 	for (dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
-			 (dbb->dbb_filename == expanded_filename))
+			(dbb->dbb_filename == expanded_filename))
 		{
 			if (attach_flag)
 				return dbb;
@@ -4679,15 +4657,12 @@ static Database* init(thread_db* tdbb,
 
 	// Lookup some external "hooks"
 
-	PluginManager::Plugin crypt_lib =
-		PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
+	PluginManager::Plugin crypt_lib = PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
 	if (crypt_lib) {
 		string encrypt_entrypoint(ENCRYPT);
 		string decrypt_entrypoint(DECRYPT);
-		dbb->dbb_encrypt =
-			(Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
-		dbb->dbb_decrypt =
-			(Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
+		dbb->dbb_encrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
+		dbb->dbb_decrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
 
 	INTL_init(tdbb);
@@ -4873,8 +4848,8 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	}
 #endif
 
-	for (vcl** vector = attachment->att_counts;
-		 vector < attachment->att_counts + DBB_max_count; ++vector)
+	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count; 
+		++vector)
 	{
 		delete *vector;
 		*vector = 0;
@@ -5198,10 +5173,10 @@ static void strip_quotes(string& out)
 
 	if (out[0] == DBL_QUOTE || out[0] == SINGLE_QUOTE)
 	{
-// Skip any initial quote
+		// Skip any initial quote
 		const char quote = out[0];
 		out.erase(0, 1);
-// Search for same quote
+		// Search for same quote
 		size_t pos = out.find(quote);
 		if (pos != string::npos)
 		{
@@ -5230,8 +5205,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 	DatabaseContextHolder dbbHolder(tdbb);
 
 	if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-		!(dbb->dbb_ast_flags & DBB_shutdown &&
-		  dbb->dbb_ast_flags & DBB_shutdown_locks))
+		!(dbb->dbb_ast_flags & DBB_shutdown && dbb->dbb_ast_flags & DBB_shutdown_locks))
 	{
 		Attachment* att_next;
 
@@ -5329,15 +5303,13 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 #endif
 
 			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-				!(dbb->dbb_ast_flags & DBB_shutdown
-				  && dbb->dbb_ast_flags & DBB_shutdown_locks))
+				!(dbb->dbb_ast_flags & DBB_shutdown && dbb->dbb_ast_flags & DBB_shutdown_locks))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
 				total += sizeof(USHORT) + dbb->dbb_filename.length();
 
-				for (const Attachment* attach = dbb->dbb_attachments; attach;
-					attach = attach->att_next)
+				for (const Attachment* attach = dbb->dbb_attachments; attach; attach = attach->att_next)
 				{
 					num_att++;
 
@@ -5478,15 +5450,12 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 	unsigned int count = 0;
 	jrd_tra* next;
 
-	for (jrd_tra* transaction = attachment->att_transactions;
-		 transaction;
-		 transaction = next)
+	for (jrd_tra* transaction = attachment->att_transactions; transaction; transaction = next)
 	{
 		next = transaction->tra_next;
 		if (transaction != trans_dbk)
 		{
-			if ((transaction->tra_flags & TRA_prepared) ||
-				(dbb->dbb_ast_flags & DBB_shutdown) ||
+			if ((transaction->tra_flags & TRA_prepared) || (dbb->dbb_ast_flags & DBB_shutdown) ||
 				(att_flags & ATT_shutdown))
 			{
 				TRA_release_transaction(tdbb, transaction);
@@ -5507,8 +5476,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 	if (trans_dbk)
 	{
 		attachment->att_dbkey_trans = NULL;
-		if ((dbb->dbb_ast_flags & DBB_shutdown) ||
-			(att_flags & ATT_shutdown))
+		if ((dbb->dbb_ast_flags & DBB_shutdown) || (att_flags & ATT_shutdown))
 		{
 			TRA_release_transaction(tdbb, trans_dbk);
 		}
@@ -5560,8 +5528,7 @@ static void purge_attachment(thread_db*		tdbb,
 					transaction = TRA_start(tdbb, 0, NULL);
 
 					// run ON DISCONNECT triggers
-					EXE_execute_db_triggers(tdbb, transaction,
-											jrd_req::req_trigger_disconnect);
+					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
 
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
@@ -5693,8 +5660,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 	const USHORT lev = level;
 	if (lev) {
 		const vec<jrd_req*>* vector = request->req_sub_requests;
-		if (!vector || lev >= vector->count() ||
-			!(request = (*vector)[lev]))
+		if (!vector || lev >= vector->count() || !(request = (*vector)[lev]))
 		{
 			ERR_post(Arg::Gds(isc_req_sync));
 		}
@@ -5774,13 +5740,12 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 			options.dpb_network_protocol.isEmpty() &&	// This 2 checks ensure that we are not remote server
 			options.dpb_remote_address.isEmpty()) 		// process, i.e. can use unix OS auth.
 		{
-			wheel = ISC_get_user(&name, &id, &group,
-								 options.dpb_sys_user_name.nullStr());
+			wheel = ISC_get_user(&name, &id, &group, options.dpb_sys_user_name.nullStr());
 		}
 
 		if (options.dpb_user_name.hasData() || (id == -1))
 		{
-			string remote = options.dpb_network_protocol +
+			const string remote = options.dpb_network_protocol +
 				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 				options.dpb_remote_address;
 
@@ -5812,8 +5777,8 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (name.length() > USERNAME_LENGTH)
 	{
-		status_exception::raise(Arg::Gds(isc_long_login) <<
-			Arg::Num(name.length()) << Arg::Num(USERNAME_LENGTH));
+		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length()) 
+														 << Arg::Num(USERNAME_LENGTH));
 	}
 
 	user.usr_user_name = name;
@@ -6162,8 +6127,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
-	EXE_send(tdbb, request, msg_type, msg_length,
-			reinterpret_cast<UCHAR*>(msg));
+	EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
 
 	check_autocommit(request, tdbb);
 
@@ -6214,8 +6178,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 				check_database(tdbb);
 			}
 
-			if ((v->teb_tpb_length < 0) ||
-				(v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+			if ((v->teb_tpb_length < 0) || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
 			{
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 			}
@@ -6226,8 +6189,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 			prior = transaction;
 
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction,
-									jrd_req::req_trigger_trans_start);
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
 		}
 
 		*tra_handle = transaction;
@@ -6345,7 +6307,8 @@ namespace {
 	class DatabaseDirectoryList : public DirectoryList
 	{
 	private:
-		const PathName getConfigString() const {
+		const PathName getConfigString() const 
+		{
 			return PathName(Config::getDatabaseAccess());
 		}
 	public:

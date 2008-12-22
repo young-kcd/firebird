@@ -150,8 +150,7 @@ public:
 	PageSpace* dbPageSpace;		// database page space
 
 private:
-	typedef Firebird::SortedArray<
-		PageSpace*, Firebird::EmptyStorage<PageSpace*>,
+	typedef Firebird::SortedArray<PageSpace*, Firebird::EmptyStorage<PageSpace*>,
 		USHORT, PageSpace> PageSpaceArray;
 
 	PageSpaceArray pageSpaces;
@@ -181,7 +180,7 @@ public:
 	inline SLONG getPageNum() const
 	{
 		return pageNum;
-	};
+	}
 
 	inline SLONG getPageSpaceID() const
 	{

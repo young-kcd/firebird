@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
- *  $Id: ntrace.h,v 1.4 2008-12-05 00:56:04 asfernandes Exp $
+ *  $Id: ntrace.h,v 1.5 2008-12-22 09:00:00 robocop Exp $
  *
  */
 
@@ -66,7 +66,8 @@ typedef unsigned char ntrace_byte_t;
 typedef unsigned int ntrace_size_t;
 
 /* Performance counters for individual table */
-struct TableStats {
+struct TableStats 
+{
 	ntrace_counter_t tin_id; /* Relation ID */
 	ntrace_counter_t tin_indexed_reads;
 	ntrace_counter_t tin_nonindexed_reads;
@@ -76,7 +77,8 @@ struct TableStats {
 };
 
 /* Performance statistics for operation */
-struct PerformanceInfo {
+struct PerformanceInfo 
+{
 	ntrace_counter_t pin_time; /* Total operation time in milliseconds */
 	ntrace_counter_t pin_reads; /* Page reads for operation */
 	ntrace_counter_t pin_writes; /* Page writes for operation */
@@ -129,7 +131,8 @@ typedef ntrace_boolean_t (*ntrace_event_proc_execute_t)(ntrace_object_t tpl_obje
 	PerformanceInfo *info);
 
 /* API of trace plugin. Used to deliver notifications for each database */
-struct TracePlugin {
+struct TracePlugin 
+{
 	/* API version */
 	ntrace_version_t tpl_version;
 	/* Object pointer to pass to each hook */

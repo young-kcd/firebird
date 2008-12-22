@@ -116,9 +116,7 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
 
 	Lock* lock;
 	vec<Lock*>* vector = transaction->tra_relation_locks;
-	if (vector &&
-		(relation->rel_id < vector->count()) &&
-		(lock = (*vector)[relation->rel_id]))
+	if (vector && (relation->rel_id < vector->count()) && (lock = (*vector)[relation->rel_id]))
 	{
 		return lock;
 	}
