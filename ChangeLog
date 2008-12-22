@@ -1,3 +1,49 @@
+2008-12-22 18:48  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.186):
+
+	Tuning HPUX build - this OS does have mmap() system call, violating
+	some posix rules, but OK for us
+
+2008-12-22 11:06  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.188), blb_proto.h (1.32), jrd.cpp
+	(1.502):
+
+	Change param type from SLONG* to UCHAR* because we gain nothing
+	with the old declaration, except forced casts.
+
+2008-12-22 10:00  robocop
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.35), Optimizer.cpp
+	(1.104), Optimizer.h (1.29), Relation.cpp (1.18), Relation.h (1.9),
+	TextType.cpp (1.10), UserManagement.h (1.4), alt.cpp (1.78),
+	blob_filter.h (1.18), btr.cpp (1.223), builtin.cpp (1.14), cvt2.cpp
+	(1.64), dbg.h (1.5), dbt.cpp (1.41), dsc.cpp (1.34), dyn.h (1.41),
+	enc.cpp (1.29), event.h (1.24), functions.cpp (1.39), isc_f_proto.h
+	(1.28), jrd.cpp (1.501), jrd.h (1.258), jrd_proto.h (1.74),
+	jrd_pwd.h (1.35), lck.cpp (1.92), msg.h (1.12), ntrace.h (1.5),
+	ods.h (1.48), opt.cpp (1.329), pag.cpp (1.198), pag.h (1.22),
+	par.cpp (1.222), pcmet.epp (1.59), perf.cpp (1.43), perf.h (1.10),
+	perf_proto.h (1.8), plugin_manager.cpp (1.27), plugin_manager.h
+	(1.23), pwd.cpp (1.76), qatest.cpp (1.26), req.h (1.85), rlck.cpp
+	(1.44), rlck_proto.h (1.16), rpb_chain.h (1.15), rse.h (1.58),
+	sdl.cpp (1.55), sdl.h (1.11), sort.cpp (1.117), sort.h (1.39),
+	svc.cpp (1.248), trig.h (1.26), utl.cpp (1.125), validation.cpp
+	(1.44), vio.cpp (1.235), extds/IscDS.cpp (1.18),
+	os/posix/isc_ipc.cpp (1.34), os/posix/mod_loader.cpp (1.10),
+	os/vms/vmsevent.cpp (1.21), os/vms/vmslock.cpp (1.14),
+	os/win32/isc_ipc.cpp (1.23), os/win32/mod_loader.cpp (1.16):
+
+	Style.
+
+2008-12-21 21:06  asfernandes
+
+	* firebird2/src/: dsql/metd.epp (1.138), jrd/IntlUtil.cpp (1.26),
+	jrd/idx.cpp (1.148), jrd/rse.cpp (1.164), jrd/why.cpp (1.224):
+
+	Misc
+
 2008-12-21 11:57  robocop
 
 	* firebird2/src/jrd/exe.cpp (1.281):
