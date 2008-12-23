@@ -466,6 +466,6 @@ extern "C" {
 		{
 			l = length();
 		}
-		return STRNCASECMP(c_str(), string, ++l);
+		return (STRNCASECMP(c_str(), string, ++l) == 0);
 	}
 }	// namespace Firebird
