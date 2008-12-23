@@ -4591,6 +4591,24 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				relation->rel_current_format = make_format(tdbb, relation, &version, stack);
 				REL.RDB$FORMAT.NULL = FALSE;
 				REL.RDB$FORMAT = version;
+
+				if (!null_view)
+				{
+					// update the dbkey length to include each of the base relations
+
+					REL.RDB$DBKEY_LENGTH = 0;
+
+					jrd_req* handle = NULL;
+					FOR(REQUEST_HANDLE handle)
+						Z IN RDB$VIEW_RELATIONS
+						CROSS R IN RDB$RELATIONS OVER RDB$RELATION_NAME
+						WITH Z.RDB$VIEW_NAME = work->dfw_name.c_str()
+					{
+						REL.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
+					}
+					END_FOR;
+					CMP_release(tdbb, handle);
+				}
 			END_MODIFY;
 		END_FOR;
 
