@@ -260,8 +260,7 @@ public:
 	{
 		StrConverter cvt_escape(pool, ttype, escape, escape_length);
 
-		return FB_NEW(pool) SimilarToMatcher(pool, ttype,
-			str, length,
+		return FB_NEW(pool) SimilarToMatcher(pool, ttype, str, length,
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
 	}
 
@@ -270,8 +269,7 @@ public:
 	{
 		StrConverter cvt_escape(pool, ttype, escape, escape_length);
 
-		Evaluator evaluator(pool, ttype,
-			p, pl,
+		Evaluator evaluator(pool, ttype, p, pl,
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
 		evaluator.processNextChunk(s, sl);
 		return evaluator.getResult();
@@ -517,10 +515,9 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 
 		UCharBuffer dummy;
 		const UCHAR* p = originalPatternStr +
-			charSet->substring(
-				originalPatternLen, originalPatternStr,
-				originalPatternLen, dummy.getBuffer(originalPatternLen),
-				1, patternPos - patternStart);
+			charSet->substring(originalPatternLen, originalPatternStr,
+							   originalPatternLen, dummy.getBuffer(originalPatternLen),
+							   1, patternPos - patternStart);
 		ULONG size = 0;
 		bool comma = false;
 		string s1, s2;
@@ -725,10 +722,9 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				UCharBuffer className;
 
 				className.getBuffer(len);
-				className.resize(charSet->substring(
-					originalPatternLen, originalPatternStr,
-					className.getCapacity(), className.begin(),
-					start - patternStart, len));
+				className.resize(charSet->substring(originalPatternLen, originalPatternStr,
+													className.getCapacity(), className.begin(),
+													start - patternStart, len));
 
 				int classN;
 				UCharBuffer buffer;
@@ -736,11 +732,10 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
 					const string s = IntlUtil::convertAsciiToUtf16(classes[classN].name);
-					charSet->getConvFromUnicode().convert(
-						s.length(), (const UCHAR*) s.c_str(), buffer);
+					charSet->getConvFromUnicode().convert(s.length(), (const UCHAR*) s.c_str(), buffer);
 
 					if (textType->compare(className.getCount(), className.begin(),
-							buffer.getCount(), buffer.begin()) == 0)
+										  buffer.getCount(), buffer.begin()) == 0)
 					{
 						for (const GetCanonicalFunc* func = classes[classN].funcs; *func; ++func)
 						{
@@ -765,9 +760,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 					--patternPos;	// go back to first char
 
 					UCHAR c[sizeof(ULONG)];
-					ULONG len = charSet->substring(
-						originalPatternLen, originalPatternStr,
-						sizeof(c), c, patternPos - patternStart, 1);
+					ULONG len = charSet->substring(originalPatternLen, originalPatternStr,
+												   sizeof(c), c, patternPos - patternStart, 1);
 
 					const int previousRangeBufferCount = rangeBuffer.getCount();
 					rangeBuffer.push(len);
@@ -792,12 +786,11 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 						}
 					}
 
-					len = charSet->substring(
-						originalPatternLen, originalPatternStr,
-						sizeof(c), c, patternPos - patternStart, 1);
+					len = charSet->substring(originalPatternLen, originalPatternStr,
+											 sizeof(c), c, patternPos - patternStart, 1);
 
 					if (textType->compare(rangeBuffer[previousRangeBufferCount],
-							&rangeBuffer[previousRangeBufferCount + 1], len, c) <= 0)
+										  &rangeBuffer[previousRangeBufferCount + 1], len, c) <= 0)
 					{
 						rangeBuffer.push(len);
 						memcpy(rangeBuffer.getBuffer(
@@ -1055,9 +1048,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 					while (p < end)
 					{
 						UCHAR c[sizeof(ULONG)];
-						ULONG len = charSet->substring(
-							buffer.getCount(), buffer.begin(),
-							sizeof(c), c, bufferPos - bufferStart, 1);
+						ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
+													   sizeof(c), c, bufferPos - bufferStart, 1);
 
 						if (textType->compare(len, c, p[0], p + 1) >= 0 &&
 							textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
@@ -1082,9 +1074,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 					while (p < end)
 					{
 						UCHAR c[sizeof(ULONG)];
-						const ULONG len = charSet->substring(
-							buffer.getCount(), buffer.begin(),
-							sizeof(c), c, bufferPos - bufferStart, 1);
+						const ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
+														sizeof(c), c, bufferPos - bufferStart, 1);
 
 						if (textType->compare(len, c, p[0], p + 1) >= 0 &&
 							textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
@@ -1103,8 +1094,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 				break;
 
 			case opExactly:
-				if (node->len > bufferEnd - bufferPos ||
-					memcmp(node->str, bufferPos, node->len) != 0)
+				if (node->len > bufferEnd - bufferPos || memcmp(node->str, bufferPos, node->len) != 0)
 				{
 					return false;
 				}
@@ -1150,8 +1140,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 
 		Scope* scope;
 
-		while (state != 0 && scopes.getCount() != 0 &&
-			   (scope = &scopes.back())->i < scope->limit)
+		while (state != 0 && scopes.getCount() != 0 && (scope = &scopes.back())->i < scope->limit)
 		{
 			const Node* node = &nodes[scope->i];
 
@@ -1310,9 +1299,8 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 							while (p < end)
 							{
 								UCHAR c[sizeof(ULONG)];
-								const ULONG len = charSet->substring(
-									buffer.getCount(), buffer.begin(),
-									sizeof(c), c, bufferPos - bufferStart, 1);
+								const ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
+														sizeof(c), c, bufferPos - bufferStart, 1);
 
 								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
 									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)

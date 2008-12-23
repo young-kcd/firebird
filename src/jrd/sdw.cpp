@@ -107,8 +107,7 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 	WIN window(HEADER_PAGE_NUMBER);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
-	CCH_write_all_shadows(tdbb, 0, window.win_bdb,
-						  tdbb->tdbb_status_vector, 1, false);
+	CCH_write_all_shadows(tdbb, 0, window.win_bdb, tdbb->tdbb_status_vector, 1, false);
 	CCH_RELEASE(tdbb, &window);
 	if (file_flags & FILE_conditional)
 		shadow->sdw_flags |= SDW_conditional;
@@ -306,9 +305,8 @@ void SDW_check(thread_db* tdbb)
 
 		if (shadow->sdw_flags & SDW_delete) {
 			MET_delete_shadow(tdbb, shadow->sdw_number);
-			gds__log
-				("shadow %s deleted from database %s due to unavailability on write",
-				 shadow->sdw_file->fil_string, dbb->dbb_filename.c_str());
+			gds__log("shadow %s deleted from database %s due to unavailability on write",
+					 shadow->sdw_file->fil_string, dbb->dbb_filename.c_str());
 		}
 
 		/* note that shutting down a shadow is destructive to
@@ -391,8 +389,7 @@ bool SDW_check_conditional(thread_db* tdbb)
 				shadow->sdw_flags &= ~SDW_conditional;
 
 				gds__log("conditional shadow %d %s activated for database %s",
-						 shadow->sdw_number, shadow->sdw_file->fil_string,
-						 dbb->dbb_filename.c_str());
+						 shadow->sdw_number, shadow->sdw_file->fil_string, dbb->dbb_filename.c_str());
 				USHORT file_flags = FILE_shadow;
 				if (shadow->sdw_flags & SDW_manual)
 					file_flags |= FILE_manual;
@@ -943,8 +940,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 	SLONG* const spare_buffer =
 		FB_NEW(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE) / sizeof(SLONG)];
 	SLONG* spare_page = reinterpret_cast<SLONG*>((SCHAR *)
-											  (((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
-												~((U_IPTR) MIN_PAGE_SIZE - 1)));
+												(((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
+													~((U_IPTR) MIN_PAGE_SIZE - 1)));
 
 	WIN window(DB_PAGE_SPACE, -1);
 	jrd_file* shadow_file = 0;
@@ -956,7 +953,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
 		PIO_force_write(shadow_file, dbb->dbb_flags & DBB_force_write,
-						dbb->dbb_flags & DBB_no_fs_cache);
+			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
 	if (!(file_flags & FILE_conditional))
@@ -1045,9 +1042,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 		else
 		{
 			MET_delete_shadow(tdbb, shadow_number);
-			gds__log
-				("shadow %s deleted from database %s due to unavailability on attach",
-				 expanded_name.c_str(), dbb_file->fil_string);
+			gds__log("shadow %s deleted from database %s due to unavailability on attach",
+					 expanded_name.c_str(), dbb_file->fil_string);
 		}
 	}
 }

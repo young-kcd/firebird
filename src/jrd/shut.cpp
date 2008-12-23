@@ -269,7 +269,8 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	if (!exclusive && (flag & isc_dpb_shut_force)) {
 		// TMN: Ugly counting!
-		while (!notify_shutdown(tdbb, flag, 0));
+		while (!notify_shutdown(tdbb, flag, 0))
+			;
 	}
 
 	++dbb->dbb_use_count;
@@ -485,8 +486,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 /* Send blocking ASTs to database users */
 
-	const bool exclusive =
-		CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : -1);
+	const bool exclusive = CCH_exclusive(tdbb, LCK_PW, delay > 0 ? -SHUT_WAIT_TIME : -1);
 
 	if (exclusive && (delay != -1)) {
 		return shutdown_locks(tdbb, flag);
@@ -494,7 +494,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	if ((flag & isc_dpb_shut_force) && !delay) {
 		return shutdown_locks(tdbb, flag);
 	}
-	if ((flag & isc_dpb_shut_transaction) && !(TRA_active_transactions(tdbb, dbb)))
+	if ((flag & isc_dpb_shut_transaction) && !TRA_active_transactions(tdbb, dbb))
 	{
 		return true;
 	}

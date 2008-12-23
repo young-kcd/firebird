@@ -193,8 +193,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 				if (!(scb->scb_flags & scb_sorted))
 				{
 					*((USHORT *) (record + key->skd_vary_offset)) = vlen;
-					const UCHAR fill_char =
-						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+					const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 					UCHAR* fill_pos = p + sizeof(USHORT) + vlen;
 					const USHORT fill = n - sizeof(USHORT) - vlen;
 					if (fill)
@@ -327,8 +326,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 				USHORT& vlen = ((vary*) p)->vary_length;
 				if (!(scb->scb_flags & scb_sorted)) {
 					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
-					fill_char =
-						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+					fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 					fill_pos = p + sizeof(USHORT) + vlen;
 					fill = n - sizeof(USHORT) - vlen;
 					if (fill)

@@ -34,8 +34,7 @@
 struct dsc;
 
 void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
-					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t,
-					  const TEXT*, const char*);
+					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t, const TEXT*, const char*);
 void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
 					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t,
 					  const TEXT*, const Firebird::MetaName&, const Firebird::MetaName&);

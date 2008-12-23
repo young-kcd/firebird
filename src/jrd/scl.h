@@ -38,8 +38,9 @@ class SecurityClass
 public:
     typedef USHORT flags_t;
 
-	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name) :
-		scl_flags(0), scl_name(pool, name) {}
+	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name) 
+		: scl_flags(0), scl_name(pool, name) 
+	{}
 
 	flags_t scl_flags;			// Access permissions
 	const Firebird::MetaName scl_name;
@@ -101,8 +102,9 @@ public:
 		return usr_flags & (USR_locksmith | USR_owner | USR_dba);
 	}
 
-	UserId() :	usr_user_id(0), usr_group_id(0),
-				usr_node_id(0), usr_flags(0) { }
+	UserId()
+		: usr_user_id(0), usr_group_id(0), usr_node_id(0), usr_flags(0) 
+	{ }
 
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
 		: usr_user_name(p, ui.usr_user_name),
@@ -112,8 +114,20 @@ public:
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_node_id(ui.usr_node_id),
-		  usr_flags(ui.usr_flags) { }
+		  usr_flags(ui.usr_flags) 
+	{ }
 
+	UserId(const UserId& ui)
+		: usr_user_name(ui.usr_user_name),
+		  usr_sql_role_name(ui.usr_sql_role_name),
+		  usr_project_name(ui.usr_project_name),
+		  usr_org_name(ui.usr_org_name),
+		  usr_user_id(ui.usr_user_id),
+		  usr_group_id(ui.usr_group_id),
+		  usr_node_id(ui.usr_node_id),
+		  usr_flags(ui.usr_flags) 
+	{ }
+	
 	UserId& operator=(const UserId& ui)
 	{
 		usr_user_name = ui.usr_user_name;
@@ -127,16 +141,6 @@ public:
 
 		return *this;
 	}
-
-	UserId(const UserId& ui)
-		: usr_user_name(ui.usr_user_name),
-		  usr_sql_role_name(ui.usr_sql_role_name),
-		  usr_project_name(ui.usr_project_name),
-		  usr_org_name(ui.usr_org_name),
-		  usr_user_id(ui.usr_user_id),
-		  usr_group_id(ui.usr_group_id),
-		  usr_node_id(ui.usr_node_id),
-		  usr_flags(ui.usr_flags) { }
 };
 
 const char* const object_table		= "TABLE";

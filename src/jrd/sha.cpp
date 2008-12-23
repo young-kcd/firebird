@@ -25,12 +25,13 @@ typedef unsigned long LONG;	/* 32-or-more-bit quantity */
 #define SHA_BLOCKSIZE		64
 #define SHA_DIGESTSIZE		20
 
-typedef struct {
+struct SHA_INFO
+{
 	LONG digest[5];			/* message digest */
 	LONG count_lo, count_hi;	/* 64-bit bit count */
 	BYTE data[SHA_BLOCKSIZE];	/* SHA data buffer */
 	int local;			/* unprocessed amount in data */
-} SHA_INFO;
+};
 
 void sha_init(SHA_INFO *);
 void sha_update(SHA_INFO *, const BYTE *, int);
@@ -350,8 +351,7 @@ typedef Firebird::HalfStaticArray<unsigned char, SHA_DIGESTSIZE> BinHash;
 void base64(Firebird::string& b64, const BinHash& bin)
 {
 	b64.erase();
-	const unsigned char* f =
-		reinterpret_cast<const unsigned char*>(bin.begin());
+	const unsigned char* f = reinterpret_cast<const unsigned char*>(bin.begin());
 	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
 	{
 		if (i >= 3)

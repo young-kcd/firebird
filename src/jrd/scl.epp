@@ -350,8 +350,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 			SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask, object_column, fullFieldName);
 		}
 		else {
-			SCL_check_access(tdbb, default_s_class, 0, NULL, NULL, mask,
-							 object_column, fullFieldName);
+			SCL_check_access(tdbb, default_s_class, 0, NULL, NULL, mask, object_column, fullFieldName);
 		}
 
 	END_FOR;
@@ -731,8 +730,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 				char name[129];
 				*name = user->usr_user_name.length();
 				user->usr_user_name.copyTo(name + 1, sizeof(name) - 1);
-				if (!check_string(reinterpret_cast<const UCHAR*>(name),
-								  REL.RDB$OWNER_NAME))
+				if (!check_string(reinterpret_cast<const UCHAR*>(name), REL.RDB$OWNER_NAME))
 				{
 					user->usr_flags |= USR_owner;
 				}

@@ -120,8 +120,7 @@ const int op_scalar		= 12;
 // to new place and if the new place's size it's not enough, allocates a buffer.
 // Typically, "target" is a static buffer with limited size for the small cases.
 // Was made for "remote/interface.cpp" to ensure input buffers aren't overwritten.
-UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size,
-	UCHAR* target, size_t target_size)
+UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size, UCHAR* target, size_t target_size)
 {
 	UCHAR* temp_sdl = target;
 	if (origin_size > target_size) {
@@ -179,7 +178,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 
 
 ISC_STATUS SDL_info(ISC_STATUS* status_vector,
-							const UCHAR* sdl, sdl_info* info, SLONG* vector)
+					const UCHAR* sdl, sdl_info* info, SLONG* vector)
 {
 /**************************************
  *
@@ -224,13 +223,13 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 
 		case isc_sdl_field:
 			n = *p++;
-			info->sdl_info_field.assign(reinterpret_cast<const char *>(p), n);
+			info->sdl_info_field.assign(reinterpret_cast<const char*>(p), n);
 			p += n;
 			break;
 
 		case isc_sdl_relation:
 			n = *p++;
-			info->sdl_info_relation.assign(reinterpret_cast<const char *>(p), n);
+			info->sdl_info_relation.assign(reinterpret_cast<const char*>(p), n);
 			p += n;
 			break;
 
@@ -329,12 +328,12 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 
 int	SDL_walk(ISC_STATUS* status_vector,
-		const UCHAR* sdl,
-		UCHAR* array,
-		Ods::InternalArrayDesc* array_desc,
-		SLONG* variables,
-		SDL_walk_callback callback,
-		array_slice* argument)
+			 const UCHAR* sdl,
+			 UCHAR* array,
+			 Ods::InternalArrayDesc* array_desc,
+			 SLONG* variables,
+			 SDL_walk_callback callback,
+			 array_slice* argument)
 {
 /**************************************
  *
@@ -362,7 +361,8 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	while (*p != isc_sdl_eoc) {
 		switch (*p++) {
 		case isc_sdl_struct:
-			for (n = *p++; n; --n) {
+			for (n = *p++; n; --n) 
+			{
 				offset = p - sdl - 1;
 				if (!(p = sdl_desc(p, &junk)))
 					return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(offset));
@@ -482,8 +482,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		return p + 2;
 
 	case isc_sdl_long_integer:
-		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
-		        ((SLONG) p[3] << 24));
+		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) | ((SLONG) p[3] << 24));
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p + 4;
@@ -519,8 +518,10 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 			COMPILE(p, 0);
 		}
 		while (expr > expressions)
+		{
 			if (!compile(*--expr, arg))
 				return NULL;
+		}
 		STUFF(op_scalar, arg);
 		STUFF(op, arg);
 		STUFF(count, arg);
@@ -539,8 +540,10 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 			COMPILE(p, 0);
 		}
 		while (expr > expressions)
+		{
 			if (!compile(*--expr, arg))
 				return NULL;
+		}
 		STUFF(op_element, arg);
 		STUFF(count, arg);
 		return p;
@@ -692,7 +695,6 @@ static bool execute(sdl_arg* arg)
 
 				if (element_desc.dsc_address < arg->sdl_arg_argument->slice_high_water)
 				{
-
 					(*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
 				}
 				else {
@@ -769,8 +771,7 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 		return p + 2;
 
 	case isc_sdl_long_integer:
-		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
-		        ((SLONG) p[3] << 24));
+		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) | ((SLONG) p[3] << 24));
 		*min = *max = value;
 		return p + 4;
 
@@ -809,20 +810,19 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 		info->sdl_info_dimensions = *p++;
 		for (n = 0; n < info->sdl_info_dimensions; n++)
 		{
-			if (!
-				(p =
-				 get_range(p, arg, &info->sdl_info_lower[n],
-						   &info->sdl_info_upper[n])))
+			if (!(p = get_range(p, arg, &info->sdl_info_lower[n], &info->sdl_info_upper[n])))
 			{
-					return NULL;
+				return NULL;
 			}
 		}
 		return p;
 
 	case isc_sdl_element:
 		for (n = *p++; n; --n)
+		{
 			if (!(p = get_range(p, arg, min, max)))
 				return NULL;
+		}
 		return p;
 
 	default:
