@@ -24,7 +24,7 @@
  *
  */
 /*
-$Id: restore.epp,v 1.31.2.5 2005-04-13 11:47:25 dimitr Exp $
+$Id: restore.epp,v 1.31.2.6 2008-12-23 13:11:27 alexpeshkoff Exp $
 */
 
 #include "firebird.h"
@@ -184,6 +184,9 @@ static void	stuff_string (SCHAR **, TEXT *);
 static void 	update_global_field (void);
 static void	update_view_dbkey_lengths();
 static void     general_on_error (void);
+static bool     blobPutData(ISC_STATUS*, FRBRD**, size_t, const UCHAR*);
+static bool     blobGetData(ISC_STATUS*, FRBRD**, size_t, UCHAR*, size_t*);
+
 #ifdef NOT_USED_OR_REPLACED
 static BOOLEAN	bug_8183 (TGBL);
 #endif
@@ -1206,11 +1209,12 @@ static const SCHAR blr_items [] = {isc_info_blob_max_segment,
 			     isc_info_blob_total_length,
 			     isc_info_blob_num_segments};
 ISC_STATUS_ARRAY	status_vector;
-SLONG	length, n;
+ULONG	n, length;
 FRBRD	*blob;
 UCHAR	*p, blob_info [32], item, *buffer, static_buffer [1024], 
 	*new_buffer, *end_buffer;
-USHORT	l, max_segment, num_segments, new_len = 0;
+USHORT	l, max_segment, num_segments;
+size_t	new_len = 0;
 TGBL	tdgbl;
 UCHAR	*c_1, *from, *to, owner_nm_len;
 SLONG	id_person_len, cnt;
@@ -1295,16 +1299,21 @@ if (length < max_segment)
 ** grinding. 
 */
 
-if (!max_segment || max_segment <= sizeof (static_buffer))
+if (!length || length <= sizeof (static_buffer))
     buffer = static_buffer;
 else
-    buffer = BURP_ALLOC (max_segment);
+    buffer = BURP_ALLOC (length);
 
-isc_get_segment (status_vector, 
-		  GDS_REF (blob), 
-		 GDS_REF (l), 
-		 max_segment, 
-		 (SCHAR*) GDS_VAL (buffer));
+size_t return_length = 0;
+if (!blobGetData(status_vector, &blob, length, buffer, &return_length))
+	{
+    if (buffer != static_buffer)
+	BURP_FREE (buffer);
+	// msg 22 gds_$get_segment failed
+	BURP_error_redirect (status_vector, 22, NULL, NULL);
+	}
+// protect ourself
+length = return_length;
 
 if (isc_close_blob (status_vector,  GDS_REF (blob)))
     {
@@ -1359,10 +1368,7 @@ if (isc_create_blob2 (status_vector,
     BURP_error_redirect (status_vector, 37, 0, 0); 
     }
 
-if (isc_put_segment (status_vector,
-		     GDS_REF (blob_handle),
-		     new_len,
-		     (SCHAR*) GDS_VAL (new_buffer)))
+if (!blobPutData(status_vector, &blob_handle, new_len, new_buffer))
     {
     if (buffer != static_buffer)
 	BURP_FREE (buffer);
@@ -1909,7 +1915,8 @@ ISC_STATUS_ARRAY	status_vector;
 ULONG		segments;
 ISC_QUAD	*blob_id;
 FRBRD	*blob;
-USHORT		field_number, max_segment, length;
+USHORT		field_number, max_segment;
+size_t		length;
 UCHAR		*buffer, static_buffer [1024];
 UCHAR	    scan_next_attr;
 TGBL	    tdgbl;
@@ -1989,12 +1996,9 @@ for (; segments > 0; --segments )
 	{
 	(void) GET_BLOCK (buffer, length);
 	}
-    if (isc_put_segment (status_vector, 
-	     GDS_REF (blob), 
-	    length, 
-	    (SCHAR*) GDS_VAL (buffer)))
-	BURP_error_redirect (status_vector, 38, 0, 0); 
-	/* msg 38 gds__put_segment failed */
+	if (!blobPutData (status_vector, &blob, length, buffer))
+		BURP_error_redirect (status_vector, 38, 0, 0); 
+		/* msg 38 gds__put_segment failed */
     }
 
 if (isc_close_blob (status_vector,  GDS_REF (blob)))
@@ -2069,10 +2073,7 @@ if (length)
 	}
 }
 
-if (isc_put_segment (status_vector, 
-	 GDS_REF (blob), 
-	length, 
-	(SCHAR*) GDS_VAL (buffer)))
+if (!blobPutData(status_vector, &blob, length, buffer))
     BURP_error_redirect (status_vector, 38, 0, 0); 
     /* msg 38 gds__put_segment failed */
 
@@ -4472,7 +4473,6 @@ static void get_misc_blob (
  **************************************/
 ISC_STATUS_ARRAY	status_vector;
 FRBRD	*blob;
-USHORT		length;
 UCHAR		*buffer, static_buffer [1024];
 USHORT		bpb_length;
 UCHAR		*bpb;
@@ -4481,7 +4481,7 @@ TGBL		tdgbl;
 
 tdgbl = GET_THREAD_DATA;
 
-length = (USHORT)get_numeric();
+size_t length = get_numeric();
 
 /* Create new blob */
 
@@ -4517,10 +4517,7 @@ if (length)
     (void) GET_BLOCK (buffer, length);
     }
 
-if (isc_put_segment (status_vector, 
-	 GDS_REF (blob), 
-	length, 
-	(SCHAR*) GDS_VAL (buffer)))
+if (!blobPutData(status_vector, &blob, length, buffer))
     BURP_error_redirect (status_vector, 38, 0, 0); 
     /* msg 38 gds__put_segment failed */
 
@@ -7296,6 +7293,79 @@ ISC_STATUS_ARRAY	req_status;
 	END_ERROR;
 
     isc_release_request (req_status, &req_handle2);
+}
+
+static const size_t SEGMENT_LIMIT = MAX_USHORT;
+
+static bool blobPutData(ISC_STATUS* status_vector, FRBRD** blob, size_t len, const UCHAR* buffer)
+{
+/**************************************
+ *
+ *	b l o b P u t D a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	Put buffer into blob using as big segments as possible
+ *
+ **************************************/
+	if (!blob || !*blob)
+		return false;
+
+	if (len > 0 && !buffer)
+		return false;
+
+	char* buf2 = (char*)buffer;
+	while (len)
+	{
+		USHORT ilen = static_cast<USHORT>(len > SEGMENT_LIMIT ? SEGMENT_LIMIT : len);
+		if (isc_put_segment(status_vector, blob, ilen, buf2))
+			return false;
+
+		len -= ilen;
+		buf2 += ilen;
+	}
+	return true;
+}
+
+static bool blobGetData(ISC_STATUS* status_vector, FRBRD** blob, size_t len, UCHAR* buffer, 
+						size_t* real_len)
+{
+/**************************************
+ *
+ *	b l o b G e t D a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get blob data into buffer
+ *
+ **************************************/
+	if (!blob || !*blob)
+		return false;
+
+	if (!len || !buffer)
+		return false;
+
+	bool rc = false;
+	*real_len = 0;
+	char* buf2 = reinterpret_cast<char*>(buffer);
+	while (len)
+	{
+		USHORT olen = 0;
+		USHORT ilen = static_cast<USHORT>(len > SEGMENT_LIMIT ? SEGMENT_LIMIT : len);
+		if (!isc_get_segment(status_vector, blob, &olen, ilen, buf2)
+			|| status_vector[1] == isc_segment)
+		{
+			len -= olen;
+			buf2 += olen;
+			*real_len += olen;
+			rc = true;
+		}
+		else
+			break;
+	}
+	return rc;
 }
 
 

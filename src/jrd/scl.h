@@ -26,7 +26,7 @@
 
 /* Security class definition */
 
-const size_t ACL_BLOB_BUFFER_SIZE = 4096; /* used to read/write acl blob */
+const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; /* used to read/write acl blob */
 
 class scl : public pool_alloc_rpt<SCHAR, type_scl>
 {
