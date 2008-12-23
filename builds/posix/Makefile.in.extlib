@@ -87,7 +87,7 @@ endif
 
 lib_ib_util: $(LIBIBUTIL_SO)
 
-$(LIBIBUTIL_SO): $(UTIL_Objects) $(COMMON_Objects) $(CLASSES_Objects)
+$(LIBIBUTIL_SO): $(UTIL_Objects)
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) \
 $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) -o $@ $^ $(THR_LIBS)
