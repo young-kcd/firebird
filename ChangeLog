@@ -1,3 +1,10 @@
+2008-12-23 14:11  alexpeshkoff
+
+	* firebird2/src/: burp/restore.epp (1.31.2.6), jrd/scl.h (1.4.4.2):
+
+	Backported fix for CORE-2223: Multiple bugs in gbak when working
+	with ACLs
+
 2008-12-14 11:30  robocop
 
 	* firebird2/src/jrd/sdw.cpp (1.14.2.2):
