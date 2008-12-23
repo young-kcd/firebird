@@ -1,3 +1,39 @@
+2008-12-23 14:34  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.258):
+
+	Fixed CORE-2255 - Exception 'string right truncation' when alter
+	view with join
+
+2008-12-23 14:32  hvlad
+
+	* firebird2/src/common/classes/fb_string.cpp (1.43):
+
+	Fixed unregistered bug : incorrect result of
+	AbstractString::equalsNoCase().  Hopefully this function was not
+	used anywhere.
+
+2008-12-23 10:34  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.extlib (1.31):
+
+	Avoid linking all this crap with trivial library
+
+2008-12-23 09:41  robocop
+
+	* firebird2/src/jrd/: ntrace.h (1.6), scl.epp (1.103), scl.h
+	(1.26), scl_proto.h (1.31), sdl.cpp (1.56), sdl_proto.h (1.19),
+	sdw.cpp (1.89), SimilarToMatcher.h (1.16), sha.cpp (1.10), shut.cpp
+	(1.65), sort.cpp (1.118):
+
+	Style.
+
+2008-12-23 09:34  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.187):
+
+	Rolled back my wrong change - mmap is not usable on HPUX
+
 2008-12-22 18:48  alexpeshkoff
 
 	* firebird2/src/jrd/common.h (1.186):
