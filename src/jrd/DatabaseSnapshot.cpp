@@ -133,14 +133,22 @@ void DatabaseSnapshot::SharedMemory::release()
 }
 
 
-UCHAR* DatabaseSnapshot::SharedMemory::readData(MemoryPool& pool, ULONG& resultSize)
+UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& pool, ULONG& resultSize)
 {
+	fb_assert(tdbb);
+
+	const Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+
 	DumpGuard guard(this);
+
+	ULONG self_dbb_offset = 0;	
 
 	// Garbage collect elements belonging to dead processes.
 	// This is done in two passes. First, we compact the data
 	// and calculate the total size of the resulting data.
-	// Second, we create a resulting buffer of the necessary size.
+	// Second, we create a resulting buffer of the necessary size
+	// and copy the data there, starting with our own dbb.
 
 	// First pass
 	for (ULONG offset = sizeof(Header); offset < base->used;)
@@ -148,6 +156,12 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(MemoryPool& pool, ULONG& resultS
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
+
+		if (element->processId == getpid() &&
+			element->localId == dbb->dbb_monitoring_id)
+		{
+			self_dbb_offset = offset;
+		}
 
 		if (ISC_check_process_existence(element->processId))
 		{
@@ -162,18 +176,29 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(MemoryPool& pool, ULONG& resultS
 		}
 	}
 
+	// Second pass
 	UCHAR* const buffer = FB_NEW(pool) UCHAR[resultSize];
 	UCHAR* bufferPtr(buffer);
 
-	// Second pass
+	fb_assert(self_dbb_offset);
+
+	UCHAR* const ptr = (UCHAR*) base + self_dbb_offset;
+	const Element* const element = (Element*) ptr;
+	memcpy(bufferPtr, ptr + sizeof(Element), element->length);
+	bufferPtr += element->length;
+
 	for (ULONG offset = sizeof(Header); offset < base->used;)
 	{
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
 
-		memcpy(bufferPtr, ptr + sizeof(Element), element->length);
-		bufferPtr += element->length;
+		if (offset != self_dbb_offset)
+		{
+			memcpy(bufferPtr, ptr + sizeof(Element), element->length);
+			bufferPtr += element->length;
+		}
+
 		offset += length;
 	}
 
@@ -436,7 +461,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	// Read the shared memory
 	fb_assert(dump);
 	ULONG dataSize = 0;
-	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump->readData(pool, dataSize));
+	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump->readData(tdbb, pool, dataSize));
 	fb_assert(dataSize);
 
 	ClumpletReader reader(ClumpletReader::WideUnTagged, data, dataSize);

@@ -81,7 +81,7 @@ class DatabaseSnapshot
 		void acquire();
 		void release();
 
-		UCHAR* readData(MemoryPool&, ULONG&);
+		UCHAR* readData(thread_db*, MemoryPool&, ULONG&);
 		void writeData(thread_db*, ULONG, const UCHAR*);
 
 		void cleanup(thread_db*);
