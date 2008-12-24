@@ -77,7 +77,18 @@ if test "x$LIBTOOL_M4" != "x"; then
   rm -f aclocal.m4
   cp $LIBTOOL_M4 aclocal.m4
 fi
-$LIBTOOLIZE --copy --force || exit 1
+
+TEMPFILE="./lt.out"
+$LIBTOOLIZE --install --dry-run >$TEMPFILE 2>&1
+LIBTOOL_AUX_FILES=`grep 'unrecognized option' $TEMPFILE`
+rm -f $TEMPFILE
+if test "x$LIBTOOL_AUX_FILES" != "x"; then
+  $LIBTOOLIZE --copy --force || exit 1
+else
+# libtoolize no longer installs config.guess and config.sub by default.
+# Use new --install option to get old behavior.
+  $LIBTOOLIZE --copy --force --install || exit 1
+fi
 
 echo "Running autoreconf ..."
 autoreconf -if
