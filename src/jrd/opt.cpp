@@ -1152,8 +1152,8 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation, i
 
 	bool includeLower = true, includeUpper = true;
 	for (tail = opt->opt_segments; 
-		(tail->opt_lower || tail->opt_upper) && tail->opt_match && (tail < end); 
-		tail++)
+		 (tail->opt_lower || tail->opt_upper) && tail->opt_match && (tail < end); 
+		 tail++)
 	{
 		switch (tail->opt_match->nod_type)
 		{
@@ -1457,8 +1457,8 @@ static void check_sorts(RecordSelExpr* rse)
 	// the sort can be eliminated.
 
 	jrd_nod *group, *sub_rse;
-	if ((project || sort) && (rse->rse_count == 1) && (sub_rse = rse->rse_relation[0]) &&
-		(sub_rse->nod_type == nod_aggregate) && (group = sub_rse->nod_arg[e_agg_group]))
+	if ((project || sort) && rse->rse_count == 1 && (sub_rse = rse->rse_relation[0]) &&
+		sub_rse->nod_type == nod_aggregate && (group = sub_rse->nod_arg[e_agg_group]))
 	{
 		// if all the fields of the project are the same as all the fields
 		// of the group by, get rid of the project.
@@ -2013,7 +2013,7 @@ static SLONG decompose(thread_db*		tdbb,
    with anything other than a pattern-matching character */
 
 	jrd_nod* arg;
-	if ((boolean_node->nod_type == nod_like) && (arg = optimize_like(tdbb, csb, boolean_node)))
+	if (boolean_node->nod_type == nod_like && (arg = optimize_like(tdbb, csb, boolean_node)))
 	{
 		stack.push(OPT_make_binary_node(nod_starts, boolean_node->nod_arg[0], arg, false));
 		stack.push(boolean_node);
@@ -2140,6 +2140,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 				for (NodeStack::iterator inner(outer); (++inner).hasData(); ) {
 					jrd_nod* boolean =
 						OPT_make_binary_node(nod_eql, outer.object(), inner.object(), true);
+
 					if ((base_count + count < MAX_CONJUNCTS) && augment_stack(boolean, org_stack))
 					{
 						DEBUG;
@@ -2432,7 +2433,7 @@ static bool dump_rsb(const jrd_req* request,
 		// we could get into a recursive situation. If the customer wants to know
 		// the plan produced by the sub-procedure, they can invoke it directly.
 
-        if (request->req_procedure || procedure->prc_request->req_fors.getCount() == 0)
+		if (request->req_procedure || procedure->prc_request->req_fors.getCount() == 0)
 		{
 			const Firebird::MetaName& n = procedure->prc_name;
 
@@ -3204,8 +3205,8 @@ static void find_best(thread_db* tdbb,
 	// won't consider (now) indirect relationships.
 	if (!done) {
 		for (IndexedRelationship* relationship = stream_data->opt_relationships;
-			relationship;
-			relationship = relationship->irl_next)
+			 relationship;
+			 relationship = relationship->irl_next)
 		{
 			if (relationship->irl_unique &&
 				(!(opt->opt_streams[relationship->irl_stream].opt_stream_flags & opt_stream_used)))
@@ -3228,8 +3229,8 @@ static void find_best(thread_db* tdbb,
 	// stream.  If there are any, we won't consider (now) indirect relationships
 	if (!done) {
 		for (IndexedRelationship* relationship = stream_data->opt_relationships;
-			relationship;
-			relationship = relationship->irl_next)
+			 relationship;
+			 relationship = relationship->irl_next)
 		{
 			if (!(opt->opt_streams[relationship->irl_stream].opt_stream_flags & opt_stream_used))
 			{
@@ -3707,7 +3708,7 @@ static void form_rivers(thread_db*		tdbb,
 		do {
 			count = innerJoin ? innerJoin->findJoinOrder() : find_order(tdbb, opt, temp, plan_node);
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause, 
-				project_clause, 0));
+				 project_clause, 0));
 
 		delete innerJoin;
 	}
@@ -3845,7 +3846,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 	jrd_nod** ptr;
 	jrd_nod* agg_operator = NULL;
 
-	if ((map->nod_count == 1) && (ptr = map->nod_arg) &&
+	if (map->nod_count == 1 && (ptr = map->nod_arg) &&
 		(agg_operator = (*ptr)->nod_arg[e_asgn_from]) &&
 		(agg_operator->nod_type == nod_agg_min || agg_operator->nod_type == nod_agg_max))
 	{
@@ -4171,7 +4172,7 @@ static void gen_join(thread_db*		tdbb,
 		do {
 			count = innerJoin->findJoinOrder();
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause, 
-				project_clause, 0));
+				 project_clause, 0));
 
 		delete innerJoin;
 		return;

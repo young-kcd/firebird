@@ -166,7 +166,7 @@ inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 {
 	Database* const dbb = tdbb->getDatabase();
 
-	return (lock->lck_compatible) ? 
+	return (lock->lck_compatible) ?
 		internal_downgrade(tdbb, lock) :
 		dbb->dbb_lock_mgr->downgrade(tdbb, lock->lck_id);
 }
@@ -958,7 +958,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (!att->att_compatibility_table)
 		hash_allocate(lock);
 
-	const USHORT hash_value = hash_func((UCHAR *) & lock->lck_key, lock->lck_length);
+	const USHORT hash_value = hash_func((UCHAR*) & lock->lck_key, lock->lck_length);
 
 	if (hash_slot)
 		*hash_slot = hash_value;
@@ -1123,7 +1123,7 @@ static void internal_ast(Lock* lock)
 
 		/* don't deliver the ast to any locks which are already compatible */
 
-		if ((match != lock) && !compatible(match, lock, lock->lck_logical) && match->lck_ast)
+		if (match != lock && !compatible(match, lock, lock->lck_logical) && match->lck_ast)
 		{
 			(*match->lck_ast)(match->lck_object);
 		}

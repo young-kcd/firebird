@@ -66,7 +66,7 @@ private:
 		SLONG tran;
 		PageBitmap *bm;
 
-		TranGarbage(PageBitmap *aBm, SLONG aTran) 
+		TranGarbage(PageBitmap* aBm, SLONG aTran) 
 			: tran(aTran), bm(aBm) 
 		{}
 

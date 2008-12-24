@@ -335,7 +335,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 void jrd_rel::RelPagesSnapshot::clear()
 {
 #ifdef DEV_BUILD
-	thread_db* tdbb = 0;
+	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
 	fb_assert(tdbb == spt_tdbb);
 #endif

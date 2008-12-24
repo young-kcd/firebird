@@ -773,7 +773,7 @@ static const UCHAR trigger2[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -821,7 +821,7 @@ static const UCHAR trigger5[] =
 	blr_field, 1, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -846,7 +846,7 @@ static const UCHAR trigger6[] =
 	blr_user_name,
 	blr_leave, 0,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -866,7 +866,7 @@ static const UCHAR trigger7[] =
 		'O', 'R', '_', 'I', 'D',
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -961,7 +961,7 @@ static const UCHAR trigger26[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -978,7 +978,7 @@ static const UCHAR trigger25[] =
 	blr_begin,
 	blr_leave, 1,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1128,7 +1128,7 @@ static const UCHAR trigger10[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1335,7 +1335,7 @@ static const UCHAR trigger12[] =
 	blr_leave, 2,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1351,7 +1351,7 @@ static const UCHAR trigger13[] =
 	blr_begin,
 	blr_leave, 1,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1367,7 +1367,7 @@ static const UCHAR trigger14[] =
 	blr_begin,
 	blr_leave, 1,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1396,7 +1396,7 @@ static const UCHAR trigger15[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1508,7 +1508,7 @@ static const UCHAR trigger17[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1557,7 +1557,7 @@ static const UCHAR trigger18[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1586,7 +1586,7 @@ static const UCHAR trigger19[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1794,7 +1794,7 @@ static const UCHAR trigger21[] =
 	blr_leave, 1,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -1883,7 +1883,7 @@ static const UCHAR trigger22[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -2030,7 +2030,7 @@ static const UCHAR trigger23[] =
     blr_erase, 7,
     blr_end,
     blr_end,
-    blr_eoc,
+    blr_eoc
 };
 
 
@@ -2105,7 +2105,7 @@ static const UCHAR trigger24[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -2150,7 +2150,7 @@ static const UCHAR trigger27[] =
 	blr_erase, 3,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 
@@ -2436,7 +2436,7 @@ static const UCHAR trigger36[] =
 	blr_end,
 	blr_end,
 	blr_end,
-	blr_eoc,
+	blr_eoc
 };
 
 

@@ -88,7 +88,7 @@ static const USHORT DSC_blr_type_mapping[] =
 
 /* Unimplemented names are in lowercase & <brackets> */
 /* Datatypes that represent a range of SQL datatypes are in lowercase */
-static const TEXT *const DSC_dtype_names[] = 
+static const TEXT* const DSC_dtype_names[] = 
 {
 	"<dtype_unknown>",
 	"CHAR",

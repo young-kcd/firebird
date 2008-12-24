@@ -184,7 +184,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 
 		for (; shadow; shadow = shadow->sdw_next)
 		{
-			if (shadow->sdw_number == *(ULONG *) arg1) {
+			if (shadow->sdw_number == *(ULONG *) arg1)
+			{
 #ifdef WIN_NT
 				desc = (HANDLE) ((shadow->sdw_file->fil_flags & FIL_force_write) ?
 							shadow->sdw_file->fil_force_write_desc : shadow->sdw_file->fil_desc);

@@ -3747,7 +3747,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 			const jrd_prc* procedure = *ptr;
 			if (procedure)
 				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
-							(procedure->prc_name->hasData()) ? procedure->prc_name->c_str() : "NULL",
+							procedure->prc_name->hasData() ? procedure->prc_name->c_str() : "NULL",
 							procedure->prc_id, procedure->prc_flags, procedure->prc_use_count,
 							0); // procedure->prc_alter_count
 		}
@@ -3796,7 +3796,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 		if (attachment)
 		{
-			if (dbb->dbb_ast_flags & DBB_shutdown && attachment->att_flags & ATT_shutdown)
+			if ((dbb->dbb_ast_flags & DBB_shutdown) && (attachment->att_flags & ATT_shutdown))
 			{
 				const PathName& file_name = attachment->att_filename;
 				if (punt)
@@ -3811,7 +3811,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					return true;
 				}
 			}
-			else if (attachment->att_flags & ATT_shutdown && !(tdbb->tdbb_flags & TDBB_shutdown_manager))
+			else if ((attachment->att_flags & ATT_shutdown) && !(tdbb->tdbb_flags & TDBB_shutdown_manager))
 			{
 				if (punt)
 				{
@@ -3833,7 +3833,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				!(attachment->att_flags & ATT_cancel_disable))
 			{
 				if ((!request ||
-					!(request->req_flags & (req_internal | req_sys_trigger))) &&
+					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
 					(!transaction || !(transaction->tra_flags & TRA_system)))
 				{
 					attachment->att_flags &= ~ATT_cancel_raise;
@@ -3953,7 +3953,7 @@ static void check_database(thread_db* tdbb)
 		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
 	}
 
-	if (attachment->att_flags & ATT_shutdown ||
+	if ((attachment->att_flags & ATT_shutdown) ||
 		((dbb->dbb_ast_flags & DBB_shutdown) && 
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
@@ -4852,7 +4852,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 		++vector)
 	{
 		delete *vector;
-		*vector = 0;
+		*vector = NULL;
 	}
 
 	// Release any validation error vector allocated
@@ -5205,7 +5205,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 	DatabaseContextHolder dbbHolder(tdbb);
 
 	if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-		!(dbb->dbb_ast_flags & DBB_shutdown && dbb->dbb_ast_flags & DBB_shutdown_locks))
+		!((dbb->dbb_ast_flags & DBB_shutdown) && (dbb->dbb_ast_flags & DBB_shutdown_locks)))
 	{
 		Attachment* att_next;
 
@@ -5303,7 +5303,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 #endif
 
 			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-				!(dbb->dbb_ast_flags & DBB_shutdown && dbb->dbb_ast_flags & DBB_shutdown_locks))
+				!((dbb->dbb_ast_flags & DBB_shutdown) && (dbb->dbb_ast_flags & DBB_shutdown_locks)))
 			{
 				if (!dbFiles.exist(dbb->dbb_filename))
 					dbFiles.add(dbb->dbb_filename);
@@ -6178,7 +6178,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 				check_database(tdbb);
 			}
 
-			if ((v->teb_tpb_length < 0) || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+			if (v->teb_tpb_length < 0 || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
 			{
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 			}

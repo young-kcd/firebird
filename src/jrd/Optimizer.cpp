@@ -2132,7 +2132,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			// Test if the new totalCost will be higher than the previous totalCost
 			// and if the current selectivity (without the bestCandidate) is already good enough.
 			if (acceptAll || firstCandidate ||
-				((totalCost < previousTotalCost) && (totalSelectivity > minimumSelectivity)))
+				(totalCost < previousTotalCost && totalSelectivity > minimumSelectivity))
 			{
 				// Exclude index from next pass
 				bestCandidate->used = true;
