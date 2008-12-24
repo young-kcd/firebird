@@ -300,7 +300,9 @@ private:
 	void internal_deallocate(void* block);
 
 	// Forbid copy constructor, should never be called
-	MemoryPool(const MemoryPool& pool) : freeBlocks((InternalAllocator*)this) { }
+	MemoryPool(const MemoryPool& pool) 
+		: freeBlocks((InternalAllocator*) this) 
+	{ }
 
 	// Used by pools to track memory usage.
 
@@ -326,8 +328,7 @@ public:
 	static MemoryPool* processMemoryPool;
 
 	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL,
-								  MemoryStats& stats = *default_stats_group);
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
 
 	// Set context pool for current thread of execution
 	static MemoryPool* setContextPool(MemoryPool* newPool);
@@ -372,8 +373,7 @@ public:
 	void print_contents(FILE*, bool = false, const char* filter_path = 0);
 
 	// The same routine, but more easily callable from the debugger
-	void print_contents(const char* filename, bool = false,
-		const char* filter_path = 0);
+	void print_contents(const char* filename, bool = false, const char* filter_path = 0);
 
 	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block)
@@ -415,7 +415,7 @@ public:
 class ContextPoolHolder
 {
 public:
-	ContextPoolHolder(MemoryPool* newPool)
+	explicit ContextPoolHolder(MemoryPool* newPool)
 	{
 		savedPool = MemoryPool::setContextPool(newPool);
 	}
@@ -430,8 +430,7 @@ private:
 // template enabling common use of old and new pools control code
 // to be dropped when old-style code goes away
 template <typename SubsystemThreadData, typename SubsystemPool>
-class SubsystemContextPoolHolder
-: public ContextPoolHolder
+class SubsystemContextPoolHolder : public ContextPoolHolder
 {
 public:
 	SubsystemContextPoolHolder <SubsystemThreadData, SubsystemPool>
@@ -573,7 +572,8 @@ namespace Firebird
 	public:
 		static MemoryPool& getAutoMemoryPool();
 	protected:
-		AutoStorage() : PermanentStorage(getAutoMemoryPool())
+		AutoStorage() 
+			: PermanentStorage(getAutoMemoryPool())
 		{
 #if defined(DEV_BUILD)
 			ProbeStack();

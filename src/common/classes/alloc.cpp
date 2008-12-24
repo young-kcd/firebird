@@ -276,8 +276,7 @@ void MemoryPool::init()
 {
 #if defined(WIN_NT) || defined(HAVE_MMAP)
 	static char mtxBuffer[sizeof(Mutex) + ALLOC_ALIGNMENT];
-	cache_mutex =
-		new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) mtxBuffer)) Mutex;
+	cache_mutex = new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) mtxBuffer)) Mutex;
 #endif
 
 	static char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
@@ -357,7 +356,7 @@ void MemoryPool::updateSpare()
 			spareLeafs.add(temp);
 		}
 		while ( (int) spareNodes.getCount() <= freeBlocks.level + 1 &&
-				spareNodes.getCount() < spareNodes.getCapacity() )
+			spareNodes.getCount() < spareNodes.getCapacity() )
 		{
 			void* temp = internal_alloc(MEM_ALIGN(sizeof(FreeBlocksTree::NodeList)), TYPE_TREEPAGE);
 			if (!temp)
@@ -394,12 +393,9 @@ void* MemoryPool::external_alloc(size_t &size)
 {
 	// This method is assumed to return NULL in case it cannot alloc
 	size = FB_ALIGN(size, get_map_page_size());
-	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	// Let Valgrind forget that block was zero-initialized
-	VALGRIND_DISCARD(
-		VALGRIND_MAKE_WRITABLE(result, size)
-	);
+	VALGRIND_DISCARD(VALGRIND_MAKE_WRITABLE(result, size));
 	return result;
 }
 
@@ -478,8 +474,7 @@ void* MemoryPool::external_alloc(size_t &size)
 # endif
 # if defined WIN_NT
 	size = FB_ALIGN(size, get_map_page_size());
-	return VirtualAlloc(NULL, size, MEM_COMMIT,
-						PAGE_READWRITE);
+	return VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
 # elif defined (HAVE_MMAP) && !defined(SOLARIS)
 
 // No successful return from mmap() will return the value MAP_FAILED.
@@ -489,14 +484,12 @@ void* MemoryPool::external_alloc(size_t &size)
 	size = FB_ALIGN(size, get_map_page_size());
 	void* result = NULL;
 #  ifdef MAP_ANONYMOUS
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE,
-				  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #  else
 	// This code is needed for Solaris 2.6, AFAIK  (only?)
 	if (dev_zero_fd < 0)
 		dev_zero_fd = open("/dev/zero", O_RDWR);
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE,
-				  MAP_PRIVATE, dev_zero_fd, 0);
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, dev_zero_fd, 0);
 #  endif //MAP_ANONYMOUS
 	return result == MAP_FAILED ? NULL : result;
 # elif  defined(SOLARIS)
@@ -510,27 +503,23 @@ void* MemoryPool::external_alloc(size_t &size)
 	void *result = NULL;
 #  ifdef MAP_ANONYMOUS
 
-	result = mmap(0, size, PROT_READ | PROT_WRITE,
-					MAP_PRIVATE | MAP_ANON , -1, 0);
+	result = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON , -1, 0);
 	if (result == MAP_FAILED) {
 		// failure happens!
 		return NULL;
 	}
-	else {
-		return result;
-	}
+
+	return result;
 #  else
 	// This code is needed for Solaris 2.6, AFAIK
 	if (dev_zero_fd < 0)
 		dev_zero_fd = open("/dev/zero", O_RDWR);
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE,
-					MAP_PRIVATE, dev_zero_fd, 0);
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, dev_zero_fd, 0);
 	if (result == MAP_FAILED) {
 		return NULL;
 	}
-	else {
-		return result;
-	}
+
+	return result;
 #  endif //MAP_ANONYMOUS
 # else
 	return malloc(size);
@@ -690,8 +679,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 			extents = extent;
 			increment_mapping(EXTENT_SIZE);
 
-			MemoryBlock* hdr = (MemoryBlock*) ((char*)extent +
-				MEM_ALIGN(sizeof(MemoryExtent)));
+			MemoryBlock* hdr = (MemoryBlock*) ((char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
 			hdr->mbk_pool = this;
 			hdr->mbk_flags = MBK_USED;
 			hdr->mbk_type = TYPE_LEAFPAGE;
@@ -725,9 +713,9 @@ void* MemoryPool::allocate_nothrow(size_t size
 
 	lock.enter();
 	// If block cannot fit into extent then allocate it from OS directly
-	if (size > EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent))) {
-		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size +
-			MEM_ALIGN(sizeof(MemoryRedirectList));
+	if (size > EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent))) 
+	{
+		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size + MEM_ALIGN(sizeof(MemoryRedirectList));
 		MemoryBlock *blk = (MemoryBlock*) external_alloc(ext_size);
 		if (!blk) {
 			lock.leave();
@@ -851,8 +839,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 			blk = next_block(blk))
 		{
 			// Verify block flags, large blocks are not allowed here
-			mem_assert(!(blk->mbk_flags &
-				~(MBK_USED | MBK_LAST | MBK_PARENT | MBK_DELAYED)));
+			mem_assert(!(blk->mbk_flags & ~(MBK_USED | MBK_LAST | MBK_PARENT | MBK_DELAYED)));
 
 			// Check that if block is marked as delayed free it is still accounted as used
 			mem_assert(!(blk->mbk_flags & MBK_DELAYED) || (blk->mbk_flags & MBK_USED));
@@ -1033,14 +1020,13 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 		if (blk->mbk_flags & MBK_DELAYED)
 			strcat(flags, " DELAYED");
 
-		const int size =
+		const int size = 
 			blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->mbk_small.mbk_length;
 
 		if (blk->mbk_flags & MBK_USED)
 		{
 #ifdef DEBUG_GDS_ALLOC
-			if (!filter_path || blk->mbk_file &&
-				!strncmp(filter_path, blk->mbk_file, filter_len))
+			if (!filter_path || blk->mbk_file && !strncmp(filter_path, blk->mbk_file, filter_len))
 			{
 				fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
 					mem, flags, size, blk->mbk_file, blk->mbk_line);
@@ -1052,8 +1038,7 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 	}
 }
 
-void MemoryPool::print_contents(const char* filename, bool used_only,
-	const char* filter_path)
+void MemoryPool::print_contents(const char* filename, bool used_only, const char* filter_path)
 {
 	FILE *out = fopen(filename, "w");
 	if (!out)
@@ -1064,8 +1049,7 @@ void MemoryPool::print_contents(const char* filename, bool used_only,
 }
 
 // This member function can't be const because there are calls to the mutex.
-void MemoryPool::print_contents(FILE *file, bool used_only,
-	const char* filter_path)
+void MemoryPool::print_contents(FILE *file, bool used_only, const char* filter_path)
 {
 	lock.enter();
 	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n",
@@ -1308,7 +1292,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 
 	// Lookup a block greater or equal than size in freeBlocks tree
 	MemoryBlock* blk;
-	if (freeBlocks.locate(locGreatEqual, size)) {
+	if (freeBlocks.locate(locGreatEqual, size))
+	{
 		// Found large enough block
 		BlockInfo* current = &freeBlocks.current();
 		if (current->bli_length - size < MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
@@ -1363,7 +1348,9 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				// cut off small pieces from it. This is common and we avoid modification
 				// of free blocks tree in this case.
 				bool get_prev_succeeded = freeBlocks.getPrev();
-				if (!get_prev_succeeded || freeBlocks.current().bli_length < current_block->mbk_small.mbk_length) {
+				if (!get_prev_succeeded || 
+					freeBlocks.current().bli_length < current_block->mbk_small.mbk_length) 
+				{
 					current->bli_length = current_block->mbk_small.mbk_length;
 				}
 				else {
@@ -1460,8 +1447,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		blk->mbk_line = line;
 #endif
 		blk->mbk_small.mbk_prev_length = 0;
-		if (EXTENT_SIZE - size - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock))
-					< MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
+		if (EXTENT_SIZE - size - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock)) <
+			MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
 		{
 			// Block is small enough to be returned AS IS
 			blk->mbk_flags |= MBK_LAST;
@@ -1601,10 +1588,7 @@ void MemoryPool::internal_deallocate(void *block)
 	// be called for free blocks in pendingFree list by updateSpare routine.
 	// Such blocks must have mbk_prev_fragment equal to NULL.
 
-	fb_assert(
-		blk->mbk_flags & MBK_USED ?
-			blk->mbk_pool == this :
-			blk->mbk_prev_fragment == NULL);
+	fb_assert(blk->mbk_flags & MBK_USED ? blk->mbk_pool == this : blk->mbk_prev_fragment == NULL);
 
 	MemoryBlock *prev;
 	// Try to merge block with preceding free block
@@ -1643,8 +1627,7 @@ void MemoryPool::internal_deallocate(void *block)
 		// Mark block as free
 		blk->mbk_flags &= ~MBK_USED;
 		// Try to merge block with next free block
-		if (!(blk->mbk_flags & MBK_LAST) &&
-			!((next = next_block(blk))->mbk_flags & MBK_USED))
+		if (!(blk->mbk_flags & MBK_LAST) && !((next = next_block(blk))->mbk_flags & MBK_USED))
 		{
 			removeFreeBlock(next);
 			blk->mbk_small.mbk_length += next->mbk_small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock));
@@ -1784,8 +1767,7 @@ void MemoryPool::deallocate(void *block)
 		decrement_usage(size);
 #endif
 		// Free the block
-		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size +
-			MEM_ALIGN(sizeof(MemoryRedirectList));
+		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size + MEM_ALIGN(sizeof(MemoryRedirectList));
 		external_free(blk, ext_size, false);
 		decrement_mapping(ext_size);
 		lock.leave();
