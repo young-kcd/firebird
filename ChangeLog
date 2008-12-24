@@ -1,3 +1,42 @@
+2008-12-24 15:17  alexpeshkoff
+
+	* firebird2/: builds/posix/prefix.aix_powerpc (1.5),
+	src/jrd/ThreadStart.cpp (1.10), src/jrd/common.h (1.188),
+	src/jrd/isc_file.cpp (1.126):
+
+	AIX port
+
+2008-12-24 14:34  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.86),
+	DatabaseSnapshot.h (1.25):
+
+	Fixed the regression for CORE-1926 reported by Philippe.
+
+2008-12-24 13:43  alexpeshkoff
+
+	* firebird2/autogen.sh (1.17):
+
+	Newer (appears 2.X) versions of libtoolize require switch --install
+	to create additional files (config.sub, config.guess). Added
+	detection of that switch - based on original patch from Bill
+	Oliver.
+
+2008-12-24 08:46  robocop
+
+	* firebird2/src/common/classes/: alloc.cpp (1.116), alloc.h (1.81):
+
+	Style.
+
+2008-12-24 01:32  asfernandes
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.105), Optimizer.h (1.30),
+	Relation.cpp (1.19), Relation.h (1.10), UserManagement.h (1.5),
+	btr.cpp (1.224), dsc.cpp (1.35), jrd.cpp (1.503), lck.cpp (1.93),
+	opt.cpp (1.330), qatest.cpp (1.27), trig.h (1.27):
+
+	Misc
+
 2008-12-23 14:34  asfernandes
 
 	* firebird2/src/jrd/dfw.epp (1.258):
