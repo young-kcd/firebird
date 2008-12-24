@@ -172,41 +172,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	pthread_attr_t pattr;
 	int state;
 
-#if ( !defined HP10 && !defined LINUX && !defined FREEBSD )
-	state = pthread_attr_init(&pattr);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_attr_init", state);
-
-	state = pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_attr_setscope", state);
-
-	if (!thd_id)
-	{
-		state = pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
-		if (state)
-			Firebird::system_call_failed::raise("pthread_attr_setdetachstate", state);
-	}
-	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
-	int state2 = pthread_attr_destroy(&pattr);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_create", state);
-	if (state2)
-		Firebird::system_call_failed::raise("pthread_attr_destroy", state2);
-
-#else
-#if ( defined LINUX || defined FREEBSD )
-
-	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
-		Firebird::system_call_failed::raise("pthread_create", state);
-	if (!thd_id)
-	{
-		if (state = pthread_detach(thread))
-			Firebird::system_call_failed::raise("pthread_detach", state);
-	}
-
-#else
-
+#if defined(HP10)
 	state = pthread_attr_create(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_create", state);
@@ -246,9 +212,57 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	state = pthread_attr_delete(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_delete", state);
+#elif defined (LINUX) || defined (FREEBSD)
+	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
+		Firebird::system_call_failed::raise("pthread_create", state);
+	if (!thd_id)
+	{
+		if (state = pthread_detach(thread))
+			Firebird::system_call_failed::raise("pthread_detach", state);
+	}
 
-#endif /* linux */
-#endif /* HP10 */
+#else
+	state = pthread_attr_init(&pattr);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_init", state);
+
+#ifdef _AIX
+// adjust stack size for AIX
+
+// For AIX 32-bit compiled applications, the default stacksize is 96 KB,
+// see <pthread.h>. For 64-bit compiled applications, the default stacksize
+// is 192 KB. This is too small - see HP-UX note above
+
+	size_t stack_size;
+	state = pthread_attr_getstacksize(&pattr, &stack_size);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_getstacksize");
+
+	if (stack_size < 0x40000L) {
+		state = pthread_attr_setstacksize(&pattr, 0x40000L);
+		if (state)
+			Firebird::system_call_failed::raise("pthread_attr_setstacksize", state);
+	}
+#endif // _AIX
+
+	state = pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_setscope", state);
+
+	if (!thd_id)
+	{
+		state = pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
+		if (state)
+			Firebird::system_call_failed::raise("pthread_attr_setdetachstate", state);
+	}
+	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
+	int state2 = pthread_attr_destroy(&pattr);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_create", state);
+	if (state2)
+		Firebird::system_call_failed::raise("pthread_attr_destroy", state2);
+
+#endif
 
 	if (thd_id)
 	{

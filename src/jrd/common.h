@@ -388,6 +388,15 @@
 
 #endif /* IBM PowerPC */
 
+// AIX does not pass autoconf's test for mmap() correctness,
+// but we do not use flag (MAP_FIXED) that fails.
+#define HAVE_MMAP
+
+// autoconf test AC_SYS_LARGEFILE defines _LARGE_FILES for AIX builds.
+// But, in <standards.h>, _LARGE_FILE_API is defined, leading to conflict
+// in 32-bit builds. Only one of these macros should be defined.
+#undef _LARGE_FILE_API
+
 #endif /* IBM AIX */
 
 

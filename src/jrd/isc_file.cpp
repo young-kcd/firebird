@@ -72,43 +72,28 @@
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
-
-#include "../common/config/config.h"
-
-const char INET_FLAG = ':';
-
-#ifdef DARWIN
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#endif // DARWIN
+
+#include "../common/config/config.h"
+
+const char INET_FLAG = ':';
 
 /* Unix/NFS specific stuff */
 #ifndef NO_NFS
 
-#ifdef HAVE_MNTENT_H
+#if defined(HAVE_MNTENT_H)
 #include <mntent.h>	/* get setmntent/endmntent */
-#endif
-#ifdef HAVE_SYS_MNTTAB_H
+#elif defined(HAVE_SYS_MNTTAB_H)
 #include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
-#endif
-
-/*
- AP: Only _PATH_MOUNTED is worth staying alive from all this company.
-	 MOUNTED & MNTTAB are deprecated, _PATH_MNTTAB gives wrong result.
-	 21-nov-2004
-#if   defined(MOUNTED)
-const char* MTAB		= MOUNTED;
-#elif defined(_PATH_MOUNTED)
-const char* MTAB		= _PATH_MOUNTED;
-#elif defined(MNTTAB)
-const char* MTAB		= MNTTAB;
-#elif defined(_PATH_MNTTAB)
-const char* MTAB		= _PATH_MNTTAB;
-*/
+#elif defined(AIX)
+#error ancient versions of AIX that do not provide "<mntent.h>" are not
+#error supported. AIX 5.1+ provides this header.
+#endif 
 
 #if   defined(_PATH_MOUNTED)
 const char* MTAB		= _PATH_MOUNTED;
@@ -136,25 +121,13 @@ const char* MTAB		= "/etc/mtab";
 #define MTAB_CLOSE(stream)	fclose(stream)
 #endif
 
-#endif /* NO_NFS */
+#endif //NO_NFS
 
 #ifdef HPUX
 #if !(defined HP10 || defined HP11)
 #include <cluster.h>
 #endif
 #endif
-
-#if (defined AIX || defined AIX_PPC)
-
-#error AIX code in this file was never tested.
-#error You should check for: 1) normal access to databases works,
-#error 2) access to databases on NFS-mounted shares disabled.
-
-#include <sys/mntctl.h>
-#include <sys/vmount.h>
-extern "C" int mntctl(int, size_t, void*);
-#endif
-
 
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
@@ -172,14 +145,6 @@ namespace {
 	class osMtab
 	{
 	public:
-#if (defined AIX || defined AIX_PPC)
-		TEXT* temp;
-		int context;
-
-		osMtab();
-		~osMtab() { delete[] temp; }
-		bool ok() const { return temp ? true : false; }
-#else
 		FILE* mtab;
 
 		osMtab()
@@ -193,7 +158,6 @@ namespace {
 		}
 
 		bool ok() const { return mtab; }
-#endif
 	};
 
 	class Mnt
@@ -204,7 +168,7 @@ namespace {
 	int mnt_cnt;
 	int mnt_i;
 #else
-		osMtab mtab;
+	osMtab mtab;
 #endif // DARWIN
 	public:
 /*		Mnt() : AutoMemory(), mtab(), node(getPool()),
@@ -1313,82 +1277,6 @@ static bool get_full_path(const tstring& part, tstring& full)
 
 namespace {
 #ifndef NO_NFS
-#if (defined AIX || defined AIX_PPC)
-#define GET_MOUNTS
-
-osMtab::osMtab() : temp(0), context(0)
-{
-	SLONG l;
-	if (mntctl(MCTL_QUERY, sizeof(SLONG), reinterpret_cast<char*>(&l)) != 0)
-		return;
-	try
-	{
-		temp = FB_NEW(*getDefaultMemoryPool()) char[l];
-	}
-	catch (Firebird::BadAlloc)
-	{
-		temp = 0;
-		return;
-	}
-	context = mntctl(MCTL_QUERY, l, temp);
-	if (context <= 0)
-	{
-		delete[] temp;
-		temp = 0;
-	}
-}
-
-bool Mnt::get()
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( A I X )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	if (!context)
-	{
-		return false;
-	}
-
-	TEXT* p;
-	for (int i = --context, p = temp; i--;)
-		p += reinterpret_cast<struct vmount *>(p)->vmt_length;
-
-	struct vmount* vmt = reinterpret_cast<struct vmount *>(p);
-
-	p = vmt2dataptr(vmt, VMT_HOSTNAME);
-	int l = vmt2datasize(vmt, VMT_HOSTNAME);
-	if (l && (p[0] != '-' || p[1]))
-	{
-		node = tstring(p, l);
-	}
-	else
-	{
-		node.erase();
-	}
-
-	p = vmt2dataptr(vmt, VMT_OBJECT);
-	l = vmt2datasize(vmt, VMT_OBJECT);
-	path = tstring(p, l);
-
-	p = vmt2dataptr(vmt, VMT_STUB);
-	l = vmt2datasize(vmt, VMT_STUB);
-	mount = tstring(p, l);
-
-	if (node.isEmpty()) {
-		node = path;
-		path.erase();
-	}
-
-	return true;
-}
-#endif // (defined AIX || defined AIX_PPC)
-
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
 #if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */

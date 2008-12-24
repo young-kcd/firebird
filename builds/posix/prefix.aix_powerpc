@@ -17,7 +17,7 @@
 #
 # Compiler settings for 64-bit AIX/powerpc using gcc and native linker
 #
-# Tested with AIX 6.1.0.0
+# Tested with AIX 6.1.0.0. Requires AIX 5.1+
 #
 # 2008-11-04 recommend gcc 4.3.1 or higher
 #
@@ -42,15 +42,25 @@
 SHRLIB_FOREIGN_EXT=a
 
 # -O3 causes lock manager seizure for gcc 4.2.3, 4.2.4, -O2 is ok
+# -O3 turns on -finline-functions, no need to specify it explicitly.
 PROD_FLAGS=-ggdb -O3 -fsigned-char -fmessage-length=0 -fno-omit-frame-pointer -DNDEBUG -pipe -MMD -fPIC 
 
-# -Wno-parentheses -Wno-unused-variable
-DEV_FLAGS=-ggdb -O0 -fsigned-char -fmessage-length=0 -pipe -MMD -fPIC -Wall -Wextra -Wno-unused-parameter -Wno-switch -Wno-switch-enum -Wno-unknown-pragmas
+# -Wno-unused-variable
+DEV_FLAGS=-ggdb -O0 -fsigned-char -fmessage-length=0 -pipe -MMD -fPIC -Wall -Wextra -Wno-unused-parameter -Wno-switch -Wno-parentheses -Wno-unknown-pragmas
 
 # link options when using IBM /usr/bin/ld fronted by g++
-LIB_LINK_OPTIONS:=-bsvr4 
-LIB_LINK_RPATH:=-Wl-R
-LDFLAGS=-Wl,-bbigtoc
+LIB_LINK_OPTIONS:=-shared -Wl,-bbigtoc,-bexpall
+
+# AIX ld option to set run-time library path is -Wl-blibpath:path1:path2
+# Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
+# LIB_LINK_RPATH:=-Wl-blibpath:
+# LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/lib:/lib
+LIB_LINK_RPATH=
+LIB_PATH_OPTS=
+
+# add LDFLAGS here, so it will be picked up even if user doesn't export LDFLAGS
+#LDFLAGS=-Wl,-bbigtoc,-b64
+#LDFLAGS=-Wl,-bbigtoc
 
 OS_ServerFiles=inet_server.cpp
 
