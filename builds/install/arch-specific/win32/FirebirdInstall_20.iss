@@ -136,7 +136,7 @@
 #define MinorVer FB_MINOR_VER
 #endif
 
-#if Len(GetEnv("FB_REV_VER")) > 0
+#if Len(GetEnv("FB_REV_NO")) > 0
 #define FB_REV_NO GetEnv("FB_REV_NO")
 #endif
 #ifdef FB_REV_NO
