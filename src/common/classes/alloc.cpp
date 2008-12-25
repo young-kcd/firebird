@@ -393,7 +393,7 @@ void* MemoryPool::external_alloc(size_t &size)
 {
 	// This method is assumed to return NULL in case it cannot alloc
 	size = FB_ALIGN(size, get_map_page_size());
-	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	void* result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	// Let Valgrind forget that block was zero-initialized
 	VALGRIND_DISCARD(VALGRIND_MAKE_WRITABLE(result, size));
 	return result;
@@ -1020,7 +1020,7 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 		if (blk->mbk_flags & MBK_DELAYED)
 			strcat(flags, " DELAYED");
 
-		const int size = 
+		const int size =
 			blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->mbk_small.mbk_length;
 
 		if (blk->mbk_flags & MBK_USED)

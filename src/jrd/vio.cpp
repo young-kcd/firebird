@@ -3177,7 +3177,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 
 		PageStack stack;
 		switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, 0,
-				stack, true))
+					stack, true))
 		{
 			case PREPARE_CONFLICT:
 				org_rpb->rpb_stream_flags |= RPB_s_refetch;

@@ -437,9 +437,7 @@ private:
 				while (l1)
 				{
 					if (matches(pool, obj, p1++, l1-- * sizeof(CharType), p2, l2 * sizeof(CharType)))
-					{
 						return true;
-					}
 				}
 				return false;
 			}
@@ -743,7 +741,7 @@ private:
 				// if we've got the definition of a quote character,
 				// slurp the next character too
 
-				if (comb > combined && comb[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) 
+				if (comb > combined && comb[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE)
 					&& *match)
 				{
 					*comb++ = *match++;

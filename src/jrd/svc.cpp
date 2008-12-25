@@ -740,7 +740,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 				const string remote = options.spb_network_protocol +
 					(options.spb_network_protocol.isEmpty() ||
-						options.spb_remote_address.isEmpty() ? "" : "/") + 
+						options.spb_remote_address.isEmpty() ? "" : "/") +
 					options.spb_remote_address;
 
 				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),

@@ -1597,7 +1597,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				// sorted on recordnumber, except for NULL keys.
 				if (useAllRecordNumbers && down_page->btr_left_sibling &&
 					!(downNode.isEndBucket || downNode.isEndLevel) &&
-					(!unique || nullKeyNode) )
+					(!unique || nullKeyNode))
 				{
 					// Check record number if key is equal with node on
 					// pointer page. In that case record number on page
@@ -1781,8 +1781,10 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
+	{
 		fprintf(stdout, "walk_pointer_page: page %d relation %d sequence %d\n",
 				   (*vector)[sequence], relation->rel_id, sequence);
+	}
 #endif
 
 /* Give the page a quick once over */
