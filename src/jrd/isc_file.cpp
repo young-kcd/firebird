@@ -164,11 +164,11 @@ namespace {
 	{
 	private:
 #ifdef DARWIN
-	struct statfs* mnt_info;
-	int mnt_cnt;
-	int mnt_i;
+		struct statfs* mnt_info;
+		int mnt_cnt;
+		int mnt_i;
 #else
-	osMtab mtab;
+		osMtab mtab;
 #endif // DARWIN
 	public:
 /*		Mnt() : AutoMemory(), mtab(), node(getPool()),
