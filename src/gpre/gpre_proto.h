@@ -26,7 +26,7 @@
 
 #include "../gpre/parse.h"
 
-void	CPR_abort(void);
+void	CPR_abort();
 #ifdef DEV_BUILD
 void	CPR_assert(const TEXT*, int);
 #endif
@@ -35,12 +35,12 @@ void	CPR_end_text(gpre_txt*);
 int		CPR_error(const TEXT*);
 void	CPR_exit(int);
 void	CPR_warn(const TEXT*);
-TOK		CPR_eol_token(void);
+TOK		CPR_eol_token();
 void	CPR_get_text(TEXT*, const gpre_txt*);
-void	CPR_raw_read(void);
+void	CPR_raw_read();
 void	CPR_s_error(const TEXT*);
-gpre_txt*	CPR_start_text(void);
-TOK		CPR_token(void);
+gpre_txt*	CPR_start_text();
+TOK		CPR_token();
 
 #endif // GPRE_GPRE_PROTO_H
 

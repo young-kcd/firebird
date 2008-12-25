@@ -1490,7 +1490,7 @@ static void gen_dyn_execute( const act* action, int column)
 	TEXT s[MAX_CURSOR_SIZE];
 	make_name(s, statement->dyn_cursor_name);
 
-	GPRE_NOD var_list;
+	gpre_nod* var_list;
 	if (var_list = statement->dyn_using) {
 		printa(column, "gds__sqlda.sqln = %s;", gpreGlob.sw_dyn_using);
 		printa(column, "gds__sqlda.sqld = %s;", gpreGlob.sw_dyn_using);
@@ -1611,7 +1611,7 @@ static void gen_dyn_open( const act* action, int column)
 	TEXT s[MAX_CURSOR_SIZE];
 	gpre_req* request;
 	gpre_req req_const;
-	GPRE_NOD var_list;
+	gpre_nod* var_list;
 	int i;
 
 	DYN statement = (DYN) action->act_object;
@@ -1806,13 +1806,14 @@ static void gen_erase( const act* action, int column)
 
 static SSHORT gen_event_block( const act* action)
 {
-	GPRE_NOD init, list;
+	gpre_nod* init;
+	gpre_nod* list;
 	int ident;
 
-	init = (GPRE_NOD) action->act_object;
+	init = (gpre_nod*) action->act_object;
 
 	ident = CMP_next_ident();
-	init->nod_arg[2] = (GPRE_NOD) ident;
+	init->nod_arg[2] = (gpre_nod*) ident;
 
 	printa(INDENT, "gds__%da\t\t: ^char;\t\t(* event parameter block *)",
 		   ident);
@@ -1834,7 +1835,11 @@ static SSHORT gen_event_block( const act* action)
 
 static void gen_event_init( const act* action, int column)
 {
-	GPRE_NOD init, event_list, *ptr, *end, node;
+	gpre_nod* init;
+	gpre_nod* event_list;
+	gpre_nod** ptr;
+	gpre_nod** end;
+	gpre_nod* node;
 	const ref* reference;
 	PAT args;
 	SSHORT count;
@@ -1847,7 +1852,7 @@ static void gen_event_init( const act* action, int column)
 		begin(column);
 	begin(column);
 
-	init = (GPRE_NOD) action->act_object;
+	init = (gpre_nod*) action->act_object;
 	event_list = init->nod_arg[1];
 
 	args.pat_database = (DBB) init->nod_arg[3];
@@ -1902,7 +1907,7 @@ static void gen_event_init( const act* action, int column)
 static void gen_event_wait( const act* action, int column)
 {
 	PAT args;
-	GPRE_NOD event_init;
+	gpre_nod* event_init;
 	gpre_sym* event_name;
 	gpre_sym* stack_name;
 	DBB database;
@@ -1925,7 +1930,7 @@ static void gen_event_wait( const act* action, int column)
 	ident = -1;
 	for (stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		event_action = (const act*) stack_ptr->lls_object;
-		event_init = (GPRE_NOD) event_action->act_object;
+		event_init = (gpre_nod*) event_action->act_object;
 		stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
@@ -1966,7 +1971,7 @@ static void gen_event_wait( const act* action, int column)
 static void gen_fetch( const act* action, int column)
 {
 	const gpre_req*		request;
-	GPRE_NOD		var_list;
+	gpre_nod*		var_list;
 	int		i;
 
 	request = action->act_request;
@@ -1974,7 +1979,7 @@ static void gen_fetch( const act* action, int column)
 #ifdef SCROLLABLE_CURSORS
 	gpre_port*	port;
 	ref*		reference;
-	VAL			value;
+	gpre_value*			value;
 	const TEXT*	direction;
 	const TEXT*	offset;
 
@@ -2039,7 +2044,7 @@ static void gen_fetch( const act* action, int column)
 	column += INDENT;
 	begin(column);
 
-	if (var_list = (GPRE_NOD) action->act_object)
+	if (var_list = (gpre_nod*) action->act_object)
 		for (i = 0; i < var_list->nod_count; i++) {
 			align(column);
 			asgn_to(action, reinterpret_cast<ref*>(var_list->nod_arg[i]), column);
@@ -2869,7 +2874,7 @@ static void gen_select( const act* action, int column)
 	column += INDENT;
 
 	begin(column);
-	const gpre_nod* var_list = (GPRE_NOD) action->act_object;
+	const gpre_nod* var_list = (gpre_nod*) action->act_object;
 	if (var_list) {
 		for (int i = 0; i < var_list->nod_count; i++) {
 			align(column);

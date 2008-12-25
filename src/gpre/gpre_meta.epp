@@ -682,7 +682,7 @@ gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
 			*tmp++;
 		*tmp = '\0';
 
-		MSC_push((GPRE_NOD) field_name, ptr_fields);
+		MSC_push((gpre_nod*) field_name, ptr_fields);
 		ptr_fields = &(*ptr_fields)->lls_next;
 
 	END_FOR
@@ -848,21 +848,21 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
  *     Return a list of the fields in a relation
  */
 
-GPRE_NOD MET_fields(gpre_ctx* context)
+gpre_nod* MET_fields(gpre_ctx* context)
 {
 	gpre_fld* field;
-	GPRE_NOD field_node;
+	gpre_nod* field_node;
 	REF reference;
 
 	gpre_prc* procedure = context->ctx_procedure;
 	if (procedure) {
-		GPRE_NOD node = MSC_node(nod_list, procedure->prc_out_count);
+		gpre_nod* node = MSC_node(nod_list, procedure->prc_out_count);
 		//count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
 			reference = (REF) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (GPRE_NOD) reference);
+			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			//count++;
 		}
@@ -875,13 +875,13 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 				++count;
 		}
-		GPRE_NOD anode = MSC_node(nod_list, count);
+		gpre_nod* anode = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			reference = (REF) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (GPRE_NOD) reference);
+			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 			anode->nod_arg[field->fld_position] = field_node;
 			//count++;
 		}
@@ -907,18 +907,18 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 		// This code stops at the first blank.
 		for (p = RFR.RDB$FIELD_NAME; *p && *p != ' '; p++);
 		*p = 0;
-		MSC_push((GPRE_NOD) MET_field(relation, RFR.RDB$FIELD_NAME), &stack);
+		MSC_push((gpre_nod*) MET_field(relation, RFR.RDB$FIELD_NAME), &stack);
 		count++;
 	END_FOR;
 
-	GPRE_NOD node = MSC_node(nod_list, count);
+	gpre_nod* node = MSC_node(nod_list, count);
 
 	while (stack) {
 		field = (gpre_fld*) MSC_pop(&stack);
 		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_field = field;
 		reference->ref_context = context;
-		field_node = MSC_unary(nod_field, (GPRE_NOD) reference);
+		field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 		node->nod_arg[--count] = field_node;
 	}
 

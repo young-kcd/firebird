@@ -1077,7 +1077,7 @@ TOK CPR_eol_token()
 	gpreGlob.token_global.tok_white_space = 0;
 	gpreGlob.token_global.tok_position = position;
 	gpreGlob.token_global.tok_symbol = HSH_lookup(gpreGlob.token_global.tok_string);
-	gpreGlob.token_global.tok_keyword = (KWWORDS) gpreGlob.token_global.tok_symbol->sym_keyword;
+	gpreGlob.token_global.tok_keyword = (kwwords_t) gpreGlob.token_global.tok_symbol->sym_keyword;
 
 	if (sw_trace)
 		puts(gpreGlob.token_global.tok_string);
@@ -2006,7 +2006,7 @@ static TOK get_token()
 			gpreGlob.token_global.tok_white_space = 0;
 			gpreGlob.token_global.tok_position = start_position + 1;
 			gpreGlob.token_global.tok_symbol = HSH_lookup(gpreGlob.token_global.tok_string);
-			gpreGlob.token_global.tok_keyword = (KWWORDS) gpreGlob.token_global.tok_symbol->sym_keyword;
+			gpreGlob.token_global.tok_keyword = (kwwords_t) gpreGlob.token_global.tok_symbol->sym_keyword;
 			return &gpreGlob.token_global;
 		}
 	}
@@ -2214,7 +2214,7 @@ static TOK get_token()
 		else
 			gpreGlob.token_global.tok_symbol = symbol = NULL;
 		if (symbol && symbol->sym_type == SYM_keyword)
-			gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
 		else
 			gpreGlob.token_global.tok_keyword = KW_none;
 	}
@@ -2222,14 +2222,14 @@ static TOK get_token()
 		if (!gpreGlob.override_case) {
 			gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
-				gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+				gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
 			else
 				gpreGlob.token_global.tok_keyword = KW_none;
 		}
 		else {
 			gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
-				gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+				gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
 			else
 				gpreGlob.token_global.tok_keyword = KW_none;
 			gpreGlob.override_case = false;
@@ -2238,7 +2238,7 @@ static TOK get_token()
 	else {
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
-			gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
 		else
 			gpreGlob.token_global.tok_keyword = KW_none;
 	}
@@ -2255,7 +2255,7 @@ static TOK get_token()
 	{
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
-			gpreGlob.token_global.tok_keyword = (KWWORDS) symbol->sym_keyword;
+			gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
 		else
 			gpreGlob.token_global.tok_keyword = KW_none;
 	}

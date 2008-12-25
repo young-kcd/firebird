@@ -47,34 +47,36 @@
 const int ZERO_BASED	= 0;
 const int ONE_BASED		= 1;
 
-static bool check_relation(void);
-static GPRE_NOD lookup_field(gpre_ctx*);
-static GPRE_NOD make_and(GPRE_NOD, GPRE_NOD);
-static GPRE_NOD make_list(gpre_lls*);
-static GPRE_NOD normalize_index(dim*, GPRE_NOD, USHORT);
-static GPRE_NOD par_and(gpre_req*);
-static GPRE_NOD par_array(gpre_req*, gpre_fld*, bool, bool);
-static GPRE_NOD par_boolean(gpre_req*);
-static GPRE_NOD par_field(gpre_req*);
-static GPRE_NOD par_multiply(gpre_req*, gpre_fld*);
-static GPRE_NOD par_native_value(gpre_req*, gpre_fld*);
-static GPRE_NOD par_not(gpre_req*);
-static GPRE_NOD par_over(gpre_ctx*);
-static GPRE_NOD par_primitive_value(gpre_req*, gpre_fld*);
-static GPRE_NOD par_relational(gpre_req*);
-static GPRE_NOD par_udf(gpre_req*, USHORT, gpre_fld*);
-static GPRE_NOD par_value(gpre_req*, gpre_fld*);
+static bool check_relation();
+static gpre_nod* lookup_field(gpre_ctx*);
+static gpre_nod* make_and(gpre_nod*, gpre_nod*);
+static gpre_nod* make_list(gpre_lls*);
+static gpre_nod* normalize_index(dim*, gpre_nod*, USHORT);
+static gpre_nod* par_and(gpre_req*);
+static gpre_nod* par_array(gpre_req*, gpre_fld*, bool, bool);
+static gpre_nod* par_boolean(gpre_req*);
+static gpre_nod* par_field(gpre_req*);
+static gpre_nod* par_multiply(gpre_req*, gpre_fld*);
+static gpre_nod* par_native_value(gpre_req*, gpre_fld*);
+static gpre_nod* par_not(gpre_req*);
+static gpre_nod* par_over(gpre_ctx*);
+static gpre_nod* par_primitive_value(gpre_req*, gpre_fld*);
+static gpre_nod* par_relational(gpre_req*);
+static gpre_nod* par_udf(gpre_req*, USHORT, gpre_fld*);
+static gpre_nod* par_value(gpre_req*, gpre_fld*);
 
 static gpre_fld* global_count_field;
 static gpre_fld* global_subscript_field;
 
-struct rel_ops {
-	enum nod_t rel_op;
-	enum kwwords rel_kw;
+struct rel_ops
+{
+	nod_t rel_op;
+	kwwords_t rel_kw;
 	SSHORT rel_args;
 };
 
-static const rel_ops relops[] = {
+static const rel_ops relops[] =
+{
 	{ nod_eq, KW_EQ, 2 },
 	{ nod_eq, KW_EQUALS, 2 },
 	{ nod_equiv, KW_EQUIV, 2 },
@@ -92,12 +94,14 @@ static const rel_ops relops[] = {
 	{ nod_any, KW_none, 0}
 };
 
-struct dtypes {
-	enum kwwords dtype_keyword;
+struct dtypes
+{
+	kwwords_t dtype_keyword;
 	USHORT dtype_dtype;
 };
 
-static const dtypes data_types[] = {
+static const dtypes data_types[] =
+{
 	{ KW_CHAR, dtype_text },
 	{ KW_VARYING, dtype_varying },
 	{ KW_STRING, dtype_cstring },
@@ -116,7 +120,7 @@ static const dtypes data_types[] = {
 //		Parse array subscript.
 //
 
-GPRE_NOD EXP_array(gpre_req* request, gpre_fld* field, bool subscript_flag, bool sql_flag)
+gpre_nod* EXP_array(gpre_req* request, gpre_fld* field, bool subscript_flag, bool sql_flag)
 {
 	return par_array(request, field, subscript_flag, sql_flag);
 }
@@ -306,7 +310,7 @@ void EXP_left_paren(const TEXT* string)
 //		Parse a native literal constant value.
 //
 
-GPRE_NOD EXP_literal(void)
+gpre_nod* EXP_literal()
 {
 	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
@@ -319,7 +323,7 @@ GPRE_NOD EXP_literal(void)
 	}
 
 	ref* reference = (REF) MSC_alloc(REF_LEN);
-	gpre_nod* node = MSC_unary(nod_literal, (GPRE_NOD) reference);
+	gpre_nod* node = MSC_unary(nod_literal, (gpre_nod*) reference);
 	if (isQuoted(gpreGlob.token_global.tok_type)) {
 	    TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 		reference->ref_value = string;
@@ -614,7 +618,7 @@ REF EXP_post_field(gpre_fld* field, gpre_ctx* context, bool null_flag)
 //		and return FALSE.
 //
 
-bool EXP_match_paren(void)
+bool EXP_match_paren()
 {
 	if (MSC_match(KW_RIGHT_PAREN))
 		return true;
@@ -629,7 +633,7 @@ bool EXP_match_paren(void)
 //		Parse and look up a qualified relation name.
 //
 
-gpre_rel* EXP_relation(void)
+gpre_rel* EXP_relation()
 {
 	if (!gpreGlob.isc_databases)
 		PAR_error("no database for operation");
@@ -772,7 +776,7 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 				}
 				gpre_nod* item = par_value(request, 0);
 				count++;
-				MSC_push((GPRE_NOD) (IPTR) ((direction) ? 1 : 0), &directions);
+				MSC_push((gpre_nod*) (IPTR) ((direction) ? 1 : 0), &directions);
 				if (insensitive) {
 					gpre_nod* upcase = MSC_node(nod_upcase, 1);
 					upcase->nod_arg[0] = item;
@@ -788,8 +792,8 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 			sort->nod_count = count;
 			gpre_nod** ptr = sort->nod_arg + count * 2;
 			while (--count >= 0) {
-				*--ptr = (GPRE_NOD) MSC_pop(&items);
-				*--ptr = (GPRE_NOD) MSC_pop(&directions);
+				*--ptr = (gpre_nod*) MSC_pop(&items);
+				*--ptr = (gpre_nod*) MSC_pop(&directions);
 			}
 		}
 
@@ -811,7 +815,7 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 			sort->nod_count = count;
 			gpre_nod** ptr = sort->nod_arg + count;
 			while (--count >= 0)
-				*--ptr = (GPRE_NOD) MSC_pop(&items);
+				*--ptr = (gpre_nod*) MSC_pop(&items);
 		}
 		else
 			break;
@@ -858,10 +862,10 @@ void EXP_rse_cleanup( gpre_rse* rs)
 //		Parse a subscript value.  This is called by PAR\par_slice.
 //
 
-GPRE_NOD EXP_subscript(gpre_req* request)
+gpre_nod* EXP_subscript(gpre_req* request)
 {
 	ref* reference = (REF) MSC_alloc(REF_LEN);
-	gpre_nod* node = MSC_unary(nod_value, (GPRE_NOD) reference);
+	gpre_nod* node = MSC_unary(nod_value, (gpre_nod*) reference);
 
 //  Special case literals
 
@@ -890,7 +894,7 @@ GPRE_NOD EXP_subscript(gpre_req* request)
 //		Check current token for either a relation or database name.
 //
 
-static bool check_relation(void)
+static bool check_relation()
 {
 //  The current token is (i.e. should be) either a relation
 //  name or a database name.  If it's a database name, search
@@ -917,7 +921,7 @@ static bool check_relation(void)
 //		block) for field.
 //
 
-static GPRE_NOD lookup_field(gpre_ctx* context)
+static gpre_nod* lookup_field(gpre_ctx* context)
 {
 	SQL_resolve_identifier("<Field Name>", NULL, NAME_SIZE);
 	gpre_fld* field = MET_field(context->ctx_relation, gpreGlob.token_global.tok_string);
@@ -928,7 +932,7 @@ static GPRE_NOD lookup_field(gpre_ctx* context)
 	reference->ref_field = field;
 	reference->ref_context = context;
 
-	return MSC_unary(nod_field, (GPRE_NOD) reference);
+	return MSC_unary(nod_field, (gpre_nod*) reference);
 }
 
 
@@ -939,7 +943,7 @@ static GPRE_NOD lookup_field(gpre_ctx* context)
 //		If both are null, return null.
 //
 
-static GPRE_NOD make_and( GPRE_NOD node1, GPRE_NOD node2)
+static gpre_nod* make_and( gpre_nod* node1, gpre_nod* node2)
 {
 	if (!node1)
 		return node2;
@@ -956,7 +960,7 @@ static GPRE_NOD make_and( GPRE_NOD node1, GPRE_NOD node2)
 //		Make a generic variable length node from a stack.
 //
 
-static GPRE_NOD make_list( gpre_lls* stack)
+static gpre_nod* make_list( gpre_lls* stack)
 {
 	USHORT count = 0;
 	for (const gpre_lls* temp = stack; temp; temp = temp->lls_next)
@@ -980,7 +984,7 @@ static GPRE_NOD make_list( gpre_lls* stack)
 //		in the user's program.
 //
 
-static GPRE_NOD normalize_index( dim* dimension, GPRE_NOD user_index, USHORT array_base)
+static gpre_nod* normalize_index( dim* dimension, gpre_nod* user_index, USHORT array_base)
 {
 	TEXT string[33];
 	bool negate = false;
@@ -1006,7 +1010,7 @@ static GPRE_NOD normalize_index( dim* dimension, GPRE_NOD user_index, USHORT arr
 	char* tmp = (TEXT *) MSC_alloc(strlen(string));
 	reference->ref_value = tmp;
 	strcpy(tmp, string);
-	gpre_nod* adjustment_node = MSC_unary(nod_literal, (GPRE_NOD) reference);
+	gpre_nod* adjustment_node = MSC_unary(nod_literal, (gpre_nod*) reference);
 
 	gpre_nod* negate_node;
 	if (negate)
@@ -1025,7 +1029,7 @@ static GPRE_NOD normalize_index( dim* dimension, GPRE_NOD user_index, USHORT arr
 //		Parse a boolean AND.
 //
 
-static GPRE_NOD par_and( gpre_req* request)
+static gpre_nod* par_and( gpre_req* request)
 {
 	gpre_nod* expr1 = par_not(request);
 
@@ -1043,7 +1047,7 @@ static GPRE_NOD par_and( gpre_req* request)
 //		in an gpre_rse.
 //
 
-static GPRE_NOD par_array(gpre_req* request,
+static gpre_nod* par_array(gpre_req* request,
 					 gpre_fld* field, bool subscript_flag, bool sql_flag)
 {
 	bool paren = false;
@@ -1138,7 +1142,7 @@ static GPRE_NOD par_array(gpre_req* request,
 //		an OR node or anything of lower precedence.
 //
 
-static GPRE_NOD par_boolean( gpre_req* request)
+static gpre_nod* par_boolean( gpre_req* request)
 {
 	gpre_nod* expr1 = par_and(request);
 
@@ -1154,7 +1158,7 @@ static GPRE_NOD par_boolean( gpre_req* request)
 //		Parse a field reference.  Anything else is an error.
 //
 
-static GPRE_NOD par_field( gpre_req* request)
+static gpre_nod* par_field( gpre_req* request)
 {
 	const gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 	if (!symbol)
@@ -1204,7 +1208,7 @@ static GPRE_NOD par_field( gpre_req* request)
 		reference->ref_context = context;
 		if (node->nod_type == nod_array)
 			reference->ref_flags |= REF_array_elem;
-		node->nod_arg[0] = (GPRE_NOD) reference;
+		node->nod_arg[0] = (gpre_nod*) reference;
 	}
 	else {
 		/* Field wants to straddle two gpreGlob.requests.  We need to do
@@ -1220,7 +1224,7 @@ static GPRE_NOD par_field( gpre_req* request)
 		value_reference->ref_source = reference;
 
 		node->nod_type = nod_value;
-		node->nod_arg[0] = (GPRE_NOD) value_reference;
+		node->nod_arg[0] = (gpre_nod*) value_reference;
 	}
 
 	if (upcase_flag) {
@@ -1239,12 +1243,12 @@ static GPRE_NOD par_field( gpre_req* request)
 //		precedence operator plus/minus.
 //
 
-static GPRE_NOD par_multiply( gpre_req* request, gpre_fld* field)
+static gpre_nod* par_multiply( gpre_req* request, gpre_fld* field)
 {
 	gpre_nod* node = par_primitive_value(request, field);
 
 	while (true) {
-		enum nod_t nod_type;
+		nod_t nod_type;
 		if (MSC_match(KW_ASTERISK))
 			nod_type = nod_times;
 		else if (MSC_match(KW_SLASH))
@@ -1263,7 +1267,7 @@ static GPRE_NOD par_multiply( gpre_req* request, gpre_fld* field)
 //		Parse a native C value.
 //
 
-static GPRE_NOD par_native_value( gpre_req* request, gpre_fld* field)
+static gpre_nod* par_native_value( gpre_req* request, gpre_fld* field)
 {
 	TEXT s[64];
 
@@ -1277,7 +1281,7 @@ static GPRE_NOD par_native_value( gpre_req* request, gpre_fld* field)
 	}
 
 	ref* reference = (REF) MSC_alloc(REF_LEN);
-	gpre_nod* node = MSC_unary(nod_value, (GPRE_NOD) reference);
+	gpre_nod* node = MSC_unary(nod_value, (gpre_nod*) reference);
 
 //  Handle general native value references.  Since these values will need
 //  to be exported to the database system, make sure there is a reference
@@ -1303,7 +1307,7 @@ static GPRE_NOD par_native_value( gpre_req* request, gpre_fld* field)
 //		Parse either a boolean NOT or a boolean parenthetical.
 //
 
-static GPRE_NOD par_not( gpre_req* request)
+static gpre_nod* par_not( gpre_req* request)
 {
 	if (MSC_match(KW_LEFT_PAREN)) {
 		gpre_nod* anode = par_boolean(request);
@@ -1327,7 +1331,7 @@ static GPRE_NOD par_not( gpre_req* request)
 //		Parse the substance of an OVER clause (but not the leading keyword).
 //
 
-static GPRE_NOD par_over( gpre_ctx* context)
+static gpre_nod* par_over( gpre_ctx* context)
 {
 	TEXT s[64];
 
@@ -1365,7 +1369,7 @@ static GPRE_NOD par_over( gpre_ctx* context)
 //		precedence operator plus/minus.
 //
 
-static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
+static gpre_nod* par_primitive_value( gpre_req* request, gpre_fld* field)
 {
 	if (MSC_match(KW_MINUS))
 		return MSC_unary(nod_negate, par_primitive_value(request, field));
@@ -1417,12 +1421,12 @@ static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
 //		Parse a relational expression.
 //
 
-static GPRE_NOD par_relational( gpre_req* request)
+static gpre_nod* par_relational( gpre_req* request)
 {
 	if (MSC_match(KW_ANY)) {
 		gpre_nod* expr = MSC_node(nod_any, 1);
 		expr->nod_count = 0;
-		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
+		expr->nod_arg[0] = (gpre_nod*) EXP_rse(request, 0);
 		EXP_rse_cleanup((gpre_rse*) expr->nod_arg[0]);
 		return expr;
 	}
@@ -1430,7 +1434,7 @@ static GPRE_NOD par_relational( gpre_req* request)
 	if (MSC_match(KW_UNIQUE)) {
 		gpre_nod* expr = MSC_node(nod_unique, 1);
 		expr->nod_count = 0;
-		expr->nod_arg[0] = (GPRE_NOD) EXP_rse(request, 0);
+		expr->nod_arg[0] = (gpre_nod*) EXP_rse(request, 0);
 		EXP_rse_cleanup((gpre_rse*) expr->nod_arg[0]);
 		return expr;
 	}
@@ -1523,7 +1527,7 @@ static GPRE_NOD par_relational( gpre_req* request)
 //		complain bitterly.
 //
 
-static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
+static gpre_nod* par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 {
 	if (!request)
 		return NULL;
@@ -1538,7 +1542,7 @@ static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 		{
 			gpre_nod* node = MSC_node(nod_udf, 2);
 			node->nod_count = 1;
-			node->nod_arg[1] = (GPRE_NOD) new_udf;
+			node->nod_arg[1] = (gpre_nod*) new_udf;
 			PAR_get_token();
 			if (!MSC_match(KW_LEFT_PAREN))
 				EXP_left_paren(0);
@@ -1563,12 +1567,12 @@ static GPRE_NOD par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 //		precedence operator plus/minus.
 //
 
-static GPRE_NOD par_value( gpre_req* request, gpre_fld* field)
+static gpre_nod* par_value( gpre_req* request, gpre_fld* field)
 {
 	gpre_nod* node = par_multiply(request, field);
 
 	while (true) {
-		enum nod_t nod_type;
+		nod_t nod_type;
 		if (MSC_match(KW_PLUS))
 			nod_type = nod_plus;
 		else if (MSC_match(KW_MINUS))

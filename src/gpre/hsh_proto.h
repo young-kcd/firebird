@@ -24,8 +24,8 @@
 #ifndef GPRE_HSH_PROTO_H
 #define GPRE_HSH_PROTO_H
 
-void	HSH_fini(void);
-void	HSH_init(void);
+void	HSH_fini();
+void	HSH_init();
 void	HSH_insert(gpre_sym*);
 gpre_sym*		HSH_lookup(const SCHAR*);
 gpre_sym*		HSH_lookup2(const SCHAR*);

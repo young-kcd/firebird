@@ -36,7 +36,7 @@
 #include "../gpre/lang_proto.h"
 
 
-typedef enum {
+enum pat_t {
 	NL,
 	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length
 	DH, DF,						// Database handle, filename
@@ -55,10 +55,11 @@ typedef enum {
 	QN, QL, QI,					// Second port number, port length, port ident
 	IF, EL, EN,					// If, else, end
 	FR							// Field reference
-} PAT_T;
+};
 
-static const struct ops {
-	PAT_T ops_type;
+static const struct ops
+{
+	pat_t ops_type;
 	TEXT ops_string[3];
 } operators[] =
 	{

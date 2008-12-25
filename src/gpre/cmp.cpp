@@ -44,7 +44,7 @@
 
 
 static void cmp_any(gpre_req*);
-static void cmp_assignment(GPRE_NOD, gpre_req*);
+static void cmp_assignment(gpre_nod*, gpre_req*);
 static void cmp_blob(blb*, bool);
 static void cmp_blr(gpre_req*);
 static void cmp_erase(act*, gpre_req*);
@@ -70,7 +70,8 @@ static void make_receive(gpre_port*, gpre_req*);
 static void make_send(gpre_port*, gpre_req*);
 static void update_references(REF);
 
-static GPRE_NOD lit0, lit1;
+static gpre_nod* lit0;
+static gpre_nod* lit1;
 static gpre_fld* eof_field;
 static gpre_fld* count_field;
 static gpre_fld* slack_byte_field;
@@ -155,11 +156,11 @@ void CMP_compile_request( gpre_req* request)
 		slack_byte_field = MET_make_field(gpreGlob.slack_name, dtype_text, 1, false);
 		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_value = "0";
-		lit0 = MSC_unary(nod_literal, (GPRE_NOD) reference);
+		lit0 = MSC_unary(nod_literal, (gpre_nod*) reference);
 
 		reference = (REF) MSC_alloc(REF_LEN);
 		reference->ref_value = "1";
-		lit1 = MSC_unary(nod_literal, (GPRE_NOD) reference);
+		lit1 = MSC_unary(nod_literal, (gpre_nod*) reference);
 	}
 
 //  Handle different request types differently
@@ -341,7 +342,7 @@ void CMP_external_field( gpre_req* request, const gpre_fld* field)
 //		called at most once per module.
 //
 
-void CMP_init(void)
+void CMP_init()
 {
 
 	lit0 = lit1 = NULL;
@@ -355,7 +356,7 @@ void CMP_init(void)
 //		Give out next identifier.
 //
 
-ULONG CMP_next_ident(void)
+ULONG CMP_next_ident()
 {
 	return next_ident++;
 }
@@ -500,7 +501,7 @@ static void cmp_any( gpre_req* request)
 	request->add_byte(blr_any);
 	CME_rse(request->req_rse, request);
 
-	gpre_nod* value = MSC_unary(nod_value, (GPRE_NOD) port->por_references);
+	gpre_nod* value = MSC_unary(nod_value, (gpre_nod*) port->por_references);
 
 //  Make a send to signal end of file
 
@@ -530,7 +531,7 @@ static void cmp_any( gpre_req* request)
 //		Compile a build assignment statement.
 //
 
-static void cmp_assignment( GPRE_NOD node, gpre_req* request)
+static void cmp_assignment( gpre_nod* node, gpre_req* request)
 {
 	CMP_check(request, 0);
 	request->add_byte(blr_assignment);
@@ -697,7 +698,7 @@ static void cmp_erase( act* action, gpre_req* request)
 
 static void cmp_fetch( act* action)
 {
-	gpre_nod* list = (GPRE_NOD) action->act_object;
+	gpre_nod* list = (gpre_nod*) action->act_object;
 	if (!list)
 		return;
 
@@ -907,11 +908,11 @@ static void cmp_for( gpre_req* request)
 			if (reference->ref_expr)
 				CME_expr(reference->ref_expr, request);
 			else {
-				field->nod_arg[0] = (GPRE_NOD) reference;
+				field->nod_arg[0] = (gpre_nod*) reference;
 				CME_expr(field, request);
 			}
 		}
-		value->nod_arg[0] = (GPRE_NOD) reference;
+		value->nod_arg[0] = (gpre_nod*) reference;
 		CME_expr(value, request);
 	}
 	request->add_byte(blr_end);
@@ -948,7 +949,7 @@ static void cmp_for( gpre_req* request)
 	make_send(port, request);
 	request->add_byte(blr_assignment);
 	CME_expr(lit0, request);
-	value->nod_arg[0] = (GPRE_NOD) request->req_eof;
+	value->nod_arg[0] = (gpre_nod*) request->req_eof;
 	CME_expr(value, request);
 
 	request->add_byte(blr_end);
@@ -973,7 +974,7 @@ static void cmp_loop( gpre_req* request)
 		 reference = reference->ref_next)
 	{
 		if (reference->ref_field == count_field)
-			counter->nod_arg[0] = (GPRE_NOD) reference;
+			counter->nod_arg[0] = (gpre_nod*) reference;
 	}
 
 	request->add_byte(blr_assignment);
@@ -1117,7 +1118,7 @@ static void cmp_procedure( gpre_req* request)
 	ref* reference = request->req_references;
 	if (reference) {
 		for (gpre_lls** list = &outputs; reference; reference = reference->ref_next) {
-			MSC_push((GPRE_NOD) reference, list);
+			MSC_push((gpre_nod*) reference, list);
 			list = &(*list)->lls_next;
 		}
 	}

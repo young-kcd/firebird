@@ -27,20 +27,20 @@
 act*	PAR_action(const TEXT*);
 SSHORT	PAR_blob_subtype(DBB);
 act*	PAR_database(bool, const TEXT*);
-bool	PAR_end(void);
+bool	PAR_end();
 void	PAR_error(const TEXT*);
 act*	PAR_event_init(bool);
 act*	PAR_event_wait(bool);
-void	PAR_fini(void);
-TOK		PAR_get_token(void);
-void	PAR_init(void);
+void	PAR_fini();
+TOK		PAR_get_token();
+void	PAR_init();
 TEXT*	PAR_native_value(bool, bool);
-gpre_fld* PAR_null_field(void);
+gpre_fld* PAR_null_field();
 void	PAR_reserving(USHORT, bool);
 gpre_req* PAR_set_up_dpb_info(rdy*, act*, USHORT);
-gpre_sym*		PAR_symbol(enum sym_t);
-void	PAR_unwind(void);
-void	PAR_using_db(void);
+gpre_sym*		PAR_symbol(sym_t);
+void	PAR_unwind();
+void	PAR_using_db();
 
 #endif // GPRE_PAR_PROTO_H
 

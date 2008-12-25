@@ -24,7 +24,6 @@
 //
 //____________________________________________________________
 //
-//	$Id: dyntable.cpp,v 1.11 2008-12-05 01:19:48 asfernandes Exp $
 //
 // CVC: Strange, this file is only referenced in a MacOsX project and gpre
 // works directly with dyntable.h.
@@ -35,10 +34,12 @@
 
 #define NODE(dyn) {dyn, "dyn"},
 
-struct dyn {
+struct dyn 
+{
 	SSHORT dyn_value;
 	const char* dyn_string;
-} dyn_table[] = {
+} dyn_table[] = 
+{
 	NODE(gds__dyn_begin)
 		NODE(gds__dyn_end)
 		NODE(gds__dyn_if)
@@ -132,18 +133,19 @@ int main()
 	max = 0;
 	for (const dyn* item = dyn_table; item->dyn_string; item++) {
 		if (table[item->dyn_value])
-			fprintf(stderr, "%s (%d) is duplicate\n",
-					   item->dyn_string, item->dyn_value);
+			fprintf(stderr, "%s (%d) is duplicate\n", item->dyn_string, item->dyn_value);
 		table[item->dyn_value] = item->dyn_string;
 		if (item->dyn_value > max)
 			max = item->dyn_value;
 	}
 
 	for (int dyn_iter = 0; dyn_iter <= max; dyn_iter++)
+	{
 		if (table[dyn_iter])
 			printf("    \"%s\",\n", table[dyn_iter]);
 		else
 			printf("    NULL,\n");
+	}
 
 	return 0;
 }

@@ -54,12 +54,14 @@
 #include "../jrd/gds_proto.h"
 
 
-typedef struct spc {
-	spc* spc_next;
+struct gpre_space
+{
+	gpre_space* spc_next;
 	SLONG spc_remaining;
-} *SPC;
+};
 
-static SPC space, permanent_space;
+static gpre_space* space;
+static gpre_space* permanent_space;
 static gpre_lls* free_lls;
 
 
@@ -68,7 +70,7 @@ static gpre_lls* free_lls;
 //		Make an action and link it to a request.
 //
 
-act* MSC_action( gpre_req* request, enum act_t type)
+act* MSC_action( gpre_req* request, act_t type)
 {
 	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = type;
@@ -93,7 +95,7 @@ UCHAR* MSC_alloc(int size)
 
 	if (!space || size > space->spc_remaining) {
 		const int n = MAX(size, 4096);
-		SPC next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)));
+		gpre_space* next = (gpre_space*) gds__alloc((SLONG) (n + sizeof(gpre_space)));
 		if (!next)
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
@@ -106,7 +108,7 @@ UCHAR* MSC_alloc(int size)
 	}
 
 	space->spc_remaining -= size;
-	UCHAR* blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
+	UCHAR* blk = ((UCHAR*) space + sizeof(gpre_space) + space->spc_remaining);
 	memset(blk, 0, size);
 
 	return blk;
@@ -124,7 +126,7 @@ UCHAR* MSC_alloc_permanent(int size)
 
 	if (!permanent_space || size > permanent_space->spc_remaining) {
 		const int n = MAX(size, 4096);
-		SPC next = (SPC) gds__alloc((SLONG) (n + sizeof(spc)));
+		gpre_space* next = (gpre_space*) gds__alloc((SLONG) (n + sizeof(gpre_space)));
 		if (!next)
 			CPR_error("virtual memory exhausted");
 #ifdef DEBUG_GDS_ALLOC
@@ -137,7 +139,7 @@ UCHAR* MSC_alloc_permanent(int size)
 	}
 
 	permanent_space->spc_remaining -= size;
-	UCHAR* blk = ((UCHAR*) permanent_space + sizeof(spc) +
+	UCHAR* blk = ((UCHAR*) permanent_space + sizeof(gpre_space) +
 		 permanent_space->spc_remaining);
 	memset(blk, 0, size);
 
@@ -150,9 +152,9 @@ UCHAR* MSC_alloc_permanent(int size)
 //		Make a binary node.
 //
 
-GPRE_NOD MSC_binary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2)
+gpre_nod* MSC_binary(nod_t type, gpre_nod* arg1, gpre_nod* arg2)
 {
-	GPRE_NOD node = MSC_node(type, 2);
+	gpre_nod* node = MSC_node(type, 2);
 	node->nod_arg[0] = arg1;
 	node->nod_arg[1] = arg2;
 
@@ -219,7 +221,7 @@ void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2
 //		Find a symbol of a particular type.
 //
 
-gpre_sym* MSC_find_symbol(gpre_sym* symbol, enum sym_t type)
+gpre_sym* MSC_find_symbol(gpre_sym* symbol, sym_t type)
 {
 
 	for (; symbol; symbol = symbol->sym_homonym)
@@ -261,11 +263,11 @@ void MSC_free_request( gpre_req* request)
 //		allocator.
 //
 
-void MSC_init(void)
+void MSC_init()
 {
 	free_lls = NULL;
 
-    SPC stuff;
+    gpre_space* stuff;
 	while (stuff = space) {
 		space = space->spc_next;
 		gds__free(stuff);
@@ -280,19 +282,19 @@ void MSC_init(void)
 //		false.
 //
 
-bool MSC_match(KWWORDS keyword)
+bool MSC_match(kwwords_t keyword)
 {
 
 	if (gpreGlob.token_global.tok_keyword == KW_none && gpreGlob.token_global.tok_symbol) {
 		gpre_sym* symbol;
 		for (symbol = gpreGlob.token_global.tok_symbol->sym_collision; symbol;
-			 symbol = symbol->sym_collision)
+			symbol = symbol->sym_collision)
 		{
-			if ((strcmp(symbol->sym_string, gpreGlob.token_global.tok_string) ==
-								 0) && symbol->sym_keyword != KW_none)
+			if ((strcmp(symbol->sym_string, gpreGlob.token_global.tok_string) == 0) &&
+				symbol->sym_keyword != KW_none)
 			{
 				gpreGlob.token_global.tok_symbol = symbol;
-				gpreGlob.token_global.tok_keyword = static_cast < kwwords > (symbol->sym_keyword);
+				gpreGlob.token_global.tok_keyword = static_cast<kwwords_t>(symbol->sym_keyword);
 			}
 		}
 	}
@@ -312,7 +314,7 @@ bool MSC_match(KWWORDS keyword)
 //		represented on a linked list stack.
 //
 
-bool MSC_member(GPRE_NOD object, gpre_lls* stack)
+bool MSC_member(gpre_nod* object, gpre_lls* stack)
 {
 
 	for (; stack; stack = stack->lls_next)
@@ -328,9 +330,9 @@ bool MSC_member(GPRE_NOD object, gpre_lls* stack)
 //		Allocate an initialize a syntax node.
 //
 
-GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
+gpre_nod* MSC_node(nod_t type, SSHORT count)
 {
-	GPRE_NOD node = (GPRE_NOD) MSC_alloc(NOD_LEN(count));
+	gpre_nod* node = (gpre_nod*) MSC_alloc(NOD_LEN(count));
 	node->nod_count = count;
 	node->nod_type = type;
 
@@ -343,10 +345,10 @@ GPRE_NOD MSC_node(enum nod_t type, SSHORT count)
 //		Pop an item off a linked list stack.  Free the stack node.
 //
 
-GPRE_NOD MSC_pop(gpre_lls** pointer)
+gpre_nod* MSC_pop(gpre_lls** pointer)
 {
 	gpre_lls* stack = *pointer;
-	GPRE_NOD node = stack->lls_object;
+	gpre_nod* node = stack->lls_object;
 	*pointer = stack->lls_next;
 
 	stack->lls_next = free_lls;
@@ -361,7 +363,7 @@ GPRE_NOD MSC_pop(gpre_lls** pointer)
 //       Allocate a new privilege (grant/revoke) block.
 //
 
-PRV MSC_privilege_block(void)
+PRV MSC_privilege_block()
 {
 	PRV privilege_block = (PRV) MSC_alloc(PRV_LEN);
 	privilege_block->prv_privileges = PRV_no_privs;
@@ -379,7 +381,7 @@ PRV MSC_privilege_block(void)
 //		Push an arbitrary object onto a linked list stack.
 //
 
-void MSC_push( GPRE_NOD object, gpre_lls** pointer)
+void MSC_push( gpre_nod* object, gpre_lls** pointer)
 {
 	gpre_lls* stack = free_lls;
 	if (stack)
@@ -418,7 +420,7 @@ REF MSC_reference(REF* link)
 //		blocks, all linked up and ready to go.
 //
 
-gpre_req* MSC_request(enum req_t type)
+gpre_req* MSC_request(req_t type)
 {
 	gpre_req* request = (gpre_req*) MSC_alloc(REQ_LEN);
 	request->req_type = type;
@@ -456,7 +458,7 @@ SCHAR* MSC_string(const TEXT* input)
 //		Allocate and initialize a symbol block.
 //
 
-gpre_sym* MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, gpre_ctx* object)
+gpre_sym* MSC_symbol(sym_t type, const TEXT* string, USHORT length, gpre_ctx* object)
 {
 	gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN + length);
 	symbol->sym_type = type;
@@ -476,9 +478,9 @@ gpre_sym* MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, gpre_ct
 //		Make a unary node.
 //
 
-GPRE_NOD MSC_unary(NOD_T type, GPRE_NOD arg)
+gpre_nod* MSC_unary(nod_t type, gpre_nod* arg)
 {
-	GPRE_NOD node = MSC_node(type, 1);
+	gpre_nod* node = MSC_node(type, 1);
 	node->nod_arg[0] = arg;
 
 	return node;

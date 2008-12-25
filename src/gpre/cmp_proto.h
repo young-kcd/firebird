@@ -27,8 +27,8 @@
 void	CMP_check(gpre_req*, SSHORT);
 void	CMP_compile_request(gpre_req*);
 void	CMP_external_field(gpre_req*, const gpre_fld*);
-void	CMP_init(void);
-ULONG	CMP_next_ident(void);
+void	CMP_init();
+ULONG	CMP_next_ident();
 void	CMP_stuff_symbol(gpre_req*, const gpre_sym*);
 void	CMP_t_start(gpre_tra*);
 

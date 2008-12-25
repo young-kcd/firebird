@@ -34,7 +34,7 @@ void	COB_action(const act*, int);
 void	COB_name_init(bool);
 void	COB_print_buffer(TEXT*, bool);
 void	FTN_action(const act*, int);
-void	FTN_fini(void);
+void	FTN_fini();
 void	FTN_print_buffer(TEXT*);
 void	INT_action(const act*, int);
 void	INT_CXX_action(const act*, int);

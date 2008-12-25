@@ -80,14 +80,14 @@ static void create_trg_firing_cond(gpre_req*, const cnstrt*);
 static void create_trigger(gpre_req*, const act*, gpre_trg*, pfn_local_trigger_cb);
 static void create_upd_cascade_trg(gpre_req*, const act*, CNSTRT);
 static bool create_view(gpre_req*, act*);
-static void create_view_trigger(gpre_req*, const act*, gpre_trg*, GPRE_NOD, gpre_ctx**, GPRE_NOD);
+static void create_view_trigger(gpre_req*, const act*, gpre_trg*, gpre_nod*, gpre_ctx**, gpre_nod*);
 static void declare_filter(gpre_req*, const act*);
 static void declare_udf(gpre_req*, const act*);
 static void get_referred_fields(const act*, CNSTRT);
 static void grant_revoke_privileges(gpre_req*, const act*);
 static void init_field_struct(gpre_fld*);
 static void put_array_info(gpre_req*, const gpre_fld*);
-static void put_blr(gpre_req*, USHORT, GPRE_NOD, pfn_local_trigger_cb);
+static void put_blr(gpre_req*, USHORT, gpre_nod*, pfn_local_trigger_cb);
 static void put_computed_blr(gpre_req*, const gpre_fld*);
 static void put_computed_source(gpre_req*, const gpre_fld*);
 static void put_cstring(gpre_req*, USHORT, const TEXT*);
@@ -97,9 +97,9 @@ static void put_numeric(gpre_req*, USHORT, SSHORT);
 static void put_short_cstring(gpre_req*, USHORT, const TEXT*);
 static void put_string(gpre_req*, USHORT, const TEXT*, USHORT);
 static void put_symbol(gpre_req*, int, const gpre_sym*);
-static void put_trigger_blr(gpre_req*, USHORT, GPRE_NOD, pfn_local_trigger_cb);
+static void put_trigger_blr(gpre_req*, USHORT, gpre_nod*, pfn_local_trigger_cb);
 static void put_view_trigger_blr(gpre_req*, const gpre_rel*, USHORT, gpre_trg*,
-								 GPRE_NOD, gpre_ctx**, GPRE_NOD);
+								 gpre_nod*, gpre_ctx**, gpre_nod*);
 static void replace_field_names(gpre_nod* const, const gpre_nod* const,
 								gpre_fld* const, bool, gpre_ctx**);
 static void set_statistics(gpre_req*, const act*);
@@ -266,7 +266,7 @@ static void add_cache( gpre_req* request, const act* action, dbb* database)
 {
 	TEXT file_name[254]; // CVC: Maybe MAXPATHLEN?
 
-	const fil* file = database->dbb_cache_file;
+	const gpre_file* file = database->dbb_cache_file;
 	const SSHORT l = MIN((strlen(file->fil_name)), (sizeof(file_name) - 1));
 
 	strncpy(file_name, file->fil_name, l);
@@ -286,7 +286,7 @@ static void add_cache( gpre_req* request, const act* action, dbb* database)
 
 static void alter_database( gpre_req* request, act* action)
 {
-	FIL file, next;
+	gpre_file* file;
 
 	dbb* db = (DBB) action->act_object;
 
@@ -294,7 +294,8 @@ static void alter_database( gpre_req* request, act* action)
 
 //  Reverse the order of files (parser left them backwards)
 
-	FIL files = db->dbb_files;
+	gpre_file* next;
+	gpre_file* files = db->dbb_files;
 	for (file = files, files = NULL; file; file = next) {
 		next = file->fil_next;
 		file->fil_next = files;
@@ -1445,10 +1446,11 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 
 	request->add_byte(isc_dyn_mod_database);
 
+	gpre_file* file;
 //  Reverse the order of files (parser left them backwards)
 
-	FIL files = db->dbb_files;
-	FIL file, next;
+	gpre_file* files = db->dbb_files;
+	gpre_file* next;
 	for (file = files, files = NULL; file; file = next) {
 		next = file->fil_next;
 		file->fil_next = files;
@@ -1600,10 +1602,11 @@ static void create_index( gpre_req* request, const ind* index)
 
 static void create_shadow( gpre_req* request, act* action)
 {
-	fil* files = (FIL) action->act_object;
+	gpre_file* files = (gpre_file*) action->act_object;
+	gpre_file* file;
 
 //  Reverse the order of files (parser left them backwards)
-	FIL file, next;
+	gpre_file* next;
 	for (file = files, files = NULL; file; file = next) {
 		next = file->fil_next;
 		file->fil_next = files;
@@ -1748,7 +1751,7 @@ static bool create_view(gpre_req* request,
 
 //  write out blr
 
-	put_blr(request, isc_dyn_view_blr, (GPRE_NOD) relation->rel_view_rse,
+	put_blr(request, isc_dyn_view_blr, (gpre_nod*) relation->rel_view_rse,
 			reinterpret_cast<pfn_local_trigger_cb>(CME_rse));
 
 //  write out view source
@@ -1896,8 +1899,8 @@ static bool create_view(gpre_req* request,
 			new_view_ref->ref_context = contexts[1];
 			new_view_ref->ref_field = view_ref->ref_field =
 				(field) ? field : fld;
-			gpre_nod* view_field = MSC_unary(nod_field, (GPRE_NOD) view_ref);
-			gpre_nod* new_view_field = MSC_unary(nod_field, (GPRE_NOD) new_view_ref);
+			gpre_nod* view_field = MSC_unary(nod_field, (gpre_nod*) view_ref);
+			gpre_nod* new_view_field = MSC_unary(nod_field, (gpre_nod*) new_view_ref);
 
 			gpre_nod* anull_node = MSC_unary(nod_missing, view_field);
 			gpre_nod* bnull_node = MSC_unary(nod_missing, value);
@@ -1926,7 +1929,7 @@ static bool create_view(gpre_req* request,
 		gpre_nod* set_list = MSC_node(nod_list, count);
 		ptr = set_list->nod_arg + count;
 		while (stack)
-			*--ptr = (GPRE_NOD) MSC_pop(&stack);
+			*--ptr = (gpre_nod*) MSC_pop(&stack);
 
 		// Modify the context of fields in boolean to be that of the
 		// sub-relation.
@@ -1945,7 +1948,7 @@ static bool create_view(gpre_req* request,
 		// "update violates CHECK constraint on view"
 
 		trigger->trg_message = NULL;
-		trigger->trg_boolean = (GPRE_NOD) select;
+		trigger->trg_boolean = (gpre_nod*) select;
 		create_view_trigger(request, action, trigger, view_boolean, contexts,
 							set_list);
 
@@ -1974,7 +1977,7 @@ static void create_view_trigger(gpre_req* request,
 								const act* action,
 								gpre_trg* trigger,
 								gpre_nod* view_boolean,
-								gpre_ctx** contexts, GPRE_NOD set_list)
+								gpre_ctx** contexts, gpre_nod* set_list)
 {
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
@@ -2013,7 +2016,7 @@ static void create_view_trigger(gpre_req* request,
 
 static void declare_filter( gpre_req* request, const act* action)
 {
-	const fltr* filter = (FLTR) action->act_object;
+	const gpre_filter* filter = (gpre_filter*) action->act_object;
 	put_cstring(request, isc_dyn_def_filter, filter->fltr_name);
 	put_numeric(request, isc_dyn_filter_in_subtype, filter->fltr_input_type);
 	put_numeric(request, isc_dyn_filter_out_subtype,
@@ -2319,7 +2322,7 @@ static void put_array_info( gpre_req* request, const gpre_fld* field)
 //
 
 static void put_blr(gpre_req* request,
-					USHORT blr_operator, GPRE_NOD node, pfn_local_trigger_cb routine)
+					USHORT blr_operator, gpre_nod* node, pfn_local_trigger_cb routine)
 {
 	request->add_byte(blr_operator);
 	const USHORT offset = request->req_blr - request->req_base;
@@ -2681,7 +2684,7 @@ static void put_symbol(gpre_req* request, int ddl_operator,
 
 static void put_trigger_blr(gpre_req* request,
 							USHORT blr_operator,
-							GPRE_NOD node, pfn_local_trigger_cb routine)
+							gpre_nod* node, pfn_local_trigger_cb routine)
 {
 	request->add_byte(blr_operator);
 	const USHORT offset = request->req_blr - request->req_base;
@@ -2723,7 +2726,7 @@ static void put_view_trigger_blr(gpre_req* request,
 								 const gpre_rel* relation,
 								 USHORT blr_operator,
 								 gpre_trg* trigger,
-	GPRE_NOD view_boolean, gpre_ctx** contexts, GPRE_NOD set_list)
+	gpre_nod* view_boolean, gpre_ctx** contexts, gpre_nod* set_list)
 {
 	gpre_rse* node = (gpre_rse*) trigger->trg_boolean;
 	request->add_byte(blr_operator);

@@ -19,7 +19,7 @@
  * Stephen W. Boyd						- Added support for new features.
  */
 
-typedef enum kwwords {
+enum kwwords_t {
 	KW_none = 0,
 	KW_start_actions,
 	KW_ACTIVE,
@@ -327,4 +327,4 @@ typedef enum kwwords {
 	KW_THEN,
 	KW_SUBSTRING,
 	KW_max
-} KWWORDS;
+};

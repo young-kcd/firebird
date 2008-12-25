@@ -89,7 +89,7 @@ static void	gen_dyn_open (const act*);
 static void	gen_dyn_prepare (const act*);
 static void	gen_emodify (const act*);
 static void	gen_estore (const act*);
-static void	gen_end_fetch (void);
+static void	gen_end_fetch ();
 static void	gen_endfor (const act*);
 static void	gen_erase (const act*);
 static SSHORT	gen_event_block (const act*);
@@ -109,7 +109,7 @@ static void	gen_put_segment (const act*);
 
 
 /* RRK_?: the following prototype is differnet from C stuff */
-static void gen_raw(const UCHAR*, enum req_t, int, int, int);
+static void gen_raw(const UCHAR*, req_t, int, int, int);
 
 static void	gen_ready (const act*);
 static void	gen_receive (const act*, const gpre_port*);
@@ -143,7 +143,7 @@ static TEXT* make_name (TEXT* const, const gpre_sym*);
 static void	make_ok_test (const act*, const gpre_req*);
 static void	make_port (const gpre_port*);
 static void	make_ready (DBB, const TEXT*, const TEXT*, const gpre_req*);
-static USHORT	next_label (void);
+static USHORT	next_label ();
 static void	printa(const TEXT*, const TEXT*, ...);
 #ifdef NOT_USED_OR_REPLACED
 static void	printb(const TEXT*,  ...);
@@ -579,7 +579,7 @@ void FTN_action(const act* action, int column)
 //       all databases not declared as extern
 //
 
-void FTN_fini(void)
+void FTN_fini()
 {
 	if (!gpreGlob.global_db_count)
 		return;
@@ -2050,7 +2050,7 @@ static void gen_estore(const act* action)
 //		the AT_END clause.
 //
 
-static void gen_end_fetch(void)
+static void gen_end_fetch()
 {
 	printa(COLUMN, "END IF");
 }
@@ -2093,16 +2093,16 @@ static void gen_erase(const act* action)
 
 static SSHORT gen_event_block(const act* action)
 {
-	GPRE_NOD init = (GPRE_NOD) action->act_object;
+	gpre_nod* init = (gpre_nod*) action->act_object;
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (GPRE_NOD) ident;
+	init->nod_arg[2] = (gpre_nod*) ident;
 
 	printa(COLUMN, "INTEGER*4      isc_%dA", ident);
 	printa(COLUMN, "INTEGER*4      isc_%dB", ident);
 	printa(COLUMN, "INTEGER*2      isc_%dL", ident);
 
-	GPRE_NOD list = init->nod_arg[1];
+	gpre_nod* list = init->nod_arg[1];
 
 	return list->nod_count;
 }
@@ -2127,8 +2127,8 @@ static void gen_event_init(const act* action)
 	const TEXT* pattern3 =
 		"CALL %S2 (ISC_EVENTS, %VFISC_%N1L%VE, %VFISC_%N1A%VE, %VFISC_%N1B%VE)";
 
-	GPRE_NOD init = (GPRE_NOD) action->act_object;
-	GPRE_NOD event_list = init->nod_arg[1];
+	gpre_nod* init = (gpre_nod*) action->act_object;
+	gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
 	args.pat_database = (DBB) init->nod_arg[3];
@@ -2144,11 +2144,11 @@ static void gen_event_init(const act* action)
 
 	TEXT variable[MAX_REF_SIZE];
 	SSHORT count = 0;
-	GPRE_NOD* ptr = event_list->nod_arg;
-	for (GPRE_NOD* end = ptr + event_list->nod_count; ptr < end; ptr++)
+	gpre_nod** ptr = event_list->nod_arg;
+	for (gpre_nod** const end = ptr + event_list->nod_count; ptr < end; ptr++)
 	{
 		count++;
-		GPRE_NOD node = *ptr;
+		gpre_nod* node = *ptr;
 		if (node->nod_type == nod_field) {
 			const ref* reference = (const ref*) node->nod_arg[0];
 			gen_name(variable, reference, true);
@@ -2205,7 +2205,7 @@ static void gen_event_wait(const act* action)
 	DBB database =  NULL;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		const act* event_action = (const act*) stack_ptr->lls_object;
-		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
+		gpre_nod* event_init = (gpre_nod*) event_action->act_object;
 		const gpre_sym* stack_name = (const gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
@@ -2259,7 +2259,7 @@ static void gen_fetch(const act* action)
 		   gen_name(s, request->req_eof, true));
 	printa(COLUMN, "SQLCODE = 0");
 
-	GPRE_NOD var_list = (GPRE_NOD) action->act_object;
+	gpre_nod* var_list = (gpre_nod*) action->act_object;
 	if (var_list) {
 		for (int i = 0; i < var_list->nod_count; i++) {
 			asgn_to(action, (const ref*) var_list->nod_arg[i]);
@@ -2651,10 +2651,7 @@ static void gen_put_segment(const act* action)
 //		Generate BLR in raw, numeric form.  Ughly but dense.
 //
 
-static void gen_raw(
-			   const UCHAR* blr,
-			   enum req_t request_type,
-			   int request_length, int begin_c, int end_c)
+static void gen_raw(const UCHAR* blr, req_t request_type, int request_length, int begin_c, int end_c)
 {
 	union {
 		UCHAR bytewise_blr[4];
@@ -3181,7 +3178,7 @@ static void gen_select(const act* action)
 	printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
 	gen_receive(action, port);
 	printa(COLUMN, "IF (%s .NE. 0) THEN", name);
-    GPRE_NOD var_list = (GPRE_NOD) action->act_object;
+    gpre_nod* var_list = (gpre_nod*) action->act_object;
 	if (var_list)
 	{
 		for (int i = 0; i < var_list->nod_count; ++i)
@@ -3944,7 +3941,7 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 //       label as used.
 //
 
-static USHORT next_label(void)
+static USHORT next_label()
 {
 	UCHAR* byte = gpreGlob.fortran_labels;
 	while (*byte == 255)

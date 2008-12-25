@@ -273,10 +273,11 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
  *     Return a list of the fields in a relation
  */
 
-GPRE_NOD MET_fields(gpre_ctx* context)
+gpre_nod* MET_fields(gpre_ctx* context)
 {
 	gpre_fld* field;
-	GPRE_NOD node, field_node;
+	gpre_nod* node;
+	gpre_nod* field_node;
 	REF reference;
 
 	gpre_prc* procedure = context->ctx_procedure;
@@ -287,7 +288,7 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 			reference = (REF) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
+			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			//count++;
 		}
@@ -306,7 +307,7 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 			reference = (REF) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (GPRE_NOD)reference);
+			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			//count++;
 		}

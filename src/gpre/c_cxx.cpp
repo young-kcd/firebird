@@ -1981,17 +1981,17 @@ static void gen_erase( const act* action, int column)
 
 static SSHORT gen_event_block( const act* action)
 {
-	GPRE_NOD init = (GPRE_NOD) action->act_object;
+	gpre_nod* init = (gpre_nod*) action->act_object;
 	gpre_sym* event_name = (gpre_sym*) init->nod_arg[0];
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (GPRE_NOD)(IPTR)ident;
+	init->nod_arg[2] = (gpre_nod*)(IPTR)ident;
 
 	printa(0, "static %schar\n   *isc_%da, *isc_%db;", CONST_STR, ident,
 		   ident);
 	printa(0, "static short\n   isc_%dl;", ident);
 
-	GPRE_NOD list = init->nod_arg[1];
+	gpre_nod* list = init->nod_arg[1];
 	return list->nod_count;
 }
 
@@ -2014,8 +2014,8 @@ static void gen_event_init( const act* action, int column)
 		begin(column);
 	begin(column);
 
-	GPRE_NOD init = (GPRE_NOD) action->act_object;
-	GPRE_NOD event_list = init->nod_arg[1];
+	gpre_nod* init = (gpre_nod*) action->act_object;
+	gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
 	args.pat_database = (DBB) init->nod_arg[3];
@@ -2085,7 +2085,7 @@ static void gen_event_wait( const act* action, int column)
 	int ident = -1;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		const act* event_action = (const act*) stack_ptr->lls_object;
-		GPRE_NOD event_init = (GPRE_NOD) event_action->act_object;
+		gpre_nod* event_init = (gpre_nod*) event_action->act_object;
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (IPTR) event_init->nod_arg[2];
@@ -2136,7 +2136,7 @@ static void gen_fetch( const act* action, int column)
 		for (reference = port->por_references; reference;
 			reference = reference->ref_next)
 		{
-			VAL value = reference->ref_values;
+			gpre_value* value = reference->ref_values;
 			reference->ref_value = value->val_value;
 			reference->ref_values = value->val_next;
 		}
@@ -2189,7 +2189,7 @@ static void gen_fetch( const act* action, int column)
 	column += INDENT;
 	begin(column);
 
-	GPRE_NOD var_list = (GPRE_NOD) action->act_object;
+	gpre_nod* var_list = (gpre_nod*) action->act_object;
 	if (var_list)
 		for (int i = 0; i < var_list->nod_count; i++) {
 			align(column);
@@ -3135,7 +3135,7 @@ static void gen_select( const act* action, int column)
 	column += INDENT;
 
 	begin(column);
-	GPRE_NOD var_list = (GPRE_NOD) action->act_object;
+	gpre_nod* var_list = (gpre_nod*) action->act_object;
 	if (var_list)
 		for (int i = 0; i < var_list->nod_count; i++) {
 			align(column);

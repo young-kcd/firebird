@@ -28,7 +28,7 @@ gpre_fld*	MET_context_field(gpre_ctx*, const char*);
 bool		MET_database(DBB, bool);
 bool		MET_domain_lookup(gpre_req*, gpre_fld*, const char*);
 gpre_fld*	MET_field(gpre_rel*, const char*);
-GPRE_NOD	MET_fields(gpre_ctx*);
+gpre_nod*	MET_fields(gpre_ctx*);
 void		MET_fini(DBB);
 const SCHAR*		MET_generator(const TEXT*, DBB);
 bool		MET_get_column_default(const gpre_rel*, const TEXT*, TEXT*, USHORT);

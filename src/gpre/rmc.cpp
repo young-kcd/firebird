@@ -177,7 +177,7 @@ static TEXT* gen_name(TEXT* const, const ref*, bool);
 static void	gen_on_error (const act*);
 static void	gen_procedure (const act*);
 static void	gen_put_segment (const act*);
-static void	gen_raw (const UCHAR*, enum req_t, int, int);
+static void	gen_raw (const UCHAR*, req_t, int, int);
 static void	gen_ready (const act*);
 static void	gen_receive (const act*, const gpre_port*);
 static void	gen_release (const act*);
@@ -2440,10 +2440,10 @@ static void gen_erase( const act* action)
 
 static SSHORT gen_event_block( const act* action)
 {
-	gpre_nod* init = (GPRE_NOD) action->act_object;
+	gpre_nod* init = (gpre_nod*) action->act_object;
 
 	int ident = CMP_next_ident();
-	init->nod_arg[2] = (GPRE_NOD) (IPTR) ident;
+	init->nod_arg[2] = (gpre_nod*) (IPTR) ident;
 
 	printa(COLUMN8, false, "01  %s%dA PIC S9(10) %s.",
 		   names[isc_a_pos], ident, USAGE_BINARY4);
@@ -2472,7 +2472,7 @@ static void gen_event_init( const act* action)
 	const TEXT *pattern3 =
 		"CALL \"%S3\" USING %S5, %S4%N1L, %S4%N1A, %S4%N1B";
 
-	const gpre_nod* init = (GPRE_NOD) action->act_object;
+	const gpre_nod* init = (gpre_nod*) action->act_object;
 	const gpre_nod* event_list = init->nod_arg[1];
 
 	const SSHORT column = strlen(names[COLUMN]);
@@ -2549,7 +2549,7 @@ static void gen_event_wait( const act* action)
 	for (const gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
 	{
 		const act* event_action = (const act*) stack_ptr->lls_object;
-		const gpre_nod* event_init = (GPRE_NOD) event_action->act_object;
+		const gpre_nod* event_init = (gpre_nod*) event_action->act_object;
 		const gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) (IPTR) event_init->nod_arg[2];
@@ -2607,7 +2607,7 @@ static void gen_fetch( const act* action)
 		for (reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-			VAL value = reference->ref_values;
+			gpre_value* value = reference->ref_values;
 			reference->ref_value = value->val_value;
 			reference->ref_values = value->val_next;
 		}
@@ -2649,7 +2649,7 @@ static void gen_fetch( const act* action)
 	printa(names[COLUMN], false,
 		   "IF %s NOT =  0 THEN", gen_name(s, request->req_eof, true));
 	printa(names[COLUMN], false, "MOVE 0 TO SQLCODE");
-	if (gpre_nod* var_list = (GPRE_NOD) action->act_object)
+	if (gpre_nod* var_list = (gpre_nod*) action->act_object)
 		for (int i = 0; i < var_list->nod_count; i++) {
 			asgn_to(action, (REF) var_list->nod_arg[i]);
 		}
@@ -3094,7 +3094,7 @@ static void gen_put_segment( const act* action)
 
 static void gen_raw(
 			   const UCHAR* blr,
-			   enum req_t request_type, int request_length, int ident)
+			   req_t request_type, int request_length, int ident)
 {
 	int		length = 1;
 	ULONG	ltemp = 0;
@@ -3630,7 +3630,7 @@ static void gen_select( const act* action)
 	gen_receive(action, port);
 
 	printa(names[COLUMN], false, "IF %s NOT = 0 THEN", name);
-	gpre_nod* var_list = (GPRE_NOD) action->act_object;
+	gpre_nod* var_list = (gpre_nod*) action->act_object;
 	if (var_list)
 		for (int i = 0; i < var_list->nod_count; i++) {
 			asgn_to(action, (REF) var_list->nod_arg[i]);

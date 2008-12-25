@@ -69,7 +69,7 @@ static act*		par_at();
 static act*		par_based();
 static act*		par_begin();
 static blb*		par_blob();
-static act*		par_blob_action(ACT_T);
+static act*		par_blob_action(act_t);
 static act*		par_blob_field();
 static act*		par_case();
 static act*		par_clear_handles();
@@ -90,19 +90,19 @@ static act*		par_left_brace();
 static act*		par_modify();
 static act*		par_on();
 static act*		par_on_error();
-static act*		par_open_blob(ACT_T, gpre_sym*);
+static act*		par_open_blob(act_t, gpre_sym*);
 static bool		par_options(gpre_req*, bool);
 static act*		par_procedure();
 static act*		par_ready();
 static act*		par_returning_values();
 static act*		par_right_brace();
 static act*		par_release();
-static act*		par_slice(ACT_T);
+static act*		par_slice(act_t);
 static act*		par_store();
 static act*		par_start_stream();
 static act*		par_start_transaction();
 static act*		par_subroutine();
-static act*		par_trans(ACT_T);
+static act*		par_trans(act_t);
 static act*		par_type();
 static act*		par_variable();
 static act*		scan_routine_header();
@@ -143,7 +143,7 @@ act* PAR_action(const TEXT* base_dir)
 	if ((USHORT) gpreGlob.token_global.tok_keyword >= (USHORT) KW_start_actions &&
 		(USHORT) gpreGlob.token_global.tok_keyword <= (USHORT) KW_end_actions)
 	{
-		const enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+		const kwwords_t keyword = gpreGlob.token_global.tok_keyword;
 		if (! gpreGlob.sw_no_qli)
 		{
 			switch (keyword)
@@ -736,8 +736,8 @@ act* PAR_event_init(bool sql)
 	//SQL_resolve_identifier("<identifier>", req_name, sizeof(req_name));
 	//strcpy(gpreGlob.token_global.tok_string, req_name); Why? It's already done.
 	gpre_nod* init = MSC_node(nod_event_init, 4);
-	init->nod_arg[0] = (GPRE_NOD) PAR_symbol(SYM_dummy);
-	init->nod_arg[3] = (GPRE_NOD) gpreGlob.isc_databases;
+	init->nod_arg[0] = (gpre_nod*) PAR_symbol(SYM_dummy);
+	init->nod_arg[3] = (gpre_nod*) gpreGlob.isc_databases;
 
 	act* action = MSC_action(0, ACT_event_init);
 	action->act_object = (REF) init;
@@ -747,7 +747,7 @@ act* PAR_event_init(bool sql)
 	if (!MSC_match(KW_LEFT_PAREN)) {
 		gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 		if (symbol && (symbol->sym_type == SYM_database))
-			init->nod_arg[3] = (GPRE_NOD) symbol->sym_object;
+			init->nod_arg[3] = (gpre_nod*) symbol->sym_object;
 		else
 			CPR_s_error("left parenthesis or database handle");
 
@@ -759,7 +759,7 @@ act* PAR_event_init(bool sql)
 //  eat any number of event strings until a right paren is found,
 //  pushing the gpreGlob.events onto a stack
 
-	GPRE_NOD node;
+	gpre_nod* node;
 	gpre_lls* stack = NULL;
 	int count = 0;
 
@@ -775,14 +775,14 @@ act* PAR_event_init(bool sql)
 			gpre_fld* field = EXP_field(&context);
 			ref* reference = EXP_post_field(field, context, false);
 			node = MSC_node(nod_field, 1);
-			node->nod_arg[0] = (GPRE_NOD) reference;
+			node->nod_arg[0] = (gpre_nod*) reference;
 		}
 		else {
 			node = MSC_node(nod_null, 1);
 			if (sql)
-				node->nod_arg[0] = (GPRE_NOD) SQL_var_or_string(false);
+				node->nod_arg[0] = (gpre_nod*) SQL_var_or_string(false);
 			else
-				node->nod_arg[0] = (GPRE_NOD) PAR_native_value(false, false);
+				node->nod_arg[0] = (gpre_nod*) PAR_native_value(false, false);
 		}
 		MSC_push(node, &stack);
 		count++;
@@ -795,9 +795,9 @@ act* PAR_event_init(bool sql)
 	gpre_nod* event_list = init->nod_arg[1] = MSC_node(nod_list, (SSHORT) count);
 	gpre_nod** ptr = event_list->nod_arg + count;
 	while (stack)
-		*--ptr = (GPRE_NOD) MSC_pop(&stack);
+		*--ptr = (gpre_nod*) MSC_pop(&stack);
 
-	MSC_push((GPRE_NOD) action, &gpreGlob.events);
+	MSC_push((gpre_nod*) action, &gpreGlob.events);
 
 	if (!sql)
 		PAR_end();
@@ -893,7 +893,7 @@ void PAR_init()
 
 	gpreGlob.cur_routine = MSC_action(0, ACT_routine);
 	gpreGlob.cur_routine->act_flags |= ACT_main;
-	MSC_push((GPRE_NOD) gpreGlob.cur_routine, &routine_stack);
+	MSC_push((gpre_nod*) gpreGlob.cur_routine, &routine_stack);
 	routine_decl = true;
 
 	flag_field = NULL;
@@ -928,7 +928,7 @@ TEXT* PAR_native_value(bool array_ref,
     **/
 		if (gpreGlob.sw_sql_dialect == 1) {
 			if (isQuoted(gpreGlob.token_global.tok_type)) {
-				//const enum tok_t typ = gpreGlob.token_global.tok_type;
+				//const tok_t typ = gpreGlob.token_global.tok_type;
 				gpreGlob.token_global.tok_length += 2;
 				*string++ = '\"';
 				gobble(string);
@@ -968,11 +968,11 @@ TEXT* PAR_native_value(bool array_ref,
 		if ((gpreGlob.sw_language == lang_ada) && (gpreGlob.token_global.tok_string[0] == '\'')) {
 			gobble(string);
 		}
-		enum kwwords keyword = gpreGlob.token_global.tok_keyword;
+		kwwords_t keyword = gpreGlob.token_global.tok_keyword;
 		if (keyword == KW_LEFT_PAREN) {
 			int parens = 1;
 			while (parens) {
-				const enum tok_t typ = gpreGlob.token_global.tok_type;
+				const tok_t typ = gpreGlob.token_global.tok_type;
 				if (isQuoted(typ))
 					*string++ = (typ == tok_sglquoted) ? '\'' : '\"';
 				gobble(string);
@@ -1144,7 +1144,7 @@ gpre_req* PAR_set_up_dpb_info(rdy* ready, act* action, USHORT buffercount)
 //		redefined.
 //
 
-gpre_sym* PAR_symbol(enum sym_t type)
+gpre_sym* PAR_symbol(sym_t type)
 {
 	gpre_sym* symbol;
 
@@ -1325,7 +1325,7 @@ static act* par_array_element()
 	reference->ref_field = element;
 	element->fld_symbol = field->fld_symbol;
 	reference->ref_context = context;
-	node->nod_arg[0] = (GPRE_NOD) reference;
+	node->nod_arg[0] = (gpre_nod*) reference;
 
 	act* action = MSC_action(request, ACT_variable);
 	action->act_object = reference;
@@ -1463,7 +1463,7 @@ static act* par_based()
 	case lang_c:
 	case lang_cxx:
 		do {
-			MSC_push((GPRE_NOD) PAR_native_value(false, false),
+			MSC_push((gpre_nod*) PAR_native_value(false, false),
 				 &based_on->bas_variables);
 		} while (MSC_match(KW_COMMA));
 		/*
@@ -1566,7 +1566,7 @@ static blb* par_blob()
 //		Parse a GET_SEGMENT, PUT_SEGMENT, CLOSE_BLOB or CANCEL_BLOB.
 //
 
-static act* par_blob_action( ACT_T type)
+static act* par_blob_action( act_t type)
 {
 	blb* blob = par_blob();
 	act* action = MSC_action(blob->blb_request, type);
@@ -1594,7 +1594,7 @@ static act* par_blob_field()
 
 	blb* blob = par_blob();
 
-	ACT_T type;
+	act_t type;
 	if (MSC_match(KW_DOT)) {
 		if (MSC_match(KW_SEGMENT))
 			type = ACT_segment;
@@ -1683,7 +1683,7 @@ static act* par_derived_from()
 	based_on->bas_variables = (gpre_lls*) MSC_alloc(LLS_LEN);
 	based_on->bas_variables->lls_next = NULL;
 	based_on->bas_variables->lls_object =
-		(GPRE_NOD) PAR_native_value(false, false);
+		(gpre_nod*) PAR_native_value(false, false);
 
 	strcpy(based_on->bas_terminator, gpreGlob.token_global.tok_string);
 	PAR_get_token();
@@ -1859,9 +1859,9 @@ static act* par_end_modify()
 			change->ref_flags = reference->ref_flags;
 
 			gpre_nod* item = MSC_node(nod_assignment, 2);
-			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) change);
-			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) change);
-			MSC_push((GPRE_NOD) item, &stack);
+			item->nod_arg[0] = MSC_unary(nod_value, (gpre_nod*) change);
+			item->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) change);
+			MSC_push((gpre_nod*) item, &stack);
 			count++;
 
 			if (reference->ref_null) {
@@ -1873,9 +1873,9 @@ static act* par_end_modify()
 				change->ref_null = flag;
 
 				item = MSC_node(nod_assignment, 2);
-				item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) flag);
-				item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) flag);
-				MSC_push((GPRE_NOD) item, &stack);
+				item->nod_arg[0] = MSC_unary(nod_value, (gpre_nod*) flag);
+				item->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) flag);
+				MSC_push((gpre_nod*) item, &stack);
 				count++;
 			}
 		}
@@ -1888,7 +1888,7 @@ static act* par_end_modify()
 	gpre_nod** ptr = assignments->nod_arg + count;
 
 	while (stack)
-		*--ptr = (GPRE_NOD) MSC_pop(&stack);
+		*--ptr = (gpre_nod*) MSC_pop(&stack);
 
 	act* action = MSC_action(request, ACT_endmodify);
 	action->act_object = (REF) modify;
@@ -1962,8 +1962,8 @@ static act* par_end_store(bool special)
 			if (reference->ref_master)
 				continue;
 			gpre_nod* item = MSC_node(nod_assignment, 2);
-			item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) reference);
-			item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) reference);
+			item->nod_arg[0] = MSC_unary(nod_value, (gpre_nod*) reference);
+			item->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) reference);
 			assignments->nod_arg[count++] = item;
 		}
 	}
@@ -1995,9 +1995,9 @@ static act* par_end_store(bool special)
 				change->ref_flags = reference->ref_flags;
 
 				gpre_nod* item = MSC_node(nod_assignment, 2);
-				item->nod_arg[0] = MSC_unary(nod_field, (GPRE_NOD) change);
-				item->nod_arg[1] = MSC_unary(nod_value, (GPRE_NOD) change);
-				MSC_push((GPRE_NOD) item, &stack);
+				item->nod_arg[0] = MSC_unary(nod_field, (gpre_nod*) change);
+				item->nod_arg[1] = MSC_unary(nod_value, (gpre_nod*) change);
+				MSC_push((gpre_nod*) item, &stack);
 				count++;
 			}
 		}
@@ -2009,7 +2009,7 @@ static act* par_end_store(bool special)
 		gpre_nod** ptr = assignments->nod_arg + count;
 
 		while (stack)
-			*--ptr = (GPRE_NOD) MSC_pop(&stack);
+			*--ptr = (gpre_nod*) MSC_pop(&stack);
 	}
 
 	gpre_ctx* context = request->req_contexts;
@@ -2075,7 +2075,7 @@ static act* par_fetch()
 	PAR_end();
 
 	act* action = MSC_action(request, ACT_s_fetch);
-	MSC_push((GPRE_NOD) action, &cur_fetch);
+	MSC_push((gpre_nod*) action, &cur_fetch);
 
 	return action;
 }
@@ -2164,7 +2164,7 @@ static act* par_for()
 	}
 
 	act* action = MSC_action(request, ACT_for);
-	MSC_push((GPRE_NOD) action, &cur_for);
+	MSC_push((gpre_nod*) action, &cur_for);
 
 	request->req_rse = rec_expr;
 	gpre_ctx* context = rec_expr->rse_context[0];
@@ -2238,7 +2238,7 @@ static act* par_modify()
 //  structure in place to cleanly handle END_MODIFY under error conditions.
 
 	upd* modify = (upd*) MSC_alloc(UPD_LEN);
-	MSC_push((GPRE_NOD) modify, &cur_modify);
+	MSC_push((gpre_nod*) modify, &cur_modify);
 
 //  If the next token isn't a context variable, we can't continue
 
@@ -2312,7 +2312,7 @@ static act* par_on_error()
 	cur_statement->act_error = action;
 	action->act_object = (REF) cur_statement;
 
-	MSC_push((GPRE_NOD) action, &cur_error);
+	MSC_push((gpre_nod*) action, &cur_error);
 
 	if (cur_statement->act_pair)
 		cur_statement->act_pair->act_error = action;
@@ -2327,7 +2327,7 @@ static act* par_on_error()
 //		CREATE_BLOB, and blob FOR.
 //
 
-static act* par_open_blob( ACT_T act_op, gpre_sym* symbol)
+static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 {
 //  If somebody hasn't already parsed up a symbol for us, parse the
 //  symbol and the mandatory IN now.
@@ -2403,7 +2403,7 @@ static act* par_open_blob( ACT_T act_op, gpre_sym* symbol)
 	action->act_object = (REF) blob;
 
 	if (act_op == ACT_blob_for)
-		MSC_push((GPRE_NOD) action, &cur_for);
+		MSC_push((gpre_nod*) action, &cur_for);
 
 //   Need to eat the semicolon if present
 
@@ -2471,7 +2471,7 @@ static act* par_procedure()
 		routine_decl = true;
 		action = scan_routine_header();
 		if (!(action->act_flags & ACT_decl)) {
-			MSC_push((GPRE_NOD) gpreGlob.cur_routine, &routine_stack);
+			MSC_push((gpre_nod*) gpreGlob.cur_routine, &routine_stack);
 			gpreGlob.cur_routine = action;
 		}
 	}
@@ -2681,7 +2681,7 @@ static act* par_returning_values()
 			count++;
 	}
 
-	GPRE_NOD assignments = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod* assignments = MSC_node(nod_list, (SSHORT) count);
 	request->req_node = assignments;
 	count = 0;
 
@@ -2696,9 +2696,9 @@ static act* par_returning_values()
 
 		if (reference->ref_master)
 			continue;
-		GPRE_NOD item = MSC_node(nod_assignment, 2);
-		item->nod_arg[0] = MSC_unary(nod_value, (GPRE_NOD) save_ref);
-		item->nod_arg[1] = MSC_unary(nod_field, (GPRE_NOD) save_ref);
+		gpre_nod* item = MSC_node(nod_assignment, 2);
+		item->nod_arg[0] = MSC_unary(nod_value, (gpre_nod*) save_ref);
+		item->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) save_ref);
 		assignments->nod_arg[count++] = item;
 	}
 
@@ -2726,8 +2726,8 @@ static act* par_returning_values()
 
 //  both actions go on the cur_store stack, the store topmost
 
-	MSC_push((GPRE_NOD) action, &cur_store);
-	MSC_push((GPRE_NOD) begin_action, &cur_store);
+	MSC_push((gpre_nod*) action, &cur_store);
+	MSC_push((gpre_nod*) begin_action, &cur_store);
 	return action;
 }
 
@@ -2780,7 +2780,7 @@ static act* par_release()
 //		Handle a GET_SLICE or PUT_SLICE statement.
 //
 
-static act* par_slice( ACT_T type)
+static act* par_slice( act_t type)
 {
 	gpre_ctx* context;
 	gpre_fld* field = EXP_field(&context);
@@ -2848,7 +2848,7 @@ static act* par_store()
 	gpre_req* request = MSC_request(REQ_store);
 	par_options(request, false);
 	act* action = MSC_action(request, ACT_store);
-	MSC_push((GPRE_NOD) action, &cur_store);
+	MSC_push((gpre_nod*) action, &cur_store);
 
 	gpre_ctx* context = EXP_context(request, 0);
 	gpre_rel* relation = context->ctx_relation;
@@ -3015,7 +3015,7 @@ static act* par_subroutine()
 //		prepare, rollback, or save (commit retaining context).
 //
 
-static act* par_trans( ACT_T act_op)
+static act* par_trans( act_t act_op)
 {
 	act* action = MSC_action(0, act_op);
 

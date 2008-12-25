@@ -39,15 +39,15 @@ enum tok_t {
 };
 
 typedef struct tok {
-	enum tok_t tok_type;		/* type of token */
-	gpre_sym* tok_symbol;			/* hash block if recognized */
-	KWWORDS tok_keyword;		/* keyword number, if recognized */
+	tok_t tok_type;				/* type of token */
+	gpre_sym* tok_symbol;		/* hash block if recognized */
+	kwwords_t tok_keyword;		/* keyword number, if recognized */
 	SLONG tok_position;			/* byte number in input stream */
 	USHORT tok_length;
 	USHORT tok_white_space;
 	SCHAR tok_string[MAX_SYM_SIZE];
 	USHORT tok_first;			/* first token in a statement */
-	gpre_sym* tok_charset;			/* Character set of token */
+	gpre_sym* tok_charset;		/* Character set of token */
 } *TOK;
 
 const size_t TOK_LEN = sizeof(tok);

@@ -150,7 +150,8 @@ bool isAnsiCobol(cob_t dialect);
 /* Structure used by Fortran and Basic to determine whether or not
    an array has been declared in a subroutine. */
 
-struct adl {
+struct adl
+{
 	ULONG adl_gds_ident;		/* Identifier of array for which Gpre has
 								   generated a declaration in main or a
 								   subroutine */
@@ -162,7 +163,8 @@ const size_t ADL_LEN = sizeof(adl);
 
 /* database block data, for generating block data section in fussy fortran */
 
-struct dbd {
+struct dbd
+{
 	enum {dbb_size = 128};
 	TEXT dbb_name[dbb_size];			/* database name */
 };
@@ -175,7 +177,8 @@ struct dbd {
  *
  */
 
-struct dim {
+struct dim
+{
 	int dim_number;				/* Dimension number i (i=1 to n) */
 	SLONG dim_lower;			/* Lower bound */
 	SLONG dim_upper;			/* Upper bound */
@@ -186,14 +189,15 @@ struct dim {
 const size_t DIM_LEN = sizeof(dim);
 
 
-typedef struct fil {
+struct gpre_file
+{
 	SLONG fil_length;			/* File length in pages */
 	SLONG fil_start;			/* Starting page */
 	TEXT *fil_name;				/* File name */
-	fil* fil_next;				/* next file */
+	gpre_file* fil_next;		/* next file */
 	USHORT fil_shadow_number;	/* shadow number if part of shadow */
 	USHORT fil_flags;
-} *FIL;
+};
 
 enum fil_flags_vals {
 	FIL_manual	= 1,	// Manual shadow
@@ -201,25 +205,27 @@ enum fil_flags_vals {
 	FIL_conditional	= 4	// Conditional shadow
 };
 
-const size_t FIL_LEN = sizeof(fil);
+const size_t FIL_LEN = sizeof(gpre_file);
 
 
 /* filter block */
 
-typedef struct fltr {
+struct gpre_filter
+{
 	TEXT *fltr_name;
 	const TEXT *fltr_entry_point;
 	const TEXT *fltr_module_name;
 	SSHORT fltr_input_type;
 	SSHORT fltr_output_type;
-} *FLTR;
+};
 
-const size_t FLTR_LEN = sizeof(fltr);
+const size_t FLTR_LEN = sizeof(gpre_filter);
 
 
 /* General Syntax node, produced by parser */
 
-typedef enum nod_t {
+enum nod_t {
+	nod_nothing = 0,
 	nod_field = 1, nod_literal, nod_value,
 	nod_and, nod_or, nod_not,
 	nod_eq, nod_equiv, nod_ne, nod_ge,
@@ -256,14 +262,15 @@ typedef enum nod_t {
 	nod_current_role, nod_current_transaction,
 	nod_coalesce, nod_case, nod_case1,
 	nod_substring,
-	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
-} NOD_T;
+	nod_LASTNOD					/* Leave this debugging gpre_nod last */
+};
 
-typedef struct gpre_nod {
-	enum nod_t nod_type;		/* node type */
+struct gpre_nod
+{
+	nod_t nod_type;				/* node type */
 	USHORT nod_count;			/* number of sub-items */
 	gpre_nod* nod_arg[1];		/* argument */
-} *GPRE_NOD;
+};
 
 inline size_t NOD_LEN(const size_t cnt)
 {
@@ -321,7 +328,8 @@ enum swe_condition_vals {
 
 /* Text block */
 
-struct gpre_txt {
+struct gpre_txt
+{
 	ULONG txt_position;
 	USHORT txt_length;
 };
@@ -331,7 +339,8 @@ const size_t TXT_LEN = sizeof(gpre_txt);
 
 /* User name -- used for SQL GRANT/REVOKE */
 
-struct gpre_usn {
+struct gpre_usn
+{
 	gpre_usn* usn_next;
 	SCHAR *usn_name;
 	USHORT usn_dyn;				/* describes the type of user via a dyn-verb,
@@ -343,26 +352,29 @@ const size_t USN_LEN = sizeof(gpre_usn);
 
 /* value block, used to store a set of values */
 
-typedef struct val {
-	val* val_next;				/* next value in list */
+struct gpre_value
+{
+	gpre_value* val_next;			/* next value in list */
 	const TEXT* val_value;			/* value */
-} *VAL;
+};
 
-const size_t VAL_LEN = sizeof(val);
+const size_t VAL_LEN = sizeof(gpre_value);
 
 
 /* Array information block.  Used to hold info about an array field.
    Note: the dimension (dim) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
 
-struct ary {
+struct ary
+{
 	USHORT ary_dtype;			/* data type of array */
 	int ary_dimension_count;	/* Number of dimensions in this array */
 	dim* ary_dimension;			/* Linked list of range info for each dimension */
 	SLONG ary_size;				/* Size of the array */
 	ULONG ary_ident;			/* Array identifier */
 	bool ary_declared;			/* True if a declaration already was generated */
-	struct ary_repeat {
+	struct ary_repeat
+	{
 		SLONG ary_lower;
 		SLONG ary_upper;
 	} ary_rpt[MAX_ARRAY_DIMENSIONS];
@@ -378,7 +390,8 @@ const size_t ARY_LEN = sizeof(ary);
    use is to create a trigger for CHECK constraints which always
    abort on error                                                   */
 
-struct gpre_trg {
+struct gpre_trg
+{
 	str* trg_name;
 	USHORT trg_type;			/* Type of trigger */
 	str* trg_source;			/* source for trigger */
@@ -526,7 +539,7 @@ struct gpre_rel;
 class gpre_req;
 class ref;
 
-typedef enum act_t {
+enum act_t {
 	ACT_any,
 	ACT_alter_database,
 	ACT_alter_domain,
@@ -636,14 +649,14 @@ typedef enum act_t {
 	ACT_sql_dialect,
 
 	ACT_LASTACT					/* leave this debugging ACT last */
-} ACT_T;
+};
 
 /* Action block, used to make action points in source */
 
 struct act {
 	SLONG act_position;			/* position in input stream */
 	SLONG act_length;			/* length to be commented out */
-	enum act_t act_type;		/* type of action */
+	act_t act_type;				/* type of action */
 	act* act_next;				/* next action in request */
 	act* act_rest;				/* remaining actions in module */
 	act* act_error;				/* on-error action (maybe) */
@@ -698,7 +711,7 @@ enum sym_t {
 
 struct gpre_sym {
 	const char* sym_string;		/* address of asciz string */
-	enum sym_t sym_type;		/* symbol type */
+	sym_t sym_type;				/* symbol type */
 	USHORT sym_keyword;			/* keyword number, if keyword */
 	gpre_ctx* sym_object;		/* general pointer to object */
 	gpre_sym* sym_collision;	/* collision pointer */
@@ -818,12 +831,12 @@ typedef struct dbb {
 	int dbb_buffersize;
 	int dbb_users;
 	ULONG dbb_length;			/* Length of database in pages, if known */
-	fil* dbb_logfiles;
+	gpre_file* dbb_logfiles;
 #ifdef SCROLLABLE_CURSORS
 	SSHORT dbb_base_level;		/* code level of the engine we are talking to */
 #endif
-	fil* dbb_cache_file;
-	fil* dbb_files;
+	gpre_file* dbb_cache_file;
+	gpre_file* dbb_files;
 } *DBB;
 
 const size_t DBB_LEN = sizeof(dbb);
@@ -919,7 +932,7 @@ struct gpre_rse {
 	gpre_nod* rse_plan;			/* user-specified access plan */
 	map* rse_map;				/* map for aggregates */
 	gpre_rse* rse_aggregate;	/* Aggregate rse */
-	enum nod_t rse_join_type;	/* Join type */
+	nod_t rse_join_type;		/* Join type */
 	USHORT rse_flags;			/* flags */
 	USHORT rse_count;			/* number of relations */
 	gpre_ctx* rse_context[1];	/* context block */
@@ -1065,18 +1078,19 @@ enum fld_flags_vals {
 };
 
 
-typedef enum {
+enum  fun_t {
 	FUN_value,
 	FUN_reference,
 	FUN_descriptor,
 	FUN_blob_struct,
 	FUN_scalar_array
-} FUN_T;
+};
 
 
 /* Port block */
 
-struct gpre_port {
+struct gpre_port
+{
 	USHORT por_msg_number;		/* message number within request */
 	ULONG por_ident;			/* ident in source */
 	int por_length;				/* length of port in bytes */
@@ -1090,14 +1104,16 @@ const size_t POR_LEN = sizeof(gpre_port);
 
 /* Slice description block */
 
-struct slc {
+struct slc
+{
 	gpre_req* slc_parent_request;	/* request for blob id */
 	gpre_fld* slc_field;			/* database array field */
 	gpre_nod* slc_array;			/* user defined array */
 	ref* slc_field_ref;				/* array field reference */
 	USHORT slc_dimensions;			/* dimensions */
 	USHORT slc_parameters;			/* number of parameters */
-	struct slc_repeat {
+	struct slc_repeat
+	{
 		gpre_nod* slc_lower;
 		gpre_nod* slc_upper;
 	} slc_rpt[1];
@@ -1131,10 +1147,11 @@ enum req_t {
 	REQ_LASTREQUEST				/* Leave this debugging gpre_req last */
 };
 
-class gpre_req {
-	public:
+class gpre_req
+{
+public:
 
-	enum req_t req_type;		/* request type */
+	req_t req_type;				/* request type */
 	ULONG req_ident;			/* ident for request handle */
 	USHORT req_act_flag;		/* activity flag ident, if used */
 	int req_length;				/* blr length of request */
@@ -1184,21 +1201,26 @@ class gpre_req {
 	USHORT req_in_subselect;	/* processing a subselect clause */
 	ULONG req_flags;
 
-	inline void add_end() {
+	inline void add_end()
+	{
 		*req_blr++ = isc_dyn_end;
 	}
-	inline void add_byte(const int byte) {
+	inline void add_byte(const int byte)
+	{
 		*req_blr++ = (SCHAR) (byte);
 	}
-	inline void add_word(const int word) {
+	inline void add_word(const int word)
+	{
 		add_byte(word);
 		add_byte(word >> 8);
 	}
-	inline void add_long(const long lg) {
+	inline void add_long(const long lg)
+	{
 		add_word(lg);
 		add_word(lg >> 16);
 	}
-	inline void add_cstring(const char* string) {
+	inline void add_cstring(const char* string)
+	{
 		add_byte(strlen(string));
 		UCHAR c;
 		while (c = *string++) {
@@ -1248,7 +1270,7 @@ const size_t CTX_LEN = sizeof(gpre_ctx);
 /* Field reference */
 
 class ref {
-	public:
+public:
 
 	USHORT ref_ident;			/* identifier */
 	USHORT ref_level;			/* highest level of access */
@@ -1264,7 +1286,7 @@ class ref {
 	ref* ref_friend;			/* value for variable */
 	gpre_nod* ref_expr;			/* expression, if node is expression */
 	const TEXT* ref_value;		/* value string if host language value */
-	val* ref_values;			/* linked list of values */
+	gpre_value* ref_values;		/* linked list of values */
 	const TEXT* ref_null_value;	/* value string if host language value */
 	UCHAR* ref_sdl;				/* Raw slice description language for an array */
 	UCHAR* ref_sdl_base;		/* base of sdl string during generation */
@@ -1275,14 +1297,17 @@ class ref {
 	USHORT ref_flags;
 	SSHORT ref_ttype;			/* Character set type for literals */
 
-	inline void add_byte(const int byte) {
+	inline void add_byte(const int byte)
+	{
 		*ref_sdl++ = (UCHAR) byte;
 	}
-	inline void add_word(const int word) {
+	inline void add_word(const int word)
+	{
 		add_byte(word);
 		add_byte(word >> 8);
 	}
-	inline void add_long(const long lg) {
+	inline void add_long(const long lg)
+	{
 		add_word(lg);
 		add_word(lg >> 16);
 	}

@@ -46,15 +46,15 @@
 #include "../jrd/misc_func_ids.h"
 #include "../jrd/align.h"
 
-static void cmp_array(GPRE_NOD, gpre_req*);
-static void cmp_array_element(GPRE_NOD, gpre_req*);
-static void cmp_cast(GPRE_NOD, gpre_req*);
+static void cmp_array(gpre_nod*, gpre_req*);
+static void cmp_array_element(gpre_nod*, gpre_req*);
+static void cmp_cast(gpre_nod*, gpre_req*);
 static void cmp_field(const gpre_nod*, gpre_req*);
 static void cmp_literal(const gpre_nod*, gpre_req*);
 static void cmp_map(MAP, gpre_req*);
 static void cmp_plan(const gpre_nod*, gpre_req*);
 static void cmp_sdl_dtype(const gpre_fld*, REF);
-static void cmp_udf(GPRE_NOD, gpre_req*);
+static void cmp_udf(gpre_nod*, gpre_req*);
 static void cmp_value(const gpre_nod*, gpre_req*);
 static void get_dtype_of_case(const gpre_nod*, gpre_fld*);
 static void get_dtype_of_list(const gpre_nod*, gpre_fld*);
@@ -78,7 +78,7 @@ static bool debug_on;
 
 struct op_table
 {
-	enum nod_t op_type;
+	nod_t op_type;
 	UCHAR op_blr;
 };
 
@@ -164,7 +164,7 @@ static inline bool is_date_and_time(const USHORT d1, const USHORT d2)
 //		Compile a random expression.
 //
 
-void CME_expr(GPRE_NOD node, gpre_req* request)
+void CME_expr(gpre_nod* node, gpre_req* request)
 {
 	gpre_ctx* context;
 	gpre_fld field;
@@ -272,7 +272,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 // ** Begin date/time/timestamp support *
 	case nod_extract:
 		request->add_byte(blr_extract);
-		switch ((KWWORDS) (IPTR) node->nod_arg[0])
+		switch ((kwwords_t) (IPTR) node->nod_arg[0])
 		{
 		case KW_YEAR:
 			request->add_byte(blr_extract_year);
@@ -609,7 +609,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 // ** Begin date/time/timestamp support *
 	case nod_extract:
 		{
-			KWWORDS kw_word = (KWWORDS) (IPTR) node->nod_arg[0];
+			kwwords_t kw_word = (kwwords_t) (IPTR) node->nod_arg[0];
 			CME_get_dtype(node->nod_arg[1], f);
 			switch (f->fld_dtype)
 			{
@@ -1222,7 +1222,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 {
 	SSHORT i;
 
-	if (selection->rse_join_type == (NOD_T) 0)
+	if (selection->rse_join_type == nod_nothing)
 	{
 		if ((selection->rse_flags & RSE_singleton) &&
 			!(request->req_database->dbb_flags & DBB_v3))
@@ -1338,7 +1338,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		cmp_plan(temp, request);
 	}
 
-	if (selection->rse_join_type != (NOD_T) 0
+	if (selection->rse_join_type != nod_nothing
 		&& selection->rse_join_type != nod_join_inner)
 	{
 		request->add_byte(blr_join_type);
@@ -1384,7 +1384,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 //       out sdl (slice description language)
 //
 
-static void cmp_array( GPRE_NOD node, gpre_req* request)
+static void cmp_array( gpre_nod* node, gpre_req* request)
 {
 	CMP_check(request, 0);
 
@@ -1464,7 +1464,7 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 //       from an gpre_rse and output blr for this reference
 //
 
-static void cmp_array_element( GPRE_NOD node, gpre_req* request)
+static void cmp_array_element( gpre_nod* node, gpre_req* request)
 {
 	request->add_byte(blr_index);
 
@@ -1483,7 +1483,7 @@ static void cmp_array_element( GPRE_NOD node, gpre_req* request)
 //
 //
 
-static void cmp_cast( GPRE_NOD node, gpre_req* request)
+static void cmp_cast( gpre_nod* node, gpre_req* request)
 {
 
 	request->add_byte(blr_cast);
@@ -1780,7 +1780,7 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 	gpre_nod* const* ptr = list->nod_arg;
 	for (gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
-		GPRE_NOD node = *ptr;
+		gpre_nod* node = *ptr;
 		if (node->nod_type == nod_plan_expr)
 		{
 			cmp_plan(node, request);
@@ -1944,7 +1944,7 @@ static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
 //		Compile a reference to a user defined function.
 //
 
-static void cmp_udf( GPRE_NOD node, gpre_req* request)
+static void cmp_udf( gpre_nod* node, gpre_req* request)
 {
 	const udf* an_udf = (udf*) node->nod_arg[1];
 	request->add_byte(blr_function);

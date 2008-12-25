@@ -43,10 +43,12 @@ const int HASH_SIZE = 211;
 static gpre_sym* hash_table[HASH_SIZE];
 static gpre_sym* key_symbols;
 
-static struct word {
+static struct word
+{
 	const char* keyword;
-	enum kwwords id;
-}  keywords[] = {
+	kwwords_t id;
+}  keywords[] =
+{
 #include "../gpre/hsh.h"
 };
 
@@ -56,7 +58,7 @@ static struct word {
 //		Release space used by keywords.
 //
 
-void HSH_fini(void)
+void HSH_fini()
 {
 	while (key_symbols) {
 		gpre_sym* symbol = key_symbols;
@@ -73,7 +75,7 @@ void HSH_fini(void)
 //		inserting all known keywords.
 //
 
-void HSH_init(void)
+void HSH_init()
 {
 	//const char *string;
 
