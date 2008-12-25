@@ -142,7 +142,7 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& poo
 
 	DumpGuard guard(this);
 
-	ULONG self_dbb_offset = 0;	
+	ULONG self_dbb_offset = 0;
 
 	// Garbage collect elements belonging to dead processes.
 	// This is done in two passes. First, we compact the data
@@ -157,8 +157,7 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& poo
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
 
-		if (element->processId == getpid() &&
-			element->localId == dbb->dbb_monitoring_id)
+		if (element->processId == getpid() && element->localId == dbb->dbb_monitoring_id)
 		{
 			self_dbb_offset = offset;
 		}
