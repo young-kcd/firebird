@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: changegdslibrarycompatibleLink.sh.in,v 1.2.2.2 2008-01-17 13:14:17 paulbeach Exp $
+#   $Id: changegdslibrarycompatibleLink.sh.in,v 1.2.2.3 2008-12-25 12:26:50 alexpeshkoff Exp $
 # 
 
 
@@ -43,41 +43,8 @@
 #
 
 #------------------------------------------------------------------------
-# Prompt for response, store result in Answer
-
-Answer=""
-
-AskQuestion() {
-    Test=$1
-    DefaultAns=$2
-    echo -n "${1}"
-    Answer="$DefaultAns"
-    read Answer
-
-    if [ -z $Answer ]
-      then
-        Answer=$DefaultAns
-    fi
-}
-
-
-#------------------------------------------------------------------------
-#  remove Link
-
-removeLink() {
-    fileName=$1
-
-    if [ -L $fileName ]
-      then
-        rm -f $fileName
-    fi
-
-}
-
-
-#------------------------------------------------------------------------
 #  quitIfRealFile
-# Remove the backward comparibility links for libgds.sl
+# Quit if library is real file, not link somewhere
 
 quitIfRealFile() {
 
@@ -102,52 +69,22 @@ quitIfRealFile() {
 
 
 #------------------------------------------------------------------------
-#  removeLinks
-# Remove the backward comparibility links for libgds.sl
-
-removeLinks() {
-    removeLink @libdir@/libgds.sl
-    removeLink @libdir@/libgds.sl.0
-}
-
-
-#------------------------------------------------------------------------
-#  createLinksForBackCompatibility
-#  Create links for back compatibility to InterBase and Firebird1.0 
-#  linked systems.
-
-createLinksForBackCompatibility() {
-
-    # These two links are required for compatibility with existing ib programs
-    # If the program had been linked with libgds.sl then this link is required
-    # to ensure it loads the fb equivalent.  Eventually these should be 
-    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
-
-    newLibrary=$FBRootDir/lib/$1
-
-    removeLinks
-
-    ln -s $newLibrary @libdir@/libgds.sl
-    ln -s $newLibrary @libdir@/libgds.sl.0
-
-
-}
-
-#------------------------------------------------------------------------
 #  printStatus
 
 printStatus() {
-    printStatus=`ls -l @libdir@/libgds.sl | sed 's@^.* /usr@/usr@'`
-    echo $printStatus
-
+    prStatus=`ls -l @libdir@/libgds.so | sed 's@^.* /usr@/usr@'`
+    echo $prStatus
 }
     
 
-#= Main ====================================================================
 
 
     FBRootDir=@prefix@
     FBBin=$FBRootDir/bin
+
+    quitIfRealFile @libdir@/libgds.sl
+    quitIfRealFile @libdir@/libgds.sl.0
+
 
 cat <<EOF
 For classic server there are two optional backward compatible client libraries.
@@ -163,9 +100,6 @@ EOF
     printStatus
 
     echo ""
-
-    quitIfRealFile @libdir@/libgds.sl
-    quitIfRealFile @libdir@/libgds.sl.0
 
     
     AskQuestion "Which option would you like to choose (client|embed|remove) [client] " "client"

@@ -30,7 +30,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: makeinstallImage.sh.in,v 1.2.2.4 2008-12-12 13:28:34 alexpeshkoff Exp $
+#   $Id: makeinstallImage.sh.in,v 1.2.2.5 2008-12-25 12:26:49 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -141,8 +141,6 @@ copyFiles() {
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
 #   Append libraries to scripts
-    addLibs $BuiltFBDir/bin changeRunUser.sh $DestDir/bin
-    addLibs $BuiltFBDir/bin restoreRootRunUser.sh $DestDir/bin
     addLibs $BuiltFBDir/bin changedbaPassword.sh $DestDir/bin
     addLibs $BuiltFBDir/bin changegdslibrarycompatibleLink.sh $DestDir/bin
 

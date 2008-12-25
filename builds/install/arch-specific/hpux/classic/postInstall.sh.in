@@ -31,32 +31,15 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postInstall.sh.in,v 1.3.2.3 2008-09-03 10:06:28 paulbeach Exp $
+#   $Id: postInstall.sh.in,v 1.3.2.4 2008-12-25 12:26:49 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic
 
     # Make sure the links are in place 
     if  [ -z "$FirebirdInstallPrefix" ]
-       then
+      then
         FirebirdInstallPrefix=@prefix@
-	ln -s @prefix@/lib/libfbembed.sl.@FIREBIRD_VERSION@ @prefix@/lib/libfbembed.sl.2
-	ln -s @prefix@/lib/libfbembed.sl.2 @prefix@/lib/libfbemebed.sl
-	ln -s @prefix@/lib/libfbembed.sl.@FIREBIRD_VERSION@ @libdir@/libfbembed.sl.@FIREBIRD_VERSION@
-	ln -s @prefix@/lib/libfbembed.sl.2 @libdir@/libfbembed.sl.2
-	ln -s @prefix@/lib/libfbembed.sl @libdir@/libfbembed.sl
-	ln -s @prefix@/lib/libfbclient.sl.@FIREBIRD_VERSION@ @prefix@/lib/libfbclient.sl.2
-	ln -s @prefix@/lib/libfbclient.sl.2 @prefix@/lib/libfbclient.sl
-	ln -s @prefix@/lib/libfbclient.sl.@FIREBIRD_VERSION@ @libdir@/libfbclient.sl.@FIREBIRD_VERSION@
-	ln -s @prefix@/lib/libfbclient.sl.2 @libdir@/libfbclient.sl.2
-	ln -s @prefix@/lib/libfbclient.sl @libdir@/libfbclient.sl
-	ln -s @prefix@/lib/libicudata.sl.30.0 @prefix@/lib/libicudata.sl.30
-	ln -s @prefix@/lib/libicudata.sl.30 @prefix@/lib/libicudata.sl
-	ln -s @prefix@/lib/libicui18n.sl.30.0 @prefix@/lib/libicui18n.sl.30
-	ln -s @prefix@/lib/libicuuc.sl.30 @prefix@/lib/libicuuc.sl
-	ln -s @prefix@/lib/libicuuc.sl.30.0 @prefix@/lib/libicuuc.sl.30
-	ln -s @prefix@/lib/libib_util.sl @libdir@/libib_util.sl
-	ln -s @prefix@/lib/libicui18n.sl.30 @prefix@/lib/libicui18n.sl
     fi
 
     origDir=`pwd`
@@ -66,17 +49,13 @@
     # The \n is needed, some /etc/services files are missing a trailing
     # line feed - MOD 7-Nov-2002
     FileName=/etc/services
-    newLine="gds_db          3050/tcp  # Firebird SQL Database Remote Protocol"
-    oldLine=`grep "^gds_db" $FileName`
+    newLine="@FB_SERVICE_NAME@		@FB_SERVICE_PORT@/tcp  # Firebird SQL Database Remote Protocol"
+    oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
     if [ -z "$oldLine" ]
       then
         echo "" >> $FileName
-        echo $newLine >> $FileName
-        echo "" >> $FileName
-    #    replaceLineInFile "$FileName" "$newLine" "$oldLine"
+        replaceLineInFile "$FileName" "$newLine" "$oldLine"
     fi
-
-    updateHostsDotFile
 
     # add Firebird user
     if [ $RunUser = "firebird" ]
@@ -84,57 +63,13 @@
         addFirebirdUser
     fi
 
-
-    # Create Lock files
-    cd $FBRootDir
-
-    for i in isc_init1 isc_lock1 isc_event1 
-      do
-        FileName=$i.`hostname`
-        touch $FileName
-      done
-
-    # Create log
-    touch firebird.log
-
-
-    # Update ownership and SUID bits for programs.
-    chown -R $RunUser $FBRootDir
-    chgrp -R $RunUser $FBRootDir
-
-    fixFilePermissions
-    # Correct a couple of minor issues set via FilePermissions
-    chmod 660 security2.fdb
-    chmod 666 isc_lock1.`hostname`
-    echo "Updating Lock Manager"
-    cd $FBBin
-    for i in fb_lock_mgr
-    do
-	if [ -f $i ]
-	then
-		chown root $i
-		chmod ug=rx,o= $i
-		chmod ugo+s $i
-		fi
-	done	
-
-    
+	setFilePermissions
     createLinksForBackCompatibility
-
     buildUninstallFile
-
-    # Update the /etc/inetd.conf or xinetd entry
     updateInetdServiceEntry
-
-
-    # Get inetd to reread new init files.
     resetInetdServer
-
 
     cd $FBRootDir
     
     # Change sysdba password
     changeDBAPassword
-
-
-
