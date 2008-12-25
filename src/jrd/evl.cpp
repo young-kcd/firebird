@@ -3130,7 +3130,7 @@ static dsc* concatenate(thread_db* tdbb,
 	}
 	else
 	{
-		fb_assert(desc.dsc_dtype == dtype_blob);
+		fb_assert(desc.isBlob());
 
 		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
 
@@ -3913,7 +3913,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 
 	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
 
-	if (value->dsc_dtype == dtype_blob)
+	if (value->isBlob())
 	{
 		EVL_make_value(tdbb, value, impure);
 
@@ -4517,7 +4517,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 /* Choose interpretation for the operation */
 
  	USHORT ttype;
-	if (desc1->dsc_dtype == dtype_blob || desc1->dsc_dtype == dtype_quad)
+	if (desc1->isBlob())
 	{
 		if (desc1->dsc_sub_type == isc_blob_text)
 			ttype = desc1->dsc_blob_ttype();	/* Load blob character set and collation */
@@ -4549,7 +4549,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
    and never Multibyte (see note in EVL_mb_sleuthCheck) */
 	bool ret_val;
 	MoveBuffer data_str;
-	if (desc1->dsc_dtype != dtype_blob && desc1->dsc_dtype != dtype_quad)
+	if (!desc1->isBlob())
 	{
 		/* Source is not a blob, do a simple search */
 
@@ -4607,7 +4607,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	DEV_BLKCHK(node, type_nod);
 
-	if (desc1->dsc_dtype != dtype_blob && desc1->dsc_dtype != dtype_quad)
+	if (!desc1->isBlob())
 	{
 		/* Source is not a blob, do a simple search */
 
@@ -4998,7 +4998,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 	ULONG length;
 
-	if (value->dsc_dtype == dtype_blob || value->dsc_dtype == dtype_quad)
+	if (value->isBlob())
 	{
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 							 reinterpret_cast<bid*>(value->dsc_address));
@@ -5168,7 +5168,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	UCHAR* valueAddress;
 	ULONG valueLength;
 
-	if (value->dsc_dtype == dtype_blob)
+	if (value->isBlob())
 	{
 		// Source string is a blob, things get interesting.
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
@@ -5216,7 +5216,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		}
 	}
 
-	if (value->dsc_dtype == dtype_blob)
+	if (value->isBlob())
 	{
 		// We have valueCanonical already allocated.
 		// Use it to get the substring that will be written to the new blob.

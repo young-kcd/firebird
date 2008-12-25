@@ -6080,10 +6080,10 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 			*desc = desc2;
 		}
 		else if (max == dtype_blob) {
-			desc->dsc_dtype = dtype_quad;
+			desc->dsc_dtype = dtype_blob;
 			desc->dsc_length = sizeof(ISC_QUAD);
 			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
+			desc->dsc_sub_type = DataTypeUtil::getResultBlobSubType(desc, &desc2);
 			desc->dsc_flags = 0;
 		}
 		else if (min <= dtype_any_text) {	// either field a text field?
