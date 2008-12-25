@@ -1,3 +1,83 @@
+2008-12-25 16:05  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.331), evl.cpp (1.285):
+
+	Fixed CORE-2258 - Internal error when select upper(<blob>) from
+	union
+
+2008-12-25 15:24  asfernandes
+
+	* firebird2/src/: common/classes/alloc.cpp (1.117),
+	jrd/Collation.cpp (1.15), jrd/svc.cpp (1.250), jrd/tra.cpp (1.190),
+	jrd/validation.cpp (1.46), jrd/vio.cpp (1.237):
+
+	Misc
+
+2008-12-25 11:40  alexpeshkoff
+
+	* firebird2/builds/install/misc/posixLibrary.sh.in (1.18):
+
+	misc
+
+2008-12-25 11:01  alexpeshkoff
+
+	* firebird2/src/config/StreamSegment.cpp (1.6):
+
+	AIX port
+
+2008-12-25 08:46  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.55), c_cxx.cpp (1.73), cmd.cpp
+	(1.46), cme.cpp (1.49), cme_proto.h (1.10), cmp.cpp (1.40),
+	cmp_proto.h (1.14), cob.cpp (1.69), dyntable.cpp (1.12), exp.cpp
+	(1.44), exp_proto.h (1.14), ftn.cpp (1.66), gpre.cpp (1.93), gpre.h
+	(1.92), gpre_meta.epp (1.59), gpre_meta.h (1.15),
+	gpre_meta_boot.cpp (1.54), gpre_proto.h (1.10), hsh.cpp (1.26),
+	hsh_proto.h (1.9), lang_proto.h (1.11), msc.cpp (1.27), msc_proto.h
+	(1.16), par.cpp (1.72), par_proto.h (1.13), parse.h (1.13), pas.cpp
+	(1.57), pat.cpp (1.31), rmc.cpp (1.11), sqe.cpp (1.55), sqe_proto.h
+	(1.12), sql.cpp (1.73), sql_proto.h (1.13), words.h (1.10):
+
+	Cleanup: style, get rid of typedef needed by plain C, other C++
+	legacy declarations, etc. First pass.
+
+2008-12-25 07:30  robocop
+
+	* firebird2/src/jrd/isc_file.cpp (1.127):
+
+	Wrong indentation.
+
+2008-12-25 07:30  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.87):
+
+	Style.
+
+2008-12-25 07:16  robocop
+
+	* firebird2/doc/README.connection_string_charset.txt (1.2):
+
+	Misc.
+
+2008-12-25 07:10  robocop
+
+	* firebird2/src/jrd/TextType.h (1.6):
+
+	Prevent surprises with signed chars being promoted to negative
+	integers.
+
+2008-12-25 07:09  robocop
+
+	* firebird2/src/jrd/: Collation.cpp (1.14), SysFunction.cpp (1.60),
+	TempSpace.h (1.13), TextType.cpp (1.11), ThreadData.h (1.7),
+	ThreadStart.cpp (1.11), UserManagement.cpp (1.6), VirtualTable.cpp
+	(1.13), sort.cpp (1.119), sqz.cpp (1.30), svc.cpp (1.249), tpc.cpp
+	(1.37), tra.cpp (1.189), unicode_util.cpp (1.43), unicode_util.h
+	(1.17), utl.cpp (1.126), utl_proto.h (1.25), validation.cpp (1.45),
+	vio.cpp (1.236), vio_proto.h (1.30), why.cpp (1.225):
+
+	Style.
+
 2008-12-24 15:17  alexpeshkoff
 
 	* firebird2/: builds/posix/prefix.aix_powerpc (1.5),
