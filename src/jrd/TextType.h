@@ -137,7 +137,7 @@ public:
 		CHAR_SQL_MATCH_ONE = CHAR_UNDERLINE
 	};
 
-	const UCHAR* getCanonicalChar(int ch) const
+	const UCHAR* getCanonicalChar(unsigned int ch) const
 	{
 		return reinterpret_cast<const UCHAR*>(&canonicalChars[ch]);
 	}
