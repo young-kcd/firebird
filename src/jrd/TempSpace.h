@@ -62,8 +62,7 @@ public:
 
 	typedef Firebird::Array<SegmentInMemory> Segments;
 
-	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize,
-		Segments& segments);
+	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize, Segments& segments);
 
 	bool validate(offset_t& freeSize) const;
 private:

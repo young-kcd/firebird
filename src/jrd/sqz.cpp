@@ -34,8 +34,7 @@
 
 using namespace Jrd;
 
-USHORT SQZ_apply_differences(Record* record, const SCHAR* differences,
-	const SCHAR* const end)
+USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCHAR* const end)
 {
 /**************************************
  *
@@ -249,8 +248,7 @@ UCHAR* SQZ_decompress(const SCHAR*	input,
 }
 
 
-USHORT SQZ_no_differences(SCHAR* const out,
-						  int	length)
+USHORT SQZ_no_differences(SCHAR* const out, int length)
 {
 /**************************************
  *
@@ -333,9 +331,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 			   when rec1 is at the end of a segment, to avoid wrapping around */
 
 			const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
-			while (rec1 <= yellow &&
-				   (rec1[0] != rec2[0] ||
-					(rec1[1] != rec2[1] && rec1 < yellow)))
+			while (rec1 <= yellow && (rec1[0] != rec2[0] || (rec1[1] != rec2[1] && rec1 < yellow)))
 			{
 				STUFF(*rec2++);
 				++rec1;

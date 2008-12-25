@@ -227,9 +227,11 @@ namespace
 			CleanupRoutine *Routine;
 			void* clean_arg;
 			st_clean(CleanupRoutine *r, void* a)
-				: Routine(r), clean_arg(a) { }
+				: Routine(r), clean_arg(a)
+			{ }
 			st_clean()
-				: Routine(0), clean_arg(0) { }
+				: Routine(0), clean_arg(0)
+			{ }
 		};
 		HalfStaticArray<st_clean, 1> calls;
 		Mutex mutex;
@@ -242,8 +244,7 @@ namespace
 			MutexLockGuard guard(mutex);
 			for (size_t i = 0; i < calls.getCount(); ++i)
 			{
-				if (calls[i].Routine == r &&
-					calls[i].clean_arg == a)
+				if (calls[i].Routine == r && calls[i].clean_arg == a)
 				{
 					return;
 				}
@@ -400,15 +401,13 @@ namespace
 
 	public:
 		Transaction(StoredTra* h, FB_API_HANDLE* pub, Attachment* par)
-			: BaseHandle(hType(), pub, par),
-			  next(0), handle(h), blobs(getPool())
+			: BaseHandle(hType(), pub, par), next(0), handle(h), blobs(getPool())
 		{
 			toParent<Transaction>(parent->transactions, this, parent->mutex);
 		}
 
 		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)
-			: BaseHandle(hType(), pub, 0, a_implementation),
-			  next(0), handle(0)
+			: BaseHandle(hType(), pub, 0, a_implementation), next(0), handle(0)
 		{
 		}
 
@@ -553,7 +552,8 @@ namespace
 	{
 	private:
 		ShutChain(ShutChain* link, FB_SHUTDOWN_CALLBACK cb, const int m, void* a)
-			: next(link), callBack(cb), mask(m), arg(a) { }
+			: next(link), callBack(cb), mask(m), arg(a)
+		{ }
 
 		~ShutChain() { }
 
@@ -1661,8 +1661,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
 		for (Transaction* sub = transaction; sub; sub = sub->next)
 		{
 			if (sub->implementation != SUBSYSTEMS &&
-				CALL(PROC_COMMIT_RETAINING, sub->implementation) (status,
-																  &sub->handle))
+				CALL(PROC_COMMIT_RETAINING, sub->implementation) (status, &sub->handle))
 			{
 				return status[1];
 			}
@@ -1703,9 +1702,7 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
 		status.setPrimaryHandle(dbb);
 		nullCheck(req_handle, isc_bad_req_handle);
 
-		if (CALL(PROC_COMPILE, dbb->implementation) (status, &dbb->handle,
-													 &rq, blr_length,
-													 blr))
+		if (CALL(PROC_COMPILE, dbb->implementation) (status, &dbb->handle, &rq, blr_length, blr))
 		{
 			return status[1];
 		}
@@ -2048,9 +2045,7 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
 		status.setPrimaryHandle(attachment);
 		Transaction* transaction = findTransaction(tra_handle, attachment);
 
-		CALL(PROC_DDL, attachment->implementation) (status,
-												  &attachment->handle,
-												  &transaction->handle,
+		CALL(PROC_DDL, attachment->implementation) (status, &attachment->handle, &transaction->handle,
 												  length, ddl);
 	}
 	catch (const Exception& e)
@@ -2293,8 +2288,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 		Statement* statement = translate<Statement>(stmt_handle);
 
 		statement->checkPrepared();
-		sqlda_sup::dasup_clause& clause =
-			statement->das.dasup_clauses[DASUP_CLAUSE_select];
+		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_select];
 
 		if (clause.dasup_info_len && clause.dasup_info_buf)
 		{
@@ -2361,8 +2355,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 
-		sqlda_sup::dasup_clause& clause =
-			statement->das.dasup_clauses[DASUP_CLAUSE_bind];
+		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_bind];
 
 		if (clause.dasup_info_len && clause.dasup_info_buf)
 		{
@@ -2459,16 +2452,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		sqlda_sup* dasup = &(statement->das);
 		statement->checkPrepared();
 
-		if (UTLD_parse_sqlda(status, dasup, &in_blr_length, &in_msg_type,
-							 &in_msg_length, dialect, in_sqlda,
-							 DASUP_CLAUSE_bind))
+		if (UTLD_parse_sqlda(status, dasup, &in_blr_length, &in_msg_type, &in_msg_length,
+							 dialect, in_sqlda, DASUP_CLAUSE_bind))
 		{
 			return status[1];
 		}
 
-		if (UTLD_parse_sqlda
-			(status, dasup, &out_blr_length, &out_msg_type, &out_msg_length,
-			dialect, out_sqlda, DASUP_CLAUSE_select))
+		if (UTLD_parse_sqlda(status, dasup, &out_blr_length, &out_msg_type, &out_msg_length,
+							 dialect, out_sqlda, DASUP_CLAUSE_select))
 		{
 			return status[1];
 		}
@@ -2487,8 +2478,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		if (UTLD_parse_sqlda(status, dasup, NULL, NULL, NULL,
-							 dialect, out_sqlda, DASUP_CLAUSE_select))
+		if (UTLD_parse_sqlda(status, dasup, NULL, NULL, NULL, dialect, out_sqlda, DASUP_CLAUSE_select))
 		{
 			return status[1];
 		}
@@ -2522,9 +2512,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(ISC_STATUS* user_status,
  *
  **************************************/
 
-	return GDS_DSQL_EXECUTE2_M(user_status, tra_handle, stmt_handle,
-							   blr_length, blr, msg_type, msg_length, msg,
-							   0, NULL, 0, 0, NULL);
+	return GDS_DSQL_EXECUTE2_M(user_status, tra_handle, stmt_handle, blr_length, blr,
+							   msg_type, msg_length, msg, 0, NULL, 0, 0, NULL);
 }
 
 
@@ -2622,8 +2611,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(ISC_STATUS* user_status,
  *
  **************************************/
 
-	return GDS_DSQL_EXECUTE_IMMED(user_status,
-								  db_handle, tra_handle, length, string,
+	return GDS_DSQL_EXECUTE_IMMED(user_status, db_handle, tra_handle, length, string,
 								  dialect, sqlda);
 }
 
@@ -2647,8 +2635,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
  *
  **************************************/
 
-	return GDS_DSQL_EXEC_IMMED2(user_status,
-								db_handle, tra_handle, length, string,
+	return GDS_DSQL_EXEC_IMMED2(user_status, db_handle, tra_handle, length, string,
 								dialect, sqlda, NULL);
 }
 
@@ -2687,16 +2674,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 		USHORT in_blr_length, in_msg_type, in_msg_length,
 			out_blr_length, out_msg_type, out_msg_length;
 
-		if (UTLD_parse_sqlda(status, &dasup, &in_blr_length, &in_msg_type,
-							 &in_msg_length, dialect, in_sqlda,
-							 DASUP_CLAUSE_bind))
+		if (UTLD_parse_sqlda(status, &dasup, &in_blr_length, &in_msg_type, &in_msg_length,
+							 dialect, in_sqlda, DASUP_CLAUSE_bind))
 		{
 			return status[1];
 		}
 
-		if (UTLD_parse_sqlda
-			(status, &dasup, &out_blr_length, &out_msg_type, &out_msg_length,
-			 dialect, out_sqlda, DASUP_CLAUSE_select))
+		if (UTLD_parse_sqlda(status, &dasup, &out_blr_length, &out_msg_type, &out_msg_length,
+							 dialect, out_sqlda, DASUP_CLAUSE_select))
 		{
 			return status[1];
 		}
@@ -2714,7 +2699,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 		if (!s)
 		{
 			s =	UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect,
-							 out_sqlda, DASUP_CLAUSE_select);
+								 out_sqlda, DASUP_CLAUSE_select);
 		}
 	}
 	catch (const Exception& e)
@@ -2782,8 +2767,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(ISC_STATUS* user_status,
 
 	return GDS_DSQL_EXEC_IMM2_M(user_status, db_handle, tra_handle,
 								length, string, dialect, blr_length, blr,
-								msg_type, msg_length, msg, 0, NULL, 0, 0,
-								NULL);
+								msg_type, msg_length, msg, 0, NULL, 0, 0, NULL);
 }
 
 
@@ -2826,8 +2810,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 
 		ISC_STATUS_ARRAY temp_status;
 		FB_API_HANDLE crdb_trans_handle = 0;
-		if (GDS_START_TRANSACTION(status, &crdb_trans_handle, 1,
-								  db_handle, 0, 0))
+		if (GDS_START_TRANSACTION(status, &crdb_trans_handle, 1, db_handle, 0, 0))
 		{
 			save_error_string(status);
 			GDS_DROP_DATABASE(temp_status, db_handle);
@@ -3012,8 +2995,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			return s;
 		}
 
-		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL,
-							 dialect, sqlda, DASUP_CLAUSE_select))
+		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect, sqlda, DASUP_CLAUSE_select))
 		{
 			return status[1];
 		}
@@ -3062,16 +3044,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 		USHORT blr_length, msg_type, msg_length;
 
 		if (UTLD_parse_sqlda(status, &dasup, &blr_length, &msg_type, &msg_length,
-						 dialect, sqlda, DASUP_CLAUSE_select))
+							 dialect, sqlda, DASUP_CLAUSE_select))
 		{
 			return status[1];
 		}
 
 		ISC_STATUS s = GDS_DSQL_FETCH2_M(status, stmt_handle, blr_length,
-							   dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
-							   0, msg_length,
-							   dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
-							   direction, offset);
+										 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
+										 0, msg_length,
+										 dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg,
+										 direction, offset);
 		if (s && s != 101)
 		{
 			return s;
@@ -3571,8 +3553,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		status.setPrimaryHandle(statement);
 
 		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
-			  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) &&
-		      (items[1] == isc_info_end || items[1] == 0) ) &&
+				(item_length == 2) && (items[0] == isc_info_sql_stmt_type) &&
+				(items[1] == isc_info_end || items[1] == 0) ) &&
 			(statement->flags & HANDLE_STATEMENT_prepared) && statement->das.dasup_stmt_type)
 		{
 			if (buffer_length >= 8)
@@ -4520,8 +4502,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS* user_status,
-										  FB_API_HANDLE* handle)
+ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS* user_status, FB_API_HANDLE* handle)
 {
 /**************************************
  *
@@ -5177,9 +5158,7 @@ static void check_status_vector(const ISC_STATUS* status)
 #endif
 
 
-static void event_ast(void* buffer_void,
-					  USHORT length,
-					  const UCHAR* items)
+static void event_ast(void* buffer_void, USHORT length, const UCHAR* items)
 {
 /**************************************
  *
@@ -5217,8 +5196,7 @@ static void exit_handler(void*)
 }
 
 
-static Transaction* find_transaction(Attachment* dbb,
-								Transaction* transaction)
+static Transaction* find_transaction(Attachment* dbb, Transaction* transaction)
 {
 /**************************************
  *
@@ -5315,8 +5293,7 @@ static const PTR get_entrypoint(int proc, int implementation)
 }
 
 
-static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda,
-								USHORT dialect)
+static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda, USHORT dialect)
 {
 /**************************************
  *
@@ -5378,13 +5355,10 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 		TEXT* p = *ptr;
 
 		if (CALL(PROC_TRANSACTION_INFO, transaction->implementation) (status,
-																	  &transaction->
-																	  handle,
-																	  sizeof
-																	  (prepare_tr_info),
+																	  &transaction->handle,
+																	  sizeof(prepare_tr_info),
 																	  prepare_tr_info,
-																	  sizeof
-																	  (buffer),
+																	  sizeof(buffer),
 																	  buffer))
 		{
 			return status[1];
@@ -5436,11 +5410,7 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 	USHORT last_index;
 	SCHAR new_items[32];
 
-	while (UTLD_parse_sql_info(	user_status,
-								dialect,
-								buffer,
-								sqlda,
-								&last_index) && last_index)
+	while (UTLD_parse_sql_info(user_status, dialect, buffer, sqlda, &last_index) && last_index)
 	{
 		char* p = new_items;
 		*p++ = isc_info_sql_sqlda_start;
@@ -5449,12 +5419,8 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 		*p++ = last_index >> 8;
 		memcpy(p, items, (int) item_length);
 		p += item_length;
-		if (GDS_DSQL_SQL_INFO(	user_status,
-								stmt_handle,
-								(SSHORT) (p - new_items),
-								new_items,
-								buffer_length,
-								buffer))
+		if (GDS_DSQL_SQL_INFO(user_status, stmt_handle, (SSHORT) (p - new_items), new_items,
+								buffer_length, buffer))
 		{
 			break;
 		}
@@ -5555,8 +5521,7 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...)
 
 } // extern "C"
 
-static ISC_STATUS prepare(ISC_STATUS* user_status,
-						  Transaction* transaction)
+static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction* transaction)
 {
 /**************************************
  *
@@ -5621,9 +5586,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
 
 	for (sub = transaction->next; sub; sub = sub->next)
 	{
-		if (CALL(PROC_PREPARE, sub->implementation) (status,
-													 &sub->handle,
-													 length, description))
+		if (CALL(PROC_PREPARE, sub->implementation) (status, &sub->handle, length, description))
 		{
 			if (description != tdr_buffer) {
 				free_block(description);
@@ -5812,8 +5775,7 @@ static void subsystem_enter(void) throw()
 		++isc_enter_count;
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
 		if (subsystem_usage == 0 ||
-			(subsystem_FPE_reset &
-			(FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
+			(subsystem_FPE_reset & (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
 		{
 			ISC_enter();
 			subsystem_FPE_reset &= ~FPE_RESET_NEXT_API_CALL;
@@ -5858,8 +5820,7 @@ static void subsystem_exit(void) throw()
 	{
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
 		if (subsystem_usage == 0 ||
-			(subsystem_FPE_reset &
-			 (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
+			(subsystem_FPE_reset & (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
 		{
 			ISC_exit();
 		}

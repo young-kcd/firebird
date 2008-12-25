@@ -229,8 +229,7 @@ extern "C" {
 /* Avoid C++ linkage API functions*/
 
 
-int API_ROUTINE gds__blob_size(
-							   FB_API_HANDLE* b,
+int API_ROUTINE gds__blob_size(FB_API_HANDLE* b,
 							   SLONG* size,
 							   SLONG* seg_count, SLONG* max_seg)
 {
@@ -249,9 +248,7 @@ int API_ROUTINE gds__blob_size(
 	ISC_STATUS_ARRAY status_vector;
 	SCHAR buffer[64];
 
-	if (isc_blob_info(status_vector, b, sizeof(blob_items),
-					   blob_items,
-					   sizeof(buffer), buffer))
+	if (isc_blob_info(status_vector, b, sizeof(blob_items), blob_items, sizeof(buffer), buffer))
 	{
 		isc_print_status(status_vector);
 		return FALSE;
@@ -604,8 +601,7 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 	struct stat after;
 	stat(file_name, &after);
 
-	return (before.st_mtime != after.st_mtime ||
-			before.st_size != after.st_size);
+	return (before.st_mtime != after.st_mtime || before.st_size != after.st_size);
 }
 #endif
 
@@ -631,7 +627,6 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
  **************************************/
 	UCHAR *p;
 	SCHAR *q;
-	const SCHAR *end;
 	SLONG length;
 	va_list ptr;
 	USHORT i;
@@ -649,8 +644,7 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 		length += strlen(q) + 5;
 	}
 
-	p = *event_buffer =
-		(UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
+	p = *event_buffer = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
 	/* FREE: unknown */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
@@ -681,7 +675,9 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 
 		/* Strip trailing blanks from string */
 
-		for (end = q + strlen(q); --end >= q && *end == ' ';);
+		const SCHAR* end = q + strlen(q);
+		while (--end >= q && *end == ' ')
+			; // empty loop
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -731,8 +727,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 	}
 
 	i = count;
-	SCHAR* p = *event_buffer =
-		(SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
+	SCHAR* p = *event_buffer = (SCHAR *) gds__alloc((SLONG) (sizeof(SCHAR) * length));
 /* FREE: unknown */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
@@ -760,7 +755,8 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 
 		/* Strip trailing blanks from string */
 		const SCHAR* end = q + 31;
-		while (--end >= q && *end == ' '); // null body
+		while (--end >= q && *end == ' ')
+			; // null body
 		*p++ = end - q + 1;
 		while (q <= end)
 			*p++ = *q++;
@@ -774,8 +770,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 }
 
 
-void API_ROUTINE gds__event_block_s(
-									SCHAR ** event_buffer,
+void API_ROUTINE gds__event_block_s(SCHAR ** event_buffer,
 									SCHAR ** result_buffer,
 									SSHORT count,
 									SCHAR ** name_buffer,
@@ -793,16 +788,14 @@ void API_ROUTINE gds__event_block_s(
  *
  **************************************/
 
-	*return_count =
-		gds__event_block_a(event_buffer, result_buffer, count, name_buffer);
+	*return_count = gds__event_block_a(event_buffer, result_buffer, count, name_buffer);
 }
 
 
-void API_ROUTINE isc_event_counts(
-					ULONG* result_vector,
-					SSHORT buffer_length,
-					UCHAR* event_buffer,
-					const UCHAR* result_buffer)
+void API_ROUTINE isc_event_counts(ULONG* result_vector,
+								  SSHORT buffer_length,
+								  UCHAR* event_buffer,
+								  const UCHAR* result_buffer)
 {
 /**************************************
  *
@@ -988,16 +981,13 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 	if (username.length() && !user_seen)
 	{
 		if (password.length() && !password_seen)
-			isc_expand_dpb_internal(dpb, dpb_size,
-						   isc_dpb_user_name, username.c_str(), isc_dpb_password,
-						   password.c_str(), 0);
+			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(), 
+									isc_dpb_password, password.c_str(), 0);
 		else
-			isc_expand_dpb_internal(dpb, dpb_size,
-						   isc_dpb_user_name, username.c_str(), 0);
+			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(), 0);
 	}
 	else if (password.length() && !password_seen)
-		isc_expand_dpb_internal(dpb, dpb_size,
-					   isc_dpb_password, password.c_str(), 0);
+		isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_password, password.c_str(), 0);
 #endif
 }
 
@@ -1044,8 +1034,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 	}
 
 	if (!single_user_seen)
-		isc_expand_dpb_internal(dpb, dpb_size,
-					   isc_dpb_reserved, single_user, 0);
+		isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_reserved, single_user, 0);
 
 }
 
@@ -1080,10 +1069,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 	const TEXT* implementations = 0;
 	bool redo;
 	do {
-		if (isc_database_info(status_vector,
-							  handle,
-							  sizeof(info),
-							  info,
+		if (isc_database_info(status_vector, handle, sizeof(info), info,
 							  buf_len, reinterpret_cast<char*>(buf)))
 		{
 			if (buf != buffer)
@@ -1150,8 +1136,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 			implementation_string = "**unknown**";
 		}
 		const TEXT* class_string;
-		if (impl_class_nr >= FB_NELEM(impl_class) ||
-			!(class_string = impl_class[impl_class_nr]))
+		if (impl_class_nr >= FB_NELEM(impl_class) || !(class_string = impl_class[impl_class_nr]))
 		{
 			class_string = "**unknown**";
 		}
@@ -1169,19 +1154,17 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 	if (get_ods_version(handle, &ods_version, &ods_minor_version) == FB_FAILURE)
 		return FB_FAILURE;
 
-	sprintf(s, "on disk structure version %d.%d", ods_version,
-			ods_minor_version);
+	sprintf(s, "on disk structure version %d.%d", ods_version, ods_minor_version);
 	(*routine)(user_arg, s);
 
 	return FB_SUCCESS;
 }
 
 
-void API_ROUTINE isc_format_implementation(
-										   USHORT implementation_nr,
-										   USHORT ibuflen,
-										   TEXT* ibuf,
-	USHORT impl_class_nr, USHORT cbuflen, TEXT* cbuf)
+void API_ROUTINE isc_format_implementation(USHORT implementation_nr,
+										   USHORT ibuflen, TEXT* ibuf,
+										   USHORT impl_class_nr, 
+										   USHORT cbuflen, TEXT* cbuf)
 {
 /**************************************
  *
@@ -1279,8 +1262,7 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 		const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
 		{
-			if (isc_put_segment(status_vector, &bstream->bstr_blob, l,
-								 bstream->bstr_buffer))
+			if (isc_put_segment(status_vector, &bstream->bstr_blob, l, bstream->bstr_buffer))
 			{
 				return FALSE;
 			}
@@ -1298,8 +1280,7 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 }
 
 
-int API_ROUTINE blob__display(
-							  SLONG blob_id[2],
+int API_ROUTINE blob__display(SLONG blob_id[2],
 							  FB_API_HANDLE* database,
 							  FB_API_HANDLE* transaction,
 							  const TEXT* field_name, const SSHORT* name_length)
@@ -1316,8 +1297,7 @@ int API_ROUTINE blob__display(
  **************************************/
 	const Firebird::MetaName temp(field_name, *name_length);
 
-	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
-						*transaction, temp.c_str());
+	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp.c_str());
 }
 
 
@@ -1342,8 +1322,7 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 }
 
 
-int API_ROUTINE blob__dump(
-						   SLONG blob_id[2],
+int API_ROUTINE blob__dump(SLONG blob_id[2],
 						   FB_API_HANDLE* database,
 						   FB_API_HANDLE* transaction,
 						   const TEXT* file_name, const SSHORT* name_length)
@@ -1370,8 +1349,7 @@ int API_ROUTINE blob__dump(
 	}
 	temp[l] = 0;
 
-	return BLOB_dump(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
-					 *transaction, temp);
+	return BLOB_dump(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp);
 }
 
 
@@ -1436,8 +1414,7 @@ int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
 }
 
 
-int API_ROUTINE blob__edit(
-						   SLONG blob_id[2],
+int API_ROUTINE blob__edit(SLONG blob_id[2],
 						   FB_API_HANDLE* database,
 						   FB_API_HANDLE* transaction,
 						   const TEXT* field_name, const SSHORT* name_length)
@@ -1455,8 +1432,7 @@ int API_ROUTINE blob__edit(
  **************************************/
 	const Firebird::MetaName temp(field_name, *name_length);
 
-	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
-					 *transaction, temp.c_str());
+	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp.c_str());
 }
 
 
@@ -1520,8 +1496,7 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 }
 
 
-int API_ROUTINE blob__load(
-						   SLONG blob_id[2],
+int API_ROUTINE blob__load(SLONG blob_id[2],
 						   FB_API_HANDLE* database,
 						   FB_API_HANDLE* transaction,
 						   const TEXT* file_name, const SSHORT* name_length)
@@ -1548,8 +1523,7 @@ int API_ROUTINE blob__load(
 	}
 	temp[l] = 0;
 
-	return BLOB_load(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
-					 *transaction, temp);
+	return BLOB_load(reinterpret_cast<ISC_QUAD*>(blob_id), *database, *transaction, temp);
 }
 
 
@@ -1635,18 +1609,16 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 	{
 	case 'w':
 	case 'W':
-		if (isc_create_blob2(status_vector, &database, &transaction, &blob,
-							  blob_id, bpb_length,
-							  reinterpret_cast<const char*>(bpb)))
+		if (isc_create_blob2(status_vector, &database, &transaction, &blob, blob_id, 
+							 bpb_length, reinterpret_cast<const char*>(bpb)))
 		{
 			return NULL;
 		}
 		break;
 	case 'r':
 	case 'R':
-		if (isc_open_blob2(status_vector, &database, &transaction, &blob,
-							blob_id, bpb_length,
-							bpb))
+		if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id, 
+						   bpb_length, bpb))
 		{
 			return NULL;
 		}
@@ -1706,8 +1678,7 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 	bstream->bstr_ptr = 0;
 
 	if (!(bstream->bstr_buffer = buffer)) {
-		bstream->bstr_buffer = (SCHAR *)
-			gds__alloc((SLONG) (sizeof(SCHAR) * bstream->bstr_length));
+		bstream->bstr_buffer = (SCHAR*) gds__alloc((SLONG) (sizeof(SCHAR) * bstream->bstr_length));
 		/* FREE: This structure is freed in BLOB_close() */
 		if (!bstream->bstr_buffer) {	/* NOMEM: */
 			gds__free(bstream);
@@ -1750,8 +1721,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 	const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_put_segment(status_vector, &bstream->bstr_blob,
-						 l, bstream->bstr_buffer))
+	if (isc_put_segment(status_vector, &bstream->bstr_blob, l, bstream->bstr_buffer))
 	{
 		return FALSE;
 	}
@@ -1788,8 +1758,7 @@ static int dump(ISC_QUAD* blob_id,
 
 	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
-						bpb_length, bpb))
+	if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id, bpb_length, bpb))
 	{
 		isc_print_status(status_vector);
 		return FALSE;
@@ -1859,10 +1828,12 @@ static int edit(ISC_QUAD* blob_id,
 
 	TEXT* p;
 	for (p = buffer; *q && p < buffer + sizeof(buffer) - 1; q++)
+	{
 		if (*q == '$')
 			*p++ = '_';
 		else
 			*p++ = LOWER7(*q);
+	}
 	*p = 0;
 
 /* Moved this out of #ifndef mpexl to get mktemp/mkstemp to work for Linux
@@ -1908,8 +1879,7 @@ static int edit(ISC_QUAD* blob_id,
 }
 
 
-static int get_ods_version(
-						   FB_API_HANDLE* handle,
+static int get_ods_version(FB_API_HANDLE* handle,
 						   USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************
@@ -1926,10 +1896,7 @@ static int get_ods_version(
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR buffer[16];
 
-	isc_database_info(status_vector,
-					  handle,
-					  sizeof(ods_info),
-					  ods_info,
+	isc_database_info(status_vector, handle, sizeof(ods_info), ods_info,
 					  sizeof(buffer), reinterpret_cast<char*>(buffer));
 
 	if (status_vector[1])
@@ -2138,8 +2105,7 @@ static int load(ISC_QUAD* blob_id,
 /* Open the blob.  If it failed, what the hell -- just return failure */
 
 	FB_API_HANDLE blob = 0;
-	if (isc_create_blob(status_vector, &database, &transaction, &blob,
-						 blob_id))
+	if (isc_create_blob(status_vector, &database, &transaction, &blob, blob_id))
 	{
 		isc_print_status(status_vector);
 		return FALSE;

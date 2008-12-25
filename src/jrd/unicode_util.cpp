@@ -445,8 +445,7 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 		{
 			*err_position = i - 1;
 
-			c = utf8_nextCharSafeBody(src, reinterpret_cast<int32_t*>(&i),
-					srcLen, c, -1);
+			c = utf8_nextCharSafeBody(src, reinterpret_cast<int32_t*>(&i), srcLen, c, -1);
 
 			if (c < 0)
 			{
@@ -1014,7 +1013,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	icu->ucolSetAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 
 	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+		(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
 	{
 		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
@@ -1217,7 +1216,7 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
 
 	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+		(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
 	{
 		fb_assert(srcLen % sizeof(*src) == 0);
 

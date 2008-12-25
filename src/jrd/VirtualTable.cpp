@@ -51,8 +51,7 @@ void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
 
-	irsb_virtual* impure =
-		(irsb_virtual*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
+	irsb_virtual* impure = (irsb_virtual*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
 
 	impure->irsb_record_buffer = NULL;
 }
@@ -123,8 +122,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 
 	rpb->rpb_number.increment();
 
-	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(),
-											 rpb->rpb_record);
+	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(), rpb->rpb_record);
 }
 
 
@@ -142,8 +140,7 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 
 	jrd_rel* const relation = rsb->rsb_relation;
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb_virtual* const impure =
-		(irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
 
 	const Record* const record = rpb->rpb_record;
 	const Format* format = NULL;

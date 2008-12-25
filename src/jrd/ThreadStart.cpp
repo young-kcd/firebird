@@ -312,8 +312,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	sigdelset(&new_mask, SIGALRM);
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		Firebird::system_call_failed::raise("thr_sigsetmask", rval);
-	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_NEW_LWP,
-					 &thread_id);
+	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_NEW_LWP, &thread_id);
 	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
 	if (rval)
@@ -377,8 +376,8 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	 * Advanced Windows by Richter pg. # 109. */
 
 	unsigned thread_id;
-	unsigned long real_handle = _beginthreadex(NULL, 0, THREAD_ENTRYPOINT,
-		THREAD_ARG, CREATE_SUSPENDED, &thread_id);
+	unsigned long real_handle = 
+		_beginthreadex(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, CREATE_SUSPENDED, &thread_id);
 	if (!real_handle)
 	{
 		Firebird::system_call_failed::raise("_beginthreadex", GetLastError());

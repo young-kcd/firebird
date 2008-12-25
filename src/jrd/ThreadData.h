@@ -57,16 +57,17 @@ private:
 
 public:
 	explicit ThreadData(ThreadDataType t)
-		: threadDataPriorContext(0), threadDataType(t) {}
+		: threadDataPriorContext(0), threadDataType(t) 
+	{}
 
 	ThreadDataType getType() const
 	{
 		return threadDataType;
 	}
 
-	static ThreadData*	getSpecific(void);
+	static ThreadData*	getSpecific();
 	void			putSpecific();
-	static void		restoreSpecific(void);
+	static void		restoreSpecific();
 };
 
 // Thread entry point definitions might much better look in ThreadStart.h,

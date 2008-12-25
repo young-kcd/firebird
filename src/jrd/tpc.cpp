@@ -86,8 +86,7 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 
 	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
 		if (number < tip_cache->tpc_base + dbb->dbb_page_manager.transPerTIP) {
-			return TRA_state(tip_cache->tpc_transactions,
-							 tip_cache->tpc_base, number);
+			return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
 		}
 	}
 
@@ -130,7 +129,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 
 	TxPageCache** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
-		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
+		tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
 	{
 		tip_cache = *tip_cache_ptr;
 	}
@@ -138,8 +137,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 	if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip))
 		return;
 
-	cache_transactions(tdbb, tip_cache_ptr,
-					   tip_cache->tpc_base + trans_per_tip);
+	cache_transactions(tdbb, tip_cache_ptr, tip_cache->tpc_base + trans_per_tip);
 }
 
 
@@ -164,8 +162,7 @@ void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 	const SLONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const SSHORT shift = TRANS_SHIFT(number);
 
-	for (TxPageCache* tip_cache = dbb->dbb_tip_cache; tip_cache;
-		 tip_cache = tip_cache->tpc_next)
+	for (TxPageCache* tip_cache = dbb->dbb_tip_cache; tip_cache; tip_cache = tip_cache->tpc_next)
 	{
 		if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip)) {
 			UCHAR* address = tip_cache->tpc_transactions + byte;
@@ -225,10 +222,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 	{
 		if (number < (SLONG) (tip_cache->tpc_base + dbb->dbb_page_manager.transPerTIP ))
 		{
-			const USHORT state =
-				TRA_state(	tip_cache->tpc_transactions,
-							tip_cache->tpc_base,
-							number);
+			const USHORT state = TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
 
 			/* committed or dead transactions always stay that
 			   way, so no need to check their current state */
@@ -302,8 +296,7 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
 
 	TxPageCache* tip_cache;
 	while ( (tip_cache = dbb->dbb_tip_cache) ) {
-		if (dbb->dbb_oldest_transaction >=
-			tip_cache->tpc_base + trans_per_tip)
+		if (dbb->dbb_oldest_transaction >= tip_cache->tpc_base + trans_per_tip)
 		{
 			dbb->dbb_tip_cache = tip_cache->tpc_next;
 			delete tip_cache;
@@ -350,16 +343,14 @@ static TxPageCache* allocate_tpc(thread_db* tdbb, SLONG base)
 /* allocate a TIP cache block with enough room for
    all desired transactions */
 
-	TxPageCache* tip_cache =
-		FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) TxPageCache();
+	TxPageCache* tip_cache = FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) TxPageCache();
 	tip_cache->tpc_base = base;
 
 	return tip_cache;
 }
 
 
-static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
-							   SLONG oldest)
+static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, SLONG oldest)
 {
 /**************************************
  *
@@ -384,8 +375,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 	const ULONG hdr_oldest = dbb->dbb_oldest_transaction;
 #else
 	WIN window(HEADER_PAGE_NUMBER);
-	const Ods::header_page* header =
-		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+	const Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 	const SLONG top = header->hdr_next_transaction;
 	const SLONG hdr_oldest = header->hdr_oldest_transaction;
 	CCH_RELEASE(tdbb, &window);
@@ -399,8 +389,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 	if (!tip_cache_ptr)
 		tip_cache_ptr = &dbb->dbb_tip_cache;
 
-	for (SLONG base = oldest - oldest % trans_per_tip; base <= top;
-		 base += trans_per_tip)
+	for (SLONG base = oldest - oldest % trans_per_tip; base <= top; base += trans_per_tip)
 	{
 		*tip_cache_ptr = allocate_tpc(tdbb, base);
 		tip_cache_ptr = &(*tip_cache_ptr)->tpc_next;
@@ -453,24 +442,21 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 	TxPageCache* tip_cache = 0;
 	TxPageCache** tip_cache_ptr;
 	for (tip_cache_ptr = &dbb->dbb_tip_cache; *tip_cache_ptr;
-		 tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
+		tip_cache_ptr = &(*tip_cache_ptr)->tpc_next)
 	{
 		tip_cache = *tip_cache_ptr;
 	}
 
-	const SLONG oldest = cache_transactions(tdbb, tip_cache_ptr,
-							tip_cache->tpc_base + trans_per_tip);
+	const SLONG oldest = cache_transactions(tdbb, tip_cache_ptr, tip_cache->tpc_base + trans_per_tip);
 	if (number < oldest)
 		return tra_committed;
 
 	// find the right block for this transaction and return the state
 
-	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
-		 tip_cache = tip_cache->tpc_next)
+	for (tip_cache = dbb->dbb_tip_cache; tip_cache; tip_cache = tip_cache->tpc_next)
 	{
 		if (number < (SLONG) (tip_cache->tpc_base + trans_per_tip))
-			 return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base,
-				number);
+			 return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
 	}
 
 	// we should never get to this point, but if we do the

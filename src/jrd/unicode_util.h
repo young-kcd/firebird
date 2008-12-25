@@ -50,8 +50,10 @@ public:
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1
 	static USHORT utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
 							 USHORT key_type);	// BOCU-1
-	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, const ULONG* exceptions);
-	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, const ULONG* exceptions);
+	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
+								const ULONG* exceptions);
+	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
+								const ULONG* exceptions);
 	static ULONG utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UCHAR* dst,
 							 USHORT* err_code, ULONG* err_position);
 	static ULONG utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USHORT* dst,

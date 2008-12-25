@@ -208,8 +208,7 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 		const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		number = header->hdr_next_transaction;
 		oldest = header->hdr_oldest_transaction;
-		active =
-			MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
+		active = MAX(header->hdr_oldest_active, header->hdr_oldest_transaction);
 		CCH_RELEASE(tdbb, &window);
 	}
 #endif /* SUPERSERVER_V2 */
@@ -276,8 +275,7 @@ void TRA_cleanup(thread_db* tdbb)
 
 /* First, make damn sure there are no outstanding transactions */
 
-	for (Attachment* attachment = dbb->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
 		if (attachment->att_transactions)
 			return;
@@ -305,22 +303,23 @@ void TRA_cleanup(thread_db* tdbb)
 	SLONG number = active % trans_per_tip;
 	SLONG limbo = 0;
 
-	for (SLONG sequence = active / trans_per_tip; sequence <= last;
-		 sequence++, number = 0)
+	for (SLONG sequence = active / trans_per_tip; sequence <= last; sequence++, number = 0)
 	{
 		window.win_page = inventory_page(tdbb, sequence);
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
 		SLONG max = ceiling - (sequence * trans_per_tip);
 		if (max > trans_per_tip)
 			max = trans_per_tip - 1;
-		for (; number <= max; number++) {
+		for (; number <= max; number++)
+		{
 			const SLONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
 			const SSHORT shift = TRANS_SHIFT(number);
 			const SSHORT state = (*byte >> shift) & TRA_MASK;
 			if (state == tra_limbo && limbo == 0)
 				limbo = sequence * trans_per_tip + number;
-			else if (state == tra_active) {
+			else if (state == tra_active)
+			{
 				CCH_MARK(tdbb, &window);
 				*byte &= ~(TRA_MASK << shift);
 
@@ -334,9 +333,11 @@ void TRA_cleanup(thread_db* tdbb)
 			}
 		}
 #ifdef SUPERSERVER_V2
-		if (sequence == last) {
+		if (sequence == last)
+		{
 			CCH_MARK(tdbb, &window);
-			for (; number < trans_per_tip; number++) {
+			for (; number < trans_per_tip; number++)
+			{
 				const SLONG trans_offset = TRANS_OFFSET(number);
 				UCHAR* byte = tip->tip_transactions + trans_offset;
 				const SSHORT shift = TRANS_SHIFT(number);
@@ -353,15 +354,16 @@ void TRA_cleanup(thread_db* tdbb)
 
 #ifdef SUPERSERVER_V2
 	window.win_page = inventory_page(tdbb, last);
-	tx_inv_page* tip =
-		(tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
+	tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
 
-	while (tip->tip_next) {
+	while (tip->tip_next)
+	{
 		CCH_RELEASE(tdbb, &window);
 		window.win_page = inventory_page(tdbb, ++last);
 		tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
 		CCH_MARK(tdbb, &window);
-		for (number = 0; number < trans_per_tip; number++) {
+		for (number = 0; number < trans_per_tip; number++)
+		{
 			const SLONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
 			const USHORT shift = TRANS_SHIFT(number);
@@ -753,13 +755,12 @@ void TRA_invalidate(Database* database, ULONG mask)
  *
  **************************************/
 	for (Attachment* attachment = database->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+		attachment = attachment->att_next)
 	{
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
 			transaction = transaction->tra_next)
 		{
-			const ULONG transaction_mask =
-				1L << (transaction->tra_number & (BITS_PER_LONG - 1));
+			const ULONG transaction_mask = 1L << (transaction->tra_number & (BITS_PER_LONG - 1));
 			if (transaction_mask & mask && transaction->tra_flags & TRA_write)
 				transaction->tra_flags |= TRA_invalidated;
 		}
@@ -1038,8 +1039,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		gds__msg_lookup(NULL, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
 		ERR_post(Arg::Gds(isc_no_recon) <<
-				 Arg::Gds(isc_tra_state) << Arg::Num(number) <<
-											Arg::Str(text));
+				 Arg::Gds(isc_tra_state) << Arg::Num(number) << Arg::Str(text));
 	}
 
 	link_transaction(tdbb, trans);
@@ -1346,9 +1346,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 /* If we're terminating ourselves and we've
    been precommitted then just return. */
 
-	if (transaction &&
-		transaction->tra_number == number &&
-		transaction->tra_flags & TRA_precommitted)
+	if (transaction && transaction->tra_number == number && transaction->tra_flags & TRA_precommitted)
 	{
 		return;
 	}
@@ -1719,8 +1717,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		CCH_flush(tdbb, FLUSH_SWEEP, 0);
 
 		WIN window(HEADER_PAGE_NUMBER);
-		header_page* header =
-			(header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
 		if (header->hdr_oldest_transaction < --transaction_oldest_active) {
 			CCH_MARK_MUST_WRITE(tdbb, &window);
@@ -1794,8 +1791,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait
 		Lock temp_lock;
 		temp_lock.lck_dbb = dbb;
 		temp_lock.lck_type = LCK_tra;
-		temp_lock.lck_owner_handle =
-			LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+		temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 		temp_lock.lck_parent = dbb->dbb_lock;
 		temp_lock.lck_length = sizeof(SLONG);
 		temp_lock.lck_key.lck_long = number;
@@ -2023,9 +2019,7 @@ static Lock* create_transaction_lock(thread_db* tdbb, void* object)
 
 
 #ifdef VMS
-static void compute_oldest_retaining(
-									 thread_db* tdbb,
-									 jrd_tra* transaction, const bool write_flag)
+static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, const bool write_flag)
 {
 /**************************************
  *
@@ -2230,10 +2224,10 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 }
 
 
-static tx_inv_page* fetch_inventory_page(
-								thread_db* tdbb,
-								WIN * window,
-								SLONG sequence, USHORT lock_level)
+static tx_inv_page* fetch_inventory_page(thread_db* tdbb,
+										 WIN* window,
+										 SLONG sequence,
+										 USHORT lock_level)
 {
 /**************************************
  *
@@ -2408,7 +2402,7 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
  **************************************/
 	SET_TDBB(tdbb);
 	for (jrd_req* request = trans->tra_attachment->att_requests; request;
-		 request = request->req_request)
+		request = request->req_request)
 	{
 		if (request->req_transaction) {
 			EXE_unwind(tdbb, request);
@@ -2461,8 +2455,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
    its snapshot doesn't contain these operations. */
 
 	if (commit) {
-		SBM_SET(tdbb->getDefaultPool(), &transaction->tra_commit_sub_trans,
-				transaction->tra_number);
+		SBM_SET(tdbb->getDefaultPool(), &transaction->tra_commit_sub_trans, transaction->tra_number);
 	}
 
 /* Create a new transaction lock, inheriting oldest active
@@ -2625,8 +2618,7 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	}
 
 	strcpy(database, pszFilename);
-	if (gds__thread_start(sweep_database, database,
-						  THREAD_medium, 0, 0))
+	if (gds__thread_start(sweep_database, database, THREAD_medium, 0, 0))
 	{
 		gds__free(database);
 		ERR_log(0, 0, "cannot start sweep thread");
@@ -2921,13 +2913,15 @@ static void transaction_options(thread_db* tdbb,
 				if (tpb >= end)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
-							 Arg::Gds(isc_tpb_reserv_missing_tname) << Arg::Num(len) << Arg::Str(option_name));
+							 Arg::Gds(isc_tpb_reserv_missing_tname) << Arg::Num(len) <<
+							 										   Arg::Str(option_name));
 				}
 
 				if (end - tpb < len)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
-							 Arg::Gds(isc_tpb_reserv_corrup_tlen) << Arg::Num(len) << Arg::Str(option_name));
+							 Arg::Gds(isc_tpb_reserv_corrup_tlen) << Arg::Num(len) <<
+							 										 Arg::Str(option_name));
 				}
 
 				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
@@ -3180,8 +3174,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	ULONG base = oldest & ~TRA_MASK;
 
-	const size_t length =
-		(temp->tra_flags & TRA_read_committed) ? 0 : (number - base + TRA_MASK) / 4;
+	const size_t length = (temp->tra_flags & TRA_read_committed) ? 0 : (number - base + TRA_MASK) / 4;
 
 	MemoryPool* const pool = tdbb->getDefaultPool();
 	jrd_tra* const trans = jrd_tra::create(pool, attachment, temp->tra_outer, length);
@@ -3374,8 +3367,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	if (dbb->dbb_sweep_interval &&
 		!(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
-		(trans->tra_oldest_active - trans->tra_oldest >
-		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo)
+		(trans->tra_oldest_active - trans->tra_oldest > dbb->dbb_sweep_interval)
+		&& oldest_state != tra_limbo)
 	{
 		// Why nobody checks the result? Changed the function to return nothing.
 		start_sweeper(tdbb, dbb);

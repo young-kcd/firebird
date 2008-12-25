@@ -176,8 +176,8 @@ TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 		{
 			USHORT code = static_cast<USHORT>(*p);
 			ULONG length = getCharSet()->getConvFromUnicode().convert(sizeof(code), &code, sizeof(temp), temp);
-			canonical(length, temp, sizeof(ULONG), &conversions2[i].buffer[
-				(p - conversions2[i].str) * getCanonicalWidth()]);
+			const size_t pos = (p - conversions2[i].str) * getCanonicalWidth();
+			canonical(length, temp, sizeof(ULONG), &conversions2[i].buffer[pos]);
 		}
 	}
 }
@@ -195,11 +195,9 @@ USHORT TextType::key_length(USHORT len)
 }
 
 
-USHORT TextType::string_to_key(USHORT srcLen,
-					 const UCHAR* src,
-					 USHORT dstLen,
-					 UCHAR* dst,
-					 USHORT key_type)
+USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src, 
+							   USHORT dstLen, UCHAR* dst, 
+							   USHORT key_type)
 {
 	if (tt->texttype_fn_string_to_key)
 		return (*tt->texttype_fn_string_to_key)(tt, srcLen, src, dstLen, dst, key_type);
@@ -219,8 +217,8 @@ USHORT TextType::string_to_key(USHORT srcLen,
 		src = utf16Str.begin();
 
 		// convert charset space to UTF-16
-		spaceLength = getCharSet()->getConvToUnicode().convert(spaceLength, space,
-					sizeof(utf16Space), utf16Space);
+		spaceLength = 
+			getCharSet()->getConvToUnicode().convert(spaceLength, space, sizeof(utf16Space), utf16Space);
 		fb_assert(spaceLength == 2);	// space character can't be surrogate for default string_to_key
 		space = utf16Space;
 	}
@@ -240,8 +238,8 @@ USHORT TextType::string_to_key(USHORT srcLen,
 
 	if (getCharSet()->isMultiByte())
 	{
-		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen),
-										 dstLen, dst, key_type);
+		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), dstLen, 
+										 dst, key_type);
 	}
 	else
 	{
@@ -258,10 +256,7 @@ USHORT TextType::string_to_key(USHORT srcLen,
 }
 
 
-SSHORT TextType::compare(ULONG len1,
-			   const UCHAR* str1,
-			   ULONG len2,
-			   const UCHAR* str2)
+SSHORT TextType::compare(ULONG len1, const UCHAR* str1, ULONG len2, const UCHAR* str2)
 {
 	INTL_BOOL error = false;
 
@@ -291,8 +286,8 @@ SSHORT TextType::compare(ULONG len1,
 		str2 = utf16Str2.begin();
 
 		// convert charset space to UTF-16
-		spaceLength = getCharSet()->getConvToUnicode().convert(spaceLength, space,
-					sizeof(utf16Space), utf16Space);
+		spaceLength = 
+			getCharSet()->getConvToUnicode().convert(spaceLength, space, sizeof(utf16Space), utf16Space);
 		fb_assert(spaceLength == 2);	// space character can't be surrogate for default compare
 		space = utf16Space;
 	}
@@ -334,10 +329,7 @@ SSHORT TextType::compare(ULONG len1,
 }
 
 
-ULONG TextType::str_to_upper(ULONG srcLen,
-				   const UCHAR* src,
-				   ULONG dstLen,
-				   UCHAR* dst)
+ULONG TextType::str_to_upper(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
 	if (tt->texttype_fn_str_to_upper)
 		return (*tt->texttype_fn_str_to_upper)(tt, srcLen, src, dstLen, dst);
@@ -346,10 +338,7 @@ ULONG TextType::str_to_upper(ULONG srcLen,
 }
 
 
-ULONG TextType::str_to_lower(ULONG srcLen,
-				   const UCHAR* src,
-				   ULONG dstLen,
-				   UCHAR* dst)
+ULONG TextType::str_to_lower(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
 	if (tt->texttype_fn_str_to_lower)
 		return (*tt->texttype_fn_str_to_lower)(tt, srcLen, src, dstLen, dst);
@@ -358,10 +347,7 @@ ULONG TextType::str_to_lower(ULONG srcLen,
 }
 
 
-ULONG TextType::canonical(ULONG srcLen,
-				const UCHAR* src,
-				ULONG dstLen,
-				UCHAR* dst)
+ULONG TextType::canonical(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
 	if (tt->texttype_fn_canonical)
 		return (*tt->texttype_fn_canonical)(tt, srcLen, src, dstLen, dst);

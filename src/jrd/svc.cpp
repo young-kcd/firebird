@@ -138,7 +138,7 @@ namespace {
 		bool spb_remote;
 
 		// Parse service parameter block picking up options and things.
-		Options(ClumpletReader& spb) :
+		explicit Options(ClumpletReader& spb) :
 			spb_version(0),
 			spb_trusted_role(false),
 			spb_remote(false)
@@ -303,8 +303,7 @@ void Service::parseSwitches()
 
 	argv.push(svc_parsed_sw.c_str());
 
-	for (const char* p = svc_parsed_sw.begin();
-		p < svc_parsed_sw.end(); ++p)
+	for (const char* p = svc_parsed_sw.begin(); p < svc_parsed_sw.end(); ++p)
 	{
 		if (!*p)
 		{
@@ -429,8 +428,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 	*status++ = isc_arg_end;
 
 	if (svc_status[0] != isc_arg_gds ||
-		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 &&
-		 svc_status[2] != isc_arg_warning))
+		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 && svc_status[2] != isc_arg_warning))
 	{
 		memcpy(svc_status, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
@@ -456,7 +454,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 				svc_status[i - 1] != isc_arg_warning &&
 				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 				(memcmp(&svc_status[i], &tmp_status[1],
-						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
+					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 			{
 				// duplicate found
 				duplicate = true;
@@ -486,13 +484,11 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 			i = err_status_len + tmp_status_len;
 			if (i < ISC_STATUS_LENGTH)
 			{
-				memcpy(&svc_status[err_status_len], tmp_status,
-							sizeof(ISC_STATUS) * tmp_status_len);
+				memcpy(&svc_status[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 				// copy current warning(s) to the status_vector
 				if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 				{
-					memcpy(&svc_status[i - 1], warning_status,
-								sizeof(ISC_STATUS) * warning_count);
+					memcpy(&svc_status[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
 				}
 			}
 		}
@@ -711,9 +707,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 		else {
 			// If we have embedded service connection, let's check for unix OS auth
-			if ((!options.spb_trusted_login.hasData()) &&
-				(!options.spb_remote) &&
-				(!options.spb_user_name.hasData()))
+			if (!options.spb_trusted_login.hasData() && !options.spb_remote &&
+				!options.spb_user_name.hasData())
 			{
 				if (ISC_get_user(&options.spb_trusted_login, NULL, NULL, NULL)) {
 					options.spb_trusted_login = SYSDBA_USER_NAME;
@@ -744,9 +739,9 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 				int id, group, node_id;
 
 				const string remote = options.spb_network_protocol +
-							(options.spb_network_protocol.isEmpty() ||
-							 options.spb_remote_address.isEmpty() ? "" : "/") +
-										  options.spb_remote_address;
+					(options.spb_network_protocol.isEmpty() ||
+						options.spb_remote_address.isEmpty() ? "" : "/") + 
+					options.spb_remote_address;
 
 				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
 						                     options.spb_password.nullStr(),
@@ -958,9 +953,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 		default:
 			if (items + 2 <= end_items) {
-				l =
-					(USHORT) gds__vax_integer(reinterpret_cast<
-											  const UCHAR*>(items), 2);
+				l = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), 2);
 				items += 2;
 				if (items + l <= end_items) {
 					switch (item) {
@@ -972,13 +965,11 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 						break;
 					case isc_info_svc_timeout:
 						timeout =
-							(USHORT) gds__vax_integer(reinterpret_cast<
-													  const UCHAR*>(items), l);
+							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
 						break;
 					case isc_info_svc_version:
 						version =
-							(USHORT) gds__vax_integer(reinterpret_cast<
-													  const UCHAR*>(items), l);
+							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
 						break;
 					}
 				}
@@ -1062,10 +1053,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					for (; num; num--) {
 						length = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
 						ptr2 += sizeof(USHORT);
-						if (!
-							(info =
-							 INF_put_item(isc_spb_dbname, length, ptr2, info,
-										  end)))
+						if (!(info = INF_put_item(isc_spb_dbname, length, ptr2, info, end)))
 						{
 							if (ptr != dbbuf)
 								gds__free(ptr);	// memory has been allocated by JRD_num_attachments()
@@ -1235,8 +1223,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				/* The path to the user security database (security2.fdb) */
 				SecurityDatabase::getPath(buffer);
 
-				if (!(info = INF_put_item(item, strlen(buffer), buffer,
-										  info, end)))
+				if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
 				{
 					return 0;
 				}
@@ -1254,9 +1241,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
-			l =
-				(USHORT) gds__vax_integer(reinterpret_cast<
-										  UCHAR*>(buffer), 2);
+			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
 			length = MIN(end - (info + 5), l);
 			get(info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1285,10 +1270,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				length = MIN(end - (info + 5), l);
 			if (!
 				(info =
-				 INF_put_item(item, length,
-							  reinterpret_cast<const char*>
-								  (svc_resp_ptr),
-							  info, end)))
+				 INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr), info, end)))
 			{
 				return 0;
 			}
@@ -1373,7 +1355,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 	if (start_info && (end - info >= 7))
 	{
-		SLONG number = 1 + (info - start_info);
+		const SLONG number = 1 + (info - start_info);
 		memmove(start_info + 7, start_info, number);
 		USHORT length2 = INF_convert(number, buffer);
 		INF_put_item(isc_info_length, length2, buffer, start_info, end);
@@ -1427,12 +1409,10 @@ void Service::query(USHORT			send_item_length,
 						put(items - 3, l + 3);
 						break;
 					case isc_info_svc_timeout:
-						timeout =
-							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
+						timeout = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
 						break;
 					case isc_info_svc_version:
-						version =
-							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
+						version = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
 						break;
 					}
 				}
@@ -1463,20 +1443,12 @@ void Service::query(USHORT			send_item_length,
 				ULONG num_dbs = 0;
 				JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
 				length = INF_convert(num_att, buffer);
-				info = INF_put_item(item,
-									length,
-									buffer,
-									info,
-									end);
+				info = INF_put_item(item, length, buffer, info, end);
 				if (!info) {
 					return;
 				}
 				length = INF_convert(num_dbs, buffer);
-				info = INF_put_item(item,
-									length,
-									buffer,
-									info,
-									end);
+				info = INF_put_item(item, length, buffer, info, end);
 				if (!info) {
 					return;
 				}
@@ -1691,8 +1663,8 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_response_more:
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 4), l);
-			if (!(info = INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr),
-									  info,	end)))
+			if (!(info = 
+				INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr), info, end)))
 			{
 				return;
 			}
@@ -2021,11 +1993,7 @@ void Service::start(ThreadEntryPoint* service_thread)
 }
 
 
-void Service::get(SCHAR*	buffer,
-				  USHORT	length,
-				  USHORT	flags,
-				  USHORT	timeout,
-				  USHORT*	return_length)
+void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval start_time, end_time;
@@ -2222,8 +2190,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					break;
 				}
 
-				if (spb.getClumpTag() != isc_spb_sec_username &&
-					spb.getClumpTag() != isc_spb_dbname)
+				if (spb.getClumpTag() != isc_spb_sec_username && spb.getClumpTag() != isc_spb_dbname)
 				{
 					// unexpected item in service parameter block, expected @1
 					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));

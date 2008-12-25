@@ -97,6 +97,7 @@ int UserManagement::execute(ISC_STATUS* status, internal_user_data* u)
 	status_exception::raise(Arg::Gds(isc_wish_list));
 	return 0; // make the compiler happy
 #else
-	return (!u->user_name_entered) ? GsecMsg18 : SECURITY_exec_line(status, database, transaction, u, NULL, NULL);
+	return (!u->user_name_entered) ? 
+		GsecMsg18 : SECURITY_exec_line(status, database, transaction, u, NULL, NULL);
 #endif
 }

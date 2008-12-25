@@ -202,7 +202,8 @@ static bool initResult(dsc* result, int argsCount, const dsc** args, bool* isNul
 }
 
 
-static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	for (int i = 0; i < argsCount; ++i)
 	{
@@ -212,7 +213,8 @@ static void setParamsDouble(DataTypeUtilBase* dataTypeUtil, const SysFunction* f
 }
 
 
-static void setParamsFromList(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsFromList(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	dsc desc;
 	dataTypeUtil->makeFromList(&desc, function->name.c_str(), argsCount, const_cast<const dsc**>(args));
@@ -225,7 +227,8 @@ static void setParamsFromList(DataTypeUtilBase* dataTypeUtil, const SysFunction*
 }
 
 
-static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	for (int i = 0; i < argsCount; ++i)
 	{
@@ -235,7 +238,8 @@ static void setParamsInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* 
 }
 
 
-static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 2)
 	{
@@ -245,21 +249,24 @@ static void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunc
 }
 
 
-static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
 		args[0]->makeText(1, CS_ASCII);
 }
 
 
-static void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
 		args[0]->makeText(GUID_BODY_SIZE, ttype_ascii);
 }
 
 
-static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
 		args[0]->makeLong(0);
@@ -269,7 +276,8 @@ static void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* 
 }
 
 
-static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 3)
 	{
@@ -286,7 +294,8 @@ static void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction*
 }
 
 
-static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 3)
 	{
@@ -317,7 +326,8 @@ static void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* 
 }
 
 
-static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 2)
 	{
@@ -330,7 +340,8 @@ static void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction*
 }
 
 
-static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 1)
 	{
@@ -346,14 +357,16 @@ static void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunctio
 }
 
 
-static void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args)
+static void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
 		args[0]->makeText(16, ttype_binary);
 }
 
 
-static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	result->makeDouble();
 
@@ -365,14 +378,16 @@ static void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* 
 }
 
 
-static void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	result->clear();
 	dataTypeUtil->makeFromList(result, function->name.c_str(), argsCount, args);
 }
 
 
-static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	if (dataTypeUtil->getDialect() == 1)
 		result->makeDouble();
@@ -387,7 +402,8 @@ static void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* f
 }
 
 
-static void makeLongResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeLongResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	result->makeLong(0);
 
@@ -402,7 +418,8 @@ static void makeLongResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* fu
 /***
  * This function doesn't work yet, because makeFromListResult isn't totally prepared for blobs vs strings.
  *
-static void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
+	dsc* result, int argsCount, const dsc** args)
 {
 	makeFromListResult(dataTypeUtil, function, result, argsCount, args);
 
@@ -412,7 +429,8 @@ static void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, const Sys
 ***/
 
 
-static void makeShortResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeShortResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	result->makeShort(0);
 
@@ -424,7 +442,8 @@ static void makeShortResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* f
 }
 
 
-static void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -465,7 +484,8 @@ static void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 }
 
 
-static void makeAsciiChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeAsciiChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -482,7 +502,8 @@ static void makeAsciiChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* fun
 }
 
 
-static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -533,7 +554,8 @@ static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 }
 
 
-static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -561,7 +583,8 @@ static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* func
 }
 
 
-static void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -594,7 +617,8 @@ static void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* fun
 }
 
 
-static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= 3);
 
@@ -609,7 +633,8 @@ static void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 }
 
 
-static void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -631,13 +656,14 @@ static void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* fun
 		result->setTextType(value->getTextType());
 		result->setNullable(value->isNullable() || length->isNullable());
 
-		result->dsc_length = dataTypeUtil->fixLength(
-			result, dataTypeUtil->convertLength(value, result)) + sizeof(USHORT);
+		result->dsc_length = 
+			dataTypeUtil->fixLength(result, dataTypeUtil->convertLength(value, result)) + sizeof(USHORT);
 	}
 }
 
 
-static void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -669,7 +695,8 @@ static void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 }
 
 
-static void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -706,7 +733,8 @@ static void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 }
 
 
-static void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -739,7 +767,8 @@ static void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 }
 
 
-static void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -798,7 +827,8 @@ static void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 }
 
 
-static void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -819,7 +849,8 @@ static void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 }
 
 
-static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -846,7 +877,8 @@ static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 }
 
 
-static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
 
@@ -878,7 +910,8 @@ static void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 }
 
 
-static void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -892,7 +925,8 @@ static void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function
 }
 
 
-static void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+static void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, 
+	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == function->minArgCount);
 
@@ -909,7 +943,8 @@ static void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* fu
 }
 
 
-static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 	fb_assert(function->misc != NULL);
@@ -930,7 +965,8 @@ static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 }
 
 
-static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -976,7 +1012,8 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 }
 
 
-static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -998,7 +1035,8 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd:
 }
 
 
-static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1024,7 +1062,8 @@ static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 }
 
 
-static dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -1046,7 +1085,8 @@ static dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 
@@ -1094,7 +1134,8 @@ static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 }
 
 
-static dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -1130,7 +1171,8 @@ static dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 }
 
 
-static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1193,7 +1235,8 @@ static string showInvalidChar(const UCHAR c)
 }
 
 
-static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1298,7 +1341,8 @@ static const char* getPartName(int n)
 }
 
 
-static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
 
@@ -1495,7 +1539,8 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 }
 
 
-static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
 
@@ -1708,7 +1753,8 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 }
 
 
-static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1729,7 +1775,8 @@ static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 }
 
 
-static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1784,7 +1831,8 @@ static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
 
@@ -1801,7 +1849,8 @@ static dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 }
 
 
-static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1863,7 +1912,8 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 }
 
 
-static dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -1886,7 +1936,8 @@ static dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 }
 
 
-static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1913,7 +1964,8 @@ static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 }
 
 
-static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -1952,7 +2004,8 @@ static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 }
 
 
-static dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 
@@ -1992,7 +2045,8 @@ static dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jr
 }
 
 
-static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -2041,7 +2095,8 @@ static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 }
 
 
-static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 3);
 
@@ -2225,7 +2280,8 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 }
 
 
-static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 2);
 
@@ -2311,7 +2367,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 		if (newBlob)
 		{
 			buffer.getBuffer(padLen * cs->maxBytesPerChar());
-			length1 = cs->substring(length1, address1, buffer.getCapacity(),
+			length1 = cs->substring(length1, address1, buffer.getCapacity(), 
 				buffer.begin(), 0, padLen);
 		}
 		else
@@ -2361,8 +2417,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 			else
 			{
 				p += cs->substring(length2, address2,
-					impure->vlu_desc.dsc_length - (p - impure->vlu_desc.dsc_address), p,
-					0, padLen);
+					impure->vlu_desc.dsc_length - (p - impure->vlu_desc.dsc_address), p, 0, padLen);
 			}
 
 			charLength2 = padLen;
@@ -2389,7 +2444,8 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 }
 
 
-static dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
 
@@ -2400,7 +2456,8 @@ static dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 }
 
 
-static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 2);
 
@@ -2518,7 +2575,8 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 }
 
 
-static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -2558,7 +2616,8 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
 
@@ -2573,7 +2632,8 @@ static dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 }
 
 
-static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
 
@@ -2638,8 +2698,7 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		const unsigned int replacementLen = lengths[2] / cs->minBytesPerChar();
 
 		const USHORT len = MIN(MAX_COLUMN_SIZE, cs->maxBytesPerChar() *
-			MAX(searchedLen, searchedLen +
-					(searchedLen / findLen) * (replacementLen - findLen)));
+			MAX(searchedLen, searchedLen + (searchedLen / findLen) * (replacementLen - findLen)));
 
 		dsc desc;
 		desc.makeText(len, ttype);
@@ -2724,7 +2783,8 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 }
 
 
-static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -2819,7 +2879,8 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 }
 
 
-static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -2872,7 +2933,8 @@ static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 
@@ -2907,7 +2969,8 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -2933,7 +2996,8 @@ static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 }
 
 
-static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -2960,7 +3024,8 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 }
 
 
-static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 
@@ -3047,7 +3112,8 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 }
 
 
-static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure)
+static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, 
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -3207,8 +3273,7 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 
 		desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_bid;
 
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
-			&impure->vlu_misc.vlu_bid);
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 							reinterpret_cast<bid*>(value->dsc_address));
