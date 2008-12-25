@@ -30,6 +30,7 @@
 
 #include <memory.h>
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "StreamSegment.h"
 #include "Stream.h"
 
