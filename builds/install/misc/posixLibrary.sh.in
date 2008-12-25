@@ -723,7 +723,7 @@ removeEmptyDirs() {
 #------------------------------------------------------------------------
 #  fixFilePermissions
 #  Change the permissions to restrict access to server programs to 
-#  firebird group only.  This is MUCH better from a saftey point of 
+#  firebird group only.  This is MUCH better from a safety point of 
 #  view than installing as root user, even if it requires a little 
 #  more work.
 
