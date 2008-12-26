@@ -75,6 +75,7 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
 TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar
+TgzFile=$(TarFile).gz
 DepotFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).depot
 RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
 #DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
@@ -98,10 +99,10 @@ depotfile: buildRoot $(DepotFile)
 $(DepotFile): buildDepot
 	(cd $(GEN_ROOT); /usr/sbin/swpackage -d "| gzip -c > $(DepotFile).gz" -x media_type=tape -s $(psfFile)) 
 
-tarfile:  buildRoot $(TarFile)
+tarfile:  buildRoot $(TgzFile)
 
-$(TarFile) :  buildTarDir
-	(cd $(GEN_ROOT); tar -cvf $(TarFile) $(TarDir) && gzip $(TarFile))
+$(TgzFile) :  buildTarDir
+	(cd $(GEN_ROOT); tar -cvf - $(TarDir) | gzip -c >$(TgzFile))
 
 #debugfile:  $(DebugFile)
 

@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postUninstall.sh.in,v 1.3 2008-01-10 11:26:54 paulbeach Exp $
+#   $Id: postUninstall.sh.in,v 1.4 2008-12-26 14:39:02 alexpeshkoff Exp $
 # 
 
 # The post uninstall routine for Firebird Classic.
@@ -40,12 +40,4 @@
       then 
         removeLinksForBackCompatibility
         removeInetdServiceEntry  
-	rm -fr /opt/firebird
-	rm /usr/lib/pa20_64/libfbembed.sl
-	rm /usr/lib/pa20_64/libfbembed.sl.2
-	rm /usr/lib/pa20_64/libfbembed.sl.2.1.0
-	rm /usr/lib/pa20_64/libfbclient.sl
-	rm /usr/lib/pa20_64/libfbclient.sl.2
-	rm /usr/lib/pa20_64/libfbclient.sl.2.1.0
-	rm /usr/lib/pa20_64/libib_util.sl
     fi

@@ -8,6 +8,12 @@ PidDir=/var/run/firebird
 export PidDir
 
 #------------------------------------------------------------------------
+# Get correct options & misc.
+
+tarExt=tar
+export tarExt
+
+#------------------------------------------------------------------------
 #  Add new user and group
 
 TryAddGroup() {
@@ -85,9 +91,11 @@ stopSuperServerIfRunning() {
 		fi
     fi
 }
+
 #-----------------------------------------------------------------------
 # Blank stub on HPUX - don't use openssl
 
 generateNewDBAPassword() {
-echo "generateNewDBAPassword" >/dev/null 2>&1
+	return 0
 }
+

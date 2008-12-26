@@ -139,8 +139,6 @@ copyFiles() {
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 
 #   Append libraries to scripts
-    addLibs $BuiltFBDir/bin changeRunUser.sh $DestDir/bin
-    addLibs $BuiltFBDir/bin restoreRootRunUser.sh $DestDir/bin
     addLibs $BuiltFBDir/bin changedbaPassword.sh $DestDir/bin
     addLibs $BuiltFBDir/bin changegdslibrarycompatibleLink.sh $DestDir/bin
 
