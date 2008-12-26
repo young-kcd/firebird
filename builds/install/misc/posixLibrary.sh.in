@@ -14,7 +14,7 @@ export FBBin
 SecurityDatabase=security2.fdb
 ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 export ArchiveDateTag
-ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}.tar.gz"
+ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}"
 export ArchiveMainFile
 
 
@@ -22,7 +22,7 @@ export ArchiveMainFile
 # Create temporary file. In case mktemp failed, do something...
 
 MakeTemp() {
-	TmpFile=`mktemp -q /tmp/firebird_install.XXXXXX`
+	TmpFile=`mktemp $mktOptions /tmp/firebird_install.XXXXXX`
 	if [ $? -ne 0 ]
 	then
 		TmpFile=/tmp/firebird_install
@@ -114,7 +114,7 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -efww | grep inetd | grep -v grep | awk '{print $2}'`
+	pid=`ps -ef$psOptions | grep inetd | grep -v grep | awk '{print $2}'`
     if [ "$pid" ]
     then
         kill -HUP $pid
@@ -127,7 +127,7 @@ resetInetdServer() {
 # take into account possible pre-firebird xinetd services
 
 removeXinetdEntry() {
-	for i in `grep -l "service gds_db" /etc/xinetd.d/*`
+	for i in `grep -l "service @FB_SERVICE_NAME@" /etc/xinetd.d/*`
 	do
         rm -f $i
     done
@@ -139,7 +139,7 @@ removeXinetdEntry() {
 
 removeInetdEntry() {
     FileName=/etc/inetd.conf
-    oldLine=`grep "^gds_db" $FileName`
+    oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
     removeLineFromFile "$FileName" "$oldLine"
 }
 
@@ -170,10 +170,9 @@ checkIfServerRunning() {
 
     stopSuperServerIfRunning
 
-
 # Check is server is being actively used.
 
-    checkString=`ps -efww| egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
@@ -182,7 +181,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -efww| egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
@@ -194,7 +193,7 @@ checkIfServerRunning() {
 
 # The following check for running interbase or firebird 1.0 servers.
 
-    checkString=`ps -efww| egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
     then
@@ -204,7 +203,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -efww| egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
     then
@@ -218,7 +217,7 @@ checkIfServerRunning() {
 	
 # Stop lock manager if it is the only thing running.
 
-    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+    for i in `ps -ef$psOptions | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
 	do
         kill $i
 	done
@@ -286,16 +285,13 @@ replaceLineInFile() {
     oldLine=`grep "$3" $FileName`
 
     if [ -z "$oldLine" ] 
-    then
+      then
         echo "$newLine" >> "$FileName"
     elif [ "$oldLine" != "$newLine"  ]
-    then
+      then
 		MakeTemp
         grep -v "$oldLine" "$FileName" > "$TmpFile"
         echo "$newLine" >> $TmpFile
-	    # The \n is needed, some /etc/services files are missing a trailing
-    	# line feed - MOD 12-Dec-2003
-		echo "" >>$TmpFile
         cp $TmpFile $FileName && rm -f $TmpFile
         echo "Updated $1"
     fi
@@ -438,7 +434,9 @@ buildUninstallFile() {
     cp manifest.txt $FBRootDir/misc
 
     cp -r scripts $FBRootDir/misc/
-    cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
+	[ -f scripts/tarMainUninstall.sh ] && cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
+	[ -f scripts/tarmainUninstall.sh ] && cp scripts/tarmainUninstall.sh $FBRootDir/bin/uninstall.sh
+	[ -f $FBRootDir/bin/uninstall.sh ] && chmod u=rx,go= $FBRootDir/bin/uninstall.sh
 }
 
 
@@ -580,6 +578,8 @@ archivePriorInstallSystemFiles() {
 		exit 1
 	fi
 
+	tarArc=${ArchiveMainFile}.$tarExt
+
     oldPWD=`pwd`
     archiveFileList=""
 
@@ -595,7 +595,7 @@ archivePriorInstallSystemFiles() {
         echo "    The installation target directory: $FBRootDir"
         echo "    Already contains a prior installation of InterBase/Firebird."
         echo "    This and files found in /usr/include and @libdir@ will be"
-        echo "    archived in the file : ${ArchiveMainFile}"
+        echo "    archived in the file : ${tarArc}"
         echo "" 
 
         if [ ! -z "$InteractiveInstall" ]
@@ -653,7 +653,7 @@ archivePriorInstallSystemFiles() {
     if [ ! -z "$archiveFileList" ]
     then
         displayMessage "Archiving..."
-        runAndCheckExit "tar -czf $ArchiveMainFile $archiveFileList"
+        runAndCheckExit "tar -c${tarOptions}f $tarArc $archiveFileList"
         displayMessage "Done."
 
         displayMessage "Deleting..."
@@ -725,10 +725,12 @@ removeEmptyDirs() {
     while [ ! -z $dirContentChanged ]
       do
         dirContentChanged=''
-        for i in `find $FBRootDir -empty -type d -print`
-          do
-            rmdir $i
-            dirContentChanged=$i
+        for i in `find $FBRootDir -type d -print`; do
+            ls $i/* >/dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                rmdir $i
+                dirContentChanged=$i
+            fi
         done
 
         if [ ! -d $FBRootDir ]  # end loop if the FBRootDir was deleted.

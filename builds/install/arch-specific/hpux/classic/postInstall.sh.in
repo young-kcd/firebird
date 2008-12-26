@@ -31,7 +31,7 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postInstall.sh.in,v 1.3.2.4 2008-12-25 12:26:49 alexpeshkoff Exp $
+#   $Id: postInstall.sh.in,v 1.3.2.5 2008-12-26 13:47:37 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -45,17 +45,11 @@
     origDir=`pwd`
 
     # Update /etc/services
-
     # The \n is needed, some /etc/services files are missing a trailing
     # line feed - MOD 7-Nov-2002
     FileName=/etc/services
     newLine="@FB_SERVICE_NAME@		@FB_SERVICE_PORT@/tcp  # Firebird SQL Database Remote Protocol"
-    oldLine=`grep "^@FB_SERVICE_NAME@" $FileName`
-    if [ -z "$oldLine" ]
-      then
-        echo "" >> $FileName
-        replaceLineInFile "$FileName" "$newLine" "$oldLine"
-    fi
+	replaceLineInFile "$FileName" "$newLine" "^@FB_SERVICE_NAME@"
 
     # add Firebird user
     if [ $RunUser = "firebird" ]

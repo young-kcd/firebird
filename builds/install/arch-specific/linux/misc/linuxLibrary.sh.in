@@ -8,6 +8,18 @@ PidDir=/var/run/firebird
 export PidDir
 
 #------------------------------------------------------------------------
+# Get correct options & misc.
+
+psOptions=ww
+export psOptions
+mktOptions=-q
+export mktOptions
+tarOptions=z
+export tarOptions
+tarExt=tar.gz
+export tarExt
+
+#------------------------------------------------------------------------
 #  Add new user and group
 
 TryAddGroup() {

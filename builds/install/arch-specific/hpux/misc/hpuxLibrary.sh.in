@@ -8,6 +8,12 @@ PidDir=/var/run/firebird
 export PidDir
 
 #------------------------------------------------------------------------
+# Get correct options & misc.
+
+tarExt=tar
+export tarExt
+
+#------------------------------------------------------------------------
 #  Add new user and group
 
 TryAddGroup() {
@@ -136,6 +142,9 @@ setFilePermissions() {
 
     # Everyone may execute clients
     chmod a=rx *
+
+	# Should set owner uid to deliver locks correctly
+	[ -f fb_lock_mgr ] && chmod +s fb_lock_mgr
 
     # Shell scripts changing security attributes are for root only
     chmod u=rx,go= *.sh
