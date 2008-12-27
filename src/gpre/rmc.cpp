@@ -1939,8 +1939,8 @@ static void gen_database( const act* action)
 			for (ref* reference = port->por_references; reference;
 				 reference = reference->ref_next)
 			{
-					if (reference->ref_field->fld_array_info)
-						make_array_declaration(reference);
+				if (reference->ref_field->fld_array_info)
+					make_array_declaration(reference);
 			}
 	}
 

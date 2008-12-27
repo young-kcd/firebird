@@ -42,7 +42,7 @@ gpre_nod*	MSC_node(nod_t, SSHORT);
 gpre_nod*	MSC_pop(gpre_lls**);
 PRV			MSC_privilege_block();
 void		MSC_push(gpre_nod*, gpre_lls**);
-ref*			MSC_reference(ref**);
+ref*		MSC_reference(ref**);
 gpre_req*	MSC_request(req_t);
 SCHAR*		MSC_string(const TEXT*);
 gpre_sym*	MSC_symbol(sym_t, const TEXT*, USHORT, gpre_ctx*);

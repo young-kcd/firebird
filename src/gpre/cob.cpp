@@ -2708,8 +2708,10 @@ static TEXT* gen_name(TEXT* const string, const ref* reference, bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
+	{
 		fb_utils::snprintf(string, MAX_REF_SIZE, "%s%d", names[isc_a_pos],
 				reference->ref_field->fld_array_info->ary_ident);
+	}
 	else
 		fb_utils::snprintf(string, MAX_REF_SIZE, "%s%d", names[isc_b_pos], reference->ref_ident);
 
@@ -4143,11 +4145,12 @@ static void t_start_auto(const gpre_req* request,
 		}
 		fb_assert(strlen(buffer) < sizeof(buffer));
 		if (test)
+		{
 			if (buffer[0])
 				printa(names[COLUMN], false, "IF (%s) AND %s = 0 THEN", buffer, trname);
-
 			else
 				printa(names[COLUMN], false, "IF %s = 0 THEN", trname);
+		}
 		else if (buffer[0])
 			printa(names[COLUMN], false, "IF (%s) THEN", buffer);
 	}
@@ -4161,8 +4164,10 @@ static void t_start_auto(const gpre_req* request,
 		   BY_VALUE, count, END_VALUE);
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
+	{
 		printa(names[CONTINUE], true, ", %s%s, %s, %s",
 			   BY_REF, db->dbb_name->sym_string, OMITTED, OMITTED);
+	}
 
 	if (gpreGlob.sw_auto && (test || buffer[0]))
 		printa(names[COLUMN], false, "END-IF");

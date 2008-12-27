@@ -703,8 +703,10 @@ static void cmp_fetch( act* action)
 	{
 		ref* var = (ref*) *ptr;
 		if (var->ref_null_value && !var->ref_null)
+		{
 			if (var->ref_friend)
 				var->ref_null = var->ref_friend->ref_null;
+		}
 	}
 }
 

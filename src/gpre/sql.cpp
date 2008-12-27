@@ -2854,7 +2854,7 @@ static act* act_drop()
 		SLONG num = EXP_USHORT_ordinal(true);
 		if (!range_positive_short_integer(num))
 			PAR_error("Shadow number out of range");
-		action->act_object = (ref*)(IPTR)num;
+		action->act_object = (ref*)(IPTR) num;
 		}
 		return action;
 
@@ -5136,7 +5136,6 @@ static gpre_rel* make_relation( gpre_req* request, const TEXT * relation_name)
 
 static void pair( gpre_nod* expr, gpre_nod* field_expr)
 {
-
 	if (field_expr->nod_type != nod_field)
 		return;
 
@@ -6368,4 +6367,3 @@ void SQL_dialect1_bad_type(USHORT field_dtype)
 			s);
 	PAR_error(buffer);
 }
-

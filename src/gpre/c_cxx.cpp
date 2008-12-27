@@ -1094,8 +1094,11 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 		for (const char* p1 = p; p1 < q;)
 		{
 			if ((*q1++ = *p1++) == 'g')
+			{
 				if (p1 < q && (*q1++ = *p1++) == 'd')
+				{
 					if (p1 < q && (*q1++ = *p1++) == 's')
+					{
 						if (p1 < q && (*q1++ = *p1++) == '_')
 						{
 							char d;
@@ -1104,6 +1107,9 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 							else
 								*q1++ = d;
 						}
+					}
+				}
+			}
 		}
 		*q1 = 0;
 		printa(indent, line);
@@ -2854,11 +2860,9 @@ static void gen_request(const gpre_req* request)
 				printa(0, "static %schar\n   isc_%d [] = {", CONST_STR, reference->ref_sdl_ident);
 				if (gpreGlob.sw_raw)
 					gen_raw(reference->ref_sdl, reference->ref_sdl_length);
-				else
-					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
-					{
-						CPR_error("internal error during SDL generation");
-					}
+				else if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
+					CPR_error("internal error during SDL generation");
+
 				printa(INDENT, "};\t/* end of sdl string for request isc_%d */\n",
 					   reference->ref_sdl_ident);
 			}

@@ -31,8 +31,6 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: postUninstall.sh.in,v 1.4 2008-12-26 14:39:02 alexpeshkoff Exp $
-# 
 
 # The post uninstall routine for Firebird Classic.
 

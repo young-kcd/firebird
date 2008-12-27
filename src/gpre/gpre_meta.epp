@@ -1223,8 +1223,10 @@ gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_
 intlsym* MET_get_text_subtype(SSHORT ttype)
 {
 	for (intlsym* p = gpreGlob.text_subtypes; p; p = p->intlsym_next)
+	{
 		if (p->intlsym_ttype == ttype)
 			return p;
+	}
 
 	return NULL;
 }

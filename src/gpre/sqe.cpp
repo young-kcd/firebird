@@ -504,8 +504,7 @@ gpre_nod* SQE_field(gpre_req* request,
 				if (context->ctx_request != request)
 					PAR_error("context not part of this request");
 				SQL_resolve_identifier("<Column Name>", NULL, NAME_SIZE);
-				if (!
-					(reference->ref_field =
+				if (!(reference->ref_field =
 						MET_context_field(context, gpreGlob.token_global.tok_string)))
 				{
 					sprintf(s, "column \"%s\" not in context", gpreGlob.token_global.tok_string);
