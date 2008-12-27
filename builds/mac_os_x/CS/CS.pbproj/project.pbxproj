@@ -5750,11 +5750,6 @@
 			path = codetext.h;
 			refType = 4;
 		};
-		F616C7F60200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = fb_boilerplate.h;
-			refType = 4;
-		};
 		F616C7F70200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = gds_codes.ftn;
