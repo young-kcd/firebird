@@ -143,10 +143,10 @@ enum gpre_cmd_switch
  * switch was set.  Allocated in MAIN.
  */
 
-typedef struct sw_tab_t
+struct sw_tab_t
 {
-	enum gpre_cmd_switch sw_in_sw;
-} *SW_TAB;
+	gpre_cmd_switch sw_in_sw;
+};
 
 
 static const in_sw_tab_t gpre_in_sw_table[] =

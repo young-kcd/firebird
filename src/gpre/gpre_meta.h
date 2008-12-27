@@ -37,7 +37,7 @@ USHORT		MET_get_dtype(USHORT, USHORT, USHORT*);
 gpre_lls*	MET_get_primary_key(DBB, const TEXT*);
 gpre_prc*	MET_get_procedure(DBB, const TEXT*, const TEXT*);
 gpre_rel*	MET_get_relation(DBB, const TEXT*, const TEXT*);
-INTLSYM		MET_get_text_subtype(SSHORT);
+intlsym*	MET_get_text_subtype(SSHORT);
 udf*		MET_get_udf(DBB, const TEXT*);
 gpre_rel*	MET_get_view_relation(gpre_req*, const char*, const char*, USHORT);
 IND			MET_index(DBB, TEXT*);

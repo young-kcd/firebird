@@ -361,7 +361,7 @@ gpre_nod* EXP_literal()
 	{
 		reference->ref_flags |= REF_ttype;
 		gpre_sym* symbol = gpreGlob.token_global.tok_charset;
-		reference->ref_ttype = ((INTLSYM) (symbol->sym_object))->intlsym_ttype;
+		reference->ref_ttype = ((intlsym*) (symbol->sym_object))->intlsym_ttype;
 	}
 	else if (gpreGlob.sw_language == lang_internal) {
 		// literals referenced in an Internal request are always correct charset

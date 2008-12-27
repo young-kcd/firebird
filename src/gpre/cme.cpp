@@ -564,7 +564,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		return;
 
 	case nod_gen_id:
-		if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5) || (gpreGlob.sw_server_version < 6))
+		if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5 || gpreGlob.sw_server_version < 6)
 		{
 			f->fld_dtype = dtype_long;
 			f->fld_length = sizeof(SLONG);
@@ -598,7 +598,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 // ** Begin date/time/timestamp support *
 	case nod_extract:
 		{
-			kwwords_t kw_word = (kwwords_t) (IPTR) node->nod_arg[0];
+			const kwwords_t kw_word = (kwwords_t) (IPTR) node->nod_arg[0];
 			CME_get_dtype(node->nod_arg[1], f);
 			switch (f->fld_dtype)
 			{

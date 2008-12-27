@@ -84,8 +84,7 @@ static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 static void			finish_based(act*);
 #endif
 static int			get_char(FILE*);
-static bool			get_switches(int, TEXT**, const in_sw_tab_t*, SW_TAB,
-								 TEXT**);
+static bool			get_switches(int, TEXT**, const in_sw_tab_t*, sw_tab_t*, TEXT**);
 static TOK			get_token();
 static int			nextchar();
 static SLONG		pass1(const TEXT*);
@@ -184,8 +183,8 @@ bool isAnsiCobol(cob_t dialect)
 
 struct ext_table_t
 {
-	lang_t			ext_language;
-	gpre_cmd_switch	ext_in_sw;
+	lang_t				ext_language;
+	gpre_cmd_switch		ext_in_sw;
 	const TEXT*			in;
 	const TEXT*			out;
 };
@@ -379,8 +378,7 @@ int main(int argc, char* argv[])
 
 	TEXT spare_file_name[MAXPATHLEN];
 	if (gpreGlob.sw_language == lang_undef)
-		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language;
-			 ext_tab++)
+		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
 		{
 			strcpy(spare_file_name, file_name);
 			if (!file_rename(spare_file_name, ext_tab->in, NULL))
@@ -393,8 +391,7 @@ int main(int argc, char* argv[])
 //
 
 	if (gpreGlob.sw_language == lang_undef)
-		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language;
-			 ext_tab++)
+		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
 		{
 			strcpy(spare_file_name, file_name);
 			if (file_rename(spare_file_name, ext_tab->in, NULL) &&
@@ -411,9 +408,7 @@ int main(int argc, char* argv[])
 //
 
 	if (gpreGlob.sw_language == lang_undef) {
-		fprintf(stderr,
-				   "gpre: can't find %s with any known extension.  Giving up.\n",
-				   file_name);
+		fprintf(stderr, "gpre: can't find %s with any known extension.  Giving up.\n", file_name);
 		CPR_exit(FINI_ERROR);
 	}
 
@@ -427,22 +422,19 @@ int main(int argc, char* argv[])
 
 	if (!input_file) {
 		strcpy(spare_file_name, file_name);
-		for (ext_tab = dml_ext_table;
-			 ext_tab->ext_language != gpreGlob.sw_language;
-			 ext_tab++)
+		for (ext_tab = dml_ext_table; ext_tab->ext_language != gpreGlob.sw_language; ext_tab++)
 		{
 				 ;	// empty loop body
 		}
 		const bool renamed = file_rename(spare_file_name, ext_tab->in, NULL);
-		if (renamed &&
-			(input_file = fopen(spare_file_name, FOPEN_READ_TYPE)))
+		if (renamed && (input_file = fopen(spare_file_name, FOPEN_READ_TYPE)))
 		{
 			file_name = spare_file_name;
 		}
-		else if (!(input_file = fopen(file_name, FOPEN_READ_TYPE))) {
+		else if (!(input_file = fopen(file_name, FOPEN_READ_TYPE)))
+		{
 			if (renamed) {
-				fprintf(stderr, "gpre: can't open %s or %s\n",
-						   file_name, spare_file_name);
+				fprintf(stderr, "gpre: can't open %s or %s\n", file_name, spare_file_name);
 			}
 			else {
 				fprintf(stderr, "gpre: can't open %s\n", file_name);
@@ -463,7 +455,7 @@ int main(int argc, char* argv[])
 	}
 	sw_table[0].sw_in_sw = src_ext_tab->ext_in_sw;
 
-	for (SW_TAB sw_tab = sw_table; sw_tab->sw_in_sw; sw_tab++)
+	for (const sw_tab_t* sw_tab = sw_table; sw_tab->sw_in_sw; sw_tab++)
 	{
 		switch (sw_tab->sw_in_sw)
 		{
@@ -719,8 +711,8 @@ int main(int argc, char* argv[])
 		}
 	}	// for (...)
 
-	if ((gpreGlob.sw_auto) && (gpreGlob.default_user || gpreGlob.default_password
-		|| gpreGlob.default_lc_ctype))
+	if ((gpreGlob.sw_auto) && (gpreGlob.default_user || gpreGlob.default_password ||
+		gpreGlob.default_lc_ctype))
 	{
 		CPR_warn("gpre: -user, -password and -charset switches require -manual");
 	}
@@ -733,7 +725,8 @@ int main(int argc, char* argv[])
 		gpreGlob.sw_language = lang_cxx;
 
 #ifdef ALSYS_ADA
-	if (sw_alsys) {
+	if (sw_alsys)
+	{
 		for (src_ext_tab = dml_ext_table;; src_ext_tab++)
 			if (src_ext_tab->ext_in_sw == IN_SW_GPRE_ALSYS)
 				break;
@@ -817,8 +810,7 @@ int main(int argc, char* argv[])
 		if (!out_file_name) {
 			out_file_name = spare_out_file_name;
 			strcpy(spare_out_file_name, file_name);
-			if (renamed = file_rename(spare_out_file_name, out_src_ext_tab->in,
-							out_src_ext_tab->out))
+			if (renamed = file_rename(spare_out_file_name, out_src_ext_tab->in, out_src_ext_tab->out))
 			{
 				explicitt = false;
 			}
@@ -841,14 +833,11 @@ int main(int argc, char* argv[])
 		}
 
 		if (!strcmp(out_file_name, file_name)) {
-			fprintf(stderr,
-					   "gpre: output file %s would duplicate input\n",
-					   out_file_name);
+			fprintf(stderr, "gpre: output file %s would duplicate input\n", out_file_name);
 			CPR_exit(FINI_ERROR);
 		}
 		if ((gpreGlob.out_file = fopen(out_file_name, FOPEN_WRITE_TYPE)) == NULL) {
-			fprintf(stderr, "gpre: can't open output file %s\n",
-					   out_file_name);
+			fprintf(stderr, "gpre: can't open output file %s\n", out_file_name);
 			CPR_exit(FINI_ERROR);
 		}
 	}
@@ -859,8 +848,8 @@ int main(int argc, char* argv[])
 
 	try {
 		SLONG end_position = 0;
-		while (end_position = compile_module(end_position, filename_array[3]));
-		// empty loop body
+		while (end_position = compile_module(end_position, filename_array[3]))
+			; // empty loop body
 	}	// try
 	catch (const Firebird::Exception&) {}  // fall through to the cleanup code
 
@@ -869,7 +858,7 @@ int main(int argc, char* argv[])
 		FTN_fini();
 #endif
 
-	MET_fini(0);
+	MET_fini(NULL);
 	fclose(input_file);
 
 	if (!sw_standard_out) {
@@ -1025,9 +1014,8 @@ TOK CPR_eol_token()
 	gpreGlob.prior_token = gpreGlob.token_global;
 	gpreGlob.prior_token.tok_position = last_position;
 
-	last_position =
-		gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length
-		+ gpreGlob.token_global.tok_white_space - 1;
+	last_position = gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length +
+		gpreGlob.token_global.tok_white_space - 1;
 	TEXT* p = gpreGlob.token_global.tok_string;
 	SSHORT num_chars = 0;
 
@@ -1146,6 +1134,7 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 //       This function is used to "eat" a BASIC external function definition.
 //
 
+#ifdef NOT_USED_OR_REPLACED
 void CPR_raw_read()
 {
 	SCHAR token_string[MAX_SYM_SIZE];
@@ -1180,6 +1169,7 @@ void CPR_raw_read()
 		}
 	}
 }
+#endif
 
 
 //____________________________________________________________
@@ -1226,13 +1216,13 @@ TOK CPR_token()
 	if (!token)
 		return NULL;
 
-	if (token->tok_type == tok_introducer) {
+	if (token->tok_type == tok_introducer)
+	{
 		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
 		if (!symbol) {
 			TEXT err_buffer[100];
 
-			sprintf(err_buffer, "Character set not recognized: '%.50s'",
-					token->tok_string);
+			sprintf(err_buffer, "Character set not recognized: '%.50s'", token->tok_string);
 			CPR_error(err_buffer);
 		}
 		token = get_token();
@@ -1254,20 +1244,21 @@ TOK CPR_token()
 
 		}
 	}
-	// use -charset switch if there is one for quoted strings
-	// only after a database declaration is loaded and MET_load_hash_table run.
-	else if (gpreGlob.default_lc_ctype && gpreGlob.text_subtypes) {
+	else if (gpreGlob.default_lc_ctype && gpreGlob.text_subtypes)
+	{
+		// use -charset switch if there is one for quoted strings
+		// only after a database declaration is loaded and MET_load_hash_table run.
 		switch (gpreGlob.sw_sql_dialect) {
 		case SQL_DIALECT_V5:
 			if (isQuoted(token->tok_type)) {
-				token->tok_charset = MSC_find_symbol(HSH_lookup(gpreGlob.default_lc_ctype),
-												   SYM_charset);
+				token->tok_charset =
+					MSC_find_symbol(HSH_lookup(gpreGlob.default_lc_ctype), SYM_charset);
 			}
 			break;
 		default:
 			if (token->tok_type == tok_sglquoted) {
-				token->tok_charset = MSC_find_symbol(HSH_lookup(gpreGlob.default_lc_ctype),
-												   SYM_charset);
+				token->tok_charset =
+					MSC_find_symbol(HSH_lookup(gpreGlob.default_lc_ctype), SYM_charset);
 			}
 			break;
 		}
@@ -1300,9 +1291,7 @@ static bool all_digits(const char* str1)
 //       If there is a problem, explain and return.
 //
 
-static bool arg_is_string(SLONG argc,
-						  TEXT** argvstring,
-						  const TEXT* errstring)
+static bool arg_is_string(SLONG argc, TEXT** argvstring, const TEXT* errstring)
 {
 	const TEXT* str = *++argvstring;
 
@@ -1358,7 +1347,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-	Firebird::PathName filename = TempFile::create(SCRATCH);
+	const Firebird::PathName filename = TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 
@@ -1413,15 +1402,13 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 //		new extension is given, use it.
 //
 
-static bool file_rename(TEXT* file_nameL,
-						const TEXT* extension,
-						const TEXT* new_extension)
+static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new_extension)
 {
-	TEXT *p;
+	TEXT* p = file_nameL;
 
-//  go to the end of the file name
-
-	for (p = file_nameL; *p; p++);
+	//  go to the end of the file name
+	while (*p)
+		p++;
 
 	TEXT* terminator = p;
 
@@ -1441,7 +1428,8 @@ static bool file_rename(TEXT* file_nameL,
 //
 
 	if (*p != '.') {
-		while (*terminator++ = *extension++);
+		while (*terminator++ = *extension++)
+			;
 		return true;
 	}
 
@@ -1503,8 +1491,7 @@ static void finish_based( act* action)
 		   this subroutine or main program, can't do a BASED_ON. */
 
 		if (!gpreGlob.isc_databases) {
-			CPR_error
-				("No database defined.  Needed for a BASED_ON operation");
+			CPR_error("No database defined.  Needed for a BASED_ON operation");
 			continue;
 		}
 
@@ -1516,18 +1503,17 @@ static void finish_based( act* action)
 		if (based_on->bas_db_name) {
 			gpre_sym* symbol = HSH_lookup(based_on->bas_db_name->str_string);
 			for (; symbol; symbol = symbol->sym_homonym)
+			{
 				if (symbol->sym_type == SYM_database)
 					break;
+			}
 
 			if (symbol) {
 				db = (DBB) symbol->sym_object;
-				relation =
-					MET_get_relation(db, based_on->bas_rel_name->str_string, "");
+				relation = MET_get_relation(db, based_on->bas_rel_name->str_string, "");
 				if (!relation) {
-					fb_utils::snprintf(s, sizeof(s),
-							"relation %s is not defined in database %s",
-							based_on->bas_rel_name->str_string,
-							based_on->bas_db_name->str_string);
+					fb_utils::snprintf(s, sizeof(s), "relation %s is not defined in database %s",
+							based_on->bas_rel_name->str_string, based_on->bas_db_name->str_string);
 					CPR_error(s);
 					continue;
 				}
@@ -1556,29 +1542,24 @@ static void finish_based( act* action)
 		if (!db) {
 			field = NULL;
 			for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
-				if (relation =
-					MET_get_relation(db, based_on->bas_rel_name->str_string, ""))
+				if (relation = MET_get_relation(db, based_on->bas_rel_name->str_string, ""))
 				{
 					if (field) {
 						/* The field reference is ambiguous.  It exists in more
 						   than one database. */
 
-						fb_utils::snprintf(s, sizeof(s),
-								"field %s in relation %s ambiguous",
-								based_on->bas_fld_name->str_string,
-								based_on->bas_rel_name->str_string);
+						fb_utils::snprintf(s, sizeof(s), "field %s in relation %s ambiguous",
+								based_on->bas_fld_name->str_string, based_on->bas_rel_name->str_string);
 						CPR_error(s);
 						break;
 					}
-					field =
-						MET_field(relation, based_on->bas_fld_name->str_string);
+					field = MET_field(relation, based_on->bas_fld_name->str_string);
 				}
 
 			if (db)
 				continue;
 			if (!relation && !field) {
-				sprintf(s, "relation %s is not defined",
-						based_on->bas_rel_name->str_string);
+				sprintf(s, "relation %s is not defined", based_on->bas_rel_name->str_string);
 				CPR_error(s);
 				continue;
 			}
@@ -1586,17 +1567,14 @@ static void finish_based( act* action)
 
 		if (!field) {
 			sprintf(s, "field %s is not defined in relation %s",
-					based_on->bas_fld_name->str_string,
-					based_on->bas_rel_name->str_string);
+					based_on->bas_fld_name->str_string, based_on->bas_rel_name->str_string);
 			CPR_error(s);
 			continue;
 		}
 
-		if ((based_on->bas_flags & BAS_segment)
-			&& !(field->fld_flags & FLD_blob))
+		if ((based_on->bas_flags & BAS_segment) && !(field->fld_flags & FLD_blob))
 		{
-			sprintf(s, "field %s is not a blob",
-					field->fld_symbol->sym_string);
+			sprintf(s, "field %s is not a blob", field->fld_symbol->sym_string);
 			CPR_error(s);
 			continue;
 		}
@@ -1642,7 +1620,7 @@ static int get_char( FILE * file)
 static bool get_switches(int			argc,
 						 TEXT**		argv,
 						 const in_sw_tab_t*	in_sw_table,
-						 SW_TAB		sw_table,
+						 sw_tab_t*		sw_table,
 						 TEXT**		file_array)
 {
 	USHORT in_sw = 0; // silence uninitialized warning
@@ -1653,7 +1631,7 @@ static bool get_switches(int			argc,
 //  we try to open the file.
 //
 
-	SW_TAB sw_table_iterator = sw_table;
+	sw_tab_t* sw_table_iterator = sw_table;
 
 	for (--argc; argc; argc--)
 	{
@@ -1699,7 +1677,7 @@ static bool get_switches(int			argc,
 
 					while (*p) {
 						if (!*++p) {
-							sw_table_iterator->sw_in_sw = (gpre_cmd_switch)in_sw_table_iterator->in_sw;
+							sw_table_iterator->sw_in_sw = (gpre_cmd_switch) in_sw_table_iterator->in_sw;
 						}
 						if (UPPER7(*p) != *q++) {
 							break;
@@ -1785,9 +1763,7 @@ static bool get_switches(int			argc,
 			break;
 
 		case IN_SW_GPRE_D:
-			if (!arg_is_string
-				(--argc, argv,
-				 "Command line syntax: -d requires database name:\n "))
+			if (!arg_is_string(--argc, argv, "Command line syntax: -d requires database name:\n "))
 			{
 				return false;
 			}
@@ -1796,9 +1772,7 @@ static bool get_switches(int			argc,
 			string = *argv;
 			if (*string == '=')
 			{
-				if (!arg_is_string
-					(--argc, argv,
-					 "Command line syntax: -d requires database name:\n "))
+				if (!arg_is_string(--argc, argv, "Command line syntax: -d requires database name:\n "))
 				{
 					return false;
 				}
@@ -1807,9 +1781,8 @@ static bool get_switches(int			argc,
 			break;
 
 		case IN_SW_GPRE_BASE:
-			if (!arg_is_string
-				(--argc, argv,
-				 "Command line syntax: -b requires database base directory:\n "))
+			if (!arg_is_string(--argc, argv,
+				"Command line syntax: -b requires database base directory:\n "))
 			{
 				return false;
 			}
@@ -1818,9 +1791,8 @@ static bool get_switches(int			argc,
 			string = *argv;
 			if (*string == '=')
 			{
-				if (!arg_is_string
-					(--argc, argv,
-					 "Command line syntax: -b requires database base directory:\n "))
+				if (!arg_is_string(--argc, argv,
+					"Command line syntax: -b requires database base directory:\n "))
 				{
 					return false;
 				}
@@ -1830,10 +1802,7 @@ static bool get_switches(int			argc,
 
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_HANDLES:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -h requires handle package name\n"))
+			if (!arg_is_string(--argc, argv, "Command line syntax: -h requires handle package name\n"))
 			{
 					return false;
 			}
@@ -1844,17 +1813,13 @@ static bool get_switches(int			argc,
 #endif
 
 		case IN_SW_GPRE_SQLDA:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -sqlda requires NEW\n "))
+			if (!arg_is_string(--argc, argv, "Command line syntax: -sqlda requires NEW\n "))
 			{
 				return false;
 			}
 
 			if (**argv != 'n' || **argv != 'N') {
-				fprintf(stderr,
-						   "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
+				fprintf(stderr, "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();
 				return false;
 			}
@@ -1863,9 +1828,7 @@ static bool get_switches(int			argc,
 		case IN_SW_GPRE_SQLDIALECT:
 			{
 				int inp;
-				if (!arg_is_string(
-						--argc,
-						argv,
+				if (!arg_is_string(--argc, argv,
 						"Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n "))
 				{
 					return false;
@@ -1873,8 +1836,7 @@ static bool get_switches(int			argc,
 				++argv;
 				inp = atoi(*argv);
 				if (inp < 1 || inp > 3) {
-					fprintf(stderr,
-							   "Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n ");
+					fprintf(stderr, "Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n ");
 					print_switches();
 					return false;
 				}
@@ -1900,10 +1862,8 @@ static bool get_switches(int			argc,
 			return false;
 
 		case IN_SW_GPRE_USER:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -user requires user name string:\n "))
+			if (!arg_is_string(--argc, argv,
+				"Command line syntax: -user requires user name string:\n "))
 			{
 				return false;
 			}
@@ -1911,10 +1871,8 @@ static bool get_switches(int			argc,
 			break;
 
 		case IN_SW_GPRE_PASSWORD:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -password requires password string:\n "))
+			if (!arg_is_string(--argc, argv,
+				"Command line syntax: -password requires password string:\n "))
 			{
 				return false;
 			}
@@ -1922,9 +1880,7 @@ static bool get_switches(int			argc,
 			break;
 
 		case IN_SW_GPRE_FETCH_PASS:
-			if (!arg_is_string(
-					--argc,
-					argv,
+			if (!arg_is_string(--argc, argv,
 					"Command line syntax: -fetch_password requires password file name:\n "))
 			{
 				return false;
@@ -1942,10 +1898,8 @@ static bool get_switches(int			argc,
 #endif
 
 		case IN_SW_GPRE_INTERP:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -charset requires character set name:\n "))
+			if (!arg_is_string(--argc, argv,
+				"Command line syntax: -charset requires character set name:\n "))
 			{
 				return false;
 			}
@@ -1954,10 +1908,8 @@ static bool get_switches(int			argc,
 
 #ifdef GPRE_COBOL
 		case IN_SW_GPRE_DATE_FMT:
-			if (!arg_is_string(
-					--argc,
-					argv,
-					"Command line syntax: -dfm requires date format string:\n "))
+			if (!arg_is_string(--argc, argv,
+				"Command line syntax: -dfm requires date format string:\n "))
 			{
 				return false;
 			}
@@ -1987,9 +1939,8 @@ static TOK get_token()
 	gpreGlob.prior_token = gpreGlob.token_global;
 	gpreGlob.prior_token.tok_position = last_position;
 
-	last_position =
-		gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length
-		+ gpreGlob.token_global.tok_white_space - 1;
+	last_position = gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length +
+		gpreGlob.token_global.tok_white_space - 1;
 	int start_line = line_global;
 	SLONG start_position = position;
 	gpreGlob.token_global.tok_charset = NULL;
@@ -2126,7 +2077,8 @@ static TOK get_token()
 		for (;;) {
 			SSHORT next = nextchar();
 #if defined(GPRE_COBOL)
-			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) && next == '\n')
+			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) &&
+				next == '\n')
 			{
 				if (prior_line_position == 73)
 				{
@@ -2343,8 +2295,7 @@ static int nextchar()
 //  the start of a statement.
 
 #ifdef GPRE_FORTRAN
-	if (gpreGlob.sw_language == lang_fortran && line_position == 6 && c != ' '
-		&& c != '0')
+	if (gpreGlob.sw_language == lang_fortran && line_position == 6 && c != ' ' && c != '0')
 	{
 		first_position = false;
 	}
@@ -2382,8 +2333,7 @@ static SLONG pass1(const TEXT* base_directory)
 {
 //  FSG 14.Nov.2000
 	if (sw_verbose) {
-		fprintf(stderr,
-				   "*********************** PASS 1 ***************************\n");
+		fprintf(stderr, "*********************** PASS 1 ***************************\n");
 	}
 
 	while (CPR_token())
@@ -2441,7 +2391,7 @@ static SLONG pass1(const TEXT* base_directory)
 				}
 
 				if (!gpreGlob.token_global.tok_length &&
-					((int) gpreGlob.token_global.tok_keyword == (int) KW_SEMI_COLON))
+					(gpreGlob.token_global.tok_keyword == KW_SEMI_COLON))
 				{
 					break;
 				}
@@ -2449,8 +2399,7 @@ static SLONG pass1(const TEXT* base_directory)
 		}
 	}
 
-	if (gpreGlob.isc_databases &&
-		(gpreGlob.isc_databases->dbb_flags & DBB_sqlca) &&
+	if (gpreGlob.isc_databases && (gpreGlob.isc_databases->dbb_flags & DBB_sqlca) &&
 		!gpreGlob.isc_databases->dbb_filename)
 	{
 		CPR_error("No database specified");
@@ -2473,16 +2422,13 @@ static void pass2( SLONG start_position)
 
 //  FSG 14.Nov.2000
 	if (sw_verbose) {
-		fprintf(stderr,
-				   "*********************** PASS 2 ***************************\n");
+		fprintf(stderr, "*********************** PASS 2 ***************************\n");
 	}
 
 	bool suppress_output = false;
 
-	const bool sw_block_comments =
-		gpreGlob.sw_language == lang_c		||
-		isLangCpp(gpreGlob.sw_language)      ||
-		gpreGlob.sw_language == lang_pascal;
+	const bool sw_block_comments = gpreGlob.sw_language == lang_c ||
+		isLangCpp(gpreGlob.sw_language) || gpreGlob.sw_language == lang_pascal;
 
 //  Put out a distintive module header
 
@@ -2551,11 +2497,9 @@ static void pass2( SLONG start_position)
 				line++;
 				if (line_pending) {
 					if (line == 1)
-						fprintf(gpreGlob.out_file, "#line %ld \"%s\"\n", line,
-								   backlash_fixed_file_name);
+						fprintf(gpreGlob.out_file, "#line %ld \"%s\"\n", line, backlash_fixed_file_name);
 					else
-						fprintf(gpreGlob.out_file, "\n#line %ld \"%s\"", line,
-								   backlash_fixed_file_name);
+						fprintf(gpreGlob.out_file, "\n#line %ld \"%s\"", line, backlash_fixed_file_name);
 
 					line_pending = false;
 				}
@@ -2575,10 +2519,8 @@ static void pass2( SLONG start_position)
 		// Determine if this action is one which requires line continuation
 		// handling in certain languages.
 
-		const bool continue_flag =
-			(action->act_type == ACT_variable)			||
-			(action->act_type == ACT_segment)			||
-			(action->act_type == ACT_segment_length) ;
+		const bool continue_flag = action->act_type == ACT_variable ||
+			action->act_type == ACT_segment || action->act_type == ACT_segment_length;
 
 		// Unless the action is purely a marker, insert a comment initiator
 		// into the output stream.
@@ -2619,8 +2561,7 @@ static void pass2( SLONG start_position)
 			c = get_char(input_file);
 			if (!suppress_output) {
 				// close current comment to avoid nesting comments
-				if (sw_block_comments && !(action->act_flags & ACT_mark) &&
-					c == comment_start[0])
+				if (sw_block_comments && !(action->act_flags & ACT_mark) && c == comment_start[0])
 				{
 					const SSHORT d = get_char(input_file);
 					return_char(d);
@@ -2628,8 +2569,8 @@ static void pass2( SLONG start_position)
 						fputs(comment_stop, gpreGlob.out_file);
 				}
 #if defined(GPRE_COBOL)
-				if (gpreGlob.sw_language != lang_cobol || !isAnsiCobol(gpreGlob.sw_cob_dialect)
-					|| c == '\n' || to_skip-- <= 0)
+				if (gpreGlob.sw_language != lang_cobol || !isAnsiCobol(gpreGlob.sw_cob_dialect) ||
+					c == '\n' || to_skip-- <= 0)
 #endif
 				{
 					putc(c, gpreGlob.out_file);
@@ -2641,8 +2582,7 @@ static void pass2( SLONG start_position)
 						(gpreGlob.sw_language == lang_cobol))
 					{
 						fputs(comment_start, gpreGlob.out_file);
-						to_skip =
-							(column < 7) ? comment_start_len - column : 0;
+						to_skip = (column < 7) ? comment_start_len - column : 0;
 						column = 0;
 					}
 				}
@@ -2661,15 +2601,14 @@ static void pass2( SLONG start_position)
 
 		if (!(action->act_flags & ACT_mark) && !suppress_output) {
 			fputs(comment_stop, gpreGlob.out_file);
-			if ((gpreGlob.sw_language == lang_fortran) || (gpreGlob.sw_language == lang_cobol))
+			if (gpreGlob.sw_language == lang_fortran || gpreGlob.sw_language == lang_cobol)
 				fputc('\n', gpreGlob.out_file);
 		}
 
 		suppress_output = false;
 		(*gen_routine) (action, start);
-		if (action->act_type == ACT_routine &&
-			!action->act_object &&
-			((gpreGlob.sw_language == lang_c) || (isLangCpp(gpreGlob.sw_language))))
+		if (action->act_type == ACT_routine && !action->act_object &&
+			(gpreGlob.sw_language == lang_c || isLangCpp(gpreGlob.sw_language)))
 		{
 			continue;
 		}
@@ -2721,9 +2660,7 @@ static void print_switches()
 	const in_sw_tab_t* in_sw_table_iterator;
 
 	fprintf(stderr, "\tlegal switches are:\n");
-	for (in_sw_table_iterator = gpre_in_sw_table;
-		 in_sw_table_iterator->in_sw;
-		 in_sw_table_iterator++)
+	for (in_sw_table_iterator = gpre_in_sw_table; in_sw_table_iterator->in_sw; in_sw_table_iterator++)
 	{
 		if (in_sw_table_iterator->in_sw_text) {
 			fprintf(stderr, "%s%s\n", in_sw_table_iterator->in_sw_name,
@@ -2732,9 +2669,7 @@ static void print_switches()
     }
 
 	fprintf(stderr, "\n\tand the internal 'illegal' switches are:\n");
-	for (in_sw_table_iterator = gpre_in_sw_table;
-		 in_sw_table_iterator->in_sw;
-		 in_sw_table_iterator++)
+	for (in_sw_table_iterator = gpre_in_sw_table; in_sw_table_iterator->in_sw; in_sw_table_iterator++)
 	{
 		if (!in_sw_table_iterator->in_sw_text) {
 			fprintf(stderr, "%s\n", in_sw_table_iterator->in_sw_name);
@@ -2815,16 +2750,17 @@ static SSHORT skip_white()
 		// skip sequence numbers when ansi COBOL
 
 		if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect)) {
-			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF);
+			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF)
+				;
 		}
 
 		// skip COBOL comments and conditional compilation
 
 		if (gpreGlob.sw_language == lang_cobol &&
 			(!isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 1 &&
-			 (c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
-			 (isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' && c != ' '
-			  && c != '-')))
+				(c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
+				(isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' && c != ' '
+				&& c != '-')))
 		{
 			while ((c = nextchar()) != '\n' && c != EOF)
 				;
@@ -2854,9 +2790,7 @@ static SSHORT skip_white()
 
 		/* skip C, C++ and PL/I comments */
 
-		if (c == '/' &&
-			(gpreGlob.sw_language == lang_c ||
-			 isLangCpp(gpreGlob.sw_language)))
+		if (c == '/' && (gpreGlob.sw_language == lang_c || isLangCpp(gpreGlob.sw_language)))
 		{
 			SSHORT next = nextchar();
 			if (next != '*') {
@@ -2877,8 +2811,7 @@ static SSHORT skip_white()
 #if !defined(sun) && defined(GPRE_FORTRAN)
 		// skip fortran embedded comments on hpux or sgi
 
-		if (c == '!'
-			&& (gpreGlob.sw_language == lang_fortran))
+		if (c == '!' && (gpreGlob.sw_language == lang_fortran))
 		{
 			/* If this character is a '!' followed by a '=', this is an
 			   Interbase 'not equal' operator, not a Fortran comment.

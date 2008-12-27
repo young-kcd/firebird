@@ -490,7 +490,7 @@ void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 		gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_collate);
 		if (!symbol)
 			PAR_error("The named COLLATION was not found");
-		field->fld_collate = (INTLSYM) symbol->sym_object;
+		field->fld_collate = (intlsym*) symbol->sym_object;
 
 		/* Is the collation valid for declared character set?
 		 * The character set is either declared (fld_character_set) or inferered
@@ -787,7 +787,7 @@ void SQL_par_field_dtype(gpre_req* request,
 		gpre_sym* symbol2 = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset);
 		if (!symbol2)
 			PAR_error("The named CHARACTER SET was not found");
-		field->fld_character_set = (INTLSYM) symbol2->sym_object;
+		field->fld_character_set = (intlsym*) symbol2->sym_object;
 		PAR_get_token();
 	}
 
@@ -798,7 +798,7 @@ void SQL_par_field_dtype(gpre_req* request,
 		{
 			PAR_error("NATIONAL character set missing");
 		}
-		field->fld_character_set = (INTLSYM) symbol->sym_object;
+		field->fld_character_set = (intlsym*) symbol->sym_object;
 	}
 	else if ((field->fld_dtype <= dtype_any_text ||
 			  (field->fld_dtype == dtype_blob
@@ -813,7 +813,7 @@ void SQL_par_field_dtype(gpre_req* request,
 							SYM_charset);
 		if (symbol)
 		{
-			field->fld_character_set = (INTLSYM) symbol->sym_object;
+			field->fld_character_set = (intlsym*) symbol->sym_object;
 		}
 		else
 			PAR_error("Could not find database default character set");
@@ -3717,20 +3717,17 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 	gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
 	gpre_fld* field = MET_field(relation, f_token->tok_string);
 	if (!field) {
-		fb_utils::snprintf(s, sizeof(s),
-			"column \"%s\" not in context", f_token->tok_string);
+		fb_utils::snprintf(s, sizeof(s), "column \"%s\" not in context", f_token->tok_string);
 		PAR_error(s);
 	}
 
 	if (!(field->fld_flags & FLD_blob)) {
-		fb_utils::snprintf(s, sizeof(s),
-			"column %s is not a BLOB", field->fld_symbol->sym_string);
+		fb_utils::snprintf(s, sizeof(s), "column %s is not a BLOB", field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
 
 	if (field->fld_array_info) {
-		fb_utils::snprintf(s, sizeof(s),
-			"column %s is an array and can not be opened as a BLOB",
+		fb_utils::snprintf(s, sizeof(s), "column %s is an array and can not be opened as a BLOB",
 			field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
@@ -4004,8 +4001,7 @@ static act* act_select()
 
 	if (!MSC_match(KW_SEMI_COLON)) {
 		TEXT s[ERROR_LENGTH];
-		fb_utils::snprintf(s, sizeof(s),
-			"Expected ';', got %s.", gpreGlob.token_global.tok_string);
+		fb_utils::snprintf(s, sizeof(s), "Expected ';', got %s.", gpreGlob.token_global.tok_string);
 		CPR_warn(s);
 	}
 
@@ -4065,29 +4061,27 @@ static act* act_set_dialect()
 	action->act_type = ACT_sql_dialect;
 
 	USHORT dialect = EXP_USHORT_ordinal(false);
-	if ((dialect < 1) || (dialect > 3))
+	if (dialect < 1 || dialect > 3)
 		CPR_s_error("SQL DIALECT 1,2 or 3");
 
-	if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect
-		&& gpreGlob.sw_ods_version < 10)
+	if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect &&
+		gpreGlob.sw_ods_version < 10)
 	{
 		char warn_mesg[100];
-		sprintf(warn_mesg,
-				"Pre 6.0 database. Cannot use dialect %d, Resetting to %d\n",
+		sprintf(warn_mesg, "Pre 6.0 database. Cannot use dialect %d, Resetting to %d\n",
 				dialect, SQL_DIALECT_V5);
 		dialect = SQL_DIALECT_V5;
 		CPR_warn(warn_mesg);
 	}
 	else if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect) {
 		char warn_mesg[100];
-		sprintf(warn_mesg,
-				"Client dialect set to %d. Compiletime database dialect is %d\n",
+		sprintf(warn_mesg, "Client dialect set to %d. Compiletime database dialect is %d\n",
 				dialect, gpreGlob.compiletime_db_dialect);
 		CPR_warn(warn_mesg);
 	}
 
 	action->act_object = (ref*) MSC_alloc(SDT_LEN);
-	((SDT) action->act_object)->sdt_dialect = dialect;
+	((set_dialect*) action->act_object)->sdt_dialect = dialect;
 
 //  Needed because subsequent parsing pass1 looks at sw_Sql_dialect value
 	gpreGlob.sw_sql_dialect = dialect;
@@ -5259,7 +5253,7 @@ static SSHORT par_char_set()
 
 	PAR_get_token();
 
-	return (((INTLSYM) symbol->sym_object)->intlsym_charset_id);
+	return (((intlsym*) symbol->sym_object)->intlsym_charset_id);
 }
 
 

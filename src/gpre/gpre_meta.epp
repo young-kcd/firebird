@@ -1220,9 +1220,9 @@ gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_
  *
  */
 
-INTLSYM MET_get_text_subtype(SSHORT ttype)
+intlsym* MET_get_text_subtype(SSHORT ttype)
 {
-	for (INTLSYM p = gpreGlob.text_subtypes; p; p = p->intlsym_next)
+	for (intlsym* p = gpreGlob.text_subtypes; p; p = p->intlsym_next)
 		if (p->intlsym_ttype == ttype)
 			return p;
 
@@ -1634,7 +1634,7 @@ void MET_load_hash_table(dbb* database)
 		p = COLL.RDB$COLLATION_NAME;
 		length = fb_utils::name_length(p);
 		p[length] = 0;
-		INTLSYM iname = (INTLSYM) MSC_alloc(INTLSYM_LEN + length);
+		intlsym* iname = (intlsym*) MSC_alloc(INTLSYM_LEN + length);
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
 		iname->intlsym_symbol = symbol =
@@ -1687,7 +1687,7 @@ void MET_load_hash_table(dbb* database)
 		p = CHARSET.RDB$CHARACTER_SET_NAME;
 		length = fb_utils::name_length(p);
 		p[length] = 0;
-		INTLSYM iname = (INTLSYM) MSC_alloc(INTLSYM_LEN + length);
+		intlsym* iname = (intlsym*) MSC_alloc(INTLSYM_LEN + length);
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
 		iname->intlsym_symbol = symbol =

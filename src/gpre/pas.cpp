@@ -471,7 +471,7 @@ void PAS_action(const act* action, int column)
 		gen_segment(action, column);
 		return;
 	case ACT_sql_dialect:
-		gpreGlob.sw_sql_dialect = ((SDT) action->act_object)->sdt_dialect;
+		gpreGlob.sw_sql_dialect = ((set_dialect*) action->act_object)->sdt_dialect;
 		return;
 	case ACT_select:
 		gen_select(action, column);

@@ -283,11 +283,12 @@ inline size_t NOD_LEN(const size_t cnt)
 }
 
 
-typedef struct sdt {
+struct set_dialect
+{
 	USHORT sdt_dialect;			/* Dialect  value as specified by SET stmt */
-} *SDT;
+};
 
-const size_t SDT_LEN = sizeof(sdt);
+const size_t SDT_LEN = sizeof(set_dialect);
 
 
 /* Set generator block */
@@ -429,7 +430,8 @@ const size_t LLS_LEN = sizeof(gpre_lls);
 
 /* Constraint block, used to hold information about integrity constraints */
 
-typedef struct cnstrt {
+typedef struct cnstrt
+{
 	str* cnstrt_name;				/* Name of constraint */
 	USHORT cnstrt_type;				/* Type of constraint */
 	gpre_lls* cnstrt_fields;				/* list of fields */
@@ -439,8 +441,7 @@ typedef struct cnstrt {
 									   referred relation */
 	cnstrt* cnstrt_next;			/* next contraint for field or relation */
 	gpre_txt* cnstrt_text;			/* source for CHECK constraints */
-	gpre_nod* cnstrt_boolean;		/* boolean expression, for CHECK
-									   constraints */
+	gpre_nod* cnstrt_boolean;		/* boolean expression, for CHECK constraints */
 	USHORT cnstrt_flags;			/* see below */
 } *CNSTRT;
 
@@ -485,7 +486,8 @@ enum cnstrt_flags_vals {
 
 /* Grant/revoke block */
 
-typedef struct prv {
+typedef struct prv
+{
 	USHORT prv_privileges;		/* holds privileges being granted or revoked */
 	SCHAR *prv_username;		/* user having privileges granted or revoked */
 	USHORT prv_user_dyn;		/* the dyn-verb to be used with prv_username
@@ -499,7 +501,8 @@ typedef struct prv {
 
 const size_t PRV_LEN = sizeof(prv);
 
-enum priv_types {
+enum priv_types
+{
 	PRV_no_privs	= 0,		/* no privileges being granted or revoked */
 	PRV_select		= 1,		/* select privilege being granted or revoked */
 	PRV_insert		= 2,		/* insert privilege being granted or revoked */
@@ -514,7 +517,8 @@ enum priv_types {
 
 /* statistic block. Used for all statistics commands */
 
-typedef struct sts {
+typedef struct sts
+{
 	str* sts_name;				/* object name */
 	USHORT sts_flags;			/* Miscellaneous flags */
 } *STS;
@@ -748,17 +752,13 @@ public:
 	USHORT blb_bpb_ident;		/* Ident for blob parameter block */
 	USHORT blb_type;			/* Blob type (0 = default segmented) */
 	SSHORT blb_const_from_type;
-	/* Constant value for subtype from
-	   which this blob is to be filtered */
-	TEXT *blb_var_from_type;
-	/* Variable whose value is the subtype
-	   from which this blob is to be filtered */
+	// Constant value for subtype from which this blob is to be filtered
+	//TEXT *blb_var_from_type;
+	// Variable whose value is the subtype from which this blob is to be filtered
 	SSHORT blb_const_to_type;
-	/* Constant value for subtype to
-	   which this blob is to be filtered */
-	TEXT *blb_var_to_type;
-	/* Variable whose value is the subtype
-	   to which this blob is to be filtered */
+	// Constant value for subtype to which this blob is to be filtered
+	//TEXT *blb_var_to_type;
+	// Variable whose value is the subtype to which this blob is to be filtered
 	USHORT blb_from_charset;	/* charset to translate from */
 	USHORT blb_to_charset;		/* charset to translate to */
 	UCHAR blb_bpb[24];
@@ -774,7 +774,8 @@ enum blb_flags_vals {
 
 /* Reserved relation lock block */
 
-struct rrl {
+struct rrl
+{
 	rrl* rrl_next;				/* next locked relation */
 	UCHAR rrl_lock_level;		/* lock level (SHARE, PROT, EXC */
 	UCHAR rrl_lock_mode;		/* lock mode (READ/WRITE) */
@@ -788,7 +789,8 @@ struct tpb; // forward declaration
 
 /* Database block, more or less the granddaddy */
 
-typedef struct dbb {
+typedef struct dbb
+{
 	dbb* dbb_next;				/* next database in program */
 	gpre_rel* dbb_relations;	/* relations in database */
 	gpre_rel* dbb_procedures;	/* procedures in database */
@@ -841,7 +843,9 @@ typedef struct dbb {
 #ifdef SCROLLABLE_CURSORS
 	SSHORT dbb_base_level;		/* code level of the engine we are talking to */
 #endif
+#ifdef FLINT_CACHE // In practice, never used.
 	gpre_file* dbb_cache_file;
+#endif
 	gpre_file* dbb_files;
 } *DBB;
 
@@ -885,7 +889,8 @@ inline size_t TPB_LEN(const size_t tpb_string_len)
 
 /* Procedure structure */
 
-struct gpre_prc {
+struct gpre_prc
+{
 	gpre_sym* prc_symbol;		/* symbol for relation */
 	SSHORT prc_id;				/* procedure id */
 	gpre_sym* prc_owner;		/* owner of procedure, if any */
@@ -906,7 +911,8 @@ enum prc_flags_vals {
 
 /* Maps used by union and global aggregates */
 
-typedef struct mel {
+typedef struct mel
+{
 	mel* mel_next;				/* Next element in map */
 	gpre_nod* mel_expr;			/* Expression */
 	ref* mel_reference;
@@ -914,7 +920,8 @@ typedef struct mel {
 	USHORT mel_position;		/* Position in map */
 } *MEL;
 
-typedef struct map {
+typedef struct map
+{
 	gpre_ctx* map_context;		/* Pseudo context for map */
 	mel* map_elements;			/* Map elements */
 	USHORT map_count;			/* Number of things in map */
@@ -923,8 +930,9 @@ typedef struct map {
 
 /* Record selection expresion syntax node */
 
-struct gpre_rse {
-	USHORT rse_type;			/* node type */
+struct gpre_rse
+{
+	//USHORT rse_type;			// node type, UNUSED
 	gpre_nod* rse_boolean;		/* boolean expression, if present */
 	gpre_nod* rse_first;		/* "first n" clause, if present */
 	gpre_nod* rse_sqlfirst;		/* SQL "first n" clause if present */
@@ -962,7 +970,8 @@ enum rse_flags_vals {
 
 /* Relation block, not to be confused with siblings or in-laws */
 
-struct gpre_rel {
+struct gpre_rel
+{
 	USHORT rel_id;				/* relation id */
 	gpre_fld* rel_fields;		/* linked list of known fields */
 	gpre_fld* rel_dbkey;		/* linked list of known fields */
@@ -1009,7 +1018,10 @@ enum ind_flags_vals {
 /* Symbolic names for international text types */
 /* (either collation or character set name)    */
 
-typedef struct intlsym {		/* International symbol */
+// International symbol
+
+struct intlsym
+{
 	dbb* intlsym_database;
 	gpre_sym* intlsym_symbol;	/* Hash symbol for intlsym */
 	intlsym* intlsym_next;
@@ -1020,7 +1032,7 @@ typedef struct intlsym {		/* International symbol */
 	SSHORT intlsym_collate_id;
 	USHORT intlsym_bytes_per_char;
 	TEXT intlsym_name[2];
-} *INTLSYM;
+};
 
 const size_t INTLSYM_LEN = sizeof(intlsym);
 
@@ -1552,7 +1564,7 @@ struct GpreGlobals
 	lang_t sw_language;
 	int errors_global;
 	act* global_functions;
-	INTLSYM text_subtypes;
+	intlsym* text_subtypes;
 
 #ifdef GPRE_ADA
 	TEXT ada_package[MAXPATHLEN];
@@ -1574,9 +1586,6 @@ struct GpreGlobals
 #ifdef GPRE_FORTRAN
 	// from gpre.cpp
 	UCHAR fortran_labels[1024];
-#endif
-
-#ifdef FTN_BLK_DATA
 	dbd global_db_list[MAX_DATABASES];
 	USHORT global_db_count;
 #endif
