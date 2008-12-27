@@ -1781,7 +1781,7 @@ void MET_load_hash_table(dbb* database)
 					database->dbb_c_lc_ctype);
 			PAR_error(buffer);
 		}
-		gpreGlob.sw_know_interp = database->dbb_know_subtype;
+		gpreGlob.sw_know_interp = database->dbb_know_subtype != 0;
 		gpreGlob.sw_interp = database->dbb_char_subtype;
 	}
 }

@@ -1279,7 +1279,7 @@ gpre_nod* SQE_variable(gpre_req* request,
 //____________________________________________________________
 //
 //		Compare two expressions symbollically.  If they're the same,
-//		return TRUE, otherwise FALSE.
+//		return true, otherwise false.
 //
 
 static bool compare_expr(gpre_nod* node1,
@@ -1597,7 +1597,7 @@ static gpre_nod* merge( gpre_nod* expr1, gpre_nod* expr2)
 //
 //		Merge 2 field lists
 //		  2nd list is added over nth entry in 1st list
-//		  if replace is TRUE, otherwise it is added
+//		  if replace is true, otherwise it is added
 //		  after the nth entry.
 //
 
@@ -2305,11 +2305,12 @@ static void par_order(gpre_req* request,
 	MSC_match(KW_BY);
 	gpre_lls* items = NULL;
 	gpre_lls* directions = NULL;
-	int count = 0, direction = 0;
+	int count = 0;
+	bool direction = false;
 	gpre_nod* values = select->rse_fields;
 
 	while (true) {
-		direction = FALSE;
+		direction = false;
 		if (gpreGlob.token_global.tok_type == tok_number) {
 			i = EXP_USHORT_ordinal(false);
 			if (i < 1 || i > values->nod_count)
@@ -2327,11 +2328,11 @@ static void par_order(gpre_req* request,
 				sort = post_map(sort, request_map);
 		}
 		if (MSC_match(KW_ASCENDING))
-			direction = FALSE;
+			direction = false;
 		else if (MSC_match(KW_DESCENDING))
-			direction = TRUE;
+			direction = true;
 		count++;
-		MSC_push((gpre_nod*)(IPTR)direction, &directions);
+		MSC_push((gpre_nod*)(IPTR) direction, &directions);
 		MSC_push(sort, &items);
 		if (!MSC_match(KW_COMMA))
 			break;

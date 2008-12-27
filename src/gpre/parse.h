@@ -46,7 +46,7 @@ typedef struct tok {
 	USHORT tok_length;
 	USHORT tok_white_space;
 	SCHAR tok_string[MAX_SYM_SIZE];
-	USHORT tok_first;			/* first token in a statement */
+	bool tok_first;				/* is it the first token in a statement? */
 	gpre_sym* tok_charset;		/* Character set of token */
 } *TOK;
 

@@ -104,11 +104,10 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 /*____________________________________________________________
  *
  *		Initialize meta data access to database.  If the
- *		database can't be opened, return FALSE.
+ *		database can't be opened, return false.
  */
 
-bool MET_database(DBB db,
-				  bool print_version)
+bool MET_database(DBB db, bool print_version)
 {
 	/*
 	   ** Each info item requested will return

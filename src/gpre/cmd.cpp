@@ -996,7 +996,7 @@ static void create_set_default_trg(gpre_req* request,
 			// nothing is found in memory, try to check db system tables
 			fb_assert(search_for_domain == NULL);
 			if (MET_get_column_default(relation, for_key_fld_name->str_string,
-									   default_val, sizeof(default_val)) != FALSE)
+									   default_val, sizeof(default_val)))
 			{
 				create_default_blr(request, default_val, sizeof(default_val));
 			}

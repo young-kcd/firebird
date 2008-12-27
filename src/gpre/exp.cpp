@@ -611,7 +611,7 @@ ref* EXP_post_field(gpre_fld* field, gpre_ctx* context, bool null_flag)
 //____________________________________________________________
 //
 //		Match a trailing parenthesis.  If isn't one, generate an error
-//		and return FALSE.
+//		and return false.
 //
 
 bool EXP_match_paren()

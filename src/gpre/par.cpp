@@ -611,7 +611,9 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 				: PAR_native_value(false, false);
 	}
 
-	if ((gpreGlob.sw_language == lang_ada) && (gpreGlob.token_global.tok_keyword == KW_HANDLES)) {
+#ifdef GPRE_ADA
+	if ((gpreGlob.sw_language == lang_ada) && (gpreGlob.token_global.tok_keyword == KW_HANDLES))
+	{
 		PAR_get_token();
 		if (isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("quoted file name");
@@ -634,6 +636,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 		}
 		PAR_get_token();
 	}
+#endif
 
 	if (gpreGlob.sw_language != lang_fortran)
 		MSC_match(KW_SEMI_COLON);
@@ -691,15 +694,18 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 //		Parse end of statement.  All languages except ADA leave
 //		the trailing semi-colon dangling.   ADA, however, must
 //		eat the semi-colon as part of the statement.  In any case,
-//		return TRUE is a semi-colon is/was there, otherwise return
-//		FALSE.
+//		return true is a semi-colon is/was there, otherwise return false.
 //
 
 bool PAR_end()
 {
 	if ((gpreGlob.sw_language == lang_ada) || (gpreGlob.sw_language == lang_c) ||
-		(isLangCpp(gpreGlob.sw_language)) ||
-		((gpreGlob.sw_language == lang_cobol) && isAnsiCobol(gpreGlob.sw_cob_dialect)))
+		(isLangCpp(gpreGlob.sw_language))
+#ifdef GPRE_COBOL
+		 ||
+		(gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect))
+#endif
+		)
 	{
 		return (MSC_match(KW_SEMI_COLON));
 	}
@@ -1215,8 +1221,7 @@ static void block_data_list( const dbb* db)
 
 	if (gpreGlob.global_db_count)
 		if (gpreGlob.global_db_count > MAX_DATABASES) {
-			PAR_error
-				("Database limit exceeded: 32 databases per source file.");
+			PAR_error("Database limit exceeded: 32 databases per source file.");
 		}
 		else {
 			for (const dbd* const end = gpreGlob.global_db_list + gpreGlob.global_db_count;
@@ -1590,7 +1595,7 @@ static act* par_blob_action( act_t type)
 
 static act* par_blob_field()
 {
-	const SSHORT first = gpreGlob.token_global.tok_first;
+	const bool first = gpreGlob.token_global.tok_first;
 
 	blb* blob = par_blob();
 
@@ -3110,7 +3115,7 @@ static act* par_variable()
 //  see if this variable token is the first thing in a statement.
 //
 
-	const USHORT first = gpreGlob.token_global.tok_first;
+	const bool first = gpreGlob.token_global.tok_first;
 	gpre_ctx* context;
 	gpre_fld* field = EXP_field(&context);
 

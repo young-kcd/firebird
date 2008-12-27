@@ -1707,11 +1707,12 @@ static act* act_create_database()
 
 //  Get optional specifications
 
-	bool extend_dpb = tail_database(ACT_create_database, db);
+	const bool extend_dpb = tail_database(ACT_create_database, db);
 
 //  Create a request to generate dpb
-
+#ifdef GPRE_ADA
 	gpreGlob.ada_flags |= gpreGlob.ADA_create_database;
+#endif
 
 	request = MSC_request(REQ_create_database);
 	request->req_actions = action;

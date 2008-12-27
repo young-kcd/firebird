@@ -120,6 +120,7 @@ enum lang_t
 	lang_internal_cxx
 };
 
+#ifdef GPRE_COBOL
 // Cobol dialect options
 enum cob_t
 {
@@ -127,6 +128,7 @@ enum cob_t
 	cob_ansi,					// ANSI-85
 	cob_rmc						// RM/Cobol
 };
+#endif
 
 
 //___________________________________________________________________
@@ -144,7 +146,10 @@ enum cob_t
 //
 
 bool isLangCpp(lang_t lang);
+
+#ifdef GPRE_COBOL
 bool isAnsiCobol(cob_t dialect);
+#endif
 
 
 /* Structure used by Fortran and Basic to determine whether or not
@@ -1515,8 +1520,6 @@ const size_t UPD_LEN = sizeof(upd);
 
 struct GpreGlobals
 {
-	cob_t sw_cob_dialect;
-	const TEXT* sw_cob_dformat;
 	bool sw_auto;
 	bool sw_sql;
 	bool sw_raw;
@@ -1529,7 +1532,7 @@ struct GpreGlobals
 	bool sw_d_float;
 	bool sw_no_qli;
 	USHORT sw_sql_dialect;
-	USHORT sw_know_interp;
+	bool sw_know_interp;
 	USHORT sw_server_version;
 	USHORT sw_ods_version;
 	bool override_case;
@@ -1539,8 +1542,6 @@ struct GpreGlobals
 	SSHORT sw_interp;
 	USHORT compiletime_db_dialect;
 
-	TEXT ada_package[MAXPATHLEN];
-	const TEXT* ada_null_address;
 	DBB isc_databases;
 	const TEXT* default_user;
 	const TEXT* default_password;
@@ -1551,21 +1552,35 @@ struct GpreGlobals
 	lang_t sw_language;
 	int errors_global;
 	act* global_functions;
-	dbd global_db_list[MAX_DATABASES];
-	USHORT global_db_count;
 	INTLSYM text_subtypes;
 
+#ifdef GPRE_ADA
+	TEXT ada_package[MAXPATHLEN];
+	const TEXT* ada_null_address;
 	// ada_flags fields definition
-
 	int ADA_create_database;	// the flag is set when there is a
 								// create database SQL statement in
 								// user program, and is used to
 								// generate additional "with" and
 								// "function" declarations
-
 	USHORT ada_flags;
+#endif
+
+#ifdef GPRE_COBOL
+	cob_t sw_cob_dialect;
+	const TEXT* sw_cob_dformat;
+#endif
+
+#ifdef GPRE_FORTRAN
 	// from gpre.cpp
 	UCHAR fortran_labels[1024];
+#endif
+
+#ifdef FTN_BLK_DATA
+	dbd global_db_list[MAX_DATABASES];
+	USHORT global_db_count;
+#endif
+
 	const TEXT* ident_pattern;
 	const TEXT* long_ident_pattern;
 	const TEXT* utility_name;

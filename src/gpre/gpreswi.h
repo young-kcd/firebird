@@ -202,7 +202,9 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #endif
 	{IN_SW_GPRE_Z		, 0, "Z"			, 0, 0, 0, FALSE, 0, 0, "\t\tprint software version"},
 	{IN_SW_GPRE_BASE	, 0, "BASE"			, 0, 0, 0, FALSE, 0, 0, "\t\tbase directory for compiletime DB"},
+#ifdef GPRE_COBOL
 	{IN_SW_GPRE_DATE_FMT, 0, "DFM"			, 0, 0, 0, FALSE, 0, 0, "\t\tCobol date format"},
+#endif
 	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, FALSE, 0, 0, "\t\tsupress QLI syntax"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, FALSE, 0, 0, NULL}
 };

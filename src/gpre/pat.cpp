@@ -364,11 +364,13 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		if (!sw_gen)
 			continue;
 		if (string) {
+#ifdef GPRE_ADA
 			if (handle_flag && (gpreGlob.sw_language == lang_ada))
 			{
 				for (const TEXT* q = gpreGlob.ada_package; *q;)
 					*p++ = *q++;
 			}
+#endif
 			while (*string)
 				*p++ = *string++;
 			continue;

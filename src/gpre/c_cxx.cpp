@@ -1388,7 +1388,7 @@ static void gen_database( const act* action, int column)
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
 		if (db->dbb_scope == DBB_STATIC)
 			scope = "static ";
-		else if (db->dbb_scope == DBB_EXTERN && TRUE)
+		else if (db->dbb_scope == DBB_EXTERN)
 			scope = "extern ";
 		printa(column, "%sisc_db_handle", scope);
 		if (!all_extern)
