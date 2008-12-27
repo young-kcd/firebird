@@ -740,7 +740,7 @@ act* PAR_event_init(bool sql)
 	init->nod_arg[3] = (gpre_nod*) gpreGlob.isc_databases;
 
 	act* action = MSC_action(0, ACT_event_init);
-	action->act_object = (REF) init;
+	action->act_object = (ref*) init;
 
 //  parse optional database handle
 
@@ -821,7 +821,7 @@ act* PAR_event_wait(bool sql)
 	SQL_resolve_identifier("<identifier>", NULL, MAX_EVENT_SIZE);
 	//SQL_resolve_identifier("<identifier>", req_name, sizeof(req_name));
 	//strcpy(gpreGlob.token_global.tok_string, req_name); redundant
-	action->act_object = (REF) PAR_symbol(SYM_dummy);
+	action->act_object = (ref*) PAR_symbol(SYM_dummy);
 	if (!sql)
 		PAR_end();
 
@@ -1295,7 +1295,7 @@ static act* par_any()
 	request->req_database = relation->rel_database;
 
 	act* function = MSC_action(0, ACT_function);
-	function->act_object = (REF) action;
+	function->act_object = (ref*) action;
 	function->act_next = gpreGlob.global_functions;
 	gpreGlob.global_functions = function;
 
@@ -1368,7 +1368,7 @@ static act* par_based()
 	MSC_match(KW_ON);
 	act* action = MSC_action(0, ACT_basedon);
 	bas* based_on = (bas*) MSC_alloc(BAS_LEN);
-	action->act_object = (REF) based_on;
+	action->act_object = (ref*) based_on;
 
 	if ((gpreGlob.sw_language != lang_fortran) || gpreGlob.isc_databases)
 	{
@@ -1570,7 +1570,7 @@ static act* par_blob_action( act_t type)
 {
 	blb* blob = par_blob();
 	act* action = MSC_action(blob->blb_request, type);
-	action->act_object = (REF) blob;
+	action->act_object = (ref*) blob;
 
 //   Need to eat the semicolon if present
 
@@ -1611,7 +1611,7 @@ static act* par_blob_field()
 	if (first)
 		action->act_flags |= ACT_first;
 
-	action->act_object = (REF) blob;
+	action->act_object = (ref*) blob;
 
 	return action;
 }
@@ -1661,7 +1661,7 @@ static act* par_derived_from()
 
 	act* action = MSC_action(0, ACT_basedon);
 	bas* based_on = (bas*) MSC_alloc(BAS_LEN);
-	action->act_object = (REF) based_on;
+	action->act_object = (ref*) based_on;
 
 	gpre_rel* relation = EXP_relation();
 	if (!MSC_match(KW_DOT))
@@ -1787,7 +1787,7 @@ static act* par_end_for()
 	if (begin_action->act_type == ACT_blob_for) {
 		blb* blob = (blb*) begin_action->act_object;
 		act* action = MSC_action(request, ACT_endblob);
-		action->act_object = (REF) blob;
+		action->act_object = (ref*) blob;
 		begin_action->act_pair = action;
 		action->act_pair = begin_action;
 		HSH_remove(blob->blb_symbol);
@@ -1891,7 +1891,7 @@ static act* par_end_modify()
 		*--ptr = (gpre_nod*) MSC_pop(&stack);
 
 	act* action = MSC_action(request, ACT_endmodify);
-	action->act_object = (REF) modify;
+	action->act_object = (ref*) modify;
 	begin_action->act_pair = action;
 	action->act_pair = begin_action;
 
@@ -1928,7 +1928,7 @@ static act* par_end_stream()
 
 static act* par_end_store(bool special)
 {
-	REF reference;
+	ref* reference;
 
 	if (!cur_store)
 		PAR_error("unmatched END_STORE");
@@ -2053,7 +2053,7 @@ static act* par_erase()
 	erase->upd_source = source;
 
 	act* action = MSC_action(request, ACT_erase);
-	action->act_object = (REF) erase;
+	action->act_object = (ref*) erase;
 
 	return action;
 }
@@ -2097,7 +2097,7 @@ static act* par_finish()
 			{
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
-				action->act_object = (REF) ready;
+				action->act_object = (ref*) ready;
 				ready->rdy_database = (DBB) symbol->sym_object;
 				CPR_eol_token();
 			}
@@ -2255,7 +2255,7 @@ static act* par_modify()
 		PAR_error("invalid context for modify");
 
 	act* action = MSC_action(request, ACT_modify);
-	action->act_object = (REF) modify;
+	action->act_object = (ref*) modify;
 
 	PAR_get_token();
 	MSC_match(KW_USING);
@@ -2310,7 +2310,7 @@ static act* par_on_error()
 	PAR_end();
 	act* action = MSC_action(0, ACT_on_error);
 	cur_statement->act_error = action;
-	action->act_object = (REF) cur_statement;
+	action->act_object = (ref*) cur_statement;
 
 	MSC_push((gpre_nod*) action, &cur_error);
 
@@ -2400,7 +2400,7 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 		gpreGlob.token_global.tok_symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 
 	act* action = MSC_action(request, act_op);
-	action->act_object = (REF) blob;
+	action->act_object = (ref*) blob;
 
 	if (act_op == ACT_blob_for)
 		MSC_push((gpre_nod*) action, &cur_for);
@@ -2517,7 +2517,7 @@ static act* par_ready()
 
 		rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 		ready->rdy_next = (rdy*) action->act_object;
-		action->act_object = (REF) ready;
+		action->act_object = (ref*) ready;
 
 		if (!(symbol = gpreGlob.token_global.tok_symbol) || symbol->sym_type != SYM_database) {
 			ready->rdy_filename = PAR_native_value(false, false);
@@ -2611,7 +2611,7 @@ static act* par_ready()
 		if (db->dbb_runtime || !(db->dbb_flags & DBB_sqlca)) {
 			rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 			ready->rdy_next = (rdy*) action->act_object;
-			action->act_object = (REF) ready;
+			action->act_object = (ref*) ready;
 			ready->rdy_database = db;
 		}
 
@@ -2661,7 +2661,7 @@ static act* par_ready()
 static act* par_returning_values()
 {
 
-	REF reference;
+	ref* reference;
 
 	if (!cur_store)
 		PAR_error("STORE must precede RETURNING_VALUES");
@@ -2688,7 +2688,7 @@ static act* par_returning_values()
 	for (reference = request->req_references; reference;
 		 reference = reference->ref_next)
 	{
-		REF save_ref = MSC_reference(&begin_action->act_object);
+		ref* save_ref = MSC_reference(&begin_action->act_object);
 		save_ref->ref_context = reference->ref_context;
 		save_ref->ref_field = reference->ref_field;
 		save_ref->ref_source = reference;
@@ -2717,7 +2717,7 @@ static act* par_returning_values()
 //  fields
 
 	act* action = MSC_action(request, ACT_store2);
-	action->act_object = (REF) new_values;
+	action->act_object = (ref*) new_values;
 
 	new_values->upd_request = request;
 	new_values->upd_source = source;
@@ -2765,7 +2765,7 @@ static act* par_release()
 
 	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 	if (symbol && (symbol->sym_type == SYM_database)) {
-		action->act_object = (REF) symbol->sym_object;
+		action->act_object = (ref*) symbol->sym_object;
 		PAR_get_token();
 	}
 
@@ -2827,7 +2827,7 @@ static act* par_slice( act_t type)
 	slice->slc_array = EXP_subscript(0);
 
 	act* action = MSC_action(request, type);
-	action->act_object = (REF) slice;
+	action->act_object = (ref*) slice;
 
 	if (gpreGlob.sw_language == lang_c)
 		MSC_match(KW_SEMI_COLON);
@@ -2985,7 +2985,7 @@ static act* par_start_transaction()
 
 	PAR_end();
 	CMP_t_start(trans);
-	action->act_object = (REF) trans;
+	action->act_object = (ref*) trans;
 
 	return action;
 }
@@ -3029,7 +3029,7 @@ static act* par_trans( act_t act_op)
 		}
 		else
 			MSC_match(KW_TRANSACTION_HANDLE);
-		action->act_object = (REF) PAR_native_value(false, true);
+		action->act_object = (ref*) PAR_native_value(false, true);
 		if (parens)
 			EXP_match_paren();
 	}
@@ -3092,7 +3092,7 @@ static act* par_type()
 
 	PAR_get_token();
 	act* action = MSC_action(0, ACT_type_number);
-	action->act_object = (REF) (IPTR) type;
+	action->act_object = (ref*) (IPTR) type;
 
 	return action;
 }
@@ -3255,24 +3255,26 @@ static bool terminator()
 
 //  For C, right brace ("}") must also be a terminator.
 
-	if (gpreGlob.sw_language == lang_c) {
-		if (MSC_match(KW_SEMI_COLON) || gpreGlob.token_global.tok_keyword == KW_ELSE ||
-			gpreGlob.token_global.tok_keyword == KW_ON_ERROR || gpreGlob.token_global.tok_keyword == KW_R_BRACE)
+	// Used reference here because MSC_match() can change tok_leyword.
+	kwwords_t& key = gpreGlob.token_global.tok_keyword;
+
+	switch (gpreGlob.sw_language)
+	{
+	case lang_c:
+		if (MSC_match(KW_SEMI_COLON) || key == KW_ELSE || key == KW_ON_ERROR || key == KW_R_BRACE)
 		{
 			return true;
 		}
-	}
-	else if (gpreGlob.sw_language == lang_ada) {
-		if (MSC_match(KW_SEMI_COLON) || gpreGlob.token_global.tok_keyword == KW_ELSE ||
-			gpreGlob.token_global.tok_keyword == KW_ON_ERROR)
+		break;
+	case lang_ada:
+		if (MSC_match(KW_SEMI_COLON) || key == KW_ELSE || key == KW_ON_ERROR)
 		{
 			return true;
 		}
-	}
-	else {
-		if (gpreGlob.token_global.tok_keyword == KW_SEMI_COLON || gpreGlob.token_global.tok_keyword == KW_ELSE ||
-			gpreGlob.token_global.tok_keyword == KW_ON_ERROR ||
-			(gpreGlob.sw_language == lang_cobol && gpreGlob.token_global.tok_keyword == KW_DOT))
+		break;
+	default:
+		if (key == KW_SEMI_COLON || key == KW_ELSE || key == KW_ON_ERROR ||
+			(gpreGlob.sw_language == lang_cobol && key == KW_DOT))
 		{
 			return true;
 		}

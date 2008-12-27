@@ -852,14 +852,14 @@ gpre_nod* MET_fields(gpre_ctx* context)
 {
 	gpre_fld* field;
 	gpre_nod* field_node;
-	REF reference;
+	ref* reference;
 
 	gpre_prc* procedure = context->ctx_procedure;
 	if (procedure) {
 		gpre_nod* node = MSC_node(nod_list, procedure->prc_out_count);
 		//count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
-			reference = (REF) MSC_alloc(REF_LEN);
+			reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
@@ -878,7 +878,7 @@ gpre_nod* MET_fields(gpre_ctx* context)
 		gpre_nod* anode = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
-			reference = (REF) MSC_alloc(REF_LEN);
+			reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
@@ -915,7 +915,7 @@ gpre_nod* MET_fields(gpre_ctx* context)
 
 	while (stack) {
 		field = (gpre_fld*) MSC_pop(&stack);
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_field = field;
 		reference->ref_context = context;
 		field_node = MSC_unary(nod_field, (gpre_nod*) reference);
@@ -1647,8 +1647,8 @@ void MET_load_hash_table(dbb* database)
 		iname->intlsym_ttype =
 			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id,
 								  iname->intlsym_collate_id);
-		iname->intlsym_bytes_per_char = (CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ?
-				1 : (CHARSET.RDB$BYTES_PER_CHARACTER);
+		iname->intlsym_bytes_per_char =
+			(CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (CHARSET.RDB$BYTES_PER_CHARACTER);
 		iname->intlsym_next = gpreGlob.text_subtypes;
 		gpreGlob.text_subtypes = iname;
 
@@ -1700,8 +1700,8 @@ void MET_load_hash_table(dbb* database)
 		iname->intlsym_ttype =
 			INTL_CS_COLL_TO_TTYPE(iname->intlsym_charset_id,
 								  iname->intlsym_collate_id);
-		iname->intlsym_bytes_per_char = (CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ?
-			1 : (CHARSET.RDB$BYTES_PER_CHARACTER);
+		iname->intlsym_bytes_per_char =
+			(CHARSET.RDB$BYTES_PER_CHARACTER.NULL) ? 1 : (CHARSET.RDB$BYTES_PER_CHARACTER);
 
 		FOR(REQUEST_HANDLE handle2)
 		TYPE IN RDB$TYPES

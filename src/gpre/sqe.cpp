@@ -293,12 +293,17 @@ gpre_ctx* SQE_context(gpre_req* request)
 
 	if (conflict) {
 		const char* error_type;
-		if (symbol->sym_type == SYM_relation)
+		switch (symbol->sym_type)
+		{
+		case SYM_relation:
 			error_type = "table";
-		else if (symbol->sym_type == SYM_procedure)
+			break;
+		case SYM_procedure:
 			error_type = "procedure";
-		else
+			break;
+		default:
 			error_type = "context";
+		}
 
 		fb_utils::snprintf(s, sizeof(s),
 				"context %s conflicts with a %s in the same statement",
@@ -460,7 +465,7 @@ gpre_nod* SQE_field(gpre_req* request,
 	}
 
 	gpre_ctx* context;
-	ref* reference = (REF) MSC_alloc(REF_LEN);
+	ref* reference = (ref*) MSC_alloc(REF_LEN);
 	node = MSC_unary(nod_field, (gpre_nod*) reference);
 
 	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
@@ -471,8 +476,7 @@ gpre_nod* SQE_field(gpre_req* request,
 
 		if (symbol->sym_type != SYM_field)
 		{
-			for (gpre_sym* temp_symbol = symbol; temp_symbol;
-				 temp_symbol = temp_symbol->sym_homonym)
+			for (gpre_sym* temp_symbol = symbol; temp_symbol; temp_symbol = temp_symbol->sym_homonym)
 			{
 				if (temp_symbol->sym_type == SYM_context) {
 					symbol = temp_symbol;
@@ -502,10 +506,9 @@ gpre_nod* SQE_field(gpre_req* request,
 				SQL_resolve_identifier("<Column Name>", NULL, NAME_SIZE);
 				if (!
 					(reference->ref_field =
-					 MET_context_field(context, gpreGlob.token_global.tok_string)))
+						MET_context_field(context, gpreGlob.token_global.tok_string)))
 				{
-					sprintf(s, "column \"%s\" not in context",
-							gpreGlob.token_global.tok_string);
+					sprintf(s, "column \"%s\" not in context", gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
 				if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
@@ -546,8 +549,7 @@ gpre_nod* SQE_field(gpre_req* request,
 				else {
 		/** We've got the column name. resolve it **/
 					SQL_resolve_identifier("<Columnn Name>", NULL, NAME_SIZE);
-					for (context = request->req_contexts; context;
-						 context = context->ctx_next)
+					for (context = request->req_contexts; context; context = context->ctx_next)
 					{
 						if (context->ctx_relation == relation &&
 								(reference->ref_field =
@@ -575,8 +577,7 @@ gpre_nod* SQE_field(gpre_req* request,
 						}
 					}
 
-					fb_utils::snprintf(s, sizeof(s),
-							"column \"%s\" not in context",
+					fb_utils::snprintf(s, sizeof(s), "column \"%s\" not in context",
 							gpreGlob.token_global.tok_string);
 					PAR_error(s);
 				}
@@ -628,11 +629,9 @@ gpre_nod* SQE_field(gpre_req* request,
 //  Hmmm.  So it wasn't a qualified field.  Try any field.
 
 	SQL_resolve_identifier("<Column Name>", NULL, NAME_SIZE);
-	for (context = request->req_contexts; context;
-		 context = context->ctx_next)
+	for (context = request->req_contexts; context; context = context->ctx_next)
 	{
-		if (reference->ref_field = MET_context_field(context,
-													 gpreGlob.token_global.tok_string))
+		if (reference->ref_field = MET_context_field(context, gpreGlob.token_global.tok_string))
 		{
 			if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
 				const USHORT field_dtype = reference->ref_field->fld_dtype;
@@ -708,16 +707,16 @@ gpre_nod* SQE_list(pfn_SQE_list_cb routine,
 //       "INDICATOR".
 //
 
-REF SQE_parameter(gpre_req* request,
+ref* SQE_parameter(gpre_req* request,
 				  bool aster_ok)
 {
-	REF reference;
+	ref* reference;
 	SCHAR* string;
 
 	assert_IS_REQ(request);
 
 	if (gpreGlob.token_global.tok_type == tok_number) {
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
 		reference->ref_value = string;
@@ -734,7 +733,7 @@ REF SQE_parameter(gpre_req* request,
     so that the host language will interpret it correctly as a string
     literal.
     ***/
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 		string[0] = '\"';
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string + 1);
@@ -755,7 +754,7 @@ REF SQE_parameter(gpre_req* request,
 		CPR_token();
 		if (gpreGlob.token_global.tok_type != tok_number)
 			CPR_s_error("<host variable> or <constant>");
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		char* s = string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1 + sign);
 		if (sign)
 			*s++ = '-';
@@ -772,7 +771,7 @@ REF SQE_parameter(gpre_req* request,
 	if (gpreGlob.token_global.tok_type != tok_ident)
 		CPR_s_error("<host variable> or <constant>");
 
-	reference = (REF) MSC_alloc(REF_LEN);
+	reference = (ref*) MSC_alloc(REF_LEN);
 
 	for (gpre_sym* symbol = gpreGlob.token_global.tok_symbol; symbol;
 		symbol = symbol->sym_homonym)
@@ -812,7 +811,7 @@ void SQE_post_field( gpre_nod* input, gpre_fld* field)
 	{
 	case nod_value:
 		{
-			ref* reference = (REF) input->nod_arg[0];
+			ref* reference = (ref*) input->nod_arg[0];
 			if (!reference->ref_field) {
 				/* We're guessing that hostvar reference->ref_value matches
 				 * the datatype of field->fld_dtype
@@ -858,10 +857,10 @@ void SQE_post_field( gpre_nod* input, gpre_fld* field)
 //		isn't a context, well, there isn't a context.
 //
 
-REF SQE_post_reference(gpre_req* request, gpre_fld* field, gpre_ctx* context,
+ref* SQE_post_reference(gpre_req* request, gpre_fld* field, gpre_ctx* context,
 	gpre_nod* node)
 {
-	REF reference;
+	ref* reference;
 
 	assert_IS_REQ(request);
 	assert_IS_NOD(node);
@@ -869,7 +868,7 @@ REF SQE_post_reference(gpre_req* request, gpre_fld* field, gpre_ctx* context,
 //  If the beast is already a field reference, get component parts
 
 	if (node && node->nod_type == nod_field) {
-		reference = (REF) node->nod_arg[0];
+		reference = (ref*) node->nod_arg[0];
 		field = reference->ref_field;
 		context = reference->ref_context;
 	}
@@ -898,7 +897,7 @@ REF SQE_post_reference(gpre_req* request, gpre_fld* field, gpre_ctx* context,
 
 //  No reference -- make one
 
-	reference = (REF) MSC_alloc(REF_LEN);
+	reference = (ref*) MSC_alloc(REF_LEN);
 	reference->ref_context = context;
 	reference->ref_field = field;
 	reference->ref_expr = node;
@@ -974,7 +973,7 @@ bool SQE_resolve(gpre_nod* node,
 		if (node->nod_arg[0]) {
 			SQE_resolve(node->nod_arg[0], request, selection);
 			gpre_nod* node_arg = node->nod_arg[0];
-			const ref* reference = (REF) node_arg->nod_arg[0];
+			const ref* reference = (ref*) node_arg->nod_arg[0];
 			if (node_arg->nod_type == nod_field && reference &&
 				reference->ref_field && reference->ref_field->fld_array_info)
 			{
@@ -1064,7 +1063,7 @@ bool SQE_resolve(gpre_nod* node,
 		SQL_dialect1_bad_type(field->fld_dtype);
 	}
 
-	ref* reference = (REF) MSC_alloc(REF_LEN);
+	ref* reference = (ref*) MSC_alloc(REF_LEN);
 	reference->ref_field = field;
 	reference->ref_context = context;
 	reference->ref_slice = (slc*) slice_action;
@@ -1255,7 +1254,7 @@ gpre_nod* SQE_variable(gpre_req* request,
 	if (isQuoted(gpreGlob.token_global.tok_type))
 		CPR_s_error("<host variable>");
 
-	ref* reference = (REF) MSC_alloc(REF_LEN);
+	ref* reference = (ref*) MSC_alloc(REF_LEN);
 
 	for (gpre_sym* symbol = gpreGlob.token_global.tok_symbol; symbol;
 		symbol = symbol->sym_homonym)
@@ -1286,7 +1285,8 @@ gpre_nod* SQE_variable(gpre_req* request,
 static bool compare_expr(gpre_nod* node1,
 						 gpre_nod* node2)
 {
-	REF ref1, ref2;
+	ref* ref1;
+	ref* ref2;
 
 	assert_IS_NOD(node1);
 	assert_IS_NOD(node2);
@@ -1296,8 +1296,8 @@ static bool compare_expr(gpre_nod* node1,
 
 	switch (node1->nod_type) {
 	case nod_field:
-		ref1 = (REF) node1->nod_arg[0];
-		ref2 = (REF) node2->nod_arg[0];
+		ref1 = (ref*) node1->nod_arg[0];
+		ref2 = (ref*) node2->nod_arg[0];
 		if (ref1->ref_context != ref2->ref_context ||
 			ref1->ref_field != ref2->ref_field ||
 			ref1->ref_master != ref2->ref_master)
@@ -2047,9 +2047,9 @@ static gpre_nod* par_in( gpre_req* request, gpre_nod* value)
 		while (true) {
 			gpre_nod* value2 = par_primitive_value(request, false, 0, NULL);
 			if (value2->nod_type == nod_value) {
-				ref* ref2 = (REF) value2->nod_arg[0];
+				ref* ref2 = (ref*) value2->nod_arg[0];
 				if (value->nod_type == nod_field) {
-					ref* ref1 = (REF) value->nod_arg[0];
+					ref* ref1 = (ref*) value->nod_arg[0];
 					ref2->ref_field = ref1->ref_field;
 				}
 				else {
@@ -2656,7 +2656,7 @@ static gpre_nod* par_primitive_value(gpre_req* request,
 			PAR_error(":hostvar reference not supported in this context");
 			return NULL;
 		}
-		ref* reference = (REF) SQE_variable(request, false, NULL, NULL);
+		ref* reference = (ref*) SQE_variable(request, false, NULL, NULL);
 		node = MSC_unary(nod_value, (gpre_nod*) reference);
 		reference->ref_next = request->req_values;
 		request->req_values = reference;
@@ -2745,7 +2745,7 @@ static gpre_nod* par_relational(gpre_req* request,
 			gpre_nod* expr2 = SQE_value(request, false, NULL, NULL);
 			node->nod_arg[2] = expr2;
 			if (expr2->nod_type == nod_value) {
-				ref* ref_value = (REF) expr2->nod_arg[0];
+				ref* ref_value = (ref*) expr2->nod_arg[0];
 				ref_value->ref_field = MET_make_field("like_escape_character",
 													  dtype_text, 2, false);
 			}
@@ -2804,7 +2804,7 @@ static gpre_nod* par_relational(gpre_req* request,
 		}
 	}
 
-	return (negation) ? negate(node) : node;
+	return negation ? negate(node) : node;
 }
 
 
@@ -3008,8 +3008,7 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 	gpre_nod* into_list = NULL;
 	if (!(request->req_flags & REQ_sql_declare_cursor))
 	{
-		into_list = (MSC_match(KW_INTO)) ? SQE_list(SQE_variable, request,
-										false) : NULL;
+		into_list = (MSC_match(KW_INTO)) ? SQE_list(SQE_variable, request, false) : NULL;
 	}
 
 	gpre_rse* select = par_rse(request, s_list, distinct);
@@ -3084,7 +3083,7 @@ static gpre_nod* par_subscript( gpre_req* request)
 {
 	assert_IS_REQ(request);
 
-	ref* reference = (REF) MSC_alloc(REF_LEN);
+	ref* reference = (ref*) MSC_alloc(REF_LEN);
 	gpre_nod* node = MSC_unary(nod_value, (gpre_nod*) reference);
 
 //  Special case literals
@@ -3733,16 +3732,21 @@ static gpre_fld* resolve(
 
 
 		field = NULL;
-		if (symbol->sym_type == SYM_relation) {
+		switch (symbol->sym_type)
+		{
+		case SYM_relation:
 			if ((gpre_rel*) symbol->sym_object == context->ctx_relation)
 				field = MET_field(context->ctx_relation, f_token->tok_string);
-		}
-		else if (symbol->sym_type == SYM_procedure) {
+			break;
+		case SYM_procedure:
 			if ((gpre_prc*) symbol->sym_object == context->ctx_procedure)
 				field = MET_context_field(context, f_token->tok_string);
+			break;
+		case SYM_context:
+			if (symbol->sym_object == context)
+				field = MET_context_field(context, f_token->tok_string);
+			break;
 		}
-		else if (symbol->sym_type == SYM_context && symbol->sym_object == context)
-			field = MET_context_field(context, f_token->tok_string);
 	}
 
 
@@ -3769,7 +3773,7 @@ static gpre_fld* resolve(
 		   set as a place holder */
 
 		act* action = MSC_action(slice_req, ACT_get_slice);
-		action->act_object = (REF) slice;
+		action->act_object = (ref*) slice;
 		*slice_action = action;
 	}
 	else if ((slice_req = (gpre_req*) node->nod_arg[2]) && slice_action) {
@@ -3835,7 +3839,7 @@ static void set_ref( gpre_nod* expr, gpre_fld* field_ref)
 {
 	assert_IS_NOD(expr);
 
-	ref* re = (REF) expr->nod_arg[0];
+	ref* re = (ref*) expr->nod_arg[0];
 	switch (expr->nod_type) {
 	case nod_value:
 		re->ref_field = field_ref;
@@ -3918,14 +3922,14 @@ static bool validate_references(const gpre_nod* fields,
 	if (fields->nod_type == nod_field) {
 		if (!group_by)
 			return true;
-		const ref* fref = (REF) fields->nod_arg[0];
+		const ref* fref = (ref*) fields->nod_arg[0];
 
 		bool context_match = false;
 		const gpre_nod* const* ptr = group_by->nod_arg;
 		for (const gpre_nod* const* const end = ptr + group_by->nod_count;
 			 ptr < end; ptr++)
 		{
-			const ref* gref = (REF) (*ptr)->nod_arg[0];
+			const ref* gref = (ref*) (*ptr)->nod_arg[0];
 			if (gref->ref_context == fref->ref_context) {
 				if (gref->ref_field == fref->ref_field)
 					return false;

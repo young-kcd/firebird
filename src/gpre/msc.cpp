@@ -252,7 +252,7 @@ void MSC_free_request( gpre_req* request)
 {
 
 	gpreGlob.requests = request->req_next;
-	gpreGlob.cur_routine->act_object = (REF) request->req_routine;
+	gpreGlob.cur_routine->act_object = (ref*) request->req_routine;
 	MSC_free(request);
 }
 
@@ -401,9 +401,9 @@ void MSC_push( gpre_nod* object, gpre_lls** pointer)
 //		a linked list.
 //
 
-REF MSC_reference(REF* link)
+ref* MSC_reference(ref** link)
 {
-	REF reference = (REF) MSC_alloc(REF_LEN);
+	ref* reference = (ref*) MSC_alloc(REF_LEN);
 
 	if (link) {
 		reference->ref_next = *link;
@@ -428,7 +428,7 @@ gpre_req* MSC_request(req_t type)
 	gpreGlob.requests = request;
 
 	request->req_routine = (gpre_req*) gpreGlob.cur_routine->act_object;
-	gpreGlob.cur_routine->act_object = (REF) request;
+	gpreGlob.cur_routine->act_object = (ref*) request;
 
 	if (!(gpreGlob.cur_routine->act_flags & ACT_main))
 		request->req_flags |= REQ_local;

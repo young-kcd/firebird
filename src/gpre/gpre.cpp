@@ -882,7 +882,7 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "%3d warnings\n", warnings_global);
 	}
 
-	CPR_exit((gpreGlob.errors_global) ? FINI_ERROR : FINI_OK);
+	CPR_exit(gpreGlob.errors_global ? FINI_ERROR : FINI_OK);
 	return 0;
 
 }
@@ -2041,7 +2041,8 @@ static TOK get_token()
 
 	bool label = false;
 
-	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER)) {
+	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER))
+	{
 		while (classes(c = nextchar()) & CHR_IDENT) {
 			if (p < end) {
 				*p++ = (TEXT) c;
@@ -2050,7 +2051,8 @@ static TOK get_token()
 		return_char(c);
 		gpreGlob.token_global.tok_type = tok_introducer;
 	}
-	else if (char_class & CHR_LETTER) {
+	else if (char_class & CHR_LETTER)
+	{
 		while (true) {
 			while (classes(c = nextchar()) & CHR_IDENT)
 				*p++ = (TEXT) c;
@@ -2064,7 +2066,8 @@ static TOK get_token()
 		return_char(c);
 		gpreGlob.token_global.tok_type = tok_ident;
 	}
-	else if (char_class & CHR_DIGIT) {
+	else if (char_class & CHR_DIGIT)
+	{
 #ifdef GPRE_FORTRAN
 		if (gpreGlob.sw_language == lang_fortran && line_position < 7)
 			label = true;
@@ -2093,12 +2096,15 @@ static TOK get_token()
 		return_char(c);
 		gpreGlob.token_global.tok_type = tok_number;
 	}
-	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE)) {
+	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE))
+	{
 		gpreGlob.token_global.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
 		for (;;) {
 			SSHORT next = nextchar();
-			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) && next == '\n') {
-				if (prior_line_position == 73) {
+			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) && next == '\n')
+			{
+				if (prior_line_position == 73)
+				{
 					// should be a split literal
 					next = skip_white();
 					if (next != '-' || line_position != 7) {
@@ -2118,8 +2124,7 @@ static TOK get_token()
 					break;
 				}
 			}
-			else if (next == EOF
-					 || (next == '\n' && (p[-1] != '\\' || gpreGlob.sw_sql)))
+			else if (next == EOF || (next == '\n' && (p[-1] != '\\' || gpreGlob.sw_sql)))
 			{
 				return_char(*p);
 
@@ -2164,7 +2169,8 @@ static TOK get_token()
 			}
 		}
 	}
-	else if (c == '.') {
+	else if (c == '.')
+	{
 		if (classes(c = nextchar()) & CHR_DIGIT) {
 			*p++ = (TEXT) c;
 			while (classes(c = nextchar()) & CHR_DIGIT)
@@ -2191,7 +2197,8 @@ static TOK get_token()
 				return_char(*--p);
 		}
 	}
-	else {
+	else
+	{
 		gpreGlob.token_global.tok_type = tok_punct;
 		*p++ = nextchar();
 		*p = 0;
@@ -2551,12 +2558,15 @@ static void pass2( SLONG start_position)
 		// into the output stream.
 
 		const SLONG start = column;
-		if (!(action->act_flags & ACT_mark)) {
-			if (gpreGlob.sw_language == lang_fortran) {
+		if (!(action->act_flags & ACT_mark))
+		{
+			switch (gpreGlob.sw_language)
+			{
+			case lang_fortran:
 				fputc('\n', gpreGlob.out_file);
 				fputs(comment_start, gpreGlob.out_file);
-			}
-			else if (gpreGlob.sw_language == lang_cobol)
+				break;
+			case lang_cobol:
 				if (continue_flag)
 					suppress_output = true;
 				else {
@@ -2565,8 +2575,10 @@ static void pass2( SLONG start_position)
 					to_skip = (column < 7) ? comment_start_len - column : 0;
 					column = 0;
 				}
-			else
+				break;
+			default:
 				fputs(comment_start, gpreGlob.out_file);
+			}
 		}
 
 		// Next, dump the text of the action to the output stream.

@@ -252,17 +252,18 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
  */
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-		if (symbol->sym_type == SYM_keyword &&
-			symbol->sym_keyword == (int) KW_DBKEY)
+	{
+		if (symbol->sym_type == SYM_keyword && symbol->sym_keyword == (int) KW_DBKEY)
 		{
 			return relation->rel_dbkey;
 		}
-		else if (symbol->sym_type == SYM_field &&
-				 (field = (gpre_fld*) symbol->sym_object) &&
-				 field->fld_relation == relation)
+
+		if (symbol->sym_type == SYM_field && (field = (gpre_fld*) symbol->sym_object) &&
+			field->fld_relation == relation)
 		{
 			return field;
 		}
+	}
 
 	return NULL;
 }
@@ -278,14 +279,14 @@ gpre_nod* MET_fields(gpre_ctx* context)
 	gpre_fld* field;
 	gpre_nod* node;
 	gpre_nod* field_node;
-	REF reference;
+	ref* reference;
 
 	gpre_prc* procedure = context->ctx_procedure;
 	if (procedure) {
 		node = MSC_node(nod_list, procedure->prc_out_count);
 		//int count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
-			reference = (REF) MSC_alloc(REF_LEN);
+			reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
@@ -304,7 +305,7 @@ gpre_nod* MET_fields(gpre_ctx* context)
 		node = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
-			reference = (REF) MSC_alloc(REF_LEN);
+			reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
 			field_node = MSC_unary(nod_field, (gpre_nod*) reference);

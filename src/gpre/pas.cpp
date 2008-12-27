@@ -372,11 +372,10 @@ void PAS_action(const act* action, int column)
 	case ACT_endblob:
 		gen_blob_end(action, column);
 		return;
-	case ACT_enderror:{
-			column += INDENT;
-			endp(column);
-			column -= INDENT;
-		}
+	case ACT_enderror:
+		column += INDENT;
+		endp(column);
+		column -= INDENT;
 		break;
 	case ACT_endfor:
 		gen_endfor(action, column);
@@ -789,10 +788,8 @@ static void gen_blob_close( const act* action, USHORT column)
 	else
 		blob = (blb*) action->act_object;
 
-	const TEXT* command = (action->act_type == ACT_blob_cancel) ?
-		"CANCEL" : "CLOSE";
-	printa(column, "GDS__%s_BLOB (%s, gds__%d);",
-		   command, status_vector(action), blob->blb_ident);
+	const TEXT* command = (action->act_type == ACT_blob_cancel) ? "CANCEL" : "CLOSE";
+	printa(column, "GDS__%s_BLOB (%s, gds__%d);", command, status_vector(action), blob->blb_ident);
 
 	if (action->act_flags & ACT_sql) {
 		endp(column);
@@ -1129,9 +1126,7 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 	args.pat_string3 = request_trans(action, request);
 	args.pat_value2 = -1;
 
-	PATTERN_expand(column,
-				   (action->act_type == ACT_open) ? pattern1 : pattern2,
-				   &args);
+	PATTERN_expand(column, (action->act_type == ACT_open) ? pattern1 : pattern2, &args);
 	PATTERN_expand(column + INDENT, pattern3, &args);
 	PATTERN_expand(column, pattern4, &args);
 	column += INDENT;
@@ -1299,7 +1294,7 @@ static void gen_database( const act* action, int column)
 		printa(column, "\nvar (gds__trans)");
 		printa(indent,
 			   "gds__trans\t\t: gds__handle%s;\t\t(* default transaction *)",
-			   (all_extern) ? "" : "\t:= nil");
+			   all_extern ? "" : "\t:= nil");
 		printa(column, "\nvar (gds__status)");
 		printa(indent,
 			   "gds__status\t\t: gds__status_vector;\t\t(* status vector *)");
@@ -1308,7 +1303,7 @@ static void gen_database( const act* action, int column)
 			   "gds__status2\t\t: gds__status_vector;\t\t(* status vector *)");
 		printa(column, "\nvar (SQLCODE)");
 		printa(indent, "SQLCODE\t: integer%s;\t\t\t(* SQL status code *)",
-			   (all_extern) ? "" : "\t:= 0");
+			   all_extern ? "" : "\t:= 0");
 	}
 	printa(column, "\nvar (gds__window)");
 	printa(indent,
@@ -1406,10 +1401,10 @@ static void gen_drop_database( const act* action, int column)
 
 static void gen_dyn_close( const act* action, int column)
 {
-	DYN statement;
+	dyn* statement;
 	TEXT s[MAX_CURSOR_SIZE];
 
-	statement = (DYN) action->act_object;
+	statement = (dyn*) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_close (gds__status, %s);",
 		   make_name(s, statement->dyn_cursor_name));
@@ -1424,10 +1419,10 @@ static void gen_dyn_close( const act* action, int column)
 
 static void gen_dyn_declare( const act* action, int column)
 {
-	DYN statement;
+	dyn* statement;
 	TEXT s1[MAX_CURSOR_SIZE], s2[MAX_CURSOR_SIZE];
 
-	statement = (DYN) action->act_object;
+	statement = (dyn*) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_declare (gds__status, %s, %s);",
 		   make_name(s1, statement->dyn_statement_name),
@@ -1447,7 +1442,7 @@ static void gen_dyn_describe(const act* action,
 {
 	TEXT s[MAX_CURSOR_SIZE];
 
-	dyn* statement = (DYN) action->act_object;
+	dyn* statement = (dyn*) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_describe%s (gds__status, %s, %d, %s %s);",
 		   bind_flag ? "_bind" : "",
@@ -1468,7 +1463,7 @@ static void gen_dyn_execute( const act* action, int column)
 	gpre_req req_const;
 	int i;
 
-	DYN statement = (DYN) action->act_object;
+	dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1499,14 +1494,14 @@ static void gen_dyn_execute( const act* action, int column)
 	}
 
 	printa(column,
-		   (statement->dyn_sqlda2) ?
+		   statement->dyn_sqlda2 ?
 		   "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
 		   : "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
 		   transaction, make_name(s, statement->dyn_statement_name),
 		   gpreGlob.sw_sql_dialect, REF_PAR,
-		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
 		   REF_PAR,
-		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : "gds__null^");
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
 	set_sqlcode(action, column);
 }
 
@@ -1518,16 +1513,16 @@ static void gen_dyn_execute( const act* action, int column)
 
 static void gen_dyn_fetch( const act* action, int column)
 {
-	DYN statement;
+	dyn* statement;
 	TEXT s[MAX_CURSOR_SIZE];
 
-	statement = (DYN) action->act_object;
+	statement = (dyn*) action->act_object;
 	printa(column,
 		   "SQLCODE := isc_embed_dsql_fetch (gds__status, %s, %d, %s %s);",
 		   make_name(s, statement->dyn_cursor_name),
 		   gpreGlob.sw_sql_dialect,
 		   REF_PAR,
-		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^");
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^");
 	printa(column,
 		   "if sqlcode <> 100 then sqlcode := gds__sqlcode (gds__status);");
 }
@@ -1544,7 +1539,7 @@ static void gen_dyn_immediate( const act* action, int column)
 	gpre_req* request;
 	gpre_req req_const;
 
-	DYN statement = (DYN) action->act_object;
+	dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1565,16 +1560,16 @@ static void gen_dyn_immediate( const act* action, int column)
 
 	database = statement->dyn_database;
 	printa(column,
-		   (statement->dyn_sqlda2) ?
+		   statement->dyn_sqlda2 ?
 		   "isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);"
 		   :
 		   "isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
 		   database->dbb_name->sym_string, transaction, SIZEOF,
 		   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect,
 		   REF_PAR,
-		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
 		   REF_PAR,
-		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : "gds__null^");
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
 	set_sqlcode(action, column);
 }
 
@@ -1586,16 +1581,16 @@ static void gen_dyn_immediate( const act* action, int column)
 
 static void gen_dyn_insert( const act* action, int column)
 {
-	DYN statement;
+	dyn* statement;
 	TEXT s[MAX_CURSOR_SIZE];
 
-	statement = (DYN) action->act_object;
+	statement = (dyn*) action->act_object;
 	printa(column,
 		   "isc_embed_dsql_insert (gds__status, %s, %d, %s %s);",
 		   make_name(s, statement->dyn_cursor_name),
 		   gpreGlob.sw_sql_dialect,
 		   REF_PAR,
-		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^");
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^");
 
 	set_sqlcode(action, column);
 }
@@ -1614,7 +1609,7 @@ static void gen_dyn_open( const act* action, int column)
 	gpre_nod* var_list;
 	int i;
 
-	DYN statement = (DYN) action->act_object;
+	dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1643,16 +1638,16 @@ static void gen_dyn_open( const act* action, int column)
 	}
 
 	printa(column,
-		   (statement->dyn_sqlda2) ?
+		   statement->dyn_sqlda2 ?
 		   "isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
 		   "isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
 		   s,
 		   transaction,
 		   gpreGlob.sw_sql_dialect,
 		   REF_PAR,
-		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^",
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
 		   REF_PAR,
-		   (statement->dyn_sqlda2) ? statement->dyn_sqlda2 : "gds__null^");
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
 	set_sqlcode(action, column);
 }
 
@@ -1668,7 +1663,7 @@ static void gen_dyn_prepare( const act* action, int column)
 	gpre_req* request;
 	gpre_req req_const;
 
-    DYN statement = (DYN) action->act_object;
+    dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1695,7 +1690,7 @@ static void gen_dyn_prepare( const act* action, int column)
 		   make_name(s, statement->dyn_statement_name),
 		   SIZEOF, statement->dyn_string, statement->dyn_string,
 		   gpreGlob.sw_sql_dialect, REF_PAR,
-		   (statement->dyn_sqlda) ? statement->dyn_sqlda : "gds__null^");
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^");
 	set_sqlcode(action, column);
 }
 
@@ -2847,9 +2842,9 @@ static void gen_segment( const act* action, int column)
 	const blb* blob = (blb*) action->act_object;
 
 	printa(column, "gds__%d",
-		   (action->act_type == ACT_segment) ? blob->blb_buff_ident :
-		   (action->act_type == ACT_segment_length) ? blob->blb_len_ident :
-		   blob->blb_ident);
+		   (action->act_type == ACT_segment) ?
+		   		blob->blb_buff_ident : (action->act_type == ACT_segment_length) ?
+		   			blob->blb_len_ident : blob->blb_ident);
 }
 
 
@@ -2979,9 +2974,7 @@ static void gen_slice( const act* action, int column)
 	args.pat_string5 = reference->ref_value;	// array name
 	args.pat_string6 = "gds__array_length";
 
-	PATTERN_expand(column,
-				   (action->act_type == ACT_get_slice) ? pattern1 : pattern2,
-				   &args);
+	PATTERN_expand(column, (action->act_type == ACT_get_slice) ? pattern1 : pattern2, &args);
 }
 
 
@@ -3111,7 +3104,7 @@ static void gen_t_start( const act* action, int column)
 
 	printa(column, "GDS__START_MULTIPLE (%s, %s, %d, gds__teb);",
 		   status_vector(action),
-		   (trans->tra_handle) ? trans->tra_handle : "gds__trans",
+		   trans->tra_handle ? trans->tra_handle : "gds__trans",
 		   trans->tra_db_count);
 
 	set_sqlcode(action, column);
@@ -3172,29 +3165,23 @@ static void gen_tpb( tpb* tpb_val, int column)
 
 static void gen_trans( const act* action, int column)
 {
-
 	align(column);
 
-	if (action->act_type == ACT_commit_retain_context) {
-		fprintf(gpreGlob.out_file, "GDS__COMMIT_RETAINING (%s, %s);",
-				   status_vector(action),
-				   (action->act_object) ?
-				   		(const TEXT*) action->act_object : "gds__trans");
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		fprintf(gpreGlob.out_file, "GDS__ROLLBACK_RETAINING (%s, %s);",
-				   status_vector(action),
-				   (action->act_object) ?
-				   		(const TEXT*) action->act_object : "gds__trans");
-	}
-	else {
+	const char* tranText = action->act_object ? (const TEXT*) action->act_object : "gds__trans";
+
+	switch (action->act_type)
+	{
+	case ACT_commit_retain_context:
+		fprintf(gpreGlob.out_file, "GDS__COMMIT_RETAINING (%s, %s);", status_vector(action), tranText);
+		break;
+	case ACT_rollback_retain_context:
+		fprintf(gpreGlob.out_file, "GDS__ROLLBACK_RETAINING (%s, %s);", status_vector(action), tranText);
+		break;
+	default:
 		fprintf(gpreGlob.out_file, "GDS__%s_TRANSACTION (%s, %s);",
 				(action->act_type == ACT_commit) ?
-					"COMMIT" : (action->act_type == ACT_rollback) ?
-						"ROLLBACK" : "PREPARE",
-				status_vector(action),
-				(action->act_object) ?
-				   		(const TEXT*) action->act_object : "gds__trans");
+					"COMMIT" : (action->act_type == ACT_rollback) ? "ROLLBACK" : "PREPARE",
+				status_vector(action), tranText);
 	}
 
 	set_sqlcode(action, column);
@@ -3208,11 +3195,8 @@ static void gen_trans( const act* action, int column)
 
 static void gen_update( const act* action, int column)
 {
-	gpre_port* port;
-	upd* modify;
-
-	modify = (upd*) action->act_object;
-	port = modify->upd_port;
+	upd* modify = (upd*) action->act_object;
+	gpre_port* port = modify->upd_port;
 	asgn_from(action, port->por_references, column);
 	gen_send(action, port, column);
 }
@@ -3529,7 +3513,7 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 		return trname;
 	}
 
-	return (request) ? request->req_trans : "gds__trans";
+	return request ? request->req_trans : "gds__trans";
 }
 
 

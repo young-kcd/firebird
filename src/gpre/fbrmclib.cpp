@@ -1557,7 +1557,7 @@ EXPORT RM_ENTRY(rmc_stoc)
 	while (src[i] == ' ' && i >= 0)
 		--i;
 
-	int len = ((i + 1) < dlen) ? i + 1 : dlen - 1;
+	int len = (i + 1 < dlen) ? i + 1 : dlen - 1;
 	memmove(dest, src, len);
 	dest[len] = '\0';
 

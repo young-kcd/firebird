@@ -505,7 +505,7 @@ static void print_blr_line(void* arg, SSHORT offset, const char* line)
 static int print_byte( CTL control, SSHORT offset)
 {
 	const UCHAR v = BLR_BYTE;
-	sprintf(control->ctl_ptr, (control->ctl_language) ? "chr(%d), " : "%d, ",
+	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d), " : "%d, ",
 			v);
 	ADVANCE_PTR(control->ctl_ptr);
 
@@ -525,8 +525,7 @@ static int print_char( CTL control, SSHORT offset)
 		(c >= 'A' && c <= 'Z') ||
 		(c >= '0' && c <= '9' || c == '$' || c == '_');
 
-	sprintf(control->ctl_ptr, (printable) ?
-			"'%c'," : (control->ctl_language) ? "chr(%d)," : "%d,", c);
+	sprintf(control->ctl_ptr, printable ? "'%c'," : control->ctl_language ? "chr(%d)," : "%d,", c);
 	ADVANCE_PTR(control->ctl_ptr);
 
 	CHECK_BUFFER;
@@ -746,8 +745,7 @@ static SLONG print_long( CTL control, SSHORT offset)
 	const UCHAR v2 = BLR_BYTE;
 	const UCHAR v3 = BLR_BYTE;
 	const UCHAR v4 = BLR_BYTE;
-	sprintf(control->ctl_ptr,
-			(control->ctl_language) ?
+	sprintf(control->ctl_ptr, control->ctl_language ?
 			"chr(%d),chr(%d),chr(%d),chr(%d) " : "%d,%d,%d,%d, ",
 			v1, v2, v3, v4);
 	ADVANCE_PTR(control->ctl_ptr);
@@ -889,8 +887,7 @@ static int print_word( CTL control, SSHORT offset)
 {
 	const UCHAR v1 = BLR_BYTE;
 	const UCHAR v2 = BLR_BYTE;
-	sprintf(control->ctl_ptr,
-			(control->ctl_language) ? "chr(%d),chr(%d), " : "%d,%d, ", v1,
+	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d),chr(%d), " : "%d,%d, ", v1,
 			v2);
 	ADVANCE_PTR(control->ctl_ptr);
 

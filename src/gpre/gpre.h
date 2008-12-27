@@ -287,14 +287,15 @@ const size_t SDT_LEN = sizeof(sdt);
 
 /* Set generator block */
 
-typedef struct sgen {
+struct set_gen
+{
 	TEXT *sgen_name;
 	USHORT sgen_dialect;
 	SLONG sgen_value;
 	SINT64 sgen_int64value;
-} *SGEN;
+};
 
-const size_t SGEN_LEN = sizeof(sgen);
+const size_t SGEN_LEN = sizeof(set_gen);
 
 
 /* STRing block - holds a null terminated string */
@@ -1269,7 +1270,8 @@ const size_t CTX_LEN = sizeof(gpre_ctx);
 
 /* Field reference */
 
-class ref {
+class ref
+{
 public:
 
 	USHORT ref_ident;			/* identifier */
@@ -1314,8 +1316,6 @@ public:
 
 };
 
-typedef ref* REF;
-
 enum ref_flags_vals {
 	REF_union		= 1,	/* Pseudo field for union */
 	REF_pseudo		= 2,	/* Other pseudo field (probably for forms) */
@@ -1336,7 +1336,8 @@ const size_t REF_LEN = sizeof(ref);
 
 /* Based on block.  Used for based on clause */
 
-struct bas {
+struct bas
+{
 	gpre_fld* bas_field;		/* database field referenced */
 	gpre_lls* bas_variables;			/* list of variables based on above */
 	str* bas_db_name;			/* database name if present and required */
@@ -1356,7 +1357,8 @@ enum bas_flags_vals {
 
 /* declare udf block */
 
-struct decl_udf {
+struct decl_udf
+{
 	const TEXT *decl_udf_name;
 	const TEXT *decl_udf_entry_point;
 	const TEXT *decl_udf_module_name;
@@ -1372,7 +1374,8 @@ const size_t DECL_UDF_LEN = sizeof(decl_udf);
 
 /* Dynamic statement block, used for dynamic SQL */
 
-typedef struct dyn {
+struct dyn
+{
 	dbb* dyn_database;			/* Database involved */
 	gpre_sym* dyn_statement_name;	/* Name of dynamic statement */
 	gpre_sym* dyn_cursor_name;		/* Cursor name */
@@ -1381,7 +1384,7 @@ typedef struct dyn {
 	TEXT *dyn_sqlda;			/* Name of SQLDA structure, if any */
 	TEXT *dyn_sqlda2;			/* Name of second SQLDA structure, if any */
 	gpre_nod* dyn_using;		/* dependent on action type */
-} *DYN;
+};
 
 const size_t DYN_LEN = sizeof(dyn);
 

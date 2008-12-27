@@ -53,16 +53,16 @@ static void cmp_field(const gpre_nod*, gpre_req*);
 static void cmp_literal(const gpre_nod*, gpre_req*);
 static void cmp_map(MAP, gpre_req*);
 static void cmp_plan(const gpre_nod*, gpre_req*);
-static void cmp_sdl_dtype(const gpre_fld*, REF);
+static void cmp_sdl_dtype(const gpre_fld*, ref*);
 static void cmp_udf(gpre_nod*, gpre_req*);
 static void cmp_value(const gpre_nod*, gpre_req*);
 static void get_dtype_of_case(const gpre_nod*, gpre_fld*);
 static void get_dtype_of_list(const gpre_nod*, gpre_fld*);
 static USHORT get_string_len(const gpre_fld*);
-static void stuff_sdl_dimension(const dim*, REF, SSHORT);
-static void stuff_sdl_element(REF, const gpre_fld*);
-static void stuff_sdl_loops(REF, const gpre_fld*);
-static void stuff_sdl_number(const SLONG, REF);
+static void stuff_sdl_dimension(const dim*, ref*, SSHORT);
+static void stuff_sdl_element(ref*, const gpre_fld*);
+static void stuff_sdl_loops(ref*, const gpre_fld*);
+static void stuff_sdl_number(const SLONG, ref*);
 
 const int USER_LENGTH = 32;
 const int ROLE_LENGTH = 32;
@@ -174,7 +174,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 	switch (node->nod_type)
 	{
 	case nod_field:
-		if (!(reference = (REF) node->nod_arg[0]))
+		if (!(reference = (ref*) node->nod_arg[0]))
 		{
 			CPR_error("CME_expr: reference missing");
 			return;
@@ -194,8 +194,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 
 	case nod_value:
 		cmp_value(node, request);
-		if ((reference = (REF) node->nod_arg[0]) &&
-			(reference->ref_flags & REF_fetch_array))
+		if ((reference = (ref*) node->nod_arg[0]) && (reference->ref_flags & REF_fetch_array))
 		{
 			cmp_array(node, request);
 		}
@@ -212,8 +211,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		{
 			request->add_byte((node->nod_count == 2) ? blr_like : blr_ansi_like);
 			gpre_nod** ptr = node->nod_arg;
-			for (const gpre_nod* const* const end = ptr + node->nod_count;
-				ptr < end; ptr++)
+			for (const gpre_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 			{
 				CME_expr(*ptr, request);
 			}
@@ -367,7 +365,6 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		return;
 
 	case nod_coalesce:
-		{ // scope
 		// Begin by casting the result of coalesce to the proper data type
 		request->add_byte(blr_cast);
 		get_dtype_of_list(node->nod_arg[0], &field);
@@ -386,12 +383,10 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		{
 			CME_expr(node->nod_arg[0]->nod_arg[j], request);
 		}
-		} // end scope
 		return;
 
 	case nod_case:
 		// Begin by casting the result of case to the proper data type
-		{ // scope
 		request->add_byte(blr_cast);
 		get_dtype_of_case(node, &field);
 		CMP_external_field(request, &field);
@@ -411,11 +406,9 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		{
 			request->add_byte(blr_null);
 		}
-		} // end scope
 		return;
 
 	case nod_case1:
-	    { // scope
 		// Begin by casting the result of case to the proper data type
 		request->add_byte(blr_cast);
 		get_dtype_of_case(node, &field);
@@ -438,7 +431,6 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		{
 			request->add_byte(blr_null);
 		}
-		} // end scope
 		return;
 
 	case nod_substring:
@@ -457,9 +449,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 	}
 
 	const op_table* nod2blr_operator;
-	for (nod2blr_operator = operators;
-		nod2blr_operator->op_type != node->nod_type;
-		++nod2blr_operator)
+	for (nod2blr_operator = operators; nod2blr_operator->op_type != node->nod_type; ++nod2blr_operator)
 	{
 		if (!nod2blr_operator->op_blr)
 		{
@@ -596,8 +586,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 	case nod_agg_min:
 	case nod_negate:
 		CME_get_dtype(node->nod_arg[0], f);
-		if ((gpreGlob.sw_sql_dialect == SQL_DIALECT_V5)
-			&& (f->fld_dtype == dtype_int64))
+		if (gpreGlob.sw_sql_dialect == SQL_DIALECT_V5 && f->fld_dtype == dtype_int64)
 		{
 			f->fld_precision = 0;
 			f->fld_scale = 0;
@@ -617,16 +606,14 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				break;
 
 			case dtype_sql_date:
-				if (kw_word == KW_HOUR || kw_word == KW_MINUTE
-					|| kw_word == KW_SECOND)
+				if (kw_word == KW_HOUR || kw_word == KW_MINUTE || kw_word == KW_SECOND)
 				{
 					CPR_error("Invalid extract part for SQL DATE type");
 				}
 				break;
 
 			case dtype_sql_time:
-				if (kw_word != KW_HOUR && kw_word != KW_MINUTE
-					&& kw_word != KW_SECOND)
+				if (kw_word != KW_HOUR && kw_word != KW_MINUTE && kw_word != KW_SECOND)
 				{
 					CPR_error("Invalid extract part for SQL TIME type");
 				}
@@ -746,8 +733,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		if (field1.fld_dtype > dtype_any_text)
 		{
 			f->fld_dtype		= dtype_cstring;
-			f->fld_char_length	=
-				get_string_len(&field1) + get_string_len(&field2);
+			f->fld_char_length	= get_string_len(&field1) + get_string_len(&field2);
 			f->fld_length		= f->fld_char_length + sizeof(USHORT);
 			f->fld_charset_id	= CS_ASCII;
 			f->fld_ttype		= ttype_ascii;
@@ -780,10 +766,8 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				field2.fld_length = sizeof(double);
 			}
 
-			if (DTYPE_IS_DATE(field1.fld_dtype) &&
-				DTYPE_IS_DATE(field2.fld_dtype) &&
-				!((node->nod_type == nod_minus) ||
-				  is_date_and_time(field1.fld_dtype, field2.fld_dtype)))
+			if (DTYPE_IS_DATE(field1.fld_dtype) && DTYPE_IS_DATE(field2.fld_dtype) &&
+				!(node->nod_type == nod_minus || is_date_and_time(field1.fld_dtype, field2.fld_dtype)))
 			{
 				CPR_error("Invalid use of timestamp/date/time value");
 				return; // silence non initialized warning
@@ -980,7 +964,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		return;
 
 	case nod_literal:
-		reference = (REF) node->nod_arg[0];
+		reference = (ref*) node->nod_arg[0];
 		string = reference->ref_value;
 		if (*string != '"' && *string != '\'')
 		{
@@ -1203,8 +1187,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 		gpre_nod* inputs = context->ctx_prc_inputs;
 		if (inputs) {
 			gpre_nod** ptr = inputs->nod_arg;
-			for (const gpre_nod* const* const end = ptr + inputs->nod_count;
-				 ptr < end; ptr++)
+			for (const gpre_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
 			{
 				CME_expr(*ptr, request);
 			}
@@ -1224,8 +1207,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 
 	if (selection->rse_join_type == nod_nothing)
 	{
-		if ((selection->rse_flags & RSE_singleton) &&
-			!(request->req_database->dbb_flags & DBB_v3))
+		if ((selection->rse_flags & RSE_singleton) && !(request->req_database->dbb_flags & DBB_v3))
 		{
 			request->add_byte(blr_singular);
 		}
@@ -1245,8 +1227,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		request->add_byte(selection->rse_context[0]->ctx_internal);
 		request->add_byte(union_node->nod_count);
 		gpre_nod** ptr = union_node->nod_arg;
-		for (const gpre_nod* const* const end = ptr + union_node->nod_count;
-			ptr < end; ptr++)
+		for (const gpre_nod* const* const end = ptr + union_node->nod_count; ptr < end; ptr++)
 		{
 			sub_rse = (gpre_rse*) * ptr;
 			CME_rse(sub_rse, request);
@@ -1265,8 +1246,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		{
 			request->add_byte(list->nod_count);
 			gpre_nod** ptr = list->nod_arg;
-			for (const gpre_nod* const* const end = ptr + list->nod_count;
-				ptr < end; ptr++)
+			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
 				CME_expr(*ptr, request);
 			}
@@ -1338,16 +1318,20 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		cmp_plan(temp, request);
 	}
 
-	if (selection->rse_join_type != nod_nothing
-		&& selection->rse_join_type != nod_join_inner)
+	if (selection->rse_join_type != nod_nothing && selection->rse_join_type != nod_join_inner)
 	{
 		request->add_byte(blr_join_type);
-		if (selection->rse_join_type == nod_join_left)
+		switch (selection->rse_join_type)
+		{
+		case nod_join_left:
 			request->add_byte(blr_left);
-		else if (selection->rse_join_type == nod_join_right)
+			break;
+		case nod_join_right:
 			request->add_byte(blr_right);
-		else
+			break;
+		default:
 			request->add_byte(blr_full);
+		}
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -1357,8 +1341,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	//  and offset to scroll; note that we do this only on a SELECT
 	//  type statement and only when talking to a 4.1 engine or greater
 
-	if (request->req_flags & REQ_sql_cursor &&
-		request->req_database->dbb_base_level >= 5)
+	if (request->req_flags & REQ_sql_cursor && request->req_database->dbb_base_level >= 5)
 	{
 		request->add_byte(blr_receive);
 		request->add_byte(request->req_aport->por_msg_number);
@@ -1388,7 +1371,7 @@ static void cmp_array( gpre_nod* node, gpre_req* request)
 {
 	CMP_check(request, 0);
 
-	ref* reference = (REF) node->nod_arg[0];
+	ref* reference = (ref*) node->nod_arg[0];
 
 	if (!reference->ref_context)
 	{
@@ -1501,7 +1484,7 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 {
 	CMP_check(request, 0);
 
-	const ref* reference = (REF) node->nod_arg[0];
+	const ref* reference = (ref*) node->nod_arg[0];
 	if (!reference)
 	{
 		CPR_error("cmp_field: reference missing");
@@ -1569,7 +1552,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 	}
 
 	request->add_byte(blr_literal);
-	const ref* reference = (REF) node->nod_arg[0];
+	const ref* reference = (ref*) node->nod_arg[0];
 	const char* string = reference->ref_value;
 
 	if (*string != '"' && *string != '\'')
@@ -1622,8 +1605,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 			}
 
 			/** see if we can fit the value in a long or INT64.  **/
-			if ((uint64_val <= MAX_SLONG) ||
-				((uint64_val == (MAX_SLONG + (FB_UINT64) 1)) && negate))
+			if ((uint64_val <= MAX_SLONG) || ((uint64_val == (MAX_SLONG + (FB_UINT64) 1)) && negate))
 			{
 				long long_val;
 				if (negate)
@@ -1636,7 +1618,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 				request->add_word(long_val >> 16);
 			}
 			else if ((uint64_val <= MAX_SINT64) ||
-					 ((uint64_val == ((FB_UINT64) MAX_SINT64 + 1)) && negate))
+				((uint64_val == ((FB_UINT64) MAX_SINT64 + 1)) && negate))
 			{
 				SINT64 sint64_val;
 				if (negate)
@@ -1816,8 +1798,7 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 				arg = arg->nod_arg[0];
 				request->add_byte(arg->nod_count);
 				const gpre_nod* const* ptr2 = arg->nod_arg;
-				for (const gpre_nod* const* const end2 = ptr2 + arg->nod_count;
-					 ptr2 < end2; ptr2++)
+				for (const gpre_nod* const* const end2 = ptr2 + arg->nod_count;  ptr2 < end2; ptr2++)
 				{
 					request->add_cstring((TEXT*) *ptr2);
 				}
@@ -1834,7 +1815,7 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 //       this datatype.
 //
 
-static void cmp_sdl_dtype( const gpre_fld* field, REF reference)
+static void cmp_sdl_dtype( const gpre_fld* field, ref* reference)
 {
 	switch (field->fld_dtype)
 	{
@@ -1960,8 +1941,7 @@ static void cmp_udf( gpre_nod* node, gpre_req* request)
 		request->add_byte(list->nod_count);
 
 		gpre_nod** ptr = list->nod_arg;
-		for (gpre_nod** const end = ptr + list->nod_count;
-			ptr < end; ++ptr)
+		for (gpre_nod** const end = ptr + list->nod_count; ptr < end; ++ptr)
 		{
 			CME_expr(*ptr, request);
 		}
@@ -1980,7 +1960,7 @@ static void cmp_udf( gpre_nod* node, gpre_req* request)
 
 static void cmp_value( const gpre_nod* node, gpre_req* request)
 {
-	const ref* reference = (REF) node->nod_arg[0];
+	const ref* reference = (ref*) node->nod_arg[0];
 
 	if (!reference)
 		puts("cmp_value: missing reference");
@@ -2033,8 +2013,7 @@ static USHORT get_string_len( const gpre_fld* field)
 //       loop for a particular dimension.
 //
 
-static void stuff_sdl_dimension(const dim* dimension,
-								ref* reference, SSHORT dimension_count)
+static void stuff_sdl_dimension(const dim* dimension, ref* reference, SSHORT dimension_count)
 {
 
 //   In the future, when we support slices, new code to handle the
@@ -2076,8 +2055,7 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 
 	if (gpreGlob.sw_language == lang_fortran)
 	{
-		for (SSHORT i = field->fld_array_info->ary_dimension_count - 1;
-			i >= 0; i--)
+		for (SSHORT i = field->fld_array_info->ary_dimension_count - 1; i >= 0; i--)
 		{
 			reference->add_byte(isc_sdl_variable);
 			reference->add_byte(i);
@@ -2122,7 +2100,7 @@ static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 			 i < field->fld_array_info->ary_dimension_count;
 			 i++, dimension = dimension->dim_next)
 		{
-				stuff_sdl_dimension(dimension, reference, i);
+			stuff_sdl_dimension(dimension, reference, i);
 		}
 	}
 }
@@ -2134,7 +2112,7 @@ static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 //       form possible to the SDL string.
 //
 
-static void stuff_sdl_number(const SLONG number, REF reference)
+static void stuff_sdl_number(const SLONG number, ref* reference)
 {
 
 	if ((number > -16) && (number < 15))

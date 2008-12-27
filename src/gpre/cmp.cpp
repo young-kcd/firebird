@@ -64,11 +64,11 @@ static void cmp_sdl_value(gpre_req*, const gpre_nod*);
 static void cmp_set_generator(gpre_req*);
 static void cmp_slice(gpre_req*);
 static void cmp_store(gpre_req*);
-static void expand_references(REF);
-static gpre_port* make_port(gpre_req*, REF);
+static void expand_references(ref*);
+static gpre_port* make_port(gpre_req*, ref*);
 static void make_receive(gpre_port*, gpre_req*);
 static void make_send(gpre_port*, gpre_req*);
-static void update_references(REF);
+static void update_references(ref*);
 
 static gpre_nod* lit0;
 static gpre_nod* lit1;
@@ -149,16 +149,14 @@ void CMP_compile_request( gpre_req* request)
 
 	ref* reference;
 	if (!eof_field) {
-		eof_field = MET_make_field(gpreGlob.utility_name, dtype_short, sizeof(SSHORT),
-								   false);
-		count_field = MET_make_field(gpreGlob.count_name, dtype_long, sizeof(SLONG),
-									 false);
+		eof_field = MET_make_field(gpreGlob.utility_name, dtype_short, sizeof(SSHORT), false);
+		count_field = MET_make_field(gpreGlob.count_name, dtype_long, sizeof(SLONG), false);
 		slack_byte_field = MET_make_field(gpreGlob.slack_name, dtype_text, 1, false);
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_value = "0";
 		lit0 = MSC_unary(nod_literal, (gpre_nod*) reference);
 
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_value = "1";
 		lit1 = MSC_unary(nod_literal, (gpre_nod*) reference);
 	}
@@ -204,13 +202,10 @@ void CMP_compile_request( gpre_req* request)
 #ifdef SCROLLABLE_CURSORS
 //  If there is an asynchronous message to be sent, make a port for it
 
-	if (request->req_flags & REQ_sql_cursor &&
-		request->req_database->dbb_base_level >= 5)
+	if (request->req_flags & REQ_sql_cursor && request->req_database->dbb_base_level >= 5)
 	{
-		gpre_fld* direction_field = MET_make_field("direction", dtype_short,
-										 sizeof(SSHORT), false);
-		gpre_fld* offset_field = MET_make_field("offset", dtype_long, sizeof(SLONG),
-										 false);
+		gpre_fld* direction_field = MET_make_field("direction", dtype_short, sizeof(SSHORT), false);
+		gpre_fld* offset_field = MET_make_field("offset", dtype_long, sizeof(SLONG), false);
 
 		reference = request->req_avalues;
 		reference->ref_field = direction_field;
@@ -224,20 +219,23 @@ void CMP_compile_request( gpre_req* request)
 //  If this is a FOR type request, an eof field reference needs
 //  to be generated.  Do it.
 
-	if (request->req_type == REQ_for ||
-		request->req_type == REQ_cursor || request->req_type == REQ_any)
+	switch (request->req_type)
 	{
-		reference = (REF) MSC_alloc(REF_LEN);
+	case REQ_for:
+	case REQ_cursor:
+	case REQ_any:
+		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_field = eof_field;
 		reference->ref_next = request->req_references;
-	}
-	else if (request->req_type == REQ_mass_update) {
-		reference = (REF) MSC_alloc(REF_LEN);
+		break;
+	case REQ_mass_update:
+		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_field = count_field;
 		reference->ref_next = request->req_references;
-	}
-	else
+		break;
+	default:
 		reference = request->req_references;
+	}
 
 //  Assume that a general port needs to be constructed.
 
@@ -409,8 +407,7 @@ void CMP_t_start( gpre_tra* trans)
 	*text++ = (trans->tra_flags & TRA_nw) ? isc_tpb_nowait : isc_tpb_wait;
 
 	if (trans->tra_flags & TRA_read_committed) {
-		*text++ = (trans->tra_flags & TRA_rec_version) ?
-			isc_tpb_rec_version : isc_tpb_no_rec_version;
+		*text++ = (trans->tra_flags & TRA_rec_version) ? isc_tpb_rec_version : isc_tpb_no_rec_version;
 	}
 
 	if (trans->tra_flags & TRA_autocommit)
@@ -445,7 +442,7 @@ void CMP_t_start( gpre_tra* trans)
 		else if (database->dbb_rrls) {
 			char* p = rrl_buffer;
 			for (const rrl* lock_block = database->dbb_rrls; lock_block;
-				 lock_block = lock_block->rrl_next)
+				lock_block = lock_block->rrl_next)
 			{
 				*p++ = lock_block->rrl_lock_mode;
 				const char* q = lock_block->rrl_relation->rel_symbol->sym_string;
@@ -515,8 +512,7 @@ static void cmp_any( gpre_req* request)
 
 	port = request->req_vport;
 	if (port) {
-		for (ref* reference = port->por_references; reference;
-			 reference = reference->ref_next)
+		for (ref* reference = port->por_references; reference; reference = reference->ref_next)
 		{
 			ref* source = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_source = source;
@@ -545,19 +541,16 @@ static void cmp_assignment( gpre_nod* node, gpre_req* request)
 //		Compile a blob parameter block, if required.
 //
 
-static void cmp_blob(blb* blob,
-					 bool sql_flag)
+static void cmp_blob(blb* blob, bool sql_flag)
 {
 	blob->blb_ident = CMP_next_ident();
 	blob->blb_buff_ident = CMP_next_ident();
 	blob->blb_len_ident = CMP_next_ident();
 
 	if (sql_flag) {
-		for (ref* reference = blob->blb_reference; reference;
-			 reference = reference->ref_next)
+		for (ref* reference = blob->blb_reference; reference; reference = reference->ref_next)
 		{
-			reference->ref_port =
-				make_port(reference->ref_context->ctx_request, reference);
+			reference->ref_port = make_port(reference->ref_context->ctx_request, reference);
 		}
 	}
 
@@ -706,10 +699,9 @@ static void cmp_fetch( act* action)
 		CPR_error("invalid fetch action");
 
 	gpre_nod** ptr = list->nod_arg;
-	for (const gpre_nod* const* const end = ptr + list->nod_count;
-		ptr < end; ptr++)
+	for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
-		ref* var = (REF) *ptr;
+		ref* var = (ref*) *ptr;
 		if (var->ref_null_value && !var->ref_null)
 			if (var->ref_friend)
 				var->ref_null = var->ref_friend->ref_null;
@@ -725,8 +717,7 @@ static void cmp_fetch( act* action)
 static void cmp_field( gpre_req* request, const gpre_fld* field,
 	const ref* reference)
 {
-	if (reference && reference->ref_value
-		&& (reference->ref_flags & REF_array_elem))
+	if (reference && reference->ref_value && (reference->ref_flags & REF_array_elem))
 	{
 		field = field->fld_array;
 	}
@@ -850,10 +841,9 @@ static void cmp_for( gpre_req* request)
 	if (request->req_flags & REQ_sql_cursor) {
 		if (!request->req_rse->rse_sort && !request->req_rse->rse_reduced)
 			for (gpre_ctx* context = (gpre_ctx*) request->req_contexts; context;
-				 context = context->ctx_next)
+				context = context->ctx_next)
 			{
-				if ((context->ctx_scope_level == request->req_scope_level) &&
-					context->ctx_procedure)
+				if (context->ctx_scope_level == request->req_scope_level && context->ctx_procedure)
 				{
 					request->add_byte(blr_stall);
 					break;
@@ -891,8 +881,7 @@ static void cmp_for( gpre_req* request)
 	gpre_nod* value = MSC_node(nod_value, 1);
 	request->add_byte(blr_begin);
 
-	for (ref* reference = port->por_references; reference;
-		 reference = reference->ref_next)
+	for (ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
 		CMP_check(request, 0);
 		if (reference->ref_master)
@@ -970,8 +959,7 @@ static void cmp_loop( gpre_req* request)
 	make_send(primary, request);
 	request->add_byte(blr_begin);
 	gpre_nod* counter = MSC_node(nod_value, 1);
-	for (ref* reference = primary->por_references; reference;
-		 reference = reference->ref_next)
+	for (ref* reference = primary->por_references; reference; reference = reference->ref_next)
 	{
 		if (reference->ref_field == count_field)
 			counter->nod_arg[0] = (gpre_nod*) reference;
@@ -998,8 +986,7 @@ static void cmp_loop( gpre_req* request)
 			gpre_nod* list = node->nod_arg[0];
 			request->add_byte(blr_begin);
 			gpre_nod** ptr = list->nod_arg;
-			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end;
-				 ptr++)
+			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
 				cmp_assignment(*ptr, request);
 			}
@@ -1014,8 +1001,7 @@ static void cmp_loop( gpre_req* request)
 			gpre_nod* list = node->nod_arg[1];
 			request->add_byte(blr_begin);
 			gpre_nod** ptr = list->nod_arg;
-			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end;
-				 ptr++)
+			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 			{
 				cmp_assignment(*ptr, request);
 			}
@@ -1065,11 +1051,10 @@ static void cmp_modify( act* action, gpre_req* request)
 	request->add_byte(blr_begin);
 
 	gpre_nod** ptr = list->nod_arg;
-	for (const gpre_nod* const* const end = ptr + list->nod_count;
-		ptr < end; ptr++)
+	for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
 		const gpre_nod* field_node = (*ptr)->nod_arg[1];
-		const ref* reference = (REF) field_node->nod_arg[0];
+		const ref* reference = (ref*) field_node->nod_arg[0];
 		if ((field_node->nod_type != nod_field) || !reference->ref_master)
 			cmp_assignment(*ptr, request);
 	}
@@ -1091,8 +1076,7 @@ static void cmp_port( gpre_port* port, gpre_req* request)
 	request->add_byte(port->por_msg_number);
 	request->add_word(port->por_count);
 
-	for (ref* reference = port->por_references; reference;
-		 reference = reference->ref_next)
+	for (ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
 		CMP_check(request, 0);
 		cmp_field(request, reference->ref_field, reference);
@@ -1167,8 +1151,7 @@ static void cmp_procedure( gpre_req* request)
 	if (procedure->prc_in_count) {
 		request->add_word(procedure->prc_in_count);
 		gpre_nod** ptr = request->req_node->nod_arg;
-		for (const gpre_nod* const* const end = ptr + procedure->prc_in_count;
-			ptr < end; ptr++)
+		for (const gpre_nod* const* const end = ptr + procedure->prc_in_count; ptr < end; ptr++)
 		{
 			CME_expr(*ptr, request);
 		}
@@ -1414,7 +1397,7 @@ static void cmp_sdl_subscript(gpre_req* request, USHORT index, const slc* slice,
 
 static void cmp_sdl_value( gpre_req* request, const gpre_nod* node)
 {
-	const ref* reference = (REF) node->nod_arg[0];
+	const ref* reference = (ref*) node->nod_arg[0];
 
 	switch (node->nod_type) {
 	case nod_literal:
@@ -1442,7 +1425,7 @@ static void cmp_set_generator( gpre_req* request)
 	act* action = request->req_actions;
 
 	request->add_byte(blr_set_generator);
-	const sgen* setgen = (SGEN) action->act_object;
+	const set_gen* setgen = (set_gen*) action->act_object;
 	const TEXT* string = setgen->sgen_name;
 	const SLONG value = setgen->sgen_value;
 	const SINT64 int64value = setgen->sgen_int64value;
@@ -1481,8 +1464,7 @@ static void cmp_slice( gpre_req* request)
 
 //  Process variable references
 
-	for (ref* reference = request->req_values; reference;
-		 reference = reference->ref_next)
+	for (ref* reference = request->req_values; reference; reference = reference->ref_next)
 	{
 		reference->ref_id = slice->slc_parameters++;
 	}
@@ -1515,12 +1497,12 @@ static void cmp_slice( gpre_req* request)
 	request->add_byte(0);
 	request->add_byte(slice->slc_dimensions);
 	{ // scope block
-	USHORT n = 0;
-	for (const bool* p = loop_flags; n < slice->slc_dimensions; n++, p++) {
-		if (!*p)
-			cmp_sdl_fudge(request, array->ary_rpt[n].ary_lower);
-		cmp_sdl_subscript(request, n, slice, array);
-	}
+		USHORT n = 0;
+		for (const bool* p = loop_flags; n < slice->slc_dimensions; n++, p++) {
+			if (!*p)
+				cmp_sdl_fudge(request, array->ary_rpt[n].ary_lower);
+			cmp_sdl_subscript(request, n, slice, array);
+		}
 	} // end scope block
 
 	request->add_byte(isc_sdl_eoc);
@@ -1551,8 +1533,7 @@ static void cmp_store( gpre_req* request)
 	request->add_byte(blr_begin);
 
     gpre_nod** ptr = list->nod_arg;
-	for (const gpre_nod* const* const end = ptr + list->nod_count;
-		ptr < end; ptr++)
+	for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
 		cmp_assignment(*ptr, request);
 	}
@@ -1594,11 +1575,11 @@ static void cmp_store( gpre_req* request)
 //		block for it before we forget.
 //
 
-static void expand_references( REF reference)
+static void expand_references( ref* reference)
 {
 	for (; reference; reference = reference->ref_next) {
 		if (reference->ref_null_value && !reference->ref_null) {
-			ref* flag = (REF) MSC_alloc(REF_LEN);
+			ref* flag = (ref*) MSC_alloc(REF_LEN);
 			flag->ref_next = reference->ref_next;
 			reference->ref_next = reference->ref_null = flag;
 			flag->ref_master = reference;
@@ -1615,7 +1596,7 @@ static void expand_references( REF reference)
 //		of field references.
 //
 
-static gpre_port* make_port( gpre_req* request, REF reference)
+static gpre_port* make_port( gpre_req* request, ref* reference)
 {
 	gpre_port* port = (gpre_port*) MSC_alloc(POR_LEN);
 	port->por_ident = CMP_next_ident();
@@ -1627,7 +1608,7 @@ static gpre_port* make_port( gpre_req* request, REF reference)
 //  Make up a dummy reference.
 
 	if (!reference) {
-		reference = (REF) MSC_alloc(REF_LEN);
+		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_field = eof_field;
 	}
 
@@ -1714,7 +1695,7 @@ static void make_send( gpre_port* port, gpre_req* request)
 //		to build the port, fix request_references
 //
 
-static void update_references( REF references)
+static void update_references( ref* references)
 {
 	for (ref* re = references; re; re = re->ref_next) {
 		ref* source = re->ref_source;

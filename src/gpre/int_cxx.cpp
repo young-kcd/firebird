@@ -39,9 +39,9 @@
 #include "../common/utils_proto.h"
 
 static void align(const int);
-static void asgn_from(REF, int);
+static void asgn_from(ref*, int);
 #ifdef NOT_USED_OR_REPLACED
-static void asgn_to(REF);
+static void asgn_to(ref*);
 #endif
 static void gen_at_end(const act*, int);
 static void gen_blr(void*, SSHORT, const char*);
@@ -190,7 +190,7 @@ static void align(const int column)
 //		a port variable.
 //
 
-static void asgn_from( REF reference, int column)
+static void asgn_from( ref* reference, int column)
 {
 	TEXT variable[MAX_REF_SIZE];
 	TEXT temp[MAX_REF_SIZE];
@@ -234,11 +234,11 @@ static void asgn_from( REF reference, int column)
 //		a port variable.
 //
 #ifdef NOT_USED_OR_REPLACED
-static void asgn_to( REF reference)
+static void asgn_to( ref* reference)
 {
 	TEXT s[MAX_REF_SIZE];
 
-	REF source = reference->ref_friend;
+	ref* source = reference->ref_friend;
 	gpre_fld* field = source->ref_field;
 	gen_name(s, source);
 
@@ -330,7 +330,7 @@ static void gen_emodify( const act* action, int column)
 	const upd* modify = (upd*) action->act_object;
 
 	for (const ref* reference = modify->upd_port->por_references; reference;
-		 reference = reference->ref_next)
+		reference = reference->ref_next)
 	{
 		const ref* source = reference->ref_source;
 		if (!source) {
@@ -339,18 +339,19 @@ static void gen_emodify( const act* action, int column)
 		const gpre_fld* field = reference->ref_field;
 		align(column);
 
-		if (field->fld_dtype == dtype_text)
+		switch (field->fld_dtype)
+		{
+		case dtype_text:
 			fprintf(gpreGlob.out_file, "jrd_ftof (%s, %d, %s, %d);",
-					   gen_name(s1, source),
-					   field->fld_length,
-					   gen_name(s2, reference), field->fld_length);
-		else if (field->fld_dtype == dtype_cstring)
+					gen_name(s1, source), field->fld_length, gen_name(s2, reference), field->fld_length);
+			break;
+		case dtype_cstring:
 			fprintf(gpreGlob.out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
-					   gen_name(s1, source),
-					   gen_name(s2, reference), field->fld_length);
-		else
-			fprintf(gpreGlob.out_file, "%s = %s;",
-					   gen_name(s1, reference), gen_name(s2, source));
+					gen_name(s1, source), gen_name(s2, reference), field->fld_length);
+			break;
+		default:
+			fprintf(gpreGlob.out_file, "%s = %s;", gen_name(s1, reference), gen_name(s2, source));
+		}
 	}
 
 	gen_send(action->act_request, modify->upd_port, column, false);
@@ -652,7 +653,7 @@ static void make_port( gpre_port* port, int column)
 {
 	printa(column, "struct {");
 
-	for (REF reference = port->por_references; reference;
+	for (ref* reference = port->por_references; reference;
 		 reference = reference->ref_next)
 	{
 		align(column + INDENT);
