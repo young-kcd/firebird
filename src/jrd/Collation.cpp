@@ -360,8 +360,7 @@ public:
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
-	static ContainsMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length)
+	static ContainsMatcher* create(MemoryPool& pool, TextType* ttype, const UCHAR* str, SLONG length)
 	{
 		StrConverter cvt(pool, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
@@ -390,8 +389,8 @@ template <typename StrConverter, typename CharType>
 class MatchesMatcher
 {
 public:
-	static bool evaluate(MemoryPool& pool, TextType* ttype,
-		const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
+	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
+		const UCHAR* p, SLONG pl)
 	{
 		StrConverter cvt1(pool, ttype, p, pl);
 		StrConverter cvt2(pool, ttype, s, sl);
@@ -427,7 +426,7 @@ private:
 		while (l2-- > 0) {
 			const CharType c = *p2++;
 			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)) {
-				while ((l2 > 0) && (*p2 == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))) 
+				while ((l2 > 0) && (*p2 == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)))
 				{
 					l2--;
 					p2++;
@@ -460,8 +459,7 @@ public:
 	// Turn the (pointer, byte length) input parameters into
 	// (pointer, end_pointer) for use in aux function
 	static bool check(MemoryPool& pool, TextType* ttype, USHORT flags,
-		const UCHAR* search, SLONG search_len,
-		const UCHAR* match, SLONG match_len)
+		const UCHAR* search, SLONG search_len, const UCHAR* match, SLONG match_len)
 	{
 		StrConverter cvt1(pool, ttype, search, search_len);//, cvt2(pool, ttype, match, match_len);
 
@@ -469,9 +467,9 @@ public:
 		fb_assert((search_len % sizeof(CharType)) == 0);
 		fb_assert(ttype->getCanonicalWidth() == sizeof(CharType));
 
-		const CharType* const end_match = 
+		const CharType* const end_match =
 			reinterpret_cast<const CharType*>(match) + (match_len / sizeof(CharType));
-		const CharType* const end_search = 
+		const CharType* const end_search =
 			reinterpret_cast<const CharType*>(search) + (search_len / sizeof(CharType));
 
 		return aux(ttype, flags, reinterpret_cast<const CharType*>(search),
@@ -510,9 +508,9 @@ private:
 		while (match < end_match) {
 			CharType c = *match++;
 			if ((c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && (c = *match++)) ||
-				((((size_t) c) < FB_NELEM(SLEUTH_SPECIAL)) && !SLEUTH_SPECIAL[c]))
+				(size_t(c) < FB_NELEM(SLEUTH_SPECIAL) && !SLEUTH_SPECIAL[c]))
 			{
-				if (match >= end_match || *match != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)) 
+				if (match >= end_match || *match != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))
 				{
 					if (search >= end_search)
 						return false;
@@ -621,8 +619,7 @@ private:
 	// Japanese version operates on short-based buffer,
 	// instead of SCHAR-based.
 	static bool className(Jrd::TextType* obj, USHORT flags,
-		const CharType* char_class, const CharType* const end_class,
-		CharType character)
+		const CharType* char_class, const CharType* const end_class, CharType character)
 	{
 		fb_assert(char_class != NULL);
 		fb_assert(end_class != NULL);
@@ -726,14 +723,14 @@ private:
 
 		// Interpret matching string, substituting where appropriate
 
-		while (match < end_match) 
+		while (match < end_match)
 		{
 			const CharType c = *match++;
 
 			// if we've got a defined character, slurp the definition
 
 			CharType* p;
-			if (c <= max_op && (p = vector[c])) 
+			if (c <= max_op && (p = vector[c]))
 			{
 				while (*p)
 					*comb++ = *p++;
@@ -741,8 +738,8 @@ private:
 				// if we've got the definition of a quote character,
 				// slurp the next character too
 
-				if (comb > combined && comb[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE)
-					&& *match)
+				if (comb > combined &&
+					comb[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && *match)
 				{
 					*comb++ = *match++;
 				}
@@ -751,7 +748,7 @@ private:
 			// at this point we've got a non-match, but as it might be one of ours, quote it
 
 			else {
-				if ((((size_t) c) < FB_NELEM(SLEUTH_SPECIAL)) && SLEUTH_SPECIAL[c] &&
+				if (size_t(c) < FB_NELEM(SLEUTH_SPECIAL) && SLEUTH_SPECIAL[c] &&
 					comb > combined && comb[-1] != *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE))
 				{
 					*comb++ = *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE);
