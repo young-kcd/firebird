@@ -27,8 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.18 2007-12-14 11:32:05 alexpeshkoff Exp $
-#
 ROOT=..
 ObjModuleType=std
 

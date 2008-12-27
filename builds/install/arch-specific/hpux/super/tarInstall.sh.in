@@ -32,8 +32,6 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarInstall.sh.in,v 1.2 2008-01-07 12:26:20 paulbeach Exp $
-# 
 
 # THe way this works is that the buildroot file is stored relative to the root
 # directory and a tar -xvf at root directory will restore all the files in 

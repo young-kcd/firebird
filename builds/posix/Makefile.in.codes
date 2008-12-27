@@ -21,8 +21,6 @@
 #   Contributor(s): ______________________________________.
 # 
 #
-#  $Id: Makefile.in.codes,v 1.21 2007-12-14 11:31:57 alexpeshkoff Exp $
-#
 ROOT=..
 ObjModuleType=std
 

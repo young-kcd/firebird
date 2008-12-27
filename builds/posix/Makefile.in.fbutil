@@ -27,8 +27,6 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.fbutil,v 1.6 2003-03-27 11:21:45 aafemt Exp $
-#
 ROOT=../..
 
 include     $(ROOT)/src/make.defaults

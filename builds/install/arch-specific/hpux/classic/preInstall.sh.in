@@ -31,8 +31,6 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: preInstall.sh.in,v 1.2 2008-01-07 12:25:44 paulbeach Exp $
-# 
 
 
 # The pre install routine for Firebird Classic

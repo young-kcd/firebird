@@ -27,8 +27,6 @@
 # Contributor(s):
 # 
 # 
-# $Id: Makefile.in,v 1.2 2004-08-19 13:50:55 kkuznetsov Exp $
-# 
 
 ROOT=..
 

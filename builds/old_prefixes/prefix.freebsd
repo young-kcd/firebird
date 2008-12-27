@@ -14,8 +14,7 @@
 #
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
-# Start of file prefix.freebsd:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.freebsd,v 1.1 2003-07-05 15:22:32 brodsom Exp $
+#
 
 .SUFFIXES: .c .e
 .e.c:

@@ -15,9 +15,6 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#$Id: prefix.linux,v 1.1 2003-07-05 15:22:32 brodsom Exp $
-#Revision 1.6  2000/12/01 11:20:31  fsg
-#Added SHRLIB_EXT to  prefix.linux
 #
 
 .SUFFIXES: .c .e

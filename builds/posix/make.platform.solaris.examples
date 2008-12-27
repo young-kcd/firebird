@@ -17,10 +17,6 @@
 # This file can be used to build FB on Solaris 2.6 x 86 with gcc 3.3.3 and bash
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
-#  
-# $Id: make.platform.solaris.examples,v 1.2 2008-09-04 10:23:26 paulbeach Exp $
-#
-# Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings

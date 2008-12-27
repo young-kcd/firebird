@@ -31,10 +31,8 @@
 #   Contributor(s):
 #  
 # 
-#   $Id: tarmainInstall.sh.in,v 1.2 2008-01-07 12:25:47 paulbeach Exp $
-# 
 
-#  Install script for FirebirdSQL database engine
+#  Install script for Firebird database engine
 #  http://www.firebirdsql.org
 
 InteractiveInstall=1
