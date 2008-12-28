@@ -536,9 +536,9 @@ clean_config clean_all: clean clean_makefiles
 	$(RM) $(ROOT)/config.status
 	$(RM) $(ROOT)/libtool
 	$(RM_R) $(ROOT)/autom4te.cache
-	-make -C $(ROOT)/extern/editline distclean
-	-make -C $(ROOT)/extern/icu/source distclean
-	-make -C $(ROOT)/extern/btyacc distclean
+	-$(MAKE) -C $(ROOT)/extern/editline distclean
+	-$(MAKE) -C $(ROOT)/extern/icu/source distclean
+	-$(MAKE) -C $(ROOT)/extern/btyacc distclean
 
 clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
@@ -553,10 +553,10 @@ clean_examples:
 	$(RM) `find $(GEN_ROOT)/examples/ -type f ! -name 'Make*'`
 
 clean_editline:
-	-make -C $(ROOT)/extern/editline clean
+	-$(MAKE) -C $(ROOT)/extern/editline clean
 
 clean_icu:
-	-make -C $(ROOT)/extern/icu/source clean
+	-$(MAKE) -C $(ROOT)/extern/icu/source clean
 
 clean_objects:
 	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`

@@ -22,13 +22,13 @@
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
-COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0 -MMD -fPIC
+COMM_SOLX_FLAGS:=-DSOLARIS -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0 -MMD -fPIC
 
 SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
-ifeq ($(ObjModuleType),superserver)
+ifneq ($(ObjModuleType),boot)
 ifdef SFIO
 COMM_SOLX_FLAGS+=$(SFIO_FLAGS) 
 endif
