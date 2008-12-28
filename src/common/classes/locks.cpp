@@ -81,7 +81,7 @@ void Spinlock::init()
 
 #elif defined(SOLARIS_MT)
 
-#error Fix me!
+// no support needed for solaris threads
 
 #else //posix mutex
 

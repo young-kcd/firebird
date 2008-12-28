@@ -156,38 +156,47 @@ public:
 
 #ifdef SOLARIS_MT
 
-#error: Make mutexes on Solaris recursive!
-
 class Mutex
 {
 private:
 	mutex_t mlock;
 
+	void init()
+	{
+		int rc = mutex_init(&mlock, USYNC_THREAD | LOCK_RECURSIVE, NULL);
+		if (rc)
+			system_call_failed::raise("mutex_init", rc);
+	}
+
 public:
-	Mutex()
-	{
-		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
-			system_call_failed::raise("mutex_init");
-	}
-	explicit Mutex(MemoryPool&)
-	{
-		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
-			system_call_failed::raise("mutex_init");
-	}
+	Mutex() { init(); }
+	explicit Mutex(MemoryPool&) { init(); }
 	~Mutex()
 	{
-		if (mutex_destroy(&mlock))
-			system_call_failed::raise("mutex_destroy");
+		int rc = mutex_destroy(&mlock);
+		if (rc)
+			system_call_failed::raise("mutex_destroy", rc);
 	}
 	void enter()
 	{
-		if (mutex_lock(&mlock))
-			system_call_failed::raise("mutex_lock");
+		int rc = mutex_lock(&mlock);
+		if (rc)
+			system_call_failed::raise("mutex_lock", rc);
+	}
+	bool tryEnter()
+	{
+		int rc = mutex_trylock(&mlock);
+		if (rc == EBUSY)
+			return false;
+		if (rc)
+			system_call_failed::raise("mutex_trylock", rc);
+		return true;
 	}
 	void leave()
 	{
-		if (mutex_unlock(&mlock))
-			system_call_failed::raise("mutex_unlock");
+		int rc = mutex_unlock(&mlock);
+		if (rc)
+			system_call_failed::raise("mutex_unlock", rc);
 	}
 
 public:

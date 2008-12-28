@@ -801,7 +801,7 @@ int ISC_event_init(event_t* event)
 	event->event_count = 0;
 
 	mutex_init(event->event_mutex, USYNC_PROCESS, NULL);
-	cond_init(event->cond, USYNC_PROCESS, NULL);
+	cond_init(event->event_cond, USYNC_PROCESS, NULL);
 
 	return FB_SUCCESS;
 }
@@ -824,7 +824,7 @@ int ISC_event_post(event_t* event)
 
 	mutex_lock(event->event_mutex);
 	++event->event_count;
-	const int ret = cond_broadcast(event->cond);
+	const int ret = cond_broadcast(event->event_cond);
 	mutex_unlock(event->event_mutex);
 	if (ret) {
 		gds__log("ISC_event_post: cond_broadcast failed with errno = %d", ret);
@@ -2835,6 +2835,22 @@ int ISC_mutex_init(struct mtx* mutex)
  **************************************/
 
 	return mutex_init(mutex->mtx_mutex, USYNC_PROCESS, NULL);
+}
+
+
+void ISC_mutex_fini(struct mtx *mutex)
+{
+/**************************************
+ *
+ *	m u t e x _ f i n i	( S O L A R I S _ M T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Destroy a mutex.
+ *
+ **************************************/
+	// no-op for Solaris threads semaphores
 }
 
 

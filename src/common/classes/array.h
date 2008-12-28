@@ -82,13 +82,13 @@ public:
 	Array() : count(0),
 		capacity(this->getStorageSize()), data(this->getStorage()) { }
 	explicit Array(const size_t InitialCapacity)
-		: count(0), capacity(this->getStorageSize()), data(this->getStorage())
+		: Storage(), count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
 	}
 
 	Array(const Array<T, Storage>& source)
-		: count(0), capacity(this->getStorageSize()), data(this->getStorage())
+		: Storage(), count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		copyFrom(source);
 	}

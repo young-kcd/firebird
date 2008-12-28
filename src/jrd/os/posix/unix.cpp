@@ -337,6 +337,11 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 }
 
 
+#ifdef SOLARIS
+// minimize #ifdefs inside PIO_force_write()
+#define O_DIRECT 0
+#endif
+
 void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseFSCache)
 {
 /**************************************
@@ -377,6 +382,14 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 		}
 #endif //FCNTL_BROKEN
 
+#ifdef SOLARIS
+		if ((notUseFSCache != oldNotUseCache) && 
+			(directio(file->fil_desc, notUseFSCache ? DIRECTIO_ON : DIRECTIO_OFF) != 0))
+		{
+			unix_error("directio()", file, isc_io_access_err);
+		}
+#endif
+		
 		file->fil_flags &= ~(FIL_force_write | FIL_no_fs_cache);
 		file->fil_flags |= (forcedWrites ? FIL_force_write : 0) |
 						   (notUseFSCache ? FIL_no_fs_cache : 0);

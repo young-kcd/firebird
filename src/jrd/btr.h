@@ -178,7 +178,9 @@ struct temporary_key
 // #pragma pack is supported at least by MSVC and GCC. Don't know about
 // other compilers, sorry
 
+#ifndef SOLARIS
 #pragma pack(push, 1)
+#endif
 struct index_sort_record
 {
 	// RecordNumber should be at the first place, because it's used
@@ -187,7 +189,9 @@ struct index_sort_record
 	USHORT isr_key_length;
 	USHORT isr_flags;
 };
+#ifndef SOLARIS
 #pragma pack(pop)
+#endif
 
 const int ISR_secondary	= 1;	// Record is secondary version
 const int ISR_null		= 2;	// Record consists of NULL values only

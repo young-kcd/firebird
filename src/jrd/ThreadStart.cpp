@@ -270,13 +270,6 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	}
 }
 
-void THD_detach(ThreadHandle& thread)
-{
-	int state = pthread_detach(thread);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_detach", state);
-}
-
 void THD_wait_for_completion(ThreadHandle& thread)
 {
 	int state = pthread_join(thread, NULL);
@@ -312,11 +305,24 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	sigdelset(&new_mask, SIGALRM);
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		Firebird::system_call_failed::raise("thr_sigsetmask", rval);
-	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_NEW_LWP, &thread_id);
+	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, 
+			  (thd_id ? 0 : THR_DETACHED) | THR_NEW_LWP, &thread_id);
 	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
 	if (rval)
 		Firebird::system_call_failed::raise("thr_create", rval);
+
+	if (thd_id)
+	{
+		*static_cast<thread_t*>(thd_id) = thread_id;
+	}
+}
+
+void THD_wait_for_completion(ThreadHandle& thread)
+{
+	int state = thr_join(thread, NULL, NULL);
+	if (state)
+		Firebird::system_call_failed::raise("thread_join", state);
 }
 #endif  // SOLARIS_MT
 
@@ -398,11 +404,6 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	}
 }
 
-void THD_detach(ThreadHandle& handle)
-{
-	CloseHandle(handle);
-}
-
 void THD_wait_for_completion(ThreadHandle& handle)
 {
 	WaitForSingleObject(handle, INFINITE);
@@ -427,5 +428,9 @@ void ThreadStart::start(ThreadEntryPoint* routine,
  *
  **************************************/
 
+}
+
+void THD_wait_for_completion(ThreadHandle&)
+{
 }
 #endif  // START_THREAD

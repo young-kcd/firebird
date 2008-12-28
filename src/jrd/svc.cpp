@@ -657,7 +657,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()),
-	svc_handle(0), svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE),
+	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()),
@@ -856,12 +856,6 @@ void Service::detach()
 
 Service::~Service()
 {
-	if (svc_handle)
-	{
-		THD_detach(svc_handle);
-		svc_handle = 0;
-	}
-
 	removeFromAllServices();
 }
 
@@ -1860,7 +1854,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			svc_flags |= SVC_thd_running;
 		}
 
-		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, &svc_handle);
+		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, 0);
 
 		// Check for the service being detached. This will prevent the thread
 		// from waiting infinitely if the client goes away.
@@ -1989,7 +1983,7 @@ void Service::start(ThreadEntryPoint* service_thread)
 		argv[0] = svc_service->serv_name;
 	}
 
-	gds__thread_start(service_thread, this, THREAD_medium, 0, &svc_handle);
+	gds__thread_start(service_thread, this, THREAD_medium, 0, 0);
 }
 
 
@@ -2075,11 +2069,6 @@ void Service::finish(USHORT flag)
 		if (svc_flags & SVC_finished)
 		{
 			svc_flags &= ~SVC_thd_running;
-			if (svc_handle)
-			{
-				THD_detach(svc_handle);
-				svc_handle = 0;
-			}
 		}
 	}
 }
