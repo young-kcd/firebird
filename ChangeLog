@@ -1,3 +1,26 @@
+2008-12-28 16:42  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.firebird (1.91),
+	make.platform.solaris.examples (1.4), prefix.solx86gcc (1.32):
+
+	Solaris port
+
+2008-12-28 16:26  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h (1.57),
+	common/classes/locks.cpp (1.21), common/classes/locks.h (1.54),
+	jrd/ThreadStart.cpp (1.12), jrd/ThreadStart.h (1.5), jrd/btr.h
+	(1.49), jrd/isc_sync.cpp (1.166), jrd/svc.cpp (1.251), jrd/svc.h
+	(1.70), jrd/os/posix/unix.cpp (1.110):
+
+	Solaris port
+
+2008-12-28 16:25  alexpeshkoff
+
+	* firebird2/src/common/classes/tree.h (1.75):
+
+	It was bad idea to compare size_t (unsigned) to be less 0
+
 2008-12-27 19:31  asfernandes
 
 	* firebird2/: builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.16),
