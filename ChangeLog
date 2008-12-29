@@ -1,3 +1,50 @@
+2008-12-29 19:40  dimitr
+
+	* firebird2/src/jrd/met.epp (1.269):
+
+	A quick fix for CORE-2257: Internal consistency check while
+	altering dependent procedures.	To be reviewed some day, along with
+	the whole ALTER mechanism.
+
+2008-12-29 18:32  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.88):
+
+	Fixed the missing database-level statistics.
+
+2008-12-29 14:19  dimitr
+
+	* firebird2/src/common/classes/alloc.h (1.82):
+
+	If the copying is really intended to be forbidden, let it be so.
+
+2008-12-29 11:26  robocop
+
+	* firebird2/src/gpre/: gpre.cpp (1.97), gpre.h (1.96),
+	gpre_meta.epp (1.64), gpre_meta_boot.cpp (1.59), gpre_proto.h
+	(1.12), hsh.cpp (1.27), hsh_proto.h (1.10), int_cxx.cpp (1.44),
+	jrdmet.cpp (1.25), movg_proto.h (1.4), msc.cpp (1.29), msc_proto.h
+	(1.19), par.cpp (1.75), par_proto.h (1.14), parse.h (1.15), pas.cpp
+	(1.60), pat.cpp (1.34), pat.h (1.11), pretty.cpp (1.37), rmc.cpp
+	(1.15), sqe.cpp (1.59), sql.cpp (1.78):
+
+	Cleanup: style, get rid of typedef needed by plain C, other C++
+	legacy declarations, etc. Fifth pass.
+
+2008-12-29 10:29  robocop
+
+	* firebird2/src/gpre/c_cxx.cpp (1.78):
+
+	Better C++ compliance.
+
+2008-12-29 10:28  robocop
+
+	*
+	firebird2/builds/install/arch-specific/hpux/super/tarmainUninstall.sh.in
+	(1.4):
+
+	Misc.
+
 2008-12-28 16:42  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.firebird (1.91),
