@@ -158,7 +158,7 @@ static ISC_STATUS info(ISC_STATUS*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&,
 				 ClumpletWriter&, const ParametersSet&);
 static Rtr* make_transaction(Rdb*, USHORT);
-static ISC_STATUS mov_dsql_message(ISC_STATUS*, const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
+static bool mov_dsql_message(ISC_STATUS*, const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
 static void receive_after_start(Rrq*, USHORT);
 static bool receive_packet(rem_port*, PACKET *, ISC_STATUS *);
@@ -1660,7 +1660,6 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor.
  *
  **************************************/
-	ISC_STATUS status;
 
 /* Check and validate handles, etc. */
 
@@ -1736,9 +1735,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		}
 
 		if (statement->rsr_flags.test(Rsr::BLOB)) {
-			status = fetch_blob(user_status, statement, blr_length, blr,
-								msg_type, msg_length, msg);
-			return status;
+			return fetch_blob(user_status, statement, blr_length, blr,
+							  msg_type, msg_length, msg);
 		}
 
 
@@ -1905,9 +1903,9 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			memcpy(msg, message->msg_address, msg_length);
 		}
 		else {
-			if (mov_dsql_message(user_status, message->msg_address,
-								 statement->rsr_select_format, msg,
-								 statement->rsr_user_select_format))
+			if (!mov_dsql_message(user_status, message->msg_address,
+								  statement->rsr_select_format, msg,
+								  statement->rsr_user_select_format))
 			{
 				return user_status[1];
 			}
@@ -5433,14 +5431,13 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 }
 
 
-static ISC_STATUS fetch_blob(
-						 ISC_STATUS* user_status,
-						 Rsr* statement,
-						 USHORT blr_length,
-						 UCHAR* blr,
-						 USHORT msg_type,
-						 USHORT msg_length,
-						 UCHAR* msg)
+static ISC_STATUS fetch_blob(ISC_STATUS* user_status,
+							 Rsr* statement,
+							 USHORT blr_length,
+							 UCHAR* blr,
+							 USHORT msg_type,
+							 USHORT msg_length,
+							 UCHAR* msg)
 {
 /**************************************
  *
@@ -5841,11 +5838,11 @@ static Rtr* make_transaction( Rdb* rdb, USHORT id)
 }
 
 
-static ISC_STATUS mov_dsql_message(ISC_STATUS* status,
-								   const UCHAR* from_msg,
-								   const rem_fmt* from_fmt,
-								   UCHAR* to_msg,
-								   const rem_fmt* to_fmt)
+static bool mov_dsql_message(ISC_STATUS* status,
+							 const UCHAR* from_msg,
+							 const rem_fmt* from_fmt,
+							 UCHAR* to_msg,
+							 const rem_fmt* to_fmt)
 {
 /**************************************
  *
@@ -5880,10 +5877,10 @@ static ISC_STATUS mov_dsql_message(ISC_STATUS* status,
 	}	// try
 	catch (const Exception& ex) {
 		stuff_exception(status, ex);
-		return FB_FAILURE;
+		return false;
 	}
 
-	return FB_SUCCESS;
+	return true;
 }
 
 
