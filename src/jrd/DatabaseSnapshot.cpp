@@ -549,6 +549,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 					putField(record, fid, reader, source == NULL);
 					fields_processed = true;
 				}
+
+				att_allowed = !dbb_processed;
 			}
 			else if (rid == rel_mon_attachments) // special case for MON$ATTACHMENTS
 			{
