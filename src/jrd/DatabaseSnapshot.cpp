@@ -541,7 +541,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 			const char* source = checkNull(rid, fid, (char*) reader.getBytes(), length);
 
-			if (rid == rel_mon_database) // special case for MON$DATABASE
+			// special case for MON$DATABASE
+			if (rid == rel_mon_database)
 			{
 				if (fid == f_mon_db_name)
 				{
@@ -553,8 +554,11 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 					putField(record, fid, reader, source == NULL);
 					fields_processed = true;
 				}
+
+				att_allowed = (dbb_allowed && !dbb_processed);
 			}
-			else if (rid == rel_mon_attachments) // special case for MON$ATTACHMENTS
+			// special case for MON$ATTACHMENTS
+			else if (rid == rel_mon_attachments)
 			{
 				if (fid == f_mon_att_user)
 				{
@@ -568,7 +572,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 					dbb_processed = true;
 				}
 			}
-			else if (record && dbb_allowed && att_allowed) // generic logic that covers all other relations
+			// generic logic that covers all other relations
+			else if (record && dbb_allowed && att_allowed)
 			{
 				putField(record, fid, reader, source == NULL);
 				fields_processed = true;
