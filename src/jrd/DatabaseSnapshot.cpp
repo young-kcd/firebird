@@ -550,7 +550,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 					fields_processed = true;
 				}
 
-				att_allowed = !dbb_processed;
+				att_allowed = (dbb_allowed && !dbb_processed);
 			}
 			else if (rid == rel_mon_attachments) // special case for MON$ATTACHMENTS
 			{
