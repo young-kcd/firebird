@@ -113,7 +113,7 @@ static void gen_slice(const act*, ref*, int);
 static void gen_start(const act*, const gpre_port*, int, bool);
 static void gen_store(const act*, int);
 static void gen_t_start(const act*, int);
-static void gen_tpb(tpb*, int);
+static void gen_tpb(const tpb*, int);
 static void gen_trans(const act*, int);
 static void gen_type(const act*, int);
 static void gen_update(const act*, int);
@@ -600,8 +600,10 @@ static void asgn_from( const act* action, ref* reference, int column)
 				fprintf(gpreGlob.out_file, "isc_ftof (%s, %d, %s, %d);", value,
 						   field->fld_length, variable, field->fld_length);
 			else if (gpreGlob.sw_cstring)
-				fprintf(gpreGlob.out_file, "isc_vtov ((char*)%s, (char*)%s, %d);", value,
-						   variable, field->fld_length);
+				fprintf(gpreGlob.out_file, isLangCpp(gpreGlob.sw_language) ?
+							"isc_vtov ((const char*) %s, (char*) %s, %d);" :
+							"isc_vtov ((char*) %s, (char*) %s, %d);",
+						value, variable, field->fld_length);
 			else if (reference->ref_source)
 				fprintf(gpreGlob.out_file, "isc_ftof (%s, sizeof (%s), %s, %d);",
 						   value, value, variable, field->fld_length);
@@ -669,10 +671,12 @@ static void asgn_to( const act* action, ref* reference, int column)
 					   s, field->fld_length, reference->ref_value, field->fld_length);
 		else if (!gpreGlob.sw_cstring || field->fld_sub_type == 1)
 			fprintf(gpreGlob.out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
-					   field->fld_length, reference->ref_value, reference->ref_value);
+				field->fld_length, reference->ref_value, reference->ref_value);
 		else
-			fprintf(gpreGlob.out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
-					   reference->ref_value, reference->ref_value);
+			fprintf(gpreGlob.out_file, isLangCpp(gpreGlob.sw_language) ?
+						"isc_vtov ((const char*) %s, (char*) %s, sizeof (%s));" :
+						"isc_vtov ((char*) %s, (char*) %s, sizeof (%s));",
+					s, reference->ref_value, reference->ref_value);
 	}
 
 //  Pick up NULL value if one is there
@@ -712,8 +716,10 @@ static void asgn_to_proc(const ref* reference, int column)
 			fprintf(gpreGlob.out_file, "isc_ftof (%s, %d, %s, sizeof (%s));", s,
 					   field->fld_length, reference->ref_value, reference->ref_value);
 		else
-			fprintf(gpreGlob.out_file, "isc_vtov ((char*)%s, (char*)%s, sizeof (%s));", s,
-					   reference->ref_value, reference->ref_value);
+			fprintf(gpreGlob.out_file, isLangCpp(gpreGlob.sw_language) ?
+						"isc_vtov ((const char*) %s, (char*) %s, sizeof (%s));" :
+						"isc_vtov ((char*) %s, (char*) %s, sizeof (%s));",
+					s, reference->ref_value, reference->ref_value);
 	}
 }
 
@@ -1856,8 +1862,10 @@ static void gen_emodify( const act* action, int column)
 			fprintf(gpreGlob.out_file, "%s = %s;", s2, s1);
 		}
 		else if (gpreGlob.sw_cstring && !field->fld_sub_type)
-			fprintf(gpreGlob.out_file, "isc_vtov ((char*)%s, (char*)%s, %d);",
-					   s1, s2, field->fld_length);
+			fprintf(gpreGlob.out_file, isLangCpp(gpreGlob.sw_language) ?
+						"isc_vtov ((const char*) %s, (char*) %s, %d);" :
+						"isc_vtov ((char*) %s, (char*) %s, %d);",
+					s1, s2, field->fld_length);
 		else
 			fprintf(gpreGlob.out_file, "isc_ftof (%s, %d, %s, %d);",
 					   s1, field->fld_length, s2, field->fld_length);
@@ -2493,9 +2501,7 @@ static void gen_loop( const act* action, int column)
 //		port and parameter idents.
 //
 
-static TEXT* gen_name(char* const string,
-					  const ref* reference,
-					  bool as_blob)
+static TEXT* gen_name(char* const string, const ref* reference, bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
@@ -3296,7 +3302,7 @@ static void gen_t_start( const act* action, int column)
 //		Generate a TPB in the output file
 //
 
-static void gen_tpb(tpb* tpb_buffer, int column)
+static void gen_tpb(const tpb* tpb_buffer, int column)
 {
 	TEXT buffer[80];
 	SSHORT length;
