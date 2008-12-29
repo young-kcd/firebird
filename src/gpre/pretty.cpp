@@ -44,10 +44,12 @@
 #define BLR_BYTE	*(control->ctl_blr)++
 #define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
 #define NEXT_BYTE	*(control->ctl_blr)
-#define CHECK_BUFFER	if (control->ctl_ptr > control->ctl_buffer + sizeof (control->ctl_buffer) - 20) print_line(control, (SSHORT)offset)
+#define CHECK_BUFFER	if (control->ctl_ptr > control->ctl_buffer + sizeof (control->ctl_buffer) - 20) \
+							print_line(control, (SSHORT)offset)
 
 
-typedef struct ctl {
+struct ctl
+{
 	UCHAR *ctl_blr;				// Running blr string
 	UCHAR *ctl_blr_start;		// Original start of blr string
 	FPTR_PRINT_CALLBACK ctl_routine;	// Call back
@@ -56,38 +58,42 @@ typedef struct ctl {
 	SSHORT ctl_language;
 	SSHORT ctl_level;
 	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
-} *CTL;
+};
 
-static int blr_format(CTL, const char *, ...);
-static int error(CTL, SSHORT, const TEXT *, int);
-static int indent(CTL, SSHORT);
-static int print_blr_dtype(CTL, bool);
+static int blr_format(ctl*, const char *, ...);
+static int error(ctl*, SSHORT, const TEXT *, int);
+static int indent(ctl*, SSHORT);
+static int print_blr_dtype(ctl*, bool);
 static void print_blr_line(void*, SSHORT, const char*);
-static int print_byte(CTL, SSHORT);
-static int print_char(CTL, SSHORT);
-static int print_dyn_verb(CTL, SSHORT);
-static int print_line(CTL, SSHORT);
-static SLONG print_long(CTL, SSHORT);
-static int print_sdl_verb(CTL, SSHORT);
-static int print_string(CTL, SSHORT);
-static int print_word(CTL, SSHORT);
+static int print_byte(ctl*, SSHORT);
+static int print_char(ctl*, SSHORT);
+static int print_dyn_verb(ctl*, SSHORT);
+static int print_line(ctl*, SSHORT);
+static SLONG print_long(ctl*, SSHORT);
+static int print_sdl_verb(ctl*, SSHORT);
+static int print_string(ctl*, SSHORT);
+static int print_word(ctl*, SSHORT);
 
-const char *dyn_table[] = {
+const char *dyn_table[] =
+{
 #include "../gpre/dyntable.h"
 	NULL
 };
 
-const char *cdb_table[] = {
+const char *cdb_table[] =
+{
 #include "../gpre/cdbtable.h"
 	NULL
 };
 
-const char *sdl_table[] = {
+const char *sdl_table[] =
+{
 #include "../gpre/sdltable.h"
 	NULL
 };
 
-const char *map_strings[] = {
+const char *map_strings[] =
+{
 	"FIELD2",
 	"FIELD1",
 	"MESSAGE",
@@ -106,14 +112,11 @@ const char *map_strings[] = {
 //		Pretty print create database parameter buffer thru callback routine.
 //
 
-int PRETTY_print_cdb( UCHAR* blr,
-					  FPTR_PRINT_CALLBACK routine,
-					  void* user_arg, SSHORT language)
+int PRETTY_print_cdb( UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
 {
 
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
-	SCHAR temp[32];
 
 	if (!routine) {
 		routine = gds__default_printer;
@@ -129,6 +132,8 @@ int PRETTY_print_cdb( UCHAR* blr,
 	SSHORT level = 0;
 	indent(control, level);
 	const SSHORT i = BLR_BYTE;
+
+	SCHAR temp[32];
 	if (*control->ctl_blr)
 		sprintf(temp, "gds__dpb_version%d, ", i);
 	else
@@ -141,12 +146,9 @@ int PRETTY_print_cdb( UCHAR* blr,
 	SSHORT parameter;
 	while (parameter = BLR_BYTE) {
 		const char* p;
-		if (parameter > FB_NELEM(cdb_table) ||
-			!(p = cdb_table[parameter]))
+		if (parameter > FB_NELEM(cdb_table) || !(p = cdb_table[parameter]))
 		{
-			return error(control, 0,
-						 "*** cdb parameter %d is undefined ***\n",
-						 parameter);
+			return error(control, 0, "*** cdb parameter %d is undefined ***\n", parameter);
 		}
 		indent(control, level);
 		blr_format(control, p);
@@ -164,15 +166,12 @@ int PRETTY_print_cdb( UCHAR* blr,
 }
 
 
-int PRETTY_print_dyn(
-					 UCHAR* blr,
+int PRETTY_print_dyn(UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SSHORT language)
 //____________________________________________________________
 //
 //		Pretty print dynamic DDL thru callback routine.
 //
 
-					 FPTR_PRINT_CALLBACK routine,
-					 void* user_arg, SSHORT language)
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
@@ -192,9 +191,7 @@ int PRETTY_print_dyn(
 
 	SSHORT offset = 0;
 	if (version != isc_dyn_version_1)
-		return error(control, offset,
-					 "*** dyn version %d is not supported ***\n",
-					 version);
+		return error(control, offset, "*** dyn version %d is not supported ***\n", version);
 
 	blr_format(control, "gds__dyn_version_1, ");
 	print_line(control, offset);
@@ -202,8 +199,7 @@ int PRETTY_print_dyn(
 	PRINT_DYN_VERB;
 
 	if (BLR_BYTE != isc_dyn_eoc)
-		return error(control, offset,
-					 "*** expected dyn end-of-command  ***\n", 0);
+		return error(control, offset, "*** expected dyn end-of-command  ***\n", 0);
 
 	blr_format(control, "gds__dyn_eoc");
 	print_line(control, offset);
@@ -212,15 +208,11 @@ int PRETTY_print_dyn(
 }
 
 
-int
-PRETTY_print_sdl(UCHAR* blr,
+int PRETTY_print_sdl(UCHAR* blr, FPTR_PRINT_CALLBACK routine, void *user_arg, SSHORT language)
 //____________________________________________________________
 //
 //		Pretty print slice description language.
 //
-
-				 FPTR_PRINT_CALLBACK routine,
-				 void *user_arg, SSHORT language)
 {
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
@@ -240,9 +232,7 @@ PRETTY_print_sdl(UCHAR* blr,
 
 	SSHORT offset = 0;
 	if (version != isc_sdl_version1)
-		return error(control, offset,
-					 "*** sdl version %d is not supported ***\n",
-					 version);
+		return error(control, offset, "*** sdl version %d is not supported ***\n", version);
 
 	blr_format(control, "gds__sdl_version1, ");
 	print_line(control, offset);
@@ -264,7 +254,7 @@ PRETTY_print_sdl(UCHAR* blr,
 //		Format an utterance.
 //
 
-static int blr_format(CTL control, const char *string, ...)
+static int blr_format(ctl* control, const char *string, ...)
 {
 	va_list ptr;
 
@@ -283,7 +273,7 @@ static int blr_format(CTL control, const char *string, ...)
 //		Put out an error msg and punt.
 //
 
-static int error( CTL control, SSHORT offset, const TEXT * string, int arg)
+static int error( ctl* control, SSHORT offset, const TEXT * string, int arg)
 {
 
 	print_line(control, offset);
@@ -301,7 +291,7 @@ static int error( CTL control, SSHORT offset, const TEXT * string, int arg)
 //		Indent for pretty printing.
 //
 
-static int indent( CTL control, SSHORT level)
+static int indent( ctl* control, SSHORT level)
 {
 
 	level *= 3;
@@ -317,8 +307,7 @@ static int indent( CTL control, SSHORT level)
 //		data described.
 //
 
-static int print_blr_dtype(CTL control,
-						   bool print_object)
+static int print_blr_dtype(ctl* control, bool print_object)
 {
 	const char* string;
 	SSHORT length;
@@ -457,7 +446,7 @@ static int print_blr_dtype(CTL control,
 	default:
 		if (dtype == blr_cstring)
 			length = print_word(control, offset);
-		if (dtype == blr_cstring2) {
+		else if (dtype == blr_cstring2) {
 			print_word(control, offset);
 			length = print_word(control, offset);
 		}
@@ -476,7 +465,7 @@ static int print_blr_dtype(CTL control,
 
 static void print_blr_line(void* arg, SSHORT offset, const char* line)
 {
-	CTL control = static_cast<CTL>(arg);
+	ctl* control = static_cast<ctl*>(arg);
 	bool comma = false;
 	char c;
 
@@ -502,11 +491,10 @@ static void print_blr_line(void* arg, SSHORT offset, const char* line)
 //		Print a byte as a numeric value and return same.
 //
 
-static int print_byte( CTL control, SSHORT offset)
+static int print_byte( ctl* control, SSHORT offset)
 {
 	const UCHAR v = BLR_BYTE;
-	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d), " : "%d, ",
-			v);
+	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d), " : "%d, ", v);
 	ADVANCE_PTR(control->ctl_ptr);
 
 	return v;
@@ -518,7 +506,7 @@ static int print_byte( CTL control, SSHORT offset)
 //		Print a byte as a numeric value and return same.
 //
 
-static int print_char( CTL control, SSHORT offset)
+static int print_char( ctl* control, SSHORT offset)
 {
 	const UCHAR c = BLR_BYTE;
 	const bool printable = (c >= 'a' && c <= 'z') ||
@@ -539,7 +527,7 @@ static int print_char( CTL control, SSHORT offset)
 //		Primary recursive routine to print dynamic DDL.
 //
 
-static int print_dyn_verb( CTL control, SSHORT level)
+static int print_dyn_verb( ctl* control, SSHORT level)
 {
 	SSHORT offset = control->ctl_blr - control->ctl_blr_start;
 	const UCHAR dyn_operator = BLR_BYTE;
@@ -547,9 +535,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
     const char* p;
 	const int size = FB_NELEM(dyn_table);
 	if (dyn_operator > size || dyn_operator <= 0 || !(p = dyn_table[dyn_operator])) {
-		return error(control, offset,
-					 "*** dyn operator %d is undefined ***\n",
-					 (int) dyn_operator);
+		return error(control, offset, "*** dyn operator %d is undefined ***\n", (int) dyn_operator);
 	}
 
 	indent(control, level);
@@ -560,7 +546,8 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 	int length;
 
-	switch (dyn_operator) {
+	switch (dyn_operator)
+	{
 	case isc_dyn_drop_difference:
 	case isc_dyn_begin_backup:
 	case isc_dyn_end_backup:
@@ -584,9 +571,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 		print_line(control, offset);
 		if (length) {
 			control->ctl_level = level;
-			gds__print_blr(control->ctl_blr,
-						   print_blr_line, control,
-						   control->ctl_language);
+			gds__print_blr(control->ctl_blr, print_blr_line, control, control->ctl_language);
 			control->ctl_blr += length;
 		}
 		return 0;
@@ -657,7 +642,8 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 	print_line(control, offset);
 
-	switch (dyn_operator) {
+	switch (dyn_operator)
+	{
 	case isc_dyn_def_database:
 	case isc_dyn_def_dimension:
 	case isc_dyn_def_exception:
@@ -724,7 +710,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 //		Invoke callback routine to print (or do something with) a line.
 //
 
-static int print_line( CTL control, SSHORT offset)
+static int print_line( ctl* control, SSHORT offset)
 {
 
 	*control->ctl_ptr = 0;
@@ -739,7 +725,7 @@ static int print_line( CTL control, SSHORT offset)
 //		Print a VAX word as a numeric value an return same.
 //
 
-static SLONG print_long( CTL control, SSHORT offset)
+static SLONG print_long( ctl* control, SSHORT offset)
 {
 	const UCHAR v1 = BLR_BYTE;
 	const UCHAR v2 = BLR_BYTE;
@@ -759,19 +745,16 @@ static SLONG print_long( CTL control, SSHORT offset)
 //		Primary recursive routine to print slice description language.
 //
 
-static int print_sdl_verb( CTL control, SSHORT level)
+static int print_sdl_verb( ctl* control, SSHORT level)
 {
 	const char* p;
 
 	SSHORT offset = control->ctl_blr - control->ctl_blr_start;
 	const UCHAR sdl_operator = BLR_BYTE;
 
-	if (sdl_operator > FB_NELEM(sdl_table) ||
-		sdl_operator <= 0 || !(p = sdl_table[sdl_operator]))
+	if (sdl_operator > FB_NELEM(sdl_table) || sdl_operator <= 0 || !(p = sdl_table[sdl_operator]))
 	{
-		return error(control, offset,
-					 "*** SDL operator %d is undefined ***\n",
-					 (int) sdl_operator);
+		return error(control, offset, "*** SDL operator %d is undefined ***\n", (int) sdl_operator);
 	}
 
 	indent(control, level);
@@ -781,7 +764,8 @@ static int print_sdl_verb( CTL control, SSHORT level)
 	++level;
 	int n = 0;
 
-	switch (sdl_operator) {
+	switch (sdl_operator)
+	{
 	case isc_sdl_begin:
 		print_line(control, offset);
 		while (NEXT_BYTE != isc_sdl_end)
@@ -867,7 +851,7 @@ static int print_sdl_verb( CTL control, SSHORT level)
 //		Print a byte-counted string.
 //
 
-static int print_string( CTL control, SSHORT offset)
+static int print_string( ctl* control, SSHORT offset)
 {
 	SSHORT n = print_byte(control, offset);
 	while (--n >= 0)
@@ -883,12 +867,11 @@ static int print_string( CTL control, SSHORT offset)
 //		Print a VAX word as a numeric value an return same.
 //
 
-static int print_word( CTL control, SSHORT offset)
+static int print_word( ctl* control, SSHORT offset)
 {
 	const UCHAR v1 = BLR_BYTE;
 	const UCHAR v2 = BLR_BYTE;
-	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d),chr(%d), " : "%d,%d, ", v1,
-			v2);
+	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d),chr(%d), " : "%d,%d, ", v1, v2);
 	ADVANCE_PTR(control->ctl_ptr);
 
 	return (v2 << 8) | v1;

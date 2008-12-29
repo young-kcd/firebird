@@ -295,7 +295,7 @@ const size_t SDT_LEN = sizeof(set_dialect);
 
 struct set_gen
 {
-	TEXT *sgen_name;
+	TEXT* sgen_name;
 	USHORT sgen_dialect;
 	SLONG sgen_value;
 	SINT64 sgen_int64value;

@@ -57,7 +57,7 @@
 #include "../gpre/sql_proto.h"
 #include "../common/utils_proto.h"
 
-static jmp_buf*	PAR_jmp_buf;
+//static jmp_buf*	PAR_jmp_buf;
 
 #ifdef FTN_BLK_DATA
 static void		block_data_list(const dbb*);
@@ -131,7 +131,7 @@ static gpre_fld*	flag_field;
 
 act* PAR_action(const TEXT* base_dir)
 {
-	jmp_buf env;
+	//jmp_buf env;
 
 	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 
@@ -140,8 +140,8 @@ act* PAR_action(const TEXT* base_dir)
 		return NULL;
 	}
 
-	if ((USHORT) gpreGlob.token_global.tok_keyword >= (USHORT) KW_start_actions &&
-		(USHORT) gpreGlob.token_global.tok_keyword <= (USHORT) KW_end_actions)
+	if (gpreGlob.token_global.tok_keyword >= KW_start_actions &&
+		gpreGlob.token_global.tok_keyword <= KW_end_actions)
 	{
 		const kwwords_t keyword = gpreGlob.token_global.tok_keyword;
 		if (! gpreGlob.sw_no_qli)
@@ -181,7 +181,7 @@ act* PAR_action(const TEXT* base_dir)
 
 		try {
 
-		PAR_jmp_buf = &env;
+		//PAR_jmp_buf = &env;
 
 		if (! gpreGlob.sw_no_qli)
 		{
@@ -388,7 +388,7 @@ act* PAR_action(const TEXT* base_dir)
 			{
 			case SYM_context:
 				try {
-					PAR_jmp_buf = &env;
+					//PAR_jmp_buf = &env;
 					cur_statement = NULL;
 					return par_variable();
 				}
@@ -405,7 +405,7 @@ act* PAR_action(const TEXT* base_dir)
 				}
 			case SYM_blob:
 				try {
-					PAR_jmp_buf = &env;
+					//PAR_jmp_buf = &env;
 					cur_statement = NULL;
 					return par_blob_field();
 				}
@@ -422,7 +422,7 @@ act* PAR_action(const TEXT* base_dir)
 				}
 			case SYM_relation:
 				try {
-					PAR_jmp_buf = &env;
+					//PAR_jmp_buf = &env;
 					cur_statement = NULL;
 					return par_type();
 				}
@@ -460,10 +460,9 @@ SSHORT PAR_blob_subtype(DBB db)
 //  Check for symbol type name
 
 	if (gpreGlob.token_global.tok_type == tok_ident) {
-		gpre_rel* relation;
 		gpre_fld* field;
-		if (!(relation = MET_get_relation(db, "RDB$FIELDS", "")) ||
-			!(field = MET_field(relation, "RDB$FIELD_SUB_TYPE")))
+		gpre_rel* relation = MET_get_relation(db, "RDB$FIELDS", "");
+		if (!relation || !(field = MET_field(relation, "RDB$FIELD_SUB_TYPE")))
 		{
 			PAR_error("error during BLOB SUB_TYPE lookup");
 		}
@@ -516,49 +515,49 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 //  parse the compiletime options
 	TEXT* string;
 
-	for (;;) {
+	for (;;)
+	{
 		if (MSC_match(KW_FILENAME) && !isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("quoted file name");
 
-		if (isQuoted(gpreGlob.token_global.tok_type)) {
+		tok& token = gpreGlob.token_global;
+
+		if (isQuoted(token.tok_type)) {
 			if (base_directory) {
-				db->dbb_filename = string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length +
-													strlen(base_directory) + 1);
+				db->dbb_filename = string =
+					(TEXT*) MSC_alloc(token.tok_length + strlen(base_directory) + 1);
 				MSC_copy_cat(base_directory, strlen(base_directory),
-						 gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+						 token.tok_string, token.tok_length, string);
 			}
 			else {
-				db->dbb_filename = string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-				MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+				db->dbb_filename = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+				MSC_copy(token.tok_string, token.tok_length, string);
 			}
-			gpreGlob.token_global.tok_length += 2;
+			token.tok_length += 2;
 		}
 		else if (MSC_match(KW_PASSWORD)) {
-			if (!isQuoted(gpreGlob.token_global.tok_type))
+			if (!isQuoted(token.tok_type))
 				CPR_s_error("quoted password");
-			db->dbb_c_password = string =
-				(TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+			db->dbb_c_password = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+			MSC_copy(token.tok_string, token.tok_length, string);
 		}
 		else if (MSC_match(KW_USER)) {
-			if (!isQuoted(gpreGlob.token_global.tok_type))
+			if (!isQuoted(token.tok_type))
 				CPR_s_error("quoted user name");
-			db->dbb_c_user = string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+			db->dbb_c_user = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+			MSC_copy(token.tok_string, token.tok_length, string);
 		}
 		else if (MSC_match(KW_LC_MESSAGES)) {
-			if (!isQuoted(gpreGlob.token_global.tok_type))
+			if (!isQuoted(token.tok_type))
 				CPR_s_error("quoted language name");
-			db->dbb_c_lc_messages = string =
-				(TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+			db->dbb_c_lc_messages = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+			MSC_copy(token.tok_string, token.tok_length, string);
 		}
 		else if (!sql && MSC_match(KW_LC_CTYPE)) {
-			if (!isQuoted(gpreGlob.token_global.tok_type))
+			if (!isQuoted(token.tok_type))
 				CPR_s_error("quoted character set name");
-			db->dbb_c_lc_ctype = string =
-				(TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
-			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+			db->dbb_c_lc_ctype = string = (TEXT *) MSC_alloc(token.tok_length + 1);
+			MSC_copy(token.tok_string, token.tok_length, string);
 		}
 		else
 			break;
@@ -566,11 +565,10 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 		PAR_get_token();
 	}
 
-	if ((gpreGlob.sw_auto) && (db->dbb_c_password || db->dbb_c_user || db->dbb_c_lc_ctype
-			|| db->dbb_c_lc_messages))
+	if ((gpreGlob.sw_auto) && (db->dbb_c_password || db->dbb_c_user || db->dbb_c_lc_ctype ||
+		db->dbb_c_lc_messages))
 	{
-			CPR_warn
-			("PASSWORD, USER and NAMES options require -manual switch to gpre.");
+			CPR_warn("PASSWORD, USER and NAMES options require -manual switch to gpre.");
 	}
 
 	if (!db->dbb_filename)
@@ -590,25 +588,20 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 
 //  parse the runtime options
 
-	if (MSC_match(KW_RUNTIME)) {
+	if (MSC_match(KW_RUNTIME))
+	{
 		if (MSC_match(KW_FILENAME))
-			db->dbb_runtime = sql ? SQL_var_or_string(false)
-				: PAR_native_value(false, false);
+			db->dbb_runtime = sql ? SQL_var_or_string(false) : PAR_native_value(false, false);
 		else if (MSC_match(KW_PASSWORD))
-			db->dbb_r_password = sql ? SQL_var_or_string(false)
-				: PAR_native_value(false, false);
+			db->dbb_r_password = sql ? SQL_var_or_string(false) : PAR_native_value(false, false);
 		else if (MSC_match(KW_USER))
-			db->dbb_r_user = sql ? SQL_var_or_string(false)
-				: PAR_native_value(false, false);
+			db->dbb_r_user = sql ? SQL_var_or_string(false) : PAR_native_value(false, false);
 		else if (MSC_match(KW_LC_MESSAGES))
-			db->dbb_r_lc_messages = sql ? SQL_var_or_string(false)
-				: PAR_native_value(false, false);
+			db->dbb_r_lc_messages = sql ? SQL_var_or_string(false) : PAR_native_value(false, false);
 		else if (!sql && MSC_match(KW_LC_CTYPE))
-			db->dbb_r_lc_ctype = sql ? SQL_var_or_string(false)
-				: PAR_native_value(false, false);
+			db->dbb_r_lc_ctype = sql ? SQL_var_or_string(false) : PAR_native_value(false, false);
 		else
-			db->dbb_runtime = sql ? SQL_var_or_string(false)
-				: PAR_native_value(false, false);
+			db->dbb_runtime = sql ? SQL_var_or_string(false) : PAR_native_value(false, false);
 	}
 
 #ifdef GPRE_ADA
@@ -680,10 +673,12 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 //  databases that were created because of an INCLUDE SQLCA statement.
 
 	for (DBB* db_ptr = &gpreGlob.isc_databases; *db_ptr;)
+	{
 		if ((*db_ptr)->dbb_flags & DBB_sqlca)
 			*db_ptr = (*db_ptr)->dbb_next;
 		else
 			db_ptr = &(*db_ptr)->dbb_next;
+	}
 
 	return action;
 }
@@ -769,13 +764,13 @@ act* PAR_event_init(bool sql)
 	gpre_lls* stack = NULL;
 	int count = 0;
 
-	while (true) {
+	while (true)
+	{
 		if (MSC_match(KW_RIGHT_PAREN))
 			break;
 
 		const gpre_sym* symbol;
-		if (!sql && (symbol = gpreGlob.token_global.tok_symbol)
-			&& symbol->sym_type == SYM_context)
+		if (!sql && (symbol = gpreGlob.token_global.tok_symbol) && symbol->sym_type == SYM_context)
 		{
 			gpre_ctx* context;
 			gpre_fld* field = EXP_field(&context);
@@ -865,13 +860,13 @@ void PAR_fini()
 //		if we hit end of file
 //
 
-TOK PAR_get_token()
+void PAR_get_token()
 {
 	if (CPR_token() == NULL) {
 		CPR_error("unexpected EOF");
 		PAR_unwind();
 	}
-	return NULL;
+	//return NULL;
 }
 
 
@@ -920,8 +915,7 @@ static inline void gobble(SCHAR*& string)
 //		Parse a native expression as a string.
 //
 
-TEXT* PAR_native_value(bool array_ref,
-					   bool handle_ref)
+TEXT* PAR_native_value(bool array_ref, bool handle_ref)
 {
 	SCHAR buffer[512];
 
@@ -1007,16 +1001,16 @@ TEXT* PAR_native_value(bool array_ref,
 			keyword = gpreGlob.token_global.tok_keyword;
 		}
 
+#ifdef GPRE_PASCAL
 		while ((keyword == KW_CARAT) && (gpreGlob.sw_language == lang_pascal)) {
 			gobble(string);
 			keyword = gpreGlob.token_global.tok_keyword;
 		}
+#endif
 
-		if (
-			(keyword == KW_DOT
-			 && (!handle_ref || gpreGlob.sw_language == lang_c
-				 || gpreGlob.sw_language == lang_ada)) || keyword == KW_POINTS
-			|| (keyword == KW_COLON && !gpreGlob.sw_sql && !array_ref))
+		if ((keyword == KW_DOT &&
+			(!handle_ref || gpreGlob.sw_language == lang_c || gpreGlob.sw_language == lang_ada)) ||
+			keyword == KW_POINTS || (keyword == KW_COLON && !gpreGlob.sw_sql && !array_ref))
 		{
 			gobble(string);
 		}
@@ -1025,6 +1019,7 @@ TEXT* PAR_native_value(bool array_ref,
 	}
 
 	int length = string - buffer;
+	fb_assert(length < sizeof(buffer));
 	string = (SCHAR *) MSC_alloc(length + 1);
 
 	if (length)
@@ -1046,8 +1041,7 @@ gpre_fld* PAR_null_field()
 	if (flag_field)
 		return flag_field;
 
-	flag_field = MET_make_field("gds__null_flag", dtype_short, sizeof(SSHORT),
-								false);
+	flag_field = MET_make_field("gds__null_flag", dtype_short, sizeof(SSHORT), false);
 
 	return flag_field;
 }
@@ -1107,8 +1101,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 
 		for (database = gpreGlob.isc_databases; database; database = database->dbb_next)
 		{
-			for (rrl* lock_block = database->dbb_rrls; lock_block;
-				lock_block = lock_block->rrl_next)
+			for (rrl* lock_block = database->dbb_rrls; lock_block; lock_block = lock_block->rrl_next)
 			{
 				if (!lock_block->rrl_lock_level)
 				{
@@ -1216,6 +1209,7 @@ static void block_data_list( const dbb* db)
 {
 	if (db->dbb_scope == DBB_EXTERN)
 		return;
+
 	const TEXT* name = db->dbb_name->sym_string;
 	dbd* list = gpreGlob.global_db_list;
 
@@ -1387,18 +1381,17 @@ static act* par_based()
 
 		gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 		if (!field) {
-			fb_utils::snprintf(s, sizeof(s),
-				"undefined field %s", gpreGlob.token_global.tok_string);
+			fb_utils::snprintf(s, sizeof(s), "undefined field %s", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
-		if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) {
-			const USHORT field_dtype = field->fld_dtype;
-			if ((dtype_sql_date == field_dtype) ||
-				(dtype_sql_time == field_dtype) ||
-				(dtype_int64 == field_dtype))
+		if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect)
+		{
+			switch (field->fld_dtype)
 			{
-				PAR_error
-					("BASED ON impermissible datatype for a dialect-1 program");
+			case dtype_sql_date:
+			case dtype_sql_time:
+			case dtype_int64:
+				PAR_error("BASED ON impermissible datatype for a dialect-1 program");
 			}
 		}
 		PAR_get_token();
@@ -1409,16 +1402,14 @@ static act* par_based()
 		if (MSC_match(KW_DOT)) {
 			if (!MSC_match(KW_SEGMENT)) {
 				if (gpreGlob.sw_language != lang_cobol)
-					PAR_error
-						("only .SEGMENT allowed after qualified field name");
+					PAR_error("only .SEGMENT allowed after qualified field name");
 				else {
 					strcpy(based_on->bas_terminator, tmpChar);
 					notSegment = true;
 				}
 			}
 			else if (!(field->fld_flags & FLD_blob)) {
-				fb_utils::snprintf(s, sizeof(s), "field %s is not a blob",
-						field->fld_symbol->sym_string);
+				fb_utils::snprintf(s, sizeof(s), "field %s is not a blob", field->fld_symbol->sym_string);
 				PAR_error(s);
 			}
 			if (!notSegment)	/* this is flag is to solve KW_DOT problem
@@ -1677,18 +1668,15 @@ static act* par_derived_from()
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
 	if (!field) {
 		TEXT s[ERROR_LENGTH];
-		fb_utils::snprintf(s, sizeof(s),
-			"undefined field %s", gpreGlob.token_global.tok_string);
+		fb_utils::snprintf(s, sizeof(s), "undefined field %s", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 	PAR_get_token();
 	based_on->bas_field = field;
 
-
 	based_on->bas_variables = (gpre_lls*) MSC_alloc(LLS_LEN);
 	based_on->bas_variables->lls_next = NULL;
-	based_on->bas_variables->lls_object =
-		(gpre_nod*) PAR_native_value(false, false);
+	based_on->bas_variables->lls_object = (gpre_nod*) PAR_native_value(false, false);
 
 	strcpy(based_on->bas_terminator, gpreGlob.token_global.tok_string);
 	PAR_get_token();
@@ -1850,8 +1838,7 @@ static act* par_end_modify()
 	gpre_lls* stack = NULL;
 	int count = 0;
 
-	for (ref* reference = request->req_references; reference;
-		 reference = reference->ref_next)
+	for (ref* reference = request->req_references; reference; reference = reference->ref_next)
 	{
 		if (reference->ref_context == modify->upd_source &&
 			reference->ref_level >= modify->upd_level &&
@@ -1943,15 +1930,15 @@ static act* par_end_store(bool special)
 	act* begin_action = (act*) MSC_pop(&cur_store);
 	gpre_req* request = begin_action->act_request;
 
-	if (request->req_type == REQ_store) {
+	if (request->req_type == REQ_store)
+	{
 		if (gpreGlob.errors_global)
 			return NULL;
 
 		// Make up an assignment list for all field references
 
 		int count = 0;
-		for (reference = request->req_references; reference;
-			 reference = reference->ref_next)
+		for (reference = request->req_references; reference; reference = reference->ref_next)
 		{
 			if (!reference->ref_master)
 				count++;
@@ -1961,8 +1948,7 @@ static act* par_end_store(bool special)
 		request->req_node = assignments;
 		count = 0;
 
-		for (reference = request->req_references; reference;
-			 reference = reference->ref_next)
+		for (reference = request->req_references; reference; reference = reference->ref_next)
 		{
 			if (reference->ref_master)
 				continue;
@@ -1986,12 +1972,11 @@ static act* par_end_store(bool special)
 		gpre_lls* stack = NULL;
 		int count = 0;
 
-		for (reference = request->req_references; reference;
-			 reference = reference->ref_next)
+		for (reference = request->req_references; reference; reference = reference->ref_next)
 		{
 			if (reference->ref_context == return_values->upd_update &&
-					reference->ref_level >= return_values->upd_level &&
-					!reference->ref_master)
+				reference->ref_level >= return_values->upd_level &&
+				!reference->ref_master)
 			{
 				ref* change = MSC_reference(&return_values->upd_references);
 				change->ref_context = return_values->upd_update;
@@ -2134,12 +2119,14 @@ static act* par_for()
 	gpre_sym* symbol = NULL;
 	bool dup_symbol = false;
 
-	if (!(gpreGlob.token_global.tok_keyword == KW_FIRST) && !(gpreGlob.token_global.tok_keyword == KW_LEFT_PAREN))
+	tok& token = gpreGlob.token_global;
+
+	if (token.tok_keyword != KW_FIRST && token.tok_keyword != KW_LEFT_PAREN)
 	{
-		if (gpreGlob.token_global.tok_symbol)
+		if (token.tok_symbol)
 			dup_symbol = true;
 
-		symbol = MSC_symbol(SYM_cursor, gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, 0);
+		symbol = MSC_symbol(SYM_cursor, token.tok_string, token.tok_length, 0);
 		PAR_get_token();
 
 		if (!MSC_match(KW_IN)) {
@@ -2147,12 +2134,11 @@ static act* par_for()
 			return NULL;
 		}
 		if (dup_symbol) {
-			fb_utils::snprintf(s, sizeof(s),
-				"symbol %s is already in use", gpreGlob.token_global.tok_string);
+			fb_utils::snprintf(s, sizeof(s), "symbol %s is already in use", token.tok_string);
 			PAR_error(s);
 		}
 
-		const gpre_sym* temp = gpreGlob.token_global.tok_symbol;
+		const gpre_sym* temp = token.tok_symbol;
 		if (temp && temp->sym_type == SYM_context)
 			return par_open_blob(ACT_blob_for, symbol);
 	}
@@ -2177,8 +2163,7 @@ static act* par_for()
 	request->req_database = relation->rel_database;
 
 	gpre_ctx** ptr = rec_expr->rse_context;
-	for (const gpre_ctx* const* const end = ptr + rec_expr->rse_count;
-		 ptr < end; ptr++)
+	for (const gpre_ctx* const* const end = ptr + rec_expr->rse_count; ptr < end; ptr++)
 	{
 		context = *ptr;
 		context->ctx_next = request->req_contexts;
@@ -2351,14 +2336,12 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 
 	TEXT s[ERROR_LENGTH];
 	if (!(field->fld_flags & FLD_blob)) {
-		fb_utils::snprintf(s, sizeof(s),
-			"Field %s is not a blob", field->fld_symbol->sym_string);
+		fb_utils::snprintf(s, sizeof(s), "Field %s is not a blob", field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
 
 	if (field->fld_array_info) {
-		fb_utils::snprintf(s, sizeof(s),
-				"Field %s is an array and can not be opened as a blob",
+		fb_utils::snprintf(s, sizeof(s), "Field %s is an array and can not be opened as a blob",
 				field->fld_symbol->sym_string);
 		PAR_error(s);
 	}
@@ -2374,6 +2357,7 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 
 	bool filter_is_defined = false;
 	for (;;)
+	{
 		if (MSC_match(KW_FILTER)) {
 			blob->blb_const_from_type = (MSC_match(KW_FROM)) ?
 				PAR_blob_subtype(request->req_database) : field->fld_sub_type;
@@ -2386,6 +2370,7 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 			blob->blb_type = isc_bpb_type_stream;
 		else
 			break;
+	}
 
 	if (!(blob->blb_seg_length = field->fld_seg_length))
 		blob->blb_seg_length = 512;
@@ -2427,8 +2412,7 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 //		false.  If a flag is set, don't give an error on false.
 //
 
-static bool par_options(gpre_req* request,
-						bool flag)
+static bool par_options(gpre_req* request, bool flag)
 {
 	if (!MSC_match(KW_LEFT_PAREN))
 		return true;
@@ -2504,7 +2488,8 @@ static act* par_ready()
 	if (gpreGlob.token_global.tok_keyword == KW_CACHE)
 		CPR_s_error("database name or handle");
 
-	while (!terminator()) {
+	while (!terminator())
+	{
 		/* this default mechanism is left here for backwards
 		   compatibility, but it is no longer documented and
 		   is not something we should maintain for all ready
@@ -2577,8 +2562,7 @@ static act* par_ready()
 		   make sure that we generate variables for the request so that the
 		   dpb can be extended at runtime */
 
-		if (db->dbb_r_user || db->dbb_r_password ||
-			db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
+		if (db->dbb_r_user || db->dbb_r_password || db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
 		{
 			if (!request)
 				request = PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -2601,8 +2585,7 @@ static act* par_ready()
 
 	if (action->act_object) {
 		if (default_buffers)
-			for (rdy* ready = (rdy*) action->act_object; ready;
-				 ready = ready->rdy_next)
+			for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 			{
 				if (!ready->rdy_request)
 					request = PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -2623,7 +2606,8 @@ static act* par_ready()
 	if (!action->act_object)
 		PAR_error("no database available to READY");
 	else
-		for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
+		for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
+		{
 			request = ready->rdy_request;
 			if (default_buffers && !ready->rdy_request)
 				request = PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -2633,8 +2617,7 @@ static act* par_ready()
 			   dpb can be extended at runtime */
 
 			db = ready->rdy_database;
-			if (db->dbb_r_user || db->dbb_r_password ||
-				db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
+			if (db->dbb_r_user || db->dbb_r_password || db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
 			{
 				if (!request)
 					request = PAR_set_up_dpb_info(ready, action, default_buffers);
@@ -2679,8 +2662,7 @@ static act* par_returning_values()
 //  clone the references while we are at it
 
 	int count = 0;
-	for (reference = request->req_references; reference;
-		 reference = reference->ref_next)
+	for (reference = request->req_references; reference; reference = reference->ref_next)
 	{
 		if (!reference->ref_master)
 			count++;
@@ -2690,8 +2672,7 @@ static act* par_returning_values()
 	request->req_node = assignments;
 	count = 0;
 
-	for (reference = request->req_references; reference;
-		 reference = reference->ref_next)
+	for (reference = request->req_references; reference; reference = reference->ref_next)
 	{
 		ref* save_ref = MSC_reference(&begin_action->act_object);
 		save_ref->ref_context = reference->ref_context;
@@ -2806,8 +2787,7 @@ static act* par_slice( act_t type)
 		CPR_s_error("left bracket");
 
 	USHORT n = 0;
-	for (slc::slc_repeat* tail = slice->slc_rpt; ++n <= slice->slc_dimensions;
-		++tail)
+	for (slc::slc_repeat* tail = slice->slc_rpt; ++n <= slice->slc_dimensions; ++tail)
 	{
 		tail->slc_lower = tail->slc_upper = EXP_subscript(request);
 		if (MSC_match(KW_COLON))
@@ -2894,8 +2874,7 @@ static act* par_start_stream()
 	request->req_database = relation->rel_database;
 
 	gpre_ctx** ptr = rec_expr->rse_context;
-	for (const gpre_ctx* const* const end = ptr + rec_expr->rse_count;
-		 ptr < end; ptr++)
+	for (const gpre_ctx* const* const end = ptr + rec_expr->rse_count; ptr < end; ptr++)
 	{
 		context = *ptr;
 		context->ctx_next = request->req_contexts;
@@ -2934,8 +2913,8 @@ static act* par_start_transaction()
 
 //  loop reading the various transaction options
 
-	while (!(gpreGlob.token_global.tok_keyword == KW_RESERVING) && !(gpreGlob.token_global.tok_keyword == KW_USING) &&
-		!terminator())
+	while (gpreGlob.token_global.tok_keyword != KW_RESERVING &&
+		gpreGlob.token_global.tok_keyword != KW_USING && !terminator())
 	{
 		if (MSC_match(KW_READ_ONLY)) {
 			trans->tra_flags |= TRA_ro;
@@ -3026,8 +3005,7 @@ static act* par_trans( act_t act_op)
 
 	if (!terminator()) {
 		const bool parens = MSC_match(KW_LEFT_PAREN);
-		if ((gpreGlob.sw_language == lang_fortran)
-			&& (act_op == ACT_commit_retain_context))
+		if ((gpreGlob.sw_language == lang_fortran) && (act_op == ACT_commit_retain_context))
 		{
 			if (!MSC_match(KW_TRANSACTION_HANDLE))
 				return NULL;
@@ -3090,8 +3068,7 @@ static act* par_type()
 	SSHORT type;
 	if (!MET_type(field, gpreGlob.token_global.tok_string, &type)) {
 		TEXT s[ERROR_LENGTH];
-		fb_utils::snprintf(s, sizeof(s),
-			 "undefined type %s", gpreGlob.token_global.tok_string);
+		fb_utils::snprintf(s, sizeof(s), "undefined type %s", gpreGlob.token_global.tok_string);
 		PAR_error(s);
 	}
 
@@ -3214,7 +3191,8 @@ static act* scan_routine_header()
 		MSC_match(KW_SEMI_COLON);
 	}
 	else
-		for (;;) {
+		for (;;)
+		{
 			if (MSC_match(KW_EXTERN) || MSC_match(KW_FORWARD)) {
 				action->act_flags |= ACT_decl;
 				MSC_match(KW_SEMI_COLON);

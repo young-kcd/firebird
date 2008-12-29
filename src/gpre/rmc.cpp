@@ -202,8 +202,7 @@ static void	make_array_declaration (ref*);
 static void make_name (TEXT* const, const gpre_sym*);
 static void make_name_formatted (TEXT* const, const TEXT*, const gpre_sym*);
 static void	make_port (const gpre_port*);
-static void	make_ready (const dbb*, const TEXT*, const TEXT*, const gpre_req*,
-	USHORT);
+static void	make_ready (const dbb*, const TEXT*, const TEXT*, const gpre_req*, USHORT);
 static void	printa(const TEXT*, bool, const TEXT*, ...) ATTRIBUTE_FORMAT(3,4);
 #ifdef NOT_USED_OR_REPLACED
 static void	printb (const TEXT*, ... ) ATTRIBUTE_FORMAT(1,2);
@@ -216,7 +215,8 @@ static void	t_start_auto (const gpre_req*, const TEXT*, const act*, bool);
 static TEXT output_buffer[512];
 static bool global_first_flag = false;
 
-static const TEXT* anames[] = {
+static const TEXT* anames[] =
+{
 	"-",
 	"ISC-",
 	"isc-",
@@ -295,7 +295,8 @@ void RMC_action(const act* action, int column)
 	if (action->act_flags & ACT_break)
 		global_first_flag = false;
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_database:
 	case ACT_alter_domain:
 	case ACT_alter_table:
@@ -551,8 +552,7 @@ void RMC_action(const act* action, int column)
 //		calls.
 //
 
-void RMC_print_buffer(TEXT* output_bufferL,
-					  bool function_call)
+void RMC_print_buffer(TEXT* output_bufferL, bool function_call)
 {
 	TEXT s[80];
 	bool open_quote = false;
@@ -577,11 +577,13 @@ void RMC_print_buffer(TEXT* output_bufferL,
 			single_quote = true;
 		}
 
-		if ((p - s) > max_line) {
+		if ((p - s) > max_line)
+		{
 			const TEXT* tempq = q;
 			save_open_quote = open_quote;
 			save_single_quote = single_quote;
-			if (function_call) {
+			if (function_call)
+			{
 				//  Back up until we reach a comma
 				for (p--; (p > s); p--, q--) {
 					if (*(p + 1) == '\"' || *(p + 1) == '\'') {
@@ -597,7 +599,8 @@ void RMC_print_buffer(TEXT* output_bufferL,
 						break;
 				}
 				/* if p == s, this is a call with no commas. back up to a blank */
-				if (p == s) {
+				if (p == s)
+				{
 					q = tempq;
 					p = s + max_line;
 					open_quote = save_open_quote;
@@ -627,7 +630,8 @@ void RMC_print_buffer(TEXT* output_bufferL,
 				else
 					*++p = 0;
 			}
-			else {
+			else
+			{
 				// back up to a blank
 				for (p--; p > s; p--, q--) {
 					if (*(p + 1) == '\"' || *(p + 1) == '\'') {
@@ -704,7 +708,8 @@ static void asgn_from( const act* action, const ref* reference)
 {
 	TEXT name[MAX_REF_SIZE], variable[MAX_REF_SIZE], temp[MAX_REF_SIZE];
 
-	for (; reference; reference = reference->ref_next) {
+	for (; reference; reference = reference->ref_next)
+	{
 		const gpre_fld* field = reference->ref_field;
 		if (field->fld_array_info)
 			if (!(reference->ref_flags & REF_array_elem)) {
@@ -725,57 +730,40 @@ static void asgn_from( const act* action, const ref* reference)
 
 		if (!reference->ref_master || (reference->ref_flags & REF_literal))
 		{
-			if ((reference->ref_field->fld_dtype == dtype_date) &&
-				(strlen(gpreGlob.sw_cob_dformat) != 0))
+			if (reference->ref_field->fld_dtype == dtype_date &&
+				strlen(gpreGlob.sw_cob_dformat) != 0)
 			{
-				sprintf(output_buffer,
-				        "%sCALL \"rmc_dtoc\" USING %s, %s, \"%s\"\n",
-				        names[COLUMN],
-						variable,
-						value,
-						gpreGlob.sw_cob_dformat);
+				sprintf(output_buffer, "%sCALL \"rmc_dtoc\" USING %s, %s, \"%s\"\n",
+				        names[COLUMN], variable, value, gpreGlob.sw_cob_dformat);
 			}
 			else
 			{
-				if ((reference->ref_field->fld_dtype == dtype_sql_date) &&
-					(strlen(gpreGlob.sw_cob_dformat) != 0))
+				if (reference->ref_field->fld_dtype == dtype_sql_date &&
+					strlen(gpreGlob.sw_cob_dformat) != 0)
 				{
-					sprintf(output_buffer,
-							"%sCALL \"rmc_dtoc\" USING ISC-TEMP-QUAD, %s, \"%s\"\n",
-							names[COLUMN],
-							value,
-							gpreGlob.sw_cob_dformat);
+					sprintf(output_buffer, "%sCALL \"rmc_dtoc\" USING ISC-TEMP-QUAD, %s, \"%s\"\n",
+							names[COLUMN], value, gpreGlob.sw_cob_dformat);
 					RMC_print_buffer(output_buffer, false);
-					sprintf(output_buffer,
-						    "%sMOVE ISC-TEMP-QUAD-HIGH TO %s\n",
-							names[COLUMN],
-							variable);
+					sprintf(output_buffer, "%sMOVE ISC-TEMP-QUAD-HIGH TO %s\n",
+							names[COLUMN], variable);
 				}
 				else
 				{
-					if ((reference->ref_field->fld_dtype == dtype_sql_time) &&
-						(strlen(gpreGlob.sw_cob_dformat) != 0))
+					if (reference->ref_field->fld_dtype == dtype_sql_time &&
+						strlen(gpreGlob.sw_cob_dformat) != 0)
 					{
-						sprintf(output_buffer,
-								"%sCALL \"rmc_dtoc\" USING ISC-TEMP-QUAD, %s, \"%s\"\n",
-								names[COLUMN],
-								value,
-								gpreGlob.sw_cob_dformat);
+						sprintf(output_buffer, "%sCALL \"rmc_dtoc\" USING ISC-TEMP-QUAD, %s, \"%s\"\n",
+								names[COLUMN], value, gpreGlob.sw_cob_dformat);
 						RMC_print_buffer(output_buffer, false);
-						sprintf(output_buffer,
-								"%sMOVE ISC-TEMP-QUAD-LOW TO %s\n",
-								names[COLUMN],
-								variable);
+						sprintf(output_buffer, "%sMOVE ISC-TEMP-QUAD-LOW TO %s\n",
+								names[COLUMN], variable);
 					}
 					else
 					{
 						if (reference->ref_field->fld_dtype == dtype_cstring)
 						{
-							sprintf(output_buffer,
-								    "%sCALL \"rmc_stoc\" USING %s GIVING %s\n",
-									names[COLUMN],
-									value,
-									variable);
+							sprintf(output_buffer, "%sCALL \"rmc_stoc\" USING %s GIVING %s\n",
+									names[COLUMN], value, variable);
 						}
 						else
 						{
@@ -787,20 +775,14 @@ static void asgn_from( const act* action, const ref* reference)
 							case dtype_short:
 							case dtype_long:
 								RMC_print_buffer(output_buffer, false);
-								sprintf(output_buffer,
-										"%sCALL \"rmc_btoc\" USING %s GIVING %s\n",
-										names[COLUMN],
-										variable,
-										variable);
+								sprintf(output_buffer, "%sCALL \"rmc_btoc\" USING %s GIVING %s\n",
+										names[COLUMN], variable, variable);
 								break;
 							case dtype_real:
 							case dtype_double:
 								RMC_print_buffer(output_buffer, false);
-								sprintf(output_buffer,
-										"%sCALL \"rmc_ftoc\" USING %s GIVING %s\n",
-										names[COLUMN],
-										variable,
-										variable);
+								sprintf(output_buffer, "%sCALL \"rmc_ftoc\" USING %s GIVING %s\n",
+										names[COLUMN], variable, variable);
 								break;
 							}
 						}
@@ -810,16 +792,13 @@ static void asgn_from( const act* action, const ref* reference)
 		}
 		else
 		{
-			sprintf(output_buffer, "%sIF %s < 0 THEN\n",
-					names[COLUMN], value);
+			sprintf(output_buffer, "%sIF %s < 0 THEN\n", names[COLUMN], value);
 			RMC_print_buffer(output_buffer, false);
-			sprintf(output_buffer, "%sMOVE -1 TO %s\n", names[COLUMN_INDENT],
-					variable);
+			sprintf(output_buffer, "%sMOVE -1 TO %s\n", names[COLUMN_INDENT], variable);
 			RMC_print_buffer(output_buffer, false);
 			sprintf(output_buffer, "%sELSE\n", names[COLUMN]);
 			RMC_print_buffer(output_buffer, false);
-			sprintf(output_buffer, "%sMOVE 0 TO %s\n", names[COLUMN_INDENT],
-					variable);
+			sprintf(output_buffer, "%sMOVE 0 TO %s\n", names[COLUMN_INDENT], variable);
 			RMC_print_buffer(output_buffer, false);
 			sprintf(output_buffer, "%sEND-IF\n", names[COLUMN]);
 		}
@@ -850,8 +829,7 @@ static void asgn_to( const act* action, ref* reference)
 
 	if ((field->fld_dtype == dtype_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
 	{
-		sprintf(output_buffer,
-			    "%sCALL \"rmc_ctod\" USING %s, %s, \"%s\"\n",
+		sprintf(output_buffer, "%sCALL \"rmc_ctod\" USING %s, %s, \"%s\"\n",
 			    names[COLUMN],
 				reference->ref_value,
 				s,
@@ -862,51 +840,32 @@ static void asgn_to( const act* action, ref* reference)
 	{
 		if ((field->fld_dtype == dtype_sql_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
 		{
-			sprintf(output_buffer,
-				    "%sMOVE ZERO TO ISC-TEMP-QUAD-LOW\n",
-					names[COLUMN]);
+			sprintf(output_buffer, "%sMOVE ZERO TO ISC-TEMP-QUAD-LOW\n", names[COLUMN]);
 			RMC_print_buffer(output_buffer, false);
-			sprintf(output_buffer,
-				    "%sMOVE %s TO ISC-TEMP-QUAD-HIGH\n",
-					names[COLUMN],
-					s);
+			sprintf(output_buffer, "%sMOVE %s TO ISC-TEMP-QUAD-HIGH\n", names[COLUMN], s);
 			RMC_print_buffer(output_buffer, false);
-			sprintf(output_buffer,
-					"%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
-					names[COLUMN],
-					reference->ref_value,
-					gpreGlob.sw_cob_dformat);
+			sprintf(output_buffer, "%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
+					names[COLUMN], reference->ref_value, gpreGlob.sw_cob_dformat);
 			RMC_print_buffer(output_buffer, false);
 		}
 		else
 		{
 			if ((field->fld_dtype == dtype_sql_time) && (strlen(gpreGlob.sw_cob_dformat) != 0))
 			{
-				sprintf(output_buffer,
-						"%sMOVE ZERO TO ISC-TEMP-QUAD-HIGH\n",
-						names[COLUMN]);
+				sprintf(output_buffer, "%sMOVE ZERO TO ISC-TEMP-QUAD-HIGH\n", names[COLUMN]);
 				RMC_print_buffer(output_buffer, false);
-				sprintf(output_buffer,
-						"%sMOVE %s TO ISC-TEMP-QUAD-LOW\n",
-						names[COLUMN],
-						s);
+				sprintf(output_buffer, "%sMOVE %s TO ISC-TEMP-QUAD-LOW\n", names[COLUMN], s);
 				RMC_print_buffer(output_buffer, false);
-				sprintf(output_buffer,
-						"%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
-						names[COLUMN],
-						reference->ref_value,
-						gpreGlob.sw_cob_dformat);
+				sprintf(output_buffer, "%sCALL \"rmc_ctod\" USING %s, ISC-TEMP-QUAD, \"%s\"\n",
+						names[COLUMN], reference->ref_value, gpreGlob.sw_cob_dformat);
 				RMC_print_buffer(output_buffer, false);
 			}
 			else
 			{
 				if (field->fld_dtype == dtype_cstring)
 				{
-					sprintf(output_buffer,
-						    "%sCALL \"rmc_ctos\" USING %s GIVING %s\n",
-							names[COLUMN],
-							s,
-							reference->ref_value);
+					sprintf(output_buffer, "%sCALL \"rmc_ctos\" USING %s GIVING %s\n",
+							names[COLUMN], s, reference->ref_value);
 					RMC_print_buffer(output_buffer, false);
 				}
 				else
@@ -915,26 +874,19 @@ static void asgn_to( const act* action, ref* reference)
 					{
 					case dtype_short:
 					case dtype_long:
-						sprintf(output_buffer,
-								"%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
-								names[COLUMN],
-								s,
-								s);
+						sprintf(output_buffer, "%sCALL \"rmc_ctob\" USING %s GIVING %s\n",
+								names[COLUMN], s, s);
 						RMC_print_buffer(output_buffer, false);
 						break;
 					case dtype_real:
 					case dtype_double:
-						sprintf(output_buffer,
-								"%sCALL \"rmc_ctof\" USING %s GIVING %s\n",
-								names[COLUMN],
-								s,
-								s);
+						sprintf(output_buffer, "%sCALL \"rmc_ctof\" USING %s GIVING %s\n",
+								names[COLUMN], s, s);
 						RMC_print_buffer(output_buffer, false);
 						break;
 					}
 					field = reference->ref_field;
-					sprintf(output_buffer, "%sMOVE %s TO %s\n",
-							names[COLUMN], s, reference->ref_value);
+					sprintf(output_buffer, "%sMOVE %s TO %s\n", names[COLUMN], s, reference->ref_value);
 					RMC_print_buffer(output_buffer, false);
 				}
 			}
@@ -946,8 +898,7 @@ static void asgn_to( const act* action, ref* reference)
 	if (reference = reference->ref_null)
 	{
 		sprintf(output_buffer, "%sMOVE %s TO %s\n",
-				names[COLUMN], gen_name(s, reference, true),
-				reference->ref_value);
+				names[COLUMN], gen_name(s, reference, true), reference->ref_value);
 		RMC_print_buffer(output_buffer, false);
 	}
 }
@@ -969,10 +920,9 @@ static void asgn_to_proc( const ref* reference)
 			continue;
 
 		gen_name(s, reference, true);
-		if ((reference->ref_field->fld_dtype == dtype_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
+		if ((reference->ref_field->fld_dtype == dtype_date) && strlen(gpreGlob.sw_cob_dformat) != 0)
 		{
-			sprintf(output_buffer,
-				    "%sCALL \"rmc_ctod\" USING %s, %s, \"%s\"\n",
+			sprintf(output_buffer, "%sCALL \"rmc_ctod\" USING %s, %s, \"%s\"\n",
 					names[COLUMN],
 					reference->ref_value,
 					s,
@@ -983,8 +933,7 @@ static void asgn_to_proc( const ref* reference)
 		{
 			if ((reference->ref_field->fld_dtype == dtype_sql_date) && (strlen(gpreGlob.sw_cob_dformat) != 0))
 			{
-				sprintf(output_buffer,
-						"%sMOVE ZERO TO ISC-TEMP-QUAD-LOW\n",
+				sprintf(output_buffer, "%sMOVE ZERO TO ISC-TEMP-QUAD-LOW\n",
 						names[COLUMN]);
 				RMC_print_buffer(output_buffer, false);
 				sprintf(output_buffer,
@@ -2970,17 +2919,14 @@ static void gen_loop( const act* action)
 //		port and parameter idents.
 //
 
-static TEXT* gen_name(TEXT* const string,
-					  const ref* reference,
-					  bool as_blob)
+static TEXT* gen_name(TEXT* const string, const ref* reference, bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
 		fb_utils::snprintf(string, MAX_REF_SIZE, "%s%d", names[isc_a_pos],
 				reference->ref_field->fld_array_info->ary_ident);
 	else
-		fb_utils::snprintf(string, MAX_REF_SIZE, "%s%d", names[isc_b_pos],
-				reference->ref_ident);
+		fb_utils::snprintf(string, MAX_REF_SIZE, "%s%d", names[isc_b_pos], reference->ref_ident);
 
 	return string;
 }

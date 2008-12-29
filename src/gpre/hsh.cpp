@@ -151,8 +151,7 @@ void HSH_insert( gpre_sym* symbol)
 
 gpre_sym* HSH_lookup(const SCHAR* string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
-		 symbol = symbol->sym_collision)
+	for (gpre_sym* symbol = hash_table[hash(string)]; symbol; symbol = symbol->sym_collision)
 	{
 		if (scompare(string, symbol->sym_string))
 			return symbol;
@@ -170,8 +169,7 @@ gpre_sym* HSH_lookup(const SCHAR* string)
 
 gpre_sym* HSH_lookup2(const SCHAR* string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
-		 symbol = symbol->sym_collision)
+	for (gpre_sym* symbol = hash_table[hash(string)]; symbol; symbol = symbol->sym_collision)
 	{
 		if (scompare2(string, symbol->sym_string))
 			return symbol;
@@ -188,16 +186,14 @@ gpre_sym* HSH_lookup2(const SCHAR* string)
 
 void HSH_remove( gpre_sym* symbol)
 {
-	gpre_sym** ptr;
-	gpre_sym* homonym;
-
 	const int h = hash(symbol->sym_string);
 
 	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 	{
 		if (symbol == *next)
 		{
-			if (homonym = symbol->sym_homonym) {
+			gpre_sym* homonym = symbol->sym_homonym;
+			if (homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 			}
@@ -207,7 +203,7 @@ void HSH_remove( gpre_sym* symbol)
 			return;
 		}
 
-		for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+		for (gpre_sym** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
 		{
 			if (symbol == *ptr) {
 				*ptr = symbol->sym_homonym;
@@ -243,8 +239,7 @@ static int hash(const SCHAR* string)
 //		case sensitive Compare
 //
 
-static bool scompare(const SCHAR* string1,
-					 const SCHAR* string2)
+static bool scompare(const SCHAR* string1, const SCHAR* string2)
 {
 	return strcmp(string1, string2) == 0;
 }
@@ -254,13 +249,13 @@ static bool scompare(const SCHAR* string1,
 //		Compare two strings
 //
 
-static bool scompare2(const SCHAR* string1,
-					  const SCHAR* string2)
+static bool scompare2(const SCHAR* string1, const SCHAR* string2)
 {
-	SCHAR c1, c2;
+	SCHAR c1;
 
 	while (c1 = *string1++)
 	{
+		SCHAR c2;
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
 			return false;
 	}

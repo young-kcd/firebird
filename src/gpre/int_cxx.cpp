@@ -64,7 +64,7 @@ static void gen_send(const gpre_req*, const gpre_port*, int, bool);
 static void gen_start(const gpre_req*, const gpre_port*, int, bool);
 static void gen_type(const act*, int);
 static void gen_variable(const act*, int);
-static void make_port(gpre_port*, int);
+static void make_port(const gpre_port*, int);
 static void printa(const int, const TEXT*, ...);
 
 static bool global_first_flag = false;
@@ -169,12 +169,12 @@ void INT_CXX_action( const act* action, int column)
 
 static void align(const int column)
 {
-	int i;
-
 	if (column < 0)
 		return;
 
 	putc('\n', gpreGlob.out_file);
+
+	int i;
 
 	for (i = column / 8; i; --i)
 		putc('\t', gpreGlob.out_file);
@@ -213,14 +213,10 @@ static void asgn_from( ref* reference, int column)
 		// gds$_vtov2 and jrd_vtof2 wherever necessary
 
 		if (!field || field->fld_dtype == dtype_text)
-			fprintf(gpreGlob.out_file, VTO_CALL,
-					   JRD_VTOF,
-					   value, variable,
+			fprintf(gpreGlob.out_file, VTO_CALL, JRD_VTOF, value, variable,
 					   field ? field->fld_length : 0);
 		else if (!field || field->fld_dtype == dtype_cstring)
-			fprintf(gpreGlob.out_file, VTO_CALL,
-					   GDS_VTOV,
-					   value, variable,
+			fprintf(gpreGlob.out_file, VTO_CALL, GDS_VTOV, value, variable,
 					   field ? field->fld_length : 0);
 		else
 			fprintf(gpreGlob.out_file, "%s = %s;", variable, value);
@@ -247,9 +243,7 @@ static void asgn_to( ref* reference)
 
 	if (!field || field->fld_dtype == dtype_text)
 		fprintf(gpreGlob.out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
-				   s,
-				   field ? field->fld_length : 0,
-				   reference->ref_value, reference->ref_value);
+				   s, field ? field->fld_length : 0, reference->ref_value, reference->ref_value);
 	else if (!field || field->fld_dtype == dtype_cstring)
 		fprintf(gpreGlob.out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
 				   s, reference->ref_value, reference->ref_value);
@@ -295,8 +289,7 @@ static void gen_compile( const gpre_req* request, int column)
 	const gpre_sym* symbol = db->dbb_name;
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
-	fprintf(gpreGlob.out_file,
-			   "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%"ULONGFORMAT", TRUE);",
+	fprintf(gpreGlob.out_file, "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%"ULONGFORMAT", TRUE);",
 			   request->req_handle, request->req_ident);
 }
 
@@ -310,6 +303,7 @@ static void gen_database( const act* action, int column)
 {
 	if (global_first_flag)
 		return;
+
 	global_first_flag = true;
 
 	align(0);
@@ -434,7 +428,7 @@ static char* gen_name(char* const string, const ref* reference)
 {
 
 	fb_utils::snprintf(string, MAX_REF_SIZE, "jrd_%d.jrd_%d",
-			reference->ref_port->por_ident, reference->ref_ident);
+					   reference->ref_port->por_ident, reference->ref_ident);
 
 	return string;
 }
@@ -497,8 +491,7 @@ static void gen_request( const gpre_req* request)
 {
 
 	if (!(request->req_flags & REQ_exp_hand))
-		fprintf(gpreGlob.out_file, "static void\t*%s;\t// request handle \n",
-				   request->req_handle);
+		fprintf(gpreGlob.out_file, "static void\t*%s;\t// request handle \n", request->req_handle);
 
 	fprintf(gpreGlob.out_file, "static const UCHAR\tjrd_%"ULONGFORMAT" [%d] =",
 			   request->req_ident, request->req_length);
@@ -523,9 +516,9 @@ static void gen_request( const gpre_req* request)
 static void gen_routine( const act* action, int column)
 {
 	for (const gpre_req* request = (gpre_req*) action->act_object; request;
-		 request = request->req_routine)
+		request = request->req_routine)
 	{
-		for (gpre_port* port = request->req_ports; port; port = port->por_next)
+		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port, column + INDENT);
 	}
 }
@@ -582,8 +575,7 @@ static void gen_s_start( const act* action, int column)
 //		Generate a send or receive call for a port.
 //
 
-static void gen_send( const gpre_req* request, const gpre_port* port,
-	int column, bool special)
+static void gen_send( const gpre_req* request, const gpre_port* port, int column, bool special)
 {
 	if (special) {
 		align(column);
@@ -594,8 +586,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 	align(column);
 
 	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
-			   request->req_handle,
-			   port->por_msg_number, port->por_length, port->por_ident);
+			   request->req_handle, port->por_msg_number, port->por_length, port->por_ident);
 }
 
 
@@ -604,13 +595,11 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 //		Generate a START.
 //
 
-static void gen_start( const gpre_req* request, const gpre_port* port,
-	int column, bool special)
+static void gen_start( const gpre_req* request, const gpre_port* port, int column, bool special)
 {
 	align(column);
 
-	fprintf(gpreGlob.out_file, "EXE_start (tdbb, %s, %s);",
-			   request->req_handle, request->req_trans);
+	fprintf(gpreGlob.out_file, "EXE_start (tdbb, %s, %s);", request->req_handle, request->req_trans);
 
 	if (port)
 		gen_send(request, port, column, special);
@@ -649,87 +638,79 @@ static void gen_variable( const act* action, int column)
 //		Insert a port record description in output.
 //
 
-static void make_port( gpre_port* port, int column)
+static void make_port( const gpre_port* port, int column)
 {
 	printa(column, "struct {");
 
-	for (ref* reference = port->por_references; reference;
-		 reference = reference->ref_next)
+	for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
 		align(column + INDENT);
-		gpre_fld* field = reference->ref_field;
-		gpre_sym* symbol = field->fld_symbol;
+		const gpre_fld* field = reference->ref_field;
+		const gpre_sym* symbol = field->fld_symbol;
 		const TEXT* name = symbol->sym_string;
+		const char* fmtstr = 0;
 
-		switch (field->fld_dtype) {
+		switch (field->fld_dtype)
+		{
 		case dtype_short:
-			fprintf(gpreGlob.out_file, "    SSHORT jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    SSHORT jrd_%d;\t// %s ";
 			break;
 
 		case dtype_long:
-			fprintf(gpreGlob.out_file, "    SLONG  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    SLONG  jrd_%d;\t// %s ";
 			break;
 
 // ** Begin sql date/time/timestamp *
 		case dtype_sql_date:
-			fprintf(gpreGlob.out_file, "    ISC_DATE  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    ISC_DATE  jrd_%d;\t// %s ";
 			break;
 
 		case dtype_sql_time:
-			fprintf(gpreGlob.out_file, "    ISC_TIME  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    ISC_TIME  jrd_%d;\t// %s ";
 			break;
 
 		case dtype_timestamp:
-			fprintf(gpreGlob.out_file, "    ISC_TIMESTAMP  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    ISC_TIMESTAMP  jrd_%d;\t// %s ";
 			break;
 // ** End sql date/time/timestamp *
 
 		case dtype_int64:
-			fprintf(gpreGlob.out_file, "    ISC_INT64  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    ISC_INT64  jrd_%d;\t// %s ";
 			break;
 
 		case dtype_quad:
-			fprintf(gpreGlob.out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    ISC_QUAD  jrd_%d;\t// %s ";
 			break;
 
 		case dtype_blob:
-			fprintf(gpreGlob.out_file, "    bid  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    bid  jrd_%d;\t// %s ";
 			break;
 
 		case dtype_cstring:
 		case dtype_text:
 			fprintf(gpreGlob.out_file, "    TEXT  jrd_%d [%d];\t// %s ",
-					   reference->ref_ident, field->fld_length, name);
+					reference->ref_ident, field->fld_length, name);
 			break;
 
 		case dtype_real:
-			fprintf(gpreGlob.out_file, "    float  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    float  jrd_%d;\t// %s ";
 			break;
 
 		case dtype_double:
-			fprintf(gpreGlob.out_file, "    double  jrd_%d;\t// %s ",
-					   reference->ref_ident, name);
+			fmtstr = "    double  jrd_%d;\t// %s ";
 			break;
 
 		default:
 			{
 				TEXT s[ERROR_LENGTH];
-				fb_utils::snprintf(s, sizeof(s),
-						"datatype %d unknown for field %s, msg %d",
+				fb_utils::snprintf(s, sizeof(s), "datatype %d unknown for field %s, msg %d",
 						field->fld_dtype, name, port->por_msg_number);
 				CPR_error(s);
 				return;
 			}
 		}
+		if (fmtstr)
+			fprintf(gpreGlob.out_file, fmtstr, reference->ref_ident, name);
 	}
 	align(column);
 	fprintf(gpreGlob.out_file, "} jrd_%"ULONGFORMAT";", port->por_ident);

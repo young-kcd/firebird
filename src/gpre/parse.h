@@ -38,7 +38,8 @@ enum tok_t {
 	tok_dblquoted
 };
 
-typedef struct tok {
+struct tok
+{
 	tok_t tok_type;				/* type of token */
 	gpre_sym* tok_symbol;		/* hash block if recognized */
 	kwwords_t tok_keyword;		/* keyword number, if recognized */
@@ -48,7 +49,7 @@ typedef struct tok {
 	SCHAR tok_string[MAX_SYM_SIZE];
 	bool tok_first;				/* is it the first token in a statement? */
 	gpre_sym* tok_charset;		/* Character set of token */
-} *TOK;
+};
 
 const size_t TOK_LEN = sizeof(tok);
 

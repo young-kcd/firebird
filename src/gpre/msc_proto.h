@@ -37,7 +37,7 @@ gpre_sym*	MSC_find_symbol(gpre_sym*, sym_t);
 void		MSC_free(void*);
 void		MSC_free_request(gpre_req*);
 void		MSC_init();
-bool		MSC_match(kwwords_t);
+bool		MSC_match(const kwwords_t);
 gpre_nod*	MSC_node(nod_t, SSHORT);
 gpre_nod*	MSC_pop(gpre_lls**);
 PRV			MSC_privilege_block();

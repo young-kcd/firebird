@@ -139,8 +139,7 @@ UCHAR* MSC_alloc_permanent(int size)
 	}
 
 	permanent_space->spc_remaining -= size;
-	UCHAR* blk = ((UCHAR*) permanent_space + sizeof(gpre_space) +
-		 permanent_space->spc_remaining);
+	UCHAR* blk = (UCHAR*) permanent_space + sizeof(gpre_space) + permanent_space->spc_remaining;
 	memset(blk, 0, size);
 
 	return blk;
@@ -204,8 +203,7 @@ void MSC_copy(const char* from, int length, char* to)
 //		Copy two strings into another.
 //
 
-void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2,
-	char* to)
+void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2, char* to)
 {
 
 	if (length1)
@@ -282,7 +280,7 @@ void MSC_init()
 //		false.
 //
 
-bool MSC_match(kwwords_t keyword)
+bool MSC_match(const kwwords_t keyword)
 {
 
 	if (gpreGlob.token_global.tok_keyword == KW_none && gpreGlob.token_global.tok_symbol) {
@@ -299,7 +297,7 @@ bool MSC_match(kwwords_t keyword)
 		}
 	}
 
-	if ((int) gpreGlob.token_global.tok_keyword != (int) keyword)
+	if (gpreGlob.token_global.tok_keyword != keyword)
 		return false;
 
 	CPR_token();
@@ -314,7 +312,7 @@ bool MSC_match(kwwords_t keyword)
 //		represented on a linked list stack.
 //
 
-bool MSC_member(gpre_nod* object, gpre_lls* stack)
+bool MSC_member(const gpre_nod* object, gpre_lls* stack)
 {
 
 	for (; stack; stack = stack->lls_next)

@@ -112,7 +112,7 @@ static void gen_slice(const act*, int);
 static void gen_start(const act*, const gpre_port*, int);
 static void gen_store(const act*, int);
 static void gen_t_start(const act*, int);
-static void gen_tpb(tpb*, int);
+static void gen_tpb(const tpb*, int);
 static void gen_trans(const act*, int);
 static void gen_update(const act*, int);
 static void gen_variable(const act*, int);
@@ -178,7 +178,8 @@ void PAS_action(const act* action, int column)
 
 //  Put leading braces where required
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_database:
 	case ACT_alter_domain:
 	case ACT_alter_table:
@@ -247,7 +248,8 @@ void PAS_action(const act* action, int column)
 		begin(column);
 	}
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_domain:
 	case ACT_create_domain:
 	case ACT_create_generator:
@@ -514,13 +516,12 @@ void PAS_action(const act* action, int column)
 
 static void align(const int column)
 {
-	int i;
-
 	putc('\n', gpreGlob.out_file);
 
 	if (column < 0)
 		return;
 
+	int i;
 	for (i = column / 8; i; --i)
 		putc('\t', gpreGlob.out_file);
 
@@ -543,8 +544,7 @@ static void asgn_from( const act* action, const ref* reference, int column)
 		const gpre_fld* field = reference->ref_field;
 		if (field->fld_array_info)
 			if (!(reference->ref_flags & REF_array_elem)) {
-				printa(column, "%s := gds__blob_null;\n",
-					   gen_name(name, reference, true));
+				printa(column, "%s := gds__blob_null;\n", gen_name(name, reference, true));
 				gen_get_or_put_slice(action, reference, false, column);
 				continue;
 			}
@@ -562,8 +562,7 @@ static void asgn_from( const act* action, const ref* reference, int column)
 			field = field->fld_array;
 		if (!field || (field->fld_flags & FLD_text))
 			fprintf(gpreGlob.out_file, "gds__ftof (%s%s, %s (%s), %s%s, %d);",
-					   REF_PAR, value, SIZEOF, value, REF_PAR, variable,
-					   field->fld_length);
+					   REF_PAR, value, SIZEOF, value, REF_PAR, variable, field->fld_length);
 		else if (!reference->ref_master || (reference->ref_flags & REF_literal))
 			fprintf(gpreGlob.out_file, "%s := %s;", variable, value);
 		else {
@@ -596,9 +595,8 @@ static void asgn_sqlda_from( const ref* reference, int number, TEXT* string, int
 			value = gen_name(temp, reference->ref_source, true);
 		else
 			value = reference->ref_value;
-		fprintf(gpreGlob.out_file,
-				   "gds__to_sqlda (gds__sqlda, %d, %s, %s(%s), %s);", number,
-				   SIZEOF, value, value, string);
+		fprintf(gpreGlob.out_file, "gds__to_sqlda (gds__sqlda, %d, %s, %s(%s), %s);",
+				number, SIZEOF, value, value, string);
 	}
 }
 
@@ -624,19 +622,15 @@ static void asgn_to(const act* action, const ref* reference, int column)
 
 	if (field && (field->fld_flags & FLD_text))
 		fprintf(gpreGlob.out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
-				   REF_PAR, gen_name(s, source, true),
-				   field->fld_length,
-				   REF_PAR, reference->ref_value,
-				   SIZEOF, reference->ref_value);
+				   REF_PAR, gen_name(s, source, true), field->fld_length,
+				   REF_PAR, reference->ref_value, SIZEOF, reference->ref_value);
 	else
-		fprintf(gpreGlob.out_file, "%s := %s;", reference->ref_value,
-				   gen_name(s, source, true));
+		fprintf(gpreGlob.out_file, "%s := %s;", reference->ref_value, gen_name(s, source, true));
 
 //  Pick up NULL value if one is there
 
 	if (reference = reference->ref_null)
-		fprintf(gpreGlob.out_file, "%s := %s;", reference->ref_value,
-				   gen_name(s, reference, true));
+		fprintf(gpreGlob.out_file, "%s := %s;", reference->ref_value, gen_name(s, reference, true));
 }
 
 
@@ -658,13 +652,10 @@ static void asgn_to_proc(const ref* reference, int column)
 		align(column);
 		if (field && (field->fld_flags & FLD_text))
 			fprintf(gpreGlob.out_file, "gds__ftof (%s%s, %d, %s%s, %s (%s));",
-					   REF_PAR, gen_name(s, reference, true),
-					   field->fld_length,
-					   REF_PAR, reference->ref_value,
-					   SIZEOF, reference->ref_value);
+					   REF_PAR, gen_name(s, reference, true), field->fld_length,
+					   REF_PAR, reference->ref_value, SIZEOF, reference->ref_value);
 		else
-			fprintf(gpreGlob.out_file, "%s := %s;",
-					   reference->ref_value, gen_name(s, reference, true));
+			fprintf(gpreGlob.out_file, "%s := %s;", reference->ref_value, gen_name(s, reference, true));
 
 	}
 }
@@ -680,8 +671,7 @@ static void gen_at_end( const act* action, int column)
 	TEXT s[MAX_REF_SIZE];
 
 	const gpre_req* request = action->act_request;
-	printa(column, "if %s = 0 then begin",
-		   gen_name(s, request->req_eof, true));
+	printa(column, "if %s = 0 then begin", gen_name(s, request->req_eof, true));
 }
 
 
@@ -692,19 +682,16 @@ static void gen_at_end( const act* action, int column)
 
 static void gen_based( const act* action, int column)
 {
-	gpre_fld* field;
-	TEXT s[64];
 	SSHORT datatype;
-	SLONG length;
-	dim* dimension;
 
 	align(column);
 	bas* based_on = (bas*) action->act_object;
-	field = based_on->bas_field;
+	gpre_fld* field = based_on->bas_field;
 
 	if (based_on->bas_flags & BAS_segment) {
 		datatype = dtype_text;
-		if (!(length = field->fld_seg_length))
+		SLONG length = field->fld_seg_length;
+		if (!length)
 			length = 256;
 		fprintf(gpreGlob.out_file, "%s [1..%"SLONGFORMAT"] of ", PACKED_ARRAY, length);
 	}
@@ -715,8 +702,8 @@ static void gen_based( const act* action, int column)
 		else
 			fprintf(gpreGlob.out_file, "array [");
 
-		for (dimension = field->fld_array_info->ary_dimension; dimension;
-			 dimension = dimension->dim_next)
+		for (dim* dimension = field->fld_array_info->ary_dimension; dimension;
+			dimension = dimension->dim_next)
 		{
 			fprintf(gpreGlob.out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 					   dimension->dim_upper);
@@ -731,9 +718,10 @@ static void gen_based( const act* action, int column)
 	else {
 		datatype = field->fld_dtype;
 		if (datatype <= dtype_varying)
-			fprintf(gpreGlob.out_file, "%s [1..%d] of ", PACKED_ARRAY,
-					   field->fld_length);
+			fprintf(gpreGlob.out_file, "%s [1..%d] of ", PACKED_ARRAY, field->fld_length);
 	}
+
+	TEXT s[64];
 
 	switch (datatype) {
 	case dtype_short:
@@ -812,11 +800,9 @@ static void gen_blob_end(const act* action, USHORT column)
 	const blb* blob = (blb*) action->act_object;
 	printa(column + INDENT, "end;");
 	if (action->act_error)
-		printa(column, "GDS__CLOSE_BLOB (gds__status2, gds__%d);",
-			   blob->blb_ident);
+		printa(column, "GDS__CLOSE_BLOB (gds__status2, gds__%d);", blob->blb_ident);
 	else
-		printa(column, "GDS__CLOSE_BLOB (%s, gds__%d);",
-			   status_vector(0), blob->blb_ident);
+		printa(column, "GDS__CLOSE_BLOB (%s, gds__%d);", status_vector(0), blob->blb_ident);
 	if (action->act_error)
 		ends(column);
 	else
@@ -837,8 +823,7 @@ static void gen_blob_for( const act* action, USHORT column)
 		printa(column, "if (gds__status[2] = 0) then begin");
 	printa(column, "while (true) do begin");
 	gen_get_segment(action, column + INDENT);
-	printa(column + INDENT,
-		   "if ((gds__status[2] <> 0) and (gds__status[2] <> gds__segment)) then");
+	printa(column + INDENT, "if ((gds__status[2] <> 0) and (gds__status[2] <> gds__segment)) then");
 	printa(column + 2 * INDENT, "exit;");
 }
 
@@ -856,15 +841,12 @@ static void gen_blob_open( const act* action, USHORT column)
 		"GDS__%IFCREATE%ELOPEN%EN_BLOB2 (%V1, %RF%DH, %RF%RT, %RF%BH, %RF%FR, 0, 0);";
 
 	if (gpreGlob.sw_auto && (action->act_flags & ACT_sql)) {
-		t_start_auto(action, action->act_request, status_vector(action),
-					 column);
-		printa(column, "if %s <> nil then",
-			   request_trans(action, action->act_request));
+		t_start_auto(action, action->act_request, status_vector(action), column);
+		printa(column, "if %s <> nil then", request_trans(action, action->act_request));
 		column += INDENT;
 	}
 
-	if ((action->act_error && (action->act_type != ACT_blob_for)) ||
-		action->act_flags & ACT_sql)
+	if ((action->act_error && (action->act_type != ACT_blob_for)) || action->act_flags & ACT_sql)
 	{
 		begin(column);
 	}
@@ -984,15 +966,13 @@ static void gen_compile( const act* action, int column)
 		const TEXT* filename = db->dbb_runtime;
 		if (filename || !(db->dbb_flags & DBB_sqlca)) {
 			printa(column, "if %s = nil then", symbol->sym_string);
-			make_ready(db, filename, status_vector(action), column + INDENT,
-					   0);
+			make_ready(db, filename, status_vector(action), column + INDENT, 0);
 		}
 		if (action->act_error || (action->act_flags & ACT_sql))
 			printa(column, "if (%s = nil) and (%s <> nil) then",
 				   request_trans(action, request), symbol->sym_string);
 		else
-			printa(column, "if %s = nil then",
-				   request_trans(action, request));
+			printa(column, "if %s = nil then", request_trans(action, request));
 		t_start_auto(action, request, status_vector(action), column + INDENT);
 	}
 
@@ -1003,8 +983,7 @@ static void gen_compile( const act* action, int column)
 		printa(column, "if %s = nil then", request->req_handle);
 
 	align(column + INDENT);
-	fprintf(gpreGlob.out_file,
-			   "GDS__COMPILE_REQUEST%s (%s, %s, %s, %d, gds__%d);\n",
+	fprintf(gpreGlob.out_file, "GDS__COMPILE_REQUEST%s (%s, %s, %s, %d, gds__%d);\n",
 			   (request->req_flags & REQ_exp_hand) ? "" : "2",
 			   status_vector(action), symbol->sym_string, request->req_handle,
 			   request->req_length, request->req_ident);
@@ -1024,22 +1003,17 @@ static void gen_compile( const act* action, int column)
 
 static void gen_create_database( const act* action, int column)
 {
-	const gpre_req* request;
-	DBB db;
-
-	request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	db = (DBB) request->req_database;
+	const gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
+	DBB db = (DBB) request->req_database;
 	align(column);
 
 	if (request->req_length)
-		fprintf(gpreGlob.out_file,
-				   "GDS__CREATE_DATABASE (%s, %d, '%s', %s, %d, gds__%d, 0);",
+		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %d, '%s', %s, %d, gds__%d, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string,
 				   request->req_length, request->req_ident);
 	else
-		fprintf(gpreGlob.out_file,
-				   "GDS__CREATE_DATABASE (%s, %d, '%s', %s, 0, 0, 0);",
+		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %d, '%s', %s, 0, 0, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string);
 
@@ -1062,10 +1036,10 @@ static void gen_create_database( const act* action, int column)
 
 static int gen_cursor_close( const act* action, const gpre_req* request, int column)
 {
-	PAT args;
 	const TEXT* pattern1 = "if %RIs <> nil then";
 	const TEXT* pattern2 = "isc_dsql_free_statement (%V1, %RF%RIs, %N1);";
 
+	PAT args;
 	args.pat_request = request;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = 1;
@@ -1093,11 +1067,8 @@ static void gen_cursor_init( const act* action, int column)
 //  If blobs are present, zero out all of the blob handles.  After this
 //  point, the handles are the user's responsibility
 
-	if (action->act_request->
-		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
-			printa(column,
-					"gds__%d := nil;",
-					action->act_request->req_blobs->blb_ident);
+	if (action->act_request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
+		printa(column, "gds__%d := nil;", action->act_request->req_blobs->blb_ident);
 }
 
 
@@ -1108,7 +1079,6 @@ static void gen_cursor_init( const act* action, int column)
 
 static int gen_cursor_open( const act* action, const gpre_req* request, int column)
 {
-	PAT args;
 	TEXT s[MAX_CURSOR_SIZE];
 	const TEXT *pattern1 =
 		"if (%RIs = nil) and (%RH <> nil)%IF and (%DH <> nil)%EN then",
@@ -1118,6 +1088,7 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 		*pattern5 = "isc_dsql_set_cursor_name (%V1, %RF%RIs, %S1, 0);",
 		*pattern6 = "isc_dsql_execute_m (%V1, %RF%S3, %RF%RIs, 0, gds__null, %N2, 0, gds__null);";
 
+	PAT args;
 	args.pat_request = request;
 	args.pat_database = request->req_database;
 	args.pat_vector1 = status_vector(action);
@@ -1153,17 +1124,7 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 
 static void gen_database( const act* action, int column)
 {
-	DBB db;
 	const gpre_req* request;
-	gpre_port* port;
-	blb* blob;
-	USHORT count;
-	tpb* tpb_val;
-	int indent;
-	const ref* reference;
-	SSHORT event_count;
-	SSHORT max_count;
-	gpre_lls* stack_ptr;
 
 	if (global_first_flag)
 		return;
@@ -1172,13 +1133,13 @@ static void gen_database( const act* action, int column)
 	fprintf(gpreGlob.out_file, "\n(**** GPRE Preprocessor Definitions ****)\n");
 	fprintf(gpreGlob.out_file, "%%include '/firebird/include/gds.ins.pas';\n");
 
-	indent = column + INDENT;
+	int indent = column + INDENT;
 	bool flag = true;
 
 	for (request = gpreGlob.requests; request; request = request->req_next) {
 		if (request->req_flags & REQ_local)
 			continue;
-		for (port = request->req_ports; port; port = port->por_next) {
+		for (const gpre_port* port = request->req_ports; port; port = port->por_next) {
 			if (flag) {
 				flag = false;
 				fprintf(gpreGlob.out_file, "type");
@@ -1190,21 +1151,19 @@ static void gen_database( const act* action, int column)
 	for (request = gpreGlob.requests; request; request = request->req_routine) {
 		if (request->req_flags & REQ_local)
 			continue;
-		for (port = request->req_ports; port; port = port->por_next)
+		for (const gpre_port* port = request->req_ports; port; port = port->por_next)
 			printa(indent, "gds__%d\t: gds__%dt;\t\t\t(* message *)",
 				   port->por_ident, port->por_ident);
 
-		for (blob = request->req_blobs; blob; blob = blob->blb_next) {
-			printa(indent, "gds__%d\t: gds__handle;\t\t\t(* blob handle *)",
-				   blob->blb_ident);
-			printa(indent,
-				   "gds__%d\t: %s [1 .. %d] of char;\t(* blob segment *)",
+		for (blb* blob = request->req_blobs; blob; blob = blob->blb_next) {
+			printa(indent, "gds__%d\t: gds__handle;\t\t\t(* blob handle *)", blob->blb_ident);
+			printa(indent, "gds__%d\t: %s [1 .. %d] of char;\t(* blob segment *)",
 				   blob->blb_buff_ident, PACKED_ARRAY, blob->blb_seg_length);
-			printa(indent, "gds__%d\t: %s;\t\t\t(* segment length *)",
-				   blob->blb_len_ident, SHORT_DCL);
+			printa(indent, "gds__%d\t: %s;\t\t\t(* segment length *)", blob->blb_len_ident, SHORT_DCL);
 		}
 	}
 
+	DBB db;
 	bool all_static = true;
 	bool all_extern = true;
 
@@ -1212,36 +1171,31 @@ static void gen_database( const act* action, int column)
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
 		if (db->dbb_scope == DBB_STATIC)
-			printa(indent,
-				   "%s\t: %s gds__handle\t:= nil;	(* database handle *)",
+			printa(indent, "%s\t: %s gds__handle\t:= nil;	(* database handle *)",
 				   db->dbb_name->sym_string, STATIC_STRING);
 	}
 
-	count = 0;
+	USHORT count = 0;
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		count++;
-		for (tpb_val = db->dbb_tpbs; tpb_val; tpb_val = tpb_val->tpb_dbb_next)
+		for (const tpb* tpb_val = db->dbb_tpbs; tpb_val; tpb_val = tpb_val->tpb_dbb_next)
 			gen_tpb(tpb_val, indent);
 	}
 
-	printa(indent,
-		   "gds__teb\t: array [1..%d] of gds__teb_t;\t(* transaction vector *)",
-		   count);
+	printa(indent, "gds__teb\t: array [1..%d] of gds__teb_t;\t(* transaction vector *)", count);
 
 //  generate event parameter block for each event in module
 
-	max_count = 0;
-	for (stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
-		event_count = gen_event_block(reinterpret_cast<act*>(stack_ptr->lls_object));
+	SSHORT max_count = 0;
+	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+		SSHORT event_count = gen_event_block(reinterpret_cast<act*>(stack_ptr->lls_object));
 		max_count = MAX(event_count, max_count);
 	}
 
 	if (max_count) {
-		printa(indent,
-			   "gds__events\t\t: %s array [1..%d] of %s;\t\t(* event vector *)",
+		printa(indent, "gds__events\t\t: %s array [1..%d] of %s;\t\t(* event vector *)",
 			   STATIC_STRING, max_count, LONG_DCL);
-		printa(indent,
-			   "gds__event_names\t\t: %s array [1..%d] of %s;\t\t(* event buffer *)",
+		printa(indent, "gds__event_names\t\t: %s array [1..%d] of %s;\t\t(* event buffer *)",
 			   STATIC_STRING, max_count, POINTER_DCL);
 		printa(indent,
 			   "gds__event_names2\t\t: %s %s [1..%d, 1..31] of char;\t\t(* event string buffer *)",
@@ -1255,9 +1209,10 @@ static void gen_database( const act* action, int column)
 		if (request->req_type == REQ_slice)
 			array_flag = true;
 
-		if (port = request->req_primary)
-			for (reference = port->por_references; reference;
-				 reference = reference->ref_next)
+		const gpre_port* port = request->req_primary;
+		if (port)
+			for (const ref* reference = port->por_references; reference;
+				reference = reference->ref_next)
 			{
 				if (reference->ref_flags & REF_fetch_array) {
 					make_array_declaration(reference);
@@ -1267,60 +1222,43 @@ static void gen_database( const act* action, int column)
 	}
 
 	if (array_flag)
-		printa(indent,
-			   "gds__array_length\t: integer32;\t\t\t(* slice return value *)");
+		printa(indent, "gds__array_length\t: integer32;\t\t\t(* slice return value *)");
 
-	printa(indent,
-		   "gds__null\t\t: ^gds__status_vector := nil;\t(* null status vector *)");
-	printa(indent,
-		   "gds__blob_null\t: gds__quad := %s0,0%s;\t\t(* null blob id *)",
+	printa(indent, "gds__null\t\t: ^gds__status_vector := nil;\t(* null status vector *)");
+	printa(indent, "gds__blob_null\t: gds__quad := %s0,0%s;\t\t(* null blob id *)",
 		   OPEN_BRACKET, CLOSE_BRACKET);
 
 	if (all_static) {
-		printa(indent,
-			   "gds__trans\t\t: %s gds__handle := nil;\t\t(* default transaction *)",
+		printa(indent, "gds__trans\t\t: %s gds__handle := nil;\t\t(* default transaction *)",
 			   STATIC_STRING);
-		printa(indent,
-			   "gds__status\t\t: %s gds__status_vector;\t\t(* status vector *)",
-			   STATIC_STRING);
-		printa(indent,
-			   "gds__status2\t\t: %s gds__status_vector;\t\t(* status vector *)",
-			   STATIC_STRING);
-		printa(indent,
-			   "SQLCODE\t: %s integer := 0;\t\t\t(* SQL status code *)",
-			   STATIC_STRING);
+		printa(indent, "gds__status\t\t: %s gds__status_vector;\t\t(* status vector *)", STATIC_STRING);
+		printa(indent, "gds__status2\t\t: %s gds__status_vector;\t\t(* status vector *)", STATIC_STRING);
+		printa(indent, "SQLCODE\t: %s integer := 0;\t\t\t(* SQL status code *)", STATIC_STRING);
 	}
 	else {
 		printa(column, "\nvar (gds__trans)");
-		printa(indent,
-			   "gds__trans\t\t: gds__handle%s;\t\t(* default transaction *)",
+		printa(indent, "gds__trans\t\t: gds__handle%s;\t\t(* default transaction *)",
 			   all_extern ? "" : "\t:= nil");
 		printa(column, "\nvar (gds__status)");
-		printa(indent,
-			   "gds__status\t\t: gds__status_vector;\t\t(* status vector *)");
+		printa(indent, "gds__status\t\t: gds__status_vector;\t\t(* status vector *)");
 		printa(column, "\nvar (gds__status2)");
-		printa(indent,
-			   "gds__status2\t\t: gds__status_vector;\t\t(* status vector *)");
+		printa(indent, "gds__status2\t\t: gds__status_vector;\t\t(* status vector *)");
 		printa(column, "\nvar (SQLCODE)");
 		printa(indent, "SQLCODE\t: integer%s;\t\t\t(* SQL status code *)",
 			   all_extern ? "" : "\t:= 0");
 	}
 	printa(column, "\nvar (gds__window)");
-	printa(indent,
-		   "gds__window\t\t:  gds__handle := nil;\t\t(* window handle *)");
+	printa(indent, "gds__window\t\t:  gds__handle := nil;\t\t(* window handle *)");
 	printa(column, "\nvar (gds__width)");
-	printa(indent, "gds__width\t\t: %s := 80;\t(* window width *)",
-		   SHORT_DCL);
+	printa(indent, "gds__width\t\t: %s := 80;\t(* window width *)", SHORT_DCL);
 	printa(column, "\nvar (gds__height)");
-	printa(indent, "gds__height\t\t: %s := 24;\t(* window height *)",
-		   SHORT_DCL);
+	printa(indent, "gds__height\t\t: %s := 24;\t(* window height *)", SHORT_DCL);
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		if (db->dbb_scope != DBB_STATIC) {
 			printa(column, "\nvar (%s)", db->dbb_name->sym_string);
 			printa(indent, "%s\t: gds__handle%s;	(* database handle *)",
-				   db->dbb_name->sym_string,
-				   (db->dbb_scope == DBB_EXTERN) ? "" : "\t:= nil");
+				   db->dbb_name->sym_string, (db->dbb_scope == DBB_EXTERN) ? "" : "\t:= nil");
 		}
 	}
 
@@ -1336,8 +1274,6 @@ static void gen_database( const act* action, int column)
 
 static void gen_ddl( const act* action, int column)
 {
-	const gpre_req* request;
-
 	if (gpreGlob.sw_auto) {
 		printa(column, "if (gds__trans = nil) then");
 		column += INDENT;
@@ -1347,7 +1283,7 @@ static void gen_ddl( const act* action, int column)
 
 //  Set up command type for call to RDB$DDL
 
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 
 	if (gpreGlob.sw_auto) {
 		printa(column, "if (gds__trans <> nil) then");
@@ -1363,11 +1299,9 @@ static void gen_ddl( const act* action, int column)
 	if (gpreGlob.sw_auto) {
 		column -= INDENT;
 		printa(column, "if (gds__status [2] = 0) then");
-		printa(column + INDENT, "GDS__COMMIT_TRANSACTION (%s, gds__trans);",
-			   status_vector(action));
+		printa(column + INDENT, "GDS__COMMIT_TRANSACTION (%s, gds__trans);", status_vector(action));
 		printa(column, "if (gds__status [2] <> 0) then");
-		printa(column + INDENT,
-			   "GDS__ROLLBACK_TRANSACTION (gds__null^ , gds__trans);");
+		printa(column + INDENT, "GDS__ROLLBACK_TRANSACTION (gds__null^ , gds__trans);");
 	}
 
 	set_sqlcode(action, column);
@@ -1381,13 +1315,10 @@ static void gen_ddl( const act* action, int column)
 
 static void gen_drop_database( const act* action, int column)
 {
-	DBB db;
-
-	db = (DBB) action->act_object;
+	DBB db = (DBB) action->act_object;
 	align(column);
 
-	fprintf(gpreGlob.out_file,
-			   "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
+	fprintf(gpreGlob.out_file, "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
 	set_sqlcode(action, column);
@@ -1401,13 +1332,10 @@ static void gen_drop_database( const act* action, int column)
 
 static void gen_dyn_close( const act* action, int column)
 {
-	dyn* statement;
 	TEXT s[MAX_CURSOR_SIZE];
 
-	statement = (dyn*) action->act_object;
-	printa(column,
-		   "isc_embed_dsql_close (gds__status, %s);",
-		   make_name(s, statement->dyn_cursor_name));
+	const dyn* statement = (dyn*) action->act_object;
+	printa(column, "isc_embed_dsql_close (gds__status, %s);", make_name(s, statement->dyn_cursor_name));
 	set_sqlcode(action, column);
 }
 
@@ -1419,12 +1347,10 @@ static void gen_dyn_close( const act* action, int column)
 
 static void gen_dyn_declare( const act* action, int column)
 {
-	dyn* statement;
 	TEXT s1[MAX_CURSOR_SIZE], s2[MAX_CURSOR_SIZE];
 
-	statement = (dyn*) action->act_object;
-	printa(column,
-		   "isc_embed_dsql_declare (gds__status, %s, %s);",
+	const dyn* statement = (dyn*) action->act_object;
+	printa(column, "isc_embed_dsql_declare (gds__status, %s, %s);",
 		   make_name(s1, statement->dyn_statement_name),
 		   make_name(s2, statement->dyn_cursor_name));
 	set_sqlcode(action, column);
@@ -1436,15 +1362,12 @@ static void gen_dyn_declare( const act* action, int column)
 //		Generate a dynamic SQL statement.
 //
 
-static void gen_dyn_describe(const act* action,
-							 int column,
-							 bool bind_flag)
+static void gen_dyn_describe(const act* action, int column, bool bind_flag)
 {
 	TEXT s[MAX_CURSOR_SIZE];
 
-	dyn* statement = (dyn*) action->act_object;
-	printa(column,
-		   "isc_embed_dsql_describe%s (gds__status, %s, %d, %s %s);",
+	const dyn* statement = (dyn*) action->act_object;
+	printa(column, "isc_embed_dsql_describe%s (gds__status, %s, %d, %s %s);",
 		   bind_flag ? "_bind" : "",
 		   make_name(s, statement->dyn_statement_name),
 		   gpreGlob.sw_sql_dialect, REF_PAR, statement->dyn_sqlda);
@@ -1461,9 +1384,8 @@ static void gen_dyn_execute( const act* action, int column)
 {
 	gpre_req* request;
 	gpre_req req_const;
-	int i;
 
-	dyn* statement = (dyn*) action->act_object;
+	const dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1489,14 +1411,14 @@ static void gen_dyn_execute( const act* action, int column)
 	if (var_list = statement->dyn_using) {
 		printa(column, "gds__sqlda.sqln = %s;", gpreGlob.sw_dyn_using);
 		printa(column, "gds__sqlda.sqld = %s;", gpreGlob.sw_dyn_using);
-		for (i = 0; i < var_list->nod_count; i++)
+		for (int i = 0; i < var_list->nod_count; i++)
 			asgn_sqlda_from(reinterpret_cast<ref*>(var_list->nod_arg[i]), i, s, column);
 	}
 
 	printa(column,
 		   statement->dyn_sqlda2 ?
-		   "isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);"
-		   : "isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
+				"isc_embed_dsql_execute2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
+				"isc_embed_dsql_execute (gds__status, %s, %s, %d, %s %s);",
 		   transaction, make_name(s, statement->dyn_statement_name),
 		   gpreGlob.sw_sql_dialect, REF_PAR,
 		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
@@ -1513,12 +1435,10 @@ static void gen_dyn_execute( const act* action, int column)
 
 static void gen_dyn_fetch( const act* action, int column)
 {
-	dyn* statement;
 	TEXT s[MAX_CURSOR_SIZE];
 
-	statement = (dyn*) action->act_object;
-	printa(column,
-		   "SQLCODE := isc_embed_dsql_fetch (gds__status, %s, %d, %s %s);",
+	const dyn* statement = (dyn*) action->act_object;
+	printa(column, "SQLCODE := isc_embed_dsql_fetch (gds__status, %s, %d, %s %s);",
 		   make_name(s, statement->dyn_cursor_name),
 		   gpreGlob.sw_sql_dialect,
 		   REF_PAR,
@@ -1535,135 +1455,10 @@ static void gen_dyn_fetch( const act* action, int column)
 
 static void gen_dyn_immediate( const act* action, int column)
 {
-	DBB database;
 	gpre_req* request;
 	gpre_req req_const;
 
-	dyn* statement = (dyn*) action->act_object;
-	const TEXT* transaction;
-	if (statement->dyn_trans) {
-		transaction = statement->dyn_trans;
-		request = &req_const;
-		request->req_trans = transaction;
-	}
-	else {
-		transaction = "gds__trans";
-		request = NULL;
-	}
-
-	if (gpreGlob.sw_auto) {
-		printa(column, "if (%s = nil) then", transaction);
-		column += INDENT;
-		t_start_auto(action, request, status_vector(action), column + INDENT);
-		column -= INDENT;
-	}
-
-	database = statement->dyn_database;
-	printa(column,
-		   statement->dyn_sqlda2 ?
-		   "isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);"
-		   :
-		   "isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
-		   database->dbb_name->sym_string, transaction, SIZEOF,
-		   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect,
-		   REF_PAR,
-		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
-		   REF_PAR,
-		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
-	set_sqlcode(action, column);
-}
-
-
-//____________________________________________________________
-//
-//		Generate a dynamic SQL statement.
-//
-
-static void gen_dyn_insert( const act* action, int column)
-{
-	dyn* statement;
-	TEXT s[MAX_CURSOR_SIZE];
-
-	statement = (dyn*) action->act_object;
-	printa(column,
-		   "isc_embed_dsql_insert (gds__status, %s, %d, %s %s);",
-		   make_name(s, statement->dyn_cursor_name),
-		   gpreGlob.sw_sql_dialect,
-		   REF_PAR,
-		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^");
-
-	set_sqlcode(action, column);
-}
-
-
-//____________________________________________________________
-//
-//		Generate a dynamic SQL statement.
-//
-
-static void gen_dyn_open( const act* action, int column)
-{
-	TEXT s[MAX_CURSOR_SIZE];
-	gpre_req* request;
-	gpre_req req_const;
-	gpre_nod* var_list;
-	int i;
-
-	dyn* statement = (dyn*) action->act_object;
-	const TEXT* transaction;
-	if (statement->dyn_trans) {
-		transaction = statement->dyn_trans;
-		request = &req_const;
-		request->req_trans = transaction;
-	}
-	else {
-		transaction = "gds__trans";
-		request = NULL;
-	}
-
-	if (gpreGlob.sw_auto) {
-		printa(column, "if (%s = nil) then", transaction);
-		column += INDENT;
-		t_start_auto(action, request, status_vector(action), column + INDENT);
-		column -= INDENT;
-	}
-
-	make_name(s, statement->dyn_cursor_name);
-
-	if (var_list = statement->dyn_using) {
-		printa(column, "gds__sqlda.sqln = %d;", gpreGlob.sw_dyn_using);
-		printa(column, "gds__sqlda.sqld = %d;", gpreGlob.sw_dyn_using);
-		for (i = 0; i < var_list->nod_count; i++)
-			asgn_sqlda_from(reinterpret_cast<ref*>(var_list->nod_arg[i]), i, s, column);
-	}
-
-	printa(column,
-		   statement->dyn_sqlda2 ?
-		   "isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
-		   "isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
-		   s,
-		   transaction,
-		   gpreGlob.sw_sql_dialect,
-		   REF_PAR,
-		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
-		   REF_PAR,
-		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
-	set_sqlcode(action, column);
-}
-
-
-//____________________________________________________________
-//
-//		Generate a dynamic SQL statement.
-//
-
-static void gen_dyn_prepare( const act* action, int column)
-{
-	TEXT s[MAX_CURSOR_SIZE];
-	gpre_req* request;
-	gpre_req req_const;
-
-    dyn* statement = (dyn*) action->act_object;
+	const dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1683,7 +1478,125 @@ static void gen_dyn_prepare( const act* action, int column)
 	}
 
 	DBB database = statement->dyn_database;
+	printa(column,
+		   statement->dyn_sqlda2 ?
+				"isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);" :
+				"isc_embed_dsql_execute_immed (gds__status, %s, %s, %s(%s), %s, %d, %s %s);",
+		   database->dbb_name->sym_string, transaction, SIZEOF,
+		   statement->dyn_string, statement->dyn_string, gpreGlob.sw_sql_dialect,
+		   REF_PAR,
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
+		   REF_PAR,
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
+	set_sqlcode(action, column);
+}
 
+
+//____________________________________________________________
+//
+//		Generate a dynamic SQL statement.
+//
+
+static void gen_dyn_insert( const act* action, int column)
+{
+	TEXT s[MAX_CURSOR_SIZE];
+
+	const dyn* statement = (dyn*) action->act_object;
+	printa(column, "isc_embed_dsql_insert (gds__status, %s, %d, %s %s);",
+		   make_name(s, statement->dyn_cursor_name),
+		   gpreGlob.sw_sql_dialect,
+		   REF_PAR,
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^");
+
+	set_sqlcode(action, column);
+}
+
+
+//____________________________________________________________
+//
+//		Generate a dynamic SQL statement.
+//
+
+static void gen_dyn_open( const act* action, int column)
+{
+	gpre_req* request;
+	gpre_req req_const;
+
+	const dyn* statement = (dyn*) action->act_object;
+	const TEXT* transaction;
+	if (statement->dyn_trans) {
+		transaction = statement->dyn_trans;
+		request = &req_const;
+		request->req_trans = transaction;
+	}
+	else {
+		transaction = "gds__trans";
+		request = NULL;
+	}
+
+	if (gpreGlob.sw_auto) {
+		printa(column, "if (%s = nil) then", transaction);
+		column += INDENT;
+		t_start_auto(action, request, status_vector(action), column + INDENT);
+		column -= INDENT;
+	}
+
+	TEXT s[MAX_CURSOR_SIZE];
+	make_name(s, statement->dyn_cursor_name);
+
+	if (const gpre_nod* var_list = statement->dyn_using) {
+		printa(column, "gds__sqlda.sqln = %d;", gpreGlob.sw_dyn_using);
+		printa(column, "gds__sqlda.sqld = %d;", gpreGlob.sw_dyn_using);
+		for (int i = 0; i < var_list->nod_count; i++)
+			asgn_sqlda_from(reinterpret_cast<const ref*>(var_list->nod_arg[i]), i, s, column);
+	}
+
+	printa(column,
+		   statement->dyn_sqlda2 ?
+				"isc_embed_dsql_open2 (gds__status, %s, %s, %d, %s %s, %s %s);" :
+				"isc_embed_dsql_open (gds__status, %s, %s, %d, %s %s);",
+		   s,
+		   transaction,
+		   gpreGlob.sw_sql_dialect,
+		   REF_PAR,
+		   statement->dyn_sqlda ? statement->dyn_sqlda : "gds__null^",
+		   REF_PAR,
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "gds__null^");
+	set_sqlcode(action, column);
+}
+
+
+//____________________________________________________________
+//
+//		Generate a dynamic SQL statement.
+//
+
+static void gen_dyn_prepare( const act* action, int column)
+{
+	gpre_req* request;
+	gpre_req req_const;
+
+    const dyn* statement = (dyn*) action->act_object;
+	const TEXT* transaction;
+	if (statement->dyn_trans) {
+		transaction = statement->dyn_trans;
+		request = &req_const;
+		request->req_trans = transaction;
+	}
+	else {
+		transaction = "gds__trans";
+		request = NULL;
+	}
+
+	if (gpreGlob.sw_auto) {
+		printa(column, "if (%s = nil) then", transaction);
+		column += INDENT;
+		t_start_auto(action, request, status_vector(action), column + INDENT);
+		column -= INDENT;
+	}
+
+	DBB database = statement->dyn_database;
+	TEXT s[MAX_CURSOR_SIZE];
 	printa(column,
 		   "isc_embed_dsql_prepare (gds__status, %s, transaction, %s, %s(%s), %s, %d, %s %s);",
 		   database->dbb_name->sym_string, transaction,
@@ -1702,10 +1615,9 @@ static void gen_dyn_prepare( const act* action, int column)
 
 static void gen_emodify( const act* action, int column)
 {
-	gpre_fld* field;
 	TEXT s1[MAX_REF_SIZE], s2[MAX_REF_SIZE];
 
-	upd* modify = (upd*) action->act_object;
+	const upd* modify = (upd*) action->act_object;
 
 	for (const ref* reference = modify->upd_port->por_references; reference;
 		 reference = reference->ref_next)
@@ -1713,7 +1625,7 @@ static void gen_emodify( const act* action, int column)
 		const ref* source = reference->ref_source;
 		if (!source)
 			continue;
-		field = reference->ref_field;
+		gpre_fld* field = reference->ref_field;
 		align(column);
 		fprintf(gpreGlob.out_file, "%s := %s;",
 				   gen_name(s1, reference, true), gen_name(s2, source, true));
@@ -1732,9 +1644,7 @@ static void gen_emodify( const act* action, int column)
 
 static void gen_estore( const act* action, int column)
 {
-	const gpre_req* request;
-
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 //  if we did a store ... returning_values aka store2
 //  just wrap up pending error
 	if (request->req_type == REQ_store2) {
@@ -1742,6 +1652,7 @@ static void gen_estore( const act* action, int column)
 			endp(column);
 		return;
 	}
+
 	if (action->act_error)
 		column += INDENT;
 	gen_start(action, request->req_primary, column);
@@ -1757,9 +1668,7 @@ static void gen_estore( const act* action, int column)
 
 static void gen_endfor( const act* action, int column)
 {
-	const gpre_req* request;
-
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 	column += INDENT;
 
 	if (request->req_sync)
@@ -1780,12 +1689,10 @@ static void gen_endfor( const act* action, int column)
 
 static void gen_erase( const act* action, int column)
 {
-	upd* erase;
-
 	if (action->act_error || (action->act_flags & ACT_sql))
 		begin(column);
 
-	erase = (upd*) action->act_object;
+	const upd* erase = (upd*) action->act_object;
 	gen_send(action, erase->upd_port, column);
 
 	if (action->act_flags & ACT_sql)
@@ -1801,24 +1708,16 @@ static void gen_erase( const act* action, int column)
 
 static SSHORT gen_event_block( const act* action)
 {
-	gpre_nod* init;
-	gpre_nod* list;
-	int ident;
+	gpre_nod* init = (gpre_nod*) action->act_object;
 
-	init = (gpre_nod*) action->act_object;
-
-	ident = CMP_next_ident();
+	int ident = CMP_next_ident();
 	init->nod_arg[2] = (gpre_nod*) ident;
 
-	printa(INDENT, "gds__%da\t\t: ^char;\t\t(* event parameter block *)",
-		   ident);
-	printa(INDENT, "gds__%db\t\t: ^char;\t\t(* result parameter block *)",
-		   ident);
-	printa(INDENT,
-		   "gds__%dl\t\t: %s;\t\t(* length of event parameter block *)",
-		   ident, SHORT_DCL);
+	printa(INDENT, "gds__%da\t\t: ^char;\t\t(* event parameter block *)", ident);
+	printa(INDENT, "gds__%db\t\t: ^char;\t\t(* result parameter block *)", ident);
+	printa(INDENT, "gds__%dl\t\t: %s;\t\t(* length of event parameter block *)", ident, SHORT_DCL);
 
-	list = init->nod_arg[1];
+	gpre_nod* list = init->nod_arg[1];
 	return list->nod_count;
 }
 
@@ -1830,14 +1729,6 @@ static SSHORT gen_event_block( const act* action)
 
 static void gen_event_init( const act* action, int column)
 {
-	gpre_nod* init;
-	gpre_nod* event_list;
-	gpre_nod** ptr;
-	gpre_nod** end;
-	gpre_nod* node;
-	const ref* reference;
-	PAT args;
-	SSHORT count;
 	const TEXT* pattern1 =
 		"gds__%N1l := GDS__EVENT_BLOCK_A (%RFgds__%N1a, %RFgds__%N1b, %N2, %RFgds__event_names%RE);";
 	const TEXT* pattern2 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
@@ -1847,9 +1738,10 @@ static void gen_event_init( const act* action, int column)
 		begin(column);
 	begin(column);
 
-	init = (gpre_nod*) action->act_object;
-	event_list = init->nod_arg[1];
+	gpre_nod* init = (gpre_nod*) action->act_object;
+	gpre_nod* event_list = init->nod_arg[1];
 
+	PAT args;
 	args.pat_database = (DBB) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
@@ -1860,19 +1752,20 @@ static void gen_event_init( const act* action, int column)
 //  generate call to dynamically generate event blocks
 
 	TEXT variable[MAX_REF_SIZE];
-	for (ptr = event_list->nod_arg, count = 0, end =
-		 ptr + event_list->nod_count; ptr < end; ptr++)
+	gpre_nod** ptr;
+	gpre_nod** end;
+	SSHORT count;
+	for (ptr = event_list->nod_arg, count = 0, end = ptr + event_list->nod_count; ptr < end; ptr++)
 	{
 		count++;
-		node = *ptr;
+		const gpre_nod* node = *ptr;
 		if (node->nod_type == nod_field) {
-			reference = (const ref*) node->nod_arg[0];
+			const ref* reference = (const ref*) node->nod_arg[0];
 			gen_name(variable, reference, true);
 			printa(column, "gds__event_names2[%d] := %s;", count, variable);
 		}
 		else
-			printa(column, "gds__event_names2[%d] := %s;", count,
-				   node->nod_arg[0]);
+			printa(column, "gds__event_names2[%d] := %s;", count, node->nod_arg[0]);
 
 		printa(column, "gds__event_names[%d] := %s (gds__event_names2[%d]);",
 			   count, ISC_BADDRESS, count);
@@ -1901,15 +1794,6 @@ static void gen_event_init( const act* action, int column)
 
 static void gen_event_wait( const act* action, int column)
 {
-	PAT args;
-	gpre_nod* event_init;
-	gpre_sym* event_name;
-	gpre_sym* stack_name;
-	DBB database;
-	gpre_lls* stack_ptr;
-	const act* event_action;
-	int ident;
-	TEXT s[64];
 	const TEXT* pattern1 = "%S1 (%V1, %RF%DH, gds__%N1l, gds__%N1a, gds__%N1b);";
 	const TEXT* pattern2 = "%S2 (gds__events, gds__%N1l, gds__%N1a, gds__%N1b);";
 
@@ -1917,16 +1801,17 @@ static void gen_event_wait( const act* action, int column)
 		begin(column);
 	begin(column);
 
-	event_name = (gpre_sym*) action->act_object;
+	gpre_sym* event_name = (gpre_sym*) action->act_object;
 
 //  go through the stack of gpreGlob.events, checking to see if the
 //  event has been initialized and getting the event identifier
 
-	ident = -1;
-	for (stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
-		event_action = (const act*) stack_ptr->lls_object;
-		event_init = (gpre_nod*) event_action->act_object;
-		stack_name = (gpre_sym*) event_init->nod_arg[0];
+	DBB database = NULL;
+	int ident = -1;
+	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
+		const act* event_action = (const act*) stack_ptr->lls_object;
+		gpre_nod* event_init = (gpre_nod*) event_action->act_object;
+		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
 			database = (DBB) event_init->nod_arg[3];
@@ -1934,11 +1819,13 @@ static void gen_event_wait( const act* action, int column)
 	}
 
 	if (ident < 0) {
+		TEXT s[64];
 		sprintf(s, "event handle \"%s\" not found", event_name->sym_string);
 		CPR_error(s);
 		return;
 	}
 
+	PAT args;
 	args.pat_database = database;
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = ident;
@@ -1965,28 +1852,20 @@ static void gen_event_wait( const act* action, int column)
 
 static void gen_fetch( const act* action, int column)
 {
-	const gpre_req*		request;
-	gpre_nod*		var_list;
-	int		i;
-
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 
 #ifdef SCROLLABLE_CURSORS
-	gpre_port*	port;
-	ref*		reference;
-	gpre_value*			value;
-	const TEXT*	direction;
-	const TEXT*	offset;
-
-	if (port = request->req_aport) {
+	gpre_port* port = request->req_aport
+	if (port)
+	{
 		/* set up the reference to point to the correct value
 		   in the linked list of values, and prepare for the
 		   next FETCH statement if applicable */
+		ref* reference;
 
-		for (reference = port->por_references; reference;
-			 reference = reference->ref_next)
+		for (reference = port->por_references; reference; reference = reference->ref_next)
 		{
-			value = reference->ref_values;
+			gpre_value* value = reference->ref_values;
 			reference->ref_value = value->val_value;
 			reference->ref_values = value->val_next;
 		}
@@ -1994,9 +1873,9 @@ static void gen_fetch( const act* action, int column)
 		// find the direction and offset parameters
 
 		reference = port->por_references;
-		offset = reference->ref_value;
+		const TEXT* offset = reference->ref_value;
 		reference = reference->ref_next;
-		direction = reference->ref_value;
+		const TEXT* direction = reference->ref_value;
 
 		/* the direction in which the engine will scroll is sticky, so check to see
 		   the last direction passed to the engine; if the direction is the same and
@@ -2013,8 +1892,7 @@ static void gen_fetch( const act* action, int column)
 
 		asgn_from(action, port->por_references, column);
 		gen_send(action, port, column);
-		printa(column, "isc_%ddirection := %s;", request->req_ident,
-			   direction);
+		printa(column, "isc_%ddirection := %s;", request->req_ident, direction);
 		column -= INDENT;
 		endp(column);
 
@@ -2039,8 +1917,8 @@ static void gen_fetch( const act* action, int column)
 	column += INDENT;
 	begin(column);
 
-	if (var_list = (gpre_nod*) action->act_object)
-		for (i = 0; i < var_list->nod_count; i++) {
+	if (gpre_nod* var_list = (gpre_nod*) action->act_object)
+		for (int i = 0; i < var_list->nod_count; i++) {
 			align(column);
 			asgn_to(action, reinterpret_cast<ref*>(var_list->nod_arg[i]), column);
 		}
@@ -2069,13 +1947,9 @@ static void gen_fetch( const act* action, int column)
 
 static void gen_finish( const act* action, int column)
 {
-	DBB db;
-	rdy* ready;
+	DBB db = NULL;
 
-	db = NULL;
-
-	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) &&
-					(action->act_type != ACT_disconnect)))
+	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) && (action->act_type != ACT_disconnect)))
 	{
 		printa(column, "if gds__trans <> nil");
 		printa(column + 4, "then GDS__%s_TRANSACTION (%s, gds__trans);",
@@ -2086,7 +1960,7 @@ static void gen_finish( const act* action, int column)
 //   Got rid of tests of gds__trans <> nil which were causing the skipping
 //   of trying to detach the databases.  Related to bug#935.  mao 6/22/89
 
-	for (ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
+	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
 		printa(column, "GDS__DETACH_DATABASE (%s, %s);",
 			   status_vector(action), db->dbb_name->sym_string);
@@ -2287,9 +2161,7 @@ static void gen_loop( const act* action, int column)
 //		port and parameter idents.
 //
 
-static TEXT *gen_name(TEXT* const string,
-					  const ref* reference,
-					  bool as_blob)
+static TEXT *gen_name(TEXT* const string, const ref* reference, bool as_blob)
 {
 
 	if (reference->ref_field->fld_array_info && !as_blob)
@@ -2473,8 +2345,7 @@ static void gen_ready( const act* action, int column)
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename)
 			filename = db->dbb_runtime;
-		if ((action->act_error || (action->act_flags & ACT_sql)) &&
-			ready != (rdy*) action->act_object)
+		if ((action->act_error || (action->act_flags & ACT_sql)) && ready != (rdy*) action->act_object)
 		{
 			printa(column, "if (gds__status[2] = 0) then begin");
 		}
@@ -2551,17 +2422,15 @@ static void gen_request( const gpre_req* request, int column)
 	const TEXT* sw_volatile = FB_DP_VOLATILE;
 	printa(column, " ");
 
-	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open |
-		  REQ_sql_blob_create)) && request->req_type != REQ_slice
-		&& request->req_type != REQ_procedure)
+	if (!(request->req_flags & (REQ_exp_hand | REQ_sql_blob_open | REQ_sql_blob_create)) &&
+		request->req_type != REQ_slice && request->req_type != REQ_procedure)
 	{
 		printa(column, "%s\t: %s gds__handle := nil;\t\t(* request handle *)",
 			   request->req_handle, sw_volatile);
 	}
 
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
-		printa(column,
-			   "gds__%ds\t: %s gds__handle := nil;\t\t(* SQL statement handle *)",
+		printa(column, "gds__%ds\t: %s gds__handle := nil;\t\t(* SQL statement handle *)",
 			   request->req_ident, sw_volatile);
 
 //  generate actual BLR string
@@ -2569,24 +2438,23 @@ static void gen_request( const gpre_req* request, int column)
 	if (request->req_length) {
 		printa(column, " ");
 		if (request->req_flags & REQ_sql_cursor)
-			printa(column,
-				   "gds__%ds\t: %s gds__handle := nil;\t\t(* SQL statement handle *)",
+			printa(column, "gds__%ds\t: %s gds__handle := nil;\t\t(* SQL statement handle *)",
 				   request->req_ident, sw_volatile);
 #ifdef SCROLLABLE_CURSORS
 		if (request->req_flags & REQ_scroll)
-			printa(column,
-				   "gds__%ddirection\t: %s := 0;\t\t(* last direction sent to engine *)",
+			printa(column, "gds__%ddirection\t: %s := 0;\t\t(* last direction sent to engine *)",
 				   request->req_ident, SHORT_DCL);
 #endif
 		printa(column, "gds__%dl\t: %s := %d;\t\t(* request length *)",
 			   request->req_ident, SHORT_DCL, request->req_length);
 		printa(column, "gds__%d\t: %s [1..%d] of char := %s",
-			   request->req_ident, PACKED_ARRAY, request->req_length,
-			   OPEN_BRACKET);
+			   request->req_ident, PACKED_ARRAY, request->req_length, OPEN_BRACKET);
 		const TEXT* string_type = "BLR";
-		if (gpreGlob.sw_raw) {
+		if (gpreGlob.sw_raw)
+		{
 			gen_raw(request->req_blr, request->req_length, column);
-			switch (request->req_type) {
+			switch (request->req_type)
+			{
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
@@ -2626,8 +2494,7 @@ static void gen_request( const gpre_req* request, int column)
 
 			default:
 				string_type = "BLR";
-				if (gds__print_blr(request->req_blr,
-								   gen_blr, 0, 1))
+				if (gds__print_blr(request->req_blr, gen_blr, 0, 1))
 					CPR_error("internal error during BLR generation");
 				break;
 			}
@@ -2638,16 +2505,14 @@ static void gen_request( const gpre_req* request, int column)
 //   Print out slice description language if there are arrays associated with request
 
 	for (const gpre_port* port = request->req_ports; port; port = port->por_next)
-		for (const ref* reference = port->por_references; reference;
-			 reference = reference->ref_next)
+		for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 		{
 			if (reference->ref_sdl) {
 				printa(column, "gds__%d\t: %s [1..%d] of char := %s",
 					   reference->ref_sdl_ident, PACKED_ARRAY,
 					   reference->ref_sdl_length, OPEN_BRACKET);
 				if (gpreGlob.sw_raw)
-					gen_raw(reference->ref_sdl, reference->ref_sdl_length,
-							column);
+					gen_raw(reference->ref_sdl, reference->ref_sdl_length, column);
 				else if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 1))
 					CPR_error("internal error during SDL generation");
 				printa(column, "%s; \t(* end of SDL string for gds__%d *)\n",
@@ -2660,8 +2525,7 @@ static void gen_request( const gpre_req* request, int column)
 	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 		if (blob->blb_bpb_length) {
 			printa(column, "gds__%d\t: %s [1..%d] of char := %s",
-				   blob->blb_bpb_ident,
-				   PACKED_ARRAY, blob->blb_bpb_length, OPEN_BRACKET);
+				   blob->blb_bpb_ident, PACKED_ARRAY, blob->blb_bpb_length, OPEN_BRACKET);
 			gen_raw(blob->blb_bpb, blob->blb_bpb_length, column);
 			printa(column, "%s;\n", CLOSE_BRACKET);
 		}
@@ -2669,8 +2533,7 @@ static void gen_request( const gpre_req* request, int column)
 
 	if (request->req_type == REQ_slice) {
 		printa(column, "gds__%dv\t: array [1..%d] of %s;",
-			   request->req_ident, MAX(request->req_slice->slc_parameters, 1),
-			   LONG_DCL);
+			   request->req_ident, MAX(request->req_slice->slc_parameters, 1), LONG_DCL);
 		printa(column, "gds__%ds\t: %s;", request->req_ident, LONG_DCL);
 	}
 }
@@ -2684,16 +2547,12 @@ static void gen_request( const gpre_req* request, int column)
 
 static void gen_return_value( const act* action, int column)
 {
-	upd* update;
-	const ref* reference;
-	const gpre_req* request;
-
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 	if (action->act_pair->act_error)
 		column += INDENT;
 	gen_start(action, request->req_primary, column);
-	update = (upd*) action->act_object;
-	reference = update->upd_references;
+	const upd* update = (upd*) action->act_object;
+	const ref* reference = update->upd_references;
 	gen_receive(action, column, reference->ref_port);
 }
 
@@ -2706,13 +2565,13 @@ static void gen_return_value( const act* action, int column)
 
 static void gen_routine( const act* action, int column)
 {
-	gpre_port* port;
-
 	column += INDENT;
 
 	for (const gpre_req* request = (const gpre_req*) action->act_object; request;
 		 request = request->req_routine)
 	{
+		gpre_port* port;
+
 		for (port = request->req_ports; port; port = port->por_next) {
 			printa(column - INDENT, "type");
 			make_port(port, column);
@@ -2726,17 +2585,13 @@ static void gen_routine( const act* action, int column)
 		}
 
 		for (port = request->req_ports; port; port = port->por_next)
-			printa(column, "gds__%d\t: gds__%dt;\t\t\t(* message *)",
-				   port->por_ident, port->por_ident);
+			printa(column, "gds__%d\t: gds__%dt;\t\t\t(* message *)", port->por_ident, port->por_ident);
 
 		for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next) {
-			printa(column, "gds__%d\t: gds__handle;\t\t\t(* blob handle *)",
-				   blob->blb_ident);
-			printa(column,
-				   "gds__%d\t: %s [1 .. %d] of char;\t(* blob segment *)",
+			printa(column, "gds__%d\t: gds__handle;\t\t\t(* blob handle *)", blob->blb_ident);
+			printa(column, "gds__%d\t: %s [1 .. %d] of char;\t(* blob segment *)",
 				   blob->blb_buff_ident, PACKED_ARRAY, blob->blb_seg_length);
-			printa(column, "gds__%d\t: %s;\t\t\t(* segment length *)",
-				   blob->blb_len_ident, SHORT_DCL);
+			printa(column, "gds__%d\t: %s;\t\t\t(* segment length *)", blob->blb_len_ident, SHORT_DCL);
 		}
 	}
 	column -= INDENT;
@@ -2759,8 +2614,7 @@ static void gen_s_end( const act* action, int column)
 		column = gen_cursor_close(action, request, column);
 
 	printa(column, "GDS__UNWIND_REQUEST (%s, %s, %s);",
-		   status_vector(action),
-		   request->req_handle, request->req_request_level);
+		   status_vector(action), request->req_handle, request->req_request_level);
 
 	if (action->act_type == ACT_close) {
 		endp(column);
@@ -2903,8 +2757,7 @@ static void gen_send( const act* action, const gpre_port* port, int column)
 
 	fprintf(gpreGlob.out_file, "GDS__SEND (%s, %s, %d, %d, gds__%d, %s);",
 			   status_vector(action),
-			   request->req_handle,
-			   port->por_msg_number,
+			   request->req_handle, port->por_msg_number,
 			   port->por_length, port->por_ident, request->req_request_level);
 
 	set_sqlcode(action, column);
@@ -2918,8 +2771,6 @@ static void gen_send( const act* action, const gpre_port* port, int column)
 
 static void gen_slice( const act* action, int column)
 {
-	PAT args;
-	slc::slc_repeat *tail, *end;
 	const TEXT* pattern1 =
 		"GDS__GET_SLICE (%V1, %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
 %I1, %N2, %I1v, %I1s, %RF%S5%RE, %RF%S6%RE);";
@@ -2936,14 +2787,13 @@ static void gen_slice( const act* action, int column)
 	printa(column, "gds__%ds := %d", request->req_ident,
 		   slice->slc_field->fld_array->fld_length);
 
-	for (tail = slice->slc_rpt, end = tail + slice->slc_dimensions;
-		 tail < end; ++tail)
+	slc::slc_repeat *tail, *end;
+	for (tail = slice->slc_rpt, end = tail + slice->slc_dimensions; tail < end; ++tail)
 		if (tail->slc_upper != tail->slc_lower) {
 			const ref* lower = (const ref*) tail->slc_lower->nod_arg[0];
 			const ref* upper = (const ref*) tail->slc_upper->nod_arg[0];
 			if (lower->ref_value)
-				fprintf(gpreGlob.out_file, " * ( %s - %s + 1)", upper->ref_value,
-						   lower->ref_value);
+				fprintf(gpreGlob.out_file, " * ( %s - %s + 1)", upper->ref_value, lower->ref_value);
 			else
 				fprintf(gpreGlob.out_file, " * ( %s + 1)", upper->ref_value);
 		}
@@ -2952,15 +2802,13 @@ static void gen_slice( const act* action, int column)
 
 //  Make assignments to variable vector
 	const ref* reference;
-	for (reference = request->req_values; reference;
-		 reference =
-		 reference->ref_next)
+	for (reference = request->req_values; reference; reference = reference->ref_next)
 	{
 		printa(column, "gds__%dv [%d] := %s;",
-									 request->req_ident, reference->ref_id,
-									 reference->ref_value);
+				request->req_ident, reference->ref_id, reference->ref_value);
 	}
 
+	PAT args;
 	args.pat_reference = slice->slc_field_ref;
 	args.pat_request = parent_request;	// blob id request
 	args.pat_vector1 = status_vector(action);	// status vector
@@ -2992,26 +2840,21 @@ static void gen_start( const act* action, const gpre_port* port, int column)
 	align(column);
 
 	if (port) {
-		for (const ref* reference = port->por_references; reference;
-			 reference = reference->ref_next)
+		for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 		{
 			if (reference->ref_field->fld_array_info)
-					gen_get_or_put_slice(action, reference, false, column);
+				gen_get_or_put_slice(action, reference, false, column);
 		}
 
-		fprintf(gpreGlob.out_file,
-				   "GDS__START_AND_SEND (%s, %s, %s, %d, %d, gds__%d, %s);",
-				   vector, request->req_handle, request_trans(action,
-															  request),
+		fprintf(gpreGlob.out_file, "GDS__START_AND_SEND (%s, %s, %s, %d, %d, gds__%d, %s);",
+				   vector, request->req_handle, request_trans(action, request),
 				   port->por_msg_number, port->por_length, port->por_ident,
 				   request->req_request_level);
 	}
 
 	else
 		fprintf(gpreGlob.out_file, "GDS__START_REQUEST (%s, %s, %s, %s);",
-				   vector,
-				   request->req_handle,
-				   request_trans(action, request),
+				   vector, request->req_handle, request_trans(action, request),
 				   request->req_request_level);
 }
 
@@ -3024,12 +2867,7 @@ static void gen_start( const act* action, const gpre_port* port, int column)
 
 static void gen_store( const act* action, int column)
 {
-	const gpre_req* request;
-	const ref* reference;
-	gpre_fld* field;
-	gpre_port* port;
-
-	request = action->act_request;
+	const gpre_req* request = action->act_request;
 	gen_compile(action, column);
 	if (action->act_error || (action->act_flags & ACT_sql)) {
 		make_ok_test(action, request, column);
@@ -3041,14 +2879,12 @@ static void gen_store( const act* action, int column)
 //  Initialize any blob fields
 
 	TEXT name[MAX_REF_SIZE];
-	port = request->req_primary;
-	for (reference = port->por_references; reference;
-		 reference = reference->ref_next)
+	const gpre_port* port = request->req_primary;
+	for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
-		field = reference->ref_field;
+		const gpre_fld* field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
-			printa(column, "%s := gds__blob_null;\n",
-				   gen_name(name, reference, true));
+			printa(column, "%s := gds__blob_null;\n", gen_name(name, reference, true));
 	}
 }
 
@@ -3060,17 +2896,13 @@ static void gen_store( const act* action, int column)
 
 static void gen_t_start( const act* action, int column)
 {
-	DBB db;
-	gpre_tra* trans;
-	tpb* tpb_val;
-	int count;
-
 //
 //  for automatically generated transactions, and transactions that are
 //  explicitly started, but don't have any arguments so don't get a TPB,
 //  generate something plausible.
 //
 
+	gpre_tra* trans;
 	if (!action || !(trans = (gpre_tra*) action->act_object)) {
 		t_start_auto(action, 0, status_vector(action), column);
 		return;
@@ -3080,31 +2912,26 @@ static void gen_t_start( const act* action, int column)
 //  first generate any appropriate ready statements,
 //  On non-VMS machines, fill in the tpb vector (aka TEB).
 
-	count = 0;
-	for (tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
+	int count = 0;
+	for (const tpb* tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
 		count++;
-		db = tpb_val->tpb_database;
+		DBB db = tpb_val->tpb_database;
 		if (gpreGlob.sw_auto)
 		{
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
-				printa(column, "if (%s = nil) then",
-					   db->dbb_name->sym_string);
-				make_ready(db, filename, status_vector(action),
-						   column + INDENT, 0);
+				printa(column, "if (%s = nil) then", db->dbb_name->sym_string);
+				make_ready(db, filename, status_vector(action), column + INDENT, 0);
 			}
 		}
 
 		printa(column, "gds__teb[%d].tpb_len := %d;", count, tpb_val->tpb_length);
-		printa(column, "gds__teb[%d].tpb_ptr := ADDR(gds__tpb_%d);",
-			   count, tpb_val->tpb_ident);
-		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);",
-			   count, db->dbb_name->sym_string);
+		printa(column, "gds__teb[%d].tpb_ptr := ADDR(gds__tpb_%d);", count, tpb_val->tpb_ident);
+		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);", count, db->dbb_name->sym_string);
 	}
 
 	printa(column, "GDS__START_MULTIPLE (%s, %s, %d, gds__teb);",
-		   status_vector(action),
-		   trans->tra_handle ? trans->tra_handle : "gds__trans",
+		   status_vector(action), trans->tra_handle ? trans->tra_handle : "gds__trans",
 		   trans->tra_db_count);
 
 	set_sqlcode(action, column);
@@ -3116,9 +2943,9 @@ static void gen_t_start( const act* action, int column)
 //		Generate a TPB in the output file
 //
 
-static void gen_tpb( tpb* tpb_val, int column)
+static void gen_tpb( const tpb* tpb_val, int column)
 {
-	TEXT buffer[80], c;
+	TEXT buffer[80];
 
 	printa(column, "gds__tpb_%d\t: %s [1..%d] of char := %s",
 		   tpb_val->tpb_ident, PACKED_ARRAY, tpb_val->tpb_length, OPEN_BRACKET);
@@ -3128,7 +2955,7 @@ static void gen_tpb( tpb* tpb_val, int column)
 	TEXT* p = buffer;
 
 	while (--length) {
-		c = *text++;
+		const TEXT c = *text++;
 		if ((c >= 'A' && c <= 'Z') || c == '$' || c == '_')
 			sprintf(p, "'%c', ", c);
 		else
@@ -3144,7 +2971,7 @@ static void gen_tpb( tpb* tpb_val, int column)
 	}
 
 //  handle the last character
-	c = *text++;
+	TEXT c = *text++;
 
 	if ((c >= 'A' && c <= 'Z') || c == '$' || c == '_')
 		sprintf(p, "'%c',", c);
@@ -3195,8 +3022,8 @@ static void gen_trans( const act* action, int column)
 
 static void gen_update( const act* action, int column)
 {
-	upd* modify = (upd*) action->act_object;
-	gpre_port* port = modify->upd_port;
+	const upd* modify = (upd*) action->act_object;
+	const gpre_port* port = modify->upd_port;
 	asgn_from(action, port->por_references, column);
 	gen_send(action, port, column);
 }
@@ -3242,8 +3069,7 @@ static void gen_whenever( const swe* label, int column)
 			break;
 		}
 		align(column);
-		fprintf(gpreGlob.out_file, "if %s then goto %s;", condition,
-				   label->swe_label);
+		fprintf(gpreGlob.out_file, "if %s then goto %s;", condition, label->swe_label);
 		label = label->swe_next;
 	}
 }
@@ -3256,10 +3082,7 @@ static void gen_whenever( const swe* label, int column)
 
 static void make_array_declaration( const ref* reference)
 {
-	gpre_fld* field;
-	dim* dimension;
-
-	field = reference->ref_field;
+	const gpre_fld* field = reference->ref_field;
 	const TEXT* name = field->fld_symbol->sym_string;
 
 //  Don't generate multiple declarations for the array.  V3 Bug 569.
@@ -3270,15 +3093,13 @@ static void make_array_declaration( const ref* reference)
 	field->fld_array_info->ary_declared = true;
 
 	if (field->fld_array_info->ary_dtype <= dtype_varying)
-		fprintf(gpreGlob.out_file, "gds__%d : %s [",
-				   field->fld_array_info->ary_ident, PACKED_ARRAY);
+		fprintf(gpreGlob.out_file, "gds__%d : %s [", field->fld_array_info->ary_ident, PACKED_ARRAY);
 	else
-		fprintf(gpreGlob.out_file, "gds__%d : array [",
-				   field->fld_array_info->ary_ident);
+		fprintf(gpreGlob.out_file, "gds__%d : array [", field->fld_array_info->ary_ident);
 
 //   Print out the dimension part of the declaration
-	for (dimension = field->fld_array_info->ary_dimension; dimension;
-		 dimension = dimension->dim_next)
+	for (const dim* dimension = field->fld_array_info->ary_dimension; dimension;
+		dimension = dimension->dim_next)
 	{
 		fprintf(gpreGlob.out_file, "%"SLONGFORMAT"..%"SLONGFORMAT, dimension->dim_lower,
 				   dimension->dim_upper);
@@ -3291,7 +3112,8 @@ static void make_array_declaration( const ref* reference)
 
 	fprintf(gpreGlob.out_file, "] of ");
 
-	switch (field->fld_array_info->ary_dtype) {
+	switch (field->fld_array_info->ary_dtype)
+	{
 	case dtype_short:
 		fprintf(gpreGlob.out_file, SHORT_DCL);
 		break;
@@ -3322,8 +3144,7 @@ static void make_array_declaration( const ref* reference)
 	default:
 		{
 			TEXT s[ERROR_LENGTH];
-			fb_utils::snprintf(s, sizeof(s),
-					"datatype %d unknown for field %s",
+			fb_utils::snprintf(s, sizeof(s), "datatype %d unknown for field %s",
 					field->fld_array_info->ary_dtype, name);
 			CPR_error(s);
 			return;
@@ -3378,8 +3199,7 @@ static void make_port( const gpre_port* port, int column)
 
 	printa(column, "gds__%dt = record", port->por_ident);
 
-	for (const ref* reference = port->por_references; reference;
-		 reference = reference->ref_next)
+	for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 	{
 		if (flag)
 			fprintf(gpreGlob.out_file, ";");
@@ -3395,45 +3215,39 @@ static void make_port( const gpre_port* port, int column)
 		if (reference->ref_value && (reference->ref_flags & REF_array_elem))
 			field = field->fld_array;
 
-		switch (field->fld_dtype) {
+		switch (field->fld_dtype)
+		{
 		case dtype_real:
-			fprintf(gpreGlob.out_file, "gds__%d\t: real\t(* %s *)",
-					   reference->ref_ident, name);
+			fprintf(gpreGlob.out_file, "gds__%d\t: real\t(* %s *)", reference->ref_ident, name);
 			break;
 
 		case dtype_double:
-			fprintf(gpreGlob.out_file, "gds__%d\t: double\t(* %s *)",
-					   reference->ref_ident, name);
+			fprintf(gpreGlob.out_file, "gds__%d\t: double\t(* %s *)", reference->ref_ident, name);
 			break;
 
 		case dtype_short:
-			fprintf(gpreGlob.out_file, "gds__%d\t: %s\t(* %s *)",
-					   reference->ref_ident, SHORT_DCL, name);
+			fprintf(gpreGlob.out_file, "gds__%d\t: %s\t(* %s *)", reference->ref_ident, SHORT_DCL, name);
 			break;
 
 		case dtype_long:
-			fprintf(gpreGlob.out_file, "gds__%d\t: %s\t(* %s *)",
-					   reference->ref_ident, LONG_DCL, name);
+			fprintf(gpreGlob.out_file, "gds__%d\t: %s\t(* %s *)", reference->ref_ident, LONG_DCL, name);
 			break;
 
 		case dtype_date:
 		case dtype_quad:
 		case dtype_blob:
-			fprintf(gpreGlob.out_file, "gds__%d\t: gds__quad\t(* %s *)",
-					   reference->ref_ident, name);
+			fprintf(gpreGlob.out_file, "gds__%d\t: gds__quad\t(* %s *)", reference->ref_ident, name);
 			break;
 
 		case dtype_text:
 			fprintf(gpreGlob.out_file, "gds__%d\t: %s [1..%d] of char\t(* %s *)",
-					   reference->ref_ident, PACKED_ARRAY, field->fld_length,
-					   name);
+					   reference->ref_ident, PACKED_ARRAY, field->fld_length, name);
 			break;
 
 		default:
 			{
 				TEXT s[ERROR_LENGTH];
-				fb_utils::snprintf(s, sizeof(s),
-						"datatype %d unknown for field %s, msg %d",
+				fb_utils::snprintf(s, sizeof(s), "datatype %d unknown for field %s, msg %d",
 						field->fld_dtype, name, port->por_msg_number);
 				CPR_error(s);
 				return;
@@ -3451,10 +3265,9 @@ static void make_port( const gpre_port* port, int column)
 //		ready;
 //
 
-static void make_ready(
-				  const dbb* db,
-				  const TEXT* filename, const TEXT* vector, USHORT column,
-				  const gpre_req* request)
+static void make_ready(const dbb* db,
+				  	   const TEXT* filename, const TEXT* vector, USHORT column,
+				  	   const gpre_req* request)
 {
 	TEXT s1[32], s2[32];
 
@@ -3466,17 +3279,15 @@ static void make_ready(
 	align(column);
 	if (filename)
 	{
-		fprintf(gpreGlob.out_file,
-				   "GDS__ATTACH_DATABASE (%s, %s (%s), %s, %s, %s, %s);",
+		fprintf(gpreGlob.out_file, "GDS__ATTACH_DATABASE (%s, %s (%s), %s, %s, %s, %s);",
 				   vector, SIZEOF, filename, filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));
 	}
 	else
 	{
-		fprintf(gpreGlob.out_file,
-				   "GDS__ATTACH_DATABASE (%s, %d, '%s', %s, %s, %s);", vector,
-				   strlen(db->dbb_filename), db->dbb_filename,
+		fprintf(gpreGlob.out_file, "GDS__ATTACH_DATABASE (%s, %d, '%s', %s, %s, %s);",
+				   vector, strlen(db->dbb_filename), db->dbb_filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));
 	}
@@ -3544,9 +3355,7 @@ static const TEXT* status_vector( const act* action)
 static void t_start_auto( const act* action, const gpre_req* request,
 						 const TEXT* vector, int column)
 {
-	DBB db;
-	int count, and_count;
-	TEXT buffer[256], temp[40];
+	TEXT buffer[256];
 
 	buffer[0] = 0;
 
@@ -3558,14 +3367,17 @@ static void t_start_auto( const act* action, const gpre_req* request,
 
 	begin(column);
 
-	for (db = gpreGlob.isc_databases, count = and_count = 0; db; db = db->dbb_next) {
+	int count, and_count;
+	DBB db;
+	for (db = gpreGlob.isc_databases, count = and_count = 0; db; db = db->dbb_next)
+	{
 		if (gpreGlob.sw_auto)
 		{
 			const TEXT* filename = db->dbb_runtime;
-			if (filename || !(db->dbb_flags & DBB_sqlca)) {
+			if (filename || !(db->dbb_flags & DBB_sqlca))
+			{
 				align(column);
-				fprintf(gpreGlob.out_file, "if (%s = nil",
-						   db->dbb_name->sym_string);
+				fprintf(gpreGlob.out_file, "if (%s = nil", db->dbb_name->sym_string);
 				if (stat && buffer[0])
 					fprintf(gpreGlob.out_file, ") and (%s[2] = 0", vector);
 				fprintf(gpreGlob.out_file, ") then");
@@ -3576,6 +3388,7 @@ static void t_start_auto( const act* action, const gpre_req* request,
 					else
 						strcat(buffer, ") and\n\t(");
 				and_count++;
+				TEXT temp[40];
 				sprintf(temp, "%s <> nil", db->dbb_name->sym_string);
 				strcat(buffer, temp);
 				printa(column, "if (%s) then", buffer);
@@ -3586,8 +3399,7 @@ static void t_start_auto( const act* action, const gpre_req* request,
 		count++;
 		printa(column, "gds__teb[%d].tpb_len:= 0;", count);
 		printa(column, "gds__teb[%d].tpb_ptr := ADDR(gds__null);", count);
-		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);", count,
-			   db->dbb_name->sym_string);
+		printa(column, "gds__teb[%d].dbb_ptr := ADDR(%s);", count, db->dbb_name->sym_string);
 	}
 
 	printa(column, "GDS__START_MULTIPLE (%s, %s, %d, gds__teb);",

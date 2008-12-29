@@ -159,8 +159,10 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 								   values printed out are signed.  */
 	SLONG long_value;
 	TEXT c;
-	while (c = *pattern++) {
-		if (c != '%') {
+	while (c = *pattern++)
+	{
+		if (c != '%')
+		{
 			if (sw_gen) {
 				*p++ = c;
 				if ((c == '\n') && (*pattern))
@@ -175,13 +177,14 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		bool handle_flag = false, long_flag = false;
 		const ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
-			if (oper_iter->ops_string[0] == pattern[0] &&
-				oper_iter->ops_string[1] == pattern[1])
-		{
+			if (oper_iter->ops_string[0] == pattern[0] && oper_iter->ops_string[1] == pattern[1])
+			{
 				break;
-		}
+			}
 		pattern += 2;
-		switch (oper_iter->ops_type) {
+
+		switch (oper_iter->ops_type)
+		{
 		case IF:
 			sw_gen = args->pat_condition;
 			continue;
@@ -356,14 +359,16 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		default:
-			sprintf(buffer, "Unknown substitution \"%c%c\"", pattern[-2],
-					pattern[-1]);
+			sprintf(buffer, "Unknown substitution \"%c%c\"", pattern[-2], pattern[-1]);
 			CPR_error(buffer);
 			continue;
 		}
+
 		if (!sw_gen)
 			continue;
-		if (string) {
+
+		if (string)
+		{
 #ifdef GPRE_ADA
 			if (handle_flag && (gpreGlob.sw_language == lang_ada))
 			{
@@ -375,6 +380,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 				*p++ = *string++;
 			continue;
 		}
+
 		if (sw_ident)
 		{
 			if (long_flag)
@@ -382,7 +388,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			else
 				sprintf(p, gpreGlob.ident_pattern, value);
 		}
-		else if (reference) {
+		else if (reference)
+		{
 			if (!reference->ref_port)
 				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);
 			else {
@@ -414,7 +421,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	*p = 0;
 
 #if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
-	switch (gpreGlob.sw_language) {
+	switch (gpreGlob.sw_language)
+	{
 #ifdef GPRE_ADA
 		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer
 		   handles this problem and ensures that GPRE output is <=120 characters.

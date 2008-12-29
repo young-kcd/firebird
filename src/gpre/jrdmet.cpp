@@ -50,7 +50,8 @@ void JRDMET_init( DBB db)
 {
 	const int* relfld = relfields;
 
-	while (relfld[RFLD_R_NAME]) {
+	while (relfld[RFLD_R_NAME])
+	{
 		gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
 		relation->rel_database = db;
 		relation->rel_next = db->dbb_relations;

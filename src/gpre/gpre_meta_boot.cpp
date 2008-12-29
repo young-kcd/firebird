@@ -45,7 +45,8 @@
 //const int MAX_USER_LENGTH		= 33;
 //const int MAX_PASSWORD_LENGTH	= 33;
 
-static const UCHAR blr_bpb[] = {
+static const UCHAR blr_bpb[] =
+{
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, isc_blob_blr,
 	isc_bpb_target_type, 1, isc_blob_blr
@@ -89,8 +90,7 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 
 	gpre_fld* field = NULL;
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
-		if (symbol->sym_type == SYM_field &&
-			(field = (gpre_fld*) symbol->sym_object) &&
+		if (symbol->sym_type == SYM_field && (field = (gpre_fld*) symbol->sym_object) &&
 			field->fld_procedure == procedure)
 		{
 			return field;
@@ -131,9 +131,7 @@ bool MET_database(DBB db, bool print_version)
  *		Initialize the size of the field.
  */
 
-bool MET_domain_lookup(gpre_req* request,
-					   gpre_fld* field,
-					   const char* string)
+bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -175,10 +173,7 @@ bool MET_domain_lookup(gpre_req* request,
  *		Gets the default value for a domain of an existing table
  */
 
-bool MET_get_domain_default(DBB db,
-							const TEXT* domain_name,
-							TEXT* buffer,
-							USHORT buff_length)
+bool MET_get_domain_default(DBB db, const TEXT* domain_name, TEXT* buffer, USHORT buff_length)
 {
 	fb_assert(0);
 	return false;
@@ -276,19 +271,16 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 gpre_nod* MET_fields(gpre_ctx* context)
 {
 	gpre_fld* field;
-	gpre_nod* node;
-	gpre_nod* field_node;
-	ref* reference;
 
 	gpre_prc* procedure = context->ctx_procedure;
 	if (procedure) {
-		node = MSC_node(nod_list, procedure->prc_out_count);
+		gpre_nod* node = MSC_node(nod_list, procedure->prc_out_count);
 		//int count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
-			reference = (ref*) MSC_alloc(REF_LEN);
+			ref* reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
+			gpre_nod* field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			//count++;
 		}
@@ -301,13 +293,13 @@ gpre_nod* MET_fields(gpre_ctx* context)
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			count++;
 		}
-		node = MSC_node(nod_list, count);
+		gpre_nod* node = MSC_node(nod_list, count);
 		//count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
-			reference = (ref*) MSC_alloc(REF_LEN);
+			ref* reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
-			field_node = MSC_unary(nod_field, (gpre_nod*) reference);
+			gpre_nod* field_node = MSC_unary(nod_field, (gpre_nod*) reference);
 			node->nod_arg[field->fld_position] = field_node;
 			//count++;
 		}
@@ -342,8 +334,7 @@ const SCHAR* MET_generator(const TEXT* string, DBB db)
 	strcpy(name, string);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_generator) &&
-			(db == (DBB) (symbol->sym_object)))
+		if ((symbol->sym_type == SYM_generator) && (db == (DBB) (symbol->sym_object)))
 		{
 			return symbol->sym_string;
 		}
@@ -459,11 +450,8 @@ gpre_prc* MET_get_procedure(DBB db, const TEXT* string, const TEXT* owner_name)
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_procedure &&
-			(procedure = (gpre_prc*) symbol->sym_object) &&
-			procedure->prc_database == db &&
-			(!owner[0] ||
-			 (procedure->prc_owner
-			  && !strcmp(owner, procedure->prc_owner->sym_string))))
+			(procedure = (gpre_prc*) symbol->sym_object) && procedure->prc_database == db &&
+			(!owner[0] || (procedure->prc_owner && !strcmp(owner, procedure->prc_owner->sym_string))))
 		{
 			break;
 		}
@@ -495,12 +483,8 @@ gpre_rel* MET_get_relation(DBB db, const TEXT* string, const TEXT* owner_name)
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_relation &&
-			(relation = (gpre_rel*) symbol->sym_object) &&
-			relation->rel_database == db &&
-			(!owner[0] ||
-			 (relation->rel_owner
-			  && !strcmp(owner,
-						 relation->rel_owner->sym_string))))
+			(relation = (gpre_rel*) symbol->sym_object) && relation->rel_database == db &&
+			(!owner[0] || (relation->rel_owner && !strcmp(owner, relation->rel_owner->sym_string))))
 		{
 			return relation;
 		}
@@ -586,8 +570,7 @@ IND MET_index(DBB db, const TEXT* string)
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_index &&
-			(index = (IND) symbol->sym_object) &&
-			index->ind_relation->rel_database == db)
+			(index = (IND) symbol->sym_object) && index->ind_relation->rel_database == db)
 		{
 			return index;
 		}
@@ -626,7 +609,7 @@ gpre_fld* MET_make_field(const SCHAR* name,
 	gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
-	gpre_sym* symbol = MSC_symbol(SYM_field, name, strlen(name), (gpre_ctx*)field);
+	gpre_sym* symbol = MSC_symbol(SYM_field, name, strlen(name), (gpre_ctx*) field);
 	field->fld_symbol = symbol;
 
 	if (insert_flag)
@@ -644,7 +627,7 @@ gpre_fld* MET_make_field(const SCHAR* name,
 IND MET_make_index(const SCHAR* name)
 {
 	IND index = (IND) MSC_alloc(IND_LEN);
-	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*)index);
+	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*) index);
 
 	return index;
 }
@@ -658,8 +641,7 @@ IND MET_make_index(const SCHAR* name)
 gpre_rel* MET_make_relation(const SCHAR* name)
 {
 	gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
-	relation->rel_symbol =
-		MSC_symbol(SYM_relation, name, strlen(name), (gpre_ctx*)relation);
+	relation->rel_symbol = MSC_symbol(SYM_relation, name, strlen(name), (gpre_ctx*) relation);
 
 	return relation;
 }
@@ -670,15 +652,12 @@ gpre_rel* MET_make_relation(const SCHAR* name)
  *		Lookup a type name for a field.
  */
 
-bool MET_type(gpre_fld* field,
-			  const TEXT* string,
-			  SSHORT* ptr)
+bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
 {
 	field_type* type;
 
 	for (gpre_sym* symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
-		if (symbol->sym_type == SYM_type &&
-			(type = (field_type*) symbol->sym_object) &&
+		if (symbol->sym_type == SYM_type && (type = (field_type*) symbol->sym_object) &&
 			(!type->typ_field || type->typ_field == field))
 		{
 			*ptr = type->typ_value;
@@ -698,8 +677,7 @@ bool MET_type(gpre_fld* field,
  *		   false otherwise
  */
 
-bool MET_trigger_exists(DBB db,
-						const TEXT* trigger_name)
+bool MET_trigger_exists(DBB db, const TEXT* trigger_name)
 {
 	//SCHAR name[NAME_SIZE];
 
@@ -719,11 +697,9 @@ static SLONG array_size( gpre_fld* field)
 {
 	ary* array_block = field->fld_array_info;
 	SLONG count = field->fld_array->fld_length;
-	for (dim* dimension = array_block->ary_dimension; dimension;
-		 dimension = dimension->dim_next)
+	for (dim* dimension = array_block->ary_dimension; dimension; dimension = dimension->dim_next)
 	{
-		count =
-			count * (dimension->dim_upper - dimension->dim_lower + 1);
+		count = count * (dimension->dim_upper - dimension->dim_lower + 1);
 	}
 
 	return count;
@@ -760,10 +736,7 @@ static void get_array( DBB db, const TEXT* field_name, gpre_fld* field)
  *		false if the name could not be resolved.
  */
 
-static bool get_intl_char_subtype(SSHORT* id,
-								 const UCHAR* name,
-								 USHORT length,
-								 DBB db)
+static bool get_intl_char_subtype(SSHORT* id, const UCHAR* name, USHORT length, DBB db)
 {
 	fb_assert(id != NULL);
 	fb_assert(name != NULL);
@@ -801,9 +774,7 @@ static bool get_intl_char_subtype(SSHORT* id,
  *		  character set.
  */
 
-static bool resolve_charset_and_collation(
-										 SSHORT* id,
-										 const UCHAR* charset, const UCHAR* collation)
+static bool resolve_charset_and_collation(SSHORT* id, const UCHAR* charset, const UCHAR* collation)
 {
 	fb_assert(id != NULL);
 
@@ -820,11 +791,10 @@ static bool resolve_charset_and_collation(
 
 static int upcase(const TEXT* from, TEXT* const to)
 {
-	TEXT c;
-
 	TEXT* p = to;
 	const TEXT* const end = to + NAME_SIZE;
 
+	TEXT c;
 	while (p < end && (c = *from++)) {
 		*p++ = UPPER(c);
 	}
@@ -839,9 +809,7 @@ static int upcase(const TEXT* from, TEXT* const to)
 ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
           FPTR_PRINT_CALLBACK callback, void* callback_argument, SSHORT language)
 {
-        return gds__print_blr((const UCHAR*) blr,
-							  callback,
-                              callback_argument, language);
+        return gds__print_blr((const UCHAR*) blr, callback, callback_argument, language);
 }
 
 extern "C" {

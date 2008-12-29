@@ -112,7 +112,7 @@ static void pop_scope(gpre_req*, scope*);
 static void push_scope(gpre_req*, scope*);
 static gpre_fld* resolve(gpre_nod*, gpre_ctx*, gpre_ctx**, act**);
 static bool resolve_fields(gpre_nod*& fields, gpre_req* request, gpre_rse* selection);
-static gpre_ctx* resolve_asterisk(TOK, gpre_rse*);
+static gpre_ctx* resolve_asterisk(const tok*, gpre_rse*);
 static void set_ref(gpre_nod*, gpre_fld*);
 static char* upcase_string(const char*);
 static bool validate_references(const gpre_nod*, const gpre_nod*);
@@ -391,7 +391,7 @@ gpre_nod* SQE_field(gpre_req* request,
 	if (!request || !request->req_contexts || request->req_in_select_list) {
 		node = MSC_node(nod_deferred, 3);
 		node->nod_count = 0;
-		TOK f_token = (TOK) MSC_alloc(TOK_LEN);
+		tok* f_token = (tok*) MSC_alloc(TOK_LEN);
 		node->nod_arg[0] = (gpre_nod*) f_token;
 		f_token->tok_length = gpreGlob.token_global.tok_length;
 		SQL_resolve_identifier("<identifier>", f_token->tok_string, f_token->tok_length + 1);
@@ -406,7 +406,7 @@ gpre_nod* SQE_field(gpre_req* request,
 			}
 			else {
 				node->nod_arg[1] = node->nod_arg[0];
-				f_token = (TOK) MSC_alloc(TOK_LEN);
+				f_token = (tok*) MSC_alloc(TOK_LEN);
 				node->nod_arg[0] = (gpre_nod*) f_token;
 				f_token->tok_length = gpreGlob.token_global.tok_length;
 				SQL_resolve_identifier("<identifier>", f_token->tok_string, f_token->tok_length + 1);
@@ -1012,9 +1012,9 @@ bool SQE_resolve(gpre_nod* node,
 		return false;
 	}
 
-	TOK f_token = (TOK) node->nod_arg[0];
+	tok* f_token = (tok*) node->nod_arg[0];
 	f_token->tok_symbol = HSH_lookup(f_token->tok_string);
-	TOK q_token = (TOK) node->nod_arg[1];
+	tok* q_token = (tok*) node->nod_arg[1];
 	if (q_token)
 		q_token->tok_symbol = HSH_lookup(q_token->tok_string);
 
@@ -1355,7 +1355,7 @@ static gpre_nod* explode_asterisk( gpre_nod* fields, int n, gpre_rse* selection)
 	assert_IS_NOD(fields);
 
 	gpre_nod* node = fields->nod_arg[n];
-	TOK q_token = (TOK) node->nod_arg[0];
+	tok* q_token = (tok*) node->nod_arg[0];
 	if (q_token) {
 		// expand for single relation
 		gpre_ctx* context = resolve_asterisk(q_token, selection);
@@ -3681,8 +3681,8 @@ static gpre_fld* resolve(
 		return NULL;
 	}
 
-	TOK f_token = (TOK) node->nod_arg[0];
-	TOK q_token = (TOK) node->nod_arg[1];
+	tok* f_token = (tok*) node->nod_arg[0];
+	tok* q_token = (tok*) node->nod_arg[1];
 
 	if (!(context->ctx_relation || context->ctx_procedure))
 		return NULL;
@@ -3794,7 +3794,7 @@ static gpre_fld* resolve(
 //		If successful, return the context.  Otherwise return NULL.
 //
 
-static gpre_ctx* resolve_asterisk( TOK q_token, gpre_rse* selection)
+static gpre_ctx* resolve_asterisk( const tok* q_token, gpre_rse* selection)
 {
 	for (int i = 0; i < selection->rse_count; i++)
 	{

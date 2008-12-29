@@ -2843,18 +2843,18 @@ static act* act_drop()
 
 	case KW_SHADOW:
 		{
-		request = MSC_request(REQ_ddl);
-		if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
-			request->req_database = gpreGlob.isc_databases;
-		else
-			PAR_error("Can only DROP SHADOW in context of a single database");
-		PAR_get_token();
-		action = MSC_action(request, ACT_drop_shadow);
-		action->act_whenever = gen_whenever();
-		SLONG num = EXP_USHORT_ordinal(true);
-		if (!range_positive_short_integer(num))
-			PAR_error("Shadow number out of range");
-		action->act_object = (ref*)(IPTR) num;
+			request = MSC_request(REQ_ddl);
+			if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+				request->req_database = gpreGlob.isc_databases;
+			else
+				PAR_error("Can only DROP SHADOW in context of a single database");
+			PAR_get_token();
+			action = MSC_action(request, ACT_drop_shadow);
+			action->act_whenever = gen_whenever();
+			SLONG num = EXP_USHORT_ordinal(true);
+			if (!range_positive_short_integer(num))
+				PAR_error("Shadow number out of range");
+			action->act_object = (ref*)(IPTR) num;
 		}
 		return action;
 
@@ -3689,7 +3689,7 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 
 //  if the token isn't an identifier, complain
 
-	TOK f_token = (TOK) MSC_alloc(TOK_LEN);
+	tok* f_token = (tok*) MSC_alloc(TOK_LEN);
 	f_token->tok_length = gpreGlob.token_global.tok_length;
 
 	// Funny, as if we can have relation names up to MAX_SYM_SIZE.

@@ -85,7 +85,7 @@ static void			finish_based(act*);
 #endif
 static int			get_char(FILE*);
 static bool			get_switches(int, TEXT**, const in_sw_tab_t*, sw_tab_t*, TEXT**);
-static TOK			get_token();
+static tok*			get_token();
 static int			nextchar();
 static SLONG		pass1(const TEXT*);
 static void			pass2(SLONG);
@@ -202,7 +202,10 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_cpp, IN_SW_GPRE_CXX, ".epp", ".cpp" },
 	{ lang_internal, IN_SW_GPRE_G, ".e", ".c" },
 	{ lang_internal_cxx, IN_SW_GPRE_0, ".epp", ".cpp" },
+
+#ifdef GPRE_PASCAL
 	{ lang_pascal, IN_SW_GPRE_P, ".epas", ".pas" },
+#endif
 
 #ifdef GPRE_FORTRAN
 	{ lang_fortran, IN_SW_GPRE_F, ".ef", ".f" },
@@ -1004,7 +1007,7 @@ void CPR_warn(const TEXT* string)
 //		on the line, it fakes a dummy token to indicate end of line.
 //
 
-TOK CPR_eol_token()
+tok* CPR_eol_token()
 {
 	if (gpreGlob.sw_language != lang_fortran)
 		return CPR_token();
@@ -1030,14 +1033,17 @@ TOK CPR_eol_token()
 //  in-line comments are equivalent to end of line
 
 	if (c == '!')
+	{
 		while (c != '\n' && c != EOF) {
 			c = nextchar();
 			num_chars++;
 		}
+	}
 
 //  in-line SQL comments are equivalent to end of line
 
-	if (gpreGlob.sw_sql && (c == '-')) {
+	if (gpreGlob.sw_sql && (c == '-'))
+	{
 		const SSHORT peek = nextchar();
 		if (peek != '-')
 			return_char(peek);
@@ -1182,7 +1188,7 @@ void CPR_s_error(const TEXT* string)
 	TEXT s[512];
 
 	fb_utils::snprintf(s, sizeof(s),
-		"expected %s, encountered \"%s\"", string, gpreGlob.token_global.tok_string);
+					   "expected %s, encountered \"%s\"", string, gpreGlob.token_global.tok_string);
 	CPR_error(s);
 	PAR_unwind();
 }
@@ -1210,9 +1216,9 @@ gpre_txt* CPR_start_text()
 //		character set.
 //
 
-TOK CPR_token()
+tok* CPR_token()
 {
-	TOK token = get_token();
+	tok* token = get_token();
 	if (!token)
 		return NULL;
 
@@ -1932,7 +1938,7 @@ static bool get_switches(int			argc,
 //		Parse and return the next token.
 //
 
-static TOK get_token()
+static tok* get_token()
 {
 //  Save the information from the previous token
 
@@ -2120,7 +2126,7 @@ static TOK get_token()
 			   of program we do not care about */
 
 			if (next == '\\' && !gpreGlob.sw_sql &&
-				((gpreGlob.sw_language == lang_c) || (isLangCpp(gpreGlob.sw_language))))
+				(gpreGlob.sw_language == lang_c || isLangCpp(gpreGlob.sw_language)))
 			{
 				const USHORT peek = nextchar();
 				if (peek == '\n') {
@@ -2728,7 +2734,8 @@ static SSHORT skip_white()
 {
 	SSHORT c;
 
-	while (true) {
+	while (true)
+	{
 		if ((c = nextchar()) == EOF)
 			return c;
 
@@ -2845,7 +2852,7 @@ static SSHORT skip_white()
 		}
 
 		// skip PASCAL comments - both types
-
+#ifdef GPRE_PASCAL
 		if (c == '{' && gpreGlob.sw_language == lang_pascal) {
 			while ((c = nextchar()) != EOF && c != '}')
 				;
@@ -2863,6 +2870,7 @@ static SSHORT skip_white()
 				c = next;
 			continue;
 		}
+#endif
 
 		break;
 	}
