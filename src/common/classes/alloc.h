@@ -299,10 +299,9 @@ private:
 	// Deallocates small block from this pool. Pool must be locked during this call
 	void internal_deallocate(void* block);
 
-	// Forbid copy constructor, should never be called
-	MemoryPool(const MemoryPool& pool) 
-		: freeBlocks((InternalAllocator*) this) 
-	{ }
+	// Forbid copy constructor and assignment operator
+	MemoryPool(const MemoryPool&);
+	MemoryPool& operator=(const MemoryPool&);
 
 	// Used by pools to track memory usage.
 
