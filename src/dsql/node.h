@@ -1091,7 +1091,7 @@ enum nod_flags_vals {
 
 	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
 	NOD_CURSOR_FOR			= 2,
-	NOD_CURSOR_ALL			= USHORT(-1U),
+	NOD_CURSOR_ALL			= USHORT(~0),
 
 	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
 	NOD_DT_CTE_USED			= 2,		// nod_derived_table

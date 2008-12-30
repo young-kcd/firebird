@@ -513,7 +513,7 @@ DESC MVOL_open(const char* name, ULONG mode, ULONG create)
 UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 {
 	const UCHAR* ptr;
-	SLONG cnt = 0;
+	ULONG cnt = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -560,9 +560,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 			 tdgbl->action->act_file->fil_length : left);
 
 		DWORD err = 0;
-		// Assumes DWORD <==> ULONG
-		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite,
-					   reinterpret_cast<DWORD*>(&cnt), NULL))
+		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite, &cnt, NULL))
 		{
 			err = GetLastError();
 		}

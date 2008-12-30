@@ -51,7 +51,7 @@ PathName ParsedPath::subPath(size_t n) const
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
-	for (int i = 1; i < n; i++) {
+	for (size_t i = 1; i < n; i++) {
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
 		rc = newpath;

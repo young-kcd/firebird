@@ -1095,7 +1095,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				if (tok == ttIdent)
 					ident.upper();
 
-				int n = 0;
+				size_t n = 0;
 				for (; n < m_sqlParamNames.getCount(); n++)
 				{
 					if ((*m_sqlParamNames[n]) == ident)

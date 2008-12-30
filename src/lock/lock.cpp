@@ -1055,7 +1055,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #endif
 		)
 	{
-		SLONG length = m_header->lhb_length;
+		const SLONG length = m_header->lhb_length;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 		Firebird::WriteLockGuard guard(m_remapSync);

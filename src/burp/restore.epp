@@ -7610,7 +7610,7 @@ bool restore(BurpGlobals*	tdgbl,
 		FOR (REQUEST_HANDLE req_handle4)
 			CS IN RDB$CHARACTER_SETS
 
-			for (int i = 0; i < tdgbl->defaultCollations.getCount(); ++i)
+			for (size_t i = 0; i < tdgbl->defaultCollations.getCount(); ++i)
 			{
 				if (tdgbl->defaultCollations[i].first == CS.RDB$CHARACTER_SET_NAME)
 				{

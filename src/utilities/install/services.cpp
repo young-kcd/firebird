@@ -62,13 +62,13 @@ USHORT SERVICES_install(SC_HANDLE manager,
  **************************************/
 
 	char exe_name[MAX_PATH];
-	int len = strlen(directory);
+	size_t len = strlen(directory);
 	const char last_char = len ? directory[len - 1] : '\\';
 	const char* exe_format =
 		(last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
 
-	len = snprintf(exe_name, sizeof(exe_name), exe_format, directory, executable);
-	if (len == sizeof(exe_name) || len < 0) {
+	int rc = snprintf(exe_name, sizeof(exe_name), exe_format, directory, executable);
+	if (rc == sizeof(exe_name) || rc < 0) {
 		return (*err_handler) (0, "service executable path name is too long", 0);
 	}
 

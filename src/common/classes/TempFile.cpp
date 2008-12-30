@@ -147,15 +147,13 @@ void TempFile::init(const Firebird::PathName& directory, const Firebird::PathNam
 	{
 		Firebird::PathName name = filename + prefix;
 		__int64 temp = randomness;
-		for (int i = 0; i < suffix.length(); i++)
+		for (size_t i = 0; i < suffix.length(); i++)
 		{
 			suffix[i] = NAME_LETTERS[temp % (strlen(NAME_LETTERS))];
 			temp /= strlen(NAME_LETTERS);
 		}
 		name += suffix;
-		DWORD attributes = FILE_ATTRIBUTE_NORMAL |
-						   FILE_ATTRIBUTE_TEMPORARY |
-						   FILE_FLAG_RANDOM_ACCESS;
+		DWORD attributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS;
 		if (doUnlink)
 		{
 			attributes |= FILE_FLAG_DELETE_ON_CLOSE;

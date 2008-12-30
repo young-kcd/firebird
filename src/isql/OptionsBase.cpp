@@ -34,7 +34,7 @@ int OptionsBase::getCommand(const char* cmd) const
 	if (!swlen)
 		return m_wrong;
 
-	for (int i = 0; i < m_size; ++i)
+	for (size_t i = 0; i < m_size; ++i)
 	{
 		const optionsMap& item = m_options[i];
 		// As long as we know our input is already uppercased, the call to
@@ -59,7 +59,7 @@ void OptionsBase::showCommands(FILE* out) const
 	int newline = 0;
 	for (char cap = 'A'; cap <= 'Z'; ++cap)
 	{
-		for (int i = 0; i < m_size; ++i)
+		for (size_t i = 0; i < m_size; ++i)
 		{
 			const optionsMap& item = m_options[i];
 			if (item.text[0] != cap)
@@ -72,7 +72,7 @@ void OptionsBase::showCommands(FILE* out) const
 				fprintf(out, "%-25s", item.text);
 			else
 			{
-				int j = 0;
+				size_t j = 0;
 				for (; j < item.abbrlen; ++j)
 					fputc(item.text[j], out);
 
