@@ -746,7 +746,7 @@ void PortsCleanup::unRegisterPort(rem_port* port)
 	{
 		size_t i;
 		const bool found = m_ports->find(port, i);
-		fb_assert(found);
+		//fb_assert(found);
 		if (found)
 			m_ports->remove(i);
 	}
