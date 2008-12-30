@@ -5891,6 +5891,11 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
  **************************************/
 	MutexLockGuard guard(singleShutdown);
 
+	if (shutdownStarted)
+	{
+		return FB_SUCCESS;
+	}
+
 	YEntry status(NULL);
 	int rc = FB_SUCCESS;
 
