@@ -1,3 +1,77 @@
+2008-12-30 18:58  alexpeshkoff
+
+	* firebird2/src/: common/utils_proto.h (1.29),
+	common/classes/MetaName.h (1.10), isql/InputDevices.cpp (1.4),
+	jrd/common.h (1.189):
+
+	Solaris port
+
+2008-12-30 18:57  alexpeshkoff
+
+	* firebird2/src/config/: InputFile.cpp (1.12), InputFile.h (1.10):
+
+	Commented unused problematic method instead of fixing it
+
+2008-12-30 18:46  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.33):
+
+	Solaris port
+
+2008-12-30 16:23  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.229):
+
+	Fixed CORE-2262: Client connection is abruptly terminated
+
+2008-12-30 16:17  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.77):
+
+	assertion is wrong for event ports - to be reviewed by Vlad
+
+2008-12-30 16:16  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.263):
+
+	misc
+
+2008-12-30 16:14  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.226):
+
+	Do not let fb_shutdown() execute more than one times
+
+2008-12-30 15:43  alexpeshkoff
+
+	* firebird2/src/common/classes/tree.h (1.76):
+
+	Better fix for signed/unsigned problem - thanks to Claudio
+
+2008-12-30 12:27  robocop
+
+	* firebird2/src/lock/print.cpp (1.75):
+
+	Misc: unused assignment.
+
+2008-12-30 11:52  robocop
+
+	* firebird2/src/: burp/mvol.cpp (1.54), burp/restore.epp (1.151),
+	common/classes/TempFile.cpp (1.17), common/config/dir_list.cpp
+	(1.38), dsql/node.h (1.120), isql/OptionsBase.cpp (1.4),
+	jrd/extds/ExtDS.cpp (1.25), lock/lock.cpp (1.173),
+	utilities/install/services.cpp (1.26):
+
+	Shut up some compiler warnings (some warnings should be enabled
+	again in autoconfig_msvc.h IMHO because hiding our possible
+	mistakes won't help us).
+
+2008-12-29 21:57  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.202):
+
+	Misc.
+
 2008-12-29 19:40  dimitr
 
 	* firebird2/src/jrd/met.epp (1.269):
