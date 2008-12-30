@@ -703,13 +703,14 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 
 	// Start building recovery map.
 	// This array contains index of the element we try to add on page of each level
-	// ~0 means that element is on new page
+	// MAP_NEW_PAGE means that element is on new page
 	// In case of low memory condition we use this data to recover to innocent state
 	size_t recovery_map[MAX_TREE_LEVEL];
+	const size_t MAP_NEW_PAGE = ~((size_t)0);
 
 	if (pos == LeafCount) {
 		newLeaf->insert(0, item);
-		recovery_map[0] = ~0;
+		recovery_map[0] = MAP_NEW_PAGE;
 	}
 	else {
 		newLeaf->insert(0, (*leaf)[LeafCount - 1]);
@@ -778,7 +779,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 			if (pos == NodeCount) {
 				NodeList::setNodeParentAndLevel(newNode, curLevel, newList);
 				newList->insert(0, newNode);
-				recovery_map[curLevel + 1] = ~0;
+				recovery_map[curLevel + 1] = MAP_NEW_PAGE;
 			}
 			else {
 				void *t = (*nodeList)[NodeCount - 1];
@@ -810,7 +811,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 		while (curLevel) {
 			NodeList *itemL = reinterpret_cast<NodeList*>(newNode);
 			void *lower;
-		    if (recovery_map[curLevel] == size_t(~0)) {
+		    if (recovery_map[curLevel] == MAP_NEW_PAGE) {
 				lower = (*itemL)[0];
 			}
 			else {
@@ -825,7 +826,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 			curLevel--;
 		}
 		ItemList *itemL2 = reinterpret_cast<ItemList*>(newNode);
-		if (recovery_map[0] != size_t(~0)) {
+		if (recovery_map[0] != MAP_NEW_PAGE) {
 			itemL2->prev->remove(recovery_map[0]);
 			itemL2->prev->insert(itemL2->prev->getCount(), (*itemL2)[0]);
 		}
