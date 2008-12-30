@@ -285,9 +285,12 @@
 /* 	Need to use full sfio not just stdio emulation to fix
 	file descriptor number limit. nmcc Dec2002
 */
-#if (!defined(SFIO) && defined(SUPERSERVER))
+#ifndef SFIO
 #error "need to use SFIO"
 #endif
+
+// this function is normally defined in stdio.h, but is missing in SFIO's h-file
+extern "C" int remove(const char *path);
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument

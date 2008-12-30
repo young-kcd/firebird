@@ -113,7 +113,12 @@ void InputDevices::indev::setPos(const fpos_t* in)
 {
 	fb_assert(in);
 	fb_assert(indev_fpointer);
+#ifdef SFIO
+// hack to fix bad sfio header
+	fsetpos(indev_fpointer, const_cast<fpos_t*>(in));
+#else
 	fsetpos(indev_fpointer, in);
+#endif
 }
 
 

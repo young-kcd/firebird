@@ -31,6 +31,11 @@
 
 #include "../common/classes/fb_string.h"
 #include "../jrd/constants.h"
+#include "../jrd/common.h"
+
+#ifdef SFIO
+#include <stdio.h>
+#endif
 
 namespace Firebird {
 
