@@ -133,6 +133,7 @@ void InputFile::postChange(int line, int skip, const Firebird::string& insertion
 	}
 }
 
+/*
 void InputFile::rewrite()
 {
 	FILE *input = fopen (fileName.c_str(), "r");
@@ -189,6 +190,7 @@ void InputFile::rewrite()
 	if (rename (tempName.c_str(), fileName.c_str()))
 		perror ("rename");
 }
+*/
 
 bool InputFile::pathEqual(const char *path1, const char *path2)
 {

@@ -48,7 +48,7 @@ public:
 	virtual ~InputFile();
 
 	static bool pathEqual(const char *path1, const char *path2);
-	void rewrite();
+//	void rewrite();
 	void postChange (int lineNumber, int skip, const Firebird::string& insertion);
 	virtual InputFile* getInputFile();
 	virtual const char* getFileName() const;
