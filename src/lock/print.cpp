@@ -339,7 +339,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	SH_MEM_T shmem_data;
 
-	SLONG LOCK_size_mapped = 1024 * 1024;	/* NS: we cannot use 0, otherwise the file
+	const SLONG LOCK_size_mapped = 1024 * 1024;	/* NS: we cannot use 0, otherwise the file
 											   will be truncated when engine is not running
 											   and engine globals do not exist anymore */
 
@@ -387,7 +387,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		exit(FINI_OK);
 	}
 
-	LOCK_size_mapped = shmem_data.sh_mem_length_mapped;
+	//LOCK_size_mapped = shmem_data.sh_mem_length_mapped; CVC: Unused
 
 /* if we can't read this version - admit there's nothing to say and return. */
 
