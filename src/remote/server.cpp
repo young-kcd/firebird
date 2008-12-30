@@ -3352,16 +3352,29 @@ static bool process_packet(rem_port* port,
 			*result = port;
 
 	}	// try
+	catch (const Firebird::status_exception& ex) {
+		// typical case like bad handle passed
+		ISC_STATUS_ARRAY local_status;
+		memset(local_status, 0, sizeof(local_status));
+
+		Firebird::stuff_exception(local_status, ex);
+
+		// Send it to the user
+		port->send_response(sendL, 0, 0, local_status, false);
+
+		return false;
+	}
 	catch (const Firebird::Exception& ex) {
+		// something more serious happened
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
 		Firebird::stuff_exception(local_status, ex);
 		gds__log_status(0, local_status);
 
-		/*  It would be nice to log an error to the user, instead of just terminating them!  */
+		// It would be nice to log an error to the user, instead of just terminating them!
 		port->send_response(sendL, 0, 0, local_status, false);
-		port->disconnect(sendL, receive);	/*  Well, how about this...  */
+		port->disconnect(sendL, receive);	// Well, how about this...
 
 		return false;
 	}
