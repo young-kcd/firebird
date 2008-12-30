@@ -328,7 +328,6 @@ static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_INT	tryStopMainThread = 0;
-static int		shut_postproviders(const int, const int, void*);
 
 
 
