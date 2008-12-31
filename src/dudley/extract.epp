@@ -343,7 +343,7 @@ static void extract_acls(void)
  *
  **************************************/
 	TEXT s[32];
-	const TEXT* relname = 0;
+	const TEXT* relname = NULL;
 
 	bool first = true;
 

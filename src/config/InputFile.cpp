@@ -133,7 +133,7 @@ void InputFile::postChange(int line, int skip, const Firebird::string& insertion
 	}
 }
 
-/*
+/* Commented out by Alex as unused and problematic.
 void InputFile::rewrite()
 {
 	FILE *input = fopen (fileName.c_str(), "r");

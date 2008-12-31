@@ -3369,10 +3369,10 @@ static bool process_packet(rem_port* port,
 		ISC_STATUS_ARRAY local_status;
 		memset(local_status, 0, sizeof(local_status));
 
+		// Log the error to the user.
 		Firebird::stuff_exception(local_status, ex);
 		gds__log_status(0, local_status);
 
-		// It would be nice to log an error to the user, instead of just terminating them!
 		port->send_response(sendL, 0, 0, local_status, false);
 		port->disconnect(sendL, receive);	// Well, how about this...
 

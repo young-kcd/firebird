@@ -3303,8 +3303,8 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 
 		}
 		// Print length where appropriate
-		if ((FNA.RDB$FIELD_TYPE == T_CHAR) || (FNA.RDB$FIELD_TYPE == VARCHAR) ||
-			(FNA.RDB$FIELD_TYPE == CSTRING))
+		if (FNA.RDB$FIELD_TYPE == T_CHAR || FNA.RDB$FIELD_TYPE == VARCHAR ||
+			FNA.RDB$FIELD_TYPE == CSTRING)
 		{
 			FOR V4FNA IN RDB$FUNCTION_ARGUMENTS CROSS
 				CHARSET IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID

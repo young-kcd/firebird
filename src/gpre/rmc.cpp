@@ -1591,8 +1591,10 @@ static void gen_cursor_init( const act* action)
 //  point, the handles are the user's responsibility
 
 	if (action->act_request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
+	{
 		printa(names[COLUMN], false, "MOVE 0 TO %s%d",
 			   names[isc_a_pos], action->act_request->req_blobs->blb_ident);
+	}
 }
 
 

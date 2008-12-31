@@ -1764,8 +1764,8 @@ USHORT CVT_make_string(const dsc*          desc,
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
-	fb_assert((((temp != NULL) && (length > 0)) ||
-			((INTL_TTYPE(desc) <= dtype_any_text) && (INTL_TTYPE(desc) == to_interp))));
+	fb_assert(((temp != NULL && length > 0) ||
+			(INTL_TTYPE(desc) <= dtype_any_text && INTL_TTYPE(desc) == to_interp)));
 
 	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
 		*address = reinterpret_cast<char*>(desc->dsc_address);
@@ -1956,7 +1956,7 @@ SSHORT CVT_decompose(const char* string,
 				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 				}
-				else if (((*p > '8') && (sign == -1)) || ((*p > '7') && (sign != -1)))
+				else if ((*p > '8' && sign == -1) || (*p > '7' && sign != -1))
 				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 				}
@@ -2083,9 +2083,9 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 	fb_assert(ttype != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
-	fb_assert(((temp != NULL) && (length > 0)) ||
-			(desc->dsc_dtype == dtype_text) ||
-			(desc->dsc_dtype == dtype_cstring) || (desc->dsc_dtype == dtype_varying));
+	fb_assert((temp != NULL && length > 0) ||
+			desc->dsc_dtype == dtype_text ||
+			desc->dsc_dtype == dtype_cstring || desc->dsc_dtype == dtype_varying);
 
 /* If the value is already a string (fixed or varying), just return
    the address and length. */

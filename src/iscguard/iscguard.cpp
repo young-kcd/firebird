@@ -617,8 +617,10 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			if (!hScManager)
 				hScManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 			if (!hService)
-				hService =
-					OpenService(hScManager, remote_name->c_str(), GENERIC_READ | GENERIC_EXECUTE);
+			{
+				hService = OpenService(hScManager, remote_name->c_str(),
+					GENERIC_READ | GENERIC_EXECUTE);
+			}
 			success = StartService(hService, 0, NULL);
 			if (success != TRUE)
 				error = GetLastError();

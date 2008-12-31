@@ -650,7 +650,7 @@ static void make_port( const gpre_port* port, int column)
 		const gpre_fld* field = reference->ref_field;
 		const gpre_sym* symbol = field->fld_symbol;
 		const TEXT* name = symbol->sym_string;
-		const char* fmtstr = 0;
+		const char* fmtstr = NULL;
 
 		switch (field->fld_dtype)
 		{

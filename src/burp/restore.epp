@@ -1408,11 +1408,11 @@ void get_array(BurpGlobals*	tdgbl,
  *	shiney, new array.
  *
  **************************************/
-	burp_fld*		field = 0;
+	burp_fld*		field = NULL;
 	ISC_STATUS_ARRAY	status_vector;
 	USHORT		count, field_number, field_length = 0;
-	UCHAR*		buffer = 0;
-	UCHAR*		p = 0;
+	UCHAR*		buffer = NULL;
+	UCHAR*		p = NULL;
 	UCHAR		blr_buffer[200]; // enough for a sdl with 16 dimensions
 	lstring		xdr_slice;
 
@@ -6505,9 +6505,9 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 	ATT_TYPE	attribute;
 	scan_attr_t		scan_next_attr;
 
-	BASED_ON RDB$TRIGGER_MESSAGES.RDB$TRIGGER_NAME		name;
-	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE_NUMBER	number = -1;
-	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE		message;
+	BASED_ON RDB$TRIGGER_MESSAGES.RDB$TRIGGER_NAME name;
+	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE_NUMBER number = -1;
+	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE message;
 
 	bool flag = false;
 	skip_init(&scan_next_attr);
@@ -6675,14 +6675,14 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	scan_attr_t		scan_next_attr;
 	USHORT		flags = 0;
 
-	BASED_ON RDB$USER_PRIVILEGES.RDB$USER		user;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR	grantor;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$PRIVILEGE	privilege;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION	grant_option = 0;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$RELATION_NAME	relation_name;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME	field_name;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE	user_type;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$OBJECT_TYPE	object_type;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$USER user;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR grantor;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$PRIVILEGE privilege;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION grant_option = 0;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$RELATION_NAME relation_name;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME field_name;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE user_type;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$OBJECT_TYPE object_type;
 
 	user_type = obj_user;
 	object_type = obj_relation;
@@ -6941,12 +6941,12 @@ void ignore_array(BurpGlobals*	tdgbl,
  *	dummy get_array().
  *
  **************************************/
-	burp_fld*		field = 0;
-	ATT_TYPE	attribute;
-	SLONG		*range;
+	burp_fld* field = NULL;
+	ATT_TYPE attribute;
+	SLONG* range;
 	const SLONG* end_ranges;
-	USHORT		field_number;
-	scan_attr_t		scan_next_attr;
+	USHORT field_number;
+	scan_attr_t scan_next_attr;
 
 	// Pick up attributes
 

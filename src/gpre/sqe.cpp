@@ -2385,7 +2385,7 @@ static gpre_nod* par_plan_item(gpre_req* request, bool aster_ok, USHORT* paren_c
 
 //  lookup the contexts for the aliases
 
-	gpre_nod* index_list = 0;
+	gpre_nod* index_list = NULL;
 	gpre_ctx* context = par_alias_list(request, alias_list);
 
 //  parse the access type
@@ -2526,7 +2526,7 @@ static gpre_nod* par_primitive_value(gpre_req* request, bool aster_ok,
 //  ORDER clause.  In this case, post only the complete expression, and not
 //  the sub-expressions.
 
-	map* tmp_map = 0;
+	map* tmp_map = NULL;
 	for (const ops* op = stat_ops; op->rel_kw != KW_none; op++)
 	{
 		MSC_match(KW_ALL);

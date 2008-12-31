@@ -197,8 +197,8 @@ void xdr_debug_memory(
 		if (packet) {
 			fb_assert(packet->p_operation > op_void && packet->p_operation < op_max);
 
-			if ((SCHAR *) xdrvar >= (SCHAR *) packet &&
-				(SCHAR *) xdrvar < (SCHAR *) packet + sizeof(PACKET))
+			if ((SCHAR*) xdrvar >= (SCHAR *) packet &&
+				(SCHAR*) xdrvar < (SCHAR *) packet + sizeof(PACKET))
 			{
 				ULONG j;
 				for (j = 0; j < P_MALLOC_SIZE; j++) {

@@ -1965,8 +1965,11 @@ static void gen_finish( const act* action, int column)
 		printa(column, "GDS__DETACH_DATABASE (%s, %s);",
 			   status_vector(action), db->dbb_name->sym_string);
 	}
+
 	if (!db)
-		for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	{
+		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		{
 			if ((action->act_error || (action->act_flags & ACT_sql)) &&
 				(db != gpreGlob.isc_databases))
 			{
@@ -1977,6 +1980,7 @@ static void gen_finish( const act* action, int column)
 			printa(column + INDENT, "GDS__DETACH_DATABASE (%s, %s);",
 				   status_vector(action), db->dbb_name->sym_string);
 		}
+	}
 
 	set_sqlcode(action, column);
 }
@@ -2789,6 +2793,7 @@ static void gen_slice( const act* action, int column)
 
 	slc::slc_repeat *tail, *end;
 	for (tail = slice->slc_rpt, end = tail + slice->slc_dimensions; tail < end; ++tail)
+	{
 		if (tail->slc_upper != tail->slc_lower) {
 			const ref* lower = (const ref*) tail->slc_lower->nod_arg[0];
 			const ref* upper = (const ref*) tail->slc_upper->nod_arg[0];
@@ -2797,6 +2802,7 @@ static void gen_slice( const act* action, int column)
 			else
 				fprintf(gpreGlob.out_file, " * ( %s + 1)", upper->ref_value);
 		}
+	}
 
 	fprintf(gpreGlob.out_file, ";");
 

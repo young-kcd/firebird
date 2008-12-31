@@ -1020,7 +1020,7 @@ TEXT* PAR_native_value(bool array_ref, bool handle_ref)
 
 	int length = string - buffer;
 	fb_assert(length < sizeof(buffer));
-	string = (SCHAR *) MSC_alloc(length + 1);
+	string = (SCHAR*) MSC_alloc(length + 1);
 
 	if (length)
 		memcpy(string, buffer, length); // MSC_alloc filled the string with zeroes.

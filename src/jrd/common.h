@@ -290,7 +290,7 @@
 #endif
 
 // this function is normally defined in stdio.h, but is missing in SFIO's h-file
-extern "C" int remove(const char *path);
+extern "C" int remove(const char* path);
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument

@@ -380,8 +380,8 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 #endif //FCNTL_BROKEN
 
 #ifdef SOLARIS
-		if ((notUseFSCache != oldNotUseCache) &&
-			(directio(file->fil_desc, notUseFSCache ? DIRECTIO_ON : DIRECTIO_OFF) != 0))
+		if (notUseFSCache != oldNotUseCache &&
+			directio(file->fil_desc, notUseFSCache ? DIRECTIO_ON : DIRECTIO_OFF) != 0)
 		{
 			unix_error("directio()", file, isc_io_access_err);
 		}

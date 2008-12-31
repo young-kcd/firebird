@@ -1075,12 +1075,14 @@ gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner
 	gpre_prc* procedure = NULL;
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_procedure && (procedure = (gpre_prc*) symbol->sym_object) &&
 			procedure->prc_database == database &&
 			(!owner[0] || (procedure->prc_owner && !strcmp(owner, procedure->prc_owner->sym_string))))
 		{
 			break;
 		}
+	}
 
 	if (!procedure)
 		return NULL;
@@ -1182,12 +1184,14 @@ gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_
 	const MetIdentifier name(string), owner(owner_name);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_relation && (relation = (gpre_rel*) symbol->sym_object) &&
 			relation->rel_database == database &&
 			(!owner[0] || (relation->rel_owner && !strcmp(owner, relation->rel_owner->sym_string))))
 		{
 			return relation;
 		}
+	}
 
 	return NULL;
 }
@@ -1375,11 +1379,13 @@ IND MET_index(dbb* database, const TEXT* string)
 
 	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_index && (index = (IND) symbol->sym_object) &&
 			index->ind_relation->rel_database == database)
 		{
 			return index;
 		}
+	}
 
 	if (gpreGlob.sw_language == lang_internal)
 		return NULL;

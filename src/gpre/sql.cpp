@@ -143,8 +143,8 @@ static swe* global_whenever_list;
 static inline bool end_of_command()
 {
 	return
-		gpreGlob.sw_language != lang_cobol && gpreGlob.token_global.tok_keyword == KW_SEMI_COLON ||
-		gpreGlob.sw_language == lang_cobol && gpreGlob.token_global.tok_keyword == KW_END_EXEC;
+		(gpreGlob.sw_language != lang_cobol && gpreGlob.token_global.tok_keyword == KW_SEMI_COLON) ||
+		(gpreGlob.sw_language == lang_cobol && gpreGlob.token_global.tok_keyword == KW_END_EXEC);
 }
 
 static inline bool range_short_integer(const SLONG x)

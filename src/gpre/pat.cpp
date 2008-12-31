@@ -177,10 +177,12 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		bool handle_flag = false, long_flag = false;
 		const ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
+		{
 			if (oper_iter->ops_string[0] == pattern[0] && oper_iter->ops_string[1] == pattern[1])
 			{
 				break;
 			}
+		}
 		pattern += 2;
 
 		switch (oper_iter->ops_type)
