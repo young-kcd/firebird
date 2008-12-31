@@ -434,7 +434,7 @@ static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* star
 		if (toCharSet->isMultiByte() &&
 			!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
 			toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
-			toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
+			toCharSet->length(toLength, start, false) > (ULONG) to_size / toCharSet->maxBytesPerChar())
 		{
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_transliteration_failed));
 		}
