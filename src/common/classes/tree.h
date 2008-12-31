@@ -663,7 +663,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	// MAP_NEW_PAGE means that element is on new page
 	// In case of low memory condition we use this data to recover to innocent state
 	size_t recovery_map[MAX_TREE_LEVEL];
-	const size_t MAP_NEW_PAGE = ~((size_t)0);
+	const size_t MAP_NEW_PAGE = ~((size_t) 0);
 			
 	if (pos == LeafCount) {
 		newLeaf->insert(0, item);
