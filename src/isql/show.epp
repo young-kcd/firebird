@@ -1006,7 +1006,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			user_string = SQL_identifier2;
 		}
 		isqlGlob.printf("GRANT %s TO %s%s%s%s%s", role,
-			user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+			user_string, with_option, granted_by(buf_grantor, grantor), terminator, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -1772,7 +1772,7 @@ static void show_charsets(
 *	Show character set and collations
 *
 **************************************/
-	SSHORT collation, char_set_id;
+	SSHORT collation = -1, char_set_id = -1;
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 
 // If there is a relation_name, this is a real column, look up collation
@@ -1796,8 +1796,7 @@ static void show_charsets(
 		END_FOR
 		ON_ERROR
 #ifdef DEV_BUILD
-			fprintf(stderr, "show_charsets(%s %s) failed\n",
-					   relation_name, field_name);
+			fprintf(stderr, "show_charsets(%s %s) failed\n", relation_name, field_name);
 #endif
 		END_ERROR;
 	}
@@ -1847,7 +1846,7 @@ static void show_proc_charsets(
 	bool show_collation,
 	bool doIndent)
 {
-	SSHORT collation, char_set_id;
+	SSHORT collation = -1, char_set_id = -1;
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();
 
 	// If there is a procedure_name, this is a real column, look up collation

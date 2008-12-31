@@ -1031,7 +1031,7 @@ static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
  *	Analyze space used by a record's fragments.
  *
  **************************************/
-	tdba* tddba = tdba::getSpecific();
+	//tdba* tddba = tdba::getSpecific();
 	ULONG space = 0;
 
 	while (header->rhdf_flags & rhd_incomplete) {
@@ -1186,7 +1186,7 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
  *	Analyze space used by a record's back versions.
  *
  **************************************/
-	tdba* tddba = tdba::getSpecific();
+	//tdba* tddba = tdba::getSpecific();
 	ULONG space = 0, versions = 0;
 	SLONG b_page = header->rhdf_b_page;
 	USHORT b_line = header->rhdf_b_line;

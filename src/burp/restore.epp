@@ -575,7 +575,8 @@ int RESTORE_restore (const TEXT* file_name,
 	BURP_verbose (88);
 	// msg 88 finishing, closing, and going home
 
-	FB_UINT64 cumul_count = MVOL_fini_read();
+	//FB_UINT64 cumul_count =
+	MVOL_fini_read();
 
 	// Close database before we attach to it again.
 	FINISH
@@ -1407,16 +1408,18 @@ void get_array(BurpGlobals*	tdgbl,
  *	shiney, new array.
  *
  **************************************/
-	burp_fld*		field;
+	burp_fld*		field = 0;
 	ISC_STATUS_ARRAY	status_vector;
-	USHORT		count, field_number, field_length;
-	UCHAR		*buffer, *p;
+	USHORT		count, field_number, field_length = 0;
+	UCHAR*		buffer = 0;
+	UCHAR*		p = 0;
 	UCHAR		blr_buffer[200]; // enough for a sdl with 16 dimensions
 	lstring		xdr_slice;
 
 	// don't free something you don't allocate
 	lstring xdr_buffer;
 	xdr_buffer.lstr_allocated = 0;
+	xdr_buffer.lstr_address = NULL;
 
 	// Pick up attributes
 	SLONG		fld_ranges[2 * MAX_DIMENSION];
@@ -6503,7 +6506,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 	scan_attr_t		scan_next_attr;
 
 	BASED_ON RDB$TRIGGER_MESSAGES.RDB$TRIGGER_NAME		name;
-	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE_NUMBER	number;
+	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE_NUMBER	number = -1;
 	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE		message;
 
 	bool flag = false;
@@ -6675,7 +6678,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER		user;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR	grantor;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$PRIVILEGE	privilege;
-	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION	grant_option;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION	grant_option = 0;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$RELATION_NAME	relation_name;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME	field_name;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE	user_type;
@@ -6938,7 +6941,7 @@ void ignore_array(BurpGlobals*	tdgbl,
  *	dummy get_array().
  *
  **************************************/
-	burp_fld*		field;
+	burp_fld*		field = 0;
 	ATT_TYPE	attribute;
 	SLONG		*range;
 	const SLONG* end_ranges;
@@ -6993,7 +6996,7 @@ void ignore_array(BurpGlobals*	tdgbl,
 	length |= get(tdgbl) << 16;
 	length |= get(tdgbl) << 24;
 
-	SLONG lcount;
+	SLONG lcount = 0;
 	if (tdgbl->gbl_sw_transportable)
 	{
 		if (get_attribute(&attribute, tdgbl) != att_xdr_array)
@@ -7714,7 +7717,7 @@ void restore_security_class(BurpGlobals*	tdgbl,
  **************************************/
 	isc_req_handle  req_handle2 = 0;
 
-	isc_tr_handle local_trans = gds_trans;
+	//isc_tr_handle local_trans = gds_trans;
 
 	FOR (REQUEST_HANDLE req_handle2)
 		X IN RDB$SECURITY_CLASSES WITH X.RDB$SECURITY_CLASS EQ sec_class_nm

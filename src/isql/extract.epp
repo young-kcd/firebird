@@ -313,7 +313,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 	bool first = true;
 	SCHAR char_sets[86];
-	USHORT rel_flags = 0;
+	//USHORT rel_flags = 0;
 	//bool intchar = false;
 	// CVC: shouldn't this var be initialized inside the FOR statement instead?
 	// CVC: 2004.12.03: I discovered someone made this variable obsolete;

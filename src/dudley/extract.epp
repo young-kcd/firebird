@@ -343,7 +343,7 @@ static void extract_acls(void)
  *
  **************************************/
 	TEXT s[32];
-	const TEXT* relname;
+	const TEXT* relname = 0;
 
 	bool first = true;
 
@@ -494,7 +494,7 @@ static void extract_database(const TEXT * DB_file_nameL)
  *	and write it to the output file.
  *
  **************************************/
-	const int OneK = 1024;
+	//const int OneK = 1024;
 	TEXT s[32], buffer[256];
 	SLONG page_size;
 	ISC_STATUS_ARRAY status_vector;
