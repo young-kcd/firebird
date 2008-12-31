@@ -2224,15 +2224,15 @@ static void get_dtype_of_list(const gpre_nod* node, gpre_fld* f)
 	UCHAR max_dtype = 0;
 	SCHAR max_scale = 0;
 	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0, max_significant_digits = 0;
-	SSHORT max_sub_type = 0, first_sub_type, ttype = ttype_ascii; // default type if all nodes are nod_null.
+	SSHORT max_sub_type = 0, first_sub_type = -1, ttype = ttype_ascii; // default type if all nodes are nod_null.
 	SSHORT max_numeric_sub_type = 0;
-	bool firstarg = true, all_same_sub_type = true, all_equal = true, all_nulls = true;
+	bool firstarg = true, all_same_sub_type = true, all_equal = true; //, all_nulls = true;
 	bool all_numeric = true, any_numeric = false, any_approx = false, any_float = false;
 	bool all_text = true, any_text = false, any_varying = false;
 	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
 	bool all_blob = true, any_blob = false, any_text_blob = false;
-	bool nullable = false;
-	bool err = false;
+	//bool nullable = false;
+	//bool err = false;
 	gpre_fld field_aux;
 
 	// Set default values

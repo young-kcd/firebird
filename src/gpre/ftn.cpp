@@ -320,7 +320,8 @@ void FTN_action(const act* action, int column)
 	if (action->act_flags & ACT_break)
 		global_first_flag = false;
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_database:
 	case ACT_alter_domain:
 	case ACT_alter_table:
@@ -1319,10 +1320,10 @@ static void gen_database(const act* action)
 {
 	if (global_first_flag)
 		return;
+
 	global_first_flag = true;
 
-	sprintf(output_buffer,
-			"\n%s      **** GDS Preprocessor Definitions ****\n\n", COMMENT);
+	sprintf(output_buffer, "\n%s      **** GDS Preprocessor Definitions ****\n\n", COMMENT);
 	FTN_print_buffer(output_buffer);
 
 	gen_database_decls(action);
@@ -2552,8 +2553,7 @@ static void gen_put_segment(const act* action)
 	else
 		blob = (blb*) action->act_object;
 
-	sprintf(output_buffer,
-			"%sISC_STATUS(2) = ISC_PUT_SEGMENT (%s, isc_%d, %sisc_%d%s, %sisc_%d%s)\n",
+	sprintf(output_buffer, "%sISC_STATUS(2) = ISC_PUT_SEGMENT (%s, isc_%d, %sisc_%d%s, %sisc_%d%s)\n",
 			COLUMN,
 			status_vector(action),
 			blob->blb_ident,
@@ -3197,9 +3197,8 @@ static void gen_start(const act* action, const gpre_port* port)
 				I2CONST_1, request->req_request_level, I2CONST_2);
 	}
 	else
-		sprintf(output_buffer,
-				"%sCALL ISC_START_REQUEST (%s, %s, %s, %s%s%s)\n", COLUMN,
-				vector, request->req_handle, request_trans(action, request),
+		sprintf(output_buffer, "%sCALL ISC_START_REQUEST (%s, %s, %s, %s%s%s)\n",
+				COLUMN, vector, request->req_handle, request_trans(action, request),
 				I2CONST_1, request->req_request_level, I2CONST_2);
 
 	FTN_print_buffer(output_buffer);
@@ -3436,10 +3435,12 @@ static void gen_variable(const act* action)
 
 static void gen_whenever(const swe* label)
 {
-	const TEXT* condition;
+	const TEXT* condition = NULL;
 
-	while (label) {
-		switch (label->swe_condition) {
+	while (label)
+	{
+		switch (label->swe_condition)
+		{
 		case SWE_error:
 			condition = "SQLCODE .LT. 0";
 			break;
@@ -3451,7 +3452,11 @@ static void gen_whenever(const swe* label)
 		case SWE_not_found:
 			condition = "SQLCODE .EQ. 100";
 			break;
-		//CVC: default: => error???
+
+		default:
+			// condition undefined
+			fb_assert(false);
+			return;
 		}
 		printa(COLUMN, "if (%s) goto %s", condition, label->swe_label);
 		label = label->swe_next;
@@ -4052,7 +4057,7 @@ static void gen_function(const act* function)
 		for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 		{
 			const gpre_fld* field = reference->ref_field;
-			const TEXT* dtype;
+			const TEXT* dtype = NULL;
 
 			switch (field->fld_dtype) {
 			case dtype_short:

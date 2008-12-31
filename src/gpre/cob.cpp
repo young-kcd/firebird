@@ -2318,7 +2318,7 @@ static void gen_event_wait( const act* action)
 		return; // silence non initialized warning
 	}
 
-	const SSHORT column = strlen(names[COLUMN]);
+	const USHORT column = strlen(names[COLUMN]);
 
 	PAT args;
 	args.pat_database = database;
@@ -2966,8 +2966,7 @@ static void gen_release( const act* action)
 static void gen_receive( const act* action, const gpre_port* port)
 {
 	const gpre_req* request = action->act_request;
-	sprintf(output_buffer,
-			"%sCALL \"%s\" USING %s, %s%s, %s%d%s, %s%d%s, %s%s%d, %s%s%s\n",
+	sprintf(output_buffer, "%sCALL \"%s\" USING %s, %s%s, %s%d%s, %s%d%s, %s%s%d, %s%s%s\n",
 			names[COLUMN],
 			ISC_RECEIVE,
 			status_vector(action),
@@ -3607,10 +3606,12 @@ static void gen_variable( const act* action)
 
 static void gen_whenever(const swe* label)
 {
-	const TEXT* condition;
+	const TEXT* condition = NULL;
 
-	while (label) {
-		switch (label->swe_condition) {
+	while (label)
+	{
+		switch (label->swe_condition)
+		{
 		case SWE_error:
 			condition = "SQLCODE < 0";
 			break;

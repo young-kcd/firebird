@@ -460,7 +460,7 @@ SSHORT PAR_blob_subtype(DBB db)
 //  Check for symbol type name
 
 	if (gpreGlob.token_global.tok_type == tok_ident) {
-		gpre_fld* field;
+		gpre_fld* field = NULL;
 		gpre_rel* relation = MET_get_relation(db, "RDB$FIELDS", "");
 		if (!relation || !(field = MET_field(relation, "RDB$FIELD_SUB_TYPE")))
 		{

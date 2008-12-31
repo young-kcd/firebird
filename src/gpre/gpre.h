@@ -318,18 +318,19 @@ inline size_t STR_LEN(const size_t size)
 
 /* SQL WHENEVER BLOCK */
 
-struct swe {
-	swe* swe_next;				/* Next in chain */
-	USHORT swe_condition;		/* Condition */
-	USHORT swe_length;			/* Length of label */
-	TEXT swe_label[1];			/* Label */
-};
-
 enum swe_condition_vals {
 	SWE_error,
 	SWE_warning,
 	SWE_not_found,
 	SWE_max
+};
+
+struct swe
+{
+	swe*				swe_next;			// Next in chain
+	swe_condition_vals	swe_condition;		// Condition
+	USHORT				swe_length;			// Length of label
+	TEXT				swe_label[1];		// Label
 };
 
 

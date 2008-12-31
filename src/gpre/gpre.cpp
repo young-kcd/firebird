@@ -1485,8 +1485,8 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 
 static void finish_based( act* action)
 {
-	gpre_rel* relation;
-	gpre_fld* field;
+	gpre_rel* relation = NULL;
+	gpre_fld* field = NULL;
 	TEXT s[MAXPATHLEN << 1];
 
 	for (; action; action = action->act_rest) {
@@ -2766,8 +2766,8 @@ static SSHORT skip_white()
 		if (gpreGlob.sw_language == lang_cobol &&
 			(!isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 1 &&
 				(c == 'C' || c == 'c' || c == '*' || c == '/' || c == '\\') ||
-				(isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' && c != ' '
-				&& c != '-')))
+				(isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' &&
+					c != ' ' && c != '-')))
 		{
 			while ((c = nextchar()) != '\n' && c != EOF)
 				;

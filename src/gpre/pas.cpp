@@ -1967,10 +1967,11 @@ static void gen_finish( const act* action, int column)
 	}
 	if (!db)
 		for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
-			if ((action->act_error || (action->act_flags & ACT_sql))
-				&& (db != gpreGlob.isc_databases)) printa(column,
-												 "if (%s <> nil) and (gds__status[2] = 0) then",
-												 db->dbb_name->sym_string);
+			if ((action->act_error || (action->act_flags & ACT_sql)) &&
+				(db != gpreGlob.isc_databases))
+			{
+				printa(column, "if (%s <> nil) and (gds__status[2] = 0) then", db->dbb_name->sym_string);
+			}
 			else
 				printa(column, "if %s <> nil then", db->dbb_name->sym_string);
 			printa(column + INDENT, "GDS__DETACH_DATABASE (%s, %s);",
@@ -2064,8 +2065,7 @@ static void gen_get_or_put_slice(const act* action,
 		args.pat_string5 = reference->ref_value;
 	}
 	else {
-		sprintf(s4, "gds__%d",
-				reference->ref_field->fld_array_info->ary_ident);
+		sprintf(s4, "gds__%d", reference->ref_field->fld_array_info->ary_ident);
 		args.pat_string5 = s4;	//  array name
 	}
 
@@ -3049,13 +3049,15 @@ static void gen_variable( const act* action, int column)
 
 static void gen_whenever( const swe* label, int column)
 {
-	const TEXT* condition;
+	const TEXT* condition = NULL;
 
 	if (label)
 		fprintf(gpreGlob.out_file, ";");
 
-	while (label) {
-		switch (label->swe_condition) {
+	while (label)
+	{
+		switch (label->swe_condition)
+		{
 		case SWE_error:
 			condition = "SQLCODE < 0";
 			break;
@@ -3067,6 +3069,11 @@ static void gen_whenever( const swe* label, int column)
 		case SWE_not_found:
 			condition = "SQLCODE = 100";
 			break;
+
+		default:
+			// condition undefined
+			fb_assert(false);
+			return;
 		}
 		align(column);
 		fprintf(gpreGlob.out_file, "if %s then goto %s;", condition, label->swe_label);

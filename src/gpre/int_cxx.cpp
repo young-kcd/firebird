@@ -73,7 +73,7 @@ const int INDENT = 3;
 
 static const char* const GDS_VTOV = "gds__vtov";
 static const char* const JRD_VTOF = "jrd_vtof";
-static const char* const VTO_CALL = "%s ((const char*)%s, (char*)%s, %d);";
+static const char* const VTO_CALL = "%s ((const char*) %s, (char*) %s, %d);";
 
 static inline void begin(const int column)
 {
@@ -94,7 +94,8 @@ void INT_CXX_action( const act* action, int column)
 
 //  Put leading braces where required
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_for:
 	case ACT_insert:
 	case ACT_modify:
@@ -105,7 +106,8 @@ void INT_CXX_action( const act* action, int column)
 		align(column);
 	}
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_at_end:
 		gen_at_end(action, column);
 		return;
@@ -242,10 +244,10 @@ static void asgn_to( ref* reference)
 	// emitting jrd_ftof call.
 
 	if (!field || field->fld_dtype == dtype_text)
-		fprintf(gpreGlob.out_file, "gds__ftov (%s, %d, %s, sizeof (%s));",
+		fprintf(gpreGlob.out_file, "gds__ftov (%s, %d, %s, sizeof(%s));",
 				   s, field ? field->fld_length : 0, reference->ref_value, reference->ref_value);
 	else if (!field || field->fld_dtype == dtype_cstring)
-		fprintf(gpreGlob.out_file, "gds__vtov((const char*)%s, (char*)%s, sizeof (%s));",
+		fprintf(gpreGlob.out_file, "gds__vtov((const char*) %s, (char*) %s, sizeof(%s));",
 				   s, reference->ref_value, reference->ref_value);
 	else
 		fprintf(gpreGlob.out_file, "%s = %s;", reference->ref_value, s);
@@ -285,11 +287,11 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 static void gen_compile( const gpre_req* request, int column)
 {
 	column += INDENT;
-	const dbb* db = request->req_database;
-	const gpre_sym* symbol = db->dbb_name;
+	//const dbb* db = request->req_database;
+	//const gpre_sym* symbol = db->dbb_name;
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
-	fprintf(gpreGlob.out_file, "%s = CMP_compile2 (tdbb, (UCHAR*)jrd_%"ULONGFORMAT", TRUE);",
+	fprintf(gpreGlob.out_file, "%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", TRUE);",
 			   request->req_handle, request->req_ident);
 }
 
@@ -340,7 +342,7 @@ static void gen_emodify( const act* action, int column)
 					gen_name(s1, source), field->fld_length, gen_name(s2, reference), field->fld_length);
 			break;
 		case dtype_cstring:
-			fprintf(gpreGlob.out_file, "gds__vtov((const char*)%s, (char*)%s, %d);",
+			fprintf(gpreGlob.out_file, "gds__vtov((const char*) %s, (char*) %s, %d);",
 					gen_name(s1, source), gen_name(s2, reference), field->fld_length);
 			break;
 		default:
@@ -476,7 +478,7 @@ static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
 	fprintf(gpreGlob.out_file,
-			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
+			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*) &jrd_%"ULONGFORMAT");",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
@@ -585,7 +587,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port, int column
 	}
 	align(column);
 
-	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*)&jrd_%"ULONGFORMAT");",
+	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*) &jrd_%"ULONGFORMAT");",
 			   request->req_handle, port->por_msg_number, port->por_length, port->por_ident);
 }
 

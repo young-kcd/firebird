@@ -235,7 +235,6 @@ gpre_lls* MET_get_primary_key(DBB db, const TEXT* relation_name)
 
 gpre_fld* MET_field(gpre_rel* relation, const char* string)
 {
-	gpre_fld* field;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
@@ -252,6 +251,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			return relation->rel_dbkey;
 		}
 
+		gpre_fld* field;
 		if (symbol->sym_type == SYM_field && (field = (gpre_fld*) symbol->sym_object) &&
 			field->fld_relation == relation)
 		{

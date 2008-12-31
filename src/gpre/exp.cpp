@@ -355,9 +355,9 @@ gpre_nod* EXP_literal()
 	/** Do not put a default here **/
 	}
 // ** End date/time/timestamp *
-	if ((gpreGlob.token_global.tok_type == tok_sglquoted && (gpreGlob.token_global.tok_charset)) ||
-		((isQuoted(gpreGlob.token_global.tok_type) && (gpreGlob.sw_sql_dialect == 1))
-		 && (gpreGlob.token_global.tok_charset)))
+	if ((gpreGlob.token_global.tok_type == tok_sglquoted && gpreGlob.token_global.tok_charset) ||
+		((isQuoted(gpreGlob.token_global.tok_type) && gpreGlob.sw_sql_dialect == 1) &&
+		gpreGlob.token_global.tok_charset))
 	{
 		reference->ref_flags |= REF_ttype;
 		gpre_sym* symbol = gpreGlob.token_global.tok_charset;

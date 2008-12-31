@@ -1752,8 +1752,8 @@ static bool create_view(gpre_req* request,
 			fld = reference->ref_field;
 			const gpre_req* slice_req;
 			const slc* slice;
-			if ((value->nod_count >= 2) && (slice_req = (gpre_req*) value->nod_arg[2])
-				&& (slice =	slice_req->req_slice))
+			if ((value->nod_count >= 2) && (slice_req = (gpre_req*) value->nod_arg[2]) &&
+				(slice = slice_req->req_slice))
 			{
 					CPR_error("Array slices not supported in views");
 			}
@@ -2274,8 +2274,8 @@ static void put_blr(gpre_req* request,
 
 static void put_computed_blr( gpre_req* request, const gpre_fld* field)
 {
-	const act* action = request->req_actions;
-	const gpre_rel* relation = (gpre_rel*) action->act_object;
+	//const act* action = request->req_actions;
+	//const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 //  Computed field context has to be 0 - so force it
 
@@ -2308,8 +2308,8 @@ static void put_computed_blr( gpre_req* request, const gpre_fld* field)
 
 static void put_computed_source( gpre_req* request, const gpre_fld* field)
 {
-	const act* action = request->req_actions;
-	const gpre_rel* relation = (gpre_rel*) action->act_object;
+	//const act* action = request->req_actions;
+	//const gpre_rel* relation = (gpre_rel*) action->act_object;
 
 	if (field->fld_computed->cmpf_text != NULL) {
 		TEXT* computed_source = (TEXT*) MSC_alloc(field->fld_computed->cmpf_text->txt_length + 1);
@@ -2343,12 +2343,13 @@ static void put_cstring(gpre_req* request, USHORT ddl_operator,
 
 static void put_dtype( gpre_req* request, const gpre_fld* field)
 {
-	USHORT dtype;
+	USHORT dtype = 0;
 
 	USHORT length = field->fld_length;
-	const USHORT precision = field->fld_precision;
-	const USHORT sub_type = field->fld_sub_type;
-	switch (field->fld_dtype) {
+	//const USHORT precision = field->fld_precision;
+	//const USHORT sub_type = field->fld_sub_type;
+	switch (field->fld_dtype)
+	{
 	case dtype_cstring:
 
 		// If the user is defining a field as cstring then generate

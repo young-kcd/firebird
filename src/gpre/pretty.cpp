@@ -309,8 +309,8 @@ static int indent( ctl* control, SSHORT level)
 
 static int print_blr_dtype(ctl* control, bool print_object)
 {
-	const char* string;
-	SSHORT length;
+	const char* string = NULL;
+	SSHORT length = -1;
 
 	const USHORT dtype = BLR_BYTE;
 

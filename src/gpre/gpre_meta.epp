@@ -702,7 +702,6 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 //  Lookup field.  If we find it, nifty.  If not, look it up in the
 //  database.
 
-	gpre_fld* field = NULL;
 	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
@@ -710,6 +709,8 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 		{
 			return relation->rel_dbkey;
 		}
+
+		gpre_fld* field;
 		if (symbol->sym_type == SYM_field && (field = (gpre_fld*) symbol->sym_object) &&
 			field->fld_relation == relation)
 		{
@@ -728,7 +729,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
-	field = NULL;
+	gpre_fld* field = NULL;
 	if (!(database->dbb_flags & DBB_v3)) {
 		FOR(REQUEST_HANDLE database->dbb_field_request)
 		RFR IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS WITH

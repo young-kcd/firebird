@@ -1270,7 +1270,7 @@ static void gen_ddl( const act* action, int column)
 static void gen_drop_database( const act* action, int column)
 {
 	DBB db = (DBB) action->act_object;
-	gpre_req* request = action->act_request;
+	//gpre_req* request = action->act_request;
 
 	printa(column, "firebird.DROP_DATABASE (%s %d, \"%s\", RDBK_DB_TYPE_GDS);",
 		   status_vector(action), strlen(db->dbb_filename), db->dbb_filename);
@@ -1664,7 +1664,7 @@ static void gen_erase( const act* action, int column)
 static SSHORT gen_event_block( const act* action)
 {
 	gpre_nod* init = (gpre_nod*) action->act_object;
-	gpre_sym* event_name = (gpre_sym*) init->nod_arg[0];
+	//gpre_sym* event_name = (gpre_sym*) init->nod_arg[0];
 
 	const int ident = CMP_next_ident();
 	init->nod_arg[2] = (gpre_nod*) ident;
@@ -1761,7 +1761,7 @@ static void gen_event_wait( const act* action, int column)
 //  event has been initialized and getting the event identifier
 
 	int ident = -1;
-	DBB database;
+	DBB database = NULL;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
 	{
 		const act* event_action = (const act*) stack_ptr->lls_object;
@@ -3089,10 +3089,12 @@ static void gen_variable( const act* action, int column)
 
 static void gen_whenever(const swe* label, int column)
 {
-	while (label) {
-		const TEXT* condition;
+	while (label)
+	{
+		const TEXT* condition = NULL;
 
-		switch (label->swe_condition) {
+		switch (label->swe_condition)
+		{
 		case SWE_error:
 			condition = "SQLCODE < 0";
 			break;
@@ -3104,6 +3106,11 @@ static void gen_whenever(const swe* label, int column)
 		case SWE_not_found:
 			condition = "SQLCODE = 100";
 			break;
+
+		default:
+			// condition undefined
+			fb_assert(false);
+			return;
 		}
 		printa(column, "if %s then goto %s; end if;", condition, label->swe_label);
 		label = label->swe_next;

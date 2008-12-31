@@ -240,8 +240,8 @@ void CMP_compile_request( gpre_req* request)
 //  Assume that a general port needs to be constructed.
 
 	gpre_port* port;
-	if ((request->req_type != REQ_insert) && (request->req_type != REQ_store2)
-		&& (request->req_type != REQ_set_generator))
+	if ((request->req_type != REQ_insert) && (request->req_type != REQ_store2) &&
+		(request->req_type != REQ_set_generator))
 	{
 		request->req_primary = port = make_port(request, reference);
 	}
@@ -1191,7 +1191,7 @@ static void cmp_ready( gpre_req* request)
 {
 	dbb* db = request->req_database;
 
-	act* action = request->req_actions;
+	//act* action = request->req_actions;
 	request->req_blr = request->req_base = MSC_alloc(250);
 	request->req_length = 250;
 	request->req_flags |= REQ_exp_hand;
