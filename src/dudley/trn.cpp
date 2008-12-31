@@ -1102,8 +1102,7 @@ static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
 	for (; *q; *q++) {
 		if ((*q == '$') || (*q == '_')) {
 			const char* r = q;
-			if ((*--r == '_') && (*--r == 's') && (*--r == 'd')
-				&& (*--r == 'g'))
+			if ((*--r == '_') && (*--r == 's') && (*--r == 'd') && (*--r == 'g'))
 			{
 				*q = 0;
 				fprintf(output_file, "%s", p);

@@ -115,8 +115,8 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 		{
 			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
 				ERRQ_bugcheck(434);	// memory pool free list is incorrect
-			else if ((tail = free->frb_header.blk_length - size) >= 0
-					 && tail < static_cast<SLONG>(best_tail))
+			else if ((tail = free->frb_header.blk_length - size) >= 0 &&
+				tail < static_cast<SLONG>(best_tail))
 			{
 				best = ptr;
 				best_tail = tail;

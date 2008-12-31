@@ -1621,8 +1621,7 @@ static gbak_action open_files(const TEXT* file1,
 				// msg 166: readied database %s for backup
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
-				 (status_vector[1] != isc_io_error
-				  && status_vector[1] != isc_bad_db_format))
+			(status_vector[1] != isc_io_error && status_vector[1] != isc_bad_db_format))
 		{
 			BURP_print_status(status_vector, true);
 			return QUIT;

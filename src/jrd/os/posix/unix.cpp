@@ -223,8 +223,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	const int desc = open(file_name.c_str(), flag, 0666);
 	if (desc == -1)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") <<
-										   Arg::Str(file_name) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
                  Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 	}
 
@@ -239,8 +238,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 		// we cannot help much with former recovery
 		close(desc);
 		unlink(file_name.c_str());
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("chmod") <<
-										   Arg::Str(file_name) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("chmod") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_create_err) << Arg::Unix(chmodError));
 	}
 
@@ -255,8 +253,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #ifdef DEV_BUILD
 		if (rc < 0)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("unlink") <<
-											   Arg::Str(file_name) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("unlink") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 		}
 #endif
@@ -383,13 +380,13 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 #endif //FCNTL_BROKEN
 
 #ifdef SOLARIS
-		if ((notUseFSCache != oldNotUseCache) && 
+		if ((notUseFSCache != oldNotUseCache) &&
 			(directio(file->fil_desc, notUseFSCache ? DIRECTIO_ON : DIRECTIO_OFF) != 0))
 		{
 			unix_error("directio()", file, isc_io_access_err);
 		}
 #endif
-		
+
 		file->fil_flags &= ~(FIL_force_write | FIL_no_fs_cache);
 		file->fil_flags |= (forcedWrites ? FIL_force_write : 0) |
 						   (notUseFSCache ? FIL_no_fs_cache : 0);
@@ -640,8 +637,7 @@ jrd_file* PIO_open(Database* dbb,
 	 * mode. Check if it is a special file (i.e. raw block device) and if a
 	 * valid database is on it. If not, return an error.
 	 */
-	if (PIO_on_raw_device(file_name)
-		&& !raw_devices_validate_database(desc, file_name))
+	if (PIO_on_raw_device(file_name) && !raw_devices_validate_database(desc, file_name))
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
 										   Arg::Str(file_name) <<
@@ -1089,8 +1085,7 @@ bool PIO_on_raw_device(const PathName& file_name)
  **************************************/
 	struct stat s;
 
-	return (stat(file_name.c_str(), &s) == 0
-			&& (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
+	return (stat(file_name.c_str(), &s) == 0 && (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
 }
 
 

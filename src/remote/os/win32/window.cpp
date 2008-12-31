@@ -224,8 +224,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	case WM_COMMAND:
 		switch (wParam) {
 		case IDM_CANCEL:
-			if ((usServerFlags & SRVR_non_service)
-				&& (!(usServerFlags & SRVR_no_icon)))
+			if ((usServerFlags & SRVR_non_service) && (!(usServerFlags & SRVR_no_icon)))
 			{
 				ShowWindow(hWnd, bInTaskBar ? SW_HIDE : SW_MINIMIZE);
 			}
@@ -308,8 +307,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		break;
 
 	case WM_CREATE:
-		if ((usServerFlags & SRVR_non_service)
-			&& (!(usServerFlags & SRVR_no_icon)))
+		if ((usServerFlags & SRVR_non_service) && (!(usServerFlags & SRVR_no_icon)))
 		{
 			HICON hIcon = (HICON) LoadImage(hInstance,
 									  MAKEINTRESOURCE(IDI_IBSVR_SMALL),

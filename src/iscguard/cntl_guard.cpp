@@ -97,8 +97,8 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(main_handler, NULL, 0, 0, 0)
-		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
+		!gds__thread_start(main_handler, NULL, 0, 0, 0) &&
+		report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		failure = false;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);

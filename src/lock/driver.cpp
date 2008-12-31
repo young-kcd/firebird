@@ -356,36 +356,27 @@ static void print_help()
 ***************************************/
 
 	printf("Command syntax is:\n");
-	printf
-		("\tnull <key>\tAcquire an 'null' lock on <key> (returns <lock#>)\n");
-	printf
-		("\tsr <key>\tAcquire an 'sr' lock on <key> (returns <lock#>)\n");
-	printf
-		("\tpr <key>\tAcquire an 'pr' lock on <key> (returns <lock#>)\n");
-	printf
-		("\tsw <key>\tAcquire an 'sw' lock on <key> (returns <lock#>)\n");
-	printf
-		("\tpw <key>\tAcquire an 'pw' lock on <key> (returns <lock#>)\n");
-	printf
-		("\tex <key>\tAcquire an 'ex' lock on <key> (returns <lock#>)\n");
+	printf("\tnull <key>\tAcquire an 'null' lock on <key> (returns <lock#>)\n");
+	printf("\tsr <key>\tAcquire an 'sr' lock on <key> (returns <lock#>)\n");
+	printf("\tpr <key>\tAcquire an 'pr' lock on <key> (returns <lock#>)\n");
+	printf("\tsw <key>\tAcquire an 'sw' lock on <key> (returns <lock#>)\n");
+	printf("\tpw <key>\tAcquire an 'pw' lock on <key> (returns <lock#>)\n");
+	printf("\tex <key>\tAcquire an 'ex' lock on <key> (returns <lock#>)\n");
 	printf("\tw <value>\tSet wait parameter to LOCK_enq:\n");
 	printf("\t\t\t\tvalue>0   willing to wait forever [default]\n");
 	printf("\t\t\t\tvalue=0   not willing to wait\n");
 	printf("\t\t\t\tvalue<0   willing to wait for that many seconds\n");
 	printf("\tar <value>\tControls the AST\n");
-	printf
-		("\t\t\t\tvalue=1   AST will not release nor downgrade [default]\n");
+	printf("\t\t\t\tvalue=1   AST will not release nor downgrade [default]\n");
 	printf("\t\t\t\tvalue=2   AST will release lock\n");
 	printf("\t\t\t\tvalue=3   AST will attempt to downgrade first\n");
 	printf("\t\t\t\tvalue<0   AST will prompt\n");
 	printf("\t\t\t\tvalue=0   AST is not supplied\n");
 	printf("\trel <lock#>\tRelease lock <lock#>\n");
-	printf
-		("\tcvt <lock#> <lock-type>\n\t\t\tConvert lock <lock#> to type <lock-type>\n");
+	printf("\tcvt <lock#> <lock-type>\n\t\t\tConvert lock <lock#> to type <lock-type>\n");
 	printf("\trd <lock#>\tRead data <lock#>\n");
 	printf("\twd <lock#> <data>\tWrite <data> to <lock#>\n");
-	printf
-		("\tqd <agg>\tQuery data for <agg := min,max,cnt,sum,avg,any>\n");
+	printf("\tqd <agg>\tQuery data for <agg := min,max,cnt,sum,avg,any>\n");
 	printf("\tq <don't-care>\tQuit\n");
 	printf("\nRemember the isc_config modifier:\n");
 	printf("\tV4_LOCK_GRANT_ORDER {0 | 1}\n");

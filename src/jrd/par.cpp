@@ -1303,9 +1303,9 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 		/* make sure procedure has been scanned before using it */
 
-		if (procedure && (!(procedure->prc_flags & PRC_scanned)
-						  || (procedure->prc_flags & PRC_being_scanned)
-						  || (procedure->prc_flags & PRC_being_altered)))
+		if (procedure && (!(procedure->prc_flags & PRC_scanned) ||
+				(procedure->prc_flags & PRC_being_scanned) ||
+				(procedure->prc_flags & PRC_being_altered)))
 		{
 			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->prc_id, false, 0);
 			if (scan_proc != procedure)
@@ -1422,7 +1422,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
-	UserFunction* function = 
+	UserFunction* function =
 		FUN_lookup_function(tdbb, name, !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {

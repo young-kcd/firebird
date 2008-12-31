@@ -81,8 +81,8 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 
 	while (!bLeftFull || !bRightFull) {
 		if (bLeft) {
-			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft)
-				   && pchLeft < pchRight);
+			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft) && pchLeft < pchRight)
+				;
 			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
 				bLeftFull = true;
 				pchLeft = pchLastLeft;
@@ -91,8 +91,8 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 				pchLastLeft = pchLeft;
 		}
 		else {
-			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight)
-				   && pchLeft < pchRight);
+			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight) && pchLeft < pchRight)
+				;
 			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
 				bRightFull = true;
 				pchRight = pchLastRight;

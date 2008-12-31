@@ -1606,9 +1606,8 @@ static bool check_proxy(rem_port* port,
 		*p = 0;
 		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user) >= 3)
 		{
-			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*"))
-				&& (!strcmp(source_user, user_name.c_str())
-					|| !strcmp(source_user, "*")))
+			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*")) &&
+				(!strcmp(source_user, user_name.c_str()) || !strcmp(source_user, "*")))
 			{
 				delete port->port_user_name;
 				port->port_user_name = REMOTE_make_string(target_user);

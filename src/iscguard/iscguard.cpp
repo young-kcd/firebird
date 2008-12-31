@@ -602,8 +602,8 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 		if (service_flag) {
 			if (hService) {
-				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE)
-					   && (ServiceStatus.dwCurrentState != SERVICE_STOPPED))
+				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE) &&
+					(ServiceStatus.dwCurrentState != SERVICE_STOPPED))
 				{
 					Sleep(500);
 				}
@@ -618,8 +618,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				hScManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 			if (!hService)
 				hService =
-					OpenService(hScManager, remote_name->c_str(),
-								GENERIC_READ | GENERIC_EXECUTE);
+					OpenService(hScManager, remote_name->c_str(), GENERIC_READ | GENERIC_EXECUTE);
 			success = StartService(hService, 0, NULL);
 			if (success != TRUE)
 				error = GetLastError();
@@ -629,11 +628,12 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				/* Make sure that it is actually ready to receive commands.
 				 * If we were the one who started it, then it will need a few
 				 * seconds to get ready. */
-				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE)
-					   && (ServiceStatus.dwCurrentState != SERVICE_RUNNING))
+				while ((QueryServiceStatus(hService, &ServiceStatus) == TRUE) &&
+					(ServiceStatus.dwCurrentState != SERVICE_RUNNING))
+				{
 					Sleep(500);
-				ControlService(hService, SERVICE_CREATE_GUARDIAN_MUTEX,
-							   &ServiceStatus);
+				}
+				ControlService(hService, SERVICE_CREATE_GUARDIAN_MUTEX, &ServiceStatus);
 				success = TRUE;
 			}
 		}

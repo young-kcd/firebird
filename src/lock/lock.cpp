@@ -223,7 +223,8 @@ LockManager::~LockManager()
 
 	ISC_STATUS_ARRAY local_status;
 
-	if (m_process) {
+	if (m_process)
+	{
 #ifdef USE_BLOCKING_THREAD
 		// Wait for AST thread to start (or 5 secs)
 		m_startupSemaphore.tryEnter(5);
@@ -799,7 +800,8 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, USHORT series, USHORT aggre
 
 	SRQ lock_srq;
 
-	switch (aggregate) {
+	switch (aggregate)
+	{
 	case LCK_MIN:
 	case LCK_CNT:
 	case LCK_AVG:
@@ -813,7 +815,8 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, USHORT series, USHORT aggre
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
 
-			switch (aggregate) {
+			switch (aggregate)
+			{
 			case LCK_MIN:
 				data = lock->lbl_data;
 				break;

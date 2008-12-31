@@ -931,8 +931,7 @@ void ISQL_copy_SQL_id(const TEXT* in_str,
 		TEXT* q1 = output_str;
 		for (const TEXT* p1 = in_str; *p1 && !need_quotes; ++p1, ++q1)
 		{
-			if ((*p1 < 'A' || *p1 > 'Z') && (*p1 < '0' || *p1 > '9')
-				&& *p1 != '_' && *p1 != '$')
+			if ((*p1 < 'A' || *p1 > 'Z') && (*p1 < '0' || *p1 > '9') && *p1 != '_' && *p1 != '$')
 			{
 				need_quotes = true;
 				break;
@@ -980,9 +979,8 @@ void ISQL_errmsg(const ISC_STATUS* status)
 	{
 		const ISC_STATUS* vec = status;
 		if (vec[0] != isc_arg_gds ||
-			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] != isc_arg_warning)
-			|| (vec[0] == isc_arg_gds && vec[1] == 0
-				&& vec[2] == isc_arg_warning && !Warnings))
+			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] != isc_arg_warning) ||
+			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] == isc_arg_warning && !Warnings))
 		{
 			return;
 		}
@@ -1004,9 +1002,8 @@ void ISQL_errmsg(const ISC_STATUS* status)
 		{
 			//const char* s = 0;
 			int linenum = -1;
-			if (status[0] == isc_arg_gds && status[1] == isc_dsql_error
-				&& status[2] == isc_arg_gds && status[3] == isc_sqlerr
-				&& vec > &status[9])
+			if (status[0] == isc_arg_gds && status[1] == isc_dsql_error &&
+				status[2] == isc_arg_gds && status[3] == isc_sqlerr && vec > &status[9])
 			{
 				switch (status[7])
 				{
@@ -2951,8 +2948,8 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 
 				case SQL_TYPE_DATE:
 					if (3 != sscanf(lastPos, "%d-%d-%d", &times.tm_year,
-									&times.tm_mon, &times.tm_mday)
-						|| !check_date(times))
+									&times.tm_mon, &times.tm_mday) ||
+						!check_date(times))
 					{
 						ISQL_msg_get(DATE_ERR, msg, SafeArg() << lastPos);
 						STDERROUT(msg);	// Bad date %s\n
@@ -2973,8 +2970,8 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 
 				case SQL_TYPE_TIME:
 					if (3 != sscanf(lastPos, "%d:%d:%d", &times.tm_hour,
-									&times.tm_min, &times.tm_sec)
-						|| !check_time(times))
+									&times.tm_min, &times.tm_sec) ||
+						!check_time(times))
 					{
 						ISQL_msg_get(TIME_ERR, msg, SafeArg() << lastPos);
 						STDERROUT(msg);	// Bad time %s\n
@@ -3388,8 +3385,7 @@ static bool check_time(const tm& times)
 // and also check milliseconds range.
 static bool check_timestamp(const tm& times, const int msec)
 {
-	return check_date(times) && check_time(times)
-		&& msec >= 0 && msec <= 9999;
+	return check_date(times) && check_time(times) && msec >= 0 && msec <= 9999;
 }
 
 
@@ -6347,8 +6343,7 @@ static processing_state newdb(TEXT* dbname,
 			break;
 		case SQL_DIALECT_V6_TRANSITION:
 		case SQL_DIALECT_V6:
-			if (*local_sql_role == DBL_QUOTE
-				|| *local_sql_role == SINGLE_QUOTE)
+			if (*local_sql_role == DBL_QUOTE || *local_sql_role == SINGLE_QUOTE)
 			{
 				// Remove the delimited quotes and escape quote from ROLE name.
 				const TEXT end_quote = *local_sql_role;

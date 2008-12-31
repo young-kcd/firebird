@@ -174,8 +174,8 @@ string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos
 
 	inputLine.rtrim(" \t\r");
 	// stringComments demands paired quotes but trimming \r may render startPos invalid.
-	if (parsingAliases && inputLine.length() > startPos + 1
-		&& inputLine[startPos] == '"' && inputLine.end()[-1] == '"')
+	if (parsingAliases && inputLine.length() > startPos + 1 &&
+		inputLine[startPos] == '"' && inputLine.end()[-1] == '"')
 	{
 		return inputLine.substr(startPos + 1, inputLine.length() - startPos - 2);
 	}

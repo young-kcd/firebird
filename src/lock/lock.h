@@ -122,7 +122,8 @@ const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
 // Lock header block -- one per lock file, lives up front
 
-struct lhb {
+struct lhb
+{
 	UCHAR lhb_type;					// memory tag - always type_lbh
 	UCHAR lhb_version;				// Version of lock table
 	SRQ_PTR lhb_secondary;			// Secondary lock header block
@@ -170,7 +171,8 @@ const USHORT LHB_lock_ordering		= 1;	// Lock ordering is enabled
 // Secondary header block -- exists only in V3.3 and later lock managers.
 // It is pointed to by the word in the lhb that used to contain a pattern.
 
-struct shb {
+struct shb
+{
 	UCHAR shb_type;					// memory tag - always type_shb
 	SRQ_PTR shb_history;
 	SRQ_PTR shb_remove_node;		// Node removing itself
@@ -200,7 +202,8 @@ struct lbl
 
 /* Lock requests */
 
-struct lrq {
+struct lrq
+{
 	UCHAR lrq_type;					// mem tag: type_lrq=in use, type_null=free
 	UCHAR lrq_requested;			// Level requested
 	UCHAR lrq_state;				// State of lock request
@@ -269,7 +272,8 @@ const USHORT OWN_timeout	= 32;		// Owner is waiting with timeout
 
 // Lock manager history block
 
-struct his {
+struct his
+{
 	UCHAR his_type;					// memory tag - always type_his
 	UCHAR his_operation;			// operation that occured
 	SRQ_PTR his_next;				// SRQ_PTR to next item in history list

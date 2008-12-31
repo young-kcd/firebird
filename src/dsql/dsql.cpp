@@ -2991,8 +2991,7 @@ static void sql_info(thread_db* tdbb,
 			}
 		}
 		else if (!message ||
-			 	(item != isc_info_sql_num_variables
-			  	&& item != isc_info_sql_describe_vars))
+			(item != isc_info_sql_num_variables && item != isc_info_sql_describe_vars))
 		{
 			buffer[0] = item;
 			const UCHAR item2 = isc_info_error;

@@ -361,8 +361,8 @@ do_test_memcpy(src, dest, size)
 			if (size < SIZE_OPTIMAL_MEMCPY_INLINE)
 				for (p = dest, q = src, p_end = p + size; p < p_end;)
 					*p++ = *q++;
-			else if ((size >= SIZE_OPTIMAL_MEMCPY_MEMCPY)
-					 && (((((U_IPTR) dest) % sizeof(ULONG)) == 0) &&
+			else if ((size >= SIZE_OPTIMAL_MEMCPY_MEMCPY) &&
+					 (((((U_IPTR) dest) % sizeof(ULONG)) == 0) &&
 						 ((((U_IPTR) src) % sizeof(ULONG)) == 0)))
 				MOV_faster((SLONG *) src, (SLONG *) dest, (ULONG) size);
 			else

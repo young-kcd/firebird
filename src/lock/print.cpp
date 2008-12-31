@@ -168,7 +168,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		argv++;
 		argc--;
 	}
-	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
+	else if (argc > 4 && !strcmp(argv[1], "-svc_re"))
+	{
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
@@ -211,7 +212,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	sw_series = sw_interactive = sw_intervals = sw_seconds = 0;
 	TEXT* lock_file = NULL;
 
-	while (--argc) {
+	while (--argc)
+	{
 		SCHAR* p = *argv++;
 		if (*p++ != '-') {
 			FPRINTF(outfile, valid_switches);
@@ -219,7 +221,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		}
 		SCHAR c;
 		while (c = *p++)
-			switch (c) {
+			switch (c)
+			{
 			case 'o':
 			case 'p':
 				sw_owners = true;
@@ -261,7 +264,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 			case 'i':
 				while (c = *p++)
-					switch (c) {
+					switch (c)
+					{
 					case 'a':
 						sw_interactive |= SW_I_ACQUIRE;
 						break;
@@ -279,14 +283,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 						break;
 
 					default:
-						FPRINTF(outfile,
-								"Valid interactive switches are: a, o, t, w\n");
+						FPRINTF(outfile, "Valid interactive switches are: a, o, t, w\n");
 						exit(FINI_OK);
 						break;
 					}
 				if (!sw_interactive)
-					sw_interactive =
-						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE | SW_I_WAIT);
+					sw_interactive = (SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE | SW_I_WAIT);
 				sw_seconds = sw_intervals = 1;
 				if (argc > 1) {
 					sw_seconds = atoi(*argv++);
@@ -296,8 +298,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 						--argc;
 					}
 					if (!(sw_seconds > 0) || (sw_intervals < 0)) {
-						FPRINTF(outfile,
-								"Please specify 2 positive values for option -i\n");
+						FPRINTF(outfile, "Please specify 2 positive values for option -i\n");
 						exit(FINI_OK);
 					}
 				}
@@ -354,8 +355,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	TEXT expanded_lock_filename[MAXPATHLEN];
 	TEXT hostname[64];
-	sprintf(expanded_lock_filename, lock_file,
-			ISC_get_host(hostname, sizeof(hostname)));
+	sprintf(expanded_lock_filename, lock_file, ISC_get_host(hostname, sizeof(hostname)));
 
 /* Make sure the lock file is valid - if it's a zero length file we
  * can't look at the header without causing a BUS error by going
@@ -364,25 +364,20 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (LOCK_header && shmem_data.sh_mem_length_mapped < (SLONG) sizeof(lhb)) {
 		/* Mapped file is obviously too small to really be a lock file */
-		FPRINTF(outfile,
-				"Unable to access lock table - file too small.\n%s\n",
-				expanded_lock_filename);
+		FPRINTF(outfile, "Unable to access lock table - file too small.\n%s\n", expanded_lock_filename);
 		exit(FINI_OK);
 	}
 
-	if (LOCK_header
-		&& LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
+	if (LOCK_header && LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
 	{
 #if (!(defined UNIX) || (defined HAVE_MMAP))
 		SLONG length = LOCK_header->lhb_length;
-		LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length,
-										   FALSE);
+		LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
 #endif
 	}
 
 	if (!LOCK_header) {
-		FPRINTF(outfile, "Unable to access lock table.\n%s\n",
-				expanded_lock_filename);
+		FPRINTF(outfile, "Unable to access lock table.\n%s\n", expanded_lock_filename);
 		gds__print_status(status_vector);
 		exit(FINI_OK);
 	}
@@ -481,8 +476,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SLONG hash_max_count = 0;
 	SLONG hash_min_count = 10000000;
 	USHORT i = 0;
-	for (const srq* slot = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots;
-		 slot++, i++)
+	for (const srq* slot = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots; slot++, i++)
 	{
 		SLONG hash_lock_count = 0;
 		for (const srq* que_inst = (SRQ) SRQ_ABS_PTR(slot->srq_forward); que_inst != slot;
@@ -499,8 +493,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	FPRINTF(outfile, "\tHash slots: %4d, ", LOCK_header->lhb_hash_slots);
 
-	FPRINTF(outfile, "Hash lengths (min/avg/max): %4"SLONGFORMAT"/%4"SLONGFORMAT
-			"/%4"SLONGFORMAT"\n",
+	FPRINTF(outfile, "Hash lengths (min/avg/max): %4"SLONGFORMAT"/%4"SLONGFORMAT"/%4"SLONGFORMAT"\n",
 			hash_min_count, (hash_total_count / LOCK_header->lhb_hash_slots),
 			hash_max_count);
 
@@ -523,8 +516,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* Print lock ordering option */
 
 	FPRINTF(outfile, "\tLock Ordering: %s\n",
-			(LOCK_header->lhb_flags & LHB_lock_ordering) ?
-				"Enabled" : "Disabled");
+			(LOCK_header->lhb_flags & LHB_lock_ordering) ? "Enabled" : "Disabled");
 	FPRINTF(outfile, "\n");
 
 /* Print known owners */
@@ -542,22 +534,19 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (sw_locks || sw_series) {
 		USHORT i2 = 0;
-		for (const srq* slot = LOCK_header->lhb_hash;
-			 i2 < LOCK_header->lhb_hash_slots; slot++, i2++)
+		for (const srq* slot = LOCK_header->lhb_hash; i2 < LOCK_header->lhb_hash_slots; slot++, i2++)
 		{
 			for (const srq* que_inst = (SRQ) SRQ_ABS_PTR(slot->srq_forward); que_inst != slot;
 				 que_inst = (SRQ) SRQ_ABS_PTR(que_inst->srq_forward))
 			{
 				prt_lock(outfile, LOCK_header,
-						 (lbl*) ((UCHAR *) que_inst - OFFSET(lbl*, lbl_lhb_hash)),
-						 sw_series);
+						 (lbl*) ((UCHAR *) que_inst - OFFSET(lbl*, lbl_lhb_hash)), sw_series);
 			}
 		}
 	}
 
 	if (sw_history)
-		prt_history(outfile, LOCK_header, LOCK_header->lhb_history,
-					"History");
+		prt_history(outfile, LOCK_header, LOCK_header->lhb_history, "History");
 
 	prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
 
@@ -570,8 +559,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 
 
-static void prt_lock_activity(
-							  OUTFILE outfile,
+static void prt_lock_activity(OUTFILE outfile,
 							  const lhb* header,
 							  USHORT flag, USHORT seconds, USHORT intervals)
 {
@@ -591,20 +579,16 @@ static void prt_lock_activity(
 	FPRINTF(outfile, "%02d:%02d:%02d ", d.tm_hour, d.tm_min, d.tm_sec);
 
 	if (flag & SW_I_ACQUIRE)
-		FPRINTF(outfile,
-				"acquire/s acqwait/s  %%acqwait acqrtry/s rtrysuc/s ");
+		FPRINTF(outfile, "acquire/s acqwait/s  %%acqwait acqrtry/s rtrysuc/s ");
 
 	if (flag & SW_I_OPERATION)
-		FPRINTF(outfile,
-				"enqueue/s convert/s downgrd/s dequeue/s readata/s wrtdata/s qrydata/s ");
+		FPRINTF(outfile, "enqueue/s convert/s downgrd/s dequeue/s readata/s wrtdata/s qrydata/s ");
 
 	if (flag & SW_I_TYPE)
-		FPRINTF(outfile,
-				"  dblop/s  rellop/s pagelop/s tranlop/s relxlop/s idxxlop/s misclop/s ");
+		FPRINTF(outfile, "  dblop/s  rellop/s pagelop/s tranlop/s relxlop/s idxxlop/s misclop/s ");
 
 	if (flag & SW_I_WAIT) {
-		FPRINTF(outfile,
-				"   wait/s  reject/s timeout/s blckast/s  dirsig/s  indsig/s ");
+		FPRINTF(outfile, "   wait/s  reject/s timeout/s blckast/s  dirsig/s  indsig/s ");
 		FPRINTF(outfile, " wakeup/s dlkscan/s deadlck/s avlckwait(msec)");
 	}
 
@@ -615,7 +599,8 @@ static void prt_lock_activity(
 	if (intervals == 0)
 		memset(&base, 0, sizeof(base));
 
-	for (ULONG i = 0; i < intervals; i++) {
+	for (ULONG i = 0; i < intervals; i++)
+	{
 #ifdef WIN_NT
 		Sleep((DWORD) seconds * 1000);
 #else
@@ -630,13 +615,10 @@ static void prt_lock_activity(
 			FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 					" %9"UQUADFORMAT" %9"UQUADFORMAT" ",
 					(header->lhb_acquires - prior.lhb_acquires) / seconds,
-					(header->lhb_acquire_blocks -
-					 prior.lhb_acquire_blocks) / seconds,
-					(header->lhb_acquires -
-					 prior.lhb_acquires) ? (100 *
-											(header->lhb_acquire_blocks -
-											 prior.lhb_acquire_blocks)) /
-					(header->lhb_acquires - prior.lhb_acquires) : 0,
+					(header->lhb_acquire_blocks - prior.lhb_acquire_blocks) / seconds,
+					(header->lhb_acquires - prior.lhb_acquires) ?
+					 	(100 * (header->lhb_acquire_blocks - prior.lhb_acquire_blocks)) /
+							(header->lhb_acquires - prior.lhb_acquires) : 0,
 					(header->lhb_acquire_retries -
 					 prior.lhb_acquire_retries) / seconds,
 					(header->lhb_retry_success -
@@ -658,8 +640,7 @@ static void prt_lock_activity(
 					(header->lhb_deqs - prior.lhb_deqs) / seconds,
 					(header->lhb_read_data - prior.lhb_read_data) / seconds,
 					(header->lhb_write_data - prior.lhb_write_data) / seconds,
-					(header->lhb_query_data -
-					 prior.lhb_query_data) / seconds);
+					(header->lhb_query_data - prior.lhb_query_data) / seconds);
 
 			prior.lhb_enqs = header->lhb_enqs;
 			prior.lhb_converts = header->lhb_converts;
@@ -675,30 +656,25 @@ static void prt_lock_activity(
 					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 					" %9"UQUADFORMAT" ",
 					(header->lhb_operations[Jrd::LCK_database] -
-					 prior.lhb_operations[Jrd::LCK_database]) / seconds,
+					 	prior.lhb_operations[Jrd::LCK_database]) / seconds,
 					(header->lhb_operations[Jrd::LCK_relation] -
-					 prior.lhb_operations[Jrd::LCK_relation]) / seconds,
+					 	prior.lhb_operations[Jrd::LCK_relation]) / seconds,
 					(header->lhb_operations[Jrd::LCK_bdb] -
-					 prior.lhb_operations[Jrd::LCK_bdb]) / seconds,
+					 	prior.lhb_operations[Jrd::LCK_bdb]) / seconds,
 					(header->lhb_operations[Jrd::LCK_tra] -
-					 prior.lhb_operations[Jrd::LCK_tra]) / seconds,
+					 	prior.lhb_operations[Jrd::LCK_tra]) / seconds,
 					(header->lhb_operations[Jrd::LCK_rel_exist] -
-					 prior.lhb_operations[Jrd::LCK_rel_exist]) / seconds,
+					 	prior.lhb_operations[Jrd::LCK_rel_exist]) / seconds,
 					(header->lhb_operations[Jrd::LCK_idx_exist] -
-					 prior.lhb_operations[Jrd::LCK_idx_exist]) / seconds,
-					(header->lhb_operations[0] -
-					 prior.lhb_operations[0]) / seconds);
+					 	prior.lhb_operations[Jrd::LCK_idx_exist]) / seconds,
+					(header->lhb_operations[0] - prior.lhb_operations[0]) / seconds);
 
-			prior.lhb_operations[Jrd::LCK_database] =
-				header->lhb_operations[Jrd::LCK_database];
-			prior.lhb_operations[Jrd::LCK_relation] =
-				header->lhb_operations[Jrd::LCK_relation];
+			prior.lhb_operations[Jrd::LCK_database] = header->lhb_operations[Jrd::LCK_database];
+			prior.lhb_operations[Jrd::LCK_relation] = header->lhb_operations[Jrd::LCK_relation];
 			prior.lhb_operations[Jrd::LCK_bdb] = header->lhb_operations[Jrd::LCK_bdb];
 			prior.lhb_operations[Jrd::LCK_tra] = header->lhb_operations[Jrd::LCK_tra];
-			prior.lhb_operations[Jrd::LCK_rel_exist] =
-				header->lhb_operations[Jrd::LCK_rel_exist];
-			prior.lhb_operations[Jrd::LCK_idx_exist] =
-				header->lhb_operations[Jrd::LCK_idx_exist];
+			prior.lhb_operations[Jrd::LCK_rel_exist] = header->lhb_operations[Jrd::LCK_rel_exist];
+			prior.lhb_operations[Jrd::LCK_idx_exist] = header->lhb_operations[Jrd::LCK_idx_exist];
 			prior.lhb_operations[0] = header->lhb_operations[0];
 		}
 
@@ -737,14 +713,11 @@ static void prt_lock_activity(
 				(header->lhb_acquires - base.lhb_acquires) / (factor),
 				(header->lhb_acquire_blocks -
 				 base.lhb_acquire_blocks) / (factor),
-				(header->lhb_acquires -
-				 base.lhb_acquires) ? (100 * (header->lhb_acquire_blocks -
-											  base.lhb_acquire_blocks)) /
-				(header->lhb_acquires - base.lhb_acquires) : 0,
-				(header->lhb_acquire_retries -
-				 base.lhb_acquire_retries) / (factor),
-				(header->lhb_retry_success -
-				 base.lhb_retry_success) / (factor));
+				(header->lhb_acquires - base.lhb_acquires) ?
+				 	(100 * (header->lhb_acquire_blocks - base.lhb_acquire_blocks)) /
+						(header->lhb_acquires - base.lhb_acquires) : 0,
+				(header->lhb_acquire_retries - base.lhb_acquire_retries) / (factor),
+				(header->lhb_retry_success - base.lhb_retry_success) / (factor));
 	}
 
 	if (flag & SW_I_OPERATION) {
@@ -765,19 +738,18 @@ static void prt_lock_activity(
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" ",
 				(header->lhb_operations[Jrd::LCK_database] -
-				 base.lhb_operations[Jrd::LCK_database]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_database]) / (factor),
 				(header->lhb_operations[Jrd::LCK_relation] -
-				 base.lhb_operations[Jrd::LCK_relation]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_relation]) / (factor),
 				(header->lhb_operations[Jrd::LCK_bdb] -
-				 base.lhb_operations[Jrd::LCK_bdb]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_bdb]) / (factor),
 				(header->lhb_operations[Jrd::LCK_tra] -
-				 base.lhb_operations[Jrd::LCK_tra]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_tra]) / (factor),
 				(header->lhb_operations[Jrd::LCK_rel_exist] -
-				 base.lhb_operations[Jrd::LCK_rel_exist]) / (factor),
+				 	base.lhb_operations[Jrd::LCK_rel_exist]) / (factor),
 				(header->lhb_operations[Jrd::LCK_idx_exist] -
-				 base.lhb_operations[Jrd::LCK_idx_exist]) / (factor),
-				(header->lhb_operations[0] -
-				 base.lhb_operations[0]) / (factor));
+				 	base.lhb_operations[Jrd::LCK_idx_exist]) / (factor),
+				(header->lhb_operations[0] - base.lhb_operations[0]) / (factor));
 	}
 
 	if (flag & SW_I_WAIT) {
@@ -813,8 +785,7 @@ static void prt_lock_init(void*, sh_mem*, bool)
 }
 
 
-static void prt_history(
-						OUTFILE outfile,
+static void prt_history(OUTFILE outfile,
 						const lhb* LOCK_header,
 						SRQ_PTR history_header,
 						const SCHAR* title)
@@ -847,8 +818,7 @@ static void prt_history(
 }
 
 
-static void prt_lock(
-					 OUTFILE outfile,
+static void prt_lock(OUTFILE outfile,
 					 const lhb* LOCK_header, lbl* lock, USHORT sw_series)
 {
 /**************************************
@@ -907,10 +877,10 @@ static void prt_lock(
 		const UCHAR* end_temp = p + sizeof(temp) - 1;
   		const UCHAR* q = lock->lbl_key;
   		const UCHAR* const end = q + lock->lbl_length;
-		for (; q < end && p < end_temp; q++) {
+		for (; q < end && p < end_temp; q++)
+		{
 			const UCHAR c = *q;
-			if ((c >= 'a' && c <= 'z') ||
-				(c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
+			if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
 			{
 				*p++ = c;
 			}
@@ -936,8 +906,7 @@ static void prt_lock(
 	FPRINTF(outfile, " Flags: 0x%02X, Pending request count: %6d\n",
 			lock->lbl_flags, lock->lbl_pending_lrq_count);
 
-	prt_que(outfile, LOCK_header, "\tHash que", &lock->lbl_lhb_hash,
-			OFFSET(lbl*, lbl_lhb_hash));
+	prt_que(outfile, LOCK_header, "\tHash que", &lock->lbl_lhb_hash, OFFSET(lbl*, lbl_lhb_hash));
 
 	prt_que(outfile, LOCK_header, "\tRequests", &lock->lbl_requests,
 			OFFSET(lrq*, lrq_lbl_requests), preRequest);
@@ -947,8 +916,8 @@ static void prt_lock(
 		const lrq* request = (lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_lbl_requests));
 		FPRINTF(outfile,
 				"\t\tRequest %s, Owner: %s, State: %d (%d), Flags: 0x%02X\n",
-				(const TEXT*)HtmlLink(preRequest, SRQ_REL_PTR(request)),
-				(const TEXT*)HtmlLink(preOwn, request->lrq_owner), request->lrq_state,
+				(const TEXT*) HtmlLink(preRequest, SRQ_REL_PTR(request)),
+				(const TEXT*) HtmlLink(preOwn, request->lrq_owner), request->lrq_state,
 				request->lrq_requested, request->lrq_flags);
 	}
 
@@ -1004,8 +973,7 @@ static void prt_owner(OUTFILE outfile,
 
 	prt_que(outfile, LOCK_header, "\tRequests", &owner->own_requests,
 			OFFSET(lrq*, lrq_own_requests), preRequest);
-	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks,
-			OFFSET(lrq*, lrq_own_blocks));
+	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks, OFFSET(lrq*, lrq_own_blocks));
 
 	if (sw_waitlist) {
 		waitque owner_list;
@@ -1019,14 +987,12 @@ static void prt_owner(OUTFILE outfile,
 		const srq* que_inst;
 		SRQ_LOOP(owner->own_requests, que_inst)
 			prt_request(outfile, LOCK_header,
-						(lrq*) ((UCHAR *) que_inst -
-							   OFFSET(lrq*, lrq_own_requests)));
+						(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_own_requests)));
 	}
 }
 
 
-static void prt_owner_wait_cycle(
-								 OUTFILE outfile,
+static void prt_owner_wait_cycle(OUTFILE outfile,
 								 const lhb* LOCK_header,
 								 const own* owner,
 								 USHORT indent, waitque *waiters)
@@ -1056,11 +1022,11 @@ static void prt_owner_wait_cycle(
 	for (i = 0; i < waiters->waitque_depth; i++)
 		if (SRQ_REL_PTR(owner) == waiters->waitque_entry[i]) {
 			FPRINTF(outfile, "%s (potential deadlock).\n",
-					(const TEXT*)HtmlLink(preOwn, SRQ_REL_PTR(owner)));
+					(const TEXT*) HtmlLink(preOwn, SRQ_REL_PTR(owner)));
 			return;
 		}
 
-	FPRINTF(outfile, "%s waits on ", (const TEXT*)HtmlLink(preOwn, SRQ_REL_PTR(owner)));
+	FPRINTF(outfile, "%s waits on ", (const TEXT*) HtmlLink(preOwn, SRQ_REL_PTR(owner)));
 
 	if (!owner->own_pending_request)
 		FPRINTF(outfile, "nothing.\n");
@@ -1082,18 +1048,17 @@ static void prt_owner_wait_cycle(
 
 		int counter = 0;
 		const srq* que_inst;
-		SRQ_LOOP(lock->lbl_requests, que_inst) {
+		SRQ_LOOP(lock->lbl_requests, que_inst)
+		{
 
 			if (counter++ > 50) {
 				for (i = indent + 6; i; i--)
 					FPRINTF(outfile, " ");
-				FPRINTF(outfile, "printout stopped after %d owners\n",
-						counter - 1);
+				FPRINTF(outfile, "printout stopped after %d owners\n", counter - 1);
 				break;
 			}
 
-			const lrq* lock_request =
-				(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_lbl_requests));
+			const lrq* lock_request = (lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_lbl_requests));
 			fb_assert(lock_request->lrq_type == type_lrq);
 
 
@@ -1119,8 +1084,7 @@ static void prt_owner_wait_cycle(
 					continue;
 			}
 			const own* lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
-			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
-								 waiters);
+			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4, waiters);
 		}
 		waiters->waitque_depth--;
 	}
@@ -1149,8 +1113,8 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 				preRequest, rel_request, rel_request);
 	}
 	FPRINTF(outfile, "\tOwner: %s, Lock: %s, State: %d, Mode: %d, Flags: 0x%02X\n",
-			(const TEXT*)HtmlLink(preOwn, request->lrq_owner),
-			(const TEXT*)HtmlLink(preLock, request->lrq_lock), request->lrq_state,
+			(const TEXT*) HtmlLink(preOwn, request->lrq_owner),
+			(const TEXT*) HtmlLink(preLock, request->lrq_lock), request->lrq_state,
 			request->lrq_requested, request->lrq_flags);
 	FPRINTF(outfile, "\tAST: 0x%p, argument: 0x%p\n",
 			request->lrq_ast_routine, request->lrq_ast_argument);
@@ -1164,8 +1128,7 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 }
 
 
-static void prt_que(
-					OUTFILE outfile,
+static void prt_que(OUTFILE outfile,
 					const lhb* LOCK_header,
 					const SCHAR* string, const srq* que_inst, USHORT que_offset,
 					const TEXT* prefix)
@@ -1193,13 +1156,12 @@ static void prt_que(
 		++count;
 
 	FPRINTF(outfile, "%s (%ld):\tforward: %s, backward: %s\n", string, count,
-			(const TEXT*)HtmlLink(prefix, que_inst->srq_forward - que_offset),
-			(const TEXT*)HtmlLink(prefix, que_inst->srq_backward - que_offset));
+			(const TEXT*) HtmlLink(prefix, que_inst->srq_forward - que_offset),
+			(const TEXT*) HtmlLink(prefix, que_inst->srq_backward - que_offset));
 }
 
 
-static void prt_que2(
-					 OUTFILE outfile,
+static void prt_que2(OUTFILE outfile,
 					 const lhb* LOCK_header,
 					 const SCHAR* string, const srq* que_inst, USHORT que_offset,
 					 const TEXT* prefix)
@@ -1223,8 +1185,8 @@ static void prt_que2(
 	}
 
 	FPRINTF(outfile, "%s:\tforward: %s, backward: %s\n", string,
-			(const TEXT*)HtmlLink(prefix, que_inst->srq_forward - que_offset),
-			(const TEXT*)HtmlLink(prefix, que_inst->srq_backward - que_offset));
+			(const TEXT*) HtmlLink(prefix, que_inst->srq_forward - que_offset),
+			(const TEXT*) HtmlLink(prefix, que_inst->srq_backward - que_offset));
 }
 
 static void prt_html_begin(OUTFILE outfile)

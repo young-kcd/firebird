@@ -115,8 +115,7 @@ int main( int argc, char **argv)
 		count = 0;
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
-			if (X.FAC_CODE == FAC_SQL_POSITIVE
-				|| X.FAC_CODE == FAC_SQL_NEGATIVE)
+			if (X.FAC_CODE == FAC_SQL_POSITIVE || X.FAC_CODE == FAC_SQL_NEGATIVE)
 			{
 				if (!store_sql_msg())
 					break;

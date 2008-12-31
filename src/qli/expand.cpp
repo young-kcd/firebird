@@ -840,8 +840,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 			node->nod_arg[e_stt_value] = expand_expression(value, stack);
 		if (value = input->syn_arg[s_stt_default])
 			node->nod_arg[e_stt_default] = expand_expression(value, stack);
-		if (input->syn_arg[s_prt_distinct] && node->nod_arg[e_stt_rse]
-			&& node->nod_arg[e_stt_value])
+		if (input->syn_arg[s_prt_distinct] && node->nod_arg[e_stt_rse] && node->nod_arg[e_stt_value])
 		{
 			expand_distinct(node->nod_arg[e_stt_rse], node->nod_arg[e_stt_value]);
 		}

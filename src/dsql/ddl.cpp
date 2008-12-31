@@ -732,8 +732,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		// A "literal constant" must be handled (charset as ttype_dynamic)
 
 		resolved_type = resolved_collation;
-		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id)
-			&& (field->fld_character_set_id != ttype_dynamic))
+		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id) &&
+			(field->fld_character_set_id != ttype_dynamic))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
@@ -1588,8 +1588,8 @@ static void define_set_default_trg(	CompiledStatement*    statement,
 				const dsql_nod* domain_node = elem->nod_arg[e_dfl_domain];
 				if (!domain_node ||
 					!(tmp_node = domain_node->nod_arg[e_dom_name]) ||
-					!(domain_name_str = (dsql_str*) tmp_node->nod_arg[e_fln_name])
-					|| !(domain_name = domain_name_str->str_data))
+					!(domain_name_str = (dsql_str*) tmp_node->nod_arg[e_fln_name]) ||
+					!(domain_name = domain_name_str->str_data))
 				{
 					break;
 				}
@@ -4794,8 +4794,8 @@ static void make_comment(CompiledStatement* statement)
 	const bool have_subobj = node->nod_arg[e_comment_part] != 0;
 
 	const dsql_nod* obj_type_node = node->nod_arg[e_comment_obj_type];
-	fb_assert(obj_type_node->nod_type == nod_constant
-		&& obj_type_node->nod_desc.dsc_dtype == dtype_long);
+	fb_assert(obj_type_node->nod_type == nod_constant &&
+		obj_type_node->nod_desc.dsc_dtype == dtype_long);
 	const int obj_type = obj_type_node->getSlong();
 
 	UCHAR dyn_verb = 0;

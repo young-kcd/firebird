@@ -1261,8 +1261,8 @@ static void db_error( SLONG status)
 						GetUserDefaultLangID(),
 						s,
 						sizeof(s),
-						NULL)
-		&& !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+						NULL) &&
+		!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 						NULL,
 						status,
 						0, // TMN: Fallback to system known language
@@ -1372,8 +1372,7 @@ static const pag* db_read( SLONG page_number)
 	tddba->page_number = page_number;
 
 	dba_fil* fil;
-	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
-							 && fil->fil_next;)
+	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page && fil->fil_next;)
 	{
 		 fil = fil->fil_next;
 	}
@@ -1541,8 +1540,7 @@ static const pag* db_read( SLONG page_number)
 	tddba->page_number = page_number;
 
 	dba_fil* fil;
-	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page
-							 && fil->fil_next;)
+	for (fil = tddba->files; page_number > (SLONG) fil->fil_max_page && fil->fil_next;)
 	{
 		fil = fil->fil_next;
 	}

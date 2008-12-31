@@ -195,8 +195,7 @@ void xdr_debug_memory(
 	for (i = 0; i < vector->vec_count; i++) {
 		PACKET* packet = (PACKET*) vector->vec_object[i];
 		if (packet) {
-			fb_assert(packet->p_operation > op_void
-				   && packet->p_operation < op_max);
+			fb_assert(packet->p_operation > op_void && packet->p_operation < op_max);
 
 			if ((SCHAR *) xdrvar >= (SCHAR *) packet &&
 				(SCHAR *) xdrvar < (SCHAR *) packet + sizeof(PACKET))
@@ -719,11 +718,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		/* Changes to this op's protocol must mirror in xdr_protocol_overhead */
 
 		port = (rem_port*) xdrs->x_public;
-		if (
-			(port->port_protocol > PROTOCOL_VERSION7
-			 && sqldata->p_sqldata_messages)
-			|| (port->port_protocol <= PROTOCOL_VERSION7
-				&& !sqldata->p_sqldata_status))
+		if ((port->port_protocol > PROTOCOL_VERSION7 && sqldata->p_sqldata_messages) ||
+			(port->port_protocol <= PROTOCOL_VERSION7 && !sqldata->p_sqldata_status))
 		{
 			return xdr_sql_message(xdrs, (SLONG)sqldata->p_sqldata_statement) ?
 				P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
@@ -733,21 +729,17 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 	case op_free_statement:
 		free_stmt = &p->p_sqlfree;
-		MAP(xdr_short,
-			reinterpret_cast<SSHORT&>(free_stmt->p_sqlfree_statement));
-		MAP(xdr_short,
-			reinterpret_cast<SSHORT&>(free_stmt->p_sqlfree_option));
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(free_stmt->p_sqlfree_statement));
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(free_stmt->p_sqlfree_option));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
 	case op_insert:
 		sqldata = &p->p_sqldata;
-		MAP(xdr_short,
-			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
 		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
 					&sqldata->p_sqldata_blr, false, TYPE_PREPARED);
-		MAP(xdr_short,
-			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
 		if (sqldata->p_sqldata_messages)
@@ -964,8 +956,7 @@ static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 #ifdef DEV_BUILD
 	const bool cond =
 		!(xdrs->x_op == XDR_DECODE &&
-			cstring->cstr_length <= cstring->cstr_allocated
-			&& cstring->cstr_allocated);
+			cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
 	fb_assert(cond);
 #endif
 #endif
@@ -1318,11 +1309,8 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 
 	switch (xdrs->x_op) {
 	case XDR_ENCODE:
-		if ((*xdrs->x_ops->x_putlong)
-			(xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high))
-			&& (*xdrs->x_ops->x_putlong) (xdrs,
-										  reinterpret_cast<
-										  SLONG*>(&ip->bid_quad_low)))
+		if ((*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)) &&
+			(*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low)))
 		{
 			return TRUE;
 		}
@@ -1335,8 +1323,7 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 		{
 			return FALSE;
 		}
-		return (*xdrs->x_ops->x_getlong) (xdrs,
-										  reinterpret_cast<SLONG*>(&ip->bid_quad_low));
+		return (*xdrs->x_ops->x_getlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low));
 
 	case XDR_FREE:
 		return TRUE;
@@ -1346,8 +1333,7 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 }
 
 
-static bool_t xdr_request(
-						  XDR* xdrs,
+static bool_t xdr_request(XDR* xdrs,
 						  USHORT request_id,
 						  USHORT message_number, USHORT incarnation)
 {
@@ -1545,8 +1531,7 @@ static bool_t xdr_sql_blr(
 		 * For all statements, if we have new blr, flush out the format information
 		 * for the old blr.
 		 */
-		if (*fmt_ptr
-			&& ((stmt_type == TYPE_IMMEDIATE) || blr->cstr_length != 0))
+		if (*fmt_ptr && ((stmt_type == TYPE_IMMEDIATE) || blr->cstr_length != 0))
 		{
 			delete *fmt_ptr;
 			*fmt_ptr = NULL;
@@ -1556,8 +1541,7 @@ static bool_t xdr_sql_blr(
 		 * setting up a format
 		 */
 		if (blr->cstr_length) {
-			REM_MSG temp_msg =
-				(REM_MSG) PARSE_messages(blr->cstr_address, blr->cstr_length);
+			REM_MSG temp_msg = (REM_MSG) PARSE_messages(blr->cstr_address, blr->cstr_length);
 			if (temp_msg != (REM_MSG) -1) {
 				*fmt_ptr = (rem_fmt*) temp_msg->msg_address;
 				delete temp_msg;

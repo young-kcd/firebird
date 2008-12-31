@@ -434,8 +434,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 			// International character sets
 			// Print only the character set
-			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR)
-				&& !RFR.RDB$COLLATION_ID.NULL && RFR.RDB$COLLATION_ID)
+			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
+				!RFR.RDB$COLLATION_ID.NULL && RFR.RDB$COLLATION_ID)
 			{
 				char_sets[0] = '\0';
 				collation = RFR.RDB$COLLATION_ID;

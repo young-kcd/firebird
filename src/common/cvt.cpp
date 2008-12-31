@@ -371,14 +371,12 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
-		(to->dsc_dtype == dtype_varying
-		 && length > (to->dsc_length - sizeof(USHORT))))
+		(to->dsc_dtype == dtype_varying && length > (to->dsc_length - sizeof(USHORT))))
 	{
 	    CVT_conversion_error(from, cb->err);
 	}
 
-	UCHAR* q = (to->dsc_dtype == dtype_varying) ?
-		to->dsc_address + sizeof(USHORT) : to->dsc_address;
+	UCHAR* q = (to->dsc_dtype == dtype_varying) ? to->dsc_address + sizeof(USHORT) : to->dsc_address;
 
 /* If negative, put in minus sign */
 
@@ -720,10 +718,8 @@ static void string_to_datetime(const dsc* desc,
 		// Forbid months or days with more than 2 digits
 		// Forbid months or days being missing
 		if (description[position_year] > 4 ||
-			description[position_month] > 2
-			|| description[position_month] == 0
-			|| description[position_day] > 2
-			|| description[position_day] <= 0)
+			description[position_month] > 2 || description[position_month] == 0 ||
+			description[position_day] > 2 || description[position_day] <= 0)
 		{
 			CVT_conversion_error(desc, err);
 			return;
@@ -1768,9 +1764,8 @@ USHORT CVT_make_string(const dsc*          desc,
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
-	fb_assert((((temp != NULL) && (length > 0))
-			|| ((INTL_TTYPE(desc) <= dtype_any_text)
-				&& (INTL_TTYPE(desc) == to_interp))));
+	fb_assert((((temp != NULL) && (length > 0)) ||
+			((INTL_TTYPE(desc) <= dtype_any_text) && (INTL_TTYPE(desc) == to_interp))));
 
 	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
 		*address = reinterpret_cast<char*>(desc->dsc_address);
@@ -1961,8 +1956,7 @@ SSHORT CVT_decompose(const char* string,
 				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 				}
-				else if (((*p > '8') && (sign == -1))
-						 || ((*p > '7') && (sign != -1)))
+				else if (((*p > '8') && (sign == -1)) || ((*p > '7') && (sign != -1)))
 				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 				}
@@ -2089,10 +2083,9 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 	fb_assert(ttype != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
-	fb_assert((((temp != NULL) && (length > 0))
-			|| (desc->dsc_dtype == dtype_text)
-			|| (desc->dsc_dtype == dtype_cstring)
-			|| (desc->dsc_dtype == dtype_varying)));
+	fb_assert(((temp != NULL) && (length > 0)) ||
+			(desc->dsc_dtype == dtype_text) ||
+			(desc->dsc_dtype == dtype_cstring) || (desc->dsc_dtype == dtype_varying));
 
 /* If the value is already a string (fixed or varying), just return
    the address and length. */

@@ -723,8 +723,8 @@ static void define_database( enum act_t action_type)
 				dudleyGlob.database->dbb_flags |= DBB_null_security_class;
 /*
 			else if (PARSE_match(KW_LOG_FILE)) {
-				if ((dudleyGlob.database->dbb_flags & DBB_log_default)
-					|| (dudleyGlob.database->dbb_logfiles))
+				if ((dudleyGlob.database->dbb_flags & DBB_log_default) ||
+					(dudleyGlob.database->dbb_logfiles))
 				{
 					PARSE_error(337, 0, 0);
 				}
@@ -770,8 +770,8 @@ static void define_database( enum act_t action_type)
 			dudleyGlob.database->dbb_grp_cmt_wait = PARSE_number();
 		}
 		else if (PARSE_match(KW_LOG_FILE)) {
-			if ((dudleyGlob.database->dbb_flags & DBB_log_default)
-				|| (dudleyGlob.database->dbb_logfiles))
+			if ((dudleyGlob.database->dbb_flags & DBB_log_default) ||
+				(dudleyGlob.database->dbb_logfiles))
 			{
 					PARSE_error(338, 0, 0);
 			}
@@ -1200,8 +1200,7 @@ static void define_relation(void)
  **************************************/
 	DUDLEY_REL relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
-		((relation->rel_flags & rel_marked_for_creation)
-		 || EXE_relation(relation)))
+		((relation->rel_flags & rel_marked_for_creation) || EXE_relation(relation)))
 	{
 		PARSE_error(137, relation->rel_name->sym_string, 0);
 		// msg 137: relation %s already exists
@@ -1526,8 +1525,7 @@ static void define_view(void)
 
 	DUDLEY_REL relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
-		((relation->rel_flags & rel_marked_for_creation)
-		 || EXE_relation(relation)))
+		((relation->rel_flags & rel_marked_for_creation) || EXE_relation(relation)))
 	{
 		PARSE_error(300, relation->rel_name->sym_string, 0);
 		// msg 300: relation %s already exists
@@ -2098,10 +2096,10 @@ static void grant_user_privilege(void)
 				PARSE_error(313, dudleyGlob.DDL_token.tok_string, 0);	/* msg 313: expected ON or '(', encountered "%s" */
 
 			do {
-				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT
-					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT
-					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE
-					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT ||
+					dudleyGlob.DDL_token.tok_keyword == KW_INSERT ||
+					dudleyGlob.DDL_token.tok_keyword == KW_DELETE ||
+					dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
 				}
@@ -3915,10 +3913,10 @@ static void revoke_user_privilege(void)
 				PARSE_error(315, dudleyGlob.DDL_token.tok_string, 0);	/* msg 315: expected ON or '(', encountered "%s" */
 
 			do {
-				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT
-					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT
-					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE
-					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT ||
+					dudleyGlob.DDL_token.tok_keyword == KW_INSERT ||
+					dudleyGlob.DDL_token.tok_keyword == KW_DELETE ||
+					dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
 				}

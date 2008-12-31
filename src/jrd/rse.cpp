@@ -397,9 +397,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 				   other attachments. */
 
 				Attachment* attachment = tdbb->getAttachment();
-				if (attachment &&
-					(attachment != dbb->dbb_attachments
-					 || attachment->att_next))
+				if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 				{
 					/* If the relation has more data pages than the number of
 					   pages in the buffer cache then mark the input window
@@ -411,12 +409,10 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					   is equal to that of a single large relation. */
 
 					if (attachment->att_flags & ATT_gbak_attachment ||
-						DPM_data_pages(tdbb,
-							rpb->rpb_relation) > (SLONG) bcb->bcb_count)
+						DPM_data_pages(tdbb, rpb->rpb_relation) > (SLONG) bcb->bcb_count)
 					{
 						rpb->getWindow(tdbb).win_flags = WIN_large_scan;
-						rpb->rpb_org_scans =
-							rpb->rpb_relation->rel_scan_count++;
+						rpb->rpb_org_scans = rpb->rpb_relation->rel_scan_count++;
 					}
 				}
 			}

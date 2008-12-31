@@ -430,26 +430,25 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr)
-				|| actual_length != (DWORD)length)
+		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr) ||
+			actual_length != (DWORD) length)
 		{
 			nt_error("ReadFile", file, isc_io_read_err, 0);
 		}
 
-		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(),
-							 spare_buffer, length, address);
+		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, length, address);
 	}
 	else
 	{
-		if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr)
-				|| actual_length != (DWORD)length)
+		if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr) ||
+			actual_length != (DWORD) length)
 		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
-					|| actual_length != length)
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+				actual_length != length)
 			{
-					CloseHandle(overlapped.hEvent);
-					nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
+				CloseHandle(overlapped.hEvent);
+				nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
 			}
 #else
 			nt_error("ReadFile", file, isc_io_read_err, 0);
@@ -624,14 +623,13 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
         DWORD actual_length;
 
-		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
-			|| actual_length != size)
+		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr) ||
+			actual_length != size)
 		{
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 		}
 
-		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(),
-							 spare_buffer, size, page);
+		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, size, page);
 	}
 	else
 	{
@@ -640,12 +638,11 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 			actual_length != size)
 		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
-				|| actual_length != size)
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+				actual_length != size)
 			{
 				release_io_event(file, overlapped_ptr);
-				return nt_error("GetOverlappedResult", file, isc_io_read_err,
-								status_vector);
+				return nt_error("GetOverlappedResult", file, isc_io_read_err, status_vector);
 			}
 #else
 			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
@@ -715,8 +712,7 @@ bool PIO_read_ahead(Database*		dbb,
 		   file. If not read what you can and loop back for the rest. */
 
 		DWORD segmented_length = 0;
-		while (pages && start_page >= file->fil_min_page
-			   && start_page <= file->fil_max_page)
+		while (pages && start_page >= file->fil_min_page && start_page <= file->fil_max_page)
 		{
 			segmented_length += dbb->dbb_page_size;
 			++start_page;
@@ -838,12 +834,11 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	if (dbb->dbb_encrypt_key.hasData()) {
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(),
-							 page, size, spare_buffer);
+		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(), page, size, spare_buffer);
 
 		DWORD actual_length;
-		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr)
-			|| actual_length != size)
+		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr) ||
+			actual_length != size)
 		{
 			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 		}
@@ -851,16 +846,14 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	else
 	{
 		DWORD actual_length;
-		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr)
-			|| actual_length != size )
+		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) || actual_length != size )
 		{
 #ifdef SUPERSERVER_V2
-			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE)
-				|| actual_length != size)
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+				actual_length != size)
 			{
 				release_io_event(file, overlapped_ptr);
-				return nt_error("GetOverlappedResult", file, isc_io_write_err,
-								status_vector);
+				return nt_error("GetOverlappedResult", file, isc_io_write_err, status_vector);
 			}
 #else
 			return nt_error("WriteFile", file, isc_io_write_err, status_vector);

@@ -1506,8 +1506,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		/* bag it if the protocol doesn't support it... */
 
 		if (port->port_protocol < PROTOCOL_VERSION7 ||
-			((in_msg_length || out_msg_length)
-		 	&& port->port_protocol < PROTOCOL_VERSION8))
+			((in_msg_length || out_msg_length) && port->port_protocol < PROTOCOL_VERSION8))
 		{
 		 	return unsupported(user_status);
 		}
@@ -1591,8 +1590,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		ex_now->p_sqlst_blr.cstr_length = in_blr_length;
 		ex_now->p_sqlst_blr.cstr_address = in_blr;
 		ex_now->p_sqlst_message_number = in_msg_type;
-		ex_now->p_sqlst_messages = (in_msg_length
-									&& statement->rsr_bind_format) ? 1 : 0;
+		ex_now->p_sqlst_messages = (in_msg_length && statement->rsr_bind_format) ? 1 : 0;
 		ex_now->p_sqlst_out_blr.cstr_length = out_blr_length;
 		ex_now->p_sqlst_out_blr.cstr_address = out_blr;
 		ex_now->p_sqlst_out_message_number = out_msg_type;
@@ -1760,26 +1758,24 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		/* Check to see if data is waiting.  If not, solicite data. */
 
 		if ((!statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
-			 (!statement->rsr_message->msg_address) &&
-			 (statement->rsr_rows_pending == 0))
-			|| (					// Low in inventory
-				   (statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
-				   (statement->rsr_msgs_waiting <= statement->rsr_reorder_level)
-				   &&
-				   // doing Batch, not RPC
-				   !(port->port_flags & PORT_rpc) &&
-				   // not using named pipe on NT
-				   /* Pipelining causes both server & client to
-				      write at the same time. In named pipes, writes
-				      block for the other end to read -  and so when both
-				      attempt to write simultaenously, they end up
-				      waiting indefinetly for the other end to read */
-				   (port->port_type != rem_port::PIPE) &&
-				   (port->port_type != rem_port::XNET) &&
-				   // We've reached eof or there was an error
-				   !statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
-				   // No error pending
-				   !statement->haveException() ))
+				(!statement->rsr_message->msg_address) && (statement->rsr_rows_pending == 0)) ||
+			(					// Low in inventory
+			   (statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
+			   (statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
+			   // doing Batch, not RPC
+			   !(port->port_flags & PORT_rpc) &&
+			   // not using named pipe on NT
+			   /* Pipelining causes both server & client to
+			      write at the same time. In named pipes, writes
+			      block for the other end to read -  and so when both
+			      attempt to write simultaenously, they end up
+			      waiting indefinetly for the other end to read */
+			   (port->port_type != rem_port::PIPE) &&
+			   (port->port_type != rem_port::XNET) &&
+			   // We've reached eof or there was an error
+			   !statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
+			   // No error pending
+			   !statement->haveException() ))
 		{
 			/* set up the packet for the other guy... */
 
@@ -1825,8 +1821,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 			enqueue_receive(port, batch_dsql_fetch, rdb, statement, NULL);
 
-			fb_assert(statement->rsr_rows_pending > 0
-				   || (!statement->rsr_select_format));
+			fb_assert(statement->rsr_rows_pending > 0 || (!statement->rsr_select_format));
 		}
 
 		/* Receive queued responses until we have some data for this cursor
@@ -1837,10 +1832,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
 			   statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET));
 
-		while (!statement->haveException()			/* received a database error */
-			   && !statement->rsr_flags.test(Rsr::EOF_SET)	/* reached end of cursor */
-			   && statement->rsr_msgs_waiting < 2	/* Have looked ahead for end of batch */
-			   && statement->rsr_rows_pending != 0)
+		while (!statement->haveException() &&			/* received a database error */
+			!statement->rsr_flags.test(Rsr::EOF_SET) &&	/* reached end of cursor */
+			statement->rsr_msgs_waiting < 2	&&			/* Have looked ahead for end of batch */
+			statement->rsr_rows_pending != 0)
 		{	/* Hit end of batch */
 			if (!receive_queued_packet(port, user_status, statement->rsr_id))
 			{
@@ -3115,8 +3110,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			P_REQ* request = &packet->p_req;
 			request->p_req_object = rdb->rdb_id;
 			request->p_req_type = P_REQ_async;
-			if (!send_packet(port, packet, user_status)
-				|| !receive_response(rdb, packet))
+			if (!send_packet(port, packet, user_status) || !receive_response(rdb, packet))
 			{
 				return user_status[1];
 			}
@@ -3366,8 +3360,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 		/* We've either got data, or some is on the way, or we have an error */
 
-		fb_assert(message->msg_address || (tail->rrq_rows_pending > 0)
-			   || request->rrq_status_vector[1]);
+		fb_assert(message->msg_address || tail->rrq_rows_pending > 0 || request->rrq_status_vector[1]);
 
 		while (!message->msg_address && !request->rrq_status_vector[1])
 		{
@@ -6476,9 +6469,8 @@ static ISC_STATUS return_success( Rdb* rdb)
    initialize the status vector to indicate success.
    Else pass the status vector along as it stands.  */
 
-	if (p[0] != isc_arg_gds || p[1] != FB_SUCCESS
-		|| (p[2] != isc_arg_end && p[2] != isc_arg_gds
-			&& p[2] != isc_arg_warning))
+	if (p[0] != isc_arg_gds || p[1] != FB_SUCCESS ||
+		(p[2] != isc_arg_end && p[2] != isc_arg_gds && p[2] != isc_arg_warning))
 	{
 		*p++ = isc_arg_gds;
 		*p++ = FB_SUCCESS;
@@ -6556,8 +6548,8 @@ static REM_MSG scroll_cache(
 		   forward one by positioning to the first record, so decrement the offset by one */
 
 		if (*offset &&
-			((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD))
-			|| ((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+			((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
 		{
 			(*offset)--;
 		}
@@ -6567,8 +6559,8 @@ static REM_MSG scroll_cache(
    (or vice versa), the cache is unusable. */
 
 	if (
-		(*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD))
-		|| (*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
+		(*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
+		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
 	{
 		return dump_cache(port, user_status, tail);
 	}
@@ -6586,15 +6578,12 @@ static REM_MSG scroll_cache(
 					/* if the cache was formed in the backward direction, see if
 					   there are any packets pending which might contain the record */
 
-					if ((tail->rrq_flags & Rrq::BACKWARD)
-						&& (tail->rrq_rows_pending > 0))
+					if ((tail->rrq_flags & Rrq::BACKWARD) && (tail->rrq_rows_pending > 0))
 					{
 						tail->rrq_message = message;
-						while (!message->msg_address
-							   && !request->rrq_status_vector[1])
+						while (!message->msg_address && !request->rrq_status_vector[1])
 						{
-							if (!receive_queued_packet(port, user_status,
-													   request->rrq_id))
+							if (!receive_queued_packet(port, user_status, request->rrq_id))
 							{
 								return NULL;
 							}

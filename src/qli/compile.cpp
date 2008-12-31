@@ -116,7 +116,7 @@ void CMP_alloc_temp(qli_nod* node)
 	if (node->nod_desc.dsc_address)
 		return;
 
-	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length + 
+	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length +
 					     type_alignments[node->nod_desc.dsc_dtype]);
 	node->nod_desc.dsc_address = (UCHAR *) FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), type_alignments[node->nod_desc.dsc_dtype]);
 	QLI_validate_desc(node->nod_desc);
@@ -298,8 +298,7 @@ static qli_nod* compile_assignment( qli_nod* node, qli_req* request,
 	}
 
 	const bool target_internal = computable(to, request);
-	statement_internal = statement_internal && request && target_internal
-		&& computable(from, request);
+	statement_internal = statement_internal && request && target_internal && computable(from, request);
 
 	qli_nod* target = compile_expression(to, request, target_internal);
 	node->nod_arg[e_asn_to] = target;

@@ -271,8 +271,7 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(6);	// msg 6: number of page buffers for cache required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
-			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string)))
-				&& (strcmp(string, "0")))
+			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
 			}
@@ -286,8 +285,7 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(9);	// msg 9: number of transactions per sweep required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
-			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string)))
-				&& (strcmp(string, "0")))
+			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
 			}
@@ -419,13 +417,12 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(17);	// msg 17: number of seconds required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
-			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string)))
-				&& (strcmp(string, "0")))
+			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
 			}
-			if (tdgbl->ALICE_data.ua_shutdown_delay < 0
-				|| tdgbl->ALICE_data.ua_shutdown_delay > 32767)
+			if (tdgbl->ALICE_data.ua_shutdown_delay < 0 ||
+				tdgbl->ALICE_data.ua_shutdown_delay > 32767)
 			{
 				ALICE_error(18);	// msg 18: numeric value between 0 and 32767 inclusive required
 			}
@@ -451,8 +448,7 @@ int alice(Firebird::UtilSvc* uSvc)
 
 //  put this here since to put it above overly complicates the parsing
 //  can't use tbl_requires since it only looks backwards on command line
-	if ((switches & sw_shut)
-		&& !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
+	if ((switches & sw_shut) && !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
 		ALICE_error(19);	// msg 19: must specify type of shutdown
 	}

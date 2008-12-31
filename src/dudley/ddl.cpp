@@ -737,9 +737,8 @@ bool DDL_yes_no( USHORT number)
 			return true;
 		if (UPPER(c) == UPPER(no_ans[0]))
 			return false;
-		if (!reprompt
-			&& fb_msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
-							   reprompt, dummy) <= 0)
+		if (!reprompt &&
+			fb_msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt), reprompt, dummy) <= 0)
 		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
 		}

@@ -674,8 +674,7 @@ static ULONG ask(void)
 			return ~0;
 		*p = 0;
 		ALICE_down_case(response, response, sizeof(response));
-		if (!strcmp(response, "n") || !strcmp(response, "c")
-			|| !strcmp(response, "r"))
+		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))
 		{
 			  break;
 		}

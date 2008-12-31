@@ -76,40 +76,40 @@ static void set_lock_attachment(Lock*, Attachment*);
 
 #ifdef SUPERSERVER
 
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) 
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb)
 {
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) 
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb)
 {
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getAttachment()->att_lock_owner_id;
 }
 
-inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) 
+inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb)
 {
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) 
+inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb)
 {
 	return &tdbb->getAttachment()->att_lock_owner_handle;
 }
 
 #else	// SUPERSERVER
 
-inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb) 
+inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb)
 {
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
-inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb) 
+inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb)
 {
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
 }
 
-inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb) 
+inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb)
 {
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
-inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb) 
+inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb)
 {
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;
 }
@@ -201,8 +201,8 @@ inline bool checkLock(const Lock* l)
    while we are in the process of asserting DBB_assert_locks is set, but
    we haven't gotten physical locks yet.
 
-			         (!(l->lck_dbb->dbb_ast_flags & DBB_assert_locks) \
-				    || (l->lck_physical >= l->lck_logical)) && \
+			         (!(l->lck_dbb->dbb_ast_flags & DBB_assert_locks) || \
+				     (l->lck_physical >= l->lck_logical)) && \
 */
 #endif
 
@@ -653,7 +653,7 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 #else
 	Lock* parent = lock->lck_parent;
 	const SLONG data =
-		dbb->dbb_lock_mgr->readData2(parent ? parent->lck_id : 0, 
+		dbb->dbb_lock_mgr->readData2(parent ? parent->lck_id : 0,
 									 lock->lck_type,
 									 (UCHAR*) &lock->lck_key, lock->lck_length,
 									 lock->lck_owner_handle);

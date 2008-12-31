@@ -459,8 +459,7 @@ int RESTORE_restore (const TEXT* file_name,
 		if (gds_status[1])
 			general_on_error ();
 		// Check to see if there is a warning
-		if (gds_status[0] == isc_arg_gds && gds_status[1] == 0
-			&& gds_status[2] != isc_arg_end)
+		if (gds_status[0] == isc_arg_gds && gds_status[1] == 0 && gds_status[2] != isc_arg_end)
 		{
 			BURP_print_warning(gds_status);
 		}
@@ -568,8 +567,7 @@ int RESTORE_restore (const TEXT* file_name,
 	END_ERROR;
 
 	// Check to see if there is a warning
-	if (gds_status[0] == isc_arg_gds && gds_status[1] == 0
-		&& gds_status[2] != isc_arg_end)
+	if (gds_status[0] == isc_arg_gds && gds_status[1] == 0 && gds_status[2] != isc_arg_end)
 	{
 		BURP_print_warning(gds_status);
 	}

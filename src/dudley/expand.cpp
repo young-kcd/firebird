@@ -368,15 +368,13 @@ static void expand_trigger( DUDLEY_TRG trigger)
 
 	relation = trigger->trg_relation;
 
-	if ((trigger->trg_type != trg_store)
-		&& (trigger->trg_type != trg_post_store)) {
+	if ((trigger->trg_type != trg_store) && (trigger->trg_type != trg_post_store)) {
 		if (!old)
 			old = make_context("OLD", relation, 0);
 		LLS_PUSH((DUDLEY_NOD) old, &contexts);
 	}
 
-	if ((trigger->trg_type != trg_erase)
-		&& (trigger->trg_type != trg_pre_erase)) {
+	if ((trigger->trg_type != trg_erase) && (trigger->trg_type != trg_pre_erase)) {
 		if (!new_ctx)
 			new_ctx = make_context("NEW", relation, 1);
 		LLS_PUSH((DUDLEY_NOD) new_ctx, &contexts);

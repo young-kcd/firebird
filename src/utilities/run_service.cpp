@@ -116,8 +116,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				send_item_length = len + 3;
 			}
 		}
-	} while (item == isc_info_truncated
-			 || (send_items == send_buffer && send_item_length));
+	} while (item == isc_info_truncated || (send_items == send_buffer && send_item_length));
 
 	isc_service_detach(NULL, &handle);
 

@@ -552,12 +552,10 @@ static bool start_server( ibmgr_data_t* data)
 		 */
 #if (defined SOLARIS_MT)
 		// Trying to understand why it died
-		if ((ret_value == pid) && ( WIFEXITED(exit_status)
-					|| WCOREDUMP(exit_status)
-					|| WIFSIGNALED(exit_status)))
+		if (ret_value == pid &&
+			(WIFEXITED(exit_status) || WCOREDUMP(exit_status) || WIFSIGNALED(exit_status)))
 		{
-			printf("Guardian process %ld terminated with code %ld\n",
-				pid, WEXITSTATUS(exit_status));
+			printf("Guardian process %ld terminated with code %ld\n", pid, WEXITSTATUS(exit_status));
 			break;
 		}
 

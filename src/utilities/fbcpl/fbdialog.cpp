@@ -349,8 +349,8 @@ int CFBDialog::GetServerStatus()
 		}
 	}
 
-	fb_status.WasRunning = ( (fb_status.ServerStatus == IDS_SERVICE_RUNNING)
-							|| (fb_status.ServerStatus == IDS_APPLICATION_RUNNING) );
+	fb_status.WasRunning = ((fb_status.ServerStatus == IDS_SERVICE_RUNNING) ||
+							(fb_status.ServerStatus == IDS_APPLICATION_RUNNING) );
 
 	// If running as an application and not set to run automatically on start up
 	// we still don't  know if we the guardian is running.
