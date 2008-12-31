@@ -1110,10 +1110,10 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 					{
 						if (p1 < q && (*q1++ = *p1++) == '_')
 						{
-							char d;
+							char d = 0;
 							if (p1 < q && ((d = *p1++) == '_' || d == '$'))
 								strncpy(q1 - 4, "isc", 3);
-							else
+							else if (d)
 								*q1++ = d;
 						}
 					}
