@@ -3552,10 +3552,12 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 			const UCHAR* info_items = items;
 			const UCHAR* const end_items = info_items + item_length;
 
-			while (info_items < end_items) {
-				USHORT data;
+			while (info_items < end_items) 
+			{
+				USHORT data = 0;
 				const UCHAR item = *info_items++;
-				switch (item) {
+				switch (item) 
+				{
 				case isc_info_end:
 					break;
 
@@ -4464,6 +4466,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, Rrq** req_handle, USHORT level)
 
 	rdb->rdb_status_vector = user_status;
 
+	/* Unreachable code because EXE_unwind was commented out.
 	try
 	{
 		// EXE_unwind (*req_handle);
@@ -4472,6 +4475,7 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, Rrq** req_handle, USHORT level)
 	{
 		return stuff_exception(user_status, ex);
 	}
+	*/
 
 	return return_success(rdb);
 }
