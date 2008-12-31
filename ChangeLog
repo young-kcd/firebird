@@ -1,3 +1,88 @@
+2008-12-31 12:45  dimitr
+
+	* firebird2/builds/win32/msvc8/gpre_boot.vcproj (1.7):
+
+	Fixed the MSVC8 build.
+
+2008-12-31 10:43  dimitr
+
+	* firebird2/builds/win32/make_all.bat (1.52):
+
+	More complete file copying code.
+
+2008-12-31 10:42  robocop
+
+	* firebird2/src/gpre/c_cxx.cpp (1.80):
+
+	Fix problem with uninitialized vars (the code has been unreliable
+	since the IB days but it's unlikely that the failure will be
+	triggered).
+
+2008-12-31 10:36  robocop
+
+	* firebird2/src/: burp/restore.epp (1.153), dudley/extract.epp
+	(1.50), isql/extract.epp (1.97), isql/show.epp (1.137),
+	utilities/gstat/dba.epp (1.106):
+
+	Shut up compiler warnings (unreferenced vars, uninitialized vars,
+	etc).
+
+2008-12-31 10:35  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.58), c_cxx.cpp (1.79), cmd.cpp
+	(1.49), cme.cpp (1.52), cmp.cpp (1.43), cob.cpp (1.73), exp.cpp
+	(1.48), ftn.cpp (1.69), gpre.cpp (1.98), gpre.h (1.97),
+	gpre_meta.epp (1.65), gpre_meta_boot.cpp (1.60), int_cxx.cpp
+	(1.45), par.cpp (1.76), pas.cpp (1.61), pretty.cpp (1.38), rmc.cpp
+	(1.16), sqe.cpp (1.60), sql.cpp (1.79):
+
+	Cleanup: style, get rid of typedef needed by plain C, other C++
+	legacy declarations, etc. Sixth pass.
+
+2008-12-31 08:51  dimitr
+
+	* firebird2/builds/win32/make_all.bat (1.51):
+
+	Misc.
+
+2008-12-31 06:07  robocop
+
+	* firebird2/src/remote/interface.cpp (1.204):
+
+	Shut up compiler warning (unreachable code).
+
+2008-12-31 06:05  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.111), alice/tdr.cpp (1.59),
+	burp/burp.cpp (1.157), burp/restore.epp (1.152), common/cvt.cpp
+	(1.8), common/config/config_file.cpp (1.33), dsql/ddl.cpp (1.267),
+	dsql/dsql.cpp (1.265), dudley/ddl.cpp (1.45), dudley/expand.cpp
+	(1.33), dudley/extract.epp (1.49), dudley/generate.cpp (1.24),
+	dudley/parse.cpp (1.55), dudley/trn.cpp (1.42),
+	iscguard/cntl_guard.cpp (1.27), iscguard/iscguard.cpp (1.61),
+	isql/extract.epp (1.96), isql/isql.epp (1.259), isql/show.epp
+	(1.136), jrd/lck.cpp (1.94), jrd/par.cpp (1.223), jrd/rse.cpp
+	(1.165), jrd/os/posix/unix.cpp (1.111), jrd/os/win32/winnt.cpp
+	(1.78), lock/driver.cpp (1.23), lock/lock.cpp (1.174), lock/lock.h
+	(1.50), lock/print.cpp (1.76), misc/memtest.cpp (1.7),
+	msgs/enter_msgs.epp (1.18), qli/all.cpp (1.36), qli/compile.cpp
+	(1.33), qli/dtr.cpp (1.63), qli/expand.cpp (1.42), remote/inet.cpp
+	(1.264), remote/interface.cpp (1.203), remote/protocol.cpp (1.74),
+	remote/os/win32/chop.cpp (1.9), remote/os/win32/cntl.cpp (1.43),
+	remote/os/win32/window.cpp (1.36), utilities/run_service.cpp
+	(1.14), utilities/fbcpl/fbdialog.cpp (1.12),
+	utilities/gstat/dba.epp (1.105), utilities/ibmgr/srvrmgr.cpp
+	(1.36):
+
+	Style.
+
+2008-12-31 05:11  robocop
+
+	* firebird2/src/jrd/cvt.cpp (1.102):
+
+	Strange warning: looks like the result of USHORT/UCHAR is being
+	promoted to int and this causes a signed/unsigned wng.
+
 2008-12-30 18:58  alexpeshkoff
 
 	* firebird2/src/: common/utils_proto.h (1.29),
