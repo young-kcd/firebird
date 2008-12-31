@@ -55,6 +55,7 @@ for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\fbclient\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 :: Firebird.conf, etc
 @copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR% > nul
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR% >nul
@@ -96,6 +97,7 @@ copy %FB_ROOT_PATH%\src\include\gen\iberror.h %FB_OUTPUT_DIR%\include > nul
 
 :: UDF
 copy %FB_ROOT_PATH%\src\extlib\ib_udf.sql %FB_OUTPUT_DIR%\udf > nul
+copy %FB_ROOT_PATH%\src\extlib\ib_udf2.sql %FB_OUTPUT_DIR%\udf > nul
 copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 :: Examples
 @copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR%\bin >nul
