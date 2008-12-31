@@ -324,10 +324,6 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\gpre\ada.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\gpre\c_cxx.cpp"
 				>
 			</File>
@@ -341,10 +337,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\cmp.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\cob.cpp"
 				>
 			</File>
 			<File
@@ -381,10 +373,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\gpre\par.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\pas.cpp"
 				>
 			</File>
 			<File
