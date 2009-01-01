@@ -1,3 +1,16 @@
+2008-12-31 21:22  asfernandes
+
+	* firebird2/src/: burp/restore.epp (1.154), common/cvt.cpp (1.9),
+	common/classes/tree.h (1.77), config/InputFile.cpp (1.13),
+	dudley/extract.epp (1.51), gpre/gpre_meta.epp (1.66),
+	gpre/int_cxx.cpp (1.46), gpre/par.cpp (1.77), gpre/pas.cpp (1.62),
+	gpre/pat.cpp (1.35), gpre/rmc.cpp (1.17), gpre/sqe.cpp (1.61),
+	gpre/sql.cpp (1.80), iscguard/iscguard.cpp (1.62), isql/show.epp
+	(1.138), jrd/common.h (1.190), jrd/os/posix/unix.cpp (1.112),
+	remote/protocol.cpp (1.75), remote/server.cpp (1.230):
+
+	Misc
+
 2008-12-31 12:45  dimitr
 
 	* firebird2/builds/win32/msvc8/gpre_boot.vcproj (1.7):
