@@ -1208,7 +1208,7 @@ void MET_modify_field( DBB database, qli_fld* field)
 		// Msg245 global field %s is not defined
 		// Msg468 Datatype of field %s may not be changed to or from blob
 		const USHORT nErr = flag ? 468 : 245;
-		ERRQ_print_error(flag, field_name->sym_string);
+		ERRQ_print_error(nErr, field_name->sym_string);
 	}
 
 	MET_meta_commit(database);
