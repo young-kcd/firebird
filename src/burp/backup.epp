@@ -338,7 +338,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		for (burp_fil* fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next)
 		{
 			tdgbl->action->act_file = fil;
-			if (MVOL_split_hdr_write() == FALSE)
+			if (!MVOL_split_hdr_write())
 			{
 				BURP_error(269, true, tdgbl->action->act_file->fil_name.c_str());
 				// msg 269 can't write a header record to file %s

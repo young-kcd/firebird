@@ -1821,7 +1821,8 @@ static gbak_action open_files(const TEXT* file1,
 		// read and check a header record
 		tdgbl->action->act_file = fil;
 		int seq = 1;
-		if (MVOL_split_hdr_read() == TRUE) {
+		if (MVOL_split_hdr_read())
+		{
 			tdgbl->action->act_action = ACT_restore_join;
 			// number of files to be join
 			const int total = tdgbl->action->act_total;
@@ -1867,7 +1868,7 @@ static gbak_action open_files(const TEXT* file1,
 					BURP_print(100, fil->fil_name.c_str());
 					// msg 100 opened file %s
 				}
-				if (MVOL_split_hdr_read() == TRUE)
+				if (MVOL_split_hdr_read())
 				{
 					if ((total != tdgbl->action->act_total) ||
 						(seq != fil->fil_seq) || (seq > total))

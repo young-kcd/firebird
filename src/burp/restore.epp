@@ -4487,12 +4487,12 @@ bool get_index(BurpGlobals*		tdgbl,
 				// Modified by Toni Martir, all index deferred when verbose
 				if (tdgbl->gbl_sw_verbose)
 				{
-					if (X.RDB$INDEX_INACTIVE == FALSE)
+					if (!X.RDB$INDEX_INACTIVE)
 						X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
 				}
 				else
 				{
-					if (X.RDB$INDEX_INACTIVE == FALSE && foreign_index)
+					if (!X.RDB$INDEX_INACTIVE && foreign_index)
 						X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
 				}
 				if (tdgbl->gbl_sw_deactivate_indexes)
@@ -4539,7 +4539,7 @@ bool get_index(BurpGlobals*		tdgbl,
 			case att_index_foreign_key:
 				foreign_index = true;
 				// Defer foreign key index activation
-				if (X.RDB$INDEX_INACTIVE == FALSE)
+				if (!X.RDB$INDEX_INACTIVE)
 					X.RDB$INDEX_INACTIVE = DEFERRED_ACTIVE;
 				if (tdgbl->gbl_sw_deactivate_indexes)
 					X.RDB$INDEX_INACTIVE = TRUE;
