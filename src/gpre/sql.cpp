@@ -71,7 +71,7 @@ static act* act_create_view();
 static act* act_d_section(act_t);
 static act* act_declare();
 static act* act_declare_filter();
-static act* act_declare_table(gpre_sym*, DBB);
+static act* act_declare_table(gpre_sym*, dbb*);
 static act* act_declare_udf();
 static act* act_delete();
 static act* act_describe();
@@ -123,18 +123,18 @@ static void		par_computed(gpre_req*, gpre_fld*);
 static gpre_req* par_cursor(gpre_sym**);
 static dyn*		par_dynamic_cursor();
 static gpre_fld* par_field(gpre_req*, gpre_rel*);
-static CNSTRT	par_field_constraint(gpre_req*, gpre_fld*, gpre_rel*);
-static void		par_fkey_extension(CNSTRT);
+static cnstrt*	par_field_constraint(gpre_req*, gpre_fld*, gpre_rel*);
+static void		par_fkey_extension(cnstrt*);
 static bool		par_into(dyn*);
 static void		par_options(const TEXT**);
 static int		par_page_size();
 static gpre_rel* par_relation(gpre_req*);
 static dyn*		par_statement();
-static CNSTRT	par_table_constraint(gpre_req*, gpre_rel*);
+static cnstrt*	par_table_constraint(gpre_req*, gpre_rel*);
 static bool		par_transaction_modes(gpre_tra*, bool);
 static bool		par_using(dyn*);
 static USHORT	resolve_dtypes(kwwords_t, bool);
-static bool		tail_database(act_t, DBB);
+static bool		tail_database(act_t, dbb*);
 static void		to_upcase(const TEXT*, TEXT*, int);
 
 static swe* global_whenever[SWE_max];
@@ -848,11 +848,11 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
-			if ((DBB) symbol->sym_object != request->req_database)
+			if ((dbb*) symbol->sym_object != request->req_database)
 				PAR_error("Inconsistent database specifier");
 		}
 		else
-			request->req_database = (DBB) symbol->sym_object;
+			request->req_database = (dbb*) symbol->sym_object;
 	}
 
 	gpre_prc* procedure = NULL;
@@ -864,7 +864,7 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		//   for the existence of the procedure
 
 		procedure = NULL; // redundant
-		for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_prc* tmp_procedure = MET_get_procedure(db, prc_string, owner_string);
 			if (tmp_procedure) {
@@ -916,11 +916,11 @@ gpre_rel* SQL_relation(gpre_req* request,
 		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
-			if ((DBB) symbol->sym_object != request->req_database)
+			if ((dbb*) symbol->sym_object != request->req_database)
 				PAR_error("Inconsistent database specifier");
 		}
 		else
-			request->req_database = (DBB) symbol->sym_object;
+			request->req_database = (dbb*) symbol->sym_object;
 	}
 
 	SCHAR s[ERROR_LENGTH];
@@ -933,7 +933,7 @@ gpre_rel* SQL_relation(gpre_req* request,
 		   for the existence of the relation */
 
 		relation = NULL; // redundant
-		for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_rel* tmp_relation = MET_get_relation(db, rel_string, owner_string);
 			if (tmp_relation) {
@@ -1087,7 +1087,7 @@ static act* act_alter_database()
 	//  create action block
 	act* action = MSC_action(request, ACT_alter_database);
 	action->act_whenever = gen_whenever();
-	DBB database = (DBB) MSC_alloc(DBB_LEN);
+	dbb* database = (dbb*) MSC_alloc(DBB_LEN);
 	action->act_object = (ref*) database;
 
 	bool logdefined = false;	// this var was undefined
@@ -1377,7 +1377,7 @@ static act* act_alter_table()
 			if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT)
 			{
 				PAR_get_token();
-				cnstrt_str = (CNSTRT) MSC_alloc(CNSTRT_LEN);
+				cnstrt_str = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
 				cnstrt_str->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 				SQL_resolve_identifier("<constraint name>",
@@ -1478,7 +1478,7 @@ static act* act_connect()
 
 			need_handle = false;
 			if (!ready->rdy_database) {
-				ready->rdy_database = dup_dbb((DBB) symbol->sym_object);
+				ready->rdy_database = dup_dbb((dbb*) symbol->sym_object);
 				PAR_get_token();
 			}
 
@@ -1656,7 +1656,7 @@ static act* act_create_database()
 		// generate a dummy db
 
 		dummy = true;
-		gpreGlob.isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (dbb*) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block
 
@@ -1679,7 +1679,7 @@ static act* act_create_database()
 
 //  get database name
 
-	DBB db = NULL;
+	dbb* db = NULL;
 	if (isQuoted(gpreGlob.token_global.tok_type)) {
 		db = dup_dbb(gpreGlob.isc_databases);
 		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
@@ -2119,7 +2119,7 @@ static act* act_d_section(act_t type)
 	if (!gpreGlob.isc_databases) {
 		// allocate database block and link to db chain
 
-		gpreGlob.isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (dbb*) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block
 
@@ -2174,13 +2174,13 @@ static act* act_d_section(act_t type)
 
 static act* act_declare()
 {
-	DBB db = NULL;
+	dbb* db = NULL;
 
 	if (gpreGlob.token_global.tok_symbol && (gpreGlob.token_global.tok_symbol->sym_type == SYM_database))
 	{
 		// must be a database specifier in a DECLARE TABLE statement
 
-		db = (DBB) gpreGlob.token_global.tok_symbol->sym_object;
+		db = (dbb*) gpreGlob.token_global.tok_symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error(". (period)");
@@ -2375,7 +2375,7 @@ static act* act_declare_filter()
 //		Handle an SQL declare table statement.
 //
 
-static act* act_declare_table( gpre_sym* symbol, DBB db)
+static act* act_declare_table( gpre_sym* symbol, dbb* db)
 {
 //  create a local request block
 
@@ -2719,7 +2719,7 @@ static act* act_disconnect()
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
 				action->act_object = (ref*) ready;
-				ready->rdy_database = (DBB) symbol->sym_object;
+				ready->rdy_database = (dbb*) symbol->sym_object;
 				PAR_get_token();
 			}
 			else
@@ -2758,7 +2758,7 @@ static act* act_drop()
 			PAR_get_token();
 			if (!isQuoted(gpreGlob.token_global.tok_type))
 				CPR_s_error("<quoted database name>");
-			db = (DBB) MSC_alloc(DBB_LEN);
+			db = (dbb*) MSC_alloc(DBB_LEN);
 			SCHAR* db_string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 			db->dbb_filename = db_string;
 			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, db_string);
@@ -3375,7 +3375,7 @@ static act* act_include()
 	{
 		// allocate database block and link to db chain
 
-		gpreGlob.isc_databases = (DBB) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (dbb*) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block
 
@@ -4729,7 +4729,7 @@ static act* act_whenever()
 //		Decnet node name.
 //
 
-static bool check_filename(const TEXT * name)
+static bool check_filename(const TEXT* name)
 {
 	const USHORT l = strlen(name);
 	if (!l)
@@ -5116,7 +5116,7 @@ static IND make_index( gpre_req* request, const TEXT* string)
 //		Create relation for a metadata request.
 //
 
-static gpre_rel* make_relation( gpre_req* request, const TEXT * relation_name)
+static gpre_rel* make_relation( gpre_req* request, const TEXT* relation_name)
 {
 	gpre_rel* relation = NULL;
 
@@ -5179,7 +5179,7 @@ static void pair( gpre_nod* expr, gpre_nod* field_expr)
 
 	case nod_map_ref:
 		{
-			MEL element = (MEL) expr->nod_arg[0];
+			mel* element = (mel*) expr->nod_arg[0];
 			pair(element->mel_expr, field_expr);
 		}
 		return;
@@ -5505,7 +5505,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //
 
-static CNSTRT par_field_constraint( gpre_req* request, gpre_fld* for_field, gpre_rel* relation)
+static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field, gpre_rel* relation)
 {
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
@@ -5806,7 +5806,7 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //
 
-static CNSTRT par_table_constraint( gpre_req* request, gpre_rel* relation)
+static cnstrt* par_table_constraint( gpre_req* request, gpre_rel* relation)
 {
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
@@ -6102,7 +6102,7 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 //		Parse the tail of a CREATE DATABASE statement.
 //
 
-static bool tail_database(act_t action_type, DBB database)
+static bool tail_database(act_t action_type, dbb* database)
 {
 	TEXT* string = NULL;
 

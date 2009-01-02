@@ -273,7 +273,7 @@ static int blr_format(ctl* control, const char *string, ...)
 //		Put out an error msg and punt.
 //
 
-static int error( ctl* control, SSHORT offset, const TEXT * string, int arg)
+static int error( ctl* control, SSHORT offset, const TEXT* string, int arg)
 {
 
 	print_line(control, offset);

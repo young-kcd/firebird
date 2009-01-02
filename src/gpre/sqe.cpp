@@ -107,7 +107,7 @@ static gpre_nod* par_udf_or_field(gpre_req*, bool);
 static gpre_nod* par_udf_or_field_with_collate(gpre_req*, bool, USHORT *, bool *);
 static void par_update(gpre_rse*, bool, bool);
 static gpre_nod* post_fields(gpre_nod*, map*);
-static gpre_nod* post_map(gpre_nod*, MAP);
+static gpre_nod* post_map(gpre_nod*, map*);
 static gpre_nod* post_select_list(gpre_nod*, map*);
 static void pop_scope(gpre_req*, scope*);
 static void push_scope(gpre_req*, scope*);
@@ -822,7 +822,7 @@ void SQE_post_field( gpre_nod* input, gpre_fld* field)
 
 	case nod_map_ref:
 		{
-			mel* element = (MEL) input->nod_arg[0];
+			mel* element = (mel*) input->nod_arg[0];
 			gpre_nod* node = element->mel_expr;
 			SQE_post_field(node, field);
 			return;
@@ -1429,7 +1429,7 @@ static gpre_fld* get_ref( gpre_nod* expr)
 // ** End date/time/timestamp support *
 	case nod_map_ref:
 		{
-			mel* element = (MEL) expr->nod_arg[0];
+			mel* element = (mel*) expr->nod_arg[0];
 			gpre_nod* node = element->mel_expr;
 			return get_ref(node);
 		}
@@ -1747,7 +1747,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 	// but gpre is not much worried about dialects... except in this file!
 	TEXT* p = new_context->ctx_alias = alias;
 	for (arg = alias_list->nod_arg; arg < end; arg++) {
-		for (const TEXT* q = (TEXT *) * arg; *q;)
+		for (const TEXT* q = (TEXT*) *arg; *q;)
 			*p++ = *q++;
 		*p++ = ' ';
 	}
@@ -1922,7 +1922,7 @@ static gpre_nod* par_case(gpre_req* request)
 //		Parse an AND boolean expression.
 //
 
-static gpre_nod* par_and( gpre_req* request, USHORT * paren_count)
+static gpre_nod* par_and( gpre_req* request, USHORT* paren_count)
 {
 	assert_IS_REQ(request);
 
@@ -2153,7 +2153,7 @@ static gpre_nod* par_multiply(gpre_req* request, bool aster_ok, USHORT* paren_co
 //		Parse an NOT boolean expression.
 //
 
-static gpre_nod* par_not( gpre_req* request, USHORT * paren_count)
+static gpre_nod* par_not( gpre_req* request, USHORT* paren_count)
 {
 	assert_IS_REQ(request);
 
@@ -2644,7 +2644,7 @@ static gpre_nod* par_primitive_value(gpre_req* request, bool aster_ok,
 //
 
 static gpre_nod* par_relational(gpre_req* request,
-							   USHORT * paren_count)
+							   USHORT* paren_count)
 {
 	assert_IS_REQ(request);
 
@@ -3140,7 +3140,7 @@ static gpre_nod* par_udf( gpre_req* request)
 		   for the existence of the udf */
 
 		an_udf = NULL;
-		for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			udf* tmp_udf = MET_get_udf(db, gpreGlob.token_global.tok_string);
 			if (tmp_udf)
@@ -3495,7 +3495,7 @@ static gpre_nod* post_fields( gpre_nod* node, map* to_map)
 
 static gpre_nod* post_map( gpre_nod* node, map* to_map)
 {
-	MEL element;
+	mel* element;
 
 	assert_IS_NOD(node);
 
@@ -3504,7 +3504,7 @@ static gpre_nod* post_map( gpre_nod* node, map* to_map)
 
 	if (node->nod_type == nod_map_ref)
 	{
-		element = (MEL) node->nod_arg[0];
+		element = (mel*) node->nod_arg[0];
 		if (element->mel_context == to_map->map_context)
 			return node;
 	}
@@ -3517,7 +3517,7 @@ static gpre_nod* post_map( gpre_nod* node, map* to_map)
 
 //  We need to make up a new map reference
 
-	element = (MEL) MSC_alloc(sizeof(mel));
+	element = (mel*) MSC_alloc(sizeof(mel));
 	element->mel_next = to_map->map_elements;
 	to_map->map_elements = element;
 	element->mel_position = to_map->map_count++;
@@ -3910,7 +3910,7 @@ static bool validate_references(const gpre_nod* fields, const gpre_nod* group_by
 		{
 		case nod_map_ref:
 			{
-				const mel* element = (MEL) (*ptr)->nod_arg[0];
+				const mel* element = (mel*) (*ptr)->nod_arg[0];
 				const gpre_nod* node = element->mel_expr;
 				if (node->nod_type != nod_agg_count &&
 					node->nod_type != nod_agg_max &&

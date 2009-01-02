@@ -1004,7 +1004,7 @@ static void gen_compile( const act* action, int column)
 static void gen_create_database( const act* action, int column)
 {
 	const gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	DBB db = (DBB) request->req_database;
+	dbb* db = (dbb*) request->req_database;
 	align(column);
 
 	if (request->req_length)
@@ -1163,7 +1163,7 @@ static void gen_database( const act* action, int column)
 		}
 	}
 
-	DBB db;
+	dbb* db;
 	bool all_static = true;
 	bool all_extern = true;
 
@@ -1315,7 +1315,7 @@ static void gen_ddl( const act* action, int column)
 
 static void gen_drop_database( const act* action, int column)
 {
-	DBB db = (DBB) action->act_object;
+	dbb* db = (dbb*) action->act_object;
 	align(column);
 
 	fprintf(gpreGlob.out_file, "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
@@ -1477,7 +1477,7 @@ static void gen_dyn_immediate( const act* action, int column)
 		column -= INDENT;
 	}
 
-	DBB database = statement->dyn_database;
+	dbb* database = statement->dyn_database;
 	printa(column,
 		   statement->dyn_sqlda2 ?
 				"isc_embed_dsql_execute_immed2 (gds__status, %s, %s, %s(%s), %s, %d, %s %s, %s %s);" :
@@ -1595,7 +1595,7 @@ static void gen_dyn_prepare( const act* action, int column)
 		column -= INDENT;
 	}
 
-	DBB database = statement->dyn_database;
+	dbb* database = statement->dyn_database;
 	TEXT s[MAX_CURSOR_SIZE];
 	printa(column,
 		   "isc_embed_dsql_prepare (gds__status, %s, transaction, %s, %s(%s), %s, %d, %s %s);",
@@ -1742,7 +1742,7 @@ static void gen_event_init( const act* action, int column)
 	gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
-	args.pat_database = (DBB) init->nod_arg[3];
+	args.pat_database = (dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
@@ -1806,7 +1806,7 @@ static void gen_event_wait( const act* action, int column)
 //  go through the stack of gpreGlob.events, checking to see if the
 //  event has been initialized and getting the event identifier
 
-	DBB database = NULL;
+	dbb* database = NULL;
 	int ident = -1;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		const act* event_action = (const act*) stack_ptr->lls_object;
@@ -1814,7 +1814,7 @@ static void gen_event_wait( const act* action, int column)
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
-			database = (DBB) event_init->nod_arg[3];
+			database = (dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -1947,7 +1947,7 @@ static void gen_fetch( const act* action, int column)
 
 static void gen_finish( const act* action, int column)
 {
-	DBB db = NULL;
+	dbb* db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) && (action->act_type != ACT_disconnect)))
 	{
@@ -2345,7 +2345,7 @@ static void gen_ready( const act* action, int column)
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 	{
-		DBB db = ready->rdy_database;
+		dbb* db = ready->rdy_database;
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename)
 			filename = db->dbb_runtime;
@@ -2398,7 +2398,7 @@ static void gen_receive( const act* action, int column, const gpre_port* port)
 
 static void gen_release( const act* action, int column)
 {
-	const dbb* exp_db = (DBB) action->act_object;
+	const dbb* exp_db = (dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		const dbb* db = request->req_database;
@@ -2921,7 +2921,7 @@ static void gen_t_start( const act* action, int column)
 	int count = 0;
 	for (const tpb* tpb_val = trans->tra_tpb; tpb_val; tpb_val = tpb_val->tpb_tra_next) {
 		count++;
-		DBB db = tpb_val->tpb_database;
+		dbb* db = tpb_val->tpb_database;
 		if (gpreGlob.sw_auto)
 		{
 			const TEXT* filename = db->dbb_runtime;
@@ -3381,7 +3381,7 @@ static void t_start_auto( const act* action, const gpre_req* request,
 	begin(column);
 
 	int count, and_count;
-	DBB db;
+	dbb* db;
 	for (db = gpreGlob.isc_databases, count = and_count = 0; db; db = db->dbb_next)
 	{
 		if (gpreGlob.sw_auto)

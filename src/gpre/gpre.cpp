@@ -138,7 +138,7 @@ inline void set_classes(UCHAR idx, UCHAR v)
 
 static TEXT input_buffer[512], *input_char;
 
-static DBB sw_databases;
+static dbb* sw_databases;
 // Added sw_verbose
 // FSG 14.Nov.2000
 static bool sw_verbose;
@@ -309,7 +309,7 @@ int main(int argc, char* argv[])
 
 //  set switches and so on to default (C) values
 
-	DBB db = NULL;
+	dbb* db = NULL;
 
 	gpreGlob.sw_language		= lang_undef;
 	sw_lines					= true;
@@ -487,7 +487,7 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_D:
 			// allocate database block and link to db chain
 
-			db = (DBB) MSC_alloc_permanent(DBB_LEN);
+			db = (dbb*) MSC_alloc_permanent(DBB_LEN);
 			db->dbb_next = gpreGlob.isc_databases;
 
 			// put this one in line to be next
@@ -709,13 +709,14 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_VERBOSE:
 			sw_verbose = true;
 			break;
+
 		default:
 			break;
 		}
 	}	// for (...)
 
-	if ((gpreGlob.sw_auto) && (gpreGlob.default_user || gpreGlob.default_password ||
-		gpreGlob.default_lc_ctype))
+	if (gpreGlob.sw_auto &&
+		(gpreGlob.default_user || gpreGlob.default_password || gpreGlob.default_lc_ctype))
 	{
 		CPR_warn("gpre: -user, -password and -charset switches require -manual");
 	}
@@ -767,7 +768,8 @@ int main(int argc, char* argv[])
 //  as might be used for SQL access.
 //
 
-	if (gpreGlob.default_lc_ctype) {
+	if (gpreGlob.default_lc_ctype)
+	{
 		if (all_digits(gpreGlob.default_lc_ctype)) {
 			/* Numeric name? if so assume user has hard-coded a subtype number */
 
@@ -799,7 +801,8 @@ int main(int argc, char* argv[])
 //
 
 	TEXT spare_out_file_name[MAXPATHLEN];
-	if (!sw_standard_out) {
+	if (!sw_standard_out)
+	{
 		const ext_table_t* out_src_ext_tab = src_ext_tab;
 		if (use_lang_internal_gxx_output) {
 			out_src_ext_tab = dml_ext_table;
@@ -821,8 +824,9 @@ int main(int argc, char* argv[])
 
 		if (renamed) {
 			// Warning: modifying program's args.
-			TEXT* p;
-			for (p = out_file_name; *p; p++);
+			TEXT* p = out_file_name;
+			while (*p)
+				p++;
 			while (p != out_file_name && *p != '.' && *p != '/')
 				p--;
 			if (!explicitt)
@@ -870,7 +874,8 @@ int main(int argc, char* argv[])
 			unlink(out_file_name);
 	}
 
-	if (gpreGlob.errors_global || warnings_global) {
+	if (gpreGlob.errors_global || warnings_global)
+	{
 		if (!gpreGlob.errors_global)
 			fprintf(stderr, "No errors, ");
 		else if (gpreGlob.errors_global == 1)
@@ -1233,7 +1238,8 @@ tok* CPR_token()
 		}
 		token = get_token();
 
-		switch (gpreGlob.sw_sql_dialect) {
+		switch (gpreGlob.sw_sql_dialect)
+		{
 		case SQL_DIALECT_V5:
 			if (!isQuoted(token->tok_type))
 				CPR_error("Can only tag quoted strings with character set");
@@ -1254,7 +1260,8 @@ tok* CPR_token()
 	{
 		// use -charset switch if there is one for quoted strings
 		// only after a database declaration is loaded and MET_load_hash_table run.
-		switch (gpreGlob.sw_sql_dialect) {
+		switch (gpreGlob.sw_sql_dialect)
+		{
 		case SQL_DIALECT_V5:
 			if (isQuoted(token->tok_type)) {
 				token->tok_charset =
@@ -1422,11 +1429,11 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 
 #ifdef WIN_NT
 	while ((p != file_nameL) && (*p != '.') && (*p != '/') && (*p != '\\'))
+		--p;
 #else
 	while ((p != file_nameL) && (*p != '.') && (*p != '/'))
+		--p;
 #endif
-
-	--p;
 
 //
 //  There's a match and the file spec has no extension,
@@ -1489,7 +1496,8 @@ static void finish_based( act* action)
 	gpre_fld* field = NULL;
 	TEXT s[MAXPATHLEN << 1];
 
-	for (; action; action = action->act_rest) {
+	for (; action; action = action->act_rest)
+	{
 		if (action->act_type != ACT_basedon)
 			continue;
 
@@ -1505,8 +1513,9 @@ static void finish_based( act* action)
 		if (!based_on->bas_fld_name)
 			continue;
 
-		DBB db = NULL;
-		if (based_on->bas_db_name) {
+		dbb* db = NULL;
+		if (based_on->bas_db_name)
+		{
 			gpre_sym* symbol = HSH_lookup(based_on->bas_db_name->str_string);
 			for (; symbol; symbol = symbol->sym_homonym)
 			{
@@ -1514,8 +1523,9 @@ static void finish_based( act* action)
 					break;
 			}
 
-			if (symbol) {
-				db = (DBB) symbol->sym_object;
+			if (symbol)
+			{
+				db = (dbb*) symbol->sym_object;
 				relation = MET_get_relation(db, based_on->bas_rel_name->str_string, "");
 				if (!relation) {
 					fb_utils::snprintf(s, sizeof(s), "relation %s is not defined in database %s",
@@ -1525,7 +1535,8 @@ static void finish_based( act* action)
 				}
 				field = MET_field(relation, based_on->bas_fld_name->str_string);
 			}
-			else {
+			else
+			{
 				if (based_on->bas_flags & BAS_ambiguous) {
 					/* The reference could have been DB.RELATION.FIELD or
 					   RELATION.FIELD.SEGMENT.  It's not the former.  Try
@@ -1595,7 +1606,7 @@ static void finish_based( act* action)
 //		Return a character to the input stream.
 //
 
-static int get_char( FILE * file)
+static int get_char( FILE* file)
 {
 	if (input_char != input_buffer)
 		return (int) *--input_char;
@@ -1909,7 +1920,7 @@ static bool get_switches(int			argc,
 			{
 				return false;
 			}
-			gpreGlob.default_lc_ctype = (const TEXT*) * ++argv;
+			gpreGlob.default_lc_ctype = (const TEXT*) *++argv;
 			break;
 
 #ifdef GPRE_COBOL
@@ -1947,8 +1958,12 @@ static tok* get_token()
 
 	last_position = gpreGlob.token_global.tok_position + gpreGlob.token_global.tok_length +
 		gpreGlob.token_global.tok_white_space - 1;
+#if defined (GPRE_COBOL) || defined(GPRE_FORTRAN)
 	int start_line = line_global;
-	SLONG start_position = position;
+#endif
+#ifdef GPRE_FORTRAN
+	const SLONG start_position = position;
+#endif
 	gpreGlob.token_global.tok_charset = NULL;
 
 	SSHORT c = skip_white();

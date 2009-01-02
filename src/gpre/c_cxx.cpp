@@ -1176,7 +1176,7 @@ static void gen_compile( const act* action, int column)
 
 	const gpre_req* request = action->act_request;
 	args.pat_request = request;
-	DBB db = request->req_database;
+	dbb* db = request->req_database;
 	args.pat_database = db;
 	args.pat_vector1 = status_vector(action);
 	args.pat_string1 = request_trans(action, request);
@@ -1396,7 +1396,7 @@ static void gen_database( const act* action, int column)
 	bool all_static = true;
 	bool all_extern = true;
 
-	DBB db;
+	dbb* db;
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
@@ -1686,7 +1686,7 @@ static void gen_dyn_immediate( const act* action, int column)
 	gpre_req req_const;
 
 	dyn* statement = (dyn*) action->act_object;
-	DBB database = statement->dyn_database;
+	dbb* database = statement->dyn_database;
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -1818,7 +1818,7 @@ static void gen_dyn_prepare( const act* action, int column)
 	}
 
 	TEXT s[MAX_CURSOR_SIZE];
-    DBB database = statement->dyn_database;
+    dbb* database = statement->dyn_database;
 	printa(column, "isc_embed_dsql_prepare (%s, &%s, &%s, %s, 0, %s, %d, %s);",
 		   global_status_name, database->dbb_name->sym_string, transaction,
 		   make_name(s, statement->dyn_statement_name), statement->dyn_string,
@@ -1986,7 +1986,7 @@ static void gen_event_init( const act* action, int column)
 	const gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
-	args.pat_database = (DBB) init->nod_arg[3];
+	args.pat_database = (dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_long1 = (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
@@ -2053,7 +2053,7 @@ static void gen_event_wait( const act* action, int column)
 		const gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (IPTR) event_init->nod_arg[2];
-			database = (DBB) event_init->nod_arg[3];
+			database = (dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -2734,7 +2734,7 @@ static void gen_receive( const act* action, int column, const gpre_port* port)
 
 static void gen_release( const act* action, int column)
 {
-	DBB exp_db = (DBB) action->act_object;
+	dbb* exp_db = (dbb*) action->act_object;
 
 	for (gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		const dbb* db = request->req_database;

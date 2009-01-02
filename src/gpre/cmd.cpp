@@ -56,34 +56,34 @@ typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*);
 
 
 
-//static void add_cache(gpre_req*, const act*, DBB);
+//static void add_cache(gpre_req*, const act*, dbb*);
 static void alter_database(gpre_req*, act*);
 static void alter_domain(gpre_req*, const act*);
 static void alter_index(gpre_req*, const act*);
 static void alter_table(gpre_req*, const act*);
-static void create_check_constraint(gpre_req*, const act*, CNSTRT);
-static void create_constraint(gpre_req*, const act*, CNSTRT);
+static void create_check_constraint(gpre_req*, const act*, cnstrt*);
+static void create_constraint(gpre_req*, const act*, cnstrt*);
 static void create_database(gpre_req*, const act*);
 static void create_database_modify_dyn(gpre_req*, act*);
 static void create_default_blr(gpre_req*, const TEXT*, const USHORT);
-static void create_del_cascade_trg(gpre_req*, const act*, CNSTRT);
+static void create_del_cascade_trg(gpre_req*, const act*, cnstrt*);
 static void create_domain(gpre_req*, const act*);
 static void create_domain_constraint(gpre_req*, const act*, const cnstrt*);
 static void create_generator(gpre_req*, const act*);
 static void create_index(gpre_req*, const ind*);
 static void create_matching_blr(gpre_req*, const cnstrt*);
-static void create_set_default_trg(gpre_req*, const act*, CNSTRT, bool);
-static void create_set_null_trg(gpre_req*, const act*, CNSTRT, bool);
+static void create_set_default_trg(gpre_req*, const act*, cnstrt*, bool);
+static void create_set_null_trg(gpre_req*, const act*, cnstrt*, bool);
 static void create_shadow(gpre_req*, act*);
 static void create_table(gpre_req*, const act*);
 static void create_trg_firing_cond(gpre_req*, const cnstrt*);
 static void create_trigger(gpre_req*, const act*, gpre_trg*, pfn_local_trigger_cb);
-static void create_upd_cascade_trg(gpre_req*, const act*, CNSTRT);
+static void create_upd_cascade_trg(gpre_req*, const act*, cnstrt*);
 static bool create_view(gpre_req*, act*);
 static void create_view_trigger(gpre_req*, const act*, gpre_trg*, gpre_nod*, gpre_ctx**, gpre_nod*);
 static void declare_filter(gpre_req*, const act*);
 static void declare_udf(gpre_req*, const act*);
-static void get_referred_fields(const act*, CNSTRT);
+static void get_referred_fields(const act*, cnstrt*);
 static void grant_revoke_privileges(gpre_req*, const act*);
 static void init_field_struct(gpre_fld*);
 static void put_array_info(gpre_req*, const gpre_fld*);
@@ -284,7 +284,7 @@ static void alter_database( gpre_req* request, act* action)
 {
 	gpre_file* file;
 
-	dbb* db = (DBB) action->act_object;
+	dbb* db = (dbb*) action->act_object;
 
 	request->add_byte(isc_dyn_mod_database);
 

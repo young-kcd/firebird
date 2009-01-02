@@ -431,7 +431,7 @@ const size_t LLS_LEN = sizeof(gpre_lls);
 
 /* Constraint block, used to hold information about integrity constraints */
 
-typedef struct cnstrt
+struct cnstrt
 {
 	str* cnstrt_name;				/* Name of constraint */
 	USHORT cnstrt_type;				/* Type of constraint */
@@ -444,7 +444,7 @@ typedef struct cnstrt
 	gpre_txt* cnstrt_text;			/* source for CHECK constraints */
 	gpre_nod* cnstrt_boolean;		/* boolean expression, for CHECK constraints */
 	USHORT cnstrt_flags;			/* see below */
-} *CNSTRT;
+};
 
 const size_t CNSTRT_LEN = sizeof(cnstrt);
 
@@ -490,7 +490,7 @@ enum cnstrt_flags_vals {
 typedef struct prv
 {
 	USHORT prv_privileges;		/* holds privileges being granted or revoked */
-	SCHAR *prv_username;		/* user having privileges granted or revoked */
+	SCHAR* prv_username;		/* user having privileges granted or revoked */
 	USHORT prv_user_dyn;		/* the dyn-verb to be used with prv_username
 								   i.e. gds__dyn_grant_user/proc/trig/view */
 	str* prv_relation;			/* relation on which we're doing grant/revoke */
@@ -790,7 +790,7 @@ struct tpb; // forward declaration
 
 /* Database block, more or less the granddaddy */
 
-typedef struct dbb
+struct dbb
 {
 	dbb* dbb_next;				/* next database in program */
 	gpre_rel* dbb_relations;	/* relations in database */
@@ -848,7 +848,7 @@ typedef struct dbb
 	gpre_file* dbb_cache_file;
 #endif
 	gpre_file* dbb_files;
-} *DBB;
+};
 
 const size_t DBB_LEN = sizeof(dbb);
 
@@ -912,21 +912,21 @@ enum prc_flags_vals {
 
 /* Maps used by union and global aggregates */
 
-typedef struct mel
+struct mel
 {
 	mel* mel_next;				/* Next element in map */
 	gpre_nod* mel_expr;			/* Expression */
 	ref* mel_reference;
 	gpre_ctx* mel_context;
 	USHORT mel_position;		/* Position in map */
-} *MEL;
+};
 
-typedef struct map
+struct map
 {
 	gpre_ctx* map_context;		/* Pseudo context for map */
 	mel* map_elements;			/* Map elements */
 	USHORT map_count;			/* Number of things in map */
-} *MAP;
+};
 
 
 /* Record selection expresion syntax node */
@@ -1555,7 +1555,7 @@ struct GpreGlobals
 	SSHORT sw_interp;
 	USHORT compiletime_db_dialect;
 
-	DBB isc_databases;
+	dbb* isc_databases;
 	const TEXT* default_user;
 	const TEXT* default_password;
 	const TEXT* default_lc_ctype;

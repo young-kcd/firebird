@@ -644,7 +644,7 @@ gpre_rel* EXP_relation()
 	SQL_resolve_identifier("<identifier>", NULL, NAME_SIZE);
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
-		dbb* db = (DBB) symbol->sym_object;
+		dbb* db = (dbb*) symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("period after database name");

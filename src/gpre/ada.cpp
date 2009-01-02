@@ -945,7 +945,7 @@ static void gen_compile( const act* action, int column)
 {
 	const gpre_req* request = action->act_request;
 	column += INDENT;
-	DBB db = request->req_database;
+	dbb* db = request->req_database;
 	gpre_sym* symbol = db->dbb_name;
 
 	if (gpreGlob.sw_auto)
@@ -998,7 +998,7 @@ static void gen_create_database( const act* action, int column)
 	TEXT s1[32], s2[32];
 
 	gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	DBB db = (DBB) request->req_database;
+	dbb* db = (dbb*) request->req_database;
 
 	sprintf(s1, "isc_%dl", request->req_ident);
 
@@ -1269,7 +1269,7 @@ static void gen_ddl( const act* action, int column)
 
 static void gen_drop_database( const act* action, int column)
 {
-	DBB db = (DBB) action->act_object;
+	dbb* db = (dbb*) action->act_object;
 	//gpre_req* request = action->act_request;
 
 	printa(column, "firebird.DROP_DATABASE (%s %d, \"%s\", RDBK_DB_TYPE_GDS);",
@@ -1429,7 +1429,7 @@ static void gen_dyn_immediate( const act* action, int column)
 		request = NULL;
 	}
 
-	DBB database = statement->dyn_database;
+	dbb* database = statement->dyn_database;
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(action, request, status_vector(action), column, true);
@@ -1703,7 +1703,7 @@ static void gen_event_init( const act* action, int column)
 	gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
-	args.pat_database = (DBB) init->nod_arg[3];
+	args.pat_database = (dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 
@@ -1761,7 +1761,7 @@ static void gen_event_wait( const act* action, int column)
 //  event has been initialized and getting the event identifier
 
 	int ident = -1;
-	DBB database = NULL;
+	dbb* database = NULL;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
 	{
 		const act* event_action = (const act*) stack_ptr->lls_object;
@@ -1769,7 +1769,7 @@ static void gen_event_wait( const act* action, int column)
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
-			database = (DBB) event_init->nod_arg[3];
+			database = (dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -1903,7 +1903,7 @@ static void gen_fetch( const act* action, int column)
 
 static void gen_finish( const act* action, int column)
 {
-	DBB db = NULL;
+	dbb* db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) && (action->act_type != ACT_disconnect)))
 	{
@@ -2420,7 +2420,7 @@ static void gen_receive( const act* action, int column, gpre_port* port)
 
 static void gen_release( const act* action, int column)
 {
-	const dbb* exp_db = (DBB) action->act_object;
+	const dbb* exp_db = (dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		const dbb* db = request->req_database;

@@ -51,7 +51,7 @@ static void cmp_array_element(gpre_nod*, gpre_req*);
 static void cmp_cast(gpre_nod*, gpre_req*);
 static void cmp_field(const gpre_nod*, gpre_req*);
 static void cmp_literal(const gpre_nod*, gpre_req*);
-static void cmp_map(MAP, gpre_req*);
+static void cmp_map(map*, gpre_req*);
 static void cmp_plan(const gpre_nod*, gpre_req*);
 static void cmp_sdl_dtype(const gpre_fld*, ref*);
 static void cmp_udf(gpre_nod*, gpre_req*);
@@ -340,7 +340,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 
 	case nod_map_ref:
 		{
-			const mel* element = (MEL) node->nod_arg[0];
+			const mel* element = (mel*) node->nod_arg[0];
 			context = element->mel_context;
 			request->add_byte(blr_fid);
 			request->add_byte(context->ctx_internal);
@@ -1229,7 +1229,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		gpre_nod** ptr = union_node->nod_arg;
 		for (const gpre_nod* const* const end = ptr + union_node->nod_count; ptr < end; ptr++)
 		{
-			sub_rse = (gpre_rse*) * ptr;
+			sub_rse = (gpre_rse*) *ptr;
 			CME_rse(sub_rse, request);
 			cmp_map(sub_rse->rse_map, request);
 		}
@@ -1729,7 +1729,7 @@ static void cmp_map(map* a_map, gpre_req* request)
 	request->add_byte(blr_map);
 	request->add_word(a_map->map_count);
 
-	for (MEL element = a_map->map_elements; element; element = element->mel_next)
+	for (mel* element = a_map->map_elements; element; element = element->mel_next)
 	{
 		request->add_word(element->mel_position);
 		CME_expr(element->mel_expr, request);

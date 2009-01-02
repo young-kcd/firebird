@@ -46,7 +46,7 @@
 //		Initialize in memory meta data.
 //
 
-void JRDMET_init( DBB db)
+void JRDMET_init( dbb* db)
 {
 	const int* relfld = relfields;
 

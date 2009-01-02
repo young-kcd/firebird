@@ -1304,7 +1304,7 @@ static void gen_create_database( const act* action)
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32];
 
 	gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	DBB db = (DBB) request->req_database;
+	dbb* db = (dbb*) request->req_database;
 	if (request) {
 		sprintf(s1, "%s%dL", names[isc_b_pos], request->req_ident);
 		if (request->req_flags & REQ_extend_dpb)
@@ -2235,7 +2235,7 @@ static void gen_event_init( const act* action)
 	const SSHORT column = strlen(names[COLUMN]);
 
 	PAT args;
-	args.pat_database = (DBB) init->nod_arg[3];
+	args.pat_database = (dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
@@ -2307,7 +2307,7 @@ static void gen_event_wait( const act* action)
 		const gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) (IPTR) event_init->nod_arg[2];
-			database = (DBB) event_init->nod_arg[3];
+			database = (dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -2893,7 +2893,7 @@ static void gen_ready( const act* action)
 	for (const rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 	{
 		const dbb* db = ready->rdy_database;
-		const dbb* dbisc = (DBB) db->dbb_name->sym_object;
+		const dbb* dbisc = (dbb*) db->dbb_name->sym_object;
 		USHORT namelength;
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename) {
@@ -2940,7 +2940,7 @@ static void gen_ready( const act* action)
 
 static void gen_release( const act* action)
 {
-	const dbb* exp_db = (DBB) action->act_object;
+	const dbb* exp_db = (dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next)
 	{
@@ -3882,7 +3882,7 @@ static void make_ready(const dbb* db, const TEXT* filename,
 					   const TEXT* vector, const gpre_req* request, USHORT namelength)
 {
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32];
-	const dbb* dbisc = (DBB) db->dbb_name->sym_object;
+	const dbb* dbisc = (dbb*) db->dbb_name->sym_object;
 
 	if (request) {
 		sprintf(s1, "%s%dL", names[isc_b_pos], request->req_ident);

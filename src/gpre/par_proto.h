@@ -25,7 +25,7 @@
 #define GPRE_PAR_PROTO_H
 
 act*	PAR_action(const TEXT*);
-SSHORT	PAR_blob_subtype(DBB);
+SSHORT	PAR_blob_subtype(dbb*);
 act*	PAR_database(bool, const TEXT*);
 bool	PAR_end();
 void	PAR_error(const TEXT*);

@@ -142,7 +142,7 @@ static void	make_array_declaration (const ref*);
 static TEXT* make_name (TEXT* const, const gpre_sym*);
 static void	make_ok_test (const act*, const gpre_req*);
 static void	make_port (const gpre_port*);
-static void	make_ready (DBB, const TEXT*, const TEXT*, const gpre_req*);
+static void	make_ready (dbb*, const TEXT*, const TEXT*, const gpre_req*);
 static USHORT	next_label ();
 static void	printa(const TEXT*, const TEXT*, ...);
 #ifdef NOT_USED_OR_REPLACED
@@ -1065,7 +1065,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 static void gen_compile(const act* action)
 {
 	const gpre_req* request = action->act_request;
-	DBB db = request->req_database;
+	dbb* db = request->req_database;
 	const gpre_sym* symbol = db->dbb_name;
 
 //  generate automatic ready if appropriate
@@ -1120,7 +1120,7 @@ static void gen_create_database(const act* action)
 	TEXT s1[32], s2[32];
 
 	const gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	DBB db = (DBB) request->req_database;
+	dbb* db = (dbb*) request->req_database;
 	sprintf(s1, "isc_%dl", request->req_ident);
 
 	if (request->req_flags & REQ_extend_dpb)
@@ -1348,7 +1348,7 @@ static void gen_database_data(const act* action)
 	FTN_print_buffer(output_buffer);
 
 	bool any_extern = false;
-	for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 #ifndef FTN_BLK_DATA
 		if (db->dbb_scope != DBB_EXTERN)
 			fprintf(gpreGlob.out_file, "%sDATA %s /0/               %s{ init database handle }\n",
@@ -1420,7 +1420,7 @@ static void gen_database_decls(const act* action)
 	bool dcl_ndx_var = false;
 
 	SSHORT count = 0;
-	for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next)
+	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 	{
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		const TEXT* name = db->dbb_name->sym_string;
@@ -1565,7 +1565,7 @@ static void gen_ddl(const act* action)
 
 static void gen_drop_database(const act* action)
 {
-	DBB db = (DBB) action->act_object;
+	dbb* db = (dbb*) action->act_object;
 
 	sprintf(output_buffer, "%s CALL ISC_DROP_DATABASE (%s, %s%d%s, %s\'%s\'%s, RDB_K_DB_TYPE_GDS)\n",
 			COLUMN,
@@ -1741,7 +1741,7 @@ static void gen_dyn_immediate(const act* action)
 		request = NULL;
 	}
 
-	DBB database = statement->dyn_database;
+	dbb* database = statement->dyn_database;
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(request, status_vector(action), action, true);
@@ -1881,7 +1881,7 @@ static void gen_dyn_prepare(const act* action)
 	gpre_req req_const;
 
 	const dyn* statement = (const dyn*) action->act_object;
-	DBB database = statement->dyn_database;
+	dbb* database = statement->dyn_database;
 
 	if (statement->dyn_trans) {
 		transaction = statement->dyn_trans;
@@ -2066,7 +2066,7 @@ static void gen_event_init(const act* action)
 	gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
-	args.pat_database = (DBB) init->nod_arg[3];
+	args.pat_database = (dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
@@ -2134,14 +2134,14 @@ static void gen_event_wait(const act* action)
 //  event has been initialized and getting the event identifier
 
 	int ident = -1;
-	DBB database =  NULL;
+	dbb* database =  NULL;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next) {
 		const act* event_action = (const act*) stack_ptr->lls_object;
 		gpre_nod* event_init = (gpre_nod*) event_action->act_object;
 		const gpre_sym* stack_name = (const gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
-			database = (DBB) event_init->nod_arg[3];
+			database = (dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -2212,7 +2212,7 @@ static void gen_fetch(const act* action)
 
 static void gen_finish(const act* action)
 {
-	DBB db = NULL;
+	dbb* db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) && action->act_type != ACT_disconnect))
 	{
@@ -2629,7 +2629,7 @@ static void gen_ready(const act* action)
 	const TEXT* vector = status_vector(action);
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
-		DBB db = ready->rdy_database;
+		dbb* db = ready->rdy_database;
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename)
 			filename = db->dbb_runtime;
@@ -2677,10 +2677,10 @@ static void gen_receive(const act* action, const gpre_port* port)
 
 static void gen_release(const act* action)
 {
-	DBB exp_db = (DBB) action->act_object;
+	dbb* exp_db = (dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
-		DBB db = request->req_database;
+		dbb* db = request->req_database;
 		if (exp_db && db != exp_db)
 			continue;
 		if (!(request->req_flags & REQ_exp_hand)) {
@@ -3254,7 +3254,7 @@ static void gen_t_start(const act* action)
 	if (gpreGlob.sw_auto)
 		for (tpb_iterator = trans->tra_tpb; tpb_iterator; tpb_iterator = tpb_iterator->tpb_tra_next)
 		{
-			DBB db = tpb_iterator->tpb_database;
+			dbb* db = tpb_iterator->tpb_database;
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(COLUMN, "IF (%s .EQ. 0) THEN", db->dbb_name->sym_string);
@@ -3272,7 +3272,7 @@ static void gen_t_start(const act* action)
 	for (tpb_iterator = trans->tra_tpb; tpb_iterator; tpb_iterator = tpb_iterator->tpb_tra_next)
 	{
 		count++;
-		DBB db = tpb_iterator->tpb_database;
+		dbb* db = tpb_iterator->tpb_database;
 		printa(COLUMN, "ISC_TEB%d_LEN = %d", count, tpb_iterator->tpb_length);
 		printa(COLUMN, "ISC_TEB%d_TPB = ISC_BADDRESS (ISC_TPB_%d)",  count, tpb_iterator->tpb_ident);
 		printa(COLUMN, "ISC_TEB%d_DBB = ISC_BADDRESS (%s)", count, db->dbb_name->sym_string);
@@ -3668,7 +3668,7 @@ static void make_port( const gpre_port* port)
 //		Generate the actual ready call.
 //
 
-static void make_ready( DBB db, const TEXT* filename, const TEXT* vector, const gpre_req* request)
+static void make_ready( dbb* db, const TEXT* filename, const TEXT* vector, const gpre_req* request)
 {
 	TEXT s1[32], s2[32];
 
@@ -3891,7 +3891,7 @@ static void t_start_auto(const gpre_req* request, const TEXT* vector, const act*
 //  this is a default transaction, make sure all databases are ready
 
 	int count = 0;
-	for (DBB db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		if (gpreGlob.sw_auto)
 		{
 			const TEXT* filename = db->dbb_runtime;
@@ -3934,7 +3934,7 @@ static void t_start_auto(const gpre_req* request, const TEXT* vector, const act*
 	printa(COLUMN_INDENT, "CALL ISC_START_TRANSACTION (%s, %s, %s%d%s",
 		   vector, trname, I2CONST_1, count, I2CONST_2);
 
-	for (DBB db2 = gpreGlob.isc_databases; db2; db2 = db2->dbb_next)
+	for (dbb* db2 = gpreGlob.isc_databases; db2; db2 = db2->dbb_next)
 	{
 		printa(CONTINUE, ", %s, %s0%s, 0", db2->dbb_name->sym_string, I2CONST_1, I2CONST_2);
 	}
