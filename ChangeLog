@@ -1,3 +1,68 @@
+2009-01-02 15:47  asfernandes
+
+	* firebird2/doc/README.intl (1.12):
+
+	Misc
+
+2009-01-02 10:49  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.226):
+
+	Fixed bug CORE-2241 : Wrong number of records fetched when using
+	index
+
+2009-01-02 10:48  robocop
+
+	* firebird2/src/: burp/backup.epp (1.115), burp/burp.cpp (1.158),
+	burp/restore.epp (1.155), jrd/met.epp (1.270):
+
+	Booleans.
+
+2009-01-02 07:46  robocop
+
+	* firebird2/src/qli/meta.epp (1.75):
+
+	Fix logic error in qli message introduced with the conversion to
+	C++ many years ago.
+
+2009-01-02 07:36  robocop
+
+	* firebird2/src/: burp/backup.epp (1.114), burp/mvol.cpp (1.55),
+	common/classes/tree.h (1.78), dsql/ddl.cpp (1.268), dsql/metd.epp
+	(1.139), dsql/pass1.cpp (1.427), dsql/utld.cpp (1.55),
+	iscguard/cntl_guard.cpp (1.28), iscguard/iscguard.cpp (1.63),
+	jrd/DatabaseSnapshot.cpp (1.89), jrd/blb.cpp (1.189), jrd/btr.cpp
+	(1.225), jrd/cch.cpp (1.220), jrd/cvt.cpp (1.103), jrd/dfw.epp
+	(1.259), jrd/dyn_def.epp (1.175), jrd/dyn_util.epp (1.57),
+	jrd/event.cpp (1.79), jrd/gds.cpp (1.269), jrd/grant.epp (1.70),
+	jrd/ini.epp (1.108), jrd/intl.cpp (1.116), jrd/intl_builtin.cpp
+	(1.46), jrd/isc_sync.cpp (1.167), jrd/jrd.cpp (1.504), jrd/nbak.cpp
+	(1.89), jrd/Optimizer.cpp (1.106), jrd/Relation.cpp (1.20),
+	jrd/SysFunction.cpp (1.61), jrd/TempSpace.cpp (1.21), jrd/opt.cpp
+	(1.331), jrd/par.cpp (1.224), jrd/rse.cpp (1.166), jrd/scl.epp
+	(1.104), jrd/sort.cpp (1.120), jrd/tra.cpp (1.191),
+	jrd/unicode_util.cpp (1.44), jrd/vio.cpp (1.238), jrd/why.cpp
+	(1.227), jrd/os/win32/config_root.cpp (1.25),
+	jrd/os/win32/isc_ipc.cpp (1.24), lock/lock.cpp (1.175),
+	remote/remote.cpp (1.78), remote/server.cpp (1.231),
+	remote/xnet.cpp (1.124), remote/os/win32/wnet.cpp (1.65),
+	utilities/gsec/gsec.cpp (1.102):
+
+	Shut up compiler warnings (unreferenced vars, uninitialized vars,
+	compile-time conditional code, etc.)
+
+2009-01-02 07:34  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.59), c_cxx.cpp (1.81), cmd.cpp
+	(1.50), cme.cpp (1.53), cob.cpp (1.74), exp.cpp (1.49), ftn.cpp
+	(1.70), gpre.cpp (1.99), gpre.h (1.98), gpre_meta.h (1.17),
+	gpre_meta_boot.cpp (1.61), jrdme_proto.h (1.6), jrdmet.cpp (1.26),
+	par.cpp (1.78), par_proto.h (1.15), pas.cpp (1.63), pretty.cpp
+	(1.39), rmc.cpp (1.18), sqe.cpp (1.62), sql.cpp (1.81):
+
+	Cleanup: style, get rid of typedef needed by plain C, other C++
+	legacy declarations, etc. Seventh pass.
+
 2008-12-31 21:22  asfernandes
 
 	* firebird2/src/: burp/restore.epp (1.154), common/cvt.cpp (1.9),
