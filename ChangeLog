@@ -1,3 +1,10 @@
+2009-01-02 07:46  robocop
+
+	* firebird2/src/qli/meta.epp (1.60.4.2):
+
+	Fix logic error in qli message introduced with the conversion to
+	C++ many years ago.
+
 2008-12-22 18:34  dimitr
 
 	* firebird2/src/jrd/validation.cpp (1.16.2.5):
