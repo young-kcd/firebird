@@ -203,7 +203,7 @@ ICU character sets
 
 All non-wide and ascii-based character sets present in ICU can be used by Firebird.
 But for small distribution kit, we customize ICU to include only essentials character sets or the ones we had feature request.
-If the character set you need is not included in it, you can replace ICU libraries by a complete one found in our site our
+If the character set you need is not included in it, you can replace ICU libraries by a complete one found in our site or
 installed in your OS.
 
 To use, you first need to register it in intl/fbintl.conf as follow:
