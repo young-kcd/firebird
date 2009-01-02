@@ -1,3 +1,10 @@
+2009-01-02 07:46  robocop
+
+	* firebird2/src/qli/meta.epp (1.17.2.4):
+
+	Fix logic error in qli message introduced with the conversion to
+	C++ many years ago.
+
 2008-12-23 14:11  alexpeshkoff
 
 	* firebird2/src/: burp/restore.epp (1.31.2.6), jrd/scl.h (1.4.4.2):
