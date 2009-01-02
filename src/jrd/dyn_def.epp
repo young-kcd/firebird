@@ -3658,7 +3658,6 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 						}
 
 						if (!(priv & SCL_read)) {
-							ISC_STATUS* s = tdbb->tdbb_status_vector;
 							ERR_post_nothrow(Arg::Gds(isc_no_priv) << Arg::Str("SELECT") <<		//	Non-Translatable
 															// Remember, a view may be based on a view.
 																	  Arg::Str("TABLE/VIEW") <<	//  Non-Translatable

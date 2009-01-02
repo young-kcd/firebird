@@ -378,8 +378,8 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc)
 
 static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err)
 {
-	UCHAR* p = to->dsc_address;
-	const UCHAR* q = from->dsc_address;
+	//UCHAR* p = to->dsc_address;
+	//const UCHAR* q = from->dsc_address;
 
 	CHARSET_ID charset1;
 	if (INTL_TTYPE(from) == ttype_dynamic)

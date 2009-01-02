@@ -1135,6 +1135,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	lstring xdr_buffer;
 	xdr_buffer.lstr_allocated = 0;
+	xdr_buffer.lstr_address = NULL;
 
 	UCHAR* blr = blr_buffer;
 	const SLONG* const end_ranges = field->fld_ranges + 2 * field->fld_dimensions;

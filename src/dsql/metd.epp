@@ -277,7 +277,7 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 
 	// mark other potential candidates as maybe dropped
 
-	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length, 
+	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
 				  SYM_relation, REL_dropped);
 
 }
@@ -576,7 +576,6 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_dbb* dbb = request->req_dbb;
-	USHORT bpc = 0;
 
 	if (charset_id == CS_dynamic)
 		charset_id = tdbb->getAttachment()->att_charset;
@@ -626,9 +625,9 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 	}
 
 	validateTransaction(request);
-	
+
 	MetaName name;
-	
+
 	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
@@ -748,15 +747,15 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 		field->fld_character_length = 0;
 		if (!FLX.RDB$CHARACTER_LENGTH.NULL)
 			field->fld_character_length = FLX.RDB$CHARACTER_LENGTH;
-	
+
 		if (!FLX.RDB$COMPUTED_BLR.NULL)
 			field->fld_flags |= FLD_computed;
-	
+
 		if (FLX.RDB$SYSTEM_FLAG == 1)
 			field->fld_flags |= FLD_system;
-	
+
 		convert_dtype(field, FLX.RDB$FIELD_TYPE);
-	
+
 		if (FLX.RDB$FIELD_TYPE == blr_blob) {
 			field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
 		}
@@ -812,7 +811,6 @@ USHORT METD_get_domain_default(dsql_req* request,
 			*has_default = false;
 
 		if (*has_default) {
-			ISC_STATUS stat = 0;
 			blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
 										 sizeof(blr_bpb), blr_bpb, true);
 
@@ -1002,7 +1000,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 				userFunc->udf_length = sizeof(ISC_QUAD);
 			else
 				userFunc->udf_length = X.RDB$FIELD_LENGTH;
-	
+
 			if (!X.RDB$CHARACTER_SET_ID.NULL) {
 				userFunc->udf_character_set_id = X.RDB$CHARACTER_SET_ID;
 			}
@@ -1207,7 +1205,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 
 	for (int type = 0; type < 2; type++)
 	{
-		dsql_fld** ptr; 		
+		dsql_fld** ptr;
 		if (type)
 			ptr = &procedure->prc_outputs;
 		else
@@ -1434,7 +1432,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 		fb_utils::exact_name(X.RDB$OWNER_NAME);
 
 		// Allocate from default or permanent pool as appropriate
-	
+
 		if (!X.RDB$RELATION_ID.NULL) {
 			relation = FB_NEW(pool) dsql_rel(pool);
 			relation->rel_id = X.RDB$RELATION_ID;
@@ -1442,9 +1440,9 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 		else if (!DDL_ids(statement)) {
 			relation = FB_NEW(pool) dsql_rel(pool);
 		}
-	
+
 		// fill out the relation information
-	
+
 		if (relation) {
 			relation->rel_name = name->str_data;
 			relation->rel_owner = X.RDB$OWNER_NAME;
@@ -1488,12 +1486,11 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 		fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 		fb_utils::exact_name(RFR.RDB$FIELD_SOURCE);
-		const int length = strlen(RFR.RDB$FIELD_NAME) + strlen(RFR.RDB$FIELD_SOURCE);
 
 		// Allocate from default or permanent pool as appropriate
-	
+
 		dsql_fld* field = NULL;
-	
+
 		if (!RFR.RDB$FIELD_ID.NULL) {
 			field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
@@ -1964,7 +1961,7 @@ static void free_relation(dsql_rel* relation)
 
 // release the field blocks
 
-	for (dsql_fld* field = relation->rel_fields; field;) 
+	for (dsql_fld* field = relation->rel_fields; field;)
 	{
 		dsql_fld* temp = field;
 		field = field->fld_next;
@@ -2033,7 +2030,7 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
 			{
 				break;
 			}
-			else if (type == SYM_intlsym_collation && 
+			else if (type == SYM_intlsym_collation &&
 				(intlSym = (dsql_intlsym*) symbol->sym_object) &&
 				!(intlSym->intlsym_flags & INTLSYM_dropped) &&
 				(charset_id == 0 || intlSym->intlsym_charset_id == charset_id))

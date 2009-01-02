@@ -199,8 +199,8 @@ static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static DeferredWork* post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t, const dsc*, USHORT);
-static void put_summary_blob(blb*, enum rsr_t, bid*, jrd_tra*);
-static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
+static void put_summary_blob(thread_db* tdbb, blb*, enum rsr_t, bid*, jrd_tra*);
+static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*, bool);
@@ -4460,35 +4460,35 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					/* Store stuff in field summary */
 
 					n = RFR.RDB$FIELD_ID;
-					put_summary_record(blob, RSR_field_id, (UCHAR*)&n, sizeof(n));
-					put_summary_record(blob, RSR_field_name, (UCHAR*) RFR.RDB$FIELD_NAME,
+					put_summary_record(tdbb, blob, RSR_field_id, (UCHAR*)&n, sizeof(n));
+					put_summary_record(tdbb, blob, RSR_field_name, (UCHAR*) RFR.RDB$FIELD_NAME,
 									   fb_utils::name_length(RFR.RDB$FIELD_NAME));
 					if (!FLD.RDB$COMPUTED_BLR.isEmpty() && !RFR.RDB$VIEW_CONTEXT)
 					{
-						put_summary_blob(blob, RSR_computed_blr, &FLD.RDB$COMPUTED_BLR, transaction);
+						put_summary_blob(tdbb, blob, RSR_computed_blr, &FLD.RDB$COMPUTED_BLR, transaction);
 					}
 					else if (!null_view)
 					{
 						n = RFR.RDB$VIEW_CONTEXT;
-						put_summary_record(blob, RSR_view_context, (UCHAR*)&n, sizeof(n));
-						put_summary_record(blob, RSR_base_field, (UCHAR*) RFR.RDB$BASE_FIELD,
+						put_summary_record(tdbb, blob, RSR_view_context, (UCHAR*)&n, sizeof(n));
+						put_summary_record(tdbb, blob, RSR_base_field, (UCHAR*) RFR.RDB$BASE_FIELD,
 										   fb_utils::name_length(RFR.RDB$BASE_FIELD));
 					}
-					put_summary_blob(blob, RSR_missing_value, &FLD.RDB$MISSING_VALUE, transaction);
-					put_summary_blob(blob, RSR_default_value,
+					put_summary_blob(tdbb, blob, RSR_missing_value, &FLD.RDB$MISSING_VALUE, transaction);
+					put_summary_blob(tdbb, blob, RSR_default_value,
 								(RFR.RDB$DEFAULT_VALUE.isEmpty() ?
 									&FLD.RDB$DEFAULT_VALUE :
 									&RFR.RDB$DEFAULT_VALUE), transaction);
-					put_summary_blob(blob, RSR_validation_blr, &FLD.RDB$VALIDATION_BLR, transaction);
+					put_summary_blob(tdbb, blob, RSR_validation_blr, &FLD.RDB$VALIDATION_BLR, transaction);
 					if (FLD.RDB$NULL_FLAG || RFR.RDB$NULL_FLAG)
 					{
-						put_summary_record(blob, RSR_field_not_null,
+						put_summary_record(tdbb, blob, RSR_field_not_null,
 											nonnull_validation_blr, sizeof(nonnull_validation_blr));
 					}
 
 					n = fb_utils::name_length(RFR.RDB$SECURITY_CLASS);
 					if (!RFR.RDB$SECURITY_CLASS.NULL && n)
-						put_summary_record(blob, RSR_security_class,
+						put_summary_record(tdbb, blob, RSR_security_class,
 										   (UCHAR*) RFR.RDB$SECURITY_CLASS, n);
 
 					/* Make a temporary field block */
@@ -5097,7 +5097,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 }
 
 
-static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* transaction)
+static void put_summary_blob(thread_db* tdbb, blb* blob, RSR_T type, bid* blob_id, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -5112,8 +5112,8 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* trans
 
 	UCHAR temp[128];
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb  = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	//Database* dbb  = tdbb->getDatabase();
 
 	/* If blob is null, don't bother */
 
@@ -5128,7 +5128,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id, jrd_tra* trans
 		FB_NEW(*getDefaultMemoryPool()) UCHAR[length] : temp;
 	try {
 		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
-		put_summary_record(blob, type, buffer, length);
+		put_summary_record(tdbb, blob, type, buffer, length);
 	}
 	catch (const Firebird::Exception&) {
 		if (buffer != temp)
@@ -5184,7 +5184,8 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 }
 
 
-static void put_summary_record(blb*		blob,
+static void put_summary_record(thread_db* tdbb,
+							   blb*		blob,
 							   RSR_T	type,
 							   const UCHAR*	data,
 							   USHORT	length)
@@ -5200,7 +5201,8 @@ static void put_summary_record(blb*		blob,
  *
  **************************************/
 
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
+
 	fb_assert(length < MAX_USHORT); // otherwise length + 1 wraps. Or do we bugcheck???
 	UCHAR temp[129];
 
@@ -5332,7 +5334,7 @@ static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHO
 
 	SLONG stuff[256];
 
-	put_summary_record(blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
+	put_summary_record(tdbb, blob, RSR_dimensions, (UCHAR*) &n, sizeof(n));
 	tfb->tfb_flags |= TFB_array;
 	Ods::InternalArrayDesc* array = reinterpret_cast<Ods::InternalArrayDesc*>(stuff);
 	MOVE_CLEAR(array, (SLONG) sizeof(Ods::InternalArrayDesc));
@@ -5340,7 +5342,7 @@ static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHO
 	array->iad_struct_count = 1;
 	array->iad_rpt[0].iad_desc = tfb->tfb_desc;
 	get_array_desc(tdbb, field_name, array);
-	put_summary_record(blob, RSR_array_desc, (UCHAR*) array, array->iad_length);
+	put_summary_record(tdbb, blob, RSR_array_desc, (UCHAR*) array, array->iad_length);
 }
 
 
@@ -5473,7 +5475,7 @@ static void setup_trigger_details(thread_db* tdbb,
  *
  **************************************/
 
-	put_summary_record(blob, RSR_trigger_name,
+	put_summary_record(tdbb, blob, RSR_trigger_name,
 		(const UCHAR*) trigger_name, fb_utils::name_length(trigger_name));
 
 	if (!null_view) {

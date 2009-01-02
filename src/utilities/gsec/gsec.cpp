@@ -1137,7 +1137,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 	if (status_vector)
 	{
 		const ISC_STATUS* vector = status_vector;
-		tsec* tdsec = tsec::getSpecific();
+		/*tsec* tdsec = */ tsec::getSpecific();
 
 		SCHAR s[1024];
 		while (fb_interpret(s, sizeof(s), &vector))

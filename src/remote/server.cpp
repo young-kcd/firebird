@@ -3088,7 +3088,7 @@ static bool process_packet(rem_port* port,
 	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	try {
-		P_OP op = receive->p_operation;
+		const P_OP op = receive->p_operation;
 		switch (op)
 		{
 		case op_connect:
@@ -5028,7 +5028,10 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 								new_request->req_port = port;
 
-								const bool ok = link_request(port, new_request);
+#ifdef DEV_BUILD
+								const bool ok =
+#endif
+									link_request(port, new_request);
 								fb_assert(ok);
 							}
 						}

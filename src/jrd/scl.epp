@@ -468,7 +468,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* _string)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
@@ -941,7 +941,7 @@ static bool check_user_group(thread_db* tdbb, const UCHAR* acl, USHORT number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	SLONG n = 0;
 

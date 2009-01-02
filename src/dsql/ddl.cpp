@@ -620,7 +620,9 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 	if (modifying)
 	{
+#ifdef DEV_BUILD
 		const dsql_rel* relation = statement->req_relation;
+#endif
 		const dsql_fld* afield = field->fld_next;
 		USHORT bpc = 0;
 			while (afield) {
@@ -2849,7 +2851,7 @@ static void define_relation(CompiledStatement* statement)
  *	global fields for the local fields.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // not used
 
 	dsql_nod* ddl_node = statement->req_ddl_node;
 
@@ -3658,7 +3660,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
  *	statement as the source of the view.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // not used
 
 	dsql_nod* node = statement->req_ddl_node;
 	const dsql_str* view_name = (dsql_str*) node->nod_arg[e_view_name];
@@ -5577,7 +5579,7 @@ static void modify_relation(CompiledStatement* statement)
  *	global fields for the local fields.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data(); // not used
 
 	dsql_nod* ddl_node = statement->req_ddl_node;
 
@@ -6902,7 +6904,7 @@ void CompiledStatement::append_meta_string(const char* string)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	ISC_STATUS_ARRAY status_vector = {0};
+	//ISC_STATUS_ARRAY status_vector = {0};
 	UCharBuffer nameBuffer;
 
 	CsConvert cv(INTL_charset_lookup(tdbb, CS_dynamic)->getStruct(),

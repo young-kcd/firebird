@@ -4130,8 +4130,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 	dsql_par* rv_source = find_record_version(parent, relation_name);
 
 	dsql_par* source;
-	if (parent->req_type != REQ_SELECT_UPD ||
-		!(source = find_dbkey(parent, relation_name)) ||
+	if (parent->req_type != REQ_SELECT_UPD || !(source = find_dbkey(parent, relation_name)) ||
 		!rv_source)
 	{
 		// cursor is not updatable
@@ -5147,7 +5146,7 @@ static void pass1_expand_select_node(CompiledStatement* statement, dsql_nod* nod
 	}
 	else if (node->nod_type == nod_derived_table) {
 		// AB: Derived table support
-		thread_db* tdbb = JRD_get_thread_data();
+		thread_db* tdbb = JRD_get_thread_data(); // unused
 		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
 		dsql_nod** ptr = sub_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;

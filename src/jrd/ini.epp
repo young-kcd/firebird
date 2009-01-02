@@ -882,7 +882,7 @@ static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 /* add desired fields to system relations, forcing a new format version */
 

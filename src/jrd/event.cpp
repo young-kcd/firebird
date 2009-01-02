@@ -468,8 +468,11 @@ static EVH acquire(void)
 		mutex_bugcheck("mutex lock", mutex_state);
 	EVENT_header->evh_current_process = EVENT_process_offset;
 
-	if (EVENT_header->evh_length > EVENT_data.sh_mem_length_mapped) {
+	if (EVENT_header->evh_length > EVENT_data.sh_mem_length_mapped)
+	{
+#if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
 		const SLONG length = EVENT_header->evh_length;
+#endif
 
 #ifdef WIN_NT
 		/* Before remapping the memory, wakeup the watcher thread.
@@ -482,7 +485,7 @@ static EVH acquire(void)
 
 		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		event_t* event = &process->prb_event;
+		//event_t* event = &process->prb_event;
 
 		post_process(process);
 
@@ -561,7 +564,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 
 		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
-		event_t* event = &process->prb_event;
+		//event_t* event = &process->prb_event;
 		post_process(process);
 
 		while (true) {

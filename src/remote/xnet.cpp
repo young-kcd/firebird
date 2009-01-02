@@ -144,7 +144,10 @@ static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
 static Firebird::GlobalPtr<PortsCleanup>	xnet_ports;
 static ULONG xnet_next_free_map_num = 0;
 
+#ifdef SUPERCLIENT
 static bool connect_init(ISC_STATUS* status);
+#endif
+
 static void connect_fini();
 static void release_all();
 
@@ -487,6 +490,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 }
 
 
+#ifdef SUPERCLIENT
 static bool connect_init(ISC_STATUS* status)
 {
 /**************************************
@@ -559,6 +563,7 @@ static bool connect_init(ISC_STATUS* status)
 		return false;
 	}
 }
+#endif
 
 static void connect_fini()
 {
@@ -1049,6 +1054,7 @@ static void cleanup_port(rem_port* port)
 }
 
 
+#ifdef SUPERCLIENT
 static void raise_lostconn_or_syserror(const char* msg)
 {
 	if (ERRNO == ERROR_FILE_NOT_FOUND)
@@ -1056,6 +1062,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 	else
 		Firebird::system_error::raise(msg);
 }
+#endif
 
 
 static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
@@ -1072,9 +1079,9 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
  **************************************/
 #ifndef SUPERCLIENT
 	return NULL;
-#endif
+#else
 
-	if (!xnet_initialized) 
+	if (!xnet_initialized)
 	{
 		Firebird::MutexLockGuard guard(xnet_mutex);
 		if (!xnet_initialized)
@@ -1342,6 +1349,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 		return NULL;
 	}
+#endif
 }
 
 
@@ -1794,10 +1802,12 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 
 	SLONG bytecount = count;
 
+#ifdef SUPERCLIENT
 	rem_port* port = (rem_port*)xdrs->x_public;
-	XCC xcc = (XCC)port->port_xcc;
-	XCH xch = (XCH)xcc->xcc_recv_channel;
+	XCC xcc = (XCC) port->port_xcc;
+	//XCH xch = (XCH)xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
+#endif
 
 	while (bytecount && !xnet_shutdown)
 	{
@@ -1911,7 +1921,9 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_send_channel;
+#ifdef SUPERCLIENT
 	XPM xpm = xcc->xcc_xpm;
+#endif
 	XPS xps = (XPS) xcc->xcc_mapped_addr;
 
 	while (bytecount && !xnet_shutdown)
@@ -2035,7 +2047,9 @@ static bool_t xnet_read(XDR * xdrs)
 	rem_port* port = (rem_port*)xdrs->x_public;
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_recv_channel;
+#ifdef SUPERCLIENT
 	XPM xpm = xcc->xcc_xpm;
+#endif
 	XPS xps = (XPS) xcc->xcc_mapped_addr;
 
 	if (xnet_shutdown)
@@ -2585,12 +2599,12 @@ static rem_port* get_server_port(ULONG client_pid,
 			(ULONG) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
 
 		// client to server events
-		UCHAR* const channel_c2s_event_buffer = p;
+		//UCHAR* const channel_c2s_event_buffer = p;
 		xps->xps_channels[XPS_CHANNEL_C2S_EVENTS].xch_size = XNET_EVENT_SPACE;
 
 		p += XNET_EVENT_SPACE;
 		// server to client events
-		UCHAR* const channel_s2c_event_buffer = p;
+		//UCHAR* const channel_s2c_event_buffer = p;
 		xps->xps_channels[XPS_CHANNEL_S2C_EVENTS].xch_size = XNET_EVENT_SPACE;
 
 		p += XNET_EVENT_SPACE;

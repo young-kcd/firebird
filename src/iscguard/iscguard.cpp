@@ -1053,10 +1053,6 @@ void write_log(int log_action, const char* buff)
  *****************************************************************************/
 	char tmp_buff[128];
 
-	time_t ltime;
-	time(&ltime);
-	const tm* today = localtime(&ltime);
-
 /* Move to the end of the log_entry list */
 	log_info* log_temp = log_entry;
 	while (log_temp->next)
@@ -1066,6 +1062,10 @@ void write_log(int log_action, const char* buff)
 	memset(tmp, 0, sizeof(log_info));
 
 #ifdef NOT_USED_OR_REPLACED
+	time_t ltime;
+	time(&ltime);
+	const tm* today = localtime(&ltime);
+
 	sprintf(tmp->log_time, "%02d:%02d", today->tm_hour, today->tm_min);
 	sprintf(tmp->log_date, "%02d/%02d/%02d",
 			today->tm_mon + 1, today->tm_mday, today->tm_year % 100);

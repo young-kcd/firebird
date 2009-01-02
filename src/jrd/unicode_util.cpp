@@ -357,7 +357,7 @@ ULONG UnicodeUtil::utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UC
 
 	srcLen /= sizeof(*src);
 
-	const USHORT* const srcEnd = src + srcLen;
+	//const USHORT* const srcEnd = src + srcLen;
 	const UCHAR* const dstStart = dst;
 	const UCHAR* const dstEnd = dst + dstLen;
 
@@ -424,7 +424,7 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 	if (dst == NULL)
 		return srcLen * sizeof(*dst);
 
-	const UCHAR* const srcEnd = src + srcLen;
+	//const UCHAR* const srcEnd = src + srcLen;
 	const USHORT* const dstStart = dst;
 	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
 
@@ -616,7 +616,7 @@ ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	if (length == 0)
 		return 0;
 
-	const USHORT* const srcStart = src;
+	//const USHORT* const srcStart = src;
 	const USHORT* const dstStart = dst;
 	const USHORT* const srcEnd = src + srcLen / sizeof(*src);
 	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);

@@ -673,7 +673,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 	Database* dbb = tdbb->getDatabase();
 
 	// This var is unused.
-	const SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
+	//const SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
 	if (window->win_page == HEADER_PAGE_NUMBER)
 		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 /* if there has been a shadow added recently, go out and
@@ -1242,7 +1242,6 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	BufferControl* bcb = dbb->dbb_bcb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* note that some of the code for btc_flush()
@@ -1250,7 +1249,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
    to minimize call overhead -- changes should
    be made in both places */
 
-	if (flush_flag & (FLUSH_TRAN | FLUSH_SYSTEM)) {
+	if (flush_flag & (FLUSH_TRAN | FLUSH_SYSTEM))
+	{
 		const SLONG transaction_mask = (tra_number) ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
 		bool sys_only = false;
 		if (!transaction_mask && (flush_flag & FLUSH_SYSTEM)) {
@@ -1258,6 +1258,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 
 #ifdef SUPERSERVER_V2
+		BufferControl* bcb = dbb->dbb_bcb;
 //		if (!dbb->dbb_wal && A && B) becomes
 //		if (true && A && B) then finally (A && B)
 		if (!(dbb->dbb_flags & DBB_force_write) && transaction_mask) {
@@ -1286,7 +1287,9 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
 		LATCH latch = (release_flag) ? LATCH_exclusive : LATCH_none;
 
-		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
+		BufferControl* bcb;
+		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++)
+		{
 			BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 			if (!release_flag && !(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)))
 			{
@@ -1397,13 +1400,12 @@ void CCH_flush_ast(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	BufferControl* bcb = dbb->dbb_bcb;
 
 #ifdef SUPERSERVER
 	CCH_flush(tdbb, FLUSH_ALL, 0);
 #else
+	Database* dbb = tdbb->getDatabase();
+	BufferControl* bcb = dbb->dbb_bcb;
 	// Do some fancy footwork to make sure that pages are
 	// not removed from the btc tree at AST level.  Then
 	// restore the flag to whatever it was before.
@@ -2759,11 +2761,14 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush(bcb->bcb_dirty_count);
 
+#ifdef SUPERSERVER
 	const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
+	const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
+#endif
 	const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
 	const bool write_thru = release_flag;
-	const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
-	LATCH latch = (release_flag) ? LATCH_exclusive : LATCH_none;
+
+	const LATCH latch = release_flag ? LATCH_exclusive : LATCH_none;
 
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++)
 	{
@@ -2802,7 +2807,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	bool writeAll = false;
 	while (flush.getCount())
 	{
-		BufferDesc **ptr = flush.begin();
+		BufferDesc** ptr = flush.begin();
 		const size_t cnt = flush.getCount();
 		while (ptr < flush.end())
 		{
@@ -4064,7 +4069,9 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
 			bcb->bcb_flags |= BCB_writer_active;
+#ifdef CACHE_READER
 			SLONG starting_page = -1;
+#endif
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
 				{ //scope
@@ -4670,11 +4677,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+#ifdef CACHE_WRITER
 	SSHORT walk = dbb->dbb_bcb->bcb_free_minimum;
+#endif
 
 //	BCB_MUTEX_ACQUIRE;
 
-	while (true) {
+	while (true)
+	{
 	  find_page:
 
 		bcb = dbb->dbb_bcb;
@@ -5820,8 +5830,10 @@ static void release_bdb(thread_db* tdbb,
 		/* Note that this loop assumes that requests for LATCH_io and LATCH_mark
 		   are queued before LATCH_shared and LATCH_exclusive. */
 		LatchWait* lwt = BLOCK(que_inst, LatchWait*, lwt_waiters);
-		if (lwt->lwt_flags & LWT_pending) {
-			switch (lwt->lwt_latch) {
+		if (lwt->lwt_flags & LWT_pending)
+		{
+			switch (lwt->lwt_latch)
+			{
 			case LATCH_exclusive:
 				if (bdb->bdb_use_count) {
 //					LATCH_MUTEX_RELEASE;
@@ -5859,7 +5871,8 @@ static void release_bdb(thread_db* tdbb,
 				break;
 
 			case LATCH_shared:
-				if (bdb->bdb_exclusive) {
+				if (bdb->bdb_exclusive)
+				{
 					break;		/* defensive programming */
 
 					/* correct programming
@@ -5867,7 +5880,7 @@ static void release_bdb(thread_db* tdbb,
 					   return;  */
 				}
 				++bdb->bdb_use_count;
-				SharedLatch* latch = allocSharedLatch(lwt->lwt_tdbb, bdb);
+				allocSharedLatch(lwt->lwt_tdbb, bdb);
 				lwt->lwt_flags &= ~LWT_pending;
 				lwt->lwt_sem.release();
 				granted = true;

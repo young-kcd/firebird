@@ -276,10 +276,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 
 	for (;;)
 	{
-		tdgbl->mvol_io_cnt =
-			read(	tdgbl->file_desc,
-					tdgbl->mvol_io_buffer,
-					tdgbl->mvol_io_buffer_size);
+		tdgbl->mvol_io_cnt = read(tdgbl->file_desc, tdgbl->mvol_io_buffer, tdgbl->mvol_io_buffer_size);
 		tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 
 		if (tdgbl->mvol_io_cnt > 0) {
@@ -315,7 +312,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 	*ptr = tdgbl->mvol_io_ptr + 1;
 	*cnt = tdgbl->mvol_io_cnt - 1;
 
-	return *(tdgbl->mvol_io_ptr);
+	return *tdgbl->mvol_io_ptr;
 }
 
 
@@ -328,18 +325,19 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
+	fb_assert(tdgbl->io_cnt <= 0);
+
 	for (;;)
 	{
-		BOOL ret = ReadFile(tdgbl->file_desc,
-					   tdgbl->mvol_io_buffer,
-					   tdgbl->mvol_io_buffer_size,
-					   reinterpret_cast<DWORD*>(&tdgbl->mvol_io_cnt),
-					   NULL);
+		DWORD bytesRead = 0;
+		const BOOL ret = ReadFile(tdgbl->file_desc, tdgbl->mvol_io_buffer,
+								  tdgbl->mvol_io_buffer_size, &bytesRead, NULL);
+		tdgbl->mvol_io_cnt = bytesRead;
 		tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 		if (tdgbl->mvol_io_cnt > 0)
 			break;
 
-		if (!tdgbl->mvol_io_cnt)
+		if (!tdgbl->mvol_io_cnt && ret)
 		{
 			tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
 			if (tdgbl->mvol_io_cnt > 0)
@@ -362,7 +360,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 	*ptr = tdgbl->mvol_io_ptr + 1;
 	*cnt = tdgbl->mvol_io_cnt - 1;
 
-	return *(tdgbl->mvol_io_ptr);
+	return *tdgbl->mvol_io_ptr;
 }
 #endif // !WIN_NT
 
@@ -494,8 +492,7 @@ DESC MVOL_open(const char* name, ULONG mode, ULONG create)
 			// a different file/device.
 			//
 			SetTapePosition(handle, TAPE_REWIND, 0, 0, 0, FALSE);
-			if (GetTapeParameters(handle, GET_TAPE_MEDIA_INFORMATION, &size,
-									&param) == NO_ERROR)
+			if (GetTapeParameters(handle, GET_TAPE_MEDIA_INFORMATION, &size, &param) == NO_ERROR)
 			{
 				tdgbl->io_buffer_size = param.BlockSize;
 			}
@@ -548,21 +545,20 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 				}
 			}
 		}
-#ifndef WIN_NT
-		cnt = write(tdgbl->file_desc, ptr,
-					((tdgbl->action->act_action == ACT_backup_split) &&
-					 (tdgbl->action->act_file->fil_length < left) ?
-					 tdgbl->action->act_file->fil_length : left));
-#else
+
 		const DWORD nBytesToWrite =
 			(tdgbl->action->act_action == ACT_backup_split &&
-			 (tdgbl->action->act_file->fil_length < left) ?
-			 tdgbl->action->act_file->fil_length : left);
+				tdgbl->action->act_file->fil_length < left) ?
+			 		tdgbl->action->act_file->fil_length : left;
 
-		DWORD err = 0;
+#ifndef WIN_NT
+		cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
+#else
+
+		DWORD ret = 0;
 		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite, &cnt, NULL))
 		{
-			err = GetLastError();
+			ret = GetLastError();
 		}
 #endif // !WIN_NT
 		tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
@@ -585,7 +581,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 				errno == ENOSPC || errno == EIO || errno == ENXIO ||
 				errno == EFBIG)
 #else
-				err == ERROR_DISK_FULL || err == ERROR_HANDLE_DISK_FULL)
+				ret == ERROR_DISK_FULL || ret == ERROR_HANDLE_DISK_FULL)
 #endif // !WIN_NT
 			{
 				if (tdgbl->action->act_action == ACT_backup_split)
@@ -650,8 +646,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 					full_buffer = true;
 				else
 					full_buffer = false;
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE,
-											   full_buffer);
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, full_buffer);
 				if (full_buffer)
 				{
 					left -= tdgbl->mvol_io_buffer_size;
@@ -852,7 +847,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 // the old file was empty
 
 	if (!tdgbl->mvol_empty_file)
-		(tdgbl->mvol_volume_count)++;
+		++tdgbl->mvol_volume_count;
 
 	tdgbl->mvol_empty_file = TRUE;
 
@@ -1287,14 +1282,15 @@ static bool write_header(DESC   handle,
 	{
 #ifdef WIN_NT
 		DWORD bytes_written = 0;
-		DWORD err = WriteFile(handle, tdgbl->mvol_io_header,
-							  tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
+		const DWORD ret = WriteFile(handle, tdgbl->mvol_io_header,
+									tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
 #else
 		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
+		const DWORD ret = TRUE;
 #endif // WIN_NT
 
-		if (bytes_written != tdgbl->mvol_io_buffer_size)
+		if (!ret || bytes_written != tdgbl->mvol_io_buffer_size)
 		{
 			return false;
 		}

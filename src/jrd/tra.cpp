@@ -494,7 +494,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
 	CHECK_DBB(dbb);
 
 /* Start by fetching prior transaction page, if any */
-	tx_inv_page* prior_tip;
+	tx_inv_page* prior_tip = NULL;
 	WIN prior_window(DB_PAGE_SPACE, -1);
 	if (sequence) {
 		prior_tip = fetch_inventory_page(tdbb, &prior_window, (SLONG) (sequence - 1), LCK_write);

@@ -70,7 +70,7 @@ static int process_id = 0;
 
 const USHORT MAX_OPN_EVENTS	= 40;
 
-struct opn_event 
+struct opn_event_t
 {
 	SLONG opn_event_pid;
 	SLONG opn_event_signal;		/* pseudo-signal number */
@@ -78,14 +78,13 @@ struct opn_event
 	ULONG opn_event_age;
 };
 
-typedef opn_event *OPN_EVENT;
 
-static struct opn_event opn_events[MAX_OPN_EVENTS];
+static struct opn_event_t opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
 
 static void (*system_overflow_handler)(int);
-static void cleanup(void *);
+static void cleanup(void*);
 static void overflow_handler(int, int);
 
 // Not thread-safe
@@ -157,11 +156,11 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 		return 0;
 	}
 
-	OPN_EVENT oldest_opn_event;
+	opn_event_t* oldest_opn_event = NULL;
 	ULONG oldest_age = ~0;
 
-	OPN_EVENT opn_event = opn_events;
-	OPN_EVENT end_opn_event = opn_event + opn_event_count;
+	opn_event_t* opn_event = opn_events;
+	const opn_event_t* const end_opn_event = opn_event + opn_event_count;
 	for (; opn_event < end_opn_event; opn_event++) {
 		if (opn_event->opn_event_pid == pid &&
 			opn_event->opn_event_signal == signal_number)
@@ -240,7 +239,7 @@ static void cleanup(void *arg)
  **************************************/
 	process_id = 0;
 
-	OPN_EVENT opn_event = opn_events + opn_event_count;
+	opn_event_t* opn_event = opn_events + opn_event_count;
 	opn_event_count = 0;
 	while (opn_event-- > opn_events)
 		CloseHandle(opn_event->opn_event_lhandle);

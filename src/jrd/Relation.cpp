@@ -256,7 +256,10 @@ bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 #endif
 
 	size_t pos;
-	const bool found = rel_pages_inst->find(pages->rel_instance_id, pos);
+#ifdef DEV_BUILD
+	const bool found =
+#endif
+		rel_pages_inst->find(pages->rel_instance_id, pos);
 	fb_assert(found && ((*rel_pages_inst)[pos] == pages) );
 
 	rel_pages_inst->remove(pos);

@@ -69,7 +69,9 @@ static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 static bool		connect_client(rem_port*);
 static void		disconnect(rem_port*);
+#ifdef NOT_USED_OR_REPLACED
 static void		exit_handler(void*);
+#endif
 static void		force_close(rem_port*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*		receive(rem_port*, PACKET *);
@@ -757,7 +759,7 @@ static bool connect_client(rem_port *port)
 			break;
 
 		case ERROR_IO_PENDING:
-			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0) 
+			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0)
 			{
 				if (!wnet_shutdown)
 					break;
@@ -837,7 +839,7 @@ static void disconnect(rem_port* port)
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
-	
+
 	wnet_ports->unRegisterPort(port);
 	port->release();
 }
@@ -868,6 +870,7 @@ static void force_close(rem_port* port)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED
 static void exit_handler(void* main_port)
 {
 /**************************************
@@ -884,6 +887,7 @@ static void exit_handler(void* main_port)
 	for (rem_port* vport = static_cast<rem_port*>(main_port); vport; vport = vport->port_next)
 		CloseHandle(vport->port_handle);
 }
+#endif
 
 
 static rem_str* make_pipe_name(const TEXT* connect_name,

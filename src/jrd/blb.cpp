@@ -209,7 +209,7 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 
 	if (blob->blb_level == 0)
 	{
-		Database* dbb = tdbb->getDatabase();
+		//Database* dbb = tdbb->getDatabase();
 
 		blob->blb_temp_size = blob->blb_clump_size - blob->blb_space_remaining;
 
@@ -808,7 +808,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-    Database* database = GET_DBB();
+    //Database* database = GET_DBB();
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Checkout slice description language */
@@ -2215,7 +2215,9 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	}
 
 	SET_TDBB(tdbb);
+#ifdef SUPERSERVER_V2
 	Database* dbb = tdbb->getDatabase();
+#endif
 	vcl* vector = blob->blb_pages;
 
 #ifdef SUPERSERVER_V2
@@ -2645,7 +2647,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		{
 			/* Note: cannot remove this JRD_get_thread_data without api change
 			   to slice callback routines */
-			thread_db* tdbb = JRD_get_thread_data();
+			/*thread_db* tdbb = */ JRD_get_thread_data();
 
 			HalfStaticArray<char, 1024> tmp_buffer;
 			const USHORT tmp_len = array_desc->dsc_length;

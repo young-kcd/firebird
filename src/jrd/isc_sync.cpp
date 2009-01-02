@@ -3447,6 +3447,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 	return false;
 }
 
+#ifdef NOT_USED_OR_REPLACED
 static bool openFastMutex(FAST_MUTEX* lpMutex, DWORD DesiredAccess, LPCSTR lpName)
 {
 	LPCSTR name = lpName;
@@ -3495,6 +3496,7 @@ static bool openFastMutex(FAST_MUTEX* lpMutex, DWORD DesiredAccess, LPCSTR lpNam
 	SetLastError(dwLastError);
 	return false;
 }
+#endif
 
 static inline void setFastMutexSpinCount(FAST_MUTEX* lpMutex, ULONG SpinCount)
 {

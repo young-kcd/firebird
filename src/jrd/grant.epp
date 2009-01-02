@@ -121,7 +121,7 @@ bool GRANT_privileges(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			bool restrct = false;
 
-			Database* dbb = tdbb->getDatabase();
+			//Database* dbb = tdbb->getDatabase();
 			Firebird::MetaName s_class, owner, default_class;
 			bool view; // unused after being retrieved.
 			get_object_info(tdbb, work->dfw_name.c_str(), work->dfw_id, owner,

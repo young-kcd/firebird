@@ -661,7 +661,7 @@ bool DYN_UTIL_is_array(thread_db* tdbb,
 
 	try
 	{
-		bool rc;
+		bool rc = false;
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ domain_name.c_str()
 
@@ -705,7 +705,7 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 						  const Firebird::MetaName& new_name)
 {
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	jrd_req* request = NULL; //CMP_find_request(tdbb, drq_dom_copy, DYN_REQUESTS);
 	jrd_req* req2 = NULL;

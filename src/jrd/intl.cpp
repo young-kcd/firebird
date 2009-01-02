@@ -984,7 +984,6 @@ Collation* INTL_texttype_lookup(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	if (parm1 == ttype_dynamic)
 		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset);

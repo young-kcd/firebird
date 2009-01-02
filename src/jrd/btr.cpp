@@ -102,7 +102,7 @@ const SLONG NO_SPLIT	= 0;
 //Debug page numbers into log file
 //#define DEBUG_BTR_PAGES
 
-struct INT64_KEY 
+struct INT64_KEY
 {
 	double d_part;
 	SSHORT s_part;
@@ -121,7 +121,7 @@ static const double pow10_table[] =
 
 #define powerof10(s) ((s) <= 0 ? pow10_table[-(s)] : 1. / pow10_table[-(s)])
 
-static const struct	// Used in make_int64_key() 
+static const struct	// Used in make_int64_key()
 {
 	FB_UINT64 limit;
 	SINT64 factor;
@@ -949,7 +949,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
  **************************************/
 
 	SET_TDBB(tdbb);
-	const Database* dbb = tdbb->getDatabase();
+	//const Database* dbb = tdbb->getDatabase();
 
 	index_desc* idx = insertion->iib_descriptor;
 	RelationPages* relPages = insertion->iib_relation->getPages(tdbb);

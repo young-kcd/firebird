@@ -371,13 +371,17 @@ bool LockManager::setOwnerHandle(SRQ_PTR request_offset, SRQ_PTR new_owner_offse
 	acquire_shmem(new_owner_offset);
 
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+#ifdef DEV_BUILD
 	own* const old_owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
 	fb_assert(old_owner->own_pending_request != request_offset);
+#endif
 	own* const new_owner = (own*) SRQ_ABS_PTR(new_owner_offset);
 	fb_assert(new_owner->own_pending_request != request_offset);
+#ifdef DEV_BUILD
 	const prc* const old_process = (prc*) SRQ_ABS_PTR(old_owner->own_process);
 	const prc* const new_process = (prc*) SRQ_ABS_PTR(new_owner->own_process);
 	fb_assert(old_process->prc_process_id == new_process->prc_process_id);
+#endif
 	lbl *lck = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 
 	// Make sure that change of lock owner is possible
@@ -2251,7 +2255,7 @@ void LockManager::initialize(SH_MEM shmem_data, bool initialize)
 
 	// Allocate a sufficiency of history blocks
 
-	his* history;
+	his* history = NULL;
 	for (USHORT j = 0; j < 2; j++)
 	{
 		SRQ_PTR* prior = (j == 0) ? &m_header->lhb_history : &secondary_header->shb_history;
@@ -3114,10 +3118,10 @@ bool LockManager::signal_owner(thread_db* tdbb, own* blocking_owner, SRQ_PTR blo
 
 	if (blocking_owner->own_flags & OWN_signaled)
 	{
+#ifdef DEBUG_LM
 		const prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
-		DEBUG_MSG(1,
-				  ("signal_owner (%ld) - skipped OWN_signaled\n",
-				   process->prc_process_id));
+		DEBUG_MSG(1, ("signal_owner (%ld) - skipped OWN_signaled\n", process->prc_process_id));
+#endif
 		return true;
 	}
 

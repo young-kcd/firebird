@@ -1254,7 +1254,10 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		(blr_operator == blr_fid || blr_operator == blr_field) && context == 0)
 	{
 		if (blr_operator == blr_fid) {
-			SSHORT id = BLR_WORD;
+#ifdef DEV_BUILD
+			SSHORT id =
+#endif
+				BLR_WORD;
 			fb_assert(id == 0);
 		}
 		else {
@@ -3167,7 +3170,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			n = BLR_WORD;
 			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
 			PAR_desc(tdbb, csb, desc, &itemInfo);
-			vec<jrd_nod*>* vector = csb->csb_variables =
+			csb->csb_variables =
 				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
 
 			if (itemInfo.isSpecial())

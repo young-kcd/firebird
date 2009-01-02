@@ -105,7 +105,7 @@ const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 
 static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 };
 
-static ULONG high_key[] = 
+static ULONG high_key[] =
 {
 	MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
 	MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
@@ -1061,7 +1061,7 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 
 	delete streams;
 
-	SORTP* buffer = (SORTP*) scb->scb_first_pointer;
+	//SORTP* buffer = (SORTP*) scb->scb_first_pointer;
 	merge->mrg_header.rmh_parent = NULL;
 	scb->scb_merge = merge;
 	scb->scb_longs -= SIZEOF_SR_BCKPTR_IN_LONGS;
@@ -1608,7 +1608,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 	while (merge) {
 		// If node is a run_control, get the next record (or not) and back to parent
 
-		if (merge->mrg_header.rmh_type == RMH_TYPE_RUN) 
+		if (merge->mrg_header.rmh_type == RMH_TYPE_RUN)
 		{
 			run_control* run = (run_control*) merge;
 			merge = run->run_header.rmh_parent;
@@ -2153,7 +2153,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 			else {
 				run->run_buffer = (ULONG*) buffer;
 				buffer += size;
-				run->run_record = 
+				run->run_record =
 					reinterpret_cast<sort_record*>(run->run_end_buffer = (ULONG*) buffer);
 			}
 		}
@@ -2215,7 +2215,7 @@ static void merge_runs(sort_context* scb, USHORT n)
 	while ( (p = get_merge(merge, scb)) )
 #endif
 	{
-		if (q >= (sort_record*) temp_run.run_end_buffer) 
+		if (q >= (sort_record*) temp_run.run_end_buffer)
 		{
 			size = (BLOB_PTR*) q - (BLOB_PTR*) temp_run.run_buffer;
 			seek = SORT_write_block(scb->scb_status_vector, scb->scb_space,
@@ -2568,7 +2568,7 @@ static void order_and_save(sort_context* scb)
 
 	const ULONG key_length = (scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS) * sizeof(ULONG);
 	run->run_size = run->run_records * key_length;
-	//FB_UINT64 seek = 
+	//FB_UINT64 seek =
 	run->run_seek = find_file_space(scb, run->run_size);
 
 	TempSpace* tmpSpace = scb->scb_space;
@@ -2812,7 +2812,7 @@ static void sort_runs_by_seek(sort_context* scb, int n)
  *
  **************************************/
 
-	Firebird::SortedArray<RunSort, Firebird::InlineStorage<RunSort, RUN_GROUP>, FB_UINT64, RunSort> 
+	Firebird::SortedArray<RunSort, Firebird::InlineStorage<RunSort, RUN_GROUP>, FB_UINT64, RunSort>
 		runs(*scb->scb_pool, n);
 
 	run_control* run;

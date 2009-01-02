@@ -756,7 +756,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	// Initialize special error handling
 
-	ISC_STATUS* const status = user_status;
 	Attachment* attachment = NULL;
 
 	bool initing_security = false;
@@ -1739,7 +1738,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_flags |= (DBB_being_opened | options.dpb_flags);
 
-	ISC_STATUS* const status = user_status;
 	Attachment* attachment = NULL;
 
 	bool initing_security = false;
@@ -3954,7 +3952,7 @@ static void check_database(thread_db* tdbb)
 	}
 
 	if ((attachment->att_flags & ATT_shutdown) ||
-		((dbb->dbb_ast_flags & DBB_shutdown) && 
+		((dbb->dbb_ast_flags & DBB_shutdown) &&
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
@@ -4848,7 +4846,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	}
 #endif
 
-	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count; 
+	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
 		++vector)
 	{
 		delete *vector;
@@ -5777,7 +5775,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (name.length() > USERNAME_LENGTH)
 	{
-		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length()) 
+		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length())
 														 << Arg::Num(USERNAME_LENGTH));
 	}
 
@@ -6307,7 +6305,7 @@ namespace {
 	class DatabaseDirectoryList : public DirectoryList
 	{
 	private:
-		const PathName getConfigString() const 
+		const PathName getConfigString() const
 		{
 			return PathName(Config::getDatabaseAccess());
 		}

@@ -395,7 +395,8 @@ public:
 				curr->remove(curPos);
 				return curPos < curr->getCount();
 			}
-			if (curr->getCount() == 1) {
+			if (curr->getCount() == 1)
+			{
 				// Only one node left in the current page. We cannot remove it directly
 				// because is would invalidate our tree structure
 				fb_assert(curPos == 0);
@@ -526,7 +527,7 @@ public:
 				items = (*(NodeList*) items)[0];
 			curr = (ItemList*) items;
 			curPos = 0;
-			return ((ItemList*) items)->getCount();
+			return ((ItemList*) items)->getCount() != 0;
 		}
 		// If method returns false it means list is empty and
 		// position of accessor is not defined.

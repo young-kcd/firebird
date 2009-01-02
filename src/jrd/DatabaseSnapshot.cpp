@@ -918,7 +918,9 @@ void DatabaseSnapshot::putDatabase(const Database* database, ClumpletWriter& wri
 	writer.insertByte(TAG_RECORD, rel_mon_database);
 
 	// Reload header
-	const PageSpace* const pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	// CVC: I don't see the need for this call. If it produces a side effect that's necessary here,
+	// then calling the function without assigning its result value may be clearer.
+	//const PageSpace* const pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 
 	// database name or alias (MUST BE ALWAYS THE FIRST ITEM PASSED!)
 	writer.insertPath(f_mon_db_name, database->dbb_database_name);

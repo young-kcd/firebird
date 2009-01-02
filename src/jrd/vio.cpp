@@ -517,8 +517,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
  **************************************/
 	SET_TDBB(tdbb);
 
+#ifdef GARBAGE_THREAD
 	const bool gcPolicyCooperative = tdbb->getDatabase()->dbb_flags & DBB_gc_cooperative;
 	const bool gcPolicyBackground = tdbb->getDatabase()->dbb_flags & DBB_gc_background;
+#endif
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {

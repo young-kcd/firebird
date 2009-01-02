@@ -843,7 +843,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 		factor = 0.7;
 	}
 	Database* dbb = tdbb->getDatabase();
-	cardinality = 
+	cardinality =
 		(csb_tail->csb_cardinality * (2 + (length * factor))) / (dbb->dbb_page_size - BTR_SIZE);
 }
 
@@ -972,7 +972,6 @@ OptimizerRetrieval::~OptimizerRetrieval()
  *
  **************************************/
 
-	InversionCandidate** invCandidate = inversionCandidates.begin();
 	for (size_t i = 0; i < inversionCandidates.getCount(); ++i) {
 		delete inversionCandidates[i];
 	}
@@ -1421,7 +1420,7 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 					// ASF: We currently can't use non-unique index for GROUP BY and DISTINCT with
 					// multi-level and insensitive collation. In NAV, keys are verified with memcmp
 					// but there we don't know length of each level.
-					if ((sortPtr->nod_flags & nod_unique_sort) && 
+					if ((sortPtr->nod_flags & nod_unique_sort) &&
 						(tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
 					{
 						usableIndex = false;
@@ -2030,9 +2029,9 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						}
 						else if (currentInv->dependencies == bestCandidate->dependencies) {
 
-							const double bestCandidateCost = 
+							const double bestCandidateCost =
 								bestCandidate->cost + (bestCandidate->selectivity * streamCardinality);
-							const double currentCandidateCost = 
+							const double currentCandidateCost =
 								currentInv->cost + (currentInv->selectivity * streamCardinality);
 
 							// Do we have very similar costs?

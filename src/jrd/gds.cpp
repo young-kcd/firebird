@@ -1642,8 +1642,6 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  *      Function returns 0 on success and -1 on failure
  *		it has very strange name, but to keep API as is leave it
  **************************************/
-	int count = 0;
-
 	if (! passed_string)
 		return -1;
 

@@ -66,7 +66,7 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	MemoryPool& pool = *getDefaultMemoryPool();
+	//MemoryPool& pool = *getDefaultMemoryPool();
 	service_name->printf(ISCGUARD_SERVICE, name);
 	remote_name->printf(REMOTE_SERVICE, name);
 }

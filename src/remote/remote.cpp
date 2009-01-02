@@ -338,7 +338,7 @@ void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
  *	is no other specification.
  *
  **************************************/
-	bool got_dpb_connect_timeout = false;
+	//bool got_dpb_connect_timeout = false;
 
 	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
 

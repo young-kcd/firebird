@@ -1261,7 +1261,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY temp;
 	StoredAtt* handle = 0;
 	Attachment* attachment = 0;
-	USHORT n;
+	USHORT n = 0;
 
 	YEntry status(user_status);
 
@@ -1829,7 +1829,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	ISC_STATUS_ARRAY temp;
 	StoredAtt* handle = 0;
 	Attachment* attachment = 0;
-	USHORT n;
+	USHORT n = 0;
 
 	YEntry status(user_status);
 
@@ -2250,7 +2250,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 			return status[1];
 		}
 
-		Statement* statement = new Statement(stmt_handle, public_stmt_handle, dbb);
+		//Statement* statement =
+		new Statement(stmt_handle, public_stmt_handle, dbb);
 	}
 	catch (const Exception& e)
 	{
@@ -3285,7 +3286,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
 		status.setPrimaryHandle(statement);
 
 		statement->checkPrepared();
-		sqlda_sup& dasup = statement->das;
+		//sqlda_sup& dasup = statement->das;
 
 		CALL(PROC_DSQL_INSERT, statement->implementation) (status, &statement->handle,
 														   blr_length, blr,
@@ -3326,7 +3327,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		sqlda_sup& dasup = statement->das;
 
 		const USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
-		Attachment*	attachment = statement->parent;
+		//Attachment*	attachment = statement->parent;
 		Array<SCHAR> db_prepare_buffer;
 		SCHAR* const buffer = db_prepare_buffer.getBuffer(buffer_len);
 
@@ -4427,7 +4428,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	StoredSvc* handle = 0;
 	Service* service = 0;
 	ISC_STATUS_ARRAY temp;
-	USHORT n;
+	USHORT n = 0;
 	YEntry status(user_status);
 
 	try
