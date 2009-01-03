@@ -198,7 +198,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				// oh no, a hex string!
 				*p++; // skip the 'X' part.
 				UCHAR byte = 0;
-				bool nibble = (strlen(constant->str_data) & 1);
+				bool nibble = ((strlen(constant->str_data) - 1) & 1);
 				SSHORT c;
 
 				// hex string is already upper-cased
