@@ -191,14 +191,14 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			// And, they will fit in a SINT64 without overflow.
 
 			SINT64 value = 0;
-			const char* p = constant->str_data;
+			const UCHAR* p = reinterpret_cast<const UCHAR*>(constant->str_data);
 
 			if (*p == 'X')
 			{
 				// oh no, a hex string!
 				*p++; // skip the 'X' part.
 				UCHAR byte = 0;
-				bool nibble = (strlen(p) & 1);
+				bool nibble = (strlen(constant->str_data) & 1);
 				SSHORT c;
 
 				// hex string is already upper-cased
@@ -249,7 +249,6 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				// 8-byte alignment of int64 data, we will have to force 8-byte
 				// alignment of node->nod_arg, which is now only guaranteed
 				// 4-byte alignment.    -- ChrisJ 1999-02-20
-				const char* p = constant->str_data;
 
 				while (isdigit(*p))
 					value = 10 * value + (*(p++) - '0');

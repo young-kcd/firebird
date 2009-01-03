@@ -2041,7 +2041,7 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
  *	restoring to multiple files
  *
  **********************************************/
-	SCHAR c;
+	UCHAR c;
 	ULONG size = 0;
 	bool digit = false;
 

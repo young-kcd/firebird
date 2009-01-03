@@ -461,7 +461,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 *********************************************************************
 */
 
-	SCHAR c;
+	UCHAR c;
 	SLONG ret_cd;
 
 	for (const SCHAR* p = string; c = *p++;)
@@ -472,8 +472,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 		if (isdigit(c))
 			*file_size = *file_size * 10 + (c - '0');
 		else {
-			if ((isalpha(c)) &&
-				(UPPER(c) == 'G' || UPPER(c) == 'K' || UPPER(c) == 'M'))
+			if ((isalpha(c)) && (UPPER(c) == 'G' || UPPER(c) == 'K' || UPPER(c) == 'M'))
 			{
 				SLONG size_indicator = 0;
 				switch (UPPER(c)) {
@@ -497,17 +496,14 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 			}
 			else {				// invalid size indicator
 
-				fprintf(stderr,
-						   "%s: invalid size indicator '%s'\n", prog_name,
-						   string);
+				fprintf(stderr, "%s: invalid size indicator '%s'\n", prog_name, string);
 				ret_cd = print_clo(prog_name);
 				return FB_FAILURE;
 			}
 		}
 	}
 	if (*file_size < MIN_FILE_SIZE) {	// handling user specifies file size 0
-		fprintf(stderr,
-				   "%s: invalid option '%s', minimum file size is 1 megabyte\n",
+		fprintf(stderr, "%s: invalid option '%s', minimum file size is 1 megabyte\n",
 				   prog_name, string);
 		ret_cd = print_clo(prog_name);
 		return FB_FAILURE;
@@ -517,8 +513,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 }
 
 
-static int gen_multy_bakup_files(b_fil* file_list,
-								 FILE_DESC input_file_desc, SLONG file_num)
+static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SLONG file_num)
 {
 /********************************************************************
 **
