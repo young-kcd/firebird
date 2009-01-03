@@ -363,13 +363,12 @@ void system_call_failed::raise(const char* syscall)
 fatal_exception::fatal_exception(const char* message) :
 	status_exception(0, false)
 {
-	const ISC_STATUS temp[] =
-						{
-							isc_arg_gds,
-							isc_random,
-							isc_arg_string, dupStringTemp(message),
-							isc_arg_end
-						};
+	const ISC_STATUS temp[] = {
+		isc_arg_gds,
+		isc_random,
+		isc_arg_string, dupStringTemp(message),
+		isc_arg_end
+	};
 	set_status(temp, false);
 }
 

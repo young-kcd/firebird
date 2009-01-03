@@ -82,7 +82,7 @@ static int* database_handle;
 static int* request_handle;
 
 
-void stats_analyze(const fb_stats* before, const fb_stats* after, print_callback callback, SCHAR *arg)
+void stats_analyze(const fb_stats* before, const fb_stats* after, print_callback callback, SCHAR* arg)
 {
 /**************************************
  *

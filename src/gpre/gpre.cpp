@@ -1428,10 +1428,10 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 //  back up to the last extension (if any)
 
 #ifdef WIN_NT
-	while ((p != file_nameL) && (*p != '.') && (*p != '/') && (*p != '\\'))
+	while (p != file_nameL && *p != '.' && *p != '/' && *p != '\\')
 		--p;
 #else
-	while ((p != file_nameL) && (*p != '.') && (*p != '/'))
+	while (p != file_nameL && *p != '.' && *p != '/')
 		--p;
 #endif
 
@@ -2892,4 +2892,3 @@ static SSHORT skip_white()
 
 	return c;
 }
-

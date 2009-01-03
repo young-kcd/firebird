@@ -1382,7 +1382,7 @@ void PAG_header_init(thread_db* tdbb)
 		const ArchitectureType* matrix = ods_version < ODS_VERSION11 ? archMatrix10 : archMatrix;
 		const int hdrImpl = header->hdr_implementation;
 		if (hdrImpl < 0 || hdrImpl > classmax ||
-		   matrix[hdrImpl] == archUnknown || matrix[hdrImpl] != matrix[CLASS])
+		    matrix[hdrImpl] == archUnknown || matrix[hdrImpl] != matrix[CLASS])
 		{
 			ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 		}

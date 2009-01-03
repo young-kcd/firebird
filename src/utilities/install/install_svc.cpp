@@ -77,8 +77,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	const TEXT* instance = FB_DEFAULT_INSTANCE;
 
-	const TEXT* username = 0;
-	const TEXT* password = 0;
+	const TEXT* username = NULL;
+	const TEXT* password = NULL;
 
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
@@ -214,7 +214,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (sw_version)
 		printf("instsvc version %s\n", GDS_VERSION);
 
-	if (sw_command == COMMAND_NONE || (username != 0 && sw_command != COMMAND_INSTALL))
+	if (sw_command == COMMAND_NONE || (username && sw_command != COMMAND_INSTALL))
 	{
 		usage_exit();
 	}

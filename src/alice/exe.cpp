@@ -92,8 +92,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 		if (tdgbl->status[1] &&
 			// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
 			(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) ||
-				tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL)
-		)
+				tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL))
 		{
 			error = true;
 		}

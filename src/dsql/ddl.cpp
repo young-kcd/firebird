@@ -6904,7 +6904,6 @@ void CompiledStatement::append_meta_string(const char* string)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	//ISC_STATUS_ARRAY status_vector = {0};
 	UCharBuffer nameBuffer;
 
 	CsConvert cv(INTL_charset_lookup(tdbb, CS_dynamic)->getStruct(),

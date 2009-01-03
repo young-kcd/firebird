@@ -1513,12 +1513,14 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 			}
 		}
 		else
+		{
 			/* A backup shouldn't touch any data - we ensure that
 			 * by never writing data during a backup, but let's double
 			 * ensure it by doing a rollback
 			 */
 			if (isc_rollback_transaction(status_vector, handle))
 				BURP_print_status(status_vector);
+		}
 	}
 }
 
@@ -2090,4 +2092,3 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 	file->fil_length = size;
 	return size;
 }
-

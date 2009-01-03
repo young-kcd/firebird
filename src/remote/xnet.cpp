@@ -565,6 +565,7 @@ static bool connect_init(ISC_STATUS* status)
 }
 #endif
 
+
 static void connect_fini()
 {
 /**************************************
@@ -1080,7 +1081,6 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 #ifndef SUPERCLIENT
 	return NULL;
 #else
-
 	if (!xnet_initialized)
 	{
 		Firebird::MutexLockGuard guard(xnet_mutex);

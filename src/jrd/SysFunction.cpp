@@ -2202,8 +2202,6 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			length = len2 / cs->maxBytesPerChar();
 	}
 
-	// Not sure "length" is set in all paths, Adriano please review. Set it to zero by default
-	// several lines above when it was defined.
 	length = MIN(length, len1 - from + 1);
 
 	blb* newBlob = NULL;

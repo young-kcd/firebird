@@ -3327,7 +3327,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		sqlda_sup& dasup = statement->das;
 
 		const USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
-		//Attachment*	attachment = statement->parent;
+		//Attachment* attachment = statement->parent;
 		Array<SCHAR> db_prepare_buffer;
 		SCHAR* const buffer = db_prepare_buffer.getBuffer(buffer_len);
 

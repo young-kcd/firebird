@@ -564,10 +564,7 @@ bool TempSpace::validate(offset_t& free) const
 	for (const Segment* space = freeSegments; space; space = space->next)
 	{
 		free += space->size;
-#ifdef DEV_BUILD
-		bool ok = !(space->next) || (space->next->position > space->position);
-		fb_assert(ok);
-#endif
+		fb_assert(!(space->next) || (space->next->position > space->position));
 	}
 
 	offset_t disk = 0;

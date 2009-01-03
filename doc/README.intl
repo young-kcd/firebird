@@ -8,16 +8,19 @@ Architecture
 ------------
 
 Firebird allow you to specify character sets and collations in every field/variable declaration.
-You can also specify the default character set at database create time and every CHAR/VARCHAR declaration that omit character set will use it.
+You can also specify the default character set at database create time and every CHAR/VARCHAR
+declaration that omit character set will use it.
 
 At attachment time you can specify the character set that the client want to read all the strings.
 If you don't specify one, NONE is assumed.
 
 There are two specials character sets: NONE and OCTETS.
 Both can be used in declarations but OCTETS can't be used in attachment.
-They are very similar with the exception that space of NONE is ASCII 0x20 and space of OCTETS is 0x00.
+They are very similar with the exception that space of NONE is ASCII 0x20 and space of OCTETS
+is 0x00.
 They are specials because they don't follow the rule of others character sets regarding conversions.
-With others character sets conversion is performed with CHARSET1->UNICODE->CHARSET2. With NONE/OCTETS the bytes is just copied: NONE/OCTETS->CHARSET2 and CHARSET1->NONE/OCTETS.
+With others character sets conversion is performed with CHARSET1->UNICODE->CHARSET2. With
+NONE/OCTETS the bytes is just copied: NONE/OCTETS->CHARSET2 and CHARSET1->NONE/OCTETS.
 
 
 Enhancements
@@ -28,13 +31,15 @@ Enhancements
 	----------------------
 
 	Some character sets (specially multi-byte) don't accept everything.
-	Now, the engine verifies if strings are wellformed when assigning from NONE/OCTETS and strings sent by the client (the statement string and parameters).
+	Now, the engine verifies if strings are wellformed when assigning from NONE/OCTETS and strings
+	sent by the client (the statement string and parameters).
 
 
 	Uppercase
 	---------
 	
-	In FB 1.5.X only ASCII characters are uppercased in character sets default collation order (without collation specified). Ex:
+	In FB 1.5.X only ASCII characters are uppercased in character sets default collation order
+	(without collation specified). Ex:
 	
 	isql -q -ch dos850
 	SQL> create database 'test.fdb';
@@ -91,7 +96,9 @@ New character sets and collations
 	UTF8 character set
 	------------------
 
-	The UNICODE_FSS character set has a number of problems: it's an old version of UTF8, accepts malformed strings and doesn't enforce correct maximum string length. In FB 1.5.X UTF8 it's an alias to UNICODE_FSS.
+	The UNICODE_FSS character set has a number of problems: it's an old version of UTF8, accepts
+	malformed strings and doesn't enforce correct maximum string length. In FB 1.5.X UTF8 it's an
+	alias to UNICODE_FSS.
 	Now UTF8 is a new character set, without these problems of UNICODE_FSS.
 
 
@@ -134,7 +141,8 @@ New character sets and collations
 	Brazilian collations
 	--------------------
 
-	Two case-insensitive/accent-insensitive collations was created for Brazil: PT_BR/WIN_PTBR (for WIN1252) and PT_BR (for ISO8859_1).
+	Two case-insensitive/accent-insensitive collations was created for Brazil: PT_BR/WIN_PTBR
+	(for WIN1252) and PT_BR (for ISO8859_1).
 	Sort order and equality sample:
 
 	isql -q -ch dos850
@@ -202,9 +210,10 @@ ICU character sets
 ------------------
 
 All non-wide and ascii-based character sets present in ICU can be used by Firebird.
-But for small distribution kit, we customize ICU to include only essentials character sets or the ones we had feature request.
-If the character set you need is not included in it, you can replace ICU libraries by a complete one found in our site or
-installed in your OS.
+But for small distribution kit, we customize ICU to include only essentials character sets or the
+ones we had feature request.
+If the character set you need is not included in it, you can replace ICU libraries by a complete
+one found in our site or installed in your OS.
 
 To use, you first need to register it in intl/fbintl.conf as follow:
 	<charset NAME>
@@ -227,8 +236,10 @@ Example:
 UNICODE collation
 -----------------
 
-You can use unicode collation (case sensitive and case insensitive) in all character sets present in fbintl.
-They're already registerd in fbintl.conf, but you need to register in the databases you want with the attributes you desire.
+You can use unicode collation (case sensitive and case insensitive) in all character sets present
+in fbintl.
+They're already registerd in fbintl.conf, but you need to register in the databases you want with
+the attributes you desire.
 They should use this name convention: charset_collation. Ex:
 	create collation win1252_unicode
 		for win1252;
@@ -255,7 +266,8 @@ Valid for: collations of narrow character sets.
 Format: DISABLE-EXPANSIONS={0 | 1}
 Example: DISABLE-EXPANSIONS=1
 
-ICU-VERSION: Specify what version of ICU library will be used. Valid values are the ones defined in the config file (intl/fbintl.conf) in entry intl_module/icu_versions.
+ICU-VERSION: Specify what version of ICU library will be used. Valid values are the ones defined in
+the config file (intl/fbintl.conf) in entry intl_module/icu_versions.
 Valid for: UNICODE and UNICODE_CI.
 Format: ICU-VERSION={default | major.minor}
 Example: ICU-VERSION=3.0

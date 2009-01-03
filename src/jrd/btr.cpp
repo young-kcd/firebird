@@ -2794,7 +2794,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	UCHAR* p = (UCHAR*) page + dbb->dbb_page_size;
 
 	index_root_page::irt_repeat* root_idx = page->irt_rpt;
-	for (const index_root_page::irt_repeat* const end = root_idx + page->irt_count; 
+	for (const index_root_page::irt_repeat* const end = root_idx + page->irt_count;
 		 root_idx < end; root_idx++)
 	{
 		if (root_idx->irt_root) {

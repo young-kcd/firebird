@@ -47,11 +47,11 @@ struct dsc
 
 	dsc()
 		: dsc_dtype(0),
-		dsc_scale(0),
-		dsc_length(0),
-		dsc_sub_type(0),
-		dsc_flags(0),
-		dsc_address(0)
+		  dsc_scale(0),
+		  dsc_length(0),
+		  dsc_sub_type(0),
+		  dsc_flags(0),
+		  dsc_address(0)
 	{}
 
 	explicit dsc(const dtype_t dtype) :

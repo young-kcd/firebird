@@ -105,7 +105,6 @@ void ConfigRoot::osConfigRoot()
 		// go to the parent directory
 		const size_t index = install_dir().rfind(PathUtils::dir_sep, install_dir().length());
 		root_dir = (index ? install_dir().substr(0, index) : install_dir()) + PathUtils::dir_sep;
-
 #endif
 		return;
 	}

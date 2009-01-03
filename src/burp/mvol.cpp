@@ -554,7 +554,6 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 #ifndef WIN_NT
 		cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
 #else
-
 		DWORD ret = 0;
 		if (!WriteFile(tdgbl->file_desc, ptr, (DWORD) nBytesToWrite, &cnt, NULL))
 		{
@@ -1282,12 +1281,12 @@ static bool write_header(DESC   handle,
 	{
 #ifdef WIN_NT
 		DWORD bytes_written = 0;
-		const bool err = WriteFile(handle, tdgbl->mvol_io_header,
-									tdgbl->mvol_io_buffer_size, &bytes_written, NULL) == 0;
+		const BOOL err = !WriteFile(handle, tdgbl->mvol_io_header,
+									tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
 #else
 		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
-		const bool err = false;
+		const BOOL err = FALSE;
 #endif // WIN_NT
 
 		if (err || bytes_written != tdgbl->mvol_io_buffer_size)

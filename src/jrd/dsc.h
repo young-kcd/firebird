@@ -78,11 +78,11 @@ typedef struct dsc
 {
 	dsc()
 		: dsc_dtype(0),
-		dsc_scale(0),
-		dsc_length(0),
-		dsc_sub_type(0),
-		dsc_flags(0),
-		dsc_address(0)
+		  dsc_scale(0),
+		  dsc_length(0),
+		  dsc_sub_type(0),
+		  dsc_flags(0),
+		  dsc_address(0)
 	{}
 
 	UCHAR	dsc_dtype;
@@ -292,11 +292,11 @@ typedef struct dsc
 // between Ods::Descriptor and struct dsc
 	dsc(const Ods::Descriptor& od)
 		: dsc_dtype(od.dsc_dtype),
-		dsc_scale(od.dsc_scale),
-		dsc_length(od.dsc_length),
-		dsc_sub_type(od.dsc_sub_type),
-		dsc_flags(od.dsc_flags),
-		dsc_address((UCHAR*)(IPTR)(od.dsc_offset))
+		  dsc_scale(od.dsc_scale),
+		  dsc_length(od.dsc_length),
+		  dsc_sub_type(od.dsc_sub_type),
+		  dsc_flags(od.dsc_flags),
+		  dsc_address((UCHAR*)(IPTR)(od.dsc_offset))
 	{}
 
 	operator Ods::Descriptor() const
