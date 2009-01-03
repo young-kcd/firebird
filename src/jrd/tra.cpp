@@ -469,7 +469,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	++transaction->tra_use_count;
 	Lock* lock = transaction->tra_lock;
 	if (lock && (lock->lck_logical < LCK_write))
-		LCK_convert(tdbb, lock, LCK_write, TRUE);
+		LCK_convert(tdbb, lock, LCK_write, LCK_WAIT);
 	--transaction->tra_use_count;
 
 	TRA_release_transaction(tdbb, transaction);
@@ -2066,11 +2066,11 @@ static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, cons
 	SLONG youngest_retaining;
 
 	if (write_flag) {
-		LCK_convert(tdbb, lock, LCK_PW, TRUE);
+		LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);
 		youngest_retaining = LOCK_read_data(lock->lck_id);
 		if (number > youngest_retaining)
 			LCK_write_data(lock, number);
-		LCK_convert(tdbb, lock, LCK_SR, TRUE);
+		LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
 	}
 	else {
 		youngest_retaining = LOCK_read_data(lock->lck_id);

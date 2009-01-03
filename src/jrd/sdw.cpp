@@ -679,7 +679,7 @@ void SDW_notify(thread_db* tdbb)
 	if (lock->lck_physical == LCK_SR) {
 		if (lock->lck_key.lck_long != header->hdr_shadow_count)
 			BUGCHECK(162);		/* msg 162 shadow lock not synchronized properly */
-		LCK_convert(tdbb, lock, LCK_EX, TRUE);
+		LCK_convert(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 	else {
 		lock->lck_key.lck_long = header->hdr_shadow_count;
@@ -1225,7 +1225,7 @@ static void check_if_got_ast(thread_db* tdbb, jrd_file* file)
 	while (true) {
 		if (dbb->dbb_ast_flags & DBB_get_shadows)
 			break;
-		LCK_convert(tdbb, lock, LCK_SR, TRUE);
+		LCK_convert(tdbb, lock, LCK_SR, LCK_WAIT);
 	}
 }
 #endif
