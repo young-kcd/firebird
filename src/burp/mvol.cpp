@@ -1286,7 +1286,7 @@ static bool write_header(DESC   handle,
 #else
 		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
-		const BOOL err = FALSE;
+		const bool err = false;
 #endif // WIN_NT
 
 		if (err || bytes_written != tdgbl->mvol_io_buffer_size)
