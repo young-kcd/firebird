@@ -1,3 +1,95 @@
+2009-01-03 20:04  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.177):
+
+	Correction
+
+2009-01-03 20:01  asfernandes
+
+	* firebird2/: doc/README.intl (1.13), src/alice/exe.cpp (1.58),
+	src/burp/burp.cpp (1.161), src/burp/mvol.cpp (1.58),
+	src/common/fb_exception.cpp (1.47), src/dsql/ddl.cpp (1.269),
+	src/gpre/gpre.cpp (1.100), src/jrd/SysFunction.cpp (1.62),
+	src/jrd/TempSpace.cpp (1.22), src/jrd/btr.cpp (1.227),
+	src/jrd/cvt.cpp (1.104), src/jrd/dsc.h (1.43), src/jrd/dsc2.h
+	(1.15), src/jrd/intl_builtin.cpp (1.47), src/jrd/pag.cpp (1.200),
+	src/jrd/unicode_util.cpp (1.46), src/jrd/why.cpp (1.229),
+	src/jrd/os/win32/config_root.cpp (1.26), src/remote/xnet.cpp
+	(1.125), src/utilities/stats.epp (1.15),
+	src/utilities/install/install_svc.cpp (1.42):
+
+	Misc
+
+2009-01-03 11:00  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.160), burp/spit.cpp (1.36),
+	dsql/make.cpp (1.176):
+
+	Some platforms have problems promoting char to int inside the ctype
+	functions (the value becomes negative). If someone has better idea
+	than this fix, please commit it.
+
+2009-01-03 10:34  robocop
+
+	* firebird2/src/jrd/: sdw.cpp (1.90), tra.cpp (1.192):
+
+	The last param to LCK_convert is not BOOL or bool but LCK_WAIT (1)
+	or LCK_NO_WAIT (0) according to lock.h, -1 (infinite) or a custom
+	value (provided as negative value by jrd_tra::getLockWait() since
+	the user must input a positive value when starting the txn).
+
+2009-01-03 10:25  robocop
+
+	* firebird2/src/utilities/stats.epp (1.14):
+
+	Only a miracle could make this crap compile, but let's fix it a bit
+	anyway.
+
+2009-01-03 10:14  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.112), alice/alice.h (1.63),
+	alice/alice_meta.epp (1.54), alice/alice_meta.h (1.5),
+	alice/exe.cpp (1.57), alice/tdr.cpp (1.60), alice/tdr_proto.h
+	(1.12), burp/backup.epp (1.116), burp/burp.cpp (1.159),
+	burp/burp_proto.h (1.25), burp/mvol.cpp (1.57), burp/std_desc.h
+	(1.11), common/fb_exception.cpp (1.46),
+	common/classes/ClumpletReader.cpp (1.34),
+	common/classes/GenericMap.h (1.23), common/classes/stack.h (1.25),
+	common/config/dir_list.h (1.23), jrd/cch.cpp (1.221), jrd/dsc.h
+	(1.42), jrd/dsc2.h (1.14), jrd/dyn.h (1.42), jrd/dyn_def.epp
+	(1.176), jrd/evl.cpp (1.286), jrd/flu.h (1.17), jrd/isc_sync.cpp
+	(1.168), jrd/pag.cpp (1.199), jrd/par.cpp (1.225),
+	jrd/unicode_util.cpp (1.45), jrd/val.h (1.41), jrd/validation.cpp
+	(1.47), jrd/vio.cpp (1.239), jrd/why.cpp (1.228),
+	jrd/os/path_utils.h (1.15), jrd/os/thd_priority.h (1.29),
+	jrd/os/posix/mod_loader.cpp (1.11), jrd/os/vms/vmsevent.cpp (1.22),
+	jrd/os/vms/vmslo_proto.h (1.7), jrd/os/vms/vmslock.cpp (1.15),
+	jrd/os/win32/isc_ipc.cpp (1.25), remote/protocol.cpp (1.76),
+	utilities/print_event.cpp (1.11), utilities/relay.cpp (1.9),
+	utilities/fbcpl/fbdialog.cpp (1.13),
+	utilities/gsec/call_service.cpp (1.20), utilities/gsec/gsec.cpp
+	(1.103), utilities/install/install_svc.cpp (1.41),
+	utilities/install/registry.cpp (1.16),
+	utilities/install/servi_proto.h (1.15),
+	utilities/install/services.cpp (1.27),
+	utilities/rebuild/rebuild.cpp (1.27):
+
+	Style.
+
+2009-01-03 03:40  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.505):
+
+	Fixed CORE-2264 - ALTER DOMAIN with dependencies may leave a
+	transaction handle in inconsistent state causing segmentation
+	faults
+
+2009-01-03 02:34  asfernandes
+
+	* firebird2/src/burp/mvol.cpp (1.56):
+
+	Fixed the Linux build
+
 2009-01-02 15:47  asfernandes
 
 	* firebird2/doc/README.intl (1.12):
