@@ -39,16 +39,22 @@ const SSHORT ITEM_purges	= 6;
 const SSHORT ITEM_expunges	= 7;
 const SSHORT ITEM_count		= 8;
 
-typedef struct stats {
+struct fb_stats
+{
 	SSHORT stats_count;
 	SSHORT stats_items;			/* Number of item per relation */
 	SLONG stats_counts[1];
-} *STATS;
+};
 
-static STATS expand_stats();
-static int print_line();
+typedef int (print_callback)(SCHAR*, SSHORT, SSHORT, const SCHAR* const*, const SLONG*);
 
-static const SCHAR info_request[] = {
+
+static fb_stats* expand_stats(fb_stats** ptr, SSHORT count);
+static int print_line(SCHAR* arg, SSHORT relation_id, SSHORT count,
+				const SCHAR* const* headers, const SLONG* counts);
+
+static const SCHAR info_request[] =
+{
 	isc_info_read_seq_count,
 	isc_info_read_idx_count,
 	isc_info_insert_count,
@@ -60,7 +66,8 @@ static const SCHAR info_request[] = {
 	isc_info_end
 };
 
-static const SCHAR* headers[] = {
+static const SCHAR* headers[] =
+{
 	"S-Reads",
 	"I-Reads",
 	"Inserts",
@@ -75,7 +82,7 @@ static int* database_handle;
 static int* request_handle;
 
 
-int stats_analyze(STATS before, STATS after, int(*callback)(), SCHAR *arg)
+void stats_analyze(const fb_stats* before, const fb_stats* after, print_callback callback, SCHAR *arg)
 {
 /**************************************
  *
@@ -99,8 +106,7 @@ int stats_analyze(STATS before, STATS after, int(*callback)(), SCHAR *arg)
 	}
 
 	SSHORT relation_id = 0
-	for (const SLONG* tail = after->stats_counts;
-		 relation_id < after->stats_count; ++relation_id)
+	for (const SLONG* tail = after->stats_counts; relation_id < after->stats_count; ++relation_id)
 	{
 		SLONG total = 0;
 		for (SLONG* p = delta; p < end;) {
@@ -119,7 +125,7 @@ int stats_analyze(STATS before, STATS after, int(*callback)(), SCHAR *arg)
 }
 
 
-int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
+int stats_fetch(SLONG *status_vector, int **db_handle, fb_stats** stats_ptr)
 {
 /**************************************
  *
@@ -133,14 +139,13 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
  **************************************/
 	SCHAR info_buffer[4096];
 
-	if (isc_database_info(status_vector, db_handle, sizeof(info_request),
-						   info_request, sizeof(info_buffer),
-						   info_buffer))
+	if (isc_database_info(status_vector, db_handle, sizeof(info_request), info_request,
+							sizeof(info_buffer), info_buffer))
 	{
 		return status_vector[1];
 	}
 
-	STATS stats = *stats_ptr;
+	fb_stats* stats = *stats_ptr;
 	if (stats)
 		zap_longs(stats->stats_counts, stats->stats_count * ITEM_count);
 	else
@@ -154,10 +159,12 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 	}
 
 	const SCHAR* const end = info_buffer + sizeof(info_buffer);
-	for (const SCHAR* p = info_buffer; p < end && *p != isc_info_end;) {
+	for (const SCHAR* p = info_buffer; p < end && *p != isc_info_end;)
+	{
 		const SSHORT length = gds__vax_integer(p + 1, 2);
 		SSHORT item = -1;
-		switch (*p) {
+		switch (*p)
+		{
 		case isc_info_read_seq_count:
 			item = ITEM_seq_reads;
 			break;
@@ -197,7 +204,7 @@ int stats_fetch(SLONG *status_vector, int **db_handle, STATS *stats_ptr)
 }
 
 
-int stats_print(int **db_handle, int **tr_handle, STATS before, STATS after)
+int stats_print(int **db_handle, int **tr_handle, const fb_stats* before, const fb_stats* after)
 {
 /**************************************
  *
@@ -219,7 +226,7 @@ int stats_print(int **db_handle, int **tr_handle, STATS before, STATS after)
 }
 
 
-static STATS expand_stats(STATS *ptr, SSHORT count)
+static fb_stats* expand_stats(fb_stats** ptr, SSHORT count)
 {
 /**************************************
  *
@@ -233,13 +240,13 @@ static STATS expand_stats(STATS *ptr, SSHORT count)
  **************************************/
 
 /* If the thing is already big enough, don't do nothing */
-	STATS old = *ptr;
+	fb_stats* old = *ptr;
 	if (old && old->stats_count < count)
 		return old;
 
 	count += 20;
-	const SLONG length = sizeof(struct stats) + (ITEM_count * count - 1) * sizeof(SLONG);
-	STATS stats = (STATS) gds__alloc(length);
+	const SLONG length = sizeof(fb_stats) + (ITEM_count * count - 1) * sizeof(SLONG);
+	fb_stats* stats = (fb_stats*) gds__alloc(length);
 /* FREE: apparently never freed */
 	if (!stats)					/* NOMEM: out of memory */
 		return NULL;			/* leave *ptr unchanged */
@@ -262,7 +269,7 @@ static STATS expand_stats(STATS *ptr, SSHORT count)
 
 
 static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
-		STATS *stats_ptr, SSHORT item)
+		fb_stats** stats_ptr, SSHORT item)
 {
 /**************************************
  *
@@ -274,7 +281,7 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
  *	Pick up operation counts from information items.
  *
  **************************************/
-	STATS stats = *stats_ptr;
+	fb_stats* stats = *stats_ptr;
 
 	const SCHAR* p = info;
 	for (const SCHAR* const end = p + length; p < end; p += 6) {
@@ -287,15 +294,14 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 				return status_vector[1];
 			}
 		}
-		stats->stats_counts[relation_id * ITEM_count + item] =
-			gds__vax_integer(p + 2, 4);
+		stats->stats_counts[relation_id * ITEM_count + item] = gds__vax_integer(p + 2, 4);
 	}
 	return status_vector[1];
 }
 
 
-static int print_line(SCHAR *arg, SSHORT relation_id, SSHORT count,
-				SCHAR **headers, SLONG *counts)
+static int print_line(SCHAR* arg, SSHORT relation_id, SSHORT count,
+				const SCHAR* const* headers, const SLONG* counts)
 {
 /**************************************
  *
@@ -310,11 +316,8 @@ static int print_line(SCHAR *arg, SSHORT relation_id, SSHORT count,
 	if (!*arg) {
 		*arg = 1;
 		printf("%32s ", " ");
-		SSHORT n = count;
-		if (n) {
-			do {
-				printf("%10s", *headers++);
-			} while (--n);
+		for (SSHORT n = count; n; --n)
+			printf("%10s", *headers++);
 		}
 		printf("\n");
 	}
