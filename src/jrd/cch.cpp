@@ -1541,7 +1541,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 		CCH_RELEASE(tdbb, &temp);
 
 	if (must_read) {
-		CCH_FETCH_PAGE(tdbb, window, TRUE, true);
+		CCH_FETCH_PAGE(tdbb, window, 1, true);
 	}
 
 	BufferDesc* bdb = window->win_bdb;

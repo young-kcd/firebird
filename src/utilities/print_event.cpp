@@ -41,7 +41,7 @@ static void event_table_dump();
 
 static EVH EVENT_header = NULL;
 
-#define SRQ_BASE                  ((UCHAR *) EVENT_header)
+#define SRQ_BASE ((UCHAR*) EVENT_header)
 
 int main(int argc, char *argv[])
 {
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	}
 
 	if ((argc == 2) && fb_utils::strnicmp(argv[1], "-dump", MAX(strlen(argv[1]), 2)) == 0)
-			event_table_dump();
+		event_table_dump();
 	else if (argc == 1)
 		event_list();
 	else
@@ -90,9 +90,9 @@ static void event_list(void)
  **************************************/
 	srq *database_que;
 
-	SRQ_LOOP(EVENT_header->evh_events, database_que) {
-		EVNT database_event =
-			(EVNT) ((UCHAR *) database_que - OFFSET(EVNT, evnt_events));
+	SRQ_LOOP(EVENT_header->evh_events, database_que)
+	{
+		EVNT database_event = (EVNT) ((UCHAR*) database_que - OFFSET(EVNT, evnt_events));
 
 		/* Skip non-database entries */
 
@@ -115,9 +115,7 @@ static void event_list(void)
 			/* Print out the interest list for this event */
 
 			SRQ_LOOP(database_event->evnt_interests, interest_que) {
-				RINT interest =
-					(RINT) ((UCHAR *) interest_que -
-							OFFSET(RINT, rint_interests));
+				RINT interest = (RINT) ((UCHAR*) interest_que - OFFSET(RINT, rint_interests));
 				if (!interest->rint_request)
 					printf("(0)");
 				else {
@@ -131,23 +129,21 @@ static void event_list(void)
 		/* Print out each event belonging to this database */
 
 		srq* que_inst;
-		SRQ_LOOP(EVENT_header->evh_events, que_inst) {
+		SRQ_LOOP(EVENT_header->evh_events, que_inst)
+		{
 
 			EVNT event = (EVNT) ((UCHAR *) que_inst - OFFSET(EVNT, evnt_events));
 			fb_assert(event->evnt_header.hdr_type == type_evnt);
 			if (event->evnt_parent != SRQ_REL_PTR(database_event))
 				continue;
-			printf("    \"%-15s\" count: %6ld Interest",
-					  event->evnt_name, event->evnt_count);
+			printf("    \"%-15s\" count: %6ld Interest", event->evnt_name, event->evnt_count);
 
 			{ // scope
 				srq *interest_que;
 				/* Print out the interest list for this event */
 
 				SRQ_LOOP(event->evnt_interests, interest_que) {
-					RINT interest =
-						(RINT) ((UCHAR *) interest_que -
-								OFFSET(RINT, rint_interests));
+					RINT interest = (RINT) ((UCHAR*) interest_que - OFFSET(RINT, rint_interests));
 					if (!interest->rint_request)
 						printf("(0)");
 					else {
@@ -179,8 +175,7 @@ static void event_table_dump(void)
  **************************************/
 
 	printf("%.5d GLOBAL REGION HEADER\n", 0);
-	printf
-		("\tLength: %ld, version: %d, free: %ld, current: %ld, request_id: %ld\n",
+	printf("\tLength: %ld, version: %d, free: %ld, current: %ld, request_id: %ld\n",
 		 EVENT_header->evh_length, EVENT_header->evh_version,
 		 EVENT_header->evh_free, EVENT_header->evh_current_process,
 		 EVENT_header->evh_request_id);
@@ -189,8 +184,7 @@ static void event_table_dump(void)
 	prt_que("\tEvents", &EVENT_header->evh_events);
 
 	event_hdr* block = 0;
-	for (SLONG offset = sizeof(evh); offset < EVENT_header->evh_length;
-		 offset += block->hdr_length)
+	for (SLONG offset = sizeof(evh); offset < EVENT_header->evh_length; offset += block->hdr_length)
 	{
 		printf("\n%.5ld ", offset);
 		block = (event_hdr*) SRQ_ABS_PTR(offset);
@@ -199,8 +193,7 @@ static void event_table_dump(void)
 			{
 				printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
 				PRB process = (PRB) block;
-				printf("\tFlags: %d, pid: %d\n",
-						  process->prb_flags, process->prb_process_id);
+				printf("\tFlags: %d, pid: %d\n", process->prb_flags, process->prb_process_id);
 				prt_que("\tProcesses", &process->prb_processes);
 				prt_que("\tSessions", &process->prb_sessions);
 			}
@@ -256,8 +249,7 @@ static void event_table_dump(void)
 					EVNT event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
 					if (event->evnt_parent) {
 						EVNT parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
-						printf("\t\"%s\".\"%s\"\n", parent->evnt_name,
-								  event->evnt_name);
+						printf("\t\"%s\".\"%s\"\n", parent->evnt_name, event->evnt_name);
 					}
 					else
 						printf("\t\"%s\"\n", event->evnt_name);
@@ -298,5 +290,5 @@ static void prt_que(const char* string, const srq* que_inst)
 		printf("%s: *empty*\n", string);
 	else
 		printf("%s: forward: %d, backward: %d\n",
-				  string, que_inst->srq_forward, que_inst->srq_backward);
+				string, que_inst->srq_forward, que_inst->srq_backward);
 }

@@ -84,7 +84,7 @@ const ULONG BACKUP_VERBOSE_INTERVAL = 20000;
 #define PUT_TEXT(attribute, text)	put_text ((attribute), (text), sizeof(text))
 #define COPY(source, target)       copy ((source), (target), sizeof(target))
 
-inline void put(BurpGlobals* tdgbl, UCHAR c)
+inline void put(BurpGlobals* tdgbl, const UCHAR c)
 {
 	if (--(tdgbl->io_cnt) >= 0)
 		*(tdgbl->io_ptr)++ = c;
@@ -103,7 +103,7 @@ int copy(const TEXT *, TEXT *, ULONG);
 burp_fld* get_fields(burp_rel*);
 SINT64 get_gen_id(const TEXT *, SSHORT);
 void get_ranges(burp_fld*);
-void put_array(burp_fld*, burp_rel*, ISC_QUAD *);
+void put_array(burp_fld*, burp_rel*, ISC_QUAD*);
 void put_asciz(const SCHAR, const TEXT*);
 void put_blob(burp_fld*, ISC_QUAD&, ULONG);
 bool put_blr_blob(SCHAR, ISC_QUAD&);
@@ -114,31 +114,31 @@ void put_numeric(SCHAR, SLONG);
 void put_relation(burp_rel*);
 bool put_source_blob(SCHAR, SCHAR, ISC_QUAD&);
 int put_text(SCHAR, const TEXT *, SSHORT);
-void set_capabilities(void);
-void write_character_sets(void);
-void write_check_constraints(void);
-void write_collations(void);
+void set_capabilities();
+void write_character_sets();
+void write_check_constraints();
+void write_collations();
 void write_database(const TEXT*);
-void write_exceptions(void);
-void write_field_dimensions(void);
-void write_filters(void);
-void write_functions(void);
+void write_exceptions();
+void write_field_dimensions();
+void write_filters();
+void write_functions();
 void write_function_args(GDS_NAME);
-void write_generators(void);
-void write_sql_roles(void);
-void write_mapping(void);
-void write_global_fields(void);
-void write_procedures(void);
+void write_generators();
+void write_sql_roles();
+void write_mapping();
+void write_global_fields();
+void write_procedures();
 void write_procedure_prms(GDS_NAME);
-void write_ref_constraints(void);
-void write_rel_constraints(void);
-void write_relations(void);
-void write_shadow_files(void);
-void write_triggers(void);
-void write_trigger_messages(void);
-void write_types(void);
-void write_user_privileges(void);
-void general_on_error(void);
+void write_ref_constraints();
+void write_rel_constraints();
+void write_relations();
+void write_shadow_files();
+void write_triggers();
+void write_trigger_messages();
+void write_types();
+void write_user_privileges();
+void general_on_error();
 
 enum backup_capabilities
 {
@@ -305,8 +305,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		if (isc_start_transaction(status_vector, &gds_trans, 1, &DB,
 								  sizeof(limbo_nau_tpb), limbo_nau_tpb))
 		{
-			isc_start_transaction(status_vector, &gds_trans, 1, &DB,
-								  sizeof(limbo_tpb), limbo_tpb);
+			isc_start_transaction(status_vector, &gds_trans, 1, &DB, sizeof(limbo_tpb), limbo_tpb);
 		}
 	}
 	else
@@ -428,15 +427,14 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	// Now go back and write all data
 
-	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next) {
+	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
+	{
 		put(tdgbl, (UCHAR) (rec_relation_data));
 		PUT_TEXT(att_relation_name, relation->rel_name);
 		put(tdgbl, (UCHAR) (att_end));
 
-		if (!(relation->rel_flags & REL_view) &&
-			!(relation->rel_flags & REL_external))
+		if (!(relation->rel_flags & REL_view) && !(relation->rel_flags & REL_external))
 		{
-
 			put_index(relation);
 			if (!tdgbl->gbl_sw_meta)
 				put_data(relation);
@@ -469,8 +467,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 			BURP_verbose (155, temp);
 			// msg 155 writing security class %s
 			put_blr_blob (att_class_acl, X.RDB$ACL);
-			put_source_blob (att_class_description2, att_class_description,
-							 X.RDB$DESCRIPTION);
+			put_source_blob (att_class_description2, att_class_description, X.RDB$DESCRIPTION);
 			put(tdgbl, att_end);
 		END_FOR;
 		ON_ERROR
@@ -572,9 +569,9 @@ void compress(const UCHAR* data, ULONG length)
 		{
 			for (; run > 127; run -= 127)
 			{
-				USHORT l = 127;
-				put(tdgbl, (UCHAR) (l));
-				p = put_block(tdgbl, p, l);
+				USHORT len = 127;
+				put(tdgbl, (UCHAR) len);
+				p = put_block(tdgbl, p, len);
 			}
 			if (run)
 			{
@@ -625,7 +622,7 @@ int copy( const TEXT* from, TEXT* to, ULONG size_len)
 }
 
 
-void general_on_error(void)
+void general_on_error()
 {
 /**************************************
  *
@@ -671,10 +668,8 @@ burp_fld* get_fields( burp_rel* relation)
    requests--this requires more code but it is well worth it
    for the performance benefits, especially remotely--deej */
 
-	if ((tdgbl->BCK_capabilities & BCK_attributes_v3) &&
-		(tdgbl->BCK_capabilities & BCK_ods8) &&
-		(tdgbl->BCK_capabilities & BCK_rfr_sys_flag) &&
-		(tdgbl->BCK_capabilities & BCK_security))
+	if ((tdgbl->BCK_capabilities & BCK_attributes_v3) && (tdgbl->BCK_capabilities & BCK_ods8) &&
+		(tdgbl->BCK_capabilities & BCK_rfr_sys_flag) && (tdgbl->BCK_capabilities & BCK_security))
 	{
 		FOR (REQUEST_HANDLE tdgbl->handles_get_fields_req_handle1)
 			X IN RDB$RELATION_FIELDS CROSS
@@ -1024,16 +1019,14 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 
 	ISC_STATUS_ARRAY status_vector;
 	const SSHORT blr_length = blr - blr_buffer;
-	if (isc_compile_request(status_vector, &DB, &gen_id_reqh,
-							blr_length, (const char*) blr_buffer))
+	if (isc_compile_request(status_vector, &DB, &gen_id_reqh, blr_length, (const char*) blr_buffer))
 	{
 		// if there's no gen_id, never mind ...
 		return 0;
 	}
 
-	if (isc_start_request(status_vector, &gen_id_reqh,
-						  &gds_trans, // use the same one generated by gpre
-						  0))
+	// use the same gds_trans generated by gpre
+	if (isc_start_request(status_vector, &gen_id_reqh, &gds_trans, 0))
 	{
 		BURP_error_redirect(status_vector, 25);
 		// msg 25 Failed in put_blr_gen_id
@@ -1043,8 +1036,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	SINT64 read_msg1;
 	if (tdgbl->BCK_capabilities & BCK_ods10)
 	{
-		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg1),
-						&read_msg1, 0))
+		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg1), &read_msg1, 0))
 		{
 			BURP_error_redirect(status_vector, 25);
 			// msg 25 Failed in put_blr_gen_id
@@ -1053,8 +1045,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 	else
 	{
 		SLONG read_msg0;
-		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg0),
-						&read_msg0, 0))
+		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg0), &read_msg0, 0))
 		{
 			BURP_error_redirect(status_vector, 25);
 			// msg 25 Failed in put_blr_gen_id
@@ -1153,16 +1144,19 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	add_byte(blr, field->fld_type);
 
-	if (field->fld_type == blr_short ||
-		field->fld_type == blr_long ||
-		field->fld_type == blr_quad ||
-		field->fld_type == blr_int64)
+	switch (field->fld_type)
 	{
+	case blr_short:
+	case blr_long:
+	case blr_quad:
+	case blr_int64:
 		add_byte(blr, field->fld_scale);
-	}
-
-	if (field->fld_type == blr_text || field->fld_type == blr_varying)
+		break;
+	case blr_text:
+	case blr_varying:
 		add_word(blr, field->fld_length);
+		break;
+	}
 
 	if (field->fld_type == blr_varying)
 		field_length += sizeof(USHORT);
@@ -1174,8 +1168,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	USHORT count;
 	const SLONG* range; // used in multiple loops.
-	for (range = field->fld_ranges, count = 0; range < end_ranges;
-		 range += 2, count++)
+	for (range = field->fld_ranges, count = 0; range < end_ranges; range += 2, count++)
 	{
 		add_byte(blr, isc_sdl_do2);
 		add_byte(blr, count);
@@ -1227,8 +1220,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	ISC_STATUS_ARRAY status_vector;
 	ULONG return_length = 0;
-	if (isc_get_slice(status_vector, &DB, &gds_trans, blob_id,
-					  blr_length, (const char*) blr_buffer,
+	if (isc_get_slice(status_vector, &DB, &gds_trans, blob_id, blr_length, (const char*) blr_buffer,
 					  0,	// param length for subset of an array handling
 					  NULL,	// param for subset of an array handling
 					  slice_length, slice, (SLONG*) &return_length))
@@ -1260,16 +1252,12 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			 range >= field->fld_ranges; range -= 2, returned_range++, i1++)
 		{
 			int divisor = 1;
-			for (int i2 = (2 * (i1 + 1) + 1); i2 <= field->fld_dimensions * 2;
-				 i2 += 2)
+			for (int i2 = (2 * (i1 + 1) + 1); i2 <= field->fld_dimensions * 2; i2 += 2)
 			{
-				divisor *=
-					(field->fld_ranges[i2] - field->fld_ranges[i2 - 1] + 1);
+				divisor *= (field->fld_ranges[i2] - field->fld_ranges[i2 - 1] + 1);
 			}
-			*returned_range =
-				(returned_elements - 1) / divisor + field->fld_ranges[i3];
-			returned_elements -=
-				(*returned_range - field->fld_ranges[i3]) * divisor;
+			*returned_range = (returned_elements - 1) / divisor + field->fld_ranges[i3];
+			returned_elements -= (*returned_range - field->fld_ranges[i3]) * divisor;
 			i3 += 2;
 		}
 	}
@@ -1279,8 +1267,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 	put_numeric(att_array_dimensions, field->fld_dimensions);
 
 	SLONG* returned_range = range_buffer;
-	for (range = field->fld_ranges; range < end_ranges;
-		 range += 2, returned_range++)
+	for (range = field->fld_ranges; range < end_ranges; range += 2, returned_range++)
 	{
 		put_numeric(att_array_range_low, (int) range[0]);
 		if (return_length == slice_length)
@@ -1303,9 +1290,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			lstring xdr_slice;
 			xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 			xdr_slice.lstr_address = slice;
-			return_length =
-				CAN_slice(&xdr_buffer, &xdr_slice, TRUE, blr_length,
-						  blr_buffer);
+			return_length = CAN_slice(&xdr_buffer, &xdr_slice, TRUE, blr_length, blr_buffer);
 			put(tdgbl, (UCHAR) (att_xdr_array));
 			put(tdgbl, (UCHAR) (return_length));
 			put(tdgbl, (UCHAR) (return_length >> 8));
@@ -1834,8 +1819,7 @@ void put_data(burp_rel* relation)
 
 	FB_API_HANDLE request = 0;
 	SSHORT blr_length = blr - blr_buffer;
-	if (isc_compile_request(status_vector, &DB, &request,
-							blr_length, (const SCHAR*) blr_buffer))
+	if (isc_compile_request(status_vector, &DB, &request, blr_length, (const SCHAR*) blr_buffer))
 	{
 		BURP_error_redirect(status_vector, 27);
 		// msg 27 isc_compile_request failed
@@ -1863,8 +1847,7 @@ void put_data(burp_rel* relation)
 	lstring xdr_buffer;
 	if (tdgbl->gbl_sw_transportable)
 	{
-		xdr_buffer.lstr_length = xdr_buffer.lstr_allocated =
-			length + count * 3;
+		xdr_buffer.lstr_length = xdr_buffer.lstr_allocated = length + count * 3;
 		xdr_buffer.lstr_address = BURP_alloc(xdr_buffer.lstr_length);
 	}
 	else
@@ -1890,8 +1873,7 @@ void put_data(burp_rel* relation)
 		const UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
 		{
-			record_length =
-				CAN_encode_decode(relation, &xdr_buffer, buffer, TRUE);
+			record_length = CAN_encode_decode(relation, &xdr_buffer, buffer, TRUE);
 			put_numeric(att_xdr_length, record_length);
 			p = xdr_buffer.lstr_address;
 		}
@@ -1908,12 +1890,9 @@ void put_data(burp_rel* relation)
 		for (field = relation->rel_fields; field; field = field->fld_next)
 		{
 			if (field->fld_type == blr_blob &&
-				!(field->fld_flags & FLD_computed) &&
-				!(field->fld_flags & FLD_array))
+				!(field->fld_flags & FLD_computed) && !(field->fld_flags & FLD_array))
 			{
-				put_blob(field,
-						 *(ISC_QUAD*) (buffer + field->fld_offset),
-						 records);
+				put_blob(field, *(ISC_QUAD*) (buffer + field->fld_offset), records);
 			}
 		}
 
@@ -1923,8 +1902,7 @@ void put_data(burp_rel* relation)
 		{
 			if (field->fld_flags & FLD_array)
 			{
-				put_array(field, relation,
-						  (ISC_QUAD *) (buffer + field->fld_offset));
+				put_array(field, relation, (ISC_QUAD*) (buffer + field->fld_offset));
 			}
 		}
 	}
@@ -2022,12 +2000,10 @@ void put_index( burp_rel* relation)
 			put_numeric (att_index_type, X.RDB$INDEX_TYPE);
 
 			if (!X.RDB$EXPRESSION_SOURCE.NULL)
-				put_source_blob (att_index_expression_source,
-								 att_index_expression_source,
+				put_source_blob (att_index_expression_source, att_index_expression_source,
 								 X.RDB$EXPRESSION_SOURCE);
 			if (!X.RDB$EXPRESSION_BLR.NULL)
-				put_blr_blob (att_index_expression_blr,
-							  X.RDB$EXPRESSION_BLR);
+				put_blr_blob (att_index_expression_blr, X.RDB$EXPRESSION_BLR);
 			if (!X.RDB$FOREIGN_KEY.NULL)
 				PUT_TEXT (att_index_foreign_key, X.RDB$FOREIGN_KEY);
 			put(tdgbl, att_end);
@@ -2096,8 +2072,7 @@ void put_index( burp_rel* relation)
 			ON_ERROR
 				general_on_error();
 			END_ERROR;
-			put_source_blob (att_index_description2, att_index_description,
-							 X.RDB$DESCRIPTION);
+			put_source_blob (att_index_description2, att_index_description, X.RDB$DESCRIPTION);
 			if (tdgbl->BCK_capabilities & BCK_attributes_v3)
 				FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle6)
 					I IN RDB$INDICES WITH I.RDB$INDEX_NAME = X.RDB$INDEX_NAME
@@ -2110,12 +2085,10 @@ void put_index( burp_rel* relation)
 				FOR (REQUEST_HANDLE tdgbl->handles_put_index_req_handle7)
 					I IN RDB$INDICES WITH I.RDB$INDEX_NAME = X.RDB$INDEX_NAME
 					if (!I.RDB$EXPRESSION_SOURCE.NULL)
-						put_source_blob (att_index_expression_source,
-										 att_index_expression_source,
+						put_source_blob (att_index_expression_source, att_index_expression_source,
 										 I.RDB$EXPRESSION_SOURCE);
 					if (!I.RDB$EXPRESSION_BLR.NULL)
-						put_blr_blob (att_index_expression_blr,
-									  I.RDB$EXPRESSION_BLR);
+						put_blr_blob (att_index_expression_blr, I.RDB$EXPRESSION_BLR);
 					if (!I.RDB$FOREIGN_KEY.NULL)
 						PUT_TEXT (att_index_foreign_key, I.RDB$FOREIGN_KEY);
 				END_FOR;
@@ -2207,8 +2180,7 @@ void put_int64( SCHAR attribute, SINT64 value)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const FB_UINT64 le_value =
-		(FB_UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
+	const FB_UINT64 le_value = (FB_UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (sizeof(value)));
@@ -2320,10 +2292,8 @@ void put_relation( burp_rel* relation)
 			PUT_TEXT(att_field_complex_name, field->fld_complex_name);
 		if (field->fld_edit_string[0])
 			PUT_TEXT(att_field_edit_string, field->fld_edit_string);
-		put_source_blob(att_field_description2, att_field_description,
-						field->fld_description);
-		put_source_blob(att_field_query_header, att_field_query_header,
-						field->fld_query_header);
+		put_source_blob(att_field_description2, att_field_description, field->fld_description);
+		put_source_blob(att_field_query_header, att_field_query_header, field->fld_query_header);
 		if (field->fld_security_class[0])
 			PUT_TEXT(att_field_security_class, field->fld_security_class);
 		if (!(field->fld_flags & FLD_position_missing))
@@ -2342,10 +2312,8 @@ void put_relation( burp_rel* relation)
 			put_numeric(att_field_character_set, field->fld_character_set_id);
 		if (field->fld_flags & FLD_collate_flag)
 			put_numeric(att_field_collation_id, field->fld_collation_id);
-		put_blr_blob(att_field_default_value,
-					 field->fld_default_value);
-		put_source_blob(att_field_default_source, att_field_default_source,
-						field->fld_default_source);
+		put_blr_blob(att_field_default_value, field->fld_default_value);
+		put_source_blob(att_field_default_source, att_field_default_source, field->fld_default_source);
 		if (relation->rel_flags & REL_view)
 		{
 			put_numeric(att_view_context, field->fld_view_context);
@@ -2561,7 +2529,7 @@ int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
 }
 
 
-void set_capabilities(void)
+void set_capabilities()
 {
 /**************************************
  *
@@ -2582,8 +2550,7 @@ void set_capabilities(void)
 
 // Look for desireable fields in system relations
 
-	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
-		 rel_field_table++)
+	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation; rel_field_table++)
 	{
 		const TEXT* field = rel_field_table->field;
 		const TEXT* relation = rel_field_table->relation;
@@ -2601,7 +2568,7 @@ void set_capabilities(void)
 }
 
 
-void write_character_sets(void)
+void write_character_sets()
 {
 /**************************************
  *
@@ -2637,8 +2604,7 @@ void write_character_sets(void)
 				put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
 			if (!X.RDB$DESCRIPTION.NULL)
 			{
-				put_source_blob (att_charset_description, att_charset_description,
-					X.RDB$DESCRIPTION);
+				put_source_blob (att_charset_description, att_charset_description, X.RDB$DESCRIPTION);
 			}
 			if (!X.RDB$FUNCTION_NAME.NULL)
 				PUT_TEXT (att_charset_funct, X.RDB$FUNCTION_NAME);
@@ -2656,7 +2622,7 @@ void write_character_sets(void)
 }
 
 
-void write_check_constraints(void)
+void write_check_constraints()
 {
 /**************************************
  *
@@ -2690,7 +2656,7 @@ void write_check_constraints(void)
 }
 
 
-void write_collations(void)
+void write_collations()
 {
 /**************************************
  *
@@ -2779,15 +2745,14 @@ void write_database( const TEXT* dbb_file)
 
 	put(tdgbl, (UCHAR) (rec_physical_db));
 
-	if (isc_database_info(status_vector, &DB, sizeof(db_info_items),
-						  db_info_items, sizeof(buffer), buffer))
+	if (isc_database_info(status_vector, &DB, sizeof(db_info_items), db_info_items,
+						  sizeof(buffer), buffer))
 	{
 		BURP_error_redirect(status_vector, 31);
 		// msg 31 isc_database_info failed
 	}
 
-	USHORT page_size = 0, forced_writes, no_reserve,
-		SQL_dialect, db_read_only;
+	USHORT page_size = 0, forced_writes, no_reserve, SQL_dialect, db_read_only;
  	ULONG sweep_interval, page_buffers;
  	USHORT length = 0;
 	for (const SCHAR* d = buffer; *d != isc_info_end; d += length)
@@ -2869,8 +2834,7 @@ void write_database( const TEXT* dbb_file)
 
 			if (!D.RDB$SECURITY_CLASS.NULL)
 				PUT_TEXT (att_database_security_class, D.RDB$SECURITY_CLASS);
-			put_source_blob (att_database_description2, att_database_description,
-				D.RDB$DESCRIPTION);
+			put_source_blob (att_database_description2, att_database_description, D.RDB$DESCRIPTION);
 			if (!D.RDB$CHARACTER_SET_NAME.NULL)
 				PUT_TEXT (att_database_dfl_charset, D.RDB$CHARACTER_SET_NAME);
 		END_FOR;
@@ -2896,8 +2860,7 @@ void write_database( const TEXT* dbb_file)
 		{
 			FOR (REQUEST_HANDLE req_handle2)
 				D IN RDB$DATABASE
-				put_source_blob (att_database_description2, att_database_description,
-					D.RDB$DESCRIPTION);
+				put_source_blob (att_database_description2, att_database_description, D.RDB$DESCRIPTION);
 			END_FOR;
 			ON_ERROR
 				general_on_error();
@@ -2925,7 +2888,7 @@ void write_database( const TEXT* dbb_file)
 }
 
 
-void write_exceptions(void)
+void write_exceptions()
 {
 /**************************************
  *
@@ -2952,8 +2915,7 @@ void write_exceptions(void)
 		BURP_verbose (198, temp);
 		// msg 198 writing exception %s
 		PUT_MESSAGE(att_exception_msg, X.RDB$MESSAGE);
-		put_source_blob (att_exception_description2, att_procedure_description,
-			X.RDB$DESCRIPTION);
+		put_source_blob (att_exception_description2, att_procedure_description, X.RDB$DESCRIPTION);
 		put(tdgbl, att_end);
 	END_FOR;
 	ON_ERROR
@@ -2964,7 +2926,7 @@ void write_exceptions(void)
 }
 
 
-void write_field_dimensions(void)
+void write_field_dimensions()
 {
 /**************************************
  *
@@ -2998,7 +2960,7 @@ void write_field_dimensions(void)
 }
 
 
-void write_filters(void)
+void write_filters()
 {
 /**************************************
  *
@@ -3039,7 +3001,7 @@ void write_filters(void)
 }
 
 
-void write_functions(void)
+void write_functions()
 {
 /**************************************
  *
@@ -3180,7 +3142,7 @@ void write_function_args( GDS_NAME funcptr)
 }
 
 
-void write_generators(void)
+void write_generators()
 {
 /**************************************
  *
@@ -3210,8 +3172,7 @@ void write_generators(void)
 				put_int64 (att_gen_value_int64, value);
 			}
 			if (!X.RDB$DESCRIPTION.NULL) {
-				put_source_blob (att_gen_description, att_gen_description,
-								 X.RDB$DESCRIPTION);
+				put_source_blob (att_gen_description, att_gen_description, X.RDB$DESCRIPTION);
 			}
 			put(tdgbl, att_end);
 			MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));
@@ -3248,7 +3209,7 @@ void write_generators(void)
 }
 
 
-void write_global_fields(void)
+void write_global_fields()
 {
 /**************************************
  *
@@ -3299,11 +3260,11 @@ void write_global_fields(void)
 			put_blr_blob (att_field_missing_value, X.RDB$MISSING_VALUE);
 			put_blr_blob (att_field_default_value, X.RDB$DEFAULT_VALUE);
 			put_blr_blob (att_field_validation_blr, X.RDB$VALIDATION_BLR);
-			put_source_blob (att_field_validation_source2, att_field_validation_source,
-				X.RDB$VALIDATION_SOURCE);
+			put_source_blob(att_field_validation_source2, att_field_validation_source,
+							X.RDB$VALIDATION_SOURCE);
 			put_blr_blob (att_field_computed_blr, X.RDB$COMPUTED_BLR);
-			put_source_blob (att_field_computed_source2, att_field_computed_source,
-				X.RDB$COMPUTED_SOURCE);
+			put_source_blob(att_field_computed_source2, att_field_computed_source,
+							X.RDB$COMPUTED_SOURCE);
 			if (X.RDB$SEGMENT_LENGTH)
 				put_numeric (att_field_segment_length, X.RDB$SEGMENT_LENGTH);
 			if (X.RDB$SYSTEM_FLAG)
@@ -3323,11 +3284,11 @@ void write_global_fields(void)
 			if (!X.RDB$CHARACTER_LENGTH.NULL)
 				put_numeric (att_field_character_length, X.RDB$CHARACTER_LENGTH);
 			if (!X.RDB$DEFAULT_SOURCE.NULL)
-				put_source_blob (att_field_default_source, att_field_default_source,
-					X.RDB$DEFAULT_SOURCE);
+				put_source_blob(att_field_default_source, att_field_default_source,
+								X.RDB$DEFAULT_SOURCE);
 			if (!X.RDB$MISSING_SOURCE.NULL)
-				put_source_blob (att_field_missing_source, att_field_missing_source,
-					X.RDB$MISSING_SOURCE);
+				put_source_blob(att_field_missing_source, att_field_missing_source,
+								X.RDB$MISSING_SOURCE);
 			if (!X.RDB$CHARACTER_SET_ID.NULL)
 				put_numeric (att_field_character_set, X.RDB$CHARACTER_SET_ID);
 			if (!X.RDB$COLLATION_ID.NULL)
@@ -3367,8 +3328,8 @@ void write_global_fields(void)
 			put_blr_blob (att_field_missing_value, X.RDB$MISSING_VALUE);
 			put_blr_blob (att_field_default_value, X.RDB$DEFAULT_VALUE);
 			put_blr_blob (att_field_validation_blr, X.RDB$VALIDATION_BLR);
-			put_source_blob (att_field_validation_source2, att_field_validation_source,
-				X.RDB$VALIDATION_SOURCE);
+			put_source_blob(att_field_validation_source2, att_field_validation_source,
+							X.RDB$VALIDATION_SOURCE);
 			put_blr_blob (att_field_computed_blr, X.RDB$COMPUTED_BLR);
 			put_source_blob (att_field_computed_source2, att_field_computed_source,
 				X.RDB$COMPUTED_SOURCE);
@@ -3376,8 +3337,7 @@ void write_global_fields(void)
 				put_numeric (att_field_segment_length, X.RDB$SEGMENT_LENGTH);
 			if (X.RDB$SYSTEM_FLAG)
 				put_numeric (att_field_system_flag, X.RDB$SYSTEM_FLAG);
-			put_source_blob (att_field_description2, att_field_description,
-				X.RDB$DESCRIPTION);
+			put_source_blob (att_field_description2, att_field_description, X.RDB$DESCRIPTION);
 			if (tdgbl->BCK_capabilities & BCK_attributes_v3)
 			{
 				FOR (REQUEST_HANDLE req_handle2)
@@ -3405,11 +3365,11 @@ void write_global_fields(void)
 					if (!F.RDB$CHARACTER_LENGTH.NULL)
 						put_numeric (att_field_character_length, F.RDB$CHARACTER_LENGTH);
 					if (!F.RDB$DEFAULT_SOURCE.NULL)
-						put_source_blob (att_field_default_source, att_field_default_source,
-							F.RDB$DEFAULT_SOURCE);
+						put_source_blob(att_field_default_source, att_field_default_source,
+										F.RDB$DEFAULT_SOURCE);
 					if (!F.RDB$MISSING_SOURCE.NULL)
-						put_source_blob (att_field_missing_source, att_field_missing_source,
-							F.RDB$MISSING_SOURCE);
+						put_source_blob(att_field_missing_source, att_field_missing_source,
+										F.RDB$MISSING_SOURCE);
 					if (!F.RDB$CHARACTER_SET_ID.NULL)
 						put_numeric (att_field_character_set, F.RDB$CHARACTER_SET_ID);
 					if (!F.RDB$COLLATION_ID.NULL)
@@ -3445,7 +3405,7 @@ void write_global_fields(void)
 }
 
 
-void write_procedures(void)
+void write_procedures()
 {
 /**************************************
  *
@@ -3476,8 +3436,7 @@ void write_procedures(void)
 			/* msg 193 writing stored procedure %.*s */
 			put_numeric (att_procedure_inputs, X.RDB$PROCEDURE_INPUTS);
 			put_numeric (att_procedure_outputs, X.RDB$PROCEDURE_OUTPUTS);
-			put_source_blob (att_procedure_description2, att_procedure_description,
-				X.RDB$DESCRIPTION);
+			put_source_blob(att_procedure_description2, att_procedure_description, X.RDB$DESCRIPTION);
 			put_source_blob (att_procedure_source2, att_procedure_source, X.RDB$PROCEDURE_SOURCE);
 			put_blr_blob (att_procedure_blr, X.RDB$PROCEDURE_BLR);
 			if (!X.RDB$SECURITY_CLASS.NULL)
@@ -3510,8 +3469,7 @@ void write_procedures(void)
 			/* msg 193 writing stored procedure %.*s */
 			put_numeric (att_procedure_inputs, X.RDB$PROCEDURE_INPUTS);
 			put_numeric (att_procedure_outputs, X.RDB$PROCEDURE_OUTPUTS);
-			put_source_blob (att_procedure_description2, att_procedure_description,
-				X.RDB$DESCRIPTION);
+			put_source_blob (att_procedure_description2, att_procedure_description, X.RDB$DESCRIPTION);
 			put_source_blob (att_procedure_source2, att_procedure_source, X.RDB$PROCEDURE_SOURCE);
 			put_blr_blob (att_procedure_blr, X.RDB$PROCEDURE_BLR);
 			if (!X.RDB$SECURITY_CLASS.NULL)
@@ -3560,11 +3518,11 @@ void write_procedure_prms( GDS_NAME procptr)
 			put_numeric (att_procedureprm_number, X.RDB$PARAMETER_NUMBER);
 			put_numeric (att_procedureprm_type, X.RDB$PARAMETER_type);
 			PUT_TEXT (att_procedureprm_field_source, X.RDB$FIELD_SOURCE);
-			put_source_blob (att_procedureprm_description2, att_procedureprm_description,
-				X.RDB$DESCRIPTION);
+			put_source_blob(att_procedureprm_description2, att_procedureprm_description,
+							X.RDB$DESCRIPTION);
 			put_blr_blob (att_procedureprm_default_value, X.RDB$DEFAULT_VALUE);
-			put_source_blob (att_procedureprm_default_source,
-				att_procedureprm_default_source, X.RDB$DEFAULT_SOURCE);
+			put_source_blob(att_procedureprm_default_source, att_procedureprm_default_source,
+							X.RDB$DEFAULT_SOURCE);
 			if (!X.RDB$COLLATION_ID.NULL)
 				put_numeric (att_procedureprm_collation_id, X.RDB$COLLATION_ID);
 			if (!X.RDB$NULL_FLAG.NULL)
@@ -3596,8 +3554,8 @@ void write_procedure_prms( GDS_NAME procptr)
 			put_numeric (att_procedureprm_number, X.RDB$PARAMETER_NUMBER);
 			put_numeric (att_procedureprm_type, X.RDB$PARAMETER_type);
 			PUT_TEXT (att_procedureprm_field_source, X.RDB$FIELD_SOURCE);
-			put_source_blob (att_procedureprm_description2, att_procedureprm_description,
-				X.RDB$DESCRIPTION);
+			put_source_blob(att_procedureprm_description2, att_procedureprm_description,
+							X.RDB$DESCRIPTION);
 			put(tdgbl, att_end);
 		END_FOR;
 		ON_ERROR
@@ -3607,7 +3565,7 @@ void write_procedure_prms( GDS_NAME procptr)
 }
 
 
-void write_ref_constraints(void)
+void write_ref_constraints()
 {
 /**************************************
  *
@@ -3641,7 +3599,7 @@ void write_ref_constraints(void)
 	MISC_release_request_silent(req_handle1);
 }
 
-void write_rel_constraints(void)
+void write_rel_constraints()
 {
 /**************************************
  *
@@ -3681,7 +3639,7 @@ void write_rel_constraints(void)
 	MISC_release_request_silent(req_handle1);
 }
 
-void write_relations(void)
+void write_relations()
 {
 /**************************************
  *
@@ -3737,11 +3695,10 @@ void write_relations(void)
 
 			put_source_blob (att_relation_description2, att_relation_description,
 				X.RDB$DESCRIPTION);
-			put_source_blob (att_relation_view_source2, att_relation_view_source,
-				X.RDB$VIEW_SOURCE);
+			put_source_blob (att_relation_view_source2, att_relation_view_source, X.RDB$VIEW_SOURCE);
 
-			put_source_blob (att_relation_ext_description2, att_relation_ext_description,
-				X.RDB$EXTERNAL_DESCRIPTION);
+			put_source_blob(att_relation_ext_description2, att_relation_ext_description,
+							X.RDB$EXTERNAL_DESCRIPTION);
 			PUT_TEXT (att_relation_owner_name, X.RDB$OWNER_NAME);
 			if (!X.RDB$EXTERNAL_FILE.NULL)
 			{
@@ -3811,16 +3768,14 @@ void write_relations(void)
 					general_on_error();
 				END_ERROR;
 			}
-			put_source_blob (att_relation_description2, att_relation_description,
-				X.RDB$DESCRIPTION);
-			put_source_blob (att_relation_view_source2, att_relation_view_source,
-				X.RDB$VIEW_SOURCE);
+			put_source_blob (att_relation_description2, att_relation_description, X.RDB$DESCRIPTION);
+			put_source_blob (att_relation_view_source2, att_relation_view_source, X.RDB$VIEW_SOURCE);
 			if (tdgbl->BCK_capabilities & BCK_attributes_v3)
 			{
 				FOR (REQUEST_HANDLE req_handle4)
 					R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME = X.RDB$RELATION_NAME
-					put_source_blob (att_relation_ext_description2, att_relation_ext_description,
-						R.RDB$EXTERNAL_DESCRIPTION);
+					put_source_blob(att_relation_ext_description2, att_relation_ext_description,
+									R.RDB$EXTERNAL_DESCRIPTION);
 					PUT_TEXT(att_relation_owner_name, R.RDB$OWNER_NAME);
 					if (!R.RDB$EXTERNAL_FILE.NULL)
 					{
@@ -3868,7 +3823,7 @@ void write_relations(void)
 }
 
 
-void write_shadow_files(void)
+void write_shadow_files()
 {
 /**************************************
  *
@@ -3908,7 +3863,7 @@ void write_shadow_files(void)
 	MISC_release_request_silent(req_handle1);
 }
 
-void write_sql_roles(void)
+void write_sql_roles()
 {
 /**************************************
  *
@@ -3936,8 +3891,7 @@ void write_sql_roles(void)
 			const SSHORT l = PUT_TEXT(att_role_name, X.RDB$ROLE_NAME);
 			PUT_TEXT (att_role_owner_name, X.RDB$OWNER_NAME);
 			if (!X.RDB$DESCRIPTION.NULL) {
-				put_source_blob (att_role_description, att_role_description,
-								 X.RDB$DESCRIPTION);
+				put_source_blob (att_role_description, att_role_description, X.RDB$DESCRIPTION);
 			}
 			put(tdgbl, att_end);
 			MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
@@ -3971,7 +3925,7 @@ void write_sql_roles(void)
 	MISC_release_request_silent(req_handle1);
 }
 
-void write_mapping(void)
+void write_mapping()
 {
 /**************************************
  *
@@ -4014,7 +3968,7 @@ void write_mapping(void)
 	MISC_release_request_silent(req_handle);
 }
 
-void write_triggers(void)
+void write_triggers()
 {
 /**************************************
  *
@@ -4163,7 +4117,7 @@ void write_triggers(void)
 }
 
 
-void write_trigger_messages(void)
+void write_trigger_messages()
 {
 /**************************************
  *
@@ -4202,7 +4156,7 @@ void write_trigger_messages(void)
 	MISC_release_request_silent(req_handle1);
 }
 
-void write_types(void)
+void write_types()
 {
 /**************************************
  *
@@ -4241,7 +4195,7 @@ void write_types(void)
 }
 
 
-void write_user_privileges(void)
+void write_user_privileges()
 {
 /**************************************
  *

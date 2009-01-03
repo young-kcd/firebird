@@ -161,7 +161,8 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		return 0;
 	}
 
-	switch (protocol) {
+	switch (protocol)
+	{
 	case sec_protocol_tcpip:
 		if (! isValidServer(status, server))
 		{
@@ -239,11 +240,8 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
 	isc_svc_handle svc_handle = 0;
-	isc_service_attach(status,
-		static_cast<USHORT>(strlen(service)),
-		service, &svc_handle,
-		static_cast<USHORT>(spb - spb_buffer),
-		spb_buffer);
+	isc_service_attach(status, static_cast<USHORT>(strlen(service)), service, &svc_handle,
+						static_cast<USHORT>(spb - spb_buffer), spb_buffer);
 	return status[1] ? 0 : svc_handle;
 }
 
@@ -260,8 +258,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	@param userInfo
 
  **/
-static void userInfoToSpb(char*& spb,
-						  const internal_user_data& userInfo)
+static void userInfoToSpb(char*& spb, const internal_user_data& userInfo)
 {
 	stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
 	if (userInfo.uid_entered) {
@@ -367,8 +364,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
-	isc_service_start(status, &handle, 0,
-		static_cast<USHORT>(spb - spb_buffer), spb_buffer);
+	isc_service_start(status, &handle, 0, static_cast<USHORT>(spb - spb_buffer), spb_buffer);
 
 	spb = spb_buffer;
 	stuffSpbByte(spb, isc_info_svc_timeout);
@@ -381,7 +377,8 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	ISC_STATUS* local_status = status[1] ? temp_status : status;
 	memset(local_status, 0, sizeof(ISC_STATUS_ARRAY));
 
-	if (userInfo.operation == DIS_OPER) {
+	if (userInfo.operation == DIS_OPER)
+	{
 		const char request[] = {isc_info_svc_get_users};
 		int startQuery = 0;
 		internal_user_data uData;
@@ -465,8 +462,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	@param handle
 
  **/
-void detachRemoteServiceManager(ISC_STATUS* status,
-							    isc_svc_handle handle)
+void detachRemoteServiceManager(ISC_STATUS* status, isc_svc_handle handle)
 {
 	isc_service_detach(status, &handle);
 }

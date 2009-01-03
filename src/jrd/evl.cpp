@@ -2553,8 +2553,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 			value->vlu_misc.vlu_timestamp.timestamp_date = *(GDS_DATE *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(Arg::Gds(isc_expression_eval_err)
-					<< Arg::Gds(isc_onlycan_add_datetotime));
+		ERR_post(Arg::Gds(isc_expression_eval_err) <<
+					Arg::Gds(isc_onlycan_add_datetotime));
 	}
 
 /* For historical reasons (behavior prior to V6),
@@ -5227,7 +5227,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 		EVL_make_value(tdbb, value, impure);
 
-		blb* newBlob = 
+		blb* newBlob =
 			BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 
 		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);

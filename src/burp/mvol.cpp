@@ -91,8 +91,8 @@ const int burp_msg_fac = 12;
 
 
 static void  bad_attribute(int, USHORT);
-static void  file_not_empty(void);
-static SLONG get_numeric(void);
+static void  file_not_empty();
+static SLONG get_numeric();
 static int   get_text(UCHAR*, SSHORT);
 static void  prompt_for_name(SCHAR*, int);
 static void  put_asciz(SCHAR, const SCHAR*);
@@ -757,7 +757,7 @@ static void bad_attribute(int attribute, USHORT type)
 //____________________________________________________________
 //
 //
-static void file_not_empty(void)
+static void file_not_empty()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -769,7 +769,7 @@ static void file_not_empty(void)
 //
 // Get a numeric value from the input stream.
 //
-static SLONG get_numeric(void)
+static SLONG get_numeric()
 {
 	SLONG value[2];
 
@@ -1317,7 +1317,7 @@ static bool write_header(DESC   handle,
 //
 // Write a header record for split operation
 //
-bool MVOL_split_hdr_write(void)
+bool MVOL_split_hdr_write()
 {
 	TEXT buffer[HDR_SPLIT_SIZE + 1];
 
@@ -1358,7 +1358,7 @@ bool MVOL_split_hdr_write(void)
 //
 // Read a header record for join operation
 //
-bool MVOL_split_hdr_read(void)
+bool MVOL_split_hdr_read()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 

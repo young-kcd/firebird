@@ -55,8 +55,8 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 static alice_str* alloc_string(const TEXT**);
 static USHORT get_capabilities(ISC_STATUS*);
-static TDR get_description(ISC_QUAD*);
-static void parse_fullpath(TDR);
+static tdr* get_description(ISC_QUAD*);
+static void parse_fullpath(tdr*);
 static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
 
 
@@ -65,13 +65,15 @@ static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
    fields in system relations
 */
 
-struct rfr_tab_t {
+struct rfr_tab_t
+{
 	const TEXT* relation;
 	const TEXT* field;
 	int bit_mask;
 };
 
-static const rfr_tab_t rfr_table[] = {
+static const rfr_tab_t rfr_table[] =
+{
 	{ "RDB$TRANSACTIONS", "RDB$TRANSACTION_DESCRIPTION", CAP_transactions },
 	{ 0, 0, 0 }
 };
@@ -100,6 +102,7 @@ void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
 	ON_ERROR
 		return_error(user_status);
 	END_ERROR;
+
 	FOR(REQUEST_HANDLE request)
 	X IN RDB$LOG_FILES
 		ERASE X;
@@ -118,7 +121,7 @@ void MET_disable_wal(ISC_STATUS* user_status, isc_db_handle handle)
  *		already been attached.
  */
 
-void MET_get_state(ISC_STATUS* user_status, TDR trans)
+void MET_get_state(ISC_STATUS* user_status, tdr* trans)
 {
 	FB_API_HANDLE request = 0;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
@@ -162,10 +165,10 @@ void MET_get_state(ISC_STATUS* user_status, TDR trans)
  *		in other databases.
  */
 
-TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
+tdr* MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
 {
 	FB_API_HANDLE request = 0;
-	TDR trans = NULL;
+	tdr* trans = NULL;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	if (!(DB = handle))
@@ -213,7 +216,7 @@ TDR MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
  *		the database for a particular transaction.
  */
 
-void MET_set_capabilities(ISC_STATUS* user_status, TDR trans)
+void MET_set_capabilities(ISC_STATUS* user_status, tdr* trans)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
@@ -245,16 +248,11 @@ static alice_str* alloc_string(const TEXT** ptr)
 
 	const TEXT* p = *ptr;
 
-	USHORT length = (USHORT) *p++;
+	const USHORT length = (USHORT) *p++;
 	alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(), length + 1) alice_str;
-
-	TEXT* q = (TEXT *) string->str_data;
-	while (length--) {
-		*q++ = *p++;
-	}
-	*q = 0;
-
-	*ptr = p;
+	memcpy(string->str_data, p, length);
+	string->str_data[length] = 0;
+	*ptr = p + length;
 
 	return string;
 }
@@ -275,8 +273,7 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 //  Look for desired fields in system relations
 	FB_API_HANDLE req = 0;
 
-	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation;
-		rel_field_table++)
+	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation; rel_field_table++)
 	{
 		FOR(REQUEST_HANDLE req) x IN DB.RDB$RELATION_FIELDS
 			WITH x.RDB$RELATION_NAME = rel_field_table->relation
@@ -304,7 +301,7 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
  *		in other databases.
  */
 
-static TDR get_description(ISC_QUAD* blob_id)
+static tdr* get_description(ISC_QUAD* blob_id)
 {
 	TEXT buffer[1024];
 	TEXT* bigger_buffer = 0;
@@ -325,18 +322,20 @@ static TDR get_description(ISC_QUAD* blob_id)
 		snarf_blob(blob_id, length, bigger_buffer);
 	}
 
-	TDR trans = NULL;
+	tdr* trans = NULL;
 	alice_str* host_site = NULL;
 	alice_str* database_path = NULL;
 
 //  skip version number
 	++p;
 
-	TDR ptr = NULL; // silence uninitialized warning
+	tdr* ptr = NULL; // silence uninitialized warning
 	SLONG id_length, id;
 
-	while (*p) {
-		switch (*p++) {
+	while (*p)
+	{
+		switch (*p++)
+		{
 		case TDR_HOST_SITE:
 			host_site = alloc_string(&p);
 			break;
@@ -388,7 +387,7 @@ static TDR get_description(ISC_QUAD* blob_id)
  *		finding the filename and the remote site.
  */
 
-static void parse_fullpath(TDR trans)
+static void parse_fullpath(tdr* trans)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
@@ -401,9 +400,7 @@ static void parse_fullpath(TDR trans)
 	const TEXT* const end = p;
 
 //  Check for a named pipes name - \\node\path\db or //node/path/db
-	while (p > start &&
-		   !(*p == '/' && *(p - 1) == '/') &&
-		   !(*p == '\\' && *(p - 1) == '\\'))
+	while (p > start && !(*p == '/' && p[-1] == '/') && !(*p == '\\' && p[-1] == '\\'))
 	{
 		--p;
 	}
@@ -466,8 +463,7 @@ static void parse_fullpath(TDR trans)
  *		is not big enough.
  */
 
-static USHORT snarf_blob(ISC_QUAD* blob_id,
-						 USHORT buffer_length, TEXT* buffer)
+static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
@@ -493,8 +489,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 		if (!(buffer_length = end - ptr))
 			break;
 		USHORT returned_length;
-		ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length,
-								  buffer_length, ptr);
+		ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length, buffer_length, ptr);
 		if (status && status != isc_segment)
 			break;
 		ptr += returned_length;
@@ -506,8 +501,8 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 	{
 		for (;;) {
 			USHORT returned_length;
-			ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length,
-									  buffer_length, buffer);
+			ISC_STATUS status =
+				isc_get_segment(gds_status, &blob, &returned_length, buffer_length, buffer);
 			if (status && status != isc_segment)
 				break;
 			buffer_length += returned_length;

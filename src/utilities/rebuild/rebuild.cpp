@@ -343,8 +343,7 @@ void RBDB_open( RBDB rbdb)
  *	Open a database file.
  *
  **************************************/
-	if ((rbdb->rbdb_file.fil_file = open(rbdb->rbdb_file.fil_name, O_RDWR, 0))
-		== -1)
+	if ((rbdb->rbdb_file.fil_file = open(rbdb->rbdb_file.fil_name, O_RDWR, 0)) == -1)
 	{
 		db_error(errno);
 	}

@@ -38,7 +38,7 @@ const int MAX_EVENT_BUFFER	= 65500;
 
 /* Dummy global section header */
 
-struct evh 
+struct evh
 {
 	SLONG evh_length;
 };
@@ -47,7 +47,7 @@ typedef evh *EVH;
 
 /* Session block */
 
-struct ses 
+struct ses
 {
 	struct ses *ses_next;		/* Next active session */
 	struct vms_req *ses_requests;	/* Outstanding requests in session */
@@ -58,7 +58,7 @@ typedef ses *SES;
 
 /* Event block */
 
-struct evnt 
+struct evnt
 {
 	struct evnt *evnt_next;		/* Next lock */
 	struct evnt *evnt_parent;	/* Parent lock, if any */
@@ -73,7 +73,7 @@ typedef evnt *EVNT;
 
 /* Request block */
 
-struct vms_req 
+struct vms_req
 {
 	struct vms_req *req_next;		/* Next request in session */
 	struct ses *req_session;	/* Parent session */
@@ -86,7 +86,7 @@ typedef vms_req *VMS_REQ;
 
 /* Request interest block */
 
-struct rint 
+struct rint
 {
 	VMS_REQ rint_request;			/* Parent request block */
 	EVNT rint_event;			/* Parent event block */
@@ -243,8 +243,7 @@ EVH EVENT_init(ISC_STATUS* status_vector, bool server_flag)
 }
 
 
-int EVENT_post(
-			   ISC_STATUS * status_vector,
+int EVENT_post(ISC_STATUS* status_vector,
 			   USHORT major_length,
 			   const TEXT* major,
 			   USHORT minor_length,

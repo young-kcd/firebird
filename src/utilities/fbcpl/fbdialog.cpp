@@ -54,7 +54,7 @@ static char BASED_CODE THIS_FILE[] = __FILE__;
 
 
 CFBDialog::CFBDialog(CWnd* pParent /*=NULL*/)
-	:	CDialog(CFBDialog::IDD, pParent)
+	: CDialog(CFBDialog::IDD, pParent)
 {
 	//{{AFX_DATA_INIT(CFBDialog)
 	m_FB_Version = _T("");

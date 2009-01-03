@@ -43,7 +43,8 @@ class ClumpletDump : public ClumpletReader
 {
 public:
 	ClumpletDump(Kind k, const UCHAR* buffer, size_t buffLen)
-		: ClumpletReader(k, buffer, buffLen) { }
+		: ClumpletReader(k, buffer, buffLen)
+	{ }
 	static string hexString(const UCHAR* b, size_t len)
 	{
 		string t1, t2;

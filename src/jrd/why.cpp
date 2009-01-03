@@ -2819,7 +2819,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		BOOLEAN ret_v3_error = FALSE;
+		bool ret_v3_error = false;
 		if (!stmt_eaten) {
 			/* Check if against < 4.0 database */
 
@@ -2834,7 +2834,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 										 out_blr_length, out_blr,
 										 out_msg_type, out_msg_length, out_msg);
 				else
-					ret_v3_error = TRUE;
+					ret_v3_error = true;
 			}
 		}
 

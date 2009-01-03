@@ -90,6 +90,7 @@ public:
 };
 
 //  Transaction block: used to store info about a multidatabase transaction.
+// Transaction Description Record
 
 struct tdr : public pool_alloc<alice_type_tdr>
 {
@@ -104,9 +105,6 @@ struct tdr : public pool_alloc<alice_type_tdr>
 	USHORT tdr_db_caps;			// capabilities of database
 	USHORT tdr_state;			// see flags below
 };
-
-typedef tdr* TDR;
-// Transaction Description Record
 
 const int TDR_VERSION		= 1;
 enum tdr_vals {
@@ -194,8 +192,7 @@ public:
 	}
 };
 
-typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool>
-	AliceContextPoolHolder;
+typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool> AliceContextPoolHolder;
 
 #endif	// ALICE_ALICE_H
 

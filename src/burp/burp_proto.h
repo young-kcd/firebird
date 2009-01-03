@@ -31,7 +31,7 @@
 THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
 int		gbak(Firebird::UtilSvc*);
 
-void	BURP_abort(void);
+void	BURP_abort();
 void	BURP_error(USHORT, bool, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_error(USHORT, bool, const char* str);
 void	BURP_error_redirect(const ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());

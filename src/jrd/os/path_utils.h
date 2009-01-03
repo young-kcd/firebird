@@ -61,9 +61,12 @@ public:
 		///	directory being iterater.
 		/// dir_iterator may be located on stack, therefore use AutoStorage
 		dir_iterator(MemoryPool& p, const Firebird::PathName& dir)
-			: AutoStorage(p), dirPrefix(getPool(), dir) {}
+			: AutoStorage(p), dirPrefix(getPool(), dir)
+		{}
+
 		dir_iterator(const Firebird::PathName& dir)
-			: AutoStorage(), dirPrefix(getPool(), dir) {}
+			: AutoStorage(), dirPrefix(getPool(), dir)
+		{}
 
 		/// destructor provided for memory cleanup.
 		virtual ~dir_iterator() {}

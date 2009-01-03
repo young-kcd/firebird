@@ -66,7 +66,7 @@ static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
 static bool get_switches(Firebird::UtilSvc::ArgvType&, const in_sw_tab_t*, tsec*, bool*);
 static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType&, tsec*);
-static void printhelp(void);
+static void printhelp();
 static void get_security_error(ISC_STATUS*, int);
 static void insert_error(ISC_STATUS*, ISC_STATUS);
 static void msg_get(USHORT number, TEXT* msg);
@@ -159,7 +159,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}
 
 	Firebird::PathName serverName;
-	bool useServices = !uSvc->isService();
+	const bool useServices = !uSvc->isService();
+
 	switch (ISC_extract_host(databaseName, serverName, true))
 	{
 	case ISC_PROTOCOL_TCPIP:
@@ -255,7 +256,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	if (!tdsec->tsec_interactive) {
+	if (!tdsec->tsec_interactive)
+	{
 		if (ret == 0) {
 			/* Signal the start of the service here ONLY if we are displaying users
 			 * since the number of users may exceed the service buffer.  This
@@ -265,8 +267,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				uSvc->started();
 			if (! useServices)
 			{
-				ret = SECURITY_exec_line(status, db_handle,
-							user_data, data_print, NULL);
+				ret = SECURITY_exec_line(status, db_handle, user_data, data_print, NULL);
 				if (ret)
 				{
 					GSEC_print(ret, user_data->user_name);
@@ -288,15 +289,18 @@ int gsec(Firebird::UtilSvc* uSvc)
 			}
 		}
 	}
-	else {
+	else
+	{
 		Firebird::UtilSvc::ArgvType local_argv;
-		for (;;) {
+		for (;;)
+		{
 			MOVE_CLEAR(status, sizeof(ISC_STATUS_ARRAY));
 			/* Clear out user data each time through this loop. */
 			MOVE_CLEAR(user_data, sizeof(internal_user_data));
 			if (get_line(local_argv, stuff, sizeof(stuff)))
 				break;
-			if (local_argv.getCount() > 1) {
+			if (local_argv.getCount() > 1)
+			{
 				ret = parse_cmd_line(local_argv, tdsec);
 				if (ret == 1)
 				{
@@ -348,13 +352,15 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 	}	// try
-	catch (const Firebird::LongJump&) {
+	catch (const Firebird::LongJump&)
+	{
 		/* All error exit calls to GSEC_error() wind up here */
 		exit_code = tdsec->tsec_exit_code;
 
 		tdsec->tsec_throw = false;
 	}
-	catch (const Firebird::Exception& e) {
+	catch (const Firebird::Exception& e)
+	{
 		// Real exceptions are coming here
 		ISC_STATUS_ARRAY status;
 		e.stuff_exception(status);
@@ -439,7 +445,8 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
    non-newline for that matter), ignore it; if it's a newline, we're
    done; otherwise, put it in the current argument */
 
-	while (count > 0) {
+	while (count > 0)
+	{
 		TEXT c = getc(stdin);
 		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
@@ -477,10 +484,9 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 }
 
 
-static bool get_switches(
-							Firebird::UtilSvc::ArgvType& argv,
-							const in_sw_tab_t* in_sw_table,
-							tsec* tdsec, bool* quitflag)
+static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
+						const in_sw_tab_t* in_sw_table,
+						tsec* tdsec, bool* quitflag)
 {
 /**************************************
  *
@@ -504,7 +510,8 @@ static bool get_switches(
 	*quitflag = false;
 	USHORT last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = false;
-	for (size_t argc = 1; argc < argv.getCount(); ++argc) {
+	for (size_t argc = 1; argc < argv.getCount(); ++argc)
+	{
 		const char* string = argv[argc];
 		if (*string == '?')
 			user_data->operation = HELP_OPER;
@@ -628,8 +635,7 @@ static bool get_switches(
 			USHORT in_sw = IN_SW_GSEC_0;
 			{ // scope
 			const TEXT* q;
-			for (const in_sw_tab_t* in_sw_tab = in_sw_table;
-				q = in_sw_tab->in_sw_name; in_sw_tab++)
+			for (const in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
 			{
 				const TEXT* p = string + 1;
 
@@ -666,7 +672,8 @@ static bool get_switches(
 
 			SSHORT err_msg_no;
 
-			switch (in_sw) {
+			switch (in_sw)
+			{
 			case IN_SW_GSEC_ADD:
 			case IN_SW_GSEC_DEL:
 			case IN_SW_GSEC_DIS:
@@ -678,7 +685,8 @@ static bool get_switches(
 					/* gsec - operation already specified */
 					return false;
 				}
-				switch (in_sw) {
+				switch (in_sw)
+				{
 				case IN_SW_GSEC_ADD:
 					user_data->operation = ADD_OPER;
 					break;
@@ -720,7 +728,8 @@ static bool get_switches(
 			case IN_SW_GSEC_FETCH_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
 				err_msg_no = 0;
-				switch (in_sw) {
+				switch (in_sw)
+				{
 				case IN_SW_GSEC_PASSWORD:
 					if (user_data->password_specified) {
 						err_msg_no = GsecMsg31;
@@ -870,7 +879,8 @@ static bool get_switches(
 			user_data->password_entered || user_data->first_name_entered ||
 			user_data->middle_name_entered || user_data->last_name_entered)
 		{
-			switch (user_data->operation) {
+			switch (user_data->operation)
+			{
 			case 0:
 				GSEC_error(GsecMsg42);
 				/* gsec - no operation specified for parameters */
@@ -897,7 +907,7 @@ static bool get_switches(
 }
 
 
-static void printhelp(void)
+static void printhelp()
 {
 /**************************************
  *
@@ -1103,9 +1113,8 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 			printhelp();
 			ret = -1;
 		}
-		else if (user_data->operation != DIS_OPER &&
-				 user_data->operation != QUIT_OPER &&
-				 !user_data->user_name_entered)
+		else if (user_data->operation != DIS_OPER && user_data->operation != QUIT_OPER &&
+			!user_data->user_name_entered)
 		{
 			GSEC_error(GsecMsg18);
 			/* gsec - no user name specified */
@@ -1174,8 +1183,7 @@ static void util_output(const SCHAR* format, ...)
 	va_end(arglist);
 }
 
-void GSEC_error_redirect(const ISC_STATUS* status_vector,
-						 USHORT errcode)
+void GSEC_error_redirect(const ISC_STATUS* status_vector, USHORT errcode)
 {
 /**************************************
  *
@@ -1234,8 +1242,7 @@ void GSEC_error(USHORT errcode)
 		Firebird::LongJump::raise();
 }
 
-void GSEC_print(USHORT number,
-				const char* str)
+void GSEC_print(USHORT number, const char* str)
 {
 /**************************************
  *

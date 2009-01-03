@@ -77,7 +77,7 @@ inline bool DTYPE_IS_NUMERIC(UCHAR d)
 typedef struct dsc
 {
 	dsc()
-	:	dsc_dtype(0),
+		: dsc_dtype(0),
 		dsc_scale(0),
 		dsc_length(0),
 		dsc_sub_type(0),
@@ -291,13 +291,14 @@ typedef struct dsc
 // this functions were added to have interoperability
 // between Ods::Descriptor and struct dsc
 	dsc(const Ods::Descriptor& od)
-	:	dsc_dtype(od.dsc_dtype),
+		: dsc_dtype(od.dsc_dtype),
 		dsc_scale(od.dsc_scale),
 		dsc_length(od.dsc_length),
 		dsc_sub_type(od.dsc_sub_type),
 		dsc_flags(od.dsc_flags),
 		dsc_address((UCHAR*)(IPTR)(od.dsc_offset))
 	{}
+
 	operator Ods::Descriptor() const
 	{
 #ifdef DEV_BUILD
@@ -371,8 +372,8 @@ const UCHAR dtype_max_comp	= dtype_d_float;
 
 inline USHORT TEXT_LEN(const dsc* desc)
 {
-	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length
-		: (desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
+	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length :
+		(desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
 }
 
 

@@ -35,7 +35,7 @@
 typedef int PTR;
 const SLONG EVENT_FLAG	= 15;
 
-static SCHAR lock_types[] = 
+static SCHAR lock_types[] =
 {
 	0,
 	LCK$K_NLMODE,
@@ -47,7 +47,7 @@ static SCHAR lock_types[] =
 };
 
 // Conflict with isc.h or redefinition???
-struct lock_status 
+struct lock_status
 {
 	SSHORT lksb_status;
 	SSHORT lksb_reserved;
@@ -59,11 +59,10 @@ static bool lock_error(ISC_STATUS *, UCHAR *, int);
 static SLONG write_data(SLONG, SLONG);
 
 
-bool LOCK_convert(
-				 PTR lock_id,
-				 UCHAR type,
-				 SSHORT wait,
-				 lock_ast_t ast_routine,
+bool LOCK_convert(PTR lock_id,
+				  UCHAR type,
+				  SSHORT wait,
+				  lock_ast_t ast_routine,
 	void* ast_argument, ISC_STATUS* status_vector)
 {
 /**************************************

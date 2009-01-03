@@ -49,10 +49,10 @@
 using MsgFormat::SafeArg;
 
 
-static ULONG ask(void);
+static ULONG ask();
 static void print_description(const tdr*);
-static void reattach_database(TDR);
-static void reattach_databases(TDR);
+static void reattach_database(tdr*);
+static void reattach_databases(tdr*);
 static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, ULONG);
 
 
@@ -94,8 +94,10 @@ USHORT TDR_analyze(const tdr* trans)
 	else if (state == TRA_unknown)
 		advice = TRA_unknown;
 
-	for (trans = trans->tdr_next; trans; trans = trans->tdr_next) {
-		switch (trans->tdr_state) {
+	for (trans = trans->tdr_next; trans; trans = trans->tdr_next)
+	{
+		switch (trans->tdr_state)
+		{
 			// an explicitly committed transaction necessitates a check for the
 			// perverse case of a rollback, otherwise a commit if at all possible
 
@@ -140,8 +142,7 @@ USHORT TDR_analyze(const tdr* trans)
 
 				return 0;
 			}
-			else
-				advice = TRA_rollback;
+			advice = TRA_rollback;
 			break;
 
 			// a missing TDR indicates a committed transaction if a limbo one hasn't
@@ -180,9 +181,7 @@ USHORT TDR_analyze(const tdr* trans)
 //		Attempt to attach a database with a given pathname.
 //
 
-bool TDR_attach_database(ISC_STATUS* status_vector,
-						 TDR trans,
-						 const TEXT* pathname)
+bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* pathname)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
@@ -195,15 +194,11 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 	dpb.insertTag(isc_dpb_gfix_attach);
 	tdgbl->uSvc->getAddressPath(dpb);
 	if (tdgbl->ALICE_data.ua_user) {
-		dpb.insertString(isc_dpb_user_name,
-						tdgbl->ALICE_data.ua_user,
-						strlen(tdgbl->ALICE_data.ua_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password) {
-		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc :
-							isc_dpb_password,
-						tdgbl->ALICE_data.ua_password,
-						strlen(tdgbl->ALICE_data.ua_password));
+		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+						tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
 	}
 	if (tdgbl->ALICE_data.ua_tr_user) {
 		tdgbl->uSvc->checkService();
@@ -246,11 +241,11 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 //		in a multidatabase transaction.
 //
 
-void TDR_get_states(TDR trans)
+void TDR_get_states(tdr* trans)
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	for (TDR ptr = trans; ptr; ptr = ptr->tdr_next)
+	for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
 		MET_get_state(status_vector, ptr);
 }
 
@@ -262,11 +257,11 @@ void TDR_get_states(TDR trans)
 //		a multidatabase transaction.
 //
 
-void TDR_shutdown_databases(TDR trans)
+void TDR_shutdown_databases(tdr* trans)
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	for (TDR ptr = trans; ptr; ptr = ptr->tdr_next)
+	for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
 		isc_detach_database(status_vector, &ptr->tdr_db_handle);
 }
 
@@ -300,19 +295,20 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 	}
 
     SLONG id;
-   	TDR trans;
+   	tdr* trans;
 	UCHAR* ptr = buffer;
 	bool flag = true;
 
-	while (flag) {
+	while (flag)
+	{
 		const USHORT item = *ptr++;
 		const USHORT length = (USHORT) gds__vax_integer(ptr, 2);
 		ptr += 2;
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_limbo:
 			id = gds__vax_integer(ptr, length);
-			if (switches &
-				(sw_commit | sw_rollback | sw_two_phase | sw_prompt))
+			if (switches & (sw_commit | sw_rollback | sw_two_phase | sw_prompt))
 			{
 				TDR_reconnect_multiple(handle, id, name, switches);
 				ptr += length;
@@ -374,16 +370,13 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 //		gfix user.
 //
 
-bool TDR_reconnect_multiple(FB_API_HANDLE handle,
-							SLONG id,
-							const TEXT* name,
-							ULONG switches)
+bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, ULONG switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
 //  get the state of all the associated transactions
 
-	TDR trans = MET_get_transaction(status_vector, handle, id);
+	tdr* trans = MET_get_transaction(status_vector, handle, id);
 	if (!trans)
 		return reconnect(handle, id, name, switches);
 
@@ -399,8 +392,10 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle,
 		print_description(trans);
 		switches = ask();
 	}
-	else {
-		switch (advice) {
+	else
+	{
+		switch (advice)
+		{
 		case TRA_rollback:
 			if (switches & sw_commit) {
 				ALICE_print(74, SafeArg() << trans->tdr_id);
@@ -473,12 +468,11 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle,
 
 		if (switches & (sw_commit | sw_rollback))
 		{
-			for (TDR ptr = trans; ptr; ptr = ptr->tdr_next)
+			for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
 			{
 				if (ptr->tdr_state == TRA_limbo)
 				{
-					reconnect(ptr->tdr_db_handle,
-							  ptr->tdr_id, ptr->tdr_filename, switches);
+					reconnect(ptr->tdr_db_handle, ptr->tdr_id, ptr->tdr_filename, switches);
 				}
 			}
 		}
@@ -524,8 +518,7 @@ static void print_description(const tdr* trans)
 	{
 		if (ptr->tdr_host_site)
 		{
-			const char* pszHostSize =
-				reinterpret_cast<const char*>(ptr->tdr_host_site->str_data);
+			const char* pszHostSize = reinterpret_cast<const char*>(ptr->tdr_host_site->str_data);
 
 			if (!tdgbl->uSvc->isService())
 			{
@@ -592,8 +585,7 @@ static void print_description(const tdr* trans)
 
 		if (ptr->tdr_remote_site)
 		{
-			const char* pszRemoteSite =
-				reinterpret_cast<const char*>(ptr->tdr_remote_site->str_data);
+			const char* pszRemoteSite = reinterpret_cast<const char*>(ptr->tdr_remote_site->str_data);
 
 			if (!tdgbl->uSvc->isService())
 			{
@@ -605,8 +597,7 @@ static void print_description(const tdr* trans)
 
 		if (ptr->tdr_fullpath)
 		{
-			const char* pszFullpath =
-				reinterpret_cast<const char*>(ptr->tdr_fullpath->str_data);
+			const char* pszFullpath = reinterpret_cast<const char*>(ptr->tdr_fullpath->str_data);
 
 			if (!tdgbl->uSvc->isService())
 			{
@@ -652,7 +643,7 @@ static void print_description(const tdr* trans)
 //		Ask the user whether to commit or rollback.
 //
 
-static ULONG ask(void)
+static ULONG ask()
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	if (tdgbl->uSvc->isService())
@@ -663,7 +654,8 @@ static ULONG ask(void)
 	char response[32];
 	ULONG switches = 0;
 
-	while (true) {
+	while (true)
+	{
 		ALICE_print(85);
 		// msg 85: Commit, rollback, or neither (c, r, or n)?
 		int c;
@@ -695,7 +687,7 @@ static ULONG ask(void)
 //		until the database is successfully attached.
 //
 
-static void reattach_database(TDR trans)
+static void reattach_database(tdr* trans)
 {
 	ISC_STATUS_ARRAY status_vector;
 	char buffer[1024];
@@ -708,17 +700,16 @@ static void reattach_database(TDR trans)
  //  if this is being run from the same host,
  //  try to reconnect using the same pathname
 
-	if (!strcmp(buffer,
-		reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
+	if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
 	{
 		if (TDR_attach_database(status_vector, trans,
-								reinterpret_cast<char*>
-								(trans->tdr_fullpath->str_data)))
+								reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
 		{
 			return;
 		}
 	}
-	else if (trans->tdr_host_site) {
+	else if (trans->tdr_host_site)
+	{
 		//  try going through the previous host with all available
 		//  protocols, using chaining to try the same method of
 		//  attachment originally used from that host
@@ -784,8 +775,7 @@ static void reattach_database(TDR trans)
 		if (TDR_attach_database(status_vector, trans, p))
 		{
 			const size_t p_len = strlen(p);
-			alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(),
-						p_len + 1) alice_str;
+			alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(), p_len + 1) alice_str;
 			strcpy(reinterpret_cast<char*>(string->str_data), p);
 			string->str_length = p_len;
 			trans->tdr_fullpath = string;
@@ -804,9 +794,9 @@ static void reattach_database(TDR trans)
 //		a multidatabase transaction.
 //
 
-static void reattach_databases(TDR trans)
+static void reattach_databases(tdr* trans)
 {
-	for (TDR ptr = trans; ptr; ptr = ptr->tdr_next)
+	for (tdr* ptr = trans; ptr; ptr = ptr->tdr_next)
 		reattach_database(ptr);
 }
 
@@ -817,18 +807,14 @@ static void reattach_databases(TDR trans)
 //		Commit or rollback a named transaction.
 //
 
-static bool reconnect(FB_API_HANDLE handle,
-					  SLONG number,
-					  const TEXT* name,
-					  ULONG switches)
+static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, ULONG switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
 	const SLONG id = gds__vax_integer(reinterpret_cast<const UCHAR*>(&number), 4);
 	FB_API_HANDLE transaction = 0;
 	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
-								   sizeof(id),
-								   reinterpret_cast<const char*>(&id)))
+								   sizeof(id), reinterpret_cast<const char*>(&id)))
 	{
 		ALICE_print(90, SafeArg() << name);
 		// msg 90: failed to reconnect to a transaction in database %s

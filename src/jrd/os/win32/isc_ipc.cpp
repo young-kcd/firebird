@@ -63,7 +63,7 @@
 #define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
-static USHORT initialized_signals = FALSE;
+static bool initialized_signals = false;
 static SLONG volatile overflow_count = 0;
 
 static int process_id = 0;
@@ -211,7 +211,7 @@ void ISC_signal_init(void)
 	if (initialized_signals)
 		return;
 
-	initialized_signals = TRUE;
+	initialized_signals = true;
 
 	overflow_count = 0;
 	gds__register_cleanup(cleanup, 0);
@@ -244,7 +244,7 @@ static void cleanup(void *arg)
 	while (opn_event-- > opn_events)
 		CloseHandle(opn_event->opn_event_lhandle);
 
-	initialized_signals = FALSE;
+	initialized_signals = false;
 }
 
 static void overflow_handler(int signal, int code)

@@ -2880,8 +2880,7 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	f_length = f_type = f_subtype = f_charlength = f_scale = f_seg_length = 0;
 	f_charset = f_collation = f_precision = 0;
 	f_notnull = FALSE;
-	f_scale_null = f_subtype_null = f_charlength_null = f_seg_length_null =
-		TRUE;
+	f_scale_null = f_subtype_null = f_charlength_null = f_seg_length_null = TRUE;
 	f_precision_null = f_charset_null = f_collation_null = f_notnull_null = TRUE;
 	id = drq_s_prms;
 
@@ -4214,8 +4213,7 @@ void DYN_define_sql_field(Global*		gbl,
 			if (RFR.RDB$FIELD_POSITION.NULL == TRUE) {
 				fld_pos = -1;
 				fb_assert(relation_name);
-				DYN_UTIL_generate_field_position(tdbb, gbl, *relation_name,
-												 &fld_pos);
+				DYN_UTIL_generate_field_position(tdbb, gbl, *relation_name, &fld_pos);
 
 				if (fld_pos >= 0) {
 					RFR.RDB$FIELD_POSITION = ++fld_pos;

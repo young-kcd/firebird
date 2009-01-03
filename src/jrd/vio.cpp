@@ -2577,13 +2577,13 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				const USHORT id = MOV_get_long(&desc2, 0);
 				work = DFW_post_work(transaction, dfw_create_procedure, &desc, id);
 
-				SSHORT check_blr = TRUE;
+				bool check_blr = true;
 
 				if (ENCODE_ODS(tdbb->getDatabase()->dbb_ods_version,
 					tdbb->getDatabase()->dbb_minor_original) >= ODS_11_1)
 				{
 					if (EVL_field(0, rpb->rpb_record, f_prc_valid_blr, &desc2))
-						check_blr = MOV_get_long(&desc2, 0);
+						check_blr = MOV_get_long(&desc2, 0) != 0;
 				}
 
 				if (check_blr)

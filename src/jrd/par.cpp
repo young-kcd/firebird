@@ -695,8 +695,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 
 	if (version != blr_version4 && version != blr_version5)
 	{
-		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) <<
-											  Arg::Num(version));
+		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
 	if (version == blr_version4)

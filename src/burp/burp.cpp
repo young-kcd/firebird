@@ -98,8 +98,8 @@ enum gbak_action
 };
 
 static void close_out_transaction(gbak_action, isc_tr_handle*);
-//static void enable_signals(void);
-//static void excp_handler(void);
+//static void enable_signals();
+//static void excp_handler();
 static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
@@ -190,10 +190,10 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 			{
 						   // user name parameter missing
 				BURP_error(inSw->in_sw == IN_SW_BURP_USER ? 188 :
-						   // password parameter missing
-						   inSw->in_sw == IN_SW_BURP_PASS ? 189 :
-						   // service name parameter missing
-						   273, true);
+								// password parameter missing
+						   		inSw->in_sw == IN_SW_BURP_PASS ? 189 :
+									// service name parameter missing
+									273, true);
 			}
 			else
 			{
@@ -921,8 +921,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 		case IN_SW_BURP_PASS:
 		case IN_SW_BURP_FETCHPASS:
-			dpb.insertString(tdgbl->uSvc->isService() ?
-							 isc_dpb_password_enc : isc_dpb_password,
+			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
 			break;
 
@@ -952,15 +951,13 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 
 		case IN_SW_BURP_USER:
-			dpb.insertString(isc_dpb_user_name,
-							 tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+			dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
 			break;
 
 		case IN_SW_BURP_TRUSTED_SVC:
 			uSvc->checkService();
 			dpb.deleteWithTag(isc_dpb_trusted_auth);
-			dpb.insertString(isc_dpb_trusted_auth,
-							 tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+			dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 			break;
 
 		case IN_SW_BURP_TRUSTED_ROLE:
@@ -1056,15 +1053,15 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->action->act_file = NULL;
 	tdgbl->action->act_action = ACT_unknown;
 
-	action = open_files(file1, &file2, tdgbl->gbl_sw_verbose,
-						sw_replace, dpb);
+	action = open_files(file1, &file2, tdgbl->gbl_sw_verbose, sw_replace, dpb);
 
 	MVOL_init(tdgbl->io_buffer_size);
 
 	int result;
 
 	tdgbl->uSvc->started();
-	switch (action) {
+	switch (action)
+	{
 	case RESTORE:
 		tdgbl->gbl_sw_overwrite = (sw_replace == IN_SW_BURP_R);
 		result = RESTORE_restore(file1, file2);
@@ -1112,8 +1109,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		if (file->fil_fd != INVALID_HANDLE_VALUE)
 			close_platf(file->fil_fd);
 		if (exit_code != FINI_OK &&
-			(tdgbl->action->act_action == ACT_backup_split ||
-				tdgbl->action->act_action == ACT_backup))
+			(tdgbl->action->act_action == ACT_backup_split || tdgbl->action->act_action == ACT_backup))
 		{
 			unlink_platf(file->fil_name.c_str());
 		}
@@ -1161,7 +1157,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 
 
-void BURP_abort(void)
+void BURP_abort()
 {
 /**************************************
  *
@@ -1183,9 +1179,7 @@ void BURP_abort(void)
 	BURP_exit_local(FINI_ERROR, tdgbl);
 }
 
-void BURP_error(USHORT errcode,
-				bool abort,
-				const SafeArg& arg)
+void BURP_error(USHORT errcode, bool abort, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1210,9 +1204,7 @@ void BURP_error(USHORT errcode,
 }
 
 
-void BURP_error(USHORT errcode,
-				bool abort,
-				const char* str)
+void BURP_error(USHORT errcode, bool abort, const char* str)
 {
 /**************************************
  *
@@ -1229,9 +1221,7 @@ void BURP_error(USHORT errcode,
 }
 
 
-void BURP_error_redirect(const ISC_STATUS* status_vector,
-							USHORT errcode,
-							const SafeArg& arg)
+void BURP_error_redirect(const ISC_STATUS* status_vector, USHORT errcode, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1258,8 +1248,7 @@ void BURP_exit_local(int code, BurpGlobals* tdgbl)
 }
 
 
-void BURP_msg_partial(	USHORT number,
-						const SafeArg& arg)
+void BURP_msg_partial(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1279,8 +1268,7 @@ void BURP_msg_partial(	USHORT number,
 }
 
 
-void BURP_msg_put(	USHORT number,
-					const SafeArg& arg)
+void BURP_msg_put(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1299,9 +1287,7 @@ void BURP_msg_put(	USHORT number,
 }
 
 
-void BURP_msg_get(	USHORT number,
-					TEXT* output_msg,
-					const SafeArg& arg)
+void BURP_msg_get(USHORT number, TEXT* output_msg, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1339,8 +1325,7 @@ void BURP_output_version(void* arg1, const TEXT* arg2)
 }
 
 
-void BURP_print(USHORT number,
-				const SafeArg& arg)
+void BURP_print(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1360,8 +1345,7 @@ void BURP_print(USHORT number,
 }
 
 
-void BURP_print(USHORT number,
-				const char* str)
+void BURP_print(USHORT number, const char* str)
 {
 /**************************************
  *
@@ -1429,7 +1413,8 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
  *	to allow redirecting output.
  *
  **************************************/
-	if (status_vector) {
+	if (status_vector)
+	{
 		// skip the error, assert that one does not exist
 		fb_assert(status_vector[0] == isc_arg_gds);
 		fb_assert(status_vector[1] == 0);
@@ -1448,8 +1433,7 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 }
 
 
-void BURP_verbose(USHORT number,
-				  const SafeArg& arg)
+void BURP_verbose(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1472,8 +1456,7 @@ void BURP_verbose(USHORT number,
 }
 
 
-void BURP_verbose(USHORT number,
-				  const char* str)
+void BURP_verbose(USHORT number, const char* str)
 {
 /**************************************
  *
@@ -1496,8 +1479,7 @@ void BURP_verbose(USHORT number,
 }
 
 
-static void close_out_transaction(gbak_action action,
-								  isc_tr_handle* handle)
+static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 {
 /**************************************
  *
@@ -1512,9 +1494,9 @@ static void close_out_transaction(gbak_action action,
  *	returned to the system.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
-
-	if (*handle != 0) {
+	if (*handle != 0)
+	{
+		ISC_STATUS_ARRAY status_vector;
 		if (action == RESTORE) {
 			/* Even if the restore failed, commit the transaction so that
 			 * a partial database is at least recovered.
@@ -1535,8 +1517,8 @@ static void close_out_transaction(gbak_action action,
 			 * by never writing data during a backup, but let's double
 			 * ensure it by doing a rollback
 			 */
-		if (isc_rollback_transaction(status_vector, handle))
-			BURP_print_status(status_vector);
+			if (isc_rollback_transaction(status_vector, handle))
+				BURP_print_status(status_vector);
 	}
 }
 
@@ -1597,8 +1579,7 @@ static gbak_action open_files(const TEXT* file1,
 	if (sw_replace != IN_SW_BURP_C && sw_replace != IN_SW_BURP_R)
 	{
 		if (!isc_attach_database(status_vector,
-								  (SSHORT) 0,
-								  file1,
+								  (SSHORT) 0, file1,
 								  &tdgbl->db_handle,
 								  dpb.getBufferLength(),
 								  reinterpret_cast<const char*>(dpb.getBuffer())))
@@ -1629,7 +1610,8 @@ static gbak_action open_files(const TEXT* file1,
 	}
 
 	burp_fil* fil = 0;
-	if (sw_replace == IN_SW_BURP_B) {
+	if (sw_replace == IN_SW_BURP_B)
+	{
 
 		// Now it is safe to skip a db file
 		tdgbl->gbl_sw_backup_files = tdgbl->gbl_sw_files->fil_next;
@@ -1693,8 +1675,8 @@ static gbak_action open_files(const TEXT* file1,
 			{
 
 #ifdef WIN_NT
-				if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_WRITE,
-											 CREATE_ALWAYS)) == INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
+					INVALID_HANDLE_VALUE)
 #else
 				if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_WRITE, open_mask)) == -1)
 #endif // WIN_NT
@@ -1800,11 +1782,10 @@ static gbak_action open_files(const TEXT* file1,
 	{
 		// open first file
 #ifdef WIN_NT
-		if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ, OPEN_EXISTING))
-			== INVALID_HANDLE_VALUE)
-#else
-		if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_READ)) ==
+		if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ, OPEN_EXISTING)) ==
 			INVALID_HANDLE_VALUE)
+#else
+		if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
 		{
 			BURP_error(65, true, fil->fil_name.c_str());
@@ -1833,8 +1814,7 @@ static gbak_action open_files(const TEXT* file1,
 				return QUIT;
 			}
 
-			for (++seq, fil = fil->fil_next; seq <= total;
-				 fil = fil->fil_next, seq++)
+			for (++seq, fil = fil->fil_next; seq <= total; fil = fil->fil_next, seq++)
 			{
 				if (!fil)
 				{
@@ -1850,12 +1830,10 @@ static gbak_action open_files(const TEXT* file1,
 				}
 				tdgbl->action->act_file = fil;
 #ifdef WIN_NT
-				if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ,
-											 OPEN_EXISTING)) ==
+				if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ, OPEN_EXISTING)) ==
 					INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_READ))
-					== INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
 				{
 					BURP_error(65, false, fil->fil_name.c_str());
@@ -1870,8 +1848,7 @@ static gbak_action open_files(const TEXT* file1,
 				}
 				if (MVOL_split_hdr_read())
 				{
-					if ((total != tdgbl->action->act_total) ||
-						(seq != fil->fil_seq) || (seq > total))
+					if ((total != tdgbl->action->act_total) || (seq != fil->fil_seq) || (seq > total))
 					{
 						BURP_error(263, true, fil->fil_name.c_str());
 						// msg 263 file %s out of sequence
@@ -1921,8 +1898,7 @@ static gbak_action open_files(const TEXT* file1,
 
 	if ((sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R) &&
 		!isc_attach_database(status_vector,
-							 (SSHORT) 0,
-							 *file2,
+							 (SSHORT) 0, *file2,
 							 &tdgbl->db_handle,
 							 dpb.getBufferLength(),
 							 reinterpret_cast<const char*>(dpb.getBuffer())))
@@ -2052,7 +2028,7 @@ static void burp_usage(const in_sw_tab_t* in_sw_tab)
 }
 
 
-static ULONG get_size( const SCHAR* string, burp_fil* file)
+static ULONG get_size(const SCHAR* string, burp_fil* file)
 {
 /**********************************************
  *
@@ -2070,19 +2046,24 @@ static ULONG get_size( const SCHAR* string, burp_fil* file)
 	bool digit = false;
 
 	file->fil_size_code = size_n;
-	for (const SCHAR *num = string; c = *num++;) {
+	for (const SCHAR *num = string; c = *num++;)
+	{
 		if (isdigit(c)) {
 			size = size * 10 + (c - '0');
 			digit = true;
 		}
-		else {
-			if (isalpha(c)) {
+		else
+		{
+			if (isalpha(c))
+			{
 				if (!digit) {
 					file->fil_size_code = size_e;
 					size = 0;
 					break;
 				}
-				switch (UPPER(c)) {
+
+				switch (UPPER(c))
+				{
 				case 'K':
 					file->fil_size_code = size_k;
 					break;
@@ -2107,6 +2088,6 @@ static ULONG get_size( const SCHAR* string, burp_fil* file)
 	}
 
 	file->fil_length = size;
-	return (size);
+	return size;
 }
 

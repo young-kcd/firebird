@@ -58,8 +58,7 @@ private:
 
 public:
 	ICU()
-		: inModule(NULL),
-		  ucModule(NULL)
+		: inModule(NULL),  ucModule(NULL)
 	{
 	}
 

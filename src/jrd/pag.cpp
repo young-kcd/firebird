@@ -1376,18 +1376,16 @@ void PAG_header_init(thread_db* tdbb)
 	// Re-enable and recode the check to avoid BUGCHECK messages when database
 	// is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 
-	if (header->hdr_implementation != CLASS &&
-		ods_version < ODS_VERSION11 ?
-		  (header->hdr_implementation < 0 || header->hdr_implementation > CLASS_MAX10 ||
-		   archMatrix10[header->hdr_implementation] == archUnknown ||
-		   archMatrix10[header->hdr_implementation] != archMatrix10[CLASS])
-		:
-		  (header->hdr_implementation < 0 || header->hdr_implementation > CLASS_MAX ||
-		   archMatrix[header->hdr_implementation] == archUnknown ||
-		   archMatrix[header->hdr_implementation] != archMatrix[CLASS])
-	   )
+	if (header->hdr_implementation != CLASS)
 	{
-		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
+		const int classmax = ods_version < ODS_VERSION11 ? CLASS_MAX10 : CLASS_MAX;
+		const ArchitectureType* matrix = ods_version < ODS_VERSION11 ? archMatrix10 : archMatrix;
+		const int hdrImpl = header->hdr_implementation;
+		if (hdrImpl < 0 || hdrImpl > classmax ||
+		   matrix[hdrImpl] == archUnknown || matrix[hdrImpl] != matrix[CLASS])
+		{
+			ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
+		}
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE || header->hdr_page_size > MAX_PAGE_SIZE)
@@ -1445,7 +1443,7 @@ void PAG_init(thread_db* tdbb)
 /* Compute the number of data pages per pointer page.  Each data page
    requires a 32 bit pointer and a 2 bit control field. */
 
-	dbb->dbb_dp_per_pp = 
+	dbb->dbb_dp_per_pp =
 		(dbb->dbb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / (BITS_PER_LONG + 2);
 
 /* Compute the number of records that can fit on a page using the
@@ -2455,7 +2453,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *********************************************/
 	fb_assert(cb);
 
-	const bool isODS11_x = 
+	const bool isODS11_x =
 		(database->dbb_ods_version == ODS_VERSION11 && database->dbb_minor_version >= 1);
 	if (!isODS11_x) {
 		return 0;

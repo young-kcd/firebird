@@ -63,7 +63,8 @@
 using MsgFormat::SafeArg;
 
 
-static const USHORT val_err_table[] = {
+static const USHORT val_err_table[] =
+{
 	0,
 	55,				// msg 55: \n\tNumber of record level errors\t: %ld
 	56,				// msg 56: \tNumber of Blob page errors\t: %ld
@@ -378,7 +379,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			tdgbl->ALICE_data.ua_password = *argv++;
 		}
 
-		if (table->in_sw_value & sw_fetch_password) {
+		if (table->in_sw_value & sw_fetch_password)
+		{
 			if (--argc <= 0) {
 				ALICE_error(14);	// msg 14: password required
 			}
@@ -638,8 +640,7 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 //		Format and print an error message, then punt.
 //
 
-void ALICE_error(USHORT	number,
-				 const SafeArg& arg)
+void ALICE_error(USHORT	number, const SafeArg& arg)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	TEXT buffer[256];

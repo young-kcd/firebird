@@ -101,9 +101,13 @@ protected:
 	void initialize(bool simple_mode = false);
 public:
 	explicit DirectoryList(MemoryPool& p)
-		: ObjectsArray<ParsedPath>(p), mode(NotInitialized) { }
+		: ObjectsArray<ParsedPath>(p), mode(NotInitialized)
+	{ }
+
 	DirectoryList()
-		: ObjectsArray<ParsedPath>(), mode(NotInitialized) { }
+		: ObjectsArray<ParsedPath>(), mode(NotInitialized)
+	{ }
+
 	virtual ~DirectoryList() {clear();}
 
 	// Check, whether Path is inside this DirectoryList

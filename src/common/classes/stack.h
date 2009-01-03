@@ -118,7 +118,8 @@ namespace Firebird {
 
 	public:
 		explicit Stack<Object, Capacity>(MemoryPool& p)
-			: AutoStorage(p), stk(0), stk_cache(0) { }
+			: AutoStorage(p), stk(0), stk_cache(0)
+		{ }
 
 		Stack<Object, Capacity>() : AutoStorage(), stk(0), stk_cache(0) { }
 
@@ -193,9 +194,13 @@ namespace Firebird {
 
 		public:
 			explicit iterator(Stack<Object, Capacity>& s)
-				: stk(s.stk), elem(stk ? stk->getCount() : 0) { }
+				: stk(s.stk), elem(stk ? stk->getCount() : 0)
+			{ }
+
 			iterator(const iterator& i)
-				: stk(i.stk), elem(i.elem) { }
+				: stk(i.stk), elem(i.elem)
+			{ }
+
 			iterator() : stk(0), elem(0) { }
 
 			iterator& operator++()
@@ -294,11 +299,17 @@ namespace Firebird {
 
 		public:
 			explicit const_iterator(const Stack<Object, Capacity>& s)
-				: stk(s.stk), elem(stk ? stk->getCount() : 0) { }
+				: stk(s.stk), elem(stk ? stk->getCount() : 0)
+			{ }
+
 			const_iterator(const iterator& i)
-				: stk(i.stk), elem(i.elem) { }
+				: stk(i.stk), elem(i.elem)
+			{ }
+
 			const_iterator(const const_iterator& i)
-				: stk(i.stk), elem(i.elem) { }
+				: stk(i.stk), elem(i.elem)
+			{ }
+
 			const_iterator() : stk(0), elem(0) { }
 
 			const_iterator& operator++()

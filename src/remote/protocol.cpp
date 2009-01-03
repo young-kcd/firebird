@@ -429,8 +429,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_quad, response->p_resp_blob_id);
 		MAP(xdr_cstring, response->p_resp_data);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector,
-								 reinterpret_cast<char**>(response->p_resp_strings))
-								 ? P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
+								 reinterpret_cast<char**>(response->p_resp_strings)) ?
+								 	P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 
 	case op_transact:
 		trrq = &p->p_trrq;

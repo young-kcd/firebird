@@ -46,7 +46,7 @@ struct dsc
 	typedef UCHAR* address_t;
 
 	dsc()
-	:	dsc_dtype(0),
+		: dsc_dtype(0),
 		dsc_scale(0),
 		dsc_length(0),
 		dsc_sub_type(0),

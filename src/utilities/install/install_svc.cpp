@@ -77,8 +77,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	const TEXT* instance = FB_DEFAULT_INSTANCE;
 
-	TEXT* username = 0;
-	TEXT* password = 0;
+	const TEXT* username = 0;
+	const TEXT* password = 0;
 
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
@@ -214,8 +214,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (sw_version)
 		printf("instsvc version %s\n", GDS_VERSION);
 
-	if (sw_command == COMMAND_NONE ||
-		(username != 0 && sw_command != COMMAND_INSTALL))
+	if (sw_command == COMMAND_NONE || (username != 0 && sw_command != COMMAND_INSTALL))
 	{
 		usage_exit();
 	}
@@ -228,11 +227,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			exit(FINI_ERROR);
 		}
 
-		p = username;
-		while (*p != '\0' && *p != '\\') ++p;
-		if (*p == '\0')
+		const char* limit = username;
+		while (*limit != '\0' && *limit != '\\')
+			++limit;
+
+		if (!*limit)
 		{
-			DWORD cnlen = sizeof(full_username);
+			DWORD cnlen = sizeof(full_username) - 1;
 			GetComputerName(full_username, &cnlen);
 			strcat(full_username, "\\");
 			strncat(full_username, username, sizeof(full_username) - (cnlen + 1));
@@ -270,18 +271,15 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			case FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED :
 				/*
 				// OM - I think it is better not to bother the admin with this message.
-				printf("The 'Logon as a Service' right was already "
-					"granted to %s\n", oem_username);
+				printf("The 'Logon as a Service' right was already granted to %s\n", oem_username);
 				*/
 				break;
 			case FB_SUCCESS :
-				printf("The 'Logon as a Service' right has been "
-					"granted to %s\n", oem_username);
+				printf("The 'Logon as a Service' right has been granted to %s\n", oem_username);
 				break;
 			case FB_FAILURE :
 			default :
-				printf("Failed granting the 'Logon as a Service' right "
-					"to %s\n", oem_username);
+				printf("Failed granting the 'Logon as a Service' right to %s\n", oem_username);
 				exit(FINI_ERROR);
 				break;
 		}
@@ -359,14 +357,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				if (username != 0)
 				{
 					status2 =
-						SERVICES_grant_access_rights(guard_service_name.c_str(),
-													 username, svc_error);
+						SERVICES_grant_access_rights(guard_service_name.c_str(), username, svc_error);
 				}
 
 				if (status == FB_SUCCESS && status2 == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully created.\n",
-						   guard_display_name.c_str());
+					printf("Service \"%s\" successfully created.\n", guard_display_name.c_str());
 				}
 
 				/* Set sw_startup to manual in preparation for install the service */
@@ -394,21 +390,18 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (username != 0)
 			{
 				status2 =
-					SERVICES_grant_access_rights(remote_service_name.c_str(),
-												 username, svc_error);
+					SERVICES_grant_access_rights(remote_service_name.c_str(), username, svc_error);
 			}
 
 			if (status == FB_SUCCESS && status2 == FB_SUCCESS)
 			{
-				printf("Service \"%s\" successfully created.\n",
-					   remote_display_name.c_str());
+				printf("Service \"%s\" successfully created.\n", remote_display_name.c_str());
 			}
 
 			break;
 
 		case COMMAND_REMOVE:
-			service = OpenService(manager, guard_service_name.c_str(),
-								  SERVICE_ALL_ACCESS);
+			service = OpenService(manager, guard_service_name.c_str(), SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
@@ -419,21 +412,18 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully deleted.\n",
-						   guard_display_name.c_str());
+					printf("Service \"%s\" successfully deleted.\n", guard_display_name.c_str());
 				}
 				else if (status == IB_SERVICE_RUNNING)
 				{
-					printf("Service \"%s\" not deleted.\n",
-						   guard_display_name.c_str());
+					printf("Service \"%s\" not deleted.\n", guard_display_name.c_str());
 					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
 			else
 				status = FB_FAILURE;
 
-			service = OpenService(manager, remote_service_name.c_str(),
-								  SERVICE_ALL_ACCESS);
+			service = OpenService(manager, remote_service_name.c_str(), SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
@@ -444,13 +434,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status2 == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully deleted.\n",
-						   remote_display_name.c_str());
+					printf("Service \"%s\" successfully deleted.\n", remote_display_name.c_str());
 				}
 				else if (status2 == IB_SERVICE_RUNNING)
 				{
-					printf("Service \"%s\" not deleted.\n",
-						   remote_display_name.c_str());
+					printf("Service \"%s\" not deleted.\n", remote_display_name.c_str());
 					printf("You must stop it before attempting to delete it.\n\n");
 				}
 			}
@@ -464,8 +452,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		case COMMAND_START:
 			/* Test for use of the guardian. If so, start the guardian else start the server */
-			service = OpenService(manager, guard_service_name.c_str(),
-								  SERVICE_START);
+			service = OpenService(manager, guard_service_name.c_str(), SERVICE_START);
 			if (service)
 			{
 				CloseServiceHandle(service);
@@ -476,8 +463,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully started.\n",
-						   guard_display_name.c_str());
+					printf("Service \"%s\" successfully started.\n", guard_display_name.c_str());
 				}
 			}
 			else
@@ -490,16 +476,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully started.\n",
-						   remote_display_name.c_str());
+					printf("Service \"%s\" successfully started.\n", remote_display_name.c_str());
 				}
 			}
 			break;
 
 		case COMMAND_STOP:
 			/* Test for use of the guardian. If so, stop the guardian else stop the server */
-			service = OpenService(manager, guard_service_name.c_str(),
-								  SERVICE_STOP);
+			service = OpenService(manager, guard_service_name.c_str(), SERVICE_STOP);
 			if (service)
 			{
 				CloseServiceHandle(service);
@@ -510,8 +494,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully stopped.\n",
-						   guard_display_name.c_str());
+					printf("Service \"%s\" successfully stopped.\n", guard_display_name.c_str());
 				}
 			}
 			else
@@ -524,8 +507,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				if (status == FB_SUCCESS)
 				{
-					printf("Service \"%s\" successfully stopped.\n",
-						   remote_display_name.c_str());
+					printf("Service \"%s\" successfully stopped.\n", remote_display_name.c_str());
 				}
 			}
 			break;
@@ -533,10 +515,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		case COMMAND_QUERY:
 			if (svc_query_ex(manager) == FB_FAILURE)
 			{
-				svc_query(guard_service_name.c_str(), guard_display_name.c_str(),
-					  manager);
-				svc_query(remote_service_name.c_str(), remote_display_name.c_str(),
-					  manager);
+				svc_query(guard_service_name.c_str(), guard_display_name.c_str(), manager);
+				svc_query(remote_service_name.c_str(), remote_display_name.c_str(), manager);
 			}
 
 			status = FB_SUCCESS;
@@ -597,8 +577,7 @@ static USHORT svc_query_ex(SC_HANDLE manager)
 				serverServiceName = service_data[i].lpServiceName;
 				if ( serverServiceName.substr(0, 8) == "Firebird" )
 				{
-					svc_query(service_data[i].lpServiceName,
-						service_data[i].lpDisplayName, manager);
+					svc_query(service_data[i].lpServiceName, service_data[i].lpDisplayName, manager);
 
 					firebirdServicesInstalled = true;
 				}
@@ -632,8 +611,7 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 	if (manager == NULL)
 		return;
 
-	SC_HANDLE service =
-		OpenService(manager, name, SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG);
+	SC_HANDLE service = OpenService(manager, name, SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG);
 
 	if (service)
 	{
@@ -738,12 +716,12 @@ static USHORT svc_error( SLONG status, const TEXT* string, SC_HANDLE service)
 		printf("Error occurred during \"%s\".\n", string);
 
 		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-								NULL,
-								status,
-								MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-								buffer,
-								sizeof(buffer),
-								NULL))
+							NULL,
+							status,
+							MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+							buffer,
+							sizeof(buffer),
+							NULL))
 		{
 			printf("Windows NT error %"SLONGFORMAT"\n", status);
 		}

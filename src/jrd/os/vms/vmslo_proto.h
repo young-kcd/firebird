@@ -24,8 +24,7 @@
 #ifndef JRD_VMSLO_PROTO_H
 #define JRD_VMSLO_PROTO_H
 
-bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*,
-						ISC_STATUS*);
+bool	LOCK_convert(SLONG, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
 int		LOCK_deq(SLONG);
 UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
 SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,

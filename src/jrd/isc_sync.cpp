@@ -526,10 +526,10 @@ namespace {
 		SharedFile(const char* pName, UCHAR* address, int length)
 			: fileNum(semTable->addFileByName(pName)), from(address), to(address + length)
 		{ }
-		SharedFile() : fileNum(0), from(0), to(0)
-		{ }
 
-		int getNum() { return fileNum; }
+		SharedFile() : fileNum(0), from(0), to(0) { }
+
+		int getNum() const { return fileNum; }
 
 		static SharedFile* locate(void* s)
 		{

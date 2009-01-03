@@ -91,7 +91,8 @@ int EXE_action(const TEXT* database, const ULONG switches)
 
 		if (tdgbl->status[1] &&
 			// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
-			(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) || tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL)
+			(tdgbl->status[1] != isc_shutdown || !(switches & sw_shut) ||
+				tdgbl->ALICE_data.ua_shutdown_mode != SHUT_FULL)
 		)
 		{
 			error = true;
@@ -156,8 +157,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 
 		FB_API_HANDLE handle = 0;
 		isc_attach_database(tdgbl->status, 0, database, &handle,
-			dpb.getBufferLength(),
-			reinterpret_cast<const SCHAR*>(dpb.getBuffer()));
+			dpb.getBufferLength(), reinterpret_cast<const SCHAR*>(dpb.getBuffer()));
 
 		tdgbl->uSvc->started();
 
@@ -171,9 +171,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 		}
 		else if (switches & (sw_commit | sw_rollback | sw_two_phase))
 		{
-			error = TDR_reconnect_multiple(handle,
-									   tdgbl->ALICE_data.ua_transaction, database,
-									   switches);
+			error = TDR_reconnect_multiple(handle, tdgbl->ALICE_data.ua_transaction, database, switches);
 		}
 
 		if (error)
@@ -223,8 +221,7 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertByte(isc_dpb_verify, b);
 	}
 	else if (switches & sw_housekeeping) {
-		dpb.insertInt(isc_dpb_sweep_interval,
-					  tdgbl->ALICE_data.ua_sweep_interval);
+		dpb.insertInt(isc_dpb_sweep_interval, tdgbl->ALICE_data.ua_sweep_interval);
 	}
 /*
 	else if (switches & sw_begin_log) {
@@ -237,25 +234,22 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 	}
 */
 	else if (switches & sw_buffers) {
-		dpb.insertInt(isc_dpb_set_page_buffers,
-					  tdgbl->ALICE_data.ua_page_buffers);
+		dpb.insertInt(isc_dpb_set_page_buffers, tdgbl->ALICE_data.ua_page_buffers);
 	}
 	else if (switches & sw_kill) {
 		dpb.insertTag(isc_dpb_delete_shadow);
 	}
 	else if (switches & sw_write) {
-		dpb.insertByte(isc_dpb_force_write,
-					   tdgbl->ALICE_data.ua_force ? 1 : 0);
+		dpb.insertByte(isc_dpb_force_write, tdgbl->ALICE_data.ua_force ? 1 : 0);
 	}
 	else if (switches & sw_no_reserve) {
-		dpb.insertByte(isc_dpb_no_reserve,
-					   tdgbl->ALICE_data.ua_no_reserve ? 1 : 0);
+		dpb.insertByte(isc_dpb_no_reserve, tdgbl->ALICE_data.ua_no_reserve ? 1 : 0);
 	}
 	else if (switches & sw_mode) {
-		dpb.insertByte(isc_dpb_set_db_readonly,
-					   tdgbl->ALICE_data.ua_read_only ? 1 : 0);
+		dpb.insertByte(isc_dpb_set_db_readonly, tdgbl->ALICE_data.ua_read_only ? 1 : 0);
 	}
-	else if (switches & sw_shut) {
+	else if (switches & sw_shut)
+	{
 		UCHAR b = 0;
 		if (switches & sw_attach)
 			b |= isc_dpb_shut_attachment;
@@ -265,7 +259,9 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 			b |= isc_dpb_shut_force;
 		else if (switches & sw_tran)
 			b |= isc_dpb_shut_transaction;
-		switch (tdgbl->ALICE_data.ua_shutdown_mode) {
+
+		switch (tdgbl->ALICE_data.ua_shutdown_mode)
+		{
 		case SHUT_NORMAL:
 			b |= isc_dpb_shut_normal;
 			break;
@@ -291,9 +287,11 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		}
 		dpb.insertInt(isc_dpb_shutdown_delay, timeout);
 	}
-	else if (switches & sw_online) {
+	else if (switches & sw_online)
+	{
 		UCHAR b = 0;
-		switch (tdgbl->ALICE_data.ua_shutdown_mode) {
+		switch (tdgbl->ALICE_data.ua_shutdown_mode)
+		{
 		case SHUT_NORMAL:
 			b |= isc_dpb_shut_normal;
 			break;
@@ -318,26 +316,21 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertTag(isc_dpb_no_garbage_collect);
 	}
 	else if (switches & sw_set_db_dialect) {
-		dpb.insertInt(isc_dpb_set_db_sql_dialect,
-					  tdgbl->ALICE_data.ua_db_SQL_dialect);
+		dpb.insertInt(isc_dpb_set_db_sql_dialect, tdgbl->ALICE_data.ua_db_SQL_dialect);
 	}
 
 	if (tdgbl->ALICE_data.ua_user) {
 		dpb.insertString(isc_dpb_user_name,
-						 tdgbl->ALICE_data.ua_user,
-						 strlen(tdgbl->ALICE_data.ua_user));
+						 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password) {
-		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc :
-						 isc_dpb_password,
-						 tdgbl->ALICE_data.ua_password,
-						 strlen(tdgbl->ALICE_data.ua_password));
+		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+						 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
 	}
 	if (tdgbl->ALICE_data.ua_tr_user) {
 		tdgbl->uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_auth,
-						 tdgbl->ALICE_data.ua_tr_user,
-						 strlen(tdgbl->ALICE_data.ua_tr_user));
+						 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
 	}
 	if (tdgbl->ALICE_data.ua_tr_role) {
 		tdgbl->uSvc->checkService();
@@ -375,52 +368,49 @@ static void extract_db_info(const UCHAR* db_info_buffer, size_t buf_size)
 		// fb_assert(length <= MAX_SSHORT);
 		// for all cases that use 'length' as input to 'gds__vax_integer'
 		// Remember to keep this list in sync with the val_errors array.
+		int pos = -1;
+
 		switch (item)
 		{
 		case isc_info_page_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_PAGE_ERRORS;
 			break;
 
 		case isc_info_record_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_RECORD_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_RECORD_ERRORS;
 			break;
 
 		case isc_info_bpage_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_BLOB_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_BLOB_PAGE_ERRORS;
 			break;
 
 		case isc_info_dpage_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_DATA_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_DATA_PAGE_ERRORS;
 			break;
 
 		case isc_info_ipage_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_INDEX_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_INDEX_PAGE_ERRORS;
 			break;
 
 		case isc_info_ppage_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_POINTER_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_POINTER_PAGE_ERRORS;
 			break;
 
 		case isc_info_tpage_errors:
-			tdgbl->ALICE_data.ua_val_errors[VAL_TIP_PAGE_ERRORS] =
-				gds__vax_integer(p, (SSHORT) length);
+			pos = VAL_TIP_PAGE_ERRORS;
 			break;
 
 		case isc_info_error:
 			/* has to be a < V4 database. */
-
 			tdgbl->ALICE_data.ua_val_errors[VAL_INVALID_DB_VERSION] = 1;
 			return;
 
 		default:
 			fb_assert(false);
 		}
+
+		if (pos != -1)
+			tdgbl->ALICE_data.ua_val_errors[pos] = gds__vax_integer(p, (SSHORT) length);
 
 		p += length;
 	}

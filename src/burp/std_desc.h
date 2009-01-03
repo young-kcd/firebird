@@ -35,11 +35,11 @@
 
 typedef HANDLE DESC;
 
-static inline DESC GBAK_STDIN_DESC(void)
+static inline DESC GBAK_STDIN_DESC()
 {
 	return GetStdHandle(STD_INPUT_HANDLE); // standard input file descriptor
 }
-static inline DESC GBAK_STDOUT_DESC(void)
+static inline DESC GBAK_STDOUT_DESC()
 {
 	return GetStdHandle(STD_OUTPUT_HANDLE);	// standard output file descriptor
 }
@@ -48,11 +48,11 @@ static inline DESC GBAK_STDOUT_DESC(void)
 
 typedef int DESC;
 
-static inline DESC GBAK_STDIN_DESC(void)
+static inline DESC GBAK_STDIN_DESC()
 {
 	return 0;	// standard input file descriptor
 }
-static inline DESC GBAK_STDOUT_DESC(void)
+static inline DESC GBAK_STDOUT_DESC()
 {
 	return 1;	// standard output file descriptor
 }

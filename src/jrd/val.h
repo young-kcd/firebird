@@ -53,7 +53,7 @@ class Format : public pool_alloc<type_fmt>
 {
 public:
 	Format(MemoryPool& p, int len)
-	:	fmt_count(len), fmt_desc(p, fmt_count)
+		: fmt_count(len), fmt_desc(p, fmt_count)
 	{
 		fmt_desc.resize(fmt_count);
 	}

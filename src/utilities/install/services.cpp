@@ -64,8 +64,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	char exe_name[MAX_PATH];
 	size_t len = strlen(directory);
 	const char last_char = len ? directory[len - 1] : '\\';
-	const char* exe_format =
-		(last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
+	const char* exe_format = (last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
 
 	int rc = snprintf(exe_name, sizeof(exe_name), exe_format, directory, executable);
 	if (rc == sizeof(exe_name) || rc < 0) {
@@ -110,7 +109,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 
 	if (service == NULL)
 	{
-		DWORD errnum = GetLastError();
+		const DWORD errnum = GetLastError();
 		if (errnum == ERROR_DUP_NAME || errnum == ERROR_SERVICE_EXISTS)
 			return IB_SERVICE_ALREADY_DEFINED;
 
@@ -125,7 +124,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 		typedef BOOL __stdcall proto_config2(SC_HANDLE, DWORD, LPVOID);
 
 		proto_config2* const config2 =
-			(proto_config2*)GetProcAddress(advapi32, "ChangeServiceConfig2A");
+			(proto_config2*) GetProcAddress(advapi32, "ChangeServiceConfig2A");
 
 		if (config2 != 0)
 		{
@@ -177,9 +176,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
  **************************************/
 	SERVICE_STATUS service_status;
 
-	SC_HANDLE service = OpenService(manager,
-									service_name,
-									SERVICE_QUERY_STATUS | DELETE);
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_QUERY_STATUS | DELETE);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -232,9 +229,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *	Start an installed service.
  *
  **************************************/
-	const SC_HANDLE service = OpenService(manager,
-	                                      service_name,
-	                                      SERVICE_START | SERVICE_QUERY_STATUS);
+	const SC_HANDLE service = OpenService(manager, service_name, SERVICE_START | SERVICE_QUERY_STATUS);
 
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
@@ -255,7 +250,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 
 	if (!StartService(service, (mode) ? 1 : 0, &mode))
 	{
-		DWORD errnum = GetLastError();
+		const DWORD errnum = GetLastError();
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_ALREADY_RUNNING)
 			return FB_SUCCESS;
@@ -271,8 +266,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 		if (!QueryServiceStatus(service, &service_status))
 			return (*err_handler) (GetLastError(), "QueryServiceStatus", service);
 		Sleep(100);	// Don't loop too quickly (would be useless)
-	}
-	while (service_status.dwCurrentState == SERVICE_START_PENDING);
+	} while (service_status.dwCurrentState == SERVICE_START_PENDING);
 
 	if (service_status.dwCurrentState != SERVICE_RUNNING)
 		return (*err_handler) (0, "Service failed to complete its startup sequence.", service);
@@ -298,9 +292,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
  *	Stop a running service.
  *
  **************************************/
-	const SC_HANDLE service = OpenService(manager,
-	                                      service_name,
-	                                      SERVICE_STOP | SERVICE_QUERY_STATUS);
+	const SC_HANDLE service = OpenService(manager, service_name, SERVICE_STOP | SERVICE_QUERY_STATUS);
 
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
@@ -309,7 +301,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 
 	if (!ControlService(service, SERVICE_CONTROL_STOP, &service_status))
 	{
-		DWORD errnum = GetLastError();
+		const DWORD errnum = GetLastError();
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_NOT_ACTIVE)
 			return FB_SUCCESS;
@@ -323,8 +315,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 		if (!QueryServiceStatus(service, &service_status))
 			return (*err_handler) (GetLastError(), "QueryServiceStatus", service);
 		Sleep(100);	// Don't loop too quickly (would be useless)
-	}
-	while (service_status.dwCurrentState == SERVICE_STOP_PENDING);
+	} while (service_status.dwCurrentState == SERVICE_STOP_PENDING);
 
 	if (service_status.dwCurrentState != SERVICE_STOPPED)
 		return (*err_handler) (0, "Service failed to complete its stop sequence", service);
@@ -334,7 +325,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	return FB_SUCCESS;
 }
 
-USHORT	SERVICES_status (const char* service_name)
+USHORT SERVICES_status (const char* service_name)
 {
 /**************************************
  *
@@ -383,8 +374,7 @@ USHORT	SERVICES_status (const char* service_name)
 	return status;
 }
 
-USHORT SERVICES_grant_logon_right(TEXT* account,
-							pfnSvcError err_handler)
+USHORT SERVICES_grant_logon_right(const TEXT* account, pfnSvcError err_handler)
 {
 /***************************************************
  *
@@ -425,14 +415,14 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 	cbSid = cchDomain = 0;
 	SID_NAME_USE peUse;
 	LookupAccountName(NULL, account, NULL, &cbSid, NULL, &cchDomain, &peUse);
-	PSID pSid = (PSID)LocalAlloc(LMEM_ZEROINIT, cbSid);
+	PSID pSid = (PSID) LocalAlloc(LMEM_ZEROINIT, cbSid);
 	if (pSid == 0)
 	{
 		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
 		return (*err_handler)(err, "LocalAlloc(Sid)", NULL);
 	}
-	TEXT* pDomain = (LPTSTR)LocalAlloc(LMEM_ZEROINIT, cchDomain);
+	TEXT* pDomain = (LPTSTR) LocalAlloc(LMEM_ZEROINIT, cchDomain);
 	if (pDomain == 0)
 	{
 		DWORD err = GetLastError();
@@ -441,8 +431,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		return (*err_handler)(err, "LocalAlloc(Domain)", NULL);
 	}
 	// Now, really obtain the SID of the user/group.
-	if (LookupAccountName(NULL, account, pSid, &cbSid,
-			pDomain, &cchDomain, &peUse) == 0)
+	if (LookupAccountName(NULL, account, pSid, &cbSid, pDomain, &cchDomain, &peUse) == 0)
 	{
 		DWORD err = GetLastError();
 		LsaClose(PolicyHandle);
@@ -469,8 +458,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 		PrivilegeString.Buffer = L"SeServiceLogonRight";
 		PrivilegeString.Length = (USHORT) 19 * sizeof(WCHAR); // 19 : char len of Buffer
 		PrivilegeString.MaximumLength = (USHORT)(19 + 1) * sizeof(WCHAR);
-		if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1))
-			!= (NTSTATUS)0)
+		if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1)) != (NTSTATUS) 0)
 		{
 			LsaClose(PolicyHandle);
 			LocalFree(pSid);
@@ -494,8 +482,7 @@ USHORT SERVICES_grant_logon_right(TEXT* account,
 }
 
 
-USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
-	pfnSvcError err_handler)
+USHORT SERVICES_grant_access_rights(const char* service_name, const TEXT* account, pfnSvcError err_handler)
 {
 /*********************************************************
  *
@@ -525,8 +512,7 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	// not allowed to do this. Administrators should be allowed, by default.
 	// CVC: Only GetNamedSecurityInfoEx has the first param declared const, so we need
 	// to make the compiler happy after Blas' cleanup.
-	if (GetNamedSecurityInfo(const_cast<CHAR*>(service_name), SE_SERVICE,
-		DACL_SECURITY_INFORMATION,
+	if (GetNamedSecurityInfo(const_cast<CHAR*>(service_name), SE_SERVICE, DACL_SECURITY_INFORMATION,
 		NULL /*Owner Sid*/, NULL /*Group Sid*/,
 		&pOldDACL, NULL /*Sacl*/, &pSD) != ERROR_SUCCESS)
 	{
@@ -542,7 +528,7 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
 	ea.Trustee.TrusteeForm = TRUSTEE_IS_NAME;
 	ea.Trustee.TrusteeType = TRUSTEE_IS_USER;
-	ea.Trustee.ptstrName = account;
+	ea.Trustee.ptstrName = const_cast<char*>(account); // safe
 
 	// Create a new DACL, adding this right to whatever exists.
 	PACL pNewDACL = NULL;
@@ -554,8 +540,7 @@ USHORT SERVICES_grant_access_rights(const char* service_name, TEXT* account,
 	}
 
 	// Updates the new rights in the object
-	if (SetNamedSecurityInfo(const_cast<CHAR*>(service_name), SE_SERVICE,
-		DACL_SECURITY_INFORMATION,
+	if (SetNamedSecurityInfo(const_cast<CHAR*>(service_name), SE_SERVICE, DACL_SECURITY_INFORMATION,
 		NULL /*Owner Sid*/, NULL /*Group Sid*/,
 		pNewDACL, NULL /*Sacl*/) != ERROR_SUCCESS)
 	{

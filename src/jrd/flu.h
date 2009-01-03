@@ -59,7 +59,9 @@ namespace Jrd
 
 /*			explicit InternalModule(MemoryPool& p)
 				: useCount(0), handle(0),
-				originalName(p), loadName(p) { } */
+				originalName(p), loadName(p)
+			{ }
+*/
 			InternalModule(MemoryPool& p,
 						   ModuleLoader::Module* h,
 						   const Firebird::PathName& on,

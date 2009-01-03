@@ -122,13 +122,10 @@ USHORT REGISTRY_remove(HKEY hkey_rootnode,
 	}
 
 	// Remove the FB_DEFAULT_INSTANCE value
-	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE))
-		!= ERROR_SUCCESS)
+	if ((status = RegDeleteValue(hkey_instances, FB_DEFAULT_INSTANCE)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(hkey_instances);
-		if (silent_flag)
-			return FB_FAILURE;
-		return (*err_handler) (status, "RegDeleteValue", NULL);
+		return silent_flag ? FB_FAILURE : (*err_handler) (status, "RegDeleteValue", NULL);
 	}
 
 	RegCloseKey(hkey_instances);

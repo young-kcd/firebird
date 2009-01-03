@@ -21,7 +21,8 @@ class InterlockedStringsBuffer : public CircularBuffer
 {
 public:
 	explicit InterlockedStringsBuffer(Firebird::MemoryPool&)
-		: CircularBuffer() { }
+		: CircularBuffer()
+	{ }
 	virtual const char* alloc(const char* string, size_t& length)
 	{
 		Firebird::MutexLockGuard guard(buffer_lock);
@@ -175,7 +176,8 @@ void status_exception::release_vector() throw()
 		if (type == isc_arg_end)
 			break;
 
-		switch (type) {
+		switch (type)
+		{
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);
@@ -361,10 +363,13 @@ void system_call_failed::raise(const char* syscall)
 fatal_exception::fatal_exception(const char* message) :
 	status_exception(0, false)
 {
-	ISC_STATUS temp[] = {isc_arg_gds,
-						isc_random,
-						isc_arg_string, dupStringTemp(message),
-						isc_arg_end};
+	const ISC_STATUS temp[] =
+						{
+							isc_arg_gds,
+							isc_random,
+							isc_arg_string, dupStringTemp(message),
+							isc_arg_end
+						};
 	set_status(temp, false);
 }
 

@@ -65,7 +65,7 @@ public:
 	public:
 		explicit Accessor(GenericMap* map) : m_Accessor(&map->tree) {}
 
-		KeyValuePair* current() const { return m_Accessor.current(); }			
+		KeyValuePair* current() const { return m_Accessor.current(); }
 
 		bool getFirst() { return m_Accessor.getFirst(); }
 		bool getNext() { return m_Accessor.getNext(); }
@@ -82,7 +82,8 @@ public:
 	GenericMap() : tree(&getPool()), mCount(0) { }
 
 	explicit GenericMap(MemoryPool& a_pool)
-		: AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
+		: AutoStorage(a_pool), tree(&getPool()), mCount(0)
+	{ }
 
 	~GenericMap()
 	{
