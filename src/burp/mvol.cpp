@@ -546,7 +546,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 			}
 		}
 
-		const DWORD nBytesToWrite =
+		const size_t nBytesToWrite =
 			(tdgbl->action->act_action == ACT_backup_split &&
 				tdgbl->action->act_file->fil_length < left) ?
 			 		tdgbl->action->act_file->fil_length : left;
@@ -556,7 +556,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 #else
 
 		DWORD ret = 0;
-		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite, &cnt, NULL))
+		if (!WriteFile(tdgbl->file_desc, ptr, (DWORD) nBytesToWrite, &cnt, NULL))
 		{
 			ret = GetLastError();
 		}
@@ -1282,15 +1282,15 @@ static bool write_header(DESC   handle,
 	{
 #ifdef WIN_NT
 		DWORD bytes_written = 0;
-		const DWORD ret = WriteFile(handle, tdgbl->mvol_io_header,
-									tdgbl->mvol_io_buffer_size, &bytes_written, NULL);
+		const bool err = WriteFile(handle, tdgbl->mvol_io_header,
+									tdgbl->mvol_io_buffer_size, &bytes_written, NULL) == 0;
 #else
 		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
-		const DWORD ret = TRUE;
+		const bool err = false;
 #endif // WIN_NT
 
-		if (!ret || bytes_written != tdgbl->mvol_io_buffer_size)
+		if (err || bytes_written != tdgbl->mvol_io_buffer_size)
 		{
 			return false;
 		}
