@@ -1511,7 +1511,7 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		stuff_exception(user_status, ex);
 	}
 
-	return user_status[1];
+	return *tra_handle ? user_status[1] : FB_SUCCESS;
 }
 
 
@@ -1543,7 +1543,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		stuff_exception(user_status, ex);
 	}
 
-	return user_status[1];
+	return *tra_handle ? user_status[1] : FB_SUCCESS;
 }
 
 
@@ -2734,7 +2734,7 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
 		stuff_exception(user_status, ex);
 	}
 
-	return user_status[1];
+	return *tra_handle ? user_status[1] : FB_SUCCESS;
 }
 
 
@@ -2766,7 +2766,7 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, jrd_tra** tra_handle)
 		stuff_exception(user_status, ex);
 	}
 
-	return user_status[1];
+	return *tra_handle ? user_status[1] : FB_SUCCESS;
 }
 
 
