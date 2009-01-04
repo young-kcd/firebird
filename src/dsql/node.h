@@ -1105,7 +1105,9 @@ enum nod_flags_vals {
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,
 	NOD_TRAN_2PC = 3,
-	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON
+	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON,
+
+	NOD_CONST_SPECIAL	= 1			// nod_constant
 };
 
 } // namespace

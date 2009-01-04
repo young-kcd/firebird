@@ -56,7 +56,7 @@ namespace Jrd {
 }
 
 
-Jrd::dsql_nod* MAKE_const_slong(SLONG);
+Jrd::dsql_nod* MAKE_const_slong(SLONG, bool special = false);
 Jrd::dsql_nod* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
 Jrd::dsql_nod* MAKE_str_constant(Jrd::dsql_str*, SSHORT);
 Jrd::dsql_str* MAKE_cstring(const char*);

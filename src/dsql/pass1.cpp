@@ -10100,6 +10100,9 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			return field;
 
 		case nod_constant:
+			// ASF: Do not remap non-user constants - CORE-2265.
+			return (field->nod_flags & NOD_CONST_SPECIAL) ? field : post_map(field, context);
+
 		case nod_dbkey:
 			return post_map(field, context);
 

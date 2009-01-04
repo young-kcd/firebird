@@ -93,12 +93,13 @@ static void make_parameter_names(dsql_par*, const dsql_nod*);
 static const char* DB_KEY_NAME = "DB_KEY";
 
 
-dsql_nod* MAKE_const_slong(SLONG value)
+dsql_nod* MAKE_const_slong(SLONG value, bool special)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_constant;
+	node->nod_flags = special ? NOD_CONST_SPECIAL : 0;
 	node->nod_desc.dsc_dtype = dtype_long;
 	node->nod_desc.dsc_length = sizeof(SLONG);
 	node->nod_desc.dsc_scale = 0;
