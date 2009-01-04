@@ -486,7 +486,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 }
 
 
-DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool &notNull)
+DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool& notNull)
 {
 	SET_TDBB(tdbb);
 	fb_assert(idx->idx_expression != NULL);
@@ -3070,7 +3070,7 @@ static void delete_tree(thread_db* tdbb,
 }
 
 
-static DSC *eval(thread_db* tdbb, jrd_nod* node, DSC * temp, bool *isNull)
+static DSC* eval(thread_db* tdbb, jrd_nod* node, DSC* temp, bool* isNull)
 {
 /**************************************
  *
