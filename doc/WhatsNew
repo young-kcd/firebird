@@ -12,6 +12,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-2241
+        Wrong number of records fetched when using index
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2234
         Sometimes terminated worker processes in Classic are still considered being alive
       Contributor(s):
