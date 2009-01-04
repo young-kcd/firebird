@@ -64,6 +64,10 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 
+#ifdef SOLARIS
+#include <nan.h>
+#endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -7066,6 +7070,39 @@ static processing_state passthrough(const char* cmd)
 }
 #endif
 
+static bool checkSpecial(TEXT* const p, const int length, const double value)
+{
+/**************************************
+ *
+ *	c h e c k S p e c i a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Special case - Nan and Infinity.
+ *	Some libraries (SFIO) work wrong with them.
+ *
+ **************************************/
+	const TEXT* t = NULL;
+#ifdef SOLARIS
+	if (IsNANorINF(value))
+	{
+	    t = IsINF(value) ? "Infinity" : "NaN";
+	}
+#endif
+	if (! t)
+	{
+	    return false;
+	}
+
+	if (List) {
+		isqlGlob.printf("%s%s", t, NEWLINE);
+	}
+	sprintf(p, "%*.*s ", length, length, t);
+
+	return true;
+}
+
 
 static SSHORT print_item(TEXT** s,
 						 XSQLVAR* var,
@@ -7215,6 +7252,12 @@ static SSHORT print_item(TEXT** s,
 				// The bug appears in TCS DSQL_DOMAIN_12 and 13
 				//
 				const double value = (double) *(float*) var->sqldata;
+
+				if (checkSpecial(p, length, value))
+				{
+				    break;
+				}
+
 #if defined(MINGW)
 				if (value == 0) {
 					sprintf(p, "% #*.*g ", length,
@@ -7248,6 +7291,12 @@ static SSHORT print_item(TEXT** s,
 		case SQL_DOUBLE:
 			{
 				const double value = *(double*) var->sqldata;
+
+				if (checkSpecial(p, length, value))
+				{
+				    break;
+				}
+
 				// Don't let numeric/decimal doubles overflow print length
 				// Special handling for 0 -- don't test log for length
 				int rounded = 0;

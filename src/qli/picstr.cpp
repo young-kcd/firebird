@@ -24,6 +24,11 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+
+#ifdef SOLARIS
+#include <nan.h>
+#endif
+
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/format.h"
@@ -716,6 +721,14 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		negative = true;
 		number = -number;
 	}
+
+#ifdef SOLARIS
+	if (IsNANorINF(number))
+	{
+	    sprintf(temp, IsINF(number) ? "Infinity" : "NaN");
+	}
+	else 
+#endif
 
 /* If exponents are explicitly requested (E-format edit_string), generate them.
    Otherwise, the rules are: if the number in f-format will fit into the allotted
