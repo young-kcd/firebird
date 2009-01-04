@@ -1,3 +1,10 @@
+2009-01-04 14:59  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.21):
+
+	Backport fix for bug CORE-2241 : Wrong number of records fetched
+	when using index
+
 2009-01-02 07:46  robocop
 
 	* firebird2/src/qli/meta.epp (1.60.4.2):
