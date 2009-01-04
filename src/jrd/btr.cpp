@@ -2841,7 +2841,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 #endif
 	);
 	memcpy(temp, page, dbb->dbb_page_size);
-	UCHAR* p = temp + dbb->dbb_page_size;
+	UCHAR* p = (UCHAR*) page + dbb->dbb_page_size;
 
 	index_root_page::irt_repeat* root_idx = page->irt_rpt;
 	for (const index_root_page::irt_repeat* const end = root_idx + page->irt_count;
@@ -2855,14 +2855,13 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 				len = root_idx->irt_keys * sizeof(irtd);
 
 			p -= len;
-			memcpy(p, (SCHAR*)page + root_idx->irt_desc, len);
-			root_idx->irt_desc = p - temp;
+			memcpy(p, temp + root_idx->irt_desc, len);
+			root_idx->irt_desc = p - (UCHAR*) page;
 		}
 	}
-	const USHORT l = p - temp;
 	tdbb->getDefaultPool()->deallocate(temp);
 
-	return l;
+	return p - (UCHAR*) page;
 }
 
 
