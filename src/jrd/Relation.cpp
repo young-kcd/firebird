@@ -125,12 +125,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			return &rel_pages_base;
 	}
 	else
-	{
-		if (tdbb->tdbb_temp_attid)
-			inst_id = tdbb->tdbb_temp_attid;
-		else
-			inst_id = PAG_attachment_id(tdbb);
-	}
+		inst_id = PAG_attachment_id(tdbb);
 
 	if (!rel_pages_inst)
 	{

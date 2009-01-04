@@ -669,7 +669,7 @@ public:
 		request = NULL;
 		tdbb_quantum = QUANTUM;
 		tdbb_flags = 0;
-		tdbb_temp_attid = tdbb_temp_traid = 0;
+		tdbb_temp_traid = 0;
 		QUE_INIT(tdbb_latches);
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 
@@ -680,7 +680,6 @@ public:
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 
-	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
 
 	que			tdbb_latches;		// shared latches held by thread
