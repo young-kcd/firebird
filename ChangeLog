@@ -1,3 +1,23 @@
+2009-01-04 19:41  asfernandes
+
+	* firebird2/src/dsql/: make.cpp (1.178), make_proto.h (1.34),
+	node.h (1.121), parse.y (1.296), pass1.cpp (1.428):
+
+	Fixed CORE-2265 - Grouping by function doesn't work properly (This
+	is related to CORE-1246 changes)
+
+2009-01-04 18:46  alexpeshkoff
+
+	* firebird2/src/: isql/isql.epp (1.260), qli/picstr.cpp (1.34):
+
+	Solaris port
+
+2009-01-03 21:44  asfernandes
+
+	* firebird2/src/burp/mvol.cpp (1.59):
+
+	Correction
+
 2009-01-03 20:04  asfernandes
 
 	* firebird2/src/dsql/make.cpp (1.177):
