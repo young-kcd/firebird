@@ -268,8 +268,7 @@ static void expand_global_field( DUDLEY_FLD field)
 	context->ctx_field = field;
 
 	field->fld_computed = resolve(field->fld_computed, request_context, 0);
-	field->fld_validation =
-		resolve(field->fld_validation, request_context, 0);
+	field->fld_validation = resolve(field->fld_validation, request_context, 0);
 
 	context->ctx_field = 0;
 }
@@ -320,7 +319,7 @@ static void expand_relation( DUDLEY_REL relation)
 		rse = relation->rel_rse;
 		contexts = (dudley_lls*) rse->nod_arg[s_rse_contexts];
 		my_context = lookup_context(NULL, contexts);
-		my_context->ctx_view_rse = TRUE;
+		my_context->ctx_view_rse = true;
 
 		/* drop view context from context stack & build the request stack */
 
@@ -339,7 +338,7 @@ static void expand_relation( DUDLEY_REL relation)
 		/* Put view context back on stack for global field resolution to follow */
 
 		LLS_PUSH((DUDLEY_NOD) my_context, &request_context);
-		my_context->ctx_view_rse = FALSE;
+		my_context->ctx_view_rse = false;
 	}
 }
 
@@ -747,8 +746,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 			node->nod_arg[s_stt_default] = resolve(sub, right, 0);
 		resolve_rse(node->nod_arg[s_stt_rse], &right);
 		if (node->nod_arg[s_stt_value])
-			node->nod_arg[s_stt_value] =
-				resolve(node->nod_arg[s_stt_value], right, 0);
+			node->nod_arg[s_stt_value] = resolve(node->nod_arg[s_stt_value], right, 0);
 		return node;
 
 	case nod_unique:
@@ -794,8 +792,7 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 		context->ctx_context_id = ++context_id;
 		context->ctx_relation = old_context->ctx_relation;
 		LLS_PUSH((DUDLEY_NOD) context, &left);
-		node->nod_arg[s_mod_action] =
-			resolve(node->nod_arg[s_mod_action], right, left);
+		node->nod_arg[s_mod_action] = resolve(node->nod_arg[s_mod_action], right, left);
 		return node;
 
 	case nod_index:

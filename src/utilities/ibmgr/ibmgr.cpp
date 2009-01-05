@@ -855,8 +855,7 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 	ibmgr_data.suboperation = SOP_NONE;
 	ibmgr_data.par_entered = 0;
 
-	SSHORT ret =
-		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
+	SSHORT ret = get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
 	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
@@ -864,7 +863,8 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 		}
 		return ACT_NONE;
 	}
-	switch (ibmgr_data.operation) {
+	switch (ibmgr_data.operation)
+	{
 	case OP_SHUT:
 		if (strcmp(ibmgr_data.user, SYSDBA_USER_NAME)) {
 			SRVRMGR_msg_get(MSG_NOPERM, msg);
@@ -886,9 +886,9 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 
 	case OP_START:
 		if ((strcmp(ibmgr_data.real_user, "root") &&
-			 strcmp(ibmgr_data.real_user, FIREBIRD_USER_NAME) &&
-			 strcmp(ibmgr_data.real_user, INTERBASE_USER_NAME) &&
-			 strcmp(ibmgr_data.real_user, INTERBASE_USER_SHORT)) ||
+				strcmp(ibmgr_data.real_user, FIREBIRD_USER_NAME) &&
+				strcmp(ibmgr_data.real_user, INTERBASE_USER_NAME) &&
+				strcmp(ibmgr_data.real_user, INTERBASE_USER_SHORT)) ||
 			strcmp(ibmgr_data.user, SYSDBA_USER_NAME))
 		{
 			SRVRMGR_msg_get(MSG_NOPERM, msg);

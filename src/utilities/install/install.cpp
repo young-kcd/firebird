@@ -209,8 +209,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		if (kernel32 != 0)
 		{
 			typedef BOOL __stdcall proto_ntmove(LPCSTR, LPCSTR, DWORD);
-			proto_ntmove* ntmove =
-				(proto_ntmove*)GetProcAddress(kernel32, "MoveFileExA");
+			proto_ntmove* ntmove = (proto_ntmove*)GetProcAddress(kernel32, "MoveFileExA");
 			if (ntmove != 0)
 			{
 				// We are definitely running on a system supporting the

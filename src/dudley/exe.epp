@@ -1239,7 +1239,7 @@ static void add_global_field( DUDLEY_FLD field)
 			if (DTYPE_IS_TEXT(make_dtype(desc.dsc_dtype))) {
 				field->fld_scale = 0;
 				field->fld_sub_type = desc.dsc_ttype();
-				field->fld_has_sub_type = TRUE;
+				field->fld_has_sub_type = true;
 			}
 			else {
 				field->fld_sub_type = 0;
@@ -1746,10 +1746,8 @@ static void add_user_privilege( USERPRIV upriv)
 					store_userpriv(upriv, grantor, priv, usr, upf);
 				else
 					/* update is the only privilege with a possible field list */
-					for (upf = upriv->userpriv_upflist; upf;
-						 upf =
-						 upf->upfe_next) store_userpriv(upriv, grantor, priv,
-														usr, upf);
+					for (upf = upriv->userpriv_upflist; upf; upf =upf->upfe_next)
+						store_userpriv(upriv, grantor, priv, usr, upf);
 
 				continue;
 			}
@@ -2683,10 +2681,8 @@ static void drop_user_privilege( USERPRIV upriv)
 					erase_userpriv(upriv, priv, usr, upf);
 				else
 					/* update is the only privilege with a possible field list */
-					for (upf = upriv->userpriv_upflist; upf;
-						 upf =
-						 upf->upfe_next) erase_userpriv(upriv, priv, usr,
-														upf);
+					for (upf = upriv->userpriv_upflist; upf; upf = upf->upfe_next)
+						erase_userpriv(upriv, priv, usr, upf);
 			}
 
 			/* don't call erase_userpriv if we just finished update */
@@ -2850,10 +2846,8 @@ static void get_relations( DBB databaseL)
 			field->fld_next = relation->rel_fields;
 			relation->rel_fields = field;
 			field->fld_position = RFR.RDB$FIELD_POSITION;
-			relation->rel_field_position =
-				MAX(RFR.RDB$FIELD_POSITION, relation->rel_field_position);
-			field->fld_source =
-				HSH_typed_lookup(RFR.RDB$FIELD_SOURCE, (USHORT) 0, SYM_global);
+			relation->rel_field_position = MAX(RFR.RDB$FIELD_POSITION, relation->rel_field_position);
+			field->fld_source = HSH_typed_lookup(RFR.RDB$FIELD_SOURCE, (USHORT) 0, SYM_global);
 		END_FOR;
 	END_FOR;
 }
@@ -2971,16 +2965,13 @@ static void get_triggers( DBB databaseL)
 		T.RDB$SYSTEM_FLAG = 0
 
 		trigger = (DUDLEY_TRG) DDL_alloc(sizeof(dudley_trg));
-		trigger->trg_name = symbol =
-			get_symbol(SYM_trigger, T.RDB$TRIGGER_NAME, (DUDLEY_CTX) trigger);
+		trigger->trg_name = symbol = get_symbol(SYM_trigger, T.RDB$TRIGGER_NAME, (DUDLEY_CTX) trigger);
 		HSH_insert(symbol);
-		rel_name =
-			HSH_typed_lookup(T.RDB$RELATION_NAME, (USHORT) 0, SYM_relation);
+		rel_name = HSH_typed_lookup(T.RDB$RELATION_NAME, (USHORT) 0, SYM_relation);
 		if (rel_name && rel_name->sym_object)
 			trigger->trg_relation = (DUDLEY_REL) rel_name->sym_object;
 		else
-			trigger->trg_relation =
-				(DUDLEY_REL) get_symbol(SYM_relation, T.RDB$RELATION_NAME, NULL);
+			trigger->trg_relation = (DUDLEY_REL) get_symbol(SYM_relation, T.RDB$RELATION_NAME, NULL);
 		trigger->trg_type = (TRG_T) T.RDB$TRIGGER_TYPE;
 		trigger->trg_inactive = T.RDB$TRIGGER_INACTIVE;
 		trigger->trg_sequence = T.RDB$TRIGGER_SEQUENCE;
@@ -3005,8 +2996,7 @@ static void get_udfs( DBB dbb)
 		FUN.RDB$RETURN_ARGUMENT EQ ARG.RDB$ARGUMENT_POSITION
 		FUNC function = (FUNC) DDL_alloc(sizeof(func));
 		function->func_database = dbb;
-		SYM symbol =
-			get_symbol(SYM_function, FUN.RDB$FUNCTION_NAME, (DUDLEY_CTX) function);
+		SYM symbol = get_symbol(SYM_function, FUN.RDB$FUNCTION_NAME, (DUDLEY_CTX) function);
 		function->func_name = symbol;
 		HSH_insert(symbol);
 		FUNCARG arg = (FUNCARG) DDL_alloc(sizeof(funcarg));
@@ -3150,8 +3140,7 @@ static void make_desc( DUDLEY_NOD node, DSC * desc)
 			desc->dsc_dtype = blr_long;
 			desc->dsc_length = sizeof(SLONG);
 			desc->dsc_sub_type = 0;
-			desc->dsc_scale = C_NUMERIC_SCALE(desc1) +
-								C_NUMERIC_SCALE(desc2);
+			desc->dsc_scale = C_NUMERIC_SCALE(desc1) + C_NUMERIC_SCALE(desc2);
 			return;
 		}
 		desc->dsc_dtype = blr_double;
@@ -3798,8 +3787,7 @@ static void set_generator( DUDLEY_NOD node)
 	new_val = *number;
 	*number = 0;
 
-	current_blr.str_current = current_blr.str_start =
-		reinterpret_cast<UCHAR *>(gds__alloc(1028));
+	current_blr.str_current = current_blr.str_start = reinterpret_cast<UCHAR*>(gds__alloc(1028));
 	if (!current_blr.str_current) {
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	}
@@ -3825,8 +3813,7 @@ static void set_generator( DUDLEY_NOD node)
    want to change the generator by */
 
 	*number = new_val - gen_value;
-	new_blr.str_current = new_blr.str_start =
-		reinterpret_cast<UCHAR*>(gds__alloc(1028));
+	new_blr.str_current = new_blr.str_start = reinterpret_cast<UCHAR*>(gds__alloc(1028));
 	if (!new_blr.str_current) {
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	}
@@ -3918,8 +3905,7 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 	ISC_STATUS_ARRAY status_vector;
 	FB_API_HANDLE handle;
 
-	blr.str_current = blr.str_start =
-		reinterpret_cast<UCHAR*>(gds__alloc(4096));
+	blr.str_current = blr.str_start = reinterpret_cast<UCHAR*>(gds__alloc(4096));
 	if (!blr.str_current)
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	blr.str_length = 4096;

@@ -2548,8 +2548,7 @@ static void modify_relation(void)
 						field->fld_dtype = global->fld_dtype;
 						field->fld_length = global->fld_length;
 						field->fld_scale = global->fld_scale;
-						field->fld_segment_length =
-							global->fld_segment_length;
+						field->fld_segment_length = global->fld_segment_length;
 						field->fld_sub_type = global->fld_sub_type;
 						field->fld_has_sub_type = global->fld_has_sub_type;
 					}
@@ -3500,7 +3499,7 @@ static void parse_field_subtype( DUDLEY_FLD field)
 	else
 		field->fld_sub_type = PARSE_number();
 
-	field->fld_has_sub_type = TRUE;
+	field->fld_has_sub_type = true;
 }
 
 
@@ -4134,7 +4133,7 @@ static void validate_field( DUDLEY_FLD field)
 		if ((field->fld_dtype) && !(field->fld_computed))
 			fb_msg_format(0, DDL_MSG_FAC, 223, sizeof(option), option, dummy);
 		/* msg 223: data type */
-		if ((field->fld_has_sub_type) && !(field->fld_computed))
+		if (field->fld_has_sub_type && !(field->fld_computed))
 			fb_msg_format(0, DDL_MSG_FAC, 224, sizeof(option), option, dummy);
 		/* msg 224: sub type */
 		if ((field->fld_segment_length) && !(field->fld_computed))
@@ -4151,8 +4150,7 @@ static void validate_field( DUDLEY_FLD field)
 	if (field->fld_flags & fld_modify)
 		return;
 
-	if ((field->fld_has_sub_type) &&
-		(field->fld_dtype != blr_blob) &&
+	if (field->fld_has_sub_type && (field->fld_dtype != blr_blob) &&
 		(field->fld_dtype != blr_text) && (field->fld_dtype != blr_varying))
 	{
 		PARSE_error(228, 0, 0);	/* msg 228: subtypes are valid only for blobs and text */

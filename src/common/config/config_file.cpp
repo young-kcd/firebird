@@ -82,8 +82,7 @@ bool ConfigFile::stripComments(string& s) const
 			if (!inString) // we finished a quoted string
 			{
 				// We don't want trash after closing the quoted string, except comments
-				const string::size_type startPos =
-					s.find_first_not_of(" \t\r", iter + 1 - s.begin());
+				const string::size_type startPos = s.find_first_not_of(" \t\r", iter + 1 - s.begin());
 				if (startPos == string::npos || s[startPos] == '#')
 				{
 					s = s.substr(0, iter + 1 - s.begin());
@@ -231,8 +230,8 @@ void ConfigFile::loadConfig()
 #ifdef EXCEPTION_ON_NO_CONF
 		if (fExceptionOnError)
 		{
-			Firebird::string Msg = "Missing configuration file: " +
-				configFile.ToString() + ", exiting";
+			const Firebird::string Msg =
+				"Missing configuration file: " + configFile.ToString() + ", exiting";
 			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg.c_str());
 			Firebird::fatal_exception::raise(Msg.c_str());
 		}
@@ -255,11 +254,11 @@ void ConfigFile::loadConfig()
 
 		if (!goodLine || inputLine.find('=') == string::npos)
 		{
-			Firebird::string Msg = (configFile + ": illegal line \"" +
-				inputLine + "\"").ToString();
+			const Firebird::string Msg =
+				(configFile + ": illegal line \"" + inputLine + "\"").ToString();
 			Firebird::Syslog::Record(fExceptionOnError ?
-					Firebird::Syslog::Error :
-					Firebird::Syslog::Warning, Msg.c_str());
+										Firebird::Syslog::Error : Firebird::Syslog::Warning,
+									Msg.c_str());
 #ifdef EXCEPTION_ON_NO_CONF
 			BadLinesCount++;
 #endif

@@ -120,27 +120,22 @@ const size_t b_fil_len = sizeof(b_fil);
 	******************************************************
 	*/
 
-static int conv_ntoc(SLONG, TEXT *);
+static int conv_ntoc(SLONG, TEXT*);
 static int free_file_list(b_fil*);
 static int final_flush_io_buff(const UCHAR*, SLONG, FILE_DESC);
-static int final_read_and_write(FILE_DESC, FILE_DESC,
-								const TEXT*, SLONG, UCHAR **, bool*);
-static int flush_io_buff(const UCHAR*, SLONG,
-						 FILE_DESC, SINT64, SLONG*, bool*);
-static int get_file_name(const SCHAR *, SINT64, b_fil**);
-static int get_file_size(const SCHAR *, const SCHAR *, SINT64*);
-static int get_function_option(const SCHAR *, gsplit_option*, const SCHAR *,
-	const in_sw_tab_t* const);
+static int final_read_and_write(FILE_DESC, FILE_DESC, const TEXT*, SLONG, UCHAR**, bool*);
+static int flush_io_buff(const UCHAR*, SLONG, FILE_DESC, SINT64, SLONG*, bool*);
+static int get_file_name(const SCHAR*, SINT64, b_fil**);
+static int get_file_size(const SCHAR*, const SCHAR *, SINT64*);
+static int get_function_option(const SCHAR*, gsplit_option*, const SCHAR*, const in_sw_tab_t* const);
 static int gen_multy_bakup_files(b_fil*, FILE_DESC, SLONG);
-static int set_hdr_str(TEXT *, const TEXT *, SLONG, SLONG);
+static int set_hdr_str(TEXT*, const TEXT*, SLONG, SLONG);
 static int join_multy_bakup_files(b_fil*);
-static int print_clo(const TEXT *);
-static int read_and_write(FILE_DESC, FILE_DESC,
-						  const TEXT*, SLONG,
-						  SINT64, UCHAR **, bool*, SINT64*, SLONG *);
-static int read_and_write_for_join(FILE_DESC, const TEXT*,
-								   UCHAR **, SLONG, SLONG *);
-static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT *);
+static int print_clo(const TEXT*);
+static int read_and_write(FILE_DESC, FILE_DESC, const TEXT*, SLONG,
+						  SINT64, UCHAR**, bool*, SINT64*, SLONG*);
+static int read_and_write_for_join(FILE_DESC, const TEXT*, UCHAR**, SLONG, SLONG*);
+static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT*);
 
 
 
@@ -153,14 +148,11 @@ static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT *);
 
 int main( int argc, char *argv[])
 {
-	SLONG ret_cd, file_num = 0;
-
 	const SCHAR *prog_name = argv[0];
 
 	if (argc < 2) {
-		fprintf(stderr, "%s: No Command Line Option Specified\n",
-				   argv[0]);
-		ret_cd = print_clo(prog_name);
+		fprintf(stderr, "%s: No Command Line Option Specified\n", argv[0]);
+		print_clo(prog_name);
 		return FB_FAILURE;
 	}
 
@@ -180,8 +172,7 @@ int main( int argc, char *argv[])
  *******************************
 */
 
-	for (in_sw_tab_t* in_sw_tab = spit_in_sw_table; in_sw_tab->in_sw_name;
-		in_sw_tab++)
+	for (in_sw_tab_t* in_sw_tab = spit_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
 		in_sw_tab->in_sw_state = false;
 	}
@@ -191,6 +182,7 @@ int main( int argc, char *argv[])
 	***********************************
 	*/
 
+	SLONG ret_cd, file_num = 0;
 	bool file_nm_sw = false;
 	const SCHAR* string = NULL;
 
@@ -201,8 +193,7 @@ int main( int argc, char *argv[])
 		string = *argv;
 		if (*string == '-') {
 			argv++;
-			ret_cd = get_function_option(prog_name, &sw_replace,
-										 string, spit_in_sw_table);
+			ret_cd = get_function_option(prog_name, &sw_replace, string, spit_in_sw_table);
 			if (ret_cd == FB_FAILURE) {
 				ret_cd = free_file_list(file_list);
 				return FB_FAILURE;
@@ -213,28 +204,24 @@ int main( int argc, char *argv[])
 			switch (sw_replace)
 			{
 			case IN_SW_SPIT_SP:
-				if (!file_nm_sw) {	// process file name
+				if (!file_nm_sw)
+				{	// process file name
 					file_size = 0;
 					file_num = file_num + 1;
 
 					if (file_num > MAX_NUM_OF_FILES) {
-						fprintf(stderr,
-								   "%s: maximum of files is %d\n",
-								   prog_name, MAX_NUM_OF_FILES);
-						ret_cd = print_clo(prog_name);
-						ret_cd = free_file_list(file_list);
+						fprintf(stderr, "%s: maximum of files is %d\n", prog_name, MAX_NUM_OF_FILES);
+						print_clo(prog_name);
+						free_file_list(file_list);
 						return FB_FAILURE;
 					}
 
 					if (strlen(string) > MAX_FILE_NM_LEN) {
-						fprintf(stderr,
-								   "%s: file name %s is too long\n",
-								   prog_name, string);
-						fprintf(stderr,
-								   "%s: maximum length of file name is %d bytes\n",
+						fprintf(stderr, "%s: file name %s is too long\n", prog_name, string);
+						fprintf(stderr, "%s: maximum length of file name is %d bytes\n",
 								   prog_name, MAX_FILE_NM_LEN);
-						ret_cd = print_clo(prog_name);
-						ret_cd = free_file_list(file_list);
+						print_clo(prog_name);
+						free_file_list(file_list);
 						return FB_FAILURE;
 					}
 
@@ -288,8 +275,7 @@ int main( int argc, char *argv[])
 				break;
 
 			default:
-				fprintf(stderr, "%s: invalid option '%s'\n",
-						   prog_name, string);
+				fprintf(stderr, "%s: invalid option '%s'\n", prog_name, string);
 				ret_cd = print_clo(prog_name);
 				ret_cd = free_file_list(file_list);
 				return FB_FAILURE;
@@ -300,23 +286,20 @@ int main( int argc, char *argv[])
 	}							// while (argv < end)
 
 	if (!file_list && sw_replace != IN_SW_SPIT_0) {
-		fprintf(stderr,
-				   "%s: invalid option '%s', rest of parameters is missing\n",
-				   prog_name, string);
+		fprintf(stderr, "%s: invalid option '%s', rest of parameters is missing\n", prog_name, string);
 		ret_cd = print_clo(prog_name);
 		ret_cd = free_file_list(file_list);
 		return FB_FAILURE;
 	}
 
 	FILE_DESC input_file_desc;
-	switch (sw_replace) {
+	switch (sw_replace)
+	{
 	case IN_SW_SPIT_SP:
 		input_file_desc = GBAK_STDIN_DESC;
 		ret_cd = gen_multy_bakup_files(file_list, input_file_desc, file_num);
 		if (ret_cd == FB_FAILURE) {
-			fprintf(stderr,
-					   "%s: progam fails to generate multi-volumn back-up files\n",
-					   prog_name);
+			fprintf(stderr, "%s: progam fails to generate multi-volumn back-up files\n", prog_name);
 			ret_cd = free_file_list(file_list);
 			return FB_FAILURE;
 		}
@@ -325,9 +308,7 @@ int main( int argc, char *argv[])
 	case IN_SW_SPIT_JT:
 		ret_cd = join_multy_bakup_files(file_list);
 		if (ret_cd == FB_FAILURE) {
-			fprintf(stderr,
-					   "%s: progam fails to join multi-volumn back-up files\n",
-					   prog_name);
+			fprintf(stderr, "%s: progam fails to join multi-volumn back-up files\n", prog_name);
 			ret_cd = free_file_list(file_list);
 			return FB_FAILURE;
 		}
@@ -394,9 +375,7 @@ static int get_function_option(const SCHAR* prog_name,
 			}
 
 			if (*sw_replace != in_sw_tab->in_sw) {
-				fprintf(stderr,
-						   "%s: invalid option '%s', incompatible option\n",
-						   prog_name, string);
+				fprintf(stderr, "%s: invalid option '%s', incompatible option\n", prog_name, string);
 				ret_cd = print_clo(prog_name);
 				return FB_FAILURE;
 			}
@@ -576,22 +555,19 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 		header_str[pos] = BLANK;
 
 	pos = 0;
-	ret_cd = set_hdr_str(header_str, header_rec_name,
-						 pos, sizeof(hdr_rec.name));
+	ret_cd = set_hdr_str(header_str, header_rec_name, pos, sizeof(hdr_rec.name));
 	size_t indx;
 	for (indx = 0; indx < sizeof(hdr_rec.name); indx++)
 		hdr_rec.name[indx] = BLANK;
 
 	pos = pos + sizeof(hdr_rec.name);
 	time_t clock = time(0);  // was SLONG
-	ret_cd = set_hdr_str(header_str, ctime(&clock),
-						 pos, sizeof(hdr_rec.date_time));
+	ret_cd = set_hdr_str(header_str, ctime(&clock), pos, sizeof(hdr_rec.date_time));
 	for (indx = 0; indx < sizeof(hdr_rec.date_time); indx++)
 		hdr_rec.date_time[indx] = BLANK;
 
 	pos = pos + sizeof(hdr_rec.date_time);
-	ret_cd = set_hdr_str(header_str, ", file No. ",
-						 pos, sizeof(hdr_rec.text1));
+	ret_cd = set_hdr_str(header_str, ", file No. ", pos, sizeof(hdr_rec.text1));
 	for (indx = 0; indx < sizeof(hdr_rec.text1); indx++)
 		hdr_rec.text1[indx] = BLANK;
 
@@ -606,8 +582,7 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 	ret_cd = conv_ntoc(file_num, num_arr);
 	if (ret_cd == FB_FAILURE) {
 		free(io_buffer);
-		fprintf(stderr,
-				   "gsplit could not convert numeric data to character data\n");
+		fprintf(stderr, "gsplit could not convert numeric data to character data\n");
 		return FB_FAILURE;
 	}
 
@@ -634,7 +609,8 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 	SINT64 byte_read = 0;
 	SINT64 file_size = 0;
 
-	while (true) {
+	while (true)
+	{
 		if (fl_ptr != NULL) {
 			byte_read = 0;
 			byte_write = 0;
@@ -649,18 +625,14 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 			output_fl_desc = open(file_name, mode_write, mask);
 			if (output_fl_desc == -1) {
 				free(io_buffer);
-				fprintf(stderr, "can not open back up file %s\n",
-						   file_name);
+				fprintf(stderr, "can not open back up file %s\n", file_name);
 				return FB_FAILURE;
 			}
 
-			ret_cd =
-				write_header(fl_ptr, hdr_rec, output_fl_desc, header_str);
+			ret_cd = write_header(fl_ptr, hdr_rec, output_fl_desc, header_str);
 			if (ret_cd == FB_FAILURE) {
 				free(io_buffer);
-				fprintf(stderr,
-						   "could not write header record to file %s\n",
-						   file_name);
+				fprintf(stderr, "could not write header record to file %s\n", file_name);
 				return FB_FAILURE;
 			}
 
@@ -672,11 +644,12 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 		else
 			io_size = IO_BUFFER_SIZE;
 
-		if (!fl_ptr) {
-			while (!end_of_input) {
+		if (!fl_ptr)
+		{
+			while (!end_of_input)
+			{
 				ret_cd = final_read_and_write(input_file_desc, output_fl_desc,
-											  file_name, io_size, &io_buffer,
-											  &end_of_input);
+											  file_name, io_size, &io_buffer, &end_of_input);
 				if (ret_cd == FB_FAILURE) {
 					free(io_buffer);
 					return FB_FAILURE;
@@ -688,13 +661,16 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 				}
 			}
 		}
-		else {
-			while ((file_size > byte_read) && (fl_ptr != NULL)) {
+		else
+		{
+			while ((file_size > byte_read) && (fl_ptr != NULL))
+			{
 				ret_cd = read_and_write(input_file_desc, output_fl_desc,
 										file_name, io_size, file_size,
 										&io_buffer, &end_of_input,
 										&byte_read, &byte_write);
-				switch (ret_cd) {
+				switch (ret_cd)
+				{
 				case FB_FAILURE:
 					free(io_buffer);
 					return FB_FAILURE;
@@ -706,42 +682,36 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 										 */
 						const UCHAR* remaining_io = io_buffer + byte_write;
 						SLONG remaining_io_len = IO_BUFFER_SIZE - byte_write;
-						while (!flush_done && (fl_ptr != NULL)) {
+						while (!flush_done && (fl_ptr != NULL))
+						{
 							if (!fl_ptr->b_fil_next && fl_ptr->b_fil_size == 0)
 								fl_ptr->b_fil_size = MIN_FILE_SIZE;
 
 							file_size = fl_ptr->b_fil_size - header_rec_len;
 							file_name = fl_ptr->b_fil_name;
 
-							output_fl_desc =
-								open(file_name, mode_write, mask);
+							output_fl_desc = open(file_name, mode_write, mask);
 							if (output_fl_desc == -1) {
 								free(io_buffer);
-								fprintf(stderr,
-										   "can not open back up file %s\n",
-										   file_name);
+								fprintf(stderr, "can not open back up file %s\n", file_name);
 								return FB_FAILURE;
 							}
-							ret_cd = write_header(fl_ptr, hdr_rec,
-												  output_fl_desc, header_str);
+							ret_cd = write_header(fl_ptr, hdr_rec, output_fl_desc, header_str);
 							if (ret_cd == FB_FAILURE) {
 								free(io_buffer);
-								fprintf(stderr,
-										   "fail to write header rec to file %s\n",
-										   file_name);
+								fprintf(stderr, "fail to write header rec to file %s\n", file_name);
 								return FB_FAILURE;
 							}
 
 							fl_ptr = fl_ptr->b_fil_next;
-							if (!fl_ptr) {
+							if (!fl_ptr)
+							{
 								ret_cd = final_flush_io_buff(remaining_io,
 															 remaining_io_len,
 															 output_fl_desc);
 								if (ret_cd == FB_FAILURE) {
-									fprintf(stderr,
-											   "gsplit could not do backup due");
-									fprintf(stderr,
-											   " to lack of space or I/O problem\n");
+									fprintf(stderr, "gsplit could not do backup due");
+									fprintf(stderr, " to lack of space or I/O problem\n");
 									free(io_buffer);
 									return FB_FAILURE;
 								}
@@ -755,8 +725,7 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 													   &byte_write,
 													   &flush_done);
 								if (ret_cd == FB_FAILURE) {
-									fprintf(stderr,
-											   "gsplit could not do backup due");
+									fprintf(stderr, "gsplit could not do backup due");
 									fprintf(stderr, " I/O problem\n");
 									free(io_buffer);
 									return FB_FAILURE;
@@ -831,7 +800,8 @@ static int read_and_write(FILE_DESC input_file_desc,
 	else
 		read_cnt = read(input_file_desc, *io_buffer, io_size);
 
-	switch (read_cnt) {
+	switch (read_cnt)
+	{
 	case 0:					// no more data to be read
 		close(output_fl_desc);
 		*end_of_input = true;
@@ -840,8 +810,7 @@ static int read_and_write(FILE_DESC input_file_desc,
 
 	case -1:					// read failed
 		close(output_fl_desc);
-		fprintf(stderr,
-				   "fail to read input from stdin, errno = %d\n", errno);
+		fprintf(stderr,  "fail to read input from stdin, errno = %d\n", errno);
 		return FB_FAILURE;
 
 	default:					// read ok
@@ -851,7 +820,8 @@ static int read_and_write(FILE_DESC input_file_desc,
 
 	const SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
-	switch (write_cnt) {
+	switch (write_cnt)
+	{
 	case -1:					// write failed
 		close(output_fl_desc);
 		return FB_FAILURE;
@@ -892,7 +862,8 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 
 	const SLONG read_cnt = read(input_file_desc, *io_buffer, io_size);
 
-	switch (read_cnt) {
+	switch (read_cnt)
+	{
 	case 0:					// no more data to be read
 		close(output_fl_desc);
 		*end_of_input = true;
@@ -900,8 +871,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 
 	case -1:					// read failed
 		close(output_fl_desc);
-		fprintf(stderr,
-				   "problem when reading input file, errno = %d\n", errno);
+		fprintf(stderr, "problem when reading input file, errno = %d\n", errno);
 		return FB_FAILURE;
 
 	default:					// read ok
@@ -910,7 +880,8 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 
 	const SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
-	switch (write_cnt) {
+	switch (write_cnt)
+	{
 	case -1:					// write failed
 		close(output_fl_desc);
 		return FB_FAILURE;
@@ -919,9 +890,7 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 		if (write_cnt == read_cnt)	// write ok
 			return FB_SUCCESS;
 
-		fprintf(stderr,
-				   "There is no enough space to write to back up file %s\n",
-				   file_name);
+		fprintf(stderr, "There is no enough space to write to back up file %s\n", file_name);
 		close(output_fl_desc);
 		return FB_FAILURE;
 	}
@@ -968,9 +937,7 @@ static int join_multy_bakup_files( b_fil* file_list)
 		next_fl = fl_ptr->b_fil_next;
 		const TEXT* file_name = fl_ptr->b_fil_name;
 
-		SLONG ret_cd =
-			read_and_write_for_join(output_fl_desc, file_name, &io_buffer,
-									cnt, &total_int);
+		SLONG ret_cd = read_and_write_for_join(output_fl_desc, file_name, &io_buffer, cnt, &total_int);
 
 		if (ret_cd == FB_FAILURE) {
 			free(io_buffer);
@@ -1017,9 +984,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	int read_cnt = read(input_fl_desc, *io_buffer, header_rec_len);
 	if (read_cnt != static_cast<int>(header_rec_len)) {
 		close(input_fl_desc);
-		fprintf(stderr,
-				   "progam fails to read gsplit header record in back-up file%s\n",
-				   file_name);
+		fprintf(stderr, "progam fails to read gsplit header record in back-up file%s\n", file_name);
 		return FB_FAILURE;
 	}
 
@@ -1028,13 +993,11 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 	if (ret_cd != 0) {
 		close(input_fl_desc);
 		fprintf(stderr, "gsplit: expected GSPLIT description record\n");
-		fprintf(stderr,
-				   "gsplit: Exiting before completion due to errors\n");
+		fprintf(stderr, "gsplit: Exiting before completion due to errors\n");
 		return FB_FAILURE;
 	}
 
-	SLONG skip_to_num = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) +
-		sizeof(hdr_rec.text1);
+	SLONG skip_to_num = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) + sizeof(hdr_rec.text1);
 	SLONG skip_to_total = skip_to_num + sizeof(hdr_rec.num) + sizeof(hdr_rec.text2);
 
 	char_ptr1 = reinterpret_cast<char*>(*io_buffer + skip_to_num);
@@ -1057,18 +1020,18 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 
 	if ((num_int != cnt) || (num_int > *total_int)) {
 		close(input_fl_desc);
-		fprintf(stderr,
-				   "gsplit: join backup file is out of sequence\n");
-		fprintf(stderr,
-				   "gsplit: Exiting before completion due to errors\n");
+		fprintf(stderr, "gsplit: join backup file is out of sequence\n");
+		fprintf(stderr, "gsplit: Exiting before completion due to errors\n");
 		return FB_FAILURE;
 	}
 
 	read_cnt = read(input_fl_desc, *io_buffer, IO_BUFFER_SIZE);
 
 
-	while (true) {
-		switch (read_cnt) {
+	while (true)
+	{
+		switch (read_cnt)
+		{
 		case 0:				// no more data to be read
 			close(input_fl_desc);
 			return FB_SUCCESS;
@@ -1083,7 +1046,8 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 
 		SLONG write_cnt = write(output_fl_desc, *io_buffer, read_cnt);
 
-		switch (write_cnt) {
+		switch (write_cnt)
+		{
 		case -1:				// write failed
 			close(input_fl_desc);
 			return FB_FAILURE;
@@ -1164,13 +1128,11 @@ static int write_header(const b_fil* fl_ptr,
 
 	SLONG ret_cd = conv_ntoc(fl_ptr->b_fil_number, num_arr);
 	if (ret_cd == FB_FAILURE) {
-		printf
-			("gsplit could not convert numeric data to character data\n");
+		printf("gsplit could not convert numeric data to character data\n");
 		return FB_FAILURE;
 	}
 	num_arr[sizeof(num_arr) - 1] = TERMINAL;
-	SLONG pos = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) +
-		sizeof(hdr_rec.text1);
+	SLONG pos = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) + sizeof(hdr_rec.text1);
 	ret_cd = set_hdr_str(header_str, num_arr, pos, sizeof(hdr_rec.num));
 
 	const TEXT* file_name = fl_ptr->b_fil_name;
@@ -1235,12 +1197,11 @@ static int flush_io_buff(const UCHAR* remaining_io,
 		write_cnt = write(output_fl_desc, remaining_io, remaining_io_len);
 	}
 	else {						/* file_size <= remaining_io_len */
-
-		write_cnt =
-			write(output_fl_desc, remaining_io, (unsigned int) file_size);
+		write_cnt = write(output_fl_desc, remaining_io, (unsigned int) file_size);
 	}
 
-	switch (write_cnt) {
+	switch (write_cnt)
+	{
 	case -1:					// write failed
 		close(output_fl_desc);
 		*flush_done = false;
@@ -1250,7 +1211,6 @@ static int flush_io_buff(const UCHAR* remaining_io,
 		if (write_cnt == remaining_io_len)	// write ok
 			*flush_done = true;
 		else {					// could not write out all remaining data
-
 			close(output_fl_desc);
 			*flush_done = false;
 		}
@@ -1313,11 +1273,8 @@ static int print_clo(const TEXT* prog_name)
 	fprintf(stderr,
 			   "  gsplit -S[PLIT_BK_FILE] <file> <size>{k|m|g} [... <file> [<size>{k|m|g}]] or\n");
 	fprintf(stderr, "  gsplit -J[OINT_BK_FILE] <file> [... <file>]\n");
-	fprintf(stderr,
-			   "%s: option can be abbreviated to the unparenthesized characters\n",
-			   prog_name);
-	fprintf(stderr,
-			   "%s: Exiting before completion due to errors\n", prog_name);
+	fprintf(stderr, "%s: option can be abbreviated to the unparenthesized characters\n", prog_name);
+	fprintf(stderr, "%s: Exiting before completion due to errors\n", prog_name);
 
 	return FB_SUCCESS;
 
@@ -1342,7 +1299,8 @@ static int set_hdr_str(TEXT header_str[], const TEXT* in_str, SLONG pos, SLONG l
 	const SLONG end = pos + len;
 
 	for (SLONG indx = pos; indx < end; indx++) {
-		switch (*t_str) {
+		switch (*t_str)
+		{
 		case NEW_LINE:
 		case TERMINAL:
 			header_str[indx] = ' ';

@@ -58,7 +58,7 @@ const int HDR_BUFLEN		= 512;
 static HINSTANCE hAppInstance = NULL;	// Handle to the app. instance
 char szSysDbaPasswd[PASSWORD_LEN];	// Pointer to hold the password
 HBRUSH hIBGrayBrush = NULL;		// Handle to a gray brush
-static BOOL bServerApp = FALSE;	// Flag indicating if Server application
+static bool bServerApp = false;	// Flag indicating if Server application
 static char szService[SERVICE_LEN];	// To store the service path
 
 // Window procedure
@@ -125,7 +125,7 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
  *****************************************************************************/
 	hIBGrayBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	hAppInstance = hInst;
-	bServerApp = TRUE;
+	bServerApp = true;
 	szService[0] = '\0';
 	szSysDbaPasswd[0] = '\0';
 

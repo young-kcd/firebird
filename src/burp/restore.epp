@@ -134,7 +134,7 @@ bool	get_global_field(BurpGlobals* tdgbl);
 bool	get_index(BurpGlobals* tdgbl, const burp_rel*);
 void	get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD&, USHORT, bool);
 SLONG	get_numeric(BurpGlobals* tdgbl);
-SINT64   get_int64(BurpGlobals* tdgbl);
+SINT64  get_int64(BurpGlobals* tdgbl);
 bool	get_procedure(BurpGlobals* tdgbl);
 bool	get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME );
 bool	get_ref_constraint(BurpGlobals* tdgbl);
@@ -239,8 +239,7 @@ const int USER_PRIV_OBJECT_TYPE		= 128;
 } // namespace
 
 
-int RESTORE_restore (const TEXT* file_name,
-					 const TEXT* database_name)
+int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 {
 /**************************************
  *
@@ -480,8 +479,7 @@ int RESTORE_restore (const TEXT* file_name,
 	** Change ownership of any procedures necessary
 	*/
 
-	for (burp_prc* procedure = tdgbl->procedures; procedure;
-						procedure = procedure->prc_next)
+	for (burp_prc* procedure = tdgbl->procedures; procedure; procedure = procedure->prc_next)
 	{
 		if (procedure->prc_owner[0])
 		{
@@ -596,21 +594,16 @@ int RESTORE_restore (const TEXT* file_name,
 
 	if (tdgbl->gbl_sw_user)
 	{
-		dpb.insertString(isc_dpb_user_name,
-							 tdgbl->gbl_sw_user,
-							 strlen(tdgbl->gbl_sw_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
 	}
 	if (tdgbl->gbl_sw_password)
 	{
-		dpb.insertString(tdgbl->uSvc->isService() ?
-								isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password,
-							 strlen(tdgbl->gbl_sw_password));
+		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
 	}
 	if (tdgbl->gbl_sw_tr_user)
 	{
-		dpb.insertString(isc_dpb_trusted_auth,
-			tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+		dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 	}
 
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
@@ -619,9 +612,8 @@ int RESTORE_restore (const TEXT* file_name,
 	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes ? 1 : 0);
 
 	FB_API_HANDLE db_handle = 0;
-	if (isc_attach_database (tdgbl->status_vector, 0, database_name,
-				  &db_handle, dpb.getBufferLength(),
-				  reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
+	if (isc_attach_database(tdgbl->status_vector, 0, database_name, &db_handle,
+							dpb.getBufferLength(), reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
 	{
 		general_on_error();
 	}
@@ -646,29 +638,23 @@ int RESTORE_restore (const TEXT* file_name,
 		dpb.reset(isc_dpb_version1);
 		if (tdgbl->gbl_sw_user)
 		{
-			dpb.insertString(isc_dpb_user_name,
-								 tdgbl->gbl_sw_user,
-								 strlen(tdgbl->gbl_sw_user));
+			dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
 		}
 		if (tdgbl->gbl_sw_password)
 		{
-			dpb.insertString(tdgbl->uSvc->isService() ?
-									isc_dpb_password_enc : isc_dpb_password,
-								 tdgbl->gbl_sw_password,
-								 strlen(tdgbl->gbl_sw_password));
+			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
 		}
 		if (tdgbl->gbl_sw_tr_user)
 		{
-			dpb.insertString(isc_dpb_trusted_auth,
-				tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+			dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 		}
 
 		dpb.insertByte(isc_dpb_set_db_readonly, 1);
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
-		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
-				  &db_handle, dpb.getBufferLength(),
-				  reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
+		if (isc_attach_database(tdgbl->status_vector, 0, database_name, &db_handle,
+								dpb.getBufferLength(), reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
 		{
 			general_on_error();
 		}
@@ -683,8 +669,7 @@ int RESTORE_restore (const TEXT* file_name,
 namespace // unnamed, private
 {
 
-void add_files(BurpGlobals*	tdgbl,
-			   const char*	file_name)
+void add_files(BurpGlobals* tdgbl, const char* file_name)
 {
 /**************************************
  *
@@ -878,8 +863,7 @@ void check_db_version(BurpGlobals* tdgbl)
 	MISC_release_request_silent(req_handle2);
 }
 
-void create_database(BurpGlobals*	tdgbl,
-					 const TEXT*	file_name)
+void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 {
 /**************************************
  *
@@ -1007,21 +991,16 @@ void create_database(BurpGlobals*	tdgbl,
 	}
 	if (tdgbl->gbl_sw_user)
 	{
-		dpb.insertString(isc_dpb_user_name,
-							 tdgbl->gbl_sw_user,
-							 strlen(tdgbl->gbl_sw_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
 	}
 	if (tdgbl->gbl_sw_password)
 	{
-		dpb.insertString(tdgbl->uSvc->isService() ?
-								isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password,
-							 strlen(tdgbl->gbl_sw_password));
+		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
 	}
 	if (tdgbl->gbl_sw_tr_user)
 	{
-		dpb.insertString(isc_dpb_trusted_auth,
-			tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+		dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 	}
 	if (page_buffers)
 	{
@@ -1056,10 +1035,9 @@ void create_database(BurpGlobals*	tdgbl,
 			strlen(tdgbl->gbl_sw_fix_fss_metadata));
 	}
 
-	if (isc_create_database (status_vector, 0, file_name,
-							 &DB, dpb.getBufferLength(),
-							 reinterpret_cast<const SCHAR*>(dpb.getBuffer()),
-							 0))
+	if (isc_create_database(status_vector, 0, file_name, &DB,
+							dpb.getBufferLength(), reinterpret_cast<const SCHAR*>(dpb.getBuffer()),
+							0))
 	{
 		BURP_error_redirect (status_vector, 33, SafeArg() << file_name);
 		// msg 33 failed to create database %s
@@ -1159,8 +1137,7 @@ void eat_text(BurpGlobals* tdgbl)
 		MVOL_skip_block(tdgbl, l);
 }
 
-burp_rel* find_relation(BurpGlobals*	tdgbl,
-						const TEXT*		name)
+burp_rel* find_relation(BurpGlobals* tdgbl, const TEXT* name)
 {
 /**************************************
  *
@@ -1175,8 +1152,7 @@ burp_rel* find_relation(BurpGlobals*	tdgbl,
  **************************************/
 
 	// Why isn't strcmp used here?
-	for (burp_rel* relation = tdgbl->relations; relation;
-		relation = relation->rel_next)
+	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
 	{
 		for (const TEXT* p = relation->rel_name, *q = name; *p == *q; p++, q++) {
 			if (!*p)
@@ -1230,9 +1206,12 @@ bool get_acl(BurpGlobals*	tdgbl,
  *
  **************************************/
 
-	static const UCHAR blr_items[] = {isc_info_blob_max_segment,
-					 isc_info_blob_total_length,
-					 isc_info_blob_num_segments};
+	static const UCHAR blr_items[] =
+	{
+		isc_info_blob_max_segment,
+		isc_info_blob_total_length,
+		isc_info_blob_num_segments
+	};
 
 	// If the blob is null, don't store it.  It will be restored as null.
 
@@ -1393,9 +1372,7 @@ bool get_acl(BurpGlobals*	tdgbl,
 	return true;
 }
 
-void get_array(BurpGlobals*	tdgbl,
-			   burp_rel*	relation,
-			   UCHAR*		record_buffer)
+void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 {
 /**************************************
  *
@@ -1515,10 +1492,8 @@ void get_array(BurpGlobals*	tdgbl,
 			int divisor = 1;
 			for (int i2 = (2 * (i1 + 1) + 1); i2 <= field->fld_dimensions * 2; i2 += 2)
 				divisor *= (field->fld_ranges[i2] - field->fld_ranges[i2 - 1] + 1);
-			last_element_dim[i1] =
-					(elements_remaining - 1) / divisor + field->fld_ranges[i3];
-			elements_remaining  -=
-					(last_element_dim[i1] - field->fld_ranges[i3]) * divisor;
+			last_element_dim[i1] = (elements_remaining - 1) / divisor + field->fld_ranges[i3];
+			elements_remaining  -= (last_element_dim[i1] - field->fld_ranges[i3]) * divisor;
 			i3 += 2;
 		}
 
@@ -1556,24 +1531,27 @@ void get_array(BurpGlobals*	tdgbl,
 			add_byte(blr, isc_sdl_struct);
 			add_byte(blr, 1);
 
-			if (field->fld_type == blr_text || field->fld_type == blr_varying)
+			switch (field->fld_type)
 			{
+			case blr_text:
+			case blr_varying:
 				if (field->fld_type == blr_text)
 					add_byte(blr, blr_text2);
 				else
 					add_byte(blr, blr_varying2);
 				add_word(blr, field->fld_character_set_id);
 				add_word(blr, field->fld_length);
-			}
-			else if (field->fld_type == blr_short || field->fld_type == blr_long ||
-					 field->fld_type == blr_quad || field->fld_type == blr_int64)
-			{
+				break;
+			case blr_short:
+			case blr_long:
+			case blr_quad:
+			case blr_int64:
 				add_byte(blr, field->fld_type);
 				add_byte(blr, field->fld_scale);
-			}
-			else
+				break;
+			default:
 				add_byte(blr, field->fld_type);
-
+			}
 
 			add_byte(blr, isc_sdl_relation);
 			add_string(blr, relation->rel_name);
@@ -1605,8 +1583,7 @@ void get_array(BurpGlobals*	tdgbl,
 			// dims were (1,2), we would just do a isc_put_slice(1..1, 1..2).
 			// This is applied for any number of dimensions.
 			//
-			for (range = field->fld_ranges, count = 0; range < end_ranges;
-				range += 2, count++)
+			for (range = field->fld_ranges, count = 0; range < end_ranges; range += 2, count++)
 			{
 				add_byte(blr, isc_sdl_do2);
 				add_byte(blr, count);
@@ -1627,8 +1604,7 @@ void get_array(BurpGlobals*	tdgbl,
 				// we perform.
 				//
 				if (current_dim + 1 == field->fld_dimensions - 1 &&
-				  field->fld_dimensions - count == 2 &&
-				   last_element_dim[count + 1]  == range[3])
+					field->fld_dimensions - count == 2 && last_element_dim[count + 1]  == range[3])
 				{
 					add_byte(blr, isc_sdl_long_integer);
 					add_long(blr, range[0]);
@@ -1658,7 +1634,7 @@ void get_array(BurpGlobals*	tdgbl,
 					lower = range[0];
 					add_byte(blr, isc_sdl_long_integer);
 					upper = (current_dim == field->fld_dimensions - 1) ?
-					 last_element_dim[count] : (last_element_dim[count] - 1);
+						last_element_dim[count] : (last_element_dim[count] - 1);
 					if (upper < range[0])
 					{
 						/**
@@ -1754,12 +1730,11 @@ void get_array(BurpGlobals*	tdgbl,
 					CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
 			}
 
-			if (isc_put_slice (status_vector, &DB, &gds_trans,
-				blob_id, blr_length, reinterpret_cast<const char*>(blr_buffer),
-				0,	  // param length for subset of an array handling
-				NULL,  // param for subset of an array handling
-				elements_written * field->fld_length,
-				buffer + data_at))
+			if (isc_put_slice(status_vector, &DB, &gds_trans,
+							  blob_id, blr_length, reinterpret_cast<const char*>(blr_buffer),
+							  0,	// param length for subset of an array handling
+							  NULL,	// param for subset of an array handling
+							  elements_written * field->fld_length, buffer + data_at))
 			{
 				BURP_print (81, field->fld_name);
 				// msg 81 error accessing blob field %s -- continuing
@@ -1786,24 +1761,27 @@ void get_array(BurpGlobals*	tdgbl,
 		add_byte(blr, isc_sdl_struct);
 		add_byte(blr, 1);
 
-		if (field->fld_type == blr_text || field->fld_type == blr_varying)
+		switch (field->fld_type)
 		{
+		case blr_text:
+		case blr_varying:
 			if (field->fld_type == blr_text)
 				add_byte(blr, blr_text2);
 			else
 				add_byte(blr, blr_varying2);
 			add_word(blr, field->fld_character_set_id);
 			add_word(blr, field->fld_length);
-		}
-		else if (field->fld_type == blr_short || field->fld_type == blr_long ||
-			field->fld_type == blr_quad || field->fld_type == blr_int64)
-		{
+			break;
+		case blr_short:
+		case blr_long:
+		case blr_quad:
+		case blr_int64:
 			add_byte(blr, field->fld_type);
 			add_byte(blr, field->fld_scale);
-		}
-		else
+			break;
+		default:
 			add_byte(blr, field->fld_type);
-
+		}
 
 		add_byte(blr, isc_sdl_relation);
 		add_string(blr, relation->rel_name);
@@ -1876,12 +1854,12 @@ void get_array(BurpGlobals*	tdgbl,
 			CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
 
 
-		if (isc_put_slice (status_vector, &DB, &gds_trans,
-						   blob_id, blr_length,
-						   reinterpret_cast<const char*>(blr_buffer),
-						   0,	  // param length for subset of an array handling
-						   NULL,  // param for subset of an array handling
-						return_length, buffer))
+		if (isc_put_slice(status_vector, &DB, &gds_trans,
+						  blob_id, blr_length,
+						  reinterpret_cast<const char*>(blr_buffer),
+						  0,	  // param length for subset of an array handling
+						  NULL,  // param for subset of an array handling
+						  return_length, buffer))
 		{
 			BURP_print (81, field->fld_name);
 			// msg 81 error accessing blob field %s -- continuing
@@ -1898,9 +1876,7 @@ void get_array(BurpGlobals*	tdgbl,
 		BURP_free (xdr_buffer.lstr_address);
 }
 
-void get_blob(BurpGlobals* tdgbl,
-			  const burp_fld* fields,
-			  UCHAR* record_buffer)
+void get_blob(BurpGlobals* tdgbl, const burp_fld* fields, UCHAR* record_buffer)
 {
 /**************************************
  *
@@ -2003,9 +1979,7 @@ void get_blob(BurpGlobals* tdgbl,
 }
 
 
-void get_blr_blob(BurpGlobals*	tdgbl,
-				  ISC_QUAD&		blob_id,
-				  bool			glb_trans)
+void get_blr_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
 {
 /**************************************
  *
@@ -2108,7 +2082,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 				case att_charset_form:
 					X.RDB$FORM_OF_USE.NULL = FALSE;
-						GET_TEXT(X.RDB$FORM_OF_USE);
+					GET_TEXT(X.RDB$FORM_OF_USE);
 					break;
 
 				case att_charset_numchar:
@@ -2422,8 +2396,7 @@ bool get_collation(BurpGlobals* tdgbl)
 	return true;
 }
 
-rec_type get_data(BurpGlobals*	tdgbl,
-				  burp_rel*		relation)
+rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -2538,8 +2511,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 			length = type_lengths[dtype_blob];
 
 			if (tdgbl->gbl_sw_fix_fss_data && !(field->fld_flags & FLD_array) &&
-				field->fld_sub_type == isc_blob_text &&
-				field->fld_character_set_id == CS_UNICODE_FSS)
+				field->fld_sub_type == isc_blob_text && field->fld_character_set_id == CS_UNICODE_FSS)
 			{
 				add_byte(blr, blr_blob2);
 				add_word(blr, field->fld_sub_type);
@@ -2628,8 +2600,8 @@ rec_type get_data(BurpGlobals*	tdgbl,
 	ISC_STATUS_ARRAY status_vector;
 	USHORT blr_length = blr - blr_buffer;
 
-	if (isc_compile_request (status_vector,  &DB, &request,
-							 blr_length,  reinterpret_cast<const char*>(blr_buffer)))
+	if (isc_compile_request (status_vector, &DB, &request,
+							 blr_length, reinterpret_cast<const char*>(blr_buffer)))
 	{
 		isc_print_blr(reinterpret_cast<const char*>(blr_buffer), NULL, NULL, 0);
 		if (!tdgbl->gbl_sw_incremental)
@@ -2744,8 +2716,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 		}
 
 
-		if (isc_start_and_send (status_vector, &request, &gds_trans, 0,
-								(USHORT) length, buffer, 0))
+		if (isc_start_and_send (status_vector, &request, &gds_trans, 0, (USHORT) length, buffer, 0))
 		{
 			if (status_vector[1] == isc_not_valid)
 			{
@@ -2921,8 +2892,7 @@ bool get_exception(BurpGlobals* tdgbl)
 }
 
 
-burp_fld* get_field(BurpGlobals*	tdgbl,
-					burp_rel*		relation)
+burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
@@ -4058,8 +4028,8 @@ bool get_global_field(BurpGlobals* tdgbl)
 			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
 				((!X.RDB$CHARACTER_LENGTH.NULL &&
-				  (X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
-				 X.RDB$FIELD_TYPE == blr_blob))
+					(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
+				 	X.RDB$FIELD_TYPE == blr_blob))
 			{
 				if (X.RDB$FIELD_TYPE != blr_blob)
 					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
@@ -4397,8 +4367,8 @@ bool get_global_field(BurpGlobals* tdgbl)
 			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
 				((!X.RDB$CHARACTER_LENGTH.NULL &&
-				  (X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
-				 X.RDB$FIELD_TYPE == blr_blob))
+					(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
+					X.RDB$FIELD_TYPE == blr_blob))
 			{
 				if (X.RDB$FIELD_TYPE != blr_blob)
 					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
@@ -4423,8 +4393,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 	return true;
 }
 
-bool get_index(BurpGlobals*		tdgbl,
-			   const burp_rel*	relation)
+bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 {
 /**************************************
  *
@@ -4709,8 +4678,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 	SSHORT		l;
 	scan_attr_t		scan_next_attr;
 
-	isc_tr_handle local_trans =
-		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	burp_prc* procedure = (burp_prc*) BURP_alloc_zero (sizeof(burp_prc));
 	procedure->prc_next = tdgbl->procedures;
@@ -4739,8 +4707,8 @@ bool get_procedure(BurpGlobals* tdgbl)
 				{
 				case att_procedure_name:
 					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
-							procedure->prc_name_length = l;
-							strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
+					procedure->prc_name_length = l;
+					strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
 					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
 					BURP_verbose (195, temp);
 					// msg 195 restoring stored procedure %s
@@ -4850,8 +4818,8 @@ bool get_procedure(BurpGlobals* tdgbl)
 				{
 				case att_procedure_name:
 					l = GET_TEXT(X.RDB$PROCEDURE_NAME);
-							procedure->prc_name_length = l;
-							strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
+					procedure->prc_name_length = l;
+					strcpy (procedure->prc_name, X.RDB$PROCEDURE_NAME);
 					MISC_terminate (X.RDB$PROCEDURE_NAME, temp, l, sizeof(temp));
 					BURP_verbose (195, temp);
 					// msg 195 restoring stored procedure %s
@@ -4951,8 +4919,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 	TEXT		temp[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
 
-	isc_tr_handle local_trans =
-		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
 	{
@@ -4960,7 +4927,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 				REQUEST_HANDLE tdgbl->handles_get_procedure_prm_req_handle1)
 			X IN RDB$PROCEDURE_PARAMETERS
 
-			strcpy (X.RDB$PROCEDURE_NAME, procptr);
+			strcpy(X.RDB$PROCEDURE_NAME, procptr);
 
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$DEFAULT_VALUE.NULL = TRUE;
@@ -6265,8 +6232,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 	BASED_ON RDB$TRIGGERS.RDB$TRIGGER_NAME name;
 	scan_attr_t		scan_next_attr;
 
-	isc_tr_handle local_trans =
-		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
 	{
@@ -6548,8 +6514,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 	if (flag)
 		return true;
 
-	isc_tr_handle local_trans =
-		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
 			REQUEST_HANDLE tdgbl->handles_get_trigger_message_req_handle2)
@@ -6885,8 +6850,7 @@ bool get_view(BurpGlobals*	tdgbl,
 
 	// If there is a global transaction then use it
 
-	isc_tr_handle local_trans =
-		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
 			REQUEST_HANDLE tdgbl->handles_get_view_req_handle1)

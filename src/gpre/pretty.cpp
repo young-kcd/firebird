@@ -144,7 +144,8 @@ int PRETTY_print_cdb( UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, S
 	print_line(control, offset);
 
 	SSHORT parameter;
-	while (parameter = BLR_BYTE) {
+	while (parameter = BLR_BYTE)
+	{
 		const char* p;
 		if (parameter > FB_NELEM(cdb_table) || !(p = cdb_table[parameter]))
 		{
@@ -317,7 +318,8 @@ static int print_blr_dtype(ctl* control, bool print_object)
 //  Special case blob (261) to keep down the size of the
 //  jump table
 
-	switch (dtype) {
+	switch (dtype)
+	{
 	case blr_short:
 		string = "short";
 		length = 2;
@@ -413,7 +415,8 @@ static int print_blr_dtype(ctl* control, bool print_object)
 //  than letting it be random.
 	SSHORT offset = 0;
 
-	switch (dtype) {
+	switch (dtype)
+	{
 	case blr_text:
 		length = print_word(control, offset);
 		break;
@@ -509,9 +512,8 @@ static int print_byte( ctl* control, SSHORT offset)
 static int print_char( ctl* control, SSHORT offset)
 {
 	const UCHAR c = BLR_BYTE;
-	const bool printable = (c >= 'a' && c <= 'z') ||
-		(c >= 'A' && c <= 'Z') ||
-		(c >= '0' && c <= '9' || c == '$' || c == '_');
+	const bool printable = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9') || c == '$' || c == '_';
 
 	sprintf(control->ctl_ptr, printable ? "'%c'," : control->ctl_language ? "chr(%d)," : "%d,", c);
 	ADVANCE_PTR(control->ctl_ptr);
@@ -529,7 +531,7 @@ static int print_char( ctl* control, SSHORT offset)
 
 static int print_dyn_verb( ctl* control, SSHORT level)
 {
-	SSHORT offset = control->ctl_blr - control->ctl_blr_start;
+	const SSHORT offset = control->ctl_blr - control->ctl_blr_start;
 	const UCHAR dyn_operator = BLR_BYTE;
 
     const char* p;

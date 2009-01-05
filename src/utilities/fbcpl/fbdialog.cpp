@@ -273,10 +273,8 @@ bool CFBDialog::ValidateInstalledServices()
 // If Guardian installed but not Server service
 // then return false;
 {
-	fb_status.UseService =
-		CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
-	fb_status.UseGuardian =
-		CheckServiceInstalled(GetServiceName(ISCGUARD_SERVICE));
+	fb_status.UseService = CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
+	fb_status.UseGuardian = CheckServiceInstalled(GetServiceName(ISCGUARD_SERVICE));
 
 	return (!fb_status.UseService && fb_status.UseGuardian) ? false : true;
 }
@@ -377,8 +375,7 @@ void CFBDialog::ViewRegistryEntries()
 
 	fb_status.AutoStart = false;
 
-	fb_status.UseService =
-		CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
+	fb_status.UseService = CheckServiceInstalled(GetServiceName(REMOTE_SERVICE));
 
 	if ( fb_status.UseService )
 	{

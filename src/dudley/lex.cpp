@@ -394,8 +394,7 @@ TOK LEX_token(void)
 
 	token->tok_length = p - token->tok_string;
 	*p = '\0';
-	token->tok_symbol = symbol =
-		HSH_lookup(token->tok_string, token->tok_length);
+	token->tok_symbol = symbol = HSH_lookup(token->tok_string, token->tok_length);
 	if (symbol && symbol->sym_type == SYM_keyword)
 		token->tok_keyword = (enum kwwords) symbol->sym_keyword;
 	else

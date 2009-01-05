@@ -101,8 +101,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 							display_name,
 							SERVICE_CHANGE_CONFIG,
 							dwServiceType,
-							(sw_startup ==
-							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
+							(sw_startup == STARTUP_DEMAND) ? SERVICE_DEMAND_START :
 							SERVICE_AUTO_START, SERVICE_ERROR_NORMAL,
 							path_name, NULL, NULL, dependencies,
 							nt_user_name, nt_user_password);

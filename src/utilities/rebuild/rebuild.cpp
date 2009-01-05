@@ -208,16 +208,14 @@ int main( int argc, char *argv[])
 	gdbb->tdbb_database = &dbb_struct;
 	gdbb->tdbb_transaction = &dull;
 	dull.tra_number = header->hdr_next_transaction;
-	gdbb->tdbb_database->dbb_max_records = (rbdb->rbdb_page_size
-											- sizeof(struct data_page)) /
+	gdbb->tdbb_database->dbb_max_records = (rbdb->rbdb_page_size - sizeof(struct data_page)) /
 		(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
 	gdbb->tdbb_database->dbb_pcontrol = &dim;
-	gdbb->tdbb_database->dbb_dp_per_pp = (rbdb->rbdb_page_size
-										  - OFFSETA(pointer_page*, ppg_page)) * 8 / 34;
-	gdbb->tdbb_database->dbb_pcontrol->pgc_bytes = rbdb->rbdb_page_size
-		- OFFSETA(page_inv_page*, pip_bits);
-	gdbb->tdbb_database->dbb_pcontrol->pgc_ppp =
-		gdbb->tdbb_database->dbb_pcontrol->pgc_bytes * 8;
+	gdbb->tdbb_database->dbb_dp_per_pp =
+		(rbdb->rbdb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / 34;
+	gdbb->tdbb_database->dbb_pcontrol->pgc_bytes =
+		rbdb->rbdb_page_size - OFFSETA(page_inv_page*, pip_bits);
+	gdbb->tdbb_database->dbb_pcontrol->pgc_ppp = gdbb->tdbb_database->dbb_pcontrol->pgc_bytes * 8;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_tpt =
 		(rbdb->rbdb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_pip = 1;
@@ -843,20 +841,20 @@ static void get_switch( TEXT** argv, SWC token)
 	token->swc_string = *argv;
 
 	if (*token->swc_string == '-') {
-		token->swc_switch = TRUE;
+		token->swc_switch = true;
 		token->swc_string++;
 	}
 	else
-		token->swc_switch = FALSE;
+		token->swc_switch = false;
 
 	const int temp = strlen(token->swc_string) - 1;
 
 	if (token->swc_string[temp] == ',') {
 		token->swc_string[temp] = '\0';
-		token->swc_comma = TRUE;
+		token->swc_comma = true;
 	}
 	else
-		token->swc_comma = FALSE;
+		token->swc_comma = false;
 }
 
 

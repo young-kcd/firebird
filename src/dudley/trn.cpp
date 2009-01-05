@@ -123,8 +123,7 @@ void TRN_translate(void)
 /* Start by reversing the set of actions */
 	str d;
 	str* dyn = &d;
-	dyn->str_current = dyn->str_start =
-		reinterpret_cast<UCHAR*>(gds__alloc(8192));
+	dyn->str_current = dyn->str_start = reinterpret_cast<UCHAR*>(gds__alloc(8192));
 	if (!dyn->str_current)
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	dyn->str_length = 8192;

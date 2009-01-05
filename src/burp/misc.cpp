@@ -67,7 +67,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
  *       are then freed when gbak exits.  This is important for
  *       NETWARE in particular.
  */
-	*((UCHAR **) block) = tdgbl->head_of_mem_list;
+	*((UCHAR**) block) = tdgbl->head_of_mem_list;
 	tdgbl->head_of_mem_list = block;
 
 	return (block + ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
@@ -88,10 +88,10 @@ void MISC_free_burp( void *free)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (free != NULL) {
+	if (free != NULL)
+	{
 		// Point at the head of the allocated block
-		UCHAR **block =
-			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
+		UCHAR** block = (UCHAR**) ((UCHAR*) free - ROUNDUP(sizeof(UCHAR*), FB_ALIGNMENT));
 
 		// Scan for this block in the list of blocks
 		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
@@ -101,7 +101,7 @@ void MISC_free_burp( void *free)
 				*ptr = *block;
 
 				// and free it
-				gds__free((SLONG *) block);
+				gds__free(block);
 				return;
 			}
 		}

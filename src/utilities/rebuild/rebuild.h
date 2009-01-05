@@ -46,8 +46,8 @@ typedef struct rbdb {
 } *RBDB;
 
 typedef struct swc {
-    SCHAR    swc_switch;
-    SCHAR    swc_comma;
+    bool    swc_switch;
+    bool    swc_comma;
     TEXT    *swc_string;
 } *SWC;
 

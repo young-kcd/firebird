@@ -100,7 +100,7 @@ typedef struct dudley_ctx {
 	struct sym* ctx_name;
 	struct dudley_rel* ctx_relation;
 	struct dudley_fld* ctx_field;
-	USHORT ctx_view_rse;
+	bool   ctx_view_rse;
 	USHORT ctx_context_id;
 } *DUDLEY_CTX;
 
@@ -157,7 +157,7 @@ typedef struct dudley_fld {
 	SSHORT fld_position;		/* field position */
 	SSHORT fld_segment_length;
 	SSHORT fld_sub_type;
-	SSHORT fld_has_sub_type;
+	bool   fld_has_sub_type;
 	SSHORT fld_dimension;		/* size of multi-dim. array */
 	SSHORT fld_system;			/* 0 if field is user defined */
 	USHORT fld_flags;			/* misc trash */
@@ -236,7 +236,7 @@ typedef struct funcarg {
 	SSHORT funcarg_length;		/* argument length in bytes */
 	SSHORT funcarg_return_arg;	/* argument is the designated return arg */
 	SSHORT funcarg_sub_type;	/* sub_type of text */
-	SSHORT funcarg_has_sub_type;	/* null field for sub_type field */
+	bool   funcarg_has_sub_type;	/* null field for sub_type field */
 	funcarg* funcarg_next;		/* next field in function */
 } *FUNCARG;
 

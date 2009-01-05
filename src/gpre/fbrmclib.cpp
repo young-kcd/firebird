@@ -296,17 +296,13 @@ static ISC_ULONG CvtCobolToInt(const ISC_UCHAR *s, ISC_USHORT len, char type)
 
 	switch (len) {
 	case 2:
-		temp = (*(s) << 8) +
-			   *(s + 1);
+		temp = (*(s) << 8) + *(s + 1);
 		// If source is negative and signed, extend sign to dest
 		if ((*(s + 1) & 0x80) && (type == 11))
 			temp |= 0xffff0000;
 		break;
 	case 4:
-		temp = (*(s) << 24) +
-			   (*(s + 1) << 16) +
-			   (*(s + 2) << 8) +
-			   *(s + 3);
+		temp = (*(s) << 24) + (*(s + 1) << 16) + (*(s + 2) << 8) + *(s + 3);
 		break;
 	default:
 		temp = 0;

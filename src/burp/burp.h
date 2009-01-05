@@ -878,7 +878,7 @@ public:
 	TEXT		mvol_db_name_buffer [MAX_FILE_NAME_SIZE];
 	SCHAR		mvol_old_file [MAX_FILE_NAME_SIZE];
 	int			mvol_volume_count;
-	USHORT		mvol_empty_file;
+	bool		mvol_empty_file;
 	isc_db_handle	db_handle;
 	isc_tr_handle	tr_handle;
 	isc_tr_handle	global_trans;
@@ -887,7 +887,7 @@ public:
 	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;
-	FILE*	output_file;
+	FILE*		output_file;
 
 	/*
 	 * Link list of global fields that were converted from V3 sub_type

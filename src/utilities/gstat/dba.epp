@@ -849,8 +849,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		/* free linked lists */
 		while (tddba->head_of_files_list != 0) {
 			open_files* tmp1 = tddba->head_of_files_list;
-			tddba->head_of_files_list =
-				tddba->head_of_files_list->open_files_next;
+			tddba->head_of_files_list = tddba->head_of_files_list->open_files_next;
 			delete tmp1;
 		}
 
@@ -977,15 +976,13 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 	USHORT space = page->dpg_count * sizeof(data_page::dpg_repeat);
 
 	const data_page::dpg_repeat* tail = page->dpg_rpt;
-	for (const data_page::dpg_repeat* const end = tail + page->dpg_count; tail < end;
-		 tail++)
+	for (const data_page::dpg_repeat* const end = tail + page->dpg_count; tail < end; tail++)
 	{
 		if (tail->dpg_offset && tail->dpg_length)
 		{
 			space += tail->dpg_length;
 			if (sw_record) {
-				const rhdf* header =
-					(const rhdf*) ((SCHAR *) page + tail->dpg_offset);
+				const rhdf* header = (const rhdf*) ((SCHAR *) page + tail->dpg_offset);
 				if (!(header->rhdf_flags &
 					(rhd_blob | rhd_chain | rhd_fragment)))
 				{
@@ -993,15 +990,13 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 					relation->rel_record_space += tail->dpg_length;
 					if (header->rhdf_flags & rhd_incomplete) {
 						relation->rel_record_space -= RHDF_SIZE;
-						relation->rel_record_space +=
-							analyze_fragments(relation, header);
+						relation->rel_record_space += analyze_fragments(relation, header);
 					}
 					else
 						relation->rel_record_space -= RHD_SIZE;
 
 					if (header->rhdf_b_page)
-						relation->rel_version_space +=
-							analyze_versions(relation, header);
+						relation->rel_version_space += analyze_versions(relation, header);
 				}
 			}
 		}
@@ -1069,8 +1064,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
  **************************************/
 	tdba* tddba = tdba::getSpecific();
 
-	const index_root_page* index_root =
-		(const index_root_page*) db_read(relation->rel_index_root);
+	const index_root_page* index_root = (const index_root_page*) db_read(relation->rel_index_root);
 
 	SLONG page;
 	if (index_root->irt_count <= index->idx_id ||
@@ -1299,15 +1293,13 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
-		fil->fil_next =
-			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
-		fil = tddba->files =
-			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 
@@ -1380,11 +1372,9 @@ static const pag* db_read( SLONG page_number)
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 
 	LARGE_INTEGER liOffset;
-	liOffset.QuadPart =
-		UInt32x32To64((DWORD) page_number, (DWORD) tddba->page_size);
-	if (SetFilePointer
-		(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart,
-		 FILE_BEGIN) == (DWORD) -1)
+	liOffset.QuadPart = UInt32x32To64((DWORD) page_number, (DWORD) tddba->page_size);
+	if (SetFilePointer(fil->fil_desc, (LONG) liOffset.LowPart, &liOffset.HighPart, FILE_BEGIN) ==
+		(DWORD) -1)
 	{
 		int lastError = GetLastError();
 		if (lastError != NO_ERROR)
@@ -1476,15 +1466,13 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	dba_fil* fil;
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
-		fil->fil_next =
-			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
-		fil = tddba->files =
-			(dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
 

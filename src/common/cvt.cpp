@@ -508,8 +508,7 @@ static void string_to_datetime(const dsc* desc,
 	TEXT buffer[100];			// arbitrarily large
 
 	const char* p = NULL;
-	const USHORT length =
-		CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
+	const USHORT length = CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 
 	const char* const end = p + length;
 
@@ -945,8 +944,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
-							sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 			scale -= CVT_decompose(p, length, dtype_long, &value, err);
 		}
 		break;
@@ -1053,9 +1051,7 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 			const char* p;
 
 			const USHORT length =
-				CVT_make_string(desc, ttype_ascii,
-								&p,
-								(vary*) buffer, sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 			value = 0.0;
 			int scale = 0;
 			SSHORT sign = 0;
@@ -1297,8 +1293,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			return;
 
 		case dtype_timestamp:
-			*((GDS_DATE *) to->dsc_address) =
-				((GDS_TIMESTAMP *) from->dsc_address)->timestamp_date;
+			*((GDS_DATE *) to->dsc_address) = ((GDS_TIMESTAMP *) from->dsc_address)->timestamp_date;
 			return;
 
 		default:
@@ -1328,8 +1323,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			return;
 
 		case dtype_timestamp:
-			*((GDS_TIME *) to->dsc_address) =
-				((GDS_TIMESTAMP *) from->dsc_address)->timestamp_time;
+			*((GDS_TIME *) to->dsc_address) = ((GDS_TIMESTAMP *) from->dsc_address)->timestamp_time;
 			return;
 
 		default:
@@ -1383,8 +1377,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			{ // scope
 				USHORT strtype_unused;
 				UCHAR *ptr;
-				length = l =
-					CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
+				length = l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
 				q = ptr;
 			} // end scope
 
@@ -1434,8 +1427,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				break;
 
 			case dtype_varying:
-				length =
-					MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
+				length = MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
 				cb->validateData(toCharset, length, q, cb->err);
 				toLength = length;
 
@@ -2213,8 +2205,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
-							sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 			scale -= CVT_decompose(p, length, dtype_quad, &value.high, err);
 		}
 		break;
@@ -2309,8 +2300,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 		break;
 
 	case dtype_quad:
-		value = (((SINT64) ((SLONG *) p)[HIGH_WORD]) << 32) +
-			(((ULONG *) p)[LOW_WORD]);
+		value = (((SINT64) ((SLONG *) p)[HIGH_WORD]) << 32) + (((ULONG *) p)[LOW_WORD]);
 		break;
 
 	case dtype_real:
@@ -2357,8 +2347,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer,
-							sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
 			scale -= CVT_decompose(p, length, dtype_int64, (SLONG *) & value, err);
 		}
 		break;
