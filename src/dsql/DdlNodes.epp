@@ -62,7 +62,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	FOR (REQUEST_HANDLE request1 TRANSACTION_HANDLE transaction)
 		CS IN RDB$CHARACTER_SETS
 		WITH CS.RDB$CHARACTER_SET_NAME EQ charSet.c_str()
-	{
+
 		charSetFound = true;
 
 		if (!DYN_REQUEST(drq_m_charset))
@@ -73,14 +73,13 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 			COLL IN RDB$COLLATIONS
 			WITH COLL.RDB$CHARACTER_SET_ID EQ CS.RDB$CHARACTER_SET_ID AND
-			     COLL.RDB$COLLATION_NAME EQ defaultCollation.c_str()
-		{
+				COLL.RDB$COLLATION_NAME EQ defaultCollation.c_str()
+
 			if (!DYN_REQUEST(drq_l_collation))
 				DYN_REQUEST(drq_l_collation) = request2;
 
 			collationFound = true;
-		}
-		END_FOR;
+		END_FOR
 
 		if (!DYN_REQUEST(drq_l_collation))
 			DYN_REQUEST(drq_l_collation) = request2;
@@ -90,10 +89,9 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			MODIFY CS
 				CS.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
 				strcpy(CS.RDB$DEFAULT_COLLATE_NAME, defaultCollation.c_str());
-			END_MODIFY;
+			END_MODIFY
 		}
-	}
-	END_FOR;
+	END_FOR
 
 	if (!DYN_REQUEST(drq_m_charset))
 		DYN_REQUEST(drq_m_charset) = request1;
@@ -105,8 +103,8 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!collationFound)
 	{
-		status_exception::raise(Arg::Gds(isc_collation_not_found) <<
-			Arg::Str(defaultCollation) << Arg::Str(charSet));
+		status_exception::raise(Arg::Gds(isc_collation_not_found) << Arg::Str(defaultCollation) <<
+																	 Arg::Str(charSet));
 	}
 }
 

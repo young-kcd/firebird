@@ -272,38 +272,31 @@ ISC_STATUS	UTLD_parse_sql_info(
 				break;
 
 			case isc_info_sql_type:
-				xvar->sqltype =
-					static_cast<SSHORT>(get_numeric_info(&info));
+				xvar->sqltype = static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
 			case isc_info_sql_sub_type:
-				xvar->sqlsubtype =
-					static_cast<SSHORT>(get_numeric_info(&info));
+				xvar->sqlsubtype = static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
 			case isc_info_sql_scale:
-				xvar->sqlscale =
-					static_cast<SSHORT>(get_numeric_info(&info));
+				xvar->sqlscale = static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
 			case isc_info_sql_length:
-				xvar->sqllen =
-					static_cast<SSHORT>(get_numeric_info(&info));
+				xvar->sqllen = static_cast<SSHORT>(get_numeric_info(&info));
 				break;
 
 			case isc_info_sql_field:
-				xvar->sqlname_length =
-					get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname));
+				xvar->sqlname_length = get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname));
 				break;
 
 			case isc_info_sql_relation:
-				xvar->relname_length =
-					get_string_info(&info, xvar->relname, sizeof(xvar->relname));
+				xvar->relname_length = get_string_info(&info, xvar->relname, sizeof(xvar->relname));
 				break;
 
 			case isc_info_sql_owner:
-				xvar->ownname_length =
-					get_string_info(&info, xvar->ownname, sizeof(xvar->ownname));
+				xvar->ownname_length = get_string_info(&info, xvar->ownname, sizeof(xvar->ownname));
 				break;
 
 			case isc_info_sql_alias:
@@ -463,8 +456,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 			if (pClause->dasup_blr) {
 				gds__free(pClause->dasup_blr);
 			}
-			pClause->dasup_blr =
-				reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
+			pClause->dasup_blr = reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
 			// FREE: unknown
 			if (!pClause->dasup_blr)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
@@ -618,8 +610,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 		{
 			if (pClause->dasup_msg)
 				gds__free(pClause->dasup_msg);
-			pClause->dasup_msg =
-				reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
+			pClause->dasup_msg = reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
 			// FREE: unknown
 			if (!pClause->dasup_msg)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
@@ -643,8 +634,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 
 	USHORT offset = 0;
 	// one huge pointer per line for LIBS
-	BLOB_PTR* msg_buf =
-		reinterpret_cast<UCHAR*>(pClause->dasup_msg);
+	BLOB_PTR* msg_buf = reinterpret_cast<UCHAR*>(pClause->dasup_msg);
 	if (xsqlda)
 		xvar = xsqlda->sqlvar - 1;
 	else
@@ -909,8 +899,7 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
  **/
 static SLONG get_numeric_info(const SCHAR** ptr)
 {
-	const SSHORT l =
-		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), 2));
+	const SSHORT l = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), 2));
 	*ptr += 2;
 	int item = gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), l);
 	*ptr += l;

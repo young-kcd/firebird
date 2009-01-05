@@ -178,10 +178,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_declare(	ISC_STATUS*	user_status,
 		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
 		const ISC_STATUS s =
-			isc_dsql_set_cursor_name(user_status,
-								 &statement->stmt_handle,
-								 cursor,
-								 0);
+			isc_dsql_set_cursor_name(user_status, &statement->stmt_handle, cursor, 0);
 		if (s) {
 			return s;
 		}
@@ -500,9 +497,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS* user_status,
  **************************************/
 	*sqlcode = 0;
 
-	ISC_STATUS s =
-		isc_embed_dsql_fetch2(user_status, cursor_name, dialect, sqlda,
-							  direction, offset);
+	ISC_STATUS s = isc_embed_dsql_fetch2(user_status, cursor_name, dialect, sqlda, direction, offset);
 	if (s == 100)
 		*sqlcode = 100;
 
@@ -766,10 +761,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 
 		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
-		ISC_STATUS s =
-			isc_dsql_free_statement(user_status,
-								&statement->stmt_handle,
-								DSQL_drop);
+		ISC_STATUS s = isc_dsql_free_statement(user_status, &statement->stmt_handle, DSQL_drop);
 		if (s) {
 			return s;
 		}
@@ -852,12 +844,8 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch2_a(ISC_STATUS* user_status,
 	*sqlcode = 0;
 
 	const ISC_STATUS s =
-		isc_dsql_fetch2(user_status,
-				reinterpret_cast<FB_API_HANDLE*>(stmt_handle),
-				dialect,
-				reinterpret_cast<XSQLDA*>(sqlda),
-				direction,
-				offset);
+		isc_dsql_fetch2(user_status, reinterpret_cast<FB_API_HANDLE*>(stmt_handle),
+						dialect, reinterpret_cast<XSQLDA*>(sqlda), direction, offset);
 	if (s == 100)
 		*sqlcode = 100;
 

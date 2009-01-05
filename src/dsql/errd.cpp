@@ -153,7 +153,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning))
+			status_vector[2] != isc_arg_warning))
 	{
 		// this is a blank status vector
 		status_vector[0] = isc_arg_gds;
@@ -226,7 +226,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-		 status_vector[2] != isc_arg_warning))
+			status_vector[2] != isc_arg_warning))
 	{
 		// this is a blank status vector
 		status_vector[0] = isc_arg_gds;
@@ -251,11 +251,9 @@ static void internal_post(const ISC_STATUS* tmp_status)
 			break;				// vector has no more errors
 		}
 
-		if (status_vector[i] == tmp_status[1] && i &&
-			status_vector[i - 1] != isc_arg_warning &&
+		if (status_vector[i] == tmp_status[1] && i && status_vector[i - 1] != isc_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
-			(memcmp(&status_vector[i], &tmp_status[1],
-					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
+			(memcmp(&status_vector[i], &tmp_status[1], sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
 			// duplicate found
 			ERRD_punt();
@@ -290,8 +288,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		// copy current warning(s) to the status_vector
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{
-			memcpy(&status_vector[i - 1], warning_status,
-						sizeof(ISC_STATUS) * warning_count);
+			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
 		}
 	}
 	ERRD_punt();

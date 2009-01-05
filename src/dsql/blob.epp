@@ -45,8 +45,7 @@ static void copy_exact_name (const UCHAR*, UCHAR*, SSHORT);
 static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v);
 
 
-void API_ROUTINE isc_blob_default_desc(
-									   ISC_BLOB_DESC* desc,
+void API_ROUTINE isc_blob_default_desc(ISC_BLOB_DESC* desc,
 									   const UCHAR* relation_name,
 									   const UCHAR* field_name)
 {
@@ -67,20 +66,17 @@ void API_ROUTINE isc_blob_default_desc(
 	desc->blob_desc_charset = CS_dynamic;
 	desc->blob_desc_segment_size = 80;
 
-    copy_exact_name (field_name, desc->blob_desc_field_name,
-                     sizeof(desc->blob_desc_field_name));
-    copy_exact_name (relation_name, desc->blob_desc_relation_name,
-                     sizeof(desc->blob_desc_relation_name));
+    copy_exact_name(field_name, desc->blob_desc_field_name, sizeof(desc->blob_desc_field_name));
+    copy_exact_name(relation_name, desc->blob_desc_relation_name, sizeof(desc->blob_desc_relation_name));
 }
 
 
-ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
-									ISC_STATUS* status,
-									const ISC_BLOB_DESC* to_desc,
-									const ISC_BLOB_DESC* from_desc,
-									USHORT bpb_buffer_length,
-									UCHAR* bpb_buffer,
-									USHORT* bpb_length)
+ISC_STATUS API_ROUTINE isc_blob_gen_bpb(ISC_STATUS* status,
+										const ISC_BLOB_DESC* to_desc,
+										const ISC_BLOB_DESC* from_desc,
+										USHORT bpb_buffer_length,
+										UCHAR* bpb_buffer,
+										USHORT* bpb_length)
 {
 /**************************************
  *
@@ -125,11 +121,11 @@ ISC_STATUS API_ROUTINE isc_blob_gen_bpb(
 
 
 ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
-										FB_API_HANDLE* db_handle,
-										FB_API_HANDLE* trans_handle,
-										const UCHAR* relation_name,
-										const UCHAR* field_name,
-										ISC_BLOB_DESC* desc, UCHAR* global)
+											FB_API_HANDLE* db_handle,
+											FB_API_HANDLE* trans_handle,
+											const UCHAR* relation_name,
+											const UCHAR* field_name,
+											ISC_BLOB_DESC* desc, UCHAR* global)
 {
 /***********************************************
  *
@@ -150,10 +146,8 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 	isc_db_handle DB = *db_handle;
 	isc_req_handle handle = 0;
 
-    copy_exact_name (field_name, desc->blob_desc_field_name,
-                     sizeof(desc->blob_desc_field_name));
-    copy_exact_name (relation_name, desc->blob_desc_relation_name,
-                     sizeof(desc->blob_desc_relation_name));
+    copy_exact_name(field_name, desc->blob_desc_field_name, sizeof(desc->blob_desc_field_name));
+    copy_exact_name(relation_name, desc->blob_desc_relation_name, sizeof(desc->blob_desc_relation_name));
 
 	bool flag = false;
 
@@ -169,8 +163,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
         desc->blob_desc_segment_size = Y.RDB$SEGMENT_LENGTH;
 
         if (global) {
-            copy_exact_name ((UCHAR*) Y.RDB$FIELD_NAME, global,
-                             sizeof(Y.RDB$FIELD_NAME));
+            copy_exact_name((UCHAR*) Y.RDB$FIELD_NAME, global, sizeof(Y.RDB$FIELD_NAME));
         }
 	END_FOR
     ON_ERROR
@@ -197,8 +190,7 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 			desc->blob_desc_segment_size = Y.RDB$SEGMENT_LENGTH;
 
 			if (global) {
-				copy_exact_name ((UCHAR*) Y.RDB$FIELD_NAME, global,
-								sizeof(Y.RDB$FIELD_NAME));
+				copy_exact_name((UCHAR*) Y.RDB$FIELD_NAME, global, sizeof(Y.RDB$FIELD_NAME));
 			}
 		END_FOR
 		ON_ERROR
@@ -211,20 +203,20 @@ ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS* status,
 	}
 
 	if (!flag)
-		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str((const char *)(desc->blob_desc_field_name)) <<
-														Arg::Str((const char *)(desc->blob_desc_relation_name)));
+		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str((const char*)(desc->blob_desc_field_name)) <<
+														Arg::Str((const char*)(desc->blob_desc_relation_name)));
 
 	return error(status, Arg::Gds(FB_SUCCESS));
 }
 
 
 ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
-									 const UCHAR* relation_name,
-									 const UCHAR* field_name,
-									 SSHORT subtype,
-									 SSHORT charset,
-									 SSHORT segment_size,
-									 ISC_BLOB_DESC* desc)
+										 const UCHAR* relation_name,
+										 const UCHAR* field_name,
+										 SSHORT subtype,
+										 SSHORT charset,
+										 SSHORT segment_size,
+										 ISC_BLOB_DESC* desc)
 {
 /**************************************
  *
@@ -241,10 +233,8 @@ ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
  *
  **************************************/
 
-    copy_exact_name (field_name, desc->blob_desc_field_name,
-                     sizeof(desc->blob_desc_field_name));
-    copy_exact_name (relation_name, desc->blob_desc_relation_name,
-                     sizeof(desc->blob_desc_relation_name));
+    copy_exact_name(field_name, desc->blob_desc_field_name, sizeof(desc->blob_desc_field_name));
+    copy_exact_name(relation_name, desc->blob_desc_relation_name, sizeof(desc->blob_desc_relation_name));
 
 	desc->blob_desc_subtype = subtype;
 	desc->blob_desc_charset = charset;
@@ -256,10 +246,7 @@ ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS* status,
 
 
 
-static void copy_exact_name (
-    const UCHAR* from,
-    UCHAR* to,
-    SSHORT bsize)
+static void copy_exact_name (const UCHAR* from, UCHAR* to, SSHORT bsize)
 {
 /**************************************
  *
@@ -273,7 +260,7 @@ static void copy_exact_name (
  *
  **************************************/
 	const UCHAR* const from_end = from + bsize - 1;
-	UCHAR *to2 = to - 1;
+	UCHAR* to2 = to - 1;
 	while (*from && from < from_end) {
 		if (*from != ' ') {
 			to2 = to;

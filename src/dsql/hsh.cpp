@@ -81,19 +81,15 @@ void HSHD_debug()
 	// dump each hash table entry
 	for (SSHORT h = 0; h < HASH_SIZE; h++)
 	{
-		for (DSQL_SYM collision = hash_table()[h]; collision;
-			 collision = collision->sym_collision)
+		for (DSQL_SYM collision = hash_table()[h]; collision; collision = collision->sym_collision)
 		{
 			// check any homonyms first
 			fprintf(stderr, "Symbol type %d: %s %p\n",
-					   collision->sym_type, collision->sym_string,
-					   collision->sym_dbb);
-			for (DSQL_SYM homptr = collision->sym_homonym; homptr;
-				 homptr = homptr->sym_homonym)
+					collision->sym_type, collision->sym_string, collision->sym_dbb);
+			for (DSQL_SYM homptr = collision->sym_homonym; homptr; homptr = homptr->sym_homonym)
 			{
 				fprintf(stderr, "Homonym Symbol type %d: %s %p\n",
-						   homptr->sym_type, homptr->sym_string,
-						   homptr->sym_dbb);
+						homptr->sym_type, homptr->sym_string, homptr->sym_dbb);
 			}
 		}
 	}
@@ -183,8 +179,7 @@ void HSHD_insert(DSQL_SYM symbol)
 	for (DSQL_SYM old = hash_table()[h]; old; old = old->sym_collision)
 	{
 		if ((!database || (database == old->sym_dbb)) &&
-			scompare(symbol->sym_string, symbol->sym_length, old->sym_string,
-					 old->sym_length))
+			scompare(symbol->sym_string, symbol->sym_length, old->sym_string, old->sym_length))
 		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
@@ -269,8 +264,7 @@ void HSHD_remove(DSQL_SYM symbol)
 
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 
-	for (DSQL_SYM* collision = &hash_table()[h]; *collision;
-		 collision = &(*collision)->sym_collision)
+	for (DSQL_SYM* collision = &hash_table()[h]; *collision; collision = &(*collision)->sym_collision)
 	{
 		if (remove_symbol(collision, symbol))
 		{
@@ -339,8 +333,7 @@ void HSHD_set_flag(const void* database,
 		{
 			// the symbol name matches and it's from a different database
 
-			for (DSQL_SYM homonym = symbol; homonym;
-				 homonym = homonym->sym_homonym)
+			for (DSQL_SYM homonym = symbol; homonym; homonym = homonym->sym_homonym)
 			{
 				if (homonym->sym_type == type)
 				{

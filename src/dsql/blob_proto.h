@@ -25,14 +25,11 @@
 #define DSQL_BLOB_PROTO_H
 
 ISC_STATUS API_ROUTINE isc_blob_gen_bpb(ISC_STATUS*, const ISC_BLOB_DESC*,
-										const ISC_BLOB_DESC*, USHORT, UCHAR*,
-										USHORT*);
+										const ISC_BLOB_DESC*, USHORT, UCHAR*, USHORT*);
 ISC_STATUS API_ROUTINE isc_blob_lookup_desc(ISC_STATUS*, void**, void**,
-											const UCHAR*, const UCHAR*,
-											ISC_BLOB_DESC*, UCHAR*);
+											const UCHAR*, const UCHAR*, ISC_BLOB_DESC*, UCHAR*);
 ISC_STATUS API_ROUTINE isc_blob_set_desc(ISC_STATUS*, const UCHAR*, const UCHAR*,
-										SSHORT, SSHORT, SSHORT,
-										ISC_BLOB_DESC*);
+										 SSHORT, SSHORT, SSHORT, ISC_BLOB_DESC*);
 
 // Only declared in ibase.h:
 //void API_ROUTINE isc_blob_default_desc(ISC_BLOB_DESC* desc,
