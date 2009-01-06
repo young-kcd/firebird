@@ -274,7 +274,8 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		{
 			// Setup the constant's descriptor
 
-			switch (numeric_flag) {
+			switch (numeric_flag)
+			{
 			case CONSTANT_DATE:
 				node->nod_desc.dsc_dtype = dtype_sql_date;
 				break;
@@ -313,8 +314,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		node->nod_desc.dsc_dtype = dtype_text;
 		node->nod_desc.dsc_sub_type = 0;
 		node->nod_desc.dsc_scale = 0;
-		node->nod_desc.dsc_length =
-			static_cast<USHORT>(constant->str_length);
+		node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
 		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 		node->nod_desc.dsc_ttype() = ttype_dynamic;
 		// carry a pointer to the constant to resolve character set in pass1
@@ -419,7 +419,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 	}
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_constant:
 	case nod_variable:
 		*desc = node->nod_desc;
@@ -450,8 +451,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 	case nod_agg_average:
 		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
-		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
-			!DTYPE_IS_TEXT(desc->dsc_dtype))
+		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("AVG"));
@@ -483,8 +483,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 	case nod_agg_total:
 		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
-		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
-			!DTYPE_IS_TEXT(desc->dsc_dtype))
+		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("SUM"));
@@ -628,8 +627,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-		if (node->nod_arg[0]->nod_type == nod_null &&
-			node->nod_arg[1]->nod_type == nod_null)
+		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL + NULL = NULL of INT
 			make_null(desc);
@@ -653,13 +651,13 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_sql_time:
 		case dtype_sql_date:
 			// CVC: I don't see how this case can happen since dialect 1 doesn't accept DATE or TIME
 			// Forbid <date/time> +- <string>
-			if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
-				DTYPE_IS_TEXT(desc2.dsc_dtype))
+			if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 			{
 				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 							Arg::Gds(isc_dsql_nodateortime_pm_string));
@@ -690,13 +688,11 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 						dtype = dtype_timestamp;
 					else if (desc1.dsc_dtype == desc2.dsc_dtype)
 						dtype = desc1.dsc_dtype;
-					else if ((desc1.dsc_dtype == dtype_timestamp) &&
-							 (desc2.dsc_dtype == dtype_sql_date))
+					else if ((desc1.dsc_dtype == dtype_timestamp) && (desc2.dsc_dtype == dtype_sql_date))
 					{
 						dtype = dtype_timestamp;
 					}
-					else if ((desc2.dsc_dtype == dtype_timestamp) &&
-							 (desc1.dsc_dtype == dtype_sql_date))
+					else if ((desc2.dsc_dtype == dtype_timestamp) && (desc1.dsc_dtype == dtype_sql_date))
 					{
 						dtype = dtype_timestamp;
 					}
@@ -782,8 +778,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-		if (node->nod_arg[0]->nod_type == nod_null &&
-			node->nod_arg[1]->nod_type == nod_null)
+		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL + NULL = NULL of INT
 			make_null(desc);
@@ -835,7 +830,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_timestamp:
@@ -960,8 +956,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-		if (node->nod_arg[0]->nod_type == nod_null &&
-			node->nod_arg[1]->nod_type == nod_null)
+		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL * NULL = NULL of INT
 			make_null(desc);
@@ -977,7 +972,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_double:
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_sub_type = 0;
@@ -1002,8 +998,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-		if (node->nod_arg[0]->nod_type == nod_null &&
-			node->nod_arg[1]->nod_type == nod_null)
+		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL * NULL = NULL of INT
 			make_null(desc);
@@ -1027,7 +1022,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_double:
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_sub_type = 0;
@@ -1063,8 +1059,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-		if (node->nod_arg[0]->nod_type == nod_null &&
-			node->nod_arg[1]->nod_type == nod_null)
+		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL / NULL = NULL of INT
 			make_null(desc);
@@ -1102,8 +1097,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
-		if (node->nod_arg[0]->nod_type == nod_null &&
-			node->nod_arg[1]->nod_type == nod_null)
+		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
 		{
 			// NULL / NULL = NULL of INT
 			make_null(desc);
@@ -1128,7 +1122,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_dtype = static_cast<UCHAR>(dtype);
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_int64:
 			desc->dsc_length = sizeof(SINT64);
 			desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
@@ -1233,7 +1228,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				fb_assert(nodeArgs->nod_type == nod_list);
 
 				for (dsql_nod** p = nodeArgs->nod_arg;
-					 p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
+					p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
 				{
 					MAKE_desc(statement, &(*p)->nod_desc, *p, NULL);
 					args.add(&(*p)->nod_desc);
@@ -1299,8 +1294,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_flags = 0;
 		desc->dsc_ttype() = ttype_metadata;
 		desc->dsc_length =
-			USERNAME_LENGTH * METD_get_charset_bpc(statement, ttype_metadata) +
-			sizeof(USHORT);
+			USERNAME_LENGTH * METD_get_charset_bpc(statement, ttype_metadata) + sizeof(USHORT);
 		return;
 
 	case nod_internal_info:
@@ -1457,8 +1451,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	desc->dsc_length = field->fld_length;
 	desc->dsc_flags = (field->fld_flags & FLD_nullable) ? DSC_nullable : 0;
 	if (desc->dsc_dtype <= dtype_any_text) {
-		INTL_ASSIGN_DSC(desc, field->fld_character_set_id,
-						field->fld_collation_id);
+		INTL_ASSIGN_DSC(desc, field->fld_character_set_id, field->fld_collation_id);
 	}
 	else if (desc->dsc_dtype == dtype_blob)
 	{
@@ -1529,12 +1522,12 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	dsql_nod* node = MAKE_node(nod_field, e_fld_count);
 	node->nod_arg[e_fld_context] = (dsql_nod*) context;
 	node->nod_arg[e_fld_field] = (dsql_nod*) field;
-	if (field->fld_dimensions) {
+	if (field->fld_dimensions)
+	{
 		if (indices) {
 			node->nod_arg[e_fld_indices] = indices;
 			MAKE_desc_from_field(&node->nod_desc, field);
-			node->nod_desc.dsc_dtype =
-				static_cast<UCHAR>(field->fld_element_dtype);
+			node->nod_desc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
 			node->nod_desc.dsc_length = field->fld_element_length;
 			/*
 			   node->nod_desc.dsc_scale = field->fld_scale;
@@ -1544,8 +1537,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		else {
 			node->nod_desc.dsc_dtype = dtype_array;
 			node->nod_desc.dsc_length = sizeof(ISC_QUAD);
-			node->nod_desc.dsc_scale =
-				static_cast<SCHAR>(field->fld_scale);
+			node->nod_desc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
 			node->nod_desc.dsc_sub_type = field->fld_sub_type;
 		}
 	}
@@ -1565,8 +1557,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	}
 
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-	if ((field->fld_flags & FLD_system) &&
-		node->nod_desc.dsc_dtype <= dtype_varying &&
+	if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
 		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
 	{
 		USHORT adjust = 0;
@@ -1931,7 +1922,8 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 
 	const char* name_alias = NULL;
 
-	switch (item->nod_type) {
+	switch (item->nod_type)
+	{
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];
 		name_alias = field->fld_name.c_str();
@@ -1982,7 +1974,8 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				map = (dsql_map*) map_node->nod_arg[e_map_map];
 				map_node = map->map_node;
 			}
-			switch (map_node->nod_type) {
+			switch (map_node->nod_type)
+			{
 			case nod_field:
 				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
 				name_alias = field->fld_name.c_str();

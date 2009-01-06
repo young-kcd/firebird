@@ -88,13 +88,12 @@ static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SSHORT*, const SCHAR**, SSHORT*, SCHAR**);
 static USHORT	get_plan_info(thread_db*, dsql_req*, SSHORT, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SSHORT, UCHAR*);
-static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
-							USHORT*);
+static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
-static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
+static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
@@ -106,7 +105,8 @@ unsigned DSQL_debug = 0;
 
 namespace
 {
-	const SCHAR db_hdr_info_items[] = {
+	const SCHAR db_hdr_info_items[] =
+	{
 		isc_info_db_sql_dialect,
 		isc_info_ods_version,
 		isc_info_ods_minor_version,
@@ -115,16 +115,19 @@ namespace
 		isc_info_end
 	};
 
-	const SCHAR explain_info[] = {
+	const SCHAR explain_info[] =
+	{
 		isc_info_access_path
 	};
 
-	const SCHAR record_info[] = {
+	const SCHAR record_info[] =
+	{
 		isc_info_req_update_count, isc_info_req_delete_count,
 		isc_info_req_select_count, isc_info_req_insert_count
 	};
 
-	const UCHAR sql_records_info[] = {
+	const UCHAR sql_records_info[] =
+	{
 		isc_info_sql_records
 	};
 
@@ -152,8 +155,7 @@ dsql_dbb::~dsql_dbb()
     @param attachment
 
  **/
-dsql_req* DSQL_allocate_statement(thread_db* tdbb,
-								  Attachment* attachment)
+dsql_req* DSQL_allocate_statement(thread_db* tdbb, Attachment* attachment)
 {
 	SET_TDBB(tdbb);
 
@@ -225,14 +227,15 @@ void DSQL_execute(thread_db* tdbb,
 /* If the request is a SELECT or blob statement then this is an open.
    Make sure the cursor is not already open. */
 
-	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_EXEC_BLOCK ||
-		request->req_type == REQ_SELECT_BLOCK ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_EMBED_SELECT ||
-		request->req_type == REQ_GET_SEGMENT ||
-		request->req_type == REQ_PUT_SEGMENT)
+	switch (request->req_type)
 	{
+	case REQ_SELECT:
+	case REQ_EXEC_BLOCK:
+	case REQ_SELECT_BLOCK:
+	case REQ_SELECT_UPD:
+	case REQ_EMBED_SELECT:
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
 		if (request->req_flags & REQ_cursor_open)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
@@ -252,10 +255,8 @@ void DSQL_execute(thread_db* tdbb,
 	if (request->req_type != REQ_EMBED_SELECT)
 	{
 		execute_request(tdbb, request, tra_handle,
-						in_blr_length, in_blr,
-						in_msg_length, in_msg,
-						out_blr_length, out_blr,
-						out_msg_length, out_msg,
+						in_blr_length, in_blr, in_msg_length, in_msg,
+						out_blr_length, out_blr, out_msg_length, out_msg,
 						singleton);
 	}
 	else
@@ -269,13 +270,16 @@ void DSQL_execute(thread_db* tdbb,
  * a singleton SELECT.  In that event, we don't add the cursor
  * to the list of open cursors (it's not really open).
  */
-	if ((request->req_type == REQ_SELECT && out_msg_length == 0) ||
-		(request->req_type == REQ_SELECT_BLOCK) ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_EMBED_SELECT ||
-		request->req_type == REQ_GET_SEGMENT ||
-		request->req_type == REQ_PUT_SEGMENT)
+	switch (request->req_type)
 	{
+	case REQ_SELECT:
+		if (out_msg_length != 0)
+			break;
+	case REQ_SELECT_BLOCK:
+	case REQ_SELECT_UPD:
+	case REQ_EMBED_SELECT:
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
 		request->req_flags |= REQ_cursor_open;
 		TRA_link_cursor(request->req_transaction, request);
 	}
@@ -317,14 +321,9 @@ void DSQL_execute_immediate(thread_db* tdbb,
 							USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg)
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
-		string, dialect, in_blr_length,
-		in_blr,
-		in_msg_type, in_msg_length,
-		in_msg,
-		out_blr_length,
-		out_blr,
-		out_msg_type, out_msg_length,
-		out_msg);
+		string, dialect,
+		in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
+		out_blr_length, out_blr, out_msg_type, out_msg_length, out_msg);
 }
 
 
@@ -374,8 +373,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
    in the same direction as before, so optimize out messages of that
    type */
 
-	if (request->req_type == REQ_SELECT &&
-		request->req_dbb->dbb_base_level >= 5)
+	if (request->req_type == REQ_SELECT && request->req_dbb->dbb_base_level >= 5)
 	{
 		switch (direction)
 		{
@@ -484,8 +482,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 		dsql_par* parameter = request->req_blob->blb_segment;
 		dsql_par* null = parameter->par_null;
-		USHORT* ret_length =
-			(USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
+		USHORT* ret_length = (USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
 		UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
 		*ret_length = BLB_get_segment(tdbb, request->req_blob->blb_blob,
@@ -529,9 +526,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
     @param option
 
  **/
-void DSQL_free_statement(thread_db* tdbb,
-						 dsql_req* request,
-						 USHORT option)
+void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 {
 	SET_TDBB(tdbb);
 
@@ -790,8 +785,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 		// Note that "" will be replaced with ".
 		// The code is very strange, because it doesn't check for "" really
 		// and thus deletes one isolated " in the middle of the cursor.
-		for (Firebird::string::iterator i = cursor.begin();
-						i < cursor.end(); ++i)
+		for (Firebird::string::iterator i = cursor.begin(); i < cursor.end(); ++i)
 		{
 			if (*i == '\"') {
 				cursor.erase(i);
@@ -800,7 +794,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 	}
 	else	// not quoted name
 	{
-		Firebird::string::size_type i = cursor.find(' ');
+		const Firebird::string::size_type i = cursor.find(' ');
 		if (i != Firebird::string::npos)
 		{
 			cursor.resize(i);
@@ -821,8 +815,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 
 	// If there already is a different cursor by the same name, bitch
 
-	const dsql_sym* symbol =
-		HSHD_lookup(request->req_dbb, cursor.c_str(), length, SYM_cursor, 0);
+	const dsql_sym* symbol = HSHD_lookup(request->req_dbb, cursor.c_str(), length, SYM_cursor, 0);
 	if (symbol)
 	{
 		if (request->req_cursor == symbol)
@@ -837,8 +830,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 	// We already know there is no cursor by this name in the hash table
 
 	if (!request->req_cursor) {
-		request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(),
-									  length, SYM_cursor, request);
+		request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(), length, SYM_cursor, request);
 	}
 	else {
 		fb_assert(request->req_cursor != symbol);
@@ -897,8 +889,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 		ThreadStatusGuard status_vector(tdbb);
 		try
 		{
-			if (request->req_type == REQ_GET_SEGMENT ||
-				request->req_type == REQ_PUT_SEGMENT)
+			if (request->req_type == REQ_GET_SEGMENT || request->req_type == REQ_PUT_SEGMENT)
 			{
 				BLB_close(tdbb, request->req_blob->blb_blob);
 				request->req_blob->blb_blob = NULL;
@@ -988,9 +979,7 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR bpb[24];
 
 	dsql_blb* blob = request->req_blob;
-	map_in_out(request, blob->blb_open_in_msg,
-			   in_blr_length, in_blr,
-			   in_msg_length, NULL, in_msg);
+	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
@@ -1023,8 +1012,8 @@ static void execute_blob(thread_db* tdbb,
 			memset(blob_id, 0, sizeof(bid));
 		}
 
-		request->req_blob->blb_blob = BLB_open2(tdbb, request->req_transaction, blob_id,
-			bpb_length, bpb, true);
+		request->req_blob->blb_blob =
+			BLB_open2(tdbb, request->req_transaction, blob_id, bpb_length, bpb, true);
 	}
 	else
 	{
@@ -1032,12 +1021,10 @@ static void execute_blob(thread_db* tdbb,
 		bid* blob_id = (bid*) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(bid));
 
-		request->req_blob->blb_blob = BLB_create2(tdbb, request->req_transaction,
-			blob_id, bpb_length, bpb);
+		request->req_blob->blb_blob =
+			BLB_create2(tdbb, request->req_transaction, blob_id, bpb_length, bpb);
 
-		map_in_out(NULL, blob->blb_open_out_msg,
-				   out_blr_length, out_blr,
-				   out_msg_length, out_msg);
+		map_in_out(NULL, blob->blb_open_out_msg, out_blr_length, out_blr, out_msg_length, out_msg);
 	}
 }
 
@@ -1131,9 +1118,10 @@ static void execute_immediate(thread_db* tdbb,
 
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-		execute_request(tdbb, request, tra_handle, in_blr_length, in_blr,
-						in_msg_length, in_msg, out_blr_length, out_blr,
-						out_msg_length,	out_msg, false);
+		execute_request(tdbb, request, tra_handle,
+						in_blr_length, in_blr, in_msg_length, in_msg,
+						out_blr_length, out_blr, out_msg_length, out_msg,
+						false);
 
 		release_request(tdbb, request, true);
 	}
@@ -1185,12 +1173,8 @@ static void execute_request(thread_db* tdbb,
 	switch (request->req_type)
 	{
 	case REQ_START_TRANS:
-		JRD_start_transaction(tdbb,
-							  &request->req_transaction,
-							  1,
-							  &request->req_dbb->dbb_attachment,
-							  request->req_blr_data.getCount(),
-							  request->req_blr_data.begin());
+		JRD_start_transaction(tdbb, &request->req_transaction, 1, &request->req_dbb->dbb_attachment,
+							  request->req_blr_data.getCount(), request->req_blr_data.begin());
 		*tra_handle = request->req_transaction;
 		return;
 
@@ -1256,16 +1240,10 @@ static void execute_request(thread_db* tdbb,
 		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
 	else
 	{
-		map_in_out(request, message,
-				   in_blr_length, in_blr,
-				   in_msg_length, NULL, in_msg);
+		map_in_out(request, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
-		JRD_start_and_send(tdbb,
-						   request->req_request,
-						   request->req_transaction,
-						   message->msg_number,
-						   message->msg_length,
-						   reinterpret_cast<SCHAR*>(message->msg_buffer),
+		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
+						   message->msg_length, reinterpret_cast<SCHAR*>(message->msg_buffer),
 						   0);
 	}
 
@@ -1284,8 +1262,7 @@ static void execute_request(thread_db* tdbb,
 		   whether anything is found by the call to receive. */
 
 		if (out_msg_length && out_blr_length) {
-			parse_blr(out_blr_length, out_blr, out_msg_length,
-					  message->msg_parameters);
+			parse_blr(out_blr_length, out_blr, out_msg_length, message->msg_parameters);
 		}
 		else if (!out_msg_length && isBlock) {
 			message = &temp_msg;
@@ -1311,8 +1288,7 @@ static void execute_request(thread_db* tdbb,
 			   second is either another record or the end of record message.
 			   In either case, there's more than one record. */
 
-			UCHAR* message_buffer =
-				(UCHAR*)gds__alloc((ULONG) message->msg_length);
+			UCHAR* message_buffer = (UCHAR*) gds__alloc((ULONG) message->msg_length);
 
 			ISC_STATUS status = FB_SUCCESS;
 
@@ -1362,11 +1338,7 @@ static void execute_request(thread_db* tdbb,
 	UCHAR buffer[20]; // Not used after retrieved
 	if (request->req_type == REQ_UPDATE_CURSOR)
 	{
-		sql_info(tdbb, request,
-				 sizeof(sql_records_info),
-				 sql_records_info,
-				 sizeof(buffer),
-				 buffer);
+		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
 
 		if (!request->req_updates)
 		{
@@ -1377,11 +1349,7 @@ static void execute_request(thread_db* tdbb,
 	}
 	else if (request->req_type == REQ_DELETE_CURSOR)
 	{
-		sql_info(tdbb, request,
-				 sizeof(sql_records_info),
-				 sql_records_info,
-				 sizeof(buffer),
-				 buffer);
+		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
 
 		if (!request->req_deletes)
 		{
@@ -1436,10 +1404,8 @@ static SSHORT filter_sub_type( dsql_req* request, const dsql_nod* node)
     @param plan_ptr
 
  **/
-static bool get_indices(
-						   SSHORT* explain_length_ptr,
-						   const SCHAR** explain_ptr,
-						   SSHORT* plan_length_ptr, SCHAR** plan_ptr)
+static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
+						SSHORT* plan_length_ptr, SCHAR** plan_ptr)
 {
 	USHORT length;
 
@@ -1452,7 +1418,8 @@ static bool get_indices(
    extracting the indices used */
 
 	explain_length--;
-	switch (*explain++) {
+	switch (*explain++)
+	{
 	case isc_info_rsb_and:
 	case isc_info_rsb_or:
 		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
@@ -1577,8 +1544,7 @@ static USHORT get_plan_info(thread_db* tdbb,
 
 		while (explain_length > 0 && buffer_length > 0)
 		{
-			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan,
-							  &join_count, &level))
+			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan, &join_count, &level))
 			{
 				// don't allocate buffer of the same length second time
 				// and let user know plan is incomplete
@@ -1600,10 +1566,9 @@ static USHORT get_plan_info(thread_db* tdbb,
 					i++;
 					continue;
 				}
-				else {
-					buffer_ptr = temp;
-					buffer_length = (SSHORT) new_length;
-				}
+
+				buffer_ptr = temp;
+				buffer_length = (SSHORT) new_length;
 				break;
 			}
 		}
@@ -1658,11 +1623,11 @@ static USHORT get_request_info(thread_db* tdbb,
 	UCHAR p;
 	while ((p = *data++) != isc_info_end)
 	{
-		const USHORT data_length =
-			static_cast<USHORT>(gds__vax_integer(data, 2));
+		const USHORT data_length = static_cast<USHORT>(gds__vax_integer(data, 2));
 		data += 2;
 
-		switch (p) {
+		switch (p)
+		{
 		case isc_info_req_update_count:
 			request->req_updates = gds__vax_integer(data, data_length);
 			break;
@@ -1770,7 +1735,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		// put out the relation name
 		{ // scope to keep length local.
 			explain_length--;
-			SSHORT length = (UCHAR) * explain++;
+			SSHORT length = (UCHAR) *explain++;
 			explain_length -= length;
 			if ((plan_length -= length) < 0)
 				return false;
@@ -1799,7 +1764,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 				USHORT union_level = *level_ptr;
 				USHORT union_join_count = 0;
-				while (explain_length > 0 && plan_length > 0) {
+				while (explain_length > 0 && plan_length > 0)
+				{
 					if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
 									  &union_join_count, &union_level))
 					{
@@ -1812,10 +1778,12 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				/* for the rest of the members, start the level at 0 so each
 				   gets its own "PLAN ... " line */
 
-				while (union_count) {
+				while (union_count)
+				{
 					union_join_count = 0;
 					union_level = 0;
-					while (explain_length > 0 && plan_length > 0) {
+					while (explain_length > 0 && plan_length > 0)
+					{
 						if (!get_rsb_item(&explain_length, &explain, &plan_length,
 										  &plan, &union_join_count, &union_level))
 						{
@@ -1836,7 +1804,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			/* if this join is itself part of a join list,
 			   but not the first item, then put out a comma */
 
-			if (*parent_join_count && plan[-1] != '(') {
+			if (*parent_join_count && plan[-1] != '(')
+			{
 				plan_length -= 2;
 				if (plan_length < 0)
 					return false;
@@ -1846,8 +1815,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			// put out the join type
 
-			if (rsb_type == isc_info_rsb_cross ||
-				rsb_type == isc_info_rsb_left_cross)
+			if (rsb_type == isc_info_rsb_cross || rsb_type == isc_info_rsb_left_cross)
 			{
 				p = "JOIN (";
 			}
@@ -1865,7 +1833,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			explain_length--;
 			{ // scope to have join_count local.
 				USHORT join_count = (USHORT) * explain++;
-				while (join_count && explain_length > 0 && plan_length > 0) {
+				while (join_count && explain_length > 0 && plan_length > 0)
+				{
 					if (!get_rsb_item(&explain_length, &explain, &plan_length,
 									  &plan, &join_count, level_ptr))
 					{
@@ -1882,8 +1851,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			if (--plan_length < 0)
 				return false;
-			else
-				*plan++ = ')';
+			*plan++ = ')';
 
 			// this qualifies as a stream, so decrement the join count
 
@@ -1917,27 +1885,23 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			// print out additional index information
 
-			if (rsb_type == isc_info_rsb_indexed ||
-				rsb_type == isc_info_rsb_navigate ||
+			if (rsb_type == isc_info_rsb_indexed || rsb_type == isc_info_rsb_navigate ||
 				rsb_type == isc_info_rsb_ext_indexed)
 			{
 				if (!get_indices(&explain_length, &explain, &plan_length, &plan))
 					return false;
 			}
 
-			if (rsb_type == isc_info_rsb_navigate &&
-				*explain == isc_info_rsb_indexed)
+			if (rsb_type == isc_info_rsb_navigate && *explain == isc_info_rsb_indexed)
 			{
 				USHORT idx_count = 1;
-				if (!get_rsb_item(&explain_length, &explain, &plan_length,
-								  &plan, &idx_count, level_ptr))
+				if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan, &idx_count, level_ptr))
 				{
 					return false;
 				}
 			}
 
-			if (rsb_type == isc_info_rsb_indexed ||
-				rsb_type == isc_info_rsb_ext_indexed)
+			if (rsb_type == isc_info_rsb_indexed || rsb_type == isc_info_rsb_ext_indexed)
 			{
 				if (--plan_length < 0)
 					return false;
@@ -1947,10 +1911,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			// detect the end of a single relation and put out a final parenthesis
 
 			if (!*parent_join_count)
+			{
 				if (--plan_length < 0)
 					return false;
-				else
-					*plan++ = ')';
+				*plan++ = ')';
+			}
 
 			// this also qualifies as a stream, so decrement the join count
 
@@ -1965,17 +1930,16 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			   substreams at once, and a plan maps to each substream
 			   in the union, so the sort doesn't really apply to a particular plan */
 
-			if (explain_length > 2 &&
-				(explain[0] == isc_info_rsb_begin) &&
-				(explain[1] == isc_info_rsb_type) &&
-				(explain[2] == isc_info_rsb_union))
+			if (explain_length > 2 && (explain[0] == isc_info_rsb_begin) &&
+				(explain[1] == isc_info_rsb_type) && (explain[2] == isc_info_rsb_union))
 			{
 				break;
 			}
 
 			// if this isn't the first item in the list, put out a comma
 
-			if (*parent_join_count && plan[-1] != '(') {
+			if (*parent_join_count && plan[-1] != '(')
+			{
 				plan_length -= 2;
 				if (plan_length < 0)
 					return false;
@@ -1995,7 +1959,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			{ // scope to have save_level local.
 				const USHORT save_level = *level_ptr;
-				while (explain_length > 0 && plan_length > 0) {
+				while (explain_length > 0 && plan_length > 0)
+				{
 					if (!get_rsb_item(&explain_length, &explain, &plan_length,
 									  &plan, parent_join_count, level_ptr))
 					{
@@ -2157,14 +2122,13 @@ static void map_in_out(	dsql_req*		request,
 
 	dsql_par* parameter;
 
-	for (parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next)
+	for (parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
 	{
 		if (parameter->par_index)
 		{
 			 // Make sure the message given to us is long enough
 
-			DSC    desc   = parameter->par_user_desc;
+			dsc desc = parameter->par_user_desc;
 			USHORT length = (IPTR) desc.dsc_address + desc.dsc_length;
 			if (length > msg_length)
 				break;
@@ -2222,8 +2186,7 @@ static void map_in_out(	dsql_req*		request,
 	}
 
 	dsql_par* dbkey;
-	if (request &&
-		((dbkey = request->req_parent_dbkey) != NULL) &&
+	if (request && ((dbkey = request->req_parent_dbkey) != NULL) &&
 		((parameter = request->req_dbkey) != NULL))
 	{
 		MOVD_move(&dbkey->par_desc, &parameter->par_desc);
@@ -2236,8 +2199,7 @@ static void map_in_out(	dsql_req*		request,
 	}
 
 	dsql_par* rec_version;
-	if (request &&
-		((rec_version = request->req_parent_rec_version) != NULL) &&
+	if (request && ((rec_version = request->req_parent_rec_version) != NULL) &&
 		((parameter = request->req_rec_version) != NULL))
 	{
 		MOVD_move(&rec_version->par_desc, &parameter->par_desc);
@@ -2264,8 +2226,7 @@ static void map_in_out(	dsql_req*		request,
     @param parameters
 
  **/
-static USHORT parse_blr(
-						USHORT blr_length,
+static USHORT parse_blr(USHORT blr_length,
 						const UCHAR* blr, const USHORT msg_length, dsql_par* parameters)
 {
 /* If there's no blr length, then the format of the current message buffer
@@ -2274,8 +2235,7 @@ static USHORT parse_blr(
 	if (!blr_length)
 	{
 		USHORT par_count = 0;
-		for (const dsql_par* parameter = parameters; parameter;
-			 parameter = parameter->par_next)
+		for (const dsql_par* parameter = parameters; parameter; parameter = parameter->par_next)
 		{
 			if (parameter->par_index) {
 				++par_count;
@@ -2572,31 +2532,26 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(statement->req_dbb->dbb_db_SQL_dialect));
 	}
 
-	if (statement->req_type == REQ_COMMIT ||
-		statement->req_type == REQ_COMMIT_RETAIN ||
-		statement->req_type == REQ_ROLLBACK ||
-		statement->req_type == REQ_ROLLBACK_RETAIN)
+	switch (statement->req_type)
 	{
+	case REQ_COMMIT:
+	case REQ_COMMIT_RETAIN:
+	case REQ_ROLLBACK:
+	case REQ_ROLLBACK_RETAIN:
 		return statement;
-	}
 
 	// Work on blob segment statements
-
-	if (statement->req_type == REQ_GET_SEGMENT ||
-		statement->req_type == REQ_PUT_SEGMENT)
-	{
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
 		GEN_port(statement, statement->req_blob->blb_open_in_msg);
 		GEN_port(statement, statement->req_blob->blb_open_out_msg);
 		GEN_port(statement, statement->req_blob->blb_segment_msg);
 		return statement;
-	}
 
 	// Generate BLR, DDL or TPB for statement
-
 	// Start transactions takes parameters via a parameter block.
 	// The statement blr string is used for that
-
-	if (statement->req_type == REQ_START_TRANS) {
+	case REQ_START_TRANS:
 		GEN_start_transaction(statement, node);
 		return statement;
 	}
@@ -2611,8 +2566,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	// stop here for ddl statements
 
-	if (statement->req_type == REQ_CREATE_DB ||
-		statement->req_type == REQ_DDL)
+	if (statement->req_type == REQ_CREATE_DB || statement->req_type == REQ_DDL)
 	{
 		return statement;
 	}
@@ -2707,7 +2661,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
  **/
 static UCHAR* put_item(	UCHAR	item,
-						USHORT	length,
+						const USHORT	length,
 						const UCHAR* string,
 						UCHAR*	ptr,
 						const UCHAR* const end)
@@ -2720,16 +2674,13 @@ static UCHAR* put_item(	UCHAR	item,
 
 	*ptr++ = item;
 
-	*ptr++ = (UCHAR)length;
+	*ptr++ = (UCHAR) length;
 	*ptr++ = length >> 8;
 
-	if (length) {
-		do {
-			*ptr++ = *string++;
-		} while (--length);
-	}
+	if (length)
+		memcpy(ptr, string, length);
 
-	return ptr;
+	return ptr + length;
 }
 
 
@@ -2870,19 +2821,20 @@ static void sql_info(thread_db* tdbb,
 	{
 		USHORT length, number;
 		const UCHAR item = *items++;
-		if (item == isc_info_sql_select || item == isc_info_sql_bind)
+		switch (item)
 		{
-			message = (item == isc_info_sql_select) ?
-				&request->req_receive : &request->req_send;
+		case isc_info_sql_select:
+		case isc_info_sql_bind:
+			message = (item == isc_info_sql_select) ? &request->req_receive : &request->req_send;
 			if (info + 1 >= end_info) {
 				*info = isc_info_truncated;
 				return;
 			}
 			*info++ = item;
-		}
-		else if (item == isc_info_sql_stmt_type)
-		{
-			switch (request->req_type) {
+			break;
+		case isc_info_sql_stmt_type:
+			switch (request->req_type)
+			{
 			case REQ_SELECT:
 			case REQ_EMBED_SELECT:
 				number = isc_info_sql_stmt_select;
@@ -2946,14 +2898,13 @@ static void sql_info(thread_db* tdbb,
 			if (!info) {
 				return;
 			}
-		}
-		else if (item == isc_info_sql_sqlda_start) {
+			break;
+		case isc_info_sql_sqlda_start:
 			length = *items++;
-			first_index =
-				static_cast<USHORT>(gds__vax_integer(items, length));
+			first_index = static_cast<USHORT>(gds__vax_integer(items, length));
 			items += length;
-		}
-		else if (item == isc_info_sql_batch_fetch) {
+			break;
+		case isc_info_sql_batch_fetch:
 			if (request->req_flags & REQ_no_batch)
 				number = 0;
 			else
@@ -2962,76 +2913,73 @@ static void sql_info(thread_db* tdbb,
 			if (!(info = put_item(item, length, buffer, info, end_info))) {
 				return;
 			}
-		}
-		else if (item == isc_info_sql_records) {
+			break;
+		case isc_info_sql_records:
 			length = get_request_info(tdbb, request, (SSHORT) sizeof(buffer), buffer);
 			if (length && !(info = put_item(item, length, buffer, info, end_info)))
 			{
 				return;
 			}
-		}
-		else if (item == isc_info_sql_get_plan) {
-		/* be careful, get_plan_info() will reallocate the buffer to a
-		   larger size if it is not big enough */
-
-			UCHAR* buffer_ptr = buffer;
-			length =
-				get_plan_info(tdbb, request, (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
-
-			if (length) {
-				info = put_item(item, length, buffer_ptr, info, end_info);
-			}
-
-			if (length > sizeof(buffer)) {
-				gds__free(buffer_ptr);
-			}
-
-			if (!info) {
-				return;
-			}
-		}
-		else if (!message ||
-			(item != isc_info_sql_num_variables && item != isc_info_sql_describe_vars))
-		{
-			buffer[0] = item;
-			const UCHAR item2 = isc_info_error;
-			length = 1 + convert((SLONG) isc_infunk, buffer + 1);
-			if (!(info = put_item(item2, length, buffer, info, end_info))) {
-				return;
-			}
-		}
-		else
-		{
-			number = (*message) ? (*message)->msg_index : 0;
-			length = convert((SLONG) number, buffer);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
-				return;
-			}
-			if (item == isc_info_sql_num_variables) {
-				continue;
-			}
-
-			const UCHAR* end_describe = items;
-			while (end_describe < end_items &&
-			   	*end_describe != isc_info_end &&
-			   	*end_describe != isc_info_sql_describe_end)
+			break;
+		case isc_info_sql_get_plan:
 			{
-				end_describe++;
-			}
+				// be careful, get_plan_info() will reallocate the buffer to a
+				// larger size if it is not big enough
 
-			info = var_info(*message,
-						items,
-						end_describe,
-						info,
-						end_info,
-						first_index);
-			if (!info) {
+				UCHAR* buffer_ptr = buffer;
+				length = get_plan_info(tdbb, request,
+									   (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
+
+				if (length) {
+					info = put_item(item, length, buffer_ptr, info, end_info);
+				}
+
+				if (length > sizeof(buffer) || buffer_ptr != buffer) {
+					gds__free(buffer_ptr);
+				}
+
+				if (!info) {
+					return;
+				}
+			}
+			break;
+		case isc_info_sql_num_variables:
+		case isc_info_sql_describe_vars:
+			if (message)
+			{
+				number = (*message) ? (*message)->msg_index : 0;
+				length = convert((SLONG) number, buffer);
+				if (!(info = put_item(item, length, buffer, info, end_info))) {
+					return;
+				}
+				if (item == isc_info_sql_num_variables) {
+					continue;
+				}
+
+				const UCHAR* end_describe = items;
+				while (end_describe < end_items &&
+					*end_describe != isc_info_end && *end_describe != isc_info_sql_describe_end)
+				{
+					end_describe++;
+				}
+
+				info = var_info(*message, items, end_describe, info, end_info, first_index);
+				if (!info) {
+					return;
+				}
+
+				items = end_describe;
+				if (*items == isc_info_sql_describe_end) {
+					items++;
+				}
+				break;
+			}
+			// else fall into
+		default:
+			buffer[0] = item;
+			length = 1 + convert((SLONG) isc_infunk, buffer + 1);
+			if (!(info = put_item(isc_info_error, length, buffer, info, end_info))) {
 				return;
-			}
-
-			items = end_describe;
-			if (*items == isc_info_sql_describe_end) {
-				items++;
 			}
 		}
 	}
@@ -3063,8 +3011,7 @@ static void sql_info(thread_db* tdbb,
     @param first_index
 
  **/
-static UCHAR* var_info(
-					   dsql_msg* message,
+static UCHAR* var_info(dsql_msg* message,
 					   const UCHAR* items,
 					   const UCHAR* const end_describe,
 					   UCHAR* info,
@@ -3076,8 +3023,7 @@ static UCHAR* var_info(
 
 	Firebird::HalfStaticArray<const dsql_par*, 16> parameters;
 
-	for (const dsql_par* param = message->msg_parameters; param;
-		param = param->par_next)
+	for (const dsql_par* param = message->msg_parameters; param; param = param->par_next)
 	{
 		if (param->par_index)
 		{
@@ -3146,12 +3092,17 @@ static UCHAR* var_info(
 			case dtype_short:
 			case dtype_long:
 			case dtype_int64:
-				if (param->par_desc.dsc_dtype == dtype_short)
+				switch (param->par_desc.dsc_dtype)
+				{
+				case dtype_short:
 					sql_type = SQL_SHORT;
-				else if (param->par_desc.dsc_dtype == dtype_long)
+					break;
+				case dtype_long:
 					sql_type = SQL_LONG;
-				else
+					break;
+				default:
 					sql_type = SQL_INT64;
+				}
 				sql_scale = param->par_desc.dsc_scale;
 				if (param->par_desc.dsc_sub_type)
 					sql_sub_type = param->par_desc.dsc_sub_type;
@@ -3176,7 +3127,8 @@ static UCHAR* var_info(
 				const TEXT* name;
 				const UCHAR* buffer = buf;
 				UCHAR item = *describe++;
-				switch (item) {
+				switch (item)
+				{
 				case isc_info_sql_sqlda_seq:
 					length = convert((SLONG) param->par_index, buf);
 					break;
