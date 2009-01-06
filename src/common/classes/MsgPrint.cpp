@@ -242,20 +242,25 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 		{
 		case 0:
 			return out_bytes;
+
 		case '@':
-			if (iter[1] == '@')
-				out_bytes += out_stream.write(iter, 1);
-			else
+			switch (iter[1])
 			{
-				int pos = iter[1] - '0';
-				if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
-					out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
-				else
+			case 0:
+				out_bytes += out_stream.write("@(EOF)", 6);
+				return out_bytes;
+			case '@':
+				out_bytes += out_stream.write(iter, 1);
+				break;
+			default:
 				{
-					if (pos >= 0 && pos <= 9)
+					const int pos = iter[1] - '0';
+					if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
+						out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
+					else if (pos >= 0 && pos <= 9)
 					{
 						// Show the missing or out of range param number.
-						char s[3] = {iter[0], iter[1], '?'};
+						const char s[3] = {iter[0], iter[1], '?'};
 						out_bytes += out_stream.write(s, 3);
 					}
 					else // Something not a number following @, invalid.
@@ -264,6 +269,25 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 			}
 			++iter;
 			break;
+
+		case '\\':
+			switch (iter[1])
+			{
+			case 0:
+				out_bytes += out_stream.write("\\(EOF)", 6);
+				return out_bytes;
+			case 'n':
+				out_bytes += out_stream.write("\n", sizeof('\n'));
+				break;
+			case 't':
+				out_bytes += out_stream.write("\t", sizeof('\t'));
+				break;
+			default:
+				out_bytes += out_stream.write(iter, 2); // iter[0] and iter[1]
+			}
+			++iter;
+			break;
+
 		default:
 			{
 				const char* iter2 = iter;
