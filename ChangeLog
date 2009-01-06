@@ -1,3 +1,57 @@
+2009-01-06 18:46  asfernandes
+
+	* firebird2/src/: burp/restore.epp (1.157), burp/spit.cpp (1.38),
+	common/cvt.cpp (1.11), common/classes/MsgPrint.cpp (1.10),
+	common/config/config_file.cpp (1.35), dsql/ddl.cpp (1.271),
+	dsql/dsql.h (1.147), dsql/pass1.cpp (1.430), jrd/event.cpp (1.81),
+	utilities/install/install.cpp (1.16),
+	utilities/install/services.cpp (1.29):
+
+	Misc
+
+2009-01-06 18:39  dimitr
+
+	* firebird2/src/jrd/met.epp (1.271):
+
+	Fixed unreliable error handling in MET_procedure().
+
+2009-01-06 16:57  dimitr
+
+	* firebird2/src/jrd/dfw.epp (1.261):
+
+	Fixed the origin of CORE-2264.
+
+2009-01-06 16:32  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.260), event.cpp (1.80),
+	event_proto.h (1.15), jrd.cpp (1.506):
+
+	Restored the original (legacy) way of returning the successful
+	status vector.	But added an assert to track an unexpected status
+	vector contents early in debug builds.	Slightly refactored the
+	error handling for events, partially synchronized the globals
+	there.	Plus some basic const'ness, better tdbb scope, etc.
+
+2009-01-06 10:47  robocop
+
+	* firebird2/src/common/classes/MsgPrint.cpp (1.9):
+
+	Initial code to fix CORE-2140: escape sequences \n and \t aren't
+	interpreted by the MsgPrint facility. To be tested by Vlad.
+
+2009-01-06 06:53  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.270), dsql.cpp (1.266), gen.cpp
+	(1.180), make.cpp (1.179), pass1.cpp (1.429):
+
+	Style.
+
+2009-01-06 06:51  robocop
+
+	* firebird2/doc/README.intl (1.14):
+
+	Misc.
+
 2009-01-05 09:48  robocop
 
 	* firebird2/src/dsql/: DdlNodes.epp (1.4), array.epp (1.42),
