@@ -177,6 +177,27 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
 
 class BackupManager {
 public:
+	class SharedDatabaseHolder
+	{
+	public:
+		explicit SharedDatabaseHolder(thread_db* atdbb, BackupManager* bm)
+			: backupManager(bm), tdbb(atdbb)
+		{
+			backupManager->lock_shared_database(tdbb, true);
+		}
+		~SharedDatabaseHolder()
+		{
+			backupManager->unlock_shared_database(tdbb);
+		}
+	private:
+		// copying is prohibited
+		SharedDatabaseHolder(const SharedDatabaseHolder&);
+		SharedDatabaseHolder& operator =(const SharedDatabaseHolder&);
+
+		BackupManager* backupManager;
+		thread_db* tdbb;
+	};
+
 	// Set when db is creating. Default = false
 	bool dbCreating;
 
