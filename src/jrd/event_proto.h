@@ -28,12 +28,11 @@
 #define JRD_EVENT_PROTO_H
 
 void EVENT_cancel(SLONG);
-SLONG EVENT_create_session(ISC_STATUS*);
+SLONG EVENT_create_session();
 void EVENT_delete_session(SLONG);
 void EVENT_deliver();
-struct evh* EVENT_init(ISC_STATUS*);
-int EVENT_post(ISC_STATUS*, USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
-SLONG EVENT_que(ISC_STATUS*, SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
+void EVENT_post(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
+SLONG EVENT_que(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
 				FPTR_EVENT_CALLBACK, void*);
 
 #endif // JRD_EVENT_PROTO_H

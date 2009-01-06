@@ -42,6 +42,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/os/isc_i_proto.h"
+#include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 
@@ -86,7 +87,7 @@ static void exit_handler(void *);
 static EVNT find_event(USHORT, const TEXT*, EVNT);
 static void free_global(FRB);
 static RINT historical_interest(SES, SLONG);
-static void init(void*, SH_MEM, bool);
+static void init_shmem(void*, SH_MEM, bool);
 static void insert_tail(srq *, srq *);
 static EVNT make_event(USHORT, const TEXT*, SLONG);
 static void mutex_bugcheck(const TEXT*, int);
@@ -96,19 +97,61 @@ static void punt(const TEXT*);
 static void release(void);
 static void remove_que(srq *);
 static bool request_completed(EVT_REQ);
-static ISC_STATUS return_ok(ISC_STATUS *);
 static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM);
 
-static EVH EVENT_header = NULL;
-static SLONG EVENT_process_offset;
+namespace
+{
+	EVH EVENT_header = NULL;
+	SLONG EVENT_process_offset = 0;
 #ifdef SOLARIS_MT
-static PRB EVENT_process;
+	PRB EVENT_process = NULL;
 #endif
-static SH_MEM_T EVENT_data;
+	SH_MEM_T EVENT_data;
 
 #if defined(WIN_NT)
-static struct mtx event_mutex;
+	struct mtx event_mutex;
 #endif
+
+	class EventStartup
+	{
+	public:
+		static void init()
+		{
+			TEXT event_file[MAXPATHLEN];
+			gds__prefix_lock(event_file, EVENT_FILE);
+
+			ISC_STATUS_ARRAY local_status;
+			if (!(EVENT_header = (EVH) ISC_map_file(local_status, event_file, init_shmem, 0,
+													Config::getEventMemSize(), &EVENT_data)))
+			{
+				Firebird::status_exception::raise(local_status);
+			}
+
+			gds__register_cleanup(exit_handler, NULL);
+		}
+
+		static void cleanup()
+		{
+			if (EVENT_process_offset)
+			{
+				if (EVENT_header->evh_current_process != EVENT_process_offset)
+					acquire();
+				delete_process(EVENT_process_offset);
+				release();
+			}
+
+			ISC_STATUS_ARRAY local_status;
+		#ifdef SOLARIS_MT
+			ISC_unmap_object(local_status, &EVENT_data, (UCHAR**) &EVENT_process, sizeof(prb));
+		#endif
+			ISC_unmap_file(local_status, &EVENT_data);
+
+			EVENT_header = NULL;
+		}
+	};
+
+	Firebird::InitMutex<EventStartup> eventStartup;
+}
 
 
 void EVENT_cancel(SLONG request_id)
@@ -148,7 +191,7 @@ void EVENT_cancel(SLONG request_id)
 }
 
 
-SLONG EVENT_create_session(ISC_STATUS* status_vector)
+SLONG EVENT_create_session()
 {
 /**************************************
  *
@@ -160,13 +203,13 @@ SLONG EVENT_create_session(ISC_STATUS* status_vector)
  *	Create session.
  *
  **************************************/
-// If we're not initialized, do so now.
 
-	if (!EVENT_header && !EVENT_init(status_vector))
-		return 0;
+	eventStartup.init();
 
 	if (!EVENT_process_offset)
+	{
 		create_process();
+	}
 
 	acquire();
 	SES session = (SES) alloc_global(type_ses, (SLONG) sizeof(ses), false);
@@ -223,8 +266,6 @@ void EVENT_deliver()
  *
  **************************************/
 
-	/* If we're not initialized, do so now */
-
 	if (!EVENT_header)
     	return;
 
@@ -251,47 +292,11 @@ void EVENT_deliver()
 }
 
 
-EVH EVENT_init(ISC_STATUS* status_vector)
-{
-/**************************************
- *
- *	E V E N T _ i n i t
- *
- **************************************
- *
- * Functional description
- *	Initialize for access to shared global region.
- *	Return address of header.
- *
- **************************************/
-	TEXT buffer[MAXPATHLEN];
-
-/* If we're already initialized, there's nothing to do */
-
-	if (EVENT_header)
-		return EVENT_header;
-
-	gds__prefix_lock(buffer, EVENT_FILE);
-	const TEXT* event_file = buffer;
-
-	if (!(EVENT_header = (EVH) ISC_map_file(status_vector, event_file, init, 0,
-											Config::getEventMemSize(), &EVENT_data)))
-	{
-		return NULL;
-	}
-
-	gds__register_cleanup(exit_handler, 0);
-
-	return EVENT_header;
-}
-
-
-int EVENT_post(ISC_STATUS * status_vector,
-			   USHORT major_length,
-			   const TEXT * major_code,
-			   USHORT minor_length,
-			   const TEXT * minor_code,
-			   USHORT count)
+void EVENT_post(USHORT major_length,
+			    const TEXT * major_code,
+			    USHORT minor_length,
+			    const TEXT * minor_code,
+			    USHORT count)
 {
 /**************************************
  *
@@ -304,10 +309,7 @@ int EVENT_post(ISC_STATUS * status_vector,
  *
  **************************************/
 
-/* If we're not initialized, do so now */
-
-	if (!EVENT_header && !EVENT_init(status_vector))
-		return status_vector[1];
+	eventStartup.init();
 
 	acquire();
 
@@ -331,13 +333,10 @@ int EVENT_post(ISC_STATUS * status_vector,
 	}
 
 	release();
-
-	return return_ok(status_vector);
 }
 
 
-SLONG EVENT_que(ISC_STATUS* status_vector,
-				SLONG session_id,
+SLONG EVENT_que(SLONG session_id,
 				USHORT string_length,
 				const TEXT* string,
 				USHORT events_length,
@@ -444,7 +443,6 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 		post_process((PRB) SRQ_ABS_PTR(EVENT_process_offset));
 
 	release();
-	return_ok(status_vector);
 
 	return id;
 }
@@ -502,8 +500,8 @@ static EVH acquire(void)
 
 	EVH header = NULL;
 #if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
-		ISC_STATUS_ARRAY status_vector;
-		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, false);
+		ISC_STATUS_ARRAY local_status;
+		header = (evh*) ISC_remap_file(local_status, &EVENT_data, length, false);
 #endif
 		if (!header) {
 			release();
@@ -580,8 +578,8 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 
 		EVH header = 0;
 #if !((defined SUPERSERVER) && (defined HAVE_MMAP))
-		ISC_STATUS_ARRAY status_vector;
-		header = reinterpret_cast<EVH>(ISC_remap_file(status_vector, &EVENT_data, ev_length, true));
+		ISC_STATUS_ARRAY local_status;
+		header = reinterpret_cast<EVH>(ISC_remap_file(local_status, &EVENT_data, ev_length, true));
 #endif
 		if (header) {
 			free = (FRB) ((UCHAR *) header + old_length);
@@ -971,21 +969,8 @@ static void exit_handler(void* arg)
  *	Cleanup on exit.
  *
  **************************************/
-	if (EVENT_process_offset) {
-		if (EVENT_header->evh_current_process != EVENT_process_offset)
-			acquire();
-		delete_process(EVENT_process_offset);
-		release();
-	}
 
-	ISC_STATUS_ARRAY local_status;
-
-#ifdef SOLARIS_MT
-	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**) &EVENT_process, sizeof(prb));
-#endif
-	ISC_unmap_file(local_status, &EVENT_data);
-
-	EVENT_header = NULL;
+	eventStartup.cleanup();
 }
 
 
@@ -1098,11 +1083,11 @@ static RINT historical_interest(SES session, SRQ_PTR event)
 }
 
 
-static void init(void* arg, SH_MEM shmem_data, bool initialize)
+static void init_shmem(void* arg, SH_MEM shmem_data, bool initialize)
 {
 /**************************************
  *
- *	i n i t
+ *	i n i t _ s h m e m
  *
  **************************************
  *
@@ -1347,25 +1332,6 @@ static bool request_completed(EVT_REQ request)
 	}
 
 	return false;
-}
-
-
-static ISC_STATUS return_ok(ISC_STATUS * status_vector)
-{
-/**************************************
- *
- *	r e t u r n _ o k
- *
- **************************************
- *
- * Functional description
- *	Everything is ducky -- return success.
- *
- **************************************/
-
-	fb_utils::init_status(status_vector);
-
-	return 0;
 }
 
 

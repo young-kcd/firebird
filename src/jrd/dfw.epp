@@ -619,7 +619,6 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
  *	Then, delete it from chain of pending work.
  *
  **************************************/
-	ISC_STATUS_ARRAY status;
 
 	if (!transaction->tra_deferred_work)
 		return;
@@ -634,7 +633,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 	{
 		if (work->dfw_type == dfw_post_event)
 		{
-			EVENT_post(status, lock->lck_length, (const TEXT*) &lock->lck_key,
+			EVENT_post(lock->lck_length, (const TEXT*) &lock->lck_key,
 					   work->dfw_name.length(), work->dfw_name.c_str(), work->dfw_count);
 			*ptr = work->dfw_next;
 			delete work;

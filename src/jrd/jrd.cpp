@@ -559,6 +559,26 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 	}
 }
 
+
+static ISC_STATUS successful_completion(ISC_STATUS* status, ISC_STATUS return_code = FB_SUCCESS)
+{
+	fb_assert(status);
+
+	// This assert validates whether we really have a successful status vector
+	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS);
+
+	// Clear the status vector if it doesn't contain a warning
+	if (status[0] != isc_arg_gds ||
+		status[1] != FB_SUCCESS ||
+		status[2] != isc_arg_warning)
+	{
+		fb_utils::init_status(status);
+	}
+
+	return return_code;
+}
+
+
 const int SWEEP_INTERVAL		= 20000;
 
 const char DBL_QUOTE			= '\042';
@@ -686,10 +706,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ex.sleep();
 		return ex.stuff_exception(user_status);
 	}
-	catch (const Exception& e)
+	catch (const Exception& ex)
 	{
-		e.stuff_exception(user_status);
-		return user_status[1];
+		return ex.stuff_exception(user_status);
 	}
 
 	PathName file_name = options.dpb_org_filename.hasData() ? options.dpb_org_filename : filename;
@@ -743,8 +762,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		ex.stuff_exception(user_status);
-		return user_status[1];
+		return ex.stuff_exception(user_status);
 	}
 
 	fb_assert(dbb);
@@ -1308,10 +1326,11 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
+	try
+	{
+		ThreadContextHolder tdbb(user_status);
 
-	try {
-		blb* blob = *blob_handle;
+		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1320,10 +1339,10 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1339,10 +1358,11 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, blb** blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
+	try
+	{
+		ThreadContextHolder tdbb(user_status);
 
-	try {
-		blb* blob = *blob_handle;
+		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1352,10 +1372,10 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1373,10 +1393,10 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
  *	Cancel an outstanding event.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1385,10 +1405,10 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1406,11 +1426,11 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
  *	Try to cancel an operation.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Attachment* attachment = *handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb, false);
 
@@ -1443,10 +1463,10 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1462,11 +1482,11 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, blb** blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		blb* blob = *blob_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1476,10 +1496,10 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1495,11 +1515,10 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, jrd_tra** tra_handle)
  *	Commit a transaction.
  *
  **************************************/
-
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1508,10 +1527,10 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS* user_status, jrd_tra** tra_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return *tra_handle ? user_status[1] : FB_SUCCESS;
+	return successful_completion(user_status);
 }
 
 
@@ -1527,11 +1546,10 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
  *	Commit a transaction.
  *
  **************************************/
-
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1540,10 +1558,10 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return *tra_handle ? user_status[1] : FB_SUCCESS;
+	return successful_completion(user_status);
 }
 
 
@@ -1562,12 +1580,11 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Attachment* attachment = *db_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -1577,10 +1594,10 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1602,29 +1619,30 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
  *	Create a new blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
 		if (*blob_handle)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
+		}
+
+		ThreadContextHolder tdbb(user_status);
 
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		blb* blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
-		*blob_handle = blob;
+		*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -1671,10 +1689,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		ex.sleep();
 		return ex.stuff_exception(user_status);
 	}
-	catch (const Exception& e)
+	catch (const Exception& ex)
 	{
-		e.stuff_exception(user_status);
-		return user_status[1];
+		return ex.stuff_exception(user_status);
 	}
 
 	PathName file_name = options.dpb_org_filename.hasData() ? options.dpb_org_filename : filename;
@@ -1727,8 +1744,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		ex.stuff_exception(user_status);
-		return user_status[1];
+		return ex.stuff_exception(user_status);
 	}
 
 	fb_assert(dbb);
@@ -2014,11 +2030,11 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
  *	Provide information on database object.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Attachment* attachment = *handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2027,10 +2043,10 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2049,10 +2065,11 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
+	try
+	{
+		ThreadContextHolder tdbb(user_status);
 
-	try {
-		Attachment* attachment = *db_handle;
+		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -2062,11 +2079,12 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 		JRD_ddl(tdbb, attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
 	}
-	catch (const Exception& ex) {
-		stuff_exception(user_status, ex);
+	catch (const Exception& ex)
+	{
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2082,14 +2100,14 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
  *	Close down a database.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		{ // scope
 			MutexLockGuard guard(databases_mutex);
 
-			Attachment* attachment = *handle;
+			Attachment* const attachment = *handle;
 			validateHandle(tdbb, attachment);
 
 			{ // holder scope
@@ -2124,10 +2142,10 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2143,17 +2161,17 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
  *	Close down and purge a database.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		MutexLockGuard guard(databases_mutex);
 
-		Attachment* attachment = *handle;
+		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 
-		Database* dbb = tdbb->getDatabase();
+		Database* const dbb = tdbb->getDatabase();
 
 		const PathName& file_name = attachment->att_filename;
 
@@ -2236,10 +2254,10 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2259,33 +2277,30 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		blb* blob = *blob_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		*length = BLB_get_segment(tdbb, blob, buffer, buffer_length);
-		user_status[0] = isc_arg_gds;
 
 		if (blob->blb_flags & BLB_eof) {
-			user_status[1] = isc_segstr_eof;
+			status_exception::raise(Arg::Gds(isc_segstr_eof));
 		}
 		else if (blob->blb_fragment_size) {
-			user_status[1] = isc_segment;
+			status_exception::raise(Arg::Gds(isc_segment));
 		}
-
-		user_status[2] = isc_arg_end;
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2311,16 +2326,16 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
 		if (!array_id->gds_quad_low && !array_id->gds_quad_high) {
 			MOVE_CLEAR(slice, slice_length);
@@ -2333,10 +2348,10 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2358,29 +2373,30 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
 		if (*blob_handle)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
+		}
+
+		ThreadContextHolder tdbb(user_status);
 
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
-		*blob_handle = blob;
+		*blob_handle = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2400,11 +2416,11 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
  *	phase commit.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_tra* transaction = *tra_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_tra* const transaction = *tra_handle;
 		validateHandle(tdbb, transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2413,10 +2429,10 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2435,11 +2451,11 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		blb* blob = *blob_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2448,10 +2464,10 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2476,26 +2492,26 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
 		BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
 					  sdl, param_length, param, slice_length, slice);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2517,33 +2533,32 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
  *	Que a request for event notification.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Attachment* attachment = *handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		Database* dbb = tdbb->getDatabase();
-		Lock* lock = dbb->dbb_lock;
+		Database* const dbb = tdbb->getDatabase();
+		Lock* const lock = dbb->dbb_lock;
 
-		if (!attachment->att_event_session &&
-			!(attachment->att_event_session = EVENT_create_session(user_status)))
+		if (!attachment->att_event_session)
 		{
-			return user_status[1];
+			attachment->att_event_session = EVENT_create_session();
 		}
 
-		*id = EVENT_que(user_status, attachment->att_event_session, lock->lck_length,
+		*id = EVENT_que(attachment->att_event_session, lock->lck_length,
 						(const TEXT*) &lock->lck_key, length, items, ast, arg);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2569,11 +2584,11 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_req* request = *req_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2587,10 +2602,10 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2610,27 +2625,28 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
 		if (*tra_handle)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		}
 
-		Attachment* attachment = *db_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = TRA_reconnect(tdbb, id, length);
-		*tra_handle = transaction;
+		*tra_handle = TRA_reconnect(tdbb, id, length);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2646,11 +2662,11 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
  *	Release a request.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_req* request = *req_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2660,10 +2676,10 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2685,11 +2701,11 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_req* request = *req_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2698,10 +2714,10 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2718,11 +2734,10 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
  *	Abort a transaction but keep the environment valid
  *
  **************************************/
-
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2731,10 +2746,10 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return *tra_handle ? user_status[1] : FB_SUCCESS;
+	return successful_completion(user_status);
 }
 
 
@@ -2750,11 +2765,10 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, jrd_tra** tra_handle)
  *	Abort a transaction.
  *
  **************************************/
-
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2763,10 +2777,10 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS* user_status, jrd_tra** tra_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return *tra_handle ? user_status[1] : FB_SUCCESS;
+	return successful_completion(user_status);
 }
 
 
@@ -2786,11 +2800,11 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
  *	Seek a stream blob.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		blb* blob = *blob_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		blb* const blob = *blob_handle;
 		validateHandle(tdbb, blob);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -2799,10 +2813,10 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2823,10 +2837,10 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		jrd_req* request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -2844,10 +2858,10 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2867,26 +2881,28 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *	Connect to a Firebird service.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
 		if (*svc_handle)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_svc_handle));
+		}
+
+		ThreadContextHolder tdbb(user_status);
 
 		*svc_handle = new Service(service_name, spb_length, reinterpret_cast<const UCHAR*>(spb));
 	}
 	catch (const DelayFailedLogin& ex)
 	{
 		ex.sleep();
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2902,11 +2918,11 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
  *	Close down a service.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Service* service = *svc_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Service* const service = *svc_handle;
 		validateHandle(service);
 
 		service->detach();
@@ -2914,10 +2930,10 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -2947,11 +2963,11 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
  *	a later date.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Service* service = *svc_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Service* const service = *svc_handle;
 		validateHandle(service);
 
 		if (service->getVersion() == isc_spb_version1) {
@@ -2978,10 +2994,10 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3006,11 +3022,11 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
  *   	network).  This parameter will be implemented at
  * 	a later date.
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Service* service = *svc_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Service* const service = *svc_handle;
 		validateHandle(service);
 
 		service->start(spb_length, reinterpret_cast<const UCHAR*>(spb));
@@ -3021,10 +3037,10 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3046,27 +3062,27 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_req* request = *req_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
 		JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg, level);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3085,27 +3101,27 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_req* request = *req_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
 		JRD_start(tdbb, request, transaction, level);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3123,11 +3139,10 @@ int GDS_SHUTDOWN(unsigned int timeout)
  *	database.
  *
  **************************************/
- 	ISC_STATUS_ARRAY status;
-	ThreadContextHolder tdbb(status);
-
 	try
 	{
+		ThreadContextHolder tdbb;
+
 		ULONG attach_count, database_count;
 		JRD_num_attachments(NULL, 0, JRD_info_none, &attach_count, &database_count);
 
@@ -3155,8 +3170,9 @@ int GDS_SHUTDOWN(unsigned int timeout)
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(status, ex);
-		gds__log_status(0, status);
+	 	ISC_STATUS_ARRAY status;
+		ex.stuff_exception(status);
+		gds__log_status(NULL, status);
 	}
 
 	return 0;
@@ -3178,18 +3194,18 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status,
  *	Start a transaction.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		JRD_start_multiple(tdbb, tra_handle, count, vector);
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3208,8 +3224,6 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
  *	Start a transaction.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
 		if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
@@ -3232,14 +3246,16 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 
 		va_end(ptr);
 
+		ThreadContextHolder tdbb(user_status);
+
 		JRD_start_multiple(tdbb, tra_handle, count, tebs.begin());
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3263,19 +3279,19 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
  *	Execute a procedure.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		Attachment* attachment = *db_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		Database* dbb = tdbb->getDatabase();
+		Database* const dbb = tdbb->getDatabase();
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
 		jrd_nod* in_message = NULL;
 		jrd_nod* out_message = NULL;
@@ -3364,10 +3380,10 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3388,11 +3404,11 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_tra* transaction = *tra_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_tra* const transaction = *tra_handle;
 		validateHandle(tdbb, transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -3401,10 +3417,10 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3423,11 +3439,11 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status,
  *	be called asynchronously.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
-		jrd_req* request = *req_handle;
+		ThreadContextHolder tdbb(user_status);
+
+		jrd_req* const request = *req_handle;
 		validateHandle(tdbb, request);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
@@ -3436,10 +3452,10 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3447,12 +3463,14 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
 							 Attachment** db_handle,
 							 dsql_req** stmt_handle)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
 		if (*stmt_handle)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
+		}
+
+		ThreadContextHolder tdbb(user_status);
 
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
@@ -3463,10 +3481,10 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3478,14 +3496,16 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 							USHORT out_blr_length, SCHAR* out_blr,
 							USHORT out_msg_type, USHORT out_msg_length, SCHAR* out_msg)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		if (*tra_handle)
+		{
 			validateHandle(tdbb, *tra_handle);
+		}
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -3497,10 +3517,10 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3513,14 +3533,16 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 									  USHORT out_blr_length, SCHAR* out_blr,
 									  USHORT out_msg_type, USHORT out_msg_length, SCHAR* out_msg)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		if (*tra_handle)
+		{
 			validateHandle(tdbb, *tra_handle);
+		}
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -3533,10 +3555,10 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3549,17 +3571,19 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 #endif
 						  )
 {
-	ThreadContextHolder tdbb(user_status);
+	ISC_STATUS return_code = FB_SUCCESS;
 
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		return DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-						  msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
+		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
+								 msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
 #ifdef SCROLLABLE_CURSORS
 						  , direction, offset
 #endif
@@ -3567,10 +3591,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status, return_code);
 }
 
 
@@ -3578,10 +3602,10 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
 						 dsql_req** stmt_handle,
 						 USHORT option)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -3590,14 +3614,16 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
 		DSQL_free_statement(tdbb, statement, option);
 
 		if (option & DSQL_drop)
+		{
 			*stmt_handle = NULL;
+		}
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3606,10 +3632,10 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 						   USHORT blr_length, const SCHAR* blr,
 						   USHORT msg_type, USHORT msg_length, const SCHAR*	dsql_msg_buf)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -3620,10 +3646,10 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3634,14 +3660,16 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 							USHORT item_length, const SCHAR* items,
 							USHORT buffer_length, SCHAR* buffer)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		if (*tra_handle)
+		{
 			validateHandle(tdbb, *tra_handle);
+		}
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -3651,10 +3679,10 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3663,10 +3691,10 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 							   const TEXT* cursor,
 							   USHORT type)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -3676,10 +3704,10 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -3688,10 +3716,10 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 							 USHORT item_length, const SCHAR* items,
 							 USHORT info_length, SCHAR* info)
 {
-	ThreadContextHolder tdbb(user_status);
-
 	try
 	{
+		ThreadContextHolder tdbb(user_status);
+
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -3703,10 +3731,10 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		return ex.stuff_exception(user_status);
 	}
 
-	return user_status[1];
+	return successful_completion(user_status);
 }
 
 
@@ -5034,14 +5062,14 @@ static void rollback(thread_db* tdbb,
 			}
 			catch (const Exception& ex)
 			{
-				stuff_exception(user_status, ex);
+				ex.stuff_exception(user_status);
 				tdbb->tdbb_status_vector = local_status;
 			}
 		}
 	}
 	catch (const Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		ex.stuff_exception(user_status);
 	}
 
 	tdbb->tdbb_status_vector = orig_status;
@@ -5803,7 +5831,7 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 							   Attachment* attachment,
 							   Database* dbb)
 {
-	stuff_exception(userStatus, ex);
+	ex.stuff_exception(userStatus);
 
 	try
 	{
@@ -5846,12 +5874,12 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  **************************************/
 	Semaphore* const semaphore = static_cast<Semaphore*>(arg);
 
-	ThreadContextHolder tdbb;
-
 	bool success = true;
 
 	try
 	{
+		ThreadContextHolder tdbb;
+
 		MutexLockGuard guard(databases_mutex);
 
 		cancel_attachments();
