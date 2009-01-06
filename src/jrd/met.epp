@@ -125,7 +125,7 @@ static void make_relation_scope_name(const TEXT*, const USHORT, Firebird::string
 static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::MetaName name = Firebird::MetaName());
 static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
-static bool par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
+static void par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*, bid*,
 	const TEXT*, UCHAR, bool, USHORT);
@@ -3236,9 +3236,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 				procedure->prc_type = prc_type;
 
-				// Now, check the result of this function here! Null pointer means failure.
-				// Or should parse_procedure_blr and its callee throw exceptions instead?
-				if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
+				try
+				{
+					parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb);
+				}
+				catch (const Firebird::Exception&)	
 				{
 					delete csb;
 
@@ -4509,9 +4511,10 @@ static jrd_nod* parse_param_blr(thread_db* tdbb,
 	return node;
 }
 
-static jrd_nod* parse_procedure_blr(
-							   thread_db* tdbb,
-							   jrd_prc* procedure, bid* blob_id, CompilerScratch* csb)
+static jrd_nod* parse_procedure_blr(thread_db* tdbb,
+									jrd_prc* procedure,
+									bid* blob_id,
+									CompilerScratch* csb)
 {
 /**************************************
  *
@@ -4534,22 +4537,17 @@ static jrd_nod* parse_procedure_blr(
 	BLB_get_data(tdbb, blob, temp, length);
 	// CVC: Why don't we check this function's return value!
 	// Trashed memory may be a cause of failure here
-	if (!par_messages(tdbb, csb->csb_blr, (USHORT) length, procedure, csb))
-	{
-		return NULL;
-	}
+	par_messages(tdbb, csb->csb_blr, (USHORT) length, procedure, csb);
 
-	jrd_nod* node = PAR_blr(tdbb, NULL, csb->csb_blr, NULL, &csb, &procedure->prc_request, false, 0);
-
-	return node;
+	return PAR_blr(tdbb, NULL, csb->csb_blr, NULL, &csb, &procedure->prc_request, false, 0);
 }
 
 
-static bool par_messages(thread_db*	tdbb,
-							const UCHAR*	blr,
-							USHORT	blr_length,
-							jrd_prc*	procedure,
-							CompilerScratch*	csb)
+static void par_messages(thread_db* tdbb,
+						 const UCHAR* blr,
+						 USHORT blr_length,
+						 jrd_prc* procedure,
+						 CompilerScratch* csb)
 {
 /**************************************
  *
@@ -4565,11 +4563,12 @@ static bool par_messages(thread_db*	tdbb,
 	csb->csb_running = blr;
 	const SSHORT version = BLR_BYTE;
 	if (version != blr_version4 && version != blr_version5) {
-		return false;
+		ERR_post(Arg::Gds(isc_metadata_corrupt) <<
+				 Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
 	if (BLR_BYTE != blr_begin) {
-		return false;
+		ERR_post(Arg::Gds(isc_metadata_corrupt));
 	}
 
 	SET_TDBB(tdbb);
@@ -4611,8 +4610,6 @@ static bool par_messages(thread_db*	tdbb,
 			delete format;
 		}
 	}
-
-	return true;
 }
 
 
