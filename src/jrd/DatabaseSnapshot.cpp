@@ -181,7 +181,7 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& poo
 		else
 		{
 			fb_assert(base->used >= offset + length);
-			memmove(ptr, ptr + length, base->used - offset + length);
+			memmove(ptr, ptr + length, base->used - offset - length);
 			base->used -= length;
 		}
 	}
@@ -272,7 +272,7 @@ void DatabaseSnapshot::SharedMemory::doCleanup(const Database* dbb)
 			element->localId == dbb->dbb_monitoring_id)
 		{
 			fb_assert(base->used >= offset + length);
-			memmove(ptr, ptr + length, base->used - offset);
+			memmove(ptr, ptr + length, base->used - offset - length);
 			base->used -= length;
 		}
 		else
