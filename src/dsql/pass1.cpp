@@ -9438,14 +9438,14 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 				fb_assert((*matching_ptr)->nod_type == nod_field_name);
 
 				const Firebird::MetaName
-					testfield(((dsql_str*)(*matching_ptr)->nod_arg[e_fln_name])->str_data);
+					testField(((dsql_str*)(*matching_ptr)->nod_arg[e_fln_name])->str_data);
 
-				if (testfield == field_name)
+				if (testField == field_name)
 				{
 					++match_count;
 
-					const size_t fieldpos = field_ptr - fields->nod_arg;
-					dsql_nod*& expr = insert->nod_arg[e_sto_statement]->nod_arg[fieldpos]->nod_arg[0];
+					const size_t fieldPos = field_ptr - fields->nod_arg;
+					dsql_nod*& expr = insert->nod_arg[e_sto_statement]->nod_arg[fieldPos]->nod_arg[0];
 					dsql_nod* var = pass1_hidden_variable(statement, expr);
 
 					if (var)
@@ -9644,9 +9644,8 @@ static dsql_nod* pass1_variable( CompiledStatement* statement, dsql_nod* input)
 					dsql_nod* var_node = *ptr;
 					const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 					DEV_BLKCHK(variable, dsql_type_var);
-					if (!strcmp
-						(reinterpret_cast<const char*>(var_name->str_data),
-						 variable->var_name))
+					if (!strcmp(reinterpret_cast<const char*>(var_name->str_data),
+						 	variable->var_name))
 					{
 						return var_node;
 					}
@@ -9662,9 +9661,8 @@ static dsql_nod* pass1_variable( CompiledStatement* statement, dsql_nod* input)
 					dsql_nod* var_node = *ptr;
 					const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 					DEV_BLKCHK(variable, dsql_type_var);
-					if (!strcmp
-						(reinterpret_cast<const char*>(var_name->str_data),
-						 variable->var_name))
+					if (!strcmp(reinterpret_cast<const char*>(var_name->str_data),
+						 	variable->var_name))
 					{
 						return var_node;
 					}
@@ -9687,9 +9685,8 @@ static dsql_nod* pass1_variable( CompiledStatement* statement, dsql_nod* input)
 				{
 					const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
 					DEV_BLKCHK(variable, dsql_type_var);
-					if (!strcmp
-						(reinterpret_cast<const char*>(var_name->str_data),
-						 variable->var_name))
+					if (!strcmp(reinterpret_cast<const char*>(var_name->str_data),
+						 	variable->var_name))
 					{
 						return var_node;
 					}

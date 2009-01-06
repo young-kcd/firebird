@@ -3494,9 +3494,12 @@ static void define_update_action(CompiledStatement* statement,
 	}
 
 	if (and_arg <= 1)
+	{
 		and_node->nod_arg[and_arg] =
 			replace_field_names(select_expr->nod_arg[e_qry_where], items, NULL, false, TEMP_CONTEXT);
-	else {
+	}
+	else
+	{
 		dsql_nod* old_and = and_node;
 		and_node = MAKE_node(nod_and, (int) 2);
 		and_node->nod_arg[0] = old_and;

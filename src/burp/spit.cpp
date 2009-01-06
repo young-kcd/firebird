@@ -195,7 +195,7 @@ int main( int argc, char *argv[])
 			argv++;
 			ret_cd = get_function_option(prog_name, &sw_replace, string, spit_in_sw_table);
 			if (ret_cd == FB_FAILURE) {
-				ret_cd = free_file_list(file_list);
+				free_file_list(file_list);
 				return FB_FAILURE;
 			}
 		}						// end of processing (*string == '-')
@@ -228,7 +228,7 @@ int main( int argc, char *argv[])
 					ret_cd = get_file_name(string, file_size, &file_ptr);
 
 					if (ret_cd == FB_FAILURE) {
-						ret_cd = free_file_list(file_list);
+						free_file_list(file_list);
 						return FB_FAILURE;
 					}
 
@@ -248,7 +248,7 @@ int main( int argc, char *argv[])
 					file_nm_sw = false;
 					ret_cd = get_file_size(prog_name, string, &file_size);
 					if (ret_cd == FB_FAILURE) {
-						ret_cd = free_file_list(file_list);
+						free_file_list(file_list);
 						return FB_FAILURE;
 					}
 				}				// end of processing file size specification
@@ -259,7 +259,7 @@ int main( int argc, char *argv[])
 				ret_cd = get_file_name(string, file_size, &file_ptr);
 
 				if (ret_cd == FB_FAILURE) {
-					ret_cd = free_file_list(file_list);
+					free_file_list(file_list);
 					return FB_FAILURE;
 				}
 
@@ -276,8 +276,8 @@ int main( int argc, char *argv[])
 
 			default:
 				fprintf(stderr, "%s: invalid option '%s'\n", prog_name, string);
-				ret_cd = print_clo(prog_name);
-				ret_cd = free_file_list(file_list);
+				print_clo(prog_name);
+				free_file_list(file_list);
 				return FB_FAILURE;
 			}					// end of switch (sw_replace)
 
@@ -287,8 +287,8 @@ int main( int argc, char *argv[])
 
 	if (!file_list && sw_replace != IN_SW_SPIT_0) {
 		fprintf(stderr, "%s: invalid option '%s', rest of parameters is missing\n", prog_name, string);
-		ret_cd = print_clo(prog_name);
-		ret_cd = free_file_list(file_list);
+		print_clo(prog_name);
+		free_file_list(file_list);
 		return FB_FAILURE;
 	}
 
@@ -300,7 +300,7 @@ int main( int argc, char *argv[])
 		ret_cd = gen_multy_bakup_files(file_list, input_file_desc, file_num);
 		if (ret_cd == FB_FAILURE) {
 			fprintf(stderr, "%s: progam fails to generate multi-volumn back-up files\n", prog_name);
-			ret_cd = free_file_list(file_list);
+			free_file_list(file_list);
 			return FB_FAILURE;
 		}
 		break;
@@ -309,7 +309,7 @@ int main( int argc, char *argv[])
 		ret_cd = join_multy_bakup_files(file_list);
 		if (ret_cd == FB_FAILURE) {
 			fprintf(stderr, "%s: progam fails to join multi-volumn back-up files\n", prog_name);
-			ret_cd = free_file_list(file_list);
+			free_file_list(file_list);
 			return FB_FAILURE;
 		}
 		break;
@@ -325,7 +325,7 @@ int main( int argc, char *argv[])
 *********************************************************
 */
 
-	ret_cd = free_file_list(file_list);
+	free_file_list(file_list);
 	return FB_SUCCESS;
 
 }								// end of main()
@@ -1340,4 +1340,3 @@ static int free_file_list( b_fil* file_list)
 
 	return FB_SUCCESS;
 }
-

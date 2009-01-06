@@ -2288,19 +2288,19 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
-		value = *((SSHORT *) p);
+		value = *((SSHORT*) p);
 		break;
 
 	case dtype_long:
-		value = *((SLONG *) p);
+		value = *((SLONG*) p);
 		break;
 
 	case dtype_int64:
-		value = *((SINT64 *) p);
+		value = *((SINT64*) p);
 		break;
 
 	case dtype_quad:
-		value = (((SINT64) ((SLONG *) p)[HIGH_WORD]) << 32) + (((ULONG *) p)[LOW_WORD]);
+		value = (((SINT64) ((SLONG*) p)[HIGH_WORD]) << 32) + (((ULONG*) p)[LOW_WORD]);
 		break;
 
 	case dtype_real:

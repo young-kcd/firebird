@@ -141,9 +141,9 @@ namespace
 			}
 
 			ISC_STATUS_ARRAY local_status;
-		#ifdef SOLARIS_MT
+#ifdef SOLARIS_MT
 			ISC_unmap_object(local_status, &EVENT_data, (UCHAR**) &EVENT_process, sizeof(prb));
-		#endif
+#endif
 			ISC_unmap_file(local_status, &EVENT_data);
 
 			EVENT_header = NULL;

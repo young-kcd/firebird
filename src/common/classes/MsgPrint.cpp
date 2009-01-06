@@ -277,10 +277,10 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 				out_bytes += out_stream.write("\\(EOF)", 6);
 				return out_bytes;
 			case 'n':
-				out_bytes += out_stream.write("\n", sizeof('\n'));
+				out_bytes += out_stream.write("\n", 1);
 				break;
 			case 't':
-				out_bytes += out_stream.write("\t", sizeof('\t'));
+				out_bytes += out_stream.write("\t", 1);
 				break;
 			default:
 				out_bytes += out_stream.write(iter, 2); // iter[0] and iter[1]

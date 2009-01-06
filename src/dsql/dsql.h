@@ -577,7 +577,8 @@ class PsqlChanger
 {
 public:
 	PsqlChanger(CompiledStatement* aStatement, bool value)
-		: statement(aStatement), oldValue(statement->isPsql())
+		: statement(aStatement),
+		  oldValue(statement->isPsql())
 	{
 		statement->setPsql(value);
 	}

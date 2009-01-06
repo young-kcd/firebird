@@ -230,10 +230,10 @@ void ConfigFile::loadConfig()
 #ifdef EXCEPTION_ON_NO_CONF
 		if (fExceptionOnError)
 		{
-			const Firebird::string Msg =
+			const Firebird::string msg =
 				"Missing configuration file: " + configFile.ToString() + ", exiting";
-			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg.c_str());
-			Firebird::fatal_exception::raise(Msg.c_str());
+			Firebird::Syslog::Record(Firebird::Syslog::Error, msg.c_str());
+			Firebird::fatal_exception::raise(msg.c_str());
 		}
 #endif //EXCEPTION_ON_NO_CONF
 		return;
@@ -254,11 +254,11 @@ void ConfigFile::loadConfig()
 
 		if (!goodLine || inputLine.find('=') == string::npos)
 		{
-			const Firebird::string Msg =
+			const Firebird::string msg =
 				(configFile + ": illegal line \"" + inputLine + "\"").ToString();
 			Firebird::Syslog::Record(fExceptionOnError ?
 										Firebird::Syslog::Error : Firebird::Syslog::Warning,
-									Msg.c_str());
+									msg.c_str());
 #ifdef EXCEPTION_ON_NO_CONF
 			BadLinesCount++;
 #endif

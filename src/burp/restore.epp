@@ -4029,7 +4029,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
 				((!X.RDB$CHARACTER_LENGTH.NULL &&
 					(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
-				 	X.RDB$FIELD_TYPE == blr_blob))
+				 X.RDB$FIELD_TYPE == blr_blob))
 			{
 				if (X.RDB$FIELD_TYPE != blr_blob)
 					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
@@ -4368,7 +4368,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
 				((!X.RDB$CHARACTER_LENGTH.NULL &&
 					(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
-					X.RDB$FIELD_TYPE == blr_blob))
+				 X.RDB$FIELD_TYPE == blr_blob))
 			{
 				if (X.RDB$FIELD_TYPE != blr_blob)
 					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
