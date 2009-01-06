@@ -9,7 +9,7 @@ Architecture
 
 Firebird allow you to specify character sets and collations in every field/variable declaration.
 You can also specify the default character set at database create time and every CHAR/VARCHAR
-declaration that omit character set will use it.
+declaration that omits the character set will use it.
 
 At attachment time you can specify the character set that the client want to read all the strings.
 If you don't specify one, NONE is assumed.
@@ -20,7 +20,7 @@ They are very similar with the exception that space of NONE is ASCII 0x20 and sp
 is 0x00.
 They are specials because they don't follow the rule of others character sets regarding conversions.
 With others character sets conversion is performed with CHARSET1->UNICODE->CHARSET2. With
-NONE/OCTETS the bytes is just copied: NONE/OCTETS->CHARSET2 and CHARSET1->NONE/OCTETS.
+NONE/OCTETS the bytes are just copied: NONE/OCTETS->CHARSET2 and CHARSET1->NONE/OCTETS.
 
 
 Enhancements
@@ -141,7 +141,7 @@ New character sets and collations
 	Brazilian collations
 	--------------------
 
-	Two case-insensitive/accent-insensitive collations was created for Brazil: PT_BR/WIN_PTBR
+	Two case-insensitive/accent-insensitive collations were created for Brazil: PT_BR/WIN_PTBR
 	(for WIN1252) and PT_BR (for ISO8859_1).
 	Sort order and equality sample:
 
@@ -210,7 +210,7 @@ ICU character sets
 ------------------
 
 All non-wide and ascii-based character sets present in ICU can be used by Firebird.
-But for small distribution kit, we customize ICU to include only essentials character sets or the
+But for small distribution kit, we customize ICU to include only essential character sets or the
 ones we had feature request.
 If the character set you need is not included in it, you can replace ICU libraries by a complete
 one found in our site or installed in your OS.
