@@ -81,6 +81,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/cch.h"
+#include "../jrd/nbak.h"
 #include "../jrd/tra.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
@@ -787,33 +788,40 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 						{
 							if (isODS11_x)
 							{
+								BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
+								const bool nbak_stalled = (dbb->dbb_backup_manager->get_state() == nbak_state_stalled);
+
 								USHORT next_init_pages = 1;
 								// ensure there are space on disk for faked page
 								if (relative_bit + 1 > pip_page->pip_header.reserved)
 								{
 									fb_assert(relative_bit == pip_page->pip_header.reserved);
 
-									USHORT init_pages = 1;
-									if (!(dbb->dbb_flags & DBB_no_reserve))
+									USHORT init_pages = 0;
+									if (!nbak_stalled)
 									{
-										const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
-										init_pages = sequence ? 64 : MIN(pip_page->pip_header.reserved / 16, 64);
-
-										// don't touch pages belongs to the next PIP
-										init_pages =
-											MIN(init_pages, pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
-
-										if (init_pages < minExtendPages)
-											init_pages = 1;
-
-										next_init_pages = init_pages;
+										init_pages = 1;
+										if (!(dbb->dbb_flags & DBB_no_reserve))
+										{
+											const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
+											init_pages = sequence ? 64 : MIN(pip_page->pip_header.reserved / 16, 64);
+	
+											// don't touch pages belongs to the next PIP
+											init_pages =
+												MIN(init_pages, pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
+	
+											if (init_pages < minExtendPages)
+												init_pages = 1;
+	
+											next_init_pages = init_pages;
+										}
+	
+										ISC_STATUS_ARRAY status;
+										const ULONG start =
+											sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
+	
+										init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
 									}
-
-									ISC_STATUS_ARRAY status;
-									const ULONG start =
-										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
-
-									init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
 
 									if (init_pages) {
 										pip_page->pip_header.reserved += init_pages;
@@ -846,7 +854,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									fb_assert(new_page);
 								}
 
-								if (!(dbb->dbb_flags & DBB_no_reserve))
+								if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled) 
 								{
 									const ULONG initialized =
 										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
