@@ -4838,6 +4838,7 @@ static bool modify_procedure(thread_db*	tdbb,
 				}
 				catch (const Firebird::Exception&)
 				{
+					fb_utils::init_status(tdbb->tdbb_status_vector);
 				}
 
 				dbb->deletePool(new_pool);
