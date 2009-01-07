@@ -268,7 +268,7 @@ struct IndexJumpNode
 	UCHAR* data;		// Data can be read from here
 };
 
-struct IndexJumpInfo 
+struct IndexJumpInfo
 {
 	USHORT firstNodeOffset;		// offset to node in page
 	USHORT jumpAreaSize;		// size area before a new jumpnode is made
@@ -293,7 +293,7 @@ struct data_page
 	SLONG dpg_sequence;			/* Sequence number in relation */
 	USHORT dpg_relation;		/* Relation id */
 	USHORT dpg_count;			/* Number of record segments on page */
-	struct dpg_repeat 
+	struct dpg_repeat
 	{
 		USHORT dpg_offset;		/* Offset of record fragment */
 		USHORT dpg_length;		/* Length of record fragment */
@@ -315,7 +315,7 @@ struct index_root_page
 	pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
-	struct irt_repeat 
+	struct irt_repeat
 	{
 		SLONG irt_root;			/* page number of index root */
 		union {
@@ -330,13 +330,13 @@ struct index_root_page
 
 /* key descriptor */
 
-struct irtd_ods10 
+struct irtd_ods10
 {
 	USHORT irtd_field;
 	USHORT irtd_itype;
 };
 
-struct irtd : public irtd_ods10 
+struct irtd : public irtd_ods10
 {
 	float irtd_selectivity;
 };
@@ -430,7 +430,7 @@ const USHORT hdr_shutdown_full		= 0x1000;
 const USHORT hdr_shutdown_single	= 0x1080;
 
 /*
-struct sfd 
+struct sfd
 {
 	SLONG sfd_min_page;			// Minimum page number
 	SLONG sfd_max_page;			// Maximum page number
@@ -507,7 +507,7 @@ struct rhd {
 
 /* Record header for fragmented record */
 
-struct rhdf 
+struct rhdf
 {
 	SLONG rhdf_transaction;		/* transaction id */
 	SLONG rhdf_b_page;			/* back pointer */
@@ -524,7 +524,7 @@ struct rhdf
 
 /* Record header for blob header */
 
-struct blh 
+struct blh
 {
 	SLONG blh_lead_page;		/* First data page number */
 	SLONG blh_max_sequence;		/* Number of data pages */
@@ -557,7 +557,7 @@ const USHORT rhd_uk_modified	= 512;		/* record key field values are changed */
 
 /* Log page */
 
-struct ctrl_pt 
+struct ctrl_pt
 {
 	SLONG cp_seqno;
 	SLONG cp_offset;
@@ -585,10 +585,10 @@ struct log_info_page
 
 /* additions for write ahead log, almost obsolete. */
 
-//const int CTRL_FILE_LEN		= 255;	/* Pre allocated size of file name */
-const USHORT CLUMP_ADD			= 0;
-const USHORT CLUMP_REPLACE		= 1;
-const USHORT CLUMP_REPLACE_ONLY= 2;
+//const int CTRL_FILE_LEN			= 255;	/* Pre allocated size of file name */
+//const USHORT CLUMP_ADD			= 0;
+//const USHORT CLUMP_REPLACE		= 1;
+//const USHORT CLUMP_REPLACE_ONLY	= 2;
 
 /* Log Clumplet types */
 
@@ -618,7 +618,7 @@ struct Descriptor
 // Array description, "internal side" used by the engine.
 // And stored on the disk, in the relation summary blob.
 
-struct InternalArrayDesc 
+struct InternalArrayDesc
 {
 	UCHAR iad_version;			/* Array descriptor version number */
 	UCHAR iad_dimensions;		/* Dimensions of array */
@@ -627,7 +627,7 @@ struct InternalArrayDesc
 	USHORT iad_length;			/* Length of array descriptor */
 	SLONG iad_count;			/* Total number of elements */
 	SLONG iad_total_length;		/* Total length of array */
-	struct iad_repeat 
+	struct iad_repeat
 	{
 		Descriptor iad_desc;	/* Element descriptor */
 		SLONG iad_length;		/* Length of "vector" element */

@@ -106,8 +106,7 @@ using namespace Ods;
 using namespace Firebird;
 
 static int blocking_ast_attachment(void*);
-static void find_clump_space(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*,
-							 USHORT);
+static void find_clump_space(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*);
 static bool find_type(thread_db* tdbb, SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**, const UCHAR**);
 
 inline void err_post_if_database_is_readonly(const Database* dbb)
@@ -344,7 +343,7 @@ static const int MIN_EXTEND_BYTES = 128 * 1024;	// 128KB
 // bool to void as the return type but left the result returned as comment.
 void PAG_add_clump(thread_db* tdbb,
 				   SLONG page_num, USHORT type,
-				   USHORT len, const UCHAR* entry, USHORT mode, USHORT must_write)
+				   USHORT len, const UCHAR* entry, ClumpOper mode) // bool must_write
 {
 /***********************************************
  *
@@ -387,13 +386,14 @@ void PAG_add_clump(thread_db* tdbb,
 
 	UCHAR* entry_p;
 	const UCHAR* clump_end;
-	while (mode != CLUMP_ADD) {
+	while (mode != CLUMP_ADD)
+	{
 		const bool found =
 			find_type(tdbb, page_num, &window, &page, LCK_write, type, &entry_p, &clump_end);
 
 		/* If we did'nt find it and it is REPLACE_ONLY, return */
 
-		if ((!found) && (mode == CLUMP_REPLACE_ONLY)) {
+		if (!found && (mode == CLUMP_REPLACE_ONLY)) {
 			CCH_RELEASE(tdbb, &window);
 			return; //false;
 		}
@@ -405,14 +405,15 @@ void PAG_add_clump(thread_db* tdbb,
 
 		/* if same size, overwrite it */
 
-		if (entry_p[1] == len) {
+		if (entry_p[1] == len)
+		{
 			entry_p += 2;
 			if (len)
 			{
-				if (must_write)
+				//if (must_write)
 					CCH_MARK_MUST_WRITE(tdbb, &window);
-				else
-					CCH_MARK(tdbb, &window);
+				//else
+				//	CCH_MARK(tdbb, &window);
 
 				memcpy(entry_p, entry, len);
 			}
@@ -456,7 +457,7 @@ void PAG_add_clump(thread_db* tdbb,
 
 	// Add the entry
 
-	find_clump_space(tdbb, page_num, &window, &page, type, len, entry, must_write);
+	find_clump_space(tdbb, page_num, &window, &page, type, len, entry);
 
 	CCH_RELEASE(tdbb, &window);
 	return; // true;
@@ -472,8 +473,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
  **************************************
  *
  * Functional description
- *	Add a file to the current database.  Return the sequence
- *	number for the new file.
+ *	Add a file to the current database.  Return the sequence number for the new file.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -560,9 +560,9 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 	}
 	else {
 		PAG_add_clump(tdbb, HEADER_PAGE, HDR_file, strlen(file_name),
-					  reinterpret_cast<const UCHAR*>(file_name), CLUMP_REPLACE, 1);
+					  reinterpret_cast<const UCHAR*>(file_name), CLUMP_REPLACE); //, true;
 		PAG_add_clump(tdbb, HEADER_PAGE, HDR_last_page, sizeof(SLONG),
-					  (UCHAR*) &start, CLUMP_REPLACE, 1);
+					  (UCHAR*) &start, CLUMP_REPLACE); //, true
 	}
 
 	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
@@ -575,7 +575,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 }
 
 
-int PAG_add_header_entry(thread_db* tdbb, header_page* header,
+bool PAG_add_header_entry(thread_db* tdbb, header_page* header,
 						 USHORT type, USHORT len, const UCHAR* entry)
 {
 /***********************************************
@@ -591,8 +591,8 @@ int PAG_add_header_entry(thread_db* tdbb, header_page* header,
  *	Will not follow to hdr_next_page
  *	Will not journal changes made to page. => obsolete
  *	RETURNS
- *		TRUE - modified page
- *		FALSE - nothing done
+ *		true - modified page
+ *		false - nothing done
  * CVC: Nobody checks the result of this function!
  *
  **************************************/
@@ -607,13 +607,14 @@ int PAG_add_header_entry(thread_db* tdbb, header_page* header,
 		p += 2 + p[1];
 
 	if (*p != HDR_end)
-		return FALSE;
+		return false;
 
 	// We are at HDR_end, add the entry
 
 	const int free_space = dbb->dbb_page_size - header->hdr_end;
 
-	if (free_space > (2 + len)) {
+	if (free_space > (2 + len))
+	{
 		fb_assert(type <= MAX_UCHAR);
 		fb_assert(len <= MAX_UCHAR);
 		*p++ = static_cast<UCHAR>(type);
@@ -633,11 +634,11 @@ int PAG_add_header_entry(thread_db* tdbb, header_page* header,
 
 		header->hdr_end = p - (UCHAR *) header;
 
-		return TRUE;
+		return true;
 	}
 
 	BUGCHECK(251);
-	return FALSE;				/* Added to remove compiler warning */
+	return false;				/* Added to remove compiler warning */
 }
 
 
@@ -667,7 +668,7 @@ void PAG_attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
 }
 
 
-int PAG_replace_entry_first(thread_db* tdbb, header_page* header,
+bool PAG_replace_entry_first(thread_db* tdbb, header_page* header,
 							USHORT type, USHORT len, const UCHAR* entry)
 {
 /***********************************************
@@ -683,8 +684,8 @@ int PAG_replace_entry_first(thread_db* tdbb, header_page* header,
  *	Will not follow to hdr_next_page
  *	Will not journal changes made to page. => obsolete
  *	RETURNS
- *		TRUE - modified page
- *		FALSE - nothing done
+ *		true - modified page
+ *		false - nothing done
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -706,7 +707,7 @@ int PAG_replace_entry_first(thread_db* tdbb, header_page* header,
 	}
 
 	if (!entry) {
-		return FALSE; // We were asked just to remove item. We finished.
+		return false; // We were asked just to remove item. We finished.
 	}
 
 	// Check if we got enough space
@@ -721,7 +722,7 @@ int PAG_replace_entry_first(thread_db* tdbb, header_page* header,
 	memcpy(header->hdr_data + 2, entry, len);
 	header->hdr_end += len + 2;
 
-	return TRUE;
+	return true;
 }
 
 PAG PAG_allocate(thread_db* tdbb, WIN* window)
@@ -764,7 +765,8 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	SLONG relative_bit = -1;
 	SLONG sequence;
 	SLONG pipMin;
-	for (sequence = pageSpace->pipHighWater; true; sequence++) {
+	for (sequence = pageSpace->pipHighWater; true; sequence++)
+	{
 		pip_window.win_page = (sequence == 0) ?
 			pageSpace->ppFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1;
 		page_inv_page* pip_page = (page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
@@ -972,7 +974,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 }
 
 
-int PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
+bool PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
 {
 /***********************************************
  *
@@ -1003,7 +1005,7 @@ int PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
 	if (!find_type(tdbb, page_num, &window, &page, LCK_write, type, &entry_p, &clump_end))
 	{
 		CCH_RELEASE(tdbb, &window);
-		return FALSE;
+		return false;
 	}
 	CCH_MARK(tdbb, &window);
 
@@ -1028,7 +1030,7 @@ int PAG_delete_clump_entry(thread_db* tdbb, SLONG page_num, USHORT type)
 
 	CCH_RELEASE(tdbb, &window);
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1390,7 +1392,7 @@ void PAG_header_init(thread_db* tdbb)
 		const ArchitectureType* matrix = ods_version < ODS_VERSION11 ? archMatrix10 : archMatrix;
 		const int hdrImpl = header->hdr_implementation;
 		if (hdrImpl < 0 || hdrImpl > classmax ||
-		    matrix[hdrImpl] == archUnknown || matrix[hdrImpl] != matrix[CLASS])
+			matrix[hdrImpl] == archUnknown || matrix[hdrImpl] != matrix[CLASS])
 		{
 			ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 		}
@@ -1573,7 +1575,8 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 
 			for (const UCHAR* p = header->hdr_data; *p != HDR_end; p += 2 + p[1])
 			{
-				switch (*p) {
+				switch (*p)
+				{
 				case HDR_file:
 					file_length = p[1];
 					file_name = buf;
@@ -1667,7 +1670,8 @@ SLONG PAG_last_page(thread_db* tdbb)
 
 	ULONG relative_bit = 0;
 	USHORT sequence;
-	for (sequence = 0; true; ++sequence) {
+	for (sequence = 0; true; ++sequence)
+	{
 		window.win_page = (!sequence) ? pageSpace->ppFirst : sequence * pages_per_pip - 1;
 		const page_inv_page* page = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
 		const UCHAR* bits = page->pip_bits + (pages_per_pip >> 3) - 1;
@@ -1870,8 +1874,10 @@ void PAG_set_db_SQL_dialect(thread_db* tdbb, SSHORT flag)
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-	if ((flag) && (ENCODE_ODS(major_version, minor_original) >= ODS_10_0)) {
-		switch (flag) {
+	if (flag && (ENCODE_ODS(major_version, minor_original) >= ODS_10_0))
+	{
+		switch (flag)
+		{
 		case SQL_DIALECT_V5:
 
 			if (dbb->dbb_flags & DBB_DB_SQL_dialect_3 || header->hdr_flags & hdr_SQL_dialect_3)
@@ -1945,7 +1951,7 @@ void PAG_sweep_interval(thread_db* tdbb, SLONG interval)
 
  	SET_TDBB(tdbb);
 	PAG_add_clump(tdbb, HEADER_PAGE, HDR_sweep_interval, sizeof(SLONG),
-				  (UCHAR*) &interval, CLUMP_REPLACE, 1);
+				  (UCHAR*) &interval, CLUMP_REPLACE); //, true
 }
 
 
@@ -1975,12 +1981,12 @@ int PAG_unlicensed(thread_db* tdbb)
 		fb_assert(sizeof(count) == len);
 		count++;
 		PAG_add_clump(tdbb, HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR *) &count, CLUMP_REPLACE_ONLY, 1);
+					  (UCHAR *) &count, CLUMP_REPLACE_ONLY); //, true
 	}
 	else {
 		count = 1;
 		PAG_add_clump(tdbb, HEADER_PAGE, HDR_unlicensed, sizeof(count),
-					  (UCHAR *) &count, CLUMP_REPLACE, 1);
+					  (UCHAR *) &count, CLUMP_REPLACE); //, true
 	}
 	CCH_RELEASE(tdbb, &window);
 
@@ -2022,8 +2028,7 @@ static void find_clump_space(thread_db* tdbb,
 							 PAG* ppage,
 							 USHORT type,
 							 USHORT len,
-							 const UCHAR* entry,
-							 USHORT must_write)
+							 const UCHAR* entry) //USHORT must_write
 {
 /***********************************************
  *
@@ -2045,7 +2050,8 @@ static void find_clump_space(thread_db* tdbb,
 	header_page* header = 0; // used after the loop
 	log_info_page* logp = 0; // used after the loop
 
-	while (true) {
+	while (true)
+	{
 		SLONG next_page, free_space;
 		USHORT* end_addr;
 		UCHAR* p;
@@ -2065,11 +2071,12 @@ static void find_clump_space(thread_db* tdbb,
 			p = (UCHAR *) logp + logp->log_end;
 		}
 
-		if (free_space > (2 + len)) {
-			if (must_write)
+		if (free_space > (2 + len))
+		{
+			//if (must_write)
 				CCH_MARK_MUST_WRITE(tdbb, window);
-			else
-				CCH_MARK(tdbb, window);
+			//else
+			//	CCH_MARK(tdbb, window);
 
 			fb_assert(type <= MAX_UCHAR);
 			fb_assert(len <= MAX_UCHAR);
@@ -2102,10 +2109,10 @@ static void find_clump_space(thread_db* tdbb,
 	WIN new_window(DB_PAGE_SPACE, -1);
 	pag* new_page = (PAG) DPM_allocate(tdbb, &new_window);
 
-	if (must_write)
+	//if (must_write)
 		CCH_MARK_MUST_WRITE(tdbb, &new_window);
-	else
-		CCH_MARK(tdbb, &new_window);
+	//else
+	//	CCH_MARK(tdbb, &new_window);
 
 
 	header_page* new_header = 0;
@@ -2185,7 +2192,8 @@ static bool find_type(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	while (true) {
+	while (true)
+	{
 		header_page* header = 0;
 		log_info_page* logp = 0;
 		UCHAR* p;
@@ -2388,9 +2396,11 @@ void PageManager::delPageSpace(const USHORT pageSpace)
 void PageManager::closeAll()
 {
 	for (size_t i = 0; i < pageSpaces.getCount(); i++)
+	{
 		if (pageSpaces[i]->file) {
 			PIO_close(pageSpaces[i]->file);
 		}
+	}
 }
 
 void PageManager::releaseLocks()

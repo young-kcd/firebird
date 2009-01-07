@@ -1935,7 +1935,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_alias:
 		string = (dsql_str*) item->nod_arg[e_alias_alias];
-		parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+		parameter->par_alias = string->str_data;
 		alias = item->nod_arg[e_alias_value];
 		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
@@ -1953,7 +1953,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_derived_field:
 		string = (dsql_str*) item->nod_arg[e_derived_field_name];
-		parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+		parameter->par_alias = string->str_data;
 		alias = item->nod_arg[e_derived_field_value];
 		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
@@ -1983,7 +1983,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				break;
 			case nod_alias:
 				string = (dsql_str*) map_node->nod_arg[e_alias_alias];
-				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+				parameter->par_alias = string->str_data;
 				alias = map_node->nod_arg[e_alias_value];
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
@@ -1993,7 +1993,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				break;
 			case nod_derived_field:
 				string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
-				parameter->par_alias = reinterpret_cast<const TEXT*>(string->str_data);
+				parameter->par_alias = string->str_data;
 				alias = map_node->nod_arg[e_derived_field_value];
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];

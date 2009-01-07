@@ -67,14 +67,12 @@ Jrd::dsql_nod* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::dsql_nod*);
 Jrd::dsql_nod* MAKE_field_name(const char*);
 Jrd::dsql_nod* MAKE_list(Jrd::DsqlNodStack&);
 Jrd::dsql_nod* MAKE_node(Dsql::nod_t, int);
-Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg* , bool, bool, USHORT, const Jrd::dsql_nod*);
-Jrd::dsql_str* MAKE_string(const char* , int);
-Jrd::dsql_sym* MAKE_symbol(Jrd::dsql_dbb*, const TEXT*, USHORT,
-						   Jrd::sym_type, Jrd::dsql_req*);
+Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::dsql_nod*);
+Jrd::dsql_str* MAKE_string(const char*, int);
+Jrd::dsql_sym* MAKE_symbol(Jrd::dsql_dbb*, const TEXT*, USHORT, Jrd::sym_type, Jrd::dsql_req*);
 Jrd::dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
 Jrd::dsql_nod* MAKE_trigger_type(Jrd::dsql_nod*, Jrd::dsql_nod*);
-Jrd::dsql_nod* MAKE_variable(Jrd::dsql_fld*, const TEXT*,
-								const Jrd::dsql_var_type type, USHORT,
+Jrd::dsql_nod* MAKE_variable(Jrd::dsql_fld*, const TEXT*, const Jrd::dsql_var_type type, USHORT,
 								USHORT, USHORT);
 
 #endif // DSQL_MAKE_PROTO_H

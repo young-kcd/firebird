@@ -5052,14 +5052,15 @@ void LEX_dsql_init(MemoryPool& pool)
 	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
 		DSQL_SYM symbol = FB_NEW_RPT(pool, 0) dsql_sym;
-		symbol->sym_string = (TEXT *) token->tok_string;
+		symbol->sym_string = token->tok_string;
 		symbol->sym_length = strlen(token->tok_string);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_keyword = token->tok_ident;
 		symbol->sym_version = token->tok_version;
 		dsql_str* str = FB_NEW_RPT(pool, symbol->sym_length) dsql_str;
 		str->str_length = symbol->sym_length;
-		strncpy((char*) str->str_data, (char*) symbol->sym_string, symbol->sym_length);
+		strncpy(str->str_data, symbol->sym_string, symbol->sym_length);
+		//str->str_data[str->str_length] = 0; Is it necessary?
 		symbol->sym_object = (void *) str;
 		HSHD_insert(symbol);
 	}
@@ -5100,14 +5101,15 @@ static bool long_int(dsql_nod* string,
  *
  *************************************/
 
-	for (const UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; true; p++)
+	const char* data = ((dsql_str*) string)->str_data;
+	for (const UCHAR* p = (UCHAR*) data; true; p++)
 	{
 		if (!(classes(*p) & CHR_DIGIT)) {
 			return false;
 		}
 	}
 
-	*long_value = atol(((dsql_str*) string)->str_data);
+	*long_value = atol(data);
 
 	return true;
 }
@@ -5709,7 +5711,7 @@ int Parser::yylexAux()
 		// Remember where we start from, to rescan later.
 		// Also we'll need to know the length of the buffer.
 		
-		const char* hexstring = (char*) ++lex.ptr;
+		const char* hexstring = ++lex.ptr;
 		int charlen = 0;
 
 		// Time to scan the string. Make sure the characters are legal,
@@ -5778,7 +5780,7 @@ int Parser::yylexAux()
 					byte = c;
 			}
 
-			dsql_str* string = MAKE_string((char*) temp.c_str(), temp.length());
+			dsql_str* string = MAKE_string(temp.c_str(), temp.length());
 			string->str_charset = "BINARY";
 			yylval = (dsql_nod*) string;
 			
@@ -5810,7 +5812,7 @@ int Parser::yylexAux()
 		// Also we'll need to know the length of the buffer.
 
 		++lex.ptr;  // Skip the 'X' and point to the first digit
-		const char* hexstring = (char*) lex.ptr;
+		const char* hexstring = lex.ptr;
 		int charlen = 0;
 
 		// Time to scan the string. Make sure the characters are legal,
@@ -6096,7 +6098,7 @@ int Parser::yylexAux()
 		check_bound(p, string);
 		*p = 0;
 		dsql_sym* sym =
-			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
+			HSHD_lookup (NULL, string, (SSHORT)(p - string), SYM_keyword, parser_version);
 		if (sym && (sym->sym_keyword != COMMENT || lex.prev_keyword == -1))
 		{
 			yylval = (dsql_nod*) sym->sym_object;

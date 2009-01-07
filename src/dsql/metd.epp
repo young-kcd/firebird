@@ -167,8 +167,8 @@ void METD_drop_collation(dsql_req* request, const dsql_str* name)
 	}
 
 	// mark other potential candidates as maybe dropped
-	HSHD_set_flag(request->req_dbb, reinterpret_cast<const TEXT*>(name->str_data),
-				  name->str_length, SYM_intlsym_collation, INTLSYM_dropped);
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length,
+				  SYM_intlsym_collation, INTLSYM_dropped);
 }
 
 
@@ -203,8 +203,7 @@ void METD_drop_function(dsql_req* request, const dsql_str* name)
 
 	// mark other potential candidates as maybe dropped
 
-	HSHD_set_flag(request->req_dbb, reinterpret_cast<const TEXT*>(name->str_data),
-				  name->str_length, SYM_udf, UDF_dropped);
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_udf, UDF_dropped);
 
 }
 
@@ -240,8 +239,7 @@ void METD_drop_procedure(dsql_req* request, const dsql_str* name)
 
 	// mark other potential candidates as maybe dropped
 
-	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
-				  SYM_procedure, PRC_dropped);
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_procedure, PRC_dropped);
 
 }
 
@@ -277,8 +275,7 @@ void METD_drop_relation(dsql_req* request, const dsql_str* name)
 
 	// mark other potential candidates as maybe dropped
 
-	HSHD_set_flag(request->req_dbb, (TEXT*)name->str_data, name->str_length,
-				  SYM_relation, REL_dropped);
+	HSHD_set_flag(request->req_dbb, name->str_data, name->str_length, SYM_relation, REL_dropped);
 
 }
 
@@ -327,7 +324,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 			DSQL_REQUEST(irq_collation) = handle;
 
 		iname = FB_NEW_RPT(dbb->dbb_pool, name->str_length) dsql_intlsym;
-		strcpy(iname->intlsym_name, (TEXT *) name->str_data);
+		strcpy(iname->intlsym_name, name->str_data);
 		iname->intlsym_flags = 0;
 		iname->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
 		iname->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -2104,6 +2101,5 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, const dsql_str* name, SYM_TYPE typ
  *  Wrapper for the above function.
  *
  **************************************/
-	return lookup_symbol(dbb, name->str_length,
-		reinterpret_cast<const TEXT*>(name->str_data), type, charset_id);
+	return lookup_symbol(dbb, name->str_length, name->str_data, type, charset_id);
 }

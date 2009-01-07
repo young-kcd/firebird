@@ -34,16 +34,18 @@ namespace Jrd {
 namespace Ods {
 	struct pag;
 	struct header_page;
+	enum ClumpOper { CLUMP_ADD, CLUMP_REPLACE, CLUMP_REPLACE_ONLY };
+
 }
 
-void	PAG_add_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT, const UCHAR*, USHORT, USHORT);
+void	PAG_add_clump(Jrd::thread_db* tdbb, SLONG, USHORT, USHORT, const UCHAR*, Ods::ClumpOper);
 USHORT	PAG_add_file(Jrd::thread_db* tdbb, const TEXT*, SLONG);
-int		PAG_add_header_entry(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
+bool	PAG_add_header_entry(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
 void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
-int		PAG_replace_entry_first(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
+bool	PAG_replace_entry_first(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
 Ods::pag*	PAG_allocate(Jrd::thread_db* tdbb, Jrd::win*);
 SLONG	PAG_attachment_id(Jrd::thread_db*);
-int		PAG_delete_clump_entry(Jrd::thread_db* tdbb, SLONG, USHORT);
+bool	PAG_delete_clump_entry(Jrd::thread_db* tdbb, SLONG, USHORT);
 void	PAG_format_header(Jrd::thread_db*);
 void	PAG_format_log(Jrd::thread_db*);
 void	PAG_format_pip(Jrd::thread_db*, Jrd::PageSpace& pageSpace);

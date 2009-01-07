@@ -456,7 +456,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 			if (pClause->dasup_blr) {
 				gds__free(pClause->dasup_blr);
 			}
-			pClause->dasup_blr = reinterpret_cast<char*>(gds__alloc((SLONG) blr_len));
+			pClause->dasup_blr = static_cast<char*>(gds__alloc((SLONG) blr_len));
 			// FREE: unknown
 			if (!pClause->dasup_blr)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
@@ -610,7 +610,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 		{
 			if (pClause->dasup_msg)
 				gds__free(pClause->dasup_msg);
-			pClause->dasup_msg = reinterpret_cast<char*>(gds__alloc((SLONG) msg_len));
+			pClause->dasup_msg = static_cast<char*>(gds__alloc((SLONG) msg_len));
 			// FREE: unknown
 			if (!pClause->dasup_msg)	// NOMEM:
 				return error_dsql_804(status, isc_virmemexh);
@@ -776,7 +776,7 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 
 	if (!DSQL_failures)
 	{
-		DSQL_failures = (TEXT *) gds__alloc((SLONG) DSQL_FAILURE_SPACE);
+		DSQL_failures = (TEXT*) gds__alloc((SLONG) DSQL_FAILURE_SPACE);
 		// FREE: by exit handler cleanup()
 		if (!DSQL_failures)		// NOMEM: don't try to copy the strings
 			return;
@@ -784,7 +784,7 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 		gds__register_cleanup(cleanup, 0);
 
 #ifdef DEBUG_GDS_ALLOC
-		gds_alloc_flag_unfreed((void *) DSQL_failures);
+		gds_alloc_flag_unfreed((void*) DSQL_failures);
 #endif
 	}
 

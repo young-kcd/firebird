@@ -3739,7 +3739,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		// determine the proper field name, replacing the default if necessary
 
 		if (alias_name) {
-			field_string = (TEXT*) alias_name->str_data;
+			field_string = alias_name->str_data;
 		}
 		else if (field) {
 			field_string = field->fld_name.c_str();
@@ -3764,7 +3764,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			if (ptr < end)
 			{
 				const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
-				field_string = (TEXT*) field_name->str_data;
+				field_string = field_name->str_data;
 			}
 			ptr++;
 		}

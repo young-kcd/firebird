@@ -260,11 +260,10 @@ bool PREPARSE_execute(
 
 // This code is because 3.3 server does not recognize isc_dpb_overwrite.
 		FB_API_HANDLE temp_db_handle = 0;
-		if (!isc_attach_database(user_status, 0, file_name.c_str(),
-				&temp_db_handle, dpb.getBufferLength(),
-				reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
-					user_status[1] != isc_io_error)
-			{
+		if (!isc_attach_database(user_status, 0, file_name.c_str(), &temp_db_handle,
+				dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
+			user_status[1] != isc_io_error)
+		{
 			if (!user_status[1]) {
 				// Swallow status from detach.
 				ISC_STATUS_ARRAY temp_status;
@@ -285,9 +284,8 @@ bool PREPARSE_execute(
 			return true;
 		}
 
-		isc_create_database(user_status, 0, file_name.c_str(),
-							(db_handle), dpb.getBufferLength(),
-							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()),
+		isc_create_database(user_status, 0, file_name.c_str(), db_handle,
+							dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()),
 							0);
 	}
 	catch (const Exception& ex)

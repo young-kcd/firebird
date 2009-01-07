@@ -5024,9 +5024,9 @@ static SCHAR *alloc(SLONG length)
 	SCHAR *block;
 
 #ifdef DEBUG_GDS_ALLOC
-	if (block = reinterpret_cast<SCHAR *>(gds__alloc_debug((SLONG) (sizeof(SCHAR) * length), file, line)))
+	if (block = static_cast<SCHAR*>(gds__alloc_debug((SLONG) (sizeof(SCHAR) * length), file, line)))
 #else
-	if (block = reinterpret_cast<SCHAR *>(gds__alloc((SLONG) (sizeof(SCHAR) * length))))
+	if (block = static_cast<SCHAR*>(gds__alloc((SLONG) (sizeof(SCHAR) * length))))
 #endif
 		memset(block, 0, length);
 	else

@@ -179,7 +179,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 			node->nod_arg[e_derived_field_value]->nod_type != nod_dbkey &&
 			node->nod_arg[e_derived_field_value]->nod_type != nod_map)
 		{
-			dsql_ctx* ctx = (dsql_ctx*) node->nod_arg[e_derived_field_context];
+			const dsql_ctx* ctx = (dsql_ctx*) node->nod_arg[e_derived_field_context];
 
 			if (ctx->ctx_main_derived_contexts.hasData())
 			{
@@ -193,7 +193,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 				stuff(statement, blr_derived_expr);
 				stuff(statement, ctx->ctx_main_derived_contexts.getCount());
 
-				for (DsqlContextStack::iterator stack(ctx->ctx_main_derived_contexts);
+				for (DsqlContextStack::const_iterator stack(ctx->ctx_main_derived_contexts);
 					 stack.hasData(); ++stack)
 				{
 					fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
@@ -366,8 +366,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		break;
 
 	case nod_agg_total:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-			blr_agg_total_distinct : blr_agg_total;
+		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ? blr_agg_total_distinct : blr_agg_total;
 		break;
 
 	case nod_agg_average2:
@@ -376,13 +375,11 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		break;
 
 	case nod_agg_total2:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-			blr_agg_total_distinct : blr_agg_total;
+		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ? blr_agg_total_distinct : blr_agg_total;
 		break;
 
 	case nod_agg_list:
-		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ?
-			blr_agg_list_distinct : blr_agg_list;
+		blr_operator = (node->nod_flags & NOD_AGG_DISTINCT) ? blr_agg_list_distinct : blr_agg_list;
 		break;
 
 	case nod_and:
@@ -785,6 +782,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 					// No special action for other data types
 					break;
 			}
+
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
@@ -921,7 +919,8 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 
 	USHORT lock_level = isc_tpb_shared;
 
-	if (count = node->nod_count) {
+	if (count = node->nod_count)
+	{
 		while (count--) {
 			const dsql_nod* ptr = node->nod_arg[count];
 
@@ -998,7 +997,6 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 				else
 					stuff(statement, isc_tpb_no_rec_version);
 			}
-
 			break;
 
 		case nod_reserve:
@@ -1017,8 +1015,8 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 						gen_table_lock(statement, *temp, lock_level);
 					}
 				}
-				break;
 			}
+			break;
 
 		case nod_tra_misc:
 			if (misc_flags & ptr->nod_flags)
@@ -1354,7 +1352,8 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			}
 			// assignment
 			dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
-			if (list_into) {
+			if (list_into)
+			{
 				dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
 				if (list->nod_count != list_into->nod_count)
 				{
@@ -2347,7 +2346,8 @@ void GEN_return( CompiledStatement* statement, const dsql_nod* parameters, bool 
 	stuff(statement, blr_begin);
 
 	USHORT outputs = 0;
-	if (parameters) {
+	if (parameters)
+	{
 		const dsql_nod* const* ptr = parameters->nod_arg;
 		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
@@ -3018,8 +3018,7 @@ static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lo
 	else if (flags & NOD_SHARED)
 		lock_level = isc_tpb_shared;
 
-	const USHORT lock_mode = (flags & NOD_WRITE) ?
-		isc_tpb_lock_write : isc_tpb_lock_read;
+	const USHORT lock_mode = (flags & NOD_WRITE) ? isc_tpb_lock_write : isc_tpb_lock_read;
 
 	const dsql_nod* const* ptr = tbl_names->nod_arg;
 	for (const dsql_nod* const* const end = ptr + tbl_names->nod_count; ptr < end; ptr++)
@@ -3031,7 +3030,7 @@ static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lo
 
 		// stuff table name
 		const dsql_str* temp = (dsql_str*) ((*ptr)->nod_arg[e_rln_name]);
-		stuff_cstring(statement, reinterpret_cast<const char*>(temp->str_data));
+		stuff_cstring(statement, temp->str_data);
 
 		stuff(statement, lock_level);
 	}

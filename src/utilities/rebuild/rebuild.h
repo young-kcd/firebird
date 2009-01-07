@@ -36,7 +36,7 @@ typedef struct rbdb {
     int		rbdb_map_count;
     SCHAR	*rbdb_map_region;
     SSHORT	rbdb_page_size;
-    SCHAR	rbdb_valid;
+    bool	rbdb_valid;
     SLONG	rbdb_window_offset;
     SLONG	rbdb_last_page;
     PAG		rbdb_buffer1;
@@ -45,11 +45,11 @@ typedef struct rbdb {
     struct fil	rbdb_file;
 } *RBDB;
 
-typedef struct swc {
+struct swc {
     bool    swc_switch;
     bool    swc_comma;
     TEXT    *swc_string;
-} *SWC;
+};
 
 #endif /* UTILITIES_REBUILD_H */
 

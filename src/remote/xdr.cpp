@@ -35,32 +35,40 @@
 
 #ifdef BURP
 #include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
-inline UCHAR* XDR_ALLOC(ULONG size) {
+inline UCHAR* XDR_ALLOC(ULONG size)
+{
 	return MISC_alloc_burp(size);
 }
-inline void XDR_FREEA(void* block) {
+inline void XDR_FREEA(void* block)
+{
 	MISC_free_burp(block);
 }
 #else // BURP
-inline UCHAR* XDR_ALLOC(ULONG size) {
+inline UCHAR* XDR_ALLOC(ULONG size)
+{
 	return (UCHAR*) gds__alloc((SLONG) size);
 }
-inline void XDR_FREEA(void* block) {
+inline void XDR_FREEA(void* block)
+{
 	gds__free(block);
 }
 #endif // BURP
 
 #ifdef DEBUG_XDR_MEMORY
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len)
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 	xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len);
 }
 #else
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 }
 #endif /* DEBUG_XDR_MEMORY */
 
@@ -126,7 +134,8 @@ bool_t xdr_hyper( XDR * xdrs, void * pi64)
  **************************************/
 	SLONG temp_long[2];
 
-	switch (xdrs->x_op) {
+	switch (xdrs->x_op)
+	{
 	case XDR_ENCODE:
 		memcpy(temp_long, pi64, sizeof temp_long);
 #ifndef WORDS_BIGENDIAN
@@ -202,8 +211,7 @@ bool_t xdr_bool( XDR * xdrs, bool_t * bp)
 }
 
 
-bool_t xdr_bytes(XDR * xdrs,
-				 SCHAR ** bpp, u_int * lp, u_int maxlength)
+bool_t xdr_bytes(XDR * xdrs, SCHAR ** bpp, u_int * lp, u_int maxlength)
 {
 /**************************************
  *
@@ -221,8 +229,7 @@ bool_t xdr_bytes(XDR * xdrs,
 	{
 	case XDR_ENCODE:
 		length = *lp;
-		if (length > (SLONG) maxlength ||
-			!PUTLONG(xdrs, &length) || !PUTBYTES(xdrs, *bpp, length))
+		if (length > (SLONG) maxlength || !PUTLONG(xdrs, &length) || !PUTBYTES(xdrs, *bpp, length))
 		{
 			return FALSE;
 		}
@@ -239,8 +246,7 @@ bool_t xdr_bytes(XDR * xdrs,
 				return FALSE;
 			DEBUG_XDR_ALLOC(xdrs, bpp, *bpp, (maxlength + 1));
 		}
-		if (!GETLONG(xdrs, &length) ||
-			length > (SLONG) maxlength || !GETBYTES(xdrs, *bpp, length))
+		if (!GETLONG(xdrs, &length) || length > (SLONG) maxlength || !GETBYTES(xdrs, *bpp, length))
 		{
 			return FALSE;
 		}
@@ -531,8 +537,7 @@ bool_t xdr_short(XDR * xdrs, SSHORT * ip)
 }
 
 
-bool_t xdr_string(XDR * xdrs,
-				  SCHAR ** sp, u_int maxlength)
+bool_t xdr_string(XDR * xdrs, SCHAR ** sp, u_int maxlength)
 {
 /**************************************
  *
@@ -915,8 +920,7 @@ static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t mem_putbytes(
-						   XDR* xdrs,
+static bool_t mem_putbytes(XDR* xdrs,
 						   const SCHAR* buff, u_int count)
 {
 /**************************************
