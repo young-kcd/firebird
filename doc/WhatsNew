@@ -7,6 +7,11 @@
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
 
+    * Bugfix CORE-2266
+        NBACKUP database locking not working correctly
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2242
         The engine incorrectly fills BPB
       Contributor(s):
