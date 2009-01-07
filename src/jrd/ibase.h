@@ -704,7 +704,7 @@ ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS*,
 										   short,
 										   const ISC_SCHAR*);
 
-ISC_STATUS ISC_EXPORT isc_ddl(ISC_STATUS*,
+ISC_STATUS FB_API_DEPRECATED ISC_EXPORT isc_ddl(ISC_STATUS*,
 							  isc_db_handle*,
 							  isc_tr_handle*,
 							  short,
