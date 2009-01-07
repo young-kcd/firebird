@@ -3787,7 +3787,7 @@ static void set_generator( DUDLEY_NOD node)
 	new_val = *number;
 	*number = 0;
 
-	current_blr.str_current = current_blr.str_start = reinterpret_cast<UCHAR*>(gds__alloc(1028));
+	current_blr.str_current = current_blr.str_start = static_cast<UCHAR*>(gds__alloc(1028));
 	if (!current_blr.str_current) {
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	}
@@ -3813,7 +3813,7 @@ static void set_generator( DUDLEY_NOD node)
    want to change the generator by */
 
 	*number = new_val - gen_value;
-	new_blr.str_current = new_blr.str_start = reinterpret_cast<UCHAR*>(gds__alloc(1028));
+	new_blr.str_current = new_blr.str_start = static_cast<UCHAR*>(gds__alloc(1028));
 	if (!new_blr.str_current) {
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	}
@@ -3905,7 +3905,7 @@ static void store_blr( DUDLEY_NOD node, ISC_QUAD* blob_id, DUDLEY_REL relation)
 	ISC_STATUS_ARRAY status_vector;
 	FB_API_HANDLE handle;
 
-	blr.str_current = blr.str_start = reinterpret_cast<UCHAR*>(gds__alloc(4096));
+	blr.str_current = blr.str_start = static_cast<UCHAR*>(gds__alloc(4096));
 	if (!blr.str_current)
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	blr.str_length = 4096;
