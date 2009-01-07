@@ -1,3 +1,41 @@
+2009-01-07 16:28  asfernandes
+
+	* firebird2/src/jrd/ibase.h (1.140):
+
+	Deprecate ISC_ddl
+
+2009-01-07 10:30  robocop
+
+	* firebird2/src/: remote/xdr.cpp (1.44), utilities/stats.epp
+	(1.16), utilities/rebuild/rebuild.cpp (1.29),
+	utilities/rebuild/rebuild.h (1.7):
+
+	Style.
+
+2009-01-07 10:30  robocop
+
+	* firebird2/src/dudley/: exe.epp (1.71), trn.cpp (1.44):
+
+	To convert void* to another ptr type you only need static_cast.
+
+2009-01-07 10:27  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.272), dsql/dsql.h (1.148),
+	dsql/gen.cpp (1.181), dsql/make.cpp (1.180), dsql/make_proto.h
+	(1.35), dsql/metd.epp (1.140), dsql/parse.y (1.297), dsql/pass1.cpp
+	(1.431), dsql/preparse.cpp (1.48), dsql/utld.cpp (1.57), jrd/ods.h
+	(1.49), jrd/pag.cpp (1.202), jrd/pag_proto.h (1.24), jrd/why.cpp
+	(1.230):
+
+	Style.
+
+2009-01-06 22:30  hvlad
+
+	* firebird2/src/jrd/pag.cpp (1.201):
+
+	Fixed bug CORE-2266 : Nbackup database locking not working
+	correctly
+
 2009-01-06 18:46  asfernandes
 
 	* firebird2/src/: burp/restore.epp (1.157), burp/spit.cpp (1.38),
