@@ -31,7 +31,6 @@
 #include <string.h>
 #include "../common/classes/fb_string.h"
 #include "gen/iberror.h"
-#include "../jrd/common.h"
 
 #ifdef SFIO
 #include <stdio.h>
