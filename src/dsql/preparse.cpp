@@ -54,16 +54,18 @@ enum pp_vals {
 const size_t MAX_TOKEN_SIZE = 1024;
 static void generate_error(ISC_STATUS*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
-static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**,
-						const SCHAR* const, Firebird::string&);
+static SSHORT get_token(ISC_STATUS*, SSHORT, bool, const SCHAR**, const SCHAR* const,
+	Firebird::string&);
 
-struct pp_table {
+struct pp_table
+{
 	SCHAR symbol[10];
 	USHORT length;
 	SSHORT code;
 };
 
-static const pp_table pp_symbols[] = {
+static const pp_table pp_symbols[] =
+{
 	{"CREATE", 6, PP_CREATE},
 	{"DATABASE", 8, PP_DATABASE},
 	{"SCHEMA", 6, PP_SCHEMA},
@@ -109,14 +111,8 @@ using namespace Firebird;
     @param dialect
 
  **/
-bool PREPARSE_execute(
-		ISC_STATUS* user_status,
-		FB_API_HANDLE* db_handle,
-		FB_API_HANDLE* trans_handle,
-		USHORT stmt_length,
-		const SCHAR* stmt,
-		bool* stmt_eaten,
-		USHORT dialect)
+bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle, FB_API_HANDLE* trans_handle,
+					  USHORT stmt_length, const SCHAR* stmt, bool* stmt_eaten, USHORT dialect)
 {
 	// no use creating separate pool for a couple of strings
 	ContextPoolHolder context(getDefaultMemoryPool());
@@ -134,17 +130,15 @@ bool PREPARSE_execute(
 		string token;
 
 		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
-			token.length() != pp_symbols[PP_CREATE].length ||
-			token != pp_symbols[PP_CREATE].symbol)
+			token.length() != pp_symbols[PP_CREATE].length || token != pp_symbols[PP_CREATE].symbol)
 		{
 			return false;
 		}
 
 		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
 			(token.length() != pp_symbols[PP_DATABASE].length &&
-			 token.length() != pp_symbols[PP_SCHEMA].length) ||
-			(token != pp_symbols[PP_DATABASE].symbol &&
-			 token != pp_symbols[PP_SCHEMA].symbol))
+				token.length() != pp_symbols[PP_SCHEMA].length) ||
+			(token != pp_symbols[PP_DATABASE].symbol && token != pp_symbols[PP_SCHEMA].symbol))
 		{
 			return false;
 		}
@@ -169,19 +163,20 @@ bool PREPARSE_execute(
 				*stmt_eaten = true;
 				break;
 			}
-			else if (result < 0)
+			if (result < 0)
 				break;
 
 			matched = false;
-			for (int i = 3; pp_symbols[i].length && !matched; i++) {
-				if (token.length() == pp_symbols[i].length &&
-					token == pp_symbols[i].symbol)
+			for (int i = 3; pp_symbols[i].length && !matched; i++)
+			{
+				if (token.length() == pp_symbols[i].length && token == pp_symbols[i].symbol)
 				{
 					bool get_out = false;
 					// CVC: What's strange, this routine doesn't check token.length()
 					// but it proceeds blindly, trying to exhaust the token itself.
 
-					switch (pp_symbols[i].code) {
+					switch (pp_symbols[i].code)
+					{
 					case PP_PAGE_SIZE:
 					case PP_PAGESIZE:
 						if (get_token(user_status, '=', true, &stmt, stmt_end, token) ||
@@ -253,8 +248,8 @@ bool PREPARSE_execute(
 					if (get_out) {
 						return true;
 					}
-				}
-			}
+				} // if
+			} // for
 
 		} while (matched);
 
@@ -269,7 +264,8 @@ bool PREPARSE_execute(
 				ISC_STATUS_ARRAY temp_status;
 				isc_detach_database(temp_status, &temp_db_handle);
 			}
-			if (!user_status[1] || user_status[1] == isc_bad_db_format) {
+			if (!user_status[1] || user_status[1] == isc_bad_db_format)
+			{
 				user_status[0] = isc_arg_gds;
 				user_status[1] = isc_io_error;
 				user_status[2] = isc_arg_string;
@@ -310,8 +306,7 @@ bool PREPARSE_execute(
     @param result
 
  **/
-static void generate_error(ISC_STATUS* user_status,
-						   const string& token, SSHORT error, SSHORT result)
+static void generate_error(ISC_STATUS* user_status, const string& token, SSHORT error, SSHORT result)
 {
 	string err_string;
 
@@ -321,7 +316,8 @@ static void generate_error(ISC_STATUS* user_status,
 	user_status[3] = -104;
 	user_status[4] = isc_arg_gds;
 
-	switch (error) {
+	switch (error)
+	{
 	case UNEXPECTED_END_OF_COMMAND:
 		user_status[5] = isc_command_end_err;
 		user_status[6] = isc_arg_end;
@@ -359,22 +355,22 @@ static void generate_error(ISC_STATUS* user_status,
     @param token
 
  **/
-static SSHORT get_next_token(const SCHAR** stmt,
-							 const SCHAR* stmt_end,
-							 string& token)
+static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& token)
 {
 	UCHAR c, char_class = 0;
 
 	token.erase();
 	const SCHAR* s = *stmt;
 
-	for (;;) {
+	for (;;)
+	{
 		if (s >= stmt_end) {
 			*stmt = s;
 			return NO_MORE_TOKENS;
 		}
 		c = *s++;
-		if (c == '/' && s < stmt_end && *s == '*') {
+		if (c == '/' && s < stmt_end && *s == '*')
+		{
 			s++;
 			while (s < stmt_end) {
 				c = *s++;
@@ -411,8 +407,10 @@ static SSHORT get_next_token(const SCHAR** stmt,
 /* In here we handle only 4 cases, STRING, INTEGER, arbitrary
    SYMBOL and single character punctuation. */
 
-	if (char_class & CHR_QUOTE) {
-		for (;;) {
+	if (char_class & CHR_QUOTE)
+	{
+		for (;;)
+		{
 			if (s >= stmt_end)
 				return UNEXPECTED_END_OF_COMMAND;
 
@@ -433,7 +431,8 @@ static SSHORT get_next_token(const SCHAR** stmt,
 
 /* Is it an integer? */
 
-	if (char_class & CHR_DIGIT) {
+	if (char_class & CHR_DIGIT)
+	{
 		for (; s < stmt_end && (classes(c = *s) & CHR_DIGIT); ++s); // empty body
 		fb_assert(s >= start_of_token);
 		const size_t length = (s - start_of_token);
@@ -448,7 +447,8 @@ static SSHORT get_next_token(const SCHAR** stmt,
 
 // Is is a symbol
 
-	if (char_class & CHR_LETTER) {
+	if (char_class & CHR_LETTER)
+	{
 		token += UPPER(c);
 		for (; s < stmt_end && (classes(*s) & CHR_IDENT); s++) {
 			token += UPPER(*s);
@@ -494,7 +494,8 @@ static SSHORT get_token(ISC_STATUS* status,
 	const SCHAR* temp_stmt = *stmt;
 	const SSHORT result = get_next_token(&temp_stmt, stmt_end, token);
 
-	switch (result) {
+	switch (result)
+	{
 	case NO_MORE_TOKENS:
 		*stmt = temp_stmt;
 		generate_error(status, token, UNEXPECTED_END_OF_COMMAND, 0);

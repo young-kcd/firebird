@@ -26,7 +26,8 @@
 
 using namespace Jrd;
 
-const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
+const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] =
+{
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},
 	{"CURRENT_TRANSACTION", 0},

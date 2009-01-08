@@ -131,7 +131,7 @@ static int get_function_option(const SCHAR*, gsplit_option*, const SCHAR*, const
 static int gen_multy_bakup_files(b_fil*, FILE_DESC, SLONG);
 static int set_hdr_str(TEXT*, const TEXT*, SLONG, SLONG);
 static int join_multy_bakup_files(b_fil*);
-static int print_clo(const TEXT*);
+static void print_clo(const TEXT*);
 static int read_and_write(FILE_DESC, FILE_DESC, const TEXT*, SLONG,
 						  SINT64, UCHAR**, bool*, SINT64*, SLONG*);
 static int read_and_write_for_join(FILE_DESC, const TEXT*, UCHAR**, SLONG, SLONG*);
@@ -348,11 +348,10 @@ static int get_function_option(const SCHAR* prog_name,
 **
 *********************************************************************
 */
-	SLONG ret_cd;
 
 	if (strlen(string) == 1) {
 		fprintf(stderr, "%s: invalid option '%s'\n", prog_name, string);
-		ret_cd = print_clo(prog_name);
+		print_clo(prog_name);
 		return FB_FAILURE;
 	}
 
@@ -376,7 +375,7 @@ static int get_function_option(const SCHAR* prog_name,
 
 			if (*sw_replace != in_sw_tab->in_sw) {
 				fprintf(stderr, "%s: invalid option '%s', incompatible option\n", prog_name, string);
-				ret_cd = print_clo(prog_name);
+				print_clo(prog_name);
 				return FB_FAILURE;
 			}
 
@@ -386,7 +385,7 @@ static int get_function_option(const SCHAR* prog_name,
 
 	if (!in_sw_tab->in_sw) {
 		fprintf(stderr, "%s: invalid option '%s'\n", prog_name, string);
-		ret_cd = print_clo(prog_name);
+		print_clo(prog_name);
 		return FB_FAILURE;
 	}
 
@@ -441,7 +440,6 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 */
 
 	UCHAR c;
-	SLONG ret_cd;
 
 	for (const SCHAR* p = string; c = *p++;)
 	{
@@ -476,7 +474,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 			else {				// invalid size indicator
 
 				fprintf(stderr, "%s: invalid size indicator '%s'\n", prog_name, string);
-				ret_cd = print_clo(prog_name);
+				print_clo(prog_name);
 				return FB_FAILURE;
 			}
 		}
@@ -484,7 +482,7 @@ static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* fi
 	if (*file_size < MIN_FILE_SIZE) {	// handling user specifies file size 0
 		fprintf(stderr, "%s: invalid option '%s', minimum file size is 1 megabyte\n",
 				   prog_name, string);
-		ret_cd = print_clo(prog_name);
+		print_clo(prog_name);
 		return FB_FAILURE;
 	}
 
@@ -1254,7 +1252,7 @@ static int final_flush_io_buff(const UCHAR* remaining_io,
 }
 
 
-static int print_clo(const TEXT* prog_name)
+static void print_clo(const TEXT* prog_name)
 {
 /********************************************************************
 **
@@ -1276,7 +1274,7 @@ static int print_clo(const TEXT* prog_name)
 	fprintf(stderr, "%s: option can be abbreviated to the unparenthesized characters\n", prog_name);
 	fprintf(stderr, "%s: Exiting before completion due to errors\n", prog_name);
 
-	return FB_SUCCESS;
+	//return FB_SUCCESS;
 
 }
 

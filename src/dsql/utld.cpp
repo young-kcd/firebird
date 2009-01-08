@@ -202,12 +202,11 @@ ISC_STATUS UTLD_copy_status(const ISC_STATUS* from, ISC_STATUS* to)
     @param return_index
 
  **/
-ISC_STATUS	UTLD_parse_sql_info(
-				ISC_STATUS* status,
-				USHORT dialect,
-				const SCHAR* info,
-				XSQLDA* xsqlda,
-				USHORT* return_index)
+ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS* status,
+								USHORT dialect,
+								const SCHAR* info,
+								XSQLDA* xsqlda,
+								USHORT* return_index)
 {
 	XSQLVAR *xvar, xsqlvar;
 	SQLDA* sqlda;
@@ -346,15 +345,14 @@ ISC_STATUS	UTLD_parse_sql_info(
     @param clause
 
  **/
-ISC_STATUS	UTLD_parse_sqlda(
-				ISC_STATUS* status,
-				sqlda_sup* const dasup,
-				USHORT* blr_length,
-				USHORT* msg_type,
-				USHORT* msg_length,
-				USHORT dialect,
-				const XSQLDA* xsqlda,
-				const USHORT clause)
+ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
+							 sqlda_sup* const dasup,
+							 USHORT* blr_length,
+							 USHORT* msg_type,
+							 USHORT* msg_length,
+							 USHORT dialect,
+							 const XSQLDA* xsqlda,
+							 const USHORT clause)
 {
 	USHORT n;
 	XSQLVAR xsqlvar;

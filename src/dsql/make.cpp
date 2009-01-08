@@ -1183,7 +1183,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// Fix for bug 10072 check that the target is a relation
 		context = (dsql_ctx*) node->nod_arg[0]->nod_arg[0];
 		relation = context->ctx_relation;
-		if (relation != 0) {
+		if (relation != 0)
+		{
 			desc->dsc_dtype = dtype_text;
 			if (relation->rel_flags & REL_creating)
 				desc->dsc_length = 8;
@@ -1331,7 +1332,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 	case nod_extract:
 		MAKE_desc(statement, &desc1, node->nod_arg[e_extract_value], NULL);
 
-		switch (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address)
+		switch (*(ULONG*) node->nod_arg[e_extract_part]->nod_desc.dsc_address)
 		{
 			case blr_extract_second:
 				// QUADDATE - maybe this should be DECIMAL(6,4)
@@ -1524,7 +1525,8 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	node->nod_arg[e_fld_field] = (dsql_nod*) field;
 	if (field->fld_dimensions)
 	{
-		if (indices) {
+		if (indices)
+		{
 			node->nod_arg[e_fld_indices] = indices;
 			MAKE_desc_from_field(&node->nod_desc, field);
 			node->nod_desc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
@@ -1534,14 +1536,16 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 			   node->nod_desc.dsc_sub_type = field->fld_sub_type;
 			 */
 		}
-		else {
+		else
+		{
 			node->nod_desc.dsc_dtype = dtype_array;
 			node->nod_desc.dsc_length = sizeof(ISC_QUAD);
 			node->nod_desc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
 			node->nod_desc.dsc_sub_type = field->fld_sub_type;
 		}
 	}
-	else {
+	else
+	{
 		if (indices)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
@@ -1693,7 +1697,8 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	}
 
 // If the parameter is used declared, set SQLDA index
-	if (sqlda_flag) {
+	if (sqlda_flag)
+	{
 		if (sqlda_index) {
 			parameter->par_index = sqlda_index;
 			if (message->msg_index < sqlda_index)

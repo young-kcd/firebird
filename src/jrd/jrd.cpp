@@ -568,9 +568,7 @@ static ISC_STATUS successful_completion(ISC_STATUS* status, ISC_STATUS return_co
 	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS);
 
 	// Clear the status vector if it doesn't contain a warning
-	if (status[0] != isc_arg_gds ||
-		status[1] != FB_SUCCESS ||
-		status[2] != isc_arg_warning)
+	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || status[2] != isc_arg_warning)
 	{
 		fb_utils::init_status(status);
 	}

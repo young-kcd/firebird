@@ -94,7 +94,7 @@ public:
 public:
 	YYSTYPE parse();
 
-	bool isStmtAmbiguous()
+	bool isStmtAmbiguous() const
 	{
 		return stmt_ambiguous;
 	}

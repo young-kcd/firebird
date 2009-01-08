@@ -44,7 +44,7 @@ template <typename T>
 class RegisterNode
 {
 public:
-	RegisterNode(UCHAR blr)
+	explicit RegisterNode(UCHAR blr)
 	{
 		PAR_register(blr, T::parse);
 	}
@@ -98,7 +98,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass()
 
 
 void InAutonomousTransactionNode::print(Firebird::string& text,
-		Firebird::Array<dsql_nod*>& nodes) const
+	Firebird::Array<dsql_nod*>& nodes) const
 {
 	text = "in autonomous transaction";
 	nodes.add(dsqlAction);
@@ -113,16 +113,14 @@ void InAutonomousTransactionNode::genBlr()
 }
 
 
-InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(
-		thread_db* tdbb, CompilerScratch* csb)
+InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	action = CMP_pass1(tdbb, csb, action);
 	return this;
 }
 
 
-InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(
-		thread_db* tdbb, CompilerScratch* csb)
+InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	action = CMP_pass2(tdbb, csb, action, node);
 	return this;
@@ -136,17 +134,15 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		fb_assert(tdbb->getTransaction() == request->req_transaction);
 
 		request->req_auto_trans.push(request->req_transaction);
-		request->req_transaction = TRA_start(tdbb,
-			request->req_transaction->tra_flags,
-			request->req_transaction->tra_lock_timeout,
-			request->req_transaction);
+		request->req_transaction = TRA_start(tdbb, request->req_transaction->tra_flags,
+											 request->req_transaction->tra_lock_timeout,
+											 request->req_transaction);
 		tdbb->setTransaction(request->req_transaction);
 
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, request->req_transaction,
-				jrd_req::req_trigger_trans_start);
+			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_start);
 		}
 
 		return action;
@@ -158,8 +154,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
-			EXE_execute_db_triggers(tdbb, request->req_transaction,
-				jrd_req::req_trigger_trans_commit);
+			EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
 		}
 
 		{ // scope
@@ -178,7 +173,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 				{
 					// run ON TRANSACTION COMMIT triggers
 					EXE_execute_db_triggers(tdbb, request->req_transaction,
-						jrd_req::req_trigger_trans_commit);
+											jrd_req::req_trigger_trans_commit);
 				}
 
 				Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
@@ -201,7 +196,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 				{
 					// run ON TRANSACTION ROLLBACK triggers
 					EXE_execute_db_triggers(tdbb, request->req_transaction,
-						jrd_req::req_trigger_trans_rollback);
+											jrd_req::req_trigger_trans_rollback);
 				}
 				catch (const Firebird::Exception&)
 				{

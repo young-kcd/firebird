@@ -89,7 +89,7 @@ Parser::YYSTYPE Parser::parse()
 {
 	if (parseAux() != 0)
 		return NULL;
-	else
-		return DSQL_parse;
+
+	return DSQL_parse;
 }
 

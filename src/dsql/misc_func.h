@@ -25,9 +25,11 @@
 
 #include "../jrd/misc_func_ids.h"
 
-class InternalInfo {
+class InternalInfo
+{
 private:
-	struct InfoAttr {
+	struct InfoAttr
+	{
 		const char* alias_name;
 		unsigned short req_mask;
 	};
