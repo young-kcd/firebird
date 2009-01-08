@@ -1,3 +1,39 @@
+2009-01-08 18:08  alexpeshkoff
+
+	* firebird2/src/common/: utils_proto.h (1.30), classes/MetaName.h
+	(1.11):
+
+	Finished x86 solaris port
+
+2009-01-08 16:15  alexpeshkoff
+
+	* firebird2/src/dsql/parse.y (1.298):
+
+	fixed build
+
+2009-01-08 10:27  robocop
+
+	* firebird2/src/dsql/movd.cpp (1.24):
+
+	Misc.
+
+2009-01-08 10:27  robocop
+
+	* firebird2/src/dsql/: hsh.cpp (1.45), hsh_proto.h (1.9), sym.h
+	(1.16):
+
+	Get rid of unneeded typedefs.
+
+2009-01-08 10:26  robocop
+
+	* firebird2/src/: burp/spit.cpp (1.39), dsql/Parser.cpp (1.5),
+	dsql/Parser.h (1.9), dsql/StmtNodes.cpp (1.7), dsql/make.cpp
+	(1.181), dsql/misc_func.cpp (1.11), dsql/misc_func.h (1.8),
+	dsql/preparse.cpp (1.49), dsql/user_dsql.cpp (1.59), dsql/utld.cpp
+	(1.58), jrd/jrd.cpp (1.507):
+
+	Style.
+
 2009-01-07 16:28  asfernandes
 
 	* firebird2/src/jrd/ibase.h (1.140):
