@@ -52,7 +52,6 @@ static void post_error(const Arg::StatusVector&);
  **/
 void MOVD_move(const dsc* from, dsc* to)
 {
-
 	CVT_move(from, to, post_error);
 }
 
