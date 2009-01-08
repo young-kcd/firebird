@@ -26,7 +26,7 @@
 
 void HSHD_finish(const void*);
 void HSHD_insert(Jrd::dsql_sym*);
-Jrd::DSQL_SYM HSHD_lookup(const void*, const TEXT*, SSHORT, Jrd::SYM_TYPE, USHORT);
+Jrd::dsql_sym* HSHD_lookup(const void*, const TEXT*, SSHORT, Jrd::SYM_TYPE, USHORT);
 void HSHD_remove(Jrd::dsql_sym*);
 void HSHD_set_flag(const void *, const TEXT*, SSHORT, Jrd::SYM_TYPE, SSHORT);
 

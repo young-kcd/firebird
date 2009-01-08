@@ -49,7 +49,8 @@ typedef sym_type SYM_TYPE;
 
 // symbol block
 
-class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
+class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym>
+{
 public:
 	void *sym_dbb;				// generic DB structure handle
 	const TEXT *sym_string;			// address of asciz string
@@ -62,7 +63,7 @@ public:
 	dsql_sym* sym_homonym;		// homonym pointer
 	TEXT sym_name[2];			// space for name, if necessary
 };
-typedef dsql_sym *DSQL_SYM;
+
 
 } // namespace
 
