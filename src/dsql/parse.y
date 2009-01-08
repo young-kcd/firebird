@@ -5051,7 +5051,7 @@ void LEX_dsql_init(MemoryPool& pool)
  **************************************/
 	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
-		DSQL_SYM symbol = FB_NEW_RPT(pool, 0) dsql_sym;
+		dsql_sym* symbol = FB_NEW_RPT(pool, 0) dsql_sym;
 		symbol->sym_string = token->tok_string;
 		symbol->sym_length = strlen(token->tok_string);
 		symbol->sym_type = SYM_keyword;
