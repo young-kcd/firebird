@@ -3464,7 +3464,7 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 			// Parameters are equal when there index is the same
 			const dsql_par* parameter1 = (dsql_par*) node1->nod_arg[e_par_parameter];
 			const dsql_par* parameter2 = (dsql_par*) node2->nod_arg[e_par_parameter];
-		return (parameter1->par_index == parameter2->par_index);
+			return (parameter1->par_index == parameter2->par_index);
 		}
 	} // switch
 
@@ -7784,7 +7784,7 @@ static dsql_nod* pass1_returning(CompiledStatement* statement, const dsql_nod* i
 static dsql_nod* pass1_rse( CompiledStatement* statement, dsql_nod* input, dsql_nod* order,
 	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
 {
-	const TEXT* save_alias = 0;
+	const TEXT* save_alias = NULL;
 	const bool isRecursive = (input->nod_flags & NOD_SELECT_EXPR_RECURSIVE);
 
 	if (isRecursive)
@@ -7892,7 +7892,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		if (update_lock &&
 			(list->nod_count != 1 || list->nod_arg[0]->nod_type != nod_relation ||
 				!(relation = ((dsql_ctx*)list->nod_arg[0]->nod_arg[e_rel_context])->ctx_relation) ||
-				(relation->rel_flags & REL_view) || (relation->rel_flags & REL_external) ))
+				(relation->rel_flags & REL_view) || (relation->rel_flags & REL_external)))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
@@ -8456,7 +8456,7 @@ static dsql_nod* pass1_sort( CompiledStatement* statement, dsql_nod* input, dsql
 		else if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long)
 		{
 			const ULONG position = node1->getSlong();
-			if ((position < 1) || !selectList || (position > (ULONG) selectList->nod_count))
+			if (position < 1 || !selectList || position > (ULONG) selectList->nod_count)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Invalid column position used in the ORDER BY clause
@@ -8889,7 +8889,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 		case nod_union:
 			if (in_select_list)
 			{
-				if ((position < 0) || (position >= input->nod_count))
+				if (position < 0 || position >= input->nod_count)
 				{
 					// Internal dsql error: column position out of range in pass1_union_auto_cast
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<

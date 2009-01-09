@@ -163,6 +163,7 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle, FB_API_
 				*stmt_eaten = true;
 				break;
 			}
+
 			if (result < 0)
 				break;
 
@@ -364,11 +365,14 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 
 	for (;;)
 	{
-		if (s >= stmt_end) {
+		if (s >= stmt_end)
+		{
 			*stmt = s;
 			return NO_MORE_TOKENS;
 		}
+
 		c = *s++;
+
 		if (c == '/' && s < stmt_end && *s == '*')
 		{
 			s++;
@@ -380,6 +384,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 			s++;
 			continue;
 		}
+
 		// CVC: Dmitry told me to leave this in peace, but if somebody wants
 		// to experiment ignoring single line comments, here's an idea.
 		if (c == '-' && s < stmt_end && *s == '-')
@@ -394,6 +399,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 			continue;
 		}
 		// CVC: End modification.
+
 		char_class = classes(c);
 		if (!(char_class & CHR_WHITE))
 			break;

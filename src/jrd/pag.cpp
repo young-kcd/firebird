@@ -393,7 +393,7 @@ void PAG_add_clump(thread_db* tdbb,
 
 		/* If we did'nt find it and it is REPLACE_ONLY, return */
 
-		if (!found && (mode == CLUMP_REPLACE_ONLY)) {
+		if (!found && mode == CLUMP_REPLACE_ONLY) {
 			CCH_RELEASE(tdbb, &window);
 			return; //false;
 		}
