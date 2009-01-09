@@ -1,3 +1,29 @@
+2009-01-09 15:44  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_atomic.h (1.16):
+
+	Removed generic (mutex-based) atomic counter. It violates fb 2.5
+	global variables construction rules, therefore does not work at all
+	- and even if fixed is highly not-efficient if attempted in
+	production build. Actually it never worked reliably (causing random
+	faults in places like MemoryPool), therefore it looks like it's
+	better not to have such buggy implementation at all.
+
+	Added AIX implememntation - using AIX atomic functions.
+
+2009-01-09 05:20  robocop
+
+	* firebird2/src/dsql/parse.y (1.299):
+
+	Only spaces.
+
+2009-01-09 02:50  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.432), dsql/preparse.cpp (1.50),
+	jrd/pag.cpp (1.203), utilities/stats.epp (1.17):
+
+	Misc
+
 2009-01-08 18:08  alexpeshkoff
 
 	* firebird2/src/common/: utils_proto.h (1.30), classes/MetaName.h
