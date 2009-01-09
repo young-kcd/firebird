@@ -147,17 +147,13 @@ private:
 
 } // namespace Firebird
 
-#else
+#elif defined(AIX)
 
-# include "../common/classes/locks.h"
+#include <sys/atomic_op.h>
 
 namespace Firebird {
 
-// Highly inefficient, but safe and portable implementation
-// We keep it for DEV build to start doing ports, but should be avoided in release
-#ifndef DEV_BUILD
-#pragma FB_COMPILER_MESSAGE("Generic AtomicCounter: implement appropriate code for your platform!"
-#endif
+// AIX version - uses AIX atomic API
 class AtomicCounter
 {
 public:
@@ -168,62 +164,51 @@ public:
 
 	counter_type exchangeAdd(counter_type value)
 	{
-		lock.enter();
-		counter_type temp = counter;
-		counter += value;
-		lock.leave();
-		return temp;
+		return fetch_and_add(&counter, value) + value;
 	}
 
 	counter_type operator +=(counter_type value)
 	{
-		lock.enter();
-		counter_type temp = counter += value;
-		lock.leave();
-		return temp;
+		return exchangeAdd(value) + value;
 	}
 
 	counter_type operator -=(counter_type value)
 	{
-		lock.enter();
-		counter_type temp = counter -= value;
-		lock.leave();
-		return temp;
+		return exchangeAdd(-value) - value;
 	}
 
 	counter_type operator ++()
 	{
-		lock.enter();
-		counter_type temp = counter++;
-		lock.leave();
-		return temp;
+		return exchangeAdd(1) + 1;
 	}
 
 	counter_type operator --()
 	{
-		lock.enter();
-		counter_type temp = counter--;
-		lock.leave();
-		return temp;
+		return exchangeAdd(-1) - 1;
 	}
 
 	counter_type value() const { return counter; }
 
 	counter_type setValue(counter_type val)
 	{
-		lock.enter();
-		const counter_type temp = counter;
-		counter = val;
-		lock.leave();
-		return temp;
+		counter_type old;
+		do
+		{
+			old = counter;
+		}
+		while (!compare_and_swap(&counter, &old, val));
+		return old;
 	}
 
 private:
-	volatile counter_type counter;
-	Mutex lock;
+	counter_type counter;
 };
 
 } // namespace Firebird
+
+#else
+
+#error AtomicCounter: implement appropriate code for your platform!
 
 #endif
 
