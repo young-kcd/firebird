@@ -1,5 +1,5 @@
 %{
-/* 
+/*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		parse.y
  *	DESCRIPTION:	Dynamic SQL parser
@@ -38,7 +38,7 @@
  * 2001.10.06 Claudio Valderrama: Honor explicit USER keyword in GRANTs and REVOKEs.
  * 2002.07.05 Mark O'Donohue: change keyword DEBUG to KW_DEBUG to avoid
  *			clashes with normal DEBUG macro.
- * 2002.07.30 Arno Brinkman:  
+ * 2002.07.30 Arno Brinkman:
  * 2002.07.30 	Let IN predicate handle value_expressions
  * 2002.07.30 	tokens CASE, NULLIF, COALESCE added
  * 2002.07.30 	See block < CASE expression > what is added to value as case_expression
@@ -69,7 +69,7 @@
  *						   with table alias. Also removed group_by_function and ordinal.
  * 2003.08.14 Arno Brinkman: Added support for derived tables.
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL.
- * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ * 2004.01.16 Vlad Horsun: added support for default parameters and
  *   EXECUTE BLOCK statement
  * Adriano dos Santos Fernandes
  */
@@ -168,7 +168,7 @@ inline void check_bound(const char* const to, const char* const string)
 
 inline void check_copy_incr(char*& to, const char ch, const char* const string)
 {
-	check_bound(to, string); 
+	check_bound(to, string);
 	*to++ = ch;
 }
 
@@ -374,7 +374,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token WORK
 %token WRITE
 
-%token FLOAT_NUMBER NUMBER NUMERIC SYMBOL STRING INTRODUCER 
+%token FLOAT_NUMBER NUMBER NUMERIC SYMBOL STRING INTRODUCER
 
 /* New tokens added v5.0 */
 
@@ -502,7 +502,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token FLOOR
 %token GEN_UUID
 %token GENERATED
-%token GLOBAL 
+%token GLOBAL
 %token HASH
 %token INSENSITIVE
 %token LIST
@@ -523,7 +523,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token POWER
 %token PRESERVE
 %token RAND
-%token RECURSIVE 
+%token RECURSIVE
 %token REPLACE
 %token REVERSE
 %token ROUND
@@ -537,7 +537,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token START
 %token TAN
 %token TANH
-%token TEMPORARY 
+%token TEMPORARY
 %token TRUNC
 %token WEEK
 
@@ -628,14 +628,14 @@ statement	: alter
 
 grant	: GRANT privileges ON table_noise simple_table_name
 			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count, 
+			{ $$ = make_node (nod_grant, (int) e_grant_count,
 					$2, $5, make_list($7), $8, $9); }
 		| GRANT proc_privileges ON PROCEDURE simple_proc_name
 			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count, 
+			{ $$ = make_node (nod_grant, (int) e_grant_count,
 					$2, $5, make_list($7), $8, $9); }
 		| GRANT role_name_list TO role_grantee_list role_admin_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count, 
+			{ $$ = make_node (nod_grant, (int) e_grant_count,
 					make_list($2), make_list($4), NULL, $5, $6); }
 		;
 
@@ -719,7 +719,7 @@ revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
 		| REVOKE ALL ON ALL FROM non_role_grantee_list
 			{ $$ = make_node (nod_revoke, (int) e_grant_count,
 					NULL, NULL, make_list($6), NULL, NULL); }
-		; 
+		;
 
 rev_grant_option : GRANT OPTION FOR
 			{ $$ = make_node (nod_grant, (int) 0, NULL); }
@@ -808,7 +808,7 @@ declare_clause  : FILTER filter_decl_clause
 
 udf_decl_clause : symbol_UDF_name arg_desc_list1 RETURNS return_value1
 			ENTRY_POINT sql_string MODULE_NAME sql_string
-				{ $$ = make_node (nod_def_udf, (int) e_udf_count, 
+				{ $$ = make_node (nod_def_udf, (int) e_udf_count,
 				$1, $6, $8, make_list ($2), $4); }
 		;
 
@@ -816,15 +816,15 @@ udf_data_type	: simple_type
 		| BLOB
 			{ lex.g_field->fld_dtype = dtype_blob; }
 		| CSTRING '(' pos_short_integer ')' charset_clause
-			{ 
-			lex.g_field->fld_dtype = dtype_cstring; 
+			{
+			lex.g_field->fld_dtype = dtype_cstring;
 			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; }
 		;
 
-arg_desc_list1	: 
+arg_desc_list1	:
 		 	{ $$ = NULL; }
-		| arg_desc_list	
-		| '(' arg_desc_list ')'	
+		| arg_desc_list
+		| '(' arg_desc_list ')'
 		 	{ $$ = $2; }
 		;
 
@@ -854,7 +854,7 @@ return_value1	: return_value
 		| '(' return_value ')'
 			{ $$ = $2; }
 		;
-		
+
 return_value	: init_data_type udf_data_type return_mechanism
 			{ $$ = make_node (nod_udf_return_value, (int) e_udf_param_count,
 							  $1, $3); }
@@ -879,7 +879,7 @@ return_mechanism :
 
 filter_decl_clause : symbol_filter_name INPUT_TYPE blob_filter_subtype OUTPUT_TYPE blob_filter_subtype
 			ENTRY_POINT sql_string MODULE_NAME sql_string
-				{ $$ = make_node (nod_def_filter, (int) e_filter_count, 
+				{ $$ = make_node (nod_def_filter, (int) e_filter_count,
 						$1, $3, $5, $7, $9); }
 		;
 
@@ -899,7 +899,7 @@ create	 	: CREATE create_clause
 create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
-			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
+			{ $$ = make_node (nod_def_index, (int) e_idx_count,
 					$1, $2, $4, $6, $7); }
 		| PROCEDURE procedure_clause
 			{ $$ = $2; }
@@ -970,22 +970,22 @@ replace_clause	: PROCEDURE replace_procedure_clause
 /* CREATE EXCEPTION */
 
 exception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_def_exception, (int) e_xcp_count, 
+			{ $$ = make_node (nod_def_exception, (int) e_xcp_count,
 						$1, $2); }
 		;
 
 rexception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_redef_exception, (int) e_xcp_count, 
+			{ $$ = make_node (nod_redef_exception, (int) e_xcp_count,
 						$1, $2); }
 		;
 
 replace_exception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_replace_exception, (int) e_xcp_count, 
+			{ $$ = make_node (nod_replace_exception, (int) e_xcp_count,
 						$1, $2); }
 		;
 
 alter_exception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_mod_exception, (int) e_xcp_count, 
+			{ $$ = make_node (nod_mod_exception, (int) e_xcp_count,
 						$1, $2); }
 		;
 
@@ -998,9 +998,9 @@ unique_opt	: UNIQUE
 			{ $$ = NULL; }
 		;
 
-index_definition : column_list 
+index_definition : column_list
 			{ $$ = make_list ($1); }
-		| column_parens 
+		| column_parens
 		| computed_by '(' begin_trigger value end_trigger ')'
 			{ $$ = make_node (nod_def_computed, 2, $4, $5); }
 		;
@@ -1017,17 +1017,17 @@ manual_auto	: MANUAL
 			{ $$ = MAKE_const_slong (1); }
 		| AUTO
 			{ $$ = MAKE_const_slong (0); }
-		| 
+		|
 			{ $$ = MAKE_const_slong (0); }
 		;
 
-conditional	: 
+conditional	:
 			{ $$ = MAKE_const_slong (0); }
 		| CONDITIONAL
 			{ $$ = MAKE_const_slong (1); }
-		;	
+		;
 
-first_file_length : 
+first_file_length :
 			{ $$ = (dsql_nod*) 0;}
 		| LENGTH equals long_integer page_noise
 			{ $$ = $3; }
@@ -1063,8 +1063,8 @@ rdomain_clause	: DOMAIN alter_column_name alter_domain_ops
 
 as_opt	: AS
 			{ $$ = NULL; }
-		| 
-			{ $$ = NULL; }  
+		|
+			{ $$ = NULL; }
 		;
 
 domain_default	: DEFAULT begin_trigger default_value end_trigger
@@ -1077,9 +1077,9 @@ domain_default_opt	: domain_default
 		;
 
 domain_constraint_clause	: domain_constraint_list
-		| 
+		|
 			{ $$ = NULL; }
-		; 
+		;
 
 domain_constraint_list  : domain_constraint_def
 		| domain_constraint_list domain_constraint_def
@@ -1088,12 +1088,12 @@ domain_constraint_list  : domain_constraint_def
 
 domain_constraint_def	: domain_constraint
 			{ $$ = make_node (nod_rel_constraint, (int) 2, NULL, $1);}
-		;	
+		;
 
 domain_constraint	: null_constraint
 		| check_constraint
 		;
-				
+
 null_constraint	: NOT KW_NULL
 			{ $$ = make_node (nod_null, (int) 0, NULL); }
 		;
@@ -1123,7 +1123,7 @@ role_clause : symbol_role_name
 collation_clause : symbol_collation_name FOR symbol_character_set_name
 		collation_sequence_definition
 		collation_attribute_list_opt collation_specific_attribute_opt
-			{ $$ = make_node (nod_def_collation, 
+			{ $$ = make_node (nod_def_collation,
 						(int) e_def_coll_count, $1, $3, $4, make_list($5), $6); }
 		;
 
@@ -1202,7 +1202,7 @@ db_name		: sql_string
 			{ $$ = (dsql_nod*) $1; }
 		;
 
-db_initial_desc1 :  
+db_initial_desc1 :
 			{$$ = NULL;}
 		| db_initial_desc
 		;
@@ -1210,22 +1210,22 @@ db_initial_desc1 :
 db_initial_desc : db_initial_option
 		| db_initial_desc db_initial_option
 			{ $$ = make_node (nod_list, 2, $1, $2); }
-		; 
- 
-db_initial_option: KW_PAGE_SIZE equals pos_short_integer 
+		;
+
+db_initial_option: KW_PAGE_SIZE equals pos_short_integer
 			{ $$ = make_node (nod_page_size, 1, $3);}
 		| LENGTH equals long_integer page_noise
 			{ $$ = make_node (nod_file_length, 1, $3);}
 		| USER sql_string
-			{ $$ = make_node (nod_user_name, 1, $2);} 
-		| PASSWORD sql_string	
-			{ $$ = make_node (nod_password, 1, $2);} 
-		| SET NAMES sql_string	
-			{ $$ = make_node (nod_lc_ctype, 1, $3);} 
+			{ $$ = make_node (nod_user_name, 1, $2);}
+		| PASSWORD sql_string
+			{ $$ = make_node (nod_password, 1, $2);}
+		| SET NAMES sql_string
+			{ $$ = make_node (nod_lc_ctype, 1, $3);}
 		;
 
-db_rem_desc1	:  
-			{$$ = NULL;} 
+db_rem_desc1	:
+			{$$ = NULL;}
 		| db_rem_desc
 		;
 
@@ -1234,14 +1234,14 @@ db_rem_desc	: db_rem_option
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-db_rem_option   : db_file  
+db_rem_option   : db_file
 		| DEFAULT CHARACTER SET symbol_character_set_name
-			{ $$ = make_node (nod_dfl_charset, 1, $4);} 
+			{ $$ = make_node (nod_dfl_charset, 1, $4);}
 		| DEFAULT CHARACTER SET symbol_character_set_name COLLATION symbol_collation_name
 			{ $$ = make_node (nod_list, 2,
 				make_node (nod_dfl_charset, 1, $4),
 				make_node (nod_dfl_collate, 1, $6));
-			} 
+			}
 		| KW_DIFFERENCE KW_FILE sql_string
 			{ $$ = make_node (nod_difference_file, 1, $3); }
 		;
@@ -1334,22 +1334,22 @@ table_element	: column_def
 
 column_def	: column_def_name data_type_or_domain domain_default_opt
 			column_constraint_clause collate_clause
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, $3, make_list ($4), $5, $2, NULL); }   
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
+					$1, $3, make_list ($4), $5, $2, NULL); }
 		| column_def_name non_array_type def_computed
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, NULL, NULL, NULL, NULL, $3); }   
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
+					$1, NULL, NULL, NULL, NULL, $3); }
 		| column_def_name def_computed
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, NULL, NULL, NULL, NULL, $2); }   
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
+					$1, NULL, NULL, NULL, NULL, $2); }
 		;
-								 
+
 /* value does allow parens around it, but there is a problem getting the
  * source text
  */
 
 def_computed	: computed_clause '(' begin_trigger value end_trigger ')'
-			{ 
+			{
 				lex.g_field->fld_flags |= FLD_computed;
 				$$ = make_node (nod_def_computed, 2, $4, $5);
 			}
@@ -1427,8 +1427,8 @@ default_value	: constant
 		| null_value
 		| datetime_value_expression
 		;
-				   
-column_constraint_clause : 
+
+column_constraint_clause :
 				{ $$ = NULL; }
 			| column_constraint_list
 			;
@@ -1455,7 +1455,7 @@ column_constraint : null_constraint
 				  | PRIMARY KEY constraint_index_opt
 						{ $$ = make_node (nod_primary, (int) e_pri_count, NULL, $3); }
 		;
-					
+
 
 
 /* table constraints */
@@ -1484,28 +1484,28 @@ primary_constraint	: PRIMARY KEY column_parens constraint_index_opt
 			{ $$ = make_node (nod_primary, (int) e_pri_count, $3, $4); }
 		;
 
-referential_constraint	: FOREIGN KEY column_parens REFERENCES 
-			  simple_table_name column_parens_opt 
+referential_constraint	: FOREIGN KEY column_parens REFERENCES
+			  simple_table_name column_parens_opt
 			  referential_trigger_action constraint_index_opt
-			{ $$ = make_node (nod_foreign, (int) e_for_count, $3, $5, 
+			{ $$ = make_node (nod_foreign, (int) e_for_count, $3, $5,
 					 $6, $7, $8); }
 		;
 
 constraint_index_opt	: USING order_direction INDEX symbol_index_name
-			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
+			{ $$ = make_node (nod_def_index, (int) e_idx_count,
 					NULL, $2, $4, NULL, NULL); }
 /*
 		| NO INDEX
 			{ $$ = NULL; }
 */
 		|
-			{ $$ = make_node (nod_def_index, (int) e_idx_count, 
+			{ $$ = make_node (nod_def_index, (int) e_idx_count,
 					NULL, NULL, NULL, NULL, NULL); }
 		;
 
-referential_trigger_action:	
+referential_trigger_action:
 		  update_rule
-		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, NULL);} 
+		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, $1, NULL);}
 		| delete_rule
 		  { $$ = make_node (nod_ref_upd_del, (int) e_ref_upd_del_count, NULL, $1);}
 		| delete_rule update_rule
@@ -1524,16 +1524,16 @@ delete_rule	: ON KW_DELETE referential_action
 		;
 
 referential_action: CASCADE
-		  { $$ = make_flag_node (nod_ref_trig_action, 
+		  { $$ = make_flag_node (nod_ref_trig_action,
 			 REF_ACTION_CASCADE, (int) e_ref_trig_action_count, NULL);}
 		| SET DEFAULT
-		  { $$ = make_flag_node (nod_ref_trig_action, 
+		  { $$ = make_flag_node (nod_ref_trig_action,
 			 REF_ACTION_SET_DEFAULT, (int) e_ref_trig_action_count, NULL);}
 		| SET KW_NULL
-		  { $$ = make_flag_node (nod_ref_trig_action, 
+		  { $$ = make_flag_node (nod_ref_trig_action,
 			 REF_ACTION_SET_NULL, (int) e_ref_trig_action_count, NULL);}
 		| NO ACTION
-		  { $$ = make_flag_node (nod_ref_trig_action, 
+		  { $$ = make_flag_node (nod_ref_trig_action,
 			 REF_ACTION_NONE, (int) e_ref_trig_action_count, NULL);}
 		;
 
@@ -1548,8 +1548,8 @@ procedure_clause	: symbol_procedure_name input_parameters
 			  full_proc_block
 			  end_trigger
 				{ $$ = make_node (nod_def_procedure,
-						(int) e_prc_count, $1, $2, $3, $6, $7, $8); } 
-		;		
+						(int) e_prc_count, $1, $2, $3, $6, $7, $8); }
+		;
 
 
 rprocedure_clause	: symbol_procedure_name input_parameters
@@ -1559,8 +1559,8 @@ rprocedure_clause	: symbol_procedure_name input_parameters
 			  full_proc_block
 			  end_trigger
 				{ $$ = make_node (nod_redef_procedure,
-						(int) e_prc_count, $1, $2, $3, $6, $7, $8); } 
-		;		
+						(int) e_prc_count, $1, $2, $3, $6, $7, $8); }
+		;
 
 replace_procedure_clause	: symbol_procedure_name input_parameters
 			 	  output_parameters
@@ -1569,8 +1569,8 @@ replace_procedure_clause	: symbol_procedure_name input_parameters
 			  full_proc_block
 			  end_trigger
 				{ $$ = make_node (nod_replace_procedure,
-						(int) e_prc_count, $1, $2, $3, $6, $7, $8); } 
-		;		
+						(int) e_prc_count, $1, $2, $3, $6, $7, $8); }
+		;
 
 alter_procedure_clause	: symbol_procedure_name input_parameters
 			 	  output_parameters
@@ -1579,8 +1579,8 @@ alter_procedure_clause	: symbol_procedure_name input_parameters
 			  full_proc_block
 			  end_trigger
 				{ $$ = make_node (nod_mod_procedure,
-						(int) e_prc_count, $1, $2, $3, $6, $7, $8); } 
-		;		
+						(int) e_prc_count, $1, $2, $3, $6, $7, $8); }
+		;
 
 input_parameters :	'(' input_proc_parameters ')'
 			{ $$ = make_list ($2); }
@@ -1601,8 +1601,8 @@ input_proc_parameters	: input_proc_parameter
 
 input_proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 				default_par_opt
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $4, NULL, $3, NULL, NULL); }   
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
+				$1, $4, NULL, $3, NULL, NULL); }
 		;
 
 output_proc_parameters	: proc_parameter
@@ -1611,8 +1611,8 @@ output_proc_parameters	: proc_parameter
 		;
 
 proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, NULL, NULL, $3, NULL, NULL); }   
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
+				$1, NULL, NULL, $3, NULL, NULL); }
 		;
 
 default_par_opt	: DEFAULT begin_trigger default_value end_trigger
@@ -1647,7 +1647,7 @@ local_declaration_item	: var_declaration_item
 		;
 
 var_declaration_item	: column_def_name domain_or_non_array_type collate_clause default_par_opt
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
+			{ $$ = make_node (nod_def_field, (int) e_dfl_count,
 				$1, $4, NULL, $3, NULL, NULL); }
 		;
 
@@ -1667,7 +1667,7 @@ proc_block	: proc_statement
 		;
 
 full_proc_block	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
-			{ 
+			{
 				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $4);
 			}
 		;
@@ -1678,7 +1678,7 @@ full_proc_block_body	: proc_statements
 			{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), make_list ($2)); }
 		|
 			{ $$ = make_node (nod_block, (int) e_blk_count, NULL, NULL);}
-		;							
+		;
 
 proc_statements	: proc_block
 		| proc_statements proc_block
@@ -1686,11 +1686,11 @@ proc_statements	: proc_block
 		;
 
 proc_statement	: stmt_start_line stmt_start_column simple_proc_statement ';'
-			{ 
+			{
 				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
 			}
 		| stmt_start_line stmt_start_column complex_proc_statement
-			{ 
+			{
 				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
 			}
 		;
@@ -1699,11 +1699,11 @@ stmt_start_line :
 		{ $$ = (dsql_nod*) (IPTR) lex.lines_bk; }
 
 stmt_start_column :
-		{ 
+		{
 			const USHORT column = (lex.last_token_bk - lex.line_start_bk + 1);
 			$$ = (dsql_nod*) (IPTR) column;
 		}
-		
+
 simple_proc_statement	: assignment
 		| insert
 		| merge
@@ -1763,7 +1763,7 @@ for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 					  make_list ($5), $6, $8, $1); }
 		;
 
-//for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc_block 
+//for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc_block
 //			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $5, $9, make_list ($7), $1); }
 //		;
 //
@@ -1774,7 +1774,7 @@ for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 exec_sql
 	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
 		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
+			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
 					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL);
 		}
 	;
@@ -1783,23 +1783,23 @@ exec_into
 	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
 			INTO variable_list
 		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
+			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
 					($3)->nod_arg[0], ($3)->nod_arg[1], make_list($6), NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
 for_exec_into
 	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
-			INTO variable_list 
-			DO proc_block 
+			INTO variable_list
+			DO proc_block
 		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
+			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
 					($5)->nod_arg[0], ($5)->nod_arg[1], make_list($8), $10, $1, make_list($6), NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
 exec_stmt_inputs
-	: value 
+	: value
 		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $1, NULL); }
 	| '(' value ')' '(' named_params_list ')'
 		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
@@ -1836,7 +1836,7 @@ exec_stmt_options
 	;
 
 exec_stmt_options_list
-	: exec_stmt_options_list exec_stmt_option 
+	: exec_stmt_options_list exec_stmt_option
 		{ $$ = make_node (nod_list, 2, $1, $2); }
 	| exec_stmt_option
 	;
@@ -1844,7 +1844,7 @@ exec_stmt_options_list
 exec_stmt_option
 	: ext_datasrc
 	| ext_user
-	| ext_pwd 
+	| ext_pwd
 	| ext_tran
 	| ext_privs
 	;
@@ -1876,13 +1876,13 @@ ext_tran
 	;
 
 ext_privs
-	: WITH CALLER PRIVILEGES 
+	: WITH CALLER PRIVILEGES
 		{ $$ = make_node (nod_exec_stmt_privs, 1, NULL); }
 	;
 
 if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, $8); }
-		| IF '(' search_condition ')' THEN proc_block 
+		| IF '(' search_condition ')' THEN proc_block
 			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, NULL); }
 		;
 
@@ -1902,7 +1902,7 @@ singleton_select	: select INTO variable_list
 		;
 
 variable	: ':' symbol_variable_name
-			{ $$ = make_node (nod_var_name, (int) e_vrn_count, 
+			{ $$ = make_node (nod_var_name, (int) e_vrn_count,
 							$2); }
 		;
 
@@ -2048,12 +2048,12 @@ proc_outputs_opt	: RETURNING_VALUES variable_list
 
 /* EXECUTE BLOCK */
 
-exec_block : EXECUTE BLOCK block_input_params output_parameters AS 
+exec_block : EXECUTE BLOCK block_input_params output_parameters AS
 			local_declaration_list
 			full_proc_block
 				{ $$ = make_node (nod_exec_block,
-						  (int) e_exe_blk_count, 
-					          $3, $4, $6, $7, make_node (nod_all, (int) 0, NULL)); } 
+						  (int) e_exe_blk_count,
+					          $3, $4, $6, $7, make_node (nod_all, (int) 0, NULL)); }
 		;
 
 block_input_params :	'(' block_parameters ')'
@@ -2068,65 +2068,65 @@ block_parameters	: block_parameter
 		;
 
 block_parameter	: proc_parameter '=' parameter
-			{ $$ = make_node (nod_param_val, e_prm_val_count, $1, $3); }   
+			{ $$ = make_node (nod_param_val, e_prm_val_count, $1, $3); }
 		;
 
 /* CREATE VIEW */
 
 view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
-			{ $$ = make_node (nod_def_view, (int) e_view_count, 
-					  $1, $2, $5, $6, $7); }   
-		;		
+			{ $$ = make_node (nod_def_view, (int) e_view_count,
+					  $1, $2, $5, $6, $7); }
+		;
 
 
 rview_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
-			{ $$ = make_node (nod_redef_view, (int) e_view_count, 
-					  $1, $2, $5, $6, $7); }   
-		;		
+			{ $$ = make_node (nod_redef_view, (int) e_view_count,
+					  $1, $2, $5, $6, $7); }
+		;
 
 replace_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
-			{ $$ = make_node (nod_replace_view, (int) e_view_count, 
-					  $1, $2, $5, $6, $7); }   
-		;		
+			{ $$ = make_node (nod_replace_view, (int) e_view_count,
+					  $1, $2, $5, $6, $7); }
+		;
 
 alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
- 			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
-					  $1, $2, $5, $6, $7); }   
- 		;		
+ 			{ $$ = make_node (nod_mod_view, (int) e_view_count,
+					  $1, $2, $5, $6, $7); }
+ 		;
 
 
 /* these rules will capture the input string for storage in metadata */
 
-begin_string	: 
+begin_string	:
 			{ lex.beginnings.push(lex_position()); }
 		;
 /*
 end_string	:
-			{ 
+			{
 				const TEXT* start = lex.beginnings.pop();
-				$$ = (dsql_nod*) MAKE_string(start, 
+				$$ = (dsql_nod*) MAKE_string(start,
 					(lex_position() == lex.end) ? lex_position() - start : lex.last_token - start);
 			}
 		;
 */
-begin_trigger	: 
+begin_trigger	:
 			{ lex.beginnings.push(lex.last_token); }
 		;
 
 end_trigger	:
-			{ 
+			{
 				const TEXT* start = lex.beginnings.pop();
-				$$ = (dsql_nod*) MAKE_string(start, lex_position() - start); 
+				$$ = (dsql_nod*) MAKE_string(start, lex_position() - start);
 			}
 		;
 
 
 check_opt	: WITH CHECK OPTION
-			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, 
+			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count,
 					NULL, NULL, NULL, NULL, NULL); }
 		|
 			{ $$ = 0; }
@@ -2238,7 +2238,7 @@ replace_trigger_clause
 		}
 	;
 
-trigger_active	: ACTIVE 
+trigger_active	: ACTIVE
 			{ $$ = MAKE_const_slong (0); }
 		| INACTIVE
 			{ $$ = MAKE_const_slong (1); }
@@ -2318,12 +2318,12 @@ trigger_action : AS begin_trigger local_declaration_list full_proc_block
 
 alter	: ALTER alter_clause
 			{ $$ = $2; }
-		; 
+		;
 
 alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = $2; }
 		| TABLE simple_table_name alter_ops
-			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, 
+			{ $$ = make_node (nod_mod_relation, (int) e_alt_count,
 						$2, make_list ($3)); }
  		| VIEW alter_view_clause
  			{ $$ = $2; }
@@ -2368,7 +2368,7 @@ alter_domain_op	: SET domain_default
 			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
 		| TO simple_column_name
 			{ $$ = $2; }
-		| KW_TYPE init_data_type non_array_type 
+		| KW_TYPE init_data_type non_array_type
 			{ $$ = make_node (nod_mod_domain_type, 2, $2); }
 		;
 
@@ -2385,8 +2385,8 @@ alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = $2; }
 		| ADD table_constraint_definition
 			{ $$ = $2; }
-/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example. 
-		| col_opt simple_column_name POSITION nonneg_short_integer 
+/* CVC: From SQL, field positions start at 1, not zero. Think in ORDER BY, for example.
+		| col_opt simple_column_name POSITION nonneg_short_integer
 			{ $$ = make_node (nod_mod_field_pos, 2, $2,
 			MAKE_const_slong ((IPTR) $4)); } */
 		| col_opt simple_column_name POSITION pos_short_integer
@@ -2398,7 +2398,7 @@ alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
 		| col_opt alter_col_name KW_TYPE non_array_type def_computed
 			{
-				// Due to parser hacks, we should not pass $4 (non_array_type) to make_node. 
+				// Due to parser hacks, we should not pass $4 (non_array_type) to make_node.
 				$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
 			}
 		| col_opt alter_col_name def_computed
@@ -2463,7 +2463,7 @@ keyword_or_column	: valid_symbol_name
 		| DISCONNECT
 		| GLOBAL
 		| INSENSITIVE
-		| RECURSIVE 
+		| RECURSIVE
 		| SENSITIVE
 		| START
 		;
@@ -2510,7 +2510,7 @@ alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 			{ $$ = make_node (nod_set_generator2, e_gen_id_count, $1,
 				make_node(nod_negate, 1, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))); }
 		;
-		
+
 alter_udf_clause    : symbol_UDF_name entry_op module_op
 			{ $$ = make_node(nod_mod_udf, e_mod_udf_count, $1, $2, $3); }
 			;
@@ -2556,7 +2556,7 @@ module_op	: MODULE_NAME sql_string
 
 /* ALTER DATABASE */
 
-init_alter_db	: 
+init_alter_db	:
 			{ $$ = NULL; }
 		;
 
@@ -2601,10 +2601,10 @@ new_trigger_action : trigger_action
 		;
 
 /* DROP metadata operations */
-				
+
 drop		: DROP drop_clause
 			{ $$ = $2; }
-				; 
+				;
 
 drop_clause	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_del_exception, 1, $2); }
@@ -2688,22 +2688,22 @@ array_type	: non_charset_simple_type '[' array_spec ']'
 			  $$ = $1; }
 		;
 
-array_spec	: array_range 
-		| array_spec ',' array_range 
+array_spec	: array_range
+		| array_spec ',' array_range
 			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
 		;
 
 array_range	: signed_long_integer
 				{ if ((IPTR) $1 < 1)
-			 		$$ = make_node (nod_list, (int) 2, 
+			 		$$ = make_node (nod_list, (int) 2,
 					MAKE_const_slong ((IPTR) $1),
 					MAKE_const_slong (1));
 				  else
-			 		$$ = make_node (nod_list, (int) 2, 
+			 		$$ = make_node (nod_list, (int) 2,
 			   		MAKE_const_slong (1),
 					MAKE_const_slong ((IPTR) $1) ); }
 		| signed_long_integer ':' signed_long_integer
-				{ $$ = make_node (nod_list, (int) 2, 
+				{ $$ = make_node (nod_list, (int) 2,
 			 	MAKE_const_slong ((IPTR) $1),
 				MAKE_const_slong ((IPTR) $3)); }
 		;
@@ -2716,97 +2716,97 @@ non_charset_simple_type	: national_character_type
 		| numeric_type
 		| float_type
 		| BIGINT
-			{ 
+			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+					Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 																	Arg::Str("BIGINT"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+					Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 																	Arg::Str("BIGINT"));
-			lex.g_field->fld_dtype = dtype_int64; 
-			lex.g_field->fld_length = sizeof (SINT64); 
+			lex.g_field->fld_dtype = dtype_int64;
+			lex.g_field->fld_length = sizeof (SINT64);
 			}
 		| integer_keyword
-			{ 
-			lex.g_field->fld_dtype = dtype_long; 
-			lex.g_field->fld_length = sizeof (SLONG); 
+			{
+			lex.g_field->fld_dtype = dtype_long;
+			lex.g_field->fld_length = sizeof (SLONG);
 			}
 		| SMALLINT
-			{ 
-			lex.g_field->fld_dtype = dtype_short; 
-			lex.g_field->fld_length = sizeof (SSHORT); 
+			{
+			lex.g_field->fld_dtype = dtype_short;
+			lex.g_field->fld_length = sizeof (SSHORT);
 			}
 		| DATE
-			{ 
+			{
 			stmt_ambiguous = true;
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
 				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
 								  Arg::Warning(isc_dtype_renamed));
-				lex.g_field->fld_dtype = dtype_timestamp; 
+				lex.g_field->fld_dtype = dtype_timestamp;
 				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 				}
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
 				yyabandon (-104, isc_transitional_date);
 			else
 				{
-				lex.g_field->fld_dtype = dtype_sql_date; 
+				lex.g_field->fld_dtype = dtype_sql_date;
 				lex.g_field->fld_length = sizeof (ULONG);
 				}
 			}
 		| TIME
-			{ 
+			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 																		  Arg::Str("TIME"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 																		  Arg::Str("TIME"));
 			lex.g_field->fld_dtype = dtype_sql_time;
 			lex.g_field->fld_length = sizeof (SLONG);
 			}
 		| TIMESTAMP
-			{ 
-			lex.g_field->fld_dtype = dtype_timestamp; 
+			{
+			lex.g_field->fld_dtype = dtype_timestamp;
 			lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			}
 		;
 
-integer_keyword	: INTEGER	
+integer_keyword	: INTEGER
 		| KW_INT
 		;
 
 
-/* allow a blob to be specified with any combination of 
+/* allow a blob to be specified with any combination of
    segment length and subtype */
 
 blob_type	: BLOB blob_subtype blob_segsize charset_clause
-			{ 
-			lex.g_field->fld_dtype = dtype_blob; 
+			{
+			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			}
 		| BLOB '(' unsigned_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_blob; 
+			{
+			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
 			lex.g_field->fld_sub_type = 0;
 			}
 		| BLOB '(' unsigned_short_integer ',' signed_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_blob; 
+			{
+			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = (USHORT)(IPTR) $3;
 			lex.g_field->fld_sub_type = (USHORT)(IPTR) $5;
 			}
 		| BLOB '(' ',' signed_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_blob; 
+			{
+			lex.g_field->fld_dtype = dtype_blob;
 			lex.g_field->fld_length = sizeof(ISC_QUAD);
 			lex.g_field->fld_seg_length = 80;
 			lex.g_field->fld_sub_type = (USHORT)(IPTR) $4;
@@ -2849,39 +2849,39 @@ charset_clause	: CHARACTER SET symbol_character_set_name
 
 
 national_character_type	: national_character_keyword '(' pos_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; 
+			{
+			lex.g_field->fld_dtype = dtype_text;
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3;
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		| national_character_keyword
-			{ 
-			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = 1; 
+			{
+			lex.g_field->fld_dtype = dtype_text;
+			lex.g_field->fld_character_length = 1;
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		| national_character_keyword VARYING '(' pos_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_varying; 
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $4; 
+			{
+			lex.g_field->fld_dtype = dtype_varying;
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $4;
 			lex.g_field->fld_flags |= FLD_national;
 			}
 		;
 
 character_type	: character_keyword '(' pos_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; 
+			{
+			lex.g_field->fld_dtype = dtype_text;
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3;
 			}
 		| character_keyword
-			{ 
-			lex.g_field->fld_dtype = dtype_text; 
-			lex.g_field->fld_character_length = 1; 
+			{
+			lex.g_field->fld_dtype = dtype_text;
+			lex.g_field->fld_character_length = 1;
 			}
 		| varying_keyword '(' pos_short_integer ')'
-			{ 
-			lex.g_field->fld_dtype = dtype_varying; 
-			lex.g_field->fld_character_length = (USHORT)(IPTR) $3; 
+			{
+			lex.g_field->fld_dtype = dtype_varying;
+			lex.g_field->fld_character_length = (USHORT)(IPTR) $3;
 			}
 		;
 
@@ -2904,11 +2904,11 @@ national_character_keyword : NCHAR
 /* numeric type */
 
 numeric_type	: KW_NUMERIC prec_scale
-						{ 
+						{
 			  lex.g_field->fld_sub_type = dsc_num_type_numeric;
 			}
 		| decimal_keyword prec_scale
-			{  
+			{
 			   lex.g_field->fld_sub_type = dsc_num_type_decimal;
 			   if (lex.g_field->fld_dtype == dtype_short)
 				{
@@ -2918,17 +2918,17 @@ numeric_type	: KW_NUMERIC prec_scale
 			}
 		;
 
-prec_scale	: 
+prec_scale	:
 			{
-				lex.g_field->fld_dtype = dtype_long; 
-				lex.g_field->fld_length = sizeof (SLONG); 
+				lex.g_field->fld_dtype = dtype_long;
+				lex.g_field->fld_length = sizeof (SLONG);
 				lex.g_field->fld_precision = 9;
 			}
 		| '(' signed_long_integer ')'
-			{		 
+			{
 			if ( ((IPTR) $2 < 1) || ((IPTR) $2 > 18) )
 				yyabandon (-842, isc_precision_err);
-				/* Precision most be between 1 and 18. */ 
+				/* Precision most be between 1 and 18. */
 			if ((IPTR) $2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) &&
@@ -2955,25 +2955,25 @@ prec_scale	:
 				}
 			}
 			else
-			{ 
+			{
 				if ((IPTR) $2 < 5)
 				{
-					lex.g_field->fld_dtype = dtype_short; 
-					lex.g_field->fld_length = sizeof (SSHORT); 
+					lex.g_field->fld_dtype = dtype_short;
+					lex.g_field->fld_length = sizeof (SSHORT);
 				}
 				else
 				{
-					lex.g_field->fld_dtype = dtype_long; 
-					lex.g_field->fld_length = sizeof (SLONG); 
+					lex.g_field->fld_dtype = dtype_long;
+					lex.g_field->fld_length = sizeof (SLONG);
 				}
 			}
 			lex.g_field->fld_precision = (USHORT)(IPTR) $2;
 			}
 		| '(' signed_long_integer ',' signed_long_integer ')'
-			{ 
+			{
 			if ( ((IPTR) $2 < 1) || ((IPTR) $2 > 18) )
 				yyabandon (-842, isc_precision_err);
-				/* Precision should be between 1 and 18 */ 
+				/* Precision should be between 1 and 18 */
 			if (((IPTR) $4 > (IPTR) $2) || ((IPTR) $4 < 0))
 				yyabandon (-842, isc_scale_nogt);
 				/* Scale must be between 0 and precision */
@@ -2990,7 +2990,7 @@ prec_scale	:
 				if (client_dialect <= SQL_DIALECT_V5)
 				{
 					lex.g_field->fld_dtype = dtype_double;
-					lex.g_field->fld_length = sizeof (double); 
+					lex.g_field->fld_length = sizeof (double);
 				}
 				else
 				{
@@ -3009,13 +3009,13 @@ prec_scale	:
 			{
 				if ((IPTR) $2 < 5)
 				{
-					lex.g_field->fld_dtype = dtype_short; 
-					lex.g_field->fld_length = sizeof (SSHORT); 
+					lex.g_field->fld_dtype = dtype_short;
+					lex.g_field->fld_length = sizeof (SSHORT);
 				}
 				else
 				{
-					lex.g_field->fld_dtype = dtype_long; 
-					lex.g_field->fld_length = sizeof (SLONG); 
+					lex.g_field->fld_dtype = dtype_long;
+					lex.g_field->fld_length = sizeof (SLONG);
 				}
 			}
 			lex.g_field->fld_precision = (USHORT)(IPTR) $2;
@@ -3023,7 +3023,7 @@ prec_scale	:
 			}
 		;
 
-decimal_keyword	: DECIMAL	
+decimal_keyword	: DECIMAL
 		| KW_DEC
 		;
 
@@ -3032,32 +3032,32 @@ decimal_keyword	: DECIMAL
 /* floating point type */
 
 float_type	: KW_FLOAT precision_opt
-			{ 
+			{
 			if ((IPTR) $2 > 7)
 				{
 				lex.g_field->fld_dtype = dtype_double;
-				lex.g_field->fld_length = sizeof (double); 
+				lex.g_field->fld_length = sizeof (double);
 				}
 			else
 				{
-				lex.g_field->fld_dtype = dtype_real; 
+				lex.g_field->fld_dtype = dtype_real;
 				lex.g_field->fld_length = sizeof (float);
 				}
 			}
 		| KW_LONG KW_FLOAT precision_opt
-			{ 
-			lex.g_field->fld_dtype = dtype_double; 
-			lex.g_field->fld_length = sizeof (double); 
+			{
+			lex.g_field->fld_dtype = dtype_double;
+			lex.g_field->fld_length = sizeof (double);
 			}
 		| REAL
-			{ 
-			lex.g_field->fld_dtype = dtype_real; 
-			lex.g_field->fld_length = sizeof (float); 
+			{
+			lex.g_field->fld_dtype = dtype_real;
+			lex.g_field->fld_length = sizeof (float);
 			}
 		| KW_DOUBLE PRECISION
-			{ 
-			lex.g_field->fld_dtype = dtype_double; 
-			lex.g_field->fld_length = sizeof (double); 
+			{
+			lex.g_field->fld_dtype = dtype_double;
+			lex.g_field->fld_length = sizeof (double);
 			}
 		;
 
@@ -3144,7 +3144,7 @@ set_transaction	: SET TRANSACTION tran_opt_list_m
 			{$$ = make_node (nod_trans, 1, make_list ($3)); }
 		;
 
-tran_opt_list_m	: tran_opt_list	
+tran_opt_list_m	: tran_opt_list
 		|
 		 	{ $$ = NULL; }
 		;
@@ -3154,12 +3154,12 @@ tran_opt_list	: tran_opt
 			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
 		;
 
-tran_opt	: access_mode 
-		| lock_wait 
-		| isolation_mode 
+tran_opt	: access_mode
+		| lock_wait
+		| isolation_mode
 		| tra_misc_options
 		| tra_timeout
-		| tbl_reserve_options 
+		| tbl_reserve_options
 		;
 
 access_mode	: READ ONLY
@@ -3189,7 +3189,7 @@ iso_mode	: snap_shot
 
 snap_shot	: SNAPSHOT
 			{ $$ = make_flag_node (nod_isolation, NOD_CONCURRENCY, 0, NULL); }
-		| SNAPSHOT TABLE 
+		| SNAPSHOT TABLE
 			{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
 		| SNAPSHOT TABLE STABILITY
 			{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
@@ -3210,7 +3210,7 @@ tra_misc_options: NO AUTO UNDO
 		| RESTART REQUESTS
 			{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
 		;
-		
+
 tra_timeout: LOCK TIMEOUT nonneg_short_integer
 			{ $$ = make_node(nod_lock_timeout, 1, MAKE_const_slong ((IPTR) $3)); }
 		;
@@ -3313,7 +3313,7 @@ ddl_type2	: COLUMN
 ddl_subname	: '.' symbol_ddl_name
 				{ $$ = $2; }
 			;
-			
+
 ddl_desc    : sql_string
 			| KW_NULL
 			    { $$ = NULL; }
@@ -3343,14 +3343,14 @@ lock_clause : WITH LOCK
 		|
 			{ $$ = NULL; }
 		;
-		
+
 
 /* SELECT expression */
 
 select_expr	: with_clause select_expr_body order_clause rows_clause
 				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
  		;
- 
+
 with_clause	: WITH RECURSIVE with_list
 				{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
 			| WITH with_list
@@ -3358,8 +3358,8 @@ with_clause	: WITH RECURSIVE with_list
 		    |
 				{ $$ = NULL; }
  		;
- 
-with_list	: with_item 
+
+with_list	: with_item
 			| with_item ',' with_list
 				{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
@@ -3390,23 +3390,23 @@ query_term	: query_spec
 
 query_spec	: SELECT limit_clause
 			 distinct_clause
-			 select_list 
-			 from_clause 
-			 where_clause 
-			 group_clause 
+			 select_list
+			 from_clause
+			 where_clause
+			 group_clause
 			 having_clause
 			 plan_clause
-			{ $$ = make_node (nod_query_spec, (int) e_qry_count, 
+			{ $$ = make_node (nod_query_spec, (int) e_qry_count,
 					$2, $3, $4, $5, $6, $7, $8, $9); }
-		;											   
+		;
 
 limit_clause	: first_clause skip_clause
 			{ $$ = make_node (nod_limit, (int) e_limit_count, $2, $1); }
 		|   first_clause
 			{ $$ = make_node (nod_limit, (int) e_limit_count, NULL, $1); }
-		|   skip_clause 
+		|   skip_clause
 			{ $$ = make_node (nod_limit, (int) e_limit_count, $1, NULL); }
-		| 
+		|
 			{ $$ = 0; }
 		;
 
@@ -3428,7 +3428,7 @@ skip_clause	: SKIP long_integer
 
 distinct_clause	: DISTINCT
 			{ $$ = make_node (nod_flag, 0, NULL); }
-		| all_noise 
+		| all_noise
 			{ $$ = 0; }
 		;
 
@@ -3528,10 +3528,10 @@ named_columns_join	: USING '(' column_list ')'
 		;
 
 table_proc	: symbol_procedure_name table_proc_inputs as_noise symbol_table_alias_name
-			{ $$ = make_node (nod_rel_proc_name, 
+			{ $$ = make_node (nod_rel_proc_name,
 					(int) e_rpn_count, $1, $4, $2); }
 		| symbol_procedure_name table_proc_inputs
-			{ $$ = make_node (nod_rel_proc_name, 
+			{ $$ = make_node (nod_rel_proc_name,
 					(int) e_rpn_count, $1, NULL, $2); }
 		;
 
@@ -3543,12 +3543,12 @@ table_proc_inputs	: '(' value_list ')'
 
 table_name	: simple_table_name
 		| symbol_table_name as_noise symbol_table_alias_name
-			{ $$ = make_node (nod_relation_name, 
+			{ $$ = make_node (nod_relation_name,
 						(int) e_rln_count, $1, $3); }
-		;						 
+		;
 
 simple_table_name: symbol_table_name
-			{ $$ = make_node (nod_relation_name, 
+			{ $$ = make_node (nod_relation_name,
 						(int) e_rln_count, $1, NULL); }
 		;
 
@@ -3582,7 +3582,7 @@ group_by_list	: group_by_item
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-/* Except aggregate-functions are all expressions supported in group_by_item, 
+/* Except aggregate-functions are all expressions supported in group_by_item,
    they are caught inside pass1.cpp */
 group_by_item : value
 		;
@@ -3595,7 +3595,7 @@ having_clause	: HAVING search_condition
 
 where_clause	: WHERE search_condition
 		 	{ $$ = $2; }
-		| 
+		|
 			{ $$ = NULL; }
 		;
 
@@ -3619,8 +3619,8 @@ plan_type	: JOIN
 		| MERGE
 			{ $$ = make_node (nod_merge_plan, (int) 0, NULL); }
 
-		/* for now the SORT operator is a no-op; it does not 
-		   change the place where a sort happens, but is just intended 
+		/* for now the SORT operator is a no-op; it does not
+		   change the place where a sort happens, but is just intended
 		   to read the output from a SET PLAN */
 		| SORT
 			{ $$ = 0; }
@@ -3721,7 +3721,7 @@ rows_clause	: ROWS value
 /* IBO hack: replace column_parens_opt by ins_column_parens_opt. */
 insert		: INSERT INTO simple_table_name ins_column_parens_opt
 				VALUES '(' value_list ')' returning_clause
-			{ $$ = make_node (nod_insert, (int) e_ins_count, 
+			{ $$ = make_node (nod_insert, (int) e_ins_count,
 				$3, $4, make_list ($7), NULL, $9); }
 		| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
 			{ $$ = make_node (nod_insert, (int) e_ins_count,
@@ -3934,10 +3934,10 @@ ins_column_list	: update_column_name
 
 column_name	 : simple_column_name
 		| symbol_table_alias_name '.' symbol_column_name
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, 
+			{ $$ = make_node (nod_field_name, (int) e_fln_count,
 							$1, $3); }
 		| symbol_table_alias_name '.' '*'
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, 
+			{ $$ = make_node (nod_field_name, (int) e_fln_count,
 							$1, NULL); }
 		;
 
@@ -3950,7 +3950,7 @@ update_column_name : simple_column_name
 /* CVC: This option should be deprecated! The only allowed syntax should be
 Update...set column = expr, without qualifier for the column. */
 		| symbol_table_alias_name '.' symbol_column_name
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, 
+			{ $$ = make_node (nod_field_name, (int) e_fln_count,
 							$1, $3); }
 		;
 
@@ -4055,7 +4055,7 @@ distinct_predicate : value IS DISTINCT FROM value
 between_predicate : value BETWEEN value AND value
 		{ $$ = make_node (nod_between, 3, $1, $3, $5); }
 	| value NOT BETWEEN value AND value
-		{ $$ = make_node (nod_not, 1, make_node (nod_between, 
+		{ $$ = make_node (nod_not, 1, make_node (nod_between,
 						3, $1, $4, $6)); }
 	;
 
@@ -4066,7 +4066,7 @@ like_predicate	: value LIKE value
 	| value LIKE value ESCAPE value
 		{ $$ = make_node (nod_like, 3, $1, $3, $5); }
 	| value NOT LIKE value ESCAPE value
-		{ $$ = make_node (nod_not, 1, make_node (nod_like, 
+		{ $$ = make_node (nod_not, 1, make_node (nod_like,
 						3, $1, $4, $6)); }
 	;
 
@@ -4142,7 +4142,7 @@ in_predicate_value	: table_subquery
 	;
 
 table_subquery	: '(' column_select ')'
-			{ $$ = $2; } 
+			{ $$ = $2; }
 		;
 
 /* USER control SQL interface */
@@ -4163,7 +4163,7 @@ drop_user_clause : symbol_user_name
 passwd_clause : PASSWORD sql_string
 		{ $$ = $2; }
 	;
-	
+
 passwd_opt : passwd_clause
 		{ $$ = $1; }
 	|
@@ -4205,7 +4205,7 @@ value	: column_name
 				| '+' value
 						{ $$ = $2; }
 		| value '+' value
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_add2, 2, $1, $3);
 			  else
@@ -4216,14 +4216,14 @@ value	: column_name
 		| value COLLATE symbol_collation_name
 			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
 		| value '-' value
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_subtract2, 2, $1, $3);
-			  else 
+			  else
 				  $$ = make_node (nod_subtract, 2, $1, $3);
 			}
 		| value '*' value
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				   $$ = make_node (nod_multiply2, 2, $1, $3);
 			  else
@@ -4248,7 +4248,7 @@ value	: column_name
 		| symbol_table_alias_name '.' DB_KEY
 			{ $$ = make_node (nod_dbkey, 1, $1); }
 				| KW_VALUE
-						{ 
+						{
 			  $$ = make_node (nod_dom_value, 0, NULL);
 						}
 		| datetime_value_expression
@@ -4256,33 +4256,33 @@ value	: column_name
 		;
 
 datetime_value_expression : CURRENT_DATE
-			{ 
+			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
 			$$ = make_node (nod_current_date, 0, NULL);
 			}
 		| CURRENT_TIME sec_precision_opt
-			{ 
+			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
 			$$ = make_node (nod_current_time, 1, $2);
@@ -4333,17 +4333,17 @@ u_constant	: u_numeric_constant
 		| sql_string
 			{ $$ = MAKE_str_constant ((dsql_str*) $1, lex.att_charset); }
 		| DATE STRING
-			{ 
+			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_DATE);
@@ -4353,13 +4353,13 @@ u_constant	: u_numeric_constant
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_TIME);
@@ -4402,7 +4402,7 @@ internal_info	: CURRENT_CONNECTION
 sql_string	: STRING			/* string in current charset */
 			{ $$ = $1; }
 		| INTRODUCER STRING		/* string in specific charset */
-			{ ((dsql_str*) $2)->str_charset = (TEXT *) $1;
+			{ ((dsql_str*) $2)->str_charset = (TEXT*) $1;
 			  $$ = $2; }
 		;
 
@@ -4461,7 +4461,7 @@ non_aggregate_function
 	| string_value_function
 	| system_function_expression
 	;
-	
+
 aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_node (nod_agg_count, 0, NULL); }
 		| COUNT '(' all_noise value ')'
@@ -4470,14 +4470,14 @@ aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_flag_node (nod_agg_count,
 									   NOD_AGG_DISTINCT, 1, $4); }
 		| SUM '(' all_noise value ')'
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_agg_total2, 1, $4);
 			  else
 				  $$ = make_node (nod_agg_total, 1, $4);
 			}
 		| SUM '(' DISTINCT value ')'
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_flag_node (nod_agg_total2,
 						   NOD_AGG_DISTINCT, 1, $4);
@@ -4486,14 +4486,14 @@ aggregate_function	: COUNT '(' '*' ')'
 						   NOD_AGG_DISTINCT, 1, $4);
 			}
 		| AVG '(' all_noise value ')'
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_agg_average2, 1, $4);
 			  else
 				  $$ = make_node (nod_agg_average, 1, $4);
 			}
 		| AVG '(' DISTINCT value ')'
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_flag_node (nod_agg_average2,
 						   NOD_AGG_DISTINCT, 1, $4);
@@ -4674,7 +4674,7 @@ string_length_opt	: FOR value
 trim_function	: TRIM '(' trim_specification value FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, $4, $6); }
 		| TRIM '(' value FROM value ')'
-			{ $$ = make_node (nod_trim, (int) e_trim_count, 
+			{ $$ = make_node (nod_trim, (int) e_trim_count,
 				MAKE_const_slong (blr_trim_both, true), $3, $5); }
 		| TRIM '(' trim_specification FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, NULL, $5); }
@@ -4690,7 +4690,7 @@ trim_specification	: BOTH
 		| LEADING
 			{ $$ = MAKE_const_slong (blr_trim_leading, true); }
 		;
-		
+
 udf		: symbol_UDF_call_name '(' value_list ')'
 			{ $$ = make_node (nod_udf, 2, $1, $3); }
 		| symbol_UDF_call_name '(' ')'
@@ -4708,11 +4708,11 @@ case_expression	: case_abbreviation
 		;
 
 case_abbreviation	: NULLIF '(' value ',' value ')'
-			{ $$ = make_node (nod_searched_case, 2, 
-				make_node (nod_list, 2, make_node (nod_eql, 2, $3, $5), 
+			{ $$ = make_node (nod_searched_case, 2,
+				make_node (nod_list, 2, make_node (nod_eql, 2, $3, $5),
 				make_node (nod_null, 0, NULL)), $3); }
 		| IIF '(' search_condition ',' value ',' value ')'
-			{ $$ = make_node (nod_searched_case, 2, 
+			{ $$ = make_node (nod_searched_case, 2,
 				make_node (nod_list, 2, $3, $5), $7); }
 		| COALESCE '(' value ',' value_list ')'
 			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
@@ -4769,7 +4769,7 @@ decode_pairs
 /* next value expression */
 
 next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_gen_id2, 2, $4,
 						MAKE_const_slong(1));
@@ -4778,7 +4778,7 @@ next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
 						MAKE_const_slong(1));
 			}
 		| GEN_ID '(' symbol_generator_name ',' value ')'
-			{ 
+			{
 			  if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
 				  $$ = make_node (nod_gen_id2, 2, $3, $5);
 			  else
@@ -5076,7 +5076,7 @@ const TEXT* Parser::lex_position()
  **************************************
  *
  * Functional description
- *	Return the current position of LEX 
+ *	Return the current position of LEX
  *	in the input string.
  *
  **************************************/
@@ -5092,7 +5092,7 @@ static bool long_int(dsql_nod* string,
 /*************************************
  *
  *	l o n g _ i n t
- * 
+ *
  *************************************
  *
  * Functional description
@@ -5153,7 +5153,7 @@ static dsql_fil* make_file()
 {
 /**************************************
  *
- *	m a k e _ f i l e 
+ *	m a k e _ f i l e
  *
  **************************************
  *
@@ -5162,7 +5162,7 @@ static dsql_fil* make_file()
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-		   
+
 	dsql_fil* temp_file = FB_NEW(*tdbb->getDefaultPool()) dsql_fil;
 
 	return temp_file;
@@ -5310,7 +5310,7 @@ static void prepare_console_debug (int level, int *yydeb)
 /*************************************
  *
  *	p r e p a r e _ c o n s o l e _ d e b u g
- * 
+ *
  *************************************
  *
  * Functional description
@@ -5334,11 +5334,11 @@ static bool short_int(dsql_nod* string,
 /*************************************
  *
  *	s h o r t _ i n t
- * 
+ *
  *************************************
  *
  * Functional description
- *	is the string a valid representation 
+ *	is the string a valid representation
  *	of a positive short int?
  *
  *************************************/
@@ -5357,7 +5357,7 @@ static bool short_int(dsql_nod* string,
 	/* there are 5 or fewer digits, it's value may still be greater
 	 * than 32767... */
 
-	SCHAR buf[10];	
+	SCHAR buf[10];
 	buf[0] = ((dsql_str*) string)->str_data[0];
 	buf[1] = ((dsql_str*) string)->str_data[1];
 	buf[2] = ((dsql_str*) string)->str_data[2];
@@ -5369,7 +5369,7 @@ static bool short_int(dsql_nod* string,
 
 	bool return_value;
 
-	switch (range) 
+	switch (range)
 	{
 		case POSITIVE:
 			return_value = *long_value > SHRT_POS_MAX;
@@ -5443,7 +5443,7 @@ static void stack_nodes (dsql_nod*	node,
 		stack_nodes (next_node, stack);
 
 		/* stack the non-list nodes and reverse the chain on the way back */
-		
+
 		curr_node = end_chain;
 		while (true)
 		{
@@ -5509,7 +5509,7 @@ int Parser::yylexAux()
 		if (c == '-' && lex.ptr < lex.end && *lex.ptr == '-')
 		{
 			/* single-line */
-			
+
 			lex.ptr++;
 			while (lex.ptr < lex.end) {
 				if ((c = *lex.ptr++) == '\n') {
@@ -5525,7 +5525,7 @@ int Parser::yylexAux()
 		else if (c == '/' && lex.ptr < lex.end && *lex.ptr == '*')
 		{
 			/* multi-line */
-			
+
 			const TEXT& start_block = lex.ptr[-1];
 			lex.ptr++;
 			while (lex.ptr < lex.end) {
@@ -5573,11 +5573,11 @@ int Parser::yylexAux()
 				return -1;
 			check_copy_incr(p, UPPER7(*lex.ptr), string);
 		}
-		
+
 		check_bound(p, string);
 		*p = 0;
 
-		/* make a string value to hold the name, the name 
+		/* make a string value to hold the name, the name
 		 * is resolved in pass1_constant */
 
 		yylval = (dsql_nod*) (MAKE_string(string, p - string))->str_data;
@@ -5664,15 +5664,15 @@ int Parser::yylexAux()
 			gds__free (buffer);
 		return STRING;
 	}
-												 
-/* 
+
+/*
  * Check for a numeric constant, which starts either with a digit or with
  * a decimal point followed by a digit.
- * 
+ *
  * This code recognizes the following token types:
- * 
+ *
  * NUMBER: string of digits which fits into a 32-bit integer
- * 
+ *
  * NUMBER64BIT: string of digits whose value might fit into an SINT64,
  *   depending on whether or not there is a preceding '-', which is to
  *   say that "9223372036854775808" is accepted here.
@@ -5699,7 +5699,7 @@ int Parser::yylexAux()
 	// Where the X is a literal 'x' or 'X' character, followed
 	// by a set of nibble values in single quotes.  The nibble
 	// can be 0-9, a-f, or A-F, and is converted from the hex.
-	// The number of nibbles should be even. 
+	// The number of nibbles should be even.
 	//
 	// The resulting value is stored in a string descriptor and
 	// returned to the parser as a string.  This can be stored
@@ -5710,13 +5710,13 @@ int Parser::yylexAux()
 
 		// Remember where we start from, to rescan later.
 		// Also we'll need to know the length of the buffer.
-		
+
 		const char* hexstring = ++lex.ptr;
 		int charlen = 0;
 
 		// Time to scan the string. Make sure the characters are legal,
 		// and find out how long the hex digit string is.
-		
+
 		for (;;)
 		{
 			if (lex.ptr >= lex.end)	// Unexpected EOS
@@ -5724,9 +5724,9 @@ int Parser::yylexAux()
 				hexerror = true;
 				break;
 			}
-			
+
 			c = *lex.ptr;
-			
+
 			if (c == '\'')			// Trailing quote, done
 			{
 				++lex.ptr;			// Skip the quote
@@ -5750,43 +5750,43 @@ int Parser::yylexAux()
 		{
 			// Figure out the length of the actual resulting hex string.
 			// Allocate a second temporary buffer for it.
-		
+
 			Firebird::string temp;
 
-			// Re-scan over the hex string we got earlier, converting 
-			// adjacent bytes into nibble values.  Every other nibble, 
-			// write the saved byte to the temp space.  At the end of 
-			// this, the temp.space area will contain the binary 
+			// Re-scan over the hex string we got earlier, converting
+			// adjacent bytes into nibble values.  Every other nibble,
+			// write the saved byte to the temp space.  At the end of
+			// this, the temp.space area will contain the binary
 			// representation of the hex constant.
-			
+
 			UCHAR byte = 0;
 			for (int i = 0; i < charlen; i++)
 			{
 				c = UPPER7(hexstring[i]);
 
 				// Now convert the character to a nibble
-			
+
 				if (c >= 'A')
 					c = (c - 'A') + 10;
 				else
 					c = (c - '0');
-			
+
 				if (i & 1) // nibble?
 				{
 					byte = (byte << 4) + (UCHAR) c;
 					temp.append(1, (char) byte);
 				}
-				else 
+				else
 					byte = c;
 			}
 
 			dsql_str* string = MAKE_string(temp.c_str(), temp.length());
 			string->str_charset = "BINARY";
 			yylval = (dsql_nod*) string;
-			
-			return STRING;	
+
+			return STRING;
 		}  // if (!hexerror)...
-		
+
 		// If we got here, there was a parsing error.  Set the
 		// position back to where it was before we messed with
 		// it.  Then fall through to the next thing we might parse.
@@ -5907,7 +5907,7 @@ int Parser::yylexAux()
 						nibble = false;
 						value = (value << 8) + byte;
 					}
-					else 
+					else
 					{
 						byte = c;
 						nibble = true;
@@ -6049,7 +6049,7 @@ int Parser::yylexAux()
 						 * the message text exceeds the 119-character limit
 						 * of our message database.
 						 */
-						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous) << 
+						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous) <<
 										  Arg::Str(Firebird::string(lex.last_token, lex.ptr - lex.last_token)));
 						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous1));
 					}
@@ -6126,7 +6126,7 @@ int Parser::yylexAux()
 			return sym->sym_keyword;
 		}
 	}
-		
+
 	/* Single character punctuation are simply passed on */
 
 	return (UCHAR) c;
@@ -6157,14 +6157,14 @@ void Parser::yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YY
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  /* Unexpected end of command */
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) << 
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) <<
 													Arg::Num(lex.last_token - line_start + 1));
 	}
 	else
 	{
 		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  /* Token unknown - line %d, column %d */
-				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(lines) << 
+				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(lines) <<
 				  									  Arg::Num(lex.last_token - line_start + 1) << /*CVC: +1*/
 				  /* Show the token */
 				  Arg::Gds(isc_random) << Arg::Str(string(lex.last_token, lex.ptr - lex.last_token)));
