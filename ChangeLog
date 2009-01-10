@@ -1,3 +1,40 @@
+2009-01-10 12:09  robocop
+
+	* firebird2/src/: dudley/extract.epp (1.52), dudley/parse.cpp
+	(1.57), dsql/pass1.cpp (1.433):
+
+	Cleanup.
+
+2009-01-10 11:51  robocop
+
+	* firebird2/src/qli/: all.cpp (1.37), blk.h (1.16), command.cpp
+	(1.30), compile.cpp (1.34), compile.h (1.13), dtr.cpp (1.64), dtr.h
+	(1.35), err.cpp (1.26), err_proto.h (1.11), eval.cpp (1.53),
+	exe.cpp (1.61), exe.h (1.28), exe_proto.h (1.11), expand.cpp
+	(1.43), format.cpp (1.40), format.h (1.16), gener.cpp (1.46),
+	gener_proto.h (1.7), help.epp (1.27), help_proto.h (1.7), hsh.cpp
+	(1.22), hsh_proto.h (1.10), lex.cpp (1.44), lex_proto.h (1.11),
+	meta.epp (1.76), meta_proto.h (1.14), mov.cpp (1.47), parse.cpp
+	(1.48), parse.h (1.13), parse_proto.h (1.8), picst_proto.h (1.10),
+	picstr.cpp (1.35), proc.epp (1.33), proc_proto.h (1.11), report.cpp
+	(1.22), report.h (1.10), reqs.h (1.5), show.epp (1.48), symbols.h
+	(1.6), words.h (1.7):
+
+	Style.
+
+2009-01-10 08:30  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.h (1.26):
+
+	localId is always assigned a SLONG and compared to a SLONG, hence I
+	changed it to SLONG.
+
+2009-01-10 08:29  robocop
+
+	* firebird2/src/dsql/user_dsql.cpp (1.60):
+
+	Style.
+
 2009-01-09 15:44  alexpeshkoff
 
 	* firebird2/src/common/classes/fb_atomic.h (1.16):
