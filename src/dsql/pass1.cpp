@@ -10729,19 +10729,19 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	switch (node->getType())
 	{
-	case (TEXT) dsql_type_str:
+	case dsql_type_str:
 		trace_line("%sSTRING: \"%s\"\n", buffer, ((dsql_str*) node)->str_data);
 		return;
 
-	case (TEXT) dsql_type_fld:
+	case dsql_type_fld:
 		trace_line("%sFIELD: %s\n", buffer, ((dsql_fld*) node)->fld_name.c_str());
 		return;
 
-	case (TEXT) dsql_type_sym:
+	case dsql_type_sym:
 		trace_line("%sSYMBOL: %s\n", buffer, ((dsql_sym*) node)->sym_string);
 		return;
 
-	case (TEXT) dsql_type_nod:
+	case dsql_type_nod:
 		break;
 
 	default:

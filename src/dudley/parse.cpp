@@ -3623,7 +3623,7 @@ static SCE parse_identifier(void)
 /* Get explicit identifiers, if any */
 
 	switch (dudleyGlob.DDL_token.tok_keyword) {
-	case (KW_VIEW):
+	case KW_VIEW:
 		LEX_token();
 		if (dudleyGlob.DDL_token.tok_type != tok_ident)
 			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
@@ -3633,7 +3633,7 @@ static SCE parse_identifier(void)
 		LEX_token();
 		break;
 
-	case (KW_USER):
+	case KW_USER:
 		LEX_token();
 		if (dudleyGlob.DDL_token.tok_type != tok_ident)
 			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
@@ -3651,7 +3651,7 @@ static SCE parse_identifier(void)
 		}
 		break;
 
-	case (KW_GROUP):
+	case KW_GROUP:
 		LEX_token();
 		if (dudleyGlob.DDL_token.tok_type != tok_ident)
 			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
@@ -3669,8 +3669,8 @@ static SCE parse_identifier(void)
 		}
 		break;
 
-	case (KW_L_BRCKET):
-	case (KW_LT):
+	case KW_L_BRCKET:
+	case KW_LT:
 		LEX_token();
 		if (!PARSE_match(KW_ASTERISK)) {
 			if (dudleyGlob.DDL_token.tok_type != tok_number)

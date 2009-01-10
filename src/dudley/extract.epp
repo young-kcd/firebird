@@ -293,8 +293,9 @@ static void decompile_blr_literal(const SCHAR* string)
 
 	TEXT* b = buffer;
 
-	switch (*p++) {
-	case (blr_text):
+	switch (*p++)
+	{
+	case blr_text:
 		size = gds__vax_integer(p, 2);
 		p += 2;
 		*b++ = '"';
@@ -304,13 +305,13 @@ static void decompile_blr_literal(const SCHAR* string)
 		*b = 0;
 		break;
 
-	case (blr_long):
+	case blr_long:
 		scale = *p++;
 		value = gds__vax_integer(p, 4);
 		binary_to_ascii(value, scale, buffer);
 		break;
 
-	case (blr_short):
+	case blr_short:
 		scale = *p++;
 		value = gds__vax_integer(p, 2);
 		binary_to_ascii(value, scale, buffer);
@@ -1351,27 +1352,27 @@ static void extract_triggers(void)
             fprintf(output_file, "\tinactive\n");
 
         switch (T.RDB$TRIGGER_TYPE) {
-        case (SSHORT) trg_store:
+        case trg_store:
             fprintf(output_file, "\tpre store");
             break;
 
-        case (SSHORT) trg_post_store:
+        case trg_post_store:
             fprintf(output_file, "\tpost store");
             break;
 
-        case (SSHORT) trg_modify:
+        case trg_modify:
 	       fprintf(output_file, "\tpre modify");
 	       break;
 
-        case (SSHORT) trg_post_modify:
+        case trg_post_modify:
 	       fprintf(output_file, "\tpost modify");
 	       break;
 
-        case (SSHORT) trg_pre_erase:
+        case trg_pre_erase:
             fprintf(output_file, "\tpre erase");
             break;
 
-        case (SSHORT) trg_erase:
+        case trg_erase:
             fprintf(output_file, "\tpost erase");
             break;
 
