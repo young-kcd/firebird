@@ -107,7 +107,7 @@ class DatabaseSnapshot
 	struct Element
 	{
 		ULONG processId;
-		ULONG localId;
+		SLONG localId;
 		ULONG length;
 	};
 
