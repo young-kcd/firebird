@@ -841,9 +841,8 @@ ISC_STATUS API_ROUTINE isc_dsql_finish(FB_API_HANDLE* db_handle)
 	return 0;
 }
 
-ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS* status_vector,
-							   FB_API_HANDLE* tra_handle,
-							   const SCHAR* statement_name, SQLDA* sqlda)
+ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS* status_vector, FB_API_HANDLE* tra_handle,
+								   const SCHAR* statement_name, SQLDA* sqlda)
 {
 	return isc_embed_dsql_execute(status_vector, tra_handle, statement_name,
 								  DIALECT_sqlda, reinterpret_cast<XSQLDA*>(sqlda));
@@ -867,56 +866,44 @@ ISC_STATUS API_ROUTINE isc_fetch(ISC_STATUS* status_vector,
 }
 
 ISC_STATUS API_ROUTINE isc_fetch_a(ISC_STATUS* status_vector,
-							   int *sqlcode,
-							   const SCHAR* cursor_name, SQLDA* sqlda)
+								   int *sqlcode,
+								   const SCHAR* cursor_name, SQLDA* sqlda)
 {
-	return isc_embed_dsql_fetch_a(status_vector,
-								  sqlcode,
-								  cursor_name,
-								  DIALECT_sqlda,
+	return isc_embed_dsql_fetch_a(status_vector, sqlcode, cursor_name, DIALECT_sqlda,
 								  reinterpret_cast<XSQLDA*>(sqlda));
 }
 
 ISC_STATUS API_ROUTINE isc_open(ISC_STATUS* status_vector,
-							FB_API_HANDLE* tra_handle,
-							const SCHAR* cursor_name, SQLDA* sqlda)
+								FB_API_HANDLE* tra_handle,
+								const SCHAR* cursor_name, SQLDA* sqlda)
 {
-	return isc_embed_dsql_open(status_vector,
-							   tra_handle,
-							   cursor_name,
-							   DIALECT_sqlda,
+	return isc_embed_dsql_open(status_vector, tra_handle, cursor_name, DIALECT_sqlda,
 							   reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-ISC_STATUS API_ROUTINE isc_prepare(	ISC_STATUS*	status_vector,
-								FB_API_HANDLE*	db_handle,
-								FB_API_HANDLE*	tra_handle,
-								const SCHAR*	statement_name,
-								const SSHORT*	sql_length,
-								const SCHAR*	sql,
-								SQLDA*	sqlda)
+ISC_STATUS API_ROUTINE isc_prepare(ISC_STATUS*	status_vector,
+								   FB_API_HANDLE*	db_handle,
+								   FB_API_HANDLE*	tra_handle,
+								   const SCHAR*	statement_name,
+								   const SSHORT*	sql_length,
+								   const SCHAR*	sql,
+								   SQLDA*	sqlda)
 {
-	return isc_embed_dsql_prepare(	status_vector,
-									db_handle,
-									tra_handle,
-									statement_name,
-									(USHORT) ((sql_length) ? *sql_length : 0),
-									sql,
-									DIALECT_sqlda,
-									reinterpret_cast<XSQLDA*>(sqlda));
+	return isc_embed_dsql_prepare(status_vector, db_handle, tra_handle, statement_name,
+									(USHORT) (sql_length ? *sql_length : 0), sql,
+									DIALECT_sqlda, reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-ISC_STATUS API_ROUTINE isc_dsql_release(ISC_STATUS*	status_vector,
-									const SCHAR*	statement_name)
+ISC_STATUS API_ROUTINE isc_dsql_release(ISC_STATUS*	status_vector, const SCHAR* statement_name)
 {
 	return isc_embed_dsql_release(status_vector, statement_name);
 }
 
-int API_ROUTINE isc_to_sqlda(	SQLDA*	sqlda,
-								int		number,
-								SCHAR*	host_var,
-								int		host_var_size,
-								SCHAR*	name)
+int API_ROUTINE isc_to_sqlda(SQLDA*	sqlda,
+							int		number,
+							SCHAR*	host_var,
+							int		host_var_size,
+							SCHAR*	name)
 {
 	// no longer supported
 	return 0;
@@ -939,22 +926,22 @@ ISC_STATUS API_ROUTINE gds__close(ISC_STATUS* status_vector, const SCHAR* statem
 }
 
 ISC_STATUS API_ROUTINE gds__declare(ISC_STATUS*	status_vector,
-								const SCHAR*	statement_name,
-								const SCHAR*	cursor_name)
+									const SCHAR*	statement_name,
+									const SCHAR*	cursor_name)
 {
 	return isc_declare(status_vector, statement_name, cursor_name);
 }
 
-ISC_STATUS API_ROUTINE gds__describe(	ISC_STATUS*	status_vector,
-									const SCHAR*	statement_name,
-									SQLDA*	sqlda)
+ISC_STATUS API_ROUTINE gds__describe(ISC_STATUS*	status_vector,
+									 const SCHAR*	statement_name,
+									 SQLDA*	sqlda)
 {
 	return isc_describe(status_vector, statement_name, sqlda);
 }
 
 ISC_STATUS API_ROUTINE gds__describe_bind(ISC_STATUS*	status_vector,
-									  const SCHAR*	statement_name,
-									  SQLDA*	sqlda)
+										  const SCHAR*	statement_name,
+										  SQLDA*	sqlda)
 {
 	return isc_describe_bind(status_vector, statement_name, sqlda);
 }
@@ -965,76 +952,62 @@ ISC_STATUS API_ROUTINE gds__dsql_finish(FB_API_HANDLE* db_handle)
 }
 
 ISC_STATUS API_ROUTINE gds__execute(ISC_STATUS*	status_vector,
-								FB_API_HANDLE*	tra_handle,
-								const SCHAR*	statement_name,
-								SQLDA*	sqlda)
+									FB_API_HANDLE*	tra_handle,
+									const SCHAR*	statement_name,
+									SQLDA*	sqlda)
 {
 	return isc_execute(status_vector, tra_handle, statement_name, sqlda);
 }
 
 ISC_STATUS API_ROUTINE gds__execute_immediate(ISC_STATUS*	status_vector,
-										  FB_API_HANDLE*	db_handle,
-										  FB_API_HANDLE*	tra_handle,
-										  SSHORT*	sql_length,
-										  const SCHAR*	sql)
+											  FB_API_HANDLE*	db_handle,
+											  FB_API_HANDLE*	tra_handle,
+											  SSHORT*	sql_length,
+											  const SCHAR*	sql)
 {
-	return isc_execute_immediate(	status_vector,
-									db_handle,
-									tra_handle,
-									sql_length,
-									sql);
+	return isc_execute_immediate(status_vector, db_handle, tra_handle, sql_length, sql);
 }
 
 ISC_STATUS API_ROUTINE gds__fetch(ISC_STATUS*	status_vector,
-							  const SCHAR*	statement_name,
-							  SQLDA*	sqlda)
+								  const SCHAR*	statement_name,
+								  SQLDA*	sqlda)
 {
 	return isc_fetch(status_vector, statement_name, sqlda);
 }
 
 ISC_STATUS API_ROUTINE gds__fetch_a(ISC_STATUS*	status_vector,
-								int*	sqlcode,
-								const SCHAR*	statement_name,
-								SQLDA*	sqlda)
+									int*	sqlcode,
+									const SCHAR*	statement_name,
+									SQLDA*	sqlda)
 {
 	return isc_fetch_a(status_vector, sqlcode, statement_name, sqlda);
 }
 
 ISC_STATUS API_ROUTINE gds__open(ISC_STATUS*	status_vector,
-							 FB_API_HANDLE*	tra_handle,
-							 const SCHAR*		cursor_name,
-							 SQLDA*		sqlda)
+								 FB_API_HANDLE*	tra_handle,
+								 const SCHAR*		cursor_name,
+								 SQLDA*		sqlda)
 {
 	return isc_open(status_vector, tra_handle, cursor_name, sqlda);
 }
 
 ISC_STATUS API_ROUTINE gds__prepare(ISC_STATUS*	status_vector,
-								FB_API_HANDLE*	db_handle,
-								FB_API_HANDLE*	tra_handle,
-								const SCHAR*	statement_name,
-								const SSHORT*	sql_length,
-								const SCHAR*	sql,
-								SQLDA*	sqlda)
+									FB_API_HANDLE*	db_handle,
+									FB_API_HANDLE*	tra_handle,
+									const SCHAR*	statement_name,
+									const SSHORT*	sql_length,
+									const SCHAR*	sql,
+									SQLDA*	sqlda)
 {
-	return isc_prepare(	status_vector,
-						db_handle,
-						tra_handle,
-						statement_name,
-						sql_length,
-						sql,
-						sqlda);
+	return isc_prepare(status_vector, db_handle, tra_handle, statement_name,
+					   sql_length, sql, sqlda);
 }
 
-ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda,
-								 int number,
-								 SCHAR* host_variable,
-								 int host_variable_size,
-								 SCHAR* host_variable_name)
+ISC_STATUS API_ROUTINE gds__to_sqlda(SQLDA* sqlda, int number,
+								 	 SCHAR* host_variable, int host_variable_size,
+								 	 SCHAR* host_variable_name)
 {
-	return isc_to_sqlda(sqlda,
-						number,
-						host_variable,
-						host_variable_size, host_variable_name);
+	return isc_to_sqlda(sqlda, number, host_variable, host_variable_size, host_variable_name);
 }
 
 
@@ -1353,8 +1326,9 @@ static USHORT name_length(const TEXT* name)
  **************************************/
 
 	// CVC: Beware, another function that stops at the first blank!!!
-	const TEXT* p;
-	for (p = name; *p && *p != ' '; p++);
+	const TEXT* p = name;
+	while (*p && *p != ' ')
+		++p;
 
 	return (USHORT) (p - name);
 }
@@ -1389,10 +1363,7 @@ static void remove_name(dsql_name* name, dsql_name** list_ptr)
 
 
 // CVC: It seems I've read at least three versions of this routine.
-static bool scompare(const SCHAR* string1,
-					 USHORT length1,
-					 const SCHAR* string2,
-					 USHORT length2)
+static bool scompare(const SCHAR* string1, USHORT length1, const SCHAR* string2, USHORT length2)
 {
 /**************************************
  *
