@@ -41,8 +41,8 @@
 using MsgFormat::SafeArg;
 
 
-static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
-static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD&);
+static void dump_procedure(qli_dbb*, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
+static void extract_procedure(void*, const TEXT*, USHORT, qli_dbb*, ISC_QUAD&);
 
 #ifdef NOT_USED_OR_REPLACED
 static SCHAR db_items[] =
@@ -176,12 +176,13 @@ void CMD_extract( qli_syntax* node)
 	FILE* file = (FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
 
 	qli_syntax* list = node->syn_arg[0];
-	if (list) {
+	if (list)
+	{
 		qli_syntax** ptr = list->syn_arg;
 		for (const qli_syntax* const* const end = ptr + list->syn_count; ptr < end; ptr++)
 		{
 			QPR proc = (QPR) *ptr;
-			DBB database = proc->qpr_database;
+			qli_dbb* database = proc->qpr_database;
 			if (!database)
 				database = QLI_databases;
 
@@ -198,7 +199,7 @@ void CMD_extract( qli_syntax* node)
 	}
 	else {
 		CMD_check_ready();
-		for (DBB database = QLI_databases; database; database = database->dbb_next)
+		for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
 		{
 			PRO_scan(database, extract_procedure, file);
 		}
@@ -232,7 +233,7 @@ void CMD_finish( qli_syntax* node)
 	}
 
 	for (USHORT i = 0; i < node->syn_count; i++)
-		MET_finish((DBB) node->syn_arg[i]);
+		MET_finish((qli_dbb*) node->syn_arg[i]);
 }
 
 
@@ -252,7 +253,7 @@ void CMD_rename_proc( qli_syntax* node)
 	QPR old_proc = (QPR) node->syn_arg[0];
 	QPR new_proc = (QPR) node->syn_arg[1];
 
-	DBB database = old_proc->qpr_database;
+	qli_dbb* database = old_proc->qpr_database;
 	if (!database)
 		database = QLI_databases;
 
@@ -266,8 +267,8 @@ void CMD_rename_proc( qli_syntax* node)
 		return;
 	}
 
-	ERRQ_error(85,				// Msg85 Procedure %s not found in database %s
-			   SafeArg() << old_name->nam_string << database->dbb_symbol->sym_string);
+	ERRQ_error(85, SafeArg() << old_name->nam_string << database->dbb_symbol->sym_string);
+	// Msg85 Procedure %s not found in database %s
 }
 
 
@@ -288,11 +289,13 @@ void CMD_set( qli_syntax* node)
 
 	const qli_syntax* const* ptr = node->syn_arg;
 
-	for (USHORT i = 0; i < node->syn_count; i++) {
+	for (USHORT i = 0; i < node->syn_count; i++)
+	{
 		const USHORT foo = (USHORT)(IPTR) *ptr++;
 		const enum set_t sw = (enum set_t) foo;
 		const qli_syntax* value = *ptr++;
-		switch (sw) {
+		switch (sw)
+		{
 		case set_blr:
 			QLI_blr = (bool)(IPTR) value;
 			break;
@@ -420,7 +423,8 @@ void CMD_shell( qli_syntax* node)
 
 	TEXT* p = buffer;
 	const qli_const* constant = (qli_const*) node->syn_arg[0];
-	if (constant) {
+	if (constant)
+	{
 		const USHORT l = constant->con_desc.dsc_length;
 		if (l)
 			memcpy(p, constant->con_data, l);
@@ -471,7 +475,7 @@ void CMD_transaction( qli_syntax* node)
 			node->syn_type = nod_commit;
 		}
 		else if (node->syn_count == 1) {
-			DBB tmp_db = (DBB) node->syn_arg[0];
+			qli_dbb* tmp_db = (qli_dbb*) node->syn_arg[0];
 			tmp_db->dbb_flags |= DBB_prepared;
 		}
 		else
@@ -481,7 +485,7 @@ void CMD_transaction( qli_syntax* node)
 
 	if (node->syn_count == 0)
 	{
-		for (DBB db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
+		for (qli_dbb* db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
 		{
 			if ((node->syn_type == nod_commit) && !(db_iter->dbb_flags & DBB_prepared))
 			{
@@ -502,7 +506,7 @@ void CMD_transaction( qli_syntax* node)
 	qli_syntax** ptr = node->syn_arg;
 	for (const qli_syntax* const* const end = ptr + node->syn_count; ptr < end; ptr++)
 	{
-		DBB database = (DBB) *ptr;
+		qli_dbb* database = (qli_dbb*) *ptr;
 		if ((node->syn_type == nod_commit) && !(database->dbb_flags & DBB_prepared))
 		{
 				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
@@ -515,8 +519,7 @@ void CMD_transaction( qli_syntax* node)
 }
 
 
-static void dump_procedure(
-						   DBB database,
+static void dump_procedure(qli_dbb* database,
 						   FILE* file,
 						   const TEXT* name, USHORT length, FB_API_HANDLE blob)
 {
@@ -543,10 +546,9 @@ static void dump_procedure(
 }
 
 
-static void extract_procedure(
-							  void* file,
+static void extract_procedure(void* file,
 							  const TEXT* name,
-							  USHORT length, DBB database, ISC_QUAD& blob_id)
+							  USHORT length, qli_dbb* database, ISC_QUAD& blob_id)
 {
 /**************************************
  *

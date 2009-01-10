@@ -177,11 +177,10 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 }
 
 
-static void print_more(
-					   USHORT level,
+static void print_more(USHORT level,
 					   USHORT depth,
 					   const TEXT** topics,
-					   USHORT * max_level,
+					   USHORT* max_level,
 					   const TEXT* parent,
 					   bool error_flag) // unused
 {
@@ -217,13 +216,14 @@ static void print_more(
 // If we got anything, print the new topic
 
 	if (p != topic)
-		print_topic(level + 1, depth + 1, topics + 1, max_level, parent,
-					false);  // strange, it doesn't use error_flag
+	{
+		print_topic(level + 1, depth + 1, topics + 1, max_level, parent, false);
+		// strange, it doesn't use error_flag
+	}
 }
 
 
-static void print_topic(
-						USHORT level,
+static void print_topic(USHORT level,
 						USHORT depth,
 						const TEXT** topics,
 						USHORT* max_level, const TEXT* parent, bool error_flag)

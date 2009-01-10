@@ -24,7 +24,7 @@
 #ifndef QLI_HELP_PROTO_H
 #define QLI_HELP_PROTO_H
 
-void	HELP_fini (void);
+void	HELP_fini();
 void	HELP_help(qli_syntax*);
 
 #endif // QLI_HELP_PROTO_H

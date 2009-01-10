@@ -37,7 +37,7 @@ typedef struct nam {
 
 typedef struct qpr {
     blk  qpr_header;
-    dbb* qpr_database;		// database block
+    qli_dbb* qpr_database;		// database block
     nam* qpr_name;			// name block
 } *QPR;
 
@@ -45,7 +45,7 @@ typedef struct qpr {
 
 typedef struct qfn {
     blk  qfn_header;
-    dbb* qfn_database;		// database block
+    qli_dbb* qfn_database;		// database block
     nam* qfn_name;			// name block
 } *QFN;
 
@@ -53,7 +53,7 @@ typedef struct qfn {
 
 typedef struct qfl {
     blk  qfl_header;
-    dbb* qfl_database;		// database block
+    qli_dbb* qfl_database;		// database block
     nam* qfl_name;			// name block
 } *QFL;
 

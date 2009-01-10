@@ -57,7 +57,7 @@ static qli_nod* compile_print_list(qli_nod*, qli_req*, qli_lls**);
 static qli_nod* compile_prompt(qli_nod*);
 static qli_nod* compile_repeat(qli_nod*, qli_req*, bool);
 static qli_nod* compile_report(qli_nod*, qli_req*);
-static qli_req* compile_rse(qli_nod*, qli_req*, bool, qli_msg**, qli_msg**, DBB *);
+static qli_req* compile_rse(qli_nod*, qli_req*, bool, qli_msg**, qli_msg**, qli_dbb**);
 static qli_nod* compile_statement(qli_nod*, qli_req*, bool);
 static qli_nod* compile_statistical(qli_nod*, qli_req*, bool);
 static qli_nod* compile_store(qli_nod*, qli_req*, bool);
@@ -67,7 +67,7 @@ static qli_msg* make_message(qli_req*);
 static void make_missing_reference(qli_par*);
 static qli_par* make_parameter(qli_msg*, qli_nod*);
 static qli_nod* make_reference(qli_nod*, qli_msg*);
-static qli_req* make_request(DBB);
+static qli_req* make_request(qli_dbb*);
 static void release_message(qli_msg*);
 static int string_length(const dsc*);
 
@@ -118,7 +118,8 @@ void CMP_alloc_temp(qli_nod* node)
 
 	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length +
 					     type_alignments[node->nod_desc.dsc_dtype]);
-	node->nod_desc.dsc_address = (UCHAR *) FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), type_alignments[node->nod_desc.dsc_dtype]);
+	node->nod_desc.dsc_address = (UCHAR *)
+		FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), type_alignments[node->nod_desc.dsc_dtype]);
 	QLI_validate_desc(node->nod_desc);
 }
 
@@ -138,7 +139,8 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 	if (!node1 || !node2 || node1->nod_type != node2->nod_type)
 		return false;
 
-	switch (node1->nod_type) {
+	switch (node1->nod_type)
+	{
 	case nod_field:
 		if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
 			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context] ||
@@ -218,8 +220,7 @@ static qli_nod* compile_any( qli_nod* node, qli_req* old_request, bool internal_
 
     qli_msg* send;
 	qli_msg* receive;
-	qli_req* request = compile_rse(node->nod_arg[e_any_rse],
-							  old_request, false, &send, &receive, 0);
+	qli_req* request = compile_rse(node->nod_arg[e_any_rse], old_request, false, &send, &receive, 0);
 	if (request)
 		node->nod_arg[e_any_request] = (qli_nod*) request;
 	else
@@ -344,7 +345,8 @@ static void compile_context( qli_nod* node, qli_req* request, bool internal_flag
 	qli_ctx** ctx_ptr = (qli_ctx**) node->nod_arg + e_rse_count;
 	const qli_ctx* const* const ctx_end = ctx_ptr + node->nod_count;
 
-	for (; ctx_ptr < ctx_end; ctx_ptr++) {
+	for (; ctx_ptr < ctx_end; ctx_ptr++)
+	{
 		qli_ctx* context = *ctx_ptr;
 		context->ctx_request = request;
 		context->ctx_context = request->req_context++;
@@ -369,7 +371,8 @@ static void compile_control_break( qli_brk* control, qli_req* request)
  *	Compile a control/page/report break.
  *
  **************************************/
-	for (; control; control = control->brk_next) {
+	for (; control; control = control->brk_next)
+	{
 		report_control_break = control;
 		if (control->brk_field)
 		{
@@ -478,7 +481,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	qli_map* map;
 	qli_fld* field;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_any:
 	case nod_unique:
 		return compile_any(node, request, internal_flag);
@@ -627,7 +631,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 			qli_par* parm = make_parameter(request->req_send, node);
 			node->nod_export = parm;
 			parm->par_value = node;
-			if (field = (qli_fld*) node->nod_arg[e_prm_field]) {
+			if (field = (qli_fld*) node->nod_arg[e_prm_field])
+			{
 				parm->par_desc.dsc_dtype = field->fld_dtype;
 				parm->par_desc.dsc_length = field->fld_length;
 				parm->par_desc.dsc_scale = field->fld_scale;
@@ -710,7 +715,8 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
    current request, there is nothing to do.  If the value is not computable,
    make up a parameter to send the value into the request. */
 
-	if (internal_flag) {
+	if (internal_flag)
+	{
 		if (computable(node, request))
 			return node;
 
@@ -760,8 +766,7 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
 
 	qli_msg* send;
 	qli_msg* receive;
-	qli_req* request = compile_rse(node->nod_arg[e_for_rse],
-							  old_request, false, &send, &receive, 0);
+	qli_req* request = compile_rse(node->nod_arg[e_for_rse], old_request, false, &send, &receive, 0);
 	if (request)
 		node->nod_arg[e_for_request] = (qli_nod*) request;
 	else
@@ -803,8 +808,7 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
 }
 
 
-static qli_nod* compile_function( qli_nod* node, qli_req* old_request,
-	bool internal_flag)
+static qli_nod* compile_function( qli_nod* node, qli_req* old_request, bool internal_flag)
 {
 /**************************************
  *
@@ -1038,7 +1042,8 @@ static qli_nod* compile_print_list( qli_nod* list, qli_req* request, qli_lls** s
 		qli_print_item* item = (qli_print_item*) *ptr;
 		if (stack)
 			ALLQ_push((blk*) item, stack);
-		if (item->itm_type == item_value) {
+		if (item->itm_type == item_value)
+		{
 			qli_nod* value = item->itm_value;
 			value->nod_flags |= NOD_parameter2;
 			item->itm_value = compile_expression(value, request, false);
@@ -1073,7 +1078,8 @@ static qli_nod* compile_prompt( qli_nod* node)
 	if (!field)
 		prompt_length = PROMPT_LENGTH;
 	else {
-		switch (field->fld_dtype) {
+		switch (field->fld_dtype)
+		{
 		case dtype_text:
 			prompt_length = field->fld_length;
 			break;
@@ -1186,11 +1192,8 @@ static qli_nod* compile_report( qli_nod* node, qli_req* request)
 }
 
 
-static qli_req* compile_rse(
-					   qli_nod* node,
-					   qli_req* old_request,
-					   bool internal_flag,
-					   qli_msg** send, qli_msg** receive, DBB* database)
+static qli_req* compile_rse(qli_nod* node, qli_req* old_request, bool internal_flag,
+							qli_msg** send, qli_msg** receive, qli_dbb** database)
 {
 /**************************************
  *
@@ -1206,7 +1209,7 @@ static qli_req* compile_rse(
  *
  **************************************/
 	qli_req* request;
-	DBB local_dbb;
+	qli_dbb* local_dbb;
 
 	qli_req* const original_request = old_request;
 
@@ -1220,7 +1223,8 @@ static qli_req* compile_rse(
 	qli_ctx** ctx_ptr = (qli_ctx**) node->nod_arg + e_rse_count;
 	const qli_ctx* const* const ctx_end = ctx_ptr + node->nod_count;
 
-	for (; ctx_ptr < ctx_end; ctx_ptr++) {
+	for (; ctx_ptr < ctx_end; ctx_ptr++)
+	{
 		qli_ctx* context = *ctx_ptr;
 		if (context->ctx_stream) {
 			if (request = compile_rse(context->ctx_stream, old_request, internal_flag,
@@ -1309,7 +1313,8 @@ static qli_nod* compile_statement( qli_nod* node, qli_req* request, bool interna
  *	the parent request.
  *
  **************************************/
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_assign:
 		return compile_assignment(node, request, internal_flag);
 
@@ -1373,8 +1378,7 @@ static qli_nod* compile_statement( qli_nod* node, qli_req* request, bool interna
 }
 
 
-static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request,
-	bool internal_flag)
+static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request, bool internal_flag)
 {
 /**************************************
  *
@@ -1411,7 +1415,7 @@ static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request,
 	qli_msg* send;
 	qli_msg* receive;
 	qli_req* request = compile_rse(node->nod_arg[e_stt_rse],
-							  old_request, internal_flag, &send, &receive, 0);
+								   old_request, internal_flag, &send, &receive, 0);
 	if (request) {
 		node->nod_arg[e_stt_request] = (qli_nod*) request;
 	}
@@ -1520,7 +1524,8 @@ static bool computable( qli_nod* node, qli_req* request)
 	qli_ctx* context;
 	qli_map* map;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_max:
 	case nod_min:
 	case nod_count:
@@ -1636,7 +1641,8 @@ static bool computable( qli_nod* node, qli_req* request)
 			return (computable(sub, request));
 
 	case nod_assign:
-		if (node->nod_arg[e_asn_valid]) {
+		if (node->nod_arg[e_asn_valid])
+		{
 			sub = node->nod_arg[e_asn_from];
 			if (sub->nod_type == nod_prompt)
 				/* Try to do validation in QLI as soon as
@@ -1707,7 +1713,8 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 	desc1.dsc_flags = 0;
 	dsc desc2 = desc1;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_field:
 	case nod_variable:
 		{
@@ -2018,7 +2025,7 @@ static qli_nod* make_reference( qli_nod* node, qli_msg* message)
 }
 
 
-static qli_req* make_request( DBB dbb)
+static qli_req* make_request( qli_dbb* database)
 {
 /**************************************
  *
@@ -2031,12 +2038,12 @@ static qli_req* make_request( DBB dbb)
  *
  **************************************/
 	qli_req* request = (qli_req*) ALLOCD(type_req);
-	request->req_database = dbb;
+	request->req_database = database;
 	request->req_next = QLI_requests;
 	QLI_requests = request;
-	dbb->dbb_flags |= DBB_active;
-	if (!(dbb->dbb_transaction))
-		MET_transaction(nod_start_trans, dbb);
+	database->dbb_flags |= DBB_active;
+	if (!(database->dbb_transaction))
+		MET_transaction(nod_start_trans, database);
 
 	return request;
 }

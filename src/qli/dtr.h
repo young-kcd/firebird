@@ -51,10 +51,10 @@ enum blk_t
 #include "../include/old_fb_blk.h"
 #endif
 
-typedef enum nod_t {
+enum nod_t {
 
 // Commands, not executed.
-
+	nod_nothing = 0,
     nod_ready = 1,
     nod_finish,
     nod_commit,
@@ -221,7 +221,7 @@ typedef enum nod_t {
     nod_sql_grant,
     nod_sql_revoke
 
-} NOD_T;
+};
 
 struct qli_vec {
     blk		vec_header;
@@ -245,7 +245,7 @@ struct qli_const {
 
 // Symbol types
 
-typedef enum sym_t {
+enum sym_t {
     SYM_keyword,
     SYM_context,
     SYM_database,
@@ -255,13 +255,13 @@ typedef enum sym_t {
     SYM_cursor,
     SYM_form,
     SYM_function
-} SYM_T;
+};
 
 struct qli_symbol {
     blk			sym_header;
     const TEXT*	sym_string;		// address of asciz string
     USHORT		sym_length;		// length of string (exc. term.)
-    SYM_T		sym_type;		// symbol type
+    sym_t		sym_type;		// symbol type
     USHORT		sym_keyword;	// keyword number, if keyword
     blk*		sym_object;		// general pointer to object
     qli_symbol*	sym_collision;	// collision pointer
@@ -273,7 +273,7 @@ struct qli_symbol {
 
 struct qli_syntax {
     blk		syn_header;
-    NOD_T	syn_type;		// Type of node
+    nod_t	syn_type;		// Type of node
     USHORT	syn_flags;
     USHORT	syn_count;		// Number of arguments
     qli_syntax*	syn_arg[1];
@@ -281,9 +281,10 @@ struct qli_syntax {
 
 // Database block
 
-typedef struct dbb {
+struct qli_dbb
+{
     blk				dbb_header;
-    dbb*			dbb_next;			// Next database in system
+    qli_dbb*		dbb_next;			// Next database in system
     struct qli_rel*	dbb_relations;		// Linked list of relations
     struct qli_fun*	dbb_functions;		// Known functions in database
     FB_API_HANDLE	dbb_handle;			// database handle
@@ -308,7 +309,7 @@ typedef struct dbb {
     int*			dbb_statistics;		// Statistics memory
     FB_API_HANDLE	dbb_requests [96];	// Misc meta-data requests
     TEXT			dbb_filename [2];	// Filename of database
-} *DBB;
+};
 
 // Bits in dbb_flags
 
@@ -341,7 +342,7 @@ const ULONG DBB_cap_index_type		= 65536;	// Database has too damn much stuff
 struct qli_rel {
     blk				rel_header;
     qli_rel* 		rel_next;			// Next relation in database
-    dbb*			rel_database;		// Parent database
+    qli_dbb*		rel_database;		// Parent database
     qli_symbol*		rel_symbol;			// Hash symbol for relation
     struct qli_fld*	rel_fields;			// Field block
     USHORT			rel_id;				// Relation id
@@ -457,7 +458,7 @@ const USHORT DSC_initial	= 2; // Nobody sets this value, at least directly
 struct qli_fun {
     blk			fun_header;
     qli_fun*	fun_next;		// Next function in database
-    dbb*		fun_database;
+    qli_dbb*	fun_database;
     qli_symbol*	fun_symbol;		// Associated symbol block
     qli_symbol*	fun_query_name;
     dsc			fun_return;		// Return descriptor
@@ -475,7 +476,7 @@ struct qli_fun {
 #define EXTERN	extern
 #endif
 
-EXTERN DBB	QLI_databases;
+EXTERN qli_dbb*	QLI_databases;
 EXTERN PLB	QLI_permanent_pool;
 EXTERN PLB	QLI_default_pool;
 EXTERN qli_fld*	QLI_variables;

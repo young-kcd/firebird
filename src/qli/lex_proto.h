@@ -34,7 +34,7 @@ bool	LEX_get_line (const TEXT*, TEXT *, int);
 void	LEX_init ();
 void	LEX_mark_statement ();
 void	LEX_pop_line ();
-void	LEX_procedure(dbb*, FB_API_HANDLE);
+void	LEX_procedure(qli_dbb*, FB_API_HANDLE);
 bool	LEX_push_file (const TEXT*, const bool);
 bool	LEX_push_string (const TEXT* const);
 void	LEX_put_procedure (FB_API_HANDLE, SLONG, SLONG);

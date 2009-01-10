@@ -25,7 +25,7 @@
 #define QLI_GENER_PROTO_H
 
 qli_nod*	GEN_generate(qli_nod*);
-void		GEN_release (void);
+void		GEN_release();
 qli_rlb*	GEN_rlb_extend(qli_rlb*);
 void		GEN_rlb_release(qli_rlb*);
 

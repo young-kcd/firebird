@@ -27,7 +27,7 @@
 #include "../common/classes/SafeArg.h"
 
 void	ERRQ_bugcheck(USHORT);
-void	ERRQ_database_error(dbb*, ISC_STATUS*);
+void	ERRQ_database_error(qli_dbb*, ISC_STATUS*);
 void	ERRQ_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ERRQ_error(USHORT, const char* str);
 void	ERRQ_error_format(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());

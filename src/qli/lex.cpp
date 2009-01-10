@@ -61,7 +61,7 @@ static const char* SCRATCH		= "fb_query_";
 
 const char* FOPEN_INPUT_TYPE	= "r";
 
-static bool get_line(FILE *, TEXT *, USHORT);
+static bool get_line(FILE*, TEXT*, USHORT);
 static int nextchar(const bool);
 static void next_line(const bool);
 static void retchar();
@@ -304,7 +304,8 @@ qli_tok* LEX_filename()
 
 // Look for white space or end of line, allowing embedded quoted strings.
 
-	for (;;) {
+	for (;;)
+	{
 		c = nextchar(true);
 		char char_class = classes(c);
 		if (c == '"' && c != save)
@@ -409,9 +410,7 @@ void LEX_flush()
 }
 
 
-bool LEX_get_line(const TEXT* prompt,
-				  TEXT * buffer,
-				  int size)
+bool LEX_get_line(const TEXT* prompt, TEXT* buffer, int size)
 {
 /**************************************
  *
@@ -437,9 +436,11 @@ bool LEX_get_line(const TEXT* prompt,
 	bool overflow_flag = false;
 	SSHORT c;
 
-	while (true) {
+	while (true)
+	{
 		c = getc(input_file);
-		if (c == EOF) {
+		if (c == EOF)
+		{
 			if (SYSCALL_INTERRUPTED(errno) && !QLI_abort) {
 				errno = 0;
 				continue;
@@ -568,7 +569,7 @@ void LEX_pop_line()
 }
 
 
-void LEX_procedure( DBB database, FB_API_HANDLE blob)
+void LEX_procedure( qli_dbb* database, FB_API_HANDLE blob)
 {
 /**************************************
  *
@@ -594,8 +595,7 @@ void LEX_procedure( DBB database, FB_API_HANDLE blob)
 }
 
 
-bool LEX_push_file(const TEXT* filename,
-				   const bool error_flag)
+bool LEX_push_file(const TEXT* filename, const bool error_flag)
 {
 /**************************************
  *
@@ -610,7 +610,8 @@ bool LEX_push_file(const TEXT* filename,
  *
  **************************************/
 	FILE *file = fopen(filename, FOPEN_INPUT_TYPE);
-	if (!file) {
+	if (!file)
+	{
 	    TEXT buffer[64];
 		sprintf(buffer, "%s.com", filename);
 		if (!(file = fopen(buffer, FOPEN_INPUT_TYPE))) {
@@ -683,9 +684,11 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 
     TEXT buffer[1024];
 
-	while (length) {
+	while (length)
+	{
 		TEXT* p = buffer;
-		while (length) {
+		while (length)
+		{
 			--length;
 			const SSHORT c = getc(trace_file);
 			*p++ = c;
@@ -764,7 +767,8 @@ qli_tok* LEX_token()
 
 	SSHORT c;
 
-	for (;;) {
+	for (;;)
+	{
 		c = skip_white();
 		if (c != '\n' || QLI_line->line_type != line_blob)
 			break;
@@ -791,7 +795,8 @@ qli_tok* LEX_token()
 
 	char char_class = classes(c);
 
-	if (char_class & CHR_letter) {
+	if (char_class & CHR_letter)
+	{
 		for (c = nextchar(true); classes(c) & CHR_ident; c = nextchar(true))
 			*p++ = c;
 		retchar();
@@ -799,9 +804,11 @@ qli_tok* LEX_token()
 	}
 	else if (((char_class & CHR_digit) || c == '.') && scan_number(c, &p))
 		token->tok_type = tok_number;
-	else if (char_class & CHR_quote) {
+	else if (char_class & CHR_quote)
+	{
 		token->tok_type = tok_quoted;
-		while (true) {
+		while (true)
+		{
 			const SSHORT next = nextchar(false);
 			if (!next || next == '\n') {
 				retchar();
@@ -823,7 +830,8 @@ qli_tok* LEX_token()
 			}
 		}
 	}
-	else if (c == '\n') {
+	else if (c == '\n')
+	{
 	    // end of line, signal it properly with a phoney token.
 		token->tok_type = tok_eol;
 		--p;
@@ -860,7 +868,7 @@ qli_tok* LEX_token()
     qli_symbol* symbol = HSH_lookup(token->tok_string, token->tok_length);
 	token->tok_symbol = symbol;
 	if (symbol && symbol->sym_type == SYM_keyword)
-		token->tok_keyword = (KWWORDS) symbol->sym_keyword;
+		token->tok_keyword = (kwwords) symbol->sym_keyword;
 	else
 		token->tok_keyword = KW_none;
 
@@ -871,9 +879,7 @@ qli_tok* LEX_token()
 }
 
 
-static bool get_line(FILE * file,
-					 TEXT * buffer,
-					 USHORT size)
+static bool get_line(FILE* file, TEXT* buffer, USHORT size)
 {
 /**************************************
  *
@@ -895,9 +901,11 @@ static bool get_line(FILE * file,
 	TEXT* p = buffer;
 	SLONG length = size;
 
-	while (true) {
+	while (true)
+	{
 		c = getc(file);
-		if (c == EOF) {
+		if (c == EOF)
+		{
 			if (SYSCALL_INTERRUPTED(errno) && !QLI_abort) {
 				errno = 0;
 				continue;
@@ -971,13 +979,15 @@ static void next_line(const bool eof_ok)
  **************************************/
 	TEXT *p;
 
-	while (QLI_line) {
+	while (QLI_line)
+	{
 		bool flag = false;
 
 		// Get next line from where ever.  If it comes from either the terminal
 		//   or command file, check for another command file.
 
-		if (QLI_line->line_type == line_blob) {
+		if (QLI_line->line_type == line_blob)
+		{
 			// If the current blob segment contains another line, use it
 
 			if ((p = QLI_line->line_ptr) != QLI_line->line_data && p[-1] == '\n' && *p)
@@ -995,7 +1005,8 @@ static void next_line(const bool eof_ok)
 					printf("%s", QLI_line->line_data);
 			}
 		}
-		else {
+		else
+		{
 			// Initialize line block for retrieval
 
 			QLI_line->line_ptr = QLI_line->line_data;
@@ -1008,7 +1019,8 @@ static void next_line(const bool eof_ok)
 				if (QLI_echo)
 					printf("%s", QLI_line->line_data);
 			}
-			if (flag) {
+			if (flag)
+			{
 				TEXT* q;
 				for (q = p; classes(*q) & CHR_white; q++);
 				if (*q == '@') {
@@ -1040,18 +1052,17 @@ static void next_line(const bool eof_ok)
 
 		// this is an unexpected end of file
 
-		if (QLI_line->line_type == line_blob)
+		switch (QLI_line->line_type)
 		{
+		case line_blob:
 			ERRQ_print_error(64, QLI_line->line_source_name);
 			// Msg 64 unexpected end of procedure in procedure %s
-		}
-		else if (QLI_line->line_type == line_file)
-		{
+			break;
+		case line_file:
 			ERRQ_print_error(65, QLI_line->line_source_name);
 			// Msg 65 unexpected end of file in file %s
-		}
-		else
-		{
+			break;
+		default:
 			if (QLI_line->line_type == line_string)
 				LEX_pop_line();
 			IBERROR(66);		// Msg 66 unexpected eof
@@ -1074,7 +1085,7 @@ static void next_line(const bool eof_ok)
 	{
 		while (*p)
 			putc(*p++, trace_file);
-		QLI_position += (TEXT *) p - QLI_line->line_data;
+		QLI_position += (TEXT*) p - QLI_line->line_data;
 #ifdef WIN_NT
 		// account for the extra line-feed on OS/2 and Windows NT
 		//   to determine file position
@@ -1083,7 +1094,7 @@ static void next_line(const bool eof_ok)
 #endif
 	}
 
-	QLI_line->line_length = (TEXT *) p - QLI_line->line_data;
+	QLI_line->line_length = (TEXT*) p - QLI_line->line_data;
 }
 
 
@@ -1106,8 +1117,7 @@ static void retchar()
 }
 
 
-static bool scan_number(SSHORT c,
-						TEXT** ptr)
+static bool scan_number(SSHORT c, TEXT** ptr)
 {
 /**************************************
  *
@@ -1124,7 +1134,8 @@ static bool scan_number(SSHORT c,
 // If this is a leading decimal point, check that the next
 //   character is really a digit, otherwise backout
 
-	if (c == '.') {
+	if (c == '.')
+	{
 		c = nextchar(true);
 		retchar();
 		if (!(classes(c) & CHR_digit))
@@ -1136,7 +1147,8 @@ static bool scan_number(SSHORT c,
 
 // Gobble up digits up to a single decimal point
 
-	for (;;) {
+	for (;;)
+	{
 		c = nextchar(true);
 		if (classes(c) & CHR_digit)
 			*p++ = c;
@@ -1150,7 +1162,8 @@ static bool scan_number(SSHORT c,
 
 // If this is an exponential, eat the exponent sign and digits
 
-	if (UPPER(c) == 'E') {
+	if (UPPER(c) == 'E')
+	{
 		*p++ = c;
 		c = nextchar(true);
 		if (c == '+' || c == '-') {
@@ -1184,12 +1197,14 @@ static int skip_white()
  **************************************/
 	SSHORT c;
 
-	while (true) {
+	while (true)
+	{
 		c = nextchar(true);
 		const char char_class = classes(c);
 		if (char_class & CHR_white)
 			continue;
-		if (c == '/') {
+		if (c == '/')
+		{
 		    SSHORT next = nextchar(true);
 			if (next != '*') {
 				retchar();

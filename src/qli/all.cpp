@@ -57,7 +57,8 @@ static const struct
 {
 	SSHORT typ_root_length;
 	SSHORT typ_tail_length;
-} block_sizes[] = {
+} block_sizes[] =
+{
 	{0, 0},
 #include "../qli/blk.h"
 };

@@ -26,7 +26,8 @@
 
 // Request Language Block  -- used for BLR, DYN, SDL, etc.
 
-struct qli_rlb {
+struct qli_rlb
+{
     blk		rlb_header;
     UCHAR	*rlb_data;		// Pointer to end of BLR/DYN/SDL
     UCHAR	*rlb_base;		// Pointer to start of buffer
@@ -69,7 +70,7 @@ struct qli_msg; // forward decl.
 struct qli_req {
     blk				req_header;
     qli_req*		req_next;		// Next request in statement
-    dbb*			req_database;	// Database for request
+    qli_dbb*		req_database;	// Database for request
     FB_API_HANDLE	req_handle;		// Database request handle
     qli_rlb*		req_blr;
     qli_msg*		req_messages;	// Messages associated with request
@@ -92,13 +93,13 @@ struct qli_nod;
 
 // Context node
 
-typedef enum {
+enum CTX_T {
     CTX_RELATION,
     CTX_VARIABLE,
     CTX_AGGREGATE,
     //CTX_UNION,
     CTX_STREAM
-} CTX_T;
+};
 
 struct qli_ctx {
     blk				ctx_header;
@@ -156,7 +157,7 @@ struct qli_par {
 
 // Print item block
 
-typedef enum itm_t
+enum itm_t
 {
     item_value,
     item_skip,
@@ -166,7 +167,7 @@ typedef enum itm_t
     item_new_page,
     item_column_header,
     item_report_header
-} ITM_T;
+};
 
 struct qli_print_item {
     blk			itm_header;
@@ -174,7 +175,7 @@ struct qli_print_item {
     const TEXT*	itm_edit_string;
     struct pics*	itm_picture;	// picture string block
     const TEXT*	itm_query_header;
-    ITM_T		itm_type;
+    itm_t		itm_type;
     USHORT		itm_flags;			// Misc flags and crud
     UCHAR		itm_dtype;
     UCHAR		itm_sub_type;
@@ -209,7 +210,7 @@ struct qli_prt {
 
 struct qli_nod {
     blk			nod_header;
-    NOD_T		nod_type;		// Type of node
+    nod_t		nod_type;		// Type of node
     dsc			nod_desc;		// Descriptor
     qli_par*	nod_import;		// To pass random value
     qli_par*	nod_export;		// To pass random value

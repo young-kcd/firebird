@@ -74,7 +74,7 @@ static void execute_store(qli_nod*);
 static void map_data(qli_msg*);
 static void print_counts(qli_req*);
 static void set_null(qli_msg*);
-static void transaction_state(qli_nod*, DBB);
+static void transaction_state(qli_nod*, qli_dbb*);
 
 // definitions for SET COUNT
 
@@ -104,7 +104,7 @@ void EXEC_abort()
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	for (DBB database = QLI_databases; database; database = database->dbb_next)
+	for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
 	{
 		if (database->dbb_handle)
 		{
@@ -133,7 +133,8 @@ void EXEC_execute( qli_nod* node)
 	if (QLI_abort)
 		EXEC_poll_abort();
 
-	if (node) {
+	if (node)
+	{
 		switch (node->nod_type)
 		{
 		case nod_abort:
@@ -235,7 +236,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 	qli_req* request = context->ctx_request;
-	DBB dbb = request->req_database;
+	qli_dbb* dbb = request->req_database;
 	FB_API_HANDLE blob = 0;
 
 // Format blob parameter block
@@ -446,8 +447,7 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
 		map_data(message);
 		if (!isc_start_and_send(status_vector, &request->req_handle,
 								 &request->req_database-> dbb_transaction,
-								 message->msg_number, message->msg_length,
-								 message->msg_buffer, 0))
+								 message->msg_number, message->msg_length, message->msg_buffer, 0))
 		{
 			return;
 		}
@@ -483,7 +483,7 @@ void EXEC_top( qli_nod* node)
 
 
 static DSC *assignment(	qli_nod*		from_node,
-						DSC*	to_desc,
+						DSC*			to_desc,
 						qli_nod*		validation,
 						qli_nod*		initial,
 						qli_par*		parameter)
@@ -578,15 +578,16 @@ static void commit_retaining( qli_nod* node)
 		node->nod_type = nod_commit_retaining;
 	}
 	else if (node->nod_count == 1) {
-		DBB database = (DBB) node->nod_arg[0];
+		qli_dbb* database = (qli_dbb*) node->nod_arg[0];
 		database->dbb_flags |= DBB_prepared;
 	}
 	else
 		QLI_databases->dbb_flags |= DBB_prepared;
 
 
-	if (node->nod_count == 0) {
-		for (DBB database = QLI_databases; database; database = database->dbb_next)
+	if (node->nod_count == 0)
+	{
+		for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
 		{
 			if ((node->nod_type == nod_commit_retaining) && !(database->dbb_flags & DBB_prepared))
 			{
@@ -603,7 +604,7 @@ static void commit_retaining( qli_nod* node)
     qli_nod** ptr = node->nod_arg;
 	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 	{
-		DBB database = (DBB) *ptr;
+		qli_dbb* database = (qli_dbb*) *ptr;
 		if ((node->nod_type == nod_commit_retaining) && !(database->dbb_flags & DBB_prepared))
 		{
 			ERRQ_msg_put(465, database->dbb_symbol->sym_string);
@@ -643,10 +644,10 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 
 	qli_ctx* context = (qli_ctx*) value->nod_arg[e_fld_context];
 	qli_req* from_request = context->ctx_request;
-	DBB from_dbb = from_request->req_database;
+	qli_dbb* from_dbb = from_request->req_database;
 	qli_msg* message = parameter->par_message;
 	qli_req* to_request = message->msg_request;
-	DBB to_dbb = to_request->req_database;
+	qli_dbb* to_dbb = to_request->req_database;
 
 	dsc* from_desc = EVAL_value(value);
 	dsc* to_desc = EVAL_parameter(parameter);
@@ -770,7 +771,8 @@ static void execute_abort( qli_nod* node)
  *	Abort a statement.
  *
  **************************************/
-	if (node->nod_count) {
+	if (node->nod_count)
+	{
 	    const TEXT* ptr = NULL;
 		UCHAR temp[80];
 		const USHORT l =
@@ -805,7 +807,8 @@ static void execute_assignment( qli_nod* node)
 	qli_nod* initial = node->nod_arg[e_asn_initial];
 
 	qli_par* parameter;
-	if (to->nod_type == nod_field) {
+	if (to->nod_type == nod_field)
+	{
 		qli_nod* reference = to->nod_arg[e_fld_reference];
 		parameter = reference->nod_import;
 		if (to->nod_desc.dsc_dtype == dtype_blob && from->nod_desc.dsc_dtype == dtype_blob &&
@@ -824,7 +827,8 @@ static void execute_assignment( qli_nod* node)
 
 // propagate the missing flag in variable assignments
 
-	if (to->nod_type == nod_variable) {
+	if (to->nod_type == nod_variable)
+	{
 		qli_fld* field = (qli_fld*) to->nod_arg[e_fld_field];
 		if (to->nod_desc.dsc_missing & DSC_missing)
 			field->fld_flags |= FLD_missing;
@@ -872,7 +876,8 @@ static void execute_for( qli_nod* node)
 /* Receive messages in a loop until the end of file field comes up
    true. */
 
-	while (true) {
+	while (true)
+	{
 		dsc* desc = EXEC_receive(message, (qli_par*) node->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
@@ -1037,8 +1042,7 @@ static void map_data( qli_msg* message)
  *	Map data to a message in preparation for sending.
  *
  **************************************/
-	for (qli_par* parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next)
+	for (qli_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
 	{
 		dsc* desc = &parameter->par_desc;
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
@@ -1083,14 +1087,16 @@ static void print_counts( qli_req* request)
 // print out the counts of any records affected
 
 	int length = 0;
-	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length) {
+	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length)
+	{
 		const UCHAR item = *c++;
 		length = gds__vax_integer(c, 2);
 		c += 2;
 		const ULONG number = gds__vax_integer(c, length);
 
 		if (number)
-			switch (item) {
+			switch (item)
+			{
 			case isc_info_req_select_count:
 				printf("\nrecords selected: %"ULONGFORMAT"\n", number);
 				break;
@@ -1143,7 +1149,7 @@ static void set_null( qli_msg* message)
 
 
 
-static void transaction_state( qli_nod* node, DBB database)
+static void transaction_state( qli_nod* node, qli_dbb* database)
 {
 /**************************************
  *
@@ -1160,7 +1166,8 @@ static void transaction_state( qli_nod* node, DBB database)
  **************************************/
 	ISC_STATUS_ARRAY status;
 
-	if (database->dbb_transaction) {
+	if (database->dbb_transaction)
+	{
 		if (node->nod_type == nod_commit_retaining) {
 			if (isc_commit_retaining(status, &database->dbb_transaction))
 				ERRQ_database_error(database, status);

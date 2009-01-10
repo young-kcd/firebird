@@ -71,17 +71,18 @@ typedef struct col {
     :		literal insertion
 */
 
-typedef enum pic_t {
+enum pic_t {
     pic_alpha = 1,
     pic_numeric,
     pic_date,
     pic_float
     // , pic_text // unused
-} PIC_T;
+};
 
 // Picture string handling block
 
-struct pics {
+struct pics
+{
     blk		pic_header;
     USHORT	pic_print_length;	// Print length of picture string
     const TEXT*	pic_string;		// Address of string
@@ -89,7 +90,7 @@ struct pics {
     USHORT	pic_flags;		// Misc. trash
     USHORT	pic_count;		// Count of repeat characters
     TEXT	pic_character;		// Last significant character
-    PIC_T	pic_type;		// Type of edit
+    pic_t	pic_type;		// Type of edit
     USHORT	pic_length;		// Printing columns (MAX of edit_string & missing)
     USHORT	pic_floats;		// Character of floating things
     USHORT	pic_digits;		// Digits of number

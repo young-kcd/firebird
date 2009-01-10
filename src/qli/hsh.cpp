@@ -38,8 +38,9 @@ const int HASH_SIZE = 224;
 static qli_symbol* hash_table[HASH_SIZE];
 static qli_symbol* key_symbols;
 
-struct qli_kword {
-	KWWORDS id;
+struct qli_kword
+{
+	kwwords id;
 	const char* keyword;
 };
 
@@ -86,12 +87,13 @@ void HSH_init()
  **************************************/
 	const qli_kword* qword = keywords;
 
-	for (int i = 0; i < FB_NELEM(keywords); i++, qword++) {
+	for (int i = 0; i < FB_NELEM(keywords); i++, qword++)
+	{
 		qli_symbol* symbol = (qli_symbol*) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_length = strlen(qword->keyword);
 		symbol->sym_string = qword->keyword;
-		symbol->sym_keyword = (int) qword->id;
+		symbol->sym_keyword = qword->id;
 		HSH_insert(symbol, true);
 		symbol->sym_object = (BLK) key_symbols;
 		key_symbols = symbol;
@@ -226,10 +228,7 @@ static int hash(const SCHAR* string, int length)
 }
 
 
-static bool scompare_ins(const SCHAR* string1,
-					 int length1,
-					 const SCHAR* string2,
-					 int length2)
+static bool scompare_ins(const SCHAR* string1, int length1, const SCHAR* string2, int length2)
 {
 /**************************************
  *
@@ -256,10 +255,7 @@ static bool scompare_ins(const SCHAR* string1,
 }
 
 
-static bool scompare_sens(const SCHAR* string1,
-					 int length1,
-					 const SCHAR* string2,
-					 int length2)
+static bool scompare_sens(const SCHAR* string1, int length1, const SCHAR* string2, int length2)
 {
 /**************************************
  *

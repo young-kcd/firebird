@@ -120,7 +120,8 @@ void RPT_report( qli_nod* loop)
 	for (control = report->rpt_top_breaks; control; control = control->brk_next)
 		FMT_print((qli_nod*) control->brk_line, print);
 
-	for (;;) {
+	for (;;)
+	{
 		// Check for bottom breaks.  If we find one, force all lower breaks.
 
 		for (control = report->rpt_bottom_breaks; control; control = control->brk_next)
@@ -240,9 +241,7 @@ static void initialize_break( qli_brk* control)
 }
 
 
-static bool test_break(qli_brk* control,
-					   qli_rpt* report,
-					   qli_msg* message)
+static bool test_break(qli_brk* control, qli_rpt* report, qli_msg* message)
 {
 /**************************************
  *
@@ -285,7 +284,7 @@ static bool test_break(qli_brk* control,
 	USHORT l = desc1.dsc_length;
 
 	if (desc1.dsc_dtype == dtype_varying)
-		l = 2 + *(USHORT *) p1;
+		l = 2 + *(USHORT*) p1;
 
 	if (l)
 		return memcmp(p1, p2, l) != 0;
@@ -317,8 +316,7 @@ static void top_break( qli_brk* control, qli_prt* print)
 }
 
 
-static void top_of_page(qli_prt* print,
-						bool first_flag)
+static void top_of_page(qli_prt* print, bool first_flag)
 {
 /**************************************
  *

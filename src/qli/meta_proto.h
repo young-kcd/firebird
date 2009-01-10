@@ -24,24 +24,24 @@
 #ifndef QLI_META_PROTO_H
 #define QLI_META_PROTO_H
 
-bool	MET_declare(dbb*, qli_fld*, const nam*);
-void	MET_define_field(dbb*, qli_fld*);
+bool	MET_declare(qli_dbb*, qli_fld*, const nam*);
+void	MET_define_field(qli_dbb*, qli_fld*);
 void	MET_define_index(qli_syntax*);
 void	MET_define_relation(qli_rel*, qli_rel*);
 void	MET_define_sql_relation(qli_rel*);
-void	MET_delete_database(dbb*);
-void	MET_delete_field(dbb*, nam*);
-void	MET_delete_index(dbb*, nam*);
+void	MET_delete_database(qli_dbb*);
+void	MET_delete_field(qli_dbb*, nam*);
+void	MET_delete_index(qli_dbb*, nam*);
 void	MET_delete_relation(qli_rel*);
-int		MET_dimensions(dbb*, const TEXT*);
+int		MET_dimensions(qli_dbb*, const TEXT*);
 void	MET_fields(qli_rel*);
-void	MET_finish(dbb*);
+void	MET_finish(qli_dbb*);
 int		MET_get_datatype (USHORT);
-void	MET_index_info(DBB db, const TEXT*, const TEXT*, SCHAR* const, size_t bufsize);
-void	MET_meta_commit(dbb*);
-void	MET_meta_rollback(dbb*);
-FB_API_HANDLE	MET_meta_transaction(dbb*, bool);
-void	MET_modify_field(dbb*, qli_fld*);
+void	MET_index_info(qli_dbb* db, const TEXT*, const TEXT*, SCHAR* const, size_t bufsize);
+void	MET_meta_commit(qli_dbb*);
+void	MET_meta_rollback(qli_dbb*);
+FB_API_HANDLE	MET_meta_transaction(qli_dbb*, bool);
+void	MET_modify_field(qli_dbb*, qli_fld*);
 void	MET_modify_index(qli_syntax*);
 void	MET_modify_relation(qli_rel*, qli_fld*);
 void	MET_ready(qli_syntax*, USHORT);
@@ -50,7 +50,7 @@ void	MET_sql_alter_table(qli_rel*, qli_fld*);
 void	MET_sql_cr_view(qli_syntax*);
 void	MET_sql_grant(qli_syntax*);
 void	MET_sql_revoke(qli_syntax*);
-FB_API_HANDLE	MET_transaction(NOD_T, dbb*);
+FB_API_HANDLE	MET_transaction(nod_t, qli_dbb*);
 
 #endif // QLI_META_PROTO_H
 

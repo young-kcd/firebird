@@ -40,8 +40,8 @@
 #include "../jrd/gds_proto.h"
 
 #ifdef DEV_BUILD
-static void explain(DBB db, const UCHAR*);
-static void explain_index_tree(DBB db, SSHORT, const TEXT*, const UCHAR**, SSHORT*);
+static void explain(qli_dbb* db, const UCHAR*);
+static void explain_index_tree(qli_dbb* db, SSHORT, const TEXT*, const UCHAR**, SSHORT*);
 static void explain_printf(SSHORT, const TEXT*, const TEXT*);
 #endif
 
@@ -107,7 +107,8 @@ void GEN_release()
  *	of a request.  Just recurse around and release requests.
  *
  **************************************/
-	for (; QLI_requests; QLI_requests = QLI_requests->req_next) {
+	for (; QLI_requests; QLI_requests = QLI_requests->req_next)
+	{
 		if (QLI_requests->req_handle)
 		{
 			ISC_STATUS_ARRAY status_vector;
@@ -183,7 +184,7 @@ void GEN_rlb_release( qli_rlb* rlb)
 
 
 #ifdef DEV_BUILD
-static void explain(DBB db, const UCHAR* explain_buffer)
+static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 {
 /**************************************
  *
@@ -207,9 +208,11 @@ static void explain(DBB db, const UCHAR* explain_buffer)
 	SSHORT buffer_length = *explain_buffer++;
 	buffer_length += (*explain_buffer++) << 8;
 
-	while (buffer_length > 0) {
+	while (buffer_length > 0)
+	{
 		buffer_length--;
-		switch (*explain_buffer++) {
+		switch (*explain_buffer++)
+		{
 		case isc_info_rsb_begin:
 			explain_printf(level, "isc_info_rsb_begin,\n", 0);
 			level++;
@@ -350,11 +353,8 @@ static void explain(DBB db, const UCHAR* explain_buffer)
 
 
 #ifdef DEV_BUILD
-static void explain_index_tree(DBB db,
-							   SSHORT level,
-							   const TEXT* relation_name,
-							   const UCHAR** explain_buffer_ptr,
-							   SSHORT* buffer_length)
+static void explain_index_tree(qli_dbb* db, SSHORT level, const TEXT* relation_name,
+							   const UCHAR** explain_buffer_ptr, SSHORT* buffer_length)
 {
 /**************************************
  *
@@ -374,7 +374,8 @@ static void explain_index_tree(DBB db,
 
 	(*buffer_length)--;
 
-	switch (*explain_buffer++) {
+	switch (*explain_buffer++)
+	{
 	case isc_info_rsb_and:
 		explain_printf(level, "isc_info_rsb_and,\n", 0);
 		level++;
@@ -465,7 +466,8 @@ static void gen_any( qli_nod* node, qli_req* request)
    generate BLR.  Otherwise assume that a request is alrealdy initialized. */
 
 	qli_req* new_request = (qli_req*) node->nod_arg[e_any_request];
-	if (new_request) {
+	if (new_request)
+	{
 		request = new_request;
 		gen_request(request);
 		const qli_msg* receive = (qli_msg*) node->nod_arg[e_any_send];
@@ -484,7 +486,8 @@ static void gen_any( qli_nod* node, qli_req* request)
 
 	USHORT value; // not feasible to change it to bool.
 	dsc desc;
-	if (new_request) {
+	if (new_request)
+	{
 		desc.dsc_dtype = dtype_short;
 		desc.dsc_length = sizeof(SSHORT);
 		desc.dsc_scale = 0;
@@ -597,7 +600,7 @@ static void gen_compile( qli_req* request)
 
 	const USHORT length = rlb->rlb_data - rlb->rlb_base;
 
-	DBB dbb = request->req_database;
+	qli_dbb* dbb = request->req_database;
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_compile_request(status_vector, &dbb->dbb_handle, &request->req_handle, length,
@@ -637,7 +640,8 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
  **************************************/
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 
 	case dtype_text:
 		STUFF(blr_text);
@@ -747,7 +751,8 @@ static void gen_expression(qli_nod* node, qli_req* request)
 	else if (request)
 		rlb = CHECK_RLB(request->req_blr);
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_any:
 		gen_any(node, request);
 		return;
@@ -988,7 +993,8 @@ static void gen_field( qli_nod* node, qli_req* request)
 /* If the field referenced is in this request, just generate a field
    reference. */
 
-	if (context->ctx_request == request) {
+	if (context->ctx_request == request)
+	{
 		qli_nod* args = node->nod_arg[e_fld_subs];
 		if (args)
 			STUFF(blr_index);
@@ -1060,7 +1066,8 @@ static void gen_for( qli_nod* node, qli_req* request)
 	dsc desc;
 	USHORT value;
 
-	if (message) {
+	if (message)
+	{
 		gen_send_receive(message, blr_send);
 		STUFF(blr_begin);
 
@@ -1097,7 +1104,8 @@ static void gen_for( qli_nod* node, qli_req* request)
 // Build  the body of the loop.
 
 	const qli_msg* continuation = request->req_continue;
-	if (continuation) {
+	if (continuation)
+	{
 		STUFF(blr_label);
 		const USHORT label = request->req_label++;
 		STUFF(label);
@@ -1152,11 +1160,13 @@ static void gen_function( qli_nod* node, qli_req* request)
 /* If there is a request associated with the statement, prepare to
    generate BLR.  Otherwise assume that a request is already initialized. */
 
-	if (request && (request->req_flags & (REQ_project | REQ_group_by))) {
+	if (request && (request->req_flags & (REQ_project | REQ_group_by)))
+	{
 		new_request = NULL;
 		rlb = CHECK_RLB(request->req_blr);
 	}
-	else if (new_request = (qli_req*) node->nod_arg[e_fun_request]) {
+	else if (new_request = (qli_req*) node->nod_arg[e_fun_request])
+	{
 		request = new_request;
 		gen_request(request);
 		const qli_msg* receive = (qli_msg*) node->nod_arg[e_fun_send];
@@ -1214,13 +1224,15 @@ static void gen_if( qli_nod* node, qli_req* request)
    statements/expressions to be local also.  If not
    local, generate BLR. */
 
-	if (node->nod_flags & NOD_local) {
+	if (node->nod_flags & NOD_local)
+	{
 		gen_expression(node->nod_arg[e_if_boolean], 0);
 		gen_statement(node->nod_arg[e_if_true], request);
 		if (node->nod_arg[e_if_false])
 			gen_statement(node->nod_arg[e_if_false], request);
 	}
-	else {
+	else
+	{
 	    // probably the var is irrelevant, but not the function call,
 	    // as it makes sure there's enough room.
 		qli_rlb* rlb = CHECK_RLB(request->req_blr);
@@ -1261,7 +1273,8 @@ static void gen_literal(const dsc* desc, qli_req* request)
 	const UCHAR* p = desc->dsc_address;
 	USHORT l = desc->dsc_length;
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_short:
 		value = *(SSHORT *) p;
 		STUFF_WORD(value);
@@ -1467,7 +1480,8 @@ static void gen_request( qli_req* request)
 	for (qli_msg* message = request->req_messages; message; message = message->msg_next)
 	{
 		message->msg_length = 0;
-		for (param = message->msg_parameters; param; param = param->par_next) {
+		for (param = message->msg_parameters; param; param = param->par_next)
+		{
 			const dsc* desc = &param->par_desc;
 			param->par_parameter = message->msg_parameter++;
 			const USHORT alignment = type_alignments[desc->dsc_dtype];
@@ -1517,7 +1531,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
-	if ((NOD_T) (IPTR) node->nod_arg[e_rse_join_type] == (NOD_T) 0)
+	if ((nod_t) (IPTR) node->nod_arg[e_rse_join_type] == nod_nothing)
 		STUFF(blr_rse);
 	else
 		STUFF(blr_rs_stream);
@@ -1527,12 +1541,14 @@ static void gen_rse( qli_nod* node, qli_req* request)
 	qli_nod* list;
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_rse_count];
 
-	if (context->ctx_sub_rse) {
+	if (context->ctx_sub_rse)
+	{
 		STUFF(blr_aggregate);
 		STUFF(context->ctx_context);
 		gen_rse(context->ctx_sub_rse, request);
 		STUFF(blr_group_by);
-		if (list = node->nod_arg[e_rse_group_by]) {
+		if (list = node->nod_arg[e_rse_group_by])
+		{
 			request->req_flags |= REQ_group_by;
 			STUFF(list->nod_count);
 			qli_nod** ptr = list->nod_arg;
@@ -1589,15 +1605,21 @@ static void gen_rse( qli_nod* node, qli_req* request)
 	if (list = node->nod_arg[e_rse_reduced])
 		gen_sort(list, request, blr_project);
 
-	const NOD_T join_type = (NOD_T) (IPTR) node->nod_arg[e_rse_join_type];
-	if (join_type != (NOD_T) 0 && join_type != nod_join_inner) {
+	const nod_t join_type = (nod_t) (IPTR) node->nod_arg[e_rse_join_type];
+	if (join_type != nod_nothing && join_type != nod_join_inner)
+	{
 		STUFF(blr_join_type);
-		if (join_type == nod_join_left)
+		switch (join_type)
+		{
+		case nod_join_left:
 			STUFF(blr_left);
-		else if (join_type == nod_join_right)
+			break;
+		case nod_join_right:
 			STUFF(blr_right);
-		else
+			break;
+		default:
 			STUFF(blr_full);
+		}
 	}
 
 	STUFF(blr_end);
@@ -1667,7 +1689,8 @@ static void gen_statement( qli_nod* node, qli_req* request)
 	if (request)
 		CHECK_RLB(request->req_blr);
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_abort:
 		if (node->nod_count)
 			gen_expression(node->nod_arg[0], 0);
@@ -1747,7 +1770,8 @@ static void gen_statistical( qli_nod* node, qli_req* request)
  **************************************/
 	USHORT operatr;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_average:
 		operatr = blr_average;
 		break;
@@ -1807,7 +1831,8 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 
 	qli_rlb* rlb;
 	qli_req* new_request = (qli_req*) node->nod_arg[e_stt_request];
-	if (new_request) {
+	if (new_request)
+	{
 		request = new_request;
 		gen_request(request);
 		const qli_msg* receive = (qli_msg*) node->nod_arg[e_stt_send];

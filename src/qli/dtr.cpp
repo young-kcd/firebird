@@ -139,7 +139,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 	const TEXT* const* const arg_end = argv + argc;
 	argv++;
-	while (argv < arg_end) {
+	while (argv < arg_end)
+	{
 		const TEXT* p = *argv++;
 		if (*p++ != '-') {
 			banner_flag = false;
@@ -149,7 +150,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		}
 		TEXT c;
 		while (c = *p++)
-			switch (UPPER(c)) {
+			switch (UPPER(c))
+			{
 			case 'A':
 				if (argv >= arg_end) {
 					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name
@@ -327,7 +329,7 @@ static bool process_statement(bool flush_flag)
  *	is required, return true (or status), otherwise return false.
  *
  **************************************/
-	DBB dbb;
+	qli_dbb* dbb;
 
 // Clear database active flags in preparation for a new statement
 
@@ -401,7 +403,8 @@ static bool process_statement(bool flush_flag)
 
 // If the statement was quit, ask the user if he want to rollback
 
-	if (syntax_tree->syn_type == nod_quit) {
+	if (syntax_tree->syn_type == nod_quit)
+	{
 		QLI_line = NULL;
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		{
@@ -435,6 +438,7 @@ static bool process_statement(bool flush_flag)
 		return false;
 
 	if (QLI_statistics)
+	{
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 			if (dbb->dbb_flags & DBB_active)
 			{
@@ -446,8 +450,9 @@ static bool process_statement(bool flush_flag)
 					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
 #endif
 				}
-				perf_get_info(&dbb->dbb_handle, (perf *)dbb->dbb_statistics);
+				perf_get_info(&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
 			}
+	}
 
 // Execute the request, for better or worse
 
@@ -616,7 +621,8 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 	}
 
 	TEXT buffer[256];
-	while (true) {
+	while (true)
+	{
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 			return true;

@@ -24,25 +24,25 @@
 #ifndef QLI_PROC_PROTO_H
 #define QLI_PROC_PROTO_H
 
-void	PRO_close(dbb*, FB_API_HANDLE);
-void	PRO_commit(dbb*);
-void	PRO_copy_procedure(dbb*, const TEXT*, dbb*, const TEXT*);
-void	PRO_create(dbb*, const TEXT*);
-int		PRO_delete_procedure(dbb*, const TEXT*);
-void	PRO_edit_procedure(dbb*, const TEXT*);
-FB_API_HANDLE	PRO_fetch_procedure(dbb*, const TEXT*);
+void	PRO_close(qli_dbb*, FB_API_HANDLE);
+void	PRO_commit(qli_dbb*);
+void	PRO_copy_procedure(qli_dbb*, const TEXT*, qli_dbb*, const TEXT*);
+void	PRO_create(qli_dbb*, const TEXT*);
+int		PRO_delete_procedure(qli_dbb*, const TEXT*);
+void	PRO_edit_procedure(qli_dbb*, const TEXT*);
+FB_API_HANDLE	PRO_fetch_procedure(qli_dbb*, const TEXT*);
 bool	PRO_get_line (FB_API_HANDLE, TEXT*, USHORT);
-void	PRO_invoke(dbb*, const TEXT*);
-FB_API_HANDLE	PRO_open_blob(dbb*, ISC_QUAD&);
-int		PRO_rename_procedure(dbb*, const TEXT*, const TEXT*);
-void	PRO_rollback(dbb*);
+void	PRO_invoke(qli_dbb*, const TEXT*);
+FB_API_HANDLE	PRO_open_blob(qli_dbb*, ISC_QUAD&);
+int		PRO_rename_procedure(qli_dbb*, const TEXT*, const TEXT*);
+void	PRO_rollback(qli_dbb*);
 
 typedef void (*extract_fn_t)(void* file, const TEXT* name,
-							  USHORT length, DBB database, ISC_QUAD& blob_id);
-void	PRO_scan(dbb*, extract_fn_t, void*);
+							  USHORT length, qli_dbb* database, ISC_QUAD& blob_id);
+void	PRO_scan(qli_dbb*, extract_fn_t, void*);
 
-void	PRO_setup(dbb*);
-FB_API_HANDLE	PRO_transaction(dbb*, bool);
+void	PRO_setup(qli_dbb*);
+FB_API_HANDLE	PRO_transaction(qli_dbb*, bool);
 
 #endif // QLI_PROC_PROTO_H
 

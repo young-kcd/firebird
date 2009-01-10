@@ -24,8 +24,8 @@
 #ifndef QLI_HSH_PROTO_H
 #define QLI_HSH_PROTO_H
 
-void	HSH_fini (void);
-void	HSH_init (void);
+void	HSH_fini();
+void	HSH_init();
 void	HSH_insert(qli_symbol*, bool ignore_case = false);
 qli_symbol*	HSH_lookup(const SCHAR*, int);
 void	HSH_remove(qli_symbol*);

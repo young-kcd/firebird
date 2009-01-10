@@ -30,28 +30,29 @@ const int MAXSYMLEN	= 256;
 
 // Keywords
 
-typedef enum kwwords {
+enum kwwords {
     KW_none = 0,
 #include "../qli/symbols.h"
     KW_continuation
-} KWWORDS;
+};
 
 // Token block, used to hold a lexical token.
 
-typedef enum tok_t {
+enum tok_t {
     tok_ident,
     tok_number,
     tok_quoted,
     tok_punct,
     tok_eol,
     tok_eof
-} TOK_T;
+};
 
-struct qli_tok {
+struct qli_tok
+{
     blk			tok_header;
-    TOK_T 		tok_type;		// type of token
+    tok_t		tok_type;		// type of token
     qli_symbol*	tok_symbol;		// hash block if recognized
-    KWWORDS		tok_keyword;	// keyword number, if recognized
+    kwwords		tok_keyword;	// keyword number, if recognized
     SLONG		tok_position;	// byte number in input stream
     USHORT		tok_length;
     //qli_tok*	tok_next;
@@ -69,10 +70,11 @@ enum line_t {
     //, line_edit
 };
 
-struct qli_line {
+struct qli_line
+{
     blk			line_header;
     qli_line*	line_next;
-    dbb*		line_database;
+    qli_dbb*	line_database;
     USHORT		line_size;
     USHORT		line_length;
     TEXT*		line_ptr;

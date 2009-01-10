@@ -105,10 +105,12 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 
 	bool debit = false;
 	TEXT c;
-	while ((c = generate(picture)) && c != '?') {
+	while ((c = generate(picture)) && c != '?')
+	{
 
 		c = UPPER(c);
-		switch (c) {
+		switch (c)
+		{
 		case 'X':
 		case 'A':
 			++picture->pic_chars;
@@ -247,7 +249,8 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 
 // if a DB showed up, and the string is numeric, treat the DB as DeBit
 
-	if (debit && (picture->pic_digits || picture->pic_hex_digits)) {
+	if (debit && (picture->pic_digits || picture->pic_hex_digits))
+	{
 		--picture->pic_days;
 		--picture->pic_literals;
 		picture->pic_flags |= PIC_signed;
@@ -309,7 +312,8 @@ void PIC_edit(const dsc* desc, pics* picture, TEXT** output, USHORT max_length)
  *
  **************************************/
 
-	switch (picture->pic_type) {
+	switch (picture->pic_type)
+	{
 	case pic_alpha:
 		edit_alpha(desc, picture, output, max_length);
 		return;
@@ -407,7 +411,8 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 
 	const SSHORT scale = desc->dsc_scale;
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_text:
 		sprintf(buff, "X(%d)", desc->dsc_length);
 		break;
@@ -483,8 +488,7 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 }
 
 
-static void edit_alpha(
-					   const dsc* desc,
+static void edit_alpha(const dsc* desc,
 					   pics* picture, TEXT** output, USHORT max_length)
 {
 /**************************************
@@ -507,7 +511,8 @@ static void edit_alpha(
 	picture->pic_count = 0;
 	TEXT* out = *output;
 
-	while (p < end) {
+	while (p < end)
+	{
 		if ((out - *output) >= max_length)
 			break;
 		TEXT c = generate(picture);
@@ -515,7 +520,9 @@ static void edit_alpha(
 			break;
 
 		c = UPPER(c);
-		switch (c) {
+
+		switch (c)
+		{
 		case 'X':
 
 			*out++ = *p++;
@@ -590,7 +597,8 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	p = cvt_to_ascii((SLONG) times.tm_yday + 1, p, picture->pic_julians);
 
 	const TEXT* meridian = "";
-	if (picture->pic_meridian) {
+	if (picture->pic_meridian)
+	{
 		if (times.tm_hour >= 12) {
 			meridian = "PM";
 			if (times.tm_hour > 12)
@@ -623,13 +631,15 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	bool sig_day = false;
 	bool blank = true;
 
-	for (;;) {
+	for (;;)
+	{
 		TEXT c = generate(picture);
 		if (!c || c == '?')
 			break;
 		c = UPPER(c);
 
-		switch (c) {
+		switch (c)
+		{
 		case 'Y':
 			*out++ = *year++;
 			break;
@@ -727,7 +737,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	{
 	    sprintf(temp, IsINF(number) ? "Infinity" : "NaN");
 	}
-	else 
+	else
 #endif
 
 /* If exponents are explicitly requested (E-format edit_string), generate them.
@@ -735,7 +745,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
    space, print it in f-format; otherwise print it in e-format.
    (G-format is untrustworthy.) */
 
-	if (picture->pic_exponents) {
+	if (picture->pic_exponents)
+	{
 		width = picture->pic_print_length - picture->pic_floats - picture->pic_literals;
 		decimal_digits = picture->pic_fractions;
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
@@ -745,12 +756,14 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	}
 	else if (number == 0)
 		sprintf(temp, "%.0f", number);
-	else {
+	else
+	{
 		width = picture->pic_float_digits - 1 + picture->pic_floats;
 		f_digits = (width > 2) ? width - 2 : 0;
 		sprintf(temp, "%.*f", f_digits, number);
 		w_digits = strlen(temp);
-		if (f_digits) {
+		if (f_digits)
+		{
 			TEXT* p = temp + w_digits;	// find the end
 			w_digits = w_digits - (f_digits + 1);
 			while (*--p == '0')
@@ -782,7 +795,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
    platforms, if the first digit of the exponent is '0', shift the other
    digits one to the left. */
 
-	if (hack_for_nt_flag) {
+	if (hack_for_nt_flag)
+	{
 		TEXT* p = temp;
 		while (*p != 'e' && *p != 'E')
 			++p;
@@ -803,15 +817,19 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 
 	bool is_signed = false;
 
-	for (;;) {
+	for (;;)
+	{
 		const TEXT e = generate(picture);
 		TEXT c = e;
 		if (!c || c == '?')
 			break;
 		c = UPPER(c);
-		switch (c) {
+
+		switch (c)
+		{
 		case 'G':
-			if (!is_signed) {
+			if (!is_signed)
+			{
 				if (negative)
 					*out++ = '-';
 				else
@@ -862,7 +880,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		case '-':
 			if (!(*p))
 				break;
-			if (*p != '+' && *p != '-') {
+			if (*p != '+' && *p != '-')
+			{
 				if (is_signed)
 					*out++ = c;
 				else if (c == '-' && !negative)
@@ -911,7 +930,8 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 	TEXT* float_ptr = NULL;
 
 	double number = MOVQ_get_double(desc);
-	if (number < 0) {
+	if (number < 0)
+	{
 		number = -number;
 		negative = true;
 		if (!(picture->pic_flags & PIC_signed))
@@ -920,6 +940,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 
     SSHORT scale = picture->pic_fractions;
 	if (scale)
+	{
 		if (scale < 0)
 			do {
 				number /= 10.;
@@ -928,6 +949,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			do {
 				number *= 10.;
 			} while (--scale);
+	}
 
 	TEXT temp[512];
 	TEXT* p = temp;
@@ -935,9 +957,10 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 
 	double check;
 	USHORT power;
-	if (picture->pic_digits && !overflow) {
+	if (picture->pic_digits && !overflow)
+	{
 		for (check = number, power = picture->pic_digits; power; --power)
-			check /= 10.;
+			check /= 10.0;
 		if (check >= 1)
 			overflow = true;
 		else {
@@ -949,11 +972,12 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 	picture->pic_pointer = picture->pic_string;
 	bool hex_overflow = false;
 	const TEXT* hex = 0;
-	if (picture->pic_hex_digits) {
+	if (picture->pic_hex_digits)
+	{
 		hex = p;
 		p += picture->pic_hex_digits;
 		for (check = number, power = picture->pic_hex_digits; power; --power)
-			check /= 16.;
+			check /= 16.0;
 		if (check >= 1)
 			hex_overflow = true;
 		else {
@@ -974,7 +998,8 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 	TEXT d;
 	bool signif = false;
 
-	for (;;) {
+	for (;;)
+	{
 		TEXT c = generate(picture);
 		if (!c || c == '?')
 			break;
@@ -984,7 +1009,9 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			*out++ = '*';
 			continue;
 		}
-		switch (c) {
+
+		switch (c)
+		{
 		case '9':
 			signif = true;
 			*out++ = *digits++;
@@ -1101,7 +1128,8 @@ static int generate( pics* picture)
  **************************************/
 	TEXT c;
 
-	for (;;) {
+	for (;;)
+	{
 		// If we're in a repeat, pass it back
 
 		if (picture->pic_count > 0) {

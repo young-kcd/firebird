@@ -26,7 +26,8 @@
 
 // Control break block
 
-struct qli_brk {
+struct qli_brk
+{
     blk			brk_header;
     qli_brk*	brk_next;			// Next break
     qli_syntax*		brk_field;		// Field expression for break
@@ -36,8 +37,9 @@ struct qli_brk {
 
 // Report block
 
-struct qli_rpt {
-    blk		rpt_hdr;
+struct qli_rpt
+{
+    blk			rpt_hdr;
     qli_nod*	rpt_detail_line;	// Detail line print list
     qli_brk*	rpt_top_page;		// Top of page print list
     qli_brk*	rpt_bottom_page;	// Bottom of page print list

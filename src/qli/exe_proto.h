@@ -24,11 +24,11 @@
 #ifndef QLI_EXE_PROTO_H
 #define QLI_EXE_PROTO_H
 
-void	EXEC_abort (void);
+void	EXEC_abort();
 void	EXEC_execute(qli_nod*);
 FB_API_HANDLE	EXEC_open_blob(qli_nod*);
 FILE*	EXEC_open_output(qli_nod*);
-void	EXEC_poll_abort (void);
+void	EXEC_poll_abort();
 dsc*	EXEC_receive(qli_msg*, qli_par*);
 void	EXEC_send(qli_msg*);
 void	EXEC_start_request(qli_req*, qli_msg*);
