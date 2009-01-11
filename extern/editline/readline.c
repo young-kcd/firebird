@@ -326,7 +326,8 @@ readline(const char *prompt)
 	static int used_event_hook;
 
 	if (e == NULL || h == NULL)
-		rl_initialize();
+	if (rl_initialize() == -1) 
+		return NULL; 
 
 	rl_done = 0;
 

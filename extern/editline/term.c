@@ -348,7 +348,8 @@ term_init(EditLine *el)
 		return (-1);
 	(void) memset(el->el_term.t_val, 0, T_val * sizeof(int));
 	term_outfile = el->el_outfile;
-	(void) term_set(el, NULL);
+	if (term_set(el, NULL) == -1) 
+		return (-1); 
 	term_init_arrow(el);
 	return (0);
 }
@@ -1013,10 +1014,10 @@ protected int
 term_change_size(EditLine *el, int lins, int cols)
 {
 	/*
-         * Just in case
-         */
-	Val(T_co) = (cols < 2) ? 80 : cols;
-	Val(T_li) = (lins < 1) ? 24 : lins;
+	 * Just in case
+	 */
+	Val(T_co) = (cols < 2 || cols > 10000) ? 80 : cols; 
+	Val(T_li) = (lins < 1 || lins > 10000) ? 24 : lins; 
 
 	/* re-make display buffers */
 	if (term_rebuffer_display(el) == -1)
