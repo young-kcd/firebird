@@ -1428,7 +1428,7 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 // Start by attaching all databases
 	ISC_STATUS_ARRAY status_vector;
 	qli_syntax** ptr;
-	qli_dbb* dbb = 0;
+	qli_dbb* dbb = NULL;
 
 	for (ptr = node->syn_arg; ptr < end; ptr++)
 	{
@@ -1476,8 +1476,10 @@ void MET_shutdown()
 	ISC_STATUS_ARRAY status_vector;
 
 	for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+	{
 		if (detach(status_vector, dbb))
 			isc_print_status(status_vector);
+	}
 }
 
 

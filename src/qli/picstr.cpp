@@ -942,13 +942,17 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 	if (scale)
 	{
 		if (scale < 0)
+		{
 			do {
 				number /= 10.;
 			} while (++scale);
+		}
 		else if (scale > 0)
+		{
 			do {
 				number *= 10.;
 			} while (--scale);
+		}
 	}
 
 	TEXT temp[512];

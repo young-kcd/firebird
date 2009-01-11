@@ -1613,5 +1613,3 @@ static const TEXT* type_name( USHORT dtype)
 	}
 	return NULL;
 }
-
-

@@ -547,6 +547,7 @@ void FMT_print( qli_nod* list, qli_prt* print)
 		if (print_line(item, &p) != EOF)
 		{
 			if (item->itm_flags & ITM_overlapped)
+			{
 				for (;;)
 				{
 					put_line(print, &p, buffer, '\n');
@@ -555,6 +556,7 @@ void FMT_print( qli_nod* list, qli_prt* print)
 					if (print_line(item, &p) == EOF)
 						break;
 				}
+			}
 		}
 	}
 

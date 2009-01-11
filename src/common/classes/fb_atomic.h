@@ -195,8 +195,7 @@ public:
 		do
 		{
 			old = counter;
-		}
-		while (!compare_and_swap(&counter, &old, val));
+		} while (!compare_and_swap(&counter, &old, val));
 		return old;
 	}
 

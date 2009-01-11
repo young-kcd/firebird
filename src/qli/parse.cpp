@@ -788,7 +788,7 @@ static qli_syntax* parse_assignment()
  *	generate an "expected statement" error.
  *
  **************************************/
-	qli_syntax* field = 0;
+	qli_syntax* field = NULL;
 
 	qli_syntax* node = syntax_node(nod_assign, s_asn_count);
 	node->syn_arg[s_asn_to] = parse_field_name(&field);
@@ -1434,7 +1434,6 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 
 			if (!PAR_match(KW_R_BRCKET) && !PAR_match(KW_GT))
 				ERRQ_syntax(175);	/* Msg175 "]" */
-
 		}
 	}
 

@@ -440,6 +440,7 @@ static bool process_statement(bool flush_flag)
 	if (QLI_statistics)
 	{
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+		{
 			if (dbb->dbb_flags & DBB_active)
 			{
 				if (!dbb->dbb_statistics)
@@ -452,6 +453,7 @@ static bool process_statement(bool flush_flag)
 				}
 				perf_get_info(&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
 			}
+		}
 	}
 
 // Execute the request, for better or worse
