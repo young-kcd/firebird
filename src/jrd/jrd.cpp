@@ -387,6 +387,7 @@ static void		get_options(UCHAR *, USHORT, TEXT **, ULONG, DPB *);
 static SLONG	get_parameter(UCHAR** dpb_ptr, UCHAR* end_ptr, bool* error);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS, TDBB);
 static bool		verify_database_name(TEXT *, ISC_STATUS *);
+static void		validateAccess(ATT);
 
 #if defined (WIN_NT)
 #ifdef SERVER_SHUTDOWN
@@ -1154,6 +1155,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (options.dpb_verify)
 	{
+		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
 			ERR_post(gds_bad_dpb_content, gds_arg_gds, gds_cant_validate, 0);
 		}
@@ -1234,11 +1236,11 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  * database. smistry 10/5/98
  */
 
-	if (((attachment->att_flags & ATT_gbak_attachment) ||
-		 (attachment->att_flags & ATT_gfix_attachment) ||
-		 (attachment->att_flags & ATT_gstat_attachment)) &&
-		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner))) {
-		ERR_post(isc_adm_task_denied, 0);
+	if ((attachment->att_flags & ATT_gbak_attachment) ||
+		(attachment->att_flags & ATT_gfix_attachment) ||
+		(attachment->att_flags & ATT_gstat_attachment)) 
+	{
+		validateAccess(attachment);
 	}
 
 	if (options.dpb_online_dump) {
@@ -1271,19 +1273,23 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 #endif
 
 	if (options.dpb_set_db_sql_dialect) {
+		validateAccess(attachment);
 		PAG_set_db_SQL_dialect(dbb, options.dpb_set_db_sql_dialect);
 	}
 
 	if (options.dpb_sweep_interval != -1) {
+		validateAccess(attachment);
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
 	if (options.dpb_set_force_write) {
+		validateAccess(attachment);
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
 
 	if (options.dpb_set_no_reserve) {
+		validateAccess(attachment);
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 	}
 
@@ -1292,6 +1298,7 @@ ISC_STATUS DLL_EXPORT GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	}
 
 	if (options.dpb_set_db_readonly) {
+		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(gds_lock_timeout, gds_arg_gds, gds_obj_in_use,
 					 gds_arg_string,
@@ -6670,6 +6677,14 @@ static bool verify_database_name(TEXT *name, ISC_STATUS *status)
 		return false;
 	}
 	return true;
+}
+
+static void validateAccess(ATT attachment)
+{
+	if (!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
+	{
+		ERR_post(isc_adm_task_denied, 0);
+	}
 }
 
 } // extern "C"
