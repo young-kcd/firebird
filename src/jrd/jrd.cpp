@@ -1193,6 +1193,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 	if (options.dpb_verify)
 	{
+		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
 			ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_validate, isc_arg_end);
 		}
