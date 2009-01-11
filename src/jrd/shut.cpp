@@ -59,7 +59,8 @@ union shutdown_data
 // matches current. Logic of jrd8_create_database may need attention in this case too
 const bool IGNORE_SAME_MODE = false;
 
-static bool bad_mode(thread_db*, bool);
+static void bad_mode();
+static void same_mode();
 static void check_backup_state(thread_db*);
 static bool notify_shutdown(thread_db*, SSHORT, SSHORT);
 static bool shutdown_locks(thread_db*, SSHORT);
@@ -137,7 +138,7 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 }
 
 
-bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
+void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -158,7 +159,7 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	if (!attachment->locksmith())
 	{
-		return false;
+		ERR_post(Arg::Gds(isc_no_priv) << "shutdown" << "database" << dbb->dbb_filename);
 	}
 
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
@@ -170,31 +171,43 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	switch (shut_mode) {
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
-			return bad_mode(tdbb, IGNORE_SAME_MODE);
+		{
+			same_mode();
+			return;
+		}
 		break;
 	case isc_dpb_shut_multi:
 		if ((dbb->dbb_ast_flags & DBB_shutdown_full) || (dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
-			return bad_mode(tdbb, false);
+			bad_mode();
 		}
 		if (dbb->dbb_ast_flags & DBB_shutdown)
-			return bad_mode(tdbb, IGNORE_SAME_MODE);
+		{
+			same_mode();
+			return;
+		}
 		break;
 	case isc_dpb_shut_single:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
-			return bad_mode(tdbb, false);
+		{
+			bad_mode();
+		}
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
-			return bad_mode(tdbb, IGNORE_SAME_MODE);
+		{
+			same_mode();
+			return;
+		}
 		break;
 	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
-			return bad_mode(tdbb, IGNORE_SAME_MODE);
-		return bad_mode(tdbb, false);
+		{
+			same_mode();
+			return;
+		}
+		bad_mode();
 	default:
-		return bad_mode(tdbb, false); // unexpected mode
+		bad_mode(); // unexpected mode
 	}
-
-	try {
 
 	// Reject exclusive and single-user shutdown attempts
 	// for a physically locked database
@@ -297,14 +310,6 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	}
 	CCH_RELEASE(tdbb, &window);
 	CCH_release_exclusive(tdbb);
-
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		return false;
-	}
-
-	return true;
 }
 
 
@@ -326,7 +331,7 @@ bool SHUT_init(thread_db* tdbb)
 }
 
 
-bool SHUT_online(thread_db* tdbb, SSHORT flag)
+void SHUT_online(thread_db* tdbb, SSHORT flag)
 {
 /**************************************
  *
@@ -345,8 +350,9 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!attachment->att_user->locksmith()) {
-		return false;
+	if (!attachment->att_user->locksmith()) 
+	{
+		ERR_post(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
 	}
 
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
@@ -355,33 +361,43 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 	switch (shut_mode) {
 	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
-			return bad_mode(tdbb, IGNORE_SAME_MODE); // normal -> normal
+		{
+			same_mode(); // normal -> normal
+			return;
+		}
 		break;
 	case isc_dpb_shut_multi:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
-			return bad_mode(tdbb, false); // normal -> multi
+		{
+			bad_mode(); // normal -> multi
+		}
 		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) && !(dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
-			return bad_mode(tdbb, IGNORE_SAME_MODE); // multi -> multi
+			same_mode(); // multi -> multi
+			return;
 		}
 		break;
 	case isc_dpb_shut_single:
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
-			return bad_mode(tdbb, IGNORE_SAME_MODE); //single -> single
+		{
+			same_mode(); //single -> single
+			return;
+		}
 		if (!(dbb->dbb_ast_flags & DBB_shutdown_full))
-			return bad_mode(tdbb, false); // !full -> single
+		{
+			bad_mode(); // !full -> single
+		}
 		break;
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
 		{
-			return bad_mode(tdbb, IGNORE_SAME_MODE); // full -> full
+			same_mode(); // full -> full
+			return;
 		}
-		return bad_mode(tdbb, false);
+		bad_mode();
 	default: // isc_dpb_shut_full
-		return bad_mode(tdbb, false); // unexpected mode
+		bad_mode(); // unexpected mode
 	}
-
-	try {
 
 	// Reject exclusive and single-user shutdown attempts
 	// for a physically locked database
@@ -424,26 +440,22 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 	/* Notify local attachments */
 
 	SHUT_blocking_ast(tdbb);
-
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		return false;
-	}
-
-	return true;
 }
 
 
-static bool bad_mode(thread_db* tdbb, bool ignore)
+static void same_mode()
 {
-	if (!ignore) {
-		Database* dbb = tdbb->getDatabase();
-
-		ERR_build_status(tdbb->tdbb_status_vector,
-			Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
+	if (!IGNORE_SAME_MODE) 
+	{
+		bad_mode();
 	}
-	return ignore;
+}
+
+
+static void bad_mode()
+{
+	Database* dbb = JRD_get_thread_data()->getDatabase();
+	ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_database_name));
 }
 
 

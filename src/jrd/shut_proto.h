@@ -29,9 +29,9 @@ namespace Jrd {
 }
 
 bool		SHUT_blocking_ast(Jrd::thread_db*);
-bool		SHUT_database(Jrd::thread_db*, SSHORT, SSHORT);
+void		SHUT_database(Jrd::thread_db*, SSHORT, SSHORT);
 bool		SHUT_init(Jrd::thread_db*);
-bool        SHUT_online(Jrd::thread_db*, SSHORT);
+void        SHUT_online(Jrd::thread_db*, SSHORT);
 
 #endif // JRD_SHUT_PROTO_H
 

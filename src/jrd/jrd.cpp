@@ -1055,30 +1055,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	initing_security = false;
 
+	// This pair (SHUT_database/SHUT_online) checks itself for valid user name
 	if (options.dpb_shutdown)
 	{
-		if (!SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay))
-		{
-			if (user_status[1] != FB_SUCCESS)
-				ERR_punt();
-			else
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
-												  Arg::Str("database") <<
-												  Arg::Str(file_name));
-		}
+		SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay);
 	}
-
 	if (options.dpb_online)
 	{
-		if (!SHUT_online(tdbb, options.dpb_online))
-		{
-			if (user_status[1] != FB_SUCCESS)
-				ERR_punt();
-			else
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
-												  Arg::Str("database") <<
-												  Arg::Str(file_name));
-		}
+		SHUT_online(tdbb, options.dpb_online);
 	}
 
 #ifdef SUPERSERVER
@@ -1143,8 +1127,23 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	find_intl_charset(tdbb, attachment, &options);
 
+/*
+ * if the attachment is through gbak and this attachment is not by owner
+ * or sysdba then return error. This has been added here to allow for the
+ * GBAK security feature of only allowing the owner or sysdba to backup a
+ * database. smistry 10/5/98
+ */
+
+	if ((attachment->att_flags & ATT_gbak_attachment) ||
+		(attachment->att_flags & ATT_gfix_attachment) ||
+		(attachment->att_flags & ATT_gstat_attachment))
+	{
+		validateAccess(attachment);
+	}
+
 	if (options.dpb_verify)
 	{
+		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
 			ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_validate));
 		}
@@ -1167,21 +1166,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	{
 		// No WAL anymore. We deleted it.
 		ERR_post(Arg::Gds(isc_no_wal));
-	}
-
-/*
- * if the attachment is through gbak and this attachment is not by owner
- * or sysdba then return error. This has been added here to allow for the
- * GBAK security feature of only allowing the owner or sysdba to backup a
- * database. smistry 10/5/98
- */
-
-	if (((attachment->att_flags & ATT_gbak_attachment) ||
-			(attachment->att_flags & ATT_gfix_attachment) ||
-			(attachment->att_flags & ATT_gstat_attachment)) &&
-		!attachment->locksmith())
-	{
-		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
 	if (((attachment->att_flags & ATT_gfix_attachment) ||
@@ -1931,12 +1915,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(file_name));
 
 	if (options.dpb_shutdown) {
-		if (!SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay))
-		{
-			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
-											  Arg::Str("database") <<
-											  Arg::Str(file_name));
-		}
+		SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay);
 	}
 
 	if (options.dpb_sweep_interval != -1) {
