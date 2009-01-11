@@ -1,3 +1,11 @@
+2009-01-11 15:24  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.76.2.15):
+
+	Backported fixes for CORE-2271(gfix reports db ownership error way
+	too late) and CORE-1972(Non-SYSDBA user can change FW mode of
+	database)
+
 2009-01-02 07:46  robocop
 
 	* firebird2/src/qli/meta.epp (1.17.2.4):
