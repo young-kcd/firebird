@@ -1,3 +1,18 @@
+2009-01-11 17:27  alexpeshkoff
+
+	* firebird2/extern/editline/: readline.c (1.2.4.1), term.c
+	(1.2.4.1):
+
+	Backported fix for CORE-2270: isql consumes all memory and crashes
+	when run in zlogin console
+
+2009-01-11 13:30  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.32):
+
+	Backported fix for CORE-2271: gfix reports db ownership error way
+	too late
+
 2009-01-04 14:59  hvlad
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.21):
