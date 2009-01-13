@@ -1,3 +1,25 @@
+2009-01-13 17:21  alexpeshkoff
+
+	* firebird2/src/: intl/cv_big5.cpp (1.19), intl/cv_gb2312.cpp
+	(1.17), intl/cv_icu.cpp (1.7), intl/cv_jis.cpp (1.23),
+	intl/cv_ksc.cpp (1.20), intl/cv_narrow.cpp (1.14),
+	jrd/intlobj_new.h (1.22):
+
+	Fixed gcc warning, avoid a lot of casts
+
+2009-01-13 16:56  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.261):
+
+	fixed gcc warning
+
+2009-01-13 15:29  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.169):
+
+	Avoid races when lock file is opened in different threads of same
+	process
+
 2009-01-11 17:23  alexpeshkoff
 
 	* firebird2/extern/editline/src/: readline.c (1.2), term.c (1.2):
