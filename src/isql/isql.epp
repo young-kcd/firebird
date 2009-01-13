@@ -7300,7 +7300,8 @@ static SSHORT print_item(TEXT** s,
 				// Don't let numeric/decimal doubles overflow print length
 				// Special handling for 0 -- don't test log for length
 				int rounded = 0;
-				if (dscale && (!value || (rounded = ceil(fabs(log10(fabs(value))))) < length - 10))
+				if (dscale && (!value || 
+					(rounded = static_cast<int>(ceil(fabs(log10(fabs(value)))))) < length - 10))
 				{
 					int precision = 0;
 
