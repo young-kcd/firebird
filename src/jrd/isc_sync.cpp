@@ -171,6 +171,7 @@ static bool		event_blocked(const event_t* event, const SLONG value);
 
 static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
 static void		longjmp_sig_handler(int);
+static GlobalPtr<Mutex> openFdInit;
 
 #ifndef HAVE_MMAP
 static SLONG	find_key(ISC_STATUS*, const TEXT*);
@@ -323,7 +324,6 @@ namespace {
 	int fdSem = -1;
 	int sharedCount = 0;
 	int fd_init = -1;
-	GlobalPtr<Mutex> openFdInit;
 
 	class SemTable
 	{
@@ -1922,8 +1922,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	}
 
 /* open the init lock file */
-#ifdef USE_SYS5SEMAPHORE
 	MutexLockGuard guard(openFdInit);
+
+#ifdef USE_SYS5SEMAPHORE
 	if (fd_init < 0)
 #else
 	int
@@ -2131,6 +2132,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	}
 
 /* Write shared memory key into expanded_filename file */
+
+	MutexLockGuard guard(openFdInit);
 
 	FILE* fp = fopen(expanded_filename, "w");
 	umask(oldmask);
