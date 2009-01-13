@@ -43,7 +43,7 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -123,7 +123,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(p_unicode_str != NULL || ksc_str == NULL);
 	fb_assert(err_code != NULL);

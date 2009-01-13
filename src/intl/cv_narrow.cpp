@@ -39,8 +39,8 @@ void CV_convert_init(csconvert* csptr,
 	csptr->csconvert_fn_convert = cvt_fn;
 	csptr->csconvert_fn_destroy = CV_convert_destroy;
 	csptr->csconvert_impl = new CsConvertImpl();
-	static_cast<CsConvertImpl*>(csptr->csconvert_impl)->csconvert_datatable = (const BYTE*) datatable;
-	static_cast<CsConvertImpl*>(csptr->csconvert_impl)->csconvert_misc = (const BYTE*) datatable2;
+	csptr->csconvert_impl->csconvert_datatable = (const BYTE*) datatable;
+	csptr->csconvert_impl->csconvert_misc = (const BYTE*) datatable2;
 }
 
 
@@ -54,7 +54,7 @@ ULONG CV_unicode_to_nc(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -105,7 +105,7 @@ ULONG CV_wc_to_wc(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(p_src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -161,7 +161,7 @@ ULONG CV_nc_to_unicode(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -247,7 +247,7 @@ ULONG eight_bit_convert(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);

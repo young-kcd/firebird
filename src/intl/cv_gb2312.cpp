@@ -37,7 +37,7 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -118,7 +118,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 
-	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+	CsConvertImpl* impl = obj->csconvert_impl;
 
 	fb_assert(p_unicode_str != NULL || gb_str == NULL);
 	fb_assert(err_code != NULL);

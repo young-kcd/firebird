@@ -211,10 +211,15 @@ typedef void (*pfn_INTL_cv_destroy) (
 /* csconvert version */
 #define CSCONVERT_VERSION_1	1
 
+namespace
+{
+	struct CsConvertImpl;	// forward declaration - refers to diff struct in diff modules!
+}
+
 struct csconvert
 {
 	USHORT csconvert_version;
-	void* csconvert_impl;
+	CsConvertImpl* csconvert_impl;
 
     /* Used only for debugging purposes. Should contain string in form
       <source_charset>-><destination_charset>. For example "WIN1251->DOS866"
