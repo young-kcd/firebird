@@ -84,7 +84,8 @@ static void FillSysdbaSPB(char*, const char*);
 // where the first of each pair is the control ID,
 // and the second is the context ID for a help topic,
 // which is used in the help file.
-static DWORD aMenuHelpIDs1[][2] = {
+static DWORD aMenuHelpIDs1[][2] =
+{
 	{IDC_MODRES, ibs_modify},		// This has to be the first entry because
 	// we modify the value of ibs_modify to
 	// ibs_reset when the button text changes.
@@ -141,8 +142,7 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	PropSheet_AddPage(hPropSheet, CreatePropertySheetPage(&IBPage));
 }
 
-LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
-							   LPARAM lParam)
+LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -167,15 +167,14 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	static bool bModifyMode = false;
 	static bool bDirty = false;
 
-	switch (unMsg) {
+	switch (unMsg)
+	{
 	case WM_INITDIALOG:
-		{
-			if (!ReadFBSettings(hDlg))
-				return FALSE;
-			RefreshIBControls(hDlg, FALSE);
-			bModifyMode = false;
-			bDirty = false;
-		}
+		if (!ReadFBSettings(hDlg))
+			return FALSE;
+		RefreshIBControls(hDlg, FALSE);
+		bModifyMode = false;
+		bDirty = false;
 		break;
 	case WM_CTLCOLORDLG:
 	case WM_CTLCOLORSTATIC:
@@ -214,7 +213,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			return TRUE;
 		}
 	case WM_COMMAND:
-		switch (LOWORD(wParam)) {
+		switch (LOWORD(wParam))
+		{
 		case IDC_MODRES:
 			if (bModifyMode)	// User clicked on RESET
 			{
@@ -252,7 +252,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		}
 		break;
 	case WM_NOTIFY:
-		switch (((LPNMHDR) lParam)->code) {
+		switch (((LPNMHDR) lParam)->code)
+		{
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
 				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
@@ -329,15 +330,15 @@ BOOL ReadFBSettings(HWND hDlg)
 
 	*pchPtr = '\0';
 
-	if (pdwStatus[1]) {
+	if (pdwStatus[1])
+	{
 		SetCursor(hOldCursor);
 		PrintCfgStatus(pdwStatus, IDS_CFGATTACH_FAILED, hDlg);
 		SetDlgItemInt(hDlg, IDC_DBPAGES, lCachePages, TRUE);
 		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_RESETCONTENT, 0, 0);
 
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
-					 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
@@ -366,8 +367,7 @@ BOOL ReadFBSettings(HWND hDlg)
 		int temp = 1024;
 		while (temp <= MAX_PAGE_SIZE) {
 			wsprintf(szTmp, "%d", temp);
-			SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0,
-							   (LPARAM) szTmp);
+			SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0, (LPARAM) szTmp);
 			temp <<= 1;
 		}
 	}
@@ -375,11 +375,10 @@ BOOL ReadFBSettings(HWND hDlg)
 // Select the right Map Size, inserting it if necessary
 	wsprintf(pchTmp, "%d", lMapSize);
 	if (SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, (unsigned int) -1,
-						   (LPARAM) pchTmp) == CB_ERR) {
-		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0,
-						   (LPARAM) pchTmp);
-		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, 0,
-						   (LPARAM) pchTmp);
+						   (LPARAM) pchTmp) == CB_ERR)
+	{
+		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0, (LPARAM) pchTmp);
+		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, 0, (LPARAM) pchTmp);
 	}
 
 // Display the proper cache size
@@ -390,8 +389,7 @@ BOOL ReadFBSettings(HWND hDlg)
 
 	if (!bSuccess) {
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
-					 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 	}
@@ -422,8 +420,7 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
 	LoadString(hAppInstance, bEnable ? IDS_RESETBTN : IDS_MODIFYBTN,
 			   szButtonName, sizeof(szButtonName));
 
-	SendDlgItemMessage(hDlg, IDC_MODRES, WM_SETTEXT, 0,
-					   (LPARAM) szButtonName);
+	SendDlgItemMessage(hDlg, IDC_MODRES, WM_SETTEXT, 0, (LPARAM) szButtonName);
 
 // This modifies the bubble help table to bring up the appropriate help
 // topic based on whether the text is "Modify..." or "Reset".  It assumes
@@ -484,13 +481,13 @@ BOOL WriteFBSettings(HWND hDlg)
 
 	*pchPtr = '\0';
 
-	if (pdwStatus[1]) {
+	if (pdwStatus[1])
+	{
 		SetCursor(hOldCursor);
 		PrintCfgStatus(pdwStatus, IDS_CFGATTACH_FAILED, hDlg);
 
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
-					 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
@@ -523,9 +520,9 @@ BOOL WriteFBSettings(HWND hDlg)
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL,
 					  (USHORT) (pchPtr - pchSendBuf), pchSendBuf,
 					  (USHORT) sizeof(szResBuf), szResBuf);
-	if (pdwStatus[1] || szResBuf[1]) {
-		PrintCfgStatus(pdwStatus[1] ? pdwStatus : NULL, IDS_CFGWRITE_FAILED,
-					   hDlg);
+	if (pdwStatus[1] || szResBuf[1])
+	{
+		PrintCfgStatus(pdwStatus[1] ? pdwStatus : NULL, IDS_CFGWRITE_FAILED, hDlg);
 
 		/* To eliminate the flicker while closing the Property Sheet */
 		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
@@ -568,14 +565,11 @@ BOOL ValidateUser(HWND hParentWnd)
 	}
 
 	szSysDbaPasswd[0] = '\0';
-	return (DialogBox
-			((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
-			 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
-			 (DLGPROC) PasswordDlgProc) > 0);
+	return (DialogBox((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
+						MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd, (DLGPROC) PasswordDlgProc) > 0);
 }
 
-BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
-							  LPARAM lParam)
+BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -593,7 +587,8 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
  *
  *  Description: This is the window procedure for the "Password" dialog box.
  *****************************************************************************/
-	switch (unMsg) {
+	switch (unMsg)
+	{
 	case WM_CTLCOLORDLG:
 	case WM_CTLCOLORSTATIC:
 	case WM_CTLCOLORLISTBOX:
@@ -604,8 +599,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			OSVERSIONINFO OsVersionInfo;
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -613,23 +607,22 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 		}
 		break;
 	case WM_COMMAND:
-		if (wParam == IDOK) {
+		if (wParam == IDOK)
+		{
 			char szPassword[PASSWORD_LEN];
 			ISC_STATUS_ARRAY pdwStatus;
 			char szSpb[SPB_BUFLEN];
 
 			szPassword[0] = '\0';
 
-			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, WM_GETTEXT,
-							   PASSWORD_LEN, (LPARAM) szPassword);
+			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, WM_GETTEXT, PASSWORD_LEN, (LPARAM) szPassword);
 			// Fill the Spb
 			FillSysdbaSPB(szSpb, szPassword);
 
 			// Attach service to check for password validity
 			HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 			isc_svc_handle hService = NULL;
-			isc_service_attach(pdwStatus, 0, "query_server",
-							   &hService, (USHORT) strlen(szSpb), szSpb);
+			isc_service_attach(pdwStatus, 0, "query_server", &hService, (USHORT) strlen(szSpb), szSpb);
 			SetCursor(hOldCursor);
 
 			if (pdwStatus[1]) {
@@ -642,8 +635,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 				EndDialog(hDlg, 1);
 			}
 
-			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, EM_SETSEL, 0,
-							   (LPARAM) - 1);
+			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, EM_SETSEL, 0, (LPARAM) - 1);
 			SetFocus(GetDlgItem(hDlg, IDC_DBAPASSWORD));
 			return TRUE;
 		}
@@ -680,7 +672,8 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 
 	szErrStr[0] = '\0';
 
-	if (status_vector) {
+	if (status_vector)
+	{
 		const ISC_STATUS* vector = status_vector;
 		if (fb_interpret(szErrStr, sizeof(szErrStr), &vector))
 		{

@@ -53,7 +53,7 @@
 
 using namespace Firebird;
 
-static int accept_connection(rem_port*, const P_CNCT*);
+static bool accept_connection(rem_port*, const P_CNCT*);
 static rem_port* alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
 static rem_port* aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port* aux_request(rem_port*, PACKET*);
@@ -173,7 +173,7 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 }
 
 
-static int xnet_error(rem_port*, ISC_STATUS, int);
+static void xnet_error(rem_port*, ISC_STATUS, int);
 
 static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
 {
@@ -286,7 +286,8 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 	port->port_context = rdb;
 	port->receive(packet);
 
-	if (packet->p_operation == op_reject && !uv_flag) {
+	if (packet->p_operation == op_reject && !uv_flag)
+	{
 		disconnect(port);
 		packet->p_operation = op_connect;
 		cnct->p_cnct_operation = op_attach;
@@ -612,7 +613,7 @@ static void connect_fini()
 }
 
 
-static int accept_connection(rem_port* port, const P_CNCT*)
+static bool accept_connection(rem_port* port, const P_CNCT*)
 {
 /**************************************
  *
@@ -629,7 +630,8 @@ static int accept_connection(rem_port* port, const P_CNCT*)
 	// Use client process ID as remote address for XNET protocol
 
 	XCC xcc = (XCC) port->port_xcc;
-	if (xcc) {
+	if (xcc)
+	{
 		XPS xps = (XPS) xcc->xcc_mapped_addr;
 		if (xps) {
 			TEXT address[MAX_COMPUTERNAME_LENGTH + 1];
@@ -638,7 +640,7 @@ static int accept_connection(rem_port* port, const P_CNCT*)
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1764,7 +1766,7 @@ static void xnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 }
 
 
-static int xnet_error(rem_port* port, ISC_STATUS operation, int status)
+static void xnet_error(rem_port* port, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -1782,8 +1784,6 @@ static int xnet_error(rem_port* port, ISC_STATUS operation, int status)
 		xnet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
 	else
 		xnet_gen_error(port, Arg::Gds(operation));
-
-	return 0;
 }
 
 

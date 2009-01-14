@@ -580,7 +580,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::RefPtr<Firebird::RefMutex> port_write_sync;
 
 	// port function pointers (C "emulation" of virtual functions)
-	int				(*port_accept)(rem_port*, const p_cnct*);
+	bool			(*port_accept)(rem_port*, const p_cnct*);
 	void			(*port_disconnect)(rem_port*);
 	void			(*port_force_close)(rem_port*);
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
@@ -795,7 +795,7 @@ public:
 public:
 	/* TMN: Beginning of C++ port */
 	/* TMN: ugly, but at least a start */
-	int		accept(p_cnct* cnct);
+	bool	accept(p_cnct* cnct);
 	void	disconnect();
 	void	force_close();
 	rem_port*	receive(PACKET* pckt);
@@ -934,7 +934,7 @@ public:
 	  m_mutex()
 	{}
 
-	~PortsCleanup() 
+	~PortsCleanup()
 	{}
 
 	void registerPort(rem_port*);

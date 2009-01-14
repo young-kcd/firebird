@@ -191,7 +191,7 @@ static ULONG INET_count_recv = 0;
 static ULONG INET_bytes_send = 0;
 static ULONG INET_bytes_recv = 0;
 
-static ULONG inet_debug_timer(void)
+static ULONG inet_debug_timer()
 {
 /**************************************
  *
@@ -235,7 +235,7 @@ typedef struct slct
 	fd_set	slct_fdset;
 } SLCT;
 
-static int		accept_connection(rem_port*, const P_CNCT*);
+static bool		accept_connection(rem_port*, const P_CNCT*);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
 #endif
@@ -257,7 +257,7 @@ static void		force_close(rem_port*);
 static int		cleanup_ports(const int, const int, void*);
 
 #ifdef NO_FORK
-static int		fork(void);
+static int		fork();
 #endif
 
 #ifdef WIN_NT
@@ -313,8 +313,8 @@ static int		parse_line(const TEXT*, const TEXT*, const TEXT*, const TEXT*);
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
 #endif
 
-static bool_t	packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
-static bool_t	packet_send(rem_port*, const SCHAR*, SSHORT);
+static bool		packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
+static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
 static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
@@ -884,8 +884,7 @@ rem_port* INET_connect(const TEXT* name,
 	while (true)
 	{
 		socklen_t l = sizeof(address);
-		SOCKET s = accept((SOCKET) port->port_handle,
-				   (struct sockaddr *) &address, &l);
+		SOCKET s = accept((SOCKET) port->port_handle, (struct sockaddr*) &address, &l);
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET) {
 			if (!INET_shutting_down)
@@ -1032,7 +1031,7 @@ void INET_set_clients( int count)
 }
 
 
-static int accept_connection(rem_port* port, const P_CNCT* cnct)
+static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 {
 /**************************************
  *
@@ -1109,7 +1108,7 @@ static int accept_connection(rem_port* port, const P_CNCT* cnct)
 		const struct passwd* passwd = getpwnam( name.c_str());
 		const int trusted = check_host(port, host, name.c_str(), passwd);
 		if (!trusted) {
-			return FALSE;
+			return false;
 		}
 
 		if (trusted == -1) {
@@ -1121,7 +1120,7 @@ static int accept_connection(rem_port* port, const P_CNCT* cnct)
 			if (check_proxy(port, host, name))
 				passwd = getpwnam(name.c_str());
 			if (!passwd) {
-				return FALSE;
+				return false;
 			}
 #ifndef HAVE_INITGROUPS
 			eff_gid = passwd->pw_gid;
@@ -1210,7 +1209,7 @@ static int accept_connection(rem_port* port, const P_CNCT* cnct)
 		port->port_address_str = REMOTE_make_string(addr_str.c_str());
 	}
 
-	return TRUE;
+	return true;
 }
 
 
@@ -1296,10 +1295,7 @@ static rem_port* alloc_port( rem_port* parent)
 					(USHORT) INET_remote_buffer,
 					XDR_ENCODE);
 
-	xdrinet_create(	&port->port_receive,
-					port, port->port_buffer,
-					0,
-					XDR_DECODE);
+	xdrinet_create(	&port->port_receive, port, port->port_buffer, 0, XDR_DECODE);
 
 	if (parent && !(parent->port_server_flags & SRVR_thread_per_port))
 	{
@@ -1331,7 +1327,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 	if (port->port_server_flags) {
 
-		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
+		SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
 		const int inetErrNo = INET_ERRNO;
 
 		if (n == INVALID_SOCKET) {
@@ -1806,7 +1802,7 @@ static int cleanup_ports(const int, const int, void* arg)
 
 
 #ifdef NO_FORK
-static int fork(void)
+static int fork()
 {
 /**************************************
  *
@@ -2342,8 +2338,8 @@ static rem_port* select_accept( rem_port* main_port)
 	socklen_t l = sizeof(address);
 	inet_ports->registerPort(port);
 
-	port->port_handle = (HANDLE) accept((SOCKET) main_port->port_handle,
-										(struct sockaddr *) &address, &l);
+	port->port_handle =
+		(HANDLE) accept((SOCKET) main_port->port_handle, (struct sockaddr*) &address, &l);
 	if ((SOCKET) port->port_handle == INVALID_SOCKET) {
 		inet_error(port, "accept", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
@@ -3123,8 +3119,7 @@ static rem_port* inet_try_connect(
 	rdb->rdb_port = port;
 	port->port_context = rdb;
 	if (!port->receive(packet)) {
-		inet_error(port, "receive in try_connect", isc_net_connect_err,
-				   INET_ERRNO);
+		inet_error(port, "receive in try_connect", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
 		delete rdb;
 		return NULL;
@@ -3247,8 +3242,7 @@ static void packet_print(
 }
 #endif
 
-static int packet_receive(
-						  rem_port* port,
+static bool packet_receive(rem_port* port,
 						  UCHAR* buffer,
 						  SSHORT buffer_length, SSHORT* length)
 {
@@ -3260,14 +3254,14 @@ static int packet_receive(
  *
  * Functional description
  *	Receive a packet and pass on it's goodness.  If it's good,
- *	return TRUE and the reported length of the packet, and update
- *	the receive sequence number.  If it's bad, return FALSE.  If it's
+ *	return true and the reported length of the packet, and update
+ *	the receive sequence number.  If it's bad, return false.  If it's
  *	a duplicate message, just ignore it.
  *
  **************************************/
 
 	if (port->port_flags & PORT_disconnect) {
-		return FALSE;
+		return false;
 	}
 
 	timeval timeout;
@@ -3281,8 +3275,7 @@ static int packet_receive(
 		timeout.tv_sec = port->port_connect_timeout;
 		time_ptr = &timeout;
 	}
-	else if (port->port_protocol >= PROTOCOL_VERSION8 &&
-			 port->port_dummy_packet_interval > 0)
+	else if (port->port_protocol >= PROTOCOL_VERSION8 && port->port_dummy_packet_interval > 0)
 	{
 		// Set the time interval for sending dummy packets to the client
 		timeout.tv_sec = port->port_dummy_packet_interval;
@@ -3323,7 +3316,8 @@ static int packet_receive(
 			FD_SET(ph, &slct_fdset);
 
 			int slct_count;
-			for (;;) {
+			for (;;)
+			{
 #if (defined WIN_NT)
 				slct_count = select(FD_SETSIZE, &slct_fdset, NULL, NULL, time_ptr);
 #else
@@ -3346,7 +3340,7 @@ static int packet_receive(
 				if (!(port->port_flags & PORT_disconnect)) {
 					inet_error(port, "select in packet_receive", isc_net_read_err, inetErrNo);
 				}
-				return FALSE;
+				return false;
 			}
 
 			if (!slct_count && port->port_protocol >= PROTOCOL_VERSION8)
@@ -3354,22 +3348,21 @@ static int packet_receive(
 #ifdef DEBUG
 				if (INET_trace & TRACE_operations)
 				{
-					fprintf(stdout, "%05lu: OP Sent: op_dummy\n",
-							   inet_debug_timer());
+					fprintf(stdout, "%05lu: OP Sent: op_dummy\n", inet_debug_timer());
 					fflush(stdout);
 				}
 #endif
 				packet.p_operation = op_dummy;
 				if (!send_full(port, &packet))
 				{
-					return FALSE;
+					return false;
 				}
 				continue;
 			}
 
 			if (!slct_count && port->port_protocol == 0)
 			{
-				return FALSE;
+				return false;
 			}
 		}
 
@@ -3381,17 +3374,17 @@ static int packet_receive(
 	}
 
 	if ((n <= 0) && (port->port_flags & PORT_disconnect)) {
-		return FALSE;
+		return false;
 	}
 
 	if (n == -1) {
 		inet_error(port, "read", isc_net_read_err, inetErrNo);
-		return FALSE;
+		return false;
 	}
 
 	if (!n) {
 		inet_error(port, "read end_of_file", isc_net_read_err, isc_arg_end);
-		return FALSE;
+		return false;
 	}
 
 #ifdef DEBUG
@@ -3403,20 +3396,19 @@ static int packet_receive(
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
-			inet_error(port, "simulated error - read",
-					   isc_net_read_err, isc_arg_end);
-			return FALSE;
+			inet_error(port, "simulated error - read", isc_net_read_err, isc_arg_end);
+			return false;
 		}
 	}
 #endif
 
 	*length = n;
 
-	return TRUE;
+	return true;
 }
 
 
-static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
+static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
  *
@@ -3432,7 +3424,8 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 	const char* data = buffer;
 	SSHORT length = buffer_length;
 
-	while (length) {
+	while (length)
+	{
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "Before Send\n");
@@ -3458,7 +3451,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 			}
 
 			inet_error(port, "send", isc_net_write_err, INET_ERRNO);
-			return FALSE;
+			return false;
 		}
 
 		data += n;
@@ -3528,7 +3521,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 
 		if (n == -1) {
 			inet_error(port, "send/oob", isc_net_write_err, inetErrNo);
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -3543,12 +3536,12 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 			INET_force_error = 1;
 			inet_error(port, "simulated error - send",
 					   isc_net_write_err, isc_arg_end);
-			return FALSE;
+			return false;
 		}
 	}
 #endif
 
-	return TRUE;
+	return true;
 }
 
 static void unhook_port( rem_port* port, rem_port* parent)

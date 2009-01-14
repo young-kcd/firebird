@@ -133,7 +133,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	UpdateWindow(hWnd);
 
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0)) {
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
 		if (hPSDlg)				// If property sheet dialog is open
 		{
 			// Check if the message is property sheet dialog specific
@@ -157,8 +158,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 
 
-LRESULT CALLBACK WindowFunc(HWND hWnd,
-							UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -188,7 +188,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	ULONG num_att = 0;
 	ULONG num_dbs = 0;
 
-	switch (message) {
+	switch (message)
+	{
 	case WM_QUERYENDSESSION:
 		/* If we are running as a non-service server, then query the user
 		 * to determine if we should end the session.  Otherwise, assume that
@@ -222,7 +223,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		break;
 
 	case WM_COMMAND:
-		switch (wParam) {
+		switch (wParam)
+		{
 		case IDM_CANCEL:
 			if ((usServerFlags & SRVR_non_service) && (!(usServerFlags & SRVR_no_icon)))
 			{
@@ -290,7 +292,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			SendMessage(hWnd, WM_COMMAND, 0, 0);
 			return TRUE;
 		}
-		switch (lParam) {
+		switch (lParam)
+		{
 		case WM_LBUTTONDOWN:
 			break;
 
@@ -309,9 +312,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	case WM_CREATE:
 		if ((usServerFlags & SRVR_non_service) && (!(usServerFlags & SRVR_no_icon)))
 		{
-			HICON hIcon = (HICON) LoadImage(hInstance,
-									  MAKEINTRESOURCE(IDI_IBSVR_SMALL),
-									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
+			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBSVR_SMALL),
+											IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 
 			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -335,11 +337,9 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				HMENU hSysMenu = GetSystemMenu(hWnd, FALSE);
 				DeleteMenu(hSysMenu, SC_RESTORE, MF_BYCOMMAND);
 				AppendMenu(hSysMenu, MF_SEPARATOR, 0, NULL);
-				LoadString(hInstance, IDS_SHUTDOWN, szMsgString,
-						   MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, MSG_STRINGLEN);
 				AppendMenu(hSysMenu, MF_STRING, IDM_SHUTDOWN, szMsgString);
-				LoadString(hInstance, IDS_PROPERTIES, szMsgString,
-						   MSG_STRINGLEN);
+				LoadString(hInstance, IDS_PROPERTIES, szMsgString, MSG_STRINGLEN);
 				AppendMenu(hSysMenu, MF_STRING, IDM_PROPERTIES, szMsgString);
 				DestroyMenu(hSysMenu);
 			}
@@ -352,7 +352,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	case WM_SYSCOMMAND:
 		if (!bInTaskBar)
-			switch (wParam) {
+			switch (wParam)
+			{
 			case SC_RESTORE:
 				return TRUE;
 
@@ -362,8 +363,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 			case IDM_PROPERTIES:
 				if (!hPSDlg)
-					hPSDlg =
-						DisplayProperties(hWnd, hInstance, usServerFlags);
+					hPSDlg = DisplayProperties(hWnd, hInstance, usServerFlags);
 				else
 					SetFocus(hPSDlg);
 				return TRUE;
@@ -389,17 +389,18 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
 		JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
-							sizeof(ULONG), JRD_info_drivemask, &num_att,
-							&num_dbs);
+							sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs);
 
-		switch (wParam) {
+		switch (wParam)
+		{
 
 		case DBT_DEVICEARRIVAL:
 			return TRUE;
 
 		case DBT_DEVICEQUERYREMOVE:
 			if (CHECK_VOLUME(pdbcv) && (ulLastMask != pdbcv->dbcv_unitmask))
-				if (CHECK_USAGE(pdbcv)) {
+				if (CHECK_USAGE(pdbcv))
+				{
 					char tmp[TMP_STRINGLEN];
 					char* p = tmp;
 					int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
@@ -407,20 +408,14 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 					*p++ = '\r';
 					*p++ = '\n';
 
-					len =
-						LoadString(hInstance, IDS_PNP2, p,
-								   p - tmp + TMP_STRINGLEN);
+					len = LoadString(hInstance, IDS_PNP2, p, p - tmp + TMP_STRINGLEN);
 					p += len;
 					*p++ = '\r';
 					*p++ = '\n';
-					len =
-						LoadString(hInstance, IDS_PNP3, p,
-								   p - tmp + TMP_STRINGLEN);
+					len = LoadString(hInstance, IDS_PNP3, p, p - tmp + TMP_STRINGLEN);
 					ulLastMask = pdbcv->dbcv_unitmask;
 					GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
-					if (MessageBox(hWnd, tmp,
-								   szDrives,
-								   MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
+					if (MessageBox(hWnd, tmp, szDrives, MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
 					{
 						return FALSE;
 					}
@@ -436,15 +431,15 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			   * OS will prompt you again, and then remove the device anyway...
 			 */
 		case DBT_DEVICEREMOVEPENDING:
-			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv)) {
+			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv))
+			{
 				char tmp[TMP_STRINGLEN];
 				char* p = tmp;
 				int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
 				p += len;
 				*p++ = '\r';
 				*p++ = '\n';
-				len = LoadString(hInstance,
-								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
+				len = LoadString(hInstance, IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
@@ -532,8 +527,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 
 	LoadString(hInstance, IDS_QUIT, szMsgString + strlen(szMsgString),
 			   MSG_STRINGLEN - strlen(szMsgString));
-	return (MessageBox(hWnd, szMsgString, APP_LABEL,
-					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
+	return (MessageBox(hWnd, szMsgString, APP_LABEL, MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 
 

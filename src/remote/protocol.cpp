@@ -41,43 +41,54 @@
 #include "../jrd/sdl_proto.h"
 
 #ifdef DEBUG_XDR_MEMORY
-inline bool_t P_TRUE(XDR* xdrs, PACKET* p) {
+inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
+{
 	return xdr_debug_packet(xdrs, XDR_FREE, p);
 }
-inline bool_t P_FALSE(XDR* xdrs, PACKET* p) {
+inline bool_t P_FALSE(XDR* xdrs, PACKET* p)
+{
 	return !xdr_debug_packet(xdrs, XDR_FREE, p);
 }
-inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p) {
+inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p)
+{
 	xdr_debug_packet(xdrs, XDR_DECODE, p);
 }
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len);
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len);
 }
 #else
-inline bool_t P_TRUE(XDR* xdrs, PACKET* p) {
+inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
+{
 	return TRUE;
 }
-inline bool_t P_FALSE(XDR* xdrs, PACKET* p) {
+inline bool_t P_FALSE(XDR* xdrs, PACKET* p)
+{
 	return FALSE;
 }
-inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p) {
+inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p)
+{
 }
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len) {
+inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+{
 }
 #endif /* DEBUG_XDR_MEMORY */
 
 #define MAP(routine, ptr)	if (!routine (xdrs, &ptr)) return P_FALSE(xdrs, p);
 const ULONG MAX_OPAQUE		= 32768;
 
-typedef enum {
+enum SQL_STMT_TYPE
+{
 	TYPE_IMMEDIATE,
 	TYPE_PREPARED
-} SQL_STMT_TYPE;
+};
 
 static bool alloc_cstring(XDR *, CSTRING *);
 static void free_cstring(XDR *, CSTRING *);

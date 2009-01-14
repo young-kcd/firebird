@@ -610,7 +610,7 @@ static void cleanup_memory(void* block)
 
 // TMN: Beginning of C++ port - ugly but a start
 
-int rem_port::accept(p_cnct* cnct)
+bool rem_port::accept(p_cnct* cnct)
 {
 	return (*this->port_accept)(this, cnct);
 }

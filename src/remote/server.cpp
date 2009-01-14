@@ -679,9 +679,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 }
 
 
-static bool accept_connection(rem_port* port,
-							  P_CNCT * connect,
-							  PACKET* send)
+static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 {
 /**************************************
  *
@@ -1293,7 +1291,7 @@ static bool check_request(Rrq* request,
  *
  * Functional description
  *	Check to see if a request is ready to send us a particular
- *	message.  If so, return TRUE, otherwise FALSE.
+ *	message.  If so, return true, otherwise false.
  *
  **************************************/
 	USHORT n;
@@ -2208,7 +2206,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	ISC_STATUS_ARRAY status_vector;
 
-	while (true) {
+	while (true)
+	{
 
 		/* Have we exhausted the cache & reached cursor EOF? */
 		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting) {
@@ -2223,9 +2222,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		{
 			fb_assert(statement->rsr_status);
 			statement->rsr_flags.clear(Rsr::STREAM_ERR);
-			return this->send_response(sendL, 0, 0,
-								 statement->rsr_status->value(),
-								 false);
+			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
 		}
 
 		message = statement->rsr_buffer;
@@ -2313,8 +2310,10 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	while (message->msg_address && message->msg_next != statement->rsr_buffer)
 		message = message->msg_next;
 
-	for (; count2; --count2) {
-		if (message->msg_address) {
+	for (; count2; --count2)
+	{
+		if (message->msg_address)
+		{
 			if (!next)
 			{
 				next = statement->rsr_buffer;
@@ -2335,7 +2334,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 						   msg_length,
 						   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
-		if (s) {
+		if (s)
+		{
 			if (status_vector[1]) {
 				/* If already have an error queued, don't overwrite it */
 				if (!statement->rsr_flags.test(Rsr::STREAM_ERR)) {
@@ -3092,7 +3092,8 @@ static bool process_packet(rem_port* port,
 		switch (op)
 		{
 		case op_connect:
-			if (!accept_connection(port, &receive->p_cnct, sendL)) {
+			if (!accept_connection(port, &receive->p_cnct, sendL))
+			{
 				rem_str* string = port->port_user_name;
 				if (string) {
 					gds__log("SERVER/process_packet: connection rejected for %*.*s",
@@ -3746,12 +3747,14 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 	REM_MSG message = 0;
 
-	while (true) {
+	while (true)
+	{
 		message = tail->rrq_xdr;
 
 		/* If we don't have a message cached, get one from the next layer down. */
 
-		if (!message->msg_address) {
+		if (!message->msg_address)
+		{
 			/* If we have an error queued for delivery, send it now */
 
 			if (requestL->rrq_status_vector[1]) {
@@ -3777,7 +3780,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			   the next layer down, and calculate the offset from the beginning
 			   of the result set */
 
-			switch (direction) {
+			switch (direction)
+			{
 			case blr_forward:
 				tail->rrq_flags &= ~Rrq::BACKWARD;
 				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
@@ -3859,7 +3863,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 	for (; count2 && check_request(requestL, data->p_data_incarnation, msg_number); --count2)
 	{
-		if (message->msg_address) {
+		if (message->msg_address)
+		{
 			if (!prior)
 #ifdef SCROLLABLE_CURSORS
 				prior = message->msg_prior;

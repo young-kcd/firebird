@@ -110,7 +110,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	for (TEXT** end = argv++ + argc; argv < end;)
 	{
-		TEXT* p = *argv++;
+		const TEXT* p = *argv++;
 		if (*p != '-')
 			sw_database = p;
 		else
