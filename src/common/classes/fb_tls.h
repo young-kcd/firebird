@@ -104,10 +104,11 @@ template <typename T>
 class TlsValue
 {
 public:
-	TlsValue()
+	TlsValue() : keySet(true)
 	{
-		if (pthread_key_create(&key, NULL))
-			system_call_failed::raise("pthread_key_create");
+		int rc = pthread_key_create(&key, NULL);
+		if (rc)
+			system_call_failed::raise("pthread_key_create", rc);
 	}
 	const T get()
 	{
@@ -117,16 +118,20 @@ public:
 	}
 	void set(const T value)
 	{
-		if (pthread_setspecific(key, (void*)(IPTR)value))
-			system_call_failed::raise("pthread_setspecific");
+		rc = pthread_setspecific(key, (void*)(IPTR)value);
+		if (rc && keySet)
+			system_call_failed::raise("pthread_setspecific", rc);
 	}
 	~TlsValue()
 	{
-		if (pthread_key_delete(key))
-			system_call_failed::raise("pthread_key_delete");
+		rc = pthread_key_delete(key);
+		if (rc)
+			system_call_failed::raise("pthread_key_delete", rc);
+		keySet = false;
 	}
 private:
 	pthread_key_t key;
+	bool keySet;	// This is used to avoid conflicts when destroying global variables
 };
 #else //SOLARIS_MT
 #include <thread.h>
