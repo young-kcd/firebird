@@ -1,3 +1,106 @@
+2009-01-14 15:27  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_tls.h (1.20):
+
+	AIX port
+
+2009-01-14 14:58  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_atomic.h (1.18):
+
+	AIX port
+
+2009-01-14 13:37  robocop
+
+	* firebird2/src/: remote/inet.cpp (1.265), remote/protocol.cpp
+	(1.77), remote/remote.cpp (1.79), remote/remote.h (1.87),
+	remote/server.cpp (1.232), remote/xnet.cpp (1.126),
+	remote/os/win32/ibconfig.cpp (1.27), remote/os/win32/window.cpp
+	(1.37), remote/os/win32/wnet.cpp (1.66), utilities/cache.cpp
+	(1.20):
+
+	Style.
+
+2009-01-14 13:19  robocop
+
+	* firebird2/src/: msgs/enter_msgs.epp (1.19), qli/blk.h (1.17),
+	qli/command.cpp (1.31), qli/compile.cpp (1.36), qli/compile.h
+	(1.14), qli/dtr.cpp (1.66), qli/eval.cpp (1.54), qli/expand.cpp
+	(1.44), qli/format.cpp (1.42), qli/gener.cpp (1.47), qli/help.epp
+	(1.28), qli/lex.cpp (1.45), qli/lex_proto.h (1.12), qli/meta.epp
+	(1.78), qli/meta_proto.h (1.15), qli/mov.cpp (1.49), qli/parse.cpp
+	(1.50), qli/picstr.cpp (1.37), qli/report.cpp (1.23), qli/show.epp
+	(1.49):
+
+	Style.
+
+2009-01-14 12:10  robocop
+
+	* firebird2/src/jrd/: ThreadData.cpp (1.13), all.h (1.28), dbg.cpp
+	(1.40), dbg_proto.h (1.13), dmp.cpp (1.39), dmp_proto.h (1.8),
+	dyn.epp (1.140), dyn.h (1.43), err.cpp (1.88), event.cpp (1.82),
+	flu.cpp (1.69), gds.cpp (1.271), gds_proto.h (1.51), isc_proto.h
+	(1.26), qatest.cpp (1.28), why.cpp (1.231), os/isc_i_proto.h
+	(1.10), os/darwin/mod_loader.cpp (1.12), os/posix/isc_ipc.cpp
+	(1.35), os/posix/unix.cpp (1.113), os/vms/vmsevent.cpp (1.23),
+	os/vms/vmslock.cpp (1.16), os/win32/isc_ipc.cpp (1.26):
+
+	Style.
+
+2009-01-14 12:07  robocop
+
+	* firebird2/src/: common/thd.cpp (1.3), common/config/dir_list.h
+	(1.24), dudley/exe.epp (1.72), dudley/exe_proto.h (1.7),
+	dudley/expan_proto.h (1.5), dudley/expand.cpp (1.35),
+	dudley/expr.cpp (1.29), dudley/expr_proto.h (1.7),
+	dudley/extra_proto.h (1.5), dudley/extract.epp (1.53),
+	dudley/hsh.cpp (1.22), dudley/hsh_proto.h (1.8), dudley/lex.cpp
+	(1.38), dudley/lex_proto.h (1.9), dudley/parse.cpp (1.58),
+	dudley/parse_proto.h (1.11), dudley/trn.cpp (1.45),
+	dudley/trn_proto.h (1.6), intl/utils/maptest2.c (1.10),
+	iscguard/cntlg_proto.h (1.8), misc/align.cpp (1.15), misc/codes.epp
+	(1.32), utilities/analyse.cpp (1.17), utilities/cache.cpp (1.19),
+	utilities/print_event.cpp (1.12),
+	utilities/install/install_client.cpp (1.12),
+	utilities/install/install_reg.cpp (1.16):
+
+	Style.
+
+2009-01-14 10:18  robocop
+
+	* firebird2/src/: jrd/Optimizer.cpp (1.107), jrd/cch.cpp (1.222),
+	jrd/dsc.h (1.44), jrd/dyn_def.epp (1.178), jrd/dyn_util.epp (1.58),
+	jrd/exe.cpp (1.283), jrd/gds.cpp (1.270), jrd/opt.cpp (1.332),
+	jrd/par.cpp (1.227), jrd/rse.cpp (1.167), utilities/guard/guard.cpp
+	(1.23), utilities/ibmgr/ibmgr.cpp (1.33),
+	utilities/ibmgr/srvrmgr.cpp (1.37),
+	utilities/install/install_svc.cpp (1.43),
+	utilities/rebuild/rebuild.cpp (1.30):
+
+	Style.
+
+2009-01-14 09:20  robocop
+
+	* firebird2/src/: jrd/cvt2.cpp (1.65), jrd/dfw.epp (1.262),
+	jrd/dyn_def.epp (1.177), jrd/evl.cpp (1.287), jrd/exe.cpp (1.282),
+	jrd/par.cpp (1.226), jrd/extds/InternalDS.cpp (1.16),
+	jrd/extds/IscDS.cpp (1.19), iscguard/iscguard.cpp (1.64):
+
+	Style.
+
+2009-01-14 09:16  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.60), c_cxx.cpp (1.82), cmd.cpp
+	(1.51), cmp.cpp (1.44), cob.cpp (1.75), exp.cpp (1.50),
+	fbrmclib.cpp (1.10), ftn.cpp (1.71), gpre.cpp (1.101), gpre.h
+	(1.99), gpre_meta.epp (1.67), gpre_meta.h (1.18),
+	gpre_meta_boot.cpp (1.62), int_cxx.cpp (1.47), jrdme_proto.h (1.7),
+	jrdmet.cpp (1.27), par.cpp (1.79), par_proto.h (1.16), pas.cpp
+	(1.64), pat.cpp (1.36), pat.h (1.12), rmc.cpp (1.19), sqe.cpp
+	(1.63), sql.cpp (1.82):
+
+	Style.
+
 2009-01-13 17:21  alexpeshkoff
 
 	* firebird2/src/: intl/cv_big5.cpp (1.19), intl/cv_gb2312.cpp
