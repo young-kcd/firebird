@@ -164,7 +164,7 @@ public:
 
 	counter_type exchangeAdd(counter_type value)
 	{
-		return fetch_and_add(&counter, value) + value;
+		return fetch_and_add(&counter, value);
 	}
 
 	counter_type operator +=(counter_type value)
