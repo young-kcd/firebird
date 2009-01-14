@@ -68,13 +68,13 @@ static ISC_STATUS detach(ISC_STATUS *, qli_dbb*);
 static void execute_dynamic_ddl(qli_dbb*, qli_rlb*);
 static int field_length(USHORT, USHORT);
 static void get_database_type(qli_dbb*);
-static TEXT *get_query_header(qli_dbb*, ISC_QUAD&);
+static TEXT* get_query_header(qli_dbb*, ISC_QUAD&);
 static void install(qli_dbb*);
 static qli_syntax* make_node(nod_t, USHORT);
-static TEXT *make_string(TEXT*, SSHORT);
-static qli_symbol* make_symbol(TEXT *, SSHORT);
+static TEXT* make_string(TEXT*, SSHORT);
+static qli_symbol* make_symbol(TEXT*, SSHORT);
 static qli_const* missing_value(ISC_QUAD&, qli_symbol*);
-static qli_syntax* parse_blr(UCHAR **, qli_symbol*);
+static qli_syntax* parse_blr(UCHAR**, qli_symbol*);
 static qli_syntax* parse_blr_blob(ISC_QUAD&, qli_symbol*);
 static void purge_relation(qli_rel*);
 static void put_dyn_string(qli_rlb*, const TEXT*);
@@ -158,7 +158,7 @@ static const rfr_tab_t rfr_table[] =
 };
 
 
-bool MET_declare( qli_dbb* database, qli_fld* variable, const nam* field_name)
+bool MET_declare( qli_dbb* database, qli_fld* variable, const qli_name* field_name)
 {
 /**************************************
  *
@@ -275,7 +275,7 @@ void MET_define_index( qli_syntax* node)
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
 
-	NAM* ptr = (NAM*) fields->syn_arg;
+	qli_name** ptr = (qli_name**) fields->syn_arg;
 	for (int position = 0; position < fields->syn_count; ptr++, position++)
 	{
 		MET_fields(relation);
@@ -489,7 +489,7 @@ void MET_delete_database( qli_dbb* dbb)
 	const TEXT* user;
 	USHORT user_length;
 	if (dbb->dbb_user) {
-		user = (TEXT *) dbb->dbb_user->con_data;
+		user = (TEXT*) dbb->dbb_user->con_data;
 		user_length = dbb->dbb_user->con_desc.dsc_length;
 	}
 	else {
@@ -500,7 +500,7 @@ void MET_delete_database( qli_dbb* dbb)
 	const TEXT* password;
 	USHORT password_length;
 	if (dbb->dbb_password) {
-		password = (TEXT *) dbb->dbb_password->con_data;
+		password = (TEXT*) dbb->dbb_password->con_data;
 		password_length = dbb->dbb_user->con_desc.dsc_length;
 	}
 	else {
@@ -563,7 +563,7 @@ void MET_delete_database( qli_dbb* dbb)
 }
 
 
-void MET_delete_field( qli_dbb* database, NAM name)
+void MET_delete_field( qli_dbb* database, qli_name* name)
 {
 /**************************************
  *
@@ -626,7 +626,7 @@ void MET_delete_field( qli_dbb* database, NAM name)
 }
 
 
-void MET_delete_index( qli_dbb* database, NAM name)
+void MET_delete_index( qli_dbb* database, qli_name* name)
 {
 /**************************************
  *
@@ -1258,7 +1258,7 @@ void MET_modify_index( qli_syntax* node)
  *	of an index.
  *
  **************************************/
-	NAM name = (NAM) node->syn_arg[s_mfi_name];
+	qli_name* name = (qli_name*) node->syn_arg[s_mfi_name];
 	qli_dbb* database = (qli_dbb*) node->syn_arg[s_mfi_database];
 	database = setup_update(database);
 
@@ -1350,7 +1350,7 @@ void MET_modify_relation( qli_rel* relation, qli_fld* fields)
 }
 
 
-void MET_ready( qli_syntax* node, USHORT create_flag)
+void MET_ready( qli_syntax* node, const bool create_flag)
 {
 /**************************************
  *
@@ -1392,7 +1392,7 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 
 	const TEXT* q;
 	if (temp->dbb_user) {
-		q = (TEXT *) temp->dbb_user->con_data;
+		q = (TEXT*) temp->dbb_user->con_data;
 		length = temp->dbb_user->con_desc.dsc_length;
 	}
 	else {
@@ -1406,7 +1406,7 @@ void MET_ready( qli_syntax* node, USHORT create_flag)
 // get a password, if specified
 
 	if (temp->dbb_password) {
-		q = (TEXT *) temp->dbb_password->con_data;
+		q = (TEXT*) temp->dbb_password->con_data;
 		length = temp->dbb_password->con_desc.dsc_length;
 	}
 	else {
@@ -1836,7 +1836,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	qli_dbb* source_dbb = (source->rel_database) ? source->rel_database : QLI_databases;
+	qli_dbb* source_dbb = source->rel_database ? source->rel_database : QLI_databases;
 	DB = source_dbb->dbb_handle;
 	UserBlob source_blob(status_vector);
 
@@ -1862,7 +1862,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
 	}
 	else {
 		buffer_length = max_segment;
-		buffer = (TEXT *) gds__alloc((SLONG) buffer_length);
+		buffer = (TEXT*) gds__alloc((SLONG) buffer_length);
 	}
 
 	STUFF_WORD((USHORT) size);
@@ -2698,7 +2698,7 @@ static void get_database_type( qli_dbb* new_dbb)
 }
 
 
-static TEXT *get_query_header( qli_dbb* database, ISC_QUAD& blob_id)
+static TEXT* get_query_header( qli_dbb* database, ISC_QUAD& blob_id)
 {
 /**************************************
  *
@@ -2795,7 +2795,7 @@ static void install( qli_dbb* old_dbb)
 
 // If a name was given, make up a symbol for the database.
 
-	nam* name = (nam*) old_dbb->dbb_symbol;
+	qli_name* name = (qli_name*) old_dbb->dbb_symbol;
 	if (name) {
 		qli_symbol* asymbol = make_symbol(name->nam_string, name->nam_length);
 		new_dbb->dbb_symbol = asymbol;
@@ -2917,7 +2917,7 @@ static qli_syntax* make_node( nod_t type, USHORT count)
 }
 
 
-static TEXT *make_string( TEXT* string, SSHORT length)
+static TEXT* make_string( TEXT* string, SSHORT length)
 {
 /**************************************
  *
@@ -2995,7 +2995,7 @@ static qli_const* missing_value( ISC_QUAD& blob_id, qli_symbol* symbol)
 }
 
 
-static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
+static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 {
 /**************************************
  *
@@ -3010,8 +3010,8 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 	qli_syntax** arg;
 	qli_const* constant;
 	nod_t operatr;
-	NAM name;
-	UCHAR *p;
+	qli_name* name;
+	UCHAR* p;
 	SSHORT dtype, scale, length, l, op;
 
 	UCHAR* blr = *ptr;
@@ -3110,7 +3110,7 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		BLR_BYTE;
 		blr += 2;
 		node = make_node(nod_field, 1);
-		name = (NAM) ALLOCPV(type_nam, symbol->sym_length);
+		name = (qli_name*) ALLOCPV(type_nam, symbol->sym_length);
 		node->syn_arg[0] = (qli_syntax*) name;
 		name->nam_length = symbol->sym_length;
 		strcpy(name->nam_string, symbol->sym_string);
@@ -3120,10 +3120,10 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		BLR_BYTE;
 		length = BLR_BYTE;
 		node = make_node(nod_field, 1);
-		name = (NAM) ALLOCPV(type_nam, length);
+		name = (qli_name*) ALLOCPV(type_nam, length);
 		node->syn_arg[0] = (qli_syntax*) name;
 		name->nam_length = length;
-		p = (UCHAR *) name->nam_string;
+		p = (UCHAR*) name->nam_string;
 		do {
 			*p++ = BLR_BYTE;
 		} while (--length);
@@ -3517,12 +3517,12 @@ static void sql_grant_revoke( qli_syntax* node, USHORT type)
 	qli_syntax* names = node->syn_arg[s_grant_users];
 	qli_syntax* fields = node->syn_arg[s_grant_fields];
 
-	NAM* name = (NAM*) names->syn_arg;
-	for (NAM* const end = name + names->syn_count; name < end; name++)
+	qli_name** name = (qli_name**) names->syn_arg;
+	for (qli_name** const end = name + names->syn_count; name < end; name++)
 	{
 		if (fields->syn_count) {
-		    NAM* field = (NAM *) fields->syn_arg;
-		    NAM* const end_field = field + fields->syn_count;
+		    qli_name** field = (qli_name**) fields->syn_arg;
+		    qli_name** const end_field = field + fields->syn_count;
 			for (; field < end_field; field++)
 			{
 				stuff_priv(rlb, type, relation_name, privileges,

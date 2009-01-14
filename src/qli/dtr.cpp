@@ -62,7 +62,7 @@ using MsgFormat::SafeArg;
 const char* STARTUP_FILE	= "HOME";	// Assume its Unix
 
 
-extern TEXT *QLI_prompt;
+extern TEXT* QLI_prompt;
 
 static void enable_signals();
 static bool process_statement(bool);

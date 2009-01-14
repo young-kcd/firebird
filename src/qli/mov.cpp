@@ -235,7 +235,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		desc.dsc_dtype = dtype_timestamp;
 		desc.dsc_length = sizeof(date);
 		desc.dsc_scale = 0;
-		desc.dsc_address = (UCHAR *) date;
+		desc.dsc_address = (UCHAR*) date;
 		desc.dsc_sub_type = 0;
 		MOVQ_move(arg2, &desc);
 		return MOVQ_compare(arg1, &desc);
@@ -244,7 +244,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		desc.dsc_dtype = dtype_sql_time;
 		desc.dsc_length = sizeof(date[0]);
 		desc.dsc_scale = 0;
-		desc.dsc_address = (UCHAR *) date;
+		desc.dsc_address = (UCHAR*) date;
 		desc.dsc_sub_type = 0;
 		MOVQ_move(arg2, &desc);
 		return MOVQ_compare(arg1, &desc);
@@ -253,7 +253,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		desc.dsc_dtype = dtype_sql_date;
 		desc.dsc_length = sizeof(date[0]);
 		desc.dsc_scale = 0;
-		desc.dsc_address = (UCHAR *) date;
+		desc.dsc_address = (UCHAR*) date;
 		desc.dsc_sub_type = 0;
 		MOVQ_move(arg2, &desc);
 		return MOVQ_compare(arg1, &desc);
@@ -332,7 +332,7 @@ double MOVQ_date_to_double(const dsc* desc)
 		temp_desc.dsc_scale = 0;
 		temp_desc.dsc_sub_type = 0;
 		date = temp;
-		temp_desc.dsc_address = (UCHAR *) date;
+		temp_desc.dsc_address = (UCHAR*) date;
 		QLI_validate_desc(temp_desc);
 		MOVQ_move(desc, &temp_desc);
 	}
@@ -529,7 +529,7 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 
 	scale -= (SSHORT) desc->dsc_scale;
 
-	const TEXT* p = (TEXT *) desc->dsc_address;
+	const TEXT* p = (TEXT*) desc->dsc_address;
 	switch (desc->dsc_dtype)
 	{
 	case dtype_short:
@@ -644,14 +644,14 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT le
    the address and length. */
 
 	if (desc->dsc_dtype == dtype_text) {
-		*address = (TEXT *) desc->dsc_address;
+		*address = (TEXT*) desc->dsc_address;
 		return desc->dsc_length;
 	}
 
 // Perhaps it a "C" type string?
 
 	if (desc->dsc_dtype == dtype_cstring) {
-		*address = (TEXT *) desc->dsc_address;
+		*address = (TEXT*) desc->dsc_address;
 		return MIN(static_cast<int>(strlen((char*)desc->dsc_address)), desc->dsc_length - 1);
 	}
 
@@ -665,7 +665,7 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT le
 
 	dsc temp_desc;
 	temp_desc.dsc_length = length;
-	temp_desc.dsc_address = (UCHAR *) temp;
+	temp_desc.dsc_address = (UCHAR*) temp;
 	temp_desc.dsc_scale = 0;
 	temp_desc.dsc_dtype = dtype_varying;
 	temp_desc.dsc_sub_type = ttype_ascii;
@@ -1041,7 +1041,7 @@ static void sql_date_to_text( const SLONG date[1], DSC* to)
 
 	dsc desc;
 	desc.dsc_length = p - temp;
-	desc.dsc_address = (UCHAR *) temp;
+	desc.dsc_address = (UCHAR*) temp;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
@@ -1081,7 +1081,7 @@ static void sql_time_to_text( const ULONG date[1], DSC* to)
 
 	dsc desc;
 	desc.dsc_length = p - temp;
-	desc.dsc_address = (UCHAR *) temp;
+	desc.dsc_address = (UCHAR*) temp;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
@@ -1123,7 +1123,7 @@ static void timestamp_to_text( const SLONG date[2], DSC* to)
 
 	dsc desc;
 	desc.dsc_length = p - temp;
-	desc.dsc_address = (UCHAR *) temp;
+	desc.dsc_address = (UCHAR*) temp;
 	desc.dsc_dtype = dtype_text;
 	desc.dsc_scale = 0;
 	desc.dsc_sub_type = ttype_ascii;
@@ -1218,7 +1218,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	intermediate.dsc_length = sizeof(SLONG);
 	intermediate.dsc_scale = scale;
 	intermediate.dsc_sub_type = 0;
-	intermediate.dsc_address = (UCHAR *) &n;
+	intermediate.dsc_address = (UCHAR*) &n;
 	QLI_validate_desc(intermediate);
 
 	MOVQ_move(from, &intermediate);
@@ -1305,7 +1305,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		return;
 	}
 
-	*(SSHORT *) (to->dsc_address) = (UCHAR *) q - to->dsc_address - sizeof(SSHORT);
+	*(SSHORT*) (to->dsc_address) = (UCHAR*) q - to->dsc_address - sizeof(SSHORT);
 }
 
 

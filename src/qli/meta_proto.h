@@ -24,14 +24,14 @@
 #ifndef QLI_META_PROTO_H
 #define QLI_META_PROTO_H
 
-bool	MET_declare(qli_dbb*, qli_fld*, const nam*);
+bool	MET_declare(qli_dbb*, qli_fld*, const qli_name*);
 void	MET_define_field(qli_dbb*, qli_fld*);
 void	MET_define_index(qli_syntax*);
 void	MET_define_relation(qli_rel*, qli_rel*);
 void	MET_define_sql_relation(qli_rel*);
 void	MET_delete_database(qli_dbb*);
-void	MET_delete_field(qli_dbb*, nam*);
-void	MET_delete_index(qli_dbb*, nam*);
+void	MET_delete_field(qli_dbb*, qli_name*);
+void	MET_delete_index(qli_dbb*, qli_name*);
 void	MET_delete_relation(qli_rel*);
 int		MET_dimensions(qli_dbb*, const TEXT*);
 void	MET_fields(qli_rel*);
@@ -44,7 +44,7 @@ FB_API_HANDLE	MET_meta_transaction(qli_dbb*, bool);
 void	MET_modify_field(qli_dbb*, qli_fld*);
 void	MET_modify_index(qli_syntax*);
 void	MET_modify_relation(qli_rel*, qli_fld*);
-void	MET_ready(qli_syntax*, USHORT);
+void	MET_ready(qli_syntax*, const bool);
 void	MET_shutdown();
 void	MET_sql_alter_table(qli_rel*, qli_fld*);
 void	MET_sql_cr_view(qli_syntax*);

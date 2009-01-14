@@ -26,36 +26,40 @@
 
 // Name nodes -- used to hold names between parse and compilation
 
-typedef struct nam {
+struct qli_name
+{
     blk			nam_header;
     qli_symbol*	nam_symbol;		// Symbol pointer, if any
     USHORT		nam_length;		// Length of name
     TEXT		nam_string[1];	// Actual name string
-} *NAM;
+};
 
 // Qualified procedure node -- used to hold qualified procedure names
 
-typedef struct qpr {
+struct qli_proc
+{
     blk  qpr_header;
     qli_dbb* qpr_database;		// database block
-    nam* qpr_name;			// name block
-} *QPR;
+    const qli_name* qpr_name;			// name block
+};
 
 // Qualified function node -- used to hold qualified function names
 
-typedef struct qfn {
+struct qli_func
+{
     blk  qfn_header;
     qli_dbb* qfn_database;		// database block
-    nam* qfn_name;			// name block
-} *QFN;
+    const qli_name* qfn_name;			// name block
+};
 
 // Qualified filter node -- used to hold qualified filter names
 
-typedef struct qfl {
+struct qli_filter
+{
     blk  qfl_header;
     qli_dbb* qfl_database;		// database block
-    nam* qfl_name;			// name block
-} *QFL;
+    const qli_name* qfl_name;			// name block
+};
 
 // SHOW options
 

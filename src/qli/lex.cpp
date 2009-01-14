@@ -65,7 +65,7 @@ static bool get_line(FILE*, TEXT*, USHORT);
 static int nextchar(const bool);
 static void next_line(const bool);
 static void retchar();
-static bool scan_number(SSHORT, TEXT **);
+static bool scan_number(SSHORT, TEXT**);
 static int skip_white();
 
 static qli_lls* QLI_statements;
@@ -977,7 +977,7 @@ static void next_line(const bool eof_ok)
  *	Get the next line from the input stream.
  *
  **************************************/
-	TEXT *p;
+	TEXT* p;
 
 	while (QLI_line)
 	{

@@ -1113,7 +1113,7 @@ static qli_nod* compile_prompt( qli_nod* node)
 	node->nod_arg[e_prm_string] = (qli_nod*) string;
 	node->nod_desc.dsc_dtype = dtype_varying;
 	node->nod_desc.dsc_length = prompt_length;
-	node->nod_desc.dsc_address = (UCHAR *) string->str_data;
+	node->nod_desc.dsc_address = (UCHAR*) string->str_data;
 	QLI_validate_desc(node->nod_desc);
 
 	return node;

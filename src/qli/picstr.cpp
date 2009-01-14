@@ -576,7 +576,7 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	temp_desc.dsc_scale = 0;
 	temp_desc.dsc_sub_type = 0;
 	temp_desc.dsc_length = sizeof(date);
-	temp_desc.dsc_address = (UCHAR *) date;
+	temp_desc.dsc_address = (UCHAR*) date;
 	QLI_validate_desc(temp_desc);
 	MOVQ_move(desc, &temp_desc);
 
@@ -1047,7 +1047,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			float_char = c;
 			if (!float_ptr) {
 				float_ptr = out;
-				*out++ = (n) ? c : ' ';
+				*out++ = n ? c : ' ';
 				break;
 			}
 			d = *digits++;
@@ -1058,12 +1058,12 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			}
 			*float_ptr = ' ';
 			float_ptr = out;
-			*out++ = (n) ? c : ' ';
+			*out++ = n ? c : ' ';
 			break;
 
 		case '(':
 		case ')':
-			*out++ = (negative) ? c : ' ';
+			*out++ = negative ? c : ' ';
 			break;
 
 		case 'C':

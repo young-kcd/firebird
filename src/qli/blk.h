@@ -37,7 +37,7 @@ BLKDEF (type_str, qli_str, 1)			// random string block
 BLKDEF (type_tok, qli_tok, 1)			// token block
 BLKDEF (type_sym, qli_symbol, 1)		// symbol block
 BLKDEF (type_msg, qli_msg, 0)			// Message block
-BLKDEF (type_nam, nam, 1)				// Name node
+BLKDEF (type_nam, qli_name, 1)				// Name node
 BLKDEF (type_ctx, qli_ctx, 0)			// Context block
 BLKDEF (type_con, qli_const, 1)			// Constant block
 BLKDEF (type_itm, qli_print_item, 0)	// Print item
@@ -48,8 +48,8 @@ BLKDEF (type_rpt, qli_rpt, 0)
 BLKDEF (type_pic, pics, 0)
 BLKDEF (type_prt, qli_prt, 0)
 BLKDEF (type_map, qli_map, 0)
-BLKDEF (type_qpr, qpr, 0)
-BLKDEF (type_qfn, qfn, 0)
-BLKDEF (type_qfl, qfl, 0)
+BLKDEF (type_qpr, qli_proc, 0)
+BLKDEF (type_qfn, qli_func, 0)
+BLKDEF (type_qfl, qli_filter, 0)
 BLKDEF (type_fun, qli_fun, sizeof(dsc)) // sizeof (((FUN) NULL)->fun_arg[0]))
 BLKDEF (type_rlb, qli_rlb, 0)			// Request language block

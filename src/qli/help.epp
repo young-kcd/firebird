@@ -106,8 +106,9 @@ void HELP_help( qli_syntax* node)
 	const TEXT** topic = topics;
 	*topic++ = "QLI";
 
-	NAM *ptr, *end;
-	for (ptr = (NAM *) node->syn_arg, end = ptr + node->syn_count; ptr < end; ptr++)
+	qli_name** ptr;
+	qli_name** end;
+	for (ptr = (qli_name**) node->syn_arg, end = ptr + node->syn_count; ptr < end; ptr++)
 	{
 		*topic++ = (*ptr)->nam_string;
 	}

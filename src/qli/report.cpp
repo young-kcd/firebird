@@ -100,7 +100,7 @@ void RPT_report( qli_nod* loop)
 
 	if (!report->rpt_buffer) {
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length);
-		report->rpt_buffer = (UCHAR *) string->str_data;
+		report->rpt_buffer = (UCHAR*) string->str_data;
 	}
 
 	memcpy(report->rpt_buffer, message->msg_buffer, (SLONG) message->msg_length);

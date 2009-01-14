@@ -59,13 +59,13 @@ static void show_dbb_parameters(qli_dbb*);
 static int show_field_detail(qli_dbb*, const TEXT*, const TEXT*, qli_syntax*);
 static int show_field_instances(qli_dbb*, const TEXT*);
 static void show_fields(qli_rel*, qli_fld*);
-static void show_filt(QFL);
-static int show_filter_detail(qli_dbb*, TEXT*);
+static void show_filt(qli_filter*);
+static int show_filter_detail(qli_dbb*, const TEXT*);
 static void show_filts(qli_dbb*);
 static int show_filters_detail(qli_dbb*);
 static void show_fld(qli_syntax*);
-static void show_func(QFN);
-static int show_func_detail(qli_dbb*, TEXT*);
+static void show_func(qli_func*);
+static int show_func_detail(qli_dbb*, const TEXT*);
 static void show_funcs(qli_dbb*);
 static int show_funcs_detail(qli_dbb*);
 static int show_insecure_fields(qli_dbb*, const TEXT*, const TEXT*);
@@ -77,7 +77,7 @@ static int show_gbl_fields_detail(qli_dbb*);
 static int show_indices_detail(qli_rel*);
 static void show_matching();
 static void show_names(const TEXT*, USHORT, TEXT*);
-static void show_proc(QPR);
+static void show_proc(qli_proc*);
 static void show_procs(qli_dbb*);
 static void show_rel(qli_rel*);
 static void show_rel_detail(qli_rel*);
@@ -94,7 +94,7 @@ static void show_trigger_messages(qli_dbb*, const TEXT*);
 static void show_trigger_status(TEXT*, USHORT, USHORT, USHORT);
 static void show_trigs(qli_dbb*);
 static int show_triggers_detail(qli_dbb*);
-static void show_var(const nam*);
+static void show_var(const qli_name*);
 static void show_vars();
 static void show_versions();
 static void show_view(qli_rel*);
@@ -150,7 +150,7 @@ void SHOW_stuff( qli_syntax* node)
 	qli_rel* relation;
 	qli_dbb* dbb;
 	USHORT count;
-	NAM name;
+	qli_name* name;
 	SSHORT width;
 
 	QLI_skip_line = true;
@@ -251,7 +251,7 @@ void SHOW_stuff( qli_syntax* node)
 
 		case show_security_class:
 			count = 0;
-			name = (NAM) value;
+			name = (qli_name*) value;
 			for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 				count += show_security_class_detail(dbb, name->nam_string);
 			if (!count) {
@@ -327,7 +327,7 @@ void SHOW_stuff( qli_syntax* node)
 			break;
 
 		case show_filter:
-			show_filt((QFL) value);
+			show_filt((qli_filter*) value);
 			break;
 
 		case show_filters:
@@ -351,7 +351,7 @@ void SHOW_stuff( qli_syntax* node)
 		*/
 
 		case show_function:
-			show_func((QFN) value);
+			show_func((qli_func*) value);
 			break;
 
 		case show_functions:
@@ -377,7 +377,7 @@ void SHOW_stuff( qli_syntax* node)
 			break;
 
 		case show_procedure:
-			show_proc((QPR) value);
+			show_proc((qli_proc*) value);
 			break;
 
 		case show_version:
@@ -385,7 +385,7 @@ void SHOW_stuff( qli_syntax* node)
 			break;
 
 		case show_variable:
-			show_var((NAM) value);
+			show_var((qli_name*) value);
 			break;
 
 		case show_variables:
@@ -424,7 +424,7 @@ void SHOW_stuff( qli_syntax* node)
 }
 
 
-static void array_dimensions( qli_dbb* database, const TEXT * field_name)
+static void array_dimensions( qli_dbb* database, const TEXT* field_name)
 {
 /**************************************
  *
@@ -514,7 +514,7 @@ static void display_blob(qli_dbb* dbb,
 		buffer[length--] = 0;
 		if (strip_line)
 		{
-			for (TEXT *b = buffer + length; b >= buffer;) {
+			for (TEXT* b = buffer + length; b >= buffer;) {
 				if (*b == '\n' || *b == '\t' || *b == ' ')
 					*b-- = 0;
 				else
@@ -746,7 +746,7 @@ static void show_datatype(qli_dbb* database,
 					AND TYPE.RDB$TYPE EQ sub_type
 
 					TEXT* p = subtype;
-					for (const TEXT *q = TYPE.RDB$TYPE_NAME; *q && *q != ' ';) {
+					for (const TEXT* q = TYPE.RDB$TYPE_NAME; *q && *q != ' ';) {
 						*p++ = *q++;
 					}
 					*p = 0;
@@ -1126,7 +1126,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 }
 
 
-static void show_filt( QFL filter)
+static void show_filt( qli_filter* filter)
 {
 /**************************************
  *
@@ -1141,7 +1141,7 @@ static void show_filt( QFL filter)
  *
  **************************************/
 	int count = 0;
-	NAM name = filter->qfl_name;
+	const qli_name* name = filter->qfl_name;
 
 	qli_dbb* database = filter->qfl_database;
 	if (database)
@@ -1182,7 +1182,7 @@ static void show_filt( QFL filter)
 }
 
 
-static int show_filter_detail( qli_dbb* database, TEXT* filter_name)
+static int show_filter_detail( qli_dbb* database, const TEXT* filter_name)
 {
 /**************************************
  *
@@ -1205,10 +1205,10 @@ static int show_filter_detail( qli_dbb* database, TEXT* filter_name)
 		F IN RDB$FILTERS WITH F.RDB$FUNCTION_NAME = filter_name
 
 		count++;
-		fb_utils::exact_name(filter_name);
+		fb_utils::exact_name(F.RDB$FUNCTION_NAME);
 
 		ERRQ_msg_put(444,		// Msg444 Filter %s in database \"%s\" (%s):
-					 SafeArg() << filter_name << database->dbb_filename <<
+					 SafeArg() << F.RDB$FUNCTION_NAME << database->dbb_filename <<
 					 database->dbb_symbol->sym_string);
 		ERRQ_msg_put(445, F.RDB$MODULE_NAME); // Msg445 Filter library is %s
 		ERRQ_msg_put(446, SafeArg() << F.RDB$INPUT_SUB_TYPE);	// Msg446 Input sub-type is %d
@@ -1304,17 +1304,17 @@ static void show_fld( qli_syntax* field_node)
 	}
 
 	qli_dbb* database = NULL;
-	NAM field_name = NULL;
-	NAM relation_name = NULL;
+	qli_name* field_name = NULL;
+	qli_name* relation_name = NULL;
 	for (qli_syntax** ptr = field_node->syn_arg + field_node->syn_count;
 		--ptr >= field_node->syn_arg;)
 	{
 		if (!field_name)
-			field_name = (NAM) * ptr;
+			field_name = (qli_name*) * ptr;
 		else if (!relation_name)
-			relation_name = (NAM) * ptr;
+			relation_name = (qli_name*) * ptr;
 		else
-			for (qli_symbol* symbol = ((NAM) *ptr)->nam_symbol; symbol; symbol = symbol->sym_homonym)
+			for (qli_symbol* symbol = ((qli_name*) *ptr)->nam_symbol; symbol; symbol = symbol->sym_homonym)
 			{
 				if (symbol->sym_type == SYM_database) {
 					database = (qli_dbb*) symbol->sym_object;
@@ -1323,7 +1323,7 @@ static void show_fld( qli_syntax* field_node)
 			}
 	}
 
-	const TEXT *string = (relation_name) ? relation_name->nam_string : NULL;
+	const TEXT* string = relation_name ? relation_name->nam_string : NULL;
 	TEXT s[65];
 
 	if (string)
@@ -1354,7 +1354,7 @@ static void show_fld( qli_syntax* field_node)
 }
 
 
-static void show_func( QFN func)
+static void show_func( qli_func* func)
 {
 /**************************************
  *
@@ -1369,7 +1369,7 @@ static void show_func( QFN func)
  *
  **************************************/
 	int count = 0;
-	NAM name = func->qfn_name;
+	const qli_name* name = func->qfn_name;
 
 	qli_dbb* database = func->qfn_database;
 	if (database)
@@ -1408,7 +1408,7 @@ static void show_func( QFN func)
 }
 
 
-static int show_func_detail( qli_dbb* database, TEXT* func_name)
+static int show_func_detail( qli_dbb* database, const TEXT* func_name)
 {
 /**************************************
  *
@@ -1424,6 +1424,7 @@ static int show_func_detail( qli_dbb* database, TEXT* func_name)
  *	description.
  *
  **************************************/
+
 	MET_meta_transaction(database, false);
 	int count = 0;
 
@@ -1433,7 +1434,9 @@ static int show_func_detail( qli_dbb* database, TEXT* func_name)
 		count++;
 		fb_utils::exact_name(F.RDB$QUERY_NAME);
 		fb_utils::exact_name(F.RDB$FUNCTION_NAME);
-		strcpy(func_name, F.RDB$FUNCTION_NAME);
+
+		BASED ON RDB$FUNCTIONS.RDB$QUERY_NAME fq_name;
+		strcpy(fq_name, F.RDB$FUNCTION_NAME);
 
 		if (F.RDB$QUERY_NAME[0]) {
 			ERRQ_msg_put(424,	// Msg424 Function %s (%s) in database \"%s\" (%s):
@@ -1451,7 +1454,7 @@ static int show_func_detail( qli_dbb* database, TEXT* func_name)
 
 		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_func_args])
 			FA IN RDB$FUNCTION_ARGUMENTS WITH
-				FA.RDB$FUNCTION_NAME = func_name SORTED BY FA.RDB$ARGUMENT_POSITION
+				FA.RDB$FUNCTION_NAME = fq_name SORTED BY FA.RDB$ARGUMENT_POSITION
 			if (FA.RDB$ARGUMENT_POSITION == 0) {
 				ERRQ_msg_partial(427);
 				// Msg427 Return argument is
@@ -1647,18 +1650,18 @@ static void show_gbl_field( qli_syntax* field_node)
  *	otherwise show them all.
  *
  **************************************/
-	NAM field_name = NULL;
+	qli_name* field_name = NULL;
 	qli_dbb* database = NULL;
 
 	for (qli_syntax** ptr = field_node->syn_arg + field_node->syn_count - 1;
 		ptr >= field_node->syn_arg; ptr--)
 	{
 		if (!field_name) {
-			field_name = (NAM) * ptr;
+			field_name = (qli_name*) * ptr;
 		}
 		else
 		{
-			NAM name = (NAM) *ptr;
+			qli_name* name = (qli_name*) *ptr;
 			for (qli_symbol* symbol = name->nam_symbol; symbol; symbol = symbol->sym_homonym)
 			{
 				if (symbol->sym_type == SYM_database) {
@@ -1975,7 +1978,7 @@ static void show_names( const TEXT* name, USHORT width, TEXT* buffer)
 }
 
 
-static void show_proc( QPR proc)
+static void show_proc( qli_proc* proc)
 {
 /**************************************
  *
@@ -1989,7 +1992,7 @@ static void show_proc( QPR proc)
  *	with that name.
  *
  **************************************/
-	NAM name = proc->qpr_name;
+	const qli_name* name = proc->qpr_name;
 
 	qli_dbb* database = proc->qpr_database;
 	if (database)
@@ -2184,7 +2187,7 @@ static void show_rels( qli_dbb* dbb, enum show_t sw, SSHORT width)
 }
 
 
-static USHORT show_security_class_detail( qli_dbb* database, const TEXT * name)
+static USHORT show_security_class_detail( qli_dbb* database, const TEXT* name)
 {
 /**************************************
  *
@@ -2544,7 +2547,7 @@ static void show_trigger_status(TEXT* name, USHORT type, USHORT status, USHORT s
 	}
 
 	ERRQ_msg_format(msg_num, sizeof(trigger_type), trigger_type);
-	msg_num = (status) ? 374 : 373;
+	msg_num = status ? 374 : 373;
 	ERRQ_msg_format(msg_num, sizeof(trigger_active), trigger_active);
 
 	fb_utils::exact_name(name);
@@ -2652,7 +2655,7 @@ static int show_triggers_detail( qli_dbb* database)
 }
 
 
-static void show_var( const nam* var_name)
+static void show_var( const qli_name* var_name)
 {
 /**************************************
  *
@@ -2664,7 +2667,7 @@ static void show_var( const nam* var_name)
  *	Display a global variables.
  *
  **************************************/
-	qli_fld* variable;
+	const qli_fld* variable;
 
 	for (variable = QLI_variables; variable; variable = variable->fld_next) {
 		if (!strcmp(var_name->nam_string, variable->fld_name->sym_string))

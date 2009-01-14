@@ -85,8 +85,8 @@ void CMD_copy_procedure( qli_syntax* node)
  *	across databases
  *
  **************************************/
-	QPR old_proc = (QPR) node->syn_arg[0];
-	QPR new_proc = (QPR) node->syn_arg[1];
+	qli_proc* old_proc = (qli_proc*) node->syn_arg[0];
+	qli_proc* new_proc = (qli_proc*) node->syn_arg[1];
 
 	PRO_copy_procedure(old_proc->qpr_database, old_proc->qpr_name->nam_string,
 					   new_proc->qpr_database, new_proc->qpr_name->nam_string);
@@ -106,7 +106,7 @@ void CMD_define_procedure( qli_syntax* node)
  *	or in the most recently readied database.
  *
  **************************************/
-	QPR proc = (QPR) node->syn_arg[0];
+	qli_proc* proc = (qli_proc*) node->syn_arg[0];
 
 	if (!(proc->qpr_database))
 		proc->qpr_database = QLI_databases;
@@ -128,7 +128,7 @@ void CMD_delete_proc( qli_syntax* node)
  *	or in the most recently readied database.
  *
  **************************************/
-	QPR proc = (QPR) node->syn_arg[0];
+	qli_proc* proc = (qli_proc*) node->syn_arg[0];
 
 	if (!proc->qpr_database)
 		proc->qpr_database = QLI_databases;
@@ -153,7 +153,7 @@ void CMD_edit_proc( qli_syntax* node)
  *	Edit a procedure in the specified database.
  *
  **************************************/
-	QPR proc = (QPR) node->syn_arg[0];
+	qli_proc* proc = (qli_proc*) node->syn_arg[0];
 	if (!proc->qpr_database)
 		proc->qpr_database = QLI_databases;
 
@@ -181,17 +181,17 @@ void CMD_extract( qli_syntax* node)
 		qli_syntax** ptr = list->syn_arg;
 		for (const qli_syntax* const* const end = ptr + list->syn_count; ptr < end; ptr++)
 		{
-			QPR proc = (QPR) *ptr;
+			qli_proc* proc = (qli_proc*) *ptr;
 			qli_dbb* database = proc->qpr_database;
 			if (!database)
 				database = QLI_databases;
 
-			NAM name = proc->qpr_name;
+			const qli_name* name = proc->qpr_name;
 			FB_API_HANDLE blob = PRO_fetch_procedure(database, name->nam_string);
-			if (!blob) {
-				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
-							 SafeArg() << name->nam_string <<
-							 database->dbb_symbol->sym_string);
+			if (!blob)
+			{
+				ERRQ_msg_put(89, SafeArg() << name->nam_string << database->dbb_symbol->sym_string);
+				// Msg89 Procedure %s not found in database %s
 				continue;
 			}
 			dump_procedure(database, file, name->nam_string, name->nam_length, blob);
@@ -250,8 +250,8 @@ void CMD_rename_proc( qli_syntax* node)
  *	or the most recently readied database.
  *
  **************************************/
-	QPR old_proc = (QPR) node->syn_arg[0];
-	QPR new_proc = (QPR) node->syn_arg[1];
+	qli_proc* old_proc = (qli_proc*) node->syn_arg[0];
+	qli_proc* new_proc = (qli_proc*) node->syn_arg[1];
 
 	qli_dbb* database = old_proc->qpr_database;
 	if (!database)
@@ -259,8 +259,8 @@ void CMD_rename_proc( qli_syntax* node)
 
 	if (new_proc->qpr_database && (new_proc->qpr_database != database))
 		IBERROR(84);			// Msg84 Procedures can not be renamed across databases. Try COPY
-	NAM old_name = old_proc->qpr_name;
-	NAM new_name = new_proc->qpr_name;
+	const qli_name* old_name = old_proc->qpr_name;
+	const qli_name* new_name = new_proc->qpr_name;
 
 	if (PRO_rename_procedure(database, old_name->nam_string, new_name->nam_string))
 	{
@@ -381,7 +381,7 @@ void CMD_set( qli_syntax* node)
 					QLI_charset[0] = 0;
 					break;
 				}
-				const TEXT* name = ((NAM) value)->nam_string;
+				const TEXT* name = ((qli_name*) value)->nam_string;
 				length = MIN(strlen(name), sizeof(QLI_charset));
 				strncpy(QLI_charset, name, length);
 				QLI_charset[length] = 0;

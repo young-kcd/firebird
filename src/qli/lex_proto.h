@@ -30,7 +30,7 @@ qli_tok*	LEX_edit_string();
 qli_tok*	LEX_filename();
 void	LEX_fini ();
 void	LEX_flush ();
-bool	LEX_get_line (const TEXT*, TEXT *, int);
+bool	LEX_get_line (const TEXT*, TEXT*, int);
 void	LEX_init ();
 void	LEX_mark_statement ();
 void	LEX_pop_line ();

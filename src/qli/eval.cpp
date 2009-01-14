@@ -328,7 +328,7 @@ dsc* EVAL_parameter(qli_par* parameter)
 
 	if (missing_parameter = parameter->par_missing) {
 		const USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);
-		desc->dsc_missing = (*missing_flag) ? DSC_missing : 0;
+		desc->dsc_missing = *missing_flag ? DSC_missing : 0;
 	}
 
 	desc->dsc_address = message->msg_buffer + parameter->par_offset;
@@ -659,7 +659,7 @@ static DSC *execute_edit( qli_nod* node)
 	if (!desc)
 		id->gds_quad_low = id->gds_quad_high = 0;
 
-	const TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
+	const TEXT* field_name = (TEXT*) node->nod_arg[e_edt_name];
 	BLOB_edit(id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
 	node->nod_desc.dsc_missing = UserBlob::blobIsNull(*id) ? DSC_missing : 0;

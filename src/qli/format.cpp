@@ -375,7 +375,7 @@ qli_nod* FMT_list(qli_nod* list)
 		{
 			if (q) {
 				if (*q != '"' && *q != '\'')
-					value->nod_desc.dsc_address = (UCHAR *) q;
+					value->nod_desc.dsc_address = (UCHAR*) q;
 				else {
 					qli_str* header = (qli_str*) ALLOCDV(type_str, strlen(q));
 					TEXT* p = header->str_data;
@@ -393,7 +393,7 @@ qli_nod* FMT_list(qli_nod* list)
 			}
 			else {
 				value->nod_desc.dsc_length = name->sym_length;
-				value->nod_desc.dsc_address = (UCHAR *) name->sym_string;
+				value->nod_desc.dsc_address = (UCHAR*) name->sym_string;
 			}
 			QLI_validate_desc(value->nod_desc);
 			column = MAX(column, value->nod_desc.dsc_length);

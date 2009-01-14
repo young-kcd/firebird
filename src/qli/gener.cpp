@@ -1186,7 +1186,7 @@ static void gen_function( qli_nod* node, qli_req* request)
 	qli_fun* function = (qli_fun*) node->nod_arg[e_fun_function];
 	qli_symbol* symbol = function->fun_symbol;
 	STUFF(symbol->sym_length);
-	for (const UCHAR* p = (UCHAR *) symbol->sym_string; *p;)
+	for (const UCHAR* p = (UCHAR*) symbol->sym_string; *p;)
 		STUFF(*p++);
 
 // Generate function arguments
@@ -1667,7 +1667,7 @@ static void gen_sort( qli_nod* node, qli_req* request, const UCHAR operatr)
 	for (qli_nod** const end = ptr + node->nod_count * 2; ptr < end; ptr += 2)
 	{
 		if (operatr == blr_sort)
-			STUFF((ptr[1]) ? blr_descending : blr_ascending);
+			STUFF(ptr[1] ? blr_descending : blr_ascending);
 		gen_expression(ptr[0], request);
 	}
 	request->req_flags &= ~REQ_project;
@@ -1819,7 +1819,7 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 		break;
 
 	case nod_from:
-		operatr = (node->nod_arg[e_stt_default]) ? blr_via : blr_from;
+		operatr = node->nod_arg[e_stt_default] ? blr_via : blr_from;
 		break;
 
 	default:

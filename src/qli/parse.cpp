@@ -50,7 +50,7 @@ static void check_end();
 static void command_end();
 static qli_dbb* get_dbb(qli_symbol*);
 static qli_syntax* make_list(qli_lls*);
-static NAM make_name();
+static qli_name* make_name();
 static qli_const* make_numeric_constant(const TEXT*, USHORT);
 static TEXT* make_string(const TEXT*, USHORT);
 static qli_syntax* negate(qli_syntax*);
@@ -94,7 +94,7 @@ static qli_syntax* parse_modify();
 static qli_syntax* parse_modify_index();
 static qli_syntax* parse_modify_relation();
 static qli_syntax* parse_multiply(USHORT*, bool*);
-static NAM parse_name();
+static qli_name* parse_name();
 static qli_syntax* parse_not(USHORT *);
 static int parse_ordinal();
 static qli_syntax* parse_output();
@@ -102,9 +102,9 @@ static qli_syntax* parse_primitive_value(USHORT*, bool*);
 static qli_syntax* parse_print_list();
 static qli_syntax* parse_print();
 static qli_syntax* parse_prompt();
-static QFL parse_qualified_filter();
-static QFN parse_qualified_function();
-static QPR parse_qualified_procedure();
+static qli_filter* parse_qualified_filter();
+static qli_func* parse_qualified_function();
+static qli_proc* parse_qualified_procedure();
 static qli_rel* parse_qualified_relation();
 static qli_syntax* parse_ready(nod_t);
 static qli_syntax* parse_relational(USHORT*);
@@ -514,7 +514,7 @@ static qli_syntax* make_list( qli_lls* stack)
 }
 
 
-static NAM make_name()
+static qli_name* make_name()
 {
 /**************************************
  *
@@ -541,7 +541,7 @@ static NAM make_name()
 			break;
 	}
 
-	NAM name = (NAM) ALLOCDV(type_nam, l);
+	qli_name* name = (qli_name*) ALLOCDV(type_nam, l);
 	name->nam_length = l;
 	TEXT* p = name->nam_string;
 	const TEXT* q = string;
@@ -593,7 +593,7 @@ static qli_const* make_numeric_constant(const TEXT* string, USHORT length)
 		constant->con_desc.dsc_dtype = dtype_text;
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = constant->con_data;
-		TEXT* p = (TEXT *) constant->con_desc.dsc_address;
+		TEXT* p = (TEXT*) constant->con_desc.dsc_address;
 		*p++ = '0';
 		memcpy(p, string, --length);
 	}
@@ -792,7 +792,7 @@ static qli_syntax* parse_assignment()
 
 	qli_syntax* node = syntax_node(nod_assign, s_asn_count);
 	node->syn_arg[s_asn_to] = parse_field_name(&field);
-	NAM name = (NAM) field->syn_arg[0];
+	qli_name* name = (qli_name*) field->syn_arg[0];
 
 /* If the next token is an equals sign, the statement really is an
    assignment, and we're off the hook. */
@@ -807,7 +807,7 @@ static qli_syntax* parse_assignment()
 	if (field->syn_count == 1)
 		relation = resolve_relation(0, name->nam_symbol);
 	else if (field->syn_count == 2 && name->nam_symbol) {
-		NAM name2 = (NAM) field->syn_arg[1];
+		qli_name* name2 = (qli_name*) field->syn_arg[1];
 		relation = resolve_relation(name->nam_symbol, name2->nam_symbol);
 	}
 
@@ -1020,8 +1020,8 @@ static qli_syntax* parse_declare()
 	qli_rel* relation = NULL;
 	if (field_node && field_node->syn_count == 3)
 	{
-		NAM db_name = (NAM) field_node->syn_arg[0];
-		NAM rel_name = (NAM) field_node->syn_arg[1];
+		qli_name* db_name = (qli_name*) field_node->syn_arg[0];
+		qli_name* rel_name = (qli_name*) field_node->syn_arg[1];
 		if (!db_name->nam_symbol)
 			ERRQ_print_error(165, db_name->nam_string);
 			// Msg165 %s is not a database
@@ -2030,7 +2030,7 @@ static qli_syntax* parse_in( qli_syntax* value, nod_t operatr, bool all_flag)
 	qli_syntax* node = syntax_node(nod_any, 1);
 	node->syn_arg[0] = rse;
 
-	return (all_flag) ? negate(node) : node;
+	return all_flag ? negate(node) : node;
 }
 
 
@@ -2231,7 +2231,7 @@ static qli_const* parse_literal()
 	qli_const* constant;
 
 	PAR_real();
-	const UCHAR* q = (UCHAR *) QLI_token->tok_string;
+	const UCHAR* q = (UCHAR*) QLI_token->tok_string;
 	USHORT l = QLI_token->tok_length;
 
 	if (QLI_token->tok_type == tok_quoted)
@@ -2509,7 +2509,7 @@ static qli_syntax* parse_multiply( USHORT * paren_count, bool* bool_flag)
 }
 
 
-static NAM parse_name()
+static qli_name* parse_name()
 {
 /**************************************
  *
@@ -2529,7 +2529,7 @@ static NAM parse_name()
 		ERRQ_syntax(199);		// Msg199 identifier
 
 	SSHORT l = QLI_token->tok_length - 2 * int(isQuoted);
-	NAM name = (NAM) ALLOCDV(type_nam, l);
+	qli_name* name = (qli_name*) ALLOCDV(type_nam, l);
 	name->nam_length = l;
 	name->nam_symbol = QLI_token->tok_symbol;
 	const TEXT* q = QLI_token->tok_string + int(isQuoted);
@@ -2931,7 +2931,7 @@ static qli_syntax* parse_prompt()
 }
 
 
-static QFL parse_qualified_filter()
+static qli_filter* parse_qualified_filter()
 {
 /**************************************
  *
@@ -2942,13 +2942,13 @@ static QFL parse_qualified_filter()
  * Functional description
  *	This token ought to be a filter, possibly qualified.
  *	Return a qualified filter block, containing the
- *	filter name in a NAM block and the database in a
+ *	filter name in a qli_name block and the database in a
  *	qli_dbb block if a database was specified.  Somebody
  *	else will decide what to do if the database was not
  *	specified.
  *
  **************************************/
-	QFL filter = (QFL) ALLOCD(type_qfl);
+	qli_filter* filter = (qli_filter*) ALLOCD(type_qfl);
 	filter->qfl_database = parse_database();
 	filter->qfl_name = parse_name();
 	return filter;
@@ -2956,7 +2956,7 @@ static QFL parse_qualified_filter()
 
 
 
-static QFN parse_qualified_function()
+static qli_func* parse_qualified_function()
 {
 /**************************************
  *
@@ -2967,20 +2967,20 @@ static QFN parse_qualified_function()
  * Functional description
  *	This token ought to be a function, possibly qualified.
  *	Return a qualified function block, containing the
- *	function name in a NAM block and the database in a
+ *	function name in a qli_name block and the database in a
  *	qli_dbb block if a database was specified.  Somebody
  *	else will decide what to do if the database was not
  *	specified.
  *
  **************************************/
-	QFN func = (QFN) ALLOCD(type_qfn);
+	qli_func* func = (qli_func*) ALLOCD(type_qfn);
 	func->qfn_database = parse_database();
 	func->qfn_name = parse_name();
 	return func;
 }
 
 
-static QPR parse_qualified_procedure()
+static qli_proc* parse_qualified_procedure()
 {
 /**************************************
  *
@@ -2991,13 +2991,13 @@ static QPR parse_qualified_procedure()
  * Functional description
  *	This token ought to be a procedure, possibly qualified.
  *	Return a qualified procedure block, containing the
- *	procedure name in a NAM block and the database in a
+ *	procedure name in a qli_name block and the database in a
  *	qli_dbb block if a database was specified.  Somebody
  *	else will decide what to do if the database was not
  *	specified.
  *
  **************************************/
-	QPR proc = (QPR) ALLOCD(type_qpr);
+	qli_proc* proc = (qli_proc*) ALLOCD(type_qpr);
 	proc->qpr_database = parse_database();
 	proc->qpr_name = parse_name();
 	return proc;
@@ -3085,7 +3085,7 @@ static qli_syntax* parse_ready( nod_t node_type)
 		case nod_def_database:
 		case nod_ready:
 			if (PAR_match(KW_AS)) {
-				NAM name = parse_name();
+				qli_name* name = parse_name();
 				database->dbb_symbol = (qli_symbol*) name;
 				if (HSH_lookup(name->nam_string, name->nam_length))
 					ERRQ_error(408, name->nam_string);
@@ -3482,7 +3482,7 @@ static qli_syntax* parse_report()
 			if (PAR_match(KW_REPORT))
 			{
 				qli_brk* control = (qli_brk*) ALLOCD(type_brk);
-				qli_brk** ptr = (top) ? &report->rpt_top_rpt : &report->rpt_bottom_rpt;
+				qli_brk** ptr = top ? &report->rpt_top_rpt : &report->rpt_bottom_rpt;
 				control->brk_next = *ptr;
 				*ptr = control;
 				PAR_match(KW_PRINT);
@@ -3550,8 +3550,8 @@ static qli_syntax* parse_report()
 						ctl_syn = qli_fld->syn_count - syn_count;
 					USHORT i;
 					for (i = 0; i < syn_count; i++) {
-						const nam* name1 = (NAM) rse_fld->syn_arg[i + srt_syn];
-						const nam* name2 = (NAM) qli_fld->syn_arg[i + ctl_syn];
+						const qli_name* name1 = (qli_name*) rse_fld->syn_arg[i + srt_syn];
+						const qli_name* name2 = (qli_name*) qli_fld->syn_arg[i + ctl_syn];
 						if (strcmp(name1->nam_string, name2->nam_string))
 							break;
 					}
@@ -4147,7 +4147,7 @@ static qli_syntax* parse_show()
 					}
 					else {
 						sw = show_procedure;
-						QPR proc = (QPR) ALLOCD(type_qpr);
+						qli_proc* proc = (qli_proc*) ALLOCD(type_qpr);
 						proc->qpr_database = (qli_dbb*) value;
 						proc->qpr_name = parse_name();
 						value = (BLK) proc;
