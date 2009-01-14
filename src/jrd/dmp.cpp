@@ -45,8 +45,8 @@
 
 void (*dbg_block) (const BufferDesc*);
 
-void (*dmp_active) (void) = DMP_active;
-void (*dmp_dirty) (void) = DMP_dirty;
+void (*dmp_active) () = DMP_active;
+void (*dmp_dirty) () = DMP_dirty;
 void (*dmp_page) (SLONG, USHORT) = DMP_page;
 
 extern FILE* dbg_file;
@@ -72,7 +72,7 @@ static int dmp_descending = 0;
 //#define TRANS_OFFSET(number)	((number) >> TRA_SHIFT)
 
 
-void DMP_active(void)
+void DMP_active()
 {
 /**************************************
  *
@@ -102,7 +102,7 @@ void DMP_active(void)
 }
 
 
-void DMP_btc(void)
+void DMP_btc()
 {
 /**************************************
  *
@@ -130,7 +130,7 @@ void DMP_btc(void)
 }
 
 
-void DMP_btc_errors(void)
+void DMP_btc_errors()
 {
 /**************************************
  *
@@ -153,7 +153,7 @@ void DMP_btc_errors(void)
 }
 
 
-void DMP_btc_ordered(void)
+void DMP_btc_ordered()
 {
 /**************************************
  *
@@ -217,7 +217,7 @@ void DMP_btc_ordered(void)
 }
 
 
-void DMP_dirty(void)
+void DMP_dirty()
 {
 /**************************************
  *

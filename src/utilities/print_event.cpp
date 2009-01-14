@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 }
 
 
-static void event_list(void)
+static void event_list()
 {
 /**************************************
  *
@@ -159,7 +159,7 @@ static void event_list(void)
 }
 
 
-static void event_table_dump(void)
+static void event_table_dump()
 {
 /**************************************
  *

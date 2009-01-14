@@ -35,7 +35,7 @@ namespace Jrd {
 void ALL_print_memory_pool_info(FILE*, Jrd::Database*);
 
 #ifdef DEV_BUILD
-void ALL_check_memory(void);
+void ALL_check_memory();
 #endif
 
 #endif	// JRD_ALL_H

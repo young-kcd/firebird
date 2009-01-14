@@ -58,11 +58,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
-	if (argc > 1 && !strcmp(argv[1], "-svc")) {
+	if (argc > 1 && !strcmp(argv[1], "-svc"))
+	{
 		argv++;
 		argc--;
 	}
-	else if (argc > 4 && !strcmp(argv[1], "-svc_re")) {
+	else if (argc > 4 && !strcmp(argv[1], "-svc_re"))
+	{
 		long redir_in = atol(argv[2]);
 		long redir_out = atol(argv[3]);
 		long redir_err = atol(argv[4]);
@@ -90,13 +92,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
-	(void)setpgrp();
+	setpgrp();
 #else
-	(void)setpgrp(0, 0);
+	setpgrp(0, 0);
 #endif /* SETPGRP_VOID */
 #else
 #ifdef HAVE_SETPGID
-	(void)setpgid(0, 0);
+	setpgid(0, 0);
 #endif /* HAVE_SETPGID */
 #endif /* HAVE_SETPGRP */
 
@@ -106,21 +108,23 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	const TEXT* sw_database = "";
 
-	for (TEXT** end = argv++ + argc; argv < end;) {
+	for (TEXT** end = argv++ + argc; argv < end;)
+	{
 		TEXT* p = *argv++;
 		if (*p != '-')
 			sw_database = p;
-		else {
+		else
+		{
 			TEXT c;
 			while (c = *++p)
-				switch (UPPER(c)) {
+				switch (UPPER(c))
+				{
 				case 'D':
 					sw_database = *argv++;
 					break;
 
 				case 'Z':
-					printf("Shared cache manager version %s\n",
-							  GDS_VERSION);
+					printf("Shared cache manager version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
 		}

@@ -1206,7 +1206,7 @@ static int raw_devices_unlink_database(const PathName& file_name)
 	}
 
 	//if (desc != -1) perhaps it's better to check this???
-		(void)close(desc);
+		close(desc);
 
 #if DEV_BUILD
 	gds__log ("raw_devices_unlink_database: %s -> %s\n",

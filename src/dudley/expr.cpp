@@ -36,19 +36,19 @@
 static CON make_numeric_constant(const TEXT*, USHORT);
 static DUDLEY_NOD parse_add(USHORT *, bool *);
 static DUDLEY_NOD parse_and(USHORT *);
-static DUDLEY_NOD parse_field(void);
+static DUDLEY_NOD parse_field();
 static DUDLEY_NOD parse_from(USHORT *, bool *);
-static DUDLEY_NOD parse_function(void);
-static DUDLEY_NOD parse_gen_id(void);
-static CON parse_literal(void);
-static void parse_matching_paren(void);
+static DUDLEY_NOD parse_function();
+static DUDLEY_NOD parse_gen_id();
+static CON parse_literal();
+static void parse_matching_paren();
 static DUDLEY_NOD parse_multiply(USHORT *, bool *);
 static DUDLEY_NOD parse_not(USHORT *);
 static DUDLEY_NOD parse_primitive_value(USHORT *, bool *);
-static DUDLEY_CTX parse_relation(void);
+static DUDLEY_CTX parse_relation();
 static DUDLEY_NOD parse_relational(USHORT *);
-static DUDLEY_NOD parse_sort(void);
-static DUDLEY_NOD parse_statistical(void);
+static DUDLEY_NOD parse_sort();
+static DUDLEY_NOD parse_statistical();
 static void parse_terminating_parens(USHORT *, USHORT *);
 
 static struct nod_types {
@@ -198,7 +198,7 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 }
 
 
-DUDLEY_NOD EXPR_statement(void)
+DUDLEY_NOD EXPR_statement()
 {
 /**************************************
  *
@@ -476,7 +476,7 @@ static DUDLEY_NOD parse_and( USHORT * paren_count)
 }
 
 
-static DUDLEY_NOD parse_field(void)
+static DUDLEY_NOD parse_field()
 {
 /**************************************
  *
@@ -563,7 +563,7 @@ static DUDLEY_NOD parse_from(USHORT * paren_count,
 }
 
 
-static DUDLEY_NOD parse_function(void)
+static DUDLEY_NOD parse_function()
 {
 /**************************************
  *
@@ -610,7 +610,7 @@ static DUDLEY_NOD parse_function(void)
 }
 
 
-static DUDLEY_NOD parse_gen_id(void)
+static DUDLEY_NOD parse_gen_id()
 {
 /**************************************
  *
@@ -642,7 +642,7 @@ static DUDLEY_NOD parse_gen_id(void)
 }
 
 
-static CON parse_literal(void)
+static CON parse_literal()
 {
 /**************************************
  *
@@ -687,7 +687,7 @@ static CON parse_literal(void)
 }
 
 
-static void parse_matching_paren(void)
+static void parse_matching_paren()
 {
 /**************************************
  *
@@ -863,7 +863,7 @@ static DUDLEY_NOD parse_primitive_value(USHORT * paren_count,
 }
 
 
-static DUDLEY_CTX parse_relation(void)
+static DUDLEY_CTX parse_relation()
 {
 /**************************************
  *
@@ -1064,7 +1064,7 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 }
 
 
-static DUDLEY_NOD parse_sort(void)
+static DUDLEY_NOD parse_sort()
 {
 /**************************************
  *
@@ -1098,7 +1098,7 @@ static DUDLEY_NOD parse_sort(void)
 }
 
 
-static DUDLEY_NOD parse_statistical(void)
+static DUDLEY_NOD parse_statistical()
 {
 /**************************************
  *

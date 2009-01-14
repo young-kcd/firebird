@@ -57,10 +57,10 @@ enum formatStyle
 };
 
 
-//static void build_codes_h(void);
-static void build_iberror_h(void);
-static void build_other_headers(void);
-static void build_msgfac_h(void);
+//static void build_codes_h();
+static void build_iberror_h();
+static void build_other_headers();
+static void build_msgfac_h();
 static void move_if_not_identical(const char *, const char *, const char*);
 static void add_text(FILE*, formatStyle, const char**);
 
@@ -312,7 +312,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 }
 
 
-static void build_msgfac_h(void)
+static void build_msgfac_h()
 {
 /*******************************************
 *
@@ -361,7 +361,7 @@ static void build_msgfac_h(void)
 	check_close(msgfac, MSGFAC_H, "tmpcode1", "w", genDirectory);
 }
 
-static void build_iberror_h(void)
+static void build_iberror_h()
 {
 /*******************************************
 *
@@ -485,7 +485,7 @@ static void build_iberror_h(void)
 }
 
 
-//static void build_codes_h(void)
+//static void build_codes_h()
 //{
 ///*******************************************
 //*
@@ -668,7 +668,7 @@ static void build_iberror_h(void)
 //}
 
 
-static void build_other_headers(void)
+static void build_other_headers()
 {
 /********************************************
 *

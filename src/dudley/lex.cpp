@@ -44,9 +44,9 @@
 
 const char* SCRATCH = "fb_query_";
 
-static int nextchar(void);
+static int nextchar();
 static void retchar(SSHORT);
-static int skip_white(void);
+static int skip_white();
 
 /* Input line control */
 
@@ -107,7 +107,7 @@ inline SCHAR classes(UCHAR idx)
 
 
 
-TOK LEX_filename(void)
+TOK LEX_filename()
 {
 /**************************************
  *
@@ -145,7 +145,7 @@ TOK LEX_filename(void)
 }
 
 
-void LEX_fini(void)
+void LEX_fini()
 {
 /**************************************
  *
@@ -165,7 +165,7 @@ void LEX_fini(void)
 }
 
 
-void LEX_flush(void)
+void LEX_flush()
 {
 /**************************************
  *
@@ -296,7 +296,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 }
 
 
-void LEX_real(void)
+void LEX_real()
 {
 /**************************************
  *
@@ -316,7 +316,7 @@ void LEX_real(void)
 }
 
 
-TOK LEX_token(void)
+TOK LEX_token()
 {
 /**************************************
  *
@@ -407,7 +407,7 @@ TOK LEX_token(void)
 }
 
 
-static int nextchar(void)
+static int nextchar()
 {
 /**************************************
  *
@@ -504,7 +504,7 @@ static void retchar( SSHORT c)
 }
 
 
-static int skip_white(void)
+static int skip_white()
 {
 /**************************************
  *

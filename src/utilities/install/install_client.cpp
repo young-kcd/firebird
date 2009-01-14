@@ -36,7 +36,7 @@
 #include "../utilities/install/install_proto.h"
 
 static USHORT inst_error(ULONG, const TEXT *);
-static void usage_exit(void);
+static void usage_exit();
 
 static const struct
 {
@@ -311,7 +311,7 @@ static USHORT inst_error(ULONG status, const TEXT * string)
 	return FB_FAILURE;
 }
 
-static void usage_exit(void)
+static void usage_exit()
 {
 /**************************************
  *

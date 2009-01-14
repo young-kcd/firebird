@@ -91,7 +91,7 @@ static void overflow_handler(int, int);
 
 ULONG isc_enter_count = 0;
 
-void ISC_enter(void)
+void ISC_enter()
 {
 /**************************************
  *
@@ -112,12 +112,12 @@ void ISC_enter(void)
 #ifdef DEBUG_FPE_HANDLING
 /* Debug code to simulate an FPE occuring during DB Operation */
 	if (overflow_count < 100)
-		(void) kill(getpid(), SIGFPE);
+		kill(getpid(), SIGFPE);
 #endif
 }
 
 
-void ISC_exit(void)
+void ISC_exit()
 {
 /**************************************
  *
@@ -195,7 +195,7 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	return (SetEvent(opn_event->opn_event_lhandle)) ? 0 : -1;
 }
 
-void ISC_signal_init(void)
+void ISC_signal_init()
 {
 /**************************************
  *

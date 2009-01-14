@@ -54,30 +54,30 @@ struct view {
 
 static void binary_to_ascii(SLONG, SSHORT, TEXT *);
 static void decompile_blr_literal(const SCHAR*);
-static void extract_acls(void);
+static void extract_acls();
 static void extract_computed(const TEXT*, bool);
 static void extract_database(const TEXT*);
-static void extract_fields(void);
-static void extract_filters(void);
-static void extract_functions(void);
+static void extract_fields();
+static void extract_filters();
+static void extract_functions();
 static void extract_func_args(const TEXT *);
-static void extract_generators(void);
+static void extract_generators();
 static void extract_grants(const TEXT *);
-static void extract_indexes(void);
-static void extract_relations(void);
+static void extract_indexes();
+static void extract_relations();
 static void extract_rfr(const TEXT*);
-static void extract_security(void);
-static void extract_triggers(void);
+static void extract_security();
+static void extract_triggers();
 static void extract_trig_msgs(const TEXT *);
 static void extract_view(const TEXT*, ISC_QUAD*, ISC_QUAD*, bool, bool, bool, bool*);
-static void extract_views(void);
+static void extract_views();
 static void field_attributes(ISC_QUAD*, const TEXT*, ISC_QUAD*, const TEXT*, SSHORT);
 static void format_acl(const SCHAR *);
 static char name_trunc(const TEXT *, TEXT *);
 static void print_blob(ISC_QUAD*, TEXT);
 static void put_comment(USHORT);
 static void put_error(USHORT, const TEXT*);
-static void set_capabilities(void);
+static void set_capabilities();
 static void type_scalar(USHORT, SSHORT, USHORT, SSHORT, USHORT, const TEXT*);
 static void view_fields(const TEXT*);
 
@@ -135,7 +135,7 @@ static const rfr_tab_t rfr_table[] = {
 };
 
 
-void DDL_ext(void)
+void DDL_ext()
 {
 /**************************************
  *
@@ -326,7 +326,7 @@ static void decompile_blr_literal(const SCHAR* string)
 }
 
 
-static void extract_acls(void)
+static void extract_acls()
 {
 /**************************************
  *
@@ -671,7 +671,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 }
 
 
-static void extract_fields(void)
+static void extract_fields()
 {
 /**************************************
  *
@@ -763,7 +763,7 @@ static void extract_fields(void)
 }
 
 
-static void extract_filters(void)
+static void extract_filters()
 {
 /**************************************
  *
@@ -803,7 +803,7 @@ static void extract_filters(void)
 }
 
 
-static void extract_functions(void)
+static void extract_functions()
 {
 /**************************************
  *
@@ -902,7 +902,7 @@ static void extract_func_args(const TEXT * function_name)
 }
 
 
-static void extract_generators(void)
+static void extract_generators()
 {
 /**************************************
  *
@@ -1041,7 +1041,7 @@ static void extract_grants(const TEXT * relname)
 }
 
 
-static void extract_indexes(void)
+static void extract_indexes()
 {
 /**************************************
  *
@@ -1112,7 +1112,7 @@ static void extract_indexes(void)
 }
 
 
-static void extract_relations(void)
+static void extract_relations()
 {
 /**************************************
  *
@@ -1229,7 +1229,7 @@ static void extract_rfr(const TEXT * relation_name)
 }
 
 
-static void extract_security(void)
+static void extract_security()
 {
 /**************************************
  *
@@ -1319,7 +1319,7 @@ static void extract_security(void)
 }
 
 
-static void extract_triggers(void)
+static void extract_triggers()
 {
 /**************************************
  *
@@ -1489,7 +1489,7 @@ static void extract_view(const TEXT * rel_name,
 }
 
 
-static void extract_views(void)
+static void extract_views()
 {
 /**************************************
  *
@@ -1945,7 +1945,7 @@ static void put_error(USHORT number, const TEXT* arg1)
 }
 
 
-static void set_capabilities(void)
+static void set_capabilities()
 {
 /**************************************
  *

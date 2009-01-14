@@ -57,7 +57,7 @@ static void resolve_rse(DUDLEY_NOD, dudley_lls**);
 static SSHORT context_id;
 static dudley_lls* request_context;
 
-void EXP_actions(void)
+void EXP_actions()
 {
 /**************************************
  *

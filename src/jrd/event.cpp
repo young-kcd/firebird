@@ -74,9 +74,9 @@
 const int MAX_EVENT_BUFFER = 65500;
 
 
-static EVH acquire(void);
+static EVH acquire();
 static FRB alloc_global(UCHAR type, ULONG length, bool recurse);
-static SLONG create_process(void);
+static SLONG create_process();
 static void delete_event(EVNT);
 static void delete_process(SLONG);
 static void delete_request(EVT_REQ);
@@ -92,9 +92,9 @@ static void insert_tail(srq *, srq *);
 static EVNT make_event(USHORT, const TEXT*, SLONG);
 static void mutex_bugcheck(const TEXT*, int);
 static void post_process(PRB);
-static void probe_processes(void);
+static void probe_processes();
 static void punt(const TEXT*);
-static void release(void);
+static void release();
 static void remove_que(srq *);
 static bool request_completed(EVT_REQ);
 static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM);
@@ -448,7 +448,7 @@ SLONG EVENT_que(SLONG session_id,
 }
 
 
-static EVH acquire(void)
+static EVH acquire()
 {
 /**************************************
  *
@@ -627,7 +627,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 }
 
 
-static SLONG create_process(void)
+static SLONG create_process()
 {
 /**************************************
  *
@@ -1222,7 +1222,7 @@ static void post_process(PRB process)
 }
 
 
-static void probe_processes(void)
+static void probe_processes()
 {
 /**************************************
  *
@@ -1266,7 +1266,7 @@ static void punt(const TEXT* string)
 }
 
 
-static void release(void)
+static void release()
 {
 /**************************************
  *
@@ -1336,7 +1336,7 @@ static bool request_completed(EVT_REQ request)
 
 
 #ifdef DEBUG_EVENT
-static int validate(void)
+static int validate()
 {
 /**************************************
  *

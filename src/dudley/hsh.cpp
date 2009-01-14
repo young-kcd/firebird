@@ -256,7 +256,7 @@ struct word {
 };
 
 
-void HSH_init(void)
+void HSH_init()
 {
 /**************************************
  *

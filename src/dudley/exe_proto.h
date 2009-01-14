@@ -27,7 +27,7 @@
 SLONG	EXE_check_db_version(DBB);
 void	EXE_create_database(DBB);
 void	EXE_drop_database(DBB);
-void	EXE_execute(void);
+void	EXE_execute();
 void	EXE_fini(DBB);
 void	EXE_modify_database(DBB);
 bool	EXE_relation(DUDLEY_REL);

@@ -57,7 +57,7 @@ static time_t times(struct tms*);
 using namespace Ods;
 
 static void analyse(int, const SCHAR*, const pag*, int);
-static SLONG get_long(void);
+static SLONG get_long();
 static void db_error(int);
 static void db_open(const char*, USHORT);
 static PAG db_read(SLONG);
@@ -260,7 +260,7 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 }
 
 
-static SLONG get_long(void)
+static SLONG get_long()
 {
 /**************************************
  *

@@ -107,7 +107,7 @@ static inline void put_number( STR dyn, int attribute, SSHORT number)
 static const char* const FOPEN_WRITE_TYPE	= "w";
 
 
-void TRN_translate(void)
+void TRN_translate()
 {
 /**************************************
  *

@@ -124,7 +124,7 @@ SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
 
 // 14-June-2004. Nickolay Samofatov. The routines below are not part of the
 // API and are not exported. Maybe use another prefix like GDS_ for them?
-void	gds__cleanup(void);
+void	gds__cleanup();
 void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 
 void	gds__default_printer(void*, SSHORT, const TEXT*);

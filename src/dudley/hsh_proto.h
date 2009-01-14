@@ -24,7 +24,7 @@
 #ifndef DUDLEY_HSH_PROTO_H
 #define DUDLEY_HSH_PROTO_H
 
-void	HSH_init(void);
+void	HSH_init();
 void	HSH_insert(SYM);
 SYM		HSH_lookup(const SCHAR*, USHORT);
 void	HSH_remove(SYM);

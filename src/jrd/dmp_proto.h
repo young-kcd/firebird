@@ -28,11 +28,11 @@ namespace Ods {
 	struct pag;
 }
 
-void DMP_active(void);
-void DMP_btc(void);
-void DMP_btc_errors(void);
-void DMP_btc_ordered(void);
-void DMP_dirty(void);
+void DMP_active();
+void DMP_btc();
+void DMP_btc_errors();
+void DMP_btc_ordered();
+void DMP_dirty();
 void DMP_page(SLONG, USHORT);
 void DMP_fetched_page(const struct Ods::pag*, ULONG, ULONG, USHORT);
 

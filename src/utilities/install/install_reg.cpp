@@ -31,7 +31,7 @@
 #include "../utilities/install/regis_proto.h"
 
 static USHORT reg_error(SLONG, const TEXT*, HKEY);
-static void usage_exit(void);
+static void usage_exit();
 
 static const struct
 {
@@ -106,7 +106,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			switch (UPPER(*p))
 			{
 				case 'Z':
-				sw_version = true;
+					sw_version = true;
 					break;
 
 				default:
@@ -199,7 +199,7 @@ static USHORT reg_error( SLONG status, const TEXT* string, HKEY hkey)
 	return FB_FAILURE;
 }
 
-static void usage_exit(void)
+static void usage_exit()
 {
 /**************************************
  *

@@ -91,76 +91,76 @@ static bool check_filename(SYM, bool);
 static SYM copy_symbol(SYM);
 static DUDLEY_FLD create_global_field(DUDLEY_FLD);
 #ifdef FLINT_CACHE
-static FIL define_cache(void);
+static FIL define_cache();
 #endif
 static void define_database(enum act_t);
-static void define_field(void);
-static FIL define_file(void);
-static void define_filter(void);
-static void define_function(void);
-static void define_generator(void);
-static void define_index(void);
+static void define_field();
+static FIL define_file();
+static void define_filter();
+static void define_function();
+static void define_generator();
+static void define_index();
 //static FIL define_log_file(USHORT);
-static void define_old_trigger(void);
-static void define_relation(void);
-static void define_security_class(void);
-static void define_shadow(void);
-static void define_trigger(void);
-static void define_type(void);
-static void define_view(void);
-static void drop_filter(void);
-static void drop_function(void);
-static void drop_gfield(void);
-static void drop_index(void);
-static void drop_relation(void);
-static void drop_security_class(void);
-static void drop_shadow(void);
-static void drop_trigger(void);
-static void drop_type(void);
+static void define_old_trigger();
+static void define_relation();
+static void define_security_class();
+static void define_shadow();
+static void define_trigger();
+static void define_type();
+static void define_view();
+static void drop_filter();
+static void drop_function();
+static void drop_gfield();
+static void drop_index();
+static void drop_relation();
+static void drop_security_class();
+static void drop_shadow();
+static void drop_trigger();
+static void drop_type();
 static void end_text(TXT);
 static SYM gen_trigger_name(TRG_T, DUDLEY_REL);
-static int get_system_flag(void);
+static int get_system_flag();
 static void get_trigger_attributes(int *, int *, int *);
-static void grant_user_privilege(void);
+static void grant_user_privilege();
 static DUDLEY_CTX lookup_context(SYM, dudley_lls*);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static ACT make_action(enum act_t, DBB);
 static ACT make_computed_field(DUDLEY_FLD);
 static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL);
 static ACT make_global_field(DUDLEY_FLD);
-static void mod_old_trigger(void);
-static void modify_field(void);
-static void modify_index(void);
-static void modify_relation(void);
-static void modify_security_class(void);
-static void modify_trigger(void);
+static void mod_old_trigger();
+static void modify_field();
+static void modify_index();
+static void modify_relation();
+static void modify_security_class();
+static void modify_trigger();
 static void modify_trigger_action(DUDLEY_TRG, DUDLEY_REL);
-static void modify_type(void);
-static void modify_view(void);
-static bool parse_action(void);
+static void modify_type();
+static void modify_view();
+static bool parse_action();
 static void parse_array(DUDLEY_FLD);
-static TXT parse_description(void);
-static void parse_end(void);
+static TXT parse_description();
+static void parse_end();
 static DUDLEY_FLD parse_field(DUDLEY_FLD);
 static void parse_field_clauses(DUDLEY_FLD);
 static void parse_field_dtype(DUDLEY_FLD);
 static void parse_field_subtype(DUDLEY_FLD);
 static FUNCARG parse_function_arg(FUNC, USHORT *);
-static SCE parse_identifier(void);
-static OBJ_T parse_object(void);
-static int parse_page_size(void);
-static SLONG parse_privileges(void);
-static void revoke_user_privilege(void);
+static SCE parse_identifier();
+static OBJ_T parse_object();
+static int parse_page_size();
+static SLONG parse_privileges();
+static void revoke_user_privilege();
 static SLONG score_entry(SCE);
-static DUDLEY_NOD set_generator(void);
+static DUDLEY_NOD set_generator();
 static void sort_out_attributes(DUDLEY_TRG, SLONG, SLONG, SLONG);
-static TXT start_text(void);
+static TXT start_text();
 static void validate_field(DUDLEY_FLD);
 
 static dudley_lls* local_context;
 
 
-void PARSE_actions(void)
+void PARSE_actions()
 {
 /**************************************
  *
@@ -277,7 +277,7 @@ FUNC PARSE_function(int existingFunction)
 }
 
 
-enum kwwords PARSE_keyword(void)
+enum kwwords PARSE_keyword()
 {
 /**************************************
  *
@@ -379,7 +379,7 @@ bool PARSE_match( enum kwwords keyword)
 }
 
 
-int PARSE_number(void)
+int PARSE_number()
 {
 /**************************************
  *
@@ -406,7 +406,7 @@ int PARSE_number(void)
 }
 
 
-DUDLEY_REL PARSE_relation(void)
+DUDLEY_REL PARSE_relation()
 {
 /**************************************
  *
@@ -631,7 +631,7 @@ static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
 }
 
 #ifdef FLINT_CACHE
-static FIL define_cache(void)
+static FIL define_cache()
 {
 /**************************************
  *
@@ -830,7 +830,7 @@ static void define_database( enum act_t action_type)
 }
 
 
-static void define_field(void)
+static void define_field()
 {
 /**************************************
  *
@@ -858,7 +858,7 @@ static void define_field(void)
 }
 
 
-static FIL define_file(void)
+static FIL define_file()
 {
 /**************************************
  *
@@ -893,7 +893,7 @@ static FIL define_file(void)
 }
 
 
-static void define_filter(void)
+static void define_filter()
 {
 /**************************************
  *
@@ -939,7 +939,7 @@ static void define_filter(void)
 }
 
 
-static void define_function(void)
+static void define_function()
 {
 /**************************************
  *
@@ -995,7 +995,7 @@ static void define_function(void)
 }
 
 
-static void define_generator(void)
+static void define_generator()
 {
 /**************************************
  *
@@ -1016,7 +1016,7 @@ static void define_generator(void)
 }
 
 
-static void define_index(void)
+static void define_index()
 {
 /**************************************
  *
@@ -1135,7 +1135,7 @@ static FIL define_log_file( USHORT log_type)
 */
 
 
-static void define_old_trigger(void)
+static void define_old_trigger()
 {
 /**************************************
  *
@@ -1186,7 +1186,7 @@ static void define_old_trigger(void)
 }
 
 
-static void define_relation(void)
+static void define_relation()
 {
 /**************************************
  *
@@ -1286,7 +1286,7 @@ static void define_relation(void)
 }
 
 
-static void define_security_class(void)
+static void define_security_class()
 {
 /**************************************
  *
@@ -1323,7 +1323,7 @@ static void define_security_class(void)
 }
 
 
-static void define_shadow(void)
+static void define_shadow()
 {
 /**************************************
  *
@@ -1390,7 +1390,7 @@ static void define_shadow(void)
 }
 
 
-static void define_trigger(void)
+static void define_trigger()
 {
 /**************************************
  *
@@ -1476,7 +1476,7 @@ static void define_trigger(void)
 }
 
 
-static void define_type(void)
+static void define_type()
 {
 /**************************************
  *
@@ -1508,7 +1508,7 @@ static void define_type(void)
 }
 
 
-static void define_view(void)
+static void define_view()
 {
 /**************************************
  *
@@ -1654,7 +1654,7 @@ static void define_view(void)
 }
 
 
-static void drop_filter(void)
+static void drop_filter()
 {
 /**************************************
  *
@@ -1674,7 +1674,7 @@ static void drop_filter(void)
 }
 
 
-static void drop_function(void)
+static void drop_function()
 {
 /**************************************
  *
@@ -1694,7 +1694,7 @@ static void drop_function(void)
 }
 
 
-static void drop_gfield(void)
+static void drop_gfield()
 {
 /**************************************
  *
@@ -1714,7 +1714,7 @@ static void drop_gfield(void)
 }
 
 
-static void drop_index(void)
+static void drop_index()
 {
 /**************************************
  *
@@ -1734,7 +1734,7 @@ static void drop_index(void)
 }
 
 
-static void drop_relation(void)
+static void drop_relation()
 {
 /**************************************
  *
@@ -1758,7 +1758,7 @@ static void drop_relation(void)
 }
 
 
-static void drop_security_class(void)
+static void drop_security_class()
 {
 /**************************************
  *
@@ -1778,7 +1778,7 @@ static void drop_security_class(void)
 }
 
 
-static void drop_shadow(void)
+static void drop_shadow()
 {
 /**************************************
  *
@@ -1797,7 +1797,7 @@ static void drop_shadow(void)
 }
 
 
-static void drop_trigger(void)
+static void drop_trigger()
 {
 /**************************************
  *
@@ -1839,7 +1839,7 @@ static void drop_trigger(void)
 }
 
 
-static void drop_type(void)
+static void drop_type()
 {
 /**************************************
  *
@@ -1953,7 +1953,7 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
 }
 
 
-static int get_system_flag(void)
+static int get_system_flag()
 {
 /**************************************
  *
@@ -2047,7 +2047,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 }
 
 
-static void grant_user_privilege(void)
+static void grant_user_privilege()
 {
 /**************************************
  *
@@ -2342,7 +2342,7 @@ static ACT make_global_field( DUDLEY_FLD field)
 }
 
 
-static void mod_old_trigger(void)
+static void mod_old_trigger()
 {
 /**************************************
  *
@@ -2380,7 +2380,7 @@ static void mod_old_trigger(void)
 }
 
 
-static void modify_field(void)
+static void modify_field()
 {
 /**************************************
  *
@@ -2425,7 +2425,7 @@ static void modify_field(void)
 }
 
 
-static void modify_index(void)
+static void modify_index()
 {
 /**************************************
  *
@@ -2486,7 +2486,7 @@ static void modify_index(void)
 }
 
 
-static void modify_relation(void)
+static void modify_relation()
 {
 /**************************************
  *
@@ -2612,7 +2612,7 @@ static void modify_relation(void)
 }
 
 
-static void modify_security_class(void)
+static void modify_security_class()
 {
 /**************************************
  *
@@ -2655,7 +2655,7 @@ static void modify_security_class(void)
 }
 
 
-static void modify_trigger(void)
+static void modify_trigger()
 {
 /**************************************
  *
@@ -2774,7 +2774,7 @@ static void modify_trigger_action( DUDLEY_TRG trigger, DUDLEY_REL relation)
 }
 
 
-static void modify_type(void)
+static void modify_type()
 {
 /**************************************
  *
@@ -2804,7 +2804,7 @@ static void modify_type(void)
 }
 
 
-static void modify_view(void)
+static void modify_view()
 {
 /**************************************
  *
@@ -2896,7 +2896,7 @@ static void modify_view(void)
 }
 
 
-static bool parse_action(void)
+static bool parse_action()
 {
 /**************************************
  *
@@ -3137,7 +3137,7 @@ static void parse_array( DUDLEY_FLD field)
 }
 
 
-static TXT parse_description(void)
+static TXT parse_description()
 {
 /**************************************
  *
@@ -3168,7 +3168,7 @@ static TXT parse_description(void)
 }
 
 
-static void parse_end(void)
+static void parse_end()
 {
 /**************************************
  *
@@ -3598,7 +3598,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 }
 
 
-static SCE parse_identifier(void)
+static SCE parse_identifier()
 {
 /**************************************
  *
@@ -3714,7 +3714,7 @@ static SCE parse_identifier(void)
 }
 
 
-static OBJ_T parse_object(void)
+static OBJ_T parse_object()
 {
 /**************************************
  *
@@ -3772,7 +3772,7 @@ static OBJ_T parse_object(void)
 }
 
 
-static int parse_page_size(void)
+static int parse_page_size()
 {
 /**************************************
  *
@@ -3809,7 +3809,7 @@ static int parse_page_size(void)
 }
 
 
-static SLONG parse_privileges(void)
+static SLONG parse_privileges()
 {
 /**************************************
  *
@@ -3869,7 +3869,7 @@ static SLONG parse_privileges(void)
 }
 
 
-static void revoke_user_privilege(void)
+static void revoke_user_privilege()
 {
 /**************************************
  *
@@ -3990,7 +3990,7 @@ static SLONG score_entry( SCE element)
 }
 
 
-static DUDLEY_NOD set_generator(void)
+static DUDLEY_NOD set_generator()
 {
 /**************************************
  *
@@ -4087,7 +4087,7 @@ static void sort_out_attributes(
 }
 
 
-static TXT start_text(void)
+static TXT start_text()
 {
 /**************************************
  *

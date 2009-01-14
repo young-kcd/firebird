@@ -736,8 +736,8 @@ static ISC_STATUS prepare(ISC_STATUS *, Transaction*);
 static void release_dsql_support(sqlda_sup&);
 static void save_error_string(ISC_STATUS *);
 static bool set_path(const PathName&, PathName&);
-static void subsystem_enter(void) throw();
-static void subsystem_exit(void) throw();
+static void subsystem_enter() throw();
+static void subsystem_exit() throw();
 
 GlobalPtr<Semaphore> why_sem;
 static bool why_initialized = false;
@@ -5758,7 +5758,7 @@ static bool set_path(const PathName& file_name, PathName& expanded_name)
 }
 
 
-static void subsystem_enter(void) throw()
+static void subsystem_enter() throw()
 {
 /**************************************
  *
@@ -5804,7 +5804,7 @@ static void subsystem_enter(void) throw()
 }
 
 
-static void subsystem_exit(void) throw()
+static void subsystem_exit() throw()
 {
 /**************************************
  *

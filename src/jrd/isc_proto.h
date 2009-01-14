@@ -38,7 +38,7 @@ void	iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector);
 void	iscLogException(const TEXT* text, const Firebird::Exception& e);
 
 #ifdef WIN_NT
-struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
+struct _SECURITY_ATTRIBUTES* ISC_get_security_desc();
 #endif
 
 #endif // JRD_ISC_PROTO_H

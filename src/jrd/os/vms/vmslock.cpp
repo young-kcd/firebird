@@ -74,9 +74,9 @@ bool LOCK_convert(PTR lock_id,
  * Functional description
  *	Perform a lock conversion, if possible.  If the lock cannot be
  *	granted immediately, either return immediately or wait depending
- *	on a wait flag.  If the lock is granted return TRUE, otherwise
- *	return FALSE.  Note: if the conversion would cause a deadlock,
- *	FALSE is returned even if wait was requested.
+ *	on a wait flag.  If the lock is granted return true, otherwise
+ *	return false.  Note: if the conversion would cause a deadlock,
+ *	false is returned even if wait was requested.
  *
  **************************************/
 	lock_status lksb;
@@ -328,11 +328,12 @@ static bool lock_error(ISC_STATUS * status_vector,
 	*status_vector++ = isc_arg_vms;
 	*status_vector++ = code;
 	*status_vector++ = 0;
-	return 0;
+	return false;
 }
 
 
-static SLONG write_data(SLONG lock_id, SLONG data) {
+static SLONG write_data(SLONG lock_id, SLONG data)
+{
 /**************************************
  *
  *	w r i t e _ d a t a

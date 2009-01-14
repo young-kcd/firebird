@@ -132,7 +132,7 @@ static const TEXT* rsb_names[] =
 };
 
 
-int DBG_all(void)
+int DBG_all()
 {
 /**************************************
  *
@@ -302,7 +302,7 @@ int DBG_analyze(int pool_id)
 }
 
 
-int DBG_bdbs(void)
+int DBG_bdbs()
 {
 /**************************************
  *
@@ -323,7 +323,7 @@ int DBG_bdbs(void)
 }
 
 
-int DBG_precedence(void)
+int DBG_precedence()
 {
 /**************************************
  *
@@ -598,7 +598,7 @@ int DBG_check(int pool_id)
 }
 
 
-int DBG_close(void)
+int DBG_close()
 {
 /**************************************
  *
@@ -651,7 +651,7 @@ int DBG_examine(int *n)
 }
 
 
-int DBG_init(void)
+int DBG_init()
 {
 /**************************************
  *
@@ -670,7 +670,7 @@ sigset  (2, &DBG_supervisor);
 }
 
 
-int DBG_open(void)
+int DBG_open()
 {
 /**************************************
  *
@@ -970,7 +970,7 @@ int DBG_smb(SortMap* smb, int column)
 }
 
 
-int DBG_verify(void)
+int DBG_verify()
 {
 /**************************************
  *
@@ -1017,7 +1017,7 @@ int DBG_window(int *window)
 }
 
 
-int DBG_memory(void)
+int DBG_memory()
 {
 /**************************************
  *
@@ -1274,7 +1274,7 @@ void yyerror(const char* string)
 }
 
 
-int yywrap(void)
+int yywrap()
 {
 /**************************************
  *

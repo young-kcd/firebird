@@ -25,8 +25,8 @@
 #define JRD_ISC_I_PROTO_H
 
 // This will install FP overflow signal handler
-void	ISC_enter(void);
-void	ISC_exit(void);
+void	ISC_enter();
+void	ISC_exit();
 
 #ifdef WIN_NT
 // This will poke event
@@ -38,6 +38,6 @@ bool	ISC_signal(int, FPTR_VOID_PTR, void *);
 void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
 #endif
 
-void	ISC_signal_init(void);
+void	ISC_signal_init();
 
 #endif // JRD_ISC_I_PROTO_H

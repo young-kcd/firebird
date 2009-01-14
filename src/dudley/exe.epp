@@ -94,7 +94,7 @@ static void drop_type(TYP);
 static void drop_user_privilege(USERPRIV);
 static void erase_userpriv(USERPRIV, TEXT *, USRE, UPFE);
 static void get_field_desc(DUDLEY_FLD);
-static void get_global_fields(void);
+static void get_global_fields();
 static void get_relations(DBB);
 static USHORT get_prot_mask(const TEXT *, TEXT *);
 static SYM get_symbol(enum sym_t, TEXT *, DUDLEY_CTX);
@@ -416,7 +416,7 @@ void EXE_drop_database( DBB dbb)
 }
 
 
-void EXE_execute(void)
+void EXE_execute()
 {
 /**************************************
  *
@@ -2784,7 +2784,7 @@ static void get_field_desc( DUDLEY_FLD field)
 }
 
 
-static void get_global_fields(void)
+static void get_global_fields()
 {
 /**************************************
  *

@@ -110,7 +110,7 @@ void THD_sleep(ULONG milliseconds)
 }
 
 
-void THD_yield(void)
+void THD_yield()
 {
 /**************************************
  *

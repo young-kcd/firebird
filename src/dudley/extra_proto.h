@@ -24,7 +24,7 @@
 #ifndef DUDLEY_EXTRA_PROTO_H
 #define DUDLEY_EXTRA_PROTO_H
 
-void DDL_ext(void);
+void DDL_ext();
 
 #endif // DUDLEY_EXTRA_PROTO_H
 

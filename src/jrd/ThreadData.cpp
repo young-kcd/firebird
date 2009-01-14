@@ -67,7 +67,7 @@ TLS_DECLARE (ThreadData*, tData);
 }
 
 
-ThreadData* ThreadData::getSpecific(void)
+ThreadData* ThreadData::getSpecific()
 {
 /**************************************
  *

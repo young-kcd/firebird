@@ -58,7 +58,7 @@ Currently defined subfunctions, and expected parameters, are:
 	Tests that the mechanism is working properly.
   	returns 2*arg1;
 
-   1	QATEST_delete_database (void)
+   1	QATEST_delete_database ()
 
 	Deletes the current database file.
 	Returns 0 on success
@@ -71,7 +71,7 @@ Currently defined subfunctions, and expected parameters, are:
 	Returns -1 if shadowing not enabled
 	Returns -2 if shadow #arg1 not found.
 
- 999	QATEST_exit (void)
+ 999	QATEST_exit ()
 
 	Performs exit() on the server.
 	Note that this will crash an NLM server - and is not suitable

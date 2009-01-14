@@ -111,7 +111,7 @@ static void delete_event(EVNT);
 static void delete_request(VMS_REQ);
 static void deliver(EVNT);
 static void deliver_request(VMS_REQ);
-static void delivery_thread(void);
+static void delivery_thread();
 static ISC_STATUS error(ISC_STATUS *, TEXT *, ISC_STATUS);
 static EVNT find_event(USHORT, const TEXT*, EVNT);
 static void free(SCHAR *);
@@ -680,7 +680,7 @@ static void deliver_request(VMS_REQ request)
 }
 
 
-static void delivery_thread(void)
+static void delivery_thread()
 {
 /**************************************
  *
@@ -709,7 +709,7 @@ static void delivery_thread(void)
 }
 
 
-static int delivery_wait(void)
+static int delivery_wait()
 {
 /**************************************
  *

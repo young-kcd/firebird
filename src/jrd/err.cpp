@@ -469,7 +469,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 }
 
 
-void ERR_punt(void)
+void ERR_punt()
 {
 /**************************************
  *

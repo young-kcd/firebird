@@ -320,7 +320,7 @@ bool DYN_is_it_sql_role(Global* gbl,
 }
 
 
-void DYN_unsupported_verb(void)
+void DYN_unsupported_verb()
 {
 /**************************************
  *

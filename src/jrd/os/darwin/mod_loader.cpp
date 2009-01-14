@@ -129,8 +129,8 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 	NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
 	if (initSym != NULL)
 	{
-		void (*init)(void);
-		init = ( void (*)(void)) NSAddressOfSymbol(initSym);
+		void (*init)();
+		init = ( void (*)()) NSAddressOfSymbol(initSym);
 		init();
 	}
 

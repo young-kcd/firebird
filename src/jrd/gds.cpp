@@ -197,7 +197,7 @@ static SLONG	blr_print_line(gds_ctl*, SSHORT);
 static void		blr_print_verb(gds_ctl*, SSHORT);
 static int		blr_print_word(gds_ctl*);
 
-static void		init(void);
+static void		init();
 static void		sanitize(Firebird::string& locale);
 
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
@@ -3447,7 +3447,7 @@ void gds__cleanup()
 	}
 }
 
-static void init(void)
+static void init()
 {
 /**************************************
  *

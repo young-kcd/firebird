@@ -26,7 +26,7 @@
 
 DUDLEY_NOD	EXPR_boolean(USHORT*);
 DUDLEY_NOD	EXPR_rse(bool);
-DUDLEY_NOD	EXPR_statement(void);
+DUDLEY_NOD	EXPR_statement();
 DUDLEY_NOD	EXPR_value(USHORT*, bool*);
 
 #endif // DUDLEY_EXPR_PROTO_H

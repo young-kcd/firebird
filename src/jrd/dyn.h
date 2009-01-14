@@ -112,7 +112,7 @@ USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
 
-void	DYN_unsupported_verb(void);
+void	DYN_unsupported_verb();
 
 #endif // JRD_DYN_H
 

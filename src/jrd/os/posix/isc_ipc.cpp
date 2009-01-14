@@ -84,7 +84,7 @@
 
 //#define LOCAL_SEMAPHORES 4
 
-struct sig 
+struct sig
 {
 	struct sig* sig_next;
 	int sig_signal;
@@ -136,7 +136,7 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 #define SIG_HOLD	SIG_DFL
 #endif
 
-void ISC_enter(void)
+void ISC_enter()
 {
 /**************************************
  *
@@ -157,11 +157,11 @@ void ISC_enter(void)
 #ifdef DEBUG_FPE_HANDLING
 /* Debug code to simulate an FPE occuring during DB Operation */
 	if (overflow_count < 100)
-		(void) kill(getpid(), SIGFPE);
+		kill(getpid(), SIGFPE);
 #endif
 }
 
-void ISC_exit(void)
+void ISC_exit()
 {
 /**************************************
  *
@@ -372,7 +372,7 @@ void ISC_signal_cancel(
 }
 
 
-void ISC_signal_init(void)
+void ISC_signal_init()
 {
 /**************************************
  *

@@ -86,14 +86,14 @@ private:
 		PathName key, PathName next);
 protected:
 	// Clear allocated memory and reinitialize
-	void clear(void)
+	void clear()
 	{
 		((inherited*) this)->clear();
 		mode = NotInitialized;
 	}
 	// Used for various configuration parameters -
 	// returns parameter PathName from Config Manager.
-	virtual const PathName getConfigString(void) const = 0;
+	virtual const PathName getConfigString() const = 0;
 	// Initialize loads data from Config Manager.
 	// With simple mutex add-on may be easily used to
 	// load them dynamically. Now called locally
