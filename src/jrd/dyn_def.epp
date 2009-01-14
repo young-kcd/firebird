@@ -2460,7 +2460,8 @@ void DYN_define_index(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_indices) {
 			DYN_rundown_request(request, id);
@@ -3448,7 +3449,8 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_prcs) {
 			DYN_rundown_request(request, id);
@@ -3716,7 +3718,8 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_rels) {
 			DYN_rundown_request(request, id);
@@ -3731,14 +3734,18 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 		DYN_rundown_request(request, -1);
 
-		if (id == drq_l_rel_name)
-			DYN_error_punt(true, 24);
-			/* msg 24: "STORE RDB$RELATIONS failed" */
-		else if (id == drq_l_view_rels)
-			DYN_error_punt(true, 115);
-			/* msg 115: "CREATE VIEW failed" */
-		else if (id == drq_l_rel_info2)
+		switch (id)
+		{
+		case drq_l_rel_name:
+			DYN_error_punt(true, 24); /* msg 24: "STORE RDB$RELATIONS failed" */
+			break;
+		case drq_l_view_rels:
+			DYN_error_punt(true, 115); /* msg 115: "CREATE VIEW failed" */
+			break;
+		case drq_l_rel_info2:
 			ERR_punt();
+			break;
+		}
 
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
@@ -4690,7 +4697,8 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 			DYN_REQUEST(drq_s_view_rels) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, id);

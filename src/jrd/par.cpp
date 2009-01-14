@@ -1540,13 +1540,16 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 		q = csb->csb_running;
 		dtype = CVT_get_numeric(q, l, &scale, (double *) p);
 		literal->lit_desc.dsc_dtype = dtype;
-		if (dtype == dtype_double)
+		switch (dtype)
+		{
+		case dtype_double:
 			literal->lit_desc.dsc_length = sizeof(double);
-		else if (dtype == dtype_long) {
+			break;
+		case dtype_long:
 			literal->lit_desc.dsc_length = sizeof(SLONG);
 			literal->lit_desc.dsc_scale = (SCHAR) scale;
-		}
-		else {
+			break;
+		default:
 			literal->lit_desc.dsc_length = sizeof(SINT64);
 			literal->lit_desc.dsc_scale = (SCHAR) scale;
 		}

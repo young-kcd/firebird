@@ -38,7 +38,7 @@
 static void svc_query(const char*, const char*, SC_HANDLE manager);
 static USHORT svc_query_ex(SC_HANDLE manager);
 static USHORT svc_error(SLONG, const TEXT*, SC_HANDLE);
-static void usage_exit(void);
+static void usage_exit();
 
 static const struct
 {
@@ -268,17 +268,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		// Let's grant "Logon as a Service" right to the -login user
 		switch (SERVICES_grant_logon_right(full_username, svc_error))
 		{
-			case FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED :
+			case FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED:
 				/*
 				// OM - I think it is better not to bother the admin with this message.
 				printf("The 'Logon as a Service' right was already granted to %s\n", oem_username);
 				*/
 				break;
-			case FB_SUCCESS :
+			case FB_SUCCESS:
 				printf("The 'Logon as a Service' right has been granted to %s\n", oem_username);
 				break;
-			case FB_FAILURE :
-			default :
+			case FB_FAILURE:
+			default:
 				printf("Failed granting the 'Logon as a Service' right to %s\n", oem_username);
 				exit(FINI_ERROR);
 				break;
@@ -406,9 +406,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				CloseServiceHandle(service);
 
-				status =
-					SERVICES_remove(manager, guard_service_name.c_str(),
-									guard_display_name.c_str(), svc_error);
+				status = SERVICES_remove(manager, guard_service_name.c_str(),
+										 guard_display_name.c_str(), svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -428,9 +427,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				CloseServiceHandle(service);
 
-				status2 =
-					SERVICES_remove(manager, remote_service_name.c_str(),
-									remote_display_name.c_str(), svc_error);
+				status2 = SERVICES_remove(manager, remote_service_name.c_str(),
+										  remote_display_name.c_str(), svc_error);
 
 				if (status2 == FB_SUCCESS)
 				{
@@ -457,9 +455,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				CloseServiceHandle(service);
 
-				status =
-					SERVICES_start(manager, guard_service_name.c_str(),
-								   guard_display_name.c_str(), sw_mode, svc_error);
+				status = SERVICES_start(manager, guard_service_name.c_str(),
+										guard_display_name.c_str(), sw_mode, svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -470,9 +467,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				CloseServiceHandle(service);
 
-				status =
-					SERVICES_start(manager, remote_service_name.c_str(),
-								   remote_display_name.c_str(), sw_mode, svc_error);
+				status = SERVICES_start(manager, remote_service_name.c_str(),
+										remote_display_name.c_str(), sw_mode, svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -488,9 +484,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				CloseServiceHandle(service);
 
-				status =
-					SERVICES_stop(manager, guard_service_name.c_str(),
-								  guard_display_name.c_str(), svc_error);
+				status = SERVICES_stop(manager, guard_service_name.c_str(),
+									   guard_display_name.c_str(), svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -501,9 +496,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				CloseServiceHandle(service);
 
-				status =
-					SERVICES_stop(manager, remote_service_name.c_str(),
-								  remote_display_name.c_str(), svc_error);
+				status = SERVICES_stop(manager, remote_service_name.c_str(),
+									   remote_display_name.c_str(), svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -734,7 +728,7 @@ static USHORT svc_error( SLONG status, const TEXT* string, SC_HANDLE service)
 	return FB_FAILURE;
 }
 
-static void usage_exit(void)
+static void usage_exit()
 {
 /**************************************
  *

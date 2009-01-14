@@ -90,38 +90,43 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	// Recurse thru interesting sub-nodes
 
-	if (node->nod_type == nod_procedure)
+	switch (node->nod_type)
 	{
-		const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
-		if (inputs) {
-			fb_assert(inputs->nod_type == nod_asn_list);
-			const jrd_nod* const* ptr = inputs->nod_arg;
-			for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
+	case nod_procedure:
+		{
+			const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
+			if (inputs) {
+				fb_assert(inputs->nod_type == nod_asn_list);
+				const jrd_nod* const* ptr = inputs->nod_arg;
+				for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
+				{
+					if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
+						return false;
+					}
+				}
+			}
+		}
+		break;
+	case nod_union:
+		{
+			const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
+			const jrd_nod* const* ptr = clauses->nod_arg;
+			for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
 			{
 				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
 					return false;
 				}
 			}
 		}
-	}
-	else if (node->nod_type == nod_union)
-	{
-		const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
-		const jrd_nod* const* ptr = clauses->nod_arg;
-		for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
+		break;
+	default:
 		{
-			if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
-				return false;
-			}
-		}
-	}
-	else
-	{
-		const jrd_nod* const* ptr = node->nod_arg;
-		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-		{
-			if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
-				return false;
+			const jrd_nod* const* ptr = node->nod_arg;
+			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			{
+				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
+					return false;
+				}
 			}
 		}
 	}
@@ -131,7 +136,8 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	const jrd_nod* value;
 	USHORT n;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_field:
 		n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 		if (allowOnlyCurrentStream) {

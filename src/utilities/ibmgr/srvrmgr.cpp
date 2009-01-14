@@ -488,12 +488,17 @@ static bool start_server( ibmgr_data_t* data)
 
 	TEXT *argv[5];
 	argv[0] = path;
-	if (data->suboperation == SOP_START_ONCE)
+	switch (data->suboperation)
+	{
+	case SOP_START_ONCE:
 		argv[1] = option_o;
-	else if (data->suboperation == SOP_START_SIGNORE)
+		break;
+	case SOP_START_SIGNORE:
 		argv[1] = option_s;
-	else
+		break;
+	default:
 		argv[1] = option_f;
+	}
 	argv[2] = NULL;
 	argv[3] = NULL;
 	if (data->pidfile[0]) {
@@ -511,7 +516,8 @@ static bool start_server( ibmgr_data_t* data)
 /* Accoding Sun's documentation vfork()  is not MT-safe
    while linking with libthreads, fork1 - fork one thread
 */
-	if (!(pid = fork1())) {
+	if (!(pid = fork1()))
+	{
 		if (execv(path, argv) == -1) {
 			printf("Could not create child process %s with args %s \n",
 				   path, argv[1]);
@@ -530,7 +536,8 @@ static bool start_server( ibmgr_data_t* data)
 /* Wait a little bit to let the server start
 */
 	sleep(ATTACH_PAUSE);
-	for (int retry = ATTACH_RETRY; retry; retry--) {
+	for (int retry = ATTACH_RETRY; retry; retry--)
+	{
 		sleep(ATTACH_PAUSE);
 
 		/* What we want to do here is to find out if the server has
@@ -623,7 +630,8 @@ static bool server_is_up( ibmgr_data_t* data)
 	strcat(svc_name, ":anonymous");
 	isc_service_attach(status, 0, svc_name, &svc_handle, 0, "");
 
-	if (status[0] == 1 && status[1] > 0) {
+	if (status[0] == 1 && status[1] > 0)
+	{
 #ifdef DEBUG
 		fprintf(OUTFILE, "server_is_up ERROR: %lu\n", status[1]);
 #endif

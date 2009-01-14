@@ -1890,27 +1890,34 @@ static void compute_dbkey_streams(const CompilerScratch* csb, const jrd_nod* nod
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (node->nod_type == nod_relation) {
+	switch (node->nod_type)
+	{
+	case nod_relation:
 		fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 		streams[++streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_rel_stream];
-	}
-	else if (node->nod_type == nod_union) {
-		const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
-		if (clauses->nod_type != nod_procedure) {
-			const jrd_nod* const* ptr = clauses->nod_arg;
-			for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
+		break;
+	case nod_union:
+		{
+			const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
+			if (clauses->nod_type != nod_procedure) {
+				const jrd_nod* const* ptr = clauses->nod_arg;
+				for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
+				{
+					compute_dbkey_streams(csb, *ptr, streams);
+				}
+			}
+		}
+		break;
+	case nod_rse:
+		{
+			const RecordSelExpr* rse = (RecordSelExpr*) node;
+			const jrd_nod* const* ptr = rse->rse_relation;
+			for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
 			{
 				compute_dbkey_streams(csb, *ptr, streams);
 			}
 		}
-	}
-	else if (node->nod_type == nod_rse) {
-		const RecordSelExpr* rse = (RecordSelExpr*) node;
-		const jrd_nod* const* ptr = rse->rse_relation;
-		for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
-		{
-			compute_dbkey_streams(csb, *ptr, streams);
-		}
+		break;
 	}
 }
 
@@ -2264,36 +2271,42 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 
 	Firebird::MetaName index_name;
 	// dump sub-nodes or the actual index info
-	if (node->nod_type == nod_bit_and || node->nod_type == nod_bit_or || node->nod_type == nod_bit_in)
+	switch (node->nod_type)
 	{
+	case nod_bit_and:
+	case nod_bit_or:
+	case nod_bit_in:
 		if (!dump_index(node->nod_arg[0], &buffer, buffer_length)) {
 			return false;
 		}
 		if (!dump_index(node->nod_arg[1], &buffer, buffer_length)) {
 			return false;
 		}
-	}
-	else if (node->nod_type == nod_index) {
-		IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
-		MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
-						 (USHORT) (retrieval->irb_index + 1));
+		break;
+	case nod_index:
+		{
+			IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
+			MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
+							 (USHORT) (retrieval->irb_index + 1));
 
-		SSHORT length = index_name.length();
+			SSHORT length = index_name.length();
 
-		MoveBuffer nameBuffer;
-		nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
-			CS_METADATA, tdbb->getAttachment()->att_charset));
-		length = INTL_convert_bytes(tdbb,
-			tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
-			CS_METADATA, (const BYTE*) index_name.c_str(), length, ERR_post);
+			MoveBuffer nameBuffer;
+			nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(MAX_SQL_IDENTIFIER_LEN,
+				CS_METADATA, tdbb->getAttachment()->att_charset));
+			length = INTL_convert_bytes(tdbb,
+				tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+				CS_METADATA, (const BYTE*) index_name.c_str(), length, ERR_post);
 
-		*buffer_length -= 1 + length;
-		if (*buffer_length < 0) {
-			return false;
+			*buffer_length -= 1 + length;
+			if (*buffer_length < 0) {
+				return false;
+			}
+			*buffer++ = (SCHAR) length;
+			memcpy(buffer, nameBuffer.begin(), length);
+			buffer += length;
 		}
-		*buffer++ = (SCHAR) length;
-		memcpy(buffer, nameBuffer.begin(), length);
-		buffer += length;
+		break;
 	}
 
 	*buffer_ptr = buffer;

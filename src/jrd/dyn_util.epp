@@ -369,12 +369,17 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 
 	do {
 		const SCHAR* format;
-		if (verb == isc_dyn_def_primary_key)
+		switch (verb)
+		{
+		case isc_dyn_def_primary_key:
 			format = "RDB$PRIMARY%" SQUADFORMAT;
-		else if (verb == isc_dyn_def_foreign_key)
+			break;
+		case isc_dyn_def_foreign_key:
 			format = "RDB$FOREIGN%" SQUADFORMAT;
-		else
+			break;
+		default:
 			format = "RDB$%" SQUADFORMAT;
+		}
 
 		buffer.printf(format,
 			(SINT64) DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_idx, "RDB$INDEX_NAME"));

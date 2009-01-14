@@ -508,8 +508,7 @@ static void db_error( int status)
 }
 
 
-static void dump(FILE* file,
-				 RBDB rbdb, ULONG lower, ULONG upper, UCHAR pg_type)
+static void dump(FILE* file, RBDB rbdb, ULONG lower, ULONG upper, UCHAR pg_type)
 {
 /**************************************
  *

@@ -329,16 +329,16 @@ inline SSHORT DSC_GET_COLLATE(const dsc* desc)
 	return (desc->dsc_sub_type >> 8);
 }
 
-typedef struct alt_dsc
+struct alt_dsc
 {
 	SLONG dsc_combined_type;
 	SSHORT dsc_sub_type;
 	USHORT dsc_flags;			/* Not currently used */
-} ALT_DSC;
+};
 
 inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate)
 {
-	if (((ALT_DSC*) d1)->dsc_combined_type == ((ALT_DSC*) d2)->dsc_combined_type)
+	if (((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type)
 	{
 		if (d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying) {
 			if (DSC_GET_CHARSET(d1) == DSC_GET_CHARSET(d2)) {
