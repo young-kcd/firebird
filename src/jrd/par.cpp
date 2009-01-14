@@ -2197,18 +2197,24 @@ static jrd_nod* par_relation(thread_db* tdbb,
 /* Find relation either by id or by name */
 	jrd_rel* relation = 0;
 	Firebird::string* alias_string = 0;
-	if (blr_operator == blr_rid || blr_operator == blr_rid2) {
-		const SSHORT id = BLR_WORD;
-		if (blr_operator == blr_rid2) {
-			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-			par_name(csb, *alias_string);
+	switch (blr_operator)
+	{
+	case blr_rid:
+	case blr_rid2:
+		{
+			const SSHORT id = BLR_WORD;
+			if (blr_operator == blr_rid2) {
+				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
+				par_name(csb, *alias_string);
+			}
+			if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
+				name.printf("id %d", id);
+				error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
+			}
 		}
-		if (!(relation = MET_lookup_relation_id(tdbb, id, false))) {
-			name.printf("id %d", id);
-			error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
-		}
-	}
-	else if (blr_operator == blr_relation || blr_operator == blr_relation2) {
+		break;
+	case blr_relation:
+	case blr_relation2:
 		par_name(csb, name);
 		if (blr_operator == blr_relation2) {
 			alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
@@ -2216,6 +2222,7 @@ static jrd_nod* par_relation(thread_db* tdbb,
 		}
 		if (!(relation = MET_lookup_relation(tdbb, name)))
 			error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name));
+		break;
 	}
 
 /* if an alias was passed, store with the relation */

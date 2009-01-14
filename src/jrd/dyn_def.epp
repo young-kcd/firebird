@@ -4735,8 +4735,10 @@ static void check_unique_name(thread_db* tdbb,
 
 	try
 	{
-		if (object_type == obj_relation || object_type == obj_procedure)
+		switch (object_type)
 		{
+		case obj_relation:
+		case obj_procedure:
 			request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4767,9 +4769,9 @@ static void check_unique_name(thread_db* tdbb,
 				if (!DYN_REQUEST(drq_l_prc_name))
 					DYN_REQUEST(drq_l_prc_name) = request;
 			}
-		}
-		else if (object_type == obj_index)
-		{
+			break;
+
+		case obj_index:
 			request = CMP_find_request(tdbb, drq_l_idx_name, DYN_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4783,9 +4785,9 @@ static void check_unique_name(thread_db* tdbb,
 
 			if (!DYN_REQUEST(drq_l_idx_name))
 				DYN_REQUEST(drq_l_idx_name) = request;
-		}
-		else if (object_type == obj_exception)
-		{
+			break;
+
+		case obj_exception:
 			request = CMP_find_request(tdbb, drq_l_xcp_name, DYN_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4799,9 +4801,9 @@ static void check_unique_name(thread_db* tdbb,
 
 			if (!DYN_REQUEST(drq_l_xcp_name))
 				DYN_REQUEST(drq_l_xcp_name) = request;
-		}
-		else if (object_type == obj_generator)
-		{
+			break;
+
+		case obj_generator:
 			request = CMP_find_request(tdbb, drq_l_gen_name, DYN_REQUESTS);
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -4815,9 +4817,9 @@ static void check_unique_name(thread_db* tdbb,
 
 			if (!DYN_REQUEST(drq_l_gen_name))
 				DYN_REQUEST(drq_l_gen_name) = request;
-		}
-		else
-		{
+			break;
+
+		default:
 			fb_assert(false);
 		}
 	}

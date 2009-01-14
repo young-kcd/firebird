@@ -70,8 +70,8 @@ using namespace Firebird;
    returns the relative priority of types for use when different types
    are compared.
    */
-static const BYTE compare_priority[] = 
-{ 
+static const BYTE compare_priority[] =
+{
 	dtype_unknown,				/* dtype_unknown through dtype_varying  */
 	dtype_text,					/* have their natural values stored  */
 	dtype_cstring,				/* in the table.                     */
@@ -121,7 +121,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		const UCHAR* p1 = arg1->dsc_address;
 		const UCHAR* p2 = arg2->dsc_address;
 
-		switch (arg1->dsc_dtype) {
+		switch (arg1->dsc_dtype)
+		{
 		case dtype_short:
 			if (*(SSHORT *) p1 == *(SSHORT *) p2)
 				return 0;
@@ -452,15 +453,13 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 	    /* Same blob id address? */
 		if (arg1->dsc_address == arg2->dsc_address)
 			return 0;
-		else
+
+		/* Second test for blob id, checking relation and slot. */
+		const bid* bid1 = (bid*) arg1->dsc_address;
+		const bid* bid2 = (bid*) arg2->dsc_address;
+		if (*bid1 == *bid2)
 		{
-			/* Second test for blob id, checking relation and slot. */
-			bid* bid1 = (bid*) arg1->dsc_address;
-			bid* bid2 = (bid*) arg2->dsc_address;
-			if (*bid1 == *bid2)
-			{
-				return 0;
-			}
+			return 0;
 		}
 
 		if (arg2->dsc_sub_type == isc_blob_text)
@@ -507,8 +506,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 			buffer2.getBuffer(blob2->blb_length / charSet2->minBytesPerChar() * charSet1->maxBytesPerChar());
 		}
 
-		while (ret_val == 0 &&
-			   !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
+		while (ret_val == 0 && !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
 			l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
@@ -616,10 +614,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string)
 }
 
 
-USHORT CVT2_make_string2(const dsc* desc,
-						 USHORT to_interp,
-						 UCHAR** address,
-						 Jrd::MoveBuffer& temp)
+USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd::MoveBuffer& temp)
 {
 /**************************************
  *
@@ -640,28 +635,32 @@ USHORT CVT2_make_string2(const dsc* desc,
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
 
-	if (desc->dsc_dtype == dtype_text) {
+	switch (desc->dsc_dtype)
+	{
+	case dtype_text:
 		from_buf = desc->dsc_address;
 		from_len = desc->dsc_length;
 		from_interp = INTL_TTYPE(desc);
-	}
+		break;
 
-	else if (desc->dsc_dtype == dtype_cstring) {
+	case dtype_cstring:
 		from_buf = desc->dsc_address;
-		from_len = MIN(strlen((char *) desc->dsc_address), \
-					   (unsigned) (desc->dsc_length - 1));
+		from_len = MIN(strlen((char *) desc->dsc_address), (unsigned) (desc->dsc_length - 1));
 		from_interp = INTL_TTYPE(desc);
+		break;
+
+	case dtype_varying:
+		{
+			vary* varying = (vary*) desc->dsc_address;
+			from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
+			from_len = MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(SSHORT)));
+			from_interp = INTL_TTYPE(desc);
+		}
+		break;
 	}
 
-	else if (desc->dsc_dtype == dtype_varying) {
-		vary* varying = (vary*) desc->dsc_address;
-		from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
-		from_len =
-			MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(SSHORT)));
-		from_interp = INTL_TTYPE(desc);
-	}
-
-	if (desc->dsc_dtype <= dtype_any_text) {
+	if (desc->dsc_dtype <= dtype_any_text)
+	{
 
 		if (to_interp == from_interp) {
 			*address = from_buf;
@@ -676,11 +675,9 @@ USHORT CVT2_make_string2(const dsc* desc,
 			return from_len;
 		}
 
-		USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
-										   cs2, from_buf, from_len, ERR_post);
+		USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0, cs2, from_buf, from_len, ERR_post);
 		UCHAR* tempptr = temp.getBuffer(length);
-		length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
-									cs2, from_buf, from_len, ERR_post);
+		length = INTL_convert_bytes(tdbb, cs1, tempptr, length, cs2, from_buf, from_len, ERR_post);
 		*address = tempptr;
 		return length;
 	}

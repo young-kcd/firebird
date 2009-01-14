@@ -3140,7 +3140,7 @@ static gpre_nod* par_udf( gpre_req* request)
 		   for the existence of the udf */
 
 		an_udf = NULL;
-		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			udf* tmp_udf = MET_get_udf(db, gpreGlob.token_global.tok_string);
 			if (tmp_udf)

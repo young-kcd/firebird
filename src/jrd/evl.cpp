@@ -1267,13 +1267,13 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			if (id < relation->rel_fields->count())
 				temp_field = (*relation->rel_fields)[id];
 
-			if (temp_field)
+			if (temp_field && temp_field->fld_default_value && temp_field->fld_not_null)
 			{
-				if (temp_field->fld_default_value && temp_field->fld_not_null)
-				{
-					const NOD_T temp_nod_type = temp_field->fld_default_value->nod_type;
+				const NOD_T temp_nod_type = temp_field->fld_default_value->nod_type;
 
-					if (temp_nod_type == nod_user_name)
+				switch (temp_nod_type)
+				{
+				case nod_user_name:
 					{
 						desc->dsc_dtype = dtype_text;
 						desc->dsc_sub_type = 0;
@@ -1283,7 +1283,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_address = (UCHAR*) owner_name.c_str(); // throwing away const.
 						desc->dsc_length = owner_name.length();
 					}
-					else if (temp_nod_type == nod_current_role)
+					break;
+				case nod_current_role:
 					{
 						// CVC: Revisiting the current_role to fill default values:
 						// If the current user is the same as the table creator,
@@ -1305,8 +1306,10 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(rc_role));
 						desc->dsc_length = strlen(rc_role);
 					}
-					else if (temp_nod_type == nod_current_date ||
-						temp_nod_type == nod_current_time || temp_nod_type == nod_current_timestamp)
+					break;
+				case nod_current_date:
+				case nod_current_time:
+				case nod_current_timestamp:
 					{
 						static const GDS_TIMESTAMP temp_timestamp = { 0, 0 };
 						desc->dsc_dtype = dtype_timestamp;
@@ -1316,7 +1319,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 							reinterpret_cast<UCHAR*>(const_cast<ISC_TIMESTAMP*>(&temp_timestamp));
 						desc->dsc_length = sizeof(temp_timestamp);
 					}
-					else if (temp_nod_type == nod_internal_info)
+					break;
+				case nod_internal_info:
 					{
 						static const SLONG temp_long = 0;
 						desc->dsc_dtype = dtype_long;
@@ -1325,7 +1329,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						desc->dsc_address = (UCHAR*) const_cast<SLONG*>(&temp_long);
 						desc->dsc_length = sizeof(temp_long);
 					}
-					else
+					break;
+				default:
 					{
 						const Literal* default_literal =
 							reinterpret_cast<Literal*>(temp_field->fld_default_value);
@@ -1350,8 +1355,9 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						*/
 						*desc = *default_desc;
 					}
-					return true;
 				}
+				return true;
+
 			}
 		}
 

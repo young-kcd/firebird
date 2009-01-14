@@ -567,12 +567,15 @@ USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
 		EngineCallbackGuard guard(tdbb, m_connection);
 		jrd8_get_segment(status, &m_blob, &result, len, reinterpret_cast<UCHAR*>(buff));
 	}
-	if (status[1] == isc_segstr_eof) {
+	switch (status[1])
+	{
+	case isc_segstr_eof:
 		fb_assert(result == 0);
-	}
-	else if (status[1] == isc_segment) {
-	}
-	else if (status[1]) {
+		break;
+	case isc_segment:
+	case 0:
+		break;
+	default:
 		m_connection.raise(status, tdbb, "jrd8_get_segment");
 	}
 

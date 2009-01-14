@@ -146,7 +146,8 @@ gpre_fld* EXP_cast(gpre_fld* field)
 	gpre_fld* cast = (gpre_fld*) MSC_alloc(FLD_LEN);
 	cast->fld_symbol = field->fld_symbol;
 
-	switch (cast->fld_dtype = dtype->dtype_dtype) {
+	switch (cast->fld_dtype = dtype->dtype_dtype)
+	{
 	case dtype_varying:
 		cast->fld_length++;
 		// fall back
@@ -312,7 +313,8 @@ void EXP_left_paren(const TEXT* string)
 
 gpre_nod* EXP_literal()
 {
-	switch (gpreGlob.sw_sql_dialect) {
+	switch (gpreGlob.sw_sql_dialect)
+	{
 	case 1:
 		if (!(gpreGlob.token_global.tok_type == tok_number || isQuoted(gpreGlob.token_global.tok_type)))
 			return NULL;
@@ -340,7 +342,8 @@ gpre_nod* EXP_literal()
 	}
 
 // ** Begin date/time/timestamp *
-	switch (gpreGlob.token_global.tok_keyword) {
+	switch (gpreGlob.token_global.tok_keyword)
+	{
 	case KW_DATE:
 		reference->ref_flags |= REF_sql_date;
 		break;
@@ -644,7 +647,7 @@ gpre_rel* EXP_relation()
 	SQL_resolve_identifier("<identifier>", NULL, NAME_SIZE);
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
-		dbb* db = (dbb*) symbol->sym_object;
+		gpre_dbb* db = (gpre_dbb*) symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error("period after database name");
@@ -652,7 +655,7 @@ gpre_rel* EXP_relation()
 		relation = MET_get_relation(db, gpreGlob.token_global.tok_string, "");
 	}
 	else {
-		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		    gpre_rel* temp = MET_get_relation(db, gpreGlob.token_global.tok_string, "");
 			if (temp) {
 				if (!relation)
@@ -903,7 +906,7 @@ static bool check_relation()
 	if (symbol && symbol->sym_type == SYM_database)
 		return true;
 
-	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		if (MET_get_relation(db, gpreGlob.token_global.tok_string, ""))
 			return true;
 	}
@@ -987,7 +990,8 @@ static gpre_nod* normalize_index( dim* dimension, gpre_nod* user_index, USHORT a
 	TEXT string[33];
 	bool negate = false;
 
-	switch (array_base) {
+	switch (array_base)
+	{
 	case ZERO_BASED:
 		if (dimension->dim_lower < 0)
 			negate = true;
@@ -1090,7 +1094,8 @@ static gpre_nod* par_array(gpre_req* request, gpre_fld* field, bool subscript_fl
 			/* Languages which can't handle negative or non-positive bounds need to
 			   be accomodated with normalization of the indices.  */
 
-			switch (gpreGlob.sw_language) {
+			switch (gpreGlob.sw_language)
+			{
 			case lang_c:
 			case lang_cxx:
 			case lang_internal:
@@ -1477,7 +1482,8 @@ static gpre_nod* par_relational( gpre_req* request)
 
 	expr->nod_arg[0] = expr1;
 
-	switch (expr->nod_type) {
+	switch (expr->nod_type)
+	{
 	case nod_missing:
 		break;
 

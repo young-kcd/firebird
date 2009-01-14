@@ -583,12 +583,15 @@ USHORT IscBlob::read(thread_db *tdbb, char *buff, USHORT len)
 		EngineCallbackGuard guard(tdbb, m_iscConnection);
 		m_iscProvider.isc_get_segment(status, &m_handle, &result, len, buff);
 	}
-	if (status[1] == isc_segstr_eof) {
+	switch (status[1])
+	{
+	case isc_segstr_eof:
 		fb_assert(result == 0);
-	}
-	else if (status[1] == isc_segment) {
-	}
-	else if (status[1]) {
+		break;
+	case isc_segment:
+	case 0:
+		break;
+	default:
 		m_iscConnection.raise(status, tdbb, "isc_get_segment");
 	}
 

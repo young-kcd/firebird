@@ -121,7 +121,7 @@ static void	make_cursor_open_test (act_t, gpre_req*, int);
 static TEXT* make_name (TEXT* const, const gpre_sym*);
 static void	make_ok_test (const act*, gpre_req*, int);
 static void	make_port (const gpre_port*, int);
-static void	make_ready (const dbb*, const TEXT*, const TEXT*, USHORT, gpre_req*);
+static void	make_ready (const gpre_dbb*, const TEXT*, const TEXT*, USHORT, gpre_req*);
 static void	printa (int, const TEXT*, ...);
 static const TEXT* request_trans (const act*, const gpre_req*);
 static const TEXT* status_vector (const act*);
@@ -173,7 +173,8 @@ static inline void set_sqlcode(const act* action, const int column)
 void ADA_action( const act* action, int column)
 {
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_database:
 	case ACT_alter_domain:
 	case ACT_alter_table:
@@ -667,7 +668,8 @@ static void gen_based( const act* action, int column)
 
 	SSHORT length;
 
-	switch (datatype) {
+	switch (datatype)
+	{
 	case dtype_short:
 		sprintf(s2, "%s", SHORT_DCL);
 		break;
@@ -945,7 +947,7 @@ static void gen_compile( const act* action, int column)
 {
 	const gpre_req* request = action->act_request;
 	column += INDENT;
-	dbb* db = request->req_database;
+	gpre_dbb* db = request->req_database;
 	gpre_sym* symbol = db->dbb_name;
 
 	if (gpreGlob.sw_auto)
@@ -998,7 +1000,7 @@ static void gen_create_database( const act* action, int column)
 	TEXT s1[32], s2[32];
 
 	gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	dbb* db = (dbb*) request->req_database;
+	gpre_dbb* db = (gpre_dbb*) request->req_database;
 
 	sprintf(s1, "isc_%dl", request->req_ident);
 
@@ -1202,7 +1204,7 @@ static void gen_database( const act* action, int column)
 	printa(column, "isc_status2\t: firebird.status_vector;\t-- status vector --");
 	printa(column, "SQLCODE\t: %s := 0;\t\t\t-- SQL status code --", LONG_DCL);
 	if (!gpreGlob.ada_package[0]) {
-		for (const dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (const gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 			printa(column, "%s\t\t: firebird.database_handle%s;-- database handle --",
 				   db->dbb_name->sym_string, (db->dbb_scope == DBB_EXTERN) ? "" : " := 0");
 	}
@@ -1210,7 +1212,7 @@ static void gen_database( const act* action, int column)
 	printa(column, " ");
 
 	USHORT count = 0;
-	for (const dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	for (const gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		++count;
 		for (const tpb* tpb_val = db->dbb_tpbs; tpb_val; tpb_val = tpb_val->tpb_dbb_next)
 			gen_tpb(tpb_val, column + INDENT);
@@ -1269,7 +1271,7 @@ static void gen_ddl( const act* action, int column)
 
 static void gen_drop_database( const act* action, int column)
 {
-	dbb* db = (dbb*) action->act_object;
+	gpre_dbb* db = (gpre_dbb*) action->act_object;
 	//gpre_req* request = action->act_request;
 
 	printa(column, "firebird.DROP_DATABASE (%s %d, \"%s\", RDBK_DB_TYPE_GDS);",
@@ -1429,7 +1431,7 @@ static void gen_dyn_immediate( const act* action, int column)
 		request = NULL;
 	}
 
-	dbb* database = statement->dyn_database;
+	gpre_dbb* database = statement->dyn_database;
 
 	if (gpreGlob.sw_auto) {
 		t_start_auto(action, request, status_vector(action), column, true);
@@ -1530,7 +1532,7 @@ static void gen_dyn_prepare( const act* action, int column)
 	gpre_req req_const;
 
 	dyn* statement = (dyn*) action->act_object;
-	const dbb* database = statement->dyn_database;
+	const gpre_dbb* database = statement->dyn_database;
 
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
@@ -1703,7 +1705,7 @@ static void gen_event_init( const act* action, int column)
 	gpre_nod* event_list = init->nod_arg[1];
 
 	PAT args;
-	args.pat_database = (dbb*) init->nod_arg[3];
+	args.pat_database = (gpre_dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) init->nod_arg[2];
 
@@ -1761,7 +1763,7 @@ static void gen_event_wait( const act* action, int column)
 //  event has been initialized and getting the event identifier
 
 	int ident = -1;
-	dbb* database = NULL;
+	gpre_dbb* database = NULL;
 	for (gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
 	{
 		const act* event_action = (const act*) stack_ptr->lls_object;
@@ -1769,7 +1771,7 @@ static void gen_event_wait( const act* action, int column)
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) event_init->nod_arg[2];
-			database = (dbb*) event_init->nod_arg[3];
+			database = (gpre_dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -1903,7 +1905,7 @@ static void gen_fetch( const act* action, int column)
 
 static void gen_finish( const act* action, int column)
 {
-	dbb* db = NULL;
+	gpre_dbb* db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) && (action->act_type != ACT_disconnect)))
 	{
@@ -2030,7 +2032,8 @@ static void gen_function( const act* function, int column)
 			const gpre_fld* field = reference->ref_field;
 			const TEXT* dtype;
 
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_short:
 				dtype = "short";
 				break;
@@ -2264,7 +2267,7 @@ static void gen_procedure( const act* action, int column)
 	gpre_port* in_port = request->req_vport;
 	gpre_port* out_port = request->req_primary;
 
-	const dbb* database = request->req_database;
+	const gpre_dbb* database = request->req_database;
 	PAT args;
 	args.pat_database = database;
 	args.pat_request = action->act_request;
@@ -2373,7 +2376,7 @@ static void gen_ready( const act* action, int column)
 	const TEXT* vector = status_vector(action);
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
-		const dbb* db = ready->rdy_database;
+		const gpre_dbb* db = ready->rdy_database;
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename)
 			filename = db->dbb_runtime;
@@ -2420,10 +2423,10 @@ static void gen_receive( const act* action, int column, gpre_port* port)
 
 static void gen_release( const act* action, int column)
 {
-	const dbb* exp_db = (dbb*) action->act_object;
+	const gpre_dbb* exp_db = (gpre_dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
-		const dbb* db = request->req_database;
+		const gpre_dbb* db = request->req_database;
 		if (exp_db && db != exp_db)
 			continue;
 		if (!(request->req_flags & REQ_exp_hand)) {
@@ -2470,7 +2473,8 @@ static void gen_request( gpre_req* request, int column)
 
 	if (request->req_length) {
 		const SSHORT length = request->req_length;
-		switch (request->req_type) {
+		switch (request->req_type)
+		{
 		case REQ_create_database:
 			if (gpreGlob.ada_flags & gpreGlob.ADA_create_database) {
 				printa(column,
@@ -2503,7 +2507,8 @@ static void gen_request( gpre_req* request, int column)
 			printa(column, "---");
 			printa(column, "--- FORMATTED REQUEST BLR FOR GDS_%d = \n", request->req_ident);
 
-			switch (request->req_type) {
+			switch (request->req_type)
+			{
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
@@ -2529,7 +2534,8 @@ static void gen_request( gpre_req* request, int column)
 			}
 		}
 		else {
-			switch (request->req_type) {
+			switch (request->req_type)
+			{
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
@@ -2950,7 +2956,7 @@ static void gen_t_start( const act* action, int column)
 		tpb_iterator = tpb_iterator->tpb_tra_next)
 	{
 		count++;
-		const dbb* db = tpb_iterator->tpb_database;
+		const gpre_dbb* db = tpb_iterator->tpb_database;
 		if (gpreGlob.sw_auto) {
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
@@ -3371,7 +3377,7 @@ static void make_port( const gpre_port* port, int column)
 //       ready;
 //
 
-static void make_ready(const dbb* db,
+static void make_ready(const gpre_dbb* db,
 					   const TEXT* filename,
 					   const TEXT* vector,
 					   USHORT column,
@@ -3517,7 +3523,7 @@ static void t_start_auto(const act* action,
 	if (gpreGlob.sw_auto) {
 		TEXT buffer[256], temp[40];
 		buffer[0] = 0;
-		for (const dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+		for (const gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				align(column);
@@ -3544,7 +3550,7 @@ static void t_start_auto(const act* action,
 	}
 
 	int count = 0;
-	for (const dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	for (const gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
 		count++;
 		printa(column, "isc_teb(%d).tpb_len:= 0;", count);
 		printa(column, "isc_teb(%d).tpb_ptr := firebird.null_tpb'address;", count);

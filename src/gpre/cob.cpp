@@ -242,7 +242,7 @@ static void	make_array_declaration (ref*);
 static void make_name (TEXT* const, const gpre_sym*);
 static void make_name_formatted (TEXT* const, const TEXT*, const gpre_sym*);
 static void	make_port (const gpre_port*);
-static void	make_ready (const dbb*, const TEXT*, const TEXT*, const gpre_req*,
+static void	make_ready (const gpre_dbb*, const TEXT*, const TEXT*, const gpre_req*,
 	USHORT);
 static void	printa(const TEXT*, bool, const TEXT*, ...) ATTRIBUTE_FORMAT(3,4);
 #ifdef NOT_USED_OR_REPLACED
@@ -370,7 +370,8 @@ void COB_action(const act* action, int column)
 	if (action->act_flags & ACT_break)
 		global_first_flag = false;
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_database:
 	case ACT_alter_domain:
 	case ACT_alter_table:
@@ -671,11 +672,13 @@ void COB_print_buffer(TEXT* output_bufferL,
 			single_quote = true;
 		}
 
-		if ((p - s) > max_line) {
+		if ((p - s) > max_line)
+		{
 			const TEXT* tempq = q;
 			save_open_quote = open_quote;
 			save_single_quote = single_quote;
-			if (function_call) {
+			if (function_call)
+			{
 				//  Back up until we reach a comma
 				for (p--; (p > s); p--, q--)
 				{
@@ -965,7 +968,8 @@ static void gen_based( const act* action)
 
 	SSHORT digits;
 
-	switch (datatype) {
+	switch (datatype)
+	{
 	case dtype_short:
 	case dtype_long:
 		digits = (datatype == dtype_short) ? 4 : 9;
@@ -1246,7 +1250,7 @@ static void gen_clear_handles( const act* action)
 static void gen_compile( const act* action)
 {
 	const gpre_req* request = action->act_request;
-	const dbb* db = request->req_database;
+	const gpre_dbb* db = request->req_database;
 	const gpre_sym* symbol = db->dbb_name;
 
 //  generate automatic ready if appropriate
@@ -1304,7 +1308,7 @@ static void gen_create_database( const act* action)
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32];
 
 	gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	dbb* db = (dbb*) request->req_database;
+	gpre_dbb* db = (gpre_dbb*) request->req_database;
 	if (request) {
 		sprintf(s1, "%s%dL", names[isc_b_pos], request->req_ident);
 		if (request->req_flags & REQ_extend_dpb)
@@ -1394,7 +1398,7 @@ static void gen_create_database( const act* action)
 		}
 	}
 
-	for (const dbb* dbisc = gpreGlob.isc_databases; dbisc; dbisc = dbisc->dbb_next)
+	for (const gpre_dbb* dbisc = gpreGlob.isc_databases; dbisc; dbisc = dbisc->dbb_next)
 	{
 		if (strcmp(dbisc->dbb_filename, db->dbb_filename) == 0)
 			db->dbb_id = dbisc->dbb_id;
@@ -1540,7 +1544,7 @@ static void gen_database( const act* action)
 	bool all_static = true;
 	bool all_extern = true;
 	USHORT count = 0;
-	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+	for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 	{
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
@@ -1576,10 +1580,11 @@ static void gen_database( const act* action)
 	bool dyn_immed = false;
 	for (const act* local_act = action; local_act; local_act = local_act->act_rest)
 	{
-		if (local_act->act_type == ACT_create_database) {
-			// no statement;
-		}
-		else if (local_act->act_type == ACT_ready) {
+		switch (local_act->act_type)
+		{
+		case ACT_create_database:
+			break; // no statement;
+		case ACT_ready:
 			for (rdy* ready = (rdy*) local_act->act_object; ready; ready = ready->rdy_next)
 			{
 				const TEXT* s = ready->rdy_filename;
@@ -1596,74 +1601,86 @@ static void gen_database( const act* action)
 						   names[isc_b_pos], ready->rdy_id, strlen(fname), fname);
 				}
 			}
-		}
-		else if ((local_act->act_flags & ACT_sql) &&
-				 (local_act->act_type == ACT_dyn_cursor ||
-				  local_act->act_type == ACT_dyn_prepare ||
-				  local_act->act_type == ACT_open ||
-				  local_act->act_type == ACT_blob_open ||
-				  local_act->act_type == ACT_blob_create))
-		{
-			const gpre_sym* cur_stmt;
-			switch (local_act->act_type)
+			break;
+		case ACT_dyn_cursor:
+		case ACT_dyn_prepare:
+		case ACT_open:
+		case ACT_blob_open:
+		case ACT_blob_create:
+			if (local_act->act_flags & ACT_sql)
 			{
-			case ACT_dyn_cursor:
-				cur_stmt = ((dyn*) local_act->act_object)->dyn_cursor_name;
-				break;
-			case ACT_dyn_prepare:
-				cur_stmt = ((dyn*) local_act->act_object)->dyn_statement_name;
-				break;
-			default:
-				cur_stmt = ((open_cursor*) local_act->act_object)->opn_cursor;
-			}
-
-			// Only generate one declaration per cursor or statement name
-
-			const act* chck_dups;
-			for (chck_dups = local_act->act_rest; chck_dups; chck_dups = chck_dups->act_rest)
-			{
-				const gpre_sym* dup;
-				if (chck_dups->act_type == ACT_dyn_cursor)
-					dup = ((dyn*) chck_dups->act_object)->dyn_cursor_name;
-				else if (chck_dups->act_type == ACT_dyn_prepare)
-					dup = ((dyn*) chck_dups->act_object)->dyn_statement_name;
-				else if ((chck_dups->act_flags & ACT_sql) &&
-					(chck_dups->act_type == ACT_open || chck_dups->act_type == ACT_blob_open ||
-						chck_dups->act_type == ACT_blob_create))
+				const gpre_sym* cur_stmt;
+				switch (local_act->act_type)
 				{
-					dup = ((open_cursor*) chck_dups->act_object)->opn_cursor;
-				}
-				else
-					continue;
-
-				if (!strcmp(dup->sym_string, cur_stmt->sym_string))
+				case ACT_dyn_cursor:
+					cur_stmt = ((dyn*) local_act->act_object)->dyn_cursor_name;
 					break;
-			}
+				case ACT_dyn_prepare:
+					cur_stmt = ((dyn*) local_act->act_object)->dyn_statement_name;
+					break;
+				default:
+					cur_stmt = ((open_cursor*) local_act->act_object)->opn_cursor;
+				}
 
-			if (!chck_dups) {
-				make_name(s1, cur_stmt);
-				printa(names[COLUMN_0], false, "01  ISC-CONST-%s PIC X(%d) VALUE IS \"%s \".",
-					   s1, strlen(s1) + 1, s1);
-				printa(names[COLUMN_0], false, "01  ISC-CONST-%sL PIC S9(4) USAGE %s.",
-					   s1, COMP_VALUE);
+				// Only generate one declaration per cursor or statement name
+
+				const act* chck_dups;
+				for (chck_dups = local_act->act_rest; chck_dups; chck_dups = chck_dups->act_rest)
+				{
+					const gpre_sym* dup;
+					switch (chck_dups->act_type)
+					{
+					case ACT_dyn_cursor:
+						dup = ((dyn*) chck_dups->act_object)->dyn_cursor_name;
+						break;
+					case ACT_dyn_prepare:
+						dup = ((dyn*) chck_dups->act_object)->dyn_statement_name;
+						break;
+					case ACT_open:
+					case ACT_blob_open:
+					case ACT_blob_create:
+						if (chck_dups->act_flags & ACT_sql)
+						{
+							dup = ((open_cursor*) chck_dups->act_object)->opn_cursor;
+							break;
+						}
+						// else fall into
+					default:
+						continue;
+					}
+
+					if (!strcmp(dup->sym_string, cur_stmt->sym_string))
+						break;
+				}
+
+				if (!chck_dups) {
+					make_name(s1, cur_stmt);
+					printa(names[COLUMN_0], false, "01  ISC-CONST-%s PIC X(%d) VALUE IS \"%s \".",
+						   s1, strlen(s1) + 1, s1);
+					printa(names[COLUMN_0], false, "01  ISC-CONST-%sL PIC S9(4) USAGE %s.",
+						   s1, COMP_VALUE);
+				}
 			}
-		}
-		else if (local_act->act_type == ACT_dyn_immediate) {
-			if (!dyn_immed) {
+			break;
+		case ACT_dyn_immediate:
+			if (!dyn_immed)
+			{
 				dyn_immed = true;
 				printa(names[COLUMN_0], false, "01  ISC-CONST-DYN-IMMEDL PIC S9(4) USAGE %s.",
 					   COMP_VALUE);
 			}
+			break;
+		case ACT_procedure:
+			{
+				const gpre_req* request = local_act->act_request;
+				const gpre_prc* procedure = (gpre_prc*) local_act->act_object;
+				const gpre_sym* symbol = procedure->prc_symbol;
+				const char* sname = symbol->sym_string;
+				printa(names[COLUMN_0], false, "01  %s%dprc PIC X(%d) VALUE IS \"%s\".",
+					   names[isc_b_pos], request->req_ident, strlen(sname), sname);
+			}
 		}
-		else if (local_act->act_type == ACT_procedure) {
-			const gpre_req* request = local_act->act_request;
-			const gpre_prc* procedure = (gpre_prc*) local_act->act_object;
-			const gpre_sym* symbol = procedure->prc_symbol;
-			const char* sname = symbol->sym_string;
-			printa(names[COLUMN_0], false, "01  %s%dprc PIC X(%d) VALUE IS \"%s\".",
-				   names[isc_b_pos], request->req_ident, strlen(sname), sname);
-		}
-	}
+	} // for
 
 	printa(names[COLUMN_0], false, "01  %s%s PIC S9(9) USAGE COMP%s.", names[isc_trans_pos],
 		   all_static ? "" : all_extern ? " IS EXTERNAL" : " IS GLOBAL",
@@ -1680,7 +1697,8 @@ static void gen_database( const act* action)
 		   all_static ? "" : all_extern ? " IS EXTERNAL" : " IS GLOBAL",
 		   COMP_VALUE, all_extern ? "" : " VALUE IS 0");
 
-	for (gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
+	for (gpre_req* request = gpreGlob.requests; request; request = request->req_next)
+	{
 		gen_request(request);
 		gpre_port* port;
 		for (port = request->req_ports; port; port = port->por_next)
@@ -1932,7 +1950,7 @@ static void gen_dyn_immediate( const act* action)
 		request = NULL;
 	}
 
-	const dbb* database = statement->dyn_database;
+	const gpre_dbb* database = statement->dyn_database;
 
 	TEXT s[64];
 	const TEXT* s2 = "ISC-CONST-DYN-IMMEDL";
@@ -2051,7 +2069,7 @@ static void gen_dyn_prepare( const act* action)
 	gpre_req req_const;
 
 	const dyn* statement = (dyn*) action->act_object;
-	const dbb* database = statement->dyn_database;
+	const gpre_dbb* database = statement->dyn_database;
 
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
@@ -2235,7 +2253,7 @@ static void gen_event_init( const act* action)
 	const SSHORT column = strlen(names[COLUMN]);
 
 	PAT args;
-	args.pat_database = (dbb*) init->nod_arg[3];
+	args.pat_database = (gpre_dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
@@ -2298,7 +2316,7 @@ static void gen_event_wait( const act* action)
 //  go through the stack of gpreGlob.events, checking to see if the
 //  event has been initialized and getting the event identifier
 
-	const dbb* database = NULL;
+	const gpre_dbb* database = NULL;
 	int ident = -1;
 	for (const gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
 	{
@@ -2307,7 +2325,7 @@ static void gen_event_wait( const act* action)
 		const gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) (IPTR) event_init->nod_arg[2];
-			database = (dbb*) event_init->nod_arg[3];
+			database = (gpre_dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -2432,7 +2450,7 @@ static void gen_finish( const act* action)
 
 //  the user may have supplied one or more handles
 
-	const dbb* db = NULL;
+	const gpre_dbb* db = NULL;
 	for (const rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
 		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", db->dbb_name->sym_string);
@@ -2514,7 +2532,8 @@ static void gen_function( const act* function)
 		{
 			const char* dtype;
 			const gpre_fld* field = reference->ref_field;
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_short:
 				dtype = "short";
 				break;
@@ -2892,8 +2911,8 @@ static void gen_ready( const act* action)
 
 	for (const rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 	{
-		const dbb* db = ready->rdy_database;
-		const dbb* dbisc = (dbb*) db->dbb_name->sym_object;
+		const gpre_dbb* db = ready->rdy_database;
+		const gpre_dbb* dbisc = (gpre_dbb*) db->dbb_name->sym_object;
 		USHORT namelength;
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename) {
@@ -2940,11 +2959,11 @@ static void gen_ready( const act* action)
 
 static void gen_release( const act* action)
 {
-	const dbb* exp_db = (dbb*) action->act_object;
+	const gpre_dbb* exp_db = (gpre_dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next)
 	{
-		const dbb* db = request->req_database;
+		const gpre_dbb* db = request->req_database;
 		if (exp_db && db != exp_db)
 			continue;
 		if (!(request->req_flags & REQ_exp_hand)) {
@@ -3035,7 +3054,8 @@ static void gen_request( gpre_req* request)
 			printa(names[COMMENT], false, " ");
 			printa(names[COMMENT], false, "FORMATTED REQUEST BLR FOR %s%d = ",
 				   names[isc_a_pos], request->req_ident);
-			switch (request->req_type) {
+			switch (request->req_type)
+			{
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
@@ -3062,7 +3082,8 @@ static void gen_request( gpre_req* request)
 			}
 		}
 		else {
-			switch (request->req_type) {
+			switch (request->req_type)
+			{
 			case REQ_create_database:
 			case REQ_ready:
 				string_type = "DPB";
@@ -3451,7 +3472,7 @@ static void gen_t_start( const act* action)
 	if (gpreGlob.sw_auto)
 		for (tpb_iterator = trans->tra_tpb;  tpb_iterator; tpb_iterator = tpb_iterator->tpb_tra_next)
 		{
-			const dbb* db = tpb_iterator->tpb_database;
+			const gpre_dbb* db = tpb_iterator->tpb_database;
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(names[COLUMN], false, "IF %s = 0 THEN", db->dbb_name->sym_string);
@@ -3684,7 +3705,8 @@ static void make_array_declaration( ref* reference)
 
 	SSHORT digits, scale;
 
-	switch (field->fld_array_info->ary_dtype) {
+	switch (field->fld_array_info->ary_dtype)
+	{
 	case dtype_short:
 	case dtype_long:
 		digits = (field->fld_array_info->ary_dtype == dtype_short) ? 4 : 9;
@@ -3810,7 +3832,8 @@ static void make_port(const gpre_port* port)
 			name = "<expression>";
 		if (reference->ref_value && (reference->ref_flags & REF_array_elem))
 			field = field->fld_array;
-		switch (field->fld_dtype) {
+		switch (field->fld_dtype)
+		{
 		case dtype_short:
 		case dtype_long:
 			digits = (field->fld_dtype == dtype_short) ? 4 : 9;
@@ -3878,11 +3901,11 @@ static void make_port(const gpre_port* port)
 //		Generate the actual ready call.
 //
 
-static void make_ready(const dbb* db, const TEXT* filename,
+static void make_ready(const gpre_dbb* db, const TEXT* filename,
 					   const TEXT* vector, const gpre_req* request, USHORT namelength)
 {
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32];
-	const dbb* dbisc = (dbb*) db->dbb_name->sym_object;
+	const gpre_dbb* dbisc = (gpre_dbb*) db->dbb_name->sym_object;
 
 	if (request) {
 		sprintf(s1, "%s%dL", names[isc_b_pos], request->req_ident);
@@ -4118,7 +4141,7 @@ static void t_start_auto(const gpre_req* request,
 
 //  this is a default transaction, make sure all databases are ready
 
-	const dbb* db;
+	const gpre_dbb* db;
 	int count;
 
 	if (gpreGlob.sw_auto) {

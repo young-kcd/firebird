@@ -287,7 +287,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 static void gen_compile( const gpre_req* request, int column)
 {
 	column += INDENT;
-	//const dbb* db = request->req_database;
+	//const gpre_dbb* db = request->req_database;
 	//const gpre_sym* symbol = db->dbb_name;
 	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);

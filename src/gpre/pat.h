@@ -69,7 +69,7 @@ Substitution codes:
 
 struct pat
 {
-	const dbb* pat_database;
+	const gpre_dbb* pat_database;
 	const gpre_req* pat_request;
 	//gpre_tra* pat_transaction; CVC: unused
 	const blb* pat_blob;

@@ -71,7 +71,7 @@ static act* act_create_view();
 static act* act_d_section(act_t);
 static act* act_declare();
 static act* act_declare_filter();
-static act* act_declare_table(gpre_sym*, dbb*);
+static act* act_declare_table(gpre_sym*, gpre_dbb*);
 static act* act_declare_udf();
 static act* act_delete();
 static act* act_describe();
@@ -108,7 +108,7 @@ static gpre_file*		define_cache();
 #endif
 static gpre_file*		define_file();
 static gpre_file*		define_log_file(bool);
-static dbb*		dup_dbb(const dbb*);
+static gpre_dbb*		dup_dbb(const gpre_dbb*);
 static void		error(const TEXT *, const TEXT *);
 static TEXT*	extract_string(bool);
 static swe*		gen_whenever();
@@ -134,7 +134,7 @@ static cnstrt*	par_table_constraint(gpre_req*, gpre_rel*);
 static bool		par_transaction_modes(gpre_tra*, bool);
 static bool		par_using(dyn*);
 static USHORT	resolve_dtypes(kwwords_t, bool);
-static bool		tail_database(act_t, dbb*);
+static bool		tail_database(act_t, gpre_dbb*);
 static void		to_upcase(const TEXT*, TEXT*, int);
 
 static swe* global_whenever[SWE_max];
@@ -848,11 +848,11 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
-			if ((dbb*) symbol->sym_object != request->req_database)
+			if ((gpre_dbb*) symbol->sym_object != request->req_database)
 				PAR_error("Inconsistent database specifier");
 		}
 		else
-			request->req_database = (dbb*) symbol->sym_object;
+			request->req_database = (gpre_dbb*) symbol->sym_object;
 	}
 
 	gpre_prc* procedure = NULL;
@@ -864,7 +864,7 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		//   for the existence of the procedure
 
 		procedure = NULL; // redundant
-		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_prc* tmp_procedure = MET_get_procedure(db, prc_string, owner_string);
 			if (tmp_procedure) {
@@ -916,11 +916,11 @@ gpre_rel* SQL_relation(gpre_req* request,
 		if (!symbol)
 			PAR_error("Unknown database specifier.");
 		if (request->req_database) {
-			if ((dbb*) symbol->sym_object != request->req_database)
+			if ((gpre_dbb*) symbol->sym_object != request->req_database)
 				PAR_error("Inconsistent database specifier");
 		}
 		else
-			request->req_database = (dbb*) symbol->sym_object;
+			request->req_database = (gpre_dbb*) symbol->sym_object;
 	}
 
 	SCHAR s[ERROR_LENGTH];
@@ -933,7 +933,7 @@ gpre_rel* SQL_relation(gpre_req* request,
 		   for the existence of the relation */
 
 		relation = NULL; // redundant
-		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_rel* tmp_relation = MET_get_relation(db, rel_string, owner_string);
 			if (tmp_relation) {
@@ -1087,7 +1087,7 @@ static act* act_alter_database()
 	//  create action block
 	act* action = MSC_action(request, ACT_alter_database);
 	action->act_whenever = gen_whenever();
-	dbb* database = (dbb*) MSC_alloc(DBB_LEN);
+	gpre_dbb* database = (gpre_dbb*) MSC_alloc(DBB_LEN);
 	action->act_object = (ref*) database;
 
 	bool logdefined = false;	// this var was undefined
@@ -1355,7 +1355,8 @@ static act* act_alter_table()
 	{
 		if (MSC_match(KW_ADD))
 		{
-			switch (gpreGlob.token_global.tok_keyword) {
+			switch (gpreGlob.token_global.tok_keyword)
+			{
 			case KW_CONSTRAINT:
 			case KW_PRIMARY:
 			case KW_UNIQUE:
@@ -1478,14 +1479,14 @@ static act* act_connect()
 
 			need_handle = false;
 			if (!ready->rdy_database) {
-				ready->rdy_database = dup_dbb((dbb*) symbol->sym_object);
+				ready->rdy_database = dup_dbb((gpre_dbb*) symbol->sym_object);
 				PAR_get_token();
 			}
 
 			// pick up the possible parameters, in any order
 
 			USHORT buffers = 0;
-			dbb* db = ready->rdy_database;
+			gpre_dbb* db = ready->rdy_database;
 			connect_opts(&db->dbb_r_user, &db->dbb_r_password,
 						 &db->dbb_r_sql_role, &db->dbb_r_lc_messages, &buffers);
 
@@ -1534,7 +1535,7 @@ static act* act_connect()
 
 	connect_opts(&user, &password, &sql_role, &lc_messages, &buffers);
 
-	for (const dbb* db_iter = gpreGlob.isc_databases; db_iter; db_iter = db_iter->dbb_next)
+	for (const gpre_dbb* db_iter = gpreGlob.isc_databases; db_iter; db_iter = db_iter->dbb_next)
 		if (db_iter->dbb_runtime || !(db_iter->dbb_flags & DBB_sqlca)) {
 			rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 			ready->rdy_next = (rdy*) action->act_object;
@@ -1557,7 +1558,7 @@ static act* act_connect()
 			   make sure that we generate variables for the request so that the
 			   dpb can be extended at runtime */
 
-			dbb* db = ready->rdy_database;
+			gpre_dbb* db = ready->rdy_database;
 			if (user || password || lc_messages || db->dbb_r_lc_ctype) {
 				db->dbb_r_user = user;
 				db->dbb_r_password = password;
@@ -1656,7 +1657,7 @@ static act* act_create_database()
 		// generate a dummy db
 
 		dummy = true;
-		gpreGlob.isc_databases = (dbb*) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (gpre_dbb*) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block
 
@@ -1679,7 +1680,7 @@ static act* act_create_database()
 
 //  get database name
 
-	dbb* db = NULL;
+	gpre_dbb* db = NULL;
 	if (isQuoted(gpreGlob.token_global.tok_type)) {
 		db = dup_dbb(gpreGlob.isc_databases);
 		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
@@ -1791,7 +1792,8 @@ static act* act_create_domain()
 
 	while (in_constraints)
 	{
-		switch (gpreGlob.token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword)
+		{
 		case KW_CONSTRAINT:
 		case KW_CHECK:
 		case KW_NOT:
@@ -2119,7 +2121,7 @@ static act* act_d_section(act_t type)
 	if (!gpreGlob.isc_databases) {
 		// allocate database block and link to db chain
 
-		gpreGlob.isc_databases = (dbb*) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (gpre_dbb*) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block
 
@@ -2174,13 +2176,13 @@ static act* act_d_section(act_t type)
 
 static act* act_declare()
 {
-	dbb* db = NULL;
+	gpre_dbb* db = NULL;
 
 	if (gpreGlob.token_global.tok_symbol && (gpreGlob.token_global.tok_symbol->sym_type == SYM_database))
 	{
 		// must be a database specifier in a DECLARE TABLE statement
 
-		db = (dbb*) gpreGlob.token_global.tok_symbol->sym_object;
+		db = (gpre_dbb*) gpreGlob.token_global.tok_symbol->sym_object;
 		PAR_get_token();
 		if (!MSC_match(KW_DOT))
 			CPR_s_error(". (period)");
@@ -2375,7 +2377,7 @@ static act* act_declare_filter()
 //		Handle an SQL declare table statement.
 //
 
-static act* act_declare_table( gpre_sym* symbol, dbb* db)
+static act* act_declare_table( gpre_sym* symbol, gpre_dbb* db)
 {
 //  create a local request block
 
@@ -2719,7 +2721,7 @@ static act* act_disconnect()
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
 				action->act_object = (ref*) ready;
-				ready->rdy_database = (dbb*) symbol->sym_object;
+				ready->rdy_database = (gpre_dbb*) symbol->sym_object;
 				PAR_get_token();
 			}
 			else
@@ -2743,7 +2745,7 @@ static act* act_disconnect()
 static act* act_drop()
 {
 	act* action = NULL;
-	dbb* db = NULL;
+	gpre_dbb* db = NULL;
 	gpre_req* request = NULL;
 	gpre_rel* relation = NULL;
 	TEXT* identifier_name;
@@ -2758,7 +2760,7 @@ static act* act_drop()
 			PAR_get_token();
 			if (!isQuoted(gpreGlob.token_global.tok_type))
 				CPR_s_error("<quoted database name>");
-			db = (dbb*) MSC_alloc(DBB_LEN);
+			db = (gpre_dbb*) MSC_alloc(DBB_LEN);
 			SCHAR* db_string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 			db->dbb_filename = db_string;
 			MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, db_string);
@@ -3375,7 +3377,7 @@ static act* act_include()
 	{
 		// allocate database block and link to db chain
 
-		gpreGlob.isc_databases = (dbb*) MSC_alloc_permanent(DBB_LEN);
+		gpreGlob.isc_databases = (gpre_dbb*) MSC_alloc_permanent(DBB_LEN);
 
 		// allocate symbol block
 
@@ -4187,7 +4189,7 @@ static act* act_set_names()
 		 * the character set.  Make this the run-time set.
 		 */
 		TEXT* value = PAR_native_value(false, false);
-		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			if (db->dbb_r_lc_ctype) {
 				char buffer[ERROR_LENGTH];
@@ -4215,7 +4217,7 @@ static act* act_set_names()
 			PAR_error("Duplicate declaration of module CHARACTER SET");
 
 		gpreGlob.module_lc_ctype = value;
-		for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			if (db->dbb_c_lc_ctype) {
 				char buffer[ERROR_LENGTH];
@@ -4906,7 +4908,7 @@ static gpre_file* define_log_file(bool log_serial)
 }
 
 
-static dbb* dup_dbb(const dbb* db)
+static gpre_dbb* dup_dbb(const gpre_dbb* db)
 {
 
 // ****************************************
@@ -4915,14 +4917,14 @@ static dbb* dup_dbb(const dbb* db)
 //
 // ****************************************
 //
-//		dirty duplication of a dbb.
+//		dirty duplication of a gpre_dbb.
 //		just memcpy as no memory
 //		is freed in gpre.
 //
 // *************************************
 	if (!db)
 		return NULL;
-	dbb* newdb = (dbb*) MSC_alloc(DBB_LEN);
+	gpre_dbb* newdb = (gpre_dbb*) MSC_alloc(DBB_LEN);
 	// CVC: the casts here should be tested and removed.
 	memcpy((SCHAR*) newdb, (const SCHAR*) db, DBB_LEN);
 
@@ -4952,7 +4954,8 @@ static void error(const TEXT* format, const TEXT* string2)
 
 static TEXT* extract_string(bool advance_token)
 {
-	switch (gpreGlob.sw_sql_dialect) {
+	switch (gpreGlob.sw_sql_dialect)
+	{
 	case 1:
 		if (!isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("<string>");
@@ -5459,7 +5462,8 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 
 	while (in_constraints)
 	{
-		switch (gpreGlob.token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword)
+		{
 		case KW_CONSTRAINT:
 		case KW_PRIMARY:
 		case KW_UNIQUE:
@@ -5773,7 +5777,8 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 		break;
 	case KW_SET:
 		PAR_get_token();
-		switch (gpreGlob.token_global.tok_keyword) {
+		switch (gpreGlob.token_global.tok_keyword)
+		{
 		case KW_DEFAULT:
 			if (keyword == KW_DELETE)
 				cnstrt_val->cnstrt_fkey_def_type |= REF_DEL_SET_DEFAULT;
@@ -6102,7 +6107,7 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 //		Parse the tail of a CREATE DATABASE statement.
 //
 
-static bool tail_database(act_t action_type, dbb* database)
+static bool tail_database(act_t action_type, gpre_dbb* database)
 {
 	TEXT* string = NULL;
 

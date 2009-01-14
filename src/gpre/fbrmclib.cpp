@@ -294,7 +294,8 @@ static ISC_ULONG CvtCobolToInt(const ISC_UCHAR *s, ISC_USHORT len, char type)
 {
 	ISC_ULONG		temp;
 
-	switch (len) {
+	switch (len)
+	{
 	case 2:
 		temp = (*(s) << 8) + *(s + 1);
 		// If source is negative and signed, extend sign to dest
@@ -321,7 +322,8 @@ static ISC_ULONG CvtArgToInt(const argument_entry *arg)
 	char			*stemp;
 	char			sign;
 
-	switch (arg->a_type) {
+	switch (arg->a_type)
+	{
 	case 1:														// NSU
 		temp = (ISC_ULONG)atoi((char *)CobolToString(arg));
 		break;
@@ -392,7 +394,8 @@ static void CobolToStatus(ISC_STATUS *stat, const argument_entry *arg)
 static void CvtIntToCobol(ISC_UCHAR *s, ISC_ULONG l, ISC_USHORT len)
 {
 	memset(s, 0, len);
-	switch (len) {
+	switch (len)
+	{
 		case 2:
 			*(s) = (ISC_UCHAR)((l >> 8) & 0xff);
 			*(s + 1) = (ISC_UCHAR)(l & 0xff);
@@ -466,7 +469,8 @@ static void ParseDateFormat(const ISC_UCHAR* s, date_fmt* fmt)
 	memset(fmt, -1, sizeof(*fmt));
 	while (*s) {
 		if (toupper(*s) != spec) {
-			switch (spec) {
+			switch (spec)
+			{
 			case 'Y':
 				fmt->yr_start = start;
 				fmt->yr_len = (short)(len > 4 ? 4 : len);
@@ -496,7 +500,8 @@ static void ParseDateFormat(const ISC_UCHAR* s, date_fmt* fmt)
 		len++;
 	}
 	// Save the last specification
-	switch (spec) {
+	switch (spec)
+	{
 	case 'Y':
 		fmt->yr_start = start;
 		fmt->yr_len = (short)(len > 4 ? 4 : len);

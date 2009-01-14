@@ -440,18 +440,15 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 			MOV_move(tdbb, from_desc, to_desc);
 		else if (from_desc->dsc_dtype == dtype_short)
 		{
-			*((SSHORT*) to_desc->dsc_address) =
-				*((SSHORT*) from_desc->dsc_address);
+			*((SSHORT*) to_desc->dsc_address) = *((SSHORT*) from_desc->dsc_address);
 		}
 		else if (from_desc->dsc_dtype == dtype_long)
 		{
-			*((SLONG*) to_desc->dsc_address) =
-				*((SLONG*) from_desc->dsc_address);
+			*((SLONG*) to_desc->dsc_address) = *((SLONG*) from_desc->dsc_address);
 		}
 		else if (from_desc->dsc_dtype == dtype_int64)
 		{
-			*((SINT64*) to_desc->dsc_address) =
-				*((SINT64*) from_desc->dsc_address);
+			*((SINT64*) to_desc->dsc_address) = *((SINT64*) from_desc->dsc_address);
 		}
 		else
 			memcpy(to_desc->dsc_address, from_desc->dsc_address, from_desc->dsc_length);
@@ -467,7 +464,8 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 	{
 		USHORT l = to_desc->dsc_length;
 		UCHAR* p = to_desc->dsc_address;
-		switch (to_desc->dsc_dtype) {
+		switch (to_desc->dsc_dtype)
+		{
 		case dtype_text:
 			// YYY - not necessarily the right thing to do
 			// for text formats that don't have trailing spaces
@@ -657,7 +655,8 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	USHORT count = 0;
 	if (!(request->req_flags & req_in_use))
 		clone = request;
-	else {
+	else
+	{
 		if (request->req_attachment == attachment)
 			count++;
 
@@ -668,7 +667,8 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		const USHORT clones = (vector) ? (vector->count() - 1) : 0;
 
 		USHORT n;
-		for (n = 1; n <= clones; n++) {
+		for (n = 1; n <= clones; n++)
+		{
 			jrd_req* next = CMP_clone_request(tdbb, request, n, validate);
 			if (next->req_attachment == attachment) {
 				if (!(next->req_flags & req_in_use)) {
@@ -928,21 +928,27 @@ void EXE_send(thread_db*		tdbb,
 
 	jrd_tra* transaction = request->req_transaction;
 
-	if (node->nod_type == nod_message)
+	switch (node->nod_type)
+	{
+	case nod_message:
 		message = node;
-	else if (node->nod_type == nod_select) {
-		jrd_nod** ptr = node->nod_arg;
-		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+		break;
+	case nod_select:
 		{
-			message = (*ptr)->nod_arg[e_send_message];
-			if ((USHORT)(IPTR) message->nod_arg[e_msg_number] == msg) {
-				request->req_next = *ptr;
-				break;
+			jrd_nod** ptr = node->nod_arg;
+			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			{
+				message = (*ptr)->nod_arg[e_send_message];
+				if ((USHORT)(IPTR) message->nod_arg[e_msg_number] == msg) {
+					request->req_next = *ptr;
+					break;
+				}
 			}
 		}
-	}
-	else
+		break;
+	default:
 		BUGCHECK(167);			/* msg 167 invalid SEND request */
+	}
 
 	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
@@ -1295,7 +1301,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
-	switch (request->req_operation) {
+	switch (request->req_operation)
+	{
 	case jrd_req::req_evaluate:
 		{
 			request->req_records_affected.bumpModified(false);
@@ -2719,7 +2726,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 #endif
 
 		case nod_set_generator:
-		case nod_set_generator2:		
+		case nod_set_generator2:
 			if (request->req_operation == jrd_req::req_evaluate) {
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id], true, MOV_get_int64(desc, 0));

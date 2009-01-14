@@ -60,7 +60,7 @@
 //static jmp_buf*	PAR_jmp_buf;
 
 #ifdef FTN_BLK_DATA
-static void		block_data_list(const dbb*);
+static void		block_data_list(const gpre_dbb*);
 #endif
 static bool		match_parentheses();
 static act*		par_any();
@@ -455,7 +455,7 @@ act* PAR_action(const TEXT* base_dir)
 //		Parse a blob subtype -- either a signed number or a symbolic name.
 //
 
-SSHORT PAR_blob_subtype(dbb* db)
+SSHORT PAR_blob_subtype(gpre_dbb* db)
 {
 //  Check for symbol type name
 
@@ -492,7 +492,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 	TEXT s[MAXPATHLEN << 1];
 
 	act* action = MSC_action(0, ACT_database);
-	dbb* db = (dbb*) MSC_alloc(DBB_LEN);
+	gpre_dbb* db = (gpre_dbb*) MSC_alloc(DBB_LEN);
 
 //  Get handle name token, make symbol for handle, and
 //  insert symbol into hash table
@@ -672,7 +672,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 //  Since we have a real DATABASE statement, get rid of any artificial
 //  databases that were created because of an INCLUDE SQLCA statement.
 
-	for (dbb** db_ptr = &gpreGlob.isc_databases; *db_ptr;)
+	for (gpre_dbb** db_ptr = &gpreGlob.isc_databases; *db_ptr;)
 	{
 		if ((*db_ptr)->dbb_flags & DBB_sqlca)
 			*db_ptr = (*db_ptr)->dbb_next;
@@ -1056,7 +1056,7 @@ gpre_fld* PAR_null_field()
 
 void PAR_reserving( USHORT flags, bool parse_sql)
 {
-	dbb* database;
+	gpre_dbb* database;
 
 	while (true) {
 		// find a relation name, or maybe a list of them
@@ -1184,7 +1184,7 @@ void PAR_using_db()
 	while (true) {
 		gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 		if (symbol) {
-			dbb* db = (dbb*) symbol->sym_object;
+			gpre_dbb* db = (gpre_dbb*) symbol->sym_object;
 			db->dbb_flags |= DBB_in_trans;
 		}
 		else
@@ -1205,7 +1205,7 @@ void PAR_using_db()
 //		names of dbs to be so handled.
 //
 
-static void block_data_list( const dbb* db)
+static void block_data_list( const gpre_dbb* db)
 {
 	if (db->dbb_scope == DBB_EXTERN)
 		return;
@@ -1455,7 +1455,8 @@ static act* par_based()
 		}
 	}
 
-	switch (gpreGlob.sw_language) {
+	switch (gpreGlob.sw_language)
+	{
 	case lang_internal:
 	case lang_fortran:
 	case lang_epascal:
@@ -2089,7 +2090,7 @@ static act* par_finish()
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
 				ready->rdy_next = (rdy*) action->act_object;
 				action->act_object = (ref*) ready;
-				ready->rdy_database = (dbb*) symbol->sym_object;
+				ready->rdy_database = (gpre_dbb*) symbol->sym_object;
 				CPR_eol_token();
 			}
 			else
@@ -2480,7 +2481,7 @@ static act* par_ready()
 {
 	gpre_req* request;
 	gpre_sym* symbol;
-	dbb* db;
+	gpre_dbb* db;
 	bool need_handle = false;
 	USHORT default_buffers = 0;
 
@@ -2526,7 +2527,7 @@ static act* par_ready()
 
 		need_handle = false;
 		if (!ready->rdy_database)
-			ready->rdy_database = (dbb*) symbol->sym_object;
+			ready->rdy_database = (gpre_dbb*) symbol->sym_object;
 		if (terminator())
 			break;
 		CPR_eol_token();

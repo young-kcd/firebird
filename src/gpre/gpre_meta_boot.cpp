@@ -57,8 +57,8 @@ static SCHAR db_version_info[] = { isc_info_base_level };
 #endif
 #ifdef NOT_USED_OR_REPLACED
 static SLONG array_size(gpre_fld*);
-static void get_array(dbb*, const TEXT*, gpre_fld*);
-static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, dbb*);
+static void get_array(gpre_dbb*, const TEXT*, gpre_fld*);
+static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, gpre_dbb*);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
 static int upcase(const TEXT*, TEXT* const);
 #endif
@@ -107,7 +107,7 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
  *		database can't be opened, return false.
  */
 
-bool MET_database(dbb* db, bool print_version)
+bool MET_database(gpre_dbb* db, bool print_version)
 {
 	/*
 	   ** Each info item requested will return
@@ -173,7 +173,7 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
  *		Gets the default value for a domain of an existing table
  */
 
-bool MET_get_domain_default(dbb* db, const TEXT* domain_name, TEXT* buffer, USHORT buff_length)
+bool MET_get_domain_default(gpre_dbb* db, const TEXT* domain_name, TEXT* buffer, USHORT buff_length)
 {
 	fb_assert(0);
 	return false;
@@ -209,7 +209,7 @@ bool MET_get_column_default(const gpre_rel* relation,
  *		of the fields.
  */
 
-gpre_lls* MET_get_primary_key(dbb* db, const TEXT* relation_name)
+gpre_lls* MET_get_primary_key(gpre_dbb* db, const TEXT* relation_name)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -315,7 +315,7 @@ gpre_nod* MET_fields(gpre_ctx* context)
  *		Shutdown all attached databases.
  */
 
-void MET_fini( dbb* end)
+void MET_fini( gpre_dbb* end)
 {
 	return;
 }
@@ -327,14 +327,14 @@ void MET_fini( dbb* end)
  *		If found, return string. If not, return NULL.
  */
 
-const SCHAR* MET_generator(const TEXT* string, dbb* db)
+const SCHAR* MET_generator(const TEXT* string, gpre_dbb* db)
 {
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_generator) && (db == (dbb*) (symbol->sym_object)))
+		if ((symbol->sym_type == SYM_generator) && (db == (gpre_dbb*) (symbol->sym_object)))
 		{
 			return symbol->sym_string;
 		}
@@ -354,7 +354,8 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	USHORT l = *length;
 
-	switch (blr_dtype) {
+	switch (blr_dtype)
+	{
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
@@ -440,7 +441,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
  *		This function has been cloned into MET_get_udf
  */
 
-gpre_prc* MET_get_procedure(dbb* db, const TEXT* string, const TEXT* owner_name)
+gpre_prc* MET_get_procedure(gpre_dbb* db, const TEXT* string, const TEXT* owner_name)
 {
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
 
@@ -473,7 +474,7 @@ gpre_prc* MET_get_procedure(dbb* db, const TEXT* string, const TEXT* owner_name)
  *		Return a relation block (if name is found) or NULL.
  */
 
-gpre_rel* MET_get_relation(dbb* db, const TEXT* string, const TEXT* owner_name)
+gpre_rel* MET_get_relation(gpre_dbb* db, const TEXT* string, const TEXT* owner_name)
 {
 	gpre_rel* relation;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
@@ -517,7 +518,7 @@ intlsym* MET_get_text_subtype(SSHORT ttype)
  *		This function was cloned from MET_get_procedure
  */
 
-udf* MET_get_udf(dbb* db, const TEXT* string)
+udf* MET_get_udf(gpre_dbb* db, const TEXT* string)
 {
 	SCHAR name[NAME_SIZE];
 
@@ -560,7 +561,7 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
  *		Return an index block (if name is found) or NULL.
  */
 
-IND MET_index(dbb* db, const TEXT* string)
+IND MET_index(gpre_dbb* db, const TEXT* string)
 {
 	IND index;
 	SCHAR name[NAME_SIZE];
@@ -586,7 +587,7 @@ IND MET_index(dbb* db, const TEXT* string)
  *       into the symbol (hash) table.
  */
 
-void MET_load_hash_table( dbb* db)
+void MET_load_hash_table( gpre_dbb* db)
 {
 /*  If this is an internal ISC access method invocation, don't do any of this
  *  stuff
@@ -677,7 +678,7 @@ bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
  *		   false otherwise
  */
 
-bool MET_trigger_exists(dbb* db, const TEXT* trigger_name)
+bool MET_trigger_exists(gpre_dbb* db, const TEXT* trigger_name)
 {
 	//SCHAR name[NAME_SIZE];
 
@@ -711,7 +712,7 @@ static SLONG array_size( gpre_fld* field)
  *		See if field is array.
  */
 
-static void get_array( dbb* db, const TEXT* field_name, gpre_fld* field)
+static void get_array( gpre_dbb* db, const TEXT* field_name, gpre_fld* field)
 {
 	fb_assert(0);
 	return;
@@ -736,7 +737,7 @@ static void get_array( dbb* db, const TEXT* field_name, gpre_fld* field)
  *		false if the name could not be resolved.
  */
 
-static bool get_intl_char_subtype(SSHORT* id, const UCHAR* name, USHORT length, dbb* db)
+static bool get_intl_char_subtype(SSHORT* id, const UCHAR* name, USHORT length, gpre_dbb* db)
 {
 	fb_assert(id != NULL);
 	fb_assert(name != NULL);

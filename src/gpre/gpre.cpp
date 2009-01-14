@@ -138,7 +138,7 @@ inline void set_classes(UCHAR idx, UCHAR v)
 
 static TEXT input_buffer[512], *input_char;
 
-static dbb* sw_databases;
+static gpre_dbb* sw_databases;
 // Added sw_verbose
 // FSG 14.Nov.2000
 static bool sw_verbose;
@@ -309,7 +309,7 @@ int main(int argc, char* argv[])
 
 //  set switches and so on to default (C) values
 
-	dbb* db = NULL;
+	gpre_dbb* db = NULL;
 
 	gpreGlob.sw_language		= lang_undef;
 	sw_lines					= true;
@@ -423,7 +423,8 @@ int main(int argc, char* argv[])
 //  point to the expanded file name string in a private buffer.
 //
 
-	if (!input_file) {
+	if (!input_file)
+	{
 		strcpy(spare_file_name, file_name);
 		for (ext_tab = dml_ext_table; ext_tab->ext_language != gpreGlob.sw_language; ext_tab++)
 		{
@@ -487,7 +488,7 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_D:
 			// allocate database block and link to db chain
 
-			db = (dbb*) MSC_alloc_permanent(DBB_LEN);
+			db = (gpre_dbb*) MSC_alloc_permanent(DBB_LEN);
 			db->dbb_next = gpreGlob.isc_databases;
 
 			// put this one in line to be next
@@ -822,7 +823,8 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		if (renamed) {
+		if (renamed)
+		{
 			// Warning: modifying program's args.
 			TEXT* p = out_file_name;
 			while (*p)
@@ -1513,7 +1515,7 @@ static void finish_based( act* action)
 		if (!based_on->bas_fld_name)
 			continue;
 
-		dbb* db = NULL;
+		gpre_dbb* db = NULL;
 		if (based_on->bas_db_name)
 		{
 			gpre_sym* symbol = HSH_lookup(based_on->bas_db_name->str_string);
@@ -1525,7 +1527,7 @@ static void finish_based( act* action)
 
 			if (symbol)
 			{
-				db = (dbb*) symbol->sym_object;
+				db = (gpre_dbb*) symbol->sym_object;
 				relation = MET_get_relation(db, based_on->bas_rel_name->str_string, "");
 				if (!relation) {
 					fb_utils::snprintf(s, sizeof(s), "relation %s is not defined in database %s",
@@ -1556,7 +1558,8 @@ static void finish_based( act* action)
 			}
 		}
 
-		if (!db) {
+		if (!db)
+		{
 			field = NULL;
 			for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 				if (relation = MET_get_relation(db, based_on->bas_rel_name->str_string, ""))
@@ -1980,7 +1983,8 @@ static tok* get_token()
 //  Skip fortran line continuation characters
 
 #ifdef GPRE_FORTRAN
-	if (gpreGlob.sw_language == lang_fortran) {
+	if (gpreGlob.sw_language == lang_fortran)
+	{
 		while (line_position == 6) {
 			c = skip_white();
 			start_line = line_global;
@@ -2016,7 +2020,8 @@ static tok* get_token()
 	UCHAR char_class = classes(c);
 
 #ifdef GPRE_ADA
-	if ((gpreGlob.sw_language == lang_ada) && (c == '\'')) {
+	if ((gpreGlob.sw_language == lang_ada) && (c == '\''))
+	{
 		const SSHORT c1 = nextchar();
 		const SSHORT c2 = nextchar();
 		if (c2 != '\'') {
@@ -2095,7 +2100,8 @@ static tok* get_token()
 	else if ((char_class & CHR_QUOTE) || (char_class & CHR_DBLQUOTE))
 	{
 		gpreGlob.token_global.tok_type = (char_class & CHR_QUOTE) ? tok_sglquoted : tok_dblquoted;
-		for (;;) {
+		for (;;)
+		{
 			SSHORT next = nextchar();
 #if defined(GPRE_COBOL)
 			if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect) &&
@@ -2171,7 +2177,8 @@ static tok* get_token()
 	}
 	else if (c == '.')
 	{
-		if (classes(c = nextchar()) & CHR_DIGIT) {
+		if (classes(c = nextchar()) & CHR_DIGIT)
+		{
 			*p++ = (TEXT) c;
 			while (classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
@@ -2188,7 +2195,8 @@ static tok* get_token()
 			return_char(c);
 			gpreGlob.token_global.tok_type = tok_number;
 		}
-		else {
+		else
+		{
 			return_char(c);
 			gpreGlob.token_global.tok_type = tok_punct;
 			*p++ = nextchar();
@@ -2210,7 +2218,8 @@ static tok* get_token()
 
 	gpreGlob.token_global.tok_length = p - gpreGlob.token_global.tok_string;
 	*p++ = 0;
-	if (isQuoted(gpreGlob.token_global.tok_type)) {
+	if (isQuoted(gpreGlob.token_global.tok_type))
+	{
 		strip_quotes(gpreGlob.token_global);
 	/** If the dialect is 1 then anything that is quoted is
 	a string. Don not lookup in the hash table to prevent
@@ -2225,7 +2234,8 @@ static tok* get_token()
 		else
 			gpreGlob.token_global.tok_keyword = KW_none;
 	}
-	else if (gpreGlob.sw_case) {
+	else if (gpreGlob.sw_case)
+	{
 		if (!gpreGlob.override_case) {
 			gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
@@ -2242,7 +2252,8 @@ static tok* get_token()
 			gpreGlob.override_case = false;
 		}
 	}
-	else {
+	else
+	{
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
 			gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
@@ -2300,7 +2311,8 @@ static int nextchar()
 //  we can decide to start the database field substitution string
 //  with a continuation indicator if appropriate.
 
-	if (line_position == 1) {
+	if (line_position == 1)
+	{
 		first_position = true;
 
 		/* If the first character on a Fortran line is a tab, bump up the
@@ -2514,7 +2526,8 @@ static void pass2( SLONG start_position)
 				CPR_error("internal error -- unexpected EOF between actions");
 				return;
 			}
-			if (c == '\n' || !line) {
+			if (c == '\n' || !line)
+			{
 				line++;
 				if (line_pending) {
 					if (line == 1)
@@ -2580,7 +2593,8 @@ static void pass2( SLONG start_position)
 			}
 			const SSHORT prior = c;
 			c = get_char(input_file);
-			if (!suppress_output) {
+			if (!suppress_output)
+			{
 				// close current comment to avoid nesting comments
 				if (sw_block_comments && !(action->act_flags & ACT_mark) && c == comment_start[0])
 				{
@@ -2596,7 +2610,8 @@ static void pass2( SLONG start_position)
 				{
 					putc(c, gpreGlob.out_file);
 				}
-				if (c == '\n') {
+				if (c == '\n')
+				{
 					line++;
 					if ((gpreGlob.sw_language == lang_fortran) ||
 						(gpreGlob.sw_language == lang_ada) ||
@@ -2651,7 +2666,8 @@ static void pass2( SLONG start_position)
 	}
 
 
-	while ((c = get_char(input_file)) != EOF) {
+	while ((c = get_char(input_file)) != EOF)
+	{
 		if (c == '\n' && line_pending) {
 			fprintf(gpreGlob.out_file, "\n#line %ld \"%s\"", line + 1, backlash_fixed_file_name);
 			line_pending = false;
@@ -2798,7 +2814,8 @@ static SSHORT skip_white()
 
 		// skip in-line SQL comments
 
-		if (gpreGlob.sw_sql && (c == '-')) {
+		if (gpreGlob.sw_sql && (c == '-'))
+		{
 			const SSHORT c2 = nextchar();
 			if (c2 != '-')
 				return_char(c2);

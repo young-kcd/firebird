@@ -163,7 +163,8 @@ void CMP_compile_request( gpre_req* request)
 
 //  Handle different request types differently
 
-	switch (request->req_type) {
+	switch (request->req_type)
+	{
 	case REQ_create_database:
 	case REQ_ddl:
 		CMD_compile_ddl(request);
@@ -253,7 +254,8 @@ void CMP_compile_request( gpre_req* request)
 	upd* update;
 	for (act* action = request->req_actions; action; action = action->act_next)
 	{
-		switch (action->act_type) {
+		switch (action->act_type)
+		{
 		case ACT_modify:
 		case ACT_erase:
 		case ACT_update:
@@ -308,7 +310,8 @@ void CMP_compile_request( gpre_req* request)
 void CMP_external_field( gpre_req* request, const gpre_fld* field)
 {
 
-	switch (field->fld_dtype) {
+	switch (field->fld_dtype)
+	{
 	case dtype_cstring:
 		request->add_byte(blr_text2);
 		request->add_word(field->fld_ttype);
@@ -380,7 +383,7 @@ void CMP_stuff_symbol( gpre_req* request, const gpre_sym* symbol)
 //		lot of relation lock blocks, and generate TPBs
 //
 //		We'll always generate TPB's, and link them
-//		into the DBB for that database so they get
+//		into the gpre_dbb for that database so they get
 //		generated.  If there's no lock list, we generate
 //		a simple TPB for every database in the program.
 //		If there is a lock list, we generate a more complex
@@ -417,7 +420,7 @@ void CMP_t_start( gpre_tra* trans)
 	*text = 0;
 	const USHORT tpb_len = text - tpb_buffer;
 
-	for (dbb* database = gpreGlob.isc_databases; database; database = database->dbb_next)
+	for (gpre_dbb* database = gpreGlob.isc_databases; database; database = database->dbb_next)
 	{
 		/*
 		 * figure out if this is a simple transaction or a reserving
@@ -460,7 +463,7 @@ void CMP_t_start( gpre_tra* trans)
 		else					// this database isn't referenced
 			continue;
 
-		/* link this into the TPB chains (gpre_tra and DBB)   */
+		/* link this into the TPB chains (gpre_tra and gpre_dbb)   */
 
 		new_tpb->tpb_database = database;
 		new_tpb->tpb_dbb_next = database->dbb_tpbs;
@@ -631,7 +634,8 @@ static void cmp_blr( gpre_req* request)
 
 //  Compile up request
 
-	switch (request->req_type) {
+	switch (request->req_type)
+	{
 	case REQ_cursor:
 	case REQ_for:
 		cmp_for(request);
@@ -728,7 +732,8 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 	fb_assert(field->fld_dtype);
 	fb_assert(field->fld_length);
 
-	switch (field->fld_dtype) {
+	switch (field->fld_dtype)
+	{
 	case dtype_cstring:
 		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
 			request->add_byte(blr_cstring);
@@ -862,7 +867,8 @@ static void cmp_for( gpre_req* request)
 
 	for (act* action = request->req_actions; action; action = action->act_next)
 	{
-		switch (action->act_type) {
+		switch (action->act_type)
+		{
 		case ACT_modify:
 		case ACT_update:
 		case ACT_erase:
@@ -921,7 +927,8 @@ static void cmp_for( gpre_req* request)
 
 		for (act* action = request->req_actions; action; action = action->act_next)
 		{
-			switch (action->act_type) {
+			switch (action->act_type)
+			{
 			case ACT_endmodify:
 			case ACT_update:
 				cmp_modify(action, request);
@@ -1189,7 +1196,7 @@ static void cmp_procedure( gpre_req* request)
 
 static void cmp_ready( gpre_req* request)
 {
-	dbb* db = request->req_database;
+	gpre_dbb* db = request->req_database;
 
 	//act* action = request->req_actions;
 	request->req_blr = request->req_base = MSC_alloc(250);
@@ -1295,7 +1302,8 @@ static void cmp_ready( gpre_req* request)
 static void cmp_sdl_fudge( gpre_req* request, SLONG lower_bound)
 {
 
-	switch (gpreGlob.sw_language) {
+	switch (gpreGlob.sw_language)
+	{
 	case lang_c:
 	case lang_cxx:
     case lang_internal:
@@ -1401,7 +1409,8 @@ static void cmp_sdl_value( gpre_req* request, const gpre_nod* node)
 {
 	const ref* reference = (ref*) node->nod_arg[0];
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_literal:
 		cmp_sdl_number(request, atoi(reference->ref_value));
 		return;

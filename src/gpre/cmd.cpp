@@ -56,7 +56,7 @@ typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*);
 
 
 
-//static void add_cache(gpre_req*, const act*, dbb*);
+//static void add_cache(gpre_req*, const act*, gpre_dbb*);
 static void alter_database(gpre_req*, act*);
 static void alter_domain(gpre_req*, const act*);
 static void alter_index(gpre_req*, const act*);
@@ -131,7 +131,8 @@ int CMD_compile_ddl(gpre_req* request)
 	request->add_byte(isc_dyn_version_1);
 	request->add_byte(isc_dyn_begin);
 
-	switch (action->act_type) {
+	switch (action->act_type)
+	{
 	case ACT_alter_table:
 		alter_table(request, action);
 		break;
@@ -258,7 +259,7 @@ int CMD_compile_ddl(gpre_req* request)
 //		Add cache file to a database.
 //
 /*
-static void add_cache( gpre_req* request, const act* action, dbb* database)
+static void add_cache( gpre_req* request, const act* action, gpre_dbb* database)
 {
 	TEXT file_name[254]; // CVC: Maybe MAXPATHLEN?
 
@@ -284,7 +285,7 @@ static void alter_database( gpre_req* request, act* action)
 {
 	gpre_file* file;
 
-	dbb* db = (dbb*) action->act_object;
+	gpre_dbb* db = (gpre_dbb*) action->act_object;
 
 	request->add_byte(isc_dyn_mod_database);
 
@@ -1250,7 +1251,8 @@ static void create_constraint( gpre_req* request, const act* action,
 
 			if (constraint->cnstrt_fkey_def_type & REF_UPDATE_ACTION) {
 				request->add_byte(isc_dyn_foreign_key_update);
-				switch (constraint->cnstrt_fkey_def_type & REF_UPDATE_MASK) {
+				switch (constraint->cnstrt_fkey_def_type & REF_UPDATE_MASK)
+				{
 				case REF_UPD_NONE:
 					request->add_byte(isc_dyn_foreign_key_none);
 					break;
@@ -1275,7 +1277,8 @@ static void create_constraint( gpre_req* request, const act* action,
 			}
 			if (constraint->cnstrt_fkey_def_type & REF_DELETE_ACTION) {
 				request->add_byte(isc_dyn_foreign_key_delete);
-				switch (constraint->cnstrt_fkey_def_type & REF_DELETE_MASK) {
+				switch (constraint->cnstrt_fkey_def_type & REF_DELETE_MASK)
+				{
 				case REF_DEL_NONE:
 					request->add_byte(isc_dyn_foreign_key_none);
 					break;
@@ -1328,7 +1331,7 @@ static void create_constraint( gpre_req* request, const act* action,
 
 static void create_database( gpre_req* request, const act* action)
 {
-	const dbb* db = ((mdbb*) action->act_object)->mdbb_database;
+	const gpre_dbb* db = ((mdbb*) action->act_object)->mdbb_database;
 	request->add_byte(isc_dpb_version1);
 	request->add_byte(isc_dpb_overwrite);
 	request->add_byte(1);
@@ -1406,7 +1409,7 @@ static void create_database( gpre_req* request, const act* action)
 
 static void create_database_modify_dyn( gpre_req* request, act* action)
 {
-	dbb* db = ((mdbb*) action->act_object)->mdbb_database;
+	gpre_dbb* db = ((mdbb*) action->act_object)->mdbb_database;
 
 	request->add_byte(isc_dyn_mod_database);
 

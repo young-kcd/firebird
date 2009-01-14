@@ -631,22 +631,21 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 	DeferredWork* work;
 	for (DeferredWork** ptr = &transaction->tra_deferred_work; (work = *ptr);)
 	{
-		if (work->dfw_type == dfw_post_event)
+		switch (work->dfw_type)
 		{
+		case dfw_post_event:
 			EVENT_post(lock->lck_length, (const TEXT*) &lock->lck_key,
 					   work->dfw_name.length(), work->dfw_name.c_str(), work->dfw_count);
 			*ptr = work->dfw_next;
 			delete work;
 			pending_events = true;
-		}
-		else if (work->dfw_type == dfw_delete_shadow)
-		{
+			break;
+		case dfw_delete_shadow:
 			unlink(work->dfw_name.c_str());
 			*ptr = work->dfw_next;
 			delete work;
-		}
-		else
-		{
+			break;
+		default:
 			ptr = &(*ptr)->dfw_next;
 		}
 	}
@@ -3922,7 +3921,8 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 
 			return true;
 		}
-		else if (dep_type == obj_validation)
+
+		if (dep_type == obj_validation)
 		{
 			// Maybe it's worth caching in the future?
 			jrd_req* request = NULL;

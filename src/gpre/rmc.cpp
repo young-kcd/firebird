@@ -202,7 +202,7 @@ static void	make_array_declaration (ref*);
 static void make_name (TEXT* const, const gpre_sym*);
 static void make_name_formatted (TEXT* const, const TEXT*, const gpre_sym*);
 static void	make_port (const gpre_port*);
-static void	make_ready (const dbb*, const TEXT*, const TEXT*, const gpre_req*, USHORT);
+static void	make_ready (const gpre_dbb*, const TEXT*, const TEXT*, const gpre_req*, USHORT);
 static void	printa(const TEXT*, bool, const TEXT*, ...) ATTRIBUTE_FORMAT(3,4);
 #ifdef NOT_USED_OR_REPLACED
 static void	printb (const TEXT*, ... ) ATTRIBUTE_FORMAT(1,2);
@@ -607,7 +607,8 @@ void RMC_print_buffer(TEXT* output_bufferL, bool function_call)
 					p = s + max_line;
 					open_quote = save_open_quote;
 					single_quote = save_single_quote;
-					for (p--; p > s; p--, q--) {
+					for (p--; p > s; p--, q--)
+					{
 						if (*(p + 1) == '\"' || *(p + 1) == '\'') {
 							/*  If we have a single or double quote, toggle the
 							   quote switch and indicate single or double quote  */
@@ -1367,7 +1368,7 @@ static void gen_clear_handles( const act* action)
 static void gen_compile( const act* action)
 {
 	const gpre_req* request = action->act_request;
-	const dbb* db = request->req_database;
+	const gpre_dbb* db = request->req_database;
 	const gpre_sym* symbol = db->dbb_name;
 
 //  generate automatic ready if appropriate
@@ -1431,7 +1432,7 @@ static void gen_create_database( const act* action)
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32];
 
 	gpre_req* request = ((mdbb*) action->act_object)->mdbb_dpb_request;
-	dbb* db = (dbb*) request->req_database;
+	gpre_dbb* db = (gpre_dbb*) request->req_database;
 	if (request) {
 		sprintf(s1, "%s%dL", names[isc_b_pos], request->req_ident);
 		if (request->req_flags & REQ_extend_dpb)
@@ -1516,7 +1517,7 @@ static void gen_create_database( const act* action)
 	}
 
 	TEXT dbname[128];
-	for (const dbb* dbisc = gpreGlob.isc_databases; dbisc; dbisc = dbisc->dbb_next)
+	for (const gpre_dbb* dbisc = gpreGlob.isc_databases; dbisc; dbisc = dbisc->dbb_next)
 	{
 		if (strcmp(dbisc->dbb_filename, db->dbb_filename) == 0)
 			db->dbb_id = dbisc->dbb_id;
@@ -1669,7 +1670,7 @@ static void gen_database( const act* action)
 	bool all_static = true;
 	bool all_extern = true;
 	USHORT count = 0;
-	for (dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+	for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 	{
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
@@ -2071,7 +2072,7 @@ static void gen_dyn_immediate( const act* action)
 		request = NULL;
 	}
 
-	const dbb* database = statement->dyn_database;
+	const gpre_dbb* database = statement->dyn_database;
 
 	TEXT s[64];
 	const TEXT* s2 = "ISC-CONST-DYN-IMMEDL";
@@ -2185,7 +2186,7 @@ static void gen_dyn_prepare( const act* action)
 	gpre_req req_const;
 
 	const dyn* statement = (dyn*) action->act_object;
-	const dbb* database = statement->dyn_database;
+	const gpre_dbb* database = statement->dyn_database;
 
 	const TEXT* transaction;
 	if (statement->dyn_trans) {
@@ -2357,7 +2358,7 @@ static void gen_event_init( const act* action)
 	const USHORT column = strlen(names[COLUMN]);
 
 	PAT args;
-	args.pat_database = (dbb*) init->nod_arg[3];
+	args.pat_database = (gpre_dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
 	args.pat_value1 = (int) (IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
@@ -2420,7 +2421,7 @@ static void gen_event_wait( const act* action)
 //  go through the stack of gpreGlob.events, checking to see if the
 //  event has been initialized and getting the event identifier
 
-	const dbb* database = NULL;
+	const gpre_dbb* database = NULL;
 	int ident = -1;
 	for (const gpre_lls* stack_ptr = gpreGlob.events; stack_ptr; stack_ptr = stack_ptr->lls_next)
 	{
@@ -2429,7 +2430,7 @@ static void gen_event_wait( const act* action)
 		const gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string)) {
 			ident = (int) (IPTR) event_init->nod_arg[2];
-			database = (dbb*) event_init->nod_arg[3];
+			database = (gpre_dbb*) event_init->nod_arg[3];
 		}
 	}
 
@@ -2556,7 +2557,7 @@ static void gen_finish( const act* action)
 
 //  the user may have supplied one or more handles
 
-	const dbb* db = NULL;
+	const gpre_dbb* db = NULL;
 	for (const rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next) {
 		db = ready->rdy_database;
 		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", db->dbb_name->sym_string);
@@ -2998,8 +2999,8 @@ static void gen_ready( const act* action)
 
 	for (const rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 	{
-		const dbb* db = ready->rdy_database;
-		const dbb* dbisc = (dbb*) db->dbb_name->sym_object;
+		const gpre_dbb* db = ready->rdy_database;
+		const gpre_dbb* dbisc = (gpre_dbb*) db->dbb_name->sym_object;
 		USHORT namelength;
 		const TEXT* filename = ready->rdy_filename;
 		if (!filename) {
@@ -3045,11 +3046,11 @@ static void gen_ready( const act* action)
 
 static void gen_release( const act* action)
 {
-	const dbb* exp_db = (dbb*) action->act_object;
+	const gpre_dbb* exp_db = (gpre_dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next)
 	{
-		const dbb* db = request->req_database;
+		const gpre_dbb* db = request->req_database;
 		if (exp_db && db != exp_db)
 			continue;
 		if (!(request->req_flags & REQ_exp_hand)) {
@@ -3565,7 +3566,7 @@ static void gen_t_start( const act* action)
 	if (gpreGlob.sw_auto)
 		for (tpb_iterator = trans->tra_tpb; tpb_iterator; tpb_iterator = tpb_iterator->tpb_tra_next)
 		{
-			const dbb* db = tpb_iterator->tpb_database;
+			const gpre_dbb* db = tpb_iterator->tpb_database;
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(names[COLUMN], false, "IF %s = 0 THEN", db->dbb_name->sym_string);
@@ -4051,13 +4052,13 @@ static void make_port(const gpre_port* port)
 //		Generate the actual ready call.
 //
 
-static void make_ready(const dbb* db,
+static void make_ready(const gpre_dbb* db,
 				  const TEXT* filename,
 				  const TEXT* vector,
 				  const gpre_req* request, USHORT namelength)
 {
 	TEXT s1[32], s1Tmp[32], s2[32], s2Tmp[32];
-	const dbb* dbisc = (dbb*) db->dbb_name->sym_object;
+	const gpre_dbb* dbisc = (gpre_dbb*) db->dbb_name->sym_object;
 
 	if (request)
 	{
@@ -4315,7 +4316,7 @@ static void t_start_auto(const gpre_req* request,
 
 //  this is a default transaction, make sure all databases are ready
 
-	const dbb* db;
+	const gpre_dbb* db;
 	int count;
 
 	if (gpreGlob.sw_auto)

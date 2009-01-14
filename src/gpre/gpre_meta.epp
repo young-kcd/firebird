@@ -77,8 +77,8 @@ public:
 
 
 static SLONG array_size(gpre_fld*);
-static void get_array(dbb*, const TEXT*, gpre_fld*);
-static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, dbb*);
+static void get_array(gpre_dbb*, const TEXT*, gpre_fld*);
+static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, gpre_dbb*);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
 #ifdef NOT_USED_OR_REPLACED
 static int upcase(const TEXT*, TEXT* const);
@@ -126,7 +126,7 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
  *		database can't be opened, return false.
  */
 
-bool MET_database(dbb* database, bool print_version)
+bool MET_database(gpre_dbb* database, bool print_version)
 {
 	static const UCHAR sql_version_info[] =
 	{
@@ -217,7 +217,8 @@ bool MET_database(dbb* database, bool print_version)
 		const USHORT length = gds__vax_integer(ptr, sizeof(USHORT));
 		ptr += sizeof(USHORT);
 
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_base_level:
 			gpreGlob.sw_server_version = (USHORT) ptr[1];
 			break;
@@ -303,7 +304,8 @@ bool MET_database(dbb* database, bool print_version)
 		const USHORT l = isc_vax_integer(data, sizeof(USHORT));
 		data += sizeof(USHORT);
 
-		switch (item) {
+		switch (item)
+		{
 			/* This flag indicates the version level of the engine
 			   itself, so we can tell what capabilities the engine
 			   code itself (as opposed to the on-disk structure).
@@ -373,7 +375,7 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 	if (!request)
 		return false;
 
-	dbb* database = request->req_database;
+	gpre_dbb* database = request->req_database;
 	if (database->dbb_flags & DBB_sqlca)
 		return false;
 
@@ -390,7 +392,8 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 			field->fld_dtype =
 				MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_text:
 			case dtype_cstring:
 				field->fld_flags |= FLD_text;
@@ -425,7 +428,8 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 			field->fld_dtype =
 				MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_text:
 			case dtype_cstring:
 				field->fld_flags |= FLD_text;
@@ -451,7 +455,7 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
  *		Gets the default value for a domain of an existing table
  */
 
-bool MET_get_domain_default(dbb* database,
+bool MET_get_domain_default(gpre_dbb* database,
 							const TEXT* domain_name,
 							TEXT* buffer,
 							USHORT buff_length)
@@ -548,7 +552,7 @@ bool MET_get_column_default(const gpre_rel* relation,
 {
 	const MetIdentifier name(column_name);
 
-	dbb* database = relation->rel_database;
+	gpre_dbb* database = relation->rel_database;
 	if (database == NULL)
 		return false;
 
@@ -641,7 +645,7 @@ bool MET_get_column_default(const gpre_rel* relation,
  *		of the fields.
  */
 
-gpre_lls* MET_get_primary_key(dbb* database, const TEXT* relation_name)
+gpre_lls* MET_get_primary_key(gpre_dbb* database, const TEXT* relation_name)
 {
 	const MetIdentifier name(relation_name);
 
@@ -721,7 +725,7 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 
-	dbb* database = relation->rel_database;
+	gpre_dbb* database = relation->rel_database;
 
 	if (database->dbb_flags & DBB_sqlca)
 		return NULL;
@@ -748,7 +752,8 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			field->fld_dtype =
 				MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_text:
 			case dtype_cstring:
 				field->fld_flags |= FLD_text;
@@ -801,7 +806,8 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 			field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
 			field->fld_dtype = MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_text:
 			case dtype_cstring:
 				field->fld_flags |= FLD_text;
@@ -877,7 +883,7 @@ gpre_nod* MET_fields(gpre_ctx* context)
 	if (gpreGlob.sw_language == lang_internal)
 		return NULL;
 
-	dbb* database = relation->rel_database;
+	gpre_dbb* database = relation->rel_database;
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
@@ -917,9 +923,9 @@ gpre_nod* MET_fields(gpre_ctx* context)
  *		Shutdown all attached databases.
  */
 
-void MET_fini(dbb* end)
+void MET_fini(gpre_dbb* end)
 {
-	for (dbb* database = gpreGlob.isc_databases;
+	for (gpre_dbb* database = gpreGlob.isc_databases;
 		 database && database != end;
 		 database = database->dbb_next)
 	{
@@ -957,12 +963,12 @@ void MET_fini(dbb* end)
  *		If found, return string. If not, return NULL.
  */
 
-const SCHAR* MET_generator(const TEXT* string, dbb* database)
+const SCHAR* MET_generator(const TEXT* string, gpre_dbb* database)
 {
 	const MetIdentifier name(string);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_generator) && (database == (dbb*) (symbol->sym_object)))
+		if ((symbol->sym_type == SYM_generator) && (database == (gpre_dbb*) (symbol->sym_object)))
 		{
 			return symbol->sym_string;
 		}
@@ -982,7 +988,8 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	USHORT l = *length;
 
-	switch (blr_dtype) {
+	switch (blr_dtype)
+	{
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
@@ -1068,7 +1075,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
  *		This function has been cloned into MET_get_udf
  */
 
-gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner_name)
+gpre_prc* MET_get_procedure(gpre_dbb* database, const TEXT* string, const TEXT* owner_name)
 {
 	const MetIdentifier name(string), owner(owner_name);
 
@@ -1121,7 +1128,8 @@ gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner
 				field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
 				field->fld_dtype =
 					MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
-				switch (field->fld_dtype) {
+				switch (field->fld_dtype)
+				{
 				case dtype_text:
 				case dtype_cstring:
 					field->fld_flags |= FLD_text;
@@ -1178,7 +1186,7 @@ gpre_prc* MET_get_procedure(dbb* database, const TEXT* string, const TEXT* owner
  *		Return a relation block (if name is found) or NULL.
  */
 
-gpre_rel* MET_get_relation(dbb* database, const TEXT* string, const TEXT* owner_name)
+gpre_rel* MET_get_relation(gpre_dbb* database, const TEXT* string, const TEXT* owner_name)
 {
 	gpre_rel* relation;
 	const MetIdentifier name(string), owner(owner_name);
@@ -1221,7 +1229,7 @@ intlsym* MET_get_text_subtype(SSHORT ttype)
  *		This function was cloned from MET_get_procedure
  */
 
-udf* MET_get_udf(dbb* database, const TEXT* string)
+udf* MET_get_udf(gpre_dbb* database, const TEXT* string)
 {
 	const MetIdentifier name(string);
 
@@ -1262,7 +1270,8 @@ udf* MET_get_udf(dbb* database, const TEXT* string)
 			field->fld_dtype =
 				MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_text:
 			case dtype_cstring:
 				field->fld_flags |= FLD_text;
@@ -1294,7 +1303,8 @@ udf* MET_get_udf(dbb* database, const TEXT* string)
 			field->fld_sub_type = UDF_ARG.RDB$FIELD_SUB_TYPE;
 			field->fld_dtype =
 				MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE, &field->fld_length);
-			switch (field->fld_dtype) {
+			switch (field->fld_dtype)
+			{
 			case dtype_text:
 			case dtype_cstring:
 				field->fld_flags |= FLD_text;
@@ -1330,7 +1340,7 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
 							   const char* relation_or_alias,
 							   USHORT level)
 {
-	dbb* database = request->req_database;
+	gpre_dbb* database = request->req_database;
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
@@ -1371,7 +1381,7 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
  *		Return an index block (if name is found) or NULL.
  */
 
-IND MET_index(dbb* database, const TEXT* string)
+IND MET_index(gpre_dbb* database, const TEXT* string)
 {
 	IND index;
 	const MetIdentifier name(string);
@@ -1418,7 +1428,7 @@ IND MET_index(dbb* database, const TEXT* string)
  *      Includes also charsets and collations.
  */
 
-void MET_load_hash_table(dbb* database)
+void MET_load_hash_table(gpre_dbb* database)
 {
 /*  If this is an internal ISC access method invocation, don't do any of this
  *  stuff
@@ -1824,7 +1834,7 @@ bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
 		}
 
 	gpre_rel* relation = field->fld_relation;
-	dbb* database = relation->rel_database;
+	gpre_dbb* database = relation->rel_database;
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
@@ -1862,7 +1872,7 @@ bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
  *		   false otherwise
  */
 
-bool MET_trigger_exists(dbb* database, const TEXT* trigger_name)
+bool MET_trigger_exists(gpre_dbb* database, const TEXT* trigger_name)
 {
 	const MetIdentifier name(trigger_name);
 
@@ -1901,7 +1911,7 @@ static SLONG array_size( gpre_fld* field)
  *		See if field is array.
  */
 
-static void get_array(dbb* database, const TEXT* field_name, gpre_fld* field)
+static void get_array(gpre_dbb* database, const TEXT* field_name, gpre_fld* field)
 {
 	ary* array_block = NULL;
 	USHORT field_dimensions = 0;
@@ -1988,7 +1998,7 @@ static void get_array(dbb* database, const TEXT* field_name, gpre_fld* field)
  *		false if the name could not be resolved.
  */
 
-static bool get_intl_char_subtype(SSHORT* id, const UCHAR* name, USHORT length, dbb* database)
+static bool get_intl_char_subtype(SSHORT* id, const UCHAR* name, USHORT length, gpre_dbb* database)
 {
 	UCHAR buffer[32];			/* BASED ON RDB$COLLATION_NAME */
 

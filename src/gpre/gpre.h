@@ -790,9 +790,9 @@ struct tpb; // forward declaration
 
 /* Database block, more or less the granddaddy */
 
-struct dbb
+struct gpre_dbb
 {
-	dbb* dbb_next;				/* next database in program */
+	gpre_dbb* dbb_next;				/* next database in program */
 	gpre_rel* dbb_relations;	/* relations in database */
 	gpre_rel* dbb_procedures;	/* procedures in database */
 	USHORT dbb_id;				/* database id in program */
@@ -850,7 +850,7 @@ struct dbb
 	gpre_file* dbb_files;
 };
 
-const size_t DBB_LEN = sizeof(dbb);
+const size_t DBB_LEN = sizeof(gpre_dbb);
 
 enum dbb_flags_valss {
 	DBB_no_arrays	= 1,
@@ -876,7 +876,7 @@ enum dbb_scope_vals {
 struct tpb {
 	tpb* tpb_tra_next;			/* next TPB for this transaction */
 	tpb* tpb_dbb_next;			/* next TPB for this database */
-	dbb* tpb_database;			/* DBB of this part of the transaction */
+	gpre_dbb* tpb_database;			/* gpre_dbb of this part of the transaction */
 	USHORT tpb_length;			/* length of actual TPB */
 	ULONG tpb_ident;			/* unique part of name for this TPB */
 	UCHAR tpb_string[1];		/* actual TPB */
@@ -895,7 +895,7 @@ struct gpre_prc
 	gpre_sym* prc_symbol;		/* symbol for relation */
 	SSHORT prc_id;				/* procedure id */
 	gpre_sym* prc_owner;		/* owner of procedure, if any */
-	dbb* prc_database;			/* parent database */
+	gpre_dbb* prc_database;			/* parent database */
 	gpre_prc* prc_next;			/* next procedure in database */
 	gpre_fld* prc_inputs;		/* linked list of input parameters */
 	gpre_fld* prc_outputs;		/* linked list of output parameters */
@@ -977,7 +977,7 @@ struct gpre_rel
 	gpre_fld* rel_fields;		/* linked list of known fields */
 	gpre_fld* rel_dbkey;		/* linked list of known fields */
 	gpre_sym* rel_symbol;		/* symbol for relation */
-	dbb* rel_database;			/* parent database */
+	gpre_dbb* rel_database;			/* parent database */
 	gpre_rel* rel_next;			/* next relation in database */
 	bool rel_meta;				/* if true, created for a metadata operation */
 	gpre_rse* rel_view_rse;
@@ -1023,7 +1023,7 @@ enum ind_flags_vals {
 
 struct intlsym
 {
-	dbb* intlsym_database;
+	gpre_dbb* intlsym_database;
 	gpre_sym* intlsym_symbol;	/* Hash symbol for intlsym */
 	intlsym* intlsym_next;
 	USHORT intlsym_type;		/* what type of name */
@@ -1186,7 +1186,7 @@ public:
 	USHORT req_top_label;		/* fortran label for top of request */
 	USHORT req_btm_label;		/* fortran label for request exit */
 	gpre_nod* req_node;			/* request definition tree */
-	dbb* req_database;			/* database */
+	gpre_dbb* req_database;			/* database */
 	act* req_actions;			/* actions within request */
 	gpre_ctx* req_contexts;		/* contexts within request */
 	gpre_ctx* req_update;		/* update context for mass insert */
@@ -1394,7 +1394,7 @@ const size_t DECL_UDF_LEN = sizeof(decl_udf);
 
 struct dyn
 {
-	dbb* dyn_database;			/* Database involved */
+	gpre_dbb* dyn_database;			/* Database involved */
 	gpre_sym* dyn_statement_name;	/* Name of dynamic statement */
 	gpre_sym* dyn_cursor_name;		/* Cursor name */
 	const TEXT* dyn_trans;			/* Transaction handle */
@@ -1439,7 +1439,7 @@ const int MAX_TRA_OPTIONS	= 8;
 /* act_object block for SQL database commands. */
 
 struct mdbb {
-	dbb* mdbb_database;
+	gpre_dbb* mdbb_database;
 	gpre_req* mdbb_dpb_request;
 	gpre_req* mdbb_dpb_extend_request;
 };
@@ -1461,7 +1461,7 @@ const size_t OPN_LEN = sizeof(open_cursor);
 struct rdy {
 	gpre_req* rdy_request;		/* dpb message & info */
 	rdy* rdy_next;
-	dbb* rdy_database;
+	gpre_dbb* rdy_database;
 	USHORT rdy_id;				/* id for unique string variable- MPEXL COB */
 	TEXT *rdy_filename;
 };
@@ -1483,7 +1483,7 @@ const size_t TYP_LEN = sizeof(field_type);
 /* User Defined Function */
 
 struct udf {
-	dbb* udf_database;
+	gpre_dbb* udf_database;
 	gpre_sym* udf_symbol;		/* Function name or query name */
 	USHORT udf_args;			/* Number of arguments */
 	USHORT udf_flags;			/* udf flags */
@@ -1555,7 +1555,7 @@ struct GpreGlobals
 	SSHORT sw_interp;
 	USHORT compiletime_db_dialect;
 
-	dbb* isc_databases;
+	gpre_dbb* isc_databases;
 	const TEXT* default_user;
 	const TEXT* default_password;
 	const TEXT* default_lc_ctype;

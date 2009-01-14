@@ -398,7 +398,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 				TEXT temp1[16], temp2[16];
 				sprintf(temp1, gpreGlob.ident_pattern, reference->ref_port->por_ident);
 				sprintf(temp2, gpreGlob.ident_pattern, reference->ref_ident);
-				switch (gpreGlob.sw_language) {
+				switch (gpreGlob.sw_language)
+				{
 				case lang_fortran:
 				case lang_cobol:
 					strcpy(p, temp2);
