@@ -1371,7 +1371,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	{
 		if (handle)
 		{
-			CALL(PROC_DETACH, n) (temp, handle);
+			CALL(PROC_DETACH, n) (temp, &handle);
 		}
 		delete attachment;
 
@@ -1942,7 +1942,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
   		e.stuff_exception(status);
 		if (handle)
 		{
-			CALL(PROC_DROP_DATABASE, n) (temp, handle);
+			CALL(PROC_DROP_DATABASE, n) (temp, &handle);
 		}
 		delete attachment;
 	}
@@ -4493,7 +4493,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		e.stuff_exception(status);
 		if (handle)
 		{
-			CALL(PROC_SERVICE_DETACH, n) (temp, handle);
+			CALL(PROC_SERVICE_DETACH, n) (temp, &handle);
 			*public_handle = 0;
 			delete service;
 		}
