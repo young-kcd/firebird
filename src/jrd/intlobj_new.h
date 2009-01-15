@@ -41,7 +41,7 @@ typedef int LONG;
 typedef signed int SLONG;
 #endif
 
-typedef SCHAR ASCII;
+typedef char ASCII;
 
 typedef USHORT INTL_BOOL;
 
