@@ -211,10 +211,14 @@ typedef void (*pfn_INTL_cv_destroy) (
 /* csconvert version */
 #define CSCONVERT_VERSION_1	1
 
+#ifdef __cplusplus
 namespace
 {
+#endif
 	struct CsConvertImpl;	// forward declaration - refers to diff struct in diff modules!
+#ifdef __cplusplus
 }
+#endif
 
 struct csconvert
 {
