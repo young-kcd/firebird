@@ -1126,11 +1126,11 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 			eff_gid = passwd->pw_gid;
 #else
 
-			SLONG gids[BUFFER_TINY];
-
 			initgroups(passwd->pw_name, passwd->pw_gid);
 			if (eff_gid != -1) {
-				const int gid_count = getgroups(FB_NELEM(gids), (gid_t*)gids);
+				gid_t gids[BUFFER_TINY];
+
+				const int gid_count = getgroups(FB_NELEM(gids), gids);
 				int i;
 				for (i = 0; i < gid_count; ++i) {
 					if (gids[i] == eff_gid) {
