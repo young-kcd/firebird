@@ -118,13 +118,13 @@ public:
 	}
 	void set(const T value)
 	{
-		rc = pthread_setspecific(key, (void*)(IPTR) value);
+		int rc = pthread_setspecific(key, (void*)(IPTR) value);
 		if (rc && keySet)
 			system_call_failed::raise("pthread_setspecific", rc);
 	}
 	~TlsValue()
 	{
-		rc = pthread_key_delete(key);
+		int rc = pthread_key_delete(key);
 		if (rc)
 			system_call_failed::raise("pthread_key_delete", rc);
 		keySet = false;
