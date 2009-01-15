@@ -117,6 +117,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		{
 			TEXT c;
 			while (c = *++p)
+			{
 				switch (UPPER(c))
 				{
 				case 'D':
@@ -127,6 +128,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					printf("Shared cache manager version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
+			}
 		}
 	}
 

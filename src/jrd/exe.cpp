@@ -1502,7 +1502,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	}
 
 	USHORT in_msg_length = 0;
-	UCHAR* in_msg = 0;
+	UCHAR* in_msg = NULL;
 	jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
 	if (in_message) {
 		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
@@ -1511,7 +1511,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	}
 
 	USHORT out_msg_length = 0;
-	UCHAR* out_msg = 0;
+	UCHAR* out_msg = NULL;
 	jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
 	if (out_message) {
 		const Format* format = (Format*) out_message->nod_arg[e_msg_format];

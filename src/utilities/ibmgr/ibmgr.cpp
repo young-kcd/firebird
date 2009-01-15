@@ -355,7 +355,7 @@ static SSHORT get_switches(int argc,
 
 				   MMM - it has to be more sophisticated check
 				   against compete host name including domain
-				   and/or network addreass, but... May be later
+				   and/or network address, but... May be later
 				 */
 				if (strcmp(ibmgr_data->host, string)) {
 					strcpy(ibmgr_data->host, string);

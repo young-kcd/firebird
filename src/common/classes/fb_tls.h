@@ -114,11 +114,11 @@ public:
 	{
 		// We use double C-style cast to allow using scalar datatypes
 		// with sizes up to size of pointer without warnings
-		return (T)(IPTR)pthread_getspecific(key);
+		return (T)(IPTR) pthread_getspecific(key);
 	}
 	void set(const T value)
 	{
-		rc = pthread_setspecific(key, (void*)(IPTR)value);
+		rc = pthread_setspecific(key, (void*)(IPTR) value);
 		if (rc && keySet)
 			system_call_failed::raise("pthread_setspecific", rc);
 	}

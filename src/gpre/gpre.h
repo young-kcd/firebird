@@ -876,7 +876,7 @@ enum dbb_scope_vals {
 struct tpb {
 	tpb* tpb_tra_next;			/* next TPB for this transaction */
 	tpb* tpb_dbb_next;			/* next TPB for this database */
-	gpre_dbb* tpb_database;			/* gpre_dbb of this part of the transaction */
+	gpre_dbb* tpb_database;		/* gpre_dbb of this part of the transaction */
 	USHORT tpb_length;			/* length of actual TPB */
 	ULONG tpb_ident;			/* unique part of name for this TPB */
 	UCHAR tpb_string[1];		/* actual TPB */
@@ -895,7 +895,7 @@ struct gpre_prc
 	gpre_sym* prc_symbol;		/* symbol for relation */
 	SSHORT prc_id;				/* procedure id */
 	gpre_sym* prc_owner;		/* owner of procedure, if any */
-	gpre_dbb* prc_database;			/* parent database */
+	gpre_dbb* prc_database;		/* parent database */
 	gpre_prc* prc_next;			/* next procedure in database */
 	gpre_fld* prc_inputs;		/* linked list of input parameters */
 	gpre_fld* prc_outputs;		/* linked list of output parameters */
@@ -977,7 +977,7 @@ struct gpre_rel
 	gpre_fld* rel_fields;		/* linked list of known fields */
 	gpre_fld* rel_dbkey;		/* linked list of known fields */
 	gpre_sym* rel_symbol;		/* symbol for relation */
-	gpre_dbb* rel_database;			/* parent database */
+	gpre_dbb* rel_database;		/* parent database */
 	gpre_rel* rel_next;			/* next relation in database */
 	bool rel_meta;				/* if true, created for a metadata operation */
 	gpre_rse* rel_view_rse;
@@ -1186,7 +1186,7 @@ public:
 	USHORT req_top_label;		/* fortran label for top of request */
 	USHORT req_btm_label;		/* fortran label for request exit */
 	gpre_nod* req_node;			/* request definition tree */
-	gpre_dbb* req_database;			/* database */
+	gpre_dbb* req_database;		/* database */
 	act* req_actions;			/* actions within request */
 	gpre_ctx* req_contexts;		/* contexts within request */
 	gpre_ctx* req_update;		/* update context for mass insert */

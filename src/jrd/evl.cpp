@@ -1356,8 +1356,8 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						*desc = *default_desc;
 					}
 				}
-				return true;
 
+				return true;
 			}
 		}
 
