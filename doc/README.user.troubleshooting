@@ -2,51 +2,51 @@ TROUBLESHOOTING
 ===============
 
 A lot of what is explained below should be done automatically by the install 
-process.  It is explanined here just in case it didn't do it correctly for
+process.  It is explained here just in case it didn't do it correctly for
 your circumstance.
 
 
-1)  IS IT WORKING HOW DO I TELL?
+1)  HOW DO I TELL IF IT IS WORKING?
  
-    A quick smoke test to see if it is all working is as follows:
+    Here is a quick smoke test to see if everything is working:
 
     
-    $cd /usr/local/firebird/examples
+    $cd /opt/firebird/examples
 
-    $/usr/local/firebird/bin/isql
+    $/opt/firebird/bin/isql
     >connect employee.gdb;
     >select rdb$relation_name from rdb$relations;
     >exit;
 
 
-    (In some cases you may need to provide a password to isql)
+    (You may need to provide the SYSDBA password in some cases)
 
-    $/usr/local/firebird/bin/isql
+    $/opt/firebird/bin/isql
     >connect employee.gdb user sysdba password <password>;
     >select rdb$relation_name from rdb$relations;
-    > show tables;
+    >show tables;
     >exit;
 
-    Where password will be either masterkey, or in the 
-    file /usr/local/firebird/SYSDBA.password.
+    Where password will be either masterkey, or present in the 
+    file /opt/firebird/SYSDBA.password.
 
 
-    For a test using networking.
+    For a test using networking:
 
-    $/usr/local/firebird/bin/isql
-    >connect 'localhost:/usr/local/firebird/examples/employee.gdb'; 
+    $/opt/firebird/bin/isql
+    >connect 'localhost:/opt/firebird/examples/employee.gdb'; 
     >select rdb$relation_name from rdb$relations;
     >exit;
 
     On a remote machine you can try the above replacing localhost with 
-    the server name.  Remember you may need to specify the username/password
-    in to get it to work.
+    the server name.  Remember, you may need to specify the username/password
+    to get this to work.
 
 
 
 2)  HOW DO I CHECK THAT THE SERVER IS RUNNING
  
-    You can check if the server is running by.
+    You can check if the server is running by:
 
     netstat -an | grep 3050 
 
@@ -56,22 +56,21 @@ your circumstance.
 
 3)  TROUBLESHOOTING CLASSIC SERVER INSTALL
 
-    The classic server works in two modes, it allows you to directly open
-    the database files, in this mode it does not need a server.
+    The classic server works in two modes. The first mode allows you
+    to directly open the database files and does not need a server.
 
-    This is done if in classic you open databases with a diretory path only.
+    To test this mode, open the database using only the directory path:
 
     $isql
-    >connect '/usr/local/firebird/examples.gdb';
+    >connect '/opt/firebird/examples.gdb';
 
     
-    If however you open files with the following 
+    In the second mode, requests are serviced by the inetd process. To test
+    this mode, open the database with a connection string that includes the
+    server name or IP:
 
     $isql
-    >connect 'localhost:/usr/local/firebird/examples.gdb';
-
-    Then the isql program connects to the local firebird inetd server program
-    to service the request. 
+    >connect 'localhost:/opt/firebird/examples.gdb';
 
     The configuration files for setting up the inetd (or xinetd) for the 
     classic server are as follows:
@@ -82,32 +81,34 @@ your circumstance.
 
     For inetd the /etc/inetd.conf file should have a line as follows 
 
-    gds_db  stream  tcp     nowait.30000  root /usr/local/firebird/bin/gds_inet_server gds_inet_server
+    gds_db  stream  tcp     nowait.30000  root /opt/firebird/bin/gds_inet_server gds_inet_server
 
     You will need to restart the inetd process before the server will work.
     $ps -ef | grep inetd
     will give you the process id and
 
     $kill -HUP <pid>
-    will instruct it to reread it's configuration file and listen on port 3050.
+    will instruct it to reread its configuration file and listen on port 3050.
 
 
-    Recent linux systems Redhat 7.0/Mandrake 7.2 and later have xinetd, The 
-    process is fairly similar, except the firebord service is described via
+    Recent Linux systems Redhat 7.0, Mandrake 7.2, and later have xinetd.
+    The process is fairly similar, except the firebird service is described via
     a file in /etc/xinetd.d/firebird.  There is a template version of this file
-    in /usr/local/firebird/misc/firebird.xinetd, you should only need to copy the 
+    in /opt/firebird/misc/firebird.xinetd, you should only need to copy the 
     file to that directory.
 
-    After copying the file, to get the xinetd process to reread it's
-    configuration files, first find the xinetd process id.
+    After copying the file, to get the xinetd process to re-read its
+    configuration files, first find the xinetd process id:
+
     $ ps -ef | grep xinetd
 
-    Then send it a restart signal.
+    Then send it a restart signal:
 
     $kill -USR2 <pid>
-    And it will reread it's configuration file and listen on port 3050.   
 
-    See the topic SERVER STILL WONT START for more info if requried.
+    The process will reread its configuration file and listen on port 3050.
+
+    See the topic SERVER STILL WONT START for more info if required.
 
 
 4)  TROUBLESHOOTING SUPER SERVER INSTALL
@@ -128,69 +129,60 @@ your circumstance.
     One bad side effect is that this could result in the initial SYSDBA 
     password not being set correctly.
 
-    The password should be in the file /usr/local/firebird/SYSDBA.password, but 
-    sometimes if the install couldn't
-    talk to the server then the SYSDBA password may be the build default of 
-    masterkey.
-
-    The SYSDBA password in /etc/init.d/firebird is hardcoded, and has to be
-    correct, so some use of the /usr/local/firebird/bin/changeDBAPassword.sh 
-    script may be required to fix this sort of problem.
-
     If there are problems you may need to check the actual file for correct
-    SYSDBA password and install location.
+    install location.
 
-    If running the /etc/init.d/firebird start script does not work then see 
+    If running the /etc/init.d/firebird start script does not work, then see 
     the topic SERVER STILL WONT START for more debugging info.
-    
+
 
 
 5)  SERVER STILL WONT START
 
     If you are really having problems try running the server programs 
-    directly, that way if there is any unsatisfied links they should show
-    up. ie:
+    directly. In this case, unsatisfied links or error messages will show
+    up in the console.
+    
+    To invoke superserver: 
 
-    $/usr/local/firebird/bin/fbserver   # for super
+    $/opt/firebird/bin/fbserver   # for super
 
-    and 
+    To invoke classic:
 
-    $/usr/local/firebird/bin/gds_inet_server  # for classic
+    $/opt/firebird/bin/fb_inet_server  # for classic
 
     and take note of any error messages.
 
-    There may be a problem with an unsatisfied dynamic library link (ie it
-    requires a library or version of a library that you do not have installed)
+    There may be a problem with an unsatisfied dynamic library link. This
+    occurs when firebird requires a library, or version of a library, that
+    you do not have installed.
+
     You can check the dynamic library requirements as follows:
 
-    $ldd /usr/local/firebird/bin/fbserver
+    $ldd /opt/firebird/bin/fbserver
 
-    After this point try posting a question to a newsgroup on:
-    http://firebird.sourceforge.net/newslists.php
-    (The ib-support newsgroups is a good starting point).
-
-
-3)  PROBLEMS CONNECTING TO SERVER
-
-    Most network connect problems come down to the /etc/hosts.equiv file.
-    It needs to have the host from which you want your clients to connect
-    from in it.
-    There can be problems if DNS is not configured where there are problems 
-    finding the names of the hosts or where ip numbers are used.
-    If this is the case placeing specific entries in the /etc/hosts file 
-    is a good place to start.
+    If you are still stuck, try posting a question to the support newsgroup at:
+    http://tech.groups.yahoo.com/group/firebird-support/
 
 
-    Try to connect to the server using telnet.
+6)  PROBLEMS CONNECTING TO SERVER
+
+    There can be problems if DNS is not configured correctly.
+    Incorrect DNS configuration will result in problems looking up the
+    host's name or IP. If this is the case, placing specific entries in the
+    /etc/hosts file is a good place to start.
+
+    Try to connect to the server using telnet, note space between server
+    name and port. 
 
     $telnet server 3050 
 
-    This will tell you if you can get to the server, failure could be becuase
-    of no suitable entry in /etc/host.equiv or some firewall blockage, or the
-    most common one, the server is not running.
+    This will tell you if you can get to the server. Failure could be because
+    of some firewall blockage. The most common problem is simply that the 
+    server is not running.
  
 
-3)  WHY ARE MY DATABASES OWNED BY ROOT
+7)  WHY ARE MY DATABASES OWNED BY ROOT
 
 
-4)  WHAT IS THE DIFFERENCE
+8)  WHAT IS THE DIFFERENCE
