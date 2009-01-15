@@ -1,0 +1,66 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): Bill Oliver
+#
+## NOTE
+## NOTE This file is work in progress, and Firebird 2.5 with xlC does not
+## NOTE currently build!!! You should be using g++ when building on AIX!
+## NOTE
+#
+# Compiler settings for AIX/powerpc, using IBM native compiler xlc.
+# "xlC" is the C++ invocation for the xlc compiler.
+#
+# Tested with AIX 6.1.0.0. Requires AIX 5.1+
+#
+# From the xlc documentation... Firebird requires xlC_r invocation.
+# All _r-suffixed invocations allow for threadsafe compilation and you
+# can use them to link the programs that use multi-threading. Use these
+# commands if you want to create threaded applications. The _r7 invocations
+# are provided to help migrate programs based on Posix Draft 7 to Posix
+# Draft 10. The _r4 invocations should be used for DCE threaded applications.
+#
+# Notes:
+#
+# 1) gcc is default compiler on AIX. To use xlC you must export these
+#    environment variables before running autogen.sh and make sure xlc is
+#    in your path.
+#
+#    export CC=cc_r
+#    export CXX=xlC_r
+#
+
+# xlC does not define _POWER or _AIX, which gcc does. xlC does define
+# __powerpc and __PPC, which Firebird code base doesn't check.
+
+# qstaticinline, http://www-01.ibm.com/support/docview.wss?uid=swg21044588
+PROD_FLAGS=-O3 -qchars=signed -qstaticinline -qlanglvl=newexcp -DNDEBUG -D_AIX -D_POWER
+DEV_FLAGS=-O0 -qchars=signed -qstaticinline -qlanglvl=newexcp -D_AIX -D_POWER
+
+# AIX ld option to set run-time library path is -Wl-blibpath:path1:path2
+# Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
+# LIB_LINK_RPATH:=-Wl-blibpath:
+# LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/lib:/lib
+LIB_LINK_RPATH=
+LIB_PATH_OPTS=
+
+OS_ServerFiles=inet_server.cpp
+
+EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print fbsvcmgr
+CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+
+Physical_IO_Module=os/posix/unix.cpp
+
+UNDEF_PLATFORM=
