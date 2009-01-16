@@ -503,8 +503,8 @@ Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: C
 #endif
 
 #if msvc_version >= 8
-;If Host O/S has Windows Installer 3.0 installed then we don't need to do local install of runtime libraries
-;In fact, local install is next to useless as the fbintl.dll will still fail to load.
+;If Host O/S has Windows Installer 3.0 installed then we use msiexec to deploy the runtime libraries
+;In fact, even if the runtime libraries did exist locally the system will alway load a shared assembly if it is available.
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;

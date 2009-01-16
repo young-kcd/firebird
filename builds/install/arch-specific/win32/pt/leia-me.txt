@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.1.1  (Windows Build)
+Firebird 2.1.2  (Windows Build)
 ==================================
 
 o Introdução
@@ -21,7 +21,7 @@ Bem-vindo ao Firebird 2.1.
 Utilizadores Alvo
 =================
 
-O Firebird 2.1.1 passou por uma extensiva fase de testes
+O Firebird 2.1.2 passou por uma extensiva fase de testes
 e o seu objectivo é ser utilizado em produção.
 Porém, recomenda-se a todos os utilizadores que sigam
 algumas práticas padrão antes de o colocar num servidor

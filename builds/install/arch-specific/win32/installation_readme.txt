@@ -40,16 +40,20 @@ Problems with installation of MS VC runtime libraries
 
 Much work has been done to ensure that the MS Visual
 C runtime libraries are correctly installed by the
-binary installer. However, in case of problems it may
-be necessary to deploy the official vcredist.exe. The
-correct versions for this build of Firebird can be
-found here:
+binary installer. Since v2.1.2 Firebird will work with
+locally deployed instances of the runtime libraries.
+This especially simplifies deployment of the firebird
+client or embedded dll with your own application.
 
-	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+However, in case of problems it may be necessary to
+deploy the official vcredist.exe. The correct versions
+for this build of Firebird can be found here:
 
-  and x64 here:
+  http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
-	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+and x64 here:
+
+  http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Other Known installation problems
@@ -69,19 +73,25 @@ o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
   - The service installer (instsvc) uses the same
-	default instance name for 32-bit and 64-bit
-	installations. This is by design. Services exist
-	in a single name space.
+    default instance name for 32-bit and 64-bit
+    installations. This is by design. Services exist
+    in a single name space.
 
   - If the 32-bit and 64-bit control panel applets are
-	installed they will both point to the same default
-	instance.
+    installed they will both point to the same default
+    instance.
 
 o When installing under Vista be sure to install as an
   administrator. ie, if using the binary installer
   right click and choose 'Run as administrator'.
   Otherwise the installer will be unable to start the
   Firebird service at the end of installation.
+
+o Libraries deployed by instclient will fail to load if
+  the MS runtime libraries have not been installed
+  correctly. In case of problems users should install
+  the appropriate version of vcredist.exe mentioned
+  above.
 
 
 Uninstallation
@@ -135,7 +145,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -146,7 +156,7 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-	installation_scripted.txt
+    installation_scripted.txt
 
 for full details.
 
