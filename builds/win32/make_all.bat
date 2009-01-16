@@ -34,7 +34,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
 @del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\*.exp 2>nul
 @del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\*.lib 2>nul
-@rmdir /q /s %FB_ROOT_PATH%\output 2>nul
+@rmdir /q /s %FB_OUTPUT_DIR% 2>nul
 
 @mkdir %FB_OUTPUT_DIR% 2>nul
 @mkdir %FB_OUTPUT_DIR%\bin 2>nul
@@ -56,18 +56,25 @@ for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\fbclient\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
+
+for %%v in ( btyacc gbak_embed gpre_boot gpre_embed isql_embed ) do (
+@del %FB_OUTPUT_DIR%\bin\%%v.exe >nul
+)
+
 :: Firebird.conf, etc
 @copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR% > nul
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl >nul
+@copy %FB_ROOT_PATH%\builds\install\misc\IPLicense.txt %FB_OUTPUT_DIR% >nul
+@copy %FB_ROOT_PATH%\builds\install\misc\IDPLicense.txt %FB_OUTPUT_DIR% >nul
+
 :: DATABASES
 @copy %FB_GEN_DIR%\dbs\SECURITY2.FDB %FB_OUTPUT_DIR%\security2.fdb >nul
 @copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
-::@copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR%\firebird.msg >nul
-@copy %FB_ROOT_PATH%\builds\misc\security.gbak %FB_OUTPUT_DIR%\security2.fbk > nul
+
 :: DOCS
-::@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
-::@copy %FB_ROOT_PATH%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt >nul
+@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
+@copy %FB_ROOT_PATH%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt >nul
 
 :: HEADERS
 :: Don't use this ibase.h unless you have to - we build it better in BuildExecutableInstall.bat
@@ -88,21 +95,27 @@ type %FB_ROOT_PATH%\src\include\gen\iberror.h >> %FB_OUTPUT_DIR%\include\ibase.t
 sed -f %FB_ROOT_PATH%\src\misc\headers.sed < %FB_OUTPUT_DIR%\include\ibase.tmp > %FB_OUTPUT_DIR%\include\ibase.h
 del %FB_OUTPUT_DIR%\include\ibase.tmp > nul
 
-::Copy additional headers
+:: Additional headers
 copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul
 copy %FB_ROOT_PATH%\src\jrd\perf.h %FB_OUTPUT_DIR%\include >nul
-::This is in ibase.h so why make a separate copy?
-::copy %FB_ROOT_PATH%\src\jrd\blr.h %FB_OUTPUT_DIR%\include > nul
 copy %FB_ROOT_PATH%\src\include\gen\iberror.h %FB_OUTPUT_DIR%\include > nul
 
 :: UDF
 copy %FB_ROOT_PATH%\src\extlib\ib_udf.sql %FB_OUTPUT_DIR%\udf > nul
 copy %FB_ROOT_PATH%\src\extlib\ib_udf2.sql %FB_OUTPUT_DIR%\udf > nul
 copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
-:: Examples
+
+:: Installers
 @copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_INSTALL_SCRIPTS%\install_classic.bat %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_INSTALL_SCRIPTS%\uninstall.bat %FB_OUTPUT_DIR%\bin >nul
+
+:: MSVC runtime
+if %MSVC_VERSION% == 8 (
+@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcr80.dll" %FB_OUTPUT_DIR%\bin >nul
+@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcp80.dll" %FB_OUTPUT_DIR%\bin >nul
+@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" %FB_OUTPUT_DIR%\bin >nul
+)
 
 @goto :EOF
 
@@ -124,7 +137,3 @@ cancel_script > nul 2>&1
 ::End of ERROR
 ::------------
 @goto :EOF
-
-
-
-
