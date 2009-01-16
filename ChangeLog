@@ -1,3 +1,49 @@
+2009-01-16 17:29  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.253):
+
+	Fixed server shutdown when reading firebird.log
+
+2009-01-16 16:42  alexpeshkoff
+
+	* firebird2/src/: common/UtilSvc.cpp (1.11), common/UtilSvc.h
+	(1.12), jrd/svc.cpp (1.252), jrd/svc.h (1.71):
+
+	Optimized services performance when transfering big amounts of data
+	to user
+
+2009-01-16 16:07  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.18):
+
+	Use faster method to receive bytes from firebird.log
+
+2009-01-16 16:05  alexpeshkoff
+
+	* firebird2/src/: jrd/intlobj_new.h (1.25), intl/cv_icu.cpp (1.8),
+	intl/cv_narrow.h (1.9):
+
+	Make code much cleaner with a price of few wasted bytes in
+	CsConvertImpl
+
+2009-01-16 16:00  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.509):
+
+	Fixed error handling in GDS_SERVICE_QUERY
+
+2009-01-16 10:55  robocop
+
+	* firebird2/src/remote/: inet.cpp (1.267), inet_proto.h (1.18),
+	inet_server.cpp (1.89), interface.cpp (1.205), merge.cpp (1.25),
+	parse_proto.h (1.6), parser.cpp (1.24), protocol.cpp (1.78),
+	protocol.h (1.48), remot_proto.h (1.14), remote.cpp (1.80),
+	remote.h (1.88), server.cpp (1.233), server_stub.cpp (1.2), xdr.cpp
+	(1.45), xdr.h (1.14), xdr_proto.h (1.16), xnet.cpp (1.127), xnet.h
+	(1.19), os/win32/wnet.cpp (1.67):
+
+	Style.
+
 2009-01-15 14:58  roman-simakov
 
 	* firebird2/src/jrd/why.cpp (1.232):
