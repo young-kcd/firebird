@@ -227,13 +227,13 @@ const int MAXHOSTLEN		= 64;
 
 const int SELECT_TIMEOUT	= 60;		/* Dispatch thread select timeout (sec) */
 
-typedef struct slct
+struct slct_t
 {
 	int		slct_width;
 	int		slct_count;
 	time_t	slct_time;
 	fd_set	slct_fdset;
-} SLCT;
+};
 
 static bool		accept_connection(rem_port*, const P_CNCT*);
 #ifdef HAVE_SETITIMER
@@ -275,9 +275,7 @@ static SocketsArray* forkSockets;
 #endif
 
 static in_addr get_bind_address();
-static int get_host_address(const char* name,
-							in_addr* const host_addr_arr,
-							const int arr_size);
+static int get_host_address(const char* name, in_addr* const host_addr_arr, const int arr_size);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -318,9 +316,9 @@ static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
 static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
-static void		select_port(rem_port*, SLCT*, RemPortPtr&);
+static void		select_port(rem_port*, slct_t*, RemPortPtr&);
 static bool		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr&);
-static int		select_wait(rem_port*, SLCT *);
+static bool		select_wait(rem_port*, slct_t*);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
@@ -375,7 +373,7 @@ SLONG INET_remote_buffer;
 static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static bool INET_initialized = false;
 static bool INET_shutting_down = false;
-static SLCT INET_select = { 0, 0, 0 };
+static slct_t INET_select = { 0, 0, 0 };
 static int INET_max_clients;
 static rem_port* inet_async_receive = NULL;
 
@@ -435,8 +433,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		   id other than default specified in /etc/passwd. */
 
 		eff_gid = htonl(eff_gid);
-		user_id.insertBytes(CNCT_group,
-			reinterpret_cast<UCHAR*>(&eff_gid), sizeof(SLONG));
+		user_id.insertBytes(CNCT_group, reinterpret_cast<UCHAR*>(&eff_gid), sizeof(SLONG));
 	}
 
 /* Establish connection to server */
@@ -465,14 +462,11 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
-	copy_p_cnct_repeat_array(cnct->p_cnct_versions,
-							 protocols_to_try1,
-							 cnct->p_cnct_count);
+	copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try1, cnct->p_cnct_count);
 
 /* Try connection using first set of protocols.  punt if error */
 
-	rem_port* port = inet_try_connect(packet, rdb, file_name,
-								 node_name, status_vector, dpb);
+	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
 	if (!port) {
 		return NULL;
 	}
@@ -494,12 +488,9 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
-		copy_p_cnct_repeat_array(cnct->p_cnct_versions,
-								 protocols_to_try2,
-								 cnct->p_cnct_count);
+		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try2, cnct->p_cnct_count);
 
-		port = inet_try_connect(packet, rdb, file_name,
-								node_name, status_vector, dpb);
+		port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
 		if (!port) {
 			return NULL;
 		}
@@ -522,12 +513,9 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
 
-		copy_p_cnct_repeat_array(cnct->p_cnct_versions,
-								 protocols_to_try3,
-								 cnct->p_cnct_count);
+		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try3, cnct->p_cnct_count);
 
-		port = inet_try_connect(packet, rdb, file_name,
-								node_name, status_vector, dpb);
+		port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
 		if (!port) {
 			return NULL;
 		}
@@ -548,8 +536,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 /* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data,
-						  port->port_protocol & FB_PROTOCOL_MASK);
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
@@ -573,9 +560,9 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 }
 
 rem_port* INET_connect(const TEXT* name,
-							 PACKET* packet,
-							 ISC_STATUS* status_vector,
-							 USHORT flag, Firebird::ClumpletReader* dpb)
+					   PACKET* packet,
+					   ISC_STATUS* status_vector,
+					   USHORT flag, Firebird::ClumpletReader* dpb)
 {
 /**************************************
  *
@@ -657,7 +644,8 @@ rem_port* INET_connect(const TEXT* name,
 	in_addr host_addr_arr[MAX_HOST_ADDRESS_NUMBER];
 	int hostAddressNumber = 0;
 
-	if (packet) {
+	if (packet)
+	{
 		// client connection
 		hostAddressNumber = get_host_address(host.c_str(), host_addr_arr, MAX_HOST_ADDRESS_NUMBER);
 		if (hostAddressNumber > MAX_HOST_ADDRESS_NUMBER)
@@ -692,7 +680,8 @@ rem_port* INET_connect(const TEXT* name,
  * If this happens, retry the operation a few times.
  * NOTE: This still does not guarantee success, but helps.
  */
-	if (!service) {
+	if (!service)
+	{
 		if (H_ERRNO == INET_RETRY_ERRNO) {
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 				if ( (service = getservbyname(protocol.c_str(), "tcp")) )
@@ -710,7 +699,8 @@ rem_port* INET_connect(const TEXT* name,
     entry in "services" file, which is important
     for zero-installation clients.
     */
-	if (!service) {
+	if (!service)
+	{
 		if (protocol == FB_SERVICE_NAME) {
 			/* apply hardwired translation */
 			address.sin_port = htons(FB_SERVICE_PORT);
@@ -765,8 +755,7 @@ rem_port* INET_connect(const TEXT* name,
 	if (packet)
 	{
 		if (! setNoNagleOption(port)) {
-			inet_error(port, "setsockopt TCP_NODELAY",
-					   isc_net_connect_err, INET_ERRNO);
+			inet_error(port, "setsockopt TCP_NODELAY", isc_net_connect_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
 		}
@@ -779,8 +768,7 @@ rem_port* INET_connect(const TEXT* name,
 			// If host has two addresses and the first one failed,
 			// but the second one succeeded - no need to worry
 
-			n = connect((SOCKET) port->port_handle,
-					(struct sockaddr *) &address, sizeof(address));
+			n = connect((SOCKET) port->port_handle, (struct sockaddr*) &address, sizeof(address));
 			inetErrNo = INET_ERRNO;
 
 			if (n != -1 && send_full(port, packet))
@@ -795,7 +783,8 @@ rem_port* INET_connect(const TEXT* name,
 
 	memcpy(&address.sin_addr, &host_addr, sizeof(address.sin_addr));
 
-	if (flag & SRVR_multi_client) {
+	if (flag & SRVR_multi_client)
+	{
 		struct linger lingerInfo;
 
 		lingerInfo.l_onoff = 0;
@@ -805,8 +794,7 @@ rem_port* INET_connect(const TEXT* name,
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_REUSEADDR,
 					   (SCHAR*) &optval, sizeof(optval));
 		if (n == -1) {
-			inet_error(port, "setsockopt REUSE", isc_net_connect_listen_err,
-					   INET_ERRNO);
+			inet_error(port, "setsockopt REUSE", isc_net_connect_listen_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
 		}
@@ -824,24 +812,22 @@ rem_port* INET_connect(const TEXT* name,
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR *) & lingerInfo, sizeof(lingerInfo));
 		if (n == -1) {
-			inet_error(port, "setsockopt LINGER", isc_net_connect_listen_err,
-					   INET_ERRNO);
+			inet_error(port, "setsockopt LINGER", isc_net_connect_listen_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
 		}
 
 		if (! setNoNagleOption(port)) {
-			inet_error(port, "setsockopt TCP_NODELAY",
-					   isc_net_connect_listen_err, INET_ERRNO);
+			inet_error(port, "setsockopt TCP_NODELAY", isc_net_connect_listen_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
 		}
 	}
 
-	n = bind((SOCKET) port->port_handle,
-			 (struct sockaddr *) &address, sizeof(address));
+	n = bind((SOCKET) port->port_handle, (struct sockaddr*) &address, sizeof(address));
 
-	if (n == -1) {
+	if (n == -1)
+	{
 		/* On Linux platform, when the server dies the system holds a port
 		   for some time. */
 
@@ -1001,8 +987,7 @@ rem_port* INET_server(int sock)
 	port->port_handle = (HANDLE) sock;
 
 	int optval = 1;
-	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
-			   (SCHAR *) & optval, sizeof(optval));
+	n = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
 	}
@@ -1127,7 +1112,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 #else
 
 			initgroups(passwd->pw_name, passwd->pw_gid);
-			if (eff_gid != -1) {
+			if (eff_gid != -1)
+			{
 				gid_t gids[BUFFER_TINY];
 
 				const int gid_count = getgroups(FB_NELEM(gids), gids);
@@ -1175,8 +1161,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
 		{
 			if (chdir(home.c_str())) {
-				gds__log("inet_server: unable to cd to %s errno %d\n",
-						 home.c_str(), INET_ERRNO);
+				gds__log("inet_server: unable to cd to %s errno %d\n", home.c_str(), INET_ERRNO);
 				/* We continue after the error */
 			}
 		}
@@ -1199,7 +1184,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
 	if (status == 0) {
 		Firebird::string addr_str;
-		UCHAR* ip = (UCHAR*) &address.sin_addr;
+		const UCHAR* ip = (UCHAR*) &address.sin_addr;
 		addr_str.printf(
 			"%d.%d.%d.%d",
 			static_cast<int>(ip[0]),
@@ -1248,8 +1233,7 @@ static rem_port* alloc_port( rem_port* parent)
 			gds__register_cleanup(wsaExitHandler, 0);
 #endif
 			INET_remote_buffer = Config::getTcpRemoteBufferSize();
-			if (INET_remote_buffer < MAX_DATA_LW ||
-				INET_remote_buffer > MAX_DATA_HW)
+			if (INET_remote_buffer < MAX_DATA_LW || INET_remote_buffer > MAX_DATA_HW)
 			{
 				INET_remote_buffer = DEF_MAX_DATA;
 			}
@@ -1325,7 +1309,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
-	if (port->port_server_flags) {
+	if (port->port_server_flags)
+	{
 
 		SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
 		const int inetErrNo = INET_ERRNO;
@@ -1401,8 +1386,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		arg = getpid();
 #endif
 		if (ioctl(n, SIOCSPGRP, &arg) < 0) {
-			inet_error(port, "ioctl/SIOCSPGRP", isc_net_event_connect_err,
-					   INET_ERRNO);
+			inet_error(port, "ioctl/SIOCSPGRP", isc_net_event_connect_err, INET_ERRNO);
 			SOCLOSE(port->port_channel);
 			return NULL;
 		}
@@ -1446,8 +1430,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	}
 
 	int optval = TRUE;
-	int ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR,
-						 (SCHAR *) &optval, sizeof(optval));
+	int ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR, (SCHAR*) &optval, sizeof(optval));
 
 	if (ret == -1) {
 		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
@@ -1496,8 +1479,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 }
 
 #ifndef WIN_NT
-static int check_host(
-					  rem_port* port,
+static int check_host(rem_port* port,
 					  TEXT* host_name,
 					  const TEXT* user_name, const struct passwd *passwd)
 {
@@ -1518,7 +1500,7 @@ static int check_host(
 
 	socklen_t length = sizeof(address);
 
-	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, &length) == -1)
+	if (getpeername((int) port->port_handle, (struct sockaddr*) &address, &length) == -1)
 		return 0;
 
 	// If source address is in the loopback net - trust it
@@ -1549,7 +1531,7 @@ static int check_host(
 
 	if (result == -1) {
 		FILE* fp = fopen(GDS_HOSTS_FILE, "r");
-		const TEXT* hosts_file = fp ? (TEXT*)GDS_HOSTS_FILE : (TEXT*)HOSTS_FILE;
+		const TEXT* hosts_file = fp ? GDS_HOSTS_FILE : HOSTS_FILE;
 		if (fp)
 			fclose(fp);
 
@@ -1592,7 +1574,8 @@ static bool check_proxy(rem_port* port,
 
 	bool result = false;
 
-	for (;;) {
+	for (;;)
+	{
 		int c;
 		TEXT* p = line;
 		while (((c = getc(proxy)) != 0) && c != EOF && c != '\n')
@@ -1725,14 +1708,10 @@ static void disconnect( rem_port* port)
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary) {
-		fprintf(stdout, "INET_count_send = %lu packets\n",
-				   INET_count_send);
-		fprintf(stdout, "INET_bytes_send = %lu bytes\n",
-				   INET_bytes_send);
-		fprintf(stdout, "INET_count_recv = %lu packets\n",
-				   INET_count_recv);
-		fprintf(stdout, "INET_bytes_recv = %lu bytes\n",
-				   INET_bytes_recv);
+		fprintf(stdout, "INET_count_send = %lu packets\n", INET_count_send);
+		fprintf(stdout, "INET_bytes_send = %lu bytes\n", INET_bytes_send);
+		fprintf(stdout, "INET_count_recv = %lu packets\n", INET_count_recv);
+		fprintf(stdout, "INET_bytes_recv = %lu bytes\n", INET_bytes_recv);
 		fflush(stdout);
 	}
 #endif
@@ -2064,8 +2043,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 
 
 #if !(defined WIN_NT)
-static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
-	const TEXT* user_name)
+static int parse_hosts( const TEXT* file_name, const TEXT* host_name, const TEXT* user_name)
 {
 /*****************************************************************
  *
@@ -2083,8 +2061,10 @@ static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
 	int result = -1;
 	FILE* fp = fopen(file_name, "r");
 
-	if (fp) {
-		for (;;) {
+	if (fp)
+	{
+		for (;;)
+		{
 			entry1[0] = entry2[0] = 0;
 			entry1[1] = entry2[1] = 0;
 			int c;
@@ -2106,9 +2086,7 @@ static int parse_hosts( const TEXT* file_name, const TEXT* host_name,
 #endif
 
 #if !(defined WIN_NT)
-static int parse_line(
-					  const TEXT* entry1,
-					  const TEXT* entry2,
+static int parse_line(const TEXT* entry1, const TEXT* entry2,
 					  const TEXT* host_name, const TEXT* user_name)
 {
 /*****************************************************************
@@ -2222,8 +2200,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	do {
 		if (!xdr_protocol(&main_port->port_receive, packet))
 		{
-			packet->p_operation = main_port->port_flags & PORT_partial_data ?
-								  op_partial : op_exit;
+			packet->p_operation = main_port->port_flags & PORT_partial_data ? op_partial : op_exit;
 			main_port->port_flags &= ~PORT_partial_data;
 
 			if (packet->p_operation == op_exit) {
@@ -2248,7 +2225,8 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	return main_port;
 }
 
-static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port)
+static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length,
+						 RemPortPtr& port)
 {
 /**************************************
  *
@@ -2353,15 +2331,14 @@ static rem_port* select_accept( rem_port* main_port)
 	port->port_flags |= PORT_server;
 
 	if (main_port->port_server_flags & SRVR_thread_per_port) {
-		port->port_server_flags =
-			(SRVR_server | SRVR_inet | SRVR_thread_per_port);
+		port->port_server_flags = (SRVR_server | SRVR_inet | SRVR_thread_per_port);
 		return port;
 	}
 
 	return 0;
 }
 
-static void select_port(rem_port* main_port, SLCT* selct, RemPortPtr& port)
+static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 {
 /**************************************
  *
@@ -2406,7 +2383,7 @@ static void select_port(rem_port* main_port, SLCT* selct, RemPortPtr& port)
 	}
 }
 
-static int select_wait( rem_port* main_port, SLCT * selct)
+static bool select_wait( rem_port* main_port, slct_t* selct)
 {
 /**************************************
  *
@@ -2519,7 +2496,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			if (!INET_shutting_down && (main_port->port_server_flags & SRVR_multi_client)) {
 				gds__log("INET/select_wait: client rundown complete, server exiting");
 			}
-			return FALSE;
+			return false;
 		}
 
 		for (;;)
@@ -2528,7 +2505,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			if (tryStopMainThread && tryStopMainThread())
 			{
 				main_port->port_server_flags &= ~SRVR_multi_client;		// this is not server port any more
-				return FALSE;
+				return false;
 			}
 
 			// Some platforms change the timeout in the select call.
@@ -2537,8 +2514,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			timeout.tv_usec = 0;
 
 #ifdef WIN_NT
-			selct->slct_count = select(FD_SETSIZE, &selct->slct_fdset,
-									   NULL, NULL, &timeout);
+			selct->slct_count = select(FD_SETSIZE, &selct->slct_fdset, NULL, NULL, &timeout);
 #else
 			selct->slct_count = select(selct->slct_width, &selct->slct_fdset,
 									   NULL, NULL, &timeout);
@@ -2546,7 +2522,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			const int inetErrNo = INET_ERRNO;
 
 			//if (INET_shutting_down) {
-			//	return FALSE;
+			//	return false;
 			//}
 
 			if (selct->slct_count != -1)
@@ -2568,7 +2544,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 #endif
 					}
 				}
-				return TRUE;
+				return true;
 			}
 			if (INTERRUPT_ERROR(inetErrNo))
 				continue;
@@ -2579,7 +2555,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			}
 
 			gds__log("INET/select_wait: select failed, errno = %d", inetErrNo);
-			return FALSE;
+			return false;
 		}	// for (;;)
 	}
 }
@@ -2646,10 +2622,8 @@ static int send_partial( rem_port* port, PACKET * packet)
 }
 
 
-static int xdrinet_create(
-						  XDR * xdrs,
-						  rem_port* port,
-						  UCHAR * buffer, USHORT length, enum xdr_op x_op)
+static int xdrinet_create(XDR* xdrs, rem_port* port,
+						  UCHAR* buffer, USHORT length, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -2665,7 +2639,7 @@ static int xdrinet_create(
 	xdrs->x_public = (caddr_t) port;
 	xdrs->x_base = xdrs->x_private = reinterpret_cast<SCHAR*>(buffer);
 	xdrs->x_handy = length;
-	xdrs->x_ops = (xdr_t::xdr_ops *) & inet_ops;
+	xdrs->x_ops = (xdr_t::xdr_ops*) &inet_ops;
 	xdrs->x_op = x_op;
 
 	return TRUE;
@@ -2701,7 +2675,7 @@ static XDR_INT inet_destroy( XDR* xdrs)
  *
  **************************************/
 
-	return (XDR_INT)0;
+	return (XDR_INT) 0;
 }
 
 static void inet_gen_error (rem_port* port, const Arg::StatusVector& v)
@@ -2894,9 +2868,8 @@ static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
 	return xdrs->x_base + bytecount;
 }
 
-static void inet_error(
-					  rem_port* port,
-					  const TEXT* function, ISC_STATUS operation, int status)
+static void inet_error(rem_port* port,
+					   const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -3002,9 +2975,7 @@ static bool_t inet_putlong( XDR* xdrs, const SLONG* lp)
  *
  **************************************/
 	const SLONG l = htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<const char*>(&l),
-									   4);
+	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(&l), 4);
 }
 
 static bool_t inet_read( XDR * xdrs)
@@ -3033,7 +3004,8 @@ static bool_t inet_read( XDR * xdrs)
 		p += xdrs->x_handy;
 	}
 
-	while (true) {
+	while (true)
+	{
 		SSHORT length = end - p;
 		if (!packet_receive(port, reinterpret_cast<UCHAR*>(p), length, &length))
 		{
@@ -3075,13 +3047,12 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 	return TRUE;
 }
 
-static rem_port* inet_try_connect(
-							 PACKET* packet,
-							 Rdb* rdb,
-							 const Firebird::PathName& file_name,
-							 const TEXT* node_name,
-							 ISC_STATUS* status_vector,
-							 Firebird::ClumpletReader& dpb)
+static rem_port* inet_try_connect(PACKET* packet,
+								  Rdb* rdb,
+								  const Firebird::PathName& file_name,
+								  const TEXT* node_name,
+								  ISC_STATUS* status_vector,
+								  Firebird::ClumpletReader& dpb)
 {
 /**************************************
  *
@@ -3153,10 +3124,11 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 
 	//p = xdrs->x_base; redundant
 
-	while (length) {
+	while (length)
+	{
 		const SSHORT l = (SSHORT) MIN(length, INET_remote_buffer);
 		length -= l;
-		if (!packet_send(port, p, (SSHORT) ((length) ? -l : l)))
+		if (!packet_send(port, p, (SSHORT) (length ? -l : l)))
 			return FALSE;
 		p += l;
 	}
@@ -3181,7 +3153,8 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 
 	char* p2 = aux_buffer;
 
-	while (l2 < 0) {
+	while (l2 < 0)
+	{
 		if (!packet_send(port, 0, 0))
 			return FALSE;
 		p2 -= l2;
@@ -3217,8 +3190,7 @@ xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
 }
 
 #ifdef DEBUG
-static void packet_print(
-						 const TEXT* string,
+static void packet_print(const TEXT* string,
 						 const UCHAR* packet, int length, ULONG counter)
 {
 /**************************************
@@ -3235,8 +3207,7 @@ static void packet_print(
 	for (int l = length; l > 0; --l)
 		sum += *packet++;
 
-	fprintf(stdout,
-			   "%05lu:    PKT %s\t(%lu): length = %4d, checksum = %d\n",
+	fprintf(stdout, "%05lu:    PKT %s\t(%lu): length = %4d, checksum = %d\n",
 			   inet_debug_timer(), string, counter, length, sum);
 	fflush(stdout);
 }
@@ -3534,8 +3505,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
-			inet_error(port, "simulated error - send",
-					   isc_net_write_err, isc_arg_end);
+			inet_error(port, "simulated error - send", isc_net_write_err, isc_arg_end);
 			return false;
 		}
 	}

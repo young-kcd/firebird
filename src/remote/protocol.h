@@ -111,7 +111,7 @@ they will be turned off once SCROLLABLE_CURSORS is turned on.
 
 /* Architecture types */
 
-typedef enum
+enum P_ARCH
 {
 	arch_generic	= 1,	/* Generic -- always use canonical forms */
 	arch_apollo		= 2,
@@ -156,7 +156,7 @@ typedef enum
 	arch_darwin_x64		= 41,
 	arch_darwin_ppc64	= 42,
 	arch_max		= 43	// Keep this at the end
-} P_ARCH;
+};
 
 /* Protocol Types */
 // p_acpt_type

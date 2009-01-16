@@ -28,7 +28,12 @@
 #include "../remote/merge_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define PUT_WORD(ptr, value)	{*(ptr)++ = static_cast<UCHAR>(value); *(ptr)++ = static_cast<UCHAR>(value >> 8);}
+inline void PUT_WORD(UCHAR*& ptr, USHORT value)
+{
+	*ptr++ = static_cast<UCHAR>(value);
+	*ptr++ = static_cast<UCHAR>(value >> 8);
+}
+
 #define PUT(ptr, value)		*(ptr)++ = value;
 
 #ifdef NOT_USED_OR_REPLACED
@@ -158,10 +163,8 @@ static SSHORT convert( ULONG number, UCHAR * buffer)
 }
 #endif
 
-static ISC_STATUS merge_setup(
-						  const UCHAR** in,
-						  UCHAR** out, const UCHAR* const end,
-						  USHORT delta_length)
+static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const end,
+							  USHORT delta_length)
 {
 /**************************************
  *

@@ -316,7 +316,7 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 }
 
 
-bool_t xdr_enum(XDR * xdrs, enum_t * ip)
+bool_t xdr_enum(XDR * xdrs, xdr_op * ip)
 {
 /**************************************
  *
@@ -339,7 +339,7 @@ bool_t xdr_enum(XDR * xdrs, enum_t * ip)
 	case XDR_DECODE:
 		if (!GETLONG(xdrs, &temp))
 			return FALSE;
-		*ip = (enum_t) temp;
+		*ip = (xdr_op) temp;
 		return TRUE;
 
 	case XDR_FREE:
@@ -701,7 +701,7 @@ bool_t xdr_u_short(XDR * xdrs, u_short * ip)
 
 
 int xdr_union(	XDR*			xdrs,
-				enum_t*			dscmp,
+				xdr_op*			dscmp,
 				SCHAR*			unp,
 				xdr_discrim*	choices,
 				xdrproc_t		dfault)
@@ -721,7 +721,7 @@ int xdr_union(	XDR*			xdrs,
 	// can have any size.
 	int enum_value = *dscmp;
 	const bool_t bOK = xdr_int(xdrs, &enum_value);
-	*dscmp = static_cast<enum_t>(enum_value);
+	*dscmp = static_cast<xdr_op>(enum_value);
 
 	if (!bOK)
 	{
@@ -762,10 +762,7 @@ bool_t xdr_wrapstring(XDR * xdrs, SCHAR ** strp)
 }
 
 
-int xdrmem_create(	XDR*	xdrs,
-					SCHAR*			addr,
-					u_int			len,
-					enum xdr_op		x_op)
+int xdrmem_create(	XDR* xdrs, SCHAR* addr, u_int len, xdr_op x_op)
 {
 /**************************************
  *
@@ -803,9 +800,7 @@ static XDR_INT mem_destroy(XDR * xdrs)
 }
 
 
-static bool_t mem_getbytes(	XDR*	xdrs,
-							SCHAR*	buff,
-							u_int	count)
+static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -920,8 +915,7 @@ static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t mem_putbytes(XDR* xdrs,
-						   const SCHAR* buff, u_int count)
+static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 {
 /**************************************
  *

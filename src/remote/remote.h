@@ -227,11 +227,11 @@ public:
 /* Windows declares a msg structure, so rename the structure
    to avoid overlap problems. */
 
-typedef struct Message : public Firebird::GlobalStorage
+struct RMessage : public Firebird::GlobalStorage
 {
-	Message*	msg_next;	/* Next available message */
+	RMessage*	msg_next;	/* Next available message */
 #ifdef SCROLLABLE_CURSORS
-	Message*	msg_prior;	/* Next available message */
+	RMessage*	msg_prior;	/* Next available message */
 	ULONG		msg_absolute; 		/* Absolute record number in cursor result set */
 #endif
 	USHORT		msg_number;			/* Message number */
@@ -239,7 +239,7 @@ typedef struct Message : public Firebird::GlobalStorage
 	UCharArrayAutoPtr msg_buffer;	/* Allocated message */
 
 public:
-	explicit Message(size_t rpt) :
+	explicit RMessage(size_t rpt) :
 		msg_next(0),
 #ifdef SCROLLABLE_CURSORS
 		msg_prior(0), msg_absolute(0),
@@ -248,7 +248,7 @@ public:
 	{
 		memset(msg_buffer, 0, rpt);
 	}
-} *REM_MSG;
+};
 
 
 // remote stored procedure request
@@ -257,8 +257,8 @@ struct Rpr : public Firebird::GlobalStorage
 	Rdb*		rpr_rdb;
 	Rtr*		rpr_rtr;
 	FB_API_HANDLE rpr_handle;
-	Message*	rpr_in_msg;		/* input message */
-	Message*	rpr_out_msg;	/* output message */
+	RMessage*	rpr_in_msg;		/* input message */
+	RMessage*	rpr_out_msg;	/* output message */
 	rem_fmt*	rpr_in_format;	/* Format of input message */
 	rem_fmt*	rpr_out_format;	/* Format of output message */
 
@@ -284,10 +284,10 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 	struct		rrq_repeat
 	{
 		rem_fmt*	rrq_format;		/* format for this message */
-		Message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
-		Message*	rrq_xdr;		/* point at which cache is read or written by xdr */
+		RMessage*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
+		RMessage*	rrq_xdr;		/* point at which cache is read or written by xdr */
 #ifdef SCROLLABLE_CURSORS
-		Message*	rrq_last;		/* last message returned */
+		RMessage*	rrq_last;		/* last message returned */
 		ULONG		rrq_absolute;	/* current offset in result set for record being read into cache */
 		USHORT		rrq_flags;
 #endif
@@ -381,8 +381,8 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	rem_fmt*		rsr_select_format;		/* Format of select message */
 	rem_fmt*		rsr_user_select_format; /* Format of user's select message */
 	rem_fmt*		rsr_format;				/* Format of current message */
-	Message*		rsr_message;			/* Next message to process */
-	Message*		rsr_buffer;				/* Next buffer to use */
+	RMessage*		rsr_message;			/* Next message to process */
+	RMessage*		rsr_buffer;				/* Next buffer to use */
 	Firebird::StatusHolder* rsr_status;		/* saved status for buffered errors */
 	USHORT			rsr_id;
 	RFlags<USHORT>	rsr_flags;
@@ -515,6 +515,7 @@ typedef int HANDLE;
 // fwd. decl.
 struct p_cnct;
 struct rmtque;
+struct xcc; // defined in xnet.h
 
 /* Queue of deferred packets */
 
@@ -642,7 +643,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Rsr*			port_statement;		/* Statement for execute immediate */
 	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
 	USHORT			port_requests_queued;	/* requests currently queued */
-	void*			port_xcc;				/* interprocess structure */
+	xcc*			port_xcc;				/* interprocess structure */
 	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */
 #ifdef REM_SERVER

@@ -37,7 +37,7 @@
 
 
 
-REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
+RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 {
 /**************************************
  *
@@ -51,19 +51,20 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
  *	messages found.  If an error occurs, return -1;
  *
  **************************************/
-	REM_MSG next;
+	RMessage* next;
 
 	const SSHORT version = *blr++;
 	if ((version != blr_version4) && (version != blr_version5))
-		return (REM_MSG) - 1;
+		return (RMessage*) - 1;
 
 	if (*blr++ != blr_begin)
 		return 0;
 
-	REM_MSG message = NULL;
+	RMessage* message = NULL;
 	USHORT net_length = 0;
 
-	while (*blr++ == blr_message) {
+	while (*blr++ == blr_message)
+	{
 		const USHORT msg_number = *blr++;
 		USHORT count = *blr++;
 		count += (*blr++) << 8;
@@ -73,9 +74,11 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 #endif
 		format->fmt_count = count;
 		USHORT offset = 0;
-		for (dsc* desc = format->fmt_desc.begin(); count; --count, ++desc) {
+		for (dsc* desc = format->fmt_desc.begin(); count; --count, ++desc)
+		{
 			USHORT align = 4;
-			switch (*blr++) {
+			switch (*blr++)
+			{
 			case blr_text:
 				desc->dsc_dtype = dtype_text;
 				desc->dsc_length = *blr++;
@@ -217,7 +220,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 					delete next->msg_address;
 					delete next;
 				}
-				return (REM_MSG) - 1;
+				return (RMessage*) - 1;
 			}
 			if (desc->dsc_dtype == dtype_varying)
 				net_length += 4 + ((desc->dsc_length - 2 + 3) & ~3);
@@ -230,7 +233,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		}
 		format->fmt_length = offset;
 		format->fmt_net_length = net_length;
-		next = new Message(format->fmt_length);
+		next = new RMessage(format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("PARSE_messages            allocate message %x\n", next);
 #endif
@@ -263,18 +266,19 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 	const UCHAR* new_blr = blr;
 
 	const SSHORT version = *blr++;
-	if (((version != blr_version4) && (version != blr_version5)) ||
-		*blr++ != blr_begin)
+	if (((version != blr_version4) && (version != blr_version5)) || *blr++ != blr_begin)
 	{
 		return old_blr;
 	}
 
-	while (*blr++ == blr_message) {
+	while (*blr++ == blr_message)
+	{
 		blr++;
 		USHORT count = *blr++;
 		count += (*blr++) << 8;
 		for (; count; --count)
-			switch (*blr++) {
+			switch (*blr++)
+			{
 			case blr_text2:
 			case blr_varying2:
 			case blr_cstring2:
@@ -299,13 +303,12 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_d_float:
-				if (new_blr == old_blr) {
+				if (new_blr == old_blr)
+				{
 					new_blr = FB_NEW(*getDefaultMemoryPool()) UCHAR[blr_length];
 					/* FREE:  Never freed, blr_d_float is VMS specific */
 #ifdef DEBUG_REMOTE_MEMORY
-					printf
-						("PARSE_prepare_messages    allocate blr     %x\n",
-						 new_blr);
+					printf("PARSE_prepare_messages    allocate blr     %x\n", new_blr);
 #endif
 					// Safe const_cast, we are allocating new space for new_blr
 					memcpy(const_cast<UCHAR*>(new_blr), old_blr, blr_length);

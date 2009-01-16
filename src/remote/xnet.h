@@ -157,7 +157,7 @@ const ULONG XPI_SERVER_PROTOCOL_VERSION		= 3;
 
 // XNET_RESPONSE - server response on client connect request
 
-typedef struct
+struct XNET_RESPONSE
 {
 	ULONG proc_id;
 	ULONG slots_per_map;
@@ -165,7 +165,7 @@ typedef struct
 	ULONG map_num;
 	ULONG slot_num;
 	ULONG timestamp;
-} XNET_RESPONSE, *PXNET_RESPONSE;
+};
 
 // XNET_CONNECT_RESPONZE_SIZE - amount of bytes server writes on connect response
 

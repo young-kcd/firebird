@@ -67,8 +67,7 @@ void REMOTE_cleanup_transaction( Rtr* transaction)
  *	receive while we still have something cached.
  *
  **************************************/
-	for (Rrq* request = transaction->rtr_rdb->rdb_requests; request;
-		 request = request->rrq_next)
+	for (Rrq* request = transaction->rtr_rdb->rdb_requests; request; request = request->rrq_next)
 	{
 		if (request->rrq_rtr == transaction) {
 			REMOTE_reset_request(request, 0);
@@ -187,7 +186,8 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 							 + buffer_used	/* used in 1st pkt */
 							 + (port->port_buff_size - 1))	/* to round up */
 							/ port->port_buff_size);
-	if (num_packets > MAX_PACKETS_PER_BATCH) {
+	if (num_packets > MAX_PACKETS_PER_BATCH)
+	{
 		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	/* data set */
 								 + buffer_used	/* used in 1st pkt */
 								 + (port->port_buff_size - 1))	/* to round up */
@@ -211,8 +211,7 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 		const char* p = getenv("DEBUG_BATCH_SIZE");
 		if (p)
 			result = atoi(p);
-		fprintf(stderr, "row_size = %lu num_packets = %d\n",
-				   row_size, num_packets);
+		fprintf(stderr, "row_size = %lu num_packets = %d\n", row_size, num_packets);
 		fprintf(stderr, "result = %lu\n", result);
 	}
 #endif
@@ -249,8 +248,7 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 	request->rrq_levels = request->clone();
 /* FREE: REMOTE_remove_request() */
 #ifdef DEBUG_REMOTE_MEMORY
-	printf("REMOTE_find_request       allocate request %x\n",
-			  request->rrq_levels);
+	printf("REMOTE_find_request       allocate request %x\n", request->rrq_levels);
 #endif
 	request = request->rrq_levels;
 	request->rrq_level = level;
@@ -260,11 +258,12 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 
 	Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
 	const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
-	for (; tail <= end; tail++) {
+	for (; tail <= end; tail++)
+	{
 		const rem_fmt* format = tail->rrq_format;
 		if (!format)
 			continue;
-		REM_MSG msg = new Message(format->fmt_length);
+		RMessage* msg = new RMessage(format->fmt_length);
 		tail->rrq_xdr = msg;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_find_request       allocate message %x\n", msg);
@@ -296,9 +295,9 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 	XDR xdr;
 	USHORT n;
 
-	if (packet) {
-		xdrmem_create(&xdr, reinterpret_cast<char*>(packet),
-					  sizeof(PACKET), XDR_FREE);
+	if (packet)
+	{
+		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
 
 		if (partial) {
@@ -342,8 +341,8 @@ void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
 
 	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
 
-	port->port_connect_timeout = pb && pb->find(isc_dpb_connect_timeout) ?
-								 pb->getInt() : Config::getConnectionTimeout();
+	port->port_connect_timeout =
+		pb && pb->find(isc_dpb_connect_timeout) ? pb->getInt() : Config::getConnectionTimeout();
 
 	port->port_flags |= PORT_dummy_pckt_set;
 	port->port_dummy_packet_interval = Config::getDummyPacketInterval();
@@ -385,7 +384,7 @@ rem_str* REMOTE_make_string(const SCHAR* input)
 }
 
 
-void REMOTE_release_messages( REM_MSG messages)
+void REMOTE_release_messages( RMessage* messages)
 {
 /**************************************
  *
@@ -397,19 +396,21 @@ void REMOTE_release_messages( REM_MSG messages)
  *	Release a circular list of messages.
  *
  **************************************/
-	REM_MSG message = messages;
+	RMessage* message = messages;
 	if (message)
-		while (true) {
-			REM_MSG temp = message;
+	{
+		while (true)
+		{
+			RMessage* temp = message;
 			message = message->msg_next;
 #ifdef DEBUG_REMOTE_MEMORY
-			printf("REMOTE_release_messages   free message     %x\n",
-					  temp);
+			printf("REMOTE_release_messages   free message     %x\n", temp);
 #endif
 			delete temp;
 			if (message == messages)
 				break;
 		}
+	}
 }
 
 
@@ -437,18 +438,19 @@ void REMOTE_release_request( Rrq* request)
 
 /* Get rid of request and all levels */
 
-	for (;;) {
+	for (;;)
+	{
 		Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
 		const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 		for (; tail <= end; tail++)
 		{
-		    REM_MSG message = tail->rrq_message;
-			if (message) {
-				if (!request->rrq_level) {
+		    RMessage* message = tail->rrq_message;
+			if (message)
+			{
+				if (!request->rrq_level)
+				{
 #ifdef DEBUG_REMOTE_MEMORY
-					printf
-						("REMOTE_release_request    free format      %x\n",
-						 tail->rrq_format);
+					printf("REMOTE_release_request    free format      %x\n", tail->rrq_format);
 #endif
 					delete tail->rrq_format;
 				}
@@ -466,7 +468,7 @@ void REMOTE_release_request( Rrq* request)
 }
 
 
-void REMOTE_reset_request( Rrq* request, REM_MSG active_message)
+void REMOTE_reset_request( Rrq* request, RMessage* active_message)
 {
 /**************************************
  *
@@ -482,14 +484,17 @@ void REMOTE_reset_request( Rrq* request, REM_MSG active_message)
  **************************************/
 	Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
 	const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
-	for (; tail <= end; tail++) {
-	    REM_MSG message = tail->rrq_message;
-		if (message != NULL && message != active_message) {
+	for (; tail <= end; tail++)
+	{
+	    RMessage* message = tail->rrq_message;
+		if (message != NULL && message != active_message)
+		{
 			tail->rrq_xdr = message;
 			tail->rrq_rows_pending = 0;
 			tail->rrq_reorder_level = 0;
 			tail->rrq_batch_count = 0;
-			while (true) {
+			while (true)
+			{
 				message->msg_address = NULL;
 				message = message->msg_next;
 				if (message == tail->rrq_message)
@@ -516,7 +521,7 @@ void REMOTE_reset_statement( Rsr* statement)
  *	Reset a statement by releasing all buffers except 1
  *
  **************************************/
-	REM_MSG message;
+	RMessage* message;
 
 	if ((!statement) || (!(message = statement->rsr_message)))
 		return;
@@ -535,7 +540,7 @@ void REMOTE_reset_statement( Rsr* statement)
 
 /* find the entry before statement->rsr_message */
 
-	REM_MSG temp = message->msg_next;
+	RMessage* temp = message->msg_next;
 	while (temp->msg_next != message)
 		temp = temp->msg_next;
 
@@ -672,33 +677,36 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > 0) {
-		if (xdrs->x_handy >= bytecount) {
+	while (bytecount > 0)
+	{
+		if (xdrs->x_handy >= bytecount)
+		{
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			break;
 		}
-		else {
-			if (xdrs->x_handy > 0) {
-				memcpy(buff, xdrs->x_private, xdrs->x_handy);
-				xdrs->x_private += xdrs->x_handy;
-				buff += xdrs->x_handy;
-				bytecount -= xdrs->x_handy;
-				xdrs->x_handy = 0;
-			}
-			rem_port* port = (rem_port*) xdrs->x_public;
-			Firebird::RefMutexGuard queGuard(*port->port_que_sync);
-			if (port->port_qoffset >= port->port_queue.getCount()) {
-				port->port_flags |= PORT_partial_data;
-				return FALSE;
-			}
-			xdrs->x_handy = port->port_queue[port->port_qoffset].getCount();
-			fb_assert(xdrs->x_handy <= port->port_buff_size);
-			memcpy(xdrs->x_base, port->port_queue[port->port_qoffset].begin(), xdrs->x_handy);
-			++port->port_qoffset;
-			xdrs->x_private = xdrs->x_base;
+
+		if (xdrs->x_handy > 0)
+		{
+			memcpy(buff, xdrs->x_private, xdrs->x_handy);
+			xdrs->x_private += xdrs->x_handy;
+			buff += xdrs->x_handy;
+			bytecount -= xdrs->x_handy;
+			xdrs->x_handy = 0;
 		}
+		rem_port* port = (rem_port*) xdrs->x_public;
+		Firebird::RefMutexGuard queGuard(*port->port_que_sync);
+		if (port->port_qoffset >= port->port_queue.getCount()) {
+			port->port_flags |= PORT_partial_data;
+			return FALSE;
+		}
+
+		xdrs->x_handy = port->port_queue[port->port_qoffset].getCount();
+		fb_assert(xdrs->x_handy <= port->port_buff_size);
+		memcpy(xdrs->x_base, port->port_queue[port->port_qoffset].begin(), xdrs->x_handy);
+		++port->port_qoffset;
+		xdrs->x_private = xdrs->x_base;
 	}
 
 	return TRUE;
@@ -708,8 +716,8 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 #ifdef TRUSTED_AUTH
 ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb,
 					   ServerAuth::Part2* p2, P_OP op)
-: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
-  part2(p2), operation(op)
+	: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
+	  part2(p2), operation(op)
 {
 	fileName.assign(fName, fLen);
 	size_t pbLen = pb.getBufferLength();

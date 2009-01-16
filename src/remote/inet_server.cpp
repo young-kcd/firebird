@@ -167,12 +167,15 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	int clients = 0;
 	bool done = false;
 
-	while (argv < end) {
+	while (argv < end)
+	{
 		TEXT c;
 		const TEXT* p = *argv++;
 		if (*p++ == '-')
-			while (c = *p++) {
-				switch (UPPER(c)) {
+			while (c = *p++)
+			{
+				switch (UPPER(c))
+				{
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
 					debug = standalone = true;
@@ -247,8 +250,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 					exit(FINI_OK);
 				case 'Z':
-					printf("Firebird TCP/IP server version %s\n",
-							  GDS_VERSION);
+					printf("Firebird TCP/IP server version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
 				if (done)
@@ -289,8 +291,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		// on any unix /tmp seems to be the best place
 		if (CHANGE_DIR(TEMP_DIR)) {
 			/* error on changing the directory */
-			gds__log("Could not change directory to %s due to errno %d",
-					TEMP_DIR, errno);
+			gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 		}
 	}
 #endif
@@ -299,12 +300,14 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
    but give up after 100 tries */
 
 #ifndef SUPERSERVER
-	if (multi_client && !debug) {
+	if (multi_client && !debug)
+	{
 #ifdef UNIX
 		set_signal(SIGUSR1, signal_handler);
 #endif
 		int child;
-		for (int n = 0; n < 100; n++) {
+		for (int n = 0; n < 100; n++)
+		{
 			INET_SERVER_start = 0;
 			if (!(child = fork()))
 				break;
@@ -321,8 +324,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	}
 #endif
 
-	if (standalone) {
-		if (multi_client) {
+	if (standalone)
+	{
+		if (multi_client)
+		{
 #ifdef SUPERSERVER
 
             // Remove restriction on username, for DEV builds
@@ -338,8 +343,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				user_name != INTERBASE_USER_SHORT)
 			{
 				/* invalid user -- bail out */
-				fprintf(stderr,
-						   "%s: Invalid user (must be %s, %s, %s or root).\n",
+				fprintf(stderr, "%s: Invalid user (must be %s, %s, %s or root).\n",
 						   "fbserver", FIREBIRD_USER_NAME,
 						   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
 				exit(STARTUP_ERROR);
@@ -378,8 +382,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 /* before starting the superserver stuff change directory to tmp */
 	if (CHANGE_DIR(TEMP_DIR)) {
 		/* error on changing the directory */
-		gds__log("Could not change directory to %s due to errno %d",
-				TEMP_DIR, errno);
+		gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 	}
 
 /* Server tries to attach to security2.fdb to make sure everything is OK

@@ -77,7 +77,7 @@ static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*		receive(rem_port*, PACKET *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
-static int		xdrwnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
+static int		xdrwnet_create(XDR *, rem_port*, UCHAR *, USHORT, xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR *, int);
 static int		wnet_destroy(XDR *);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
@@ -1006,7 +1006,7 @@ static int send_partial( rem_port* port, PACKET * packet)
 
 static int xdrwnet_create(XDR* xdrs,
 						  rem_port* port,
-						  UCHAR* buffer, USHORT length, enum xdr_op x_op)
+						  UCHAR* buffer, USHORT length, xdr_op x_op)
 {
 /**************************************
  *
