@@ -37,7 +37,7 @@
 #include "../common/classes/init.h"
 
 #ifdef DEV_BUILD
-Firebird::AtomicCounter rem_port::portCounter(0);
+Firebird::AtomicCounter rem_port::portCounter;
 #endif
 
 #ifdef REMOTE_DEBUG
