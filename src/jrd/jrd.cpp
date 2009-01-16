@@ -2966,6 +2966,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 				memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
 				memset(service->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
+				return user_status[1];
 			}
 		}
 	}
