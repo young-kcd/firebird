@@ -95,6 +95,8 @@ class thread_db;
 class Service : public Firebird::UtilSvc, public TypedHandle<type_svc>
 {
 public:		// utilities interface with service
+	// output to svc_stdout
+	virtual void output(const char* text);
 	// printf() to svc_stdout
     virtual void printf(const SCHAR* format, ...);
 	// returns true - it's service :)
@@ -155,11 +157,9 @@ private:
 	void	readFbLog();
 	// Create argv, argc and svc_parsed_sw
 	void	parseSwitches();
-	// Get character from stdout buffer
-	UCHAR	dequeueByte();
-	// Put character to stdout buffer
-	void	enqueueByte(const UCHAR c);
-	// true if there is any data in stdout buffer
+	// Put data into stdout buffer
+	void	enqueue(const UCHAR* s, ULONG len);
+	// true if there is no data in stdout buffer
 	bool	empty() const;
 	// true if no more space in stdout buffer
 	bool	full() const;
@@ -177,7 +177,8 @@ private:
 	void	put(const SCHAR* buffer, USHORT length);
 
 	// Increment circular buffer pointer
-	static USHORT		add_one(USHORT i);
+	static ULONG		add_one(ULONG i);
+	static ULONG		add_val(ULONG i, ULONG val);
 	// Convert spb flags to utility switches
 	static void			conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Find spb switch in switch table
@@ -205,7 +206,7 @@ private:
 	Firebird::string svc_parsed_sw;		// Here point elements of argv
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
-	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE + 1];		// output from service
+	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE];		// output from service
 	Firebird::Semaphore	svcStart;
 	const serv_entry*	svc_service;
 	Firebird::Array<UCHAR> svc_resp_alloc;

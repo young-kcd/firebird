@@ -52,11 +52,7 @@ public:
 public:
 	UtilSvc() : argv(getPool()) { }
 
-	void output(const char* text)
-	{
-		printf("%s", text);
-	}
-
+	virtual void output(const char* text) = 0;
     virtual void printf(const SCHAR* format, ...) = 0;
 	virtual bool isService() = 0;
 	virtual void started() = 0;

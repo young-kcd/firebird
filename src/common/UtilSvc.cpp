@@ -49,6 +49,15 @@ public:
 		}
 	}
 
+	virtual void output(const char* text)
+	{
+		size_t len = strlen(text);
+		if (::fwrite(text, 1, len, stdout) != len)
+		{
+			system_call_failed::raise("StandaloneUtilityInterface::output()/fwrite()");
+		}
+	}
+
     virtual void printf(const SCHAR* format, ...)
 	{
 		va_list arglist;

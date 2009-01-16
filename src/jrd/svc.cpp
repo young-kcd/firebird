@@ -312,6 +312,12 @@ void Service::parseSwitches()
 	}
 }
 
+void Service::output(const char* text)
+{
+	ULONG len = strlen(text);
+	enqueue(reinterpret_cast<const UCHAR*>(text), len);
+}
+
 void Service::printf(const SCHAR* format, ...)
 {
 	// Ensure that service is not detached.
@@ -326,12 +332,7 @@ void Service::printf(const SCHAR* format, ...)
 	buf.vprintf(format, arglist);
 	va_end(arglist);
 
-	const char* const end = buf.end();
-
-	for (const char* p = buf.begin(); p < end && !(svc_flags & SVC_detached); ++p)
-	{
-		enqueueByte(*p);
-	}
+	enqueue(reinterpret_cast<const UCHAR*>(buf.begin()), buf.length());
 }
 
 bool Service::isService()
@@ -356,30 +357,34 @@ void Service::finish()
 
 void Service::putLine(char tag, const char* val)
 {
-	const size_t len = strlen(val) & 0xFFFF;
-	enqueueByte(tag);
-	enqueueByte(len);
-	enqueueByte(len >> 8);
+	const ULONG len = strlen(val) & 0xFFFF;
 
-	for (size_t i = 0; i < len; i++)
-	{
-		enqueueByte(val[i]);
-	}
+	UCHAR buf[3];
+	buf[0] = tag;
+	buf[1] = len;
+	buf[2] = len >> 8;
+	enqueue(buf, sizeof buf);
+
+	enqueue(reinterpret_cast<const UCHAR*>(val), len);
 }
 
 void Service::putSLong(char tag, SLONG val)
 {
-	enqueueByte(tag);
-	enqueueByte(val);
-	enqueueByte(val >> 8);
-	enqueueByte(val >> 16);
-	enqueueByte(val >> 24);
+	UCHAR buf[5];
+	buf[0] = tag;
+	buf[1] = val;
+	buf[2] = val >> 8;
+	buf[3] = val >> 16;
+	buf[4] = val >> 24;
+	enqueue(buf, sizeof buf);
 }
 
 void Service::putChar(char tag, char val)
 {
-	enqueueByte(tag);
-	enqueueByte(val);
+	UCHAR buf[2];
+	buf[0] = tag;
+	buf[1] = val;
+	enqueue(buf, sizeof buf);
 }
 
 void Service::setServiceStatus(const ISC_STATUS* status_vector)
@@ -657,7 +662,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()),
-	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE),
+	svc_stdout_head(0), svc_stdout_tail(0),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()),
@@ -1922,57 +1927,6 @@ void Service::readFbLog()
 }
 
 
-USHORT Service::add_one(USHORT i)
-{
-	return ((i % SVC_STDOUT_BUFFER_SIZE) + 1);
-}
-
-
-bool Service::empty() const
-{
-	return add_one(svc_stdout_tail) == svc_stdout_head;
-}
-
-
-bool Service::full() const
-{
-	return add_one(add_one(svc_stdout_tail)) == svc_stdout_head;
-}
-
-
-UCHAR Service::dequeueByte()
-{
-	const UCHAR ch = svc_stdout[svc_stdout_head];
-	svc_stdout_head = add_one(svc_stdout_head);
-
-	return ch;
-}
-
-
-void Service::enqueueByte(const UCHAR ch)
-{
-	if (checkForShutdown())
-	{
-		return;
-	}
-
-	// Wait for space in buffer while service is not detached.
-	while (full() && !(svc_flags & SVC_detached)) {
-		THREAD_SLEEP(1);
-		if (checkForShutdown())
-		{
-			return;
-		}
-	}
-
-	// Ensure that service is not detached.
-	if (!(svc_flags & SVC_detached)) {
-		svc_stdout[add_one(svc_stdout_tail)] = ch;
-		svc_stdout_tail = add_one(svc_stdout_tail);
-	}
-}
-
-
 void Service::start(ThreadEntryPoint* service_thread)
 {
 	// Break up the command line into individual arguments.
@@ -1984,6 +1938,69 @@ void Service::start(ThreadEntryPoint* service_thread)
 	}
 
 	gds__thread_start(service_thread, this, THREAD_medium, 0, 0);
+}
+
+
+ULONG Service::add_one(ULONG i)
+{
+	return (i + 1) % SVC_STDOUT_BUFFER_SIZE;
+}
+
+
+ULONG Service::add_val(ULONG i, ULONG val)
+{
+	return (i + val) % SVC_STDOUT_BUFFER_SIZE;
+}
+
+
+bool Service::empty() const
+{
+	return svc_stdout_tail == svc_stdout_head;
+}
+
+
+bool Service::full() const
+{
+	return add_one(svc_stdout_tail) == svc_stdout_head;
+}
+
+
+void Service::enqueue(const UCHAR* s, ULONG len)
+{
+	if (checkForShutdown() || svc_flags & SVC_detached)
+	{
+		return;
+	}
+
+	while (len)
+	{
+		// Wait for space in buffer
+		while (full())
+		{
+			THREAD_SLEEP(1);
+			if (checkForShutdown() || svc_flags & SVC_detached)
+			{
+				return;
+			}
+		}
+
+		ULONG head = svc_stdout_head;
+		ULONG cnt = (head > svc_stdout_tail ? head : sizeof(svc_stdout)) - 1;
+		if (add_one(cnt) != head)
+		{
+			++cnt;
+		}
+		cnt -= svc_stdout_tail;
+		if (cnt > len)
+		{
+			cnt = len;
+		}
+
+		memcpy(&svc_stdout[svc_stdout_tail], s, cnt);
+		svc_stdout_tail = add_val(svc_stdout_tail, cnt);
+		s += cnt;
+		len -= cnt;
+	}
 }
 
 
@@ -2004,9 +2021,17 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 		svc_flags &= ~SVC_timeout;
 	}
 
-	while (length) {
+	while (length) 
+	{
+		if ((empty() && svc_flags & SVC_finished) || checkForShutdown())
+		{
+			break;
+		}
+
 		if (empty())
+		{
 			THREAD_SLEEP(1);
+		}
 #ifdef HAVE_GETTIMEOFDAY
 		GETTIMEOFDAY(&end_time);
 		const time_t elapsed_time = end_time.tv_sec - start_time.tv_sec;
@@ -2018,28 +2043,32 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 		{
 			MutexLockGuard guard(svc_mutex);
 			svc_flags &= SVC_timeout;
-			return;
+			break;
 		}
 
-		while (!empty() && length > 0)
+		ULONG head = svc_stdout_head;
+
+		while (head != svc_stdout_tail && length > 0)
 		{
-			const int ch = dequeueByte();
+			const UCHAR ch = svc_stdout[head];
+			head = add_one(head);
 			length--;
 
 			/* If returning a line of information, replace all new line
 			 * characters with a space.  This will ensure that the output is
 			 * consistent when returning a line or to eof
 			 */
-			if ((flags & GET_LINE) && (ch == '\n')) {
+			if ((flags & GET_LINE) && (ch == '\n')) 
+			{
 				buffer[(*return_length)++] = ' ';
-				return;
+				length = 0;
+				break;
 			}
 
 			buffer[(*return_length)++] = ch;
 		}
 
-		if (empty() && (svc_flags & SVC_finished))
-			return;
+		svc_stdout_head = head;
 	}
 }
 
