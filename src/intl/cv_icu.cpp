@@ -31,15 +31,6 @@
 #include "unicode/ucnv.h"
 
 
-namespace
-{
-	struct CsConvertImpl
-	{
-		charset* cs;
-	};
-}
-
-
 static UConverter* create_converter(csconvert* cv, UErrorCode* status)
 {
 	UConverter* conv = ucnv_open(cv->csconvert_impl->cs->charset_name, status);
