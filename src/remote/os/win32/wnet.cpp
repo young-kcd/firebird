@@ -858,10 +858,10 @@ static void force_close(rem_port* port)
 	{
 		port->port_state = rem_port::BROKEN;
 
-		SetEvent(port->port_event);
-		//fb_assert(port->port_handle);
-		CloseHandle(port->port_handle);
+		HANDLE h = port->port_handle;
 		port->port_handle = 0;
+		SetEvent(port->port_event);
+		CloseHandle(h);
 	}
 }
 
