@@ -1852,7 +1852,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	// The service block can be reused hence init a status vector.
 	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 
-	if (serv->serv_thd) {
+	if (serv->serv_thd) 
+	{
 		{	// scope
 			MutexLockGuard guard(svc_mutex);
 			svc_flags &= ~SVC_evnt_fired;
@@ -1899,29 +1900,42 @@ void Service::readFbLog()
 	TEXT name[MAXPATHLEN];
 	gds__prefix(name, LOGFILE);
 	FILE* file = fopen(name, "r");
-	if (file != NULL) {
-		fb_utils::init_status(svc_status);
-		started();
-		svc_started = true;
-		TEXT buffer[100];
-		while (!feof(file) && !ferror(file)) {
-			fgets(buffer, sizeof(buffer), file);
-			output(buffer);
+
+	try 
+	{
+		if (file != NULL) 
+		{
+			fb_utils::init_status(svc_status);
+			started();
+			svc_started = true;
+			TEXT buffer[100];
+			while (!feof(file) && !ferror(file)) 
+			{
+				fgets(buffer, sizeof(buffer), file);
+				output(buffer);
+			}
+		}
+
+		if (!file || file && ferror(file)) 
+		{
+			(Arg::Gds(isc_sys_request) << Arg::Str(file ? "fgets" : "fopen") <<
+										  SYS_ERR(errno)).copyTo(svc_status);
+			StringsBuffer::makeEnginePermanentVector(svc_status);
+			if (!svc_started)
+			{
+				started();
+			}
 		}
 	}
-
-	if (!file || file && ferror(file)) {
-		(Arg::Gds(isc_sys_request) << Arg::Str(file ? "fgets" : "fopen") <<
-									  SYS_ERR(errno)).copyTo(svc_status);
-		StringsBuffer::makeEnginePermanentVector(svc_status);
-		if (!svc_started)
-		{
-			started();
-		}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(getStatus());
 	}
 
 	if (file)
+	{
 		fclose(file);
+	}
 
 	finish(SVC_finished);
 }
