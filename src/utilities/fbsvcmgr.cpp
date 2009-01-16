@@ -399,7 +399,7 @@ const Switches actionSwitch[] = {
 	{"action_properties", putSingleTag, propertiesOptions, isc_action_svc_properties, 0},
 	{"action_repair", putSingleTag, repairOptions, isc_action_svc_repair, 0},
 	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
-	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_line},
+	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_to_eof},
 	{"action_display_user", putSingleTag, dispdelOptions, isc_action_svc_display_user, isc_info_svc_get_users},
 	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
@@ -434,6 +434,14 @@ bool printLine(const char*& p)
 	string s;
 	bool rc = getLine(s, p);
 	printf ("%s\n", s.c_str());
+	return rc;
+}
+
+bool printData(const char*& p)
+{
+	string s;
+	bool rc = getLine(s, p);
+	printf ("%s", s.c_str());
 	return rc;
 }
 
@@ -639,6 +647,9 @@ bool printInfo(const char* p, UserPrint& up)
 
 		case isc_info_svc_line:
 			return printLine(p);
+
+		case isc_info_svc_to_eof:
+			return printData(p);
 
 		case isc_info_truncated:
 			printf ("%s\n", getMessage(18).c_str());
