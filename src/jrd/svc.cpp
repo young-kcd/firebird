@@ -1998,7 +1998,7 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 			}
 		}
 
-		ULONG head = svc_stdout_head;
+		const ULONG head = svc_stdout_head;
 		ULONG cnt = (head > svc_stdout_tail ? head : sizeof(svc_stdout)) - 1;
 		if (add_one(cnt) != head)
 		{
