@@ -36,7 +36,7 @@ if "%VS_VER%"=="msvc6" (
 	if "%VS_VER_EXPRESS%"=="1" (
 		set exec=vcexpress
 	) else (
-		set exec=devenv /USEENV
+		set exec=devenv
 	)
 )
 
