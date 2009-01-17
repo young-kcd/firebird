@@ -79,10 +79,8 @@ static ULONG unicode_to_icu(csconvert* cv,
 	*errCode = 0;
 	*errPosition = 0;
 
-	if (dst == NULL)
-	{
+	if (!dst)
 		return srcLen / sizeof(UChar) * cv->csconvert_impl->cs->charset_max_bytes_per_char;
-	}
 
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
@@ -93,7 +91,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 	ucnv_fromUnicode(conv, &target, target + dstLen, &source,
 		source + srcLen / sizeof(UChar), NULL, TRUE, &status);
 
-	*errPosition = (source - reinterpret_cast<const UChar*>(src)) * sizeof(UChar);
+	*errPosition = (source - alignedSource) * sizeof(UChar);
 
 	if (!U_SUCCESS(status))
 	{
@@ -103,6 +101,8 @@ static ULONG unicode_to_icu(csconvert* cv,
 			*errCode = CS_CONVERT_ERROR;
 			break;
 		case U_TRUNCATED_CHAR_FOUND:
+			// If this assert fails, it means we should use the same logic as in icu_to_unicode.
+			fb_assert(*errPosition < srcLen);
 			*errCode = CS_BAD_INPUT;
 			break;
 		case U_BUFFER_OVERFLOW_ERROR:
@@ -133,10 +133,8 @@ static ULONG icu_to_unicode(csconvert* cv,
 	*errCode = 0;
 	*errPosition = 0;
 
-	if (dst == NULL)
-	{
+	if (!dst)
 		return srcLen / cv->csconvert_impl->cs->charset_min_bytes_per_char * sizeof(UChar);
-	}
 
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
@@ -157,7 +155,23 @@ static ULONG icu_to_unicode(csconvert* cv,
 			*errCode = CS_CONVERT_ERROR;
 			break;
 		case U_TRUNCATED_CHAR_FOUND:
-			*errCode = CS_BAD_INPUT;
+			{
+				// ICU advances the source pointer to after the truncated character, hence we can't
+				// continue converting when we have more input. So we have to subtract from
+				// errPosition the number of invalid bytes.
+				status = U_ZERO_ERROR;
+				char errBytes[16];
+				int8_t errLen = sizeof(errBytes);
+				ucnv_getInvalidChars(conv, errBytes, &errLen, &status);
+				if (!U_SUCCESS(status))
+					*errCode = CS_CONVERT_ERROR;
+				else
+				{
+					fb_assert((int) errLen <= (int) *errPosition);
+					*errPosition -= errLen;
+					*errCode = CS_BAD_INPUT;
+				}
+			}
 			break;
 		case U_BUFFER_OVERFLOW_ERROR:
 			*errCode = CS_TRUNCATION_ERROR;
