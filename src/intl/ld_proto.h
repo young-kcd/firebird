@@ -29,6 +29,13 @@
 extern "C" {
 #endif
 
+struct CsConvertImpl
+{
+	struct charset* cs;
+	const BYTE* csconvert_datatable;
+	const BYTE* csconvert_misc;
+};
+
 extern USHORT version;
 
 INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const ASCII* config_info);

@@ -211,12 +211,7 @@ typedef void (*pfn_INTL_cv_destroy) (
 /* csconvert version */
 #define CSCONVERT_VERSION_1	1
 
-struct CsConvertImpl
-{
-	struct charset* cs;
-	const BYTE* csconvert_datatable;
-	const BYTE* csconvert_misc;
-};
+struct CsConvertImpl;
 
 struct csconvert
 {
