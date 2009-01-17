@@ -128,23 +128,23 @@ static bool server_shutdown = false;
 class ThreadCounter
 {
 public:
-	ThreadCounter() 
+	ThreadCounter()
 	{
 		++m_count;
 	}
 
-	~ThreadCounter() 	
+	~ThreadCounter()
 	{
 		--m_count;
 		m_semaphore.release();
 	}
 
-	static bool wait() 
+	static bool wait()
 	{
 		while (m_count.value() > 0)
 		{
 			if (!m_semaphore.tryEnter(10))
-				break; 
+				break;
 		}
 
 		return (m_count.value() == 0);
@@ -159,10 +159,7 @@ Firebird::AtomicCounter ThreadCounter::m_count;
 Firebird::Semaphore ThreadCounter::m_semaphore;
 
 
-int WINAPI WinMain(HINSTANCE	hThisInst,
-				   HINSTANCE	hPrevInst,
-				   LPSTR		lpszArgs,
-				   int			nWndMode)
+int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR lpszArgs, int nWndMode)
 {
 /**************************************
  *
@@ -202,7 +199,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
-
 
 #ifdef SUPERSERVER
 	server_flag = SRVR_multi_client;
@@ -560,7 +556,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 				case 'H':
 					while (*p && *p == ' ')
 						p++;
-					if (*p) {
+					if (*p)
+					{
 						TEXT buffer[32];
 						char* pp = buffer;
 						while (*p && *p != ' ' && (pp - buffer < sizeof(buffer) - 1))
@@ -586,7 +583,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 				case 'P':	// Specify a port or named pipe other than the default
 					while (*p && *p == ' ')
 						p++;
-					if (*p) {
+					if (*p)
+					{
 						// Assumed the buffer size for both protocols may differ
 						// in the future, hence I did generic code.
 						char* pi = protocol_inet;
@@ -623,7 +621,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						p++;
 						delimited = true;
 					}
-					if (delimited) {
+					if (delimited)
+					{
 						char* pi = instance;
 						const char* pend = instance + sizeof(instance) - 1;
 						while (*p && *p != '"' && pi < pend) {
@@ -633,7 +632,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						if (*p && *p == '"')
 							p++;
 					}
-					else {
+					else
+					{
 						if (*p && *p != '-') {
 							char* pi = instance;
 							const char* pend = instance + sizeof(instance) - 1;

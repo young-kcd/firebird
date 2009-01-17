@@ -24,7 +24,7 @@
 #ifndef CHOP_PATH_PROTO_H
 #define CHOP_PATH_PROTO_H
 
-char * ChopFileName	(char*, char*, ULONG);
+char* ChopFileName(const char*, char*, ULONG);
 
 #endif // CHOP_PATH_PROTO_H
 

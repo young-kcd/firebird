@@ -107,7 +107,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 	wcl.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH);
 
-	if (!RegisterClass(&wcl)) {
+	if (!RegisterClass(&wcl))
+	{
 		char szMsgString[MSG_STRINGLEN];
 		LoadString(hInstance, IDS_REGERROR, szMsgString, MSG_STRINGLEN);
 		if (usServerFlagMask & SRVR_non_service) {
@@ -210,7 +211,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		 * the hidden window created by the server for IPC.  This should get
 		 * destroyed when the user session ends.
 		 */
-		if (usServerFlags & SRVR_non_service) {
+		if (usServerFlags & SRVR_non_service)
+		{
 			if (CanEndServer(hWnd, false)) {
 				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
 				{
@@ -245,18 +247,16 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				SetForegroundWindow(hWnd);
 
 				HMENU hPopup = CreatePopupMenu();
-				LoadString(hInstance, IDS_SHUTDOWN, szMsgString,
-						   MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, MSG_STRINGLEN);
 				AppendMenu(hPopup, MF_STRING, IDM_SHUTDOWN, szMsgString);
-				LoadString(hInstance, IDS_PROPERTIES, szMsgString,
-						   MSG_STRINGLEN);
+				LoadString(hInstance, IDS_PROPERTIES, szMsgString, MSG_STRINGLEN);
 				AppendMenu(hPopup, MF_STRING, IDM_PROPERTIES, szMsgString);
 				SetMenuDefaultItem(hPopup, IDM_PROPERTIES, FALSE);
 
 				POINT curPos;
 				GetCursorPos(&curPos);
-				TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
-							   curPos.x, curPos.y, 0, hWnd, NULL);
+				TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON, curPos.x, curPos.y, 0,
+							   hWnd, NULL);
 				DestroyMenu(hPopup);
 				return TRUE;
 			}
@@ -331,7 +331,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				DestroyIcon(hIcon);
 
 			// This will be true in the Program Manager interface.
-			if (!bInTaskBar) {
+			if (!bInTaskBar)
+			{
 				char szMsgString[MSG_STRINGLEN];
 
 				HMENU hSysMenu = GetSystemMenu(hWnd, FALSE);
@@ -372,7 +373,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_DESTROY:
-		if (bInTaskBar) {
+		if (bInTaskBar)
+		{
 			NOTIFYICONDATA nid;
 
 			nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -393,7 +395,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		switch (wParam)
 		{
-
 		case DBT_DEVICEARRIVAL:
 			return TRUE;
 
@@ -488,7 +489,8 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 	char chDrive = 'A';
 	char* p = pchBuf;
 
-	while (ulDriveMask) {
+	while (ulDriveMask)
+	{
 		if (ulDriveMask & 1)
 			*p++ = chDrive;
 		chDrive++;

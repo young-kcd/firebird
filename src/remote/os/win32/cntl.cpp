@@ -131,7 +131,8 @@ void CNTL_shutdown_service( const TEXT* message)
 	sprintf(buffer, "%s error: %lu", service_name->c_str(), GetLastError());
 
 	HANDLE event_source = RegisterEventSource(NULL, service_name->c_str());
-	if (event_source) {
+	if (event_source)
+	{
 		strings[0] = buffer;
 		strings[1] = message;
 		ReportEvent(event_source,
@@ -164,7 +165,8 @@ static void WINAPI control_thread( DWORD action)
  **************************************/
 	const DWORD state = SERVICE_RUNNING;
 
-	switch (action) {
+	switch (action)
+	{
 	case SERVICE_CONTROL_STOP:
 	case SERVICE_CONTROL_SHUTDOWN:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
@@ -193,9 +195,7 @@ static void WINAPI control_thread( DWORD action)
 	report_status(state, NO_ERROR, 0, 0);
 }
 
-static USHORT report_status(
-							DWORD state,
-							DWORD exit_code, DWORD checkpoint, DWORD hint)
+static USHORT report_status(DWORD state, DWORD exit_code, DWORD checkpoint, DWORD hint)
 {
 /**************************************
  *
@@ -208,8 +208,7 @@ static USHORT report_status(
  *
  **************************************/
 	SERVICE_STATUS status;
-	status.dwServiceType =
-		(SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
+	status.dwServiceType = (SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
 	status.dwServiceSpecificExitCode = 0;
 
 	if (state == SERVICE_START_PENDING)

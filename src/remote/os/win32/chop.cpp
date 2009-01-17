@@ -27,9 +27,9 @@
 #include "../jrd/common.h"
 
 
-
 #define PATHSEP(c) ((c) == '\\' || (c) == '/')
-char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
+
+char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
 {
 /**************************************
  *
@@ -52,35 +52,36 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
  *				 pointer to a buffer (szShortname).
  *
  **************************************/
-	char *pchTmp;
 
 /* Set pointers to the beginning and the end */
-	char *pchLeft, *pchEnd;
+	const char *pchLeft, *pchEnd;
 	pchLeft = pchEnd = szName;
 	while (*pchEnd)
 		pchEnd++;
 
 /* Check that the path is already short enough */
-	if (((ULONG) (pchEnd - pchLeft)) <= dwLen) {
-		pchTmp = szShortName;
-		while (*pchTmp++ = *szName++);
+	if (((ULONG) (pchEnd - pchLeft)) <= dwLen)
+	{
+		memcpy(szShortName, szName, pchEnd - pchLeft + 1);
 		return szShortName;
 	}
 
 /* Subtract the room needed for the three dots */
 	dwLen -= 3;
 
-	char* pchRight = pchEnd;
+	const char* pchRight = pchEnd;
 
-	char* pchLastLeft = pchLeft;
-	char* pchLastRight = pchRight;
+	const char* pchLastLeft = pchLeft;
+	const char* pchLastRight = pchRight;
 
 	bool bLeft = true;
 	bool bLeftFull = false;
 	bool bRightFull = false;
 
-	while (!bLeftFull || !bRightFull) {
-		if (bLeft) {
+	while (!bLeftFull || !bRightFull)
+	{
+		if (bLeft)
+		{
 			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft) && pchLeft < pchRight)
 				;
 			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
@@ -90,7 +91,8 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 			else
 				pchLastLeft = pchLeft;
 		}
-		else {
+		else
+		{
 			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight) && pchLeft < pchRight)
 				;
 			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
@@ -103,12 +105,17 @@ char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 		bLeft = !bLeft;
 	}
 
-	for (pchTmp = szShortName, pchLeft = szName;
-		 pchLeft <= pchLastLeft; *pchTmp++ = *pchLeft++);
+	char* pchTmp = szShortName;
+	pchLeft = szName;
+	while (pchLeft <= pchLastLeft)
+		*pchTmp++ = *pchLeft++;
+
 	*pchTmp++ = '.';
 	*pchTmp++ = '.';
 	*pchTmp++ = '.';
-	for (; pchLastRight < pchEnd; *pchTmp++ = *pchLastRight++);
+	while (pchLastRight < pchEnd)
+		*pchTmp++ = *pchLastRight++;
+
 	*pchTmp++ = '\0';
 
 	return szShortName;

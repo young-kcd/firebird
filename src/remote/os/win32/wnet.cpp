@@ -886,9 +886,7 @@ static void exit_handler(void* main_port)
 #endif
 
 
-static rem_str* make_pipe_name(const TEXT* connect_name,
-							   const TEXT* suffix_name,
-							   const TEXT* str_pid)
+static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
 {
 /**************************************
  *
@@ -914,11 +912,15 @@ static rem_str* make_pipe_name(const TEXT* connect_name,
 		buffer += *p++;
 
 	const TEXT* protocol = NULL;
-	if (!*p)
+	switch (*p)
+	{
+	case 0:
 		protocol = Config::getRemoteServiceName();
-	else if (*p == '@')
+		break;
+	case '@':
 		protocol = p + 1;
-	else {
+		break;
+	default:
 		while (*p)
 		{
 			if (*p++ == '\\')
@@ -1462,9 +1464,7 @@ static void packet_print(const TEXT* string, const UCHAR* packet, const int leng
 #endif
 
 
-static bool packet_receive(rem_port* port,
-						  UCHAR* buffer,
-						  SSHORT buffer_length, SSHORT* length)
+static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, SSHORT* length)
 {
 /**************************************
  *

@@ -186,8 +186,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			OSVERSIONINFO OsVersionInfo;
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -199,16 +198,14 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
-				WinHelp(static_cast<HWND>(lphi->hItemHandle),
-						"IBSERVER.HLP",
+				WinHelp(static_cast<HWND>(lphi->hItemHandle), "IBSERVER.HLP",
 						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs1);
 			}
 			return TRUE;
 		}
 	case WM_CONTEXTMENU:
 		{
-			WinHelp((HWND) wParam,
-					"IBSERVER.HLP",
+			WinHelp((HWND) wParam, "IBSERVER.HLP",
 					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs1);
 			return TRUE;
 		}
@@ -309,11 +306,10 @@ BOOL ReadFBSettings(HWND hDlg)
  *               current IB settings in the config file and then sets these
  *               values to the corresponding controls.
  *****************************************************************************/
-	char pchTmp[TEMP_BUFLEN];
+
 	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
 	//char pchRcvBuf[SEND_BUFLEN],
-	char pchResBuf[RESP_BUFLEN];
 
 	HCURSOR hOldCursor = NULL;
 
@@ -347,7 +343,8 @@ BOOL ReadFBSettings(HWND hDlg)
 
 	const char pchRcvBuf[] = {isc_info_svc_get_config};
 
-// Query the service with get_config
+	// Query the service with get_config
+	char pchResBuf[RESP_BUFLEN];
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL, 1, pchRcvBuf,
 					  sizeof(pchResBuf), pchResBuf);
 	if (pdwStatus[1])
@@ -372,7 +369,8 @@ BOOL ReadFBSettings(HWND hDlg)
 		}
 	}
 
-// Select the right Map Size, inserting it if necessary
+	// Select the right Map Size, inserting it if necessary
+	char pchTmp[TEMP_BUFLEN];
 	wsprintf(pchTmp, "%d", lMapSize);
 	if (SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, (unsigned int) -1,
 						   (LPARAM) pchTmp) == CB_ERR)
@@ -445,12 +443,7 @@ BOOL WriteFBSettings(HWND hDlg)
  *               current OS settings in the config file.
  *               It's disabled for now.
  *****************************************************************************/
-	ISC_STATUS_ARRAY pdwStatus;
-	isc_svc_handle hService = NULL;
-	char pchSendBuf[SEND_BUFLEN];
-	short *psLen;
-	char szSpb[SPB_BUFLEN];		// Server parameter block
-	char szResBuf[16];			// Response buffer
+
 	BOOL bRetFlag = TRUE;
 
 	HCURSOR hOldCursor = NULL;
@@ -467,7 +460,8 @@ BOOL WriteFBSettings(HWND hDlg)
 		return FALSE;
 	}
 
-// Encode the SPB for SysDba
+	// Encode the SPB for SysDba
+	char szSpb[SPB_BUFLEN];		// Server parameter block
 	FillSysdbaSPB(szSpb, szSysDbaPasswd);
 
 // Build the complete name to the service
@@ -475,9 +469,10 @@ BOOL WriteFBSettings(HWND hDlg)
 	char* pchPtr = szService + strlen(szService);
 	strcat(szService, "query_server");
 
-// Attach to "query_server" service
-	isc_service_attach(pdwStatus, 0, szService, &hService,
-					   (USHORT) strlen(szSpb), szSpb);
+	// Attach to "query_server" service
+	ISC_STATUS_ARRAY pdwStatus;
+	isc_svc_handle hService = NULL;
+	isc_service_attach(pdwStatus, 0, szService, &hService, (USHORT) strlen(szSpb), szSpb);
 
 	*pchPtr = '\0';
 
@@ -495,9 +490,10 @@ BOOL WriteFBSettings(HWND hDlg)
 	}
 
 // Fill in the Send buffer's header
+	char pchSendBuf[SEND_BUFLEN];
 	pchPtr = pchSendBuf;
 	*pchPtr++ = isc_info_svc_set_config;
-	psLen = (short *) pchPtr;
+	short* psLen = (short *) pchPtr;
 	pchPtr += sizeof(USHORT);
 
 // Fill in all the records
@@ -517,6 +513,7 @@ BOOL WriteFBSettings(HWND hDlg)
 	*psLen = (short) isc_vax_integer((SCHAR *) psLen, sizeof(short));
 // Query service with set_config
 
+	char szResBuf[16];			// Response buffer
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL,
 					  (USHORT) (pchPtr - pchSendBuf), pchSendBuf,
 					  (USHORT) sizeof(szResBuf), szResBuf);
@@ -525,8 +522,7 @@ BOOL WriteFBSettings(HWND hDlg)
 		PrintCfgStatus(pdwStatus[1] ? pdwStatus : NULL, IDS_CFGWRITE_FAILED, hDlg);
 
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
-					 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
@@ -611,12 +607,12 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 		{
 			char szPassword[PASSWORD_LEN];
 			ISC_STATUS_ARRAY pdwStatus;
-			char szSpb[SPB_BUFLEN];
 
 			szPassword[0] = '\0';
 
 			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, WM_GETTEXT, PASSWORD_LEN, (LPARAM) szPassword);
 			// Fill the Spb
+			char szSpb[SPB_BUFLEN];
 			FillSysdbaSPB(szSpb, szPassword);
 
 			// Attach service to check for password validity

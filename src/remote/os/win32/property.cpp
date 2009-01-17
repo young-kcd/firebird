@@ -70,7 +70,8 @@ static USHORT usServerFlags;	// Server Flag Mask
 // where the first of each pair is the control ID,
 // and the second is the context ID for a help topic,
 // which is used in the help file.
-static const DWORD aMenuHelpIDs[] = {
+static const DWORD aMenuHelpIDs[] =
+{
 	IDC_IBSVR_ICON, ibs_server_icon,
 	IDC_PROTOCOLS, ibs_capabilities,
 	IDC_CAPABILITIES_TEXT, ibs_capabilities,
@@ -94,8 +95,7 @@ LRESULT APIENTRY GeneralPage(HWND, UINT, WPARAM, LPARAM);
 static char *MakeVersionString(char *, int, USHORT);
 static void RefreshUserCount(HWND);
 
-HWND DisplayProperties(HWND hParentWnd,
-					   HINSTANCE hInst, USHORT usServerFlagMask)
+HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -125,8 +125,7 @@ HWND DisplayProperties(HWND hParentWnd,
 
 	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
-	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE |
-		PSH_USEICONID | PSH_MODELESS;
+	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
@@ -151,8 +150,7 @@ HWND DisplayProperties(HWND hParentWnd,
 	return hPSDlg;
 }
 
-LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
-							 LPARAM lParam)
+LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -175,7 +173,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *               the NMDR structure
  *****************************************************************************/
 
-	switch (unMsg) {
+	switch (unMsg)
+	{
 	case WM_INITDIALOG:
 		{
 			char szText[MSG_STRINGLEN];
@@ -187,11 +186,9 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			SetDlgItemText(hDlg, IDC_LICENSE, szText);
 
 			if (usServerFlags & (SRVR_inet | SRVR_wnet))
-				LoadString(hInstance,
-						   IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
 			else
-				LoadString(hInstance,
-						   IDS_LOCALPROD_NAME, szText, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_LOCALPROD_NAME, szText, MSG_STRINGLEN);
 
 			SetDlgItemText(hDlg, IDC_PRODNAME, szText);
 
@@ -219,8 +216,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			OSVERSIONINFO OsVersionInfo;
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hGrayBrush;
@@ -232,28 +228,28 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
-				WinHelp(static_cast<HWND>(lphi->hItemHandle),
-						"IBSERVER.HLP",
+				WinHelp(static_cast<HWND>(lphi->hItemHandle), "IBSERVER.HLP",
 						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
 			}
 		}
 		return TRUE;
 	case WM_CONTEXTMENU:
 		{
-			WinHelp((HWND) wParam,
-					"IBSERVER.HLP",
+			WinHelp((HWND) wParam, "IBSERVER.HLP",
 					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
 		}
 		return TRUE;
 	case WM_COMMAND:
-		switch (wParam) {
+		switch (wParam)
+		{
 		case IDC_REFRESH:
 			RefreshUserCount(hDlg);
 			break;
 		}
 		break;
 	case WM_NOTIFY:
-		switch (((LPNMHDR) lParam)->code) {
+		switch (((LPNMHDR) lParam)->code)
+		{
 		case PSN_KILLACTIVE:
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
 			break;
@@ -266,8 +262,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	return FALSE;
 }
 
-static char *MakeVersionString(char *pchBuf, int nLen,
-							   USHORT usServerFlagMask)
+static char *MakeVersionString(char *pchBuf, int nLen, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -287,7 +282,8 @@ static char *MakeVersionString(char *pchBuf, int nLen,
 	char* p = pchBuf;
 	const char* const end = p + nLen;
 
-	if (usServerFlagMask & SRVR_inet) {
+	if (usServerFlagMask & SRVR_inet)
+	{
 		p += LoadString(hInstance, IDS_TCP, p, end - p);
 		if (p < end)
 			*p++ = '\r';
