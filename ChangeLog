@@ -1,3 +1,61 @@
+2009-01-17 20:07  asfernandes
+
+	* firebird2/: doc/README.user.troubleshooting (1.3),
+	src/jrd/svc.cpp (1.255), src/remote/interface.cpp (1.206),
+	src/remote/parser.cpp (1.25), src/remote/server.cpp (1.234),
+	src/remote/server_stub.cpp (1.3), src/remote/os/win32/property.cpp
+	(1.24):
+
+	Misc
+
+2009-01-17 19:12  asfernandes
+
+	* firebird2/src/: intl/ld_proto.h (1.10), jrd/intlobj_new.h (1.26):
+
+	Move implementation details to out of the interface
+
+2009-01-17 11:58  robocop
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.26):
+
+	Misc.
+
+2009-01-17 11:33  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.254):
+
+	Misc.
+
+2009-01-17 11:11  robocop
+
+	* firebird2/src/remote/os/win32/: chop.cpp (1.10), chop_proto.h
+	(1.5), cntl.cpp (1.44), ibconfig.cpp (1.28), property.cpp (1.23),
+	srvr_w32.cpp (1.65), window.cpp (1.38), wnet.cpp (1.69):
+
+	Style.
+
+2009-01-17 03:23  asfernandes
+
+	* firebird2/src/intl/cv_icu.cpp (1.9):
+
+	1) Fixed another problem with CP943C and BLOBs (CORE-2123) 2)
+	CORE-2278 - Incorrect conversion from/to CP943C in RISC machines
+
+2009-01-17 00:58  hvlad
+
+	* firebird2/src/remote/os/win32/wnet.cpp (1.68):
+
+	Avoid races - twice close handle of listener port during server
+	shutdown. It was not dangerous but not comfortable for developers
+	as under debugger CloseHandle() throw exception at second close
+	attempt.
+
+2009-01-16 21:25  dimitr
+
+	* firebird2/src/remote/remote.cpp (1.81):
+
+	Misc.
+
 2009-01-16 17:29  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.253):
