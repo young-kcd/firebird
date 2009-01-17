@@ -927,7 +927,7 @@ void Statement::deallocate(thread_db *tdbb)
 }
 
 
-typedef enum {ttNone, ttWhite, ttComment, ttBrokenComment, ttString, ttParamMark, ttIdent, ttOther} TokenType;
+enum TokenType {ttNone, ttWhite, ttComment, ttBrokenComment, ttString, ttParamMark, ttIdent, ttOther};
 
 static TokenType getToken(const char **begin, const char *end)
 {
