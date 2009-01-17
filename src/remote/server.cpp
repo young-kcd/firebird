@@ -220,9 +220,9 @@ bool Worker::shutting_down = false;
 
 
 static Firebird::GlobalPtr<Firebird::Mutex> request_que_mutex;
-static server_req_t*	request_que			= NULL;
-static server_req_t*	free_requests		= NULL;
-static server_req_t*	active_requests		= NULL;
+static server_req_t* request_que		= NULL;
+static server_req_t* free_requests		= NULL;
+static server_req_t* active_requests	= NULL;
 
 static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
 static SRVR			servers;

@@ -266,7 +266,7 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 	const UCHAR* new_blr = blr;
 
 	const SSHORT version = *blr++;
-	if (((version != blr_version4) && (version != blr_version5)) || *blr++ != blr_begin)
+	if ((version != blr_version4 && version != blr_version5) || *blr++ != blr_begin)
 	{
 		return old_blr;
 	}

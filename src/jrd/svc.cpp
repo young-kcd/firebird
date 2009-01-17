@@ -1916,7 +1916,7 @@ void Service::readFbLog()
 			}
 		}
 
-		if (!file || file && ferror(file)) 
+		if (!file || (file && ferror(file))) 
 		{
 			(Arg::Gds(isc_sys_request) << Arg::Str(file ? "fgets" : "fopen") <<
 										  SYS_ERR(errno)).copyTo(svc_status);
@@ -1981,7 +1981,7 @@ bool Service::full() const
 
 void Service::enqueue(const UCHAR* s, ULONG len)
 {
-	if (checkForShutdown() || svc_flags & SVC_detached)
+	if (checkForShutdown() || (svc_flags & SVC_detached))
 	{
 		return;
 	}
@@ -1992,7 +1992,7 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 		while (full())
 		{
 			THREAD_SLEEP(1);
-			if (checkForShutdown() || svc_flags & SVC_detached)
+			if (checkForShutdown() || (svc_flags & SVC_detached))
 			{
 				return;
 			}
@@ -2037,7 +2037,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 	while (length) 
 	{
-		if ((empty() && svc_flags & SVC_finished) || checkForShutdown())
+		if ((empty() && (svc_flags & SVC_finished)) || checkForShutdown())
 		{
 			break;
 		}
@@ -2072,7 +2072,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			 * characters with a space.  This will ensure that the output is
 			 * consistent when returning a line or to eof
 			 */
-			if ((flags & GET_LINE) && (ch == '\n')) 
+			if ((flags & GET_LINE) && ch == '\n') 
 			{
 				buffer[(*return_length)++] = ' ';
 				length = 0;

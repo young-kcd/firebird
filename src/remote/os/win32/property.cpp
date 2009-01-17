@@ -262,7 +262,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-static char *MakeVersionString(char *pchBuf, int nLen, USHORT usServerFlagMask)
+static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *

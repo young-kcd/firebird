@@ -81,7 +81,7 @@ your circumstance.
 
     For inetd the /etc/inetd.conf file should have a line as follows 
 
-    gds_db  stream  tcp     nowait.30000  root /opt/firebird/bin/gds_inet_server gds_inet_server
+    gds_db  stream  tcp     nowait.30000  root /opt/firebird/bin/fb_inet_server gds_inet_server
 
     You will need to restart the inetd process before the server will work.
     $ps -ef | grep inetd

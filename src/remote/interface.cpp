@@ -1317,7 +1317,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 			}
 		}
 
-		RMessage* message = 0;
+		RMessage* message = NULL;
 		if (!statement->rsr_buffer)
 		{
 			statement->rsr_buffer = message = new RMessage(0);
@@ -2055,7 +2055,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 			}
 		}
 
-		RMessage* message = 0;
+		RMessage* message = NULL;
 		if (!statement->rsr_buffer)
 		{
 			statement->rsr_buffer = message = new RMessage(0);
@@ -3307,11 +3307,12 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			   could dynamically adjust batching sizes based on fetch patterns */
 
 			if (port->port_flags & PORT_rpc)
-
+			{
 				/* This is an RPC (remote procedure call) port - we just do
 				   one at a time processing as that's how RPC works. */
 
 				data->p_data_messages = 1;
+			}
 			else
 			{
 				data->p_data_messages =
@@ -4226,7 +4227,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 
 	try
 	{
-		if ((tpb_length < 0) || (tpb_length > 0 && !tpb))
+		if (tpb_length < 0 || (tpb_length > 0 && !tpb))
 		{
 			status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 		}
@@ -4416,8 +4417,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 	try
 	{
 		status = info(user_status, rdb, op_info_transaction, transaction->rtr_id, 0,
-					 item_length, items, 0, 0,
-					 buffer_length, buffer);
+					  item_length, items, 0, 0, buffer_length, buffer);
 	}
 	catch (const Exception& ex)
 	{
@@ -6190,7 +6190,7 @@ static void dequeue_receive( rem_port* port)
 }
 
 
-static bool receive_response(Rdb* rdb, PACKET * packet)
+static bool receive_response(Rdb* rdb, PACKET* packet)
 {
 /**************************************
  *
