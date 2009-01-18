@@ -37,6 +37,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../lock/lock_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -392,6 +393,8 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
  **************************************/
 	SET_TDBB(tdbb);
 
+	SLONG handle = 0;
+
 	switch (lock_type) {
 	case LCK_database:
 	case LCK_bdb:
@@ -408,7 +411,8 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_monitor:
 	case LCK_tt_exist:
 	case LCK_shared_counter:
-		return *LCK_OWNER_HANDLE_DBB(tdbb);
+		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
+		break;
 	case LCK_attachment:
 	case LCK_page_space:
 	case LCK_relation:
@@ -419,12 +423,18 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_backup_end:
 	case LCK_cancel:
 	case LCK_btr_dont_gc:
-		return *LCK_OWNER_HANDLE_ATT(tdbb);
+		handle = *LCK_OWNER_HANDLE_ATT(tdbb);
+		break;
 	default:
-		bug_lck("Invalid lock type in LCK_get_owner_handle ()");
-		/* Not Reached - bug_lck calls ERR_post */
-		return 0;
+		bug_lck("Invalid lock type in LCK_get_owner_handle()");
 	}
+
+	if (!handle)
+	{
+		bug_lck("Invalid lock owner handle");
+	}
+
+	return handle;
 }
 
 
