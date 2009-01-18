@@ -737,7 +737,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		break;
 
 	case dtype_sql_date:
-		switch (from->dsc_dtype) {
+		switch (from->dsc_dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -758,7 +759,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		break;
 
 	case dtype_sql_time:
-		switch (from->dsc_dtype) {
+		switch (from->dsc_dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:

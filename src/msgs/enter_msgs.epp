@@ -447,7 +447,7 @@ static bool store_sql_msg()
 	{
 		printf("Enter the sqlcode: ");
 		if (!gets((char*) nstring))
-			break;;
+			break;
 
 		sql_num = atoi((char*) nstring);
 		printf(" Text: ");
@@ -499,7 +499,8 @@ static bool translate( const UCHAR* source, UCHAR* target, SSHORT length)
 			return false;
 		if (*q == '\\') {
 			*q++;
-			switch (*q) {
+			switch (*q)
+			{
 			case 'n':
 				*p++ = '\n';
 				break;

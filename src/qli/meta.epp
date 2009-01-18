@@ -2676,18 +2676,19 @@ static void get_database_type( qli_dbb* new_dbb)
 		UCHAR item = *p++;
 		USHORT l = gds__vax_integer(p, 2);
 		p += 2;
-		switch (item) {
-		case isc_info_implementation:
+		switch (item)
 		{
-			const UCHAR* q = p;
-			int count = *q++;
-			while (count--) {
-				new_dbb->dbb_type = *q++;
-				if (*q++ == isc_info_db_class_access)
-					break;
+		case isc_info_implementation:
+			{
+				const UCHAR* q = p;
+				int count = *q++;
+				while (count--) {
+					new_dbb->dbb_type = *q++;
+					if (*q++ == isc_info_db_class_access)
+						break;
+				}
 			}
 			break;
-		}
 
 		default:
 			ERRQ_error(257);

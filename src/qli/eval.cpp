@@ -128,7 +128,8 @@ int EVAL_boolean( qli_nod* node)
 		result = string_boolean(node);
 	}
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_eql:
 		return (result == 0);
 	case nod_neq:

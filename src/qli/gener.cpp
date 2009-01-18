@@ -244,7 +244,8 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 		case isc_info_rsb_type:
 			buffer_length--;
 			explain_printf(level, "isc_info_rsb_type, ", 0);
-			switch (*explain_buffer++) {
+			switch (*explain_buffer++)
+			{
 			case isc_info_rsb_unknown:
 				printf("unknown type\n");
 				break;

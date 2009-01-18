@@ -943,7 +943,8 @@ static void add_text(FILE* fd, formatStyle style, const char** text)
 *	in 'style' language
 *
 *******************************************/
-	switch (style) {
+	switch (style)
+	{
 	case CSTYLE:
 		fprintf(fd, "/*\n");
 		break;
@@ -968,7 +969,8 @@ static void add_text(FILE* fd, formatStyle style, const char** text)
 
 	for (const char** ptr = text; *ptr; ++ptr)
 	{
-		switch (style) {
+		switch (style)
+		{
 		case CSTYLE:
 		case PASSTYLE:
 			fprintf(fd, " *");
@@ -987,7 +989,8 @@ static void add_text(FILE* fd, formatStyle style, const char** text)
 		fprintf(fd, "%s%s\n", space, *ptr);
 	}
 
-	switch (style) {
+	switch (style)
+	{
 	case CSTYLE:
 		fprintf(fd, " */\n");
 		break;

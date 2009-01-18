@@ -377,7 +377,7 @@ static void compile_control_break( qli_brk* control, qli_req* request)
 		if (control->brk_field)
 		{
 			// control->brk_field  = (qli_syntax*) compile_expression (control->brk_field, request, false);
-			qli_nod* temp = (qli_nod*) control->brk_field;;
+			qli_nod* temp = (qli_nod*) control->brk_field;
 			temp->nod_flags |= NOD_parameter2;
 			temp =  compile_expression((qli_nod*) control->brk_field, request, false);
 			if (temp->nod_type == nod_field)
@@ -1781,7 +1781,8 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 		}
 		else
 			dtype = MAX(desc1.dsc_dtype, desc2.dsc_dtype);
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_timestamp:
@@ -1820,7 +1821,8 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 		}
 		else
 			dtype = MAX(desc1.dsc_dtype, desc2.dsc_dtype);
-		switch (dtype) {
+		switch (dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:

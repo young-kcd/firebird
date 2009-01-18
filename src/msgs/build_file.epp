@@ -107,14 +107,16 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	bool sw_warning = false;
 	const TEXT* const* const end_args = argv + argc;
 
-	for (++argv; argv < end_args;) {
+	for (++argv; argv < end_args;)
+	{
 		const TEXT* p = *argv++;
 		bool sw_bad = false;
 		if (*p != '-')
 			sw_bad = true;
 		else
 		{
-			switch (UPPER(p[1])) {
+			switch (UPPER(p[1]))
+			{
 			case 'D':
 				if (argv >= end_args)
 					sw_bad = true;

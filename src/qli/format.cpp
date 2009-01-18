@@ -1452,7 +1452,8 @@ static void report_line( qli_nod* list, qli_vec** columns_vec)
 	{
 		qli_print_item* item = *ptr;
 		report_item(item, columns_vec, &col_ndx);
-		switch (item->itm_type) {
+		switch (item->itm_type)
+		{
 		case item_skip:
 		case item_new_page:
 			col_ndx = 0;

@@ -252,8 +252,10 @@ static void explicit_print( const TEXT* string)
  **************************************/
 	const TEXT* p = string;
 
-	while (*p) {
-		switch (*p) {
+	while (*p)
+	{
+		switch (*p)
+		{
 		case '\n':
 			putchar('\\');
 			putchar('n');
@@ -416,13 +418,15 @@ static bool translate(const char* source, char* target, SSHORT length)
 	SCHAR* p = target;
 	const SCHAR* q = source;
 
-	while (*q) {
+	while (*q)
+	{
 		if (!--length)
 			return false;
 
 		if (*q == '\\') {
 			*q++;
-			switch (*q) {
+			switch (*q)
+			{
 			case 'n':
 				*p++ = '\n';
 				break;

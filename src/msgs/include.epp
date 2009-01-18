@@ -64,10 +64,12 @@ void main( int argc, char **argv)
 	const char* language = "C";
 
 	char** end;
-	for (end = argv + argc, ++argv; argv < end;) {
+	for (end = argv + argc, ++argv; argv < end;)
+	{
 		const char* p = *argv++;
 		if (*p == '-')
-			switch (UPPER(p[1])) {
+			switch (UPPER(p[1]))
+			{
 			case 'F':
 				file = *argv++;
 				continue;

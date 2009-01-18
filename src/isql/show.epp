@@ -328,7 +328,8 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		 * to remove the '\n' (on the PC its '\n\r').
 		 * CVC: WISQL is dead. I've restored the missing newlines for isql.
 		 */
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_end:
 			break;
 
@@ -652,7 +653,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				prev_user_type = PRV.RDB$USER_TYPE;
 				strcpy (prev_grantor, PRV.RDB$GRANTOR);
 
-				switch (PRV.RDB$USER_TYPE) {
+				switch (PRV.RDB$USER_TYPE)
+				{
 				case obj_relation:
 				case obj_view:
 				case obj_trigger:
@@ -670,7 +672,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					break;
 				}
 
-				switch (PRV.RDB$USER_TYPE) {
+				switch (PRV.RDB$USER_TYPE)
+				{
 				case obj_view:
 					sprintf (user_string, "VIEW %s", SQL_identifier);
 					break;
@@ -701,7 +704,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				const char c = PRV.RDB$PRIVILEGE[0];
 
-				switch (c) {
+				switch (c)
+				{
 				case 'S':
 					priv_flags |= priv_SELECT;
 				break;
@@ -800,7 +804,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				first = false;
 				fb_utils::exact_name(PRV.RDB$USER);
 
-				switch (PRV.RDB$USER_TYPE) {
+				switch (PRV.RDB$USER_TYPE)
+				{
 				case obj_relation:
 				case obj_view:
 				case obj_trigger:
@@ -817,7 +822,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					break;
 				}
 
-				switch (PRV.RDB$USER_TYPE) {
+				switch (PRV.RDB$USER_TYPE)
+				{
 				case obj_view:
 					sprintf (user_string, "VIEW %s", SQL_identifier);
 					break;

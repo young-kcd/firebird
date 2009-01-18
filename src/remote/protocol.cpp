@@ -298,7 +298,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	if (!xdr_enum(xdrs, reinterpret_cast<xdr_op*>(&p->p_operation)))
 		return P_FALSE(xdrs, p);
 
-	switch (p->p_operation) {
+	switch (p->p_operation)
+	{
 	case op_reject:
 	case op_disconnect:
 	case op_dummy:
@@ -944,7 +945,8 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 		return FALSE;
 	}
 
-	switch (xdrs->x_op) {
+	switch (xdrs->x_op)
+	{
 	case XDR_ENCODE:
 		if (cstring->cstr_length &&
 			!(*xdrs->x_ops->x_putbytes) (xdrs,
@@ -962,7 +964,8 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 		if (!alloc_cstring(xdrs, cstring))
 			return FALSE;
 		if (!(*xdrs->x_ops->x_getbytes)(xdrs,
-										reinterpret_cast<SCHAR*>(cstring->cstr_address), cstring->cstr_length))
+										reinterpret_cast<SCHAR*>(cstring->cstr_address),
+										cstring->cstr_length))
 		{
 			return FALSE;
 		}
@@ -1129,7 +1132,8 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 			}
 		}
 	}
-	else {						/* XDR_ENCODE or XDR_DECODE */
+	else
+	{						/* XDR_ENCODE or XDR_DECODE */
 
 		/* Allocate an unused slot in the packet tracking vector
 		   to start recording memory allocations for this packet. */
@@ -1229,9 +1233,7 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 
 	if (port->port_flags & PORT_symmetric)
 	{
-		return xdr_opaque(xdrs,
-						  reinterpret_cast<SCHAR*>(message->msg_address),
-						  format->fmt_length);
+		return xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(message->msg_address), format->fmt_length);
 	}
 
 	const dsc* desc = format->fmt_desc.begin();
@@ -1261,7 +1263,8 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
  *
  **************************************/
 
-	switch (xdrs->x_op) {
+	switch (xdrs->x_op)
+	{
 	case XDR_ENCODE:
 		if ((*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)) &&
 			(*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low)))
@@ -1271,9 +1274,7 @@ static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 		return FALSE;
 
 	case XDR_DECODE:
-		if (!(*xdrs->x_ops->x_getlong)
-			(xdrs,
-			 reinterpret_cast<SLONG*>(&ip->bid_quad_high)))
+		if (!(*xdrs->x_ops->x_getlong)(xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)))
 		{
 			return FALSE;
 		}
@@ -1338,8 +1339,7 @@ static bool_t xdr_request(XDR* xdrs,
 }
 
 
-static bool_t xdr_slice(XDR* xdrs,
-						lstring* slice, USHORT sdl_length, const UCHAR* sdl)
+static bool_t xdr_slice(XDR* xdrs, lstring* slice, USHORT sdl_length, const UCHAR* sdl)
 {
 /**************************************
  *
