@@ -57,6 +57,7 @@ LONG CFBPanel::OnInquire(UINT uAppNum, NEWCPLINFO* pInfo)
     pInfo->dwHelpContext = 0;
     pInfo->lData = 0;
     pInfo->hIcon = ::LoadIcon(AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON1));
+    // Shouldn't this read FB 2 without fixing the minor version?
     strcpy(pInfo->szName, "Firebird 2.0 Server Manager");
     strcpy(pInfo->szInfo, "Configure Firebird 2.0 Database Server");
     strcpy(pInfo->szHelpFile, "");
@@ -91,35 +92,38 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
 
 			dlg.m_FB_Version = "not known";
 			CString afilename = dlg.m_Root_Path + "bin\\gbak.exe";
-			buffer_size = GetFileVersionInfoSize( const_cast<char *> ((LPCTSTR) afilename), 0);
+			buffer_size = GetFileVersionInfoSize( (LPCTSTR) afilename, 0);
 			void* VersionInfo = new char [buffer_size];
 			void* ProductVersion = 0;
 			void* SpecialBuild = 0;
 			void* PrivateBuild = 0;
 			UINT ValueSize;
-			if ( GetFileVersionInfo( const_cast<char *> ((LPCTSTR) afilename), 0, buffer_size, VersionInfo) )
+			if ( GetFileVersionInfo((LPCTSTR) afilename, 0, buffer_size, VersionInfo) )
 			{
-				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\ProductVersion", &ProductVersion, &ValueSize);
+				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\ProductVersion",
+								&ProductVersion, &ValueSize);
 				if (ValueSize)
 				{
 					dlg.m_FB_Version = "Version ";
-					dlg.m_FB_Version += (char *)ProductVersion;
+					dlg.m_FB_Version += (char*) ProductVersion;
 				}
-				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\SpecialBuild", &SpecialBuild, &ValueSize);
+				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\SpecialBuild",
+								&SpecialBuild, &ValueSize);
 				if (ValueSize)
 				{
 					dlg.m_FB_Version += " ";
-					dlg.m_FB_Version += (char *)SpecialBuild;
+					dlg.m_FB_Version += (char*) SpecialBuild;
 				}
-				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\PrivateBuild", &PrivateBuild, &ValueSize);
+				VerQueryValue( VersionInfo, "\\StringFileInfo\\040904E4\\PrivateBuild",
+								&PrivateBuild, &ValueSize);
 				if (ValueSize)
 				{
 					dlg.m_FB_Version += " ";
-					dlg.m_FB_Version += (char *)PrivateBuild;
+					dlg.m_FB_Version += (char*) PrivateBuild;
 				}
 /**/
 			}
-			delete[] VersionInfo;
+			delete[] (char*) VersionInfo;
 
 			// Show the dialog box
 			if (dlg.DoModal() != IDOK)

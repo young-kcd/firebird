@@ -114,7 +114,8 @@ static void event_list()
 			srq *interest_que;
 			/* Print out the interest list for this event */
 
-			SRQ_LOOP(database_event->evnt_interests, interest_que) {
+			SRQ_LOOP(database_event->evnt_interests, interest_que)
+			{
 				RINT interest = (RINT) ((UCHAR*) interest_que - OFFSET(RINT, rint_interests));
 				if (!interest->rint_request)
 					printf("(0)");
@@ -142,7 +143,8 @@ static void event_list()
 				srq *interest_que;
 				/* Print out the interest list for this event */
 
-				SRQ_LOOP(event->evnt_interests, interest_que) {
+				SRQ_LOOP(event->evnt_interests, interest_que)
+				{
 					RINT interest = (RINT) ((UCHAR*) interest_que - OFFSET(RINT, rint_interests));
 					if (!interest->rint_request)
 						printf("(0)");
@@ -188,7 +190,8 @@ static void event_table_dump()
 	{
 		printf("\n%.5ld ", offset);
 		block = (event_hdr*) SRQ_ABS_PTR(offset);
-		switch (block->hdr_type) {
+		switch (block->hdr_type)
+		{
 		case type_prb:
 			{
 				printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
@@ -224,8 +227,7 @@ static void event_table_dump()
 				printf("EVENT (%ld)\n", block->hdr_length);
 				EVNT event = (EVNT) block;
 				printf("\t\"%s\", count: %ld, parent: %ld\n",
-						  event->evnt_name, event->evnt_count,
-						  event->evnt_parent);
+						  event->evnt_name, event->evnt_count, event->evnt_parent);
 				prt_que("\tInterests", &event->evnt_interests);
 				prt_que("\tEvents", &event->evnt_events);
 			}
@@ -245,7 +247,8 @@ static void event_table_dump()
 			{
 				printf("INTEREST (%ld)\n", block->hdr_length);
 				RINT interest = (RINT) block;
-				if (interest->rint_event) {
+				if (interest->rint_event)
+				{
 					EVNT event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
 					if (event->evnt_parent) {
 						EVNT parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);

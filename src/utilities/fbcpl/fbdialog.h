@@ -82,7 +82,7 @@ public:
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CFBDialog)
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	//}}AFX_VIRTUAL
 
@@ -167,7 +167,7 @@ public:
 	bool CheckServiceInstalled( LPCTSTR service );
 	int DatabasesConnected();
 
-	bool FirebirdInstalled();
+	//bool FirebirdInstalled();  Not implemented?
 	bool FirebirdRunning();
 
 //Get Stuff

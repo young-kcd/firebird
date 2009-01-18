@@ -62,7 +62,7 @@
 
 const int FTOK_KEY = 15;
 
-static SLONG get_key(TEXT *);
+static SLONG get_key(const TEXT*);
 static void remove_resource(const TEXT*, SLONG, const TEXT*);
 #ifndef HAVE_MMAP
 static void dummy_init();
@@ -97,7 +97,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	while (++argv < end)
 		if (**argv == '-')
 			for (const char* p = *argv + 1; *p; p++)
-				switch (UPPER(*p)) {
+				switch (UPPER(*p))
+				{
 
 				case 'E':
 					sw_events = true;
@@ -157,7 +158,7 @@ static void dummy_init()
 }
 #endif
 
-static SLONG get_key( TEXT * filename)
+static SLONG get_key(const TEXT* filename)
 {
 /*************************************
  *
@@ -174,8 +175,7 @@ static SLONG get_key( TEXT * filename)
 #ifdef NOHOSTNAME
 	strcpy(expanded_filename, filename);
 #else
-	sprintf(expanded_filename, filename,
-			ISC_get_host(hostname, sizeof(hostname)));
+	sprintf(expanded_filename, filename, ISC_get_host(hostname, sizeof(hostname)));
 #endif
 
 /* Produce shared memory key for file */
@@ -185,9 +185,7 @@ static SLONG get_key( TEXT * filename)
 
 
 #ifndef HAVE_MMAP
-static void remove_resource(
-							const TEXT* filename,
-							SLONG shm_length, const TEXT* label)
+static void remove_resource(const TEXT* filename, SLONG shm_length, const TEXT* label)
 {
 /**************************************
  *
@@ -207,11 +205,9 @@ static void remove_resource(
 	if (!ISC_map_file
 #ifdef HP11
 		(status_vector, expanded_filename,
-		(void (*) (void*, sh_mem*, bool)) dummy_init, 0, shm_length,
-		&shmem_data))
+		(void (*) (void*, sh_mem*, bool)) dummy_init, 0, shm_length, &shmem_data))
 #else
-		(status_vector, expanded_filename, dummy_init, 0, shm_length,
-		 &shmem_data))
+		(status_vector, expanded_filename, dummy_init, 0, shm_length, &shmem_data))
 #endif
 	{
 		printf("\n***Unable to access %s resources:\n", label);
@@ -221,8 +217,7 @@ static void remove_resource(
 
 	const SLONG key = get_key(expanded_filename);
 	if (key == -1) {
-		printf("\n***Unable to get the key value of the %s file.\n",
-				  label);
+		printf("\n***Unable to get the key value of the %s file.\n", label);
 		return;
 	}
 
@@ -234,8 +229,7 @@ static void remove_resource(
 	}
 
 	if (shmctl(shmid, IPC_RMID, 0) == -1)
-		printf("\n***Error trying to drop %s file.  ERRNO = %d.\n", label,
-				  errno);
+		printf("\n***Error trying to drop %s file.  ERRNO = %d.\n", label, errno);
 	else
 		printf("Successfully removed %s file.\n", label);
 }
@@ -243,9 +237,7 @@ static void remove_resource(
 
 
 #ifdef HAVE_MMAP
-static void remove_resource(
-							const TEXT* filename,
-							SLONG shm_length, const TEXT* label)
+static void remove_resource(const TEXT* filename, SLONG shm_length, const TEXT* label)
 {
 /**************************************
  *

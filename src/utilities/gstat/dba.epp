@@ -176,7 +176,8 @@ struct open_files
 	struct open_files *open_files_next;
 };
 
-struct dba_mem {
+struct dba_mem
+{
 	char *memory;
 	struct dba_mem *mem_next;
 };
@@ -329,7 +330,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	const TEXT* const* const end = argv + argc;
 	++argv;
-	while (argv < end) {
+	while (argv < end)
+	{
 		const TEXT* str = *argv++;
 		if (*str != '-')
 		{
@@ -427,7 +429,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 			break;
 		case IN_SW_DBA_RELATION:
 			sw_relation = true;
-			while (argv < end && **argv != '-') {
+			while (argv < end && **argv != '-')
+			{
 				if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
 					argv++;
 					continue;
@@ -537,8 +540,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 					*(file_name + vp[1]) = '\0';
 				}
 				if (*vp == HDR_last_page) {
-					memcpy(&current->fil_max_page, vp + 2,
-						   sizeof(current->fil_max_page));
+					memcpy(&current->fil_max_page, vp + 2, sizeof(current->fil_max_page));
 				}
 			}
 		} while (page = header->hdr_next_page);
@@ -566,9 +568,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 		dba_print(8, SafeArg() << current->fil_string << current->fil_next->fil_string);
 		//* msg 8: File %s continues as file %s
 	}
-	dba_print(9, SafeArg() << current->fil_string <<
-		 ((current == tddba->files) ? "only" : "last"));
-		 // msg 9: File %s is the %s file\n
+	dba_print(9, SafeArg() << current->fil_string << ((current == tddba->files) ? "only" : "last"));
+	// msg 9: File %s is the %s file\n
 
 /* Check to make sure that the user accessing the database is either
  * SYSDBA or owner of the database */
@@ -745,27 +746,23 @@ int gstat(Firebird::UtilSvc* uSvc)
 				relation->rel_id);
 		if (sw_data)
 		{
-			dba_print(11, SafeArg() << relation->rel_pointer_page <<
-					  relation->rel_index_root);
+			dba_print(11, SafeArg() << relation->rel_pointer_page << relation->rel_index_root);
 			// msg 11: "    Primary pointer page: %ld, Index root page: %ld"
-			if (sw_record) {
-				double average = (relation->rel_records) ?
-					(double) relation->rel_record_space /
-					relation->rel_records : 0.0;
+			if (sw_record)
+			{
+				double average = relation->rel_records ?
+					(double) relation->rel_record_space / relation->rel_records : 0.0;
 				sprintf((char*) buf, "%.2f", average);
-				uSvc->printf(
-						"    Average record length: %s, total records: %ld\n",
+				uSvc->printf("    Average record length: %s, total records: %ld\n",
 						buf, relation->rel_records);
 				// dba_print(18, SafeArg() << buf << relation->rel_records);
 				// msg 18: "    Average record length: %s, total records: %ld
-				average = (relation->rel_versions) ?
-					(double) relation->rel_version_space /
-					relation->rel_versions : 0.0;
+				average = relation->rel_versions ?
+					(double) relation->rel_version_space / relation->rel_versions : 0.0;
 				sprintf((char*) buf, "%.2f", average);
 				uSvc->printf(
 						"    Average version length: %s, total versions: %ld, max versions: %ld\n",
-						buf, relation->rel_versions,
-						relation->rel_max_versions);
+						buf, relation->rel_versions, relation->rel_max_versions);
 				// dba_print(19, SafeArg() << buf << relation->rel_versions <<
 				//			 relation->rel_max_versions);
 				// msg 19: " Average version length: %s, total versions: %ld, max versions: %ld
@@ -773,11 +770,9 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 			const double average = (relation->rel_data_pages) ?
 				(double) relation->rel_total_space * 100 /
-				((double) relation->rel_data_pages *
-				 (tddba->page_size - DPG_SIZE)) : 0.0;
+				((double) relation->rel_data_pages * (tddba->page_size - DPG_SIZE)) : 0.0;
 			sprintf((char*) buf, "%.0f%%", average);
-			dba_print(12, SafeArg() << relation->rel_data_pages <<
-					  relation->rel_slots << buf);
+			dba_print(12, SafeArg() << relation->rel_data_pages << relation->rel_slots << buf);
 			/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
 			dba_print(13);	/* msg 13: "    Fill distribution:" */
 			print_distribution("\t", relation->rel_fill_distribution);
@@ -788,14 +783,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 		{
 			dba_print(14, SafeArg() << index->idx_name << index->idx_id);
 			// msg 14: "    Index %s (%d)"
-			dba_print(15, SafeArg() << index->idx_depth <<
-					  index->idx_leaf_buckets <<  index->idx_nodes);
+			dba_print(15, SafeArg() << index->idx_depth << index->idx_leaf_buckets << index->idx_nodes);
 			// msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld
 			const double average = (index->idx_nodes) ?
 				(double) index->idx_data_length / index->idx_nodes : 0;
 			sprintf((char*) buf, "%.2f", average);
-			dba_print(16, SafeArg() << buf << index->idx_total_duplicates <<
-					  index->idx_max_duplicates);
+			dba_print(16, SafeArg() << buf << index->idx_total_duplicates << index->idx_max_duplicates);
 			// msg 16: \tAverage data length: %s, total dup: %ld, max dup: %ld"
 			dba_print(17);
 			// msg 17: \tFill distribution:
@@ -929,13 +922,11 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 
 	pointer_page* ptr_page = (pointer_page*) tddba->buffer1;
 
-	for (SLONG next_pp = relation->rel_pointer_page; next_pp;
-		 next_pp = ptr_page->ppg_next)
+	for (SLONG next_pp = relation->rel_pointer_page; next_pp; next_pp = ptr_page->ppg_next)
 	{
 		memcpy(ptr_page, (const SCHAR*) db_read(next_pp), tddba->page_size);
 		const SLONG* ptr = ptr_page->ppg_page;
-		for (const SLONG* const end = ptr + ptr_page->ppg_count;
-			ptr < end; ptr++)
+		for (const SLONG* const end = ptr + ptr_page->ppg_count; ptr < end; ptr++)
 		{
 			++relation->rel_slots;
 			if (*ptr) {
@@ -981,10 +972,10 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 		if (tail->dpg_offset && tail->dpg_length)
 		{
 			space += tail->dpg_length;
-			if (sw_record) {
+			if (sw_record)
+			{
 				const rhdf* header = (const rhdf*) ((SCHAR *) page + tail->dpg_offset);
-				if (!(header->rhdf_flags &
-					(rhd_blob | rhd_chain | rhd_fragment)))
+				if (!(header->rhdf_flags & (rhd_blob | rhd_chain | rhd_fragment)))
 				{
 					++relation->rel_records;
 					relation->rel_record_space += tail->dpg_length;
@@ -1029,12 +1020,12 @@ static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
 	//tdba* tddba = tdba::getSpecific();
 	ULONG space = 0;
 
-	while (header->rhdf_flags & rhd_incomplete) {
+	while (header->rhdf_flags & rhd_incomplete)
+	{
 		const SLONG f_page = header->rhdf_f_page;
 		const USHORT f_line = header->rhdf_f_line;
 		const data_page* page = (const data_page*) db_read(f_page);
-		if (page->dpg_header.pag_type != pag_data ||
-			page->dpg_relation != relation->rel_id ||
+		if (page->dpg_header.pag_type != pag_data || page->dpg_relation != relation->rel_id ||
 			page->dpg_count <= f_line)
 		{
 			break;
@@ -1102,8 +1093,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 		const UCHAR* const firstNode = pointer;
 		while (true)
 		{
-			pointer = BTreeNode::readNode(&node, pointer,
-				bucket->btr_header.pag_flags, true);
+			pointer = BTreeNode::readNode(&node, pointer, bucket->btr_header.pag_flags, true);
 
 			if (node.isEndBucket || node.isEndLevel) {
 				break;
@@ -1185,10 +1175,10 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 	SLONG b_page = header->rhdf_b_page;
 	USHORT b_line = header->rhdf_b_line;
 
-	while (b_page) {
+	while (b_page)
+	{
 		const data_page* page = (const data_page*) db_read(b_page);
-		if (page->dpg_header.pag_type != pag_data ||
-			page->dpg_relation != relation->rel_id ||
+		if (page->dpg_header.pag_type != pag_data || page->dpg_relation != relation->rel_id ||
 			page->dpg_count <= b_line)
 		{
 			break;
@@ -1298,7 +1288,6 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
-
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
 		fil->fil_min_page = 0L;
 	}
@@ -1309,7 +1298,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
-	fil->fil_desc = CreateFile(	reinterpret_cast<LPCTSTR>(file_name),
+	fil->fil_desc = CreateFile(	file_name,
 								GENERIC_READ,
 								FILE_SHARE_READ | FILE_SHARE_WRITE,
 								NULL,
@@ -1564,8 +1553,7 @@ static const pag* db_read( SLONG page_number)
 #endif
 
 
-static void dba_error(USHORT errcode,
-					  const SafeArg& arg)
+static void dba_error(USHORT errcode, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1585,9 +1573,7 @@ static void dba_error(USHORT errcode,
 }
 
 
-static void dba_print(
-					  USHORT number,
-					  const SafeArg& arg)
+static void dba_print(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -1623,8 +1609,7 @@ static void print_distribution(const SCHAR* prefix, const SLONG* vector)
 
 	for (SSHORT n = 0; n < BUCKETS; n++) {
 		tddba->uSvc->printf("%s%2d - %2d%% = %ld\n",
-				prefix,
-				n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
+				prefix, n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
 }
 

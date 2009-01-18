@@ -94,8 +94,6 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
-	SLONG n;
-	SCHAR string[128] = "";
 
 	bool detail = true;
 
@@ -117,6 +115,9 @@ void main( int argc, char **argv)
 
 	struct tms before;
 	time_t elapsed = times(&before);
+
+	SLONG n;
+	SCHAR string[128] = "";
 
 	const pag* page;
 	SSHORT event;
@@ -182,8 +183,7 @@ void main( int argc, char **argv)
 	printf("High activity pages:\n");
 
 	const USHORT *r, *w;
-	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES;
-		 n++, r++, w++)
+	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES; n++, r++, w++)
 	{
 		if (*r > 1 || *w > 1) {
 			sprintf(string, "  Read: %d, write: %d", *r, *w);
@@ -212,7 +212,8 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 	else
 		printf("%s\t%d\t\t", string, number);
 
-	switch (page->pag_type) {
+	switch (page->pag_type)
+	{
 	case pag_header:
 		printf("Header page\n");
 		break;
@@ -247,8 +248,7 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 		break;
 
 	case pag_blob:
-		printf(
-			"Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
+		printf("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
 			page->pag_flags, ((blob_page*) page)->blp_lead_page,
 			((blob_page*) page)->blp_sequence, ((blob_page*) page)->blp_length);
 		break;
@@ -342,7 +342,7 @@ static PAG db_read( SLONG page_number)
  *
  **************************************/
 
-	FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
+	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
 
 	if (!global_buffer)
 		global_buffer = (pag*) malloc(page_size);

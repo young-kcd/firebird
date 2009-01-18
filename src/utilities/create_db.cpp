@@ -44,8 +44,7 @@ int main(int argc, char** argv)
 		return -3;
 	}
 
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged,
-								 MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
 	isc_attach_database(sv, 0, argv[1], &db, dpb.getBufferLength(),
 		reinterpret_cast<const char*>(dpb.getBuffer()));

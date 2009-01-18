@@ -111,26 +111,27 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
    could be true only if shutdown has not been initiated.
 */
 	if (data->operation != OP_START)
+	{
 		if (data->reattach) {
 			fb_assert(!data->shutdown);
-			if (data->attached)
-
-				/* Attached flag should be NULL after detach_service
-				 */
+			if (data->attached) // Attached flag should be NULL after detach_service
 				detach_service(data);
 			if (!attach_service(data))
 				return MSG_ATTFAIL;
 			data->reattach = 0;
 		}
+	}
 
-	switch (data->operation) {
+	switch (data->operation)
+	{
 	case OP_START:
 		if (!start_server(data))
 			return MSG_STARTFAIL;
 		break;
 
 	case OP_SHUT:
-		switch (data->suboperation) {
+		switch (data->suboperation)
+		{
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
@@ -161,7 +162,8 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 		break;
 
 	case OP_PRINT:
-		switch (data->suboperation) {
+		switch (data->suboperation)
+		{
 		case SOP_PRINT_POOL:
 			if (!print_pool(data))
 				return MSG_PRPOOLFAIL;
@@ -204,7 +206,8 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 
 	const char* rs = 0;
 
-	switch (number) {
+	switch (number)
+	{
 	case MSG_PROMPT:
 		rs = "FBMGR>";
 		break;

@@ -77,7 +77,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		fd = -1;
 
 	TEXT** end = argv + argc;
-	while (argv < end) {
+	while (argv < end)
+	{
 		TEXT* p = *argv++;
 		if (*p++ == '-')
 		{

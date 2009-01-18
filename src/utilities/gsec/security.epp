@@ -126,7 +126,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 	isc_req_handle request = 0;
 
-	switch (io_user_data->operation) {
+	switch (io_user_data->operation)
+	{
 	case ADD_OPER:
 		/* this checks the "entered" flags for each parameter (except the name)
 		   and makes all non-entered parameters null valued */
@@ -256,7 +257,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		/* Do not allow SYSDBA user to be deleted */
 		if (!fb_utils::stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
-		else {
+		else
+		{
 			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
 					WITH U.USER_NAME EQ io_user_data->user_name
 				found = true;
@@ -278,7 +280,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		/* gets either the desired record, or all records, and displays them */
 
 		found = false;
-		if (!io_user_data->user_name_entered) {
+		if (!io_user_data->user_name_entered)
+		{
 			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
 				io_user_data->uid = U.UID;
 				io_user_data->gid = U.GID;
@@ -297,7 +300,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				ret = GsecMsg28;	/* gsec - find/display record error */
 			END_ERROR;
 		}
-		else {
+		else
+		{
 			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
 					WITH U.USER_NAME EQ io_user_data->user_name
 				io_user_data->uid = U.UID;

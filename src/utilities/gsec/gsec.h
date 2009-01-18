@@ -50,7 +50,8 @@ const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
 
-struct internal_user_data {
+struct internal_user_data
+{
 	int		operation;		/* what's to be done */
 	TEXT	user_name [USER_NAME_LEN];	/* the user's name */
 	bool	user_name_entered;	/* user name entered flag */

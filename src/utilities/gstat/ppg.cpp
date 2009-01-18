@@ -59,44 +59,34 @@ void PPG_print_header(const header_page* header, SLONG page,
 		uSvc->printf("Database overflow header page information:\n");
 
 
-	if (page == HEADER_PAGE) {
+	if (page == HEADER_PAGE)
+	{
 		uSvc->printf("\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
-		uSvc->printf("\tChecksum\t\t%d\n",
-				header->hdr_header.pag_checksum);
-		uSvc->printf("\tGeneration\t\t%"ULONGFORMAT"\n",
-				header->hdr_header.pag_generation);
+		uSvc->printf("\tChecksum\t\t%d\n", header->hdr_header.pag_checksum);
+		uSvc->printf("\tGeneration\t\t%"ULONGFORMAT"\n", header->hdr_header.pag_generation);
 		uSvc->printf("\tPage size\t\t%d\n", header->hdr_page_size);
 		uSvc->printf("\tODS version\t\t%d.%d\n",
 				header->hdr_ods_version & ~ODS_FIREBIRD_FLAG, header->hdr_ods_minor);
-		uSvc->printf("\tOldest transaction\t%"SLONGFORMAT"\n",
-				header->hdr_oldest_transaction);
-		uSvc->printf("\tOldest active\t\t%"SLONGFORMAT"\n",
-				header->hdr_oldest_active);
-		uSvc->printf("\tOldest snapshot\t\t%"SLONGFORMAT"\n",
-				header->hdr_oldest_snapshot);
-		uSvc->printf("\tNext transaction\t%"SLONGFORMAT"\n",
-				header->hdr_next_transaction);
-		uSvc->printf("\tBumped transaction\t%"SLONGFORMAT"\n",
-				header->hdr_bumped_transaction);
+		uSvc->printf("\tOldest transaction\t%"SLONGFORMAT"\n", header->hdr_oldest_transaction);
+		uSvc->printf("\tOldest active\t\t%"SLONGFORMAT"\n", header->hdr_oldest_active);
+		uSvc->printf("\tOldest snapshot\t\t%"SLONGFORMAT"\n", header->hdr_oldest_snapshot);
+		uSvc->printf("\tNext transaction\t%"SLONGFORMAT"\n", header->hdr_next_transaction);
+		uSvc->printf("\tBumped transaction\t%"SLONGFORMAT"\n", header->hdr_bumped_transaction);
 		uSvc->printf("\tSequence number\t\t%d\n", header->hdr_sequence);
 
-		uSvc->printf("\tNext attachment ID\t%"SLONGFORMAT"\n",
-				header->hdr_attachment_id);
-		uSvc->printf("\tImplementation ID\t%d\n",
-				header->hdr_implementation);
-		uSvc->printf("\tShadow count\t\t%"SLONGFORMAT"\n"
-				, header->hdr_shadow_count);
-		uSvc->printf("\tPage buffers\t\t%"ULONGFORMAT"\n"
-				, header->hdr_page_buffers);
+		uSvc->printf("\tNext attachment ID\t%"SLONGFORMAT"\n", header->hdr_attachment_id);
+		uSvc->printf("\tImplementation ID\t%d\n", header->hdr_implementation);
+		uSvc->printf("\tShadow count\t\t%"SLONGFORMAT"\n", header->hdr_shadow_count);
+		uSvc->printf("\tPage buffers\t\t%"ULONGFORMAT"\n", header->hdr_page_buffers);
 	}
 
-	uSvc->printf("\tNext header page\t%"ULONGFORMAT"\n"
-				, header->hdr_next_page);
+	uSvc->printf("\tNext header page\t%"ULONGFORMAT"\n", header->hdr_next_page);
 #ifdef DEV_BUILD
 	uSvc->printf("\tClumplet End\t\t%d\n", header->hdr_end);
 #endif
 
-	if (page == HEADER_PAGE) {
+	if (page == HEADER_PAGE)
+	{
 
 		/* If the database dialect is not set to 3, then we need to
 		 * assume it was set to 1.  The reason for this is that a dialect
@@ -107,7 +97,8 @@ void PPG_print_header(const header_page* header, SLONG page,
 		else
 			uSvc->printf("\tDatabase dialect\t1\n");
 
-		if (!nocreation) {
+		if (!nocreation)
+		{
 			struct tm time;
 			isc_decode_timestamp(reinterpret_cast<const ISC_TIMESTAMP*>(header->hdr_creation_date),
 							&time);
@@ -120,7 +111,8 @@ void PPG_print_header(const header_page* header, SLONG page,
 	ULONG flags;
 	int flag_count = 0;
 
-	if ((page == HEADER_PAGE) && (flags = header->hdr_flags)) {
+	if ((page == HEADER_PAGE) && (flags = header->hdr_flags))
+	{
 		uSvc->printf("\tAttributes\t\t");
 		if (flags & hdr_force_write) {
 			uSvc->printf("force write");
@@ -168,7 +160,8 @@ void PPG_print_header(const header_page* header, SLONG page,
 				uSvc->printf(", ");
 			uSvc->printf("read only");
 		}
-		if (flags & hdr_backup_mask) {
+		if (flags & hdr_backup_mask)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			if ((flags & hdr_backup_mask) == Jrd::nbak_state_stalled)
@@ -188,10 +181,10 @@ void PPG_print_header(const header_page* header, SLONG page,
 	TEXT temp[257];
 
 	const UCHAR* p = header->hdr_data;
-	for (const UCHAR* const end = p + header->hdr_page_size;
-		 p < end && *p != HDR_end; p += 2 + p[1])
+	for (const UCHAR* const end = p + header->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
 	{
-		switch (*p) {
+		switch (*p)
+		{
 		case HDR_root_file_name:
 			memcpy(temp, p + 2, p[1]);
 			temp[p[1]] = '\0';
@@ -253,11 +246,9 @@ void PPG_print_header(const header_page* header, SLONG page,
 
 		default:
 			if (*p > HDR_max)
-				uSvc->printf("\tUnrecognized option %d, length %d\n",
-						p[0], p[1]);
+				uSvc->printf("\tUnrecognized option %d, length %d\n", p[0], p[1]);
 			else
-				uSvc->printf("\tEncoded option %d, length %d\n", p[0],
-						p[1]);
+				uSvc->printf("\tEncoded option %d, length %d\n", p[0], p[1]);
 			break;
 		}
 	}

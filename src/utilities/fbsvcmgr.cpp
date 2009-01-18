@@ -140,7 +140,8 @@ bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
 	return false;	// compiler warning silencer
 }
 
-const Switches amSwitch[] = {
+const Switches amSwitch[] =
+{
 	{"prp_am_readonly", 0, 0, isc_spb_prp_am_readonly, 0},
 	{"prp_am_readwrite", 0, 0, isc_spb_prp_am_readwrite, 0},
 	{0, 0, 0, 0, 0}
@@ -151,7 +152,8 @@ bool putAccessMode(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, amSwitch, isc_fbsvcmgr_bad_am);
 }
 
-const Switches wmSwitch[] = {
+const Switches wmSwitch[] =
+{
 	{"prp_wm_async", 0, 0, isc_spb_prp_wm_async, 0},
 	{"prp_wm_sync", 0, 0, isc_spb_prp_wm_sync, 0},
 	{0, 0, 0, 0, 0}
@@ -162,7 +164,8 @@ bool putWriteMode(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, wmSwitch, isc_fbsvcmgr_bad_wm);
 }
 
-const Switches rsSwitch[] = {
+const Switches rsSwitch[] =
+{
 	{"prp_res_use_full", 0, 0, isc_spb_prp_res_use_full, 0},
 	{"prp_res", 0, 0, isc_spb_prp_res, 0},
 	{0, 0, 0, 0, 0}
@@ -173,7 +176,8 @@ bool putReserveSpace(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, rsSwitch, isc_fbsvcmgr_bad_rs);
 }
 
-const Switches shutSwitch[] = {
+const Switches shutSwitch[] =
+{
 	{"prp_sm_normal", 0, 0, isc_spb_prp_sm_normal, 0},
 	{"prp_sm_multi", 0, 0, isc_spb_prp_sm_multi, 0},
 	{"prp_sm_single", 0, 0, isc_spb_prp_sm_single, 0},
@@ -220,10 +224,8 @@ bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
 // populate spb with tags according to user-defined command line switches
 // and programmer-defined set of Switches array
 
-bool populateSpbFromSwitches(char**& av,
-		ClumpletWriter& spb,
-		const Switches* sw,
-		ClumpletWriter* infoSpb)
+bool populateSpbFromSwitches(char**& av, ClumpletWriter& spb,
+							 const Switches* sw, ClumpletWriter* infoSpb)
 {
 	if (! *av)
 		return false;
@@ -256,7 +258,8 @@ bool populateSpbFromSwitches(char**& av,
 	return false;
 }
 
-const Switches attSwitch[] = {
+const Switches attSwitch[] =
+{
 	{"user", putStringArgument, 0, isc_spb_user_name, 0},
 	{"user_name", putStringArgument, 0, isc_spb_user_name, 0},
 	{"password", putStringArgument, 0, isc_spb_password, 0},
@@ -265,7 +268,8 @@ const Switches attSwitch[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches infSwitch[] = {
+const Switches infSwitch[] =
+{
 	{"info_server_version", putSingleTag, 0, isc_info_svc_server_version, 0},
 	{"info_implementation", putSingleTag, 0, isc_info_svc_implementation, 0},
 	{"info_user_dbpath", putSingleTag, 0, isc_info_svc_user_dbpath, 0},
@@ -277,7 +281,8 @@ const Switches infSwitch[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches backupOptions[] = {
+const Switches backupOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"verbose", putSingleTag, 0, isc_spb_verbose, 0},
 	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
@@ -294,7 +299,8 @@ const Switches backupOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches restoreOptions[] = {
+const Switches restoreOptions[] =
+{
 	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"res_length", putNumericArgument, 0, isc_spb_res_length, 0},
@@ -312,7 +318,8 @@ const Switches restoreOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches propertiesOptions[] = {
+const Switches propertiesOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"prp_page_buffers", putNumericArgument, 0, isc_spb_prp_page_buffers, 0},
 	{"prp_sweep_interval", putNumericArgument, 0, isc_spb_prp_sweep_interval, 0},
@@ -333,7 +340,8 @@ const Switches propertiesOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches repairOptions[] = {
+const Switches repairOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"rpr_commit_trans", putNumericArgument, 0, isc_spb_rpr_commit_trans, 0},
 	{"rpr_rollback_trans", putNumericArgument, 0, isc_spb_rpr_rollback_trans, 0},
@@ -349,7 +357,8 @@ const Switches repairOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches statisticsOptions[] = {
+const Switches statisticsOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sts_data_pages", putOption, 0, isc_spb_sts_data_pages, 0},
 	{"sts_hdr_pages", putOption, 0, isc_spb_sts_hdr_pages, 0},
@@ -358,14 +367,16 @@ const Switches statisticsOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches dispdelOptions[] = {
+const Switches dispdelOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
 	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches addmodOptions[] = {
+const Switches addmodOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
 	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
@@ -379,7 +390,8 @@ const Switches addmodOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches nbackOptions[] = {
+const Switches nbackOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
 	{"nbk_level", putNumericArgument, 0, isc_spb_nbk_level, 0},
@@ -387,13 +399,15 @@ const Switches nbackOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
-const Switches nrestOptions[] = {
+const Switches nrestOptions[] =
+{
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches actionSwitch[] = {
+const Switches actionSwitch[] =
+{
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
 	{"action_properties", putSingleTag, propertiesOptions, isc_action_svc_properties, 0},
@@ -413,8 +427,7 @@ const Switches actionSwitch[] = {
 
 bool getLine(string& dest, const char*& p)
 {
-	unsigned short length = (unsigned short)
-		isc_vax_integer (p, sizeof(unsigned short));
+	unsigned short length = (unsigned short) isc_vax_integer (p, sizeof(unsigned short));
 	p += sizeof (unsigned short);
 	dest.assign(p, length);
 	p += length;
@@ -423,8 +436,7 @@ bool getLine(string& dest, const char*& p)
 
 int getNumeric(const char*& p)
 {
-	unsigned int num = (unsigned int)
-		isc_vax_integer (p, sizeof(unsigned int));
+	unsigned int num = (unsigned int) isc_vax_integer (p, sizeof(unsigned int));
 	p += sizeof (unsigned int);
 	return num;
 }
@@ -534,7 +546,8 @@ bool printInfo(const char* p, UserPrint& up)
 
 		case isc_info_svc_svr_db_info:
 			printf ("%s:\n", getMessage(14).c_str());
-			while (*p != isc_info_flag_end) {
+			while (*p != isc_info_flag_end)
+			{
 				switch (*p++)
 				{
 				case isc_spb_dbname:
@@ -718,8 +731,7 @@ int main(int ac, char **av)
 		}
 
 		isc_svc_handle svc_handle = 0;
-		if (isc_service_attach(status,
-					0, name, &svc_handle,
+		if (isc_service_attach(status, 0, name, &svc_handle,
 					static_cast<USHORT>(spbAtt.getBufferLength()),
 					reinterpret_cast<const char*>(spbAtt.getBuffer())))
 		{
@@ -729,8 +741,7 @@ int main(int ac, char **av)
 
 		if (spbStart.getBufferLength() > 0)
 		{
-			if (isc_service_start(status,
-					&svc_handle, 0,
+			if (isc_service_start(status, &svc_handle, 0,
 					static_cast<USHORT>(spbStart.getBufferLength()),
 					reinterpret_cast<const char*>(spbStart.getBuffer())))
 			{
@@ -746,8 +757,7 @@ int main(int ac, char **av)
 			UserPrint up;
 			do
 			{
-				if (isc_service_query(status,
-						&svc_handle, 0, 0, 0,
+				if (isc_service_query(status, &svc_handle, 0, 0, 0,
 						static_cast<USHORT>(spbItems.getBufferLength()),
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))

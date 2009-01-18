@@ -53,7 +53,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	char spb_buffer[2048];
 	char* spb = spb_buffer;
-	if (argc > 2) {
+	if (argc > 2)
+	{
 		*spb++ = isc_spb_version1;
 		*spb++ = isc_spb_command_line;
 		spb++;
@@ -66,8 +67,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	SLONG* handle = NULL;
-	isc_service_attach(NULL, 0, service_path, &handle,
-					   (SSHORT) (spb - spb_buffer), spb_buffer);
+	isc_service_attach(NULL, 0, service_path, &handle, (SSHORT) (spb - spb_buffer), spb_buffer);
 
 	SCHAR send_buffer[2048];
 
@@ -91,14 +91,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	char item = isc_info_end;
 	do {
 		isc_service_query(NULL, &handle, send_item_length, send_items,
-						  sizeof(recv_items), recv_items, sizeof(buffer),
-						  buffer);
+						  sizeof(recv_items), recv_items, sizeof(buffer), buffer);
 		if (send_items == send_buffer)
 			send_item_length = 0;
 		const char* p = buffer;
-		while (p < buffer + sizeof(buffer) &&
-			   (item = *p) != isc_info_end &&
-			   item != isc_info_truncated && item != isc_info_svc_timeout)
+		while (p < buffer + sizeof(buffer) && (item = *p) != isc_info_end &&
+			item != isc_info_truncated && item != isc_info_svc_timeout)
 		{
 			SSHORT len = gds__vax_integer(p + 1, 2);
 			p += 2;

@@ -21,8 +21,7 @@ CControlPanel::~CControlPanel()
 // Callback function (exported)
 
 // static member functions (callbacks)
-LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg,
-                                       LONG lParam1, LONG lParam2)
+LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg, LONG lParam1, LONG lParam2)
 {
 
 
@@ -30,7 +29,8 @@ LONG APIENTRY CControlPanel::CPlApplet(HWND hwndCPl, UINT  uMsg,
     CControlPanel* pCtrl = m_pThis;
     ASSERT(pCtrl);
 
-    switch (uMsg) {
+    switch (uMsg)
+    {
     case CPL_DBLCLK:
         return pCtrl->OnDblclk(hwndCPl, lParam1, lParam2);
 

@@ -760,8 +760,7 @@ static void get_next_file( RBDB rbdb, header_page* header)
 }
 
 
-static void get_range(TEXT*** argv,
-					  const TEXT* const* const end, ULONG* lower, ULONG* upper)
+static void get_range(TEXT*** argv, const TEXT* const* const end, ULONG* lower, ULONG* upper)
 {
 /**************************************
  *
@@ -981,10 +980,10 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 	SLONG number;
 
 	const UCHAR* p = header->hdr_data;
-	for (const UCHAR* const end = p + header->hdr_page_size;
-		 p < end && *p != HDR_end; p += 2 + p[1])
+	for (const UCHAR* const end = p + header->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
 	{
-		switch (*p) {
+		switch (*p)
+		{
 		case HDR_root_file_name:
 			fprintf(file, "\tRoot file name: %*s\n", p[1], p + 2);
 			break;
@@ -1068,8 +1067,7 @@ static void rebuild( RBDB rbdb)
 }
 
 
-static void write_headers(
-						  FILE* file, RBDB rbdb, ULONG lower, ULONG upper)
+static void write_headers(FILE* file, RBDB rbdb, ULONG lower, ULONG upper)
 {
 /**************************************
  *
@@ -1083,12 +1081,13 @@ static void write_headers(
  **************************************/
 	pag* page;
 	for (ULONG page_number = lower;
-		 (page_number <= upper) && (page = RBDB_read(rbdb, page_number));
-		 page_number++)
+		(page_number <= upper) && (page = RBDB_read(rbdb, page_number));
+		page_number++)
 	{
 		fprintf(file, "page %d, ", page_number);
 
-		switch (page->pag_type) {
+		switch (page->pag_type)
+		{
 		case pag_header:
 			fprintf(file, "header page, checksum %d\n",
 					   page->pag_checksum);

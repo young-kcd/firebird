@@ -296,6 +296,9 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 		}
 		stats->stats_counts[relation_id * ITEM_count + item] = gds__vax_integer(p + 2, 4);
 	}
+	// CVC: Maybe this line is missing here? This function may relocate the pointer.
+	// Otherwise the caller may be using deallocated memory in the next iteration.
+	*stats_ptr = stats;
 	return status_vector[1];
 }
 

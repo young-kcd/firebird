@@ -211,8 +211,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 			if (user_data->dba_password_entered)
 			{
-				dpb.insertString(tdsec->utilSvc->isService() ?
-								isc_dpb_password_enc : isc_dpb_password,
+				dpb.insertString(tdsec->utilSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 					user_data->dba_password, strlen(user_data->dba_password));
 			}
 		}
@@ -223,8 +222,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 
 		if (isc_attach_database(status, 0, databaseName.c_str(), &db_handle,
-				dpb.getBufferLength(),
-				reinterpret_cast<const char*>(dpb.getBuffer())))
+				dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
 			GSEC_error_redirect(status, GsecMsg15);
 		}
@@ -258,7 +256,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 	if (!tdsec->tsec_interactive)
 	{
-		if (ret == 0) {
+		if (ret == 0)
+		{
 			/* Signal the start of the service here ONLY if we are displaying users
 			 * since the number of users may exceed the service buffer.  This
 			 * will cause the service to wait for the client to request data.  However,
@@ -397,7 +396,8 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
  **************************************/
 	tsec* tdsec = tsec::getSpecific();
 
-	if (tdsec->utilSvc->isService()) {
+	if (tdsec->utilSvc->isService())
+	{
 		tdsec->utilSvc->putLine(isc_spb_sec_username, data->user_name);
 		tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->first_name);
 		tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middle_name);
@@ -405,7 +405,8 @@ static void data_print(void* arg, const internal_user_data* data, bool first)
 		tdsec->utilSvc->putSLong(isc_spb_sec_userid, data->uid);
 		tdsec->utilSvc->putSLong(isc_spb_sec_groupid, data->gid);
 	}
-	else {
+	else
+	{
 		if (first) {
 			GSEC_print(GsecMsg26);
 			GSEC_print(GsecMsg27);
@@ -448,11 +449,13 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 	while (count > 0)
 	{
 		TEXT c = getc(stdin);
-		if (c > ' ' && c <= '~') {
+		if (c > ' ' && c <= '~')
+		{
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */
 
-			for (argv.push(cursor); count > 0; count--) {
+			for (argv.push(cursor); count > 0; count--)
+			{
 				if (first) {
 					first = false;
 					if (c != '?') {
@@ -515,13 +518,15 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 		const char* string = argv[argc];
 		if (*string == '?')
 			user_data->operation = HELP_OPER;
-		else if (*string != '-') {
+		else if (*string != '-')
+		{
 			/* this is not a switch, so it must be a parameter for
 			   the previous switch, if any */
 			char quote;
 			int l;
 
-			switch (last_sw) {
+			switch (last_sw)
+			{
 			case IN_SW_GSEC_ADD:
 			case IN_SW_GSEC_DEL:
 			case IN_SW_GSEC_DIS:
@@ -629,14 +634,14 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			}
 			last_sw = IN_SW_GSEC_0;
 		}
-		else {
+		else
+		{
 			/* iterate through the switch table, looking for matches */
 
 			USHORT in_sw = IN_SW_GSEC_0;
-			{ // scope
-			const TEXT* q;
-			for (const in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
+			for (const in_sw_tab_t* in_sw_tab = in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
 			{
+				const TEXT* q = in_sw_tab->in_sw_name;
 				const TEXT* p = string + 1;
 
 				/* handle orphaned hyphen case */
@@ -646,7 +651,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 
 				/* compare switch to switch name in table */
 
-				for (int l = 0; *p; ++l) {
+				for (int l = 0; *p; ++l)
+				{
 					if (!*++p) {
 						if (l >= in_sw_tab->in_sw_min_length)
 							in_sw = in_sw_tab->in_sw;
@@ -662,7 +668,6 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				if (!*p)
 					break;
 			}
-			} // scope
 
 			/* this checks to make sure that the switch is not a duplicate.   if
 			   it is a duplicate, it's an error.   if it's not a duplicate, the
@@ -1109,6 +1114,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 		ret = -1;
 	}
 	else if (user_data->operation)
+	{
 		if (user_data->operation == HELP_OPER) {
 			printhelp();
 			ret = -1;
@@ -1120,6 +1126,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 			/* gsec - no user name specified */
 			ret = -1;
 		}
+	}
 
 	if (quitflag)
 		ret = 1;
@@ -1342,7 +1349,8 @@ static void get_security_error(ISC_STATUS* status, int gsec_err)
  **************************************/
 
 
-	switch (gsec_err) {
+	switch (gsec_err)
+	{
 	case GsecMsg19:			/* gsec - add record error */
 		insert_error(status, isc_error_adding_sec_record);
 		return;

@@ -91,7 +91,8 @@ static void store_headers( RBDB rbdb)
 
 	ULONG page_number = 0;
 
-	while (page = RBDB_read(rbdb, page_number)) {
+	while (page = RBDB_read(rbdb, page_number))
+	{
 		STORE P IN FULL_PAGES USING
 			{
 				P.NUMBER = page_number;
@@ -128,7 +129,8 @@ static void store_headers( RBDB rbdb)
 				P.TIP_NEXT.NULL = TRUE;
 
 
-				switch (page->pag_type) {
+				switch (page->pag_type)
+				{
 				case pag_header:
 					header = (header_page*) page;
 					P.HDR_PAGE_SIZE.NULL = FALSE;
