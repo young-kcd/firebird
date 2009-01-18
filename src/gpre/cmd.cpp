@@ -70,7 +70,7 @@ static void create_del_cascade_trg(gpre_req*, const act*, cnstrt*);
 static void create_domain(gpre_req*, const act*);
 static void create_domain_constraint(gpre_req*, const act*, const cnstrt*);
 static void create_generator(gpre_req*, const act*);
-static void create_index(gpre_req*, const ind*);
+static void create_index(gpre_req*, const gpre_index*);
 static void create_matching_blr(gpre_req*, const cnstrt*);
 static void create_set_default_trg(gpre_req*, const act*, cnstrt*, bool);
 static void create_set_null_trg(gpre_req*, const act*, cnstrt*, bool);
@@ -119,7 +119,7 @@ const int BLOB_BUFFER_SIZE = 4096;	// to read in blr blob for default values
 
 int CMD_compile_ddl(gpre_req* request)
 {
-	IND index;
+	gpre_index* index;
 	gpre_rel* relation;
 
 //  Initialize the blr string
@@ -167,7 +167,7 @@ int CMD_compile_ddl(gpre_req* request)
 		break;
 
 	case ACT_create_index:
-		index = (IND) action->act_object;
+		index = (gpre_index*) action->act_object;
 		create_index(request, index);
 		break;
 
@@ -198,7 +198,7 @@ int CMD_compile_ddl(gpre_req* request)
 		break;
 
 	case ACT_drop_index:
-		index = (IND) action->act_object;
+		index = (gpre_index*) action->act_object;
 		put_symbol(request, isc_dyn_delete_idx, index->ind_symbol);
 		request->add_end();
 		break;
@@ -376,7 +376,7 @@ static void alter_domain( gpre_req* request, const act* action)
 
 static void alter_index( gpre_req* request, const act* action)
 {
-	const ind* index = (IND) action->act_object;
+	const gpre_index* index = (gpre_index*) action->act_object;
 	put_symbol(request, isc_dyn_mod_idx, index->ind_symbol);
 
 	const SSHORT value = (index->ind_flags & IND_active) ? 0 : 1;
@@ -1487,7 +1487,8 @@ static void create_domain( gpre_req* request, const act* action)
 static void create_domain_constraint(gpre_req* request, const act* action,
 									 const cnstrt* constraint)
 {
-	for (; constraint; constraint = constraint->cnstrt_next) {
+	for (; constraint; constraint = constraint->cnstrt_next)
+	{
 		if (constraint->cnstrt_flags & CNSTRT_delete)
 			continue;
 
@@ -1524,7 +1525,7 @@ static void create_generator( gpre_req* request, const act* action)
 //		Generate dynamic DDL for CREATE INDEX action.
 //
 
-static void create_index( gpre_req* request, const ind* index)
+static void create_index( gpre_req* request, const gpre_index* index)
 {
 	if (index->ind_symbol)
 		put_symbol(request, isc_dyn_def_idx, index->ind_symbol);
@@ -2232,7 +2233,8 @@ static void put_array_info( gpre_req* request, const gpre_fld* field)
 	const ary* array_info = field->fld_array_info;
 	const SSHORT dims = (SSHORT) array_info->ary_dimension_count;
 	put_numeric(request, isc_dyn_fld_dimensions, dims);
-	for (SSHORT i = 0; i < dims; ++i) {
+	for (SSHORT i = 0; i < dims; ++i)
+	{
 		put_numeric(request, isc_dyn_def_dimension, i);
 		request->add_byte(isc_dyn_dim_lower);
 		const SLONG lrange = (SLONG) (array_info->ary_rpt[i].ary_lower);

@@ -1381,16 +1381,16 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
  *		Return an index block (if name is found) or NULL.
  */
 
-IND MET_index(gpre_dbb* database, const TEXT* string)
+gpre_index* MET_index(gpre_dbb* database, const TEXT* string)
 {
-	IND index;
+	gpre_index* index;
 	const MetIdentifier name(string);
 	const USHORT length = strlen(name);
 
 	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
-		if (symbol->sym_type == SYM_index && (index = (IND) symbol->sym_object) &&
+		if (symbol->sym_type == SYM_index && (index = (gpre_index*) symbol->sym_object) &&
 			index->ind_relation->rel_database == database)
 		{
 			return index;
@@ -1409,7 +1409,7 @@ IND MET_index(gpre_dbb* database, const TEXT* string)
 
 	FOR(REQUEST_HANDLE database->dbb_index_request)
 	X IN RDB$INDICES WITH X.RDB$INDEX_NAME EQ name
-		index = (IND) MSC_alloc(IND_LEN);
+		index = (gpre_index*) MSC_alloc(IND_LEN);
 		index->ind_symbol = symbol = MSC_symbol(SYM_index, name, length, (gpre_ctx*) index);
 		index->ind_relation = MET_get_relation(database, X.RDB$RELATION_NAME, "");
 		HSH_insert(symbol);
@@ -1791,9 +1791,9 @@ gpre_fld* MET_make_field(const SCHAR* name, SSHORT dtype, SSHORT length, bool in
  *		Make an index symbol.
  */
 
-IND MET_make_index(const SCHAR* name)
+gpre_index* MET_make_index(const SCHAR* name)
 {
-	IND index = (IND) MSC_alloc(IND_LEN);
+	gpre_index* index = (gpre_index*) MSC_alloc(IND_LEN);
 	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*) index);
 
 	return index;

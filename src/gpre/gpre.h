@@ -998,14 +998,15 @@ enum rel_flags_vals {
 
 /* Index block. Used for DDL INDEX commands */
 
-typedef struct ind {
+struct gpre_index
+{
 	gpre_sym* ind_symbol;		/* index name */
 	gpre_rel* ind_relation;		/* relation name */
 	gpre_fld* ind_fields;		/* list of fields */
 	USHORT ind_flags;			/* Miscellaneous flags */
-} *IND;
+};
 
-const size_t IND_LEN = sizeof(ind);
+const size_t IND_LEN = sizeof(gpre_index);
 
 enum ind_flags_vals {
 	IND_dup_flag	= 1,	/* if false, duplicates not allowed */
@@ -1047,7 +1048,8 @@ enum intlsym_type_vals {
 
 /* Field block.  Fields are what farms and databases are all about */
 
-struct gpre_fld {
+struct gpre_fld
+{
 	USHORT fld_dtype;			/* data type of field */
 	FLD_LENGTH fld_length;		/* field length in bytes */
 	SSHORT fld_scale;			/* scale factor */
@@ -1067,8 +1069,7 @@ struct gpre_fld {
 								   array field */
 	gpre_nod* fld_default_value;/* field's default value */
 	gpre_txt* fld_default_source;	/* source for field default value */
-	ind* fld_index;				/* If CREATE TABLE, specifies field with
-								   the unique constraint */
+	gpre_index* fld_index;		/* If CREATE TABLE, specifies field with the unique constraint */
 	cnstrt* fld_constraints;	/* linked list of constraints defined
 								   during a meta operation */
 	intlsym* fld_character_set; /* character set for SQL declared field */

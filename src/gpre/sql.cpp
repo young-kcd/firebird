@@ -101,41 +101,41 @@ static act* act_transaction(act_t);
 static act* act_update();
 static act* act_whenever();
 
-static bool		check_filename(const TEXT *);
-static void		connect_opts(const TEXT**, const TEXT**, const TEXT**, const TEXT**, USHORT*);
+static bool			check_filename(const TEXT *);
+static void			connect_opts(const TEXT**, const TEXT**, const TEXT**, const TEXT**, USHORT*);
 #ifdef FLINT_CACHE
-static gpre_file*		define_cache();
+static gpre_file*	define_cache();
 #endif
-static gpre_file*		define_file();
-static gpre_file*		define_log_file(bool);
-static gpre_dbb*		dup_dbb(const gpre_dbb*);
-static void		error(const TEXT *, const TEXT *);
-static TEXT*	extract_string(bool);
-static swe*		gen_whenever();
-static void		into(gpre_req*, gpre_nod*, gpre_nod*);
+static gpre_file*	define_file();
+static gpre_file*	define_log_file(bool);
+static gpre_dbb*	dup_dbb(const gpre_dbb*);
+static void			error(const TEXT *, const TEXT *);
+static TEXT*		extract_string(bool);
+static swe*			gen_whenever();
+static void			into(gpre_req*, gpre_nod*, gpre_nod*);
 static gpre_fld*	make_field(gpre_rel*);
-static IND		make_index(gpre_req*, const TEXT*);
-static gpre_rel* make_relation(gpre_req*, const TEXT *);
-static void		pair(gpre_nod*, gpre_nod*);
-static void		par_array(gpre_fld*);
-static SSHORT	par_char_set();
-static void		par_computed(gpre_req*, gpre_fld*);
-static gpre_req* par_cursor(gpre_sym**);
-static dyn*		par_dynamic_cursor();
-static gpre_fld* par_field(gpre_req*, gpre_rel*);
-static cnstrt*	par_field_constraint(gpre_req*, gpre_fld*, gpre_rel*);
-static void		par_fkey_extension(cnstrt*);
-static bool		par_into(dyn*);
-static void		par_options(const TEXT**);
-static int		par_page_size();
-static gpre_rel* par_relation(gpre_req*);
-static dyn*		par_statement();
-static cnstrt*	par_table_constraint(gpre_req*, gpre_rel*);
-static bool		par_transaction_modes(gpre_tra*, bool);
-static bool		par_using(dyn*);
-static USHORT	resolve_dtypes(kwwords_t, bool);
-static bool		tail_database(act_t, gpre_dbb*);
-static void		to_upcase(const TEXT*, TEXT*, int);
+static gpre_index*	make_index(gpre_req*, const TEXT*);
+static gpre_rel*	make_relation(gpre_req*, const TEXT *);
+static void			pair(gpre_nod*, gpre_nod*);
+static void			par_array(gpre_fld*);
+static SSHORT		par_char_set();
+static void			par_computed(gpre_req*, gpre_fld*);
+static gpre_req*	par_cursor(gpre_sym**);
+static dyn*			par_dynamic_cursor();
+static gpre_fld*	par_field(gpre_req*, gpre_rel*);
+static cnstrt*		par_field_constraint(gpre_req*, gpre_fld*, gpre_rel*);
+static void			par_fkey_extension(cnstrt*);
+static bool			par_into(dyn*);
+static void			par_options(const TEXT**);
+static int			par_page_size();
+static gpre_rel*	par_relation(gpre_req*);
+static dyn*			par_statement();
+static cnstrt*		par_table_constraint(gpre_req*, gpre_rel*);
+static bool			par_transaction_modes(gpre_tra*, bool);
+static bool			par_using(dyn*);
+static USHORT		resolve_dtypes(kwwords_t, bool);
+static bool			tail_database(act_t, gpre_dbb*);
+static void			to_upcase(const TEXT*, TEXT*, int);
 
 static swe* global_whenever[SWE_max];
 static swe* global_whenever_list;
@@ -1214,7 +1214,8 @@ static act* act_alter_domain()
 
 //  Check if default value was specified
 
-	while (!end_of_command()) {
+	while (!end_of_command())
+	{
 		if (MSC_match(KW_SET)) {
 			if (gpreGlob.token_global.tok_keyword == KW_DEFAULT) {
 				field->fld_default_source = CPR_start_text();
@@ -1293,7 +1294,7 @@ static act* act_alter_index()
 
 	PAR_get_token();
 
-	IND index = make_index(request, i_name);
+	gpre_index* index = make_index(request, i_name);
 
 	if (MSC_match(KW_ACTIVE))
 		index->ind_flags |= IND_active;
@@ -1870,7 +1871,7 @@ static act* act_create_index(bool dups, bool descending)
 
 	gpre_rel* relation = par_relation(request);
 
-	IND index = make_index(request, i_name);
+	gpre_index* index = make_index(request, i_name);
 	index->ind_relation = relation;
 	index->ind_flags |= dups ? IND_dup_flag : 0;
 	index->ind_flags |= descending ? IND_descend : 0;
@@ -2841,7 +2842,7 @@ static act* act_drop()
 			if (gpreGlob.token_global.tok_length >= NAME_SIZE)
 				PAR_error("Index name too long");
 
-			IND index = make_index(request, gpreGlob.token_global.tok_string);
+			gpre_index* index = make_index(request, gpreGlob.token_global.tok_string);
 			action = MSC_action(request, ACT_drop_index);
 			action->act_whenever = gen_whenever();
 			action->act_object = (ref*) index;
@@ -5092,9 +5093,9 @@ static gpre_fld* make_field( gpre_rel* relation)
 //		Create index for metadata request.
 //
 
-static IND make_index( gpre_req* request, const TEXT* string)
+static gpre_index* make_index( gpre_req* request, const TEXT* string)
 {
-	IND index = NULL;
+	gpre_index* index = NULL;
 
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
 		// CVC: I've kept this silly code. What's the idea of the copy here?
@@ -5485,7 +5486,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 // field->fld_flags |= FLD_not_null;
 // if (MSC_match (KW_UNIQUE))
 //    {
-//    index = (IND) MSC_alloc (IND_LEN);
+//    index = (gpre_index*) MSC_alloc (IND_LEN);
 //    index->ind_relation = relation;
 //    index->ind_fields = field;
 //    index->ind_flags |= IND_dup_flag | IND_meta;

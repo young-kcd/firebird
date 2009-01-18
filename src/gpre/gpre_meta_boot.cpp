@@ -561,9 +561,9 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
  *		Return an index block (if name is found) or NULL.
  */
 
-IND MET_index(gpre_dbb* db, const TEXT* string)
+gpre_index* MET_index(gpre_dbb* db, const TEXT* string)
 {
-	IND index;
+	gpre_index* index;
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
@@ -571,7 +571,7 @@ IND MET_index(gpre_dbb* db, const TEXT* string)
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_index &&
-			(index = (IND) symbol->sym_object) && index->ind_relation->rel_database == db)
+			(index = (gpre_index*) symbol->sym_object) && index->ind_relation->rel_database == db)
 		{
 			return index;
 		}
@@ -625,9 +625,9 @@ gpre_fld* MET_make_field(const SCHAR* name,
  *		Make an index symbol.
  */
 
-IND MET_make_index(const SCHAR* name)
+gpre_index* MET_make_index(const SCHAR* name)
 {
-	IND index = (IND) MSC_alloc(IND_LEN);
+	gpre_index* index = (gpre_index*) MSC_alloc(IND_LEN);
 	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*) index);
 
 	return index;
