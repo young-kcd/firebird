@@ -3455,4 +3455,5 @@ static void warning(CompilerScratch* csb, const Arg::StatusVector& v)
 
 /* Save into tdbb */
 	p.copyTo(tdbb->tdbb_status_vector);
+	ERR_make_permanent(tdbb->tdbb_status_vector);
 }
