@@ -1117,18 +1117,17 @@ static bool nt_error(TEXT*	string,
  *	to do something about it.  Harumph!
  *
  **************************************/
-
-	if (status_vector)
+	if (!status_vector)
 	{
-		ERR_build_status(status_vector, Arg::Gds(isc_io_error) << Arg::Str(string) <<
-																  Arg::Str(file->fil_string) <<
-										Arg::Gds(operation) << Arg::Windows(GetLastError()));
-		return false;
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+				 Arg::Gds(operation) << Arg::Windows(GetLastError()));
 	}
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) <<
-									   Arg::Str(file->fil_string) <<
-			 Arg::Gds(operation) << Arg::Windows(GetLastError()));
+	ERR_build_status(status_vector,
+					 Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+					 Arg::Gds(operation) << Arg::Windows(GetLastError()));
 
-	return true;
+	gds__log_status(0, status_vector);
+
+	return false;
 }
