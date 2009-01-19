@@ -54,7 +54,12 @@ public:
 		size_t len = strlen(text);
 		if (::fwrite(text, 1, len, stdout) != len)
 		{
+			// ASF: If the console is configured to UTF-8 (chcp 65001) with TrueType font, the MSVC
+			// runtime returns the number of characters (instead of bytes) written and make
+			// ferror(stdout) return true. So lets not check for errors here.
+#ifndef WIN_NT
 			system_call_failed::raise("StandaloneUtilityInterface::output()/fwrite()");
+#endif
 		}
 	}
 
