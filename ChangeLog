@@ -1,3 +1,46 @@
+2009-01-19 17:16  alexpeshkoff
+
+	* firebird2/src/common/classes/: fb_tls.h (1.23), init.cpp (1.12),
+	init.h (1.15):
+
+	Fixed order of TLS keys destruction in POSIX build.
+
+2009-01-19 11:10  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.79):
+
+	Misc + added critical I/O errors logging on Windows (same as done
+	for POSIX).
+
+2009-01-19 10:46  dimitr
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.114):
+
+	Misc + added critical I/O errors logging on Windows (same as done
+	for POSIX).
+
+2009-01-18 23:32  hvlad
+
+	* firebird2/src/jrd/par.cpp (1.228):
+
+	Make strings permanent in warning's status-vector
+
+2009-01-18 21:06  dimitr
+
+	* firebird2/src/jrd/lck.cpp (1.95):
+
+	Some additional runtime protection from any mistakes in the lock
+	manager initialization or cleanup.
+
+2009-01-18 21:03  dimitr
+
+	* firebird2/src/jrd/met.epp (1.272):
+
+	My extra check becomes more and more complicated to be proven
+	correct while it protects from a purely theoretical issue that was
+	never observed yet.  So I've decided to restore the condition to
+	its original state.
+
 2009-01-18 12:37  robocop
 
 	* firebird2/src/gpre/: cmd.cpp (1.52), gpre.h (1.101),
