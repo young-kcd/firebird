@@ -121,7 +121,8 @@ namespace Firebird
 	FPTR_VOID InstanceControl::gdsCleanup = 0;
 	FPTR_VOID InstanceControl::gdsShutdown = 0;
 
-	InstanceControl::InstanceControl()
+	InstanceControl::InstanceControl(DtorPriority p)
+		: priority(p)
 	{
 		// Initialize required subsystems, including static mutex, needed next line
 		init();
@@ -161,17 +162,32 @@ namespace Firebird
 		}
 
 		// Destroy global objects
-		for (InstanceControl* i = instanceList; i; i = i->next)
+		DtorPriority currentPriority = PRIORITY_REGULAR, nextPriority = currentPriority;
+		do
 		{
-			try
+			currentPriority = nextPriority;
+			for (InstanceControl* i = instanceList; i; i = i->next)
 			{
-				i->dtor();
+				if (i->priority == currentPriority)
+				{
+					try
+					{
+						i->dtor();
+					}
+					catch (const Firebird::Exception& e)
+					{
+						cleanError(&e);
+					}
+				}
+				else if (i->priority > currentPriority)
+				{
+					if (nextPriority == currentPriority || i->priority < nextPriority)
+					{
+						nextPriority = i->priority;
+					}
+				}
 			}
-			catch (const Firebird::Exception& e)
-			{
-				cleanError(&e);
-			}
-		}
+		} while (nextPriority != currentPriority);
 	}
 
 	void InstanceControl::registerGdsCleanup(FPTR_VOID cleanup)
@@ -190,11 +206,12 @@ namespace Firebird
 
 	void StaticMutex::create()
 	{
-		mutex = FB_NEW(*getDefaultMemoryPool()) Mutex;
+		static char staticMutexPlace[sizeof(Firebird::Mutex)];
+		mutex = new(staticMutexPlace) Mutex;
 	}
 
 	void StaticMutex::release()
 	{
-		delete mutex;
+		mutex->~Mutex();
 	}
 }

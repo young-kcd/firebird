@@ -95,16 +95,21 @@ private:
 
 #ifndef SOLARIS_MT
 
+#include "../common/classes/init.h"
+
 #include <pthread.h>
 
 namespace Firebird {
 
 
 template <typename T>
-class TlsValue
+class TlsValue : private InstanceControl
 {
 public:
-	TlsValue() : keySet(true)
+	TlsValue() : InstanceControl(InstanceControl::PRIORITY_TLS_KEY)
+#ifdef DEV_BUILD
+		, keySet(true)
+#endif
 	{
 		int rc = pthread_key_create(&key, NULL);
 		if (rc)
@@ -112,26 +117,35 @@ public:
 	}
 	const T get()
 	{
+		fb_assert(keySet);
 		// We use double C-style cast to allow using scalar datatypes
 		// with sizes up to size of pointer without warnings
 		return (T)(IPTR) pthread_getspecific(key);
 	}
 	void set(const T value)
 	{
+		fb_assert(keySet);
 		int rc = pthread_setspecific(key, (void*)(IPTR) value);
-		if (rc && keySet)
+		if (rc)
 			system_call_failed::raise("pthread_setspecific", rc);
 	}
 	~TlsValue()
 	{
+	}
+	void dtor()
+	{
 		int rc = pthread_key_delete(key);
 		if (rc)
 			system_call_failed::raise("pthread_key_delete", rc);
+#ifdef DEV_BUILD
 		keySet = false;
+#endif
 	}
 private:
 	pthread_key_t key;
+#ifdef DEV_BUILD
 	bool keySet;	// This is used to avoid conflicts when destroying global variables
+#endif
 };
 #else //SOLARIS_MT
 #include <thread.h>

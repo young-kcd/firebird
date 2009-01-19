@@ -48,7 +48,12 @@ public:
 class InstanceControl : private StaticMutex
 {
 public:
-	InstanceControl();
+	enum DtorPriority
+	{
+		PRIORITY_REGULAR,
+		PRIORITY_TLS_KEY
+	};
+	InstanceControl(DtorPriority p);
 	static void destructors();
 	static void registerGdsCleanup(FPTR_VOID cleanup);
 	static void registerShutdown(FPTR_VOID shutdown);
@@ -59,6 +64,7 @@ private:
 	static FPTR_VOID gdsCleanup;
 	static FPTR_VOID gdsShutdown;
 	InstanceControl* next;
+	DtorPriority priority;
 };
 
 // GlobalPtr - template to help declaring global varables
@@ -75,7 +81,7 @@ private:
 	}
 public:
 	GlobalPtr()
-		: InstanceControl()
+		: InstanceControl(InstanceControl::PRIORITY_REGULAR)
 	{
 		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 		// This means - for objects with ctors/dtors that want to be global,
