@@ -946,25 +946,19 @@ static bool unix_error(const TEXT* string,
  *	to do something about it.  Harumph!
  *
  **************************************/
-	ISC_STATUS* status = status_vector;
-	if (status) {
-		ERR_build_status(status, Arg::Gds(isc_io_error) << Arg::Str(string) <<
-														   Arg::Str(file->fil_string) <<
-								 Arg::Gds(operation) << Arg::Unix(errno));
-		gds__log_status(0, status_vector);
-		return false;
+	if (!status_vector)
+	{
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+				 Arg::Gds(operation) << Arg::Unix(errno));
 	}
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) <<
-									   Arg::Str(file->fil_string) <<
-			 Arg::Gds(operation) << Arg::Unix(errno));
+	ERR_build_status(status_vector,
+					 Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+					 Arg::Gds(operation) << Arg::Unix(errno));
 
-    // Added a false for final return - which seems to be the answer,
-    // but is better than what it was which was nothing ie random
-    // Most usages within here want it to return a failure.
-    // MOD 01-July-2002
+	gds__log_status(0, status_vector);
 
-    return false;
+	return false;
 }
 
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
