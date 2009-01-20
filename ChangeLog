@@ -1,3 +1,47 @@
+2009-01-20 15:58  dimitr
+
+	* firebird2/src/common/utils_proto.h (1.31):
+
+	Totally misc.
+
+2009-01-20 15:56  dimitr
+
+	* firebird2/src/common/cvt.cpp (1.12):
+
+	Fixed random errors while converting the string '0' into a numeric.
+
+2009-01-20 09:33  robocop
+
+	* firebird2/src/: gpre/par.cpp (1.80), jrd/DatabaseSnapshot.cpp
+	(1.90), jrd/blb.cpp (1.190), jrd/btr.cpp (1.229), jrd/cch.cpp
+	(1.223), jrd/cmp.cpp (1.332), jrd/dbg.cpp (1.41), jrd/dpm.epp
+	(1.84), jrd/dsc.cpp (1.36), jrd/dsc2.h (1.16), jrd/dyn.epp (1.141),
+	jrd/dyn_def.epp (1.179), jrd/dyn_del.epp (1.80), jrd/dyn_mod.epp
+	(1.111), jrd/enc.cpp (1.30), jrd/err.cpp (1.89), jrd/evl.cpp
+	(1.289), jrd/evl_string.h (1.32), jrd/exe.cpp (1.285),
+	jrd/filters.cpp (1.70), jrd/gds.cpp (1.272), jrd/grant.epp (1.71),
+	jrd/inf.cpp (1.91), jrd/intl.cpp (1.117), jrd/isc_sync.cpp (1.170),
+	jrd/jrd.cpp (1.510), jrd/lck.cpp (1.96), jrd/met.epp (1.273),
+	jrd/mov.cpp (1.39), jrd/Optimizer.cpp (1.108), jrd/nbak.cpp (1.90),
+	jrd/opt.cpp (1.333), jrd/par.cpp (1.229), jrd/perf.cpp (1.44),
+	jrd/qatest.cpp (1.29), jrd/rse.cpp (1.168), jrd/sdl.cpp (1.57),
+	jrd/shut.cpp (1.67), jrd/sort.cpp (1.121), jrd/svc.cpp (1.256),
+	jrd/tra.cpp (1.193), jrd/utl.cpp (1.127), jrd/vio.cpp (1.240),
+	jrd/why.cpp (1.233), jrd/os/posix/fbsyslog.cpp (1.10),
+	jrd/os/posix/unix.cpp (1.115), jrd/os/vms/extvms.cpp (1.32),
+	jrd/os/win32/fbsyslog.cpp (1.14), jrd/os/win32/winnt.cpp (1.80),
+	qli/mov.cpp (1.51), qli/picstr.cpp (1.38),
+	remote/os/win32/ibconfig.cpp (1.29):
+
+	Style.
+
+2009-01-19 22:39  asfernandes
+
+	* firebird2/src/common/UtilSvc.cpp (1.12):
+
+	Do not check for errors when writing to the console in Windows. It
+	can be problematic.
+
 2009-01-19 17:16  alexpeshkoff
 
 	* firebird2/src/common/classes/: fb_tls.h (1.23), init.cpp (1.12),
