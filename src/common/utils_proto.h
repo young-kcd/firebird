@@ -106,7 +106,7 @@ namespace fb_utils
 	void inline init_status(ISC_STATUS* status)
 	{
 		status[0] = isc_arg_gds;
-		status[1] = 0;
+		status[1] = FB_SUCCESS;
 		status[2] = isc_arg_end;
 	}
 
