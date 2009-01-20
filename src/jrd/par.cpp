@@ -156,7 +156,8 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 /* If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
    the target relation */
 
-	if (trigger) {
+	if (trigger)
+	{
 		SSHORT stream = csb->nextStream();
 		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
 		t1->csb_flags |= csb_used | csb_active | csb_trigger;
@@ -178,7 +179,8 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 
 	csb->csb_running = csb->csb_blr = blr;
 
-	if (view_csb) {
+	if (view_csb)
+	{
 		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data.
@@ -917,7 +919,8 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 	exception_list->xcp_count = 1;
 	xcp_repeat& item = exception_list->xcp_rpt[0];
 
-	switch (code_type) {
+	switch (code_type)
+	{
 	case blr_sql_code:
 		item.xcp_type = xcp_sql_code;
 		item.xcp_code = (SSHORT) BLR_WORD;
@@ -987,7 +990,8 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 		const USHORT code_type = BLR_BYTE;
 		xcp_repeat& item = exception_list->xcp_rpt[i];
 
-		switch (code_type) {
+		switch (code_type)
+		{
 		case blr_sql_code:
 			item.xcp_type = xcp_sql_code;
 			item.xcp_code = (SSHORT) BLR_WORD;
@@ -1317,10 +1321,10 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		if (procedure) {
 			par_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
-				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
-													   Arg::Str(procedure->prc_name));
+				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) << Arg::Str(procedure->prc_name));
 		}
-		else {
+		else
+		{
 			jrd_rel* relation = tail->csb_relation;
 			if (!relation)
 				error(csb, Arg::Gds(isc_ctxnotdef));
@@ -1505,7 +1509,8 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 	const UCHAR* q = csb->csb_running;
 	USHORT l = desc.dsc_length;
 
-	switch (desc.dsc_dtype) {
+	switch (desc.dsc_dtype)
+	{
 	case dtype_short:
 		l = 2;
 		*(SSHORT *) p = (SSHORT) gds__vax_integer(q, l);
@@ -1824,7 +1829,8 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 /* we have hit a stream; parse the context number and access type */
 
-	if (node_type == blr_retrieve) {
+	if (node_type == blr_retrieve)
+	{
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
 
@@ -1862,7 +1868,8 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		Firebird::MetaName name;
 		TEXT* idx_name = 0;
 
-		switch (node_type) {
+		switch (node_type)
+		{
 		case blr_navigational:
 			{
 				access_type = plan->nod_arg[e_retrieve_access_type] =
@@ -1935,7 +1942,8 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				/* pick up the index names and look up the appropriate ids */
 
-				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;) {
+				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;)
+				{
 					par_name(csb, name);
 	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
 					 for (p = name; *p; *p++)
@@ -2079,13 +2087,14 @@ static void par_procedure_parms(thread_db* tdbb,
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 		{
 			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
-					   Arg::Str(procedure->prc_name));
+								Arg::Str(procedure->prc_name));
 		}
 		else
 			mismatch = true;
 	}
 
-	if (count || input_flag && procedure->prc_defaults) {
+	if (count || input_flag && procedure->prc_defaults)
+	{
 	/** We have a few parameters. Get on with creating the message block **/
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
@@ -2141,7 +2150,8 @@ static void par_procedure_parms(thread_db* tdbb,
 			asgn_arg1 = e_asgn_to;
 			asgn_arg2 = e_asgn_from;
 		}
-		for (USHORT i = 0; n; count--, n--) {
+		for (USHORT i = 0; n; count--, n--)
+		{
 			jrd_nod* asgn = PAR_make_node(tdbb, e_asgn_length);
 			*ptr++ = asgn;
 			asgn->nod_type = nod_assignment;
@@ -2302,9 +2312,11 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		//*ptr++ = PAR_parse_node(tdbb, csb, RELATION);
 	}
 
-	while (true) {
+	while (true)
+	{
 		const UCHAR op = BLR_BYTE;
-		switch (op) {
+		switch (op)
+		{
 		case blr_boolean:
 			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
 			break;
@@ -2367,7 +2379,8 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 #endif
 
 		default:
-			if (op == (UCHAR) blr_end) {
+			if (op == (UCHAR) blr_end)
+			{
 				/* An outer join is only allowed when the stream count is 2
 				   and a boolean expression has been supplied */
 
@@ -2419,10 +2432,12 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 	jrd_nod** ptr2 = ptr + count;
 	jrd_nod** ptr3 = ptr2 + count;
 
-	while (--count >= 0) {
+	while (--count >= 0)
+	{
 		if (flag) {
 			UCHAR code = BLR_BYTE;
-			switch (code) {
+			switch (code)
+			{
 			case blr_nullsfirst:
 				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_first;
 				code = BLR_BYTE;
@@ -2466,7 +2481,8 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 
 	while (true) {
 		const UCHAR op = BLR_BYTE;
-		switch (op) {
+		switch (op)
+		{
 		case blr_boolean:
 			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
 			break;
@@ -2629,7 +2645,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 /* Dispatch on operator type. */
 
-	switch (blr_operator) {
+	switch (blr_operator)
+	{
 	case blr_any:
 	case blr_unique:
 	case blr_ansi_any:
@@ -3018,7 +3035,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		n = BLR_BYTE;
 		node->nod_arg[e_cursor_stmt_op] = (jrd_nod*) (IPTR) n;
 		node->nod_arg[e_cursor_stmt_number] = (jrd_nod*) (IPTR) BLR_WORD;
-		switch (n) {
+		switch (n)
+		{
 		case blr_cursor_open:
 		case blr_cursor_close:
 			break;

@@ -304,16 +304,20 @@ LikeEvaluator<CharType>::LikeEvaluator(
 	// PASS1. Parse pattern.
 	SLONG pattern_pos = 0;
 	PatternItem *item = patternItems.begin();
-	while (pattern_pos < pattern_len) {
+	while (pattern_pos < pattern_len)
+	{
 		CharType c = pattern_str[pattern_pos++];
 		// Escaped symbol
-		if (use_escape && c == escape_char) {
-			if (pattern_pos < pattern_len) {
+		if (use_escape && c == escape_char)
+		{
+			if (pattern_pos < pattern_len)
+			{
 				c = pattern_str[pattern_pos++];
 				/* Note: SQL II says <escape_char><escape_char> is error condition */
 				if (c == escape_char ||	c == sql_match_any || c == sql_match_one)
 				{
-					switch (item->type) {
+					switch (item->type)
+					{
 					case piSkipFixed:
 					case piSkipMore:
 						patternItems.grow(patternItems.getCount() + 1);
@@ -337,8 +341,10 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			ERR_post(Firebird::Arg::Gds(isc_escape_invalid));
 		}
 		// percent sign
-		if (c == sql_match_any) {
-			switch (item->type) {
+		if (c == sql_match_any)
+		{
+			switch (item->type)
+			{
 			case piSearch:
 			case piEscapedString:
 				patternItems.grow(patternItems.getCount() + 1);
@@ -352,7 +358,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			continue;
 		}
 		// underscore
-		if (c == sql_match_one) {
+		if (c == sql_match_one)
+		{
 			switch (item->type) {
 			case piSearch:
 			case piEscapedString:
@@ -371,7 +378,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			continue;
 		}
 		// anything else
-		switch (item->type) {
+		switch (item->type)
+		{
 		case piSkipFixed:
 		case piSkipMore:
 			patternItems.grow(patternItems.getCount() + 1);
@@ -393,9 +401,11 @@ LikeEvaluator<CharType>::LikeEvaluator(
 	// Unescape strings, mark direct match items, pre-compile KMP tables and
 	// optimize out piSkipMore nodes
 	bool directMatch = true;
-	for (size_t i = 0; i < patternItems.getCount();) {
+	for (size_t i = 0; i < patternItems.getCount();)
+	{
 		PatternItem *itemL = &patternItems[i];
-		switch (itemL->type) {
+		switch (itemL->type)
+		{
 		case piEscapedString: {
 			const CharType *curPos = itemL->str.data;
 			itemL->str.data = static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
@@ -425,7 +435,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 				itemL->type = piSkipFixed;
 				itemL->match_any = true;
 			}
-			else {
+			else
+			{
 				if (i > 0) {
 					// Mark previous node if it exists
 					patternItems[i - 1].match_any = true;
@@ -468,14 +479,16 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 
 	SLONG data_pos = 0;
 	SLONG finishCandidate = -1;
-	while (data_pos < data_len) {
+	while (data_pos < data_len)
+	{
 
 		size_t branch_number = 0;
 		while (branch_number < branches.getCount())
 		{
 			BranchItem *current_branch = &branches[branch_number];
 			PatternItem *current_pattern = current_branch->pattern;
-			switch (current_pattern->type) {
+			switch (current_pattern->type)
+			{
 			case piDirectMatch:
 				if (data[data_pos] != current_pattern->str.data[current_branch->offset]) {
 					// Terminate matching branch
@@ -487,9 +500,11 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 				// Note: fall into
 			case piSkipFixed:
 				current_branch->offset++;
-				if (current_branch->offset >= current_pattern->str.length) {
+				if (current_branch->offset >= current_pattern->str.length)
+				{
 					// Switch to next subpattern or finish matching
-					if (current_pattern->match_any) {
+					if (current_pattern->match_any)
+					{
 						current_pattern++;
 						if (current_pattern >= patternItems.end()) {
 							branches.shrink(0);
@@ -503,7 +518,8 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 						break;
 					}
 					current_pattern++;
-					if (current_pattern >= patternItems.end()) {
+					if (current_pattern >= patternItems.end())
+					{
 						finishCandidate = data_pos;
 						branches.remove(branch_number);
 						if (branches.getCount() == 0) {
@@ -527,7 +543,8 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 			    	current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 				}
 				current_branch->offset++;
-				if (current_branch->offset >= current_pattern->str.length) {
+				if (current_branch->offset >= current_pattern->str.length)
+				{
 					PatternItem *next_pattern = current_pattern + 1;
 					if (next_pattern >= patternItems.end()) {
 						if (current_pattern->match_any) {

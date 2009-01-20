@@ -663,7 +663,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			}
 		}
 
-		switch (state) {
+		switch (state)
+		{
 			/* If it's dead, back it out, if possible.  Otherwise continue to
 			   chase backward */
 
@@ -1829,7 +1830,8 @@ bool VIO_get_current(thread_db* tdbb,
 		   reattempt the backout. */
 
 		if (rpb->rpb_flags & rpb_gc_active) {
-			switch (state) {
+			switch (state)
+			{
 			case tra_committed:
 				state = tra_dead;
 				rpb->rpb_flags &= ~rpb_gc_active;
@@ -1883,7 +1885,8 @@ bool VIO_get_current(thread_db* tdbb,
 			}
 		}
 
-		switch (state) {
+		switch (state)
+		{
 		case tra_committed:
 			/* If the record doesn't exist anymore, no problem. This
 			 * can happen in two cases.  The transaction that inserted
@@ -2125,8 +2128,10 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 /* If we're about to modify a system relation, check to make sure
    everything is completely kosher. */
 
-	if (needDfw(tdbb, transaction)) {
-		switch ((RIDS) relation->rel_id) {
+	if (needDfw(tdbb, transaction))
+	{
+		switch ((RIDS) relation->rel_id)
+		{
 		case rel_database:
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
 			break;
@@ -2561,8 +2566,10 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	transaction->tra_flags |= TRA_write;
 	jrd_rel* relation = rpb->rpb_relation;
 
-	if (needDfw(tdbb, transaction)) {
-		switch ((RIDS) relation->rel_id) {
+	if (needDfw(tdbb, transaction))
+	{
+		switch ((RIDS) relation->rel_id)
+		{
 		case rel_relations:
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
@@ -4397,7 +4404,8 @@ static int prepare_update(	thread_db*		tdbb,
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			switch (state) {
+			switch (state)
+			{
 			case tra_committed:
 				state = tra_dead;
 				rpb->rpb_flags &= ~rpb_gc_active;
@@ -4412,7 +4420,8 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 		}
 
-		switch (state) {
+		switch (state)
+		{
 		case tra_committed:
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_READS_INFO) {
@@ -4555,7 +4564,8 @@ static int prepare_update(	thread_db*		tdbb,
 				}
 				delete_record(tdbb, temp, (SLONG) 0, 0);
 			}
-			switch (state) {
+			switch (state)
+			{
 			case tra_committed:
 				// We need to loop waiting in read committed transactions only
 				if (!(transaction->tra_flags & TRA_read_committed))

@@ -110,7 +110,8 @@ bool GRANT_privileges(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *	the order of operations	lightly.
  *
  **************************************/
-	switch (phase) {
+	switch (phase)
+	{
 	case 1:
 	case 2:
 		return true;
@@ -503,7 +504,8 @@ static void grant_user(Acl& acl,
  *
  **************************************/
 	CHECK_AND_MOVE(acl, ACL_id_list);
-	switch (user_type) {
+	switch (user_type)
+	{
 	case obj_user_group:
 		CHECK_AND_MOVE(acl, id_group);
 		break;
@@ -876,7 +878,8 @@ static SecurityClass::flags_t trans_sql_priv(const TEXT* privileges)
  **************************************/
 	SecurityClass::flags_t priv = 0;
 
-	switch (UPPER7(privileges[0])) {
+	switch (UPPER7(privileges[0]))
+	{
 	case 'S':
 		priv |= SCL_read;
 		break;
@@ -931,12 +934,15 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 	bool hit = false;
 
 	while ( (c = *a++) )
-		switch (c) {
+		switch (c)
+		{
 		case ACL_id_list:
 			dup_acl = a - 1;
 			hit = true;
-			while ( (c = *a++) ) {
-				switch (c) {
+			while ( (c = *a++) )
+			{
+				switch (c)
+				{
 				case id_person:
 					if (user_type != obj_user)
 						hit = false;
@@ -1008,9 +1014,11 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 			break;
 
 		case ACL_priv_list:
-			if (hit) {
+			if (hit)
+			{
 				while ( (c = *a++) )
-					switch (c) {
+					switch (c)
+					{
 					case priv_control:
 						privilege |= SCL_control;
 						break;

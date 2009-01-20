@@ -1840,7 +1840,8 @@ void DPM_scan_pages( thread_db* tdbb)
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
 		relPages = relation->getBasePages();
 		sequence = X.RDB$PAGE_SEQUENCE;
-		switch (X.RDB$PAGE_TYPE) {
+		switch (X.RDB$PAGE_TYPE)
+		{
 		case pag_root:
 			relPages->rel_index_root = X.RDB$PAGE_NUMBER;
 			continue;

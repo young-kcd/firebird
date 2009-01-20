@@ -456,7 +456,8 @@ int DBG_block(BLK block)
 
 	prt_fields(reinterpret_cast<char*>(block), fields);
 
-	switch ((enum blk_t) block->blk_type) {
+	switch ((enum blk_t) block->blk_type)
+	{
 	case type_vec:
 		fprintf(dbg_file, "\t");
 		p = string;
@@ -750,7 +751,8 @@ int DBG_pretty(const jrd_nod* node, int column)
 	const jrd_nod* const* end;
 	const IndexRetrieval* retrieval;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_rse:
 		{
 			const RecordSelExpr* recse = (RecordSelExpr*) node;
@@ -1053,7 +1055,8 @@ int DBG_memory()
 		if (!pool)
 			continue;
 		const int pool_type = DBG_analyze(pool_id);
-		switch (pool_type) {
+		switch (pool_type)
+		{
 		case 1:
 			break;
 		case 2:
@@ -1149,7 +1152,8 @@ static int prt_fields(SCHAR * block, int *fields)
 		offset = *fields++;
 		length = *fields++;
 		ptr = (SCHAR *) block + offset;
-		switch (length) {
+		switch (length)
+		{
 		case 0:
 		case 1:
 			sprintf(s, string, *ptr);

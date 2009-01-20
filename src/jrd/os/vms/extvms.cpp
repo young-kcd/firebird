@@ -86,8 +86,7 @@ void EXT_close(RecordSource* rsb)
 	jrd_req* request = tdbb->getRequest();
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
-	if ((rab.rab$w_isi = rpb->rpb_ext_isi) &&
-		rpb->rpb_ext_isi != file->ext_isi)
+	if ((rab.rab$w_isi = rpb->rpb_ext_isi) && rpb->rpb_ext_isi != file->ext_isi)
 	{
 		disconnect(file);
 		rpb->rpb_ext_isi = 0;
@@ -184,8 +183,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 		fab.fab$b_fac = FAB$M_DEL | FAB$M_GET | FAB$M_PUT | FAB$M_UPD;
 
 	struct XABSUM summary;
-	fab.fab$b_shr = FAB$M_MSE | FAB$M_SHRGET | FAB$M_SHRPUT |
-		FAB$M_SHRDEL | FAB$M_SHRUPD;
+	fab.fab$b_shr = FAB$M_MSE | FAB$M_SHRGET | FAB$M_SHRPUT | FAB$M_SHRDEL | FAB$M_SHRUPD;
 	fab.fab$l_xab = &summary;
 	summary = cc$rms_xabsum;
 
@@ -207,7 +205,8 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 
 	struct XABKEY keys[MAX_KEYS];
 
-	if (fab.fab$b_org == FAB$C_IDX) {
+	if (fab.fab$b_org == FAB$C_IDX)
+	{
 		struct XABKEY *key, *end;
 		struct XABKEY** ptr = (struct XABKEY**) &fab.fab$l_xab;
 		for (key = keys, end = key + summary.xab$b_nok; key < end; key++) {
@@ -295,7 +294,8 @@ bool EXT_get(RecordSource* rsb)
 	if (tdbb->getRequest()->req_flags & req_abort)
 		return false;
 
-	switch (rsb->rsb_type) {
+	switch (rsb->rsb_type)
+	{
 		case rsb_ext_sequential:
 			return get_sequential(rsb);
 
@@ -374,7 +374,8 @@ EXT_open(RecordSource* rsb)
 		record = VIO_record(tdbb, rpb, format, request->req_pool);
 	}
 
-	switch (rsb->rsb_type) {
+	switch (rsb->rsb_type)
+	{
 	case rsb_ext_sequential:
 		return open_sequential(rsb);
 
@@ -438,8 +439,7 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
 	if (!dbkey && opt->opt_count && (idx = file->ext_indices))
 	{
 		for (SSHORT i = 0; i < file->ext_index_count; i++) {
-			if (OPT_match_index(opt, stream, idx) &&
-				opt->opt_rpt[0].opt_lower)
+			if (OPT_match_index(opt, stream, idx) && opt->opt_rpt[0].opt_lower)
 			{
 				inversion = OPT_make_index(tdbb, opt, relation, idx);
 				if (check_sort(*sort_ptr, idx, stream))
@@ -630,8 +630,7 @@ static bool check_sort(const jrd_nod* sort, const index_desc* index, USHORT stre
 
 	const index_desc::idx_repeat* tail = index->idx_rpt;
 	const jrd_nod* const* ptr = sort->nod_arg;
-	for (const jrd_nod* const* const end = ptr + sort->nod_count; ptr < end;
-		ptr++, tail++)
+	for (const jrd_nod* const* const end = ptr + sort->nod_count; ptr < end; ptr++, tail++)
 	{
 		const jrd_nod* field = *ptr;
 		if (field->nod_type != nod_field ||
@@ -755,8 +754,7 @@ static void expand_format(Format* external, const Format* internal)
 
 	const dsc* idesc = internal->fmt_desc;
 	dsc* edesc = external->fmt_desc;
-	for (const dsc* const end = edesc + external->fmt_count; edesc < end;
-		edesc++, idesc++)
+	for (const dsc* const end = edesc + external->fmt_count; edesc < end; edesc++, idesc++)
 	{
 		*edesc = *idesc;
 		edesc->dsc_address = (UCHAR *) offset;
@@ -767,8 +765,7 @@ static void expand_format(Format* external, const Format* internal)
 }
 
 
-static SLONG find_field(
-						const Format* format, USHORT type, USHORT offset, USHORT length)
+static SLONG find_field(const Format* format, USHORT type, USHORT offset, USHORT length)
 {
 /**************************************
  *
@@ -784,10 +781,10 @@ static SLONG find_field(
  **************************************/
 	USHORT n = 0;
 	const dsc* desc = format->fmt_desc;
-	for (const dsc* const end = desc + format->fmt_count;
-		 desc < end; desc++, n++)
+	for (const dsc* const end = desc + format->fmt_count; desc < end; desc++, n++)
 		if ((int) desc->dsc_address == offset && desc->dsc_length == length)
-			switch (type) {
+			switch (type)
+			{
 			case XAB$C_IN2:
 				if (desc->dsc_dtype == dtype_short)
 					return n;
@@ -799,8 +796,7 @@ static SLONG find_field(
 				break;
 
 			case XAB$C_IN8:
-				if (desc->dsc_dtype == dtype_timestamp ||
-					desc->dsc_dtype == dtype_quad)
+				if (desc->dsc_dtype == dtype_timestamp || desc->dsc_dtype == dtype_quad)
 				{
 					return n;
 				}
@@ -917,22 +913,21 @@ static bool get_indexed(RecordSource* rsb)
    it is a little more convenient to do it here */
 
 	if (impure->irsb_flags & irsb_first)
-		if (retrieval->irb_lower_count) {
+		if (retrieval->irb_lower_count)
+		{
 			UCHAR* p = key_buffer;
 			index_desc::idx_repeat* segment = index->idx_rpt;
 			jrd_nod** ptr = retrieval->irb_value;
 			for (const jrd_nod* const* const end = ptr + retrieval->irb_lower_count;
 				ptr < end; ptr++, segment++)
 			{
-				p += get_key_segment(*ptr, p,
-									format->fmt_desc + segment->idx_field);
+				p += get_key_segment(*ptr, p, format->fmt_desc + segment->idx_field);
 			}
 			rab.rab$b_krf = index->idx_id;
 			rab.rab$l_kbf = key_buffer;
 			rab.rab$b_ksz = p - key_buffer;
 			rab.rab$b_rac = RAB$C_KEY;
-			rab.rab$l_rop =
-				(retrieval->irb_generic & irb_equality) ? 0 : RAB$M_KGE;
+			rab.rab$l_rop = (retrieval->irb_generic & irb_equality) ? 0 : RAB$M_KGE;
 			const int status = sys$find(&rab);
 			file->ext_flags &= ~EXT_eof;
 			if (status == RMS$_EOF || status == RMS$_RNF)
@@ -962,9 +957,7 @@ static bool get_indexed(RecordSource* rsb)
 	for (const jrd_nod* const* const end = ptr + retrieval->irb_upper_count;
 		ptr < end; ptr++, segment++)
 	{
-		const int result =
-			compare_segment(*ptr, rab.rab$l_ubf,
-							format->fmt_desc + segment->idx_field);
+		const int result = compare_segment(*ptr, rab.rab$l_ubf, format->fmt_desc + segment->idx_field);
 		if (result < 0)
 			break;
 		if (result > 0)
@@ -1029,8 +1022,7 @@ static bool get_sequential(RecordSource* rsb)
 
 /* If the rab is shared and has been moved, reposition it */
 
-	if (rpb->rpb_ext_isi == file->ext_isi &&
-		!(impure->irsb_flags & irsb_first) &&
+	if (rpb->rpb_ext_isi == file->ext_isi && !(impure->irsb_flags & irsb_first) &&
 		compare(file->ext_dbkey, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa)))
 	{
 		position_by_rfa(file, &rpb->rpb_ext_dbkey);

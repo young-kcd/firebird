@@ -153,7 +153,8 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 
 	TEXT line[BUFFER_SMALL];
 
-	if (!status) {
+	if (!status)
+	{
 		sprintf(line, "ACL version %d", (int) *p++);
 		string_put(control, line);
 		TEXT* out = line;
@@ -161,7 +162,8 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
         bool all_wild;
 		UCHAR c;
 		while (c = *p++)
-			switch (c) {
+			switch (c)
+			{
 			case ACL_id_list:
 				all_wild = true;
 				*out++ = '\t';
@@ -347,7 +349,8 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 	bool blr = false;
 
 	TEXT line[128];
-	switch ((RSR_T) buff[0]) {
+	switch ((RSR_T) buff[0])
+	{
 	case RSR_field_name:
 		sprintf(line, "    name: %s", p);
 		break;
@@ -453,7 +456,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
  **************************************/
 	BlobControl* source;
 
-	switch (action) {
+	switch (action)
+	{
 	case isc_blob_filter_open:
 		source = control->ctl_handle;
 		control->ctl_total_length = source->ctl_total_length;
@@ -651,7 +655,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	SSHORT i;
 	USHORT result_length;
 
-	switch (action) {
+	switch (action)
+	{
 	case isc_blob_filter_open:
 	case isc_blob_filter_create:
 		for (i = 0; i < FB_NELEM(control->ctl_data); i++)
@@ -1019,7 +1024,8 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 				goto break_out;
 			}
 
-			switch (c) {
+			switch (c)
+			{
 			case TDR_HOST_SITE:
 				sprintf(out, "Host site: %.*s", length, p);
 				break;
@@ -1140,7 +1146,8 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 	TMP string;
 	USHORT length;
 
-	switch (action) {
+	switch (action)
+	{
 	case isc_blob_filter_close:
 		while (string = (TMP) control->ctl_data[0]) {
 			control->ctl_data[0] = (IPTR) string->tmp_next;

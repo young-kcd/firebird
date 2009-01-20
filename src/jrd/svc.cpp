@@ -122,7 +122,7 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 namespace {
 
 	// Option block for service parameter block
-	struct Options 
+	struct Options
 	{
 		string spb_sys_user_name;
 		string spb_user_name;
@@ -955,7 +955,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				l = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), 2);
 				items += 2;
 				if (items + l <= end_items) {
-					switch (item) {
+					switch (item)
+					{
 					case isc_info_svc_line:
 						put(items, l);
 						break;
@@ -1400,7 +1401,8 @@ void Service::query(USHORT			send_item_length,
 				items += 2;
 				if (items + l <= end_items)
 				{
-					switch (item) {
+					switch (item)
+					{
 					case isc_info_svc_line:
 						put(items, l);
 						break;
@@ -1491,7 +1493,8 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_get_env_msg:
 			if (svc_user_flag & SVC_user_dba)
 			{
-				switch (item) {
+				switch (item)
+				{
 				case isc_info_svc_get_env:
 					gds__prefix(PathBuffer, "");
 					break;
@@ -1662,7 +1665,7 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_response_more:
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 4), l);
-			if (!(info = 
+			if (!(info =
 				INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr), info, end)))
 			{
 				return;
@@ -1852,7 +1855,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	// The service block can be reused hence init a status vector.
 	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 
-	if (serv->serv_thd) 
+	if (serv->serv_thd)
 	{
 		{	// scope
 			MutexLockGuard guard(svc_mutex);
@@ -1901,15 +1904,15 @@ void Service::readFbLog()
 	gds__prefix(name, LOGFILE);
 	FILE* file = fopen(name, "r");
 
-	try 
+	try
 	{
-		if (file != NULL) 
+		if (file != NULL)
 		{
 			fb_utils::init_status(svc_status);
 			started();
 			svc_started = true;
 			TEXT buffer[100];
-			while (!feof(file) && !ferror(file)) 
+			while (!feof(file) && !ferror(file))
 			{
 				fgets(buffer, sizeof(buffer), file);
 				output(buffer);
@@ -2035,7 +2038,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 		svc_flags &= ~SVC_timeout;
 	}
 
-	while (length) 
+	while (length)
 	{
 		if ((empty() && (svc_flags & SVC_finished)) || checkForShutdown())
 		{
@@ -2298,7 +2301,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			break;
 
 		case isc_action_svc_db_stats:
-			switch (spb.getClumpTag()) {
+			switch (spb.getClumpTag())
+			{
 			case isc_spb_dbname:
 				get_action_svc_string(spb, switches);
 				break;
@@ -2326,7 +2330,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 		case isc_action_svc_backup:
 		case isc_action_svc_restore:
-			switch (spb.getClumpTag()) {
+			switch (spb.getClumpTag())
+			{
 			case isc_spb_bkp_file:
                 get_action_svc_string(spb, burp_backup);
 				break;
@@ -2374,7 +2379,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 		case isc_action_svc_repair:
 		case isc_action_svc_properties:
-			switch (spb.getClumpTag()) {
+			switch (spb.getClumpTag())
+			{
 			case isc_spb_dbname:
                 get_action_svc_string(spb, switches);
 				break;

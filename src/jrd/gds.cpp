@@ -1667,7 +1667,8 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 
 	gdsPrefixInit();
 
-	switch (arg_type) {
+	switch (arg_type)
+	{
 	case IB_PREFIX_TYPE:
 		prefix.copyTo(fb_prefix_val, sizeof fb_prefix_val);
 		break;
@@ -1866,7 +1867,8 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 	while (p < end) {
 		const UCHAR op = *p++;
 		const USHORT length = *p++;
-		switch (op) {
+		switch (op)
+		{
 		case isc_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
 			if (source_type_specified)
@@ -2768,7 +2770,8 @@ static void blr_print_cond(gds_ctl* control)
 
 	const USHORT ctype = BLR_BYTE;
 
-	switch (ctype) {
+	switch (ctype)
+	{
 	case blr_gds_code:
 		blr_format(control, "blr_gds_code, ");
 		n = blr_print_byte(control);
@@ -3037,7 +3040,8 @@ static void blr_print_join(gds_ctl* control)
 
 	const USHORT join_type = BLR_BYTE;
 
-	switch (join_type) {
+	switch (join_type)
+	{
 	case blr_inner:
 		string = "inner";
 		break;
@@ -3113,7 +3117,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 	while (*ops)
 	{
-		switch (*ops++) {
+		switch (*ops++)
+		{
 		case op_verb:
 			blr_print_verb(control, level);
 			break;

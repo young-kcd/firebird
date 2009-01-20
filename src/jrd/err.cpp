@@ -149,7 +149,8 @@ void ERR_duplicate_error(IDX_E code, const jrd_rel* relation, USHORT index_numbe
 		index = constraint = "***unknown***";
 	}
 
-	switch (code) {
+	switch (code)
+	{
 	case idx_e_keytoobig:
 		ERR_post(Arg::Gds(isc_imp_exc) <<
 				 Arg::Gds(isc_keytoobig) << Arg::Str(index));

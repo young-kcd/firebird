@@ -178,7 +178,8 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		USHORT n = key->skd_length;
 		bool complement = key->skd_flags & SKD_descending;
 
-		switch (key->skd_dtype) {
+		switch (key->skd_dtype)
+		{
 		case SKD_ulong:
 		case SKD_ushort:
 		case SKD_bytes:
@@ -302,7 +303,8 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		bool complement = key->skd_flags & SKD_descending;
 		USHORT n = ROUNDUP(key->skd_length, sizeof(SLONG));
 
-		switch (key->skd_dtype) {
+		switch (key->skd_dtype)
+		{
 		case SKD_timestamp1:
 		case SKD_timestamp2:
 		case SKD_sql_date:
@@ -532,7 +534,8 @@ void SORT_get(thread_db* tdbb,
 	if (scb->scb_merge)
 		record = get_merge(scb->scb_merge, scb, mode);
 	else
-		switch (mode) {
+		switch (mode)
+		{
 		case RSE_get_forward:
 			if (scb->scb_flags & scb_initialized)
 				scb->scb_flags &= ~scb_initialized;
@@ -1209,7 +1212,8 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		USHORT n = key->skd_length;
 		USHORT complement = key->skd_flags & SKD_descending;
 
-		switch (key->skd_dtype) {
+		switch (key->skd_dtype)
+		{
 		case SKD_ulong:
 		case SKD_ushort:
 		case SKD_bytes:
@@ -1335,7 +1339,8 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		USHORT complement = key->skd_flags & SKD_descending;
 		USHORT n = ROUNDUP(key->skd_length, sizeof(SLONG));
 
-		switch (key->skd_dtype) {
+		switch (key->skd_dtype)
+		{
 		case SKD_timestamp1:
 		case SKD_timestamp2:
 		case SKD_sql_time:

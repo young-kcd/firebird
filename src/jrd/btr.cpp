@@ -2386,7 +2386,8 @@ static void compress(thread_db* tdbb,
 
 	UCHAR* p = key->key_data;
 
-	if (isNull) {
+	if (isNull)
+	{
 		if (dbb->dbb_ods_version >= ODS_VERSION7)
 		{
 			UCHAR pad = 0;

@@ -288,9 +288,11 @@ inline bool dsc::isDscEquiv(const dsc* d2) const
 dsc::length_t dsc::getTextLen(bool validate) const
 {
 	fb_assert(dsc_dtype <= dtype_any_text);
-	if (validate) {
+	if (validate)
+	{
 		length_t len, len2;
-		switch (dsc_dtype) {
+		switch (dsc_dtype)
+		{
 		case dtype_text:
 			len = len2 = dsc_length;
 			break;
@@ -313,7 +315,8 @@ dsc::length_t dsc::getTextLen(bool validate) const
 		return len;
 	}
 
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_text: return dsc_length;
 	case dtype_cstring: return dsc_length - 1;
 	case dtype_varying: return dsc_length - sizeof(USHORT);
@@ -400,7 +403,8 @@ inline bool dsc::isUserDefinedBlob() const
 
 inline bool dsc::isExact() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_int64:
 	case dtype_long:
 	case dtype_short:
@@ -428,7 +432,8 @@ inline bool dsc::isSqlDecimal() const
 
 inline bool dsc::isApprox() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_real:
 	case dtype_double:
 		return true;
@@ -521,7 +526,8 @@ bool dsc::mayExactMulDivFit(const dsc& d2) const
 
 inline dsc::address_t dsc::asUText()
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_text:
 	case dtype_cstring:
 		return dsc_address;
@@ -555,7 +561,8 @@ inline BYTE dsc::asByte() const
 
 inline SSHORT dsc::asSShort() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -567,7 +574,8 @@ inline SSHORT dsc::asSShort() const
 
 inline USHORT dsc::asUShort() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -579,7 +587,8 @@ inline USHORT dsc::asUShort() const
 
 inline SLONG dsc::asSLong() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -593,7 +602,8 @@ inline SLONG dsc::asSLong() const
 
 inline ULONG dsc::asULong() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -675,7 +685,8 @@ inline GDS_TIMESTAMP dsc::asSqlTimestamp() const
 
 inline SINT64 dsc::asSBigInt() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -691,7 +702,8 @@ inline SINT64 dsc::asSBigInt() const
 
 inline FB_UINT64 dsc::asUBigInt() const
 {
-	switch (dsc_dtype) {
+	switch (dsc_dtype)
+	{
 	case dtype_byte:
 		return asByte();
 	case dtype_short:

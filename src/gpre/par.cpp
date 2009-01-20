@@ -921,7 +921,8 @@ TEXT* PAR_native_value(bool array_ref, bool handle_ref)
 
 	SCHAR* string = buffer;
 
-	while (true) {
+	while (true)
+	{
 	/** PAR_native_values copies the string constants. These are
 	passed to api calls. Make sure to enclose these with
 	double quotes.
@@ -969,7 +970,8 @@ TEXT* PAR_native_value(bool array_ref, bool handle_ref)
 			gobble(string);
 		}
 		kwwords_t keyword = gpreGlob.token_global.tok_keyword;
-		if (keyword == KW_LEFT_PAREN) {
+		if (keyword == KW_LEFT_PAREN)
+		{
 			int parens = 1;
 			while (parens) {
 				const tok_t typ = gpreGlob.token_global.tok_type;

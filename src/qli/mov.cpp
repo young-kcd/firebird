@@ -1425,13 +1425,16 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 		while (p < end && *p == ' ')
 			p++;
 
-		if (*p == '/' || *p == '-' || *p == ',' || *p == ':') {
-			p++;
-			continue;
-		}
-		if (*p == '.') {
+		switch (*p)
+		{
+		case '.':
 			if (!month_position && i < 2)
 				month_position = 1;
+			// fall into
+		case '/':
+		case '-':
+		case ',':
+		case ':':
 			p++;
 			continue;
 		}

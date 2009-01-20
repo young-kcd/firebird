@@ -671,7 +671,8 @@ void DatabaseSnapshot::putField(Record* record, int id, const ClumpletReader& re
 		return;
 	}
 
-	switch (desc.dsc_dtype) {
+	switch (desc.dsc_dtype)
+	{
 	case dtype_text:
 		{
 			const char* const string = (char*) reader.getBytes();

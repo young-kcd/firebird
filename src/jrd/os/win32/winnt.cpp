@@ -228,8 +228,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 
 	if (desc == INVALID_HANDLE_VALUE)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (create)") <<
-										   Arg::Str(string) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (create)") << Arg::Str(string) <<
 				 Arg::Gds(isc_io_create_err) << Arg::Windows(GetLastError()));
 	}
 
@@ -243,8 +242,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
-	size_t len_expanded)
+bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
 {
 /**************************************
  *
@@ -258,8 +256,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
  *
  **************************************/
 
-	return ISC_expand_filename(file_name, file_length,
-				expanded_name, len_expanded, false);
+	return ISC_expand_filename(file_name, file_length, expanded_name, len_expanded, false);
 }
 
 
@@ -294,8 +291,8 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
 	{
 		const ULONG filePages = PIO_get_number_of_pages(file, pageSize);
-		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ? MAX_ULONG :
-									file->fil_max_page - file->fil_min_page + 1;
+		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ?
+									MAX_ULONG : file->fil_max_page - file->fil_min_page + 1;
 		if (filePages < fileMaxPages)
 		{
 			const ULONG extendBy = MIN(fileMaxPages - filePages + file->fil_fudge, leftPages);
@@ -394,7 +391,7 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 }
 
 
-void PIO_header(Database* dbb, SCHAR * address, int length)
+void PIO_header(Database* dbb, SCHAR* address, int length)
 {
 /**************************************
  *
@@ -492,8 +489,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	OVERLAPPED overlapped;
 	OVERLAPPED* overlapped_ptr;
-	jrd_file* file =
-		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
+	jrd_file* file = seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
 
 	if (!file)
 		return 0;
@@ -512,7 +508,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
 
-		DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size;
+		const DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size;
 		DWORD written;
 
 		if (!WriteFile(file->fil_desc, zero_buff, to_write, &written, overlapped_ptr) ||
@@ -557,7 +553,8 @@ jrd_file* PIO_open(Database* dbb,
 					  g_dwExtraFlags,
 					  0);
 
-	if (desc == INVALID_HANDLE_VALUE) {
+	if (desc == INVALID_HANDLE_VALUE)
+	{
 		/* Try opening the database file in ReadOnly mode.
 		 * The database file could be on a RO medium (CD-ROM etc.).
 		 * If this fileopen fails, return error.
@@ -572,8 +569,7 @@ jrd_file* PIO_open(Database* dbb,
 
 		if (desc == INVALID_HANDLE_VALUE)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (open)") <<
-											   Arg::Str(file_name) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (open)") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Windows(GetLastError()));
 		}
 		else
@@ -694,16 +690,14 @@ bool PIO_read_ahead(Database*		dbb,
 	}
 
 	BufferDesc bdb;
-	while (pages) {
+	while (pages)
+	{
 		/* Setup up a dummy buffer descriptor block for seeking file. */
 
 		bdb.bdb_dbb = dbb;
 		bdb.bdb_page = start_page;
 
-		jrd_file* file = seek_file(dbb->dbb_file,
-						&bdb, status_vector,
-						overlapped_ptr,
-						&overlapped_ptr);
+		jrd_file* file = seek_file(dbb->dbb_file, &bdb, status_vector, overlapped_ptr, &overlapped_ptr);
 		if (!file) {
 			return false;
 		}
@@ -722,35 +716,28 @@ bool PIO_read_ahead(Database*		dbb,
 		HANDLE desc = file->fil_desc;
 
 		DWORD actual_length;
-		if (ReadFile(	desc,
-						buffer,
-						segmented_length,
-						&actual_length,
-						overlapped_ptr) &&
+		if (ReadFile(desc, buffer, segmented_length, &actual_length, overlapped_ptr) &&
 			actual_length == segmented_length)
 		{
 			if (piob && !pages) {
 				piob->piob_flags = PIOB_success;
 			}
 		}
-		else if (piob && !pages) {
+		else if (piob && !pages)
+		{
 			piob->piob_flags = PIOB_pending;
 			piob->piob_desc = reinterpret_cast<SLONG>(desc);
 			piob->piob_file = file;
 			piob->piob_io_length = segmented_length;
 		}
-		else if (!GetOverlappedResult(	desc,
-										overlapped_ptr,
-										&actual_length,
-										TRUE) ||
-				actual_length != segmented_length)
+		else if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+			actual_length != segmented_length)
 		{
 			if (piob) {
 					piob->piob_flags = PIOB_error;
 			}
 			release_io_event(file, overlapped_ptr);
-			return nt_error("GetOverlappedResult", file, isc_io_read_err,
-							status_vector);
+			return nt_error("GetOverlappedResult", file, isc_io_read_err, status_vector);
 		}
 
 		if (!piob || (piob->piob_flags & (PIOB_success | PIOB_error)))
@@ -785,15 +772,14 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
 		}
 		DWORD actual_length;
 		if (!GetOverlappedResult((HANDLE) piob->piob_desc,
-								 (OVERLAPPED *) & piob->piob_io_event,
+								 (OVERLAPPED*) &piob->piob_io_event,
 								 &actual_length,
 								 piob->piob_wait) ||
 			actual_length != piob->piob_io_length)
 		{
-			release_io_event(piob->piob_file,
-							 (OVERLAPPED *) & piob->piob_io_event);
-			return nt_error("GetOverlappedResult", piob->piob_file,
-							isc_io_error, status_vector); // io_error is wrong here as primary & secondary error.
+			release_io_event(piob->piob_file, (OVERLAPPED*) &piob->piob_io_event);
+			return nt_error("GetOverlappedResult", piob->piob_file, isc_io_error, status_vector);
+			// io_error is wrong here as primary & secondary error.
 		}
 	}
 
@@ -831,7 +817,8 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 
 	HANDLE desc = file->fil_desc;
 
-	if (dbb->dbb_encrypt_key.hasData()) {
+	if (dbb->dbb_encrypt_key.hasData())
+	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
 		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(), page, size, spare_buffer);
@@ -890,8 +877,7 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 		nt_error("GetFileSize", file, isc_io_access_err, 0);
 	}
 
-    const ULONGLONG ullFileSize = (((ULONGLONG) dwFileSizeHigh) << 32)
-		+ dwFileSizeLow;
+    const ULONGLONG ullFileSize = (((ULONGLONG) dwFileSizeHigh) << 32) + dwFileSizeLow;
 	return (ULONG) ((ullFileSize + pagesize - 1) / pagesize);
 }
 
@@ -995,8 +981,7 @@ static jrd_file* seek_file(jrd_file*			file,
 	page -= file->fil_min_page - file->fil_fudge;
 
     LARGE_INTEGER liOffset;
-	liOffset.QuadPart =
-		UInt32x32To64((DWORD) page, (DWORD) dbb->dbb_page_size);
+	liOffset.QuadPart = UInt32x32To64((DWORD) page, (DWORD) dbb->dbb_page_size);
 
 	overlapped->Offset = liOffset.LowPart;
 	overlapped->OffsetHigh = liOffset.HighPart;
@@ -1016,8 +1001,7 @@ static jrd_file* seek_file(jrd_file*			file,
 		}
 	}
 
-	if (!overlapped->hEvent &&
-		!(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
+	if (!overlapped->hEvent && !(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
 	{
 		nt_error("CreateEvent", file, isc_io_access_err, status_vector);
 		return 0;

@@ -119,7 +119,8 @@ void INF_blob_info(const blb* blob,
 	{
 		SCHAR item = *items++;
 
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_end:
 			break;
 
@@ -238,7 +239,8 @@ void INF_database_info(const SCHAR* items,
 		SCHAR* p = buffer;
 		SCHAR item = *items++;
 
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_end:
 			break;
 
@@ -870,7 +872,8 @@ void INF_request_info(const jrd_req* request,
 	{
 		SCHAR item = *items++;
 
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_end:
 			break;
 
@@ -1021,7 +1024,8 @@ void INF_transaction_info(const jrd_tra* transaction,
 	{
 		SCHAR item = *items++;
 
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_end:
 			break;
 

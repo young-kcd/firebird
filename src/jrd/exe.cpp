@@ -2013,7 +2013,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			break;
 
 		case nod_for:
-			switch (request->req_operation) {
+			switch (request->req_operation)
+			{
 			case jrd_req::req_evaluate:
 				RSE_open(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]);
 				request->req_records_affected.clear();

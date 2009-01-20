@@ -207,8 +207,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
  *
  **************************************/
 #ifdef SUPERSERVER_V2
-	const int flag =
-		SYNC | O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
+	const int flag = SYNC | O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
 #else
 #ifdef SUPPORT_RAW_DEVICES
 	const int flag = O_RDWR |
@@ -284,8 +283,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
  *
  **************************************/
 
-	return ISC_expand_filename(file_name, file_length,
-		expanded_name, len_expanded, false);
+	return ISC_expand_filename(file_name, file_length, expanded_name, len_expanded, false);
 }
 
 
@@ -480,9 +478,11 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	if (file->fil_desc == -1)
 		unix_error("PIO_header", file, isc_io_read_err);
 
-	for (i = 0; i < IO_RETRY; i++) {
+	for (i = 0; i < IO_RETRY; i++)
+	{
 #ifdef ISC_DATABASE_ENCRYPTION
-		if (dbb->dbb_encrypt_key) {
+		if (dbb->dbb_encrypt_key)
+		{
 			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
 			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1) {
@@ -491,8 +491,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 				unix_error("read", file, isc_io_read_err);
 			}
 
-			(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
-								 spare_buffer, length, address);
+			(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, length, address);
 		}
 		else
 #endif /* ISC_DATABASE_ENCRYPTION */
@@ -505,14 +504,17 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			break;
 	}
 
-	if (i == IO_RETRY) {
-		if (bytes == 0) {
+	if (i == IO_RETRY)
+	{
+		if (bytes == 0)
+		{
 #ifdef DEV_BUILD
 			fprintf(stderr, "PIO_header: an empty page read!\n");
 			fflush(stderr);
 #endif
 		}
-		else {
+		else
+		{
 #ifdef DEV_BUILD
 			fprintf(stderr, "PIO_header: retry count exceeded\n");
 			fflush(stderr);
@@ -609,14 +611,14 @@ jrd_file* PIO_open(Database* dbb,
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	int desc = openFile(ptr, false, false, false);
 
-	if (desc == -1) {
+	if (desc == -1)
+	{
 		/* Try opening the database file in ReadOnly mode. The database file could
 		 * be on a RO medium (CD-ROM etc.). If this fileopen fails, return error.
 		 */
 		desc = openFile(ptr, false, false, true);
 		if (desc == -1) {
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
-											   Arg::Str(file_name) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
 		/* If this is the primary file, set Database flag to indicate that it is
@@ -639,8 +641,7 @@ jrd_file* PIO_open(Database* dbb,
 	 */
 	if (PIO_on_raw_device(file_name) && !raw_devices_validate_database(desc, file_name))
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
-										   Arg::Str(file_name) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
 	}
 #endif /* SUPPORT_RAW_DEVICES */
@@ -674,16 +675,17 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	const FB_UINT64 size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
-	if (dbb->dbb_encrypt_key) {
+	if (dbb->dbb_encrypt_key)
+	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		for (i = 0; i < IO_RETRY; i++) {
+		for (i = 0; i < IO_RETRY; i++)
+		{
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
             if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
 			{
-				(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
-									 spare_buffer, size, page);
+				(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, size, page);
 				break;
 			}
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
@@ -693,7 +695,8 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	else
 #endif /* ISC_DATABASE_ENCRYPTION */
 	{
-		for (i = 0; i < IO_RETRY; i++) {
+		for (i = 0; i < IO_RETRY; i++)
+		{
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
 			if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
@@ -704,14 +707,17 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 	}
 
 
-	if (i == IO_RETRY) {
-		if (bytes == 0) {
+	if (i == IO_RETRY)
+	{
+		if (bytes == 0)
+		{
 #ifdef DEV_BUILD
 			fprintf(stderr, "PIO_read: an empty page read!\n");
 			fflush(stderr);
 #endif
 		}
-		else {
+		else
+		{
 #ifdef DEV_BUILD
 			fprintf(stderr, "PIO_read: retry count exceeded\n");
 			fflush(stderr);
@@ -750,13 +756,14 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	const SLONG size = dbb->dbb_page_size;
 
 #ifdef ISC_DATABASE_ENCRYPTION
-	if (dbb->dbb_encrypt_key) {
+	if (dbb->dbb_encrypt_key)
+	{
 		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key->str_data,
-							 page, size, spare_buffer);
+		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key->str_data, page, size, spare_buffer);
 
-		for (i = 0; i < IO_RETRY; i++) {
+		for (i = 0; i < IO_RETRY; i++)
+		{
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
 			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
@@ -768,7 +775,8 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	else
 #endif /* ISC_DATABASE_ENCRYPTION */
 	{
-		for (i = 0; i < IO_RETRY; i++) {
+		for (i = 0; i < IO_RETRY; i++)
+		{
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
 			if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
@@ -1111,8 +1119,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	{
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") <<
-											   Arg::Str(file_name) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 		}
 
@@ -1122,22 +1129,19 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") <<
-											   Arg::Str(file_name) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 		}
 	}
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read_retry") <<
-									   Arg::Str(file_name) <<
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read_retry") << Arg::Str(file_name) <<
 			 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 
   read_finished:
 	/* Rewind file pointer */
 	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") <<
-										   Arg::Str(file_name) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 	}
 
@@ -1179,8 +1183,7 @@ static int raw_devices_unlink_database(const PathName& file_name)
 
 		if (!SYSCALL_INTERRUPTED(errno))
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
-											   Arg::Str(file_name) <<
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
 	}
@@ -1194,8 +1197,7 @@ static int raw_devices_unlink_database(const PathName& file_name)
 			break;
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("write") <<
-										   Arg::Str(file_name) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("write") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_write_err) << Arg::Unix(errno));
 	}
 

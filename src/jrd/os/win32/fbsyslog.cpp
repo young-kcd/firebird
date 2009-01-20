@@ -98,7 +98,8 @@ namespace Firebird {
 void Syslog::Record(Severity level, const char* msg)
 {
 	WORD wType = EVENTLOG_ERROR_TYPE;
-	switch (level) {
+	switch (level)
+	{
 	case Warning:
 		wType = EVENTLOG_INFORMATION_TYPE;
 		break;

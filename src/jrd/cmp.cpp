@@ -306,7 +306,8 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 				continue;
 
 			trig_vec *vec1, *vec2;
-			switch (item->exa_action) {
+			switch (item->exa_action)
+			{
 			case ExternalAccess::exa_insert:
 				vec1 = relation->rel_pre_store;
 				vec2 = relation->rel_post_store;
@@ -414,7 +415,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	ExternalAccessList external;
 	build_external_access(tdbb, external, request);
 
-	for (ExternalAccess* item = external.begin(); item < external.end(); item++) {
+	for (ExternalAccess* item = external.begin(); item < external.end(); item++)
+	{
 		if (item->exa_action == ExternalAccess::exa_procedure) {
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (!prc->prc_request)
@@ -438,7 +440,8 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			if (!relation)
 				continue;
 
-			switch (item->exa_action) {
+			switch (item->exa_action)
+			{
 			case ExternalAccess::exa_insert:
 				verify_trigger_access(tdbb, relation, relation->rel_pre_store, view);
 				verify_trigger_access(tdbb, relation, relation->rel_post_store, view);
@@ -771,7 +774,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_max:
 	case nod_min:
 	case nod_from:
@@ -785,7 +789,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
 		else
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		switch (dtype = desc->dsc_dtype) {
+		switch (dtype = desc->dsc_dtype)
+		{
 		case dtype_short:
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(SLONG);
@@ -844,7 +849,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 	case nod_agg_total2:
 	case nod_agg_total_distinct2:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		switch (dtype = desc->dsc_dtype) {
+		switch (dtype = desc->dsc_dtype)
+		{
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
@@ -1031,7 +1037,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
 		// In V6, the average of an exact type is computed in SINT64,
 		// rather than double as in prior releases
-		switch (dtype = desc->dsc_dtype) {
+		switch (dtype = desc->dsc_dtype)
+		{
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
@@ -1102,7 +1109,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				dtype = MAX(dtype1, dtype2);
 			}
 
-			switch (dtype) {
+			switch (dtype)
+			{
 			case dtype_short:
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
@@ -1324,7 +1332,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				dtype = MAX(dtype1, dtype2);
 			}
 
-			switch (dtype) {
+			switch (dtype)
+			{
 			case dtype_timestamp:
 			case dtype_sql_date:
 			case dtype_sql_time:
@@ -1496,7 +1505,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
 			dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
 
-			switch (dtype) {
+			switch (dtype)
+			{
 			case dtype_long:
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
@@ -1541,7 +1551,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
 			dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
 
-			switch (dtype) {
+			switch (dtype)
+			{
 			case dtype_double:
 				node->nod_flags |= nod_double;
 				desc->dsc_dtype = DEFAULT_DOUBLE;
@@ -2265,7 +2276,8 @@ void CMP_post_resource(	ResourceList* rsc_ptr,
  **************************************/
 	// Initialize resource block
 	Resource resource(type, id, NULL, NULL, NULL);
-	switch (type) {
+	switch (type)
+	{
 	case Resource::rsc_relation:
 	case Resource::rsc_index:
 		resource.rsc_rel = (jrd_rel*) obj;
@@ -2361,11 +2373,13 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 	// release existence locks on references
 
 	Attachment* attachment = request->req_attachment;
-	if (!attachment || !(attachment->att_flags & ATT_shutdown)) {
+	if (!attachment || !(attachment->att_flags & ATT_shutdown))
+	{
 		for (Resource* resource = request->req_resources.begin();
 			 resource < request->req_resources.end(); resource++)
 		{
-			switch (resource->rsc_type) {
+			switch (resource->rsc_type)
+			{
 			case Resource::rsc_relation:
 				{
 					jrd_rel* relation = resource->rsc_rel;
@@ -2668,7 +2682,8 @@ static jrd_nod* copy(thread_db* tdbb,
 
 	USHORT args = input->nod_count;
 
-	switch (input->nod_type) {
+	switch (input->nod_type)
+	{
 	case nod_ansi_all:
 	case nod_ansi_any:
 	case nod_any:
@@ -3487,7 +3502,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	// if there is processing to be done before sub expressions, do it here
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_like:
 	case nod_similar:
 		ptr = node->nod_arg;
@@ -3655,7 +3671,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// the nodes in the subtree are involved in a validation
 			// clause only, the subtree is a validate_subtree in our notation.
 
-			if (tail->csb_flags & csb_modify) {
+			if (tail->csb_flags & csb_modify)
+			{
 				if (!csb->csb_validate_expr) {
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id :
@@ -3669,14 +3686,16 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 									field->fld_name, relation->rel_name);
 				}
 			}
-			else if (tail->csb_flags & csb_erase) {
+			else if (tail->csb_flags & csb_erase)
+			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
 								SCL_sql_delete, object_table,
 								relation->rel_name);
 			}
-			else if (tail->csb_flags & csb_store) {
+			else if (tail->csb_flags & csb_store)
+			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
@@ -3688,7 +3707,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 								SCL_sql_insert, object_column,
 								field->fld_name, relation->rel_name);
 			}
-			else {
+			else
+			{
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
@@ -5057,7 +5077,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	RecordSource** rsb_ptr = 0;
 	jrd_nod* rse_node = NULL;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_rse:
 		return NULL;
 
@@ -5212,7 +5233,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	node->nod_impure = CMP_impure(csb, 0);
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_abort:
 		CMP_pass2(tdbb, csb, node->nod_arg[e_xcp_msg], node);
 		break;

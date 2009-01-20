@@ -30,7 +30,8 @@ namespace Firebird {
 void Syslog::Record(Severity level, const char* msg)
 {
 	int priority = LOG_ERR;
-	switch (level) {
+	switch (level)
+	{
 	case Warning:
 		priority = LOG_WARNING;
 		break;

@@ -207,7 +207,8 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 
 	int arg_number;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_argument:
 		message = node->nod_arg[e_arg_message];
 		format = (Format*) message->nod_arg[e_msg_format];
@@ -286,7 +287,8 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_bit_and:
 		{
 			RecordBitmap** bitmap = EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and);
@@ -825,7 +827,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 /* Do a preliminary screen for either simple nodes or nodes that
    are special cased elsewhere */
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_add:
 	case nod_subtract:
 	case nod_divide:
@@ -1004,7 +1007,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				Firebird::TimeStamp::round_time(enc_times.timestamp_time, precision);
 			}
 
-			switch (node->nod_type) {
+			switch (node->nod_type)
+			{
 			case nod_current_time:
 				impure->vlu_desc.dsc_dtype = dtype_sql_time;
 				impure->vlu_desc.dsc_length = type_lengths[dtype_sql_time];
@@ -1158,7 +1162,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 		}
 	}
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_gen_id:		// return a 32-bit generator value
 		{
 			SLONG temp = (SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
@@ -1437,7 +1442,8 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 		impure->vlux_count = 0;
-		switch (from->nod_type) {
+		switch (from->nod_type)
+		{
 		case nod_agg_average:
 		case nod_agg_average_distinct:
 			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
@@ -1912,7 +1918,8 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	value->vlu_desc = *desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
 
-	switch (from.dsc_dtype) {
+	switch (from.dsc_dtype)
+	{
 	case dtype_short:
 		value->vlu_misc.vlu_short = *((SSHORT *) from.dsc_address);
 		return;
@@ -2314,7 +2321,8 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		}
 	}
 
-	switch (dtype) {
+	switch (dtype)
+	{
 	case dtype_timestamp:
 	default:
 		/* This needs to handle a dtype_sql_date + dtype_sql_time */
@@ -2843,7 +2851,8 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 
 	EVL_make_value(tdbb, desc1, impure);
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_add:				/* with dialect-1 semantics */
 	case nod_subtract:
 		return add(desc2, node, impure);
@@ -3002,7 +3011,8 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 
 		desc->dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
 
-		switch (node->nod_type) {
+		switch (node->nod_type)
+		{
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
 			++impure->vlux_count;
@@ -3532,7 +3542,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	}
 
 	USHORT part;
-	switch (extract_part) {
+	switch (extract_part)
+	{
 	case blr_extract_year:
 		part = times.tm_year + 1900;
 		break;
@@ -4327,7 +4338,8 @@ static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
 	SET_TDBB(tdbb);
 	EVL_make_value(tdbb, desc, value);
 
-	switch (value->vlu_desc.dsc_dtype) {
+	switch (value->vlu_desc.dsc_dtype)
+	{
 	case dtype_short:
 		if (value->vlu_misc.vlu_short == MIN_SSHORT)
 			ERR_post(Arg::Gds(isc_exception_integer_overflow));
@@ -5233,8 +5245,7 @@ static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 		EVL_make_value(tdbb, value, impure);
 
-		blb* newBlob =
-			BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 
 		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);
 
@@ -5276,8 +5287,7 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
  **************************************/
 	EVL_make_value(tdbb, value, impure);
 
-	const internal_info_id id =
-		*reinterpret_cast<internal_info_id*>(impure->vlu_desc.dsc_address);
+	const internal_info_id id = *reinterpret_cast<internal_info_id*>(impure->vlu_desc.dsc_address);
 
 	switch (id)
 	{

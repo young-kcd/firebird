@@ -64,7 +64,7 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 };
 
 /* blr to dsc type conversions */
-static const USHORT DSC_blr_type_mapping[] = 
+static const USHORT DSC_blr_type_mapping[] =
 {
 	blr_null,
 	blr_text,
@@ -88,7 +88,7 @@ static const USHORT DSC_blr_type_mapping[] =
 
 /* Unimplemented names are in lowercase & <brackets> */
 /* Datatypes that represent a range of SQL datatypes are in lowercase */
-static const TEXT* const DSC_dtype_names[] = 
+static const TEXT* const DSC_dtype_names[] =
 {
 	"<dtype_unknown>",
 	"CHAR",
@@ -118,7 +118,7 @@ static const TEXT* const DSC_dtype_names[] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = 
+const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 {
 
 /*
@@ -276,7 +276,7 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = 
+const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 {
 
 /*
@@ -434,7 +434,7 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = 
+const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 {
 
 /*
@@ -592,7 +592,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = 
+const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 {
 
 /*
@@ -802,7 +802,8 @@ bool DSC_make_descriptor(DSC* desc,
 	desc->dsc_scale = (SCHAR) scale;
 	desc->dsc_sub_type = sub_type;
 
-	switch (blr_type) {
+	switch (blr_type)
+	{
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
 		INTL_ASSIGN_DSC(desc, charset, collation);
@@ -903,7 +904,8 @@ int DSC_string_length(const dsc* desc)
  *
  **************************************/
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_text:
 		return desc->dsc_length;
 	case dtype_cstring:

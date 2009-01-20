@@ -149,7 +149,8 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 
 		impure->irsb_flags &= ~irsb_open;
 
-		switch (rsb->rsb_type) {
+		switch (rsb->rsb_type)
+		{
 		case rsb_indexed:
 		case rsb_navigate:
 			return;

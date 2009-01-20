@@ -94,7 +94,8 @@ void MOV_double_to_date2(double real, dsc* desc)
 	SLONG fixed[2];
 
 	MOV_double_to_date(real, fixed);
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_timestamp:
 		((SLONG *) desc->dsc_address)[0] = fixed[0];
 		((SLONG *) desc->dsc_address)[1] = fixed[1];

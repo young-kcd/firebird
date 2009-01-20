@@ -56,7 +56,7 @@ static SLONG get_parameter(const SCHAR**);
 static void times(struct tms*);
 #endif
 
-static const SCHAR items[] = 
+static const SCHAR items[] =
 {
 	isc_info_reads,
 	isc_info_writes,
@@ -102,12 +102,14 @@ int API_ROUTINE perf_format(const PERF* before, const PERF* after,
 	SLONG buffer_length = (buf_len) ? *buf_len : 0;
 	SCHAR* p = buffer;
 
-	while ((c = *string++) && c != '$') {
+	while ((c = *string++) && c != '$')
+	{
 		if (c != '!')
 			*p++ = c;
 		else {
 			SLONG delta;
-			switch (c = *string++) {
+			switch (c = *string++)
+			{
 			case 'r':
 				delta = after->perf_reads - before->perf_reads;
 				break;
@@ -150,7 +152,8 @@ int API_ROUTINE perf_format(const PERF* before, const PERF* after,
 					p++;
 			}
 
-			switch (c) {
+			switch (c)
+			{
 			case 'r':
 			case 'w':
 			case 'f':

@@ -228,8 +228,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 					RefreshIBControls(hDlg, TRUE);
 					bModifyMode = true;
 					bDirty = false;
-					SendDlgItemMessage(hDlg, IDC_DBPAGES, EM_SETSEL,
-									   0, (LPARAM) - 1);
+					SendDlgItemMessage(hDlg, IDC_DBPAGES, EM_SETSEL, 0, (LPARAM) - 1);
 					SetFocus(GetDlgItem(hDlg, IDC_DBPAGES));
 				}
 			}
@@ -321,7 +320,7 @@ BOOL ReadFBSettings(HWND hDlg)
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
-	char spb[] = {isc_spb_version1};
+	const char spb[] = {isc_spb_version1};
 	isc_service_attach(pdwStatus, 0, szService, &hService, sizeof(spb), spb);
 
 	*pchPtr = '\0';

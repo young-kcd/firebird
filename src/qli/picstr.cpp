@@ -869,7 +869,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			break;
 
 		case 'E':
-			if (!(*p))
+			if (!*p)
 				break;
 			*out++ = e;
 			if (UPPER(*p) == c)
@@ -878,7 +878,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 
 		case '+':
 		case '-':
-			if (!(*p))
+			if (!*p)
 				break;
 			if (*p != '+' && *p != '-')
 			{

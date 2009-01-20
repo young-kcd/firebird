@@ -4227,7 +4227,8 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
 	SLONG prior;
 	prior = (SLONG) subsystem_FPE_reset;
-	switch (fpe_status) {
+	switch (fpe_status)
+	{
 	case FPE_RESET_INIT_ONLY:
 		subsystem_FPE_reset = fpe_status;
 		break;
@@ -5072,9 +5073,11 @@ static void check_status_vector(const ISC_STATUS* status)
 
 	ULONG length;
 
-	while (*s != isc_arg_end) {
+	while (*s != isc_arg_end)
+	{
 		const ISC_STATUS code = *s++;
-		switch (code) {
+		switch (code)
+		{
 		case isc_arg_warning:
 		case isc_arg_gds:
 			/* The next element must either be 0 (indicating no error) or a

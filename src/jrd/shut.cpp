@@ -168,7 +168,8 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	// Note that if we are already in requested mode we just return true.
 	// This is required to ensure backward compatible behavior (gbak relies on that,
 	// user-written scripts may rely on this behaviour too)
-	switch (shut_mode) {
+	switch (shut_mode)
+	{
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
 		{
@@ -266,7 +267,8 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	dbb->dbb_ast_flags |= DBB_shutdown;
 	dbb->dbb_ast_flags &= ~(DBB_shutdown_single | DBB_shutdown_full);
-	switch (shut_mode) {
+	switch (shut_mode)
+	{
 	case isc_dpb_shut_normal:
 	case isc_dpb_shut_multi:
 		break;
@@ -293,7 +295,8 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
-	switch (shut_mode) {
+	switch (shut_mode)
+	{
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:
@@ -350,7 +353,7 @@ void SHUT_online(thread_db* tdbb, SSHORT flag)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!attachment->att_user->locksmith()) 
+	if (!attachment->att_user->locksmith())
 	{
 		ERR_post(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
 	}
@@ -358,7 +361,8 @@ void SHUT_online(thread_db* tdbb, SSHORT flag)
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
 
 	// Check if requested shutdown mode is valid
-	switch (shut_mode) {
+	switch (shut_mode)
+	{
 	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
 		{
@@ -414,7 +418,8 @@ void SHUT_online(thread_db* tdbb, SSHORT flag)
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
-	switch (shut_mode) {
+	switch (shut_mode)
+	{
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:
@@ -445,7 +450,7 @@ void SHUT_online(thread_db* tdbb, SSHORT flag)
 
 static void same_mode()
 {
-	if (!IGNORE_SAME_MODE) 
+	if (!IGNORE_SAME_MODE)
 	{
 		bad_mode();
 	}
@@ -534,7 +539,8 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 
 	dbb->dbb_ast_flags &= ~(DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
 
-	switch (flag & isc_dpb_shut_mode_mask) {
+	switch (flag & isc_dpb_shut_mode_mask)
+	{
 	case isc_dpb_shut_normal:
 		break;
 	case isc_dpb_shut_multi:

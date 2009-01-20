@@ -502,7 +502,8 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
@@ -511,7 +512,8 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
 		// msg 232: "%s cannot reference %s"
-		switch (id) {
+		switch (id)
+		{
 			case drq_s_rel_con:
 				number = 121;
 				local_id = id;
@@ -757,7 +759,8 @@ void DYN_define_constraint(Global*		gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		SSHORT local_id = -1;
 		USHORT number;
@@ -765,7 +768,8 @@ void DYN_define_constraint(Global*		gbl,
 		// msg 124: "A column name is repeated in the definition of constraint: %s"
 		// msg 125: "Integrity constraint lookup failed"
 		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
-		switch (id) {
+		switch (id)
+		{
 			case drq_s_rel_con:
 				number = 121;
 				local_id = id;
@@ -870,7 +874,8 @@ void DYN_define_dimension(Global*		gbl,
 	END_STORE;
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
 			DYN_rundown_request(request, drq_s_dims);
@@ -1114,7 +1119,8 @@ void DYN_define_file(Global*		gbl,
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_l_files)
 		{
@@ -1195,7 +1201,8 @@ void DYN_define_difference(Global*		gbl,
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (id == drq_s_difference)
 		{
@@ -3194,15 +3201,19 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 
-		if (id == -1 || id == drq_s_prms || id == drq_s_prm_src ||
-			id == drq_s_prms2 || id == drq_s_prms3)
+		switch (id)
 		{
-			if (id != -1)
-				DYN_rundown_request(request, id);
-
+		case drq_s_prms:
+		case drq_s_prm_src:
+		case drq_s_prms2:
+		case drq_s_prms3:
+			DYN_rundown_request(request, id);
+			// fall down
+		case -1:
 			DYN_error_punt(true, 136);
 			// msg 136: "STORE RDB$PROCEDURE_PARAMETERS failed"
 		}

@@ -272,7 +272,8 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 		MODIFY DBB USING
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_security_class:
 					if (GET_STRING(ptr, DBB.RDB$SECURITY_CLASS))
 						DBB.RDB$SECURITY_CLASS.NULL = FALSE;
@@ -383,7 +384,8 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		MODIFY X
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_xcp_msg:
 					GET_BYTES(ptr, X.RDB$MESSAGE);
 					X.RDB$MESSAGE.NULL = FALSE;
@@ -776,7 +778,8 @@ void DYN_modify_global_field(Global* gbl,
 					DYN_error_punt(false, 148, orig_dom.dyn_fld_name.c_str());
 					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
-				switch (new_dom.dyn_dtype) {
+				switch (new_dom.dyn_dtype)
+				{
 
 				case blr_text:
 				case blr_text2:
@@ -802,7 +805,8 @@ void DYN_modify_global_field(Global* gbl,
 					// msg 148: "Only one data type change to the domain %s allowed at a time"
 				}
 
-				switch (new_dom.dyn_dtype) {
+				switch (new_dom.dyn_dtype)
+				{
 
 				case blr_text:
 				case blr_text2:
@@ -1193,7 +1197,8 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 		MODIFY IDX USING
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_idx_unique:
 					IDX.RDB$UNIQUE_FLAG = DYN_get_number(ptr);
 					IDX.RDB$UNIQUE_FLAG.NULL = FALSE;
@@ -1277,7 +1282,8 @@ void DYN_modify_local_field(Global* gbl,
 
 	UCHAR verb;
 	while ((verb = *(*ptr)++) != isc_dyn_end)
-		switch (verb) {
+		switch (verb)
+		{
 		case isc_dyn_rel_name:
 			GET_STRING(ptr, r);
 			break;
@@ -1592,7 +1598,8 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_system_flag:
 					P.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 					P.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -1706,7 +1713,8 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		MODIFY REL USING
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_system_flag:
 					REL.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
 					REL.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -1902,7 +1910,8 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_trg_name:
 					{
 						MetaName new_trigger_name;
@@ -2052,7 +2061,8 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
 		MODIFY X
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end)
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_trg_msg_number:
 					X.RDB$MESSAGE_NUMBER = DYN_get_number(ptr);
 					X.RDB$MESSAGE_NUMBER.NULL = FALSE;
@@ -2253,7 +2263,8 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 		if (X.RDB$FILE_FLAGS & FILE_difference) {
 			found = true;
-			switch (verb) {
+			switch (verb)
+			{
 			case isc_dyn_drop_difference:
 				ERASE X;
 				break;
@@ -2768,7 +2779,8 @@ void DYN_modify_sql_field(Global* gbl,
 
 			UCHAR verb;
 			while ((verb = *(*ptr)++) != isc_dyn_end) {
-				switch (verb) {
+				switch (verb)
+				{
 				case isc_dyn_fld_source:
 					GET_STRING(ptr, dom_fld.dyn_fld_source);
 					if (fb_utils::implicit_domain(dom_fld.dyn_fld_source.c_str()))
@@ -2819,7 +2831,8 @@ void DYN_modify_sql_field(Global* gbl,
 						// msg 149: "Only one data type change to the field %s allowed at a time"
 					}
 
-					switch (new_fld.dyn_dtype) {
+					switch (new_fld.dyn_dtype)
+					{
 					case blr_text:
 					case blr_text2:
 					case blr_varying:
@@ -3534,12 +3547,14 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 
 /* Check to make sure that the old and new types are compatible */
-	switch (orig_fld.dyn_dtype) {
+	switch (orig_fld.dyn_dtype)
+	{
 /* CHARACTER types */
 	case blr_text:
 	case blr_varying:
 	case blr_cstring:
-		switch (new_fld.dyn_dtype) {
+		switch (new_fld.dyn_dtype)
+		{
 		case blr_blob:
 		case blr_blob_id:
 			return isc_dyn_dtype_invalid;
@@ -3599,7 +3614,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 	case blr_sql_date:
 	case blr_sql_time:
 	case blr_timestamp:
-		switch (new_fld.dyn_dtype) {
+		switch (new_fld.dyn_dtype)
+		{
 		case blr_sql_date:
 			if (orig_fld.dyn_dtype == blr_sql_time)
 				return isc_dyn_invalid_dtype_conversion;
@@ -3651,7 +3667,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 	case blr_d_float:
 	case blr_double:
 	case blr_float:
-		switch (new_fld.dyn_dtype) {
+		switch (new_fld.dyn_dtype)
+		{
 		case blr_blob:
 		case blr_blob_id:
 			return isc_dyn_dtype_invalid;
@@ -3668,7 +3685,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			 * is there enough space in the new field (do not allow the base type to decrease) */
 
 		case blr_short:
-			switch (orig_fld.dyn_dtype) {
+			switch (orig_fld.dyn_dtype)
+			{
 			case blr_short:
 				return check_update_numeric_type(orig_fld, new_fld);
 
@@ -3679,7 +3697,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			break;
 
 		case blr_long:
-			switch (orig_fld.dyn_dtype) {
+			switch (orig_fld.dyn_dtype)
+			{
 			case blr_long:
 			case blr_short:
 				return check_update_numeric_type(orig_fld, new_fld);
@@ -3691,7 +3710,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			break;
 
 		case blr_float:
-			switch (orig_fld.dyn_dtype) {
+			switch (orig_fld.dyn_dtype)
+			{
 			case blr_float:
 			case blr_short:
 				break;
@@ -3703,7 +3723,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 			break;
 
 		case blr_int64:
-			switch (orig_fld.dyn_dtype) {
+			switch (orig_fld.dyn_dtype)
+			{
 			case blr_int64:
 			case blr_long:
 			case blr_short:
@@ -3717,7 +3738,8 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 		case blr_d_float:
 		case blr_double:
-			switch (orig_fld.dyn_dtype) {
+			switch (orig_fld.dyn_dtype)
+			{
 			case blr_double:
 			case blr_d_float:
 			case blr_float:

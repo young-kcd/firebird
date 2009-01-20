@@ -1617,7 +1617,8 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 	// NOMEM: crash!
 	log_msg[0] = '\0';
 
-	switch (sig_num) {
+	switch (sig_num)
+	{
 	case SIGSEGV:
 		sprintf(log_msg, "%s Segmentation Fault.\n"
 				"\t\tThe code attempted to access memory\n"
@@ -1694,7 +1695,8 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 	// NOMEM: crash!
 	log_msg[0] = '\0';
 
-	switch (except_code) {
+	switch (except_code)
+	{
 	case EXCEPTION_ACCESS_VIOLATION:
 		sprintf(log_msg, "%s Access violation.\n"
 				"\t\tThe code attempted to access a virtual\n"

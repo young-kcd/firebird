@@ -143,7 +143,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 
 	Database::SyncGuard dsGuard(dbb);
 
-	switch (*function) {
+	switch (*function)
+	{
 	case QATEST_testing:
 		/* Parameter 1: SLONG *testvalue */
 		/* Entrypoint for testing the QA entrypoint method */

@@ -107,7 +107,7 @@ static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
 /* Blob info stuff */
 
-static const char blob_items[] = 
+static const char blob_items[] =
 {
 	isc_info_blob_max_segment, isc_info_blob_num_segments,
 	isc_info_blob_total_length
@@ -262,7 +262,8 @@ int API_ROUTINE gds__blob_size(FB_API_HANDLE* b,
 		p += 2;
 		const SLONG n = gds__vax_integer(p, l);
 		p += l;
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_blob_max_segment:
 			if (max_seg)
 				*max_seg = n;
@@ -981,7 +982,7 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 	if (username.length() && !user_seen)
 	{
 		if (password.length() && !password_seen)
-			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(), 
+			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(),
 									isc_dpb_password, password.c_str(), 0);
 		else
 			isc_expand_dpb_internal(dpb, dpb_size, isc_dpb_user_name, username.c_str(), 0);
@@ -1080,11 +1081,13 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 		const UCHAR* p = buf;
 		redo = false;
 
-		while (!redo && *p != isc_info_end && p < buf + buf_len) {
+		while (!redo && *p != isc_info_end && p < buf + buf_len)
+		{
 			const UCHAR item = *p++;
 			const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
 			p += 2;
-			switch (item) {
+			switch (item)
+			{
 			case isc_info_firebird_version:
 				versions = (TEXT *) p;
 				break;
@@ -1163,7 +1166,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 
 void API_ROUTINE isc_format_implementation(USHORT implementation_nr,
 										   USHORT ibuflen, TEXT* ibuf,
-										   USHORT impl_class_nr, 
+										   USHORT impl_class_nr,
 										   USHORT cbuflen, TEXT* cbuf)
 {
 /**************************************
@@ -1609,7 +1612,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 	{
 	case 'w':
 	case 'W':
-		if (isc_create_blob2(status_vector, &database, &transaction, &blob, blob_id, 
+		if (isc_create_blob2(status_vector, &database, &transaction, &blob, blob_id,
 							 bpb_length, reinterpret_cast<const char*>(bpb)))
 		{
 			return NULL;
@@ -1617,7 +1620,7 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 		break;
 	case 'r':
 	case 'R':
-		if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id, 
+		if (isc_open_blob2(status_vector, &database, &transaction, &blob, blob_id,
 						   bpb_length, bpb))
 		{
 			return NULL;
@@ -1905,12 +1908,14 @@ static int get_ods_version(FB_API_HANDLE* handle,
 	const UCHAR* p = buffer;
 	UCHAR item;
 
-	while ((item = *p++) != isc_info_end) {
+	while ((item = *p++) != isc_info_end)
+	{
 		const USHORT l = static_cast<USHORT>(gds__vax_integer(p, 2));
 		p += 2;
 		const USHORT n = static_cast<USHORT>(gds__vax_integer(p, l));
 		p += l;
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_ods_version:
 			*ods_version = n;
 			break;

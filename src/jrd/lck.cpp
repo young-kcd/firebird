@@ -361,7 +361,8 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	switch (owner_type) {
+	switch (owner_type)
+	{
 	case LCK_OWNER_database:
 		owner_handle_ptr = LCK_OWNER_HANDLE_DBB(tdbb);
 		break;
@@ -395,7 +396,8 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 
 	SLONG handle = 0;
 
-	switch (lock_type) {
+	switch (lock_type)
+	{
 	case LCK_database:
 	case LCK_bdb:
 	case LCK_rel_exist:
@@ -511,7 +513,8 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	switch (owner_type) {
+	switch (owner_type)
+	{
 	case LCK_OWNER_database:
 		owner_id = LCK_OWNER_ID_DBB(tdbb);
 		owner_handle_ptr = LCK_OWNER_HANDLE_DBB(tdbb);

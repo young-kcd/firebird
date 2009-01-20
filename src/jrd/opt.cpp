@@ -1797,7 +1797,8 @@ static void compute_dependencies(const jrd_nod* node, ULONG* dependencies)
 	const jrd_nod* sub;
 	const jrd_nod* value;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_field:
 		{
 			const SLONG n = (SLONG)(IPTR) node->nod_arg[e_fld_stream];
@@ -2389,7 +2390,8 @@ static bool dump_rsb(const jrd_req* request,
 	USHORT return_length;
 	*buffer++ = isc_info_rsb_type;
 
-	switch (rsb->rsb_type) {
+	switch (rsb->rsb_type)
+	{
 	case rsb_indexed:
 		*buffer++ = isc_info_rsb_indexed;
 		if (!dump_index((jrd_nod*) rsb->rsb_arg[0], &buffer, buffer_length)) {
@@ -2556,7 +2558,8 @@ static bool dump_rsb(const jrd_req* request,
 	const RecordSource* const* ptr;
 	const RecordSource* const* end;
 
-	switch (rsb->rsb_type) {
+	switch (rsb->rsb_type)
+	{
 	case rsb_cross:
 		*buffer++ = (UCHAR) rsb->rsb_count;
 		ptr = rsb->rsb_arg;
@@ -2780,7 +2783,8 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		return false;
 	}
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 
 		case nod_cast:
 			return expression_possible_unknown(node->nod_arg[e_cast_source]);
@@ -2884,7 +2888,8 @@ static bool expression_contains_stream(CompilerScratch* csb,
 	RecordSelExpr* rse = NULL;
 
 	USHORT n;
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 
 		case nod_field:
 			n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
@@ -3507,7 +3512,8 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 	RecordSource** ptr;
 	const RecordSource* const* end;
 
-	switch (rsb->rsb_type) {
+	switch (rsb->rsb_type)
+	{
 		case rsb_union:
 		case rsb_recurse:
 		case rsb_aggregate:
@@ -3576,7 +3582,8 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 	USHORT stream = 0;
 	bool found = false;
 
-	switch (rsb->rsb_type) {
+	switch (rsb->rsb_type)
+	{
 
 		case rsb_aggregate:
 		case rsb_ext_indexed:
@@ -5799,7 +5806,8 @@ static void get_expression_streams(const jrd_nod* node,
 	int n;
 	size_t pos;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 
 		case nod_field:
 			n = (int)(IPTR) node->nod_arg[e_fld_stream];
@@ -6005,7 +6013,8 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 
 	jrd_nod* returnNode = NULL;
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 
 		case nod_cast:
 			if (get_unmapped_node(tdbb, node->nod_arg[e_cast_source], map, shellStream, false) != NULL)
@@ -6902,7 +6911,8 @@ static int match_index(thread_db* tdbb, OptimizerBlk* opt, SSHORT stream, jrd_no
 			if (ptr->opt_match && ptr->opt_match->nod_type == nod_eql) {
 				break;
 			}
-			switch (boolean->nod_type) {
+			switch (boolean->nod_type)
+			{
 				case nod_between:
 					if (!forward || !OPT_computable(opt->opt_csb, value2, stream, true, false))
 					{
@@ -7017,7 +7027,8 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 	if (node1 == node2) {
 		return true;
 	}
-	switch (node1->nod_type) {
+	switch (node1->nod_type)
+	{
 		case nod_field:
 			return (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream] &&
 					node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]);

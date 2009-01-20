@@ -38,7 +38,7 @@ const int COMPILE_SIZE	= 256;
 using namespace Jrd;
 using namespace Firebird;
 
-struct sdl_arg 
+struct sdl_arg
 {
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
@@ -57,7 +57,7 @@ struct sdl_arg
 // Let's stop this insanity! The header rng.h defined rng for the purposes
 // of refresh range and emulation of file-based data formats like Pdx.
 // Therefore, I renamed this struct array_range.
-struct array_range 
+struct array_range
 {
 	SLONG rng_minima[64];
 	SLONG rng_maxima[64];
@@ -202,7 +202,8 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 		return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(0));
 
 	for (;;)
-		switch (*p++) {
+		switch (*p++)
+		{
 		case isc_sdl_struct:
 			n = *p++;
 			if (n != 1)
@@ -358,10 +359,12 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	arg.sdl_arg_status_vector = status_vector;
 	const UCHAR* p = sdl + 1;
 
-	while (*p != isc_sdl_eoc) {
-		switch (*p++) {
+	while (*p != isc_sdl_eoc)
+	{
+		switch (*p++)
+		{
 		case isc_sdl_struct:
-			for (n = *p++; n; --n) 
+			for (n = *p++; n; --n)
 			{
 				offset = p - sdl - 1;
 				if (!(p = sdl_desc(p, &junk)))
@@ -425,7 +428,8 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 	const UCHAR* p = sdl;
 
 	UCHAR op = *p++;
-	switch (op) {
+	switch (op)
+	{
 	case isc_sdl_do1:
 	case isc_sdl_do2:
 	case isc_sdl_do3:
@@ -600,9 +604,11 @@ static bool execute(sdl_arg* arg)
 	const IPTR* next = arg->sdl_arg_compiled;
 	SLONG* stack_ptr = stack + FB_NELEM(stack);
 
-	for (;;) {
+	for (;;)
+	{
 		const SLONG x = *next++;
-		switch (x) {
+		switch (x)
+		{
 		case op_literal:
 			*--stack_ptr = *next++;
 			break;
@@ -735,7 +741,8 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 	const UCHAR* p = sdl;
 
 	const UCHAR op = *p++;
-	switch (op) {
+	switch (op)
+	{
 	case isc_sdl_do1:
 	case isc_sdl_do2:
 	case isc_sdl_do3:
@@ -783,7 +790,8 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 			return NULL;
 		if (!(p = get_range(p, arg, &min2, &max2)))
 			return NULL;
-		switch (op) {
+		switch (op)
+		{
 		case isc_sdl_add:
 			*min = min1 + min2;
 			*max = max1 + max2;
@@ -852,7 +860,8 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	desc->dsc_sub_type = 0;
 	desc->dsc_flags = 0;
 
-	switch (*sdl++) {
+	switch (*sdl++)
+	{
 	case blr_text2:
 		desc->dsc_dtype = dtype_text;
 		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
@@ -939,7 +948,8 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		return NULL;
 	}
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_short:
 	case dtype_long:
 	case dtype_quad:

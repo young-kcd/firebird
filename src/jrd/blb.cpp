@@ -1919,7 +1919,8 @@ static ISC_STATUS blob_filter(USHORT	action,
 
 	blb* blob = 0;
 
-	switch (action) {
+	switch (action)
+	{
 	case isc_blob_filter_open:
 		blob = BLB_open2(tdbb, transaction, blob_id, 0, 0);
 		control->source_handle = blob;

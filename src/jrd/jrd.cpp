@@ -1416,7 +1416,8 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb, false);
 
-		switch (option) {
+		switch (option)
+		{
 		case fb_cancel_disable:
 			attachment->att_flags |= ATT_cancel_disable;
 			attachment->att_flags &= ~ATT_cancel_raise;
@@ -1785,7 +1786,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_no_db_triggers)
 		attachment->att_flags |= ATT_no_db_triggers;
 
-	switch (options.dpb_sql_dialect) {
+	switch (options.dpb_sql_dialect)
+	{
 	case 0:
 		// This can be issued by QLI, GDEF and old BDE clients.
 		// In this case assume dialect 1
@@ -4485,7 +4487,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 					ClumpletReader address(ClumpletReader::UnTagged,
 										   address_stack.getBytes(), address_stack.getClumpLength());
 					while (!address.isEof()) {
-						switch (address.getClumpTag()) {
+						switch (address.getClumpTag())
+						{
 							case isc_dpb_addr_protocol:
 								address.getString(dpb_network_protocol);
 								break;

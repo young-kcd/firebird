@@ -1992,7 +1992,8 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	if (pageSpace->isTemporary())
 		return;
 
-	switch (backup_state) {
+	switch (backup_state)
+	{
 	case nbak_state_stalled:
 		dbb->dbb_backup_manager->lock_alloc(tdbb, true);
 		bdb->bdb_difference_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());

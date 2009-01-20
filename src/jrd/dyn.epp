@@ -358,7 +358,8 @@ void DYN_execute(Global* gbl,
  **************************************/
 	UCHAR verb;
 
-	switch (verb = *(*ptr)++) {
+	switch (verb = *(*ptr)++)
+	{
 	case isc_dyn_begin:
 		while (**ptr != isc_dyn_end)
 			DYN_execute(gbl, ptr, relation_name, field_name,
@@ -389,7 +390,8 @@ void DYN_execute(Global* gbl,
 	default:
 		/* make sure that the license allows metadata operations */
 
-		switch (verb) {
+		switch (verb)
+		{
 		case isc_dyn_mod_database:
 			DYN_modify_database(gbl, ptr);
 			break;
@@ -1081,7 +1083,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	UCHAR verb;
 	while ((verb = *(*ptr)++) != isc_dyn_end)
 	{
-		switch (verb) {
+		switch (verb)
+		{
 		case isc_dyn_rel_name:
 			obj_type = obj_relation;
 			GET_STRING(ptr, object);
@@ -1795,7 +1798,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	SSHORT obj_type = -1;
 
 	while ((verb = *(*ptr)++) != isc_dyn_end) {
-		switch (verb) {
+		switch (verb)
+		{
 		case isc_dyn_rel_name:
 			obj_type = obj_relation;
 			GET_STRING(ptr, object);
@@ -2048,8 +2052,10 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
-	while ((verb = *(*ptr)++) != isc_dyn_end) {
-		switch (verb) {
+	while ((verb = *(*ptr)++) != isc_dyn_end)
+	{
+		switch (verb)
+		{
 
 		case isc_dyn_grant_user:
 			GET_STRING(ptr, user);

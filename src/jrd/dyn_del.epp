@@ -922,11 +922,13 @@ void DYN_delete_local_field(Global* gbl,
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 
-		switch (id) {
+		switch (id)
+		{
 		case drq_l_dep_flds:
 			DYN_error_punt(true, 53);
 			// msg 53: "ERASE RDB$RELATION_FIELDS failed"
@@ -1041,7 +1043,8 @@ void DYN_delete_parameter(Global* gbl,
 		DYN_REQUEST(drq_e_prm) = request;
 	}
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		if (id == drq_e_prms) {
@@ -1219,7 +1222,8 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_e_prc_prv) = request;
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 
@@ -1495,7 +1499,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 		DYN_REQUEST(drq_e_view_prv) = request;
 	}
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_rundown_request(req2, -1);
@@ -1511,7 +1516,8 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 		// msg  74: "ERASE RDB$SECURITY_CLASSES failed"
 		// msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed"
 		USHORT number;
-		switch (id) {
+		switch (id)
+		{
 			case drq_e_rel_con2:
 				number = 129;
 				break;
@@ -1893,7 +1899,8 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
 	}
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		switch (id)

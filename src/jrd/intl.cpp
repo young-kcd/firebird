@@ -697,7 +697,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	CharSet* toCharSet = INTL_charset_lookup(tdbb, to_cs);
 	ULONG toLength;
 
-	switch (to->dsc_dtype) {
+	switch (to->dsc_dtype)
+	{
 	case dtype_text:
 		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
@@ -1097,7 +1098,8 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	fb_assert(pByte->dsc_address != NULL);
 	fb_assert(pByte->dsc_dtype == dtype_text);
 
-	switch (idxType) {
+	switch (idxType)
+	{
 	case idx_string:
 		pad_char = ' ';
 		ttype = ttype_none;
@@ -1126,7 +1128,8 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	char* dest = reinterpret_cast<char*>(pByte->dsc_address);
 	USHORT destLen = pByte->dsc_length;
 
-	switch (ttype) {
+	switch (ttype)
+	{
 	case ttype_metadata:
 	case ttype_binary:
 	case ttype_ascii:

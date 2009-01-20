@@ -1016,7 +1016,8 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	if (state != tra_limbo) {
 		USHORT message;
 
-		switch (state) {
+		switch (state)
+		{
 		case tra_active:
 			message = 262;		/* ACTIVE */
 			break;
@@ -1101,7 +1102,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	for (Resource* rsc = transaction->tra_resources.begin();
 		rsc < transaction->tra_resources.end(); rsc++)
 	{
-		switch (rsc->rsc_type) {
+		switch (rsc->rsc_type)
+		{
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
 			break;

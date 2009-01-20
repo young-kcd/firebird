@@ -173,8 +173,7 @@ void BackupManager::lock_clean_database(
 	CCH_FETCH(tdbb, window, LCK_write, pag_header);
 }
 
-void BackupManager::unlock_clean_database(
-	thread_db* tdbb)
+void BackupManager::unlock_clean_database(thread_db* tdbb)
 {
 	tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
 	database_lock->unlock(tdbb, LCK_write);
@@ -268,7 +267,8 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		diff_file = PIO_create(database, diff_name, true, false, false);
 #ifdef UNIX
 		// adjust difference file access rights to make it match main DB ones
-		if (diff_file && geteuid() == 0) {
+		if (diff_file && geteuid() == 0)
+		{
 			struct stat st;
 			while (fstat(database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file->fil_desc, &st) != 0) {
 				if (errno != EINTR) {
@@ -545,7 +545,8 @@ bool BackupManager::actualize_alloc(thread_db* tdbb)
 		// it has exlock or when exclusive access to database is enabled
 		if (!alloc_table)
 			alloc_table = FB_NEW(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
-		while (true) {
+		while (true)
+		{
 			BufferDesc temp_bdb;
 			// Difference file pointer pages have one ULONG as number of pages allocated on the page and
 			// then go physical numbers of pages from main database file. Offsets of numbers correspond
@@ -775,7 +776,8 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 	jrd_file* file = pageSpace->file;
-	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {
+	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status))
+	{
 		if (!CCH_rollover_to_shadow(tdbb, database, file, false)) {
 			NBAK_TRACE(("Shadow change error"));
 			return false;
@@ -802,7 +804,8 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	explicit_diff_name = false;
 	const UCHAR* p = header->hdr_data;
 	while (true) {
-		switch (*p) {
+		switch (*p)
+		{
 		case Ods::HDR_backup_guid:
 			p += p[1] + 2;
 			continue;
@@ -815,7 +818,8 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	if (!explicit_diff_name)
 		generate_filename();
 
-	if (new_backup_state == nbak_state_normal || missed_cycle) {
+	if (new_backup_state == nbak_state_normal || missed_cycle)
+	{
 		if (diff_file) {
 			NBAK_TRACE(("Close difference file"));
 			PIO_close(diff_file);
@@ -832,7 +836,8 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 		}
 	}
 
-	if (new_backup_state != nbak_state_normal && !diff_file) {
+	if (new_backup_state != nbak_state_normal && !diff_file)
+	{
 		try {
 			NBAK_TRACE(("Open difference file"));
 			diff_file = PIO_open(database, diff_name, diff_name, false);
