@@ -1891,7 +1891,7 @@ SSHORT CVT_decompose(const char* string,
 
 	// Check if this is a numeric hex string. Must start with 0x or 0X, and be
 	// no longer than 16 hex digits + 2 (the length of the 0x prefix) = 18.
-	if (p[0] == '0' && UPPER(p[1]) == 'X')
+	if (p + 2 < end && p[0] == '0' && UPPER(p[1]) == 'X')
 	{
 		p += 2; // skip over 0x part
 
