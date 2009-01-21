@@ -129,7 +129,7 @@ static bool serverClosing = false;
 
 extern "C" {
 
-int CLIB_ROUTINE server_main( int argc, char** argv)
+int FB_EXPORTED server_main( int argc, char** argv)
 {
 /**************************************
  *

@@ -190,6 +190,10 @@
 #define QUADFORMAT "q"
 #define MAP_ANON
 
+#define API_ROUTINE __attribute__((visibility("default")))
+#define API_ROUTINE_VARARG API_ROUTINE
+#define INTERNAL_API_ROUTINE API_ROUTINE
+#define FB_EXPORTED __attribute__((visibility("default")))
 #endif /* Darwin Platforms */
 
 

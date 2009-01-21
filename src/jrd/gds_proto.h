@@ -127,7 +127,7 @@ SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
 void	gds__cleanup();
 void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 
-void	gds__default_printer(void*, SSHORT, const TEXT*);
+void	FB_EXPORTED gds__default_printer(void*, SSHORT, const TEXT*);
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
 void	gds__print_pool(Firebird::MemoryPool*, const TEXT*, ...);
 
