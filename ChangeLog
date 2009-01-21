@@ -1,3 +1,60 @@
+2009-01-21 19:06  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.434):
+
+	Slightly reworked my recent changes for IN (list).  Now it resolves
+	the parameter datatypes the same way as before.
+
+2009-01-21 16:42  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin_i386 (1.13):
+
+	Frontport and solve symbol issue for MacOSX
+
+2009-01-21 16:42  asfernandes
+
+	* firebird2/src/: common/classes/init.cpp (1.13),
+	extlib/fbudf/fbudf.cpp (1.35), isql/extract.epp (1.99), jrd/par.cpp
+	(1.230), jrd/svc.cpp (1.257), utilities/nbackup.cpp (1.77),
+	utilities/print_pool.cpp (1.12), utilities/fbcpl/fbdialog.cpp
+	(1.16), utilities/gstat/dba.epp (1.109):
+
+	Misc
+
+2009-01-21 16:39  paulbeach
+
+	* firebird2/src/: dsql/keywords.cpp (1.77), dsql/keywords.h (1.23),
+	jrd/gds.cpp (1.275), jrd/gds_proto.h (1.54):
+
+	[no log message]
+
+2009-01-21 14:25  paulbeach
+
+	* firebird2/src/jrd/: gds.cpp (1.274), gds_proto.h (1.53):
+
+	Frontport and solve symbol issue for MacOSX - not needed
+
+2009-01-21 14:04  paulbeach
+
+	* firebird2/src/: jrd/common.h (1.191), jrd/gds.cpp (1.273),
+	jrd/gds_proto.h (1.52), remote/inet_server.cpp (1.90),
+	remote/server_stub.cpp (1.4):
+
+	Frontport and solve symbol issue for MacOSX
+
+2009-01-21 10:58  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.34):
+
+	Fix CORE-2281 and CORE-2282.
+
+2009-01-21 05:02  robocop
+
+	* firebird2/src/isql/: extract.epp (1.98), isql.epp (1.262),
+	show.epp (1.140):
+
+	Style.
+
 2009-01-20 15:58  dimitr
 
 	* firebird2/src/common/utils_proto.h (1.31):
