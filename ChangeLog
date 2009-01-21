@@ -1,3 +1,9 @@
+2009-01-21 11:10  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.26.4.2):
+
+	Backport CORE-2281 and CORE-2282.
+
 2009-01-11 17:27  alexpeshkoff
 
 	* firebird2/extern/editline/: readline.c (1.2.4.1), term.c
