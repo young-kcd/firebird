@@ -2087,7 +2087,7 @@ static void par_procedure_parms(thread_db* tdbb,
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 		{
 			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
-								Arg::Str(procedure->prc_name));
+							Arg::Str(procedure->prc_name));
 		}
 		else
 			mismatch = true;

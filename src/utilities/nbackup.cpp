@@ -317,8 +317,8 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	offset.QuadPart = pos;
 	DWORD error;
 	if (SetFilePointer(dbase, offset.LowPart, &offset.HighPart, FILE_BEGIN) ==
-		INVALID_SET_FILE_POINTER &&
-		 (error = GetLastError()) != NO_ERROR)
+			INVALID_SET_FILE_POINTER &&
+		(error = GetLastError()) != NO_ERROR)
 	{
 		b_error::raise(uSvc, "IO error (%d) seeking file: %s",
 			error,

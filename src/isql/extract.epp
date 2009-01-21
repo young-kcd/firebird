@@ -2809,5 +2809,3 @@ static void list_views()
 		return;
 	END_ERROR;
 }
-
-

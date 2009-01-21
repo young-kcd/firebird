@@ -442,7 +442,7 @@ void CFBDialog::ViewRegistryEntries()
 	{
 		HKEY hkey;
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-			0, KEY_QUERY_VALUE, &hkey) == ERROR_SUCCESS)
+				0, KEY_QUERY_VALUE, &hkey) == ERROR_SUCCESS)
 		{
 			DWORD dwType;
 			DWORD dwSize = MAX_PATH;
@@ -1009,13 +1009,13 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 		//Add line to registry
 		HKEY hkey;
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-			0, KEY_WRITE, &hkey) == ERROR_SUCCESS)
+				0, KEY_WRITE, &hkey) == ERROR_SUCCESS)
 		{
 
 			char full_name[MAX_PATH + 15] = "";
 			GetFullAppPath( status, full_name);
 			if (!RegSetValueEx (hkey, "Firebird", 0,REG_SZ, (CONST BYTE*) full_name, sizeof(full_name) ) ==
-				ERROR_SUCCESS)
+					ERROR_SUCCESS)
 			{
 				HandleError(false, "AppInstall");
 				return false;
@@ -1032,7 +1032,7 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 		//Remove registry entry if set to start automatically on boot.
 		HKEY hkey;
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-			0, KEY_QUERY_VALUE | KEY_WRITE, &hkey) == ERROR_SUCCESS)
+				0, KEY_QUERY_VALUE | KEY_WRITE, &hkey) == ERROR_SUCCESS)
 
 		{
 			if (RegQueryValueEx(hkey, "Firebird", NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
@@ -1653,4 +1653,3 @@ bool CFBDialog::UserHasSufficientRights()
 	CloseServiceManager();
 	return HasRights;
 }
-

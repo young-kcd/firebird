@@ -1665,8 +1665,8 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_response_more:
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 4), l);
-			if (!(info =
-				INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr), info, end)))
+			if (!(info = INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr),
+									  info, end)))
 			{
 				return;
 			}

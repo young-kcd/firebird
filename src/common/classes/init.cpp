@@ -163,9 +163,11 @@ namespace Firebird
 
 		// Destroy global objects
 		DtorPriority currentPriority = PRIORITY_REGULAR, nextPriority = currentPriority;
+
 		do
 		{
 			currentPriority = nextPriority;
+
 			for (InstanceControl* i = instanceList; i; i = i->next)
 			{
 				if (i->priority == currentPriority)
@@ -202,7 +204,7 @@ namespace Firebird
 		gdsShutdown = shutdown;
 	}
 
-	Mutex* StaticMutex::mutex = 0;
+	Mutex* StaticMutex::mutex = NULL;
 
 	void StaticMutex::create()
 	{

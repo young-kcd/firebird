@@ -85,7 +85,6 @@ BOOL APIENTRY DllMain( HANDLE ,//hModule,
 // To do: go from C++ native types to abstract FB types.
 
 
-
 #ifdef DEV_BUILD
 // This function shouldn't be defined in production.
 FBUDF_API paramdsc* testreflect(paramdsc* rc)

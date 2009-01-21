@@ -1612,4 +1612,3 @@ static void print_distribution(const SCHAR* prefix, const SLONG* vector)
 				prefix, n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
 }
-
