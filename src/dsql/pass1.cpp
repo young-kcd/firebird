@@ -887,6 +887,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_leq_all:
 		{
 			dsql_nod* sub2 = input->nod_arg[1];
+
 			if (sub2->nod_type == nod_list)
 			{
 				int list_item_count = 0;
@@ -905,13 +906,14 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 					dsql_nod* temp = MAKE_node(input->nod_type, 2);
-					temp->nod_arg[0] = PASS1_node(statement, input->nod_arg[0]);
-					temp->nod_arg[1] = PASS1_node(statement, *ptr);
-					node = compose(node, temp, nod_or);
+					temp->nod_arg[0] = input->nod_arg[0];
+					temp->nod_arg[1] = *ptr;
+					node = compose(node, PASS1_node(statement, temp), nod_or);
 				}
 
 				return node;
 			}
+
 			if (sub2->nod_type == nod_select_expr)
 			{
 				if (statement->isPsql())
