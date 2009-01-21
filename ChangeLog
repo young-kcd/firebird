@@ -1,3 +1,10 @@
+2009-01-21 11:06  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.7.2.4):
+
+	Backport CORE-2281 and CORE-2282; backport the addHour overflow fix
+	from 2004.
+
 2009-01-11 15:24  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.76.2.15):
