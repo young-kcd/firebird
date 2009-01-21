@@ -133,19 +133,22 @@ static const SCHAR* Object_types[] =
 
 
 
-const SCHAR* Trigger_prefix_types[] = {
+const SCHAR* Trigger_prefix_types[] =
+{
 	"BEFORE",			// NTX: keyword
 	"AFTER"				// NTX: keyword
 };
 
-const SCHAR* Trigger_suffix_types[] = {
+const SCHAR* Trigger_suffix_types[] =
+{
 	"",
 	"INSERT",			// NTX: keyword
 	"UPDATE",			// NTX: keyword
 	"DELETE"			// NTX: keyword
 };
 
-const SCHAR* Db_trigger_types[] = {
+const SCHAR* Db_trigger_types[] =
+{
 	"CONNECT",				// NTX: keyword
 	"DISCONNECT",			// NTX: keyword
 	"TRANSACTION START",	// NTX: keyword
@@ -165,10 +168,12 @@ enum priv_flag {
 };
 
 
-static const struct {
+static const struct
+{
 	USHORT priv_flag;
 	const char* priv_string;
-} privs[] = {
+} privs[] =
+{
 	{ priv_DELETE, "DELETE"},		// NTX: keyword
 	{ priv_EXECUTE, "EXECUTE"},	// NTX: keyword
 	{ priv_INSERT, "INSERT"},		// NTX: keyword
@@ -183,7 +188,8 @@ static const struct {
 const int MAX_PRIV_LIST = (6 + 2 + 7 + 2 + 6 + 2 + 6 + 2 + 6 + 2 + 10 + 1);
 
 
-static const SCHAR db_dialect_info[] = {
+static const SCHAR db_dialect_info[] =
+{
 	isc_info_db_sql_dialect,
 	isc_info_end
 };
@@ -191,7 +197,8 @@ static const SCHAR db_dialect_info[] = {
 // Added support to display FORCED WRITES status. - PR 27-NOV-2001
 // Added support to display transaction info when next_transaction id is fixed.
 // Added support to display ODS version. CVC 26-Aug-2004.
-static const SCHAR db_items[] = {
+static const SCHAR db_items[] =
+{
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
 	isc_info_sweep_interval,
@@ -216,7 +223,8 @@ static const SCHAR db_items[] = {
  * This same BPB is safe to use for both V3 & V4 db's - as
  * a V3 db will ignore the source_ & target_interp values.
  */
-static const UCHAR metadata_text_bpb[] = {
+static const UCHAR metadata_text_bpb[] =
+{
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, isc_blob_text,
 	isc_bpb_target_type, 1, isc_blob_text,
@@ -226,11 +234,13 @@ static const UCHAR metadata_text_bpb[] = {
 
 // trigger action helpers
 
-inline int TRIGGER_ACTION_PREFIX(int value) {
+inline int TRIGGER_ACTION_PREFIX(int value)
+{
 	return (value + 1) & 1;
 }
 
-inline int TRIGGER_ACTION_SUFFIX(int value, int slot) {
+inline int TRIGGER_ACTION_SUFFIX(int value, int slot)
+{
 	return ((value + 1) >> (slot * 2 - 1)) & 3;
 }
 
@@ -238,26 +248,29 @@ const char* trigger_action(int type)
 {
 	static char buffer[256];
 
-	if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DML)
+	switch (type & TRIGGER_TYPE_MASK)
 	{
-		int prefix = TRIGGER_ACTION_PREFIX(type);
-		strcpy(buffer, Trigger_prefix_types[prefix]);
-		int suffix = TRIGGER_ACTION_SUFFIX(type, 1);
-		strcat(buffer, " ");
-		strcat(buffer, Trigger_suffix_types[suffix]);
-		if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 2)) ) {
-			strcat(buffer, " OR ");
+	case TRIGGER_TYPE_DML:
+		{
+			int prefix = TRIGGER_ACTION_PREFIX(type);
+			strcpy(buffer, Trigger_prefix_types[prefix]);
+			int suffix = TRIGGER_ACTION_SUFFIX(type, 1);
+			strcat(buffer, " ");
 			strcat(buffer, Trigger_suffix_types[suffix]);
+			if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 2)) ) {
+				strcat(buffer, " OR ");
+				strcat(buffer, Trigger_suffix_types[suffix]);
+			}
+			if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 3)) ) {
+				strcat(buffer, " OR ");
+				strcat(buffer, Trigger_suffix_types[suffix]);
+			}
 		}
-		if ( (suffix = TRIGGER_ACTION_SUFFIX(type, 3)) ) {
-			strcat(buffer, " OR ");
-			strcat(buffer, Trigger_suffix_types[suffix]);
-		}
-	}
-	else if ((type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+		break;
+	case TRIGGER_TYPE_DB:
 		sprintf(buffer, "ON %s", Db_trigger_types[type & ~TRIGGER_TYPE_DB]);
-	else
-	{
+		break;
+	default:
 		buffer[0] = '\0';
 		fb_assert(false);
 	}
@@ -276,8 +289,7 @@ void SHOW_comments(bool force)
 	if (isqlGlob.major_ods >= ODS_VERSION11 || force)
 	{
 		char banner[BUFFER_LENGTH128];
-		sprintf(banner, "%s/* Comments for database objects. */%s",
-			NEWLINE, NEWLINE);
+		sprintf(banner, "%s/* Comments for database objects. */%s", NEWLINE, NEWLINE);
 		show_comments(cmmExtract, banner);
 	}
 }
@@ -317,7 +329,8 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 
 	*info_buf = '\0';
 	SCHAR* info = info_buf;
-	for (const SCHAR* d = buffer; *d != isc_info_end;) {
+	for (const SCHAR* d = buffer; *d != isc_info_end;)
+	{
 		SLONG value_out = 0;
 		const SCHAR item = *d++;
 		const int length = isc_vax_integer(d, 2);
@@ -345,8 +358,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT" %s",
-						value_out, NEWLINE);
+				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_sweep_interval:
@@ -401,8 +413,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Transaction in limbo = %"SLONGFORMAT" %s",
-						value_out, NEWLINE);
+				sprintf(info, "Transaction in limbo = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_ods_version:
@@ -447,9 +458,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 }
 
 
-processing_state SHOW_grants(const SCHAR* object,
-				const SCHAR* terminator,
-				USHORT obj_type)
+processing_state SHOW_grants(const SCHAR* object, const SCHAR* terminator, USHORT obj_type)
 {
 /**************************************
  *
@@ -634,7 +643,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 						priv_string, col_string,
 						SQL_identifier,
-						user_string, with_option, granted_by(buf_grantor, prev_grantor), terminator, NEWLINE);
+						user_string, with_option, granted_by(buf_grantor, prev_grantor),
+						terminator, NEWLINE);
 
 					// re-initialize strings
 
@@ -754,7 +764,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			// Print last case if there was anything to print
 
-			if (prev_option != -1) {
+			if (prev_option != -1)
+			{
 				make_priv_string (priv_flags, priv_string);
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
@@ -884,7 +895,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	// No procedure called "object" was found, try role "object"
 	SCHAR role_name[BUFFER_LENGTH128];
 
-	if (obj_type == obj_sql_role || obj_type == 255) {
+	if (obj_type == obj_sql_role || obj_type == 255)
+	{
 		// No procedure called "object" was found, try role "object"
 		// CVC: This code could be superseded by SHOW_grant_roles() below
 		// with the sole difference of the sort fields.
@@ -916,7 +928,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					with_option[0] = '\0';
 
 				sprintf (Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
-						 user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+						 user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR),
+						 terminator, NEWLINE);
 
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
@@ -944,8 +957,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 }
 
 
-void SHOW_grant_roles(const SCHAR* terminator,
-					  bool* first)
+void SHOW_grant_roles(const SCHAR* terminator, bool* first)
 {
 /**************************************
  *
@@ -1022,9 +1034,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 }
 
 
-void SHOW_print_metadata_text_blob(FILE* fp,
-								   ISC_QUAD* blobid,
-								   bool escape_squote)
+void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squote)
 {
 /**************************************
  *
@@ -1078,8 +1088,7 @@ void SHOW_print_metadata_text_blob(FILE* fp,
 }
 
 
-processing_state SHOW_metadata(const SCHAR* const* cmd,
-				  SCHAR** lcmd)
+processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 {
 /**************************************
  *
@@ -1452,8 +1461,10 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 			ret = EXTRACT_list_grants ("");
 		}
 
-		if (ret == OBJECT_NOT_FOUND) {
-			if (*cmd[2]) {
+		if (ret == OBJECT_NOT_FOUND)
+		{
+			if (*cmd[2])
+			{
 				FOR FIRST 1 R IN RDB$RELATIONS
 					WITH R.RDB$RELATION_NAME EQ SQL_id_for_grant;
 
@@ -1636,8 +1647,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd,
 }
 
 
-static void local_fprintf(void* format_ignored,
-						  const char* string)
+static void local_fprintf(void* format_ignored, const char* string)
 {
 /**************************************
  *
@@ -1672,8 +1682,7 @@ static void remove_delimited_double_quotes(TEXT* string)
 }
 
 
-static void make_priv_string(USHORT flags,
-							 char* string)
+static void make_priv_string(USHORT flags, char* string)
 {
 /**************************************
  *
@@ -1714,7 +1723,8 @@ static processing_state show_all_tables(SSHORT sys_flag)
 	bool odd = true;
 	bool first = true;
 
-	if (sys_flag == -1) {
+	if (sys_flag == -1)
+	{
 		// Views
 		FOR REL IN RDB$RELATIONS WITH
 			REL.RDB$VIEW_BLR NOT MISSING
@@ -1730,8 +1740,8 @@ static processing_state show_all_tables(SSHORT sys_flag)
 			return ps_ERR;
 		END_ERROR;
 	}
-	// 23-Apr-2004 (only tables)
-	else {
+	else // 23-Apr-2004 (only tables)
+	{
 		// The rdb$system_flag is not always set for non-system objects... this
 		// query may potentially fail.
 		FOR REL IN RDB$RELATIONS WITH
@@ -1784,7 +1794,8 @@ static void show_charsets(
 // If there is a relation_name, this is a real column, look up collation
 // in rdb$relation_fields
 
-	if (relation_name) {
+	if (relation_name)
+	{
 		FOR RRF IN RDB$RELATION_FIELDS CROSS
 			FLD IN RDB$FIELDS
 			WITH RRF.RDB$FIELD_NAME EQ field_name AND
@@ -1806,7 +1817,8 @@ static void show_charsets(
 #endif
 		END_ERROR;
 	}
-	else {
+	else
+	{
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME EQ field_name
 
@@ -1925,8 +1937,7 @@ static void show_proc_charsets(
 		END_FOR
 		ON_ERROR
 #ifdef DEV_BUILD
-			fprintf(stderr, "show_proc_charsets(NULL %s) failed\n",
-					   parameter_name);
+			fprintf(stderr, "show_proc_charsets(NULL %s) failed\n", parameter_name);
 #endif
 		END_ERROR;
 	}
@@ -2484,13 +2495,14 @@ static void show_db()
 					 FIL.RDB$FILE_LENGTH, FIL.RDB$FILE_START, NEWLINE);
 		}
 
-		if (FIL.RDB$FILE_FLAGS & FILE_shadow) {
+		if (FIL.RDB$FILE_FLAGS & FILE_shadow)
+		{
 			if (FIL.RDB$FILE_SEQUENCE) {
 				isqlGlob.printf("%sfile %s ", TAB_AS_SPACES, FIL.RDB$FILE_NAME);
 			}
-			else {
-				isqlGlob.printf(" Shadow %d: \"%s\" ",
-						 FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_NAME);
+			else
+			{
+				isqlGlob.printf(" Shadow %d: \"%s\" ", FIL.RDB$SHADOW_NUMBER, FIL.RDB$FILE_NAME);
 				if (FIL.RDB$FILE_FLAGS & FILE_inactive) {
 					isqlGlob.printf("inactive ");
 				}
@@ -2809,7 +2821,8 @@ static processing_state show_domains(const SCHAR* domain_name)
 ************************************/
 	bool first = true;
 
-	if (!*domain_name) {
+	if (!*domain_name)
+	{
 		bool odd = true;
 		//  List all domain names in columns
 		FOR FLD IN RDB$FIELDS WITH
@@ -2828,7 +2841,8 @@ static processing_state show_domains(const SCHAR* domain_name)
 		if (!first)
 			isqlGlob.printf(NEWLINE);
 	}
-	else {						// List named domain
+	else
+	{						// List named domain
 
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME EQ domain_name;
@@ -2849,7 +2863,8 @@ static processing_state show_domains(const SCHAR* domain_name)
 			// Look through types array
 
 			for (int i = 0; Column_types[i].type; i++)
-				if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
+				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
+				{
 					bool precision_known = false;
 
 					if (isqlGlob.major_ods >= ODS_VERSION10) {
@@ -2882,28 +2897,20 @@ static processing_state show_domains(const SCHAR* domain_name)
 						}
 					}
 
-					if (!precision_known) {
+					if (!precision_known)
+					{
 						// Take a stab at numerics and decimals
-						if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
-							(FLD.RDB$FIELD_SCALE < 0))
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
 						{
-							sprintf (Print_buffer,
-									 "NUMERIC(4, %d)",
-									 -FLD.RDB$FIELD_SCALE);
+							sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
 						}
-						else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
-								 (FLD.RDB$FIELD_SCALE < 0))
+						else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0))
 						{
-							sprintf (Print_buffer,
-									 "NUMERIC(9, %d)",
-									 -FLD.RDB$FIELD_SCALE);
+							sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
 						}
-						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-								 (FLD.RDB$FIELD_SCALE < 0))
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
 						{
-							sprintf (Print_buffer,
-									 "NUMERIC(15, %d)",
-									 -FLD.RDB$FIELD_SCALE);
+							sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
 						}
 						else {
 							sprintf (Print_buffer, "%s", Column_types[i].type_name);
@@ -2934,8 +2941,8 @@ static processing_state show_domains(const SCHAR* domain_name)
 
 			// Show international character sets
 			if (FLD.RDB$FIELD_TYPE == T_CHAR ||
-					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
-					   FLD.RDB$FIELD_TYPE == BLOB)
+				FLD.RDB$FIELD_TYPE == VARCHAR ||
+				FLD.RDB$FIELD_TYPE == BLOB)
 			{
 				show_charsets(NULL, FLD.RDB$FIELD_NAME, true, false, false, false);
 			}
@@ -2949,8 +2956,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			isqlGlob.printf(NEWLINE);
 
 			ISC_QUAD default_source;
-			ISQL_get_default_source (NULL, FLD.RDB$FIELD_NAME,
-									 &default_source);
+			ISQL_get_default_source (NULL, FLD.RDB$FIELD_NAME, &default_source);
 			if (default_source.gds_quad_high) {
 				isqlGlob.printf("                                ");
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &default_source);
@@ -2965,8 +2971,8 @@ static processing_state show_domains(const SCHAR* domain_name)
 
 			// Show collations
 			if (FLD.RDB$FIELD_TYPE == T_CHAR ||
-					   FLD.RDB$FIELD_TYPE == VARCHAR  ||
-					   FLD.RDB$FIELD_TYPE == BLOB)
+				FLD.RDB$FIELD_TYPE == VARCHAR ||
+				FLD.RDB$FIELD_TYPE == BLOB)
 			{
 				show_charsets(NULL, FLD.RDB$FIELD_NAME, false, true, true, true);
 			}
@@ -3047,10 +3053,7 @@ static processing_state show_exceptions(const SCHAR* object)
 						strcpy (type, "Unknown");
 						break;
 				}
-				isqlGlob.printf("%s, %s%s",
-						 DEP.RDB$DEPENDENT_NAME,
-						 type,
-						 NEWLINE);
+				isqlGlob.printf("%s, %s%s", DEP.RDB$DEPENDENT_NAME, type, NEWLINE);
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (isc_status);
@@ -3091,7 +3094,8 @@ static processing_state show_filters(const SCHAR* object)
 	bool first = true;
 
 // Show all functions
-	if (!*object) {
+	if (!*object)
+	{
 		bool odd = true;
 		FOR FIL IN RDB$FILTERS
 		SORTED BY FIL.RDB$FUNCTION_NAME
@@ -3143,8 +3147,7 @@ static processing_state show_filters(const SCHAR* object)
 }
 
 
-static processing_state show_functions(const SCHAR* object, const SSHORT sys_flag,
-	const char* msg)
+static processing_state show_functions(const SCHAR* object, const SSHORT sys_flag, const char* msg)
 {
 /**************************************
  *
@@ -3217,16 +3220,9 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 		fb_utils::exact_name(FUN.RDB$MODULE_NAME);
 		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
 		if (first) {
-			isqlGlob.printf("%sFunction %s:%s",
-					 NEWLINE,
-					 FUN.RDB$FUNCTION_NAME,
-					 NEWLINE);
-			isqlGlob.printf("Function library is %s%s",
-				FUN.RDB$MODULE_NAME,
-					 NEWLINE);
-			isqlGlob.printf("Entry point is %s%s",
-					 FUN.RDB$ENTRYPOINT,
-					 NEWLINE);
+			isqlGlob.printf("%sFunction %s:%s", NEWLINE, FUN.RDB$FUNCTION_NAME, NEWLINE);
+			isqlGlob.printf("Function library is %s%s", FUN.RDB$MODULE_NAME, NEWLINE);
+			isqlGlob.printf("Entry point is %s%s", FUN.RDB$ENTRYPOINT, NEWLINE);
 		}
 
 		SSHORT ptype = (SSHORT) abs (FNA.RDB$MECHANISM);
@@ -3236,13 +3232,11 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 
 		first = false;
 		if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
-			isqlGlob.printf("Returns %s%s",
-					 UDF_param_types[ptype],
+			isqlGlob.printf("Returns %s%s", UDF_param_types[ptype],
 					 (FNA.RDB$MECHANISM < 0 ? " FREE_IT " : " "));
 		}
 		else {
-			isqlGlob.printf("Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION,
-					 UDF_param_types[ptype]);
+			isqlGlob.printf("Argument %d:%s ", FNA.RDB$ARGUMENT_POSITION, UDF_param_types[ptype]);
 		}
 		for (int i = 0; Column_types[i].type; i++)
 		{
@@ -3293,8 +3287,7 @@ static processing_state show_functions(const SCHAR* object, const SSHORT sys_fla
 					{
 						sprintf (Print_buffer, "NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
 					}
-					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-							 (FNA.RDB$FIELD_SCALE < 0))
+					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
 					{
 						sprintf (Print_buffer, "NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
 					}
@@ -3407,8 +3400,7 @@ static processing_state show_generators(const SCHAR* object)
 			sqlda.sqlvar[0].sqlind = &indicator;
 
 			// Singleton select needs no fetch
-			if (isc_dsql_execute2 (isc_status, &gds_trans, &stmt,
-								   isqlGlob.SQL_dialect, NULL, &sqlda))
+			if (isc_dsql_execute2 (isc_status, &gds_trans, &stmt, isqlGlob.SQL_dialect, NULL, &sqlda))
 			{
 				ISQL_errmsg (isc_status);
 			}
@@ -3417,8 +3409,7 @@ static processing_state show_generators(const SCHAR* object)
 				found = true;
 				if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
 				{
-					isqlGlob.printf(
-							 "Generator %s, current value is %" QUADFORMAT "d%s",
+					isqlGlob.printf("Generator %s, current value is %" QUADFORMAT "d%s",
 							 GEN.RDB$GENERATOR_NAME,
 							 genid64,
 							 NEWLINE);
@@ -3479,8 +3470,7 @@ static void show_index(SCHAR* relation_name,
 
 	if (ISQL_get_index_segments(collist, sizeof(collist), index_name, false))
 	{
-		isqlGlob.printf("(%s) %s%s", collist,
-				(inactive ? "(inactive)" : ""), NEWLINE);
+		isqlGlob.printf("(%s) %s%s", collist, (inactive ? "(inactive)" : ""), NEWLINE);
 	}
 }
 
@@ -3507,7 +3497,8 @@ static processing_state show_indices(const SCHAR* const* cmd)
 
 	const SCHAR* name = cmd[2];
 
-	if (*name) {
+	if (*name)
+	{
 		FOR IDX1 IN RDB$INDICES WITH
 			IDX1.RDB$RELATION_NAME EQ name OR
 			IDX1.RDB$INDEX_NAME EQ name
@@ -3586,7 +3577,8 @@ static processing_state show_proc(const SCHAR* procname)
 
 // If no procedure name was given, just list the procedures
 
-	if (!procname || !strlen(procname)) {
+	if (!procname || !strlen(procname))
+	{
 		/* This query gets the procedure name  the next query
 		   **   gets all the dependencies if any
 		 */
@@ -3685,10 +3677,12 @@ static processing_state show_proc(const SCHAR* procname)
 			// Look through types array
 
 			for (int i = 0; Column_types[i].type; i++)
-				if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
+				if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
+				{
 					bool precision_known = false;
 
-					if (isqlGlob.major_ods >= ODS_VERSION10) {
+					if (isqlGlob.major_ods >= ODS_VERSION10)
+					{
 						// Handle Integral subtypes NUMERIC and DECIMAL
 
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
@@ -3719,7 +3713,8 @@ static processing_state show_proc(const SCHAR* procname)
 						} // if field_type ...
 					} // if isqlGlob.major_ods ...
 
-					if (!precision_known) {
+					if (!precision_known)
+					{
 						// Take a stab at numerics and decimals
 						if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
 							sprintf (type_name, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
@@ -3727,8 +3722,7 @@ static processing_state show_proc(const SCHAR* procname)
 						else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0)) {
 							sprintf (type_name, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
 						}
-						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-								 (FLD.RDB$FIELD_SCALE < 0))
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
 						{
 							sprintf (type_name, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
 						}
@@ -4096,9 +4090,7 @@ static processing_state show_secclass(const char* object, const char* opt)
 }
 
 
-static processing_state show_table(
-	const SCHAR* relation_name,
-	bool isView)
+static processing_state show_table(const SCHAR* relation_name, bool isView)
 {
 /**************************************
  *
@@ -4193,10 +4185,12 @@ static processing_state show_table(
 
 		for (int i = 0; Column_types[i].type; i++)
 		{
-			if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
+			if (FLD.RDB$FIELD_TYPE == Column_types[i].type)
+			{
 				bool precision_known = false;
 
-				if (isqlGlob.major_ods >= ODS_VERSION10) {
+				if (isqlGlob.major_ods >= ODS_VERSION10)
+				{
 					// Handle Integral subtypes NUMERIC and DECIMAL
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) ||
 						(FLD.RDB$FIELD_TYPE == INTEGER) ||
@@ -4227,7 +4221,8 @@ static processing_state show_table(
 					}
 				}
 
-				if (!precision_known) {
+				if (!precision_known)
+				{
 					// Take a stab at numerics and decimals
 					if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0)) {
 						sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
@@ -4282,8 +4277,7 @@ static processing_state show_table(
 		// The null flag is either 1 or null (for nullable)
 
 		if (RFR.RDB$NULL_FLAG == 1 || FLD.RDB$NULL_FLAG == 1 ||
-			(!RFR.RDB$BASE_FIELD.NULL &&
-			 !ISQL_get_null_flag (relation_name, RFR.RDB$FIELD_NAME)))
+			(!RFR.RDB$BASE_FIELD.NULL && !ISQL_get_null_flag (relation_name, RFR.RDB$FIELD_NAME)))
 		{
 			isqlGlob.printf(" Not Null ");
 		}
@@ -4375,21 +4369,16 @@ static processing_state show_table(
 				ISQL_get_index_segments (collist, sizeof(collist), RELC2.RDB$INDEX_NAME, false);
 				fb_utils::exact_name(RELC2.RDB$RELATION_NAME);
 
-				isqlGlob.printf("    References %s (%s)",
-						 RELC2.RDB$RELATION_NAME, collist);
+				isqlGlob.printf("    References %s (%s)", RELC2.RDB$RELATION_NAME, collist);
 
 				if (!REFC.RDB$UPDATE_RULE.NULL) {
-					ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
-										sizeof(REFC.RDB$UPDATE_RULE));
-					ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update",
-										  false);
+					ISQL_truncate_term (REFC.RDB$UPDATE_RULE, sizeof(REFC.RDB$UPDATE_RULE));
+					ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update", false);
 				}
 
 				if (!REFC.RDB$DELETE_RULE.NULL) {
-					ISQL_truncate_term (REFC.RDB$DELETE_RULE,
-										sizeof(REFC.RDB$DELETE_RULE));
-					ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete",
-										  false);
+					ISQL_truncate_term (REFC.RDB$DELETE_RULE, sizeof(REFC.RDB$DELETE_RULE));
+					ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete", false);
 				}
 
 				isqlGlob.printf(NEWLINE);
@@ -4443,10 +4432,8 @@ static processing_state show_table(
 		{
 			fb_utils::exact_name(C_C.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(R_C.RDB$CONSTRAINT_NAME);
-			isqlGlob.printf("CONSTRAINT %s:%s", R_C.RDB$CONSTRAINT_NAME,
-					 NEWLINE);
-			isqlGlob.printf("  Not Null Column (%s)%s",
-					 C_C.RDB$TRIGGER_NAME, NEWLINE);
+			isqlGlob.printf("CONSTRAINT %s:%s", R_C.RDB$CONSTRAINT_NAME, NEWLINE);
+			isqlGlob.printf("  Not Null Column (%s)%s", C_C.RDB$TRIGGER_NAME, NEWLINE);
 		}
 	END_FOR
 	ON_ERROR
@@ -4468,10 +4455,7 @@ static processing_state show_table(
 }
 
 
-static processing_state show_trigger(
-	const SCHAR* object,
-	bool show_source,
-	bool isTriggerName)
+static processing_state show_trigger(const SCHAR* object, bool show_source, bool isTriggerName)
 {
 /**************************************
  *
@@ -4499,10 +4483,8 @@ static processing_state show_trigger(
 
 				if (!has_dbtrig)
 				{
-					isqlGlob.printf(
-							 "Trigger name                     Invalid%s", NEWLINE);
-					isqlGlob.printf(
-							 "================================ =======%s", NEWLINE);
+					isqlGlob.printf("Trigger name                     Invalid%s", NEWLINE);
+					isqlGlob.printf("================================ =======%s", NEWLINE);
 					has_dbtrig = true;
 				}
 
@@ -4620,10 +4602,7 @@ static processing_state show_trigger(
 			{
 				fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
-				isqlGlob.printf("%sTriggers on Table %s:%s",
-						 NEWLINE,
-						 TRG.RDB$RELATION_NAME,
-						 NEWLINE);
+				isqlGlob.printf("%sTriggers on Table %s:%s", NEWLINE, TRG.RDB$RELATION_NAME, NEWLINE);
 			}
 
 			first = false;

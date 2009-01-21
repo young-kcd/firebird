@@ -604,7 +604,8 @@ int ISQL_main(int argc,
 		isqlGlob.Errfp = isqlGlob.Out;
 
 	ISQL_make_upper(tabname);
-	switch (ret) {
+	switch (ret)
+	{
 	case EXTRACT:
 	case EXTRACTALL:
 		if (*isqlGlob.global_Db_name) {
@@ -2118,7 +2119,8 @@ static processing_state add_row(TEXT* tabname)
 				int msec = 0;
 				ISC_QUAD* blobid;
 
-				switch (type) {
+				switch (type)
+				{
 				case SQL_BLOB:
 
 					blobid = (ISC_QUAD*) ISQL_ALLOC((SLONG) sizeof(ISC_QUAD));
@@ -2310,19 +2312,20 @@ static processing_state add_row(TEXT* tabname)
 					if (done)
 						break; // Nothing else, we found an error.
 
-					if (type == SQL_INT64)
-						*pi64 = n;
-					else if (type == SQL_SHORT)
+					switch (type)
 					{
+					case SQL_INT64:
+						*pi64 = n;
+						break;
+					case SQL_SHORT:
 						*smallint = n;
 						if (SINT64(*smallint) != n)
 						{
 							STDERROUT("Value too big");
 							done = true;
 						}
-					}
-					else if (type == SQL_LONG)
-					{
+						break;
+					case SQL_LONG:
 						*integer = n;
 						if (SINT64(*integer) != n)
 						{
@@ -3121,19 +3124,20 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					if (done)
 						continue; // Nothing else, we found an error.
 
-					if (type == SQL_INT64)
-						*pi64 = n;
-					else if (type == SQL_SHORT)
+					switch (type)
 					{
+					case SQL_INT64:
+						*pi64 = n;
+						break;
+					case SQL_SHORT:
 						*smallint = n;
 						if (SINT64(*smallint) != n)
 						{
 							STDERROUT("Integer value too big");
 							done = true;
 						}
-					}
-					else if (type == SQL_LONG)
-					{
+						break;
+					case SQL_LONG:
 						*integer = n;
 						if (SINT64(*integer) != n)
 						{
@@ -3506,7 +3510,8 @@ static void copy_str(TEXT** output_str,
 	TEXT* temp_str = *output_str;
 	const TEXT* temp_local_stmt_str = *input_str;
 
-	switch (str_flag) {
+	switch (str_flag)
+	{
 	case SINGLE_QUOTED_STRING:
 		slen = str_end - temp_local_stmt_str;
 		if (temp_str != temp_local_stmt_str)
@@ -3529,7 +3534,8 @@ static void copy_str(TEXT** output_str,
 		while (b1 < str_end) {
 			*temp_str = *b1;
 			temp_str++;
-			switch (*b1) {
+			switch (*b1)
+			{
 			case SINGLE_QUOTE:
 				*temp_str = SINGLE_QUOTE;
 				temp_str++;
@@ -4152,7 +4158,8 @@ static void do_isql()
 				ret = SKIP;
 		}
 
-		switch (ret) {
+		switch (ret)
+		{
 		case CONT:
 			if (process_statement(statement, global_sqldap) == ps_ERR)
 			{
@@ -5335,7 +5342,8 @@ static processing_state get_statement(TEXT* const statement,
 		in_double_quoted_string
 	} state = normal;
 
-	while (!done) {
+	while (!done)
+	{
 		SSHORT c = getNextInputChar();
 		switch (c) {
 		case EOF:
@@ -5688,7 +5696,8 @@ void ISQL_get_version(bool call_by_create_db)
 		const UCHAR item = (UCHAR) *p++;
 		const USHORT length = gds__vax_integer(p, sizeof(USHORT));
 		p += sizeof(USHORT);
-		switch (item) {
+		switch (item)
+		{
 		case isc_info_ods_version:
 			isqlGlob.major_ods = gds__vax_integer(p, length);
 			break;
@@ -5711,7 +5720,8 @@ void ISQL_get_version(bool call_by_create_db)
 			}
 			else {				// ODS 10 databases
 
-				switch (global_dialect_spoken) {
+				switch (global_dialect_spoken)
+				{
 				case SQL_DIALECT_V5:
 					if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 						print_warning = true;
@@ -5952,7 +5962,8 @@ static bool get_numeric(const UCHAR* string,
 	bool digit_seen = false, fraction = false;
 
 	const UCHAR* const end = string + length;
-	for (const UCHAR* p = string; p < end; p++) {
+	for (const UCHAR* p = string; p < end; p++)
+	{
 		if (DIGIT(*p)) {
 			digit_seen = true;
 
@@ -6036,11 +6047,15 @@ static processing_state print_sets()
 	print_set("Access Plan only:", Planonly);
 
 	isqlGlob.printf("%-25s", "Display BLOB type:");
-	if (Doblob == ALL_BLOBS)
+	switch (Doblob)
+	{
+	case ALL_BLOBS:
 		isqlGlob.printf("ALL");
-	else if (Doblob == NO_BLOBS)
+		break;
+	case NO_BLOBS:
 		isqlGlob.printf("NONE");
-	else {
+		break;
+	default:
 		isqlGlob.printf("%d", Doblob);
 	}
 	isqlGlob.printf(NEWLINE);
@@ -6056,8 +6071,7 @@ static processing_state print_sets()
 		isqlGlob.printf("Column print widths:%s", NEWLINE);
 		const ColList::item* p = global_Cols.getHead();
 		while (p) {
-			isqlGlob.printf("%s%s width: %d%s",
-					TAB_AS_SPACES, p->col_name, p->col_len, NEWLINE);
+			isqlGlob.printf("%s%s width: %d%s", TAB_AS_SPACES, p->col_name, p->col_len, NEWLINE);
 			p = p->next;
 		}
 	}
@@ -6085,7 +6099,8 @@ static processing_state help(const TEXT* what)
 
 	// Ordered list of help messages to display.  Use -1 to terminate list,
 	// and 0 for an empty blank line
-	static const SSHORT help_ids[] = {
+	static const SSHORT help_ids[] =
+	{
 		HLP_FRONTEND,			// Frontend commands:
 		HLP_BLOBDMP,			// BLOBDUMP <blobid> <file>	-- dump BLOB to a file
 		HLP_BLOBVIEW,			// BLOBVIEW <blobid>		-- view BLOB in text editor
@@ -6108,7 +6123,8 @@ static processing_state help(const TEXT* what)
 		-1						// end of list
 	};
 
-	static const SSHORT help_set_ids[] = {
+	static const SSHORT help_set_ids[] =
+	{
 		HLP_SETCOM,				//Set commands:
 		HLP_SET,				//	SET						-- display current SET options
 		HLP_SETAUTO,			//	SET AUTOddl				-- toggle autocommit of DDL statements
@@ -6179,10 +6195,7 @@ static bool isyesno(const TEXT* buffer)
 
 	// Just check first byte of yes response -- could be multibyte problem
 
-	if (UPPER7(buffer[0]) == UPPER7(yesword[0]))
-		return true;
-	else
-		return false;
+	return UPPER7(buffer[0]) == UPPER7(yesword[0]);
 }
 
 
@@ -6316,8 +6329,7 @@ static processing_state newdb(TEXT* dbname,
 	{ // scope
 		const TEXT* local_name = isqlGlob.global_Db_name;
 
-		if (isc_attach_database
-			(isc_status, 0, local_name, &DB, dpb.getBufferLength(),
+		if (isc_attach_database(isc_status, 0, local_name, &DB, dpb.getBufferLength(),
 									reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
 			ISQL_errmsg(isc_status);
@@ -6339,8 +6351,10 @@ static processing_state newdb(TEXT* dbname,
 
 	ISQL_get_version(false);
 
-	if (*local_sql_role) {
-		switch (isqlGlob.SQL_dialect) {
+	if (*local_sql_role)
+	{
+		switch (isqlGlob.SQL_dialect)
+		{
 		case SQL_DIALECT_V5:
 			// Uppercase the Sql isqlGlob.Role name
 			ISQL_make_upper(local_sql_role);
@@ -6365,21 +6379,20 @@ static processing_state newdb(TEXT* dbname,
 	// CVC: Do not put the user and pw used to extract metadata in a script!
 	// Only acknowledge user connection parameters in interactive logins.
 
-	if (Interactive) {
+	if (Interactive)
+	{
 		if (local_usr[0] != '\0') {
 			if (local_sql_role[0] != '\0') {
 				isqlGlob.printf("Database:  %s, User: %s, Role: %s%s",
 						dbname, local_usr, local_sql_role, NEWLINE);
 			}
 			else {
-				isqlGlob.printf("Database:  %s, User: %s%s",
-						dbname, local_usr, NEWLINE);
+				isqlGlob.printf("Database:  %s, User: %s%s", dbname, local_usr, NEWLINE);
 			}
 		}
 		else {
 			if (local_sql_role[0] != '\0') {
-				isqlGlob.printf("Database:  %s, Role:  %s%s",
-						dbname, local_sql_role, NEWLINE);
+				isqlGlob.printf("Database:  %s, Role:  %s%s", dbname, local_sql_role, NEWLINE);
 			}
 			else {
 				isqlGlob.printf("Database:  %s%s", dbname, NEWLINE);
@@ -6390,7 +6403,8 @@ static processing_state newdb(TEXT* dbname,
 	// CVC: We do not require those pesky transactions for -x or -a options.
 	// Metadata extraction works exclusively with default transaction gds__trans.
 
-	if (start_user_trans) {
+	if (start_user_trans)
+	{
 
 		// Start the user transaction and default transaction
 
@@ -6496,7 +6510,8 @@ static processing_state newoutput(const TEXT* outfile)
 	processing_state ret = SKIP;
 	// If there is a file name, attempt to open it for append
 
-	if (*outfile) {
+	if (*outfile)
+	{
 		TEXT path[MAXPATHLEN];
 		strip_quotes(outfile, path);
 		outfile = path;
@@ -6533,8 +6548,7 @@ static processing_state newoutput(const TEXT* outfile)
 }
 
 
-static processing_state newsize(const TEXT* colname,
-					  const TEXT* sizestr)
+static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
 {
 /**************************************
  *
@@ -6666,10 +6680,7 @@ static processing_state newtrans(const TEXT* statement)
 }
 
 
-static processing_state parse_arg(int argc,
-						SCHAR** argv,
-						SCHAR* tabname,
-						FILE** sess)
+static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname, FILE** sess)
 {
 /**************************************
  *
@@ -6746,7 +6757,8 @@ static processing_state parse_arg(int argc,
 
 	int i = 1;
 	const char* s = argv[i];
-	while (i < argc) {
+	while (i < argc)
+	{
 		// Look at flags to find unique match.  If the flag has an arg,
 		// advance the pointer (and i).  Only change the return value
 		// for extract switch or error.
@@ -6757,7 +6769,8 @@ static processing_state parse_arg(int argc,
 			char* swarg_str = NULL;
 			size_t swlen = strlen(s + 1);
 
-			for (int j = 0; j < FB_NELEM(switches); j++) {
+			for (int j = 0; j < FB_NELEM(switches); j++)
+			{
 				if (swlen >= switches[j].abbrlen && !fb_utils::strnicmp(s + 1, switches[j].text, swlen))
 				{
 					swid = switches[j].id;
@@ -7057,8 +7070,7 @@ static processing_state parse_arg(int argc,
 static processing_state passthrough(const char* cmd)
 {
 	processing_state ret = SKIP;
-	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0,
-								   cmd, isqlGlob.SQL_dialect, NULL))
+	if (isc_dsql_execute_immediate(isc_status, &DB, &M__trans, 0, cmd, isqlGlob.SQL_dialect, NULL))
 	{
 		ISQL_errmsg(isc_status);
 		if (!DB)
@@ -7104,9 +7116,7 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
 }
 
 
-static SSHORT print_item(TEXT** s,
-						 XSQLVAR* var,
-						 const int length)
+static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 {
 /**************************************
  *
@@ -7133,7 +7143,8 @@ static SSHORT print_item(TEXT** s,
 		isqlGlob.printf("%-31s ", fb_utils::exact_name(var->aliasname));
 	}
 
-	if ((var->sqltype & 1) && (*var->sqlind < 0)) {
+	if ((var->sqltype & 1) && (*var->sqlind < 0))
+	{
 		// If field was missing print <null>
 
 		if (List) {
@@ -7145,7 +7156,8 @@ static SSHORT print_item(TEXT** s,
 		else
 			sprintf(p, "%*s ", length, "<null>");
 	}
-	else if (!strncmp(var->sqlname, "DB_KEY", 6)) {
+	else if (!strncmp(var->sqlname, "DB_KEY", 6))
+	{
 		// Special handling for db_keys printed in hex
 
 		// Keep a temp buf, d for building the binary string
@@ -7165,13 +7177,15 @@ static SSHORT print_item(TEXT** s,
 		else
 			strcat(p, " ");
 	}
-	else {
+	else
+	{
 		const ISC_QUAD* blobid;
 		TEXT blobbuf[30];
 		TEXT* string;
 		tm times;
 
-		switch (dtype) {
+		switch (dtype)
+		{
 		case SQL_ARRAY:
 
 			// Print blob-ids only here
@@ -7201,16 +7215,22 @@ static SSHORT print_item(TEXT** s,
 		case SQL_LONG:
 		case SQL_INT64:
 			{
-				Firebird::string str_buf;
 				SINT64 value;
 
-				if (dtype == SQL_SHORT)
+				switch (dtype)
+				{
+				case SQL_SHORT:
 					value = (SINT64) (*(SSHORT*) var->sqldata);
-				else if (dtype == SQL_LONG)
+					break;
+				case SQL_LONG:
 					value = (SINT64) (*(SLONG*) var->sqldata);
-				else if (dtype == SQL_INT64)
+					break;
+				case SQL_INT64:
 					value = *(SINT64*) var->sqldata;
+					break;
+				}
 
+				Firebird::string str_buf;
 				print_item_numeric(value, length, dscale, str_buf.getBuffer(length));
 				sprintf(p, "%s ", str_buf.c_str());
 				if (List) {
@@ -7236,8 +7256,7 @@ static SSHORT print_item(TEXT** s,
 			else {
 				sprintf(p, "%*ld ", length, *(SQUAD*) var->sqldata);
 				if (List) {
-					isqlGlob.printf("%ld%s",
-							*(SQUAD*) var->sqldata, NEWLINE);
+					isqlGlob.printf("%ld%s", *(SQUAD*) var->sqldata, NEWLINE);
 				}
 			}
 			break;
@@ -7260,29 +7279,21 @@ static SSHORT print_item(TEXT** s,
 
 #if defined(MINGW)
 				if (value == 0) {
-					sprintf(p, "% #*.*g ", length,
-							(int) MIN(8, (length - 6)) - 1,
-							value);
+					sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)) - 1, value);
 					if (List) {
-						isqlGlob.printf("%.*g%s", FLOAT_LEN - 6 -1,
-								value, NEWLINE);
+						isqlGlob.printf("%.*g%s", FLOAT_LEN - 6 -1, value, NEWLINE);
 					}
 				}
 				else {
-					sprintf(p, "% #*.*g ", length,
-							(int) MIN(8, (length - 6)),
-							value);
+					sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)), value);
 					if (List) {
-						isqlGlob.printf("%.*g%s", FLOAT_LEN - 6,
-								value, NEWLINE);
+						isqlGlob.printf("%.*g%s", FLOAT_LEN - 6, value, NEWLINE);
 					}
 				}
 #else
-				sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)),
-						value);
+				sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)), value);
 				if (List) {
-					isqlGlob.printf("%.*g%s", FLOAT_LEN - 6,
-							value, NEWLINE);
+					isqlGlob.printf("%.*g%s", FLOAT_LEN - 6, value, NEWLINE);
 				}
 #endif
 			}
@@ -7300,7 +7311,7 @@ static SSHORT print_item(TEXT** s,
 				// Don't let numeric/decimal doubles overflow print length
 				// Special handling for 0 -- don't test log for length
 				int rounded = 0;
-				if (dscale && (!value || 
+				if (dscale && (!value ||
 					(rounded = static_cast<int>(ceil(fabs(log10(fabs(value)))))) < length - 10))
 				{
 					int precision = 0;
@@ -7335,41 +7346,28 @@ static SSHORT print_item(TEXT** s,
 					sprintf(p, "%*.*f ", length, precision, value);
 
 					if (List) {
-						isqlGlob.printf("%.*f%s",
-								precision, //dscale,
-								value, NEWLINE);
+						isqlGlob.printf("%.*f%s", precision, /*dscale,*/ value, NEWLINE);
 					}
 				}
-				else {
+				else
+				{
 #if defined(MINGW)
 					if (value == 0) {
-						sprintf(p, "% #*.*g ", length,
-								(int) MIN(16, (length - 7)) - 1,
-								value);
+						sprintf(p, "% #*.*g ", length, (int) MIN(16, (length - 7)) - 1, value);
 						if (List) {
-							isqlGlob.printf("%#.*g%s",
-									DOUBLE_LEN - 7 - 1,
-									value, NEWLINE);
+							isqlGlob.printf("%#.*g%s", DOUBLE_LEN - 7 - 1, value, NEWLINE);
 						}
 					}
 					else {
-						sprintf(p, "% #*.*g ", length,
-								(int) MIN(16, (length - 7)),
-								value);
+						sprintf(p, "% #*.*g ", length, (int) MIN(16, (length - 7)), value);
 						if (List) {
-							isqlGlob.printf("%#.*g%s",
-									DOUBLE_LEN - 7,
-									value, NEWLINE);
+							isqlGlob.printf("%#.*g%s", DOUBLE_LEN - 7, value, NEWLINE);
 						}
 					}
 #else
-					sprintf(p, "% #*.*g ", length,
-							(int) MIN(16, (length - 7)),
-							value);
+					sprintf(p, "% #*.*g ", length, (int) MIN(16, (length - 7)), value);
 					if (List) {
-						isqlGlob.printf("%#.*g%s",
-								DOUBLE_LEN - 7,
-								value, NEWLINE);
+						isqlGlob.printf("%#.*g%s", DOUBLE_LEN - 7, value, NEWLINE);
 					}
 #endif
 				}
@@ -7380,7 +7378,8 @@ static SSHORT print_item(TEXT** s,
 			string = var->sqldata;
 			string[var->sqllen] = '\0';
 			// See if it is character set OCTETS
-			if (var->sqlsubtype == 1) {
+			if (var->sqlsubtype == 1)
+			{
 				const SLONG hex_len = 2 * var->sqllen;
 				TEXT* buff2 = (TEXT*) ISQL_ALLOC(hex_len + 1);
 				// Convert the string to hex digits
@@ -7484,8 +7483,7 @@ static SSHORT print_item(TEXT** s,
 					else
 					{
 						// Truncate if necessary
-						sprintf(p, "%-*.*s ", length,
-							static_cast<int>(MIN(length, hex_len)), buff2);
+						sprintf(p, "%-*.*s ", length, static_cast<int>(MIN(length, hex_len)), buff2);
 					}
 					ISQL_FREE(buff2);
 				}
@@ -7496,8 +7494,7 @@ static SSHORT print_item(TEXT** s,
 					// Truncate if necessary
 					if (length < avary->vary_length)
 						avary->vary_length = length;
-					sprintf(p, "%-*.*s ", length, (int) avary->vary_length,
-							avary->vary_string);
+					sprintf(p, "%-*.*s ", length, (int) avary->vary_length, avary->vary_string);
 				}
 				break;
 			}
@@ -7559,7 +7556,8 @@ processing_state ISQL_print_item_blob(FILE* fp,
 	ISC_BLOB_DESC from_desc;
 
 	const int blob_subtype = var->sqlsubtype;
-	if (blob_subtype == isc_blob_text) {
+	if (blob_subtype == isc_blob_text)
+	{
 		// ASF: Since ODS11.1, BLOBs are automatically transliterated to the client charset.
 		if (isqlGlob.major_ods < ODS_VERSION11 ||
 			(isqlGlob.major_ods == ODS_VERSION11 && isqlGlob.minor_ods == 0))
@@ -7574,8 +7572,7 @@ processing_state ISQL_print_item_blob(FILE* fp,
 			// ASF: But use M__trans if D__trans is not started;
 			if (!var->relname[0] ||
 				isc_blob_lookup_desc(isc_status, &DB, (D__trans ? &D__trans : &M__trans),
-					(const UCHAR*) var->relname, (const UCHAR*) var->sqlname,
-					&from_desc, NULL) == 0)
+					(const UCHAR*) var->relname, (const UCHAR*) var->sqlname, &from_desc, NULL) == 0)
 			{
 				if (!var->relname[0])
 				{
@@ -7585,9 +7582,8 @@ processing_state ISQL_print_item_blob(FILE* fp,
 
 				ISC_BLOB_DESC to_desc;
 				isc_blob_default_desc(&to_desc, (const UCHAR*) var->relname, (const UCHAR*) var->sqlname);
-				if (!isc_blob_gen_bpb
-					(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
-						bpb_buffer, &bpb_length))
+				if (!isc_blob_gen_bpb(isc_status, &to_desc, &from_desc, sizeof(bpb_buffer),
+									  bpb_buffer, &bpb_length))
 				{
 					bpb = bpb_buffer;
 				}
@@ -7699,9 +7695,7 @@ static void print_item_numeric(SINT64 value,
 }
 
 
-static processing_state print_line(XSQLDA* sqlda,
-					  const int pad[],
-					  TEXT line[])
+static processing_state print_line(XSQLDA* sqlda, const int pad[], TEXT line[])
 {
 /**************************************
  *
@@ -7759,9 +7753,11 @@ static processing_state print_line(XSQLDA* sqlda,
 
 	// If there were Blobs to print, print them passing the blobid
 
-	for (int i = 0; i < varnum; i++) {
+	for (int i = 0; i < varnum; i++)
+	{
 		const XSQLVAR* var = varlist[i];
-		if (!(var->sqltype & 1) || *var->sqlind == 0) {
+		if (!(var->sqltype & 1) || *var->sqlind == 0)
+		{
 			// Print blob title
 
 			isqlGlob.printf(
@@ -7828,16 +7824,15 @@ static processing_state print_sqlda_input(const bool can_have_input_parameters)
 		ISQL_warning(isc_status);
 
 	// Reallocate if there's LOTS of input
-	if (input_sqlda->sqld > input_sqlda->sqln) {
+	if (input_sqlda->sqld > input_sqlda->sqln)
+	{
 		USHORT n_columns = input_sqlda->sqld;
 		ISQL_FREE(input_sqlda);
-		input_sqlda =
-			(XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
+		input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
 		memset(input_sqlda, 0, XSQLDA_LENGTH(n_columns));
 		input_sqlda->version = SQLDA_VERSION1;
 		input_sqlda->sqld = input_sqlda->sqln = n_columns;
-		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
-								   input_sqlda))
+		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda))
 		{
 			ISQL_FREE(input_sqlda);
 			ISQL_errmsg(isc_status);
@@ -7858,11 +7853,9 @@ static processing_state print_sqlda_input(const bool can_have_input_parameters)
 				input_sqlda->sqld);
 		int i = 0;
 		const XSQLVAR* var = input_sqlda->sqlvar;
-		for (const XSQLVAR* const end = var + input_sqlda->sqld; var < end;
-			var++, i++)
+		for (const XSQLVAR* const end = var + input_sqlda->sqld; var < end; var++, i++)
 		{
-			isqlGlob.printf(
-					"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
+			isqlGlob.printf("%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
 					i + 1, var->sqltype, sqltype_to_string(var->sqltype),
 					(var->sqltype & 1) ? "Nullable" : "		",
 					var->sqlscale, var->sqlsubtype, var->sqllen);
@@ -7900,8 +7893,7 @@ static void print_sqlda_output(const XSQLDA& sqlda)
 	for (const XSQLVAR* const end = var + sqlda.sqld; var < end;
 		 var++, i++)
 	{
-		isqlGlob.printf(
-				"%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
+		isqlGlob.printf("%02d: sqltype: %d %s %s sqlscale: %d sqlsubtype: %d sqllen: %d\n",
 				i + 1, var->sqltype, sqltype_to_string(var->sqltype),
 				(var->sqltype & 1) ? "Nullable" : "		",
 				var->sqlscale, var->sqlsubtype, var->sqllen);
@@ -7968,8 +7960,7 @@ static void process_plan()
 	}
 	else if (plan_buffer[0] == isc_info_sql_get_plan)
 	{
-		const int l =
-			gds__vax_integer(reinterpret_cast<const UCHAR*>(plan_buffer) + 1, 2);
+		const int l = gds__vax_integer(reinterpret_cast<const UCHAR*>(plan_buffer) + 1, 2);
 		ISQL_printf2(Diag, "%.*s%s", l, plan_buffer + 3, NEWLINE);
 	}
 }
@@ -8002,9 +7993,8 @@ static SLONG process_record_count(const int statement_type)
 	if (count_type) {
 		const SCHAR count_info[] = { isc_info_sql_records };
 		SCHAR count_buffer[33];
-		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(count_info),
-						  count_info, sizeof(count_buffer),
-						  count_buffer))
+		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(count_info), count_info,
+							  sizeof(count_buffer), count_buffer))
 		{
 			ISQL_errmsg(isc_status);
 			return -1;
@@ -8067,7 +8057,8 @@ static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[])
 	SLONG bufsize = 0;
 	SSHORT* nullp = nullind;
 	XSQLVAR* var = sqlda->sqlvar;
-	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++) {
+	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++)
+	{
 		// Allocate enough space for all the sqldata and null pointers
 
 		const SSHORT type = var->sqltype & ~1;
@@ -8139,7 +8130,8 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 
 		const SSHORT type = var->sqltype & ~1;
 
-		switch (type) {
+		switch (type)
+		{
 		case SQL_BLOB:
 		case SQL_ARRAY:
 			// enough room for the blob id to print
@@ -8228,8 +8220,7 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 }
 
 
-static int process_statement(const TEXT* string,
-							 XSQLDA** sqldap)
+static int process_statement(const TEXT* string, XSQLDA** sqldap)
 {
 /**************************************
  *
@@ -8462,7 +8453,8 @@ static int process_statement(const TEXT* string,
 
 	// The query is bigger than the curent sqlda, so make more room
 
-	if (n_cols > sqlda->sqln) {
+	if (n_cols > sqlda->sqln)
+	{
 		ISQL_FREE(sqlda);
 		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
 		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
@@ -8562,7 +8554,8 @@ static int process_statement(const TEXT* string,
 			ISQL_errmsg(isc_status);
 			ret = ps_ERR;
 		}
-		else {
+		else
+		{
 			if (sqlda->sqld) { // do not output unnecessary white text
 				isqlGlob.printf(NEWLINE);
 				if (!List && Heading) {
@@ -8593,7 +8586,8 @@ static int process_statement(const TEXT* string,
 
 		const bool printHead = !List && Heading;
 		unsigned int lines;
-		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines) {
+		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines)
+		{
 
 			// Check if exceeded rowCount value
 			if (rowCount != 0 && lines >= rowCount)
@@ -8602,21 +8596,22 @@ static int process_statement(const TEXT* string,
 			// Fetch the current cursor
 
 #ifdef SCROLLABLE_CURSORS
-			if (Autofetch) {
+			if (Autofetch)
+			{
 #endif
 				if (isc_dsql_fetch(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda) == 100)
 					break;
 #ifdef SCROLLABLE_CURSORS
 			}
-			else {
+			else
+			{
 				TEXT fetch_statement[BUFFER_LENGTH80];
 
 				// if not autofetching, sit and wait for user to input
 				// NEXT, PRIOR, FIRST, LAST, ABSOLUTE <n>, or RELATIVE <n>
 
 				const SSHORT fetch_ret =
-					get_statement(fetch_statement, sizeof(fetch_statement),
-								  fetch_prompt);
+					get_statement(fetch_statement, sizeof(fetch_statement), fetch_prompt);
 				if (fetch_ret == FETCH) {
 					if (isc_dsql_fetch2(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda,
 										fetch_direction, fetch_offset) == 100)
@@ -8651,7 +8646,8 @@ static int process_statement(const TEXT* string,
 								NEWLINE);
 			}
 
-			if (isc_status[1]) {
+			if (isc_status[1])
+			{
 				// CVC: Add a \n so the error message is not at the right of
 				// header but in its own line, if no row was output yet.
 				if (!lines && !printHead)
@@ -8800,8 +8796,7 @@ static bool stdin_redirected()
 // CVC: There's something either wrong or on purpose in this routine:
 // it doesn't unescape the embedded quotes that may exist.
 // But it's useful for paths as it's now.
-static void strip_quotes(const TEXT* in,
-						 TEXT* out)
+static void strip_quotes(const TEXT* in, TEXT* out)
 {
 /**************************************
  *
@@ -8845,7 +8840,8 @@ static const char* sqltype_to_string(USHORT sqltype)
  *	Return a more readable version of SQLDA.sqltype
  *
  **************************************/
-	switch (sqltype & ~1) {
+	switch (sqltype & ~1)
+	{
 	case SQL_TEXT:
 		return "TEXT	 ";
 	case SQL_VARYING:

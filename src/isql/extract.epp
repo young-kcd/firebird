@@ -101,8 +101,7 @@ static TEXT SQL_identifier2[BUFFER_LENGTH128];
 
 
 
-int EXTRACT_ddl(LegacyTables flag,
-				   const SCHAR* tabname)
+int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 {
 /**************************************
  *
@@ -133,29 +132,14 @@ int EXTRACT_ddl(LegacyTables flag,
 	ISQL_get_version(false);
 	if (isqlGlob.SQL_dialect != isqlGlob.db_SQL_dialect)
 	{
-		isqlGlob.printf(
-				"/*=========================================================*/%s",
-				NEWLINE);
-
-		isqlGlob.printf(
-				"/*=                                                      ==*/%s",
-				NEWLINE);
-
-		isqlGlob.printf(
-				"/*=     Command Line -sqldialect %d is overwritten by    ==*/%s",
+		isqlGlob.printf("/*=========================================================*/%s", NEWLINE);
+		isqlGlob.printf("/*=                                                      ==*/%s", NEWLINE);
+		isqlGlob.printf("/*=     Command Line -sqldialect %d is overwritten by    ==*/%s",
 				isqlGlob.SQL_dialect, NEWLINE);
-
-		isqlGlob.printf(
-				"/*=     Database SQL Dialect %d.                          ==*/%s",
+		isqlGlob.printf("/*=     Database SQL Dialect %d.                          ==*/%s",
 				isqlGlob.db_SQL_dialect, NEWLINE);
-
-		isqlGlob.printf(
-				"/*=                                                      ==*/%s",
-				NEWLINE);
-
-		isqlGlob.printf(
-				"/*=========================================================*/%s",
-				NEWLINE);
+		isqlGlob.printf("/*=                                                      ==*/%s", NEWLINE);
+		isqlGlob.printf("/*=========================================================*/%s", NEWLINE);
 	}
 	isqlGlob.printf(NEWLINE);
 
@@ -363,8 +347,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					 REL.RDB$OWNER_NAME,
 					 NEWLINE);
 
-			if (rel_type == rel_global_temp_preserve ||
-				rel_type == rel_global_temp_delete)
+			if (rel_type == rel_global_temp_preserve || rel_type == rel_global_temp_delete)
 			{
 				isqlGlob.printf("CREATE GLOBAL TEMPORARY TABLE ");
 			}
@@ -388,8 +371,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
-				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2,
-								  SINGLE_QUOTE);
+				ISQL_copy_SQL_id (REL.RDB$EXTERNAL_FILE, SQL_identifier2, SINGLE_QUOTE);
 				isqlGlob.printf("EXTERNAL FILE %s ", SQL_identifier2);
 			}
 			isqlGlob.printf("(");
@@ -401,8 +383,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (fb_utils::exact_name(RFR.RDB$FIELD_NAME),
-							  SQL_identifier, DBL_QUOTE);
+			ISQL_copy_SQL_id (fb_utils::exact_name(RFR.RDB$FIELD_NAME), SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("%s ", SQL_identifier);
 		}
 		else
@@ -490,27 +471,20 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					{
 
 						// Take a stab at numerics and decimals
-						if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
-							(FLD.RDB$FIELD_SCALE < 0))
+						if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
 						{
-							sprintf (Print_buffer, "NUMERIC(4, %d)",
-									 -FLD.RDB$FIELD_SCALE);
+							sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
 						}
-						else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
-								 (FLD.RDB$FIELD_SCALE < 0))
+						else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0))
 						{
-							sprintf (Print_buffer, "NUMERIC(9, %d)",
-									 -FLD.RDB$FIELD_SCALE);
+							sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
 						}
-						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-								 (FLD.RDB$FIELD_SCALE < 0))
+						else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
 						{
-							sprintf (Print_buffer, "NUMERIC(15, %d)",
-									 -FLD.RDB$FIELD_SCALE);
+							sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
 						}
 						else
-							sprintf (Print_buffer, "%s",
-									 Column_types[i].type_name);
+							sprintf (Print_buffer, "%s", Column_types[i].type_name);
 					}
 					isqlGlob.prints(Print_buffer);
 					break;
@@ -545,8 +519,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				{
 					isqlGlob.printf("%d", subtype);
 				}
-				isqlGlob.printf(" SEGMENT SIZE %u",
-						 (USHORT) FLD.RDB$SEGMENT_LENGTH);
+				isqlGlob.printf(" SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
 			}
 
 			// International character sets
@@ -605,14 +578,11 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					fb_utils::exact_name(CON.RDB$CONSTRAINT_NAME);
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
-
-						ISQL_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier,
-										  DBL_QUOTE);
+						ISQL_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 						sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
 					}
 					else
-						isqlGlob.printf(" CONSTRAINT %s",
-							 CON.RDB$CONSTRAINT_NAME);
+						isqlGlob.printf(" CONSTRAINT %s", CON.RDB$CONSTRAINT_NAME);
 				}
 			END_FOR
 			ON_ERROR
@@ -950,28 +920,21 @@ static void get_procedure_args(const char* proc_name)
 						if (!precision_known)
 						{
 							// Take a stab at numerics and decimals
-							if ((FLD.RDB$FIELD_TYPE == SMALLINT) &&
-								(FLD.RDB$FIELD_SCALE < 0))
+							if ((FLD.RDB$FIELD_TYPE == SMALLINT) && (FLD.RDB$FIELD_SCALE < 0))
 							{
-								sprintf (Print_buffer, "NUMERIC(4, %d)",
-										-FLD.RDB$FIELD_SCALE);
+								sprintf (Print_buffer, "NUMERIC(4, %d)", -FLD.RDB$FIELD_SCALE);
 							}
-							else if ((FLD.RDB$FIELD_TYPE == INTEGER) &&
-									 (FLD.RDB$FIELD_SCALE < 0))
+							else if ((FLD.RDB$FIELD_TYPE == INTEGER) && (FLD.RDB$FIELD_SCALE < 0))
 							{
-								sprintf (Print_buffer, "NUMERIC(9, %d)",
-										-FLD.RDB$FIELD_SCALE);
+								sprintf (Print_buffer, "NUMERIC(9, %d)", -FLD.RDB$FIELD_SCALE);
 							}
-							else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-									 (FLD.RDB$FIELD_SCALE < 0))
+							else if ((FLD.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FLD.RDB$FIELD_SCALE < 0))
 							{
-								sprintf (Print_buffer, "NUMERIC(15, %d)",
-										-FLD.RDB$FIELD_SCALE);
+								sprintf (Print_buffer, "NUMERIC(15, %d)", -FLD.RDB$FIELD_SCALE);
 							}
 							else
 							{
-								sprintf (Print_buffer, "%s",
-										 Column_types[i].type_name);
+								sprintf (Print_buffer, "%s", Column_types[i].type_name);
 							}
 						}
 						isqlGlob.prints(Print_buffer);
@@ -987,7 +950,6 @@ static void get_procedure_args(const char* proc_name)
 				{
 					if (FLD.RDB$CHARACTER_LENGTH.NULL)
 					{
-
 						isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
 					}
 					else
@@ -1011,8 +973,7 @@ static void get_procedure_args(const char* proc_name)
 					if (FLD.RDB$CHARACTER_SET_ID.NULL)
 						FLD.RDB$CHARACTER_SET_ID = 0;
 
-					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID,
-											 collation, false, char_sets);
+					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, false, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
@@ -1070,8 +1031,7 @@ static void list_all_grants()
 }
 
 
-static processing_state list_all_grants2(bool show_role_list,
-							const SCHAR* terminator)
+static processing_state list_all_grants2(bool show_role_list, const SCHAR* terminator)
 {
 /**************************************
  *
@@ -1115,9 +1075,7 @@ static processing_state list_all_grants2(bool show_role_list,
 			{
 				if (first_role)
 				{
-					isqlGlob.printf("%s/* Grant roles for this database */%s",
-							 NEWLINE,
-							 NEWLINE);
+					isqlGlob.printf("%s/* Grant roles for this database */%s", NEWLINE, NEWLINE);
 					first_role = false;
 				}
 
@@ -1137,14 +1095,11 @@ static processing_state list_all_grants2(bool show_role_list,
 
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				{
-
 					ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.printf("CREATE ROLE %s;%s",
-							 SQL_identifier, NEWLINE);
+					isqlGlob.printf("CREATE ROLE %s;%s", SQL_identifier, NEWLINE);
 				}
 				else
-					isqlGlob.printf("CREATE ROLE %s;%s",
-							 XX.RDB$ROLE_NAME, NEWLINE);
+					isqlGlob.printf("CREATE ROLE %s;%s", XX.RDB$ROLE_NAME, NEWLINE);
 			}
 
 		END_FOR
@@ -1158,9 +1113,7 @@ static processing_state list_all_grants2(bool show_role_list,
 	// and misses views, getting only null view_source
 
 	char banner[100];
-	sprintf(banner, "%s/* Grant permissions for this database */%s",
-					 NEWLINE,
-					 NEWLINE);
+	sprintf(banner, "%s/* Grant permissions for this database */%s", NEWLINE, NEWLINE);
 
 	bool first = true;
 
@@ -1258,8 +1211,7 @@ static void list_all_procs()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
-			isqlGlob.printf(create_procedure_str1,
-					 SQL_identifier);
+			isqlGlob.printf(create_procedure_str1, SQL_identifier);
 		}
 		else
 		{
@@ -1309,12 +1261,10 @@ static void list_all_procs()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRC.RDB$PROCEDURE_NAME, SQL_identifier, DBL_QUOTE);
-			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE,
-					 SQL_identifier);
+			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, SQL_identifier);
 		}
 		else
-			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE,
-					 PRC.RDB$PROCEDURE_NAME);
+			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, PRC.RDB$PROCEDURE_NAME);
 		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
 
 		// Print the procedure body
@@ -1342,8 +1292,7 @@ static void list_all_procs()
 }
 
 
-static void list_all_tables(LegacyTables flag,
-							SSHORT default_char_set_id)
+static void list_all_tables(LegacyTables flag, SSHORT default_char_set_id)
 {
 /**************************************
  *
@@ -1412,8 +1361,7 @@ static void list_all_triggers()
 		if (header)
 		{
 			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			isqlGlob.printf(
-					 "%s/* Triggers only will work for SQL triggers */%s",
+			isqlGlob.printf("%s/* Triggers only will work for SQL triggers */%s",
 					 NEWLINE,
 					 NEWLINE);
 			header = false;
@@ -1466,8 +1414,7 @@ static void list_all_triggers()
 		if (header)
 		{
 			isqlGlob.printf("SET TERM %s %s%s", Procterm, isqlGlob.global_Term, NEWLINE);
-			isqlGlob.printf(
-					 "%s/* Triggers only will work for SQL triggers */%s",
+			isqlGlob.printf("%s/* Triggers only will work for SQL triggers */%s",
 					 NEWLINE,
 					 NEWLINE);
 			header = false;
@@ -1557,12 +1504,10 @@ static void list_check()
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (TRG.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
-			isqlGlob.printf("ALTER TABLE %s ADD %s%s",
-					 SQL_identifier, NEWLINE, TAB_AS_SPACES);
+			isqlGlob.printf("ALTER TABLE %s ADD %s%s", SQL_identifier, NEWLINE, TAB_AS_SPACES);
 		}
 		else
-			isqlGlob.printf("ALTER TABLE %s ADD %s%s",
-					 TRG.RDB$RELATION_NAME, NEWLINE, TAB_AS_SPACES);
+			isqlGlob.printf("ALTER TABLE %s ADD %s%s", TRG.RDB$RELATION_NAME, NEWLINE, TAB_AS_SPACES);
 
 		// If the name of the constraint is not INTEG_..., print it
 		if (!fb_utils::implicit_integrity(CHK.RDB$CONSTRAINT_NAME))
@@ -1570,8 +1515,7 @@ static void list_check()
 			fb_utils::exact_name(CHK.RDB$CONSTRAINT_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier,
-								  DBL_QUOTE);
+				ISQL_copy_SQL_id (CHK.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
@@ -1612,10 +1556,7 @@ static void list_charsets()
 
 		if (first)
 		{
-			isqlGlob.printf(
-					 "%s/*  Character sets */%s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/*  Character sets */%s", NEWLINE, NEWLINE);
 			first = false;
 		}
 
@@ -1673,10 +1614,7 @@ static void list_collations()
 
 		if (first)
 		{
-			isqlGlob.printf(
-					 "%s/*  Collations */%s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/*  Collations */%s", NEWLINE, NEWLINE);
 			first = false;
 		}
 
@@ -1777,7 +1715,8 @@ static void list_create_db()
  *	the page size in a comment with the extracted db name
  *
  **************************************/
-	static const SCHAR page_items[] = {
+	static const SCHAR page_items[] =
+	{
 		isc_info_page_size,
 		isc_info_end
 	};
@@ -1798,8 +1737,7 @@ static void list_create_db()
 	// no longer exists. Localizing the messages means also not printing
 	// any CRLF and therefore the output looks ugly.
 	const bool translate = true;
-	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items),
-						translate))
+	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items), translate))
 	{
 		isqlGlob.printf(" %s", info_buf);
 	}
@@ -1833,9 +1771,7 @@ static void list_create_db()
 
 		if (first)
 		{
-			isqlGlob.printf("%s/* Add secondary files in comments %s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/* Add secondary files in comments %s", NEWLINE, NEWLINE);
 		}
 
 		first = false;
@@ -1854,9 +1790,7 @@ static void list_create_db()
 		// Pure secondary files
 		if (FIL.RDB$FILE_FLAGS == 0)
 		{
-			isqlGlob.printf("%sALTER DATABASE ADD FILE '%s'",
-					 NEWLINE,
-					 FIL.RDB$FILE_NAME);
+			isqlGlob.printf("%sALTER DATABASE ADD FILE '%s'", NEWLINE, FIL.RDB$FILE_NAME);
 			if (FIL.RDB$FILE_START)
 			{
 				isqlGlob.printf(" STARTING %ld", FIL.RDB$FILE_START);
@@ -1920,8 +1854,7 @@ static void list_create_db()
 }
 
 
-static void list_domain_table(const SCHAR* table_name,
-							  SSHORT default_char_set_id)
+static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_id)
 {
 /**************************************
  *
@@ -2091,8 +2024,7 @@ static void list_domain_table(const SCHAR* table_name,
 		if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
 			char_sets[0] = 0;
-			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID,
-									 true, char_sets);
+			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, char_sets);
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -2273,8 +2205,7 @@ static void list_domains(SSHORT default_char_set_id)
 		if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
 			char_sets[0] = 0;
-			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID,
-									 true, char_sets);
+			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, char_sets);
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -2360,9 +2291,7 @@ static void list_filters()
 
 		if (first)
 		{
-			isqlGlob.printf("%s/*  BLOB Filter declarations */%s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/*  BLOB Filter declarations */%s", NEWLINE, NEWLINE);
 			first = false;
 		}
 
@@ -2427,43 +2356,34 @@ static void list_foreign()
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (RELC1.RDB$RELATION_NAME, SQL_identifier,
-							  DBL_QUOTE);
+			ISQL_copy_SQL_id (RELC1.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
 			isqlGlob.printf("ALTER TABLE %s ADD ", SQL_identifier);
 		}
 		else
-			isqlGlob.printf("ALTER TABLE %s ADD ",
-					 RELC1.RDB$RELATION_NAME);
+			isqlGlob.printf("ALTER TABLE %s ADD ", RELC1.RDB$RELATION_NAME);
 
 		/* If the name of the constraint is not INTEG..., print it.
 	      INTEG_... are internally generated names. */
 		if (!RELC1.RDB$CONSTRAINT_NAME.NULL &&
 			!fb_utils::implicit_integrity(RELC1.RDB$CONSTRAINT_NAME))
 		{
-			ISQL_truncate_term (RELC1.RDB$CONSTRAINT_NAME,
-								strlen(RELC1.RDB$CONSTRAINT_NAME));
+			ISQL_truncate_term (RELC1.RDB$CONSTRAINT_NAME, strlen(RELC1.RDB$CONSTRAINT_NAME));
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
-				ISQL_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier,
-								  DBL_QUOTE);
+				ISQL_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
 				isqlGlob.printf("CONSTRAINT %s ", SQL_identifier);
 			}
 			else
-				isqlGlob.printf("CONSTRAINT %s ",
-						 RELC1.RDB$CONSTRAINT_NAME);
+				isqlGlob.printf("CONSTRAINT %s ", RELC1.RDB$CONSTRAINT_NAME);
 		}
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
-			ISQL_copy_SQL_id (RELC2.RDB$RELATION_NAME, SQL_identifier,
-							  DBL_QUOTE);
-			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ",
-					 collist, SQL_identifier);
+			ISQL_copy_SQL_id (RELC2.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ", collist, SQL_identifier);
 		}
 		else
-			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ",
-					 collist,
-					 RELC2.RDB$RELATION_NAME);
+			isqlGlob.printf("FOREIGN KEY (%s) REFERENCES %s ", collist, RELC2.RDB$RELATION_NAME);
 
 		// Get the column list for the primary key
 
@@ -2474,15 +2394,13 @@ static void list_foreign()
 		// Add the referential actions, if any
 		if (!REFC.RDB$UPDATE_RULE.NULL)
 		{
-			ISQL_truncate_term (REFC.RDB$UPDATE_RULE,
-								strlen(REFC.RDB$UPDATE_RULE));
+			ISQL_truncate_term (REFC.RDB$UPDATE_RULE, strlen(REFC.RDB$UPDATE_RULE));
 			ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " ON UPDATE", true);
 		}
 
 		if (!REFC.RDB$DELETE_RULE.NULL)
 		{
-			ISQL_truncate_term (REFC.RDB$DELETE_RULE,
-								strlen(REFC.RDB$DELETE_RULE));
+			ISQL_truncate_term (REFC.RDB$DELETE_RULE, strlen(REFC.RDB$DELETE_RULE));
 			ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", true);
 		}
 
@@ -2528,9 +2446,7 @@ static void list_functions()
 		fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
 		if (first)
 		{
-			isqlGlob.printf("%s/*  External Function declarations */%s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/*  External Function declarations */%s", NEWLINE, NEWLINE);
 			first = false;
 		}
 
@@ -2554,7 +2470,7 @@ static void list_functions()
 				i++;
 
 			// Print length where appropriate
-			if ((FNA.RDB$FIELD_TYPE == T_CHAR)   ||
+			if ((FNA.RDB$FIELD_TYPE == T_CHAR) ||
 				(FNA.RDB$FIELD_TYPE == VARCHAR) ||
 				(FNA.RDB$FIELD_TYPE == CSTRING))
 			{
@@ -2576,8 +2492,7 @@ static void list_functions()
 				END_ERROR;
 
 				if (!did_charset)
-					sprintf (type_buffer, "%s(%d)",  Column_types[i].type_name,
-							 FNA.RDB$FIELD_LENGTH);
+					sprintf (type_buffer, "%s(%d)",  Column_types[i].type_name, FNA.RDB$FIELD_LENGTH);
 			}
 			else
 			{
@@ -2616,27 +2531,20 @@ static void list_functions()
 				if (!precision_known)
 				{
 					// Take a stab at numerics and decimals
-					if ((FNA.RDB$FIELD_TYPE == SMALLINT) &&
-						(FNA.RDB$FIELD_SCALE < 0))
+					if ((FNA.RDB$FIELD_TYPE == SMALLINT) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-						sprintf (type_buffer, "NUMERIC(4, %d)",
-								 -FNA.RDB$FIELD_SCALE);
+						sprintf (type_buffer, "NUMERIC(4, %d)", -FNA.RDB$FIELD_SCALE);
 					}
-					else if ((FNA.RDB$FIELD_TYPE == INTEGER) &&
-							 (FNA.RDB$FIELD_SCALE < 0))
+					else if ((FNA.RDB$FIELD_TYPE == INTEGER) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-						sprintf (type_buffer, "NUMERIC(9, %d)",
-								 -FNA.RDB$FIELD_SCALE);
+						sprintf (type_buffer, "NUMERIC(9, %d)", -FNA.RDB$FIELD_SCALE);
 					}
-					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) &&
-							 (FNA.RDB$FIELD_SCALE < 0))
+					else if ((FNA.RDB$FIELD_TYPE == DOUBLE_PRECISION) && (FNA.RDB$FIELD_SCALE < 0))
 					{
-						sprintf (type_buffer, "NUMERIC(15, %d)",
-								 -FNA.RDB$FIELD_SCALE);
+						sprintf (type_buffer, "NUMERIC(15, %d)", -FNA.RDB$FIELD_SCALE);
 					}
 					else
-						sprintf (type_buffer, "%s",
-								 Column_types[i].type_name);
+						sprintf (type_buffer, "%s", Column_types[i].type_name);
 				} // if !precision_known
 			} // if T_CHAR or VARCHAR or CSTRING ... else
 
@@ -2661,8 +2569,7 @@ static void list_functions()
 
 			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
 				if (FUN.RDB$RETURN_ARGUMENT) {
-					sprintf (return_buffer, "RETURNS PARAMETER %d",
-							 FUN.RDB$RETURN_ARGUMENT);
+					sprintf (return_buffer, "RETURNS PARAMETER %d", FUN.RDB$RETURN_ARGUMENT);
 				}
 				else {
 					sprintf (return_buffer, "RETURNS %s%s %s", type_buffer,
@@ -2675,8 +2582,7 @@ static void list_functions()
 
 			if (printarg) {
 				// First arg needs no comma
-				isqlGlob.printf("%s%s%s", (firstarg ? "" : ", "), type_buffer,
-						 UDF_param_types[ptype]);
+				isqlGlob.printf("%s%s%s", (firstarg ? "" : ", "), type_buffer, UDF_param_types[ptype]);
 				firstarg = false;
 			}
 
@@ -2687,10 +2593,7 @@ static void list_functions()
 		END_ERROR;
 
 		// Print the return type -- All functions return a type
-		isqlGlob.printf("%s%s%s",
-				 NEWLINE,
-				 return_buffer,
-				 NEWLINE);
+		isqlGlob.printf("%s%s%s", NEWLINE, return_buffer, NEWLINE);
 
 		// Print out entrypoint information
 		ISQL_copy_SQL_id(FUN.RDB$ENTRYPOINT, SQL_identifier, SINGLE_QUOTE);
@@ -2736,10 +2639,7 @@ static void list_generators()
 
 		if (first)
 		{
-			isqlGlob.printf(
-					 "%s/*  Generators or sequences */%s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/*  Generators or sequences */%s", NEWLINE, NEWLINE);
 			first = false;
 		}
 
@@ -2750,10 +2650,7 @@ static void list_generators()
 		else
 			strcpy (SQL_identifier, GEN.RDB$GENERATOR_NAME);
 
-		isqlGlob.printf("CREATE GENERATOR %s%s%s",
-				 SQL_identifier,
-				 isqlGlob.global_Term,
-				 NEWLINE);
+		isqlGlob.printf("CREATE GENERATOR %s%s%s", SQL_identifier, isqlGlob.global_Term, NEWLINE);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(gds_status);
@@ -2792,10 +2689,7 @@ static void list_index()
 
 		if (first)
 		{
-			isqlGlob.printf(
-					 "%s/*  Index definitions for all user tables */%s",
-					 NEWLINE,
-					 NEWLINE);
+			isqlGlob.printf("%s/*  Index definitions for all user tables */%s", NEWLINE, NEWLINE);
 			first = false;
 		}
 
