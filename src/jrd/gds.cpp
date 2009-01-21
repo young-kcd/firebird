@@ -229,7 +229,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> global_msg_mutex;
 static gds_msg* global_default_msg = NULL;
 static bool volatile initialized = false;
 
-void* API_ROUTINE gds__alloc_debug(SLONG size_request, const TEXT* filename, ULONG lineno)
+VoidPtr API_ROUTINE gds__alloc_debug(SLONG size_request, const TEXT* filename, ULONG lineno)
 {
 	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
@@ -2323,7 +2323,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 }
 
 
-void* API_ROUTINE gds__temp_file(BOOLEAN stdio_flag, const TEXT* string, TEXT* expanded_string,
+VoidPtr API_ROUTINE gds__temp_file(BOOLEAN stdio_flag, const TEXT* string, TEXT* expanded_string,
 								 TEXT* dir, BOOLEAN unlink_flag)
 {
 /**************************************
@@ -3563,7 +3563,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 }
 
 
-void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
+void FB_EXPORTED gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
 {
 	printf("%4d %s\n", offset, line);
 }
@@ -3586,7 +3586,7 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 
 #undef gds__alloc
 
-void* API_ROUTINE gds__alloc(SLONG size_request)
+VoidPtr API_ROUTINE gds__alloc(SLONG size_request)
 {
 	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
