@@ -12,7 +12,7 @@
  *     language governing rights and limitations under the License.
  *
  *
- *  The Original Code was created by Claudio Valderama C. for IBPhoenix.
+ *  The Original Code was created by Claudio Valderrama C. for IBPhoenix.
  *  The development of the Original Code was sponsored by Craig Leonardi.
  *
  *  Copyright (c) 2001 IBPhoenix
@@ -470,9 +470,9 @@ FBUDF_API ISC_TIMESTAMP* addYear(ISC_TIMESTAMP* v, int& nyears)
 
 namespace internal
 {
-	ISC_TIMESTAMP* addTenthMSec(ISC_TIMESTAMP* v, int tenthmilliseconds, int multiplier)
+	ISC_TIMESTAMP* addTenthMSec(ISC_TIMESTAMP* v, SINT64 tenthmilliseconds, int multiplier)
 	{
-		long full = tenthmilliseconds * multiplier;
+		const SINT64 full = tenthmilliseconds * multiplier;
 		long days = full / tenthmsec_in_day, secs = full % tenthmsec_in_day;
 		v->timestamp_date += days;
 		 // Time portion is unsigned, so we avoid unsigned rolling over negative values
@@ -567,11 +567,12 @@ FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 	// truncate(0.9)  =>  0
 	// truncate(-0.9) => -1
 	// truncate(-0.9) =>  0 ### SYMMETRIC_MATH defined.
-	signed char scale = v->dsc_scale;
+	int scale = v->dsc_scale;
 #if defined(SYMMETRIC_MATH)
 	while (scale++ < 0)
 		iv /= 10;
 #else
+	const bool isNeg = iv < 0;
 	bool gt = false;
 	while (scale++ < 0)
 	{
@@ -581,7 +582,7 @@ FBUDF_API paramdsc* fbtruncate(paramdsc* v, paramdsc* rc)
 	}
 	if (gt)
 	{
-		if (iv < 0)
+		if (isNeg)
 			--iv;
 	}
 #endif
@@ -604,32 +605,52 @@ FBUDF_API paramdsc* fbround(paramdsc* v, paramdsc* rc)
 		rc->dsc_scale = 0;
 		return rc;
 	}
-	
+
 	// round(0.3)  => 0 ### round(0.5)  =>  1
 	// round(-0.3) => 0 ### round(-0.5) =>  0
 	// round(-0.3) => 0 ### round(-0.5) => -1 ### SYMMETRIC_MATH defined.
-	bool gt = false;
-	signed char scale = v->dsc_scale;
-	while(scale++ < 0)
+	const bool isNeg = iv < 0;
+	int scale = v->dsc_scale;
+	bool gt = false, check_more = false;
+	while (scale++ < 0)
 	{
 		if (!scale)
 		{
-			short dig = static_cast<short>(iv % 10);
+			int dig;
+			if (iv == MIN_SINT64)
+				dig = -(iv + 10) % 10;
+			else
+				dig = static_cast<int>(iv >= 0 ? iv % 10 : -iv % 10);
+
 #if defined(SYMMETRIC_MATH)
-			if (dig >= 5 || dig <= -5)
+			if (dig >= 5)
 				gt = true;
 #else
-			if (dig >= 5 || dig < -5)
-				gt = true;
+			if (!isNeg)
+			{
+				if (dig >= 5)
+					gt = true;
+			}
+ 			else
+ 			{
+ 				if (dig > 5 || dig == 5 && check_more)
+	 				gt = true;
+ 			}
 #endif
+		}
+		else if (isNeg && !check_more)
+		{
+			if (iv % 10 != 0)
+				check_more = true;
 		}
 		iv /= 10;
 	}
 	if (gt)
 	{
-		if (iv < 0)
+		if (isNeg)
 			--iv;
-		else ++iv;
+		else
+			++iv;
 	}
 	internal::set_int_type(rc, iv);
 	rc->dsc_scale = 0;
