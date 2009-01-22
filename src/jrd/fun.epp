@@ -87,6 +87,7 @@ namespace
 #ifdef WIN_NT
 			libUtilPath->assign("ib_util");
 #else
+#ifdef HAVE_DLADDR
 			Dl_info info;
 			if (dladdr((void*) IbUtil::initialize, &info) != 0)
 			{
@@ -104,8 +105,9 @@ namespace
 				PathUtils::concatPath(libUtilPath, temp3, "../lib/libib_util");
 			}
 			else
+#endif // HAVE_DLADDR
 				libUtilPath->assign("libib_util");
-#endif
+#endif // WIN_NT
 
 			ModuleLoader::doctorModuleExtention(libUtilPath);
 		}
