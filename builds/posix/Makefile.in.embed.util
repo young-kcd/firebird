@@ -144,8 +144,8 @@ all: $(EMBED_UTIL_TARGETS)
 
 create_db: $(CREATE_DB)
 
-$(CREATE_DB):	$(CREATEDB_Objects) $(LIBFBSTATIC_A) $(COMMON_Objects)
-	$(STATICEXE_LINK) $(LINK_OPTS) $(CREATEDB_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+$(CREATE_DB):	$(CREATEDB_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
 
 
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)
