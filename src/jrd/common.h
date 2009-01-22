@@ -531,6 +531,9 @@ typedef unsigned __int64 FB_UINT64;
 #define CLIB_ROUTINE
 #endif
 
+#ifndef FB_EXPORTED
+#define FB_EXPORTED
+#endif
 
 
 /* alignment macros */
