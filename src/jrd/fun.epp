@@ -78,14 +78,12 @@ using namespace Firebird;
 // them.
 namespace
 {
-	GlobalPtr<PathName> libUtilPath;
-
 	struct IbUtilStartup
 	{
-		IbUtilStartup()
+		IbUtilStartup(MemoryPool& p) : libUtilPath(p)
 		{
 #ifdef WIN_NT
-			libUtilPath->assign("ib_util");
+			libUtilPath.assign("ib_util");
 #else
 #ifdef HAVE_DLADDR
 			Dl_info info;
@@ -106,12 +104,16 @@ namespace
 			}
 			else
 #endif // HAVE_DLADDR
-				libUtilPath->assign("libib_util");
+				libUtilPath.assign("libib_util");
 #endif // WIN_NT
 
 			ModuleLoader::doctorModuleExtention(libUtilPath);
 		}
-	} ibUtilStartup;
+
+		PathName libUtilPath;
+	};
+
+	GlobalPtr<IbUtilStartup> ibUtilStartup;
 }
 #endif
 
@@ -125,7 +127,7 @@ void IbUtil::initialize()
 	PathName path = "libib_util";
 #endif
 
-	ModuleLoader::Module* module = ModuleLoader::loadModule(libUtilPath);
+	ModuleLoader::Module* module = ModuleLoader::loadModule(ibUtilStartup->libUtilPath);
 
 	if (module)
 	{
@@ -134,10 +136,10 @@ void IbUtil::initialize()
 		if (module->findSymbol("ib_util_init", ibUtilUnit))
 			ibUtilUnit(alloc);
 		else
-			gds__log("ib_util_init not found in %s", libUtilPath->c_str());
+			gds__log("ib_util_init not found in %s", ibUtilStartup->libUtilPath.c_str());
 	}
 	else
-		gds__log("%s library has not been found", libUtilPath->c_str());
+		gds__log("%s library has not been found", ibUtilStartup->libUtilPath.c_str());
 #endif	// !BOOT_BUILD
 }
 
