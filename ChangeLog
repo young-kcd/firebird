@@ -1,3 +1,41 @@
+2009-01-22 17:53  asfernandes
+
+	* firebird2/src/jrd/: DatabaseSnapshot.h (1.27), RandomGenerator.h
+	(1.4), extds/ExtDS.cpp (1.27):
+
+	Fixed a few signed vs unsigned warnings
+
+2009-01-22 17:49  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.112):
+
+	Fixed use of GlobalPtr
+
+2009-01-22 14:51  alexpeshkoff
+
+	* firebird2/: configure.in (1.305), src/jrd/fun.epp (1.111):
+
+	AIX port - avoid using non-standard function dladdr()
+	unconditionally
+
+2009-01-22 10:17  alexpeshkoff
+
+	* firebird2/src/: include/firebird.h (1.49), intl/ld.h (1.28):
+
+	frontported minor visibility issue on darwin
+
+2009-01-22 10:16  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.embed.util (1.43):
+
+	misc
+
+2009-01-22 08:35  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.192):
+
+	fixed non-Mac build
+
 2009-01-21 19:06  dimitr
 
 	* firebird2/src/dsql/pass1.cpp (1.434):
