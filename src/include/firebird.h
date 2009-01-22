@@ -53,7 +53,9 @@ using namespace NAMESPACE;
 #endif
 
 #if defined(WIN_NT)
-#define FB_DLL_EXPORT __declspec(dllexport)
+#define FB_DLL_EXPORT	__declspec(dllexport)
+#elif defined(DARWIN)
+#define FB_DLL_EXPORT API_ROUTINE
 #else
 #define FB_DLL_EXPORT
 #endif
