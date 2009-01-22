@@ -1160,7 +1160,7 @@ void Statement::preprocess(const string& sql, string& ret)
 
 void Statement::setInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
-	m_error = (names && (m_sqlParamNames.getCount() != count || !count)) ||
+	m_error = (names && ((int) m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
 
 	if (m_error) {
