@@ -56,7 +56,7 @@
 #define UINT16	USHORT
 
 #if defined(WIN_NT)
-#define FB_DLL_EXPORT	__declspec(dllexport)
+#define FB_DLL_EXPORT __declspec(dllexport)
 #elif defined(DARWIN)
 #define FB_DLL_EXPORT API_ROUTINE
 #else
