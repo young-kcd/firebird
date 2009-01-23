@@ -5309,6 +5309,7 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
 		{
+			fb_utils::init_status(status);
 			release_bdb(tdbb, bdb, false, false, false);
 			return -1;
 		}
@@ -5356,6 +5357,7 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 
 	if ((wait < 0) && (status[1] == isc_lock_timeout))
 	{
+		fb_utils::init_status(status);
 		release_bdb(tdbb, bdb, false, false, false);
 		return -1;
 	}
