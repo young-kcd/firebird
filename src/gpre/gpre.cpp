@@ -115,12 +115,12 @@ static act* global_last_action;
 static act* global_first_action;
 static UCHAR classes_array[256];
 
-inline UCHAR classes(int idx)
+inline UCHAR get_classes(int idx)
 {
 	return classes_array[(UCHAR) idx];
 }
 
-inline UCHAR classes(UCHAR idx)
+inline UCHAR get_classes(UCHAR idx)
 {
 	return classes_array[idx];
 }
@@ -1159,7 +1159,7 @@ void CPR_raw_read()
 	while (c = get_char(input_file))
 	{
 		position++;
-		if ((classes(c) == CHR_WHITE) && sw_trace && token_string) {
+		if ((get_classes(c) == CHR_WHITE) && sw_trace && token_string) {
 			*p = 0;
 			puts(token_string);
 			token_string[0] = 0;
@@ -1177,7 +1177,7 @@ void CPR_raw_read()
 		}
 		else {
 			line_position++;
-			if (classes(c) != CHR_WHITE)
+			if (get_classes(c) != CHR_WHITE)
 				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
 		}
 	}
@@ -1291,7 +1291,7 @@ static bool all_digits(const char* str1)
 {
 	for (; *str1; str1++)
 	{
-		if (!(classes(*str1) & CHR_DIGIT))
+		if (!(get_classes(*str1) & CHR_DIGIT))
 			return false;
 	}
 
@@ -2017,7 +2017,7 @@ static tok* get_token()
 
 	gpreGlob.token_global.tok_position = position;
 	gpreGlob.token_global.tok_white_space = 0;
-	UCHAR char_class = classes(c);
+	UCHAR char_class = get_classes(c);
 
 #ifdef GPRE_ADA
 	if ((gpreGlob.sw_language == lang_ada) && (c == '\''))
@@ -2040,7 +2040,7 @@ static tok* get_token()
 
 	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER))
 	{
-		while (classes(c = nextchar()) & CHR_IDENT) {
+		while (get_classes(c = nextchar()) & CHR_IDENT) {
 			if (p < end) {
 				*p++ = (TEXT) c;
 			}
@@ -2051,7 +2051,7 @@ static tok* get_token()
 	else if (char_class & CHR_LETTER)
 	{
 		while (true) {
-			while (classes(c = nextchar()) & CHR_IDENT)
+			while (get_classes(c = nextchar()) & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || gpreGlob.sw_language != lang_cobol)
 				break;
@@ -2071,7 +2071,7 @@ static tok* get_token()
 		if (gpreGlob.sw_language == lang_fortran && line_position < 7)
 			label = true;
 #endif
-		while (classes(c = nextchar()) & CHR_DIGIT)
+		while (get_classes(c = nextchar()) & CHR_DIGIT)
 			*p++ = (TEXT) c;
 #ifdef GPRE_FORTRAN
 		if (label) {
@@ -2081,7 +2081,7 @@ static tok* get_token()
 #endif
 		if (c == '.') {
 			*p++ = (TEXT) c;
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (get_classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		if (!label && (c == 'E' || c == 'e')) {
@@ -2091,7 +2091,7 @@ static tok* get_token()
 				*p++ = (TEXT) c;
 			else
 				return_char(c);
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (get_classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
 		return_char(c);
@@ -2177,10 +2177,10 @@ static tok* get_token()
 	}
 	else if (c == '.')
 	{
-		if (classes(c = nextchar()) & CHR_DIGIT)
+		if (get_classes(c = nextchar()) & CHR_DIGIT)
 		{
 			*p++ = (TEXT) c;
-			while (classes(c = nextchar()) & CHR_DIGIT)
+			while (get_classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 			if ((c == 'E' || c == 'e')) {
 				*p++ = (TEXT) c;
@@ -2189,7 +2189,7 @@ static tok* get_token()
 					*p++ = (TEXT) c;
 				else
 					return_char(c);
-				while (classes(c = nextchar()) & CHR_DIGIT)
+				while (get_classes(c = nextchar()) & CHR_DIGIT)
 					*p++ = (TEXT) c;
 			}
 			return_char(c);
@@ -2806,7 +2806,7 @@ static SSHORT skip_white()
 		}
 #endif
 
-		const UCHAR char_class = classes(c);
+		const UCHAR char_class = get_classes(c);
 
 		if (char_class & CHR_WHITE) {
 			continue;
