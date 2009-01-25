@@ -119,7 +119,7 @@ void ERR_corrupt(int number)
 }
 
 
-void ERR_duplicate_error(IDX_E code, const jrd_rel* relation, USHORT index_number)
+void ERR_duplicate_error(IDX_E code, const jrd_rel* relation, USHORT index_number, const TEXT* idx_name)
 {
 /**************************************
  *
@@ -134,7 +134,10 @@ void ERR_duplicate_error(IDX_E code, const jrd_rel* relation, USHORT index_numbe
 	thread_db* tdbb = JRD_get_thread_data();
 
 	MetaName index, constraint;
-	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
+	if (!idx_name)
+		MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
+	else
+		index = idx_name;
 
 	bool haveConstraint = true;
 	if (index.hasData()) {

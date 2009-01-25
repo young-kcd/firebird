@@ -420,7 +420,8 @@ void IDX_create_index(thread_db* tdbb,
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_duplicate_error(result, partner_relation, partner_index_id);
+
+				ERR_duplicate_error(result, relation, idx->idx_id, index_name);
 			}
 
 			if (key.key_length > key_length) {
