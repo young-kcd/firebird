@@ -26,11 +26,11 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 
-typedef Firebird::PathName string;
+using namespace Firebird;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-static void replace_dir_sep(string& s)
+static void replace_dir_sep(PathName& s)
 {
 	const char correct_dir_sep = PathUtils::dir_sep;
 	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
@@ -43,14 +43,14 @@ static void replace_dir_sep(string& s)
 	}
 }
 
-bool ResolveDatabaseAlias(const string& alias, string& database)
+bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 {
-	string alias_filename;
+	PathName alias_filename;
 	Firebird::Prefix(alias_filename, ALIAS_FILE);
 	ConfigFile aliasConfig(false, true);
 	aliasConfig.setConfigFilePath(alias_filename);
 
-	string corrected_alias = alias;
+	PathName corrected_alias = alias;
 	replace_dir_sep(corrected_alias);
 
 	database = aliasConfig.getString(corrected_alias);
