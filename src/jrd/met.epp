@@ -4903,7 +4903,7 @@ static void store_dependencies(thread_db* tdbb,
 		if (!node->nod_arg[e_dep_object])
 			continue;
 
-		const int dpdo_type = (int) (IPTR) node->nod_arg[e_dep_object_type];
+		int dpdo_type = (int) (IPTR) node->nod_arg[e_dep_object_type];
 		jrd_rel* relation = NULL;
 		jrd_prc* procedure = NULL;
 		const Firebird::MetaName* dpdo_name = 0;
@@ -4940,6 +4940,10 @@ static void store_dependencies(thread_db* tdbb,
 				}
 			}
 
+			MET_scan_relation(tdbb, relation);
+			if (relation->rel_view_rse) {
+				dpdo_type = obj_view;
+			}
 			break;
 		case obj_procedure:
 			procedure = (jrd_prc*) node->nod_arg[e_dep_object];
