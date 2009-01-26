@@ -1,3 +1,16 @@
+2009-01-26 19:51  dimitr
+
+	* firebird2/src/jrd/db_alias.cpp (1.22):
+
+	Misc.
+
+2009-01-26 14:44  hvlad
+
+	* firebird2/src/jrd/met.epp (1.274):
+
+	Fixed bug CORE-2293 : Wrong dependent object type (RELATION) in
+	RDB$DEPEDENCIES for VIEW's
+
 2009-01-25 15:30  hvlad
 
 	* firebird2/src/jrd/rse.cpp (1.169):
