@@ -113,7 +113,7 @@ namespace
 		PathName libUtilPath;
 	};
 
-	GlobalPtr<IbUtilStartup> ibUtilStartup;
+	InitInstance<IbUtilStartup> ibUtilStartup;
 }
 #endif
 
@@ -127,7 +127,7 @@ void IbUtil::initialize()
 	PathName path = "libib_util";
 #endif
 
-	ModuleLoader::Module* module = ModuleLoader::loadModule(ibUtilStartup->libUtilPath);
+	ModuleLoader::Module* module = ModuleLoader::loadModule(ibUtilStartup().libUtilPath);
 
 	if (module)
 	{
@@ -136,10 +136,10 @@ void IbUtil::initialize()
 		if (module->findSymbol("ib_util_init", ibUtilUnit))
 			ibUtilUnit(alloc);
 		else
-			gds__log("ib_util_init not found in %s", ibUtilStartup->libUtilPath.c_str());
+			gds__log("ib_util_init not found in %s", ibUtilStartup().libUtilPath.c_str());
 	}
 	else
-		gds__log("%s library has not been found", ibUtilStartup->libUtilPath.c_str());
+		gds__log("%s library has not been found", ibUtilStartup().libUtilPath.c_str());
 #endif	// !BOOT_BUILD
 }
 
