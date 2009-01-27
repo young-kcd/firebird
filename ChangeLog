@@ -1,3 +1,22 @@
+2009-01-27 17:52  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.192):
+
+	Misc
+
+2009-01-27 15:48  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.113):
+
+	Much better way to initialize such complex stuff - avoid abort() on
+	MacOS
+
+2009-01-26 21:50  roman-simakov
+
+	* firebird2/src/jrd/blb.cpp (1.191):
+
+	Avoiding creating/destructing AutoBlb object when it's unnecessary
+
 2009-01-26 19:51  dimitr
 
 	* firebird2/src/jrd/db_alias.cpp (1.22):
