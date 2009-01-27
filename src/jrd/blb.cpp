@@ -998,7 +998,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 	if (!needFilter && to_desc->isBlob() &&
         (from_desc->getCharSet() == CS_NONE || from_desc->getCharSet() == CS_BINARY) &&
-        (to_desc->getCharSet() != CS_NONE && to_desc->getCharSet() != CS_BINARY))	
+        (to_desc->getCharSet() != CS_NONE && to_desc->getCharSet() != CS_BINARY))
 	{
 		AutoBlb blob(tdbb, BLB_open(tdbb, tdbb->getTransaction(), source));
 		BLB_check_well_formed(tdbb, to_desc, blob.getBlb());
