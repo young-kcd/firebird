@@ -5464,6 +5464,7 @@ static void iterative_sql_info(ISC_STATUS* user_status,
 		{
 			*p++ = isc_info_sql_sqlda_version;
 			put_vax_short((UCHAR*) p, sqlda->version);
+			p += 2;
 		}
 
 		memcpy(p, items, (int) item_length);
