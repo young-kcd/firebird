@@ -90,12 +90,6 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
                            # If this is defined then we are building a production
                            # release with debug and optimization
 
-
-ifeq ($(PLATFORM),DARWIN)
-FirebirdInstallPrefix =
-else
-FirebirdInstallPrefix = @prefix@
-endif
 CpuType=@CPU_TYPE@
 
 PLATFORM=@PLATFORM@
@@ -222,11 +216,11 @@ LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
 # to the fbserver. MOD 28-July-2002
 
 ClientLibraryName = $(LIB_PREFIX)fbclient.$(SHRLIB_EXT)
-ClientLibraryNameMajor = $(ClientLibraryName).${MajorVer}
+ClientLibrarySoName = $(ClientLibraryName).${MajorVer}
 ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
 
 LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
-LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibraryNameMajor)
+LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibrarySoName)
 LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
 
 # intl will load dynamically, and having the whole soname set with version
@@ -262,24 +256,49 @@ ifneq ($(IsProdTypeBuild),Y)
 endif
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FIREBIRD_EMBED_SYMBOLS = $(LINK_FIREBIRD_SYMBOLS)
+LINK_FIREBIRD_CLIENT_SYMBOLS = $(LINK_FIREBIRD_SYMBOLS)
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.vers
 
-LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-
-LINK_OPTS = $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
-LIB_LINK_OPTIONS = $(LDFLAGS) $(THR_FLAGS) -shared
-
-LIB_LINK_RPATH = -Wl,-rpath,
-LIB_LINK_SONAME = -Wl,-soname,
+LIB_PLATFORM_RPATH = -Wl,-rpath,$(1)
+LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,$(FirebirdInstallPrefix)/$(1))
+LIB_PATH_OPTS = $(call LIB_LINK_RPATH,lib) $(call LIB_LINK_RPATH,intl)
+LIB_LINK_SONAME= -Wl,-soname,$(1)
 LIB_LINK_MAPFILE= -Wl,--version-script,
 FBEMBED_LINK= -L$(LIB) -lfbembed
+
+LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
 FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
 
 STATIC_CXXSUPPORT_LIB = -lsupc++ -lgcc_eh
+LIB_LINK_IMPLIB =
+LIB_GUI =
+
+# Per-library link rules
+LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT))\
+ $(call LIB_LINK_RPATH,lib) -lm
+LINK_UDF_LIBS = $(THR_LIBS) -L$(LIB) -lib_util
+
+LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS)\
+ $(call LIB_LINK_SONAME,$(IbUtilLibraryName)) $(call LIB_LINK_RPATH,lib)
+LINK_IB_UTIL_LIBS = $(THR_LIBS)
+
+LINK_INTL = $(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS)\
+ $(call LIB_LINK_SONAME,libintl.$(SHRLIB_EXT).1) $(call LIB_LINK_RPATH,lib)
+LINK_INTL_LIBS = -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS)
+
+LINK_CLIENT = $(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS)\
+ $(LIB_LINK_IMPLIB) $(call LIB_LINK_SONAME,$(ClientLibrarySoName)) $(call LIB_LINK_RPATH,lib)
+LINK_CLIENT_LIBS = $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
+
+LINK_EMBED = $(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_EMBED_LINK_OPTIONS)\
+ $(call LIB_LINK_SONAME,$(SharedLibrarySoName)) $(call LIB_LINK_RPATH,lib)
+LINK_EMBED_LIBS = -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
 
 # From utilities 
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)

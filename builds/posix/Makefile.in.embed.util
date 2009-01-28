@@ -117,10 +117,6 @@ RELAY_Files =  relay.cpp
 RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
-
 AllObjects = $(CREATEDB_Object) $(DROP_Object) $(FBSVCMGR_Objects) \
 			 $(GSEC_Objects) $(GSTAT_Object) $(FBGUARD_Objects) \
 			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(CLUMPLETS_Objects)

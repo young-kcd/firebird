@@ -96,26 +96,18 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 
 libfbclient : $(LIBFBCLIENT_SONAME)
 
-ifneq ($(ClientLibraryNameFull),$(ClientLibraryNameMajor))
+ifneq ($(ClientLibraryNameFull),$(ClientLibrarySoName))
 $(LIBFBCLIENT_SOBASENAME):	$(LIBFBCLIENT_SO)
-	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibraryNameMajor) )
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibrarySoName) )
 endif
 
-ifneq ($(ClientLibraryName),$(ClientLibraryNameMajor))
+ifneq ($(ClientLibrarySoName),$(ClientLibraryName))
 $(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
-	(cd $(LIB) && $(LN) -f $(ClientLibraryNameMajor) $(ClientLibraryName) )
+	(cd $(LIB) && $(LN) -f $(ClientLibrarySoName) $(ClientLibraryName) )
 endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-ifeq ($(PLATFORM),DARWIN)
-	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
-$(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME) \
--o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
-else
-	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
-$(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
--o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
-endif
+	$(LINK_CLIENT) -o $@ $^ $(LINK_CLIENT_LIBS)
 
 AllObjects = $(FBCLIENT_Objects)
 Dependencies = $(AllObjects:.o=.d)

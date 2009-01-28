@@ -51,10 +51,6 @@ GSPLIT_Files=	spit.cpp
 GSPLIT_Sources = $(addprefix burp/, $(GSPLIT_Files)) $(GSPLIT_Other_Sources)
 GSPLIT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSPLIT_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
-
 AllObjects = $(GBAK_Objects) $(GSPLIT_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 

@@ -62,14 +62,8 @@ Dependencies = $(AllObjects:.o=.d)
 libfbembed : $(LIBIBUTIL_SO) $(LIBFBEMBED_SONAME)
 
 $(LIBFBEMBED_SO): $(LIBFBEMBED_Objects) $(SERVER_Objects) $(COMMON_Objects)
-ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) \
-$(LIB_EMBED_LINK_OPTIONS) $(LIB_LINK_SONAME) \
--o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
-else
-	$(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(SharedLibrarySoName) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
-endif
+	$(LINK_EMBED) -o $@ $^ $(LINK_EMBED_LIBS)
+
 $(LIBFBEMBED_SOBASENAME): $(LIBFBEMBED_SO)
 	(cd $(LIB) && $(LN) -f $(SharedLibraryName) $(SharedLibrarySoName) )
 

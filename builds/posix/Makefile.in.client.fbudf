@@ -79,16 +79,7 @@ all: lib_fbudf
 lib_fbudf: $(LIBIBUTIL_SO) $(UDF)/fbudf.$(SHRLIB_EXT) 
 
 $(UDF)/fbudf.$(SHRLIB_EXT):	$(AllObjects)
-ifeq ($(PLATFORM),win32)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -lib_util \
--o $@ $^
-endif
-ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -L$(LIB) -lm -o $@ $^ -lib_util @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
-else
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -L$(LIB) -lm -o $@ $^ -lib_util $(THR_LIBS)
-endif
+	$(call LINK_UDF,fbudf) -o $@ $^ $(LINK_UDF_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

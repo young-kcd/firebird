@@ -70,10 +70,10 @@ LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
 
 Server_main_dummy = os/sun/server_main_dummy.cpp
 
-LIB_LINK_OPTIONS:= -G
+LIB_LINK_OPTIONS= -G
 
-LIB_LINK_RPATH:=-R
-LIB_LINK_SONAME:=-h
+LIB_PLATFORM_RPATH= -R $(1)
+LIB_LINK_SONAME= -h $(1)
 LIB_LINK_MAPFILE= -z -M
 
 EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print

@@ -48,9 +48,6 @@ QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
 AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 

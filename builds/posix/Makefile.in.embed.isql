@@ -49,9 +49,6 @@ ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources)))
 
 AllObjects = $(ISQL_Objects) $(CLUMPLETS_Objects)
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
 Dependencies = $(AllObjects:.o=.d) 
 
 

@@ -84,13 +84,8 @@ all : libfbintl
 libfbintl : $(LIBFBINTL_SO)
 
 $(LIBFBINTL_SO):	$(INTL_Objects) $(FBCOMMON_ClientObjects) $(FBCLASSES_ClientObjects)
-ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
--o $@ $^ $(SO_LINK_LIBS)
-else
-	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libintl.$(SHRLIB_EXT).1 \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS)
-endif
+	$(LINK_INTL) -o $@ $^ $(LINK_INTL_LIBS)
+
 
 include $(ROOT)/gen/make.shared.targets
 

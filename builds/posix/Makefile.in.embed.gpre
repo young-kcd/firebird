@@ -48,9 +48,6 @@ GPRE_Files = gpre_meta.epp \
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files)) $(GPRE_Other_Sources)
 GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
 AllObjects = $(GPRE_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 

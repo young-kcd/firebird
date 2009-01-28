@@ -42,9 +42,6 @@ SERVER_Files = server_stub.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources))))
 
-ifeq ($(PLATFORM),DARWIN)
-LINK_LIBS+=$(ICU_LIBS)
-endif
 AllObjects = $(SERVER_Objects)
 Dependencies = $(AllObjects:.o=.d) 
 

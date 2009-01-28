@@ -26,9 +26,9 @@ JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
 
 OS_ServerFiles=inet_server.cpp
 
-LIB_LINK_OPTIONS:= -fPIC -shared
-LIB_LINK_RPATH:=  -Wl,+b
-LIB_LINK_SONAME:= -Wl,+h
+LIB_LINK_OPTIONS= -fPIC -shared
+LIB_LINK_RPATH= -Wl,+b,$(1)
+LIB_LINK_SONAME= -Wl,+h,$(1)
 LIB_LINK_MAPFILE= -Wl,-c
 LINK_FBINTL_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.hpux.vers
 LINK_IBUTIL_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.hpux.vers
