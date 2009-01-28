@@ -59,6 +59,9 @@
 
 #ifdef WIN_NT
 #include <io.h>
+#endif
+
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 
@@ -454,7 +457,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 	else if (lock_file)
 	{
-		const int fd = open(filename.c_str(), O_RDONLY | O_BINARY);
+		const int fd = open(filename.c_str(), O_RDONLY 
+#if defined WIN_NT
+											| O_BINARY
+#endif
+							);
 		if (fd == -1) {
 			FPRINTF(outfile, "Unable to open lock file.\n");
 			exit(FINI_OK);
