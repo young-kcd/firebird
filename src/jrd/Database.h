@@ -449,7 +449,7 @@ public:
 	bool onRawDevice() const;
 
 	// returns an unique ID string for a database file
-	const Firebird::string& getUniqueFileId() const;
+	Firebird::string getUniqueFileId() const;
 
 	MemoryPool* createPool()
 	{

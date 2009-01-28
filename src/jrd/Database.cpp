@@ -54,23 +54,19 @@ namespace Jrd
 #endif
 	}
 
-	const Firebird::string& Database::getUniqueFileId() const
+	Firebird::string Database::getUniqueFileId() const
 	{
-		static Firebird::GlobalPtr<Firebird::string> file_id;
+		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 
-		if (file_id->empty())
+		Firebird::UCharBuffer buffer;
+		PIO_get_unique_file_id(pageSpace->file, buffer);
+
+		Firebird::string file_id;
+		for (size_t i = 0; i < buffer.getCount(); i++)
 		{
-			const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-
-			Firebird::UCharBuffer buffer;
-			PIO_get_unique_file_id(pageSpace->file, buffer);
-
-			for (size_t i = 0; i < buffer.getCount(); i++)
-			{
-				TEXT hex[3];
-				sprintf(hex, "%02x", (int) buffer[i]);
-				file_id->append(hex);
-			}
+			TEXT hex[3];
+			sprintf(hex, "%02x", (int) buffer[i]);
+			file_id.append(hex);
 		}
 
 		return file_id;
