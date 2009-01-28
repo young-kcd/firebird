@@ -90,6 +90,7 @@ IsProdTypeBuild = @PROD_BUILD_FLG@
                            # If this is defined then we are building a production
                            # release with debug and optimization
 
+FirebirdInstallPrefix = @prefix@
 CpuType=@CPU_TYPE@
 
 PLATFORM=@PLATFORM@
