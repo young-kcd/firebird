@@ -75,7 +75,7 @@ using namespace Jrd;
  * Firebird
  */
 
-#define DBSERVER_BASE_LEVEL 6
+#define DBSERVER_BASE_LEVEL DBSERVER_BASE_LEVEL_7
 
 
 #define STUFF_WORD(p, value)	{*p++ = value; *p++ = value >> 8;}

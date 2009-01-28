@@ -1914,7 +1914,7 @@ static processing_state add_row(TEXT* tabname)
 
 	XSQLDA* sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
 	memset(sqlda, 0, XSQLDA_LENGTH(20));
-	sqlda->version = SQLDA_VERSION1;
+	sqlda->version = SQLDA_VERSION2;
 	sqlda->sqln = 20;
 	if (isc_dsql_prepare(isc_status, &D__trans, &global_Stmt, 0, string,
 						 isqlGlob.SQL_dialect, sqlda))
@@ -1933,7 +1933,7 @@ static processing_state add_row(TEXT* tabname)
 		ISQL_FREE(sqlda);
 		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
 		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
-		sqlda->version = SQLDA_VERSION1;
+		sqlda->version = SQLDA_VERSION2;
 		sqlda->sqld = sqlda->sqln = n_cols;
 
 		//  We must re-describe the sqlda, no need to re-prepare
@@ -2009,7 +2009,7 @@ static processing_state add_row(TEXT* tabname)
 	// to avoid lots of problems.
 
 	memset(isqlda, 0, XSQLDA_LENGTH(i_cols));
-	isqlda->version = SQLDA_VERSION1;
+	isqlda->version = SQLDA_VERSION2;
 	isqlda->sqln = isqlda->sqld = i_cols;
 
 	SSHORT* nullind = (SSHORT*) ISQL_ALLOC((SLONG) (i_cols * sizeof(SSHORT)));
@@ -2584,7 +2584,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 		ISQL_FREE(sqlda);
 		*sqldap = sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
 		memset(sqlda, 0, XSQLDA_LENGTH(n_columns));
-		sqlda->version = SQLDA_VERSION1;
+		sqlda->version = SQLDA_VERSION2;
 		sqlda->sqld = sqlda->sqln = n_columns;
 		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect,
 								   sqlda))
@@ -4088,7 +4088,7 @@ static void do_isql()
 
 	global_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(20)));
 	memset(global_sqlda, 0, XSQLDA_LENGTH(20));
-	global_sqlda->version = SQLDA_VERSION1;
+	global_sqlda->version = SQLDA_VERSION2;
 	global_sqlda->sqln = 20;
 
 	// The sqldap is the handle containing the current sqlda pointer
@@ -7812,7 +7812,7 @@ static processing_state print_sqlda_input(const bool can_have_input_parameters)
 	// Describe the input
 	XSQLDA* input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(10)));
 	memset(input_sqlda, 0, XSQLDA_LENGTH(10));
-	input_sqlda->version = SQLDA_VERSION1;
+	input_sqlda->version = SQLDA_VERSION2;
 	input_sqlda->sqld = input_sqlda->sqln = 10;
 
 	if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda)) {
@@ -7830,7 +7830,7 @@ static processing_state print_sqlda_input(const bool can_have_input_parameters)
 		ISQL_FREE(input_sqlda);
 		input_sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_columns)));
 		memset(input_sqlda, 0, XSQLDA_LENGTH(n_columns));
-		input_sqlda->version = SQLDA_VERSION1;
+		input_sqlda->version = SQLDA_VERSION2;
 		input_sqlda->sqld = input_sqlda->sqln = n_columns;
 		if (isc_dsql_describe_bind(isc_status, &global_Stmt, isqlGlob.SQL_dialect, input_sqlda))
 		{
@@ -8459,7 +8459,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		sqlda = (XSQLDA*) ISQL_ALLOC((SLONG) (XSQLDA_LENGTH(n_cols)));
 		memset(sqlda, 0, XSQLDA_LENGTH(n_cols));
 		*sqldap = sqlda;
-		sqlda->version = SQLDA_VERSION1;
+		sqlda->version = SQLDA_VERSION2;
 		sqlda->sqld = sqlda->sqln = n_cols;
 
 		//  We must re-describe the sqlda, no need to re-prepare
@@ -8870,6 +8870,8 @@ static const char* sqltype_to_string(USHORT sqltype)
 		return "ARRAY	";
 	case SQL_QUAD:
 		return "QUAD	 ";
+	case SQL_NULL:
+		return "NULL	 ";
 	default:
 		return "unknown  ";
 	}

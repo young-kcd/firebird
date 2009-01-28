@@ -96,7 +96,7 @@ static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, 
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
+static UCHAR*	var_info(dsql_msg*, SSHORT, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT);
 
 #ifdef DSQL_DEBUG
@@ -683,7 +683,7 @@ void DSQL_prepare(thread_db* tdbb,
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
  * the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
- * and client dialect are separated and passed on to their final desintations.  The information
+ * and client dialect are separated and passed on to their final destinations.  The information
  * is combined as follows:
  *     Dialect * 10 + parser_version
  *
@@ -2165,9 +2165,12 @@ static void map_in_out(	dsql_req*		request,
 			}
 			else if (!flag || *flag >= 0)
 			{
-				// Safe cast because desc is used as source only.
-				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-				MOVD_move(&desc, &parameter->par_desc);
+				if (!(parameter->par_desc.dsc_flags & DSC_null))
+				{
+					// Safe cast because desc is used as source only.
+					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
+					MOVD_move(&desc, &parameter->par_desc);
+				}
 			}
 			else if (parameter->par_desc.isBlob())
 				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
@@ -2816,6 +2819,7 @@ static void sql_info(thread_db* tdbb,
 	// in the loop or should it be made NULL in each iteration?
 	dsql_msg** message = NULL;
 	USHORT first_index = 0;
+	SSHORT sqlda_version = SQLDA_VERSION1;
 
 	while (items < end_items && *items != isc_info_end)
 	{
@@ -2943,6 +2947,12 @@ static void sql_info(thread_db* tdbb,
 				}
 			}
 			break;
+
+		case isc_info_sql_sqlda_version:
+			sqlda_version = static_cast<SSHORT>(gds__vax_integer(items, 2));
+			items += 2;
+			break;
+
 		case isc_info_sql_num_variables:
 		case isc_info_sql_describe_vars:
 			if (message)
@@ -2963,10 +2973,11 @@ static void sql_info(thread_db* tdbb,
 					end_describe++;
 				}
 
-				info = var_info(*message, items, end_describe, info, end_info, first_index);
-				if (!info) {
+				info = var_info(*message, sqlda_version, items, end_describe, info, end_info,
+					first_index);
+
+				if (!info)
 					return;
-				}
 
 				items = end_describe;
 				if (*items == isc_info_sql_describe_end) {
@@ -3012,6 +3023,7 @@ static void sql_info(thread_db* tdbb,
 
  **/
 static UCHAR* var_info(dsql_msg* message,
+					   SSHORT version,
 					   const UCHAR* items,
 					   const UCHAR* const end_describe,
 					   UCHAR* info,
@@ -3073,8 +3085,16 @@ static UCHAR* var_info(dsql_msg* message,
 				break;
 
 			case dtype_text:
-				sql_type = SQL_TEXT;
-				sql_sub_type = param->par_desc.dsc_sub_type;
+				if ((param->par_desc.dsc_flags & DSC_null) && version >= SQLDA_VERSION2)
+				{
+					sql_type = SQL_NULL;
+					sql_len = 0;
+				}
+				else
+				{
+					sql_type = SQL_TEXT;
+					sql_sub_type = param->par_desc.dsc_sub_type;
+				}
 				break;
 
 			case dtype_blob:

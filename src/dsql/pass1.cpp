@@ -10288,11 +10288,10 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 	{
 		case nod_parameter:
 			{
-				if (!node) {
-					return false;
-				}
-
-				MAKE_desc(statement, &in_node->nod_desc, node, NULL);
+				if (!node)
+					in_node->nod_desc.makeNullString();
+				else
+					MAKE_desc(statement, &in_node->nod_desc, node, NULL);
 
 				if (att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
 				{
