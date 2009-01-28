@@ -92,7 +92,8 @@ static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*, USH
 static dsql_dbb*	init(Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
-static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
+static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT,
+	USHORT, SSHORT);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
@@ -710,6 +711,17 @@ void DSQL_prepare(thread_db* tdbb,
 			dialect /= 10;
 		}
 
+		SSHORT sqlda_version = SQLDA_VERSION1;
+
+		for (const UCHAR* p = items; p < items + item_length; ++p)
+		{
+			if (*p == isc_info_sql_sqlda_version)
+			{
+				sqlda_version = static_cast<SSHORT>(gds__vax_integer(++p, 2));
+				break;
+			}
+		}
+
 		// Allocate a new request block and then prepare the request.  We want to
 		// keep the old request around, as is, until we know that we are able
 		// to prepare the new one.
@@ -718,7 +730,8 @@ void DSQL_prepare(thread_db* tdbb,
 		// Because that's the client's allocated statement handle and we
 		// don't want to trash the context in it -- 2001-Oct-27 Ann Harrison
 
-		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version);
+		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version,
+			sqlda_version);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
@@ -1114,7 +1127,8 @@ static void execute_immediate(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version);
+		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version,
+			SQLDA_VERSION2);
 
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
@@ -2433,7 +2447,7 @@ static USHORT parse_blr(USHORT blr_length,
 static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
 				   USHORT string_length,
 				   const TEXT* string,
-				   USHORT client_dialect, USHORT parser_version)
+				   USHORT client_dialect, USHORT parser_version, SSHORT sqlda_version)
 {
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
@@ -2475,6 +2489,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	statement->req_dbb = database;
 	statement->req_transaction = transaction;
 	statement->req_client_dialect = client_dialect;
+	statement->req_sqlda_version = sqlda_version;
 
 	try {
 

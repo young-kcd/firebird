@@ -555,6 +555,7 @@ public:
 	USHORT	req_in_order_by_clause;	//!< processing "order by clause"
 	USHORT	req_error_handlers;	//!< count of active error handlers
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
+	SSHORT	req_sqlda_version;	// SQLDA version
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
 	DsqlNodStack	req_hidden_vars;			// hidden variables
