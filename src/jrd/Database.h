@@ -57,19 +57,20 @@
 #include "../common/classes/PublicHandle.h"
 #include "../common/classes/semaphore.h"
 #include "../common/utils_proto.h"
+#include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
-#include "../lock/lock_proto.h"
 #include "../jrd/os/thd_priority.h"
+#include "../jrd/event_proto.h"
+#include "../lock/lock_proto.h"
 
 class CharSetContainer;
 
 namespace Jrd
 {
-
 	class Trigger;
 	template <typename T> class vec;
 	class jrd_prc;
@@ -326,10 +327,10 @@ public:
 		return TypedHandle<type_dbb>::checkHandle();
 	}
 
-	mutable Sync* dbb_sync;				// Database sync primitive
-	Firebird::Reference dbb_sync_ref;	// Database reference to dbb_sync
+	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
-	LockManager*	dbb_lock_mgr;
+	Firebird::RefPtr<LockManager>	dbb_lock_mgr;
+	Firebird::RefPtr<EventManager>	dbb_event_mgr;
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
@@ -342,10 +343,8 @@ public:
 	SLONG		dbb_sh_counter_curr;	// current value of shared counter lock
 	SLONG		dbb_sh_counter_max;		// maximum cached value of shared counter lock
 	jrd_tra*	dbb_sys_trans;			// system transaction
-//	jrd_file*	dbb_file;				// files for I/O operations
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
-	//SLONG dbb_shadow_sync_count;		// to synchronize changes to shadows
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
 	Lock*		dbb_monitor_lock;		// lock for monitoring purposes
 	PageManager dbb_page_manager;
@@ -353,6 +352,8 @@ public:
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
+
+	DatabaseSnapshot::SharedData*	dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
 
@@ -447,6 +448,9 @@ public:
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
 
+	// returns an unique ID string for a database file
+	const Firebird::string& getUniqueFileId() const;
+
 	MemoryPool* createPool()
 	{
 		MemoryPool* const pool = MemoryPool::createPool(dbb_permanent, dbb_memory_stats);
@@ -459,7 +463,6 @@ public:
 private:
 	explicit Database(MemoryPool* p)
 	:	dbb_sync(FB_NEW(*getDefaultMemoryPool()) Sync),
-		dbb_sync_ref(*dbb_sync),
 		dbb_page_manager(*p),
 		dbb_modules(*p),
 		dbb_filename(*p),

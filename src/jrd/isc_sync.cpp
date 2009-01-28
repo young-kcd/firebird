@@ -131,7 +131,7 @@ union semun
 	ushort *array;
 };
 #endif
-#endif /* UNIX */
+#endif // UNIX
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -1889,7 +1889,9 @@ void *ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
 UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
-					void* init_arg, SLONG length, SH_MEM shmem_data)
+					void* init_arg,
+					ULONG length,
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -1903,25 +1905,20 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	TEXT expanded_filename[MAXPATHLEN], hostname[64];
-	sprintf(expanded_filename, filename, ISC_get_host(hostname, sizeof(hostname)));
+
+	TEXT expanded_filename[MAXPATHLEN];
+	gds__prefix_lock(expanded_filename, filename);
 
 /* make the complete filename for the init file this file is to be used as a
    master lock to eliminate possible race conditions with just a single file
    locking. The race condition is caused as the conversion of a EXCLUSIVE
    lock to a SHARED lock is not atomic*/
 
-	TEXT tmp[MAXPATHLEN];
-	gds__prefix_lock(tmp, INIT_FILE);
-	string init_filename;	/* to hold the complete filename of the init file. */
-	init_filename.printf(tmp, hostname);	/* already have the hostname! */
+	TEXT init_filename[MAXPATHLEN];
+	gds__prefix_lock(init_filename, INIT_FILE);
 
 	const int oldmask = umask(0);
-	bool trunc_flag = true;
-	if (length < 0) {
-		length = -length;
-		trunc_flag = false;
-	}
+	const bool trunc_flag = (length != 0);
 
 /* open the init lock file */
 	MutexLockGuard guard(openFdInit);
@@ -1931,7 +1928,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #else
 	int
 #endif
-		fd_init = open(init_filename.c_str(), O_RDWR | O_CREAT, 0666);
+		fd_init = open(init_filename, O_RDWR | O_CREAT, 0666);
 	if (fd_init == -1) {
 		error(status_vector, "open", errno);
 		return NULL;
@@ -1950,10 +1947,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #ifdef USE_SYS5SEMAPHORE
 	if (fdSem < 0)
 	{
-		string semFileName;
-		gds__prefix_lock(tmp, SEM_FILE);
-		semFileName.printf(tmp, hostname);
-		int f = open(semFileName.c_str(), O_RDWR | O_CREAT, 0666);
+		TEXT sem_filename[MAXPATHLEN];
+		gds__prefix_lock(sem_filename, SEM_FILE);
+		int f = open(sem_filename, O_RDWR | O_CREAT, 0666);
 		if (f == -1) {
 			error(status_vector, "open", errno);
 			return NULL;
@@ -2098,7 +2094,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
-					void* init_arg, SLONG length, SH_MEM shmem_data)
+					void* init_arg,
+					ULONG length,
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2112,18 +2110,12 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	//SSHORT count;
-	TEXT expanded_filename[512];
-#ifdef NOHOSTNAME
-	strcpy(expanded_filename, filename);
-#else
-	TEXT hostname[64];
-	sprintf(expanded_filename, filename, ISC_get_host(hostname, sizeof(hostname)));
-#endif
+
+	TEXT expanded_filename[MAXPATHLEN];
+	gds__prefix_lock(expanded_filename, filename);
+
 	const int oldmask = umask(0);
 	bool init_flag = false;
-	if (length < 0)
-		length = -length;
 
 /* Produce shared memory key for file */
 
@@ -2383,13 +2375,12 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 
 #ifdef WIN_NT
-UCHAR* ISC_map_file(
-	   ISC_STATUS* status_vector,
-	   const TEXT* filename,
-	   FPTR_INIT_GLOBAL_REGION init_routine,
-	   void* init_arg,
-	   SLONG length,
-	   SH_MEM shmem_data)
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
+					const TEXT* filename,
+					FPTR_INIT_GLOBAL_REGION init_routine,
+					void* init_arg,
+					ULONG length,
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2403,17 +2394,14 @@ UCHAR* ISC_map_file(
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	TEXT expanded_filename[MAXPATHLEN], hostname[64];
-	TEXT map_file[MAXPATHLEN];
+	TEXT object_name[MAXPATHLEN];
 	HANDLE file_handle, event_handle;
 	int retry_count = 0;
 
-	bool trunc_flag = true;
-	if (length < 0) {
-		length = -length;
-		fb_assert(length > 0); // Was someone so crazy as to pass a bigger value than MAX_SLONG?
-		trunc_flag = false;
-	}
+	TEXT expanded_filename[MAXPATHLEN];
+	gds__prefix_lock(expanded_filename, filename);
+
+	const bool trunc_flag = (length != 0);
 
 /* retry to attach to mmapped file if the process initializing
  * dies during initialization.
@@ -2422,16 +2410,13 @@ UCHAR* ISC_map_file(
   retry:
 	retry_count++;
 
-	ISC_get_host(hostname, sizeof(hostname));
-	sprintf(map_file, filename, hostname);
-
-	file_handle = CreateFile(map_file,
-				 GENERIC_READ | GENERIC_WRITE,
-				 FILE_SHARE_READ | FILE_SHARE_WRITE,
-				 NULL,
-				 OPEN_ALWAYS,
-				 FILE_ATTRIBUTE_NORMAL,
-				 NULL);
+	file_handle = CreateFile(expanded_filename,
+							 GENERIC_READ | GENERIC_WRITE,
+							 FILE_SHARE_READ | FILE_SHARE_WRITE,
+							 NULL,
+							 OPEN_ALWAYS,
+							 FILE_ATTRIBUTE_NORMAL,
+							 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		error(status_vector, "CreateFile", GetLastError());
 		return NULL;
@@ -2444,14 +2429,14 @@ UCHAR* ISC_map_file(
 	// Create an event that can be used to determine if someone has already
 	// initialized shared memory.
 
-	if (!make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event"))
+	if (!make_object_name(object_name, sizeof(object_name), filename, "_event"))
 	{
 		error(status_vector, "make_object_name", GetLastError());
 		CloseHandle(file_handle);
 		return NULL;
 	}
 
-	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, expanded_filename);
+	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
 	if (!event_handle) {
 		error(status_vector, "CreateEvent", GetLastError());
 		CloseHandle(file_handle);
@@ -2512,13 +2497,13 @@ UCHAR* ISC_map_file(
 	else
 		fdw_create = OPEN_ALWAYS;
 
-	file_handle = CreateFile(map_file,
-				 GENERIC_READ | GENERIC_WRITE,
-				 FILE_SHARE_READ | FILE_SHARE_WRITE,
-				 NULL,
-				 fdw_create,
-				 FILE_ATTRIBUTE_NORMAL,
-				 NULL);
+	file_handle = CreateFile(expanded_filename,
+							 GENERIC_READ | GENERIC_WRITE,
+							 FILE_SHARE_READ | FILE_SHARE_WRITE,
+							 NULL,
+							 fdw_create,
+							 FILE_ATTRIBUTE_NORMAL,
+							 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		CloseHandle(event_handle);
 		error(status_vector, "CreateFile", GetLastError());
@@ -2528,7 +2513,7 @@ UCHAR* ISC_map_file(
 /* Create a file mapping object that will be used to make remapping possible.
    The current length of real mapped file and its name are saved in it. */
 
-	if (!make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_mapping"))
+	if (!make_object_name(object_name, sizeof(object_name), filename, "_mapping"))
 	{
 		error(status_vector, "make_object_name", GetLastError());
 		CloseHandle(event_handle);
@@ -2536,12 +2521,11 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	HANDLE header_obj = CreateFileMapping ((HANDLE) -1,
-				ISC_get_security_desc(),
-				PAGE_READWRITE,
-				0,
-				2 * sizeof (SLONG),
-				expanded_filename);
+	HANDLE header_obj = CreateFileMapping(INVALID_HANDLE_VALUE,
+										  ISC_get_security_desc(),
+										  PAGE_READWRITE,
+										  0, 2 * sizeof(ULONG),
+										  object_name);
 	if (header_obj == NULL)
 	{
 		error(status_vector, "CreateFileMapping", GetLastError());
@@ -2561,7 +2545,7 @@ UCHAR* ISC_map_file(
 		goto retry;
 	}
 
-	SLONG* const header_address = (SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
+	ULONG* const header_address = (ULONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (header_address == NULL) {
 		error(status_vector, "MapViewOfFile", GetLastError());
@@ -2583,16 +2567,14 @@ UCHAR* ISC_map_file(
 
 /* Create the real file mapping object. */
 
-	TEXT mapping_filename[sizeof(expanded_filename) + 15]; // enough for int32 as text
-	sprintf(mapping_filename, "%s%"SLONGFORMAT, expanded_filename, header_address[1]);
+	TEXT mapping_name[MAXPATHLEN + 15]; // enough for int32 as text
+	sprintf(mapping_name, "%s_mapping_%"ULONGFORMAT, filename, header_address[1]);
 
-	HANDLE file_obj =
-		CreateFileMapping(file_handle,
-				  ISC_get_security_desc(),
-				  PAGE_READWRITE,
-				  0,
-				  length,
-				  mapping_filename);
+	HANDLE file_obj = CreateFileMapping(file_handle,
+										ISC_get_security_desc(),
+										PAGE_READWRITE,
+										0, length,
+										mapping_name);
 	if (file_obj == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
 		UnmapViewOfFile(header_address);
@@ -2628,7 +2610,7 @@ UCHAR* ISC_map_file(
 	shmem_data->sh_mem_interest = event_handle;
 	shmem_data->sh_mem_hdr_object = header_obj;
 	shmem_data->sh_mem_hdr_address = header_address;
-	strcpy(shmem_data->sh_mem_name, expanded_filename);
+	strcpy(shmem_data->sh_mem_name, filename);
 
 	if (init_routine)
 		(*init_routine) (init_arg, shmem_data, init_flag);
@@ -2636,7 +2618,7 @@ UCHAR* ISC_map_file(
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
 		SetEvent(event_handle);
-		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == 0xFFFFFFFF ||
+		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
 			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
@@ -2651,9 +2633,10 @@ UCHAR* ISC_map_file(
 
 
 #ifdef HAVE_MMAP
-UCHAR *ISC_map_object(ISC_STATUS * status_vector,
+UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  SH_MEM shmem_data,
-					  SLONG object_offset, SLONG object_length)
+					  ULONG object_offset,
+					  ULONG object_length)
 {
 /**************************************
  *
@@ -2668,13 +2651,13 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 /* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
-	const SLONG page_size = sysconf(_SC_PAGESIZE);
+	const ULONG page_size = sysconf(_SC_PAGESIZE);
 	if (page_size == -1) {
 		error(status_vector, "sysconf", errno);
 		return NULL;
 	}
 #else
-	const SLONG page_size = (int) getpagesize();
+	const ULONG page_size = (int) getpagesize();
 	if (page_size == -1) {
 		error(status_vector, "getpagesize", errno);
 		return NULL;
@@ -2684,9 +2667,9 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 /* Compute the start and end page-aligned offsets which
    contain the object being mapped. */
 
-	const SLONG start = (object_offset / page_size) * page_size;
-	const SLONG end = (((object_offset + object_length) / page_size) + 1) * page_size;
-	const SLONG length = end - start;
+	const ULONG start = (object_offset / page_size) * page_size;
+	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
+	const ULONG length = end - start;
 	int fd = shmem_data->sh_mem_handle;
 
 	UCHAR* address = (UCHAR*) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, start);
@@ -2706,7 +2689,8 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
 					  SH_MEM shmem_data,
-					  UCHAR** object_pointer, SLONG object_length)
+					  UCHAR** object_pointer,
+					  ULONG object_length)
 {
 /**************************************
  *
@@ -2722,13 +2706,13 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 /* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
-	const SLONG page_size = sysconf(_SC_PAGESIZE);
+	const ULONG page_size = sysconf(_SC_PAGESIZE);
 	if (page_size == -1) {
 		error(status_vector, "sysconf", errno);
 		return; // false;
 	}
 #else
-	const SLONG page_size = (int) getpagesize();
+	const ULONG page_size = (int) getpagesize();
 	if (page_size == -1) {
 		error(status_vector, "getpagesize", errno);
 		return; // false;
@@ -2741,7 +2725,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 	UCHAR* start = (UCHAR *) ((U_IPTR) * object_pointer & ~(page_size - 1));
 	const UCHAR* end =
 		(UCHAR*) ((U_IPTR) ((*object_pointer + object_length) + (page_size - 1)) & ~(page_size - 1));
-	const SLONG length = end - start;
+	const ULONG length = end - start;
 
 	if (munmap((char *) start, length) == -1) {
 		error(status_vector, "munmap", errno);
@@ -2757,7 +2741,8 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 #ifdef WIN_NT
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  SH_MEM shmem_data,
-					  SLONG object_offset, SLONG object_length)
+					  ULONG object_offset,
+					  ULONG object_length)
 {
 /**************************************
  *
@@ -2772,14 +2757,14 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
-	const SLONG page_size = sys_info.dwAllocationGranularity;
+	const ULONG page_size = sys_info.dwAllocationGranularity;
 
 	// Compute the start and end page-aligned offsets which
 	// contain the object being mapped.
 
-	const SLONG start = (object_offset / page_size) * page_size;
-	const SLONG end = (((object_offset + object_length) / page_size) + 1) * page_size;
-	const SLONG length = end - start;
+	const ULONG start = (object_offset / page_size) * page_size;
+	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
+	const ULONG length = end - start;
 	const HANDLE handle = shmem_data->sh_mem_object;
 
 	UCHAR* address = (UCHAR*) MapViewOfFile(handle, FILE_MAP_WRITE, 0, start, length);
@@ -2797,7 +2782,8 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
 					  SH_MEM shmem_data,
-					  UCHAR** object_pointer, SLONG object_length)
+					  UCHAR** object_pointer,
+					  ULONG object_length)
 {
 /**************************************
  *
@@ -2812,7 +2798,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
  **************************************/
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
-	const SLONG page_size = sys_info.dwAllocationGranularity;
+	const ULONG page_size = sys_info.dwAllocationGranularity;
 
 	// Compute the start and end page-aligned offsets which
 	// contain the object being mapped.
@@ -3623,8 +3609,10 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
-UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
-					  SH_MEM shmem_data, SLONG new_length, bool flag)
+UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
+					  SH_MEM shmem_data,
+					  ULONG new_length,
+					  bool flag)
 {
 /**************************************
  *
@@ -3669,9 +3657,9 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
-					SH_MEM shmem_data,
-					SLONG new_length,
-					bool flag)
+					  SH_MEM shmem_data,
+					  ULONG new_length,
+					  bool flag)
 {
 /**************************************
  *
@@ -3686,7 +3674,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 	if (flag)
 	{
-		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL, FILE_BEGIN) == 0xFFFFFFFF ||
+		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
 			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
@@ -3709,16 +3697,15 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 	HANDLE file_obj;
 
 	while (true) {
-		TEXT expanded_filename[MAXPATHLEN];
-		sprintf(expanded_filename, "%s%"SLONGFORMAT, shmem_data->sh_mem_name,
-				shmem_data->sh_mem_hdr_address[1] + 1);
+		TEXT mapping_name[MAXPATHLEN + 15]; // enough for int32 as text
+		sprintf(mapping_name, "%s_mapping_%"ULONGFORMAT,
+				shmem_data->sh_mem_name, shmem_data->sh_mem_hdr_address[1] + 1);
 
 		file_obj = CreateFileMapping(shmem_data->sh_mem_handle,
-					     ISC_get_security_desc(),
-					     PAGE_READWRITE,
-					     0,
-					     new_length,
-					     expanded_filename);
+									 ISC_get_security_desc(),
+									 PAGE_READWRITE,
+									 0, new_length,
+									 mapping_name);
 
 		if (!((GetLastError() == ERROR_ALREADY_EXISTS) && flag))
 			break;
@@ -3766,7 +3753,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 #ifndef ISC_REMAP_FILE_DEFINED
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 						SH_MEM shmem_data,
-						SLONG new_length,
+						ULONG new_length,
 						bool flag)
 {
 /**************************************

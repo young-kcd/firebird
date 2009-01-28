@@ -67,6 +67,8 @@ const char* INTERBASE_USER		= "interbase";
 const char* FIREBIRD_USER		= "firebird";
 const char* INTERBASE_USER_SHORT= "interbas";
 
+const char* GUARD_FILE	= "fb_guard";
+
 volatile sig_atomic_t shutting_down;
 
 

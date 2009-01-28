@@ -19,21 +19,102 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
- * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
- *
  */
 
 #ifndef JRD_EVENT_PROTO_H
 #define JRD_EVENT_PROTO_H
 
-void EVENT_cancel(SLONG);
-SLONG EVENT_create_session();
-void EVENT_delete_session(SLONG);
-void EVENT_deliver();
-void EVENT_post(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
-SLONG EVENT_que(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
-				FPTR_EVENT_CALLBACK, void*);
+#include "../common/classes/init.h"
+#include "../common/classes/semaphore.h"
+#include "../common/classes/GenericMap.h"
+#include "../common/classes/RefCounted.h"
+#include "../jrd/ThreadData.h"
+#include "../jrd/event.h"
+
+namespace Jrd {
+
+class Database;
+
+class EventManager: public Firebird::RefCounted, public Firebird::GlobalStorage
+{
+	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, EventManager*> > > DbEventMgrMap;
+
+	static Firebird::GlobalPtr<DbEventMgrMap> g_emMap;
+	static Firebird::GlobalPtr<Firebird::Mutex> g_mapMutex;
+
+	const int PID;
+
+public:
+	static void init(Database*);
+
+	explicit EventManager(const Firebird::string&);
+	~EventManager();
+
+	SLONG createSession();
+	void deleteSession(SLONG);
+
+	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
+				    FPTR_EVENT_CALLBACK, void*);
+	void cancelEvents(SLONG);
+	void postEvent(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
+	void deliverEvents();
+
+private:
+	evh* acquire_shmem();
+	frb* alloc_global(UCHAR type, ULONG length, bool recurse);
+	void create_process();
+	void delete_event(evnt*);
+	void delete_process(SLONG);
+	void delete_request(evt_req*);
+	void delete_session(SLONG);
+	void deliver();
+	void deliver_request(evt_req*);
+	void exit_handler(void *);
+	evnt* find_event(USHORT, const TEXT*, evnt*);
+	void free_global(frb*);
+	req_int* historical_interest(ses*, SLONG);
+	void init_shmem(SH_MEM, bool);
+	void insert_tail(srq*, srq*);
+	evnt* make_event(USHORT, const TEXT*, SLONG);
+	void post_process(prb*);
+	void probe_processes();
+	void release_shmem();
+	void remove_que(srq*);
+	bool request_completed(evt_req*);
+	void watcher_thread();
+
+	static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM arg)
+	{
+		EventManager* const eventMgr = static_cast<EventManager*>(arg);
+		eventMgr->watcher_thread();
+		return 0;
+	}
+
+	static void init_shmem(void* arg, SH_MEM shmem, bool init)
+	{
+		EventManager* const eventMgr = static_cast<EventManager*>(arg);
+		eventMgr->init_shmem(shmem, init);
+	}
+
+	static void mutex_bugcheck(const TEXT*, int);
+	static void punt(const TEXT*);
+
+	evh* m_header;
+	prb* m_process;
+	SLONG m_processOffset;
+	SH_MEM_T m_shmemData;
+
+	Firebird::string m_dbId;
+
+	Firebird::Semaphore m_startupSemaphore;
+	Firebird::Semaphore m_cleanupSemaphore;
+
+#ifdef WIN_NT
+	struct mtx m_mutex;
+#endif
+};
+
+} // namespace
 
 #endif // JRD_EVENT_PROTO_H
 

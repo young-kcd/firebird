@@ -45,7 +45,7 @@ void*	ISC_make_signal(bool, bool, int, int);
 
 typedef void (*FPTR_INIT_GLOBAL_REGION)(void*, struct sh_mem*, bool);
 UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
-					void*, SLONG, struct sh_mem*);
+					 void*, ULONG, struct sh_mem*);
 #if defined(WIN_NT)
 int		ISC_mutex_init(struct mtx*, const TEXT*);
 #else
@@ -58,8 +58,8 @@ int		ISC_mutex_unlock(struct mtx *);
 void	ISC_mutex_fini(struct mtx *);
 
 #if defined HAVE_MMAP || defined WIN_NT
-UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
-void	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
+UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, ULONG, ULONG);
+void	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, ULONG);
 #endif
 
 #ifdef UNIX
@@ -72,7 +72,7 @@ void	ISC_sync_signals_reset();
 ULONG	ISC_exception_post(ULONG, const TEXT*);
 #endif
 
-UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, SLONG, bool);
+UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, ULONG, bool);
 void	ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void *, SLONG *, void **);
 void	ISC_unmap_file(ISC_STATUS *, struct sh_mem *);

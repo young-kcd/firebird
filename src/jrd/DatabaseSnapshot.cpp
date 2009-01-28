@@ -72,35 +72,40 @@ const UCHAR TAG_RECORD = MAX_UCHAR;
 
 // SharedMemory class
 
-const ULONG DatabaseSnapshot::SharedMemory::VERSION = 2;
-const ULONG DatabaseSnapshot::SharedMemory::DEFAULT_SIZE = 1048576;
-
-
-DatabaseSnapshot::SharedMemory::SharedMemory()
+DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
+	: process_id(getpid()), local_id(dbb->dbb_monitoring_id)
 {
-	TEXT filename[MAXPATHLEN];
-	gds__prefix_lock(filename, MONITOR_FILE);
+	Firebird::string name;
+	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
 	ISC_STATUS_ARRAY statusVector;
-	base = (Header*) ISC_map_file(statusVector, filename, init, this, DEFAULT_SIZE, &handle);
+	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
 	if (!base)
 	{
 		iscLogStatus("Cannot initialize the shared memory region", statusVector);
 		status_exception::raise(statusVector);
 	}
 
-	fb_assert(base->version == VERSION);
+	fb_assert(base->version == MONITOR_VERSION);
 }
 
 
-DatabaseSnapshot::SharedMemory::~SharedMemory()
+DatabaseSnapshot::SharedData::~SharedData()
 {
+	cleanup();
+
+#ifdef WIN_NT
+	ISC_mutex_fini(&mutex);
+#else
+	ISC_mutex_fini(&base->mutex);
+#endif
+
 	ISC_STATUS_ARRAY statusVector;
 	ISC_unmap_file(statusVector, &handle);
 }
 
 
-void DatabaseSnapshot::SharedMemory::acquire()
+void DatabaseSnapshot::SharedData::acquire()
 {
 #ifdef WIN_NT
 	checkMutex("lock", ISC_mutex_lock(&mutex));
@@ -123,7 +128,7 @@ void DatabaseSnapshot::SharedMemory::acquire()
 }
 
 
-void DatabaseSnapshot::SharedMemory::release()
+void DatabaseSnapshot::SharedData::release()
 {
 #ifdef WIN_NT
 	checkMutex("unlock", ISC_mutex_unlock(&mutex));
@@ -133,13 +138,8 @@ void DatabaseSnapshot::SharedMemory::release()
 }
 
 
-UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& pool, ULONG& resultSize)
+UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 {
-	fb_assert(tdbb);
-
-	const Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
 	DumpGuard guard(this);
 
 	ULONG self_dbb_offset = 0;
@@ -157,7 +157,7 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& poo
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
 
-		if (element->processId == getpid() && element->localId == dbb->dbb_monitoring_id)
+		if (element->processId == process_id && element->localId == local_id)
 		{
 			self_dbb_offset = offset;
 		}
@@ -206,17 +206,12 @@ UCHAR* DatabaseSnapshot::SharedMemory::readData(thread_db* tdbb, MemoryPool& poo
 }
 
 
-void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ULONG length, const UCHAR* buffer)
+void DatabaseSnapshot::SharedData::write(ULONG length, const UCHAR* buffer)
 {
-	fb_assert(tdbb);
-
-	const Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
 	DumpGuard guard(this);
 
 	// Remove old copies of our element, if any
-	doCleanup(dbb);
+	cleanup();
 
 	// Do we need to extend the allocated memory?
 	while (base->used + sizeof(Element) + length > base->allocated)
@@ -227,37 +222,24 @@ void DatabaseSnapshot::SharedMemory::writeData(thread_db* tdbb, ULONG length, co
 	// Put an up-to-date element at the tail
 	UCHAR* const ptr = (UCHAR*) base + base->used;
 	Element* const element = (Element*) ptr;
-	element->processId = getpid();
-	element->localId = dbb->dbb_monitoring_id;
+	element->processId = process_id;
+	element->localId = local_id;
 	element->length = length;
 	memcpy(ptr + sizeof(Element), buffer, length);
 	base->used += sizeof(Element) + length;
 }
 
 
-void DatabaseSnapshot::SharedMemory::cleanup(thread_db* tdbb)
+void DatabaseSnapshot::SharedData::cleanup()
 {
-	fb_assert(tdbb);
-
-	const Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
-	DumpGuard guard(this);
-
 	// Remove information about our dbb
-	doCleanup(dbb);
-}
-
-
-void DatabaseSnapshot::SharedMemory::doCleanup(const Database* const dbb)
-{
 	for (ULONG offset = sizeof(Header); offset < base->used;)
 	{
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = sizeof(Element) + element->length;
 
-		if (element->processId == getpid() && element->localId == dbb->dbb_monitoring_id)
+		if (element->processId == process_id && element->localId == local_id)
 		{
 			fb_assert(base->used >= offset + length);
 			memmove(ptr, ptr + length, base->used - offset - length);
@@ -271,7 +253,7 @@ void DatabaseSnapshot::SharedMemory::doCleanup(const Database* const dbb)
 }
 
 
-void DatabaseSnapshot::SharedMemory::extend()
+void DatabaseSnapshot::SharedData::extend()
 {
 	const ULONG newSize = handle.sh_mem_length_mapped + DEFAULT_SIZE;
 
@@ -289,7 +271,7 @@ void DatabaseSnapshot::SharedMemory::extend()
 }
 
 
-void DatabaseSnapshot::SharedMemory::checkMutex(const TEXT* string, int state)
+void DatabaseSnapshot::SharedData::checkMutex(const TEXT* string, int state)
 {
 	if (state)
 	{
@@ -304,15 +286,13 @@ void DatabaseSnapshot::SharedMemory::checkMutex(const TEXT* string, int state)
 }
 
 
-void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool initialize)
+void DatabaseSnapshot::SharedData::init(void* arg, SH_MEM_T* shmemData, bool initialize)
 {
-	SharedMemory* const shmem = (SharedMemory*) arg;
+	SharedData* const shmem = (SharedData*) arg;
 	fb_assert(shmem);
 
 #ifdef WIN_NT
-	char buffer[MAXPATHLEN];
-	gds__prefix_lock(buffer, MONITOR_FILE);
-	checkMutex("init", ISC_mutex_init(&shmem->mutex, buffer));
+	checkMutex("init", ISC_mutex_init(&shmem->mutex, shmemData->sh_mem_name));
 #endif
 
 	if (!initialize)
@@ -320,7 +300,7 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 
 	// Initialize the shared data header
 	Header* const header = (Header*) shmemData->sh_mem_address;
-	header->version = VERSION;
+	header->version = MONITOR_VERSION;
 	header->used = sizeof(Header);
 	header->allocated = shmemData->sh_mem_length_mapped;
 
@@ -331,9 +311,6 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 
 
 // DatabaseSnapshot class
-
-DatabaseSnapshot::SharedMemory* DatabaseSnapshot::dump = NULL;
-InitMutex<DatabaseSnapshot> DatabaseSnapshot::startup;
 
 
 DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
@@ -352,17 +329,6 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 	}
 
 	return transaction->tra_db_snapshot;
-}
-
-
-void DatabaseSnapshot::cleanup(thread_db* tdbb)
-{
-	SET_TDBB(tdbb);
-
-	if (dump)
-	{
-		dump->cleanup(tdbb);
-	}
 }
 
 
@@ -458,9 +424,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	dbb->dbb_ast_flags |= DBB_monitor_off;
 
 	// Read the shared memory
-	fb_assert(dump);
+	fb_assert(dbb->dbb_monitoring_data);
 	ULONG dataSize = 0;
-	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dump->readData(tdbb, pool, dataSize));
+	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dbb->dbb_monitoring_data->read(pool, dataSize));
 	fb_assert(dataSize);
 
 	ClumpletReader reader(ClumpletReader::WideUnTagged, data, dataSize);
@@ -899,10 +865,12 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 		}
 	}
 
-	startup.init();
+	if (!dbb->dbb_monitoring_data)
+	{
+		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) SharedData(dbb);
+	}
 
-	fb_assert(dump);
-	dump->writeData(tdbb, writer.getBufferLength(), writer.getBuffer());
+	dbb->dbb_monitoring_data->write(writer.getBufferLength(), writer.getBuffer());
 }
 
 

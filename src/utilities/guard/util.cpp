@@ -256,11 +256,10 @@ int UTIL_ex_lock(const TEXT* file)
  *
  **************************************/
 
-	TEXT expanded_filename[MAXPATHLEN], tmp[MAXPATHLEN], hostname[64];
+	TEXT expanded_filename[MAXPATHLEN];
 
 /* get the file name and prepend the complete path etc */
-	gds__prefix_lock(tmp, file);
-	sprintf(expanded_filename, tmp, ISC_get_host(hostname, sizeof(hostname)));
+	gds__prefix(expanded_filename, file);
 
 /* file fd for the opened and locked file */
 	int fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666);

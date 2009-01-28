@@ -43,7 +43,6 @@ int			INTL_convert_string(dsc*, const dsc*, ErrorFunction);
 int			INTL_data(const dsc*);
 int			INTL_data_or_binary(const dsc*);
 bool		INTL_defined_type(Jrd::thread_db*, USHORT);
-void		INTL_init(Jrd::thread_db*);
 USHORT		INTL_key_length(Jrd::thread_db*, USHORT, USHORT);
 Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, USHORT parm1);
 Jrd::Collation*	INTL_texttype_lookup(Jrd::thread_db* tdbb, USHORT parm1);

@@ -861,9 +861,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	bool first = false;
 
-	LCK_init(tdbb, LCK_OWNER_attachment);	// For the attachment
-	attachment->att_flags |= ATT_lck_init_done;
-
 	if (dbb->dbb_filename.empty())
 	{
 #if defined(DEV_BUILD) && defined(SUPERSERVER)
@@ -891,19 +888,22 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		else
 			dbb->dbb_database_name = expanded_name;
 
-		// Extra LCK_init() done to keep the lock table until the
-		// database is shutdown() after the last detach.
+		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
+
+		// Initialize the lock manager
+		dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId());
+
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 
-		INI_init(tdbb);
-
-		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
+		LCK_init(tdbb, LCK_OWNER_attachment);
+		attachment->att_flags |= ATT_lck_init_done;
 
 		// Initialize locks
 		init_database_locks(tdbb);
 
+		INI_init(tdbb);
 		SHUT_init(tdbb);
 		PAG_header_init(tdbb);
 		INI_init2(tdbb);
@@ -939,6 +939,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			// looks like someone tries to attach incompatibly
 			status_exception::raise(Arg::Gds(isc_bad_dpb_content));
 		}
+
+		fb_assert(dbb->dbb_lock_mgr);
+
+		LCK_init(tdbb, LCK_OWNER_attachment);
+		attachment->att_flags |= ATT_lck_init_done;
 	}
 
     // Attachments to a ReadOnly database need NOT do garbage collection
@@ -1361,9 +1366,7 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, blb** blob_handle)
 }
 
 
-ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
-							Attachment**	handle,
-							SLONG*	id)
+ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS* user_status, Attachment** handle, SLONG* id)
 {
 /**************************************
  *
@@ -1383,7 +1386,12 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		EVENT_cancel(*id);
+		Database* const dbb = tdbb->getDatabase();
+
+		if (dbb->dbb_event_mgr)
+		{
+			dbb->dbb_event_mgr->cancelEvents(*id);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1823,19 +1831,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_page_size = (page_size > MAX_PAGE_SIZE) ? MAX_PAGE_SIZE : page_size;
 
-	LCK_init(tdbb, LCK_OWNER_attachment);	// For the attachment
-	attachment->att_flags |= ATT_lck_init_done;
-	// Extra LCK_init() done to keep the lock table until the
-	// database is shutdown() after the last detach.
-	LCK_init(tdbb, LCK_OWNER_database);
-	dbb->dbb_flags |= DBB_lck_init_done;
-
-	INI_init(tdbb);
-	PAG_init(tdbb);
-	initing_security = true;
-
-    SCL_init(tdbb, true, userId);
-
 	initing_security = false;
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
@@ -1885,8 +1880,23 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	const jrd_file* const first_dbb_file = pageSpace->file;
 
+	// Initialize the lock manager
+	dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId());
+
+	LCK_init(tdbb, LCK_OWNER_database);
+	dbb->dbb_flags |= DBB_lck_init_done;
+
+	LCK_init(tdbb, LCK_OWNER_attachment);
+	attachment->att_flags |= ATT_lck_init_done;
+
 	// Initialize locks
 	init_database_locks(tdbb);
+
+	INI_init(tdbb);
+	PAG_init(tdbb);
+	initing_security = true;
+
+	SCL_init(tdbb, true, userId);
 
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -2524,13 +2534,17 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		Database* const dbb = tdbb->getDatabase();
 		Lock* const lock = dbb->dbb_lock;
 
+		EventManager::init(dbb);
+
 		if (!attachment->att_event_session)
 		{
-			attachment->att_event_session = EVENT_create_session();
+			attachment->att_event_session = dbb->dbb_event_mgr->createSession();
 		}
 
-		*id = EVENT_que(attachment->att_event_session, lock->lck_length,
-						(const TEXT*) &lock->lck_key, length, items, ast, arg);
+		*id = dbb->dbb_event_mgr->queEvents(attachment->att_event_session,
+											lock->lck_length, (const TEXT*) &lock->lck_key,
+											length, items,
+											ast, arg);
 	}
 	catch (const Exception& ex)
 	{
@@ -4654,10 +4668,6 @@ static Database* init(thread_db* tdbb,
 		}
 	}
 
-	// Initialize the lock manager
-
-	dbb->dbb_lock_mgr = LockManager::create(expanded_filename);
-
 	// Initialize a number of subsystems
 
 	TRA_init(dbb);
@@ -4671,8 +4681,6 @@ static Database* init(thread_db* tdbb,
 		dbb->dbb_encrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
 		dbb->dbb_decrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
-
-	INTL_init(tdbb);
 
 	return dbb;
 }
@@ -4838,8 +4846,10 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	}
 #endif
 
-	if (attachment->att_event_session)
-		EVENT_delete_session(attachment->att_event_session);
+	if (dbb->dbb_event_mgr && attachment->att_event_session)
+	{
+		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
+	}
 
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
@@ -4870,7 +4880,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	detachLocksFromAttachment(attachment);
 
 	if (attachment->att_flags & ATT_lck_init_done) {
-		LCK_fini(tdbb, LCK_OWNER_attachment);	// For the attachment
+		LCK_fini(tdbb, LCK_OWNER_attachment);
 		attachment->att_flags &= ~ATT_lck_init_done;
 	}
 
@@ -5088,8 +5098,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
 
-	DatabaseSnapshot::cleanup(tdbb);
-
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 
@@ -5150,7 +5158,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_flags & DBB_lck_init_done) {
 		dbb->dbb_page_manager.releaseLocks();
 
-		LCK_fini(tdbb, LCK_OWNER_database);	// For the database
+		LCK_fini(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags &= ~DBB_lck_init_done;
 	}
 

@@ -36,6 +36,7 @@
 
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
+#include "../jrd/ods.h"
 
 namespace Jrd {
 

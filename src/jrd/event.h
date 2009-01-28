@@ -20,11 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 23-Feb-2002 Dmitry Yemanov - Events wildcarding
- *
- *
  * 2002-02-23 Sean Leyne - Code Cleanup, removed old Win3.1 port (Windows_Only)
- *
  */
 
 #ifndef JRD_EVENT_H
@@ -36,16 +32,11 @@
 
 // Global section header
 
-const int EVENT_VERSION			= 4;
-
-const int EVENT_HASH_SIZE		= 7;
-
-const int EVENT_DEFAULT_SIZE	= 32768;
-const int EVENT_EXTEND_SIZE		= 32768;
+const int EVENT_VERSION = 4;
 
 struct evh 
 {
-	SLONG evh_length;				// Current length of global section
+	ULONG evh_length;				// Current length of global section
 	UCHAR evh_version;				// Version number of global section
 	srq evh_events;					// Known events
 	srq evh_processes;				// Known processes
@@ -53,10 +44,7 @@ struct evh
 	SRQ_PTR evh_current_process;	// Current process, if any
 	struct mtx evh_mutex;			// Mutex controlling access
 	SLONG evh_request_id;			// Next request id
-	SRQ_PTR evh_hash_table[EVENT_HASH_SIZE];
 };
-
-typedef evh *EVH;
 
 // Common block header
 
@@ -71,7 +59,7 @@ const int type_max	= 8;
 
 struct event_hdr // CVC: previous clash with ods.h's hdr
 {
-	SLONG hdr_length;				// Length of block
+	ULONG hdr_length;				// Length of block
 	UCHAR hdr_type;					// Type of block
 };
 
@@ -82,7 +70,6 @@ struct frb
 	event_hdr frb_header;
 	SLONG frb_next;					// Next block
 };
-typedef frb *FRB;
 
 // Process blocks
 
@@ -95,13 +82,13 @@ struct prb
 	event_t prb_event;				// Event on which to wait
 	USHORT prb_flags;
 };
-typedef prb *PRB;
 
 const int PRB_wakeup	= 1;		// Schedule a wakeup for process
 const int PRB_pending	= 2;		// Wakeup has been requested, and is dangling
+#if (defined HAVE_MMAP || defined WIN_NT)
 const int PRB_remap		= 4;		// need to remap shared memory
 const int PRB_remap_over= 8;		// remap is over
-const int PRB_exiting	= 16;		// Process is exiting
+#endif
 
 // Session block
 
@@ -113,7 +100,6 @@ struct ses
 	SRQ_PTR ses_interests;			// Historical interests
 	USHORT ses_flags;
 };
-typedef ses *SES;
 
 const int SES_delivering	= 1;	// Watcher thread is delivering an event
 const int SES_purge			= 2;	// delete session after delivering an event
@@ -130,7 +116,6 @@ struct evnt
 	USHORT evnt_length;				// Length of event name
 	TEXT evnt_name[1];				// Event name
 };
-typedef evnt *EVNT;
 
 // Request block
 
@@ -145,7 +130,6 @@ struct evt_req
 	void *req_ast_arg;				// Argument for ast
 	SLONG req_request_id;			// Request id, dummy
 };
-typedef evt_req *EVT_REQ;
 
 // Request interest block
 
@@ -158,7 +142,6 @@ struct req_int
 	SRQ_PTR rint_next;				// Next interest of request
 	SLONG rint_count;				// Threshold count
 };
-typedef req_int *RINT;
 
 const int EPB_version1 = 1;
 

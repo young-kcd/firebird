@@ -634,8 +634,12 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 		switch (work->dfw_type)
 		{
 		case dfw_post_event:
-			EVENT_post(lock->lck_length, (const TEXT*) &lock->lck_key,
-					   work->dfw_name.length(), work->dfw_name.c_str(), work->dfw_count);
+			EventManager::init(dbb);
+
+			dbb->dbb_event_mgr->postEvent(lock->lck_length, (const TEXT*) &lock->lck_key,
+										  work->dfw_name.length(), work->dfw_name.c_str(),
+										  work->dfw_count);
+
 			*ptr = work->dfw_next;
 			delete work;
 			pending_events = true;
@@ -651,7 +655,9 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 	}
 
 	if (pending_events)
-		EVENT_deliver();
+	{
+		dbb->dbb_event_mgr->deliverEvents();
+	}
 }
 
 

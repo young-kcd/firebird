@@ -90,14 +90,12 @@ const SSHORT LCK_NO_WAIT	= 0;
 
 const UCHAR type_null	= 0;
 const UCHAR type_lhb	= 1;
-const UCHAR type_prb	= 2;
-const UCHAR type_lrq	= 3;
-const UCHAR type_lbl	= 4;
-const UCHAR type_his	= 5;
-const UCHAR type_smbx	= 6;
-const UCHAR type_shb	= 7;
-const UCHAR type_own	= 8;
-const UCHAR type_lpr	= 9;
+const UCHAR type_lrq	= 2;
+const UCHAR type_lbl	= 3;
+const UCHAR type_his	= 4;
+const UCHAR type_shb	= 5;
+const UCHAR type_own	= 6;
+const UCHAR type_lpr	= 7;
 const UCHAR type_MAX	= type_lpr;
 
 // Version number of the lock table.
@@ -134,11 +132,11 @@ struct lhb
 	srq lhb_free_owners;			// Free owner blocks
 	srq lhb_free_locks;				// Free lock blocks
 	srq lhb_free_requests;			// Free lock requests
-	SLONG lhb_length;				// Size of lock table
-	SLONG lhb_used;					// Bytes of lock table in use
+	ULONG lhb_length;				// Size of lock table
+	ULONG lhb_used;					// Bytes of lock table in use
 	USHORT lhb_hash_slots;			// Number of hash slots allocated
 	USHORT lhb_flags;				// Miscellaneous info
-	mtx lhb_mutex[1];				// Mutex controlling access
+	struct mtx lhb_mutex;			// Mutex controlling access
 	SRQ_PTR lhb_history;
 	ULONG lhb_scan_interval;		// Deadlock scan interval (secs)
 	ULONG lhb_acquire_spins;

@@ -880,20 +880,6 @@ bool INTL_defined_type(thread_db* tdbb, USHORT t_type)
 }
 
 
-void INTL_init(thread_db* tdbb)
-{
-/**************************************
- *
- *      I N T L _ i n i t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-}
-
-
 USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 {
 /**************************************

@@ -43,16 +43,15 @@ class thread_db;
 
 class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
-	typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<int, LockManager*> > > DbLockMgrMap;
+	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
 
 	static Firebird::GlobalPtr<DbLockMgrMap> g_lmMap;
 	static Firebird::GlobalPtr<Firebird::Mutex> g_mapMutex;
-	static const char* PATTERN;
 
 	const int PID;
 
 public:
-	static LockManager* create(const Firebird::PathName&);
+	static LockManager* create(const Firebird::string&);
 
 	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(thread_db*, SRQ_PTR*);
@@ -72,7 +71,7 @@ public:
 	SLONG writeData(SRQ_PTR, SLONG);
 
 private:
-	explicit LockManager(int);
+	explicit LockManager(const Firebird::string&);
 	~LockManager();
 
 	bool lockOrdering() const
@@ -81,7 +80,7 @@ private:
 	}
 
 	void acquire_shmem(SRQ_PTR);
-	UCHAR* alloc(SSHORT, ISC_STATUS*);
+	UCHAR* alloc(USHORT, ISC_STATUS*);
 	lbl* alloc_lock(USHORT, ISC_STATUS*);
 	void blocking_action(thread_db*, SRQ_PTR, SRQ_PTR);
 	void blocking_action_thread();
@@ -133,7 +132,12 @@ private:
 #endif
 	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
 
-	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM);
+	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
+	{
+		LockManager* const lockMgr = static_cast<LockManager*>(arg);
+		lockMgr->blocking_action_thread();
+		return 0;
+	}
 
 	static void initialize(void* arg, SH_MEM shmem, bool init)
 	{
@@ -155,8 +159,7 @@ private:
 	Firebird::Semaphore m_cleanupSemaphore;
 	Firebird::Semaphore m_startupSemaphore;
 
-	const int m_dbId;
-	Firebird::PathName m_lockFile;
+	Firebird::string m_dbId;
 
 #ifdef WIN_NT
 	struct mtx m_shmemMutex;

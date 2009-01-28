@@ -39,6 +39,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
+#include "../jrd/ThreadStart.h"
 
 #include <windows.h>
 #include <process.h>

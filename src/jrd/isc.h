@@ -153,7 +153,7 @@ struct sh_mem
 	void*	sh_mem_object;
 	void*	sh_mem_interest;
 	void*	sh_mem_hdr_object;
-	SLONG*	sh_mem_hdr_address;
+	ULONG*	sh_mem_hdr_address;
 	TEXT	sh_mem_name[MAXPATHLEN];
 };
 typedef sh_mem SH_MEM_T;

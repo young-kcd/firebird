@@ -54,6 +54,28 @@ namespace Jrd
 #endif
 	}
 
+	const Firebird::string& Database::getUniqueFileId() const
+	{
+		static Firebird::GlobalPtr<Firebird::string> file_id;
+
+		if (file_id->empty())
+		{
+			const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+
+			Firebird::UCharBuffer buffer;
+			PIO_get_unique_file_id(pageSpace->file, buffer);
+
+			for (size_t i = 0; i < buffer.getCount(); i++)
+			{
+				TEXT hex[3];
+				sprintf(hex, "%02x", (int) buffer[i]);
+				file_id->append(hex);
+			}
+		}
+
+		return file_id;
+	}
+
 	Database::~Database()
 	{
 		delete dbb_sys_trans;
@@ -66,9 +88,14 @@ namespace Jrd
 			MemoryPool::deletePool(dbb_pools[i]);
 		}
 
+		delete dbb_monitoring_data;
+
 		dbb_flags |= DBB_destroying;
+
 		Checkout dcoHolder(this);
-		dbb_lock_mgr->release();
+		// This line decrements the usage counter and may cause the destructor to be called.
+		// It should happen with the dbb_sync unlocked.
+		dbb_lock_mgr = NULL;
 	}
 
 	void Database::deletePool(MemoryPool* pool)

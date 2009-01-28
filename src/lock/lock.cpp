@@ -96,7 +96,7 @@
 #include <process.h>
 #define MUTEX		&m_shmemMutex
 #else
-#define MUTEX		m_header->lhb_mutex
+#define MUTEX		&m_header->lhb_mutex
 #endif
 
 #ifdef DEV_BUILD
@@ -159,17 +159,12 @@ static const bool compatibility[LCK_max][LCK_max] =
 
 namespace Jrd {
 
-const char* LockManager::PATTERN = "firebird_db_%d_lock";
-
 Firebird::GlobalPtr<LockManager::DbLockMgrMap> LockManager::g_lmMap;
 Firebird::GlobalPtr<Firebird::Mutex> LockManager::g_mapMutex;
 
 
-LockManager* LockManager::create(const Firebird::PathName& filename)
+LockManager* LockManager::create(const Firebird::string& id)
 {
-	//const size_t HASH_SIZE = 997;
-	const int id = 0;//filename.hash(HASH_SIZE);
-
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
 	LockManager* lockMgr = NULL;
@@ -180,32 +175,32 @@ LockManager* LockManager::create(const Firebird::PathName& filename)
 
 	fb_assert(lockMgr);
 
-	lockMgr->addRef();
 	return lockMgr;
 }
 
-LockManager::LockManager(int dbId)
+
+LockManager::LockManager(const Firebird::string& id)
 	: PID(getpid()),
 	  m_bugcheck(false),
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
-	  m_dbId(dbId),
-	  m_lockFile(getPool())
+	  m_dbId(getPool(), id)
 {
-//	m_lockFile.printf(PATTERN, m_dbId);
-	TEXT buffer[MAXPATHLEN];
-	gds__prefix_lock(buffer, LOCK_FILE);
-	m_lockFile = buffer;
+	Firebird::string name;
+	name.printf(LOCK_FILE, m_dbId.c_str());
 
 	ISC_STATUS_ARRAY local_status;
-	if (!(m_header = (lhb*) ISC_map_file(local_status, m_lockFile.c_str(),
+	if (!(m_header = (lhb*) ISC_map_file(local_status,
+										 name.c_str(),
 										 initialize, this,
 										 Config::getLockMemSize(),
 										 &m_shmem)))
 	{
 		Firebird::status_exception::raise(local_status);
 	}
+
+	fb_assert(m_header->lhb_version == LHB_VERSION);
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -251,10 +246,9 @@ LockManager::~LockManager()
 		release_mutex();
 	}
 
-	ISC_mutex_fini(MUTEX);
-
 	if (m_header)
 	{
+		ISC_mutex_fini(MUTEX);
 		ISC_unmap_file(local_status, &m_shmem);
 	}
 
@@ -507,7 +501,7 @@ SRQ_PTR LockManager::enqueue(thread_db* tdbb,
 		else {
 			++m_header->lhb_operations[0];
 		}
-
+	
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
 		const SRQ_PTR lock_id = grant_or_que(tdbb, request, lock, lck_wait);
@@ -1062,7 +1056,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #endif
 		)
 	{
-		const SLONG length = m_header->lhb_length;
+		const ULONG new_length = m_header->lhb_length;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 		Firebird::WriteLockGuard guard(m_remapSync);
@@ -1070,7 +1064,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		remap_local_owners();
 		// Remap the shared memory region
 		ISC_STATUS_ARRAY status_vector;
-		lhb* const header = (lhb*) ISC_remap_file(status_vector, &m_shmem, length, false);
+		lhb* const header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, false);
 		if (header)
 			m_header = header;
 		else
@@ -1109,7 +1103,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 }
 
 
-UCHAR* LockManager::alloc(SSHORT size, ISC_STATUS* status_vector)
+UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1124,32 +1118,22 @@ UCHAR* LockManager::alloc(SSHORT size, ISC_STATUS* status_vector)
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
 	const ULONG block = m_header->lhb_used;
-	m_header->lhb_used += size;
 
 	// Make sure we haven't overflowed the lock table.  If so, bump the size of the table.
 
-	if (m_header->lhb_used > m_header->lhb_length
-#ifdef LOCK_DEBUG_REMAP
-		// If we're debugging remaps, force a remap every-so-often.
-		|| ((debug_remap_count++ % DEBUG_REMAP_INTERVAL) == 0 && m_processOffset)
-#endif
-		)
+	if (m_header->lhb_used + size > m_header->lhb_length)
 	{
-		const bool extend = (m_header->lhb_used > m_header->lhb_length);
-		m_header->lhb_used -= size;
-
 #if (defined HAVE_MMAP || defined WIN_NT)
 		Firebird::WriteLockGuard guard(m_remapSync);
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		const ULONG length = m_shmem.sh_mem_length_mapped + (extend ? Config::getLockMemSize() : 0);
-		lhb* header = (lhb*) ISC_remap_file(status_vector, &m_shmem, length, true);
+		const ULONG new_length = m_shmem.sh_mem_length_mapped + Config::getLockMemSize();
+		lhb* header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, true);
 		if (header) {
 			m_header = header;
 			ASSERT_ACQUIRED;
 			m_header->lhb_length = m_shmem.sh_mem_length_mapped;
-			m_header->lhb_used += size;
 		}
 		else
 #endif
@@ -1168,6 +1152,8 @@ UCHAR* LockManager::alloc(SSHORT size, ISC_STATUS* status_vector)
 			return NULL;
 		}
 	}
+
+	m_header->lhb_used += size;
 
 #ifdef DEV_BUILD
 	// This version of alloc() doesn't initialize memory.  To shake out
@@ -1299,14 +1285,6 @@ void LockManager::blocking_action(thread_db* tdbb,
 }
 
 
-THREAD_ENTRY_DECLARE LockManager::blocking_action_thread(THREAD_ENTRY_PARAM arg)
-{
-	LockManager* const lockMgr = static_cast<LockManager*>(arg);
-	lockMgr->blocking_action_thread();
-	return 0;
-}
-
-
 void LockManager::blocking_action_thread()
 {
 /**************************************
@@ -1334,14 +1312,12 @@ void LockManager::blocking_action_thread()
 
 	try
 	{
-		SRQ_PTR* process_offset_ptr = (SRQ_PTR*) &m_processOffset;
-
 		while (true)
 		{
 			m_localMutex.enter();
 
 			// See if the main thread has requested us to go away
-			if (!*process_offset_ptr || m_process->prc_process_id != PID)
+			if (!m_processOffset || m_process->prc_process_id != PID)
 			{
 				if (atStartup)
 				{
@@ -1357,7 +1333,7 @@ void LockManager::blocking_action_thread()
 			Firebird::HalfStaticArray<SRQ_PTR, 4> blocking_owners;
 
 			acquire_shmem(DUMMY_OWNER);
-			const prc* const process = (prc*) SRQ_ABS_PTR(*process_offset_ptr);
+			const prc* const process = (prc*) SRQ_ABS_PTR(m_processOffset);
 
 			srq* lock_srq;
 			SRQ_LOOP(process->prc_owners, lock_srq)
@@ -1368,7 +1344,7 @@ void LockManager::blocking_action_thread()
 
 			release_mutex();
 
-			while (blocking_owners.getCount() && *process_offset_ptr)
+			while (blocking_owners.getCount() && m_processOffset)
 			{
 				const SRQ_PTR owner_offset = blocking_owners.pop();
 				acquire_shmem(owner_offset);
@@ -1466,6 +1442,18 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 	{
 		m_bugcheck = true;
 
+		// The lock table has some problem - copy it for later analysis
+
+		TEXT buffer[MAXPATHLEN];
+		gds__prefix(buffer, "lock_table.dump");
+		const TEXT* const lock_file = buffer;
+		FILE* const fd = fopen(lock_file, "wb");
+		if (fd)
+		{
+			fwrite(m_header, 1, m_header->lhb_used, fd);
+			fclose(fd);
+		}
+
 		// If the current mutex acquirer is in the same process, release the mutex
 
 		if (m_header && (m_header->lhb_active_owner > 0)) {
@@ -1519,8 +1507,7 @@ bool LockManager::create_owner(ISC_STATUS* status_vector,
 	if (m_header->lhb_version != LHB_VERSION)
 	{
 		TEXT bug_buffer[BUFFER_TINY];
-		sprintf(bug_buffer,
-				"inconsistent lock table version number; found %d, expected %d",
+		sprintf(bug_buffer, "inconsistent lock table version number; found %d, expected %d",
 				m_header->lhb_version, LHB_VERSION);
 		bug(status_vector, bug_buffer);
 		return false;
@@ -2152,6 +2139,7 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 	owner->own_count = 1;
 	owner->own_owner_id = owner_id;
 	owner->own_process = m_processOffset;
+	owner->own_thread_id = 0;
 	SRQ_INIT(owner->own_lhb_owners);
 	SRQ_INIT(owner->own_prc_owners);
 	SRQ_INIT(owner->own_requests);
@@ -2177,7 +2165,7 @@ void LockManager::initialize(SH_MEM shmem_data, bool initialize)
  *
  **************************************/
 #ifdef WIN_NT
-	if (ISC_mutex_init(MUTEX, m_lockFile.c_str())) {
+	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) {
 		bug(NULL, "mutex init failed");
 	}
 #endif
@@ -2236,7 +2224,7 @@ void LockManager::initialize(SH_MEM shmem_data, bool initialize)
 	if (Config::getLockGrantOrder())
 		m_header->lhb_flags |= LHB_lock_ordering;
 
-	const SLONG length = sizeof(lhb) + (m_header->lhb_hash_slots * sizeof(m_header->lhb_hash[0]));
+	const ULONG length = sizeof(lhb) + (m_header->lhb_hash_slots * sizeof(m_header->lhb_hash[0]));
 	m_header->lhb_length = shmem_data->sh_mem_length_mapped;
 	m_header->lhb_used = FB_ALIGN(length, FB_ALIGNMENT);
 

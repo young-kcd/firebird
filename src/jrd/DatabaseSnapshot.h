@@ -30,6 +30,11 @@
 
 namespace Jrd {
 
+// forward declarations
+class jrd_rel;
+class RecordBuffer;
+class RuntimeStatistics;
+
 class DatabaseSnapshot
 {
 	struct RelationData
@@ -38,10 +43,18 @@ class DatabaseSnapshot
 		RecordBuffer* data;
 	};
 
-	class SharedMemory
+	struct Element
 	{
-		static const ULONG VERSION;
-		static const ULONG DEFAULT_SIZE;
+		SLONG processId;
+		SLONG localId;
+		ULONG length;
+	};
+
+public:
+	class SharedData
+	{
+		static const ULONG MONITOR_VERSION = 2;
+		static const ULONG DEFAULT_SIZE = 1048576;
 
 		struct Header
 		{
@@ -56,42 +69,40 @@ class DatabaseSnapshot
 		class DumpGuard
 		{
 		public:
-			explicit DumpGuard(SharedMemory* ptr)
-				: dump(ptr)
+			explicit DumpGuard(SharedData* ptr)
+				: data(ptr)
 			{
-				dump->acquire();
+				data->acquire();
 			}
 
 			~DumpGuard()
 			{
-				dump->release();
+				data->release();
 			}
 
 		private:
 			DumpGuard(const DumpGuard&);
 			DumpGuard& operator=(const DumpGuard&);
 
-			SharedMemory* dump;
+			SharedData* const data;
 		};
 
 	public:
-		SharedMemory();
-		~SharedMemory();
+		explicit SharedData(const Database*);
+		~SharedData();
 
 		void acquire();
 		void release();
 
-		UCHAR* readData(thread_db*, MemoryPool&, ULONG&);
-		void writeData(thread_db*, ULONG, const UCHAR*);
-
-		void cleanup(thread_db*);
+		UCHAR* read(MemoryPool&, ULONG&);
+		void write(ULONG, const UCHAR*);
 
 	private:
 		// copying is prohibited
-		SharedMemory(const SharedMemory&);
-		SharedMemory& operator =(const SharedMemory&);
+		SharedData(const SharedData&);
+		SharedData& operator =(const SharedData&);
 
-		void doCleanup(const Database* const dbb);
+		void cleanup();
 		void extend();
 
 		static void checkMutex(const TEXT*, int);
@@ -102,28 +113,17 @@ class DatabaseSnapshot
 		struct mtx mutex;
 #endif
 		Header* base;
+
+		const SLONG process_id;
+		const SLONG local_id;
 	};
 
-	struct Element
-	{
-		SLONG processId;
-		SLONG localId;
-		ULONG length;
-	};
-
-public:
 	~DatabaseSnapshot();
 
 	RecordBuffer* getData(const jrd_rel*) const;
 
 	static DatabaseSnapshot* create(thread_db*);
-	static void cleanup(thread_db*);
 	static int blockingAst(void*);
-
-	static void init()
-	{
-		dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
-	}
 
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);
@@ -146,9 +146,6 @@ private:
 	static void putStatistics(const RuntimeStatistics&, Firebird::ClumpletWriter&, int, int);
 	static void putContextVars(Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
 	static void putMemoryUsage(const Firebird::MemoryStats&, Firebird::ClumpletWriter&, int, int);
-
-	static SharedMemory* dump;
-	static Firebird::InitMutex<DatabaseSnapshot> startup;
 
 	Firebird::Array<RelationData> snapshot;
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
