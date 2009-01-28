@@ -1193,6 +1193,7 @@ AC_CONFIG_FILES(
 gen/make.rules:${MAKE_SRC_DIR}/make.rules
 gen/make.defaults:${MAKE_SRC_DIR}/make.defaults
 gen/make.platform:${MAKE_SRC_DIR}/prefix.${MAKEFILE_PREFIX}
+gen/darwin.defaults:${MAKE_SRC_DIR}/darwin.defaults
 ${POSTFIX_FILE}
 gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
