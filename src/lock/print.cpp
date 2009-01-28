@@ -42,6 +42,7 @@
 #include "../jrd/isc.h"
 #include "../lock/lock.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/db_alias.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
@@ -58,6 +59,7 @@
 
 #ifdef WIN_NT
 #include <io.h>
+#include <fcntl.h>
 #endif
 
 #ifndef FPRINTF
@@ -198,7 +200,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	argv++;
 	bool sw_consistency = false;
 	bool sw_waitlist = false;
-	bool sw_file = false;
 	bool sw_requests = false;
 	bool sw_locks = false;
 	bool sw_history = false;
@@ -210,7 +211,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SSHORT sw_intervals;
 	SSHORT sw_seconds;
 	sw_series = sw_interactive = sw_intervals = sw_seconds = 0;
-	TEXT* lock_file = NULL;
+	const TEXT* lock_file = NULL;
+	const TEXT* db_file = NULL;
 
 	while (--argc)
 	{
@@ -255,8 +257,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				if (argc > 1)
 					sw_series = atoi(*argv++);
 				if (sw_series <= 0) {
-					FPRINTF(outfile,
-							"Please specify a positive value following option -s\n");
+					FPRINTF(outfile, "Please specify a positive value following option -s\n");
 					exit(FINI_OK);
 				}
 				--argc;
@@ -310,13 +311,23 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'f':
-				sw_file = true;
 				if (argc > 1) {
 					lock_file = *argv++;
 					--argc;
 				}
 				else {
 					FPRINTF(outfile, "Usage: -f <filename>\n");
+					exit(FINI_OK);
+				}
+				break;
+
+			case 'd':
+				if (argc > 1) {
+					db_file = *argv++;
+					--argc;
+				}
+				else {
+					FPRINTF(outfile, "Usage: -d <filename>\n");
 					exit(FINI_OK);
 				}
 				break;
@@ -332,57 +343,148 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			}
 	}
 
-	TEXT buffer[MAXPATHLEN];
-	if (!sw_file) {
-		gds__prefix_lock(buffer, LOCK_FILE);
-		lock_file = buffer;
-	}
+	Firebird::PathName filename;
 
-	SH_MEM_T shmem_data;
-
-	const SLONG LOCK_size_mapped = 1024 * 1024;	/* NS: we cannot use 0, otherwise the file
-											   will be truncated when engine is not running
-											   and engine globals do not exist anymore */
-
-	ISC_STATUS_ARRAY status_vector;
-
-	lhb* LOCK_header = (lhb*) ISC_map_file(status_vector,
-							lock_file,
-							prt_lock_init,
-							0,
-							-LOCK_size_mapped,	/* Negative to NOT truncate file */
-							&shmem_data);
-
-	TEXT expanded_lock_filename[MAXPATHLEN];
-	TEXT hostname[64];
-	sprintf(expanded_lock_filename, lock_file, ISC_get_host(hostname, sizeof(hostname)));
-
-/* Make sure the lock file is valid - if it's a zero length file we
- * can't look at the header without causing a BUS error by going
- * off the end of the mapped region.
- */
-
-	if (LOCK_header && shmem_data.sh_mem_length_mapped < (SLONG) sizeof(lhb)) {
-		/* Mapped file is obviously too small to really be a lock file */
-		FPRINTF(outfile, "Unable to access lock table - file too small.\n%s\n", expanded_lock_filename);
-		exit(FINI_OK);
-	}
-
-	if (LOCK_header && LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
+	if (db_file && lock_file)
 	{
-#if (!(defined UNIX) || (defined HAVE_MMAP))
-		SLONG length = LOCK_header->lhb_length;
-		LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
-#endif
+		FPRINTF(outfile, "Switches -d and -f cannot be specified together\n");
+		exit(FINI_OK);
 	}
+	else if (db_file)
+	{
+		Firebird::PathName org_name = db_file;
+		Firebird::PathName db_name;
+		if (!ResolveDatabaseAlias(org_name, db_name))
+		{
+			db_name = org_name;
+		}
 
-	if (!LOCK_header) {
-		FPRINTF(outfile, "Unable to access lock table.\n%s\n", expanded_lock_filename);
-		gds__print_status(status_vector);
+		// Below code mirrors the one in JRD (PIO modules and Database class).
+		// Maybe it's worth putting it into common, if no better solution is found.
+#ifdef WIN_NT
+		const HANDLE h = CreateFile(db_name.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+									NULL, OPEN_EXISTING, 0, 0);
+		if (h == INVALID_HANDLE_VALUE)
+		{
+			FPRINTF(outfile, "Unable to open the database file (%d).\n", GetLastError());
+			exit(FINI_OK);
+		}
+		BY_HANDLE_FILE_INFORMATION file_info;
+		GetFileInformationByHandle(h, &file_info);
+		const size_t len1 = sizeof(file_info.dwVolumeSerialNumber);
+		const size_t len2 = sizeof(file_info.nFileIndexHigh);
+		const size_t len3 = sizeof(file_info.nFileIndexLow);
+		UCHAR buffer[len1 + len2 + len3], *p = buffer;
+		memcpy(p, &file_info.dwVolumeSerialNumber, len1);
+		p += len1;
+		memcpy(p, &file_info.nFileIndexHigh, len2);
+		p += len2;
+		memcpy(p, &file_info.nFileIndexLow, len3);
+		CloseHandle(h);
+#else
+		struct stat statistics;
+		if (stat(db_name.c_str(), &statistics) == -1)
+		{
+			FPRINTF(outfile, "Unable to open the database file.\n");
+			exit(FINI_OK);
+		}
+		const size_t len1 = sizeof(statistics.st_dev);
+		const size_t len2 = sizeof(statistics.st_ino);
+		UCHAR buffer[len1 + len2], *p = buffer;
+		memcpy(p, &statistics.st_dev, len1);
+		p += len1;
+		memcpy(p, &statistics.st_ino, len2);
+#endif
+
+		Firebird::string file_id;
+		for (size_t i = 0; i < sizeof(buffer); i++)
+		{
+			TEXT hex[3];
+			sprintf(hex, "%02x", (int) buffer[i]);
+			file_id.append(hex);
+		}
+
+		filename.printf(LOCK_FILE, file_id.c_str());
+	}
+	else if (lock_file)
+	{
+		filename = lock_file;
+	}
+	else
+	{
+		FPRINTF(outfile, "Please specify either -d <database name> or -f <lock file name>\n");
 		exit(FINI_OK);
 	}
 
-	//LOCK_size_mapped = shmem_data.sh_mem_length_mapped; CVC: Unused
+	Firebird::AutoPtr<UCHAR> buffer;
+	lhb* LOCK_header = NULL;
+
+	if (db_file)
+	{
+		SH_MEM_T shmem_data;
+
+		ISC_STATUS_ARRAY status_vector;
+		LOCK_header = (lhb*) ISC_map_file(status_vector, filename.c_str(),
+										  prt_lock_init, NULL, 0, &shmem_data);
+
+		if (!LOCK_header) {
+			FPRINTF(outfile, "Unable to access lock table.\n");
+			gds__print_status(status_vector);
+			exit(FINI_OK);
+		}
+
+		/* Make sure the lock file is valid - if it's a zero length file we
+		 * can't look at the header without causing a BUS error by going
+		 * off the end of the mapped region.
+		 */
+
+		if (shmem_data.sh_mem_length_mapped < sizeof(lhb)) {
+			/* Mapped file is obviously too small to really be a lock file */
+			FPRINTF(outfile, "Unable to access lock table - file too small.\n");
+			exit(FINI_OK);
+		}
+
+		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
+		{
+#if defined HAVE_MMAP || defined WIN_NT
+			const ULONG length = LOCK_header->lhb_length;
+			LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
+#endif
+		}
+	}
+	else if (lock_file)
+	{
+		const int fd = open(filename.c_str(), O_RDONLY | O_BINARY);
+		if (fd == -1) {
+			FPRINTF(outfile, "Unable to open lock file.\n");
+			exit(FINI_OK);
+		}
+		struct stat file_stat;
+		if (fstat(fd, &file_stat) == -1) {
+			close(fd);
+			FPRINTF(outfile, "Unable to retrieve lock file size.\n");
+			exit(FINI_OK);
+		}
+		if (!file_stat.st_size) {
+			close(fd);
+			FPRINTF(outfile, "Lock file is empty.\n");
+			exit(FINI_OK);
+		}
+		buffer = new UCHAR[file_stat.st_size];
+		LOCK_header = (lhb*) (UCHAR*) buffer;
+		if (!LOCK_header) {
+			FPRINTF(outfile, "Insufficient memory to read lock file.\n");
+			exit(FINI_OK);
+		}
+		read(fd, LOCK_header, file_stat.st_size);
+		close(fd);
+	}
+	else
+	{
+		fb_assert(false);
+	}
+
+	fb_assert(LOCK_header);
 
 /* if we can't read this version - admit there's nothing to say and return. */
 
@@ -419,15 +521,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		 */
 		header = (lhb*) gds__alloc(LOCK_header->lhb_length);
 		if (!header) {
-			FPRINTF(outfile,
-					"Insufficient memory for consistent lock statistics.\n");
+			FPRINTF(outfile, "Insufficient memory for consistent lock statistics.\n");
 			FPRINTF(outfile, "Try omitting the -c switch.\n");
 			exit(FINI_OK);
 		}
 
-		ISC_mutex_lock(LOCK_header->lhb_mutex);
+		ISC_mutex_lock(&LOCK_header->lhb_mutex);
 		memcpy(header, LOCK_header, LOCK_header->lhb_length);
-		ISC_mutex_unlock(LOCK_header->lhb_mutex);
+		ISC_mutex_unlock(&LOCK_header->lhb_mutex);
 		LOCK_header = header;
 	}
 
