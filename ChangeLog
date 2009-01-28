@@ -1,3 +1,74 @@
+2009-01-28 16:01  alexpeshkoff
+
+	* firebird2/configure.in (1.306):
+
+	Moved most of OS-specific checks away from regular makefiles
+
+2009-01-28 15:54  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.74):
+
+	Fixed my recent commit
+
+2009-01-28 15:13  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.client.util (1.58),
+	builds/posix/Makefile.in.embed.util (1.45), src/lock/print.cpp
+	(1.78):
+
+	fixed posix build
+
+2009-01-28 14:47  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.fbudf (1.15),
+	Makefile.in.embed.fbudf (1.11), Makefile.in.embed.gbak (1.23),
+	Makefile.in.embed.gdef (1.14), Makefile.in.embed.gfix (1.27),
+	Makefile.in.embed.gpre (1.27), Makefile.in.embed.isql (1.20),
+	Makefile.in.embed.qli (1.25), Makefile.in.embed.util (1.44),
+	Makefile.in.extlib (1.32), Makefile.in.inet_server (1.18),
+	Makefile.in.intl (1.34), Makefile.in.libfbclient (1.42),
+	Makefile.in.libfbembed (1.28), Makefile.in.smp_server (1.5),
+	darwin.defaults (1.1), make.defaults (1.73),
+	make.platform.solaris.examples (1.5), prefix.darwin_i386 (1.14),
+	prefix.darwin_powerpc (1.11), prefix.darwin_ppc64 (1.9),
+	prefix.darwin_x86_64 (1.11), prefix.hpux (1.9), prefix.linux_arm
+	(1.5), prefix.linux_mipsel (1.7), prefix.mingw (1.45),
+	prefix.netbsd (1.7), prefix.solaris (1.25), prefix.solaris-64SCC
+	(1.8), prefix.solaris-64gcc (1.9), prefix.solx86 (1.30),
+	prefix.solx86gcc (1.34), prefix.solx86gcc_64 (1.5):
+
+	Moved most of OS-specific checks away from regular makefiles
+
+2009-01-28 14:38  dimitr
+
+	* firebird2/src/lock/print.cpp (1.77):
+
+	Make fb_lock_print compatible with the latest commit. Still
+	requires some polishing.
+
+2009-01-28 14:02  dimitr
+
+	* firebird2/src/jrd/: Database.cpp (1.13), Database.h (1.34):
+
+	Correction.
+
+2009-01-28 13:25  dimitr
+
+	* firebird2/src/: jrd/Database.cpp (1.12), jrd/Database.h (1.33),
+	jrd/DatabaseSnapshot.cpp (1.91), jrd/DatabaseSnapshot.h (1.28),
+	jrd/dfw.epp (1.263), jrd/event.cpp (1.83), jrd/event.h (1.25),
+	jrd/event_proto.h (1.16), jrd/file_params.h (1.32), jrd/gds.cpp
+	(1.276), jrd/intl.cpp (1.118), jrd/intl_proto.h (1.24), jrd/isc.h
+	(1.39), jrd/isc_s_proto.h (1.24), jrd/isc_sync.cpp (1.171),
+	jrd/jrd.cpp (1.511), jrd/pag.h (1.23), jrd/os/thd_priority.h
+	(1.30), lock/lock.cpp (1.176), lock/lock.h (1.51),
+	lock/lock_proto.h (1.25), utilities/guard/guard.cpp (1.24),
+	utilities/guard/util.cpp (1.19):
+
+	1) Globally named per-database shmem regions.  2) Slightly reworked
+	monitoring internals.  3) Encapsulated the event manager, many
+	internal changes there.  4) Various cleanup, etc.
+
 2009-01-27 17:52  asfernandes
 
 	* firebird2/src/jrd/blb.cpp (1.192):
