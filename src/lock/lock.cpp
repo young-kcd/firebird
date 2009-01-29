@@ -1445,7 +1445,7 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 		// The lock table has some problem - copy it for later analysis
 
 		TEXT buffer[MAXPATHLEN];
-		gds__prefix(buffer, "lock_table.dump");
+		gds__prefix_lock(buffer, "lock_table.dump");
 		const TEXT* const lock_file = buffer;
 		FILE* const fd = fopen(lock_file, "wb");
 		if (fd)
