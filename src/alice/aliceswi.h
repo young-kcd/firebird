@@ -157,14 +157,15 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	0, 0, FALSE, 31, 0, NULL},
 	// msg 31: \t-disable\tdisable WAL
 #endif
-	{IN_SW_ALICE_FETCH_PASSWORD, 0, "fetch_password", sw_fetch_password,
-	0, sw_password, FALSE, 119, 0, NULL},
 	{IN_SW_ALICE_FULL, isc_spb_rpr_full, "full", sw_full,
 	sw_validate, 0, FALSE, 32, 0, NULL},
 	// msg 32: \t-full\t\tvalidate record fragments (-v)
 	{IN_SW_ALICE_FORCE, isc_spb_prp_force_shutdown, "force", sw_force,
 	sw_shut, 0, FALSE, 33, 0, NULL},
 	// msg 33: \t-force\t\tforce database shutdown
+	{IN_SW_ALICE_FETCH_PASSWORD, 0, "fetch_password", sw_fetch_password,
+	0, sw_password, FALSE, 119, 0, NULL},
+	// msg 119: -fetch_password fetch_password from file
 	{IN_SW_ALICE_HOUSEKEEPING, isc_spb_prp_sweep_interval, "housekeeping",
 	sw_housekeeping,
 	0, 0, FALSE, 34, 0, NULL},
