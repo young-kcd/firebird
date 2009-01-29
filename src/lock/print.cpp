@@ -65,6 +65,10 @@
 #include <fcntl.h>
 #endif
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #ifndef FPRINTF
 #define FPRINTF         fprintf
 #endif
@@ -457,11 +461,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 	else if (lock_file)
 	{
-		const int fd = open(filename.c_str(), O_RDONLY 
-#if defined WIN_NT
-											| O_BINARY
-#endif
-							);
+		const int fd = open(filename.c_str(), O_RDONLY | O_BINARY);
 		if (fd == -1) {
 			FPRINTF(outfile, "Unable to open lock file.\n");
 			exit(FINI_OK);
