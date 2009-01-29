@@ -1,3 +1,103 @@
+2009-01-29 19:07  dimitr
+
+	* firebird2/src/common/classes/fb_tls.h (1.24):
+
+	Mirror the POSIX way of making the TLS globals thread-safe.
+	Otherwise we may crash or lock-up during the process exit.
+
+2009-01-29 18:44  asfernandes
+
+	* firebird2/: doc/README.incompatibilities.txt (1.9),
+	src/jrd/DatabaseSnapshot.cpp (1.92), src/jrd/event.cpp (1.84),
+	src/jrd/event_proto.h (1.17), src/lock/lock.cpp (1.179):
+
+	Misc
+
+2009-01-29 18:18  dimitr
+
+	* firebird2/src/lock/print.cpp (1.79):
+
+	Misc. This change follows the solution in unix.cpp.
+
+2009-01-29 18:05  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.178):
+
+	If we write the dump into the globally accessible directory, let's
+	have its name suggesting it belongs to the Firebird family :-)
+
+2009-01-29 17:54  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.177):
+
+	Choose better place for lock_table.dump
+
+2009-01-29 16:44  alexpeshkoff
+
+	* firebird2/doc/README.incompatibilities.txt (1.8):
+
+	Preparing to beta
+
+2009-01-29 13:53  dimitr
+
+	* firebird2/doc/README.incompatibilities.txt (1.7):
+
+	Updated docs. Getting prepared for Beta.
+
+2009-01-29 12:55  dimitr
+
+	* firebird2/src/dsql/parse.y (1.300):
+
+	Make SIMILAR a migrateable keyword.
+
+2009-01-29 12:52  dimitr
+
+	* firebird2/doc/sql.extensions/README.keywords (1.8):
+
+	Updated docs. Getting prepared for Beta.
+
+2009-01-29 12:43  alexpeshkoff
+
+	* firebird2/doc/README.services_extension (1.3):
+
+	Documented use of services API for nbackup
+
+2009-01-29 12:14  alexpeshkoff
+
+	* firebird2/src/alice/aliceswi.h (1.25):
+
+	Fixed recognition of -f as -full, not -fetch_password
+
+2009-01-29 11:51  dimitr
+
+	* firebird2/doc/: README.superclassic (1.1), WhatsNew (1.160):
+
+	Updated docs. Getting prepared for Beta.
+
+2009-01-29 00:04  asfernandes
+
+	* firebird2/src/jrd/why.cpp (1.235):
+
+	Correction
+
+2009-01-28 23:04  asfernandes
+
+	* firebird2/src/dsql/: dsql.cpp (1.268), dsql.h (1.149), pass1.cpp
+	(1.436):
+
+	Adjustments related to CORE-2298
+
+2009-01-28 22:37  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.267), dsql/make.cpp (1.182),
+	dsql/pass1.cpp (1.435), dsql/sqlda_pub.h (1.7), dsql/utld.cpp
+	(1.59), isql/isql.epp (1.263), isql/show.epp (1.141),
+	jrd/constants.h (1.58), jrd/dsc.h (1.45), jrd/inf.cpp (1.92),
+	jrd/inf_pub.h (1.29), jrd/why.cpp (1.234):
+
+	Improvement CORE-2298 - Add support for "some_col = ? or ? IS NULL"
+	conditions
+
 2009-01-28 16:01  alexpeshkoff
 
 	* firebird2/configure.in (1.306):
