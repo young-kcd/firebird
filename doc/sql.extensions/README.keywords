@@ -119,6 +119,8 @@ Firebird 2.1:
     DISCONNECT
     GLOBAL
     INSENSITIVE
+    RECURSIVE
+    SENSITIVE
     START
 
   Added as non-reserved words:
