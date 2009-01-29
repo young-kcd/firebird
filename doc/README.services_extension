@@ -31,3 +31,30 @@ password are set using some other method):
  Return to normal state:
   fbsvcmgr service_mgr action_properties dbname employee prp_online_mode prp_sm_normal
 
+2) Services API extension - nbackup support.
+(Alex Peshkov, peshkoff@mail.ru, 2008)
+
+Nbackup performs two logical groups of operations - locking/unlocking database 
+and backup/restore it. It's absolutely no use duplicating locking/unlocking in 
+services, cause that functionality is present remotely in much better from any 
+point of view SQL language interface (ALTER DATABASE). But backup and restore 
+must be run on localhost and the only way to access them is nbackup utility.
+Therefore expanding services API with this functionalty is very useful.
+
+The following actions were added:
+isc_action_svc_nbak - incremental nbackup,
+isc_action_svc_nrest - incremental database restore.
+The following parameters were added:
+isc_spb_nbk_level - backup level (integer),
+isc_spb_nbk_file - backup file name (string),
+isc_spb_nbk_no_triggers - do not run DB triggers (option).
+
+Samples of use of new parameters in fbsvcmgr utility (supposing login and
+password are set using some other method):
+ Create backup level 0:
+  fbsvcmgr service_mgr action_nbak dbname employee nbk_file e.nb0 nbk_level 0
+ Create backup level 1:
+  fbsvcmgr service_mgr action_nbak dbname employee nbk_file e.nb1 nbk_level 1
+ Restore database from this files:
+  fbsvcmgr service_mgr action_nrest dbname e.fdb nbk_file e.nb0 nbk_file e.nb1
+
