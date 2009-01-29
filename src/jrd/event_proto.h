@@ -35,7 +35,7 @@ namespace Jrd {
 
 class Database;
 
-class EventManager: public Firebird::RefCounted, public Firebird::GlobalStorage
+class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, EventManager*> > > DbEventMgrMap;
 

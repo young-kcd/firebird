@@ -399,6 +399,7 @@ void EventManager::postEvent(USHORT major_length, const TEXT* major_code,
 
 	evnt* event;
 	evnt* const parent = find_event(major_length, major_code, 0);
+
 	if (parent && (event = find_event(minor_length, minor_code, parent)))
 	{
 		event->evnt_count += count;

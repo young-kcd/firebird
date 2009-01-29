@@ -45,7 +45,7 @@ SQL EXECUTION RESULTS
     conform to the SQL standard. Starting with Firebird 2.5, only OLD column
     values are accessible to all the assignments of the SET clause.
     You can revert back to the legacy behavior via the OldSetClauseSemantics
-    parameter of firebird.conf, if required. Please beware that this parameter
+    parameter of firebird.conf, if required. Please be aware that this parameter
     is provided as a temporary solution for backward compatibility issues and
     will be deprecated in future Firebird versions.
 

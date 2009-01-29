@@ -75,7 +75,7 @@ const UCHAR TAG_RECORD = MAX_UCHAR;
 DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	: process_id(getpid()), local_id(dbb->dbb_monitoring_id)
 {
-	Firebird::string name;
+	string name;
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
 	ISC_STATUS_ARRAY statusVector;

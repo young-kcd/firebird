@@ -501,7 +501,7 @@ SRQ_PTR LockManager::enqueue(thread_db* tdbb,
 		else {
 			++m_header->lhb_operations[0];
 		}
-	
+
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
 		const SRQ_PTR lock_id = grant_or_que(tdbb, request, lock, lck_wait);
