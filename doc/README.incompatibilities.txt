@@ -63,3 +63,11 @@ API
     it's not allowed to specify "no wait" and non-zero "wait timeout" options
     together, neither it's possible to specify "no record version" mode along
     with "snapshot" transaction isolation mode, etc.
+
+SECURITY
+--------------------------
+
+  * Members of administrative windows groups are not mapped to SYSDBA any more
+	by default. Mapping is controlled on per-database basis using SQL command
+	ALTER ROLE RDB$ADMIN SET/DROP AUTO ADMIN MAPPING. 
+	See README.trusted_authentication for details.
