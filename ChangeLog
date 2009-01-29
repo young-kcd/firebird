@@ -1,3 +1,10 @@
+2009-01-29 16:29  alexpeshkoff
+
+	* firebird2/configure.in (1.241.2.34):
+
+	Backported fix for CORE-2157: fbclient does not have libpthread
+	dependency
+
 2009-01-21 11:10  robocop
 
 	* firebird2/src/extlib/fbudf/fbudf.cpp (1.26.4.2):
