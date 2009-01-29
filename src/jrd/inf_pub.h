@@ -382,7 +382,6 @@ enum info_db_provider
 #define isc_info_sql_records		  23
 #define isc_info_sql_batch_fetch	  24
 #define isc_info_sql_relation_alias		25
-#define isc_info_sql_sqlda_version		26
 
 /*********************************/
 /* SQL information return values */

@@ -3380,7 +3380,7 @@ static processing_state show_generators(const SCHAR* object)
 			isc_stmt_handle stmt = 0;
 			isc_dsql_allocate_statement (isc_status, &DB, &stmt);
 			sqlda.sqln = 1;
-			sqlda.version = SQLDA_VERSION2;
+			sqlda.version = SQLDA_VERSION1;
 
 			/* If the user has set his client dialect to 1, we take that to
 			   mean that he wants to see just the lower 32 bits of the
@@ -4658,7 +4658,7 @@ static processing_state show_users()
 	char my_user[128] = "";
 	XSQLDA osqlda; // XSQLDA comes with one XSQLVAR inside.
 	memset(&osqlda, 0, XSQLDA_LENGTH(1));
-	osqlda.version = SQLDA_VERSION2;
+	osqlda.version = SQLDA_VERSION1;
 	osqlda.sqln = 1;
 	osqlda.sqld = 1;
 	XSQLVAR& ovar = osqlda.sqlvar[0];

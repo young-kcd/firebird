@@ -226,7 +226,7 @@ ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS* status,
 	const SSHORT n = static_cast<SSHORT>(get_numeric_info(&info));
 	if (dialect >= DIALECT_xsqlda)
 	{
-		if (xsqlda->version != SQLDA_VERSION1 && xsqlda->version != SQLDA_VERSION2)
+		if (xsqlda->version != SQLDA_VERSION1)
 			return error_dsql_804(status, isc_dsql_sqlda_err);
 		xsqlda->sqld = n;
 
@@ -365,7 +365,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 	else
 		if (dialect >= DIALECT_xsqlda)
 		{
-			if (xsqlda->version != SQLDA_VERSION1 && xsqlda->version != SQLDA_VERSION2)
+			if (xsqlda->version != SQLDA_VERSION1)
 				return error_dsql_804(status, isc_dsql_sqlda_err);
 			n = xsqlda->sqld;
 		}
@@ -428,7 +428,6 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			{
 			case SQL_VARYING:
 			case SQL_TEXT:
-			case SQL_NULL:
 				blr_len += 3;
 				break;
 			case SQL_SHORT:
@@ -582,11 +581,6 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 				ch_stuff(p, xvar->sqlscale, same_flag);
 				dtype = dtype_quad;
 				break;
-			case SQL_NULL:
-				ch_stuff(p, blr_text, same_flag);
-				ch_stuff_word(p, len, same_flag);
-				dtype = dtype_text;
-				break;
 			default:
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 			}
@@ -696,9 +690,6 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			break;
 		case SQL_QUAD:
 			dtype = dtype_quad;
-		case SQL_NULL:
-			dtype = dtype_text;
-			break;
 		}
 
 		USHORT align = type_alignments[dtype];
@@ -715,15 +706,11 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 		{
 			// Move data from the message into the SQLDA.
 
-			if ((xvar->sqltype & ~1) != SQL_NULL)
-			{
-				// Make sure user has specified a data location
-				if (!xvar->sqldata)
-					return error_dsql_804(status, isc_dsql_sqlda_value_err);
+			// Make sure user has specified a data location
+			if (!xvar->sqldata)
+				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
-				memcpy(xvar->sqldata, msg_buf + offset, len);
-			}
-
+			memcpy(xvar->sqldata, msg_buf + offset, len);
 			if (xvar->sqltype & 1)
 			{
 				// Make sure user has specified a location for null indicator
@@ -749,7 +736,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 				*null_ind = 0;
 
 			// Make sure user has specified a data location (unless NULL)
-			if (!xvar->sqldata && !*null_ind && (xvar->sqltype & ~1) != SQL_NULL)
+			if (!xvar->sqldata && !*null_ind)
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
 			// Copy data - unless known to be NULL

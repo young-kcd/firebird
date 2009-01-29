@@ -86,6 +86,7 @@ static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 }
 
 static void make_null(dsc* const desc);
+static void make_placeholder_null(dsc* const desc);
 static void make_parameter_names(dsql_par*, const dsql_nod*);
 
 
@@ -1391,7 +1392,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			desc->dsc_flags |= (DSC_nullable | DSC_null);
 		}
 		else
-			desc->makeNullString();
+		{
+			make_placeholder_null(desc);
+		}
 		return;
 
 	case nod_via:
@@ -1882,6 +1885,25 @@ static void make_null(dsc* const desc)
 	desc->dsc_flags |= DSC_nullable;
 }
 
+
+/**
+
+	make_placeholder_null
+
+	@brief  Prepare a descriptor to signal SQL NULL with a char(1) when
+	    the type is unknown. The descriptor will be a placeholder only.
+
+	@param desc
+
+**/
+static void make_placeholder_null(dsc* const desc)
+{
+	desc->dsc_dtype = dtype_text;
+	desc->dsc_length = 1;
+	desc->dsc_scale = 0;
+	desc->dsc_ttype() = 0;
+	desc->dsc_flags = DSC_nullable | DSC_null;
+}
 
 /**
 

@@ -364,7 +364,6 @@ namespace
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;
 		PathName db_path;
-		bool support_sqlda_version;
 
 		static ISC_STATUS hError()
 		{
@@ -729,12 +728,10 @@ static const PTR get_entrypoint(int, int);
 static USHORT sqlda_buffer_size(USHORT, const XSQLDA*, USHORT);
 static ISC_STATUS get_transaction_info(ISC_STATUS *, Transaction*, TEXT **);
 
-static void iterative_sql_info(ISC_STATUS*, Statement*, SSHORT, const SCHAR*, SSHORT,
-							   SCHAR*, USHORT, XSQLDA*);
+static void iterative_sql_info(ISC_STATUS *, FB_API_HANDLE*, SSHORT, const SCHAR *, SSHORT,
+							   SCHAR *, USHORT, XSQLDA *);
 static ISC_STATUS open_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, FB_API_HANDLE*, SLONG*,
 						USHORT, const UCHAR*, SSHORT, SSHORT);
-static void put_sqlda_version(Statement* statement, XSQLDA* sqlda, const SCHAR*& buffer,
-	USHORT& len, HalfStaticArray<SCHAR, BUFFER_SMALL>& tempBuffer);
 static ISC_STATUS prepare(ISC_STATUS *, Transaction*);
 static void release_dsql_support(sqlda_sup&);
 static void save_error_string(ISC_STATUS *);
@@ -1362,12 +1359,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 					status[2] = isc_arg_end;
 				}
 
-				const SCHAR ch = isc_info_base_level;
-				SCHAR buffer[16];
-				attachment->support_sqlda_version =
-					GDS_DATABASE_INFO(temp, public_handle, 1, &ch, sizeof(buffer), buffer) == 0 &&
-					buffer[0] == isc_info_base_level && buffer[4] >= DBSERVER_BASE_LEVEL_7;
-
 				return status[1];
 			}
 			if (ptr[1] != isc_unavailable)
@@ -1940,12 +1931,6 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				if (status[2] != isc_arg_warning)
 					status[2] = isc_arg_end;
 
-				const SCHAR ch = isc_info_base_level;
-				SCHAR buffer[16];
-				attachment->support_sqlda_version =
-					GDS_DATABASE_INFO(temp, public_handle, 1, &ch, sizeof(buffer), buffer) == 0 &&
-					buffer[0] == isc_info_base_level && buffer[4] >= DBSERVER_BASE_LEVEL_7;
-
 				return status[1];
 			}
 			if (ptr[1] != isc_unavailable)
@@ -2306,18 +2291,12 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 		statement->checkPrepared();
 		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_select];
 
-		const SCHAR* info_buffer = describe_select_info;
-		USHORT info_len = sizeof(describe_select_info);
-		HalfStaticArray<SCHAR, BUFFER_SMALL> temp_buffer;
-
-		put_sqlda_version(statement, sqlda, info_buffer, info_len, temp_buffer);
-
 		if (clause.dasup_info_len && clause.dasup_info_buf)
 		{
 			iterative_sql_info(	status,
-								statement,
-								info_len,
-								info_buffer,
+								stmt_handle,
+								sizeof(describe_select_info),
+								describe_select_info,
 								clause.dasup_info_len,
 								clause.dasup_info_buf,
 								dialect,
@@ -2331,15 +2310,15 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 
 			if (!GDS_DSQL_SQL_INFO(	status,
 									stmt_handle,
-									info_len,
-									info_buffer,
+									sizeof(describe_select_info),
+									describe_select_info,
 									buffer_len,
 									buffer))
 			{
 				iterative_sql_info(	status,
-									statement,
-									info_len,
-									info_buffer,
+									stmt_handle,
+									sizeof(describe_select_info),
+									describe_select_info,
 									buffer_len,
 									buffer,
 									dialect,
@@ -2379,18 +2358,12 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 
 		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_bind];
 
-		const SCHAR* info_buffer = describe_bind_info;
-		USHORT info_len = sizeof(describe_bind_info);
-		HalfStaticArray<SCHAR, BUFFER_SMALL> temp_buffer;
-
-		put_sqlda_version(statement, sqlda, info_buffer, info_len, temp_buffer);
-
 		if (clause.dasup_info_len && clause.dasup_info_buf)
 		{
 			iterative_sql_info(	status,
-								statement,
-								info_len,
-								info_buffer,
+								stmt_handle,
+								sizeof(describe_bind_info),
+								describe_bind_info,
 								clause.dasup_info_len,
 								clause.dasup_info_buf,
 								dialect,
@@ -2404,15 +2377,15 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 
 			if (!GDS_DSQL_SQL_INFO(	status,
 									stmt_handle,
-									info_len,
-									info_buffer,
+									sizeof(describe_bind_info),
+									describe_bind_info,
 									buffer_len,
 									buffer))
 			{
 				iterative_sql_info(	status,
-									statement,
-									info_len,
-									info_buffer,
+									stmt_handle,
+									sizeof(describe_bind_info),
+									describe_bind_info,
 									buffer_len,
 									buffer,
 									dialect,
@@ -3358,20 +3331,14 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		Array<SCHAR> db_prepare_buffer;
 		SCHAR* const buffer = db_prepare_buffer.getBuffer(buffer_len);
 
-		const SCHAR* info_buffer = sql_prepare_info2;
-		USHORT info_len = sizeof(sql_prepare_info2);
-		HalfStaticArray<SCHAR, BUFFER_SMALL> temp_buffer;
-
-		put_sqlda_version(statement, sqlda, info_buffer, info_len, temp_buffer);
-
 		if (!GDS_DSQL_PREPARE_M(status,
 								tra_handle,
 								stmt_handle,
 								length,
 								string,
 								dialect,
-								info_len,
-								info_buffer,
+								sizeof(sql_prepare_info2),
+								sql_prepare_info2,
 								buffer_len,
 								buffer))
 		{
@@ -3452,13 +3419,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 				}
 			}
 
-			info_buffer = sql_prepare_info;
-			info_len = sizeof(sql_prepare_info);
-
-			put_sqlda_version(statement, sqlda, info_buffer, info_len, temp_buffer);
-
-			iterative_sql_info(status, statement, info_len, info_buffer, len_select, buf_select,
-				dialect, sqlda);
+			iterative_sql_info(status, stmt_handle, sizeof(sql_prepare_info),
+				sql_prepare_info, len_select, buf_select, dialect, sqlda);
 
 			// statement prepared OK
 			statement->flags |= HANDLE_STATEMENT_prepared;
@@ -5428,14 +5390,14 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 }
 
 
-static void iterative_sql_info(ISC_STATUS* user_status,
-							   Statement* statement,
+static void iterative_sql_info(ISC_STATUS * user_status,
+							   FB_API_HANDLE* stmt_handle,
 							   SSHORT item_length,
-							   const SCHAR* items,
+							   const SCHAR * items,
 							   SSHORT buffer_length,
 							   SCHAR* buffer,
 							   USHORT dialect,
-							   XSQLDA* sqlda)
+							   XSQLDA * sqlda)
 {
 /**************************************
  *
@@ -5450,7 +5412,7 @@ static void iterative_sql_info(ISC_STATUS* user_status,
  *
  **************************************/
 	USHORT last_index;
-	SCHAR new_items[35];
+	SCHAR new_items[32];
 
 	while (UTLD_parse_sql_info(user_status, dialect, buffer, sqlda, &last_index) && last_index)
 	{
@@ -5459,18 +5421,10 @@ static void iterative_sql_info(ISC_STATUS* user_status,
 		*p++ = 2;
 		*p++ = last_index;
 		*p++ = last_index >> 8;
-
-		if (statement->parent->support_sqlda_version && sqlda)
-		{
-			*p++ = isc_info_sql_sqlda_version;
-			put_vax_short((UCHAR*) p, sqlda->version);
-			p += 2;
-		}
-
 		memcpy(p, items, (int) item_length);
 		p += item_length;
-		if (GDS_DSQL_SQL_INFO(user_status, &statement->public_handle, (SSHORT) (p - new_items),
-							  new_items, buffer_length, buffer))
+		if (GDS_DSQL_SQL_INFO(user_status, stmt_handle, (SSHORT) (p - new_items), new_items,
+								buffer_length, buffer))
 		{
 			break;
 		}
@@ -5570,22 +5524,6 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...)
 }
 
 } // extern "C"
-
-
-static void put_sqlda_version(Statement* statement, XSQLDA* sqlda, const SCHAR*& buffer,
-	USHORT& len, HalfStaticArray<SCHAR, BUFFER_SMALL>& tempBuffer)
-{
-	if (statement->parent->support_sqlda_version && sqlda)
-	{
-		SCHAR* p = tempBuffer.getBuffer(1 + sizeof(SSHORT) + len);
-		*p++ = isc_info_sql_sqlda_version;
-		put_vax_short((UCHAR*) p, sqlda->version);
-		memcpy(p + sizeof(SSHORT), buffer, len);
-		buffer = tempBuffer.begin();
-		len = tempBuffer.getCount();
-	}
-}
-
 
 static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction* transaction)
 {

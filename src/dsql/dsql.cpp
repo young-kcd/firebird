@@ -92,12 +92,11 @@ static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*, USH
 static dsql_dbb*	init(Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
-static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT,
-	USHORT, SSHORT);
+static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static UCHAR*	var_info(dsql_msg*, SSHORT, const UCHAR*, const UCHAR* const, UCHAR*,
+static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT);
 
 #ifdef DSQL_DEBUG
@@ -711,17 +710,6 @@ void DSQL_prepare(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		SSHORT sqlda_version = SQLDA_VERSION1;
-
-		for (const UCHAR* p = items; p < items + item_length; ++p)
-		{
-			if (*p == isc_info_sql_sqlda_version)
-			{
-				sqlda_version = static_cast<SSHORT>(gds__vax_integer(++p, 2));
-				break;
-			}
-		}
-
 		// Allocate a new request block and then prepare the request.  We want to
 		// keep the old request around, as is, until we know that we are able
 		// to prepare the new one.
@@ -730,8 +718,7 @@ void DSQL_prepare(thread_db* tdbb,
 		// Because that's the client's allocated statement handle and we
 		// don't want to trash the context in it -- 2001-Oct-27 Ann Harrison
 
-		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version,
-			sqlda_version);
+		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
@@ -1127,8 +1114,7 @@ static void execute_immediate(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version,
-			SQLDA_VERSION2);
+		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version);
 
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
@@ -2179,12 +2165,9 @@ static void map_in_out(	dsql_req*		request,
 			}
 			else if (!flag || *flag >= 0)
 			{
-				if (!(parameter->par_desc.dsc_flags & DSC_null))
-				{
-					// Safe cast because desc is used as source only.
-					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-					MOVD_move(&desc, &parameter->par_desc);
-				}
+				// Safe cast because desc is used as source only.
+				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
+				MOVD_move(&desc, &parameter->par_desc);
 			}
 			else if (parameter->par_desc.isBlob())
 				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
@@ -2447,7 +2430,7 @@ static USHORT parse_blr(USHORT blr_length,
 static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
 				   USHORT string_length,
 				   const TEXT* string,
-				   USHORT client_dialect, USHORT parser_version, SSHORT sqlda_version)
+				   USHORT client_dialect, USHORT parser_version)
 {
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
@@ -2489,7 +2472,6 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	statement->req_dbb = database;
 	statement->req_transaction = transaction;
 	statement->req_client_dialect = client_dialect;
-	statement->req_sqlda_version = sqlda_version;
 
 	try {
 
@@ -2834,7 +2816,6 @@ static void sql_info(thread_db* tdbb,
 	// in the loop or should it be made NULL in each iteration?
 	dsql_msg** message = NULL;
 	USHORT first_index = 0;
-	SSHORT sqlda_version = SQLDA_VERSION1;
 
 	while (items < end_items && *items != isc_info_end)
 	{
@@ -2962,12 +2943,6 @@ static void sql_info(thread_db* tdbb,
 				}
 			}
 			break;
-
-		case isc_info_sql_sqlda_version:
-			sqlda_version = static_cast<SSHORT>(gds__vax_integer(items, 2));
-			items += 2;
-			break;
-
 		case isc_info_sql_num_variables:
 		case isc_info_sql_describe_vars:
 			if (message)
@@ -2988,11 +2963,10 @@ static void sql_info(thread_db* tdbb,
 					end_describe++;
 				}
 
-				info = var_info(*message, sqlda_version, items, end_describe, info, end_info,
-					first_index);
-
-				if (!info)
+				info = var_info(*message, items, end_describe, info, end_info, first_index);
+				if (!info) {
 					return;
+				}
 
 				items = end_describe;
 				if (*items == isc_info_sql_describe_end) {
@@ -3038,7 +3012,6 @@ static void sql_info(thread_db* tdbb,
 
  **/
 static UCHAR* var_info(dsql_msg* message,
-					   SSHORT version,
 					   const UCHAR* items,
 					   const UCHAR* const end_describe,
 					   UCHAR* info,
@@ -3100,16 +3073,8 @@ static UCHAR* var_info(dsql_msg* message,
 				break;
 
 			case dtype_text:
-				if ((param->par_desc.dsc_flags & DSC_null) && version >= SQLDA_VERSION2)
-				{
-					sql_type = SQL_NULL;
-					sql_len = 0;
-				}
-				else
-				{
-					sql_type = SQL_TEXT;
-					sql_sub_type = param->par_desc.dsc_sub_type;
-				}
+				sql_type = SQL_TEXT;
+				sql_sub_type = param->par_desc.dsc_sub_type;
 				break;
 
 			case dtype_blob:

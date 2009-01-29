@@ -242,10 +242,10 @@ typedef struct dsc
 	{
 		clear();
 
-		// CHAR(1) CHARACTER SET NONE
-		dsc_dtype = dtype_text;
+		// VARCHAR(1) CHARACTER SET NONE
+		dsc_dtype = dtype_varying;
 		setTextType(CS_NONE);
-		dsc_length = 1;
+		dsc_length = sizeof(USHORT) + 1;
 		dsc_flags = DSC_nullable | DSC_null;
 	}
 
