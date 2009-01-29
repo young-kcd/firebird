@@ -2466,6 +2466,7 @@ keyword_or_column	: valid_symbol_name
 		| RECURSIVE
 		| SENSITIVE
 		| START
+		| SIMILAR				/* added in FB 2.5 */
 		;
 
 col_opt	: ALTER
