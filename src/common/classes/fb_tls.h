@@ -36,6 +36,8 @@
 //
 // TLS variable type should be smaller than size of pointer to stay portable
 
+#include "../common/classes/init.h"
+
 #if defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
@@ -46,31 +48,36 @@
 namespace Firebird {
 
 template <typename T>
-class Win32Tls
+class Win32Tls : private InstanceControl
 {
 public:
-	Win32Tls()
+	Win32Tls() : InstanceControl(InstanceControl::PRIORITY_TLS_KEY)
 	{
-		if ((key = TlsAlloc()) == 0xFFFFFFFF)
+		if ((key = TlsAlloc()) == MAX_ULONG)
 			system_call_failed::raise("TlsAlloc");
 	}
 	const T get()
 	{
-	 	LPVOID value = TlsGetValue(key);
+		fb_assert(key != MAX_ULONG);
+	 	const LPVOID value = TlsGetValue(key);
 		if ((value == NULL) && (GetLastError() != NO_ERROR))
 			system_call_failed::raise("TlsGetValue");
-//		return reinterpret_cast<T>(value);
-		return (T)value;
+		return (T) value;
 	}
 	void set(const T value)
 	{
-		if (TlsSetValue(key, (LPVOID)value) == 0)
+		fb_assert(key != MAX_ULONG);
+		if (TlsSetValue(key, (LPVOID) value) == 0)
 			system_call_failed::raise("TlsSetValue");
 	}
 	~Win32Tls()
 	{
+	}
+	void dtor()
+	{
 		if (TlsFree(key) == 0)
 			system_call_failed::raise("TlsFree");
+		key = MAX_ULONG;
 	}
 private:
 	DWORD key;
@@ -169,7 +176,7 @@ public:
 
 	TlsValue()
 	{
-		if (thr_keycreate(&key, TlsV_on_thread_exit) )
+		if (thr_keycreate(&key, TlsV_on_thread_exit))
 			system_call_failed::raise("thr_key_create");
 	}
 	const T get()
@@ -177,20 +184,20 @@ public:
 		// We use double C-style cast to allow using scalar datatypes
 		// with sizes up to size of pointer without warnings
 		T* valuep;
-		if (thr_getspecific(key, (void **) &valuep) == 0)
-			return (T)(IPTR) valuep ;
+		if (thr_getspecific(key, (void**) &valuep) == 0)
+			return (T)(IPTR) valuep;
 
 		system_call_failed::raise("thr_getspecific");
 		return (T) NULL;
 	}
 	void set(const T value)
 	{
-		if (thr_setspecific(key, (void*)(IPTR)value))
+		if (thr_setspecific(key, (void*)(IPTR) value))
 			system_call_failed::raise("thr_setspecific");
 	}
 	~TlsValue()
 	{
-		/* Do nothing if no pthread_key_delete */
+		// Do nothing if no pthread_key_delete
 	}
 private:
 	thread_key_t key;
