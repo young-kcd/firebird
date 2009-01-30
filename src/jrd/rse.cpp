@@ -114,7 +114,7 @@ static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
 static void open_sort(thread_db*, RecordSource*, irsb_sort*, FB_UINT64);
-static void proc_assignment(thread_db*, const dsc*, const dsc*, UCHAR*, dsc*, SSHORT, Record*);
+static void proc_assignment(thread_db*, const dsc*, const dsc*, UCHAR*, const dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, RecordSource*);
 static void push_rpbs(thread_db*, jrd_req*, RecordSource*);
 static ULONG read_merge_block(thread_db*, merge_file*, ULONG);
@@ -2971,7 +2971,7 @@ static void proc_assignment(thread_db* tdbb,
 							const dsc* from_desc,
 							const dsc* flag_desc,
 							UCHAR* msg, // this param is logically const
-							dsc* to_desc, SSHORT to_id, Record* record)
+							const dsc* to_desc, SSHORT to_id, Record* record)
 {
 /**************************************
  *
@@ -3033,7 +3033,8 @@ static void proc_assignment(thread_db* tdbb,
 				memset(p, 0, l);
 			break;
 		}
-		to_desc->dsc_flags |= DSC_null;
+
+		///to_desc->dsc_flags |= DSC_null;	// Commented to fix CORE-2300
 	}
 	else
 	{
