@@ -49,14 +49,26 @@ PROD_FLAGS=-ggdb -O3 -fsigned-char -fmessage-length=0 -fno-omit-frame-pointer -D
 DEV_FLAGS=-ggdb -O0 -fsigned-char -fmessage-length=0 -pipe -MMD -fPIC -Wall -Wextra -Wno-unused-parameter -Wno-switch -Wno-parentheses -Wno-unknown-pragmas
 
 # link options when using IBM /usr/bin/ld fronted by g++
-LIB_LINK_OPTIONS:=-shared -Wl,-bbigtoc,-bexpall
+LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -Wl,-bbigtoc,-brtl
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared -Wl,-G,-bbigtoc
 
 # AIX ld option to set run-time library path is -Wl-blibpath:path1:path2
 # Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
-# LIB_LINK_RPATH:=-Wl-blibpath:
-# LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/lib:/lib
+LIB_PATH_OPTS= -Wl-blibpath:/usr/local/lib:/opt/freeware/lib:$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl
+
+# AIX ld uses "export files" to manage symbol visibility. Export files are
+# functionally similar to "version files" on ELF systems and are specified
+# with the "-Wl,-bE:exportfile.exp" option.
+LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.exp
+LINK_FIREBIRD_EMBED_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
+LINK_FIREBIRD_CLIENT_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
+LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.exp
+LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.exp
+LIB_LINK_MAPFILE=-Wl,-bE:
+
+# These options aren't used by AIX (XCOFF) object files...
 LIB_LINK_RPATH=
-LIB_PATH_OPTS=
+LIB_LINK_SONAME=
 
 # add LDFLAGS here, so it will be picked up even if user doesn't export LDFLAGS
 #LDFLAGS=-Wl,-bbigtoc,-b64
