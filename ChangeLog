@@ -1,3 +1,28 @@
+2009-01-30 16:53  alexpeshkoff
+
+	* firebird2/builds/posix/: fbintl.exp (1.1), firebird.exp (1.1),
+	ib_util.exp (1.1), prefix.aix_powerpc (1.6):
+
+	AIX port
+
+2009-01-30 16:05  asfernandes
+
+	* firebird2/src/jrd/rse.cpp (1.170):
+
+	Fixed CORE-2300 - Unexpected error "arithmetic exception, numeric
+	overflow, or string truncation" while evaluating SUBSTRING the
+	second time
+
+2009-01-29 21:36  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.269), dsql/dsql.h (1.150),
+	dsql/make.cpp (1.183), dsql/pass1.cpp (1.437), dsql/sqlda_pub.h
+	(1.8), dsql/utld.cpp (1.60), isql/isql.epp (1.264), isql/show.epp
+	(1.142), jrd/constants.h (1.59), jrd/dsc.h (1.46), jrd/inf.cpp
+	(1.93), jrd/inf_pub.h (1.30), jrd/why.cpp (1.236):
+
+	Rollback CORE-2298
+
 2009-01-29 19:07  dimitr
 
 	* firebird2/src/common/classes/fb_tls.h (1.24):
