@@ -45,6 +45,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\include 2>nul
 @mkdir %FB_OUTPUT_DIR%\lib 2>nul
 @mkdir %FB_OUTPUT_DIR%\system32 2>nul
+@mkdir %FB_OUTPUT_DIR%\plugins 2>nul
 
 for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_OUTPUT_DIR%\bin >nul
@@ -54,6 +55,7 @@ for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\fbtrace.dll %FB_OUTPUT_DIR%\plugins\fbtrace.dll >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\fbclient\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
@@ -65,6 +67,7 @@ for %%v in ( btyacc gbak_embed gpre_boot gpre_embed isql_embed ) do (
 @copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR% > nul
 @copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl >nul
+@copy %FB_ROOT_PATH%\src\utilities\ntrace\fbtrace.conf %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\IPLicense.txt %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\IDPLicense.txt %FB_OUTPUT_DIR% >nul
 
