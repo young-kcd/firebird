@@ -19,6 +19,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
+ *  Nickolay Samofatov <nickolay@broadviewsoftware.com>
  */
 
 
@@ -118,6 +119,11 @@ namespace fb_utils
 	};
 	FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password);
 
+	// Returns current value of performance counter
+	SINT64 query_performance_counter();
+
+	// Returns frequency of performance counter in Hz
+	SINT64 query_performance_frequency();
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

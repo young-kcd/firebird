@@ -284,6 +284,12 @@
 #define isc_action_svc_get_fb_log     12	/* Retrieves the Firebird log file from the server */
 #define isc_action_svc_nbak           20	/* Incremental nbackup */
 #define isc_action_svc_nrest          21	/* Incremental database restore */
+#define isc_action_svc_trace_start    22	// Start trace session
+#define isc_action_svc_trace_stop     23	// Stop trace session
+#define isc_action_svc_trace_suspend  24	// Suspend trace session
+#define isc_action_svc_trace_resume   25	// Resume trace session
+#define isc_action_svc_trace_list     26	// List existing sessions
+#define isc_action_svc_last			  27	// keep it last !
 
 /*****************************
  * Service information items *
@@ -488,6 +494,14 @@
 #define isc_spb_nbk_level			5
 #define isc_spb_nbk_file			6
 #define isc_spb_nbk_no_triggers		0x01
+
+/***************************************
+ * Parameters for isc_action_svc_trace *
+ ***************************************/
+
+#define isc_spb_trc_id				1
+#define isc_spb_trc_name			2
+#define isc_spb_trc_cfg				3
 
 /**********************************************/
 /* Dynamic Data Definition Language operators */

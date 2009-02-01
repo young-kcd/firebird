@@ -114,6 +114,7 @@ public:
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
 		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
+		tra_stats(*p),
 		tra_open_cursors(*p),
 		tra_outer(outer),
 		tra_transactions(*p),

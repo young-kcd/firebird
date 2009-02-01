@@ -35,6 +35,7 @@
 static const char* EVENT_FILE	= "fb_event_%s";
 static const char* LOCK_FILE	= "fb_lock_%s";
 static const char* MONITOR_FILE	= "fb_monitor_%s";
+static const char* TRACE_FILE	= "fb_trace";
 
 #ifdef UNIX
 static const char* INIT_FILE	= "fb_init";

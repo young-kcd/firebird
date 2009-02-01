@@ -68,6 +68,8 @@
 #include "../jrd/sort_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/VirtualTable.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceJrdHelpers.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1681,6 +1683,7 @@ static bool get_procedure(thread_db*			tdbb,
 	else
 		record = rpb->rpb_record;
 
+	TraceProcFetch trace(tdbb, proc_request);
 	try {
 		EXE_receive(tdbb, proc_request, 1, oml, om);
 	}
@@ -1701,7 +1704,10 @@ static bool get_procedure(thread_db*			tdbb,
 	eos_desc.dsc_address = (UCHAR *) & eos;
 	MOV_move(tdbb, &desc, &eos_desc);
 	if (!eos)
+	{
+		trace.fetch(true, res_successful);
 		return false;
+	}
 
 	for (int i = 0; i < rec_format->fmt_count; i++)
 	{
@@ -1714,6 +1720,7 @@ static bool get_procedure(thread_db*			tdbb,
 						record);
 	}
 
+	trace.fetch(false, res_successful);
 	return true;
 }
 
@@ -2799,10 +2806,15 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 
 	try {
 		proc_request->req_timestamp = request->req_timestamp;
+		
+		TraceProcExecute trace(tdbb, proc_request, request, inputs);
+
 		EXE_start(tdbb, proc_request, request->req_transaction);
 		if (iml) {
 			EXE_send(tdbb, proc_request, 0, iml, im);
 		}
+
+		trace.finish(true, res_successful);
 	}
 	catch (const Firebird::Exception&) {
 		close_procedure(tdbb, rsb);

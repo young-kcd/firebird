@@ -120,7 +120,9 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
 	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536},	// page buffers
 	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
-	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false}	// if true disallow SET A = B, B = A to exchange column values
+	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
+	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) "None"},	// location of audit trace configuration file
+	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10}		// maximum size of user session trace log
 };
 
 /******************************************************************************
@@ -496,4 +498,14 @@ bool Config::getRelaxedAliasChecking()
 bool Config::getOldSetClauseSemantics()
 {
 	return (bool) sysConfig().values[KEY_OLD_SET_CLAUSE_SEMANTICS];
+}
+
+const char *Config::getAuditTraceConfigFile()
+{
+	return (const char*) sysConfig().values[KEY_TRACE_CONFIG];
+}
+
+int Config::getMaxUserTraceLogSize()
+{
+	return (int) sysConfig().values[KEY_MAX_TRACELOG_SIZE];
 }

@@ -170,6 +170,7 @@ public:
 		{
 			return module ? module->lookupSymbol(sym) : 0;
 		}
+		const Firebird::PathName* name() const { return module ? &module->name() : NULL; }
 		operator bool() const { return module != 0; }
 
 	private:

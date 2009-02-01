@@ -2441,6 +2441,8 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 		}
 	}
 
+	request->req_sql_text = NULL;
+
 	dbb->deletePool(request->req_pool);
 }
 

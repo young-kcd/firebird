@@ -138,6 +138,7 @@ class Parameter;
 class jrd_fld;
 class dsql_dbb;
 class PreparedStatement;
+class TraceManager;
 
 // The database block, the topmost block in the metadata
 // cache for a database
@@ -341,7 +342,8 @@ public:
 	Firebird::StringsBuffer* att_strings_buffer;	// per attachment circular strings buffer
 	Firebird::Mutex att_strings_mutex;				// mutex for this buffer access
 
-	EDS::Connection* att_ext_connection; // external connection executed by this attachment
+	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
+	TraceManager* att_trace_manager;		// Trace API manager 
 
 	bool locksmith() const;
 
@@ -751,6 +753,14 @@ public:
 		traStat->bumpValue(index);
 		attStat->bumpValue(index);
 		dbbStat->bumpValue(index);
+	}
+
+	void bumpStats(const RuntimeStatistics::StatType index, SLONG relation_id)
+	{
+		reqStat->bumpValue(index, relation_id);
+		//traStat->bumpValue(index, relation_id);
+		//attStat->bumpValue(index, relation_id);
+		//dbbStat->bumpValue(index, relation_id);
 	}
 };
 

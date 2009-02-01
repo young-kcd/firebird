@@ -24,10 +24,29 @@
 #define JRD_RUNTIME_STATISTICS_H
 
 #include "../common/classes/alloc.h"
+#include "../common/classes/array.h"
+#include "../common/classes/init.h"
+#include "../common/classes/tree.h"
+#include "../jrd/ntrace.h"
 
 namespace Jrd {
 
-class thread_db;
+class Database;
+
+
+// Performance counters for individual table 
+struct RelationCounts 
+{
+	SLONG rlc_relation_id;	// Relation ID 
+	SINT64 rlc_counter[DBB_max_rel_count];
+
+	inline static const SLONG& generate(const void* sender, const RelationCounts& item) 
+		{ return item.rlc_relation_id; }
+};
+
+typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelationCountsTree;
+
+ typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
 
 // Runtime statistics class
 
@@ -56,33 +75,41 @@ public:
 		TOTAL_ITEMS		// last
 	};
 
-	RuntimeStatistics()
+	RuntimeStatistics(MemoryPool& pool) : rel_counts(&pool)
 	{
 		reset();
 	}
 
+	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other);
+	
 	~RuntimeStatistics() {}
 
 	SINT64 getValue(const StatType index) const
 	{
 		return values[index];
 	}
-
 	void reset();
 
 	void bumpValue(const StatType index)
 	{
 		++values[index];
 	}
+	void bumpValue(StatType index, SLONG relation_id);
 
-	bool operator==(const RuntimeStatistics& other) const;
-	bool operator!=(const RuntimeStatistics& other) const;
+	// Calculate difference between counts stored in this object and current 
+	// counts of given request. Counts stored in object are destroyed.
+	PerformanceInfo *computeDifference(Database *dbb, const RuntimeStatistics& new_stat, 
+		PerformanceInfo &dest, TraceCountsArray& temp);
+
+//	bool operator==(const RuntimeStatistics& other) const;
+//	bool operator!=(const RuntimeStatistics& other) const;
 
 	RuntimeStatistics& operator+=(const RuntimeStatistics& other)
 	{
 		for (size_t i = 0; i < TOTAL_ITEMS; ++i)
 			values[i] += other.values[i];
 
+		addRelCounts(other.rel_counts, true);
 		return *this;
 	}
 
@@ -91,6 +118,7 @@ public:
 		for (size_t i = 0; i < TOTAL_ITEMS; ++i)
 			values[i] -= other.values[i];
 
+		addRelCounts(other.rel_counts, false);
 		return *this;
 	}
 
@@ -100,12 +128,15 @@ public:
 	}
 
 private:
+	void addRelCounts(const RelationCountsTree &other, bool add);
+
 	SINT64 values[TOTAL_ITEMS];
+	RelationCountsTree rel_counts;
 
 	// This dummy RuntimeStatistics is used instead of missing elements in tdbb,
 	// helping us avoid conditional checks in time-critical places of code.
 	// Values of it contain actually garbage - don't be surprised when debugging.
-	static RuntimeStatistics dummy;
+	static Firebird::GlobalPtr<RuntimeStatistics> dummy;
 };
 
 } // namespace

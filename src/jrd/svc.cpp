@@ -67,6 +67,9 @@
 #include "../common/utils_proto.h"
 #include "../jrd/scl.h"
 #include "../jrd/msg_encode.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceObjects.h"
+#include "../jrd/trace/TraceService.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -133,6 +136,8 @@ namespace {
 		string spb_remote_address;
 		string spb_trusted_login;
 		string spb_address_path;
+		string spb_remote_process;
+		SLONG  spb_remote_pid;
 		USHORT spb_version;
 		bool spb_trusted_role;
 		bool spb_remote;
@@ -220,6 +225,14 @@ namespace {
 						}
 					}
 
+					break;
+
+				case isc_spb_process_name:
+					spb.getString(spb_remote_process);
+					break;
+
+				case isc_spb_process_id:
+					spb_remote_pid = spb.getInt();
 					break;
 				}
 			}
@@ -385,6 +398,11 @@ void Service::putChar(char tag, char val)
 	buf[0] = tag;
 	buf[1] = val;
 	enqueue(buf, sizeof buf);
+}
+
+void Service::putBytes(const UCHAR* bytes, size_t len)
+{
+	enqueue(bytes, len);
 }
 
 void Service::setServiceStatus(const ISC_STATUS* status_vector)
@@ -574,11 +592,13 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #define MAIN_GFIX		ALICE_main
 #define MAIN_GSTAT		main_gstat
 #define MAIN_NBAK		NBACKUP_main
+#define MAIN_TRACE		TRACE_main
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
 #define MAIN_GSTAT		NULL
 #define MAIN_NBAK		NULL
+#define MAIN_TRACE		NULL
 #endif
 
 #if !defined(EMBEDDED) && !defined(BOOT_BUILD)
@@ -634,6 +654,11 @@ static const serv_entry services[] =
 	{ isc_action_svc_get_fb_log, "Get Log File", NULL, Service::readFbLog },
 	{ isc_action_svc_nbak, "Incremental Backup Database", NULL, MAIN_NBAK },
 	{ isc_action_svc_nrest, "Incremental Restore Database", NULL, MAIN_NBAK },
+	{ isc_action_svc_trace_start, "Start Trace Session", NULL, MAIN_TRACE },
+	{ isc_action_svc_trace_stop, "Stop Trace Session", NULL, MAIN_TRACE },
+	{ isc_action_svc_trace_suspend, "Suspend Trace Session", NULL, MAIN_TRACE },
+	{ isc_action_svc_trace_resume, "Resume Trace Session", NULL, MAIN_TRACE },
+	{ isc_action_svc_trace_list, "List Trace Sessions", NULL, MAIN_TRACE },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
@@ -662,14 +687,16 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()),
-	svc_stdout_head(0), svc_stdout_tail(0),
+	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL), 
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()),
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
-	svc_strings_buffer(NULL)
+	svc_network_protocol(getPool()),  svc_remote_address(getPool()), svc_remote_process(getPool()), 
+	svc_remote_pid(0), svc_strings_buffer(NULL)
 {
+	svc_trace_manager = NULL;
 	memset(svc_status, 0, sizeof svc_status);
 
 	{	// scope
@@ -681,7 +708,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 	// Since this moment we should remove this service from allServices in case of error thrown
 	try
-	{
+	{		
 		// If the service name begins with a slash, ignore it.
 		if (*service_name == '/' || *service_name == '\\') {
 			service_name++;
@@ -689,6 +716,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 		// Find the service by looking for an exact match.
 		const string svcname(service_name);
+
 		const serv_entry* serv;
 		for (serv = services; serv->serv_name; serv++) {
 			if (svcname == serv->serv_name)
@@ -788,6 +816,11 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		svc_trusted_login = options.spb_trusted_login;
 		svc_trusted_role = options.spb_trusted_role;
 		svc_address_path = options.spb_address_path;
+		svc_network_protocol = options.spb_network_protocol;
+		svc_remote_address = options.spb_remote_address;
+		svc_remote_process = options.spb_remote_process;
+		svc_remote_pid = options.spb_remote_pid;
+		svc_trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
 
 		// The password will be issued to the service threads on NT since
 		// there is no OS authentication.  If the password is not yet
@@ -817,11 +850,38 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		{
 			siHolder.clear();
 		}
-	}
-	catch (const Exception&)
+	}	// try
+	catch (const Firebird::Exception& ex)
 	{
+		TraceManager* trace_manager = NULL;
+		ISC_STATUS_ARRAY status_vector;
+
+		// Use created trace manager if it's possible
+		const bool hasTrace = svc_trace_manager;
+		if (hasTrace)
+			trace_manager = svc_trace_manager;
+		else
+			trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
+
+		if (trace_manager->needs().event_service_attach)
+		{
+			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+
+			TraceServiceImpl service(this);
+			trace_manager->event_service_attach(&service, no_priv ? res_unauthorized : res_failed);
+		}
+
+		if ( !hasTrace)
+			delete trace_manager;
+
 		removeFromAllServices();
 		throw;
+	}
+	if (svc_trace_manager->needs().event_service_attach)
+	{
+		TraceServiceImpl service(this);
+		svc_trace_manager->event_service_attach(&service, res_successful);
 	}
 }
 
@@ -848,6 +908,9 @@ void Service::detach()
 		SecurityDatabase::shutdown();
 	}
 
+	TraceServiceImpl service(this);
+	svc_trace_manager->event_service_detach(&service, res_successful);
+
 	// Mark service as detached.
 	finish(SVC_detached);
 
@@ -862,6 +925,9 @@ void Service::detach()
 Service::~Service()
 {
 	removeFromAllServices();
+
+	delete svc_trace_manager;
+	svc_trace_manager = NULL;
 }
 
 
@@ -939,6 +1005,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	// Setup the status vector
 	Arg::StatusVector status;
 
+	try
+	{
 	// Process the send portion of the query first.
 	USHORT timeout = 0;
 	const SCHAR* items = send_items;
@@ -1361,6 +1429,35 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		INF_put_item(isc_info_length, length2, buffer, start_info, end);
 	}
 
+	if (svc_trace_manager->needs().event_service_query)
+	{
+		TraceServiceImpl service(this);
+		svc_trace_manager->event_service_query(&service,
+			send_item_length, reinterpret_cast<const UCHAR*>(send_items),
+			recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+			res_successful);
+	}
+
+	}	// try
+	catch (const Firebird::Exception& ex)
+	{
+		ISC_STATUS_ARRAY status_vector;
+
+		if (svc_trace_manager->needs().event_service_query)
+		{
+			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const bool no_priv = (exc == isc_login || exc == isc_no_priv ||
+							exc == isc_insufficient_svc_privileges);
+
+			TraceServiceImpl service(this);
+			svc_trace_manager->event_service_query(&service,
+				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
+				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+				no_priv ? res_unauthorized : res_failed);
+		}
+		throw;
+	}
+
 	if (!(svc_flags & SVC_thd_running))
 	{
 		finish(SVC_finished);
@@ -1383,6 +1480,8 @@ void Service::query(USHORT			send_item_length,
 	TEXT PathBuffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
 
+	try
+	{
 	// Process the send portion of the query first.
 	USHORT timeout = 0;
 	const SCHAR* items = send_items;
@@ -1725,9 +1824,37 @@ void Service::query(USHORT			send_item_length,
 	{
 		*info = isc_info_end;
 	}
+	}	// try
+	catch (const Firebird::Exception& ex)
+	{
+		ISC_STATUS_ARRAY status_vector;
+
+		if (svc_trace_manager->needs().event_service_query)
+		{
+			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+
+			// Report to Trace API that attachment has not been created
+			TraceServiceImpl service(this);
+			svc_trace_manager->event_service_query(&service,
+				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
+				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+				no_priv ? res_unauthorized : res_failed);
+		}
+		throw;
+	}
 
 	if (!(svc_flags & SVC_thd_running))
 	{
+		if ((svc_flags & SVC_detached) &&
+			svc_trace_manager->needs().event_service_query)
+		{
+			TraceServiceImpl service(this);
+			svc_trace_manager->event_service_query(&service,
+				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
+				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+				res_successful);
+		}
 		finish(SVC_finished);
 	}
 }
@@ -1735,6 +1862,8 @@ void Service::query(USHORT			send_item_length,
 
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
+	try
+	{
 	ClumpletReader spb(ClumpletReader::SpbStart, spb_data, spb_length);
 
 /* The name of the service is the first element of the buffer */
@@ -1748,6 +1877,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	if (!serv->serv_name)
 		status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_service_not_supported));
+
+	svc_service_run = serv;
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
@@ -1799,7 +1930,12 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_modify_user ||
 		svc_id == isc_action_svc_display_user ||
 		svc_id == isc_action_svc_db_stats ||
-		svc_id == isc_action_svc_properties)
+		svc_id == isc_action_svc_properties ||
+		svc_id == isc_action_svc_trace_start ||
+		svc_id == isc_action_svc_trace_stop ||
+		svc_id == isc_action_svc_trace_suspend ||
+		svc_id == isc_action_svc_trace_resume ||
+		svc_id == isc_action_svc_trace_list)
 	{
 		/* add the username and password to the end of svc_switches if needed */
 		if (svc_switches.hasData())
@@ -1885,6 +2021,30 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	else
 	{
 		status_exception::raise(Arg::Gds(isc_svcnotdef) << Arg::Str(serv->serv_name));
+	}
+	}	// try
+	catch (const Firebird::Exception& ex)
+	{
+		if (svc_trace_manager->needs().event_service_start)
+		{
+			ISC_STATUS_ARRAY status_vector;
+			const ISC_LONG exc = ex.stuff_exception(status_vector);
+			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+
+			TraceServiceImpl service(this);
+			svc_trace_manager->event_service_start(&service,
+				this->svc_switches.length(), this->svc_switches.c_str(),
+				no_priv ? res_unauthorized : res_failed);
+		}
+		throw;
+	}
+
+	if (this->svc_trace_manager->needs().event_service_start)
+	{
+		TraceServiceImpl service(this);
+		this->svc_trace_manager->event_service_start(&service,
+			this->svc_switches.length(), this->svc_switches.c_str(),
+			this->svc_status[1] ? res_failed : res_successful);
 	}
 }
 
@@ -2434,6 +2594,43 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				return false;
 			}
 			break;
+		
+		case isc_action_svc_trace_start:
+		case isc_action_svc_trace_stop:
+		case isc_action_svc_trace_suspend:
+		case isc_action_svc_trace_resume:
+		case isc_action_svc_trace_list:
+		{
+			if (!found)
+			{
+				if (!get_action_svc_parameter(svc_action, trace_action_in_sw_table, switches)) {
+					return false;
+				}
+				found = true;
+			}
+
+			if (svc_action == isc_action_svc_trace_list)
+				break;
+
+			if (!get_action_svc_parameter(spb.getClumpTag(), trace_option_in_sw_table, switches)) {
+				return false;
+			}
+
+			switch (spb.getClumpTag())
+			{
+			case isc_spb_trc_cfg:
+			case isc_spb_trc_name:
+				get_action_svc_string(spb, switches);
+				break;
+			case isc_spb_trc_id:
+				get_action_svc_data(spb, switches);
+				break;
+			default:
+				return false;
+			}
+			break;
+		}
+
 		default:
 			return false;
 		}
@@ -2550,6 +2747,16 @@ bool Service::get_action_svc_parameter(UCHAR action,
 	switches += ' ';
 
 	return true;
+}
+
+const char* Service::getServiceMgr() const
+{
+	return svc_service ? svc_service->serv_name : NULL;
+}
+
+const char* Service::getServiceName() const
+{
+	return svc_service_run ? svc_service_run->serv_name : NULL;
 }
 
 #ifdef DEBUG

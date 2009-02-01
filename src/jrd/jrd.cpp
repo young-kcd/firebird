@@ -121,6 +121,9 @@
 #include "../common/config/dir_list.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceObjects.h"
+#include "../jrd/trace/TraceJrdHelpers.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
@@ -157,7 +160,8 @@ namespace
 		{
 			IbUtil::initialize();
 			IntlManager::initialize();
-			PluginManager::load_engine_plugins();
+			if (!PluginManager::enginePluginManager().begin())
+				PluginManager::load_engine_plugins();
 		}
 
 		static void cleanup()
@@ -438,6 +442,38 @@ public:
 	void get(const UCHAR*, USHORT, bool&);
 };
 
+/// trace manager support
+
+class TraceFailedConnection : public TraceConnection
+{
+public:
+	TraceFailedConnection(const char* filename, const DatabaseOptions *options) :
+	  m_filename(filename),
+	  m_options(options)
+	{}	
+
+	virtual int getConnectionID()				{ return 0; }
+	virtual int getProcessID()					{ return m_options->dpb_remote_pid; }
+	virtual const char* getDatabaseName()		{ return m_filename; }
+	virtual const char* getUserName()			
+	{ 
+		if (m_options->dpb_user_name.empty())
+			return m_options->dpb_trusted_login.c_str(); 
+		else
+			return m_options->dpb_user_name.c_str(); 
+	}
+
+	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
+	virtual const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
+	virtual const char* getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
+	virtual int getRemoteProcessID()			{ return m_options->dpb_remote_pid; }
+	virtual const char* getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
+
+private:
+	const DatabaseOptions *m_options;
+	const char* m_filename;
+};
+
 static void			cancel_attachments();
 static void			check_database(thread_db* tdbb);
 static void			check_transaction(thread_db*, jrd_tra*);
@@ -661,8 +697,30 @@ void JRD_print_pools(const char* filename)
 	}
 }
 
+void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options, bool no_priv)
+{
+	// Report to Trace API that attachment has not been created
+	if (!traceManager)
+	{
+		TraceManager tempMgr(filename);
 
-ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
+		if (tempMgr.needs().event_attach) 
+		{
+			TraceFailedConnection conn(filename, &options);
+			tempMgr.event_attach(&conn, false, no_priv ? res_unauthorized : res_failed);
+		}
+	}
+	else
+	{
+		if (traceManager->needs().event_attach)
+		{
+			TraceFailedConnection conn(filename, &options);
+			traceManager->event_attach(&conn, false, no_priv ? res_unauthorized : res_failed);
+		}
+	}
+}
+
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 								const TEXT* filename,
 								Attachment** handle,
 								SSHORT dpb_length,
@@ -701,11 +759,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const DelayFailedLogin& ex)
 	{
+		trace_failed_attach(NULL, filename, options, true);
+
 		ex.sleep();
 		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
+		trace_failed_attach(NULL, filename, options, true);
 		return ex.stuff_exception(user_status);
 	}
 
@@ -746,6 +807,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
+		trace_failed_attach(NULL, filename, options, false);
 		return user_status[1];
 	}
 
@@ -946,7 +1008,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		attachment->att_flags |= ATT_lck_init_done;
 	}
 
-    // Attachments to a ReadOnly database need NOT do garbage collection
+	// Attachments to a ReadOnly database need NOT do garbage collection
 	if (dbb->dbb_flags & DBB_read_only) {
 		attachment->att_flags |= ATT_no_cleanup;
 	}
@@ -1250,6 +1312,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	// Recover database after crash during backup difference file merge
 	dbb->dbb_backup_manager->end_backup(tdbb, true); // true = do recovery
 
+	if (attachment->att_trace_manager->needs().event_attach)
+	{
+		TraceConnectionImpl conn(attachment);
+		attachment->att_trace_manager->event_attach(&conn, false, res_successful);
+	}
+
 	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
 		jrd_tra* transaction = NULL;
@@ -1288,6 +1356,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}	// try
 	catch (const Exception& ex)
 	{
+		const ISC_LONG exc = ex.stuff_exception(user_status);
+		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+		trace_failed_attach(attachment->att_trace_manager, filename, options, no_priv);
+
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 
@@ -1574,14 +1646,29 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
-
+	
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_compile(tdbb, attachment, req_handle, blr_length, reinterpret_cast<const UCHAR*>(blr),
-					0, NULL, 0, NULL);
+		TraceBlrCompile trace(tdbb, blr_length, blr);
+		try
+		{
+			JRD_compile(tdbb, attachment, req_handle, blr_length, reinterpret_cast<const UCHAR*>(blr),
+						RefStrPtr(), 0, NULL);
+
+			fb_assert(*req_handle);
+			trace.finish(*req_handle, res_successful);
+		}
+		catch (const Exception& ex)
+		{
+			const ISC_LONG exc = ex.stuff_exception(user_status);
+			const bool no_priv = (exc == isc_no_priv);
+			trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
+
+			return exc;
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -1677,11 +1764,14 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const DelayFailedLogin& ex)
 	{
+		trace_failed_attach(NULL, filename, options, true);
+
 		ex.sleep();
 		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
+		trace_failed_attach(NULL, filename, options, true);
 		return ex.stuff_exception(user_status);
 	}
 
@@ -1722,6 +1812,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
+		trace_failed_attach(NULL, filename, options, false);
 		return user_status[1];
 	}
 
@@ -1903,6 +1994,23 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	CCH_init(tdbb, options.dpb_buffers);
 
+#ifdef WIN_NT
+	dbb->dbb_filename.assign(first_dbb_file->fil_string);
+#else
+	dbb->dbb_filename = expanded_name;
+#endif
+
+	// NS: Use alias as database ID only if accessing database using file name is not possible.
+	//
+	// This way we:
+	// 1. Ensure uniqueness of ID even in presence of multiple processes
+	// 2. Make sure that ID value can be used to connect back to database
+	//
+	if (is_alias && vdn == vdnFail)
+		dbb->dbb_database_name = file_name;
+	else
+		dbb->dbb_database_name = dbb->dbb_filename;
+
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal);
@@ -1965,26 +2073,16 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	find_intl_charset(tdbb, attachment, &options);
 
-#ifdef WIN_NT
-	dbb->dbb_filename.assign(first_dbb_file->fil_string);
-#else
-	dbb->dbb_filename = expanded_name;
-#endif
-
-	// NS: Use alias as database ID only if accessing database using file name is not possible.
-	//
-	// This way we:
-	// 1. Ensure uniqueness of ID even in presence of multiple processes
-	// 2. Make sure that ID value can be used to connect back to database
-	//
-	if (is_alias && vdn == vdnFail)
-		dbb->dbb_database_name = file_name;
-	else
-		dbb->dbb_database_name = dbb->dbb_filename;
-
 	CCH_flush(tdbb, FLUSH_FINI, 0);
 
 	dbb->dbb_backup_manager->dbCreating = false;
+
+	// Report that we created attachment to Trace API
+	if (attachment->att_trace_manager->needs().event_attach)
+	{
+		TraceConnectionImpl conn(attachment);
+		attachment->att_trace_manager->event_attach(&conn, true, res_successful);
+	}
 
 	guardDatabases.leave();
 
@@ -1994,6 +2092,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}	// try
 	catch (const Exception& ex)
 	{
+		const ISC_LONG exc = ex.stuff_exception(user_status);
+		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+		trace_failed_attach(attachment->att_trace_manager, filename, options, no_priv);
+
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
 
@@ -2064,12 +2166,24 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
+		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		JRD_ddl(tdbb, attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
+		TraceDynExecute trace(tdbb, ddl_length, ddl);
+		try
+		{
+			JRD_ddl(tdbb, attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
+
+			trace.finish(res_successful);
+		}
+		catch (const Exception& ex)
+		{
+			const ISC_STATUS exc = ex.stuff_exception(user_status);
+			trace.finish(exc == FB_SUCCESS ? res_successful : res_failed);
+
+			return exc;
+		}
 	}
-	catch (const Exception& ex)
-	{
+	catch (const Exception& ex) {
 		return ex.stuff_exception(user_status);
 	}
 
@@ -2221,6 +2335,13 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		const jrd_file* file = pageSpace->file;
 		const Shadow* shadow = dbb->dbb_shadow;
+
+		// Notify Trace API manager about successful drop of database
+		if (attachment->att_trace_manager->needs().event_detach)
+		{
+			TraceConnectionImpl conn(attachment);
+			attachment->att_trace_manager->event_detach(&conn, true);
+		}
 
 		// Unlink attachment from database
 		release_attachment(tdbb, attachment);	// normal release, no need to process status vector
@@ -2883,6 +3004,10 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		ThreadContextHolder tdbb(user_status);
 
+		// hvlad: ???
+		if (!PluginManager::enginePluginManager().begin())
+			PluginManager::load_engine_plugins();
+
 		*svc_handle = new Service(service_name, spb_length, reinterpret_cast<const UCHAR*>(spb));
 	}
 	catch (const DelayFailedLogin& ex)
@@ -2982,7 +3107,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 				memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
 				memset(service->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
-				return user_status[1];
+				return user_status[1]; 
 			}
 		}
 	}
@@ -3071,7 +3196,22 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-		JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg, level);
+		TraceBlrExecute trace(tdbb, request);
+		try
+		{
+			JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg, level);
+
+			// Notify Trace API about blr execution
+			trace.finish(res_successful);
+		}
+		catch (const Exception& ex)
+		{
+			const ISC_LONG exc = ex.stuff_exception(user_status);
+			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+			trace.finish(no_priv ? res_unauthorized : res_failed);
+
+			return exc;
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3110,7 +3250,20 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 
 		jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-		JRD_start(tdbb, request, transaction, level);
+		TraceBlrExecute trace(tdbb, request);
+		try
+		{
+			JRD_start(tdbb, request, transaction, level);
+			trace.finish(res_successful);
+		}
+		catch (const Exception& ex)
+		{
+			const ISC_LONG exc = stuff_exception(user_status, ex);
+			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
+			trace.finish(no_priv ? res_unauthorized : res_failed);
+
+			return exc;
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -3579,7 +3732,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		check_database(tdbb);
 
 		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-								 msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
+						  msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
 #ifdef SCROLLABLE_CURSORS
 						  , direction, offset
 #endif
@@ -3612,7 +3765,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
 		if (option & DSQL_drop)
 		{
 			*stmt_handle = NULL;
-		}
+	}
 	}
 	catch (const Exception& ex)
 	{
@@ -3855,7 +4008,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				!(attachment->att_flags & ATT_cancel_disable))
 			{
 				if ((!request ||
-					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+					!(request->req_flags & (req_internal | req_sys_trigger))) &&
 					(!transaction || !(transaction->tra_flags & TRA_system)))
 				{
 					attachment->att_flags &= ~ATT_cancel_raise;
@@ -3976,7 +4129,7 @@ static void check_database(thread_db* tdbb)
 	}
 
 	if ((attachment->att_flags & ATT_shutdown) ||
-		((dbb->dbb_ast_flags & DBB_shutdown) &&
+		((dbb->dbb_ast_flags & DBB_shutdown) && 
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
@@ -4867,7 +5020,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	}
 #endif
 
-	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
+	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count; 
 		++vector)
 	{
 		delete *vector;
@@ -4950,6 +5103,7 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_memory_stats(&dbb->dbb_memory_stats),
 	att_database(dbb),
 	att_lock_owner_id(Database::getLockOwnerId()),
+	att_stats(*pool),
 	att_lc_messages(*pool),
 	att_working_directory(*pool),
 	att_filename(*pool),
@@ -4961,14 +5115,18 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_dsql_cache(*pool),
 	att_udf_pointers(*pool),
 	att_strings_buffer(NULL),
-	att_ext_connection(NULL)
+	att_ext_connection(NULL),
+	att_trace_manager(NULL)
 {
 	att_mutex.enter();
+	att_trace_manager = FB_NEW(*att_pool) TraceManager(this);
 }
 
 
 Attachment::~Attachment()
 {
+	delete att_trace_manager;
+
 	// For normal attachments that happens release_attachment(),
 	// but for special ones like GC should be done also in dtor -
 	// they do not (and should not) call release_attachment().
@@ -5605,6 +5763,13 @@ static void purge_attachment(thread_db*		tdbb,
 		throw;
 	}
 
+	// Notify Trace API manager about disconnect
+	if (attachment->att_trace_manager->needs().event_detach)
+	{
+		TraceConnectionImpl conn(attachment);
+		attachment->att_trace_manager->event_detach(&conn, false);
+	}
+
 	// Unlink attachment from database
 
 	release_attachment(tdbb, attachment);	// normal release - no status vector processing
@@ -5794,7 +5959,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (name.length() > USERNAME_LENGTH)
 	{
-		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length())
+		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length()) 
 														 << Arg::Num(USERNAME_LENGTH));
 	}
 
@@ -6207,6 +6372,8 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 
 			// run ON TRANSACTION START triggers
 			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
+
+			Database* dbb = tdbb->getDatabase();
 		}
 
 		*tra_handle = transaction;
@@ -6292,7 +6459,7 @@ void JRD_compile(thread_db* tdbb,
 				 jrd_req** req_handle,
 				 SSHORT blr_length,
 				 const UCHAR* blr,
-				 USHORT string_length, const char* string,
+				 Firebird::RefStrPtr ref_str,
 				 USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
@@ -6314,7 +6481,12 @@ void JRD_compile(thread_db* tdbb,
 	request->req_request = attachment->att_requests;
 	attachment->att_requests = request;
 
-	request->req_sql_text.assign(string, string_length);
+	if (!ref_str) {
+		request->req_blr.insert(0, blr, blr_length);
+	}
+	else {
+		request->req_sql_text = ref_str;
+	}
 
 	*req_handle = request;
 }
@@ -6324,7 +6496,7 @@ namespace {
 	class DatabaseDirectoryList : public DirectoryList
 	{
 	private:
-		const PathName getConfigString() const
+		const PathName getConfigString() const 
 		{
 			return PathName(Config::getDatabaseAccess());
 		}

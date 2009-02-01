@@ -32,6 +32,8 @@
 #include "../jrd/fun_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceObjects.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -309,52 +311,71 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
+	Database* dbb	= tdbb->getDatabase();
+	Attachment *att	= tdbb->getAttachment();
+	jrd_tra* tra	= tdbb->getTransaction();
+
+	Firebird::StringMap *context_vars = NULL;
+
+	bool result = false;
 
 	if (ns_str == USER_SESSION_NAMESPACE)
 	{
-		Attachment* att = tdbb->getAttachment();
-
 		if (!att) {
 			fb_assert(false);
 			return 0;
 		}
 
-		if (!value_vary)
-			return att->att_context_vars.remove(name_str);
-
-		if (att->att_context_vars.count() >= MAX_CONTEXT_VARS) {
-			// "Too many context variables"
-			ERR_post(Arg::Gds(isc_ctx_too_big));
-		}
-
-		return att->att_context_vars.put(name_str,
-			Firebird::string(value_vary->vary_string, value_vary->vary_length));
+		context_vars = &att->att_context_vars;
 	}
-
-	if (ns_str == USER_TRANSACTION_NAMESPACE)
+	else if (ns_str == USER_TRANSACTION_NAMESPACE)
 	{
-		jrd_tra* tra = tdbb->getTransaction();
-
 		if (!tra) {
 			fb_assert(false);
 			return 0;
 		}
 
-		if (!value_vary)
-			return tra->tra_context_vars.remove(name_str);
+		context_vars = &tra->tra_context_vars;
+	}
+	else
+	{
+		// "Invalid namespace name %s passed to %s"
+		ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << Arg::Str(RDB_SET_CONTEXT));
+	}
 
-		if (tra->tra_context_vars.count() >= MAX_CONTEXT_VARS) {
+	if (!value_vary) {
+		result = context_vars->remove(name_str);
+	}
+	else 
+	{
+		result = context_vars->put(name_str, Firebird::string(value_vary->vary_string, value_vary->vary_length));
+		
+		if (context_vars->count() > MAX_CONTEXT_VARS) 
+		{
+			context_vars->remove(name_str);
+
 			// "Too many context variables"
 			ERR_post(Arg::Gds(isc_ctx_too_big));
 		}
-
-		return tra->tra_context_vars.put(name_str,
-			Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	}
 
-	// "Invalid namespace name %s passed to %s"
-	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << Arg::Str(RDB_SET_CONTEXT));
-	return 0;
+	if (att->att_trace_manager->needs().event_set_context) 
+	{
+		TraceConnectionImpl conn(att);
+		TraceTransactionImpl tran(tra);
+		
+		Firebird::string *value_str = NULL;
+		if (value_vary) {
+			value_str = att->att_context_vars.get(name_str);
+		}
+		
+		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(), 
+			value_str ? value_str->c_str() : NULL );
+
+		att->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);
+	}
+
+	return result;
 }
 
 static int test(const long* n, char *result)

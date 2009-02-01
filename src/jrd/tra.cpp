@@ -70,6 +70,8 @@
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
 #include "../common/StatusArg.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceJrdHelpers.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -397,6 +399,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
  **************************************/
 	SET_TDBB(tdbb);
 
+	TraceTransactionEnd trace(transaction, true, retaining_flag);
+
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, true, retaining_flag, false);
 
 	// If this is a commit retaining, and no updates have been performed,
@@ -414,6 +418,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			VIO_verb_cleanup(tdbb, transaction);
 			transaction->tra_save_point = next;
 		}
+
+		trace.finish(res_successful);
 		return;
 	}
 
@@ -450,7 +456,9 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	}
 #endif
 
-	if (retaining_flag) {
+	if (retaining_flag) 
+	{
+		trace.finish(res_successful);
 		retain_context(tdbb, transaction, true, tra_committed);
 		return;
 	}
@@ -472,6 +480,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 		LCK_convert(tdbb, lock, LCK_write, LCK_WAIT);
 	--transaction->tra_use_count;
 
+	trace.finish(res_successful);
 	TRA_release_transaction(tdbb, transaction);
 }
 
@@ -1202,6 +1211,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
  **************************************/
 	SET_TDBB(tdbb);
 
+	TraceTransactionEnd trace(transaction, false, retaining_flag);
+
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, retaining_flag, false /*force_flag ?*/);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
@@ -1319,12 +1330,16 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	// If this is a rollback retain abort this transaction and start a new one.
 
-	if (retaining_flag) {
+	if (retaining_flag) 
+	{
+		trace.finish(res_successful);
 		retain_context(tdbb, transaction, false, state);
 		return;
 	}
 
 	TRA_set_state(tdbb, transaction, transaction->tra_number, state);
+
+	trace.finish(res_successful);
 	TRA_release_transaction(tdbb, transaction);
 }
 
@@ -1545,7 +1560,16 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	temp->tra_flags = flags;
 	temp->tra_lock_timeout = lock_timeout;
 
-	return transaction_start(tdbb, temp);
+	jrd_tra* transaction = transaction_start(tdbb, temp);
+
+	if (attachment->att_trace_manager->needs().event_transaction_start)
+	{
+		TraceConnectionImpl conn(attachment);
+		TraceTransactionImpl tran(transaction);
+		attachment->att_trace_manager->event_transaction_start(&conn,
+			&tran, 0, NULL, res_successful);
+	}
+	return transaction;
 }
 
 
@@ -1579,7 +1603,16 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 
 	transaction_options(tdbb, temp, tpb, tpb_length);
 
-	return transaction_start(tdbb, temp);
+	jrd_tra* transaction = transaction_start(tdbb, temp);
+
+	if (attachment->att_trace_manager->needs().event_transaction_start)
+	{
+		TraceConnectionImpl conn(attachment);
+		TraceTransactionImpl tran(transaction);
+		attachment->att_trace_manager->event_transaction_start(&conn,
+			&tran, tpb_length, tpb, res_successful);
+	}
+	return transaction;
 }
 
 
@@ -3430,6 +3463,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	return trans;
 }
+
 
 jrd_tra::~jrd_tra()
 {

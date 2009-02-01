@@ -494,6 +494,8 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 
 	vcl* vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
 	((*vector)[relation_id])++;
+
+	tdbb->bumpStats((RuntimeStatistics::StatType) count_id, relation_id);
 }
 
 

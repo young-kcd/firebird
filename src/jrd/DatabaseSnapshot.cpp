@@ -1107,7 +1107,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, ClumpletWriter& writer
 		writer.insertTimeStamp(f_mon_stmt_timestamp, empty);
 	}
 	// sql text
-	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
+	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text ? *request->req_sql_text : string());
 	// statistics
 	writer.insertBigInt(f_mon_stmt_stat_id, getGlobalId(stat_id));
 	putStatistics(request->req_stats, writer, stat_id, stat_statement);

@@ -67,5 +67,9 @@ void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*, USHORT);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
 				   USHORT, const UCHAR*,
 				   USHORT, UCHAR*);
+USHORT DSQL_get_plan_info(Jrd::thread_db*,
+						  Jrd::dsql_req*,
+						  SSHORT,
+						  SCHAR**);
 
 #endif //  DSQL_DSQL_PROTO_H

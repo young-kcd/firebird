@@ -103,6 +103,8 @@
 #include "../dsql/dsql_proto.h"
 #include "../jrd/rpb_chain.h"
 #include "../jrd/VirtualTable.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceJrdHelpers.h"
 
 #include "../dsql/Nodes.h"
 
@@ -824,7 +826,6 @@ void EXE_receive(thread_db*		tdbb,
 		request->req_proc_sav_point = save_sav_point;
 		VIO_merge_proc_sav_points(tdbb, transaction, &request->req_proc_sav_point);
 	}
-
 }
 
 
@@ -1183,6 +1184,8 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp.invalidate();
+	request->req_proc_inputs = NULL;
+	request->req_proc_caller = NULL;
 }
 
 
@@ -1522,6 +1525,9 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 	jrd_req* proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
 
+	// trace procedure execution start
+	TraceProcExecute trace(tdbb, proc_request, request, node->nod_arg[e_esp_inputs]);
+
 	Firebird::Array<UCHAR> temp_buffer;
 
 	if (!out_message) {
@@ -1562,7 +1568,11 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		}
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception& ex) 
+	{
+		const bool no_priv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
+		trace.finish(false, no_priv ? res_unauthorized : res_failed);
+
 		tdbb->setRequest(request);
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
@@ -1570,6 +1580,9 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		proc_request->req_timestamp.invalidate();
 		throw;
 	}
+
+	// trace procedure execution finish
+	trace.finish(false, res_successful);
 
 	EXE_unwind(tdbb, proc_request);
 	tdbb->setRequest(request);
@@ -1763,11 +1776,19 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 				trigger->req_timestamp = timestamp;
 
 			trigger->req_trigger_action = trigger_action;
+			
+			TraceTrigExecute trace(tdbb, trigger, which_trig);
+
 			EXE_start(tdbb, trigger, transaction);
+
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
 			trigger->req_timestamp.invalidate();
-			if (trigger->req_operation == jrd_req::req_unwind) {
+
+			const bool ok = (trigger->req_operation != jrd_req::req_unwind);
+			trace.finish(ok ? res_successful : res_failed);
+
+			if (!ok) {
 				result = trigger;
 				break;
 			}

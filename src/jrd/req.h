@@ -196,8 +196,9 @@ public:
 	jrd_req(MemoryPool* pool, Firebird::MemoryStats* parent_stats)
 	:	req_pool(pool), req_memory_stats(parent_stats),
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_ext_stmt(NULL),
-		req_invariants(*pool), req_sql_text(*pool), req_domain_validation(NULL),
+		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
+		req_exec_sta(*pool), req_ext_stmt(NULL), req_invariants(*pool),
+		req_blr(*pool), req_domain_validation(NULL), 
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool)
 	{}
 
@@ -260,7 +261,14 @@ public:
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
 	Firebird::TimeStamp	req_timestamp;		/* Start time of request */
-	Firebird::string req_sql_text;
+	Firebird::RefStrPtr req_sql_text;
+	Firebird::Array<UCHAR> req_blr;
+
+	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; //!< State of request performance counters when we reported it last time
+	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time 
+	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
+	jrd_req* req_proc_caller;	// Procedure's caller request
+	jrd_nod* req_proc_inputs;	// and its node with input parameters
 
 	USHORT	req_src_line;
 	USHORT	req_src_column;

@@ -35,12 +35,14 @@
 #define DSQL_DSQL_H
 
 #include "../jrd/common.h"
+#include "../jrd/RuntimeStatistics.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Database.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
+#include "../common/classes/auto.h"
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -410,6 +412,13 @@ public:
 	ULONG	req_selects;
 	REQ_TYPE req_type;			//!< Type of request
 	ULONG	req_flags;			//!< generic flag
+
+	Firebird::RefStrPtr req_sql_text;
+
+	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; //!< State of request performance counters when we reported it last time
+	SINT64 req_fetch_elapsed;		//!< Number of clock ticks spent while fetching rows for this request since we reported it last time
+	SINT64 req_fetch_rowcount;		//!< Total number of rows returned by this request
+	bool req_traced;				//!< request is traced via TraceAPI
 
 protected:
 	// Request should never be destroyed using delete.

@@ -472,6 +472,7 @@ private:
 		dbb_pools(*p, 4),
 		dbb_internal(*p),
 		dbb_dyn_req(*p),
+		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),

@@ -41,7 +41,8 @@ namespace Firebird {
 class StandaloneUtilityInterface : public UtilSvc
 {
 public:
-	StandaloneUtilityInterface(int ac, char** av)
+	StandaloneUtilityInterface(int ac, char** av) :
+	  m_finished(false)
 	{
 		while (ac--)
 		{
@@ -106,15 +107,20 @@ public:
 	}
 
 	// do nothing for non-service
-	virtual void finish() { }
+	virtual void finish() { m_finished = true; }
 	virtual void started() { }
 	virtual void putLine(char, const char*) { }
 	virtual void putSLong(char, SLONG) { }
 	virtual void putChar(char, char) { }
+	virtual void putBytes(const UCHAR*, size_t) { }
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual ISC_STATUS* getStatus() { return 0; }
 	virtual void getAddressPath(ClumpletWriter& dpb) { }
+	virtual bool finished() { return m_finished; };
+
+private:
+	bool m_finished;
 };
 
 

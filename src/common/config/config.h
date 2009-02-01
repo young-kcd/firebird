@@ -115,7 +115,9 @@ class Config
 		KEY_DATABASE_GROWTH_INCREMENT,				// 40
 		KEY_MAX_FILESYSTEM_CACHE,					// 41
 		KEY_RELAXED_ALIAS_CHECKING,					// 42
-		KEY_OLD_SET_CLAUSE_SEMANTICS				// 43
+		KEY_OLD_SET_CLAUSE_SEMANTICS,				// 43
+		KEY_TRACE_CONFIG,							// 44
+		KEY_MAX_TRACELOG_SIZE						// 45
 	};
 
 public:
@@ -342,6 +344,10 @@ public:
 	static bool getRelaxedAliasChecking();
 
 	static bool getOldSetClauseSemantics();
+
+	static const char *getAuditTraceConfigFile();
+
+	static int getMaxUserTraceLogSize();
 };
 
 namespace Firebird {

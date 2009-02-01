@@ -19,6 +19,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
+ *  Nickolay Samofatov <nickolay@broadviewsoftware.com>
  */
 
 
@@ -775,6 +776,61 @@ FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& passw
 	pwd.copyTo(pass, pwd.length() + 1);
 	password = pass;
 	return FETCH_PASS_OK;
+}
+
+
+
+const SINT64 BILLION = 1000000000;
+static SINT64 saved_frequency = 0;
+
+// Returns current value of performance counter
+SINT64 query_performance_counter() 
+{
+#if defined(WIN_NT)
+
+	// Use Windows performance counters
+	LARGE_INTEGER counter;
+	if (QueryPerformanceCounter(&counter) == 0)
+		return 0;
+
+	return counter.QuadPart;
+#elif defined(HAVE_CLOCK_GETTIME)
+
+	// Use high-resultion clock
+	struct timespec tp;
+	if (clock_gettime(CLOCK_REALTIME, &tp) != 0)
+		return 0;
+
+	return static_cast<SINT64>(tp.tv_sec) * BILLION + tp.tv_nsec;
+#else
+
+	// This is not safe because of possible wrapping and very inprecise
+	return clock();
+#endif
+}
+
+
+// Returns frequency of performance counter in Hz
+SINT64 query_performance_frequency() 
+{
+#if defined(WIN_NT)
+	if (saved_frequency)
+		return saved_frequency;
+
+	LARGE_INTEGER frequency;
+	if (QueryPerformanceFrequency(&frequency) == 0)
+		return 1;
+
+	saved_frequency = frequency.QuadPart;
+	return frequency.QuadPart;
+#elif defined(HAVE_CLOCK_GETTIME)
+
+	return BILLION;
+#else
+
+	// This is not safe because of possible wrapping and very inprecise
+	return CLOCKS_PER_SEC;
+#endif
 }
 
 } // namespace fb_utils

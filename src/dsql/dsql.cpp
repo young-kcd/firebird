@@ -58,6 +58,8 @@
 #include "../jrd/inf_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceDSQLHelpers.h"
 #include "../common/classes/init.h"
 #include "../common/utils_proto.h"
 #ifdef SCROLLABLE_CURSORS
@@ -78,7 +80,7 @@ static void		close_cursor(thread_db*, dsql_req*);
 static USHORT	convert(SLONG, UCHAR*);
 static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, const UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
-static void execute_immediate(thread_db*, Attachment*, jrd_tra**,
+static void		execute_immediate(thread_db*, Attachment*, jrd_tra**,
 							  USHORT, const TEXT*, USHORT,
 							  USHORT, const UCHAR*, USHORT, USHORT, const UCHAR*,
 							  USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
@@ -86,7 +88,6 @@ static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCH
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SSHORT*, const SCHAR**, SSHORT*, SCHAR**);
-static USHORT	get_plan_info(thread_db*, dsql_req*, SSHORT, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SSHORT, UCHAR*);
 static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Attachment*);
@@ -98,6 +99,22 @@ static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT);
+
+static inline bool reqTypeWithCursor(REQ_TYPE req_type)
+{
+	switch (req_type)
+	{
+	case REQ_SELECT:
+	case REQ_SELECT_BLOCK:
+	case REQ_SELECT_UPD:
+	case REQ_EMBED_SELECT:
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
+		return true;
+	}
+
+	return false;
+}
 
 #ifdef DSQL_DEBUG
 unsigned DSQL_debug = 0;
@@ -227,15 +244,7 @@ void DSQL_execute(thread_db* tdbb,
 /* If the request is a SELECT or blob statement then this is an open.
    Make sure the cursor is not already open. */
 
-	switch (request->req_type)
-	{
-	case REQ_SELECT:
-	case REQ_EXEC_BLOCK:
-	case REQ_SELECT_BLOCK:
-	case REQ_SELECT_UPD:
-	case REQ_EMBED_SELECT:
-	case REQ_GET_SEGMENT:
-	case REQ_PUT_SEGMENT:
+	if (reqTypeWithCursor(request->req_type)) {
 		if (request->req_flags & REQ_cursor_open)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
@@ -270,16 +279,8 @@ void DSQL_execute(thread_db* tdbb,
  * a singleton SELECT.  In that event, we don't add the cursor
  * to the list of open cursors (it's not really open).
  */
-	switch (request->req_type)
+	if (reqTypeWithCursor(request->req_type) && !singleton)
 	{
-	case REQ_SELECT:
-		if (out_msg_length != 0)
-			break;
-	case REQ_SELECT_BLOCK:
-	case REQ_SELECT_UPD:
-	case REQ_EMBED_SELECT:
-	case REQ_GET_SEGMENT:
-	case REQ_PUT_SEGMENT:
 		request->req_flags |= REQ_cursor_open;
 		TRA_link_cursor(request->req_transaction, request);
 	}
@@ -469,6 +470,10 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 	dsql_msg* message = (dsql_msg*) request->req_receive;
 
+	// Set up things for tracing this call
+	Attachment *att = request->req_dbb->dbb_attachment;
+	TraceDSQLFetch trace(att, request);
+
 /* Insure that the blr for the message is parsed, regardless of
    whether anything is found by the call to receive. */
 
@@ -501,15 +506,21 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		message->msg_buffer, 0);
 
 	const dsql_par* const eof = request->req_eof;
-	if (eof)
+
+	bool eof_reached = false;
+	if (eof) {
+		eof_reached = !*((USHORT *) eof->par_desc.dsc_address);
+	}
+
+	if (eof_reached) 
 	{
-		if (!*((USHORT *) eof->par_desc.dsc_address)) {
-			return 100;
-		}
+		trace.fetch(true, res_successful);
+		return 100;
 	}
 
 	map_in_out(NULL, message, 0, blr, msg_length, dsql_msg_buf);
 
+	trace.fetch(false, res_successful);
 	return FB_SUCCESS;
 }
 
@@ -884,6 +895,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 {
 	SET_TDBB(tdbb);
 
+	Attachment* attachment = request->req_dbb->dbb_attachment;
 	if (request->req_request)
 	{
 		ThreadStatusGuard status_vector(tdbb);
@@ -895,7 +907,23 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 				request->req_blob->blb_blob = NULL;
 			}
 			else
+			{
+				// Report some remaining fetches if any
+				if (request->req_fetch_baseline)
+				{
+					TraceDSQLFetch trace(attachment, request);
+					trace.fetch(true, res_successful);
+				}
+
+				if (request->req_traced && TraceManager::need_dsql_free(attachment))
+				{
+					TraceSQLStatementImpl stmt(request, NULL);
+
+					TraceManager::event_dsql_free(attachment, &stmt, DSQL_close);
+				}
+
 				JRD_unwind_request(tdbb, request->req_request, 0);
+			}
 		}
 		catch (Firebird::Exception&)
 		{
@@ -1198,8 +1226,12 @@ static void execute_request(thread_db* tdbb,
 
 	case REQ_CREATE_DB:
 	case REQ_DDL:
+	{
+		TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
 		DDL_execute(request);
+		trace.finish(false, res_successful);
 		return;
+	}
 
 	case REQ_GET_SEGMENT:
 		execute_blob(tdbb, request,
@@ -1236,12 +1268,18 @@ static void execute_request(thread_db* tdbb,
 	// If there is no data required, just start the request
 
 	dsql_msg* message = request->req_send;
-	if (!message)
-		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
-	else
-	{
+	if (message) {
 		map_in_out(request, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
+	}
 
+	// we need to map_in_out before tracing of execution start to let trace
+	// manager know statement parameters values
+	TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
+
+	if (!message) {
+		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
+	}
+	else {
 		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
 						   message->msg_length, reinterpret_cast<SCHAR*>(message->msg_buffer),
 						   0);
@@ -1358,6 +1396,9 @@ static void execute_request(thread_db* tdbb,
 					  Arg::Gds(isc_update_conflict));
 		}
 	}
+
+	const bool have_cursor = reqTypeWithCursor(request->req_type) && !singleton;
+	trace.finish(have_cursor, res_successful);
 }
 
 /**
@@ -1469,7 +1510,7 @@ static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
 
 /**
 
- 	get_plan_info
+ 	DSQL_get_plan_info
 
     @brief	Get the access plan for the request and turn
  	it into a textual representation suitable for
@@ -1481,7 +1522,7 @@ static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
     @param buffer
 
  **/
-static USHORT get_plan_info(thread_db* tdbb,
+USHORT DSQL_get_plan_info(thread_db* tdbb,
 							dsql_req* request,
 							SSHORT buffer_length,
 							SCHAR** out_buffer)
@@ -2435,6 +2476,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
 
+	TraceDSQLPrepare trace(transaction, string_length, string);
+
 	if (client_dialect > SQL_DIALECT_CURRENT)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
@@ -2472,6 +2515,10 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	statement->req_dbb = database;
 	statement->req_transaction = transaction;
 	statement->req_client_dialect = client_dialect;
+	statement->req_sql_text = FB_NEW(pool) RefString(pool, Firebird::string(pool, string, string_length));
+	statement->req_traced = false;
+
+	trace.setStatement(statement);
 
 	try {
 
@@ -2523,6 +2570,14 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	if (!node)
 		return statement;
 
+	statement->req_traced = statement->req_type != REQ_COMMIT &&
+		statement->req_type != REQ_COMMIT_RETAIN &&
+		statement->req_type != REQ_ROLLBACK &&
+		statement->req_type != REQ_ROLLBACK_RETAIN &&
+		statement->req_type != REQ_GET_SEGMENT &&
+		statement->req_type != REQ_PUT_SEGMENT &&
+		statement->req_type != REQ_START_TRANS;
+	
 	// stop here for statements not requiring code generation
 
 	if (statement->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
@@ -2568,6 +2623,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	if (statement->req_type == REQ_CREATE_DB || statement->req_type == REQ_DDL)
 	{
+		// Notify Trace API manager about new DDL request cooked.
+		trace.prepare(res_successful);
 		return statement;
 	}
 
@@ -2599,15 +2656,16 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 					&statement->req_request,
 					length,
 					statement->req_blr_data.begin(),
-					string_length,
-					string,
+					statement->req_sql_text,
 					statement->req_debug_data.getCount(),
 					statement->req_debug_data.begin());
 	}
 	catch (const Firebird::Exception&)
 	{
 		status = tdbb->tdbb_status_vector[1];
+		trace.prepare(status == isc_no_priv ? res_unauthorized : res_failed);
 	}
+
 
 	// restore warnings (if there are any)
 	if (local_status[2] == isc_arg_warning)
@@ -2632,7 +2690,9 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	if (status)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-
+		
+	// Notify Trace API manager about new request cooked.
+	trace.prepare(res_successful);
 	return statement;
 
 	}
@@ -2731,6 +2791,14 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		close_cursor(tdbb, request);
 	}
 
+	Attachment* att = request->req_dbb->dbb_attachment;
+	const bool need_trace_free = request->req_traced && TraceManager::need_dsql_free(att);
+	if (need_trace_free) 
+	{
+		TraceSQLStatementImpl stmt(request, NULL);
+		TraceManager::event_dsql_free(att, &stmt, DSQL_drop);
+	}
+
 	// If request is named, clear it from the hash table
 
 	if (request->req_name) {
@@ -2758,6 +2826,8 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		{
 		}
 	}
+
+	request->req_sql_text = NULL;
 
 	// free blr memory
 	request->req_blr_data.free();
@@ -2927,8 +2997,8 @@ static void sql_info(thread_db* tdbb,
 				// larger size if it is not big enough
 
 				UCHAR* buffer_ptr = buffer;
-				length = get_plan_info(tdbb, request,
-									   (SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
+				length = DSQL_get_plan_info(tdbb, request, 
+					(SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
 
 				if (length) {
 					info = put_item(item, length, buffer_ptr, info, end_info);
@@ -3223,3 +3293,4 @@ static UCHAR* var_info(dsql_msg* message,
 
 	return info;
 }
+

@@ -23,9 +23,11 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
+ *  2008 Khorsun Vladyslav
  */
 
 #include "firebird.h"
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +35,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/TimeStamp.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 
@@ -113,6 +116,38 @@ bool putFileArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	}
 
 	spb.insertString(tag, s, strlen(s));
+	++av;
+
+	return true;
+}
+
+bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
+{
+	if (! *av)
+		return false;
+
+	FILE *file = fopen(*av, "rb");
+	if (!file) {
+		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
+	}
+	
+	fseek(file, 0, SEEK_END);
+	fpos_t len;
+	fgetpos(file, &len);
+
+	if (!len) {
+		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
+	}
+
+	HalfStaticArray<UCHAR, 1024> buff(*getDefaultMemoryPool(), len);
+	UCHAR *p = buff.getBuffer(len);
+
+	fseek(file, 0, SEEK_SET);
+	if (fread(p, 1, len, file) != len)	{
+		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
+	}
+
+	spb.insertBytes(tag, p, len);
 	++av;
 
 	return true;
@@ -406,6 +441,18 @@ const Switches nrestOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
+const Switches traceStartOptions[] = {
+	{"trc_cfg", putFileFromArgument, 0, isc_spb_trc_cfg, 0},
+	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches traceChgStateOptions[] = {
+	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
+	{"trc_id", putNumericArgument, 0, isc_spb_trc_id, 0},
+	{0, 0, 0, 0, 0}
+};
+
 const Switches actionSwitch[] =
 {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
@@ -420,6 +467,11 @@ const Switches actionSwitch[] =
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
 	{"action_nbak", putSingleTag, nbackOptions, isc_action_svc_nbak, 0},
 	{"action_nrest", putSingleTag, nrestOptions, isc_action_svc_nrest, 0},
+	{"action_trace_start", putSingleTag, traceStartOptions, isc_action_svc_trace_start, isc_info_svc_to_eof},
+	{"action_trace_suspend", putSingleTag, traceChgStateOptions, isc_action_svc_trace_suspend, isc_info_svc_line},
+	{"action_trace_resume", putSingleTag, traceChgStateOptions, isc_action_svc_trace_resume, isc_info_svc_line},
+	{"action_trace_stop", putSingleTag, traceChgStateOptions, isc_action_svc_trace_stop, isc_info_svc_line},
+	{"action_trace_list", putSingleTag, 0, isc_action_svc_trace_list, isc_info_svc_line},
 	{0, 0, 0, 0, 0}
 };
 
@@ -445,7 +497,8 @@ bool printLine(const char*& p)
 {
 	string s;
 	bool rc = getLine(s, p);
-	printf ("%s\n", s.c_str());
+	if (rc)
+		printf ("%s\n", s.c_str());
 	return rc;
 }
 
@@ -518,6 +571,8 @@ public:
 
 bool printInfo(const char* p, UserPrint& up)
 {
+	bool ret = false;
+	bool ignoreTruncation = false;
 	while (*p != isc_info_end)
 	{
 		switch (*p++)
@@ -659,14 +714,25 @@ bool printInfo(const char* p, UserPrint& up)
 			break;
 
 		case isc_info_svc_line:
-			return printLine(p);
+			ret = printLine(p);
+			break;
 
 		case isc_info_svc_to_eof:
-			return printData(p);
+			ret = printData(p);
+			ignoreTruncation = true;
+			break;
 
 		case isc_info_truncated:
-			printf ("%s\n", getMessage(18).c_str());
-			return false;
+			if (!ignoreTruncation)
+			{
+				printf ("%s\n", getMessage(18).c_str());
+				return false;
+			}
+			break;
+
+		case isc_info_svc_timeout:
+			ret = true;
+			break;
 
 		default:
 			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) <<
@@ -674,7 +740,7 @@ bool printInfo(const char* p, UserPrint& up)
 		}
 	}
 
-	return false;
+	return ret;
 }
 
 // short usage from firebird.msg
@@ -687,6 +753,21 @@ void usage()
 	}
 }
 
+
+typedef void (*SignalHandlerPointer)(int);
+static SignalHandlerPointer prev_ctrl_c_handler = NULL;
+static bool terminated = false;
+
+static void ctrl_c_handler(int signal)
+{
+	if (signal == SIGINT) 
+		terminated = true;	
+	
+	if (prev_ctrl_c_handler)
+		prev_ctrl_c_handler(signal);
+}
+
+
 // simple main function
 
 int main(int ac, char **av)
@@ -696,6 +777,8 @@ int main(int ac, char **av)
 		usage();
 		return 1;
 	}
+
+	prev_ctrl_c_handler = signal(SIGINT, ctrl_c_handler);
 
 	ISC_STATUS_ARRAY status;
 
@@ -753,11 +836,13 @@ int main(int ac, char **av)
 
 		if (spbItems.getBufferLength() > 0)
 		{
+			char send[] = {isc_info_svc_timeout, 2, 0, 1, 0, 0, 0, isc_info_end};
+
 			char results[maxbuf];
 			UserPrint up;
 			do
 			{
-				if (isc_service_query(status, &svc_handle, 0, 0, 0,
+				if (isc_service_query(status, &svc_handle, 0,  sizeof(send), send,
 						static_cast<USHORT>(spbItems.getBufferLength()),
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))
@@ -766,7 +851,7 @@ int main(int ac, char **av)
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
-			} while (printInfo(results, up));
+			} while (printInfo(results, up) && !terminated);
 		}
 
 		isc_service_detach(status, &svc_handle);

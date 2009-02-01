@@ -71,7 +71,7 @@ const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in *
 /* Range definitions for service actions.  Any action outside of
    this range is not supported */
 const USHORT isc_action_min				= 1;
-const USHORT isc_action_max				= 22;
+const USHORT isc_action_max				= isc_action_svc_last;
 
 /* Range definitions for service actions.  Any action outside of
    this range is not supported */
@@ -90,6 +90,7 @@ const int SVC_cmd_line		= 0x80;
 
 // forward decl.
 class thread_db;
+class TraceManager;
 
 // Service manager
 class Service : public Firebird::UtilSvc, public TypedHandle<type_svc>
@@ -109,6 +110,8 @@ public:		// utilities interface with service
     virtual void putLine(char tag, const char* val);
     virtual void putSLong(char tag, SLONG val);
 	virtual void putChar(char tag, char val);
+	// put raw bytes to svc_stdout
+	virtual void putBytes(const UCHAR*, size_t);
 	// append status_vector to service's status
 	virtual void setServiceStatus(const ISC_STATUS* status_vector);
 	// append error message to service's status
@@ -123,6 +126,16 @@ public:		// utilities interface with service
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb);
 	// dup strings in service's circular buffer
 	virtual void makePermanentVector(ISC_STATUS* s);
+
+	virtual TraceManager* getTraceManager()
+	{
+		return svc_trace_manager;
+	}
+
+	virtual bool finished() 
+	{
+		return (svc_flags & (SVC_finished | SVC_detached));
+	}
 
 public:		// external interface with service
 	// Attach - service ctor
@@ -146,6 +159,21 @@ public:		// external interface with service
 	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
 	// Shuts all service threads (should be called after databases shutdown)
 	static void shutdownServices();
+
+	const char* getServiceMgr() const;
+	const char* getServiceName() const;
+
+	const Firebird::string&	getUserName() const	
+	{ 
+		if (svc_username.empty())
+			return svc_trusted_login;
+		else
+			return svc_username;
+	}
+	const Firebird::string&	getNetworkProtocol() const	{ return svc_network_protocol; }
+	const Firebird::string&	getRemoteAddress() const	{ return svc_remote_address; }
+	const Firebird::string&	getRemoteProcess() const	{ return svc_remote_process; }
+	int	getRemotePID() const { return svc_remote_pid; }
 
 private:
 	// Service must have private destructor, called from finish
@@ -208,7 +236,8 @@ private:
 	ULONG	svc_stdout_tail;
 	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE];		// output from service
 	Firebird::Semaphore	svcStart;
-	const serv_entry*	svc_service;
+	const serv_entry*	svc_service;			// attached service's enrty 
+	const serv_entry*	svc_service_run;		// running service's enrty 
 	Firebird::Array<UCHAR> svc_resp_alloc;
 	UCHAR*	svc_resp_buf;
 	const UCHAR*	svc_resp_ptr;
@@ -218,6 +247,7 @@ private:
 	USHORT	svc_user_flag;
 	USHORT	svc_spb_version;
 	bool	svc_do_shutdown;
+
 	Firebird::string	svc_username;
 	Firebird::string	svc_enc_password;
 	Firebird::string	svc_trusted_login;
@@ -226,7 +256,14 @@ private:
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table and/or passed using spb_command_line
 	Firebird::string	svc_address_path;
+
+	Firebird::string	svc_network_protocol;
+	Firebird::string	svc_remote_address;
+	Firebird::string	svc_remote_process;
+	SLONG				svc_remote_pid;
+
 	Firebird::StringsBuffer* svc_strings_buffer;
+	TraceManager*		svc_trace_manager;
 };
 
 } //namespace Jrd

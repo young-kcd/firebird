@@ -319,6 +319,19 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			}
 			invalid_structure("unknown parameter for nbackup");
 			break;
+		case isc_action_svc_trace_start:
+		case isc_action_svc_trace_stop:
+		case isc_action_svc_trace_suspend:
+		case isc_action_svc_trace_resume:
+			switch(tag)
+			{
+			case isc_spb_trc_cfg:
+			case isc_spb_trc_name:
+				return StringSpb;
+			case isc_spb_trc_id:
+				return IntSpb;
+			}
+			break;
 		}
 		invalid_structure("wrong spb state");
 		break;

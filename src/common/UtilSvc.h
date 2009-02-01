@@ -60,6 +60,7 @@ public:
     virtual void putLine(char, const char*) = 0;
     virtual void putSLong(char, SLONG) = 0;
 	virtual void putChar(char, char) = 0;
+	virtual void putBytes(const UCHAR*, size_t) = 0;
 	virtual void setServiceStatus(const ISC_STATUS*) = 0;
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
 	virtual void hidePasswd(ArgvType&, int) = 0;
@@ -67,6 +68,7 @@ public:
 	virtual void checkService() = 0;
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
 	virtual void makePermanentVector(ISC_STATUS* s) = 0;
+	virtual bool finished() = 0;
 
 	virtual ~UtilSvc() { }
 
