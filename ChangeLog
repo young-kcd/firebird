@@ -1,3 +1,9 @@
+2009-02-01 16:06  asfernandes
+
+	* firebird2/src/jrd/rse.cpp (1.171):
+
+	Misc
+
 2009-01-30 16:53  alexpeshkoff
 
 	* firebird2/builds/posix/: fbintl.exp (1.1), firebird.exp (1.1),
