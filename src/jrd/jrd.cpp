@@ -3025,8 +3025,10 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 
 		service->start(spb_length, reinterpret_cast<const UCHAR*>(spb));
 
-		if (service->getStatus()[1]) {
+		if (service->getStatus()[1]) 
+		{
 			memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS_ARRAY));
+			return tdbb->tdbb_status_vector[1];
 		}
 	}
 	catch (const Exception& ex)
