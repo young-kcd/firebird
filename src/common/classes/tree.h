@@ -190,6 +190,7 @@ public:
 
 	bool add(const Value& item) { return defaultAccessor.add(item); }
 
+	class ConstAccessor;
 	class Accessor;
 	// If item already exists method sets accessor's current position
 	// to found item's location and returns false.
@@ -276,11 +277,11 @@ public:
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
 
-	void append(BePlusTree& from)
+	void append(const BePlusTree& from)
 	{
 		// This is slow approach especially when used for assignment.
 		// Optimize it when need arises.
-		Accessor accessor(&from);
+		ConstAccessor accessor(&from);
 		if (accessor.getFirst()) {
 			do {
 				add(accessor.current());
@@ -372,87 +373,10 @@ public:
 	};
 
 public:
-	class Accessor
+	class ConstAccessor
 	{
 	public:
-		explicit Accessor(BePlusTree* _tree) : curr(NULL), curPos(0), tree(_tree) {}
-
-		bool add(const Value& item)
-		{
-			return tree->add(item, this);
-		}
-
-		// Remove item. Current position moves to next item after this call.
-		// If next item doesn't exist method returns false
-		bool fastRemove()
-		{
-			// invalidate current position of defaultAccessor
-			// if i'm not a defaultAccessor
-			if (this != &tree->defaultAccessor)
-				tree->defaultAccessor.curr = NULL;
-
-			if (!tree->level) {
-				curr->remove(curPos);
-				return curPos < curr->getCount();
-			}
-			if (curr->getCount() == 1)
-			{
-				// Only one node left in the current page. We cannot remove it directly
-				// because is would invalidate our tree structure
-				fb_assert(curPos == 0);
-				ItemList *temp;
-				if ((temp = curr->prev) && NEED_MERGE(temp->getCount(), LeafCount)) {
-					temp = curr->next;
-					tree->_removePage(0, curr);
-					curr = temp;
-					return curr;
-				}
-				if ((temp = curr->next) && NEED_MERGE(temp->getCount(), LeafCount)) {
-					tree->_removePage(0, curr);
-					curr = temp;
-					return true;
-				}
-				if ((temp = curr->prev)) {
-					(*curr)[0] = (*temp)[temp->getCount() - 1];
-					temp->shrink(temp->getCount() - 1);
-					curr = curr->next;
-					return curr;
-				}
-				if ((temp = curr->next)) {
-					(*curr)[0] = (*temp)[0];
-					temp->remove(0);
-					return true;
-				}
-				// It means the tree is broken
-				fb_assert(false);
-				return false;
-			}
-			curr->remove(curPos);
-			ItemList *temp;
-			if ((temp = curr->prev) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount)) {
-				// After join upper levels of the tree remain stable because join doesn't change
-				// key of the page. The same applies to lower case too.
-				curPos += temp->getCount();
-				temp->join(*curr);
-				tree->_removePage(0, curr);
-				curr = temp;
-				// The code below will adjust current position if needed
-			}
-			else {
-				if ((temp = curr->next) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount)) {
-					curr->join(*temp);
-					tree->_removePage(0, temp);
-					return true;
-				}
-			}
-			if (curPos >= curr->getCount()) {
-				fb_assert(curPos == curr->getCount());
-				curPos = 0;
-				curr = curr->next;
-				return curr;
-			}
-			return true;
-		}
+		explicit ConstAccessor(const BePlusTree* _tree) : curr(NULL), curPos(0), tree(_tree) {}
 
 		bool locate(const Key& key)
 		{
@@ -584,9 +508,9 @@ public:
 			return true;
 		}
 
-	    Value& current() const { return (*curr)[curPos]; }
+	    const Value& current() const { return (*curr)[curPos]; }
 
-	private:
+	protected:
 
 		// Returns true if current position is valid and already points to the given key.
 		// Note that we can't guarantie validity of current position if tree is accessed
@@ -600,6 +524,96 @@ public:
 
 		ItemList* curr;
   		size_t curPos;
+
+	private:
+		const BePlusTree* tree;
+
+		friend class BePlusTree;
+	}; // class ConstAccessor
+
+	class Accessor : public ConstAccessor
+	{
+	public:
+		explicit Accessor(BePlusTree* _tree) : ConstAccessor(_tree), tree(_tree) {}
+
+		bool add(const Value& item)
+		{
+			return tree->add(item, this);
+		}
+
+		// Remove item. Current position moves to next item after this call.
+		// If next item doesn't exist method returns false
+		bool fastRemove()
+		{
+			// invalidate current position of defaultAccessor
+			// if i'm not a defaultAccessor
+			if (this != &tree->defaultAccessor)
+				tree->defaultAccessor.curr = NULL;
+
+			if (!tree->level) {
+				curr->remove(curPos);
+				return curPos < curr->getCount();
+			}
+			if (curr->getCount() == 1)
+			{
+				// Only one node left in the current page. We cannot remove it directly
+				// because is would invalidate our tree structure
+				fb_assert(curPos == 0);
+				ItemList *temp;
+				if ((temp = curr->prev) && NEED_MERGE(temp->getCount(), LeafCount)) {
+					temp = curr->next;
+					tree->_removePage(0, curr);
+					curr = temp;
+					return curr;
+				}
+				if ((temp = curr->next) && NEED_MERGE(temp->getCount(), LeafCount)) {
+					tree->_removePage(0, curr);
+					curr = temp;
+					return true;
+				}
+				if ((temp = curr->prev)) {
+					(*curr)[0] = (*temp)[temp->getCount() - 1];
+					temp->shrink(temp->getCount() - 1);
+					curr = curr->next;
+					return curr;
+				}
+				if ((temp = curr->next)) {
+					(*curr)[0] = (*temp)[0];
+					temp->remove(0);
+					return true;
+				}
+				// It means the tree is broken
+				fb_assert(false);
+				return false;
+			}
+			curr->remove(curPos);
+			ItemList *temp;
+			if ((temp = curr->prev) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount)) {
+				// After join upper levels of the tree remain stable because join doesn't change
+				// key of the page. The same applies to lower case too.
+				curPos += temp->getCount();
+				temp->join(*curr);
+				tree->_removePage(0, curr);
+				curr = temp;
+				// The code below will adjust current position if needed
+			}
+			else {
+				if ((temp = curr->next) && NEED_MERGE(temp->getCount() + curr->getCount(), LeafCount)) {
+					curr->join(*temp);
+					tree->_removePage(0, temp);
+					return true;
+				}
+			}
+			if (curPos >= curr->getCount()) {
+				fb_assert(curPos == curr->getCount());
+				curPos = 0;
+				curr = curr->next;
+				return curr;
+			}
+			return true;
+		}
+
+	    Value& current() const { return (*curr)[curPos]; }
 
 	private:
 		BePlusTree* tree;
