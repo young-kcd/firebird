@@ -1351,7 +1351,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	}
 
 	if (info < end)
-		*info = isc_info_end;
+		*info++ = isc_info_end;
 
 	if (start_info && (end - info >= 7))
 	{
@@ -1814,7 +1814,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 				if (svc_trusted_role)
 				{
 					auth += "-";
-					svc_switches += TRUSTED_ROLE_SWITCH;
+					auth += TRUSTED_ROLE_SWITCH;
 					auth += ' ';
 				}
 				svc_switches = auth + svc_switches;
@@ -2059,7 +2059,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 		if ((timeout) && (elapsed_time >= timeout))
 		{
 			MutexLockGuard guard(svc_mutex);
-			svc_flags &= SVC_timeout;
+			svc_flags |= SVC_timeout;
 			break;
 		}
 
