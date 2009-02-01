@@ -3033,8 +3033,6 @@ static void proc_assignment(thread_db* tdbb,
 				memset(p, 0, l);
 			break;
 		}
-
-		///to_desc->dsc_flags |= DSC_null;	// Commented to fix CORE-2300
 	}
 	else
 	{
