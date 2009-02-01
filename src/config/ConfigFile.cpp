@@ -63,13 +63,6 @@ ConfigFile::ConfigFile(const LEX_flags configFlags) :
 	rootDirectory(getPool()), installDirectory(getPool()), currentDirectory(getPool())
 {
 	init (configFlags);
-	InputFile *inputFile = openConfigFile();
-
-	if (!inputFile)
-		return;
-
-	pushStream (inputFile);
-	parse();
 }
 
 
@@ -119,6 +112,12 @@ InputFile* ConfigFile::openConfigFile()
 	fb_assert(false);
 	// Vulcan specific code removed
 	return NULL;
+}
+
+void ConfigFile::addText(const char* text)
+{
+	InputStream *stream = new InputStream(text);
+	pushStream(stream);
 }
 
 void ConfigFile::parse()

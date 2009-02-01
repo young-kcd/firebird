@@ -27,8 +27,8 @@
 #ifndef _ConfigFile_h_
 #define _ConfigFile_h_
 
-#include "Lex.h"
-#include "RefObject.h"
+#include "../config/Lex.h"
+#include "../vulcan/RefObject.h"
 #include "../common/classes/fb_string.h"
 
 //static const int CONFIG_trace	= 1;
@@ -51,6 +51,7 @@ public:
 
 public:
 	InputFile* openConfigFile();
+	void			addText(const char* text);
 
 	void			parse();
 	Element*		parseObject();

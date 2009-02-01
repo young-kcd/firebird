@@ -90,6 +90,7 @@ void Element::init(const Firebird::string& elementName)
 {
 	name = elementName;
 	attributes = NULL;
+	sibling = NULL;
 	children = NULL;
 	parent = NULL;
 	lineNumber = 0;

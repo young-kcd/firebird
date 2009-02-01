@@ -28,7 +28,7 @@
 #define _CONFOBJECT_H_
 
 #include "../common/classes/fb_string.h"
-#include "RefObject.h"
+#include "../vulcan/RefObject.h"
 
 START_NAMESPACE
 
