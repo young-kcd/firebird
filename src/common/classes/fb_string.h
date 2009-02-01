@@ -37,6 +37,7 @@
 #include "../include/fb_types.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
+#include "../common/classes/RefCounted.h"
 
 namespace Firebird
 {
@@ -767,6 +768,10 @@ namespace Firebird
 		rc += str;
 		return rc;
 	}
+
+	// reference-counted strings
+	typedef AnyRef<string> RefString;
+	typedef RefPtr<RefString> RefStrPtr;
 }
 
 
