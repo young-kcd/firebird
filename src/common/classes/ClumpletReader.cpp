@@ -505,7 +505,7 @@ SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
 	int shift = 0;
 	while (length > 0) {
 		--length;
-		value += ((SLONG) *ptr++) << shift;
+		value += ((SINT64) *ptr++) << shift;
 		shift += 8;
 	}
 
