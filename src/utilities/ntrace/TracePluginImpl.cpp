@@ -509,7 +509,7 @@ void TracePluginImpl::appendTableCounts(PerformanceInfo *info, string& line)
 	for (trc = info->pin_tables, trc_end = trc + info->pin_count; trc < trc_end; trc++) 
 	{
 		line.append(trc->trc_relation_name);
-		line.append(31 - strlen(trc->trc_relation_name), ' ');
+		line.append(MAX_SQL_IDENTIFIER_LEN - strlen(trc->trc_relation_name), ' ');
 		for (int j = 0; j < DBB_max_rel_count; j++) 
 		{
 			if (trc->trc_counters[j] == 0) 
