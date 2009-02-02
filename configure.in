@@ -1231,6 +1231,7 @@ gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
+gen/Makefile.extern.regex:${MAKE_SRC_DIR}/Makefile.in.extern.regex
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 )
