@@ -311,11 +311,11 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
-	Database* dbb	= tdbb->getDatabase();
-	Attachment *att	= tdbb->getAttachment();
-	jrd_tra* tra	= tdbb->getTransaction();
+	Database* dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
+	jrd_tra* tra = tdbb->getTransaction();
 
-	Firebird::StringMap *context_vars = NULL;
+	Firebird::StringMap* context_vars = NULL;
 
 	bool result = false;
 
@@ -364,18 +364,17 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		TraceConnectionImpl conn(att);
 		TraceTransactionImpl tran(tra);
 		
-		Firebird::string *value_str = NULL;
-		if (value_vary) {
+		Firebird::string* value_str = NULL;
+		if (value_vary)
 			value_str = att->att_context_vars.get(name_str);
-		}
 		
 		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(), 
-			value_str ? value_str->c_str() : NULL );
+			value_str ? value_str->c_str() : NULL);
 
 		att->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);
 	}
 
-	return result;
+	return (SLONG) result;
 }
 
 static int test(const long* n, char *result)

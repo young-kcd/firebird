@@ -134,7 +134,7 @@ public:		// utilities interface with service
 
 	virtual bool finished() 
 	{
-		return (svc_flags & (SVC_finished | SVC_detached));
+		return (svc_flags & (SVC_finished | SVC_detached)) != 0;
 	}
 
 public:		// external interface with service
@@ -170,6 +170,7 @@ public:		// external interface with service
 		else
 			return svc_username;
 	}
+
 	const Firebird::string&	getNetworkProtocol() const	{ return svc_network_protocol; }
 	const Firebird::string&	getRemoteAddress() const	{ return svc_remote_address; }
 	const Firebird::string&	getRemoteProcess() const	{ return svc_remote_process; }
@@ -236,8 +237,8 @@ private:
 	ULONG	svc_stdout_tail;
 	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE];		// output from service
 	Firebird::Semaphore	svcStart;
-	const serv_entry*	svc_service;			// attached service's enrty 
-	const serv_entry*	svc_service_run;		// running service's enrty 
+	const serv_entry*	svc_service;			// attached service's entry
+	const serv_entry*	svc_service_run;		// running service's entry
 	Firebird::Array<UCHAR> svc_resp_alloc;
 	UCHAR*	svc_resp_buf;
 	const UCHAR*	svc_resp_ptr;

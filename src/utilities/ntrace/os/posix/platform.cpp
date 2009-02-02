@@ -26,7 +26,6 @@
  */
 
 #include "firebird.h"
-
 #include "../platform.h"
 #include "../common/classes/fb_tls.h"
 #include <sys/types.h>
@@ -35,29 +34,36 @@
 #define TEST
 //#undef TEST
 #ifndef TEST
-class MallocClear {
+class MallocClear
+{
 public:
-	static void clear(char* error_string) {
+	static void clear(char* error_string)
+	{
 		free(error_string);
 	}
 };
 
 Firebird::TlsValue<char*, MallocClear> error_value;
 
-const char* get_error_string() {
+const char* get_error_string()
+{
 	return error_value.get();
 }
 
-void set_error_string(const char* str) {
+void set_error_string(const char* str)
+{
 	char* org_str = error_value.get();
-	if (org_str) {
+	if (org_str)
+	{
 		free(org_str);
 		error_value.set(NULL);
 	}
-	if (str) {
+	if (str)
+	{
 		size_t len = strlen(str);
 		char* new_str = (char*) malloc(len + 1);
-		if (new_str) {
+		if (new_str)
+		{
 			memcpy(new_str, str, len + 1);
 			error_value.set(new_str);
 		}
@@ -65,26 +71,32 @@ void set_error_string(const char* str) {
 }
 #else
 TLS_DECLARE(char*, error_string);
-const char* get_error_string(){
+const char* get_error_string()
+{
 	return TLS_GET(error_string);
 }
 
-void set_error_string(const char* str){
+void set_error_string(const char* str)
+{
 	char* org_str = TLS_GET(error_string);
-	if (org_str){
+	if (org_str)
+	{
 		free(org_str);
 		TLS_SET(error_string,NULL);
 	}
-	if (str){
+	if (str)
+	{
 		size_t len = strlen(str);
 		char* new_str = (char*) malloc(len + 1);
-		if (new_str) {
+		if (new_str)
+		{
 			memcpy(new_str, str, len + 1);
 			TLS_SET(error_string, new_str);
 		}
 	}
 }
 #endif
-SLONG get_process_id() {
+SLONG get_process_id()
+{
 	return getpid();
 }

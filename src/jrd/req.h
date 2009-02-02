@@ -261,10 +261,10 @@ public:
 	ULONG		req_flags;			/* misc request flags */
 	Savepoint*	req_proc_sav_point;	/* procedure savepoint list */
 	Firebird::TimeStamp	req_timestamp;		/* Start time of request */
-	Firebird::RefStrPtr req_sql_text;
-	Firebird::Array<UCHAR> req_blr;
+	Firebird::RefStrPtr req_sql_text;	// SQL text
+	Firebird::Array<UCHAR> req_blr;		// BLR for non-SQL query
 
-	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; //!< State of request performance counters when we reported it last time
+	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time 
 	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
 	jrd_req* req_proc_caller;	// Procedure's caller request

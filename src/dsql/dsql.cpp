@@ -471,7 +471,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	dsql_msg* message = (dsql_msg*) request->req_receive;
 
 	// Set up things for tracing this call
-	Attachment *att = request->req_dbb->dbb_attachment;
+	Attachment* att = request->req_dbb->dbb_attachment;
 	TraceDSQLFetch trace(att, request);
 
 /* Insure that the blr for the message is parsed, regardless of
@@ -1268,18 +1268,17 @@ static void execute_request(thread_db* tdbb,
 	// If there is no data required, just start the request
 
 	dsql_msg* message = request->req_send;
-	if (message) {
+	if (message)
 		map_in_out(request, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
-	}
 
 	// we need to map_in_out before tracing of execution start to let trace
 	// manager know statement parameters values
 	TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
 
-	if (!message) {
+	if (!message)
 		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
-	}
-	else {
+	else
+	{
 		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
 						   message->msg_length, reinterpret_cast<SCHAR*>(message->msg_buffer),
 						   0);
@@ -2570,7 +2569,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	if (!node)
 		return statement;
 
-	statement->req_traced = statement->req_type != REQ_COMMIT &&
+	statement->req_traced =
+		statement->req_type != REQ_COMMIT &&
 		statement->req_type != REQ_COMMIT_RETAIN &&
 		statement->req_type != REQ_ROLLBACK &&
 		statement->req_type != REQ_ROLLBACK_RETAIN &&
@@ -2666,7 +2666,6 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		trace.prepare(status == isc_no_priv ? res_unauthorized : res_failed);
 	}
 
-
 	// restore warnings (if there are any)
 	if (local_status[2] == isc_arg_warning)
 	{
@@ -2690,9 +2689,10 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	if (status)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		
+
 	// Notify Trace API manager about new request cooked.
 	trace.prepare(res_successful);
+
 	return statement;
 
 	}
@@ -2997,7 +2997,7 @@ static void sql_info(thread_db* tdbb,
 				// larger size if it is not big enough
 
 				UCHAR* buffer_ptr = buffer;
-				length = DSQL_get_plan_info(tdbb, request, 
+				length = DSQL_get_plan_info(tdbb, request,
 					(SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
 
 				if (length) {
@@ -3293,4 +3293,3 @@ static UCHAR* var_info(dsql_msg* message,
 
 	return info;
 }
-

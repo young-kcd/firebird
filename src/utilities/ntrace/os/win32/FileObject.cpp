@@ -26,19 +26,20 @@
  */
 
 #include "firebird.h"
-
 #include "../FileObject.h"
 
 using namespace Firebird;
 Firebird::Mutex open_mutex;
 
-void FileObject::open(int flags, int pflags) {
+void FileObject::open(int flags, int pflags)
+{
 	open_mutex.enter();
 	DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
 	DWORD filecreate = 0;
 	DWORD desiredAccess = 0;
 
-	switch (flags & (fo_rdonly | fo_wronly | fo_rdwr)) {
+	switch (flags & (fo_rdonly | fo_wronly | fo_rdwr))
+	{
 		case fo_rdonly:
 			desiredAccess = GENERIC_READ;
 			break;
@@ -49,29 +50,34 @@ void FileObject::open(int flags, int pflags) {
 			desiredAccess = GENERIC_READ | GENERIC_WRITE;
 	}
 
-	if (flags & fo_append) {
+	if (flags & fo_append)
+	{
 		// This is going to be tricky. Need to use global named mutex to achieve
 		// multi-process happiness
 		string temp(filename.c_str());
 		for (string::size_type i = 0; i < temp.length(); i++)
-			switch (temp[i]) {
+		{
+			switch (temp[i])
+			{
 				case '\\':
 				case '/':
 				case ':':
 					temp[i] = '_';				
 			}
+		}
+
 		temp.append("_mutex");
 		append_mutex = CreateMutex(NULL, FALSE, temp.c_str());
-		if (append_mutex == NULL) {
+		if (append_mutex == NULL)
+		{
 			append_mutex = INVALID_HANDLE_VALUE;
 			system_call_failed::raise("CreateMutex");
 		}
 	}
 
-	/*
-	 * decode open/create method flags
-	 */
-	switch ( flags & (fo_creat | fo_excl | fo_trunc) ) {
+	// decode open/create method flags
+	switch ( flags & (fo_creat | fo_excl | fo_trunc) )
+	{
 		case 0:
 		case fo_excl:                   // ignore EXCL w/o CREAT
 			filecreate = OPEN_EXISTING;
@@ -118,17 +124,21 @@ void FileObject::open(int flags, int pflags) {
 		NULL, 
 		filecreate, 
 		flagsAndAttributes, NULL);
+
 	open_mutex.leave();
+
 	if (file == INVALID_HANDLE_VALUE)
 		fatal_exception::raiseFmt("Error (%d) opening file: %s", GetLastError(), filename.c_str());
 }
 
-FileObject::~FileObject() {
+FileObject::~FileObject()
+{
 	CloseHandle(file);
 	CloseHandle(append_mutex);
 }
 
-UINT64 FileObject::size() {
+UINT64 FileObject::size()
+{
 	UINT64 nFileLen = 0;
 	if (file != INVALID_HANDLE_VALUE)
 	{ 
@@ -152,21 +162,28 @@ void FileObject::reopen()
 	FlushFileBuffers(file);
 }
 
-size_t FileObject::blockRead(void* buffer, size_t bytesToRead) {
+size_t FileObject::blockRead(void* buffer, size_t bytesToRead)
+{
 	DWORD bytesDone;
 	if (!ReadFile(file, buffer, bytesToRead, &bytesDone, NULL))
+	{
 		fatal_exception::raiseFmt("IO error (%d) reading file: %s", 
 			GetLastError(),
 			filename.c_str());
+	}
+	
 	return bytesDone;
 }
 
-void FileObject::blockWrite(const void* buffer, size_t bytesToWrite) {
-	if (append_mutex != INVALID_HANDLE_VALUE) {
+void FileObject::blockWrite(const void* buffer, size_t bytesToWrite)
+{
+	if (append_mutex != INVALID_HANDLE_VALUE)
+	{
 		if (WaitForSingleObject(append_mutex, INFINITE) != WAIT_OBJECT_0)
 			system_call_failed::raise("WaitForSingleObject");
 		seek(0, so_from_end);
 	}
+
 	DWORD bytesDone;
 	if (!WriteFile(file, buffer, bytesToWrite, &bytesDone, NULL) ||
 		bytesDone != bytesToWrite)
@@ -177,24 +194,30 @@ void FileObject::blockWrite(const void* buffer, size_t bytesToWrite) {
 			GetLastError(),
 			filename.c_str());
 	}
+
 	if (append_mutex != INVALID_HANDLE_VALUE)
 		ReleaseMutex(append_mutex);
 }
 
 // Write data to header only if file is empty
-void FileObject::writeHeader(const void* buffer, size_t bytesToWrite) {
-	if (append_mutex != INVALID_HANDLE_VALUE) {
+void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
+{
+	if (append_mutex != INVALID_HANDLE_VALUE)
+	{
 		if (WaitForSingleObject(append_mutex, INFINITE) != WAIT_OBJECT_0)
 			system_call_failed::raise("WaitForSingleObject");
 	}
+
 	if (seek(0, so_from_end) != 0) 
 		return;
+
 	DWORD bytesDone;
 	if (!WriteFile(file, buffer, bytesToWrite, &bytesDone, NULL) ||
 		bytesDone != bytesToWrite)
 	{
 		if (append_mutex != INVALID_HANDLE_VALUE)
 			ReleaseMutex(append_mutex);
+
 		fatal_exception::raiseFmt("IO error (%d) writing file: %s", 
 			GetLastError(),
 			filename.c_str());
@@ -204,35 +227,46 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite) {
 		ReleaseMutex(append_mutex);
 }
 
-bool FileObject::renameFile(const Firebird::PathName new_filename) {
-	if (append_mutex != INVALID_HANDLE_VALUE) 
+bool FileObject::renameFile(const Firebird::PathName new_filename)
+{
+	if (append_mutex != INVALID_HANDLE_VALUE)
+	{ 
 		if (WaitForSingleObject(append_mutex, INFINITE) != WAIT_OBJECT_0)
 			system_call_failed::raise("WaitForSingleObject");
-	if (!MoveFile(filename.c_str(), new_filename.c_str())) {
+	}
+
+	if (!MoveFile(filename.c_str(), new_filename.c_str()))
+	{
 		DWORD rename_err = GetLastError();
-		if (rename_err == ERROR_ALREADY_EXISTS || rename_err == ERROR_FILE_NOT_FOUND) {
+		if (rename_err == ERROR_ALREADY_EXISTS || rename_err == ERROR_FILE_NOT_FOUND)
+		{
 			// Another process renames our file just now. Open new it.
 			reopen();
 			return false;
 		}
+
 		if (append_mutex != INVALID_HANDLE_VALUE)
 			ReleaseMutex(append_mutex);
+
 		fatal_exception::raiseFmt("IO error (%d) renaming file: %s", 
 			rename_err,
 			filename.c_str());
 	}
 	else 
 		reopen();
+
 	return true;
 }
 
-SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin) {
+SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
+{
 	LARGE_INTEGER offset;
 	offset.QuadPart = newOffset;
 	DWORD error;
 	DWORD moveMethod;
 
-	switch(origin) {
+	switch(origin)
+	{
 		case so_from_beginning:
 			moveMethod = FILE_BEGIN;
 			break;
@@ -244,14 +278,14 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin) {
 			break;
 	}
 	
-	if ((offset.LowPart = SetFilePointer(file, offset.LowPart, 
-			&offset.HighPart, moveMethod)) == INVALID_SET_FILE_POINTER 
-		&&
-		 (error = GetLastError()) != NO_ERROR)
+	if ((offset.LowPart = SetFilePointer(file, offset.LowPart,
+			&offset.HighPart, moveMethod)) == INVALID_SET_FILE_POINTER &&
+		(error = GetLastError()) != NO_ERROR)
 	{
 		fatal_exception::raiseFmt("IO error (%d) seeking file: %s", 
 			error,
 			filename.c_str());
 	}
+
 	return offset.QuadPart;
 }

@@ -76,7 +76,7 @@ void TraceCfgReader::readConfig()
 	}
 
 	bool defDB = false, defSvc = false, exactMatch = false;
-	const Element *section = cfgFile->getObjects()->children;
+	const Element* section = cfgFile->getObjects()->children;
 	for (; section && !exactMatch; section = section->sibling)
 	{
 		const bool isDatabase = (section->name == "database");
@@ -89,7 +89,8 @@ void TraceCfgReader::readConfig()
 		{
 			if (isDatabase) 
 			{
-				if (defDB) {
+				if (defDB)
+				{
 					fatal_exception::raiseFmt("line %d: second default database section is not allowed", 
 						section->lineNumber + 1);
 				}
@@ -99,7 +100,8 @@ void TraceCfgReader::readConfig()
 			}
 			else 
 			{
-				if (defSvc) {
+				if (defSvc)
+				{
 					fatal_exception::raiseFmt("line %d: second default service section is not allowed", 
 						section->lineNumber + 1);
 				}
@@ -109,9 +111,8 @@ void TraceCfgReader::readConfig()
 		}
 		else if (isDatabase && !m_databaseName.empty())
 		{
-			if (m_databaseName == pattern.c_str()) {
+			if (m_databaseName == pattern.c_str())
 				match = exactMatch = true;
-			}
 			else
 			{
 				regex_t matcher;
@@ -142,16 +143,17 @@ void TraceCfgReader::readConfig()
 
 				if (errorCode == 0)
 					match = exactMatch = true;
-				}
+			}
 		}
 
 		if (!match)
 			continue;
 
-		const Element *el = section->children;
+		const Element* el = section->children;
 		for (; el; el = el->sibling)
 		{
-			if (!el->getAttributes()) {
+			if (!el->getAttributes())
+			{
 				fatal_exception::raiseFmt("line %d: element \"%s\" have no attribute value set", 
 					el->lineNumber + 1, el->name.c_str());
 			}
@@ -170,7 +172,8 @@ void TraceCfgReader::readConfig()
 #undef SERVICE_PARAMS
 			}
 
-			if (!found) {
+			if (!found)
+			{
 				fatal_exception::raiseFmt("line %d: element \"%s\" is unknown", 
 					el->lineNumber + 1, el->name.c_str());
 			}
@@ -213,12 +216,11 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 		string::char_type c = valueToExpand[pos];
 		if (c == '$') 
 		{
-			if (pos + 1 >= valueToExpand.length()) {
+			if (pos + 1 >= valueToExpand.length())
 				fatal_exception::raiseFmt("pattern is invalid");
-			}
 			
-			c = valueToExpand[pos+1];
-			if (c == '$') 
+			c = valueToExpand[pos + 1];
+			if (c == '$')
 			{
 				// Kill one of the dollar signs and loop again
 				valueToExpand.erase(pos, 1);
@@ -227,7 +229,7 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 			
 			if (c >= '0' && c <= '9') 
 			{
-				regmatch_t *subpattern = m_subpatterns + (c - '0');
+				regmatch_t* subpattern = m_subpatterns + (c - '0');
 				// Replace value with piece of database name
 				valueToExpand.erase(pos, 2);
 				if (subpattern->rm_eo != -1 && subpattern->rm_so != -1) 
@@ -250,9 +252,10 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 				pos += filename.length();
 				continue;
 			}
+
 			fatal_exception::raiseFmt("pattern is invalid");
 		}
+
 		pos++;
 	}
 }
-

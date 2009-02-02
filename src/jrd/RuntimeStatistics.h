@@ -40,13 +40,15 @@ struct RelationCounts
 	SLONG rlc_relation_id;	// Relation ID 
 	SINT64 rlc_counter[DBB_max_rel_count];
 
-	inline static const SLONG& generate(const void* sender, const RelationCounts& item) 
-		{ return item.rlc_relation_id; }
+	inline static const SLONG& generate(const void* sender, const RelationCounts& item)
+	{
+		return item.rlc_relation_id;
+	}
 };
 
 typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelationCountsTree;
 
- typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
+typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
 
 // Runtime statistics class
 
@@ -88,21 +90,23 @@ public:
 	{
 		return values[index];
 	}
+
 	void reset();
 
 	void bumpValue(const StatType index)
 	{
 		++values[index];
 	}
+
 	void bumpValue(StatType index, SLONG relation_id);
 
-	// Calculate difference between counts stored in this object and current 
+	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.
-	PerformanceInfo *computeDifference(Database *dbb, const RuntimeStatistics& new_stat, 
-		PerformanceInfo &dest, TraceCountsArray& temp);
+	PerformanceInfo* computeDifference(Database* dbb, const RuntimeStatistics& new_stat, 
+		PerformanceInfo& dest, TraceCountsArray& temp);
 
-//	bool operator==(const RuntimeStatistics& other) const;
-//	bool operator!=(const RuntimeStatistics& other) const;
+	// bool operator==(const RuntimeStatistics& other) const;
+	// bool operator!=(const RuntimeStatistics& other) const;
 
 	RuntimeStatistics& operator+=(const RuntimeStatistics& other)
 	{
@@ -128,7 +132,7 @@ public:
 	}
 
 private:
-	void addRelCounts(const RelationCountsTree &other, bool add);
+	void addRelCounts(const RelationCountsTree& other, bool add);
 
 	SINT64 values[TOTAL_ITEMS];
 	RelationCountsTree rel_counts;

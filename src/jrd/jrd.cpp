@@ -447,7 +447,7 @@ public:
 class TraceFailedConnection : public TraceConnection
 {
 public:
-	TraceFailedConnection(const char* filename, const DatabaseOptions *options) :
+	TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
 	  m_filename(filename),
 	  m_options(options)
 	{}	
@@ -455,6 +455,7 @@ public:
 	virtual int getConnectionID()				{ return 0; }
 	virtual int getProcessID()					{ return m_options->dpb_remote_pid; }
 	virtual const char* getDatabaseName()		{ return m_filename; }
+
 	virtual const char* getUserName()			
 	{ 
 		if (m_options->dpb_user_name.empty())
@@ -470,7 +471,7 @@ public:
 	virtual const char* getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
 
 private:
-	const DatabaseOptions *m_options;
+	const DatabaseOptions* m_options;
 	const char* m_filename;
 };
 
@@ -720,7 +721,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename, const
 	}
 }
 
-ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 								const TEXT* filename,
 								Attachment** handle,
 								SSHORT dpb_length,
@@ -1646,7 +1647,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
-	
+
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -3107,7 +3108,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 				memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
 				memset(service->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
-				return user_status[1]; 
+				return user_status[1];
 			}
 		}
 	}
@@ -3732,7 +3733,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		check_database(tdbb);
 
 		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-						  msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
+						msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
 #ifdef SCROLLABLE_CURSORS
 						  , direction, offset
 #endif
@@ -3763,9 +3764,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
 		DSQL_free_statement(tdbb, statement, option);
 
 		if (option & DSQL_drop)
-		{
 			*stmt_handle = NULL;
-	}
 	}
 	catch (const Exception& ex)
 	{
@@ -4008,7 +4007,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				!(attachment->att_flags & ATT_cancel_disable))
 			{
 				if ((!request ||
-					!(request->req_flags & (req_internal | req_sys_trigger))) &&
+					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
 					(!transaction || !(transaction->tra_flags & TRA_system)))
 				{
 					attachment->att_flags &= ~ATT_cancel_raise;
@@ -4129,7 +4128,7 @@ static void check_database(thread_db* tdbb)
 	}
 
 	if ((attachment->att_flags & ATT_shutdown) ||
-		((dbb->dbb_ast_flags & DBB_shutdown) && 
+		((dbb->dbb_ast_flags & DBB_shutdown) &&
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
@@ -5020,7 +5019,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	}
 #endif
 
-	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count; 
+	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
 		++vector)
 	{
 		delete *vector;
@@ -5959,7 +5958,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (name.length() > USERNAME_LENGTH)
 	{
-		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length()) 
+		status_exception::raise(Arg::Gds(isc_long_login) << Arg::Num(name.length())
 														 << Arg::Num(USERNAME_LENGTH));
 	}
 
@@ -6372,8 +6371,6 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 
 			// run ON TRANSACTION START triggers
 			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
-
-			Database* dbb = tdbb->getDatabase();
 		}
 
 		*tra_handle = transaction;
@@ -6496,7 +6493,7 @@ namespace {
 	class DatabaseDirectoryList : public DirectoryList
 	{
 	private:
-		const PathName getConfigString() const 
+		const PathName getConfigString() const
 		{
 			return PathName(Config::getDatabaseAccess());
 		}

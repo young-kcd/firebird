@@ -30,9 +30,10 @@
 
 #include "../../common/classes/fb_string.h"
 
-enum LogFormat {lfText = 0, lfBinary = 1};
+enum LogFormat { lfText = 0, lfBinary = 1 };
 
-struct TracePluginConfig {
+struct TracePluginConfig
+{
 #define DATABASE_PARAMS
 #define SERVICE_PARAMS
 
@@ -46,7 +47,6 @@ struct TracePluginConfig {
 #undef BOOL_PARAMETER
 #undef UINT_PARAMETER
 	Firebird::PathName db_filename;
-
 
 	// Default constructor. Pass pool to all string parameters, initialize everything to defaults
 	TracePluginConfig() : 

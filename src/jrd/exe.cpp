@@ -1776,7 +1776,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 				trigger->req_timestamp = timestamp;
 
 			trigger->req_trigger_action = trigger_action;
-			
+
 			TraceTrigExecute trace(tdbb, trigger, which_trig);
 
 			EXE_start(tdbb, trigger, transaction);
@@ -1788,7 +1788,8 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			const bool ok = (trigger->req_operation != jrd_req::req_unwind);
 			trace.finish(ok ? res_successful : res_failed);
 
-			if (!ok) {
+			if (!ok)
+			{
 				result = trigger;
 				break;
 			}

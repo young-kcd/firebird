@@ -29,7 +29,6 @@
 #define TRACE_CONFIGURATION
 
 #include "firebird.h"
-
 #include "../../common/classes/auto.h"
 #include "../../common/classes/fb_string.h"
 #include "../../config/ConfigFile.h"
@@ -42,16 +41,14 @@
 #include <sys/types.h>
 #include <regex.h>
 
-using Firebird::string;
-using Firebird::PathName;
 
 class TraceCfgReader
 {
 public:
-	static void readTraceConfiguration(const char* text, const PathName& databaseName, TracePluginConfig& config);
+	static void readTraceConfiguration(const char* text, const Firebird::PathName& databaseName, TracePluginConfig& config);
 
 private:
-	TraceCfgReader(const char* text, const PathName& databaseName, TracePluginConfig& config) :
+	TraceCfgReader(const char* text, const Firebird::PathName& databaseName, TracePluginConfig& config) :
 		m_text(text),
 		m_databaseName(databaseName),
 		m_config(config)
@@ -59,14 +56,14 @@ private:
 
 	void readConfig();
 
-	void expandPattern(string& valueToExpand);
-	bool parseBoolean(const string& value) const;
-	ULONG parseUInteger(const string& value) const;
+	void expandPattern(Firebird::string& valueToExpand);
+	bool parseBoolean(const Firebird::string& value) const;
+	ULONG parseUInteger(const Firebird::string& value) const;
 
-	const char*		m_text;
-	const PathName&	m_databaseName;
-	regmatch_t		m_subpatterns[10];
-	TracePluginConfig&	m_config;
+	const char* m_text;
+	const Firebird::PathName& m_databaseName;
+	regmatch_t m_subpatterns[10];
+	TracePluginConfig& m_config;
 };
 
 #endif // TRACE_CONFIGURATION

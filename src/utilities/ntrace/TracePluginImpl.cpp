@@ -50,12 +50,12 @@ TracePlugin* TracePluginImpl::createSkeletalPlugin()
 	return plugin_ptr;
 }
 
-TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig &configuration, TraceInitInfo* initInfo) 
+TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo) 
 {
 	TracePlugin* plugin_ptr = createSkeletalPlugin();
 	try 
 	{
-		TracePluginImpl *pluginImpl = FB_NEW(*getDefaultMemoryPool()) TracePluginImpl(configuration, initInfo);
+		TracePluginImpl* pluginImpl = FB_NEW(*getDefaultMemoryPool()) TracePluginImpl(configuration, initInfo);
 		plugin_ptr->tpl_object = pluginImpl;
 
 		plugin_ptr->tpl_event_attach = ntrace_event_attach;
@@ -79,11 +79,13 @@ TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig &configur
 		plugin_ptr->tpl_event_service_start = ntrace_event_service_start;
 		plugin_ptr->tpl_event_service_query = ntrace_event_service_query;
 		plugin_ptr->tpl_event_service_detach = ntrace_event_service_detach;
-	} catch(const Firebird::Exception&) 
+	}
+	catch(const Firebird::Exception&) 
 	{
 		plugin_ptr->tpl_shutdown(plugin_ptr);
 		throw;
 	}
+
 	return plugin_ptr;
 }
 
@@ -104,13 +106,13 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	statements(getDefaultMemoryPool()),
 	services(getDefaultMemoryPool())
 {
-	const char *ses_name = initInfo->getTraceSessionName();
+	const char* ses_name = initInfo->getTraceSessionName();
 	session_name = ses_name && *ses_name ? ses_name : " ";
 
 	if (!logWriter)
 	{
 		logFile = FB_NEW (*getDefaultMemoryPool())
-			FileObject (*getDefaultMemoryPool(), configuration.log_filename, fo_rdwr | fo_append | fo_creat);
+			FileObject(*getDefaultMemoryPool(), configuration.log_filename, fo_rdwr | fo_append | fo_creat);
 	}
 
 	// Compile filtering regular expressions
@@ -151,21 +153,33 @@ TracePluginImpl::~TracePluginImpl()
 
 	if (operational) 
 	{
-		if (connections.getFirst()) do {
-			connections.current().deallocate_references();
-		} while (connections.getNext());
+		if (connections.getFirst())
+		{
+			do {
+				connections.current().deallocate_references();
+			} while (connections.getNext());
+		}
 
-		if (transactions.getFirst()) do {
-			transactions.current().deallocate_references();
-		} while (transactions.getNext());
+		if (transactions.getFirst())
+		{
+			do {
+				transactions.current().deallocate_references();
+			} while (transactions.getNext());
+		}
 
-		if (statements.getFirst()) do {
-			delete statements.current().description;
-		} while (statements.getNext());
+		if (statements.getFirst())
+		{
+			do {
+				delete statements.current().description;
+			} while (statements.getNext());
+		}
 
-		if (services.getFirst()) do {
-			services.current().deallocate_references();
-		} while (services.getNext());
+		if (services.getFirst())
+		{
+			do {
+				services.current().deallocate_references();
+			} while (services.getNext());
+		}
 
 		log_finalize();
 	}
@@ -173,7 +187,7 @@ TracePluginImpl::~TracePluginImpl()
 
 bool TracePluginImpl::need_rotate(size_t added_bytes_length)
 {
-	return logFile->size() + added_bytes_length >= config.max_log_size*1048576;
+	return logFile->size() + added_bytes_length >= config.max_log_size * 1048576;
 }
 
 
@@ -199,7 +213,9 @@ void TracePluginImpl::rotateLog(size_t added_bytes_length)
 		newName.printf("%s.%04d-%02d-%02dT%02d-%02d-%02d", config.log_filename.c_str(), times.tm_year + 1900, 
 			times.tm_mon + 1, times.tm_mday, times.tm_hour, times.tm_min, times.tm_sec);
 	}
+
 	logFile->reopen();
+
 	if (logFile->size() + added_bytes_length > config.max_log_size*1048576 || !added_bytes_length) {
 		logFile->renameFile(newName);
 	}
@@ -236,9 +252,7 @@ void TracePluginImpl::logRecord(const char* action, string& line)
 	// line.adjustLineBreaks();
 
 	if (logWriter)
-	{
 		logWriter->write(line.c_str(), line.length());
-	}
 	else
 	{
 		if (config.max_log_size && need_rotate(line.length()))
@@ -253,6 +267,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connect
 	// Lookup connection description
 	const int conn_id = connection->getConnectionID();
 	bool reg = false;
+
 	while (true)
 	{
 		{
@@ -443,7 +458,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceService* service,
 	logRecord(action, line);
 }
 
-void TracePluginImpl::appendGlobalCounts(PerformanceInfo *info, string& line) 
+void TracePluginImpl::appendGlobalCounts(PerformanceInfo* info, string& line) 
 {
 	string temp;
 
@@ -452,22 +467,26 @@ void TracePluginImpl::appendGlobalCounts(PerformanceInfo *info, string& line)
 
 	ntrace_counter_t cnt;
 
-	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_READS]) != 0) {
+	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_READS]) != 0)
+	{
 		temp.printf(", %d read(s)", cnt);
 		line.append(temp);
 	}
 
-	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_WRITES]) != 0) {
+	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_WRITES]) != 0)
+	{
 		temp.printf(", %d write(s)", cnt);
 		line.append(temp);
 	}
 
-	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_FETCHES]) != 0) {
+	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_FETCHES]) != 0)
+	{
 		temp.printf(", %d fetch(es)", cnt);
 		line.append(temp);
 	}
 
-	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_MARKS]) != 0) {
+	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_MARKS]) != 0)
+	{
 		temp.printf(", %d mark(s)", cnt);
 		line.append(temp);
 	}
@@ -484,7 +503,9 @@ void TracePluginImpl::appendTableCounts(PerformanceInfo *info, string& line)
 		"Table                             Natural     Index    Update    Insert    Delete   Backout     Purge   Expunge" NEWLINE
 		"***************************************************************************************************************" NEWLINE );
 
-	TraceCounts *trc, *trc_end;
+	TraceCounts* trc;
+	TraceCounts* trc_end;
+
 	for (trc = info->pin_tables, trc_end = trc + info->pin_count; trc < trc_end; trc++) 
 	{
 		line.append(trc->trc_relation_name);
@@ -520,13 +541,17 @@ void int_to_quoted_str(SINT64 value, int scale, string& str)
 	else if (scale > 0) 
 	{
 		// Append needed amount of zeros in the beginning of string as necessary
-		if (value >= 0) {
+		if (value >= 0)
+		{
 			if (str.length() < static_cast<size_t>(scale + 1))
 				str.insert((string::size_type) 0, scale - str.length() + 1, '0');
-		} else {
+		}
+		else
+		{
 			if (str.length() < static_cast<size_t>(scale + 2))
 				str.insert(1, scale - str.length(), '0');
 		}
+
 		str.insert(str.length() - scale, "0");
 	}
 
@@ -552,7 +577,7 @@ void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, siz
 }
 
 
-void TracePluginImpl::appendParams(TraceParams *params, Firebird::string& line)
+void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 {
 	size_t paramcount = params->getCount();
 	if (!paramcount) 
@@ -679,34 +704,34 @@ void TracePluginImpl::appendParams(TraceParams *params, Firebird::string& line)
 				}
 
 				case dtype_short:
-					int_to_quoted_str(*(SSHORT*)parameters->dsc_address, parameters->dsc_scale, paramvalue);
+					int_to_quoted_str(*(SSHORT*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
 					break;
 
 				case dtype_long:
-					int_to_quoted_str(*(SLONG*)parameters->dsc_address, parameters->dsc_scale, paramvalue);
+					int_to_quoted_str(*(SLONG*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
 					break;
 
 				case dtype_int64:
-					int_to_quoted_str(*(SINT64*)parameters->dsc_address, parameters->dsc_scale, paramvalue);
+					int_to_quoted_str(*(SINT64*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
 					break;
 
 				case dtype_real:
 					if (!parameters->dsc_scale) {
-						paramvalue.printf("\"%f\"", *(float*)parameters->dsc_address);
+						paramvalue.printf("\"%f\"", *(float*) parameters->dsc_address);
 					}
 					else {
 						paramvalue.printf("\"%f\"", 
-							*(float*)parameters->dsc_address * pow((float)10, -parameters->dsc_scale));
+							*(float*) parameters->dsc_address * pow(10.0f, -parameters->dsc_scale));
 					}
 					break;
 
 				case dtype_double:
 					if (!parameters->dsc_scale) {
-						paramvalue.printf("\"%f\"", *(double*)parameters->dsc_address);
+						paramvalue.printf("\"%f\"", *(double*) parameters->dsc_address);
 					}
 					else {
 						paramvalue.printf("\"%f\"", 
-							*(double*)parameters->dsc_address * pow((double)10, -parameters->dsc_scale));
+							*(double*) parameters->dsc_address * pow(10.0, -parameters->dsc_scale));
 					}
 					break;
 
@@ -720,7 +745,7 @@ void TracePluginImpl::appendParams(TraceParams *params, Firebird::string& line)
 				case dtype_sql_time: 
 				{
 					int hours, minutes, seconds, fractions;
-					Firebird::TimeStamp::decode_time(*(ISC_TIME*)parameters->dsc_address, 
+					Firebird::TimeStamp::decode_time(*(ISC_TIME*) parameters->dsc_address, 
 						&hours, &minutes, &seconds, &fractions);
 
 					paramvalue.printf("\"%02d:%02d:%02d.%04d\"", hours,	minutes, seconds, fractions);
@@ -728,7 +753,7 @@ void TracePluginImpl::appendParams(TraceParams *params, Firebird::string& line)
 				}
 				case dtype_timestamp: 
 				{
-					Firebird::TimeStamp ts(*(ISC_TIMESTAMP*)parameters->dsc_address);
+					Firebird::TimeStamp ts(*(ISC_TIMESTAMP*) parameters->dsc_address);
 					struct tm times;
 
 					ts.decode(&times);

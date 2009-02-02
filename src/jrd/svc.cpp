@@ -708,7 +708,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 	// Since this moment we should remove this service from allServices in case of error thrown
 	try
-	{		
+	{
 		// If the service name begins with a slash, ignore it.
 		if (*service_name == '/' || *service_name == '\\') {
 			service_name++;
@@ -857,7 +857,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		ISC_STATUS_ARRAY status_vector;
 
 		// Use created trace manager if it's possible
-		const bool hasTrace = svc_trace_manager;
+		const bool hasTrace = svc_trace_manager != NULL;
 		if (hasTrace)
 			trace_manager = svc_trace_manager;
 		else
@@ -872,12 +872,13 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			trace_manager->event_service_attach(&service, no_priv ? res_unauthorized : res_failed);
 		}
 
-		if ( !hasTrace)
+		if (!hasTrace)
 			delete trace_manager;
 
 		removeFromAllServices();
 		throw;
 	}
+
 	if (svc_trace_manager->needs().event_service_attach)
 	{
 		TraceServiceImpl service(this);
@@ -1834,7 +1835,7 @@ void Service::query(USHORT			send_item_length,
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
-			// Report to Trace API that attachment has not been created
+			// Report to Trace API that query failed
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service,
 				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
@@ -1855,6 +1856,7 @@ void Service::query(USHORT			send_item_length,
 				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
 				res_successful);
 		}
+
 		finish(SVC_finished);
 	}
 }
@@ -2022,6 +2024,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	{
 		status_exception::raise(Arg::Gds(isc_svcnotdef) << Arg::Str(serv->serv_name));
 	}
+
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -2216,7 +2219,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 		time(&end_time);
 		const time_t elapsed_time = end_time - start_time;
 #endif
-		if ((timeout) && (elapsed_time >= timeout))
+		if (timeout && elapsed_time >= timeout)
 		{
 			MutexLockGuard guard(svc_mutex);
 			svc_flags |= SVC_timeout;
@@ -2600,7 +2603,6 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		case isc_action_svc_trace_suspend:
 		case isc_action_svc_trace_resume:
 		case isc_action_svc_trace_list:
-		{
 			if (!found)
 			{
 				if (!get_action_svc_parameter(svc_action, trace_action_in_sw_table, switches)) {
@@ -2629,7 +2631,6 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				return false;
 			}
 			break;
-		}
 
 		default:
 			return false;

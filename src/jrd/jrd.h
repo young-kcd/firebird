@@ -343,7 +343,7 @@ public:
 	Firebird::Mutex att_strings_mutex;				// mutex for this buffer access
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
-	TraceManager* att_trace_manager;		// Trace API manager 
+	TraceManager* att_trace_manager;		// Trace API manager
 
 	bool locksmith() const;
 

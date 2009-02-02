@@ -25,8 +25,7 @@
  *
  */
 
-#include "../../../include/firebird.h"
-
+#include "firebird.h"
 #include "../FileObject.h"
 #include <errno.h>
 #include <sys/types.h>
@@ -37,11 +36,13 @@
 using namespace Firebird;
 Firebird::Mutex open_mutex;
 
-void FileObject::open(int flags, int pflags) {
+void FileObject::open(int flags, int pflags)
+{
 	open_mutex.enter();
 	int oflags = 0;
 
-	switch (flags & (fo_rdonly | fo_wronly | fo_rdwr)) {
+	switch (flags & (fo_rdonly | fo_wronly | fo_rdwr))
+	{
 	case fo_rdonly:
 		oflags = O_RDONLY;
 		break;
@@ -67,6 +68,7 @@ void FileObject::open(int flags, int pflags) {
 
 	file = ::open(filename.c_str(), oflags, pflags);
 	open_mutex.leave();
+
 	if (file < 0)
 		fatal_exception::raiseFmt("Error (%d) opening file: %s", errno, filename.c_str());
 
@@ -74,12 +76,14 @@ void FileObject::open(int flags, int pflags) {
 		unlink(filename.c_str());
 }
 
-FileObject::~FileObject() {
+FileObject::~FileObject()
+{
 	close(file);
 }
 
 //Size of file, given by descriptor
-FB_UINT64 FileObject::size() {
+FB_UINT64 FileObject::size()
+{
 	off_t nFileLen = 0;
 	struct stat file_stat;
 	if (!fstat(file, &file_stat))
@@ -90,16 +94,21 @@ FB_UINT64 FileObject::size() {
 	return nFileLen;
 }
 
-size_t FileObject::blockRead(void* buffer, size_t bytesToRead) {
+size_t FileObject::blockRead(void* buffer, size_t bytesToRead)
+{
 	ssize_t bytesDone = read(file, buffer, bytesToRead);
 	if (bytesDone < 0)
+	{
 		fatal_exception::raiseFmt("IO error (%d) reading file: %s", 
 			errno,
 			filename.c_str());
+	}
+
 	return bytesDone;
 }
 
-void FileObject::blockWrite(const void* buffer, size_t bytesToWrite) {
+void FileObject::blockWrite(const void* buffer, size_t bytesToWrite)
+{
 	ssize_t bytesDone = write(file, buffer, bytesToWrite);
 	if (bytesDone != static_cast<ssize_t>(bytesToWrite))
 	{
@@ -110,9 +119,11 @@ void FileObject::blockWrite(const void* buffer, size_t bytesToWrite) {
 }
 
 // Write data to header only if file is empty
-void FileObject::writeHeader(const void* buffer, size_t bytesToWrite) {
+void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
+{
 	if (seek(0, so_from_end) != 0)
 		return;
+
 	ssize_t bytesDone = write(file, buffer, bytesToWrite);
 	if (bytesDone != static_cast<ssize_t>(bytesToWrite))
 	{
@@ -122,14 +133,16 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite) {
 	}
 }
 
-void FileObject::reopen() {
+void FileObject::reopen()
+{
 	if (file >= 0) 
 		close(file);
 	open(fo_rdwr | fo_append | fo_creat, 0666);
-//	fchmod(file, PMASK);
+	//fchmod(file, PMASK);
 }
 
-bool FileObject::renameFile(const Firebird::PathName new_filename) {
+bool FileObject::renameFile(const Firebird::PathName new_filename)
+{
 	if (rename(filename.c_str(), new_filename.c_str()))
 	{
 		int rename_err = errno;
@@ -146,8 +159,10 @@ bool FileObject::renameFile(const Firebird::PathName new_filename) {
 	return true;
 }
 
-SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin) {
-    if (newOffset != (SINT64) LSEEK_OFFSET_CAST newOffset) {
+SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
+{
+    if (newOffset != (SINT64) LSEEK_OFFSET_CAST newOffset)
+	{
 		fatal_exception::raiseFmt(
 			"Attempt to seek file %s past platform size limit", 
 			filename.c_str());
@@ -155,7 +170,8 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin) {
 
 	int moveMethod;
 
-	switch(origin) {
+	switch(origin)
+	{
 		case so_from_beginning:
 			moveMethod = SEEK_SET;
 			break;
@@ -175,5 +191,6 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin) {
 			errno,
 			filename.c_str());
 	}
+
 	return result;
 }

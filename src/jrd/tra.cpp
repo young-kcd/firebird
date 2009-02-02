@@ -1225,7 +1225,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		MET_update_transaction(tdbb, transaction, false);
 
 /* If force flag is true, get rid of all savepoints to mark the transaction as dead */
-	if (force_flag) {
+	if (force_flag)
+	{
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
 		// of memory is really done in VIO_verb_cleanup when we pass NULL as sav_next
@@ -1569,6 +1570,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 		attachment->att_trace_manager->event_transaction_start(&conn,
 			&tran, 0, NULL, res_successful);
 	}
+
 	return transaction;
 }
 
@@ -1612,6 +1614,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 		attachment->att_trace_manager->event_transaction_start(&conn,
 			&tran, tpb_length, tpb, res_successful);
 	}
+
 	return transaction;
 }
 

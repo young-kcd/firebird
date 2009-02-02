@@ -26,7 +26,6 @@
  */
 
 #include "firebird.h"
-
 #include <windows.h>
 #include "../platform.h"
 #include "../common/classes/fb_tls.h"
@@ -46,7 +45,8 @@ void set_error_string(const char* str)
 		LocalFree(org_str);
 		TLS_SET(error_string, NULL);
 	}
-	if (str) 
+
+	if (str)
 	{
 		size_t len = strlen(str);
 		char* new_str = (char*) LocalAlloc(LMEM_FIXED, len + 1);
@@ -64,11 +64,7 @@ SLONG get_process_id()
 }
 
 
-BOOL WINAPI DllMain(
-  HINSTANCE hinstDLL,
-  DWORD fdwReason,
-  LPVOID lpvReserved
-)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
 	if (fdwReason == DLL_THREAD_DETACH) 
 	{
@@ -81,5 +77,3 @@ BOOL WINAPI DllMain(
 	}
 	return TRUE;
 }
-
-

@@ -58,12 +58,13 @@ public:
 	virtual const char* getRemoteProcessName() = 0;
 };
 
-typedef enum {
+enum ntrace_tra_isolation_t
+{
 	tra_iso_consistency = 1,
 	tra_iso_concurrency,
 	tra_iso_read_committed_recver,
 	tra_iso_read_committed_norecver
-} ntrace_tra_isolation_t;
+};
 
 class TraceTransaction
 {
@@ -177,17 +178,19 @@ typedef unsigned char ntrace_byte_t;
 
 
 /* Event completion: 0 - successful, 1 - unsuccessful, 2 - unauthorized access */
-typedef enum {
+enum ntrace_result_t
+{
 	res_successful		= 0,
 	res_failed			= 1,
 	res_unauthorized	= 2
-} ntrace_result_t;
+};
 
-typedef enum {
+enum ntrace_trigger_type_t
+{
 	trg_all				= 0,
 	trg_before			= 1,
 	trg_after			= 2
-} ntrace_trigger_type_t;
+};
 
 const int DBB_max_rel_count = 8; // must be the same as DBB_max_count from jrd.h
 
@@ -202,7 +205,8 @@ enum {
 };
 
 /* Performance counters for individual table */
-struct TraceCounts {
+struct TraceCounts
+{
 	ntrace_relation_t	trc_relation_id; /* Relation ID */
 	const char*			trc_relation_name; /* Relation name */
 	const ntrace_counter_t*	trc_counters; /* Pointer to allow easy addition of new counters */
@@ -212,10 +216,10 @@ struct TraceCounts {
 struct PerformanceInfo 
 {
 	ntrace_counter_t pin_time;		/* Total operation time in milliseconds */
-	ntrace_counter_t *pin_counters;	/* Pointer to allow easy addition of new counters */
+	ntrace_counter_t* pin_counters;	/* Pointer to allow easy addition of new counters */
 
 	size_t pin_count;				/* Number of relations involved in analysis */
-	struct TraceCounts *pin_tables; /* Pointer to array with table stats */
+	struct TraceCounts* pin_tables; /* Pointer to array with table stats */
 
 	ntrace_counter_t pin_records_fetched;	// records fetched from statement/procedure
 };
@@ -359,4 +363,4 @@ public:
 /* Trace API plugin entrypoint type */
 typedef ntrace_boolean_t (*ntrace_attach_t)(const TraceInitInfo* initInfo, const TracePlugin** plugin);
 
-#endif
+#endif	// FIREBIRD_NTRACE_H
