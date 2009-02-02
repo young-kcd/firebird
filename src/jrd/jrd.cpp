@@ -698,7 +698,8 @@ void JRD_print_pools(const char* filename)
 	}
 }
 
-void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options, bool no_priv)
+void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options, 
+	bool create, bool no_priv)
 {
 	// Report to Trace API that attachment has not been created
 	if (!traceManager)
@@ -708,7 +709,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename, const
 		if (tempMgr.needs().event_attach) 
 		{
 			TraceFailedConnection conn(filename, &options);
-			tempMgr.event_attach(&conn, false, no_priv ? res_unauthorized : res_failed);
+			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
 		}
 	}
 	else
@@ -716,7 +717,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename, const
 		if (traceManager->needs().event_attach)
 		{
 			TraceFailedConnection conn(filename, &options);
-			traceManager->event_attach(&conn, false, no_priv ? res_unauthorized : res_failed);
+			traceManager->event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
 		}
 	}
 }
@@ -760,14 +761,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const DelayFailedLogin& ex)
 	{
-		trace_failed_attach(NULL, filename, options, true);
+		trace_failed_attach(NULL, filename, options, false, true);
 
 		ex.sleep();
 		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
-		trace_failed_attach(NULL, filename, options, true);
+		trace_failed_attach(NULL, filename, options, false, true);
 		return ex.stuff_exception(user_status);
 	}
 
@@ -808,7 +809,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
-		trace_failed_attach(NULL, filename, options, false);
+		trace_failed_attach(NULL, filename, options, false, false);
 		return user_status[1];
 	}
 
@@ -1360,7 +1361,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		const ISC_LONG exc = ex.stuff_exception(user_status);
 		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL, 
-			filename, options, no_priv);
+			filename, options, false, no_priv);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -1766,14 +1767,14 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 	catch (const DelayFailedLogin& ex)
 	{
-		trace_failed_attach(NULL, filename, options, true);
+		trace_failed_attach(NULL, filename, options, true, true);
 
 		ex.sleep();
 		return ex.stuff_exception(user_status);
 	}
 	catch (const Exception& ex)
 	{
-		trace_failed_attach(NULL, filename, options, true);
+		trace_failed_attach(NULL, filename, options, true, true);
 		return ex.stuff_exception(user_status);
 	}
 
@@ -1814,7 +1815,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	const vdnResult vdn = verify_database_name(expanded_name, user_status);
 	if (!is_alias && vdn == vdnFail)
 	{
-		trace_failed_attach(NULL, filename, options, false);
+		trace_failed_attach(NULL, filename, options, true, false);
 		return user_status[1];
 	}
 
@@ -2097,7 +2098,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		const ISC_LONG exc = ex.stuff_exception(user_status);
 		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL, 
-			filename, options, no_priv);
+			filename, options, true, no_priv);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -5117,18 +5118,9 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_udf_pointers(*pool),
 	att_strings_buffer(NULL),
 	att_ext_connection(NULL),
-	att_trace_manager(NULL)
+	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
 {
 	att_mutex.enter();
-	try
-	{
-		att_trace_manager = FB_NEW(*att_pool) TraceManager(this);
-	}
-	catch (...)
-	{
-		att_mutex.leave();
-		throw;
-	}
 }
 
 
