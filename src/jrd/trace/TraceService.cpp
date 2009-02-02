@@ -30,11 +30,11 @@
 #include "iberror.h"
 #include "../../jrd/ibase.h"
 #include "../../common/classes/fb_string.h"
-#include "../../common/classes/TimeStamp.h"
+#include "../../common/classes/timestamp.h"
 #include "../../common/config/config.h"
 #include "../../common/StatusArg.h"
 #include "../../common/thd.h"
-#include "../../jrd/threaddata.h"
+#include "../../jrd/ThreadData.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"
@@ -122,7 +122,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 			StorageGuard guard(storage);
 			storage->removeSession(session.ses_id);
 		}
-		unlink(session.ses_logfile.c_str());
+		// unlink(session.ses_logfile.c_str());
 	}
 	else {
 		m_svc.printf("Trace session ID %ld started\n", session.ses_id);
@@ -278,7 +278,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	}
 
 	MemoryPool& pool = *getDefaultMemoryPool();
-	AutoPtr<TraceLogImpl> log = FB_NEW(pool) TraceLogImpl(pool, session.ses_logfile, true);
+	AutoPtr<TraceLogImpl> log(FB_NEW(pool) TraceLogImpl(pool, session.ses_logfile, true));
 
 	UCHAR buff[1024];
 	while (!m_svc.finished() && checkAlive(session.ses_id))

@@ -2095,7 +2095,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	{
 		const ISC_LONG exc = ex.stuff_exception(user_status);
 		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-		trace_failed_attach(attachment->att_trace_manager, filename, options, no_priv);
+		if (attachment && attachment->att_trace_manager)
+			trace_failed_attach(attachment->att_trace_manager, filename, options, no_priv);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -5118,7 +5119,15 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_trace_manager(NULL)
 {
 	att_mutex.enter();
-	att_trace_manager = FB_NEW(*att_pool) TraceManager(this);
+	try
+	{
+		att_trace_manager = FB_NEW(*att_pool) TraceManager(this);
+	}
+	catch (...)
+	{
+		att_mutex.leave();
+		throw;
+	}
 }
 
 

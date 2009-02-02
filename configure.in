@@ -1250,7 +1250,6 @@ fi
 if test "$STD_ICU" = "false"; then
   AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
 fi
-AC_CONFIG_FILES(gen/Makefile.extern.regex:${MAKE_SRC_DIR}/Makefile.in.extern.regex)
 
 
 if test "$PROD_BUILD_FLG" = N; then
