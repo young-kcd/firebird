@@ -57,7 +57,7 @@ ConfigStorage::ConfigStorage()
 	if (!m_base)
 	{
 		iscLogStatus("Cannot initialize the shared memory region", status);
-		Firebird::status_exception::raise(status);
+		status_exception::raise(status);
 	}
 
 	fb_assert(m_base->version == 1);
@@ -145,9 +145,9 @@ void ConfigStorage::checkFile()
 	// put default (audit) trace file contents into storage
 	if (m_base->change_number == 0)
 	{
-		Firebird::PathName configFileName(Config::getAuditTraceConfigFile());
+		PathName configFileName(Config::getAuditTraceConfigFile());
 
-		if (configFileName.empty() || configFileName.equalsNoCase("none"))
+		if (configFileName.empty())
 			return;
 
 		if (PathUtils::isRelative(configFileName)) {

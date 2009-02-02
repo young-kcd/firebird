@@ -121,7 +121,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"MaxFileSystemCache",		(ConfigValue) 65536},	// page buffers
 	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
 	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
-	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) "None"},	// location of audit trace configuration file
+	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10}		// maximum size of user session trace log
 };
 
