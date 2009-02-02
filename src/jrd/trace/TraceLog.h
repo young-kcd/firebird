@@ -68,7 +68,7 @@ private:
 	};
 
 	SH_MEM_T m_handle;
-	volatile ShMemHeader *m_base;
+	ShMemHeader *m_base;
 #ifdef WIN_NT
 	struct mtx m_mutex;
 #endif

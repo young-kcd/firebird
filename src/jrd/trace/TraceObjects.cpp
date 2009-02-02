@@ -50,6 +50,9 @@
 #ifdef WIN_NT
 #include <process.h> 
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 using namespace Firebird;
 

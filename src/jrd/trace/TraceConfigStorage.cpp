@@ -39,12 +39,21 @@
 #include "../../jrd/os/config_root.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
 #include <io.h>
+#endif
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <stdio.h>
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 using namespace Firebird;
 
@@ -142,7 +151,7 @@ void ConfigStorage::checkFile()
 	}
 
 	if (m_cfg_file < 0) {
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("sopen") << Arg::Str(cfg_file_name) <<
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(cfg_file_name) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 

@@ -25,13 +25,17 @@
  *
  */
 
+#include "firebird.h"
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
 #include <io.h>
+#endif
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <share.h>
-
-#include "firebird.h"
 
 #include "../../common/StatusArg.h"
 #include "../../common/classes/TempFile.h"
@@ -108,15 +112,14 @@ int TraceLogImpl::openFile(int fileNum)
 	PathName fileName;
 	fileName.printf("%s.%07ld", m_baseFileName.c_str(), fileNum);
 
-	const int oflag = O_CREAT | O_RDWR | O_BINARY | O_SEQUENTIAL 
+	const int oflag = O_CREAT | O_RDWR
 #ifdef WIN_NT
-		| _O_SHORT_LIVED
+		| O_BINARY | O_SEQUENTIAL | _O_SHORT_LIVED
 #endif
 		;
-	const int sflag = SH_DENYNO;
 	const int pflag = S_IREAD | S_IWRITE;
 
-	int file = sopen(fileName.c_str(), oflag, sflag, pflag);
+	int file = open(fileName.c_str(), oflag, pflag);
 
 	return file;
 }
@@ -138,11 +141,9 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 	{
 		const int reads = ::read(m_fileHandle, p, readLeft);
 
-		p += reads;
-		readLeft -= reads;
-		if (!reads && ::eof(m_fileHandle))
+		if (reads < 0)
 		{
-			const long len = ::tell(m_fileHandle);
+			const off_t len = lseek(m_fileHandle, 0, SEEK_CUR);
 			if (len >= MAX_LOG_FILE_SIZE)
 			{
 				::close(m_fileHandle);
@@ -157,6 +158,9 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 				break;
 			}
 		}
+
+		p += reads;
+		readLeft -= reads;
 	}
 
 	return (size - readLeft);
