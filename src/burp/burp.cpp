@@ -1444,7 +1444,7 @@ void BURP_verbose(USHORT number, const SafeArg& arg)
  * Functional description
  *	Calls BURP_print for displaying a formatted error message
  *	but only for verbose output.  If not verbose then calls
- *	user defined yieding function.
+ *	user defined yielding function.
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();

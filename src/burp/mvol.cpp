@@ -1353,7 +1353,7 @@ bool MVOL_split_hdr_read()
 		(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE))
 	{
 		TEXT buffer[HDR_SPLIT_SIZE];
-		int cnt;
+		int cnt = 0;
 
 #ifdef WIN_NT
 		ReadFile(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE,
@@ -1365,7 +1365,7 @@ bool MVOL_split_hdr_read()
 			((strncmp(buffer, HDR_SPLIT_TAG, (sizeof(HDR_SPLIT_TAG) - 1)) == 0) ||
 			(strncmp(buffer, HDR_SPLIT_TAG5, (sizeof(HDR_SPLIT_TAG) - 1)) == 0)))
 		{
-			HDR_SPLIT hdr = (HDR_SPLIT) buffer;
+			const hdr_split* hdr = (hdr_split*) buffer;
 			if ((tdgbl->action->act_file->fil_seq = atoi(hdr->hdr_split_sequence)) > 0 &&
 				(tdgbl->action->act_total = atoi(hdr->hdr_split_total)) > 0 &&
 				(tdgbl->action->act_file->fil_seq <= tdgbl->action->act_total))
