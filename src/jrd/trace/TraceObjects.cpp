@@ -26,7 +26,6 @@
  */
 
 #include "firebird.h" 
-
 #include "../../jrd/common.h"
 #include "../../common/classes/auto.h"
 #include "../../common/utils_proto.h"
@@ -60,57 +59,69 @@ namespace Jrd {
 
 /// TraceConnectionImpl 
 
-int TraceConnectionImpl::getConnectionID() {
+int TraceConnectionImpl::getConnectionID()
+{
 	//return m_att->att_attachment_id;
 	return PAG_attachment_id(JRD_get_thread_data());
 }
 
-int TraceConnectionImpl::getProcessID() {
+int TraceConnectionImpl::getProcessID()
+{
 	return getpid();
 }
 
-const char* TraceConnectionImpl::getDatabaseName() {
+const char* TraceConnectionImpl::getDatabaseName()
+{
 	return m_att->att_filename.c_str();
 }
 
-const char* TraceConnectionImpl::getUserName() {
-	const UserId *user = m_att->att_user;
+const char* TraceConnectionImpl::getUserName()
+{
+	const UserId* user = m_att->att_user;
 	return user ? user->usr_user_name.c_str() : NULL;
 }
 
-const char* TraceConnectionImpl::getRoleName() {
-	const UserId *user = m_att->att_user;
+const char* TraceConnectionImpl::getRoleName()
+{
+	const UserId* user = m_att->att_user;
 	return user ? user->usr_sql_role_name.c_str() : NULL;
 }
 
-const char* TraceConnectionImpl::getRemoteProtocol() {
+const char* TraceConnectionImpl::getRemoteProtocol()
+{
 	return m_att->att_network_protocol.c_str();
 }
 
-const char* TraceConnectionImpl::getRemoteAddress() {
+const char* TraceConnectionImpl::getRemoteAddress()
+{
 	return m_att->att_remote_address.c_str();
 }
 
-int TraceConnectionImpl::getRemoteProcessID() {
+int TraceConnectionImpl::getRemoteProcessID()
+{
 	return m_att->att_remote_pid;
 }
 
-const char* TraceConnectionImpl::getRemoteProcessName() {
+const char* TraceConnectionImpl::getRemoteProcessName()
+{
 	return m_att->att_remote_process.c_str();
 }
 
 
 /// TraceTransactionImpl
 
-int TraceTransactionImpl::getTransactionID() {
+int TraceTransactionImpl::getTransactionID()
+{
 	return m_tran->tra_number;
 }
 
-bool TraceTransactionImpl::getReadOnly() {
+bool TraceTransactionImpl::getReadOnly()
+{
 	return (m_tran->tra_flags & TRA_readonly);
 }
 
-int TraceTransactionImpl::getWait(){
+int TraceTransactionImpl::getWait()
+{
 	return -m_tran->getLockWait();
 }
 
@@ -169,7 +180,7 @@ const char* BLRPrinter::getText()
 
 void BLRPrinter::print_blr(void* arg, SSHORT offset, const char* line)
 {
-	BLRPrinter *blr = (BLRPrinter*) arg;
+	BLRPrinter* blr = (BLRPrinter*) arg;
 
 	string temp;
 	temp.printf("%4d %s\n", offset, line);
@@ -245,7 +256,7 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 
 			// Use descriptor for nulls signaling
 			if (parameter->par_null && 
-				*((SSHORT *) parameter->par_null->par_desc.dsc_address))
+				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
 			{
 				parameter->par_desc.dsc_flags |= DSC_null;
 			}
@@ -300,7 +311,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 	if (m_descs.getCount() || !m_params)
 		return;
 
-	thread_db *tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 
 	const jrd_nod* const* ptr = m_params->nod_arg;
 	const jrd_nod* const* end = ptr + m_params->nod_count;
@@ -369,7 +380,7 @@ const char* TraceTriggerImpl::getTriggerName()
 
 const char* TraceTriggerImpl::getRelationName()
 {
-	const jrd_rel *rel = m_trig->req_rpb->rpb_relation;
+	const jrd_rel* rel = m_trig->req_rpb->rpb_relation;
 	return rel ? rel->rel_name.c_str() : NULL;
 }
 
@@ -442,16 +453,14 @@ const char* TraceServiceImpl::getRemoteProcessName()
 
 /// TraceRuntimeStats
 
-TraceRuntimeStats::TraceRuntimeStats(Database *dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats, 
+TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats, 
 	SINT64 clock, SINT64 records_fetched)
 {
 	m_info.pin_time = clock * 1000 / fb_utils::query_performance_frequency();
 	m_info.pin_records_fetched = records_fetched;
 
 	if (baseline) 
-	{
 		baseline->computeDifference(dbb, *stats, m_info, m_counts);
-	} 
 	else 
 	{
 		// Report all zero counts for the moment. 

@@ -35,7 +35,6 @@
 #include "../../jrd/trace/TraceService.h"
 
 
-
 namespace Firebird {
 
 static void usage(UtilSvc* uSvc, const char* message, ...)
@@ -48,7 +47,6 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 
 	if (uSvc->isService())
 		(Arg::Gds(isc_random) << msg).raise();
-
 
 	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
 	fprintf(stderr,
@@ -142,27 +140,27 @@ static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
 	return 0;
 }
 
-const char *TRACE_ERR_CONFLICT_ACTS		= "conflicting actions \"%s\" and \"%s\" found";
-const char *TRACE_ERR_ACT_NOTFOUND		= "action switch not found";
-const char *TRACE_ERR_SWITCH_ONCE		= "switch \"%s\" must be set only once";
-const char *TRACE_ERR_PARAM_VAL_MISS	= "value for switch \"%s\" is missed";
-const char *TRACE_ERR_PARAM_INVALID		= "invalid value (\"%s\") for switch \"%s\"";
-const char *TRACE_ERR_SWITCH_UNKNOWN	= "unknow switch \"%s\" encountered";
-const char *TRACE_ERR_SWITCH_SVC_ONLY	= "switch \"%s\" can be used by service only";
-const char *TRACE_ERR_SWITCH_PARAM_MISS	= "mandatory parameter \"%s\" for switch \"%s\" is missed";
-const char *TRACE_ERR_PARAM_ACT_NOTCOMPAT	= "parameter \"%s\" is incomatible with action \"%s\"";
+const char* TRACE_ERR_CONFLICT_ACTS		= "conflicting actions \"%s\" and \"%s\" found";
+const char* TRACE_ERR_ACT_NOTFOUND		= "action switch not found";
+const char* TRACE_ERR_SWITCH_ONCE		= "switch \"%s\" must be set only once";
+const char* TRACE_ERR_PARAM_VAL_MISS	= "value for switch \"%s\" is missed";
+const char* TRACE_ERR_PARAM_INVALID		= "invalid value (\"%s\") for switch \"%s\"";
+const char* TRACE_ERR_SWITCH_UNKNOWN	= "unknow switch \"%s\" encountered";
+const char* TRACE_ERR_SWITCH_SVC_ONLY	= "switch \"%s\" can be used by service only";
+const char* TRACE_ERR_SWITCH_PARAM_MISS	= "mandatory parameter \"%s\" for switch \"%s\" is missed";
+const char* TRACE_ERR_PARAM_ACT_NOTCOMPAT	= "parameter \"%s\" is incompatible with action \"%s\"";
 
 
-void trace(UtilSvc *uSvc, TraceSvcIntf *traceSvc)
+void trace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 {
 	const char* const* end = uSvc->argv.end();
 
 	// search for "action" switch, set NULL into recognized argv 
-	const in_sw_tab_t *action_sw = NULL;
+	const in_sw_tab_t* action_sw = NULL;
 	const char** argv = uSvc->argv.begin();
 	for (++argv; argv < end; argv++)
 	{
-		const in_sw_tab_t *sw = findSwitch(&trace_action_in_sw_table[0], *argv);
+		const in_sw_tab_t* sw = findSwitch(&trace_action_in_sw_table[0], *argv);
 		if (sw)
 		{
 			if (action_sw)
@@ -186,11 +184,12 @@ void trace(UtilSvc *uSvc, TraceSvcIntf *traceSvc)
 		if (!*argv)
 			continue;
 
-		const in_sw_tab_t *sw = findSwitch(&trace_option_in_sw_table[0], *argv);
+		const in_sw_tab_t* sw = findSwitch(&trace_option_in_sw_table[0], *argv);
 		if (!sw)
 			continue;
 
 		*argv = NULL;
+
 		switch (sw->in_sw)
 		{
 		case IN_SW_TRACE_CONFIG:
@@ -273,7 +272,7 @@ void trace(UtilSvc *uSvc, TraceSvcIntf *traceSvc)
 		if (!*argv)
 			continue;
 
-		const in_sw_tab_t *sw = findSwitch(&trace_auth_in_sw_table[0], *argv);
+		const in_sw_tab_t* sw = findSwitch(&trace_auth_in_sw_table[0], *argv);
 		if (!sw) {
 			usage(uSvc, TRACE_ERR_SWITCH_UNKNOWN, *argv);
 		}
@@ -341,7 +340,7 @@ void trace(UtilSvc *uSvc, TraceSvcIntf *traceSvc)
 		}
 	}
 
-	// validate misssed action's parameters and perform action
+	// validate missed action's parameters and perform action
 	if (!session.ses_id) 
 	{
 		switch (action_sw->in_sw)
@@ -363,6 +362,7 @@ void trace(UtilSvc *uSvc, TraceSvcIntf *traceSvc)
 
 
 	traceSvc->setAttachInfo(svc_name, user, pwd, adminRole);
+
 	switch (action_sw->in_sw)
 	{
 	case IN_SW_TRACE_START:

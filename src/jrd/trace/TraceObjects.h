@@ -29,7 +29,6 @@
 #define JRD_TRACE_OBJECTS_H
 
 #include <time.h>
-
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../dsql/dsql.h"
@@ -51,8 +50,8 @@ class jrd_tra;
 class TraceConnectionImpl : public TraceConnection
 {
 public:
-	TraceConnectionImpl(const Attachment *att) :
-	  m_att(att)
+	TraceConnectionImpl(const Attachment* att) :
+		m_att(att)
 	{}
 
 	virtual int getConnectionID();
@@ -66,7 +65,7 @@ public:
 	virtual const char* getRemoteProcessName();
 
 private:
-	const Attachment *m_att;
+	const Attachment* m_att;
 };
 
 
@@ -74,8 +73,8 @@ class TraceTransactionImpl : public TraceTransaction
 {
 public:
 	TraceTransactionImpl(const jrd_tra* tran, PerformanceInfo* perf = NULL) :
-	  m_tran(tran),
-	  m_perf(perf)
+		m_tran(tran),
+		m_perf(perf)
 	{}
 
 	virtual int getTransactionID();
@@ -94,9 +93,9 @@ class TraceDYNRequestImpl : public TraceDYNRequest
 {
 public:
 	TraceDYNRequestImpl(size_t length, const char* ddl) :
-	  m_ddl(ddl), 
-	  m_length(length),
-	  m_text(*getDefaultMemoryPool())
+		m_ddl(ddl), 
+		m_length(length),
+		m_text(*getDefaultMemoryPool())
 	{}
 
 	virtual const char* getData()	{ return m_ddl; }
@@ -116,9 +115,9 @@ class BLRPrinter : public TraceBLRStatement
 {
 public:
 	BLRPrinter(const char* blr, size_t length) :
-	  m_blr(blr), 
-	  m_length(length),
-	  m_text(*getDefaultMemoryPool())
+		m_blr(blr), 
+		m_length(length),
+		m_text(*getDefaultMemoryPool())
 	{}
 
 	virtual const char* getData()	{ return m_blr; }
@@ -138,9 +137,9 @@ class TraceBLRStatementImpl : public BLRPrinter
 {
 public:
 	TraceBLRStatementImpl(const jrd_req* stmt, PerformanceInfo* perf) :
-	  BLRPrinter((char*)stmt->req_blr.begin(), stmt->req_blr.getCount()),
-	  m_stmt(stmt),
-	  m_perf(perf)
+		BLRPrinter((char*)stmt->req_blr.begin(), stmt->req_blr.getCount()),
+		m_stmt(stmt),
+		m_perf(perf)
 	{}
 
 	virtual int getStmtID()				{ return m_stmt->req_id; } 
@@ -156,7 +155,7 @@ class TraceFailedBLRStatement : public BLRPrinter
 {
 public:
 	TraceFailedBLRStatement(const char* blr, size_t length) :
-	  BLRPrinter(blr, length)
+		BLRPrinter(blr, length)
 	{}
 
 	virtual int getStmtID()				{ return 0; }
@@ -168,10 +167,10 @@ class TraceSQLStatementImpl : public TraceSQLStatement
 {
 public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
-	  m_stmt(stmt),
-	  m_perf(perf),
-	  m_plan(NULL),
-	  m_inputs(*getDefaultMemoryPool(), m_stmt->req_send ? m_stmt->req_send->msg_parameters : NULL)
+		m_stmt(stmt),
+		m_perf(perf),
+		m_plan(NULL),
+		m_inputs(*getDefaultMemoryPool(), m_stmt->req_send ? m_stmt->req_send->msg_parameters : NULL)
 	{}
 
 	~TraceSQLStatementImpl();
@@ -187,8 +186,8 @@ private:
 	{
 	public:
 		DSQLParamsImpl(Firebird::MemoryPool &pool, dsql_par* params) :
-		  m_params(params),
-		  m_descs(pool)
+			m_params(params),
+			m_descs(pool)
 		{}
 
 		virtual size_t getCount();
@@ -212,7 +211,7 @@ class TraceFailedSQLStatement : public TraceSQLStatement
 {
 public:
 	TraceFailedSQLStatement(Firebird::string &text) :
-	  m_text(text)
+		m_text(text)
 	{}
 
 	virtual int getStmtID()				{ return 0; }
@@ -230,9 +229,9 @@ class TraceContextVarImpl : public TraceContextVariable
 {
 public:
 	TraceContextVarImpl(const char* ns, const char* name, const char* value) :
-	  m_namespace(ns),
-	  m_name(name),
-	  m_value(value)
+		m_namespace(ns),
+		m_name(name),
+		m_value(value)
 	{}
 
 	virtual const char* getNameSpace()	{ return m_namespace; }
@@ -249,9 +248,9 @@ class TraceProcedureImpl : public TraceProcedure
 {
 public:
 	TraceProcedureImpl(const jrd_req* request, PerformanceInfo* perf) :
-	  m_request(request),
-	  m_perf(perf),
-	  m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
+		m_request(request),
+		m_perf(perf),
+		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
 	virtual const char* getProcName()	{ return m_request->req_procedure->prc_name.c_str(); }
@@ -262,10 +261,10 @@ private:
 	class JrdParamsImpl : public TraceParams
 	{
 	public:
-		JrdParamsImpl(Firebird::MemoryPool &pool, const jrd_req* request, const jrd_nod* params) :
-		  m_request(request),
-		  m_params(params),
-		  m_descs(pool)
+		JrdParamsImpl(Firebird::MemoryPool& pool, const jrd_req* request, const jrd_nod* params) :
+			m_request(request),
+			m_params(params),
+			m_descs(pool)
 		{}
 
 		virtual size_t getCount();
@@ -301,8 +300,8 @@ public:
 	virtual PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
-	const jrd_req*	m_trig;
-	SSHORT			m_which;
+	const jrd_req* m_trig;
+	SSHORT m_which;
 	PerformanceInfo* m_perf;
 };
 
@@ -310,8 +309,8 @@ private:
 class TraceServiceImpl : public TraceService
 {
 public:
-	TraceServiceImpl(const Service *svc) :
-	  m_svc(svc)
+	TraceServiceImpl(const Service* svc) :
+		m_svc(svc)
 	{}
 
 	virtual const ntrace_service_t getServiceID();
@@ -326,17 +325,17 @@ public:
 	virtual const char* getRemoteProcessName();
 
 private:
-	const Service *m_svc;
+	const Service* m_svc;
 };
 
 
 class TraceRuntimeStats
 {
 public:
-	TraceRuntimeStats(Database *dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats, 
+	TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats, 
 		SINT64 clock, SINT64 records_fetched);
 
-	PerformanceInfo *getPerf()	{	return &m_info; }
+	PerformanceInfo* getPerf()	{	return &m_info; }
 
 private:
 	PerformanceInfo m_info;
@@ -378,9 +377,9 @@ public:
 	virtual TraceLogWriter* getLogWriter();
 
 private:
-	const Firebird::TraceSession &m_session;
+	const Firebird::TraceSession& m_session;
 	const Attachment* m_attachment;
-	TraceLogWriter *m_logWriter;
+	TraceLogWriter* m_logWriter;
 	TraceConnectionImpl m_trace_conn;
 	const char* m_filename;
 };

@@ -26,7 +26,6 @@
  */
 
 #include "firebird.h"
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -36,7 +35,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include "../../common/StatusArg.h"
 #include "../../common/classes/TempFile.h"
 #include "../../jrd/common.h"
@@ -135,7 +133,7 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 {
 	fb_assert(m_reader);
 
-	char *p = (char*) buf;
+	char* p = (char*) buf;
 	unsigned int readLeft = size;
 	while (readLeft)
 	{
@@ -186,7 +184,7 @@ size_t TraceLogImpl::write(const void* buf, size_t size)
 
 	TraceLogGuard guard(this);
 	
-	const char *p = (const char*) buf;
+	const char* p = (const char*) buf;
 	unsigned int writeLeft = size;
 	while (writeLeft)
 	{
@@ -194,7 +192,7 @@ size_t TraceLogImpl::write(const void* buf, size_t size)
 		const unsigned int toWrite = MIN(writeLeft, MAX_LOG_FILE_SIZE - len);
 		if (!toWrite)
 		{
-			// While this instance of writer was idle new log file was created.
+			// While this instance of writer was idle, new log file was created.
 			// More, if current file was already readed by reader, we must delete it. 
 			::close(m_fileHandle);
 			if (m_fileNum < m_base->readFileNum) {
@@ -242,7 +240,7 @@ void TraceLogImpl::checkMutex(const TEXT* string, int state)
 
 void TraceLogImpl::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
 {
-	TraceLogImpl *log = (TraceLogImpl*) arg;
+	TraceLogImpl* log = (TraceLogImpl*) arg;
 
 #ifdef WIN_NT
 	checkMutex("init", ISC_mutex_init(&log->m_mutex, shmemData->sh_mem_name));
@@ -280,4 +278,3 @@ void TraceLogImpl::unlock()
 }
 
 } // namespace Jrd
-

@@ -43,11 +43,11 @@ public:
 	ConfigStorage();
 	~ConfigStorage();
 
-	void addSession(Firebird::TraceSession &session);
-	bool getNextSession(Firebird::TraceSession &session);
+	void addSession(Firebird::TraceSession& session);
+	bool getNextSession(Firebird::TraceSession& session);
 	void removeSession(ULONG id);
 	void restart();
-	void updateSession(Firebird::TraceSession &session);
+	void updateSession(Firebird::TraceSession& session);
 
 	ULONG getChangeNumber() const
 	{ return m_base ? m_base->change_number : 0; }
@@ -104,10 +104,10 @@ private:
 	};
 
 	void putItem(ITEM tag, size_t len, const void* data);
-	bool getItemLength(ITEM &tag, size_t &len);
+	bool getItemLength(ITEM& tag, size_t& len);
 
 	SH_MEM_T m_handle;
-	ShMemHeader *m_base;
+	ShMemHeader* m_base;
 #ifdef WIN_NT
 	struct mtx m_mutex;
 #endif
@@ -119,7 +119,7 @@ private:
 class StorageInstance : private Firebird::InstanceControl
 {
 	Firebird::Mutex initMtx;
-	ConfigStorage *storage;
+	ConfigStorage* storage;
 
 	virtual void dtor()
 	{
@@ -129,11 +129,11 @@ class StorageInstance : private Firebird::InstanceControl
 
 public:
 	StorageInstance() :
-	  Firebird::InstanceControl(Firebird::InstanceControl::PRIORITY_REGULAR),
-	  storage(NULL)
+		Firebird::InstanceControl(Firebird::InstanceControl::PRIORITY_REGULAR),
+		storage(NULL)
 	{}
 
-	ConfigStorage *getStorage()
+	ConfigStorage* getStorage()
 	{
 		if (!storage)
 		{
@@ -161,7 +161,7 @@ public:
 		m_storage->release();
 	}
 private:
-	ConfigStorage *m_storage;
+	ConfigStorage* m_storage;
 };
 
 }

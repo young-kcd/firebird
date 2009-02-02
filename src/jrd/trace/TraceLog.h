@@ -37,7 +37,7 @@ namespace Jrd {
 class TraceLogImpl : public TraceLogWriter
 {
 public:
-	TraceLogImpl(Firebird::MemoryPool &pool, const Firebird::PathName &fileName, bool reader);
+	TraceLogImpl(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
 	virtual ~TraceLogImpl();
 
 	size_t read(void* buf, size_t size);
@@ -68,7 +68,7 @@ private:
 	};
 
 	SH_MEM_T m_handle;
-	ShMemHeader *m_base;
+	ShMemHeader* m_base;
 #ifdef WIN_NT
 	struct mtx m_mutex;
 #endif
@@ -96,9 +96,10 @@ public:
 	}
 
 private:
-	TraceLogImpl *m_log;
+	TraceLogImpl* m_log;
 };
 
 
 } // namespace Jrd
+
 #endif // TRACE_LOG

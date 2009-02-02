@@ -43,7 +43,7 @@ const int trs_log_full		= 0x0008;	// session trace log is full
 class TraceSession
 {
 public:
-	TraceSession(MemoryPool &pool) :
+	TraceSession(MemoryPool& pool) :
 		ses_id(0),
 		ses_name(pool),
 		ses_user(pool),

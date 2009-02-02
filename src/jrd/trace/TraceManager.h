@@ -30,7 +30,6 @@
 #define JRD_TRACEMANAGER_H
 
 #include <time.h>
-
 #include "../../jrd/ntrace.h"
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
@@ -46,17 +45,18 @@ class Attachment;
 class jrd_tra;
 class Service;
 
-class TraceManager {
+class TraceManager
+{
 public:
     /* Initializes plugins. */
-	TraceManager(Attachment *att);
-	TraceManager(Service *svc);
-	TraceManager(const char *filename);
+	TraceManager(Attachment* att);
+	TraceManager(Service* svc);
+	TraceManager(const char* filename);
 
 	/* Finalize plugins. Called when database is closed by the engine */
 	~TraceManager();
 
-	ConfigStorage *getStorage()
+	ConfigStorage* getStorage()
 	{ return storage; }
 
 	void event_attach(TraceConnection* connection, bool create_db, 
@@ -105,7 +105,8 @@ public:
 
 	void event_service_detach(TraceService* service, ntrace_result_t detach_result);
 
-	struct NotificationNeeds {
+	struct NotificationNeeds
+	{
 		// Set if event is tracked
 		bool event_attach;
 		bool event_detach;
@@ -136,22 +137,22 @@ public:
 
 	/* DSQL-friendly routines to call Trace API hooks.
        Needed because DSQL cannot include JRD for the current engine */
-	static bool need_dsql_prepare(Attachment *att);
-	static bool need_dsql_free(Attachment *att);
-	static bool need_dsql_execute(Attachment *att);
+	static bool need_dsql_prepare(Attachment* att);
+	static bool need_dsql_free(Attachment* att);
+	static bool need_dsql_execute(Attachment* att);
 
-	static void event_dsql_prepare(Attachment *att, jrd_tra* transaction, TraceSQLStatement* statement, 
+	static void event_dsql_prepare(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement, 
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	static void event_dsql_free(Attachment *att, TraceSQLStatement* statement, 
+	static void event_dsql_free(Attachment* att, TraceSQLStatement* statement, 
 		unsigned short option);
 
-	static void event_dsql_execute(Attachment *att, jrd_tra* transaction, TraceSQLStatement* statement, 
+	static void event_dsql_execute(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement, 
 		bool started, ntrace_result_t req_result);
 
 private:
 	Attachment*	attachment;
-	Service*	service;
+	Service* service;
 	const char* filename;
 	NotificationNeeds trace_needs;
 
@@ -175,9 +176,9 @@ private:
 	{
 		const TracePlugin* plugin;
 		ModuleInfo* module_info;
-		ULONG	ses_id;
+		ULONG ses_id;
 
-		static ULONG generate(const void*, const SessionInfo &item)
+		static ULONG generate(const void*, const SessionInfo& item)
 		{ return item.ses_id; }
 	};
 	Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, 
@@ -187,7 +188,7 @@ private:
 	void update_sessions();
 	void update_session(const Firebird::TraceSession& session);
 
-	bool check_result(const TracePlugin *plugin, const char *module, const char* function, bool result);
+	bool check_result(const TracePlugin* plugin, const char* module, const char* function, bool result);
 
 	/* DSQL statement lifecycle. To be moved to public and used directly when DSQL becomes a part of JRD */
 	void event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction, 
@@ -204,7 +205,7 @@ private:
 	static StorageInstance storageInstance;
 
 	ULONG change_number;
-	ConfigStorage *storage;
+	ConfigStorage* storage;
 };
 
 }

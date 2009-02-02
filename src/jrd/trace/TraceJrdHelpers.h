@@ -37,12 +37,12 @@ class TraceTransactionEnd
 {
 public:
 	TraceTransactionEnd(jrd_tra* transaction, bool commit, bool retain) :
-	  m_commit(commit),
-	  m_retain(retain),
-	  m_transaction(transaction),
-	  m_baseline(NULL)
+		m_commit(commit),
+		m_retain(retain),
+		m_transaction(transaction),
+		m_baseline(NULL)
 	{
-		Attachment *attachment = m_transaction->tra_attachment;
+		Attachment* attachment = m_transaction->tra_attachment;
 		m_need_trace = attachment->att_trace_manager->needs().event_transaction_end;
 		if (!m_need_trace)
 			return;
@@ -93,7 +93,7 @@ public:
 		m_tdbb(tdbb),
 		m_request(request)
 	{
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		m_need_trace = trace_mgr->needs().event_proc_execute;
 		if (!m_need_trace)
 			return;
@@ -101,7 +101,7 @@ public:
 		m_request->req_proc_inputs = inputs;
 		m_request->req_proc_caller = caller;
 
-		{
+		{	// scope
 			TraceConnectionImpl conn(m_tdbb->getAttachment());
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 			TraceProcedureImpl proc(m_request, NULL);
@@ -137,7 +137,7 @@ public:
 			return;
 		}
 
-		Database *dbb = m_tdbb->getDatabase();
+		Database* dbb = m_tdbb->getDatabase();
 		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
@@ -146,7 +146,7 @@ public:
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 		TraceProcedureImpl proc(m_request, stats.getPerf());
 
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		trace_mgr->event_proc_execute(&conn, &tran, &proc,  false, result);
 
 		m_request->req_proc_inputs = NULL;
@@ -168,7 +168,7 @@ public:
 		m_tdbb(tdbb),
 		m_request(request)
 	{
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		m_need_trace = (request->req_flags & req_proc_fetch) && trace_mgr->needs().event_proc_execute;
 		if (!m_need_trace)
 			return;
@@ -194,7 +194,7 @@ public:
 			return;
 		}
 
-		Database *dbb = m_tdbb->getDatabase();
+		Database* dbb = m_tdbb->getDatabase();
 		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats, 
 			m_request->req_fetch_elapsed, m_request->req_fetch_rowcount);
 
@@ -202,7 +202,7 @@ public:
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 		TraceProcedureImpl proc(m_request, stats.getPerf());
 
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		trace_mgr->event_proc_execute(&conn, &tran, &proc, false, result);
 
 		m_request->req_proc_inputs = NULL;
@@ -215,7 +215,7 @@ private:
 	bool m_need_trace;
 	thread_db* m_tdbb;
 	jrd_req* m_request;
-	SINT64	m_start_clock;
+	SINT64 m_start_clock;
 };
 
 
@@ -227,14 +227,14 @@ public:
 		m_request(trigger),
 		m_which_trig(which_trig)
 	{
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		m_need_trace = !(m_request->req_flags & req_sys_trigger) && 
 						trace_mgr->needs().event_trigger_execute;
 
 		if (!m_need_trace)
 			return;
 
-		{
+		{	// scope
 			TraceConnectionImpl conn(m_tdbb->getAttachment());
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 			TraceTriggerImpl trig(m_request, m_which_trig, NULL);
@@ -257,7 +257,7 @@ public:
 
 		m_need_trace = false;
 
-		Database *dbb = m_tdbb->getDatabase();
+		Database* dbb = m_tdbb->getDatabase();
 		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock, 0);
 
@@ -265,7 +265,7 @@ public:
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 		TraceTriggerImpl trig(m_request, m_which_trig, stats.getPerf());
 
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		trace_mgr->event_trigger_execute(&conn, &tran, &trig, false, result);
 
 		m_request->req_fetch_baseline = NULL;
@@ -293,7 +293,7 @@ public:
 		m_blr_length(blr_length),
 		m_blr(blr)
 	{
-		Attachment *attachment = m_tdbb->getAttachment();
+		Attachment* attachment = m_tdbb->getAttachment();
 
 		m_need_trace = attachment->att_trace_manager->needs().event_blr_compile &&
 			m_blr_length && m_blr &&
@@ -307,7 +307,7 @@ public:
 		m_start_clock = fb_utils::query_performance_counter();
 	}
 
-	void finish(jrd_req *request, ntrace_result_t result)
+	void finish(jrd_req* request, ntrace_result_t result)
 	{
 		if (!m_need_trace)
 			return;
@@ -316,7 +316,7 @@ public:
 
 		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 / 
 						 fb_utils::query_performance_frequency();
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
@@ -356,7 +356,7 @@ public:
 		m_tdbb(tdbb),
 		m_request(request)
 	{
-		Attachment *attachment = m_tdbb->getAttachment();
+		Attachment* attachment = m_tdbb->getAttachment();
 
 		m_need_trace = attachment->att_trace_manager->needs().event_blr_execute &&
 			!m_request->req_sql_text &&
@@ -384,7 +384,7 @@ public:
 
 		m_need_trace = false;
 
-		Database *dbb = m_tdbb->getDatabase();
+		Database* dbb = m_tdbb->getDatabase();
 		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
@@ -393,7 +393,7 @@ public:
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 		TraceBLRStatementImpl stmt(m_request, stats.getPerf());
 
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		trace_mgr->event_blr_execute(&conn, &tran, &stmt, result);
 
 		m_request->req_fetch_baseline = NULL;
@@ -420,7 +420,7 @@ public:
 		m_ddl_length(ddl_length), 
 		m_ddl(ddl)
 	{
-		Attachment *attachment = m_tdbb->getAttachment();
+		Attachment* attachment = m_tdbb->getAttachment();
 
 		m_need_trace = attachment->att_trace_manager->needs().event_dyn_execute &&
 			m_ddl_length && m_ddl;
@@ -445,7 +445,7 @@ public:
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 		TraceDYNRequestImpl request(m_ddl_length, m_ddl);
 
-		TraceManager *trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		trace_mgr->event_dyn_execute(&conn, m_tdbb->getTransaction() ? &tran : NULL, &request, 
 			m_start_clock, result);
 	}

@@ -48,48 +48,46 @@ using namespace Jrd;
 class TraceSvcJrd : public TraceSvcIntf
 {
 public:
-
-	TraceSvcJrd(Service &svc) : 
-	  m_svc(svc),
-	  m_admin(false),
-	  m_chg_number(0)
+	TraceSvcJrd(Service& svc) : 
+		m_svc(svc),
+		m_admin(false),
+		m_chg_number(0)
 	{};
 
 	virtual ~TraceSvcJrd() {};
 
-	virtual void setAttachInfo(const string &service_name, const string &user, 
-		const string &pwd, bool isAdmin);
+	virtual void setAttachInfo(const string& service_name, const string& user, 
+		const string& pwd, bool isAdmin);
 
-	virtual void startSession(TraceSession &session, bool interactive);
+	virtual void startSession(TraceSession& session, bool interactive);
 	virtual void stopSession(ULONG id);
 	virtual void setActive(ULONG id, bool active);
 	virtual void listSessions();
-	virtual void readSession(TraceSession &session);
+	virtual void readSession(TraceSession& session);
 
 private:
 	bool changeFlags(ULONG id, int setFlags, int clearFlags);
 	bool checkAlive(ULONG sesId);
 
-
-	Service &m_svc;
+	Service& m_svc;
 	string m_user;
 	bool   m_admin;
 	ULONG  m_chg_number;
 };
 
-void TraceSvcJrd::setAttachInfo(const string &/*service_name*/, const string &user, 
-	const string &/*pwd*/, bool isAdmin)
+void TraceSvcJrd::setAttachInfo(const string& /*service_name*/, const string& user, 
+	const string& /*pwd*/, bool isAdmin)
 {
 	m_user = user;
 	m_admin = isAdmin || (m_user == SYSDBA_USER_NAME);
 }
 
-void TraceSvcJrd::startSession(TraceSession &session, bool interactive)
+void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 {
 	TraceManager* mgr = m_svc.getTraceManager();
-	ConfigStorage *storage = mgr->getStorage();
+	ConfigStorage* storage = mgr->getStorage();
 
-	{
+	{	// scope
 		StorageGuard guard(storage);
 
 		session.ses_user = m_user;
@@ -98,12 +96,13 @@ void TraceSvcJrd::startSession(TraceSession &session, bool interactive)
 		if (m_admin) {
 			session.ses_flags |= trs_admin;
 		}
+
 		if (interactive) 
 		{
 			FB_GUID guid;
 			GenerateGuid(&guid);
 
-			char *buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
+			char* buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
 			GuidToString(buff, &guid);
 			
 			session.ses_logfile.insert(0, "fb_trace.");
@@ -135,7 +134,7 @@ void TraceSvcJrd::stopSession(ULONG id)
 	m_svc.started();
 	TraceManager* mgr = m_svc.getTraceManager();
 
-	ConfigStorage *storage = mgr->getStorage();
+	ConfigStorage* storage = mgr->getStorage();
 	StorageGuard guard(storage);
 
 	storage->restart();
@@ -181,7 +180,7 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 	m_svc.started();
 	TraceManager* mgr = m_svc.getTraceManager();
 
-	ConfigStorage *storage = mgr->getStorage();
+	ConfigStorage* storage = mgr->getStorage();
 	StorageGuard guard(storage);
 
 	storage->restart();
@@ -217,7 +216,7 @@ void TraceSvcJrd::listSessions()
 	
 	TraceManager* mgr = m_svc.getTraceManager();
 
-	ConfigStorage *storage = mgr->getStorage();
+	ConfigStorage* storage = mgr->getStorage();
 	StorageGuard guard(storage);
 
 	storage->restart();
@@ -233,7 +232,7 @@ void TraceSvcJrd::listSessions()
 			}
 			m_svc.printf("  user:  %s\n", session.ses_user.c_str());
 			
-			struct tm *t = localtime(&session.ses_start);
+			struct tm* t = localtime(&session.ses_start);
 			m_svc.printf("  date:  %04d-%02d-%02d %02d:%02d:%02d\n",
 					t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
 					t->tm_hour, t->tm_min, t->tm_sec);
@@ -265,10 +264,10 @@ void TraceSvcJrd::listSessions()
 	}
 }
 
-void TraceSvcJrd::readSession(TraceSession &session)
+void TraceSvcJrd::readSession(TraceSession& session)
 {
 	TraceManager* mgr = m_svc.getTraceManager();
-	ConfigStorage *storage = mgr->getStorage();
+	ConfigStorage* storage = mgr->getStorage();
 	const size_t maxLogSize = Config::getMaxUserTraceLogSize(); // in MB
 	bool logFull = false;
 
@@ -278,7 +277,7 @@ void TraceSvcJrd::readSession(TraceSession &session)
 		return;
 	}
 
-	MemoryPool &pool = *getDefaultMemoryPool();
+	MemoryPool& pool = *getDefaultMemoryPool();
 	AutoPtr<TraceLogImpl> log = FB_NEW(pool) TraceLogImpl(pool, session.ses_logfile, true);
 
 	UCHAR buff[1024];
@@ -313,7 +312,7 @@ void TraceSvcJrd::readSession(TraceSession &session)
 bool TraceSvcJrd::checkAlive(ULONG sesId)
 {
 	TraceManager* mgr = m_svc.getTraceManager();
-	ConfigStorage *storage = mgr->getStorage();
+	ConfigStorage* storage = mgr->getStorage();
 
 	bool alive = (m_chg_number == storage->getChangeNumber());
 	if (!alive)
@@ -324,11 +323,13 @@ bool TraceSvcJrd::checkAlive(ULONG sesId)
 		TraceSession readSession(*getDefaultMemoryPool());
 		storage->restart();
 		while (storage->getNextSession(readSession))
+		{
 			if (readSession.ses_id == sesId)
 			{
 				alive = true;
 				break;
 			}
+		}
 
 		m_chg_number = storage->getChangeNumber();
 	}
@@ -340,11 +341,12 @@ bool TraceSvcJrd::checkAlive(ULONG sesId)
 // service entrypoint
 THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 {
-	Service *svc = (Service *)arg;
+	Service* svc = (Service*)arg;
 	int exit_code = FB_SUCCESS;
 
 	TraceSvcJrd traceSvc(*svc);
-	try {
+	try
+	{
 		trace(svc, &traceSvc);
 	}
 	catch (const Exception& e)

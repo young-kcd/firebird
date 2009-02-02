@@ -26,10 +26,8 @@
  */
 
 #include "firebird.h"
-
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
-
 #include "../../jrd/common.h"
 #include "../../jrd/err_proto.h"
 #include "../../jrd/isc_proto.h"
@@ -137,7 +135,7 @@ void ConfigStorage::checkFile()
 	if (m_cfg_file >= 0)
 		return;
 
-	char *cfg_file_name = &m_base->cfg_file_name[0];
+	char* cfg_file_name = &m_base->cfg_file_name[0];
 
 	if (!(*cfg_file_name))
 	{
@@ -189,7 +187,7 @@ void ConfigStorage::checkFile()
 		if (len)
 		{
 			fseek(cfgFile, 0, SEEK_SET);
-			char *p = session.ses_config.getBuffer(len+1);
+			char* p = session.ses_config.getBuffer(len+1);
 			if (fread(p, 1, len, cfgFile) != len)
 			{
 				Arg::Gds temp(isc_io_error); 
@@ -234,7 +232,7 @@ void ConfigStorage::release()
 #endif
 }
 
-void ConfigStorage::addSession(TraceSession &session)
+void ConfigStorage::addSession(TraceSession& session)
 {
 	setDirty();
 	session.ses_id = m_base->session_number++;
@@ -244,7 +242,7 @@ void ConfigStorage::addSession(TraceSession &session)
 	const long pos1 = lseek(m_cfg_file, 0, SEEK_END);
 	if (pos1 < 0) 
 	{
-		const char *fn = &m_base->cfg_file_name[0];
+		const char* fn = &m_base->cfg_file_name[0];
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
 			Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 	}
@@ -266,7 +264,7 @@ void ConfigStorage::addSession(TraceSession &session)
 	// m_base->used_space += pos2 - pos1;
 }
 
-bool ConfigStorage::getNextSession(TraceSession &session)
+bool ConfigStorage::getNextSession(TraceSession& session)
 {
 	ITEM tag = tagID;
 	size_t len;
@@ -285,45 +283,46 @@ bool ConfigStorage::getNextSession(TraceSession &session)
 			continue;
 		}
 
-		void *p = NULL;
+		void* p = NULL;
+
 		switch (tag)
 		{
 			case tagID:
 				fb_assert(len == sizeof(session.ses_id));
 				p = &session.ses_id;
-			break;
+				break;
 
 			case tagName:
 				if (session.ses_id)
 					p = session.ses_name.getBuffer(len);
-			break;
+				break;
 
 			case tagUserName:
 				if (session.ses_id)
 					p = session.ses_user.getBuffer(len);
-			break;
+				break;
 
 			case tagFlags:
 				fb_assert(len == sizeof(session.ses_flags));
 				if (session.ses_id)
 					p = &session.ses_flags;
-			break;
+				break;
 
 			case tagConfig:
 				if (session.ses_id)
 					p = session.ses_config.getBuffer(len);
-			break;
+				break;
 
 			case tagStartTS:
 				fb_assert(len == sizeof(session.ses_start));
 				if (session.ses_id)
 					p = &session.ses_start;
-			break;
+				break;
 
 			case tagLogFile:
 				if (session.ses_id)
 					p = session.ses_logfile.getBuffer(len);
-			break;
+				break;
 
 			default:
 				fb_assert(false);
@@ -337,7 +336,7 @@ bool ConfigStorage::getNextSession(TraceSession &session)
 
 		if (err) 
 		{
-			const char *fn = &m_base->cfg_file_name[0];
+			const char* fn = &m_base->cfg_file_name[0];
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
 				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 		}
@@ -380,7 +379,7 @@ void ConfigStorage::removeSession(ULONG id)
 
 		if (err)
 		{
-			const char *fn = &m_base->cfg_file_name[0];
+			const char* fn = &m_base->cfg_file_name[0];
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
 				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 		}
@@ -392,14 +391,14 @@ void ConfigStorage::restart()
 	checkDirty();
 	if (lseek(m_cfg_file, 0, SEEK_SET) < 0)
 	{
-		const char *fn = &m_base->cfg_file_name[0];
+		const char* fn = &m_base->cfg_file_name[0];
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
 			Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 	}
 }
 
 
-void ConfigStorage::updateSession(Firebird::TraceSession &session)
+void ConfigStorage::updateSession(Firebird::TraceSession& session)
 {
 	restart();
 
@@ -412,26 +411,26 @@ void ConfigStorage::updateSession(Firebird::TraceSession &session)
 		if (!getItemLength(tag, len))
 			return;
 
-		void *p = NULL;
+		void* p = NULL;
 		switch (tag)
 		{
 			case tagID:
 				fb_assert(len == sizeof(currID));
 				read(m_cfg_file, &currID, len);
 				continue;
-			break;
+				break;
 
 			case tagFlags:
 				fb_assert(len == sizeof(session.ses_flags));
 				if (currID == session.ses_id)
 					p = &session.ses_flags;
-			break;
+				break;
 
 			case tagEnd:
 				if (currID == session.ses_id)
 					return;
 				len = 0;
-			break;
+				break;
 		}
 
 		if (p) 
@@ -461,7 +460,7 @@ void ConfigStorage::putItem(ITEM tag, size_t len, const void* data)
 	}
 }
 
-bool ConfigStorage::getItemLength(ITEM &tag, size_t &len)
+bool ConfigStorage::getItemLength(ITEM& tag, size_t& len)
 {
 	char data;
 	const int cnt_read = read(m_cfg_file, &data, sizeof(data));

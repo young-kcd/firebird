@@ -60,7 +60,8 @@ public:
 		prepare(res_failed);
 	}
 
-	void setStatement(dsql_req* request) {
+	void setStatement(dsql_req* request)
+	{
 		m_request = request;
 	}
 
@@ -96,7 +97,7 @@ private:
 	bool m_need_trace;
 	jrd_tra* m_transaction;
 	dsql_req* m_request;
-	SINT64	m_start_clock;
+	SINT64 m_start_clock;
 	size_t m_string_len;
 	const TEXT* m_string;
 };
@@ -113,7 +114,7 @@ public:
 		if (!m_need_trace)
 			return;
 
-		{
+		{	// scope
 			TraceSQLStatementImpl stmt(request, NULL);
 			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true, res_successful);
 		}
@@ -217,7 +218,7 @@ private:
 	bool m_need_trace;
 	Attachment* m_attachment;
 	dsql_req* m_request;
-	SINT64	m_start_clock;
+	SINT64 m_start_clock;
 };
 
 

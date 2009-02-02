@@ -40,10 +40,9 @@
 
 using namespace Firebird;
 
-namespace {
-
+namespace
+{
 	static const char* NTRACE_PREFIX = "fbtrace";
-
 }
 
 namespace Jrd {
@@ -54,7 +53,7 @@ bool TraceManager::init_modules = false;
 
 StorageInstance TraceManager::storageInstance;
 
-bool TraceManager::check_result(const TracePlugin *plugin, const char *module, const char* function, bool result) 
+bool TraceManager::check_result(const TracePlugin* plugin, const char* module, const char* function, bool result) 
 {
 	if (result)
 		return true;
@@ -80,7 +79,7 @@ bool TraceManager::check_result(const TracePlugin *plugin, const char *module, c
 	return false;
 }
 
-TraceManager::TraceManager(Attachment *_att) : 
+TraceManager::TraceManager(Attachment* _att) : 
 	attachment(_att),
 	service(NULL),
 	filename(NULL),
@@ -94,7 +93,7 @@ TraceManager::TraceManager(Attachment *_att) :
 	load_modules();
 }
 
-TraceManager::TraceManager(Service *_svc) : 
+TraceManager::TraceManager(Service* _svc) : 
 	attachment(NULL),
 	service(_svc),
 	filename(NULL),
@@ -106,7 +105,7 @@ TraceManager::TraceManager(Service *_svc) :
 	load_modules();
 }
 
-TraceManager::TraceManager(const char *_filename) : 
+TraceManager::TraceManager(const char* _filename) : 
 	attachment(NULL),
 	service(NULL),
 	filename(_filename),
@@ -145,7 +144,7 @@ void TraceManager::load_modules()
 	for (PluginManager::iterator i = PluginManager::enginePluginManager().begin(); *i; ++i) 
 	{
 		PluginManager::Plugin p = *i;
-		const PathName *name = p.name();
+		const PathName* name = p.name();
 		if (!name) 
 			continue;
 
@@ -173,7 +172,8 @@ void TraceManager::load_modules()
 void TraceManager::update_sessions() 
 {
 	SortedArray<ULONG> liveSessions(*getDefaultMemoryPool());
-	{
+
+	{	// scope
 		StorageGuard guard(storage);
 		storage->restart();
 
@@ -200,8 +200,8 @@ void TraceManager::update_sessions()
 		}
 		else
 		{
-			const TracePlugin *p = trace_sessions[i].plugin;
-			ModuleInfo *info = trace_sessions[i].module_info;
+			const TracePlugin* p = trace_sessions[i].plugin;
+			ModuleInfo* info = trace_sessions[i].module_info;
 
 			check_result(p, info->module, "tpl_shutdown", p->tpl_shutdown(p));
 
@@ -210,7 +210,7 @@ void TraceManager::update_sessions()
 	}
 }
 
-void TraceManager::update_session(const TraceSession &session)
+void TraceManager::update_session(const TraceSession& session)
 {
 	// if this session is already known, nothing to do
 	size_t pos;
@@ -218,32 +218,35 @@ void TraceManager::update_session(const TraceSession &session)
 		return;
 	}
 
-	// if this session not from administrator, it may trace connections
+	// if this session is not from administrator, it may trace connections
 	// only created by the same user
 	if (!(session.ses_flags & trs_admin))
 	{
-		if (attachment) {
+		if (attachment)
+		{
 			if (!attachment->att_user || attachment->att_user->usr_user_name != session.ses_user)
 				return;
 		}
-		else if (service) {
+		else if (service)
+		{
 			if (session.ses_user != service->getUserName())
 				return;
 		}
-		else {
+		else
+		{
 			// failed attachment attempts traced by admin trace only
 			return;
 		}
 	}
 
-	ModuleInfo *info = modules->begin();
+	ModuleInfo* info = modules->begin();
 	for (; info < modules->end(); info++)
 	{
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
 
-		const TracePlugin *plugin = NULL;
+		const TracePlugin* plugin = NULL;
 		if (!check_result(plugin, info->module, NTRACE_ATTACH, 
-			info->ntrace_attach(&attachInfo, &plugin))) 
+				info->ntrace_attach(&attachInfo, &plugin))) 
 		{
 			// This was a skeletal plugin to return an error
 			if (plugin && plugin->tpl_shutdown)
@@ -310,19 +313,22 @@ void TraceManager::update_session(const TraceSession &session)
 	}
 }
 
-bool TraceManager::need_dsql_prepare(Attachment *att) {
+bool TraceManager::need_dsql_prepare(Attachment* att)
+{
 	return att->att_trace_manager->needs().event_dsql_prepare;
 }
 
-bool TraceManager::need_dsql_free(Attachment *att) {
+bool TraceManager::need_dsql_free(Attachment* att)
+{
 	return att->att_trace_manager->needs().event_dsql_free;
 }
 
-bool TraceManager::need_dsql_execute(Attachment *att){
+bool TraceManager::need_dsql_execute(Attachment* att)
+{
 	return att->att_trace_manager->needs().event_dsql_execute;
 }
 
-void TraceManager::event_dsql_prepare(Attachment *att, jrd_tra* transaction,
+void TraceManager::event_dsql_prepare(Attachment* att, jrd_tra* transaction,
 		TraceSQLStatement* statement, 
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
@@ -334,7 +340,7 @@ void TraceManager::event_dsql_prepare(Attachment *att, jrd_tra* transaction,
 		time_millis, req_result);
 }
 
-void TraceManager::event_dsql_free(Attachment *att,	TraceSQLStatement* statement, 
+void TraceManager::event_dsql_free(Attachment* att,	TraceSQLStatement* statement, 
 		unsigned short option)
 {
 	TraceConnectionImpl conn(att);
@@ -342,7 +348,7 @@ void TraceManager::event_dsql_free(Attachment *att,	TraceSQLStatement* statement
 	att->att_trace_manager->event_dsql_free(&conn, statement, option);
 }
 
-void TraceManager::event_dsql_execute(Attachment *att, jrd_tra* transaction, 
+void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction, 
 	TraceSQLStatement* statement, bool started, ntrace_result_t req_result)
 {
 	TraceConnectionImpl conn(att);
@@ -354,12 +360,12 @@ void TraceManager::event_dsql_execute(Attachment *att, jrd_tra* transaction,
 
 #define EXECUTE_HOOKS(METHOD, PARAMS) \
 	size_t i = 0; \
-	while(i < trace_sessions.getCount()) \
+	while (i < trace_sessions.getCount()) \
 	{ \
 		SessionInfo* plug_info = &trace_sessions[i]; \
 		if (!plug_info->plugin->METHOD || \
 			check_result(plug_info->plugin, plug_info->module_info->module, #METHOD, \
-			plug_info->plugin->METHOD PARAMS)) \
+				plug_info->plugin->METHOD PARAMS)) \
 		{ \
 			i++; /* Move to next plugin */ \
 		} \
