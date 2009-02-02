@@ -880,6 +880,7 @@ mkdir -p gen/iscguard
 mkdir -p gen/isql
 mkdir -p gen/jrd
 mkdir -p gen/jrd/extds
+mkdir -p gen/jrd/trace
 mkdir -p gen/msgs
 mkdir -p gen/qli
 mkdir -p gen/utilities
@@ -930,6 +931,7 @@ mkdir -p temp/boot/jrd/extds
 mkdir -p temp/boot/jrd/os/posix
 mkdir -p temp/boot/jrd/os/win32
 mkdir -p temp/boot/jrd/os/darwin
+mkdir -p temp/boot/jrd/trace
 mkdir -p temp/boot/lock
 mkdir -p temp/boot/misc
 mkdir -p temp/boot/msgs
@@ -968,6 +970,7 @@ mkdir -p temp/std/jrd/extds
 mkdir -p temp/std/jrd/os/posix
 mkdir -p temp/std/jrd/os/win32
 mkdir -p temp/std/jrd/os/darwin
+mkdir -p temp/std/jrd/trace
 mkdir -p temp/std/lock
 mkdir -p temp/std/misc
 mkdir -p temp/std/msgs
@@ -1006,6 +1009,7 @@ mkdir -p temp/superclient/jrd/extds
 mkdir -p temp/superclient/jrd/os/posix
 mkdir -p temp/superclient/jrd/os/win32
 mkdir -p temp/superclient/jrd/os/darwin
+mkdir -p temp/superclient/jrd/trace
 mkdir -p temp/superclient/lock
 mkdir -p temp/superclient/misc
 mkdir -p temp/superclient/msgs
@@ -1044,6 +1048,7 @@ mkdir -p temp/superserver/jrd/extds
 mkdir -p temp/superserver/jrd/os/posix
 mkdir -p temp/superserver/jrd/os/win32
 mkdir -p temp/superserver/jrd/os/darwin
+mkdir -p temp/superserver/jrd/trace
 mkdir -p temp/superserver/lock
 mkdir -p temp/superserver/misc
 mkdir -p temp/superserver/msgs
