@@ -141,11 +141,12 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 	{
 		const int reads = ::read(m_fileHandle, p, readLeft);
 
-		if (reads < 0)
+		if (reads == 0)
 		{
 			const off_t len = lseek(m_fileHandle, 0, SEEK_CUR);
 			if (len >= MAX_LOG_FILE_SIZE)
 			{
+				// this file was reads completely, go to next one
 				::close(m_fileHandle);
 				removeFile(m_fileNum);
 
@@ -155,12 +156,21 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 			}
 			else
 			{
+				// nothing to read, return what we have
 				break;
 			}
 		}
-
-		p += reads;
-		readLeft -= reads;
+		else if (reads > 0)
+		{
+			p += reads;
+			readLeft -= reads;
+		}
+		else
+		{
+			// io error
+			system_call_failed::raise("read", errno);
+			break; 
+		}
 	}
 
 	return (size - readLeft);
