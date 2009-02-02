@@ -78,15 +78,23 @@ ConfigStorage::ConfigStorage()
 	
 	StorageGuard guard(this);
 	checkFile();
+	++m_base->cnt_uses;
 }
 
 ConfigStorage::~ConfigStorage()
 {
 	::close(m_cfg_file);
 	m_cfg_file = -1;
-#ifdef WIN_NT
-	unlink((char*) &m_base->cfg_file_name[0]);
-#endif
+
+	{
+		StorageGuard guard(this);
+		--m_base->cnt_uses;
+		if (m_base->cnt_uses == 0)
+		{
+			unlink((char*) &m_base->cfg_file_name[0]);
+			memset(m_base->cfg_file_name, 0, sizeof(m_base->cfg_file_name));
+		}
+	}
 	
 	ISC_STATUS_ARRAY status;
 	ISC_unmap_file(status, &m_handle);
@@ -121,10 +129,10 @@ void ConfigStorage::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
 	// Initialize the shared data header
 	if (initialize)
 	{
-		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
 		header->version = 1;
 		header->change_number = 0;
 		header->session_number = 1;
+		header->cnt_uses = 0;
 		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
 #ifndef WIN_NT
 		checkMutex("init", ISC_mutex_init(&header->mutex));
@@ -141,6 +149,8 @@ void ConfigStorage::checkFile()
 
 	if (!(*cfg_file_name))
 	{
+		fb_assert(m_base->cnt_uses == 0);
+
 		PathName filename = TempFile::create("fb_trace_");
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
 		m_cfg_file = ::open(cfg_file_name, O_CREAT | O_RDWR | O_BINARY, S_IREAD | S_IWRITE);
@@ -154,10 +164,6 @@ void ConfigStorage::checkFile()
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(cfg_file_name) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
-
-#ifndef WIN_NT
-//	unlink(cfg_file_name);
-#endif
 
 	// put default (audit) trace file contents into storage
 	if (m_base->change_number == 0)
