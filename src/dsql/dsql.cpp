@@ -2475,7 +2475,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	ISC_STATUS_ARRAY local_status;
 	MOVE_CLEAR(local_status, sizeof(local_status));
 
-	TraceDSQLPrepare trace(transaction, string_length, string);
+	TraceDSQLPrepare trace(database->dbb_attachment, string_length, string);
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
 	{
@@ -2515,7 +2515,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	statement->req_transaction = transaction;
 	statement->req_client_dialect = client_dialect;
 	statement->req_sql_text = FB_NEW(pool) RefString(pool, Firebird::string(pool, string, string_length));
-	statement->req_traced = false;
+	statement->req_traced = true;
 
 	trace.setStatement(statement);
 
@@ -2698,6 +2698,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	}
 	catch (const Firebird::Exception&)
 	{
+		trace.prepare(res_failed);
 		release_request(tdbb, statement, true);
 		throw;
 	}
