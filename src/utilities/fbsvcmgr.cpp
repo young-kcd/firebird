@@ -131,7 +131,8 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
 	}
 	
-	off_t len = fseek(file, 0, SEEK_END);
+	fseek(file, 0, SEEK_END);
+	const long len = ftell(file);
 	if (!len) {
 		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
 	}
