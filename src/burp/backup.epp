@@ -80,7 +80,7 @@ namespace // unnamed, private
 // VERBOSE INTERVAL WHEN BACKING RECORDS
 const ULONG BACKUP_VERBOSE_INTERVAL = 20000;
 
-#define PUT_MESSAGE(attribute, message)	put_message ((attribute), (message), sizeof(message))
+#define PUT_MESSAGE(attrib, attrib2, message) put_message((attrib), (attrib2), (message), sizeof(message))
 #define PUT_TEXT(attribute, text)	put_text ((attribute), (text), sizeof(text))
 #define COPY(source, target)       copy ((source), (target), sizeof(target))
 
@@ -109,8 +109,9 @@ void put_blob(burp_fld*, ISC_QUAD&, ULONG);
 bool put_blr_blob(SCHAR, ISC_QUAD&);
 void put_data(burp_rel*);
 void put_index(burp_rel*);
-int put_message(SCHAR, const TEXT *, ULONG);
+int put_message(SCHAR, SCHAR, const TEXT*, const ULONG);
 void put_numeric(SCHAR, SLONG);
+void put_int64( SCHAR attribute, SINT64 value);
 void put_relation(burp_rel*);
 bool put_source_blob(SCHAR, SCHAR, ISC_QUAD&);
 int put_text(SCHAR, const TEXT *, SSHORT);
@@ -159,6 +160,7 @@ enum backup_capabilities
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11			= 16384,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
+								// rdb$message enlarged to 1021.
 	BCK_ods11_1			= 32768,// rdb$relation_type in rdb$relations
 								// rdb$procedure_type in rdb$procedures
 								// rdb$valid_blr in rdb$triggers
@@ -167,6 +169,7 @@ enum backup_capabilities
 								// rdb$null_flag and rdb$parameter_mechanism in rdb$procedure_parameters
 	BCK_ods11_2			= 65536	// rdb$field_name and rdb$relation_name in rdb$procedure_parameters
 								// rdb$admin system role
+								// rdb$message enlarged to 1023.
 };
 // ASF: Engine that works with ODS11.1 supports access to non-existent system fields.
 // Reads returns NULL and writes do nothing.
@@ -616,7 +619,7 @@ int copy( const TEXT* from, TEXT* to, ULONG size_len)
 	const ULONG l = (ULONG) MISC_symbol_length(from, size_len);
 
 	memcpy(to, from, l);
-	*(to + l) = '\0';
+	to[l] = '\0';
 
 	return (int) l;
 }
@@ -2105,7 +2108,7 @@ void put_index( burp_rel* relation)
 }
 
 
-int put_message( SCHAR attribute, const TEXT* text, ULONG length)
+int put_message( SCHAR attribute, SCHAR attribute2, const TEXT* text, const ULONG length)
 {
 /**************************************
  *
@@ -2122,6 +2125,8 @@ int put_message( SCHAR attribute, const TEXT* text, ULONG length)
  * used for exception & trigger's messages (plus update/delete
  * rules for FKs and constraint types, where it's irrelevant
  * which function of the two you use).
+ * CVC: Responsability for FKs and constraint types transferred to put_text.
+ * This functions tries to maintain backwards compatibility where possible.
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -2130,13 +2135,31 @@ int put_message( SCHAR attribute, const TEXT* text, ULONG length)
 	for (const TEXT* p = text; *p && l < length; p++)
 		l++;
 
-	l = length = MIN(l, length);
-	put(tdgbl, (UCHAR) (attribute));
-	put(tdgbl, (UCHAR) (l));
-	if (l)
-		put_block(tdgbl, reinterpret_cast<const UCHAR*>(text), l);
+	const ULONG newlen = MIN(l, length);
+	fb_assert(newlen <= MAX_USHORT);
 
-	return length;
+	// If we can store the message using the old format, we do it.
+	if (newlen <= MAX_UCHAR)
+	{
+		put(tdgbl, (UCHAR) attribute);
+		put(tdgbl, (UCHAR) newlen);
+	}
+	else if (newlen <= MAX_USHORT)
+	{
+		if (!attribute2) // In theory, this never happens, because the caller knows what it's doing.
+			BURP_error(314, "");
+		put(tdgbl, (UCHAR) attribute2);
+		USHORT vax_value = (USHORT) newlen;
+		vax_value = (USHORT) gds__vax_integer((const UCHAR*) &vax_value, sizeof(vax_value));
+		put_block(tdgbl, (const UCHAR*) &vax_value, sizeof(vax_value));
+	}
+	else
+		BURP_error(315, "");
+
+	if (newlen)
+		put_block(tdgbl, reinterpret_cast<const UCHAR*>(text), newlen);
+
+	return newlen;
 }
 
 
@@ -2157,7 +2180,7 @@ void put_numeric( SCHAR attribute, SLONG value)
 
 	const SLONG vax_value = (SLONG) isc_vax_integer((const char*) &value, sizeof(value));
 
-	put(tdgbl, (UCHAR) (attribute));
+	put(tdgbl, (UCHAR) attribute);
 	put(tdgbl, (UCHAR) sizeof(value));
 	put_block(tdgbl, (const UCHAR*) &vax_value, sizeof(vax_value));
 }
@@ -2514,11 +2537,13 @@ int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
  * Now this routine does not truncate trailing spaces, 3-2002 MOD
  * transfering changes from fb1, I believe this is to do with problems
  * with quoted names and embedded spaces.
+ * CVC: This routine does trailing spaces truncation, but correctly.
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const SSHORT l = (SSHORT) MISC_symbol_length(text, (ULONG) size_len);
+	fb_assert(l <= MAX_UCHAR);
 
 	put(tdgbl, (UCHAR) (attribute));
 	put(tdgbl, (UCHAR) (l));
@@ -2914,7 +2939,7 @@ void write_exceptions()
 		MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
 		BURP_verbose (198, temp);
 		// msg 198 writing exception %s
-		PUT_MESSAGE(att_exception_msg, X.RDB$MESSAGE);
+		PUT_MESSAGE(att_exception_msg, att_exception_msg2, X.RDB$MESSAGE);
 		put_source_blob (att_exception_description2, att_procedure_description, X.RDB$DESCRIPTION);
 		put(tdgbl, att_end);
 	END_FOR;
@@ -3588,8 +3613,8 @@ void write_ref_constraints()
 		PUT_TEXT (att_ref_constraint_name, X.RDB$CONSTRAINT_NAME);
 		PUT_TEXT (att_ref_unique_const_name, X.RDB$CONST_NAME_UQ);
 		PUT_TEXT (att_ref_match_option, X.RDB$MATCH_OPTION);
-		PUT_MESSAGE (att_ref_update_rule, X.RDB$UPDATE_RULE);
-		PUT_MESSAGE (att_ref_delete_rule, X.RDB$DELETE_RULE);
+		PUT_TEXT (att_ref_update_rule, X.RDB$UPDATE_RULE);
+		PUT_TEXT (att_ref_delete_rule, X.RDB$DELETE_RULE);
 		put(tdgbl, att_end);
 	END_FOR;
 	ON_ERROR
@@ -3624,7 +3649,7 @@ void write_rel_constraints()
 		MISC_terminate (X.RDB$CONSTRAINT_NAME, temp, l, sizeof(temp));
 		BURP_verbose (207, temp);
 		// msg 207 writing constraint %s
-		PUT_MESSAGE (att_rel_constraint_type, X.RDB$CONSTRAINT_TYPE);
+		PUT_TEXT (att_rel_constraint_type, X.RDB$CONSTRAINT_TYPE);
 		PUT_TEXT (att_rel_constraint_rel_name, X.RDB$RELATION_NAME);
 		PUT_TEXT (att_rel_constraint_defer, X.RDB$DEFERRABLE);
 		PUT_TEXT (att_rel_constraint_init, X.RDB$INITIALLY_DEFERRED);
@@ -4146,7 +4171,7 @@ void write_trigger_messages()
 		BURP_verbose (157, temp);
 		/* msg 157 writing trigger message for *s */
 		put_numeric (att_trigmsg_number, X.RDB$MESSAGE_NUMBER);
-		PUT_MESSAGE (att_trigmsg_text, X.RDB$MESSAGE);
+		PUT_MESSAGE (att_trigmsg_text, 0, X.RDB$MESSAGE);
 		put(tdgbl, att_end);
 	END_FOR;
 	ON_ERROR

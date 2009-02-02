@@ -167,35 +167,45 @@ and trigger-new is:
 
 // Attributes within major record
 
-/* CAREFUL not to pull the lastest version into maint version without
-   modifying the att_backup_format to be one version back */
+/*
+   CAREFUL not to pull the lastest version into maint version without
+   modifying the att_backup_format to be one version back
 
-/* ATT_BACKUP_FORMAT has been increased to 5. It allows us to distinguish
+   ATT_BACKUP_FORMAT has been increased to 5. It allows us to distinguish
    backup format between IB3.3/IB4.0 and IB4.5 in case of migration
-   problem */
+   problem
 
-/* Version 6:		Supports SQL Time & Date columns.
-			RDB$FIELD_PRECISION
-			SQL Dialect from database header
-			SQL_INT64 columns and generator values
- */
 
-/* Version 7: RDB$DESCRIPTION in roles and generators.
-			  RDB$FILE_NAME in character_sets and collations
-			  RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
- */
+Version 6: IB6, FB1, FB1.5.
+			Supports SQL Time & Date columns.
+			  RDB$FIELD_PRECISION
+			  SQL Dialect from database header
+			  SQL_INT64 columns and generator values
 
-/* Version 8: RDB$RELATION_TYPE in relations
-			  RDB$PROCEDURE_TYPE and RDB$VALID_BLR in procedures
-			  RDB$VALID_BLR in triggers
-			  RDB$DEFAULT_VALUE, RDB$DEFAULT_SOURCE and RDB$COLLATION_ID in procedure_parameters
+Version 7: FB2.0.
+			RDB$DESCRIPTION in roles and generators.
+			RDB$FILE_NAME in character_sets and collations
+			RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
 
- */
-const int ATT_BACKUP_FORMAT		= 8;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
+Version 8: FB2.1.
+			RDB$RELATION_TYPE in relations
+			RDB$PROCEDURE_TYPE and RDB$VALID_BLR in procedures
+			RDB$VALID_BLR in triggers
+			RDB$DEFAULT_VALUE, RDB$DEFAULT_SOURCE and RDB$COLLATION_ID in procedure_parameters
+
+Version 9: FB2.5.
+			RDB$MESSAGE domain was enlarged from 78 to 1021 in FB2.0 and to 1023 in FB2.5,
+			but gbak wasn't adjusted accordingly and thus it cannot store reliably text that's
+			longer than 255 bytes.
+			We anyway tried a recovery routine in v2.5 that may be backported.
+*/
+
+// ASF: when change this, change the text of the message gbak_inv_bkup_ver, too.
+const int ATT_BACKUP_FORMAT		= 9;
 
 // format version number for ranges for arrays
 
-const int GDS_NDA_VERSION		= 1;
+//const int GDS_NDA_VERSION		= 1; // Not used
 
 // max array dimension
 
@@ -488,6 +498,7 @@ enum att_type {
 	att_exception_msg,
 	att_exception_description,
 	att_exception_description2,
+	att_exception_msg2,
 
 	// Relation constraints attributes
 

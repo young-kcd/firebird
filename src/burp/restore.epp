@@ -75,13 +75,14 @@ namespace // unnamed, private
 
 const int DB_VERSION_DDL4		= 40;  // ods4 db
 const int DB_VERSION_DDL5		= 50;  // ods5 db
-const int DB_VERSION_DDL8		= 80;  // ods8 db
-const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // IB4.0 is ods8
+const int DB_VERSION_DDL8		= 80;  // ods8 db, IB4
 const int DB_VERSION_DDL9		= 90;  // ods9 db, IB5
 const int DB_VERSION_DDL10		= 100; // ods10 db, IB6, FB1, FB1.5
 const int DB_VERSION_DDL11		= 110; // ods11 db, FB2
 const int DB_VERSION_DDL11_1	= 111; // ods11.1 db, FB2.1
 const int DB_VERSION_DDL11_2	= 112; // ods11.2 db, FB2.5
+
+const int DB_VERSION_OLDEST_SUPPORTED = DB_VERSION_DDL8;  // IB4.0 is ods8
 
 const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
@@ -110,6 +111,7 @@ void	create_database(BurpGlobals* tdgbl, const TEXT*);
 void	decompress(BurpGlobals* tdgbl, UCHAR*, USHORT);
 void	eat_blob(BurpGlobals* tdgbl);
 void	eat_text(BurpGlobals* tdgbl);
+void	eat_text2(BurpGlobals* tdgbl);
 burp_rel*	find_relation(BurpGlobals* tdgbl, const TEXT*);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
@@ -145,7 +147,8 @@ bool	get_sql_roles(BurpGlobals* tdgbl);
 bool	get_mapping(BurpGlobals* tdgbl);
 bool	get_security_class(BurpGlobals* tdgbl);
 void	get_source_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
-USHORT	get_text (BurpGlobals* tdgbl, TEXT*, ULONG);
+USHORT	get_text(BurpGlobals* tdgbl, TEXT*, ULONG);
+USHORT	get_text2(BurpGlobals* tdgbl, TEXT* text, ULONG length);
 bool	get_trigger(BurpGlobals* tdgbl);
 bool	get_trigger_message(BurpGlobals* tdgbl);
 bool	get_trigger_old (BurpGlobals* tdgbl, burp_rel*);
@@ -195,6 +198,7 @@ static inline rec_type get_record(rec_type *rec, BurpGlobals* tdgbl)
 }
 
 #define GET_TEXT(text)	get_text(tdgbl, (text), sizeof(text))
+#define GET_TEXT2(text)	get_text2(tdgbl, (text), sizeof(text))
 
 static inline void get_skip(BurpGlobals* tdgbl, ULONG n)
 {
@@ -1137,6 +1141,19 @@ void eat_text(BurpGlobals* tdgbl)
 		MVOL_skip_block(tdgbl, l);
 }
 
+// *****************************
+// e a t _ t e x t 2
+// *****************************
+// Discard a text field from the backup file, using USHORT length indicator.
+void eat_text2(BurpGlobals* tdgbl)
+{
+	UCHAR lenstr[sizeof(USHORT)] = "";
+	get_block(tdgbl, lenstr, sizeof(lenstr));
+	USHORT len = (USHORT) gds__vax_integer(lenstr, sizeof(lenstr));
+	if (len)
+		MVOL_skip_block(tdgbl, len);
+}
+
 burp_rel* find_relation(BurpGlobals* tdgbl, const TEXT* name)
 {
 /**************************************
@@ -2039,7 +2056,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 {
 /**************************************
  *
- *	g e t _ c h a r a c t e r _ s e t s
+ *	g e t _ c h a r a c t e r _ s e t
  *
  **************************************
  *
@@ -2840,15 +2857,20 @@ bool get_exception(BurpGlobals* tdgbl)
  **************************************/
 	ATT_TYPE	attribute;
 	TEXT		temp[GDS_NAME_LEN];
-	ULONG		l;
+	ULONG		l2 = 0;
 	scan_attr_t		scan_next_attr;
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
 		X IN RDB$EXCEPTIONS
+		X.RDB$EXCEPTION_NAME.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$MESSAGE.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG = 0;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
+		att_type failed_attrib = att_end;
+		bool msg_seen = false; // only for att_exception_msg, not att_exception_msg2
+		UCHAR* msg_ptr = reinterpret_cast<UCHAR*>(X.RDB$MESSAGE);
 
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -2856,33 +2878,117 @@ bool get_exception(BurpGlobals* tdgbl)
 			switch (attribute)
 			{
 			case att_exception_name:
-				l = GET_TEXT(X.RDB$EXCEPTION_NAME);
-				MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
-				BURP_verbose (199, temp);
-				// msg 199 restoring exception %s
+				if (!X.RDB$EXCEPTION_NAME.NULL)
+					BURP_error(311, true, SafeArg() << att_exception_name << X.RDB$EXCEPTION_NAME);
+				else
+				{
+					const ULONG l = GET_TEXT(X.RDB$EXCEPTION_NAME);
+					X.RDB$EXCEPTION_NAME.NULL = FALSE;
+					MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
+					BURP_verbose (199, temp);
+					// msg 199 restoring exception %s
+				}
 				break;
 
 			case att_exception_description:
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
-				X.RDB$DESCRIPTION.NULL = FALSE;
+				if (!X.RDB$DESCRIPTION.NULL)
+					BURP_error(311, true, SafeArg() << att_exception_description << X.RDB$EXCEPTION_NAME);
+				else
+				{
+					msg_seen = false;
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				}
 				break;
 
 			case att_exception_description2:
-				get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
-				X.RDB$DESCRIPTION.NULL = FALSE;
+				if (!X.RDB$DESCRIPTION.NULL)
+					BURP_error(311, true, SafeArg() << att_exception_description2 << X.RDB$EXCEPTION_NAME);
+				else
+				{
+					msg_seen = false;
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				}
 				break;
 
 			case att_exception_msg:
-				GET_TEXT(X.RDB$MESSAGE);
-				X.RDB$MESSAGE.NULL = FALSE;
+				if (msg_seen)
+					BURP_error(311, true, SafeArg() << att_exception_msg << X.RDB$EXCEPTION_NAME);
+				else if (!X.RDB$MESSAGE.NULL)
+				{
+					msg_seen = true;
+					BURP_print(312, SafeArg() << att_exception_msg << X.RDB$EXCEPTION_NAME);
+					eat_text(tdgbl);
+				}
+				else
+				{
+					msg_seen = true;
+					l2 = GET_TEXT(X.RDB$MESSAGE);
+					msg_ptr += l2;
+					X.RDB$MESSAGE.NULL = FALSE;
+				}
+				break;
+
+			case att_exception_msg2:
+				if (msg_seen)
+					BURP_error(311, true, SafeArg() << att_exception_msg2 << X.RDB$EXCEPTION_NAME);
+				else if (!X.RDB$MESSAGE.NULL)
+				{
+					BURP_print(312, SafeArg() << att_exception_msg2 << X.RDB$EXCEPTION_NAME);
+					eat_text2(tdgbl);
+				}
+				else
+				{
+					GET_TEXT2(X.RDB$MESSAGE);
+					X.RDB$MESSAGE.NULL = FALSE;
+				}
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 287);
-				// msg 287 exception
+				if (msg_seen && (tdgbl->RESTORE_format == 7 || tdgbl->RESTORE_format == 8))
+				{
+					 // we have a corrup backup
+					if (!failed_attrib)
+					{
+						failed_attrib = attribute;
+						BURP_print(313, SafeArg() << failed_attrib << X.RDB$EXCEPTION_NAME);
+					}
+
+					// Notice we use 1021 instead of 1023 because this is the maximum length
+					// for this field in v2.0 and v2.1 and they produce the corrupt backups.
+					const int FIELD_LIMIT = 1021;
+
+					const int remaining = FIELD_LIMIT - l2;
+					if (remaining < 1) // not enough space
+					{
+						bad_attribute (scan_next_attr, failed_attrib, 287);
+						break;
+					}
+					*msg_ptr++ = char(attribute); // (1)
+					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, min(remaining - 1, 255));
+					if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
+					{
+						bad_attribute (scan_next_attr, failed_attrib, 287);
+						break;
+					}
+					l2 += rc_ptr - msg_ptr + 1; // + 1 because (1)
+					msg_ptr = rc_ptr;
+					*msg_ptr = 0;
+					if (l2 == FIELD_LIMIT)
+						msg_seen = false;
+				}
+				else
+					bad_attribute (scan_next_attr, attribute, 287); // msg 287 exception
 				break;
 			}
 		}
+		// Versions prior to FB2.0 don't support a field longer than varchar(78).
+		// Versions prior to FB2.5 use a field length of 1021, not 1023.
+		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+			X.RDB$MESSAGE[78] = 0;
+		else if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+			X.RDB$MESSAGE[1021] = 0;
 	END_STORE;
 	ON_ERROR
 		general_on_error ();
@@ -6093,6 +6199,34 @@ USHORT get_text(BurpGlobals* 	tdgbl,
 	return (USHORT) l;
 }
 
+USHORT get_text2(BurpGlobals* tdgbl, TEXT* text, ULONG length)
+{
+/**************************************
+ *
+ *	g e t _ t e x t 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move a text attribute to a string and fill, using USHORT as length indicator.
+ *
+ **************************************/
+	UCHAR lenstr[sizeof(USHORT)] = "";
+	get_block(tdgbl, lenstr, sizeof(lenstr));
+	const USHORT len = (USHORT) gds__vax_integer(lenstr, sizeof(lenstr));
+
+	if (length <= len)
+		BURP_error_redirect (NULL, 46);
+		// msg 46 string truncated
+
+	if (len)
+		text = (TEXT*) get_block(tdgbl, (UCHAR*) text, len);
+
+	*text = 0;
+
+	return len;
+}
+
 bool get_trigger_old (BurpGlobals*	tdgbl,
 					  burp_rel*		relation)
 {
@@ -6475,7 +6609,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE_NUMBER number = -1;
 	BASED_ON RDB$TRIGGER_MESSAGES.RDB$MESSAGE message;
 
-	bool flag = false;
+	bool sysflag = false;
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -6483,11 +6617,11 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 		{
 		case att_trigmsg_name:
 			GET_TEXT(name);
-			flag = false;
+			sysflag = false;
 			FOR (REQUEST_HANDLE tdgbl->handles_get_trigger_message_req_handle1)
 				FIRST 1 X IN RDB$TRIGGERS WITH
 				X.RDB$SYSTEM_FLAG EQ 1 AND X.RDB$TRIGGER_NAME EQ name
-				flag = true;
+				sysflag = true;
 			END_FOR;
 			ON_ERROR
 				general_on_error ();
@@ -6511,8 +6645,13 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 		}
 	}
 
-	if (flag)
+	if (sysflag)
 		return true;
+
+	// Versions prior to FB2.0 don't support a field longer than varchar(78).
+	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+		message[78] = 0;
+
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
@@ -7278,7 +7417,7 @@ bool restore(BurpGlobals*	tdgbl,
 	EXEC SQL SET TRANSACTION NAME tdgbl->global_trans ISOLATION LEVEL READ COMMITTED;
 
 	check_db_version(tdgbl);
-	if (tdgbl->RESTORE_ods < DB_VERSION_CURRENT)
+	if (tdgbl->RESTORE_ods < DB_VERSION_OLDEST_SUPPORTED)
 	{
 		BURP_error(51, true, SafeArg() << tdgbl->RESTORE_ods);
 		// msg 51 database format %ld is too old to restore to
@@ -7511,8 +7650,8 @@ bool restore(BurpGlobals*	tdgbl,
 					general_on_error ();
 				END_ERROR;
 				EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
-					if (gds_status[1])
-						EXEC SQL SET TRANSACTION;
+				if (gds_status[1])
+					EXEC SQL SET TRANSACTION;
 				flag = false;
 			}
 			if (!get_relation_data(tdgbl))
@@ -7648,10 +7787,10 @@ bool restore(BurpGlobals*	tdgbl,
 
 	FOR (REQUEST_HANDLE req_handle5)
 		IND IN RDB$INDICES WITH IND.RDB$SYSTEM_FLAG EQ 1
-		MODIFY IND;
+		MODIFY IND
 			IND.RDB$STATISTICS.NULL = FALSE;
 			IND.RDB$STATISTICS = -1;
-		END_MODIFY;
+		END_MODIFY
 		ON_ERROR
 			general_on_error ();
 		END_ERROR;

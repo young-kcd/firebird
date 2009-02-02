@@ -803,7 +803,7 @@ Data source : @4"},		/* 606, eds_statement */
 	{336330793, "expected data attribute"},		/* 776, gbak_exp_data_type */
 	{336330794, "Failed in store_blr_gen_id"},		/* 777, gbak_gen_id_failed */
 	{336330795, "do not recognize record type @1"},		/* 778, gbak_unk_rec_type */
-	{336330796, "Expected backup version 1..8.  Found @1"},		/* 779, gbak_inv_bkup_ver */
+	{336330796, "Expected backup version 1..9.  Found @1"},		/* 779, gbak_inv_bkup_ver */
 	{336330797, "expected backup description record"},		/* 780, gbak_missing_bkup_desc */
 	{336330798, "string truncated"},		/* 781, gbak_string_trunc */
 	{336330799, "warning -- record could not be restored"},		/* 782, gbak_cant_rest_record */
