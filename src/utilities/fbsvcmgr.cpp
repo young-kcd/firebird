@@ -126,11 +126,11 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	if (! *av)
 		return false;
 
-	FILE *file = fopen(*av, "rb");
+	FILE* file = fopen(*av, "rb");
 	if (!file) {
 		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
 	}
-	
+
 	fseek(file, 0, SEEK_END);
 	fpos_t len;
 	fgetpos(file, &len);
@@ -140,7 +140,7 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	}
 
 	HalfStaticArray<UCHAR, 1024> buff(*getDefaultMemoryPool(), len);
-	UCHAR *p = buff.getBuffer(len);
+	UCHAR* p = buff.getBuffer(len);
 
 	fseek(file, 0, SEEK_SET);
 	if (fread(p, 1, len, file) != len)	{
@@ -441,13 +441,15 @@ const Switches nrestOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches traceStartOptions[] = {
+const Switches traceStartOptions[] =
+{
 	{"trc_cfg", putFileFromArgument, 0, isc_spb_trc_cfg, 0},
 	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches traceChgStateOptions[] = {
+const Switches traceChgStateOptions[] =
+{
 	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
 	{"trc_id", putNumericArgument, 0, isc_spb_trc_id, 0},
 	{0, 0, 0, 0, 0}
@@ -573,6 +575,7 @@ bool printInfo(const char* p, UserPrint& up)
 {
 	bool ret = false;
 	bool ignoreTruncation = false;
+
 	while (*p != isc_info_end)
 	{
 		switch (*p++)
@@ -725,7 +728,7 @@ bool printInfo(const char* p, UserPrint& up)
 		case isc_info_truncated:
 			if (!ignoreTruncation)
 			{
-				printf ("%s\n", getMessage(18).c_str());
+				printf("%s\n", getMessage(18).c_str());
 				return false;
 			}
 			break;
@@ -755,7 +758,8 @@ void usage()
 
 
 typedef void (*SignalHandlerPointer)(int);
-static SignalHandlerPointer prev_ctrl_c_handler = NULL;
+
+static SignalHandlerPointer prevCtrlCHandler = NULL;
 static bool terminated = false;
 
 static void ctrl_c_handler(int signal)
@@ -763,14 +767,14 @@ static void ctrl_c_handler(int signal)
 	if (signal == SIGINT) 
 		terminated = true;	
 	
-	if (prev_ctrl_c_handler)
-		prev_ctrl_c_handler(signal);
+	if (prevCtrlCHandler)
+		prevCtrlCHandler(signal);
 }
 
 
 // simple main function
 
-int main(int ac, char **av)
+int main(int ac, char** av)
 {
 	if (ac < 2)
 	{
@@ -778,7 +782,7 @@ int main(int ac, char **av)
 		return 1;
 	}
 
-	prev_ctrl_c_handler = signal(SIGINT, ctrl_c_handler);
+	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
 
 	ISC_STATUS_ARRAY status;
 

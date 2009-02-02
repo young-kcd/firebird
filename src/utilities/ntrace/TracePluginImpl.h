@@ -30,7 +30,6 @@
 #define TRACEPLUGINIMPL_H
 
 #include "../../jrd/ntrace.h"
-
 #include "TracePluginConfig.h"
 #include "os/FileObject.h"
 #include "../../common/classes/rwlock.h"
@@ -42,29 +41,33 @@
 #include <sys/types.h>
 #include <regex.h>
 
-class TracePluginImpl {
+class TracePluginImpl
+{
 public:
 	// Create skeletal plugin (to report initialization error)
 	static TracePlugin* createSkeletalPlugin();
 
 	// Create trace plugin for particular database
-	static TracePlugin* createFullPlugin(const TracePluginConfig &configuration, TraceInitInfo* initInfo);
+	static TracePlugin* createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo);
 
 	// Serialize exception to TLS buffer to return it to user
 	static void marshal_exception(const Firebird::Exception& ex);
 
 	// Data for tracked (active) connections
-	struct ConnectionData {
+	struct ConnectionData
+	{
         int id;
 		Firebird::string* description;
 
 		// Deallocate memory used by objects hanging off this structure
-		void deallocate_references() {
+		void deallocate_references()
+		{
 			delete description;
 			description = NULL;
 		}
 
-		static const int& generate(const void* sender, const ConnectionData& item) {
+		static const int& generate(const void* sender, const ConnectionData& item)
+		{
 			return item.id;
 		}
 	};
@@ -73,17 +76,20 @@ public:
 		ConnectionsTree;
 
 	// Data for tracked (active) transactions
-	struct TransactionData {
+	struct TransactionData
+	{
 		int id;
 		Firebird::string* description;
 
 		// Deallocate memory used by objects hanging off this structure
-		void deallocate_references() {
+		void deallocate_references()
+		{
 			delete description;
 			description = NULL;
 		}
 
-		static const int& generate(const void* sender, const TransactionData& item) {
+		static const int& generate(const void* sender, const TransactionData& item)
+		{
 			return item.id;
 		}
 	};
@@ -92,11 +98,13 @@ public:
 		TransactionsTree;
 
 	// Data for tracked (active) statements
-	struct StatementData {
+	struct StatementData
+	{
 		unsigned int id;
 		Firebird::string* description; // NULL in this field indicates that tracing of this statement is not desired
 
-		static const unsigned int& generate(const void* sender, const StatementData& item) {
+		static const unsigned int& generate(const void* sender, const StatementData& item)
+		{
 			return item.id;
 		}
 	};
@@ -104,17 +112,20 @@ public:
 	typedef Firebird::BePlusTree<StatementData, unsigned int, Firebird::MemoryPool, StatementData>
 		StatementsTree;
 
-	struct ServiceData {
+	struct ServiceData
+	{
 		ntrace_service_t id;
 		Firebird::string* description;
 
 		// Deallocate memory used by objects hanging off this structure
-		void deallocate_references() {
+		void deallocate_references()
+		{
 			delete description;
 			description = NULL;
 		}
 
-		static const ntrace_service_t& generate(const void* sender, const ServiceData& item) {
+		static const ntrace_service_t& generate(const void* sender, const ServiceData& item)
+		{
 			return item.id;
 		}
 	};
@@ -123,7 +134,7 @@ public:
 		ServicesTree;
 
 private:
-	TracePluginImpl(const TracePluginConfig &configuration, TraceInitInfo* initInfo);
+	TracePluginImpl(const TracePluginConfig& configuration, TraceInitInfo* initInfo);
 	~TracePluginImpl();
 
 	bool operational; // Set if plugin is fully initialized and is ready for logging
@@ -131,7 +142,7 @@ private:
 					  // when destructor is called
 	int session_id;				// trace session ID, set by Firebird
 	Firebird::string session_name;		// trace session name, set by Firebird
-	FileObject *logFile;		// Thread-safe
+	FileObject* logFile;		// Thread-safe
 	TraceLogWriter* logWriter;
 	TracePluginConfig config;	// Immutable, thus thread-safe
 
@@ -158,14 +169,13 @@ private:
 	void rotateLog(size_t added_bytes_length);
 	void writePacket(const UCHAR* packet_data, const ULONG packet_size);
 
-	void appendGlobalCounts(PerformanceInfo *info, Firebird::string& line);
-	void appendTableCounts(PerformanceInfo *info, Firebird::string& line);
-	void appendParams(TraceParams *params, Firebird::string& line);
+	void appendGlobalCounts(PerformanceInfo* info, Firebird::string& line);
+	void appendTableCounts(PerformanceInfo* info, Firebird::string& line);
+	void appendParams(TraceParams* params, Firebird::string& line);
 	void appendServiceQueryParams(size_t send_item_length,
 		const ntrace_byte_t* send_items, size_t recv_item_length, 
 		const ntrace_byte_t* recv_items, Firebird::string& line);
 	void formatStringArgument(Firebird::string& result, const UCHAR* str, size_t len);
-
 
 	// register various objects
 	void register_connection(TraceConnection* connection);
@@ -295,7 +305,7 @@ private:
 
 	/* BLR requests */
 	static ntrace_boolean_t ntrace_event_blr_compile(const TracePlugin* tpl_plugin,
-		TraceConnection* connection,	TraceTransaction* transaction, 
+		TraceConnection* connection, TraceTransaction* transaction, 
 		TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
 	static ntrace_boolean_t ntrace_event_blr_execute(const TracePlugin* tpl_plugin, 
 		TraceConnection* connection, TraceTransaction* transaction,
@@ -304,7 +314,7 @@ private:
 	/* DYN requests */
 	static ntrace_boolean_t ntrace_event_dyn_execute(const TracePlugin* tpl_plugin, 
 		TraceConnection* connection, TraceTransaction* transaction, 
-		TraceDYNRequest* request,	ntrace_counter_t time_millis, 
+		TraceDYNRequest* request, ntrace_counter_t time_millis, 
 		ntrace_result_t req_result);
 
 	/* Using the services */
