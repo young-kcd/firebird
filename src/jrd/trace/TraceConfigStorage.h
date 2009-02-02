@@ -28,14 +28,6 @@
 #ifndef JRD_TRACECONFIGSTORAGE_H
 #define JRD_TRACECONFIGSTORAGE_H
 
-#include <io.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <share.h>
-
-#include <stdio.h>
-
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
@@ -104,10 +96,10 @@ private:
 		tagID = 1,			// session ID
 		tagName,			// session Name
 		tagUserName,		// creator user name
-		tagFlags,			// tracked by every attachment
+		tagFlags,			// sesion flags
 		tagConfig,			// configuration
 		tagStartTS,			// date+time when started
-		tagLogFile,			// log file name
+		tagLogFile,			// log file name, if any
 		tagEnd
 	};
 

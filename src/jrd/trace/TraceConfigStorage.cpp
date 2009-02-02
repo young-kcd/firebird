@@ -39,6 +39,13 @@
 #include "../../jrd/os/config_root.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 
+#include <io.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <stdio.h>
+
 using namespace Firebird;
 
 namespace Jrd {
@@ -127,10 +134,11 @@ void ConfigStorage::checkFile()
 	{
 		PathName filename = TempFile::create("fb_trace_");
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
-		m_cfg_file = sopen(cfg_file_name, O_CREAT | O_RDWR | O_BINARY, SH_DENYNO, S_IREAD | S_IWRITE);
+		m_cfg_file = ::open(cfg_file_name, O_CREAT | O_RDWR | O_BINARY, S_IREAD | S_IWRITE);
 	}
-	else {
-		m_cfg_file = sopen(cfg_file_name, O_RDWR | O_BINARY, SH_DENYNO);
+	else 
+	{
+		m_cfg_file = ::open(cfg_file_name, O_RDWR | O_BINARY);
 	}
 
 	if (m_cfg_file < 0) {
@@ -168,8 +176,7 @@ void ConfigStorage::checkFile()
 		TraceSession session(*getDefaultMemoryPool());
 
 		fseek(cfgFile, 0, SEEK_END);
-		fpos_t len;
-		fgetpos(cfgFile, &len);
+		const long len = ftell(cfgFile);
 		if (len)
 		{
 			fseek(cfgFile, 0, SEEK_SET);
@@ -246,8 +253,7 @@ void ConfigStorage::addSession(TraceSession &session)
 	}
 	putItem(tagEnd, 0, NULL);
 
-	const long pos2 = tell(m_cfg_file);
-
+	// const long pos2 = lseek(m_cfg_file, 0, SEEK_END);
 	// m_base->used_space += pos2 - pos1;
 }
 
@@ -449,13 +455,13 @@ void ConfigStorage::putItem(ITEM tag, size_t len, const void* data)
 bool ConfigStorage::getItemLength(ITEM &tag, size_t &len)
 {
 	char data;
-	if (!read(m_cfg_file, &data, sizeof(data)))
-	{
-		if (eof(m_cfg_file))
-			return false;
-		else
-			system_call_failed::raise("read", errno);
-	}
+	const int cnt_read = read(m_cfg_file, &data, sizeof(data));
+
+	if (cnt_read == 0)
+		return false;
+
+	if (cnt_read < 0)
+		system_call_failed::raise("read", errno);
 
 	tag = (ITEM) data;
 
