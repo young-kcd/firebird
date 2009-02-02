@@ -35,7 +35,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/classes/TimeStamp.h"
+#include "../common/classes/timestamp.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 
@@ -130,11 +130,8 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	if (!file) {
 		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
 	}
-
-	fseek(file, 0, SEEK_END);
-	fpos_t len;
-	fgetpos(file, &len);
-
+	
+	off_t len = fseek(file, 0, SEEK_END);
 	if (!len) {
 		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
 	}
