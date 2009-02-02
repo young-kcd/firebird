@@ -101,7 +101,9 @@ TraceLogImpl::~TraceLogImpl()
 	ISC_unmap_file(status, &m_handle);
 
 	if (m_reader || readerDone) {
-//		unlink(m_baseFileName.c_str());
+#ifdef WIN_NT
+		unlink(m_baseFileName.c_str());
+#endif
 	}
 }
 
@@ -126,8 +128,11 @@ int TraceLogImpl::removeFile(int fileNum)
 {
 	PathName fileName;
 	fileName.printf("%s.%07ld", m_baseFileName.c_str(), fileNum);
-//	return unlink(fileName.c_str());
+#ifdef WIN_NT
+	return unlink(fileName.c_str());
+#else
 	return 0;
+#endif
 }
 
 size_t TraceLogImpl::read(void* buf, size_t size)

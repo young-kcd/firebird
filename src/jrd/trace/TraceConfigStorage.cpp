@@ -85,7 +85,7 @@ ConfigStorage::~ConfigStorage()
 	::close(m_cfg_file);
 	m_cfg_file = -1;
 #ifdef WIN_NT
-//	unlink((char*) &m_base->cfg_file_name[0]);
+	unlink((char*) &m_base->cfg_file_name[0]);
 #endif
 	
 	ISC_STATUS_ARRAY status;
@@ -125,6 +125,7 @@ void ConfigStorage::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
 		header->version = 1;
 		header->change_number = 0;
 		header->session_number = 1;
+		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
 #ifndef WIN_NT
 		checkMutex("init", ISC_mutex_init(&header->mutex));
 #endif
