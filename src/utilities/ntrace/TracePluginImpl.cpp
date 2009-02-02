@@ -329,7 +329,7 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connec
 		if (reg)
 		{
 			string temp;
-			temp.printf("\t\t(TRA_%d, <unknown, bug?>)" NEWLINE, transaction);
+			temp.printf("\t\t(TRA_%d, <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
 			line.insert(0, temp);
 			break;
 		}
@@ -386,7 +386,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 		if (reg)
 		{
 			string temp;
-			temp.printf(NEWLINE "Statement %p, <unknown, bug?>:" NEWLINE, statement);
+			temp.printf(NEWLINE "Statement %d, <unknown, bug?>:" NEWLINE, stmt_id);
 			line.insert(0, temp);
 			break;
 		}
@@ -462,32 +462,32 @@ void TracePluginImpl::appendGlobalCounts(PerformanceInfo* info, string& line)
 {
 	string temp;
 
-	temp.printf("%7d ms", info->pin_time);
+	temp.printf("%7"QUADFORMAT"d ms", info->pin_time);
 	line.append(temp);
 
 	ntrace_counter_t cnt;
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_READS]) != 0)
 	{
-		temp.printf(", %d read(s)", cnt);
+		temp.printf(", %"QUADFORMAT"d read(s)", cnt);
 		line.append(temp);
 	}
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_WRITES]) != 0)
 	{
-		temp.printf(", %d write(s)", cnt);
+		temp.printf(", %"QUADFORMAT"d write(s)", cnt);
 		line.append(temp);
 	}
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_FETCHES]) != 0)
 	{
-		temp.printf(", %d fetch(es)", cnt);
+		temp.printf(", %"QUADFORMAT"d fetch(es)", cnt);
 		line.append(temp);
 	}
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_MARKS]) != 0)
 	{
-		temp.printf(", %d mark(s)", cnt);
+		temp.printf(", %"QUADFORMAT"d mark(s)", cnt);
 		line.append(temp);
 	}
 
@@ -519,7 +519,7 @@ void TracePluginImpl::appendTableCounts(PerformanceInfo *info, string& line)
 			else 
 			{
 				string temp;
-				temp.printf("%10d", trc->trc_counters[j]);
+				temp.printf("%10"QUADFORMAT"d", trc->trc_counters[j]);
 				line.append(temp);
 			}
 		}
@@ -1243,7 +1243,7 @@ void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceT
 		if (info->pin_records_fetched)
 		{
 			string temp;
-			temp.printf("%d records fetched" NEWLINE, info->pin_records_fetched);
+			temp.printf("%"QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
 			line.append(temp);
 		}
 		appendGlobalCounts(info, line);
@@ -1444,7 +1444,7 @@ void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
 	if (info)
 	{
 		string temp;
-		temp.printf("%d records fetched" NEWLINE, info->pin_records_fetched);
+		temp.printf("%"QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
 		line.append(temp);
 
 		appendGlobalCounts(info, line);
