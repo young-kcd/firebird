@@ -95,6 +95,7 @@
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
+#define HAVE_IO_H
 #undef HAVE_SYS_SIGNAL_H
 #undef HAVE_SYS_SIGINFO_H
 #undef HAVE_EDITLINE_H
