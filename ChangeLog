@@ -1,3 +1,351 @@
+2009-02-02 17:28  hvlad
+
+	* firebird2/src/jrd/trace/TraceManager.cpp (1.3):
+
+	Remove unneeded assignment
+
+2009-02-02 17:24  hvlad
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.7),
+	TraceLog.cpp (1.6):
+
+	Enable unlink of temporary trace files for WINNT only. This is
+	temporary solution.
+
+2009-02-02 17:23  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.272),
+	jrd/trace/TraceDSQLHelpers.h (1.3):
+
+	Trace correctly failed SQL statement prepare attempts and SET
+	TRANSACTION statement.
+
+2009-02-02 17:06  asfernandes
+
+	* firebird2/configure.in (1.312):
+
+	[no log message]
+
+2009-02-02 17:04  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.517):
+
+	Distinguish create\attach database call's when reporting failed
+	attempt.  Misc.
+
+2009-02-02 16:55  asfernandes
+
+	* firebird2/configure.in (1.311):
+
+	Remove concurrent duplicate changes
+
+2009-02-02 16:41  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.516):
+
+	Correction
+
+2009-02-02 16:23  alexpeshkoff
+
+	* firebird2/: configure.in (1.310), src/jrd/jrd.cpp (1.515),
+	src/jrd/trace/TraceConfigStorage.cpp (1.6),
+	src/jrd/trace/TraceLog.cpp (1.5), src/jrd/trace/TraceService.cpp
+	(1.3):
+
+	Do not AC_CONFIG_FILE twice
+
+2009-02-02 16:14  alexpeshkoff
+
+	* firebird2/src/burp/restore.epp (1.159):
+
+	use MIN instead min
+
+2009-02-02 16:12  alexpeshkoff
+
+	* firebird2/src/jrd/trace/TraceCmdLine.cpp (1.3):
+
+	filename case
+
+2009-02-02 16:08  alexpeshkoff
+
+	* firebird2/configure.in (1.309):
+
+	Added regex and trace build
+
+2009-02-02 16:04  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.22):
+
+	Do not use exotic fgetpos()
+
+2009-02-02 15:57  asfernandes
+
+	* firebird2/configure.in (1.308):
+
+	Create the temp dirs
+
+2009-02-02 15:54  asfernandes
+
+	* firebird2/configure.in (1.307):
+
+	Process the extern.regex makefile (its ./configure is currently
+	needed to be called manually)
+
+2009-02-02 15:46  asfernandes
+
+	* firebird2/src/jrd/trace/: TraceCmdLine.cpp (1.2),
+	TraceConfigStorage.cpp (1.5), TraceConfigStorage.h (1.3),
+	TraceDSQLHelpers.h (1.2), TraceJrdHelpers.h (1.2), TraceLog.cpp
+	(1.4), TraceLog.h (1.3), TraceManager.cpp (1.2), TraceManager.h
+	(1.2), TraceObjects.cpp (1.3), TraceObjects.h (1.2),
+	TraceService.cpp (1.2), TraceService.h (1.3), TraceSession.h (1.2):
+
+	Misc
+
+2009-02-02 15:01  hvlad
+
+	* firebird2/src/jrd/trace/TraceLog.cpp (1.3):
+
+	Correction
+
+2009-02-02 14:59  asfernandes
+
+	* firebird2/src/utilities/: fbsvcmgr.cpp (1.21),
+	ntrace/TracePluginImpl.cpp (1.5), ntrace/TracePluginImpl.h (1.3),
+	ntrace/fbtrace.conf (1.4), ntrace/traceplugin.cpp (1.3):
+
+	Misc
+
+2009-02-02 14:54  hvlad
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.112):
+
+	MSVC have <io.h>
+
+2009-02-02 14:31  alexpeshkoff
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.4),
+	TraceLog.cpp (1.2), TraceLog.h (1.2), TraceObjects.cpp (1.2):
+
+	make it compile on posix
+
+2009-02-02 14:26  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables (1.105):
+
+	misc
+
+2009-02-02 14:11  hvlad
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.3),
+	TraceConfigStorage.h (1.2):
+
+	Be POSIX compliant. Fixed few errors, thanks to Alex.
+
+2009-02-02 13:06  hvlad
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.94):
+
+	Make GCC's life easier
+
+2009-02-02 13:05  alexpeshkoff
+
+	* firebird2/src/jrd/trace/TraceService.h (1.2):
+
+	fixed posix compile
+
+2009-02-02 12:51  alexpeshkoff
+
+	* firebird2/src/common/classes/tree.h (1.80):
+
+	fixed gcc compile
+
+2009-02-02 12:48  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.59),
+	Makefile.in.embed.util (1.46), Makefile.in.extern.regex (1.1),
+	Makefile.in.firebird (1.92), make.defaults (1.75),
+	make.shared.variables (1.104):
+
+	Added trace to posix build - first draft
+
+2009-02-02 12:16  alexpeshkoff
+
+	* firebird2/extern/regex/: Makefile.in (1.3), aclocal.m4 (1.3),
+	config.guess (1.3), config.sub (1.3), configure (1.3), ltmain.sh
+	(1.3):
+
+	Updated libtool-related files
+
+2009-02-02 11:39  robocop
+
+	* firebird2/src/burp/: burp.cpp (1.162), mvol.cpp (1.61):
+
+	Misc.
+
+2009-02-02 11:24  robocop
+
+	* firebird2/src/: burp/backup.epp (1.117), burp/burp.h (1.98),
+	burp/restore.epp (1.158), include/gen/msgs.h (1.130),
+	msgs/facilities2.sql (1.59), msgs/messages2.sql (1.78):
+
+	Proposed solution for CORE-2245 in HEAD: - create recovery routine
+	for corrupt backups from FB2.0 and FB2.1.  - create new function to
+	store text with length between 256 and 64K bytes.  - other related
+	adjustments.
+
+2009-02-02 10:12  hvlad
+
+	* firebird2/: builds/install/misc/firebird.conf (1.49),
+	src/common/config/config.cpp (1.94),
+	src/jrd/trace/TraceConfigStorage.cpp (1.2):
+
+	Don't use "None" as empty configuration file name for audit. Per
+	Adriano request.
+
+2009-02-02 10:01  hvlad
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.4):
+
+	Fixed few mistakes in printf formats. Use QUADFORMAT for numbers
+	when applicable.
+
+2009-02-02 09:30  hvlad
+
+	* firebird2/builds/win32/msvc8/: fbtrace.vcproj (1.1), regex.vcproj
+	(1.1):
+
+	Add forgotten project files, sorry for inconvenience
+
+2009-02-02 09:21  hvlad
+
+	* firebird2/src/utilities/ntrace/fbtrace.conf (1.3):
+
+	Corrections
+
+2009-02-02 04:35  asfernandes
+
+	* firebird2/: builds/install/misc/firebird.conf (1.48),
+	src/dsql/dsql.cpp (1.271), src/jrd/RuntimeStatistics.cpp (1.9),
+	src/jrd/RuntimeStatistics.h (1.14), src/jrd/exe.cpp (1.287),
+	src/jrd/functions.cpp (1.41), src/jrd/jrd.cpp (1.514),
+	src/jrd/jrd.h (1.261), src/jrd/ntrace.h (1.8), src/jrd/req.h
+	(1.87), src/jrd/svc.cpp (1.260), src/jrd/svc.h (1.73),
+	src/jrd/tra.cpp (1.195),
+	src/utilities/ntrace/TraceConfiguration.cpp (1.2),
+	src/utilities/ntrace/TraceConfiguration.h (1.2),
+	src/utilities/ntrace/TracePluginConfig.h (1.3),
+	src/utilities/ntrace/TracePluginImpl.cpp (1.3),
+	src/utilities/ntrace/os/FileObject.h (1.2),
+	src/utilities/ntrace/os/posix/FileObject.cpp (1.2),
+	src/utilities/ntrace/os/posix/platform.cpp (1.3),
+	src/utilities/ntrace/os/win32/FileObject.cpp (1.2),
+	src/utilities/ntrace/os/win32/platform.cpp (1.3):
+
+	Misc
+
+2009-02-01 23:16  hvlad
+
+	* firebird2/extern/regex/regerror.c (1.3):
+
+	Don't confuse MSVC8 with deprecated 'errcode' as formal parameter
+
+2009-02-01 23:14  hvlad
+
+	* firebird2/builds/install/misc/firebird.conf (1.47):
+
+	Trace related configuration settings
+
+2009-02-01 23:14  hvlad
+
+	* firebird2/builds/win32/: make_all.bat (1.53), msvc8/Firebird2.sln
+	(1.14), msvc8/engine.vcproj (1.30), msvc8/engine_classic.vcproj
+	(1.32), msvc8/engine_embed.vcproj (1.29),
+	msvc8/fb_inet_server.vcproj (1.16), msvc8/fbembed.vcproj (1.20),
+	msvc8/fbserver.vcproj (1.17):
+
+	Trace services adjustement for build system. MSVC8 only, sorry.
+
+2009-02-01 23:10  hvlad
+
+	* firebird2/src/utilities/ntrace/: TraceConfiguration.cpp (1.1),
+	TraceConfiguration.h (1.1), TracePluginConfig.h (1.2),
+	TracePluginImpl.cpp (1.2), TracePluginImpl.h (1.2), fbtrace.conf
+	(1.2), paramtable.h (1.2), traceplugin.cpp (1.2), os/FileObject.h
+	(1.1), os/platform.h (1.2), os/posix/FileObject.cpp (1.1),
+	os/posix/platform.cpp (1.2), os/win32/FileObject.cpp (1.1),
+	os/win32/platform.cpp (1.2):
+
+	Trace plugin
+
+2009-02-01 23:09  hvlad
+
+	* firebird2/src/: common/UtilSvc.cpp (1.13), common/UtilSvc.h
+	(1.13), common/utils.cpp (1.57), common/utils_proto.h (1.32),
+	common/classes/ClumpletReader.cpp (1.36), common/config/config.cpp
+	(1.93), common/config/config.h (1.52), dsql/dsql.cpp (1.270),
+	dsql/dsql.h (1.151), dsql/dsql_proto.h (1.23), include/consts_pub.h
+	(1.30), jrd/Database.h (1.35), jrd/DatabaseSnapshot.cpp (1.93),
+	jrd/cmp.cpp (1.333), jrd/RuntimeStatistics.cpp (1.8),
+	jrd/RuntimeStatistics.h (1.13), jrd/exe.cpp (1.286),
+	jrd/file_params.h (1.33), jrd/functions.cpp (1.40), jrd/jrd.cpp
+	(1.513), jrd/jrd.h (1.260), jrd/jrd_proto.h (1.75), jrd/ntrace.h
+	(1.7), jrd/plugin_manager.h (1.24), jrd/req.h (1.86), jrd/rse.cpp
+	(1.172), jrd/svc.cpp (1.259), jrd/svc.h (1.72), jrd/tra.cpp
+	(1.194), jrd/tra.h (1.94), jrd/vio.cpp (1.241),
+	utilities/fbsvcmgr.cpp (1.20):
+
+	Trace services support
+
+2009-02-01 23:07  hvlad
+
+	* firebird2/src/jrd/trace/: TraceCmdLine.cpp (1.1),
+	TraceConfigStorage.cpp (1.1), TraceConfigStorage.h (1.1),
+	TraceDSQLHelpers.h (1.1), TraceJrdHelpers.h (1.1), TraceLog.cpp
+	(1.1), TraceLog.h (1.1), TraceManager.cpp (1.1), TraceManager.h
+	(1.1), TraceObjects.cpp (1.1), TraceObjects.h (1.1),
+	TraceService.cpp (1.1), TraceService.h (1.1), TraceSession.h (1.1):
+
+	Trace services implementation
+
+2009-02-01 23:03  hvlad
+
+	* firebird2/src/common/classes/tree.h (1.79):
+
+	ConstAccessor for BePlusTree
+
+2009-02-01 23:03  hvlad
+
+	* firebird2/src/common/classes/: RefCounted.h (1.17), fb_string.h
+	(1.18):
+
+	Reference-counted string
+
+2009-02-01 22:56  hvlad
+
+	* firebird2/src/config/: ConfObject.h (1.9), ConfigFile.cpp (1.15),
+	ConfigFile.h (1.10), Element.cpp (1.13):
+
+	Make vulcan's config file work with configuration from text string.
+
+2009-02-01 22:55  hvlad
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.35):
+
+	Correction
+
+2009-02-01 22:54  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.512):
+
+	Don't report error status as succesfull
+
+2009-02-01 22:53  hvlad
+
+	* firebird2/src/jrd/svc.cpp (1.258):
+
+	Fixed few small glitches
+
 2009-02-01 16:06  asfernandes
 
 	* firebird2/src/jrd/rse.cpp (1.171):
