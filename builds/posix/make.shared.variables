@@ -43,10 +43,10 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
 		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
 		plugin_manager.cpp trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
-		trace/TraceManager.cpp trace/TraceObjects.cpp gpre\pretty.cpp
+		trace/TraceManager.cpp trace/TraceObjects.cpp
 
 JRD_ServerSources = $(addprefix jrd/, $(JRD_ServerFiles))
-
+JRD_ServerSources += gpre/pretty.cpp
 
 JRD_Sources = $(JRD_ClientSources) $(JRD_ServerSources)
 
