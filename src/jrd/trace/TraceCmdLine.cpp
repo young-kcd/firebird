@@ -30,8 +30,8 @@
 #include "iberror.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/StatusArg.h"
-#include "../../common/utilsvc.h"
-#include "../../jrd/threaddata.h"
+#include "../../common/UtilSvc.h"
+#include "../../jrd/ThreadData.h"
 #include "../../jrd/trace/TraceService.h"
 
 
