@@ -85,8 +85,6 @@ TraceManager::TraceManager(Attachment* _att) :
 	filename(NULL),
 	trace_sessions(*_att->att_pool)
 {
-	filename = attachment->att_filename.c_str();
-
 	change_number = 0;
 
 	storage = storageInstance.getStorage();
