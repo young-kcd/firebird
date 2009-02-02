@@ -2966,7 +2966,7 @@ bool get_exception(BurpGlobals* tdgbl)
 						break;
 					}
 					*msg_ptr++ = char(attribute); // (1)
-					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, min(remaining - 1, 255));
+					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, MIN(remaining - 1, 255));
 					if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
 					{
 						bad_attribute (scan_next_attr, failed_attrib, 287);
