@@ -199,6 +199,11 @@ instsvc: $(INSTSVC)
 $(INSTSVC):	$(INSTSVC_Objects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) 
 
+ntrace:	$(NTRACE)
+
+$(NTRACE):	$(NTRACE_Objects) $(LIBFBCLIENT_SO)
+	$(EXE_LINK) $(LINK_OPTS) $(NTRACE_Objects) -o $@ -lfbclient $(LINK_LIBS)
+
 # This one needs a bit of work.
 
 rebuild: $(GDS_REBUILD)

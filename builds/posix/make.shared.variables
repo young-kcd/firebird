@@ -1,4 +1,3 @@
-#________________________________________________________________________
 #
 # jrd
 
@@ -42,7 +41,9 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) TextType.cpp \
 		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
-		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp
+		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
+		plugin_manager.cpp trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
+		trace/TraceManager.cpp trace/TraceObjects.cpp gpre\pretty.cpp
 
 JRD_ServerSources = $(addprefix jrd/, $(JRD_ServerFiles))
 
@@ -153,6 +154,27 @@ BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources)))
 NBACKUP_SERVER_Files= nbackup.cpp
 NBACKUP_SERVER_Sources = $(addprefix utilities/, $(NBACKUP_SERVER_Files))
 NBACKUP_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_SERVER_Sources))))
+
+#________________________________________________________________________
+#
+# ntrace
+
+NTRACE_UTIL_Files= TraceConfiguration.cpp traceplugin.cpp TracePluginImpl.cpp
+#NTRACE_OS_Files= os\win32\FileObject.cpp os\win32\platform.cpp
+NTRACE_UTIL_Sources = $(addprefix utilities/ntrace/, $(NTRACE_UTIL_Files))
+NTRACE_UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_UTIL_Sources))))
+
+NTRACE_OTHER_Sources = $(OS_SPECIFIC_Sources) jrd\isc.cpp jrd\isc_sync.cpp \
+common\classes\alloc.cpp common\classes\ClumpletReader.cpp common\fb_exception.cpp \
+common\classes\fb_string.cpp common\classes\MetaName.cpp common\classes\timestamp.cpp \
+common\utils.cpp gpre\pretty.cpp
+NTRACE_OTHER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_OTHER_Sources))))
+
+NTRACE_Objects = $(NTRACE_UTIL_Objects) $(NTRACE_OTHER_Objects)
+
+NTRACE_SERVER_Files= TraceCmdLine.cpp TraceService.cpp
+NTRACE_SERVER_Sources = $(addprefix jrd/trace/, $(NTRACE_SERVER_Files))
+NTRACE_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_SERVER_Sources))))
 
 #________________________________________________________________________
 #
@@ -314,6 +336,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects) \
 				$(NBACKUP_SERVER_Objects) \
+				$(NTRACE_SERVER_Objects) \
 				$(UTIL_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 

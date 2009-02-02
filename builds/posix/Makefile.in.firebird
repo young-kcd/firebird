@@ -193,6 +193,7 @@ ifeq ($(EDITLINE_FLG),Y)
 	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.editline
 endif
 endif
+	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.regex
 
 btyacc_binary: $(BTYACC)
 
