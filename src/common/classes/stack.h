@@ -261,8 +261,7 @@ namespace Firebird {
 
 			bool operator== (const Stack<Object, Capacity>& s) const
 			{
-				return (this->stk == s.stk) &&
-					(s.stk ? this->elem == s.stk->getCount() : true);
+				return (this->stk == s.stk) && (s.stk ? this->elem == s.stk->getCount() : true);
 			}
 
 			bool operator!= (const Stack<Object, Capacity>& s) const
@@ -380,8 +379,7 @@ namespace Firebird {
 
 			bool operator== (const Stack<Object, Capacity>& s) const
 			{
-				return (this->stk == s.stk) &&
-				   (s.stk ? this->elem == s.stk->getCount() : true);
+				return (this->stk == s.stk) && (s.stk ? this->elem == s.stk->getCount() : true);
 			}
 
 			bool operator!= (const Stack<Object, Capacity>& s) const

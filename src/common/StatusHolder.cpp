@@ -48,7 +48,8 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 		if (type == isc_arg_end)
 			break;
 
-		switch (type) {
+		switch (type)
+		{
 		case isc_arg_cstring:
 			{
 				const size_t len = *to++ = *from++;
@@ -90,7 +91,8 @@ void StatusHolder::clear()
 		if (type == isc_arg_end)
 			break;
 
-		switch (type) {
+		switch (type)
+		{
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);

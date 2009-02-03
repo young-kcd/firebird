@@ -98,8 +98,7 @@ public:
 	bool simpleCompare(const ClumpletReader &other) const
 	{
 		const size_t len = getBufferLength();
-		return (len == other.getBufferLength()) &&
-			(memcmp(getBuffer(), other.getBuffer(), len) == 0);
+		return (len == other.getBufferLength()) && (memcmp(getBuffer(), other.getBuffer(), len) == 0);
 	}
 
 protected:

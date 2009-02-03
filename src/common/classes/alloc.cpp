@@ -324,21 +324,19 @@ void MemoryPool::setStatsGroup(MemoryStats& statsL)
 		parent->lock.leave();
 }
 
-MemoryPool::MemoryPool(MemoryPool* parentL,
-		MemoryStats &statsL, void *first_extent, void *root_page
-	) :
-	parent_redirect(parentL != NULL),
-	freeBlocks((InternalAllocator*)this, root_page),
-	extents((MemoryExtent *)first_extent),
-	needSpare(false),
-	pendingFree(NULL),
-	used_memory(0),
-	mapped_memory(0),
-	parent(parentL),
-	parent_redirected(NULL),
-	os_redirected(NULL),
-	redirect_amount(0),
-	stats(&statsL)
+MemoryPool::MemoryPool(MemoryPool* parentL, MemoryStats &statsL, void *first_extent, void *root_page)
+	: parent_redirect(parentL != NULL),
+	  freeBlocks((InternalAllocator*)this, root_page),
+	  extents((MemoryExtent *)first_extent),
+	  needSpare(false),
+	  pendingFree(NULL),
+	  used_memory(0),
+	  mapped_memory(0),
+	  parent(parentL),
+	  parent_redirected(NULL),
+	  os_redirected(NULL),
+	  redirect_amount(0),
+	  stats(&statsL)
 {
 }
 
@@ -411,7 +409,8 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 
 	// Employ extents delayed free logic only when pool is destroying.
 	// In normal case all blocks pass through queue of sufficent length by themselves
-	if (pool_destroying) {
+	if (pool_destroying)
+	{
 		// Synchronize delayed free queue using extents mutex
 		MutexLockGuard guard(*cache_mutex);
 
@@ -459,7 +458,8 @@ void* MemoryPool::external_alloc(size_t &size)
 {
 	// This method is assumed to return NULL in case it cannot alloc
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
-	if (size == EXTENT_SIZE) {
+	if (size == EXTENT_SIZE)
+	{
 		MutexLockGuard guard(*cache_mutex);
 		void *result = NULL;
 		if (extents_cache.getCount()) {
@@ -561,6 +561,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 void* MemoryPool::tree_alloc(size_t size)
 {
 	if (size == sizeof(FreeBlocksTree::ItemList))
+	{
 		// This condition is to handle case when nodelist and itemlist have equal size
 		if (sizeof(FreeBlocksTree::ItemList) != sizeof(FreeBlocksTree::NodeList) ||
 			spareLeafs.getCount())
@@ -572,6 +573,7 @@ void* MemoryPool::tree_alloc(size_t size)
 			needSpare = true;
 			return temp;
 		}
+	}
 	if (size == sizeof(FreeBlocksTree::NodeList)) {
 		if (!spareNodes.getCount())
 			Firebird::BadAlloc::raise();
@@ -691,7 +693,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 				MEM_ALIGN(sizeof(MemoryExtent)) +
 				MEM_ALIGN(sizeof(MemoryBlock)) +
 				MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
-			int blockLength = EXTENT_SIZE -
+			const int blockLength = EXTENT_SIZE -
 				MEM_ALIGN(sizeof(MemoryExtent)) -
 				MEM_ALIGN(sizeof(MemoryBlock)) -
 				MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) -
@@ -713,7 +715,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 
 	lock.enter();
 	// If block cannot fit into extent then allocate it from OS directly
-	if (size > EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent))) 
+	if (size > EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)))
 	{
 		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size + MEM_ALIGN(sizeof(MemoryRedirectList));
 		MemoryBlock *blk = (MemoryBlock*) external_alloc(ext_size);
@@ -823,7 +825,8 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 		} while (freeBlocks.getNext());
 
 	// check each block in each segment for consistency with free blocks structure
-	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
+	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next)
+	{
 		// Verify doubly linked list
 		if (extent == extents) {
 			mem_assert(extent->mxt_prev == NULL);
@@ -869,9 +872,11 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 				}
 			}
 			bool foundTree = false;
-			if (freeBlocks.locate(blk->mbk_small.mbk_length)) {
+			if (freeBlocks.locate(blk->mbk_small.mbk_length))
+			{
 				// Check previous fragment pointer if block is marked as unused
-				if (!(blk->mbk_flags & MBK_USED)) {
+				if (!(blk->mbk_flags & MBK_USED))
+				{
 					if (blk->mbk_prev_fragment) {
 						// See if previous fragment seems kosher
 						MemoryBlock *prev_fragment_blk = ptrToBlock(blk->mbk_prev_fragment);
@@ -962,7 +967,8 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 	mem_assert(blk_mapped_memory == mapped_memory);
 	lock.leave();
 
-	if (parent) {
+	if (parent)
+	{
 		parent->lock.enter();
 		// Verify redirected blocks
 		size_t blk_redirected = 0;
@@ -1004,8 +1010,8 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 	const char* filter_path, const size_t filter_len)
 {
 	void *mem = blockToPtr<void*>(blk);
-	if (((blk->mbk_flags & MBK_USED) &&
-		!(blk->mbk_flags & MBK_DELAYED) && blk->mbk_type >= 0) || !used_only)
+	if (((blk->mbk_flags & MBK_USED) && !(blk->mbk_flags & MBK_DELAYED) && blk->mbk_type >= 0) ||
+		!used_only)
 	{
 		char flags[100];
 		flags[0] = 0;
@@ -1094,7 +1100,8 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 	// If pool has a parent things are simplified.
 	// Note we do not use parent redirection when using Valgrind because it is
 	// difficult to make memory pass through any delayed free list in this case
-	if (parent) {
+	if (parent)
+	{
 		parent->lock.enter();
 		const size_t size = MEM_ALIGN(sizeof(MemoryPool) + sizeof(MemoryRedirectList));
 		void* mem = parent->internal_alloc(size, TYPE_POOL);
@@ -1172,7 +1179,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 			MEM_ALIGN(sizeof(MemoryPool)) +
 			MEM_ALIGN(sizeof(MemoryBlock)) +
 			MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
-		int blockLength = EXTENT_SIZE -
+		const int blockLength = EXTENT_SIZE -
 			MEM_ALIGN(sizeof(MemoryExtent)) -
 			MEM_ALIGN(sizeof(MemoryBlock)) -
 			MEM_ALIGN(sizeof(MemoryPool)) -
@@ -1247,10 +1254,12 @@ void MemoryPool::deletePool(MemoryPool* pool)
 
 	// Deallocate blocks redirected to parent
 	// IF parent is set then pool was allocated from it and is not deleted at this point yet
-	if (parent) {
+	if (parent)
+	{
 		parent->lock.enter();
 		MemoryBlock *redirected = pool->parent_redirected;
-		while (redirected) {
+		while (redirected)
+		{
 			MemoryBlock *next = block_list_small(redirected)->mrl_next;
 			redirected->mbk_pool = parent;
 			redirected->mbk_flags &= ~MBK_PARENT;
@@ -1315,7 +1324,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			else
 				freeBlocks.fastRemove();
 		}
-		else {
+		else
+		{
 			// Cut a piece at the end of block in hope to avoid structural
 			// modification of free blocks tree
 			MemoryBlock *current_block = ptrToBlock(current->bli_fragments);
@@ -1336,24 +1346,27 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 
 			FreeMemoryBlock *next_free = current->bli_fragments->fbk_next_fragment;
 
-			if (next_free) {
+			if (next_free)
+			{
 				// Moderately cheap case. Quite possibly we only need to tweak doubly
 				// linked lists a little
 				ptrToBlock(next_free)->mbk_prev_fragment = NULL;
 				current->bli_fragments = next_free;
 				addFreeBlock(current_block);
 			}
-			else {
+			else
+			{
 				// This is special handling of case when we have single large fragment and
 				// cut off small pieces from it. This is common and we avoid modification
 				// of free blocks tree in this case.
 				bool get_prev_succeeded = freeBlocks.getPrev();
-				if (!get_prev_succeeded || 
-					freeBlocks.current().bli_length < current_block->mbk_small.mbk_length) 
+				if (!get_prev_succeeded ||
+					freeBlocks.current().bli_length < current_block->mbk_small.mbk_length)
 				{
 					current->bli_length = current_block->mbk_small.mbk_length;
 				}
-				else {
+				else
+				{
 					// Moderately expensive case. We need to modify tree for sure
 					if (get_prev_succeeded) {
 						// Recover tree position after failed shortcut attempt
@@ -1371,11 +1384,13 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			}
 		}
 	}
-	else {
+	else
+	{
 		// If we are in a critically low memory condition look up for a block in a list
 		// of pending free blocks. We do not do "best fit" in this case
 		PendingFreeBlock *itr = pendingFree, *prev = NULL;
-		while (itr) {
+		while (itr)
+		{
 			MemoryBlock *temp = ptrToBlock(itr);
 			if (temp->mbk_small.mbk_length >= size)
 			{
@@ -1454,7 +1469,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			blk->mbk_flags |= MBK_LAST;
 			blk->mbk_small.mbk_length = EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock));
 		}
-		else {
+		else
+		{
 			// Cut a piece at the beginning of the block
 			blk->mbk_small.mbk_length = size;
 			// Put the rest to the tree of free blocks
@@ -1536,7 +1552,8 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 			freeBlocks.fastRemove();
 		}
 	}
-	else {
+	else
+	{
 		// Our block could be in the pending free blocks list if we are in a
 		// critically-low memory condition or if tree_free placed it there.
 		// Find and remove it from there.
@@ -1622,7 +1639,8 @@ void MemoryPool::internal_deallocate(void *block)
 		else
 			addFreeBlock(prev);
 	}
-	else {
+	else
+	{
 		MemoryBlock *next;
 		// Mark block as free
 		blk->mbk_flags &= ~MBK_USED;
@@ -1724,7 +1742,8 @@ void MemoryPool::deallocate(void *block)
 	lock.leave();
 #endif
 
-	if (blk->mbk_flags & MBK_PARENT) {
+	if (blk->mbk_flags & MBK_PARENT)
+	{
 		parent->lock.enter();
 		blk->mbk_pool = parent;
 		blk->mbk_flags &= ~MBK_PARENT;
@@ -1752,7 +1771,8 @@ void MemoryPool::deallocate(void *block)
 
 	lock.enter();
 
-	if (blk->mbk_flags & MBK_LARGE) {
+	if (blk->mbk_flags & MBK_LARGE)
+	{
 		// Delete block from list of redirected blocks
 		MemoryRedirectList *list = block_list_large(blk);
 		if (list->mrl_prev)

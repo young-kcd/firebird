@@ -225,14 +225,16 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
    destination, try g-format with the maximum precision which makes sense
    for the input type: if it fits, we're done. */
 
-	if (chars_printed > width) {
+	if (chars_printed > width)
+	{
 		char num_format[] = "%- #*.*g";
 		chars_printed = sprintf(temp, num_format, width, precision, d);
 
 		/* If the full-precision result is too wide for the destination,
 		   reduce the precision and try again. */
 
-		if (chars_printed > width) {
+		if (chars_printed > width)
+		{
 			precision -= (chars_printed - width);
 
 			/* If we cannot print at least two digits, one on each side of the
@@ -568,9 +570,11 @@ static void string_to_datetime(const dsc* desc,
 			}
 
 			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
-			while (true) {
+			while (true)
+			{
 				// Month names are only allowed in first 2 positions
-				if (*month_ptr && i < 2) {
+				if (*month_ptr && i < 2)
+				{
 					t = temp;
 					const TEXT* m = *month_ptr++;
 					while (*t && *t == *m) {
@@ -580,7 +584,8 @@ static void string_to_datetime(const dsc* desc,
 					if (!*t)
 						break;
 				}
-				else {
+				else
+				{
 					// it's not a month name, so it's either a magic word or
 					// a non-date string.  If there are more characters, it's bad
 
@@ -765,12 +770,12 @@ static void string_to_datetime(const dsc* desc,
 	// seconds value due to LEAP second (Not supported in V4.0).
 	if (i > 2 &&
 		(((times.tm_hour = components[3]) > 23) ||
-		 ((times.tm_min = components[4]) > 59) ||
-		 ((times.tm_sec = components[5]) > 59) ||
-		 description[3] > 2 || description[3] == 0 ||
-		 description[4] > 2 || description[4] == 0 ||
-		 description[5] > 2 ||
-		 description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE))
+			((times.tm_min = components[4]) > 59) ||
+			((times.tm_sec = components[5]) > 59) ||
+			description[3] > 2 || description[3] == 0 ||
+			description[4] > 2 || description[4] == 0 ||
+			description[5] > 2 ||
+			description[6] > -ISC_TIME_SECONDS_PRECISION_SCALE))
 	{
 		CVT_conversion_error(desc, err);
 	}
@@ -849,7 +854,8 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	const char* p = reinterpret_cast<char*>(desc->dsc_address);
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_short:
 		value = *((SSHORT *) p);
 		break;
@@ -964,7 +970,8 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 /* Last, but not least, adjust for scale */
 
-	if (scale > 0) {
+	if (scale > 0)
+	{
 		SLONG fraction = 0;
 		do {
 			if (scale == 1)
@@ -982,7 +989,8 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else if (fraction < -4)
 			value--;
 	}
-	else if (scale < 0) {
+	else if (scale < 0)
+	{
 		do {
 			if (value > LONG_LIMIT || value < -LONG_LIMIT)
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -1008,7 +1016,8 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
  **************************************/
 	double value;
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_short:
 		value = *((SSHORT *) desc->dsc_address);
 		break;
@@ -1062,7 +1071,8 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 			for (; p < end && *p == ' '; p++)
 				;
 
-			for (; p < end; p++) {
+			for (; p < end; p++)
+			{
 				if (DIGIT(*p)) {
 					digit_seen = true;
 					past_sign = true;
@@ -1111,11 +1121,13 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 			/* If there's still something left, there must be an explicit
 			   exponent */
 
-			if (p < end) {
+			if (p < end)
+			{
 				digit_seen = false;
 				sign = 0;
 				SSHORT exp = 0;
-				for (p++; p < end; p++) {
+				for (p++; p < end; p++)
+				{
 					if (DIGIT(*p)) {
 						digit_seen = true;
 						exp = exp * 10 + *p - '0';
@@ -1243,9 +1255,11 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 /* Do data type by data type conversions.  Not all are supported,
    and some will drop out for additional handling. */
 
-	switch (to->dsc_dtype) {
+	switch (to->dsc_dtype)
+	{
 	case dtype_timestamp:
-		switch (from->dsc_dtype) {
+		switch (from->dsc_dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -1281,7 +1295,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		break;
 
 	case dtype_sql_date:
-		switch (from->dsc_dtype) {
+		switch (from->dsc_dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -1311,7 +1326,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		break;
 
 	case dtype_sql_time:
-		switch (from->dsc_dtype) {
+		switch (from->dsc_dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -1343,7 +1359,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	case dtype_text:
 	case dtype_cstring:
 	case dtype_varying:
-		switch (from->dsc_dtype) {
+		switch (from->dsc_dtype)
+		{
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -1391,7 +1408,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			if (charset2 == ttype_binary)
 				fill_char = 0x00;
 
-			switch (to->dsc_dtype) {
+			switch (to->dsc_dtype)
+			{
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
 				cb->validateData(toCharset, length, q, cb->err);
@@ -1590,8 +1608,8 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 
 		try
 	    {
-			const USHORT length = CVT_make_string(desc, ttype_ascii, &p,
-									(vary*) s, sizeof(s) - 1, localError);
+			const USHORT length =
+				CVT_make_string(desc, ttype_ascii, &p, (vary*) s, sizeof(s) - 1, localError);
 			const_cast<char*>(p)[length] = 0;
 		}
 		/*
@@ -1759,7 +1777,8 @@ USHORT CVT_make_string(const dsc*          desc,
 	fb_assert(((temp != NULL && length > 0) ||
 			(INTL_TTYPE(desc) <= dtype_any_text && INTL_TTYPE(desc) == to_interp)));
 
-	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
+	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp)
+	{
 		*address = reinterpret_cast<char*>(desc->dsc_address);
 		const USHORT from_len = desc->dsc_length;
 
@@ -1811,12 +1830,14 @@ double CVT_power_of_ten(const int scale)
 	 */
 
 	static const double upper_part[] =
-		{ 1.e000, 1.e032, 1.e064, 1.e096, 1.e128,
+	{
+		1.e000, 1.e032, 1.e064, 1.e096, 1.e128,
 		1.e160, 1.e192, 1.e224, 1.e256, 1.e288
 	};
 
 	static const double lower_part[] =
-		{ 1.e00, 1.e01, 1.e02, 1.e03, 1.e04, 1.e05,
+	{
+		1.e00, 1.e01, 1.e02, 1.e03, 1.e04, 1.e05,
 		1.e06, 1.e07, 1.e08, 1.e09, 1.e10, 1.e11,
 		1.e12, 1.e13, 1.e14, 1.e15, 1.e16, 1.e17,
 		1.e18, 1.e19, 1.e20, 1.e21, 1.e22, 1.e23,
@@ -1934,7 +1955,8 @@ SSHORT CVT_decompose(const char* string,
 
 	for (; p < end; p++)
 	{
-		if (DIGIT(*p)) {
+		if (DIGIT(*p))
+		{
 			digit_seen = true;
 
 			/* Before computing the next value, make sure there will be
@@ -1958,7 +1980,8 @@ SSHORT CVT_decompose(const char* string,
 			if (fraction)
 				--scale;
 		}
-		else if (*p == '.') {
+		else if (*p == '.')
+		{
 			if (fraction)
 				CVT_conversion_error(&errd, err);
 			else
@@ -1991,12 +2014,15 @@ SSHORT CVT_decompose(const char* string,
 		value = -value;
 
 /* If there's still something left, there must be an explicit exponent */
-	if (p < end) {
+	if (p < end)
+	{
 		sign = 0;
 		SSHORT exp = 0;
 		digit_seen = false;
-		for (p++; p < end; p++) {
-			if (DIGIT(*p)) {
+		for (p++; p < end; p++)
+		{
+			if (DIGIT(*p))
+			{
 				digit_seen = true;
 				exp = exp * 10 + *p - '0';
 
@@ -2082,7 +2108,8 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 /* If the value is already a string (fixed or varying), just return
    the address and length. */
 
-	if (desc->dsc_dtype <= dtype_any_text) {
+	if (desc->dsc_dtype <= dtype_any_text)
+	{
 		*address = desc->dsc_address;
 		*ttype = INTL_TTYPE(desc);
 		if (desc->dsc_dtype == dtype_text)
@@ -2138,24 +2165,34 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	const char* p = reinterpret_cast<char*>(desc->dsc_address);
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_short:
-		((SLONG *) & value)[LOW_WORD] = *((SSHORT *) p);
-		((SLONG *) & value)[HIGH_WORD] = (*((SSHORT *) p) < 0) ? -1 : 0;
+		{
+			const SSHORT input = *(SSHORT*) p;
+			((SLONG*) &value)[LOW_WORD] = input;
+			((SLONG*) &value)[HIGH_WORD] = (input < 0) ? -1 : 0;
+		}
 		break;
 
 	case dtype_long:
-		((SLONG *) & value)[LOW_WORD] = *((SLONG *) p);
-		((SLONG *) & value)[HIGH_WORD] = (*((SLONG *) p) < 0) ? -1 : 0;
+		{
+			const SLONG input = *(SLONG*) p;
+			((SLONG*) &value)[LOW_WORD] = input;
+			((SLONG*) &value)[HIGH_WORD] = (input < 0) ? -1 : 0;
+		}
 		break;
 
 	case dtype_quad:
-		value = *((SQUAD *) p);
+		value = *((SQUAD*) p);
 		break;
 
 	case dtype_int64:
-		((SLONG *) & value)[LOW_WORD] = (SLONG) (*((SINT64 *) p) & 0xffffffff);
-		((SLONG *) & value)[HIGH_WORD] = (SLONG) (*((SINT64 *) p) >> 32);
+		{
+			const SINT64 input = *(SINT64*) p;
+			((SLONG*) &value)[LOW_WORD] = (SLONG) (input & 0xffffffff);
+			((SLONG*) &value)[HIGH_WORD] = (SLONG) (input >> 32);
+		}
 		break;
 
 	case dtype_real:
@@ -2231,7 +2268,8 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 #ifndef NATIVE_QUAD
 	err(Arg::Gds(isc_badblk));	/* internal error */
 #else
-	if (scale > 0) {
+	if (scale > 0)
+	{
 		SLONG fraction = 0;
 		do {
 			if (scale == 1)
@@ -2249,7 +2287,8 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else if (fraction < -4)
 			value--;
 	}
-	else {
+	else
+	{
 		do {
 			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -2286,7 +2325,8 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	const char* p = reinterpret_cast<char*>(desc->dsc_address);
 
-	switch (desc->dsc_dtype) {
+	switch (desc->dsc_dtype)
+	{
 	case dtype_short:
 		value = *((SSHORT*) p);
 		break;
@@ -2367,7 +2407,8 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 /* Last, but not least, adjust for scale */
 
-	if (scale > 0) {
+	if (scale > 0)
+	{
 		SLONG fraction = 0;
 		do {
 			if (scale == 1)
@@ -2385,7 +2426,8 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else if (fraction < -4)
 			value--;
 	}
-	else if (scale < 0) {
+	else if (scale < 0)
+	{
 		do {
 			if (value > INT64_LIMIT || value < -INT64_LIMIT)
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));

@@ -91,11 +91,7 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 	return true;
 }
 
-bool DirectoryList::keyword(
-		const ListMode keyMode,
-		PathName& value,
-		PathName key,
-		PathName next)
+bool DirectoryList::keyword(const ListMode keyMode, PathName& value, PathName key, PathName next)
 {
 	if (value.length() < key.length()) {
 		return false;
@@ -141,8 +137,7 @@ void DirectoryList::initialize(bool simple_mode)
 		mode = SimpleList;
 	}
 	else {
-		if (keyword(None, val, "None", "") ||
-			keyword(Full, val, "Full", "")) {
+		if (keyword(None, val, "None", "") || keyword(Full, val, "Full", "")) {
 			return;
 		}
 		if (! keyword(Restrict, val, "Restrict", " \t")) {
@@ -193,7 +188,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 	fb_assert(mode != NotInitialized);
 
 	// Handle special cases
-	switch (mode) {
+	switch (mode)
+	{
 	case None:
 		return false;
 	case Full:
@@ -211,8 +207,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 	PathName varpath(path);
 	if (PathUtils::isRelative(path)) {
-		PathUtils::concatPath(varpath,
-			PathName(Config::getRootDirectory()), path);
+		PathUtils::concatPath(varpath, PathName(Config::getRootDirectory()), path);
 	}
 
 	ParsedPath pPath(varpath);

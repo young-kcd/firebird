@@ -207,7 +207,8 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 	case SpbItems:
 		return SingleTpb;
 	case SpbStart:
-		switch (spbState) {
+		switch (spbState)
+		{
 		case 0:
 			return SingleTpb;
 		case isc_action_svc_backup:
@@ -463,12 +464,20 @@ void ClumpletReader::rewind()
 		spbState = 0;
 		return;
 	}
-	if (kind == UnTagged || kind == WideUnTagged || kind == SpbStart || kind == SpbItems)
+	switch (kind)
+	{
+	case UnTagged:
+	case WideUnTagged:
+	case SpbStart:
+	case SpbItems:
 		cur_offset = 0;
-	else if (kind == SpbAttach && getBufferLength() > 0 && getBuffer()[0] != isc_spb_version1)
-		cur_offset = 2;
-	else
-		cur_offset = 1;
+		break;
+	default:
+		if (kind == SpbAttach && getBufferLength() > 0 && getBuffer()[0] != isc_spb_version1)
+			cur_offset = 2;
+		else
+			cur_offset = 1;
+	}
 	spbState = 0;
 }
 

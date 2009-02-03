@@ -51,10 +51,11 @@ void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
 	while (true)
 	{
 		const ISC_STATUS type = *ptr++ = *orig_status++;
-		if (type == isc_arg_end)
-			break;
 
-		switch (type) {
+		switch (type)
+		{
+		case isc_arg_end:
+			return;
 		case isc_arg_cstring:
 			{
 				const size_t len = *ptr++ = *orig_status++;
@@ -67,10 +68,8 @@ void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
 		case isc_arg_string:
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
-			{
-				*ptr++ = dupStringTemp(reinterpret_cast<char*>(*orig_status++));
-				break;
-			}
+			*ptr++ = dupStringTemp(reinterpret_cast<char*>(*orig_status++));
+			break;
 		default:
 			*ptr++ = *orig_status++;
 			break;
@@ -92,7 +91,8 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 	{
 		const ISC_STATUS type = *perm++ = *trans++;
 
-		switch (type) {
+		switch (type)
+		{
 		case isc_arg_end:
 			return;
 		case isc_arg_cstring:
@@ -173,11 +173,11 @@ void status_exception::release_vector() throw()
 	while (true)
 	{
 		const ISC_STATUS type = *ptr++;
-		if (type == isc_arg_end)
-			break;
 
 		switch (type)
 		{
+		case isc_arg_end:
+			return;
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);
@@ -363,7 +363,8 @@ void system_call_failed::raise(const char* syscall)
 fatal_exception::fatal_exception(const char* message) :
 	status_exception(0, false)
 {
-	const ISC_STATUS temp[] = {
+	const ISC_STATUS temp[] =
+	{
 		isc_arg_gds,
 		isc_random,
 		isc_arg_string, dupStringTemp(message),

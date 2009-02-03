@@ -2394,7 +2394,6 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	TEXT object_name[MAXPATHLEN];
 	HANDLE file_handle, event_handle;
 	int retry_count = 0;
 
@@ -2429,6 +2428,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	// Create an event that can be used to determine if someone has already
 	// initialized shared memory.
 
+	TEXT object_name[MAXPATHLEN];
 	if (!make_object_name(object_name, sizeof(object_name), filename, "_event"))
 	{
 		error(status_vector, "make_object_name", GetLastError());

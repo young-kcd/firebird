@@ -83,7 +83,8 @@ namespace Firebird
 		void reserveBuffer(const size_type newLen)
 		{
 			size_type newSize = newLen + 1;
-			if (newSize > bufferSize) {
+			if (newSize > bufferSize)
+			{
 				// Make sure we do not exceed string length limit
 				checkLength(newLen);
 

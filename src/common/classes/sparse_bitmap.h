@@ -259,7 +259,8 @@ public:
 				// Trivial handling for singular bitmap
 				current_value = bitmap->singular_value;
 
-				switch (lt) {
+				switch (lt)
+				{
 				case locEqual:
 					return current_value == key;
 				case locGreatEqual:
@@ -275,7 +276,8 @@ public:
 			}
 
 			// Transform locLess and locGreat to locLessEqual and locGreatEqual
-			switch (lt) {
+			switch (lt)
+			{
 				case locLess:
 					if (key == 0)
 						return false;
@@ -297,7 +299,8 @@ public:
 				return false;
 			}
 
-			switch (lt) {
+			switch (lt)
+			{
 				case locEqual:
 					current_value = key;
 					bit_mask = BUNCH_ONE << (key - key_aligned);
@@ -621,8 +624,10 @@ SparseBitmap<T, InternalTypes>::bit_or(
 	T destValue = dest->tree.current().start_value;
 	T sourceValue = source->tree.current().start_value;
 
-	while (sourceFound) {
-		if (destFound) {
+	while (sourceFound)
+	{
+		if (destFound)
+		{
 			// See if we need to skip value in destination tree
 			if (destValue < sourceValue) {
 				if ((destFound = dest->tree.getNext()))
@@ -659,7 +664,8 @@ SparseBitmap<T, InternalTypes>::bit_or(
 				}
 			}
 		}
-		else {
+		else
+		{
 			// Add remaining buckets to destination tree and get out
 			do {
 				dest->tree.add(source->tree.current());
@@ -734,8 +740,10 @@ SparseBitmap<T, InternalTypes>::bit_and(
 	T destValue = dest->tree.current().start_value;
 	T sourceValue = source->tree.current().start_value;
 
-	while (destFound) {
-		if (sourceFound) {
+	while (destFound)
+	{
+		if (sourceFound)
+		{
 			// See if we need to skip value in destination tree
 			if (sourceValue < destValue) {
 				if ((sourceFound = source->tree.getNext()))
@@ -767,7 +775,8 @@ SparseBitmap<T, InternalTypes>::bit_and(
 			if ((destFound = dest->tree.fastRemove()))
 				destValue = dest->tree.current().start_value;
 		}
-		else {
+		else
+		{
 			// Trim out remaining values from destination list and get out
 			while (dest->tree.fastRemove())
 			{ }

@@ -405,7 +405,8 @@ extern "C" {
 		FB_VA_COPY(paramsCopy, params);
 		int l = VSNPRINTF(temp, tempsize, format, paramsCopy);
 		FB_CLOSE_VACOPY(paramsCopy);
-		if (l < 0) {
+		if (l < 0)
+		{
 			size_type n = sizeof(temp);
 			while (true) {
 				n *= 2;
