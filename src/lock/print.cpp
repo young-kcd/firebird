@@ -82,7 +82,8 @@ const USHORT SW_I_WAIT		= 8;
 
 #define SRQ_BASE                    ((UCHAR*) LOCK_header)
 
-struct waitque {
+struct waitque
+{
 	USHORT waitque_depth;
 	SRQ_PTR waitque_entry[30];
 };
@@ -1139,7 +1140,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 	if (!owner->own_pending_request)
 		FPRINTF(outfile, "nothing.\n");
 	else {
-		if (waiters->waitque_depth > FB_NELEM(waiters->waitque_entry)) {
+		if (waiters->waitque_depth >= FB_NELEM(waiters->waitque_entry)) {
 			FPRINTF(outfile, "Dependency too deep\n");
 			return;
 		}
