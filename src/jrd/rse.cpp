@@ -1687,7 +1687,9 @@ static bool get_procedure(thread_db*			tdbb,
 	try {
 		EXE_receive(tdbb, proc_request, 1, oml, om);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&) 
+	{
+		trace.fetch(true, res_failed);
 		close_procedure(tdbb, rsb);
 		throw;
 	}
