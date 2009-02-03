@@ -63,7 +63,7 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 
 void TraceCfgReader::readConfig()
 {
-	Firebird::AutoPtr<ConfigFile> cfgFile = new ConfigFile(Lex::LEX_none);
+	Firebird::AutoPtr<ConfigFile> cfgFile(new ConfigFile(Lex::LEX_none));
 	cfgFile->addText(m_text);
 	cfgFile->parse();
 

@@ -1158,7 +1158,7 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 			appendTableCounts(info, line);
 		}
 
-		char* event_type;
+		const char* event_type = "<Unknown>";
 		switch (tra_result) 
 		{
 			case res_successful:
@@ -1250,7 +1250,7 @@ void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceT
 		appendTableCounts(info, line);
 	}
 
-	char* event_type;
+	const char* event_type = "<Unknown>";
 	switch (proc_result) 
 	{
 		case res_successful:
@@ -1432,7 +1432,6 @@ void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
 		return;
 
 	string line;
-	char* event_type;
 	TraceParams *params = statement->getInputs();
 	if (params && params->getCount()) 
 	{
@@ -1451,6 +1450,7 @@ void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
 		appendTableCounts(info, line);
 	}
 
+	const char* event_type = "<Unknown>";
 	switch (req_result) 
 	{
 		case res_successful:
