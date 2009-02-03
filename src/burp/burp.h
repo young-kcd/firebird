@@ -556,11 +556,6 @@ enum att_type {
 };
 
 
-typedef att_type ATT_TYPE;
-
-// TMN: Why was this even added in the first place???
-//typedef SCHAR		att_type;
-
 
 // Trigger types
 
@@ -585,7 +580,8 @@ const int TRIGGER_SEQUENCE_DEFAULT	= 0;
 
 // field block, used to hold local field definitions
 
-struct burp_fld {
+struct burp_fld
+{
 	burp_fld*	fld_next;
 	SSHORT		fld_type;
 	SSHORT		fld_sub_type;
@@ -605,13 +601,13 @@ struct burp_fld {
 	TEXT		fld_base [GDS_NAME_LEN];
 	TEXT		fld_query_name [GDS_NAME_LEN];
 	TEXT		fld_security_class [GDS_NAME_LEN];
-	SSHORT		fld_edit_length;
+	//SSHORT		fld_edit_length;
 	SSHORT		fld_view_context;
 	SSHORT		fld_update_flag;
 	SSHORT		fld_flags;
 	/* Can't do here
 	   BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string; */
-	TEXT		fld_edit_string [126]; /* was [256] */
+	TEXT		fld_edit_string[128]; /* was [256] */
 	ISC_QUAD	fld_description;
 	ISC_QUAD	fld_query_header;
 	TEXT		fld_complex_name [GDS_NAME_LEN];
@@ -620,7 +616,7 @@ struct burp_fld {
 	SSHORT		fld_null_flag;
 	ISC_QUAD	fld_default_value;
 	ISC_QUAD	fld_default_source;
-	SSHORT		fld_character_length;
+	SSHORT		fld_character_length; // only assigned in restore.epp but never used.
 	SSHORT		fld_character_set_id;
 	SSHORT		fld_collation_id;
 };
@@ -637,7 +633,8 @@ enum fld_flags_vals {
 
 // relation definition - holds useful relation type stuff
 
-struct burp_rel {
+struct burp_rel
+{
 	burp_rel*	rel_next;
 	burp_fld*	rel_fields;
 	SSHORT		rel_flags;
@@ -645,12 +642,13 @@ struct burp_rel {
 	SSHORT		rel_name_length;
 	GDS_NAME	rel_name;
 	GDS_NAME	rel_owner;		// relation owner, if not us
-	ISC_QUAD	rel_store_blr;		// trigger blr blob id
-	ISC_QUAD	rel_store_source;	// trigger source blob id
-	ISC_QUAD	rel_modify_blr;		// trigger blr blob id
-	ISC_QUAD	rel_modify_source;	// trigger source blob id
-	ISC_QUAD	rel_erase_blr;		// trigger blr blob id
-	ISC_QUAD	rel_erase_source;	// trigger source blob id
+	// These fields were used for old style relations before IB4.
+	//ISC_QUAD	rel_store_blr;		// trigger blr blob id
+	//ISC_QUAD	rel_store_source;	// trigger source blob id
+	//ISC_QUAD	rel_modify_blr;		// trigger blr blob id
+	//ISC_QUAD	rel_modify_source;	// trigger source blob id
+	//ISC_QUAD	rel_erase_blr;		// trigger blr blob id
+	//ISC_QUAD	rel_erase_source;	// trigger source blob id
 };
 
 enum burp_rel_flags_vals {
@@ -660,15 +658,17 @@ enum burp_rel_flags_vals {
 
 // procedure definition - holds useful procedure type stuff
 
-struct burp_prc {
+struct burp_prc
+{
 	burp_prc*	prc_next;
-	SSHORT		prc_name_length;
+	//SSHORT		prc_name_length; // Currently useless, but didn't want to delete it.
 	GDS_NAME	prc_name;
 	GDS_NAME	prc_owner;		// relation owner, if not us
 };
 
 
-struct gfld {
+struct gfld
+{
 	TEXT		gfld_name [GDS_NAME_LEN];
 	ISC_QUAD	gfld_vb;
 	ISC_QUAD	gfld_vs;
@@ -679,8 +679,6 @@ struct gfld {
 	gfld*		gfld_next;
 	USHORT		gfld_flags;
 };
-
-typedef gfld* GFLD;
 
 enum gfld_flags_vals {
 	GFLD_validation_blr		= 1,
@@ -769,23 +767,21 @@ enum act_t {
 	ACT_restore_join
 };
 
-typedef act_t ACT_T;
-
-struct act {
+struct burp_act
+{
 		USHORT		act_total;
 		burp_fil*	act_file;
-		ACT_T		act_action;
+		act_t		act_action;
 };
 
-typedef act* ACT;
-
-const size_t ACT_LEN = sizeof(act);
+const size_t ACT_LEN = sizeof(burp_act);
 
 const ULONG MAX_LENGTH = ~0;	// Keep in sync with burp_fil.fil_length
 
 // This structure has been cloned from spit.cpp
 
-struct hdr_split {
+struct hdr_split
+{
 	TEXT hdr_split_tag[18];
 	TEXT hdr_split_timestamp[30];
 	TEXT hdr_split_text1[11];
@@ -796,7 +792,6 @@ struct hdr_split {
 	TEXT hdr_split_name[27];	 // File name
 };
 
-typedef hdr_split* HDR_SPLIT;
 
 /* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
    to 18. Otherwise we will not be able to join the gbk files v5.x */
@@ -838,7 +833,7 @@ public:
 	bool		gbl_sw_ignore_limbo;
 	bool		gbl_sw_meta;
 	bool		gbl_sw_novalidity;
-	bool		gbl_sw_nodbtriggers;
+	//bool		gbl_sw_nodbtriggers; // Currently useless, as the dpb is filled immediately.
 	USHORT		gbl_sw_page_size;
 	bool		gbl_sw_compress;
 	bool		gbl_sw_version;
@@ -865,8 +860,8 @@ public:
 	SLONG		gbl_sw_page_buffers;
 	burp_fil*	gbl_sw_files;
 	burp_fil*	gbl_sw_backup_files;
-	GFLD		gbl_global_fields;
-	ACT			action;
+	gfld*		gbl_global_fields;
+	burp_act*	action;
 	ULONG		io_buffer_size;
 	redirect_vals	sw_redirect;
 	bool		burp_throw;
@@ -875,7 +870,10 @@ public:
 	burp_rel*	relations;
 	burp_prc*	procedures;
 	SLONG		BCK_capabilities;
+	// Format of the backup being read on restore; gbak always creates it using the latest version
+	// but it can read backups created by previous versions.
 	USHORT		RESTORE_format;
+	// ODS of the target server (not necessarily the same version as gbak)
 	int         RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
@@ -961,13 +959,16 @@ public:
 	bool			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update
 
-	static inline BurpGlobals* getSpecific() {
+	static inline BurpGlobals* getSpecific()
+	{
 		return (BurpGlobals*) ThreadData::getSpecific();
 	}
-	static inline void putSpecific(BurpGlobals* tdgbl) {
+	static inline void putSpecific(BurpGlobals* tdgbl)
+	{
 		tdgbl->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific() {
+	static inline void restoreSpecific()
+	{
 		ThreadData::restoreSpecific();
 	}
 

@@ -903,7 +903,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 
 		case IN_SW_BURP_NOD:
-			tdgbl->gbl_sw_nodbtriggers = true;
+			//tdgbl->gbl_sw_nodbtriggers = true;
 			dpb.insertByte(isc_dpb_no_db_triggers, 1);
 			break;
 
@@ -1048,7 +1048,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			*nlp = 0;
 	} // scope
 
-	tdgbl->action = (ACT) BURP_alloc_zero(ACT_LEN);
+	tdgbl->action = (burp_act*) BURP_alloc_zero(ACT_LEN);
 	tdgbl->action->act_total = 0;
 	tdgbl->action->act_file = NULL;
 	tdgbl->action->act_action = ACT_unknown;

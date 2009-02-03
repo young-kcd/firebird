@@ -92,6 +92,14 @@ inline void put(BurpGlobals* tdgbl, const UCHAR c)
 		MVOL_write(c, &tdgbl->io_cnt, &tdgbl->io_ptr);
 }
 
+inline void put(BurpGlobals* tdgbl, const att_type c)
+{
+	if (--(tdgbl->io_cnt) >= 0)
+		*(tdgbl->io_ptr)++ = UCHAR(c);
+	else
+		MVOL_write(UCHAR(c), &tdgbl->io_cnt, &tdgbl->io_ptr);
+}
+
 inline const UCHAR* put_block(BurpGlobals* tdgbl, const UCHAR* p, ULONG n)
 {
 	return MVOL_write_block (tdgbl, p, n);
@@ -104,17 +112,17 @@ burp_fld* get_fields(burp_rel*);
 SINT64 get_gen_id(const TEXT *, SSHORT);
 void get_ranges(burp_fld*);
 void put_array(burp_fld*, burp_rel*, ISC_QUAD*);
-void put_asciz(const SCHAR, const TEXT*);
+void put_asciz(const att_type, const TEXT*);
 void put_blob(burp_fld*, ISC_QUAD&, ULONG);
-bool put_blr_blob(SCHAR, ISC_QUAD&);
+bool put_blr_blob(att_type, ISC_QUAD&);
 void put_data(burp_rel*);
 void put_index(burp_rel*);
-int put_message(SCHAR, SCHAR, const TEXT*, const ULONG);
-void put_numeric(SCHAR, SLONG);
-void put_int64( SCHAR attribute, SINT64 value);
+int put_message(att_type, att_type, const TEXT*, const ULONG);
+void put_numeric(att_type, SLONG);
+void put_int64( att_type attribute, SINT64 value);
 void put_relation(burp_rel*);
-bool put_source_blob(SCHAR, SCHAR, ISC_QUAD&);
-int put_text(SCHAR, const TEXT *, SSHORT);
+bool put_source_blob(att_type, att_type, ISC_QUAD&);
+int put_text(att_type, const TEXT *, SSHORT);
 void set_capabilities();
 void write_character_sets();
 void write_check_constraints();
@@ -432,9 +440,9 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
 	{
-		put(tdgbl, (UCHAR) (rec_relation_data));
+		put(tdgbl, (UCHAR) rec_relation_data);
 		PUT_TEXT(att_relation_name, relation->rel_name);
-		put(tdgbl, (UCHAR) (att_end));
+		put(tdgbl, att_end);
 
 		if (!(relation->rel_flags & REL_view) && !(relation->rel_flags & REL_external))
 		{
@@ -443,7 +451,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 				put_data(relation);
 		}
 
-		put(tdgbl, (UCHAR) (rec_relation_end));
+		put(tdgbl, (UCHAR) rec_relation_end);
 	}
 
 	// now for the new triggers in rdb$triggers
@@ -517,7 +525,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	// Finish up
 
-	put(tdgbl, (UCHAR) (rec_end));
+	put(tdgbl, (UCHAR) rec_end);
 
 	FB_UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
 	BURP_verbose(176, SafeArg() << cumul_count);
@@ -578,7 +586,7 @@ void compress(const UCHAR* data, ULONG length)
 			}
 			if (run)
 			{
-				put(tdgbl, (UCHAR) (run));
+				put(tdgbl, (UCHAR) run);
 				p = put_block(tdgbl, p, run);
 			}
 		}
@@ -1265,7 +1273,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 		}
 	}
 
-	put(tdgbl, (UCHAR) (rec_array));
+	put(tdgbl, (UCHAR) rec_array);
 	put_numeric(att_blob_field_number, field->fld_number);
 	put_numeric(att_array_dimensions, field->fld_dimensions);
 
@@ -1279,7 +1287,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			put_numeric(att_array_range_high, (int) *returned_range);
 	}
 
-	put(tdgbl, (UCHAR) (att_blob_data));
+	put(tdgbl, att_blob_data);
 	put(tdgbl, (UCHAR) (return_length));
 	put(tdgbl, (UCHAR) (return_length >> 8));
 	put(tdgbl, (UCHAR) (return_length >> 16));
@@ -1294,7 +1302,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 			xdr_slice.lstr_address = slice;
 			return_length = CAN_slice(&xdr_buffer, &xdr_slice, TRUE, blr_length, blr_buffer);
-			put(tdgbl, (UCHAR) (att_xdr_array));
+			put(tdgbl, att_xdr_array);
 			put(tdgbl, (UCHAR) (return_length));
 			put(tdgbl, (UCHAR) (return_length >> 8));
 			put(tdgbl, (UCHAR) (return_length >> 16));
@@ -1312,7 +1320,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 }
 
 
-void put_asciz( const SCHAR attribute, const TEXT* string)
+void put_asciz( const att_type attribute, const TEXT* string)
 {
 /**************************************
  *
@@ -1338,8 +1346,8 @@ void put_asciz( const SCHAR attribute, const TEXT* string)
 		l = MAX_FILE_NAME_SIZE - 1;
 	}
 
-	put(tdgbl, (UCHAR) (attribute));
-	put(tdgbl, (UCHAR) (l));
+	put(tdgbl, attribute);
+	put(tdgbl, (UCHAR) l);
 	if (l)
 		put_block(tdgbl, (const UCHAR*) string, l);
 }
@@ -1386,7 +1394,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id, ULONG count)
 		// msg 20 isc_blob_info failed
 	}
 
-	put(tdgbl, (UCHAR) (rec_blob));
+	put(tdgbl, (UCHAR) rec_blob);
 	put_numeric(att_blob_field_number, field->fld_number);
 
 	ULONG segments = 0, total_length = 0;
@@ -1449,7 +1457,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id, ULONG count)
 	else
 		buffer = BURP_alloc(max_segment);
 
-	put(tdgbl, (UCHAR) (att_blob_data));
+	put(tdgbl, att_blob_data);
 
 	while (segments > 0)
 	{
@@ -1482,7 +1490,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id, ULONG count)
 }
 
 
-bool put_blr_blob( SCHAR attribute, ISC_QUAD& blob_id)
+bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 {
 /**************************************
  *
@@ -1871,7 +1879,7 @@ void put_data(burp_rel* relation)
 		if ((records % BACKUP_VERBOSE_INTERVAL) == 0)
 			BURP_verbose(108, SafeArg() << records);
 
-		put(tdgbl, (UCHAR) (rec_data));
+		put(tdgbl, (UCHAR) rec_data);
 		put_numeric(att_data_length, record_length);
 		const UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
@@ -1882,7 +1890,7 @@ void put_data(burp_rel* relation)
 		}
 		else
 			p = buffer;
-		put(tdgbl, (UCHAR) (att_data_data));
+		put(tdgbl, att_data_data);
 		if (tdgbl->gbl_sw_compress)
 			compress(p, record_length);
 		else if (record_length)
@@ -2108,7 +2116,7 @@ void put_index( burp_rel* relation)
 }
 
 
-int put_message( SCHAR attribute, SCHAR attribute2, const TEXT* text, const ULONG length)
+int put_message( att_type attribute, att_type attribute2, const TEXT* text, const ULONG length)
 {
 /**************************************
  *
@@ -2141,14 +2149,14 @@ int put_message( SCHAR attribute, SCHAR attribute2, const TEXT* text, const ULON
 	// If we can store the message using the old format, we do it.
 	if (newlen <= MAX_UCHAR)
 	{
-		put(tdgbl, (UCHAR) attribute);
+		put(tdgbl, attribute);
 		put(tdgbl, (UCHAR) newlen);
 	}
 	else if (newlen <= MAX_USHORT)
 	{
 		if (!attribute2) // In theory, this never happens, because the caller knows what it's doing.
 			BURP_error(314, "");
-		put(tdgbl, (UCHAR) attribute2);
+		put(tdgbl, attribute2);
 		USHORT vax_value = (USHORT) newlen;
 		vax_value = (USHORT) gds__vax_integer((const UCHAR*) &vax_value, sizeof(vax_value));
 		put_block(tdgbl, (const UCHAR*) &vax_value, sizeof(vax_value));
@@ -2163,7 +2171,7 @@ int put_message( SCHAR attribute, SCHAR attribute2, const TEXT* text, const ULON
 }
 
 
-void put_numeric( SCHAR attribute, SLONG value)
+void put_numeric( att_type attribute, SLONG value)
 {
 /**************************************
  *
@@ -2180,13 +2188,13 @@ void put_numeric( SCHAR attribute, SLONG value)
 
 	const SLONG vax_value = (SLONG) isc_vax_integer((const char*) &value, sizeof(value));
 
-	put(tdgbl, (UCHAR) attribute);
+	put(tdgbl, attribute);
 	put(tdgbl, (UCHAR) sizeof(value));
 	put_block(tdgbl, (const UCHAR*) &vax_value, sizeof(vax_value));
 }
 
 
-void put_int64( SCHAR attribute, SINT64 value)
+void put_int64( att_type attribute, SINT64 value)
 {
 /**************************************
  *
@@ -2205,8 +2213,8 @@ void put_int64( SCHAR attribute, SINT64 value)
 
 	const FB_UINT64 le_value = (FB_UINT64) isc_portable_integer((const UCHAR*) &value, sizeof(value));
 
-	put(tdgbl, (UCHAR) (attribute));
-	put(tdgbl, (UCHAR) (sizeof(value)));
+	put(tdgbl, attribute);
+	put(tdgbl, (UCHAR) sizeof(value));
 	put_block(tdgbl, (const UCHAR*) &le_value, sizeof(le_value));
 }
 
@@ -2303,7 +2311,7 @@ void put_relation( burp_rel* relation)
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
-		put(tdgbl, (UCHAR) (rec_field));
+		put(tdgbl, (UCHAR) rec_field);
 		const USHORT l = PUT_TEXT(att_field_name, field->fld_name);
 		MISC_terminate(field->fld_name, temp, l, sizeof(temp));
 		BURP_verbose(144, temp);
@@ -2355,7 +2363,7 @@ void put_relation( burp_rel* relation)
 				put_numeric(att_field_range_high, *(rp + 1));
 			}
 		}
-		put(tdgbl, (UCHAR) (att_end));
+		put(tdgbl, att_end);
 	}
 
 // Write out view relations (if a view, of course)
@@ -2390,13 +2398,11 @@ void put_relation( burp_rel* relation)
 			END_ERROR;
 		}
 	}
-	put(tdgbl, (UCHAR) (rec_relation_end));
+	put(tdgbl, (UCHAR) rec_relation_end);
 }
 
 
-bool put_source_blob(SCHAR		attribute,
-					 SCHAR		old_attribute,
-					 ISC_QUAD&	blob_id)
+bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_id)
 {
 /**************************************
  *
@@ -2446,9 +2452,9 @@ bool put_source_blob(SCHAR		attribute,
 
 	while ((item = *p++) != isc_info_end)
 	{
-		const USHORT l = isc_vax_integer((const SCHAR*) p, 2);
+		const USHORT l = gds__vax_integer(p, 2);
 		p += 2;
-		const ULONG n = isc_vax_integer((const SCHAR*) p, l);
+		const ULONG n = gds__vax_integer(p, l);
 		p += l;
 		switch (item)
 		{
@@ -2509,7 +2515,7 @@ bool put_source_blob(SCHAR		attribute,
 		{
 			put_block(tdgbl, buffer, segment_length);
 		}
-		put(tdgbl, (UCHAR) (NULL));
+		put(tdgbl, (UCHAR) 0);
 	}
 
 	if (!blob.close())
@@ -2523,7 +2529,7 @@ bool put_source_blob(SCHAR		attribute,
 }
 
 
-int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
+int put_text( att_type attribute, const TEXT* text, SSHORT size_len)
 {
 /**************************************
  *
@@ -2545,8 +2551,8 @@ int put_text( SCHAR attribute, const TEXT* text, SSHORT size_len)
 	const SSHORT l = (SSHORT) MISC_symbol_length(text, (ULONG) size_len);
 	fb_assert(l <= MAX_UCHAR);
 
-	put(tdgbl, (UCHAR) (attribute));
-	put(tdgbl, (UCHAR) (l));
+	put(tdgbl, attribute);
+	put(tdgbl, (UCHAR) l);
 	if (l)
 		put_block(tdgbl, (const UCHAR*) text, l);
 
@@ -2768,7 +2774,7 @@ void write_database( const TEXT* dbb_file)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	put(tdgbl, (UCHAR) (rec_physical_db));
+	put(tdgbl, (UCHAR) rec_physical_db);
 
 	if (isc_database_info(status_vector, &DB, sizeof(db_info_items), db_info_items,
 						  sizeof(buffer), buffer))
@@ -2782,7 +2788,7 @@ void write_database( const TEXT* dbb_file)
  	USHORT length = 0;
 	for (const SCHAR* d = buffer; *d != isc_info_end; d += length)
 	{
-		const SCHAR item = *d++;
+		const UCHAR item = *d++;
 		length = (USHORT) isc_vax_integer(d, 2);
 		d += 2;
 		switch (item)
@@ -2840,9 +2846,9 @@ void write_database( const TEXT* dbb_file)
 	BURP_verbose(77, SafeArg() << dbb_file << page_size);
 	// msg 77 database %s has a page size of %ld bytes.
 
-	put(tdgbl, (UCHAR) (att_end));
+	put(tdgbl, att_end);
 
-	put(tdgbl, (UCHAR) (rec_database));
+	put(tdgbl, (UCHAR) rec_database);
 
 /* if we have all capabilities, use the first request to get the
    most performance out of the latest engine; if we don't
@@ -2909,7 +2915,7 @@ void write_database( const TEXT* dbb_file)
 	MISC_release_request_silent(req_handle2);
 	MISC_release_request_silent(req_handle3);
 
-	put(tdgbl, (UCHAR) (att_end));
+	put(tdgbl, att_end);
 }
 
 
@@ -4171,7 +4177,7 @@ void write_trigger_messages()
 		BURP_verbose (157, temp);
 		/* msg 157 writing trigger message for *s */
 		put_numeric (att_trigmsg_number, X.RDB$MESSAGE_NUMBER);
-		PUT_MESSAGE (att_trigmsg_text, 0, X.RDB$MESSAGE);
+		PUT_MESSAGE (att_trigmsg_text, att_end, X.RDB$MESSAGE);
 		put(tdgbl, att_end);
 	END_FOR;
 	ON_ERROR
