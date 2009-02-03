@@ -67,7 +67,7 @@ API
 SECURITY
 --------------------------
 
-  * Members of administrative windows groups are not mapped to SYSDBA any more
+  * Members of administrative Windows groups are not mapped to SYSDBA any more
 	by default. Mapping is controlled on per-database basis using SQL command
 	ALTER ROLE RDB$ADMIN SET/DROP AUTO ADMIN MAPPING. 
 	See README.trusted_authentication for details.

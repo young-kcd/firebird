@@ -39,7 +39,7 @@ The drawbacks are the following:
   * Somewhat ineffective memory usage (same as for Classic)
 
   * High lock table contention (due to page locks), so it requires careful tuning
-    the lock manager confuguration (again, same as for Classic)
+    the lock manager configuration (again, same as for Classic)
  
   * Server crash affects all user attachments (same as for SuperServer)
 

@@ -35,9 +35,9 @@ password are set using some other method):
 (Alex Peshkov, peshkoff@mail.ru, 2008)
 
 Nbackup performs two logical groups of operations - locking/unlocking database 
-and backup/restore it. It's absolutely no use duplicating locking/unlocking in 
-services, cause that functionality is present remotely in much better from any 
-point of view SQL language interface (ALTER DATABASE). But backup and restore 
+and backup/restore it. It's doesn't make sense duplicating locking/unlocking in 
+services, cause that functionality is present remotely in much better (from any 
+point of view) in SQL language interface (ALTER DATABASE). But backup and restore 
 must be run on localhost and the only way to access them is nbackup utility.
 Therefore expanding services API with this functionalty is very useful.
 
