@@ -206,6 +206,11 @@ void TraceManager::update_sessions()
 			trace_sessions.remove(i);
 		}
 	}
+
+	// nothing to trace, clear needs
+	if (trace_sessions.getCount() == 0) {
+		memset(&trace_needs, 0, sizeof(trace_needs));
+	}
 }
 
 void TraceManager::update_session(const TraceSession& session)
