@@ -55,6 +55,7 @@ export FIREBIRD
 
 LIB=$(FIREBIRD)/lib
 BIN=$(FIREBIRD)/bin
+PLUGINS=$(FIREBIRD)/plugins
 
 # This picks up the current directory and maps it to the equivalent module
 # in the src and gen area.
@@ -293,6 +294,10 @@ LINK_INTL = $(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS)\
  $(call LIB_LINK_SONAME,libintl.$(SHRLIB_EXT).1) $(call LIB_LINK_RPATH,lib)
 LINK_INTL_LIBS = -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS)
 
+LINK_TRACE = $(LIB_LINK) $(LINK_TRACE_SYMBOLS) $(LIB_LINK_OPTIONS)\
+ $(call LIB_LINK_SONAME,$(LIB_PREFIX)fbtrace.$(SHRLIB_EXT).0) $(call LIB_LINK_RPATH,lib)
+LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) -lrxspencer
+
 LINK_CLIENT = $(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS)\
  $(LIB_LINK_IMPLIB) $(call LIB_LINK_SONAME,$(ClientLibrarySoName)) $(call LIB_LINK_RPATH,lib)
 LINK_CLIENT_LIBS = $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
@@ -307,7 +312,7 @@ GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
 FBSVCMGR	= $(BIN)/fbsvcmgr$(EXEC_EXT)
 GSTAT		= $(BIN)/gstat$(EXEC_EXT)
 NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
-NTRACE		= $(BIN)/ntrace$(EXEC_EXT)
+FBTRACE		= $(PLUGINS)/$(LIB_PREFIX)fbtrace.$(SHRLIB_EXT)
 LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
 GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)

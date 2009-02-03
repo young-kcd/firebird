@@ -22,22 +22,15 @@
 # this file are either listed below or can be obtained from a CVS 
 # history command.
 #
-#  Created by:  Erik Kunze <Erik.Kunze@philosys.de>
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
 #
 #  Contributor(s):
-# 		Alex Peshkov
+# 
 #
 #
 ROOT=..
-#ObjModuleType=std
-
-##  Set your options:
-##  -DANSI_ARROWS       ANSI arrows keys work like emacs.
-##  -DHIDE              Make static functions static (non debug).
-##  -DHIST_SIZE=n       History size.
-##  -DUNIQUE_HISTORY    Don't save command if same as last one.
-##  -DDO_SIGTSTP        Send SIGTSTP on "suspend" key
-#CFLAGS:= -DANSI_ARROWS -DHIDE -DHIST_SIZE=100 -DUNIQUE_HISTORY -DSYS_UNIX
+ObjModuleType=superclient
+CFLAGS+=-DSUPERCLIENT
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -47,17 +40,40 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-.PHONY: librxspencer
+FBTRACE_UTIL_Files= TraceConfiguration.cpp traceplugin.cpp TracePluginImpl.cpp \
+		os/posix/FileObject.cpp os/posix/platform.cpp
+FBTRACE_UTIL_Sources = $(addprefix utilities/ntrace/, $(FBTRACE_UTIL_Files))
+FBTRACE_UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACE_UTIL_Sources))))
+
+FBTRACE_OTHER_Sources = $(OS_SPECIFIC_Sources) jrd/isc.cpp jrd/isc_sync.cpp \
+common/classes/alloc.cpp common/classes/ClumpletReader.cpp common/fb_exception.cpp \
+common/classes/fb_string.cpp common/classes/MetaName.cpp common/classes/timestamp.cpp \
+common/utils.cpp gpre/pretty.cpp
+FBTRACE_OTHER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACE_OTHER_Sources))))
+
+FBTRACE_Objects = $(FBTRACE_UTIL_Objects) $(FBTRACE_OTHER_Objects)
 
 
-librxspencer : $(LIB)/librxspencer.a
+AllObjects = $(FBTRACE_Objects)
+Dependencies = $(AllObjects:.o=.d)
 
-$(LIB)/librxspencer.a:
-	$(MAKE) -C $(ROOT)/extern/regex
-	(cd $(ROOT)/extern/regex/.libs/; tar cf - librxspencer.so*) | (cd $(LIB); tar xf -)
-#	cp $(ROOT)/extern/regex/.libs/librxspencer.a $(LIB)/librxspencer.a
+
+.PHONY: all fbtrace
+
+
+all : fbtrace
+
+# In the following the rpath variable probably wants to be different
+# if it's going to be installed in fb specific path.
+# Also the dynamic link process used in fb, will fall over if it finds
+# links etc in the intl directory MOD 28-July-2002
+
+fbtrace: $(FBTRACE)
+
+$(FBTRACE):	$(FBTRACE_Objects)
+	$(LINK_TRACE) -o $@ $^ $(LINK_TRACE_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets
 
-#-include $(Dependencies)
+-include $(Dependencies)

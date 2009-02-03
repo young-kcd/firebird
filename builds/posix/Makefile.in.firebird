@@ -131,6 +131,7 @@ export LD_LIBRARY_PATH
 .PHONY: all firebird firebird_boot firebird_basic 
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
 .PHONY: firebird_super firebird_classic btyacc_binary
+.PHONY: fbtrace
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -141,8 +142,8 @@ export LD_LIBRARY_PATH
 
 firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
 
-firebird_classic firebird_embedded: firebird_basic classic_targets
-firebird_super firebird_server: firebird_basic super_targets
+firebird_classic firebird_embedded: firebird_basic classic_targets fbtrace
+firebird_super firebird_server: firebird_basic super_targets fbtrace
 
 
 
@@ -415,6 +416,12 @@ client_qli:
 #sysdba_user gstat:			# add sysdba user and build gstat program
 #	$(MAKE) -C utilities $@
 
+
+
+#---------------------------------------------------------------------------
+
+fbtrace:
+	$(MAKE) -f $(GEN_ROOT)/Makefile.fbtrace
 
 
 #---------------------------------------------------------------------------

@@ -159,19 +159,6 @@ NBACKUP_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACK
 #
 # ntrace
 
-NTRACE_UTIL_Files= TraceConfiguration.cpp traceplugin.cpp TracePluginImpl.cpp
-#NTRACE_OS_Files= os\win32\FileObject.cpp os\win32\platform.cpp
-NTRACE_UTIL_Sources = $(addprefix utilities/ntrace/, $(NTRACE_UTIL_Files))
-NTRACE_UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_UTIL_Sources))))
-
-NTRACE_OTHER_Sources = $(OS_SPECIFIC_Sources) jrd\isc.cpp jrd\isc_sync.cpp \
-common\classes\alloc.cpp common\classes\ClumpletReader.cpp common\fb_exception.cpp \
-common\classes\fb_string.cpp common\classes\MetaName.cpp common\classes\timestamp.cpp \
-common\utils.cpp gpre\pretty.cpp
-NTRACE_OTHER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_OTHER_Sources))))
-
-NTRACE_Objects = $(NTRACE_UTIL_Objects) $(NTRACE_OTHER_Objects)
-
 NTRACE_SERVER_Files= TraceCmdLine.cpp TraceService.cpp
 NTRACE_SERVER_Sources = $(addprefix jrd/trace/, $(NTRACE_SERVER_Files))
 NTRACE_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_SERVER_Sources))))
