@@ -124,7 +124,7 @@ public:
 		append(from);
 	}
 
-	BePlusTree& operator =(BePlusTree& from)
+	BePlusTree& operator =(const BePlusTree& from)
 	{
 		clear();
 		append(from);
