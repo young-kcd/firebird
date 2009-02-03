@@ -1107,7 +1107,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, ClumpletWriter& writer
 		writer.insertTimeStamp(f_mon_stmt_timestamp, empty);
 	}
 	// sql text
-	const static string emptyString;
+	const string emptyString;
 	const string &sql = request->req_sql_text ? (*request->req_sql_text) : emptyString;
 	writer.insertString(f_mon_stmt_sql_text, sql);
 	// statistics
