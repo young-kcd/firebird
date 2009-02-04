@@ -31,8 +31,9 @@
 #include "../../jrd/common.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceObjects.h"
-#include "../../jrd/plugin_manager.h"
 #include "../../jrd/os/path_utils.h"
+
+#include "../config/ScanDir.h"
 
 #ifdef WIN_NT
 #include <process.h> 
@@ -139,29 +140,30 @@ void TraceManager::load_modules()
 
 	init_modules = true;
 
-	for (PluginManager::iterator i = PluginManager::enginePluginManager().begin(); *i; ++i) 
+	char plugdir[MAXPATHLEN];
+	gds__prefix(plugdir, "plugins");
+	ScanDir plugins(plugdir, "*.*");
+
+	while (plugins.next())
 	{
-		PluginManager::Plugin p = *i;
-		const PathName* name = p.name();
-		if (!name) 
+		PathName modLib(plugins.getFileName());
+		if (modLib.find(NTRACE_PREFIX) == PathName::npos)
 			continue;
 
-		PathName pathComponent, modName;			
-		PathUtils::splitLastComponent(pathComponent, modName, *name);
+		PathName fullModName;
+		PathUtils::concatPath(fullModName, plugdir, modLib);
 
-		if (modName.substr(0, strlen(NTRACE_PREFIX)) != NTRACE_PREFIX)
+		ModuleLoader::Module* m = ModuleLoader::loadModule(fullModName);
+		if (!m)
 			continue;
 
-		ntrace_attach_t ntrace_attach_func = 
-			(ntrace_attach_t) ((*i).lookupSymbol(NTRACE_ATTACH));
-
+		ntrace_attach_t ntrace_attach_func = (ntrace_attach_t) (m->findSymbol(NTRACE_ATTACH));
 		if (!ntrace_attach_func)
 			continue;
 
 		ModuleInfo info;
 		info.ntrace_attach = ntrace_attach_func;
-		strncpy(info.module, modName.c_str(), sizeof(info.module));
-		info.module[sizeof(info.module)-1] = 0;
+		fullModName.copyTo(info.module, sizeof(info.module));
 		modules->add(info);
 	}
 }
