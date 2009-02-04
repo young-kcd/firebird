@@ -544,10 +544,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\plugin_manager.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\PreparedStatement.cpp"
 				>
 			</File>
@@ -653,6 +649,22 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tra.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceLog.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceObjects.cpp"
 				>
 			</File>
 			<File
@@ -1376,6 +1388,34 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceDSQLHelpers.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceJrdHelpers.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceLog.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceObjects.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceSession.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\trig.h"
 				>
 			</File>
@@ -1413,6 +1453,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\why_proto.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="GPRE files"
+			>
+			<File
+				RelativePath="..\..\..\src\gpre\pretty.cpp"
 				>
 			</File>
 		</Filter>
