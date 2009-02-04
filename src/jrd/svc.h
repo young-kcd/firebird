@@ -134,7 +134,8 @@ public:		// utilities interface with service
 
 	virtual bool finished() 
 	{
-		return (svc_flags & (SVC_finished | SVC_detached)) != 0;
+		return ((svc_flags & (SVC_finished | SVC_detached)) != 0)
+			|| checkForShutdown();
 	}
 
 public:		// external interface with service
