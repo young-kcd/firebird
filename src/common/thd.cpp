@@ -44,6 +44,16 @@
 #include <unistd.h>
 #endif
 
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
 #ifdef SOLARIS_MT
 #include <thread.h>
@@ -101,12 +111,26 @@ void THD_sleep(ULONG milliseconds)
  *	of milliseconds.
  *
  **************************************/
-#ifdef WIN_NT
+#if defined(WIN_NT)
 	SleepEx(milliseconds, FALSE);
+#elif defined(HAVE_NANOSLEEP)
+	timespec timer, rem;
+	timer.tv_sec = milliseconds / 1000;
+	timer.tv_nsec = (milliseconds % 1000) * 1000000;
+
+	while (nanosleep(&timer, &rem) != 0)
+	{
+		if (errno != EINTR)
+		{
+			timer = rem;
+			continue;
+		}
+		Firebird::system_call_failed::raise("nanosleep");
+	}
 #else
 	Firebird::Semaphore timer;
 	timer.tryEnter(0, milliseconds);
-#endif // WIN_NT
+#endif
 }
 
 

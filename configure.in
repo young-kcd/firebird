@@ -593,6 +593,7 @@ if test "$ac_cv_func_gettimeofday" = "yes"; then
 #endif])
 fi
 AC_CHECK_FUNCS(time times)
+AC_CHECK_FUNCS(nanosleep)
 AC_SEARCH_LIBS(gethostname,nsl)
 AC_SEARCH_LIBS(connect,socket)
 AC_CHECK_FUNCS(strcasecmp stricmp)
