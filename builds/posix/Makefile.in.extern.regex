@@ -54,7 +54,7 @@ librxspencer : $(LIB)/librxspencer.a
 
 $(LIB)/librxspencer.a:
 	$(MAKE) -C $(ROOT)/extern/regex
-	(cd $(ROOT)/extern/regex/.libs/; tar cf - librxspencer.so*) | (cd $(LIB); tar xf -)
+	(cd $(ROOT)/extern/regex/.libs/; tar cf - librxspencer.$(SHRLIB_FOREIGN_EXT)*) | (cd $(LIB); tar xf -)
 #	cp $(ROOT)/extern/regex/.libs/librxspencer.a $(LIB)/librxspencer.a
 
 
