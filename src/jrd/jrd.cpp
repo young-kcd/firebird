@@ -119,7 +119,6 @@
 
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../jrd/plugin_manager.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
@@ -160,8 +159,6 @@ namespace
 		{
 			IbUtil::initialize();
 			IntlManager::initialize();
-			if (!PluginManager::enginePluginManager().begin())
-				PluginManager::load_engine_plugins();
 		}
 
 		static void cleanup()
@@ -3008,10 +3005,6 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		ThreadContextHolder tdbb(user_status);
 
-		// hvlad: ???
-		if (!PluginManager::enginePluginManager().begin())
-			PluginManager::load_engine_plugins();
-
 		*svc_handle = new Service(service_name, spb_length, reinterpret_cast<const UCHAR*>(spb));
 	}
 	catch (const DelayFailedLogin& ex)
@@ -4829,6 +4822,7 @@ static Database* init(thread_db* tdbb,
 
 	TRA_init(dbb);
 
+#ifdef ISC_DATABASE_ENCRYPTION
 	// Lookup some external "hooks"
 
 	PluginManager::Plugin crypt_lib = PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
@@ -4838,7 +4832,7 @@ static Database* init(thread_db* tdbb,
 		dbb->dbb_encrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
 		dbb->dbb_decrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
-
+#endif
 	return dbb;
 }
 

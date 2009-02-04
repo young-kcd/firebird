@@ -32,7 +32,6 @@
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceObjects.h"
-#include "../../jrd/plugin_manager.h"
 #include "../../jrd/isc_proto.h"
 #include "../../jrd/isc_s_proto.h"
 #include "../../jrd/jrd.h"
