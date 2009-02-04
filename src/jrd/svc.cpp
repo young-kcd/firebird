@@ -1424,7 +1424,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 	if (start_info && (end - info >= 7))
 	{
-		const SLONG number = 1 + (info - start_info);
+		const SLONG number = (info - start_info);
 		memmove(start_info + 7, start_info, number);
 		USHORT length2 = INF_convert(number, buffer);
 		INF_put_item(isc_info_length, length2, buffer, start_info, end);
