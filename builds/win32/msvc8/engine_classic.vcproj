@@ -543,10 +543,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\plugin_manager.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\PreparedStatement.cpp"
 				>
 			</File>
