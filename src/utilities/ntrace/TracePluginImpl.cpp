@@ -992,11 +992,11 @@ void TracePluginImpl::register_connection(TraceConnection* connection)
 		conn_data.description->append(", <unknown_user>");
 	}
 
-	const char* rem_proto = connection->getRemoteProtocol();
-	const char* rem_addr = connection->getRemoteAddress();
-	if (rem_proto && *rem_proto)
+	const char* remProto = connection->getRemoteProtocol();
+	const char* remAddr = connection->getRemoteAddress();
+	if (remProto && *remProto)
 	{
-		tmp.printf(", %s:%s)", rem_proto, rem_addr);
+		tmp.printf(", %s:%s)", remProto, remAddr);
 		conn_data.description->append(tmp);
 	}
 	else
