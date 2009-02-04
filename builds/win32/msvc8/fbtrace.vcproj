@@ -369,56 +369,8 @@
 			>
 		</Filter>
 		<Filter
-			Name="COMMON files"
-			>
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\ClumpletReader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\config.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\config_file.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\MetaName.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\gpre\pretty.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\timestamp.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\utils.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="JRD files"
 			>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp"
 				>
