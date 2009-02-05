@@ -1092,7 +1092,10 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 		impure->vlu_flags = 0;
 	}
 
-	tdbb->bumpStats(RuntimeStatistics::STMT_EXECUTES);
+	if (request->req_sql_text)
+	{
+		tdbb->bumpStats(RuntimeStatistics::STMT_EXECUTES);
+	}
 
 	// Start a save point if not in middle of one
 	if (transaction && (transaction != dbb->dbb_sys_trans)) {

@@ -2209,7 +2209,10 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		ERR_punt();
 	}
 
-	tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
+	if (!internal_flag)
+	{
+		tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
+	}
 
 	return request;
 }
