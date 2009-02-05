@@ -2834,9 +2834,6 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		default:
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
-
-		request->adjustCallerStats();
-
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -2888,6 +2885,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 	} // while()
 
+	request->adjustCallerStats();
+	
 	fb_assert(request->req_auto_trans.getCount() == 0);
 
 	// If there is no node, assume we have finished processing the
