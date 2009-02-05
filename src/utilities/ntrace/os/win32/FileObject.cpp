@@ -142,10 +142,9 @@ UINT64 FileObject::size()
 	UINT64 nFileLen = 0;
 	if (file != INVALID_HANDLE_VALUE)
 	{ 
-		DWORD dwSizeHigh = 0;
-		DWORD dwSizeLow = 0;
-		dwSizeLow = GetFileSize(file, &dwSizeHigh);
-		nFileLen = (dwSizeHigh * (MAXDWORD + 1)) + dwSizeLow;
+		LARGE_INTEGER size;
+		if (GetFileSizeEx(file, &size))
+			nFileLen = size.QuadPart;
 	}
 	return nFileLen;
 }
