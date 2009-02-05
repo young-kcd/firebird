@@ -97,7 +97,7 @@ private:
 		tagID = 1,			// session ID
 		tagName,			// session Name
 		tagUserName,		// creator user name
-		tagFlags,			// sesion flags
+		tagFlags,			// session flags
 		tagConfig,			// configuration
 		tagStartTS,			// date+time when started
 		tagLogFile,			// log file name, if any

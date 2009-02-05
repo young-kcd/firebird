@@ -151,7 +151,7 @@ void TraceSvcJrd::stopSession(ULONG id)
 			m_svc.printf("Trace session ID %ld stopped\n", id);
 		}
 		else
-			m_svc.printf("No permissions to stop other user trace sesion\n");
+			m_svc.printf("No permissions to stop other user trace session\n");
 
 		return;
 	}
@@ -201,7 +201,7 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 		}
 		else
 		{
-			m_svc.printf("No permissions to change other user trace sesion\n");
+			m_svc.printf("No permissions to change other user trace session\n");
 			return false;
 		}
 	}
