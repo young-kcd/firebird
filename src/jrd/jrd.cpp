@@ -3101,7 +3101,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 			int len, warning;
 			PARSE_STATUS(service->getStatus(), len, warning);
 			if (len) {
-				memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS) * len);
+				memcpy(user_status, service->getStatus(), sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
 				memset(service->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
 				return user_status[1];
@@ -3149,8 +3149,8 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 
 		if (service->getStatus()[1]) 
 		{
-			memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS_ARRAY));
-			return tdbb->tdbb_status_vector[1];
+			memcpy(user_status, service->getStatus(), sizeof(ISC_STATUS_ARRAY));
+			return user_status[1];
 		}
 	}
 	catch (const Exception& ex)
