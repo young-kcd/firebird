@@ -8870,6 +8870,8 @@ static const char* sqltype_to_string(USHORT sqltype)
 		return "ARRAY	";
 	case SQL_QUAD:
 		return "QUAD	 ";
+	case SQL_NULL:
+		return "NULL	 ";
 	default:
 		return "unknown  ";
 	}

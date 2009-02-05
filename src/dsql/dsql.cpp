@@ -98,7 +98,7 @@ static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* c
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
-	const UCHAR* const, USHORT);
+	const UCHAR* const, USHORT, bool);
 
 static inline bool reqTypeWithCursor(REQ_TYPE req_type)
 {
@@ -2205,9 +2205,12 @@ static void map_in_out(	dsql_req*		request,
 			}
 			else if (!flag || *flag >= 0)
 			{
-				// Safe cast because desc is used as source only.
-				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-				MOVD_move(&desc, &parameter->par_desc);
+				if (!(parameter->par_desc.dsc_flags & DSC_null))
+				{
+					// Safe cast because desc is used as source only.
+					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
+					MOVD_move(&desc, &parameter->par_desc);
+				}
 			}
 			else if (parameter->par_desc.isBlob())
 				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
@@ -3034,7 +3037,8 @@ static void sql_info(thread_db* tdbb,
 					end_describe++;
 				}
 
-				info = var_info(*message, items, end_describe, info, end_info, first_index);
+				info = var_info(*message, items, end_describe, info, end_info, first_index,
+					message == &request->req_send);
 				if (!info) {
 					return;
 				}
@@ -3087,7 +3091,8 @@ static UCHAR* var_info(dsql_msg* message,
 					   const UCHAR* const end_describe,
 					   UCHAR* info,
 					   const UCHAR* const end,
-					   USHORT first_index)
+					   USHORT first_index,
+					   bool input_message)
 {
 	if (!message || !message->msg_index)
 		return info;
@@ -3144,8 +3149,16 @@ static UCHAR* var_info(dsql_msg* message,
 				break;
 
 			case dtype_text:
-				sql_type = SQL_TEXT;
-				sql_sub_type = param->par_desc.dsc_sub_type;
+				if (input_message && (param->par_desc.dsc_flags & DSC_null))
+				{
+					sql_type = SQL_NULL;
+					sql_len = 0;
+				}
+				else
+				{
+					sql_type = SQL_TEXT;
+					sql_sub_type = param->par_desc.dsc_sub_type;
+				}
 				break;
 
 			case dtype_blob:
