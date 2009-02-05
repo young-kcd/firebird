@@ -66,6 +66,14 @@ typedef unsigned char UCHAR;
 typedef short SSHORT;
 typedef unsigned short USHORT;
 
+#ifdef WIN_NT
+typedef __int64 SINT64;
+typedef unsigned __int64 FB_UINT64;
+#else
+typedef long long int SINT64;
+typedef unsigned long long int FB_UINT64;
+#endif
+
 /* Substitution of API data types */
 
 typedef SCHAR ISC_SCHAR;
@@ -74,6 +82,8 @@ typedef SSHORT ISC_SHORT;
 typedef USHORT ISC_USHORT;
 typedef SLONG ISC_LONG;
 typedef ULONG ISC_ULONG;
+typedef SINT64 ISC_INT64;
+typedef FB_UINT64 ISC_UINT64;
 
 #include "types_pub.h"
 

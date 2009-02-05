@@ -425,10 +425,6 @@ extern "C" int remove(const char* path);
 //format for __LINE__
 #define LINEFORMAT "d"
 
-typedef __int64 SINT64;
-typedef unsigned __int64 FB_UINT64;
-#define INT64_DEFINED
-
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
    is an SINT64 or FB_UINT64. */
@@ -588,15 +584,6 @@ typedef unsigned __int64 FB_UINT64;
 #endif
 
 /* data type definitions */
-
-
-#ifndef INT64_DEFINED			/* 64 bit */
-typedef long long int SINT64;
-typedef unsigned long long int FB_UINT64;
-#else
-#undef INT64_DEFINED
-#endif
-
 
 #ifndef ATOM_DEFINED			/* 32 or 64 bit */
 typedef long SATOM;
