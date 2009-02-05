@@ -903,7 +903,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 
 		case IN_SW_BURP_NOD:
-			//tdgbl->gbl_sw_nodbtriggers = true;
 			dpb.insertByte(isc_dpb_no_db_triggers, 1);
 			break;
 

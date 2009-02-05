@@ -32,7 +32,6 @@
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceObjects.h"
 #include "../../jrd/os/path_utils.h"
-
 #include "../config/ScanDir.h"
 
 #ifdef WIN_NT

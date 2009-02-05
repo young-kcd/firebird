@@ -341,7 +341,7 @@ bool TraceSvcJrd::checkAlive(ULONG sesId)
 // service entrypoint
 THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 {
-	Service* svc = (Service*)arg;
+	Service* svc = (Service*) arg;
 	int exit_code = FB_SUCCESS;
 
 	TraceSvcJrd traceSvc(*svc);

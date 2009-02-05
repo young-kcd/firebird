@@ -69,11 +69,6 @@ Dependencies = $(AllObjects:.o=.d)
 
 all : fbtrace
 
-# In the following the rpath variable probably wants to be different
-# if it's going to be installed in fb specific path.
-# Also the dynamic link process used in fb, will fall over if it finds
-# links etc in the intl directory MOD 28-July-2002
-
 fbtrace: $(FBTRACE)
 
 $(FBTRACE):	$(FBTRACE_Objects)

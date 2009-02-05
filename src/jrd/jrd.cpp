@@ -2094,7 +2094,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	{
 		const ISC_LONG exc = ex.stuff_exception(user_status);
 		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL, 
+		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 			filename, options, true, no_priv);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
@@ -4833,6 +4833,7 @@ static Database* init(thread_db* tdbb,
 		dbb->dbb_decrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
 #endif
+
 	return dbb;
 }
 

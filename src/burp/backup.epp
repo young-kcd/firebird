@@ -94,7 +94,7 @@ inline void put(BurpGlobals* tdgbl, const UCHAR c)
 
 inline void put(BurpGlobals* tdgbl, const att_type c)
 {
-	if (--(tdgbl->io_cnt) >= 0)
+	if (--tdgbl->io_cnt >= 0)
 		*(tdgbl->io_ptr)++ = UCHAR(c);
 	else
 		MVOL_write(UCHAR(c), &tdgbl->io_cnt, &tdgbl->io_ptr);
@@ -624,12 +624,12 @@ int copy( const TEXT* from, TEXT* to, ULONG size_len)
  *
  **************************************/
 
-	const ULONG l = (ULONG) MISC_symbol_length(from, size_len);
+	const ULONG len = (ULONG) MISC_symbol_length(from, size_len);
 
-	memcpy(to, from, l);
-	to[l] = '\0';
+	memcpy(to, from, len);
+	to[len] = '\0';
 
-	return (int) l;
+	return (int) len;
 }
 
 
@@ -2130,7 +2130,7 @@ int put_message( att_type attribute, att_type attribute2, const TEXT* text, cons
  * CVC: As v6 time, put_text handles embedded blanks, too!
  * The only difference is that put_text's length is SSHORT, so
  * in theory put_message can handle much longer input and it's
- * used for exception & trigger's messages (plus update/delete
+ * used for exception and trigger's messages (plus update/delete
  * rules for FKs and constraint types, where it's irrelevant
  * which function of the two you use).
  * CVC: Responsability for FKs and constraint types transferred to put_text.

@@ -1108,7 +1108,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, ClumpletWriter& writer
 	}
 	// sql text
 	const string emptyString;
-	const string &sql = request->req_sql_text ? (*request->req_sql_text) : emptyString;
+	const string& sql = request->req_sql_text ? (*request->req_sql_text) : emptyString;
 	writer.insertString(f_mon_stmt_sql_text, sql);
 	// statistics
 	writer.insertBigInt(f_mon_stmt_stat_id, getGlobalId(stat_id));

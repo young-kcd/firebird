@@ -184,7 +184,6 @@ Version 6: IB6, FB1, FB1.5.
 
 Version 7: FB2.0.
 			RDB$DESCRIPTION in roles and generators.
-			RDB$FILE_NAME in character_sets and collations
 			RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
 
 Version 8: FB2.1.
@@ -601,7 +600,7 @@ struct burp_fld
 	TEXT		fld_base [GDS_NAME_LEN];
 	TEXT		fld_query_name [GDS_NAME_LEN];
 	TEXT		fld_security_class [GDS_NAME_LEN];
-	//SSHORT		fld_edit_length;
+	//SSHORT	fld_edit_length;
 	SSHORT		fld_view_context;
 	SSHORT		fld_update_flag;
 	SSHORT		fld_flags;
@@ -661,7 +660,7 @@ enum burp_rel_flags_vals {
 struct burp_prc
 {
 	burp_prc*	prc_next;
-	//SSHORT		prc_name_length; // Currently useless, but didn't want to delete it.
+	//SSHORT	prc_name_length; // Currently useless, but didn't want to delete it.
 	GDS_NAME	prc_name;
 	GDS_NAME	prc_owner;		// relation owner, if not us
 };
@@ -833,7 +832,6 @@ public:
 	bool		gbl_sw_ignore_limbo;
 	bool		gbl_sw_meta;
 	bool		gbl_sw_novalidity;
-	//bool		gbl_sw_nodbtriggers; // Currently useless, as the dpb is filled immediately.
 	USHORT		gbl_sw_page_size;
 	bool		gbl_sw_compress;
 	bool		gbl_sw_version;

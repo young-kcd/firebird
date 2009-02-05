@@ -195,7 +195,7 @@ void ConfigStorage::checkFile()
 		if (len)
 		{
 			fseek(cfgFile, 0, SEEK_SET);
-			char* p = session.ses_config.getBuffer(len+1);
+			char* p = session.ses_config.getBuffer(len + 1);
 			if (fread(p, 1, len, cfgFile) != len)
 			{
 				Arg::Gds temp(isc_io_error); 

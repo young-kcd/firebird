@@ -183,7 +183,7 @@ public:
 
 	bool isEmpty() const
 	{
-		return root == NULL || (level == 0 && ((ItemList*)root)->getCount() == 0);
+		return root == NULL || (level == 0 && ((ItemList*) root)->getCount() == 0);
 	}
 
 	bool add(const Value& item) { return defaultAccessor.add(item); }
@@ -557,7 +557,7 @@ public:
 				// Only one node left in the current page. We cannot remove it directly
 				// because is would invalidate our tree structure
 				fb_assert(this->curPos == 0);
-				ItemList *temp;
+				ItemList* temp;
 				if ((temp = this->curr->prev) && NEED_MERGE(temp->getCount(), LeafCount)) {
 					temp = this->curr->next;
 					tree->_removePage(0, this->curr);

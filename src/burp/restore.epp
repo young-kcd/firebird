@@ -2946,7 +2946,7 @@ bool get_exception(BurpGlobals* tdgbl)
 			default:
 				if (msg_seen && (tdgbl->RESTORE_format == 7 || tdgbl->RESTORE_format == 8))
 				{
-					 // we have a corrup backup
+					 // we have a corrupt backup
 					if (!failed_attrib)
 					{
 						failed_attrib = attribute;
@@ -2960,14 +2960,14 @@ bool get_exception(BurpGlobals* tdgbl)
 					const int remaining = FIELD_LIMIT - l2;
 					if (remaining < 1) // not enough space
 					{
-						bad_attribute (scan_next_attr, failed_attrib, 287);
+						bad_attribute(scan_next_attr, failed_attrib, 287);
 						break;
 					}
 					*msg_ptr++ = char(attribute); // (1)
 					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, MIN(remaining - 1, 255));
 					if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
 					{
-						bad_attribute (scan_next_attr, failed_attrib, 287);
+						bad_attribute(scan_next_attr, failed_attrib, 287);
 						break;
 					}
 					l2 += rc_ptr - msg_ptr + 1; // + 1 because (1)
@@ -2977,7 +2977,7 @@ bool get_exception(BurpGlobals* tdgbl)
 						msg_seen = false;
 				}
 				else
-					bad_attribute (scan_next_attr, attribute, 287); // msg 287 exception
+					bad_attribute(scan_next_attr, attribute, 287); // msg 287 exception
 				break;
 			}
 		}
@@ -6214,8 +6214,10 @@ USHORT get_text2(BurpGlobals* tdgbl, TEXT* text, ULONG length)
 	const USHORT len = (USHORT) gds__vax_integer(lenstr, sizeof(lenstr));
 
 	if (length <= len)
+	{
 		BURP_error_redirect (NULL, 46);
 		// msg 46 string truncated
+	}
 
 	if (len)
 		text = (TEXT*) get_block(tdgbl, (UCHAR*) text, len);
@@ -6649,7 +6651,6 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 	// Versions prior to FB2.0 don't support a field longer than varchar(78).
 	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
 		message[78] = 0;
-
 
 	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 

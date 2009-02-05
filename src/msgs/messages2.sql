@@ -2461,7 +2461,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 309, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 310, NULL, 'empty password file @1', NULL, NULL);
 (NULL, 'get_exception', 'restore.epp', NULL, 12, 311, NULL, 'Attribute @1 was already processed for exception @2', NULL, NULL)
-(NULL, 'get_exception', 'restore.epp', NULL, 12, 312, NULL, 'Skipping attribute @1 because the message already exists for exception @2 ', NULL, NULL)
+(NULL, 'get_exception', 'restore.epp', NULL, 12, 312, NULL, 'Skipping attribute @1 because the message already exists for exception @2', NULL, NULL)
 (NULL, 'get_exception', 'restore.epp', NULL, 12, 313, NULL, 'Trying to recover from unexpected attribute @1 due to wrong message length for exception @2', NULL, NULL)
 (NULL, 'put_exception', 'backup.epp', NULL, 12, 314, NULL, 'Attribute not specified for storing text bigger than 255 bytes', NULL, NULL)
 (NULL, 'put_exception', 'backup.epp', NULL, 12, 315, NULL, 'Unable to store text bigger than 65536 bytes', NULL, NULL)
