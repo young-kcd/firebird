@@ -1,3 +1,118 @@
+2009-02-05 17:15  hvlad
+
+	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.10),
+	RuntimeStatistics.h (1.15), req.h (1.88):
+
+	Performance : don't perform costly operations if not needed
+
+2009-02-05 16:03  hvlad
+
+	* firebird2/src/jrd/exe.cpp (1.288):
+
+	Performance : move costly method out of the loop
+
+2009-02-05 15:50  asfernandes
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.h (1.5),
+	TraceService.cpp (1.6):
+
+	Misc
+
+2009-02-05 15:44  asfernandes
+
+	* firebird2/src/jrd/trace/: TraceCmdLine.cpp (1.4), TraceLog.cpp
+	(1.8), TraceService.cpp (1.5), TraceService.h (1.4):
+
+	Misc
+
+2009-02-05 15:29  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.273), dsql/make.cpp (1.184),
+	dsql/pass1.cpp (1.438), dsql/sqlda_pub.h (1.9), dsql/utld.cpp
+	(1.61), isql/isql.epp (1.265), jrd/dsc.h (1.47):
+
+	CORE-2298 - Add support for "some_col = ? or ? IS NULL" conditions
+
+2009-02-05 15:23  asfernandes
+
+	* firebird2/src/utilities/ntrace/os/win32/FileObject.cpp (1.3):
+
+	1) Replace usage of GetFileSize (trick error returning) by
+	GetFileSizeEx - Vlad, please review if errors need to be thrown
+	here.  2) Get rid of a numeric overflow
+
+2009-02-05 14:22  alexpeshkoff
+
+	* firebird2/builds/: install/arch-specific/aix/Makefile.in (1.3),
+	install/arch-specific/aix/classic/makeInstallImage.sh.in (1.1),
+	install/arch-specific/aix/classic/rpmfiles.txt.in (1.1),
+	install/arch-specific/aix/classic/rpmheader.txt.in (1.1),
+	install/arch-specific/aix/misc/aixLibrary.sh.in (1.1),
+	install/arch-specific/aix/misc/firebird.init.d.aix.in (1.1),
+	install/arch-specific/aix/misc/postinstall.sh.in (1.1),
+	install/arch-specific/aix/misc/postuninstall.sh.in (1.1),
+	install/arch-specific/aix/misc/preinstall.sh.in (1.1),
+	install/arch-specific/aix/misc/preuninstall.sh.in (1.1),
+	install/arch-specific/aix/misc/rc.config.firebird.aix.in (1.1),
+	install/arch-specific/aix/misc/tarinstall.sh.in (1.1),
+	install/arch-specific/aix/misc/tarmaininstall.sh.in (1.1),
+	install/arch-specific/aix/misc/tarmainuninstall.sh.in (1.1),
+	install/arch-specific/aix/misc/taruninstall.sh.in (1.1),
+	install/misc/posixLibrary.sh.in (1.20), posix/Makefile.in.firebird
+	(1.94):
+
+	AIX port
+
+2009-02-05 14:09  dimitr
+
+	* firebird2/src/msgs/system_errors2.sql (1.52):
+
+	A few SQLSTATE changes upon request by Bill Oliver.
+
+2009-02-05 12:41  alexpeshkoff
+
+	* firebird2/src/jrd/: plugin_manager.cpp (1.28), plugin_manager.h
+	(1.25):
+
+	removed unused files
+
+2009-02-05 09:53  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.520):
+
+	In JRD entrypoints, tdbb_status_vector is always equal to
+	user_status.  So let's deal with the explicitly passed user's
+	vector instead of the implementation detail that's likely to
+	disappear soon.
+
+2009-02-05 09:48  alexpeshkoff
+
+	* firebird2/builds/posix/fbtrace.vers (1.2):
+
+	add forgotten file
+
+2009-02-05 02:19  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.334):
+
+	Fix the problem reported by Vlad (another case of CORE-2237)
+
+2009-02-05 02:08  asfernandes
+
+	* firebird2/: builds/install/misc/firebird.conf (1.50),
+	builds/posix/Makefile.in.fbtrace (1.3),
+	doc/README.services_extension (1.5), src/burp/backup.epp (1.119),
+	src/burp/burp.cpp (1.164), src/burp/burp.h (1.100),
+	src/burp/restore.epp (1.161), src/common/classes/alloc.cpp (1.119),
+	src/common/classes/tree.h (1.83), src/jrd/DatabaseSnapshot.cpp
+	(1.96), src/jrd/jrd.cpp (1.519),
+	src/jrd/trace/TraceConfigStorage.cpp (1.9),
+	src/jrd/trace/TraceManager.cpp (1.6),
+	src/jrd/trace/TraceService.cpp (1.4), src/msgs/messages2.sql
+	(1.79):
+
+	Misc
+
 2009-02-04 19:08  hvlad
 
 	* firebird2/builds/win32/msvc9/: Firebird2.sln (1.2), engine.vcproj
