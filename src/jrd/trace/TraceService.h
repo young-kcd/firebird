@@ -103,7 +103,7 @@ public:
 	virtual void readSession(TraceSession& ) = 0;
 };
 
-void trace(UtilSvc* uSvc, TraceSvcIntf* traceSvc);
+void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc);
 
 } // namespace Firebird
 

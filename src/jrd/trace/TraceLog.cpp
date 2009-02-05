@@ -52,7 +52,7 @@ namespace Jrd {
 const size_t MAX_LOG_FILE_SIZE = 1024 * 1024;
 const unsigned int MAX_FILE_NUM = (unsigned int) -1;
 
-TraceLogImpl::TraceLogImpl(MemoryPool &pool, const PathName &fileName, bool reader) :
+TraceLogImpl::TraceLogImpl(MemoryPool& pool, const PathName& fileName, bool reader) :
 	m_baseFileName(pool)
 {
 	m_base = 0;

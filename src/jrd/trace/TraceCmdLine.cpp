@@ -151,7 +151,7 @@ const char* TRACE_ERR_SWITCH_PARAM_MISS	= "mandatory parameter \"%s\" for switch
 const char* TRACE_ERR_PARAM_ACT_NOTCOMPAT	= "parameter \"%s\" is incompatible with action \"%s\"";
 
 
-void trace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
+void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 {
 	const char* const* end = uSvc->argv.end();
 

@@ -347,7 +347,7 @@ THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 	TraceSvcJrd traceSvc(*svc);
 	try
 	{
-		trace(svc, &traceSvc);
+		fbtrace(svc, &traceSvc);
 	}
 	catch (const Exception& e)
 	{
