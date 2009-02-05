@@ -46,7 +46,14 @@ struct RelationCounts
 	}
 };
 
-typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelationCountsTree;
+// hvlad: what to use for relation's counters - tree or sorted array ?
+#define REL_COUNTS_TREE
+
+#ifdef REL_COUNTS_TREE
+typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelCounters;
+#else
+typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>, SLONG, RelationCounts> RelCounters;
+#endif
 
 typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
 
@@ -77,25 +84,40 @@ public:
 		TOTAL_ITEMS		// last
 	};
 
-	RuntimeStatistics(MemoryPool& pool) : rel_counts(&pool)
+	RuntimeStatistics(MemoryPool& pool) : rel_counts(pool)
 	{
 		reset();
 	}
 
-	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other);
+	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other) : 
+		rel_counts(pool)
+	{
+		memcpy(values, other.values, sizeof(values));
+		rel_counts = other.rel_counts;
+
+		allChgNumber = other.allChgNumber;
+		relChgNumber = other.relChgNumber;
+	}
 	
 	~RuntimeStatistics() {}
+
+	void reset()
+	{
+		memset(values, 0, sizeof values);
+		rel_counts.clear();
+		allChgNumber = 0;
+		relChgNumber = 0;
+	}
 
 	SINT64 getValue(const StatType index) const
 	{
 		return values[index];
 	}
 
-	void reset();
-
 	void bumpValue(const StatType index)
 	{
 		++values[index];
+		++allChgNumber;
 	}
 
 	void bumpValue(StatType index, SLONG relation_id);
@@ -108,21 +130,44 @@ public:
 	// bool operator==(const RuntimeStatistics& other) const;
 	// bool operator!=(const RuntimeStatistics& other) const;
 
-	RuntimeStatistics& operator+=(const RuntimeStatistics& other)
+	// add difference between newStats and baseStats to our counters
+	// newStats and baseStats must be "in-sync"
+	void adjust(const RuntimeStatistics &baseStats, const RuntimeStatistics &newStats)
 	{
-		for (size_t i = 0; i < TOTAL_ITEMS; ++i)
-			values[i] += other.values[i];
+		if (baseStats.allChgNumber != newStats.allChgNumber) 
+		{
+			allChgNumber++;
+			for (size_t i = 0; i < TOTAL_ITEMS; ++i) 
+			{
+				values[i] += newStats.values[i] - baseStats.values[i];
+			}
 
-		addRelCounts(other.rel_counts, true);
-		return *this;
+			if (baseStats.relChgNumber != newStats.relChgNumber) 
+			{
+				relChgNumber++;
+				addRelCounts(newStats.rel_counts, true);
+				addRelCounts(baseStats.rel_counts, false);
+			}
+		}
+
 	}
 
-	RuntimeStatistics& operator-=(const RuntimeStatistics& other)
+	// copy counters values from other instance
+	// after copying both instances is "in-sync" i.e. have the same
+	// allChgNumber and relChgNumber values
+	RuntimeStatistics& assign(const RuntimeStatistics& other)
 	{
-		for (size_t i = 0; i < TOTAL_ITEMS; ++i)
-			values[i] -= other.values[i];
+		if (allChgNumber != other.allChgNumber) 
+		{
+			memcpy(values, other.values, sizeof(values));
+			allChgNumber = other.allChgNumber;
+		}
 
-		addRelCounts(other.rel_counts, false);
+		if (relChgNumber != other.relChgNumber) 
+		{
+			rel_counts = other.rel_counts;
+			relChgNumber = other.relChgNumber;
+		}
 		return *this;
 	}
 
@@ -132,10 +177,17 @@ public:
 	}
 
 private:
-	void addRelCounts(const RelationCountsTree& other, bool add);
+	void addRelCounts(const RelCounters& other, bool add);
 
 	SINT64 values[TOTAL_ITEMS];
-	RelationCountsTree rel_counts;
+	RelCounters rel_counts;
+
+	// This two numbers used in adjust() and assign methods() as "generation"
+	// to not perform costly operations when two instances of RuntimeStatistics
+	// contain equal counters values. This is intended to use *only* with the 
+	// same pair of class instances, as in jrd_req.
+	ULONG allChgNumber;		// incremented when any counter changed
+	ULONG relChgNumber;		// incremented when relation counter changed
 
 	// This dummy RuntimeStatistics is used instead of missing elements in tdbb,
 	// helping us avoid conditional checks in time-critical places of code.

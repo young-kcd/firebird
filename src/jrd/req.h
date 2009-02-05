@@ -306,12 +306,10 @@ public:
 
 	void adjustCallerStats()
 	{
-		if (req_caller)
-		{
-			req_caller->req_stats -= req_base_stats;
-			req_caller->req_stats += req_stats;
+		if (req_caller) {
+			req_caller->req_stats.adjust(req_base_stats, req_stats);
 		}
-		req_base_stats = req_stats;
+		req_base_stats.assign(req_stats);
 	}
 };
 
