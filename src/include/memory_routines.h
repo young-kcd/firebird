@@ -23,10 +23,6 @@
  * Contributor(s): ______________________________________.
  */
 
-
-
-
-
 #ifndef MEMORY_ROUTINES_H
 #define MEMORY_ROUTINES_H
 
@@ -182,7 +178,7 @@ inline void put_long(UCHAR* p, SLONG value)
 #endif
 }
 
-inline void put_vax_short(UCHAR* p, USHORT value)
+inline void put_vax_short(UCHAR* p, SSHORT value)
 {
 /**************************************
  *
@@ -191,17 +187,17 @@ inline void put_vax_short(UCHAR* p, USHORT value)
  **************************************
  *
  * Functional description
- *    Store one unsigned short int as
+ *    Store one signed short int as
  *    two chars in VAX format
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
   // little-endian
-  memcpy(p, &value, sizeof(USHORT));
+  memcpy(p, &value, sizeof(SSHORT));
 #else
   // big-endian
   union {
-    USHORT n;
+    SSHORT n;
     UCHAR c[2];
   } temp;
 
@@ -241,6 +237,42 @@ inline void put_vax_long(UCHAR* p, SLONG value)
   p[1] = temp.c[2];
   p[2] = temp.c[1];
   p[3] = temp.c[0];
+#endif
+}
+
+inline void put_vax_int64(UCHAR* p, SINT64 value)
+{
+/**************************************
+ *
+ *      p u t _ v a x _ i n t 6 4
+ *
+ **************************************
+ *
+ * Functional description
+ *    Store one signed long long int as
+ *    eight chars in VAX format
+ *
+ **************************************/
+#ifndef WORDS_BIGENDIAN
+  // little-endian
+  memcpy(p, &value, sizeof(SINT64));
+#else
+  // big-endian
+  union {
+    SINT64 n;
+    UCHAR c[8];
+  } temp;
+
+  temp.n = value;
+
+  p[0] = temp.c[7];
+  p[1] = temp.c[6];
+  p[2] = temp.c[5];
+  p[3] = temp.c[4];
+  p[4] = temp.c[3];
+  p[5] = temp.c[2];
+  p[6] = temp.c[1];
+  p[7] = temp.c[0];
 #endif
 }
 
