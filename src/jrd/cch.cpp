@@ -927,7 +927,6 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 	pag* page = bdb->bdb_buffer;
 	bdb->bdb_incarnation = ++dbb->dbb_page_incarnation;
 
-	++dbb->dbb_reads;
 	tdbb->bumpStats(RuntimeStatistics::PAGE_READS);
 	page = bdb->bdb_buffer;
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
@@ -1729,7 +1728,6 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	dbb->dbb_marks++;
 	tdbb->bumpStats(RuntimeStatistics::PAGE_MARKS);
 	BufferControl* bcb = dbb->dbb_bcb;
 	BufferDesc* bdb = window->win_bdb;
@@ -4720,7 +4718,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					}
 
 					bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
-					dbb->dbb_fetches++;
 					tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 					return bdb;
 				}
@@ -4825,7 +4822,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
 #endif
-				dbb->dbb_fetches++;
 				tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 //				BCB_MUTEX_RELEASE;
 				return bdb;
@@ -6240,7 +6236,6 @@ static bool write_page(thread_db* tdbb,
 // I won't wipe out the if() itself to allow my changes be verified easily by others
 	if (true)
 	{
-		dbb->dbb_writes++;
 		tdbb->bumpStats(RuntimeStatistics::PAGE_WRITES);
 
 		/* write out page to main database file, and to any

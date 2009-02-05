@@ -420,10 +420,6 @@ public:
 
 	Firebird::MemoryStats dbb_memory_stats;
 
-	SLONG dbb_reads;
-	SLONG dbb_writes;
-	SLONG dbb_fetches;
-	SLONG dbb_marks;
 	RuntimeStatistics dbb_stats;
 	SLONG dbb_last_header_write;		// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle

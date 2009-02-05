@@ -164,7 +164,7 @@ void INF_blob_info(const blb* blob,
 }
 
 
-USHORT INF_convert(SLONG number, SCHAR* buffer)
+USHORT INF_convert(SINT64 number, SCHAR* buffer)
 {
 /**************************************
  *
@@ -177,27 +177,16 @@ USHORT INF_convert(SLONG number, SCHAR* buffer)
  *	Return the length.
  *
  **************************************/
-	const SCHAR* p;
-
-#ifndef WORDS_BIGENDIAN
-	p = reinterpret_cast<const SCHAR*>(&number);
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer = *p;
-
-#else
-
-	p = reinterpret_cast<const SCHAR*>(&number);
-	p += 3;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer = *p;
-
-#endif
-
-	return 4;
+	if (number >= MIN_SLONG && number <= MAX_SLONG)
+	{
+		put_vax_long((UCHAR*) buffer, (SLONG) number);
+		return sizeof(SLONG);
+	}
+	else
+	{
+		put_vax_int64((UCHAR*) buffer, number);
+		return sizeof(SINT64);
+	}
 }
 
 
@@ -245,19 +234,19 @@ void INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_reads:
-			length = INF_convert(dbb->dbb_reads, buffer);
+			length = INF_convert(dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_READS), buffer);
 			break;
 
 		case isc_info_writes:
-			length = INF_convert(dbb->dbb_writes, buffer);
+			length = INF_convert(dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_WRITES), buffer);
 			break;
 
 		case isc_info_fetches:
-			length = INF_convert(dbb->dbb_fetches, buffer);
+			length = INF_convert(dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_FETCHES), buffer);
 			break;
 
 		case isc_info_marks:
-			length = INF_convert(dbb->dbb_marks, buffer);
+			length = INF_convert(dbb->dbb_stats.getValue(RuntimeStatistics::PAGE_MARKS), buffer);
 			break;
 
 		case isc_info_page_size:
