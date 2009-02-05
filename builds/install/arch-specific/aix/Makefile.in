@@ -43,7 +43,7 @@ FIREBIRD=$(FirebirdInstallPrefix)
 export -n FIREBIRD
 export -n INTERBASE
 
-.PHONY: install dist packages depotfile tarfile 
+.PHONY: install install-embedded dist packages depotfile tarfile 
 .PHONY: buildDepot buildTarDir buildImageDir buildRoot buildDebugInfo
 
 # Some of these targets are run from the root tree of the build.
@@ -52,10 +52,7 @@ export -n INTERBASE
 # root of the build tree.
 
 BuildRoot=$(GEN_ROOT)
-
 InstallRoot=.
-
-
 FirebirdBuildPrefix=$(GEN_ROOT)
 
 #export FirebirdBuildPrefix
@@ -63,20 +60,15 @@ FirebirdBuildPrefix=$(GEN_ROOT)
 #export PackageVersion
 
 BuildVersion=$(FirebirdVersion).$(BuildNum)
-
 Version=$(BuildVersion)-$(PackageVersion)
 
-
-
 # This means something like: FirebirdCS-2.0.0-1.i386.tar
-
 TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
 TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar
 DepotFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).depot
 RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
 DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
 DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar
-psfFile=firebird$(ArchPrefix).psf
 
 PkgSrcDir=$(InstallRoot)/$(ArchType)
 ScriptDir=$(GEN_ROOT)/install/scripts/
@@ -88,9 +80,6 @@ dist : packages
 
 packages: depotfile tarfile debugfile
 depotfile: $(DepotFile)
-
-$(DepotFile): buildDepot
-	(cd $(GEN_ROOT); swpackage -d "| gzip -c > $(DepotFile).gz" -x media_type=tape -s $(psfFile)) 
 
 tarfile:  $(TarFile)
 
@@ -121,7 +110,7 @@ $(DebugFile) :  buildImageDir
 #
 
 buildRoot:
-	(cd $(GEN_ROOT); ./install/makeinstallImage.sh)
+	(cd $(GEN_ROOT); ./install/makeInstallImage.aix.sh $(MAKECMDGOALS))
 
 buildDebugInfo: buildRoot
 	mkdir -p $(GEN_ROOT)/$(DebugDir)
@@ -155,13 +144,14 @@ buildImageDir: buildRoot
 buildTarDir: buildImageDir
 	mkdir -p $(GEN_ROOT)/$(TarDir)
 	cp -r $(GEN_ROOT)/install/scripts $(GEN_ROOT)/$(TarDir)
-	cp -r $(GEN_ROOT)/install/scripts/tarmainInstall.sh $(GEN_ROOT)/$(TarDir)/install.sh
+	cp -r $(GEN_ROOT)/install/scripts/tarmaininstall.aix.sh $(GEN_ROOT)/$(TarDir)/install.sh
 	chmod a+x $(GEN_ROOT)/$(TarDir)/install.sh $(GEN_ROOT)/$(TarDir)/scripts/*sh
-	(cd $(GEN_ROOT)/buildroot; tar -cvf buildroot.tar usr opt )
+	(cd $(GEN_ROOT)/buildroot; rm -f buildroot.tar; tar -cvf buildroot.tar * )
 	(cd $(GEN_ROOT)/buildroot; tar -tvf buildroot.tar > manifest.txt )
 	(cd $(GEN_ROOT)/buildroot; cp buildroot.tar ../$(TarDir)/buildroot.tar )
 	(cd $(GEN_ROOT)/buildroot; cp manifest.txt ../$(TarDir)/manifest.txt )
 
-install: buildTarDir
-	(cd $(GEN_ROOT)/$(TarDir); ./install.sh)
-	cp -r $(GEN_ROOT)/$(DebugDir)/* /
+install install-embedded: buildTarDir
+# pass command-line goal, e.g. "install-embedded", to shell process
+# "install-embedded" installs without a server process, i.e. embedded mode
+	(cd $(GEN_ROOT)/$(TarDir); ./install.sh $(MAKECMDGOALS))

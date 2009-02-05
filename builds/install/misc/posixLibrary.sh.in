@@ -196,7 +196,11 @@ checkIfServerRunning() {
 		serverMode=super
 	fi
 
-    stopSuperServerIfRunning
+# have to be root to stop the server
+	if [ "$1" != "install-embedded" ]
+    then
+    	stopSuperServerIfRunning
+    fi
 
 
 # Check is server is being actively used.
@@ -246,8 +250,11 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-	removeInetdServiceEntry
-
+# have to be root to modify (x)inetd
+	if [ "$1" != "install-embedded" ]
+	then
+		removeInetdServiceEntry
+	fi
 }
 
 
