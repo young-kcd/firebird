@@ -91,7 +91,7 @@ ConfigStorage::~ConfigStorage()
 		--m_base->cnt_uses;
 		if (m_base->cnt_uses == 0)
 		{
-			unlink((char*) &m_base->cfg_file_name[0]);
+			unlink(m_base->cfg_file_name);
 			memset(m_base->cfg_file_name, 0, sizeof(m_base->cfg_file_name));
 		}
 	}
@@ -145,7 +145,7 @@ void ConfigStorage::checkFile()
 	if (m_cfg_file >= 0)
 		return;
 
-	char* cfg_file_name = &m_base->cfg_file_name[0];
+	char* cfg_file_name = m_base->cfg_file_name;
 
 	if (!(*cfg_file_name))
 	{
@@ -250,7 +250,7 @@ void ConfigStorage::addSession(TraceSession& session)
 	const long pos1 = lseek(m_cfg_file, 0, SEEK_END);
 	if (pos1 < 0) 
 	{
-		const char* fn = &m_base->cfg_file_name[0];
+		const char* fn = m_base->cfg_file_name;
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
 			Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 	}
@@ -344,7 +344,7 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 
 		if (err) 
 		{
-			const char* fn = &m_base->cfg_file_name[0];
+			const char* fn = m_base->cfg_file_name;
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
 				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 		}
@@ -387,7 +387,7 @@ void ConfigStorage::removeSession(ULONG id)
 
 		if (err)
 		{
-			const char* fn = &m_base->cfg_file_name[0];
+			const char* fn = m_base->cfg_file_name;
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
 				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 		}
@@ -399,7 +399,7 @@ void ConfigStorage::restart()
 	checkDirty();
 	if (lseek(m_cfg_file, 0, SEEK_SET) < 0)
 	{
-		const char* fn = &m_base->cfg_file_name[0];
+		const char* fn = m_base->cfg_file_name;
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
 			Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 	}
