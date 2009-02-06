@@ -1,3 +1,75 @@
+2009-02-06 15:18  hvlad
+
+	* firebird2/src/jrd/trace/TraceObjects.cpp (1.5):
+
+	Don't change descriptors of other objects, noted by Claudio
+
+2009-02-06 14:47  hvlad
+
+	* firebird2/src/jrd/trace/TraceDSQLHelpers.h (1.4):
+
+	Correct typo, thanks to Claudio
+
+2009-02-06 14:47  hvlad
+
+	* firebird2/src/jrd/trace/TraceConfigStorage.cpp (1.10):
+
+	Simplification
+
+2009-02-06 13:01  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.28):
+
+	Fixed few minor issues noted by Dmitry
+
+2009-02-06 12:20  alexpeshkoff
+
+	* firebird2/src/jrd/grant.epp (1.72):
+
+	Fixed CORE-2285 (and CORE-1770): Database with many grants gets
+	corrupted
+
+2009-02-06 10:01  dimitr
+
+	* firebird2/src/include/gen/sql_state.h (1.36):
+
+	Committed the forgotten file.
+
+2009-02-06 05:55  dimitr
+
+	* firebird2/src/jrd/inf.cpp (1.95):
+
+	Fixed CORE-2307: Incomplete API information values.
+
+2009-02-05 21:41  dimitr
+
+	* firebird2/src/jrd/: cmp.cpp (1.334), exe.cpp (1.289):
+
+	Let's count user DSQL statements only.
+
+2009-02-05 21:12  dimitr
+
+	* firebird2/src/jrd/: Database.h (1.36), cch.cpp (1.225), inf.cpp
+	(1.94), inf_proto.h (1.12):
+
+	1) Cleanup the legacy page op counters (they're redundant now).  2)
+	Return 64-bit values in the information buffer, if required.
+
+2009-02-05 21:09  dimitr
+
+	* firebird2/src/include/memory_routines.h (1.13):
+
+	1) Declare the input of put_vax_short() to be signed instead of
+	unsigned.  2) Add put_vax_int64() to deal with 64-bit values.
+
+2009-02-05 21:08  dimitr
+
+	* firebird2/src/: jrd/common.h (1.193), include/fb_types.h (1.58):
+
+	Move the int64 typedefs from common.h into fb_types.h.	This brings
+	the consistency with other FB types and allows to use int64 values
+	without including common.h.
+
 2009-02-05 17:15  hvlad
 
 	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.10),
