@@ -246,7 +246,7 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 		return;
 
 	USHORT first_index = 0;
-	for (dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
+	for (const dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
 	{
 		if (parameter->par_index) 
 		{
@@ -254,16 +254,23 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 				first_index = parameter->par_index;
 
 			// Use descriptor for nulls signaling
+			USHORT null_flag = 0;
 			if (parameter->par_null && 
 				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
 			{
-				parameter->par_desc.dsc_flags |= DSC_null;
+				null_flag = DSC_null;
 			}
 
 			if (first_index > parameter->par_index)
+			{
 				m_descs.insert(0, parameter->par_desc);
+				m_descs.front().dsc_flags |= null_flag;
+			}
 			else
+			{
 				m_descs.add(parameter->par_desc);
+				m_descs.back().dsc_flags |= null_flag;
+			}
 		}
 	}
 }
@@ -352,7 +359,8 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 			}
 
 			case nod_null:
-				from_desc = &((Literal*) prm)->lit_desc;
+				desc = ((Literal*) prm)->lit_desc;
+				from_desc = &desc;
 				from_desc->dsc_flags |= DSC_null;
 				break;
 
