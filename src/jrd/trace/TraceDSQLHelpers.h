@@ -48,7 +48,7 @@ public:
 		m_start_clock = fb_utils::query_performance_counter();
 
 		static char empty_string[] = "";
-		if (!m_string_len && !string)
+		if (!m_string_len || !string)
 		{
 			m_string = empty_string;
 			m_string_len = sizeof(empty_string);
