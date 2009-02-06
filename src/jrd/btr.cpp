@@ -2876,7 +2876,8 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	USHORT newNextPrefix = nextNode.prefix;
 	USHORT newNextLength = 0;
 	USHORT length = MAX(removingNode.length + removingNode.prefix, nextNode.length + nextNode.prefix);
-	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[length];
+	HalfStaticArray<UCHAR, MAX_KEY> tempBuf(*tdbb->getDefaultPool());
+	UCHAR* tempData = tempBuf.getBuffer(length);
 	length = 0;
 	if (nextNode.prefix > removingNode.prefix) {
 		// The next node uses data from the node that is going to
@@ -2897,7 +2898,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 	nextNode.length = newNextLength;
 	nextNode.data = tempData;
 	pointer = BTreeNode::writeNode(&nextNode, pointer, flags, leafPage);
-	delete[] tempData;
+	// below this point tempData contents is not used anymore and buffer may be reused
 
 	// Compute length of rest of bucket and move it down.
 	length = page->btr_length - (localPointer - (UCHAR*) page);
@@ -2919,10 +2920,14 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		// Only update offsets pointing after the deleted node and
 		// remove jump nodes pointing to the deleted node or node
 		// next to the deleted one.
-		jumpNodeList* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool());
+		jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
+		jumpNodeList* jumpNodes = &tmpJumpNodes; 
 
 		IndexJumpInfo jumpInfo;
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
+
+		tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
+		UCHAR *const tempEnd = tempData + jumpInfo.firstNodeOffset;
 
 		bool rebuild = false;
 		USHORT n = jumpInfo.jumpers;
@@ -2942,7 +2947,10 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newJumpNode.length];
+					newJumpNode.data = tempData; 
+					tempData += newJumpNode.length;
+					fb_assert(tempData < tempEnd);
+
 					memcpy(newJumpNode.data, delJumpNode.data, addLength);
 					memcpy(newJumpNode.data + addLength, jumpNode.data, jumpNode.length);
 				}
@@ -2953,7 +2961,9 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newJumpNode.length];
+					newJumpNode.data = tempData; 
+					tempData += newJumpNode.length;
+					fb_assert(tempData < tempEnd);
 					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
 				}
 				jumpNodes->add(newJumpNode);
@@ -2973,10 +2983,8 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
 		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
 			pointer = BTreeNode::writeJumpNode(&walkJumpNode[i], pointer, flags);
-			delete[] walkJumpNode[i].data;
 		}
 		jumpNodes->clear();
-		delete jumpNodes;
 	}
 
 	// check to see if the page is now empty
@@ -5575,7 +5583,8 @@ static SLONG insert_node(thread_db* tdbb,
 
 	// Update the values for the next node after our new node.
 	// First, store needed data for beforeInsertNode into tempData.
-	UCHAR* tempData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLength];
+	HalfStaticArray<UCHAR, MAX_KEY> tempBuf(*tdbb->getDefaultPool());
+	UCHAR* tempData = tempBuf.getBuffer(newLength);
 	memcpy(tempData, beforeInsertNode.data + newPrefix - beforeInsertNode.prefix, newLength);
 
 	beforeInsertNode.prefix = newPrefix;
@@ -5609,7 +5618,6 @@ static SLONG insert_node(thread_db* tdbb,
 	beforeInsertNode.data = tempData;
 	pointer = BTreeNode::writeNode(&beforeInsertNode, pointer, flags, leafPage);
 	newBucket->btr_prefix_total += newPrefix;
-	delete[] tempData;
 	beforeInsertNode.data = 0;
 
 	// Copy remaining data to scratch page.
@@ -5633,7 +5641,8 @@ static SLONG insert_node(thread_db* tdbb,
 	USHORT newPrefixTotalBySplit = 0;
 	USHORT splitJumpNodeIndex = 0;
 	IndexJumpInfo jumpInfo;
-	jumpNodeList* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool());
+	jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
+	jumpNodeList* jumpNodes = &tmpJumpNodes; 
 
 	USHORT ensureEndInsert = 0;
 	if (endOfPage) {
@@ -5750,7 +5759,6 @@ static SLONG insert_node(thread_db* tdbb,
 		CCH_RELEASE(tdbb, window);
 
 		jumpNodes->clear();
-		delete jumpNodes;
 
 		return NO_SPLIT;
 	}
@@ -6028,7 +6036,6 @@ static SLONG insert_node(thread_db* tdbb,
 	}
 
 	jumpNodes->clear();
-	delete jumpNodes;
 
 	return split_page;
 }
