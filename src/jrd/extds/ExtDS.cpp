@@ -277,10 +277,6 @@ Connection::Connection(Provider &prov) :
 void Connection::deleteConnection(thread_db *tdbb, Connection *conn)
 {
 	conn->m_deleting = true;
-	conn->clearStatements(tdbb);
-
-	fb_assert(conn->m_used_stmts == 0);
-	fb_assert(conn->m_transactions.getCount() == 0);
 
 	if (conn->isConnected())
 		conn->detach(tdbb);
@@ -458,6 +454,9 @@ void Connection::detach(thread_db *tdbb)
 		m_deleting = was_deleting;
 		throw;
 	}
+
+	fb_assert(m_used_stmts == 0);
+	fb_assert(m_transactions.getCount() == 0);
 
 	doDetach(tdbb);
 }
@@ -687,9 +686,10 @@ void Transaction::detachFromJrdTran()
 void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 		bool commit, bool retain, bool force)
 {
-	while (transaction->tra_ext_common)
+	Transaction* tran = transaction->tra_ext_common;
+	while (tran)
 	{
-		Transaction* tran = transaction->tra_ext_common;
+		Transaction* next = tran->m_nextTran;
 		try
 		{
 			if (commit)
@@ -706,6 +706,7 @@ void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 			tran->detachFromJrdTran();
 		}
+		tran = next;
 	}
 }
 
