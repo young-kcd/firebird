@@ -48,7 +48,7 @@ static const struct {
 	{335544345, "40001"}, //  25 lock_conflict
 	{335544346, "XX001"}, //  26 metadata_corrupt
 	{335544347, "23000"}, //  27 not_valid
-	{335544348, "HY000"}, //  28 no_cur_rec
+	{335544348, "22000"}, //  28 no_cur_rec
 	{335544349, "23000"}, //  29 no_dup
 	{335544350, "HY000"}, //  30 no_finish
 	{335544351, "42000"}, //  31 no_meta_update
@@ -331,7 +331,7 @@ static const struct {
 	{335544628, "42000"}, // 308 idx_create_err
 	{335544629, "HY000"}, // 309 wal_shadow_err
 	{335544630, "42000"}, // 310 dependency
-	{335544631, "42000"}, // 311 idx_key_err
+	{335544631, "54011"}, // 311 idx_key_err
 	{335544632, "42000"}, // 312 dsql_file_length_err
 	{335544633, "HY000"}, // 313 dsql_shadow_number_err
 	{335544634, "42000"}, // 314 dsql_token_unk_err
@@ -558,7 +558,7 @@ static const struct {
 	{335544855, "22021"}, // 535 collation_not_installed
 	{335544856, "08003"}, // 536 att_shutdown
 	{335544857, "54000"}, // 537 blobtoobig
-	{335544858, "HY000"}, // 538 must_have_phys_field
+	{335544858, "42000"}, // 538 must_have_phys_field
 	{335544859, "22007"}, // 539 invalid_time_precision
 	{335544860, "HY000"}, // 540 blob_convert_error
 	{335544861, "22000"}, // 541 array_convert_error
