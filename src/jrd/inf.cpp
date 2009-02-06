@@ -81,7 +81,9 @@ using namespace Jrd;
 #define STUFF_WORD(p, value)	{*p++ = value; *p++ = value >> 8;}
 #define STUFF(p, value)		*p++ = value
 
-static USHORT get_counts(USHORT, SCHAR*, USHORT);
+typedef Firebird::HalfStaticArray<SCHAR, BUFFER_SMALL> CountsBuffer;
+
+static USHORT get_counts(USHORT, CountsBuffer&);
 
 
 void INF_blob_info(const blb* blob,
@@ -205,7 +207,8 @@ void INF_database_info(const SCHAR* items,
  *	Process requests for database info.
  *
  **************************************/
-	SCHAR buffer[BUFFER_SMALL];
+	CountsBuffer counts_buffer;
+	SCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
 	SSHORT length;
 	SLONG id;
 	SLONG err_val;
@@ -218,7 +221,6 @@ void INF_database_info(const SCHAR* items,
 	jrd_tra* transaction = NULL;
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	const SCHAR* const end_buf = buffer + sizeof(buffer);
 
 	const Attachment* err_att = tdbb->getAttachment();
 	const SCHAR* q;
@@ -328,35 +330,43 @@ void INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_read_seq_count:
-			length = get_counts(DBB_read_seq_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_read_seq_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_read_idx_count:
-			length = get_counts(DBB_read_idx_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_read_idx_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_update_count:
-			length = get_counts(DBB_update_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_update_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_insert_count:
-			length = get_counts(DBB_insert_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_insert_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_delete_count:
-			length = get_counts(DBB_delete_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_delete_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_backout_count:
-			length = get_counts(DBB_backout_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_backout_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_purge_count:
-			length = get_counts(DBB_purge_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_purge_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_expunge_count:
-			length = get_counts(DBB_expunge_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_expunge_count, counts_buffer);
+			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_implementation:
@@ -402,6 +412,7 @@ void INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
+				const SCHAR* const end_buf = counts_buffer.end();
 				// May be simpler to code using a server-side version of isql's Extender class.
 				const Firebird::PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
@@ -1095,7 +1106,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 }
 
 
-static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
+static USHORT get_counts(USHORT count_id, CountsBuffer& buffer)
 {
 /**************************************
  *
@@ -1113,24 +1124,28 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
 	if (!vector)
 		return 0;
 
-	// CVC: This function was receiving UCHAR* but to avoid all the casts
-	// when calling it, I changed it to SCHAR* and I'm doing here the cast
-	// to avoid signed/unsigned surprises.
-	UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
-	const UCHAR* const end = p + length - 6;
+	SCHAR num_buffer[BUFFER_TINY];
 
-	USHORT relation_id = 0;
-	for (vcl::const_iterator ptr = vector->begin(); relation_id < vector->count() && p < end;
-		++relation_id)
+	buffer.clear();
+	size_t buffer_length = 0;
+
+	vcl::const_iterator ptr = vector->begin();
+	for (USHORT relation_id = 0; relation_id < vector->count(); ++relation_id)
 	{
 		const SLONG n = *ptr++;
 		if (n) {
+			const USHORT length = INF_convert(n, num_buffer);
+			const size_t new_buffer_length = buffer_length + length + sizeof(USHORT);
+			buffer.grow(new_buffer_length);
+			UCHAR* p = (UCHAR*) buffer.begin() + buffer_length;
 			STUFF_WORD(p, relation_id);
-			p += INF_convert(n, reinterpret_cast<char*>(p));
+			memcpy(p, num_buffer, length);
+			p += length;
+			buffer_length = new_buffer_length;
 		}
 	}
 
-	return p - reinterpret_cast<UCHAR*>(buffer);
+	return buffer.getCount();
 }
 
 
