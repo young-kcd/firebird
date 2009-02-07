@@ -1,3 +1,47 @@
+2009-02-07 20:36  dimitr
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.44):
+
+	Fixed CORE-1923: "instsvc remove" returns 1 when succefully
+	executed.
+
+2009-02-07 16:20  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.439), include/memory_routines.h
+	(1.14), jrd/RuntimeStatistics.cpp (1.12), jrd/RuntimeStatistics.h
+	(1.17), jrd/btr.cpp (1.231), jrd/grant.epp (1.73), jrd/inf.cpp
+	(1.97), jrd/opt.cpp (1.335), jrd/extds/ExtDS.cpp (1.29),
+	jrd/trace/TraceConfigStorage.cpp (1.11), jrd/trace/TraceLog.cpp
+	(1.9):
+
+	Misc
+
+2009-02-07 13:30  dimitr
+
+	* firebird2/src/jrd/: RuntimeStatistics.cpp (1.11),
+	RuntimeStatistics.h (1.16):
+
+	Misc.
+
+2009-02-07 12:38  dimitr
+
+	* firebird2/src/jrd/inf.cpp (1.96):
+
+	Fix by Claudio's suggestion.
+
+2009-02-07 03:32  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.17):
+
+	Fixed CORE-2308 - SIMILAR TO produces random results with [x-y]
+	expressions
+
+2009-02-06 20:38  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.230):
+
+	Performance : use stack allocation when possible
+
 2009-02-06 15:18  hvlad
 
 	* firebird2/src/jrd/trace/TraceObjects.cpp (1.5):
