@@ -3475,7 +3475,6 @@ table_primary	: table_proc
 		;
 
 // AB: derived table support
-// ASF: create derived table with nested union to fix CORE-1246
 derived_table :
 		'(' select_expr ')' as_noise correlation_name derived_column_list
 			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6, NULL); }
