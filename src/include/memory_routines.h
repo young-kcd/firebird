@@ -193,7 +193,7 @@ inline void put_vax_short(UCHAR* p, SSHORT value)
  **************************************/
 #ifndef WORDS_BIGENDIAN
   // little-endian
-  memcpy(p, &value, sizeof(SSHORT));
+  memcpy(p, &value, sizeof(value));
 #else
   // big-endian
   union {

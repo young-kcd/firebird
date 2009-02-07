@@ -2927,7 +2927,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
 
 		tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
-		UCHAR *const tempEnd = tempData + jumpInfo.firstNodeOffset;
+		UCHAR* const tempEnd = tempData + jumpInfo.firstNodeOffset;
 
 		bool rebuild = false;
 		USHORT n = jumpInfo.jumpers;
@@ -2947,7 +2947,7 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = tempData; 
+					newJumpNode.data = tempData;
 					tempData += newJumpNode.length;
 					fb_assert(tempData < tempEnd);
 
@@ -5642,7 +5642,7 @@ static SLONG insert_node(thread_db* tdbb,
 	USHORT splitJumpNodeIndex = 0;
 	IndexJumpInfo jumpInfo;
 	jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
-	jumpNodeList* jumpNodes = &tmpJumpNodes; 
+	jumpNodeList* jumpNodes = &tmpJumpNodes;
 
 	USHORT ensureEndInsert = 0;
 	if (endOfPage) {

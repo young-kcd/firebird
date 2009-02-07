@@ -1148,5 +1148,3 @@ static USHORT get_counts(USHORT count_id, CountsBuffer& buffer)
 
 	return buffer.getCount();
 }
-
-

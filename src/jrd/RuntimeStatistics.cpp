@@ -179,13 +179,14 @@ void RuntimeStatistics::bumpValue(StatType index, SLONG relation_id)
 		rel_counts.add(counts);
 	}
 }
+
 void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 {
-	if (!other.getCount())
+	if (other.isEmpty())
 		return;
 
-	const RelationCounts *src = other.begin();
-	const RelationCounts *const end = other.end();
+	const RelationCounts* src = other.begin();
+	const RelationCounts* const end = other.end();
 
 	size_t pos;
 	rel_counts.find(src->rlc_relation_id, pos);
@@ -206,7 +207,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 
 		fb_assert(pos >= 0 && pos < rel_counts.getCount());
 
-		RelationCounts *dst = &(rel_counts[pos]);
+		RelationCounts* dst = &(rel_counts[pos]);
 		fb_assert(dst->rlc_relation_id == src->rlc_relation_id);
 
 		for (int index = 0; index < FB_NELEM(src->rlc_counter); index++)
@@ -239,8 +240,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 	bool base_found = (rel_counts.getCount() > 0);
 	RelationCounts *base_cnts = base_found ? rel_counts.begin() : NULL;
 
-	const RelationCounts *new_cnts = new_stat.rel_counts.begin();
-	const RelationCounts *const end = new_stat.rel_counts.end();
+	const RelationCounts* new_cnts = new_stat.rel_counts.begin();
+	const RelationCounts* const end = new_stat.rel_counts.end();
 	for (; new_cnts < end; new_cnts++)
 	{
 		if (base_found && base_cnts->rlc_relation_id == new_cnts->rlc_relation_id) 

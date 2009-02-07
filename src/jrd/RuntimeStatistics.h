@@ -89,7 +89,7 @@ public:
 		reset();
 	}
 
-	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other) : 
+	RuntimeStatistics(MemoryPool& pool, const RuntimeStatistics& other) :
 		rel_counts(pool)
 	{
 		memcpy(values, other.values, sizeof(values));
@@ -132,7 +132,7 @@ public:
 
 	// add difference between newStats and baseStats to our counters
 	// newStats and baseStats must be "in-sync"
-	void adjust(const RuntimeStatistics &baseStats, const RuntimeStatistics &newStats)
+	void adjust(const RuntimeStatistics& baseStats, const RuntimeStatistics& newStats)
 	{
 		if (baseStats.allChgNumber != newStats.allChgNumber) 
 		{
@@ -168,6 +168,7 @@ public:
 			rel_counts = other.rel_counts;
 			relChgNumber = other.relChgNumber;
 		}
+
 		return *this;
 	}
 

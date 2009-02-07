@@ -445,12 +445,14 @@ void Connection::detach(thread_db *tdbb)
 	const bool was_deleting = m_deleting;
 	m_deleting = true;
 
-	try {
+	try
+	{
 		clearStatements(tdbb);
 		clearTransactions(tdbb);
 		m_deleting = was_deleting;
 	}
-	catch (...) {
+	catch (...)
+	{
 		m_deleting = was_deleting;
 		throw;
 	}

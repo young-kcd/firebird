@@ -65,7 +65,7 @@ TraceLogImpl::TraceLogImpl(MemoryPool& pool, const PathName& fileName, bool read
 	if (!m_base)
 	{
 		iscLogStatus("Cannot initialize the shared memory region", status);
-		Firebird::status_exception::raise(status);
+		status_exception::raise(status);
 	}
 
 	PathUtils::concatPath(m_baseFileName, TempFile::getTempPath(), fileName);

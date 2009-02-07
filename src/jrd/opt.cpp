@@ -2294,7 +2294,8 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 			MoveBuffer nameBuffer;
 			const char* namePtr = index_name.c_str();
 
-			if (tdbb->getAttachment()->att_charset != CS_METADATA)
+			if (tdbb->getAttachment()->att_charset != CS_METADATA &&
+				tdbb->getAttachment()->att_charset != CS_NONE)
 			{
 				namePtr = (const char*) nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(
 					MAX_SQL_IDENTIFIER_LEN, CS_METADATA, tdbb->getAttachment()->att_charset));
@@ -2368,7 +2369,8 @@ static bool dump_rsb(const jrd_req* request,
 
 	if (name)
 	{
-		if (tdbb->getAttachment()->att_charset != CS_METADATA)
+		if (tdbb->getAttachment()->att_charset != CS_METADATA &&
+			tdbb->getAttachment()->att_charset != CS_NONE)
 		{
 			nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(length, CS_METADATA,
 				tdbb->getAttachment()->att_charset));
@@ -2456,7 +2458,8 @@ static bool dump_rsb(const jrd_req* request,
 		{
 			const Firebird::MetaName& n = procedure->prc_name;
 
-			if (tdbb->getAttachment()->att_charset != CS_METADATA)
+			if (tdbb->getAttachment()->att_charset != CS_METADATA &&
+				tdbb->getAttachment()->att_charset != CS_NONE)
 			{
 				nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(n.length(), CS_METADATA,
 					tdbb->getAttachment()->att_charset));

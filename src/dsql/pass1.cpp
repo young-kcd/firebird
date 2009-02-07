@@ -10291,47 +10291,49 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 				if (!node)
 					in_node->nod_desc.makeNullString();
 				else
+				{
 					MAKE_desc(statement, &in_node->nod_desc, node, NULL);
 
-				if (att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
-				{
-					const USHORT fromCharSet = in_node->nod_desc.getCharSet();
-					const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-						fromCharSet : att->att_charset;
-
-					if (in_node->nod_desc.dsc_dtype <= dtype_any_text)
+					if (att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
 					{
-						int diff = 0;
-						switch (in_node->nod_desc.dsc_dtype)
+						const USHORT fromCharSet = in_node->nod_desc.getCharSet();
+						const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
+							fromCharSet : att->att_charset;
+
+						if (in_node->nod_desc.dsc_dtype <= dtype_any_text)
 						{
-						case dtype_varying:
-							diff = sizeof(USHORT);
-							break;
-						case dtype_cstring:
-							diff = 1;
-							break;
-						}
-						in_node->nod_desc.dsc_length -= diff;
+							int diff = 0;
+							switch (in_node->nod_desc.dsc_dtype)
+							{
+							case dtype_varying:
+								diff = sizeof(USHORT);
+								break;
+							case dtype_cstring:
+								diff = 1;
+								break;
+							}
+							in_node->nod_desc.dsc_length -= diff;
 
-						if (toCharSet != fromCharSet)
+							if (toCharSet != fromCharSet)
+							{
+								const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
+								const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
+
+								INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
+									(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
+
+								in_node->nod_desc.dsc_length =
+									UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+							}
+
+							in_node->nod_desc.dsc_length += diff;
+						}
+						else if (in_node->nod_desc.dsc_dtype == dtype_blob &&
+							in_node->nod_desc.dsc_sub_type == isc_blob_text &&
+							fromCharSet != CS_NONE && fromCharSet != CS_BINARY)
 						{
-							const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
-							const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
-
-							INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
-								(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
-
-							in_node->nod_desc.dsc_length =
-								UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+							in_node->nod_desc.setTextType(toCharSet);
 						}
-
-						in_node->nod_desc.dsc_length += diff;
-					}
-					else if (in_node->nod_desc.dsc_dtype == dtype_blob &&
-						in_node->nod_desc.dsc_sub_type == isc_blob_text &&
-						fromCharSet != CS_NONE && fromCharSet != CS_BINARY)
-					{
-						in_node->nod_desc.setTextType(toCharSet);
 					}
 				}
 

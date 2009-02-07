@@ -93,8 +93,7 @@ static SecurityClass::flags_t squeeze_acl(Acl&, const Firebird::MetaName&, SSHOR
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 
 
-bool GRANT_privileges(thread_db* tdbb, SSHORT phase, DeferredWork* work,
-					  jrd_tra* transaction)
+bool GRANT_privileges(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
  *

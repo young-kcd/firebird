@@ -391,7 +391,7 @@ void ConfigStorage::removeSession(ULONG id)
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
 				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 		}
-}
+	}
 }
 
 void ConfigStorage::restart()
