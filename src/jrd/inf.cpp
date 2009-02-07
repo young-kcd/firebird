@@ -412,6 +412,7 @@ void INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
+				counts_buffer.resize(BUFFER_SMALL);
 				const SCHAR* const end_buf = counts_buffer.end();
 				// May be simpler to code using a server-side version of isql's Extender class.
 				const Firebird::PathName& str_fn = dbb->dbb_database_name;
