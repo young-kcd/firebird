@@ -765,8 +765,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 
 					const int previousRangeBufferCount = rangeBuffer.getCount();
 					rangeBuffer.push(len);
-					memcpy(rangeBuffer.getBuffer(rangeBuffer.getCount() + len) +
-						rangeBuffer.getCount() - len, &c, len);
+					size_t rangeCount = rangeBuffer.getCount();
+					memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
 
 					++patternPos;	// character
 					++patternPos;	// minus
@@ -793,9 +793,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 										  &rangeBuffer[previousRangeBufferCount + 1], len, c) <= 0)
 					{
 						rangeBuffer.push(len);
-						memcpy(rangeBuffer.getBuffer(
-							rangeBuffer.getCount() + len) + rangeBuffer.getCount() - len,
-							&c, len);
+						size_t rangeCount = rangeBuffer.getCount();
+						memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
 
 						charsBuffer.push(*patternPos);
 					}
