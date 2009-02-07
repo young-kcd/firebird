@@ -182,15 +182,15 @@ private:
 	SINT64 values[TOTAL_ITEMS];
 	RelCounters rel_counts;
 
-	// This two numbers used in adjust() and assign methods() as "generation"
-	// to not perform costly operations when two instances of RuntimeStatistics
+	// These two numbers are used in adjust() and assign() methods as "generation"
+	// values in order to avoid costly operations when two instances of RuntimeStatistics
 	// contain equal counters values. This is intended to use *only* with the 
 	// same pair of class instances, as in jrd_req.
-	ULONG allChgNumber;		// incremented when any counter changed
-	ULONG relChgNumber;		// incremented when relation counter changed
+	ULONG allChgNumber;		// incremented when any counter changes
+	ULONG relChgNumber;		// incremented when relation counter changes
 
 	// This dummy RuntimeStatistics is used instead of missing elements in tdbb,
-	// helping us avoid conditional checks in time-critical places of code.
+	// helping us to avoid conditional checks in time-critical places of code.
 	// Values of it contain actually garbage - don't be surprised when debugging.
 	static Firebird::GlobalPtr<RuntimeStatistics> dummy;
 };

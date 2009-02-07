@@ -219,8 +219,10 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 	}
 }
 
-PerformanceInfo* RuntimeStatistics::computeDifference(
-	Database* dbb, const RuntimeStatistics& new_stat, PerformanceInfo& dest, TraceCountsArray& temp)
+PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
+													  const RuntimeStatistics& new_stat,
+													  PerformanceInfo& dest,
+													  TraceCountsArray& temp)
 {
 	// NOTE: we do not initialize dest.pin_time. This must be done by the caller
 
@@ -285,19 +287,5 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 	return &dest;
 }
 #endif  // REL_COUNTS_TREE
-
-
-/* hvlad: I've commented out this two operators as they're not used and not take 
-	  in account relation's counters
-bool RuntimeStatistics::operator==(const RuntimeStatistics& other) const
-{
-	return !memcmp(values, other.values, sizeof(values));
-}
-
-bool RuntimeStatistics::operator!=(const RuntimeStatistics& other) const
-{
-	return !(*this == other);
-}
-*/
 
 } // namespace
