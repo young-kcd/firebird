@@ -266,8 +266,9 @@ void TraceSvcJrd::listSessions()
 
 void TraceSvcJrd::readSession(TraceSession& session)
 {
-	TraceManager* mgr = m_svc.getTraceManager();
-	ConfigStorage* storage = mgr->getStorage();
+	// Unused, let's assume StorageGuard not needed.
+	//TraceManager* mgr = m_svc.getTraceManager();
+	//ConfigStorage* storage = mgr->getStorage();
 	const size_t maxLogSize = Config::getMaxUserTraceLogSize(); // in MB
 
 	if (session.ses_logfile.empty())
