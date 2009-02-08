@@ -1197,11 +1197,11 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
 	writer.insertBigInt(f_mon_rec_expunges, statistics.getValue(RuntimeStatistics::RECORD_EXPUNGES));
 }
 
-void DatabaseSnapshot::putContextVars(StringMap& variables,
+void DatabaseSnapshot::putContextVars(const StringMap& variables,
 									  ClumpletWriter& writer,
 									  int object_id, bool is_attachment)
 {
-	StringMap::Accessor accessor(&variables);
+	StringMap::ConstAccessor accessor(&variables);
 
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{

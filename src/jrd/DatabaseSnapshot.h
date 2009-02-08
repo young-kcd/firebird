@@ -144,7 +144,7 @@ private:
 	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putStatistics(const RuntimeStatistics&, Firebird::ClumpletWriter&, int, int);
-	static void putContextVars(Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
+	static void putContextVars(const Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
 	static void putMemoryUsage(const Firebird::MemoryStats&, Firebird::ClumpletWriter&, int, int);
 
 	Firebird::Array<RelationData> snapshot;

@@ -59,6 +59,7 @@ public:
 
 	typedef BePlusTree<KeyValuePair*, KeyType, MemoryPool, FirstObjectKey<KeyValuePair>, KeyComparator> ValuesTree;
 	typedef typename ValuesTree::Accessor TreeAccessor;
+	typedef typename ValuesTree::ConstAccessor ConstTreeAccessor;
 
 	class Accessor
 	{
@@ -77,7 +78,25 @@ public:
 		TreeAccessor m_Accessor;
 	};
 
+	class ConstAccessor
+	{
+	public:
+		explicit ConstAccessor(const GenericMap* map) : m_Accessor(&map->tree) {}
+
+		const KeyValuePair* current() const { return m_Accessor.current(); }
+
+		bool getFirst() { return m_Accessor.getFirst(); }
+		bool getNext() { return m_Accessor.getNext(); }
+
+	private:
+		ConstAccessor(const ConstAccessor&);
+		ConstAccessor& operator=(const ConstAccessor&);
+
+		ConstTreeAccessor m_Accessor;
+	};
+
 	friend class Accessor;
+	friend class ConstAccessor;
 
 	GenericMap() : tree(&getPool()), mCount(0) { }
 
