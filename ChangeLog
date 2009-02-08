@@ -1,3 +1,178 @@
+2009-02-08 20:28  hvlad
+
+	* firebird2/src/jrd/os/win32/config_root.cpp (1.31):
+
+	Make it work correctly
+
+2009-02-08 19:01  asfernandes
+
+	* firebird2/src/jrd/trace/TraceObjects.cpp (1.7):
+
+	Misc
+
+2009-02-08 18:22  asfernandes
+
+	* firebird2/src/: common/dllinst.h (1.2), include/memory_routines.h
+	(1.16), jrd/os/win32/config_root.cpp (1.30),
+	jrd/os/win32/ibinitdll.cpp (1.23):
+
+	Misc
+
+2009-02-08 17:09  dimitr
+
+	* firebird2/builds/win32/msvc9/: common.vcproj (1.2),
+	common_classic.vcproj (1.2), fbrmclib.vcproj (1.3), intl.vcproj
+	(1.3):
+
+	Fixed MSVC9 build.
+
+2009-02-08 16:50  hvlad
+
+	* firebird2/src/jrd/: opt.cpp (1.337), rse.cpp (1.175), rse.h
+	(1.59):
+
+	Fixed bug CORE-2311 : Possible memory leak in WITH RECURSIVE query
+
+2009-02-08 16:39  hvlad
+
+	* firebird2/: src/common/dllinst.cpp (1.1), src/common/dllinst.h
+	(1.1), src/jrd/os/win32/config_root.cpp (1.29),
+	src/jrd/os/win32/ibinitdll.cpp (1.22),
+	src/jrd/os/win32/mod_loader.cpp (1.17),
+	builds/win32/msvc8/common.vcproj (1.13),
+	builds/win32/msvc8/common_classic.vcproj (1.14),
+	builds/win32/msvc8/fbrmclib.vcproj (1.9),
+	builds/win32/msvc8/intl.vcproj (1.19):
+
+	Move DLL instance variable into separate file. It would be much
+	better to make it member of Config class but currently it is not
+	desirable due to big amount of related changes of build process.
+
+2009-02-08 14:34  hvlad
+
+	* firebird2/src/jrd/os/win32/config_root.cpp (1.28):
+
+	Make it compiles
+
+2009-02-08 14:27  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.115):
+
+	Use getInstallDirectory() to locate libibutil
+
+2009-02-08 14:24  alexpeshkoff
+
+	* firebird2/src/jrd/os/: config_root.h (1.21),
+	darwin/config_root.cpp (1.11), posix/config_root.cpp (1.18),
+	win32/config_root.cpp (1.27), win32/ibinitdll.cpp (1.21):
+
+	Fixed problems when setting rootDir and installDir
+
+2009-02-08 14:02  robocop
+
+	* firebird2/src/jrd/functions.cpp (1.43):
+
+	Unused var.
+
+2009-02-08 13:57  robocop
+
+	* firebird2/src/: common/classes/GenericMap.h (1.24),
+	jrd/DatabaseSnapshot.cpp (1.97), jrd/DatabaseSnapshot.h (1.29):
+
+	Constness.
+
+2009-02-08 13:54  robocop
+
+	* firebird2/src/jrd/trace/TraceService.cpp (1.8):
+
+	Misc, please review.
+
+2009-02-08 13:53  robocop
+
+	* firebird2/src/common/classes/tree.h (1.84):
+
+	Misc.
+
+2009-02-08 13:44  robocop
+
+	* firebird2/src/jrd/: fun.epp (1.114), functions.cpp (1.42):
+
+	Misc.
+
+2009-02-08 12:37  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.113), burp/burp.cpp (1.165),
+	burp/mvol.cpp (1.62), burp/spit.cpp (1.40),
+	common/classes/BaseStream.h (1.3), config/Args.cpp (1.6),
+	config/InputFile.cpp (1.14), config/ScanDir.cpp (1.13),
+	dudley/ddl.cpp (1.46), dudley/exe.epp (1.73), isql/isql.epp
+	(1.266), jrd/divorce.cpp (1.14), jrd/rse.cpp (1.174), jrd/sort.cpp
+	(1.122), jrd/utl.cpp (1.128), lock/print.cpp (1.81),
+	misc/makeHeader.cpp (1.8), qli/lex.cpp (1.46),
+	utilities/analyse.cpp (1.19), utilities/cache.cpp (1.22),
+	utilities/gsec/gsec.cpp (1.105), utilities/gstat/dba.epp (1.110),
+	utilities/ntrace/os/posix/FileObject.cpp (1.4),
+	utilities/ntrace/os/posix/platform.cpp (1.5):
+
+	Trying to be more consistent in the detection of headers (HAVE_*
+	macros).
+
+2009-02-08 12:23  robocop
+
+	* firebird2/src/: common/utils.cpp (1.58), dsql/dsql.cpp (1.274),
+	jrd/Database.cpp (1.14), jrd/RuntimeStatistics.cpp (1.13),
+	jrd/RuntimeStatistics.h (1.18), jrd/jrd.cpp (1.521), jrd/svc.cpp
+	(1.262), jrd/svc.h (1.75), jrd/trace/TraceCmdLine.cpp (1.5),
+	jrd/trace/TraceConfigStorage.cpp (1.12),
+	jrd/trace/TraceConfigStorage.h (1.6), jrd/trace/TraceDSQLHelpers.h
+	(1.5), jrd/trace/TraceJrdHelpers.h (1.3), jrd/trace/TraceLog.cpp
+	(1.10), jrd/trace/TraceLog.h (1.4), jrd/trace/TraceManager.cpp
+	(1.7), jrd/trace/TraceManager.h (1.3), jrd/trace/TraceObjects.cpp
+	(1.6), jrd/trace/TraceObjects.h (1.3), jrd/trace/TraceService.cpp
+	(1.7), jrd/trace/TraceSession.h (1.3), utilities/fbsvcmgr.cpp
+	(1.24), utilities/ntrace/TraceConfiguration.h (1.3),
+	utilities/ntrace/TracePluginImpl.cpp (1.9),
+	utilities/ntrace/TracePluginImpl.h (1.4),
+	utilities/ntrace/fbtrace.conf (1.5),
+	utilities/ntrace/os/FileObject.h (1.3),
+	utilities/ntrace/os/platform.h (1.3),
+	utilities/ntrace/os/posix/FileObject.cpp (1.3),
+	utilities/ntrace/os/posix/platform.cpp (1.4),
+	utilities/ntrace/os/win32/FileObject.cpp (1.4),
+	utilities/ntrace/os/win32/platform.cpp (1.4):
+
+	Misc, style, fixing dangerous warnings, constness, etc.
+
+2009-02-08 10:40  robocop
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.18):
+
+	Eliminate variable shadowing.
+
+2009-02-08 10:39  robocop
+
+	* firebird2/src/jrd/opt.cpp (1.336):
+
+	Make code easier to read.
+
+2009-02-08 10:17  robocop
+
+	* firebird2/src/msgs/messages2.sql (1.80):
+
+	Totally misc.
+
+2009-02-08 10:09  robocop
+
+	* firebird2/src/include/memory_routines.h (1.15):
+
+	This file was challenging all our typical indenting practices.
+
+2009-02-07 22:24  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.301):
+
+	Remove obsolete comment
+
 2009-02-07 20:36  dimitr
 
 	* firebird2/src/utilities/install/install_svc.cpp (1.44):
