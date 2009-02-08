@@ -3334,6 +3334,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 37, NULL, '    -fetch  fetch password from file', NULL, NULL);
 -- FBSVCMGR
+-- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);
 ('fbsvcmgr_bad_wm', 'putWriteMode', 'fbsvcmgr.cpp', NULL, 22, 2, NULL, 'Wrong value for write mode', NULL, NULL);
 ('fbsvcmgr_bad_rs', 'putReserveSpace', 'fbsvcmgr.cpp', NULL, 22, 3, NULL, 'Wrong value for reserve space', NULL, NULL);
