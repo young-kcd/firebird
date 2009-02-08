@@ -331,7 +331,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		{
 			case nod_argument: 
 			{
-				//const impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
+				//const impure_value* impure = (impure_value*) ((SCHAR*) m_request + prm->nod_impure);
 				const jrd_nod* message = prm->nod_arg[e_arg_message];
 				const Format* format = (Format*) message->nod_arg[e_msg_format];
 				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
