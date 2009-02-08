@@ -162,7 +162,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	Database* dbb;
-	Attachment *att;
+	Attachment* att;
 	jrd_tra* transaction;
 
 	// See if JRD thread data structure looks sane for occasion
@@ -311,7 +311,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 	Attachment* att = tdbb->getAttachment();
 	jrd_tra* tra = tdbb->getTransaction();
 
