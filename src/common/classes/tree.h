@@ -374,7 +374,9 @@ public:
 	class ConstAccessor
 	{
 	public:
-		explicit ConstAccessor(const BePlusTree* _tree) : curr(NULL), curPos(0), tree(_tree) {}
+		explicit ConstAccessor(const BePlusTree* in_tree) :
+			curr(NULL), curPos(0), tree(in_tree)
+		{}
 
 		bool locate(const Key& key)
 		{
@@ -532,7 +534,9 @@ public:
 	class Accessor : public ConstAccessor
 	{
 	public:
-		explicit Accessor(BePlusTree* _tree) : ConstAccessor(_tree), tree(_tree) {}
+		explicit Accessor(BePlusTree* in_tree) :
+			ConstAccessor(in_tree), tree(in_tree)
+		{}
 
 		bool add(const Value& item)
 		{
