@@ -26,13 +26,15 @@
 #include <windows.h>
 
 #include "fb_types.h"
-#include "../common/classes/fb_string.h"
+#include "../../../common/classes/fb_string.h"
+#include "../../../common/dllinst.h"
 
 #include "../jrd/os/config_root.h"
 #include "../utilities/install/registry.h"
 #include "../utilities/install/install_nt.h"
 
 typedef Firebird::PathName string;
+
 
 /******************************************************************************
  *
@@ -64,10 +66,9 @@ bool getRootFromRegistry(string& root)
 }
 
 
-extern HINSTANCE hDllInst;
-
 bool getBinFromHInstance(string& root)
 {
+	const HINSTANCE hDllInst = Firebird::hDllInst;
 	if (!hDllInst)
 	{
 		return false;

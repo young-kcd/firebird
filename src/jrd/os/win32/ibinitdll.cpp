@@ -23,31 +23,27 @@
  */
 
 #include "firebird.h"
+#include "../../../common/dllinst.h"
+
 #include <windows.h>
-#include "../common/classes/fb_string.h"
-#include "../jrd/os/config_root.h"
-#include "../jrd/os/path_utils.h"
 
 using namespace Firebird;
 
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
-#if defined(EMBEDDED)
 	switch (reason)
 	{
 		case DLL_PROCESS_ATTACH:
 		{
-			extern HINSTANCE hDllInst;
-			extern BOOL bEmbedded;
-	
 			hDllInst = h;
+#if defined(EMBEDDED)
 			bEmbedded = true;
+#endif
 
 			break;
 		}
 	}
-#endif
 
 	return TRUE;
 }

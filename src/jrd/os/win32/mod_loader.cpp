@@ -7,6 +7,7 @@
 #define _WIN32_WINNT 0x0501
 
 #include "firebird.h"
+#include "../../../common/dllinst.h"
 #include "../jrd/os/mod_loader.h"
 #include <windows.h>
 
@@ -14,9 +15,6 @@ typedef Firebird::string string;
 typedef Firebird::PathName PathName;
 
 /// This is the Win32 implementation of the mod_loader abstraction.
-
-HINSTANCE hDllInst = 0;
-BOOL bEmbedded = false;
 
 /// activation context API prototypes
 typedef HANDLE (WINAPI * PFN_CAC)(PCACTCTXA pActCtx);
@@ -78,7 +76,7 @@ public:
 		return;
 #endif
 
-		if (!bEmbedded || !mCreateActCtx)
+		if (!Firebird::bEmbedded || !mCreateActCtx)
 			return;
 
 		ACTCTX_SECTION_KEYED_DATA ackd;
@@ -107,7 +105,7 @@ public:
 		actCtx.cbSize = sizeof(actCtx);
 		actCtx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID;
 		actCtx.lpResourceName = ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
-		actCtx.hModule = hDllInst; 
+		actCtx.hModule = Firebird::hDllInst; 
 
 		if (actCtx.hModule)
 		{
