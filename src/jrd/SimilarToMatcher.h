@@ -793,7 +793,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 										  &rangeBuffer[previousRangeBufferCount + 1], len, c) <= 0)
 					{
 						rangeBuffer.push(len);
-						size_t rangeCount = rangeBuffer.getCount();
+						rangeCount = rangeBuffer.getCount();
 						memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
 
 						charsBuffer.push(*patternPos);
