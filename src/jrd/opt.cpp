@@ -2294,13 +2294,13 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 			MoveBuffer nameBuffer;
 			const char* namePtr = index_name.c_str();
 
-			if (tdbb->getAttachment()->att_charset != CS_METADATA &&
-				tdbb->getAttachment()->att_charset != CS_NONE)
+			const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+			if (charset!= CS_METADATA && charset != CS_NONE)
 			{
 				namePtr = (const char*) nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(
-					MAX_SQL_IDENTIFIER_LEN, CS_METADATA, tdbb->getAttachment()->att_charset));
+					MAX_SQL_IDENTIFIER_LEN, CS_METADATA, charset));
 				length = INTL_convert_bytes(tdbb,
-					tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+					charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 					CS_METADATA, (const BYTE*) index_name.c_str(), length, ERR_post);
 			}
 
@@ -2369,14 +2369,13 @@ static bool dump_rsb(const jrd_req* request,
 
 	if (name)
 	{
-		if (tdbb->getAttachment()->att_charset != CS_METADATA &&
-			tdbb->getAttachment()->att_charset != CS_NONE)
+		const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+		if (charset != CS_METADATA && charset != CS_NONE)
 		{
-			nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(length, CS_METADATA,
-				tdbb->getAttachment()->att_charset));
+			nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(length, CS_METADATA, charset));
 
 			length = INTL_convert_bytes(tdbb,
-				tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+				charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 				CS_METADATA, (const BYTE*) name, length, ERR_post);
 			name = reinterpret_cast<SCHAR*>(nameBuffer.begin());
 		}
@@ -2457,15 +2456,14 @@ static bool dump_rsb(const jrd_req* request,
 		if (request->req_procedure || procedure->prc_request->req_fors.getCount() == 0)
 		{
 			const Firebird::MetaName& n = procedure->prc_name;
-
-			if (tdbb->getAttachment()->att_charset != CS_METADATA &&
-				tdbb->getAttachment()->att_charset != CS_NONE)
+			const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+			if (charset != CS_METADATA && charset != CS_NONE)
 			{
 				nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(n.length(), CS_METADATA,
-					tdbb->getAttachment()->att_charset));
+					charset));
 
 				length = INTL_convert_bytes(tdbb,
-					tdbb->getAttachment()->att_charset, nameBuffer.begin(), nameBuffer.getCapacity(),
+					charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 					CS_METADATA, (const BYTE*) n.c_str(), n.length(), ERR_post);
 				name = reinterpret_cast<SCHAR*>(nameBuffer.begin());
 			}
