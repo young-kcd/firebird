@@ -35,14 +35,11 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	switch (reason)
 	{
 		case DLL_PROCESS_ATTACH:
-		{
 			hDllInst = h;
 #if defined(EMBEDDED)
 			bEmbedded = true;
 #endif
-
 			break;
-		}
 	}
 
 	return TRUE;

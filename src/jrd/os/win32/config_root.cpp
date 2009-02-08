@@ -33,7 +33,7 @@
 #include "../utilities/install/registry.h"
 #include "../utilities/install/install_nt.h"
 
-typedef Firebird::PathName string;
+using Firebird::PathName;
 
 
 /******************************************************************************
@@ -42,12 +42,12 @@ typedef Firebird::PathName string;
  */
 namespace {
 
-bool getRootFromRegistry(string& root)
+bool getRootFromRegistry(PathName& root)
 {
 	HKEY hkey;
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
-		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
+			0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
 	{
 		return false;
 	}
@@ -66,7 +66,7 @@ bool getRootFromRegistry(string& root)
 }
 
 
-bool getBinFromHInstance(string& root)
+bool getBinFromHInstance(PathName& root)
 {
 	const HINSTANCE hDllInst = Firebird::hDllInst;
 	if (!hDllInst)
@@ -77,7 +77,7 @@ bool getBinFromHInstance(string& root)
 	char filename[MAX_PATH];
 	GetModuleFileName(hDllInst, filename, sizeof(filename));
 
-	Firebird::PathName file;
+	PathName file;
 	PathUtils::splitLastComponent(root, file, filename);
 
 	return root.hasData();
@@ -98,7 +98,7 @@ void ConfigRoot::osConfigRoot()
 #endif
 
 	// get the pathname of the running dll / executable
-	string bin_dir;
+	PathName bin_dir;
 	if (!getBinFromHInstance(bin_dir))
 	{
 		bin_dir = fb_utils::get_process_name();
@@ -133,7 +133,7 @@ void ConfigRoot::osConfigInstallDir()
 {
 
 	// get the pathname of the running dll / executable
-	string bin_dir;
+	PathName bin_dir;
 	if (!getBinFromHInstance(bin_dir))
 	{
 		bin_dir = fb_utils::get_process_name();
