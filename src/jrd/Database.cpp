@@ -62,11 +62,11 @@ namespace Jrd
 		PIO_get_unique_file_id(pageSpace->file, buffer);
 
 		Firebird::string file_id;
+		char* s = file_id.getBuffer(2 * buffer.getCount());
 		for (size_t i = 0; i < buffer.getCount(); i++)
 		{
-			TEXT hex[3];
-			sprintf(hex, "%02x", (int) buffer[i]);
-			file_id.append(hex);
+			sprintf(s, "%02x", (int) buffer[i]);
+			s += 2;
 		}
 
 		return file_id;

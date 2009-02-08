@@ -40,7 +40,7 @@
 using namespace Firebird;
 using namespace Jrd;
 
-TracePlugin* TracePluginImpl::createSkeletalPlugin() 
+TracePlugin* TracePluginImpl::createSkeletalPlugin()
 {
 	TracePlugin* plugin_ptr = FB_NEW(*getDefaultMemoryPool()) TracePlugin;
 	memset(plugin_ptr, 0, sizeof(TracePlugin));
@@ -50,10 +50,10 @@ TracePlugin* TracePluginImpl::createSkeletalPlugin()
 	return plugin_ptr;
 }
 
-TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo) 
+TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo)
 {
 	TracePlugin* plugin_ptr = createSkeletalPlugin();
-	try 
+	try
 	{
 		TracePluginImpl* pluginImpl = FB_NEW(*getDefaultMemoryPool()) TracePluginImpl(configuration, initInfo);
 		plugin_ptr->tpl_object = pluginImpl;
@@ -80,7 +80,7 @@ TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configur
 		plugin_ptr->tpl_event_service_query = ntrace_event_service_query;
 		plugin_ptr->tpl_event_service_detach = ntrace_event_service_detach;
 	}
-	catch(const Firebird::Exception&) 
+	catch(const Firebird::Exception&)
 	{
 		plugin_ptr->tpl_shutdown(plugin_ptr);
 		throw;
@@ -89,12 +89,12 @@ TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configur
 	return plugin_ptr;
 }
 
-void TracePluginImpl::marshal_exception(const Firebird::Exception& ex) 
+void TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 {
 	set_error_string(ex.what());
 }
 
-TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceInitInfo* initInfo) : 
+TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceInitInfo* initInfo) :
 	operational(false),
 	session_id(initInfo->getTraceSessionID()),
 	session_name(*getDefaultMemoryPool()),
@@ -116,28 +116,28 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	}
 
 	// Compile filtering regular expressions
-	if (config.include_filter.hasData()) 
+	if (config.include_filter.hasData())
 	{
 		int errorCode = regcomp(&include_matcher, config.include_filter.c_str(), REG_EXTENDED | REG_ICASE);
-		if (errorCode) 
+		if (errorCode)
 		{
 			char errBuf[256];
 			regerror(errorCode, NULL, errBuf, sizeof(errBuf));
 			Firebird::fatal_exception::raiseFmt(
-				"error \"%s\" while compiling regular expression \"%s\" for database \"%s\"", 
+				"error \"%s\" while compiling regular expression \"%s\" for database \"%s\"",
 				errBuf, config.include_filter.c_str(), config.db_filename.c_str());
 		}
 	}
 
-	if (config.exclude_filter.hasData()) 
+	if (config.exclude_filter.hasData())
 	{
 		int errorCode = regcomp(&exclude_matcher, config.exclude_filter.c_str(), REG_EXTENDED | REG_ICASE);
-		if (errorCode) 
+		if (errorCode)
 		{
 			char errBuf[256];
 			regerror(errorCode, NULL, errBuf, sizeof(errBuf));
 			Firebird::fatal_exception::raiseFmt(
-				"error \"%s\" while compiling regular expression \"%s\" for database \"%s\"", 
+				"error \"%s\" while compiling regular expression \"%s\" for database \"%s\"",
 				errBuf, config.exclude_filter.c_str(), config.db_filename.c_str());
 		}
 	}
@@ -146,12 +146,12 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	log_init();
 }
 
-TracePluginImpl::~TracePluginImpl() 
+TracePluginImpl::~TracePluginImpl()
 {
-	// All objects must have been free already, but in case something remained 
+	// All objects must have been free already, but in case something remained
 	// deallocate tracking objects now.
 
-	if (operational) 
+	if (operational)
 	{
 		if (connections.getFirst())
 		{
@@ -195,22 +195,22 @@ void TracePluginImpl::rotateLog(size_t added_bytes_length)
 {
 	WriteLockGuard lock(renameLock);
 
-	Firebird::TimeStamp stamp(Firebird::TimeStamp::getCurrentTimeStamp());
+	const Firebird::TimeStamp stamp(Firebird::TimeStamp::getCurrentTimeStamp());
 	struct tm times;
 	stamp.decode(&times);
 
 	Firebird::PathName newName;
-	size_t last_dot_pos = config.log_filename.rfind(".");
+	const size_t last_dot_pos = config.log_filename.rfind(".");
 	if (last_dot_pos > 0)
 	{
 		Firebird::PathName log_name = config.log_filename.substr(0, last_dot_pos);
 		Firebird::PathName log_ext = config.log_filename.substr(last_dot_pos + 1, config.log_filename.length());
-		newName.printf("%s.%04d-%02d-%02dT%02d-%02d-%02d.%s", log_name.c_str(), times.tm_year + 1900, 
+		newName.printf("%s.%04d-%02d-%02dT%02d-%02d-%02d.%s", log_name.c_str(), times.tm_year + 1900,
 			times.tm_mon + 1, times.tm_mday, times.tm_hour, times.tm_min, times.tm_sec, log_ext.c_str());
 	}
 	else
 	{
-		newName.printf("%s.%04d-%02d-%02dT%02d-%02d-%02d", config.log_filename.c_str(), times.tm_year + 1900, 
+		newName.printf("%s.%04d-%02d-%02dT%02d-%02d-%02d", config.log_filename.c_str(), times.tm_year + 1900,
 			times.tm_mon + 1, times.tm_mday, times.tm_hour, times.tm_min, times.tm_sec);
 	}
 
@@ -222,7 +222,7 @@ void TracePluginImpl::rotateLog(size_t added_bytes_length)
 }
 
 
-void TracePluginImpl::writePacket(const UCHAR* packet_data, const ULONG packet_size) 
+void TracePluginImpl::writePacket(const UCHAR* packet_data, const ULONG packet_size)
 {
 	if (config.max_log_size && need_rotate(packet_size))
 		rotateLog(packet_size);
@@ -232,18 +232,18 @@ void TracePluginImpl::writePacket(const UCHAR* packet_data, const ULONG packet_s
 
 /******************************** Logging code *********************************/
 
-void TracePluginImpl::logRecord(const char* action, string& line) 
+void TracePluginImpl::logRecord(const char* action, string& line)
 {
 	// We use atomic file appends for logging. Do not try to break logging
 	// to multiple separate file operations
-	Firebird::TimeStamp stamp(Firebird::TimeStamp::getCurrentTimeStamp());
+	const Firebird::TimeStamp stamp(Firebird::TimeStamp::getCurrentTimeStamp());
 	struct tm times;
 	stamp.decode(&times);
 
 	char buffer[100];
 	SNPRINTF(buffer, sizeof(buffer), "%04d-%02d-%02dT%02d:%02d:%02d.%04d (%d:%p) %s" NEWLINE,
-		times.tm_year + 1900, times.tm_mon + 1, times.tm_mday, times.tm_hour, 
-		times.tm_min, times.tm_sec, (int) (stamp.value().timestamp_time % ISC_TIME_SECONDS_PRECISION), 
+		times.tm_year + 1900, times.tm_mon + 1, times.tm_mday, times.tm_hour,
+		times.tm_min, times.tm_sec, (int) (stamp.value().timestamp_time % ISC_TIME_SECONDS_PRECISION),
 		get_process_id(), this, action);
 
 	line.insert(0, buffer);
@@ -262,7 +262,7 @@ void TracePluginImpl::logRecord(const char* action, string& line)
 	}
 }
 
-void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connection, string& line) 
+void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connection, string& line)
 {
 	// Lookup connection description
 	const int conn_id = connection->getConnectionID();
@@ -273,13 +273,13 @@ void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connect
 		{
 			ReadLockGuard lock(connectionsLock);
 			ConnectionsTree::Accessor accessor(&connections);
-			if (accessor.locate(conn_id)) 
+			if (accessor.locate(conn_id))
 			{
 				line.insert(0, *accessor.current().description);
 				break;
 			}
 		}
-		
+
 		if (reg)
 		{
 			string temp;
@@ -298,7 +298,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connect
 	{
 		WriteLockGuard lock(connectionsLock);
 		ConnectionsTree::Accessor accessor(&connections);
-		if (accessor.locate(conn_id)) 
+		if (accessor.locate(conn_id))
 		{
 			accessor.current().deallocate_references();
 			accessor.fastRemove();
@@ -308,7 +308,7 @@ void TracePluginImpl::logRecordConn(const char* action, TraceConnection* connect
 	logRecord(action, line);
 }
 
-void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connection, 
+void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connection,
 	TraceTransaction* transaction, string& line)
 {
 	const int tra_id = transaction->getTransactionID();
@@ -319,13 +319,13 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connec
 		{
 			ReadLockGuard lock(transactionsLock);
 			TransactionsTree::Accessor accessor(&transactions);
-			if (accessor.locate(tra_id)) 
+			if (accessor.locate(tra_id))
 			{
 				line.insert(0, *accessor.current().description);
 				break;
 			}
 		}
-		
+
 		if (reg)
 		{
 			string temp;
@@ -341,7 +341,7 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceConnection* connec
 	logRecordConn(action, connection, line);
 }
 
-void TracePluginImpl::logRecordProc(const char* action, TraceConnection* connection, 
+void TracePluginImpl::logRecordProc(const char* action, TraceConnection* connection,
 	TraceTransaction* transaction, const char* proc_name, string& line)
 {
 	string temp;
@@ -356,7 +356,7 @@ void TracePluginImpl::logRecordProc(const char* action, TraceConnection* connect
 	}
 }
 
-void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connection, 
+void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connection,
 	TraceTransaction* transaction, TraceStatement* statement, bool isSQL, string& line)
 {
 	const int stmt_id = statement->getStmtID();
@@ -370,9 +370,9 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 			ReadLockGuard lock(statementsLock);
 
 			StatementsTree::Accessor accessor(&statements);
-			if (accessor.locate(stmt_id)) 
+			if (accessor.locate(stmt_id))
 			{
-				string* description = accessor.current().description;
+				const string* description = accessor.current().description;
 
 				log = (description != NULL);
 				// Do not say anything about statements which do not fall under filter criteria
@@ -380,7 +380,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 					line.insert(0, *description);
 				}
 				break;
-			} 
+			}
 		}
 
 		if (reg)
@@ -412,7 +412,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 		}
 	}
 
-	if (!log) 
+	if (!log)
 		return;
 
 	if (!transaction) {
@@ -423,10 +423,10 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 	}
 }
 
-void TracePluginImpl::logRecordServ(const char* action, TraceService* service, 
+void TracePluginImpl::logRecordServ(const char* action, TraceService* service,
 	string& line)
 {
-	const ntrace_service_t svc_id = service->getServiceID();
+	//const ntrace_service_t svc_id = service->getServiceID(); // Unused
 	bool reg = false;
 
 	while (true)
@@ -436,7 +436,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceService* service,
 			ReadLockGuard lock(servicesLock);
 
 			ServicesTree::Accessor accessor(&services);
-			if (accessor.locate(service->getServiceID())) 
+			if (accessor.locate(service->getServiceID()))
 			{
 				line.insert(0, *accessor.current().description);
 				break;
@@ -458,7 +458,7 @@ void TracePluginImpl::logRecordServ(const char* action, TraceService* service,
 	logRecord(action, line);
 }
 
-void TracePluginImpl::appendGlobalCounts(PerformanceInfo* info, string& line) 
+void TracePluginImpl::appendGlobalCounts(const PerformanceInfo* info, string& line)
 {
 	string temp;
 
@@ -494,7 +494,7 @@ void TracePluginImpl::appendGlobalCounts(PerformanceInfo* info, string& line)
 	line.append(NEWLINE);
 }
 
-void TracePluginImpl::appendTableCounts(PerformanceInfo *info, string& line)
+void TracePluginImpl::appendTableCounts(const PerformanceInfo *info, string& line)
 {
 	if (!config.print_perf || info->pin_count == 0)
 		return;
@@ -503,20 +503,20 @@ void TracePluginImpl::appendTableCounts(PerformanceInfo *info, string& line)
 		"Table                             Natural     Index    Update    Insert    Delete   Backout     Purge   Expunge" NEWLINE
 		"***************************************************************************************************************" NEWLINE );
 
-	TraceCounts* trc;
-	TraceCounts* trc_end;
+	const TraceCounts* trc;
+	const TraceCounts* trc_end;
 
-	for (trc = info->pin_tables, trc_end = trc + info->pin_count; trc < trc_end; trc++) 
+	for (trc = info->pin_tables, trc_end = trc + info->pin_count; trc < trc_end; trc++)
 	{
 		line.append(trc->trc_relation_name);
 		line.append(MAX_SQL_IDENTIFIER_LEN - strlen(trc->trc_relation_name), ' ');
-		for (int j = 0; j < DBB_max_rel_count; j++) 
+		for (int j = 0; j < DBB_max_rel_count; j++)
 		{
-			if (trc->trc_counters[j] == 0) 
+			if (trc->trc_counters[j] == 0)
 			{
 				line.append(10, ' ');
 			}
-			else 
+			else
 			{
 				string temp;
 				temp.printf("%10"QUADFORMAT"d", trc->trc_counters[j]);
@@ -530,7 +530,7 @@ void TracePluginImpl::appendTableCounts(PerformanceInfo *info, string& line)
 
 namespace {
 
-void int_to_quoted_str(SINT64 value, int scale, string& str) 
+void int_to_quoted_str(SINT64 value, int scale, string& str)
 {
 	str.printf("%"QUADFORMAT"d", value);
 
@@ -538,7 +538,7 @@ void int_to_quoted_str(SINT64 value, int scale, string& str)
 		// Append needed amount of zeros at the end of string
 		str.append(-scale, '0');
 	}
-	else if (scale > 0) 
+	else if (scale > 0)
 	{
 		// Append needed amount of zeros in the beginning of string as necessary
 		if (value >= 0)
@@ -562,13 +562,19 @@ void int_to_quoted_str(SINT64 value, int scale, string& str)
 
 }
 
-void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, size_t len) 
+void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, size_t len)
 {
-	if (config.max_arg_length && len > config.max_arg_length) 
+	if (config.max_arg_length && len > config.max_arg_length)
 	{
+		/* CVC: We will wrap with the original code.
 		len = config.max_arg_length - 3;
-		if (len < 0) 
+		if (len < 0)
 			len = 0;
+		*/
+		if (config.max_arg_length < 3)
+			len = 0;
+		else
+			len = config.max_arg_length - 3;
 
 		result.printf("\"%.*s...\"", len, str);
 		return;
@@ -579,8 +585,8 @@ void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, siz
 
 void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 {
-	size_t paramcount = params->getCount();
-	if (!paramcount) 
+	const size_t paramcount = params->getCount();
+	if (!paramcount)
 		return;
 
 	// NS: Please, do not move strings inside the loop. This is performance-sensitive piece of code.
@@ -588,12 +594,12 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 	string paramvalue;
 	string temp;
 
-	for (size_t i = 0; i < paramcount; i++) 
+	for (size_t i = 0; i < paramcount; i++)
 	{
 		const struct dsc* parameters = params->getParam(i);
 
 		// See if we need to print any more arguments
-		if (config.max_arg_count && i >= config.max_arg_count) 
+		if (config.max_arg_count && i >= config.max_arg_count)
 		{
 			temp.printf("...%d more arguments skipped..." NEWLINE, paramcount - i);
 			line.append(temp);
@@ -601,7 +607,7 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 		}
 
 		// Assign type name
-		switch (parameters->dsc_dtype) 
+		switch (parameters->dsc_dtype)
 		{
 			case dtype_text:
 				paramtype.printf("char(%d)", parameters->dsc_length);
@@ -672,31 +678,31 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 		{
 			paramvalue = "<NULL>";
 		}
-		else 
+		else
 		{
 			// Assign value
-			switch (parameters->dsc_dtype) 
+			switch (parameters->dsc_dtype)
 			{
 				// Handle potentially long string values
 				case dtype_text:
-					formatStringArgument(paramvalue, 
+					formatStringArgument(paramvalue,
 						parameters->dsc_address, parameters->dsc_length);
 					break;
 				case dtype_cstring:
-					formatStringArgument(paramvalue, 
-						parameters->dsc_address, 
+					formatStringArgument(paramvalue,
+						parameters->dsc_address,
 						strlen(reinterpret_cast<const char*>(parameters->dsc_address)));
 					break;
 				case dtype_varying:
-					formatStringArgument(paramvalue, 
-						parameters->dsc_address + 2, 
+					formatStringArgument(paramvalue,
+						parameters->dsc_address + 2,
 						*(USHORT*)parameters->dsc_address);
 					break;
 
 				// Handle quad
 				case dtype_quad:
-				case dtype_blob: 
-				case dtype_array: 
+				case dtype_blob:
+				case dtype_array:
 				{
 					ISC_QUAD *quad = (ISC_QUAD*) parameters->dsc_address;
 					paramvalue.printf("\"%08X%08X\"", quad->gds_quad_high, quad->gds_quad_low);
@@ -720,7 +726,7 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 						paramvalue.printf("\"%f\"", *(float*) parameters->dsc_address);
 					}
 					else {
-						paramvalue.printf("\"%f\"", 
+						paramvalue.printf("\"%f\"",
 							*(float*) parameters->dsc_address * pow(10.0f, -parameters->dsc_scale));
 					}
 					break;
@@ -730,37 +736,37 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 						paramvalue.printf("\"%f\"", *(double*) parameters->dsc_address);
 					}
 					else {
-						paramvalue.printf("\"%f\"", 
+						paramvalue.printf("\"%f\"",
 							*(double*) parameters->dsc_address * pow(10.0, -parameters->dsc_scale));
 					}
 					break;
 
-				case dtype_sql_date: 
+				case dtype_sql_date:
 				{
 					struct tm times;
 					Firebird::TimeStamp::decode_date(*(ISC_DATE*)parameters->dsc_address, &times);
 					paramvalue.printf("\"%04d-%02d-%02d\"", times.tm_year + 1900, times.tm_mon + 1, times.tm_mday);
 					break;
 				}
-				case dtype_sql_time: 
+				case dtype_sql_time:
 				{
 					int hours, minutes, seconds, fractions;
-					Firebird::TimeStamp::decode_time(*(ISC_TIME*) parameters->dsc_address, 
+					Firebird::TimeStamp::decode_time(*(ISC_TIME*) parameters->dsc_address,
 						&hours, &minutes, &seconds, &fractions);
 
 					paramvalue.printf("\"%02d:%02d:%02d.%04d\"", hours,	minutes, seconds, fractions);
 					break;
 				}
-				case dtype_timestamp: 
+				case dtype_timestamp:
 				{
 					Firebird::TimeStamp ts(*(ISC_TIMESTAMP*) parameters->dsc_address);
 					struct tm times;
 
 					ts.decode(&times);
 
-					paramvalue.printf("\"%04d-%02d-%02dT%02d:%02d:%02d.%04d\"", 
+					paramvalue.printf("\"%04d-%02d-%02dT%02d:%02d:%02d.%04d\"",
 						times.tm_year + 1900, times.tm_mon + 1, times.tm_mday,
-						times.tm_hour, times.tm_min, times.tm_sec, 
+						times.tm_hour, times.tm_min, times.tm_sec,
 						ts.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
 					break;
 				}
@@ -774,17 +780,17 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 }
 
 void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
-		const ntrace_byte_t* send_items, size_t recv_item_length, 
+		const ntrace_byte_t* send_items, size_t recv_item_length,
 		const ntrace_byte_t* recv_items, string& line)
 {
 	string send_query;
 	string recv_query;
 	USHORT l;
 	SCHAR item;
-	USHORT timeout = 0;
+	//USHORT timeout = 0; // Unused
 
-	const SCHAR* items = reinterpret_cast<const SCHAR*>(send_items);
-	const SCHAR* const end_items = items + send_item_length;
+	const UCHAR* items = send_items;
+	const UCHAR* const end_items = items + send_item_length;
 	while (items < end_items && *items != isc_info_end)
 	{
 		switch ((item = *items++))
@@ -795,11 +801,11 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 		default:
 			if (items + 2 <= end_items)
 			{
-				l = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), 2);
+				l = (USHORT) gds__vax_integer(items, 2);
 				items += 2;
 				if (items + l <= end_items)
 				{
-					switch (item) 
+					switch (item)
 					{
 					case isc_info_svc_line:
 						send_query.printf(NEWLINE "\t\t send line: %.*s", l, items);
@@ -808,12 +814,12 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 						send_query.printf(NEWLINE "\t\t send message: %.*s", l + 3, items - 3);
 						break;
 					case isc_info_svc_timeout:
-						send_query.printf(NEWLINE "\t\t set timeout: %d", 
-							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l));
+						send_query.printf(NEWLINE "\t\t set timeout: %d",
+							(USHORT) gds__vax_integer(items, l));
 						break;
 					case isc_info_svc_version:
-						send_query.printf(NEWLINE "\t\t set version: %d", 
-							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l));
+						send_query.printf(NEWLINE "\t\t set version: %d",
+							(USHORT) gds__vax_integer(items, l));
 						break;
 					}
 				}
@@ -824,15 +830,15 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 			break;
 		}
 	}
-	
+
 	if (send_query.hasData())
 	{
 		line.append("\t Send portion of the query:");
 		line.append(send_query);
 	}
 
-	items = reinterpret_cast<const SCHAR*>(recv_items);
-	const SCHAR* const end_items2 = items + recv_item_length;
+	items = recv_items;
+	const UCHAR* const end_items2 = items + recv_item_length;
 
 	if (*items == isc_info_length) {
 		items++;
@@ -940,14 +946,14 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 	}
 }
 
-void TracePluginImpl::log_init() 
+void TracePluginImpl::log_init()
 {
 	string line;
 	line.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
 	logRecord("TRACE_INIT", line);
 }
 
-void TracePluginImpl::log_finalize() 
+void TracePluginImpl::log_finalize()
 {
 	string line;
 	line.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
@@ -987,7 +993,7 @@ void TracePluginImpl::register_connection(TraceConnection* connection)
 		}
 		conn_data.description->append(tmp);
 	}
-	else 
+	else
 	{
 		conn_data.description->append(", <unknown_user>");
 	}
@@ -1005,7 +1011,7 @@ void TracePluginImpl::register_connection(TraceConnection* connection)
 	}
 
 	const char *prc_name = connection->getRemoteProcessName();
-	if (prc_name && *prc_name) 
+	if (prc_name && *prc_name)
 	{
 		tmp.printf(NEWLINE "\t%s:%d", prc_name, connection->getRemoteProcessID());
 		conn_data.description->append(tmp);
@@ -1019,13 +1025,13 @@ void TracePluginImpl::register_connection(TraceConnection* connection)
 	}
 }
 
-void TracePluginImpl::log_event_attach(TraceConnection* connection, 
+void TracePluginImpl::log_event_attach(TraceConnection* connection,
 	ntrace_boolean_t create_db, ntrace_result_t att_result)
 {
-	if (config.log_connections) 
+	if (config.log_connections)
 	{
 		const char* event_type;
-		switch (att_result) 
+		switch (att_result)
 		{
 			case res_successful:
 				event_type = create_db ? "CREATE_DATABASE" : "ATTACH_DATABASE";
@@ -1036,6 +1042,10 @@ void TracePluginImpl::log_event_attach(TraceConnection* connection,
 			case res_unauthorized:
 				event_type = create_db ? "UNAUTHORIZED CREATE_DATABASE" : "UNAUTHORIZED ATTACH_DATABASE";
 				break;
+			default:
+				event_type = create_db ?
+					"Unknown event in CREATE DATABASE ": "Unknown event in ATTACH_DATABASE";
+				break;
 		}
 
 		string line;
@@ -1045,7 +1055,7 @@ void TracePluginImpl::log_event_attach(TraceConnection* connection,
 
 void TracePluginImpl::log_event_detach(TraceConnection* connection, ntrace_boolean_t drop_db)
 {
-	if (config.log_connections) 
+	if (config.log_connections)
 	{
 		string line;
 		logRecordConn(drop_db ? "DROP_DATABASE" : "DETACH_DATABASE", connection, line);
@@ -1053,7 +1063,7 @@ void TracePluginImpl::log_event_detach(TraceConnection* connection, ntrace_boole
 
 	// Get rid of connection descriptor
 	WriteLockGuard lock(connectionsLock);
-	if (connections.locate(connection->getConnectionID())) 
+	if (connections.locate(connection->getConnectionID()))
 	{
 		connections.current().deallocate_references();
 		connections.fastRemove();
@@ -1088,7 +1098,7 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 	default:
 		trans_data.description->append("<unknown>");
 	}
-	
+
 	const int wait = transaction->getWait();
 	if (wait < 0) {
 		trans_data.description->append(" | WAIT");
@@ -1096,7 +1106,7 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 	else if (wait == 0) {
 		trans_data.description->append(" | NOWAIT");
 	}
-	else 
+	else
 	{
 		string s;
 		s.printf(" | WAIT %d", wait);
@@ -1120,15 +1130,15 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 }
 
 
-void TracePluginImpl::log_event_transaction_start(TraceConnection* connection, 
-		TraceTransaction* transaction, size_t tpb_length, 
+void TracePluginImpl::log_event_transaction_start(TraceConnection* connection,
+		TraceTransaction* transaction, size_t tpb_length,
 		const ntrace_byte_t* tpb, ntrace_result_t tra_result)
 {
-	if (config.log_transactions) 
+	if (config.log_transactions)
 	{
 		string line;
-		char* event_type;
-		switch (tra_result) 
+		const char* event_type;
+		switch (tra_result)
 		{
 			case res_successful:
 				event_type = "START_TRANSACTION";
@@ -1139,16 +1149,19 @@ void TracePluginImpl::log_event_transaction_start(TraceConnection* connection,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED START_TRANSACTION";
 				break;
+			default:
+				event_type = "Unknown event in START_TRANSACTION";
+				break;
 		}
 		logRecordTrans(event_type, connection, transaction, line);
 	}
 }
 
-void TracePluginImpl::log_event_transaction_end(TraceConnection* connection, 
-		TraceTransaction* transaction, ntrace_boolean_t commit, 
+void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
+		TraceTransaction* transaction, ntrace_boolean_t commit,
 		ntrace_boolean_t retain_context, ntrace_result_t tra_result)
 {
-	if (config.log_transactions) 
+	if (config.log_transactions)
 	{
 		string line;
 		PerformanceInfo* info = transaction->getPerf();
@@ -1158,8 +1171,8 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 			appendTableCounts(info, line);
 		}
 
-		const char* event_type = "<Unknown>";
-		switch (tra_result) 
+		const char* event_type;
+		switch (tra_result)
 		{
 			case res_successful:
 				event_type = commit ?
@@ -1176,6 +1189,9 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 					(retain_context ? "UNAUTHORIZED COMMIT_RETAINING"   : "UNAUTHORIZED COMMIT_TRANSACTION") :
 					(retain_context ? "UNAUTHORIZED ROLLBACK_RETAINING" : "UNAUTHORIZED ROLLBACK_TRANSACTION");
 				break;
+			default:
+				event_type = "Unknown event at transaction end";
+				break;
 		}
 		logRecordTrans(event_type, connection, transaction, line);
 	}
@@ -1184,7 +1200,7 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 	{
 		// Forget about the transaction
 		WriteLockGuard lock(transactionsLock);
-		if (transactions.locate(transaction->getTransactionID())) 
+		if (transactions.locate(transaction->getTransactionID()))
 		{
 			transactions.current().deallocate_references();
 			transactions.fastRemove();
@@ -1193,23 +1209,24 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 }
 
 void TracePluginImpl::log_event_set_context(
-		TraceConnection* connection, TraceTransaction* transaction, 
+		TraceConnection* connection, TraceTransaction* transaction,
 		TraceContextVariable* variable)
 {
 	const char* ns = variable->getNameSpace();
 	const char* name = variable->getVarName();
 	const char* value = variable->getVarValue();
 
-	size_t ns_len = strlen(ns);
-	size_t name_len = strlen(name);
-	size_t value_len = value ? strlen(value) : 0;
+	const size_t ns_len = strlen(ns);
+	const size_t name_len = strlen(name);
+	const size_t value_len = value ? strlen(value) : 0;
 
-	if (config.log_context) 
+	if (config.log_context)
 	{
 		string line;
 		if (value == NULL) {
 			line.printf("[%.*s] %.*s = NULL" NEWLINE, ns_len, ns, name_len, name);
-		} else {
+		}
+		else {
 			line.printf("[%.*s] %.*s = \"%.*s\"" NEWLINE, ns_len, ns, name_len, name, value_len, value);
 		}
 		logRecordTrans("SET_CONTEXT", connection, transaction, line);
@@ -1219,22 +1236,22 @@ void TracePluginImpl::log_event_set_context(
 void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceTransaction* transaction,
 		TraceProcedure* procedure, bool started, ntrace_result_t proc_result)
 {
-	if (!config.log_procedure_start && started) 
+	if (!config.log_procedure_start && started)
 		return;
 
-	if (!config.log_procedure_finish && !started) 
+	if (!config.log_procedure_finish && !started)
 		return;
 
 	// Do not log operation if it is below time threshold
-	PerformanceInfo *info = started ? NULL : procedure->getPerf();
+	const PerformanceInfo *info = started ? NULL : procedure->getPerf();
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
 	string line;
 	TraceParams *params = procedure->getInputs();
-	if (params && params->getCount()) 
+	if (params && params->getCount())
 	{
-		appendParams(procedure->getInputs(), line); 
+		appendParams(params, line);
 		line.append(NEWLINE);
 	}
 
@@ -1250,20 +1267,23 @@ void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceT
 		appendTableCounts(info, line);
 	}
 
-	const char* event_type = "<Unknown>";
-	switch (proc_result) 
+	const char* event_type;
+	switch (proc_result)
 	{
 		case res_successful:
-			event_type = started ? "EXECUTE_PROCEDURE_START" : 
+			event_type = started ? "EXECUTE_PROCEDURE_START" :
 								   "EXECUTE_PROCEDURE_FINISH";
 			break;
 		case res_failed:
-			event_type = started ? "FAILED EXECUTE_PROCEDURE_START" : 
+			event_type = started ? "FAILED EXECUTE_PROCEDURE_START" :
 								   "FAILED EXECUTE_PROCEDURE_FINISH";
 			break;
 		case res_unauthorized:
-			event_type = started ? "UNAUTHORIZED EXECUTE_PROCEDURE_START" : 
+			event_type = started ? "UNAUTHORIZED EXECUTE_PROCEDURE_START" :
 								   "UNAUTHORIZED EXECUTE_PROCEDURE_FINISH";
+			break;
+		default:
+			event_type = "Unknown at executing procedure";
 			break;
 	}
 
@@ -1278,47 +1298,47 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 	bool need_statement = true;
 
 	const char* sql = statement->getText();
-	if (!sql) 
+	if (!sql)
 		return;
 
 	size_t sql_length = strlen(sql);
 	if (!sql_length)
 		return;
 
-	if (config.include_filter.hasData() || config.exclude_filter.hasData()) 
+	if (config.include_filter.hasData() || config.exclude_filter.hasData())
 	{
-		if (config.include_filter.hasData()) 
+		if (config.include_filter.hasData())
 		{
-			int errorCode = regexec(&include_matcher, sql, 0, NULL, 0);
-			if (errorCode && errorCode != REG_NOMATCH) 
+			const int errorCode = regexec(&include_matcher, sql, 0, NULL, 0);
+			if (errorCode && errorCode != REG_NOMATCH)
 			{
 				char errBuf[256];
 				regerror(errorCode, NULL, errBuf, sizeof(errBuf));
 				Firebird::fatal_exception::raiseFmt(
-					"error \"%s\" while applying regular expression \"%s\" for database \"%s\"", 
+					"error \"%s\" while applying regular expression \"%s\" for database \"%s\"",
 					errBuf, config.include_filter.c_str(), config.db_filename.c_str());
 			}
 			need_statement = !errorCode;
 		}
 
-		if (need_statement && config.exclude_filter.hasData()) 
+		if (need_statement && config.exclude_filter.hasData())
 		{
-			int errorCode = regexec(&exclude_matcher, sql, 0, NULL, 0);
-			if (errorCode && errorCode != REG_NOMATCH) 
+			const int errorCode = regexec(&exclude_matcher, sql, 0, NULL, 0);
+			if (errorCode && errorCode != REG_NOMATCH)
 			{
 				char errBuf[256];
 				regerror(errorCode, NULL, errBuf, sizeof(errBuf));
 				Firebird::fatal_exception::raiseFmt(
-					"error \"%s\" while applying regular expression \"%s\" for database \"%s\"", 
+					"error \"%s\" while applying regular expression \"%s\" for database \"%s\"",
 					errBuf, config.exclude_filter.c_str(), config.db_filename.c_str());
 			}
 
-			if (!errorCode) 
+			if (!errorCode)
 				need_statement = false;
 		}
 	}
 
-	if (need_statement) 
+	if (need_statement)
 	{
 		stmt_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
@@ -1327,7 +1347,7 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 		}
 
 		string temp(*getDefaultMemoryPool());
-		if (config.max_sql_length && sql_length > config.max_sql_length) 
+		if (config.max_sql_length && sql_length > config.max_sql_length)
 		{
 			// Truncate too long SQL printing it out with ellipsis
 			sql_length = (config.max_sql_length < 3) ? 0 : (config.max_sql_length - 3);
@@ -1346,19 +1366,19 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 		const char* access_path = config.print_plan ? statement->getPlan() : NULL;
 		if (access_path && *access_path)
 		{
-			size_t access_path_length = strlen(access_path);
+			const size_t access_path_length = strlen(access_path);
 			temp.printf(NEWLINE
 				"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
 				"%.*s" NEWLINE, access_path_length, access_path);
-	
+
 			*stmt_data.description += temp;
 		}
 		else
 		{
 			*stmt_data.description += NEWLINE;
 		}
-	} 
-	else 
+	}
+	else
 	{
 		stmt_data.description = NULL;
 	}
@@ -1370,15 +1390,15 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 	}
 }
 
-void TracePluginImpl::log_event_dsql_prepare(TraceConnection* connection, 
-		TraceTransaction* transaction, TraceSQLStatement* statement, 
+void TracePluginImpl::log_event_dsql_prepare(TraceConnection* connection,
+		TraceTransaction* transaction, TraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
-	if (config.log_statement_prepare) 
+	if (config.log_statement_prepare)
 	{
 		string line;
-		char* event_type;
-		switch (req_result) 
+		const char* event_type;
+		switch (req_result)
 		{
 			case res_successful:
 				event_type = "PREPARE_STATEMENT";
@@ -1389,26 +1409,29 @@ void TracePluginImpl::log_event_dsql_prepare(TraceConnection* connection,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED PREPARE_STATEMENT";
 				break;
+			default:
+				event_type = "Unknown event in PREPARE_STATEMENT";
+				break;
 		}
 		line.printf("%7d ms" NEWLINE, time_millis);
 		logRecordStmt(event_type, connection, transaction, statement, true, line);
 	}
 }
 
-void TracePluginImpl::log_event_dsql_free(TraceConnection* connection, 
+void TracePluginImpl::log_event_dsql_free(TraceConnection* connection,
 		TraceSQLStatement* statement, unsigned short option)
 {
-	if (config.log_statement_free) 
+	if (config.log_statement_free)
 	{
 		string line;
-		logRecordStmt(option == DSQL_drop ? "FREE_STATEMENT" : "CLOSE_CURSOR", 
+		logRecordStmt(option == DSQL_drop ? "FREE_STATEMENT" : "CLOSE_CURSOR",
 			connection, 0, statement, true, line);
 	}
 
-	if (option == DSQL_drop) 
+	if (option == DSQL_drop)
 	{
 		WriteLockGuard lock(statementsLock);
-		if (statements.locate(statement->getStmtID())) 
+		if (statements.locate(statement->getStmtID()))
 		{
 			delete statements.current().description;
 			statements.fastRemove();
@@ -1416,24 +1439,24 @@ void TracePluginImpl::log_event_dsql_free(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection, 
-		TraceTransaction* transaction, TraceSQLStatement* statement, 
+void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
+		TraceTransaction* transaction, TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result)
 {
-	if (started && !config.log_statement_start) 
+	if (started && !config.log_statement_start)
 		return;
 
-	if (!started && !config.log_statement_finish) 
+	if (!started && !config.log_statement_finish)
 		return;
 
 	// Do not log operation if it is below time threshold
-	PerformanceInfo *info = started ? NULL : statement->getPerf();
+	const PerformanceInfo *info = started ? NULL : statement->getPerf();
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
 	string line;
 	TraceParams *params = statement->getInputs();
-	if (params && params->getCount()) 
+	if (params && params->getCount())
 	{
 		line.append(NEWLINE);
 		appendParams(params, line);
@@ -1450,20 +1473,23 @@ void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
 		appendTableCounts(info, line);
 	}
 
-	const char* event_type = "<Unknown>";
-	switch (req_result) 
+	const char* event_type;
+	switch (req_result)
 	{
 		case res_successful:
 			event_type = started ? "EXECUTE_STATEMENT_START" :
 								   "EXECUTE_STATEMENT_FINISH";
 			break;
 		case res_failed:
-			event_type = started ? "FAILED EXECUTE_STATEMENT_START" : 
+			event_type = started ? "FAILED EXECUTE_STATEMENT_START" :
 								   "FAILED EXECUTE_STATEMENT_FINISH";
 			break;
 		case res_unauthorized:
-			event_type = started ? "UNAUTHORIZED EXECUTE_STATEMENT_START" : 
+			event_type = started ? "UNAUTHORIZED EXECUTE_STATEMENT_START" :
 								   "UNAUTHORIZED EXECUTE_STATEMENT_FINISH";
+			break;
+		default:
+			event_type = "Unknown event at executing statement";
 			break;
 	}
 	logRecordStmt(event_type, connection, transaction, statement, true, line);
@@ -1478,14 +1504,14 @@ void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
 		description->printf(NEWLINE "Statement %d:" NEWLINE, statement->getStmtID());
 	}
 
-	if (config.print_blr) 
+	if (config.print_blr)
 	{
 		const char *text_blr = statement->getText();
 		size_t text_blr_length = text_blr ? strlen(text_blr) : 0;
 		if (!text_blr)
 			text_blr = "";
 
-		if (config.max_blr_length && text_blr_length > config.max_blr_length) 
+		if (config.max_blr_length && text_blr_length > config.max_blr_length)
 		{
 			// Truncate too long BLR printing it out with ellipsis
 			text_blr_length = config.max_blr_length < 3 ? 0 : config.max_blr_length - 3;
@@ -1493,8 +1519,8 @@ void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
 				"-------------------------------------------------------------------------------" NEWLINE
 				"%.*s..." NEWLINE,
 				text_blr_length, text_blr);
-		} 
-		else 
+		}
+		else
 		{
 			description->printf(
 				"-------------------------------------------------------------------------------" NEWLINE
@@ -1511,11 +1537,11 @@ void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
 	statements.add(stmt_data);
 }
 
-void TracePluginImpl::log_event_blr_compile(TraceConnection* connection, 
-	TraceTransaction* transaction, TraceBLRStatement* statement, 
+void TracePluginImpl::log_event_blr_compile(TraceConnection* connection,
+	TraceTransaction* transaction, TraceBLRStatement* statement,
 	ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
-	if (config.log_blr_requests) 
+	if (config.log_blr_requests)
 	{
 		{
 			ReadLockGuard lock(statementsLock);
@@ -1525,8 +1551,9 @@ void TracePluginImpl::log_event_blr_compile(TraceConnection* connection,
 		}
 
 		string line;
-		char* event_type;
-		switch (req_result) {
+		const char* event_type;
+		switch (req_result)
+		{
 			case res_successful:
 				event_type = "COMPILE_BLR";
 				break;
@@ -1536,16 +1563,19 @@ void TracePluginImpl::log_event_blr_compile(TraceConnection* connection,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED COMPILE_BLR";
 				break;
+			default:
+				event_type = "Unknown event in COMPILE_BLR";
+				break;
 		}
 
 		line.printf("%7d ms", time_millis);
-		
+
 		logRecordStmt(event_type, connection, transaction, statement, false, line);
 	}
 }
 
-void TracePluginImpl::log_event_blr_execute(TraceConnection* connection, 
-		TraceTransaction* transaction, TraceBLRStatement* statement, 
+void TracePluginImpl::log_event_blr_execute(TraceConnection* connection,
+		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_result_t req_result)
 {
 	PerformanceInfo *info = statement->getPerf();
@@ -1554,14 +1584,14 @@ void TracePluginImpl::log_event_blr_execute(TraceConnection* connection,
 	if (config.time_threshold && info->pin_time < config.time_threshold)
 		return;
 
-	if (config.log_blr_requests) 
+	if (config.log_blr_requests)
 	{
 		string line;
 		appendGlobalCounts(info, line);
 		appendTableCounts(info, line);
 
-		char* event_type;
-		switch (req_result) 
+		const char* event_type;
+		switch (req_result)
 		{
 			case res_successful:
 				event_type = "EXECUTE_BLR";
@@ -1572,21 +1602,24 @@ void TracePluginImpl::log_event_blr_execute(TraceConnection* connection,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED EXECUTE_BLR";
 				break;
+			default:
+				event_type = "Unknown event in EXECUTE_BLR";
+				break;
 		}
 
 		logRecordStmt(event_type, connection, transaction, statement, false, line);
 	}
 }
 
-void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection, 
-	TraceTransaction* transaction, TraceDYNRequest* request, 
+void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
+	TraceTransaction* transaction, TraceDYNRequest* request,
 	ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
-	if (config.log_dyn_requests) 
+	if (config.log_dyn_requests)
 	{
 		string description;
 
-		if (config.print_dyn) 
+		if (config.print_dyn)
 		{
 			const char *text_dyn = request->getText();
 			size_t text_dyn_length = text_dyn ? strlen(text_dyn) : 0;
@@ -1594,7 +1627,7 @@ void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
 				text_dyn = "";
 			}
 
-			if (config.max_dyn_length && text_dyn_length > config.max_dyn_length) 
+			if (config.max_dyn_length && text_dyn_length > config.max_dyn_length)
 			{
 				// Truncate too long DDL printing it out with ellipsis
 				text_dyn_length = config.max_dyn_length < 3 ? 0 : config.max_dyn_length - 3;
@@ -1602,8 +1635,8 @@ void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
 					"-------------------------------------------------------------------------------" NEWLINE
 					"%.*s...",
 					text_dyn_length, text_dyn);
-			} 
-			else 
+			}
+			else
 			{
 				description.printf(
 					"-------------------------------------------------------------------------------" NEWLINE
@@ -1613,8 +1646,8 @@ void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
 		}
 
 		string line;
-		char* event_type;
-		switch (req_result) 
+		const char* event_type;
+		switch (req_result)
 		{
 			case res_successful:
 				event_type = "EXECUTE_DYN";
@@ -1625,11 +1658,14 @@ void TracePluginImpl::log_event_dyn_execute(TraceConnection* connection,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED EXECUTE_DYN";
 				break;
+			default:
+				event_type = "Unknown event in EXECUTE_DYN";
+				break;
 		}
 
 		line.printf("%7d ms", time_millis);
 		line.insert(0, description);
-		
+
 		logRecordTrans(event_type, connection, transaction, line);
 	}
 }
@@ -1645,10 +1681,10 @@ void TracePluginImpl::register_service(TraceService* service)
 	if (tmp && *tmp) {
 		remote_address.printf("%s:%s", service->getRemoteProtocol(), service->getRemoteAddress());
 	}
-	else 
+	else
 	{
 		tmp = service->getRemoteProtocol();
-		if (tmp && *tmp) 
+		if (tmp && *tmp)
 			remote_address = tmp;
 		else
 			remote_address = "internal";
@@ -1666,7 +1702,7 @@ void TracePluginImpl::register_service(TraceService* service)
 	serv_data.id = service->getServiceID();
 	serv_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 	serv_data.description->printf("\t%s, (Service %p, %s, %s%s)" NEWLINE,
-		service->getServiceMgr(), serv_data.id, 
+		service->getServiceMgr(), serv_data.id,
 		username.c_str(), remote_address.c_str(), remote_process.c_str());
 
 	// Adjust the list of services
@@ -1676,13 +1712,13 @@ void TracePluginImpl::register_service(TraceService* service)
 	}
 }
 
-void TracePluginImpl::log_event_service_attach(TraceService* service, 
+void TracePluginImpl::log_event_service_attach(TraceService* service,
 	ntrace_result_t att_result)
 {
-	if (config.log_services) 
+	if (config.log_services)
 	{
 		const char* event_type;
-		switch (att_result) 
+		switch (att_result)
 		{
 			case res_successful:
 				event_type = "ATTACH_SERVICE";
@@ -1693,6 +1729,9 @@ void TracePluginImpl::log_event_service_attach(TraceService* service,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED ATTACH_SERVICE";
 				break;
+			default:
+				event_type = "Unknown evnt in ATTACH_SERVICE";
+				break;
 		}
 
 		string line;
@@ -1700,13 +1739,13 @@ void TracePluginImpl::log_event_service_attach(TraceService* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_start(TraceService* service, 
+void TracePluginImpl::log_event_service_start(TraceService* service,
 	size_t switches_length, const char* switches, ntrace_result_t start_result)
 {
-	if (config.log_services) 
+	if (config.log_services)
 	{
 		const char* event_type;
-		switch (start_result) 
+		switch (start_result)
 		{
 			case res_successful:
 				event_type = "START_SERVICE";
@@ -1716,6 +1755,9 @@ void TracePluginImpl::log_event_service_start(TraceService* service,
 				break;
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED START_SERVICE";
+				break;
+			default:
+				event_type = "Unknown event in START_SERVICE";
 				break;
 		}
 
@@ -1729,11 +1771,11 @@ void TracePluginImpl::log_event_service_start(TraceService* service,
 		{
 			string sw;
 			sw.printf("\t%.*s" NEWLINE, switches_length, switches);
-			
+
 			// Delete terminator symbols from service switches
-			for (size_t i = 0; i < sw.length(); ++i) 
+			for (size_t i = 0; i < sw.length(); ++i)
 			{
-				if (sw[i] == Firebird::SVC_TRMNTR) 
+				if (sw[i] == Firebird::SVC_TRMNTR)
 				{
 					sw.erase(i, 1);
 					if ((i < sw.length()) && (sw[i] != Firebird::SVC_TRMNTR))
@@ -1742,17 +1784,17 @@ void TracePluginImpl::log_event_service_start(TraceService* service,
 			}
 			line.append(sw);
 		}
-		
+
 		logRecordServ(event_type, service, line);
 	}
 }
 
-void TracePluginImpl::log_event_service_query(TraceService* service, 
-	size_t send_item_length, const ntrace_byte_t* send_items, 
-	size_t recv_item_length, const ntrace_byte_t* recv_items, 
+void TracePluginImpl::log_event_service_query(TraceService* service,
+	size_t send_item_length, const ntrace_byte_t* send_items,
+	size_t recv_item_length, const ntrace_byte_t* recv_items,
 	ntrace_result_t query_result)
 {
-	if (config.log_services && config.log_service_query) 
+	if (config.log_services && config.log_service_query)
 	{
 		string line;
 		const char* tmp = service->getServiceName();
@@ -1763,7 +1805,7 @@ void TracePluginImpl::log_event_service_query(TraceService* service,
 		line.append(NEWLINE);
 
 		const char* event_type;
-		switch (query_result) 
+		switch (query_result)
 		{
 			case res_successful:
 				event_type = "QUERY_SERVICE";
@@ -1774,18 +1816,21 @@ void TracePluginImpl::log_event_service_query(TraceService* service,
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED QUERY_SERVICE";
 				break;
+			default:
+				event_type = "Unknown event in QUERY_SERVICE";
+				break;
 		}
-		
+
 		logRecordServ(event_type, service, line);
 	}
 }
 
 void TracePluginImpl::log_event_service_detach(TraceService* service, ntrace_result_t detach_result)
 {
-	if (config.log_services) 
+	if (config.log_services)
 	{
 		const char* event_type;
-		switch (detach_result) 
+		switch (detach_result)
 		{
 			case res_successful:
 				event_type = "DETACH_SERVICE";
@@ -1796,6 +1841,9 @@ void TracePluginImpl::log_event_service_detach(TraceService* service, ntrace_res
 			case res_unauthorized:
 				event_type = "UNAUTHORIZED DETACH_SERVICE";
 				break;
+			default:
+				event_type = "Unknown event in DETACH_SERVICE";
+				break;
 		}
 		string line;
 		logRecordServ(event_type, service, line);
@@ -1804,7 +1852,7 @@ void TracePluginImpl::log_event_service_detach(TraceService* service, ntrace_res
 	// Get rid of connection descriptor
 	{
 		WriteLockGuard lock(servicesLock);
-		if (services.locate(service->getServiceID())) 
+		if (services.locate(service->getServiceID()))
 		{
 			services.current().deallocate_references();
 			services.fastRemove();
@@ -1812,17 +1860,17 @@ void TracePluginImpl::log_event_service_detach(TraceService* service, ntrace_res
 	}
 }
 
-void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction, 
+void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
 {
-	if (!config.log_trigger_start && started) 
+	if (!config.log_trigger_start && started)
 		return;
 
-	if (!config.log_trigger_finish && !started) 
+	if (!config.log_trigger_finish && !started)
 		return;
 
 	// Do not log operation if it is below time threshold
-	PerformanceInfo *info = started ? NULL : trigger->getPerf();
+	const PerformanceInfo *info = started ? NULL : trigger->getPerf();
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
@@ -1832,7 +1880,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 	if (trgname.empty())
 		trgname = "<unknown>";
 
-	if (trigger->getRelationName()) 
+	if (trigger->getRelationName())
 	{
 		string relation;
 		relation.printf(" FOR %s", trigger->getRelationName());
@@ -1840,7 +1888,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 	}
 
 	string action;
-	switch (trigger->getWhich()) 
+	switch (trigger->getWhich())
 	{
 		case trg_all:
 			action = "ON ";
@@ -1856,7 +1904,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 			break;
 	}
 
-	switch (trigger->getAction()) 
+	switch (trigger->getAction())
 	{
 		case jrd_req::req_trigger_insert:
 			action.append("INSERT");
@@ -1882,6 +1930,9 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 		case jrd_req::req_trigger_trans_rollback:
 			action.append("TRANSACTION_ROLLBACK");
 			break;
+		default:
+			action.append("Unknown trigger action");
+			break;
 	}
 
 	line.printf("\t%s (%s) " NEWLINE, trgname.c_str(), action.c_str());
@@ -1893,19 +1944,22 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 	}
 
 	const char* event_type;
-	switch (trig_result) 
+	switch (trig_result)
 	{
 		case res_successful:
-			event_type = started ? "EXECUTE_TRIGGER_START" : 
+			event_type = started ? "EXECUTE_TRIGGER_START" :
 								   "EXECUTE_TRIGGER_FINISH" ;
 			break;
 		case res_failed:
-			event_type = started ? "FAILED EXECUTE_TRIGGER_START" : 
+			event_type = started ? "FAILED EXECUTE_TRIGGER_START" :
 								   "FAILED EXECUTE_TRIGGER_FINISH";
 			break;
 		case res_unauthorized:
-			event_type = started ? "UNAUTHORIZED EXECUTE_TRIGGER_START" : 
+			event_type = started ? "UNAUTHORIZED EXECUTE_TRIGGER_START" :
 								   "UNAUTHORIZED EXECUTE_TRIGGER_FINISH";
+			break;
+		default:
+			event_type = "Unknown event at executing trigger";
 			break;
 	}
 
@@ -1914,9 +1968,9 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 
 /***************************** PLUGIN INTERFACE ********************************/
 
-ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin) 
+ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
 {
-	if (tpl_plugin) 
+	if (tpl_plugin)
 	{
 		// Kill implementation object
 		delete static_cast<TracePluginImpl*>(tpl_plugin->tpl_object);
@@ -1927,19 +1981,19 @@ ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
 	return true;
 }
 
-const char* TracePluginImpl::ntrace_get_error(const TracePlugin* tpl_plugin) 
+const char* TracePluginImpl::ntrace_get_error(const TracePlugin* tpl_plugin)
 {
 	return get_error_string();
 }
 
 /* Create/close attachment */
-ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plugin, 
-	TraceConnection* connection, ntrace_boolean_t create_db, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, ntrace_boolean_t create_db,
 	ntrace_result_t att_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_attach(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_attach(connection,
 			create_db, att_result);
 		return true;
 	}
@@ -1950,7 +2004,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_attach(const TracePlugin* tpl_plu
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, ntrace_boolean_t drop_db)
 {
 	try
@@ -1966,13 +2020,13 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_detach(const TracePlugin* tpl_plu
 }
 
 /* Start/end transaction */
-ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlugin* tpl_plugin, 
-	TraceConnection* connection, TraceTransaction* transaction, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_transaction_start(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_transaction_start(connection,
 			transaction, tpb_length, tpb, tra_result);
 		return true;
 	}
@@ -1984,12 +2038,12 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_start(const TracePlug
 }
 
 ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_end(const TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, 
+	TraceConnection* connection, TraceTransaction* transaction,
 	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_transaction_end(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_transaction_end(connection,
 			transaction, commit, retain_context, tra_result);
 		return true;
 	}
@@ -2002,12 +2056,12 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_transaction_end(const TracePlugin
 
 /* Assignment to context variables */
 ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction, 
+		TraceConnection* connection, TraceTransaction* transaction,
 		TraceContextVariable* variable)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_set_context(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_set_context(connection,
 			transaction, variable);
 		return true;
 	}
@@ -2020,12 +2074,12 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_set_context(const struct TracePlu
 
 /* Stored procedure executing */
 ntrace_boolean_t TracePluginImpl::ntrace_event_proc_execute(const struct TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure, 
+		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 		bool started, ntrace_result_t proc_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_proc_execute(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_proc_execute(connection,
 			transaction, procedure, started, proc_result);
 		return true;
 	}
@@ -2036,8 +2090,8 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_proc_execute(const struct TracePl
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin* tpl_plugin, 
-	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 	bool started, ntrace_result_t trig_result)
 {
 	try
@@ -2055,13 +2109,13 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_trigger_execute(const TracePlugin
 
 
 /* DSQL statement lifecycle */
-ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_prepare(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_prepare(connection,
 			transaction, statement, time_millis, req_result);
 		return true;
 	}
@@ -2072,12 +2126,12 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_prepare(const TracePlugin* t
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_free(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_free(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceSQLStatement* statement, unsigned short option)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_free(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dsql_free(connection,
 			statement, option);
 		return true;
 	}
@@ -2088,8 +2142,8 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_free(const TracePlugin* tpl_
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* tpl_plugin, 
-	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 	bool started, ntrace_result_t req_result)
 {
 	try
@@ -2107,13 +2161,13 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dsql_execute(const TracePlugin* t
 
 
 /* BLR requests */
-ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tpl_plugin, 
-	TraceConnection* connection, TraceTransaction* transaction, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_blr_compile(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_blr_compile(connection,
 			transaction, statement, time_millis, req_result);
 		return true;
 	}
@@ -2124,13 +2178,13 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_blr_compile(const TracePlugin* tp
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceTransaction* transaction,
 	TraceBLRStatement* statement, ntrace_result_t req_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_blr_execute(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_blr_execute(connection,
 			transaction, statement, req_result);
 		return true;
 	}
@@ -2142,13 +2196,13 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_blr_execute(const TracePlugin* tp
 }
 
 /* DYN requests */
-ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tpl_plugin, 
-	TraceConnection* connection, TraceTransaction* transaction, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tpl_plugin,
+	TraceConnection* connection, TraceTransaction* transaction,
 	TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	try
 	{
-		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dyn_execute(connection, 
+		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_dyn_execute(connection,
 			transaction, request, time_millis, req_result);
 		return true;
 	}
@@ -2160,7 +2214,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_dyn_execute(const TracePlugin* tp
 }
 
 /* Using the services */
-ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin* tpl_plugin,
 	TraceService* service, ntrace_result_t att_result)
 {
 	try
@@ -2176,7 +2230,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_service_attach(const TracePlugin*
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_service_start(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_start(const TracePlugin* tpl_plugin,
 	TraceService* service, size_t switches_length, const char* switches,
 	ntrace_result_t start_result)
 {
@@ -2193,15 +2247,15 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_service_start(const TracePlugin* 
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_service_query(const TracePlugin* tpl_plugin, 
-	TraceService* service, size_t send_item_length, 
-	const ntrace_byte_t* send_items, size_t recv_item_length, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_query(const TracePlugin* tpl_plugin,
+	TraceService* service, size_t send_item_length,
+	const ntrace_byte_t* send_items, size_t recv_item_length,
 	const ntrace_byte_t* recv_items, ntrace_result_t query_result)
 {
 	try
 	{
 		static_cast<TracePluginImpl*>(tpl_plugin->tpl_object)->log_event_service_query(
-			service, send_item_length, send_items, recv_item_length, recv_items, 
+			service, send_item_length, send_items, recv_item_length, recv_items,
 			query_result);
 		return true;
 	}
@@ -2213,7 +2267,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_event_service_query(const TracePlugin* 
 
 }
 
-ntrace_boolean_t TracePluginImpl::ntrace_event_service_detach(const TracePlugin* tpl_plugin, 
+ntrace_boolean_t TracePluginImpl::ntrace_event_service_detach(const TracePlugin* tpl_plugin,
 	TraceService* service, ntrace_result_t detach_result)
 {
 	try

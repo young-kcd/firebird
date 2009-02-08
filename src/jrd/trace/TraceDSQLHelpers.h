@@ -47,7 +47,7 @@ public:
 
 		m_start_clock = fb_utils::query_performance_counter();
 
-		static char empty_string[] = "";
+		static const char empty_string[] = "";
 		if (!m_string_len || !string)
 		{
 			m_string = empty_string;
@@ -95,7 +95,7 @@ public:
 
 private:
 	bool m_need_trace;
-	Attachment* m_attachment;
+	Attachment* const m_attachment;
 	dsql_req* m_request;
 	SINT64 m_start_clock;
 	size_t m_string_len;
@@ -164,8 +164,8 @@ public:
 
 private:
 	bool m_need_trace;
-	Attachment* m_attachment;
-	dsql_req* m_request;
+	Attachment* const m_attachment;
+	dsql_req* const m_request;
 	SINT64 m_start_clock;
 };
 
@@ -216,8 +216,8 @@ public:
 
 private:
 	bool m_need_trace;
-	Attachment* m_attachment;
-	dsql_req* m_request;
+	Attachment* const m_attachment;
+	dsql_req* const m_request;
 	SINT64 m_start_clock;
 };
 

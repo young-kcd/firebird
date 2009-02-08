@@ -78,9 +78,9 @@ public:
 
 private:
 	bool m_need_trace;
-	bool m_commit;
-	bool m_retain;
-	jrd_tra* m_transaction;
+	const bool m_commit;
+	const bool m_retain;
+	jrd_tra* const m_transaction;
 	SINT64 m_start_clock;
 	Firebird::AutoPtr<RuntimeStatistics> m_baseline;
 };
@@ -156,8 +156,8 @@ public:
 
 private:
 	bool m_need_trace;
-	thread_db* m_tdbb;
-	jrd_req* m_request;
+	thread_db* const m_tdbb;
+	jrd_req* const m_request;
 	SINT64 m_start_clock;
 };
 
@@ -213,8 +213,8 @@ public:
 
 private:
 	bool m_need_trace;
-	thread_db* m_tdbb;
-	jrd_req* m_request;
+	thread_db* const m_tdbb;
+	jrd_req* const m_request;
 	SINT64 m_start_clock;
 };
 
@@ -278,10 +278,10 @@ public:
 
 private:
 	bool m_need_trace;
-	thread_db* m_tdbb;
-	jrd_req* m_request;
+	thread_db* const m_tdbb;
+	jrd_req* const m_request;
 	SINT64 m_start_clock;
-	int m_which_trig;
+	const int m_which_trig;
 };
 
 
@@ -342,10 +342,10 @@ public:
 
 private:
 	bool m_need_trace;
-	thread_db* m_tdbb;
+	thread_db* const m_tdbb;
 	SINT64 m_start_clock;
-	size_t m_blr_length;
-	const SCHAR* m_blr;
+	const size_t m_blr_length;
+	const SCHAR* const m_blr;
 };
 
 
@@ -406,8 +406,8 @@ public:
 
 private:
 	bool m_need_trace;
-	thread_db* m_tdbb;
-	jrd_req* m_request;
+	thread_db* const m_tdbb;
+	jrd_req* const m_request;
 	SINT64 m_start_clock;
 };
 
@@ -457,10 +457,10 @@ public:
 
 private:
 	bool m_need_trace;
-	thread_db* m_tdbb;
+	thread_db* const m_tdbb;
 	SINT64 m_start_clock;
-	size_t m_ddl_length;
-	const SCHAR* m_ddl;
+	const size_t m_ddl_length;
+	const SCHAR* const m_ddl;
 };
 
 } // namespace Jrd 

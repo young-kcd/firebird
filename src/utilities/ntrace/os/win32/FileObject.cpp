@@ -239,7 +239,7 @@ bool FileObject::renameFile(const Firebird::PathName new_filename)
 		DWORD rename_err = GetLastError();
 		if (rename_err == ERROR_ALREADY_EXISTS || rename_err == ERROR_FILE_NOT_FOUND)
 		{
-			// Another process renames our file just now. Open new it.
+			// Another process renames our file just now. Open it again.
 			reopen();
 			return false;
 		}
@@ -261,7 +261,6 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
 {
 	LARGE_INTEGER offset;
 	offset.QuadPart = newOffset;
-	DWORD error;
 	DWORD moveMethod;
 
 	switch(origin)
@@ -277,6 +276,7 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
 			break;
 	}
 	
+	DWORD error;
 	if ((offset.LowPart = SetFilePointer(file, offset.LowPart,
 			&offset.HighPart, moveMethod)) == INVALID_SET_FILE_POINTER &&
 		(error = GetLastError()) != NO_ERROR)

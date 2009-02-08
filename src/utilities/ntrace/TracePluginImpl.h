@@ -140,7 +140,7 @@ private:
 	bool operational; // Set if plugin is fully initialized and is ready for logging
 					  // Keep this member field first to ensure its correctness
 					  // when destructor is called
-	int session_id;				// trace session ID, set by Firebird
+	const int session_id;				// trace session ID, set by Firebird
 	Firebird::string session_name;		// trace session name, set by Firebird
 	FileObject* logFile;		// Thread-safe
 	TraceLogWriter* logWriter;
@@ -169,8 +169,8 @@ private:
 	void rotateLog(size_t added_bytes_length);
 	void writePacket(const UCHAR* packet_data, const ULONG packet_size);
 
-	void appendGlobalCounts(PerformanceInfo* info, Firebird::string& line);
-	void appendTableCounts(PerformanceInfo* info, Firebird::string& line);
+	void appendGlobalCounts(const PerformanceInfo* info, Firebird::string& line);
+	void appendTableCounts(const PerformanceInfo* info, Firebird::string& line);
 	void appendParams(TraceParams* params, Firebird::string& line);
 	void appendServiceQueryParams(size_t send_item_length,
 		const ntrace_byte_t* send_items, size_t recv_item_length, 

@@ -507,12 +507,9 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 	const dsql_par* const eof = request->req_eof;
 
-	bool eof_reached = false;
-	if (eof) {
-		eof_reached = !*((USHORT *) eof->par_desc.dsc_address);
-	}
+	const bool eof_reached = eof && !*((USHORT*) eof->par_desc.dsc_address);
 
-	if (eof_reached) 
+	if (eof_reached)
 	{
 		trace.fetch(true, res_successful);
 		return 100;
@@ -2572,15 +2569,21 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	if (!node)
 		return statement;
 
-	statement->req_traced =
-		statement->req_type != REQ_COMMIT &&
-		statement->req_type != REQ_COMMIT_RETAIN &&
-		statement->req_type != REQ_ROLLBACK &&
-		statement->req_type != REQ_ROLLBACK_RETAIN &&
-		statement->req_type != REQ_GET_SEGMENT &&
-		statement->req_type != REQ_PUT_SEGMENT &&
-		statement->req_type != REQ_START_TRANS;
-	
+	switch (statement->req_type)
+	{
+	case REQ_COMMIT:
+	case REQ_COMMIT_RETAIN:
+	case REQ_ROLLBACK:
+	case REQ_ROLLBACK_RETAIN:
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
+	case REQ_START_TRANS:
+		statement->req_traced = false;
+		break;
+	default:
+		statement->req_traced = true;
+	}
+
 	// stop here for statements not requiring code generation
 
 	if (statement->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
@@ -2797,7 +2800,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	Attachment* att = request->req_dbb->dbb_attachment;
 	const bool need_trace_free = request->req_traced && TraceManager::need_dsql_free(att);
-	if (need_trace_free) 
+	if (need_trace_free)
 	{
 		TraceSQLStatementImpl stmt(request, NULL);
 		TraceManager::event_dsql_free(att, &stmt, DSQL_drop);

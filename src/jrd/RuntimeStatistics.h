@@ -84,7 +84,7 @@ public:
 		TOTAL_ITEMS		// last
 	};
 
-	RuntimeStatistics(MemoryPool& pool) : rel_counts(pool)
+	explicit RuntimeStatistics(MemoryPool& pool) : rel_counts(pool)
 	{
 		reset();
 	}
@@ -120,7 +120,7 @@ public:
 		++allChgNumber;
 	}
 
-	void bumpValue(StatType index, SLONG relation_id);
+	void bumpValue(const StatType index, SLONG relation_id);
 
 	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.
@@ -153,7 +153,7 @@ public:
 	}
 
 	// copy counters values from other instance
-	// after copying both instances is "in-sync" i.e. have the same
+	// after copying both instances are "in-sync" i.e. have the same
 	// allChgNumber and relChgNumber values
 	RuntimeStatistics& assign(const RuntimeStatistics& other)
 	{

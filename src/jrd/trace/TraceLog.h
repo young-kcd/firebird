@@ -85,18 +85,18 @@ friend class TraceLogGuard;
 class TraceLogGuard
 {
 public:
-	TraceLogGuard(TraceLogImpl* log) : m_log(log)
+	explicit TraceLogGuard(TraceLogImpl* log) : m_log(*log)
 	{
-		m_log->lock();
+		m_log.lock();
 	}
 
 	~TraceLogGuard() 
 	{
-		m_log->unlock();
+		m_log.unlock();
 	}
 
 private:
-	TraceLogImpl* m_log;
+	TraceLogImpl& m_log;
 };
 
 

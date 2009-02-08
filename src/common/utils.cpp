@@ -804,7 +804,7 @@ SINT64 query_performance_counter()
 	return static_cast<SINT64>(tp.tv_sec) * BILLION + tp.tv_nsec;
 #else
 
-	// This is not safe because of possible wrapping and very inprecise
+	// This is not safe because of possible wrapping and very imprecise
 	return clock();
 #endif
 }
@@ -828,7 +828,7 @@ SINT64 query_performance_frequency()
 	return BILLION;
 #else
 
-	// This is not safe because of possible wrapping and very inprecise
+	// This is not safe because of possible wrapping and very imprecise
 	return CLOCKS_PER_SEC;
 #endif
 }

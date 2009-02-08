@@ -457,8 +457,8 @@ public:
 	{ 
 		if (m_options->dpb_user_name.empty())
 			return m_options->dpb_trusted_login.c_str(); 
-		else
-			return m_options->dpb_user_name.c_str(); 
+
+		return m_options->dpb_user_name.c_str(); 
 	}
 
 	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }

@@ -144,7 +144,7 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 			const off_t len = lseek(m_fileHandle, 0, SEEK_CUR);
 			if (len >= MAX_LOG_FILE_SIZE)
 			{
-				// this file was reads completely, go to next one
+				// this file was read completely, go to next one
 				::close(m_fileHandle);
 				removeFile(m_fileNum);
 
@@ -193,7 +193,7 @@ size_t TraceLogImpl::write(const void* buf, size_t size)
 		if (!toWrite)
 		{
 			// While this instance of writer was idle, new log file was created.
-			// More, if current file was already readed by reader, we must delete it. 
+			// More, if current file was already read by reader, we must delete it. 
 			::close(m_fileHandle);
 			if (m_fileNum < m_base->readFileNum) {
 				removeFile(m_fileNum);
@@ -204,6 +204,8 @@ size_t TraceLogImpl::write(const void* buf, size_t size)
 		}
 
 		const int written = ::write(m_fileHandle, p, toWrite);
+		if (written == -1 || size_t(written) != toWrite)
+			system_call_failed::raise("write", errno);
 
 		p += toWrite;
 		writeLeft -= toWrite;

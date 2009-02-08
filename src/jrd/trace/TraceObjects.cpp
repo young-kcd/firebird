@@ -199,8 +199,8 @@ int TraceSQLStatementImpl::getStmtID()
 {
 	if (m_stmt->req_request)
 		return m_stmt->req_request->req_id;
-	else
-		return 0;
+
+	return 0;
 }
 
 const char* TraceSQLStatementImpl::getText()
@@ -216,7 +216,7 @@ const char* TraceSQLStatementImpl::getPlan()
 		m_plan = &buff;
 
 		const int len = DSQL_get_plan_info(JRD_get_thread_data(),
-			const_cast<dsql_req*> (m_stmt), sizeof(buff), &m_plan);
+			const_cast<dsql_req*>(m_stmt), sizeof(buff), &m_plan);
 		
 		if (len)
 			m_plan[len] = 0;
@@ -326,14 +326,14 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		dsc* from_desc = NULL;
 		dsc desc;
 
-		jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
+		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
 		switch (prm->nod_type) 
 		{
 			case nod_argument: 
 			{
-				impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
-				jrd_nod* message = prm->nod_arg[e_arg_message];
-				Format* format = (Format*) message->nod_arg[e_msg_format];
+				//const impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
+				const jrd_nod* message = prm->nod_arg[e_arg_message];
+				const Format* format = (Format*) message->nod_arg[e_msg_format];
 				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
 				
 				desc = format->fmt_desc[arg_number];
@@ -343,7 +343,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 				// handle null flag if present
 				if (prm->nod_arg[e_arg_flag])
 				{
-					dsc* flag = EVL_expr(tdbb, prm->nod_arg[e_arg_flag]);
+					const dsc* flag = EVL_expr(tdbb, prm->nod_arg[e_arg_flag]);
 					if (MOV_get_long(flag, 0)) {
 						from_desc->dsc_flags |= DSC_null;
 					}

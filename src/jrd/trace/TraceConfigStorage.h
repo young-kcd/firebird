@@ -151,7 +151,7 @@ public:
 class StorageGuard
 {
 public:
-	StorageGuard(ConfigStorage* storage) :
+	explicit StorageGuard(ConfigStorage* storage) :
 		m_storage(storage)
 	{
 		m_storage->acquire();

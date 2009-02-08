@@ -31,8 +31,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+
 #define TEST
 //#undef TEST
+
 #ifndef TEST
 class MallocClear
 {
@@ -60,17 +62,18 @@ void set_error_string(const char* str)
 	}
 	if (str)
 	{
-		size_t len = strlen(str);
-		char* new_str = (char*) malloc(len + 1);
+		const size_t size = strlen(str) + 1;
+		char* new_str = (char*) malloc(size);
 		if (new_str)
 		{
-			memcpy(new_str, str, len + 1);
+			memcpy(new_str, str, size);
 			error_value.set(new_str);
 		}
 	}
 }
 #else
 TLS_DECLARE(char*, error_string);
+
 const char* get_error_string()
 {
 	return TLS_GET(error_string);
@@ -86,16 +89,17 @@ void set_error_string(const char* str)
 	}
 	if (str)
 	{
-		size_t len = strlen(str);
-		char* new_str = (char*) malloc(len + 1);
+		const size_t size = strlen(str) + 1;
+		char* new_str = (char*) malloc(size);
 		if (new_str)
 		{
-			memcpy(new_str, str, len + 1);
+			memcpy(new_str, str, size);
 			TLS_SET(error_string, new_str);
 		}
 	}
 }
 #endif
+
 SLONG get_process_id()
 {
 	return getpid();

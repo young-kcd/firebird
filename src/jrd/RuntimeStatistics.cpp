@@ -34,7 +34,7 @@ GlobalPtr<RuntimeStatistics> RuntimeStatistics::dummy;
 
 #ifdef REL_COUNTS_TREE
 
-void RuntimeStatistics::bumpValue(StatType index, SLONG relation_id)
+void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
@@ -77,11 +77,14 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 			RelationCounts& dst = first.current();
 			fb_assert(src.rlc_relation_id == dst.rlc_relation_id);
 
-			for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
+			if (add)
 			{
-				if (add)
+				for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
 					dst.rlc_counter[index] += src.rlc_counter[index];
-				else
+			}
+			else
+			{
+				for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
 					dst.rlc_counter[index] -= src.rlc_counter[index];
 			}
 		} while(second.getNext());
@@ -210,11 +213,14 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 		RelationCounts* dst = &(rel_counts[pos]);
 		fb_assert(dst->rlc_relation_id == src->rlc_relation_id);
 
-		for (int index = 0; index < FB_NELEM(src->rlc_counter); index++)
+		if (add)
 		{
-			if (add)
+			for (int index = 0; index < FB_NELEM(src->rlc_counter); index++)
 				dst->rlc_counter[index] += src->rlc_counter[index];
-			else
+		}
+		else
+		{
+			for (int index = 0; index < FB_NELEM(src->rlc_counter); index++)
 				dst->rlc_counter[index] -= src->rlc_counter[index];
 		}
 	}

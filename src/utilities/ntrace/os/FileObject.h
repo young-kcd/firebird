@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef FILEOBJECT_H
-#define FILEOBJECT_H
+#ifndef OS_FILEOBJECT_H
+#define OS_FILEOBJECT_H
 
 #include "../../../common/classes/fb_string.h"
 #include "../../../common/classes/locks.h"
@@ -180,4 +180,4 @@ private:
 #endif
 };
 
-#endif // FILEOBJECT_H
+#endif // OS_FILEOBJECT_H

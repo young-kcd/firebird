@@ -196,7 +196,7 @@ void ConfigStorage::checkFile()
 		{
 			fseek(cfgFile, 0, SEEK_SET);
 			char* p = session.ses_config.getBuffer(len + 1);
-			if (fread(p, 1, len, cfgFile) != len)
+			if (fread(p, 1, len, cfgFile) != size_t(len))
 			{
 				Arg::Gds temp(isc_io_error); 
 				temp << Arg::Str("fopen") << Arg::Str(configFileName.c_str());
@@ -375,7 +375,11 @@ void ConfigStorage::removeSession(ULONG id)
 				setDirty();
 
 				currID = 0;
-				lseek(m_cfg_file, -len, SEEK_CUR);
+				// Do not delete this temporary signed var, otherwise we get
+				// warning C4146: unary minus operator applied to unsigned type, result still unsigned
+				// but we need a negative offset here.
+				const long local_len = len;
+				lseek(m_cfg_file, -local_len, SEEK_CUR);
 				write(m_cfg_file, &currID, len);
 				break;
 			}

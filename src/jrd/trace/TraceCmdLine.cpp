@@ -55,7 +55,7 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 		"Actions: \n"
 		"  -STA[RT]                              Start trace session\n"
 		"  -STO[P]                               Stop trace session\n"
-		"  -S[USPEND]                            Susupend trace session\n"
+		"  -S[USPEND]                            Suspend trace session\n"
 		"  -R[ESUME]                             Resume trace session\n"
 		"  -L[IST]                               List existing trace sessions\n\n"
 		"Parameters: \n"
@@ -143,11 +143,11 @@ static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
 const char* TRACE_ERR_CONFLICT_ACTS		= "conflicting actions \"%s\" and \"%s\" found";
 const char* TRACE_ERR_ACT_NOTFOUND		= "action switch not found";
 const char* TRACE_ERR_SWITCH_ONCE		= "switch \"%s\" must be set only once";
-const char* TRACE_ERR_PARAM_VAL_MISS	= "value for switch \"%s\" is missed";
+const char* TRACE_ERR_PARAM_VAL_MISS	= "value for switch \"%s\" is missing";
 const char* TRACE_ERR_PARAM_INVALID		= "invalid value (\"%s\") for switch \"%s\"";
-const char* TRACE_ERR_SWITCH_UNKNOWN	= "unknow switch \"%s\" encountered";
+const char* TRACE_ERR_SWITCH_UNKNOWN	= "unknown switch \"%s\" encountered";
 const char* TRACE_ERR_SWITCH_SVC_ONLY	= "switch \"%s\" can be used by service only";
-const char* TRACE_ERR_SWITCH_PARAM_MISS	= "mandatory parameter \"%s\" for switch \"%s\" is missed";
+const char* TRACE_ERR_SWITCH_PARAM_MISS	= "mandatory parameter \"%s\" for switch \"%s\" is missing";
 const char* TRACE_ERR_PARAM_ACT_NOTCOMPAT	= "parameter \"%s\" is incompatible with action \"%s\"";
 
 

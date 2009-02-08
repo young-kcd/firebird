@@ -79,11 +79,11 @@ bool TraceManager::check_result(const TracePlugin* plugin, const char* module, c
 	return false;
 }
 
-TraceManager::TraceManager(Attachment* _att) : 
-	attachment(_att),
+TraceManager::TraceManager(Attachment* in_att) : 
+	attachment(in_att),
 	service(NULL),
 	filename(NULL),
-	trace_sessions(*_att->att_pool)
+	trace_sessions(*in_att->att_pool)
 {
 	change_number = 0;
 
@@ -91,11 +91,11 @@ TraceManager::TraceManager(Attachment* _att) :
 	load_modules();
 }
 
-TraceManager::TraceManager(Service* _svc) : 
+TraceManager::TraceManager(Service* in_svc) : 
 	attachment(NULL),
-	service(_svc),
+	service(in_svc),
 	filename(NULL),
-	trace_sessions(_svc->getPool())
+	trace_sessions(in_svc->getPool())
 {
 	change_number = 0;
 
@@ -103,10 +103,10 @@ TraceManager::TraceManager(Service* _svc) :
 	load_modules();
 }
 
-TraceManager::TraceManager(const char* _filename) : 
+TraceManager::TraceManager(const char* in_filename) : 
 	attachment(NULL),
 	service(NULL),
-	filename(_filename),
+	filename(in_filename),
 	trace_sessions(*getDefaultMemoryPool())
 {
 	change_number = 0;
@@ -145,7 +145,7 @@ void TraceManager::load_modules()
 
 	while (plugins.next())
 	{
-		PathName modLib(plugins.getFileName());
+		const PathName modLib(plugins.getFileName());
 		if (modLib.find(NTRACE_PREFIX) == PathName::npos)
 			continue;
 

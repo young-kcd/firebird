@@ -48,7 +48,7 @@ using namespace Jrd;
 class TraceSvcJrd : public TraceSvcIntf
 {
 public:
-	TraceSvcJrd(Service& svc) : 
+	explicit TraceSvcJrd(Service& svc) : 
 		m_svc(svc),
 		m_admin(false),
 		m_chg_number(0)
@@ -269,7 +269,6 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	TraceManager* mgr = m_svc.getTraceManager();
 	ConfigStorage* storage = mgr->getStorage();
 	const size_t maxLogSize = Config::getMaxUserTraceLogSize(); // in MB
-	bool logFull = false;
 
 	if (session.ses_logfile.empty())
 	{
@@ -280,6 +279,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	MemoryPool& pool = *getDefaultMemoryPool();
 	AutoPtr<TraceLogImpl> log(FB_NEW(pool) TraceLogImpl(pool, session.ses_logfile, true));
 
+	bool logFull = false;
 	UCHAR buff[1024];
 	while (!m_svc.finished() && checkAlive(session.ses_id))
 	{
@@ -288,8 +288,8 @@ void TraceSvcJrd::readSession(TraceSession& session)
 		{
 			if (!checkAlive(session.ses_id))
 				break;
-			else
-				THD_sleep(250);
+
+			THD_sleep(250);
 		}
 		else
 		{

@@ -687,13 +687,13 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()),
-	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL), 
+	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()),
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
-	svc_network_protocol(getPool()),  svc_remote_address(getPool()), svc_remote_process(getPool()), 
+	svc_network_protocol(getPool()),  svc_remote_address(getPool()), svc_remote_process(getPool()),
 	svc_remote_pid(0), svc_strings_buffer(NULL)
 {
 	svc_trace_manager = NULL;
@@ -902,7 +902,7 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 void Service::detach()
 {
 	// save it cause after call to finish() we can't access class members any more
-	bool localDoShutdown = svc_do_shutdown;
+	const bool localDoShutdown = svc_do_shutdown;
 
 	if (svc_uses_security_database)
 	{
@@ -2082,7 +2082,7 @@ void Service::readFbLog()
 			}
 		}
 
-		if (!file || (file && ferror(file))) 
+		if (!file || (file && ferror(file)))
 		{
 			(Arg::Gds(isc_sys_request) << Arg::Str(file ? "fgets" : "fopen") <<
 										  SYS_ERR(errno)).copyTo(svc_status);
@@ -2238,7 +2238,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			 * characters with a space.  This will ensure that the output is
 			 * consistent when returning a line or to eof
 			 */
-			if ((flags & GET_LINE) && ch == '\n') 
+			if ((flags & GET_LINE) && ch == '\n')
 			{
 				buffer[(*return_length)++] = ' ';
 				length = 0;
@@ -2597,7 +2597,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				return false;
 			}
 			break;
-		
+
 		case isc_action_svc_trace_start:
 		case isc_action_svc_trace_stop:
 		case isc_action_svc_trace_suspend:

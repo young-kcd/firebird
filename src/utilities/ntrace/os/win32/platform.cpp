@@ -48,11 +48,11 @@ void set_error_string(const char* str)
 
 	if (str)
 	{
-		size_t len = strlen(str);
-		char* new_str = (char*) LocalAlloc(LMEM_FIXED, len + 1);
+		const size_t size = strlen(str) + 1;
+		char* new_str = (char*) LocalAlloc(LMEM_FIXED, size);
 		if (new_str) 
 		{
-			memcpy(new_str, str, len + 1);
+			memcpy(new_str, str, size);
 			TLS_SET(error_string, new_str);
 		}
 	}

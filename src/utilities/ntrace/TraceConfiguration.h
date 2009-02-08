@@ -60,7 +60,7 @@ private:
 	bool parseBoolean(const Firebird::string& value) const;
 	ULONG parseUInteger(const Firebird::string& value) const;
 
-	const char* m_text;
+	const char* const m_text;
 	const Firebird::PathName& m_databaseName;
 	regmatch_t m_subpatterns[10];
 	TracePluginConfig& m_config;

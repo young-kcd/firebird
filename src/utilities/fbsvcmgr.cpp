@@ -142,9 +142,11 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 
 	fseek(file, 0, SEEK_SET);
 	if (fread(p, 1, len, file) != len)	{
+		fclose(file);
 		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
 	}
 
+	fclose(file);
 	spb.insertBytes(tag, p, len);
 	++av;
 
@@ -838,7 +840,7 @@ int main(int ac, char** av)
 
 		if (spbItems.getBufferLength() > 0)
 		{
-			char send[] = {isc_info_svc_timeout, 2, 0, 1, 0, 0, 0, isc_info_end};
+			const char send[] = {isc_info_svc_timeout, 2, 0, 1, 0, 0, 0, isc_info_end};
 
 			char results[maxbuf];
 			UserPrint up;

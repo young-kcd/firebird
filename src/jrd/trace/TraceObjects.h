@@ -14,7 +14,7 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Khorsun Vladyslav 
+ *  The Original Code was created by Khorsun Vladyslav
  *  for the Firebird Open Source RDBMS project.
  *
  *  Copyright (c) 2009 Khorsun Vladyslav <hvlad@users.sourceforge.net>
@@ -65,7 +65,7 @@ public:
 	virtual const char* getRemoteProcessName();
 
 private:
-	const Attachment* m_att;
+	const Attachment* const m_att;
 };
 
 
@@ -84,8 +84,8 @@ public:
 	virtual PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
-	const jrd_tra* m_tran;
-	PerformanceInfo* m_perf;
+	const jrd_tra* const m_tran;
+	PerformanceInfo* const m_perf;
 };
 
 
@@ -93,7 +93,7 @@ class TraceDYNRequestImpl : public TraceDYNRequest
 {
 public:
 	TraceDYNRequestImpl(size_t length, const char* ddl) :
-		m_ddl(ddl), 
+		m_ddl(ddl),
 		m_length(length),
 		m_text(*getDefaultMemoryPool())
 	{}
@@ -105,8 +105,8 @@ public:
 private:
 	static void print_dyn(void* arg, SSHORT offset, const char* line);
 
-	const char* m_ddl;
-	size_t m_length;
+	const char* const m_ddl;
+	const size_t m_length;
 	Firebird::string m_text;
 };
 
@@ -115,7 +115,7 @@ class BLRPrinter : public TraceBLRStatement
 {
 public:
 	BLRPrinter(const char* blr, size_t length) :
-		m_blr(blr), 
+		m_blr(blr),
 		m_length(length),
 		m_text(*getDefaultMemoryPool())
 	{}
@@ -127,8 +127,8 @@ public:
 private:
 	static void print_blr(void* arg, SSHORT offset, const char* line);
 
-	const char* m_blr;
-	size_t m_length;
+	const char* const m_blr;
+	const size_t m_length;
 	Firebird::string m_text;
 };
 
@@ -142,12 +142,12 @@ public:
 		m_perf(perf)
 	{}
 
-	virtual int getStmtID()				{ return m_stmt->req_id; } 
+	virtual int getStmtID()				{ return m_stmt->req_id; }
 	virtual PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
-	const jrd_req* m_stmt;
-	PerformanceInfo* m_perf;
+	const jrd_req* const m_stmt;
+	PerformanceInfo* const m_perf;
 };
 
 
@@ -200,8 +200,8 @@ private:
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
 
-	const dsql_req* m_stmt;
-	PerformanceInfo* m_perf;
+	const dsql_req* const m_stmt;
+	PerformanceInfo* const m_perf;
 	char* m_plan;
 	DSQLParamsImpl m_inputs;
 };
@@ -239,9 +239,9 @@ public:
 	virtual const char* getVarValue()	{ return m_value; }
 
 private:
-	const char* m_namespace;
-	const char* m_name;
-	const char* m_value;
+	const char* const m_namespace;
+	const char* const m_name;
+	const char* const m_value;
 };
 
 class TraceProcedureImpl : public TraceProcedure
@@ -278,8 +278,8 @@ private:
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
 
-	const jrd_req* m_request;
-	PerformanceInfo* m_perf;
+	const jrd_req* const m_request;
+	PerformanceInfo* const m_perf;
 	JrdParamsImpl m_inputs;
 };
 
@@ -300,9 +300,9 @@ public:
 	virtual PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
-	const jrd_req* m_trig;
-	SSHORT m_which;
-	PerformanceInfo* m_perf;
+	const jrd_req* const m_trig;
+	const SSHORT m_which;
+	PerformanceInfo* const m_perf;
 };
 
 
@@ -325,17 +325,17 @@ public:
 	virtual const char* getRemoteProcessName();
 
 private:
-	const Service* m_svc;
+	const Service* const m_svc;
 };
 
 
 class TraceRuntimeStats
 {
 public:
-	TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats, 
+	TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 		SINT64 clock, SINT64 records_fetched);
 
-	PerformanceInfo* getPerf()	{	return &m_info; }
+	PerformanceInfo* getPerf()	{ return &m_info; }
 
 private:
 	PerformanceInfo m_info;
@@ -347,19 +347,19 @@ private:
 class TraceInitInfoImpl : public TraceInitInfo
 {
 public:
-	TraceInitInfoImpl(const Firebird::TraceSession &session, const Attachment* att, 
+	TraceInitInfoImpl(const Firebird::TraceSession &session, const Attachment* att,
 					const char* filename) :
 		m_session(session),
 		m_trace_conn(att),
-		m_filename(filename)
+		m_filename(filename),
+		m_attachment(att)
 	{
-		m_attachment = att;
 		if (m_attachment && !m_attachment->att_filename.empty()) {
 			m_filename = m_attachment->att_filename.c_str();
 		}
 		m_logWriter = NULL;
 	}
-		
+
 	virtual const char* getConfigText()			{ return m_session.ses_config.c_str(); }
 	virtual int getTraceSessionID()				{ return m_session.ses_id; }
 	virtual const char* getTraceSessionName()	{ return m_session.ses_name.c_str(); }
@@ -367,24 +367,24 @@ public:
 	virtual const char* getDatabaseName()		{ return m_filename; }
 
 	virtual TraceConnection* getConnection()
-	{ 
+	{
 		if (m_attachment)
 			return &m_trace_conn;
-		else
-			return NULL;
+
+		return NULL;
 	}
 
 	virtual TraceLogWriter* getLogWriter();
 
 private:
 	const Firebird::TraceSession& m_session;
-	const Attachment* m_attachment;
 	TraceLogWriter* m_logWriter;
 	TraceConnectionImpl m_trace_conn;
 	const char* m_filename;
+	const Attachment* const m_attachment;
 };
 
 
-} // namespace Jrd 
+} // namespace Jrd
 
 #endif // JRD_TRACE_OBJECTS_H

@@ -49,9 +49,9 @@ class TraceManager
 {
 public:
     /* Initializes plugins. */
-	TraceManager(Attachment* att);
-	TraceManager(Service* svc);
-	TraceManager(const char* filename);
+	explicit TraceManager(Attachment* in_att);
+	explicit TraceManager(Service* in_svc);
+	explicit TraceManager(const char* in_filename);
 
 	/* Finalize plugins. Called when database is closed by the engine */
 	~TraceManager();

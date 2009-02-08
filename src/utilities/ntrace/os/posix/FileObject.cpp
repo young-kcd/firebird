@@ -147,7 +147,7 @@ bool FileObject::renameFile(const Firebird::PathName new_filename)
 	{
 		int rename_err = errno;
 		if (rename_err == ENOENT || rename_err == EEXIST) {
-			// Another process renames our file just now. Open new it.
+			// Another process renames our file just now. Open it again.
 			reopen();
 			return false;
 		}

@@ -168,8 +168,8 @@ public:		// external interface with service
 	{ 
 		if (svc_username.empty())
 			return svc_trusted_login;
-		else
-			return svc_username;
+
+		return svc_username;
 	}
 
 	const Firebird::string&	getNetworkProtocol() const	{ return svc_network_protocol; }
