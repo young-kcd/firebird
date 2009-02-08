@@ -38,7 +38,7 @@
 using namespace Jrd;
 using namespace Firebird;
 
-struct FN 
+struct FN
 {
 	const char* fn_module;
 	const char* fn_entrypoint;
@@ -359,16 +359,16 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		}
 	}
 
-	if (att->att_trace_manager->needs().event_set_context) 
+	if (att->att_trace_manager->needs().event_set_context)
 	{
 		TraceConnectionImpl conn(att);
 		TraceTransactionImpl tran(tra);
-		
-		Firebird::string* value_str = NULL;
+
+		const Firebird::string* value_str = NULL;
 		if (value_vary)
 			value_str = att->att_context_vars.get(name_str);
-		
-		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(), 
+
+		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(),
 			value_str ? value_str->c_str() : NULL);
 
 		att->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);

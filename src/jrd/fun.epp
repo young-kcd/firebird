@@ -206,7 +206,7 @@ struct udf_blob
 class OwnedBlobStack : public Stack<blb*>
 {
 public:
-	OwnedBlobStack(thread_db* in_tdbb) :
+	explicit OwnedBlobStack(thread_db* in_tdbb) :
 		m_blob_created(0), m_tdbb(in_tdbb)
 	{}
 	~OwnedBlobStack();
