@@ -74,11 +74,10 @@ bool getBinFromHInstance(PathName& root)
 		return false;
 	}
 
-	char filename[MAX_PATH];
-	GetModuleFileName(hDllInst, filename, sizeof(filename));
+	char *filename = root.getBuffer(MAX_PATH);
+	GetModuleFileName(hDllInst, filename, MAX_PATH);
 
-	PathName file;
-	PathUtils::splitLastComponent(root, file, filename);
+	root.recalculate_length();
 
 	return root.hasData();
 }
