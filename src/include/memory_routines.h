@@ -31,9 +31,9 @@ template <typename T>
 inline void copy_toptr(void* to, const T from)
 {
 #ifndef I386
-        memcpy(to, &from, sizeof(T));
+	memcpy(to, &from, sizeof(T));
 #else
-         *((T*) to) = from;
+	 *((T*) to) = from;
 #endif
 }
 
@@ -41,9 +41,9 @@ template <typename T>
 inline void copy_fromptr(T& to, const void* from)
 {
 #ifndef I386
-         memcpy(&to, from, sizeof(T));
+	 memcpy(&to, from, sizeof(T));
 #else
-         to = *(T*) from;
+	 to = *(T*) from;
 #endif
 }
 
@@ -64,21 +64,22 @@ inline USHORT get_short(const UCHAR* p)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-  // little-endian
-  USHORT temp;
-  memcpy(&temp, p, sizeof(USHORT));
-  return temp;
+	// little-endian
+	USHORT temp;
+	memcpy(&temp, p, sizeof(USHORT));
+	return temp;
 #else
-  // big-endian
-  union {
-    USHORT n;
-    UCHAR c[2];
-  } temp;
+	// big-endian
+	union
+	{
+		USHORT n;
+		UCHAR c[2];
+	} temp;
 
-  temp.c[0] = p[0];
-  temp.c[1] = p[1];
+	temp.c[0] = p[0];
+	temp.c[1] = p[1];
 
-  return temp.n;
+	return temp.n;
 #endif
 }
 
@@ -97,22 +98,23 @@ inline SLONG get_long(const UCHAR* p)
  **************************************/
 #ifndef WORDS_BIGENDIAN
   // little-endian
-  SLONG temp;
-  memcpy(&temp, p, sizeof(SLONG));
-  return temp;
+	SLONG temp;
+	memcpy(&temp, p, sizeof(SLONG));
+	return temp;
 #else
-  // big-endian
-  union {
-    SLONG n;
-    UCHAR c[4];
-  } temp;
+	// big-endian
+	union
+	{
+		SLONG n;
+		UCHAR c[4];
+	} temp;
 
-  temp.c[0] = p[0];
-  temp.c[1] = p[1];
-  temp.c[2] = p[2];
-  temp.c[3] = p[3];
+	temp.c[0] = p[0];
+	temp.c[1] = p[1];
+	temp.c[2] = p[2];
+	temp.c[3] = p[3];
 
-  return temp.n;
+	return temp.n;
 #endif
 }
 
@@ -130,19 +132,20 @@ inline void put_short(UCHAR* p, USHORT value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(USHORT));
+	// little-endian
+	memcpy(p, &value, sizeof(USHORT));
 #else
   // big-endian
-  union {
-    USHORT n;
-    UCHAR c[2];
-  } temp;
+	union
+	{
+		USHORT n;
+		UCHAR c[2];
+	} temp;
 
-  temp.n = value;
+	temp.n = value;
 
-  p[0] = temp.c[0];
-  p[1] = temp.c[1];
+	p[0] = temp.c[0];
+	p[1] = temp.c[1];
 #endif
 }
 
@@ -160,21 +163,22 @@ inline void put_long(UCHAR* p, SLONG value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(SLONG));
+	// little-endian
+	memcpy(p, &value, sizeof(SLONG));
 #else
-  // big-endian
-  union {
-    SLONG n;
-    UCHAR c[4];
-  } temp;
+	// big-endian
+	union
+	{
+		SLONG n;
+		UCHAR c[4];
+	} temp;
 
-  temp.n = value;
+	temp.n = value;
 
-  p[0] = temp.c[0];
-  p[1] = temp.c[1];
-  p[2] = temp.c[2];
-  p[3] = temp.c[3];
+	p[0] = temp.c[0];
+	p[1] = temp.c[1];
+	p[2] = temp.c[2];
+	p[3] = temp.c[3];
 #endif
 }
 
@@ -192,19 +196,20 @@ inline void put_vax_short(UCHAR* p, SSHORT value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(value));
+	// little-endian
+	memcpy(p, &value, sizeof(value));
 #else
-  // big-endian
-  union {
-    SSHORT n;
-    UCHAR c[2];
-  } temp;
+	// big-endian
+	union
+	{
+		SSHORT n;
+		UCHAR c[2];
+	} temp;
 
-  temp.n = value;
+	temp.n = value;
 
-  p[0] = temp.c[1];
-  p[1] = temp.c[0];
+	p[0] = temp.c[1];
+	p[1] = temp.c[0];
 #endif
 }
 
@@ -222,21 +227,22 @@ inline void put_vax_long(UCHAR* p, SLONG value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(SLONG));
+	// little-endian
+	memcpy(p, &value, sizeof(SLONG));
 #else
-  // big-endian
-  union {
-    SLONG n;
-    UCHAR c[4];
-  } temp;
+	// big-endian
+	union
+	{
+		SLONG n;
+		UCHAR c[4];
+	} temp;
 
-  temp.n = value;
+	temp.n = value;
 
-  p[0] = temp.c[3];
-  p[1] = temp.c[2];
-  p[2] = temp.c[1];
-  p[3] = temp.c[0];
+	p[0] = temp.c[3];
+	p[1] = temp.c[2];
+	p[2] = temp.c[1];
+	p[3] = temp.c[0];
 #endif
 }
 
@@ -254,25 +260,26 @@ inline void put_vax_int64(UCHAR* p, SINT64 value)
  *
  **************************************/
 #ifndef WORDS_BIGENDIAN
-  // little-endian
-  memcpy(p, &value, sizeof(SINT64));
+	// little-endian
+	memcpy(p, &value, sizeof(SINT64));
 #else
-  // big-endian
-  union {
-    SINT64 n;
-    UCHAR c[8];
-  } temp;
+	// big-endian
+	union
+	{
+		SINT64 n;
+		UCHAR c[8];
+	} temp;
 
-  temp.n = value;
+	temp.n = value;
 
-  p[0] = temp.c[7];
-  p[1] = temp.c[6];
-  p[2] = temp.c[5];
-  p[3] = temp.c[4];
-  p[4] = temp.c[3];
-  p[5] = temp.c[2];
-  p[6] = temp.c[1];
-  p[7] = temp.c[0];
+	p[0] = temp.c[7];
+	p[1] = temp.c[6];
+	p[2] = temp.c[5];
+	p[3] = temp.c[4];
+	p[4] = temp.c[3];
+	p[5] = temp.c[2];
+	p[6] = temp.c[1];
+	p[7] = temp.c[0];
 #endif
 }
 
