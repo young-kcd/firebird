@@ -79,11 +79,18 @@ private:
 		osConfigRoot();
 	}
 
+	void GetInstallDir()
+	{
+		// we have no reliable ways to detect install directory in OS-independent way
+		osConfigInstallDir();
+	}
+
 public:
 	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), config_file(getPool())
+		root_dir(getPool()), config_file(getPool()), install_dir(getPool())
 	{
 		GetRoot();
+		GetInstallDir();
 		config_file = root_dir + string(CONFIG_FILE);
 	}
 
@@ -91,18 +98,10 @@ public:
 
 	const char* getInstallDirectory()
 	{
-		osConfigRoot();
-		return install_dir().c_str();
+		return install_dir.c_str();
 	}
 
-	static void setInstallDirectory(const char* dir)
-	{
-		fb_assert(!initialized);
-		install_dir() = dir;
-		initialized = true;
-	}
-
-	const char *getRootDirectory() const
+	const char* getRootDirectory() const
 	{
 		return root_dir.c_str();
 	}
@@ -114,9 +113,7 @@ protected:
 	}
 
 private:
-	static bool initialized;
-	static Firebird::InitInstance<string> install_dir;
-	string root_dir, config_file;
+	string root_dir, config_file, install_dir;
 
 	void addSlash()
 	{
@@ -138,6 +135,7 @@ private:
 	}
 
 	void osConfigRoot();
+	void osConfigInstallDir();
 
 	// copy prohibition
 	ConfigRoot(const ConfigRoot&);

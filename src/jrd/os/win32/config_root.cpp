@@ -63,17 +63,27 @@ bool getRootFromRegistry(string& root)
 	return false;
 }
 
+bool getBinFromHInstance(string& root)
+{
+	if (!hDllInst)
+	{
+		return false;
+	}
+
+	char filename[MAX_PATH];
+	GetModuleFileName(h, filename, sizeof(filename));
+
+	PathName file;
+	PathUtils::splitLastComponent(root, file, filename);
+
+	return root.hasData();
+}
+
 } // namespace
-
-
-bool ConfigRoot::initialized = false;
-Firebird::InitInstance<string> ConfigRoot::install_dir;
 
 
 void ConfigRoot::osConfigRoot()
 {
-	initialized = true;
-
 	// check the registry first
 #if defined(SUPERCLIENT)
 	if (getRootFromRegistry(root_dir))
@@ -83,32 +93,68 @@ void ConfigRoot::osConfigRoot()
 	}
 #endif
 
-	if (install_dir().isEmpty())
+	// get the pathname of the running dll / executable
+	string bin_dir;
+	if (!getBinFromHInstance(bin_dir)
 	{
-		// get the pathname of the running executable
-		string bin_dir = fb_utils::get_process_name();
-		if (bin_dir.length() != 0)
-		{
-			// get rid of the filename
-			const size_t index = bin_dir.rfind(PathUtils::dir_sep);
-			install_dir() = bin_dir.substr(0, index);
-		}
+		bin_dir = fb_utils::get_process_name();
 	}
 
-	if (install_dir().hasData())
+	if (bin_dir.hasData())
 	{
+		// get rid of the filename
+		const size_t index = bin_dir.rfind(PathUtils::dir_sep);
+		root_dir = bin_dir.substr(0, index);
+
 		// how should we decide to use bin_dir instead of root_dir? any ideas?
 		// ???
-#if defined(EMBEDDED)
-		root_dir = install_dir() + PathUtils::dir_sep;
-#else
+#ifndef EMBEDDED
 		// go to the parent directory
-		const size_t index = install_dir().rfind(PathUtils::dir_sep, install_dir().length());
-		root_dir = (index ? install_dir().substr(0, index) : install_dir()) + PathUtils::dir_sep;
+		const size_t index = root_dir.rfind(PathUtils::dir_sep, root_dir.length());
+		if (index)
+		{
+			root_dir = root_dir.substr(0, index);
+		}
 #endif
+		root_dir += PathUtils::dir_sep;
+
 		return;
 	}
 
 	// As a last resort get it from the default install directory
 	root_dir = FB_PREFIX;
+}
+
+void ConfigRoot::osConfigInstallDir()
+{
+
+	// get the pathname of the running dll / executable
+	string bin_dir;
+	if (!getBinFromHInstance(bin_dir)
+	{
+		bin_dir = fb_utils::get_process_name();
+	}
+
+	if (bin_dir.hasData())
+	{
+		// get rid of the filename
+		const size_t index = bin_dir.rfind(PathUtils::dir_sep);
+		install_dir = bin_dir.substr(0, index);
+
+		// how should we decide to use bin_dir instead of root_dir? any ideas?
+		// ???
+#ifndef EMBEDDED
+		// go to the parent directory
+		const size_t index = install_dir.rfind(PathUtils::dir_sep, install_dir.length());
+		if (index)
+		{
+			install_dir = install_dir.substr(0, index);
+		}
+#endif
+
+		return;
+	}
+
+	// As a last resort get it from the default install directory
+	install_dir = FB_PREFIX;
 }

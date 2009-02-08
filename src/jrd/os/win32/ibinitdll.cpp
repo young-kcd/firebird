@@ -44,14 +44,6 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 			hDllInst = h;
 			bEmbedded = true;
 
-			char filename[MAX_PATH];
-			GetModuleFileName(h, filename, sizeof(filename));
-
-			PathName dir, file;
-			PathUtils::splitLastComponent(dir, file, filename);
-
-			ConfigRoot::setInstallDirectory(dir.c_str());
-
 			break;
 		}
 	}

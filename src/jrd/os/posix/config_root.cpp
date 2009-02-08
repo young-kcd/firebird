@@ -42,44 +42,35 @@ typedef Firebird::PathName string;
  *	Platform-specific root locator
  */
 
-#if defined SUPERSERVER || defined EMBEDDED
+#ifdef SUPERSERVER
 static string getRootPathFromExePath()
 {
 	// get the pathname of the running executable
 	string bin_dir = fb_utils::get_process_name();
-	if (bin_dir.length() == 0)
+	if (bin_dir.length() == 0 || bin_dir[0] != '/')
+	{
 		return "";
+	}
 
 	// get rid of the filename
 	int index = bin_dir.rfind(PathUtils::dir_sep);
 	bin_dir = bin_dir.substr(0, index);
 
-	// how should we decide to use bin_dir instead of root_dir? any ideas?
-	// ???
-#ifdef EMBEDDED
-	// Placed here in case we introduce embedded POSIX build
-	root_dir = bin_dir + PathUtils::dir_sep;
-	return;
-#endif
-
 	// go to the parent directory
 	index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
-	string root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
-    return root_dir;
+	string dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
+    return dir;
 }
 #endif
 
 
-bool ConfigRoot::initialized = false;
-Firebird::InitInstance<string> ConfigRoot::install_dir;
-
-
 void ConfigRoot::osConfigRoot()
 {
-#if defined SUPERSERVER || defined EMBEDDED
+#ifdef SUPERSERVER
 	// Try getting the root path from the executable
 	root_dir = getRootPathFromExePath();
-    if (root_dir.length() != 0) {
+    if (root_dir.hasData()) 
+	{
         return;
     }
 #endif
@@ -88,3 +79,18 @@ void ConfigRoot::osConfigRoot()
     root_dir = string(FB_PREFIX) + PathUtils::dir_sep;
 }
 
+
+void ConfigRoot::osConfigInstallDir()
+{
+#ifdef SUPERSERVER
+	// Try getting the root path from the executable
+	install_dir = getRootPathFromExePath();
+    if (install_dir.hasData()) 
+	{
+        return;
+    }
+#endif
+
+    // As a last resort get it from the default install directory
+	install_dir = string(FB_PREFIX);
+}
