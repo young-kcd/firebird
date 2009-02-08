@@ -75,7 +75,7 @@ enum rsb_t
 	rsb_left_cross,						// left outer join as a nested loop
 	rsb_procedure,						// stored procedure
 	rsb_virt_sequential,				// sequential access to a virtual table
-	rsb_recurse							// Recursive union
+	rsb_recursive_union					// Recursive union
 };
 
 
@@ -121,6 +121,7 @@ const USHORT rsb_singular = 1;			// singleton select, expect 0 or 1 records
 const USHORT rsb_descending = 4;		// an ascending index is being used for a descending sort or vice versa
 const USHORT rsb_project = 8;			// projection on this stream is requested
 const USHORT rsb_writelock = 16;		// records should be locked for writing
+const USHORT rsb_recursive = 32;		// this rsb is a sub_rsb of recursive rsb
 
 // special argument positions within the RecordSource
 

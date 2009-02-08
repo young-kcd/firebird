@@ -159,6 +159,7 @@ static jrd_nod* make_missing(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHO
 static jrd_nod* make_starts(thread_db*, OptimizerBlk*, jrd_rel*, jrd_nod*, USHORT, index_desc*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
 static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
+static void mark_rsb_recursive(RecordSource*);
 static int match_index(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool match_indices(thread_db*, OptimizerBlk*, SSHORT, jrd_nod*, const index_desc*);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
@@ -2515,7 +2516,7 @@ static bool dump_rsb(const jrd_req* request,
 		*buffer++ = isc_info_rsb_union;
 		break;
 
-	case rsb_recurse:
+	case rsb_recursive_union:
 		*buffer++ = isc_info_rsb_recursive;
 		break;
 
@@ -2576,7 +2577,7 @@ static bool dump_rsb(const jrd_req* request,
 		break;
 
 	case rsb_union:
-	case rsb_recurse:
+	case rsb_recursive_union:
 		*buffer++ = rsb->rsb_count / 2;
 		ptr = rsb->rsb_arg;
 		for (end = ptr + rsb->rsb_count; ptr < end; ptr++) {
@@ -3520,7 +3521,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 	switch (rsb->rsb_type)
 	{
 		case rsb_union:
-		case rsb_recurse:
+		case rsb_recursive_union:
 		case rsb_aggregate:
 		case rsb_procedure:
 			if (rsb_list) {
@@ -3598,7 +3599,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 		case rsb_procedure:
 		case rsb_sequential:
 		case rsb_union:
-		case rsb_recurse:
+		case rsb_recursive_union:
 		case rsb_virt_sequential:
 			stream = rsb->rsb_stream;
 			found = true;
@@ -5732,7 +5733,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 2 : 0)) RecordSource();
 	if (recurse)
 	{
-		rsb->rsb_type   = rsb_recurse;
+		rsb->rsb_type   = rsb_recursive_union;
 		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_recurse));
 	}
 	else
@@ -5779,9 +5780,12 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 	// hvlad: save size of inner impure area and context of mapped record
 	// for recursive processing later
-	if (recurse) {
+	if (recurse) 
+	{
 		*rsb_ptr++ = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
 		*rsb_ptr = (RecordSource*) (IPTR) union_node->nod_arg[e_uni_map_stream];
+
+		mark_rsb_recursive(rsb);
 	}
 	return rsb;
 }
@@ -6783,6 +6787,88 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 			idx->idx_runtime_flags |= idx_plan_dont_use;
 		}
 		++idx;
+	}
+}
+
+
+static void mark_rsb_recursive(RecordSource* rsb)
+{
+/**************************************
+ *
+ *	m a r k _ r s b _ r e c u r s i v e
+ *
+ **************************************
+ *
+ * Functional description
+ * Mark all RSB's at sub-tree as recursive.
+ *
+ **************************************/
+
+	while (true)
+	{
+		rsb->rsb_flags |= rsb_recursive;
+		switch (rsb->rsb_type)
+		{
+			case rsb_indexed:
+			case rsb_navigate:
+			case rsb_sequential:
+			case rsb_ext_sequential:
+			case rsb_ext_indexed:
+			case rsb_ext_dbkey:
+			case rsb_virt_sequential:
+			case rsb_procedure:
+				return;
+
+			case rsb_first:
+			case rsb_skip:
+			case rsb_boolean:
+			case rsb_aggregate:
+			case rsb_sort:
+				rsb = rsb->rsb_next;
+				break;
+
+			case rsb_cross:
+				{
+					RecordSource** ptr = rsb->rsb_arg;
+					const RecordSource* const* const end = ptr + rsb->rsb_count;
+					for (; ptr < end; ptr++) 
+						mark_rsb_recursive(*ptr);
+				}
+				return;
+
+			case rsb_left_cross:
+				mark_rsb_recursive(rsb->rsb_arg[RSB_LEFT_outer]);
+				mark_rsb_recursive(rsb->rsb_arg[RSB_LEFT_inner]);
+				return;
+
+			case rsb_merge:
+				{
+					RecordSource** ptr = rsb->rsb_arg;
+					const RecordSource* const* const end = ptr + rsb->rsb_count * 2;
+
+					for (; ptr < end; ptr += 2)
+						mark_rsb_recursive(*ptr);
+				}
+				return;
+
+			case rsb_union:
+				{
+					RecordSource** ptr = rsb->rsb_arg;
+					const RecordSource* const* end = ptr + rsb->rsb_count;
+
+					for (; ptr < end; ptr += 2)
+						mark_rsb_recursive(*ptr);
+				}
+				return;
+
+			case rsb_recursive_union:
+				mark_rsb_recursive(rsb->rsb_arg[0]);
+				mark_rsb_recursive(rsb->rsb_arg[2]);
+				return;
+
+			default:
+				BUGCHECK(166);		/* msg 166 invalid rsb type */
+		}
 	}
 }
 
