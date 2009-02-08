@@ -39,7 +39,7 @@
 # endif
 #endif
 
-#ifdef WIN_NT
+#ifdef HAVE_IO_H
 #include <io.h> // open, close
 #endif
 

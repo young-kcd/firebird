@@ -30,8 +30,11 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <unistd.h>
 #include <termios.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #include <stdlib.h>

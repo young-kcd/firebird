@@ -62,13 +62,13 @@
 #endif
 #include "../common/utils_proto.h"
 
-#ifdef UNIX
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
 #include <fcntl.h>
 
-#ifdef WIN_NT
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 

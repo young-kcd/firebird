@@ -28,10 +28,12 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#ifndef _WIN32
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#else
-#include <io.h> // for unlink
+#endif
+
+#ifdef HAVE_IO_H
+#include <io.h>
 #endif
 
 #include <stdio.h>

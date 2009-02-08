@@ -47,7 +47,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#if (defined WIN_NT)
+#ifdef HAVE_IO_H
 #include <io.h>  // isatty
 #endif
 

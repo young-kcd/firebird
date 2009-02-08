@@ -71,7 +71,9 @@
 #if defined(WIN_NT)
 #include <io.h> // mktemp, unlink ..
 #include <process.h>
-#else
+#endif
+
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
 

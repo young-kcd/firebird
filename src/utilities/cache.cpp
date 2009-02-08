@@ -32,7 +32,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
 
-#if (defined WIN_NT)
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 

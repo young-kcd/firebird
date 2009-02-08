@@ -30,7 +30,9 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 
 using namespace Firebird;
@@ -51,7 +53,7 @@ void FileObject::open(int flags, int pflags)
 		break;
 	default:
 		oflags = O_RDWR;
-		break;	
+		break;
 	}
 
 	if (flags & fo_append)
@@ -88,7 +90,7 @@ FB_UINT64 FileObject::size()
 	struct stat file_stat;
 	if (!fstat(file, &file_stat))
 		nFileLen = file_stat.st_size;
-	else 
+	else
 		fatal_exception::raiseFmt("IO error (%d) file stat: %s", errno, filename.c_str());
 
 	return nFileLen;
@@ -99,7 +101,7 @@ size_t FileObject::blockRead(void* buffer, size_t bytesToRead)
 	ssize_t bytesDone = read(file, buffer, bytesToRead);
 	if (bytesDone < 0)
 	{
-		fatal_exception::raiseFmt("IO error (%d) reading file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) reading file: %s",
 			errno,
 			filename.c_str());
 	}
@@ -112,7 +114,7 @@ void FileObject::blockWrite(const void* buffer, size_t bytesToWrite)
 	ssize_t bytesDone = write(file, buffer, bytesToWrite);
 	if (bytesDone != static_cast<ssize_t>(bytesToWrite))
 	{
-		fatal_exception::raiseFmt("IO error (%d) writing file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) writing file: %s",
 			errno,
 			filename.c_str());
 	}
@@ -127,7 +129,7 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
 	ssize_t bytesDone = write(file, buffer, bytesToWrite);
 	if (bytesDone != static_cast<ssize_t>(bytesToWrite))
 	{
-		fatal_exception::raiseFmt("IO error (%d) writing file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) writing file: %s",
 			errno,
 			filename.c_str());
 	}
@@ -135,7 +137,7 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
 
 void FileObject::reopen()
 {
-	if (file >= 0) 
+	if (file >= 0)
 		close(file);
 	open(fo_rdwr | fo_append | fo_creat, 0666);
 	//fchmod(file, PMASK);
@@ -151,7 +153,7 @@ bool FileObject::renameFile(const Firebird::PathName new_filename)
 			reopen();
 			return false;
 		}
-		fatal_exception::raiseFmt("IO error (%d) renaming file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) renaming file: %s",
 			rename_err,	filename.c_str());
 	}
 	else
@@ -164,7 +166,7 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
     if (newOffset != (SINT64) LSEEK_OFFSET_CAST newOffset)
 	{
 		fatal_exception::raiseFmt(
-			"Attempt to seek file %s past platform size limit", 
+			"Attempt to seek file %s past platform size limit",
 			filename.c_str());
 	}
 
@@ -184,10 +186,10 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
 	}
 
 	off_t result = lseek(file, newOffset, moveMethod);
-	
+
 	if (result == (off_t) -1)
 	{
-		fatal_exception::raiseFmt("IO error (%d) seeking file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) seeking file: %s",
 			errno,
 			filename.c_str());
 	}

@@ -60,8 +60,7 @@
 #include <stdio.h>
 #endif
 
-#ifdef WIN_NT
-/* for SEEK_SET */
+#ifdef HAVE_IO_H
 #include <io.h> // lseek, read, write, close
 #endif
 

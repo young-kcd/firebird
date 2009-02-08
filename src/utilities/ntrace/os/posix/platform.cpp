@@ -29,7 +29,9 @@
 #include "../platform.h"
 #include "../common/classes/fb_tls.h"
 #include <sys/types.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 
 #define TEST

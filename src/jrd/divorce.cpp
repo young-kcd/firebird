@@ -58,8 +58,8 @@
 #include <sys/select.h>
 #endif
 
-#ifdef WIN_NT
-#include <io.h> // close
+#ifdef HAVE_IO_H
+#include <io.h>
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H

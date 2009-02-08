@@ -75,8 +75,8 @@
 #include <unistd.h>
 #endif
 
-#if defined(WIN_NT)
-#include <io.h> // close
+#ifdef HAVE_IO_H
+#include <io.h>
 #endif
 
 using namespace Jrd;
@@ -1687,7 +1687,7 @@ static bool get_procedure(thread_db*			tdbb,
 	try {
 		EXE_receive(tdbb, proc_request, 1, oml, om);
 	}
-	catch (const Firebird::Exception&) 
+	catch (const Firebird::Exception&)
 	{
 		trace.fetch(true, res_failed);
 		close_procedure(tdbb, rsb);
@@ -2808,7 +2808,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 
 	try {
 		proc_request->req_timestamp = request->req_timestamp;
-		
+
 		TraceProcExecute trace(tdbb, proc_request, request, inputs);
 
 		EXE_start(tdbb, proc_request, request->req_transaction);
@@ -3372,9 +3372,9 @@ static void restore_record(record_param* rpb)
 				BUGCHECK(284);	// msg 284 cannot restore singleton select data
 
 			const USHORT size = rec_copy->rec_length;
-			if (size > record->rec_length) 
+			if (size > record->rec_length)
 			{
-				// hvlad: saved copy of record have longer format, reallocate 
+				// hvlad: saved copy of record have longer format, reallocate
 				// given record to make enough space for saved data
 				thread_db *tdbb = JRD_get_thread_data();
 				record = VIO_record(tdbb, rpb, rec_copy->rec_format, tdbb->getDefaultPool());

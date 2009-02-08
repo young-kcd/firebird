@@ -53,7 +53,7 @@ using MsgFormat::SafeArg;
 #include <unistd.h>
 #endif
 
-#ifdef WIN_NT
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 

@@ -40,6 +40,9 @@
 
 #ifndef _WIN32
 #include <sys/stat.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

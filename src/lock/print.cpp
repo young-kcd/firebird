@@ -57,7 +57,7 @@
 #  include <sys/param.h>
 #endif
 
-#ifdef WIN_NT
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 
