@@ -63,6 +63,9 @@ bool getRootFromRegistry(string& root)
 	return false;
 }
 
+
+extern HINSTANCE hDllInst;
+
 bool getBinFromHInstance(string& root)
 {
 	if (!hDllInst)
@@ -71,9 +74,9 @@ bool getBinFromHInstance(string& root)
 	}
 
 	char filename[MAX_PATH];
-	GetModuleFileName(h, filename, sizeof(filename));
+	GetModuleFileName(hDllInst, filename, sizeof(filename));
 
-	PathName file;
+	Firebird::PathName file;
 	PathUtils::splitLastComponent(root, file, filename);
 
 	return root.hasData();
@@ -95,7 +98,7 @@ void ConfigRoot::osConfigRoot()
 
 	// get the pathname of the running dll / executable
 	string bin_dir;
-	if (!getBinFromHInstance(bin_dir)
+	if (!getBinFromHInstance(bin_dir))
 	{
 		bin_dir = fb_utils::get_process_name();
 	}
@@ -103,14 +106,14 @@ void ConfigRoot::osConfigRoot()
 	if (bin_dir.hasData())
 	{
 		// get rid of the filename
-		const size_t index = bin_dir.rfind(PathUtils::dir_sep);
+		size_t index = bin_dir.rfind(PathUtils::dir_sep);
 		root_dir = bin_dir.substr(0, index);
 
 		// how should we decide to use bin_dir instead of root_dir? any ideas?
 		// ???
 #ifndef EMBEDDED
 		// go to the parent directory
-		const size_t index = root_dir.rfind(PathUtils::dir_sep, root_dir.length());
+		index = root_dir.rfind(PathUtils::dir_sep, root_dir.length());
 		if (index)
 		{
 			root_dir = root_dir.substr(0, index);
@@ -130,7 +133,7 @@ void ConfigRoot::osConfigInstallDir()
 
 	// get the pathname of the running dll / executable
 	string bin_dir;
-	if (!getBinFromHInstance(bin_dir)
+	if (!getBinFromHInstance(bin_dir))
 	{
 		bin_dir = fb_utils::get_process_name();
 	}
@@ -138,14 +141,14 @@ void ConfigRoot::osConfigInstallDir()
 	if (bin_dir.hasData())
 	{
 		// get rid of the filename
-		const size_t index = bin_dir.rfind(PathUtils::dir_sep);
+		size_t index = bin_dir.rfind(PathUtils::dir_sep);
 		install_dir = bin_dir.substr(0, index);
 
 		// how should we decide to use bin_dir instead of root_dir? any ideas?
 		// ???
 #ifndef EMBEDDED
 		// go to the parent directory
-		const size_t index = install_dir.rfind(PathUtils::dir_sep, install_dir.length());
+		index = install_dir.rfind(PathUtils::dir_sep, install_dir.length());
 		if (index)
 		{
 			install_dir = install_dir.substr(0, index);
