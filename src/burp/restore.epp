@@ -95,6 +95,7 @@ USHORT	check_db_version();
 void	create_database (const TEXT*);
 void	decompress(UCHAR*, USHORT);
 void	eat_blob();
+void	eat_text(BurpGlobals);
 burp_rel*	find_relation (const TEXT *);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
@@ -1011,6 +1012,19 @@ void create_database (const TEXT* file_name)
 	BURP_verbose (74, file_name, (void*) (IPTR)page_size, NULL, NULL, NULL);
 	// msg 74 created database %s, page_size %ld bytes 
 }
+
+
+// *****************************
+// e a t _ t e x t
+// *****************************
+// Discard a text field from the backup file.
+void eat_text(BurpGlobals* tdgbl)
+{
+	const ULONG l = get(tdgbl);
+	if (l)
+		MVOL_skip_block(tdgbl, l);
+}
+
 
 void decompress(UCHAR* buffer,
 				USHORT	length)
@@ -2778,7 +2792,7 @@ bool get_exception(void)
 					const ULONG l = GET_TEXT(X.RDB$EXCEPTION_NAME);
 					X.RDB$EXCEPTION_NAME.NULL = FALSE;
 					MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
-					BURP_verbose (199, temp);
+					BURP_verbose (199, temp, NULL, NULL, NULL, NULL);
 					// msg 199 restoring exception %s
 				}
 				break;
@@ -2786,11 +2800,11 @@ bool get_exception(void)
 			case att_exception_description:
 				if (!X.RDB$DESCRIPTION.NULL)
 					BURP_error(311, true, isc_arg_number, (void*) att_exception_description,
-						isc_arg_ctring, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
+						isc_arg_cstring, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
 				else
 				{
 					msg_seen = false;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+					get_misc_blob (&X.RDB$DESCRIPTION, 0, false);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 				}
 				break;
@@ -2802,7 +2816,7 @@ bool get_exception(void)
 				else
 				{
 					msg_seen = false;
-					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					get_source_blob (&X.RDB$DESCRIPTION, false);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 				}
 				break;
@@ -2845,7 +2859,7 @@ bool get_exception(void)
 						break;
 					}
 					*msg_ptr++ = char(attribute); // (1)
-					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, min(remaining - 1, 255));
+					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, MIN(remaining - 1, 255));
 					if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
 					{
 						bad_attribute (scan_next_attr, failed_attrib, 287);
@@ -2864,8 +2878,8 @@ bool get_exception(void)
 		}
 		// Versions prior to FB2.0 don't support a field longer than varchar(78).
 		// Versions prior to FB2.5 use a field length of 1021, not 1023.
-		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
-			X.RDB$MESSAGE[78] = 0;
+		// if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)	(always restore in ODS11 - AP)
+		//	X.RDB$MESSAGE[78] = 0;
 	END_STORE;
 	ON_ERROR
 		general_on_error ();
@@ -5825,8 +5839,8 @@ bool get_trigger_message()
 		return true;
 
 	// Versions prior to FB2.0 don't support a field longer than varchar(78).
-	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
-		message[78] = 0;
+	//if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+	//	message[78] = 0;
 		
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
