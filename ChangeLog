@@ -1,3 +1,53 @@
+2009-02-09 16:25  hvlad
+
+	* firebird2/src/: dsql/dsql.cpp (1.275), dsql/dsql_proto.h (1.24),
+	jrd/trace/TraceObjects.cpp (1.8):
+
+	Constness
+
+2009-02-09 16:24  alexpeshkoff
+
+	* firebird2/src/jrd/grant.epp (1.74):
+
+	More changes for CORE-1770 and CORE-2285
+
+2009-02-09 16:12  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.232):
+
+	Comment my recent (not obvious) change
+
+2009-02-09 15:11  alexpeshkoff
+
+	* firebird2/src/: common/classes/objects_array.h (1.25),
+	jrd/RuntimeStatistics.cpp (1.14), jrd/RuntimeStatistics.h (1.19):
+
+	Add new class PointerArray and use it in RuntimeStatistics.  Now
+	RuntimeStatistics has 3 #ifdef choices: SortedArray, PointersArray
+	or Tree.
+
+2009-02-09 13:22  robocop
+
+	* firebird2/src/jrd/: inf.cpp (1.98), inf_proto.h (1.13), svc.cpp
+	(1.264):
+
+	Frontport fix for CORE-2313.
+
+2009-02-09 12:13  hvlad
+
+	* firebird2/builds/win32/: msvc8/common_static.vcproj (1.11),
+	msvc9/common_static.vcproj (1.2):
+
+	Update boot build
+
+2009-02-09 02:43  asfernandes
+
+	* firebird2/src/: jrd/fun.epp (1.116), jrd/opt.cpp (1.338),
+	jrd/rse.cpp (1.176), jrd/svc.cpp (1.263), utilities/fbsvcmgr.cpp
+	(1.25), utilities/ntrace/TracePluginImpl.cpp (1.10):
+
+	Misc
+
 2009-02-08 20:28  hvlad
 
 	* firebird2/src/jrd/os/win32/config_root.cpp (1.31):
