@@ -1243,12 +1243,12 @@ void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceT
 		return;
 
 	// Do not log operation if it is below time threshold
-	const PerformanceInfo *info = started ? NULL : procedure->getPerf();
+	const PerformanceInfo* info = started ? NULL : procedure->getPerf();
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
 	string line;
-	TraceParams *params = procedure->getInputs();
+	TraceParams* params = procedure->getInputs();
 	if (params && params->getCount())
 	{
 		appendParams(params, line);
@@ -1283,7 +1283,7 @@ void TracePluginImpl::log_event_proc_execute(TraceConnection* connection, TraceT
 								   "UNAUTHORIZED EXECUTE_PROCEDURE_FINISH";
 			break;
 		default:
-			event_type = "Unknown at executing procedure";
+			event_type = "Unknown event at executing procedure";
 			break;
 	}
 
@@ -1450,7 +1450,7 @@ void TracePluginImpl::log_event_dsql_execute(TraceConnection* connection,
 		return;
 
 	// Do not log operation if it is below time threshold
-	const PerformanceInfo *info = started ? NULL : statement->getPerf();
+	const PerformanceInfo* info = started ? NULL : statement->getPerf();
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
@@ -1870,7 +1870,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceConnection* connection, Tra
 		return;
 
 	// Do not log operation if it is below time threshold
-	const PerformanceInfo *info = started ? NULL : trigger->getPerf();
+	const PerformanceInfo* info = started ? NULL : trigger->getPerf();
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 

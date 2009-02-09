@@ -81,7 +81,7 @@ namespace
 #ifdef WIN_NT
 			libUtilPath.assign("ib_util");
 #else
- 			PathName id(Config::getInstallDirectory());
+			PathName id(Config::getInstallDirectory());
 			PathUtils::concatPath(libUtilPath, id, "lib/libib_util");
 #endif // WIN_NT
 

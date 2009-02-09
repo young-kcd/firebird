@@ -2296,7 +2296,7 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 			const char* namePtr = index_name.c_str();
 
 			const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
-			if (charset!= CS_METADATA && charset != CS_NONE)
+			if (charset != CS_METADATA && charset != CS_NONE)
 			{
 				namePtr = (const char*) nameBuffer.getBuffer(DataTypeUtil(tdbb).convertLength(
 					MAX_SQL_IDENTIFIER_LEN, CS_METADATA, charset));
@@ -5787,6 +5787,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 		mark_rsb_recursive(rsb);
 	}
+
 	return rsb;
 }
 
@@ -6807,6 +6808,7 @@ static void mark_rsb_recursive(RecordSource* rsb)
 	while (true)
 	{
 		rsb->rsb_flags |= rsb_recursive;
+
 		switch (rsb->rsb_type)
 		{
 			case rsb_indexed:

@@ -244,7 +244,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			break;
 
 		case rsb_recursive_union:
-			RSBRecurse::close(tdbb, rsb, (irsb_recurse*)impure);
+			RSBRecurse::close(tdbb, rsb, (irsb_recurse*) impure);
 			return;
 
 		case rsb_ext_sequential:
@@ -522,7 +522,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			break;
 
 		case rsb_recursive_union:
-			RSBRecurse::open(tdbb, rsb, (irsb_recurse*)impure);
+			RSBRecurse::open(tdbb, rsb, (irsb_recurse*) impure);
 			return;
 
 		case rsb_aggregate:
@@ -2364,7 +2364,7 @@ static bool get_record(thread_db*	tdbb,
 		break;
 
 	case rsb_recursive_union:
-		if (!RSBRecurse::get(tdbb, rsb, (irsb_recurse*)impure))
+		if (!RSBRecurse::get(tdbb, rsb, (irsb_recurse*) impure))
 			return false;
 		break;
 
@@ -3405,7 +3405,7 @@ static void restore_record(record_param* rpb)
 			{
 				// hvlad: saved copy of record have longer format, reallocate
 				// given record to make enough space for saved data
-				thread_db *tdbb = JRD_get_thread_data();
+				thread_db* tdbb = JRD_get_thread_data();
 				record = VIO_record(tdbb, rpb, rec_copy->rec_format, tdbb->getDefaultPool());
 			}
 			else
