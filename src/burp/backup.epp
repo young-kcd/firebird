@@ -158,6 +158,7 @@ enum backup_capabilities
 	BCK_ods10			= 8192,	// FIELD_PRECISION
 	BCK_ods11			= 16384,// rdb$description in rdb$roles and rdb$generators
 								// rdb$base_collation_name and rdb$specific_attributes in rdb$collations
+								// rdb$message enlarged to 1021.
 	BCK_ods11_1			= 32768 // rdb$relation_type in rdb$relations
 								// rdb$procedure_type in rdb$procedures
 								// rdb$valid_blr in rdb$triggers

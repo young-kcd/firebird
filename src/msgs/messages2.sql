@@ -2339,6 +2339,10 @@ ERROR: Backup incomplete', NULL, NULL);
 -- Do not change the arguments of the previous GBAK messages.
 -- Write the new GBAK messages here.
 (NULL, '', 'burp.cpp', NULL, 12, 295, NULL, '	@1TRU(STED)            use trusted authentication', NULL, NULL);
+-- Here's a gap. I don't know if it's better to copy the missing messages from FB2.5.
+(NULL, 'get_exception', 'restore.epp', NULL, 12, 311, NULL, 'Attribute @1 was already processed for exception @2', NULL, NULL)
+(NULL, 'get_exception', 'restore.epp', NULL, 12, 312, NULL, 'Skipping attribute @1 because the message already exists for exception @2', NULL, NULL)
+(NULL, 'get_exception', 'restore.epp', NULL, 12, 313, NULL, 'Trying to recover from unexpected attribute @1 due to wrong message length for exception @2', NULL, NULL)
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
