@@ -334,6 +334,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\dllinst.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\fb_string.cpp"
 				>
 			</File>
