@@ -1,3 +1,32 @@
+2009-02-09 14:10  alexpeshkoff
+
+	* firebird2/src/burp/restore.epp (1.101.4.6):
+
+	Fixed compile errors
+
+2009-02-09 11:14  dimitr
+
+	* firebird2/src/utilities/install/install_svc.cpp (1.21.4.1):
+
+	Backported CORE-1923: "instsvc remove" returns 1 when succefully
+	executed.
+
+2009-02-09 10:52  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.166.2.13):
+
+	Backport Vlad's fix.
+
+2009-02-09 10:50  robocop
+
+	* firebird2/src/: burp/backup.epp (1.81.2.3), burp/mvol.cpp
+	(1.43.4.3), burp/restore.epp (1.101.4.5), msgs/facilities.sql
+	(1.57.2.1), msgs/messages.sql (1.71.2.1):
+
+	Backport fix for CORE-2245. I can't compile to verify it and alas,
+	this backport requires adjusting to the old error reporting
+	functions before SafeArg.
+
 2009-01-29 16:29  alexpeshkoff
 
 	* firebird2/configure.in (1.241.2.34):
