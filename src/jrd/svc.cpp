@@ -2279,7 +2279,7 @@ static void service_get(Service*		service,
 		const time_t elapsed_time = end_time - start_time;
 #endif
 		if ((timeout) && (elapsed_time >= timeout)) {
-			service->svc_flags &= SVC_timeout;
+			service->svc_flags |= SVC_timeout;
 			return;
 		}
 
