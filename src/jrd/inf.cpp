@@ -161,7 +161,7 @@ void INF_blob_info(const blb* blob,
 		SLONG number = info - start_info;
 		memmove(start_info + 7, start_info, number);
 		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
+		INF_put_item(isc_info_length, length, buffer, start_info, end, true);
 	}
 }
 
@@ -801,7 +801,7 @@ SCHAR* INF_put_item(SCHAR item,
 					USHORT length,
 					const SCHAR* string,
 					SCHAR* ptr,
-					const SCHAR* end)
+					const SCHAR* end, const bool inserting)
 {
 /**************************************
  *
@@ -813,10 +813,11 @@ SCHAR* INF_put_item(SCHAR item,
  *	Put information item in output buffer if there is room, and
  *	return an updated pointer.  If there isn't room for the item,
  *	indicate truncation and return NULL.
+ *	If we are inserting, we don't need space for isc_info_end, since it was calculated already.
  *
  **************************************/
 
-	if (ptr + length + 4 >= end) {
+	if (ptr + length + (inserting ? 3 : 4) >= end) {
 		*ptr = isc_info_truncated;
 		return NULL;
 	}
@@ -985,7 +986,7 @@ void INF_request_info(const jrd_req* request,
 		SLONG number = info - start_info;
 		memmove(start_info + 7, start_info, number);
 		length = INF_convert(number, buffer.begin());
-		INF_put_item(isc_info_length, length, buffer.begin(), start_info, end);
+		INF_put_item(isc_info_length, length, buffer.begin(), start_info, end, true);
 	}
 }
 
@@ -1102,7 +1103,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 		SLONG number = info - start_info;
 		memmove(start_info + 7, start_info, number);
 		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
+		INF_put_item(isc_info_length, length, buffer, start_info, end, true);
 	}
 }
 
