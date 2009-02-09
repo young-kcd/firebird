@@ -129,7 +129,7 @@ bool	get_relation_data();
 bool	get_sql_roles();
 bool	get_security_class();
 void	get_source_blob (ISC_QUAD*, bool);
-USHORT	get_text (TEXT*, ULONG);
+USHORT	get_text(TEXT*, ULONG);
 bool	get_trigger();
 bool	get_trigger_message();
 bool	get_trigger_old (burp_rel*);
@@ -1996,7 +1996,7 @@ bool get_character_set()
 {
 /**************************************
  *
- *	g e t _ c h a r a c t e r _ s e t s
+ *	g e t _ c h a r a c t e r _ s e t
  *
  **************************************
  *
@@ -2750,48 +2750,122 @@ bool get_exception(void)
  **************************************/
 	ATT_TYPE	attribute;
 	TEXT		temp[GDS_NAME_LEN];
-	ULONG		l;
+	ULONG		l2 = 0;
 	scan_attr_t		scan_next_attr;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	STORE (REQUEST_HANDLE tdgbl->handles_get_exception_req_handle1)
 		X IN RDB$EXCEPTIONS
+		X.RDB$EXCEPTION_NAME.NULL = TRUE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
 		X.RDB$MESSAGE.NULL = TRUE;
+		
+		att_type failed_attrib = att_end;
+		bool msg_seen = false; // only for att_exception_msg, not att_exception_msg2
+		UCHAR* msg_ptr = reinterpret_cast<UCHAR*>(X.RDB$MESSAGE);
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
-			case att_exception_name:
-				l = GET_TEXT(X.RDB$EXCEPTION_NAME);
-				MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
-				BURP_verbose (199, temp, NULL, NULL, NULL, NULL);
-				// msg 199 restoring exception %s 
+				if (!X.RDB$EXCEPTION_NAME.NULL)
+					BURP_error(311, true, isc_arg_number, (void*) att_exception_name,
+						isc_arg_string, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
+				else
+				{
+					const ULONG l = GET_TEXT(X.RDB$EXCEPTION_NAME);
+					X.RDB$EXCEPTION_NAME.NULL = FALSE;
+					MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
+					BURP_verbose (199, temp);
+					// msg 199 restoring exception %s
+				}
 				break;
 
 			case att_exception_description:
-				get_misc_blob (&X.RDB$DESCRIPTION, 0, false);
-				X.RDB$DESCRIPTION.NULL = FALSE;
+				if (!X.RDB$DESCRIPTION.NULL)
+					BURP_error(311, true, isc_arg_number, (void*) att_exception_description,
+						isc_arg_ctring, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
+				else
+				{
+					msg_seen = false;
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				}
 				break;
 
 			case att_exception_description2:
-				get_source_blob (&X.RDB$DESCRIPTION, false);
-				X.RDB$DESCRIPTION.NULL = FALSE;
+				if (!X.RDB$DESCRIPTION.NULL)
+					BURP_error(311, true, isc_arg_number, (void*) att_exception_description2,
+						isc_arg_string, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
+				else
+				{
+					msg_seen = false;
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					X.RDB$DESCRIPTION.NULL = FALSE;
+				}
 				break;
 
 			case att_exception_msg:
-				GET_TEXT(X.RDB$MESSAGE);
-				X.RDB$MESSAGE.NULL = FALSE;
+				if (msg_seen)
+					BURP_error(311, true, isc_arg_number, (void*) att_exception_msg,
+						isc_arg_string, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
+				else if (!X.RDB$MESSAGE.NULL)
+				{
+					msg_seen = true;
+					BURP_print(312, (void*) att_exception_msg, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL);
+					eat_text(tdgbl);
+				}
+				else
+				{
+					msg_seen = true;
+					l2 = GET_TEXT(X.RDB$MESSAGE);
+					msg_ptr += l2;
+					X.RDB$MESSAGE.NULL = FALSE;
+				}
 				break;
 
 			default:
-				bad_attribute (scan_next_attr, attribute, 89);
-				// msg 89 function 
+				if (msg_seen && tdgbl->RESTORE_format == 7)
+				{
+					 // we have a corrupt backup
+					if (!failed_attrib)
+					{
+						failed_attrib = attribute;
+						BURP_print(313, (void*) failed_attrib, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL);
+					}
+
+					const int FIELD_LIMIT = 1021;
+
+					const int remaining = FIELD_LIMIT - l2;
+					if (remaining < 1) // not enough space
+					{
+						bad_attribute (scan_next_attr, failed_attrib, 287);
+						break;
+					}
+					*msg_ptr++ = char(attribute); // (1)
+					UCHAR* rc_ptr = get_block(tdgbl, msg_ptr, min(remaining - 1, 255));
+					if (remaining > 1 && rc_ptr == msg_ptr) // we couldn't read anything
+					{
+						bad_attribute (scan_next_attr, failed_attrib, 287);
+						break;
+					}
+					l2 += rc_ptr - msg_ptr + 1; // + 1 because (1)
+					msg_ptr = rc_ptr;
+					*msg_ptr = 0;
+					if (l2 == FIELD_LIMIT)
+						msg_seen = false;
+				}
+				else
+					bad_attribute (scan_next_attr, attribute, 287); // msg 287 exception
 				break;
 			}
 		}
+		// Versions prior to FB2.0 don't support a field longer than varchar(78).
+		// Versions prior to FB2.5 use a field length of 1021, not 1023.
+		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+			X.RDB$MESSAGE[78] = 0;
 	END_STORE;
 	ON_ERROR
 		general_on_error ();
@@ -5711,7 +5785,7 @@ bool get_trigger_message()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	bool flag = false;
+	bool sysflag = false;
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -5719,11 +5793,11 @@ bool get_trigger_message()
 		{
 		case att_trigmsg_name:
 			GET_TEXT(name);
-			flag = false;
+			sysflag = false;
 			FOR (REQUEST_HANDLE tdgbl->handles_get_trigger_message_req_handle1)
 				FIRST 1 X IN RDB$TRIGGERS WITH
 				X.RDB$SYSTEM_FLAG EQ 1 AND X.RDB$TRIGGER_NAME EQ name
-				flag = true;
+				sysflag = true;
 			END_FOR;
 			ON_ERROR
 				general_on_error ();
@@ -5747,9 +5821,13 @@ bool get_trigger_message()
 		}
 	}
 
-	if (flag)
+	if (sysflag)
 		return true;
 
+	// Versions prior to FB2.0 don't support a field longer than varchar(78).
+	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
+		message[78] = 0;
+		
 	isc_tr_handle local_trans =
 		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 

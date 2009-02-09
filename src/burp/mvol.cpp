@@ -1371,7 +1371,7 @@ bool MVOL_split_hdr_read(void)
 		(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE))
 	{
 		TEXT buffer[HDR_SPLIT_SIZE];
-		int cnt;
+		int cnt = 0;
 
 #ifdef WIN_NT
 		ReadFile(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE,

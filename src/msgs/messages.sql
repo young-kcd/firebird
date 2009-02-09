@@ -3032,5 +3032,9 @@ INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FL
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('USAGE_DUPSW', 'ISQL_main', 'isql.epp', NULL, 17, 145, NULL, 'switch "%s" or its equivalent used more than once', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('USAGE_DUPDB', 'ISQL_main', 'isql.epp', NULL, 17, 146, NULL, 'more than one database name: "%s", "%s"', NULL, NULL);
 INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES ('field_disappeared', 'EVL_assign_to', 'evl.cpp', NULL, 0, 545, NULL, 'Column has been unexpectedly deleted', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'get_exception', 'restore.epp', NULL, 12, 311, NULL, 'Attribute %ld was already processed for exception %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'get_exception', 'restore.epp', NULL, 12, 312, NULL, 'Skipping attribute %ld because the message already exists for exception %s', NULL, NULL);
+INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_CODE, NUMBER, FLAGS, TEXT, "ACTION", EXPLANATION) VALUES (NULL, 'get_exception', 'restore.epp', NULL, 12, 313, NULL, 'Trying to recover from unexpected attribute %ld due to wrong message length for exception %s', NULL, NULL);
+
 
 COMMIT WORK;
