@@ -359,7 +359,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 			}
 			else
-				status = FB_FAILURE;
+			{
+				status = (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST) ? FB_SUCCESS : FB_FAILURE;
+			}
 
 			service = OpenService(manager, remote_service_name.c_str(),
 								  SERVICE_ALL_ACCESS);
@@ -384,7 +386,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				}
 			}
 			else
-				status2 = FB_FAILURE;
+			{
+				status2 = (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST) ? FB_SUCCESS : FB_FAILURE;
+			}
 
 			if (status != FB_SUCCESS && status2 != FB_SUCCESS)
 				status = FB_FAILURE;
