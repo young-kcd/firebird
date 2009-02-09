@@ -1519,7 +1519,7 @@ static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
 
  **/
 USHORT DSQL_get_plan_info(thread_db* tdbb,
-							dsql_req* request,
+							const dsql_req* request,
 							SSHORT buffer_length,
 							SCHAR** out_buffer)
 {

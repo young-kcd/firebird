@@ -216,7 +216,7 @@ const char* TraceSQLStatementImpl::getPlan()
 		m_plan = &buff;
 
 		const int len = DSQL_get_plan_info(JRD_get_thread_data(),
-			const_cast<dsql_req*>(m_stmt), sizeof(buff), &m_plan);
+			m_stmt, sizeof(buff), &m_plan);
 		
 		if (len)
 			m_plan[len] = 0;
