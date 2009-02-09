@@ -2926,6 +2926,14 @@ static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		IndexJumpInfo jumpInfo;
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
 
+		// We going to rebuild jump nodes. In the end of this process we will either have 
+		// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset 
+		// by its definition is a good upper estimate for summary size of all existing 
+		// jump nodes data length's.
+		// After rebuild jump node next after removed one may have new length longer than 
+		// before rebuild but no longer than length of removed node. All other nodes didn't 
+		// change its lengths. Therefore jumpInfo.firstNodeOffset is valid upper estimate
+		// for summary size of all new jump nodes data length's too.
 		tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
 		UCHAR* const tempEnd = tempData + jumpInfo.firstNodeOffset;
 
