@@ -188,12 +188,12 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 	if (other.isEmpty())
 		return;
 
-	const RelationCounts* src = other.begin();
-	const RelationCounts* const end = other.end();
+	RelCounters::const_iterator src(other.begin());
+	const RelCounters::const_iterator end(other.end());
 
 	size_t pos;
 	rel_counts.find(src->rlc_relation_id, pos);
-	for (; src < end; src++)
+	for (; src != end; ++src)
 	{
 		const size_t cnt = rel_counts.getCount();
 
@@ -243,12 +243,16 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 	temp.clear();
 
 	// This loop assumes that base array is smaller than new one
-	bool base_found = (rel_counts.getCount() > 0);
-	RelationCounts *base_cnts = base_found ? rel_counts.begin() : NULL;
+	RelCounters::iterator base_cnts;
+	bool base_found = rel_counts.getCount() > 0;
+	if (base_found)
+	{
+		base_cnts = rel_counts.begin();
+	}
 
-	const RelationCounts* new_cnts = new_stat.rel_counts.begin();
-	const RelationCounts* const end = new_stat.rel_counts.end();
-	for (; new_cnts < end; new_cnts++)
+	RelCounters::const_iterator new_cnts = new_stat.rel_counts.begin();
+	const RelCounters::const_iterator end = new_stat.rel_counts.end();
+	for (; new_cnts != end; ++new_cnts)
 	{
 		if (base_found && base_cnts->rlc_relation_id == new_cnts->rlc_relation_id) 
 		{
@@ -271,8 +275,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 				temp.add(traceCounts);
 			}
 
-			base_cnts++;
-			base_found = (base_cnts < rel_counts.end());
+			++base_cnts;
+			base_found = (base_cnts != rel_counts.end());
 		}
 		else 
 		{

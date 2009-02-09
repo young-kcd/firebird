@@ -365,6 +365,291 @@ namespace Firebird
 		ObjectValue& add();	// Unusable when sorted
 	};
 
+	// Sorted pointers array - contains 2 arrays: simple for values (POD)
+	// and sorted for pointers to them. Effective for big sizeof(POD).
+	template <typename Value,
+		typename Storage = EmptyStorage<Value>,
+		typename Key = Value,
+		typename KeyOfValue = DefaultKeyValue<Value*>,
+		typename Cmp = ObjectComparator<const Key*> >
+	class PointersArray
+	{
+	private:
+		Array<Value, Storage> values;
+		SortedArray <Value*, InlineStorage<Value*, 8>, const Key*, KeyOfValue, Cmp> pointers;
+
+		void checkPointers(const Value* oldBegin)
+		{
+			Value* newBegin = values.begin();
+			if (newBegin != oldBegin)
+			{
+				for (Value** ptr = pointers.begin(); ptr < pointers.end(); ++ptr)
+				{
+					*ptr = newBegin + (*ptr - oldBegin);
+				}
+			}
+		}
+
+	public:
+		class const_iterator
+		{
+		private:
+			const Value* const* ptr;
+
+		public:
+			const_iterator() : ptr(NULL) { }
+			const_iterator(const const_iterator& it) : ptr(ptr) { }
+			explicit const_iterator(const PointersArray& a) : ptr(a.pointers.begin()) { }
+
+			const_iterator& operator++()
+			{
+				fb_assert(ptr);
+				ptr++;
+				return *this;
+			}
+
+			const_iterator operator++(int)
+			{
+				fb_assert(ptr);
+				const_iterator tmp = *this;
+				ptr++;
+				return tmp;
+			}
+
+			const_iterator& operator--()
+			{
+				fb_assert(ptr);
+				ptr--;
+				return *this;
+			}
+
+			const_iterator operator--(int)
+			{
+				fb_assert(ptr);
+				const_iterator tmp = *this;
+				ptr--;
+				return tmp;
+			}
+
+			const_iterator& operator+=(size_t v)
+			{
+				fb_assert(ptr);
+				ptr += v;
+				return *this;
+			}
+
+			const_iterator& operator-=(size_t v)
+			{
+				fb_assert(ptr);
+				ptr -= v;
+				return *this;
+			}
+
+			const Value* operator->()
+			{
+				fb_assert(ptr);
+				return *ptr;
+			}
+
+			const Value& operator*()
+			{
+				fb_assert(ptr && *ptr);
+				return **ptr;
+			}
+
+			bool operator==(const const_iterator& v) const
+			{
+				return ptr && ptr == v.ptr;
+			}
+
+			bool operator!=(const const_iterator& v) const
+			{
+				return !operator==(v);
+			}
+		};
+
+		class iterator
+		{
+		private:
+			Value** ptr;
+
+		public:
+			iterator() : ptr(NULL) { }
+			iterator(const iterator& it) : ptr(ptr) { }
+			explicit iterator(PointersArray& a) : ptr(a.pointers.begin()) { }
+
+			iterator& operator++()
+			{
+				fb_assert(ptr);
+				ptr++;
+				return *this;
+			}
+
+			iterator operator++(int)
+			{
+				fb_assert(ptr);
+				iterator tmp = *this;
+				ptr++;
+				return tmp;
+			}
+
+			iterator& operator--()
+			{
+				fb_assert(ptr);
+				ptr--;
+				return *this;
+			}
+
+			iterator operator--(int)
+			{
+				fb_assert(ptr);
+				iterator tmp = *this;
+				ptr--;
+				return tmp;
+			}
+
+			iterator& operator+=(size_t v)
+			{
+				fb_assert(ptr);
+				ptr += v;
+				return *this;
+			}
+
+			iterator& operator-=(size_t v)
+			{
+				fb_assert(ptr);
+				ptr -= v;
+				return *this;
+			}
+
+			Value* operator->()
+			{
+				fb_assert(ptr);
+				return *ptr;
+			}
+
+			Value& operator*()
+			{
+				fb_assert(ptr && *ptr);
+				return **ptr;
+			}
+
+			bool operator==(const iterator& v) const
+			{
+				return ptr && ptr == v.ptr;
+			}
+
+			bool operator!=(const iterator& v) const
+			{
+				return !operator==(v);
+			}
+		};
+
+	public:
+		size_t add(const Value& item)
+		{
+			const Value* oldBegin = values.begin();
+			values.add(item);
+			checkPointers(oldBegin);
+			return pointers.add(values.end() - 1);
+		}
+
+		const_iterator begin() const
+		{
+			return const_iterator(*this);
+		}
+
+		const_iterator end() const
+		{
+			const_iterator rc(*this);
+			rc += getCount();
+			return rc;
+		}
+
+		iterator begin()
+		{
+			return iterator(*this);
+		}
+
+		iterator end()
+		{
+			iterator rc(*this);
+			rc += getCount();
+			return rc;
+		}
+
+		const Value& operator[](size_t index) const
+		{
+  			return *getPointer(index);
+		}
+
+		const Value* getPointer(size_t index) const
+		{
+  			return pointers[index];
+		}
+
+		Value& operator[](size_t index)
+		{
+  			return *getPointer(index);
+		}
+
+		Value* getPointer(size_t index)
+		{
+  			return pointers[index];
+		}
+
+		explicit PointersArray(MemoryPool& p) : values(p), pointers(p) { }
+		PointersArray() : values(), pointers() { }
+		~PointersArray() { }
+
+		size_t getCount() const 
+		{
+			fb_assert(values.getCount() == pointers.getCount());
+			return values.getCount();
+		}
+		size_t getCapacity() const 
+		{
+			return values.getCapacity();
+		}
+
+		void clear()
+		{
+			pointers.clear();
+			values.clear();
+		}
+
+		PointersArray& operator=(const PointersArray& L)
+		{
+			values = L.values;
+			pointers = L.pointers;
+			checkPointers(L.values.begin());
+			return *this;
+		}
+
+		bool find(const Key& item, size_t& pos) const
+		{
+			return pointers.find(&item, pos);
+		}
+
+		bool exist(const Key& item) const
+		{
+			return pointers.exist(item);
+		}
+
+		bool isEmpty() const
+		{
+			return getCount() == 0;
+		}
+
+		void insert(size_t pos, const Value& item)
+		{
+			const Value* oldBegin = values.begin();
+			values.add(item);
+			checkPointers(oldBegin);
+			pointers.insert(pos, values.end() - 1);
+		}
+	};
+
 } // namespace Firebird
 
 #endif	// CLASSES_OBJECTS_ARRAY_H

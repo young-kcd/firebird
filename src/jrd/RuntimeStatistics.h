@@ -24,15 +24,18 @@
 #define JRD_RUNTIME_STATISTICS_H
 
 #include "../common/classes/alloc.h"
-#include "../common/classes/array.h"
+#include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/tree.h"
 #include "../jrd/ntrace.h"
 
 namespace Jrd {
 
-class Database;
+// hvlad: what to use for relation's counters - tree or sorted array ?
+// #define REL_COUNTS_TREE
+// #define REL_COUNTS_PTR
 
+class Database;
 
 // Performance counters for individual table 
 struct RelationCounts 
@@ -40,19 +43,27 @@ struct RelationCounts
 	SLONG rlc_relation_id;	// Relation ID 
 	SINT64 rlc_counter[DBB_max_rel_count];
 
+#ifdef REL_COUNTS_PTR
+	inline static const SLONG* generate(const void* sender, const RelationCounts* item)
+	{
+		return &item->rlc_relation_id;
+	}
+#else
 	inline static const SLONG& generate(const void* sender, const RelationCounts& item)
 	{
 		return item.rlc_relation_id;
 	}
+#endif	
 };
 
-// hvlad: what to use for relation's counters - tree or sorted array ?
-#define REL_COUNTS_TREE
-
-#ifdef REL_COUNTS_TREE
+#if defined(REL_COUNTS_TREE)
 typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelCounters;
+#elif defined(REL_COUNTS_PTR)
+typedef Firebird::PointersArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>, 
+	SLONG, RelationCounts> RelCounters;
 #else
-typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>, SLONG, RelationCounts> RelCounters;
+typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>, 
+	SLONG, RelationCounts> RelCounters;
 #endif
 
 typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
