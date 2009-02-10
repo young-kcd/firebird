@@ -1236,31 +1236,31 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 		*((SSHORT*) null.dsc_address) = (srcNull ? -1 : 0);
 
 		if (srcNull)
-		{
-			dst.setNull();
 			memset(dst.dsc_address, 0, dst.dsc_length);
-		}
-		else if (dst.isBlob())
+		else if (!dst.isNull())
 		{
-			dsc srcBlob;
-			srcBlob.clear();
-			ISC_QUAD srcBlobID;
-
-			if (src->isBlob())
+			if (dst.isBlob())
 			{
-				srcBlob.makeBlob(src->getBlobSubType(), src->getTextType(), &srcBlobID);
-				memmove(srcBlob.dsc_address, src->dsc_address, src->dsc_length);
+				dsc srcBlob;
+				srcBlob.clear();
+				ISC_QUAD srcBlobID;
+
+				if (src->isBlob())
+				{
+					srcBlob.makeBlob(src->getBlobSubType(), src->getTextType(), &srcBlobID);
+					memmove(srcBlob.dsc_address, src->dsc_address, src->dsc_length);
+				}
+				else
+				{
+					srcBlob.makeBlob(dst.getBlobSubType(), dst.getTextType(), &srcBlobID);
+					MOV_move(tdbb, src, &srcBlob);
+				}
+
+				putExtBlob(tdbb, srcBlob, dst);
 			}
 			else
-			{
-				srcBlob.makeBlob(dst.getBlobSubType(), dst.getTextType(), &srcBlobID);
-				MOV_move(tdbb, src, &srcBlob);
-			}
-
-			putExtBlob(tdbb, srcBlob, dst);
+				MOV_move(tdbb, src, &dst);
 		}
-		else
-			MOV_move(tdbb, src, &dst);
 	}
 }
 

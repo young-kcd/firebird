@@ -1549,6 +1549,8 @@ static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &
 		src.dsc_scale = xVar->sqlscale;
 		src.dsc_sub_type = xVar->sqlsubtype;
 		src.dsc_address = (UCHAR*) xVar->sqldata;
+		if ((xVar->sqltype & ~1) == SQL_NULL)
+			src.setNull();
 
 		offset += xVar->sqllen;
         const int type = xVar->sqltype & (~1);
@@ -1578,6 +1580,9 @@ static UCHAR sqlTypeToDscType(SSHORT sqlType)
 		return dtype_varying;
 		break;
 	case SQL_TEXT:
+		return dtype_text;
+		break;
+	case SQL_NULL:
 		return dtype_text;
 		break;
 	case SQL_DOUBLE:
