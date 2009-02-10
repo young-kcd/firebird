@@ -4387,7 +4387,9 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_num_buffers:
 			dpb_buffers = rdr.getInt();
+#ifndef SUPERSERVER
 			if (dpb_buffers < 10)
+#endif
 			{
 				ERR_post(Arg::Gds(isc_bad_dpb_content));
 			}
