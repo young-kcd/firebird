@@ -1,3 +1,9 @@
+2009-02-10 09:58  alexpeshkoff
+
+	* firebird2/src/burp/restore.epp (1.101.4.7):
+
+	Removed code, meaningless in 2.0
+
 2009-02-09 14:10  alexpeshkoff
 
 	* firebird2/src/burp/restore.epp (1.101.4.6):
