@@ -51,7 +51,7 @@ public:
 		if (!m_string_len || !string)
 		{
 			m_string = empty_string;
-			m_string_len = sizeof(empty_string);
+			m_string_len = 0;
 		}
 	}
 
