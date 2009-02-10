@@ -39,10 +39,15 @@ UserManagement::UserManagement(thread_db* tdbb)
 	char securityDatabaseName[MAXPATHLEN];
 	SecurityDatabase::getPath(securityDatabaseName);
 	ISC_STATUS_ARRAY status;
+	Attachment* att = tdbb->getAttachment();
 
 	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
-	dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
+	dpb.insertString(isc_dpb_trusted_auth, att->att_user->usr_user_name);
+	if (att->att_user->usr_flags & USR_trole)
+	{
+		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+	}
 
 	if (isc_attach_database(status, 0, securityDatabaseName, &database,
 							dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
