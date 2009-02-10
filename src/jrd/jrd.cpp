@@ -6479,9 +6479,9 @@ void JRD_compile(thread_db* tdbb,
 	{
 		fb_assert(request->req_blr.isEmpty());
 
-		// hvlad: if\when we implement request's cache in the feature and 
+		// hvlad: if\when we implement request's cache in the future and 
 		// CMP_compile2 will return us previously compiled request with
-		// non-empy req_blr, then we must replace assertion by the line below 
+		// non-empty req_blr, then we must replace assertion by the line below 
 		// if (!request->req_blr.isEmpty())
 
 		request->req_blr.insert(0, blr, blr_length);
