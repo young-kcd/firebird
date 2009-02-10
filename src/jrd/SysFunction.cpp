@@ -951,7 +951,6 @@ static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -972,7 +971,6 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1019,7 +1017,6 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd:
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1042,7 +1039,6 @@ static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1069,7 +1065,6 @@ static dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
@@ -1094,7 +1089,6 @@ static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	for (int i = 0; i < args->nod_count; ++i)
 	{
-		request->req_flags &= ~req_null;
 		const dsc* value = EVL_expr(tdbb, args->nod_arg[i]);
 		if (request->req_flags & req_null)	// return NULL if value is NULL
 			return NULL;
@@ -1141,12 +1135,10 @@ static dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	request->req_flags &= ~req_null;
 	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
@@ -1178,7 +1170,6 @@ static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1242,7 +1233,6 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1348,7 +1338,6 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* quantityDsc = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if quantityDsc is NULL
 		return NULL;
@@ -1550,7 +1539,6 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
 		return NULL;
 
-	request->req_flags &= ~req_null;
 	const dsc* value1Dsc = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if value1Dsc is NULL
 		return NULL;
@@ -1760,7 +1748,6 @@ static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1782,7 +1769,6 @@ static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1856,7 +1842,6 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1919,7 +1904,6 @@ static dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	dsc* str = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if str is NULL
 		return NULL;
@@ -1943,7 +1927,6 @@ static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -1971,7 +1954,6 @@ static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
@@ -2014,7 +1996,6 @@ static dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jr
 
 	for (int i = 0; i < args->nod_count; ++i)
 	{
-		request->req_flags &= ~req_null;
 		dsc* value = EVL_expr(tdbb, args->nod_arg[i]);
 		if (request->req_flags & req_null)	// return NULL if value is NULL
 			return NULL;
@@ -2052,7 +2033,6 @@ static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
@@ -2102,7 +2082,6 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -2287,7 +2266,6 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
@@ -2463,7 +2441,6 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
@@ -2582,7 +2559,6 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
@@ -2644,7 +2620,6 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	for (i = 0; i < 3; ++i)
 	{
-		request->req_flags &= ~req_null;
 		values[i] = EVL_expr(tdbb, args->nod_arg[i]);
 		if (request->req_flags & req_null)	// return NULL if values[i] is NULL
 			return NULL;
@@ -2790,7 +2765,6 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -2892,7 +2866,6 @@ static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -2946,7 +2919,6 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -2982,7 +2954,6 @@ static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -3009,7 +2980,6 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -3037,7 +3007,6 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
@@ -3125,7 +3094,6 @@ static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 
 	jrd_req* request = tdbb->getRequest();
 
-	request->req_flags &= ~req_null;
 	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
