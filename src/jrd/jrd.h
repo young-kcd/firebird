@@ -286,7 +286,6 @@ public:
 		att_security_classes(0),
 		att_flags(0),
 		att_charset(0),
-		att_lc_messages(0),
 		att_long_locks(0),
 		att_compatibility_table(0),
 		att_val_errors(0),
@@ -316,9 +315,6 @@ public:
 	RuntimeStatistics	att_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_charset;				// user's charset specified in dpb
-	// The following data member is set but never used, so the DPB to set the location of a
-	// customized firebird.msg file doesn't work; the only way is to use an env var.
-	Firebird::PathName	att_lc_messages;	// attachment's preference for message natural language
 	Lock*		att_long_locks;				// outstanding two phased locks
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;

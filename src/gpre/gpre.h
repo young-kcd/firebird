@@ -837,8 +837,6 @@ struct gpre_dbb
 	int dbb_allocation;
 	int dbb_pagesize;
 	int dbb_buffercount;
-	int dbb_buffersize;
-	int dbb_users;
 	ULONG dbb_length;			/* Length of database in pages, if known */
 	gpre_file* dbb_logfiles;
 #ifdef SCROLLABLE_CURSORS

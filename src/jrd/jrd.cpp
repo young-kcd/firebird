@@ -420,7 +420,6 @@ public:
 	string	dpb_role_name;
 	string	dpb_journal;
 	string	dpb_key;
-	PathName	dpb_lc_messages;
 	string	dpb_lc_ctype;
 	PathName	dpb_working_directory;
 	string	dpb_set_db_charset;
@@ -897,10 +896,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	dbb->dbb_sys_trans->tra_attachment = attachment;
 
 	attachment->att_charset = options.dpb_interp;
-
-	if (options.dpb_lc_messages.hasData()) {
-		attachment->att_lc_messages = options.dpb_lc_messages;
-	}
 
 	if (options.dpb_no_garbage)
 		attachment->att_flags |= ATT_no_cleanup;
@@ -1904,10 +1899,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	attachment->att_charset = options.dpb_interp;
-
-	if (options.dpb_lc_messages.hasData()) {
-		attachment->att_lc_messages = options.dpb_lc_messages;
-	}
 
 	if (!options.dpb_page_size) {
 		options.dpb_page_size = DEFAULT_PAGE_SIZE;
@@ -4541,10 +4532,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_interp = (SSHORT) rdr.getInt();
 			break;
 
-		case isc_dpb_lc_messages:
-			rdr.getPath(dpb_lc_messages);
-			break;
-
 		case isc_dpb_lc_ctype:
 			rdr.getString(dpb_lc_ctype);
 			break;
@@ -5103,7 +5090,6 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_database(dbb),
 	att_lock_owner_id(Database::getLockOwnerId()),
 	att_stats(*pool),
-	att_lc_messages(*pool),
 	att_working_directory(*pool),
 	att_filename(*pool),
 	att_timestamp(TimeStamp::getCurrentTimeStamp()),

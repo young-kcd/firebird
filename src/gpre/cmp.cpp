@@ -1223,18 +1223,6 @@ static void cmp_ready( gpre_req* request)
 		request->add_long(db->dbb_buffercount);
 	}
 
-	if (db->dbb_buffersize) {
-		request->add_byte(isc_dpb_buffer_length);
-		request->add_byte(4);
-		request->add_long(db->dbb_buffersize);
-	}
-
-	if (db->dbb_users) {
-		request->add_byte(isc_dpb_number_of_users);
-		request->add_byte(4);
-		request->add_long(db->dbb_users);
-	}
-
 	const TEXT* p;
 	SSHORT l;
 
