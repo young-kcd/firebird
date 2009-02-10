@@ -608,7 +608,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 	desc.dsc_ttype() = ttype_metadata;
 	desc.dsc_address = (UCHAR *) object_name;
 	desc.dsc_length = strlen(object_name);
-	DFW_post_system(transaction, dfw_scan_relation, &desc, 0);
+	DFW_post_work(transaction, dfw_scan_relation, &desc, 0);
 }
 #endif // NOT_USED_OR_REPLACED
 
