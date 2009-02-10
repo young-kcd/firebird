@@ -104,8 +104,8 @@ private:
 		tagEnd
 	};
 
-	void putItem(ITEM tag, size_t len, const void* data);
-	bool getItemLength(ITEM& tag, size_t& len);
+	void putItem(ITEM tag, ULONG len, const void* data);
+	bool getItemLength(ITEM& tag, ULONG& len);
 
 	SH_MEM_T m_handle;
 	ShMemHeader* m_base;

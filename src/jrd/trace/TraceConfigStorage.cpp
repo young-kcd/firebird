@@ -57,6 +57,25 @@ using namespace Firebird;
 
 namespace Jrd {
 
+	
+void checkFileError(const char *filename, const char* operation, ISC_STATUS iscError)
+{
+	if (errno == 0)
+		return;
+
+#ifdef WIN_NT
+	// we can't use SYS_ERR(errno) on Windows as errno codes is not
+	// the same as GetLastError() codes
+	const char *strErr = strerror(errno);
+
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
+		Arg::Gds(iscError) << Arg::Str(strErr));
+#else
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
+		Arg::Gds(iscError) << SYS_ERR(errno));
+#endif
+}
+
 ConfigStorage::ConfigStorage()
 {
 	m_base = NULL;
@@ -161,61 +180,65 @@ void ConfigStorage::checkFile()
 	}
 
 	if (m_cfg_file < 0) {
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(cfg_file_name) <<
-				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+		checkFileError(cfg_file_name, "open", isc_io_open_err);
 	}
 
 	// put default (audit) trace file contents into storage
 	if (m_base->change_number == 0)
 	{
-		PathName configFileName(Config::getAuditTraceConfigFile());
+		FILE* cfgFile = NULL;
 
-		if (configFileName.empty())
-			return;
-
-		if (PathUtils::isRelative(configFileName)) {
-			configFileName.insert(0, Config::getRootDirectory());
-		}
-
-		FILE* cfgFile = fopen(configFileName.c_str(), "rb");
-		if (!cfgFile) 
+		try 
 		{
-			Arg::Gds temp(isc_io_error); 
-			temp << Arg::Str("fopen") << Arg::Str(configFileName.c_str());
-			temp << Arg::Gds(isc_io_open_err) << SYS_ERR(errno);
+			PathName configFileName(Config::getAuditTraceConfigFile());
 
-			iscLogStatus("Cannot open audit configuration file", temp.value());
-			return;
-		}
+			if (configFileName.empty())
+				return;
 
-		TraceSession session(*getDefaultMemoryPool());
-
-		fseek(cfgFile, 0, SEEK_END);
-		const long len = ftell(cfgFile);
-		if (len)
-		{
-			fseek(cfgFile, 0, SEEK_SET);
-			char* p = session.ses_config.getBuffer(len + 1);
-			if (fread(p, 1, len, cfgFile) != size_t(len))
-			{
-				Arg::Gds temp(isc_io_error); 
-				temp << Arg::Str("fopen") << Arg::Str(configFileName.c_str());
-				temp << Arg::Gds(isc_io_open_err) << SYS_ERR(errno);
-
-				iscLogStatus("Cannot read audit configuration file", temp.value());
+			if (PathUtils::isRelative(configFileName)) {
+				configFileName.insert(0, Config::getRootDirectory());
 			}
-			p[len] = 0;
-		}
-		else {
-			gds__log("Audit configuration file is empty");
-		}
-		fclose(cfgFile);
 
-		session.ses_user = SYSDBA_USER_NAME;
-		session.ses_name = "Firebird Audit"; 
-		session.ses_flags = trs_admin | trs_system;
+			cfgFile = fopen(configFileName.c_str(), "rb");
+			if (!cfgFile) {
+				checkFileError(configFileName.c_str(), "fopen", isc_io_open_err);
+			}
 
-		addSession(session);
+			TraceSession session(*getDefaultMemoryPool());
+
+			fseek(cfgFile, 0, SEEK_END);
+			const long len = ftell(cfgFile);
+			if (len)
+			{
+				fseek(cfgFile, 0, SEEK_SET);
+				char* p = session.ses_config.getBuffer(len + 1);
+
+				if (fread(p, 1, len, cfgFile) != size_t(len)) {
+					checkFileError(configFileName.c_str(), "fread", isc_io_read_err);
+				}
+				p[len] = 0;
+			}
+			else {
+				gds__log("Audit configuration file \"%s\" is empty", configFileName.c_str());
+			}
+
+			session.ses_user = SYSDBA_USER_NAME;
+			session.ses_name = "Firebird Audit"; 
+			session.ses_flags = trs_admin | trs_system;
+
+			addSession(session);
+
+		} 
+		catch(const Exception& ex)
+		{
+			ISC_STATUS_ARRAY temp;
+			ex.stuff_exception(temp);
+			iscLogStatus("Cannot open audit configuration file", temp);
+		}
+
+		if (cfgFile) {
+			fclose(cfgFile);
+		}
 	}
 }
 
@@ -275,7 +298,7 @@ void ConfigStorage::addSession(TraceSession& session)
 bool ConfigStorage::getNextSession(TraceSession& session)
 {
 	ITEM tag = tagID;
-	size_t len;
+	ULONG len;
 	session.clear();
 
 	while (true)
@@ -336,17 +359,15 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 				fb_assert(false);
 		}
 
-		bool err;
-		if (p)
-			err = (::read(m_cfg_file, p, len) != len);
-		else
-			err = (lseek(m_cfg_file, len, SEEK_CUR) < 0);
-
-		if (err) 
+		if (p) 
 		{
-			const char* fn = m_base->cfg_file_name;
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
-				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
+			if (::read(m_cfg_file, p, len) != len) 
+				checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
+		}
+		else 
+		{
+			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
+				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
 
@@ -356,7 +377,7 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 void ConfigStorage::removeSession(ULONG id)
 {
 	ITEM tag = tagID;
-	size_t len;
+	ULONG len;
 
 	restart();
 	while (true)
@@ -369,6 +390,7 @@ void ConfigStorage::removeSession(ULONG id)
 		{
 			ULONG currID;
 			fb_assert(len == sizeof(currID));
+
 			err = (::read(m_cfg_file, &currID, len) != len);
 			if (!err && currID == id)
 			{
@@ -379,34 +401,30 @@ void ConfigStorage::removeSession(ULONG id)
 				// warning C4146: unary minus operator applied to unsigned type, result still unsigned
 				// but we need a negative offset here.
 				const long local_len = len;
-				lseek(m_cfg_file, -local_len, SEEK_CUR);
-				write(m_cfg_file, &currID, len);
+				if (lseek(m_cfg_file, -local_len, SEEK_CUR) < 0)
+					checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
+
+				if (write(m_cfg_file, &currID, len) != len)
+					checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
+
 				break;
 			}
 		}
 		else
 		{
-			err = (lseek(m_cfg_file, len, SEEK_CUR) < 0);
-		}
-
-		if (err)
-		{
-			const char* fn = m_base->cfg_file_name;
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fn) <<
-				Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
+			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
+				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
 }
 
+
 void ConfigStorage::restart()
 {
 	checkDirty();
-	if (lseek(m_cfg_file, 0, SEEK_SET) < 0)
-	{
-		const char* fn = m_base->cfg_file_name;
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
-			Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
-	}
+
+	if (lseek(m_cfg_file, 0, SEEK_SET) < 0) 
+		checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 }
 
 
@@ -415,7 +433,7 @@ void ConfigStorage::updateSession(Firebird::TraceSession& session)
 	restart();
 
 	ITEM tag;
-	size_t len;
+	ULONG len;
 	ULONG currID = 0;
 
 	while (true)
@@ -448,31 +466,40 @@ void ConfigStorage::updateSession(Firebird::TraceSession& session)
 		if (p) 
 		{
 			setDirty();
-			write(m_cfg_file, p, len);
+			if (write(m_cfg_file, p, len) != len)
+				checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 		}
 		else if (len)
 		{
-			lseek(m_cfg_file, len, SEEK_CUR);
+			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
+				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
 }
 
 
-void ConfigStorage::putItem(ITEM tag, size_t len, const void* data)
+void ConfigStorage::putItem(ITEM tag, ULONG len, const void* data)
 {
 	const char tag_data = (char) tag;
-	write(m_cfg_file, &tag_data, sizeof(tag_data));
+	ULONG to_write = sizeof(tag_data);
+	if (write(m_cfg_file, &tag_data, to_write) != to_write)
+		checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 
 	if (tag == tagEnd)
 		return;
 
-	write(m_cfg_file, &len, sizeof(len));
-	if (len) {
-		write(m_cfg_file, data, len);
+	to_write = sizeof(len);
+	if (write(m_cfg_file, &len, to_write) != to_write)
+		checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
+
+	if (len) 
+	{
+		if (write(m_cfg_file, data, len) != len)
+			checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 	}
 }
 
-bool ConfigStorage::getItemLength(ITEM& tag, size_t& len)
+bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 {
 	char data;
 	const int cnt_read = read(m_cfg_file, &data, sizeof(data));
@@ -481,14 +508,17 @@ bool ConfigStorage::getItemLength(ITEM& tag, size_t& len)
 		return false;
 
 	if (cnt_read < 0)
-		system_call_failed::raise("read", errno);
+		checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
 
 	tag = (ITEM) data;
 
 	if (tag == tagEnd)
 		len = 0;
 	else
-		read(m_cfg_file, &len, sizeof(len));
+	{
+		if (read(m_cfg_file, &len, sizeof(ULONG)) != sizeof(ULONG))
+			checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
+	}
 
 	return true;
 }
