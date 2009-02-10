@@ -1,3 +1,99 @@
+2009-02-10 17:29  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.63):
+
+	Remove not needed lines
+
+2009-02-10 17:16  hvlad
+
+	* firebird2/src/jrd/extds/IscDS.cpp (1.21):
+
+	Misc
+
+2009-02-10 17:11  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.31):
+
+	Take into account req_null as Adriano suggests
+
+2009-02-10 16:45  alexpeshkoff
+
+	* firebird2/src/jrd/UserManagement.cpp (1.7):
+
+	Pass trusted role to security database connection
+
+2009-02-10 15:33  asfernandes
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.30), IscDS.cpp (1.20):
+
+	Fix SQL_NULL problems with EXEC. STMT.
+
+2009-02-10 15:20  alexpeshkoff
+
+	* firebird2/src/: gpre/cmd.cpp (1.53), gpre/cmp.cpp (1.45),
+	gpre/gpre.h (1.102), jrd/jrd.cpp (1.525), jrd/jrd.h (1.262):
+
+	Cleanup
+
+2009-02-10 14:32  robocop
+
+	* firebird2/src/jrd/functions.cpp (1.44):
+
+	- Optimize the case when we reached the max number of context vars
+	(not a great concern).	- Fix Vlad's code where he was only tracing
+	attachment level context vars (and leaving apart txn context vars).
+
+2009-02-10 14:30  robocop
+
+	* firebird2/src/jrd/fun.epp (1.117):
+
+	Totally misc.
+
+2009-02-10 12:33  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.524):
+
+	Disabled use of isc_dpb_num_buffers on SS to avoid unpredictable
+	shared cache behavior
+
+2009-02-10 12:32  hvlad
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.13),
+	TraceConfigStorage.h (1.7):
+
+	Lets handle file IO errors.  Don't use HW dependent size_t in
+	shared file records.
+
+2009-02-10 10:30  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.523):
+
+	Misc.
+
+2009-02-10 10:01  hvlad
+
+	* firebird2/src/jrd/trace/TraceDSQLHelpers.h (1.6):
+
+	Correction by Adriano
+
+2009-02-10 09:59  hvlad
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.23):
+
+	Misc
+
+2009-02-10 09:56  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.522):
+
+	Add "paranoid check" suggested by Claudio
+
+2009-02-10 05:38  dimitr
+
+	* firebird2/src/jrd/grant.epp (1.75):
+
+	Misc.
+
 2009-02-09 16:25  hvlad
 
 	* firebird2/src/: dsql/dsql.cpp (1.275), dsql/dsql_proto.h (1.24),
