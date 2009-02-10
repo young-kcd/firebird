@@ -1220,6 +1220,8 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 	jrd_nod** jrdVar = params;
 	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
 
+	const jrd_req *request = tdbb->getRequest();
+
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
 		dsc *src = NULL;
@@ -1230,13 +1232,17 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 		{
 			src = EVL_expr(tdbb, *jrdVar);
 			paramDescs.put(*jrdVar, src);
+
+			if (src && (request->req_flags & req_null))
+				src->setNull();
 		}
 
 		const bool srcNull = !src || src->isNull();
 		*((SSHORT*) null.dsc_address) = (srcNull ? -1 : 0);
 
-		if (srcNull)
+		if (srcNull) {
 			memset(dst.dsc_address, 0, dst.dsc_length);
+		}
 		else if (!dst.isNull())
 		{
 			if (dst.isBlob())
