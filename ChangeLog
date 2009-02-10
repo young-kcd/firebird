@@ -1,3 +1,9 @@
+2009-02-10 11:31  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.67.2.12):
+
+	Backport Vlad's fix (since it's trivial to do).
+
 2009-01-21 11:06  robocop
 
 	* firebird2/src/extlib/fbudf/fbudf.cpp (1.7.2.4):
