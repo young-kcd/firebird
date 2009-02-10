@@ -2920,7 +2920,7 @@ static void service_get(SVC		service,
 		elapsed_time = end_time - start_time;
 #endif
 		if ((timeout) && (elapsed_time >= timeout)) {
-			service->svc_flags &= SVC_timeout;
+			service->svc_flags |= SVC_timeout;
 			return;
 		}
 
