@@ -346,17 +346,20 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	if (!value_vary) {
 		result = context_vars->remove(name_str);
 	}
-	else 
+	else if (context_vars->count() == MAX_CONTEXT_VARS)
+	{
+		string* rc = context_vars->get(name_str);
+		if (rc)
+		{
+			rc->assign(value_vary->vary_string, value_vary->vary_length);
+			result = true;
+		}
+		else
+			ERR_post(Arg::Gds(isc_ctx_too_big)); // "Too many context variables"
+	}
+	else
 	{
 		result = context_vars->put(name_str, Firebird::string(value_vary->vary_string, value_vary->vary_length));
-		
-		if (context_vars->count() > MAX_CONTEXT_VARS) 
-		{
-			context_vars->remove(name_str);
-
-			// "Too many context variables"
-			ERR_post(Arg::Gds(isc_ctx_too_big));
-		}
 	}
 
 	if (att->att_trace_manager->needs().event_set_context)
@@ -366,7 +369,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		const Firebird::string* value_str = NULL;
 		if (value_vary)
-			value_str = att->att_context_vars.get(name_str);
+			value_str = context_vars->get(name_str);
 
 		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(),
 			value_str ? value_str->c_str() : NULL);
