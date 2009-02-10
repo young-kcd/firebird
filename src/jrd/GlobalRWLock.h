@@ -26,6 +26,9 @@
  *
  */
 
+#ifndef GLOBAL_RW_LOCK
+#define GLOBAL_RW_LOCK
+
 #include "../common/classes/alloc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
@@ -170,3 +173,5 @@ private:
 };
 
 }
+
+#endif // GLOBAL_RW_LOCK
