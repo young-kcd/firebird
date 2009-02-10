@@ -2876,10 +2876,6 @@ bool get_exception(void)
 				break;
 			}
 		}
-		// Versions prior to FB2.0 don't support a field longer than varchar(78).
-		// Versions prior to FB2.5 use a field length of 1021, not 1023.
-		// if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)	(always restore in ODS11 - AP)
-		//	X.RDB$MESSAGE[78] = 0;
 	END_STORE;
 	ON_ERROR
 		general_on_error ();
@@ -5838,12 +5834,7 @@ bool get_trigger_message()
 	if (sysflag)
 		return true;
 
-	// Versions prior to FB2.0 don't support a field longer than varchar(78).
-	//if (tdgbl->RESTORE_ods < DB_VERSION_DDL11)
-	//	message[78] = 0;
-		
-	isc_tr_handle local_trans =
-		tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+	isc_tr_handle local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
 
 	STORE (TRANSACTION_HANDLE local_trans
 			REQUEST_HANDLE tdgbl->handles_get_trigger_message_req_handle2)
