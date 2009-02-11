@@ -1086,7 +1086,7 @@ MAKE_SRC_DIR=builds/posix
 dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
-  [LINUX|GENTOOFREEBSD|HPUX])
+  [LINUX|GENTOOFREEBSD|HPUX|AIX])
     AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
@@ -1159,6 +1159,29 @@ case "$PLATFORM" in
     [chmod a+x gen/install/scripts/*.sh gen/install/*.sh 2>/dev/null])
     ;;
 
+  AIX)
+    AIX_INSTALL_SRC_DIR=builds/install/arch-specific/aix/${FIREBIRD_ARCH_TYPE}
+    AC_CONFIG_FILES([
+    gen/install/scripts/rpmheader.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmheader.txt.in
+    gen/install/scripts/rpmfiles.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmfiles.txt.in
+    gen/install/makeInstallImage.aix.sh:${AIX_INSTALL_SRC_DIR}/makeInstallImage.sh.in
+    gen/firebird/bin/preinstall.aix.sh:builds/install/arch-specific/aix/misc/preinstall.sh.in
+    gen/firebird/bin/tarinstall.aix.sh:builds/install/arch-specific/aix/misc/tarinstall.sh.in
+    gen/firebird/bin/tarmaininstall.aix.sh:builds/install/arch-specific/aix/misc/tarmaininstall.sh.in
+    gen/firebird/bin/taruninstall.aix.sh:builds/install/arch-specific/aix/misc/taruninstall.sh.in
+    gen/firebird/bin/tarmainuninstall.aix.sh:builds/install/arch-specific/aix/misc/tarmainuninstall.sh.in
+    gen/firebird/bin/postinstall.aix.sh:builds/install/arch-specific/aix/misc/postinstall.sh.in
+    gen/firebird/bin/preuninstall.aix.sh:builds/install/arch-specific/aix/misc/preuninstall.sh.in
+    gen/firebird/bin/postuninstall.aix.sh:builds/install/arch-specific/aix/misc/postuninstall.sh.in
+    gen/install/misc/firebird.init.d.aix:builds/install/arch-specific/aix/misc/firebird.init.d.aix.in
+    gen/install/misc/rc.config.firebird.aix:builds/install/arch-specific/aix/misc/rc.config.firebird.aix.in
+    gen/firebird/bin/changedbapassword.aix.sh:builds/install/misc/changeDBAPassword.sh.in
+    gen/firebird/bin/changemulticonnectmode.aix.sh:builds/install/misc/changeMultiConnectMode.sh.in
+    gen/firebird/bin/changegdslibrarycompatiblelink.aix.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
+    gen/firebird/bin/createaliasdb.aix.sh:builds/install/misc/createAliasDB.sh.in
+    gen/firebird/bin/aixLibrary.sh:builds/install/arch-specific/aix/misc/aixLibrary.sh.in], 
+    [chmod a+x gen/install/scripts/*.sh gen/install/*.sh 2>/dev/null])
+    ;;
   FREEBSD)
     AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in]
       ,[chmod a+x gen/install/install.sh 2>/dev/null])
