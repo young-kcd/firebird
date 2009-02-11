@@ -58,7 +58,7 @@ using namespace Firebird;
 namespace Jrd {
 
 	
-void checkFileError(const char *filename, const char* operation, ISC_STATUS iscError)
+void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
 	if (errno == 0)
 		return;
@@ -66,7 +66,7 @@ void checkFileError(const char *filename, const char* operation, ISC_STATUS iscE
 #ifdef WIN_NT
 	// we can't use SYS_ERR(errno) on Windows as errno codes is not
 	// the same as GetLastError() codes
-	const char *strErr = strerror(errno);
+	const char* strErr = strerror(errno);
 
 	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(operation) << Arg::Str(filename) <<
 		Arg::Gds(iscError) << Arg::Str(strErr));

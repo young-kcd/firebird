@@ -376,7 +376,7 @@ namespace Firebird
 	{
 	private:
 		Array<Value, Storage> values;
-		SortedArray <Value*, InlineStorage<Value*, 8>, const Key*, KeyOfValue, Cmp> pointers;
+		SortedArray<Value*, InlineStorage<Value*, 8>, const Key*, KeyOfValue, Cmp> pointers;
 
 		void checkPointers(const Value* oldBegin)
 		{
@@ -607,6 +607,7 @@ namespace Firebird
 			fb_assert(values.getCount() == pointers.getCount());
 			return values.getCount();
 		}
+
 		size_t getCapacity() const 
 		{
 			return values.getCapacity();
@@ -618,11 +619,11 @@ namespace Firebird
 			values.clear();
 		}
 
-		PointersArray& operator=(const PointersArray& L)
+		PointersArray& operator=(const PointersArray& o)
 		{
-			values = L.values;
-			pointers = L.pointers;
-			checkPointers(L.values.begin());
+			values = o.values;
+			pointers = o.pointers;
+			checkPointers(o.values.begin());
 			return *this;
 		}
 

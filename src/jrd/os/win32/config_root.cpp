@@ -74,7 +74,7 @@ bool getBinFromHInstance(PathName& root)
 		return false;
 	}
 
-	char *filename = root.getBuffer(MAX_PATH);
+	char* filename = root.getBuffer(MAX_PATH);
 	GetModuleFileName(hDllInst, filename, MAX_PATH);
 
 	root.recalculate_length();

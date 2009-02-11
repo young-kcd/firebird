@@ -1220,13 +1220,13 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 	jrd_nod** jrdVar = params;
 	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
 
-	const jrd_req *request = tdbb->getRequest();
+	const jrd_req* request = tdbb->getRequest();
 
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
-		dsc *src = NULL;
-		dsc &dst = m_inDescs[i * 2];
-		dsc &null = m_inDescs[i * 2 + 1];
+		dsc* src = NULL;
+		dsc& dst = m_inDescs[i * 2];
+		dsc& null = m_inDescs[i * 2 + 1];
 
 		if (!paramDescs.get(*jrdVar, src))
 		{
