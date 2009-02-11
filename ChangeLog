@@ -1,3 +1,101 @@
+2009-02-11 16:24  hvlad
+
+	* firebird2/src/jrd/trace/: TraceLog.cpp (1.11), TraceLog.h (1.5),
+	TraceObjects.cpp (1.10), TraceService.cpp (1.9):
+
+	Suspend  trace session when log is full despite of log reader
+	[in]activity.
+
+2009-02-11 16:24  asfernandes
+
+	* firebird2/src/jrd/extds/IscDS.cpp (1.22):
+
+	Misc
+
+2009-02-11 16:21  hvlad
+
+	* firebird2/src/jrd/trace/: TraceManager.cpp (1.8), TraceManager.h
+	(1.4):
+
+	Refactoring. Make getStorage static method.
+
+2009-02-11 16:20  hvlad
+
+	* firebird2/src/jrd/trace/: TraceDSQLHelpers.h (1.7),
+	TraceJrdHelpers.h (1.4):
+
+	Avod assertion
+
+2009-02-11 16:19  hvlad
+
+	* firebird2/src/jrd/trace/TraceConfigStorage.cpp (1.16):
+
+	Misc
+
+2009-02-11 15:23  asfernandes
+
+	* firebird2/src/dsql/sqlda_pub.h (1.10):
+
+	Change SQL_NULL value
+
+2009-02-11 15:02  hvlad
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.12):
+
+	Misc
+
+2009-02-11 12:37  hvlad
+
+	* firebird2/src/jrd/RuntimeStatistics.cpp (1.15):
+
+	Simplification
+
+2009-02-11 12:36  hvlad
+
+	* firebird2/src/: jrd/ntrace.h (1.9),
+	jrd/trace/TraceConfigStorage.cpp (1.15), jrd/trace/TraceObjects.cpp
+	(1.9), jrd/trace/TraceObjects.h (1.4),
+	utilities/ntrace/TracePluginImpl.cpp (1.11):
+
+	Pass Firebird's root directory to the trace plugin with
+	initialization info.  Allow to use relative and/or empty filenames
+	as audit log file.  Ensure root directory ends with separator when
+	it is used.
+
+2009-02-11 11:29  alexpeshkoff
+
+	* firebird2/configure.in (1.315):
+
+	AIX port
+
+2009-02-11 10:51  alexpeshkoff
+
+	* firebird2/builds/posix/: fbtrace.exp (1.1), prefix.aix_powerpc
+	(1.7):
+
+	AIX port - make fbtrace build on AIX
+
+2009-02-11 09:44  dimitr
+
+	* firebird2/doc/WhatsNew (1.161):
+
+	Getting closer to Beta.
+
+2009-02-11 09:26  dimitr
+
+	* firebird2/src/lock/: lock.cpp (1.180), lock_proto.h (1.26):
+
+	Minor optimizations.
+
+2009-02-11 02:32  asfernandes
+
+	* firebird2/src/: common/classes/objects_array.h (1.26),
+	jrd/btr.cpp (1.233), jrd/extds/ExtDS.cpp (1.32),
+	jrd/os/win32/config_root.cpp (1.32),
+	jrd/trace/TraceConfigStorage.cpp (1.14):
+
+	Misc
+
 2009-02-10 17:29  asfernandes
 
 	* firebird2/src/jrd/SysFunction.cpp (1.63):
