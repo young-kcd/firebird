@@ -41,7 +41,7 @@
 using namespace Firebird;
 using namespace Jrd;
 
-static const char* DEFAULT_LOG_NAME = "default.trace.log";
+static const char* DEFAULT_LOG_NAME = "default_trace.log";
 
 TracePlugin* TracePluginImpl::createSkeletalPlugin()
 {
