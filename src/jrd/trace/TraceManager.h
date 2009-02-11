@@ -56,8 +56,8 @@ public:
 	/* Finalize plugins. Called when database is closed by the engine */
 	~TraceManager();
 
-	ConfigStorage* getStorage()
-	{ return storage; }
+	static ConfigStorage* getStorage()
+	{ return storageInstance.getStorage(); }
 
 	void event_attach(TraceConnection* connection, bool create_db, 
 		ntrace_result_t att_result);
@@ -114,6 +114,7 @@ public:
 		bool event_transaction_end;
 		bool event_set_context;
 		bool event_proc_execute;
+		bool event_trigger_execute;
 		bool event_dsql_prepare;
 		bool event_dsql_free;
 		bool event_dsql_execute;
@@ -124,13 +125,11 @@ public:
 		bool event_service_start;
 		bool event_service_query;
 		bool event_service_detach;
-		bool event_auth_factor;
-		bool event_trigger_execute;
 	};
 
 	inline const NotificationNeeds& needs() 
 	{
-		if (change_number != storage->getChangeNumber())
+		if (changeNumber != getStorage()->getChangeNumber())
 			update_sessions();
 		return trace_needs;
 	}
@@ -184,6 +183,7 @@ private:
 	Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, 
 		ULONG, SessionInfo> trace_sessions;
 
+	void init();
 	void load_modules();
 	void update_sessions();
 	void update_session(const Firebird::TraceSession& session);
@@ -204,8 +204,7 @@ private:
 
 	static StorageInstance storageInstance;
 
-	ULONG change_number;
-	ConfigStorage* storage;
+	ULONG changeNumber;
 };
 
 }

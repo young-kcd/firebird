@@ -85,10 +85,7 @@ TraceManager::TraceManager(Attachment* in_att) :
 	filename(NULL),
 	trace_sessions(*in_att->att_pool)
 {
-	change_number = 0;
-
-	storage = storageInstance.getStorage();
-	load_modules();
+	init();
 }
 
 TraceManager::TraceManager(Service* in_svc) : 
@@ -97,10 +94,7 @@ TraceManager::TraceManager(Service* in_svc) :
 	filename(NULL),
 	trace_sessions(in_svc->getPool())
 {
-	change_number = 0;
-
-	storage = storageInstance.getStorage();
-	load_modules();
+	init();
 }
 
 TraceManager::TraceManager(const char* in_filename) : 
@@ -109,10 +103,7 @@ TraceManager::TraceManager(const char* in_filename) :
 	filename(in_filename),
 	trace_sessions(*getDefaultMemoryPool())
 {
-	change_number = 0;
-
-	storage = storageInstance.getStorage();
-	load_modules();
+	init();
 }
 
 TraceManager::~TraceManager() 
@@ -123,6 +114,14 @@ TraceManager::~TraceManager()
 		check_result(NULL, info->module_info->module, "tpl_shutdown", 
 			info->plugin->tpl_shutdown(info->plugin));
 	}
+}
+
+void TraceManager::init()
+{
+	// ensure storage is initialized
+	ConfigStorage *storage = getStorage();
+	load_modules();
+	changeNumber = 0;
 }
 
 void TraceManager::load_modules() 
@@ -173,6 +172,8 @@ void TraceManager::update_sessions()
 	SortedArray<ULONG> liveSessions(*getDefaultMemoryPool());
 
 	{	// scope
+		ConfigStorage* storage = getStorage();
+
 		StorageGuard guard(storage);
 		storage->restart();
 
@@ -186,7 +187,7 @@ void TraceManager::update_sessions()
 			}
 		}
 
-		change_number = storage->getChangeNumber();
+		changeNumber = storage->getChangeNumber();
 	}
 
 	// remove sessions not present in storage
