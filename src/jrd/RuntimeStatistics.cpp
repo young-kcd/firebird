@@ -243,12 +243,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 	temp.clear();
 
 	// This loop assumes that base array is smaller than new one
-	RelCounters::iterator base_cnts;
-	bool base_found = rel_counts.getCount() > 0;
-	if (base_found)
-	{
-		base_cnts = rel_counts.begin();
-	}
+	RelCounters::iterator base_cnts = rel_counts.begin();
+	bool base_found = (base_cnts != rel_counts.end());
 
 	RelCounters::const_iterator new_cnts = new_stat.rel_counts.begin();
 	const RelCounters::const_iterator end = new_stat.rel_counts.end();
