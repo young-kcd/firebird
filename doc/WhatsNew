@@ -2,6 +2,27 @@
   * v2.5 Beta 1
   *************
 
+    * Bugfix CORE-2311
+        Possible memory leak in WITH RECURSIVE query
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2308
+        SIMILAR TO produces random results with [x-y] expressions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2307
+        Incomplete API information values
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2300
+        Unexpected error "arithmetic exception, numeric overflow, or string truncation"
+        while evaluating SUBSTRING the second time
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2293
         Wrong dependent object type (RELATION) in RDB$DEPEDENCIES for views
       Contributor(s):
@@ -16,6 +37,11 @@
         Wrong (primary) constraint name is reported for the foreign key violation during FK creation
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2285
+        Database with many grants gets corrupted after backup/restore
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-2278
         Incorrect conversion from/to CP943C in RISC machines
@@ -577,6 +603,11 @@
         Procedure sp_register_character_set can generate the negative RDB$CHARACTER_SET_ID
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1923
+        "instsvc remove" returns 1 when succefully executed
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-1914
         Problem creating table leave the database in inconsistent state
