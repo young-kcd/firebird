@@ -89,7 +89,7 @@ ConfigStorage::ConfigStorage()
 	ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
-		iscLogStatus("Cannot initialize the shared memory region", status);
+		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", status);
 		status_exception::raise(status);
 	}
 
@@ -125,7 +125,7 @@ void ConfigStorage::checkMutex(const TEXT* string, int state)
 	{
 		TEXT msg[BUFFER_TINY];
 
-		sprintf(msg, "TRACE: mutex %s error, status = %d", string, state);
+		sprintf(msg, "ConfigStorage: mutex %s error, status = %d", string, state);
 		gds__log(msg);
 
 		fprintf(stderr, "%s\n", msg);
@@ -431,7 +431,7 @@ void ConfigStorage::restart()
 }
 
 
-void ConfigStorage::updateSession(Firebird::TraceSession& session)
+void ConfigStorage::updateSession(TraceSession& session)
 {
 	restart();
 
@@ -451,7 +451,6 @@ void ConfigStorage::updateSession(Firebird::TraceSession& session)
 				fb_assert(len == sizeof(currID));
 				read(m_cfg_file, &currID, len);
 				continue;
-				break;
 
 			case tagFlags:
 				fb_assert(len == sizeof(session.ses_flags));
