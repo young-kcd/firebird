@@ -161,6 +161,9 @@ private:
 
 	Firebird::string m_dbId;
 
+	const ULONG m_acquireSpins;
+	const ULONG m_memorySize;
+
 #ifdef WIN_NT
 	struct mtx m_shmemMutex;
 #endif

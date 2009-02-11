@@ -185,6 +185,8 @@ LockManager::LockManager(const Firebird::string& id)
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
+	  m_acquireSpins(Config::getLockAcquireSpins()),
+	  m_memorySize(Config::getLockMemSize()),
 	  m_dbId(getPool(), id)
 {
 	Firebird::string name;
@@ -194,7 +196,7 @@ LockManager::LockManager(const Firebird::string& id)
 	if (!(m_header = (lhb*) ISC_map_file(local_status,
 										 name.c_str(),
 										 initialize, this,
-										 Config::getLockMemSize(),
+										 m_memorySize,
 										 &m_shmem)))
 	{
 		Firebird::status_exception::raise(local_status);
@@ -1010,11 +1012,9 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	// Perform a spin wait on the lock table mutex. This should only
 	// be used on SMP machines; it doesn't make much sense otherwise.
 
-	const SLONG acquire_spins = Config::getLockAcquireSpins();
-
 	SLONG status = FB_FAILURE;
-	SLONG spins = 0;
-	while (spins++ < acquire_spins) {
+	ULONG spins = 0;
+	while (spins++ < m_acquireSpins) {
 		if ((status = ISC_mutex_lock_cond(MUTEX)) == FB_SUCCESS) {
 			break;
 		}
@@ -1035,7 +1035,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 	if (spins) {
 		++m_header->lhb_acquire_retries;
-		if (spins < acquire_spins) {
+		if (spins < m_acquireSpins) {
 			++m_header->lhb_retry_success;
 		}
 	}
@@ -1128,7 +1128,7 @@ UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		const ULONG new_length = m_shmem.sh_mem_length_mapped + Config::getLockMemSize();
+		const ULONG new_length = m_shmem.sh_mem_length_mapped + m_memorySize;
 		lhb* header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, true);
 		if (header) {
 			m_header = header;
@@ -2204,7 +2204,7 @@ void LockManager::initialize(SH_MEM shmem_data, bool initialize)
 
 	m_header->lhb_hash_slots = (USHORT) hash_slots;
 	m_header->lhb_scan_interval = Config::getDeadlockTimeout();
-	m_header->lhb_acquire_spins = Config::getLockAcquireSpins();
+	m_header->lhb_acquire_spins = m_acquireSpins;
 
 	// Initialize lock series data queues and lock hash chains
 
