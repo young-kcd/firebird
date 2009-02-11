@@ -29,21 +29,18 @@
 #define TRACE_LOG
 
 #include "../../common/classes/fb_string.h"
-#include "../../jrd/ntrace.h"
 #include "../../jrd/isc.h"
 
 namespace Jrd {
 
-class TraceLogImpl : public TraceLogWriter
+class TraceLog 
 {
 public:
-	TraceLogImpl(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
-	virtual ~TraceLogImpl();
+	TraceLog(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
+	virtual ~TraceLog();
 
 	size_t read(void* buf, size_t size);
-	virtual size_t write(const void* buf, size_t size);
-	virtual void release()
-	{ delete this; }
+	size_t write(const void* buf, size_t size);
 
 	// returns approximate log size in MB
 	size_t getApproxLogSize() const;
@@ -78,25 +75,22 @@ private:
 	int m_fileHandle;
 	bool m_reader;
 
-friend class TraceLogGuard;
-};
-
-
-class TraceLogGuard
-{
-public:
-	explicit TraceLogGuard(TraceLogImpl* log) : m_log(*log)
+	class TraceLogGuard
 	{
-		m_log.lock();
-	}
+	public:
+		explicit TraceLogGuard(TraceLog* log) : m_log(*log)
+		{
+			m_log.lock();
+		}
 
-	~TraceLogGuard() 
-	{
-		m_log.unlock();
-	}
+		~TraceLogGuard() 
+		{
+			m_log.unlock();
+		}
 
-private:
-	TraceLogImpl& m_log;
+	private:
+		TraceLog& m_log;
+	};
 };
 
 

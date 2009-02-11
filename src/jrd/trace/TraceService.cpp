@@ -67,7 +67,7 @@ public:
 
 private:
 	bool changeFlags(ULONG id, int setFlags, int clearFlags);
-	bool checkAlive(ULONG sesId);
+	bool checkAliveAndFlags(ULONG sesId, int& flags);
 
 	Service& m_svc;
 	string m_user;
@@ -84,8 +84,7 @@ void TraceSvcJrd::setAttachInfo(const string& /*service_name*/, const string& us
 
 void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 {
-	TraceManager* mgr = m_svc.getTraceManager();
-	ConfigStorage* storage = mgr->getStorage();
+	ConfigStorage* storage = TraceManager::getStorage();
 
 	{	// scope
 		StorageGuard guard(storage);
@@ -106,7 +105,6 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 			GuidToString(buff, &guid);
 			
 			session.ses_logfile.insert(0, "fb_trace.");
-			// session.ses_logfile = TempFile::create("fb_trace_");
 		}
 
 		storage->addSession(session);
@@ -122,7 +120,6 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 			StorageGuard guard(storage);
 			storage->removeSession(session.ses_id);
 		}
-		// unlink(session.ses_logfile.c_str());
 	}
 	else {
 		m_svc.printf("Trace session ID %ld started\n", session.ses_id);
@@ -132,9 +129,8 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 void TraceSvcJrd::stopSession(ULONG id)
 {
 	m_svc.started();
-	TraceManager* mgr = m_svc.getTraceManager();
 
-	ConfigStorage* storage = mgr->getStorage();
+	ConfigStorage* storage = TraceManager::getStorage();
 	StorageGuard guard(storage);
 
 	storage->restart();
@@ -177,10 +173,7 @@ void TraceSvcJrd::setActive(ULONG id, bool active)
 
 bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 {
-	m_svc.started();
-	TraceManager* mgr = m_svc.getTraceManager();
-
-	ConfigStorage* storage = mgr->getStorage();
+	ConfigStorage* storage = TraceManager::getStorage();
 	StorageGuard guard(storage);
 
 	storage->restart();
@@ -193,10 +186,14 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 
 		if (m_admin || m_user == session.ses_user)
 		{
+			const int saveFlags = session.ses_flags;
+
 			session.ses_flags |= setFlags;
 			session.ses_flags &= ~clearFlags;
 
-			storage->updateSession(session);
+			if (saveFlags != session.ses_flags) {
+				storage->updateSession(session);
+			}
 			return true;
 		}
 		else
@@ -214,9 +211,7 @@ void TraceSvcJrd::listSessions()
 {
 	m_svc.started();
 	
-	TraceManager* mgr = m_svc.getTraceManager();
-
-	ConfigStorage* storage = mgr->getStorage();
+	ConfigStorage* storage = TraceManager::getStorage();
 	StorageGuard guard(storage);
 
 	storage->restart();
@@ -266,9 +261,6 @@ void TraceSvcJrd::listSessions()
 
 void TraceSvcJrd::readSession(TraceSession& session)
 {
-	// Unused, let's assume StorageGuard not needed.
-	//TraceManager* mgr = m_svc.getTraceManager();
-	//ConfigStorage* storage = mgr->getStorage();
 	const size_t maxLogSize = Config::getMaxUserTraceLogSize(); // in MB
 
 	if (session.ses_logfile.empty())
@@ -278,16 +270,16 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	}
 
 	MemoryPool& pool = *getDefaultMemoryPool();
-	AutoPtr<TraceLogImpl> log(FB_NEW(pool) TraceLogImpl(pool, session.ses_logfile, true));
+	AutoPtr<TraceLog> log(FB_NEW(pool) TraceLog(pool, session.ses_logfile, true));
 
-	bool logFull = false;
 	UCHAR buff[1024];
-	while (!m_svc.finished() && checkAlive(session.ses_id))
+	int flags = session.ses_flags;
+	while (!m_svc.finished() && checkAliveAndFlags(session.ses_id, flags))
 	{
 		size_t len = log->read(buff, sizeof(buff)); 
 		if (!len)
 		{
-			if (!checkAlive(session.ses_id))
+			if (!checkAliveAndFlags(session.ses_id, flags))
 				break;
 
 			THD_sleep(250);
@@ -296,24 +288,19 @@ void TraceSvcJrd::readSession(TraceSession& session)
 		{
 			m_svc.putBytes(buff, len);
 
-			if (logFull && log->getApproxLogSize() <= maxLogSize)
+			const bool logFull = (flags & trs_log_full);
+			if (logFull && log->getApproxLogSize() <= maxLogSize) 
 			{
+				// resume session
 				changeFlags(session.ses_id, 0, trs_log_full);
-				logFull = false;
-			}
-			else if (!logFull && log->getApproxLogSize() > maxLogSize)
-			{
-				changeFlags(session.ses_id, trs_log_full, 0);
-				logFull = true;
 			}
 		}
 	}
 }
 
-bool TraceSvcJrd::checkAlive(ULONG sesId)
+bool TraceSvcJrd::checkAliveAndFlags(ULONG sesId, int& flags)
 {
-	TraceManager* mgr = m_svc.getTraceManager();
-	ConfigStorage* storage = mgr->getStorage();
+	ConfigStorage* storage = TraceManager::getStorage();
 
 	bool alive = (m_chg_number == storage->getChangeNumber());
 	if (!alive)
@@ -328,6 +315,7 @@ bool TraceSvcJrd::checkAlive(ULONG sesId)
 			if (readSession.ses_id == sesId)
 			{
 				alive = true;
+				flags = readSession.ses_flags;
 				break;
 			}
 		}

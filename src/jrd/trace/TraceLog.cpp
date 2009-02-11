@@ -47,12 +47,10 @@ using namespace Firebird;
 
 namespace Jrd {
 
-/// TraceLogImpl 
-
 const size_t MAX_LOG_FILE_SIZE = 1024 * 1024;
 const unsigned int MAX_FILE_NUM = (unsigned int) -1;
 
-TraceLogImpl::TraceLogImpl(MemoryPool& pool, const PathName& fileName, bool reader) :
+TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	m_baseFileName(pool)
 {
 	m_base = 0;
@@ -64,7 +62,7 @@ TraceLogImpl::TraceLogImpl(MemoryPool& pool, const PathName& fileName, bool read
 	ISC_map_file(status, fileName.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
-		iscLogStatus("Cannot initialize the shared memory region", status);
+		iscLogStatus("TraceLog: cannot initialize the shared memory region", status);
 		status_exception::raise(status);
 	}
 
@@ -79,7 +77,7 @@ TraceLogImpl::TraceLogImpl(MemoryPool& pool, const PathName& fileName, bool read
 	m_fileHandle = openFile(m_fileNum);
 }
 
-TraceLogImpl::~TraceLogImpl()
+TraceLog::~TraceLog()
 {
 	::close(m_fileHandle);
 
@@ -105,7 +103,7 @@ TraceLogImpl::~TraceLogImpl()
 	}
 }
 
-int TraceLogImpl::openFile(int fileNum)
+int TraceLog::openFile(int fileNum)
 {
 	PathName fileName;
 	fileName.printf("%s.%07ld", m_baseFileName.c_str(), fileNum);
@@ -122,14 +120,14 @@ int TraceLogImpl::openFile(int fileNum)
 	return file;
 }
 
-int TraceLogImpl::removeFile(int fileNum)
+int TraceLog::removeFile(int fileNum)
 {
 	PathName fileName;
 	fileName.printf("%s.%07ld", m_baseFileName.c_str(), fileNum);
 	return unlink(fileName.c_str());
 }
 
-size_t TraceLogImpl::read(void* buf, size_t size)
+size_t TraceLog::read(void* buf, size_t size)
 {
 	fb_assert(m_reader);
 
@@ -141,6 +139,7 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 
 		if (reads == 0)
 		{
+			// EOF reached, check the reason
 			const off_t len = lseek(m_fileHandle, 0, SEEK_CUR);
 			if (len >= MAX_LOG_FILE_SIZE)
 			{
@@ -174,7 +173,7 @@ size_t TraceLogImpl::read(void* buf, size_t size)
 	return (size - readLeft);
 }
 
-size_t TraceLogImpl::write(const void* buf, size_t size)
+size_t TraceLog::write(const void* buf, size_t size)
 {
 	fb_assert(!m_reader);
 
@@ -220,19 +219,19 @@ size_t TraceLogImpl::write(const void* buf, size_t size)
 	return size - writeLeft;
 }
 
-size_t TraceLogImpl::getApproxLogSize() const
+size_t TraceLog::getApproxLogSize() const
 {
 	return (m_base->writeFileNum - m_base->readFileNum + 1) * 
 			(MAX_LOG_FILE_SIZE / (1024 * 1024));
 }
 
-void TraceLogImpl::checkMutex(const TEXT* string, int state)
+void TraceLog::checkMutex(const TEXT* string, int state)
 {
 	if (state)
 	{
 		TEXT msg[BUFFER_TINY];
 
-		sprintf(msg, "TRACE: mutex %s error, status = %d", string, state);
+		sprintf(msg, "TraceLog: mutex %s error, status = %d", string, state);
 		gds__log(msg);
 
 		fprintf(stderr, "%s\n", msg);
@@ -240,9 +239,9 @@ void TraceLogImpl::checkMutex(const TEXT* string, int state)
 	}
 }
 
-void TraceLogImpl::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
+void TraceLog::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
 {
-	TraceLogImpl* log = (TraceLogImpl*) arg;
+	TraceLog* log = (TraceLog*) arg;
 
 #ifdef WIN_NT
 	checkMutex("init", ISC_mutex_init(&log->m_mutex, shmemData->sh_mem_name));
@@ -261,7 +260,7 @@ void TraceLogImpl::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
 	}
 }
 
-void TraceLogImpl::lock()
+void TraceLog::lock()
 {
 #ifdef WIN_NT
 	checkMutex("lock", ISC_mutex_lock(&m_mutex));
@@ -270,7 +269,7 @@ void TraceLogImpl::lock()
 #endif
 }
 
-void TraceLogImpl::unlock()
+void TraceLog::unlock()
 {
 #ifdef WIN_NT
 	checkMutex("unlock", ISC_mutex_unlock(&m_mutex));

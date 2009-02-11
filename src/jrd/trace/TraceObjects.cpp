@@ -392,6 +392,64 @@ const char* TraceTriggerImpl::getRelationName()
 }
 
 
+/// TraceLogWriterImpl
+
+class TraceLogWriterImpl : public TraceLogWriter
+{
+public:
+	TraceLogWriterImpl(MemoryPool& pool, const TraceSession& session) :
+		m_log(pool, session.ses_logfile, false),
+		m_sesId(session.ses_id)
+	{
+		m_maxSize = Config::getMaxUserTraceLogSize();
+	}
+
+	virtual size_t write(const void* buf, size_t size);
+	virtual void release()	
+	{ 
+		delete this; 
+	}
+
+private:
+	TraceLog m_log;
+	ULONG m_sesId;
+	size_t m_maxSize;
+};
+
+size_t TraceLogWriterImpl::write(const void* buf, size_t size)
+{
+	// comparison is in MB
+	if (m_log.getApproxLogSize() <= m_maxSize)
+		return m_log.write(buf, size);
+
+	ConfigStorage* storage = TraceManager::getStorage();
+	StorageGuard guard(storage);
+
+	TraceSession session(*getDefaultMemoryPool());
+	storage->restart();
+	while (storage->getNextSession(session))
+	{
+		if (session.ses_id == m_sesId)
+		{
+			if (!(session.ses_flags & trs_log_full))
+			{
+				// suspend session
+				session.ses_flags |= trs_log_full;
+				storage->updateSession(session);
+
+				string s;
+				s.printf("\n--- Session %d is suspended as its log is full ---\n", m_sesId);
+				m_log.write(s.c_str(), s.length());
+			}
+			break;
+		}
+	}
+
+	// report successful write
+	return size;
+}
+
+
 /// TraceInitInfoImpl
 
 const char* TraceInitInfoImpl::getFirebirdRootDirectory()
@@ -404,7 +462,7 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 	if (!m_logWriter && !m_session.ses_logfile.empty()) 
 	{
 		MemoryPool &pool = *getDefaultMemoryPool();
-		m_logWriter = FB_NEW(pool) TraceLogImpl(pool, m_session.ses_logfile, false);
+		m_logWriter = FB_NEW(pool) TraceLogWriterImpl(pool, m_session);
 	}
 	return m_logWriter;
 }
