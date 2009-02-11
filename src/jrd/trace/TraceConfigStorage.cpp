@@ -195,8 +195,11 @@ void ConfigStorage::checkFile()
 			if (configFileName.empty())
 				return;
 
-			if (PathUtils::isRelative(configFileName)) {
-				configFileName.insert(0, Config::getRootDirectory());
+			if (PathUtils::isRelative(configFileName)) 
+			{
+				PathName root(Config::getRootDirectory());
+				PathUtils::ensureSeparator(root);
+				configFileName.insert(0, root);
 			}
 
 			cfgFile = fopen(configFileName.c_str(), "rb");

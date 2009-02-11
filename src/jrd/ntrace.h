@@ -355,6 +355,7 @@ public:
 	virtual const char* getConfigText() = 0;
 	virtual int getTraceSessionID() = 0;
 	virtual const char* getTraceSessionName() = 0;
+	virtual const char* getFirebirdRootDirectory() = 0;
 	virtual const char* getDatabaseName() = 0;
 	virtual TraceConnection* getConnection() = 0;
 	virtual TraceLogWriter* getLogWriter() = 0;

@@ -394,6 +394,11 @@ const char* TraceTriggerImpl::getRelationName()
 
 /// TraceInitInfoImpl
 
+const char* TraceInitInfoImpl::getFirebirdRootDirectory()
+{
+	return Config::getRootDirectory();
+}
+
 TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 {
 	if (!m_logWriter && !m_session.ses_logfile.empty()) 

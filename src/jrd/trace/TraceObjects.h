@@ -364,6 +364,7 @@ public:
 	virtual int getTraceSessionID()				{ return m_session.ses_id; }
 	virtual const char* getTraceSessionName()	{ return m_session.ses_name.c_str(); }
 
+	virtual const char* getFirebirdRootDirectory();
 	virtual const char* getDatabaseName()		{ return m_filename; }
 
 	virtual TraceConnection* getConnection()

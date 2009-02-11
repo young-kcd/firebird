@@ -36,9 +36,12 @@
 #include "../../jrd/ibase.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
+#include "../../jrd/os/path_utils.h"
 
 using namespace Firebird;
 using namespace Jrd;
+
+static const char* DEFAULT_LOG_NAME = "default.trace.log";
 
 TracePlugin* TracePluginImpl::createSkeletalPlugin()
 {
@@ -111,8 +114,20 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 
 	if (!logWriter)
 	{
+		PathName logname(configuration.log_filename);
+		if (logname.empty()) {
+			logname = DEFAULT_LOG_NAME;
+		}
+
+		if (PathUtils::isRelative(logname))
+		{
+			PathName root(initInfo->getFirebirdRootDirectory());
+			PathUtils::ensureSeparator(root);
+			logname.insert(0, root);
+		}
+
 		logFile = FB_NEW (*getDefaultMemoryPool())
-			FileObject(*getDefaultMemoryPool(), configuration.log_filename, fo_rdwr | fo_append | fo_creat);
+			FileObject(*getDefaultMemoryPool(), logname, fo_rdwr | fo_append | fo_creat);
 	}
 
 	// Compile filtering regular expressions
