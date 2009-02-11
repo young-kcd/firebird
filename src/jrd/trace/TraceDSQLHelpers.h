@@ -178,7 +178,10 @@ public:
 	{
 		m_need_trace = m_request->req_traced && TraceManager::need_dsql_execute(m_attachment);
 		if (!m_need_trace)
+		{
+			m_request->req_fetch_baseline = NULL;
 			return;
+		}
 
 		m_start_clock = fb_utils::query_performance_counter();
 	}
