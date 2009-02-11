@@ -549,25 +549,30 @@ void int_to_quoted_str(SINT64 value, int scale, string& str)
 {
 	str.printf("%"QUADFORMAT"d", value);
 
-	if (scale < 0) {
-		// Append needed amount of zeros at the end of string
-		str.append(-scale, '0');
-	}
-	else if (scale > 0)
+	if (value)
 	{
-		// Append needed amount of zeros in the beginning of string as necessary
-		if (value >= 0)
-		{
-			if (str.length() < static_cast<size_t>(scale + 1))
-				str.insert((string::size_type) 0, scale - str.length() + 1, '0');
+		if (scale > 0) {
+			// Append needed amount of zeros at the end of string
+			str.append(scale, '0');
 		}
-		else
+		else if (scale < 0)
 		{
-			if (str.length() < static_cast<size_t>(scale + 2))
-				str.insert(1, scale - str.length(), '0');
+			scale = -scale;
+			// Append needed amount of zeros in the beginning of string as necessary
+			if (value >= 0)
+			{
+				const int lpad = scale - str.length() + 1;
+				if (lpad > 0)
+					str.insert((string::size_type)0, lpad, '0');
+			}
+			else
+			{
+				const int lpad = scale - str.length() + 2;
+				if (lpad > 0)
+					str.insert(1, lpad, '0');
+			}
 		}
-
-		str.insert(str.length() - scale, "0");
+		str.insert(str.length() - scale, ".");
 	}
 
 	// Add quotes
@@ -738,20 +743,20 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 
 				case dtype_real:
 					if (!parameters->dsc_scale) {
-						paramvalue.printf("\"%f\"", *(float*) parameters->dsc_address);
+						paramvalue.printf("\"%.7g\"", *(float*) parameters->dsc_address);
 					}
 					else {
-						paramvalue.printf("\"%f\"",
+						paramvalue.printf("\"%.7g\"",
 							*(float*) parameters->dsc_address * pow(10.0f, -parameters->dsc_scale));
 					}
 					break;
 
 				case dtype_double:
 					if (!parameters->dsc_scale) {
-						paramvalue.printf("\"%f\"", *(double*) parameters->dsc_address);
+						paramvalue.printf("\"%.15g\"", *(double*) parameters->dsc_address);
 					}
 					else {
-						paramvalue.printf("\"%f\"",
+						paramvalue.printf("\"%.15g\"",
 							*(double*) parameters->dsc_address * pow(10.0, -parameters->dsc_scale));
 					}
 					break;
