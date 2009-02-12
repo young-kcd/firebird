@@ -2,6 +2,12 @@
   * v2.5 Beta 1
   *************
 
+    * Bugfix CORE-2313
+        INF_* functions may invalidate the whole output buffer
+        with isc_info_truncated at the beginning due to boundary condition
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-2311
         Possible memory leak in WITH RECURSIVE query
       Contributor(s):
@@ -42,6 +48,16 @@
         Database with many grants gets corrupted after backup/restore
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2282
+        *truncate UDFs are broken for numbers below -1
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2281
+        *round UDFs are broken for negative numbers
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-2278
         Incorrect conversion from/to CP943C in RISC machines
@@ -100,6 +116,11 @@
         Message and descriptor buffers are not aligned properly in QLI
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2245
+        Error on restoring a database with long exceptions from a backup
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-2242
         Engine incorrectly (for big-endian machines) fills BPB
@@ -228,6 +249,11 @@
         Temporary directory path with spaces in the middle is wrongly truncated from the rightmost space
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2140
+        Error messages after parameters substitution contains '\n' characters instead of line break
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-2138
         If a stored procedure with an EXECUTE STATEMENT against an external database fails at runtime,
@@ -781,6 +807,11 @@
         Don't evaluate DEFAULT value expressions until really necessary
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1799
+        Improve the almost useless "expression evaluation not supported" message
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Improvement CORE-1758
         NBackup support in the Services API
