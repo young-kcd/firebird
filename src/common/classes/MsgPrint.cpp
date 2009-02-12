@@ -291,7 +291,8 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 		default:
 			{
 				const char* iter2 = iter;
-				while (iter2[1] && iter2[1] != '@')
+				// Take into account the previous cases: 0, @ and backslash.
+				while (iter2[1] && iter2[1] != '@' && iter2[1] != '\\')
 					++iter2;
 
 				out_bytes += out_stream.write(iter, iter2 - iter + 1);
