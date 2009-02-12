@@ -211,6 +211,15 @@ dnl ICU_PLATFORM=AIXPPCXLC
     SHRLIB_EXT=so
     ;;
 
+  ia64-*-hpux*)
+    MAKEFILE_PREFIX=hpux_ia64
+    PLATFORM=HPUX
+    AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=sl
+    libdir=/usr/lib/pa20_64
+    ;;
+
   *-*-hpux*)
     MAKEFILE_PREFIX=hpux
     PLATFORM=HPUX
