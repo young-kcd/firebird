@@ -1,3 +1,59 @@
+2009-02-12 19:54  dimitr
+
+	* firebird2/doc/WhatsNew (1.162):
+
+	Update for almost forgotten Claudio's work.
+
+2009-02-12 15:56  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.335):
+
+	Fixed CORE-2317 - select * from (select cast(.... returns null
+
+2009-02-12 13:58  robocop
+
+	* firebird2/src/common/classes/MsgPrint.cpp (1.11):
+
+	More changes for the improvement requested as CORE-2140 (it was
+	never designed to work with printf escape sequences).
+
+2009-02-12 12:13  hvlad
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.14):
+
+	Optimize a bit
+
+2009-02-12 11:48  alexpeshkoff
+
+	* firebird2/configure.in (1.316):
+
+	HPUX IA64 port
+
+2009-02-12 11:15  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.hpux_ia64 (1.1):
+
+	HPUX IA64 port
+
+2009-02-12 10:34  hvlad
+
+	* firebird2/doc/sql.extensions/README.isc_info_xxx (1.6):
+
+	Update documentation
+
+2009-02-12 10:31  hvlad
+
+	* firebird2/src/jrd/rse.cpp (1.177):
+
+	Fixed bug CORE-2320 : Complex recursive query may produce not all
+	rows
+
+2009-02-11 22:48  hvlad
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.13):
+
+	Try to show numeric parameters correctly
+
 2009-02-11 16:24  hvlad
 
 	* firebird2/src/jrd/trace/: TraceLog.cpp (1.11), TraceLog.h (1.5),
