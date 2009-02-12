@@ -14,6 +14,25 @@ New items for isc_database_info
 	and (second) time portions of ISC_TIMESTAMP. Then use
 	isc_decode_timestamp as usual
 
+3. fb_info_page_contents :
+	return contents of some database page
+
+	Query format is <fb_info_page_contents> <length> <page_number>, where 
+		<length> is 2-byte length of <page_number> 
+		<page_number> is 4-byte number of requested page. 
+	In the future it will be possible to pass 8-byte page_number value 
+	including both page number and page space number.
+
+	Responce format is <fb_info_page_contents, length, page_content>, where 
+		<length> is 2-byte length of <page_content> and is equal to database 
+				 page size
+
+	This feature is allowed only for SYSDBA or database owner for security 
+	reasons. Introduced in Firebird v2.5
+
+	See also CORE-2054.
+
+
 
 New items for isc_transaction_info:
 	
