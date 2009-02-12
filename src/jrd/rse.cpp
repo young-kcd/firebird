@@ -3657,9 +3657,13 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			const RecordSource* const* end = ptr + streams;
 			for (; ptr < end; ptr++)
 			{
-				const record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
+				record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
 				memmove(p, rpb, sizeof(record_param));
 				p += sizeof(record_param);
+
+				// Don't overwrite record contents at next level of recursion. 
+				// RSE_open and company will allocate new record if needed
+				rpb->rpb_record = NULL;
 			}
 			irsb->irsb_stack = tmp;
 
@@ -3707,10 +3711,9 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			memmove(rpb, p, sizeof(record_param));
 			p += sizeof(record_param);
 
-			if (rec)
-			{
-				rpb->rpb_record = rec;
-			}
+			// We just restored record of current recursion level, delete record 
+			// from upper level. It may be optimized in the future if needed
+			delete rec;
 		}
 		delete[] tmp;
 
