@@ -133,7 +133,7 @@ static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
-static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T);
+static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T, bool);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
@@ -3171,7 +3171,8 @@ static void expand_view_nodes(thread_db* tdbb,
 							  CompilerScratch* csb,
 							  USHORT stream,
 							  NodeStack& stack,
-							  NOD_T type)
+							  NOD_T type,
+							  bool allStreams)
 {
 /**************************************
  *
@@ -3189,26 +3190,27 @@ static void expand_view_nodes(thread_db* tdbb,
 
 	// if the stream's dbkey should be ignored, do so
 
-	if (csb->csb_rpt[stream].csb_flags & csb_no_dbkey)
+	if (!allStreams && (csb->csb_rpt[stream].csb_flags & csb_no_dbkey))
 		return;
 
 	// if the stream references a view, follow map
 	const UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (map) {
+	if (map)
+	{
 		++map;
-		while (*map) {
-			expand_view_nodes(tdbb, csb, *map++, stack, type);
-		}
+		while (*map)
+			expand_view_nodes(tdbb, csb, *map++, stack, type, allStreams);
 		return;
 	}
 
 	// relation is primitive - make dbkey node
 
-	if (csb->csb_rpt[stream].csb_relation) {
+	if (allStreams || csb->csb_rpt[stream].csb_relation)
+	{
 		jrd_nod* node = PAR_make_node(tdbb, 1);
 		node->nod_count = 0;
 		node->nod_type = type;
-		node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
+		node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
 		stack.push(node);
 	}
 }
@@ -3779,7 +3781,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					sub->nod_type != nod_dbkey)
 				{
 					NodeStack stack;
-					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey);
+					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, false);
 
 					if (stack.hasData())
 					{
@@ -3805,6 +3807,28 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			return CMP_pass1(tdbb, csb, sub);
 		}
+
+	case nod_derived_expr:
+		{
+			const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+			USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+			NodeStack stack;
+
+			for (UCHAR i = 0; i < streamCount; ++i)
+			{
+				mark_variant(tdbb, csb, streamList[i]);
+				expand_view_nodes(tdbb, csb, streamList[i], stack, nod_dbkey, true);
+			}
+
+			streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[stack.getCount()];
+
+			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
+			node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) stack.getCount();
+
+			for (NodeStack::iterator i(stack); i.hasData(); ++i)
+				*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
+		}
+		break;
 
 	case nod_assignment:
 		{
@@ -3903,7 +3927,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;
 			NodeStack stack;
-			expand_view_nodes(tdbb, csb, stream, stack, type);
+			expand_view_nodes(tdbb, csb, stream, stack, type, false);
 
 			if (stack.hasData())
 			{
