@@ -545,42 +545,44 @@ void TracePluginImpl::appendTableCounts(const PerformanceInfo *info, string& lin
 
 namespace {
 
-void int_to_quoted_str(SINT64 value, int scale, string& str)
+void int_to_str(SINT64 value, int scale, string& str)
 {
-	str.printf("%"QUADFORMAT"d", value);
-
-	if (value)
+	if (!value)
 	{
-		if (scale > 0) {
-			// Append needed amount of zeros at the end of string
-			str.append(scale, '0');
-		}
-		else if (scale < 0)
-		{
-			scale = -scale;
-			// Append needed amount of zeros in the beginning of string as necessary
-			if (value >= 0)
-			{
-				const int lpad = scale - str.length() + 1;
-				if (lpad > 0)
-					str.insert((string::size_type)0, lpad, '0');
-			}
-			else
-			{
-				const int lpad = scale - str.length() + 2;
-				if (lpad > 0)
-					str.insert(1, lpad, '0');
-			}
-		}
-		str.insert(str.length() - scale, ".");
+		str = "0";
+		return;
 	}
 
-	// Add quotes
-	str.insert(0, "\"");
-	str.append("\"");
+	str.printf("%"QUADFORMAT"d", value);
+
+	if (scale > 0) {
+		// Append needed amount of zeros at the end of string
+		str.append(scale, '0');
+	}
+	else if (scale < 0)
+	{
+		scale = -scale;
+		// Append needed amount of zeros in the beginning of string as necessary
+		if (value >= 0)
+		{
+			const int lpad = scale - str.length() + 1;
+			if (lpad > 0)
+				str.insert((string::size_type)0, lpad, '0');
+		}
+		else
+		{
+			const int lpad = scale - str.length() + 2;
+			if (lpad > 0)
+				str.insert(1, lpad, '0');
+		}
+	}
+
+	if (scale) {
+		str.insert(str.length() - scale, ".");
+	}
 }
 
-}
+} // namespace
 
 void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, size_t len)
 {
@@ -596,10 +598,10 @@ void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, siz
 		else
 			len = config.max_arg_length - 3;
 
-		result.printf("\"%.*s...\"", len, str);
+		result.printf("%.*s...", len, str);
 		return;
 	}
-	result.printf("\"%.*s\"", len, str);
+	result.printf("%.*s", len, str);
 }
 
 
@@ -725,38 +727,38 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 				case dtype_array:
 				{
 					ISC_QUAD *quad = (ISC_QUAD*) parameters->dsc_address;
-					paramvalue.printf("\"%08X%08X\"", quad->gds_quad_high, quad->gds_quad_low);
+					paramvalue.printf("%08X%08X", quad->gds_quad_high, quad->gds_quad_low);
 					break;
 				}
 
 				case dtype_short:
-					int_to_quoted_str(*(SSHORT*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
+					int_to_str(*(SSHORT*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
 					break;
 
 				case dtype_long:
-					int_to_quoted_str(*(SLONG*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
+					int_to_str(*(SLONG*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
 					break;
 
 				case dtype_int64:
-					int_to_quoted_str(*(SINT64*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
+					int_to_str(*(SINT64*) parameters->dsc_address, parameters->dsc_scale, paramvalue);
 					break;
 
 				case dtype_real:
 					if (!parameters->dsc_scale) {
-						paramvalue.printf("\"%.7g\"", *(float*) parameters->dsc_address);
+						paramvalue.printf("%.7g", *(float*) parameters->dsc_address);
 					}
 					else {
-						paramvalue.printf("\"%.7g\"",
+						paramvalue.printf("%.7g",
 							*(float*) parameters->dsc_address * pow(10.0f, -parameters->dsc_scale));
 					}
 					break;
 
 				case dtype_double:
 					if (!parameters->dsc_scale) {
-						paramvalue.printf("\"%.15g\"", *(double*) parameters->dsc_address);
+						paramvalue.printf("%.15g", *(double*) parameters->dsc_address);
 					}
 					else {
-						paramvalue.printf("\"%.15g\"",
+						paramvalue.printf("%.15g",
 							*(double*) parameters->dsc_address * pow(10.0, -parameters->dsc_scale));
 					}
 					break;
@@ -765,7 +767,7 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 				{
 					struct tm times;
 					Firebird::TimeStamp::decode_date(*(ISC_DATE*)parameters->dsc_address, &times);
-					paramvalue.printf("\"%04d-%02d-%02d\"", times.tm_year + 1900, times.tm_mon + 1, times.tm_mday);
+					paramvalue.printf("%04d-%02d-%02d", times.tm_year + 1900, times.tm_mon + 1, times.tm_mday);
 					break;
 				}
 				case dtype_sql_time:
@@ -774,7 +776,7 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 					Firebird::TimeStamp::decode_time(*(ISC_TIME*) parameters->dsc_address,
 						&hours, &minutes, &seconds, &fractions);
 
-					paramvalue.printf("\"%02d:%02d:%02d.%04d\"", hours,	minutes, seconds, fractions);
+					paramvalue.printf("%02d:%02d:%02d.%04d", hours,	minutes, seconds, fractions);
 					break;
 				}
 				case dtype_timestamp:
@@ -784,7 +786,7 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 
 					ts.decode(&times);
 
-					paramvalue.printf("\"%04d-%02d-%02dT%02d:%02d:%02d.%04d\"",
+					paramvalue.printf("%04d-%02d-%02dT%02d:%02d:%02d.%04d",
 						times.tm_year + 1900, times.tm_mon + 1, times.tm_mday,
 						times.tm_hour, times.tm_min, times.tm_sec,
 						ts.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
@@ -794,7 +796,7 @@ void TracePluginImpl::appendParams(TraceParams* params, Firebird::string& line)
 					paramvalue = "<unknown>";
 			}
 		}
-		temp.printf("param%d = %s, %s" NEWLINE, i, paramtype.c_str(), paramvalue.c_str());
+		temp.printf("param%d = %s, \"%s\"" NEWLINE, i, paramtype.c_str(), paramvalue.c_str());
 		line.append(temp);
 	}
 }
