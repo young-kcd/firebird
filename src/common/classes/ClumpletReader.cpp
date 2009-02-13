@@ -249,6 +249,8 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 		case isc_action_svc_delete_user:
 		case isc_action_svc_modify_user:
 		case isc_action_svc_display_user:
+		case isc_action_svc_set_mapping:
+		case isc_action_svc_drop_mapping:
 			switch (tag)
 			{
 			case isc_spb_dbname:

@@ -128,6 +128,19 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 	switch (io_user_data->operation)
 	{
+	case MAP_DROP_OPER:
+	case MAP_SET_OPER:
+		{
+			Firebird::string sql;
+			sql.printf("ALTER ROLE RDB$ADMIN %s AUTO ADMIN MAPPING", 
+				io_user_data->operation == MAP_SET_OPER ? "SET" : "DROP");
+			isc_dsql_execute_immediate(isc_status, &DB, &trans, sql.length(), sql.c_str(), 1, NULL);
+			if (isc_status[1])
+			{
+				ret = GsecMsg97;
+			}
+		}
+		break;
 	case ADD_OPER:
 		/* this checks the "entered" flags for each parameter (except the name)
 		   and makes all non-entered parameters null valued */

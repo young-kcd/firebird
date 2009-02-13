@@ -319,7 +319,8 @@ void callRemoteServiceManager(ISC_STATUS* status,
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	if (userInfo.operation != DIS_OPER && !userInfo.user_name_entered)
+	if (userInfo.operation != DIS_OPER && userInfo.operation != MAP_SET_OPER && 
+		userInfo.operation != MAP_DROP_OPER && !userInfo.user_name_entered)
 	{
 	    status[0] = isc_arg_gds;
 	    status[1] = isc_gsec_switches_error;
@@ -352,6 +353,14 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		}
 		break;
 
+	case MAP_SET_OPER:
+		stuffSpbByte(spb, isc_action_svc_set_mapping);
+		break;
+
+	case MAP_DROP_OPER:
+		stuffSpbByte(spb, isc_action_svc_drop_mapping);
+		break;
+
 	default:
 	    status[0] = isc_arg_gds;
 	    status[1] = isc_gsec_switches_error;
@@ -364,7 +373,10 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
-	isc_service_start(status, &handle, 0, static_cast<USHORT>(spb - spb_buffer), spb_buffer);
+	if (isc_service_start(status, &handle, 0, static_cast<USHORT>(spb - spb_buffer), spb_buffer))
+	{
+		return;
+	}
 
 	spb = spb_buffer;
 	stuffSpbByte(spb, isc_info_svc_timeout);

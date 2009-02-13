@@ -59,6 +59,7 @@ const int IN_SW_GSEC_DBA_TRUST_ROLE	= 23;	/* use trusted role for auth */
 const int IN_SW_GSEC_TRUSTED_AUTH	= 24;	/* Use trusted authentication */
 #endif
 const int IN_SW_GSEC_FETCH_PASSWORD	= 25;   /* Fetch Password (Database Admin.) */
+const int IN_SW_GSEC_MAPPING		= 26;	/* Change auto admin mapping */
 
 
 static const struct in_sw_tab_t gsec_in_sw_table [] =
@@ -90,15 +91,18 @@ static const struct in_sw_tab_t gsec_in_sw_table [] =
 #ifdef TRUSTED_AUTH
 	{IN_SW_GSEC_TRUSTED_AUTH,	0,			"TRUSTED",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */
 #endif
+	{IN_SW_GSEC_MAPPING,		0,			"MAPPING",	0, 0, 0, FALSE, 0,	2, NULL},	/* Change mapping of domain admins to sysdba in sec. DB */
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		/* End of List */
 };
 
 static const struct in_sw_tab_t gsec_action_in_sw_table [] =
 {
-    {IN_SW_GSEC_ADD,		isc_action_svc_add_user,	"ADD",		0, 0, 0, FALSE,	0,	1, NULL},	/* add user */
-    {IN_SW_GSEC_DEL,		isc_action_svc_delete_user,	"DELETE",	0, 0, 0, FALSE,	0,	2, NULL},	/* delete user */
-    {IN_SW_GSEC_MOD,		isc_action_svc_modify_user,	"MODIFY",	0, 0, 0, FALSE,	0,	2, NULL},	/* modify user */
+    {IN_SW_GSEC_ADD,		isc_action_svc_add_user,		"ADD",		0, 0, 0, FALSE,	0,	1, NULL},	/* add user */
+    {IN_SW_GSEC_DEL,		isc_action_svc_delete_user,		"DELETE",	0, 0, 0, FALSE,	0,	2, NULL},	/* delete user */
+    {IN_SW_GSEC_MOD,		isc_action_svc_modify_user,		"MODIFY",	0, 0, 0, FALSE,	0,	2, NULL},	/* modify user */
     {IN_SW_GSEC_DIS,		isc_action_svc_display_user,	"DISPLAY",	0, 0, 0, FALSE,	0,	2, NULL},	/* display user(s) */
+    {IN_SW_GSEC_MAPPING,	isc_action_svc_set_mapping,		"MAP SET",	0, 0, 0, FALSE,	0,	2, NULL},	/* map admins */
+    {IN_SW_GSEC_MAPPING,	isc_action_svc_drop_mapping,	"MAP DROP",	0, 0, 0, FALSE,	0,	2, NULL},	/* map admins */
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		/* End of List */
 };
 #endif /* GSEC_GSECSWI_H */

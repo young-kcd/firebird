@@ -411,6 +411,13 @@ const Switches dispdelOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
+const Switches mappingOptions[] =
+{
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
+	{0, 0, 0, 0, 0}
+};
+
 const Switches addmodOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
@@ -475,6 +482,8 @@ const Switches actionSwitch[] =
 	{"action_trace_resume", putSingleTag, traceChgStateOptions, isc_action_svc_trace_resume, isc_info_svc_line},
 	{"action_trace_stop", putSingleTag, traceChgStateOptions, isc_action_svc_trace_stop, isc_info_svc_line},
 	{"action_trace_list", putSingleTag, 0, isc_action_svc_trace_list, isc_info_svc_line},
+	{"action_set_mapping", putSingleTag, mappingOptions, isc_action_svc_set_mapping, 0},
+	{"action_drop_mapping", putSingleTag, mappingOptions, isc_action_svc_drop_mapping, 0},
 	{0, 0, 0, 0, 0}
 };
 

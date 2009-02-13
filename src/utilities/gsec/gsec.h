@@ -42,6 +42,8 @@ const int MOD_OPER		= 4;
 const int QUIT_OPER		= 5;
 const int HELP_OPER		= 6;
 const int VERSION_OPER	= 7;
+const int MAP_SET_OPER	= 8;
+const int MAP_DROP_OPER	= 9;
 
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;
@@ -241,6 +243,10 @@ const USHORT GsecMsg93	= 93;	/* error closing security database */
 const USHORT GsecMsg94	= 94;	/* error releasing request in security database */
 const USHORT GsecMsg95	= 95;	/* -fe(tch_password) fetch password from file */
 const USHORT GsecMsg96	= 96;	/* error fetching password from file */
+const USHORT GsecMsg97	= 97;	/* error changing AUTO ADMINS MAPPING in security database */
+const USHORT GsecMsg98	= 98;	/* changing admins mapping to SYSDBA:\n */
+const USHORT GsecMsg99	= 99;	/* invalid parameter for -MAPPING, only SET or DROP is accepted */
+const USHORT GsecMsg100	= 100;	/* -ma(pping) {set|drop} */
 
 #endif /* UTILITIES_GSEC_H */
 

@@ -135,9 +135,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tdsec->tsec_user_data = &u;
 
 	try {
-	// Perform some special handling when run as a Firebird service.  The
-	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-	// by 3 file descriptors to use in re-directing stdin, stdout and stderr.
+	// Perform some special handling when run as a Firebird service.
 
 	tdsec->tsec_throw = true;
 	tdsec->tsec_interactive = !uSvc->isService();
@@ -626,6 +624,24 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				fb_utils::copy_terminate(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
 				user_data->dba_trust_user_name_entered = true;
 				break;
+			case IN_SW_GSEC_MAPPING:
+				{
+					Firebird::string val(string);
+					val.upper();
+					if (val == "SET")
+					{
+						user_data->operation = MAP_SET_OPER;
+					}
+					else if (val == "DROP") {
+						user_data->operation = MAP_DROP_OPER;
+					}
+					else {
+						GSEC_diag(GsecMsg99);
+						/* gsec - invalid parameter value for -MAPPING, only SET or DROP is accepted */
+						return false;
+					}
+				}
+				break;
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
 				GSEC_diag(GsecMsg29);
@@ -685,6 +701,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			case IN_SW_GSEC_MOD:
 			case IN_SW_GSEC_QUIT:
 			case IN_SW_GSEC_HELP:
+			case IN_SW_GSEC_MAPPING:
 				if (user_data->operation) {
 					GSEC_error(GsecMsg30);
 					/* gsec - operation already specified */
@@ -1028,6 +1045,14 @@ static void printhelp()
 /* modify <name> <parameter> [ <parameter> ... ] */
 
 	util_output("%s", "     ");
+	GSEC_print(GsecMsg98);
+/* changing admins mapping to SYSDBA: */
+
+	util_output("%s", "       ");
+	GSEC_print(GsecMsg100);
+/* -ma(pping) {set|drop} */
+
+	util_output("%s", "     ");
 	GSEC_print(GsecMsg60);
 /* help: */
 
@@ -1120,7 +1145,8 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 			ret = -1;
 		}
 		else if (user_data->operation != DIS_OPER && user_data->operation != QUIT_OPER &&
-			!user_data->user_name_entered)
+				 user_data->operation != MAP_SET_OPER && user_data->operation != MAP_DROP_OPER &&
+				 !user_data->user_name_entered)
 		{
 			GSEC_error(GsecMsg18);
 			/* gsec - no user name specified */

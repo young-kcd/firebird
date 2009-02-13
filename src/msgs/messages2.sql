@@ -3144,8 +3144,12 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg92', 'common_main', 'gsec.cpp', NULL, 18, 92, NULL, 'invalid switch specified in interactive mode', NULL, NULL);
 ('GsecMsg93', 'common_main', 'gsec.cpp', NULL, 18, 93, NULL, 'error closing security database', NULL, NULL);
 ('GsecMsg94', 'SECURITY_exec_line', 'security.epp', NULL, 18, 94, NULL, 'error releasing request in security database', NULL, NULL);
-('GsecMsg95', 'printhelp', 'gsec.cpp', NULL, 18, 95, NULL, '-fe(tch_password) fetch password from file', NULL, NULL);
+('GsecMsg95', 'printhelp', 'gsec.cpp', NULL, 18, 95, NULL, '-fetch_password <file to fetch password from>', NULL, NULL);
 ('GsecMsg96', 'get_switches', 'gsec.cpp', NULL, 18, 96, NULL, 'error fetching password from file', NULL, NULL);
+('GsecMsg97', 'SECURITY_exec_line', 'security.epp', NULL, 18, 97, NULL, 'error changing AUTO ADMINS MAPPING in security database', NULL, NULL);
+('GsecMsg98', 'printhelp', 'gsec.cpp', NULL, 18, 98, NULL, 'changing admins mapping to RDB$ADMIN role in security database:', NULL, NULL);
+('GsecMsg99', 'get_switches', 'gsec.cpp', NULL, 18, 99, NULL, 'invalid parameter for -MAPPING, only SET or DROP is accepted', NULL, NULL);
+('GsecMsg100', 'printhelp', 'gsec.cpp', NULL, 18, 100, NULL, 'mapping {set|drop}', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in

@@ -659,6 +659,8 @@ static const serv_entry services[] =
 	{ isc_action_svc_trace_suspend, "Suspend Trace Session", NULL, MAIN_TRACE },
 	{ isc_action_svc_trace_resume, "Resume Trace Session", NULL, MAIN_TRACE },
 	{ isc_action_svc_trace_list, "List Trace Sessions", NULL, MAIN_TRACE },
+	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
+	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
@@ -2369,6 +2371,38 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				break;
+			}
+			break;
+
+		case isc_action_svc_set_mapping:
+		case isc_action_svc_drop_mapping:
+			if (!found)
+			{
+				if (!get_action_svc_parameter(svc_action, gsec_action_in_sw_table, switches))
+				{
+					return false;
+				}
+
+				found = true;
+				if (spb.isEof())
+				{
+					break;
+				}
+			}
+			
+			switch (spb.getClumpTag())
+			{
+			case isc_spb_sql_role_name:
+			case isc_spb_dbname:
+				if (!get_action_svc_parameter(spb.getClumpTag(), gsec_in_sw_table, switches))
+				{
+					return false;
+				}
+				get_action_svc_string(spb, switches);
+				break;
+
+			default:
+				return false;
 			}
 			break;
 
