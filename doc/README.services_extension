@@ -58,3 +58,92 @@ password are set using some other method):
  Restore database from this files:
   fbsvcmgr service_mgr action_nrest dbname e.fdb nbk_file e.nb0 nbk_file e.nb1
 
+
+3) Services API extension - trace support.
+(Khorsun Vlad, hvlad@users.sourceforge.net, 2009)
+
+	There is five new services and corresponding actions to manage by user
+trace sessions :
+
+Start user trace session :
+	action
+		isc_action_svc_trace_start    
+
+	parameter(s)
+		isc_spb_trc_name : trace session name, string, optional
+		isc_spb_trc_cfg  : trace session configuration, string, mandatory
+
+	output
+		ñontents of trace session output in text format
+
+
+Stop trace session
+	action
+		isc_action_svc_trace_stop     
+
+	parameter(s)
+		isc_spb_trc_id : trace session ID, integer, mandatory
+
+	output
+		text message with status of operation :
+			- Trace session ID NNN stopped
+			- No permissions to stop other user trace session
+			- Trace session ID NNN not found
+
+
+Suspend trace session
+	action
+		isc_action_svc_trace_suspend  
+
+	parameter(s)
+		isc_spb_trc_id : trace session ID, integer, mandatory
+
+	output
+		text message with status of operation :
+			- Trace session ID NNN paused
+			- No permissions to change other user trace session
+			- Trace session ID NNN not found
+
+Resume trace session
+	action
+		isc_action_svc_trace_resume   
+
+	parameter(s)
+		isc_spb_trc_id : trace session ID, integer, mandatory
+
+	output
+		text message with status of operation :
+			- Trace session ID NNN resumed
+			- No permissions to change other user trace session
+			- Trace session ID NNN not found
+
+List of existing trace sessions
+	action
+		isc_action_svc_trace_list     
+
+	parameter(s)
+		none
+
+	output
+		text messages with list and state of trace sessions
+			- Session ID: <number>
+			-   name:  <string>
+			-   user:  <string>
+			-   date:  YYYY-MM-DD HH:NN:SS
+			-   flags: <string>
+		
+		"name" is trace session name and not printed if empty.
+		"user" is creator user name
+		"date" is session start date and time
+		"flags" is comma delimited set of
+			session's run state : "active" or "suspend"
+			if creator user is administrator : "admin"
+			if session created by the engine itself : "system"
+			kind of session : "audit" or "trace"
+			if user session log file is full : "log full"
+
+
+	Output of every service is obtained as usually using isc_service_query call
+with isc_info_svc_line or isc_info_svc_to_eof information items.
+
+See also README.trace_services
