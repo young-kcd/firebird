@@ -74,7 +74,7 @@ Start user trace session :
 		isc_spb_trc_cfg  : trace session configuration, string, mandatory
 
 	output
-		ñontents of trace session output in text format
+		contents of trace session output in text format
 
 
 Stop trace session
