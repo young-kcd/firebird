@@ -2,6 +2,11 @@
   * v2.5 Beta 1
   *************
 
+    * Bugfix CORE-2317
+        select * from (select cast(....  returns null
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2313
         INF_* functions may invalidate the whole output buffer
         with isc_info_truncated at the beginning due to boundary condition
