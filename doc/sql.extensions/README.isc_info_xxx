@@ -28,7 +28,7 @@ New items for isc_database_info
 				 page size
 
 	This feature is allowed only for SYSDBA or database owner for security 
-	reasons. Introduced in Firebird v2.5
+	reasons. Introduced in Firebird v2.5.
 
 	See also CORE-2054.
 

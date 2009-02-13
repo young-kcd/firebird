@@ -405,6 +405,7 @@ public:
 	}
 
 	virtual size_t write(const void* buf, size_t size);
+
 	virtual void release()	
 	{ 
 		delete this; 

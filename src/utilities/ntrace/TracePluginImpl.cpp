@@ -547,7 +547,7 @@ namespace {
 
 void int_to_str(SINT64 value, int scale, string& str)
 {
-	if (!value)
+	if (value == 0)
 	{
 		str = "0";
 		return;

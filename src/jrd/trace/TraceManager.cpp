@@ -119,7 +119,7 @@ TraceManager::~TraceManager()
 void TraceManager::init()
 {
 	// ensure storage is initialized
-	ConfigStorage *storage = getStorage();
+	getStorage();
 	load_modules();
 	changeNumber = 0;
 }

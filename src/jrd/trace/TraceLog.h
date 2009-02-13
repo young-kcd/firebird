@@ -33,7 +33,7 @@
 
 namespace Jrd {
 
-class TraceLog 
+class TraceLog
 {
 public:
 	TraceLog(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);

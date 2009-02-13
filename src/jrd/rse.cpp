@@ -3712,7 +3712,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			p += sizeof(record_param);
 
 			// We just restored record of current recursion level, delete record 
-			// from upper level. It may be optimized in the future if needed
+			// from upper level. It may be optimized in the future if needed.
 			delete rec;
 		}
 		delete[] tmp;
