@@ -2,6 +2,11 @@
   * v2.5 Beta 1
   *************
 
+    * Bugfix CORE-2320
+        Complex recursive query may produce not all rows
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2317
         select * from (select cast(....  returns null
       Contributor(s):
