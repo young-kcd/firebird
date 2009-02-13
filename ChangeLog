@@ -1,3 +1,60 @@
+2009-02-13 15:16  asfernandes
+
+	* firebird2/doc/README.services_extension (1.7):
+
+	Typo
+
+2009-02-13 15:06  hvlad
+
+	* firebird2/doc/README.trace_services (1.1):
+
+	New documentation
+
+2009-02-13 15:06  hvlad
+
+	* firebird2/doc/README.services_extension (1.6):
+
+	Update documentation
+
+2009-02-13 14:05  alexpeshkoff
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.38),
+	include/consts_pub.h (1.31), jrd/svc.cpp (1.265),
+	msgs/facilities2.sql (1.60), msgs/messages2.sql (1.81),
+	utilities/fbsvcmgr.cpp (1.26), utilities/gsec/call_service.cpp
+	(1.22), utilities/gsec/gsec.cpp (1.106), utilities/gsec/gsec.h
+	(1.37), utilities/gsec/gsecswi.h (1.12),
+	utilities/gsec/security.epp (1.25):
+
+	Implemented CORE-2322: added gsec and services support to control
+	SYSDBA-like access of windows domain administrators to security
+	database
+
+2009-02-13 09:11  robocop
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.15):
+
+	Correction.
+
+2009-02-13 08:48  robocop
+
+	* firebird2/: doc/sql.extensions/README.isc_info_xxx (1.7),
+	src/jrd/trace/TraceService.cpp (1.10):
+
+	Misc.
+
+2009-02-13 04:23  dimitr
+
+	* firebird2/doc/WhatsNew (1.164):
+
+	Update.
+
+2009-02-13 01:32  asfernandes
+
+	* firebird2/doc/WhatsNew (1.163):
+
+	Update
+
 2009-02-12 19:54  dimitr
 
 	* firebird2/doc/WhatsNew (1.162):
