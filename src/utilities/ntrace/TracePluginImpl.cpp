@@ -567,7 +567,7 @@ void int_to_str(SINT64 value, int scale, string& str)
 		{
 			const int lpad = scale - str.length() + 1;
 			if (lpad > 0)
-				str.insert((string::size_type)0, lpad, '0');
+				str.insert((string::size_type) 0, lpad, '0');
 		}
 		else
 		{
@@ -575,11 +575,10 @@ void int_to_str(SINT64 value, int scale, string& str)
 			if (lpad > 0)
 				str.insert(1, lpad, '0');
 		}
-	}
 
-	if (scale) {
 		str.insert(str.length() - scale, ".");
 	}
+
 }
 
 } // namespace
