@@ -196,11 +196,9 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 			}
 			return true;
 		}
-		else
-		{
-			m_svc.printf("No permissions to change other user trace session\n");
-			return false;
-		}
+
+		m_svc.printf("No permissions to change other user trace session\n");
+		return false;
 	}
 
 	m_svc.printf("Trace session ID %d not found\n", id);

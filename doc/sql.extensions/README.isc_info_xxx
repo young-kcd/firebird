@@ -23,7 +23,7 @@ New items for isc_database_info
 	In the future it will be possible to pass 8-byte page_number value 
 	including both page number and page space number.
 
-	Responce format is <fb_info_page_contents, length, page_content>, where 
+	Response format is <fb_info_page_contents, length, page_content>, where 
 		<length> is 2-byte length of <page_content> and is equal to database 
 				 page size
 
