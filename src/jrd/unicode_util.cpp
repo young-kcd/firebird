@@ -1233,7 +1233,7 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 			icu->utransClose(trans);
 
 			len *= sizeof(USHORT);
-			if (len > dstLen)
+			if (ULONG(len) > dstLen)
 				len = INTL_BAD_STR_LENGTH;
 
 			srcLen = len;
