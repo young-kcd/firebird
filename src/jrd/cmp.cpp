@@ -2581,7 +2581,9 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 //   (and its variants that uses the same BLR: {NOT (a = ANY b)} and {a <> ALL b})
 // to:
 //   select ... from <t1>
-//     where not (x is null or exists (select <y> from <t2> where <y> = <x> or <y> is null))
+//     where not ((x is null and exists (select 1 from <t2>)) or
+//                exists (select <y> from <t2> where <y> = <x> or <y> is null))
+//
 // Because the second form can use indexes.
 // Returns NULL when not converted, and a new node to be processed when converted.
 static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
@@ -2615,14 +2617,32 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 	newNode->nod_arg[0]->nod_count = 2;
 
 	newNode->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 2);
-	newNode->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
-	newNode->nod_arg[0]->nod_arg[0]->nod_count = 1;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0] = outerRse->rse_boolean->nod_arg[0];
+	newNode->nod_arg[0]->nod_arg[0]->nod_type = nod_and;
+	newNode->nod_arg[0]->nod_arg[0]->nod_count = 2;
+
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 2);
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_count = 1;
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_arg[0] = outerRse->rse_boolean->nod_arg[0];
+
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, e_any_length);
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_type = nod_any;
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_count = 1;
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = (jrd_nod*) innerRse;
+
+	RecordSelExpr* newInnerRse = (RecordSelExpr*) PAR_make_node(
+		tdbb, innerRse->rse_count + rse_delta + 2);
+
+	*newInnerRse = *innerRse;
+	newInnerRse->rse_count = innerRse->rse_count;
+
+	for (USHORT i = 0; i < innerRse->rse_count; ++i)
+		newInnerRse->rse_relation[i] = innerRse->rse_relation[i];
 
 	newNode->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, e_any_length);
 	newNode->nod_arg[0]->nod_arg[1]->nod_type = nod_any;
 	newNode->nod_arg[0]->nod_arg[1]->nod_count = 1;
-	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = (jrd_nod*) innerRse;
+	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = (jrd_nod*) newInnerRse;
 
 	jrd_nod* boolean = PAR_make_node(tdbb, 2);
 	boolean->nod_type = nod_or;
@@ -2637,17 +2657,17 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 	boolean->nod_arg[1]->nod_type = nod_eql;
 
 	// If there was a boolean on the stream, append (AND) the new one
-	if (innerRse->rse_boolean)
+	if (newInnerRse->rse_boolean)
 	{
 		jrd_nod* temp = PAR_make_node(tdbb, 2);
 		temp->nod_type = nod_and;
 		temp->nod_count = 2;
-		temp->nod_arg[0] = innerRse->rse_boolean;
+		temp->nod_arg[0] = newInnerRse->rse_boolean;
 		temp->nod_arg[1] = boolean;
 		boolean = temp;
 	}
 
-	innerRse->rse_boolean = boolean;
+	newInnerRse->rse_boolean = boolean;
 
 	return newNode;
 }
