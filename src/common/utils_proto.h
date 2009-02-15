@@ -124,9 +124,9 @@ namespace fb_utils
 
 	// Returns frequency of performance counter in Hz
 	SINT64 query_performance_frequency();
-} // namespace fb_utils
 
-void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
+	void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
+} // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H
 
