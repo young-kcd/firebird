@@ -135,7 +135,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			sql.printf("ALTER ROLE RDB$ADMIN %s AUTO ADMIN MAPPING", 
 				io_user_data->operation == MAP_SET_OPER ? "SET" : "DROP");
 			isc_dsql_execute_immediate(isc_status, &DB, &trans, sql.length(), sql.c_str(), 1, NULL);
-			if (isc_status[1])
+			if (isc_status[1] != 0)
 			{
 				ret = GsecMsg97;
 			}

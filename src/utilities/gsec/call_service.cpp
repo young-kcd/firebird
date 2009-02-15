@@ -373,7 +373,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
-	if (isc_service_start(status, &handle, 0, static_cast<USHORT>(spb - spb_buffer), spb_buffer))
+	if (isc_service_start(status, &handle, 0, static_cast<USHORT>(spb - spb_buffer), spb_buffer) != 0)
 	{
 		return;
 	}

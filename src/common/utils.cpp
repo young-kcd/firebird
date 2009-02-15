@@ -835,7 +835,7 @@ SINT64 query_performance_frequency()
 
 void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append)
 {
-	if (!value)
+	if (value == 0)
 	{
 		if (append)
 			target.append("0", 1);
@@ -848,30 +848,39 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 	const int MAX_BUFFER = 50;
 
 	if (scale < -MAX_SCALE || scale > MAX_SCALE)
+	{
+		fb_assert(false);
 		return; // throw exception here?
+	}
 
 	const bool neg = value < 0;
 	const bool dot = scale < 0; // Need the decimal separator or not?
 	char buffer[MAX_BUFFER];
 	int iter = MAX_BUFFER;
-	buffer[--iter] = 0;
+
+	buffer[--iter] = '\0';
+
 	if (scale > 0)
 	{
 		while (scale-- > 0)
 			buffer[--iter] = '0';
 	}
+
 	bool dot_used = false;
 	FB_UINT64 uval = neg ? FB_UINT64(-(value + 1)) + 1 : value; // avoid problems with MIN_SINT64
-	while (uval)
+
+	while (uval != 0)
 	{
 		buffer[--iter] = static_cast<char>(uval % 10) + '0';
 		uval /= 10;
+
 		if (dot && !++scale)
 		{
 			buffer[--iter] = '.';
 			dot_used = true;
 		}
 	}
+
 	if (dot)
 	{
 		// if scale > 0 we have N.M
@@ -888,10 +897,12 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 		else if (!scale)
 			buffer[--iter] = '0';
 	}
+
 	if (neg)
 		buffer[--iter] = '-';
 
 	const size_t len = MAX_BUFFER - iter - 1;
+
 	if (append)
 		target.append(buffer + iter, len);
 	else

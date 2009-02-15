@@ -2634,7 +2634,6 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 		tdbb, innerRse->rse_count + rse_delta + 2);
 
 	*newInnerRse = *innerRse;
-	newInnerRse->rse_count = innerRse->rse_count;
 
 	for (USHORT i = 0; i < innerRse->rse_count; ++i)
 		newInnerRse->rse_relation[i] = innerRse->rse_relation[i];

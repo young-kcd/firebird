@@ -578,7 +578,6 @@ void int_to_str(SINT64 value, int scale, string& str)
 
 		str.insert(str.length() - scale, ".");
 	}
-
 }
 
 } // namespace

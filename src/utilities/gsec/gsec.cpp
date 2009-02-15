@@ -628,6 +628,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				{
 					Firebird::string val(string);
 					val.upper();
+
 					if (val == "SET")
 					{
 						user_data->operation = MAP_SET_OPER;
