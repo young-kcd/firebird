@@ -101,9 +101,7 @@ size_t FileObject::blockRead(void* buffer, size_t bytesToRead)
 	ssize_t bytesDone = read(file, buffer, bytesToRead);
 	if (bytesDone < 0)
 	{
-		fatal_exception::raiseFmt("IO error (%d) reading file: %s",
-			errno,
-			filename.c_str());
+		fatal_exception::raiseFmt("IO error (%d) reading file: %s", errno, filename.c_str());
 	}
 
 	return bytesDone;
@@ -114,9 +112,7 @@ void FileObject::blockWrite(const void* buffer, size_t bytesToWrite)
 	ssize_t bytesDone = write(file, buffer, bytesToWrite);
 	if (bytesDone != static_cast<ssize_t>(bytesToWrite))
 	{
-		fatal_exception::raiseFmt("IO error (%d) writing file: %s",
-			errno,
-			filename.c_str());
+		fatal_exception::raiseFmt("IO error (%d) writing file: %s", errno, filename.c_str());
 	}
 }
 
@@ -129,9 +125,7 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
 	ssize_t bytesDone = write(file, buffer, bytesToWrite);
 	if (bytesDone != static_cast<ssize_t>(bytesToWrite))
 	{
-		fatal_exception::raiseFmt("IO error (%d) writing file: %s",
-			errno,
-			filename.c_str());
+		fatal_exception::raiseFmt("IO error (%d) writing file: %s", errno, filename.c_str());
 	}
 }
 
@@ -153,8 +147,7 @@ bool FileObject::renameFile(const Firebird::PathName new_filename)
 			reopen();
 			return false;
 		}
-		fatal_exception::raiseFmt("IO error (%d) renaming file: %s",
-			rename_err,	filename.c_str());
+		fatal_exception::raiseFmt("IO error (%d) renaming file: %s", rename_err,	filename.c_str());
 	}
 	else
 		reopen();
@@ -165,9 +158,7 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
 {
     if (newOffset != (SINT64) LSEEK_OFFSET_CAST newOffset)
 	{
-		fatal_exception::raiseFmt(
-			"Attempt to seek file %s past platform size limit",
-			filename.c_str());
+		fatal_exception::raiseFmt("Attempt to seek file %s past platform size limit", filename.c_str());
 	}
 
 	int moveMethod;
@@ -189,9 +180,7 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
 
 	if (result == (off_t) -1)
 	{
-		fatal_exception::raiseFmt("IO error (%d) seeking file: %s",
-			errno,
-			filename.c_str());
+		fatal_exception::raiseFmt("IO error (%d) seeking file: %s", errno, filename.c_str());
 	}
 
 	return result;
