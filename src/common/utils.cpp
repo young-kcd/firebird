@@ -784,7 +784,7 @@ const SINT64 BILLION = 1000000000;
 static SINT64 saved_frequency = 0;
 
 // Returns current value of performance counter
-SINT64 query_performance_counter() 
+SINT64 query_performance_counter()
 {
 #if defined(WIN_NT)
 
@@ -811,7 +811,7 @@ SINT64 query_performance_counter()
 
 
 // Returns frequency of performance counter in Hz
-SINT64 query_performance_frequency() 
+SINT64 query_performance_frequency()
 {
 #if defined(WIN_NT)
 	if (saved_frequency)
@@ -831,6 +831,71 @@ SINT64 query_performance_frequency()
 	// This is not safe because of possible wrapping and very imprecise
 	return CLOCKS_PER_SEC;
 #endif
+}
+
+void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append)
+{
+	if (!value)
+	{
+		if (append)
+			target.append("0", 1);
+		else
+			target.assign("0", 1);
+		return;
+	}
+
+	const int MAX_SCALE = 25;
+	const int MAX_BUFFER = 50;
+
+	if (scale < -MAX_SCALE || scale > MAX_SCALE)
+		return; // throw exception here?
+
+	const bool neg = value < 0;
+	const bool dot = scale < 0; // Need the decimal separator or not?
+	char buffer[MAX_BUFFER];
+	int iter = MAX_BUFFER;
+	buffer[--iter] = 0;
+	if (scale > 0)
+	{
+		while (scale-- > 0)
+			buffer[--iter] = '0';
+	}
+	bool dot_used = false;
+	UINT64 uval = neg ? UINT64(-(value + 1)) + 1 : value; // avoid problems with MIN_SINT64
+	while (uval)
+	{
+		buffer[--iter] = static_cast<char>(uval % 10) + '0';
+		uval /= 10;
+		if (dot && !++scale)
+		{
+			buffer[--iter] = '.';
+			dot_used = true;
+		}
+	}
+	if (dot)
+	{
+		// if scale > 0 we have N.M
+		// if scale == 0 we have .M and we need 0.M
+		// if scale < 0 we have pending zeroes and need 0.{0+}M
+		if (!dot_used)
+		{
+			while (scale++ < 0)
+				buffer[--iter] = '0';
+
+			buffer[--iter] = '.';
+			buffer[--iter] = '0';
+		}
+		else if (!scale)
+			buffer[--iter] = '0';
+	}
+	if (neg)
+		buffer[--iter] = '-';
+
+	const size_t len = MAX_BUFFER - iter - 1;
+	if (append)
+		target.append(buffer + iter, len);
+	else
+		target.assign(buffer + iter, len);
 }
 
 } // namespace fb_utils

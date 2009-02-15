@@ -126,5 +126,7 @@ namespace fb_utils
 	SINT64 query_performance_frequency();
 } // namespace fb_utils
 
+void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
+
 #endif // INCLUDE_UTILS_PROTO_H
 
