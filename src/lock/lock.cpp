@@ -185,9 +185,9 @@ LockManager::LockManager(const Firebird::string& id)
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
+	  m_dbId(getPool(), id),
 	  m_acquireSpins(Config::getLockAcquireSpins()),
-	  m_memorySize(Config::getLockMemSize()),
-	  m_dbId(getPool(), id)
+	  m_memorySize(Config::getLockMemSize())
 {
 	Firebird::string name;
 	name.printf(LOCK_FILE, m_dbId.c_str());

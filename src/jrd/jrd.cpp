@@ -467,8 +467,8 @@ public:
 	virtual const char* getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
 
 private:
-	const DatabaseOptions* m_options;
 	const char* m_filename;
+	const DatabaseOptions* m_options;
 };
 
 static void			cancel_attachments();

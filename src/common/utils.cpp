@@ -660,7 +660,7 @@ Firebird::PathName get_process_name()
 
 	if (len <= 0)
 		buffer[0] = 0;
-	else if (len < sizeof(buffer))
+	else if (size_t(len) < sizeof(buffer))
 		buffer[len] = 0;
 	else
 		buffer[len - 1] = 0;
@@ -861,7 +861,7 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 			buffer[--iter] = '0';
 	}
 	bool dot_used = false;
-	UINT64 uval = neg ? UINT64(-(value + 1)) + 1 : value; // avoid problems with MIN_SINT64
+	FB_UINT64 uval = neg ? FB_UINT64(-(value + 1)) + 1 : value; // avoid problems with MIN_SINT64
 	while (uval)
 	{
 		buffer[--iter] = static_cast<char>(uval % 10) + '0';
