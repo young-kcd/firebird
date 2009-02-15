@@ -15,7 +15,7 @@ trace output is specified by trace configuration when trace session is created.
 	
 	System audit session is started by the engine itself and obtains configuration
 from the text file. The name of this file is set via new setting in firebird.conf
-("AuditTraceConfigFile") and by default have empty vale, i.e. no system audit
+("AuditTraceConfigFile") and by default have empty value, i.e. no system audit
 is configured. There may be only one system audit trace session, obviously.
 Configuration file contains list of traced events and placement of trace log(s).
 It is very flexible and allows to log different set of events for different
@@ -35,22 +35,22 @@ temporary files (1MB each) and deletes it automatically when file was read
 completely. Maximum size of user session's output is limited and set via
 "MaxUserTraceLogSize" setting in firebird.conf. Default value is 10 MB.
 
-	After application starts user trace session it must read session's output
+	After application starts user trace session, it must read session's output
 from service (using isc_service_query). Session output could be produced by the
 engine faster than application is able to read it. When session output grows
 more than "MaxUserTraceLogSize" engine automatically suspends this trace
 session. When application reads part of the output so output size stay less than
-"MaxUserTraceLogSize" engine automatically resumed trace session.
+"MaxUserTraceLogSize" engine automatically resumes trace session
 
 	When application decide to stop its trace session it just do detach from
 service. Also there is abilities to manage trace sessions (suspend\resume\stop).
-Administrators allowed to manage any trace session while ordinary users allowed
+Administrators are allowed to manage any trace session while ordinary users are allowed
 to manage its own trace sessions only.
 
     If user trace session was created by ordinary user it will trace only
 connections established by this user.
 
-    User trace sessions is not preserved when all Firebird processes is stopped.
+    User trace sessions are not preserved when all Firebird processes are stopped.
 I.e. if user started trace session and Firebird SS or SC process is shutted down,
 this session is stopped and will not be restarted with new Firebird process. For
 CS this is not the case as user trace session can't live without connection with
@@ -90,7 +90,7 @@ b) Trace all connections of given user to database mydatabase.fdb
 	
 
 	So far there is no specialized standalone utility to work with trace services.
-Therefore examples below uses more general utility fbsvcmrg.
+Therefore examples below uses more general utility fbsvcmgr.
 
 a) Start user trace named "My trace" using configuration file fbtrace.conf and read
    its output on the screen :
@@ -125,7 +125,7 @@ e) Stop trace sesson with ID 1
 
     This is served by system audit trace. Administrator edit (or create new)
 trace configuration file, set its name in firebird.conf (AuditTraceConfigFile
-setting) and restarts Firebird. Later administrator could suspend\resume\stop
+setting) and restarts Firebird. Later, administrator could suspend\resume\stop
 this session without need to restart Firebird. To make audit configuration
 changes accepted by the engine, Firebird needs to be restarted.
 
