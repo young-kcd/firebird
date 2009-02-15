@@ -27,13 +27,14 @@
 
 #include "firebird.h"
 #include "../FileObject.h"
+//#include "../common/classes/locks.h"
 
 using namespace Firebird;
 Firebird::Mutex open_mutex;
 
 void FileObject::open(int flags, int pflags)
 {
-	open_mutex.enter();
+	MutexLockGuard guard(open_mutex);
 	DWORD flagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
 	DWORD filecreate = 0;
 	DWORD desiredAccess = 0;
@@ -62,7 +63,7 @@ void FileObject::open(int flags, int pflags)
 				case '\\':
 				case '/':
 				case ':':
-					temp[i] = '_';				
+					temp[i] = '_';
 			}
 		}
 
@@ -118,14 +119,12 @@ void FileObject::open(int flags, int pflags)
 	if (flags & fo_random)
 		flagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
 
-	file = CreateFile(filename.c_str(), 
-		desiredAccess, 
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
-		NULL, 
-		filecreate, 
+	file = CreateFile(filename.c_str(),
+		desiredAccess,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		NULL,
+		filecreate,
 		flagsAndAttributes, NULL);
-
-	open_mutex.leave();
 
 	if (file == INVALID_HANDLE_VALUE)
 		fatal_exception::raiseFmt("Error (%d) opening file: %s", GetLastError(), filename.c_str());
@@ -141,7 +140,7 @@ UINT64 FileObject::size()
 {
 	UINT64 nFileLen = 0;
 	if (file != INVALID_HANDLE_VALUE)
-	{ 
+	{
 		LARGE_INTEGER size;
 		if (GetFileSizeEx(file, &size))
 			nFileLen = size.QuadPart;
@@ -166,11 +165,11 @@ size_t FileObject::blockRead(void* buffer, size_t bytesToRead)
 	DWORD bytesDone;
 	if (!ReadFile(file, buffer, bytesToRead, &bytesDone, NULL))
 	{
-		fatal_exception::raiseFmt("IO error (%d) reading file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) reading file: %s",
 			GetLastError(),
 			filename.c_str());
 	}
-	
+
 	return bytesDone;
 }
 
@@ -189,7 +188,7 @@ void FileObject::blockWrite(const void* buffer, size_t bytesToWrite)
 	{
 		if (append_mutex != INVALID_HANDLE_VALUE)
 			ReleaseMutex(append_mutex);
-		fatal_exception::raiseFmt("IO error (%d) writing file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) writing file: %s",
 			GetLastError(),
 			filename.c_str());
 	}
@@ -207,7 +206,7 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
 			system_call_failed::raise("WaitForSingleObject");
 	}
 
-	if (seek(0, so_from_end) != 0) 
+	if (seek(0, so_from_end) != 0)
 		return;
 
 	DWORD bytesDone;
@@ -217,11 +216,11 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
 		if (append_mutex != INVALID_HANDLE_VALUE)
 			ReleaseMutex(append_mutex);
 
-		fatal_exception::raiseFmt("IO error (%d) writing file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) writing file: %s",
 			GetLastError(),
 			filename.c_str());
 	}
-	
+
 	if (append_mutex != INVALID_HANDLE_VALUE)
 		ReleaseMutex(append_mutex);
 }
@@ -229,7 +228,7 @@ void FileObject::writeHeader(const void* buffer, size_t bytesToWrite)
 bool FileObject::renameFile(const Firebird::PathName new_filename)
 {
 	if (append_mutex != INVALID_HANDLE_VALUE)
-	{ 
+	{
 		if (WaitForSingleObject(append_mutex, INFINITE) != WAIT_OBJECT_0)
 			system_call_failed::raise("WaitForSingleObject");
 	}
@@ -247,11 +246,11 @@ bool FileObject::renameFile(const Firebird::PathName new_filename)
 		if (append_mutex != INVALID_HANDLE_VALUE)
 			ReleaseMutex(append_mutex);
 
-		fatal_exception::raiseFmt("IO error (%d) renaming file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) renaming file: %s",
 			rename_err,
 			filename.c_str());
 	}
-	else 
+	else
 		reopen();
 
 	return true;
@@ -275,13 +274,13 @@ SINT64 FileObject::seek(SINT64 newOffset, SeekOrigin origin)
 			moveMethod = FILE_END;
 			break;
 	}
-	
+
 	DWORD error;
 	if ((offset.LowPart = SetFilePointer(file, offset.LowPart,
 			&offset.HighPart, moveMethod)) == INVALID_SET_FILE_POINTER &&
 		(error = GetLastError()) != NO_ERROR)
 	{
-		fatal_exception::raiseFmt("IO error (%d) seeking file: %s", 
+		fatal_exception::raiseFmt("IO error (%d) seeking file: %s",
 			error,
 			filename.c_str());
 	}
