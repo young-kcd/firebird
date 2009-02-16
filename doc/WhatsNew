@@ -746,6 +746,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-2322
+        Support SYSDBA-like access of Windows domain administrators to the security database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement CORE-2299
         Use the SuperClassic architecture for the embedded server on Windows
       Contributor(s):
@@ -867,6 +872,15 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Feature CORE-2323
+        Ability to trace various events happening inside the database engine
+      See also:
+        /doc/README.trace_services
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+        Dmitry Starodubov <dmitry.starodubov at red-soft.biz>
+
     * Feature CORE-2054
         Ability to query contents database file pages via ISC API interface
         in order to get low-level information for debug and deep analysis purposes
@@ -881,6 +895,15 @@
         /doc/README.intl
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Feature CORE-729
+        Log all SQL statements
+      See also:
+        /doc/README.trace_services
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+        Dmitry Starodubov <dmitry.starodubov at red-soft.biz>
 
 
   **************
