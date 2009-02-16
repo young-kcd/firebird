@@ -1,3 +1,9 @@
+2009-02-16 10:36  dimitr
+
+	* firebird2/doc/WhatsNew (1.165):
+
+	Update.
+
 2009-02-15 19:02  asfernandes
 
 	* firebird2/: src/common/utils.cpp (1.61), src/include/consts_pub.h
