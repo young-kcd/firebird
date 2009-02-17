@@ -1031,9 +1031,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (request->req_sql_text.length())
-		gds__log(request->req_sql_text.c_str());
-
 	BLKCHK(request, type_req);
 	BLKCHK(transaction, type_tra);
 
