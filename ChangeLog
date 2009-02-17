@@ -1,3 +1,10 @@
+2009-02-17 18:00  aafemt
+
+	* firebird2/src/remote/: inet_proto.h (1.19), remot_proto.h (1.15),
+	remote.h (1.89), os/win32/srvr_w32.cpp (1.66):
+
+	Fix some mistypes that GCC doesn't tolerate
+
 2009-02-16 10:36  dimitr
 
 	* firebird2/doc/WhatsNew (1.165):
