@@ -1031,6 +1031,9 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	if (request->req_sql_text.length())
+		gds__log(request->req_sql_text.c_str());
+
 	BLKCHK(request, type_req);
 	BLKCHK(transaction, type_tra);
 
@@ -1588,7 +1591,8 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		Jrd::ContextPoolHolder context(tdbb, proc_request->req_pool);
 
 		jrd_tra* transaction = request->req_transaction;
-		const SLONG save_point_number = transaction->tra_save_point->sav_number;
+		const SLONG save_point_number = transaction->tra_save_point ?
+			transaction->tra_save_point->sav_number : 0;
 
 		proc_request->req_timestamp = request->req_timestamp;
 		EXE_start(tdbb, proc_request, transaction);
