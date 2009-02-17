@@ -236,7 +236,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR lpszArgs, int
 #endif
 
 	TEXT mutex_name[MAXPATHLEN];
-	fb_utils::_snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
+	fb_utils::snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
 	fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
 	CreateMutex(ISC_get_security_desc(), FALSE, mutex_name);
 

@@ -27,7 +27,7 @@
 namespace Firebird
 {
 	class ClumpletReader;
-};
+}
 
 void		REMOTE_cleanup_transaction (struct Rtr *);
 ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);

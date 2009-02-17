@@ -29,7 +29,7 @@
 namespace Firebird
 {
 	class ClumpletReader;
-};
+}
 
 rem_port*	INET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*,
 	bool, Firebird::ClumpletReader&);

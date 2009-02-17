@@ -403,7 +403,7 @@ public:
 		STREAM_ERR = 16,	// There is an error pending in the batched rows
 		LAZY = 32,			// To be allocated at the first reference
 		DEFER_EXECUTE = 64,	// op_execute can be deferred
-		PAST_EOF = 128,		// EOF was returned by fetch from this statement
+		PAST_EOF = 128		// EOF was returned by fetch from this statement
 	};
 
 public:
