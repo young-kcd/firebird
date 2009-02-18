@@ -1,3 +1,10 @@
+2009-02-18 09:31  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.176.2.6):
+
+	Backported CORE-2326: AV when committing a new view while trigger
+	on rdb$relations is in place.
+
 2009-02-10 09:58  alexpeshkoff
 
 	* firebird2/src/burp/restore.epp (1.101.4.7):
