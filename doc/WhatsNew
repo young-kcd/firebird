@@ -7,6 +7,21 @@
       Contributor(s):
         Paul Beach <pbeach at ibphoenix.com>
 
+    * Bugfix CORE-2329
+        Significant performance degradation in v2.1.2 RC1
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2326
+        Access violation when committing a new view while trigger on rdb$relations is in place
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2271
+        GFIX reports the database ownership error way too late
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2266
         NBACKUP database locking not working correctly
       Contributor(s):
