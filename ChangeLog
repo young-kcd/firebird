@@ -1,3 +1,29 @@
+2009-02-19 19:09  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.267):
+
+	Ignore exceptions in catch() block - to be reviewed by Vlad
+
+2009-02-19 16:49  alexpeshkoff
+
+	* firebird2/src/common/thd.cpp (1.5):
+
+	Fixed my silly error in THD_sleep()
+
+2009-02-19 16:41  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.266):
+
+	always uppercase service user name - should make trace happy
+
+2009-02-19 13:59  alexpeshkoff
+
+	* firebird2/src/jrd/: UserManagement.cpp (1.8), UserManagement.h
+	(1.6), dfw.epp (1.264), dyn.epp (1.142), tra.cpp (1.196), tra.h
+	(1.95), vio.cpp (1.242):
+
+	Fixed transactions support in user management commands
+
 2009-02-17 18:00  aafemt
 
 	* firebird2/src/remote/: inet_proto.h (1.19), remot_proto.h (1.15),
