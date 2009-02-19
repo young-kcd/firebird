@@ -122,10 +122,9 @@ void THD_sleep(ULONG milliseconds)
 	{
 		if (errno != EINTR)
 		{
-			timer = rem;
-			continue;
+			Firebird::system_call_failed::raise("nanosleep");
 		}
-		Firebird::system_call_failed::raise("nanosleep");
+		timer = rem;
 	}
 #else
 	Firebird::Semaphore timer;
