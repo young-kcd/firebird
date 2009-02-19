@@ -165,6 +165,7 @@ namespace {
 
 				case isc_spb_user_name:
 					spb.getString(spb_user_name);
+					spb_user_name.upper();
 					break;
 
 				case isc_spb_password:
@@ -791,9 +792,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			}
 
 			// Check that the validated user has the authority to access this service
-			string uName(options.spb_user_name);
-			uName.upper();
-			if ((uName != SYSDBA_USER_NAME) && !options.spb_trusted_role) {
+			if ((options.spb_user_name != SYSDBA_USER_NAME) && !options.spb_trusted_role) {
 				user_flag = SVC_user_any;
 			}
 			else {
