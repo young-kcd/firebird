@@ -4,7 +4,6 @@ AC_PREREQ(2.56)
 AC_INIT(src)
 AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
-AC_CONFIG_MACRO_DIR([m4])
 AC_PREFIX_DEFAULT(/usr/local/firebird)
 
 AC_CONFIG_HEADER(src/include/gen/autoconfig.h:builds/make.new/config/config.h.in)
@@ -455,11 +454,8 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
-AC_LIBTOOL_DLOPEN
-AC_LIBTOOL_WIN32_DLL
+AC_PROG_RANLIB
 AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
 
 
 dnl Check for system header files
@@ -551,6 +547,11 @@ if test "$RT_LIB_CHECK" = "true"; then
 	AC_CHECK_LIB(rt, main)
 	AC_CHECK_LIB(resolv, inet_aton)
 fi
+
+dnl Check for libraries for static C++ runtime linking
+AC_CHECK_LIB(supc++, main, XE_APPEND(-lsupc++, STATIC_CXXSUPPORT_LIB))
+AC_CHECK_LIB(gcc_eh, main, XE_APPEND(-lgcc_eh, STATIC_CXXSUPPORT_LIB))
+AC_SUBST(STATIC_CXXSUPPORT_LIB)
 
 dnl check for INFINITY in math.h
 dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
@@ -1170,8 +1171,7 @@ case "$PLATFORM" in
 
   AIX)
     AIX_INSTALL_SRC_DIR=builds/install/arch-specific/aix/${FIREBIRD_ARCH_TYPE}
-    AC_CONFIG_FILES([
-    gen/install/scripts/rpmheader.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmheader.txt.in
+    AC_CONFIG_FILES([gen/install/scripts/rpmheader.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmheader.txt.in
     gen/install/scripts/rpmfiles.aix.txt:${AIX_INSTALL_SRC_DIR}/rpmfiles.txt.in
     gen/install/makeInstallImage.aix.sh:${AIX_INSTALL_SRC_DIR}/makeInstallImage.sh.in
     gen/firebird/bin/preinstall.aix.sh:builds/install/arch-specific/aix/misc/preinstall.sh.in

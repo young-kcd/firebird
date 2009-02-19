@@ -15,14 +15,9 @@ if [ -z "$LIBTOOL" ]
 then
   LIBTOOL=libtool
 fi
-if [ -z "$LIBTOOLIZE" ]
-then
-  LIBTOOLIZE=libtoolize
-fi
 
 echo "AUTOCONF="$AUTOCONF
 echo "LIBTOOL="$LIBTOOL
-echo "LIBTOOLiZE="$LIBTOOLIZE
 AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
 
 VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
@@ -37,20 +32,7 @@ case "$VER" in
   ;;
 esac
 
-VER=`$LIBTOOL --version|grep ' libtool)'|sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
-case "$VER" in
- 0* | 1\.[0-2] | 1\.[0-2][a-z]* | \
- 1\.3\.[0-2] | 1\.3\.[0-2][a-z]* )
-  echo
-  echo "**Error**: You must have libtool 1.3.3 or later installed."
-  echo "Download the appropriate package for your distribution/OS,"
-  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/libtool/"
-  DIE=1
-  ;;
-esac
-
 # Put other tests for programs here!
-
 
 # If anything failed, exit now.
 if test "$DIE" -eq 1; then
@@ -64,34 +46,6 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo \`$0\'" command line."
   echo
 fi
-
-# For Ubuntu 8.10 - Intrepid Ibex
-if [ ! -d m4 ]; then
-  mkdir m4
-fi
-
-# Generate configure from configure.in
-echo "Running libtoolize ..."
-LIBTOOL_M4=`$LIBTOOLIZE --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
-if test "x$LIBTOOL_M4" != "x"; then
-  rm -f aclocal.m4
-  cp $LIBTOOL_M4 aclocal.m4
-fi
-
-TEMPFILE="./lt.out"
-$LIBTOOLIZE --install --dry-run >$TEMPFILE 2>&1
-LIBTOOL_AUX_FILES=`grep 'unrecognized option' $TEMPFILE`
-rm -f $TEMPFILE
-if test "x$LIBTOOL_AUX_FILES" != "x"; then
-  $LIBTOOLIZE --copy --force || exit 1
-else
-# libtoolize no longer installs config.guess and config.sub by default.
-# Use new --install option to get old behavior.
-  $LIBTOOLIZE --copy --force --install || exit 1
-fi
-
-echo "Running autoreconf ..."
-autoreconf -if
 
 echo "Running autoheader ..."
 $AUTOHEADER || exit 1
