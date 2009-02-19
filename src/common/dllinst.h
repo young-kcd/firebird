@@ -28,6 +28,8 @@
 #ifndef FB_DLL_INST
 #define FB_DLL_INST
 
+#ifdef WIN_NT
+
 #include <windows.h>
 
 namespace Firebird {
@@ -36,5 +38,7 @@ extern HINSTANCE hDllInst;
 extern bool bEmbedded;
 
 } // namespace 
+
+#endif // WIN_NT
 
 #endif // FB_DLL_INST
