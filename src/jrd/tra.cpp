@@ -43,6 +43,7 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/jrd_pwd.h"
 #include "../jrd/ThreadStart.h"
+#include "../jrd/UserManagement.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
