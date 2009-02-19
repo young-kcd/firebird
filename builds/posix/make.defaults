@@ -137,25 +137,7 @@ CC =	@CC@
 CXX =	@CXX@
 LD =	@CXX@
 
-#
-# LIBTOOL ISSUES
-#
-# Most of the libraries and programs are linked using the dynamic linker
-# We default to using the dynamic linker and have a special link macros for
-# using the static linker.
-#
-# Also libtool looks like the future in cross platform shared object compile
-# and linking, but unfortunately it does not yet work for us, as a
-# libtool gcc -o $(BIN)/fred fred.o libzzz.la
-# command will generate incorrect relative addresses in the wrapper script in
-# $(BIN)/fred as it required the exe file fred to be in the directory from
-# which the command is run from.
-# One other issue is that libtool puts a -DPIC onto the compile line.  While
-# nice it conflicts with a struct in the file qli/format.h
-# MOD 26-July-2001.
-
 # LINKER COMMANDS
-# Alternatively we may use libtool here.
 
 LIB_LINK:= @CXX@ $(GLOB_OPTIONS)
 STATICLIB_LINK:= ar cruvs
@@ -278,7 +260,7 @@ FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
 FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
 
-STATIC_CXXSUPPORT_LIB = -lsupc++ -lgcc_eh
+STATIC_CXXSUPPORT_LIB=@STATIC_CXXSUPPORT_LIB@
 LIB_LINK_IMPLIB =
 LIB_GUI =
 

@@ -45,7 +45,7 @@ JRDBOOT_Sources = $(addprefix jrd/, $(JRDBOOT_Files))
 JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sources))))
 
 
-COMMONBOOT_Files =	 cvt.cpp
+COMMONBOOT_Files =	 cvt.cpp dllinst.cpp
 COMMONBOOT_Sources = $(addprefix common/, $(COMMONBOOT_Files))
 COMMONBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(COMMONBOOT_Sources))))
 
