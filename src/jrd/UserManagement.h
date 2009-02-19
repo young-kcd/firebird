@@ -24,6 +24,7 @@
 #define JRD_USER_MANAGEMENT_H
 
 #include "firebird.h"
+#include "../common/classes/array.h"
 #include "../jrd/ibase.h"
 
 struct internal_user_data;
@@ -31,20 +32,25 @@ struct internal_user_data;
 namespace Jrd {
 
 class thread_db;
+class jrd_tra;
 
 // User management argument for deferred work
 class UserManagement
 {
 public:
-	explicit UserManagement(thread_db* tdbb);
+	explicit UserManagement(jrd_tra* tra);
 	~UserManagement();
+
+	// store userData for DFW-time processing
+	USHORT put(internal_user_data* userData);
+	// execute command with ID
+	void execute(USHORT id);
+	// commit transaction in security database
+	void commit();
 
 private:
 	FB_API_HANDLE database, transaction;
-
-public:
-	int execute(ISC_STATUS* status, internal_user_data* u);
-	void commit();
+	Firebird::HalfStaticArray<internal_user_data*, 8> commands;
 };
 
 }	// namespace

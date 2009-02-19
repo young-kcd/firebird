@@ -2292,15 +2292,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	ISC_STATUS_ARRAY status;
 	try
 	{
-		DeferredWork* work = DFW_post_work(tra, dfw_user_management, NULL, 0);
-		UserManagement* sec = reinterpret_cast<UserManagement*>(work->dfw_args);
-		if (!sec)
-		{
-			sec = FB_NEW(*tra->tra_pool) UserManagement(tdbb);
-			work->dfw_args = reinterpret_cast<DeferredWork*>(sec);
-		}
-
-		internal_user_data userData;
+		internal_user_data* userData = FB_NEW(*tra->tra_pool) internal_user_data;
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_user_end)
 		{
@@ -2311,23 +2303,23 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			{
 			case isc_dyn_user_add:
 				text.upper();
-				userData.operation = ADD_OPER;
-				text.copyTo(userData.user_name, sizeof(userData.user_name));
-				userData.user_name_entered = true;
+				userData->operation = ADD_OPER;
+				text.copyTo(userData->user_name, sizeof(userData->user_name));
+				userData->user_name_entered = true;
 				break;
 
 			case isc_dyn_user_mod:
 				text.upper();
-				userData.operation = MOD_OPER;
-				text.copyTo(userData.user_name, sizeof(userData.user_name));
-				userData.user_name_entered = true;
+				userData->operation = MOD_OPER;
+				text.copyTo(userData->user_name, sizeof(userData->user_name));
+				userData->user_name_entered = true;
 				break;
 
 			case isc_dyn_user_del:
 				text.upper();
-				userData.operation = DEL_OPER;
-				text.copyTo(userData.user_name, sizeof(userData.user_name));
-				userData.user_name_entered = true;
+				userData->operation = DEL_OPER;
+				text.copyTo(userData->user_name, sizeof(userData->user_name));
+				userData->user_name_entered = true;
 				break;
 
 			case isc_dyn_user_passwd:
@@ -2336,63 +2328,53 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 					// 249: Password should not be empty string
 					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(249, DYN_MSG_FAC)));
 				}
-				text.copyTo(userData.password, sizeof(userData.password));
-				userData.password_entered = true;
+				text.copyTo(userData->password, sizeof(userData->password));
+				userData->password_entered = true;
 				break;
 
 			case isc_dyn_user_first:
 				if (text.hasData())
 				{
-					text.copyTo(userData.first_name, sizeof(userData.first_name));
-					userData.first_name_entered = true;
+					text.copyTo(userData->first_name, sizeof(userData->first_name));
+					userData->first_name_entered = true;
 				}
 				else
 				{
-					userData.first_name_entered = false;
-					userData.first_name_specified = true;
+					userData->first_name_entered = false;
+					userData->first_name_specified = true;
 				}
 				break;
 
 			case isc_dyn_user_middle:
 				if (text.hasData())
 				{
-					text.copyTo(userData.middle_name, sizeof(userData.middle_name));
-					userData.middle_name_entered = true;
+					text.copyTo(userData->middle_name, sizeof(userData->middle_name));
+					userData->middle_name_entered = true;
 				}
 				else
 				{
-					userData.middle_name_entered = false;
-					userData.middle_name_specified = true;
+					userData->middle_name_entered = false;
+					userData->middle_name_specified = true;
 				}
 				break;
 
 			case isc_dyn_user_last:
 				if (text.hasData())
 				{
-					text.copyTo(userData.last_name, sizeof(userData.last_name));
-					userData.last_name_entered = true;
+					text.copyTo(userData->last_name, sizeof(userData->last_name));
+					userData->last_name_entered = true;
 				}
 				else
 				{
-					userData.last_name_entered = false;
-					userData.last_name_specified = true;
+					userData->last_name_entered = false;
+					userData->last_name_specified = true;
 				}
 				break;
 			}
 		}
 
-		int errcode = sec->execute(status, &userData);
-
-		switch (errcode)
-		{
-		case 0: // nothing
-		    break;
-		case GsecMsg22:
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)) <<
-									Arg::Str(userData.user_name));
-		default:
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)));
-		}
+		USHORT id = tra->getUserManagement()->put(userData);
+		DeferredWork* work = DFW_post_work(tra, dfw_user_management, NULL, id);
 	}
 	catch (const Exception& e)
 	{

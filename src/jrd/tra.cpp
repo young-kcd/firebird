@@ -3472,6 +3472,7 @@ jrd_tra::~jrd_tra()
 {
 	delete tra_undo_record;
 	delete tra_undo_space;
+	delete tra_user_management;
 
 	if (!tra_outer)
 	{

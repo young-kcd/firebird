@@ -2909,7 +2909,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 /* Cleanup/merge deferred work/event post */
 
-	if (sav_point->sav_verb_actions || (sav_point->sav_flags & SAV_event_post))
+	if (sav_point->sav_verb_actions || (sav_point->sav_flags & SAV_force_dfw))
 	{
 		if (sav_point->sav_verb_count) {
 			DFW_delete_deferred(transaction, sav_point->sav_number);
@@ -2923,13 +2923,13 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		 * not rolled back, set flag for the previous save point.
 		 */
 
-		if (sav_point->sav_flags & SAV_event_post) {
+		if (sav_point->sav_flags & SAV_force_dfw) {
 			if (transaction->tra_save_point && !sav_point->sav_verb_count)
 			{
-				transaction->tra_save_point->sav_flags |= SAV_event_post;
+				transaction->tra_save_point->sav_flags |= SAV_force_dfw;
 			}
 
-			sav_point->sav_flags &= ~SAV_event_post;
+			sav_point->sav_flags &= ~SAV_force_dfw;
 		}
 	}
 

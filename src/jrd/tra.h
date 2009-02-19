@@ -60,6 +60,8 @@ class ArrayField;
 class Attachment;
 class DeferredWork;
 class dsql_opn;
+class UserManagement;
+class thread_db;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this
 // structure small as there can be huge amount of them floating in memory.
@@ -120,7 +122,8 @@ public:
 		tra_transactions(*p),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
-		tra_undo_record(NULL)
+		tra_undo_record(NULL),
+		tra_user_management(NULL)
 	{
 		if (outer)
 		{
@@ -212,6 +215,7 @@ private:
 	TempSpace* tra_undo_space;	// undo log storage
 
 	Record* tra_undo_record;	// temporary record used for the undo purposes
+	UserManagement* tra_user_management;
 
 public:
 	SSHORT getLockWait() const
@@ -250,6 +254,9 @@ public:
 
 		return tra_undo_record;
 	}
+
+	// get UserManagement object for transaction, defined in UserManagement.cpp
+	UserManagement* getUserManagement();
 };
 
 // System transaction is always transaction 0.
@@ -327,7 +334,7 @@ public:
 /* Savepoint block flags. */
 
 const int SAV_trans_level	= 1;	/* savepoint was started by TRA_start */
-const int SAV_event_post	= 2;	/* event posted in the save point */
+const int SAV_force_dfw		= 2;	/* DFW is present even if savepoint is empty */
 const int SAV_user			= 4;	/* named user savepoint as opposed to system ones */
 
 /* Maximum size in bytes of transaction-level savepoint data.

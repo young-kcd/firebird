@@ -26,6 +26,8 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/jrd_pwd.h"
+#include "../jrd/tra.h"
+#include "../jrd/msg_encode.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 
@@ -33,13 +35,13 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-UserManagement::UserManagement(thread_db* tdbb)
-	: database(0), transaction(0)
+UserManagement::UserManagement(jrd_tra* tra)
+	: database(0), transaction(0), commands(*tra->tra_pool)
 {
 	char securityDatabaseName[MAXPATHLEN];
 	SecurityDatabase::getPath(securityDatabaseName);
 	ISC_STATUS_ARRAY status;
-	Attachment* att = tdbb->getAttachment();
+	Attachment* att = tra->tra_attachment;
 
 	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
@@ -61,22 +63,14 @@ UserManagement::UserManagement(thread_db* tdbb)
 	}
 }
 
-void UserManagement::commit()
-{
-	ISC_STATUS_ARRAY status;
-	if (transaction)
-	{
-		// Commit transaction in security database
-		if (isc_commit_transaction(status, &transaction))
-		{
-			status_exception::raise(status);
-		}
-		transaction = 0;
-	}
-}
-
 UserManagement::~UserManagement()
 {
+	for (ULONG i = 0; i < commands.getCount(); ++i)
+	{
+		delete commands[i];
+	}
+	commands.clear();
+
 	ISC_STATUS_ARRAY status;
 	if (transaction)
 	{
@@ -96,13 +90,72 @@ UserManagement::~UserManagement()
 	}
 }
 
-int UserManagement::execute(ISC_STATUS* status, internal_user_data* u)
+void UserManagement::commit()
+{
+	ISC_STATUS_ARRAY status;
+	if (transaction)
+	{
+		// Commit transaction in security database
+		if (isc_commit_transaction(status, &transaction))
+		{
+			status_exception::raise(status);
+		}
+		transaction = 0;
+	}
+}
+
+USHORT UserManagement::put(internal_user_data* userData)
+{
+	size_t ret = commands.getCount();
+	if (ret > MAX_USHORT)
+	{
+		status_exception::raise(Arg::Gds(isc_random) << "Too many user management DDL per transaction)");
+	}
+	commands.push(userData);
+	return ret;
+}
+
+void UserManagement::execute(USHORT id)
 {
 #if (defined BOOT_BUILD || defined EMBEDDED)
 	status_exception::raise(Arg::Gds(isc_wish_list));
-	return 0; // make the compiler happy
 #else
-	return (!u->user_name_entered) ? 
-		GsecMsg18 : SECURITY_exec_line(status, database, transaction, u, NULL, NULL);
+	if ((!transaction) || (!commands[id]))
+	{
+		// Already executed
+		return;
+	}
+
+	if (id >= commands.getCount())
+	{
+		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
+	}
+
+	ISC_STATUS_ARRAY status;
+	int errcode = (!commands[id]->user_name_entered) ? GsecMsg18 : 
+		SECURITY_exec_line(status, database, transaction, commands[id], NULL, NULL);
+
+	switch (errcode)
+	{
+	case 0: // nothing
+	    break;
+	case GsecMsg22:
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)) <<
+								Arg::Str(commands[id]->user_name));
+	default:
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)));
+	}
+
+	delete commands[id];
+	commands[id] = 0;
 #endif
+}
+
+UserManagement* jrd_tra::getUserManagement()
+{
+	if (!tra_user_management)
+	{
+		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
+	}
+	return tra_user_management;
 }

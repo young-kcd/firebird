@@ -378,20 +378,12 @@ DeferredWork::~DeferredWork()
 {
 	if (dfw_args)
 	{
-		if (dfw_type == dfw_user_management)
+		DeferredWork* tmp = dfw_args;
+		while (tmp)
 		{
-			UserManagement* sec = reinterpret_cast<UserManagement*>(dfw_args);
-			delete sec;
-		}
-		else
-		{
-			DeferredWork* tmp = dfw_args;
-			while (tmp)
-			{
-				DeferredWork* next = tmp->dfw_next;
-				delete tmp;
-				tmp = next;
-			}
+			DeferredWork* next = tmp->dfw_next;
+			delete tmp;
+			tmp = next;
 		}
 	}
 
@@ -1260,12 +1252,10 @@ static bool user_management(thread_db*		tdbb,
 	case 2:
 		return true;
 	case 3:
-		// Commit
-		sec = reinterpret_cast<UserManagement*>(work->dfw_args);
-		if (sec)
-		{
-			sec->commit();
-		}
+		transaction->getUserManagement()->execute(work->dfw_id);
+		return true;
+	case 4:
+		transaction->getUserManagement()->commit();	// safe to be called multiple times
 		return false;
 	}
 
@@ -5094,10 +5084,19 @@ static DeferredWork* post_work(jrd_tra* transaction,
 	*ptr = FB_NEW(*transaction->tra_pool)
 		DeferredWork(*transaction->tra_pool, type, id, sav_number, string, length);
 
-	if (type != dfw_post_event)
+	switch (type)
+	{
+	case dfw_user_management:
 		transaction->tra_flags |= TRA_deferred_meta;
-	else if (transaction->tra_save_point)
-		transaction->tra_save_point->sav_flags |= SAV_event_post;
+		// fall down ...
+	case dfw_post_event:
+		if (transaction->tra_save_point)
+			transaction->tra_save_point->sav_flags |= SAV_force_dfw;
+		break;
+	default:
+		transaction->tra_flags |= TRA_deferred_meta;
+		break;
+	}
 
 	return *ptr;
 }
