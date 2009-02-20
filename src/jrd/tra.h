@@ -255,7 +255,6 @@ public:
 		return tra_undo_record;
 	}
 
-	// get UserManagement object for transaction, defined in UserManagement.cpp
 	UserManagement* getUserManagement();
 };
 

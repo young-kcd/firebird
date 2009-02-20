@@ -150,12 +150,3 @@ void UserManagement::execute(USHORT id)
 	commands[id] = 0;
 #endif
 }
-
-UserManagement* jrd_tra::getUserManagement()
-{
-	if (!tra_user_management)
-	{
-		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
-	}
-	return tra_user_management;
-}
