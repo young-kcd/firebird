@@ -244,8 +244,7 @@ static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 
 #if !defined(WIN_NT)
-static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
-static bool		check_proxy(rem_port*, TEXT*, Firebird::string&);
+static bool		check_host(rem_port*);
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM);
 
 static Firebird::GlobalPtr<Firebird::Mutex> waitThreadMutex;
@@ -302,10 +301,6 @@ static rem_port*		inet_try_connect(	PACKET*,
 									ISC_STATUS*,
 									Firebird::ClumpletReader&);
 static bool_t	inet_write(XDR *, int);
-#if !(defined WIN_NT)
-static int		parse_hosts(const TEXT*, const TEXT*, const TEXT*);
-static int		parse_line(const TEXT*, const TEXT*, const TEXT*, const TEXT*);
-#endif
 
 #ifdef DEBUG
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
@@ -1078,7 +1073,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	}
 
 /* See if user exists.  If not, reject connection */
-	if (user_verification) {
+	if (user_verification) 
+	{
 		eff_gid = eff_uid = -1;
 		port->port_flags |= PORT_not_trusted; // never tested
 	}
@@ -1086,64 +1082,9 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 #ifndef WIN_NT
 	else
 	{
-		/* Security check should be against remote name passed - so do
-		   check_host first */
-
-		TEXT host[MAXHOSTLEN];
-		const struct passwd* passwd = getpwnam( name.c_str());
-		const int trusted = check_host(port, host, name.c_str(), passwd);
-		if (!trusted) {
-			return false;
-		}
-
-		if (trusted == -1) {
-			eff_gid = eff_uid = -1;
-			port->port_flags |= PORT_not_trusted; // never tested
-		}
-		else
+		if (!check_host(port))
 		{
-			if (check_proxy(port, host, name))
-				passwd = getpwnam(name.c_str());
-			if (!passwd) {
-				return false;
-			}
-#ifndef HAVE_INITGROUPS
-			eff_gid = passwd->pw_gid;
-#else
-
-			initgroups(passwd->pw_name, passwd->pw_gid);
-			if (eff_gid != -1)
-			{
-				gid_t gids[BUFFER_TINY];
-
-				const int gid_count = getgroups(FB_NELEM(gids), gids);
-				int i;
-				for (i = 0; i < gid_count; ++i) {
-					if (gids[i] == eff_gid) {
-						break;
-					}
-				}
-				if ((i == gid_count) && passwd) {
-					eff_gid = passwd->pw_gid;
-				}
-			}
-			else
-			{
-				eff_gid = passwd->pw_gid;
-			}
-#endif /* HAVE_INITGROUPS */
-			eff_uid = passwd->pw_uid;
-
-			/* if not multi-client: set uid, gid and home directory */
-
-			if (!port->port_parent) {
-				if (!eff_gid || setregid(passwd->pw_gid, eff_gid) == -1) {
-					setregid(passwd->pw_gid, passwd->pw_gid);
-				}
-				if (!setreuid(passwd->pw_uid, passwd->pw_uid)) {
-					chdir(passwd->pw_dir);
-				}
-			}
+			return false;
 		}
 	}
 
@@ -1166,7 +1107,6 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 			}
 		}
 	}
-
 #endif /* !WIN_NT */
 
 /* store FULL user identity in port_user_name for security purposes */
@@ -1479,9 +1419,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 }
 
 #ifndef WIN_NT
-static int check_host(rem_port* port,
-					  TEXT* host_name,
-					  const TEXT* user_name, const struct passwd *passwd)
+static bool check_host(rem_port* port)
 {
 /**************************************
  *
@@ -1490,10 +1428,7 @@ static int check_host(rem_port* port,
  **************************************
  *
  * Functional description
- *	Check the host on the other end of the socket to see if
- *	it's an equivalent host.
- * NB.: First check the ~/.rhosts then the HOSTS_FILE - both have
- *	the same line formats (see parse_line)
+ *	Check the host on the other end of the socket to see if it's localhost
  *
  **************************************/
 	struct sockaddr_in address;
@@ -1501,109 +1436,12 @@ static int check_host(rem_port* port,
 	socklen_t length = sizeof(address);
 
 	if (getpeername((int) port->port_handle, (struct sockaddr*) &address, &length) == -1)
-		return 0;
-
-	// If source address is in the loopback net - trust it
-	if ((ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
-		return 1;
-
-	const struct hostent* host = gethostbyaddr((SCHAR*) &address.sin_addr,
-							   sizeof(address.sin_addr), address.sin_family);
-	if (!host)
-	{
-		return 0;
-	}
-
-	int result = -1;
-
-	strcpy(host_name, host->h_name);
-
-	TEXT user[BUFFER_TINY], rhosts[MAXPATHLEN];
-	if (passwd) {
-		strcpy(user, passwd->pw_name);
-		fb_assert(strlen(passwd->pw_dir) + strlen("/.rhosts") < MAXPATHLEN);
-		strcpy(rhosts, passwd->pw_dir);
-		strcat(rhosts, "/.rhosts");
-		result = parse_hosts(rhosts, host_name, user);
-	}
-	else
-		strcpy(user, user_name);
-
-	if (result == -1) {
-		FILE* fp = fopen(GDS_HOSTS_FILE, "r");
-		const TEXT* hosts_file = fp ? GDS_HOSTS_FILE : HOSTS_FILE;
-		if (fp)
-			fclose(fp);
-
-		result = parse_hosts(hosts_file, host_name, user);
-		if (result == -1)
-			result = 0;
-	}
-	return result;
-}
-#endif // !defined(WIN_NT)
-
-#if !(defined WIN_NT)
-static bool check_proxy(rem_port* port,
-						TEXT* host_name,
-						Firebird::string& user_name)
-{
-/**************************************
- *
- *	c h e c k _ p r o x y
- *
- **************************************
- *
- * Functional description
- *	Lookup <host_name, user_name> in proxy file.  If found,
- *	change user_name.
- *
- **************************************/
-	TEXT proxy_file[MAXPATHLEN];
-	TEXT source_user[BUFFER_TINY];
-	TEXT source_host[MAXHOSTLEN];
-	TEXT target_user[BUFFER_TINY];
-	TEXT line[BUFFER_SMALL];
-
-	strcpy(proxy_file, PROXY_FILE);
-	FILE* proxy = fopen(proxy_file, "r");
-	if (!proxy)
 		return false;
 
-/* Read lines, scan, and compare */
-
-	bool result = false;
-
-	for (;;)
-	{
-		int c;
-		TEXT* p = line;
-		while (((c = getc(proxy)) != 0) && c != EOF && c != '\n')
-		{
-			*p++ = c;
-		}
-		*p = 0;
-		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user) >= 3)
-		{
-			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*")) &&
-				(!strcmp(source_user, user_name.c_str()) || !strcmp(source_user, "*")))
-			{
-				delete port->port_user_name;
-				port->port_user_name = REMOTE_make_string(target_user);
-				user_name = target_user;
-				result = true;
-				break;
-			}
-		}
-		if (c == EOF)
-			break;
-	}
-
-	fclose(proxy);
-
-	return result;
+	// If source address is in the loopback net - trust it
+	return (ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET;
 }
-#endif // !defined(WIN_NT)
+#endif //WIN_NT
 
 #if !(defined WIN_NT)
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
@@ -2041,140 +1879,6 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 	}
 }
 
-
-#if !(defined WIN_NT)
-static int parse_hosts( const TEXT* file_name, const TEXT* host_name, const TEXT* user_name)
-{
-/*****************************************************************
- *
- *	p a r s e _ h o s t s
- *
- *****************************************************************
- *
- * Functional description:
- *	Parse hosts file (.rhosts or hosts.equiv) to determine
- *	if user_name on host_name should be allowed access.
- *
- *****************************************************************/
-	TEXT line[BUFFER_SMALL], entry1[BUFFER_SMALL], entry2[BUFFER_SMALL];
-
-	int result = -1;
-	FILE* fp = fopen(file_name, "r");
-
-	if (fp)
-	{
-		for (;;)
-		{
-			entry1[0] = entry2[0] = 0;
-			entry1[1] = entry2[1] = 0;
-			int c;
-			TEXT* p = line;
-			while ((c = getc(fp)) != EOF && c != '\n')
-				*p++ = c;
-			*p = 0;
-			sscanf(line, "%s", entry1);
-			sscanf(&line[strlen(entry1)], "%s", entry2);
-			result = parse_line(entry1, entry2, host_name, user_name);
-			if (c == EOF || result > -1)
-				break;
-		}
-		fclose(fp);
-	}
-
-	return result;
-}
-#endif
-
-#if !(defined WIN_NT)
-static int parse_line(const TEXT* entry1, const TEXT* entry2,
-					  const TEXT* host_name, const TEXT* user_name)
-{
-/*****************************************************************
- *
- *	p a r s e _ l i n e
- *
- *****************************************************************
- *
- * Functional description:
- *	Parse hosts file (.rhosts or hosts.equiv) to determine
- *	if user_name on host_name should be allowed access.
- *
- *  Returns
- *  1 if user_name is allowed
- *  0 if not allowed and
- *  -1 if there is not a host_name or a user_name
- *
- * only supporting:
- *    + - anybody on any machine
- *    -@machinegroup [2nd entry optional] - nobody on that machine
- *    +@machinegroup - anybody on that machine
- *    +@machinegroup username - this person on these machines
- *    +@machinegroup +@usergroup - these people  on these machines
- *    +@machinegroup -@usergroup - anybody on these machines EXCEPT these people
- *    machinename - anyone on this machine
- *    machinename username - this person on this machine
- *    machinename +@usergroup - these people on this machine
- *    machinename -@usergroup - anybody but these people on this machine
- *    machinename + - anybody on this machine
- *
- ******************************************************************/
-
-/* if entry1 is simply a "+" - everyone's in */
-
-	if (!strcmp(entry1, "+"))
-		return TRUE;
-
-/* if we don't have a host_name match, don't bother */
-
-	if (strcmp(entry1, host_name))
-	{
-#if (defined UNIX) && !(defined NETBSD)
-		if (entry1[1] == '@')
-		{
-			if (!innetgr(&entry1[2], host_name, 0, 0))
-				return -1;
-		}
-		else
-#endif
-			return -1;
-	}
-
-/* if we have a host_name match and an exclude symbol - they're out */
-
-	if (entry1[0] == '-')
-		return FALSE;
-
-/* if we matched the machine and seen a + after the machine
-   name they are in (eg: <machinename> + ) */
-
-	if ((entry2[0] == '+') && (strlen(entry2) == 1))
-		return TRUE;
-
-/* if we don't have a second entry OR it matches the user_name - they're in */
-
-	if (!entry2[0] || !strcmp(entry2, user_name))
-		return TRUE;
-
-/* if they're in the user group: + they're in, - they're out */
-
-#if (defined UNIX) && !(defined NETBSD)
-	if (entry2[1] == '@')
-	{
-		if (innetgr(&entry2[2], 0, user_name, 0))
-			return entry2[0] == '+' ? TRUE : FALSE;
-
-		// if they're NOT in the user group AND we're excluding it - they're in
-
-		if (entry2[0] == '-')
-			return TRUE;
-	}
-#endif
-
-/* if we get here - we matched machine but not user - maybe next line ... */
-
-	return -1;
-}
-#endif
 
 static rem_port* receive( rem_port* main_port, PACKET * packet)
 {
