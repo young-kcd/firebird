@@ -52,6 +52,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif
@@ -908,5 +911,112 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 	else
 		target.assign(buffer + iter, len);
 }
+
+
+#ifdef UNIX
+
+#ifdef AIX_PPC
+#define _UNIX95
+#endif
+#include <grp.h>
+#ifdef AIX_PPC
+#undef _UNIX95
+#endif
+
+#include <pwd.h>
+
+// Return user group id if user group name found, otherwise return 0.
+SLONG get_user_group_id(const TEXT* user_group_name)
+{
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+	Firebird::MutexLockGuard guard(mutex);
+
+	const struct group* user_group = getgrnam(user_group_name);
+	return user_group ? user_group->gr_gid : 0;
+}
+
+
+// Return user id if user found, otherwise return -1.
+SLONG get_user_id(const TEXT* user_name)
+{
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+	Firebird::MutexLockGuard guard(mutex);
+
+	const struct passwd* user = getpwnam(user_name);
+	return user ? user->pw_uid : -1;
+}
+
+
+// Fills the buffer with home directory if user found
+bool get_user_home(int user_id, Firebird::PathName& homeDir)
+{
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+	Firebird::MutexLockGuard guard(mutex);
+
+	const struct passwd* user = getpwuid(user_id);
+	if (user)
+	{
+		homeDir = user->pw_dir;
+		return true;
+	}
+	return false;
+}
+
+
+// open (or create if missing) and set appropriate access rights
+int openCreateFile(const char *pathname, int flags)
+{
+	int fd;
+	do {
+		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
+	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+		
+	if (fd >= 0)
+	{
+#ifdef SUPERSERVER
+		const mode_t mode = 0600;
+#else //SUPERSERVER
+		const char* firebird = "firebird";
+		uid_t uid = geteuid() == 0 ? get_user_id("firebird") : -1;
+		gid_t gid = get_user_group_id("firebird");
+		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno));
+
+		const mode_t mode = 0660;
+#endif //SUPERSERVER
+		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno));
+	}
+
+	return fd;
+}
+
+#else //UNIX
+
+// waits for implementation
+SLONG get_user_group_id(const TEXT* user_group_name)
+{
+	return 0;
+}
+
+
+// waits for implementation
+int get_user_id(const TEXT* user_name)
+{
+	return -1;
+}
+
+
+// waits for implementation
+bool get_user_home(int user_id, Firebird::PathName& homeDir)
+{
+	return false;
+}
+
+
+// open (or create if missing) and set appropriate access rights
+int openCreateFile(const char *pathname, int flags)
+{
+	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
+}
+#endif //UNIX
 
 } // namespace fb_utils

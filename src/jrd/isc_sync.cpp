@@ -1917,7 +1917,6 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	TEXT init_filename[MAXPATHLEN];
 	gds__prefix_lock(init_filename, INIT_FILE);
 
-	const int oldmask = umask(0);
 	const bool trunc_flag = (length != 0);
 
 /* open the init lock file */
@@ -1928,7 +1927,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #else
 	int
 #endif
-		fd_init = open(init_filename, O_RDWR | O_CREAT, 0666);
+		fd_init = fb_utils::openCreateFile(init_filename, 0);
 	if (fd_init == -1) {
 		error(status_vector, "open", errno);
 		return NULL;
@@ -1949,7 +1948,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		TEXT sem_filename[MAXPATHLEN];
 		gds__prefix_lock(sem_filename, SEM_FILE);
-		int f = open(sem_filename, O_RDWR | O_CREAT, 0666);
+		int f = fb_utils::openCreateFile(sem_filename, 0);
 		if (f == -1) {
 			error(status_vector, "open", errno);
 			return NULL;
@@ -1977,8 +1976,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif
 
 /* open the file to be inited */
-	const int fd = open(expanded_filename, O_RDWR | O_CREAT, 0666);
-	umask(oldmask);
+	const int fd = fb_utils::openCreateFile(expanded_filename, 0);
 	if (fd == -1) {
 		error(status_vector, "open", errno);
 		return NULL;
@@ -2114,14 +2112,12 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
 
-	const int oldmask = umask(0);
 	bool init_flag = false;
 
 /* Produce shared memory key for file */
 
 	const SLONG key = find_key(status_vector, expanded_filename);
 	if (!key) {
-		umask(oldmask);
 		return NULL;
 	}
 
@@ -2129,11 +2125,15 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	MutexLockGuard guard(openFdInit);
 
-	FILE* fp = fopen(expanded_filename, "w");
-	umask(oldmask);
+	int fd = fb_utils::openCreateFile(expanded_filename, O_TRUNC);
+	if (fd < 0) {
+		error(status_vector, "open", errno);
+		return NULL;
+	}
 
+	FILE* fp = fdopen(fd, "w");
 	if (!fp) {
-		error(status_vector, "fopen", errno);
+		error(status_vector, "fdopen", errno);
 		return NULL;
 	}
 
@@ -2143,10 +2143,10 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
    is complete.  That way potential race conditions are avoided. */
 
 #ifndef HAVE_FLOCK
-	if (lockf(fileno(fp), F_LOCK, 0)) {
+	if (lockf(fd, F_LOCK, 0)) {
 		error(status_vector, "lockf", errno);
 #else
-	if (flock(fileno(fp), LOCK_EX)) {
+	if (flock(fd, LOCK_EX)) {
 		error(status_vector, "flock", errno);
 #endif
 		fclose(fp);
@@ -4131,7 +4131,7 @@ static SLONG find_key(ISC_STATUS* status_vector, const TEXT* filename)
 
 	key_t key = ftok(filename, FTOK_KEY);
 	if (key == -1) {
-		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV);
+		int fd = fb_utils::openCreateFile(filename, O_TRUNC);
 		if (fd == -1) {
 			error(status_vector, "open", errno);
 			return 0L;

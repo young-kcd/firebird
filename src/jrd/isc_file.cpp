@@ -1056,10 +1056,9 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring q;
 		while (*from && *from != '/')
 			q += *from++;
-		const struct passwd* password = q.hasData() ? getpwnam(q.c_str()) : getpwuid(geteuid());
-		if (password)
+		if (fb_utils::get_user_home(q.hasData() ? fb_utils::get_user_id(q.c_str()) : geteuid(), 
+									buff))
 		{
-			buff = password->pw_dir;
 			expand_filename2(buff, expand_mounts);
 		}
 	}

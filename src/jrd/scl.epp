@@ -963,7 +963,7 @@ static bool check_user_group(thread_db* tdbb, const UCHAR* acl, USHORT number)
 			} while (--l);
 
 			// convert unix group name to unix group id
-			n = ISC_get_user_group_id(user_group_name.c_str());
+			n = fb_utils::get_user_group_id(user_group_name.c_str());
 		}
 	}
 

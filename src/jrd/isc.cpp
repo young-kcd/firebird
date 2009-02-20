@@ -516,64 +516,6 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 }
 
 
-#ifdef UNIX
-#ifdef AIX_PPC
-#define _UNIX95
-#endif
-#include <grp.h>
-#ifdef AIX_PPC
-#undef _UNIX95
-#endif
-
-SLONG ISC_get_user_group_id(const TEXT* user_group_name)
-{
-/**************************************
- *
- *      I S C _ g e t _ u s e r _ g r o u p _ n a n e
- *
- **************************************
- *
- * Functional description
- *
- *      Return user group id if user group name found,
- *      Otherwise return 0.
- *
- *                  ---  for UNIX platform  ---
- *
- **************************************/
-	SLONG n = 0;
-
-	const struct group* user_group = getgrnam(user_group_name);
-	if (user_group)
-		n = user_group->gr_gid;
-
-	return (n);
-}
-#else
-SLONG ISC_get_user_group_id(const TEXT* user_group_name)
-{
-/**************************************
- *
- *      I S C _ g e t _ u s e r _ g r o u p _ n a n e
- *
- *                  ---  for non-UNIX platform  ---
- *
- **************************************
- *
- * Functional description
- *
- *      needed to be developed for non-unix platform
- *
- *      Currently it just returns 0.
- *
- **************************************/
-
-	SLONG n = 0;
-	return (n);
-}
-#endif /* end of ifdef UNIX */
-
-
 #ifdef WIN_NT
 LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 {

@@ -28,6 +28,7 @@
 #include "firebird.h"
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
+#include "../../common/utils_proto.h"
 #include "../../jrd/common.h"
 #include "../../jrd/err_proto.h"
 #include "../../jrd/isc_proto.h"
@@ -172,7 +173,7 @@ void ConfigStorage::checkFile()
 
 		PathName filename = TempFile::create("fb_trace_");
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
-		m_cfg_file = ::open(cfg_file_name, O_CREAT | O_RDWR | O_BINARY, S_IREAD | S_IWRITE);
+		m_cfg_file = fb_utils::openCreateFile(cfg_file_name, O_BINARY);
 	}
 	else 
 	{
