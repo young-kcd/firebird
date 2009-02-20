@@ -25,9 +25,9 @@
  *
  */
 
-#ifdef WIN_NT
-
 #include "../common/dllinst.h"
+
+#ifdef WIN_NT
 
 namespace Firebird {
 

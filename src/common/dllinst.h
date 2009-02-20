@@ -28,6 +28,8 @@
 #ifndef FB_DLL_INST
 #define FB_DLL_INST
 
+#include <firebird.h>
+
 #ifdef WIN_NT
 
 #include <windows.h>
