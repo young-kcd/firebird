@@ -25,7 +25,7 @@
  *
  */
 
-#ifndef FB_DLL_INST
+#if !defined(FB_DLL_INST) && defined(WIN_NT)
 #define FB_DLL_INST
 
 #include <firebird.h>

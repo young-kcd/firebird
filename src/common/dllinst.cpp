@@ -25,9 +25,11 @@
  *
  */
 
-#include "../common/dllinst.h"
+#include "firebird.h"
 
 #ifdef WIN_NT
+
+#include "../common/dllinst.h"
 
 namespace Firebird {
 
@@ -35,5 +37,4 @@ HINSTANCE hDllInst = 0;
 bool bEmbedded = false;
 
 } // namespace 
-
 #endif // WIN_NT
