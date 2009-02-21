@@ -131,7 +131,7 @@ namespace fb_utils
 	int get_user_id(const TEXT* user_name);
 	bool get_user_home(int user_id, Firebird::PathName& homeDir);
 
-	int openCreateFile(const char *pathname, int flags);
+	int openCreateFile(const char* pathname, int flags);
 
 } // namespace fb_utils
 

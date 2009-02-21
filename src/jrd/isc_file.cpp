@@ -1056,7 +1056,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring q;
 		while (*from && *from != '/')
 			q += *from++;
-		if (fb_utils::get_user_home(q.hasData() ? fb_utils::get_user_id(q.c_str()) : geteuid(), 
+		if (fb_utils::get_user_home(q.hasData() ? fb_utils::get_user_id(q.c_str()) : geteuid(),
 									buff))
 		{
 			expand_filename2(buff, expand_mounts);

@@ -120,7 +120,7 @@ void UserManagement::execute(USHORT id)
 #if (defined BOOT_BUILD || defined EMBEDDED)
 	status_exception::raise(Arg::Gds(isc_wish_list));
 #else
-	if ((!transaction) || (!commands[id]))
+	if (!transaction || !commands[id])
 	{
 		// Already executed
 		return;
@@ -147,6 +147,6 @@ void UserManagement::execute(USHORT id)
 	}
 
 	delete commands[id];
-	commands[id] = 0;
+	commands[id] = NULL;
 #endif
 }

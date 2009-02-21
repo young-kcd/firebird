@@ -26,11 +26,10 @@
  */
 
 #if !defined(FB_DLL_INST) && defined(WIN_NT)
+
 #define FB_DLL_INST
 
 #include <firebird.h>
-
-#ifdef WIN_NT
 
 #include <windows.h>
 
@@ -41,6 +40,4 @@ extern bool bEmbedded;
 
 } // namespace 
 
-#endif // WIN_NT
-
-#endif // FB_DLL_INST
+#endif // !FB_DLL_INST && WIN_NT

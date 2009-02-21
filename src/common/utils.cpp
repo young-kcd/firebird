@@ -964,7 +964,7 @@ bool get_user_home(int user_id, Firebird::PathName& homeDir)
 
 
 // open (or create if missing) and set appropriate access rights
-int openCreateFile(const char *pathname, int flags)
+int openCreateFile(const char* pathname, int flags)
 {
 	int fd;
 	do {
@@ -975,21 +975,24 @@ int openCreateFile(const char *pathname, int flags)
 	{
 #ifdef SUPERSERVER
 		const mode_t mode = 0600;
-#else //SUPERSERVER
-		const char* firebird = "firebird";
-		uid_t uid = geteuid() == 0 ? get_user_id("firebird") : -1;
-		gid_t gid = get_user_group_id("firebird");
-		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno));
+#else // SUPERSERVER
+		const char* const FIREBIRD = "firebird";
+		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
+		gid_t gid = get_user_group_id(FIREBIRD);
+
+		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
 
 		const mode_t mode = 0660;
 #endif //SUPERSERVER
-		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno));
+		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
 	}
 
 	return fd;
 }
 
-#else //UNIX
+#else // UNIX
 
 // waits for implementation
 SLONG get_user_group_id(const TEXT* user_group_name)
@@ -1013,10 +1016,11 @@ bool get_user_home(int user_id, Firebird::PathName& homeDir)
 
 
 // open (or create if missing) and set appropriate access rights
-int openCreateFile(const char *pathname, int flags)
+int openCreateFile(const char* pathname, int flags)
 {
 	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 }
+
 #endif //UNIX
 
 } // namespace fb_utils

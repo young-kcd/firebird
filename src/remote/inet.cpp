@@ -1441,7 +1441,7 @@ static bool check_host(rem_port* port)
 	// If source address is in the loopback net - trust it
 	return (ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET;
 }
-#endif //WIN_NT
+#endif // WIN_NT
 
 #if !(defined WIN_NT)
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
