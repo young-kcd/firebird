@@ -1,3 +1,12 @@
+2009-02-21 18:43  asfernandes
+
+	* firebird2/src/: common/dllinst.cpp (1.5), common/dllinst.h (1.6),
+	common/utils.cpp (1.63), common/utils_proto.h (1.36),
+	jrd/UserManagement.cpp (1.10), jrd/isc_file.cpp (1.129),
+	jrd/svc.cpp (1.268), remote/inet.cpp (1.269):
+
+	Misc
+
 2009-02-20 17:17  alexpeshkoff
 
 	* firebird2/src/: common/utils.cpp (1.62), common/utils_proto.h
