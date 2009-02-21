@@ -11,13 +11,8 @@ if [ -z "$AUTOCONF" ]
 then
   AUTOCONF=autoconf
 fi
-if [ -z "$LIBTOOL" ]
-then
-  LIBTOOL=libtool
-fi
 
 echo "AUTOCONF="$AUTOCONF
-echo "LIBTOOL="$LIBTOOL
 AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
 
 VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
