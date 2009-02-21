@@ -39,7 +39,7 @@
 #include "TracePluginConfig.h"
 
 #include <sys/types.h>
-#include <regex.h>
+#include "regex.h"
 
 
 class TraceCfgReader

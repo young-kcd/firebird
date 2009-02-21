@@ -181,7 +181,7 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 
 # 
 # Libraries that come from outside the project but are built 
-# as part of the project are included here.  Currently IBM ICU and 
+# as part of the project are included here.  Currently IBM ICU, Henry Spencer's regex and 
 # editline are the only externals libraries we have included.
 # 
 
