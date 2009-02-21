@@ -641,7 +641,8 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
 
 	Firebird::MetaName field_name, user, s_class;
 	SecurityClass::flags_t aggregate_public = public_priv;
-	SecurityClass::flags_t priv, field_public;
+	SecurityClass::flags_t priv = 0;
+	SecurityClass::flags_t field_public = 0;
 	SSHORT user_type = -1;
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant6, IRQ_REQUESTS);
@@ -919,7 +920,7 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
  *	privilege for the input user.
  *
  **************************************/
-	UCHAR* dup_acl;
+	UCHAR* dup_acl = NULL;
 	SecurityClass::flags_t privilege = 0;
 	UCHAR c;
 
@@ -1017,6 +1018,7 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 			if (hit)
 			{
 				while ( (c = *a++) )
+				{
 					switch (c)
 					{
 					case priv_control:
@@ -1066,7 +1068,10 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 					default:
 						BUGCHECK(293);	/* bad ACL */
 					}
+				}
+
 				/* Squeeze out duplicate acl element. */
+				fb_assert(dup_acl);
 				acl.remove(dup_acl, a);
 				a = dup_acl;
 			}

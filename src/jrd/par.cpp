@@ -3231,7 +3231,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_parameter2:
 	case blr_parameter3:
 		{
-			jrd_nod* message;
+			jrd_nod* message = NULL;
 			n = (USHORT) BLR_BYTE;
 			if (n >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[n].csb_message))
 			{
