@@ -733,6 +733,8 @@
 
     * Bugfix CORE-316
         Cannot open database with MBCS/extended characters in name
+      See also:
+        /doc/README.connection_string_charset.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -869,6 +871,8 @@
         Revoke all privileges of a particular user or role
       Syntax:
         REVOKE ALL ON ALL FROM { <user list> | <role list> } 
+      See also:
+        /doc/README.ddl.txt (section #12)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -892,7 +896,7 @@
     * Feature CORE-1945
         Custom attribute for collations to sort numbers in numeric order
       See also:
-        /doc/README.intl
+        /doc/README.intl (NUMERIC-SORT)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
