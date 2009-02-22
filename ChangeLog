@@ -1,3 +1,31 @@
+2009-02-22 16:10  asfernandes
+
+	* firebird2/doc/WhatsNew (1.166):
+
+	Some documentation pointers
+
+2009-02-21 23:50  asfernandes
+
+	* firebird2/src/jrd/: grant.epp (1.76), par.cpp (1.231):
+
+	Uninitialized variables
+
+2009-02-21 23:09  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.firebird (1.95),
+	builds/posix/make.rules (1.40),
+	src/utilities/ntrace/TraceConfiguration.h (1.4),
+	src/utilities/ntrace/TracePluginImpl.h (1.5):
+
+	Use regex.h header of our extern/regex, and not the one from a
+	completelly different POSIX system library
+
+2009-02-21 23:06  asfernandes
+
+	* firebird2/autogen.sh (1.19):
+
+	Clean remainings of libtool
+
 2009-02-21 18:43  asfernandes
 
 	* firebird2/src/: common/dllinst.cpp (1.5), common/dllinst.h (1.6),
