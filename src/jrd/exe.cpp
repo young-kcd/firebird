@@ -1548,7 +1548,8 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		Jrd::ContextPoolHolder context(tdbb, proc_request->req_pool);
 
 		jrd_tra* transaction = request->req_transaction;
-		const SLONG save_point_number = transaction->tra_save_point->sav_number;
+		const SLONG save_point_number = transaction->tra_save_point ?
+			transaction->tra_save_point->sav_number : 0;
 
 		proc_request->req_timestamp = request->req_timestamp;
 		EXE_start(tdbb, proc_request, transaction);
