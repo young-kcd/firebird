@@ -1,3 +1,12 @@
+2009-02-23 15:07  dimitr
+
+	* firebird2/src/jrd/exe.cpp (1.290):
+
+	Front ported CORE-2326: AV when committing a new view while trigger
+	on rdb$relations is in place.  Actually, this fix is not required
+	for v2.5 due to the DFW logic changes there, but it doesn't hurt
+	either.
+
 2009-02-22 16:10  asfernandes
 
 	* firebird2/doc/WhatsNew (1.166):
