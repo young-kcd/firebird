@@ -69,6 +69,7 @@ private:
 	static Firebird::InitMutex<ThreadPriorityScheduler> initialized;
 	static OperationMode opMode;	// current mode
 	static TpsPointers* toDetach;	// instances to be detached
+	static HANDLE masterHandle;		// handle of the master thread
 	static bool active;				// may be turned off in firebird.conf
 
 	ThreadEntryPoint* routine;		// real thread entrypoint

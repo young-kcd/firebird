@@ -54,6 +54,7 @@ ThreadPriorityScheduler* ThreadPriorityScheduler::chain = 0;
 Firebird::InitMutex<ThreadPriorityScheduler> ThreadPriorityScheduler::initialized;
 ThreadPriorityScheduler::OperationMode ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
 ThreadPriorityScheduler::TpsPointers* ThreadPriorityScheduler::toDetach = 0;
+HANDLE ThreadPriorityScheduler::masterHandle = INVALID_HANDLE_VALUE;
 bool ThreadPriorityScheduler::active = true;
 
 namespace {
@@ -105,13 +106,12 @@ void ThreadPriorityScheduler::init()
 	if (active)
 	{
 		unsigned thread_id;
-		HANDLE handle = (HANDLE) _beginthreadex(NULL, 0, schedulerMain, 0, 0, &thread_id);
-		if (! handle)
+		masterHandle = (HANDLE) _beginthreadex(NULL, 0, schedulerMain, 0, 0, &thread_id);
+		if (! masterHandle)
 		{
 			Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
 		}
-		SetThreadPriority(handle, THREAD_PRIORITY_TIME_CRITICAL);
-		CloseHandle(handle);
+		SetThreadPriority(masterHandle, THREAD_PRIORITY_TIME_CRITICAL);
 	}
 
 	// register
@@ -125,8 +125,16 @@ void ThreadPriorityScheduler::Cleanup(void*)
 
 void ThreadPriorityScheduler::cleanup()
 {
-	Firebird::MutexLockGuard guard(mutex);
-	opMode = Stopping;
+	{	// scope for MutexLockGuard
+		Firebird::MutexLockGuard guard(mutex);
+		opMode = Stopping;
+	}
+
+	if (active)
+	{
+		WaitForSingleObject(masterHandle, INFINITE);
+		CloseHandle(masterHandle);
+	}
 }
 
 void ThreadPriorityScheduler::attach()
