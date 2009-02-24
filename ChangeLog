@@ -1,3 +1,50 @@
+2009-02-24 16:51  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.273):
+
+	Fixed CORE-2341 - Hidden variables conflict with output parameters,
+	causing assertions, unexpected errors or possibly incorrect results
+
+2009-02-24 16:24  asfernandes
+
+	* firebird2/src/jrd/rse.cpp (1.179):
+
+	Fixed CORE-2339 - Incorrect result for the derived expression based
+	on aggregate and computation
+
+2009-02-24 14:04  dimitr
+
+	* firebird2/src/jrd/os/: thd_priority.h (1.31),
+	win32/thd_priority.cpp (1.37):
+
+	Fix by Alex for yet another races during the engine shutdown.
+
+2009-02-24 12:11  alexpeshkoff
+
+	* firebird2/src/common/utils.cpp (1.64):
+
+	Fixed use of mutexes
+
+2009-02-24 11:06  hvlad
+
+	* firebird2/src/utilities/gstat/dba.epp (1.111):
+
+	Let gstat service detect engine shutdown and stop its work
+
+2009-02-24 10:13  aafemt
+
+	* firebird2/builds/make.new/config/: config.guess (1.1), config.sub
+	(1.1):
+
+	Files required to detect canonical system name
+
+2009-02-24 09:19  hvlad
+
+	* firebird2/src/jrd/dpm.epp (1.85):
+
+	Fixed bug CORE-2340 : Bugcheck 258 (page slot not empty) could
+	occurs under high concurrent load
+
 2009-02-23 15:07  dimitr
 
 	* firebird2/src/jrd/exe.cpp (1.290):
