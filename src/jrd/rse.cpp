@@ -2372,6 +2372,7 @@ static bool get_record(thread_db*	tdbb,
 		if ( (impure->irsb_count =
 			EVL_group(tdbb, rsb->rsb_next, (jrd_nod*) rsb->rsb_arg[0], impure->irsb_count)) )
 		{
+			rpb->rpb_number.setValid(true);
 			break;
 		}
 		return false;
