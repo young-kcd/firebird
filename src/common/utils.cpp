@@ -925,22 +925,23 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 
 #include <pwd.h>
 
+static Firebird::GlobalPtr<Firebird::Mutex> grMutex;
+
 // Return user group id if user group name found, otherwise return 0.
 SLONG get_user_group_id(const TEXT* user_group_name)
 {
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(grMutex);
 
 	const struct group* user_group = getgrnam(user_group_name);
 	return user_group ? user_group->gr_gid : 0;
 }
 
+static Firebird::GlobalPtr<Firebird::Mutex> pwMutex;
 
 // Return user id if user found, otherwise return -1.
 SLONG get_user_id(const TEXT* user_name)
 {
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(pwMutex);
 
 	const struct passwd* user = getpwnam(user_name);
 	return user ? user->pw_uid : -1;
@@ -950,8 +951,7 @@ SLONG get_user_id(const TEXT* user_name)
 // Fills the buffer with home directory if user found
 bool get_user_home(int user_id, Firebird::PathName& homeDir)
 {
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(pwMutex);
 
 	const struct passwd* user = getpwuid(user_id);
 	if (user)
