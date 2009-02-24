@@ -1347,6 +1347,9 @@ static const pag* db_read( SLONG page_number)
  **************************************/
 	tdba* tddba = tdba::getSpecific();
 
+	if (tddba->uSvc->finished())
+		dba_exit(FINI_OK, tddba);
+
 	if (tddba->page_number == page_number)
 		return tddba->global_buffer;
 
