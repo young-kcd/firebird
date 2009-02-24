@@ -2633,7 +2633,8 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 
 			*ptr = MAKE_variable(field, field->fld_name.c_str(), VAR_input, 0,
-								 (USHORT) (2 * position), locals++);
+								 (USHORT) (2 * position), locals);
+			// ASF: do not increment locals here - CORE-2341
 			position++;
 		}
 		inputs = position;
