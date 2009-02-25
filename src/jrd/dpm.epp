@@ -222,7 +222,8 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 	// is to worse to be usefull, therefore rely on the record count
 	// from the data-page.
 
-	if (dataPages == 1) {
+	if (dataPages == 1)
+	{
 		RelationPages* relPages = relation->getPages(tdbb);
 		vcl* vector = relPages->rel_pages;
 		if (vector) {
@@ -302,8 +303,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	record_param temp = *org_rpb;
 	DataComprControl dcc;
 	const USHORT size =
-		SQZ_length(tdbb, (SCHAR*) new_rpb->rpb_address, (int) new_rpb->rpb_length,
-				   &dcc);
+		SQZ_length(tdbb, (SCHAR*) new_rpb->rpb_address, (int) new_rpb->rpb_length, &dcc);
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {
 #ifdef VIO_DEBUG
@@ -610,9 +610,11 @@ SLONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 
 	RelationPages* relPages = relation->getPages(tdbb);
 	SLONG pages = relPages->rel_data_pages;
-	if (!pages) {
+	if (!pages)
+	{
 		WIN window(relPages->rel_pg_space_id, -1);
-		for (USHORT sequence = 0; true; sequence++) {
+		for (USHORT sequence = 0; true; sequence++)
+		{
 			const pointer_page* ppage =
 				get_pointer_page(tdbb, relation, relPages, &window, sequence, LCK_read);
 			if (!ppage) {
@@ -1205,7 +1207,8 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 		lptr = ((SLONG *) (((pointer_page*) page)->ppg_page)) + offset;
 	}
 
-	if (val || initialize) {
+	if (val || initialize)
+	{
 		if (dbb->dbb_flags & DBB_read_only) {
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(Arg::Gds(isc_read_only_database));
@@ -1524,21 +1527,23 @@ bool DPM_next(thread_db* tdbb,
 
 /* Find starting point */
 
-	if (backwards) {
+	if (backwards)
+	{
 		if (rpb->rpb_number.isEmpty())
 			return false;
 
 		if (!rpb->rpb_number.isBof()) {
 			rpb->rpb_number.decrement();
 		}
-		else {
+		else
+		{
 			/*  if the stream was just opened, assume we want to start
-			   at the end of the stream, so compute the last theoretically
-			   possible rpb_number and go down from there */
-	/** for now, we must force a scan to make sure that we get
-	    the last pointer page: this should be changed to use
-	    a coordination mechanism (probably using a shared lock)
-	    to keep apprised of when a pointer page gets added **/
+			at the end of the stream, so compute the last theoretically
+			possible rpb_number and go down from there */
+			/** for now, we must force a scan to make sure that we get
+			the last pointer page: this should be changed to use
+			a coordination mechanism (probably using a shared lock)
+			to keep apprised of when a pointer page gets added **/
 
 			DPM_scan_pages(tdbb);
 			const vcl* vector = relPages->rel_pages;
@@ -1567,7 +1572,8 @@ bool DPM_next(thread_db* tdbb,
 
 /* Find the next pointer page, data page, and record */
 
-	while (true) {
+	while (true)
+	{
 		const pointer_page* ppage = get_pointer_page(tdbb, rpb->rpb_relation,
 							relPages, window, pp_sequence, LCK_read);
 		if (!ppage) {
@@ -1577,15 +1583,19 @@ bool DPM_next(thread_db* tdbb,
 		if (backwards && slot >= ppage->ppg_count) {
 			slot = ppage->ppg_count - 1;
 		}
-		for (; slot >= 0 && slot < ppage->ppg_count;) {
+		for (; slot >= 0 && slot < ppage->ppg_count;)
+		{
 			const SLONG page_number = ppage->ppg_page[slot];
-			if (page_number) {
+			if (page_number)
+			{
 #ifdef SUPERSERVER_V2
 				/* Perform sequential prefetch of relation's data pages.
 				   This may need more work for scrollable cursors. */
 
-				if (!onepage && !line && !backwards) {
-					if (!(slot % dbb->dbb_prefetch_sequence)) {
+				if (!onepage && !line && !backwards)
+				{
+					if (!(slot % dbb->dbb_prefetch_sequence))
+					{
                         SLONG pages[PREFETCH_MAX_PAGES + 1];
 						USHORT slot2 = slot;
 						USHORT i;
@@ -1759,7 +1769,8 @@ SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, PageBitmap* bitmap
 	SLONG prefetch_number = -1;
 
 	USHORT i;
-	for (i = 0; i < dbb->dbb_prefetch_pages;) {
+	for (i = 0; i < dbb->dbb_prefetch_pages;)
+	{
         SLONG dp_sequence;
         SSHORT line, slot;
         USHORT pp_sequence;
@@ -2267,9 +2278,11 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 
 /* If the object isn't a blob, things are a little simpler. */
 
-	if (!(header->rhdf_flags & rhd_blob)) {
+	if (!(header->rhdf_flags & rhd_blob))
+	{
 		SLONG page_number = header->rhdf_f_page;
-		while (true) {
+		while (true)
+		{
 			window.win_page = page_number;
 			data_page* dpage = (data_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_data);
 			header = (rhdf*) ((UCHAR *) dpage + dpage->dpg_rpt[0].dpg_offset);
@@ -2290,8 +2303,10 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 	const SLONG* page1 = blob->blh_page;
 	const SLONG* const end1 = page1 + (length - BLH_SIZE) / sizeof(SLONG);
 
-	for (; page1 < end1; page1++) {
-		if (blob->blh_level == 2) {
+	for (; page1 < end1; page1++)
+	{
+		if (blob->blh_level == 2)
+		{
 			window.win_page = *page1;
 			blob_page* bpage = (blob_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			SLONG* page2 = bpage->blp_page;
@@ -2306,8 +2321,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 }
 
 
-static void fragment(
-					 thread_db* tdbb,
+static void fragment(thread_db* tdbb,
 					 record_param* rpb,
 					 SSHORT available_space,
 					 DataComprControl* dcc, SSHORT length, const jrd_tra* transaction)
@@ -2404,13 +2418,15 @@ static void fragment(
 	const SSHORT line = rpb->rpb_line;
 
 	rhdf* header;
-	if (transaction->tra_number != rpb->rpb_transaction_nr) {
+	if (transaction->tra_number != rpb->rpb_transaction_nr)
+	{
 		header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 		header->rhdf_transaction = transaction->tra_number;
 		header->rhdf_flags |= rhd_gc_active;
 		page->dpg_rpt[line].dpg_length = available_space = length;
 	}
-	else {
+	else
+	{
 		if (rpb->rpb_flags & rpb_delta) {
 			header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 			header->rhdf_flags |= rpb_delta;
@@ -2567,7 +2583,8 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 
   retry_after_latch_timeout:
 
-	for (pp_sequence = relPages->rel_slot_space;; pp_sequence++) {
+	for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
+	{
 		if (!(ppage = get_pointer_page(tdbb, relation, relPages, &pp_window,
 										pp_sequence, LCK_write)))
 		{
@@ -2588,7 +2605,8 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 			slot = ppage->ppg_count;
 			break;
 		}
-		if (ppage->ppg_header.pag_flags & ppg_eof) {
+		if (ppage->ppg_header.pag_flags & ppg_eof)
+		{
 			ppage = (pointer_page*) DPM_allocate(tdbb, &new_pp_window);
 			ppage->ppg_header.pag_type = pag_pointer;
 			ppage->ppg_header.pag_flags |= ppg_eof;
@@ -2712,11 +2730,14 @@ static UCHAR* find_space(thread_db*	tdbb,
 	{ // scope
 		const bool reserving = !(dbb->dbb_flags & DBB_no_reserve);
 		const data_page::dpg_repeat* index = page->dpg_rpt;
-		for (SSHORT i = 0; i < page->dpg_count; i++, index++) {
-			if (index->dpg_offset) {
+		for (SSHORT i = 0; i < page->dpg_count; i++, index++)
+		{
+			if (index->dpg_offset)
+			{
 				space = MIN(space, index->dpg_offset);
 				used += ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
-				if (type == DPM_primary && reserving) {
+				if (type == DPM_primary && reserving)
+				{
 					const rhd* header = (rhd*) ((SCHAR *) page + index->dpg_offset);
 					if (!header->rhd_b_page &&
 						!(header->rhd_flags & (rhd_chain | rhd_blob | rhd_deleted | rhd_fragment)))
@@ -2829,10 +2850,9 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 }
 
 
-static pointer_page* get_pointer_page(
-							thread_db* tdbb,
-							jrd_rel* relation, RelationPages* relPages,
-							WIN * window, USHORT sequence, USHORT lock)
+static pointer_page* get_pointer_page(thread_db* tdbb,
+	   	 							  jrd_rel* relation, RelationPages* relPages,
+									  WIN * window, USHORT sequence, USHORT lock)
 {
 /**************************************
  *
@@ -2850,8 +2870,10 @@ static pointer_page* get_pointer_page(
 	SET_TDBB(tdbb);
 
 	vcl* vector = relPages->rel_pages;
-	if (!vector || sequence >= vector->count()) {
-		for (;;) {
+	if (!vector || sequence >= vector->count())
+	{
+		for (;;)
+		{
 			DPM_scan_pages(tdbb);
 			/* If the relation is gone, then we can't do anything anymore. */
 			if ((!relation) || (!(vector = relPages->rel_pages))) {
@@ -2885,10 +2907,9 @@ static pointer_page* get_pointer_page(
 }
 
 
-static rhd* locate_space(
-						thread_db* tdbb,
-						record_param* rpb,
-						SSHORT size, PageStack& stack, Record* record, USHORT type)
+static rhd* locate_space(thread_db* tdbb,
+						 record_param* rpb,
+						 SSHORT size, PageStack& stack, Record* record, USHORT type)
 {
 /**************************************
  *
@@ -2912,7 +2933,8 @@ static rhd* locate_space(
 
 /* If there is a preferred page, try there first */
 
-	if (type == DPM_secondary) {
+	if (type == DPM_secondary)
+	{
 		USHORT pp_sequence;
 		SSHORT slot, line;
 		rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
@@ -2936,7 +2958,8 @@ static rhd* locate_space(
 
 /* Look for space anywhere */
 
-	for (USHORT pp_sequence = relPages->rel_data_space;; pp_sequence++) {
+	for (USHORT pp_sequence = relPages->rel_data_space;; pp_sequence++)
+	{
 		relPages->rel_data_space = pp_sequence;
 		const pointer_page* ppage =
 			 get_pointer_page(tdbb, relation, relPages, window, pp_sequence, LCK_read);
@@ -2949,7 +2972,8 @@ static rhd* locate_space(
 		for (USHORT slot = ppage->ppg_min_space; slot < ppage->ppg_count; slot++)
 		{
 			const SLONG dp_number = ppage->ppg_page[slot];
-			if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1))) {
+			if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
+			{
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
@@ -2971,7 +2995,8 @@ static rhd* locate_space(
    are really screwed up. */
 	UCHAR* space = 0;
 	int i;
-	for (i = 0; i < 20; ++i) {
+	for (i = 0; i < 20; ++i)
+	{
 		DPM_allocate(tdbb, window);
 		extend_relation(tdbb, relation, window);
 		space = find_space(tdbb, rpb, size, stack, record, type);
@@ -3160,7 +3185,8 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 /* Fill up data pages tail first until what's left fits on a single
    page. */
 
-	while (size > max_data) {
+	while (size > max_data)
+	{
 		/* Allocate and format data page and fragment header */
 
 		data_page* page = (data_page*) DPM_allocate(tdbb, &rpb->getWindow(tdbb));
@@ -3179,9 +3205,11 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 
 		/* Move compressed data onto page */
 
-		while (length > 1) {
+		while (length > 1)
+		{
 			/* Handle residual count, if any */
-			if (count > 0) {
+			if (count > 0)
+			{
                 const USHORT l = MIN((USHORT) count, length - 1);
 				USHORT n = l;
 				do {
@@ -3195,7 +3223,8 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 
 			/* If we've exhausted this data compression block, find the prior one */
 
-			if (control == dcc->dcc_string) {
+			if (control == dcc->dcc_string)
+			{
 				DataComprControl* const temp_dcc = dcc;
 				for (dcc = head_dcc; dcc->dcc_next != temp_dcc; dcc = dcc->dcc_next)
 					; // empty loop body
