@@ -62,7 +62,7 @@ password are set using some other method):
 3) Services API extension - trace support.
 (Khorsun Vlad, hvlad@users.sourceforge.net, 2009)
 
-	There is five new services and corresponding actions to manage by user
+	There are five new services and corresponding actions to manage by user
 trace sessions :
 
 Start user trace session :
@@ -74,7 +74,7 @@ Start user trace session :
 		isc_spb_trc_cfg  : trace session configuration, string, mandatory
 
 	output
-		contents of trace session output in text format
+		contents of trace session in text format
 
 
 Stop trace session
@@ -138,7 +138,7 @@ List of existing trace sessions
 		"flags" is comma delimited set of
 			session's run state : "active" or "suspend"
 			if creator user is administrator : "admin"
-			if session created by the engine itself : "system"
+			if the session was created by the engine itself : "system"
 			kind of session : "audit" or "trace"
 			if user session log file is full : "log full"
 
