@@ -5,6 +5,10 @@ AC_INIT(src)
 AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
 AC_PREFIX_DEFAULT(/usr/local/firebird)
+m4_ifdef([AC_CONFIG_MACRO_DIR],
+         [],
+         [m4_define([AC_CONFIG_MACRO_DIR], [])])
+AC_CONFIG_MACRO_DIR(m4)
 
 AC_CONFIG_HEADER(src/include/gen/autoconfig.h:builds/make.new/config/config.h.in)
 
@@ -454,9 +458,10 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_RANLIB
+AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_WIN32_DLL
 AC_PROG_MAKE_SET
-
+AC_PROG_LIBTOOL
 
 dnl Check for system header files
 AC_HEADER_DIRENT
@@ -1202,15 +1207,6 @@ case "$PLATFORM" in
       ,[chmod a+x gen/install/install.netbsd.sh 2>/dev/null])
     ;;
 
-
-  SINIX-Z)
-    AC_CONFIG_FILES([gen/install/pkginfo:builds/install/arch-specific/sinixz/pkginfo.in
-                     gen/install/prototype:builds/install/arch-specific/sinixz/prototype.in
-                     gen/install/preinstall:builds/install/arch-specific/sinixz/preinstall.in
-                     gen/install/postinstall:builds/install/arch-specific/sinixz/postinstall.in
-                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in]
-      ,[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
-    ;;
 
   solx86|SOLARIS)
     AC_CONFIG_FILES([gen/firebird/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in

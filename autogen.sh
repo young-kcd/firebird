@@ -7,15 +7,18 @@ PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-if [ -z "$AUTOCONF" ]
+if [ -z "$AUTORECONF" ]
 then
-  AUTOCONF=autoconf
+  AUTORECONF=autoreconf
 fi
 
-echo "AUTOCONF="$AUTOCONF
-AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
+echo "AUTORECONF="$AUTORECONF
 
-VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
+# This prevents calling automake in old autotools
+AUTOMAKE=true
+export AUTOMAKE
+
+VER=`$AUTORECONF --version|grep '^[Aa]utoreconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
  2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
@@ -42,11 +45,8 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo
 fi
 
-echo "Running autoheader ..."
-$AUTOHEADER || exit 1
-
-echo "Running autoconf ..."
-$AUTOCONF || exit 1
+echo "Running autoreconf ..."
+$AUTORECONF --install --force --verbose || exit 1
 
 # If NOCONFIGURE is set, skip the call to configure
 if test "x$NOCONFIGURE" = "x"; then
