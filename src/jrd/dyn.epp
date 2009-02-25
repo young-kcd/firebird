@@ -2374,7 +2374,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		}
 
 		USHORT id = tra->getUserManagement()->put(userData);
-		DeferredWork* work = DFW_post_work(tra, dfw_user_management, NULL, id);
+		DFW_post_work(tra, dfw_user_management, NULL, id);
 	}
 	catch (const Exception& e)
 	{

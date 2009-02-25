@@ -1242,8 +1242,6 @@ static bool user_management(thread_db*		tdbb,
  *
  **************************************/
 
-	UserManagement* sec;
-
 	switch (phase)
 	{
 	case 0:
