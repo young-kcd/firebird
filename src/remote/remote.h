@@ -720,16 +720,9 @@ private:		// this is refCounted object
 	}
 
 public:
-	void linkParent(rem_port* parent)
-	{
-		port_parent = parent;
-		port_next = parent->port_clients;
-		port_handle = parent->port_handle;
-		port_server = parent->port_server;
-		port_server_flags = parent->port_server_flags;
+	void linkParent(rem_port* parent);
 
-		parent->port_clients = parent->port_next = this;
-	}
+	void unlinkParent();
 
 	template <typename T>
 	void getHandle(T*& blk, OBJCT id)

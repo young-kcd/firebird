@@ -615,6 +615,55 @@ static void cleanup_memory(void* block)
 
 // TMN: Beginning of C++ port - ugly but a start
 
+void rem_port::linkParent(rem_port* const parent)
+{
+	fb_assert(parent);
+
+	port_parent = parent;
+	port_next = parent->port_clients;
+	port_handle = parent->port_handle;
+	port_server = parent->port_server;
+	port_server_flags = parent->port_server_flags;
+
+	parent->port_clients = parent->port_next = this;
+}
+
+void rem_port::unlinkParent()
+{
+	fb_assert(this->port_parent != NULL);
+
+	if (this->port_parent == NULL)
+		return;
+
+#if DEV_BUILD
+	bool found = false;
+#endif
+
+	for (rem_port** ptr = &this->port_parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+	{
+		if (*ptr == this)
+		{
+			*ptr = this->port_next;
+
+			if (ptr == &this->port_parent->port_clients)
+			{
+				fb_assert(this->port_parent->port_next == this);
+
+				this->port_parent->port_next = *ptr;
+			}
+
+#if DEV_BUILD
+			found = true;
+#endif
+			break;
+		}
+	} // for
+
+	fb_assert(found);
+
+	this->port_parent = NULL;
+}
+
 bool rem_port::accept(p_cnct* cnct)
 {
 	return (*this->port_accept)(this, cnct);

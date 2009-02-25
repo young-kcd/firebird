@@ -790,7 +790,7 @@ static void disconnect(rem_port* port)
 
 /* If this is a sub-port, unlink it from it's parent */
 
-	rem_port* parent = port->port_parent;
+	rem_port* const parent = port->port_parent;
 	if (parent)
 	{
 		if (port->port_async)
@@ -798,17 +798,8 @@ static void disconnect(rem_port* port)
 			disconnect(port->port_async);
 			port->port_async = NULL;
 		}
-		for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
-		{
-			if (*ptr == port)
-			{
-				*ptr = port->port_next;
-				if (ptr == &parent->port_clients) {
-					parent->port_next = *ptr;
-				}
-				break;
-			}
-		}
+		
+		port->unlinkParent();
 	}
 	else if (port->port_async)
 	{
