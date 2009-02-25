@@ -1,3 +1,58 @@
+2009-02-25 15:47  alexpeshkoff
+
+	* firebird2/builds/make.new/config/: config.guess (1.2), config.sub
+	(1.2):
+
+	Removed files, not needed any more
+
+2009-02-25 15:44  alexpeshkoff
+
+	* firebird2/: autogen.sh (1.20), configure.in (1.318):
+
+	This variant works on all of: ancient MinGW's autotools, autotools,
+	built from most fresh stable sources on ftp.gnu.org and some middle
+	case, installed on my box by default.  Also finished sinix-z
+	cleanup.
+
+2009-02-25 09:08  robocop
+
+	* firebird2/src/remote/: remote.cpp (1.82), remote.h (1.91),
+	xnet.cpp (1.128), os/win32/wnet.cpp (1.70):
+
+	Apply patch from Kovalenko Dmitry (Lipetsk).
+
+2009-02-25 07:08  robocop
+
+	* firebird2/src/jrd/dpm.epp (1.86):
+
+	Align braces in relatively large or complex blocks.
+
+2009-02-25 07:00  robocop
+
+	* firebird2/src/jrd/: dfw.epp (1.265), dyn.epp (1.143):
+
+	Delete unused vars.
+
+2009-02-25 06:39  robocop
+
+	* firebird2/src/utilities/gsec/: call_service.h (1.5), gsec.h
+	(1.38), gsecswi.h (1.13), secur_proto.h (1.10):
+
+	Misc and comments.
+
+2009-02-25 06:38  robocop
+
+	* firebird2/src/remote/: inet.cpp (1.270), remote.h (1.90):
+
+	Comment flag that I marked as unused years ago.
+
+2009-02-25 06:36  robocop
+
+	* firebird2/doc/: README.services_extension (1.8),
+	README.trace_services (1.4):
+
+	Misc.
+
 2009-02-24 16:51  asfernandes
 
 	* firebird2/src/dsql/ddl.cpp (1.273):
