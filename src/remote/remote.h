@@ -552,7 +552,7 @@ const USHORT PORT_async			= 0x0004;	// Port is asynchronous channel for events
 const USHORT PORT_no_oob		= 0x0008;	// Don't send out of band data
 const USHORT PORT_disconnect	= 0x0010;	// Disconnect is in progress
 // This is set only in inet.cpp but never tested
-const USHORT PORT_not_trusted	= 0x0020;	// Connection is from an untrusted node
+//const USHORT PORT_not_trusted	= 0x0020;	// Connection is from an untrusted node
 const USHORT PORT_dummy_pckt_set= 0x0040;	// A dummy packet interval is set
 const USHORT PORT_partial_data	= 0x0080;	// Physical packet doesn't contain all API packet
 const USHORT PORT_lazy			= 0x0100;	// Deferred operations are allowed

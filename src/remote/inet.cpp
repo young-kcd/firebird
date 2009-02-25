@@ -1073,10 +1073,10 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	}
 
 /* See if user exists.  If not, reject connection */
-	if (user_verification) 
+	if (user_verification)
 	{
 		eff_gid = eff_uid = -1;
-		port->port_flags |= PORT_not_trusted; // never tested
+		//port->port_flags |= PORT_not_trusted; // never tested
 	}
 
 #ifndef WIN_NT
@@ -1095,7 +1095,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
  * the current directory to the effective user's home directory.
  * This feature was added primarily for testing via remote
  * loopback - but does seem to be of good general use, so
- * is activiated for the production product.
+ * is activated for the release version.
  * 1995-February-27 David Schnepper
  */
 		Firebird::PathName home;
