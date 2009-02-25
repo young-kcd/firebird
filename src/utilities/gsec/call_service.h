@@ -30,10 +30,8 @@
 
 isc_svc_handle attachRemoteServiceManager(ISC_STATUS*, const TEXT*, const TEXT*,
 							  bool, int, const TEXT*);
-isc_svc_handle attachRemoteServiceManager(ISC_STATUS*, const TEXT*, const TEXT*,
-							  bool, const TEXT*);
-void callRemoteServiceManager(ISC_STATUS*, isc_svc_handle,
-							  const internal_user_data&,
+isc_svc_handle attachRemoteServiceManager(ISC_STATUS*, const TEXT*, const TEXT*, bool, const TEXT*);
+void callRemoteServiceManager(ISC_STATUS*, isc_svc_handle, const internal_user_data&,
 							  FPTR_SECURITY_CALLBACK, void*);
 void detachRemoteServiceManager(ISC_STATUS*, isc_svc_handle);
 
