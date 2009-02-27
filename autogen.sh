@@ -45,6 +45,11 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo
 fi
 
+if [ ! -d m4 ]; then
+	rm -rf m4
+	mkdir m4
+fi
+
 echo "Running autoreconf ..."
 $AUTORECONF --install --force --verbose || exit 1
 
