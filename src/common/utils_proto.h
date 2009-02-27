@@ -128,7 +128,7 @@ namespace fb_utils
 	void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
 
 	SLONG get_user_group_id(const TEXT* user_group_name);
-	int get_user_id(const TEXT* user_name);
+	SLONG get_user_id(const TEXT* user_name);
 	bool get_user_home(int user_id, Firebird::PathName& homeDir);
 
 	int openCreateFile(const char* pathname, int flags);
