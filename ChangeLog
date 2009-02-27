@@ -1,3 +1,29 @@
+2009-02-27 18:08  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.extern.regex (1.4):
+
+	Copy all libraries to let platform decide which to use
+
+2009-02-27 16:01  alexpeshkoff
+
+	* firebird2/autogen.sh (1.21):
+
+	restored lost code to create m4 directory
+
+2009-02-27 15:57  alexpeshkoff
+
+	* firebird2/src/common/utils_proto.h (1.37):
+
+	fixed declaration error - failed only on 32 bit
+
+2009-02-27 12:33  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.182):
+
+	Fixed CORE-2347: "Deadlock. Page type <N> lock conversion denied"
+	error is reported under a concurrent "connect-work-disconnect" kind
+	of load.
+
 2009-02-25 15:47  alexpeshkoff
 
 	* firebird2/builds/make.new/config/: config.guess (1.2), config.sub
