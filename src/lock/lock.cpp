@@ -1266,6 +1266,7 @@ void LockManager::blocking_action(thread_db* tdbb,
 		}
 
 		if (routine) {
+			owner->own_count++;
 			release_shmem(blocked_owner_offset);
 			m_localMutex.leave();
 			if (tdbb)
@@ -1280,8 +1281,12 @@ void LockManager::blocking_action(thread_db* tdbb,
 			m_localMutex.enter();
 			acquire_shmem(blocked_owner_offset);
 			owner = (own*) SRQ_ABS_PTR(blocking_owner_offset);
+			owner->own_count--;
 		}
 	}
+
+	if (!owner->own_count)
+		purge_owner(blocked_owner_offset, owner);
 }
 
 
