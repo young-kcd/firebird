@@ -3345,8 +3345,6 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 
 		// Send it to the user
 		port->send_response(sendL, 0, 0, local_status, false);
-
-		return false;
 	}
 	catch (const Firebird::Exception& ex)
 	{
