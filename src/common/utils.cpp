@@ -1002,7 +1002,7 @@ SLONG get_user_group_id(const TEXT* user_group_name)
 
 
 // waits for implementation
-int get_user_id(const TEXT* user_name)
+SLONG get_user_id(const TEXT* user_name)
 {
 	return -1;
 }
