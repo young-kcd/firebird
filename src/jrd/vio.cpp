@@ -3358,7 +3358,7 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 		}
 	}
 
-	return (*q) ? false : true;
+	return *q ? false : true;
 }
 
 

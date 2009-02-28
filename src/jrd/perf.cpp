@@ -99,14 +99,15 @@ int API_ROUTINE perf_format(const PERF* before, const PERF* after,
  **************************************/
 	SCHAR c;
 
-	SLONG buffer_length = (buf_len) ? *buf_len : 0;
+	SLONG buffer_length = buf_len ? *buf_len : 0;
 	SCHAR* p = buffer;
 
 	while ((c = *string++) && c != '$')
 	{
 		if (c != '!')
 			*p++ = c;
-		else {
+		else
+		{
 			SLONG delta;
 			switch (c = *string++)
 			{

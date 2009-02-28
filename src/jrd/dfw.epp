@@ -3829,7 +3829,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 		dfw_type = dfw_delete_trigger;
 		break;
 	case obj_computed:
-		dfw_type = (rel_id) ? dfw_delete_rfr : dfw_delete_global;
+		dfw_type = rel_id ? dfw_delete_rfr : dfw_delete_global;
 		break;
 	case obj_validation:
 		dfw_type = dfw_delete_global;

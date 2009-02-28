@@ -3249,7 +3249,7 @@ static void define_udf(CompiledStatement* statement)
 
 		if (field->fld_dtype == dtype_blob)
 		{
-			blob_position = (arguments) ? arguments->nod_count + 1 : 1;
+			blob_position = arguments ? arguments->nod_count + 1 : 1;
 			if (blob_position > MAX_UDF_ARGUMENTS)
 			{
 				// External functions can not have more than 10 parameters
@@ -6059,7 +6059,7 @@ static void put_local_variable( CompiledStatement* statement, dsql_var* variable
 	//field->fld_dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
-	dsql_nod* node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
+	dsql_nod* node = host_param ? host_param->nod_arg[e_dfl_default] : 0;
 
 	if (node || (!field->fld_full_domain && !field->fld_not_nullable))
 	{
@@ -6226,7 +6226,7 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 				replace = replace_fields->nod_arg;
 			}
 			bool found = false;
-			for (; search < end; search++, (replace_fields) ? replace++ : NULL)
+			for (; search < end; search++, replace_fields ? replace++ : NULL)
 			{
 				const dsql_str* replace_name = 0;
 				if (replace_fields) {

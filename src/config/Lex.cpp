@@ -368,7 +368,7 @@ bool Lex::getSegment()
 		ptr = inputStream->ptr;
 	}
 
-	end = (ptr) ? inputStream->getEnd() : NULL;
+	end = ptr ? inputStream->getEnd() : NULL;
 
 	if (end && (flags & LEX_list))
 		printf ("    %s", ptr);

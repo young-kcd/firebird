@@ -1415,7 +1415,7 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 	case dtype_int64:
 		if (PAR_match(KW_SCALE))
 		{
-			const bool m = (PAR_match(KW_MINUS)) ? true : false;
+			const bool m = PAR_match(KW_MINUS) ? true : false;
 			*scale = parse_ordinal();
 			if (m)
 				*scale = -(*scale);
@@ -1463,7 +1463,7 @@ static int parse_dtype_subtype()
 	if (PAR_match(KW_TEXT) || PAR_match(KW_FIXED))
 		return 1;
 
-	const int sign = (PAR_match(KW_MINUS)) ? -1 : 1;
+	const int sign = PAR_match(KW_MINUS) ? -1 : 1;
 
 	return (sign * parse_ordinal());
 }
@@ -4458,7 +4458,7 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision, US
 
 			if (PAR_match(KW_COMMA))
 			{
-				const bool l = (PAR_match(KW_MINUS)) ? true : false;
+				const bool l = PAR_match(KW_MINUS) ? true : false;
 				*scale = parse_ordinal();
 				if (*scale > logLength)
 					ERRQ_syntax(510);  // Msg510 "Field scale exceeds allowed range"

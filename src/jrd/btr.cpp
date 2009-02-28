@@ -2154,11 +2154,11 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	selectivity.grow(segments);
 	if (segments > 1) {
 		for (ULONG i = 0; i < segments; i++) {
-			selectivity[i] = (float) ((nodes) ? 1.0 / (float) (nodes - duplicatesList[i]) : 0.0);
+			selectivity[i] = (float) (nodes ? 1.0 / (float) (nodes - duplicatesList[i]) : 0.0);
 		}
 	}
 	else {
-		selectivity[0] = (float) ((nodes) ? 1.0 / (float) (nodes - duplicates) : 0.0);
+		selectivity[0] = (float) (nodes ? 1.0 / (float) (nodes - duplicates) : 0.0);
 	}
 
 	// Store the selectivity on the root page
@@ -3926,11 +3926,11 @@ static SLONG fast_load(thread_db* tdbb,
 		selectivity.grow(segments);
 		if (segments > 1) {
 			for (ULONG i = 0; i < segments; i++) {
-				selectivity[i] = (float) ((count) ? 1.0 / (float) (count - duplicatesList[i]) : 0.0);
+				selectivity[i] = (float) (count ? 1.0 / (float) (count - duplicatesList[i]) : 0.0);
 			}
 		}
 		else {
-			selectivity[0] = (float) ((count) ? (1.0 / (float) (count - duplicates)) : 0.0);
+			selectivity[0] = (float) (count ? (1.0 / (float) (count - duplicates)) : 0.0);
 		}
 
 		return window->win_page.getPageNum();

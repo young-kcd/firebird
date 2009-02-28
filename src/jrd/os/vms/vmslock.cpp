@@ -87,7 +87,7 @@ bool LOCK_convert(PTR lock_id,
 	int status = sys$enq(EVENT_FLAG,
 					 lock_types[type],
 					 &lksb,
-					 (wait) ? LCK$M_CONVERT : LCK$M_CONVERT | LCK$M_NOQUEUE,
+					 wait ? LCK$M_CONVERT : LCK$M_CONVERT | LCK$M_NOQUEUE,
 					 &desc, NULL,	/* Lock parent (not used) */
 					 gds__completion_ast,	/* AST routine when granted */
 					 (int*) ast_argument, ast_routine, NULL, NULL);
@@ -163,11 +163,10 @@ SLONG LOCK_enq(PTR prior_request,
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
 	desc.dsc$w_length = p - buffer;
 	desc.dsc$a_pointer = buffer;
-	flags =
-		(wait) ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM |
-		LCK$M_NOQUEUE; lock_type = lock_types[type];
+	flags = wait ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM | LCK$M_NOQUEUE;
+	lock_type = lock_types[type];
 	int status =
-	sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
+		sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
 		   ast_argument, ast_routine, PSL$C_USER, NULL);
 	if (status & 1)
 		ISC_wait(&lksb, EVENT_FLAG);

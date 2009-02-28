@@ -1677,7 +1677,7 @@ BSTREAM* API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 #endif
 
 	bstream->bstr_blob = blob;
-	bstream->bstr_length = (length) ? length : 512;
+	bstream->bstr_length = length ? length : 512;
 	bstream->bstr_mode = 0;
 	bstream->bstr_cnt = 0;
 	bstream->bstr_ptr = 0;

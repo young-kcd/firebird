@@ -439,7 +439,7 @@ static void checksum( RBDB rbdb, ULONG lower, ULONG upper, bool sw_fix)
 			sprintf(s, "checksum %5d is OK", old_checksum);
 		else
 			sprintf(s, "stored checksum %5d\tcomputed checksum %5d\t%s",
-					old_checksum, new_checksum, (sw_fix) ? "fixed" : "");
+					old_checksum, new_checksum, sw_fix ? "fixed" : "");
 		printf("page %9d\t%s\n", page_number, s);
 	}
 }

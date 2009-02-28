@@ -536,7 +536,7 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
 	// Start with database security class
 
 	const SecurityClass* s_class = attachment->att_security_class;
-	SecurityClass::flags_t access = (s_class) ? s_class->scl_flags : -1;
+	SecurityClass::flags_t access = s_class ? s_class->scl_flags : -1;
 
 	// If there's a relation, track it down
 	jrd_rel* relation;

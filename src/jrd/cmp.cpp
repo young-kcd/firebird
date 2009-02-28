@@ -2953,7 +2953,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			// Get that stream number so that the flags can be copied
 			// into the newly created child stream.
 
-			const int relative_stream = (stream) ? remap[stream - 1] : stream;
+			const int relative_stream = stream ? remap[stream - 1] : stream;
 			new_stream = csb->nextStream();
 			node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) new_stream;
 			remap[stream] = (UCHAR) new_stream;

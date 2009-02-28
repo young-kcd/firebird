@@ -3844,7 +3844,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				break;
 
 			case RSR_computed_blr:
-				field->fld_computation = (dependencies) ?
+				field->fld_computation = dependencies ?
 					MET_get_dependencies(tdbb, relation, p, csb, NULL, NULL, NULL, field->fld_name,
 										 obj_computed, 0, depTrans) :
 					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
@@ -4113,7 +4113,7 @@ void MET_update_transaction(thread_db* tdbb, jrd_tra* transaction, const bool do
 		else
 		{
 			MODIFY X
-				X.RDB$TRANSACTION_STATE = (do_commit) ?
+				X.RDB$TRANSACTION_STATE = do_commit ?
 					RDB$TRANSACTIONS.RDB$TRANSACTION_STATE.COMMITTED :
 					RDB$TRANSACTIONS.RDB$TRANSACTION_STATE.ROLLED_BACK;
 			END_MODIFY;

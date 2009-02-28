@@ -2946,7 +2946,7 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 	gpre_nod* into_list = NULL;
 	if (!(request->req_flags & REQ_sql_declare_cursor))
 	{
-		into_list = (MSC_match(KW_INTO)) ? SQE_list(SQE_variable, request, false) : NULL;
+		into_list = MSC_match(KW_INTO) ? SQE_list(SQE_variable, request, false) : NULL;
 	}
 
 	gpre_rse* select = par_rse(request, s_list, distinct);

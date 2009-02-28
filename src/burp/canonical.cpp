@@ -97,7 +97,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 	XDR xdr;
 	XDR* xdrs = &xdr;
 
-	xdr_init(xdrs, buffer, (direction) ? XDR_ENCODE : XDR_DECODE);
+	xdr_init(xdrs, buffer, direction ? XDR_ENCODE : XDR_DECODE);
 
 	RCRD_OFFSET offset = 0;
 	for (field = relation->rel_fields; field; field = field->fld_next)
@@ -106,7 +106,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 			continue;
 		UCHAR* p = data + field->fld_offset;
 		const bool array_fld = ((field->fld_flags & FLD_array) != 0);
-		const FLD_LENGTH length = (array_fld) ? 8 : field->fld_length;
+		const FLD_LENGTH length = array_fld ? 8 : field->fld_length;
 		if (field->fld_offset >= offset)
 			offset = field->fld_offset + length;
 		if (field->fld_type == blr_varying && !array_fld)
@@ -232,7 +232,7 @@ ULONG CAN_slice(lstring* buffer,
 	XDR xdr;
 	XDR* xdrs = &xdr;
 
-	xdr_init(xdrs, buffer, (direction) ? XDR_ENCODE : XDR_DECODE);
+	xdr_init(xdrs, buffer, direction ? XDR_ENCODE : XDR_DECODE);
 
 	xdr_slice(xdrs, slice, sdl_length, sdl);
 	return (xdrs->x_private - xdrs->x_base);

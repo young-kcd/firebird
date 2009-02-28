@@ -1935,7 +1935,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				for (USHORT i = 0; i < extra_count; i++) {
 					temp->nod_arg[i] = access_type->nod_arg[i];
 				}
-				temp->nod_type = (extra_count) ? nod_navigational : nod_indices;
+				temp->nod_type = extra_count ? nod_navigational : nod_indices;
 				if (extra_count)
 					delete access_type;
 				access_type = temp;
@@ -3089,7 +3089,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_group_by:
 		node = par_sort(tdbb, csb, false);
-		return (node->nod_count) ? node : NULL;
+		return node->nod_count ? node : NULL;
 
 	case blr_field:
 	case blr_fid:

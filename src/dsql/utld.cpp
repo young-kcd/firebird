@@ -624,7 +624,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 
 		// Fill in the return values to the caller.
 
-		*blr_length = (same_flag) ? 0 : blr_len;
+		*blr_length = same_flag ? 0 : blr_len;
 		*msg_length = msg_len;
 		*msg_type = 0;
 

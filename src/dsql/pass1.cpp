@@ -4273,7 +4273,7 @@ static dsql_nod* pass1_delete( CompiledStatement* statement, dsql_nod* input)
 		return anode;
 	}
 
-	statement->req_type = (cursor) ? REQ_DELETE_CURSOR : REQ_DELETE;
+	statement->req_type = cursor ? REQ_DELETE_CURSOR : REQ_DELETE;
 	dsql_nod* node = MAKE_node(nod_erase, e_era_count);
 
 	// Generate record selection expression
@@ -9149,7 +9149,7 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 		return anode;
 	}
 
-	statement->req_type = (cursor) ? REQ_UPDATE_CURSOR : REQ_UPDATE;
+	statement->req_type = cursor ? REQ_UPDATE_CURSOR : REQ_UPDATE;
 
 	dsql_nod* node = MAKE_node(nod_modify, e_mod_count);
 	node->nod_arg[e_mod_update] = pass1_node_psql(statement, relation, false);

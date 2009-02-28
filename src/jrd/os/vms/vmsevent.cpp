@@ -765,7 +765,7 @@ static EVNT find_event(USHORT length,
  *	Lookup an event.
  *
  **************************************/
-	EVNT event = (parent) ? parent->evnt_offspring : global_parent_events;
+	EVNT event = parent ? parent->evnt_offspring : global_parent_events;
 	for (; event; event = event->evnt_next)
 		if (event->evnt_length == length &&
 			!strncmp(string, event->evnt_name, length))

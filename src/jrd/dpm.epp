@@ -1393,7 +1393,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		data_page* page = (data_page*) CCH_HANDOFF(tdbb,
 							&rpb.getWindow(tdbb),
 							page_number,
-							(SSHORT)((delete_flag) ? LCK_write : LCK_read),
+							(SSHORT)(delete_flag ? LCK_write : LCK_read),
 							pag_data);
 		if (line >= page->dpg_count) {
 			goto punt;
@@ -2774,7 +2774,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 
 	{ // scope
-		const USHORT rec_segments = page->dpg_count + ((slot) ? 0 : 1);
+		const USHORT rec_segments = page->dpg_count + (slot ? 0 : 1);
 		fb_assert(rec_segments > 0); // zero is a disaster in macro HIGH_WATER
 		if (aligned_size > space - HIGH_WATER(rec_segments))
 			space = DPM_compress(tdbb, page);

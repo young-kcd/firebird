@@ -1100,7 +1100,7 @@ static TEXT* get_buffer(qli_str** str, TEXT* ptr, USHORT length)
 	}
 
 	if (length <= (*str)->str_length)
-		return (ptr) ? ptr : (*str)->str_data;
+		return ptr ? ptr : (*str)->str_data;
 
 	qli_str* temp_str = (qli_str*) ALLOCPV(type_str, length);
 	temp_str->str_length = length;

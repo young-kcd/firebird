@@ -659,7 +659,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 							   buffer, F.RDB$FILE_START);
 				else
 					fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
-							   (any_shadows) ? ";\n" : "",
+							   any_shadows ? ";\n" : "",
 							   F.RDB$SHADOW_NUMBER,
 							   buffer);
 				any_shadows = true;

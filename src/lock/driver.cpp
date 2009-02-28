@@ -175,7 +175,7 @@ void main( int argc, char **argv)
 			}
 			SLONG data = LOCK_query_data(parent, 0, agg);
 			if (agg == LCK_ANY)
-				printf("%s = %s\n", arg, ((data) ? "true" : "false"));
+				printf("%s = %s\n", arg, (data ? "true" : "false"));
 			else
 				printf("%s = %d\n", arg, data);
 			continue;

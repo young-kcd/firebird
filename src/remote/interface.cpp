@@ -835,7 +835,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		string user_string;
 		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
-		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
 
 		PathName expanded_name(filename);
 		PathName node_name;
@@ -1342,10 +1342,10 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		/* set up the packet for the other guy... */
 
 		PACKET* packet = &rdb->rdb_packet;
-		packet->p_operation = (out_msg_length) ? op_execute2 : op_execute;
+		packet->p_operation = out_msg_length ? op_execute2 : op_execute;
 		P_SQLDATA* sqldata = &packet->p_sqldata;
 		sqldata->p_sqldata_statement = statement->rsr_id;
-		sqldata->p_sqldata_transaction = (transaction) ? transaction->rtr_id : 0;
+		sqldata->p_sqldata_transaction = transaction ? transaction->rtr_id : 0;
 		sqldata->p_sqldata_blr.cstr_length = in_blr_length;
 		sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(in_blr); // safe, see protocol.cpp and server.cpp
 		sqldata->p_sqldata_message_number = in_msg_type;
@@ -1575,7 +1575,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		packet->p_operation = (in_msg_length || out_msg_length) ?
 			op_exec_immediate2 : op_exec_immediate;
 		P_SQLST* ex_now = &packet->p_sqlst;
-		ex_now->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
+		ex_now->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		ex_now->p_sqlst_SQL_dialect = dialect;
 		ex_now->p_sqlst_SQL_str.cstr_length = length ? length : strlen(string);
 		ex_now->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(string);
@@ -2198,7 +2198,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status, Rtr** rtr_handle,
 
 		packet->p_operation = op_prepare_statement;
 		P_SQLST* prepare = &packet->p_sqlst;
-		prepare->p_sqlst_transaction = (transaction) ? transaction->rtr_id : 0;
+		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
 		prepare->p_sqlst_statement = statement->rsr_id;
 		prepare->p_sqlst_SQL_dialect = dialect;
 		prepare->p_sqlst_SQL_str.cstr_length = length ? length : strlen(string);
@@ -3839,7 +3839,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		string user_string;
 
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
-		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
 
 		rem_port* port = analyze_service(expanded_name, user_status, us, user_verification, newSpb);
 		if (!port) {
@@ -4355,7 +4355,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 		trrq->p_trrq_transaction = transaction->rtr_id;
 		trrq->p_trrq_blr.cstr_length = blr_length;
 		trrq->p_trrq_blr.cstr_address = blr;
-		trrq->p_trrq_messages = (in_msg_length) ? 1 : 0;
+		trrq->p_trrq_messages = in_msg_length ? 1 : 0;
 
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 			return user_status[1];

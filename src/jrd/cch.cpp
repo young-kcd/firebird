@@ -1255,7 +1255,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 
 	if (flush_flag & (FLUSH_TRAN | FLUSH_SYSTEM))
 	{
-		const SLONG transaction_mask = (tra_number) ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
+		const SLONG transaction_mask = tra_number ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
 		bool sys_only = false;
 		if (!transaction_mask && (flush_flag & FLUSH_SYSTEM)) {
 			sys_only = true;
@@ -1289,7 +1289,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
 		const bool write_thru = release_flag;
 		const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
-		LATCH latch = (release_flag) ? LATCH_exclusive : LATCH_none;
+		LATCH latch = release_flag ? LATCH_exclusive : LATCH_none;
 
 		BufferControl* bcb;
 		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++)

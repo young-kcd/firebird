@@ -192,7 +192,7 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 
 	opn_event->opn_event_age = ++opn_event_clock;
 
-	return (SetEvent(opn_event->opn_event_lhandle)) ? 0 : -1;
+	return SetEvent(opn_event->opn_event_lhandle) ? 0 : -1;
 }
 
 void ISC_signal_init()

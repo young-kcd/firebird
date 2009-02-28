@@ -2085,7 +2085,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	}
 	statement->rsr_flags.clear(Rsr::FETCHED);
 
-	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
+	FB_API_HANDLE handle = transaction ? transaction->rtr_handle : 0;
 
 	ISC_STATUS_ARRAY status_vector;
 
@@ -2972,7 +2972,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	*info = isc_info_length;
 	memmove(info + 1, prepareL->p_sqlst_items.cstr_address, prepareL->p_sqlst_items.cstr_length);
 
-	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
+	FB_API_HANDLE handle = transaction ? transaction->rtr_handle : 0;
 
 
 /* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to

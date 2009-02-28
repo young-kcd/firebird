@@ -123,7 +123,7 @@ Firebird::GlobalPtr<Firebird::RWLock> global_sync;
 static inline void set_global_private_status(ISC_STATUS* user_status, ISC_STATUS* local_status)
 {
 	UDSQL_error->dsql_user_status = user_status;
-	UDSQL_error->dsql_status = (user_status) ? user_status : local_status;
+	UDSQL_error->dsql_status = user_status ? user_status : local_status;
 }
 
 static inline void INIT_DSQL(ISC_STATUS* user_status, ISC_STATUS* local_status)

@@ -1828,7 +1828,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 	// Merge pointer is null; we're done. Return either the most
 	// recent record, or end of file, as appropriate.
 
-	return (eof) ? NULL : record;
+	return eof ? NULL : record;
 }
 
 

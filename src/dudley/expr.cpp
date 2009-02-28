@@ -936,35 +936,36 @@ static DUDLEY_NOD parse_relational( USHORT * paren_count)
 
 	enum nod_t operatr;
 
-	switch (PARSE_keyword()) {
+	switch (PARSE_keyword())
+	{
 	case KW_EQUALS:
 	case KW_EQ:
-		operatr = (negation) ? nod_neq : nod_eql;
+		operatr = negation ? nod_neq : nod_eql;
 		negation = false;
 		break;
 
 	case KW_NE:
-		operatr = (negation) ? nod_eql : nod_neq;
+		operatr = negation ? nod_eql : nod_neq;
 		negation = false;
 		break;
 
 	case KW_GT:
-		operatr = (negation) ? nod_leq : nod_gtr;
+		operatr = negation ? nod_leq : nod_gtr;
 		negation = false;
 		break;
 
 	case KW_GE:
-		operatr = (negation) ? nod_lss : nod_geq;
+		operatr = negation ? nod_lss : nod_geq;
 		negation = false;
 		break;
 
 	case KW_LE:
-		operatr = (negation) ? nod_gtr : nod_leq;
+		operatr = negation ? nod_gtr : nod_leq;
 		negation = false;
 		break;
 
 	case KW_LT:
-		operatr = (negation) ? nod_geq : nod_lss;
+		operatr = negation ? nod_geq : nod_lss;
 		negation = false;
 		break;
 

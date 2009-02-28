@@ -248,7 +248,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 			break;
 	}
 
-	if (!StartService(service, (mode) ? 1 : 0, &mode))
+	if (!StartService(service, mode ? 1 : 0, &mode))
 	{
 		const DWORD errnum = GetLastError();
 		CloseServiceHandle(service);

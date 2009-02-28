@@ -128,7 +128,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 		}
 	}
 
-	return ((error) ? FINI_ERROR : FINI_OK);
+	return error ? FINI_ERROR : FINI_OK;
 }
 
 

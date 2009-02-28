@@ -751,7 +751,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
 
-	string version = (icuVersion.isEmpty() ? versions[0] : icuVersion);
+	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
 		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
 

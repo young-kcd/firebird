@@ -148,7 +148,7 @@ inline bool CONVERT(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 {
 	Database* const dbb = tdbb->getDatabase();
 
-	return (lock->lck_compatible) ?
+	return lock->lck_compatible ?
 		internal_enqueue(tdbb, lock, level, wait, true) :
 		dbb->dbb_lock_mgr->convert(tdbb, lock->lck_id, level, wait, lock->lck_ast, lock->lck_object);
 }
@@ -167,7 +167,7 @@ inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 {
 	Database* const dbb = tdbb->getDatabase();
 
-	return (lock->lck_compatible) ?
+	return lock->lck_compatible ?
 		internal_downgrade(tdbb, lock) :
 		dbb->dbb_lock_mgr->downgrade(tdbb, lock->lck_id);
 }
