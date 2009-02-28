@@ -76,3 +76,10 @@ LIB=$(BIN)
 # Special options for UDF link
 LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT)) -L$(LIB) -lib_util
 LINK_UDF_LIBS = 
+
+# Special options for trace plugin link
+LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) $(LIB)/librxspencer.a
+
+# This is ugly HACK!!! Must be removed as soon as somebody find
+# a way to use routines from server
+TRACE_OS_Sources = jrd/gds.cpp
