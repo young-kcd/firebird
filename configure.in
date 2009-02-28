@@ -967,6 +967,7 @@ mkdir -p temp/boot/utilities/nbackup
 mkdir -p temp/boot/utilities/rebuild
 mkdir -p temp/boot/utilities/ntrace
 mkdir -p temp/boot/utilities/ntrace/os/posix
+mkdir -p temp/boot/utilities/ntrace/os/win32
 mkdir -p temp/boot/vulcan
 
 mkdir -p temp/std/alice
@@ -1008,6 +1009,7 @@ mkdir -p temp/std/utilities/nbackup
 mkdir -p temp/std/utilities/rebuild
 mkdir -p temp/std/utilities/ntrace
 mkdir -p temp/std/utilities/ntrace/os/posix
+mkdir -p temp/std/utilities/ntrace/os/win32
 mkdir -p temp/std/vulcan
 
 mkdir -p temp/superclient/alice
@@ -1049,6 +1051,7 @@ mkdir -p temp/superclient/utilities/nbackup
 mkdir -p temp/superclient/utilities/rebuild
 mkdir -p temp/superclient/utilities/ntrace
 mkdir -p temp/superclient/utilities/ntrace/os/posix
+mkdir -p temp/superclient/utilities/ntrace/os/win32
 mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
@@ -1090,6 +1093,7 @@ mkdir -p temp/superserver/utilities/nbackup
 mkdir -p temp/superserver/utilities/rebuild
 mkdir -p temp/superserver/utilities/ntrace
 mkdir -p temp/superserver/utilities/ntrace/os/posix
+mkdir -p temp/superserver/utilities/ntrace/os/win32
 mkdir -p temp/superserver/vulcan
 
 ])
