@@ -138,6 +138,7 @@ const SLONG HASH_MIN_SLOTS	= 101;
 const SLONG HASH_MAX_SLOTS	= 65521;
 const USHORT HISTORY_BLOCKS	= 256;
 
+// SRQ_ABS_PTR uses this macro.
 #define SRQ_BASE                    ((UCHAR*) m_header)
 
 static const bool compatibility[LCK_max][LCK_max] =
@@ -841,7 +842,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, USHORT series, USHORT aggre
 		if (aggregate == LCK_CNT || aggregate == LCK_ANY)
 			data = count;
 		else if (aggregate == LCK_AVG)
-			data = (count) ? data / count : 0;
+			data = count ? data / count : 0;
 		break;
 
 	case LCK_MAX:
@@ -1080,7 +1081,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	// the lock mutex.  In that event, lets see if there is any unfinished work
 	// left around that we need to finish up.
 
-	if (prior_active) {
+	if (prior_active)
+	{
 		post_history(his_active, owner_offset, prior_active, (SRQ_PTR) 0, false);
 		shb* recover = (shb*) SRQ_ABS_PTR(m_header->lhb_secondary);
 		if (recover->shb_remove_node) {
@@ -1241,7 +1243,8 @@ void LockManager::blocking_action(thread_db* tdbb,
 	if (!blocked_owner_offset)
 		blocked_owner_offset = blocking_owner_offset;
 
-	while (owner->own_count) {
+	while (owner->own_count)
+	{
 		srq* lock_srq = SRQ_NEXT(owner->own_blocks);
 		if (lock_srq == &owner->own_blocks) {
 			// We've processed the own_blocks queue, reset the "we've been
@@ -1265,7 +1268,8 @@ void LockManager::blocking_action(thread_db* tdbb,
 			insert_tail(&m_header->lhb_free_requests, &request->lrq_lbl_requests);
 		}
 
-		if (routine) {
+		if (routine)
+		{
 			owner->own_count++;
 			release_shmem(blocked_owner_offset);
 			m_localMutex.leave();
@@ -1365,8 +1369,7 @@ void LockManager::blocking_action_thread()
 
 			m_localMutex.leave();
 
-			event_t* event_ptr = &m_process->prc_blocking;
-			ISC_event_wait(event_ptr, value, 0);
+			ISC_event_wait(&m_process->prc_blocking, value, 0);
 		}
 
 		m_localMutex.leave();
@@ -1790,7 +1793,8 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 	// blocking the request we're handling, recurse to find what's blocking him.
 
 	srq* lock_srq;
-	SRQ_LOOP(lock->lbl_requests, lock_srq) {
+	SRQ_LOOP(lock->lbl_requests, lock_srq)
+	{
 		lrq* block = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 
 		if (!lockOrdering() || conversion)
@@ -2410,7 +2414,8 @@ bool LockManager::internal_convert(thread_db* tdbb,
 	// If we weren't requested to wait, just forget about the whole thing.
 	// Otherwise wait for the request to be granted or rejected.
 
-	if (lck_wait) {
+	if (lck_wait)
+	{
 		bool new_ast;
 		if (request->lrq_ast_routine != ast_routine || request->lrq_ast_argument != ast_argument)
 		{
@@ -2655,7 +2660,8 @@ void LockManager::post_pending(lbl* lock)
 	// it can post_blockage() to the newly granted owner of the lock.
 
 	SRQ lock_srq;
-	SRQ_LOOP(lock->lbl_requests, lock_srq) {
+	SRQ_LOOP(lock->lbl_requests, lock_srq)
+	{
 		lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 		if (!(request->lrq_flags & LRQ_pending))
 			continue;
@@ -3333,7 +3339,8 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 	ULONG found_pending = 0;
 	UCHAR highest_request = LCK_none;
 	const srq* lock_srq;
-	SRQ_LOOP(lock->lbl_requests, lock_srq) {
+	SRQ_LOOP(lock->lbl_requests, lock_srq)
+	{
 		// Validate that the next backpointer points back to us
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
@@ -3444,7 +3451,8 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 		  		~(OWN_blocking | OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled | OWN_timeout)));
 
 	const srq* lock_srq;
-	SRQ_LOOP(owner->own_requests, lock_srq) {
+	SRQ_LOOP(owner->own_requests, lock_srq)
+	{
 		// Validate that the next backpointer points back to us
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
@@ -3457,7 +3465,8 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 
 		// Make sure that request marked as blocking also exists in the blocking list
 
-		if (request->lrq_flags & LRQ_blocking) {
+		if (request->lrq_flags & LRQ_blocking)
+		{
 			ULONG found = 0;
 			const srq* que2;
 			SRQ_LOOP(owner->own_blocks, que2) {
@@ -3479,7 +3488,8 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 
 	// Check each item in the blocking queue
 
-	SRQ_LOOP(owner->own_blocks, lock_srq) {
+	SRQ_LOOP(owner->own_blocks, lock_srq)
+	{
 		// Validate that the next backpointer points back to us
 		const srq* const que_next = SRQ_NEXT((*lock_srq));
 		CHECK(que_next->srq_backward == SRQ_REL_PTR(lock_srq));
@@ -3521,7 +3531,8 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 	// If there is a pending request, make sure it is valid, that it
 	// exists in the queue for the lock.
 
-	if (owner_own_pending_request && (freed == EXPECT_inuse)) {
+	if (owner_own_pending_request && (freed == EXPECT_inuse))
+	{
 		// Make sure pending request is valid, and we own it
 		const lrq* const request3 = (lrq*) SRQ_ABS_PTR(owner_own_pending_request);
 		validate_request(SRQ_REL_PTR(request3), EXPECT_inuse, RECURSE_not);
@@ -3689,8 +3700,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 	else
 		owner->own_flags |= OWN_timeout;
 
-	event_t* event_ptr = &owner->own_wakeup;
-	SLONG value = ISC_event_clear(event_ptr);
+	SLONG value = ISC_event_clear(&owner->own_wakeup);
 
 	// Post blockage. If the blocking owner has disappeared, the blockage
 	// may clear spontaneously.
@@ -3713,7 +3723,8 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 	ULONG repost_counter = 0;
 #endif
 
-	while (true) {
+	while (true)
+	{
 		int ret = FB_FAILURE;
 
 		// Before starting to wait - look to see if someone resolved
@@ -3743,12 +3754,11 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			{ // scope
 				Firebird::ReadLockGuard guard(m_remapSync);
 				owner = (own*) SRQ_ABS_PTR(owner_offset);
-				event_ptr = &owner->own_wakeup;
 				++m_waitingOwners;
 			}
 			{ // scope
 				Database::Checkout dcoHolder(tdbb->getDatabase());
-				ret = ISC_event_wait(event_ptr, value, (timeout - current_time) * 1000000);
+				ret = ISC_event_wait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 				--m_waitingOwners;
 			}
 			m_localMutex.enter();
@@ -3774,8 +3784,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
 		if (ret == FB_SUCCESS)
 		{
-			event_ptr = &owner->own_wakeup;
-			value = ISC_event_clear(event_ptr);
+			value = ISC_event_clear(&owner->own_wakeup);
 		}
 
 		if (owner->own_flags & OWN_wakeup)

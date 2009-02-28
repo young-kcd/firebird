@@ -976,7 +976,7 @@ evnt* EventManager::find_event(USHORT length, const TEXT* string, evnt* parent)
  *	Lookup an event.
  *
  **************************************/
-	const SRQ_PTR parent_offset = (parent) ? SRQ_REL_PTR(parent) : 0;
+	const SRQ_PTR parent_offset = parent ? SRQ_REL_PTR(parent) : 0;
 
 	srq* event_srq;
 	SRQ_LOOP(m_header->evh_events, event_srq)
@@ -1433,8 +1433,7 @@ void EventManager::watcher_thread()
 			if (!m_processOffset)
 				break;
 
-			event_t* event_ptr = &m_process->prb_event;
-			ISC_event_wait(event_ptr, value, 0);
+			ISC_event_wait(&m_process->prb_event, value, 0);
 		}
 
 		m_cleanupSemaphore.release();
