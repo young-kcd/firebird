@@ -1562,7 +1562,16 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	temp->tra_flags = flags;
 	temp->tra_lock_timeout = lock_timeout;
 
-	jrd_tra* transaction = transaction_start(tdbb, temp);
+	jrd_tra* transaction = NULL;
+	try 
+	{
+		transaction = transaction_start(tdbb, temp);
+	}
+	catch (const Exception&)
+	{
+		jrd_tra::destroy(dbb, temp);
+		throw;
+	}
 
 	if (attachment->att_trace_manager->needs().event_transaction_start)
 	{
@@ -1604,9 +1613,17 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
-	transaction_options(tdbb, temp, tpb, tpb_length);
-
-	jrd_tra* transaction = transaction_start(tdbb, temp);
+	jrd_tra* transaction = NULL;
+	try
+	{
+		transaction_options(tdbb, temp, tpb, tpb_length);
+		transaction = transaction_start(tdbb, temp);
+	}
+	catch (const Exception&)
+	{
+		jrd_tra::destroy(dbb, temp);
+		throw;
+	}
 
 	if (attachment->att_trace_manager->needs().event_transaction_start)
 	{
