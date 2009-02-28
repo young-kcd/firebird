@@ -1,3 +1,61 @@
+2009-02-28 14:12  dimitr
+
+	* firebird2/src/remote/server.cpp (1.236):
+
+	Fixed the "bad handle" error reporting in the remote server.
+
+2009-02-28 13:34  robocop
+
+	* firebird2/src/isql/: isql.epp (1.267), isql_proto.h (1.26):
+
+	Little cleanup.
+
+2009-02-28 12:57  robocop
+
+	* firebird2/src/: alice/exe.cpp (1.59), burp/canonical.cpp (1.42),
+	config/Lex.cpp (1.10), dsql/ddl.cpp (1.274), dsql/pass1.cpp
+	(1.440), dsql/user_dsql.cpp (1.61), dsql/utld.cpp (1.62),
+	dudley/expr.cpp (1.30), dudley/extract.epp (1.54), gpre/sqe.cpp
+	(1.64), jrd/btr.cpp (1.234), jrd/cch.cpp (1.226), jrd/cmp.cpp
+	(1.338), jrd/dfw.epp (1.266), jrd/dpm.epp (1.87), jrd/lck.cpp
+	(1.97), jrd/met.epp (1.275), jrd/par.cpp (1.232), jrd/perf.cpp
+	(1.45), jrd/scl.epp (1.106), jrd/sort.cpp (1.123),
+	jrd/unicode_util.cpp (1.48), jrd/utl.cpp (1.129),
+	jrd/validation.cpp (1.48), jrd/vio.cpp (1.243),
+	jrd/os/vms/vmsevent.cpp (1.24), jrd/os/vms/vmslock.cpp (1.17),
+	jrd/os/win32/isc_ipc.cpp (1.27), lock/driver.cpp (1.24),
+	qli/format.cpp (1.44), qli/parse.cpp (1.51), remote/interface.cpp
+	(1.207), remote/server.cpp (1.235), utilities/install/services.cpp
+	(1.30), utilities/rebuild/rebuild.cpp (1.32):
+
+	Get rid of superflous parentheses.
+
+2009-02-28 12:47  robocop
+
+	* firebird2/src/: jrd/event.cpp (1.85), lock/lock.cpp (1.183):
+
+	Simplify the call to ISC_event_wait.
+
+2009-02-28 12:44  aafemt
+
+	* firebird2/builds/posix/: Makefile.in.client.gsec (1.13),
+	Makefile.in.fbtrace (1.4), make.defaults (1.79), prefix.mingw
+	(1.46):
+
+	Fix MinGW build
+
+2009-02-28 12:43  aafemt
+
+	* firebird2/configure.in (1.319):
+
+	Missed dirs
+
+2009-02-28 12:33  robocop
+
+	* firebird2/src/common/utils.cpp (1.65):
+
+	Fix the Windows build.
+
 2009-02-27 18:08  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.extern.regex (1.4):
