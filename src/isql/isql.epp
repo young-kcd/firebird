@@ -6242,6 +6242,8 @@ static processing_state newdb(TEXT* dbname,
 	strcpy(save_database, dbname);
 	ISQL_disconnect_database(false);
 	strcpy(dbname, save_database);
+	ISQL_FREE(save_database);
+
 
 	TEXT local_psw[BUFFER_LENGTH128];
 	TEXT local_usr[BUFFER_LENGTH128];
@@ -6334,8 +6336,6 @@ static processing_state newdb(TEXT* dbname,
 		{
 			ISQL_errmsg(isc_status);
 			isqlGlob.global_Db_name[0] = '\0';
-			if (save_database)
-				ISQL_FREE(save_database);
 			return FAIL;
 		}
 
@@ -6345,9 +6345,6 @@ static processing_state newdb(TEXT* dbname,
 		// No use in cancel when running non-end-user operators
 		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
 	} // scope
-
-	if (save_database)
-		ISQL_FREE(save_database);
 
 	ISQL_get_version(false);
 
