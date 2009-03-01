@@ -54,10 +54,6 @@
 #include "../jrd/divorce.h"
 #include "../common/classes/semaphore.h"
 
-#ifdef _AIX
-#include <sys/select.h>
-#endif
-
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif

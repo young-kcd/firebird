@@ -31,16 +31,12 @@
 
 #include "../jrd/common.h"
 
+#include <sys/types.h>
 #ifdef WIN_NT
-#include <sys/types.h>
 #include <winsock.h>
-typedef	char *	caddr_t;
+typedef	char* caddr_t;
 #else // WIN_NT
-#include <sys/types.h>
 #include <netinet/in.h>
-#ifdef _AIX
-#include <sys/select.h>
-#endif
 #endif // WIN_NT
 
 typedef int XDR_INT;
