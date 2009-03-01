@@ -77,8 +77,6 @@
 
 const int DYN_MSG_FAC	= 8;
 
-static const SLONG MAX_TRA_NUMBER = MAX_SLONG;
-
 using namespace Jrd;
 using namespace Ods;
 using namespace Firebird;
@@ -1795,7 +1793,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		try {
-			if (!trans)
+			if (!trans && transaction)
 				TRA_commit(tdbb, transaction, false);
 
 			LCK_release(tdbb, &temp_lock);
@@ -1809,8 +1807,8 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
 			tdbb->setTransaction(tdbb_old_trans);
-			return false;
 		}
+		return false;
 	}
 
 	return true;
