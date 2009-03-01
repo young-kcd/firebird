@@ -140,7 +140,7 @@ void TraceManager::load_modules()
 
 	char plugdir[MAXPATHLEN];
 	gds__prefix(plugdir, "plugins");
-	ScanDir plugins(plugdir, "*.*");
+	ScanDir plugins(plugdir, "*."SHRLIB_EXT);
 
 	while (plugins.next())
 	{
