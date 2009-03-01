@@ -64,7 +64,7 @@ class UserManagement;
 class thread_db;
 
 
-static const SLONG MAX_TRA_NUMBER = MAX_SLONG;
+const SLONG MAX_TRA_NUMBER = MAX_SLONG;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this
 // structure small as there can be huge amount of them floating in memory.
