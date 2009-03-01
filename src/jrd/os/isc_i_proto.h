@@ -38,6 +38,10 @@ bool	ISC_signal(int, FPTR_VOID_PTR, void *);
 void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
 #endif
 
+#ifdef WIN_NT
+void*	ISC_make_signal(bool, bool, int, int);
+#endif
+
 void	ISC_signal_init();
 
 #endif // JRD_ISC_I_PROTO_H

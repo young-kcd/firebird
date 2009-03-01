@@ -1846,42 +1846,6 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 #endif // WIN_NT
 
 
-#ifdef WIN_NT
-void *ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
-{
-/**************************************
- *
- *	I S C _ m a k e _ s i g n a l		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Create or open a Windows/NT event.
- *	Use the signal number and process id
- *	in naming the object.
- *
- **************************************/
-
-	const BOOLEAN man_rst = manual_reset ? TRUE : FALSE;
-
-	if (!signal_number)
-		return CreateEvent(NULL, man_rst, FALSE, NULL);
-
-	TEXT event_name[BUFFER_TINY];
-	sprintf(event_name, "_firebird_process%u_signal%d", process_idL, signal_number);
-
-	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
-
-	if (create_flag) {
-		fb_assert(!hEvent);
-		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
-	}
-
-	return hEvent;
-}
-#endif
-
-
 #ifdef UNIX
 
 #ifdef HAVE_MMAP

@@ -74,7 +74,7 @@ public:
 // if we don't use MSVC then we don't use MS CRT ?
 #ifndef _MSC_VER
 		return;
-#endif
+#else
 
 		if (!Firebird::bEmbedded || !mCreateActCtx)
 			return;
@@ -117,6 +117,7 @@ public:
 			if (hActCtx != INVALID_HANDLE_VALUE)
 				(*mActivateActCtx) (hActCtx, &mCookie);
 		}
+#endif // ifndef _MSC_VER
 	}
 
 	~ContextActivator()

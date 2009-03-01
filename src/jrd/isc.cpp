@@ -124,7 +124,7 @@ public:
 		// WARNING!!! The absent DACL means full access granted
 		// to everyone, this is a huge security risk!
 
-		PSECURITY_DESCRIPTOR p_security_desc = pool.allocate(SECURITY_DESCRIPTOR_MIN_LENGTH);
+		PSECURITY_DESCRIPTOR p_security_desc = reinterpret_cast<PSECURITY_DESCRIPTOR>(pool.allocate(SECURITY_DESCRIPTOR_MIN_LENGTH));
 
 		attributes.nLength = sizeof(attributes);
 		attributes.lpSecurityDescriptor = p_security_desc;
@@ -140,7 +140,7 @@ public:
 
 	~SecurityAttributes()
 	{
-		delete attributes.lpSecurityDescriptor;
+		delete reinterpret_cast<PSECURITY_DESCRIPTOR>(attributes.lpSecurityDescriptor);
 	}
 
 	operator LPSECURITY_ATTRIBUTES()

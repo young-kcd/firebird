@@ -39,10 +39,6 @@ int		ISC_event_init(event_t*);
 int		ISC_event_post(event_t*);
 int		ISC_event_wait(event_t*, const SLONG, const SLONG);
 
-#ifdef WIN_NT
-void*	ISC_make_signal(bool, bool, int, int);
-#endif
-
 typedef void (*FPTR_INIT_GLOBAL_REGION)(void*, struct sh_mem*, bool);
 UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
 					 void*, ULONG, struct sh_mem*);
