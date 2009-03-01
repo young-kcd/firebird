@@ -3057,8 +3057,8 @@ static bool packet_receive(rem_port* port,
 		return false;
 	}
 
-	if (!n) {
-		inet_error(port, "read end_of_file", isc_net_read_err, isc_arg_end);
+	if (!n && inetErrNo) {
+		inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
 		return false;
 	}
 
@@ -3071,7 +3071,7 @@ static bool packet_receive(rem_port* port,
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
-			inet_error(port, "simulated error - read", isc_net_read_err, isc_arg_end);
+			inet_error(port, "simulated error - read", isc_net_read_err, 0);
 			return false;
 		}
 	}
@@ -3209,7 +3209,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		INET_force_error--;
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
-			inet_error(port, "simulated error - send", isc_net_write_err, isc_arg_end);
+			inet_error(port, "simulated error - send", isc_net_write_err, 0);
 			return false;
 		}
 	}
