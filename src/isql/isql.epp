@@ -6244,7 +6244,6 @@ static processing_state newdb(TEXT* dbname,
 	strcpy(dbname, save_database);
 	ISQL_FREE(save_database);
 
-
 	TEXT local_psw[BUFFER_LENGTH128];
 	TEXT local_usr[BUFFER_LENGTH128];
 	TEXT local_sql_role[BUFFER_LENGTH256];

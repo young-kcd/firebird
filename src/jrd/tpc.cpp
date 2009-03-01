@@ -134,7 +134,7 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 		tip_cache = *tip_cache_ptr;
 	}
 
-	if ((ULONG)number < (ULONG)(tip_cache->tpc_base + trans_per_tip))
+	if ((ULONG) number < (ULONG) (tip_cache->tpc_base + trans_per_tip))
 		return;
 
 	if (tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip)
@@ -165,7 +165,8 @@ void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 
 	for (TxPageCache* tip_cache = dbb->dbb_tip_cache; tip_cache; tip_cache = tip_cache->tpc_next)
 	{
-		if ((ULONG)number < (ULONG)(tip_cache->tpc_base + trans_per_tip)) {
+		if ((ULONG) number < (ULONG) (tip_cache->tpc_base + trans_per_tip))
+		{
 			UCHAR* address = tip_cache->tpc_transactions + byte;
 			*address &= ~(TRA_MASK << shift);
 			*address |= state << shift;
@@ -297,7 +298,7 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
 
 	TxPageCache* tip_cache;
 	while ( (tip_cache = dbb->dbb_tip_cache) ) {
-		if ((ULONG)dbb->dbb_oldest_transaction >= (ULONG)(tip_cache->tpc_base + trans_per_tip))
+		if ((ULONG) dbb->dbb_oldest_transaction >= (ULONG) (tip_cache->tpc_base + trans_per_tip))
 		{
 			dbb->dbb_tip_cache = tip_cache->tpc_next;
 			delete tip_cache;
@@ -409,7 +410,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, SL
 	// cached tip page and new pages if our process was idle for long time
 
 	for (TxPageCache* tip_cache = dbb->dbb_tip_cache;
-		 tip_cache && ((ULONG)(tip_cache->tpc_base + trans_per_tip) < (ULONG)hdr_oldest);
+		 tip_cache && ((ULONG) (tip_cache->tpc_base + trans_per_tip) < (ULONG) hdr_oldest);
 		 tip_cache = dbb->dbb_tip_cache)
 	{
 		dbb->dbb_tip_cache = tip_cache->tpc_next;

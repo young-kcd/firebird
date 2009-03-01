@@ -195,7 +195,7 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	return SetEvent(opn_event->opn_event_lhandle) ? 0 : -1;
 }
 
-void *ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
+void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
 {
 /**************************************
  *

@@ -41,7 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 FBTRACE_UTIL_Files= TraceConfiguration.cpp traceplugin.cpp TracePluginImpl.cpp \
-		$(PLATFORM_PATH)/FileObject.cpp $(PLATFORM_PATH)/platform.cpp
+	$(PLATFORM_PATH)/FileObject.cpp $(PLATFORM_PATH)/platform.cpp
 
 FBTRACE_UTIL_Sources = $(addprefix utilities/ntrace/, $(FBTRACE_UTIL_Files))
 
@@ -49,8 +49,8 @@ FBTRACE_UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACE
 
 
 FBTRACE_OTHER_Sources = $(OS_SPECIFIC_Sources) $(TRACE_OS_Sources) \
-jrd/isc.cpp jrd/isc_sync.cpp jrd/isc_ipc.cpp \
-common/classes/ClumpletReader.cpp common/utils.cpp
+	jrd/isc.cpp jrd/isc_sync.cpp jrd/isc_ipc.cpp \
+	common/classes/ClumpletReader.cpp common/utils.cpp
 
 FBTRACE_OTHER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACE_OTHER_Sources))))
 

@@ -1393,7 +1393,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		data_page* page = (data_page*) CCH_HANDOFF(tdbb,
 							&rpb.getWindow(tdbb),
 							page_number,
-							(SSHORT)(delete_flag ? LCK_write : LCK_read),
+							(SSHORT) (delete_flag ? LCK_write : LCK_read),
 							pag_data);
 		if (line >= page->dpg_count) {
 			goto punt;

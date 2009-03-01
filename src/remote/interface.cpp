@@ -835,7 +835,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		string user_string;
 		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
-		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
 
 		PathName expanded_name(filename);
 		PathName node_name;
@@ -3839,7 +3839,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		string user_string;
 
 		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
-		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
 
 		rem_port* port = analyze_service(expanded_name, user_status, us, user_verification, newSpb);
 		if (!port) {

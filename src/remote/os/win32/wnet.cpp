@@ -798,7 +798,7 @@ static void disconnect(rem_port* port)
 			disconnect(port->port_async);
 			port->port_async = NULL;
 		}
-		
+
 		port->unlinkParent();
 	}
 	else if (port->port_async)

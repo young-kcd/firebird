@@ -30,7 +30,7 @@ void	ISQL_array_dimensions(const TEXT*);
 TEXT*	ISQL_blankterm2(const TEXT* input, TEXT* output);
 //void	ISQL_build_table_list(void**, FILE*, FILE*, FILE*);
 //void	ISQL_build_view_list(void**, FILE*, FILE*, FILE*);
-//int		ISQL_commit_work(int, FILE*, FILE*, FILE*);
+//int	ISQL_commit_work(int, FILE*, FILE*, FILE*);
 void	ISQL_copy_SQL_id(const TEXT*, TEXT*, TEXT);
 // CVC: Not found, probably in some lost GUI-related file.
 //int		ISQL_create_database(TEXT*,
@@ -70,7 +70,7 @@ void	ISQL_printf2(FILE*, const char*, ...);
 void	ISQL_remove_and_unescape_quotes(TEXT* string, const char quote);
 //void	ISQL_reset_settings();
 void	ISQL_ri_action_print(const TEXT*, const TEXT*, bool);
-//int		ISQL_sql_statement(TEXT*, FILE*, FILE*, FILE*);
+//int	ISQL_sql_statement(TEXT*, FILE*, FILE*, FILE*);
 void	ISQL_truncate_term(TEXT*, USHORT);
 //void	ISQL_win_err(const char*);
 processing_state ISQL_print_item_blob(FILE*, const XSQLVAR*, FB_API_HANDLE, int subtype);

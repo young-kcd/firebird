@@ -117,7 +117,7 @@ public:
 			if (hActCtx != INVALID_HANDLE_VALUE)
 				(*mActivateActCtx) (hActCtx, &mCookie);
 		}
-#endif // ifndef _MSC_VER
+#endif // !_MSC_VER
 	}
 
 	~ContextActivator()

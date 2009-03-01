@@ -351,4 +351,4 @@ GDEF			= $(BIN)/gdef$(EXEC_EXT)
 #Platform Manager
 #For want of a better suggestion we may as well default to posix
 PLATFORM_PATH	=	os/posix
-TRACE_OS_Sources	=	
+TRACE_OS_Sources	=
