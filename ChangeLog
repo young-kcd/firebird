@@ -1,3 +1,93 @@
+2009-03-01 17:38  aafemt
+
+	* firebird2/src/jrd/trace/TraceManager.cpp (1.10):
+
+	Only shared libraries can have plugins inside
+
+2009-03-01 17:37  aafemt
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.113):
+
+	Shared library extension on Windows is "dll"
+
+2009-03-01 17:35  aafemt
+
+	* firebird2/configure.in (1.320):
+
+	Propagate shared library extension through code
+
+2009-03-01 16:58  hvlad
+
+	* firebird2/src/jrd/tra.h (1.98):
+
+	Misc
+
+2009-03-01 16:56  hvlad
+
+	* firebird2/src/jrd/tpc.cpp (1.40):
+
+	More SLONG overflows in TPC fixed.
+
+2009-03-01 16:42  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.fbtrace (1.5),
+	builds/posix/make.defaults (1.80), src/isql/isql.epp (1.268),
+	src/isql/isql_proto.h (1.27), src/jrd/dpm.epp (1.88),
+	src/jrd/isc.cpp (1.89), src/jrd/tpc.cpp (1.39),
+	src/jrd/os/win32/isc_ipc.cpp (1.29),
+	src/jrd/os/win32/mod_loader.cpp (1.19), src/remote/interface.cpp
+	(1.208), src/remote/os/win32/wnet.cpp (1.71):
+
+	Misc
+
+2009-03-01 14:26  aafemt
+
+	* firebird2/src/jrd/: isc.cpp (1.88), isc_s_proto.h (1.25),
+	isc_sync.cpp (1.174), os/isc_i_proto.h (1.11), os/win32/isc_ipc.cpp
+	(1.28), os/win32/mod_loader.cpp (1.18):
+
+	Fix MinGW build
+
+2009-03-01 14:23  alexpeshkoff
+
+	* firebird2/src/: jrd/divorce.cpp (1.15), remote/xdr.h (1.15):
+
+	AIX port - cleanup
+
+2009-03-01 11:35  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.271):
+
+	Don't report wrong error at graceful socket shutdown.  Misc.
+
+2009-03-01 11:29  hvlad
+
+	* firebird2/src/jrd/tpc.cpp (1.38):
+
+	Avoid SLONG overflow when high tx number of cached TIP page is
+	calculated (tip_cache->tpc_base + trans_per_tip).  It fixed bugs
+	CORE-2348 and CORE-1042
+
+2009-03-01 11:25  hvlad
+
+	* firebird2/src/jrd/: tra.cpp (1.200), tra.h (1.97):
+
+	Move MAX_TRA_NUMBER to the header file.  Fix AV in TRA_sweep when
+	new transaction can't be started
+
+2009-03-01 11:22  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.33):
+
+	Remove wrong assertion. Correct error message
+
+2009-02-28 21:11  hvlad
+
+	* firebird2/src/jrd/tra.cpp (1.199):
+
+	Destroy temporary transaction block if exception occurs at
+	transaction start.
+
 2009-02-28 14:12  dimitr
 
 	* firebird2/src/remote/server.cpp (1.236):
