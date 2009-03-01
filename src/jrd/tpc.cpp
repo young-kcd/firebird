@@ -84,8 +84,9 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 
 /* locate the specific TIP cache block for the transaction */
 
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
-		if (number < tip_cache->tpc_base + dbb->dbb_page_manager.transPerTIP) {
+		if ((ULONG) number < (ULONG) (tip_cache->tpc_base + trans_per_tip)) {
 			return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
 		}
 	}
@@ -220,9 +221,10 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 
 /* locate the specific TIP cache block for the transaction */
 
+	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	for (; tip_cache; tip_cache = tip_cache->tpc_next)
 	{
-		if (number < (SLONG) (tip_cache->tpc_base + dbb->dbb_page_manager.transPerTIP ))
+		if ((ULONG) number < (ULONG) (tip_cache->tpc_base + trans_per_tip))
 		{
 			const USHORT state = TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
 
