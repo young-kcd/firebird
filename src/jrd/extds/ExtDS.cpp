@@ -435,7 +435,6 @@ void Connection::clearStatements(thread_db *tdbb)
 
 	m_statements.clear();
 
-	fb_assert(!m_used_stmts);
 	m_freeStatements = NULL;
 	m_free_stmts = m_used_stmts = 0;
 }
@@ -586,7 +585,7 @@ void Transaction::prepare(thread_db *tdbb, int info_len, const char* info)
 	doPrepare(status, tdbb, info_len, info);
 
 	if (status[1]) {
-		m_connection.raise(status, tdbb, "transaction start");
+		m_connection.raise(status, tdbb, "transaction prepare");
 	}
 }
 
