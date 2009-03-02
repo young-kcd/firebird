@@ -171,7 +171,13 @@
 				RelativePath="..\..\..\src\common\classes\ClumpletWriter.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\cvt.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\dllinst.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
@@ -196,6 +202,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatusArg.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\thd.cpp">
@@ -244,10 +253,16 @@
 				RelativePath="..\..\..\src\jrd\os\config_root.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\cvt.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\db_alias.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\dllinst.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\fbsyslog.h">
@@ -260,6 +275,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatusArg.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusHolder.h">
