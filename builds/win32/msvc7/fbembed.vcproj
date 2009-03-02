@@ -24,7 +24,7 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;DEV_BUILD;EMBEDDED"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -98,7 +98,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;EMBEDDED"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="FALSE"
@@ -325,7 +325,16 @@
 				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\nbackup.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceCmdLine.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceService.cpp">
 			</File>
 		</Filter>
 		<Filter

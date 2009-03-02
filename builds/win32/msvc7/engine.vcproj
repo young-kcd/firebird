@@ -169,6 +169,9 @@
 				RelativePath="..\..\..\src\jrd\cvt2.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Database.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.cpp">
 			</File>
 			<File
@@ -226,6 +229,9 @@
 				RelativePath="..\..\..\src\jrd\ext.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\ExtDS.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\filters.cpp">
 			</File>
 			<File
@@ -259,6 +265,9 @@
 				RelativePath="..\..\..\gen\jrd\ini.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\InternalDS.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\intl.cpp">
 			</File>
 			<File
@@ -281,6 +290,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\extds\IscDS.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\jrd.cpp">
@@ -406,7 +418,22 @@
 				RelativePath="..\..\..\src\jrd\tra.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceLog.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceManager.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceObjects.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\unicode_util.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\UserManagement.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp">
@@ -506,6 +533,9 @@
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Database.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.h">
 			</File>
 			<File
@@ -599,6 +629,9 @@
 				RelativePath="..\..\..\src\jrd\ext_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\ExtDS.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\include\fb_blk.h">
 			</File>
 			<File
@@ -671,6 +704,9 @@
 				RelativePath="..\..\..\src\jrd\ini_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\InternalDS.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\intl.h">
 			</File>
 			<File
@@ -708,6 +744,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_signal.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\extds\IscDS.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\jrd.h">
@@ -932,6 +971,18 @@
 				RelativePath="..\..\..\src\jrd\tra_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceLog.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceManager.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceObjects.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\trig.h">
 			</File>
 			<File
@@ -939,6 +990,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\unicode_util.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\UserManagement.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl_proto.h">

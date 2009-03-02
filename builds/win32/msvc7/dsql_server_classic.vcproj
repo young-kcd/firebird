@@ -159,6 +159,9 @@
 				RelativePath="..\..\..\src\dsql\parse.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\Parser.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\pass1.cpp">
 			</File>
 			<File
@@ -271,16 +274,19 @@
 				RelativePath="..\..\..\src\dsql\parse_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\Parser.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\pass1_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\prepa_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.h">
+				RelativePath="..\..\..\src\dsql\sqlda.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\sqlda.h">
+				RelativePath="..\..\..\src\dsql\StmtNodes.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\sym.h">

@@ -163,7 +163,16 @@
 				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\nbackup.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceCmdLine.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceService.cpp">
 			</File>
 		</Filter>
 		<Filter
