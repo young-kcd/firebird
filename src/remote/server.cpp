@@ -3331,9 +3331,6 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			port = NULL;
 		}
 
-		if (result)
-			*result = port;
-
 	}	// try
 	catch (const Firebird::status_exception& ex)
 	{
@@ -3360,6 +3357,11 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		port->disconnect(sendL, receive);	// Well, how about this...
 
 		return false;
+	}
+
+	if (result)
+	{
+		*result = port;
 	}
 
 	return true;
