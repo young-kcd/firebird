@@ -180,7 +180,14 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 {
 	ContextActivator ctx;
 
+	// supress error message box if it is not done yet
+	UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+
 	HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+
+	// Restore old mode in case we are embedded into user application
+	SetErrorMode(oldErrorMode);
+
 	if (!module)
 		return 0;
 
