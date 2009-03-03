@@ -117,9 +117,6 @@ static SLONG volatile overflow_count = 0;
 
 static Firebird::GlobalPtr<Firebird::Mutex> sig_mutex;
 
-static int process_id = 0;
-
-
 const char* GDS_RELAY	= "/bin/gds_relay";
 
 static int volatile relay_pipe = 0;
@@ -287,10 +284,6 @@ static bool isc_signal2(
 
 	SIG sig;
 
-/* The signal handler needs the process id */
-	if (!process_id)
-		process_id = getpid();
-
 	Firebird::MutexLockGuard guard(sig_mutex);
 
 /* See if this signal has ever been cared about before */
@@ -393,8 +386,6 @@ void ISC_signal_init()
 	overflow_count = 0;
 	gds__register_cleanup(cleanup, 0);
 
-	process_id = getpid();
-
 	isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
 
 }
@@ -413,8 +404,6 @@ static void cleanup(void* arg)
  *
  **************************************/
 	signals = NULL;
-
-	process_id = 0;
 
 	initialized_signals = false;
 }
