@@ -642,7 +642,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Rpr*			port_rpr;			/* port stored procedure reference */
 	Rsr*			port_statement;		/* Statement for execute immediate */
 	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
-	USHORT			port_requests_queued;	/* requests currently queued */
+	Firebird::AtomicCounter	port_requests_queued;	/* requests currently queued */
 	xcc*			port_xcc;				/* interprocess structure */
 	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */

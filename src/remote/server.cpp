@@ -419,7 +419,7 @@ static bool link_request(rem_port* port, server_req_t* request)
 					append_request_chain(request, &queue->req_chain);
 #ifdef DEBUG_REMOTE_MEMORY
 					printf("link_request %s request_queued %d\n",
-						active ? "ACTIVE" : "PENDING", port->port_requests_queued);
+						active ? "ACTIVE" : "PENDING", port->port_requests_queued.value());
 					fflush(stdout);
 #endif
 					break;
@@ -438,7 +438,7 @@ static bool link_request(rem_port* port, server_req_t* request)
 		}
 	} // request_que_mutex scope
 
-	port->port_requests_queued++;
+	++port->port_requests_queued;
 
 	if (queue)
 	{
@@ -475,7 +475,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 	try
 	{
-
 		set_server(main_port, flags);
 
 /* We need to have this error handler as there is so much underlaying code
@@ -492,7 +491,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 		try
 		{
-
 			const size_t MAX_PACKET_SIZE = MAX_SSHORT;
 			const SSHORT bufSize = MIN(main_port->port_buff_size, MAX_PACKET_SIZE);
 			Firebird::UCharBuffer packet_buffer;
@@ -527,7 +525,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = portGuard.tryEnter();
-				if (portLocked || !dataSize)
+				// Handle bytes received only if port currently idle and have no requests
+				// queued or if it is disconnect (dataSize == 0). Else let loopThread to
+				// handle this bytes
+				if (portLocked && !port->port_requests_queued.value() || !dataSize)
 				{
 					// Allocate a memory block to store the request in
 					request = alloc_request();
@@ -535,6 +536,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					if (dataSize)
 					{
 						fb_assert(portLocked);
+						fb_assert(port->port_requests_queued.value() == 0);
 
 						Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 
@@ -567,16 +569,23 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						portGuard.leave();
 					}
 
+					// link_request will increment port_requests_queued. Port is not locked 
+					// at this point but it is safe because :
+					// - port_requests_queued is atomic counter
+					// - only place where we check its value is at the same thread (see above)
+					// - other thread where port_requests_queued is changed is loopThread and
+					//	 there port is locked
+					// - same port can be accessed no more than by two threads simultaneously -
+					//	 this one and some instance of loopThread 
 					if (!link_request(port, request))
 					{
-						/* No port to assign request to, add it to the waiting queue and wake up a
-						* thread to handle it
-						*/
+						// Request was assigned to the waiting queue so wee need to wake up a
+						// thread to handle it
 						REMOTE_TRACE(("Enqueue request %p", request));
 						request = 0;
 #ifdef DEBUG_REMOTE_MEMORY
 						printf("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
-							port->port_requests_queued);
+							port->port_requests_queued.value());
 						fflush(stdout);
 #endif
 						Worker::start(flags);
@@ -2063,6 +2072,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (statement->rsr_format)
 	{
+		fb_assert(statement->rsr_format == statement->rsr_bind_format);
+
 		in_msg_length = statement->rsr_format->fmt_length;
 		in_msg = statement->rsr_message->msg_address;
 	}
@@ -3052,6 +3063,22 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 }
 
 
+class DecrementRequestsQueued
+{
+public:
+	DecrementRequestsQueued(rem_port* port) :
+		m_port(port)
+	{}
+
+	~DecrementRequestsQueued()
+	{
+		--m_port->port_requests_queued;
+	}
+
+private:
+	RemPortPtr m_port;
+};
+
 // Declared in serve_proto.h
 
 static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_port** result)
@@ -3068,6 +3095,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
  *
  **************************************/
 	Firebird::RefMutexGuard portGuard(*port->port_sync);
+	DecrementRequestsQueued dec(port);
 
 	try
 	{
@@ -5055,10 +5083,9 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 					}
 					else
 					{
-						port->port_requests_queued--;
 #ifdef DEBUG_REMOTE_MEMORY
 						printf("thread    ACTIVE     request_queued %d\n",
-								  port->port_requests_queued);
+								  port->port_requests_queued.value());
 						fflush(stdout);
 #endif
 					}
