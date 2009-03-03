@@ -2191,13 +2191,17 @@ static void map_in_out(	dsql_req*		request,
 				}
 			}
 
-
 			if (!request)
 			{
+				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
+
 				if (!flag || *flag >= 0)
 				{
-					desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 					MOVD_move(&parameter->par_desc, &desc);
+				}
+				else
+				{
+					memset(desc.dsc_address, 0, desc.dsc_length);
 				}
 			}
 			else if (!flag || *flag >= 0)
@@ -2209,8 +2213,10 @@ static void map_in_out(	dsql_req*		request,
 					MOVD_move(&desc, &parameter->par_desc);
 				}
 			}
-			else if (parameter->par_desc.isBlob())
+			else
+			{
 				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
+			}
 
 			count--;
 		}
