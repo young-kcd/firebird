@@ -694,7 +694,7 @@ namespace {
 	class InputFile
 	{
 	public:
-		InputFile(const Firebird::PathName& name)
+		explicit InputFile(const Firebird::PathName& name)
 		  : flagEcho(false)
 		{
 			if (name == "stdin") {
@@ -747,7 +747,7 @@ namespace {
 			}
 		}
 
-		FILE* get_stdio_file() { return f; }
+		FILE* getStdioFile() { return f; }
 		bool operator!() { return !f; }
 
 	private:
@@ -769,9 +769,9 @@ FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& passw
 	}
 
 	Firebird::string pwd;
-	if (! pwd.LoadFromFile(file.get_stdio_file()))
+	if (! pwd.LoadFromFile(file.getStdioFile()))
 	{
-		return ferror(file.get_stdio_file()) ? FETCH_PASS_FILE_READ_ERROR : FETCH_PASS_FILE_EMPTY;
+		return ferror(file.getStdioFile()) ? FETCH_PASS_FILE_READ_ERROR : FETCH_PASS_FILE_EMPTY;
 	}
 
 	// this is planned leak of a few bytes of memory in utilities
