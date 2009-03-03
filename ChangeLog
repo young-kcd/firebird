@@ -1,3 +1,66 @@
+2009-03-03 16:25  dimitr
+
+	* firebird2/src/remote/interface.cpp (1.209):
+
+	Fixed the wrong assertion.
+
+2009-03-03 16:19  dimitr
+
+	* firebird2/src/common/classes/: PublicHandle.cpp (1.4),
+	PublicHandle.h (1.4):
+
+	Prefer explicit #includes to tricky forward declarations for
+	template classes.
+
+2009-03-03 15:55  dimitr
+
+	* firebird2/src/: dsql/dsql.cpp (1.276), jrd/exe.cpp (1.291):
+
+	Restored the legacy logic that was zapping the output NULL
+	descriptors to mimic some pseudo-empty values.	Just for symmetry,
+	unconditionally applied the same logic to inputs (it was there for
+	blobs only).  Finally, do the same in the original place,
+	EXE_assignment(). A more complex original code that tried to care
+	about character sets is removed.
+
+2009-03-03 13:26  robocop
+
+	* firebird2/src/jrd/isc.cpp (1.90):
+
+	Playing with mixture of new/deallocate or allocate/delete doesn't
+	seem a good approach to me, even if it works due to our
+	redefinitions.
+
+2009-03-03 13:24  robocop
+
+	* firebird2/src/common/utils.cpp (1.67):
+
+	Adjust to our naming conventions.
+
+2009-03-03 13:00  hvlad
+
+	* firebird2/src/remote/: remote.h (1.92), server.cpp (1.238):
+
+	Fixed bug CORE-2349 : False "Invalid SQLDA" error
+
+2009-03-03 12:49  dimitr
+
+	* firebird2/src/jrd/os/win32/mod_loader.cpp (1.22):
+
+	Constness.
+
+2009-03-03 12:18  aafemt
+
+	* firebird2/src/jrd/os/win32/mod_loader.cpp (1.21):
+
+	Suppress error pop-up in non-server modes
+
+2009-03-03 11:17  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.36):
+
+	cleanup
+
 2009-03-02 11:27  aafemt
 
 	* firebird2/src/jrd/trace/TraceManager.cpp (1.11):
