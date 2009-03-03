@@ -6079,9 +6079,8 @@ static bool receive_packet_noqueue(rem_port* port, PACKET * packet, ISC_STATUS *
 			}
 		}
 
-		if (bFreeStmt)
+		if (bFreeStmt && p->packet.p_resp.p_resp_object == INVALID_OBJECT)
 		{
-			fb_assert(p->packet.p_resp.p_resp_object == INVALID_OBJECT);
 			release_sql_request(statement);
 		}
 
