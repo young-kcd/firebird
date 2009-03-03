@@ -75,6 +75,7 @@ class SecurityAttributes
 {
 public:
 	explicit SecurityAttributes(MemoryPool& pool)
+		: m_pool(pool)
 	{
 		// Ensure that our process has the SYNCHRONIZE privilege granted to everyone
 		PSECURITY_DESCRIPTOR pOldSD = NULL;
@@ -124,7 +125,7 @@ public:
 		// WARNING!!! The absent DACL means full access granted
 		// to everyone, this is a huge security risk!
 
-		PSECURITY_DESCRIPTOR p_security_desc = reinterpret_cast<PSECURITY_DESCRIPTOR>(
+		PSECURITY_DESCRIPTOR p_security_desc = static_cast<PSECURITY_DESCRIPTOR>(
 			pool.allocate(SECURITY_DESCRIPTOR_MIN_LENGTH));
 
 		attributes.nLength = sizeof(attributes);
@@ -134,14 +135,15 @@ public:
 		if (!InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION) ||
 			!SetSecurityDescriptorDacl(p_security_desc, TRUE, NULL, FALSE))
 		{
-			delete p_security_desc;
+			pool.deallocate(p_security_desc);
 			attributes.lpSecurityDescriptor = NULL;
 		}
 	}
 
 	~SecurityAttributes()
 	{
-		delete reinterpret_cast<PSECURITY_DESCRIPTOR>(attributes.lpSecurityDescriptor);
+		if (attributes.lpSecurityDescriptor)
+			m_pool.deallocate(attributes.lpSecurityDescriptor);
 	}
 
 	operator LPSECURITY_ATTRIBUTES()
@@ -151,6 +153,7 @@ public:
 
 private:
 	SECURITY_ATTRIBUTES attributes;
+	MemoryPool& m_pool;
 };
 
 static Firebird::InitInstance<SecurityAttributes> security_attributes;
