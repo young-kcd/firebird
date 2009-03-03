@@ -151,26 +151,25 @@ public:
 	void *findSymbol(const string&);
 
 private:
-	HMODULE module;
+	const HMODULE module;
 };
 
 bool ModuleLoader::isLoadableModule(const PathName& module)
 {
 	ContextActivator ctx;
 
-	LPCSTR pszName = module.c_str();
-	HINSTANCE hMod = LoadLibraryEx(pszName, 0,
+	const HMODULE hMod = LoadLibraryEx(module.c_str(), 0,
 		LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
 
 	if (hMod) {
-		FreeLibrary((HMODULE)hMod);
+		FreeLibrary(hMod);
 	}
 	return hMod != 0;
 }
 
 void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
-	PathName::size_type pos = name.rfind(".dll");
+	const PathName::size_type pos = name.rfind(".dll");
 	if (pos != PathName::npos && pos == name.length() - 4)
 		return;
 	name += ".dll";
@@ -181,9 +180,10 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	ContextActivator ctx;
 
 	// supress error message box if it is not done yet
-	UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	const UINT oldErrorMode =
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 
-	HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
 
 	// Restore old mode in case we are embedded into user application
 	SetErrorMode(oldErrorMode);
