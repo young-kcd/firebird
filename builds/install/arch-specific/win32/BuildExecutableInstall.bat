@@ -43,6 +43,11 @@ set /A FBBUILD_PACKAGE_NUMBER+=1
 )
 @echo   Setting FBBUILD_PACKAGE_NUMBER to %FBBUILD_PACKAGE_NUMBER%
 
+::If a suffix is defined (usually for an RC) ensure it is prefixed correctly.
+if defined FBBUILD_FILENAME_SUFFIX (
+if not %FBBUILD_FILENAME_SUFFIX:~0,1% == _ (set FBBUILD_FILENAME_SUFFIX=_%FBBUILD_FILENAME_SUFFIX%)
+)
+
 :: See what we have on the command line
 ::for %%v in ( %1 %2 %3 %4 %5 )  do (
 for %%v in ( %* )  do (
@@ -519,7 +524,7 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf misc misc\upgra
 
 :: Now remove stuff that is not needed.
 setlocal
-set FB_RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll bin\btyacc.exe bin\fbrmclib.dll
+set FB_RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll bin\btyacc.exe
 if %FB2_SNAPSHOT% EQU 0 (set FB_RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %FB_RM_FILE_LIST%)
 for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
@@ -546,16 +551,16 @@ goto :EOF
 ::=======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip (
-	  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb%FBBUILD_FILENAME_SUFFIX%.zip (
+	  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb%FBBUILD_FILENAME_SUFFIX%.zip
 	)
-	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb.zip
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_pdb%FBBUILD_FILENAME_SUFFIX%.zip
 
 ) else (
-	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip (
-	  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip
+	if exist %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%%FBBUILD_FILENAME_SUFFIX%.zip (
+	  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%%FBBUILD_FILENAME_SUFFIX%.zip
 	)
-	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%.zip
+	set FBBUILD_ZIPFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%%FBBUILD_FILENAME_SUFFIX%.zip
 )
 
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_ZIPFILE% %FBBUILD_ZIP_PACK_ROOT%\*.*
@@ -620,11 +625,11 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
 :: Now we can zip it up and copy the package to the install images directory.
 if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-  @del %FBBUILD_INSTALL_IMAGES%\%FBBUILD_FILE_ID%_embed_win32_pdb.zip > nul
-  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed_pdb.zip
+  @del %FBBUILD_INSTALL_IMAGES%\%FBBUILD_FILE_ID%_embed_pdb%FBBUILD_FILENAME_SUFFIX%.zip > nul
+  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed_pdb%FBBUILD_FILENAME_SUFFIX%.zip
 ) else (
-  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed.zip > nul
-  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed.zip
+  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed%FBBUILD_FILENAME_SUFFIX%.zip > nul
+  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed%FBBUILD_FILENAME_SUFFIX%.zip
 )
 
 @%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_EMBFILE% %FBBUILD_EMB_PACK_ROOT%\*.*
