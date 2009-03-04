@@ -525,9 +525,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = portGuard.tryEnter();
-				// Handle bytes received only if port currently idle and have no requests
-				// queued or if it is disconnect (dataSize == 0). Else let loopThread to
-				// handle this bytes
+				// Handle bytes received only if port is currently idle and has no requests
+				// queued or if it is disconnect (dataSize == 0). Else let loopThread
+				// handle these bytes
 				if (portLocked && !port->port_requests_queued.value() || !dataSize)
 				{
 					// Allocate a memory block to store the request in
@@ -579,7 +579,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					//	 this one and some instance of loopThread 
 					if (!link_request(port, request))
 					{
-						// Request was assigned to the waiting queue so wee need to wake up a
+						// Request was assigned to the waiting queue so we need to wake up a
 						// thread to handle it
 						REMOTE_TRACE(("Enqueue request %p", request));
 						request = 0;
@@ -3066,7 +3066,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 class DecrementRequestsQueued
 {
 public:
-	DecrementRequestsQueued(rem_port* port) :
+	explicit DecrementRequestsQueued(rem_port* port) :
 		m_port(port)
 	{}
 
