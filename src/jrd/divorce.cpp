@@ -19,7 +19,7 @@
 *	13379	katz	16-OCT-1993
 *	Move away from C language datatypes
 *
-*	0	katz	7-JUN-1993
+*	0	katz	7-JUN-1993 
 *	history begins
 *
  * The contents of this file are subject to the Interbase Public
@@ -54,8 +54,12 @@
 #include "../jrd/divorce.h"
 #include "../common/classes/semaphore.h"
 
-#ifdef HAVE_IO_H
-#include <io.h>
+#ifdef _AIX
+#include <sys/select.h>
+#endif
+
+#ifdef WIN_NT
+#include <io.h> // close
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H

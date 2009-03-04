@@ -45,7 +45,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
@@ -56,7 +55,6 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
-#include "../common/utils_proto.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -72,28 +70,78 @@
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
+
+#include "../common/config/config.h"
+
+/* VMS Specific Stuff */
+
+#ifdef VMS
+
+#include <rms.h>
+#include <descrip.h>
+#include <ssdef.h>
+#include <jpidef.h>
+#include <prvdef.h>
+#include <secdef.h>
+#include <lckdef.h>
+#include "../jrd/lnmdef.h"
+
+
+const char* LOGICAL_NAME_TABLE	= "LNM$FILE_DEV";
+const char* DEFAULT_FILE_NAME	= ".fdb";
+const char INET_FLAG		= '^';
+
+struct itm {
+	SSHORT itm_length;
+	SSHORT itm_code;
+	SCHAR *itm_buffer;
+	SSHORT *itm_return_length;
+};
+typedef itm ITM;
+
+#else /* of ifdef VMS */
+const char INET_FLAG		= ':';
+#endif
+
+
+#ifdef SUPERSERVER
+#define GETWD(buf)		JRD_getdir(buf)
+#else
+#define GETWD(buf)		fb_getcwd(buf)
+#endif /* SUPERSERVER */
+
+#ifdef DARWIN
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-
-#include "../common/config/config.h"
-
-const char INET_FLAG = ':';
+#endif // DARWIN
 
 /* Unix/NFS specific stuff */
 #ifndef NO_NFS
 
-#if defined(HAVE_MNTENT_H)
+#ifdef HAVE_MNTENT_H
 #include <mntent.h>	/* get setmntent/endmntent */
-#elif defined(HAVE_SYS_MNTTAB_H)
+#endif
+#ifdef HAVE_SYS_MNTTAB_H
 #include <sys/mnttab.h>	/* get MNTTAB/_PATH_MNTTAB */
-#elif defined(AIX)
-#error ancient versions of AIX that do not provide "<mntent.h>" are not
-#error supported. AIX 5.1+ provides this header.
-#endif 
+#endif
+
+/*
+ AP: Only _PATH_MOUNTED is worth staying alive from all this company.
+	 MOUNTED & MNTTAB are deprecated, _PATH_MNTTAB gives wrong result.
+	 21-nov-2004
+#if   defined(MOUNTED)
+const char* MTAB		= MOUNTED;
+#elif defined(_PATH_MOUNTED)
+const char* MTAB		= _PATH_MOUNTED;
+#elif defined(MNTTAB)
+const char* MTAB		= MNTTAB;
+#elif defined(_PATH_MNTTAB)
+const char* MTAB		= _PATH_MNTTAB;
+*/
 
 #if   defined(_PATH_MOUNTED)
 const char* MTAB		= _PATH_MOUNTED;
@@ -121,7 +169,7 @@ const char* MTAB		= "/etc/mtab";
 #define MTAB_CLOSE(stream)	fclose(stream)
 #endif
 
-#endif //NO_NFS
+#endif /* NO_NFS */
 
 #ifdef HPUX
 #if !(defined HP10 || defined HP11)
@@ -129,49 +177,58 @@ const char* MTAB		= "/etc/mtab";
 #endif
 #endif
 
+#if (defined AIX || defined AIX_PPC)
+
+#error AIX code in this file was never tested.
+#error You should check for: 1) normal access to databases works,
+#error 2) access to databases on NFS-mounted shares disabled.
+
+#include <sys/mntctl.h>
+#include <sys/vmount.h>
+extern "C" int mntctl(int, size_t, void*);
+#endif
+
+
 #ifndef MAXHOSTLEN
 #define MAXHOSTLEN	64
 #endif
 
-using namespace Firebird;
-
 namespace {
-	typedef Firebird::PathName tstring;
-	typedef tstring::size_type size;
-	typedef tstring::iterator iter;
-	const size npos = tstring::npos;
+    typedef Firebird::PathName tstring;
+    typedef tstring::size_type size;
+    typedef tstring::iterator iter;
+    const size npos = tstring::npos;
 
 #ifndef NO_NFS
-	class osMtab
-	{
+	class osMtab {
 	public:
+#if (defined AIX || defined AIX_PPC)
+		TEXT* temp;
+		int context;
+		
+		osMtab();
+		~osMtab() { delete[] temp; }
+		bool ok() const { return temp ? true : false; }
+#else
 		FILE* mtab;
-
-		osMtab()
-			: mtab(MTAB_OPEN(MTAB, "r"))
-		{ }
-
-		~osMtab()
-		{
-			if (mtab)
-				MTAB_CLOSE(mtab);
-		}
-
+		
+		osMtab() : mtab(MTAB_OPEN(MTAB, "r")) { }
+		~osMtab() { if (mtab) MTAB_CLOSE(mtab); }
 		bool ok() const { return mtab; }
+#endif
 	};
 
-	class Mnt
-	{
+	class Mnt {
 	private:
 #ifdef DARWIN
-		struct statfs* mnt_info;
-		int mnt_cnt;
-		int mnt_i;
+	struct statfs* mnt_info;
+	int mnt_cnt;
+	int mnt_i;
 #else
 		osMtab mtab;
 #endif // DARWIN
 	public:
-/*		Mnt() : AutoMemory(), mtab(), node(getPool()),
+/*		Mnt() : AutoMemory(), mtab(), node(getPool()), 
 				mount(getPool()), path(getPool()) { } */
 #ifdef DARWIN
 		Mnt();
@@ -185,7 +242,7 @@ namespace {
 			path;  /* path on remote server */
 	};
 #endif //NO_NFS
-} // anonymous namespace
+} // anonymous namespace 
 
 #if (!defined NO_NFS || defined FREEBSD || defined NETBSD)
 static void expand_filename2(tstring&, bool);
@@ -222,9 +279,9 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
  *
  **************************************/
 
-	// If we are ignoring NFS remote mounts then do not bother checking here
-	// and pretend it's only local. MOD 16-Nov-2002
-
+    // If we are ignoring NFS remote mounts then do not bother checking here
+    // and pretend it's only local. MOD 16-Nov-2002
+	
 	if (Config::getRemoteFileOpenAbility()) {
 		return false;
 	}
@@ -234,7 +291,7 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 
 	// Search mount points
 	Mnt mount;
-	if (!mount.ok())
+	if (!mount.ok()) 
 	{
 		return false;
 	}
@@ -246,11 +303,11 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		// if the whole mount point is not contained in the expanded_filename
 		// or the mount point is not a valid pathname in the expanded_filename,
 		// skip it
-		if (expanded_filename.length() <= mount.mount.length() ||
-			expanded_filename.compare(0, mount.mount.length(), mount.mount) != 0 ||
-			expanded_filename[mount.mount.length()] != '/')
+		if (expanded_filename.length() <= mount.mount.length() 
+			|| expanded_filename.compare(0, mount.mount.length(), mount.mount) != 0
+			|| expanded_filename[mount.mount.length()] != '/')
 		{
-			if (mount.mount == "/" && mount.path.hasData())
+			if (mount.mount == "/" && mount.path.hasData()) 
 			{
 				// root mount point = diskless client case
 				mount.path += '/';
@@ -262,15 +319,15 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		}
 
 		// the longest mount point contained in the expanded_filename wins
-		if (mount.mount.length() >= len)
+		if (mount.mount.length() >= len) 
 		{
 			len = mount.mount.length();
-			if (mount.node.hasData())
+			if (mount.node.hasData()) 
 			{
 				max_node = mount.node;
 				max_path = mount.path;
 			}
-			else
+			else 
 			{
 				max_node = "";
 				max_path = "";
@@ -287,7 +344,7 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
    node name and expanded_filename with the remote file name. */
 
 	bool flag = !max_path.isEmpty();
-	if (flag)
+	if (flag) 
 	{
 		expanded_filename.replace(0, len, max_path);
 		node_name = max_node;
@@ -327,7 +384,7 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 		return false;
 	}
 
-	const size p = expanded_name.find_first_of("\\/", 2);
+	size p = expanded_name.find_first_of("\\/", 2);
 	if (p == npos)
 		return false;
 
@@ -417,10 +474,10 @@ bool ISC_check_if_remote(const tstring& file_name, bool implicit_flag)
 	return ISC_extract_host(temp_name, host_name, implicit_flag) != ISC_PROTOCOL_LOCAL;
 }
 
-
-iscProtocol ISC_extract_host(Firebird::PathName& file_name,
+	
+iscProtocol ISC_extract_host(Firebird::PathName& file_name, 
 							 Firebird::PathName& host_name,
-							 bool implicit_flag)
+							 bool implicit_flag) 
 {
 /**************************************
  *
@@ -434,7 +491,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
  *	analyze the path to see if it resolves to a
  *	file on a remote machine.  Otherwise, simply
  *	check for an explicit node name.
- *  If file is found to be remote, extract
+ *  If file is found to be remote, extract 
  *  the node name and compute the residual file name.
  *  Return protocol type.
  *
@@ -442,16 +499,16 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 
 /* Always check for an explicit TCP node name */
 
-	if (ISC_analyze_tcp(file_name, host_name))
+	if (ISC_analyze_tcp(file_name, host_name)) 
 	{
 		return ISC_PROTOCOL_TCPIP;
 	}
 #ifndef NO_NFS
-	if (implicit_flag)
+	if (implicit_flag) 
 	{
 		/* Check for a file on an NFS mounted device */
 
-		if (ISC_analyze_nfs(file_name, host_name))
+		if (ISC_analyze_nfs(file_name, host_name)) 
 		{
 			return ISC_PROTOCOL_TCPIP;
 		}
@@ -461,7 +518,7 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 #if defined(WIN_NT)
 /* Check for an explicit named pipe node name */
 
-	if (ISC_analyze_pclan(file_name, host_name))
+	if (ISC_analyze_pclan(file_name, host_name)) 
 	{
 		return ISC_PROTOCOL_WLAN;
 	}
@@ -509,6 +566,59 @@ bool ISC_expand_filename(tstring& buff, bool expand_mounts)
 #endif
 
 
+#ifdef VMS
+int ISC_expand_filename(const TEXT* file_name,
+						USHORT file_length, TEXT* expanded_name, USHORT bufsize)
+{
+/**************************************
+ *
+ *	I S C _ e x p a n d _ f i l e n a m e		( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fully expand a file name.  If the file doesn't exist, do something
+ *	intelligent.
+ *
+ **************************************/
+	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
+
+	int length = ISC_expand_logical(file_name, file_length, expanded_name, bufsize);
+
+	TEXT* p;
+	for (p = expanded_name; *p; p++)
+		if (p[0] == ':' && p[1] == ':')
+			return length;
+
+	struct FAB fab = cc$rms_fab;
+	struct NAM nam = cc$rms_nam;
+	fab.fab$l_nam = &nam;
+	nam.nam$l_esa = temp;
+	nam.nam$b_ess = sizeof(temp);
+	nam.nam$l_rsa = temp2;
+	nam.nam$b_rss = sizeof(temp2);
+	fab.fab$l_fna = expanded_name;
+	fab.fab$b_fns = length;
+	fab.fab$l_dna = DEFAULT_FILE_NAME;
+	fab.fab$b_dns = sizeof(DEFAULT_FILE_NAME) - 1;
+
+	if ((sys$parse(&fab) & 1) && (sys$search(&fab) & 1)) {
+		p = temp2;
+		int l = length = nam.nam$b_rsl
+		if (l)
+			do {
+				if (bufsize-- == 1)
+					break;
+				*expanded_name++ = *p++;
+			} while (--l);
+		*expanded_name = 0;
+	}
+
+	return length;
+}
+#endif
+
+
 #ifdef WIN_NT
 
 static void translate_slashes(tstring& Path)
@@ -531,7 +641,7 @@ static bool isDriveLetter(const tstring::char_type letter)
 
 
 // Code of this function is a slightly changed version of this routine
-// from Jim Barry (jim.barry@bigfoot.com) published at
+// from Jim Barry (jim.barry@bigfoot.com) published at 
 // http://www.geocities.com/SiliconValley/2060/articles/longpaths.html
 
 static bool ShortToLongPathName(tstring& Path)
@@ -540,7 +650,7 @@ static bool ShortToLongPathName(tstring& Path)
 	const char sep = '\\';
 	const char colon = ':';
 
-	// Copy the short path into the work buffer and convert forward
+	// Copy the short path into the work buffer and convert forward 
 	// slashes to backslashes.
 	translate_slashes(Path);
 
@@ -581,13 +691,13 @@ static bool ShortToLongPathName(tstring& Path)
 		{
 			right = npos;  // skip main block
 		}
-		else
+		else 
 		{
 			if (sep == Path[1]) // is it UNC?
 			{
 				// Find end of machine name
 				right = Path.find_first_of(sep, 2);
-				if (npos == right)
+				if (npos == right) 
 				{
 					return false;
 				}
@@ -604,7 +714,7 @@ static bool ShortToLongPathName(tstring& Path)
 		}
 	}
 	// else FindFirstFile will handle relative paths
-
+	
 	bool error = false;
 
 	if (npos != right)
@@ -633,7 +743,7 @@ static bool ShortToLongPathName(tstring& Path)
 					right = npos;
 					error = true;
 				}
-
+					
 				Path[last] = sep;
 			}
 		}
@@ -753,7 +863,7 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
  *
  **************************************/
 	// check for empty filename to avoid multiple checks later
-	if (file_name.isEmpty())
+	if (file_name.isEmpty()) 
 	{
 		return false;
 	}
@@ -767,9 +877,9 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	// assume named pipes.  Translate forward slashes to back slashes
 	// and return with no further processing.
 
-	if ((file_name.length() >= 2) &&
+	if ((file_name.length() >= 2) && 
 		((file_name[0] == '\\' && file_name[1] == '\\') ||
-			(file_name[0] == '/' && file_name[1] == '/')))
+		 (file_name[0] == '/' && file_name[1] == '/')))
 	{
 		file_name = temp;
 
@@ -794,7 +904,7 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 			return true;
 		}
 
-		// This happen if remote interface of our server
+		// This happen if remote interface of our server 
 		// rejected WNet connection or we were called with:
 		// localhost:R:\Path\To\Database, where R - remote disk
 		if (dtype == DRIVE_REMOTE && expand_mounts)
@@ -803,7 +913,7 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 			translate_slashes(file_name);
 			return true;
 		}
-
+		
 		if ((temp.length() >= 3) && (temp[2] == '/' || temp[2] == '\\'))
 		{
 			fully_qualified_path = true;
@@ -828,12 +938,11 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 		fully_qualified_path = true;
 	}
 
-	// Expand the file name
+	// Expand the file name 
 
 #ifdef SUPERSERVER
-	if (!fully_qualified_path)
+	if ((!fully_qualified_path) && JRD_getdir(file_name))
 	{
-		fb_utils::getCwd(file_name);
 		if (device.hasData() && device[0] == file_name[0]) {
 			// case where temp is of the form "c:foo.fdb" and
 			// expanded_name is "c:\x\y".
@@ -861,7 +970,8 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	else
 #endif
 	{
-		// Here we get "." and ".." translated by the API.
+		// Here we get "." and ".." translated by the API, but ONLY IF we are using
+		// local conection, because in that case, JRD_getdir() returns false.
 		if (!get_full_path(temp, file_name))
 		{
 			file_name = temp;
@@ -877,6 +987,68 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	// results in incorrect behavior.
 	file_name.upper();
 	return rc;
+}
+#endif
+
+
+#ifdef VMS
+int ISC_expand_logical(const TEXT* file_name,
+					   USHORT file_length, TEXT* expanded_name, USHORT bufsize)
+{
+/**************************************
+ *
+ *	I S C _ e x p a n d _ l o g i c a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fully expand a file name.  If the file doesn't exist, do something
+ *	intelligent.
+ *
+ **************************************/
+	ITM items[2];
+	struct dsc$descriptor_s desc1, desc2;
+
+	if (!file_length)
+		file_length = strlen(file_name);
+
+	ISC_make_desc(file_name, &desc1, file_length);
+	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
+
+	USHORT l;
+	items[0].itm_length = bufsize; //256;
+	items[0].itm_code = LNM$_STRING;
+	items[0].itm_buffer = expanded_name;
+	items[0].itm_return_length = &l;
+
+	items[1].itm_length = 0;
+	items[1].itm_code = 0;
+
+	int attr = LNM$M_CASE_BLIND;
+
+	if (l = file_length) {
+		if (l > bufsize)
+		    l = bufsize;
+		TEXT* p = expanded_name;
+		do {
+			*p++ = *file_name++;
+		} while (--l);
+	}
+
+	for (int n = 0; n < 10; n++) {
+		const int status = sys$trnlnm(&attr, &desc2, &desc1, NULL, items);
+		if (!(status & 1))
+			break;
+		desc1.dsc$a_pointer = expanded_name;
+		desc1.dsc$w_length = file_length = l;
+	}
+
+	if (file_length >= bufsize)
+		file_length = bufsize - 1;
+
+	expanded_name[file_length] = 0;
+
+	return file_length;
 }
 #endif
 
@@ -911,9 +1083,10 @@ void ISC_expand_share(tstring& file_name)
 	{
 		return;
 	}
-
+		
 	HANDLE handle;
-	if (WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, &handle) != NO_ERROR)
+	if (WNetOpenEnum(RESOURCE_CONNECTED, RESOURCETYPE_DISK, 0, NULL, &handle)
+		!= NO_ERROR)
 	{
 		return;
 	}
@@ -923,7 +1096,7 @@ void ISC_expand_share(tstring& file_name)
 	{
 		return;
 	}
-
+		
 	DWORD ret = WNetEnumResource(handle, &nument, resources, &bufSize);
 	if (ret == ERROR_MORE_DATA) {
 		gds__free(resources);
@@ -955,7 +1128,9 @@ void ISC_expand_share(tstring& file_name)
 	if (i == nument) {
 		device += ':';
 		LPREMOTE_NAME_INFO res2 = (LPREMOTE_NAME_INFO) resources;
-		ret = WNetGetUniversalName(device.c_str(), REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
+		ret =
+			WNetGetUniversalName(device.c_str(), 
+					REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
 		if (ret == ERROR_MORE_DATA) {
 			gds__free(resources);
 			resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
@@ -964,7 +1139,8 @@ void ISC_expand_share(tstring& file_name)
 				return;
 			}
 			res2 = (LPREMOTE_NAME_INFO) resources;
-			ret = WNetGetUniversalName(device.c_str(), REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
+			ret = WNetGetUniversalName(device.c_str(), 
+					REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
 		}
 		if (ret == NO_ERROR)
 		{
@@ -1040,7 +1216,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
  **************************************/
 
 	// If the filename contains a TCP node name, don't even try to expand it
-	if (buff.find(INET_FLAG) != npos)
+	if (buff.find(INET_FLAG) != npos) 
 	{
 		return;
 	}
@@ -1050,39 +1226,44 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 	buff = "";
 
 	// Handle references to default directories (tilde refs)
-	if (*from == '~')
+	if (*from == '~') 
 	{
 		++from;
 		tstring q;
 		while (*from && *from != '/')
 			q += *from++;
-		if (fb_utils::get_user_home(q.hasData() ? fb_utils::get_user_id(q.c_str()) : geteuid(),
-									buff))
+		const struct passwd* password =
+			q.hasData() ? getpwnam(q.c_str()) : getpwuid(geteuid());
+		if (password) 
 		{
+			buff = password->pw_dir;
 			expand_filename2(buff, expand_mounts);
 		}
 	}
 
 	// If the file is local, expand partial pathnames with default directory
-	if (*from && *from != '/')
+	if (*from && *from != '/') 
 	{
-		fb_utils::getCwd(buff);
+		if (! GETWD(buff)) 
+		{
+			buff = "";
+		}
 		buff += '/';
 	}
 
 	// Process file name segment by segment looking for symbolic links.
-	while (*from)
+	while (*from) 
 	{
 
 		// skip dual // (will collapse /// to / as well)
-		if (*from == '/' && from[1] == '/')
+		if (*from == '/' && from[1] == '/') 
 		{
 			++from;
 			continue;
 		}
 
 		// Copy the leading slash, if any
-		if (*from == '/')
+		if (*from == '/') 
 		{
 			if (buff.hasData() && (buff.end()[-1] == '/'))
 			{
@@ -1096,12 +1277,12 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		}
 
 		// Handle self references
-		if (*from == '.' && (from[1] == '.' || from[1] == '/'))
+		if (*from == '.' && (from[1] == '.' || from[1] == '/')) 
 		{
-			if (*++from == '.')
+			if (*++from == '.') 
 			{
 				++from;
-				if (buff.length() > 2)
+				if (buff.length() > 2) 
 				{
 					const size slash = buff.rfind('/', buff.length() - 2);
 					buff = slash != npos ? buff.substr(0, slash + 1) : "/";
@@ -1112,7 +1293,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 
 		// Copy the rest of the segment name
 		const int segment = buff.length();
-		while (*from && *from != '/')
+		while (*from && *from != '/') 
 		{
 			buff += *from++;
 		}
@@ -1128,16 +1309,16 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		// We've got a link.  If it contains a node name or it starts
 		// with a slash, it replaces the initial segment so far.
 		const tstring link(temp, n);
-		if (link.find(INET_FLAG) != npos)
+		if (link.find(INET_FLAG) != npos) 
 		{
 			buff = link;
 			return;
 		}
-		if (link[0] == '/')
+		if (link[0] == '/') 
 		{
 			buff = link;
 		}
-		else
+		else 
 		{
 			buff.replace(segment, buff.length() - segment, link);
 		}
@@ -1153,7 +1334,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring nfsServer;
 		if (ISC_analyze_nfs(buff, nfsServer))
 		{
-			buff.insert(0, ":");
+			buff.insert(0, ':');
 			buff.insert(0, nfsServer);
 		}
 	}
@@ -1202,8 +1383,9 @@ static void expand_share_name(tstring& share_name)
 	}
 
 	HKEY hkey;
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
-					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+					 "SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares",
+					 0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS) 
 	{
 		return;
 	}
@@ -1213,7 +1395,8 @@ static void expand_share_name(tstring& share_name)
 	DWORD type_code;
 	LPBYTE data = data_buf;
 
-	DWORD ret = RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
+	DWORD ret =
+		RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	if (ret == ERROR_MORE_DATA) {
 		d_size++;
 		data = (LPBYTE) gds__alloc((SLONG) d_size);
@@ -1222,12 +1405,13 @@ static void expand_share_name(tstring& share_name)
 			RegCloseKey(hkey);
 			return;				// Error not really handled
 		}
-		ret = RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
+		ret =
+			RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	}
 
 	if (ret == ERROR_SUCCESS) {
 		for (const TEXT* s = reinterpret_cast<const TEXT*>(data); s && *s;
-			s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
+			 s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
 		{
 			if (!strnicmp(s, "path", 4)) {
 				// CVC: Paranoid protection against buffer overrun.
@@ -1276,6 +1460,82 @@ static bool get_full_path(const tstring& part, tstring& full)
 
 namespace {
 #ifndef NO_NFS
+#if (defined AIX || defined AIX_PPC)
+#define GET_MOUNTS
+
+osMtab::osMtab() : temp(0), context(0) 
+{ 
+	SLONG l;
+	if (mntctl(MCTL_QUERY, sizeof(SLONG), reinterpret_cast<char*>(&l)) != 0)
+		return;
+	try 
+	{
+		temp = FB_NEW(*getDefaultMemoryPool()) char[l];
+	}
+	catch (Firebird::BadAlloc)
+	{
+		temp = 0;
+		return;
+	}
+	context = mntctl(MCTL_QUERY, l, temp);
+	if (context <= 0)
+	{
+		delete[] temp;
+		temp = 0;
+	}
+}
+
+bool Mnt::get()
+{
+/**************************************
+ *
+ *	g e t _ m o u n t s	( A I X )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get ALL mount points.
+ *
+ **************************************/
+	if (!context)
+	{
+		return false;
+	}
+
+	TEXT* p;
+	for (int i = --context, p = temp; i--;)
+		p += reinterpret_cast<struct vmount *>(p)->vmt_length;
+
+	struct vmount* vmt = reinterpret_cast<struct vmount *>(p);
+
+	p = vmt2dataptr(vmt, VMT_HOSTNAME);
+	int l = vmt2datasize(vmt, VMT_HOSTNAME);
+	if (l && (p[0] != '-' || p[1])) 
+	{
+		node = tstring(p, l);
+	}
+	else 
+	{
+		node.erase();
+	}
+
+	p = vmt2dataptr(vmt, VMT_OBJECT);
+	l = vmt2datasize(vmt, VMT_OBJECT);
+	path = tstring(p, l);
+
+	p = vmt2dataptr(vmt, VMT_STUB);
+	l = vmt2datasize(vmt, VMT_STUB);
+	mount = tstring(p, l);
+
+	if (node.isEmpty()) {
+		node = path;
+		path.erase();
+	}
+
+	return true;
+}
+#endif // (defined AIX || defined AIX_PPC)
+
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
 #if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) /* SYSV stylish */
@@ -1322,7 +1582,7 @@ bool Mnt::get()
 	else
 		return false;
 }
-#else // !GETMNTENT_TAKES_TWO_ARGUMENTS
+#else // !GETMNTENT_TAKES_TWO_ARGUMENTS 
 bool Mnt::get()
 {
 /**************************************
@@ -1347,7 +1607,7 @@ bool Mnt::get()
 	// NFS mount points, therefore ignore mnt_type
 
 	const char* iflag = strchr(mptr->mnt_fsname, ':');
-
+	
 	if (iflag)
 	{
 		node = tstring(mptr->mnt_fsname, iflag - mptr->mnt_fsname);
@@ -1387,8 +1647,9 @@ bool Mnt::get()
 	for (;;) {
 		/* Sake of argument, inverted the mount_point, device */
 
-		int n = fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
-					   foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
+		int n =
+			fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
+					  foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
 		if (!strcmp(rw, "read"))
 			n = fscanf(file, "%s", foo1);
 
@@ -1441,10 +1702,10 @@ bool Mnt::get()
 
  /* This code is tested on Solaris 2.6 IA */
  TEXT device[128], mount_point[128], type[16], opts[256], ftime[128];
-
+ 
 	const int n = fscanf(mtab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts,ftime);
 	const char* start = device;
-
+	
 	if (n<5)
 	return false;
 
@@ -1508,16 +1769,16 @@ bool Mnt::get()
  *	Get ALL mount points.
  *
  **************************************/
-
+	
 /* Solaris uses this because:
 	Since we had to substitute an alternative for the stdio supplied
 	with Solaris, we cannot use the getmntent() library call which
 	wants a Solaris stdio FILE* as an argument, so we parse the text-
 	type /etc/mnttab file ourselves.     - from FB1
-
+	
 	This will still apply with SFIO on FB2.  nmcc Dec2002
 */
-
+	
 	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
 
 /* Start by finding a mount point. */
@@ -1525,7 +1786,8 @@ bool Mnt::get()
 	TEXT* p = buffer;
 
 	for (;;) {
-		const int n = fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+		const int n =
+			fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
 #ifdef SOLARIS
 		if (n != 5)
 #else
@@ -1537,7 +1799,7 @@ bool Mnt::get()
 		   NFS mount points */
 
 /****
-	if (strcmp (type, "nfs"))
+    if (strcmp (type, "nfs"))
 	continue;
 ****/
 
@@ -1632,7 +1894,7 @@ static void share_name_from_resource(tstring& file_name,
 		expanded_name += '!';
 		file_name.replace(0, 2, expanded_name);
 	}
-	else {
+	else {						
 		// we're guessing that it might be an NFS shared drive
 
 		iter q = expanded_name.end() - 1;
@@ -1646,7 +1908,8 @@ static void share_name_from_resource(tstring& file_name,
 		\\NODE and it contains a ':', then it's probably an NFS mounted drive.
 		Therefore we must convert any back slashes to forward slashes. */
 
-		if ((file_name[0] != '\\' || file_name[1] != '\\') && (file_name.find(INET_FLAG) != npos))
+		if ((file_name[0] != '\\' || file_name[1] != '\\')
+			&& (file_name.find(INET_FLAG) != npos)) 
 		{
 			for (q = file_name.begin(); q < file_name.end(); ++q)
 			{
@@ -1695,122 +1958,40 @@ static void share_name_from_unc(tstring& file_name,
 #endif /* WIN_NT */
 
 
-// Converts a PathName from the system charset to UTF-8.
-void ISC_systemToUtf8(Firebird::PathName& pathName)
-{
-#ifdef WIN_NT
-	WCHAR utf16Buffer[MAX_PATH];
-	int len = MultiByteToWideChar(CP_ACP, 0, pathName.c_str(), pathName.length(),
-		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
-
-	if (len == 0)
-		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
-
-	char utf8Buffer[MAX_PATH];
-	len = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len, utf8Buffer, sizeof(utf8Buffer),
-		NULL, NULL);
-
-	if (len == 0)
-		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
-
-	pathName.assign(utf8Buffer, len);
-#endif
-}
-
-
-// Converts a PathName from UTF-8 to the system charset.
-void ISC_utf8ToSystem(Firebird::PathName& pathName)
-{
-#ifdef WIN_NT
-	WCHAR utf16Buffer[MAX_PATH];
-	int len = MultiByteToWideChar(CP_UTF8, 0, pathName.c_str(), pathName.length(),
-		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
-
-	if (len == 0)
-		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
-
-	char ansiBuffer[MAX_PATH];
-	BOOL defaultCharUsed;
-	len = WideCharToMultiByte(CP_ACP, 0, utf16Buffer, len, ansiBuffer, sizeof(ansiBuffer),
-		NULL, &defaultCharUsed);
-
-	if (len == 0 || defaultCharUsed)
-		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
-
-	pathName.assign(ansiBuffer, len);
-#endif
-}
-
-
-// Escape Unicode characters from a PathName
-void ISC_escape(PathName& pathName)
-{
-	size_t pos = 0;
-	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
+#ifndef SUPERCLIENT
+namespace {
+	class DatabaseDirectoryList : public Firebird::DirectoryList
 	{
-		pathName.insert(pos, "#");
-		pos += 2;
-	}
+	private:
+		const Firebird::PathName getConfigString(void) const {
+			return Firebird::PathName(Config::getDatabaseAccess());
+		}
+	public:
+		DatabaseDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		{ 
+			initialize();
+		}
+	};
+	Firebird::InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
 }
+#endif
 
-
-// Adapted from macro in ICU headers.
-static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
+bool ISC_verify_database_access(const Firebird::PathName& name)
 {
-	if ((unsigned int) c <= 0x7f) {
-		s[i++] = (unsigned char) c;
+/**************************************
+ *
+ *      I S C _ v e r i f y _ d a t a b a s e _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *      Verify 'name' against DatabaseAccess entry of firebird.conf.
+ *
+ **************************************/
+#ifndef SUPERCLIENT
+	if (!iDatabaseDirectoryList().isPathInList(name)) {
+		return false;
 	}
-	else {
-		if ((unsigned int) c <= 0x7ff) {
-			s[i++] = (unsigned char) ((c >> 6) | 0xc0);
-		}
-		else {
-			if ((unsigned int) c <= 0xffff) {
-				s[i++] = (unsigned char) ((c >> 12) | 0xe0);
-			}
-			else {
-				s[i++] = (unsigned char) ((c >> 18) | 0xf0);
-				s[i++] = (unsigned char) (((c >> 12) & 0x3f) | 0x80);
-			}
-			s[i++] = (unsigned char) (((c >> 6) & 0x3f) | 0x80);
-		}
-		s[i++] = (unsigned char) ((c & 0x3f) | 0x80);
-	}
-}
-
-
-// Unescape Unicode characters from a PathName
-void ISC_unescape(PathName& pathName)
-{
-
-	size_t pos = 0;
-	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
-	{
-		const char* p = pathName.c_str() + pos;
-
-		if (pos + 5 <= pathName.length() &&
-			((p[1] >= '0' && p[1] <= '9') || (toupper(p[1]) >= 'A' && toupper(p[1]) <= 'F')) &&
-			((p[2] >= '0' && p[2] <= '9') || (toupper(p[2]) >= 'A' && toupper(p[2]) <= 'F')) &&
-			((p[3] >= '0' && p[3] <= '9') || (toupper(p[3]) >= 'A' && toupper(p[3]) <= 'F')) &&
-			((p[4] >= '0' && p[4] <= '9') || (toupper(p[4]) >= 'A' && toupper(p[4]) <= 'F')))
-		{
-			char sCode[5];
-			memcpy(sCode, p + 1, 4);
-			sCode[4] = '\0';
-			const int code = strtol(sCode, NULL, 16);
-
-			char unicode[4];
-			int len = 0;
-			FB_U8_APPEND_UNSAFE(unicode, len, code);
-
-			pathName.replace(pos, 5, PathName(unicode, len));
-			pos += len;
-		}
-		else if (pos + 2 <= pathName.length() && p[1] == '#')
-			pathName.erase(pos++, 1);
-		else
-			status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_escape_invalid));
-	}
-
-#undef U8_APPEND_UNSAFE
+#endif
+	return true;
 }

@@ -36,7 +36,8 @@ static void get_set_generator(STR, DUDLEY_NOD);
 
 static inline void check_blr(str* blr, const int l)
 {
-	if (!(blr->str_current - blr->str_start + l <= blr->str_length) && !TRN_get_buffer(blr, l) )
+	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
+		&& !TRN_get_buffer(blr, l) )
 	{
 		DDL_err(289);
 	}
@@ -75,10 +76,8 @@ int GENERATE_acl( SCL sec_class, UCHAR * buffer)
 		*p++ = priv_end;
 		*p++ = ACL_priv_list;
 		for (i = 0; i < priv_max; i++)
-		{
 			if (item->sce_privileges & (1 << i))
 				*p++ = i;
-		}
 		*p++ = id_end;
 	}
 
@@ -537,7 +536,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		operatr = blr_matching2;
 		break;
 //	case nod_substr:
-//		operatr = blr_substring;
+//		operatr = blr_substring; 
 //		break;
 
 	default:
@@ -555,8 +554,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 //
 //     field [NOT] MISSING
 
-	if ((operatr == blr_eql || operatr == blr_neq) &&
-		(node->nod_arg[posi]->nod_type == nod_null || node->nod_arg[posi + 1]->nod_type == nod_null))
+	if ((operatr == blr_eql || operatr == blr_neq)
+		&& (node->nod_arg[posi]->nod_type == nod_null ||
+			node->nod_arg[posi + 1]->nod_type == nod_null))
 	{
 		if (operatr == blr_neq) {
 			check_blr(blr, 1);

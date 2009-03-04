@@ -64,8 +64,7 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 };
 
 /* blr to dsc type conversions */
-static const USHORT DSC_blr_type_mapping[] =
-{
+static const USHORT DSC_blr_type_mapping[] = {
 	blr_null,
 	blr_text,
 	blr_cstring,
@@ -88,8 +87,7 @@ static const USHORT DSC_blr_type_mapping[] =
 
 /* Unimplemented names are in lowercase & <brackets> */
 /* Datatypes that represent a range of SQL datatypes are in lowercase */
-static const TEXT* const DSC_dtype_names[] =
-{
+static const TEXT *const DSC_dtype_names[] = {
 	"<dtype_unknown>",
 	"CHAR",
 	"CSTRING",
@@ -118,8 +116,7 @@ static const TEXT* const DSC_dtype_names[] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
-{
+const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
@@ -276,8 +273,7 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
-{
+const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
@@ -434,8 +430,7 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
-{
+const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
@@ -592,8 +587,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
    dtype_unknown as the result means that we do not yet know the type of one of
    the operands, so we cannot decide the type of the result. */
 
-const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
-{
+const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] = {
 
 /*
 	dtype_unknown	dtype_text	dtype_cstring	dtype_varying
@@ -759,7 +753,8 @@ int dsc::getStringLength() const
 
 USHORT DSC_convert_to_text_length(USHORT dsc_type)
 {
-	if (dsc_type < (sizeof(_DSC_convert_to_text_length) / sizeof(_DSC_convert_to_text_length[0])))
+	if (dsc_type < (sizeof(_DSC_convert_to_text_length) /
+					sizeof(_DSC_convert_to_text_length[0])))
 		return _DSC_convert_to_text_length[dsc_type];
 	fb_assert(FALSE);
 	return 0;
@@ -802,8 +797,7 @@ bool DSC_make_descriptor(DSC* desc,
 	desc->dsc_scale = (SCHAR) scale;
 	desc->dsc_sub_type = sub_type;
 
-	switch (blr_type)
-	{
+	switch (blr_type) {
 	case blr_text:
 		desc->dsc_dtype = dtype_text;
 		INTL_ASSIGN_DSC(desc, charset, collation);
@@ -841,10 +835,19 @@ bool DSC_make_descriptor(DSC* desc,
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_length = sizeof(double);
 		desc->dsc_dtype = dtype_double;
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_length = sizeof(double);
+		desc->dsc_dtype = dtype_d_float;
+		break;
+#endif
 
 	case blr_timestamp:
 		desc->dsc_length = 2 * sizeof(SLONG);
@@ -896,7 +899,7 @@ int DSC_string_length(const dsc* desc)
  *
  * Functional description
  *	Estimate length of string (in bytes) based on descriptor.
- *	Estimated length assumes representing string in
+ *	Estimated length assumes representing string in 
  *	narrow-char ASCII format.
  *
  *	Note that this strips off the short at the
@@ -904,8 +907,7 @@ int DSC_string_length(const dsc* desc)
  *
  **************************************/
 
-	switch (desc->dsc_dtype)
-	{
+	switch (desc->dsc_dtype) {
 	case dtype_text:
 		return desc->dsc_length;
 	case dtype_cstring:
@@ -931,13 +933,13 @@ const TEXT *DSC_dtype_tostring(UCHAR dtype)
  **************************************
  *
  * Functional description
- *	Convert a datatype to its textual representation
- *
+ *	Convert a datatype to its textual representation	
+ *	
  **************************************/
 	if (dtype < FB_NELEM(DSC_dtype_names))
 		return DSC_dtype_names[dtype];
-
-	return "<unknown>";
+	else
+		return "<unknown>";
 }
 
 
@@ -950,8 +952,8 @@ void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
  **************************************
  *
  * Functional description
- *	Convert a datatype to its textual representation
- *
+ *	Convert a datatype to its textual representation	
+ *	
  **************************************/
 	// This function didn't put a string terminator even though
 	// it's calling strncpy that doesn't put it if source > target.
@@ -999,7 +1001,7 @@ static bool validate_dsc_tables()
  *          server memory.  If you uncomment the printf's and build a
  *          kit, make sure that you run that server with the -d flag
  *          so it won't detach from its controlling terminal.
- *
+ *	
  **************************************/
 	for (BYTE op1 = dtype_unknown; op1 < DTYPE_TYPE_MAX; op1++) {
 		for (BYTE op2 = dtype_unknown; op2 < DTYPE_TYPE_MAX; op2++) {

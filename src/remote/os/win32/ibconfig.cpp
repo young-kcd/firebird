@@ -32,6 +32,7 @@
 #include "../jrd/file_params.h"
 
 #include "../jrd/svc_undoc.h"
+#include "../jrd/svc_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../remote/os/win32/window_proto.h"
 
@@ -58,7 +59,7 @@ const int HDR_BUFLEN		= 512;
 static HINSTANCE hAppInstance = NULL;	// Handle to the app. instance
 char szSysDbaPasswd[PASSWORD_LEN];	// Pointer to hold the password
 HBRUSH hIBGrayBrush = NULL;		// Handle to a gray brush
-static bool bServerApp = false;	// Flag indicating if Server application
+static BOOL bServerApp = FALSE;	// Flag indicating if Server application
 static char szService[SERVICE_LEN];	// To store the service path
 
 // Window procedure
@@ -84,10 +85,9 @@ static void FillSysdbaSPB(char*, const char*);
 // where the first of each pair is the control ID,
 // and the second is the context ID for a help topic,
 // which is used in the help file.
-static DWORD aMenuHelpIDs1[][2] =
-{
+static DWORD aMenuHelpIDs1[][2] = {
 	{IDC_MODRES, ibs_modify},		// This has to be the first entry because
-	// we modify the value of ibs_modify to
+	// we modify the value of ibs_modify to 
 	// ibs_reset when the button text changes.
 
 	{IDC_MINSIZETEXT, ibs_min_process_work_set},
@@ -126,7 +126,7 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
  *****************************************************************************/
 	hIBGrayBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	hAppInstance = hInst;
-	bServerApp = true;
+	bServerApp = TRUE;
 	szService[0] = '\0';
 	szSysDbaPasswd[0] = '\0';
 
@@ -142,7 +142,8 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	PropSheet_AddPage(hPropSheet, CreatePropertySheetPage(&IBPage));
 }
 
-LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
+							   LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -167,14 +168,15 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 	static bool bModifyMode = false;
 	static bool bDirty = false;
 
-	switch (unMsg)
-	{
+	switch (unMsg) {
 	case WM_INITDIALOG:
-		if (!ReadFBSettings(hDlg))
-			return FALSE;
-		RefreshIBControls(hDlg, FALSE);
-		bModifyMode = false;
-		bDirty = false;
+		{
+			if (!ReadFBSettings(hDlg))
+				return FALSE;
+			RefreshIBControls(hDlg, FALSE);
+			bModifyMode = false;
+			bDirty = false;
+		}
 		break;
 	case WM_CTLCOLORDLG:
 	case WM_CTLCOLORSTATIC:
@@ -186,7 +188,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			OSVERSIONINFO OsVersionInfo;
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
+				OsVersionInfo.dwMajorVersion < 4) 
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -198,20 +201,21 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
-				WinHelp(static_cast<HWND>(lphi->hItemHandle), "IBSERVER.HLP",
+				WinHelp(static_cast<HWND>(lphi->hItemHandle),
+						"IBSERVER.HLP",
 						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs1);
 			}
 			return TRUE;
 		}
 	case WM_CONTEXTMENU:
 		{
-			WinHelp((HWND) wParam, "IBSERVER.HLP",
+			WinHelp((HWND) wParam,
+					"IBSERVER.HLP",
 					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs1);
 			return TRUE;
 		}
 	case WM_COMMAND:
-		switch (LOWORD(wParam))
-		{
+		switch (LOWORD(wParam)) {
 		case IDC_MODRES:
 			if (bModifyMode)	// User clicked on RESET
 			{
@@ -228,7 +232,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 					RefreshIBControls(hDlg, TRUE);
 					bModifyMode = true;
 					bDirty = false;
-					SendDlgItemMessage(hDlg, IDC_DBPAGES, EM_SETSEL, 0, (LPARAM) - 1);
+					SendDlgItemMessage(hDlg, IDC_DBPAGES, EM_SETSEL,
+									   0, (LPARAM) - 1);
 					SetFocus(GetDlgItem(hDlg, IDC_DBPAGES));
 				}
 			}
@@ -248,18 +253,17 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_NOTIFY:
-		switch (((LPNMHDR) lParam)->code)
-		{
+		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
 				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
 				break;
 			}
-		case PSN_SETACTIVE:	// When the page is about to recieve
+		case PSN_SETACTIVE:	// When the page is about to recieve 
 			{					// focus
-				// This modifies the bubble help table to bring up
-				// the appropriate help topic based on whether the text
-				// is "Modify..." or "Reset".  It assumes that the first
+				// This modifies the bubble help table to bring up 
+				// the appropriate help topic based on whether the text 
+				// is "Modify..." or "Reset".  It assumes that the first 
 				// entry is the first one.
 				aMenuHelpIDs1[0][1] = bModifyMode ? ibs_reset : ibs_modify;
 				break;
@@ -305,10 +309,11 @@ BOOL ReadFBSettings(HWND hDlg)
  *               current IB settings in the config file and then sets these
  *               values to the corresponding controls.
  *****************************************************************************/
-
+	char pchTmp[TEMP_BUFLEN];
 	ISC_STATUS_ARRAY pdwStatus;
 	isc_svc_handle hService = NULL;
 	//char pchRcvBuf[SEND_BUFLEN],
+	char pchResBuf[RESP_BUFLEN];
 
 	HCURSOR hOldCursor = NULL;
 
@@ -320,20 +325,19 @@ BOOL ReadFBSettings(HWND hDlg)
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
-	const char spb[] = {isc_spb_version1};
-	isc_service_attach(pdwStatus, 0, szService, &hService, sizeof(spb), spb);
+	isc_service_attach(pdwStatus, 0, szService, &hService, 0, "");
 
 	*pchPtr = '\0';
 
-	if (pdwStatus[1])
-	{
+	if (pdwStatus[1]) {
 		SetCursor(hOldCursor);
 		PrintCfgStatus(pdwStatus, IDS_CFGATTACH_FAILED, hDlg);
 		SetDlgItemInt(hDlg, IDC_DBPAGES, lCachePages, TRUE);
 		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_RESETCONTENT, 0, 0);
 
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
+					 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
@@ -342,8 +346,7 @@ BOOL ReadFBSettings(HWND hDlg)
 
 	const char pchRcvBuf[] = {isc_info_svc_get_config};
 
-	// Query the service with get_config
-	char pchResBuf[RESP_BUFLEN];
+// Query the service with get_config
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL, 1, pchRcvBuf,
 					  sizeof(pchResBuf), pchResBuf);
 	if (pdwStatus[1])
@@ -363,19 +366,20 @@ BOOL ReadFBSettings(HWND hDlg)
 		int temp = 1024;
 		while (temp <= MAX_PAGE_SIZE) {
 			wsprintf(szTmp, "%d", temp);
-			SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0, (LPARAM) szTmp);
+			SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0,
+							   (LPARAM) szTmp);
 			temp <<= 1;
 		}
 	}
 
-	// Select the right Map Size, inserting it if necessary
-	char pchTmp[TEMP_BUFLEN];
+// Select the right Map Size, inserting it if necessary
 	wsprintf(pchTmp, "%d", lMapSize);
 	if (SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, (unsigned int) -1,
-						   (LPARAM) pchTmp) == CB_ERR)
-	{
-		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0, (LPARAM) pchTmp);
-		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, 0, (LPARAM) pchTmp);
+						   (LPARAM) pchTmp) == CB_ERR) {
+		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0,
+						   (LPARAM) pchTmp);
+		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, 0,
+						   (LPARAM) pchTmp);
 	}
 
 // Display the proper cache size
@@ -386,7 +390,8 @@ BOOL ReadFBSettings(HWND hDlg)
 
 	if (!bSuccess) {
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
+					 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 	}
@@ -417,9 +422,10 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
 	LoadString(hAppInstance, bEnable ? IDS_RESETBTN : IDS_MODIFYBTN,
 			   szButtonName, sizeof(szButtonName));
 
-	SendDlgItemMessage(hDlg, IDC_MODRES, WM_SETTEXT, 0, (LPARAM) szButtonName);
+	SendDlgItemMessage(hDlg, IDC_MODRES, WM_SETTEXT, 0,
+					   (LPARAM) szButtonName);
 
-// This modifies the bubble help table to bring up the appropriate help
+// This modifies the bubble help table to bring up the appropriate help 
 // topic based on whether the text is "Modify..." or "Reset".  It assumes
 // that the first entry is the first one.
 	aMenuHelpIDs1[0][1] = bEnable ? ibs_reset : ibs_modify;
@@ -442,7 +448,12 @@ BOOL WriteFBSettings(HWND hDlg)
  *               current OS settings in the config file.
  *               It's disabled for now.
  *****************************************************************************/
-
+	ISC_STATUS_ARRAY pdwStatus;
+	isc_svc_handle hService = NULL;
+	char pchSendBuf[SEND_BUFLEN];
+	short *psLen;
+	char szSpb[SPB_BUFLEN];		// Server parameter block
+	char szResBuf[16];			// Response buffer
 	BOOL bRetFlag = TRUE;
 
 	HCURSOR hOldCursor = NULL;
@@ -459,8 +470,7 @@ BOOL WriteFBSettings(HWND hDlg)
 		return FALSE;
 	}
 
-	// Encode the SPB for SysDba
-	char szSpb[SPB_BUFLEN];		// Server parameter block
+// Encode the SPB for SysDba
 	FillSysdbaSPB(szSpb, szSysDbaPasswd);
 
 // Build the complete name to the service
@@ -468,20 +478,19 @@ BOOL WriteFBSettings(HWND hDlg)
 	char* pchPtr = szService + strlen(szService);
 	strcat(szService, "query_server");
 
-	// Attach to "query_server" service
-	ISC_STATUS_ARRAY pdwStatus;
-	isc_svc_handle hService = NULL;
-	isc_service_attach(pdwStatus, 0, szService, &hService, (USHORT) strlen(szSpb), szSpb);
+// Attach to "query_server" service
+	isc_service_attach(pdwStatus, 0, szService, &hService,
+					   (USHORT) strlen(szSpb), szSpb);
 
 	*pchPtr = '\0';
 
-	if (pdwStatus[1])
-	{
+	if (pdwStatus[1]) {
 		SetCursor(hOldCursor);
 		PrintCfgStatus(pdwStatus, IDS_CFGATTACH_FAILED, hDlg);
 
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
+					 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
@@ -489,10 +498,9 @@ BOOL WriteFBSettings(HWND hDlg)
 	}
 
 // Fill in the Send buffer's header
-	char pchSendBuf[SEND_BUFLEN];
 	pchPtr = pchSendBuf;
 	*pchPtr++ = isc_info_svc_set_config;
-	short* psLen = (short *) pchPtr;
+	psLen = (short *) pchPtr;
 	pchPtr += sizeof(USHORT);
 
 // Fill in all the records
@@ -512,16 +520,16 @@ BOOL WriteFBSettings(HWND hDlg)
 	*psLen = (short) isc_vax_integer((SCHAR *) psLen, sizeof(short));
 // Query service with set_config
 
-	char szResBuf[16];			// Response buffer
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL,
 					  (USHORT) (pchPtr - pchSendBuf), pchSendBuf,
 					  (USHORT) sizeof(szResBuf), szResBuf);
-	if (pdwStatus[1] || szResBuf[1])
-	{
-		PrintCfgStatus(pdwStatus[1] ? pdwStatus : NULL, IDS_CFGWRITE_FAILED, hDlg);
+	if (pdwStatus[1] || szResBuf[1]) {
+		PrintCfgStatus(pdwStatus[1] ? pdwStatus : NULL, IDS_CFGWRITE_FAILED,
+					   hDlg);
 
 		/* To eliminate the flicker while closing the Property Sheet */
-		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
+		SetWindowPos(GetParent(hDlg), HWND_DESKTOP,
+					 0, 0, 0, 0, SWP_HIDEWINDOW);
 		/* Close the Property Sheet */
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
@@ -558,13 +566,17 @@ BOOL ValidateUser(HWND hParentWnd)
 		PrintCfgStatus(NULL, IDS_CFGNOT_SYSDBA, hParentWnd);
 		return FALSE;
 	}
-
-	szSysDbaPasswd[0] = '\0';
-	return (DialogBox((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
-						MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd, (DLGPROC) PasswordDlgProc) > 0);
+	else {
+		szSysDbaPasswd[0] = '\0';
+		return (DialogBox
+				((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
+				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
+				 (DLGPROC) PasswordDlgProc) > 0);
+	}
 }
 
-BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
+							  LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -582,8 +594,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
  *
  *  Description: This is the window procedure for the "Password" dialog box.
  *****************************************************************************/
-	switch (unMsg)
-	{
+	switch (unMsg) {
 	case WM_CTLCOLORDLG:
 	case WM_CTLCOLORSTATIC:
 	case WM_CTLCOLORLISTBOX:
@@ -594,7 +605,8 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			OSVERSIONINFO OsVersionInfo;
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
+				OsVersionInfo.dwMajorVersion < 4) 
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -602,22 +614,24 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_COMMAND:
-		if (wParam == IDOK)
-		{
+		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
 			ISC_STATUS_ARRAY pdwStatus;
+			isc_svc_handle hService = NULL;
+			char szSpb[SPB_BUFLEN];
+			HCURSOR hOldCursor = NULL;
 
 			szPassword[0] = '\0';
 
-			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, WM_GETTEXT, PASSWORD_LEN, (LPARAM) szPassword);
+			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, WM_GETTEXT,
+							   PASSWORD_LEN, (LPARAM) szPassword);
 			// Fill the Spb
-			char szSpb[SPB_BUFLEN];
 			FillSysdbaSPB(szSpb, szPassword);
 
 			// Attach service to check for password validity
-			HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
-			isc_svc_handle hService = NULL;
-			isc_service_attach(pdwStatus, 0, "query_server", &hService, (USHORT) strlen(szSpb), szSpb);
+			hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+			isc_service_attach(pdwStatus, 0, "query_server",
+							   &hService, (USHORT) strlen(szSpb), szSpb);
 			SetCursor(hOldCursor);
 
 			if (pdwStatus[1]) {
@@ -630,18 +644,23 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 				EndDialog(hDlg, 1);
 			}
 
-			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, EM_SETSEL, 0, (LPARAM) - 1);
+			SendDlgItemMessage(hDlg, IDC_DBAPASSWORD, EM_SETSEL, 0,
+							   (LPARAM) - 1);
 			SetFocus(GetDlgItem(hDlg, IDC_DBAPASSWORD));
 			return TRUE;
 		}
-		if (wParam == IDCANCEL) {
-			EndDialog(hDlg, 0);
-			return TRUE;
+		else {
+			if (wParam == IDCANCEL) {
+				EndDialog(hDlg, 0);
+				return TRUE;
+			}
 		}
 		break;
 	case WM_CLOSE:
-		EndDialog(hDlg, 0);
-		return TRUE;
+		{
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
 	default:
 		return FALSE;
 	}
@@ -667,8 +686,7 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 
 	szErrStr[0] = '\0';
 
-	if (status_vector)
-	{
+	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 		if (fb_interpret(szErrStr, sizeof(szErrStr), &vector))
 		{
@@ -738,7 +756,7 @@ void FillSysdbaSPB(char *szSpb, const char* szPasswd)
 void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
 {
 /****************************************************************
- *
+ *                                              
  *  H e l p C m d
  *
  ****************************************************************
@@ -749,7 +767,7 @@ void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *              nId       - The help message Id.
  *
  *  Description:  Invoke the Windows Help facility with context of nId.
- *
+ *      
  *****************************************************************/
 	SCHAR szPathFileName[1024 + 256 + 1];
 

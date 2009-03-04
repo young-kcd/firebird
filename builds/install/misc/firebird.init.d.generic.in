@@ -5,11 +5,11 @@
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird database server daemon 
+# Firebird/interbase database server daemon 
 
 
 
-: ${FIREBIRD:=@prefix@}
+: ${INTERBASE:=@prefix@}
 : ${ISC_USER:=SYSDBA}
 : ${ISC_PASSWORD:=masterkey}
 : ${FBRunUser:=root}
@@ -20,13 +20,13 @@
 # the server. 
 
 
-export FIREBIRD
+export INTERBASE 
 export ISC_USER
 export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
-[ -x $FIREBIRD/bin/fbmgr ] || exit 0
+[ -x $INTERBASE/bin/fbmgr ] || exit 0
 
 
 
@@ -34,12 +34,12 @@ export ISC_PASSWORD
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-        echo '$FIREBIRD/bin/fbmgr -start -forever' | su $FBRunUser
+        echo '$INTERBASE/bin/fbmgr -start -forever' | su $FBRunUser
 	RETVAL=$?
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-        $FIREBIRD/bin/fbmgr -shut
+        $INTERBASE/bin/fbmgr -shut
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/identd
 	;;

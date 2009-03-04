@@ -44,9 +44,9 @@
 
 const char* SCRATCH = "fb_query_";
 
-static int nextchar();
+static int nextchar(void);
 static void retchar(SSHORT);
-static int skip_white();
+static int skip_white(void);
 
 /* Input line control */
 
@@ -107,7 +107,7 @@ inline SCHAR classes(UCHAR idx)
 
 
 
-TOK LEX_filename()
+TOK LEX_filename(void)
 {
 /**************************************
  *
@@ -145,7 +145,7 @@ TOK LEX_filename()
 }
 
 
-void LEX_fini()
+void LEX_fini(void)
 {
 /**************************************
  *
@@ -165,7 +165,7 @@ void LEX_fini()
 }
 
 
-void LEX_flush()
+void LEX_flush(void)
 {
 /**************************************
  *
@@ -296,7 +296,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 }
 
 
-void LEX_real()
+void LEX_real(void)
 {
 /**************************************
  *
@@ -316,7 +316,7 @@ void LEX_real()
 }
 
 
-TOK LEX_token()
+TOK LEX_token(void)
 {
 /**************************************
  *
@@ -394,7 +394,8 @@ TOK LEX_token()
 
 	token->tok_length = p - token->tok_string;
 	*p = '\0';
-	token->tok_symbol = symbol = HSH_lookup(token->tok_string, token->tok_length);
+	token->tok_symbol = symbol =
+		HSH_lookup(token->tok_string, token->tok_length);
 	if (symbol && symbol->sym_type == SYM_keyword)
 		token->tok_keyword = (enum kwwords) symbol->sym_keyword;
 	else
@@ -407,7 +408,7 @@ TOK LEX_token()
 }
 
 
-static int nextchar()
+static int nextchar(void)
 {
 /**************************************
  *
@@ -504,7 +505,7 @@ static void retchar( SSHORT c)
 }
 
 
-static int skip_white()
+static int skip_white(void)
 {
 /**************************************
  *

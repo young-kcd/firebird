@@ -31,6 +31,15 @@
 #include "unicode/ucnv.h"
 
 
+namespace
+{
+	struct CsConvertImpl
+	{
+		charset* cs;
+	};
+}
+
+
 static UConverter* create_converter(csconvert* cv, UErrorCode* status)
 {
 	UConverter* conv = ucnv_open(cv->csconvert_impl->cs->charset_name, status);
@@ -74,41 +83,28 @@ static ULONG unicode_to_icu(csconvert* cv,
 							USHORT* errCode,
 							ULONG* errPosition)
 {
-	fb_assert(srcLen % sizeof(UChar) == 0);
-
 	*errCode = 0;
 	*errPosition = 0;
 
-	if (!dst)
+	if (dst == NULL)
 		return srcLen / sizeof(UChar) * cv->csconvert_impl->cs->charset_max_bytes_per_char;
 
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
 
-	Firebird::Aligner<UChar> alignedSource(src, srcLen);
-	const UChar* source = alignedSource;
-	char* target = reinterpret_cast<char*>(dst);
-	ucnv_fromUnicode(conv, &target, target + dstLen, &source,
-		source + srcLen / sizeof(UChar), NULL, TRUE, &status);
-
-	*errPosition = (source - alignedSource) * sizeof(UChar);
+	ULONG len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
+        Firebird::Aligner<UChar>(src, srcLen), srcLen / sizeof(UChar), &status);
 
 	if (!U_SUCCESS(status))
 	{
-		switch (status)
-		{
-		case U_INVALID_CHAR_FOUND:
+		len = INTL_BAD_STR_LENGTH;
+
+		if (status == U_INVALID_CHAR_FOUND)
 			*errCode = CS_CONVERT_ERROR;
-			break;
-		case U_TRUNCATED_CHAR_FOUND:
-			// If this assert fails, it means we should use the same logic as in icu_to_unicode.
-			fb_assert(*errPosition < srcLen);
-			*errCode = CS_BAD_INPUT;
-			break;
-		case U_BUFFER_OVERFLOW_ERROR:
+		else if (status == U_TRUNCATED_CHAR_FOUND)
 			*errCode = CS_TRUNCATION_ERROR;
-			break;
-		default:
+		else
+		{
 			fb_assert(false);
 			*errCode = CS_CONVERT_ERROR;
 		}
@@ -116,7 +112,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 
 	ucnv_close(conv);
 
-	return target - reinterpret_cast<char*>(dst);
+	return len;
 }
 
 
@@ -128,63 +124,38 @@ static ULONG icu_to_unicode(csconvert* cv,
 							USHORT* errCode,
 							ULONG* errPosition)
 {
-	fb_assert(dstLen % sizeof(UChar) == 0);
-
 	*errCode = 0;
 	*errPosition = 0;
 
-	if (!dst)
+	if (dst == NULL)
 		return srcLen / cv->csconvert_impl->cs->charset_min_bytes_per_char * sizeof(UChar);
 
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
 
-	const char* source = reinterpret_cast<const char*>(src);
-	Firebird::OutAligner<UChar> alignedTarget(dst, dstLen);
-	UChar* target = alignedTarget;
-	ucnv_toUnicode(conv, &target, target + dstLen / sizeof(UChar), &source,
-		source + srcLen, NULL, TRUE, &status);
-
-	*errPosition = source - reinterpret_cast<const char*>(src);
+	ULONG len = ucnv_toUChars(conv, Firebird::OutAligner<UChar>(dst, dstLen), dstLen / sizeof(UChar),
+        reinterpret_cast<const char*>(src), srcLen, &status);
 
 	if (!U_SUCCESS(status))
 	{
-		switch (status)
-		{
-		case U_INVALID_CHAR_FOUND:
-			*errCode = CS_CONVERT_ERROR;
-			break;
-		case U_TRUNCATED_CHAR_FOUND:
-			{
-				// ICU advances the source pointer to after the truncated character, hence we can't
-				// continue converting when we have more input. So we have to subtract from
-				// errPosition the number of invalid bytes.
-				status = U_ZERO_ERROR;
-				char errBytes[16];
-				int8_t errLen = sizeof(errBytes);
-				ucnv_getInvalidChars(conv, errBytes, &errLen, &status);
-				if (!U_SUCCESS(status))
-					*errCode = CS_CONVERT_ERROR;
-				else
-				{
-					fb_assert((int) errLen <= (int) *errPosition);
-					*errPosition -= errLen;
-					*errCode = CS_BAD_INPUT;
-				}
-			}
-			break;
-		case U_BUFFER_OVERFLOW_ERROR:
+		len = INTL_BAD_STR_LENGTH;
+
+		if (status == U_INVALID_CHAR_FOUND)
+			*errCode = CS_BAD_INPUT;
+		else if (status == U_TRUNCATED_CHAR_FOUND)
 			*errCode = CS_TRUNCATION_ERROR;
-			break;
-		default:
+		else
+		{
 			fb_assert(false);
-			*errCode = CS_CONVERT_ERROR;
+			*errCode = CS_BAD_INPUT;
 		}
 	}
+	else
+		len *= sizeof(UChar);
 
 	ucnv_close(conv);
 
-	return (target - alignedTarget) * sizeof(UChar);
+	return len;
 }
 
 

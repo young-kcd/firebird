@@ -323,10 +323,6 @@
 				RelativePath="..\..\..\src\utilities\nbackup.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\nbackup\nbkMain.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header files"

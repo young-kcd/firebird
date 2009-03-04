@@ -58,13 +58,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		printf("gds_relay: couldn't set uid to superuser\n");
 #ifdef HAVE_SETPGRP
 #ifdef SETPGRP_VOID
-	setpgrp();
+	(void)setpgrp();
 #else
-	setpgrp(0, 0);
+	(void)setpgrp(0, 0);
 #endif /* SETPGRP_VOID */
 #else
 #ifdef HAVE_SETPGID
-	setpgid(0, 0);
+	(void)setpgid(0, 0);
 #endif /* HAVE_SETPGID */
 #endif /* HAVE_SETPGRP */
 	signal(SIGINT, SIG_IGN);
@@ -77,8 +77,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		fd = -1;
 
 	TEXT** end = argv + argc;
-	while (argv < end)
-	{
+	while (argv < end) {
 		TEXT* p = *argv++;
 		if (*p++ == '-')
 		{
@@ -108,8 +107,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	SLONG msg[3];
-	while (read(fd, msg, sizeof(msg)) == sizeof(msg))
-	{
+	while (read(fd, msg, sizeof(msg)) == sizeof(msg)) {
 #ifdef DEV_BUILD
 		/* This is #ifdef for DEV_BUILD just in case a V3 client will
 		 * attempt communication with this V4 version.

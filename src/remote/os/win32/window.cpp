@@ -31,8 +31,9 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
-#include "../jrd/svc.h"
-#include "../common/thd.h"
+#include "../jrd/svc_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../remote/os/win32/window_proto.h"
@@ -50,10 +51,9 @@
 #include "../common/config/config.h"
 
 
-static HWND hPSDlg = NULL;
+HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
-static HWND hMainWnd = NULL;
 
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
@@ -63,9 +63,9 @@ static char *MakeVersionString(char *, int, USHORT);
 static BOOL CanEndServer(HWND, bool);
 
 // Window Procedure
+void WINDOW_shutdown(ULONG);
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
-static int fb_shutdown_cb(const int, const int, void*);
 
 int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 {
@@ -90,8 +90,6 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	hInstance = hThisInst;
 	usServerFlags = usServerFlagMask;
 
-	fb_shutdown_callback(0, fb_shutdown_cb, fb_shut_postproviders, 0);
-
 /* initialize main window */
 
 	WNDCLASS wcl;
@@ -107,8 +105,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 	wcl.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH);
 
-	if (!RegisterClass(&wcl))
-	{
+	if (!RegisterClass(&wcl)) {
 		char szMsgString[MSG_STRINGLEN];
 		LoadString(hInstance, IDS_REGERROR, szMsgString, MSG_STRINGLEN);
 		if (usServerFlagMask & SRVR_non_service) {
@@ -118,7 +115,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 		return 0;
 	}
 
-	hMainWnd = hWnd = CreateWindowEx(0,
+	hWnd = CreateWindowEx(0,
 						  szClassName,
 						  APP_NAME,
 						  WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -126,7 +123,9 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  CW_USEDEFAULT,
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
-
+#ifdef SERVER_SHUTDOWN
+	SVC_shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
+#endif
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.
 
@@ -134,8 +133,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	UpdateWindow(hWnd);
 
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
+	while (GetMessage(&msg, NULL, 0, 0)) {
 		if (hPSDlg)				// If property sheet dialog is open
 		{
 			// Check if the message is property sheet dialog specific
@@ -159,7 +157,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 
 
-LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowFunc(HWND hWnd,
+							UINT message, WPARAM wParam, LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -173,7 +172,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
  *          lParam - LPARAM parameter for the message
  *
  *  Return: FALSE indicates that the message has not been handled
- *          TRUE indicates the message has been handled
+ *          TRUE indicates the message has been handled 
  *
  *  Description: This is main window procedure for the Firebird server. This
  *               traps all the Firebird significant messages and processes
@@ -189,13 +188,12 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	ULONG num_att = 0;
 	ULONG num_dbs = 0;
 
-	switch (message)
-	{
+	switch (message) {
 	case WM_QUERYENDSESSION:
 		/* If we are running as a non-service server, then query the user
 		 * to determine if we should end the session.  Otherwise, assume that
 		 * the server is a service  and could be servicing remote clients and
-		 * therefore should not be shut down.
+		 * therefore should not be shut down.  
 		 */
 		if (usServerFlags & SRVR_non_service) {
 			return CanEndServer(hWnd, true);
@@ -209,26 +207,32 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		 * the server is a service  and could be servicing remote clients and
 		 * therefore should not be shut down.  The DestroyWindow() will destroy
 		 * the hidden window created by the server for IPC.  This should get
-		 * destroyed when the user session ends.
+		 * destroyed when the user session ends. 
 		 */
-		if (usServerFlags & SRVR_non_service)
-		{
+		if (usServerFlags & SRVR_non_service) {
 			if (CanEndServer(hWnd, false)) {
-				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
+				if (GetPriorityClass(GetCurrentProcess()) !=
+					NORMAL_PRIORITY_CLASS)
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-				fb_shutdown(0, fb_shutrsn_app_stopped);
-				//DestroyWindow(hWnd);
+#ifdef DEBUG_GDS_ALLOC
+				//gds_alloc_report(ALLOC_verbose, "from server", 0);
+				char fn[] = __FILE__;
+				fn[strlen(fn) - 19] = 0; // all remote files
+				gds_alloc_report(ALLOC_verbose, fn, 0);
+#endif
+				JRD_shutdown_all(false);
+				DestroyWindow(hWnd);
 			}
 		}
 		break;
 
 	case WM_COMMAND:
-		switch (wParam)
-		{
+		switch (wParam) {
 		case IDM_CANCEL:
-			if ((usServerFlags & SRVR_non_service) && (!(usServerFlags & SRVR_no_icon)))
+			if ((usServerFlags & SRVR_non_service)
+				&& (!(usServerFlags & SRVR_no_icon))) 
 			{
 				ShowWindow(hWnd, bInTaskBar ? SW_HIDE : SW_MINIMIZE);
 			}
@@ -247,16 +251,18 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				SetForegroundWindow(hWnd);
 
 				HMENU hPopup = CreatePopupMenu();
-				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SHUTDOWN, szMsgString,
+						   MSG_STRINGLEN);
 				AppendMenu(hPopup, MF_STRING, IDM_SHUTDOWN, szMsgString);
-				LoadString(hInstance, IDS_PROPERTIES, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_PROPERTIES, szMsgString,
+						   MSG_STRINGLEN);
 				AppendMenu(hPopup, MF_STRING, IDM_PROPERTIES, szMsgString);
 				SetMenuDefaultItem(hPopup, IDM_PROPERTIES, FALSE);
 
 				POINT curPos;
 				GetCursorPos(&curPos);
-				TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON, curPos.x, curPos.y, 0,
-							   hWnd, NULL);
+				TrackPopupMenu(hPopup, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
+							   curPos.x, curPos.y, 0, hWnd, NULL);
 				DestroyMenu(hPopup);
 				return TRUE;
 			}
@@ -292,8 +298,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			SendMessage(hWnd, WM_COMMAND, 0, 0);
 			return TRUE;
 		}
-		switch (lParam)
-		{
+		switch (lParam) {
 		case WM_LBUTTONDOWN:
 			break;
 
@@ -302,7 +307,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 
 		case WM_RBUTTONUP:
-			// The TrackPopupMenu() is inconsistant if called from here?
+			// The TrackPopupMenu() is inconsistant if called from here? 
 			// This is the only way I could make it work.
 			PostMessage(hWnd, WM_COMMAND, (WPARAM) IDM_OPENPOPUP, 0);
 			break;
@@ -310,10 +315,12 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 
 	case WM_CREATE:
-		if ((usServerFlags & SRVR_non_service) && (!(usServerFlags & SRVR_no_icon)))
+		if ((usServerFlags & SRVR_non_service)
+			&& (!(usServerFlags & SRVR_no_icon))) 
 		{
-			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBSVR_SMALL),
-											IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
+			HICON hIcon = (HICON) LoadImage(hInstance,
+									  MAKEINTRESOURCE(IDI_IBSVR_SMALL),
+									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
 
 			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -324,23 +331,24 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			nid.hIcon = hIcon;
 			lstrcpy(nid.szTip, GDS_VERSION);
 
-			// This will be true in the explorer interface
+			// This will be true in the explorer interface 
 			bInTaskBar = Shell_NotifyIcon(NIM_ADD, &nid);
 
 			if (hIcon)
 				DestroyIcon(hIcon);
 
 			// This will be true in the Program Manager interface.
-			if (!bInTaskBar)
-			{
+			if (!bInTaskBar) {
 				char szMsgString[MSG_STRINGLEN];
 
 				HMENU hSysMenu = GetSystemMenu(hWnd, FALSE);
 				DeleteMenu(hSysMenu, SC_RESTORE, MF_BYCOMMAND);
 				AppendMenu(hSysMenu, MF_SEPARATOR, 0, NULL);
-				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SHUTDOWN, szMsgString,
+						   MSG_STRINGLEN);
 				AppendMenu(hSysMenu, MF_STRING, IDM_SHUTDOWN, szMsgString);
-				LoadString(hInstance, IDS_PROPERTIES, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_PROPERTIES, szMsgString,
+						   MSG_STRINGLEN);
 				AppendMenu(hSysMenu, MF_STRING, IDM_PROPERTIES, szMsgString);
 				DestroyMenu(hSysMenu);
 			}
@@ -353,8 +361,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	case WM_SYSCOMMAND:
 		if (!bInTaskBar)
-			switch (wParam)
-			{
+			switch (wParam) {
 			case SC_RESTORE:
 				return TRUE;
 
@@ -364,7 +371,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 			case IDM_PROPERTIES:
 				if (!hPSDlg)
-					hPSDlg = DisplayProperties(hWnd, hInstance, usServerFlags);
+					hPSDlg =
+						DisplayProperties(hWnd, hInstance, usServerFlags);
 				else
 					SetFocus(hPSDlg);
 				return TRUE;
@@ -373,8 +381,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_DESTROY:
-		if (bInTaskBar)
-		{
+		if (bInTaskBar) {
 			NOTIFYICONDATA nid;
 
 			nid.cbSize = sizeof(NOTIFYICONDATA);
@@ -390,18 +397,18 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
-		JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
-							sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs);
+		JRD_num_attachments(reinterpret_cast<char*>(&ulInUseMask),
+							sizeof(ULONG), JRD_info_drivemask, &num_att,
+							&num_dbs);
 
-		switch (wParam)
-		{
+		switch (wParam) {
+
 		case DBT_DEVICEARRIVAL:
 			return TRUE;
 
 		case DBT_DEVICEQUERYREMOVE:
 			if (CHECK_VOLUME(pdbcv) && (ulLastMask != pdbcv->dbcv_unitmask))
-				if (CHECK_USAGE(pdbcv))
-				{
+				if (CHECK_USAGE(pdbcv)) {
 					char tmp[TMP_STRINGLEN];
 					char* p = tmp;
 					int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
@@ -409,42 +416,48 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 					*p++ = '\r';
 					*p++ = '\n';
 
-					len = LoadString(hInstance, IDS_PNP2, p, p - tmp + TMP_STRINGLEN);
+					len =
+						LoadString(hInstance, IDS_PNP2, p,
+								   p - tmp + TMP_STRINGLEN);
 					p += len;
 					*p++ = '\r';
 					*p++ = '\n';
-					len = LoadString(hInstance, IDS_PNP3, p, p - tmp + TMP_STRINGLEN);
+					len =
+						LoadString(hInstance, IDS_PNP3, p,
+								   p - tmp + TMP_STRINGLEN);
 					ulLastMask = pdbcv->dbcv_unitmask;
 					GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
-					if (MessageBox(hWnd, tmp, szDrives, MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
+					if (MessageBox(hWnd, tmp,
+								   szDrives,
+								   MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
 					{
 						return FALSE;
 					}
 
-					fb_shutdown(0, fb_shutrsn_device_removed);
-					//DestroyWindow(hWnd);
+					JRD_shutdown_all(false);
+					PostMessage(hWnd, WM_DESTROY, 0, 0);
 					return TRUE;
 				}
 			/* Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
 			   * same device twice.  This will occur if we say yes to the removal
-			   * of a controller.  The OS will prompt for the removal of all
+			   * of a controller.  The OS will prompt for the removal of all 
 			   * devices connected to that controller.  If you respond no, the
 			   * OS will prompt you again, and then remove the device anyway...
 			 */
 		case DBT_DEVICEREMOVEPENDING:
-			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv))
-			{
+			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv)) {
 				char tmp[TMP_STRINGLEN];
 				char* p = tmp;
 				int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
 				p += len;
 				*p++ = '\r';
 				*p++ = '\n';
-				len = LoadString(hInstance, IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
+				len = LoadString(hInstance,
+								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
+				JRD_shutdown_all(false);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
-				fb_shutdown(0, fb_shutrsn_device_removed);
 			}
 			return TRUE;
 
@@ -469,6 +482,25 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 }
 
 
+void WINDOW_shutdown(ULONG hWnd)
+{
+/******************************************************************************
+ *
+ *  W I N D O W _ s h u t d o w n
+ *
+ ******************************************************************************
+ *
+ *  Input:  hWnd - Handle to the window
+ *
+ *  Return: none
+ *
+ *  Description: This is a callback function which is called at shutdown time.
+ *               This function post the WM_DESTROY message in appl. queue.
+ *****************************************************************************/
+	PostMessage(reinterpret_cast < HWND > (hWnd), WM_DESTROY, 0, 0);
+}
+
+
 // Hmm, maybe some Pascal programmer doing the declaration?
 static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 {
@@ -489,8 +521,7 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 	char chDrive = 'A';
 	char* p = pchBuf;
 
-	while (ulDriveMask)
-	{
+	while (ulDriveMask) {
 		if (ulDriveMask & 1)
 			*p++ = chDrive;
 		chDrive++;
@@ -519,7 +550,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
  *****************************************************************************/
 	ULONG usNumAtt;
 	ULONG usNumDbs;
-	JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs);
+	JRD_num_attachments(NULL, 0, 0, &usNumAtt, &usNumDbs);
 
 	char szMsgString[MSG_STRINGLEN];
 	sprintf(szMsgString, "%u ", usNumAtt);
@@ -529,14 +560,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 
 	LoadString(hInstance, IDS_QUIT, szMsgString + strlen(szMsgString),
 			   MSG_STRINGLEN - strlen(szMsgString));
-	return (MessageBox(hWnd, szMsgString, APP_LABEL, MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
+	return (MessageBox(hWnd, szMsgString, APP_LABEL,
+					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 
-
-static int fb_shutdown_cb(const int, const int, void*)
-{
-	if (hMainWnd)
-		DestroyWindow(hMainWnd);
-
-	return 0;
-}

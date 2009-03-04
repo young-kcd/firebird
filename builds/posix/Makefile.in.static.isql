@@ -43,8 +43,7 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 
-ISQL_Files = extract.epp isql.epp show.epp Extender.cpp InputDevices.cpp \
-    ColList.cpp OptionsBase.cpp
+ISQL_Files = extract.epp isql.epp show.epp Extender.cpp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files))
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 

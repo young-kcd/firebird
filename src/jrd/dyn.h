@@ -46,15 +46,11 @@ class jrd_tra;
 class Global
 {
 public:
-	explicit Global(jrd_tra* t)
-		: gbl_transaction(t)
-	{ }
-
+	explicit Global(jrd_tra* t) : gbl_transaction(t) { }
 	jrd_tra* gbl_transaction;
 };
 
-class dyn_fld
-{
+class dyn_fld {
 public:
 	dsc dyn_dsc;
 	bool dyn_null_flag;
@@ -70,24 +66,16 @@ public:
     const UCHAR* dyn_default_src;
     const UCHAR* dyn_default_val;
     bool dyn_drop_default;
-    const UCHAR* dyn_computed_src;
-    const UCHAR* dyn_computed_val;
-    bool dyn_drop_computed;
 public:
-	explicit dyn_fld(MemoryPool& p)
-		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
+	explicit dyn_fld(MemoryPool& p) 
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
 		dyn_fld_name(p), dyn_charbytelen(0),
-		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
-		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false)
-	{ }
-
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
 	dyn_fld()
-		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
 		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0),
-		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
-		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false)
-	{ }
+		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false) { }
 };
 
 } //namespace Jrd
@@ -96,12 +84,10 @@ void	DYN_error(bool, USHORT, const MsgFormat::SafeArg& sarg = MsgFormat::SafeArg
 void	DYN_error_punt(bool, USHORT, const MsgFormat::SafeArg& arg);
 void	DYN_error_punt(bool, USHORT, const char* str);
 void	DYN_error_punt(bool, USHORT);
-void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*,
-	Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
+void	DYN_execute(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*);
 SLONG	DYN_get_number(const UCHAR**);
 USHORT	DYN_get_string(const TEXT**, Firebird::MetaName&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, Firebird::PathName&, size_t, bool);
-USHORT	DYN_get_string(const TEXT**, Firebird::string&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, Firebird::UCharBuffer&, size_t, bool);
 USHORT	DYN_get_string(const TEXT**, TEXT*, size_t, bool);
 
@@ -111,8 +97,12 @@ USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 
 void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
+USHORT	DYN_skip_blr_blob(const UCHAR**);
 
-void	DYN_unsupported_verb();
+// This function is not defined anywhere.
+//USHORT	DYN_skip_attribute2(const UCHAR**);
+
+void	DYN_unsupported_verb(void);
 
 #endif // JRD_DYN_H
 

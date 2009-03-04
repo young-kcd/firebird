@@ -30,11 +30,6 @@
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/os/mod_loader.h"
-//#include "unicode/ucol.h"
-//#include "unicode/ucnv.h"
-
-struct UCollator;
-struct USet;
 
 namespace Jrd {
 
@@ -42,18 +37,16 @@ class UnicodeUtil
 {
 private:
 	struct ICU;
+	class ICUModules;
 
 public:
-	class ICUModules;
 	// routines semantically equivalent with intlobj_new.h
 
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1
 	static USHORT utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
 							 USHORT key_type);	// BOCU-1
-	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
-								const ULONG* exceptions);
-	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
-								const ULONG* exceptions);
+	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, const ULONG* exceptions);
+	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, const ULONG* exceptions);
 	static ULONG utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UCHAR* dst,
 							 USHORT* err_code, ULONG* err_position);
 	static ULONG utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USHORT* dst,
@@ -66,7 +59,7 @@ public:
 							   INTL_BOOL* error_flag);
 
 	static ULONG utf16Length(ULONG len, const USHORT* str);
-	static ULONG utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
+	static ULONG utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
 								ULONG startPos, ULONG length);
 	static INTL_BOOL utf8WellFormed(ULONG len, const UCHAR* str, ULONG* offending_position);
 	static INTL_BOOL utf16WellFormed(ULONG len, const USHORT* str, ULONG* offending_position);
@@ -100,14 +93,13 @@ public:
 		ICU* icu;
 		texttype* tt;
 		USHORT attributes;
-		UCollator* compareCollator;
-		UCollator* partialCollator;
-		UCollator* sortCollator;
-		USet* contractions;
+		void* compareCollator;
+		void* partialCollator;
+		void* sortCollator;
+		void* contractions;
 		int contractionsCount;
-		bool numericSort;
 	};
-
+	
 	friend class Utf16Collation;
 };
 

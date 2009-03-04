@@ -42,12 +42,13 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
+#include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/thd.h"
 #include "../common/classes/locks.h"
-#include "../common/classes/init.h"
 
 #ifdef HAVE_VFORK_H
 #include <vfork.h>
@@ -84,8 +85,7 @@
 
 //#define LOCAL_SEMAPHORES 4
 
-struct sig
-{
+struct sig {
 	struct sig* sig_next;
 	int sig_signal;
 	union {
@@ -115,7 +115,10 @@ static bool initialized_signals = false;
 static SIG volatile signals = NULL;
 static SLONG volatile overflow_count = 0;
 
-static Firebird::GlobalPtr<Firebird::Mutex> sig_mutex;
+static Firebird::Mutex sig_mutex;
+
+static int process_id = 0;
+
 
 const char* GDS_RELAY	= "/bin/gds_relay";
 
@@ -133,7 +136,11 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 #define SIG_HOLD	SIG_DFL
 #endif
 
-void ISC_enter()
+// Not thread-safe 
+
+ULONG isc_enter_count = 0;
+
+void ISC_enter(void)
 {
 /**************************************
  *
@@ -154,11 +161,55 @@ void ISC_enter()
 #ifdef DEBUG_FPE_HANDLING
 /* Debug code to simulate an FPE occuring during DB Operation */
 	if (overflow_count < 100)
-		kill(getpid(), SIGFPE);
+		(void) kill(getpid(), SIGFPE);
 #endif
 }
 
-void ISC_exit()
+namespace {
+	volatile int inhibitCounter = 0;
+	Firebird::Mutex inhibitMutex;
+	volatile bool inSignalHandler = false;
+	volatile FB_UINT64 pendingSignals = 0;
+}
+
+SignalInhibit::SignalInhibit() throw()
+	: locked(!inSignalHandler)	// When called from signal handler, no need
+								// to care - signals are already inhibited.
+{
+	if (!locked)
+		return;
+
+	Firebird::MutexLockGuard lock(inhibitMutex);
+
+	++inhibitCounter;
+}
+
+void SignalInhibit::enable() throw()
+{
+	if (!locked)
+		return;
+
+	locked = false;
+
+	Firebird::MutexLockGuard lock(inhibitMutex);
+
+	fb_assert(inhibitCounter > 0);
+	if (--inhibitCounter == 0) {
+		while (pendingSignals)
+		{
+			for (int n = 0; pendingSignals && n < 64; n++)
+			{
+				if (pendingSignals & (QUADCONST(1) << n)) 
+				{
+					pendingSignals &= ~(QUADCONST(1) << n);
+					ISC_kill(process_id, n + 1);
+				}
+			}
+		}
+	}
+}		
+
+void ISC_exit(void)
 {
 /**************************************
  *
@@ -208,10 +259,10 @@ int ISC_kill(SLONG pid, SLONG signal_number)
    send to him.  */
 
 	int pipes[2];
-
+	
 	if (!relay_pipe) {
 		TEXT process[MAXPATHLEN], arg[10];
-
+		
 		gds__prefix(process, GDS_RELAY);
 		if (access(process, X_OK) != 0) {
 			// we don't have relay, therefore simply give meaningful diagnostic
@@ -284,7 +335,11 @@ static bool isc_signal2(
 
 	SIG sig;
 
-	Firebird::MutexLockGuard guard(sig_mutex);
+/* The signal handler needs the process id */
+	if (!process_id)
+		process_id = getpid();
+
+	sig_mutex.enter();
 
 /* See if this signal has ever been cared about before */
 
@@ -309,7 +364,7 @@ static bool isc_signal2(
 		sigaddset(&act.sa_mask, signal_number);
 		sigaction(signal_number, &act, &oact);
 		old_sig_w_siginfo = oact.sa_flags & SA_SIGINFO;
-
+		
 		if (oact.sa_sigaction != signal_action &&
 			oact.sa_handler != SIG_DFL &&
 			oact.sa_handler != SIG_HOLD &&
@@ -325,8 +380,10 @@ static bool isc_signal2(
 
 	/* Que up the new ISC signal handler routine */
 
-	que_signal(signal_number, handler, arg, flags, false);
+	que_signal(signal_number, handler, arg, flags, old_sig_w_siginfo);
 
+	sig_mutex.leave();
+	
 	return rc;
 }
 
@@ -349,12 +406,12 @@ void ISC_signal_cancel(
 	SIG sig;
 	volatile SIG* ptr;
 
-	Firebird::MutexLockGuard guard(sig_mutex);
+	sig_mutex.enter();
 
 	for (ptr = &signals; sig = *ptr;) {
 		if (sig->sig_signal == signal_number &&
 			(handler == NULL ||
-			 (sig->sig_routine.user == handler && sig->sig_arg == arg)))
+			 (sig->sig_routine.user == handler && sig->sig_arg == arg))) 
 		{
 			*ptr = sig->sig_next;
 			gds__free(sig);
@@ -362,10 +419,13 @@ void ISC_signal_cancel(
 		else
 			ptr = &(*ptr)->sig_next;
 	}
+
+	sig_mutex.leave();
+
 }
 
 
-void ISC_signal_init()
+void ISC_signal_init(void)
 {
 /**************************************
  *
@@ -386,6 +446,8 @@ void ISC_signal_init()
 	overflow_count = 0;
 	gds__register_cleanup(cleanup, 0);
 
+	process_id = getpid();
+
 	isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
 
 }
@@ -404,6 +466,12 @@ static void cleanup(void* arg)
  *
  **************************************/
 	signals = NULL;
+
+	pendingSignals = 0;
+
+	inhibitCounter = 0;
+
+	process_id = 0;
 
 	initialized_signals = false;
 }
@@ -425,19 +493,31 @@ static SLONG overflow_handler(void* arg)
 	fprintf(stderr, "overflow_handler (%x)\n", arg);
 #endif
 
-	++overflow_count;
+/* If we're within ISC world (inside why-value) when the FPE occurs
+ * we handle it (basically by ignoring it).  If it occurs outside of
+ * ISC world, return back a code that tells signal_action to call any
+ * customer provided handler.
+ */
+	if (isc_enter_count) {
+		++overflow_count;
 #ifdef DEBUG_FPE_HANDLING
-	fprintf(stderr, "SIGFPE in isc code ignored %d\n",
-			   overflow_count);
+		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
+				   overflow_count);
 #endif
-	/* We've "handled" the FPE - let signal_action know not to chain
-	   the signal to other handlers */
-	return SIG_informs_stop;
+		/* We've "handled" the FPE - let signal_action know not to chain
+		   the signal to other handlers */
+		return SIG_informs_stop;
+	}
+	else {
+		/* We've NOT "handled" the FPE - let signal_action know to chain
+		   the signal to other handlers */
+		return SIG_informs_continue;
+	}
 }
 
 static SIG que_signal(int signal_number,
-					  FPTR_VOID handler,
-					  void* arg,
+					  FPTR_VOID handler, 
+					  void* arg, 
 					  int flags,
 					  bool sig_w_siginfo)
 {
@@ -492,6 +572,21 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
  *
  **************************************/
 
+	if (inhibitCounter > 0 && number != SIGALRM)
+	{
+		pendingSignals |= QUADCONST(1) << (number - 1);
+		return;
+	}
+
+#ifndef SUPERSERVER
+	// Save signal delivery status.
+	const bool restoreState = inSignalHandler;
+	inSignalHandler = true;
+	sigset_t set, localSavedSigmask;
+	sigfillset(&set);
+	sigprocmask(SIG_BLOCK, &set, &localSavedSigmask);
+#endif
+
 	// Invoke everybody who may have expressed an interest.
 	for (SIG sig = signals; sig; sig = sig->sig_next)
 	{
@@ -508,7 +603,7 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 					(*sig->sig_routine.client1)(number);
 				}
 			}
-			else if (sig->sig_flags & SIG_informs)
+			else if (sig->sig_flags & SIG_informs) 
 			{
 				/* Routine will tell us whether to chain the signal to other handlers */
 				if ((*sig->sig_routine.informs)(sig->sig_arg) == SIG_informs_stop)
@@ -522,5 +617,10 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 			}
 		}
 	}
+
+#ifndef SUPERSERVER
+	sigprocmask(SIG_SETMASK, &localSavedSigmask, NULL);
+	inSignalHandler = restoreState;
+#endif
 }
 

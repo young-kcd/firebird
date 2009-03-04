@@ -52,10 +52,11 @@
 ;Hard code some defaults to aid debugging and running script standalone.
 ;In practice, these values are set in the environment and we use the env vars.
 #define MajorVer "2"
-#define MinorVer "5"
-#define PointRelease "0"
+#define MinorVer "1"
+#define PointRelease "1"
 #define BuildNumber "0"
 #define PackageNumber "0"
+#define FilenameSuffix ""
 
 
 ;-------Start of Innosetup script debug flags section
@@ -111,7 +112,7 @@
 ;     uses them.
 #define release
 #define no_pdb
-;#define i18n
+#define i18n
 
 
 ;------If necessary we can turn off i18n by uncommenting this undefine
@@ -136,7 +137,7 @@
 #define MinorVer FB_MINOR_VER
 #endif
 
-#if Len(GetEnv("FB_REV_VER")) > 0
+#if Len(GetEnv("FB_REV_NO")) > 0
 #define FB_REV_NO GetEnv("FB_REV_NO")
 #endif
 #ifdef FB_REV_NO
@@ -157,6 +158,15 @@
 #define PackageNumber FBBUILD_PACKAGE_NUMBER
 #endif
 
+#if Len(GetEnv("FBBUILD_FILENAME_SUFFIX")) > 0
+#define FBBUILD_FILENAME_SUFFIX GetEnv("FBBUILD_FILENAME_SUFFIX")
+#endif
+#ifdef FBBUILD_FILENAME_SUFFIX
+#define FilenameSuffix FBBUILD_FILENAME_SUFFIX
+#if pos('_',FilenameSuffix) == 0
+#define FilenameSuffix "_" + FilenameSuffix
+#endif
+#endif
 
 
 #if BuildNumber == "0"
@@ -181,8 +191,8 @@
 #endif
 #define msvc_version 8
 
-;BaseVer should be used for all v2.5.n installs.
-;This allows us to upgrade silently from 2.5.m to 2.5.n
+;BaseVer should be used for all v2.1.n installs.
+;This allows us to upgrade silently from 2.1.m to 2.1.n
 #define BaseVer MajorVer + "_" + MinorVer
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
@@ -191,8 +201,6 @@
 #define FB15_cur_ver GetEnv("FBBUILD_FB15_CUR_VER")
 #define FB20_cur_ver GetEnv("FBBUILD_FB20_CUR_VER")
 #define FB21_cur_ver GetEnv("FBBUILD_FB21_CUR_VER")
-#define FB25_cur_ver GetEnv("FBBUILD_FB25_CUR_VER")
-#define FB_cur_ver FB25_cur_ver
 
 ; We can save space by shipping a pdb package that just includes
 ; the pdb files. It would then upgrade an existing installation,
@@ -238,8 +246,8 @@ AppUpdatesURL={#MyAppURL}
 AppVersion={#MyAppVerString}
 
 SourceDir=..\..\..\..\
-OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}
-;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}_Setup-Manifest.txt
+OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}
+;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}_Setup-Manifest.txt
 OutputDir=builds\install_images
 ;!!! These directories are as seen from SourceDir !!!
 #define ScriptsDir "builds\install\arch-specific\win32"
@@ -362,9 +370,9 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 
 [Run]
 #if msvc_version == 8
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
@@ -408,29 +416,21 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\ClassicServerComponent; Comment: Run Firebird classic server
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
-Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
-Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-#ifdef FB25_FULL_DOCS
-;dummy define. We don't yet have full docs, so lets not create links
-Name: {group}\Firebird {#FB_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
-Name: {group}\Firebird {#FB_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
-#endif
-#ifndef DONT_INCLUDE_FB21_DOCS
-; dummy define. for now (alpha 1) we include Fb 2.1 docs.
+Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
-Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
-#endif
-Name: {group}\Firebird 2.1 Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB21_cur_ver}
+Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
+Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
+Name: {group}\Firebird {#FB15_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB15_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird 2.1 Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
-Name: {group}\{cm:IconReadme,{#FB_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
-Name: {group}\{cm:IconReadme,{#FB_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
 #endif
-Name: {group}\{cm:Uninstall,{#FB_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
+Name: {group}\{cm:Uninstall,{#FB21_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
 #ifdef files
@@ -513,8 +513,8 @@ Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: C
 #endif
 
 #if msvc_version >= 8
-;If Host O/S has Windows Installer 3.0 installed then we don't need to do local install of runtime libraries
-;In fact, local install is next to useless as the fbintl.dll will still fail to load.
+;If Host O/S has Windows Installer 3.0 installed then we use msiexec to deploy the runtime libraries
+;In fact, even if the runtime libraries did exist locally the system will alway load a shared assembly if it is available.
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
@@ -560,6 +560,9 @@ Source: {#FilesDir}\include\*.*; DestDir: {app}\include; Components: DevAdminCom
 Source: {#FilesDir}\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: {#FilesDir}\intl\fbintl.conf; DestDir: {app}\intl; Components: ServerComponent; Flags: onlyifdoesntexist
 Source: {#FilesDir}\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags: ignoreversion;
+#if PlatformTarget == "x64"
+Source: {#WOW64Dir}\lib\*.lib; DestDir: {app}\WOW64\lib; Components: DevAdminComponent; Flags: ignoreversion
+#endif
 Source: {#FilesDir}\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: {#FilesDir}\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: {#FilesDir}\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;

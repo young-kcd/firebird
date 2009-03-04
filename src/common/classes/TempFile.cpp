@@ -52,11 +52,13 @@
 // Const definitions
 
 static const char* ENV_VAR = "FIREBIRD_TMP";
-static const char* DEFAULT_PATH =
+static const char* DEFAULT_PATH = 
 #if defined(UNIX)
 	"/tmp/";
 #elif defined(WIN_NT)
 	"c:\\temp\\";
+#elif defined(VMS)
+	"SYS$SCRATCH:";
 #else
 	NULL;
 #endif
@@ -126,7 +128,8 @@ Firebird::PathName TempFile::create(const Firebird::PathName& prefix)
 // Creates temporary file with a unique filename
 //
 
-void TempFile::init(const Firebird::PathName& directory, const Firebird::PathName& prefix)
+void TempFile::init(const Firebird::PathName& directory,
+				    const Firebird::PathName& prefix)
 {
 	// set up temporary directory, if not specified
 	filename = directory;
@@ -147,13 +150,15 @@ void TempFile::init(const Firebird::PathName& directory, const Firebird::PathNam
 	{
 		Firebird::PathName name = filename + prefix;
 		__int64 temp = randomness;
-		for (size_t i = 0; i < suffix.length(); i++)
+		for (int i = 0; i < suffix.length(); i++)
 		{
 			suffix[i] = NAME_LETTERS[temp % (strlen(NAME_LETTERS))];
 			temp /= strlen(NAME_LETTERS);
 		}
 		name += suffix;
-		DWORD attributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS;
+		DWORD attributes = FILE_ATTRIBUTE_NORMAL |
+						   FILE_ATTRIBUTE_TEMPORARY |
+						   FILE_FLAG_RANDOM_ACCESS;
 		if (doUnlink)
 		{
 			attributes |= FILE_FLAG_DELETE_ON_CLOSE;
@@ -227,16 +232,15 @@ TempFile::~TempFile()
 // Performs a positioning operation
 //
 
-void TempFile::seek(const offset_t offset)
+void TempFile::seek(offset_t offset)
 {
 	if (position == offset)
 		return;
-
 #if defined(WIN_NT)
 	LARGE_INTEGER liOffset;
 	liOffset.QuadPart = offset;
-	const DWORD seek_result =
-		SetFilePointer(handle, (LONG) liOffset.LowPart, &liOffset.HighPart, FILE_BEGIN);
+	const DWORD seek_result = SetFilePointer(handle, (LONG) liOffset.LowPart,
+									  &liOffset.HighPart, FILE_BEGIN);
 	if (seek_result == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 	{
 		Firebird::system_call_failed::raise("SetFilePointer");
@@ -276,7 +280,8 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	seek(offset);
 #if defined(WIN_NT)
 	DWORD bytes = 0;
-	if (!ReadFile(handle, buffer, length, &bytes, NULL) || bytes != length)
+	if (!ReadFile(handle, buffer, length, &bytes, NULL) ||
+		bytes != length)
 	{
 		Firebird::system_call_failed::raise("ReadFile");
 	}
@@ -297,13 +302,14 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to file
 //
 
-size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
+size_t TempFile::write(offset_t offset, void* buffer, size_t length)
 {
 	fb_assert(offset <= size);
 	seek(offset);
 #if defined(WIN_NT)
 	DWORD bytes = 0;
-	if (!WriteFile(handle, buffer, length, &bytes, NULL) || bytes != length)
+	if (!WriteFile(handle, buffer, length, &bytes, NULL) ||
+		bytes != length)
 	{
 		Firebird::system_call_failed::raise("WriteFile");
 	}

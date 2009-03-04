@@ -34,40 +34,38 @@
 #ifndef JRD_PAG_H
 #define JRD_PAG_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
-#include "../jrd/ods.h"
 
 namespace Jrd {
-
+ 
 /* Page control block -- used by PAG to keep track of critical
    constants */
 /**
 class PageControl : public pool_alloc<type_pgc>
 {
     public:
-	SLONG pgc_high_water;		// Lowest PIP with space
-	SLONG pgc_ppp;				// Pages per pip
-	SLONG pgc_pip;				// First pointer page
-	ULONG pgc_bytes;			// Number of bytes of bit in PIP
-	ULONG pgc_tpt;				// Transactions per TIP
-	ULONG pgc_gpg;				// Generators per generator page
+	SLONG pgc_high_water;		// Lowest PIP with space 
+	SLONG pgc_ppp;				// Pages per pip 
+	SLONG pgc_pip;				// First pointer page 
+	ULONG pgc_bytes;			// Number of bytes of bit in PIP 
+	ULONG pgc_tpt;				// Transactions per TIP 
+	ULONG pgc_gpg;				// Generators per generator page 
 };
 **/
 
 // page spaces below TEMP_PAGE_SPACE is regular database pages
 // TEMP_PAGE_SPACE and page spaces above TEMP_PAGE_SPACE is temporary pages
 const USHORT DB_PAGE_SPACE		= 1;
-const USHORT TEMP_PAGE_SPACE	= 256;
+const USHORT TEMP_PAGE_SPACE	= 256;	
 
 class jrd_file;
-class Database;
-class thread_db;
 
 class PageSpace : public pool_alloc<type_PageSpace>
 {
 public:
-	PageSpace(USHORT aPageSpaceID)
+	PageSpace(USHORT aPageSpaceID) 
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
@@ -79,18 +77,16 @@ public:
 	~PageSpace();
 
 	USHORT pageSpaceID;
-	SLONG pipHighWater;		// Lowest PIP with space
-	SLONG ppFirst;			// First pointer page
+	SLONG pipHighWater;		// Lowest PIP with space 
+	SLONG ppFirst;			// First pointer page 
 
 	jrd_file*	file;
 
-	inline bool isTemporary() const
-	{
+	inline bool isTemporary() const {
 		return (pageSpaceID >= TEMP_PAGE_SPACE);
 	}
 
-	static inline SLONG generate(const void* , const PageSpace* Item)
-	{
+	static inline SLONG generate(const void* , const PageSpace* Item) {
 		return Item->pageSpaceID;
 	}
 
@@ -112,7 +108,7 @@ private:
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
-	PageManager(Firebird::MemoryPool& aPool) :
+	PageManager(Firebird::MemoryPool& aPool) : 
 		pageSpaces(aPool),
 		pool(aPool)
 	{
@@ -120,17 +116,17 @@ public:
 		bytesBitPIP = 0;
 		transPerTIP = 0;
 		gensPerPage = 0;
-
+		
 		dbPageSpace = addPageSpace(DB_PAGE_SPACE);
 		// addPageSpace(TEMP_PAGE_SPACE);
 	}
 
 	~PageManager()
 	{
-		for (size_t i = pageSpaces.getCount(); i > 0; --i)
+		for (int i = pageSpaces.getCount() - 1; i >= 0; --i)
 		{
-			PageSpace* pageSpace = pageSpaces[i - 1];
-			pageSpaces.remove(i - 1);
+			PageSpace* pageSpace = pageSpaces[i];
+			pageSpaces.remove(i);
 			delete pageSpace;
 		}
 	}
@@ -144,14 +140,15 @@ public:
 	void closeAll();
 	void releaseLocks();
 
-	SLONG pagesPerPIP;			// Pages per pip
-	ULONG bytesBitPIP;			// Number of bytes of bit in PIP
-	SLONG transPerTIP;			// Transactions per TIP
-	ULONG gensPerPage;			// Generators per generator page
+	SLONG pagesPerPIP;			// Pages per pip 
+	ULONG bytesBitPIP;			// Number of bytes of bit in PIP 
+	SLONG transPerTIP;			// Transactions per TIP 
+	ULONG gensPerPage;			// Generators per generator page 
 	PageSpace* dbPageSpace;		// database page space
 
 private:
-	typedef Firebird::SortedArray<PageSpace*, Firebird::EmptyStorage<PageSpace*>,
+	typedef Firebird::SortedArray<
+		PageSpace*, Firebird::EmptyStorage<PageSpace*>, 
 		USHORT, PageSpace> PageSpaceArray;
 
 	PageSpaceArray pageSpaces;
@@ -161,8 +158,7 @@ private:
 class PageNumber
 {
 public:
-	inline PageNumber(const USHORT aPageSpace, const SLONG aPageNum)
-	{
+	inline PageNumber(const USHORT aPageSpace, const SLONG aPageNum) {
 		pageSpaceID = aPageSpace;
 		pageNum	= aPageNum;
 	}
@@ -172,40 +168,33 @@ public:
 		pageNum	= aPageNum;
 	}
 	*/
-	inline PageNumber(const PageNumber& from)
-	{
+	inline PageNumber(const PageNumber& from) {
 		pageSpaceID = from.pageSpaceID;
 		pageNum	= from.pageNum;
 	}
 
-	inline SLONG getPageNum() const
-	{
+	inline SLONG getPageNum() const {
 		return pageNum;
-	}
+	};
 
-	inline SLONG getPageSpaceID() const
-	{
+	inline SLONG getPageSpaceID() const {
 		return pageSpaceID;
-	}
+	} 
 
-	inline SLONG setPageSpaceID(const USHORT aPageSpaceID)
-	{
+	inline SLONG setPageSpaceID(const USHORT aPageSpaceID) {
 		pageSpaceID = aPageSpaceID;
 		return pageSpaceID;
-	}
+	} 
 
-	inline bool isTemporary() const
-	{
+	inline bool isTemporary() const {
 		return (pageSpaceID >= TEMP_PAGE_SPACE);
 	}
 
-	inline static SSHORT getLockLen()
-	{
+	inline static SSHORT getLockLen() {
 		return sizeof(SLONG) + sizeof(ULONG);
 	}
 
-	inline void getLockStr(UCHAR* str) const
-	{
+	inline void getLockStr(UCHAR* str) const {
 		memcpy(str, &pageNum, sizeof(SLONG));
 		str += sizeof(SLONG);
 
@@ -213,55 +202,46 @@ public:
 		memcpy(str, &val, sizeof(ULONG));
 	}
 
-	inline PageNumber& operator=(const PageNumber& from)
-	{
+	inline PageNumber& operator=(const PageNumber& from) {
 		pageSpaceID = from.pageSpaceID;
 		pageNum	= from.pageNum;
 		return *this;
 	}
 
-	inline SLONG operator=(const SLONG from)
-	{
+	inline SLONG operator=(const SLONG from) {
 		pageNum	= from;
 		return pageNum;
 	}
 
-	inline bool operator==(const PageNumber& other) const
-	{
-		return (pageNum == other.pageNum) &&
+	inline bool operator==(const PageNumber& other) const {
+		return (pageNum == other.pageNum) && 
 			(pageSpaceID == other.pageSpaceID);
 	}
 
-	inline bool operator!=(const PageNumber& other) const
-	{
+	inline bool operator!=(const PageNumber& other) const {
 		return !(*this == other);
 	}
 
-	inline bool operator>(const PageNumber& other) const
-	{
+	inline bool operator>(const PageNumber& other) const {
 		return (pageSpaceID > other.pageSpaceID) ||
 			(pageSpaceID == other.pageSpaceID) && (pageNum > other.pageNum);
 	}
 
-	inline bool operator>=(const PageNumber& other) const
-	{
+	inline bool operator>=(const PageNumber& other) const {
 		return (pageSpaceID > other.pageSpaceID) ||
 			(pageSpaceID == other.pageSpaceID) && (pageNum >= other.pageNum);
 	}
 
-	inline bool operator<(const PageNumber& other) const
-	{
+	inline bool operator<(const PageNumber& other) const {
 		return !(*this >= other);
 	}
 
-	inline bool operator<=(const PageNumber& other) const
-	{
+	inline bool operator<=(const PageNumber& other) const {
 		return !(*this > other);
 	}
 
 	/*
-	inline operator SLONG() const
-	{
+	inline operator SLONG() const {
 		return pageNum;
 	}
 	*/

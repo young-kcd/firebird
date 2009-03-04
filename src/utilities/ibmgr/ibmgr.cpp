@@ -71,11 +71,11 @@ const SSHORT ACT_PROMPT	= 2;
 
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);
-static SSHORT get_switches(int argc, TEXT** argv, const in_sw_tab_t* in_sw_table,
-						   ibmgr_data_t* ibmgr_data, bool* quitflag, bool zapPasswd);
+static SSHORT get_switches(int, const TEXT* const*, const in_sw_tab_t*,
+	ibmgr_data_t*, bool*, bool);
 static SSHORT parse_cmd_line(int, TEXT**, bool);
-static void print_config();
-static void print_help();
+static void print_config(void);
+static void print_help(void);
 
 
 static ibmgr_data_t ibmgr_data;
@@ -95,16 +95,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	the specified argc/argv to IBMGR_exec_line (see below).
  *
  **************************************/
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
-	fprintf(stderr, "*** fbmgr is deprecated, will be removed soon ***\n");
-	gds__log("*** fbmgr is deprecated, will be removed soon ***");
 
 /* Let's see if we have something in
    environment variables
 */
 	Firebird::string user, password;
-	fb_utils::readenv(ISC_USER, user);
-	fb_utils::readenv(ISC_PASSWORD, password);
+	fb_utils::readenv("ISC_USER", user);
+	fb_utils::readenv("ISC_PASSWORD", password);
 
 	Firebird::string host;
 /* MMM - do not allow to change host now
@@ -134,7 +135,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		!strcmp(pw->pw_name, INTERBASE_USER_NAME) ||
 		!strcmp(pw->pw_name, INTERBASE_USER_SHORT))
 	{
-		strcpy(ibmgr_data.user, SYSDBA_USER_NAME);
+			strcpy(ibmgr_data.user, SYSDBA_USER_NAME);
 	}
 	else
 		copy_str_upper(ibmgr_data.user, pw->pw_name);
@@ -155,7 +156,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 
 /* Shutdown is not in progress and we are not attached to service yet.
-   But obviously we will need attachment.
+   But obviously we will need attachment. 
 */
 	ibmgr_data.shutdown = false;
 	ibmgr_data.attached = 0;
@@ -170,18 +171,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 /* Special case a solitary -z switch.
    Print the version and then drop into prompt mode.
 */
-	if (argc == 2 && *argv[1] == '-' && (argv[1][1] == 'Z' || argv[1][1] == 'z'))
+	if (argc == 2 &&
+		*argv[1] == '-' && (argv[1][1] == 'Z' || argv[1][1] == 'z'))
 	{
 		parse_cmd_line(argc, argv, false);
 		argc--;
 	}
 
 	SSHORT ret;
-	if (argc > 1)
-	{
+	if (argc > 1) {
 		ret = parse_cmd_line(argc, argv, true);
-		if (ret == FB_SUCCESS)
-		{
+		if (ret == FB_SUCCESS) {
 			ret = SRVRMGR_exec_line(&ibmgr_data);
 			if (ret) {
 				SRVRMGR_msg_get(ret, msg);
@@ -202,13 +202,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	int local_argc;
 	SCHAR* local_argv[MAXARGS];
 	TEXT stuff[MAXSTUFF];
-
-	for (;;)
-	{
+	
+	for (;;) {
 		if (get_line(&local_argc, local_argv, stuff))
 			break;
-		if (local_argc > 1)
-		{
+		if (local_argc > 1) {
 			ret = parse_cmd_line(local_argc, local_argv, false);
 			if (ret == ACT_QUIT)
 				break;
@@ -258,16 +256,13 @@ if (sw_service_gsec)
    non-newline for that matter), ignore it; if it's a newline, we're
    done; otherwise, put it in the current argument */
 
-	while (*argc < MAXARGS && count > 0)
-	{
+	while (*argc < MAXARGS && count > 0) {
 		TEXT c = getc(stdin);
-		if (c > ' ' && c <= '~')
-		{
+		if (c > ' ' && c <= '~') {
 			/* note that the first argument gets a '-' appended to the front to fool
 			   the switch checker into thinking it came from the command line */
 
-			for (argv[(*argc)++] = cursor; count > 0; count--)
-			{
+			for (argv[(*argc)++] = cursor; count > 0; count--) {
 				if (first) {
 					first = false;
 					if (c != '?') {
@@ -290,7 +285,8 @@ if (sw_service_gsec)
 				errno = 0;
 				continue;
 			}
-			return true;
+			else
+				return true;
 		}
 	}
 
@@ -299,7 +295,8 @@ if (sw_service_gsec)
 }
 
 
-static SSHORT get_switches(int argc,
+static SSHORT get_switches(
+						   int argc,
 						   TEXT** argv,
 						   const in_sw_tab_t* in_sw_table,
 						   ibmgr_data_t* ibmgr_data, bool * quitflag, bool zapPasswd)
@@ -327,18 +324,15 @@ static SSHORT get_switches(int argc,
 */
 	*quitflag = false;
 	USHORT last_sw = IN_SW_IBMGR_0;
-	for (--argc; argc > 0; argc--)
-	{
+	for (--argc; argc > 0; argc--) {
 		TEXT* string = *++argv;
 		if (*string == '?')
 			ibmgr_data->operation = OP_HELP;
-		else if (*string != '-')
-		{
+		else if (*string != '-') {
 			/* this is not a switch, so it must be a parameter for
 			   the previous switch, if any
 			 */
-			switch (last_sw)
-			{
+			switch (last_sw) {
 			case IN_SW_IBMGR_POOL:
 				if (strlen(string) >= MAXPATHLEN) {
 					SRVRMGR_msg_get(MSG_FLNMTOOLONG, msg);
@@ -355,7 +349,7 @@ static SSHORT get_switches(int argc,
 
 				   MMM - it has to be more sophisticated check
 				   against compete host name including domain
-				   and/or network address, but... May be later
+				   and/or network addreass, but... May be later
 				 */
 				if (strcmp(ibmgr_data->host, string)) {
 					strcpy(ibmgr_data->host, string);
@@ -398,7 +392,7 @@ static SSHORT get_switches(int argc,
 				pf.copyTo(ibmgr_data->pidfile, sizeof(ibmgr_data->pidfile));
 				break;
 			}
-
+			
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVPAR, msg);
 				fprintf(OUTFILE, "%s\n", msg);
@@ -434,13 +428,13 @@ static SSHORT get_switches(int argc,
 			}
 			last_sw = IN_SW_IBMGR_0;
 		}
-		else
-		{
+		else {
 			/* iterate through the switch table, looking for matches
 			 */
 			USHORT in_sw = IN_SW_IBMGR_0;
 			const TEXT* q;
-			for (const in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
+			for (const in_sw_tab_t* in_sw_tab = in_sw_table; q = in_sw_tab->in_sw_name;
+				 in_sw_tab++)
 			{
 				const TEXT* p = string + 1;
 
@@ -452,10 +446,8 @@ static SSHORT get_switches(int argc,
 				/* compare switch to switch name in table
 				 */
 				int l = 0;
-				while (*p)
-				{
-					if (!*++p)
-					{
+				while (*p) {
+					if (!*++p) {
 						if (l >= in_sw_tab->in_sw_min_length)
 							in_sw = in_sw_tab->in_sw;
 						else
@@ -475,8 +467,7 @@ static SSHORT get_switches(int argc,
 			/* If the previous switch requires parameters and we are
 			   here, this is an error
 			 */
-			switch (last_sw)
-			{
+			switch (last_sw) {
 			case IN_SW_IBMGR_PASSWORD:
 			case IN_SW_IBMGR_USER:
 			case IN_SW_IBMGR_HOST:
@@ -486,8 +477,7 @@ static SSHORT get_switches(int argc,
 				return ERR_SYNTAX;
 			}
 
-			switch (in_sw)
-			{
+			switch (in_sw) {
 			case IN_SW_IBMGR_START:
 			case IN_SW_IBMGR_SHUT:
 			case IN_SW_IBMGR_SET:
@@ -504,8 +494,7 @@ static SSHORT get_switches(int argc,
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
 				}
-				switch (in_sw)
-				{
+				switch (in_sw) {
 				case IN_SW_IBMGR_START:
 					ibmgr_data->operation = OP_START;
 					break;
@@ -542,7 +531,7 @@ static SSHORT get_switches(int argc,
 			case IN_SW_IBMGR_HOST:
 
 				/* The above switches are separate case: they can be
-				   used as operation or parameter switches. If an
+				   used as operation or parameter switches. If an 
 				   operation has already been specified, we assume it
 				   is a switch else we set an implied operation type
 				   OP_SET.
@@ -564,8 +553,7 @@ static SSHORT get_switches(int argc,
 				   psrameters will require new attachment to service
 				 */
 				err_msg_no = 0;
-				switch (in_sw)
-				{
+				switch (in_sw) {
 				case IN_SW_IBMGR_HOST:
 					if (ibmgr_data->par_entered & ENT_HOST) {
 						err_msg_no = MSG_INVSWSW;
@@ -606,7 +594,7 @@ static SSHORT get_switches(int argc,
 			case IN_SW_IBMGR_IGNORE:
 			case IN_SW_IBMGR_POOL:
 
-				/* These switches are operation modifiers or
+				/* These switches are operation modifiers or 
 				   suboperations. Each of them makes sense only
 				   in a contex of certain operation. So, let's
 				   make sure it is a right contex.
@@ -628,8 +616,7 @@ static SSHORT get_switches(int argc,
 					return ERR_SYNTAX;
 				}
 				err_msg_no = 0;
-				switch (in_sw)
-				{
+				switch (in_sw) {
 				case IN_SW_IBMGR_ONCE:
 				case IN_SW_IBMGR_FOREVER:
 				case IN_SW_IBMGR_SIGNORE:
@@ -637,7 +624,7 @@ static SSHORT get_switches(int argc,
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-
+					
 					switch (in_sw)
 					{
 					case IN_SW_IBMGR_ONCE:
@@ -660,7 +647,7 @@ static SSHORT get_switches(int argc,
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-
+					
 					switch (in_sw)
 					{
 					case IN_SW_IBMGR_NOW:
@@ -696,7 +683,7 @@ static SSHORT get_switches(int argc,
 			case IN_SW_IBMGR_Z:
 
 				/* This is also a separate case - it could be
-				   operation switch or just switch. Also,
+				   operation switch or just switch. Also, 
 				   does not matter how many times version switch
 				   was specified, we output version only once
 				 */
@@ -728,7 +715,7 @@ static SSHORT get_switches(int argc,
 				}
 				break;
 			}
-
+			
 			default:
 #ifdef DEV_BUILD
 				fprintf(OUTFILE, "ASSERT: file %s line %"LINEFORMAT": in_sw = %d\n",
@@ -746,8 +733,7 @@ static SSHORT get_switches(int argc,
 /* If the previous switch requires parameters and we are
    here, this is an error
 */
-	switch (last_sw)
-	{
+	switch (last_sw) {
 	case IN_SW_IBMGR_PASSWORD:
 	case IN_SW_IBMGR_USER:
 	case IN_SW_IBMGR_HOST:
@@ -769,7 +755,7 @@ static SSHORT get_switches(int argc,
 }
 
 
-static void print_config()
+static void print_config(void)
 {
 /**************************************
  *
@@ -786,7 +772,8 @@ static void print_config()
 #ifdef DEBUG
 	fprintf(OUTFILE, "\nReal user:\t%s\nPassword:\t%s\n\n",
 			   ibmgr_data.real_user, ibmgr_data.password);
-	fprintf(OUTFILE, "Attached:\t%s\nNew attach:\t%s %s %s\nShutdown:\t%s\n\n",
+	fprintf(OUTFILE,
+			   "Attached:\t%s\nNew attach:\t%s %s %s\nShutdown:\t%s\n\n",
 			   ibmgr_data.attached ? "yes" : "no",
 			   ibmgr_data.reattach & REA_HOST ? "HOST" : "no",
 			   ibmgr_data.reattach & REA_PASSWORD ? "PASSWORD" : "no",
@@ -796,7 +783,7 @@ static void print_config()
 }
 
 
-static void print_help()
+static void print_help(void)
 {
 /**************************************
  *
@@ -811,7 +798,8 @@ static void print_help()
 	TEXT msg2[MSG_LEN];
 
 	fprintf(OUTFILE, "\n\n");
-	fprintf(OUTFILE, "Usage:		fbmgr -command [-option [parameter]]\n\n");
+	fprintf(OUTFILE,
+			   "Usage:		fbmgr -command [-option [parameter]]\n\n");
 	fprintf(OUTFILE, "or		fbmgr<RETURN>\n");
 	fprintf(OUTFILE, "		FBMGR> command [-option [parameter]]\n\n");
 	fprintf(OUTFILE, "		shut  [-now]		shutdown server\n");
@@ -821,8 +809,10 @@ static void print_help()
 	fprintf(OUTFILE, "		pidfile <filename>	file to save fbserver's PID\n");
 	fprintf(OUTFILE, "		help			prints help text\n");
 	fprintf(OUTFILE, "		quit			quit prompt mode\n\n");
-	fprintf(OUTFILE, "Command switches 'user' and 'password' can also be used\n");
-	fprintf(OUTFILE, "as an option switches for commands like start or shut.\n");
+	fprintf(OUTFILE,
+			   "Command switches 'user' and 'password' can also be used\n");
+	fprintf(OUTFILE,
+			   "as an option switches for commands like start or shut.\n");
 	fprintf(OUTFILE, "For example, to shutdown server you can: \n\n");
 	fprintf(OUTFILE, "fbmgr -shut -password <password>\n\n");
 	fprintf(OUTFILE, "or\n\n");
@@ -851,7 +841,7 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
  *
  *	returns:
  *
- *	    FB_SUCCESS   on normal completion,
+ *	    FB_SUCCESS   on normal completion, 
  *	    ACT_QUIT  if user chooses to quit
  *	    ACT_PROMT used by main() to switch into
  *	              the prompt mode
@@ -867,17 +857,16 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 	ibmgr_data.suboperation = SOP_NONE;
 	ibmgr_data.par_entered = 0;
 
-	SSHORT ret = get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
-	if (ret != FB_SUCCESS)
-	{
+	SSHORT ret =
+		get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
+	if (ret != FB_SUCCESS) {
 		if (ret == ERR_SYNTAX) {
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
 			fprintf(OUTFILE, "%s\n", msg);
 		}
 		return ACT_NONE;
 	}
-	switch (ibmgr_data.operation)
-	{
+	switch (ibmgr_data.operation) {
 	case OP_SHUT:
 		if (strcmp(ibmgr_data.user, SYSDBA_USER_NAME)) {
 			SRVRMGR_msg_get(MSG_NOPERM, msg);
@@ -899,9 +888,9 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 
 	case OP_START:
 		if ((strcmp(ibmgr_data.real_user, "root") &&
-				strcmp(ibmgr_data.real_user, FIREBIRD_USER_NAME) &&
-				strcmp(ibmgr_data.real_user, INTERBASE_USER_NAME) &&
-				strcmp(ibmgr_data.real_user, INTERBASE_USER_SHORT)) ||
+			 strcmp(ibmgr_data.real_user, FIREBIRD_USER_NAME) &&
+			 strcmp(ibmgr_data.real_user, INTERBASE_USER_NAME) &&
+			 strcmp(ibmgr_data.real_user, INTERBASE_USER_SHORT)) ||
 			strcmp(ibmgr_data.user, SYSDBA_USER_NAME))
 		{
 			SRVRMGR_msg_get(MSG_NOPERM, msg);

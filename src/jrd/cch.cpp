@@ -43,11 +43,13 @@
 #include "../jrd/sdw.h"
 #include "../jrd/tra.h"
 #include "../jrd/sbm.h"
+#include "../jrd/iberr.h"
 #include "../jrd/nbak.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/iberr_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -55,17 +57,18 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
-#include "../jrd/ThreadStart.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/MsgPrint.h"
 
+
 using namespace Jrd;
 using namespace Ods;
-using namespace Firebird;
 
 /* In the superserver mode, no page locks are acquired through the lock manager.
    Instead, a latching mechanism is used.  So the calls to lock subsystem for
@@ -73,36 +76,39 @@ using namespace Firebird;
    any undesirable side-effects.  The following defines help us achieve that.  */
 
 #ifdef CCH_DEBUG
-#include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #endif
 
 #ifdef SUPERSERVER
 #define	CACHE_WRITER
+#define PAGE_LATCHING
 #endif
 
 #ifdef SUPERSERVER_V2
 #define CACHE_READER
 #endif
 
-#ifdef SUPERSERVER
-#define PAGE_LOCK_RELEASE(lock)
+#ifdef PAGE_LATCHING
+#define PAGE_LOCK(lock, lock_type, wait)
+#define PAGE_LOCK_RELEASE(lock)  
 #define PAGE_LOCK_ASSERT(lock)
-#define PAGE_LOCK_RE_POST(lock)
+#define PAGE_LOCK_OPT(lock, lock_type, wait)
+#define PAGE_LOCK_RE_POST(lock) 
 #define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + \
 			 (int) dbb->dbb_page_size)
 #else
+#define PAGE_LOCK(lock, lock_type, wait)	LCK_lock (tdbb, lock, lock_type, wait)
 #define PAGE_LOCK_RELEASE(lock)			LCK_release (tdbb, lock)
 #define PAGE_LOCK_ASSERT(lock)			LCK_assert (tdbb, lock)
-#define PAGE_LOCK_RE_POST(lock)			LCK_re_post (tdbb, lock)
+#define PAGE_LOCK_OPT(lock, lock_type, wait)	LCK_lock_opt (tdbb, lock, lock_type, wait)
+#define PAGE_LOCK_RE_POST(lock)			LCK_re_post (lock)
 #define PAGE_OVERHEAD	(sizeof (bcb_repeat) + sizeof(BufferDesc) + \
 			 sizeof (Lock) + (int) dbb->dbb_page_size)
 #endif
 
 
 static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
-#ifndef SUPERSERVER
-static Lock* alloc_page_lock(Jrd::thread_db*, BufferDesc*);
+#ifndef PAGE_LATCHING
 static int blocking_ast_bdb(void*);
 #endif
 #ifdef CACHE_READER
@@ -112,9 +118,9 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
 #endif
 static void check_precedence(thread_db*, WIN *, PageNumber);
-static void clear_precedence(thread_db*, BufferDesc*);
+static void clear_precedence(Database*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
-#ifndef SUPERSERVER
+#ifndef PAGE_LATCHING
 static void down_grade(thread_db*, BufferDesc*);
 #endif
 static void expand_buffers(thread_db*, ULONG);
@@ -144,7 +150,7 @@ static void clear_page_dirty_flag(thread_db*, BufferDesc*);
 
 static inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
 {
-	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty)
+	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty) 
 	{
 		bcb->bcb_dirty_count++;
 		QUE_INSERT(bcb->bcb_dirty, bdb->bdb_dirty);
@@ -153,7 +159,7 @@ static inline void insertDirty(BufferControl* bcb, BufferDesc* bdb)
 
 static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 {
-	if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
+	if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty) 
 	{
 		fb_assert(bcb->bcb_dirty_count > 0);
 
@@ -200,72 +206,21 @@ const SLONG MIN_BUFFER_SEGMENT = 65536;
 
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
 
-static inline SharedLatch* allocSharedLatch(thread_db* tdbb, BufferDesc* bdb)
-{
-	BufferControl* bcb = bdb->bdb_dbb->dbb_bcb;
-	SharedLatch* latch;
-	if (QUE_NOT_EMPTY(bcb->bcb_free_slt))
-	{
-		QUE que_inst = bcb->bcb_free_slt.que_forward;
-		QUE_DELETE(*que_inst);
-		latch = BLOCK(que_inst, SharedLatch*, slt_bdb_que);
-	}
-	else
-	{
-		const int BATCH_ALLOC = 64;
-		Database* dbb = bdb->bdb_dbb;
-
-		SharedLatch* latches = latch = FB_NEW(*dbb->dbb_bufferpool) SharedLatch[BATCH_ALLOC];
-		for (int i = 1; i < BATCH_ALLOC; i++) {
-			QUE_APPEND(bcb->bcb_free_slt, latches[i].slt_bdb_que);
-		}
-	}
-
-	latch->slt_bdb = bdb;
-	QUE_APPEND(bdb->bdb_shared, latch->slt_bdb_que);
-
-	latch->slt_tdbb = tdbb;
-	QUE_APPEND(tdbb->tdbb_latches, latch->slt_tdbb_que);
-
-	return latch;
-}
-
-
-static inline void freeSharedLatch(thread_db* tdbb, BufferControl* bcb, SharedLatch* latch)
-{
-	latch->slt_bdb = NULL;
-	QUE_DELETE(latch->slt_bdb_que);
-	QUE_INSERT(bcb->bcb_free_slt, latch->slt_bdb_que);
-
-	latch->slt_tdbb = NULL;
-	QUE_DELETE(latch->slt_tdbb_que);
-}
-
-
-static inline SharedLatch* findSharedLatch(thread_db* tdbb, BufferDesc* bdb)
-{
-	for (QUE que_inst = tdbb->tdbb_latches.que_forward; que_inst != &tdbb->tdbb_latches;
-		 que_inst = que_inst->que_forward)
-	{
-		SharedLatch* latch = BLOCK(que_inst, SharedLatch*, slt_tdbb_que);
-		fb_assert(latch->slt_tdbb == tdbb);
-		if (latch->slt_bdb == bdb) {
-			return latch;
-		}
-	}
-	return NULL;
-}
-
+#ifdef MULTI_THREAD
+#ifndef VMS
+#define INTERLOCK_CACHE
+#endif
+#endif
 
 //
 //#define BCB_MUTEX_ACQUIRE
 //#define BCB_MUTEX_RELEASE
 //
-//#define PRE_MUTEX_ACQUIRE
-//#define PRE_MUTEX_RELEASE
+//#define PRE_MUTEX_ACQUIRE 
+//#define PRE_MUTEX_RELEASE 
 //
-//#define BTC_MUTEX_ACQUIRE
-//#define BTC_MUTEX_RELEASE
+//#define BTC_MUTEX_ACQUIRE 
+//#define BTC_MUTEX_RELEASE 
 //
 //#define LATCH_MUTEX_ACQUIRE
 //#define LATCH_MUTEX_RELEASE
@@ -282,7 +237,6 @@ const int PRE_EXISTS		= -1;
 const int PRE_UNKNOWN		= -2;
 
 const int DUMMY_CHECKSUM	= 12345;
-
 
 USHORT CCH_checksum(BufferDesc* bdb)
 {
@@ -366,73 +320,102 @@ int CCH_down_grade_dbb(void* ast_object)
  **************************************/
 	Database* dbb = static_cast<Database*>(ast_object);
 
-	try
+/* Ignore the request if the database or lock block does not appear
+   to be valid . */
+	Lock* lock;
+	if ((MemoryPool::blk_type(dbb) != type_dbb) ||
+		!(lock = dbb->dbb_lock) ||
+		(MemoryPool::blk_type(lock) != type_lck) || !(lock->lck_id))
 	{
-		Database::SyncGuard dsGuard(dbb, true);
+		return 0;
+	}
 
-		Lock* lock = dbb->dbb_lock;
+/* Since this routine will be called asynchronously, we must establish
+   a thread context. */
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
 
-		// Since this routine will be called asynchronously,
-		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(lock->lck_attachment);
+	ISC_STATUS_ARRAY ast_status;
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(lock->lck_attachment);
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
+	tdbb->tdbb_status_vector = ast_status;
 
-		dbb->dbb_ast_flags |= DBB_blocking;
+	dbb->dbb_ast_flags |= DBB_blocking;
 
-		// Database shutdown will release the database lock; just return
+/* Database shutdown will release the database lock; just return. */
 
-		if (SHUT_blocking_ast(tdbb)) {
-			dbb->dbb_ast_flags &= ~DBB_blocking;
-			return 0;
-		}
+	if (SHUT_blocking_ast(dbb)) {
+		dbb->dbb_ast_flags &= ~DBB_blocking;
+		JRD_restore_thread_data();
+		return 0;
+	}
 
-		// If we are already shared, there is nothing more we can do.
-		// If any case, the other guy probably wants exclusive access,
-		// and we can't give it anyway
+/*
+if (dbb->dbb_use_count)
+    {
+	JRD_restore_thread_data();
+    return;
+    }
+*/
 
-		if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
-			return 0;
-		}
+/* If we are already shared, there is nothing more we can do.
+   If any case, the other guy probably wants exclusive access,
+   and we can't give it anyway */
 
-		if (dbb->dbb_flags & DBB_bugcheck) {
-			LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
-			dbb->dbb_ast_flags &= ~DBB_blocking;
-			return 0;
-		}
+	if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
+		JRD_restore_thread_data();
+		return 0;
+	}
 
-		// If we are supposed to be exclusive, stay exclusive
+	if (dbb->dbb_flags & DBB_bugcheck) {
+		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
+		dbb->dbb_ast_flags &= ~DBB_blocking;
+		JRD_restore_thread_data();
+		return 0;
+	}
 
-		if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
-			return 0;
-		}
+/* If we are supposed to be exclusive, stay exclusive */
 
-		// Assert any page locks that have been requested, but not asserted
+	if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
+		JRD_restore_thread_data();
+		return 0;
+	}
 
-		dbb->dbb_ast_flags |= DBB_assert_locks;
-		BufferControl* bcb = dbb->dbb_bcb;
-		if (bcb && bcb->bcb_count) {
-			const bcb_repeat* tail = bcb->bcb_rpt;
-			for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
+/* Assert any page locks that have been requested, but not asserted */
+
+	ISC_ast_enter();
+
+	dbb->dbb_ast_flags |= DBB_assert_locks;
+	BufferControl* bcb = dbb->dbb_bcb;
+	if (bcb) {
+		if (bcb->bcb_count) {
+            const bcb_repeat* tail = bcb->bcb_rpt;
+			for (const bcb_repeat* const end = tail + bcb->bcb_count;
+				tail < end; tail++)
 			{
 				PAGE_LOCK_ASSERT(tail->bcb_bdb->bdb_lock);
 			}
 		}
-
-	// Down grade the lock on the database itself
-
-		if (lock->lck_physical == LCK_EX) {
-			LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	/* This lets waiting cache manager in first */
-		}
-		else {
-			LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
-		}
-
-		dbb->dbb_ast_flags &= ~DBB_blocking;
 	}
-	catch (const Firebird::Exception&)
-	{} // no-op
 
+/* Down grade the lock on the database itself */
+
+	if (lock->lck_physical == LCK_EX) {
+		LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	/* This lets waiting cache manager in first */
+	}
+	else {
+		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
+	}
+
+	dbb->dbb_ast_flags &= ~DBB_blocking;
+	ISC_ast_exit();
+
+/* Restore the prior thread context */
+
+	JRD_restore_thread_data();
 	return 0;
 }
 
@@ -469,17 +452,18 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	dbb->dbb_flags |= DBB_exclusive;
 
-	switch (level)
-	{
+	switch (level) {
 	case LCK_PW:
-		if (lock->lck_physical >= LCK_PW || LCK_convert(tdbb, lock, LCK_PW, wait_flag))
+		if ((lock->lck_physical >= LCK_PW)
+			|| LCK_convert(tdbb, lock, LCK_PW, wait_flag))
 		{
 			return true;
 		}
 		break;
 
 	case LCK_EX:
-		if (lock->lck_physical == LCK_EX || LCK_convert(tdbb, lock, LCK_EX, wait_flag))
+		if (lock->lck_physical == LCK_EX ||
+			LCK_convert(tdbb, lock, LCK_EX, wait_flag))
 		{
 			return true;
 		}
@@ -491,13 +475,13 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	// Clear the status vector, as our callers check the return value
 	// and throw custom exceptions themselves
-	fb_utils::init_status(tdbb->tdbb_status_vector);
+	tdbb->tdbb_status_vector[0] = 0;
 
 /* If we are supposed to wait (presumably patiently),
    but can't get the lock, generate an error */
 
 	if (wait_flag == LCK_WAIT) {
-		ERR_post(Arg::Gds(isc_deadlock));
+		ERR_post(isc_deadlock, isc_arg_end);
 	}
 
 	dbb->dbb_flags &= ~DBB_exclusive;
@@ -529,16 +513,17 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 		return true;
 	}
 
-	attachment->att_flags |= (level == LCK_none) ? ATT_attach_pending : ATT_exclusive_pending;
+	attachment->att_flags |=
+		(level == LCK_none) ? ATT_attach_pending : ATT_exclusive_pending;
 
-	const SLONG timeout = (SLONG) (wait_flag < 0) ?
-		-wait_flag : ((wait_flag == LCK_WAIT) ? 1L << 30 : CCH_EXCLUSIVE_RETRY_INTERVAL);
+	const SLONG timeout =
+		(SLONG) (wait_flag < 0) ? -wait_flag :
+			((wait_flag == LCK_WAIT) ? 1L << 30 : CCH_EXCLUSIVE_RETRY_INTERVAL);
 
 /* If requesting exclusive database access, then re-position attachment as the
    youngest so that pending attachments may pass. */
 
-	if (level != LCK_none)
-	{
+	if (level != LCK_none) {
 		for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next) {
 			if (*ptr == attachment) {
 				*ptr = attachment->att_next;
@@ -549,7 +534,8 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 		dbb->dbb_attachments = attachment;
 	}
 
-	for (SLONG remaining = timeout; remaining > 0; remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
+	for (SLONG remaining = timeout; remaining > 0;
+		 remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
 	{
 		if (tdbb->getAttachment()->att_flags & ATT_shutdown) {
 			break;
@@ -557,34 +543,35 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 		bool found = false;
 		for (attachment = tdbb->getAttachment()->att_next; attachment;
-			attachment = attachment->att_next)
+			 attachment = attachment->att_next)
 		{
 			if (attachment->att_flags & ATT_shutdown) {
 				continue;
 			}
 
 			if (level == LCK_none) {	/* Wait for other attachments requesting exclusive access */
-				if (attachment->att_flags & (ATT_exclusive | ATT_exclusive_pending))
+				if (attachment->att_flags &
+					(ATT_exclusive | ATT_exclusive_pending))
 				{
 					found = true;
 					break;
 				}
 				// Forbid multiple attachments in single-user maintenance mode
-				if (attachment != tdbb->getAttachment() && (dbb->dbb_ast_flags & DBB_shutdown_single) )
+				if (attachment != tdbb->getAttachment() &&
+					(dbb->dbb_ast_flags & DBB_shutdown_single) )
 				{
 					found = true;
 					break;
 				}
 			}
-			else
-			{
-				// Requesting exclusive database access
+			else {				/* Requesting exclusive database access */
+
 				found = true;
 				if (attachment->att_flags & ATT_exclusive_pending) {
 					tdbb->getAttachment()->att_flags &= ~ATT_exclusive_pending;
 
 					if (wait_flag == LCK_WAIT) {
-						ERR_post(Arg::Gds(isc_deadlock));
+						ERR_post(isc_deadlock, isc_arg_end);
 					}
 					else {
 						return false;
@@ -595,7 +582,8 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 		}
 
 		if (!found) {
-			tdbb->getAttachment()->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
+			tdbb->getAttachment()->att_flags &=
+				~(ATT_exclusive_pending | ATT_attach_pending);
 			if (level != LCK_none) {
 				tdbb->getAttachment()->att_flags |= ATT_exclusive;
 			}
@@ -606,19 +594,22 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 		if (remaining > CCH_EXCLUSIVE_RETRY_INTERVAL)
 		{
-			Database::Checkout dcoHolder(dbb);
+			THREAD_EXIT();
 			THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
+			THREAD_ENTER();
 		}
 
 		if (tdbb->getAttachment()->att_flags & ATT_cancel_raise) {
 			if (JRD_reschedule(tdbb, 0, false)) {
-				tdbb->getAttachment()->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
+				tdbb->getAttachment()->att_flags &=
+					~(ATT_exclusive_pending | ATT_attach_pending);
 				ERR_punt();
 			}
 		}
 	}
 
-	tdbb->getAttachment()->att_flags &= ~(ATT_exclusive_pending | ATT_attach_pending);
+	tdbb->getAttachment()->att_flags &=
+		~(ATT_exclusive_pending | ATT_attach_pending);
 	return false;
 }
 
@@ -674,15 +665,14 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	// This var is unused.
-	//const SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
+	SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
 	if (window->win_page == HEADER_PAGE_NUMBER)
 		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 /* if there has been a shadow added recently, go out and
    find it before we grant any more write locks */
 
 	if (dbb->dbb_ast_flags & DBB_get_shadows) {
-		SDW_get_shadows(tdbb);
+		SDW_get_shadows();
 	}
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page, LATCH_exclusive, latch_wait);
@@ -696,8 +686,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
    to clear current precedences and checkpoint state. This would also
    update the bcb_free_pages field appropriately. */
 
-	if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
-	{
+	if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) {
 		/* If the caller didn't want to wait at all, then
 		   return 'try to fake an other page' to the caller. */
 
@@ -708,15 +697,15 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 			return NULL;
 		}
 
-		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
+		if (!write_buffer
+			(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
 		{
 			CCH_unwind(tdbb, true);
 		}
 	}
-	else if (QUE_NOT_EMPTY(bdb->bdb_lower))
-	{
+	else if (QUE_NOT_EMPTY(bdb->bdb_lower)) {
 		/* Clear residual precedence left over from AST-level I/O. */
-		clear_precedence(tdbb, bdb);
+		clear_precedence(dbb, bdb);
 	}
 
 	bdb->bdb_flags = (BDB_writer | BDB_faked);
@@ -735,8 +724,14 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 }
 
 
-pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT checksum,
-	SSHORT latch_wait, const bool read_shadow)
+pag* CCH_fetch(
+		thread_db* tdbb,
+		WIN* window,
+		USHORT lock_type,
+		SCHAR page_type,
+		SSHORT checksum,
+		SSHORT latch_wait,
+		bool read_shadow)
 {
 /**************************************
  *
@@ -761,27 +756,26 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
-	if (window->win_page == HEADER_PAGE_NUMBER)
-		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
-
+	if (window->win_page == HEADER_PAGE_NUMBER) {
+		tdbb->getDatabase()->dbb_backup_manager->lock_shared_database(tdbb, true);
+	}
+	
 	CCH_TRACE(("FETCH PAGE=%d", window->win_page));
-
+	
 	// FETCH_LOCK will return 0, 1, -1 or -2
+	
+	const SSHORT fetch_lock_return =
+		CCH_FETCH_LOCK(tdbb, window, lock_type, latch_wait, page_type);
 
-	const SSHORT fetch_lock_return = CCH_FETCH_LOCK(tdbb, window, lock_type, latch_wait, page_type);
-
-	switch (fetch_lock_return)
+	if (fetch_lock_return == 1)
 	{
-	case 1:
 		CCH_TRACE(("FETCH FROM DISK PAGE=%d", window->win_page));
 		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow);	/* must read page from disk */
-		break;
-	case -2:
-	case -1:
+	}
+	else if (fetch_lock_return == -2 || fetch_lock_return == -1) {
 		if (window->win_page == HEADER_PAGE_NUMBER)
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+			tdbb->getDatabase()->dbb_backup_manager->unlock_shared_database(tdbb);
 		return NULL;			/* latch or lock timeout */
 	}
 
@@ -796,7 +790,8 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
    from being queued to the LRU tail. */
 
 	if (window->win_flags & WIN_large_scan) {
-		if (fetch_lock_return == 1 || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
+		if (fetch_lock_return == 1 ||
+			bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
 		{
 			bdb->bdb_scan_count = window->win_scans;
 		}
@@ -816,14 +811,15 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 	}
 	else {
 		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect) {
+		if (bdb->bdb_flags & BDB_garbage_collect) {			
 			bdb->bdb_flags &= ~BDB_garbage_collect;
 		}
 	}
 
 /* Validate the fetched page matches the expected type */
 
-	if (bdb->bdb_buffer->pag_type != page_type && page_type != pag_undefined)
+	if (bdb->bdb_buffer->pag_type != page_type &&
+		page_type != pag_undefined)
 	{
 		page_validation_error(tdbb, window, page_type);
 	}
@@ -832,7 +828,12 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 }
 
 
-SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wait, SCHAR page_type)
+SSHORT CCH_fetch_lock(
+		thread_db* tdbb,
+		WIN * window,
+		USHORT lock_type,
+		SSHORT wait,
+		SCHAR page_type)
 {
 /**************************************
  *
@@ -845,11 +846,11 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
  *
  * input
  *
- *	wait:
- *	LCK_WAIT (1)	=> Wait as long a necessary to get the lock.
+ *	wait: 
+ *	LCK_WAIT (1)	=> Wait as long a necessary to get the lock. 
  *		This can cause deadlocks of course.
  *
- *	LCK_NO_WAIT (0)	=>
+ *	LCK_NO_WAIT (0)	=> 
  *		If the latch can't be acquired immediately, give up and return -2.
  *		If the lock can't be acquired immediately, give up and return -1.
  *
@@ -869,20 +870,20 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
    find it before we grant any more write locks */
 
 	if (dbb->dbb_ast_flags & DBB_get_shadows) {
-		SDW_get_shadows(tdbb);
+		SDW_get_shadows();
 	}
+
 
 /* Look for the page in the cache. */
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
 		((lock_type >= LCK_write) ? LATCH_exclusive : LATCH_shared), wait);
 
-	if (wait != 1 && bdb == 0) {
+	if ((wait != 1) && (bdb == 0)) {
 		return -2;				/* latch timeout */
 	}
 
-	if (lock_type >= LCK_write)
-	{
+	if (lock_type >= LCK_write) {
 		bdb->bdb_flags |= BDB_writer;
 	}
 
@@ -903,7 +904,10 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	return lock_buffer(tdbb, bdb, wait, page_type);
 }
 
-void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const bool read_shadow)
+void CCH_fetch_page(
+					thread_db* tdbb,
+					WIN * window,
+					SSHORT compute_checksum, bool read_shadow)
 {
 /**************************************
  *
@@ -922,14 +926,17 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 	Database* dbb = tdbb->getDatabase();
 	BufferDesc* bdb = window->win_bdb;
 
-	ISC_STATUS* const status = tdbb->tdbb_status_vector;
+	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 	pag* page = bdb->bdb_buffer;
 	bdb->bdb_incarnation = ++dbb->dbb_page_incarnation;
 
+	AST_CHECK();
+	++dbb->dbb_reads;
 	tdbb->bumpStats(RuntimeStatistics::PAGE_READS);
 	page = bdb->bdb_buffer;
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
+	PageSpace* pageSpace = 
+		dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 	fb_assert(pageSpace);
 	jrd_file* file = pageSpace->file;
 	SSHORT retryCount = 0;
@@ -952,36 +959,86 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
    to rollover to the shadow file.  If the I/O error is
    persistant (more than 3 times) error out of the routine by
    calling CCH_unwind, and eventually punting out. */
+   
 
-	{ // scope
+	dbb->dbb_backup_manager->lock_shared_database(tdbb, true); 
+	bool database_locked = true;
+	const int bak_state = dbb->dbb_backup_manager->get_state();
+	fb_assert(bak_state != nbak_state_unknown);
 
-		BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
+	ULONG diff_page = 0;
+	if (!isTempPage && bak_state != nbak_state_normal) {
+		dbb->dbb_backup_manager->lock_alloc(tdbb, true);
+		diff_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
+		dbb->dbb_backup_manager->unlock_alloc(tdbb);
+		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d", bdb->bdb_page, bak_state, diff_page));
+	}
 
-		const int bak_state = dbb->dbb_backup_manager->get_state();
-		fb_assert(bak_state != nbak_state_unknown);
-
-		ULONG diff_page = 0;
-		if (!isTempPage && bak_state != nbak_state_normal) {
-			dbb->dbb_backup_manager->lock_alloc(tdbb, true);
-			diff_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
-			dbb->dbb_backup_manager->unlock_alloc(tdbb);
-			NBAK_TRACE(("Reading page %d, state=%d, diff page=%d", bdb->bdb_page, bak_state, diff_page));
-		}
-
-		// In merge mode, if we are reading past beyond old end of file and page is in .delta file
-		// then we maintain actual page in difference file. Always read it from there.
-		if (isTempPage || bak_state == nbak_state_normal || !diff_page)
-		{
-			NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DISK",
-				bdb->bdb_page, bak_state, diff_page));
-			// Read page from disk as normal
-			while (!PIO_read(file, bdb, page, status)) {
-				if (isTempPage || !read_shadow) {
-					break;
+	// In merge mode, if we are reading past beyond old end of file and page is in .delta file
+	// then we maintain actual page in difference file. Always read it from there.
+	if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
+	{
+		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DISK",
+			bdb->bdb_page, bak_state, diff_page));
+		// Read page from disk as normal
+		while (!PIO_read(file, bdb, page, status)) {
+			if (isTempPage || !read_shadow) {
+				break;
+			}
+			if (!CCH_rollover_to_shadow(dbb, file, false)) {
+				PAGE_LOCK_RELEASE(bdb->bdb_lock);
+				if (database_locked) {
+					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+					database_locked = false;
 				}
 
-				if (!CCH_rollover_to_shadow(tdbb, dbb, file, false)) {
+				CCH_unwind(tdbb, true);
+			}
+			if (file != pageSpace->file) {
+				file = pageSpace->file;
+			}
+			else {
+				if (retryCount++ == 3) {
+					fprintf(stderr,
+							   "IO error loop Unwind to avoid a hang\n");
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
+					if (database_locked) {
+						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+						database_locked = false;
+					}
+					CCH_unwind(tdbb, true);
+				}
+			}
+		}
+	}
+	else
+	{
+		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
+			bdb->bdb_page, bak_state, diff_page));
+		if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
+			PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			if (database_locked) {
+				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+				database_locked = false;
+			}
+			CCH_unwind(tdbb, true);
+		}
+		if (page->pag_type == pag_undefined) {
+			// Page was marked as allocated inside the difference file, but not really used
+			// this is very rare, but possible case (after certain errors). 
+			// Read (or re-read) page from database
+			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK", 
+				bdb->bdb_page, bak_state, diff_page));
+			while (!PIO_read(file, bdb, page, status)) {
+				if (!read_shadow) {
+					break;
+				}
+				if (!CCH_rollover_to_shadow(dbb, file, false)) {
+					PAGE_LOCK_RELEASE(bdb->bdb_lock);
+					if (database_locked) {
+						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+						database_locked = false;
+					}
 					CCH_unwind(tdbb, true);
 				}
 				if (file != pageSpace->file) {
@@ -989,65 +1046,45 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 				}
 				else {
 					if (retryCount++ == 3) {
-						fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
+						fprintf(stderr,
+								   "IO error loop Unwind to avoid a hang\n");
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
-						CCH_unwind(tdbb, true);
-					}
-				}
-			}
-		}
-		else
-		{
-			NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE",
-				bdb->bdb_page, bak_state, diff_page));
-			if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
-				PAGE_LOCK_RELEASE(bdb->bdb_lock);
-				CCH_unwind(tdbb, true);
-			}
-			if (page->pag_type == pag_undefined) {
-				// Page was marked as allocated inside the difference file, but not really used
-				// this is very rare, but possible case (after certain errors).
-				// Read (or re-read) page from database
-				NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
-					bdb->bdb_page, bak_state, diff_page));
-				while (!PIO_read(file, bdb, page, status)) {
-					if (!read_shadow) {
-						break;
-					}
-
-					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false)) {
-						PAGE_LOCK_RELEASE(bdb->bdb_lock);
-						CCH_unwind(tdbb, true);
-					}
-					if (file != pageSpace->file) {
-						file = pageSpace->file;
-					}
-					else {
-						if (retryCount++ == 3) {
-							fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
-							PAGE_LOCK_RELEASE(bdb->bdb_lock);
-							CCH_unwind(tdbb, true);
+						if (database_locked) {
+							dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+							database_locked = false;
 						}
+						CCH_unwind(tdbb, true);
 					}
 				}
 			}
 		}
-	} // scope
+	}
+	
+	if (database_locked) {
+		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+		database_locked = false;
+	}
 
 #ifndef NO_CHECKSUM
-	if ((compute_checksum == 1 || (compute_checksum == 2 && page->pag_type)) &&
-		page->pag_checksum != CCH_checksum(bdb) && !(dbb->dbb_flags & DBB_damaged))
+	if (((compute_checksum == 1)
+		 || ((compute_checksum == 2) && page->pag_type))
+		&& ((page->pag_checksum != CCH_checksum(bdb))
+			&& !(dbb->dbb_flags & DBB_damaged)))
 	{
-		ERR_build_status(status,
-						 Arg::Gds(isc_db_corrupt) << Arg::Str("") <<	// why isn't the db name used here?
-						 Arg::Gds(isc_bad_checksum) <<
-						 Arg::Gds(isc_badpage) << Arg::Num(bdb->bdb_page.getPageNum()));
+		IBERR_build_status(tdbb->tdbb_status_vector,
+						   isc_db_corrupt,
+						   isc_arg_string, "",
+						   isc_arg_gds, isc_bad_checksum,
+						   isc_arg_gds, isc_badpage,
+						   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(), isc_arg_end);
 		/* We should invalidate this bad buffer. */
 
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
 		CCH_unwind(tdbb, true);
 	}
 #endif /* NO_CHECKSUM */
+
+	AST_CHECK();
 
 	bdb->bdb_flags &= ~(BDB_not_valid | BDB_read_pending);
 	window->win_buffer = bdb->bdb_buffer;
@@ -1073,7 +1110,7 @@ void CCH_forget_page(thread_db* tdbb, WIN * window)
 	Database* dbb = tdbb->getDatabase();
 
 	if (window->win_page != bdb->bdb_page ||
-		bdb->bdb_buffer->pag_type != pag_undefined)
+		bdb->bdb_buffer->pag_type != pag_undefined) 
 	{
 		// buffer was reassigned or page was reused
 		return;
@@ -1121,7 +1158,7 @@ void CCH_fini(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	bool flush_error = false;
-
+	
 	// CVC: Patching a conversion error FB1->FB2 with crude logic
 	for (int i = 0; i < 2; ++i)
 	{
@@ -1137,11 +1174,14 @@ void CCH_fini(thread_db* tdbb)
 		BufferControl* bcb = dbb->dbb_bcb;
 		if (bcb && (tail = bcb->bcb_rpt) && (tail->bcb_bdb)) {
 			if (dbb->dbb_flags & DBB_bugcheck || flush_error) {
-				for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count; tail < end; tail++)
+				for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count;
+					tail < end; tail++)
 				{
 					BufferDesc* bdb = tail->bcb_bdb;
-					delete bdb->bdb_expanded_buffer;
-					bdb->bdb_expanded_buffer = NULL;
+					if (bdb->bdb_expanded_buffer) {
+						delete bdb->bdb_expanded_buffer;
+						bdb->bdb_expanded_buffer = NULL;
+					}
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
 			}
@@ -1156,12 +1196,15 @@ void CCH_fini(thread_db* tdbb)
 	/* Shutdown the dedicated cache reader for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader)) {
+			event_t* event = dbb->dbb_reader_event;
 			bcb->bcb_flags &= ~BCB_cache_reader;
-			dbb->dbb_reader_sem.release();
-			{ // scope
-				Database::Checkout dcoHolder(dbb);
-				dbb->dbb_reader_fini.enter();
-			}
+			ISC_event_post(event);
+			SLONG count = ISC_event_clear(event);
+			THREAD_EXIT();
+			ISC_event_wait(1, &event, &count, 0, NULL, 0);
+			THREAD_ENTER();
+			/* Now dispose off the cache reader associated semaphore */
+			ISC_event_fini(event);
 		}
 #endif
 
@@ -1170,19 +1213,26 @@ void CCH_fini(thread_db* tdbb)
 	/* Wait for cache writer startup to complete. */
 		while ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_writer_start))
 		{
-			Database::Checkout dcoHolder(dbb);
+			THREAD_EXIT();
 			THREAD_YIELD();
+			THREAD_ENTER();
 		}
 
 	/* Shutdown the dedicated cache writer for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
+			event_t* event = dbb->dbb_writer_event_fini;
+			/* initialize initialization event */
+			ISC_event_init(event, 0, 0);
+			SLONG count = ISC_event_clear(event);
+
 			bcb->bcb_flags &= ~BCB_cache_writer;
-			dbb->dbb_writer_sem.release(); // Wake up running thread
-			{ // scope
-				Database::Checkout dcoHolder(dbb);
-				dbb->dbb_writer_fini.enter();
-			}
+			ISC_event_post(dbb->dbb_writer_event); /* Wake up running thread */
+			THREAD_EXIT();
+			ISC_event_wait(1, &event, &count, 0, NULL, 0);
+			THREAD_ENTER();
+			/* Cleanup initialization event */
+			ISC_event_fini(event);
 		}
 #endif
 
@@ -1192,19 +1242,20 @@ void CCH_fini(thread_db* tdbb)
 		dbb->dbb_page_manager.closeAll();
 		SDW_close();
 
-		if ( (bcb = dbb->dbb_bcb) )
+		if ( (bcb = dbb->dbb_bcb) ) 
 		{
-			while (bcb->bcb_memory.hasData())
+			while (bcb->bcb_memory.hasData()) 
 			{
 				dbb->dbb_bufferpool->deallocate(bcb->bcb_memory.pop());
 			}
 #ifdef CACHE_WRITER
 			/* Dispose off any associated latching semaphores */
-			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt))
+			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) 
 			{
 				QUE que_inst = bcb->bcb_free_lwt.que_forward;
-				QUE_DELETE(*que_inst);
-				// LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
+				QUE_DELETE((*que_inst));
+				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
+				ISC_event_fini(&lwt->lwt_event);
 			}
 #endif
 		}
@@ -1220,7 +1271,7 @@ void CCH_fini(thread_db* tdbb)
 				ERR_punt();
 			}
 		}
-
+		
 		if (!flush_error) { // wasn't set in the catch => no failure, just exit
 			break;
 		}
@@ -1246,6 +1297,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	BufferControl* bcb = dbb->dbb_bcb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* note that some of the code for btc_flush()
@@ -1253,22 +1305,21 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
    to minimize call overhead -- changes should
    be made in both places */
 
-	if (flush_flag & (FLUSH_TRAN | FLUSH_SYSTEM))
-	{
-		const SLONG transaction_mask = tra_number ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
+	if (flush_flag & (FLUSH_TRAN | FLUSH_SYSTEM)) {
+		const SLONG transaction_mask =
+			(tra_number) ? 1L << (tra_number & (BITS_PER_LONG - 1)) : 0;
 		bool sys_only = false;
 		if (!transaction_mask && (flush_flag & FLUSH_SYSTEM)) {
 			sys_only = true;
 		}
 
 #ifdef SUPERSERVER_V2
-		BufferControl* bcb = dbb->dbb_bcb;
 //		if (!dbb->dbb_wal && A && B) becomes
 //		if (true && A && B) then finally (A && B)
 		if (!(dbb->dbb_flags & DBB_force_write) && transaction_mask) {
 			dbb->dbb_flush_cycle |= transaction_mask;
 			if (!(bcb->bcb_flags & BCB_writer_active))
-				dbb->dbb_writer_sem.release();
+				ISC_event_post(dbb->dbb_writer_event);
 		}
 		else
 #endif
@@ -1289,27 +1340,30 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
 		const bool write_thru = release_flag;
 		const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
-		LATCH latch = release_flag ? LATCH_exclusive : LATCH_none;
+		LATCH latch = (release_flag) ? LATCH_exclusive : LATCH_none;
 
-		BufferControl* bcb;
-		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++)
-		{
+		for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 			BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
-			if (!release_flag && !(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)))
+			if (!release_flag
+				&& !(bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)))
 			{
 				continue;
 			}
-			if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1)
+			if (latch == LATCH_exclusive
+				&& latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1)
 			{
-				BUGCHECK(302);	// msg 302 unexpected page change
+				BUGCHECK(302);	// msg 302 unexpected page change 
 			}
-			if (bdb->bdb_use_count > 1)
-				BUGCHECK(210);	// msg 210 page in use during flush
+			if (latch == LATCH_exclusive && bdb->bdb_use_count > 1)
+				BUGCHECK(210);	// msg 210 page in use during flush 
 #ifdef SUPERSERVER
 			if (bdb->bdb_flags & BDB_db_dirty) {
-				if (all_flag || (sweep_flag && (!bdb->bdb_parent && bdb != bcb->bcb_btree)))
+				if (all_flag
+					|| (sweep_flag
+						&& (!bdb->bdb_parent && bdb != bcb->bcb_btree)))
 				{
-					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, status, true))
+					if (!write_buffer
+						(tdbb, bdb, bdb->bdb_page, write_thru, status, true))
 					{
 						CCH_unwind(tdbb, true);
 					}
@@ -1317,7 +1371,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 			}
 #else
 			if (bdb->bdb_flags & BDB_dirty) {
-				if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, status, true))
+				if (!write_buffer
+					(tdbb, bdb, bdb->bdb_page, false, status, true))
 				{
 					CCH_unwind(tdbb, true);
 				}
@@ -1327,12 +1382,13 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 			{
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			}
-			release_bdb(tdbb, bdb, false, false, false);
+			if (latch == LATCH_exclusive)
+				release_bdb(tdbb, bdb, false, false, false);
 		}
 #endif // DIRTY_TREE
 	}
 
-	//
+	// 
 	// Check if flush needed
 	//
 	const int max_unflushed_writes = Config::getMaxUnflushedWrites();
@@ -1349,8 +1405,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	{
 		const time_t now = time(0);
 
-		Database::CheckoutLockGuard guard(dbb, dbb->dbb_flush_count_mutex);
-
+		dbb->dbb_mutexes[DBB_MUTX_flush_count].enter();
+		
 		// If this is the first commit set last_flushed_write to now
 		if (!dbb->last_flushed_write)
 		{
@@ -1358,8 +1414,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 
 		// test max_num condition and max_time condition
-		max_num = max_num && (dbb->unflushed_writes == max_unflushed_writes);
-		max_time = max_time && (now - dbb->last_flushed_write > max_unflushed_write_time);
+		max_num = max_num 
+			&& (dbb->unflushed_writes == max_unflushed_writes);
+		max_time = max_time
+			&& (now - dbb->last_flushed_write > max_unflushed_write_time);
 
 		if (max_num || max_time)
 		{
@@ -1371,14 +1429,16 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		{
 			dbb->unflushed_writes++;
 		}
+
+		dbb->dbb_mutexes[DBB_MUTX_flush_count].leave();
 	}
 
 	if (doFlush)
 	{
-		PIO_flush(dbb, main_file);
+		PIO_flush(main_file);
 		if (dbb->dbb_shadow)
 		{
-			PIO_flush(dbb, dbb->dbb_shadow->sdw_file);
+			PIO_flush(dbb->dbb_shadow->sdw_file);
 		}
 		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
 	}
@@ -1387,7 +1447,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
    in cache to check that the shadow(s) have not been
    scheduled for shutdown or deletion */
 
-	SDW_check(tdbb);
+	SDW_check();
 }
 
 void CCH_flush_ast(thread_db* tdbb)
@@ -1404,12 +1464,13 @@ void CCH_flush_ast(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-
-#ifdef SUPERSERVER
-	CCH_flush(tdbb, FLUSH_ALL, 0);
-#else
 	Database* dbb = tdbb->getDatabase();
+
 	BufferControl* bcb = dbb->dbb_bcb;
+
+#ifdef PAGE_LATCHING
+	CCH_flush(tdbb, FLUSH_ALL, 0);
+#else		
 	// Do some fancy footwork to make sure that pages are
 	// not removed from the btc tree at AST level.  Then
 	// restore the flag to whatever it was before.
@@ -1418,7 +1479,8 @@ void CCH_flush_ast(thread_db* tdbb)
 
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
-		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
+		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) 
+
 			down_grade(tdbb, bdb);
 	}
 
@@ -1453,9 +1515,11 @@ bool CCH_free_page(thread_db* tdbb)
 	}
 
 	BufferDesc* bdb;
-	if (bcb->bcb_flags & BCB_free_pending && (bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)))
+	if (bcb->bcb_flags & BCB_free_pending &&
+		(bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)))
 	{
-		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
+		if (!write_buffer
+			(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
 		{
 			CCH_unwind(tdbb, false);
 		}
@@ -1483,8 +1547,14 @@ SLONG CCH_get_incarnation(WIN * window)
 }
 
 
-pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR page_type,
-	SSHORT latch_wait, const bool release_tail)
+pag* CCH_handoff(
+		thread_db*	tdbb,
+		WIN* window,
+		SLONG	page,
+		SSHORT	lock,
+		SCHAR	page_type,
+		SSHORT	latch_wait,
+		SSHORT	release_tail)
 {
 /**************************************
  *
@@ -1529,13 +1599,24 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 
 	WIN temp = *window;
 	window->win_page = PageNumber(window->win_page.getPageSpaceID(), page);
-	const SSHORT must_read = CCH_FETCH_LOCK(tdbb, window, lock, latch_wait, page_type);
+	const SSHORT must_read =
+		CCH_FETCH_LOCK(tdbb, window, lock, latch_wait, page_type);
 
 /* Latch or lock timeout, return failure. */
 
 	if (must_read == -2 || must_read == -1) {
+		const bool blocking = (temp.win_bdb->bdb_ast_flags & BDB_blocking);
 		*window = temp;
 		CCH_RELEASE(tdbb, window);
+
+		// hvlad: allow AST thread to process blocking AST re-posted when
+		// 'from-page' was released
+		if (blocking)
+		{
+			THREAD_EXIT();
+			THREAD_YIELD();
+			THREAD_ENTER();
+		}
 		return NULL;
 	}
 
@@ -1545,7 +1626,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 		CCH_RELEASE(tdbb, &temp);
 
 	if (must_read) {
-		CCH_FETCH_PAGE(tdbb, window, 1, true);
+		CCH_FETCH_PAGE(tdbb, window, TRUE, true);
 	}
 
 	BufferDesc* bdb = window->win_bdb;
@@ -1559,7 +1640,8 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
    from being queued to the LRU tail. */
 
 	if (window->win_flags & WIN_large_scan) {
-		if (must_read == 1 || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
+		if (must_read == 1 ||
+			bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
 		{
 			bdb->bdb_scan_count = window->win_scans;
 		}
@@ -1586,7 +1668,8 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 
 /* Validate the fetched page matches the expected type */
 
-	if (bdb->bdb_buffer->pag_type != page_type && page_type != pag_undefined)
+	if (bdb->bdb_buffer->pag_type != page_type &&
+		page_type != pag_undefined)
 	{
 		page_validation_error(tdbb, window, page_type);
 	}
@@ -1610,7 +1693,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-
+	
 	CCH_TRACE(("INIT %s", dbb->dbb_filename.c_str()));
 
 	// Check for database-specific page buffers
@@ -1647,7 +1730,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 			number -= number >> 2;
 
 			if (number < MIN_PAGE_BUFFERS) {
-				ERR_post(Arg::Gds(isc_cache_too_small));
+				ERR_post(isc_cache_too_small, isc_arg_end);
 			}
 		}
 	}
@@ -1660,7 +1743,6 @@ void CCH_init(thread_db* tdbb, ULONG number)
 #endif
 	QUE_INIT(bcb->bcb_empty);
 	QUE_INIT(bcb->bcb_free_lwt);
-	QUE_INIT(bcb->bcb_free_slt);
 
 	// initialization of memory is system-specific
 
@@ -1668,13 +1750,14 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	bcb->bcb_free_minimum = (SSHORT) MIN(bcb->bcb_count / 4, 128);
 
 	if (bcb->bcb_count < MIN_PAGE_BUFFERS) {
-		ERR_post(Arg::Gds(isc_cache_too_small));
+		ERR_post(isc_cache_too_small, isc_arg_end);
 	}
 
 	// Log if requested number of page buffers could not be allocated.
 
 	if (count != (SLONG) bcb->bcb_count) {
-		gds__log("Database: %s\n\tAllocated %ld page buffers of %ld requested",
+		gds__log
+			("Database: %s\n\tAllocated %ld page buffers of %ld requested",
 			 tdbb->getAttachment()->att_filename.c_str(), bcb->bcb_count, count);
 	}
 
@@ -1683,31 +1766,41 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	}
 
 #ifdef CACHE_READER
+	event_t* event = dbb->dbb_reader_event;
+	ISC_event_init(event, 0, 0);
+	count = ISC_event_clear(event);
 	if (gds__thread_start(cache_reader, dbb, THREAD_high, 0, 0))
 	{
 		ERR_bugcheck_msg("cannot start thread");
 	}
 
-	{ // scope
-		Database::Checkout dcoHolder(dbb);
-		dbb->dbb_reader_init.enter();
-	}
+	THREAD_EXIT();
+	ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
+	THREAD_ENTER();
 #endif
 
 #ifdef CACHE_WRITER
 	if (!(dbb->dbb_flags & DBB_read_only)) {
+		event_t* event = dbb->dbb_writer_event_init;
+
 		// writer startup in progress
 		bcb->bcb_flags |= BCB_writer_start;
 
-		if (gds__thread_start(cache_writer, dbb, THREAD_high, 0, 0))
+		/* Initialize initialization event */
+		ISC_event_init(event, 0, 0);
+		count = ISC_event_clear(event);
+
+		if (gds__thread_start(cache_writer, dbb,
+			THREAD_high, 0, 0))
 		{
 			bcb->bcb_flags &= ~BCB_writer_start;
 			ERR_bugcheck_msg("cannot start thread");
 		}
-		{ // scope
-			Database::Checkout dcoHolder(dbb);
-			dbb->dbb_writer_init.enter();
-		}
+		THREAD_EXIT();
+		ISC_event_wait(1, &event, &count, 5 * 1000000, NULL, 0);
+		THREAD_ENTER();
+		/* Clean up initialization event */
+		ISC_event_fini(event);
 	}
 #endif
 }
@@ -1728,6 +1821,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	dbb->dbb_marks++;
 	tdbb->bumpStats(RuntimeStatistics::PAGE_MARKS);
 	BufferControl* bcb = dbb->dbb_bcb;
 	BufferDesc* bdb = window->win_bdb;
@@ -1739,9 +1833,9 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 
 	CCH_TRACE(("MARK PAGE=%d", window->win_page));
 
-	const SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
+	SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
 
-	const bool was_marked = bdb->bdb_flags & BDB_marked;
+	bool was_marked = bdb->bdb_flags & BDB_marked;
 	if (!was_marked)
 		dbb->dbb_backup_manager->checkout_dirty_page(tdbb, attachment_lock_owner);
 
@@ -1777,7 +1871,8 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 		bdb->bdb_flags |= BDB_system_dirty;
 	}
 
-	if (!(tdbb->tdbb_flags & TDBB_sweeper) || bdb->bdb_flags & BDB_system_dirty)
+	if (!(tdbb->tdbb_flags & TDBB_sweeper) ||
+		bdb->bdb_flags & BDB_system_dirty)
 	{
 #ifdef DIRTY_LIST
 		insertDirty(bcb, bdb);
@@ -1793,7 +1888,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	bdb->bdb_flags |= BDB_db_dirty;
 #endif
 
-	const bool was_dirty = bdb->bdb_flags & BDB_dirty;
+	bool was_dirty = bdb->bdb_flags & BDB_dirty;
 	bdb->bdb_flags |= (BDB_dirty | BDB_marked);
 
 	if (must_write || dbb->dbb_backup_manager->database_flush_in_progress())
@@ -1805,14 +1900,11 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 			// Backup lock owner can be database or attachment
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb));
 			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-		}
-		else
-		{
+		} else {
 			fb_assert(bdb->bdb_backup_lock_owner == 0);
 		}
 		bdb->bdb_backup_lock_owner = attachment_lock_owner;
 	}
-	fb_assert(bdb->bdb_backup_lock_owner);
 	set_diff_page(tdbb, bdb);
 }
 
@@ -1837,13 +1929,41 @@ void CCH_must_write(WIN * window)
 	}
 
 	bdb->bdb_flags |= (BDB_dirty | BDB_must_write);
-	fb_assert(bdb->bdb_backup_lock_owner);
+}
+
+
+
+Lock* CCH_page_lock(thread_db* tdbb)
+{
+/**************************************
+ *
+ *	C C H _ p a g e _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Allocate a page-type lock.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	const SSHORT lockLen = PageNumber::getLockLen();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_bufferpool, lockLen) Lock;
+	lock->lck_type = LCK_bdb;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_length = lockLen;
+
+	lock->lck_dbb = dbb;
+	lock->lck_parent = dbb->dbb_lock;
+
+	return lock;
 }
 
 
 void CCH_precedence(thread_db* tdbb, WIN * window, SLONG pageNum)
 {
-	const USHORT pageSpaceID = pageNum > LOG_PAGE ?
+	const USHORT pageSpaceID = pageNum > LOG_PAGE ? 
 		window->win_page.getPageSpaceID() : DB_PAGE_SPACE;
 
 	CCH_precedence(tdbb, window, PageNumber(pageSpaceID, pageNum));
@@ -1878,7 +1998,7 @@ void CCH_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 		return;
 	}
 
-	// no need to support precedence for temporary pages
+	// no need to support precedence for temporary pages 
 	if (page.isTemporary() || window->win_page.isTemporary()) {
 		return;
 	}
@@ -1985,13 +2105,13 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 		return;
 
 	// Temporary pages don't write to delta
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
+	PageSpace* pageSpace = 
+		dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 	fb_assert(pageSpace);
 	if (pageSpace->isTemporary())
 		return;
 
-	switch (backup_state)
-	{
+	switch (backup_state) {
 	case nbak_state_stalled:
 		dbb->dbb_backup_manager->lock_alloc(tdbb, true);
 		bdb->bdb_difference_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
@@ -2004,11 +2124,11 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 				invalidate_and_release_buffer(tdbb, bdb);
 				CCH_unwind(tdbb, true);
 			}
-			NBAK_TRACE(("Allocate difference page %d for database page %d",
+			NBAK_TRACE(("Allocate difference page %d for database page %d", 
 				bdb->bdb_difference_page, bdb->bdb_page));
 		}
 		else {
-			NBAK_TRACE(("Map existing difference page %d to database page %d",
+			NBAK_TRACE(("Map existing difference page %d to database page %d", 
 				bdb->bdb_difference_page, bdb->bdb_page));
 		}
 		break;
@@ -2017,14 +2137,14 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 		bdb->bdb_difference_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
 		dbb->dbb_backup_manager->unlock_alloc(tdbb);
 		if (bdb->bdb_difference_page) {
-			NBAK_TRACE(("Map existing difference page %d to database page %d (write_both)",
+			NBAK_TRACE(("Map existing difference page %d to database page %d (write_both)", 
 				bdb->bdb_difference_page, bdb->bdb_page));
 		}
 		break;
 	}
 }
 
-void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
+void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 {
 /**************************************
  *
@@ -2055,27 +2175,27 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
    page isn't released to the LRU tail before the garbage
    collector can process the page. */
 
-	if (window->win_flags & WIN_large_scan && window->win_flags & WIN_garbage_collect)
+	if (window->win_flags & WIN_large_scan &&
+		window->win_flags & WIN_garbage_collect)
 	{
 		bdb->bdb_flags |= BDB_garbage_collect;
 		window->win_flags &= ~WIN_garbage_collect;
 	}
 
-	if (bdb->bdb_page == HEADER_PAGE_NUMBER)
+	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
 		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+	}
 
 	if (bdb->bdb_use_count == 1)
 	{
-		const bool marked = bdb->bdb_flags & BDB_marked;
-		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);
+		bool marked = bdb->bdb_flags & BDB_marked;
+		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);		
 
-		if (marked)
-		{
-			if (bdb->bdb_flags & BDB_dirty)
-			{
+		if (marked) {
+			if (bdb->bdb_flags & BDB_dirty) {
 				fb_assert(bdb->bdb_backup_lock_owner == BackupManager::attachment_lock_handle(tdbb));
-				const SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
-				dbb->dbb_backup_manager->change_dirty_page_owner(tdbb,
+				SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
+				dbb->dbb_backup_manager->change_dirty_page_owner(tdbb, 
 					bdb->bdb_backup_lock_owner, database_lock_handle);
 				bdb->bdb_backup_lock_owner = database_lock_handle;
 			}
@@ -2088,7 +2208,12 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 			   to page during I/O. */
 
 			release_bdb(tdbb, bdb, false, true, false);
-			if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, tdbb->tdbb_status_vector, true))
+			if (!write_buffer(	tdbb,
+								bdb,
+								bdb->bdb_page,
+								false,
+								tdbb->tdbb_status_vector,
+								true))
 			{
 #ifdef DIRTY_LIST
 				insertDirty(dbb->dbb_bcb, bdb);
@@ -2099,15 +2224,20 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 				CCH_unwind(tdbb, true);
 			}
 		}
-
+#ifndef PAGE_LATCHING
 		if (bdb->bdb_flags & BDB_no_blocking_ast)
 		{
 			if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty))
 			{
-				if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, tdbb->tdbb_status_vector, true))
+				if (!write_buffer(	tdbb,
+									bdb,
+									bdb->bdb_page,
+									false,
+									tdbb->tdbb_status_vector,
+									true))
 				{
-					// Reassert blocking AST after write failure with dummy lock convert
-					// to same level. This will re-enable blocking AST notification.
+					/* Reassert blocking AST after write failure with dummy lock convert
+					   to same level. This will re-enable blocking AST notification. */
 
 					LCK_convert_opt(tdbb, bdb->bdb_lock,
 									bdb->bdb_lock->lck_logical);
@@ -2119,15 +2249,20 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 			bdb->bdb_flags &= ~BDB_no_blocking_ast;
 			bdb->bdb_ast_flags &= ~BDB_blocking;
 		}
+#endif
 
-		// Make buffer the least-recently-used by queueing it to the LRU tail
+		/* Make buffer the least-recently-used by queueing it
+		   to the LRU tail. */
 
 		if (release_tail)
 		{
-			if ((window->win_flags & WIN_large_scan && bdb->bdb_scan_count > 0 &&
-				 	!(--bdb->bdb_scan_count) && !(bdb->bdb_flags & BDB_garbage_collect)) ||
-				(window->win_flags & WIN_garbage_collector && bdb->bdb_flags & BDB_garbage_collect &&
-				 	!bdb->bdb_scan_count))
+			if ((window->win_flags & WIN_large_scan &&
+				 bdb->bdb_scan_count > 0 &&
+				 !(--bdb->bdb_scan_count) &&
+				 !(bdb->bdb_flags & BDB_garbage_collect)) ||
+				(window->win_flags & WIN_garbage_collector &&
+				 bdb->bdb_flags & BDB_garbage_collect &&
+				 !(bdb->bdb_scan_count)))
 			{
 				if (window->win_flags & WIN_garbage_collector)
 				{
@@ -2139,16 +2274,17 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 				if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 				{
 #ifdef DIRTY_LIST
-					if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty)
+					if (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty) 
 					{
 						QUE_DELETE(bdb->bdb_dirty);
 						QUE_APPEND(bcb->bcb_dirty, bdb->bdb_dirty);
 					}
 #endif
 					bcb->bcb_flags |= BCB_free_pending;
-					if (bcb->bcb_flags & BCB_cache_writer && !(bcb->bcb_flags & BCB_writer_active))
+					if (bcb->bcb_flags & BCB_cache_writer &&
+						!(bcb->bcb_flags & BCB_writer_active))
 					{
-						dbb->dbb_writer_sem.release();
+						ISC_event_post(dbb->dbb_writer_event);
 					}
 				}
 #endif
@@ -2184,7 +2320,7 @@ void CCH_release_exclusive(thread_db* tdbb)
  *	Release exclusive access to database.
  *
  **************************************/
-	SET_TDBB(tdbb);
+	SET_TDBB(tdbb);	
 	Database* dbb = tdbb->getDatabase();
 	dbb->dbb_flags &= ~DBB_exclusive;
 
@@ -2194,12 +2330,12 @@ void CCH_release_exclusive(thread_db* tdbb)
 	}
 
 	if (dbb->dbb_ast_flags & DBB_blocking) {
-		LCK_re_post(tdbb, dbb->dbb_lock);
+		LCK_re_post(dbb->dbb_lock);
 	}
 }
 
 
-bool CCH_rollover_to_shadow(thread_db* tdbb, Database* dbb, jrd_file* file, const bool inAst)
+bool CCH_rollover_to_shadow(Database* dbb, jrd_file* file, const bool inAst)
 {
 /**************************************
  *
@@ -2213,10 +2349,7 @@ bool CCH_rollover_to_shadow(thread_db* tdbb, Database* dbb, jrd_file* file, cons
  *	the shadow file.
  *
  **************************************/
-
-	SET_TDBB(tdbb);
-
-	// Is the shadow subsystem yet initialized
+/* Is the shadow subsystem yet initialized */
 	if (!dbb->dbb_shadow_lock) {
 		return false;
 	}
@@ -2228,9 +2361,9 @@ bool CCH_rollover_to_shadow(thread_db* tdbb, Database* dbb, jrd_file* file, cons
 		return false;
 	}
 
-	// notify other process immediately to ensure all read from sdw
-	// file instead of db file
-	return SDW_rollover_to_shadow(tdbb, file, inAst);
+/* notify other process immediately to ensure all read from sdw
+   file instead of db file */
+	return SDW_rollover_to_shadow(file, inAst);
 }
 
 
@@ -2251,7 +2384,8 @@ void CCH_shutdown_database(Database* dbb)
 	bcb_repeat* tail;
 	BufferControl* bcb = dbb->dbb_bcb;
 	if (bcb && (tail = bcb->bcb_rpt) && (tail->bcb_bdb)) {
-		for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; tail++)
+		for (const bcb_repeat* const end = tail + bcb->bcb_count;
+			tail < end; tail++)
 		{
 			BufferDesc* bdb = tail->bcb_bdb;
 			clear_page_dirty_flag(tdbb, bdb);
@@ -2267,7 +2401,7 @@ void CCH_shutdown_database(Database* dbb)
 #endif
 }
 
-void CCH_unwind(thread_db* tdbb, const bool punt)
+void CCH_unwind(thread_db* tdbb, bool punt)
 {
 /**************************************
  *
@@ -2306,6 +2440,30 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 	for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; tail++)
 	{
 		BufferDesc* bdb = tail->bcb_bdb;
+#ifndef SUPERSERVER
+//		if (bdb->bdb_length || !bdb->bdb_use_count) becomes (false || expr)
+		if (!bdb->bdb_use_count) {
+			continue;
+		}
+		if (bdb->bdb_flags & BDB_marked) {
+			BUGCHECK(268);	/* msg 268 buffer marked during cache unwind */
+		}
+		bdb->bdb_flags &= ~BDB_writer;
+		while (bdb->bdb_use_count) {
+			release_bdb(tdbb, bdb, true, false, false);
+		}
+		pag* page = bdb->bdb_buffer;
+		if ((page->pag_type == pag_header) ||
+			(page->pag_type == pag_transactions))
+		{
+			++bdb->bdb_use_count;
+
+			clear_page_dirty_flag(tdbb, bdb);
+			bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked | BDB_db_dirty);
+			PAGE_LOCK_RELEASE(bdb->bdb_lock);
+			--bdb->bdb_use_count;
+		}
+#else
 		if (!bdb->bdb_use_count) {
 			continue;
 		}
@@ -2319,24 +2477,10 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 			release_bdb(tdbb, bdb, true, false, false);
 		}
-
-		// hvlad : as far as I understand thread can't hold more than two shared latches
-		// on the same bdb, so findSharedLatch below will not be called many times
-		SharedLatch* latch = findSharedLatch(tdbb, bdb);
-		while (latch)
-		{
-			release_bdb(tdbb, bdb, true, false, false);
-			latch = findSharedLatch(tdbb, bdb);
-		}
-#ifndef SUPERSERVER
-		const pag* const page = bdb->bdb_buffer;
-		if (page->pag_type == pag_header || page->pag_type == pag_transactions)
-		{
-			++bdb->bdb_use_count;
-			clear_page_dirty_flag(tdbb, bdb);
-			bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked | BDB_db_dirty);
-			PAGE_LOCK_RELEASE(bdb->bdb_lock);
-			--bdb->bdb_use_count;
+		for (int i = 0; i < BDB_max_shared; ++i) {
+			if (bdb->bdb_shared[i] == tdbb) {
+				release_bdb(tdbb, bdb, true, false, false);
+			}
 		}
 #endif
 	}
@@ -2347,7 +2491,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 }
 
 
-bool CCH_validate(WIN* window)
+bool CCH_validate(WIN * window)
 {
 /**************************************
  *
@@ -2378,8 +2522,11 @@ bool CCH_validate(WIN* window)
 }
 
 
-bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
-	ISC_STATUS* status, USHORT checksum, const bool inAst)
+bool CCH_write_all_shadows(thread_db* tdbb,
+							  Shadow* shadow,
+							  BufferDesc* bdb,
+							  ISC_STATUS* status, USHORT checksum,
+							  const bool inAst)
 {
 /**************************************
  *
@@ -2404,13 +2551,25 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	}
 
 	bool result = true;
-	Firebird::UCharBuffer spare_buffer;
+	SLONG* spare_buffer = NULL;
+
+	try {
 
 	pag* page;
-	pag* old_buffer = NULL;
+	pag* old_buffer = 0;
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-		page = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
-		memcpy(page, bdb->bdb_buffer, HDR_SIZE);
+		/* allocate a spare buffer which is large enough,
+		   and set up to release it in case of error */
+
+		spare_buffer =
+			(SLONG*) dbb->dbb_bufferpool->allocate(dbb->dbb_page_size, 0
+#ifdef DEBUG_GDS_ALLOC
+			  ,__FILE__, __LINE__
+#endif
+			);
+
+		page = (pag*) spare_buffer;
+		MOVE_FAST((const UCHAR*) bdb->bdb_buffer, (UCHAR*) page, HDR_SIZE);
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
 	}
@@ -2435,7 +2594,8 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		   old code --> if (sdw->sdw_flags & SDW_INVALID)
 		 */
 
-		if ((sdw->sdw_flags & SDW_INVALID) && !(sdw->sdw_flags & SDW_conditional))
+		if ((sdw->sdw_flags & SDW_INVALID) &&
+			!(sdw->sdw_flags & SDW_conditional))
 		{
 			continue;
 		}
@@ -2451,15 +2611,17 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			header->hdr_end = HDR_SIZE;
 			header->hdr_next_page = 0;
 
-			PAG_add_header_entry(tdbb, header, HDR_root_file_name,
+			PAG_add_header_entry(header, HDR_root_file_name,
 								 (USHORT) strlen((const char*) q), q);
 
 			jrd_file* next_file = shadow_file->fil_next;
 			if (next_file) {
 				q = (UCHAR *) next_file->fil_string;
 				const SLONG last = next_file->fil_min_page - 1;
-				PAG_add_header_entry(tdbb, header, HDR_file, (USHORT) strlen((const char*) q), q);
-				PAG_add_header_entry(tdbb, header, HDR_last_page, sizeof(last), (const UCHAR*) &last);
+				PAG_add_header_entry(header, HDR_file,
+									 (USHORT) strlen((const char*) q), q);
+				PAG_add_header_entry(header, HDR_last_page, sizeof(last),
+									 (const UCHAR*) & last);
 			}
 
 			header->hdr_flags |= hdr_active_shadow;
@@ -2471,7 +2633,8 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 
 	-Sudesh 07/10/95
 */
-		if ((sdw->sdw_flags & SDW_conditional) && bdb->bdb_page != HEADER_PAGE_NUMBER)
+		if ((sdw->sdw_flags & SDW_conditional) &&
+			(bdb->bdb_page != HEADER_PAGE_NUMBER))
 		{
 			continue;
 		}
@@ -2486,12 +2649,12 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 			}
 			else {
 				sdw->sdw_flags |= SDW_delete;
-				if (!inAst && SDW_check_conditional(tdbb)) {
-					if (SDW_lck_update(tdbb, 0)) {
-						SDW_notify(tdbb);
+				if (!inAst && SDW_check_conditional()) {
+					if (SDW_lck_update((SLONG) 0)) {
+						SDW_notify();
 						CCH_unwind(tdbb, false);
-						SDW_dump_pages(tdbb);
-						ERR_post(Arg::Gds(isc_deadlock));
+						SDW_dump_pages();
+						ERR_post(isc_deadlock, isc_arg_end);
 					}
 				}
 			}
@@ -2505,6 +2668,19 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
 		bdb->bdb_buffer = old_buffer;
+	}
+
+	if (spare_buffer) {
+		dbb->dbb_bufferpool->deallocate(spare_buffer);
+	}
+
+	}	// try
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		if (spare_buffer) {
+			dbb->dbb_bufferpool->deallocate(spare_buffer);
+		}
+		ERR_punt();
 	}
 
 	return result;
@@ -2529,14 +2705,17 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 	BufferDesc* bdb = FB_NEW(*dbb->dbb_bufferpool) BufferDesc;
 	bdb->bdb_dbb = dbb;
 
-#ifndef SUPERSERVER
+#ifndef PAGE_LATCHING
+	Lock* lock;
 	try {
-		bdb->bdb_lock = alloc_page_lock(tdbb, bdb);
+		bdb->bdb_lock = lock = CCH_page_lock(tdbb);
 	}
 	catch (const Firebird::Exception&) {
 		delete bdb;
 		throw;
 	}
+	lock->lck_ast = blocking_ast_bdb;
+	lock->lck_object = bdb;
 #endif
 
 	bdb->bdb_buffer = (pag*) *memory;
@@ -2545,7 +2724,6 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 	QUE_INIT(bdb->bdb_higher);
 	QUE_INIT(bdb->bdb_lower);
 	QUE_INIT(bdb->bdb_waiters);
-	QUE_INIT(bdb->bdb_shared);
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
 #ifdef DIRTY_LIST
 	QUE_INIT(bdb->bdb_dirty);
@@ -2555,38 +2733,7 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 }
 
 
-#ifndef SUPERSERVER
-static Lock* alloc_page_lock(thread_db* tdbb, BufferDesc* bdb)
-{
-/**************************************
- *
- *	a l l o c _ p a g e _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Allocate a page-type lock.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	const SSHORT lockLen = PageNumber::getLockLen();
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_bufferpool, lockLen) Lock;
-	lock->lck_type = LCK_bdb;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_length = lockLen;
-
-	lock->lck_dbb = dbb;
-	lock->lck_parent = dbb->dbb_lock;
-
-	lock->lck_ast = blocking_ast_bdb;
-	lock->lck_object = bdb;
-
-	return lock;
-}
-
-
+#ifndef PAGE_LATCHING
 static int blocking_ast_bdb(void* ast_object)
 {
 /**************************************
@@ -2608,36 +2755,48 @@ static int blocking_ast_bdb(void* ast_object)
  **************************************/
 	BufferDesc* bdb = static_cast<BufferDesc*>(ast_object);
 
-	try
-	{
-		Database* dbb = bdb->bdb_dbb;
+	ISC_ast_enter();
 
-		Database::SyncGuard dsGuard(dbb, true);
+/* Since this routine will be called asynchronously, we must establish
+   a thread context. */
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
 
-		// Since this routine will be called asynchronously,
-		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
+	BLKCHK(bdb, type_bdb);
+	
+	ISC_STATUS_ARRAY ast_status;
+	Database* dbb = bdb->bdb_dbb;
 
-		// Do some fancy footwork to make sure that pages are
-		// not removed from the btc tree at AST level. Then
-		// restore the flag to whatever it was before.
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(NULL);
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
+	tdbb->tdbb_status_vector = ast_status;
 
-		const bool keep_pages = (dbb->dbb_bcb->bcb_flags & BCB_keep_pages) != 0;
-		dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
+/* Do some fancy footwork to make sure that pages are
+   not removed from the btc tree at AST level.  Then
+   restore the flag to whatever it was before. */
 
-		down_grade(tdbb, bdb);
+	const bool keep_pages = (dbb->dbb_bcb->bcb_flags & BCB_keep_pages) != 0;
+	dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
+	ast_status[1] = 0;
 
-		if (!keep_pages) {
-			dbb->dbb_bcb->bcb_flags &= ~BCB_keep_pages;
-		}
+	down_grade(tdbb, bdb);
 
-		if (tdbb->tdbb_status_vector[1]) {
-			gds__log_status(dbb->dbb_filename.c_str(), tdbb->tdbb_status_vector);
-		}
+	if (!keep_pages) {
+		dbb->dbb_bcb->bcb_flags &= ~BCB_keep_pages;
 	}
-	catch (const Firebird::Exception&)
-	{} // no-op
+
+	if (ast_status[1]) {
+		gds__log_status(dbb->dbb_filename.c_str(), ast_status);
+	}
+
+/* Restore the prior thread context */
+
+	JRD_restore_thread_data();
+
+	ISC_ast_exit();
 
     return 0;
 }
@@ -2663,7 +2822,7 @@ static int cmpBdbs(const void* a, const void* b)
 }
 
 
-// Remove cleared precedence blocks from high precedence queue
+// Remove cleared precedence blocks from high precedence queue 
 static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 {
 	QUE que_prec = bdb->bdb_higher.que_forward, next_prec;
@@ -2672,7 +2831,7 @@ static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 		next_prec = que_prec->que_forward;
 
 		Precedence* precedence = BLOCK(que_prec, Precedence*, pre_higher);
-		if (precedence->pre_flags & PRE_cleared)
+		if (precedence->pre_flags & PRE_cleared) 
 		{
 			QUE_DELETE(precedence->pre_higher);
 			QUE_DELETE(precedence->pre_lower);
@@ -2683,14 +2842,15 @@ static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 }
 
 // Write pages modified by given or system transaction to disk. First sort all
-// corresponding pages by their numbers to make writes physically ordered and
+// corresponding pages by their numbers to make writes physically ordered and 
 // thus faster. At every iteration of while loop write pages which have no high
-// precedence pages to ensure order preserved. If after some iteration there are
-// no such pages (i.e. all of not written yet pages have high precedence pages)
-// then write them all at last iteration (of course write_buffer will also check
+// precedence pages to ensure order preserved. If after some iteration there are 
+// no such pages (i.e. all of not written yet pages have high precedence pages) 
+// then write them all at last iteration (of course write_buffer will also check 
 // for precedence before write)
-static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only,
-	ISC_STATUS* status)
+static void flushDirty(thread_db* tdbb,
+					  SLONG transaction_mask,
+					  const bool sys_only, ISC_STATUS* status)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -2708,13 +2868,14 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 			continue;
 		}
 
-		if ((transaction_mask & bdb->bdb_transactions) || (bdb->bdb_flags & BDB_system_dirty) ||
+		if ((transaction_mask & bdb->bdb_transactions) ||
+			(bdb->bdb_flags & BDB_system_dirty) ||
 			(!transaction_mask && !sys_only) || (!bdb->bdb_transactions))
 		{
 			flush.add(bdb);
 		}
 	}
-
+	
 	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
 
 	bool writeAll = false;
@@ -2733,13 +2894,18 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 			if (writeAll || QUE_EMPTY(bdb->bdb_higher))
 			{
 				const PageNumber page = bdb->bdb_page;
-
+#ifndef SUPERSERVER
+				if (bdb->bdb_use_count) {
+					BUGCHECK(210);	// msg 210 page in use during flush 
+				}
+#endif
 				if (!write_buffer(tdbb, bdb, page, false, status, true)) {
 					CCH_unwind(tdbb, true);
 				}
 
-				// re-post the lock only if it was really written
-				if ((bdb->bdb_ast_flags & BDB_blocking) && !(bdb->bdb_flags & BDB_dirty))
+				// re-post the lock only if it was really written 
+				if ((bdb->bdb_ast_flags & BDB_blocking) &&
+					!(bdb->bdb_flags & BDB_dirty))
 				{
 					PAGE_LOCK_RE_POST(bdb->bdb_lock);
 				}
@@ -2765,21 +2931,18 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush(bcb->bcb_dirty_count);
 
-#ifdef SUPERSERVER
 	const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
-	const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
-#endif
 	const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
 	const bool write_thru = release_flag;
+	const bool sweep_flag = (flush_flag & FLUSH_SWEEP) != 0;
+	LATCH latch = (release_flag) ? LATCH_exclusive : LATCH_none;
 
-	const LATCH latch = release_flag ? LATCH_exclusive : LATCH_none;
-
-	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++)
+	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) 
 	{
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 
 #ifdef SUPERSERVER
-		if (bdb->bdb_flags & BDB_db_dirty)
+		if (bdb->bdb_flags & BDB_db_dirty) 
 		{
 			// pages modified by sweep\garbage collector are not in dirty list
 			const bool dirty_list = (bdb->bdb_dirty.que_forward != &bdb->bdb_dirty);
@@ -2811,7 +2974,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	bool writeAll = false;
 	while (flush.getCount())
 	{
-		BufferDesc** ptr = flush.begin();
+		BufferDesc **ptr = flush.begin();
 		const size_t cnt = flush.getCount();
 		while (ptr < flush.end())
 		{
@@ -2825,20 +2988,20 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 				if (release_flag)
 				{
 					if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1) {
-						BUGCHECK(302);	// msg 302 unexpected page change
+						BUGCHECK(302);	// msg 302 unexpected page change 
 					}
 					if (bdb->bdb_use_count > 1) {
-						BUGCHECK(210);	// msg 210 page in use during flush
+						BUGCHECK(210);	// msg 210 page in use during flush 
 					}
 				}
-				if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty))
+				if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty)) 
 				{
-					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, status, true))
+					if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, status, true))
 					{
 						CCH_unwind(tdbb, true);
 					}
 				}
-				if (release_flag)
+				if (release_flag) 
 				{
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					release_bdb(tdbb, bdb, false, false, false);
@@ -2856,8 +3019,9 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 
 #ifdef DIRTY_TREE
 
-static void btc_flush(thread_db* tdbb, SLONG transaction_mask, const bool sys_only,
-	ISC_STATUS* status)
+static void btc_flush(thread_db* tdbb,
+					  SLONG transaction_mask,
+					  const bool sys_only, ISC_STATUS* status)
 {
 /**************************************
  *
@@ -2881,7 +3045,7 @@ static void btc_flush(thread_db* tdbb, SLONG transaction_mask, const bool sys_on
    this simplifies worrying about random pages dropping
    out when dependencies have been set up */
 
-	PageNumber max_seen = MIN_PAGE_NUMBER;
+	PageNumber max_seen = MIN_PAGE_NUMBER; 
 
 /* Pick starting place at leftmost node */
 
@@ -2902,7 +3066,8 @@ static void btc_flush(thread_db* tdbb, SLONG transaction_mask, const bool sys_on
 	while ( (bdb = next) ) {
 		/* If we're lost, reposition */
 
-		if ((bdb->bdb_page != next_page) || (!bdb->bdb_parent && (bdb != dbb->dbb_bcb->bcb_btree)))
+		if ((bdb->bdb_page != next_page) ||
+			(!bdb->bdb_parent && (bdb != dbb->dbb_bcb->bcb_btree)))
 		{
 			for (bdb = dbb->dbb_bcb->bcb_btree; bdb;) {
 				if (bdb->bdb_left && (max_seen < bdb->bdb_page)) {
@@ -2957,10 +3122,15 @@ static void btc_flush(thread_db* tdbb, SLONG transaction_mask, const bool sys_on
 		const PageNumber page = bdb->bdb_page;
 //		BTC_MUTEX_RELEASE;
 
+#ifndef SUPERSERVER
+		if (bdb->bdb_use_count)
+			BUGCHECK(210);	/* msg 210 page in use during flush */
+#endif
 		/* if any transaction has dirtied this page,
 		   check to see if it could have been this one */
 
-		if ((transaction_mask & bdb->bdb_transactions) || (bdb->bdb_flags & BDB_system_dirty) ||
+		if ((transaction_mask & bdb->bdb_transactions) ||
+			(bdb->bdb_flags & BDB_system_dirty) ||
 			(!transaction_mask && !sys_only) || (!bdb->bdb_transactions))
 		{
 			if (!write_buffer(tdbb, bdb, page, false, status, true)) {
@@ -2970,7 +3140,8 @@ static void btc_flush(thread_db* tdbb, SLONG transaction_mask, const bool sys_on
 
 		/* re-post the lock only if it was really written */
 
-		if ((bdb->bdb_ast_flags & BDB_blocking) && !(bdb->bdb_flags & BDB_dirty))
+		if ((bdb->bdb_ast_flags & BDB_blocking) &&
+			!(bdb->bdb_flags & BDB_dirty))
 		{
 			PAGE_LOCK_RE_POST(bdb->bdb_lock);
 		}
@@ -3047,7 +3218,7 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 		{
 			comp = -1;
 		}
-
+	
 		if (comp == 0)
 		{
 //			BTC_MUTEX_RELEASE;
@@ -3087,7 +3258,8 @@ static void btc_insert_balanced(Database* dbb, BufferDesc* bdb)
 		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 		if (stackp == 0)
 		{
-			subtree = btc_insert_balance(&dbb->dbb_bcb->bcb_btree, subtree, stack[0].comp);
+			subtree = btc_insert_balance(&dbb->dbb_bcb->bcb_btree,
+										 subtree, stack[0].comp);
 		}
 		else
 		{
@@ -3200,14 +3372,14 @@ static bool btc_insert_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 			else
 			{
 				p1 = p->bdb_left;
-
+				
 				if (p1->bdb_balance == comp)
 				{
 					if ( (p->bdb_left = p1->bdb_right) )
 					{
 						p1->bdb_right->bdb_parent = p;
 					}
-
+	
 					p1->bdb_right = p;
 					p1->bdb_parent = p->bdb_parent;
 					p->bdb_parent = p1;
@@ -3318,8 +3490,9 @@ static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 				bdb->bdb_parent = node;
 				break;
 			}
-
-			node = node->bdb_left;
+			else {
+				node = node->bdb_left;
+			}
 		}
 		else {
 			if (!node->bdb_right) {
@@ -3327,8 +3500,8 @@ static void btc_insert_unbalanced(Database* dbb, BufferDesc* bdb)
 				bdb->bdb_parent = node;
 				break;
 			}
-
-			node = node->bdb_right;
+			else
+				node = node->bdb_right;
 		}
 	}
 
@@ -3364,8 +3537,9 @@ static void btc_remove_balanced(BufferDesc* bdb)
 //	BTC_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
 
-	if (!bcb->bcb_btree ||
-		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && bcb->bcb_btree != bdb))
+	if ((!bcb->bcb_btree) ||
+		(!bdb->bdb_parent &&
+		 !bdb->bdb_left && !bdb->bdb_right && (bcb->bcb_btree != bdb)))
 	{
 		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
 		{
@@ -3373,9 +3547,10 @@ static void btc_remove_balanced(BufferDesc* bdb)
 //			BTC_MUTEX_RELEASE;
 			return;
 		}
-
-		BUGCHECK(211);
-		/* msg 211 attempt to remove page from dirty page list when not there */
+		else {
+			BUGCHECK(211);
+			/* msg 211 attempt to remove page from dirty page list when not there */
+		}
 	}
 
 /* stack the way to node from root */
@@ -3400,7 +3575,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		{
 			comp = -1;
 		}
-
+	
 		stackp++;
 		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 
@@ -3410,16 +3585,18 @@ static void btc_remove_balanced(BufferDesc* bdb)
 			stack[stackp].comp = -1;
 			break;
 		}
-
-		stack[stackp].bdb_node = p;
-		stack[stackp].comp = comp;
-
-		p = (comp > 0) ? p->bdb_right : p->bdb_left;
-
-		// node not found, bad tree
-		if (!p)
+		else
 		{
-			BUGCHECK(211);
+			stack[stackp].bdb_node = p;
+			stack[stackp].comp = comp;
+			
+			p = (comp > 0) ? p->bdb_right : p->bdb_left;
+
+			// node not found, bad tree
+			if (!p)
+			{
+				BUGCHECK(211);
+			}
 		}
 	}
 
@@ -3430,7 +3607,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		BUGCHECK(211);
 	}
 
-	// delete node
+/* delete node */
 
 	if (!bdb->bdb_right || !bdb->bdb_left)
 	{
@@ -3456,7 +3633,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 			{
 				stack[stackp].bdb_node->bdb_left = p;
 			}
-
+		
 			if (p)
 			{
 				p->bdb_parent = stack[stackp].bdb_node;
@@ -3501,7 +3678,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		}
 		else
 		{
-			const int stackp_save = stackp;
+			const int stackp_save = stackp; 
 
 			while (p->bdb_right)
 			{
@@ -3557,7 +3734,8 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		fb_assert(stackp >= 0 && stackp < BTREE_STACK_SIZE);
 		if (stackp == 0)
 		{
-			subtree = btc_remove_balance(&bcb->bcb_btree, subtree, stack[0].comp);
+			subtree = btc_remove_balance(&bcb->bcb_btree,
+										 subtree, stack[0].comp);
 		}
 		else
 		{
@@ -3648,7 +3826,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 				{
 					// double RL or LR rotation
 
-					p2 = p1->bdb_left;
+					p2 = p1->bdb_left; 
 					const SSHORT b2 = p2->bdb_balance;
 
 					if ( (p1->bdb_left = p2->bdb_right) )
@@ -3656,7 +3834,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 						p2->bdb_right->bdb_parent = p1;
 					}
 
-					p2->bdb_right = p1;
+					p2->bdb_right = p1; 
 					p1->bdb_parent = p2;
 
 					if ( (p->bdb_right = p2->bdb_left) )
@@ -3665,7 +3843,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 					}
 
 					p2->bdb_left = p;
-					p2->bdb_parent = p->bdb_parent;
+					p2->bdb_parent = p->bdb_parent; 
 					p->bdb_parent = p2;
 
 					if (b2 == -comp)
@@ -3705,7 +3883,7 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 					}
 
 					p1->bdb_right = p;
-					p1->bdb_parent = p->bdb_parent;
+					p1->bdb_parent = p->bdb_parent; 
 					p->bdb_parent = p1;
 
 					if (b1 == 0)
@@ -3742,11 +3920,11 @@ static bool btc_remove_balance(BufferDesc** bdb, bool subtree, SSHORT comp)
 						p2->bdb_right->bdb_parent = p;
 					}
 
-					p2->bdb_right = p;
+					p2->bdb_right = p; 
 					p2->bdb_parent = p->bdb_parent;
 					p->bdb_parent = p2;
 
-					if (b2 == -comp)
+					if (b2 == -comp) 
 					{
 						p->bdb_balance = comp;
 					}
@@ -3803,8 +3981,9 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 
 //	BTC_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
-	if (!bcb->bcb_btree ||
-		(!bdb->bdb_parent && !bdb->bdb_left && !bdb->bdb_right && bcb->bcb_btree != bdb))
+	if ((!bcb->bcb_btree) ||
+		(!bdb->bdb_parent &&
+		 !bdb->bdb_left && !bdb->bdb_right && (bcb->bcb_btree != bdb)))
 	{
 		if ((bdb->bdb_flags & BDB_must_write) || !(bdb->bdb_flags & BDB_dirty))
 		{
@@ -3812,9 +3991,10 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 //			BTC_MUTEX_RELEASE;
 			return;
 		}
-
-		BUGCHECK(211);
-		/* msg 211 attempt to remove page from dirty page list when not there */
+		else {
+			BUGCHECK(211);
+			/* msg 211 attempt to remove page from dirty page list when not there */
+		}
 	}
 
 /* make a new child out of the left and right children */
@@ -3876,37 +4056,46 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
  *	busy at a time.
  *
  **************************************/
-	Database* dbb = (Database*) arg;
-	Database::SyncGuard dsGuard(dbb);
-
-	ISC_STATUS_ARRAY status_vector;
+	Database* dbb = (Database*)arg;
+	THREAD_ENTER();
 
 /* Establish a thread context. */
-	ThreadContextHolder tdbb(status_vector);
+/* Note: Since this function operates as its own thread,
+   we have no need to restore the THREAD CONTEXT on exit.
+   Once we reach the end, the thread will die, thus implicitly
+   killing all its contexts. */
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
 
+	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
 	tdbb->setDatabase(dbb);
-	Attachment* const attachment = Attachment::create(dbb);
-	tdbb->setAttachment(attachment);
-	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
+	tdbb->tdbb_status_vector = status_vector;
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment());
+	tdbb->getAttachment()->att_database = dbb;
+	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
-
+   
+	event_t* reader_event = 0;
 	BufferControl* bcb = 0;
 
 	try {
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
+		reader_event = dbb->dbb_reader_event;
 		bcb = dbb->dbb_bcb;
 		bcb->bcb_flags |= BCB_cache_reader;
-		dbb->dbb_reader_init.post();	/* Notify our creator that we have started  */
+		ISC_event_post(reader_event);	/* Notify our creator that we have started  */
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_file->fil_string, status_vector);
+		THREAD_EXIT();
 		return -1;
 	}
 
@@ -3921,14 +4110,16 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	prefetch_init(&prefetch2, tdbb);
 
 	while (bcb->bcb_flags & BCB_cache_reader) {
+		SLONG count = ISC_event_clear(reader_event);
 		bcb->bcb_flags |= BCB_reader_active;
 		bool found = false;
 		SLONG starting_page = -1;
 		prf* next_prefetch = &prefetch1;
 
 		if (dbb->dbb_flags & DBB_suspend_bgio) {
-			Database::Checkout dcoHolder(dbb);
-			dbb->dbb_reader_sem.tryEnter(10);
+			THREAD_EXIT();
+			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
+			THREAD_ENTER();
 			continue;
 		}
 
@@ -3938,7 +4129,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 		do {
 			if (!(prefetch1.prf_flags & PRF_active) &&
-				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward))
+				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) 
 			{
 				found = true;
 				prefetch_prologue(&prefetch1, &starting_page);
@@ -3946,7 +4137,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 			}
 
 			if (!(prefetch2.prf_flags & PRF_active) &&
-				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward))
+				SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward)) 
 			{
 				found = true;
 				prefetch_prologue(&prefetch2, &starting_page);
@@ -3954,7 +4145,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 			}
 
 			prf* post_prefetch = next_prefetch;
-			next_prefetch = (post_prefetch == &prefetch1) ? &prefetch2 : &prefetch1;
+			next_prefetch =
+				(post_prefetch == &prefetch1) ? &prefetch2 : &prefetch1;
 			if (post_prefetch->prf_flags & PRF_active) {
 				prefetch_epilogue(post_prefetch, status_vector);
 			}
@@ -3963,19 +4155,22 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 				/* If the cache writer or garbage collector is idle, put
 				   them to work prefetching pages. */
 #ifdef CACHE_WRITER
-				if ((bcb->bcb_flags & BCB_cache_writer) && !(bcb->bcb_flags & BCB_writer_active))
+				if (bcb->bcb_flags & BCB_cache_writer &&
+					!(bcb->bcb_flags & BCB_writer_active))
 				{
-					dbb_writer_sem.release();
+						ISC_event_post(dbb->dbb_writer_event);
 				}
 #endif
 #ifdef GARBAGE_THREAD
-				if ((dbb->dbb_flags & DBB_garbage_collector) && !(dbb->dbb_flags & DBB_gc_active))
+				if (dbb->dbb_flags & DBB_garbage_collector &&
+					!(dbb->dbb_flags & DBB_gc_active))
 				{
-					dbb->dbb_gc_sem.release();
+					ISC_event_post(dbb->dbb_gc_event);
 				}
 #endif
 			}
-		} while (prefetch1.prf_flags & PRF_active || prefetch2.prf_flags & PRF_active);
+		} while (prefetch1.prf_flags & PRF_active
+				 || prefetch2.prf_flags & PRF_active);
 
 		/* If there's more work to do voluntarily ask to be rescheduled.
 		   Otherwise, wait for event notification. */
@@ -3984,7 +4179,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 			JRD_reschedule(tdbb, 0, true);
 		}
 		else if (bcb->bcb_flags & BCB_free_pending &&
-			(bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)))
+				 (bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)))
 		{
 			/* In our spare time, help writer clean the cache. */
 
@@ -3992,17 +4187,19 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 		}
 		else {
 			bcb->bcb_flags &= ~BCB_reader_active;
-			Database::Checkout dcoHolder(dbb);
-			dbb->dbb_reader_sem.tryEnter(10);
+			THREAD_EXIT();
+			ISC_event_wait(1, &reader_event, &count, 10 * 1000000, NULL, 0);
+			THREAD_ENTER();
 		}
 		bcb = dbb->dbb_bcb;
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	Attachment::destroy(attachment);	// no need saving warning error strings here
-	tdbb->setAttachment(NULL);
+	delete tdbb->getAttachment();
+	tdbb->setAttachment(0);
 	bcb->bcb_flags &= ~BCB_cache_reader;
-	dbb->dbb_reader_fini.post();
+	ISC_event_post(reader_event);
+	THREAD_EXIT();
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4032,74 +4229,81 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Database* dbb = (Database*)arg;
-	Database::SyncGuard dsGuard(dbb);
-
-	ISC_STATUS_ARRAY status_vector;
+	THREAD_ENTER();
 
 /* Establish a thread context. */
-	ThreadContextHolder tdbb(status_vector);
+/* Note: Since this function operates as its own thread,
+   we have no need to restore the THREAD CONTEXT on exit.
+   Once we reach the end, the thread will die, thus implicitly
+   killing all its contexts. */
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
 
+	ISC_STATUS_ARRAY status_vector;
 /* Dummy attachment needed for lock owner identification. */
 
 	tdbb->setDatabase(dbb);
-	Attachment* const attachment = Attachment::create(dbb);
-	tdbb->setAttachment(attachment);
-	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
+	tdbb->tdbb_status_vector = status_vector;
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
+	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
-	Semaphore& writer_sem = dbb->dbb_writer_sem;
+	event_t* writer_event = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	try {
+		writer_event = dbb->dbb_writer_event;
+		ISC_event_init(writer_event, 0, 0);
 		LCK_init(tdbb, LCK_OWNER_attachment);
 		bcb->bcb_flags |= BCB_cache_writer;
 		bcb->bcb_flags &= ~BCB_writer_start;
 
 		/* Notify our creator that we have started */
-		dbb->dbb_writer_init.release();
+		ISC_event_post(dbb->dbb_writer_event_init);
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
+		ISC_event_fini(writer_event);
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
+		THREAD_EXIT();
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
 
 	try {
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
+			SLONG count = ISC_event_clear(writer_event);
 			bcb->bcb_flags |= BCB_writer_active;
-#ifdef CACHE_READER
 			SLONG starting_page = -1;
-#endif
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
-				{ //scope
-					Database::Checkout dcoHolder(dbb);
-					writer_sem.tryEnter(10);
-				}
+				THREAD_EXIT();
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
+				THREAD_ENTER();
 				bcb = dbb->dbb_bcb;
 				continue;
 			}
-
+	
 #ifdef SUPERSERVER_V2
 			/* Flush buffers for lazy commit */
 			SLONG commit_mask;
-			if (!(dbb->dbb_flags & DBB_force_write) && (commit_mask = dbb->dbb_flush_cycle))
+			if (!(dbb->dbb_flags & DBB_force_write) &&
+				(commit_mask = dbb->dbb_flush_cycle))
 			{
 				dbb->dbb_flush_cycle = 0;
 				btc_flush(tdbb, commit_mask, false, status_vector);
 			}
 #endif
 
-			{ // scope
-				Database::Checkout dcoHolder(dbb);
-				THREAD_YIELD();
-			}
+			THREAD_EXIT();
+			THREAD_YIELD();
+			THREAD_ENTER();
 
 			if (bcb->bcb_flags & BCB_free_pending) {
 				BufferDesc* bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1);
@@ -4111,15 +4315,17 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				/* If the cache reader or garbage collector is idle, put
 				   them to work freeing pages. */
 #ifdef CACHE_READER
-				if ((bcb->bcb_flags & BCB_cache_reader) && !(bcb->bcb_flags & BCB_reader_active))
+				if (bcb->bcb_flags & BCB_cache_reader &&
+					!(bcb->bcb_flags & BCB_reader_active))
 				{
-					dbb->dbb_reader_sem.post();
+						ISC_event_post(dbb->dbb_reader_event);
 				}
 #endif
 #ifdef GARBAGE_THREAD
-				if ((dbb->dbb_flags & DBB_garbage_collector) && !(dbb->dbb_flags & DBB_gc_active))
+				if (dbb->dbb_flags & DBB_garbage_collector &&
+					!(dbb->dbb_flags & DBB_gc_active))
 				{
-					dbb->dbb_gc_sem.release();
+						ISC_event_post(dbb->dbb_gc_event);
 				}
 #endif
 			}
@@ -4127,7 +4333,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			/* If there's more work to do voluntarily ask to be rescheduled.
 			   Otherwise, wait for event notification. */
 
-			if ((bcb->bcb_flags & BCB_free_pending) || bcb->bcb_checkpoint || dbb->dbb_flush_cycle)
+			if ((bcb->bcb_flags & BCB_free_pending) ||
+				bcb->bcb_checkpoint || dbb->dbb_flush_cycle)
 			{
 				JRD_reschedule(tdbb, 0, true);
 			}
@@ -4146,18 +4353,21 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 #endif
 			else {
 				bcb->bcb_flags &= ~BCB_writer_active;
-				Database::Checkout dcoHolder(dbb);
-				writer_sem.tryEnter(10);
+				THREAD_EXIT();
+				ISC_event_wait(1, &writer_event, &count, 10 * 1000000, NULL, 0);
+				THREAD_ENTER();
 			}
 			bcb = dbb->dbb_bcb;
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		Attachment::destroy(attachment);	// no need saving warning error strings here
-		tdbb->setAttachment(NULL);
+		delete tdbb->getAttachment();
+		tdbb->setAttachment(0);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		/* Notify the finalization caller that we're finishing. */
-		dbb->dbb_writer_fini.release();
+		ISC_event_post(dbb->dbb_writer_event_fini);
+		ISC_event_fini(writer_event);
+		THREAD_EXIT();
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4197,13 +4407,15 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 
 /* If this is really a transaction id, sort things out */
 
-	if ((page.getPageSpaceID() == DB_PAGE_SPACE) && (page.getPageNum() < 0))
+	if ((page.getPageSpaceID() == DB_PAGE_SPACE) && 
+		(page.getPageNum() < 0)) 
 	{
 		if (-page.getPageNum() <= dbb->dbb_last_header_write) {
 			return;
 		}
-
-		page = PageNumber(DB_PAGE_SPACE, 0);
+		else {
+			page = PageNumber(DB_PAGE_SPACE, 0);
+		}
 	}
 
 /* Start by finding the buffer containing the high priority page */
@@ -4230,7 +4442,8 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 /* Found the higher precedence buffer.  If it's not dirty, don't sweat it.
    If it's the same page, ditto.  */
 
-	if (!(high->bdb_flags & BDB_dirty) || (high->bdb_page == window->win_page))
+	if (!(high->bdb_flags & BDB_dirty)
+		|| (high->bdb_page == window->win_page))
 	{
 //		PRE_MUTEX_RELEASE;
 		return;
@@ -4245,18 +4458,17 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
    search was too complex to complete, just write the high page and
    forget about about establishing the relationship. */
 
-	if (QUE_NOT_EMPTY(high->bdb_lower))
-	{
+	if (QUE_NOT_EMPTY(high->bdb_lower)) {
 		const SSHORT relationship = related(low, high, PRE_SEARCH_LIMIT);
 		if (relationship == PRE_EXISTS) {
 //			PRE_MUTEX_RELEASE;
 			return;
 		}
-
-		if (relationship == PRE_UNKNOWN) {
+		else if (relationship == PRE_UNKNOWN) {
 			const PageNumber high_page = high->bdb_page;
 //			PRE_MUTEX_RELEASE;
-			if (!write_buffer(tdbb, high, high_page, false, tdbb->tdbb_status_vector, true))
+			if (!write_buffer
+				(tdbb, high, high_page, false, tdbb->tdbb_status_vector, true))
 			{
 				CCH_unwind(tdbb, true);
 			}
@@ -4274,7 +4486,8 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 		if (relationship == PRE_EXISTS || relationship == PRE_UNKNOWN) {
 			const PageNumber low_page = low->bdb_page;
 //			PRE_MUTEX_RELEASE;
-			if (!write_buffer(tdbb, low, low_page, false, tdbb->tdbb_status_vector, true))
+			if (!write_buffer
+				(tdbb, low, low_page, false, tdbb->tdbb_status_vector, true))
 			{
 				CCH_unwind(tdbb, true);
 			}
@@ -4311,7 +4524,7 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 
 
 
-static void clear_precedence(thread_db* tdbb, BufferDesc* bdb)
+static void clear_precedence(Database* dbb, BufferDesc* bdb)
 {
 /**************************************
  *
@@ -4323,8 +4536,7 @@ static void clear_precedence(thread_db* tdbb, BufferDesc* bdb)
  *	Clear precedence relationships to lower precedence block.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	SET_DBB(dbb);
 
 //	PRE_MUTEX_ACQUIRE;
 	BufferControl* bcb = dbb->dbb_bcb;
@@ -4365,18 +4577,20 @@ static BufferDesc* dealloc_bdb(BufferDesc* bdb)
  *
  **************************************/
 	if (bdb) {
-#ifndef SUPERSERVER
-		delete bdb->bdb_lock;
+#ifndef PAGE_LATCHING
+		if (bdb->bdb_lock) {
+			delete bdb->bdb_lock;
+		}
 #endif
 		QUE_DELETE(bdb->bdb_que);
 		delete bdb;
 	}
 
-	return NULL;
+	return 0;
 }
 
 
-#ifndef SUPERSERVER
+#ifndef PAGE_LATCHING
 // CVC: Nobody was interested in the result from this function, so I made it
 // void instead of bool, but preserved the returned values in comments.
 static void down_grade(thread_db* tdbb, BufferDesc* bdb)
@@ -4424,7 +4638,16 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 	if (!(bdb->bdb_flags & BDB_dirty)) {
 		bdb->bdb_ast_flags &= ~BDB_blocking;
+#ifdef VMS
+		if (lock->lck_logical == LCK_write) {
+			LCK_convert(tdbb, lock, LCK_read, LCK_WAIT);
+		}
+		else {
+			PAGE_LOCK_RELEASE(bdb->bdb_lock);
+		}
+#else
 		LCK_downgrade(tdbb, lock);
+#endif
 		release_bdb(tdbb, bdb, false, false, false);
 		return; // true;
 	}
@@ -4471,7 +4694,8 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 /* Everything is clear to write this buffer.  Do so and reduce the lock */
 
-	if (invalid || !write_page(tdbb, bdb, false, tdbb->tdbb_status_vector, true))
+	if (invalid
+		|| !write_page(tdbb, bdb, false, tdbb->tdbb_status_vector, true))
 	{
 		bdb->bdb_flags |= BDB_not_valid;
 		// This will also release logical lock on LCK_backup_database
@@ -4483,7 +4707,11 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	}
 	else {
 		bdb->bdb_ast_flags &= ~BDB_blocking;
+#ifdef VMS
+		LCK_convert(tdbb, lock, LCK_read, LCK_WAIT);
+#else
 		LCK_downgrade(tdbb, lock);
+#endif
 	}
 
 /* Clear precedence relationships to lower precedence buffers.  Since it
@@ -4499,7 +4727,8 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		if (bdb->bdb_flags & BDB_not_valid)
 			blocking_bdb->bdb_flags |= BDB_not_valid;
 		precedence->pre_flags |= PRE_cleared;
-		if ((blocking_bdb->bdb_flags & BDB_not_valid) || (blocking_bdb->bdb_ast_flags & BDB_blocking))
+		if (blocking_bdb->bdb_flags & BDB_not_valid ||
+			blocking_bdb->bdb_ast_flags & BDB_blocking)
 		{
 			down_grade(tdbb, blocking_bdb);
 		}
@@ -4550,7 +4779,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	old = dbb->dbb_bcb;
 	const bcb_repeat* const old_end = old->bcb_rpt + old->bcb_count;
 
-	BufferControl* new_block = FB_NEW_RPT(*dbb->dbb_bufferpool, number)
+	BufferControl* new_block =
+		FB_NEW_RPT(*dbb->dbb_bufferpool, number) 
 		BufferControl(*dbb->dbb_bufferpool);
 	new_block->bcb_count = number;
 	new_block->bcb_free_minimum = (SSHORT) MIN(number / 4, 128);	/* 25% clean page reserve */
@@ -4581,8 +4811,6 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	QUE_DELETE(old->bcb_empty);
 	QUE_INSERT(old->bcb_free_lwt, new_block->bcb_free_lwt);
 	QUE_DELETE(old->bcb_free_lwt);
-	QUE_INSERT(old->bcb_free_slt, new_block->bcb_free_slt);
-	QUE_DELETE(old->bcb_free_slt);
 
 /* Copy addresses of previously allocated buffer space to new block */
 
@@ -4600,16 +4828,17 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 	new_tail = new_block->bcb_rpt;
 
-	for (bcb_repeat* old_tail = old->bcb_rpt; old_tail < old_end; old_tail++, new_tail++)
+	for (bcb_repeat* old_tail = old->bcb_rpt; old_tail < old_end;
+		old_tail++, new_tail++)
 	{
 		new_tail->bcb_bdb = old_tail->bcb_bdb;
 		while (QUE_NOT_EMPTY(old_tail->bcb_page_mod)) {
 			QUE que_inst = old_tail->bcb_page_mod.que_forward;
 			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
-			QUE_DELETE(*que_inst);
+			QUE_DELETE((*que_inst));
 			QUE mod_que =
 				&new_block->bcb_rpt[bdb->bdb_page.getPageNum() % new_block->bcb_count].bcb_page_mod;
-			QUE_INSERT(*mod_que, *que_inst);
+			QUE_INSERT((*mod_que), (*que_inst));
 		}
 	}
 
@@ -4681,24 +4910,20 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-#ifdef CACHE_WRITER
 	SSHORT walk = dbb->dbb_bcb->bcb_free_minimum;
-#endif
 
 //	BCB_MUTEX_ACQUIRE;
 
-	while (true)
-	{
+	while (true) {
 	  find_page:
 
 		bcb = dbb->dbb_bcb;
-		if (page.getPageNum() >= 0)
-		{
+		if (page.getPageNum() >= 0) {
 			/* Check to see if buffer has already been assigned to page */
 
 			QUE mod_que = &bcb->bcb_rpt[page.getPageNum() % bcb->bcb_count].bcb_page_mod;
 			for (que_inst = mod_que->que_forward; que_inst != mod_que;
-				que_inst = que_inst->que_forward)
+				 que_inst = que_inst->que_forward) 
 			{
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
 				if (bdb->bdb_page == page) {
@@ -4707,8 +4932,8 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #endif
 						QUE_MOST_RECENTLY_USED(bdb->bdb_in_use);
 //					BCB_MUTEX_RELEASE;
-					const SSHORT latch_return = latch_bdb(tdbb, latch, bdb, page, latch_wait);
-
+					const SSHORT latch_return =
+						latch_bdb(tdbb, latch, bdb, page, latch_wait);
 					if (latch_return) {
 						if (latch_return == 1) {
 							return NULL;	/* permitted timeout happened */
@@ -4716,32 +4941,34 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 //						BCB_MUTEX_ACQUIRE;
 						goto find_page;
 					}
-
-					bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
-					tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
-					return bdb;
+					else {
+						bdb->bdb_flags &= ~(BDB_faked | BDB_prefetch);
+						dbb->dbb_fetches++;
+						tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
+						return bdb;
+					}
 				}
 			}
 		}
 #ifdef CACHE_WRITER
-		else if ((page == FREE_PAGE) || (page == CHECKPOINT_PAGE))
-		{
+		else if ((page == FREE_PAGE) || (page == CHECKPOINT_PAGE)) {
 			/* This code is only used by the background I/O threads:
 			   cache writer, cache reader and garbage collector. */
 
-			Database::Checkout dcoHolder(dbb);
+			THREAD_EXIT();
 
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
-				if (page == FREE_PAGE)
-				{
-					if (bdb->bdb_use_count || (bdb->bdb_flags & BDB_free_pending))
+				if (page == FREE_PAGE) {
+					if (bdb->bdb_use_count ||
+						bdb->bdb_flags & BDB_free_pending)
 					{
 						continue;
 					}
 					if (bdb->bdb_flags & BDB_db_dirty) {
+						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4753,6 +4980,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				else {			/* if (page == CHECKPOINT_PAGE) */
 
 					if (bdb->bdb_flags & BDB_checkpoint) {
+						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4763,6 +4991,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				bcb->bcb_flags &= ~BCB_free_pending;
 			}
 
+			THREAD_ENTER();
 //			BCB_MUTEX_RELEASE;
 			return NULL;
 		}
@@ -4777,14 +5006,12 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			/* If there is an empty buffer sitting around, allocate it */
 
-			if (QUE_NOT_EMPTY(bcb->bcb_empty))
-			{
+			if (QUE_NOT_EMPTY(bcb->bcb_empty)) {
 				que_inst = bcb->bcb_empty.que_forward;
-				QUE_DELETE(*que_inst);
+				QUE_DELETE((*que_inst));
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
-				if (page.getPageNum() >= 0)
-				{
-					QUE_INSERT(*mod_que, *que_inst);
+				if (page.getPageNum() >= 0) {
+					QUE_INSERT((*mod_que), (*que_inst));
 #ifdef SUPERSERVER_V2
 					/* Reserve a buffer for header page with deferred header
 					   page write mechanism. Otherwise, a deadlock will occur
@@ -4813,7 +5040,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				if (latch_bdb(tdbb, latch, bdb, page, -100) == -1) {
 					BUGCHECK(302);	/* msg 302 unexpected page change */
 				}
-#ifndef SUPERSERVER
+#ifndef PAGE_LATCHING
 				if (page.getPageNum() >= 0) {
 					CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page));
 					bdb->bdb_lock->lck_logical = LCK_none;
@@ -4822,6 +5049,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				}
 #endif
+				dbb->dbb_fetches++;
 				tdbb->bumpStats(RuntimeStatistics::PAGE_FETCHES);
 //				BCB_MUTEX_RELEASE;
 				return bdb;
@@ -4836,8 +5064,9 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			BufferDesc* oldest = BLOCK(que_inst, BufferDesc*, bdb_in_use);
 //			LATCH_MUTEX_ACQUIRE;
-			if (oldest->bdb_use_count || (oldest->bdb_flags & BDB_free_pending) ||
-				!writeable(oldest))
+			if (oldest->bdb_use_count
+				|| (oldest->bdb_flags & BDB_free_pending)
+				|| !writeable(oldest))
 			{
 //				LATCH_MUTEX_RELEASE;
 				continue;
@@ -4847,8 +5076,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			/* If page has been prefetched but not yet fetched, let
 			   it cycle once more thru LRU queue before re-using it. */
 
-			if (oldest->bdb_flags & BDB_prefetch)
-			{
+			if (oldest->bdb_flags & BDB_prefetch) {
 				oldest->bdb_flags &= ~BDB_prefetch;
 				que_inst = que_inst->que_forward;
 				QUE_MOST_RECENTLY_USED(oldest->bdb_in_use);
@@ -4858,18 +5086,20 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #endif
 //			LATCH_MUTEX_RELEASE;
 #ifdef CACHE_WRITER
-			if (oldest->bdb_flags & (BDB_dirty | BDB_db_dirty))
-			{
+			if (oldest->bdb_flags & (BDB_dirty | BDB_db_dirty)) {
 				bcb->bcb_flags |= BCB_free_pending;
-				if ((bcb->bcb_flags & BCB_cache_writer) && !(bcb->bcb_flags & BCB_writer_active))
+				if (bcb->bcb_flags & BCB_cache_writer &&
+					!(bcb->bcb_flags & BCB_writer_active))
 				{
-					dbb->dbb_writer_sem.release();
+					ISC_event_post(dbb->dbb_writer_event);
 				}
 				if (walk) {
-					if (!--walk)
+					if (!--walk) {
 						break;
-
-					continue;
+					}
+					else {
+						continue;
+					}
 				}
 			}
 #endif
@@ -4882,13 +5112,16 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			/* If the buffer selected is dirty, arrange to have it written. */
 
-			if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
-			{
+			if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) {
 //				BCB_MUTEX_RELEASE;
 #ifdef SUPERSERVER
-				if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
+				if (!write_buffer
+					(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector,
+					 true))
 #else
-				if (!write_buffer (tdbb, bdb, bdb->bdb_page, false, tdbb->tdbb_status_vector, true))
+				if (!write_buffer
+					(tdbb, bdb, bdb->bdb_page, false,
+					 tdbb->tdbb_status_vector, true))
 #endif
 				{
 					bdb->bdb_flags &= ~BDB_free_pending;
@@ -4913,8 +5146,10 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			/* if the page has an expanded index buffer, release it */
 
-			delete bdb->bdb_expanded_buffer;
-			bdb->bdb_expanded_buffer = NULL;
+			if (bdb->bdb_expanded_buffer) {
+				delete bdb->bdb_expanded_buffer;
+				bdb->bdb_expanded_buffer = NULL;
+			}
 
 			/* Cleanup any residual precedence blocks.  Unless something is
 			   screwed up, the only precedence blocks that can still be hanging
@@ -4931,7 +5166,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			}
 //			PRE_MUTEX_RELEASE;
 
-			clear_precedence(tdbb, bdb);
+			clear_precedence(dbb, bdb);
 
 			/* remove the buffer from the "mod" queue and place it
 			   in it's new spot, provided it's not a negative (scratch) page */
@@ -4941,7 +5176,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				QUE_DELETE(bdb->bdb_que);
 			}
 			QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
-			QUE_DELETE(bdb->bdb_in_use);
+			QUE_DELETE(bdb->bdb_in_use)
 
 			bdb->bdb_page = JOURNAL_PAGE;
 			release_bdb(tdbb, bdb, false, false, false);
@@ -4981,8 +5216,9 @@ static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
 	release_bdb(tdbb, bdb, false, false, false);
 }
 
-
-static SSHORT latch_bdb(thread_db* tdbb,
+#ifdef PAGE_LATCHING
+static SSHORT latch_bdb(
+						thread_db* tdbb,
 						LATCH type, BufferDesc* bdb, const PageNumber page, SSHORT latch_wait)
 {
 /**************************************
@@ -5021,13 +5257,11 @@ static SSHORT latch_bdb(thread_db* tdbb,
 
 /* Handle the easy case first, no users of the buffer. */
 
-	if (!bdb->bdb_use_count)
-	{
-		switch (type)
-		{
+	if (!bdb->bdb_use_count) {
+		switch (type) {
 		case LATCH_shared:
 			++bdb->bdb_use_count;
-			allocSharedLatch(tdbb, bdb);
+			bdb->bdb_shared[0] = tdbb;
 			break;
 		case LATCH_exclusive:
 			++bdb->bdb_use_count;
@@ -5060,8 +5294,9 @@ static SSHORT latch_bdb(thread_db* tdbb,
    flag is set, then an exclusive latch request will be followed by
    an io latch request. */
 
-	switch (type)
-	{
+	SSHORT i;
+	
+	switch (type) {
 
 	case LATCH_none:
 //		LATCH_MUTEX_RELEASE;
@@ -5076,15 +5311,16 @@ static SSHORT latch_bdb(thread_db* tdbb,
 				break;			/* someone else owns exclusive latch */
 			}
 		}
-		else
-		{
+		else {
 			/* Note that Firebird often 'hands-off' to the same page, for both
 			   shared and exlusive latches. */
 			/* Check if we own already an exclusive latch. */
-			if (!findSharedLatch(tdbb, bdb)) {	// we don't own a shared latch yet
+			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
+				 i++);
+			if (i >= BDB_max_shared) {	/* we don't own a shared latch yet */
 				/* If there are latch-waiters, and they are not waiting for an
 				   io_latch, then we have to wait also (there must be a exclusive
-				   latch waiter).  If there is an IO in progress, then violate the
+				   latch waiter).  If there is an IO in progress, the violate the
 				   fairness and sneak ahead of the exclusive (or io) waiters. */
 
 				if ((QUE_NOT_EMPTY(bdb->bdb_waiters)) && !bdb->bdb_io) {
@@ -5095,8 +5331,12 @@ static SSHORT latch_bdb(thread_db* tdbb,
 		/* Nobody owns an exlusive latch, or sneak ahead of exclusive latch
 		   waiters while an io is in progress. */
 
+		for (i = 0; (i < BDB_max_shared) && bdb->bdb_shared[i]; i++); // empty loop body
+		if (i >= BDB_max_shared) {
+			break;
+		}
 		++bdb->bdb_use_count;
-		allocSharedLatch(tdbb, bdb);
+		bdb->bdb_shared[i] = tdbb;
 //		LATCH_MUTEX_RELEASE;
 		return 0;
 
@@ -5160,12 +5400,13 @@ static SSHORT latch_bdb(thread_db* tdbb,
 	LatchWait* lwt;
 	if (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
 		QUE que_inst = bcb->bcb_free_lwt.que_forward;
-		QUE_DELETE(*que_inst);
+		QUE_DELETE((*que_inst));
 		lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 	}
 	else {
 		lwt = FB_NEW(*dbb->dbb_bufferpool) LatchWait;
 		QUE_INIT(lwt->lwt_waiters);
+		ISC_event_init(&lwt->lwt_event, 0, 0);
 	}
 
 	lwt->lwt_flags |= LWT_pending;
@@ -5176,24 +5417,32 @@ static SSHORT latch_bdb(thread_db* tdbb,
    precedence writes.  This does not cause starvation because an
    exclusive latch is needed to dirty the page again. */
 	if ((type == LATCH_io) || (type == LATCH_mark)) {
-		QUE_INSERT(bdb->bdb_waiters, lwt->lwt_waiters);
+		QUE_INSERT(bdb->bdb_waiters, lwt->lwt_waiters)
 	}
 	else {
 		QUE_APPEND(bdb->bdb_waiters, lwt->lwt_waiters);
 	}
 
+	event_t* event = &lwt->lwt_event;
+
 	int timeout_occurred = FALSE;
 /* Loop until the latch is granted or until a timeout occurrs. */
-	while ((lwt->lwt_flags & LWT_pending) && !timeout_occurred)
+	for (SLONG count = ISC_event_clear(event);
+		 ((lwt->lwt_flags & LWT_pending) && !timeout_occurred);
+		 count = ISC_event_clear(event))
 	{
 //		LATCH_MUTEX_RELEASE;
-		Database::Checkout dcoHolder(dbb);
+		THREAD_EXIT();
 		if (latch_wait == 1) {
-			timeout_occurred = !(lwt->lwt_sem.tryEnter(120));
+			timeout_occurred =
+				ISC_event_wait(1, &event, &count, 120 * 1000000, NULL, event);
 		}
 		else {
-			lwt->lwt_sem.enter();
+			timeout_occurred =
+				ISC_event_wait(1, &event, &count, -latch_wait * 1000000,
+							   NULL, event);
 		}
+		THREAD_ENTER();
 //		LATCH_MUTEX_ACQUIRE;
 	}
 
@@ -5202,11 +5451,10 @@ static SSHORT latch_bdb(thread_db* tdbb,
 	QUE_INSERT(bcb->bcb_free_lwt, lwt->lwt_waiters);
 
 /* If the latch is not granted then a timeout must have occurred. */
-	if ((lwt->lwt_flags & LWT_pending) && timeout_occurred)
-	{
+	if ((lwt->lwt_flags & LWT_pending) && timeout_occurred) {
 //		LATCH_MUTEX_RELEASE;
 		if (latch_wait == 1) {
-			ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_deadlock));
+			IBERR_build_status(tdbb->tdbb_status_vector, isc_deadlock, isc_arg_end);
 			CCH_unwind(tdbb, true);
 		}
 		else {
@@ -5225,7 +5473,51 @@ static SSHORT latch_bdb(thread_db* tdbb,
 }
 
 
-static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR page_type)
+#else
+static SSHORT latch_bdb(
+						thread_db* tdbb,
+						LATCH type, BufferDesc* bdb, const PageNumber page, SSHORT latch_wait)
+{
+/**************************************
+ *
+ *	l a t c h _ b d b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Simple optimized latching for single-threaded
+ *	non-SUPERSERVER platforms.
+ *
+ **************************************/
+
+	++bdb->bdb_use_count;
+
+	switch (type) {
+	case LATCH_shared:
+		break;
+	case LATCH_exclusive:
+		bdb->bdb_exclusive = tdbb;
+		break;
+	case LATCH_io:
+		bdb->bdb_io = tdbb;
+		break;
+	case LATCH_mark:
+		bdb->bdb_io = tdbb;
+	case LATCH_none:
+		--bdb->bdb_use_count;
+		break;
+	}
+
+	return 0;
+}
+#endif
+
+
+static SSHORT lock_buffer(
+		thread_db* tdbb,
+		BufferDesc* bdb,
+		SSHORT wait,
+		SCHAR page_type)
 {
 /**************************************
  *
@@ -5249,21 +5541,22 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
  *
  **************************************/
 	SET_TDBB(tdbb);
-#ifdef SUPERSERVER
+#ifdef PAGE_LATCHING
 	return ((bdb->bdb_flags & BDB_read_pending) ? 1 : 0);
 #else
-	const USHORT lock_type = (bdb->bdb_flags & (BDB_dirty | BDB_writer)) ? LCK_write : LCK_read;
+	const USHORT lock_type =
+		(bdb->bdb_flags & (BDB_dirty | BDB_writer)) ? LCK_write : LCK_read;
 	Lock* lock = bdb->bdb_lock;
 
 	if (lock->lck_logical >= lock_type) {
 		return 0;
 	}
 
+
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
-	if (lock->lck_logical == LCK_none)
-	{
+	if (lock->lck_logical == LCK_none) {
 		/* Prevent header and TIP pages from generating blocking AST
 		   overhead. The promise is that the lock will unconditionally
 		   be released when the buffer use count indicates it is safe
@@ -5281,13 +5574,14 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 
 		//lock->lck_key.lck_long = bdb->bdb_page;
 		bdb->bdb_page.getLockStr(lock->lck_key.lck_string);
-		if (LCK_lock_opt(tdbb, lock, lock_type, wait))
-		{
+		if (PAGE_LOCK_OPT(lock, lock_type, wait)) {
 			if (!lock->lck_ast) {
-				// Restore blocking AST to lock block if it was swapped out.
-				// Flag the BufferDesc so that the lock is released when the buffer is released.
+				/* Restore blocking AST to lock block if it was swapped
+				   out. Flag the BufferDesc so that the lock is released when
+				   the buffer is released. */
 
-				fb_assert(page_type == pag_header || page_type == pag_transactions);
+				fb_assert(page_type == pag_header
+					   || page_type == pag_transactions);
 				lock->lck_ast = blocking_ast_bdb;
 				lock->lck_object = bdb;
 				bdb->bdb_flags |= BDB_no_blocking_ast;
@@ -5303,9 +5597,9 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 		/* Case: a timeout was specified, or the caller didn't want to wait,
 		   return the error. */
 
-		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
+		if ((wait == LCK_NO_WAIT)
+			|| ((wait < 0) && (status[1] == isc_lock_timeout)))
 		{
-			fb_utils::init_status(status);
 			release_bdb(tdbb, bdb, false, false, false);
 			return -1;
 		}
@@ -5316,7 +5610,8 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 
 		fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 			MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
-		ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
+		IBERR_append_status(status, isc_random, isc_arg_string,
+							ERR_cstring(errmsg), isc_arg_end);
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
 
 		/* CCH_unwind releases all the BufferDesc's and calls ERR_punt()
@@ -5344,16 +5639,15 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 
 	memcpy(tdbb->tdbb_status_vector, alt_status, sizeof(alt_status));
 
-	if (LCK_lock(tdbb, lock, lock_type, wait)) {
+	if (PAGE_LOCK(lock, lock_type, wait)) {
 		return 1;
 	}
 
 /* Case: a timeout was specified, or the caller didn't want to wait,
    return the error. */
 
-	if ((wait < 0) && (status[1] == isc_lock_timeout))
+	if ((wait < 0) && (status[1] == isc_lock_timeout)) 
 	{
-		fb_utils::init_status(status);
 		release_bdb(tdbb, bdb, false, false, false);
 		return -1;
 	}
@@ -5364,7 +5658,8 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, SSHORT wait, SCHAR p
 
 	fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 					MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
-	ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
+	IBERR_append_status(status, isc_random, isc_arg_string,
+						ERR_cstring(errmsg), isc_arg_end);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */
 
 	CCH_unwind(tdbb, true);
@@ -5408,7 +5703,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 				memory_size = page_size * (number + 1);
 			}
 
-			while (true)
+			while (true) 
 			{
 				try {
 					memory = (UCHAR*) dbb->dbb_bufferpool->allocate(memory_size);
@@ -5440,8 +5735,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 
 		QUE_INIT(tail->bcb_page_mod);
 
-		if (!(tail->bcb_bdb = alloc_bdb(tdbb, bcb, &memory)))
-		{
+		if (!(tail->bcb_bdb = alloc_bdb(tdbb, bcb, &memory))) {
 			/* Whoops! Time to reset our expectations. Release the
 			   buffer memory but use that memory size to calculate
 			   a new number that takes into account the page buffer
@@ -5497,15 +5791,16 @@ static void page_validation_error(thread_db* tdbb, WIN * window, SSHORT type)
 	BufferDesc* bdb = window->win_bdb;
 	const pag* page = bdb->bdb_buffer;
 
-	PageSpace* pages =
-		tdbb->getDatabase()->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
+	PageSpace* pages = tdbb->getDatabase()->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 
-	ERR_build_status(tdbb->tdbb_status_vector,
-					 Arg::Gds(isc_db_corrupt) << Arg::Str(pages->file->fil_string) <<
-					 Arg::Gds(isc_page_type_err) <<
-					 Arg::Gds(isc_badpagtyp) << Arg::Num(bdb->bdb_page.getPageNum()) <<
-												Arg::Num(type) <<
-												Arg::Num(page->pag_type));
+	IBERR_build_status(tdbb->tdbb_status_vector,
+					   isc_db_corrupt,
+					   isc_arg_string, ERR_cstring(pages->file->fil_string),
+					   isc_arg_gds, isc_page_type_err,
+					   isc_arg_gds, isc_badpagtyp,
+					   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(),
+					   isc_arg_number, (SLONG) type,
+					   isc_arg_number, (SLONG) page->pag_type, isc_arg_end);
 /* We should invalidate this bad buffer. */
 	CCH_unwind(tdbb, true);
 }
@@ -5531,17 +5826,16 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 		return;
 	}
 
-	thread_db* tdbb = prefetch->prf_tdbb;
-	Database* dbb = tdbb->getDatabase();
-
 	prefetch->prf_piob.piob_wait = TRUE;
-	const bool async_status = PIO_status(dbb, &prefetch->prf_piob, status_vector);
+	const bool async_status = PIO_status(&prefetch->prf_piob, status_vector);
 
 /* If there was an I/O error release all buffer latches acquired
    for the prefetch request. */
 
-	if (!async_status)
-	{
+	thread_db* tdbb = prefetch->prf_tdbb;
+	Database* dbb = tdbb->getDatabase();
+
+	if (!async_status) {
 		BufferDesc** next_bdb = prefetch->prf_bdbs;
 		for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {
 			if (*next_bdb) {
@@ -5556,12 +5850,12 @@ static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
 	const SCHAR* next_buffer = prefetch->prf_io_buffer;
 	BufferDesc** next_bdb = prefetch->prf_bdbs;
 
-	for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++)
-	{
+	for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {
 		if (*next_bdb) {
 			pag* page = (*next_bdb)->bdb_buffer;
 			if (next_buffer != reinterpret_cast<char*>(page)) {
-				memcpy(page, next_buffer, (ULONG) dbb->dbb_page_size);
+				MOVE_FASTER(next_buffer, (SCHAR *) page,
+							(ULONG) dbb->dbb_page_size);
 			}
 			if (page->pag_checksum == CCH_checksum(*next_bdb)) {
 				(*next_bdb)->bdb_flags &= ~(BDB_read_pending | BDB_not_valid);
@@ -5597,8 +5891,9 @@ static void prefetch_init(Prefetch* prefetch, thread_db* tdbb)
 	prefetch->prf_flags = 0;
 	prefetch->prf_max_prefetch = PREFETCH_MAX_TRANSFER / dbb->dbb_page_size;
 	prefetch->prf_aligned_buffer =
-		(SCHAR*) (((U_IPTR) &prefetch->prf_unaligned_buffer + MIN_PAGE_SIZE - 1) &
-		~((U_IPTR) MIN_PAGE_SIZE - 1));
+		(SCHAR
+		 *) (((U_IPTR) & prefetch->prf_unaligned_buffer + MIN_PAGE_SIZE -
+			  1) & ~((U_IPTR) MIN_PAGE_SIZE - 1));
 }
 
 
@@ -5621,17 +5916,17 @@ static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
 	if (!prefetch->prf_page_count) {
 		prefetch->prf_flags &= ~PRF_active;
 	}
-	else
-	{
+	else {
 		/* Get the cache reader working on our behalf too */
 
 		if (!(dbb->dbb_bcb->bcb_flags & BCB_reader_active)) {
-			dbb->dbb_reader_sem.post();
+			ISC_event_post(dbb->dbb_reader_event);
 		}
 
 		const bool async_status =
-			PIO_read_ahead(dbb, prefetch->prf_start_page, prefetch->prf_io_buffer,
-						   prefetch->prf_page_count, &prefetch->prf_piob, status_vector);
+			PIO_read_ahead(dbb, prefetch->prf_start_page,
+						   prefetch->prf_io_buffer, prefetch->prf_page_count,
+						   &prefetch->prf_piob, status_vector);
 		if (!async_status) {
 			BufferDesc** next_bdb = prefetch->prf_bdbs;
 			for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {
@@ -5668,8 +5963,7 @@ static void prefetch_prologue(Prefetch* prefetch, SLONG* start_page)
 	prefetch->prf_flags |= PRF_active;
 
 	BufferDesc** next_bdb = prefetch->prf_bdbs;
-	for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++)
-	{
+	for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++) {
 		*next_bdb = 0;
 		if (SBM_clear(bcb->bcb_prefetch, *start_page) &&
 			(*next_bdb = get_buffer(tdbb, *start_page, LATCH_shared, 0)))
@@ -5727,8 +6021,7 @@ static SSHORT related(const BufferDesc* low, const BufferDesc* high, SSHORT limi
 			return PRE_UNKNOWN;
 		}
 		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
-		if (!(precedence->pre_flags & PRE_cleared))
-		{
+		if (!(precedence->pre_flags & PRE_cleared)) {
 			if (precedence->pre_hi == high) {
 				return PRE_EXISTS;
 			}
@@ -5743,11 +6036,12 @@ static SSHORT related(const BufferDesc* low, const BufferDesc* high, SSHORT limi
 }
 
 
-static void release_bdb(thread_db* tdbb,
+#ifdef PAGE_LATCHING
+static void release_bdb(
+						thread_db* tdbb,
 						BufferDesc* bdb,
 						const bool repost,
-						const bool downgrade_latch,
-						const bool rel_mark_latch)
+						const bool downgrade_latch, const bool rel_mark_latch)
 {
 /**************************************
  *
@@ -5758,25 +6052,25 @@ static void release_bdb(thread_db* tdbb,
  * Functional description
  *	Decrement the use count of a BufferDesc, reposting
  *	blocking AST if required.
- *	If rel_mark_latch is true, the value of downgrade_latch is ignored.
+ *	If rel_mark_latch is true, the the value of downgrade_latch is ignored.
  *
  **************************************/
+	SSHORT i;
 
 //	LATCH_MUTEX_ACQUIRE;
 
 	QUE wait_que = &bdb->bdb_waiters;
 
 /* Releasing a LATCH_mark. */
-	if (rel_mark_latch)
-	{
+	if (rel_mark_latch) {
 		if ((bdb->bdb_io != tdbb) || (bdb->bdb_exclusive != tdbb)) {
 			BUGCHECK(294);	/* inconsistent LATCH_mark release */
 		}
 		bdb->bdb_io = 0;
 	}
-	else if (downgrade_latch)
-	{
-		/* Downgrading from an exlusive to a shared latch. */
+	else
+/* Downgrading from an exlusive to a shared latch. */
+	if (downgrade_latch) {
 		/* Only the transition from exclusive to shared is supported.
 		   If an actual state changed, then we need to check if waiters
 		   can be granted.  Otherwise, there is nothing further to do. */
@@ -5785,28 +6079,24 @@ static void release_bdb(thread_db* tdbb,
 		}
 		if (bdb->bdb_exclusive == tdbb) {
 			bdb->bdb_exclusive = 0;
-			allocSharedLatch(tdbb, bdb);
+			for (i = 0; bdb->bdb_shared[i]; i++); // empty loop body
+			bdb->bdb_shared[i] = tdbb;
 		}
 		else {
 //			LATCH_MUTEX_RELEASE;
 			return;
 		}
 	}
-	else if (bdb->bdb_exclusive == tdbb)
-	{
-		/* If the exclusive latch is held, then certain code does funny things:
-		ail.c does: exclusive - mark - exclusive */
+	else
+/* If the exclusive latch is held, then certain code does funny things:
+   ail.c does: exclusive - mark - exclusive */
+	if (bdb->bdb_exclusive == tdbb) {
 		--bdb->bdb_use_count;
 		if (!bdb->bdb_use_count) {	/* All latches are released */
 			bdb->bdb_exclusive = bdb->bdb_io = 0;
-			while (QUE_NOT_EMPTY(bdb->bdb_shared))
-			{
-				SharedLatch* latch = BLOCK(bdb->bdb_shared.que_forward, SharedLatch*, slt_bdb_que);
-				freeSharedLatch(tdbb, bdb->bdb_dbb->dbb_bcb, latch);
-			}
+			for (i = 0; i < BDB_max_shared; bdb->bdb_shared[i++] = 0); // null loop body
 		}
-		else if (bdb->bdb_io)
-		{	/* This is a release for an io or an exclusive latch */
+		else if (bdb->bdb_io) {	/* This is a release for an io or an exclusive latch */
 			if (bdb->bdb_io == tdbb) {	/* We have an io latch */
 
 				/* The BDB_must_write flag causes the system to latch for io, in addition
@@ -5823,15 +6113,16 @@ static void release_bdb(thread_db* tdbb,
 			}
 		}
 		else {					/* This is a release for a shared latch */
-			SharedLatch* latch = findSharedLatch(tdbb, bdb);
-			if (latch) {
-				freeSharedLatch(tdbb, bdb->bdb_dbb->dbb_bcb, latch);
+			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
+				 i++); // null loop body
+			if (i < BDB_max_shared) {
+				bdb->bdb_shared[i] = 0;
 			}
 		}
 	}
 	else
+/* If the exclusive latch is not held, then things have to behave much nicer. */
 	{
-		/* If the exclusive latch is not held, then things have to behave much nicer. */
 		if (bdb->bdb_flags & BDB_marked) {
 			BUGCHECK(297);	/* bdb is unexpectedly marked */
 		}
@@ -5840,11 +6131,12 @@ static void release_bdb(thread_db* tdbb,
 			bdb->bdb_io = 0;
 		}
 		else {
-			SharedLatch* latch = findSharedLatch(tdbb, bdb);
-			if (!latch) {
+			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
+				 i++); // null loop body
+			if (i >= BDB_max_shared) {
 				BUGCHECK(300);	/* can't find shared latch */
 			}
-			freeSharedLatch(tdbb, bdb->bdb_dbb->dbb_bcb, latch);
+			bdb->bdb_shared[i] = 0;
 		}
 	}
 
@@ -5855,59 +6147,66 @@ static void release_bdb(thread_db* tdbb,
 		/* Note that this loop assumes that requests for LATCH_io and LATCH_mark
 		   are queued before LATCH_shared and LATCH_exclusive. */
 		LatchWait* lwt = BLOCK(que_inst, LatchWait*, lwt_waiters);
-		if (lwt->lwt_flags & LWT_pending)
-		{
-			switch (lwt->lwt_latch)
-			{
+		if (lwt->lwt_flags & LWT_pending) {
+			switch (lwt->lwt_latch) {
 			case LATCH_exclusive:
 				if (bdb->bdb_use_count) {
 //					LATCH_MUTEX_RELEASE;
 					return;
 				}
-				++bdb->bdb_use_count;
-				bdb->bdb_exclusive = lwt->lwt_tdbb;
-				lwt->lwt_flags &= ~LWT_pending;
-				lwt->lwt_sem.release();
-//				LATCH_MUTEX_RELEASE;
-				return;
+				else {
+					++bdb->bdb_use_count;
+					bdb->bdb_exclusive = lwt->lwt_tdbb;
+					lwt->lwt_flags &= ~LWT_pending;
+					ISC_event_post(&lwt->lwt_event);
+//					LATCH_MUTEX_RELEASE;
+					return;
+				}
 
 			case LATCH_io:
-				if (!bdb->bdb_io)
-				{
+				if (bdb->bdb_io) {
+					break;
+				}
+				else {
 					++bdb->bdb_use_count;
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
-					lwt->lwt_sem.release();
+					ISC_event_post(&lwt->lwt_event);
 					granted = true;
+					break;
 				}
-				break;
 
 			case LATCH_mark:
 				if (bdb->bdb_exclusive != lwt->lwt_tdbb) {
 					BUGCHECK(298);	/* missing exclusive latch */
 				}
-				if (!bdb->bdb_io)
-				{
+				if (bdb->bdb_io) {
+					break;
+				}
+				else {
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
-					lwt->lwt_sem.release();
+					ISC_event_post(&lwt->lwt_event);
 					granted = true;
+					break;
 				}
-				break;
 
 			case LATCH_shared:
-				if (bdb->bdb_exclusive)
-				{
+				if (bdb->bdb_exclusive) {
 					break;		/* defensive programming */
-
+					
 					/* correct programming
 					   LATCH_MUTEX_RELEASE;
 					   return;  */
 				}
+				for (i = 0; (i < BDB_max_shared) && bdb->bdb_shared[i]; i++);
+				if (i >= BDB_max_shared) {
+					break;
+				}
 				++bdb->bdb_use_count;
-				allocSharedLatch(lwt->lwt_tdbb, bdb);
+				bdb->bdb_shared[i] = lwt->lwt_tdbb;
 				lwt->lwt_flags &= ~LWT_pending;
-				lwt->lwt_sem.release();
+				ISC_event_post(&lwt->lwt_event);
 				granted = true;
 				break;
 			}
@@ -5933,6 +6232,77 @@ static void release_bdb(thread_db* tdbb,
 }
 
 
+#else
+static void release_bdb(
+						thread_db* tdbb,
+						BufferDesc* bdb,
+						const bool repost,
+						const bool downgrade_latch, const bool rel_mark_latch)
+{
+/**************************************
+ *
+ *	r e l e a s e _ b d b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Decrement the use count of a BufferDesc, reposting
+ *	blocking AST if required.
+ *	If rel_mark_latch is TRUE, the the value of downgrade_latch is ignored.
+ *
+ **************************************/
+
+/* Releasing a LATCH_mark. */
+
+	if (rel_mark_latch) {
+		bdb->bdb_io = 0;
+	}
+	else
+/* Downgrading from an exlusive to a shared latch. */
+	if (downgrade_latch) {
+		bdb->bdb_exclusive = 0;
+	}
+	else
+/* If the exclusive latch is held, then certain code does funny things:
+   ail.c does: exclusive - mark - exclusive */
+	if (bdb->bdb_exclusive == tdbb) {
+		if (!--bdb->bdb_use_count) {
+			bdb->bdb_exclusive = bdb->bdb_io = 0;
+		}
+		else if (bdb->bdb_io) {	/* This is a release for an io or an exclusive latch */
+			if (bdb->bdb_io == tdbb) {	/* We have an io latch */
+
+				/* The BDB_must_write flag causes the system to latch for io, in addition
+				   to the already owned latches.  Make sure not to disturb an already existing
+				   exclusive latch. */
+				/* ail.c does: EX => MARK => SHARED => release => EX => MARK => RELEASE => EX */
+				if (!(bdb->bdb_flags & BDB_marked)) {
+					bdb->bdb_io = 0;
+				}
+			}
+			else if (bdb->bdb_use_count == 1) {
+				/* This must be a release for our exclusive latch */
+				bdb->bdb_exclusive = 0;
+			}
+		}
+	}
+	else
+		/* If the exclusive latch is not held, then things have to behave much nicer. */
+	{
+		--bdb->bdb_use_count;
+		bdb->bdb_io = 0;
+	}
+
+	if (bdb->bdb_use_count || !repost) {
+		return;
+	}
+
+	if (bdb->bdb_ast_flags & BDB_blocking) {
+		PAGE_LOCK_RE_POST(bdb->bdb_lock);
+	}
+}
+#endif
+
 static void unmark(thread_db* tdbb, WIN * window)
 {
 /**************************************
@@ -5951,15 +6321,14 @@ static void unmark(thread_db* tdbb, WIN * window)
 	BufferDesc* bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
 
-	if (bdb->bdb_use_count == 1)
-	{
+	if (bdb->bdb_use_count == 1) {
 		const bool marked = bdb->bdb_flags & BDB_marked;
 		bdb->bdb_flags &= ~BDB_marked;
 		if (marked) {
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::attachment_lock_handle(tdbb));
 
-			const SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
-			tdbb->getDatabase()->dbb_backup_manager->change_dirty_page_owner(tdbb,
+			SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
+			tdbb->getDatabase()->dbb_backup_manager->change_dirty_page_owner(tdbb, 
 				bdb->bdb_backup_lock_owner, database_lock_handle);
 			bdb->bdb_backup_lock_owner = database_lock_handle;
 			release_bdb(tdbb, bdb, false, false, true);
@@ -5980,7 +6349,7 @@ static inline bool writeable(BufferDesc* bdb)
  *	See if a buffer is writeable.  A buffer is writeable if
  *	neither it nor any of it's higher precedence cousins are
  *	marked for write.
- *  This is the starting point of recursive walk of precedence
+ *  This is the starting point of recursive walk of precedence 
  *  graph. The writeable_mark member is used to mark already seen
  *  buffers to avoid repeated walk of the same sub-graph.
  *  Currently this function can't be called from more than one
@@ -6021,7 +6390,7 @@ static bool is_writeable(BufferDesc* bdb, const ULONG mark)
  *
  **************************************/
 
-	// If there are buffers that must be written first, check them, too.
+	// If there are buffers that must be written first, check them, too. 
 
 	for (const que* queue = bdb->bdb_higher.que_forward;
 		queue != &bdb->bdb_higher; queue = queue->que_forward)
@@ -6031,12 +6400,12 @@ static bool is_writeable(BufferDesc* bdb, const ULONG mark)
 		if (!(precedence->pre_flags & PRE_cleared))
 		{
 			BufferDesc* high = precedence->pre_hi;
-
+			
 			if (high->bdb_flags & BDB_marked) {
 				return false;
 			}
 
-			if (high->bdb_writeable_mark != mark)
+			if (high->bdb_writeable_mark != mark) 
 			{
 				if (QUE_EMPTY(high->bdb_higher))
 					high->bdb_writeable_mark = mark;
@@ -6051,7 +6420,8 @@ static bool is_writeable(BufferDesc* bdb, const ULONG mark)
 }
 
 
-static int write_buffer(thread_db* tdbb,
+static int write_buffer(
+						thread_db* tdbb,
 						BufferDesc* bdb,
 						const PageNumber page,
 						const bool write_thru,
@@ -6098,9 +6468,10 @@ static int write_buffer(thread_db* tdbb,
 		BUGCHECK(217);	/* msg 217 buffer marked for update */
 	}
 
-	if (!(bdb->bdb_flags & BDB_dirty) && !(write_thru && bdb->bdb_flags & BDB_db_dirty))
+	if (!(bdb->bdb_flags & BDB_dirty) &&
+		!(write_thru && bdb->bdb_flags & BDB_db_dirty))
 	{
-		clear_precedence(tdbb, bdb);
+		clear_precedence(dbb, bdb);
 		release_bdb(tdbb, bdb, true, false, false);
 		return 1;
 	}
@@ -6109,8 +6480,7 @@ static int write_buffer(thread_db* tdbb,
 
 //	PRE_MUTEX_ACQUIRE;
 
-	while (QUE_NOT_EMPTY(bdb->bdb_higher))
-	{
+	while (QUE_NOT_EMPTY(bdb->bdb_higher)) {
 		BufferControl* bcb = dbb->dbb_bcb;		/* Re-initialize in the loop */
 		QUE que_inst = bdb->bdb_higher.que_forward;
 		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
@@ -6120,13 +6490,14 @@ static int write_buffer(thread_db* tdbb,
 			precedence->pre_hi = (BufferDesc*) bcb->bcb_free;
 			bcb->bcb_free = precedence;
 		}
-		else
-		{
+		else {
 			BufferDesc* hi_bdb = precedence->pre_hi;
 			const PageNumber hi_page = hi_bdb->bdb_page;
 //			PRE_MUTEX_RELEASE;
 			release_bdb(tdbb, bdb, false, false, false);
-			const int write_status = write_buffer(tdbb, hi_bdb, hi_page, write_thru, status, false);
+			const int write_status =
+				write_buffer(tdbb, hi_bdb, hi_page, write_thru, status,
+							 false);
 			if (write_status == 0) {
 				return 0;		/* return IO error */
 			}
@@ -6151,7 +6522,8 @@ static int write_buffer(thread_db* tdbb,
    that the header page needs to be written with the target page latched to
    prevent younger transactions from modifying the target page. */
 
-	if (page != HEADER_PAGE_NUMBER && bdb->bdb_mark_transaction > dbb->dbb_last_header_write)
+	if (page != HEADER_PAGE_NUMBER
+		&& bdb->bdb_mark_transaction > dbb->dbb_last_header_write)
 	{
 		TRA_header_write(tdbb, dbb, bdb->bdb_mark_transaction);
 	}
@@ -6161,15 +6533,16 @@ static int write_buffer(thread_db* tdbb,
    out the page */
 
 	bool result = true;
-	if ((bdb->bdb_flags & BDB_dirty || (write_thru && bdb->bdb_flags & BDB_db_dirty)) &&
-		!(bdb->bdb_flags & BDB_marked))
+	if ((bdb->bdb_flags & BDB_dirty
+		 || (write_thru && bdb->bdb_flags & BDB_db_dirty))
+		&& !(bdb->bdb_flags & BDB_marked))
 	{
 		if ( (result = write_page(tdbb, bdb, write_thru, status, false)) ) {
-			clear_precedence(tdbb, bdb);
+			clear_precedence(dbb, bdb);
 		}
 	}
 	else {
-		clear_precedence(tdbb, bdb);
+		clear_precedence(dbb, bdb);
 	}
 
 	release_bdb(tdbb, bdb, true, false, false);
@@ -6177,21 +6550,22 @@ static int write_buffer(thread_db* tdbb,
 	if (!result) {
 		return 0;
 	}
-
+	else
 #ifdef SUPERSERVER
 	if (!write_this_page) {
 		return 2;
 	}
+	else
 #endif
-
-	return 1;
+		return 1;
 }
 
 
-static bool write_page(thread_db* tdbb,
-					   BufferDesc* bdb,
-					   const bool write_thru, ISC_STATUS* status,
-					   const bool inAst)
+static bool write_page(
+						  thread_db* tdbb,
+						  BufferDesc* bdb,
+						  const bool write_thru, ISC_STATUS* status,
+						  const bool inAst)
 {
 /**************************************
  *
@@ -6205,7 +6579,11 @@ static bool write_page(thread_db* tdbb,
  *
  **************************************/
 	if (bdb->bdb_flags & BDB_not_valid) {
-		ERR_build_status(status, Arg::Gds(isc_buf_invalid) << Arg::Num(bdb->bdb_page.getPageNum()));
+		*status++ = isc_arg_gds;
+		*status++ = isc_buf_invalid;
+		*status++ = isc_arg_number;
+		*status++ = bdb->bdb_page.getPageNum();
+		*status++ = isc_arg_end;
 		return false;
 	}
 
@@ -6215,8 +6593,7 @@ static bool write_page(thread_db* tdbb,
 
 /* Before writing db header page, make sure that the next_transaction > oldest_active
    transaction */
-	if (bdb->bdb_page == HEADER_PAGE_NUMBER)
-	{
+	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
 		header_page* header = (header_page*) page;
 		if (header->hdr_next_transaction) {
 			if (header->hdr_oldest_active > header->hdr_next_transaction) {
@@ -6234,16 +6611,16 @@ static bool write_page(thread_db* tdbb,
 //	if (!dbb->dbb_wal || write_thru) becomes
 //	if (true || write_thru) then finally if (true)
 // I won't wipe out the if() itself to allow my changes be verified easily by others
-	if (true)
-	{
+	if (true) {
+		AST_CHECK();
+		dbb->dbb_writes++;
 		tdbb->bumpStats(RuntimeStatistics::PAGE_WRITES);
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
-		const int backup_state = dbb->dbb_backup_manager->get_state();
+		int backup_state = dbb->dbb_backup_manager->get_state();
 
-		if (bdb->bdb_page.getPageNum() >= 0)
-		{
+		if (bdb->bdb_page.getPageNum() >= 0) {
 			fb_assert(backup_state != nbak_state_unknown);
 			page->pag_checksum = CCH_checksum(bdb);
 
@@ -6253,7 +6630,7 @@ static bool write_page(thread_db* tdbb,
 			char buffer[1000], *ptr = buffer;
 			strcpy(ptr, "NBAK,Write page ");
 			ptr += strlen(ptr);
-			gds__ulstr(ptr, bdb->bdb_page.getPageNum(), 0, 0);
+			gds__ulstr(ptr, bdb->bdb_page, 0, 0);
 			ptr += strlen(ptr);
 
 			strcpy(ptr, ", backup_state=");
@@ -6273,7 +6650,7 @@ static bool write_page(thread_db* tdbb,
 
 			gds__trace(buffer);
 #endif
-			PageSpace* pageSpace =
+			PageSpace* pageSpace = 
 				dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 			fb_assert(pageSpace);
 			const bool isTempPage = pageSpace->isTemporary();
@@ -6281,54 +6658,49 @@ static bool write_page(thread_db* tdbb,
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
 				(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
 			{
-
-				const bool res = dbb->dbb_backup_manager->write_difference(status,
-									bdb->bdb_difference_page, bdb->bdb_buffer);
-
-				if (!res)
+				const bool res = 
+					dbb->dbb_backup_manager->write_difference(status, 
+						bdb->bdb_difference_page, bdb->bdb_buffer);
+				if (!res) 
 				{
 					bdb->bdb_flags |= BDB_io_error;
 					dbb->dbb_flags |= DBB_suspend_bgio;
 					return false;
 				}
 			}
-			if (!isTempPage && backup_state == nbak_state_stalled)
-			{
+			if (!isTempPage && backup_state == nbak_state_stalled) { 
 				// We finished. Adjust transaction accounting and get ready for exit
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
+					dbb->dbb_last_header_write =
+						((header_page*) page)->hdr_next_transaction;
 				}
 			}
-			else
-			{
+			else {
 				// We need to write our pages to main database files
-
 				jrd_file* file = pageSpace->file;
-				while (!PIO_write(file, bdb, page, status))
-				{
-
-					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
+				while (!PIO_write(file, bdb, page, status)) {
+					if (isTempPage || !CCH_rollover_to_shadow(dbb, file, inAst))
 					{
 						bdb->bdb_flags |= BDB_io_error;
 						dbb->dbb_flags |= DBB_suspend_bgio;
 						return false;
 					}
-
 					file = pageSpace->file;
 				}
 
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
+					dbb->dbb_last_header_write =
+						((header_page*) page)->hdr_next_transaction;
 				}
 				if (dbb->dbb_shadow && !isTempPage) {
-					result = CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
+					result =
+						CCH_write_all_shadows(tdbb, 0, bdb, status, 0, inAst);
 				}
 			}
 		}
 
 #ifdef SUPERSERVER
-		if (result)
-		{
+		if (result) {
 #ifdef CACHE_WRITER
 			if (bdb->bdb_flags & BDB_checkpoint) {
 				--dbb->dbb_bcb->bcb_checkpoint;
@@ -6337,6 +6709,7 @@ static bool write_page(thread_db* tdbb,
 			bdb->bdb_flags &= ~(BDB_db_dirty | BDB_checkpoint);
 		}
 #endif
+		AST_CHECK();
 	}
 
 	if (!result) {
@@ -6348,8 +6721,7 @@ static bool write_page(thread_db* tdbb,
 		bdb->bdb_flags |= BDB_io_error;
 		dbb->dbb_flags |= DBB_suspend_bgio;
 	}
-	else
-	{
+	else {
 		/* clear the dirty bit vector, since the buffer is now
 		   clean regardless of which transactions have modified it */
 
@@ -6367,8 +6739,9 @@ static bool write_page(thread_db* tdbb,
 		}
 #endif
 
-		fb_assert(bdb->bdb_flags & BDB_dirty ?
-			bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb) : true);
+		fb_assert(bdb->bdb_flags & BDB_dirty ? 
+			bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb) : 
+			true);
 		clear_page_dirty_flag(tdbb, bdb);
 
 		bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty);

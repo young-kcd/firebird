@@ -105,37 +105,36 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 
 /* If reattach is true and we currently attached, then we
    will detach from service. This is potentially dangerous
-   situation, because if shutdown is true (server shutdown
+   situation, because if shutdown is true (server shutdown 
    was initiated) server will be shutdowned.
    I do not check the shutdown flag here because reattach
    could be true only if shutdown has not been initiated.
 */
 	if (data->operation != OP_START)
-	{
 		if (data->reattach) {
 			fb_assert(!data->shutdown);
-			if (data->attached) // Attached flag should be NULL after detach_service
+			if (data->attached)
+
+				/* Attached flag should be NULL after detach_service
+				 */
 				detach_service(data);
-			if (!attach_service(data))
+			if (attach_service(data) == false)
 				return MSG_ATTFAIL;
 			data->reattach = 0;
 		}
-	}
 
-	switch (data->operation)
-	{
+	switch (data->operation) {
 	case OP_START:
-		if (!start_server(data))
+		if (start_server(data) == false)
 			return MSG_STARTFAIL;
 		break;
 
 	case OP_SHUT:
-		switch (data->suboperation)
-		{
+		switch (data->suboperation) {
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
-			if (!start_shutdown(data)) {
+			if (start_shutdown(data) == false) {
 				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
@@ -162,10 +161,9 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 		break;
 
 	case OP_PRINT:
-		switch (data->suboperation)
-		{
+		switch (data->suboperation) {
 		case SOP_PRINT_POOL:
-			if (!print_pool(data))
+			if (print_pool(data) == false)
 				return MSG_PRPOOLFAIL;
 			return MSG_PRPOOLOK;
 		}
@@ -205,9 +203,8 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 */
 
 	const char* rs = 0;
-
-	switch (number)
-	{
+	
+	switch (number) {
 	case MSG_PROMPT:
 		rs = "FBMGR>";
 		break;
@@ -301,7 +298,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 	default:
 		rs = "can not get an error message";
 	}
-
+	
 	strcpy(msg, rs);
 }
 
@@ -469,7 +466,7 @@ static bool start_server( ibmgr_data_t* data)
 
 /* Let's see if server is already running, try to attach to it
 */
-	if (server_is_up(data)) {
+	if (server_is_up(data) == true) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
@@ -480,7 +477,7 @@ static bool start_server( ibmgr_data_t* data)
 */
 	TEXT path[MAXPATHLEN];
 	gds__prefix(path, SERVER_GUARDIAN);
-
+	
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]
 	// that may not be accepted by execv().
@@ -491,17 +488,12 @@ static bool start_server( ibmgr_data_t* data)
 
 	TEXT *argv[5];
 	argv[0] = path;
-	switch (data->suboperation)
-	{
-	case SOP_START_ONCE:
+	if (data->suboperation == SOP_START_ONCE)
 		argv[1] = option_o;
-		break;
-	case SOP_START_SIGNORE:
+	else if (data->suboperation == SOP_START_SIGNORE)
 		argv[1] = option_s;
-		break;
-	default:
+	else
 		argv[1] = option_f;
-	}
 	argv[2] = NULL;
 	argv[3] = NULL;
 	if (data->pidfile[0]) {
@@ -519,8 +511,7 @@ static bool start_server( ibmgr_data_t* data)
 /* Accoding Sun's documentation vfork()  is not MT-safe
    while linking with libthreads, fork1 - fork one thread
 */
-	if (!(pid = fork1()))
-	{
+	if (!(pid = fork1())) {
 		if (execv(path, argv) == -1) {
 			printf("Could not create child process %s with args %s \n",
 				   path, argv[1]);
@@ -539,8 +530,7 @@ static bool start_server( ibmgr_data_t* data)
 /* Wait a little bit to let the server start
 */
 	sleep(ATTACH_PAUSE);
-	for (int retry = ATTACH_RETRY; retry; retry--)
-	{
+	for (int retry = ATTACH_RETRY; retry; retry--) {
 		sleep(ATTACH_PAUSE);
 
 		/* What we want to do here is to find out if the server has
@@ -562,14 +552,16 @@ static bool start_server( ibmgr_data_t* data)
 		 */
 #if (defined SOLARIS_MT)
 		// Trying to understand why it died
-		if (ret_value == pid &&
-			(WIFEXITED(exit_status) || WCOREDUMP(exit_status) || WIFSIGNALED(exit_status)))
+		if ((ret_value == pid) && ( WIFEXITED(exit_status)
+					|| WCOREDUMP(exit_status)
+					|| WIFSIGNALED(exit_status)))
 		{
-			printf("Guardian process %ld terminated with code %ld\n", pid, WEXITSTATUS(exit_status));
+			printf("Guardian process %ld terminated with code %ld\n",
+				pid, WEXITSTATUS(exit_status)); 
 			break;
 		}
 
-#else
+#else		 
 
 
 		if (ret_value == pid) {
@@ -590,7 +582,7 @@ static bool start_server( ibmgr_data_t* data)
 #ifdef DEBUG
 		printf("Attach retries left: %d\n", retry);
 #endif
-		if (server_is_up(data)) {
+		if (server_is_up(data) == true) {
 			SRVRMGR_msg_get(MSG_SRVUPOK, msg);
 			fprintf(OUTFILE, "%s\n", msg);
 			return true;
@@ -633,8 +625,7 @@ static bool server_is_up( ibmgr_data_t* data)
 	strcat(svc_name, ":anonymous");
 	isc_service_attach(status, 0, svc_name, &svc_handle, 0, "");
 
-	if (status[0] == 1 && status[1] > 0)
-	{
+	if (status[0] == 1 && status[1] > 0) {
 #ifdef DEBUG
 		fprintf(OUTFILE, "server_is_up ERROR: %lu\n", status[1]);
 #endif
@@ -644,7 +635,10 @@ static bool server_is_up( ibmgr_data_t* data)
 		   other reasons. For example, attach could return
 		   not enough memory error. Let's take care of it.
 		 */
-		up = (status[1] == isc_virmemexh);
+		if (status[1] == isc_virmemexh)
+			up = true;
+		else
+			up = false;
 	}
 	isc_service_detach(status, &svc_handle);
 	return up;

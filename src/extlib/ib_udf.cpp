@@ -15,11 +15,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Changes made by Claudio Valderrama for the Firebird project
- *   changes to substr and added substrlen
+ * Changes made by Claudio Valderrama for the Firebird project 
+ *   changes to substr and added substrlen 
  * 2004.9.1 Claudio Valderrama, change some UDF's to be able to detect NULL.
  * 2004.12.5 Slavomir Skopalik contributed IB_UDF_frac.
- *
+ * 
  */
 
 #include "firebird.h"
@@ -56,6 +56,7 @@ int MATHERR(struct exception_type *e)
 #undef exception_type
 #endif /* SOLARIS */
 
+typedef char* pChar;
 double EXPORT IB_UDF_abs( double *a)
 {
 	return (*a < 0.0) ? -*a : *a;
@@ -66,7 +67,7 @@ double EXPORT IB_UDF_acos( double *a)
 	return (acos(*a));
 }
 
-char *EXPORT IB_UDF_ascii_char( ISC_LONG *a)
+pChar EXPORT IB_UDF_ascii_char( ISC_LONG *a)
 {
 	if (!a)
 		return 0;
@@ -145,8 +146,8 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 	}
 	else
 	{
-		// This is a Kludge!  We need to return INF,
-		// but this seems to be the only way to do
+		// This is a Kludge!  We need to return INF, 
+		// but this seems to be the only way to do 
 		// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
 		return INFINITY;
@@ -185,11 +186,11 @@ double EXPORT IB_UDF_log10( double *a)
 	return (log10(*a));
 }
 
-char *EXPORT IB_UDF_lower(const char *s)
+pChar EXPORT IB_UDF_lower(const char *s)
 {
 	if (!s)
 		return 0;
-
+		
 	char* buf = (char *) ib_util_malloc(strlen(s) + 1);
 	char* p = buf;
 	while (*s)
@@ -205,13 +206,13 @@ char *EXPORT IB_UDF_lower(const char *s)
 	return buf;
 }
 
-char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
+pChar EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
 
 	const long avalue = *a;
-
+	
 	if (avalue >= 0) {
 		long current = 0;
 		const long length = strlen(s);
@@ -238,14 +239,14 @@ char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 		return NULL;
 }
 
-char *EXPORT IB_UDF_ltrim( const char *s)
+pChar EXPORT IB_UDF_ltrim( const char *s)
 {
 	if (!s)
 		return 0;
-
+		
 	while (*s == ' ')		/* skip leading blanks */
 		s++;
-
+		
 	const long length = strlen(s);
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
@@ -265,8 +266,8 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 	}
 	else
 	{
-		// This is a Kludge!  We need to return INF,
-		// but this seems to be the only way to do
+		// This is a Kludge!  We need to return INF, 
+		// but this seems to be the only way to do 
 		// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
 		return INFINITY;
@@ -292,11 +293,11 @@ double EXPORT IB_UDF_rand()
 	return ((float) rand() / (float) RAND_MAX);
 }
 
-char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
+pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
-
+		
 	const long avalue = *a;
 
 	if (avalue >= 0) {
@@ -324,14 +325,14 @@ char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 		return NULL;
 }
 
-char *EXPORT IB_UDF_rtrim( const char *s)
+pChar EXPORT IB_UDF_rtrim( const char *s)
 {
 	if (!s)
 		return 0;
-
+		
 	const char* p = s + strlen(s);
 	while (--p >= s && *p == ' '); // empty loop body
-
+	
 	const long length = p - s + 1;
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
@@ -365,7 +366,7 @@ double EXPORT IB_UDF_sqrt( double *a)
 	return (sqrt(*a));
 }
 
-char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
+pChar EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 {
 	if (!s) {
 		return 0;
@@ -401,7 +402,7 @@ char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	return buf;
 }
 
-char* EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
+pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 {
 	/* Created by Claudio Valderrama for the Firebird project,
 		2001.04.17 We don't want to return NULL when params are wrong

@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 26-Sept-2001 Paul Beach - Windows External File Directory Config. Parameter
+ * 26-Sept-2001 Paul Beach - Windows External File Directory Config. Parameter 
  *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
@@ -52,6 +52,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
@@ -59,7 +60,6 @@
 #include "../common/classes/init.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 
 namespace {
@@ -77,28 +77,26 @@ namespace {
 	class ExternalFileDirectoryList : public Firebird::DirectoryList
 	{
 	private:
-		const Firebird::PathName getConfigString() const
-		{
+		const Firebird::PathName getConfigString(void) const {
 			return Firebird::PathName(Config::getExternalFileAccess());
 		}
 	public:
-		explicit ExternalFileDirectoryList(MemoryPool& p)
-			: DirectoryList(p)
+		ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p) 
 		{
 			initialize();
 		}
 	};
 	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
 
-	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file)
+	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file) 
 	{
-		const char* file_name = ext_file->ext_filename;
+		const char* file_name = (char*) ext_file->ext_filename;
 
 		if (!iExternalFileDirectoryList().isPathInList(file_name))
-		{
-			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("external file") <<
-														 Arg::Str(file_name));
-		}
+			ERR_post(isc_conf_access_denied,
+				isc_arg_string, "external file",
+				isc_arg_string, ERR_cstring(file_name),
+				isc_arg_end);
 
 		// If the database is updateable, then try opening the external files in
 		// RW mode. If the DB is ReadOnly, then open the external files only in
@@ -108,11 +106,14 @@ namespace {
 
 		if (!ext_file->ext_ifi)
 		{
-			// could not open the file as read write attempt as read only
+			// could not open the file as read write attempt as read only 
 			if (!(ext_file->ext_ifi = fopen(file_name, FOPEN_READ_ONLY)))
 			{
-				ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fopen") << Arg::Str(file_name) <<
-						 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+				ERR_post(isc_io_error,
+						isc_arg_string, "fopen",
+						isc_arg_string,
+						ERR_cstring(file_name),
+						isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
 			}
 			else {
 				ext_file->ext_flags |= EXT_readonly;
@@ -152,7 +153,7 @@ void EXT_erase(record_param* rpb, jrd_tra* transaction)
  *
  **************************************/
 
-	ERR_post(Arg::Gds(isc_ext_file_delete));
+	ERR_post(isc_ext_file_delete, isc_arg_end);
 }
 
 
@@ -179,7 +180,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	}
 
 #ifdef WIN_NT
-	/* Default number of file handles stdio.h on Windows is 512, use this
+	/* Default number of file handles stdio.h on Windows is 512, use this 
 	call to increase and set to the maximum */
 	_setmaxstdio(2048);
 #endif
@@ -195,9 +196,10 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 		file_name = Path.c_str();
 	}
 
-	ExternalFile* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
+	ExternalFile* file =
+		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
 	relation->rel_file = file;
-	strcpy(file->ext_filename, file_name);
+	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
 	file->ext_ifi = NULL;
 
@@ -225,7 +227,7 @@ void EXT_fini(jrd_rel* relation, bool close_only)
 			file->ext_ifi = NULL;
 		}
 
-		// before zeroing out the rel_file we need to deallocate the memory
+		// before zeroing out the rel_file we need to deallocate the memory 
 		if (!close_only)
 		{
 			delete file;
@@ -262,17 +264,20 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 
 	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
-	const ULONG l = record->rec_length - offset;
+	SSHORT l = record->rec_length - offset;
 
-	// hvlad: fseek will flush file buffer and degrade performance, so don't
-	// call it if it is not necessary. Note that we must flush file buffer if we
+	// hvlad: fseek will flush file buffer and degrade performance, so don't 
+	// call it if it is not necessary. Note that we must flush file buffer if we 
 	// do read after write
-	if (file->ext_ifi == NULL ||
-		((ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
-			(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
+	if (file->ext_ifi == NULL || 
+		( (ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
+		 (fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
-				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+		ERR_post(isc_io_error,
+				 isc_arg_string, "fseek",
+				 isc_arg_string,
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
 	}
 
 	if (!fread(p, l, 1, file->ext_ifi))
@@ -291,11 +296,11 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 
     SSHORT i = 0;
 	for (vec<jrd_fld*>::iterator itr = relation->rel_fields->begin();
-		i < format->fmt_count; ++i, ++itr, ++desc_ptr)
+			i < format->fmt_count; ++i, ++itr, ++desc_ptr)
 	{
 	    const jrd_fld* field = *itr;
 		SET_NULL(record, i);
-		if (!desc_ptr->dsc_length || !field)
+		if (!desc_ptr->dsc_length || !field) 
 			continue;
 		const Literal* literal = (Literal*) field->fld_missing_value;
 		if (literal) {
@@ -324,7 +329,8 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transacti
  *
  **************************************/
 
-	ERR_post(Arg::Gds(isc_ext_file_modify));
+/* ERR_post (isc_wish_list, isc_arg_interpreted, "EXT_modify: not yet implemented", isc_arg_end); */
+	ERR_post(isc_ext_file_modify, isc_arg_end);
 }
 
 
@@ -393,24 +399,27 @@ SSHORT		i, size;
    inversion component of the boolean. */
 
 /*
-	inversion = NULL;
-	opt_end = opt->opt_rpt + opt->opt_count;
+inversion = NULL;
+opt_end = opt->opt_rpt + opt->opt_count;
 
-	if (opt->opt_count)
-	    for (i = 0; i < csb_tail->csb_indices; i++)
-		{
-			clear_bounds (opt, idx);
-			for (tail = opt->opt_rpt; tail < opt_end; tail++)
-			{
-			    node = tail->opt_conjunct;
-			    if (!(tail->opt_flags & opt_used) && OPT_computable(csb, node, -1))
-					match (opt, stream, node, idx);
-			    if (node->nod_type == nod_starts)
-					compose (&inversion, make_starts (opt, node, stream, idx), nod_bit_and);
-			}
-			compose (&inversion, make_index (opt, relation, idx), nod_bit_and);
-			idx = idx->idx_rpt + idx->idx_count;
-		}
+if (opt->opt_count)
+    for (i = 0; i < csb_tail->csb_indices; i++)
+	{
+	clear_bounds (opt, idx);
+	for (tail = opt->opt_rpt; tail < opt_end; tail++)
+	    {
+	    node = tail->opt_conjunct;
+	    if (!(tail->opt_flags & opt_used) &&
+		OPT_computable(csb, node, -1))
+		match (opt, stream, node, idx);
+	    if (node->nod_type == nod_starts)
+		compose (&inversion,
+			 make_starts (opt, node, stream, idx), nod_bit_and);
+	    }
+	compose (&inversion, make_index (opt, relation, idx),
+		nod_bit_and);
+	idx = idx->idx_rpt + idx->idx_count;
+	}
 */
 
 	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
@@ -469,11 +478,13 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
-			ERR_post(Arg::Gds(isc_read_only_database));
+			ERR_post(isc_read_only_database, isc_arg_end);
 		else {
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("insert") << Arg::Str(file->ext_filename) <<
-					 Arg::Gds(isc_io_write_err) <<
-					 Arg::Gds(isc_ext_readonly_err));
+			ERR_post(isc_io_error,
+					 isc_arg_string, "insert",
+					 isc_arg_string, file->ext_filename,
+					 isc_arg_gds, isc_io_write_err,
+					 isc_arg_gds, isc_ext_readonly_err, isc_arg_end);
 		}
 	}
 
@@ -484,7 +495,10 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	for (USHORT i = 0; i < format->fmt_count; ++i, ++field_ptr, ++desc_ptr)
 	{
 		const jrd_fld* field = *field_ptr;
-		if (field && !field->fld_computation && desc_ptr->dsc_length && TEST_NULL(record, i))
+		if (field &&
+			!field->fld_computation &&
+			desc_ptr->dsc_length &&
+			TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
 			Literal* literal = (Literal*) field->fld_missing_value;
@@ -502,22 +516,24 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	const UCHAR* p = record->rec_data + offset;
-	const ULONG l = record->rec_length - offset;
+	USHORT l = record->rec_length - offset;
 
-	// hvlad: fseek will flush file buffer and degrade performance, so don't
-	// call it if it is not necessary.	Note that we must flush file buffer if we
+	// hvlad: fseek will flush file buffer and degrade performance, so don't 
+	// call it if it is not necessary.	Note that we must flush file buffer if we 
 	// do write after read
-	if (file->ext_ifi == NULL ||
+	if (file->ext_ifi == NULL || 
 		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
-				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
 	}
 
 	if (!fwrite(p, l, 1, file->ext_ifi))
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fwrite") << Arg::Str(file->ext_filename) <<
-				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+		ERR_post(isc_io_error, isc_arg_string, "fwrite", isc_arg_string,
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
 	}
 
 	// fflush(file->ext_ifi);

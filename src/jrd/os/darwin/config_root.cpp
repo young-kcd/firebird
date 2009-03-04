@@ -42,10 +42,22 @@
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 
+//typedef Firebird::string string;
+
 typedef Firebird::PathName string;
 
-static string getFrameworkFromBundle()
+//static const char *CONFIG_FILE = "firebird.conf";
+
+void ConfigRoot::osConfigRoot()
 {
+	// Check the environment variable
+	const char* envPath = getenv("FIREBIRD");
+	if (envPath != NULL && strcmp("", envPath))
+	{
+		root_dir = envPath;
+		return;
+	}
+
 	// Attempt to locate the Firebird.framework bundle
 	CFBundleRef fbFramework = CFBundleGetBundleWithIdentifier(CFSTR(DARWIN_FRAMEWORK_ID));
 	if (fbFramework)
@@ -62,26 +74,12 @@ static string getFrameworkFromBundle()
 				if (CFStringGetCString(msgFilePath, file_buff, MAXPATHLEN,
 					kCFStringEncodingMacRoman))
 				{
-					string dir = file_buff;
-					dir += PathUtils::dir_sep;
-					return dir;
+					root_dir = file_buff;
+					root_dir += PathUtils::dir_sep;
+					return;
 				}
 			}
 		}
-	}
-
-	// No luck
-	return "";
-}
-
-
-void ConfigRoot::osConfigRoot()
-{
-	// Attempt to locate the Firebird.framework bundle
-	root_dir = getFrameworkFromBundle();
-	if (root_dir.hasData())
-	{
-		return;
 	}
 
 	// As a last resort get it from the default install directory
@@ -90,18 +88,3 @@ void ConfigRoot::osConfigRoot()
 	root_dir = FB_PREFIX;
 }
 
-
-void ConfigRoot::osConfigInstallDir()
-{
-	// Attempt to locate the Firebird.framework bundle
-	install_dir = getFrameworkFromBundle();
-	if (install_dir.hasData())
-	{
-		return;
-	}
-
-	// As a last resort get it from the default install directory
-	// this doesn't make much sense because the framework method should
-	// never fail, but what the heck.
-	install_dir = FB_PREFIX;
-}

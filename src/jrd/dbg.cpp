@@ -32,6 +32,7 @@
 #include "../jrd/cch.h"
 #include "../jrd/dbg.h"
 #include "../jrd/val.h"
+#include "../jrd/all.h"
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
@@ -43,6 +44,7 @@
 #include "../jrd/err_proto.h"
 
 #ifdef SUPERSERVER
+#include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #endif
 
@@ -69,7 +71,7 @@ int (*dbg_block) (blk *) = DBG_block;
 int (*dbg_eval) (int) = DBG_eval;
 int (*dbg_open) () = DBG_open;
 int (*dbg_close) () = DBG_close;
-int (*dbg_pool) (MemoryPool*) = DBG_pool;
+int (*dbg_pool) (JrdMemoryPool*) = DBG_pool;
 int (*dbg_pretty) (const jrd_nod*, int) = DBG_pretty;
 int (*dbg_window) (int *) = DBG_window;
 int (*dbg_rpb) (record_param*) = DBG_rpb;
@@ -132,7 +134,7 @@ static const TEXT* rsb_names[] =
 };
 
 
-int DBG_all()
+int DBG_all(void)
 {
 /**************************************
  *
@@ -186,7 +188,7 @@ int DBG_analyze(int pool_id)
 
 	if (!dbb || !dbb->dbb_pools.getCount())
 		return TRUE;
-
+	
 	Database::pool_vec_type* vector = &dbb->dbb_pools;
 
 	for (p = blocks, end = p + (int) type_MAX; p < end; p++) {
@@ -302,7 +304,7 @@ int DBG_analyze(int pool_id)
 }
 
 
-int DBG_bdbs()
+int DBG_bdbs(void)
 {
 /**************************************
  *
@@ -323,7 +325,7 @@ int DBG_bdbs()
 }
 
 
-int DBG_precedence()
+int DBG_precedence(void)
 {
 /**************************************
  *
@@ -431,7 +433,8 @@ int DBG_block(BLK block)
 	}
 
 	/*
-	if (block->blk_type <= (SCHAR) type_MIN || block->blk_type >= (SCHAR) type_MAX)
+	if (block->blk_type <= (SCHAR) type_MIN
+		|| block->blk_type >= (SCHAR) type_MAX)
 	{
 		fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block,
 				   block->blk_type);
@@ -456,8 +459,7 @@ int DBG_block(BLK block)
 
 	prt_fields(reinterpret_cast<char*>(block), fields);
 
-	switch ((enum blk_t) block->blk_type)
-	{
+	switch ((enum blk_t) block->blk_type) {
 	case type_vec:
 		fprintf(dbg_file, "\t");
 		p = string;
@@ -533,8 +535,8 @@ int DBG_block(BLK block)
 		}
 		fprintf(dbg_file, "\n");
 		break;
-    default:    /* Shut up compiler warnings */
-		break;
+        default:    /* Shut up compiler warnings */
+                break;
 	}
 
 	return TRUE;
@@ -576,9 +578,11 @@ int DBG_check(int pool_id)
 					++corrupt;
 					break;
 				}
-				if (block->blk_type <= (SCHAR) type_MIN || block->blk_type >= (SCHAR) type_MAX)
+				if (block->blk_type <= (SCHAR) type_MIN
+					|| block->blk_type >= (SCHAR) type_MAX)
 				{
-					fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n", block, block->blk_type);
+					fprintf(dbg_file, "%X\t*** BAD BLOCK (%d) ***\n",
+							   block, block->blk_type);
 					++corrupt;
 					break;
 				}
@@ -599,7 +603,7 @@ int DBG_check(int pool_id)
 }
 
 
-int DBG_close()
+int DBG_close(void)
 {
 /**************************************
  *
@@ -652,7 +656,7 @@ int DBG_examine(int *n)
 }
 
 
-int DBG_init()
+int DBG_init(void)
 {
 /**************************************
  *
@@ -671,7 +675,7 @@ sigset  (2, &DBG_supervisor);
 }
 
 
-int DBG_open()
+int DBG_open(void)
 {
 /**************************************
  *
@@ -692,7 +696,7 @@ int DBG_open()
 }
 
 
-int DBG_pool(MemoryPool *pool)
+int DBG_pool(JrdMemoryPool *pool)
 {
 /**************************************
  *
@@ -751,8 +755,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	const jrd_nod* const* end;
 	const IndexRetrieval* retrieval;
 
-	switch (node->nod_type)
-	{
+	switch (node->nod_type) {
 	case nod_rse:
 		{
 			const RecordSelExpr* recse = (RecordSelExpr*) node;
@@ -815,7 +818,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	case nod_relation:
 		relation = (jrd_rel*) node->nod_arg[e_rel_relation];
 		fprintf(dbg_file, ", stream: %d, %s (%X)\n",
-				   node->nod_arg[e_rel_stream],
+				   node->nod_arg[e_rel_stream], 
 				   relation->rel_name.c_str(), relation);
 		return TRUE;
 
@@ -895,11 +898,13 @@ int DBG_supervisor(int arg)
 
 	debug = 0;
 
+#ifndef VMS
 	fprintf(dbg_file, "\nEntering JRD diagnostic DBG_supervisor\n");
 	int yyparse();
 	yyparse();
 	fprintf(dbg_file, "\nLeaving JRD diagnostic DBG_supervisor\n");
 	DBG_init();
+#endif
 
 	return TRUE;
 }
@@ -972,7 +977,7 @@ int DBG_smb(SortMap* smb, int column)
 }
 
 
-int DBG_verify()
+int DBG_verify(void)
 {
 /**************************************
  *
@@ -1019,7 +1024,7 @@ int DBG_window(int *window)
 }
 
 
-int DBG_memory()
+int DBG_memory(void)
 {
 /**************************************
  *
@@ -1055,8 +1060,7 @@ int DBG_memory()
 		if (!pool)
 			continue;
 		const int pool_type = DBG_analyze(pool_id);
-		switch (pool_type)
-		{
+		switch (pool_type) {
 		case 1:
 			break;
 		case 2:
@@ -1116,7 +1120,7 @@ static void prt_dsc(DSC * desc, int column)
 {
 /**************************************
  *
- *	p r t _ d s c
+ *	p r t _ d s c 
  *
  **************************************
  *
@@ -1152,8 +1156,7 @@ static int prt_fields(SCHAR * block, int *fields)
 		offset = *fields++;
 		length = *fields++;
 		ptr = (SCHAR *) block + offset;
-		switch (length)
-		{
+		switch (length) {
 		case 0:
 		case 1:
 			sprintf(s, string, *ptr);
@@ -1278,7 +1281,7 @@ void yyerror(const char* string)
 }
 
 
-int yywrap()
+int yywrap(void)
 {
 /**************************************
  *

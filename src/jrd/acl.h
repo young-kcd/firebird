@@ -66,7 +66,7 @@ const int id_procedure		= 10;		/* Procedure name */
 const int id_sql_role		= 11;		/* SQL role */
 const int id_max			= 12;
 
-/* Format of access control list:
+/* Format of access control list: 
 
 	acl		:=	<ACL_version> [ <acl_element> ]... <0>
 	acl_element	:=	<ACL_id_list> <id_list> <ACL_priv_list> <priv_list>

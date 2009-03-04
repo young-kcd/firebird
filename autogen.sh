@@ -7,18 +7,25 @@ PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-if [ -z "$AUTORECONF" ]
+if [ -z "$AUTOCONF" ]
 then
-  AUTORECONF=autoreconf
+  AUTOCONF=autoconf
+fi
+if [ -z "$LIBTOOL" ]
+then
+  LIBTOOL=libtool
+fi
+if [ -z "$LIBTOOLIZE" ]
+then
+  LIBTOOLIZE=libtoolize
 fi
 
-echo "AUTORECONF="$AUTORECONF
+echo "AUTOCONF="$AUTOCONF
+echo "LIBTOOL="$LIBTOOL
+echo "LIBTOOLiZE="$LIBTOOLIZE
+AUTOHEADER=`echo $AUTOCONF |sed 's/conf/header/'`
 
-# This prevents calling automake in old autotools
-AUTOMAKE=true
-export AUTOMAKE
-
-VER=`$AUTORECONF --version|grep '^[Aa]utoreconf'|sed 's/^[^0-9]*//'`
+VER=`$AUTOCONF --version|grep '^[Aa]utoconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
  2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
@@ -30,7 +37,20 @@ case "$VER" in
   ;;
 esac
 
+VER=`$LIBTOOL --version|grep ' libtool)'|sed 's/.*) \([0-9][0-9.]*\) .*/\1/'`
+case "$VER" in
+ 0* | 1\.[0-2] | 1\.[0-2][a-z]* | \
+ 1\.3\.[0-2] | 1\.3\.[0-2][a-z]* )
+  echo
+  echo "**Error**: You must have libtool 1.3.3 or later installed."
+  echo "Download the appropriate package for your distribution/OS,"
+  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/libtool/"
+  DIE=1
+  ;;
+esac
+
 # Put other tests for programs here!
+
 
 # If anything failed, exit now.
 if test "$DIE" -eq 1; then
@@ -45,13 +65,20 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo
 fi
 
-if [ ! -d m4 ]; then
-	rm -rf m4
-	mkdir m4
+# Generate configure from configure.in
+echo "Running libtoolize ..."
+LIBTOOL_M4=`$LIBTOOLIZE --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
+if test "x$LIBTOOL_M4" != "x"; then
+ rm -f aclocal.m4
+ cp $LIBTOOL_M4 aclocal.m4
 fi
+$LIBTOOLIZE --copy --force || exit 1
 
-echo "Running autoreconf ..."
-$AUTORECONF --install --force --verbose || exit 1
+echo "Running autoheader ..."
+$AUTOHEADER || exit 1
+
+echo "Running autoconf ..."
+$AUTOCONF || exit 1
 
 # If NOCONFIGURE is set, skip the call to configure
 if test "x$NOCONFIGURE" = "x"; then

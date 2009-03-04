@@ -45,6 +45,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/thd.h"
 
 #include <windows.h>
 #include <process.h>
@@ -63,35 +64,41 @@
 #define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
-static bool initialized_signals = false;
+#ifndef REQUESTER
+static USHORT initialized_signals = FALSE;
 static SLONG volatile overflow_count = 0;
+
+static Firebird::Mutex	sig_mutex;
 
 static int process_id = 0;
 
+#endif /* of ifndef REQUESTER */
+
+
 const USHORT MAX_OPN_EVENTS	= 40;
 
-struct opn_event_t
-{
+struct opn_event {
 	SLONG opn_event_pid;
 	SLONG opn_event_signal;		/* pseudo-signal number */
 	HANDLE opn_event_lhandle;	/* local handle to foreign event */
 	ULONG opn_event_age;
 };
 
+typedef opn_event *OPN_EVENT;
 
-static struct opn_event_t opn_events[MAX_OPN_EVENTS];
+static struct opn_event opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
 
 static void (*system_overflow_handler)(int);
-static void cleanup(void*);
+static void cleanup(void *);
 static void overflow_handler(int, int);
 
-// Not thread-safe
+// Not thread-safe 
 
 ULONG isc_enter_count = 0;
 
-void ISC_enter()
+void ISC_enter(void)
 {
 /**************************************
  *
@@ -102,7 +109,7 @@ void ISC_enter()
  * Functional description
  *	Enter ISC world from caller.
  *
- **************************************/
+ **************************************/  
 /* Setup overflow handler - with chaining to any user handler */
 	void (*temp)(int) = signal(SIGFPE,
 		reinterpret_cast<void(*)(int)>(overflow_handler));
@@ -112,12 +119,12 @@ void ISC_enter()
 #ifdef DEBUG_FPE_HANDLING
 /* Debug code to simulate an FPE occuring during DB Operation */
 	if (overflow_count < 100)
-		kill(getpid(), SIGFPE);
+		(void) kill(getpid(), SIGFPE);
 #endif
 }
 
 
-void ISC_exit()
+void ISC_exit(void)
 {
 /**************************************
  *
@@ -156,11 +163,11 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 		return 0;
 	}
 
-	opn_event_t* oldest_opn_event = NULL;
+	OPN_EVENT oldest_opn_event;
 	ULONG oldest_age = ~0;
 
-	opn_event_t* opn_event = opn_events;
-	const opn_event_t* const end_opn_event = opn_event + opn_event_count;
+	OPN_EVENT opn_event = opn_events;
+	OPN_EVENT end_opn_event = opn_event + opn_event_count;
 	for (; opn_event < end_opn_event; opn_event++) {
 		if (opn_event->opn_event_pid == pid &&
 			opn_event->opn_event_signal == signal_number)
@@ -192,43 +199,10 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 
 	opn_event->opn_event_age = ++opn_event_clock;
 
-	return SetEvent(opn_event->opn_event_lhandle) ? 0 : -1;
+	return (SetEvent(opn_event->opn_event_lhandle)) ? 0 : -1;
 }
 
-void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
-{
-/**************************************
- *
- *	I S C _ m a k e _ s i g n a l		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Create or open a Windows/NT event.
- *	Use the signal number and process id
- *	in naming the object.
- *
- **************************************/
-
-	const BOOLEAN man_rst = manual_reset ? TRUE : FALSE;
-
-	if (!signal_number)
-		return CreateEvent(NULL, man_rst, FALSE, NULL);
-
-	TEXT event_name[BUFFER_TINY];
-	sprintf(event_name, "_firebird_process%u_signal%d", process_idL, signal_number);
-
-	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
-
-	if (create_flag) {
-		fb_assert(!hEvent);
-		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
-	}
-
-	return hEvent;
-}
-
-void ISC_signal_init()
+void ISC_signal_init(void)
 {
 /**************************************
  *
@@ -241,10 +215,11 @@ void ISC_signal_init()
  *
  **************************************/
 
+#ifndef REQUESTER
 	if (initialized_signals)
 		return;
 
-	initialized_signals = true;
+	initialized_signals = TRUE;
 
 	overflow_count = 0;
 	gds__register_cleanup(cleanup, 0);
@@ -254,10 +229,13 @@ void ISC_signal_init()
 	system_overflow_handler =
 		signal(SIGFPE, reinterpret_cast<void(*)(int)>(overflow_handler));
 
+#endif /* REQUESTER */
+
 	ISC_get_security_desc();
 }
 
 
+#ifndef REQUESTER
 static void cleanup(void *arg)
 {
 /**************************************
@@ -272,14 +250,16 @@ static void cleanup(void *arg)
  **************************************/
 	process_id = 0;
 
-	opn_event_t* opn_event = opn_events + opn_event_count;
+	OPN_EVENT opn_event = opn_events + opn_event_count;
 	opn_event_count = 0;
 	while (opn_event-- > opn_events)
 		CloseHandle(opn_event->opn_event_lhandle);
 
-	initialized_signals = false;
+	initialized_signals = FALSE;
 }
+#endif
 
+#ifndef REQUESTER
 static void overflow_handler(int signal, int code)
 {
 /**************************************
@@ -322,3 +302,5 @@ static void overflow_handler(int signal, int code)
 		}
 	}
 }
+#endif
+

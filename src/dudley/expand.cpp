@@ -50,14 +50,14 @@ static DUDLEY_FLD lookup_field(DUDLEY_FLD);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static DUDLEY_REL lookup_relation(DUDLEY_REL);
 static DUDLEY_TRG lookup_trigger(DUDLEY_TRG);
-static DUDLEY_CTX make_context(const TEXT *, DUDLEY_REL, USHORT);
+static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL, USHORT);
 static DUDLEY_NOD resolve(DUDLEY_NOD, dudley_lls*, dudley_lls*);
 static void resolve_rse(DUDLEY_NOD, dudley_lls**);
 
 static SSHORT context_id;
 static dudley_lls* request_context;
 
-void EXP_actions()
+void EXP_actions(void)
 {
 /**************************************
  *
@@ -69,7 +69,7 @@ void EXP_actions()
  *	Expand the output of the parser.
  *	Look for field references and put
  *	them in appropriate context.
- *
+ *   
  **************************************/
 	ACT action;
 
@@ -268,7 +268,8 @@ static void expand_global_field( DUDLEY_FLD field)
 	context->ctx_field = field;
 
 	field->fld_computed = resolve(field->fld_computed, request_context, 0);
-	field->fld_validation = resolve(field->fld_validation, request_context, 0);
+	field->fld_validation =
+		resolve(field->fld_validation, request_context, 0);
 
 	context->ctx_field = 0;
 }
@@ -319,7 +320,7 @@ static void expand_relation( DUDLEY_REL relation)
 		rse = relation->rel_rse;
 		contexts = (dudley_lls*) rse->nod_arg[s_rse_contexts];
 		my_context = lookup_context(NULL, contexts);
-		my_context->ctx_view_rse = true;
+		my_context->ctx_view_rse = TRUE;
 
 		/* drop view context from context stack & build the request stack */
 
@@ -338,7 +339,7 @@ static void expand_relation( DUDLEY_REL relation)
 		/* Put view context back on stack for global field resolution to follow */
 
 		LLS_PUSH((DUDLEY_NOD) my_context, &request_context);
-		my_context->ctx_view_rse = false;
+		my_context->ctx_view_rse = FALSE;
 	}
 }
 
@@ -367,13 +368,15 @@ static void expand_trigger( DUDLEY_TRG trigger)
 
 	relation = trigger->trg_relation;
 
-	if ((trigger->trg_type != trg_store) && (trigger->trg_type != trg_post_store)) {
+	if ((trigger->trg_type != trg_store)
+		&& (trigger->trg_type != trg_post_store)) {
 		if (!old)
 			old = make_context("OLD", relation, 0);
 		LLS_PUSH((DUDLEY_NOD) old, &contexts);
 	}
 
-	if ((trigger->trg_type != trg_erase) && (trigger->trg_type != trg_pre_erase)) {
+	if ((trigger->trg_type != trg_erase)
+		&& (trigger->trg_type != trg_pre_erase)) {
 		if (!new_ctx)
 			new_ctx = make_context("NEW", relation, 1);
 		LLS_PUSH((DUDLEY_NOD) new_ctx, &contexts);
@@ -395,11 +398,11 @@ static DUDLEY_FLD field_context( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_C
  *
  * Functional description
  *	Lookup a field reference, guessing the
- *	context.  Since by now all field references
+ *	context.  Since by now all field references 
  *	ought to be entered in the hash table, this is
  *	pretty easy.  We may be looking up a global
  *	field reference, in which case the context
- *	relation will be null.
+ *	relation will be null. 
  *
  *
  **************************************/
@@ -465,7 +468,7 @@ static DUDLEY_FLD field_search( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CT
  *	iteratively.  The context indicated is
  *	the current context.  Get to there, then
  *	work backward.
- *
+ * 
  **************************************/
 	DUDLEY_FLD field;
 	DUDLEY_CTX context, old_context;
@@ -539,8 +542,8 @@ static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 
 	for (; contexts; contexts = contexts->lls_next) {
 		context = (DUDLEY_CTX) contexts->lls_object;
-		if ((name = context->ctx_name) && !strcmp(name->sym_string, symbol->sym_string))
-			return context;
+		if ((name = context->ctx_name) &&
+			!strcmp(name->sym_string, symbol->sym_string)) return context;
 	}
 
 	return NULL;
@@ -559,7 +562,7 @@ static DUDLEY_FLD lookup_field( DUDLEY_FLD old_field)
  *	Lookup a field reference, from a modify or
  *	delete field statement, and make sure we
  *	found the thing originally.
- *	context.  Since by now all field references
+ *	context.  Since by now all field references 
  *	ought to be entered in the hash table, this is
  *	pretty easy.
  *
@@ -606,8 +609,9 @@ static DUDLEY_FLD lookup_global_field( DUDLEY_FLD field)
 /* Find symbol */
 
 	name = (field->fld_source) ? field->fld_source : field->fld_name;
-	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_global)))
-		return (DUDLEY_FLD) symbol->sym_object;
+	if (symbol =
+		HSH_typed_lookup(name->sym_string, name->sym_length,
+						 SYM_global)) return (DUDLEY_FLD) symbol->sym_object;
 
 	expand_error(103, SafeArg() << name->sym_string);	/* msg 103: global field %s isn't defined */
 
@@ -631,11 +635,10 @@ static DUDLEY_REL lookup_relation( DUDLEY_REL relation)
 /* Find symbol */
 
 	name = (relation->rel_name);
-	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation)) &&
-		symbol->sym_object)
-	{
-		return (DUDLEY_REL) symbol->sym_object;
-	}
+	if (
+		(symbol =
+		 HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation))
+		&& symbol->sym_object) return (DUDLEY_REL) symbol->sym_object;
 
 	expand_error(104, SafeArg() << name->sym_string);	/* msg 104: relation %s isn't defined */
 
@@ -647,7 +650,7 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
- *	l o o k u p _ t r i g g e r
+ *	l o o k u p _ t r i g g e r 
  *
  **************************************
  *
@@ -659,8 +662,9 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 /* Find symbol */
 
 	name = (trigger->trg_name);
-	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_trigger)))
-		return (DUDLEY_TRG) symbol->sym_object;
+	if (symbol =
+		HSH_typed_lookup(name->sym_string, name->sym_length,
+						 SYM_trigger)) return (DUDLEY_TRG) symbol->sym_object;
 
 	expand_error(105, SafeArg() << name->sym_string);	/* msg 105: trigger %s isn't defined */
 
@@ -668,7 +672,7 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 }
 
 
-static DUDLEY_CTX make_context( const TEXT * string, DUDLEY_REL relation, USHORT id)
+static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation, USHORT id)
 {
 /**************************************
  *
@@ -746,7 +750,8 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 			node->nod_arg[s_stt_default] = resolve(sub, right, 0);
 		resolve_rse(node->nod_arg[s_stt_rse], &right);
 		if (node->nod_arg[s_stt_value])
-			node->nod_arg[s_stt_value] = resolve(node->nod_arg[s_stt_value], right, 0);
+			node->nod_arg[s_stt_value] =
+				resolve(node->nod_arg[s_stt_value], right, 0);
 		return node;
 
 	case nod_unique:
@@ -792,7 +797,8 @@ static DUDLEY_NOD resolve( DUDLEY_NOD node, dudley_lls* right, dudley_lls* left)
 		context->ctx_context_id = ++context_id;
 		context->ctx_relation = old_context->ctx_relation;
 		LLS_PUSH((DUDLEY_NOD) context, &left);
-		node->nod_arg[s_mod_action] = resolve(node->nod_arg[s_mod_action], right, left);
+		node->nod_arg[s_mod_action] =
+			resolve(node->nod_arg[s_mod_action], right, left);
 		return node;
 
 	case nod_index:
@@ -881,7 +887,7 @@ static void resolve_rse( DUDLEY_NOD rse, dudley_lls** stack)
  **************************************
  *
  * Functional description
- *	Resolve record selection expression, augmenting
+ *	Resolve record selection expression, augmenting 
  *	context stack.  At the same time, put a context
  *	node in front of every context and build a list
  *	out of the whole thing;

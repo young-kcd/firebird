@@ -48,7 +48,7 @@ Monitoring tables
   Scope:
     DSQL and PSQL
 
-  ODS 11.1 metadata:
+  Metadata:
     MON$DATABASE (connected database)
       - MON$DATABASE_NAME (database pathname or alias)
       - MON$PAGE_SIZE (page size)
@@ -171,26 +171,6 @@ Monitoring tables
       - MON$RECORD_PURGES (number of purged records)
       - MON$RECORD_EXPUNGES (number of expunged records)
 
-  ODS 11.2 metadata:
-    MON$MEMORY_USAGE (current memory usage)
-      - MON$STAT_ID (statistics ID)
-      - MON$STAT_GROUP (statistics group)
-          0: database
-          1: attachment
-          2: transaction
-          3: statement
-          4: call
-      - MON$MEMORY_USED (number of bytes currently in use)
-      - MON$MEMORY_ALLOCATED (number of bytes currently allocated at the OS level)
-      - MON$MAX_MEMORY_USED (maximum number of bytes used by this object)
-      - MON$MAX_MEMORY_ALLOCATED (maximum number of bytes allocated from OS by this object)
-
-    MON$CONTEXT_VARIABLES (known context variables)
-      - MON$ATTACHMENT_ID (attachment ID)
-      - MON$TRANSACTION_ID (transaction ID)
-      - MON$VARIABLE_NAME (name of context variable)
-      - MON$VARIABLE_VALUE (value of context variable)
-
   Notes:
     1) Textual descriptions of all "state" and "mode" values can be found
        in the system table RDB$TYPES
@@ -213,49 +193,31 @@ Monitoring tables
       - columns MON$SOURCE_LINE and MON$SOURCE_COLUMN contain line/column information
         related to the PSQL statement being currently executed
 
-    5) For table MON$MEMORY_USAGE:
-      - the "used" values represent high-level memory allocations, i.e. the ones
-        performed by the engine from its pools. They are useful to investigate unexpected
-        memory consumptions and find the "guilty" objects (attachments, procedures, etc),
-        as well as trace memory leaks.
-      - the "allocated" values represent low-level memory allocations, i.e. the ones
-        performed by the Firebird memory manager. This means bytes really allocated from OS,
-        thus allowing to monitor the physical memory consumption. Please note that not every
-        record has these columns populated with non-zero values. Small allocations don't go
-        to the OS level, they're redirected to the database memory pool instead. So usually
-        only MON$DATABASE and memory-bound objects point to non-zero "allocated" values.
-
-    6) For table MON$CONTEXT_VARIABLES:
-      - column MON$ATTACHMENT_ID contains a valid ID only for session-level context variables.
-        Transaction-level ones have this field set to NULL.
-      - column MON$TRANSACTION_ID contains a valid ID only for transaction-level context variables.
-        Session-level ones have this field set to NULL.
-
   Example(s):
-    1) Retrieve IDs of all CS processes loading CPU at the moment:
+    1) Retrieve IDs of all CS processes loading CPU at the moment
         SELECT MON$SERVER_PID
         FROM MON$ATTACHMENTS
         WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
           AND MON$STATE = 1
 
-    2) Retrieve information about client applications:
+    2) Retrieve information about client applications
         SELECT MON$USER, MON$REMOTE_ADDRESS, MON$REMOTE_PID, MON$TIMESTAMP
         FROM MON$ATTACHMENTS
         WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
 
-    3) Get isolation level of the current transaction:
+    3) Get isolation level of the current transaction
         SELECT MON$ISOLATION_MODE
         FROM MON$TRANSACTIONS
         WHERE MON$TRANSACTION_ID = CURRENT_TRANSACTION
 
-    4) Get statements that are currently active:
+    4) Get statements that are currently active
         SELECT ATT.MON$USER, ATT.MON$REMOTE_ADDRESS, STMT.MON$SQL_TEXT, STMT.MON$TIMESTAMP
         FROM MON$ATTACHMENTS ATT
           JOIN MON$STATEMENTS STMT ON ATT.MON$ATTACHMENT_ID = STMT.MON$ATTACHMENT_ID
         WHERE ATT.MON$ATTACHMENT_ID <> CURRENT_CONNECTION
           AND STMT.MON$STATE = 1
 
-    5) Retrieve call stacks for all connections:
+    5) Retrieve call stacks for all connections
         WITH RECURSIVE
           HEAD AS
         (
@@ -271,40 +233,3 @@ Monitoring tables
         FROM HEAD
           JOIN MON$STATEMENTS STMT ON STMT.MON$STATEMENT_ID = HEAD.MON$STATEMENT_ID
         WHERE STMT.MON$ATTACHMENT_ID <> CURRENT_CONNECTION
-
-    6) Enumerate all session-level context variables for the current connection:
-        SELECT VAR.MON$VARIABLE_NAME, VAR.MON$VARIABLE_VALUE
-        FROM MON$CONTEXT_VARIABLES VAR
-        WHERE VAR.MON$ATTACHMENT_ID = CURRENT_CONNECTION
-
-    7) Report top 10 statements ranked by their memory usage:
-        SELECT FIRST 10 STMT.MON$ATTACHMENT_ID, STMT.MON$SQL_TEXT, MEM.MON$MEMORY_USED
-        FROM MON$MEMORY_USAGE MEM
-          NATURAL JOIN MON$STATEMENTS STMT
-        ORDER BY MEM.MON$MEMORY_USED DESC
-
---------------------------------------
-Modifications of the monitoring tables
---------------------------------------
-
-    Monitoring tables also allow some special administration activities, in particular:
-    cancelling running statements and terminating client sessions. This is done via deletes
-    from tables MON$STATEMENTS and MON$ATTACHMENTS respectively. Deletes from other tables,
-    as well as inserts/updates issued against them, are prohibited.
-
-  Notes:
-    1) If there are no statements currently running by the client, then the cancellation
-       attempt becomes a void operation. Once cancelled, the execute/fetch API call returns
-       the isc_cancelled error code. Any subsequent operations are allowed.
-
-    2) If there are active transactions in the connection being terminated, their activity
-       is immediately cancelled and they're rolled back. Once terminated, the client session
-       receives the isc_att_shutdown error code. Subsequent attempts to use this connection
-       handle will cause network read/write errors.
-
-  Example(s):
-    1) Cancel current activity of connection #32:
-        DELETE FROM MON$STATEMENTS WHERE MON$ATTACHMENT_ID = 32
-
-    2) Disconnect everybody but ourselves:
-        DELETE FROM MON$ATTACHMENTS WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION

@@ -25,6 +25,7 @@
 //
 //____________________________________________________________
 //
+//	$Id: hsh.cpp,v 1.22 2005-05-27 22:42:15 asfernandes Exp $
 //
 
 #include "firebird.h"
@@ -43,39 +44,37 @@ const int HASH_SIZE = 211;
 static gpre_sym* hash_table[HASH_SIZE];
 static gpre_sym* key_symbols;
 
-static struct word
-{
+static struct word {
 	const char* keyword;
-	kwwords_t id;
-}  keywords[] =
-{
+	enum kwwords id;
+}  keywords[] = {
 #include "../gpre/hsh.h"
 };
 
 
 //____________________________________________________________
-//
+//  
 //		Release space used by keywords.
-//
+//  
 
-void HSH_fini()
+void HSH_fini(void)
 {
 	while (key_symbols) {
 		gpre_sym* symbol = key_symbols;
 		key_symbols = (gpre_sym*) key_symbols->sym_object;
 		HSH_remove(symbol);
-		MSC_free(symbol);
+		MSC_free((UCHAR *) symbol);
 	}
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Initialize the hash table.  This mostly involves
 //		inserting all known keywords.
-//
+//  
 
-void HSH_init()
+void HSH_init(void)
 {
 	//const char *string;
 
@@ -100,24 +99,21 @@ void HSH_init()
 
 
 //____________________________________________________________
-//
+//  
 //		Insert a symbol into the hash table.
-//
+//  
 
 void HSH_insert( gpre_sym* symbol)
 {
 	const int h = hash(symbol->sym_string);
 
-	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-	{
+	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision) {
 		for (const gpre_sym* ptr = *next; ptr; ptr = ptr->sym_homonym)
-		{
 			if (ptr == symbol)
 				return;
-		}
 
 		if (scompare(symbol->sym_string, (*next)->sym_string)) {
-			/* insert in most recently seen order;
+			/* insert in most recently seen order; 
 			   This is important for alias resolution in subqueries.
 			   BUT insert tokens AFTER keyword!
 			   In a lookup, keyword should be found first.
@@ -145,15 +141,16 @@ void HSH_insert( gpre_sym* symbol)
 
 
 //____________________________________________________________
-//
+//  
 //		Perform a string lookup against hash table.
-//
+//  
 
 gpre_sym* HSH_lookup(const SCHAR* string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol; symbol = symbol->sym_collision)
+	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
+		 symbol = symbol->sym_collision)
 	{
-		if (scompare(string, symbol->sym_string))
+		if (scompare(string, symbol->sym_string)) 
 			return symbol;
 	}
 
@@ -161,17 +158,18 @@ gpre_sym* HSH_lookup(const SCHAR* string)
 }
 
 //____________________________________________________________
-//
+//  
 //		Perform a string lookup against hash table.
 //       Calls scompare2 which performs case insensitive
 //		compare.
-//
+//  
 
 gpre_sym* HSH_lookup2(const SCHAR* string)
 {
-	for (gpre_sym* symbol = hash_table[hash(string)]; symbol; symbol = symbol->sym_collision)
+	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
+		 symbol = symbol->sym_collision)
 	{
-		if (scompare2(string, symbol->sym_string))
+		if (scompare2(string, symbol->sym_string)) 
 			return symbol;
 	}
 
@@ -180,46 +178,43 @@ gpre_sym* HSH_lookup2(const SCHAR* string)
 
 
 //____________________________________________________________
-//
+//  
 //		Remove a symbol from the hash table.
-//
+//  
 
 void HSH_remove( gpre_sym* symbol)
 {
+	gpre_sym** ptr;
+	gpre_sym* homonym;
+
 	const int h = hash(symbol->sym_string);
 
 	for (gpre_sym** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
-	{
 		if (symbol == *next)
-		{
-			gpre_sym* homonym = symbol->sym_homonym;
-			if (homonym) {
+			if (homonym = symbol->sym_homonym) {
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
+				return;
 			}
 			else {
 				*next = symbol->sym_collision;
-			}
-			return;
-		}
-
-		for (gpre_sym** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
-		{
-			if (symbol == *ptr) {
-				*ptr = symbol->sym_homonym;
 				return;
 			}
-		}
-	}
+		else
+			for (ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
+				if (symbol == *ptr) {
+					*ptr = symbol->sym_homonym;
+					return;
+				}
 
 	CPR_error("HSH_remove failed");
 }
 
 
 //____________________________________________________________
-//
+//  
 //		Returns the hash function of a string.
-//
+//  
 
 static int hash(const SCHAR* string)
 {
@@ -235,31 +230,37 @@ static int hash(const SCHAR* string)
 
 
 //____________________________________________________________
-//
-//		case sensitive Compare
-//
+//  
+//		case sensitive Compare 
+//  
 
-static bool scompare(const SCHAR* string1, const SCHAR* string2)
+static bool scompare(const SCHAR* string1,
+					 const SCHAR* string2)
 {
-	return strcmp(string1, string2) == 0;
+
+	while (*string1)
+		if (*string1++ != *string2++)
+			return false;
+
+	if (*string2)
+		return false;
+
+	return true;
 }
 
 //____________________________________________________________
-//
+//  
 //		Compare two strings
-//
+//  
 
-static bool scompare2(const SCHAR* string1, const SCHAR* string2)
+static bool scompare2(const SCHAR* string1,
+					  const SCHAR* string2)
 {
-	SCHAR c1;
+	SCHAR c1, c2;
 
 	while (c1 = *string1++)
-	{
-		SCHAR c2;
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
 			return false;
-	}
-
 	if (*string2)
 		return false;
 

@@ -26,8 +26,8 @@
 
 namespace Jrd
 {
-	class Attachment;
-	class jrd_tra;
+	class Jrd::Attachment;
+	class Jrd::jrd_tra;
 }
 
 void	DYN_ddl(Jrd::Attachment*, Jrd::jrd_tra*, USHORT, const UCHAR*);

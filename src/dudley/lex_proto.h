@@ -24,14 +24,14 @@
 #ifndef DUDLEY_LEX_PROTO_H
 #define DUDLEY_LEX_PROTO_H
 
-tok*	LEX_filename();
-void	LEX_fini();
-void	LEX_flush();
+tok*	LEX_filename(void);
+void	LEX_fini(void);
+void	LEX_flush(void);
 void	LEX_get_text(UCHAR*, TXT);
 void	LEX_init(void*);
 void	LEX_put_text(FB_API_HANDLE, TXT);
-void	LEX_real();
-tok*	LEX_token();
+void	LEX_real(void);
+tok*	LEX_token(void);
 
 #endif // DUDLEY_LEX_PROTO_H
 

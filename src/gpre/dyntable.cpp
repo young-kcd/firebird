@@ -1,29 +1,30 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	BLR Pretty Printer
 //		MODULE:		dyntable.cpp
 //		DESCRIPTION:	Dynamic DDL to internal conversion table generator
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//
+//  
 //
 //____________________________________________________________
 //
+//	$Id: dyntable.cpp,v 1.10 2005-05-27 22:42:14 asfernandes Exp $
 //
 // CVC: Strange, this file is only referenced in a MacOsX project and gpre
 // works directly with dyntable.h.
@@ -34,12 +35,10 @@
 
 #define NODE(dyn) {dyn, "dyn"},
 
-struct dyn 
-{
+struct dyn {
 	SSHORT dyn_value;
 	const char* dyn_string;
-} dyn_table[] = 
-{
+} dyn_table[] = {
 	NODE(gds__dyn_begin)
 		NODE(gds__dyn_end)
 		NODE(gds__dyn_if)
@@ -118,9 +117,9 @@ struct dyn
 
 
 //____________________________________________________________
-//
+//  
 //		Spit out a conversion table.
-//
+//  
 
 int main()
 {
@@ -133,19 +132,18 @@ int main()
 	max = 0;
 	for (const dyn* item = dyn_table; item->dyn_string; item++) {
 		if (table[item->dyn_value])
-			fprintf(stderr, "%s (%d) is duplicate\n", item->dyn_string, item->dyn_value);
+			fprintf(stderr, "%s (%d) is duplicate\n",
+					   item->dyn_string, item->dyn_value);
 		table[item->dyn_value] = item->dyn_string;
 		if (item->dyn_value > max)
 			max = item->dyn_value;
 	}
 
 	for (int dyn_iter = 0; dyn_iter <= max; dyn_iter++)
-	{
 		if (table[dyn_iter])
 			printf("    \"%s\",\n", table[dyn_iter]);
 		else
 			printf("    NULL,\n");
-	}
 
 	return 0;
 }

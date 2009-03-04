@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		mvol_proto.h
+ *	MODULE:		mvol_proto.h		
  *	DESCRIPTION:	Prototype Header file for mvol.cpp
  *
  * The contents of this file are subject to the Interbase Public
@@ -37,7 +37,7 @@ bool			MVOL_split_hdr_read();
 int				MVOL_read(int*, UCHAR**);
 UCHAR*			MVOL_read_block(BurpGlobals*, UCHAR*, ULONG);
 void			MVOL_skip_block(BurpGlobals*, ULONG);
-UCHAR			MVOL_write(const UCHAR, int*, UCHAR**);
+UCHAR			MVOL_write(UCHAR, int*, UCHAR**);
 const UCHAR*	MVOL_write_block(BurpGlobals*, const UCHAR*, ULONG);
 
 #if defined WIN_NT

@@ -66,8 +66,7 @@ const ULONG XNET_EVENT_SPACE		= 100;	// half of space (bytes) for event handling
 
 // Mapped file structure
 
-typedef struct xpm
-{
+typedef struct xpm {
     struct xpm  *xpm_next;					// pointer to next one
     ULONG       xpm_count;					// slots in use
     ULONG       xpm_number;					// mapped area number
@@ -101,8 +100,7 @@ typedef struct xch
 
 // Thread connection control block
 
-typedef struct xcc
-{
+typedef struct xcc {
     struct xcc  *xcc_next;					// pointer to next thread
     XPM         xcc_xpm;					// pointer back to xpm
     ULONG       xcc_map_num;				// this thread's mapped file number
@@ -141,10 +139,6 @@ typedef struct xps
     ULONG       xps_data[1];				// start of data area
 } *XPS;
 
-// XPS flags
-
-const USHORT XPS_DISCONNECTED = 1;
-
 // xps_channel numbers
 
 const int XPS_CHANNEL_C2S_DATA		= 0;	// 0 - client to server data
@@ -157,15 +151,14 @@ const ULONG XPI_SERVER_PROTOCOL_VERSION		= 3;
 
 // XNET_RESPONSE - server response on client connect request
 
-struct XNET_RESPONSE
-{
+typedef struct {
 	ULONG proc_id;
 	ULONG slots_per_map;
 	ULONG pages_per_slot;
 	ULONG map_num;
 	ULONG slot_num;
 	ULONG timestamp;
-};
+} XNET_RESPONSE, *PXNET_RESPONSE;
 
 // XNET_CONNECT_RESPONZE_SIZE - amount of bytes server writes on connect response
 

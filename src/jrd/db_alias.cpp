@@ -26,11 +26,11 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 
-using namespace Firebird;
+typedef Firebird::PathName string;
 
 const char* ALIAS_FILE = "aliases.conf";
 
-static void replace_dir_sep(PathName& s)
+static void replace_dir_sep(string& s)
 {
 	const char correct_dir_sep = PathUtils::dir_sep;
 	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
@@ -43,16 +43,16 @@ static void replace_dir_sep(PathName& s)
 	}
 }
 
-bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
+bool ResolveDatabaseAlias(const string& alias, string& database)
 {
-	PathName alias_filename;
+	string alias_filename;
 	Firebird::Prefix(alias_filename, ALIAS_FILE);
-	ConfigFile aliasConfig(false, true);
+	ConfigFile aliasConfig(false);
 	aliasConfig.setConfigFilePath(alias_filename);
 
-	PathName corrected_alias = alias;
+	string corrected_alias = alias;
 	replace_dir_sep(corrected_alias);
-
+	
 	database = aliasConfig.getString(corrected_alias);
 
 	if (!database.empty())
@@ -60,7 +60,7 @@ bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 		replace_dir_sep(database);
 		if (PathUtils::isRelative(database)) {
 			gds__log("Value %s configured for alias %s "
-				"is not a fully qualified path name, ignored",
+				"is not a fully qualified path name, ignored", 
 						database.c_str(), alias.c_str());
 			return false;
 		}

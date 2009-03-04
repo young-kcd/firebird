@@ -38,9 +38,9 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
-#include "../common/cvt.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/gds_proto.h"
 /* CVC: I needed them here. */
@@ -52,7 +52,10 @@
 #include "../common/utils_proto.h"
 
 using namespace Jrd;
-using namespace Firebird;
+
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
+#endif
 
 /* The original order of dsc_type values corresponded to the priority
    of conversion (that is, always convert the lesser to the greater
@@ -70,9 +73,7 @@ using namespace Firebird;
    returns the relative priority of types for use when different types
    are compared.
    */
-static const BYTE compare_priority[] =
-{
-	dtype_unknown,				/* dtype_unknown through dtype_varying  */
+static const BYTE compare_priority[] = { dtype_unknown,	/* dtype_unknown through dtype_varying  */
 	dtype_text,					/* have their natural values stored  */
 	dtype_cstring,				/* in the table.                     */
 	dtype_varying,
@@ -94,7 +95,7 @@ static const BYTE compare_priority[] =
 };								/* int64 goes right after long       */
 
 
-SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
+SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -121,8 +122,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		const UCHAR* p1 = arg1->dsc_address;
 		const UCHAR* p2 = arg2->dsc_address;
 
-		switch (arg1->dsc_dtype)
-		{
+		switch (arg1->dsc_dtype) {
 		case dtype_short:
 			if (*(SSHORT *) p1 == *(SSHORT *) p2)
 				return 0;
@@ -180,6 +180,15 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 				return 1;
 			return -1;
 
+#ifdef VMS
+		case SPECIAL_DOUBLE:
+			if (*(double *) p1 == *(double *) p2)
+				return 0;
+			if (CNVT_TO_DFLT((double *) p1) > CNVT_TO_DFLT((double *) p2))
+				return 1;
+			return -1;
+#endif
+
 		case dtype_text:
 		case dtype_varying:
 		case dtype_cstring:
@@ -228,63 +237,58 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			 (charset2 != ttype_ascii)) &&
 			((charset1 != ttype_none) || (charset2 != ttype_none)))
 		{
-			return INTL_compare(tdbb, arg1, arg2, ERR_post);
+			return INTL_compare(tdbb, arg1, arg2, err);
 		}
 
 		UCHAR* p1 = NULL;
 		UCHAR* p2 = NULL;
 		USHORT t1, t2; // unused later
-		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, ERR_post);
-		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, ERR_post);
+		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, err);
+		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, err);
 
 		int fill = length - length2;
 		const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
-
-		if (length >= length2)
-		{
+		if (length >= length2) {
 			if (length2)
-			{
 				do
-				{
 					if (*p1++ != *p2++)
-						return (p1[-1] > p2[-1]) ? 1 : -1;
-				} while (--length2);
-			}
-
+						if (p1[-1] > p2[-1])
+							return 1;
+						else
+							return -1;
+				while (--length2);
 			if (fill > 0)
-			{
 				do
-				{
 					if (*p1++ != pad)
-						return (p1[-1] > pad) ? 1 : -1;
-				} while (--fill);
-			}
-
+						if (p1[-1] > pad)
+							return 1;
+						else
+							return -1;
+				while (--fill);
 			return 0;
 		}
-
 		if (length)
-		{
 			do
-			{
 				if (*p1++ != *p2++)
-					return (p1[-1] > p2[-1]) ? 1 : -1;
-			} while (--length);
-		}
-
+					if (p1[-1] > p2[-1])
+						return 1;
+					else
+						return -1;
+			while (--length);
 		do
-		{
 			if (*p2++ != pad)
-				return (pad > p2[-1]) ? 1 : -1;
-		} while (++fill);
-
+				if (pad > p2[-1])
+					return 1;
+				else
+					return -1;
+		while (++fill);
 		return 0;
 	}
 
 /* Handle heterogeneous compares */
 
 	if (compare_priority[arg1->dsc_dtype] < compare_priority[arg2->dsc_dtype])
-		return -CVT2_compare(arg2, arg1);
+		return -CVT2_compare(arg2, arg1, err);
 
 /* At this point, the type of arg1 is guaranteed to be "greater than" arg2,
    in the sense that it is the preferred type for comparing the two. */
@@ -300,8 +304,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			desc.dsc_dtype = dtype_timestamp;
 			desc.dsc_length = sizeof(date);
 			desc.dsc_address = (UCHAR *) date;
-			CVT_move(arg2, &desc);
-			return CVT2_compare(arg1, &desc);
+			CVT_move(arg2, &desc, err);
+			return CVT2_compare(arg1, &desc, err);
 		}
 
 	case dtype_sql_time:
@@ -311,8 +315,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			desc.dsc_dtype = dtype_sql_time;
 			desc.dsc_length = sizeof(date[0]);
 			desc.dsc_address = (UCHAR *) date;
-			CVT_move(arg2, &desc);
-			return CVT2_compare(arg1, &desc);
+			CVT_move(arg2, &desc, err);
+			return CVT2_compare(arg1, &desc, err);
 		}
 
 	case dtype_sql_date:
@@ -322,8 +326,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			desc.dsc_dtype = dtype_sql_date;
 			desc.dsc_length = sizeof(date[0]);
 			desc.dsc_address = (UCHAR *) date;
-			CVT_move(arg2, &desc);
-			return CVT2_compare(arg1, &desc);
+			CVT_move(arg2, &desc, err);
+			return CVT2_compare(arg1, &desc, err);
 		}
 
 	case dtype_short:
@@ -333,8 +337,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 				scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 			else
 				scale = arg1->dsc_scale;
-			const SLONG temp1 = CVT_get_long(arg1, scale, ERR_post);
-			const SLONG temp2 = CVT_get_long(arg2, scale, ERR_post);
+			const SLONG temp1 = CVT_get_long(arg1, scale, err);
+			const SLONG temp2 = CVT_get_long(arg2, scale, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -351,8 +355,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 				scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 			else
 				scale = arg1->dsc_scale;
-			const SINT64 temp1 = CVT_get_int64(arg1, scale, ERR_post);
-			const SINT64 temp2 = CVT_get_int64(arg2, scale, ERR_post);
+			const SINT64 temp1 = CVT_get_int64(arg1, scale, err);
+			const SINT64 temp2 = CVT_get_int64(arg2, scale, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -367,15 +371,15 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 				scale = MIN(arg1->dsc_scale, arg2->dsc_scale);
 			else
 				scale = arg1->dsc_scale;
-			const SQUAD temp1 = CVT_get_quad(arg1, scale, ERR_post);
-			const SQUAD temp2 = CVT_get_quad(arg2, scale, ERR_post);
+			const SQUAD temp1 = CVT_get_quad(arg1, scale, err);
+			const SQUAD temp2 = CVT_get_quad(arg2, scale, err);
 			return QUAD_COMPARE(temp1, temp2);
 		}
 
 	case dtype_real:
 		{
-			const float temp1 = (float) CVT_get_double(arg1, ERR_post);
-			const float temp2 = (float) CVT_get_double(arg2, ERR_post);
+			const float temp1 = (float) CVT_get_double(arg1, err);
+			const float temp2 = (float) CVT_get_double(arg2, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -384,9 +388,12 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		}
 
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		{
-			const double temp1 = CVT_get_double(arg1, ERR_post);
-			const double temp2 = CVT_get_double(arg2, ERR_post);
+			const double temp1 = CVT_get_double(arg1, err);
+			const double temp2 = CVT_get_double(arg2, err);
 			if (temp1 == temp2)
 				return 0;
 			if (temp1 > temp2)
@@ -395,10 +402,11 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		}
 
 	case dtype_blob:
-		return CVT2_blob_compare(arg1, arg2);
+		return CVT2_blob_compare(arg1, arg2, err);
 
 	case dtype_array:
-		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_blobnotsup) << "compare");
+		(*err) (isc_wish_list, isc_arg_gds, isc_blobnotsup,
+				isc_arg_string, "compare", isc_arg_end);
 		break;
 
 	default:
@@ -409,7 +417,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 }
 
 
-SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
+SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -436,7 +444,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 /* DEV_BLKCHK (node, type_nod); */
 
 	if (arg1->dsc_dtype != dtype_blob)
-		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_datnotsup));
+		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, isc_arg_end);
 
 	USHORT ttype1;
 	if (arg1->dsc_sub_type == isc_blob_text)
@@ -453,13 +461,15 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 	    /* Same blob id address? */
 		if (arg1->dsc_address == arg2->dsc_address)
 			return 0;
-
-		/* Second test for blob id, checking relation and slot. */
-		const bid* bid1 = (bid*) arg1->dsc_address;
-		const bid* bid2 = (bid*) arg2->dsc_address;
-		if (*bid1 == *bid2)
+		else
 		{
-			return 0;
+			/* Second test for blob id, checking relation and slot. */
+			bid* bid1 = (bid*) arg1->dsc_address;
+			bid* bid2 = (bid*) arg2->dsc_address;
+			if (*bid1 == *bid2)
+			{
+				return 0;
+			}
 		}
 
 		if (arg2->dsc_sub_type == isc_blob_text)
@@ -506,7 +516,8 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 			buffer2.getBuffer(blob2->blb_length / charSet2->minBytesPerChar() * charSet1->maxBytesPerChar());
 		}
 
-		while (ret_val == 0 && !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
+		while (ret_val == 0 &&
+			   !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
 		{
 			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
 			l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
@@ -541,7 +552,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 	}
 	/* We do not accept arrays for now. Maybe InternalArrayDesc in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
-		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_datnotsup));
+		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, isc_arg_end);
 	/* The second parameter should be a string. */
 	else
 	{
@@ -566,7 +577,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 		UCHAR* p;
 		MoveBuffer temp_str;
 
-		l2 = CVT2_make_string2(arg2, ttype1, &p, temp_str);
+		l2 = CVT2_make_string2(arg2, ttype1, &p, temp_str, err);
 
 		blb* blob1 = BLB_open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
 
@@ -591,7 +602,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 }
 
 
-void CVT2_get_name(const dsc* desc, TEXT* string)
+void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -606,15 +617,22 @@ void CVT2_get_name(const dsc* desc, TEXT* string)
 	VARY_STR(MAX_SQL_IDENTIFIER_SIZE) temp;			/* 31 bytes + 1 NULL */
 	const char* p;
 
-	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, (vary*) &temp, sizeof(temp), ERR_post);
+	USHORT length = CVT_make_string(desc, ttype_metadata, &p,
+							 (vary*) & temp, sizeof(temp), err);
+	TEXT* const orig_string = string;
+	for (; length; --length)
+		*string++ = *p++;
 
-	memcpy(string, p, length);
-	string[length] = 0;
-	fb_utils::exact_name(string);
+	*string = 0;
+	fb_utils::exact_name(orig_string);
 }
 
 
-USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd::MoveBuffer& temp)
+USHORT CVT2_make_string2(const dsc* desc,
+						 USHORT to_interp,
+						 UCHAR** address,
+						 Jrd::MoveBuffer& temp,
+						 FPTR_ERROR err)
 {
 /**************************************
  *
@@ -634,33 +652,30 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
+	fb_assert(err != NULL);
 
-	switch (desc->dsc_dtype)
-	{
-	case dtype_text:
+	if (desc->dsc_dtype == dtype_text) {
 		from_buf = desc->dsc_address;
 		from_len = desc->dsc_length;
 		from_interp = INTL_TTYPE(desc);
-		break;
-
-	case dtype_cstring:
-		from_buf = desc->dsc_address;
-		from_len = MIN(strlen((char *) desc->dsc_address), (unsigned) (desc->dsc_length - 1));
-		from_interp = INTL_TTYPE(desc);
-		break;
-
-	case dtype_varying:
-		{
-			vary* varying = (vary*) desc->dsc_address;
-			from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
-			from_len = MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(SSHORT)));
-			from_interp = INTL_TTYPE(desc);
-		}
-		break;
 	}
 
-	if (desc->dsc_dtype <= dtype_any_text)
-	{
+	else if (desc->dsc_dtype == dtype_cstring) {
+		from_buf = desc->dsc_address;
+		from_len = MIN(strlen((char *) desc->dsc_address), \
+					   (unsigned) (desc->dsc_length - 1));
+		from_interp = INTL_TTYPE(desc);
+	}
+
+	else if (desc->dsc_dtype == dtype_varying) {
+		vary* varying = (vary*) desc->dsc_address;
+		from_buf = reinterpret_cast<UCHAR*>(varying->vary_string);
+		from_len =
+			MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(SSHORT)));
+		from_interp = INTL_TTYPE(desc);
+	}
+
+	if (desc->dsc_dtype <= dtype_any_text) {
 
 		if (to_interp == from_interp) {
 			*address = from_buf;
@@ -674,12 +689,15 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 			*address = from_buf;
 			return from_len;
 		}
-
-		USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0, cs2, from_buf, from_len, ERR_post);
-		UCHAR* tempptr = temp.getBuffer(length);
-		length = INTL_convert_bytes(tdbb, cs1, tempptr, length, cs2, from_buf, from_len, ERR_post);
-		*address = tempptr;
-		return length;
+		else {
+			USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
+											   cs2, from_buf, from_len, err);
+			UCHAR* tempptr = temp.getBuffer(length);
+			length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
+										cs2, from_buf, from_len, err);
+			*address = tempptr;
+			return length;
+		}
 	}
 
 /* Not string data, then  -- convert value to varying string. */
@@ -691,7 +709,7 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 	vary* vtmp = reinterpret_cast<vary*>(temp_desc.dsc_address);
 	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
-	CVT_move(desc, &temp_desc);
+	CVT_move(desc, &temp_desc, err);
 	*address = reinterpret_cast<UCHAR*>(vtmp->vary_string);
 
 	return vtmp->vary_length;

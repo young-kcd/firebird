@@ -1,17 +1,18 @@
-Firebird Database Server 2.5 Alpha 1
+Firebird Database Server 2.1
 ==================================================
 
+
 This document is a guide to installing this package of
-Firebird 2.5 on the Windows platform. These notes refer
+Firebird 2.1 on the Windows platform. These notes refer
 to the installation package itself, rather than
-Firebird 2.5 in general. In addition, these notes are
+Firebird 2.1 in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar with Firebird 2.1. If you are evaluating
-Firebird 2.5 as part of a migration from FB 2.1 you are
-advised to review the FB 2.1 documentation to
-understand the changes made between 2.1 and 2.5.
+familiar with Firebird 2.0. If you are evaluating
+Firebird 2.1 as part of a migration from Fb 1.5 you are
+advised to review the Fb 2.0 documentation to
+understand the changes made between 1.5 and 2.0.
 
 
 Contents
@@ -39,16 +40,20 @@ Problems with installation of MS VC runtime libraries
 
 Much work has been done to ensure that the MS Visual
 C runtime libraries are correctly installed by the
-binary installer. However, in case of problems it may
-be necessary to deploy the official vcredist.exe. The
-correct versions for this build of Firebird can be
-found here:
+binary installer. Since v2.1.2 Firebird will work with
+locally deployed instances of the runtime libraries.
+This especially simplifies deployment of the firebird
+client or embedded dll with your own application.
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+However, in case of problems it may be necessary to
+deploy the official vcredist.exe. The correct versions
+for this build of Firebird can be found here:
 
-  and x64 here:
+  http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+and x64 here:
+
+  http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Other Known installation problems
@@ -81,6 +86,12 @@ o When installing under Vista be sure to install as an
   right click and choose 'Run as administrator'.
   Otherwise the installer will be unable to start the
   Firebird service at the end of installation.
+
+o Libraries deployed by instclient will fail to load if
+  the MS runtime libraries have not been installed
+  correctly. In case of problems users should install
+  the appropriate version of vcredist.exe mentioned
+  above.
 
 
 Uninstallation

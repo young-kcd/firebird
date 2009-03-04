@@ -25,7 +25,6 @@ private:
 	CtxtHandle ctxtHndl;
 	bool hasContext;
 	Firebird::string ctName;
-	bool wheel;
 
 	// Handle of library
 	static HINSTANCE library;
@@ -48,7 +47,7 @@ public:
 	AuthSspi();
 	~AuthSspi();
 
-	// true when has non-empty security context,
+	// true when has non-empty security context, 
 	// ready to be sent to the other side
 	bool isActive() const
 	{
@@ -57,12 +56,12 @@ public:
 
 	// prepare security context to be sent to the server (used by client)
 	bool request(DataHolder& data);
-
+	
 	// accept security context from the client (used by server)
 	bool accept(DataHolder& data);
 
 	// returns Windows user name, matching accepted security context
-	bool getLogin(Firebird::string& login, bool& wh);
+	bool getLogin(Firebird::string& login);
 };
 
 #endif // TRUSTED_AUTH

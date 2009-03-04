@@ -95,20 +95,19 @@
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
-#define HAVE_IO_H
 #undef HAVE_SYS_SIGNAL_H
 #undef HAVE_SYS_SIGINFO_H
 #undef HAVE_EDITLINE_H
 #undef HAVE_TERMIO_H
 #undef HAVE_TERMIOS_H
-#undef HAVE_DIRENT_H
-#undef HAVE_SYS_NDIR_H
-#undef HAVE_SYS_DIR_H
-#undef HAVE_NDIR_H
+#undef HAVE_DIRENT_H 
+#undef HAVE_SYS_NDIR_H 
+#undef HAVE_SYS_DIR_H 
+#undef HAVE_NDIR_H 
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
-#undef HAVE_CRYPT_H
+#undef HAVE_CRYPT_H 
 #undef HAVE_NETCONFIG_H
 #undef HAVE_NETINET_IN_H
 #undef HAVE_RPC_RPC_H
@@ -138,12 +137,13 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
+#define vsnprintf _vsnprintf
 #define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB
 #undef HAVE_MMAP
 #undef HAVE_WORKING_VFORK
-#undef HAVE_SETPGRP
+#undef HAVE_SETPGRP 
 #undef HAVE_SETPGID
 #undef HAVE_GETPGRP
 #undef SETPGRP_VOID
@@ -166,10 +166,6 @@
 #undef HAVE_LOCALTIME_R
 #undef HAVE_GMTIME_R
 
-#if defined _MSC_VER && _MSC_VER < 1500
-#define vsnprintf _vsnprintf
-#endif
-
 
 /* Types */
 #undef HAVE_SOCKLEN_T
@@ -187,13 +183,13 @@
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 4
 /* alignment of long */
-#define FB_ALIGNMENT 4
+#define ALIGNMENT 4
 #elif defined(_M_AMD64)
 #define AMD64
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 8
 /* alignment of long */
-#define FB_ALIGNMENT 8
+#define ALIGNMENT 8
 #else
 #error unknown target platform
 #endif
@@ -202,7 +198,7 @@
 #define SIZEOF_LONG 4
 
 /* alignment of double */
-#define FB_DOUBLE_ALIGN 8
+#define DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
@@ -243,9 +239,6 @@
 
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
-
-/* Define dynamic library extension */
-#define SHRLIB_EXT "dll"
 
 /* Windows platforms support threads */
 #define HAVE_MULTI_THREAD 1

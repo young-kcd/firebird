@@ -47,12 +47,25 @@ typedef unsigned short SHORT;
 /* Following defines are duplicates of those in intl.c */
 /* Name of module that implements text-type (n) */
 
+#ifdef VMS
+#define	INTL_MODULE "[syslib]IBLD_%03d"
+#endif
+
 #ifndef INTL_MODULE
 #define	INTL_MODULE "lib/IBLD_%03d"
 #endif
 
 #ifndef INTL_INIT_ENTRY
 #define INTL_INIT_ENTRY "ld_init"
+#endif
+
+
+#ifdef VMS
+char *defaults[] = {
+	"<null>",
+	"IBLD_010",
+	"IBLD_011", "ask", "ask", "ask", "ask", "ask", "ask", "ask"
+};
 #endif
 
 
@@ -71,11 +84,16 @@ int main(int argc, char** argv)
 	char buffer[200];
 	struct texttype this_textobj;
 
+#ifdef VMS
+	char** vector = defaults;
+	argc = FB_NELEM(defaults);
+#else
 	if (argc <= 1) {
 		printf("usage: dtest Intl_module_name\n");
 		return (1);
 	}
 	char** vector = argv;
+#endif
 
 	FPTR_INT func = 0;
 

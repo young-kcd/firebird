@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  */
-
+ 
 #ifndef CLASSES_FB_ATOMIC_H
 #define CLASSES_FB_ATOMIC_H
 
@@ -40,42 +40,32 @@ class AtomicCounter
 {
 public:
 	typedef LONG counter_type;
-
-	explicit AtomicCounter(counter_type val = 0) : counter(val) {}
+	
+	AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type val)
-	{
+			
+	counter_type exchangeAdd(counter_type val) {
 		return InterlockedExchangeAdd(&counter, val);
 	}
-
-	counter_type operator +=(counter_type val)
-	{
+	
+	counter_type operator +=(counter_type val) {
 		return exchangeAdd(val) + val;
 	}
-
-	counter_type operator -=(counter_type val)
-	{
+	
+	counter_type operator -=(counter_type val) {
 		return exchangeAdd(-val) - val;
 	}
-
-	counter_type operator ++()
-	{
+	
+	counter_type operator ++() {
 		return InterlockedIncrement(&counter);
 	}
-
-	counter_type operator --()
-	{
+	
+	counter_type operator --() {
 		return InterlockedDecrement(&counter);
 	}
-
+	
 	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-		return InterlockedExchange(&counter, val);
-	}
-
+	
 private:
 # if defined(MINGW)
 	counter_type counter;
@@ -95,12 +85,11 @@ class AtomicCounter
 {
 public:
 	typedef int counter_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	
+	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type value)
-	{
+			
+	counter_type exchangeAdd(counter_type value) {
 		register counter_type result;
 		__asm __volatile (
 			"lock; xaddl %0, %1"
@@ -108,106 +97,90 @@ public:
 			 : "0" (value), "m" (counter));
 		return result;
 	}
-
-	counter_type operator +=(counter_type value)
-	{
+	
+	counter_type operator +=(counter_type value) {
 		return exchangeAdd(value) + value;
 	}
-
-	counter_type operator -=(counter_type value)
-	{
+	
+	counter_type operator -=(counter_type value) {
 		return exchangeAdd(-value) - value;
 	}
-
-	counter_type operator ++()
-	{
+	
+	counter_type operator ++() {
 		return exchangeAdd(1) + 1;
 	}
-
-	counter_type operator --()
-	{
+	
+	counter_type operator --() {
 		return exchangeAdd(-1) - 1;
 	}
-
+	
 	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-		register counter_type result;
-		__asm __volatile (
-			"lock; xchg %0, %1"
-			 : "=r" (result), "=m" (counter)
-			 : "0" (val), "m" (counter));
-		return result;
-	}
-
+	
 private:
 	volatile counter_type counter;
 };
 
 } // namespace Firebird
 
-#elif defined(AIX)
+#else
 
-#include <sys/atomic_op.h>
+# include "../common/classes/locks.h"
 
 namespace Firebird {
 
-// AIX version - uses AIX atomic API
+// Highly inefficient, but safe and portable implementation
 class AtomicCounter
 {
 public:
 	typedef int counter_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	
+	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type value)
-	{
-		return fetch_and_add(&counter, value);
+			
+	counter_type exchangeAdd(counter_type value) {
+		lock.enter();
+		counter_type temp = counter;
+		counter += value;
+		lock.leave();
+		return temp;		
 	}
-
-	counter_type operator +=(counter_type value)
-	{
-		return exchangeAdd(value) + value;
+	
+	counter_type operator +=(counter_type value) {
+		lock.enter();
+		counter_type temp = counter += value;
+		lock.leave();
+		return temp;
 	}
-
-	counter_type operator -=(counter_type value)
-	{
-		return exchangeAdd(-value) - value;
+	
+	counter_type operator -=(counter_type value) {
+		lock.enter();
+		counter_type temp = counter -= value;
+		lock.leave();
+		return temp;
 	}
-
-	counter_type operator ++()
-	{
-		return exchangeAdd(1) + 1;
+	
+	counter_type operator ++() {
+		lock.enter();
+		counter_type temp = counter++;
+		lock.leave();
+		return temp;
 	}
-
-	counter_type operator --()
-	{
-		return exchangeAdd(-1) - 1;
+	
+	counter_type operator --() {
+		lock.enter();
+		counter_type temp = counter--;
+		lock.leave();
+		return temp;
 	}
-
+	
 	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-		counter_type old;
-		do
-		{
-			old = counter;
-		} while (!compare_and_swap(&counter, &old, val));
-		return old;
-	}
-
+	
 private:
-	counter_type counter;
+	volatile counter_type counter;
+	Mutex lock;
 };
 
 } // namespace Firebird
-
-#else
-
-#error AtomicCounter: implement appropriate code for your platform!
 
 #endif
 

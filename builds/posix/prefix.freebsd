@@ -24,7 +24,7 @@ LINK_OPTS+=-Wl,-rpath,../gen/firebird/lib
 
 PROD_FLAGS=-O -fno-builtin -DNDEBUG -DFREEBSD -pipe -MMD -fPIC
 DEV_FLAGS=-ggdb -DFREEBSD -pipe -MMD -p -fPIC -Wall
-EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fbguard fb_lock_print
+EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp

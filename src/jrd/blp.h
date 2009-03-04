@@ -200,7 +200,7 @@ static const struct
 	{"agg_list_distinct", two},
 	/***
 	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
-	{"gen_id2", gen_id},
+	{"gen_id2", gen_id}, 
 	{"set_generator2", gen_id},
 	***/
 	{"modify2", modify2},
@@ -217,16 +217,9 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
-	// New BLR in FB2.1
 	{"init_variable", variable},
 	{"recurse", union_ops},
 	{"sys_function", function},
-	// New BLR in FB2.5
-	{"auto_trans", byte_verb},
-	{"similar", similar},
-	{"exec_stmt", exec_stmt},
-	{"stmt_expr", two},
-	{"derived_expr", derived_expr},
 	{0, 0}
 };
 

@@ -28,8 +28,6 @@
 #define JRD_BLB_H
 
 #include "../jrd/RecordNumber.h"
-#include "../common/classes/array.h"
-#include "../common/classes/File.h"
 
 namespace Jrd {
 
@@ -49,48 +47,41 @@ class jrd_tra;
 class vcl;
 
 // This structure must occupy 8 bytes
-struct bid
-{
-	union
-	{
+struct bid {
+	union {
 		// Internal decomposition of the structure
 		RecordNumber::Packed bid_internal;
 
 		// This is how bid structure represented in public API.
 		// Must be present to enforce alignment rules when structure is declared on stack
-		struct
-		{
+		struct {
 			ULONG bid_quad_high;
 			ULONG bid_quad_low;
 		} bid_quad;
 	};
 
-	ULONG& bid_temp_id()
-	{
+	ULONG& bid_temp_id() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
 		return bid_internal.bid_temp_id();
 	}
 
-	ULONG bid_temp_id() const
-	{
+	ULONG bid_temp_id() const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
 		return bid_internal.bid_temp_id();
 	}
 
-	bool isEmpty() const
-	{
+	bool isEmpty() const { 
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0;
+		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0; 
 	}
 
-	void clear()
-	{
+	void clear() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -98,8 +89,7 @@ struct bid
 		bid_quad.bid_quad_low = 0;
 	}
 
-	void set_temporary(ULONG temp_id)
-	{
+	void set_temporary(ULONG temp_id) {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -107,8 +97,7 @@ struct bid
 		bid_temp_id() = temp_id;
 	}
 
-	void set_permanent(USHORT relation_id, RecordNumber num)
-	{
+	void set_permanent(USHORT relation_id, RecordNumber num) {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -117,8 +106,7 @@ struct bid
 		num.bid_encode(&bid_internal);
 	}
 
-	RecordNumber get_permanent_number() const
-	{
+	RecordNumber get_permanent_number() const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -127,31 +115,24 @@ struct bid
 		return temp;
 	}
 
-	bool operator == (const bid& other) const
-	{
+	bool operator == (const bid& other) const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high &&
+		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high && 
 			bid_quad.bid_quad_low == other.bid_quad.bid_quad_low;
 	}
 };
 
 /* Your basic blob block. */
 
-class blb : public pool_alloc<type_blb>
+class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
-public:
-	blb(MemoryPool& pool, USHORT page_size)
-		: blb_buffer(pool, page_size / sizeof(SLONG)),
-		  blb_has_buffer(true)
-	{
-	}
-
+    public:
 	Attachment*	blb_attachment;	/* database attachment */
 	jrd_rel*	blb_relation;	/* Relation, if known */
 	jrd_tra*	blb_transaction;	/* Parent transaction block */
-	//blb*		blb_next;		/* Next blob in transaction */
+	blb*		blb_next;		/* Next blob in transaction */
 	UCHAR*		blb_segment;	/* Next segment to be addressed */
 	BlobControl*	blb_filter;	/* Blob filter control block, if any */
 	bid			blb_blob_id;	/* Id of materialized blob */
@@ -164,8 +145,8 @@ public:
 	USHORT blb_space_remaining;	/* Data space left */
 	USHORT blb_max_pages;		/* Max pages in vector */
 	USHORT blb_fragment_size;	/* Residual fragment size */
-	//USHORT blb_source_interp;	/* source interp (for writing) */
-	//USHORT blb_target_interp;	/* destination interp (for reading) */
+	USHORT blb_source_interp;	/* source interp (for writing) */
+	USHORT blb_target_interp;	/* destination interp (for reading) */
 	SSHORT blb_sub_type;		/* Blob's declared sub-type */
 	UCHAR blb_charset;			// Blob's charset
 	USHORT blb_pg_space_id;		// page space
@@ -176,31 +157,8 @@ public:
 	ULONG blb_lead_page;		/* First page number */
 	ULONG blb_seek;				/* Seek location */
 	ULONG blb_temp_id;          // ID of newly created blob in transaction
-	size_t blb_temp_size;		// size stored in transaction temp space
-	offset_t blb_temp_offset;	// offset in transaction temp space
-
-private:
-	Firebird::Array<SLONG> blb_buffer;	// buffer used in opened blobs - must be longword aligned
-	bool blb_has_buffer;
-
-public:
-	bool hasBuffer() const
-	{
-		return blb_has_buffer;
-	}
-
-	UCHAR* getBuffer()
-	{
-		fb_assert(blb_has_buffer);
-		return (UCHAR*) blb_buffer.getBuffer(blb_buffer.getCapacity());
-	}
-
-	void freeBuffer()
-	{
-		fb_assert(blb_has_buffer);
-		blb_buffer.free();
-		blb_has_buffer = false;
-	}
+	/* blb_data must be longword aligned */
+	UCHAR blb_data[1];			/* A page's worth of blob */
 };
 
 const int BLB_temporary	= 1;			/* Newly created blob */
@@ -218,6 +176,16 @@ const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 	1	medium blob -- blob "record" is pointer to pages
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
+
+// mapping blob ids for REPLAY
+// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
+class blb_map : public pool_alloc<type_map>
+{
+    public:
+	blb_map*	map_next;
+	blb*		map_old_blob;
+	blb*		map_new_blob;
+};
 
 } //namespace Jrd
 

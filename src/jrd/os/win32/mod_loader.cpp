@@ -7,7 +7,6 @@
 #define _WIN32_WINNT 0x0501
 
 #include "firebird.h"
-#include "../../../common/dllinst.h"
 #include "../jrd/os/mod_loader.h"
 #include <windows.h>
 
@@ -15,6 +14,9 @@ typedef Firebird::string string;
 typedef Firebird::PathName PathName;
 
 /// This is the Win32 implementation of the mod_loader abstraction.
+
+HINSTANCE hDllInst = 0;
+BOOL bEmbedded = false;
 
 /// activation context API prototypes
 typedef HANDLE (WINAPI * PFN_CAC)(PCACTCTXA pActCtx);
@@ -48,37 +50,37 @@ public:
 	~WinApiFunction()
 	{}
 
-	PFN operator* () const { return m_ptr; }
+	PFN operator* () const
+	{ return m_ptr; }
 
-	operator bool() const { return (m_ptr != NULL); }
+	operator bool() const
+	{ return (m_ptr != NULL); }
 
 private:
 	PFN m_ptr;
 };
 
-const char* const KERNEL32_DLL = "kernel32.dll";
+const char* sKernel32 = "kernel32.dll";
 
 
 class ContextActivator
 {
 public:
 	ContextActivator() :
-	  mFindActCtxSectionString(KERNEL32_DLL, "FindActCtxSectionStringA"),
-	  mCreateActCtx(KERNEL32_DLL, "CreateActCtxA"),
-	  mReleaseActCtx(KERNEL32_DLL, "ReleaseActCtx"),
-	  mActivateActCtx(KERNEL32_DLL, "ActivateActCtx"),
-	  mDeactivateActCtx(KERNEL32_DLL, "DeactivateActCtx")
+	  mFindActCtxSectionString(sKernel32, "FindActCtxSectionStringA"),
+	  mCreateActCtx(sKernel32, "CreateActCtxA"),
+	  mReleaseActCtx(sKernel32, "ReleaseActCtx"),
+	  mActivateActCtx(sKernel32, "ActivateActCtx"),
+	  mDeactivateActCtx(sKernel32, "DeactivateActCtx")
 	{
 		hActCtx = INVALID_HANDLE_VALUE;
 
 // if we don't use MSVC then we don't use MS CRT ?
-// NS: versions of MSVC before 2005 and, as preliminary reports suggest,
-// after 2008 do not need this hack
-#if !defined(_MSC_VER) || (_MSC_VER <= 1400)
+#ifndef _MSC_VER
 		return;
-#else
+#endif
 
-		if (!Firebird::bEmbedded || !mCreateActCtx)
+		if (!bEmbedded || !mCreateActCtx)
 			return;
 
 		ACTCTX_SECTION_KEYED_DATA ackd;
@@ -90,16 +92,12 @@ public:
 				(0, NULL, 
 				ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION, 
 #if _MSC_VER == 1400
-                    "msvcr80.dll",
-#elif _MSC_VER == 1500
-                    "msvcr90.dll",
+				"msvcr80.dll",
 #else
-                    #error Specify CRT DLL name here !
+				#error Specify CRT DLL name here !
 #endif
 				&ackd))
-		{
 			return;
-		}
 
 		// create and use activation context from our own manifest
 		ACTCTXA actCtx;
@@ -107,7 +105,7 @@ public:
 		actCtx.cbSize = sizeof(actCtx);
 		actCtx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID;
 		actCtx.lpResourceName = ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
-		actCtx.hModule = Firebird::hDllInst; 
+		actCtx.hModule = hDllInst; 
 
 		if (actCtx.hModule)
 		{
@@ -119,7 +117,6 @@ public:
 			if (hActCtx != INVALID_HANDLE_VALUE)
 				(*mActivateActCtx) (hActCtx, &mCookie);
 		}
-#endif // !_MSC_VER
 	}
 
 	~ContextActivator()
@@ -149,27 +146,26 @@ public:
 	Win32Module(HMODULE m) : module(m) {}
 	~Win32Module();
 	void *findSymbol(const string&);
-
+	
 private:
-	const HMODULE module;
+	HMODULE module;
 };
 
 bool ModuleLoader::isLoadableModule(const PathName& module)
 {
 	ContextActivator ctx;
 
-	const HMODULE hMod = LoadLibraryEx(module.c_str(), 0,
-		LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
-
+	LPCSTR pszName = module.c_str();
+	HINSTANCE hMod = LoadLibraryEx(pszName, 0, LOAD_LIBRARY_AS_DATAFILE);
 	if (hMod) {
-		FreeLibrary(hMod);
+		FreeLibrary((HMODULE)hMod);
 	}
 	return hMod != 0;
 }
 
 void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
-	const PathName::size_type pos = name.rfind(".dll");
+	PathName::size_type pos = name.rfind(".dll");
 	if (pos != PathName::npos && pos == name.length() - 4)
 		return;
 	name += ".dll";
@@ -179,18 +175,10 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 {
 	ContextActivator ctx;
 
-	// supress error message box if it is not done yet
-	const UINT oldErrorMode =
-		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-
-	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
-
-	// Restore old mode in case we are embedded into user application
-	SetErrorMode(oldErrorMode);
-
+	HMODULE module = LoadLibrary(modPath.c_str());
 	if (!module)
 		return 0;
-
+	
 	return FB_NEW(*getDefaultMemoryPool()) Win32Module(module);
 }
 

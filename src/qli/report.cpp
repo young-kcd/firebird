@@ -44,9 +44,9 @@ static void top_of_page(qli_prt*, bool);
 //#define SWAP(a, b)	{temp = a; a = b; b = temp;}
 inline void swap_uchar(UCHAR*& a, UCHAR*& b)
 {
-	UCHAR* temp = a;
-	a = b;
-	b = temp;
+		UCHAR* temp = a;
+		a = b;
+		b = temp;
 }
 
 
@@ -100,10 +100,11 @@ void RPT_report( qli_nod* loop)
 
 	if (!report->rpt_buffer) {
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length);
-		report->rpt_buffer = (UCHAR*) string->str_data;
+		report->rpt_buffer = (UCHAR *) string->str_data;
 	}
 
-	memcpy(report->rpt_buffer, message->msg_buffer, (SLONG) message->msg_length);
+	MOVQ_fast((SCHAR*) message->msg_buffer, (SCHAR*) report->rpt_buffer,
+			  (SLONG) message->msg_length);
 
 	qli_brk* control;
 	if (control = report->rpt_top_rpt)
@@ -117,14 +118,14 @@ void RPT_report( qli_nod* loop)
 
 // Force TOP breaks for all fields
 
-	for (control = report->rpt_top_breaks; control; control = control->brk_next)
-		FMT_print((qli_nod*) control->brk_line, print);
+	for (control = report->rpt_top_breaks; control;
+		 control = control->brk_next) FMT_print((qli_nod*) control->brk_line, print);
 
-	for (;;)
-	{
+	for (;;) {
 		// Check for bottom breaks.  If we find one, force all lower breaks.
 
-		for (control = report->rpt_bottom_breaks; control; control = control->brk_next)
+		for (control = report->rpt_bottom_breaks; control;
+			 control = control->brk_next)
 		{
 			if (test_break(control, report, message)) {
 				swap_uchar(message->msg_buffer, report->rpt_buffer);
@@ -140,7 +141,8 @@ void RPT_report( qli_nod* loop)
 
 		// Now check for top breaks.
 
-		for (control = report->rpt_top_breaks; control; control = control->brk_next)
+		for (control = report->rpt_top_breaks; control;
+			 control = control->brk_next)
 		{
 			if (test_break(control, report, message)) {
 				top_break(control, print);
@@ -188,13 +190,15 @@ static void bottom_break( qli_brk* control, qli_prt* print)
  *	Force all lower breaks then take break.
  *
  **************************************/
+	qli_lls* stack;
+
 	if (!control)
 		return;
 
 	if (control->brk_next)
 		bottom_break(control->brk_next, print);
 
-	for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
+	for (stack = control->brk_statisticals; stack; stack = stack->lls_next)
 		EVAL_break_compute((qli_nod*) stack->lls_object);
 
 	FMT_print((qli_nod*) control->brk_line, print);
@@ -213,11 +217,11 @@ static void increment_break( qli_brk* control)
  *	Toss another record into running computations.
  *
  **************************************/
+	qli_lls* stack;
+
 	for (; control; control = control->brk_next)
-	{
-		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
-			EVAL_break_increment((qli_nod*) stack->lls_object);
-	}
+		for (stack = control->brk_statisticals; stack;
+			 stack = stack->lls_next) EVAL_break_increment((qli_nod*) stack->lls_object);
 }
 
 
@@ -233,15 +237,17 @@ static void initialize_break( qli_brk* control)
  *	Execute a control break.
  *
  **************************************/
+	qli_lls* stack;
+
 	for (; control; control = control->brk_next)
-	{
-		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
-			EVAL_break_init((qli_nod*) stack->lls_object);
-	}
+		for (stack = control->brk_statisticals; stack;
+			 stack = stack->lls_next) EVAL_break_init((qli_nod*) stack->lls_object);
 }
 
 
-static bool test_break(qli_brk* control, qli_rpt* report, qli_msg* message)
+static bool test_break(qli_brk* control,
+					   qli_rpt* report,
+					   qli_msg* message)
 {
 /**************************************
  *
@@ -284,7 +290,7 @@ static bool test_break(qli_brk* control, qli_rpt* report, qli_msg* message)
 	USHORT l = desc1.dsc_length;
 
 	if (desc1.dsc_dtype == dtype_varying)
-		l = 2 + *(USHORT*) p1;
+		l = 2 + *(USHORT *) p1;
 
 	if (l)
 		return memcmp(p1, p2, l) != 0;
@@ -305,9 +311,11 @@ static void top_break( qli_brk* control, qli_prt* print)
  *	Execute a control break.
  *
  **************************************/
-	for (; control; control = control->brk_next)
-	{
-		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
+	qli_lls* stack;
+
+	for (; control; control = control->brk_next) {
+		for (stack = control->brk_statisticals; stack;
+			 stack = stack->lls_next)
 		{
 			EVAL_break_compute((qli_nod*) stack->lls_object);
 		}
@@ -316,7 +324,8 @@ static void top_break( qli_brk* control, qli_prt* print)
 }
 
 
-static void top_of_page(qli_prt* print, bool first_flag)
+static void top_of_page(qli_prt* print,
+						bool first_flag)
 {
 /**************************************
  *

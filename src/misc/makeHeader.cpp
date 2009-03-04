@@ -1,13 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-//#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-//#endif
 
 
-
-void ProcessFile(FILE *in, bool stripFirstComment)
+void ProcessFile(FILE *in, bool stripFirstComment) 
 {
 	char s[256];
 	bool striping = false;

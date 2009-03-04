@@ -25,8 +25,8 @@
 #define JRD_ISC_I_PROTO_H
 
 // This will install FP overflow signal handler
-void	ISC_enter();
-void	ISC_exit();
+void	ISC_enter(void);
+void	ISC_exit(void);
 
 #ifdef WIN_NT
 // This will poke event
@@ -38,10 +38,42 @@ bool	ISC_signal(int, FPTR_VOID_PTR, void *);
 void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
 #endif
 
-#ifdef WIN_NT
-void*	ISC_make_signal(bool, bool, int, int);
-#endif
+void	ISC_signal_init(void);
 
-void	ISC_signal_init();
+
+class SignalInhibit
+//
+// This class inhibits signals' processing during I/O 
+// activity and re-enables it afterwards.
+//
+{
+public:
+#ifndef WIN_NT
+	// Constructor inhibits processing of signals.  
+	// Signals will be retained until signals are 
+	// eventually re-enabled, then re-posted.
+    SignalInhibit() throw();
+	// Destructor enables signal processing
+	// and re-posts any pending signals.
+    ~SignalInhibit() throw()
+	{
+	    enable();
+	}
+	// Let one re-enable signals in advance
+	void enable() throw();
+#else
+	// Just stubs
+    SignalInhibit() throw() { }
+    ~SignalInhibit() throw() { }
+	void enable() throw() { }
+#endif
+private:
+	// Forbid copy constructor & assignment
+	SignalInhibit(const SignalInhibit&);
+	SignalInhibit& operator=(const SignalInhibit&);
+#ifndef WIN_NT
+	bool locked;
+#endif
+};
 
 #endif // JRD_ISC_I_PROTO_H

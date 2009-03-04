@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird exceptions classes
  *	MODULE:			StatusHolder.cpp
- *	DESCRIPTION:	Firebird's exception classes
+ *	DESCRIPTION:	Firebird's exception classes 
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -42,15 +42,14 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 
 	const ISC_STATUS *from = status;
 	ISC_STATUS *to = m_status_vector;
-	while (true)
+	while (true) 
 	{
 		const ISC_STATUS type = *to++ = *from++;
 		if (type == isc_arg_end)
 			break;
 
-		switch (type)
-		{
-		case isc_arg_cstring:
+		switch (type) {
+		case isc_arg_cstring: 
 			{
 				const size_t len = *to++ = *from++;
 				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
@@ -62,12 +61,11 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			{
-				const char* temp = reinterpret_cast<const char*>(*from++);
-
+			{				
+				const char *temp = reinterpret_cast<const char*>(*from++);
+				
 				const size_t len = strlen(temp);
-				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
+				char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				memcpy(string, temp, len + 1);
 
 				*to++ = (ISC_STATUS)(IPTR) string;
@@ -85,14 +83,13 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 void StatusHolder::clear()
 {
 	ISC_STATUS *ptr = m_status_vector;
-	while (true)
+	while (true) 
 	{
 		const ISC_STATUS type = *ptr++;
 		if (type == isc_arg_end)
 			break;
 
-		switch (type)
-		{
+		switch (type) {
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);
@@ -100,25 +97,24 @@ void StatusHolder::clear()
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
 			delete[] reinterpret_cast<char*>(*ptr++);
 			break;
 
 		default:
 			ptr++;
 			break;
-		}
+		}		
 	}
 	memset(m_status_vector, 0, sizeof(m_status_vector));
 	m_raised = false;
 }
 
 void StatusHolder::raise()
-{
-	if (getError())
+{ 
+	if (getError()) 
 	{
 		m_raised = true;
-		throw status_exception(m_status_vector, true);
+		throw status_exception(m_status_vector, true); 
 	}
 }
 

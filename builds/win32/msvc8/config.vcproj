@@ -335,6 +335,10 @@
 			Name="Vulcan files"
 			>
 			<File
+				RelativePath="..\..\..\src\vulcan\JString.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\vulcan\PathName.cpp"
 				>
 			</File>
@@ -347,6 +351,10 @@
 			Name="Header files"
 			Filter="h"
 			>
+			<File
+				RelativePath="..\..\..\src\vulcan\JString.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\vulcan\PathName.h"
 				>

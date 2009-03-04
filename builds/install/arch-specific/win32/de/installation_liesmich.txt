@@ -1,10 +1,6 @@
-Firebird Datenbank Server 2.5 pre-Alpha
+Firebird Datenbank Server 2.1
 ==================================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 Dieses Dokument ist eine Anleitung um dieses Paket
 von Firebird 2.1 auf einer Windows Plattform zu installieren.

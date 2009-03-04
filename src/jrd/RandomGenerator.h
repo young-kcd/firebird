@@ -36,7 +36,7 @@ public:
 private:
 	const static size_t BUFFER_SIZE = 4096;
 
-	size_t bufferPos;
+	int bufferPos;
 	char buffer[BUFFER_SIZE];
 };
 

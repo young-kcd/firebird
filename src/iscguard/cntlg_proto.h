@@ -24,10 +24,10 @@
 #ifndef REMOTE_CNTL_PROTO_H
 #define REMOTE_CNTL_PROTO_H
 
-#include "../jrd/ThreadStart.h"
+#include "../jrd/thd.h"
 
 void	CNTL_init(ThreadEntryPoint*, const TEXT*);
-void*	CNTL_insert_thread();
+void*	CNTL_insert_thread(void);
 void	WINAPI CNTL_main_thread(DWORD, char* []);
 void	CNTL_remove_thread(void*);
 void	CNTL_shutdown_service(const TEXT*);

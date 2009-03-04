@@ -26,9 +26,7 @@
  */
 
 #include "../jrd/common.h"
-
-struct tok
-{
+struct tok {
     USHORT tok_ident;
     const char* tok_string;
     USHORT tok_version;

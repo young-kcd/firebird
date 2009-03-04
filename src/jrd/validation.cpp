@@ -26,27 +26,27 @@
 
                       Database Validation and Repair
                       ==============================
-
+ 
                               Deej Bredenberg
                               March 16, 1994
-			Updated: 1996-Dec-11 David Schnepper
+			Updated: 1996-Dec-11 David Schnepper 
 
 
-I. TERMINOLOGY
+I. TERMINOLOGY 
 
    The following terminology will be helpful to understand in this discussion:
 
-   record fragment: The smallest recognizable piece of a record; multiple
+   record fragment: The smallest recognizable piece of a record; multiple 
                     fragments can be linked together to form a single version.
    record version:  A single version of a record representing an INSERT, UPDATE
-                    or DELETE by a particular transaction (note that deletion
+                    or DELETE by a particular transaction (note that deletion 
                     of a record causes a new version to be stored as a
                     deleted stub).
    record chain:    A linked list of record versions chained together to
                     represent a single logical "record".
    slot:            The line number of the record on page.  A
-                    variable-length array on each data page stores the
-                    offsets to the stored records on
+                    variable-length array on each data page stores the 
+                    offsets to the stored records on 
                     that page, and the slot is an index into that array.
 
    For more information on data page format, see my paper on the internals
@@ -54,38 +54,38 @@ I. TERMINOLOGY
 
 II. COMMAND OPTIONS
 
-   Here are all the options for gfix which have to do with validation, and
+   Here are all the options for gfix which have to do with validation, and 
    what they do:
 
-   gfix switch   dpb parameter
-   -----------   -------------
+   gfix switch   dpb parameter      
+   -----------   -------------      
 
    -validate    isc_dpb_verify  (gds__dpb_verify prior to 4.0)
 
     Invoke validation and repair.  All other switches modify this switch.
 
-   -full        isc_dpb_records
+   -full        isc_dpb_records       
 
     Visit all records.  Without this switch, only page structures will be
-    validated, which does involve some limited checking of records.
+    validated, which does involve some limited checking of records.     
 
-   -mend        isc_dpb_repair
+   -mend        isc_dpb_repair     
 
     Attempts to mend the database where it can to make it viable for reading;
     does not guarantee to retain data.
 
-   -no_update   isc_dpb_no_update
+   -no_update   isc_dpb_no_update  
 
-    Specifies that orphan pages not be released, and allocated pages not
+    Specifies that orphan pages not be released, and allocated pages not 
     be marked in use when found to be free.  Actually a misleading switch
-    name since -mend will update the database, but if -mend is not specified
+    name since -mend will update the database, but if -mend is not specified 
     and -no_update is specified, then no updates will occur to the database.
 
    -ignore      isc_dpb_ignore
 
-    Tells the engine to ignore checksums in fetching pages.  Validate will
+    Tells the engine to ignore checksums in fetching pages.  Validate will 
     report on the checksums, however.  Should probably not even be a switch,
-    it should just always be in effect.  Otherwise checksums will disrupt
+    it should just always be in effect.  Otherwise checksums will disrupt  
     the validation.  Customers should be advised to always use it.
     NOTE: Unix 4.0 (ODS 8.0) does not have on-page checksums, and all
           platforms under ODS 9.0 (NevaStone & above) does not have
@@ -103,20 +103,20 @@ III.  OPERATION
    "Lock timeout during wait transaction
    -- Object "database_filename.fdb" is in use"
 
-   If other processes or servers are attached to the database, validate
-   waits for the exclusive lock on the database (i.e. waits for every
+   If other processes or servers are attached to the database, validate 
+   waits for the exclusive lock on the database (i.e. waits for every 
    other server to get out of the database).
 
-   NOTE: Ordinarily when processes gain exclusive access to the database,
-   all active transactions are marked as dead on the Transaction Inventory
+   NOTE: Ordinarily when processes gain exclusive access to the database, 
+   all active transactions are marked as dead on the Transaction Inventory 
    Pages.  This feature is turned off for validation.
 
 IV. PHASES OF VALIDATION
 
    There are two phases to the validation, the first of which is a walk through
-   the entire database (described below).  During this phase, all pages visited
-   are stored in a bitmap for later use during the garbage collection phase.
-
+   the entire database (described below).  During this phase, all pages visited 
+   are stored in a bitmap for later use during the garbage collection phase.  
+ 
    A. Visiting Pages
 
       During the walk-through phase, any page that is fetched goes through a
@@ -129,9 +129,9 @@ IV. PHASES OF VALIDATION
 
          "Page xxx wrong type (expected xxx encountered xxx)"
 
-         is returned.  This could represent a) a problem with the database
-         being overwritten, b) a bug with InterBase page allocation mechanisms
-         in which one page was written over another, or c) a page which was
+         is returned.  This could represent a) a problem with the database 
+         being overwritten, b) a bug with InterBase page allocation mechanisms 
+         in which one page was written over another, or c) a page which was 
          allocated but never written to disk (most likely if the encountered
          page type was 0).
 
@@ -153,16 +153,16 @@ IV. PHASES OF VALIDATION
       2. Checksum
 
          If -ignore is specified, the checksum is specifically checked in
-         validate instead of in the engine.  If the checksum is found to
+         validate instead of in the engine.  If the checksum is found to 
          be wrong, the error:
-
+ 
          "Checksum error on page xxx"
 
          is returned.  This is harmless when found by validate, and the page
-         will still continue to be validated--if data structures can be
-         validated on page, they will be.  If -mend is specified, the page
-         will be marked for write, so that when the page is written to disk
-         at the end of validation the checksum will automatically be
+         will still continue to be validated--if data structures can be 
+         validated on page, they will be.  If -mend is specified, the page 
+         will be marked for write, so that when the page is written to disk 
+         at the end of validation the checksum will automatically be 
          recalculated.
 
          Note: For 4.0 only Windows & NLM platforms keep page checksums.
@@ -171,10 +171,10 @@ IV. PHASES OF VALIDATION
 
          We check each page fetched against the page bitmap to make sure we
          have not visited already.  If we have, the error:
-
+ 
           "Page xxx doubly allocated"
 
-         is returned.  This should catch the case when a page of the same type
+         is returned.  This should catch the case when a page of the same type 
          is allocated for two different purposes.
 
 	 Data pages are not checked with the Revisit mechanism - when walking
@@ -188,7 +188,7 @@ IV. PHASES OF VALIDATION
 
       1. Orphan Pages
 
-         If any pages in the page inventory were not visited
+         If any pages in the page inventory were not visited 
          during validation, the following error will be returned:
 
          "Page xxx is an orphan"
@@ -198,12 +198,12 @@ IV. PHASES OF VALIDATION
 
       2. Improperly Freed Pages
 
-         If any pages marked free in the page inventory were in fact
-         found to be in use during validation, the following error
+         If any pages marked free in the page inventory were in fact 
+         found to be in use during validation, the following error 
          will be returned:
-
+ 
          "Page xxx is use but marked free"  (sic)
-
+     
          If -no_update was not specified, the page will be marked in use
          on the PIP.
 
@@ -224,37 +224,37 @@ V. WALK-THROUGH PHASE
       4. Transaction Inventory pages
 
          If the system relation RDB$PAGES could not be read or did not
-         contain any TIP pages, the message:
+         contain any TIP pages, the message: 
 
          "Transaction inventory pages lost"
-
-         will be returned.  If a particular page is missing from the
+ 
+         will be returned.  If a particular page is missing from the 
          sequence as established by RDB$PAGE_SEQUENCE, then the following
          message will be returned:
-
+                                        
          "Transaction inventory page lost, sequence xxx"
 
-         If -mend is specified, then a new TIP will be allocated on disk and
-         stored in RDB$PAGES in the proper sequence.  All transactions which
+         If -mend is specified, then a new TIP will be allocated on disk and 
+         stored in RDB$PAGES in the proper sequence.  All transactions which 
          would have been on that page are assumed committed.
-
+ 
          If a TIP page does not point to the next one in sequence, the
          following message will be returned:
 
          "Transaction inventory pages confused, sequence xxx"
 
       5. Generator pages as identified in RDB$PAGES.
-
+   
    B. Relation Walking
 
       All the relations in the database are walked.  For each relation, all
-      indices defined on the relation are fetched, and all pointer and
+      indices defined on the relation are fetched, and all pointer and 
       data pages associated with the relation are fetched (see below).
 
       But first, the metadata is scanned from RDB$RELATIONS to fetch the
-      format of the relation.  If this information is missing or
-      corrupted the relation cannot be walked.
-      If any bugchecks are encountered from the scan, the following
+      format of the relation.  If this information is missing or 
+      corrupted the relation cannot be walked.  
+      If any bugchecks are encountered from the scan, the following 
       message is returned:
 
       "bugcheck during scan of table xxx (<table_name>)"
@@ -272,7 +272,7 @@ V. WALK-THROUGH PHASE
    D. Pointer Pages
 
       All the pointer pages for the relation are walked.  As they are walked
-      all child data pages are walked (see below).  If a pointer page cannot
+      all child data pages are walked (see below).  If a pointer page cannot 
       be found, the following message is returned:
 
       "Pointer page (sequence xxx) lost"
@@ -280,11 +280,11 @@ V. WALK-THROUGH PHASE
       If the pointer page is not part of the relation we expected or
       if it is not marked as being in the proper sequence, the following
       message is returned:
-
+                       
       "Pointer page xxx is inconsistent"
-
+ 
       If each pointer page does not point to the next pointer page as
-      stored in the RDB$PAGE_SEQUENCE field in RDB$PAGES, the following
+      stored in the RDB$PAGE_SEQUENCE field in RDB$PAGES, the following 
       error is returned:
 
       "Pointer page (sequence xxx) inconsistent"
@@ -292,13 +292,13 @@ V. WALK-THROUGH PHASE
    E. Data Pages
 
       Each of the data pages referenced by the pointer page is fetched.
-      If any are found to be corrupt at the page level, and -mend is
-      specified, the page is deleted from its pointer page.  This will
+      If any are found to be corrupt at the page level, and -mend is 
+      specified, the page is deleted from its pointer page.  This will 
       cause a whole page of data to be lost.
 
       The data page is corrupt at the page level if it is not marked as
-      part of the current relation, or if it is not marked as being in
-      the proper sequence.  If either of these conditions occurs, the
+      part of the current relation, or if it is not marked as being in 
+      the proper sequence.  If either of these conditions occurs, the 
       following error is returned:
 
       "Data page xxx (sequence xxx) is confused"
@@ -306,69 +306,69 @@ V. WALK-THROUGH PHASE
    F. Slot Validation
 
       Each of the slots on the data page is looked at, up to the count
-      of records stored on page.  If the slot is non-zero, the record
+      of records stored on page.  If the slot is non-zero, the record 
       fragment at the specified offset is retrieved.  If the record
       begins before the end of the slots array, or continues off the
       end of the page, the following error is returned:
 
       "Data page xxx (sequence xxx), line xxx is bad"
 
-      where "line" means the slot number.
-
-      NOTE: If this condition is encountered, the data page is considered
+      where "line" means the slot number.  
+  
+      NOTE: If this condition is encountered, the data page is considered 
       corrupt at the page level (and thus will be removed from its
       pointer page if -mend is specified).
-
+                                          
    G. Record Validation
-
+                       
       The record at each slot is looked at for basic validation, regardless
-      of whether -full is specified or not.  The fragment could be any of the
+      of whether -full is specified or not.  The fragment could be any of the 
       following:
 
       1.  Back Version
 
-          If the fragment is marked as a back version, then it is skipped.
+          If the fragment is marked as a back version, then it is skipped.  
           It will be fetched as part of its record.
 
       2.  Corrupt
 
-          If the fragment is determined to be corrupt for any reason, and -mend
+          If the fragment is determined to be corrupt for any reason, and -mend 
           is specified, then the record header is marked as damaged.
 
       3.  Damaged
 
           If the fragment is marked damaged already from a previous visit or
           a previous validation, the following error is returned:
-
+      
           "Record xxx is marked as damaged"
 
-          where xxx is the record number.
+          where xxx is the record number.  
 
-      4.  Bad Transaction
+      4.  Bad Transaction 
 
-          If the record is marked with a transaction id greater than the last
+          If the record is marked with a transaction id greater than the last 
           transaction started in the database, the following error is returned:
-
+                                         
           "Record xxx has bad transaction xxx"
 
    H. Record Walking
 
       If -full is specified, and the fragment is the first fragment in a logical
       record, then the record at this slot number is fully retrieved.  This
-      involves retrieving all versions, and all fragments of each
-      particular version.  In other
+      involves retrieving all versions, and all fragments of each 
+      particular version.  In other 
       words, the entire logical record will be retrieved.
 
       1. Back Versions
 
-         If there are any back versions, they are visited at this point.
-         If the back version is on another page, the page is fetched but
-         not validated since it will be walked separately.
+         If there are any back versions, they are visited at this point.  
+         If the back version is on another page, the page is fetched but 
+         not validated since it will be walked separately.  
 
          If the slot number of the back version is greater than the max
-         records on page, or there is no record stored at that slot number,
-         or it is a blob record, or it is a record fragment, or the
-         fragment itself is invalid, the following error
+         records on page, or there is no record stored at that slot number, 
+         or it is a blob record, or it is a record fragment, or the 
+         fragment itself is invalid, the following error 
          message is returned:
 
          "Chain for record xxx is broken"
@@ -376,7 +376,7 @@ V. WALK-THROUGH PHASE
       2. Incomplete
 
          If the record header is marked as incomplete, it means that there
-         are additional fragments to be fetched--the record was too large
+         are additional fragments to be fetched--the record was too large 
          to be stored in one slot.
          A pointer is stored in the record to the next fragment in the list.
 
@@ -384,12 +384,12 @@ V. WALK-THROUGH PHASE
          record version.  If any of the fragments is not in a valid position,
          or is not the correct length, the following error is returned:
 
-         "Fragmented record xxx is corrupt"
-
+         "Fragmented record xxx is corrupt"      
+   
       Once the full record has been retrieved, the length of the format is
-      checked against the expected format stored in RDB$FORMATS (the
-      format number is stored with the record, representing the exact
-      format of the relation at the time the record was stored.)
+      checked against the expected format stored in RDB$FORMATS (the 
+      format number is stored with the record, representing the exact 
+      format of the relation at the time the record was stored.)  
       If the length of the reconstructed record does not match
       the expected format length, the following error is returned:
 
@@ -398,35 +398,35 @@ V. WALK-THROUGH PHASE
       For delta records (record versions which represent updates to the record)
       this check is not made.
 
-   I. Blob Walking
+   I. Blob Walking 
 
       If the slot on the data page points to a blob record, then the blob
-      is fetched (even without -full).  This has several cases, corresponding
-      to the various blob levels.  (See the "Engine Internals" document for a
+      is fetched (even without -full).  This has several cases, corresponding 
+      to the various blob levels.  (See the "Engine Internals" document for a 
       discussion of blob levels.)
-
+             
       Level                      Action
-      -----   -----------------------------------------------------------------
+      -----   ----------------------------------------------------------------- 
         0     These are just records on page, and no further validation is done.
         1     All the pages pointed to by the blob record are fetched and
               validated in sequence.
-        2     All pages pointed to by the blob pointer pages are fetched and
+        2     All pages pointed to by the blob pointer pages are fetched and 
               validated.
         3     The blob page is itself a blob pointer page; all its children
               are fetched and validated.
 
       For each blob page found, some further validation is done.  If the
-      page does not point back to the lead page, the following error
+      page does not point back to the lead page, the following error 
       is returned:
 
       "Warning: blob xxx appears inconsistent"
-
+   
       where xxx corresponds to the blob record number.  If any of the blob pages
       are not marked in the sequence we expect them to be in, the following
       error is returned:
-
+ 
       "Blob xxx is corrupt"
-
+ 
       Tip: the message for the same error in level 2 or 3 blobs is slightly
            different:
 
@@ -452,27 +452,27 @@ V. WALK-THROUGH PHASE
       "Missing index root page"
 
       and the indices are not walked.  Otherwise the index root page
-      is fetched and all indices on the page fetched.
+      is fetched and all indices on the page fetched. 
 
       For each index, the btree pages are fetched from top-down, left to
-      right.
+      right.  
       Basic validation is made on non-leaf pages to ensure that each node
       on page points to another index page.  If -full validation is specified
       then the lower level page is fetched to ensure it is starting index
-      entry is consistent with the parent entry.
-      On leaf pages, the records pointed to by the index pages are not
-      fetched, the keys are looked at to ensure they are in correct
+      entry is consistent with the parent entry. 
+      On leaf pages, the records pointed to by the index pages are not 
+      fetched, the keys are looked at to ensure they are in correct 
       ascending order.
 
       If a visited page is not part of the specified relation and index,
       the following error is returned:
-
+      
       "Index xxx is corrupt at page xxx"
-
-      If there are orphan child pages, i.e. a child page does not have its entry
-      as yet in the parent page, however the child's left sibling page has it's
+        
+      If there are orphan child pages, i.e. a child page does not have its entry 
+      as yet in the parent page, however the child's left sibling page has it's 
       btr_sibling updated, the following error is returned
-
+	    
       "Index xxx has orphan child page at page xxx"
 
       If the page does not contain the number of nodes we would have
@@ -482,7 +482,7 @@ V. WALK-THROUGH PHASE
 
       While we are walking leaf pages, we keep a bitmap of all record
       numbers seen in the index.  At the conclusion of the index walk
-      we compare this bitmap to the bitmap of all records in the
+      we compare this bitmap to the bitmap of all records in the 
       relation (calculated during data page/Record Validation phase).
       If the bitmaps are not equal then we have a corrupt index
       and the following error is reported:
@@ -512,9 +512,9 @@ VI. ADDITIONAL NOTES
 
    A.  Damaged Records
 
-      If any corruption of a record fragment is seen during validation, the
-      record header is marked as "damaged".  As far as I can see, this has no
-      effect on the engine per se.  Records marked as damaged will still be
+      If any corruption of a record fragment is seen during validation, the 
+      record header is marked as "damaged".  As far as I can see, this has no 
+      effect on the engine per se.  Records marked as damaged will still be 
       retrieved by the engine itself.  There is some question in my mind as
       to whether this record should be retrieved at all during a gbak.
 
@@ -523,18 +523,18 @@ VI. ADDITIONAL NOTES
       "Record xxx is marked as damaged"
 
       Note that when a damaged record is first detected, this message is not
-      actually printed.  The record is simply marked as damaged.  It is only
+      actually printed.  The record is simply marked as damaged.  It is only 
       thereafter when the record is visited that this message will appear.
       So I would postulate that unless a full validation is done at some point,
-      you would not see this error message; once the full validation is done,
+      you would not see this error message; once the full validation is done, 
       the message will be returned even if you do not specify -full.
 
    B. Damaged Blobs
 
-      Blob records marked as damaged cannot be opened and will not be deleted
-      from disk.  This means that even during backup the blob structures marked
+      Blob records marked as damaged cannot be opened and will not be deleted 
+      from disk.  This means that even during backup the blob structures marked 
       as damaged will not be fetched and backed up.  (Why this is done
-      differently for blobs than for records I cannot say.
+      differently for blobs than for records I cannot say.  
       Perhaps it was viewed as too difficult to try to retrieve a damaged blob.)
 
 */
@@ -551,6 +551,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
 #include "../jrd/btn.h"
+#include "../jrd/all.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/rse.h"
@@ -564,6 +565,8 @@ VI. ADDITIONAL NOTES
 #include "../jrd/jrd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/thread_proto.h"
@@ -571,7 +574,7 @@ VI. ADDITIONAL NOTES
 #ifdef DEBUG_VAL_VERBOSE
 #include "../jrd/dmp_proto.h"
 /* Control variable for verbose output during debug of
-   validation.
+   validation.  
    0 == logged errors only
    1 == logical output also
    2 == physical page output also */
@@ -620,27 +623,27 @@ enum RTN {
 
 static const TEXT msg_table[VAL_MAX_ERROR][66] =
 {
-	"Page %ld wrong type (expected %d encountered %d)",	// 0
+	"Page %ld wrong type (expected %d encountered %d)",	// 0 
 	"Checksum error on page %ld",
 	"Page %ld doubly allocated",
 	"Page %ld is used but marked free",
 	"Page %ld is an orphan",
-	"Warning: blob %ld appears inconsistent",	// 5
+	"Warning: blob %ld appears inconsistent",	// 5 
 	"Blob %ld is corrupt",
 	"Blob %ld is truncated",
 	"Chain for record %ld is broken",
 	"Data page %ld (sequence %ld) is confused",
-	"Data page %ld (sequence %ld), line %ld is bad",	// 10
+	"Data page %ld (sequence %ld), line %ld is bad",	// 10 
 	"Index %d is corrupt on page %ld level %d. File: %s, line: %d\n\t",
 	"Pointer page (sequence %ld) lost",
 	"Pointer page (sequence %ld) inconsistent",
 	"Record %ld is marked as damaged",
-	"Record %ld has bad transaction %ld",	// 15
+	"Record %ld has bad transaction %ld",	// 15 
 	"Fragmented record %ld is corrupt",
 	"Record %ld is wrong length",
 	"Missing index root page",
 	"Transaction inventory pages lost",
-	"Transaction inventory page lost, sequence %ld",	// 20
+	"Transaction inventory page lost, sequence %ld",	// 20 
 	"Transaction inventory pages confused, sequence %ld",
 	"Relation has %ld orphan backversions (%ld in use)",
 	"Index %d is corrupt (missing entries)",
@@ -684,7 +687,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
  *	Validate a database.
  *
  **************************************/
-	MemoryPool* val_pool = NULL;
+	JrdMemoryPool* val_pool = 0;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -692,7 +695,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	try {
 
-	val_pool = dbb->createPool();
+	val_pool = JrdMemoryPool::createPool();
 	Jrd::ContextPoolHolder context(tdbb, val_pool);
 
 	vdr control;
@@ -716,7 +719,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 /* initialize validate errors */
 
 	if (!att->att_val_errors) {
-		att->att_val_errors = vcl::newVector(*att->att_pool, VAL_MAX_ERROR);
+		att->att_val_errors = vcl::newVector(*dbb->dbb_permanent, VAL_MAX_ERROR);
 	}
 	else {
 		for (USHORT i = 0; i < VAL_MAX_ERROR; i++)
@@ -735,12 +738,12 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		dbb->deletePool(val_pool);
+		JrdMemoryPool::deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		return false;
 	}
 
-	dbb->deletePool(val_pool);
+	JrdMemoryPool::deletePool(val_pool);
 	return true;
 }
 
@@ -802,7 +805,7 @@ static RTN corrupt(thread_db* tdbb, vdr* control, USHORT err_code, const jrd_rel
 static FETCH_CODE fetch_page(thread_db* tdbb,
 							 vdr* control,
 							 SLONG page_number,
-							 USHORT type, WIN* window, void *page_pointer)
+							 USHORT type, WIN * window, void *page_pointer)
 {
 /**************************************
  *
@@ -825,11 +828,11 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 	window->win_page = page_number;
 	window->win_flags = 0;
-	*(PAG*) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
+	*(PAG *) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
 
-	if ((*(PAG*) page_pointer)->pag_type != type) {
-		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type,
-				(*(PAG*) page_pointer)->pag_type);
+	if ((*(PAG *) page_pointer)->pag_type != type) {
+		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE,
+				0, page_number, type, (*(PAG *) page_pointer)->pag_type);
 		return fetch_type;
 	}
 
@@ -883,23 +886,20 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 	PageManager& pageSpaceMgr = dbb->dbb_page_manager;
 	PageSpace* pageSpace = pageSpaceMgr.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
-
+	
 	WIN window(DB_PAGE_SPACE, -1);
 
-	for (SLONG sequence = 0, number = 0; number < control->vdr_max_page; sequence++)
+	for (SLONG sequence = 0, number = 0; number < control->vdr_max_page; sequence++) 
 	{
-		const SLONG page_number = sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
+		const SLONG page_number = (sequence) ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
 		page_inv_page* page = 0;
 		fetch_page(tdbb, 0, page_number, pag_pages, &window, &page);
 		UCHAR* p = page->pip_bits;
 		const UCHAR* const end = p + pageSpaceMgr.bytesBitPIP;
-		while (p < end && number < control->vdr_max_page)
-		{
+		while (p < end && number < control->vdr_max_page) {
 			UCHAR byte = *p++;
-			for (int i = 8; i; --i, byte >>= 1, number++)
-			{
-				if (PageBitmap::test(control->vdr_page_bitmap, number))
-				{
+			for (int i = 8; i; --i, byte >>= 1, number++) {
+				if (PageBitmap::test(control->vdr_page_bitmap, number)) {
 					if (byte & 1) {
 						corrupt(tdbb, control, VAL_PAG_IN_USE, 0, number);
 						if (control->vdr_flags & vdr_update) {
@@ -913,8 +913,7 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 			/* Page is potentially an orphan - but don't declare it as such
 			   unless we think we walked all pages */
 
-				else if (!(byte & 1) && (control->vdr_flags & vdr_records))
-				{
+				else if (!(byte & 1) && (control->vdr_flags & vdr_records)) {
 					corrupt(tdbb, control, VAL_PAG_ORPHAN, 0, number);
 					if (control->vdr_flags & vdr_update) {
 						CCH_MARK(tdbb, &window);
@@ -964,17 +963,26 @@ static void print_rhd(USHORT length, const rhd* header)
 		fprintf(stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
 		if (header->rhd_flags & rhd_incomplete) {
-			const rhdf* fragment = (rhdf*) header;
-			fprintf(stdout, "FP %d/%d ", fragment->rhdf_f_page, fragment->rhdf_f_line);
+			rhdf* fragment = (rhdf*) header;
+			fprintf(stdout, "FP %d/%d ",
+					   fragment->rhdf_f_page, fragment->rhdf_f_line);
 		}
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_deleted) ? "DEL" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_chain) ? "CHN" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_fragment) ? "FRG" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_incomplete) ? "INC" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_blob) ? "BLB" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_delta) ? "DLT" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_large) ? "LRG" : "   ");
-		fprintf(stdout, "%s ", (header->rhd_flags & rhd_damaged) ? "DAM" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_deleted) ? "DEL" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_chain) ? "CHN" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_fragment) ? "FRG" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_incomplete) ? "INC" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_blob) ? "BLB" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_delta) ? "DLT" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_large) ? "LRG" : "   ");
+		fprintf(stdout, "%s ",
+				   (header->rhd_flags & rhd_damaged) ? "DAM" : "   ");
 		fprintf(stdout, "\n");
 	}
 }
@@ -1020,8 +1028,7 @@ static RTN walk_blob(thread_db* tdbb,
 	const SLONG* const end1 = pages1 + ((USHORT) (length - BLH_SIZE) >> SHIFTLONG);
 	SLONG sequence;
 
-	for (sequence = 0; pages1 < end1; pages1++)
-	{
+	for (sequence = 0; pages1 < end1; pages1++) {
 		blob_page* page1 = 0;
 		fetch_page(tdbb, control, *pages1, pag_blob, &window1, &page1);
 		if (page1->blp_lead_page != header->blh_lead_page)
@@ -1038,10 +1045,13 @@ static RTN walk_blob(thread_db* tdbb,
 			const SLONG* const end2 = pages2 + (page1->blp_length >> SHIFTLONG);
 			for (; pages2 < end2; pages2++, sequence++) {
 				blob_page* page2 = 0;
-				fetch_page(tdbb, control, *pages2, pag_blob, &window2, &page2);
-				if (page2->blp_lead_page != header->blh_lead_page || page2->blp_sequence != sequence)
+				fetch_page(tdbb, control, *pages2, pag_blob, &window2,
+						   &page2);
+				if (page2->blp_lead_page != header->blh_lead_page
+					|| page2->blp_sequence != sequence)
 				{
-					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number);
+					corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation,
+							number);
 					CCH_RELEASE(tdbb, &window1);
 					CCH_RELEASE(tdbb, &window2);
 					return rtn_corrupt;
@@ -1082,8 +1092,7 @@ static RTN walk_chain(thread_db* tdbb,
 	USHORT line_number = header->rhd_b_line;
 	WIN window(DB_PAGE_SPACE, -1);
 
-	while (page_number)
-	{
+	while (page_number) {
 		const bool delta_flag = (header->rhd_flags & rhd_delta) ? true : false;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
@@ -1094,13 +1103,15 @@ static RTN walk_chain(thread_db* tdbb,
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		header = (rhd*) ((UCHAR *) page + line->dpg_offset);
-		if (page->dpg_count <= line_number || !line->dpg_length ||
+		if (page->dpg_count <= line_number ||
+			!line->dpg_length ||
 			(header->rhd_flags & (rhd_blob | rhd_fragment)) ||
 			walk_record(tdbb, control, relation, header, line->dpg_length,
-						head_number, delta_flag) != rtn_ok)
+						head_number, delta_flag) != rtn_ok) 
 		{
 			CCH_RELEASE(tdbb, &window);
-			return corrupt(tdbb, control, VAL_REC_CHAIN_BROKEN, relation, head_number);
+			return corrupt(tdbb, control, VAL_REC_CHAIN_BROKEN,
+						   relation, head_number);
 		}
 		page_number = header->rhd_b_page;
 		line_number = header->rhd_b_line;
@@ -1137,7 +1148,8 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	DPM_scan_pages(tdbb);
 	WIN window(DB_PAGE_SPACE, -1);
 	header_page* page = 0;
-	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window, &page);
+	fetch_page(tdbb, control, (SLONG) HEADER_PAGE, pag_header, &window,
+			   &page);
 	control->vdr_max_transaction = page->hdr_next_transaction;
 
 	walk_header(tdbb, control, page->hdr_next_page);
@@ -1191,11 +1203,13 @@ static RTN walk_data_page(thread_db* tdbb,
 	}
 #endif
 
-	if (page->dpg_relation != relation->rel_id || page->dpg_sequence != sequence)
+	if (page->dpg_relation != relation->rel_id
+		|| page->dpg_sequence != sequence)
 	{
 		++control->vdr_errors;
 		CCH_RELEASE(tdbb, &window);
-		return corrupt(tdbb, control, VAL_DATA_PAGE_CONFUSED, relation, page_number, sequence);
+		return corrupt(tdbb, control, VAL_DATA_PAGE_CONFUSED,
+					   relation, page_number, sequence);
 	}
 
 /* Walk records */
@@ -1204,22 +1218,24 @@ static RTN walk_data_page(thread_db* tdbb,
 	const data_page::dpg_repeat* const end = page->dpg_rpt + page->dpg_count;
 	SLONG number = sequence * dbb->dbb_max_records;
 
-	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end; line++, number++)
+	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end;
+		line++, number++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
 			fprintf(stdout, "Slot %02d (%d,%d): ",
-					   line - page->dpg_rpt, line->dpg_offset, line->dpg_length);
+					   line - page->dpg_rpt,
+					   line->dpg_offset, line->dpg_length);
 		}
 #endif
-		if (line->dpg_length)
-		{
+		if (line->dpg_length) {
 			rhd* header = (rhd*) ((UCHAR *) page + line->dpg_offset);
-			if ((UCHAR *) header < (UCHAR *) end || (UCHAR *) header + line->dpg_length > end_page)
+			if ((UCHAR *) header < (UCHAR *) end ||
+				(UCHAR *) header + line->dpg_length > end_page)
 			{
-				CCH_RELEASE(tdbb, &window);
-				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR, relation, page_number,
-								sequence, (SLONG) (line - page->dpg_rpt));
+				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR,
+							   relation, page_number, sequence,
+							   (SLONG) (line - page->dpg_rpt));
 			}
 			if (header->rhd_flags & rhd_chain)
 				control->vdr_rel_backversion_counter++;
@@ -1241,7 +1257,8 @@ static RTN walk_data_page(thread_db* tdbb,
 					if (header->rhd_transaction < dbb->dbb_oldest_transaction)
 						state = tra_committed;
 					else
-						state = TRA_fetch_state(tdbb, header->rhd_transaction);
+						state =
+							TRA_fetch_state(tdbb, header->rhd_transaction);
 					if (state == tra_committed || state == tra_limbo)
 						RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
 				}
@@ -1258,12 +1275,16 @@ static RTN walk_data_page(thread_db* tdbb,
 			}
 #endif
 			if (!(header->rhd_flags & rhd_chain) &&
-				((header->rhd_flags & rhd_large) || (control->vdr_flags & vdr_records)))
+				((header->rhd_flags & rhd_large) ||
+				 (control->vdr_flags & vdr_records)))
 			{
 				const RTN result = (header->rhd_flags & rhd_blob) ?
-					walk_blob(tdbb, control, relation, (blh*) header, line->dpg_length, number) :
-					walk_record(tdbb, control, relation, header, line->dpg_length, number, false);
-				if ((result == rtn_corrupt) && (control->vdr_flags & vdr_repair))
+					walk_blob(tdbb, control, relation, (blh*) header,
+							  line->dpg_length, number) :
+					walk_record(tdbb, control, relation, header,
+								line->dpg_length, number, false);
+				if ((result == rtn_corrupt)
+					&& (control->vdr_flags & vdr_repair))
 				{
 					CCH_MARK(tdbb, &window);
 					header->rhd_flags |= rhd_damaged;
@@ -1306,8 +1327,7 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 	vcl* vector = dbb->dbb_gen_id_pages;
 	if (vector) {
         vcl::iterator ptr, end;
-		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
-		{
+		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr) {
 			if (*ptr) {
 #ifdef DEBUG_VAL_VERBOSE
 				if (VAL_debug_level)
@@ -1348,7 +1368,7 @@ static void walk_header(thread_db* tdbb, vdr* control, SLONG page_num)
 	}
 }
 
-static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
+static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation, 
 					  index_root_page& root_page, USHORT id)
 {
 /**************************************
@@ -1359,10 +1379,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
  *
  * Functional description
  *	Walk all btree pages left-to-right and top-down.
- *	Check all the pointers and keys for consistency
- *	relative to each other, and check sibling pointers.
+ *	Check all the pointers and keys for consistency 
+ *	relative to each other, and check sibling pointers. 
  *
- *	NOTE: id is the internal index id, relative for each
+ *	NOTE: id is the internal index id, relative for each 
  *	relation.  It is 1 less than the user level index id.
  *	So errors are reported against index id+1
  *
@@ -1422,15 +1442,16 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		WIN window(DB_PAGE_SPACE, -1);
 		btree_page* page = 0;
 		fetch_page(tdbb, control, next, pag_index, &window, &page);
-
-		// remember each page for circular reference detection
-		visited_pages.set(next);
-
+		
+		// remember each page for circular reference detection 
+		visited_pages.set(next); 
+		
 		if ((next != page_number) &&
-			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
+			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) !=
+			(flags & BTR_FLAG_COPY_MASK))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-					id + 1, next, page->btr_level, __FILE__, __LINE__);
+				id + 1, next, page->btr_level, __FILE__, __LINE__);
 		}
 		flags = page->btr_header.pag_flags;
 		const bool leafPage = (page->btr_level == 0);
@@ -1439,34 +1460,34 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 
 		if (!useAllRecordNumbers)
 			nullKeyHandled = true;
-
-		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256))
+		
+		if (page->btr_relation != relation->rel_id || 
+			page->btr_id != (UCHAR) (id % 256)) 
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next, page->btr_level, __FILE__, __LINE__);
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
-
-		if (useJumpInfo)
+		
+		if (useJumpInfo) 
 		{
 			IndexJumpInfo jumpInfo;
 			pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
 			const USHORT headerSize = (pointer - (UCHAR*)page);
 			// Check if firstNodeOffset is not out of page area.
 			if ((jumpInfo.firstNodeOffset < headerSize) ||
-				(jumpInfo.firstNodeOffset > page->btr_length))
+				(jumpInfo.firstNodeOffset > page->btr_length)) 
 			{
 				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, __FILE__, __LINE__);
+					id + 1, next, page->btr_level, __FILE__, __LINE__);
 			}
 
 			USHORT n = jumpInfo.jumpers;
 			USHORT jumpersSize = 0;
 			IndexNode checknode;
 			IndexJumpNode jumpNode;
-			while (n)
-			{
+			while (n) {
 				pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
 				jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
 				// Check if jump node offset is inside page.
@@ -1474,14 +1495,15 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					(jumpNode.offset > page->btr_length))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+						id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 				else {
 					// Check if jump node has same length as data node prefix.
-					BTreeNode::readNode(&checknode, (UCHAR*)page + jumpNode.offset, flags, leafPage);
+					BTreeNode::readNode(&checknode, 
+						(UCHAR*)page + jumpNode.offset, flags, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 				n--;
@@ -1495,8 +1517,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		}
 
 		const UCHAR* const endPointer = ((UCHAR *) page + page->btr_length);
-		while (pointer < endPointer)
-		{
+		while (pointer < endPointer) {
 
 			pointer = BTreeNode::readNode(&node, pointer, flags, leafPage);
 			if (pointer > endPointer) {
@@ -1504,13 +1525,12 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			}
 
 			// make sure the current key is not less than the previous key
-			bool duplicateNode = !firstNode && !node.isEndLevel &&
-				(key.key_length == (node.length + node.prefix));
+			bool duplicateNode = !firstNode && !node.isEndLevel && 
+					(key.key_length == (node.length + node.prefix));
 			q = node.data;
 			p = key.key_data + node.prefix;
 			l = MIN(node.length, (USHORT) (key.key_length - node.prefix));
-			for (; l; l--, p++, q++)
-			{
+			for (; l; l--, p++, q++) {
 				if (*p > *q) {
 					duplicateNode = false;
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
@@ -1527,17 +1547,17 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				nullKeyNode = false;
 			}
 
-			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) && !firstNode &&
-				!node.isEndLevel)
+			if (useAllRecordNumbers && (node.recordNumber.getValue() >= 0) &&
+				!firstNode && !node.isEndLevel)
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
 				if (duplicateNode) {
 					if ((!unique || (unique && nullKeyNode)) &&
-						(node.recordNumber < lastNode.recordNumber))
+						(node.recordNumber < lastNode.recordNumber)) 
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 
@@ -1552,14 +1572,14 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			if (!nullKeyHandled && !nullKeyNode && !duplicateNode)
 			{
 				nullKeyNode = (leafPage || (!leafPage && !firstNode) ) &&
-					!node.isEndLevel && (null_key->key_length == key.key_length) &&
+					!node.isEndLevel && (null_key->key_length == key.key_length) && 
 					(memcmp(null_key->key_data, key.key_data, null_key->key_length) == 0);
 			}
 
 			if (firstNode) {
 				firstNode = false;
 			}
-
+			
 			if (node.isEndBucket || node.isEndLevel) {
 				break;
 			}
@@ -1570,17 +1590,18 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			}
 
 			// fetch the next page down (if full validation was specified)
-			if (!leafPage && control && (control->vdr_flags & vdr_records))
+			if (!leafPage && control && (control->vdr_flags & vdr_records)) 
 			{
 				const SLONG down_number = node.pageNumber;
 				const RecordNumber down_record_number = node.recordNumber;
 
-				// Note: control == 0 for the fetch_page() call here
-				// as we don't want to mark the page as visited yet - we'll
+				// Note: control == 0 for the fetch_page() call here 
+				// as we don't want to mark the page as visited yet - we'll 
 				// mark it when we visit it for real later on
 				WIN down_window(DB_PAGE_SPACE, -1);
 				btree_page* down_page = 0;
-				fetch_page(tdbb, 0, down_number, pag_index, &down_window, &down_page);
+				fetch_page(tdbb, 0, down_number, pag_index, &down_window,
+					&down_page);
 				const bool downLeafPage = (down_page->btr_level == 0);
 
 				// make sure the initial key is greater than the pointer key
@@ -1594,29 +1615,30 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				l = MIN(key.key_length, downNode.length);
 				for (; l; l--, p++, q++) {
 					if (*p < *q) {
-						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, 
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 					else if (*p > *q) {
 						break;
 					}
 				}
 
-				// Only check record-number if this isn't the first page in
+				// Only check record-number if this isn't the first page in 
 				// the level and it isn't a MARKER.
 				// Also don't check on primary/unique keys, because duplicates aren't
 				// sorted on recordnumber, except for NULL keys.
 				if (useAllRecordNumbers && down_page->btr_left_sibling &&
-					!(downNode.isEndBucket || downNode.isEndLevel) && (!unique || nullKeyNode))
+					!(downNode.isEndBucket || downNode.isEndLevel) &&
+					(!unique || (unique && nullKeyNode)) ) 
 				{
 					// Check record number if key is equal with node on
-					// pointer page. In that case record number on page
+					// pointer page. In that case record number on page 
 					// down should be same or larger.
 					if ((l == 0) && (key.key_length == downNode.length) &&
 						(downNode.recordNumber < down_record_number))
 					{
-						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, 
+							id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
 				}
 
@@ -1629,15 +1651,16 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				BTreeNode::readNode(&downNode, pointer, flags, leafPage);
 				const SLONG next_number = downNode.pageNumber;
 
-				if (!(downNode.isEndBucket || downNode.isEndLevel) &&
-					(next_number != down_page->btr_sibling))
+				if (!(downNode.isEndBucket || downNode.isEndLevel) && 
+					(next_number != down_page->btr_sibling)) 
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
-					corrupt(tdbb, control, VAL_INDEX_ORPHAN_CHILD, relation, id + 1, next);
+					corrupt(tdbb, control, VAL_INDEX_ORPHAN_CHILD, relation,
+							id + 1, next);
 				}
 				previous_number = down_number;
 
@@ -1653,9 +1676,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (next == down) {
 			if (page->btr_level) {
 				IndexNode newPageNode;
-				BTreeNode::readNode(&newPageNode, BTreeNode::getPointerFirstNode(page), flags, false);
+				BTreeNode::readNode(&newPageNode, 
+					BTreeNode::getPointerFirstNode(page), flags, false);
 				down = newPageNode.pageNumber;
-			}
+			} 
 			else {
 				down = 0;
 			}
@@ -1671,9 +1695,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		}
 
 		// check for circular referenes
-		if (next && visited_pages.test(next))
+		if (next && visited_pages.test(next)) 
 		{
-			corrupt(tdbb, control, VAL_INDEX_CYCLE, relation, id + 1, next);
+			corrupt(tdbb, control, VAL_INDEX_CYCLE, relation,
+					id + 1, next);
 			next = 0;
 		}
 		CCH_RELEASE(tdbb, &window);
@@ -1682,15 +1707,18 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	// If the index & relation contain different sets of records we
 	// have a corrupt index
 	if (control && (control->vdr_flags & vdr_records)) {
-		Database::Checkout dcoHolder(dbb);
+		THREAD_EXIT();
 		RecordBitmap::Accessor accessor(control->vdr_rel_records);
-		if (accessor.getFirst())
+		if (accessor.getFirst()) 
 			do {
 				SINT64 next_number = accessor.current();
 				if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
-					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS, relation, id + 1);
+					THREAD_ENTER();
+					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
+								   relation, id + 1);
 				}
 			} while (accessor.getNext());
+		THREAD_ENTER();
 	}
 
 	return rtn_ok;
@@ -1743,10 +1771,9 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 
 	page_inv_page* page = 0;
 
-	for (USHORT sequence = 0; true; sequence++)
-	{
+	for (USHORT sequence = 0;; sequence++) {
 		const SLONG page_number =
-			sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
+			(sequence) ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->ppFirst;
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			fprintf(stdout, "walk_pip: page %d\n", page_number);
@@ -1760,10 +1787,10 @@ static void walk_pip(thread_db* tdbb, vdr* control)
 	}
 }
 
-static RTN walk_pointer_page(thread_db*	tdbb,
-							vdr*		control,
-							jrd_rel*		relation,
-							int		sequence)
+static RTN walk_pointer_page(	thread_db*	tdbb,
+								vdr*		control,
+								jrd_rel*		relation,
+								int		sequence)
 {
 /**************************************
  *
@@ -1788,22 +1815,27 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 
 	pointer_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
-	fetch_page(tdbb, control, (*vector)[sequence], pag_pointer, &window, &page);
+	fetch_page(	tdbb,
+				control,
+				(*vector)[sequence],
+				pag_pointer,
+				&window,
+				&page);
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
-	{
-		fprintf(stdout, "walk_pointer_page: page %d relation %d sequence %d\n",
+		fprintf(stdout,
+				   "walk_pointer_page: page %d relation %d sequence %d\n",
 				   (*vector)[sequence], relation->rel_id, sequence);
-	}
 #endif
 
 /* Give the page a quick once over */
 
-	if (page->ppg_relation != relation->rel_id || page->ppg_sequence != sequence)
+	if (page->ppg_relation != relation->rel_id ||
+		page->ppg_sequence != sequence)
 	{
-		CCH_RELEASE(tdbb, &window);
-		return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation, sequence);
+			return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation,
+						   sequence);
 	}
 
 /* Walk the data pages (someday we may optionally walk pages with "large objects" */
@@ -1811,7 +1843,8 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 	SLONG seq = (SLONG) sequence *dbb->dbb_dp_per_pp;
 
 	USHORT slot = 0;
-	for (SLONG* pages = page->ppg_page; slot < page->ppg_count; slot++, pages++, seq++)
+	for (SLONG* pages = page->ppg_page; slot < page->ppg_count;
+		 slot++, pages++, seq++)
 	{
 		if (*pages) {
 			const RTN result = walk_data_page(tdbb, control, relation, *pages, seq);
@@ -1835,7 +1868,11 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 		(page->ppg_next && page->ppg_next != (*vector)[sequence]))
 	{
 		CCH_RELEASE(tdbb, &window);
-		return corrupt(tdbb, control, VAL_P_PAGE_INCONSISTENT, relation, sequence);
+		return corrupt(	tdbb,
+						control,
+						VAL_P_PAGE_INCONSISTENT,
+						relation,
+						sequence);
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -1878,7 +1915,8 @@ static RTN walk_record(thread_db* tdbb,
 
 	if (control && header->rhd_transaction > control->vdr_max_transaction)
 	{
-		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number, header->rhd_transaction);
+		corrupt(tdbb, control, VAL_REC_BAD_TID, relation, number,
+				header->rhd_transaction);
 	}
 
 /* If there's a back pointer, verify that it's good */
@@ -1893,7 +1931,8 @@ static RTN walk_record(thread_db* tdbb,
    chasing records, skip the record */
 
 	if (header->rhd_flags & (rhd_fragment | rhd_deleted) ||
-		!((header->rhd_flags & rhd_large) || (control && (control->vdr_flags & vdr_records))))
+		!((header->rhd_flags & rhd_large) ||
+		  (control && (control->vdr_flags & vdr_records))))
 	{
 		return rtn_ok;
 	}
@@ -1905,18 +1944,18 @@ static RTN walk_record(thread_db* tdbb,
 	const char* p;
 	const char* end;
 	if (header->rhd_flags & rhd_incomplete) {
-		p = (SCHAR*) fragment->rhdf_data;
+		p = (SCHAR *) fragment->rhdf_data;
 		end = p + length - OFFSETA(rhdf*, rhdf_data);
 	}
 	else {
-		p = (SCHAR*) header->rhd_data;
+		p = (SCHAR *) header->rhd_data;
 		end = p + length - OFFSETA(rhd*, rhd_data);
 	}
 
 	USHORT record_length = 0;
 
 	while (p < end) {
-		const signed char c = *p++;
+		const char c = *p++;
 		if (c >= 0) {
 			record_length += c;
 			p += c;
@@ -1934,22 +1973,23 @@ static RTN walk_record(thread_db* tdbb,
 	USHORT flags = fragment->rhdf_flags;
 
 	data_page* page = 0;
-	while (flags & rhd_incomplete)
-	{
+	while (flags & rhd_incomplete) {
 		WIN window(DB_PAGE_SPACE, -1);
 		fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		if (page->dpg_relation != relation->rel_id ||
 			line_number >= page->dpg_count || !(length = line->dpg_length))
 		{
-			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation, number);
+			corrupt(tdbb, control, VAL_REC_FRAGMENT_CORRUPT, relation,
+					number);
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
 		fragment = (rhdf*) ((UCHAR *) page + line->dpg_offset);
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level) {
-			fprintf(stdout, "fragment: pg %d/%d ", page_number, line_number);
+			fprintf(stdout, "fragment: pg %d/%d ",
+					   page_number, line_number);
 			print_rhd(line->dpg_length, (rhd*) fragment);
 		}
 #endif
@@ -1962,7 +2002,7 @@ static RTN walk_record(thread_db* tdbb,
 			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
 		}
 		while (p < end) {
-			const signed char c = *p++;
+			const char c = *p++;
 			if (c >= 0) {
 				record_length += c;
 				p += c;
@@ -2008,7 +2048,8 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 	// If relation hasn't been scanned, do so now
 
-	if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
+	if (!(relation->rel_flags & REL_scanned) ||
+		(relation->rel_flags & REL_being_scanned))
 	{
 		MET_scan_relation(tdbb, relation);
 	}
@@ -2054,16 +2095,19 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 	// See if the counts of backversions match
 	if (control && (control->vdr_flags & vdr_records) &&
-		(control->vdr_rel_backversion_counter != control->vdr_rel_chain_counter))
+		(control->vdr_rel_backversion_counter !=
+		 control->vdr_rel_chain_counter))
 	{
-		 return corrupt(tdbb, control, VAL_REL_CHAIN_ORPHANS, relation,
+		 return corrupt(tdbb,
+						control,
+						VAL_REL_CHAIN_ORPHANS,
+						relation,
 						control->vdr_rel_backversion_counter - control-> vdr_rel_chain_counter,
 						control-> vdr_rel_chain_counter);
 	}
 
 	}	// try
-	catch (const Firebird::Exception&)
-	{
+	catch (const Firebird::Exception&) {
 		const char* msg = relation->rel_name.length() > 0 ?
 			"bugcheck during scan of table %d (%s)" :
 			"bugcheck during scan of table %d";
@@ -2106,7 +2150,8 @@ static RTN walk_root(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 	index_root_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
-	fetch_page(tdbb, control, relPages->rel_index_root, pag_root, &window, &page);
+	fetch_page(tdbb, control, relPages->rel_index_root, pag_root, &window,
+			   &page);
 
 	for (USHORT i = 0; i < page->irt_count; i++) {
 		walk_index(tdbb, control, relation, *page, i);
@@ -2142,8 +2187,7 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 	tx_inv_page* page = 0;
 	const ULONG pages = transaction / dbb->dbb_page_manager.transPerTIP;
 
-	for (ULONG sequence = 0; sequence <= pages; sequence++)
-	{
+	for (ULONG sequence = 0; sequence <= pages; sequence++) {
 		if (!(*vector)[sequence] || sequence >= vector->count()) {
 			corrupt(tdbb, control, VAL_TIP_LOST_SEQUENCE, 0, sequence);
 			if (!(control->vdr_flags & vdr_repair))
@@ -2153,11 +2197,17 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 		}
 
 		WIN window(DB_PAGE_SPACE, -1);
-		fetch_page(tdbb, control, (*vector)[sequence], pag_transactions, &window, &page);
+		fetch_page(	tdbb,
+					control,
+					(*vector)[sequence],
+					pag_transactions,
+					&window,
+					&page);
 
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
-			fprintf(stdout, "walk_tip: page %d next %d\n", (*vector)[sequence], page->tip_next);
+			fprintf(stdout, "walk_tip: page %d next %d\n",
+					   (*vector)[sequence], page->tip_next);
 #endif
 		if (page->tip_next && page->tip_next != (*vector)[sequence + 1])
 		{
@@ -2168,3 +2218,4 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 
 	return rtn_ok;
 }
+

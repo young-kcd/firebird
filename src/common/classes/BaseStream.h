@@ -27,7 +27,7 @@
 #ifndef FB_BASESTREAM_H
 #define FB_BASESTREAM_H
 
-#ifdef HAVE_IO_H
+#ifdef WIN_NT
 #include <io.h>
 #endif
 

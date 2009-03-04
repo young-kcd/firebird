@@ -41,12 +41,14 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../jrd/thd.h"
+
 
 
 void (*dbg_block) (const BufferDesc*);
 
-void (*dmp_active) () = DMP_active;
-void (*dmp_dirty) () = DMP_dirty;
+void (*dmp_active) (void) = DMP_active;
+void (*dmp_dirty) (void) = DMP_dirty;
 void (*dmp_page) (SLONG, USHORT) = DMP_page;
 
 extern FILE* dbg_file;
@@ -72,7 +74,7 @@ static int dmp_descending = 0;
 //#define TRANS_OFFSET(number)	((number) >> TRA_SHIFT)
 
 
-void DMP_active()
+void DMP_active(void)
 {
 /**************************************
  *
@@ -102,7 +104,7 @@ void DMP_active()
 }
 
 
-void DMP_btc()
+void DMP_btc(void)
 {
 /**************************************
  *
@@ -130,7 +132,7 @@ void DMP_btc()
 }
 
 
-void DMP_btc_errors()
+void DMP_btc_errors(void)
 {
 /**************************************
  *
@@ -153,7 +155,7 @@ void DMP_btc_errors()
 }
 
 
-void DMP_btc_ordered()
+void DMP_btc_ordered(void)
 {
 /**************************************
  *
@@ -217,7 +219,7 @@ void DMP_btc_ordered()
 }
 
 
-void DMP_dirty()
+void DMP_dirty(void)
 {
 /**************************************
  *
@@ -660,7 +662,7 @@ static void dmp_header(const header_page* page)
 	fprintf(dbg_file,
 			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d(%d), pages: %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
-			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG,
+			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG, 
 			   minor_version, page->hdr_ods_minor_original, page->hdr_PAGES);
 
 	const Firebird::TimeStamp ts(*((GDS_TIMESTAMP *) page->hdr_creation_date));
@@ -895,18 +897,16 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
 
 	for (int n = 0; n < control->pgc_ppp;) {
 		while (n < control->pgc_ppp)
-		{
 			if (BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d - ", n);
 		while (n < control->pgc_ppp)
-		{
 			if (!BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d, ", n - 1);
 	}
 
@@ -992,7 +992,7 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 {
 /**************************************
  *
- *	d m p _ t r a n s a c t i o n
+ *	d m p _ t r a n s a c t i o n 
  *
  **************************************
  *

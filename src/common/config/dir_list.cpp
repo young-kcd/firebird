@@ -28,7 +28,7 @@
 
 namespace Firebird {
 
-void ParsedPath::parse(const PathName& path)
+void ParsedPath::parse(const PathName& path) 
 {
 	clear();
 
@@ -46,12 +46,12 @@ void ParsedPath::parse(const PathName& path)
 	} while (oldpath.length() > 0);
 }
 
-PathName ParsedPath::subPath(size_t n) const
+PathName ParsedPath::subPath(int n) const 
 {
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
-	for (size_t i = 1; i < n; i++) {
+	for (int i = 1; i < n; i++) {
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
 		rc = newpath;
@@ -59,14 +59,14 @@ PathName ParsedPath::subPath(size_t n) const
 	return rc;
 }
 
-ParsedPath::operator PathName() const
+ParsedPath::operator PathName() const 
 {
 	if (!getCount())
 		return "";
 	return subPath(getCount());
 }
 
-bool ParsedPath::contains(const ParsedPath& pPath) const
+bool ParsedPath::contains(const ParsedPath& pPath) const 
 {
 	size_t nFullElem = getCount();
 	if (nFullElem > 1 && (*this)[nFullElem - 1].length() == 0)
@@ -75,7 +75,7 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 	if (pPath.getCount() < nFullElem) {
 		return false;
 	}
-
+	
 	size_t i;
 	for (i = 0; i < nFullElem; i++) {
 		if (pPath[i] != (*this)[i]) {
@@ -91,7 +91,11 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 	return true;
 }
 
-bool DirectoryList::keyword(const ListMode keyMode, PathName& value, PathName key, PathName next)
+bool DirectoryList::keyword(
+		const ListMode keyMode, 
+		PathName& value, 
+		PathName key, 
+		PathName next) 
 {
 	if (value.length() < key.length()) {
 		return false;
@@ -124,7 +128,7 @@ bool DirectoryList::keyword(const ListMode keyMode, PathName& value, PathName ke
 	return true;
 }
 
-void DirectoryList::initialize(bool simple_mode)
+void DirectoryList::initialize(bool simple_mode) 
 {
 	if (mode != NotInitialized)
 		return;
@@ -137,7 +141,8 @@ void DirectoryList::initialize(bool simple_mode)
 		mode = SimpleList;
 	}
 	else {
-		if (keyword(None, val, "None", "") || keyword(Full, val, "Full", "")) {
+		if (keyword(None, val, "None", "") || 
+			keyword(Full, val, "Full", "")) {
 			return;
 		}
 		if (! keyword(Restrict, val, "Restrict", " \t")) {
@@ -148,7 +153,7 @@ void DirectoryList::initialize(bool simple_mode)
 		}
 	}
 
-	size_t last = 0;
+	unsigned int last = 0;
 	PathName root = Config::getRootDirectory();
 	size_t i;
 	for (i = 0; i < val.length(); i++) {
@@ -180,7 +185,7 @@ void DirectoryList::initialize(bool simple_mode)
 	add(ParsedPath(dir));
 }
 
-bool DirectoryList::isPathInList(const PathName& path) const
+bool DirectoryList::isPathInList(const PathName& path) const 
 {
 #ifdef BOOT_BUILD
 	return true;
@@ -188,8 +193,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 	fb_assert(mode != NotInitialized);
 
 	// Handle special cases
-	switch (mode)
-	{
+	switch (mode) {
 	case None:
 		return false;
 	case Full:
@@ -207,7 +211,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 	PathName varpath(path);
 	if (PathUtils::isRelative(path)) {
-		PathUtils::concatPath(varpath, PathName(Config::getRootDirectory()), path);
+		PathUtils::concatPath(varpath, 
+			PathName(Config::getRootDirectory()), path);
 	}
 
 	ParsedPath pPath(varpath);
@@ -222,7 +227,10 @@ bool DirectoryList::isPathInList(const PathName& path) const
 #endif //BOOT_BUILD
 }
 
-bool DirectoryList::expandFileName(PathName& path, const PathName& name) const
+bool DirectoryList::expandFileName (
+					PathName& path, 
+					const PathName& name) 
+const 
 {
 	fb_assert(mode != NotInitialized);
     for (size_t i = 0; i < getCount(); i++) {
@@ -235,7 +243,10 @@ bool DirectoryList::expandFileName(PathName& path, const PathName& name) const
 	return false;
 }
 
-bool DirectoryList::defaultName(PathName& path, const PathName& name) const
+bool DirectoryList::defaultName (
+					PathName& path, 
+					const PathName& name) 
+const
 {
 	fb_assert(mode != NotInitialized);
 	if (! getCount())

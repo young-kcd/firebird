@@ -216,6 +216,23 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 			size_t n = strlen(s);
 			if (n > MAX_STRING)
 				n = MAX_STRING;
+				
+			return out_stream.write(s, n);
+		}
+	case safe_cell::at_counted_str:
+		{
+			size_t n = item.st_value.s_len;
+			const char* s = item.st_value.s_string;
+			if (!s)
+			{
+				if (!n) // Do not bother with null pointer if length is zero.
+					return 0;
+					
+				s = "(null)";
+				n = strlen(s);
+			}
+			else if (n > MAX_STRING)
+				n = MAX_STRING;
 
 			return out_stream.write(s, n);
 		}
@@ -242,25 +259,20 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 		{
 		case 0:
 			return out_bytes;
-
 		case '@':
-			switch (iter[1])
-			{
-			case 0:
-				out_bytes += out_stream.write("@(EOF)", 6);
-				return out_bytes;
-			case '@':
+			if (iter[1] == '@')
 				out_bytes += out_stream.write(iter, 1);
-				break;
-			default:
+			else
+			{
+				int pos = iter[1] - '0';
+				if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
+					out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
+				else
 				{
-					const int pos = iter[1] - '0';
-					if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
-						out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
-					else if (pos >= 0 && pos <= 9)
+					if (pos >= 0 && pos <= 9)
 					{
 						// Show the missing or out of range param number.
-						const char s[3] = {iter[0], iter[1], '?'};
+						char s[3] = {iter[0], iter[1], '?'};
 						out_bytes += out_stream.write(s, 3);
 					}
 					else // Something not a number following @, invalid.
@@ -269,30 +281,10 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 			}
 			++iter;
 			break;
-
-		case '\\':
-			switch (iter[1])
-			{
-			case 0:
-				out_bytes += out_stream.write("\\(EOF)", 6);
-				return out_bytes;
-			case 'n':
-				out_bytes += out_stream.write("\n", 1);
-				break;
-			case 't':
-				out_bytes += out_stream.write("\t", 1);
-				break;
-			default:
-				out_bytes += out_stream.write(iter, 2); // iter[0] and iter[1]
-			}
-			++iter;
-			break;
-
 		default:
 			{
 				const char* iter2 = iter;
-				// Take into account the previous cases: 0, @ and backslash.
-				while (iter2[1] && iter2[1] != '@' && iter2[1] != '\\')
+				while (iter2[1] && iter2[1] != '@')
 					++iter2;
 
 				out_bytes += out_stream.write(iter, iter2 - iter + 1);
@@ -318,7 +310,7 @@ int MsgPrint(const char* format, const SafeArg& arg)
 int MsgPrint(const char* format)
 {
 	static const SafeArg dummy;
-
+	
 	StdioStream st(stdout);
 	return MsgPrint(st, format, dummy);
 }
@@ -326,7 +318,8 @@ int MsgPrint(const char* format)
 
 // Shortcut version to format a string with arguments on a string output
 // of a given size.
-int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg)
+int MsgPrint(char* plainstring, unsigned int s_size,
+			 const char* format, const SafeArg& arg)
 {
 	StringStream st(plainstring, s_size);
 	return MsgPrint(st, format, arg);

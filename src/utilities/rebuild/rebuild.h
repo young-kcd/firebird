@@ -31,12 +31,12 @@ typedef struct fil {
 } *FIL;
 
 typedef struct rbdb {
-    ULONG	rbdb_map_length;
+    ULONG	rbdb_map_length; 
     int		rbdb_map_base;
     int		rbdb_map_count;
     SCHAR	*rbdb_map_region;
     SSHORT	rbdb_page_size;
-    bool	rbdb_valid;
+    SCHAR	rbdb_valid;
     SLONG	rbdb_window_offset;
     SLONG	rbdb_last_page;
     PAG		rbdb_buffer1;
@@ -45,11 +45,11 @@ typedef struct rbdb {
     struct fil	rbdb_file;
 } *RBDB;
 
-struct swc {
-    bool    swc_switch;
-    bool    swc_comma;
+typedef struct swc { 
+    SCHAR    swc_switch;
+    SCHAR    swc_comma;
     TEXT    *swc_string;
-};
+} *SWC;
 
 #endif /* UTILITIES_REBUILD_H */
 

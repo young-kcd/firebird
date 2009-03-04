@@ -934,7 +934,7 @@ void output_debug()
     fprintf(output_file, "#if YYDEBUG\n");
     if (!rflag)
 	fprintf(output_file, "static ");
-    fprintf(output_file, "const char *yyname[] = {");
+    fprintf(output_file, "char *yyname[] = {");
     j = 80;
     for (i = 0; i <= max; ++i)
     {
@@ -1062,7 +1062,7 @@ void output_debug()
     if (!rflag) ++outline;
     if (!rflag)
 	fprintf(output_file, "static ");
-    fprintf(output_file, "const char *yyrule[] = {\n");
+    fprintf(output_file, "char *yyrule[] = {\n");
     for (i = 2; i < nrules; ++i)
     {
 	fprintf(output_file, "\"%s :", symbol_name[rlhs[i]]);

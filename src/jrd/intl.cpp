@@ -110,21 +110,23 @@
 #include "../intl/ld_proto.h"
 #endif
 #include "../jrd/cvt_proto.h"
-#include "../common/cvt.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/iberr_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
+#include "../jrd/evl_string.h"
 #include "../jrd/intlobj_new.h"
+#include "../jrd/jrd.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/init.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 #define IS_TEXT(x)      (((x)->dsc_dtype == dtype_text)   ||\
 			 ((x)->dsc_dtype == dtype_varying)||\
@@ -148,10 +150,8 @@ public:
 	{
 		cs->destroy();
 		for (size_t i = 0; i < charset_collations.getCount(); i++)
-		{
 			if (charset_collations[i])
 				charset_collations[i]->destroy();
-		}
 	}
 
 	CharSet* getCharSet() { return cs; }
@@ -219,7 +219,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 		}
 		else
-			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
+			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, isc_arg_end);
 	}
 
 	return cs;
@@ -262,7 +262,7 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInf
 	else
 	{
 		delete csL;
-		ERR_post(Arg::Gds(isc_charset_not_installed) << Arg::Str(info->charsetName));
+		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), isc_arg_end);
 	}
 }
 
@@ -270,12 +270,15 @@ CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID toCsId)
 {
 	if (toCsId == CS_UTF16)
 		return CsConvert(cs->getStruct(), NULL);
+	else
+	{
+		CharSet* toCs = INTL_charset_lookup(tdbb, toCsId);
 
-	CharSet* toCs = INTL_charset_lookup(tdbb, toCsId);
-	if (cs->getId() == CS_UTF16)
-		return CsConvert(NULL, toCs->getStruct());
-
-	return CsConvert(cs->getStruct(), toCs->getStruct());
+		if (cs->getId() == CS_UTF16)
+			return CsConvert(NULL, toCs->getStruct());
+		else
+			return CsConvert(cs->getStruct(), toCs->getStruct());
+	}
 }
 
 Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
@@ -321,8 +324,9 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (!lookup_texttype(tt, &info))
 		{
 			delete tt;
-			ERR_post(Arg::Gds(isc_collation_not_installed) << Arg::Str(info.collationName) <<
-															  Arg::Str(info.charsetName));
+			ERR_post(isc_collation_not_installed,
+				isc_arg_string, ERR_cstring(info.collationName.c_str()),
+				isc_arg_string, ERR_cstring(info.charsetName.c_str()), isc_arg_end);
 		}
 
 		if (charset_collations.getCount() <= id)
@@ -351,13 +355,13 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		{
 			Lock* lock = charset_collations[id]->existenceLock =
 				CharSetContainer::createCollationLock(tdbb, tt_id);
-			lock->lck_object = charset_collations[id];
+			lock->lck_object = (blk*)charset_collations[id];
 
 			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		}
 	}
 	else
-		ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(tt_id));
+		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, isc_arg_end);
 
 	return charset_collations[id];
 }
@@ -371,12 +375,14 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 	{
 		if (charset_collations[id]->useCount != 0)
 		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(charset_collations[id]->name));
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, charset_collations[id]->name.c_str(),
+					 isc_arg_end);
 		}
 
 		if (charset_collations[id]->existenceLock)
-			LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
+			LCK_convert_non_blocking(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
 
 		charset_collations[id]->obsolete = true;
 
@@ -460,7 +466,7 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 int INTL_compare(thread_db* tdbb,
 				const dsc* pText1,
 				const dsc* pText2,
-				ErrorFunction err)
+				FPTR_ERROR err)
 {
 /**************************************
  *
@@ -512,13 +518,17 @@ int INTL_compare(thread_db* tdbb,
 				   sense if the string cannot be expressed...
 				 */
 
-				length2 = INTL_convert_bytes(tdbb, cs1, buffer, sizeof(buffer), cs2, p2, length2, err);
+				length2 = INTL_convert_bytes(tdbb, cs1,
+											 buffer, sizeof(buffer),
+											 cs2, p2, length2, err);
 				p2 = buffer;
 			}
 			else {
 				/* convert pText1 to pText2's type, if possible */
 
-				length1 = INTL_convert_bytes(tdbb, cs2, buffer, sizeof(buffer), cs1, p1, length1, err);
+				length1 = INTL_convert_bytes(tdbb, cs2,
+											 buffer, sizeof(buffer),
+											 cs1, p1, length1, err);
 				p1 = buffer;
 			}
 		}
@@ -537,7 +547,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 						 CHARSET_ID src_type,
 						 const BYTE* src_ptr,
 						 ULONG src_len,
-						 ErrorFunction err)
+						 FPTR_ERROR err)
 {
 /**************************************
  *
@@ -572,8 +582,10 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 	const UCHAR* const start_dest_ptr = dest_ptr;
 
-	if (dest_type == CS_BINARY || dest_type == CS_NONE ||
-		src_type == CS_BINARY || src_type == CS_NONE)
+	if ((dest_type == CS_BINARY) ||
+		(dest_type == CS_NONE) ||
+		(src_type == CS_BINARY) ||
+		(src_type == CS_NONE))
 	{
 		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
@@ -584,7 +596,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 			CharSet* toCharSet = INTL_charset_lookup(tdbb, dest_type);
 
 			if (!toCharSet->wellFormed(src_len, src_ptr))
-				err(Arg::Gds(isc_malformed_string));
+				(*err)(isc_malformed_string, isc_arg_end);
 		}
 
 		len = MIN(dest_len, src_len);
@@ -597,19 +609,21 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		len = src_len - MIN(dest_len, src_len);
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
-
-		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+		else
+			(*err) (isc_arith_except, isc_arg_end);
 	}
-	else if (src_len)
-	{
+	else if (src_len == 0)
+		return (0);
+	else
 		/* character sets are known to be different */
+	{
 		/* Do we know an object from cs1 to cs2? */
 
 		CsConvert cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		return cs_obj.convert(src_len, src_ptr, dest_len, dest_ptr, NULL, true);
 	}
 
-	return 0;
+	return (0);					/* to remove compiler errors.  This should never be executed */
 }
 
 
@@ -648,7 +662,7 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
 }
 
 
-int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
+int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -687,7 +701,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	UCHAR* from_ptr;
 	USHORT from_type;
-	const USHORT from_len = CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
+	const USHORT from_len =
+		CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
 
 	ULONG to_size, to_len, to_fill;
 	to_size = to_len = TEXT_LEN(to);
@@ -697,11 +712,9 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	CharSet* toCharSet = INTL_charset_lookup(tdbb, to_cs);
 	ULONG toLength;
 
-	switch (to->dsc_dtype)
-	{
+	switch (to->dsc_dtype) {
 	case dtype_text:
-		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
-		{
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
 
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
@@ -715,7 +728,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				err(Arg::Gds(isc_malformed_string));
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			to_fill = to_size - to_len;
@@ -730,8 +743,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 
 	case dtype_cstring:
-		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
-		{
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
 			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
@@ -743,7 +755,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				err(Arg::Gds(isc_malformed_string));
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			if (to_len)
@@ -755,8 +767,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 
 	case dtype_varying:
-		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
-		{
+		if ((from_cs != to_cs) && (to_cs != CS_BINARY) && (to_cs != CS_NONE) && (from_cs != CS_NONE)) {
 
 			to_len =
 				INTL_convert_bytes(tdbb, to_cs,
@@ -770,7 +781,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			/* binary string can always be converted TO by byte-copy */
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				err(Arg::Gds(isc_malformed_string));
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			((vary*) p)->vary_length = to_len;
@@ -788,15 +799,13 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+		(*err)(isc_arith_except, isc_arg_end);
 	}
 
 	if (from_fill)
-	{
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
-	}
+			(*err) (isc_arith_except, isc_arg_end);
 
 	return 0;
 }
@@ -866,17 +875,38 @@ bool INTL_defined_type(thread_db* tdbb, USHORT t_type)
  **************************************/
 	SET_TDBB(tdbb);
 
+	ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
+	bool defined = true;
+
 	try
 	{
-		ThreadStatusGuard local_status(tdbb);
+		ISC_STATUS_ARRAY local_status;
+		tdbb->tdbb_status_vector = local_status;
+
 		INTL_texttype_lookup(tdbb, t_type);
 	}
 	catch (...)
 	{
-		return false;
+		defined = false;
 	}
 
-	return true;
+	tdbb->tdbb_status_vector = original_status;
+
+	return defined;
+}
+
+
+void INTL_init(thread_db* tdbb)
+{
+/**************************************
+ *
+ *      I N T L _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
 }
 
 
@@ -971,6 +1001,7 @@ Collation* INTL_texttype_lookup(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 	if (parm1 == ttype_dynamic)
 		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset);
@@ -1076,16 +1107,15 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	fb_assert(idxType >= idx_first_intl_string || idxType == idx_string ||
-			  idxType == idx_byte_array || idxType == idx_metadata);
+	fb_assert(idxType >= idx_first_intl_string || idxType == idx_string
+		   || idxType == idx_byte_array || idxType == idx_metadata);
 	fb_assert(pString != NULL);
 	fb_assert(pByte != NULL);
 	fb_assert(pString->dsc_address != NULL);
 	fb_assert(pByte->dsc_address != NULL);
 	fb_assert(pByte->dsc_dtype == dtype_text);
 
-	switch (idxType)
-	{
+	switch (idxType) {
 	case idx_string:
 		pad_char = ' ';
 		ttype = ttype_none;
@@ -1114,8 +1144,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	char* dest = reinterpret_cast<char*>(pByte->dsc_address);
 	USHORT destLen = pByte->dsc_length;
 
-	switch (ttype)
-	{
+	switch (ttype) {
 	case ttype_metadata:
 	case ttype_binary:
 	case ttype_ascii:
@@ -1145,9 +1174,116 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
-static bool all_spaces(thread_db* tdbb,
-					   CHARSET_ID charset,
-					   const BYTE* ptr, ULONG len, ULONG offset)
+int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
+{
+/**************************************
+ *
+ *      I N T L _ s t r _ t o _ u p p e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Given an input string, convert it to uppercase
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(pString != NULL);
+	fb_assert(pString->dsc_address != NULL);
+
+	UCHAR* src;
+	UCHAR buffer[MAX_KEY];
+	USHORT ttype;
+	USHORT len =
+		CVT_get_string_ptr(pString, &ttype, &src,
+						   reinterpret_cast<vary*>(buffer),
+						   sizeof(buffer), ERR_post);
+
+	UCHAR* dest;
+	switch (ttype) {
+	case ttype_binary:
+		/* cannot uppercase binary strings */
+		break;
+
+	case ttype_none:
+	case ttype_ascii:
+		dest = src;
+		while (len--) {
+			*dest++ = UPPER7(*src);
+			src++;
+		}
+		break;
+
+	default:
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		obj->str_to_upper(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
+		break;
+	}
+/*
+ * Added to remove compiler errors. Callers are not checking
+ * the return code from this function 4/5/95.
+*/
+	return (0);
+}
+
+
+int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
+{
+/**************************************
+ *
+ *      I N T L _ s t r _ t o _ l o w e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Given an input string, convert it to lowercase
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(pString != NULL);
+	fb_assert(pString->dsc_address != NULL);
+
+	UCHAR* src;
+	UCHAR buffer[MAX_KEY];
+	USHORT ttype;
+	USHORT len =
+		CVT_get_string_ptr(pString, &ttype, &src,
+						   reinterpret_cast<vary*>(buffer),
+						   sizeof(buffer), ERR_post);
+
+	UCHAR* dest;
+	switch (ttype) {
+	case ttype_binary:
+		/* cannot lowercase binary strings */
+		break;
+
+	case ttype_none:
+	case ttype_ascii:
+		dest = src;
+		while (len--) {
+			*dest++ = LOWWER7(*src);
+			src++;
+		}
+		break;
+
+	default:
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		obj->str_to_lower(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
+		break;
+	}
+/*
+ * Added to remove compiler errors. Callers are not checking
+ * the return code from this function 4/5/95.
+*/
+	return (0);
+}
+
+
+static bool all_spaces(
+						  thread_db* tdbb,
+						  CHARSET_ID charset,
+						  const BYTE* ptr, ULONG len, ULONG offset)
 {
 /**************************************
  *
@@ -1183,6 +1319,7 @@ static bool all_spaces(thread_db* tdbb,
 			if (*p++ != *obj->getSpace())
 				return false;
 		}
+		return true;
 	}
 	else {
 		const BYTE* p = &ptr[offset];
@@ -1196,9 +1333,8 @@ static bool all_spaces(thread_db* tdbb,
 					return false;
 			}
 		}
+		return true;
 	}
-
-	return true;
 }
 
 
@@ -1226,23 +1362,24 @@ static int blocking_ast_collation(void* ast_object)
 
 		if (tt->existenceLock)
 		{
-			try
-			{
-				Database* dbb = tt->existenceLock->lck_dbb;
+			thread_db thd_context, *tdbb;
 
-				Database::SyncGuard dsGuard(dbb, true);
+			// Since this routine will be called asynchronously, we must establish
+			// a thread context.
+			JRD_set_thread_data(tdbb, thd_context);
 
-				ThreadContextHolder tdbb;
-				tdbb->setDatabase(dbb);
-				tdbb->setAttachment(tt->existenceLock->lck_attachment);
+			tdbb->setDatabase(tt->existenceLock->lck_dbb);
+			tdbb->setAttachment(tt->existenceLock->lck_attachment);
+			tdbb->tdbb_quantum = QUANTUM;
+			tdbb->setRequest(NULL);
+			tdbb->setTransaction(NULL);
+			Jrd::ContextPoolHolder context(tdbb, 0);
 
-				Jrd::ContextPoolHolder context(tdbb, 0);
+			LCK_release(tdbb, tt->existenceLock);
+			tt->existenceLock = NULL;
 
-				LCK_release(tdbb, tt->existenceLock);
-				tt->existenceLock = NULL;
-			}
-			catch (const Firebird::Exception&)
-			{} // no-op
+			// Restore the prior thread context
+			JRD_restore_thread_data();
 		}
 	}
 

@@ -28,7 +28,7 @@
 #ifndef JRD_ALIGN_H
 #define JRD_ALIGN_H
 
-/*
+/* 
 Maximum alignments for corresponding data types are defined in dsc.h
 */
 
@@ -93,8 +93,8 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	sizeof(SQUAD),				/* dtype_quad */
 #endif
 	sizeof(float),				/* dtype_real */
-	FB_DOUBLE_ALIGN,			/* dtype_double */
-	FB_DOUBLE_ALIGN,			/* dtype_d_float */
+	DOUBLE_ALIGN,				/* dtype_double */
+	DOUBLE_ALIGN,				/* dtype_d_float */
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_DATE),			/* dtype_timestamp */

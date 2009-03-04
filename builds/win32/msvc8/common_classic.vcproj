@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="common_classic"
 	ProjectGUID="{F5746066-8613-4811-B27C-0ED70FF9F0FF}"
 	>
@@ -323,15 +323,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\cvt.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dllinst.cpp"
 				>
 			</File>
 			<File
@@ -340,10 +332,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp"
 				>
 			</File>
 			<File
@@ -363,23 +351,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\PublicHandle.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\StatusArg.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
 			<File
@@ -392,10 +368,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\UtilSvc.cpp"
 				>
 			</File>
 		</Filter>
@@ -440,10 +412,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\cvt.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\db_alias.h"
 				>
 			</File>
@@ -465,10 +433,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusArg.h"
 				>
 			</File>
 			<File

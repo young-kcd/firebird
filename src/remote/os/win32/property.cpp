@@ -48,6 +48,7 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
+#include "../jrd/svc_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
 #include "../remote/os/win32/ibconfig.h"
@@ -57,7 +58,7 @@
 #include "../remote/os/win32/ibsvrhlp.h"
 #include "../remote/os/win32/chop_proto.h"
 
-#include "../common/thd.h"			/* get jrd_proto.h to declare the function */
+#include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
 #include <stdio.h>				/* sprintf() */
 
@@ -70,8 +71,7 @@ static USHORT usServerFlags;	// Server Flag Mask
 // where the first of each pair is the control ID,
 // and the second is the context ID for a help topic,
 // which is used in the help file.
-static const DWORD aMenuHelpIDs[] =
-{
+static const DWORD aMenuHelpIDs[] = {
 	IDC_IBSVR_ICON, ibs_server_icon,
 	IDC_PROTOCOLS, ibs_capabilities,
 	IDC_CAPABILITIES_TEXT, ibs_capabilities,
@@ -95,7 +95,8 @@ LRESULT APIENTRY GeneralPage(HWND, UINT, WPARAM, LPARAM);
 static char *MakeVersionString(char *, int, USHORT);
 static void RefreshUserCount(HWND);
 
-HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask)
+HWND DisplayProperties(HWND hParentWnd,
+					   HINSTANCE hInst, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -125,7 +126,8 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 
 	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
-	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS;
+	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE |
+		PSH_USEICONID | PSH_MODELESS;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
@@ -150,7 +152,8 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 	return hPSDlg;
 }
 
-LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
+							 LPARAM lParam)
 {
 /******************************************************************************
  *
@@ -169,12 +172,11 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
  *  Description: This is the window procedure for the "General" page dialog
  *               of the property sheet dialog box. All the Property Sheet
  *               related events are passed as WM_NOTIFY messages and they
- *               are identified within the LPARAM which will be pointer to
+ *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
 
-	switch (unMsg)
-	{
+	switch (unMsg) {
 	case WM_INITDIALOG:
 		{
 			char szText[MSG_STRINGLEN];
@@ -186,9 +188,11 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 			SetDlgItemText(hDlg, IDC_LICENSE, szText);
 
 			if (usServerFlags & (SRVR_inet | SRVR_wnet))
-				LoadString(hInstance, IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
+				LoadString(hInstance,
+						   IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
 			else
-				LoadString(hInstance, IDS_LOCALPROD_NAME, szText, MSG_STRINGLEN);
+				LoadString(hInstance,
+						   IDS_LOCALPROD_NAME, szText, MSG_STRINGLEN);
 
 			SetDlgItemText(hDlg, IDC_PRODNAME, szText);
 
@@ -216,7 +220,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 			OSVERSIONINFO OsVersionInfo;
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
+				OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hGrayBrush;
@@ -228,28 +233,28 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 			{
-				WinHelp(static_cast<HWND>(lphi->hItemHandle), "IBSERVER.HLP",
+				WinHelp(static_cast<HWND>(lphi->hItemHandle),
+						"IBSERVER.HLP",
 						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
 			}
 		}
 		return TRUE;
 	case WM_CONTEXTMENU:
 		{
-			WinHelp((HWND) wParam, "IBSERVER.HLP",
+			WinHelp((HWND) wParam,
+					"IBSERVER.HLP",
 					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
 		}
 		return TRUE;
 	case WM_COMMAND:
-		switch (wParam)
-		{
+		switch (wParam) {
 		case IDC_REFRESH:
 			RefreshUserCount(hDlg);
 			break;
 		}
 		break;
 	case WM_NOTIFY:
-		switch (((LPNMHDR) lParam)->code)
-		{
+		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
 			break;
@@ -262,7 +267,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
+static char *MakeVersionString(char *pchBuf, int nLen,
+							   USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -282,8 +288,7 @@ static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
 	char* p = pchBuf;
 	const char* const end = p + nLen;
 
-	if (usServerFlagMask & SRVR_inet)
-	{
+	if (usServerFlagMask & SRVR_inet) {
 		p += LoadString(hInstance, IDS_TCP, p, end - p);
 		if (p < end)
 			*p++ = '\r';
@@ -323,7 +328,7 @@ static void RefreshUserCount(HWND hDlg)
 	ULONG num_dbs = 0;
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
+	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 
 	char szText[MSG_STRINGLEN];
 	sprintf(szText, "%d", num_att);

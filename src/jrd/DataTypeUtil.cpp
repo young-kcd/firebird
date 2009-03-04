@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:
+ *	PROGRAM:	
  *	MODULE:		DataTypeUtil.cpp
  *	DESCRIPTION:	Data Type Utility functions
  *
@@ -40,7 +40,7 @@ using namespace Firebird;
 
 
 SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* value2)
-{
+{	
 	SSHORT subType1 = value1->getBlobSubType();
 	SSHORT subType2 = value2->getBlobSubType();
 
@@ -71,40 +71,40 @@ USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 
 void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args)
 {
-	//--------------------------------------------------------------------------
+	//-------------------------------------------------------------------------- 
 	//  [Arno Brinkman] 2003-08-23
-	//
+	//  
 	//  This function is made to determine a output descriptor from a given list
 	//  of expressions according to the latest SQL-standard that was available.
-	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002)
-	//
+	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002) 
+	//  
 	//  If any datatype has a character type then :
 	//  - the output will always be a character type except unconvertable types.
 	//    (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
 	//  !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
 	//  - first character-set and collation are used as output descriptor.
-	//  - if all types have datatype CHAR then output should be CHAR else
+	//  - if all types have datatype CHAR then output should be CHAR else 
 	//    VARCHAR and with the maximum length used from the given list.
-	//
-	//  If all of the datatypes are EXACT numeric then the output descriptor
-	//  shall be EXACT numeric with the maximum scale and the maximum precision
+	//  
+	//  If all of the datatypes are EXACT numeric then the output descriptor 
+	//  shall be EXACT numeric with the maximum scale and the maximum precision 
 	//  used. (dtype_byte, dtype_short, dtype_long, dtype_int64)
-	//
+	//  
 	//  If any of the datatypes is APPROXIMATE numeric then each datatype in the
-	//  list shall be numeric else a error is thrown and the output descriptor
+	//  list shall be numeric else a error is thrown and the output descriptor 
 	//  shall be APPROXIMATE numeric. (dtype_real, dtype_double, dtype_d_float)
-	//
+	//  
 	//  If any of the datatypes is a datetime type then each datatype in the
 	//  list shall be the same datetime type else a error is thrown.
 	//  numeric. (dtype_sql_date, dtype_sql_time, dtype_timestamp)
-	//
+	//  
 	//  If any of the datatypes is a BLOB datatype then :
 	//  - all types should be a BLOB else throw error.
 	//  - all types should have the same sub_type else throw error.
 	//  - when TEXT type then use first character-set and collation as output
 	//    descriptor.
 	//  (dtype_blob)
-	//
+	//  
 	//--------------------------------------------------------------------------
 
 	// Initialize values.
@@ -147,8 +147,9 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		{
 			// ERROR !!!!
 			// Unknown datatype
-			status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				Arg::Gds(isc_dsql_datatype_err));
+			status_exception::raise(
+				isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
 		}
 
 		// Initialize some values if this is the first time.
@@ -161,10 +162,10 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 		else {
 			if (all_equal) {
-				all_equal =
+				all_equal = 
 					(max_dtype == arg->dsc_dtype) &&
-					(max_scale == arg->dsc_scale) &&
-					(max_length == arg->dsc_length) &&
+					(max_scale == arg->dsc_scale) && 
+					(max_length == arg->dsc_length) && 
 					(max_sub_type == arg->dsc_sub_type);
 			}
 		}
@@ -175,7 +176,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			// Is there any approximate numeric?
 			if (DTYPE_IS_APPROX(arg->dsc_dtype)) {
 				any_approx = true;
-				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types
+				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types 
 				// 1 and 2 from float types dtype_real, dtype_double
 				if (!any_float) {
 					any_float = (arg->dsc_sub_type == 0);
@@ -217,71 +218,58 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		// Is this a text type?
 		if (DTYPE_IS_TEXT(arg->dsc_dtype) ||
 			(arg->dsc_dtype == dtype_blob && arg->dsc_sub_type == isc_blob_text))
-		{
-			// Pick first characterset-collate from args-list
-			//
-			// Is there an better way to determine the
-			// characterset / collate from the list ?
-			// Maybe first according SQL-standard which has an order
-			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
-			//
-			// At least give any first charset other than ASCII/NONE precedence
-
-			const USHORT oldttype = ttype;
-
-			if (!any_text)
-				ttype = arg->getTextType();
-			else
-			{
-				if (ttype == ttype_none || ttype == ttype_ascii)
-					ttype = arg->getTextType();
+		{ 
+			const USHORT cnvlength = TEXT_LEN(arg);
+			if (cnvlength > maxtextlength) {
+				maxtextlength = cnvlength;
+			}
+			if (arg->dsc_dtype == dtype_varying) {
+				any_varying = true;
 			}
 
+			// Pick first characterset-collate from args-list  
+			// 
+			// Is there an better way to determine the         
+			// characterset / collate from the list ?          
+			// Maybe first according SQL-standard which has an order 
+			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
+			//
+			// At least give any first charset other then ASCII/NONE precedence
+			if (!any_text) {
+				ttype = arg->getTextType();
+			}
+			else {
+				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
+					ttype = arg->getTextType();
+				}
+			}
 			any_text = true;
-
-			maxtextlength = convertLength(maxtextlength, oldttype, ttype);
-
-			const USHORT cnvlength = arg->getStringLength();
-
-			if (cnvlength > maxtextlength)
-				maxtextlength = cnvlength;
-
-			if (arg->dsc_dtype == dtype_varying)
-				any_varying = true;
 		}
-		else
-		{
+		else {
 			// Get max needed-length for not text types suchs as int64,timestamp etc..
-			USHORT cnvlength = DSC_convert_to_text_length(arg->dsc_dtype);
-			cnvlength = convertLength(cnvlength, arg->getCharSet(), ttype);
-
-			if (cnvlength > maxtextlength)
+			const USHORT cnvlength = DSC_convert_to_text_length(arg->dsc_dtype);
+			if (cnvlength > maxtextlength) {
 				maxtextlength = cnvlength;
-
+			}
 			all_text = false;
 		}
 
-		if (DTYPE_IS_DATE(arg->dsc_dtype))
-		{
+		if (DTYPE_IS_DATE(arg->dsc_dtype)) {
 			any_datetime = true;
-			switch (arg->dsc_dtype)
-			{
-			case dtype_sql_date:
+			if (arg->dsc_dtype == dtype_sql_date) {
 				all_time = false;
 				all_timestamp = false;
-				break;
-			case dtype_sql_time:
+			} 
+			else if (arg->dsc_dtype == dtype_sql_time) { 
 				all_date = false;
 				all_timestamp = false;
-				break;
-			case dtype_timestamp:
+			}
+			else if (arg->dsc_dtype == dtype_timestamp) {
 				all_date = false;
 				all_time = false;
-				break;
 			}
 		}
-		else
-		{
+		else {
 			all_date = false;
 			all_time = false;
 			all_timestamp = false;
@@ -329,14 +317,19 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 
 	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
 	if (firstarg) {
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 804,
+			isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
-		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) << Arg::Gds(isc_dsql_datatype_err));
 	}
 
 	if (err) {
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expressionName, isc_arg_end);
 		// "Datatypes %sare not comparable in expression %s"
-		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
 	}
 
 	// If all the datatypes we've seen are exactly the same, we're done
@@ -351,7 +344,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	// If all of the arguments are from type text use a text type.
 	// Firebird behaves a little bit different than standard here, because
 	// any datatype (except BLOB) can be converted to a character-type we
-	// allow to use numeric and datetime types together with a
+	// allow to use numeric and datetime types together with a 
 	// character-type, but output will always be varying !
 	if (all_text || (any_text && (any_numeric || any_datetime))) {
 		if (any_text_blob)
@@ -366,22 +359,18 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			if (any_varying || (any_text && (any_numeric || any_datetime)))
 			{
 				result->dsc_dtype = dtype_varying;
-				result->dsc_length = sizeof(USHORT);
+				maxtextlength += sizeof(USHORT);
 			}
 			else
-			{
 				result->dsc_dtype = dtype_text;
-				result->dsc_length = 0;
-			}
 
 			result->dsc_ttype() = ttype;  // same as dsc_subtype
-			result->dsc_length += maxtextlength;
+			result->dsc_length = maxtextlength;
 			result->dsc_scale = 0;
 		}
 		return;
 	}
-
-	if (all_numeric) {
+	else if (all_numeric) {
 		// If all of the arguments are a numeric datatype.
 		if (any_approx) {
 			if (max_significant_digits <= type_significant_bits[dtype_real]) {
@@ -409,8 +398,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 		return;
 	}
-
-	if (all_date || all_time || all_timestamp) {
+	else if (all_date || all_time || all_timestamp) {
 		// If all of the arguments are the same datetime datattype.
 		result->dsc_dtype  = max_dtype;
 		result->dsc_length = max_dtype_length;
@@ -418,8 +406,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		result->dsc_sub_type = 0;
 		return;
 	}
-
-	if (all_blob && all_same_sub_type) {
+	else if (all_blob && all_same_sub_type) {
 		// If all of the arguments are the same BLOB datattype.
 		result->dsc_dtype  = max_dtype;
 		result->dsc_sub_type = max_sub_type;
@@ -434,13 +421,17 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		result->dsc_length = max_length;
 		return;
 	}
-
-	// We couldn't do anything with this list, mostly because the
-	// datatypes aren't comparable.
-	// Let's try to give a usefull error message.
-	// "Datatypes %sare not comparable in expression %s"
-	status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-		Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
+	else {
+		// We couldn't do anything with this list, mostly because the
+		// datatypes aren't comparable.
+		// Let's try to give a usefull error message.
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expressionName, isc_arg_end);
+		// "Datatypes %sare not comparable in expression %s"
+	}
 }
 
 

@@ -44,7 +44,7 @@ hu.InstalledProducts=Az újratelepítési vizsgálat az mutatja, hogy %s létezõ Fire
 hu.InstalledProdCountSingular=található
 hu.InstalledProdCountPlural=találhatóak
 
-hu.FbRunning1=Egy létezõ Firebird Adatbázisszerver %s már fut.
+hu.FbRunning1=Egy létezõ %s Adatbázisszerver már fut.
 hu.FbRunning2= A folytatás elõtt Önnek be kell zárnia a futó alkalmazást,
 hu.FbRunning3=          vagy le kell állítani szolgáltatást.
 
@@ -52,7 +52,7 @@ hu.PreviousInstallBroken=   (A telepítés hibásnak tûnik a nem megfelelõ verzió-a
 hu.PreviousInstallGood=   (A telepítés hibátlannak tûnik.)
 
 hu.IconReadme=Firebird %1 - Olvass El
-hu.IconUninstall=A Firebird eltávolítása %1 
+hu.IconUninstall=A Firebird eltávolítása %1
 hu.ReleaseNotes= Firebird %1 - Újdonságok (Acrobat Reader programot igényel)
 hu.InstallationGuide= telepítési segédlet. (Acrobat Reader programot igényel)
 hu.BugFixes= hibajavítások. (Acrobat Reader programot igényel)

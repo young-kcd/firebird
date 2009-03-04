@@ -48,7 +48,7 @@ struct TextTypeImpl
 
 static void famasc_destroy(texttype* obj)
 {
-	TextTypeImpl* impl = static_cast<TextTypeImpl*>(obj->texttype_impl);
+	TextTypeImpl* impl = obj->texttype_impl;
 
 	if (impl)
 	{
@@ -65,9 +65,8 @@ static ULONG famasc_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, UL
 {
 	try
 	{
-		TextTypeImpl* impl = static_cast<TextTypeImpl*>(obj->texttype_impl);
-		return Firebird::IntlUtil::toLower(impl->charSet, iLen, pStr, iOutLen, pOutStr,
-			impl->lower_exceptions);
+		return Firebird::IntlUtil::toLower(obj->texttype_impl->charSet, iLen, pStr, iOutLen, pOutStr,
+			obj->texttype_impl->lower_exceptions);
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -80,9 +79,8 @@ static ULONG famasc_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, UL
 {
 	try
 	{
-		TextTypeImpl* impl = static_cast<TextTypeImpl*>(obj->texttype_impl);
-		return Firebird::IntlUtil::toUpper(impl->charSet, iLen, pStr, iOutLen, pOutStr,
-			impl->upper_exceptions);
+		return Firebird::IntlUtil::toUpper(obj->texttype_impl->charSet, iLen, pStr, iOutLen, pOutStr,
+			obj->texttype_impl->upper_exceptions);
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -121,7 +119,7 @@ static inline bool FAMILY_ASCII(texttype* cache,
 
 		TextTypeImpl* impl = FB_NEW(*getDefaultMemoryPool()) TextTypeImpl;
 		cache->texttype_impl = impl;
-
+		
 		memset(&impl->cs, 0, sizeof(impl->cs));
 		LD_lookup_charset(&impl->cs, cs_name, config_info);
 
@@ -504,7 +502,7 @@ USHORT famasc_key_length(texttype* obj, USHORT inLen)
  *
  *  For ASCII type collation (codepoint collation) this mearly
  *  involves stripping the space character off the key.
- *
+ * 
  * RETURN:
  *		Length, in bytes, of returned key
  */
@@ -563,14 +561,14 @@ SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const B
 	for (ULONG i = 0; i < len; i++) {
 		if (s1[i] == s2[i])
 			continue;
-		if (all_spaces(&s1[i], (SLONG) (l1 - i)))
+		else if (all_spaces(&s1[i], (SLONG) (l1 - i)))
 			return -1;
-		if (all_spaces(&s2[i], (SLONG) (l2 - i)))
+		else if (all_spaces(&s2[i], (SLONG) (l2 - i)))
 			return 1;
-		if (s1[i] < s2[i])
+		else if (s1[i] < s2[i])
 			return -1;
-
-		return 1;
+		else
+			return 1;
 	}
 
 	if (l1 > len) {

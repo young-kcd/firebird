@@ -24,6 +24,7 @@
 #ifndef JRD_BLF_H
 #define JRD_BLF_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 namespace Jrd {
@@ -65,12 +66,10 @@ public:
 	void*	ctl_internal[3];			/* Firebird internal-use only */
 	Firebird::string	ctl_exception_message;	/* Message to use in case of filter exception */
 public:
-	explicit BlobControl(MemoryPool& p)
-		: ctl_exception_message(p) 
-	{ }
-	BlobControl()
-		: ctl_exception_message() 
-	{ }
+	BlobControl(MemoryPool& p) 
+		: ctl_exception_message(p) { }
+	BlobControl() 
+		: ctl_exception_message() { }
 };
 
 
@@ -86,14 +85,12 @@ class BlobFilter : public pool_alloc<type_blf>
 	FPTR_BFILTER_CALLBACK	blf_filter;	/* Entrypoint of filter */
 	Firebird::string	blf_exception_message;	/* message to be used in case of filter exception */
     public:
-	BlobFilter(MemoryPool& p) 
-		: blf_exception_message(p) 
-	{ }
+	BlobFilter(MemoryPool& p) : blf_exception_message(p) { }
 };
 
 // BRS 29-Apr-2004
 // replace those constants with public defined ones isc_blob_filter_
-//
+// 
 // const int ACTION_open			= 0;
 // const int ACTION_get_segment	= 1;
 // const int ACTION_close			= 2;

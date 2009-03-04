@@ -33,15 +33,14 @@
 const SINT64 EMPTY_NUMBER = QUADCONST(0);
 const SINT64 BOF_NUMBER = QUADCONST(-1);
 
-// This class is to be used everywhere you may need to handle record numbers. We
-// deliberately not define implicit conversions to and from integer to allow
-// compiler check errors on our migration path from 32-bit to 64-bit record
+// This class is to be used everywhere you may need to handle record numbers. We 
+// deliberately not define implicit conversions to and from integer to allow 
+// compiler check errors on our migration path from 32-bit to 64-bit record 
 // numbers.
-class RecordNumber
-{
+class RecordNumber {
 public:
 	// Packed record number represents common layout of RDB$DB_KEY and BLOB ID.
-	// To ensure binary compatibility with old (pre-ODS11) databases it differs
+	// To ensure binary compatibility with old (pre-ODS11) databases it differs 
 	// for big- and little-endian machines.
 	class Packed
 	{
@@ -65,34 +64,32 @@ public:
 											// or 32-bit temporary ID of blob or array
 #endif
 	public:
-		ULONG& bid_temp_id()
+		ULONG& bid_temp_id() 
 		{
 			return bid_number;
 		}
 
-		ULONG bid_temp_id() const
+		ULONG bid_temp_id() const 
 		{
 			return bid_number;
 		}
-
+		
 		// Handle encoding of record number for RDB$DB_KEY and BLOB ID structure.
-		// BLOB ID is stored in database thus we do encode large record numbers
-		// in a manner which preserves backward compatibility with older ODS.
+		// BLOB ID is stored in database thus we do encode large record numbers 
+		// in a manner which preserves backward compatibility with older ODS. 
 		// The same applies to bid_decode routine below.
-		inline void bid_encode(SINT64 value)
-		{
+		inline void bid_encode(SINT64 value) {
 			// Store lower 32 bits of number
 			bid_number = value;
 			// Store high 8 bits of number
 			bid_number_up = value >> 32;
 		}
 
-		inline SINT64 bid_decode() const
-		{
+		inline SINT64 bid_decode() const {
 			return bid_number + (((FB_UINT64) bid_number_up) << 32);
 		}
 	};
-
+	
 	// Default constructor.
 	inline RecordNumber() : value(EMPTY_NUMBER), valid(false) {}
 
@@ -103,41 +100,33 @@ public:
 	inline explicit RecordNumber(SINT64 number) : value(number), valid(true) {}
 
 	// Assignment operator
-	inline RecordNumber& operator =(const RecordNumber& from)
-	{
+	inline RecordNumber& operator =(const RecordNumber& from) { 
 		value = from.value;
-		valid = from.valid;
 		return *this;
 	}
 
-	inline bool operator ==(const RecordNumber& other) const
-	{
-		return value == other.value;
+	inline bool operator ==(const RecordNumber& other) const { 
+		return value == other.value; 
 	}
 
-	inline bool operator !=(const RecordNumber& other) const
-	{
-		return value != other.value;
+	inline bool operator !=(const RecordNumber& other) const { 
+		return value != other.value; 
 	}
 
-	inline bool operator > (const RecordNumber& other) const
-	{
-		return value > other.value;
+	inline bool operator > (const RecordNumber& other) const { 
+		return value > other.value; 
 	}
 
-	inline bool operator < (const RecordNumber& other) const
-	{
-		return value < other.value;
+	inline bool operator < (const RecordNumber& other) const { 
+		return value < other.value; 
 	}
 
-	inline bool operator >= (const RecordNumber& other) const
-	{
-		return value >= other.value;
+	inline bool operator >= (const RecordNumber& other) const { 
+		return value >= other.value; 
 	}
 
-	inline bool operator <= (const RecordNumber& other) const
-	{
-		return value <= other.value;
+	inline bool operator <= (const RecordNumber& other) const { 
+		return value <= other.value; 
 	}
 
 	inline void decrement() { value--; }
@@ -160,16 +149,16 @@ public:
 	) const
 	{
 		// We limit record number value to 40 bits and make sure decomposed value
-		// fits into 3 USHORTs. This all makes practical table size limit (not
+		// fits into 3 USHORTs. This all makes practical table size limit (not 
 		// counting allocation threshold and overhead) roughtly equal to:
 		// 16k page - 20000 GB
 		// 8k page -  10000 GB
 		// 4k page -   2500 GB
 		// 2k page -    600 GB
 		// 1k page -    150 GB
-		// Large page size values are recommended for large databases because
+		// Large page size values are recommended for large databases because 
 		// page allocators are generally linear.
-		return value < QUADCONST(0x10000000000) &&
+		return value < QUADCONST(0x10000000000) && 
 			value < (SINT64) MAX_USHORT * records_per_page * data_pages_per_pointer_page;
 	}
 
@@ -193,19 +182,17 @@ public:
 		SSHORT line,
 		SSHORT slot,
 		USHORT pp_sequence
-	)
+	) 
 	{
 		value = (((SINT64) pp_sequence) * data_pages_per_pointer_page + slot) * records_per_page + line;
 	}
 
 	// Handle encoding of record number for RDB$DB_KEY and BLOB ID structure.
-	inline void bid_encode(Packed* recno) const
-	{
+	inline void bid_encode(Packed* recno) const {
 		recno->bid_encode(value);
 	}
 
-	inline void bid_decode(const Packed* recno)
-	{
+	inline void bid_decode(const Packed* recno) {
 		value = recno->bid_decode();
 	}
 
@@ -215,7 +202,7 @@ public:
 	}
 
 private:
-	// Use signed value because negative values are widely used as flags in the
+	// Use signed value because negative values are widely used as flags in the 
 	// engine. Since page number is the signed 32-bit integer and it is also may
 	// be stored in this structure we want sign extension to take place.
 	SINT64 value;

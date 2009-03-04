@@ -1,26 +1,26 @@
 //____________________________________________________________
-//
+//  
 //		PROGRAM:	Language Preprocessor
 //		MODULE:		pat.cpp
 //		DESCRIPTION:	Code generator pattern generator
-//
+//  
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//
+//  
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//
+//  
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//
+//  
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//
+//  
 //
 //____________________________________________________________
 //
@@ -36,30 +36,29 @@
 #include "../gpre/lang_proto.h"
 
 
-enum pat_t {
+typedef enum {
 	NL,
-	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length
-	DH, DF,						// Database handle, filename
-	TH,							// Transaction handle
-	BH, BI,						// Blob handle, blob_ident
-	FH,							// Form handle
-	V1, V2,						// Status vectors
-	I1, I2,						// Identifier numbers
-	RF, RE,						// OS- and language-dependent REF and REF-end character
-	VF, VE,						// OS- and language-dependent VAL and VAL-end character
+	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length 
+	DH, DF,						// Database handle, filename 
+	TH,							// Transaction handle 
+	BH, BI,						// Blob handle, blob_ident 
+	FH,							// Form handle 
+	V1, V2,						// Status vectors 
+	I1, I2,						// Identifier numbers 
+	RF, RE,						// OS- and language-dependent REF and REF-end character 
+	VF, VE,						// OS- and language-dependent VAL and VAL-end character 
 	S1, S2, S3, S4, S5, S6, S7,
-	// Arbitrary strings
+	// Arbitrary strings 
 	N1, N2, N3, N4,				// Arbitrary number (SSHORT)
 	L1, L2,						// Arbitrary number (SLONG)
-	PN, PL, PI,					// Port number, port length, port ident
-	QN, QL, QI,					// Second port number, port length, port ident
-	IF, EL, EN,					// If, else, end
-	FR							// Field reference
-};
+	PN, PL, PI,					// Port number, port length, port ident 
+	QN, QL, QI,					// Second port number, port length, port ident 
+	IF, EL, EN,					// If, else, end 
+	FR							// Field reference 
+} PAT_T;
 
-static const struct ops
-{
-	pat_t ops_type;
+static const struct ops {
+	PAT_T ops_type;
 	TEXT ops_string[3];
 } operators[] =
 	{
@@ -110,9 +109,9 @@ static const struct ops
 
 
 //____________________________________________________________
-//
+//  
 //		Expand a pattern.
-//
+//  
 
 void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 {
@@ -140,6 +139,12 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		valend = "";
 	}
 	else if (gpreGlob.sw_language == lang_fortran) {
+#ifdef VMS
+		lang_ref = "%REF(";
+		refend = ")";
+		lang_val = "%VAL(";
+		valend = ")";
+#endif
 #if (defined AIX || defined AIX_PPC)
 		lang_ref = "%REF(";
 		refend = ")";
@@ -159,10 +164,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 								   values printed out are signed.  */
 	SLONG long_value;
 	TEXT c;
-	while (c = *pattern++)
-	{
-		if (c != '%')
-		{
+	while (c = *pattern++) {
+		if (c != '%') {
 			if (sw_gen) {
 				*p++ = c;
 				if ((c == '\n') && (*pattern))
@@ -177,16 +180,13 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		bool handle_flag = false, long_flag = false;
 		const ops* oper_iter;
 		for (oper_iter = operators; oper_iter->ops_type != NL; oper_iter++)
+			if (oper_iter->ops_string[0] == pattern[0] &&
+				oper_iter->ops_string[1] == pattern[1])
 		{
-			if (oper_iter->ops_string[0] == pattern[0] && oper_iter->ops_string[1] == pattern[1])
-			{
 				break;
-			}
 		}
 		pattern += 2;
-
-		switch (oper_iter->ops_type)
-		{
+		switch (oper_iter->ops_type) {
 		case IF:
 			sw_gen = args->pat_condition;
 			continue;
@@ -361,45 +361,38 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			break;
 
 		default:
-			sprintf(buffer, "Unknown substitution \"%c%c\"", pattern[-2], pattern[-1]);
+			sprintf(buffer, "Unknown substitution \"%c%c\"", pattern[-2],
+					pattern[-1]);
 			CPR_error(buffer);
 			continue;
 		}
-
 		if (!sw_gen)
 			continue;
-
-		if (string)
-		{
-#ifdef GPRE_ADA
+		if (string) {
 			if (handle_flag && (gpreGlob.sw_language == lang_ada))
 			{
 				for (const TEXT* q = gpreGlob.ada_package; *q;)
 					*p++ = *q++;
 			}
-#endif
 			while (*string)
 				*p++ = *string++;
 			continue;
 		}
-
 		if (sw_ident)
 		{
 			if (long_flag)
 				sprintf(p, gpreGlob.long_ident_pattern, long_value);
 			else
 				sprintf(p, gpreGlob.ident_pattern, value);
-		}
-		else if (reference)
-		{
+		}	
+		else if (reference) {
 			if (!reference->ref_port)
 				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);
 			else {
 				TEXT temp1[16], temp2[16];
 				sprintf(temp1, gpreGlob.ident_pattern, reference->ref_port->por_ident);
 				sprintf(temp2, gpreGlob.ident_pattern, reference->ref_ident);
-				switch (gpreGlob.sw_language)
-				{
+				switch (gpreGlob.sw_language) {
 				case lang_fortran:
 				case lang_cobol:
 					strcpy(p, temp2);
@@ -422,10 +415,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	}
 
 	*p = 0;
-
 #if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
-	switch (gpreGlob.sw_language)
-	{
+	switch (gpreGlob.sw_language) {
 #ifdef GPRE_ADA
 		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer
 		   handles this problem and ensures that GPRE output is <=120 characters.

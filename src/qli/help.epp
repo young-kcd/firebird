@@ -43,6 +43,10 @@ const char* INDENT	= "  ";
 const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
 
+#ifdef VMS
+const char* TARGET	= "[syshlp]help.fdb";
+#endif
+
 #ifdef UNIX
 const char* TARGET	= "help/help.fdb";
 #endif
@@ -59,7 +63,7 @@ static void print_topic(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool
 static const TEXT* strip(const TEXT*);
 
 
-void HELP_fini()
+void HELP_fini(void)
 {
 /**************************************
  *
@@ -106,9 +110,9 @@ void HELP_help( qli_syntax* node)
 	const TEXT** topic = topics;
 	*topic++ = "QLI";
 
-	qli_name** ptr;
-	qli_name** end;
-	for (ptr = (qli_name**) node->syn_arg, end = ptr + node->syn_count; ptr < end; ptr++)
+	NAM *ptr, *end;
+	for (ptr = (NAM *) node->syn_arg, end = ptr + node->syn_count; ptr < end;
+		 ptr++)
 	{
 		*topic++ = (*ptr)->nam_string;
 	}
@@ -141,8 +145,7 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 	USHORT topics = 0;
 	USHORT l = strlen(parent);
 
-	FOR X IN TOPICS
-		WITH X.PARENT EQ parent SORTED BY X.TOPIC
+	FOR X IN TOPICS WITH X.PARENT EQ parent SORTED BY X.TOPIC
 		if (QLI_abort)
 			return 0;
 		const TEXT* p = X.TOPIC;
@@ -178,10 +181,11 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 }
 
 
-static void print_more(USHORT level,
+static void print_more(
+					   USHORT level,
 					   USHORT depth,
 					   const TEXT** topics,
-					   USHORT* max_level,
+					   USHORT * max_level,
 					   const TEXT* parent,
 					   bool error_flag) // unused
 {
@@ -217,14 +221,13 @@ static void print_more(USHORT level,
 // If we got anything, print the new topic
 
 	if (p != topic)
-	{
-		print_topic(level + 1, depth + 1, topics + 1, max_level, parent, false);
-		// strange, it doesn't use error_flag
-	}
+		print_topic(level + 1, depth + 1, topics + 1, max_level, parent,
+					false);  // strange, it doesn't use error_flag
 }
 
 
-static void print_topic(USHORT level,
+static void print_topic(
+						USHORT level,
 						USHORT depth,
 						const TEXT** topics,
 						USHORT* max_level, const TEXT* parent, bool error_flag)
@@ -258,8 +261,7 @@ static void print_topic(USHORT level,
 	TEXT* const next = p;
 	USHORT count = 0;
 
-	FOR X IN TOPICS
-		WITH X.FACILITY EQ "QLI" AND
+	FOR X IN TOPICS WITH X.FACILITY EQ "QLI" AND
 		(X.TOPIC STARTING WITH * topics AND X.PARENT EQ parent) OR
          (X.TOPIC = X.FACILITY AND X.TOPIC = *topics AND X.TOPIC = X.PARENT)
         count++;
@@ -270,8 +272,7 @@ static void print_topic(USHORT level,
 
 	count = 0;
 
-	FOR(LEVEL level) X IN TOPICS
-		WITH X.FACILITY EQ "QLI" AND
+	FOR(LEVEL level) X IN TOPICS WITH X.FACILITY EQ "QLI" AND
 		(X.TOPIC STARTING WITH * topics AND X.PARENT EQ parent) OR
         (X.TOPIC = X.FACILITY AND X.TOPIC = *topics AND X.TOPIC = X.PARENT)
 		SORTED BY X.TOPIC
@@ -294,7 +295,8 @@ static void print_topic(USHORT level,
 			*p++ = *q++;
 		*p = 0;
 		if (level < depth)
-			print_topic(level + 1, depth, topics + 1, max_level, string, error_flag);
+			print_topic(level + 1, depth, topics + 1, max_level, string,
+						error_flag);
 		else {
 			printf("\n%s\n\n", strip(string));
 			QLI_skip_line = true;
@@ -307,7 +309,8 @@ static void print_topic(USHORT level,
 			ERRQ_msg_format(81, sizeof(banner), banner, SafeArg() << INDENT);
 			// Msg81 %sSub-topics available:
 			if (additional_topics(string, banner, INDENT))
-				print_more(level, depth, topics, max_level, string, error_flag);
+				print_more(level, depth, topics, max_level, string,
+						   error_flag);
 		}
 	END_FOR;
 

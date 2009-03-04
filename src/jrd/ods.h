@@ -60,7 +60,7 @@ const USHORT ODS_VERSION8	= 8;		/* new btree structure to support pc semantics *
 const USHORT ODS_VERSION9	= 9;		/* btree leaf pages are always propogated up */
 const USHORT ODS_VERSION10	= 10;		/* V6.0 features. SQL delimited idetifier,
 									SQLDATE, and 64-bit exact numeric type */
-const USHORT ODS_VERSION11	= 11;		/* Firebird 2.x features */
+const USHORT ODS_VERSION11	= 11;		/* Firebird 2.0 features */
 
 /* ODS minor version -- minor versions ARE compatible, but may be
    increasingly functional.  Add new minor versions, but leave previous
@@ -103,8 +103,7 @@ const USHORT ODS_CURRENT10		= 1;
 
 const USHORT ODS_CURRENT11_0	= 0;		/* Firebird 2.0 features */
 const USHORT ODS_CURRENT11_1	= 1;		/* Firebird 2.1 features */
-const USHORT ODS_CURRENT11_2	= 2;		/* Firebird 2.5 features */
-const USHORT ODS_CURRENT11		= 2;
+const USHORT ODS_CURRENT11		= 1;
 
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
@@ -121,11 +120,10 @@ const USHORT ODS_10_0		= ENCODE_ODS(ODS_VERSION10, 0);
 const USHORT ODS_10_1		= ENCODE_ODS(ODS_VERSION10, 1);
 const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
-const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
-/* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and
+/* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
    the next 11 bits are major version number. The highest significant bit
    is the Firebird database flag. */
 inline USHORT DECODE_ODS_MAJOR(USHORT ods_version) {
@@ -146,7 +144,7 @@ const USHORT ODS_RELEASED = ODS_CURRENT11_0;	// The lowest stable minor version
 const USHORT ODS_CURRENT = ODS_CURRENT11;		// The highest defined minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT_VERSION = ODS_11_2;	// Current ODS version in use which includes
+const USHORT ODS_CURRENT_VERSION = ODS_11_1;	// Current ODS version in use which includes
 												// both major and minor ODS versions!
 
 
@@ -264,12 +262,11 @@ struct IndexJumpNode
 	UCHAR* nodePointer;	// pointer to where this node can be read from the page
 	USHORT prefix;		// length of prefix against previous jump node
 	USHORT length;		// length of data in jump node (together with prefix this is prefix for pointing node)
-	USHORT offset;		// offset to node in page
+	USHORT offset;		// offset to node in page  
 	UCHAR* data;		// Data can be read from here
 };
 
-struct IndexJumpInfo
-{
+struct IndexJumpInfo {
 	USHORT firstNodeOffset;		// offset to node in page
 	USHORT jumpAreaSize;		// size area before a new jumpnode is made
 	UCHAR  jumpers;				// nr of jump-nodes in page, with a maximum of 255
@@ -293,8 +290,7 @@ struct data_page
 	SLONG dpg_sequence;			/* Sequence number in relation */
 	USHORT dpg_relation;		/* Relation id */
 	USHORT dpg_count;			/* Number of record segments on page */
-	struct dpg_repeat
-	{
+	struct dpg_repeat {
 		USHORT dpg_offset;		/* Offset of record fragment */
 		USHORT dpg_length;		/* Length of record fragment */
 	} dpg_rpt[1];
@@ -315,8 +311,7 @@ struct index_root_page
 	pag irt_header;
 	USHORT irt_relation;		/* relation id (for consistency) */
 	USHORT irt_count;			/* Number of indices */
-	struct irt_repeat
-	{
+	struct irt_repeat {
 		SLONG irt_root;			/* page number of index root */
 		union {
 			float irt_selectivity;	/* selectivity of index - NOT USED since ODS11 */
@@ -330,14 +325,12 @@ struct index_root_page
 
 /* key descriptor */
 
-struct irtd_ods10
-{
+struct irtd_ods10 {
 	USHORT irtd_field;
 	USHORT irtd_itype;
 };
 
-struct irtd : public irtd_ods10
-{
+struct irtd : public irtd_ods10 {
 	float irtd_selectivity;
 };
 
@@ -430,14 +423,13 @@ const USHORT hdr_shutdown_full		= 0x1000;
 const USHORT hdr_shutdown_single	= 0x1080;
 
 /*
-struct sfd
-{
+struct sfd {
 	SLONG sfd_min_page;			// Minimum page number
 	SLONG sfd_max_page;			// Maximum page number
 	UCHAR sfd_index;			// Sequence of secondary file
 	UCHAR sfd_file[1];			// Given file name
 };
-typedef sfd SFD;
+typedef sfd SFD; 
 */
 
 /* Page Inventory Page */
@@ -507,8 +499,7 @@ struct rhd {
 
 /* Record header for fragmented record */
 
-struct rhdf
-{
+struct rhdf {
 	SLONG rhdf_transaction;		/* transaction id */
 	SLONG rhdf_b_page;			/* back pointer */
 	USHORT rhdf_b_line;			/* back line */
@@ -524,8 +515,7 @@ struct rhdf
 
 /* Record header for blob header */
 
-struct blh
-{
+struct blh {
 	SLONG blh_lead_page;		/* First data page number */
 	SLONG blh_max_sequence;		/* Number of data pages */
 	USHORT blh_max_segment;		/* Longest segment */
@@ -552,13 +542,12 @@ const USHORT rhd_delta			= 32;		/* prior version is differences only */
 const USHORT rhd_large			= 64;		/* object is large */
 const USHORT rhd_damaged		= 128;		/* object is known to be damaged */
 const USHORT rhd_gc_active		= 256;		/* garbage collecting dead record version */
-const USHORT rhd_uk_modified	= 512;		/* record key field values are changed */
+
 
 
 /* Log page */
 
-struct ctrl_pt
-{
+struct ctrl_pt {
 	SLONG cp_seqno;
 	SLONG cp_offset;
 	SLONG cp_p_offset;
@@ -585,10 +574,10 @@ struct log_info_page
 
 /* additions for write ahead log, almost obsolete. */
 
-//const int CTRL_FILE_LEN			= 255;	/* Pre allocated size of file name */
-//const USHORT CLUMP_ADD			= 0;
-//const USHORT CLUMP_REPLACE		= 1;
-//const USHORT CLUMP_REPLACE_ONLY	= 2;
+//const int CTRL_FILE_LEN		= 255;	/* Pre allocated size of file name */
+const USHORT CLUMP_ADD			= 0;
+const USHORT CLUMP_REPLACE		= 1;
+const USHORT CLUMP_REPLACE_ONLY= 2;
 
 /* Log Clumplet types */
 
@@ -618,8 +607,7 @@ struct Descriptor
 // Array description, "internal side" used by the engine.
 // And stored on the disk, in the relation summary blob.
 
-struct InternalArrayDesc
-{
+struct InternalArrayDesc {
 	UCHAR iad_version;			/* Array descriptor version number */
 	UCHAR iad_dimensions;		/* Dimensions of array */
 	USHORT iad_struct_count;	/* Number of struct elements */
@@ -627,8 +615,7 @@ struct InternalArrayDesc
 	USHORT iad_length;			/* Length of array descriptor */
 	SLONG iad_count;			/* Total number of elements */
 	SLONG iad_total_length;		/* Total length of array */
-	struct iad_repeat
-	{
+	struct iad_repeat {
 		Descriptor iad_desc;	/* Element descriptor */
 		SLONG iad_length;		/* Length of "vector" element */
 		SLONG iad_lower;		/* Lower bound */
@@ -644,7 +631,7 @@ inline int IAD_LEN(int count)
 {
 	if (!count)
 		count = 1;
-	return sizeof (InternalArrayDesc) +
+	return sizeof (InternalArrayDesc) + 
 		(count - 1) * sizeof (InternalArrayDesc::iad_repeat);
 }
 */

@@ -27,8 +27,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/File.h"
 
-class TempFile : public Firebird::File
-{
+class TempFile : public Firebird::File {
 public:
 	TempFile(MemoryPool& pool,
 			 const Firebird::PathName& prefix,
@@ -39,7 +38,8 @@ public:
 		init(directory, prefix);
 	}
 
-	TempFile(const Firebird::PathName& prefix, bool do_unlink = true)
+	TempFile(const Firebird::PathName& prefix,
+			 bool do_unlink = true)
 		: position(0), size(0), doUnlink(do_unlink)
 	{
 		init("", prefix);
@@ -48,7 +48,7 @@ public:
 	virtual ~TempFile();
 
 	size_t read(offset_t, void*, size_t);
-	size_t write(offset_t, const void*, size_t);
+	size_t write(offset_t, void*, size_t);
 
 	void unlink();
 
@@ -69,7 +69,7 @@ public:
 
 private:
 	void init(const Firebird::PathName&, const Firebird::PathName&);
-	void seek(const offset_t);
+	void seek(offset_t);
 
 #if defined(WIN_NT)
 	HANDLE handle;

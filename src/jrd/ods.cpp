@@ -52,7 +52,7 @@ bool isSupported(USHORT majorVersion, USHORT minorVersion)
 	if (majorVersion == ODS_VERSION &&
 		minorVersion >= ODS_RELEASED &&
 		minorVersion <= ODS_CURRENT)
-	{
+	{	
 		return true;
 	}
 

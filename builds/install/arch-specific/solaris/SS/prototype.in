@@ -10,9 +10,9 @@ i postremove=Postremove
 i prototype=Prototype
 
 !default 755 firebird firebird
-d none  /usr         ? ? ?
-d none  /usr/lib     ? ? ?
-d none /opt          ? ? ?
+d none /usr         ? ? ?
+d none /usr/lib     ? ? ?
+d none /opt         ? ? ?
 
 d none @prefix@ 0755 firebird firebird
 
@@ -32,7 +32,6 @@ d none @prefix@/bin  0755 firebird firebird
 
 s none /usr/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.2
 s none /usr/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.2
-
 
 # include
 
@@ -173,9 +172,9 @@ f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so
 s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.2
 
-#f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0755 firebird firebird
-#s none @prefix@/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
-#s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
+#f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0555 firebird firebird
+#s none @prefix@/lib/libfbembed.so.2.1=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
+#s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2.1
 
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 firebird firebird
 

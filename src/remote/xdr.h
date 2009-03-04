@@ -31,29 +31,37 @@
 
 #include "../jrd/common.h"
 
-#include <sys/types.h>
+#ifdef VMS
+#error "VMS remote must be completed"
+#endif
+
 #ifdef WIN_NT
+#include <sys/types.h>
 #include <winsock.h>
-typedef	char* caddr_t;
+typedef	char *	caddr_t;
 #else // WIN_NT
+#include <sys/types.h>
 #include <netinet/in.h>
+#ifdef _AIX
+#include <sys/select.h>
+#endif
 #endif // WIN_NT
 
 typedef int XDR_INT;
 typedef int bool_t;
-//#ifndef enum_t
-//#define enum_t	enum xdr_op
-//#endif
+#ifndef enum_t
+#define enum_t	enum xdr_op
+#endif
 
-#define xdr_getpostn(xdr)	((*(*xdr).x_ops->x_getpostn)(xdr)) // unused?
-#define xdr_destroy(xdr)	(*(*xdr).x_ops->x_destroy)() // unused?
+#define xdr_getpostn(xdr)	((*(*xdr).x_ops->x_getpostn)(xdr))
+#define xdr_destroy(xdr)	(*(*xdr).x_ops->x_destroy)()
 
 
 enum xdr_op { XDR_ENCODE = 0, XDR_DECODE = 1, XDR_FREE = 2 };
 
 typedef struct xdr_t
 {
-	xdr_op x_op;			/* operation; fast additional param */
+	enum xdr_op	x_op;			/* operation; fast additional param */
 	struct xdr_ops
 	{
 		bool_t  (*x_getlong)(struct xdr_t*, SLONG*);		/* get a long from underlying stream */
@@ -69,11 +77,6 @@ typedef struct xdr_t
 	caddr_t	x_private;	/* pointer to private data */
 	caddr_t	x_base;		/* private used for position info */
 	int		x_handy;	/* extra private word */
-
-public:
-	xdr_t() :
-		x_op(XDR_ENCODE), x_ops(0), x_public(0), x_private(0), x_base(0), x_handy(0)
-	{ }
 } XDR;
 
 /* Descriminated union crud */
@@ -81,11 +84,11 @@ public:
 // CVC: Restore the old definition if some compilation failure happens.
 //typedef bool_t			(*xdrproc_t)();
 typedef bool_t          (*xdrproc_t)(xdr_t*, SCHAR*);
-//#define NULL_xdrproc_t	((xdrproc_t) 0)
+#define NULL_xdrproc_t	((xdrproc_t) 0)
 
 struct xdr_discrim
 {
-	xdr_op		value;
+	enum_t		value;
 	xdrproc_t	proc;
 };
 

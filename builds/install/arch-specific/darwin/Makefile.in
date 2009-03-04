@@ -7,7 +7,6 @@ include	$(ROOT)/gen/make.rules
 include	$(ROOT)/gen/make.shared.variables
 
 
-
 DIR = $(ROOT)/gen/firebird/installer_scratch
 
 export BLOCKSIZE

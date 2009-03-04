@@ -63,16 +63,7 @@ public:
 	{
 	}
 
-	void convert(ULONG srcLen,
-				 const UCHAR* src,
-				 Firebird::UCharBuffer& dst,
-				 ULONG* badInputPos = NULL,
-				 bool ignoreTrailingSpaces = false)
-	{
-		dst.getBuffer(convertLength(srcLen));
-		dst.resize(convert(srcLen, src, dst.getCapacity(), dst.begin(), badInputPos, ignoreTrailingSpaces));
-	}
-
+public:
 	// CVC: Beware of this can of worms: csconvert_convert gets assigned
 	// different functions that not necessarily take the same argument. Typically,
 	// the src pointer and the dest pointer use different types.
@@ -119,7 +110,7 @@ public:
 			ULONG len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
 
 			if (len == INTL_BAD_STR_LENGTH || errCode != 0)
-				raiseError(isc_string_truncation);
+				Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
 
 			fb_assert(len % sizeof(USHORT) == 0);
 
@@ -129,15 +120,24 @@ public:
 				reinterpret_cast<UCHAR*>(temp.getBuffer(len / 2)), &errCode, &errPos);
 
 			if (len == INTL_BAD_STR_LENGTH)
-				raiseError(isc_transliteration_failed);
+			{
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					isc_arg_end);
+			}
 
 			if (errCode == CS_BAD_INPUT && badInputPos)
 				*badInputPos = errPos;
 			else if (errCode != 0)
-				raiseError(isc_transliteration_failed);
+			{
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					isc_arg_end);
+			}
 
 			fb_assert(len % sizeof(USHORT) == 0);
-
 			temp.shrink(len / 2);
 
 			len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, reinterpret_cast<const UCHAR*>(temp.begin()),
@@ -145,7 +145,10 @@ public:
 
 			if (len == INTL_BAD_STR_LENGTH)
 			{
-				raiseError(isc_transliteration_failed);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					isc_arg_end);
 			}
 			else if (errCode == CS_TRUNCATION_ERROR)
 			{
@@ -163,8 +166,8 @@ public:
 						{
 							if (badInputPos)
 								break;
-
-							raiseError(isc_string_truncation);
+							else
+								Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
 						}
 					}
 
@@ -174,7 +177,7 @@ public:
 				else
 				{
 					if (!badInputPos)
-						raiseError(isc_string_truncation);
+						Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
 				}
 
 				if (badInputPos)
@@ -191,52 +194,69 @@ public:
 				}
 			}
 			else if (errCode != 0)
-				raiseError(isc_transliteration_failed);
+			{
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					isc_arg_end);
+			}
 
 			return len;
 		}
-
-		const ULONG len = (*cnvt1->csconvert_fn_convert)(
-			cnvt1, srcLen, src, dstLen, dst, &errCode, &errPos);
-
-		if (len == INTL_BAD_STR_LENGTH)
-			raiseError(isc_transliteration_failed);
-
-		if (errCode == CS_BAD_INPUT && badInputPos)
-			*badInputPos = errPos;
-		else if (errCode != 0)
+		else
 		{
-			if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
+			ULONG len = (*cnvt1->csconvert_fn_convert)(
+				cnvt1, srcLen, src, dstLen, dst, &errCode, &errPos);
+
+			if (len == INTL_BAD_STR_LENGTH)
 			{
-				const UCHAR* end = src + srcLen - charSet1->charset_space_length;
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					isc_arg_end);
+			}
 
-				for (const UCHAR* p = src + errPos; p <= end; p += charSet1->charset_space_length)
+			if (errCode == CS_BAD_INPUT && badInputPos)
+				*badInputPos = errPos;
+			else if (errCode != 0)
+			{
+				if (ignoreTrailingSpaces && errCode == CS_TRUNCATION_ERROR)
 				{
-					if (memcmp(p, charSet1->charset_space_character,
-							charSet1->charset_space_length) != 0)
-					{
-						if (badInputPos)
-						{
-							*badInputPos = errPos;
-							break;
-						}
+					const UCHAR* end = src + srcLen - charSet1->charset_space_length;
 
-						raiseError(isc_string_truncation);
+					for (const UCHAR* p = src + errPos; p <= end; p += charSet1->charset_space_length)
+					{
+						if (memcmp(p, charSet1->charset_space_character,
+								charSet1->charset_space_length) != 0)
+						{
+							if (badInputPos)
+							{
+								*badInputPos = errPos;
+								break;
+							}
+							else
+								Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
+						}
 					}
 				}
-			}
-			else if (errCode == CS_TRUNCATION_ERROR)
-			{
-				if (badInputPos)
-					*badInputPos = errPos;
+				else if (errCode == CS_TRUNCATION_ERROR)
+				{
+					if (badInputPos)
+						*badInputPos = errPos;
+					else
+						Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
+				}
 				else
-					raiseError(isc_string_truncation);
+				{
+					Firebird::status_exception::raise(
+						isc_arith_except,
+						isc_arg_gds, isc_transliteration_failed,
+						isc_arg_end);
+				}
 			}
-			else
-				raiseError(isc_transliteration_failed);
-		}
 
-		return len;
+			return len;
+		}
 	}
 
 	// To be used for measure length of conversion
@@ -253,7 +273,7 @@ public:
 		}
 
 		if (len == INTL_BAD_STR_LENGTH || errCode != 0)
-			raiseError(isc_string_truncation);
+			Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
 
 		return len;
 	}
@@ -267,14 +287,6 @@ private:
 	charset* charSet2;
 	csconvert* cnvt1;
 	csconvert* cnvt2;
-
-private:
-	void raiseError(ISC_STATUS code)
-	{
-		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_arith_except) <<
-			Firebird::Arg::Gds(code));
-	}
-
 };
 
 }	// namespace Jrd

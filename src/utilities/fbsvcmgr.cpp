@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		fbsvcmgr.cpp
+ *	MODULE:		gserv.cpp
  *	DESCRIPTION:	Command line interface with services manager
  *
  *  The contents of this file are subject to the Initial
@@ -23,11 +23,9 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  2008 Khorsun Vladyslav
  */
 
 #include "firebird.h"
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,15 +33,12 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/classes/timestamp.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 
-using namespace Firebird;
-
 // Here we define main control structure
 
-typedef bool PopulateFunction(char**&, ClumpletWriter&, unsigned int);
+typedef bool PopulateFunction(char**&, Firebird::ClumpletWriter&, unsigned int);
 
 struct Switches
 {
@@ -51,24 +46,24 @@ struct Switches
 	PopulateFunction* populate;
 	const Switches* options;
 	unsigned int tag;
-	UCHAR tagInf;
+	unsigned char tagInf;
 };
 
 // Get message from security database
 
-string getMessage(int n)
+Firebird::string getMessage(int n)
 {
 	char buffer[256];
 	const int FACILITY = 22;
 
 	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, MsgFormat::SafeArg());
 
-	return string(buffer);
+	return Firebird::string(buffer);
 }
 
-string prepareSwitch(const char* arg)
+Firebird::string prepareSwitch(const char* arg)
 {
-	string s(arg);
+	Firebird::string s(arg);
 	if (s[0] == '-')
 	{
 		s.erase(0, 1);
@@ -80,89 +75,27 @@ string prepareSwitch(const char* arg)
 
 // add string tag to spb
 
-bool putStringArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
 		return false;
 
 	char* x = *av++;
-	string s(tag == isc_spb_password ? fb_utils::get_passwd(x) : x);
+	Firebird::string s(tag == isc_spb_password ? fb_utils::get_passwd(x) : x);
 	spb.insertString(tag, s);
-
-	return true;
-}
-
-// add string tag from file (fetch password)
-
-bool putFileArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
-{
-	if (! *av)
-		return false;
-
-	const char* s = NULL;
-	switch (fb_utils::fetchPassword(*av, s))
-	{
-	case fb_utils::FETCH_PASS_OK:
-		break;
-	case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
-		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
-		break;
-	case fb_utils::FETCH_PASS_FILE_READ_ERROR:
-		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
-		break;
-	case fb_utils::FETCH_PASS_FILE_EMPTY:
-		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
-		break;
-	}
-
-	spb.insertString(tag, s, strlen(s));
-	++av;
-
-	return true;
-}
-
-bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
-{
-	if (! *av)
-		return false;
-
-	FILE* file = fopen(*av, "rb");
-	if (!file) {
-		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
-	}
-	
-	fseek(file, 0, SEEK_END);
-	const long len = ftell(file);
-	if (len == 0) {
-		fclose(file);
-		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
-	}
-
-	HalfStaticArray<UCHAR, 1024> buff(*getDefaultMemoryPool(), len);
-	UCHAR* p = buff.getBuffer(len);
-
-	fseek(file, 0, SEEK_SET);
-	if (fread(p, 1, len, file) != len)	{
-		fclose(file);
-		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
-	}
-
-	fclose(file);
-	spb.insertBytes(tag, p, len);
-	++av;
 
 	return true;
 }
 
 // add some special format tags to spb
 
-bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
+bool putSpecTag(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag,
 				const Switches* sw, ISC_STATUS errorCode)
 {
 	if (! *av)
 		return false;
 
-	const string s(prepareSwitch(*av++));
+	const Firebird::string s(prepareSwitch(*av++));
 	for (; sw->name; ++sw)
 	{
 		if (s == sw->name)
@@ -172,63 +105,46 @@ bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
 		}
 	}
 
-	status_exception::raise(Arg::Gds(errorCode));
+	Firebird::status_exception::raise(errorCode, isc_arg_end);
 	return false;	// compiler warning silencer
 }
 
-const Switches amSwitch[] =
-{
+const Switches amSwitch[] = {
 	{"prp_am_readonly", 0, 0, isc_spb_prp_am_readonly, 0},
 	{"prp_am_readwrite", 0, 0, isc_spb_prp_am_readwrite, 0},
 	{0, 0, 0, 0, 0}
 };
 
-bool putAccessMode(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putAccessMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	return putSpecTag(av, spb, tag, amSwitch, isc_fbsvcmgr_bad_am);
 }
 
-const Switches wmSwitch[] =
-{
+const Switches wmSwitch[] = {
 	{"prp_wm_async", 0, 0, isc_spb_prp_wm_async, 0},
 	{"prp_wm_sync", 0, 0, isc_spb_prp_wm_sync, 0},
 	{0, 0, 0, 0, 0}
 };
 
-bool putWriteMode(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putWriteMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	return putSpecTag(av, spb, tag, wmSwitch, isc_fbsvcmgr_bad_wm);
 }
 
-const Switches rsSwitch[] =
-{
+const Switches rsSwitch[] = {
 	{"prp_res_use_full", 0, 0, isc_spb_prp_res_use_full, 0},
 	{"prp_res", 0, 0, isc_spb_prp_res, 0},
 	{0, 0, 0, 0, 0}
 };
 
-bool putReserveSpace(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putReserveSpace(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	return putSpecTag(av, spb, tag, rsSwitch, isc_fbsvcmgr_bad_rs);
 }
 
-const Switches shutSwitch[] =
-{
-	{"prp_sm_normal", 0, 0, isc_spb_prp_sm_normal, 0},
-	{"prp_sm_multi", 0, 0, isc_spb_prp_sm_multi, 0},
-	{"prp_sm_single", 0, 0, isc_spb_prp_sm_single, 0},
-	{"prp_sm_full", 0, 0, isc_spb_prp_sm_full, 0},
-	{0, 0, 0, 0, 0}
-};
-
-bool putShutdownMode(char**& av, ClumpletWriter& spb, unsigned int tag)
-{
-	return putSpecTag(av, spb, tag, shutSwitch, isc_fbsvcmgr_bad_sm);
-}
-
 // add numeric (int32) tag to spb
 
-bool putNumericArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
 		return false;
@@ -241,7 +157,7 @@ bool putNumericArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 
 // add boolean option to spb
 
-bool putOption(char**&, ClumpletWriter& spb, unsigned int tag)
+bool putOption(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	spb.insertInt(isc_spb_options, tag);
 
@@ -250,7 +166,7 @@ bool putOption(char**&, ClumpletWriter& spb, unsigned int tag)
 
 // add argument-less tag to spb
 
-bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
+bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	spb.insertTag(tag);
 
@@ -260,13 +176,15 @@ bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
 // populate spb with tags according to user-defined command line switches
 // and programmer-defined set of Switches array
 
-bool populateSpbFromSwitches(char**& av, ClumpletWriter& spb,
-							 const Switches* sw, ClumpletWriter* infoSpb)
+bool populateSpbFromSwitches(char**& av, 
+		Firebird::ClumpletWriter& spb, 
+		const Switches* sw, 
+		Firebird::ClumpletWriter* infoSpb)
 {
 	if (! *av)
 		return false;
 
-	const string s(prepareSwitch(*av));
+	const Firebird::string s(prepareSwitch(*av));
 
 	for (; sw->name; ++sw)
 	{
@@ -294,18 +212,15 @@ bool populateSpbFromSwitches(char**& av, ClumpletWriter& spb,
 	return false;
 }
 
-const Switches attSwitch[] =
-{
+const Switches attSwitch[] = {
 	{"user", putStringArgument, 0, isc_spb_user_name, 0},
 	{"user_name", putStringArgument, 0, isc_spb_user_name, 0},
 	{"password", putStringArgument, 0, isc_spb_password, 0},
-	{"fetch_password", putFileArgument, 0, isc_spb_password, 0},
 	{"trusted_auth", putSingleTag, 0, isc_spb_trusted_auth, 0},
 	{0, 0, 0, 0, 0}
 };
-
-const Switches infSwitch[] =
-{
+	
+const Switches infSwitch[] = {
 	{"info_server_version", putSingleTag, 0, isc_info_svc_server_version, 0},
 	{"info_implementation", putSingleTag, 0, isc_info_svc_implementation, 0},
 	{"info_user_dbpath", putSingleTag, 0, isc_info_svc_user_dbpath, 0},
@@ -317,8 +232,7 @@ const Switches infSwitch[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches backupOptions[] =
-{
+const Switches backupOptions[] = {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"verbose", putSingleTag, 0, isc_spb_verbose, 0},
 	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
@@ -331,12 +245,10 @@ const Switches backupOptions[] =
 	{"bkp_old_descriptions", putOption, 0, isc_spb_bkp_old_descriptions, 0},
 	{"bkp_non_transportable", putOption, 0, isc_spb_bkp_non_transportable, 0},
 	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
-	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches restoreOptions[] =
-{
+const Switches restoreOptions[] = {
 	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"res_length", putNumericArgument, 0, isc_spb_res_length, 0},
@@ -354,8 +266,7 @@ const Switches restoreOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches propertiesOptions[] =
-{
+const Switches propertiesOptions[] = {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"prp_page_buffers", putNumericArgument, 0, isc_spb_prp_page_buffers, 0},
 	{"prp_sweep_interval", putNumericArgument, 0, isc_spb_prp_sweep_interval, 0},
@@ -368,16 +279,10 @@ const Switches propertiesOptions[] =
 	{"prp_write_mode", putWriteMode, 0, isc_spb_prp_write_mode, 0},
 	{"prp_activate", putOption, 0, isc_spb_prp_activate, 0},
 	{"prp_db_online", putOption, 0, isc_spb_prp_db_online, 0},
-	{"prp_force_shutdown", putNumericArgument, 0, isc_spb_prp_force_shutdown, 0},
-	{"prp_attachments_shutdown", putNumericArgument, 0, isc_spb_prp_attachments_shutdown, 0},
-	{"prp_transactions_shutdown", putNumericArgument, 0, isc_spb_prp_transactions_shutdown, 0},
-	{"prp_shutdown_mode", putShutdownMode, 0, isc_spb_prp_shutdown_mode, 0},
-	{"prp_online_mode", putShutdownMode, 0, isc_spb_prp_online_mode, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches repairOptions[] =
-{
+const Switches repairOptions[] = {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"rpr_commit_trans", putNumericArgument, 0, isc_spb_rpr_commit_trans, 0},
 	{"rpr_rollback_trans", putNumericArgument, 0, isc_spb_rpr_rollback_trans, 0},
@@ -393,8 +298,7 @@ const Switches repairOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches statisticsOptions[] =
-{
+const Switches statisticsOptions[] = {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sts_data_pages", putOption, 0, isc_spb_sts_data_pages, 0},
 	{"sts_hdr_pages", putOption, 0, isc_spb_sts_hdr_pages, 0},
@@ -403,23 +307,14 @@ const Switches statisticsOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches dispdelOptions[] =
-{
+const Switches dispdelOptions[] = {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
 	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches mappingOptions[] =
-{
-	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
-	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
-	{0, 0, 0, 0, 0}
-};
-
-const Switches addmodOptions[] =
-{
+const Switches addmodOptions[] = {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
 	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
@@ -433,65 +328,26 @@ const Switches addmodOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches nbackOptions[] =
-{
-	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
-	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
-	{"nbk_level", putNumericArgument, 0, isc_spb_nbk_level, 0},
-	{"nbk_no_triggers", putOption, 0, isc_spb_nbk_no_triggers, 0},
-	{0, 0, 0, 0, 0}
-};
-
-const Switches nrestOptions[] =
-{
-	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
-	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
-	{0, 0, 0, 0, 0}
-};
-
-const Switches traceStartOptions[] =
-{
-	{"trc_cfg", putFileFromArgument, 0, isc_spb_trc_cfg, 0},
-	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
-	{0, 0, 0, 0, 0}
-};
-
-const Switches traceChgStateOptions[] =
-{
-	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
-	{"trc_id", putNumericArgument, 0, isc_spb_trc_id, 0},
-	{0, 0, 0, 0, 0}
-};
-
-const Switches actionSwitch[] =
-{
+const Switches actionSwitch[] = {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
 	{"action_properties", putSingleTag, propertiesOptions, isc_action_svc_properties, 0},
 	{"action_repair", putSingleTag, repairOptions, isc_action_svc_repair, 0},
 	{"action_db_stats", putSingleTag, statisticsOptions, isc_action_svc_db_stats, isc_info_svc_line},
-	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_to_eof},
+	{"action_get_ib_log", putSingleTag, 0, isc_action_svc_get_ib_log, isc_info_svc_line},
 	{"action_display_user", putSingleTag, dispdelOptions, isc_action_svc_display_user, isc_info_svc_get_users},
 	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
-	{"action_nbak", putSingleTag, nbackOptions, isc_action_svc_nbak, 0},
-	{"action_nrest", putSingleTag, nrestOptions, isc_action_svc_nrest, 0},
-	{"action_trace_start", putSingleTag, traceStartOptions, isc_action_svc_trace_start, isc_info_svc_to_eof},
-	{"action_trace_suspend", putSingleTag, traceChgStateOptions, isc_action_svc_trace_suspend, isc_info_svc_line},
-	{"action_trace_resume", putSingleTag, traceChgStateOptions, isc_action_svc_trace_resume, isc_info_svc_line},
-	{"action_trace_stop", putSingleTag, traceChgStateOptions, isc_action_svc_trace_stop, isc_info_svc_line},
-	{"action_trace_list", putSingleTag, 0, isc_action_svc_trace_list, isc_info_svc_line},
-	{"action_set_mapping", putSingleTag, mappingOptions, isc_action_svc_set_mapping, 0},
-	{"action_drop_mapping", putSingleTag, mappingOptions, isc_action_svc_drop_mapping, 0},
 	{0, 0, 0, 0, 0}
 };
 
 // print information, returned by isc_svc_query() call
 
-bool getLine(string& dest, const char*& p)
+bool getLine(Firebird::string& dest, const char*& p)
 {
-	unsigned short length = (unsigned short) isc_vax_integer (p, sizeof(unsigned short));
+	unsigned short length = (unsigned short)
+		isc_vax_integer (p, sizeof(unsigned short));
 	p += sizeof (unsigned short);
 	dest.assign(p, length);
 	p += length;
@@ -500,25 +356,17 @@ bool getLine(string& dest, const char*& p)
 
 int getNumeric(const char*& p)
 {
-	unsigned int num = (unsigned int) isc_vax_integer (p, sizeof(unsigned int));
+	unsigned int num = (unsigned int)
+		isc_vax_integer (p, sizeof(unsigned int));
 	p += sizeof (unsigned int);
 	return num;
 }
 
 bool printLine(const char*& p)
 {
-	string s;
+	Firebird::string s;
 	bool rc = getLine(s, p);
-	if (rc)
-		printf ("%s\n", s.c_str());
-	return rc;
-}
-
-bool printData(const char*& p)
-{
-	string s;
-	bool rc = getLine(s, p);
-	printf ("%s", s.c_str());
+	printf ("%s\n", s.c_str());
 	return rc;
 }
 
@@ -544,7 +392,7 @@ void printNumeric(const char*& p, int num)
 class UserPrint
 {
 public:
-	string login, first, middle, last;
+	Firebird::string login, first, middle, last;
 	int gid, uid;
 
 private:
@@ -583,9 +431,6 @@ public:
 
 bool printInfo(const char* p, UserPrint& up)
 {
-	bool ret = false;
-	bool ignoreTruncation = false;
-
 	while (*p != isc_info_end)
 	{
 		switch (*p++)
@@ -614,8 +459,7 @@ bool printInfo(const char* p, UserPrint& up)
 
 		case isc_info_svc_svr_db_info:
 			printf ("%s:\n", getMessage(14).c_str());
-			while (*p != isc_info_flag_end)
-			{
+			while (*p != isc_info_flag_end) {
 				switch (*p++)
 				{
 				case isc_spb_dbname:
@@ -628,8 +472,8 @@ bool printInfo(const char* p, UserPrint& up)
 					printNumeric(p, 17);
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
-											Arg::Num(static_cast<unsigned char>(p[-1])));
+					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+						static_cast<unsigned char>(p[-1]), isc_arg_end);
 				}
 			}
 			p++;
@@ -644,7 +488,7 @@ bool printInfo(const char* p, UserPrint& up)
 					printString(p, 36);
 					break;
 				case isc_spb_tra_state:
-					switch (*p++)
+					switch(*p++)
 					{
 					case isc_spb_tra_state_limbo:
 			            printMessage(38);
@@ -659,8 +503,8 @@ bool printInfo(const char* p, UserPrint& up)
 			            printMessage(41);
 						break;
 					default:
-						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
-												Arg::Num(static_cast<unsigned char>(p[-1])));
+						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+							static_cast<unsigned char>(p[-1]), isc_arg_end);
 					}
 					break;
 				case isc_spb_tra_remote_site:
@@ -670,7 +514,7 @@ bool printInfo(const char* p, UserPrint& up)
 					printString(p, 43);
 					break;
 				case isc_spb_tra_advise:
-					switch (*p++)
+					switch(*p++)
 					{
 					case isc_spb_tra_advise_commit:
 			            printMessage(44);
@@ -682,8 +526,8 @@ bool printInfo(const char* p, UserPrint& up)
 			            printMessage(46);
 						break;
 					default:
-						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
-												Arg::Num(static_cast<unsigned char>(p[-1])));
+						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+							static_cast<unsigned char>(p[-1]), isc_arg_end);
 					}
 					break;
 				case isc_spb_multi_tra_id:
@@ -696,8 +540,8 @@ bool printInfo(const char* p, UserPrint& up)
 					printNumeric(p, 37);
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
-											Arg::Num(static_cast<unsigned char>(p[-1])));
+					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+						static_cast<unsigned char>(p[-1]), isc_arg_end);
 				}
 			}
 			p++;
@@ -727,33 +571,19 @@ bool printInfo(const char* p, UserPrint& up)
 			break;
 
 		case isc_info_svc_line:
-			ret = printLine(p);
-			break;
-
-		case isc_info_svc_to_eof:
-			ret = printData(p);
-			ignoreTruncation = true;
-			break;
+			return printLine(p);
 
 		case isc_info_truncated:
-			if (!ignoreTruncation)
-			{
-				printf("%s\n", getMessage(18).c_str());
-				return false;
-			}
-			break;
-
-		case isc_info_svc_timeout:
-			ret = true;
-			break;
+			printf ("%s\n", getMessage(18).c_str());
+			return false;
 
 		default:
-			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) <<
-									Arg::Num(static_cast<unsigned char>(p[-1])));
+			Firebird::status_exception::raise(isc_fbsvcmgr_query_err, isc_arg_number, 
+				static_cast<unsigned char>(p[-1]), isc_arg_end);
 		}
 	}
 
-	return ret;
+	return false;
 }
 
 // short usage from firebird.msg
@@ -766,33 +596,15 @@ void usage()
 	}
 }
 
-
-typedef void (*SignalHandlerPointer)(int);
-
-static SignalHandlerPointer prevCtrlCHandler = NULL;
-static bool terminated = false;
-
-static void ctrl_c_handler(int signal)
-{
-	if (signal == SIGINT) 
-		terminated = true;	
-	
-	if (prevCtrlCHandler)
-		prevCtrlCHandler(signal);
-}
-
-
 // simple main function
 
-int main(int ac, char** av)
+int main(int ac, char **av)
 {
 	if (ac < 2)
 	{
 		usage();
 		return 1;
 	}
-
-	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
 
 	ISC_STATUS_ARRAY status;
 
@@ -804,14 +616,14 @@ int main(int ac, char** av)
 		if (name)
 		{
 			av++;
-		}
+		}	
 
-		ClumpletWriter spbAtt(ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
+		Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
 		while (populateSpbFromSwitches(av, spbAtt, attSwitch, 0))
 			;
 
-		ClumpletWriter spbStart(ClumpletWriter::SpbStart, maxbuf);
-		ClumpletWriter spbItems(ClumpletWriter::SpbItems, 256);
+		Firebird::ClumpletWriter spbStart(Firebird::ClumpletWriter::SpbStart, maxbuf);
+		Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
 		// single action per one utility run, it may populate info items also
 		populateSpbFromSwitches(av, spbStart, actionSwitch, &spbItems);
 
@@ -824,22 +636,24 @@ int main(int ac, char** av)
 		//Here we are over with av parse, look - may be unknown switch left
 		if (*av)
 		{
-			status_exception::raise(Arg::Gds(isc_fbsvcmgr_switch_unknown) << Arg::Str(*av));
+			Firebird::status_exception::raise(isc_fbsvcmgr_switch_unknown, isc_arg_string, *av, isc_arg_end);
 		}
 
 		isc_svc_handle svc_handle = 0;
-		if (isc_service_attach(status, 0, name, &svc_handle,
-					static_cast<USHORT>(spbAtt.getBufferLength()),
+		if (isc_service_attach(status, 
+					0, name, &svc_handle, 
+					static_cast<USHORT>(spbAtt.getBufferLength()), 
 					reinterpret_cast<const char*>(spbAtt.getBuffer())))
 		{
 			isc_print_status(status);
 			return 1;
 		}
-
+	
 		if (spbStart.getBufferLength() > 0)
 		{
-			if (isc_service_start(status, &svc_handle, 0,
-					static_cast<USHORT>(spbStart.getBufferLength()),
+			if (isc_service_start(status,
+					&svc_handle, 0,
+					static_cast<USHORT>(spbStart.getBufferLength()), 
 					reinterpret_cast<const char*>(spbStart.getBuffer())))
 			{
 				isc_print_status(status);
@@ -850,14 +664,13 @@ int main(int ac, char** av)
 
 		if (spbItems.getBufferLength() > 0)
 		{
-			const char send[] = {isc_info_svc_timeout, 2, 0, 1, 0, 0, 0, isc_info_end};
-
 			char results[maxbuf];
 			UserPrint up;
 			do
 			{
-				if (isc_service_query(status, &svc_handle, 0,  sizeof(send), send,
-						static_cast<USHORT>(spbItems.getBufferLength()),
+				if (isc_service_query(status,
+						&svc_handle, 0, 0, 0,
+						static_cast<USHORT>(spbItems.getBufferLength()), 
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))
 				{
@@ -865,13 +678,13 @@ int main(int ac, char** av)
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
-			} while (printInfo(results, up) && !terminated);
+			} while(printInfo(results, up));
 		}
 
 		isc_service_detach(status, &svc_handle);
 		return 0;
 	}
-	catch (const Exception& e)
+	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
 		isc_print_status(status);
