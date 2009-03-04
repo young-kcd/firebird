@@ -1946,7 +1946,9 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_trace_stop ||
 		svc_id == isc_action_svc_trace_suspend ||
 		svc_id == isc_action_svc_trace_resume ||
-		svc_id == isc_action_svc_trace_list)
+		svc_id == isc_action_svc_trace_list ||
+		svc_id == isc_action_svc_set_mapping ||
+		svc_id == isc_action_svc_drop_mapping)
 	{
 		/* add the username and password to the end of svc_switches if needed */
 		if (svc_switches.hasData())
