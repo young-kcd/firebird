@@ -395,7 +395,7 @@ protected:
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
 			}
-			T* newdata = reinterpret_cast<T*>
+			T* newdata = static_cast<T*>
 				(this->getPool().allocate(sizeof(T) * newcapacity
 #ifdef DEBUG_GDS_ALLOC
 					, __FILE__, __LINE__
