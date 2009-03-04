@@ -32,20 +32,17 @@
 
 namespace Firebird {
 
-// Support for common mutex for various inits
-
-class StaticMutex
+namespace StaticMutex
 {
-protected:
-	static Mutex* mutex;
-public:
-	static void create();
-	static void release();
-};
+	// Support for common mutex for various inits
+	extern Mutex* mutex;
+	void create();
+	void release();
+}
 
 // InstanceControl - interface for almost all global variables
 
-class InstanceControl : private StaticMutex
+class InstanceControl
 {
 public:
 	enum DtorPriority
@@ -53,19 +50,60 @@ public:
 		PRIORITY_REGULAR,
 		PRIORITY_TLS_KEY
 	};
-	InstanceControl(DtorPriority p);
+
+    InstanceControl();
+
+	//
+	// GlobalPtr should not be directly derived from class with virtual functions - 
+	// virtual table for it's instances may become invalid in the moment, 
+	// when cleanup is needed. Therefore indirect link via InstanceList and
+	// InstanceLink is established. This means more calls to memory allocator, 
+	// but who cares for 100 global variables?
+	//
+
+	class InstanceList
+	{
+	public:
+		InstanceList(DtorPriority p);
+		virtual ~InstanceList();
+		static void destructors();
+
+	private:
+		InstanceList* next;
+		DtorPriority priority;
+		virtual void dtor() = 0;
+	};
+
+	template <typename T, InstanceControl::DtorPriority P = InstanceControl::PRIORITY_REGULAR>
+	class InstanceLink : private InstanceList, public GlobalStorage
+	{
+	private:
+		T* link;
+
+	public:
+		InstanceLink(T* l)
+			: InstanceControl::InstanceList(P), link(l) 
+		{
+			fb_assert(link);
+		}
+
+		void dtor()
+		{
+			fb_assert(link);
+			if (link)
+			{
+				link->dtor();
+				link = NULL;
+			}
+		}
+	};
+
+public:
 	static void destructors();
 	static void registerGdsCleanup(FPTR_VOID cleanup);
 	static void registerShutdown(FPTR_VOID shutdown);
-protected:
-	virtual void dtor() = 0;
-private:
-	static InstanceControl* instanceList;
-	static FPTR_VOID gdsCleanup;
-	static FPTR_VOID gdsShutdown;
-	InstanceControl* next;
-	DtorPriority priority;
 };
+
 
 // GlobalPtr - template to help declaring global varables
 
@@ -74,19 +112,24 @@ class GlobalPtr : private InstanceControl
 {
 private:
 	T* instance;
+
+public:
 	void dtor()
 	{
 		delete instance;
 		instance = 0;
 	}
-public:
+
 	GlobalPtr()
-		: InstanceControl(InstanceControl::PRIORITY_REGULAR)
 	{
-		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 		// This means - for objects with ctors/dtors that want to be global,
 		// provide ctor with MemoryPool& parameter. Even if it is ignored!
+		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
+		// Put ourself into linked list for cleanup.
+		// Allocated pointer is saved by InstanceList::constructor.
+		new InstanceControl::InstanceLink<GlobalPtr>(this);
 	}
+
 	T* operator->() throw()
 	{
 		return instance;
@@ -104,7 +147,7 @@ public:
 // InitMutex - executes static void C::init() once and only once
 
 template <typename C>
-class InitMutex : private StaticMutex
+class InitMutex
 {
 private:
 	volatile bool flag;
@@ -114,7 +157,7 @@ public:
 	void init()
 	{
 		if (!flag) {
-			MutexLockGuard guard(*mutex);
+			MutexLockGuard guard(*StaticMutex::mutex);
 			if (!flag) {
 				C::init();
 				flag = true;
@@ -124,7 +167,7 @@ public:
 	void cleanup()
 	{
 		if (flag) {
-			MutexLockGuard guard(*mutex);
+			MutexLockGuard guard(*StaticMutex::mutex);
 			if (flag) {
 				C::cleanup();
 				flag = false;
@@ -148,7 +191,7 @@ public:
 
 template <typename T,
 	typename I = DefaultInit<T> >
-class InitInstance : private StaticMutex
+class InitInstance
 {
 private:
 	T* instance;
@@ -159,7 +202,7 @@ public:
 	T& operator()()
 	{
 		if (!flag) {
-			MutexLockGuard guard(*mutex);
+			MutexLockGuard guard(*StaticMutex::mutex);
 			if (!flag) {
 				instance = I::init();
 				flag = true;

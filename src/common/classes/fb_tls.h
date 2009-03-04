@@ -51,10 +51,12 @@ template <typename T>
 class Win32Tls : private InstanceControl
 {
 public:
-	Win32Tls() : InstanceControl(InstanceControl::PRIORITY_TLS_KEY)
+	Win32Tls() : InstanceControl()
 	{
 		if ((key = TlsAlloc()) == MAX_ULONG)
 			system_call_failed::raise("TlsAlloc");
+		// Allocated pointer is saved by InstanceList::constructor.
+		new InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
 	}
 	const T get()
 	{
@@ -113,7 +115,7 @@ template <typename T>
 class TlsValue : private InstanceControl
 {
 public:
-	TlsValue() : InstanceControl(InstanceControl::PRIORITY_TLS_KEY)
+	TlsValue() : InstanceControl()
 #ifdef DEV_BUILD
 		, keySet(true)
 #endif
@@ -121,6 +123,9 @@ public:
 		int rc = pthread_key_create(&key, NULL);
 		if (rc)
 			system_call_failed::raise("pthread_key_create", rc);
+		// Allocated pointer is saved by InstanceList::constructor.
+		new InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
+		
 	}
 	const T get()
 	{

@@ -37,7 +37,7 @@
 namespace Jrd {
 
 
-class ConfigStorage
+class ConfigStorage : public Firebird::GlobalStorage
 {
 public:
 	ConfigStorage();
@@ -119,18 +119,18 @@ private:
 
 class StorageInstance : private Firebird::InstanceControl
 {
+private:
 	Firebird::Mutex initMtx;
 	ConfigStorage* storage;
 
-	virtual void dtor()
+public:
+	void dtor()
 	{
 		delete storage;
 		storage = 0;
 	}
 
-public:
 	StorageInstance() :
-		Firebird::InstanceControl(Firebird::InstanceControl::PRIORITY_REGULAR),
 		storage(NULL)
 	{}
 
@@ -140,7 +140,10 @@ public:
 		{
 			Firebird::MutexLockGuard guard(initMtx);
 			if (!storage)
-				storage = FB_NEW(*getDefaultMemoryPool()) ConfigStorage;
+			{
+				storage = new ConfigStorage;
+				new Firebird::InstanceControl::InstanceLink<StorageInstance>(this);
+			}
 		}
 		return storage;
 	}

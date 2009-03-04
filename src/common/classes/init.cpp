@@ -96,6 +96,15 @@ namespace
 
 	void init()
 	{
+		// This initialization code can't use mutex to protect itself 
+		// cause among other it's preparing mutexes to work. But as long
+		// as only one thread is used to initialize globals (which is a case
+		// for all known in year 2009 systems), it's safe to use it if we
+		// have at least one global (not static in fucntion) GlobalPtr<> 
+		// variable. When later "static GlobalPtr<>" variables in functions 
+		// are constructed (which may happen in parallel in different threads),
+		// races are prevented by StaticMutex::mutex.
+
 		if (initDone)
 		{
 			return;
@@ -111,26 +120,32 @@ namespace
 
 		initDone = true;
 	}
+
+	Firebird::InstanceControl::InstanceList* instanceList = 0;
+	FPTR_VOID gdsCleanup = 0;
+	FPTR_VOID gdsShutdown = 0;
 }
 
 
 namespace Firebird
 {
+	InstanceControl::InstanceControl()
+	{
+		// Initialize required subsystems, including static mutex
+		init();
+	}
 
-	InstanceControl* InstanceControl::instanceList = 0;
-	FPTR_VOID InstanceControl::gdsCleanup = 0;
-	FPTR_VOID InstanceControl::gdsShutdown = 0;
-
-	InstanceControl::InstanceControl(DtorPriority p)
+	InstanceControl::InstanceList::InstanceList(DtorPriority p)
 		: priority(p)
 	{
-		// Initialize required subsystems, including static mutex, needed next line
-		init();
-
-		// Ready to be used in static variables inside functions
-		MutexLockGuard guard(*mutex);
+		MutexLockGuard guard(*StaticMutex::mutex);
 		next = instanceList;
 		instanceList = this;
+	}
+
+	InstanceControl::InstanceList::~InstanceList()
+	{
+		delete next;
 	}
 
 	void InstanceControl::destructors()
@@ -161,6 +176,12 @@ namespace Firebird
 			}
 		}
 
+		InstanceControl::InstanceList::destructors();
+	}
+
+
+	void InstanceControl::InstanceList::destructors()
+	{
 		// Destroy global objects
 		DtorPriority currentPriority = PRIORITY_REGULAR, nextPriority = currentPriority;
 
@@ -168,7 +189,7 @@ namespace Firebird
 		{
 			currentPriority = nextPriority;
 
-			for (InstanceControl* i = instanceList; i; i = i->next)
+			for (InstanceList* i = instanceList; i; i = i->next)
 			{
 				if (i->priority == currentPriority)
 				{
@@ -190,6 +211,9 @@ namespace Firebird
 				}
 			}
 		} while (nextPriority != currentPriority);
+
+		delete instanceList;
+		instanceList = 0;
 	}
 
 	void InstanceControl::registerGdsCleanup(FPTR_VOID cleanup)
@@ -204,16 +228,19 @@ namespace Firebird
 		gdsShutdown = shutdown;
 	}
 
-	Mutex* StaticMutex::mutex = NULL;
-
-	void StaticMutex::create()
+	namespace StaticMutex
 	{
-		static char staticMutexPlace[sizeof(Firebird::Mutex)];
-		mutex = new(staticMutexPlace) Mutex;
-	}
+		Firebird::Mutex* mutex = NULL;
 
-	void StaticMutex::release()
-	{
-		mutex->~Mutex();
+		void create()
+		{
+			static char staticMutexPlace[sizeof(Firebird::Mutex)];
+			mutex = new(staticMutexPlace) Firebird::Mutex;
+		}
+
+		void release()
+		{
+			mutex->~Mutex();
+		}
 	}
 }
