@@ -16,6 +16,8 @@
 
 @echo off
 
+::set FB_PROCESSOR_ARCHITECTURE=AMD64
+
 :: Default target CPU architecture is the native environment
 if NOT DEFINED FB_PROCESSOR_ARCHITECTURE (
 set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
@@ -23,6 +25,9 @@ set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
 
 ::===============================
 ::Set up the compiler environment
+
+:: To disable VS8 or VS9 build, slightly alter the env var names in "if" conditions below
+
 if DEFINED VS90COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
@@ -80,7 +85,7 @@ if DEFINED VS71COMNTOOLS (
 @set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
 @set FB_TEMP_DIR=%FB_ROOT_PATH%\temp\%FB_TARGET_PLATFORM%
 @set FB_INSTALL_SCRIPTS=%FB_ROOT_PATH%\builds\install\arch-specific\win32
-@if %MSVC_VERSION% GEQ 8 (
+@if %MSVC_VERSION% GEQ 7 (
 @set FB_GEN_DIR=%FB_ROOT_PATH%\gen\%FB_TARGET_PLATFORM%
 @set FB_GEN_DB_DIR=%FB_DB_PATH%/gen/%FB_TARGET_PLATFORM%
 @set FB_ICU_SOURCE_BIN=%FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release\bin\

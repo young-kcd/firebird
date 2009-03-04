@@ -12,8 +12,6 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\temp\release\fbclient_static"
-			IntermediateDirectory=".\..\..\..\temp\release\fbclient_static"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -21,26 +19,16 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386,_X86_=1,WIN32,_X86_,_LIB,NDEBUG,BOOT_BUILD"
+				PreprocessorDefinitions="_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386=1,WIN32,_LIB,NDEBUG,BOOT_BUILD"
 				StringPooling="TRUE"
-				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\..\..\..\temp\release\fbclient_static/fbclient_static.pch"
-				AssemblerListingLocation=".\..\..\..\temp\release\fbclient_static/"
-				ObjectFile=".\..\..\..\temp\release\fbclient_static/"
-				ProgramDataBaseFileName=".\..\..\..\temp\release\fbclient_static/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				CompileAs="0"/>
+				UsePrecompiledHeader="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\..\..\..\temp\release\fbclient_static\fbclient_static.lib"
-				SuppressStartupBanner="TRUE"/>
+			/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -64,8 +52,6 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\..\..\..\temp\debug\fbclient_static"
-			IntermediateDirectory=".\..\..\..\temp\debug\fbclient_static"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -73,26 +59,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386,_X86_=1,WIN32,_X86_,_LIB,BOOT_BUILD,DEV_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				PreprocessorDefinitions="NDEBUG,_WINDOWS,_USRDLL,CLIENT,SUPERCLIENT,I386=1,WIN32,_LIB,BOOT_BUILD,DEV_BUILD"
 				RuntimeTypeInfo="TRUE"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\..\..\..\temp\debug\fbclient_static/fbclient_static.pch"
-				AssemblerListingLocation=".\..\..\..\temp\debug\fbclient_static/"
-				ObjectFile=".\..\..\..\temp\debug\fbclient_static/"
-				ProgramDataBaseFileName=".\..\..\..\temp\debug\fbclient_static/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
+				UsePrecompiledHeader="2"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\..\..\..\temp\debug\fbclient_static\fbclient_static.lib"
-				SuppressStartupBanner="TRUE"/>
+			/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -199,6 +173,9 @@
 			Name="REMOTE files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\remote\allr.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
 			</File>
 			<File
@@ -230,10 +207,10 @@
 			Name="DSQL files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\gen\dsql\array.cpp">
+				RelativePath="..\..\..\gen\$(PlatformName)\dsql\array.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\gen\dsql\blob.cpp">
+				RelativePath="..\..\..\gen\$(PlatformName)\dsql\blob.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\keywords.cpp">
