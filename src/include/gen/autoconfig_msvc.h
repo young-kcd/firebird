@@ -244,9 +244,6 @@
 /* Maximum allowed pathname length */
 #define MAXPATHLEN 260 // should correspond to MAX_PATH define in windef.h
 
-/* Define dynamic library extension */
-#define SHRLIB_EXT "dll"
-
 /* Windows platforms support threads */
 #define HAVE_MULTI_THREAD 1
 
