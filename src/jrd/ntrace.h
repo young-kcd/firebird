@@ -56,6 +56,8 @@ public:
 	virtual const char* getRemoteAddress() = 0;
 	virtual int getRemoteProcessID() = 0;
 	virtual const char* getRemoteProcessName() = 0;
+
+	virtual ~TraceConnection() { }
 };
 
 enum ntrace_tra_isolation_t
@@ -74,6 +76,8 @@ public:
 	virtual int getWait() = 0;
 	virtual ntrace_tra_isolation_t getIsolation() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
+
+	virtual ~TraceTransaction() { }
 };
 
 typedef int ntrace_relation_t;
@@ -83,6 +87,8 @@ class TraceParams
 public:
 	virtual size_t getCount() = 0;
 	virtual const struct dsc* getParam(size_t idx) = 0;
+
+	virtual ~TraceParams() { }
 };
 
 class TraceStatement
@@ -90,6 +96,8 @@ class TraceStatement
 public:
 	virtual int getStmtID() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
+
+	virtual ~TraceStatement() { }
 };
 
 class TraceSQLStatement : public TraceStatement
@@ -114,6 +122,8 @@ public:
 	virtual const char* getData() = 0;
 	virtual size_t getDataLength() = 0;
 	virtual const char* getText() = 0;
+
+	virtual ~TraceDYNRequest() { }
 };
 
 class TraceContextVariable
@@ -122,6 +132,8 @@ public:
 	virtual const char* getNameSpace() = 0; 
 	virtual const char* getVarName() = 0;
 	virtual const char* getVarValue() = 0;
+
+	virtual ~TraceContextVariable() { }
 };
 
 class TraceProcedure
@@ -130,6 +142,8 @@ public:
 	virtual const char* getProcName() = 0;
 	virtual TraceParams* getInputs() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
+
+	virtual ~TraceProcedure() { }
 };
 
 class TraceTrigger
@@ -140,6 +154,8 @@ public:
 	virtual int getAction() = 0;
 	virtual int getWhich() = 0;
 	virtual PerformanceInfo* getPerf() = 0;
+
+	virtual ~TraceTrigger() { }
 };
 
 typedef void* ntrace_service_t;
@@ -158,6 +174,8 @@ public:
 	virtual const char* getRemoteAddress() = 0;
 	virtual int getRemoteProcessID() = 0;
 	virtual const char* getRemoteProcessName() = 0;
+
+	virtual ~TraceService() { }
 };
 
 
@@ -347,6 +365,8 @@ class TraceLogWriter
 public:
 	virtual size_t write(const void* buf, size_t size) = 0;
 	virtual void release() = 0;
+
+	virtual ~TraceLogWriter() { }
 };
 
 class TraceInitInfo
@@ -359,6 +379,8 @@ public:
 	virtual const char* getDatabaseName() = 0;
 	virtual TraceConnection* getConnection() = 0;
 	virtual TraceLogWriter* getLogWriter() = 0;
+
+	virtual ~TraceInitInfo() { }
 };
 
 /* Trace API plugin entrypoint type */

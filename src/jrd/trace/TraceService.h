@@ -101,6 +101,8 @@ public:
 	virtual void setActive(ULONG id, bool active) = 0;
 	virtual void listSessions() = 0;
 	virtual void readSession(TraceSession& ) = 0;
+
+	virtual ~TraceSvcIntf() { }
 };
 
 void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc);
