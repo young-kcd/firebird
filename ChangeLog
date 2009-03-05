@@ -1,3 +1,11 @@
+2009-03-05 07:38  robocop
+
+	* firebird2/: builds/win32/defs/ib_udf.def (1.2.4.1),
+	src/extlib/ib_udf.sql (1.5.10.1):
+
+	Expose frac() in ib_udf but only as udf_frac to not clash with a
+	possible native implementation.
+
 2009-02-18 09:31  dimitr
 
 	* firebird2/src/jrd/exe.cpp (1.176.2.6):
