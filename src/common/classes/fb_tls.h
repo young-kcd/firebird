@@ -56,7 +56,7 @@ public:
 		if ((key = TlsAlloc()) == MAX_ULONG)
 			system_call_failed::raise("TlsAlloc");
 		// Allocated pointer is saved by InstanceList::constructor.
-		new InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
+		new InstanceControl::InstanceLink<Win32Tls, PRIORITY_TLS_KEY>(this);
 	}
 	const T get()
 	{
