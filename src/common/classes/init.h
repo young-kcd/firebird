@@ -54,10 +54,10 @@ public:
     InstanceControl();
 
 	//
-	// GlobalPtr should not be directly derived from class with virtual functions - 
-	// virtual table for it's instances may become invalid in the moment, 
+	// GlobalPtr should not be directly derived from class with virtual functions -
+	// virtual table for its instances may become invalid in the moment,
 	// when cleanup is needed. Therefore indirect link via InstanceList and
-	// InstanceLink is established. This means more calls to memory allocator, 
+	// InstanceLink is established. This means more calls to memory allocator,
 	// but who cares for 100 global variables?
 	//
 
@@ -215,4 +215,3 @@ public:
 } //namespace Firebird
 
 #endif // CLASSES_INIT_INSTANCE_H
-

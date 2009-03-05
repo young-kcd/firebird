@@ -125,8 +125,8 @@ public:
 			system_call_failed::raise("pthread_key_create", rc);
 		// Allocated pointer is saved by InstanceList::constructor.
 		new InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
-		
 	}
+
 	const T get()
 	{
 		fb_assert(keySet);

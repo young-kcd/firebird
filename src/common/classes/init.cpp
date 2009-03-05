@@ -96,12 +96,12 @@ namespace
 
 	void init()
 	{
-		// This initialization code can't use mutex to protect itself 
+		// This initialization code can't use mutex to protect itself
 		// cause among other it's preparing mutexes to work. But as long
 		// as only one thread is used to initialize globals (which is a case
 		// for all known in year 2009 systems), it's safe to use it if we
-		// have at least one global (not static in fucntion) GlobalPtr<> 
-		// variable. When later "static GlobalPtr<>" variables in functions 
+		// have at least one global (not static in fucntion) GlobalPtr<>
+		// variable. When later "static GlobalPtr<>" variables in functions
 		// are constructed (which may happen in parallel in different threads),
 		// races are prevented by StaticMutex::mutex.
 

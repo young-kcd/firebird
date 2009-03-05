@@ -528,7 +528,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				// Handle bytes received only if port is currently idle and has no requests
 				// queued or if it is disconnect (dataSize == 0). Else let loopThread
 				// handle these bytes
-				if (portLocked && !port->port_requests_queued.value() || !dataSize)
+				if ((portLocked && !port->port_requests_queued.value()) || !dataSize)
 				{
 					// Allocate a memory block to store the request in
 					request = alloc_request();
@@ -572,11 +572,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					// link_request will increment port_requests_queued. Port is not locked 
 					// at this point but it is safe because :
 					// - port_requests_queued is atomic counter
-					// - only place where we check its value is at the same thread (see above)
+					// - the only place where we check its value is at the same thread (see above)
 					// - other thread where port_requests_queued is changed is loopThread and
 					//	 there port is locked
 					// - same port can be accessed no more than by two threads simultaneously -
-					//	 this one and some instance of loopThread 
+					//	 this one and some instance of loopThread
 					if (!link_request(port, request))
 					{
 						// Request was assigned to the waiting queue so we need to wake up a
