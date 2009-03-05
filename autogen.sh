@@ -45,13 +45,34 @@ if test -z "$*" -a x$NOCONFIGURE = x; then
   echo
 fi
 
+# Some versions of autotools need it
 if [ ! -d m4 ]; then
 	rm -rf m4
 	mkdir m4
 fi
 
+# Ensure correct utilities are called by AUTORECONF
+autopath=`dirname $AUTORECONF`
+if [ "$autopath" != x. ]; then
+	PATH=$autopath:$PATH
+	export PATH
+fi
+
 echo "Running autoreconf ..."
 $AUTORECONF --install --force --verbose || exit 1
+
+# Hack to bypass bug in autoreconf - --install switch not passed to libtoolize,
+# therefore missing config.sub and confg.guess files
+CONFIG_AUX_DIR=builds/make.new/config
+if [ ! -f $CONFIG_AUX_DIR/config.sub -o ! -f $CONFIG_AUX_DIR/config.guess ]; then
+	# re-run libtoolize with --install switch, if it does not understand that switch
+	# and there are no config.sub/guess files in CONFIG_AUX_DIR, we will anyway fail
+	echo "Re-running libtoolize ..."
+	if [ -z "$LIBTOOLIZE" ]; then
+		LIBTOOLIZE=libtoolize
+	fi
+	$LIBTOOLIZE --install --copy --force || exit 1
+fi
 
 # If NOCONFIGURE is set, skip the call to configure
 if test "x$NOCONFIGURE" = "x"; then
