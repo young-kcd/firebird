@@ -258,9 +258,10 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle, FB_API_
 		FB_API_HANDLE temp_db_handle = 0;
 		if (!isc_attach_database(user_status, 0, file_name.c_str(), &temp_db_handle,
 				dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
-			user_status[1] != isc_io_error)
+			(user_status[1] != isc_io_error && user_status[1] != isc_conf_access_denied))
 		{
-			if (!user_status[1]) {
+			if (!user_status[1]) 
+			{
 				// Swallow status from detach.
 				ISC_STATUS_ARRAY temp_status;
 				isc_detach_database(temp_status, &temp_db_handle);

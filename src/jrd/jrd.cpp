@@ -484,9 +484,9 @@ static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
 static unsigned int purge_transactions(thread_db*, Attachment*, const bool, const ULONG);
 namespace {
-	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
+	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
 }
-static vdnResult	verify_database_name(const PathName&, ISC_STATUS*);
+static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 static ISC_STATUS	unwindAttach(const Exception& ex,
 								 ISC_STATUS* userStatus,
 								 thread_db* tdbb,
@@ -802,8 +802,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	// Check database against conf file.
-	const vdnResult vdn = verify_database_name(expanded_name, user_status);
-	if (!is_alias && vdn == vdnFail)
+	const VdnResult vdn = verifyDatabaseName(expanded_name, user_status, is_alias);
+	if (!is_alias && vdn == VDN_FAIL)
 	{
 		trace_failed_attach(NULL, filename, options, false, false);
 		return user_status[1];
@@ -854,7 +854,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 /* If database to be opened is security database, then only
    gsec or SecurityDatabase may open it. This protects from use
    of old gsec to write wrong password hashes into it. */
-	if (vdn == vdnSecurity && !options.dpb_gsec_attach && !options.dpb_sec_attach)
+	if (vdn == VDN_SECURITY && !options.dpb_gsec_attach && !options.dpb_sec_attach)
 	{
 		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") <<
 										  Arg::Str("security database") <<
@@ -939,7 +939,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// 1. Ensure uniqueness of ID even in presence of multiple processes
 		// 2. Make sure that ID value can be used to connect back to database
 		//
-		if (is_alias && vdn == vdnFail)
+		if (is_alias && vdn == VDN_FAIL)
 			dbb->dbb_database_name = file_name;
 		else
 			dbb->dbb_database_name = expanded_name;
@@ -1804,8 +1804,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	// Check database against conf file.
-	const vdnResult vdn = verify_database_name(expanded_name, user_status);
-	if (!is_alias && vdn == vdnFail)
+	const VdnResult vdn = verifyDatabaseName(expanded_name, user_status, is_alias);
+	if (!is_alias && vdn == VDN_FAIL)
 	{
 		trace_failed_attach(NULL, filename, options, true, false);
 		return user_status[1];
@@ -1997,7 +1997,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	// 1. Ensure uniqueness of ID even in presence of multiple processes
 	// 2. Make sure that ID value can be used to connect back to database
 	//
-	if (is_alias && vdn == vdnFail)
+	if (is_alias && vdn == VDN_FAIL)
 		dbb->dbb_database_name = file_name;
 	else
 		dbb->dbb_database_name = dbb->dbb_filename;
@@ -5836,7 +5836,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 
 /**
 
- 	verify_database_name
+ 	verifyDatabaseName
 
     @brief	Verify database name for open/create
 	against given in conf file list of available directories
@@ -5846,7 +5846,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
     @param status
 
  **/
-static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
+static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bool is_alias)
 {
 	// Check for security2.fdb
 	static TEXT securityNameBuffer[MAXPATHLEN] = "";
@@ -5861,15 +5861,17 @@ static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
 		ISC_expand_filename(expandedSecurityNameBuffer, false);
 	}
 	if (name == securityNameBuffer || name == expandedSecurityNameBuffer)
-		return vdnSecurity;
+		return VDN_SECURITY;
 
 	// Check for .conf
 	if (!JRD_verify_database_access(name)) {
-		ERR_build_status(status, Arg::Gds(isc_conf_access_denied) << Arg::Str("database") <<
-																	 Arg::Str(name));
-		return vdnFail;
+		if (!is_alias) {
+			ERR_build_status(status, Arg::Gds(isc_conf_access_denied) << Arg::Str("database") <<
+																		 Arg::Str(name));
+		}
+		return VDN_FAIL;
 	}
-	return vdnOk;
+	return VDN_OK;
 }
 
 
