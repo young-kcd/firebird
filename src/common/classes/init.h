@@ -64,7 +64,7 @@ public:
 	class InstanceList
 	{
 	public:
-		InstanceList(DtorPriority p);
+		explicit InstanceList(DtorPriority p);
 		virtual ~InstanceList();
 		static void destructors();
 
@@ -81,7 +81,7 @@ public:
 		T* link;
 
 	public:
-		InstanceLink(T* l)
+		explicit InstanceLink(T* l)
 			: InstanceControl::InstanceList(P), link(l) 
 		{
 			fb_assert(link);
