@@ -1,3 +1,64 @@
+2009-03-05 18:01  alexpeshkoff
+
+	* firebird2/src/jrd/: ntrace.h (1.10), pag_proto.h (1.25),
+	trace/TraceService.h (1.5):
+
+	Fixed a number of gcc warnings: class has virtual functions but
+	non-virtual destructor
+
+2009-03-05 16:18  alexpeshkoff
+
+	* firebird2/src/: dsql/preparse.cpp (1.51), jrd/jrd.cpp (1.527):
+
+	Fixed CORE-2351: Aliased database can't be created
+
+2009-03-05 11:25  alexpeshkoff
+
+	* firebird2/src/common/classes/init.cpp (1.17):
+
+	Fixed alignment - thanks to Adriano
+
+2009-03-05 10:27  alexpeshkoff
+
+	* firebird2/autogen.sh (1.22):
+
+	Support one more combination of autotools - present on AIX
+
+2009-03-05 07:38  robocop
+
+	* firebird2/: builds/win32/defs/ib_udf.def (1.3),
+	src/extlib/ib_udf.sql (1.9), src/extlib/ib_udf2.sql (1.11):
+
+	Expose frac() in ib_udf but only as udf_frac to not clash with a
+	possible native implementation.
+
+2009-03-05 07:05  robocop
+
+	* firebird2/src/common/classes/: init.cpp (1.16), init.h (1.18):
+
+	Misc.
+
+2009-03-05 07:05  robocop
+
+	* firebird2/src/common/classes/fb_tls.h (1.27):
+
+	Make it compile on Windows.
+
+2009-03-05 02:01  asfernandes
+
+	* firebird2/: configure.in (1.321),
+	src/include/gen/autoconfig_msvc.h (1.114):
+
+	Remove not used and non-simmetric platform specific define
+
+2009-03-05 01:52  asfernandes
+
+	* firebird2/src/: common/classes/fb_tls.h (1.26),
+	common/classes/init.cpp (1.15), common/classes/init.h (1.17),
+	remote/server.cpp (1.240):
+
+	Misc
+
 2009-03-04 13:44  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.269):
