@@ -317,10 +317,16 @@ void nbackup::open_database_scan()
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
 #else
-	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE);
-	if (dbase < 0)
-		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());	
-#endif
+	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
+  	if (dbase < 0)
+  		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
+#ifdef HAVE_POSIX_FADVISE
+	if (posix_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL) < 0)
+		b_error::raise("Error (%d) in posix_fadvise(SEQUENTIAL) for %s", errno, dbname.c_str());
+	if (posix_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE) < 0)
+		b_error::raise("Error (%d) in posix_fadvise(NOREUSE) for %s", errno, dbname.c_str());
+#endif //HAVE_POSIX_FADVISE
+#endif //WIN_NT
 }
 
 void nbackup::create_database()
