@@ -1,3 +1,16 @@
+2009-03-06 18:56  alexpeshkoff
+
+	* firebird2/: configure.in (1.322), src/utilities/nbackup.cpp
+	(1.78):
+
+	Fixed CORE-2316: Throttling Nbackup on large databases
+
+2009-03-06 13:10  robocop
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.115):
+
+	Do not hide some important warnings.
+
 2009-03-05 18:01  alexpeshkoff
 
 	* firebird2/src/jrd/: ntrace.h (1.10), pag_proto.h (1.25),
