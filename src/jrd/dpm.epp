@@ -2629,17 +2629,16 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 			CCH_MARK(tdbb, &pp_window);
 			ppage->ppg_header.pag_flags &= ~ppg_eof;
 			ppage->ppg_next = new_pp_window.win_page.getPageNum();
-			ppage =
-				(pointer_page*) CCH_HANDOFF(tdbb, &pp_window, new_pp_window.win_page.getPageNum(),
-								  LCK_write, pag_pointer);
-			break;
+			--pp_sequence;
 		}
 		CCH_RELEASE(tdbb, &pp_window);
 	}
 
 /* We've found a slot.  Stick in the pointer to the data page */
 
-	if (ppage->ppg_page[slot]) {
+	if (ppage->ppg_page[slot]) 
+	{
+		CCH_RELEASE(tdbb, &pp_window);
 		CORRUPT(258);			/* msg 258 page slot not empty */
 	}
 
