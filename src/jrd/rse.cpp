@@ -137,13 +137,20 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
  *
  * Functional description
  *
+ * hvlad: for RSB's marked as part of recursive sub-tree we must free 
+ * resources stored in impure area as this area is over-written when 
+ * recursion returns to the upper level. See also RSBRecurse::get()
+ *
  **************************************/
 	SET_TDBB(tdbb);
 
 	invalidate_child_rpbs(tdbb, rsb);
 
+	jrd_req* request = tdbb->getRequest();
+	const bool bFreeAll = (rsb->rsb_flags & rsb_recursive);
+
 	while (true) {
-		irsb_sort* impure = (irsb_sort*) ((UCHAR*) tdbb->getRequest() + rsb->rsb_impure);
+		irsb_sort* impure = (irsb_sort*) ((UCHAR*) request + rsb->rsb_impure);
 		if (!(impure->irsb_flags & irsb_open))
 			return;
 
@@ -151,12 +158,34 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 
 		switch (rsb->rsb_type) {
 		case rsb_indexed:
+			if (bFreeAll)
+			{
+				irsb_index* imp_idx = (irsb_index*) impure;
+				if (imp_idx->irsb_bitmap)
+				{
+					delete (*imp_idx->irsb_bitmap);
+					*imp_idx->irsb_bitmap = NULL;
+				}
+			}
+			return;
+
 		case rsb_navigate:
+			if (bFreeAll)
+			{
+				irsb_nav* imp_nav = (irsb_nav*) impure;
+				if (imp_nav->irsb_nav_bitmap)
+				{
+					delete (*imp_nav->irsb_nav_bitmap);
+					*imp_nav->irsb_nav_bitmap = NULL;
+				}
+
+				delete imp_nav->irsb_nav_records_visited;
+				imp_nav->irsb_nav_records_visited = NULL;
+			}
 			return;
 
 		case rsb_sequential:
 			{
-				jrd_req* request = tdbb->getRequest();
 				record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 				if (rpb->getWindow(tdbb).win_flags & WIN_large_scan &&
 					rpb->rpb_relation->rel_scan_count)
@@ -212,7 +241,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 			}
 			break;
 
-		case rsb_recurse:
+		case rsb_recursive_union:
 			RSBRecurse::close(tdbb, rsb, (irsb_recurse*)impure);
 			return;
 
@@ -497,7 +526,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			}
 			break;
 
-		case rsb_recurse:
+		case rsb_recursive_union:
 			RSBRecurse::open(tdbb, rsb, (irsb_recurse*)impure);
 			return;
 
@@ -2399,7 +2428,7 @@ static bool get_record(thread_db*	tdbb,
 			return false;
 		break;
 
-	case rsb_recurse:
+	case rsb_recursive_union:
 		if (!RSBRecurse::get(tdbb, rsb, (irsb_recurse*)impure))
 			return false;
 		break;
@@ -2627,7 +2656,7 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 				}
 				return;
 
-			case rsb_recurse:
+			case rsb_recursive_union:
 				{
 					// hvlad: recursive CTE is always a 'union all' of 
 					// exactly two members. 
@@ -3157,7 +3186,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_ext_dbkey:
 	case rsb_navigate:
 	case rsb_union:
-	case rsb_recurse:
+	case rsb_recursive_union:
 	case rsb_aggregate:
 	case rsb_virt_sequential:
 		{
@@ -3272,7 +3301,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_ext_dbkey:
 	case rsb_navigate:
 	case rsb_union:
-	case rsb_recurse:
+	case rsb_recursive_union:
 	case rsb_aggregate:
 	case rsb_virt_sequential:
 		{
