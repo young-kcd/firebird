@@ -1,3 +1,16 @@
+2009-03-07 18:39  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.290):
+
+	Fixed CORE-2355 - Incorrect handling of LOWER/UPPER when result
+	string shrinks in terms of byte length
+
+2009-03-07 04:09  asfernandes
+
+	* firebird2/src/utilities/nbackup.cpp (1.79):
+
+	Misc
+
 2009-03-06 18:56  alexpeshkoff
 
 	* firebird2/: configure.in (1.322), src/utilities/nbackup.cpp
