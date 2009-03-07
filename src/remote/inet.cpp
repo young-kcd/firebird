@@ -3057,8 +3057,9 @@ static bool packet_receive(rem_port* port,
 		return false;
 	}
 
-	if (!n && inetErrNo) {
-		inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
+	if (!n) {
+		if (inetErrNo)
+			inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
 		return false;
 	}
 
