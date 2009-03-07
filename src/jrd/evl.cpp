@@ -3982,7 +3982,7 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 		INTL_ASSIGN_TTYPE(&desc, ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		intl_str_to_case(tdbb, &impure->vlu_desc);
+		impure->vlu_desc.dsc_length = (USHORT) intl_str_to_case(tdbb, &impure->vlu_desc);
 	}
 
 	return &impure->vlu_desc;

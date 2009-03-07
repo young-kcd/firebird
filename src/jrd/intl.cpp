@@ -1194,10 +1194,8 @@ int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
 	UCHAR* src;
 	UCHAR buffer[MAX_KEY];
 	USHORT ttype;
-	USHORT len =
-		CVT_get_string_ptr(pString, &ttype, &src,
-						   reinterpret_cast<vary*>(buffer),
-						   sizeof(buffer), ERR_post);
+	int len = CVT_get_string_ptr(pString, &ttype, &src, reinterpret_cast<vary*>(buffer),
+		sizeof(buffer), ERR_post);
 
 	UCHAR* dest;
 	switch (ttype) {
@@ -1216,14 +1214,12 @@ int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
 
 	default:
 		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
-		obj->str_to_upper(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
+		// ASF: this works for all cases? (src and dst buffers are the same)
+		len = obj->str_to_upper(len, src, len, src);
 		break;
 	}
-/*
- * Added to remove compiler errors. Callers are not checking
- * the return code from this function 4/5/95.
-*/
-	return (0);
+
+	return len;
 }
 
 
@@ -1247,10 +1243,8 @@ int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
 	UCHAR* src;
 	UCHAR buffer[MAX_KEY];
 	USHORT ttype;
-	USHORT len =
-		CVT_get_string_ptr(pString, &ttype, &src,
-						   reinterpret_cast<vary*>(buffer),
-						   sizeof(buffer), ERR_post);
+	int len = CVT_get_string_ptr(pString, &ttype, &src, reinterpret_cast<vary*>(buffer),
+		sizeof(buffer), ERR_post);
 
 	UCHAR* dest;
 	switch (ttype) {
@@ -1269,14 +1263,12 @@ int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
 
 	default:
 		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
-		obj->str_to_lower(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
+		// ASF: this works for all cases? (src and dst buffers are the same)
+		len = obj->str_to_lower(len, src, len, src);
 		break;
 	}
-/*
- * Added to remove compiler errors. Callers are not checking
- * the return code from this function 4/5/95.
-*/
-	return (0);
+
+	return len;
 }
 
 
