@@ -3978,8 +3978,8 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 
 		if (value->isText())
 		{
-			(textType->*tt_str_to_case)(desc.dsc_length, impure->vlu_desc.dsc_address,
-				desc.dsc_length, impure->vlu_desc.dsc_address);
+			impure->vlu_desc.dsc_length = (textType->*tt_str_to_case)(desc.dsc_length,
+				impure->vlu_desc.dsc_address, desc.dsc_length, impure->vlu_desc.dsc_address);
 		}
 	}
 
