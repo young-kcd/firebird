@@ -1678,7 +1678,8 @@ static int fork( SOCKET old_handle, USHORT flag)
 	}
 
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -i -h %"SLONGFORMAT, name, (SLONG) new_handle);
+	cmdLine.printf("%s -i -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) new_handle, 
+		GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -1690,7 +1691,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 
 	PROCESS_INFORMATION pi;
-	if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
+	if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, FALSE,
 					  (flag & SRVR_high_priority ?
 						 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 						 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
@@ -1698,6 +1699,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	{
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
+		// hvlad: child process will close our handle of just accepted socket 
 		return 1;
 	}
 
