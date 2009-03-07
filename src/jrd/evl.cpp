@@ -4957,7 +4957,7 @@ static dsc* upcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 		}
 	}
 	else
-		INTL_str_to_upper(tdbb, &impure->vlu_desc);
+		impure->vlu_desc.dsc_length = (USHORT) INTL_str_to_upper(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }
@@ -4998,7 +4998,7 @@ static dsc* lowcase(thread_db* tdbb, const dsc* value, impure_value* impure)
 		}
 	}
 	else
-		INTL_str_to_lower(tdbb, &impure->vlu_desc);
+		impure->vlu_desc.dsc_length = (USHORT) INTL_str_to_lower(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }
