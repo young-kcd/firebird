@@ -374,8 +374,8 @@ void NBackup::open_database_scan()
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(SEQUENTIAL) for %s", errno, dbname.c_str());
 	if (posix_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE) < 0)
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(NOREUSE) for %s", errno, dbname.c_str());
-#endif //HAVE_POSIX_FADVISE
-#endif //WIN_NT
+#endif // HAVE_POSIX_FADVISE
+#endif // WIN_NT
 }
 
 void NBackup::create_database()
