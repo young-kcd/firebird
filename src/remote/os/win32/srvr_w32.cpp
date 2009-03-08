@@ -579,7 +579,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						}
 						else
 						{
-							DWORD parent_id = atol(buffer);
+							const DWORD parent_id = atol(buffer);
 							HANDLE parent_handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, parent_id);
 							if (!parent_handle) 
 							{
