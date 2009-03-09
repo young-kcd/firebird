@@ -1315,12 +1315,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
 		jrd_tra* transaction = NULL;
+		const ULONG save_flags = attachment->att_flags;
 
 		try
 		{
-			// start a transaction to execute ON CONNECT triggers
-			transaction = TRA_start(tdbb, 0, NULL);
-
 			// load all database triggers
 			MET_load_db_triggers(tdbb, DB_TRIGGER_CONNECT);
 			MET_load_db_triggers(tdbb, DB_TRIGGER_DISCONNECT);
@@ -1328,14 +1326,25 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
-			// run ON CONNECT triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_connect);
+			const trig_vec* trig_connect = dbb->dbb_triggers[DB_TRIGGER_CONNECT];
+			if (trig_connect && trig_connect->getCount())
+			{
+				// start a transaction to execute ON CONNECT triggers
+				// ensure this transaction can't trigger auto-sweep
+				attachment->att_flags |= ATT_no_cleanup;
+				transaction = TRA_start(tdbb, 0, NULL);
+				attachment->att_flags = save_flags;
 
-			// and commit the transaction
-			TRA_commit(tdbb, transaction, false);
+				// run ON CONNECT triggers
+				EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_connect);
+
+				// and commit the transaction
+				TRA_commit(tdbb, transaction, false);
+			}
 		}
 		catch (const Exception&)
 		{
+			attachment->att_flags = save_flags;
 			if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
 				TRA_rollback(tdbb, transaction, false, false);
 			throw;
@@ -5674,17 +5683,23 @@ static void purge_attachment(thread_db*		tdbb,
 	{
 		try
 		{
-			if (!(attachment->att_flags & ATT_no_db_triggers) &&
-				!(attachment->att_flags & ATT_shutdown))
+			const trig_vec* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
+			if (!(attachment->att_flags & ATT_no_db_triggers) && 
+				!(attachment->att_flags & ATT_shutdown) &&
+				trig_disconnect && trig_disconnect->getCount())
 			{
 				ThreadStatusGuard temp_status(tdbb);
 
 				jrd_tra* transaction = NULL;
+				const ULONG save_flags = attachment->att_flags;
 
 				try
 				{
 					// start a transaction to execute ON DISCONNECT triggers
+					// ensure this transaction can't trigger auto-sweep
+					attachment->att_flags |= ATT_no_cleanup;
 					transaction = TRA_start(tdbb, 0, NULL);
+					attachment->att_flags = save_flags;
 
 					// run ON DISCONNECT triggers
 					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
@@ -5694,6 +5709,7 @@ static void purge_attachment(thread_db*		tdbb,
 				}
 				catch (const Exception&)
 				{
+					attachment->att_flags = save_flags;
 					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
 
