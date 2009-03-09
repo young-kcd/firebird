@@ -587,12 +587,14 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 								exit(FINI_ERROR);
 							}
 
-							if (!DuplicateHandle(parent_handle, connection_handle, GetCurrentProcess(), &connection_handle, 
-								0, FALSE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE))
+							if (!DuplicateHandle(parent_handle, connection_handle, GetCurrentProcess(), &connection_handle,
+									0, FALSE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE))
 							{
 								gds__log("SERVER: DuplicateHandle failed. Errno = %d, parent PID = %d", GetLastError(), parent_id);
 								exit(FINI_ERROR);
 							}
+
+							CloseHandle(parent_handle);
 						}
 					}
 					break;
