@@ -1,3 +1,17 @@
+2009-03-09 19:33  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.528):
+
+	Fixed bug CORE-1980 : Sweeper consumes 100% CPU forever.  Also
+	avoid start transaction if no ON CONNECT\ON DISCONNECT triggers
+	defined.
+
+2009-03-09 02:42  asfernandes
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.69):
+
+	Close handle refering to parent process
+
 2009-03-08 13:17  robocop
 
 	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.68):
