@@ -627,6 +627,7 @@ static void prt_lock_activity(
 		memset(&base, 0, sizeof(base));
 
 	for (ULONG i = 0; i < intervals; i++) {
+		fflush(outfile);
 #ifdef WIN_NT
 		Sleep((DWORD) seconds * 1000);
 #else
