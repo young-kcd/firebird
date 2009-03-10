@@ -1,3 +1,10 @@
+2009-03-10 13:49  alexpeshkoff
+
+	* firebird2/src/lock/print.cpp (1.48.2.3):
+
+	Backported fix for CORE-2354: "fb_lock_print -ia" output is not
+	flushed to a file between iterations
+
 2009-03-07 19:00  asfernandes
 
 	* firebird2/src/jrd/: evl.cpp (1.165.2.11), intl.cpp (1.83.4.4):
