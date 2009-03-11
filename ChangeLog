@@ -1,3 +1,15 @@
+2009-03-11 15:30  alexpeshkoff
+
+	* firebird2/configure.in (1.323):
+
+	HPUX has posix semaphores in this library
+
+2009-03-11 08:51  alexpeshkoff
+
+	* firebird2/src/jrd/event.cpp (1.86):
+
+	Fixed build with not defined HAVE_MMAP
+
 2009-03-10 13:27  alexpeshkoff
 
 	* firebird2/src/lock/print.cpp (1.82):
