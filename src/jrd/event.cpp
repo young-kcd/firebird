@@ -674,15 +674,15 @@ void EventManager::create_process()
 #if (defined HAVE_MMAP || defined WIN_NT)
 	ISC_STATUS_ARRAY local_status;
 	m_process = (prb*) ISC_map_object(local_status, &m_shmemData, m_processOffset, sizeof(prb));
-#else
-	m_process = process;
-#endif
 
 	if (!m_process)
 	{
 		release_shmem();
 		Firebird::status_exception::raise(local_status);
 	}
+#else
+	m_process = process;
+#endif
 
 	probe_processes();
 
