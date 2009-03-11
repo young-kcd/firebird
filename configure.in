@@ -221,6 +221,7 @@ dnl ICU_PLATFORM=AIXPPCXLC
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
+    RT_LIB_CHECK=true
     ;;
 
   *-*-hpux*)
@@ -230,6 +231,7 @@ dnl ICU_PLATFORM=AIXPPCXLC
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
+    RT_LIB_CHECK=true
     ;;
 
   i386-pc-solaris*)
