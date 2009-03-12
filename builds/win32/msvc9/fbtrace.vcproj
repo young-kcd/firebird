@@ -301,11 +301,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\src\utilities\ntrace\os\win32\FileObject.cpp"
+				RelativePath="..\..\..\src\utilities\ntrace\os\win32\platform.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\ntrace\os\win32\platform.cpp"
+				RelativePath="..\..\..\src\utilities\ntrace\PluginLogWriter.cpp"
 				>
 			</File>
 			<File
@@ -327,10 +327,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\src\utilities\ntrace\os\FileObject.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.h"
 				>
 			</File>
@@ -344,6 +340,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\ntrace\os\platform.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\ntrace\PluginLogWriter.h"
 				>
 			</File>
 			<File
