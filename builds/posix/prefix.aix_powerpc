@@ -38,6 +38,23 @@
 # _AIX, _POWER are pre-defined by gcc. To see list of all system-specific
 # pre-defined macros, type "echo | cpp -dM  | sort"
 
+
+# we put the g++ runtime in the LIBPATH env variable so that gpre_boot
+# and other tools can find it during the build process. The -blibpath
+# option removes this path from the output object modules.
+GCC_RUNTIME=$(shell dirname $(shell g++ $(CXXFLAGS) -print-file-name=libstdc++.a))
+export GCC_RUNTIME
+LIBPATH=$(FIREBIRD)/lib:$(GCC_RUNTIME)
+export LIBPATH
+
+# AIX ld option to set run-time library path is -Wl-blibpath:path1:path2
+# Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
+LIB_PATH_OPTS= -Wl,-blibpath:$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/local/lib:/usr/lib:/lib:$(GCC_RUNTIME)
+
+ifeq ($(STD_ICU),true)
+   ICU_LIBS= -L/usr/local/lib -licuuc -licudata -licui18n
+endif
+
 # non-firebird libraries have .a extension
 SHRLIB_FOREIGN_EXT=a
 
@@ -50,11 +67,7 @@ DEV_FLAGS=-ggdb -O0 -fsigned-char -fmessage-length=0 -pipe -MMD -fPIC -Wall -Wex
 
 # link options when using IBM /usr/bin/ld fronted by g++
 LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -Wl,-bbigtoc,-brtl
-LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared -Wl,-G,-bbigtoc
-
-# AIX ld option to set run-time library path is -Wl-blibpath:path1:path2
-# Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
-LIB_PATH_OPTS= -Wl-blibpath:/usr/local/lib:/opt/freeware/lib:$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS) -shared -Wl,-G,-bbigtoc
 
 # AIX ld uses "export files" to manage symbol visibility. Export files are
 # functionally similar to "version files" on ELF systems and are specified
