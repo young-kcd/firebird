@@ -1191,7 +1191,10 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 /* If no event found, pretend it was cancelled */
 
 	if (!event)
+	{
+		success(status_vector);
 		return port->send_response(send, 0, 0, status_vector, false);
+	}
 
 /* cancel the event */
 
