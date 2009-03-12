@@ -41,7 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 FBTRACE_UTIL_Files= TraceConfiguration.cpp traceplugin.cpp TracePluginImpl.cpp \
-	$(PLATFORM_PATH)/FileObject.cpp $(PLATFORM_PATH)/platform.cpp
+	PluginLogWriter.cpp $(PLATFORM_PATH)/platform.cpp
 
 FBTRACE_UTIL_Sources = $(addprefix utilities/ntrace/, $(FBTRACE_UTIL_Files))
 
