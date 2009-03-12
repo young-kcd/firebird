@@ -275,8 +275,15 @@ namespace Firebird
 				delete getPointer(i);
 			}
 		}
+
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
+
+		bool isEmpty() const
+		{
+			return getCount() == 0;
+		}
+
 		void clear()
 		{
 			for (size_t i = 0; i < getCount(); i++) {
@@ -635,11 +642,6 @@ namespace Firebird
 		bool exist(const Key& item) const
 		{
 			return pointers.exist(item);
-		}
-
-		bool isEmpty() const
-		{
-			return getCount() == 0;
 		}
 
 		void insert(size_t pos, const Value& item)

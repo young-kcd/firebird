@@ -1327,10 +1327,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
 			const trig_vec* trig_connect = dbb->dbb_triggers[DB_TRIGGER_CONNECT];
-			if (trig_connect && trig_connect->getCount())
+			if (trig_connect && !trig_connect->isEmpty())
 			{
-				// start a transaction to execute ON CONNECT triggers
-				// ensure this transaction can't trigger auto-sweep
+				// Start a transaction to execute ON CONNECT triggers.
+				// Ensure this transaction can't trigger auto-sweep.
 				attachment->att_flags |= ATT_no_cleanup;
 				transaction = TRA_start(tdbb, 0, NULL);
 				attachment->att_flags = save_flags;
@@ -5686,7 +5686,7 @@ static void purge_attachment(thread_db*		tdbb,
 			const trig_vec* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
 			if (!(attachment->att_flags & ATT_no_db_triggers) && 
 				!(attachment->att_flags & ATT_shutdown) &&
-				trig_disconnect && trig_disconnect->getCount())
+				trig_disconnect && !trig_disconnect->isEmpty())
 			{
 				ThreadStatusGuard temp_status(tdbb);
 
@@ -5695,8 +5695,8 @@ static void purge_attachment(thread_db*		tdbb,
 
 				try
 				{
-					// start a transaction to execute ON DISCONNECT triggers
-					// ensure this transaction can't trigger auto-sweep
+					// Start a transaction to execute ON DISCONNECT triggers.
+					// Ensure this transaction can't trigger auto-sweep.
 					attachment->att_flags |= ATT_no_cleanup;
 					transaction = TRA_start(tdbb, 0, NULL);
 					attachment->att_flags = save_flags;
