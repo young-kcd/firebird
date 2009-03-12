@@ -1,3 +1,10 @@
+2009-03-12 09:08  hvlad
+
+	* firebird2/src/remote/server.cpp (1.126.2.14):
+
+	Backport fix for bug CORE-2368 : AV after isc_cancel_events if
+	event was not found
+
 2009-03-10 13:49  alexpeshkoff
 
 	* firebird2/src/lock/print.cpp (1.48.2.3):
