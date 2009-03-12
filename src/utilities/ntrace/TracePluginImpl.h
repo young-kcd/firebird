@@ -31,7 +31,6 @@
 
 #include "../../jrd/ntrace.h"
 #include "TracePluginConfig.h"
-#include "os/FileObject.h"
 #include "../../common/classes/rwlock.h"
 #include "../../common/classes/GenericMap.h"
 #include "../../common/classes/locks.h"
@@ -142,9 +141,9 @@ private:
 					  // when destructor is called
 	const int session_id;				// trace session ID, set by Firebird
 	Firebird::string session_name;		// trace session name, set by Firebird
-	FileObject* logFile;		// Thread-safe
 	TraceLogWriter* logWriter;
 	TracePluginConfig config;	// Immutable, thus thread-safe
+	Firebird::string record;
 
 	// Data for currently active connections, transactions, statements
 	Firebird::RWLock connectionsLock;
@@ -165,16 +164,11 @@ private:
 	regex_t include_matcher;
 	regex_t exclude_matcher;
 
-	bool need_rotate(size_t added_bytes_length);
-	void rotateLog(size_t added_bytes_length);
-	void writePacket(const UCHAR* packet_data, const ULONG packet_size);
-
-	void appendGlobalCounts(const PerformanceInfo* info, Firebird::string& line);
-	void appendTableCounts(const PerformanceInfo* info, Firebird::string& line);
-	void appendParams(TraceParams* params, Firebird::string& line);
-	void appendServiceQueryParams(size_t send_item_length,
-		const ntrace_byte_t* send_items, size_t recv_item_length, 
-		const ntrace_byte_t* recv_items, Firebird::string& line);
+	void appendGlobalCounts(const PerformanceInfo* info);
+	void appendTableCounts(const PerformanceInfo* info);
+	void appendParams(TraceParams* params);
+	void appendServiceQueryParams(size_t send_item_length, const ntrace_byte_t* send_items, 
+								  size_t recv_item_length, const ntrace_byte_t* recv_items);
 	void formatStringArgument(Firebird::string& result, const UCHAR* str, size_t len);
 
 	// register various objects
@@ -185,16 +179,16 @@ private:
 	void register_service(TraceService* service);
 
 	// Write message to text log file
-	void logRecord(const char* action, Firebird::string& line);
-	void logRecordConn(const char* action, TraceConnection* connection, Firebird::string& line);
+	void logRecord(const char* action);
+	void logRecordConn(const char* action, TraceConnection* connection);
 	void logRecordTrans(const char* action, TraceConnection* connection, 
-		TraceTransaction* transaction, Firebird::string& line);
+		TraceTransaction* transaction);
 	void logRecordProc(const char* action, TraceConnection* connection, 
-		TraceTransaction* transaction, const char* proc_name, Firebird::string& line);
+		TraceTransaction* transaction, const char* proc_name);
 	void logRecordStmt(const char* action, TraceConnection* connection, 
 		TraceTransaction* transaction, TraceStatement* statement, 
-		bool isSQL, Firebird::string& line);
-	void logRecordServ(const char* action, TraceService* service, Firebird::string& line);
+		bool isSQL);
+	void logRecordServ(const char* action, TraceService* service);
 
 	/* Methods which do logging of events to file */
 	void log_init();
