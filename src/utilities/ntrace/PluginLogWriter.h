@@ -44,7 +44,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-using namespace Firebird;
 
 class PluginLogWriter : public TraceLogWriter
 {
@@ -61,7 +60,7 @@ private:
 	void reopen();
 	void checkErrno(const char* operation);
 
-	// Windows requires explicit syncronization when few processes appens the 
+	// Windows requires explicit syncronization when few processes appends to the
 	// same file simultaneously, therefore we used our fastMutex for this
 	// purposes. On Posix's platforms we honour O_APPEND flag which works
 	// better as in this case syncronization is performed by OS kernel itself.
@@ -80,7 +79,7 @@ private:
 			m_log.lock();
 		}
 
-		~Guard() 
+		~Guard()
 		{
 			m_log.unlock();
 		}
@@ -90,7 +89,7 @@ private:
 	};
 #endif
 
-	PathName m_fileName;
+	Firebird::PathName m_fileName;
 	int		 m_fileHandle;
 	size_t	 m_maxSize;
 };
