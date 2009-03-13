@@ -137,6 +137,7 @@ static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
 static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info);
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
 
+static GlobalPtr<Mutex> createCollationMtx;
 
 // Classes and structures used internally to this file and intl implementation
 class CharSetContainer
@@ -284,13 +285,29 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
 	{
+		if (!charset_collations[id]->obsolete)
+			return charset_collations[id];
+	}
+
+	Database* dbb = tdbb->getDatabase();
+	Database::CheckoutLockGuard guard(dbb, createCollationMtx);
+
+	Collation* to_delete = NULL;
+	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
+	{
 		if (charset_collations[id]->obsolete)
 		{
-			if (charset_collations[id]->existenceLock)
-				LCK_release(tdbb, charset_collations[id]->existenceLock);
-
-			charset_collations[id]->destroy();
-			delete charset_collations[id];
+			// if obsolete collation is not used delete it immediately,
+			// else wait until all references are released
+			if (charset_collations[id]->useCount == 0)
+			{
+				charset_collations[id]->destroy();
+				delete charset_collations[id];
+			}
+			else 
+			{
+				to_delete = charset_collations[id];
+			}
 			charset_collations[id] = NULL;
 		}
 		else
@@ -353,11 +370,31 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 				CharSetContainer::createCollationLock(tdbb, tt_id);
 			lock->lck_object = charset_collations[id];
 
+			fb_assert(charset_collations[id]->useCount == 0);
+			fb_assert(charset_collations[id]->obsolete == 0);
+
 			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+
+			// as we just obtained SR lock for new collation instance 
+			// we could safely delete obsolete instance
+			if (to_delete)
+			{
+				to_delete->destroy();
+				delete to_delete;
+			}
 		}
 	}
 	else
+	{
+		if (to_delete)
+		{
+			LCK_lock(tdbb, to_delete->existenceLock, LCK_SR, LCK_WAIT);
+			to_delete->destroy();
+			delete to_delete;
+		}
+
 		ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(tt_id));
+	}
 
 	return charset_collations[id];
 }
@@ -366,6 +403,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 {
 	const USHORT id = TTYPE_TO_COLLATION(tt_id);
+	fb_assert(id != 0);
 
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
 	{
@@ -375,20 +413,21 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(charset_collations[id]->name));
 		}
 
-		if (charset_collations[id]->existenceLock)
-			LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
+		fb_assert(charset_collations[id]->existenceLock);
+		LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
 
 		charset_collations[id]->obsolete = true;
 
-		if (charset_collations[id]->existenceLock)
-		{
-			LCK_release(tdbb, charset_collations[id]->existenceLock);
-			charset_collations[id]->existenceLock = NULL;
-		}
+		LCK_release(tdbb, charset_collations[id]->existenceLock);
 	}
 	else
 	{
+		// signal other processes collation is gone
 		Lock* lock = CharSetContainer::createCollationLock(tdbb, tt_id);
+
+		// Ñould we have an AST on this lock ? If yes, it will fail as we don't
+		// assign lck_object to it, so clear ast routine for safety
+		lock->lck_ast = NULL;
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, lock);
@@ -1220,31 +1259,25 @@ static int blocking_ast_collation(void* ast_object)
  **************************************/
 	Collation* tt = static_cast<Collation*>(ast_object);
 
-	if (tt && tt->useCount == 0)
+	try
 	{
+		Database* dbb = tt->existenceLock->lck_dbb;
+
+		Database::SyncGuard dsGuard(dbb, true);
+
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(tt->existenceLock->lck_attachment);
+
+		Jrd::ContextPoolHolder context(tdbb, 0);
+
 		tt->obsolete = true;
-
-		if (tt->existenceLock)
-		{
-			try
-			{
-				Database* dbb = tt->existenceLock->lck_dbb;
-
-				Database::SyncGuard dsGuard(dbb, true);
-
-				ThreadContextHolder tdbb;
-				tdbb->setDatabase(dbb);
-				tdbb->setAttachment(tt->existenceLock->lck_attachment);
-
-				Jrd::ContextPoolHolder context(tdbb, 0);
-
-				LCK_release(tdbb, tt->existenceLock);
-				tt->existenceLock = NULL;
-			}
-			catch (const Firebird::Exception&)
-			{} // no-op
-		}
+		if (!tt->useCount)
+			LCK_release(tdbb, tt->existenceLock);
 	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
 
 	return 0;
 }

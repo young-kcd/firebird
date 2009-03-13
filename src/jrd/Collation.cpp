@@ -939,6 +939,8 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 
 void Collation::destroy()
 {
+	fb_assert(useCount == 0);
+
 	if (tt->texttype_fn_destroy)
 		tt->texttype_fn_destroy(tt);
 
@@ -963,15 +965,21 @@ void Collation::destroy()
 
 void Collation::incUseCount(thread_db* tdbb)
 {
+	fb_assert(!obsolete);
+	fb_assert(useCount >= 0);
+
 	++useCount;
 }
 
 
 void Collation::decUseCount(thread_db* tdbb)
 {
+	fb_assert(useCount > 0);
+
 	if (--useCount == 0)
 	{
-		if (existenceLock)
+		fb_assert(existenceLock);
+		if (obsolete)
 			LCK_re_post(tdbb, existenceLock);
 	}
 }
