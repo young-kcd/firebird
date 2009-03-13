@@ -10122,6 +10122,9 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 		}
 		break;
 
+	case nod_aggregate:
+		break;
+
 	default:
 		fb_assert(false);
 		break;
