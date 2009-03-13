@@ -10091,7 +10091,7 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 	{
 	case nod_list:
 		{
-		    dsql_nod** ptr = input->nod_arg;
+			dsql_nod** ptr = input->nod_arg;
 			for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
 			{
 				remap_streams_to_parent_context(*ptr, parent_context);
@@ -10115,7 +10115,7 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 	case nod_derived_table:
 		{
 			dsql_nod* list = input->nod_arg[e_derived_table_rse]->nod_arg[e_rse_streams];
-		    dsql_nod** ptr = list->nod_arg;
+			dsql_nod** ptr = list->nod_arg;
 
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 				remap_streams_to_parent_context(*ptr, parent_context);
