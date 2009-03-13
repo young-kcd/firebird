@@ -168,7 +168,13 @@ void InternalConnection::doDetach(thread_db *tdbb)
 			m_attachment = att;
 		}
 
-		if (status[1]) {
+		if (status[1] == isc_att_shutdown)
+		{
+			m_attachment = 0;
+			fb_utils::init_status(status);
+		}
+		if (status[1]) 
+		{
 			raise(status, tdbb, "detach");
 		}
 	}
@@ -282,6 +288,12 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 			jrd8_rollback_retaining(status, &m_transaction);
 		else
 			jrd8_rollback_transaction(status, &m_transaction);
+	}
+
+	if (status[1] == isc_att_shutdown && !retain)
+	{
+		m_transaction = 0;
+		fb_utils::init_status(status);
 	}
 }
 

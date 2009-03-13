@@ -60,6 +60,7 @@ public:
 
 static RegisterFBProvider reg;
 
+static bool isConnectionBrokenError(ISC_STATUS status);
 static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &descs);
 static UCHAR sqlTypeToDscType(SSHORT sqlType);
 
@@ -167,19 +168,8 @@ void IscConnection::doDetach(thread_db *tdbb)
 		m_handle = h;
 	}
 
-	switch (status[1])
-	{
-	case 0: // nothing to do
-		break;
-	case isc_att_shutdown:
-	case isc_network_error:
-	case isc_net_read_err:
-	case isc_net_write_err:
-		m_handle = 0;
-		break;
-	default:
+	if (status[1] && !isConnectionBrokenError(status[1]))
 		raise(status, tdbb, "detach");
-	}
 }
 
 bool IscConnection::cancelExecution(thread_db *tdbb)
@@ -267,6 +257,12 @@ void IscTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool retain
 		m_iscProvider.isc_rollback_retaining(status, &m_handle);
 	else
 		m_iscProvider.isc_rollback_transaction(status, &m_handle);
+
+	if (status[1] && isConnectionBrokenError(status[1]) && !retain)
+	{
+		m_handle = 0;
+		fb_utils::init_status(status);
+	}
 
 	fb_assert(retain && m_handle || !retain && !m_handle || status[1] && m_handle);
 }
@@ -1503,6 +1499,20 @@ void FBProvider::loadAPI()
 	m_api = isc_callbacks;
 	m_api_loaded = true;
 }
+
+
+static bool isConnectionBrokenError(ISC_STATUS status)
+{
+	switch (status)
+	{
+	case isc_att_shutdown:
+	case isc_network_error:
+	case isc_net_read_err:
+	case isc_net_write_err:
+		return true;
+	}
+	return false;
+};
 
 
 static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &descs)

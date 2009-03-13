@@ -512,9 +512,9 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
 static void cancel_attachments()
 {
+	MutexLockGuard guard(databases_mutex);
 	engineShuttingDown = true;
 
-	MutexLockGuard guard(databases_mutex);
 	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
 		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
@@ -5733,13 +5733,10 @@ static void purge_attachment(thread_db*		tdbb,
 		}
 	}
 
-	const bool wasShuttingDown = engineShuttingDown;
 	try
 	{
 		// allow to free resources used by dynamic statements
-		engineShuttingDown = false;
 		EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
-		engineShuttingDown = wasShuttingDown;
 
 		const ULONG att_flags = attachment->att_flags;
 		attachment->att_flags |= ATT_shutdown;
@@ -5758,7 +5755,6 @@ static void purge_attachment(thread_db*		tdbb,
 	}
 	catch (const Exception&)
 	{
-		engineShuttingDown = wasShuttingDown;
 		attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
 		throw;
 	}
