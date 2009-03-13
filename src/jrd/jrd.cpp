@@ -5991,28 +5991,38 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 {
 	ex.stuff_exception(userStatus);
 
-	try
+	if (engineShuttingDown)
 	{
-		ThreadStatusGuard temp_status(tdbb);
-
-		dbb->dbb_flags &= ~DBB_being_opened;
-
+		// this attachment will be released as part of engine shutdown process
+		// see also cancel_attachments
 		if (attachment)
+			attachment->att_mutex.leave();
+	}
+	else
+	{
+		try
 		{
-			release_attachment(tdbb, attachment, userStatus);
-		}
+			ThreadStatusGuard temp_status(tdbb);
 
-		if (dbb->checkHandle())
-		{
-			if (!dbb->dbb_attachments)
+			dbb->dbb_flags &= ~DBB_being_opened;
+
+			if (attachment)
 			{
-				shutdown_database(dbb, true);
+				release_attachment(tdbb, attachment, userStatus);
+			}
+
+			if (dbb->checkHandle())
+			{
+				if (!dbb->dbb_attachments)
+				{
+					shutdown_database(dbb, true);
+				}
 			}
 		}
-	}
-	catch (const Exception&)
-	{
-		// no-op
+		catch (const Exception&)
+		{
+			// no-op
+		}
 	}
 
 	return userStatus[1];
