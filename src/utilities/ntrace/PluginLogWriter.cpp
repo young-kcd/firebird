@@ -38,19 +38,8 @@ PluginLogWriter::PluginLogWriter(const char* fileName, size_t maxSize) :
 	m_fileName = fileName;
 
 #ifdef WIN_NT
-	PathName mutexName(m_fileName);
-	for (string::size_type i = 0; i < mutexName.length(); i++)
-	{
-		switch (mutexName[i])
-		{
-			case '\\':
-			case '/':
-			case ':':
-				mutexName[i] = '_';
-		}
-	}
-
-	mutexName.insert(0, "fb_mutex_");
+	PathName mutexName("fb_mutex_");
+	mutexName.append(m_fileName);
 
 	checkMutex("init", ISC_mutex_init(&m_mutex, mutexName.c_str()));
 #endif
@@ -80,7 +69,6 @@ SINT64 PluginLogWriter::seekToEnd()
 	return nFileLen;
 }
 
-// must be called under Guard protection
 void PluginLogWriter::reopen()
 {
 	if (m_fileHandle >= 0)
@@ -183,8 +171,6 @@ void PluginLogWriter::checkErrno(const char* operation)
 
 	const char* strErr;
 #ifdef WIN_NT
-	const int err = errno;
-	const DWORD winerr = GetLastError();
 	strErr = strerror(errno);
 #else
 	char buff[256];
