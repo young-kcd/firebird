@@ -88,7 +88,7 @@ void PluginLogWriter::reopen()
 
 #ifdef WIN_NT
 	HANDLE hFile = CreateFile(
-		m_fileName.c_str(), 
+		m_fileName.c_str(),
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 		NULL,
@@ -96,7 +96,7 @@ void PluginLogWriter::reopen()
 		0, // FILE_FLAG_SEQUENTIAL_SCAN,
 		NULL
 		);
-	m_fileHandle = _open_osfhandle((intptr_t)hFile, 0);
+	m_fileHandle = _open_osfhandle((intptr_t) hFile, 0);
 #else
 	m_fileHandle = ::open(m_fileName.c_str(), O_CREAT | O_APPEND | O_RDWR, S_IREAD | S_IWRITE);
 #endif
@@ -123,11 +123,11 @@ size_t PluginLogWriter::write(const void* buf, size_t size)
 
 	if (m_maxSize && (fileSize > m_maxSize))
 	{
-		const TimeStamp stamp(Firebird::TimeStamp::getCurrentTimeStamp());
+		const TimeStamp stamp(TimeStamp::getCurrentTimeStamp());
 		struct tm times;
 		stamp.decode(&times);
 
-		Firebird::PathName newName;
+		PathName newName;
 		const size_t last_dot_pos = m_fileName.rfind(".");
 		if (last_dot_pos > 0)
 		{
@@ -143,16 +143,16 @@ size_t PluginLogWriter::write(const void* buf, size_t size)
 		}
 
 #ifdef WIN_NT
-		// hvlad: sad, but MSDN said "rename" returns EACCES when newName is already 
+		// hvlad: sad, but MSDN said "rename" returns EACCES when newName already
 		// exists. Therefore we can't just check "rename" result for EEXIST and need
-		// to write platform-dependent code. In reality, "rename" returns EEXIST to 
+		// to write platform-dependent code. In reality, "rename" returns EEXIST to
 		// me, not EACCES, strange...
 		if (!MoveFile(m_fileName.c_str(), newName.c_str()))
 		{
 			const DWORD dwError = GetLastError();
 			if (dwError != ERROR_ALREADY_EXISTS && dwError != ERROR_FILE_NOT_FOUND)
 			{
-				fatal_exception::raiseFmt("PluginLogWriter: MoveFile failed on file \"%s\". Error is : %d", 
+				fatal_exception::raiseFmt("PluginLogWriter: MoveFile failed on file \"%s\". Error is : %d",
 					m_fileName.c_str(), dwError);
 			}
 		}
@@ -160,7 +160,7 @@ size_t PluginLogWriter::write(const void* buf, size_t size)
 		if (rename(m_fileName.c_str(), newName.c_str()))
 		{
 			const int iErr = errno;
-			if (iErr != ENOENT && iErr != EEXIST) 
+			if (iErr != ENOENT && iErr != EEXIST)
 				checkErrno("rename");
 		}
 #endif
@@ -191,7 +191,7 @@ void PluginLogWriter::checkErrno(const char* operation)
 	strerror_r(errno, buff, sizeof(buff));
 	strErr = buff;
 #endif
-	fatal_exception::raiseFmt("PluginLogWriter: operation \"%s\" failed on file \"%s\". Error is : %s", 
+	fatal_exception::raiseFmt("PluginLogWriter: operation \"%s\" failed on file \"%s\". Error is : %s",
 		operation, m_fileName.c_str(), strErr);
 }
 
