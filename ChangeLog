@@ -1,3 +1,10 @@
+2009-03-14 20:17  asfernandes
+
+	* firebird2/src/jrd/: intl.cpp (1.120), extds/InternalDS.cpp
+	(1.18):
+
+	Misc
+
 2009-03-13 17:03  hvlad
 
 	* firebird2/src/jrd/: Collation.cpp (1.17), intl.cpp (1.119):
