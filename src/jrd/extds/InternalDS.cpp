@@ -170,7 +170,7 @@ void InternalConnection::doDetach(thread_db *tdbb)
 
 		if (status[1] == isc_att_shutdown)
 		{
-			m_attachment = 0;
+			m_attachment = NULL;
 			fb_utils::init_status(status);
 		}
 		if (status[1]) 
@@ -259,7 +259,7 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db *tdbb, bool ret
 
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
 		if (!retain) {
-			m_transaction = 0;
+			m_transaction = NULL;
 		}
 	}
 	else
@@ -278,7 +278,7 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
 		if (!retain) {
-			m_transaction = 0;
+			m_transaction = NULL;
 		}
 	}
 	else
@@ -292,7 +292,7 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 
 	if (status[1] == isc_att_shutdown && !retain)
 	{
-		m_transaction = 0;
+		m_transaction = NULL;
 		fb_utils::init_status(status);
 	}
 }

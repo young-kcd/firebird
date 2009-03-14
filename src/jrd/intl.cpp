@@ -371,7 +371,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			lock->lck_object = charset_collations[id];
 
 			fb_assert(charset_collations[id]->useCount == 0);
-			fb_assert(charset_collations[id]->obsolete == 0);
+			fb_assert(!charset_collations[id]->obsolete);
 
 			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
@@ -425,8 +425,8 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 		// signal other processes collation is gone
 		Lock* lock = CharSetContainer::createCollationLock(tdbb, tt_id);
 
-		// Ñould we have an AST on this lock ? If yes, it will fail as we don't
-		// assign lck_object to it, so clear ast routine for safety
+		// Could we have an AST on this lock? If yes, it will fail as we don't
+		// assign lck_object to it, so clear ast routine for safety.
 		lock->lck_ast = NULL;
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
