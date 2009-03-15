@@ -5245,6 +5245,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	TRA_header_write(tdbb, dbb, 0L);	// Update transaction info on header page.
 #endif
 
+	MET_clear_cache(tdbb);
+
 #ifdef GARBAGE_THREAD
 	VIO_fini(tdbb);
 #endif
