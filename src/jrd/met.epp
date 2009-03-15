@@ -524,6 +524,10 @@ void MET_clear_cache(thread_db* tdbb)
 
 	Database* dbb = tdbb->getDatabase();
 
+	for (int i = 0; i < DB_TRIGGER_MAX; i++) {
+		release_cached_triggers(tdbb, dbb->dbb_triggers[i]);
+	}
+
 	vec<jrd_rel*>* relations = dbb->dbb_relations;
 	{ // scope
 		vec<jrd_rel*>::iterator ptr, end;
