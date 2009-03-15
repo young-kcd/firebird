@@ -529,6 +529,7 @@ void MET_clear_cache(thread_db* tdbb)
 	}
 
 	vec<jrd_rel*>* relations = dbb->dbb_relations;
+	if (relations)
 	{ // scope
 		vec<jrd_rel*>::iterator ptr, end;
 		for (ptr = relations->begin(), end = relations->end(); ptr < end; ++ptr)
