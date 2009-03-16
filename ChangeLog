@@ -1,3 +1,24 @@
+2009-03-16 17:51  alexpeshkoff
+
+	* firebird2/: builds/install/misc/firebird.conf (1.51),
+	src/common/config/config.cpp (1.95):
+
+	Fixed CORE-2376: Change default for authentication method parameter
+
+2009-03-16 17:31  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.274), interface.cpp (1.210),
+	remote.cpp (1.83), remote.h (1.93), server.cpp (1.242), xnet.cpp
+	(1.130), os/win32/wnet.cpp (1.73):
+
+	Cleanup - events delivery using unix signals is not used any more
+
+2009-03-15 21:09  hvlad
+
+	* firebird2/src/jrd/met.epp (1.277):
+
+	Fixed AV in boot build.
+
 2009-03-15 19:05  hvlad
 
 	* firebird2/src/jrd/jrd.cpp (1.532):
