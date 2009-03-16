@@ -699,9 +699,9 @@ XDR_INT rem_port::send_partial(PACKET* pckt)
 	return (*this->port_send_partial)(this, pckt);
 }
 
-rem_port* rem_port::connect(PACKET* pckt, t_event_ast ast)
+rem_port* rem_port::connect(PACKET* pckt)
 {
-	return (*this->port_connect)(this, pckt, ast);
+	return (*this->port_connect)(this, pckt);
 }
 
 rem_port* rem_port::request(PACKET* pckt)

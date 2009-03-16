@@ -240,7 +240,7 @@ static bool		accept_connection(rem_port*, const P_CNCT*);
 static void		alarm_handler(int);
 #endif
 static rem_port*		alloc_port(rem_port*);
-static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
+static rem_port*		aux_connect(rem_port*, PACKET*);
 static rem_port*		aux_request(rem_port*, PACKET*);
 
 #if !defined(WIN_NT)
@@ -285,9 +285,6 @@ static void		inet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
-#if !(defined WIN_NT)
-static void		inet_handler(void* _port);
-#endif
 static caddr_t	inet_inline(XDR *, u_int);
 static void		inet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putlong(XDR*, const SLONG*);
@@ -1230,7 +1227,7 @@ static rem_port* alloc_port( rem_port* parent)
 	return port;
 }
 
-static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
+static rem_port* aux_connect(rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1315,26 +1312,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		SOCLOSE(n);
 		return NULL;
 	}
-
-#ifdef SIOCSPGRP
-	if (ast)
-	{
-		int arg;
-#ifdef HAVE_GETPGRP
-		arg = getpgrp();
-#else
-		arg = getpid();
-#endif
-		if (ioctl(n, SIOCSPGRP, &arg) < 0) {
-			inet_error(port, "ioctl/SIOCSPGRP", isc_net_event_connect_err, INET_ERRNO);
-			SOCLOSE(port->port_channel);
-			return NULL;
-		}
-
-		new_port->port_ast = ast;
-		ISC_signal(SIGURG, inet_handler, new_port);
-	}
-#endif /* SIOCSPGRP */
 
 	new_port->port_handle = (HANDLE) n;
 
@@ -1512,12 +1489,6 @@ static void disconnect( rem_port* port)
 	}
 
 #endif /* WIN_NT */
-
-#ifndef WIN_NT
-	if (port->port_ast) {
-		ISC_signal_cancel(SIGURG, inet_handler, port);
-	}
-#endif
 
 /* If this is a sub-port, unlink it from it's parent */
 	Firebird::MutexLockGuard guard(port_mutex);
@@ -2524,36 +2495,6 @@ static u_int inet_getpostn( XDR * xdrs)
 
 	return (u_int) (xdrs->x_private - xdrs->x_base);
 }
-
-#if !(defined WIN_NT)
-static void inet_handler(void* port_void)
-{
-/**************************************
- *
- *	i n e t _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	Inet_handler is called the the signal handler on receipt of
- *	a SIGURG signal indicating out-of-band data.  Since SIGURG
- *	may be noisy, check to see if any IO is pending on the channel.
- *	If not, ignore the signal.  If so, call the port specific
- *	handler to do something appropriate.
- *
- **************************************/
-	rem_port* port = static_cast<rem_port*>(port_void);
-
-/* If there isn't any out of band data, this signal isn't for us */
-	SCHAR junk;
-	const int n = recv((SOCKET) port->port_handle, &junk, 1, MSG_OOB);
-	if (n < 0) {
-		return;
-	}
-
-	(*port->port_ast) (port);
-}
-#endif
 
 static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
 {

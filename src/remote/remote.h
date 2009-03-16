@@ -561,9 +561,7 @@ const USHORT PORT_detached		= 0x0400;	// op_detach, op_drop_database or op_servi
 
 /* Port itself */
 
-//typedef XDR_INT (*t_event_ast)();
-typedef void (*t_event_ast)(rem_port*);
-typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
+typedef rem_port* (*t_port_connect)(rem_port*, PACKET*);
 
 typedef Firebird::RefPtr<rem_port> RemPortPtr;
 
@@ -622,7 +620,6 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	int				port_channel;		/* handle for connection (from by OS) */
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 	Rdb*			port_context;
-	t_event_ast		port_ast;			/* AST for events */
 #ifdef WIN_NT
 	HANDLE			port_event;			// event associated with port, Windows only
 #endif
@@ -669,7 +666,7 @@ public:
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
 		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0),
-		port_context(0), port_ast(0),
+		port_context(0),
 #ifdef WIN_NT
 		port_event(INVALID_HANDLE_VALUE),
 #endif
@@ -795,7 +792,7 @@ public:
 	rem_port*	receive(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
-	rem_port*	connect(PACKET* pckt, t_event_ast);
+	rem_port*	connect(PACKET* pckt);
 	rem_port*	request(PACKET* pckt);
 	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
 

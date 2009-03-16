@@ -65,7 +65,7 @@ static bool wnet_shutdown = false;
 
 static bool		accept_connection(rem_port*, const P_CNCT*);
 static rem_port*		alloc_port(rem_port*);
-static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
+static rem_port*		aux_connect(rem_port*, PACKET*);
 static rem_port*		aux_request(rem_port*, PACKET*);
 static bool		connect_client(rem_port*);
 static void		disconnect(rem_port*);
@@ -618,7 +618,7 @@ static rem_port* alloc_port( rem_port* parent)
 
 
 // Third param "ast" is unused.
-static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
+static rem_port* aux_connect( rem_port* port, PACKET* packet)
 {
 /**************************************
  *

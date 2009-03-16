@@ -1138,7 +1138,7 @@ static void aux_connect( rem_port* port, P_REQ * request, PACKET* send)
  *  This code is 64-bit unsafe, unused and also has a security hole, thus I disable it for now
  *
  **************************************/
-	port->connect(0, 0);
+	port->connect(0);
 	rem_port* partner = (rem_port*) request->p_req_partner;
 	partner->port_async = port;
 }
@@ -1190,7 +1190,7 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 	}
 
 	if (aux_port) {
-		aux_port->connect(send, 0);
+		aux_port->connect(send);
 		aux_port->port_context = rdb;
 	}
 

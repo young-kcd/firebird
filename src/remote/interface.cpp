@@ -3113,7 +3113,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 			{
 				return user_status[1];
 			}
-			if (!port->connect(packet, 0)) {
+			if (!port->connect(packet)) {
 				return user_status[1];
 			}
 
