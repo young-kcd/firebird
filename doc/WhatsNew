@@ -2,6 +2,70 @@
   * v2.5 Beta 1
   *************
 
+    * Bugfix CORE-2372
+        Server crashes inside CMP_release() while releasing an already freed collation resource
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2368
+        Access violation after the isc_cancel_events() call if event was not found
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2356
+        On Windows the listener process of Classic Server can't create necessary resources
+        after restart if any worker process was present
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2355
+        Incorrect handling of LOWER/UPPER when result string shrinks in terms of byte length
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2354
+        "fb_lock_print -ia" output is not flushed to a file between iterations
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2351
+        An aliased database cannot be created
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2349
+        False "Invalid SQLDA" error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2348
+        More problems with transaction numbers overflowing 32-bit signed integer
+        and corrupting a database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2347
+        "Deadlock. Page type <N> lock conversion denied" error is reported
+        under a concurrent "connect-work-disconnect" kind of load
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2341
+        Hidden variables conflict with output parameters, causing assertions,
+        unexpected errors or possibly incorrect results
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2340
+        Bugcheck 258 (page slot not empty) could occurs under high concurrent load
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2339
+        Incorrect result for the derived expression based on aggregate and computation
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2320
         Complex recursive query may produce not all rows
       Contributor(s):
@@ -571,6 +635,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-1980
+        Sweeper consumes 100% CPU forever
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-1972
         Non-SYSDBA user can change FW mode of a database
       Contributor(s):
@@ -665,6 +734,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-1696
+        Deadlock in the lock manager when using NBackup utility
+      Contributor(s):
+        Roman Simakov <roman.simakov at red-soft.biz>
+
     * Bugfix CORE-1690
         Error "arithmetic exception, numeric overflow, or string truncation" for UTF8 tables
       Contributor(s):
@@ -753,8 +827,18 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-2376
+        Change default value for the authentication method parameter
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement CORE-2322
         Support SYSDBA-like access of Windows domain administrators to the security database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-2316
+        Throttling NBackup on large databases
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -872,15 +956,6 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Feature CORE-2113
-        Revoke all privileges of a particular user or role
-      Syntax:
-        REVOKE ALL ON ALL FROM { <user list> | <role list> } 
-      See also:
-        /doc/README.ddl.txt (section #12)
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
     * Feature CORE-2323
         Ability to trace various events happening inside the database engine
       See also:
@@ -889,6 +964,15 @@
         Vlad Khorsun <hvlad at users.sourceforge.net>
         Nickolay Samofatov <skidder at users.sourceforge.net>
         Dmitry Starodubov <dmitry.starodubov at red-soft.biz>
+
+    * Feature CORE-2113
+        Revoke all privileges of a particular user or role
+      Syntax:
+        REVOKE ALL ON ALL FROM { <user list> | <role list> } 
+      See also:
+        /doc/README.ddl.txt (section #12)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Feature CORE-2054
         Ability to query contents database file pages via ISC API interface
