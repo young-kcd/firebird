@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="engine"
 	ProjectGUID="{F8798A49-9D20-451E-A7BD-FEB5237103B5}"
+	RootNamespace="engine"
 	>
 	<Platforms>
 		<Platform

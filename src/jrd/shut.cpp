@@ -468,9 +468,9 @@ static void check_backup_state(thread_db* tdbb)
 {
 	Database* dbb = tdbb->getDatabase();
 
-	BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
+	BackupManager::StateReadGuard stateGuard(tdbb);
 
-	if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
+	if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
 	{
 		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}
@@ -614,7 +614,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 			LCK_release(tdbb, dbb->dbb_sh_counter_lock);
 		if (dbb->dbb_lock)
 			LCK_release(tdbb, dbb->dbb_lock);
-		dbb->dbb_backup_manager->shutdown_locks(tdbb);
+		dbb->dbb_backup_manager->shutdown(tdbb);
 		dbb->dbb_ast_flags |= DBB_shutdown_locks;
 	}
 

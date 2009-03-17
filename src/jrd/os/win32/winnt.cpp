@@ -991,6 +991,8 @@ static jrd_file* seek_file(jrd_file*			file,
 
 	*overlapped_ptr = overlapped;
 
+	fb_assert(dbb == bdb->bdb_dbb);
+
 #ifdef SUPERSERVER_V2
 	Firebird::MutexLockGuard guard(file->fil_mutex);
 

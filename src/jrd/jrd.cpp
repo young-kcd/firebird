@@ -718,6 +718,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename, const
 	}
 }
 
+
 ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 								const TEXT* filename,
 								Attachment** handle,
@@ -1304,7 +1305,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	// Recover database after crash during backup difference file merge
-	dbb->dbb_backup_manager->end_backup(tdbb, true); // true = do recovery
+	dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
 
 	if (attachment->att_trace_manager->needs().event_attach)
 	{
@@ -5093,6 +5094,42 @@ static void detachLocksFromAttachment(Attachment* attachment)
 }
 
 
+bool Attachment::backupStateWriteLock(thread_db* tdbb, SSHORT wait)
+{
+	if (att_backup_state_counter++)
+		return true;
+
+	if (att_database->dbb_backup_manager->lockStateWrite(tdbb, wait))
+		return true;
+
+	att_backup_state_counter--;
+	return false;
+}
+
+void Attachment::backupStateWriteUnLock(thread_db* tdbb)
+{
+	if (--att_backup_state_counter == 0)
+		att_database->dbb_backup_manager->unlockStateWrite(tdbb);
+}
+
+bool Attachment::backupStateReadLock(thread_db* tdbb, SSHORT wait)
+{
+	if (att_backup_state_counter++)
+		return true;
+
+	if (att_database->dbb_backup_manager->lockStateRead(tdbb, wait))
+		return true;
+
+	att_backup_state_counter--;
+	return false;
+}
+
+void Attachment::backupStateReadUnLock(thread_db* tdbb)
+{
+	if (--att_backup_state_counter == 0)
+		att_database->dbb_backup_manager->unlockStateRead(tdbb);
+}
+ 
 Attachment::Attachment(MemoryPool* pool, Database* dbb)
 :	att_pool(pool),
 	att_memory_stats(&dbb->dbb_memory_stats),
@@ -5110,7 +5147,8 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_udf_pointers(*pool),
 	att_strings_buffer(NULL),
 	att_ext_connection(NULL),
-	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
+	att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
+	att_backup_state_counter(0)
 {
 	att_mutex.enter();
 }

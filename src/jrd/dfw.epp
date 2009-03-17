@@ -1091,14 +1091,14 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 	case 3:
 		{
-			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
-			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
+			BackupManager::StateReadGuard stateGuard(tdbb);
+			if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
 			{
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
 						 Arg::Gds(isc_wrong_backup_state));
 			}
 			check_filename(work->dfw_name, true);
-			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
+			dbb->dbb_backup_manager->setDifference(tdbb, work->dfw_name.c_str());
 		}
 
 		return false;
@@ -1138,14 +1138,14 @@ static bool delete_difference(	thread_db*	tdbb,
 		return true;
 	case 3:
 		{
-			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
+			BackupManager::StateReadGuard stateGuard(tdbb);
 
-			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
+			if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
 			{
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
 						 Arg::Gds(isc_wrong_backup_state));
 			}
-			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
+			dbb->dbb_backup_manager->setDifference(tdbb, NULL);
 		}
 
 		return false;
@@ -1183,7 +1183,7 @@ static bool begin_backup(	thread_db*	tdbb,
 	case 2:
 		return true;
 	case 3:
-		dbb->dbb_backup_manager->begin_backup(tdbb);
+		dbb->dbb_backup_manager->beginBackup(tdbb);
 		return false;
 	}
 
@@ -1220,7 +1220,7 @@ static bool end_backup(	thread_db*	tdbb,
 		return true;
 	case 3:
 		// End backup normally
-		dbb->dbb_backup_manager->end_backup(tdbb, false);
+		dbb->dbb_backup_manager->endBackup(tdbb, false);
 		return false;
 	}
 

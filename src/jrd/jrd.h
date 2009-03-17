@@ -308,6 +308,7 @@ public:
 	SLONG		att_attachment_id;			// Attachment ID
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
+	ULONG		att_backup_state_counter;			// Counter of backup state locks for attachment
 	SLONG		att_event_session;			// Event session id, if any
 	SecurityClass*	att_security_class;		// security class for database
 	SecurityClassList*	att_security_classes;	// security classes
@@ -347,6 +348,11 @@ public:
 		jrd_tra* transaction, const Firebird::string& text);
 
 	void cancelExternalConnection(thread_db* tdbb);
+
+	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
+	void backupStateWriteUnLock(thread_db* tdbb);
+	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
+	void backupStateReadUnLock(thread_db* tdbb);
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb);

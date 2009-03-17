@@ -947,9 +947,9 @@ void DatabaseSnapshot::putDatabase(const Database* database, ClumpletWriter& wri
 	thread_db* tdbb = JRD_get_thread_data();
 
 	{	// scope
-		BackupManager::SharedDatabaseHolder sdbHolder(tdbb, database->dbb_backup_manager);
+		BackupManager::StateReadGuard stateGuard(tdbb);
 
-		switch (database->dbb_backup_manager->get_state())
+		switch (database->dbb_backup_manager->getState())
 		{
 			case nbak_state_normal:
 				temp = backup_state_normal;

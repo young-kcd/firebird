@@ -790,8 +790,8 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 						{
 							if (isODS11_x)
 							{
-								BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
-								const bool nbak_stalled = (dbb->dbb_backup_manager->get_state() == nbak_state_stalled);
+								BackupManager::StateReadGuard stateGuard(tdbb);
+								const bool nbak_stalled = (dbb->dbb_backup_manager->getState() == nbak_state_stalled);
 
 								USHORT next_init_pages = 1;
 								// ensure there are space on disk for faked page

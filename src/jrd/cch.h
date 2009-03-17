@@ -167,21 +167,23 @@ public:
 	SSHORT		bdb_use_count;			/* Number of active users */
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
-	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
-	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk
+	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk 
 	que			bdb_shared;				// shared latches queue
 };
 
 /* bdb_flags */
 
-// to clear BDB_dirty use clear_page_dirty_flag()
+// to set/clear BDB_dirty use  set_dirty_flag()/clear_dirty_flag()
 const int BDB_dirty				= 1;		/* page has been updated but not written yet */
 const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
 const int BDB_writer			= 4;		/* someone is updating the page */
 const int BDB_marked			= 8;		/* page has been updated */
 const int BDB_must_write		= 16;		/* forces a write as soon as the page is released */
 const int BDB_faked				= 32;		/* page was just allocated */
-//const int BDB_journal			= 64;		// Journal buffer
+/*	BDB_merge: Page marked for backup merge purposes to prevent redundant writing
+	just readed from delta page back into the delta while delta is merging.
+	See cch.cpp: write_page */
+const int BDB_merge				= 64;		
 const int BDB_system_dirty 		= 128;		/* system transaction has marked dirty */
 const int BDB_io_error	 		= 256;		/* page i/o error */
 const int BDB_read_pending 		= 512;		/* read is pending */

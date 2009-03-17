@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="common_classic"
 	ProjectGUID="{F5746066-8613-4811-B27C-0ED70FF9F0FF}"
+	RootNamespace="common_classic"
 	>
 	<Platforms>
 		<Platform
@@ -421,6 +422,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\condition.h"
 				>
 			</File>
 			<File

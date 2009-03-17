@@ -210,6 +210,7 @@ typedef Mutex Spinlock;
 // Pthreads version of the class
 class Mutex
 {
+friend class Condition;
 private:
 	pthread_mutex_t mlock;
 	static pthread_mutexattr_t attr;

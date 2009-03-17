@@ -1094,6 +1094,10 @@ void API_ROUTINE gds__trace(const TEXT * text)
  *
  **************************************/
 
+	char buffer[1024]; // 1K should be enough for the trace message
+	char* p = buffer;
+
+/*
 	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
 
 	// 07 Sept 2003, Nickolay Samofatov.
@@ -1110,8 +1114,6 @@ void API_ROUTINE gds__trace(const TEXT * text)
     today.tm_min = rem / 60;
     today.tm_sec = rem % 60;
 
-	char buffer[1024]; // 1K should be enough for the trace message
-	char* p = buffer;
 	gds__ulstr(p, today.tm_year + 1900, 4, '0');
 	p += 4;
 	*p++ = '-';
@@ -1130,7 +1132,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	gds__ulstr(p, today.tm_sec, 2, '0');
 	p += 2;
 	*p++ = ' ';
-	ULONG apid =
+*/	ULONG apid =
 #ifdef WIN_NT
 #ifdef SUPERSERVER
 			     GetCurrentThreadId();
@@ -1143,6 +1145,15 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	gds__ulstr(p, apid, 5, ' ');
 	p += 5;
 	*p++ = ' ';
+#if (defined(WIN_NT) && !defined(SUPERSERVER))
+	ULONG atid = GetCurrentThreadId();
+	if (apid != atid)	// For superclassic
+	{
+		gds__ulstr(p, atid, 5, ' ');
+		p += 5;
+		*p++ = ' ';
+	}
+#endif
 	strcpy(p, text);
 	p += strlen(p);
 	strcat(p, "\n");

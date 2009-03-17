@@ -21,8 +21,9 @@
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
+ *  Contributor(s):
  *
+ *	Roman Simakov <roman-simakov@users.sourceforge.net>
  *
  */
 
@@ -34,6 +35,8 @@
 #include "jrd.h"
 #include "lck_proto.h"
 #include "err_proto.h"
+#include "../common/classes/rwlock.h"
+#include "../common/classes/condition.h"
 
 #ifdef COS_DEBUG
 #include <stdarg.h>
@@ -48,7 +51,7 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 	try
 	{
-		Database* dbb = globalRWLock->getDatabase();
+		Database* dbb = globalRWLock->cachedLock->lck_dbb;
 
 		Database::SyncGuard dsGuard(dbb, true);
 
@@ -64,334 +67,296 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 }
 
 GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
-						   size_t lockLen, const UCHAR* lockStr, lck_owner_t physical_lock_owner,
-						   lck_owner_t default_logical_lock_owner, bool lock_caching)
-	: PermanentStorage(p), internal_blocking(0), external_blocking(false),
-	  physicalLockOwner(physical_lock_owner), defaultLogicalLockOwner(default_logical_lock_owner),
-	  lockCaching(lock_caching), dbb(tdbb->getDatabase()), readers(p)
+		lck_owner_t lock_owner, bool lock_caching, size_t lockLen, const UCHAR* lockStr)
+	: PermanentStorage(p), blocking(false), lockCaching(lock_caching), readers(0), pendingLock(0),
+	pendingWriters(0), currentWriter(false)
 {
 	SET_TDBB(tdbb);
 
-	cached_lock = FB_NEW_RPT(getPool(), lockLen) Lock();
-	cached_lock->lck_type = static_cast<lck_t>(lckType);
-	cached_lock->lck_owner_handle = 0;
-	cached_lock->lck_length = lockLen;
+	cachedLock = FB_NEW_RPT(getPool(), lockLen) Lock();
+	cachedLock->lck_type = static_cast<lck_t>(lckType);
+	cachedLock->lck_owner_handle = LCK_get_owner_handle_by_type(tdbb, lock_owner);
+	cachedLock->lck_length = lockLen;
 
-	cached_lock->lck_dbb = dbb;
-	cached_lock->lck_parent = dbb->dbb_lock;
-	cached_lock->lck_object = this;
-	cached_lock->lck_ast = lockCaching ? blocking_ast_cached_lock : NULL;
-	memcpy(&cached_lock->lck_key, lockStr, lockLen);
-
-	writer.owner_handle = 0;
-	writer.entry_count = 0;
+	Database* dbb = tdbb->getDatabase();
+	cachedLock->lck_dbb = dbb;
+	cachedLock->lck_parent = dbb->dbb_lock;
+	cachedLock->lck_object = this;
+	cachedLock->lck_ast = lockCaching ? blocking_ast_cached_lock : NULL;
+	memcpy(&cachedLock->lck_key, lockStr, lockLen);
 }
 
 GlobalRWLock::~GlobalRWLock()
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	LCK_release(tdbb, cached_lock);
-	delete cached_lock;
+	if (cachedLock)
+		shutdownLock();
 }
 
-bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, SLONG owner_handle)
+void GlobalRWLock::shutdownLock()
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
+
+	COS_TRACE(("(%p)->shutdownLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+	LCK_release(tdbb, cachedLock);
+
+	delete cachedLock;
+	cachedLock = NULL;
+}
+
+bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 {
 	SET_TDBB(tdbb);
-	fb_assert(owner_handle);
 
-	{ // this is a first scope for a code where counters are locked
-		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	Database* dbb = tdbb->getDatabase();
 
-		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
-		// Check if this is a recursion case
-		size_t n = size_t(-1);
-		if (level == LCK_read)
+	{	// scope 1
+
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
+
+		COS_TRACE(("(%p)->lockWrite stage 1 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+		++pendingWriters;
+
+		while (readers > 0 )
 		{
-			if (readers.find(owner_handle, n))
-			{
-				readers[n].entry_count++;
-				return true;
-			}
-		}
-		else
-		{
-			if (writer.owner_handle == owner_handle)
-			{
-				writer.entry_count++;
-				return true;
-			}
+			Database::Checkout checkoutDbb(dbb);
+			noReaders.wait(counterMutex);
 		}
 
-		const bool all_compatible =
-			!writer.entry_count && (level == LCK_read || readers.getCount() == 0);
+		COS_TRACE(("(%p)->lockWrite stage 2 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
 
-		// We own the lock and all present requests are compatible with us
-		// In case of any congestion we force all requests through the lock
-		// manager to ensure lock ordering.
-		if (cached_lock->lck_physical >= level && all_compatible &&
-			!internal_blocking && !external_blocking)
+		while (currentWriter || pendingLock)
 		{
-			if (level == LCK_read)
+			Database::Checkout checkoutDbb(dbb);
+			writerFinished.wait(counterMutex);
+		}
+
+		COS_TRACE(("(%p)->lockWrite stage 3 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+		fb_assert(!readers && !currentWriter);
+
+		if (cachedLock->lck_physical > LCK_none)
+		{
+			LCK_release(tdbb, cachedLock);	// To prevent selfdeadlock
+			invalidate(tdbb);
+		}
+
+		++pendingLock;
+	}
+
+
+	COS_TRACE(("(%p)->lockWrite LCK_lock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d), pendingLock(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical, pendingLock));
+
+	if (!LCK_lock(tdbb, cachedLock, LCK_write, wait))
+	{
+	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);  
+		--pendingLock;
+	    if (--pendingWriters)
+	    {
+	        if (!currentWriter)
+	            writerFinished.notifyAll();
+	    }
+	    return false;
+	}
+
+	{	// scope 2
+
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
+
+		--pendingLock;
+		--pendingWriters;
+
+		fb_assert(!currentWriter);
+
+		currentWriter = true;
+
+		COS_TRACE(("(%p)->lockWrite end readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+		return fetch(tdbb);
+	}
+}
+
+void GlobalRWLock::unlockWrite(thread_db* tdbb)
+{
+	SET_TDBB(tdbb);
+
+	Database* dbb = tdbb->getDatabase();
+
+	Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
+
+	COS_TRACE(("(%p)->unlockWrite readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+	currentWriter = false;
+
+	if (!lockCaching)
+		LCK_release(tdbb, cachedLock);
+	else if (blocking)
+	{
+		LCK_downgrade(tdbb, cachedLock);
+		blocking = false;
+	}
+
+	if (cachedLock->lck_physical < LCK_read)
+		invalidate(tdbb);
+
+	writerFinished.notifyAll();
+	COS_TRACE(("(%p)->unlockWrite end readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+}
+
+bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
+{
+	SET_TDBB(tdbb);
+
+	Database* dbb = tdbb->getDatabase();
+
+	bool needFetch;
+
+	{	// scope 1
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
+
+		COS_TRACE(("(%p)->lockRead stage 1 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+		while (true)
+		{
+			if (readers > 0 && queueJump)
 			{
-				ObjectOwnerData ownerData;
-				ownerData.owner_handle = owner_handle;
-				ownerData.entry_count++;
-				fb_assert(n <= readers.getCount());
-				readers.insert(n, ownerData);
-			}
-			else
-			{
-				writer.owner_handle = owner_handle;
-				writer.entry_count++;
+				COS_TRACE(("(%p)->lockRead queueJump", this));
+				readers++;
+				return true;
 			}
 
+			while (pendingWriters > 0 || currentWriter)
+			{
+				Database::Checkout checkoutDbb(dbb);
+				writerFinished.wait(counterMutex);
+			}
+		
+			COS_TRACE(("(%p)->lockRead stage 3 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+				this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+			if (!pendingLock)
+				break;
+
+			counterMutex.leave();
+			Database::Checkout checkoutDbb(dbb);
+			counterMutex.enter();
+		}
+
+		needFetch = cachedLock->lck_physical < LCK_read;
+		if (!needFetch)
+		{
+			++readers;
 			return true;
 		}
 
-		// We need to release lock to get new level lock
-		if ( (cached_lock->lck_physical > 0) && (writer.entry_count == 0) && (readers.getCount() == 0) )
-		{
-			LCK_release(tdbb, cached_lock);
-			invalidate(tdbb, false);
-			external_blocking = false;
-			COS_TRACE(("release our lock to get new level lock, type=%i, level=%i", cached_lock->lck_type, cached_lock->lck_physical));
-		}
+		++pendingLock;
 
-		internal_blocking++;
+		fb_assert(cachedLock->lck_physical == LCK_none);
 	}
 
-	// There is some congestion. Need to use the lock manager.
-	// Request new lock at the new level. Several concurrent lock requests may
-	// wait here in the same process in parallel.
-	Lock* newLock = FB_NEW_RPT(getPool(), cached_lock->lck_length) Lock;
-	newLock->lck_type = cached_lock->lck_type;
-	newLock->lck_owner_handle = owner_handle;
-	newLock->lck_length = cached_lock->lck_length;
-
-	newLock->lck_dbb = cached_lock->lck_dbb;
-	newLock->lck_parent = cached_lock->lck_parent;
-	newLock->lck_object = cached_lock->lck_object;
-	newLock->lck_ast = cached_lock->lck_ast;
-	memcpy(&newLock->lck_key, &cached_lock->lck_key, cached_lock->lck_length);
-
-	COS_TRACE(("request new lock, type=%i, level=%i", cached_lock->lck_type, level));
-	if (!LCK_lock(tdbb, newLock, level, wait))
+	if (!LCK_lock(tdbb, cachedLock, LCK_read, wait))
 	{
-		COS_TRACE(("Can't get a lock"));
-		delete newLock;
-		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
-		fb_assert(internal_blocking > 0);
-		internal_blocking--;
+	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);  
+		--pendingLock;
 		return false;
 	}
-	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
 
-	{ // this is a second scope for a code where counters are locked
-		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	{	// scope 2
+		Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
-		fb_assert(internal_blocking > 0);
-		internal_blocking--;
+		--pendingLock;
+		++readers;
 
-		// Here old lock is not protecting shared object. We must refresh state by fetch.
-		if (newLock->lck_physical >= LCK_read)
-		{
-			try
-			{
-				fetch(tdbb);
-			}
-			catch (const Firebird::Exception&)
-			{
-				LCK_release(tdbb, newLock);
-				delete newLock;
-				return false;
-			}
-		}
-
-		if (level == LCK_read)
-		{
-			ObjectOwnerData ownerData;
-			ownerData.entry_count++;
-			ownerData.owner_handle = owner_handle;
-			readers.add(ownerData);
-		}
-		else
-		{
-			writer.owner_handle = owner_handle;
-			writer.entry_count++;
-		}
-
-		// Replace cached lock with the new lock if needed
-		COS_TRACE(("Replace lock, type=%i", cached_lock->lck_type));
-		if (newLock->lck_physical > cached_lock->lck_physical)
-		{
-			LCK_release(tdbb, cached_lock);
-			Lock* const old_lock = cached_lock;
-			cached_lock = newLock;
-			delete old_lock;
-			if (!LCK_set_owner_handle(tdbb, cached_lock,
-									  LCK_get_owner_handle_by_type(tdbb, physicalLockOwner)))
-			{
-				COS_TRACE(("Error: set owner handle for captured lock, type=%i", cached_lock->lck_type));
-				LCK_release(tdbb, cached_lock);
-				return false;
-			}
-		}
-		else
-		{
-			LCK_release(tdbb, newLock);
-			delete newLock;
-		}
+		COS_TRACE(("(%p)->lockRead end readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+		
+		return fetch(tdbb);
 	}
-
-	return true;
 }
 
-// NOTE: unlock method must be signal safe
-// This function may be called in AST. The function doesn't wait.
-void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_handle)
+void GlobalRWLock::unlockRead(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	Database* dbb = tdbb->getDatabase();
 
-	COS_TRACE(("unlock level=%i", level));
+	Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 
-	// Check if this is a recursion case
-	if (level == LCK_read)
+	COS_TRACE(("(%p)->unlockRead readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+	readers--;
+
+	if (!readers)
 	{
-		size_t n;
-		if (!readers.find(owner_handle, n))
+		if (!lockCaching || pendingWriters || blocking)
 		{
-			ERR_bugcheck_msg("Attempt to call GlobalRWLock::unlock() while not holding a valid lock for logical owner");
+			LCK_release(tdbb, cachedLock);	// Release since concurrent request needs LCK_write
+			invalidate(tdbb);
 		}
-		fb_assert(readers[n].entry_count > 0);
-		readers[n].entry_count--;
-		if (readers[n].entry_count == 0)
-			readers.remove(n);
+
+		noReaders.notifyAll();
 	}
-	else
+	COS_TRACE(("(%p)->unlockRead end readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+}
+
+bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
+{
+	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
+
+	COS_TRACE(("(%p)->tryReleaseLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+	if (readers || currentWriter)
+		return false;
+
+	if (cachedLock->lck_physical > LCK_none)
 	{
-		fb_assert(writer.owner_handle == owner_handle);
-		fb_assert(writer.entry_count > 0);
-		fb_assert(cached_lock->lck_physical == LCK_write);
-
-		writer.entry_count--;
-
-		if (!writer.entry_count)
-		{
-			writer.owner_handle = 0;
-			// Optimize non-contention case - downgrade to PR and re-use the lock
-			if (!internal_blocking && !external_blocking && lockCaching)
-			{
-				if (!LCK_convert(tdbb, cached_lock, LCK_read, 0))
-					ERR_bugcheck_msg("LCK_convert call failed in GlobalRWLock::unlock()");
-				return;
-			}
-		}
-	}
-
-	if ( (readers.getCount() == 0) && (writer.entry_count == 0) )
-	{
-		COS_TRACE(("check for release a lock, type=%i", cached_lock->lck_type));
-		if (internal_blocking || !lockCaching)
-		{
-			LCK_release(tdbb, cached_lock);
-			invalidate(tdbb, false);
-			external_blocking = false;
-		}
-		else if (external_blocking)
-		{
-			LCK_downgrade(tdbb, cached_lock);
-			if (cached_lock->lck_physical < LCK_read)
-				invalidate(tdbb, false);
-			external_blocking = false;
-		}
+		LCK_release(tdbb, cachedLock);
+		invalidate(tdbb);
 	}
 
-	COS_TRACE(("unlock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
+	return true;
 }
 
 void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	COS_TRACE(("(%p)->blockingAst enter", this));
+/*	Noted by Roman Simakov: We don't checkout dbb_sync to prevent database shutting down.
+	dbb_sync protects counters.
+	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
+*/	
 
-	COS_TRACE_AST("bloackingAstHandler");
-	// When we request a new lock counters are not updated until we get it.
-	// As such, we need to check internal_blocking flag that is set during such situation.
-	if ( !internal_blocking && (readers.getCount() == 0) && (writer.entry_count == 0) )
+	COS_TRACE(("(%p)->blockingAst readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
+		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
+
+	if (!pendingLock && !currentWriter && !readers)
 	{
-		COS_TRACE_AST("downgrade");
-		LCK_downgrade(tdbb, cached_lock);
-		if (cached_lock->lck_physical < LCK_read)
-		{
-			invalidate(tdbb, true);
-			external_blocking = false;
-		}
-	}
-	else
-		external_blocking = true;
-}
-
-void GlobalRWLock::setLockData(thread_db* tdbb, SLONG lck_data)
-{
-	LCK_write_data(tdbb, cached_lock, lck_data);
-}
-
-void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle)
-{
-	SET_TDBB(tdbb);
-
-	if (old_owner_handle == new_owner_handle)
-		return;
-
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
-
-	if (level == LCK_read)
-	{
-		size_t n;
-		if (readers.find(old_owner_handle, n))
-		{
-			fb_assert(readers[n].entry_count > 0);
-			readers[n].entry_count--;
-			if (readers[n].entry_count == 0)
-				readers.remove(n);
-
-			if (readers.find(new_owner_handle, n))
-				readers[n].entry_count++;
-			else
-			{
-				ObjectOwnerData ownerData;
-				ownerData.entry_count++;
-				ownerData.owner_handle = new_owner_handle;
-				readers.insert(n, ownerData);
-			}
-		}
-		else
-		{
-			ERR_bugcheck_msg("Attempt to perform GlobalRWLock::change_lock_owner() while not holding a valid lock for logical owner");
-		}
+		COS_TRACE(("(%p)->Downgrade lock", this));
+		LCK_downgrade(tdbb, cachedLock);
+		fb_assert(!blocking);
+		if (cachedLock->lck_physical < LCK_read)
+			invalidate(tdbb);
 	}
 	else
 	{
-		fb_assert(writer.entry_count > 0);
-		writer.owner_handle = new_owner_handle;
+		COS_TRACE(("(%p)->Set blocking", this));
+		blocking = true;
 	}
 }
 
-bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
-{
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
-
-	if (!writer.entry_count && !readers.getCount())
-	{
-		LCK_release(tdbb, cached_lock);
-		invalidate(tdbb, false);
-		return true;
-	}
-
-	return false;
-}
 
 } // namespace Jrd
