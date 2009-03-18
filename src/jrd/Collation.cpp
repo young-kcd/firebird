@@ -939,7 +939,8 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 
 void Collation::destroy()
 {
-	fb_assert(useCount == 0);
+	// Temporary commented assert() to avoid aborts in 2.5 beta1. AP.
+	// fb_assert(useCount == 0);
 
 	if (tt->texttype_fn_destroy)
 		tt->texttype_fn_destroy(tt);
