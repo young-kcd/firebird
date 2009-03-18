@@ -68,8 +68,8 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 		lck_owner_t lock_owner, bool lock_caching, size_t lockLen, const UCHAR* lockStr)
-	: PermanentStorage(p), blocking(false), lockCaching(lock_caching), readers(0), pendingLock(0),
-	pendingWriters(0), currentWriter(false)
+	: PermanentStorage(p), pendingLock(0), readers(0), pendingWriters(0), currentWriter(false),
+	  lockCaching(lock_caching), blocking(false)
 {
 	SET_TDBB(tdbb);
 
