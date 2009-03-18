@@ -1097,7 +1097,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	char buffer[1024]; // 1K should be enough for the trace message
 	char* p = buffer;
 
-/*
+
 	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
 
 	// 07 Sept 2003, Nickolay Samofatov.
@@ -1132,7 +1132,7 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	gds__ulstr(p, today.tm_sec, 2, '0');
 	p += 2;
 	*p++ = ' ';
-*/	ULONG apid =
+	ULONG apid =
 #ifdef WIN_NT
 #ifdef SUPERSERVER
 			     GetCurrentThreadId();
