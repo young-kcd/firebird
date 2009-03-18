@@ -1,3 +1,30 @@
+2009-03-18 13:45  alexpeshkoff
+
+	* firebird2/src/jrd/Collation.cpp (1.18):
+
+	Temporary commented assert() to avoid aborts in 2.5 beta1
+
+2009-03-18 10:21  roman-simakov
+
+	* firebird2/src/jrd/gds.cpp (1.278):
+
+	Restored forgotten change. Thanks to Adriano.
+
+2009-03-18 03:55  asfernandes
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.28):
+
+	Fix warnings
+
+2009-03-18 03:43  asfernandes
+
+	* firebird2/src/: common/classes/condition.h (1.2),
+	jrd/GlobalRWLock.cpp (1.27), jrd/GlobalRWLock.h (1.25), jrd/cch.cpp
+	(1.228), jrd/cch.h (1.45), jrd/jrd.h (1.264), jrd/nbak.cpp (1.92),
+	jrd/nbak.h (1.36):
+
+	Misc
+
 2009-03-17 09:47  dimitr
 
 	* firebird2/doc/WhatsNew (1.168):
