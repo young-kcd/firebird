@@ -45,6 +45,7 @@ class Condition
 private:
 	ULONG waitersCount;
 	Mutex waiterCountLock;
+
 	enum
 	{
 		SIGNAL = 0,
@@ -54,24 +55,24 @@ private:
 
 	HANDLE events[MAX_EVENTS];
 
-void init()
-{
-	waitersCount = 0;
+	void init()
+	{
+		waitersCount = 0;
 
-	events[SIGNAL] = CreateEvent(NULL,  // no security
-		                         FALSE, // auto-reset event
-								 FALSE, // non-signaled initially
-                                 NULL); // unnamed
+		events[SIGNAL] = CreateEvent(NULL,  // no security
+			                         FALSE, // auto-reset event
+									 FALSE, // non-signaled initially
+    	                             NULL); // unnamed
 
-	// Create a manual-reset event.
-	events[BROADCAST] = CreateEvent(NULL,  // no security
-                                    TRUE,  // manual-reset
-                                    FALSE, // non-signaled initially
-                                    NULL); // unnamed
+		// Create a manual-reset event.
+		events[BROADCAST] = CreateEvent(NULL,  // no security
+    	                                TRUE,  // manual-reset
+    	                                FALSE, // non-signaled initially
+    	                                NULL); // unnamed
 
-	if (!events[SIGNAL] || !events[BROADCAST])
-		system_call_failed::raise("CreateCondition(Event)");
-}
+		if (!events[SIGNAL] || !events[BROADCAST])
+			system_call_failed::raise("CreateCondition(Event)");
+	}
 
 public:
 	Condition()	{ init(); }
@@ -122,8 +123,10 @@ public:
 		}
 
 		if (haveWaiters)
+		{
 			if (!SetEvent(events[SIGNAL]))
 				system_call_failed::raise("SetEvent");
+		}
 	}
 
 	void notifyAll()
@@ -136,8 +139,10 @@ public:
 		}
 
 		if (haveWaiters)
+		{
 			if (!SetEvent(events[BROADCAST]))
 				system_call_failed::raise("SetEvent");
+		}
 	}
 };
 
@@ -159,7 +164,7 @@ namespace Firebird
 class Condition
 {
 private:
-	pthread_cond_t	cv;
+	pthread_cond_t cv;
 
 	void init()
 	{

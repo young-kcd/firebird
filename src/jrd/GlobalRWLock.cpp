@@ -143,7 +143,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 		if (cachedLock->lck_physical > LCK_none)
 		{
-			LCK_release(tdbb, cachedLock);	// To prevent selfdeadlock
+			LCK_release(tdbb, cachedLock);	// To prevent self deadlock
 			invalidate(tdbb);
 		}
 

@@ -62,6 +62,7 @@ public:
 			size_t lockLen = 0, const UCHAR* lockStr = NULL);
 
 	virtual ~GlobalRWLock();
+
 	// This function returns false if it cannot take the lock
 	bool lockWrite(thread_db* tdbb, SSHORT wait);
 	void unlockWrite(thread_db* tdbb);

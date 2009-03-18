@@ -86,8 +86,9 @@ typedef Firebird::BePlusTree<AllocItem, ULONG, MemoryPool, AllocItem> AllocItemT
 class NBackupStateLock: public GlobalRWLock
 {
 public:
-	NBackupStateLock(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
+	NBackupStateLock(thread_db* tdbb, MemoryPool& p, BackupManager* bakMan);
 	virtual ~NBackupStateLock() { }
+
 protected:
 	BackupManager *backup_manager;
 	virtual void blockingAstHandler(thread_db* tdbb);
@@ -99,12 +100,13 @@ protected:
 class NBackupAllocLock: public GlobalRWLock
 {
 public:
-	NBackupAllocLock(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
+	NBackupAllocLock(thread_db* tdbb, MemoryPool& p, BackupManager* bakMan);
 	virtual ~NBackupAllocLock() { }
 
 protected:
-	BackupManager *backup_manager;
+	BackupManager* backup_manager;
 	virtual bool fetch(thread_db* tdbb);
+
 	virtual void invalidate(thread_db* tdbb)
 	{
 		GlobalRWLock::invalidate(tdbb);
@@ -113,10 +115,10 @@ protected:
 };
 
 // Note this flags MUST correspond with backup mask in ods.h
-const USHORT nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
-const USHORT nbak_state_stalled	= 0x400;   // 1024 Main files are locked. Changes are written to diff file
-const USHORT nbak_state_merge	= 0x800;   // 2048 Merging changes from diff file into main files
-const USHORT nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
+const USHORT nbak_state_normal	= 0x000;	// Normal mode. Changes are simply written to main files
+const USHORT nbak_state_stalled	= 0x400;	// 1024 Main files are locked. Changes are written to diff file
+const USHORT nbak_state_merge	= 0x800;	// 2048 Merging changes from diff file into main files
+const USHORT nbak_state_unknown	= -1;		// State is unknown. Needs to be read from disk
 
 /*
  *  The functional responsibilities of NBAK are:

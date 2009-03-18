@@ -967,7 +967,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
    to rollover to the shadow file.  If the I/O error is
    persistant (more than 3 times) error out of the routine by
    calling CCH_unwind, and eventually punting out. */
-   
+
 	BackupManager* bm = dbb->dbb_backup_manager;
 	const int bak_state = bm->getState();
 	fb_assert(bak_state != nbak_state_unknown);
@@ -987,8 +987,10 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 	{
 		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d from DISK",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
+
 		// Read page from disk as normal
-		while (!PIO_read(file, bdb, page, status)) {
+		while (!PIO_read(file, bdb, page, status))
+		{
 			if (isTempPage || !read_shadow) {
 				break;
 			}
@@ -6281,7 +6283,7 @@ static bool write_page(thread_db* tdbb,
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
 				(backup_state == nbak_state_merge && 
 					bdb->bdb_difference_page &&
-					!(bdb->bdb_flags & BDB_merge) ) ) ) 
+					!(bdb->bdb_flags & BDB_merge))))
 			{
 
 				const bool res = dbb->dbb_backup_manager->writeDifference(status,

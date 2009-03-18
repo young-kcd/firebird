@@ -173,7 +173,7 @@ public:
 
 /* bdb_flags */
 
-// to set/clear BDB_dirty use  set_dirty_flag()/clear_dirty_flag()
+// to set/clear BDB_dirty use set_dirty_flag()/clear_dirty_flag()
 const int BDB_dirty				= 1;		/* page has been updated but not written yet */
 const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
 const int BDB_writer			= 4;		/* someone is updating the page */

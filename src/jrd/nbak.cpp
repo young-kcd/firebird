@@ -74,7 +74,7 @@ using namespace Firebird;
 
 /******************************** NBackupStateLock ******************************/
 
-NBackupStateLock::NBackupStateLock(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan):
+NBackupStateLock::NBackupStateLock(thread_db* tdbb, MemoryPool& p, BackupManager* bakMan):
 	GlobalRWLock(tdbb, p, LCK_backup_database, LCK_OWNER_database), backup_manager(bakMan)
 {
 }
@@ -113,7 +113,7 @@ void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
 
 /******************************** NBackupAllocLock ******************************/
 
-NBackupAllocLock::NBackupAllocLock(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan):
+NBackupAllocLock::NBackupAllocLock(thread_db* tdbb, MemoryPool& p, BackupManager* bakMan):
 	GlobalRWLock(tdbb, p, LCK_backup_alloc, LCK_OWNER_database), backup_manager(bakMan)
 {
 }
@@ -300,10 +300,10 @@ ULONG BackupManager::getPageCount()
 }
 
 
-// Merge difference file to main files (if needed) and unlink() difference 
-// file then. If merge is already in progress method silently returns and 
-// does nothing (so it can be used for recovery on database startup). 
-void BackupManager::endBackup(thread_db* tdbb, bool recover) 
+// Merge difference file to main files (if needed) and unlink() difference
+// file then. If merge is already in progress method silently returns and
+// does nothing (so it can be used for recovery on database startup).
+void BackupManager::endBackup(thread_db* tdbb, bool recover)
 {
 	NBAK_TRACE(("end_backup, recover=%i", recover));
 
@@ -331,8 +331,8 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		// Check state under PR lock of backup state for speed
 		{ // scope
 			StateReadGuard stateGuard(tdbb);
-			// Nobody is doing end_backup but database isn't in merge state. 
-			if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) 
+			// Nobody is doing end_backup but database isn't in merge state.
+			if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) )
 			{
 				NBAK_TRACE(("invalid state %d", backup_state));
 				endLock.unlockWrite(tdbb);
