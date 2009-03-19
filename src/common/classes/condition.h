@@ -43,8 +43,7 @@ class MemoryPool;
 class Condition
 {
 private:
-	ULONG waitersCount;
-	Mutex waiterCountLock;
+	AtomicCounter waiters;
 
 	enum
 	{
@@ -57,8 +56,6 @@ private:
 
 	void init()
 	{
-		waitersCount = 0;
-
 		events[SIGNAL] = CreateEvent(NULL,  // no security
 			                         FALSE, // auto-reset event
 									 FALSE, // non-signaled initially
@@ -88,23 +85,13 @@ public:
 
 	void wait(Mutex& m)
 	{
-		{	// scope
-			MutexLockGuard guard(waiterCountLock);
-			waitersCount++;
-		}
+		++waiters;
+
 		m.leave();
 
-		DWORD last_waiter;
-
 		DWORD result = WaitForMultipleObjects (2, events, FALSE, INFINITE);
-		{	// scope
-			MutexLockGuard guard(waiterCountLock);
-			fb_assert(waitersCount < 100);	// to debug purpose
-			waitersCount--;
-			last_waiter = (result == WAIT_OBJECT_0 + BROADCAST) && !waitersCount;
-		}
 
-		if (last_waiter)
+		if (--waiters == 0)
 		{
 			if (!ResetEvent(events[BROADCAST]))
 				system_call_failed::raise("ResetEvent");
@@ -115,14 +102,7 @@ public:
 
 	void notifyOne()
 	{
-		bool haveWaiters;
-		{	// scope
-			MutexLockGuard guard(waiterCountLock);
-			fb_assert(waitersCount < 100);	// to debug purpose
-			haveWaiters = waitersCount > 0;
-		}
-
-		if (haveWaiters)
+		if (waiters.value() > 0)
 		{
 			if (!SetEvent(events[SIGNAL]))
 				system_call_failed::raise("SetEvent");
@@ -131,14 +111,7 @@ public:
 
 	void notifyAll()
 	{
-		bool haveWaiters;
-		{	// scope
-			MutexLockGuard guard(waiterCountLock);
-			fb_assert(waitersCount < 100);	// to debug purpose
-			haveWaiters = waitersCount > 0;
-		}
-
-		if (haveWaiters)
+		if (waiters.value() > 0)
 		{
 			if (!SetEvent(events[BROADCAST]))
 				system_call_failed::raise("SetEvent");
