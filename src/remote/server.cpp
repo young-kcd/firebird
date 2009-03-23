@@ -1061,7 +1061,8 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
  *
  **************************************/
     ISC_STATUS_ARRAY status_vector;
-	
+	success(status_vector);
+
 /* Which database ? */
 
 	RDB rdb = port->port_context;
@@ -1080,10 +1081,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 /* If no event found, pretend it was cancelled */
 
 	if (!event)
-	{
-		success(status_vector);
 		return port->send_response(send, 0, 0, status_vector);
-	}
 
 /* cancel the event */
 
