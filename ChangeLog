@@ -1,3 +1,10 @@
+2009-03-23 18:19  hvlad
+
+	* firebird2/src/remote/server.cpp (1.243):
+
+	More complete fix for bug CORE-2368 : AV after isc_cancel_events if
+	event was not found
+
 2009-03-19 20:08  roman-simakov
 
 	* firebird2/src/common/classes/condition.h (1.3):
