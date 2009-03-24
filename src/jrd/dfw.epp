@@ -1413,9 +1413,13 @@ static void check_dependencies(thread_db* tdbb,
 
 	if (field_name)
 	{
+		string fld_name(dpdo_name);
+		fld_name.append(".");
+		fld_name.append(field_name);
+
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_no_delete) <<						/* Msg353: can not delete */
-				 Arg::Gds(isc_field_name) << Arg::Str(field_name) <<
+				 Arg::Gds(isc_field_name) << Arg::Str(fld_name) <<
 				 Arg::Gds(isc_dependency) << Arg::Num(total));	/* Msg310: there are %ld dependencies */
 	}
 	else
@@ -3638,8 +3642,12 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		   that defines the relation */
 
 		if ( (relation = MET_lookup_relation_id(tdbb, work->dfw_id, false)) )
+		{
+			MET_scan_relation(tdbb, relation);
 			check_dependencies(tdbb, relation->rel_name.c_str(), work->dfw_name.c_str(),
-							   obj_relation, transaction);
+							   relation->rel_view_rse ? obj_view : obj_relation, 
+							   transaction);
+		}
 
 		/* see if the relation itself is being dropped */
 
