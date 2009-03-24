@@ -1,3 +1,12 @@
+2009-03-24 14:08  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/classic/makeInstallImage.sh.in (1.25),
+	arch-specific/linux/super/makeInstallImage.sh.in (1.24),
+	misc/posixLibrary.sh.in (1.21):
+
+	Take care about plugins directory
+
 2009-03-23 18:19  hvlad
 
 	* firebird2/src/remote/server.cpp (1.243):
