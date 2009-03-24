@@ -773,9 +773,9 @@ fixFilePermissions() {
     # Security database
     MakeFileFirebirdWritable $SecurityDatabase
 
-	# set up libraries - everyone may use them
-	cd $FBRootDir/lib
-	chmod a=rx lib*
+	# set up libraries & plugins - everyone may use them
+	cd $FBRootDir
+	chmod a=rx lib/lib* plugins/lib*
 
 	# set up include files - everyone may use them
 	cd $FBRootDir/include

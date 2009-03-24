@@ -100,6 +100,7 @@ copyFiles() {
     mkdir $DestDir/include 
     mkdir $DestDir/intl 
     mkdir $DestDir/lib
+    mkdir $DestDir/plugins
     mkdir $DestDir/doc 
     mkdir $DestDir/doc/sql.extensions 
     mkdir $DestDir/UDF 
@@ -186,6 +187,8 @@ copyFiles() {
     cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
 
     cp -df $BuiltFBDir/lib/libicu*.so* $DestDir/lib/
+
+	cp -df $BuiltFBDir/plugins/* $DestDir/plugins/
 
     cp $BuiltFBDir/intl/libfbintl.so $DestDir/intl/fbintl
     cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
