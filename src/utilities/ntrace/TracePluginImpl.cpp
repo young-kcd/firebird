@@ -137,30 +137,41 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
+	IntlUtil::initAsciiCharset(&cs);
+	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, UCharBuffer(), string());
+	charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
+	textType = FB_NEW(*getDefaultMemoryPool()) Jrd::TextType(0, &tt, charSet);
+
 	// Compile filtering regular expressions
 	if (config.include_filter.hasData())
 	{
-		int errorCode = regcomp(&include_matcher, config.include_filter.c_str(), REG_EXTENDED | REG_ICASE);
-		if (errorCode)
+		try
 		{
-			char errBuf[256];
-			regerror(errorCode, NULL, errBuf, sizeof(errBuf));
-			Firebird::fatal_exception::raiseFmt(
-				"error \"%s\" while compiling regular expression \"%s\" for database \"%s\"",
-				errBuf, config.include_filter.c_str(), config.db_filename.c_str());
+			include_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
+				*getDefaultMemoryPool(), textType, (const UCHAR*) config.include_filter.c_str(),
+				config.include_filter.length(), '\\', true);
+		}
+		catch (const Exception&)
+		{
+			fatal_exception::raiseFmt(
+				"error while compiling regular expression \"%s\" for database \"%s\"",
+				config.include_filter.c_str(), config.db_filename.c_str());
 		}
 	}
 
 	if (config.exclude_filter.hasData())
 	{
-		int errorCode = regcomp(&exclude_matcher, config.exclude_filter.c_str(), REG_EXTENDED | REG_ICASE);
-		if (errorCode)
+		try
 		{
-			char errBuf[256];
-			regerror(errorCode, NULL, errBuf, sizeof(errBuf));
-			Firebird::fatal_exception::raiseFmt(
-				"error \"%s\" while compiling regular expression \"%s\" for database \"%s\"",
-				errBuf, config.exclude_filter.c_str(), config.db_filename.c_str());
+			exclude_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
+				*getDefaultMemoryPool(), textType, (const UCHAR*) config.exclude_filter.c_str(),
+				config.exclude_filter.length(), '\\', true);
+		}
+		catch (const Exception&)
+		{
+			fatal_exception::raiseFmt(
+				"error while compiling regular expression \"%s\" for database \"%s\"",
+				config.exclude_filter.c_str(), config.db_filename.c_str());
 		}
 	}
 
@@ -1229,32 +1240,16 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 	{
 		if (config.include_filter.hasData())
 		{
-			const int errorCode = regexec(&include_matcher, sql, 0, NULL, 0);
-			if (errorCode && errorCode != REG_NOMATCH)
-			{
-				char errBuf[256];
-				regerror(errorCode, NULL, errBuf, sizeof(errBuf));
-				Firebird::fatal_exception::raiseFmt(
-					"error \"%s\" while applying regular expression \"%s\" for database \"%s\"",
-					errBuf, config.include_filter.c_str(), config.db_filename.c_str());
-			}
-			need_statement = !errorCode;
+			include_matcher->reset();
+			include_matcher->process((const UCHAR*) sql, sql_length);
+			need_statement = include_matcher->result();
 		}
 
 		if (need_statement && config.exclude_filter.hasData())
 		{
-			const int errorCode = regexec(&exclude_matcher, sql, 0, NULL, 0);
-			if (errorCode && errorCode != REG_NOMATCH)
-			{
-				char errBuf[256];
-				regerror(errorCode, NULL, errBuf, sizeof(errBuf));
-				Firebird::fatal_exception::raiseFmt(
-					"error \"%s\" while applying regular expression \"%s\" for database \"%s\"",
-					errBuf, config.exclude_filter.c_str(), config.db_filename.c_str());
-			}
-
-			if (!errorCode)
-				need_statement = false;
+			exclude_matcher->reset();
+			exclude_matcher->process((const UCHAR*) sql, sql_length);
+			need_statement = !exclude_matcher->result();
 		}
 	}
 

@@ -38,9 +38,12 @@ namespace Firebird
 {
 
 template <typename StrConverter, typename CharType>
-class SimilarToMatcher : public PatternMatcher
+class SimilarToMatcher : public Jrd::PatternMatcher
 {
 private:
+	typedef Jrd::CharSet CharSet;
+	typedef Jrd::TextType TextType;
+
 	// This class is based on work of Zafir Anjum
 	// http://www.codeguru.com/Cpp/Cpp/string/regex/article.php/c2791
 	// which has been derived from work by Henry Spencer.
@@ -103,7 +106,8 @@ private:
 				  len3(aLen),
 				  str4(NULL),
 				  len4(0),
-				  ref(0)
+				  ref(0),
+				  branchNum(-1)
 			{
 			}
 
@@ -117,7 +121,8 @@ private:
 				  len3(0),
 				  str4(NULL),
 				  len4(0),
-				  ref(aRef)
+				  ref(aRef),
+				  branchNum(-1)
 			{
 			}
 
@@ -131,7 +136,8 @@ private:
 				  len3(0),
 				  str4(NULL),
 				  len4(0),
-				  ref(aRef)
+				  ref(aRef),
+				  branchNum(-1)
 			{
 			}
 
@@ -145,7 +151,8 @@ private:
 				  len3(node.len3),
 				  str4(node.str4),
 				  len4(node.len4),
-				  ref(node.ref)
+				  ref(node.ref),
+				  branchNum(node.branchNum)
 			{
 			}
 
@@ -159,6 +166,7 @@ private:
 			const UCHAR* str4;
 			SLONG len4;
 			int ref;
+			int branchNum;
 		};
 
 		// Struct used to evaluate expressions without recursion.
@@ -213,6 +221,12 @@ private:
 			const CharType* set, SLONG setLen);
 
 	private:
+		struct Range
+		{
+			unsigned start;
+			unsigned length;
+		};
+
 		TextType* textType;
 		CharType escapeChar;
 		bool useEscape;
@@ -230,6 +244,10 @@ private:
 		const CharType* bufferEnd;
 		const CharType* bufferPos;
 		CharType metaCharacters[15];
+
+	public:	
+		unsigned branchNum;
+		Range* branches;
 	};
 
 public:
@@ -253,6 +271,18 @@ public:
 	bool process(const UCHAR* str, SLONG length)
 	{
 		return evaluator.processNextChunk(str, length);
+	}
+
+	unsigned getNumBranches()
+	{
+		return evaluator.branchNum;
+	}
+
+	void getBranchInfo(unsigned n, unsigned* start, unsigned* length)
+	{
+		fb_assert(n <= evaluator.branchNum);
+		*start = evaluator.branches[n].start;
+		*length = evaluator.branches[n].length;
 	}
 
 	static SimilarToMatcher* create(MemoryPool& pool, TextType* ttype,
@@ -295,7 +325,8 @@ SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 	  patternCvt(pool, textType, patternStr, patternLen),
 	  charSet(textType->getCharSet()),
 	  nodes(pool),
-	  scopes(pool)
+	  scopes(pool),
+	  branchNum(0)
 {
 	fb_assert(patternLen % sizeof(CharType) == 0);
 	patternLen /= sizeof(CharType);
@@ -339,6 +370,8 @@ SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 	if (patternPos < patternEnd)
 		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
+	branches = FB_NEW(pool) Range[branchNum + 1];
+
 	reset();
 }
 
@@ -356,11 +389,29 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 	bufferStart = bufferPos = (const CharType*) str;
 	bufferEnd = bufferStart + len / sizeof(CharType);
 
+	bool matched =
 #ifdef RECURSIVE_SIMILAR
-	return match(nodes.getCount(), 0);
+		match(nodes.getCount(), 0);
 #else
-	return match();
+		match();
 #endif
+
+#ifdef DEBUG_SIMILAR
+	if (matched)
+	{
+		string s;
+		for (unsigned i = 0; i <= branchNum; ++i)
+		{
+			string x;
+			x.printf("%d: %d, %d\n\t", i, branches[i].start, branches[i].length);
+			s += x;
+		}
+
+		gds__log("%s", s.c_str());
+	}
+#endif	// DEBUG_SIMILAR
+
+	return matched;
 }
 
 
@@ -378,6 +429,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::reset()
 {
 	buffer.shrink(0);
 	scopes.shrink(0);
+
+	memset(branches, 0, sizeof(Range) * (branchNum + 1));
 }
 
 
@@ -397,8 +450,10 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
 		else
 			++patternPos;
 
+		int thisBranchNum = branchNum;
 		start = nodes.getCount();
 		nodes.push(Node(opBranch));
+		nodes.back().branchNum = thisBranchNum;
 
 		int flags;
 		parseTerm(&flags);
@@ -407,8 +462,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
 
 		refs.push(nodes.getCount());
 		nodes.push(Node(opRef));
+		nodes.back().branchNum = thisBranchNum;
 
-		nodes[start].ref = nodes.getCount() - start;
 	}
 
 	nodes[start].ref = 0;
@@ -832,6 +887,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 	}
 	else if (op == canonicalChar(TextType::CHAR_OPEN_PAREN))
 	{
+		++branchNum;
+
 		int flags;
 		parseExpr(&flags);
 
@@ -899,7 +956,10 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 				break;
 
 			case opBranch:
-				type.printf("opBranch(%d)", i + nodes[i].ref);
+				if (nodes[i].branchNum == -1)
+					type.printf("opBranch(%d)", i + nodes[i].ref);
+				else
+					type.printf("opBranch(%d, %d)", i + nodes[i].ref, nodes[i].branchNum);
 				break;
 
 			case opStart:
@@ -911,7 +971,10 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 				break;
 
 			case opRef:
-				type.printf("opRef(%d)", i + nodes[i].ref);
+				if (nodes[i].branchNum == -1)
+					type.printf("opRef(%d)", i + nodes[i].ref);
+				else
+					type.printf("opRef(%d, %d)", i + nodes[i].ref, nodes[i].branchNum);
 				break;
 
 			case opNothing:
@@ -993,6 +1056,9 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 
 				while (true)
 				{
+					if (node->branchNum != -1)
+						branches[node->branchNum].start = save - bufferStart;
+
 					if (match(limit, i + 1))
 						return true;
 
@@ -1022,6 +1088,12 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 				break;
 
 			case opRef:
+				if (node->branchNum != -1)
+				{
+					branches[node->branchNum].length =
+						bufferPos - bufferStart - branches[node->branchNum].start;
+				}
+
 				if (node->ref == 1)	// avoid recursion
 					break;
 				return match(limit, i + node->ref);
@@ -1202,6 +1274,9 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 				case opBranch:
 					if (state == msIterating)
 					{
+						if (node->branchNum != -1)
+							branches[node->branchNum].start = bufferPos - bufferStart;
+
 						scope->save = bufferPos;
 						start = scope->i + 1;
 						limit = scope->limit;
@@ -1258,6 +1333,12 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					fb_assert(state == msIterating || state == msReturning);
 					if (state == msIterating)
 					{
+						if (node->branchNum != -1)
+						{
+							branches[node->branchNum].length =
+								bufferPos - bufferStart - branches[node->branchNum].start;
+						}
+
 						if (node->ref != 1)
 						{
 							state = msRecursing;

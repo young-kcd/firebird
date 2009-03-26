@@ -31,14 +31,17 @@
 
 #include "../../jrd/ntrace.h"
 #include "TracePluginConfig.h"
+#include "../../jrd/intl_classes.h"
+#include "../../jrd/evl_string.h"
+#include "../../jrd/TextType.h"
+#include "../../jrd/SimilarToMatcher.h"
 #include "../../common/classes/rwlock.h"
 #include "../../common/classes/GenericMap.h"
 #include "../../common/classes/locks.h"
 
-
 // Bring in off_t
 #include <sys/types.h>
-#include "regex.h"
+
 
 class TracePluginImpl
 {
@@ -161,8 +164,13 @@ private:
 	// Lock for log rotation
 	Firebird::RWLock renameLock;
 
-	regex_t include_matcher;
-	regex_t exclude_matcher;
+	charset cs;
+	texttype tt;
+	Firebird::AutoPtr<Jrd::CharSet> charSet;
+	Firebird::AutoPtr<Jrd::TextType> textType;
+
+	Firebird::AutoPtr<Firebird::SimilarToMatcher<Jrd::UpcaseConverter<Jrd::NullStrConverter>, UCHAR> >
+		include_matcher, exclude_matcher;
 
 	void appendGlobalCounts(const PerformanceInfo* info);
 	void appendTableCounts(const PerformanceInfo* info);

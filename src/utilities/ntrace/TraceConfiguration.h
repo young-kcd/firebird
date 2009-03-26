@@ -39,13 +39,19 @@
 #include "TracePluginConfig.h"
 
 #include <sys/types.h>
-#include "regex.h"
 
 
 class TraceCfgReader
 {
 public:
 	static void readTraceConfiguration(const char* text, const Firebird::PathName& databaseName, TracePluginConfig& config);
+
+private:
+	struct MatchPos
+	{
+		int start;
+		int end;
+	};
 
 private:
 	TraceCfgReader(const char* text, const Firebird::PathName& databaseName, TracePluginConfig& config) :
@@ -62,7 +68,7 @@ private:
 
 	const char* const m_text;
 	const Firebird::PathName& m_databaseName;
-	regmatch_t m_subpatterns[10];
+	MatchPos m_subpatterns[10];
 	TracePluginConfig& m_config;
 };
 

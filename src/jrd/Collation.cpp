@@ -101,9 +101,9 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/TextType.h"
 
-using namespace Jrd;
-
 #include "../jrd/SimilarToMatcher.h"
+
+using namespace Jrd;
 
 
 namespace {
@@ -136,74 +136,6 @@ static const UCHAR SLEUTH_SPECIAL[128] =
 };
 
 // Below are templates for functions used in Collation implementation
-
-class NullStrConverter
-{
-public:
-	NullStrConverter(MemoryPool& pool, const TextType* obj, const UCHAR* str, SLONG len)
-	{
-	}
-};
-
-template <typename PrevConverter>
-class UpcaseConverter : public PrevConverter
-{
-public:
-	UpcaseConverter(MemoryPool& pool, TextType* obj, const UCHAR*& str, SLONG& len)
-		: PrevConverter(pool, obj, str, len)
-	{
-		if (len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[len];
-		else
-			out_str = tempBuffer;
-		obj->str_to_upper(len, str, len, out_str);
-		str = out_str;
-	}
-
-	~UpcaseConverter()
-	{
-		if (out_str != tempBuffer)
-			delete[] out_str;
-	}
-
-private:
-	UCHAR tempBuffer[100];
-	UCHAR* out_str;
-};
-
-template <typename PrevConverter>
-class CanonicalConverter : public PrevConverter
-{
-public:
-	CanonicalConverter(MemoryPool& pool, TextType* obj, const UCHAR*& str, SLONG& len)
-		: PrevConverter(pool, obj, str, len)
-	{
-		const SLONG out_len = len / obj->getCharSet()->minBytesPerChar() * obj->getCanonicalWidth();
-
-		if (out_len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[out_len];
-		else
-			out_str = tempBuffer;
-
-		if (str)
-		{
-			len = obj->canonical(len, str, out_len, out_str) * obj->getCanonicalWidth();
-			str = out_str;
-		}
-		else
-			len = 0;
-	}
-
-	~CanonicalConverter()
-	{
-		if (out_str != tempBuffer)
-			delete[] out_str;
-	}
-
-private:
-	UCHAR tempBuffer[100];
-	UCHAR* out_str;
-};
 
 template <typename StrConverter, typename CharType>
 class LikeMatcher : public PatternMatcher

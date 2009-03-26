@@ -78,7 +78,7 @@ LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_
 LINK_UDF_LIBS = 
 
 # Special options for trace plugin link
-LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) $(LIB)/librxspencer.a
+LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS)
 
 # This is ugly HACK!!! Must be removed as soon as somebody find
 # a way to use routines from server

@@ -388,6 +388,8 @@ void IntlUtil::initNarrowCharset(charset* cs, const ASCII* name)
 bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
 	USHORT attributes, const UCharBuffer& specificAttributes, const string& configInfo)
 {
+	memset(tt, 0, sizeof(*tt));
+
 	// name comes from stack. Copy it.
 	ASCII* nameCopy = new ASCII[strlen(name) + 1];
 	strcpy(nameCopy, name);

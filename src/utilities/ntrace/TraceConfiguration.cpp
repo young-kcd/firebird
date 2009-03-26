@@ -26,8 +26,13 @@
  */
 
 #include "TraceConfiguration.h"
+#include "../../jrd/intl_classes.h"
+#include "../../jrd/evl_string.h"
+#include "../../jrd/TextType.h"
+#include "../../jrd/SimilarToMatcher.h"
 
 using namespace Firebird;
+
 
 void TraceCfgReader::readTraceConfiguration(const char* text, 
 		const PathName& databaseName, 
@@ -67,13 +72,20 @@ void TraceCfgReader::readConfig()
 	cfgFile->addText(m_text);
 	cfgFile->parse();
 
-	m_subpatterns[0].rm_so = 0;
-	m_subpatterns[0].rm_eo = m_databaseName.length();
+	m_subpatterns[0].start = 0;
+	m_subpatterns[0].end = m_databaseName.length();
 	for (size_t i = 1; i < FB_NELEM(m_subpatterns); i++) 
 	{
-		m_subpatterns[i].rm_so = -1;
-		m_subpatterns[i].rm_eo = -1;
+		m_subpatterns[i].start = -1;
+		m_subpatterns[i].end = -1;
 	}
+
+	charset cs;
+	IntlUtil::initAsciiCharset(&cs);
+	texttype tt;
+	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, UCharBuffer(), string());
+	AutoPtr<Jrd::CharSet> charSet(Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs));
+	Jrd::TextType textType(0, &tt, charSet);
 
 	bool defDB = false, defSvc = false, exactMatch = false;
 	const Element* section = cfgFile->getObjects()->children;
@@ -115,34 +127,38 @@ void TraceCfgReader::readConfig()
 				match = exactMatch = true;
 			else
 			{
-				regex_t matcher;
-				int flags = REG_EXTENDED;
-				if (!CASE_SENSITIVITY)
-					flags |= REG_ICASE;
-				int errorCode = regcomp(&matcher, pattern.c_str(), flags);
-
-				if (errorCode) 
+				try
 				{
-					char errBuf[256];
-					regerror(errorCode, NULL, errBuf, sizeof(errBuf));
-					fatal_exception::raiseFmt(
-						"line %d: error \"%s\" while compiling regular expression \"%s\"", 
-						section->lineNumber + 1, errBuf, pattern.c_str());
+#ifdef WIN_NT	// !CASE_SENSITIVITY
+					typedef Jrd::UpcaseConverter<Jrd::NullStrConverter> SimilarConverter;
+#else
+					typedef Jrd::NullStrConverter SimilarConverter;
+#endif
+					SimilarToMatcher<SimilarConverter, UCHAR> matcher(*getDefaultMemoryPool(),
+						&textType, (const UCHAR*) pattern.c_str(), pattern.length(), '\\', true);
+
+					matcher.process((const UCHAR*) m_databaseName.c_str(), m_databaseName.length());
+					if (matcher.result())
+					{
+						for (unsigned i = 0;
+							 i <= matcher.getNumBranches() && i < FB_NELEM(m_subpatterns); ++i)
+						{
+							unsigned start, length;
+							matcher.getBranchInfo(i, &start, &length);
+
+							m_subpatterns[i].start = start;
+							m_subpatterns[i].end = start + length;
+						}
+
+						match = exactMatch = true;
+					}
 				}
-
-				errorCode = regexec(&matcher, m_databaseName.c_str(), FB_NELEM(m_subpatterns), m_subpatterns, 0);
-
-				if (errorCode && errorCode != REG_NOMATCH) 
+				catch (const Exception&)
 				{
-					char errBuf[256];
-					regerror(errorCode, NULL, errBuf, sizeof(errBuf));
 					fatal_exception::raiseFmt(
-						"line %d: error \"%s\" while applying regular expression \"%s\" to database \"%s\"", 
-						section->lineNumber + 1, errBuf, pattern.c_str(), m_databaseName.c_str());
+						"line %d: error while compiling regular expression \"%s\"", 
+						section->lineNumber + 1, pattern.c_str());
 				}
-
-				if (errorCode == 0)
-					match = exactMatch = true;
 			}
 		}
 
@@ -214,42 +230,32 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 	while (pos < valueToExpand.length()) 
 	{
 		string::char_type c = valueToExpand[pos];
-		if (c == '$') 
+		if (c == '\\') 
 		{
 			if (pos + 1 >= valueToExpand.length())
 				fatal_exception::raiseFmt("pattern is invalid");
 			
 			c = valueToExpand[pos + 1];
-			if (c == '$')
+			if (c == '\\')
 			{
-				// Kill one of the dollar signs and loop again
+				// Kill one of the backslash signs and loop again
 				valueToExpand.erase(pos, 1);
 				continue;
 			}
 			
 			if (c >= '0' && c <= '9') 
 			{
-				regmatch_t* subpattern = m_subpatterns + (c - '0');
+				MatchPos* subpattern = m_subpatterns + (c - '0');
 				// Replace value with piece of database name
 				valueToExpand.erase(pos, 2);
-				if (subpattern->rm_eo != -1 && subpattern->rm_so != -1) 
+				if (subpattern->end != -1 && subpattern->start != -1) 
 				{
-					off_t subpattern_len = subpattern->rm_eo - subpattern->rm_so;
+					off_t subpattern_len = subpattern->end - subpattern->start;
 					valueToExpand.insert(pos, 
-						m_databaseName.substr(subpattern->rm_so, subpattern_len).c_str(),
+						m_databaseName.substr(subpattern->start, subpattern_len).c_str(),
 						subpattern_len);
 					pos += subpattern_len;
 				}
-				continue;
-			}
-
-			if (c == '&') 
-			{
-				// Replace value with whole database file name
-				valueToExpand.erase(pos, 2);
-				const Firebird::PathName& filename = m_databaseName;
-				valueToExpand.insert(pos, filename.c_str(), filename.length());
-				pos += filename.length();
 				continue;
 			}
 
