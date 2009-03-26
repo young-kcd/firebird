@@ -127,6 +127,7 @@ void TraceCfgReader::readConfig()
 				match = exactMatch = true;
 			else
 			{
+				bool regExpOk = false;
 				try
 				{
 #ifdef WIN_NT	// !CASE_SENSITIVITY
@@ -136,6 +137,8 @@ void TraceCfgReader::readConfig()
 #endif
 					SimilarToMatcher<SimilarConverter, UCHAR> matcher(*getDefaultMemoryPool(),
 						&textType, (const UCHAR*) pattern.c_str(), pattern.length(), '\\', true);
+
+					regExpOk = true;
 
 					matcher.process((const UCHAR*) m_databaseName.c_str(), m_databaseName.length());
 					if (matcher.result())
@@ -155,9 +158,16 @@ void TraceCfgReader::readConfig()
 				}
 				catch (const Exception&)
 				{
-					fatal_exception::raiseFmt(
-						"line %d: error while compiling regular expression \"%s\"", 
-						section->lineNumber + 1, pattern.c_str());
+					if (regExpOk) {
+						fatal_exception::raiseFmt(
+							"line %d: error while processing string \"%s\" against regular expression \"%s\"", 
+							section->lineNumber + 1, m_databaseName.c_str(), pattern.c_str());
+					}
+					else {
+						fatal_exception::raiseFmt(
+							"line %d: error while compiling regular expression \"%s\"", 
+							section->lineNumber + 1, pattern.c_str());
+					}
 				}
 			}
 		}
@@ -240,6 +250,7 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 			{
 				// Kill one of the backslash signs and loop again
 				valueToExpand.erase(pos, 1);
+				pos++;
 				continue;
 			}
 			
