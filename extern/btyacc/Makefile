@@ -8,16 +8,20 @@ DEST	      = .
 
 HDRS	      = defs.h mstring.h
 
-CFLAGS	      = -g -Wall -Wstrict-prototypes -Wmissing-prototypes
+# Keep this as simple as possible. It's desirable that btyacc be portable
+# across all of our supported compilers/platforms.
 
-#LDFLAGS	      = -static
+# Vanilla CFLAGS
+CFLAGS=
 
-LIBS	      =
+# No LDFLAGS
+#LDFLAGS=
 
-CC	      = gcc
-LINKER	      = gcc
-# LINKER      = cl
-# CC	      = cl
+LIBS=
+
+# For GNU environment, gmake will set $CC to gcc
+# Other environments will have different values, maybe no GNU installed!
+#CC	      = gcc
 
 MAKEFILE      = Makefile
 
@@ -38,7 +42,7 @@ OTHERS	      = README README.BYACC \
 all:		$(PROGRAM)
 
 $(PROGRAM):     $(OBJS) $(LIBS)
-		$(LINKER) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
+		$(CC) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
 
 clean:;		rm -f $(OBJS)
 
