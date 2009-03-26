@@ -2,6 +2,11 @@
   * v2.5 Beta 1
   *************
 
+    * Bugfix CORE-2389
+        Wrong matching of SIMILAR TO expression with brackets
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2372
         Server crashes inside CMP_release() while releasing an already freed collation resource
       Contributor(s):
