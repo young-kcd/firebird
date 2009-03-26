@@ -1311,7 +1311,11 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 							}
 
 							if (node->len + node->len2 != 0 && p >= end)
-								return false;
+							{
+								ret = false;
+								state = msReturning;
+								break;
+							}
 						}
 
 						if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
