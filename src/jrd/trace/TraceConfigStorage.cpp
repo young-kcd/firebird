@@ -231,7 +231,6 @@ void ConfigStorage::checkFile()
 			session.ses_flags = trs_admin | trs_system;
 
 			addSession(session);
-
 		} 
 		catch(const Exception& ex)
 		{
