@@ -203,12 +203,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbsvcmgr", "fbsvcmgr.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fbtrace", "fbtrace.vcproj", "{53F75437-15B8-4A5C-86BF-E238CC68FCBC}"
 	ProjectSection(ProjectDependencies) = postProject
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D} = {34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}
 		{E83187C1-AAC2-445D-B8B2-883EFC10C39A} = {E83187C1-AAC2-445D-B8B2-883EFC10C39A}
 		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "regex", "regex.vcproj", "{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -560,14 +557,6 @@ Global
 		{53F75437-15B8-4A5C-86BF-E238CC68FCBC}.Release|Win32.Build.0 = Release|Win32
 		{53F75437-15B8-4A5C-86BF-E238CC68FCBC}.Release|x64.ActiveCfg = Release|x64
 		{53F75437-15B8-4A5C-86BF-E238CC68FCBC}.Release|x64.Build.0 = Release|x64
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Debug|Win32.Build.0 = Debug|Win32
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Debug|x64.ActiveCfg = Debug|x64
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Debug|x64.Build.0 = Debug|x64
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Release|Win32.ActiveCfg = Release|Win32
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Release|Win32.Build.0 = Release|Win32
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Release|x64.ActiveCfg = Release|x64
-		{34FDEFC1-F14D-4ADD-ADC1-25134C28A73D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\src\include;..\..\..\extern\regex;..\..\..\src\include\gen;..\..\..\include;..\..\..\src\common\classes"
+				AdditionalIncludeDirectories="..\..\..\src\include;..\..\..\src\include\gen;..\..\..\src\common\classes;..\..\..\extern\icu\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;SUPERCLIENT;FBTRACE_EXPORTS;NAMESPACE=Vulcan"
 				DebugInformationFormat="4"
 			/>
@@ -56,8 +56,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\extern\icu\$(PlatformName)\release\lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -108,7 +110,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\src\include;..\..\..\extern\regex;..\..\..\src\include\gen;..\..\..\include;..\..\..\src\common\classes"
+				AdditionalIncludeDirectories="..\..\..\src\include;..\..\..\src\include\gen;..\..\..\src\common\classes;..\..\..\extern\icu\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;SUPERCLIENT;FBTRACE_EXPORTS;NAMESPACE=Vulcan"
 				Detect64BitPortabilityProblems="true"
 			/>
@@ -123,8 +125,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\extern\icu\$(PlatformName)\release\lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"
@@ -178,7 +182,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\..\src\include\gen;..\..\..\extern\regex;..\..\..\src\include;..\..\..\src\common\classes"
+				AdditionalIncludeDirectories="..\..\..\src\include\gen;..\..\..\src\include;..\..\..\src\common\classes;..\..\..\extern\icu\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBTRACE_EXPORTS;SUPERCLIENT;NAMESPACE=Vulcan"
 				UsePrecompiledHeader="0"
 			/>
@@ -193,8 +197,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\extern\icu\$(PlatformName)\release\lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -248,7 +254,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\..\src\include\gen;..\..\..\extern\regex;..\..\..\src\include;..\..\..\src\common\classes"
+				AdditionalIncludeDirectories="..\..\..\src\include\gen;..\..\..\src\include;..\..\..\src\common\classes;..\..\..\extern\icu\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FBTRACE_EXPORTS;SUPERCLIENT;NAMESPACE=Vulcan"
 				UsePrecompiledHeader="0"
 			/>
@@ -263,8 +269,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\extern\icu\$(PlatformName)\release\lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"
@@ -369,11 +377,19 @@
 			Name="JRD files"
 			>
 			<File
+				RelativePath="..\..\..\src\jrd\CharSet.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\gds.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.cpp"
 				>
 			</File>
 			<File
@@ -390,6 +406,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\TextType.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\unicode_util.cpp"
 				>
 			</File>
 		</Filter>
