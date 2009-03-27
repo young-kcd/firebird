@@ -5135,6 +5135,7 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_memory_stats(&dbb->dbb_memory_stats),
 	att_database(dbb),
 	att_lock_owner_id(Database::getLockOwnerId()),
+	att_backup_state_counter(0),
 	att_stats(*pool),
 	att_working_directory(*pool),
 	att_filename(*pool),
@@ -5147,8 +5148,7 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_udf_pointers(*pool),
 	att_strings_buffer(NULL),
 	att_ext_connection(NULL),
-	att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
-	att_backup_state_counter(0)
+	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
 {
 	att_mutex.enter();
 }
