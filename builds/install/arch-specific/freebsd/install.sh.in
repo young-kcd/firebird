@@ -257,9 +257,9 @@ cd $InstallFirebirdPrefix
 
 # Lock files
 
-for i in isc_init1 isc_lock1 isc_event1 isc_monitor1
+for i in fb_guard
 do
-	FileName=$i.`hostname`
+	FileName=$i
 	touch $FileName
 	chmod ug=rw,o= $FileName
 	chown firebird:firebird $FileName

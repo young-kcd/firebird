@@ -44,7 +44,7 @@
         echo "Saved a copy of $SecurityDatabase in /tmp" 
     fi 
     
-    for i in isc_*1.* firebird.log SYSDBA.password
+    for i in fb_guard firebird.log SYSDBA.password
       do
         if [ -f $i ]
           then

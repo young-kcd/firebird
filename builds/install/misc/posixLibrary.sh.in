@@ -759,9 +759,9 @@ fixFilePermissions() {
     
     # Lock files
     cd $FBRootDir
-    for i in init1 lock1 event1 guard1 monitor1 sem1
+    for i in fb_guard
     do
-        FileName=isc_$i.`hostname`
+        FileName=$i
         touch $FileName
         MakeFileFirebirdWritable $FileName
     done
