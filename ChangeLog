@@ -1,3 +1,9 @@
+2009-03-28 20:05  asfernandes
+
+	* firebird2/builds/win32/msvc9/regex.vcproj (1.2):
+
+	Remove obsolete project
+
 2009-03-27 17:13  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.534):
