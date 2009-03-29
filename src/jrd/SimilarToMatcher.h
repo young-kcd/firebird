@@ -1090,6 +1090,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 			case opRef:
 				if (node->branchNum != -1)
 				{
+					fb_assert(unsigned(node->branchNum) <= branchNum);
 					branches[node->branchNum].length =
 						bufferPos - bufferStart - branches[node->branchNum].start;
 				}
@@ -1335,6 +1336,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					{
 						if (node->branchNum != -1)
 						{
+							fb_assert(unsigned(node->branchNum) <= branchNum);
 							branches[node->branchNum].length =
 								bufferPos - bufferStart - branches[node->branchNum].start;
 						}
