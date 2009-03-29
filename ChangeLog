@@ -1,3 +1,9 @@
+2009-03-29 17:23  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.21):
+
+	Misc
+
 2009-03-28 20:05  asfernandes
 
 	* firebird2/builds/win32/msvc9/regex.vcproj (1.2):
