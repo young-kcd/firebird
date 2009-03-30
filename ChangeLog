@@ -1,3 +1,23 @@
+2009-03-30 17:23  asfernandes
+
+	* firebird2/src/common/cvt.cpp (1.14):
+
+	Fixed CORE-2359 - Logical multibyte maximum string length is not
+	respected when assigning numbers
+
+2009-03-30 17:20  asfernandes
+
+	* firebird2/src/jrd/cvt.cpp (1.105):
+
+	Fix error message for string truncation
+
+2009-03-30 10:40  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.244):
+
+	Fixed bug CORE-2397 : If you drop two different indexes within the
+	same transaction, you get database corruption
+
 2009-03-29 17:23  asfernandes
 
 	* firebird2/src/jrd/SimilarToMatcher.h (1.21):
