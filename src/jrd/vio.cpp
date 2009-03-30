@@ -1267,19 +1267,24 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				r2 = MET_lookup_relation(tdbb, relation_name);
 				fb_assert(r2);
 
+				DSC idx_name;
+				EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
+
+				// hvlad: lets add index name to the DFW item even if we add it 
+				// again later within additional argument. This is needed to make 
+				// DFW work items different for different indexes dropped at the 
+				// same transaction and to not merge them at DFW_merge_work.
 				if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2)) {
 					work = DFW_post_work(transaction, dfw_delete_expression_index,
-										 NULL, r2->rel_id);
+										 &idx_name, r2->rel_id);
 				}
 				else {
 					work = DFW_post_work(transaction, dfw_delete_index,
-										 NULL, r2->rel_id);
+										 &idx_name, r2->rel_id);
 				}
 
 				// add index id and name (the latter is required
 				// to delete dependencies correctly)
-				DSC idx_name;
-				EVL_field(0, rpb->rpb_record, f_idx_name, &idx_name);
 				DeferredWork* arg = DFW_post_work_arg(transaction, work, &idx_name, id);
 				arg->dfw_type = dfw_arg_index_name;
 
