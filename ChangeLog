@@ -1,3 +1,9 @@
+2009-03-31 06:14  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.201):
+
+	Misc.
+
 2009-03-30 17:23  asfernandes
 
 	* firebird2/src/common/cvt.cpp (1.14):
