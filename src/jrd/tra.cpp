@@ -1112,6 +1112,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	{
 		switch (rsc->rsc_type)
 		{
+		case Resource::rsc_relation:
+			MET_release_existence(tdbb, rsc->rsc_rel);
+			break;
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);
 			break;
@@ -1119,8 +1122,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 			rsc->rsc_coll->decUseCount(tdbb);
 			break;
 		default:
-			MET_release_existence(tdbb, rsc->rsc_rel);
-			break;
+			fb_assert(false);
 		}
 	}
 
