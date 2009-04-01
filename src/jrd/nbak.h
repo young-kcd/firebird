@@ -118,7 +118,7 @@ protected:
 const USHORT nbak_state_normal	= 0x000;	// Normal mode. Changes are simply written to main files
 const USHORT nbak_state_stalled	= 0x400;	// 1024 Main files are locked. Changes are written to diff file
 const USHORT nbak_state_merge	= 0x800;	// 2048 Merging changes from diff file into main files
-const USHORT nbak_state_unknown	= -1;		// State is unknown. Needs to be read from disk
+const USHORT nbak_state_unknown	= USHORT(~0);	// State is unknown. Needs to be read from disk
 
 /*
  *  The functional responsibilities of NBAK are:
@@ -140,8 +140,8 @@ const USHORT nbak_state_unknown	= -1;		// State is unknown. Needs to be read fro
  *  - In merge state new pages are not allocated from difference files. Writes go to
  *  the main database files. Reads of mapped pages compare both page versions and
  *  return the version which is fresher, because we don't know if it is merged or not.
- *  Merged pages is written only in database file.
- *  
+ *  Merged pages are written only in database file.
+ *
  *  For synchronization NBAK uses 3 lock types via Firebird::GlobalRWLock:
  *  LCK_backup_database, LCK_backup_alloc, LCK_backup_end.
  *
@@ -153,9 +153,9 @@ const USHORT nbak_state_unknown	= -1;		// State is unknown. Needs to be read fro
  *
  *  Modification process of a page is as follows:
  *  CCH_fetch -> CCH_mark -> CCH_release -> write_page
- *  
- *  The dirty page is owned by the DATABASE between setting up and clearing the page dirty flag until write_page happens. 
- *  
+ *
+ *  The dirty page is owned by the DATABASE between setting up and clearing the page dirty flag until write_page happens.
+ *
  *  The page lock is requested every time under LCK_backup_database to prevent any deadlocks. So fecthed page is
  *  owned by the ATTACHMENT between CCH_FETCH_LOCK, CCH_FAKE and CCH_RELEASE.
  *  AST on LCK_backup_database forces all dirty pages owned by DATABASE to be
@@ -206,7 +206,7 @@ public:
 	class StateReadGuard
 	{
 	public:
-		StateReadGuard(thread_db* _tdbb): tdbb(_tdbb)
+		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
 			if (!tdbb->getAttachment()->backupStateReadLock(tdbb, true))
 				ERR_bugcheck_msg("Can't lock state for read");
@@ -247,7 +247,7 @@ public:
 		thread_db* tdbb;
 		BackupManager* backupManager;
 	};
-	
+
 	class AllocReadGuard
 	{
 	public:
@@ -300,10 +300,10 @@ public:
 
 	// Initialize and open difference file for writing
 	void beginBackup(thread_db* tdbb);
-	
-	// Merge difference file to main files (if needed) and unlink() difference 
-	// file then. If merge is already in progress method silently returns false and 
-	// does nothing (so it can be used for recovery on database startup). 
+
+	// Merge difference file to main files (if needed) and unlink() difference
+	// file then. If merge is already in progress method silently returns false and
+	// does nothing (so it can be used for recovery on database startup).
 	void endBackup(thread_db* tdbb, bool recover);
 
 	// State Lock member functions
@@ -337,7 +337,7 @@ public:
 		if (tdbb->tdbb_flags & TDBB_backup_write_locked)
 			return;
 		if (!stateLock->lockRead(tdbb, true, true))
-			ERR_bugcheck_msg("Can't lock backup state for set dirty flag");
+			ERR_bugcheck_msg("Can't lock backup state to set dirty flag");
 	}
 
 	void unlockDirtyPage(thread_db* tdbb)
@@ -350,19 +350,19 @@ public:
 	bool actualizeState(thread_db* tdbb);
 	bool actualizeAlloc(thread_db* tdbb);
 
-	// Return page index in difference file that can be used in 
-	// writeDifference call later. 
+	// Return page index in difference file that can be used in
+	// writeDifference call later.
 	ULONG getPageIndex(thread_db* tdbb, ULONG db_page);
 
 	// Return next page index in the difference file to be allocated
 	ULONG allocateDifferencePage(thread_db* tdbb, ULONG db_page);
-	
+
 	// Must have ISC_STATUS because it is called from write_page
 	void openDelta();
 	void closeDelta();
 	bool writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
-	
+
 	void shutdown(thread_db* tdbb);
 
 	void beginFlush()
@@ -427,4 +427,4 @@ private:
 
 } //namespace Jrd
 
-#endif /* JRD_NBAK_PROTO_H */
+#endif /* JRD_NBAK_H */

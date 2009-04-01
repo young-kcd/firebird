@@ -389,7 +389,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 	bufferStart = bufferPos = (const CharType*) str;
 	bufferEnd = bufferStart + len / sizeof(CharType);
 
-	bool matched =
+	const bool matched =
 #ifdef RECURSIVE_SIMILAR
 		match(nodes.getCount(), 0);
 #else

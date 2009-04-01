@@ -1131,7 +1131,8 @@ static void internal_ast(Lock* lock)
    in case the current one gets deleted in the ast */
 
 	Lock* next;
-	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next) {
+	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next)
+	{
 		next = match->lck_identical;
 
 		/* don't deliver the ast to any locks which are already compatible */
@@ -1313,7 +1314,8 @@ static bool internal_enqueue(thread_db* tdbb,
 /* look for an identical lock */
 
 	Lock* match = hash_get_lock(lock, 0, 0);
-	if (match) {
+	if (match)
+	{
 		/* if there are incompatible locks for which
 		   there are no blocking asts defined, give up */
 
@@ -1329,7 +1331,8 @@ static bool internal_enqueue(thread_db* tdbb,
 		   convert the lock, otherwise fall
 		   through and enqueue a new one */
 
-		if ( (match = hash_get_lock(lock, 0, 0)) ) {
+		if ( (match = hash_get_lock(lock, 0, 0)) )
+		{
 			/* if a conversion is necessary, update all identical
 			   locks to reflect the new physical lock level */
 
@@ -1410,12 +1413,13 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 	fb_assert(!lock->lck_attachment ? !lock->lck_prior && !lock->lck_next : true);
 
 	// Delist in old attachment
-	if (lock->lck_attachment) {
+	if (lock->lck_attachment)
+	{
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
 		fb_assert(lock->lck_attachment->att_flags != 0xDEADBEEF);
 
-		Lock* next = lock->lck_next;
-		Lock* prior = lock->lck_prior;
+		Lock* const next = lock->lck_next;
+		Lock* const prior = lock->lck_prior;
 
 		if (prior) {
 			fb_assert(prior->lck_next == lock);

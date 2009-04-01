@@ -89,12 +89,13 @@ public:
 
 		m.leave();
 
-		DWORD result = WaitForMultipleObjects (2, events, FALSE, INFINITE);
+		if (WaitForMultipleObjects((DWORD) MAX_EVENTS, events, FALSE, INFINITE) == WAIT_FAILED)
+			system_call_failed::raise("WaitForMultipleObjects");
 
 		if (--waiters == 0)
 		{
 			if (!ResetEvent(events[BROADCAST]))
-				system_call_failed::raise("ResetEvent");
+				system_call_failed::raise("ResetEvent(BROADCAST)");
 		}
 
 		m.enter();
@@ -105,7 +106,7 @@ public:
 		if (waiters.value() > 0)
 		{
 			if (!SetEvent(events[SIGNAL]))
-				system_call_failed::raise("SetEvent");
+				system_call_failed::raise("SetEvent(SIGNAL)");
 		}
 	}
 

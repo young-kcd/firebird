@@ -1512,7 +1512,7 @@ static bool isConnectionBrokenError(ISC_STATUS status)
 		return true;
 	}
 	return false;
-};
+}
 
 
 static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &descs)

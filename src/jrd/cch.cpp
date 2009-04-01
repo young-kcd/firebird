@@ -900,7 +900,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
    fetched for read; if it is ever fetched for write, it must
    be discarded */
 
-	if (bdb->bdb_expanded_buffer && (lock_type > LCK_read)) 
+	if (bdb->bdb_expanded_buffer && (lock_type > LCK_read))
 	{
 		delete bdb->bdb_expanded_buffer;
 		bdb->bdb_expanded_buffer = NULL;
@@ -973,17 +973,17 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 	fb_assert(bak_state != nbak_state_unknown);
 
 	ULONG diff_page = 0;
-	if (!isTempPage && bak_state != nbak_state_normal) 
+	if (!isTempPage && bak_state != nbak_state_normal)
 	{
 		BackupManager::AllocReadGuard allocGuard(tdbb, dbb->dbb_backup_manager);
 		diff_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
-		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d", 
+		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
 	}
 
 	// In merge mode, if we are reading past beyond old end of file and page is in .delta file
 	// then we maintain actual page in difference file. Always read it from there.
-	if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
+	if (isTempPage || bak_state == nbak_state_normal || !diff_page)
 	{
 		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d from DISK",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
@@ -1004,8 +1004,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 			}
 			else {
 				if (retryCount++ == 3) {
-					fprintf(stderr,
-							   "IO error loop Unwind to avoid a hang\n");
+					fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					CCH_unwind(tdbb, true);
 				}
@@ -1014,7 +1013,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 	}
 	else
 	{
-		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
+		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE",
 			bdb->bdb_page, bak_state, diff_page));
 		if (!bm->readDifference(tdbb, diff_page, page)) {
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -1025,14 +1024,15 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 		if (merge_flag)
 			bdb->bdb_flags |= BDB_merge;
 
-		if ((page->pag_checksum == 0) && !merge_flag) {
-			// We encountered a page which was allocated, but never written to the 
+		if ((page->pag_checksum == 0) && !merge_flag)
+		{
+			// We encountered a page which was allocated, but never written to the
 			// difference file. In this case we try to read the page from database. With
 			// this approach if the page was old we get it from DISK, and if the page
 			// was new IO error (EOF) or BUGCHECK (checksum error) will be the result.
 			// Engine is not supposed to read a page which was never written unless
 			// this is a merge process.
-			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK", 
+			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
 			while (!PIO_read(file, bdb, page, status)) {
 				if (!read_shadow) {
@@ -1540,7 +1540,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 
 	SET_TDBB(tdbb);
 
-	CCH_TRACE(("H %d:%06d->%06d", 
+	CCH_TRACE(("H %d:%06d->%06d",
 		window->win_page.getPageSpaceID(), window->win_page.getPageNum(), page));
 
 	unmark(tdbb, window);
@@ -4711,7 +4711,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #ifdef SUPERSERVER_V2
 					if (page != HEADER_PAGE_NUMBER)
 #endif
-					QUE_MOST_RECENTLY_USED(bdb->bdb_in_use);
+						QUE_MOST_RECENTLY_USED(bdb->bdb_in_use);
 //					BCB_MUTEX_RELEASE;
 					const SSHORT latch_return = latch_bdb(tdbb, latch, bdb, page, latch_wait);
 
@@ -4800,7 +4800,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 					if (page != HEADER_PAGE_NUMBER)
 #endif
-					QUE_INSERT(bcb->bcb_in_use, bdb->bdb_in_use);
+						QUE_INSERT(bcb->bcb_in_use, bdb->bdb_in_use);
 				}
 
 				/* This correction for bdb_use_count below is needed to
@@ -6281,9 +6281,8 @@ static bool write_page(thread_db* tdbb,
 			const bool isTempPage = pageSpace->isTemporary();
 
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge && 
-					bdb->bdb_difference_page &&
-					!(bdb->bdb_flags & BDB_merge))))
+				(backup_state == nbak_state_merge &&
+					bdb->bdb_difference_page && !(bdb->bdb_flags & BDB_merge))))
 			{
 
 				const bool res = dbb->dbb_backup_manager->writeDifference(status,
@@ -6357,7 +6356,7 @@ static bool write_page(thread_db* tdbb,
 		/* clear the dirty bit vector, since the buffer is now
 		   clean regardless of which transactions have modified it */
 
-		// Destination difference page number is only valid between MARK and 
+		// Destination difference page number is only valid between MARK and
 		// write_page so clean it now to avoid confusion
 		bdb->bdb_difference_page = 0;
 		bdb->bdb_transactions = bdb->bdb_mark_transaction = 0;
@@ -6394,7 +6393,7 @@ static void set_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
 {
 	if ( !(bdb->bdb_flags & BDB_dirty) )
 	{
-		NBAK_TRACE(("lock state for dirty page %d:%06d", 
+		NBAK_TRACE(("lock state for dirty page %d:%06d",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum()));
 		bdb->bdb_flags |= BDB_dirty;
 		tdbb->getDatabase()->dbb_backup_manager->lockDirtyPage(tdbb);
@@ -6406,7 +6405,7 @@ static void clear_dirty_flag(thread_db* tdbb, BufferDesc* bdb)
 	if (bdb->bdb_flags & BDB_dirty)
 	{
 		bdb->bdb_flags &= ~BDB_dirty;
-		NBAK_TRACE(("unlock state for dirty page %d:%06d", 
+		NBAK_TRACE(("unlock state for dirty page %d:%06d",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum()));
 		tdbb->getDatabase()->dbb_backup_manager->unlockDirtyPage(tdbb);
 	}

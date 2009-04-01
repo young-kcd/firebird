@@ -188,7 +188,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 
 	WIN window(HEADER_PAGE_NUMBER);
 
-	try 
+	try
 	{
 		StateWriteGuard stateGuard(tdbb, &window);
 		Ods::header_page* header = (Ods::header_page*) window.win_buffer;
@@ -237,7 +237,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		GenerateGuid(&guid);
 		// Set state in database header page. All changes are written to main database file yet.
 		CCH_MARK_MUST_WRITE(tdbb, &window);
-		int newState = nbak_state_stalled;
+		const int newState = nbak_state_stalled; // Should be USHORT?
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | newState;
 		const ULONG adjusted_scn = ++header->hdr_header.pag_scn; // Generate new SCN
 		PAG_replace_entry_first(tdbb, header, Ods::HDR_backup_guid, sizeof(guid),

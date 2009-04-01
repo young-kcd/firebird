@@ -181,7 +181,7 @@ const int BDB_marked			= 8;		/* page has been updated */
 const int BDB_must_write		= 16;		/* forces a write as soon as the page is released */
 const int BDB_faked				= 32;		/* page was just allocated */
 /*	BDB_merge: Page marked for backup merge purposes to prevent redundant writing
-	just readed from delta page back into the delta while delta is merging.
+	just read from delta page back into the delta while delta is merging.
 	See cch.cpp: write_page */
 const int BDB_merge				= 64;		
 const int BDB_system_dirty 		= 128;		/* system transaction has marked dirty */
@@ -193,6 +193,7 @@ const int BDB_db_dirty 			= 4096;		/* page must be written to database */
 const int BDB_checkpoint		= 8192;		/* page must be written by next checkpoint */
 const int BDB_prefetch			= 16384;	/* page has been prefetched but not yet referenced */
 const int BDB_no_blocking_ast	= 32768;	/* No blocking AST registered with page lock */
+// CVC: There's no more room for flags unless you change bdb_flags from USHORT to ULONG.
 
 /* bdb_ast_flags */
 
