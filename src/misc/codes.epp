@@ -681,7 +681,9 @@ static void build_other_headers()
 *	files.
 *
 *********************************************/
-	SCHAR text[256];
+
+	// TEXT is varchar(118) but we need to double quotes and add \ after hardcoded newline for msgs.h
+	SCHAR text[512];
 	int i;
 	unsigned long new_code = 0L;
 
@@ -807,16 +809,29 @@ static void build_other_headers()
 				   S.GDS_SYMBOL, S.GDS_SYMBOL, new_code);
 
 		SCHAR* q = text;
-		SCHAR* end = q;
+		const SCHAR* const end = q + sizeof(text) - 1;
+		SCHAR* last = q;
 		for (const SCHAR* p = N.TEXT; *p && p < N.TEXT + sizeof(N.TEXT); p++)
 		{
-			if (*p == '"')
-				*q++ = '\\';
-			*q++ = *p;
+			switch (*p)
+			{
+			case '"': // Double the quotes
+			case '\n': // We need a backslash to continue string literals in another line in C++
+				if (q + 2 <= end)
+				{
+					*q++ = '\\';
+					*q++ = *p;
+				}
+				break;
+			default:
+				if (q + 1 <= end)
+					*q++ = *p;
+			}
+
 			if (*p != ' ')
-				end = q;
+				last = q;
 		}
-		*end = 0;
+		*last = 0;
 
 		q = S.GDS_SYMBOL;
 		while (*q && *q != ' ' && q < S.GDS_SYMBOL + sizeof(S.GDS_SYMBOL) - 1)

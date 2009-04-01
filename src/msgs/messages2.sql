@@ -288,7 +288,7 @@ without specifying a character set.', NULL);
 ('lock_timeout', NULL, 'lck.c', NULL, 0, 190, NULL, 'lock time-out on wait transaction', NULL, NULL);
 ('prcnotdef', 'par_procedure', 'PAR', NULL, 0, 191, NULL, 'procedure @1 is not defined', NULL, NULL);
 ('prcmismat', 'par_procedure', 'par.c', NULL, 0, 192, NULL, 'Input parameter mismatch for procedure @1', NULL, NULL);
-('wal_bugcheck', 'WALC_bug', 'walc.c', NULL, 0, 193, NULL, 'Database @1: WAL subsystem bug for pid @2\
+('wal_bugcheck', 'WALC_bug', 'walc.c', NULL, 0, 193, NULL, 'Database @1: WAL subsystem bug for pid @2
 @3', NULL, NULL);
 ('wal_cant_expand', 'increase_buffers', 'walw.c', NULL, 0, 194, NULL, 'Could not expand the WAL segment for database @1', NULL, NULL);
 ('codnotdef', 'par_condition', 'par.c', NULL, 0, 195, NULL, 'status code @1 unknown', NULL, NULL);
@@ -700,14 +700,14 @@ COMMIT WORK;
 ('att_handle_busy', NULL, NULL, NULL, 0, 598, NULL, 'Attachment handle is busy', NULL, NULL)
 ('bad_udf_freeit', NULL, NULL, NULL, 0, 599, NULL, 'Bad written UDF detected: pointer returned in FREE_IT function was not allocated by ib_util_malloc', NULL, NULL)
 ('eds_provider_not_found', NULL, 'ExtDS.cpp', NULL, 0, 600, NULL, 'External Data Source provider ''@1'' not found', NULL, NULL)
-('eds_connection', NULL, 'ExtDS.cpp', NULL, 0, 601, NULL, 'Execute statement error at @1 :\
+('eds_connection', NULL, 'ExtDS.cpp', NULL, 0, 601, NULL, 'Execute statement error at @1 :
 @2Data source : @3', NULL, NULL)
 ('eds_preprocess', NULL, 'ExtDS.cpp', NULL, 0, 602, NULL, 'Execute statement preprocess SQL error', NULL, NULL)
 ('eds_stmt_expected', NULL, 'ExtDS.cpp', NULL, 0, 603, NULL, 'Statement expected', NULL, NULL)
 ('eds_prm_name_expected', NULL, 'ExtDS.cpp', NULL, 0, 604, NULL, 'Parameter name expected', NULL, NULL)
 ('eds_unclosed_comment', NULL, 'ExtDS.cpp', NULL, 0, 605, NULL, 'Unclosed comment found near ''@1''', NULL, NULL)
-('eds_statement', NULL, 'ExtDS.cpp', NULL, 0, 606, NULL, 'Execute statement error at @1 :\
-@2Statement : @3\
+('eds_statement', NULL, 'ExtDS.cpp', NULL, 0, 606, NULL, 'Execute statement error at @1 :
+@2Statement : @3
 Data source : @4', NULL, NULL)
 ('eds_input_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 607, NULL, 'Input parameters mismatch', NULL, NULL)
 ('eds_output_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 608, NULL, 'Output parameters mismatch', NULL, NULL)
