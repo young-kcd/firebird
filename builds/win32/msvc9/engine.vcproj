@@ -272,10 +272,6 @@
 			Name="JRD files"
 			>
 			<File
-				RelativePath="..\..\..\src\jrd\all.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\alt.cpp"
 				>
 			</File>
@@ -709,10 +705,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\align.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\all.h"
 				>
 			</File>
 			<File
