@@ -2039,9 +2039,16 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	CHECK_DBB(dbb);
 
 	const USHORT pageSpaceID = blob->blb_pg_space_id;
-	const USHORT tempSpaceID = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
-	if ((dbb->dbb_flags & DBB_read_only) && pageSpaceID != tempSpaceID)
-		ERR_post(Arg::Gds(isc_read_only_database));
+
+	if (dbb->dbb_flags & DBB_read_only)
+	{
+		const USHORT tempSpaceID = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
+
+		if (pageSpaceID != tempSpaceID)
+		{
+			ERR_post(Arg::Gds(isc_read_only_database));
+		}
+	}
 
 	// Level 0 blobs don't need cleanup
 
