@@ -132,9 +132,6 @@ UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*);
 
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 
-// Call this function from the debugger if desired
-void	JRD_print_pools(const char* filename);
-
 #ifdef DEBUG_PROCS
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 #endif

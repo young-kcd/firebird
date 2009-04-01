@@ -34,9 +34,7 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
-#include "../jrd/all.h"
 #include "../jrd/btn.h"
-#include "../jrd/all.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/val.h"
 

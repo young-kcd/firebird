@@ -67,7 +67,6 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/val.h"
 #include "../jrd/rse.h"
-#include "../jrd/all.h"
 #include "../jrd/fil.h"
 #include "../jrd/intl.h"
 #include "../jrd/sbm.h"
@@ -683,16 +682,6 @@ static const char* CRYPT_IMAGE = "fbcrypt";
 static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
-
-void JRD_print_pools(const char* filename)
-{
-	FILE* out = fopen(filename, "w");
-	if (out)
-	{
-		ALL_print_memory_pool_info(out, databases);
-		fclose(out);
-	}
-}
 
 void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options, 
 	bool create, bool no_priv)
@@ -3961,80 +3950,66 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	{
 		// If database has been shutdown then get out
 
-		Attachment* attachment = tdbb->getAttachment();
-		jrd_tra* transaction = tdbb->getTransaction();
-		jrd_req* request = tdbb->getRequest();
+		Attachment* const attachment = tdbb->getAttachment();
+		jrd_tra* const transaction = tdbb->getTransaction();
+		jrd_req* const request = tdbb->getRequest();
 
-		if (attachment)
+		try
 		{
-			if ((dbb->dbb_ast_flags & DBB_shutdown) && (attachment->att_flags & ATT_shutdown))
+			if (attachment)
 			{
-				const PathName& file_name = attachment->att_filename;
-				if (punt)
+				if (attachment->att_flags & ATT_shutdown)
 				{
-					CCH_unwind(tdbb, false);
-					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+					if (dbb->dbb_ast_flags & DBB_shutdown)
+					{
+						status_exception::raise(Arg::Gds(isc_shutdown) <<
+												Arg::Str(attachment->att_filename));
+					}
+					else if (!(tdbb->tdbb_flags & TDBB_shutdown_manager))
+					{
+						status_exception::raise(Arg::Gds(isc_att_shutdown));
+					}
 				}
-				else
+
+				// If a cancel has been raised, defer its acknowledgement
+				// when executing in the context of an internal request or
+				// the system transaction.
+
+				if ((attachment->att_flags & ATT_cancel_raise) &&
+					!(attachment->att_flags & ATT_cancel_disable))
 				{
-					ERR_build_status(tdbb->tdbb_status_vector,
-									 Arg::Gds(isc_shutdown) << Arg::Str(file_name));
-					return true;
-				}
-			}
-			else if ((attachment->att_flags & ATT_shutdown) && !(tdbb->tdbb_flags & TDBB_shutdown_manager))
-			{
-				if (punt)
-				{
-					CCH_unwind(tdbb, false);
-					ERR_post(Arg::Gds(isc_att_shutdown));
-				}
-				else
-				{
-					ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_att_shutdown));
-					return true;
+					if ((!request ||
+						 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+						(!transaction || !(transaction->tra_flags & TRA_system)))
+					{
+						attachment->att_flags &= ~ATT_cancel_raise;
+						status_exception::raise(Arg::Gds(isc_cancelled));
+					}
 				}
 			}
 
-			// If a cancel has been raised, defer its acknowledgement
-			// when executing in the context of an internal request or
-			// the system transaction.
+			// Handle request cancellation
 
-			if ((attachment->att_flags & ATT_cancel_raise) &&
-				!(attachment->att_flags & ATT_cancel_disable))
+			if (transaction && (transaction->tra_flags & TRA_cancel_request))
 			{
-				if ((!request ||
-					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
-					(!transaction || !(transaction->tra_flags & TRA_system)))
-				{
-					attachment->att_flags &= ~ATT_cancel_raise;
-					if (punt)
-					{
-						CCH_unwind(tdbb, false);
-						ERR_post(Arg::Gds(isc_cancelled));
-					}
-					else
-					{
-						ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_cancelled));
-						return true;
-					}
-				}
+				transaction->tra_flags &= ~TRA_cancel_request;
+				status_exception::raise(Arg::Gds(isc_cancelled));
 			}
 		}
-
-		// Handle request cancellation
-
-		if (transaction && (transaction->tra_flags & TRA_cancel_request))
+		catch (const status_exception& ex)
 		{
-			transaction->tra_flags &= ~TRA_cancel_request;
 			tdbb->tdbb_flags |= TDBB_sys_error;
 
-			if (punt) {
+			const Arg::StatusVector status(ex.value());
+
+			if (punt)
+			{
 				CCH_unwind(tdbb, false);
-				ERR_post(Arg::Gds(isc_cancelled));
+				ERR_post(status);
 			}
-			else {
-				ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_cancelled));
+			else
+			{
+				ERR_build_status(tdbb->tdbb_status_vector, status);
 				return true;
 			}
 		}
@@ -4042,7 +4017,8 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	// Enable signal handler for the monitoring stuff
 
-	if (dbb->dbb_ast_flags & DBB_monitor_off) {
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
+	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
 	}
@@ -4173,8 +4149,6 @@ static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
 	if (transaction && (transaction->tra_flags & TRA_cancel_request))
 	{
 		transaction->tra_flags &= ~TRA_cancel_request;
-		tdbb->tdbb_flags |= TDBB_sys_error;
-
 		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 }
@@ -6505,7 +6479,7 @@ void JRD_compile(thread_db* tdbb,
 				 jrd_req** req_handle,
 				 SSHORT blr_length,
 				 const UCHAR* blr,
-				 Firebird::RefStrPtr ref_str,
+				 RefStrPtr ref_str,
 				 USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
