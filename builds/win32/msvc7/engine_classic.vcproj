@@ -47,8 +47,6 @@
   </References>
   <Files>
     <Filter Name="JRD files">
-      <File RelativePath="..\..\..\src\jrd\all.cpp">
-      </File>
       <File RelativePath="..\..\..\src\jrd\alt.cpp">
       </File>
       <File RelativePath="..\..\..\src\jrd\blb.cpp">
@@ -266,8 +264,6 @@
       <File RelativePath="..\..\..\src\jrd\acl.h">
       </File>
       <File RelativePath="..\..\..\src\jrd\align.h">
-      </File>
-      <File RelativePath="..\..\..\src\jrd\all.h">
       </File>
       <File RelativePath="..\..\..\src\jrd\blb.h">
       </File>

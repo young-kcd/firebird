@@ -26,7 +26,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
         CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
-        all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
+        blb.cpp btn.cpp btr.cpp builtin.cpp \
 		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
 		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
 		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
