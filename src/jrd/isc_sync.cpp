@@ -3948,6 +3948,10 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 	CloseHandle(shmem_data->sh_mem_handle);
 	UnmapViewOfFile(shmem_data->sh_mem_hdr_address);
 	CloseHandle(shmem_data->sh_mem_hdr_object);
+
+	TEXT expanded_filename[MAXPATHLEN];
+	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
+	DeleteFile(expanded_filename);
 }
 #endif
 
