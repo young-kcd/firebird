@@ -1074,7 +1074,7 @@ req_int* EventManager::historical_interest(ses* session, SRQ_PTR event_offset)
 }
 
 
-void EventManager::init_shmem(SH_MEM shmem_data, bool initialize)
+void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
 {
 /**************************************
  *

@@ -73,7 +73,7 @@ private:
 	evnt* find_event(USHORT, const TEXT*, evnt*);
 	void free_global(frb*);
 	req_int* historical_interest(ses*, SLONG);
-	void init_shmem(SH_MEM, bool);
+	void init_shmem(sh_mem*, bool);
 	void insert_tail(srq*, srq*);
 	evnt* make_event(USHORT, const TEXT*, SLONG);
 	void post_process(prb*);
@@ -90,7 +90,7 @@ private:
 		return 0;
 	}
 
-	static void init_shmem(void* arg, SH_MEM shmem, bool init)
+	static void init_shmem(void* arg, sh_mem* shmem, bool init)
 	{
 		EventManager* const eventMgr = static_cast<EventManager*>(arg);
 		eventMgr->init_shmem(shmem, init);
@@ -102,7 +102,7 @@ private:
 	evh* m_header;
 	prb* m_process;
 	SLONG m_processOffset;
-	SH_MEM_T m_shmemData;
+	sh_mem m_shmemData;
 
 	Firebird::string m_dbId;
 

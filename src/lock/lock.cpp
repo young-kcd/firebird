@@ -2160,7 +2160,7 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 }
 
 
-void LockManager::initialize(SH_MEM shmem_data, bool initialize)
+void LockManager::initialize(sh_mem* shmem_data, bool initialize)
 {
 /**************************************
  *

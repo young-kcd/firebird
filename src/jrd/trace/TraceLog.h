@@ -47,7 +47,7 @@ public:
 
 private:
 	static void checkMutex(const TEXT*, int);
-	static void initShMem(void*, SH_MEM_T*, bool);
+	static void initShMem(void*, sh_mem*, bool);
 
 	void lock();
 	void unlock();
@@ -64,7 +64,7 @@ private:
 #endif
 	};
 
-	SH_MEM_T m_handle;
+	sh_mem m_handle;
 	ShMemHeader* m_base;
 #ifdef WIN_NT
 	struct mtx m_mutex;

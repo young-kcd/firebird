@@ -57,7 +57,7 @@ public:
 
 private:
 	static void checkMutex(const TEXT*, int);
-	static void initShMem(void*, SH_MEM_T*, bool);
+	static void initShMem(void*, sh_mem*, bool);
 
 	void checkFile();
 
@@ -107,7 +107,7 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
-	SH_MEM_T m_handle;
+	sh_mem m_handle;
 	ShMemHeader* m_base;
 #ifdef WIN_NT
 	struct mtx m_mutex;

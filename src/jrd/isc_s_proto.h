@@ -54,8 +54,8 @@ int		ISC_mutex_unlock(struct mtx *);
 void	ISC_mutex_fini(struct mtx *);
 
 #if defined HAVE_MMAP || defined WIN_NT
-UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, ULONG, ULONG);
-void	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, ULONG);
+UCHAR*	ISC_map_object(ISC_STATUS *, sh_mem*, ULONG, ULONG);
+void	ISC_unmap_object(ISC_STATUS *, sh_mem*, UCHAR **, ULONG);
 #endif
 
 #ifdef UNIX

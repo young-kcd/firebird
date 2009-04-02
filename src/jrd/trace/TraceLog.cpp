@@ -239,7 +239,7 @@ void TraceLog::checkMutex(const TEXT* string, int state)
 	}
 }
 
-void TraceLog::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
+void TraceLog::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 {
 	TraceLog* log = (TraceLog*) arg;
 

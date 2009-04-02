@@ -286,7 +286,7 @@ void DatabaseSnapshot::SharedData::checkMutex(const TEXT* string, int state)
 }
 
 
-void DatabaseSnapshot::SharedData::init(void* arg, SH_MEM_T* shmemData, bool initialize)
+void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initialize)
 {
 	SharedData* const shmem = (SharedData*) arg;
 	fb_assert(shmem);

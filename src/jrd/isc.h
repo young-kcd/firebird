@@ -104,8 +104,8 @@ struct sh_mem
 	ULONG sh_mem_length_mapped;
 	SLONG sh_mem_handle;
 };
-typedef sh_mem SH_MEM_T;
-typedef sh_mem *SH_MEM;
+//typedef sh_mem SH_MEM_T;
+//typedef sh_mem *SH_MEM;
 #endif // UNIX
 
 
@@ -156,8 +156,8 @@ struct sh_mem
 	ULONG*	sh_mem_hdr_address;
 	TEXT	sh_mem_name[MAXPATHLEN];
 };
-typedef sh_mem SH_MEM_T;
-typedef sh_mem *SH_MEM;
+//typedef sh_mem SH_MEM_T;
+//typedef sh_mem *SH_MEM;
 #define THREAD_HANDLE_DEFINED
 typedef void *THD_T;
 #endif // WIN_NT
@@ -170,8 +170,8 @@ struct sh_mem
 	ULONG	sh_mem_length_mapped;
 	SLONG	sh_mem_handle;
 };
-typedef sh_mem SH_MEM_T;
-typedef sh_mem *SH_MEM;
+//typedef sh_mem SH_MEM_T;
+//typedef sh_mem *SH_MEM;
 #endif
 #undef SH_MEM_STRUCTURE_DEFINED
 

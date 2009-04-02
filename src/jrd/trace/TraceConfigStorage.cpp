@@ -134,7 +134,7 @@ void ConfigStorage::checkMutex(const TEXT* string, int state)
 	}
 }
 
-void ConfigStorage::initShMem(void* arg, SH_MEM_T* shmemData, bool initialize)
+void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 {
 	ConfigStorage* const storage = (ConfigStorage*) arg;
 	fb_assert(storage);

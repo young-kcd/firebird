@@ -106,9 +106,9 @@ public:
 		void extend();
 
 		static void checkMutex(const TEXT*, int);
-		static void init(void*, SH_MEM_T*, bool);
+		static void init(void*, sh_mem*, bool);
 
-		SH_MEM_T handle;
+		sh_mem handle;
 #ifdef WIN_NT
 		struct mtx mutex;
 #endif

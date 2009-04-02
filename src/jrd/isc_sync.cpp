@@ -1855,7 +1855,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
 					ULONG length,
-					SH_MEM shmem_data)
+					sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -2058,7 +2058,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
 					ULONG length,
-					SH_MEM shmem_data)
+					sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -2344,7 +2344,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
 					ULONG length,
-					SH_MEM shmem_data)
+					sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -2598,7 +2598,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 #ifdef HAVE_MMAP
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
-					  SH_MEM shmem_data,
+					  sh_mem* shmem_data,
 					  ULONG object_offset,
 					  ULONG object_length)
 {
@@ -2652,7 +2652,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  SH_MEM shmem_data,
+					  sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -2704,7 +2704,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 #ifdef WIN_NT
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
-					  SH_MEM shmem_data,
+					  sh_mem* shmem_data,
 					  ULONG object_offset,
 					  ULONG object_length)
 {
@@ -2745,7 +2745,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  SH_MEM shmem_data,
+					  sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -3574,7 +3574,7 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
 UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
-					  SH_MEM shmem_data,
+					  sh_mem* shmem_data,
 					  ULONG new_length,
 					  bool flag)
 {
@@ -3621,7 +3621,7 @@ UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
-					  SH_MEM shmem_data,
+					  sh_mem* shmem_data,
 					  ULONG new_length,
 					  bool flag)
 {
@@ -3716,7 +3716,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 #ifndef ISC_REMAP_FILE_DEFINED
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
-						SH_MEM shmem_data,
+						sh_mem* shmem_data,
 						ULONG new_length,
 						bool flag)
 {
@@ -3865,7 +3865,7 @@ void ISC_sync_signals_reset()
 
 #ifdef UNIX
 #ifdef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -3906,7 +3906,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 
 #ifdef UNIX
 #ifndef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -3928,7 +3928,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 
 
 #ifdef WIN_NT
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 {
 /**************************************
  *

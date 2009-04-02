@@ -101,7 +101,7 @@ private:
 	void grant(lrq*, lbl*);
 	SRQ_PTR grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
 	void init_owner_block(own*, UCHAR, LOCK_OWNER_T) const;
-	void initialize(SH_MEM, bool);
+	void initialize(sh_mem*, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
 	bool internal_convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
@@ -139,7 +139,7 @@ private:
 		return 0;
 	}
 
-	static void initialize(void* arg, SH_MEM shmem, bool init)
+	static void initialize(void* arg, sh_mem* shmem, bool init)
 	{
 		LockManager* const lockMgr = static_cast<LockManager*>(arg);
 		lockMgr->initialize(shmem, init);
@@ -150,7 +150,7 @@ private:
 	prc* m_process;
 	SRQ_PTR m_processOffset;
 
-	SH_MEM_T m_shmem;
+	sh_mem m_shmem;
 
 	Firebird::Mutex m_localMutex;
 	Firebird::RWLock m_remapSync;

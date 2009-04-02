@@ -429,7 +429,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (db_file)
 	{
-		SH_MEM_T shmem_data;
+		sh_mem shmem_data;
 
 		ISC_STATUS_ARRAY status_vector;
 		LOCK_header = (lhb*) ISC_map_file(status_vector, filename.c_str(),
