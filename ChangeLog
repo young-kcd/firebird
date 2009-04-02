@@ -1,3 +1,16 @@
+2009-04-02 10:52  robocop
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.99),
+	jrd/DatabaseSnapshot.h (1.30), jrd/event.cpp (1.87),
+	jrd/event_proto.h (1.18), jrd/isc.h (1.40), jrd/isc_s_proto.h
+	(1.26), jrd/isc_sync.cpp (1.176), lock/lock.cpp (1.184),
+	lock/lock_proto.h (1.27), lock/print.cpp (1.83),
+	jrd/trace/TraceConfigStorage.cpp (1.19),
+	jrd/trace/TraceConfigStorage.h (1.9), jrd/trace/TraceLog.cpp
+	(1.12), jrd/trace/TraceLog.h (1.7):
+
+	Get rid of some typedefs.
+
 2009-04-01 19:40  dimitr
 
 	* firebird2/src/jrd/blb.cpp (1.193):
