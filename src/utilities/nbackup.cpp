@@ -1101,11 +1101,6 @@ void nbackup(UtilSvc* uSvc)
 	UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = argv.getCount();
 
-#if defined DEV_BUILD && !defined WIN_NT
-	if (!uSvc->isService())
-		fprintf(stderr, "Using %d-bit UNIX IO\n", sizeof(off_t) * 8);
-#endif
-
 	NbOperation op = nbNone;
 	string username, password;
 	PathName database, filename;
