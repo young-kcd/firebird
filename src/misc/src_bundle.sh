@@ -65,9 +65,6 @@ rm -rf gen
 # Copy configure script
 cp $SRCROOT/configure .
 
-# Help poor windows people avoid awk dependency
-cp $SRCROOT/extern/btyacc/skeleton.c ./extern/btyacc/skeleton.c
-
 echo "Creating tarball for $PACKNAME"
 cd ..
 tar cjf ../gen/$PACKNAME.tar.bz2 $PACKNAME
