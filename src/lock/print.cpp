@@ -1065,7 +1065,7 @@ static void prt_owner(OUTFILE outfile,
 			owner->own_owner_id, owner->own_owner_type,
 			(const TEXT*)HtmlLink(preRequest, owner->own_pending_request));
 
-	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6d\n",
+	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6"SIZEFORMAT"\n",
 			process->prc_process_id,
 			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead",
 			owner->own_thread_id);
@@ -1265,7 +1265,7 @@ static void prt_que(OUTFILE outfile,
 	SRQ_LOOP((*que_inst), next)
 		++count;
 
-	FPRINTF(outfile, "%s (%ld):\tforward: %s, backward: %s\n", string, count,
+	FPRINTF(outfile, "%s (%"SLONGFORMAT"):\tforward: %s, backward: %s\n", string, count,
 			(const TEXT*) HtmlLink(prefix, que_inst->srq_forward - que_offset),
 			(const TEXT*) HtmlLink(prefix, que_inst->srq_backward - que_offset));
 }

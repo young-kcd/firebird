@@ -1660,7 +1660,9 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	// Convert a date or time value into a timestamp for manipulation
 
-	tm times = {0};
+	tm times;
+	memset(&times, 0, sizeof(struct tm));
+
 	int	fractions = 0;
 
 	switch (from->dsc_dtype)

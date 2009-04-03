@@ -37,7 +37,7 @@
 #define NTRACE_VERSION 2
 
 // plugin entry point
-static const char* NTRACE_ATTACH = "trace_create";
+static const char* const NTRACE_ATTACH = "trace_create";
 
 /* Database objects*/
 

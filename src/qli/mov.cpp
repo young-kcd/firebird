@@ -1382,7 +1382,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 				p++;
 			}
 			*t = 0;
-			const TEXT** month_ptr = FB_LONG_MONTHS_UPPER;
+			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
 			while (true)
 			{
 				if (!*month_ptr)

@@ -2531,9 +2531,9 @@ static void pass2( SLONG start_position)
 				line++;
 				if (line_pending) {
 					if (line == 1)
-						fprintf(gpreGlob.out_file, "#line %ld \"%s\"\n", line, backlash_fixed_file_name);
+						fprintf(gpreGlob.out_file, "#line %"SLONGFORMAT" \"%s\"\n", line, backlash_fixed_file_name);
 					else
-						fprintf(gpreGlob.out_file, "\n#line %ld \"%s\"", line, backlash_fixed_file_name);
+						fprintf(gpreGlob.out_file, "\n#line %"SLONGFORMAT" \"%s\"", line, backlash_fixed_file_name);
 
 					line_pending = false;
 				}
@@ -2669,7 +2669,7 @@ static void pass2( SLONG start_position)
 	while ((c = get_char(input_file)) != EOF)
 	{
 		if (c == '\n' && line_pending) {
-			fprintf(gpreGlob.out_file, "\n#line %ld \"%s\"", line + 1, backlash_fixed_file_name);
+			fprintf(gpreGlob.out_file, "\n#line %"SLONGFORMAT" \"%s\"", line + 1, backlash_fixed_file_name);
 			line_pending = false;
 		}
 		if (c == EOF) {

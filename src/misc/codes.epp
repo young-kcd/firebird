@@ -89,8 +89,8 @@ const int FAC_SQL_POSITIVE	= 14;	// facility for positive SQL codes
 const int FAC_SQL_NEGATIVE	= 13;	// ditto for negative codes
 
 const int gds_facility_local	= 20;
-const SLONG gds_base_local		= (SLONG) gds_facility_local << 24;
-const SLONG gds_factor_local	= 1;
+const int gds_base_local		= (SLONG) gds_facility_local << 24;
+const int gds_factor_local		= 1;
 
 
 static const char *license[] = {
@@ -722,8 +722,8 @@ static void build_other_headers()
 	fprintf(pas_codes, "\n"
 		"const\n"
 		"\tgds_facility\t\t= %d;\n"
-		"\tgds_err_base\t\t= %ld;\n"
-		"\tgds_err_factor\t\t= %ld;\n",
+		"\tgds_err_base\t\t= %d;\n"
+		"\tgds_err_factor\t\t= %d;\n",
 		gds_facility_local, gds_base_local, gds_factor_local);
 
 	int numLines = FB_NELEM(pas_boiler_plate);
@@ -747,8 +747,8 @@ static void build_other_headers()
 	fprintf(ftn_codes, "\n"
 		"      PARAMETER (\n"
 		"     + GDS_FACILITY    = %d,\n"
-		"     + GDS_ERR_BASE    = %ld,\n"
-		"     + GDS_ERR_FACTOR  = %ld)\n",
+		"     + GDS_ERR_BASE    = %d,\n"
+		"     + GDS_ERR_FACTOR  = %d)\n",
 		gds_facility_local, gds_base_local, gds_factor_local);
 
 	numLines = FB_NELEM(ftn_boiler_plate_data);

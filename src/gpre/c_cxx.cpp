@@ -866,7 +866,7 @@ static void gen_based( const act* action, int column)
 		fprintf(gpreGlob.out_file, "%s", variable);
 		if (based_on->bas_flags & BAS_segment) {
 			if (*variable != '*')
-				fprintf(gpreGlob.out_file, "[%ld]", length);
+				fprintf(gpreGlob.out_file, "[%"SLONGFORMAT"]", length);
 		}
 		else if (field->fld_array_info)
 		{
@@ -875,7 +875,7 @@ static void gen_based( const act* action, int column)
 			for (const dim* dimension = field->fld_array_info->ary_dimension;
 				dimension; dimension = dimension->dim_next)
 			{
-				fprintf(gpreGlob.out_file, " [%ld]", dimension->dim_upper - dimension->dim_lower + 1);
+				fprintf(gpreGlob.out_file, " [%"SLONGFORMAT"]", dimension->dim_upper - dimension->dim_lower + 1);
 			}
 
 			if (field->fld_array_info->ary_dtype <= dtype_varying && field->fld_length > 1)
@@ -1547,7 +1547,7 @@ static void gen_drop_database( const act* action, int column)
 	const gpre_dbb* db = (gpre_dbb*) action->act_object;
 	align(column);
 
-	fprintf(gpreGlob.out_file, "isc_drop_database (%s, %d, \"%s\", rdb$k_db_type_gds);",
+	fprintf(gpreGlob.out_file, "isc_drop_database (%s, %"SIZEFORMAT", \"%s\", rdb$k_db_type_gds);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
 	set_sqlcode(action, column);
@@ -3541,7 +3541,7 @@ static void make_array_declaration(ref* reference)
 	for (const dim* dimension = field->fld_array_info->ary_dimension; dimension;
 		 dimension = dimension->dim_next)
 	{
-		fprintf(gpreGlob.out_file, " [%ld]", dimension->dim_upper - dimension->dim_lower + 1);
+		fprintf(gpreGlob.out_file, " [%"SLONGFORMAT"]", dimension->dim_upper - dimension->dim_lower + 1);
 	}
 
 	if (field->fld_array_info->ary_dtype <= dtype_varying)

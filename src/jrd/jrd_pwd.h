@@ -35,10 +35,10 @@
 #endif
 #include <time.h>
 
-const size_t MAX_PASSWORD_ENC_LENGTH = 12;	// passed by remote protocol
-const size_t MAX_PASSWORD_LENGTH = 64;		// used to store passwords internally
-static const char* PASSWORD_SALT  = "9z";	// for old ENC_crypt()
-const size_t SALT_LENGTH = 12;				// measured after base64 coding
+const size_t MAX_PASSWORD_ENC_LENGTH = 12;		// passed by remote protocol
+const size_t MAX_PASSWORD_LENGTH = 64;			// used to store passwords internally
+static const char* const PASSWORD_SALT  = "9z";	// for old ENC_crypt()
+const size_t SALT_LENGTH = 12;					// measured after base64 coding
 
 namespace Jrd {
 

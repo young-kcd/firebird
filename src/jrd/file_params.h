@@ -32,19 +32,21 @@
 #ifndef JRD_FILE_PARAMS_H
 #define JRD_FILE_PARAMS_H
 
-static const char* EVENT_FILE	= "fb_event_%s";
-static const char* LOCK_FILE	= "fb_lock_%s";
-static const char* MONITOR_FILE	= "fb_monitor_%s";
-static const char* TRACE_FILE	= "fb_trace";
+static const char* const EVENT_FILE		= "fb_event_%s";
+static const char* const LOCK_FILE		= "fb_lock_%s";
+static const char* const MONITOR_FILE	= "fb_monitor_%s";
+static const char* const TRACE_FILE		= "fb_trace";
 
 #ifdef UNIX
-static const char* INIT_FILE	= "fb_init";
-static const char* SEM_FILE		= "fb_sem";
+static const char* const INIT_FILE		= "fb_init";
+static const char* const SEM_FILE		= "fb_sem";
 #endif
 
-// CVC: Do we really need this information here after using autoconf?
-#if defined(sun) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD)
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_IPC_H
 #include <sys/ipc.h>
 #endif
 
@@ -57,15 +59,15 @@ static const char* SEM_FILE		= "fb_sem";
 
 /* keep MSG_FILE_LANG in sync with build_file.epp */
 #ifdef WIN_NT
-static const char* WORKFILE		= "c:\\temp\\";
+static const char* const WORKFILE		= "c:\\temp\\";
 static const char MSG_FILE_LANG[]= "intl\\%.10s.msg";
 #else
-static const char* WORKFILE		= "/tmp/";
+static const char* const WORKFILE		= "/tmp/";
 static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
 #endif
 
-static const char* LOGFILE		= "firebird.log";
-static const char* MSG_FILE		= "firebird.msg";
+static const char* const LOGFILE		= "firebird.log";
+static const char* const MSG_FILE		= "firebird.msg";
 // Keep in sync with MSG_FILE_LANG
 const int LOCALE_MAX	= 10;
 

@@ -547,14 +547,14 @@ static void extract_database(const TEXT * DB_file_nameL)
                 FOR F IN RDB$FILES WITH F.RDB$SHADOW_NUMBER MISSING OR
                     F.RDB$SHADOW_NUMBER EQ 0
                     name_trunc(F.RDB$FILE_NAME, buffer);
-                    fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
+                    fprintf(output_file, "\n\tfile \"%s\" starting at page %"SLONGFORMAT,
                                buffer, F.RDB$FILE_START);
                 END_FOR;
             }
             else {
                 FOR F IN RDB$FILES
 					name_trunc(F.RDB$FILE_NAME, buffer);
-                    fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
+                    fprintf(output_file, "\n\tfile \"%s\" starting at page %"SLONGFORMAT,
                                buffer, F.RDB$FILE_START);
                 END_FOR;
 			}
@@ -592,7 +592,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 	           fprintf(output_file, ",\n\t\t\"%s\"", F.RDB$FILE_NAME);
 
 	       if (F.RDB$FILE_LENGTH)
-	           fprintf(output_file, " size = %ld", F.RDB$FILE_LENGTH);
+	           fprintf(output_file, " size = %"SLONGFORMAT, F.RDB$FILE_LENGTH);
 
 	       if (F.RDB$FILE_PARTITIONS)
 	           fprintf(output_file, " partitions = %d",
@@ -613,7 +613,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 	       fprintf(output_file, " \"%s\"", F.RDB$FILE_NAME);
 
 	       if (F.RDB$FILE_LENGTH)
-	           fprintf(output_file, " size = %ld", F.RDB$FILE_LENGTH);
+	           fprintf(output_file, " size = %"SLONGFORMAT, F.RDB$FILE_LENGTH);
 
 	       if (F.RDB$FILE_PARTITIONS)
 	           fprintf(output_file, " partitions = %d",
@@ -655,7 +655,7 @@ static void extract_database(const TEXT * DB_file_nameL)
 				SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
 				name_trunc(F.RDB$FILE_NAME, buffer);
 				if (F.RDB$FILE_START)
-					fprintf(output_file, "\n\tfile \"%s\" starting at page %ld",
+					fprintf(output_file, "\n\tfile \"%s\" starting at page %"SLONGFORMAT,
 							   buffer, F.RDB$FILE_START);
 				else
 					fprintf(output_file, "%s\ndefine shadow %d \"%s\"",
@@ -2053,9 +2053,9 @@ static void type_scalar(USHORT dtype,
             D.RDB$FIELD_NAME EQ field_name
             SORTED BY D.RDB$DIMENSION
             if (D.RDB$LOWER_BOUND  == 1)
-                fprintf(output_file, "%c%ld", c, D.RDB$UPPER_BOUND);
+                fprintf(output_file, "%c%"SLONGFORMAT, c, D.RDB$UPPER_BOUND);
             else
-                fprintf(output_file, "%c%ld:%ld", c, D.RDB$LOWER_BOUND,
+                fprintf(output_file, "%c%"SLONGFORMAT":%"SLONGFORMAT, c, D.RDB$LOWER_BOUND,
                            D.RDB$UPPER_BOUND);
             c = ',';
 	    END_FOR;

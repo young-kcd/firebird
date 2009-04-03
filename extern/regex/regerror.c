@@ -61,7 +61,7 @@ static struct rerr {
  */
 /* ARGSUSED */
 size_t
-regerror(_errcode, preg, errbuf, errbuf_size)
+regError(_errcode, preg, errbuf, errbuf_size)
 int _errcode;
 const regex_t *preg;
 char *errbuf;

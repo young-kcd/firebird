@@ -627,9 +627,21 @@ struct ISC_TIMESTAMP
 #endif
 #endif
 
+#ifndef SIZEFORMAT
+#if (SIZEOF_LONG == 8) && defined(__GNUC__)
+#define SIZEFORMAT "ld"
+#else
+#define SIZEFORMAT "d"
+#endif
+#endif // SIZEFORMAT
+
 //format for __LINE__
 #ifndef LINEFORMAT
+#ifdef __GNUC__
+#define LINEFORMAT "d"
+#else
 #define LINEFORMAT "ld"
+#endif // __GNUC__
 #endif
 
 /* conditional compilation macros */
@@ -884,7 +896,7 @@ static const TEXT FB_SHORT_MONTHS[][4] =
 	"\0"
 };
 
-static const TEXT* FB_LONG_MONTHS_UPPER[] =
+static const TEXT* const FB_LONG_MONTHS_UPPER[] =
 {
 	"JANUARY",
 	"FEBRUARY",
