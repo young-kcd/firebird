@@ -35,11 +35,9 @@ struct symb
 {
 	char *symb_string;
 	int (**symb_value) ();
-	enum s_type symb_type;
+	s_type symb_type;
 	short symb_size;
 };
-
-typedef symb *SYMB;
 
 #endif // JRD_DBG_H
 
