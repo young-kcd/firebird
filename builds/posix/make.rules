@@ -32,20 +32,20 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan \
+WCFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan \
 	-DNAMESPACE=Vulcan $(THR_FLAGS)
 
 ifeq ($(STD_ICU),false)
-  CFLAGS:= $(CFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
+  WCFLAGS:= $(WCFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
 endif
 
 ifeq ($(IsProdTypeBuild),Y)
-  CFLAGS:= $(CFLAGS) $(PROD_FLAGS)
+  WCFLAGS:= $(WCFLAGS) $(PROD_FLAGS)
 else
-  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) -DDEV_BUILD
+  WCFLAGS:= $(WCFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif
 
-CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
+WCXXFLAGS:= $(CXXFLAGS) $(WCFLAGS)
 
 # Here we have definitions for using the preprocessor.
 
@@ -87,27 +87,21 @@ $(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
 
 .SUFFIXES: .lo .o .cpp .c
 
-.c.o:
-	$(CC) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
-
-.cpp.o:
-	$(CXX) -c $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
-
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
 
 ifneq ($(strip $(PLATFORM_FALLBACK)),)
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
 endif
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
-	$(CC) $(CFLAGS) -c $(firstword $<) -o $@
+	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(OBJ)/%.cpp 
-	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
-	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
 
 .SUFFIXES: .epp .e
 
