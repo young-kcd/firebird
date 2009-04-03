@@ -6,7 +6,7 @@ Author:
 
 
 Function:
-	Common Table Expressions is like view’s, locally defined within main query.
+	Common Table Expressions is like views, locally defined within main query.
 From the engine point of view CTE is a derived table so no intermediate 
 materialization is performed. 
 
@@ -45,11 +45,11 @@ select_expr_body	: query_term
 	Or, in less formal format :
 
 WITH [RECURSIVE]
-	CTE_A [(a1, a2, …)] 
-	AS ( SELECT … ),
+	CTE_A [(a1, a2, ...)] 
+	AS ( SELECT ...  ),
 
-	CTE_B [(b1, b2, …)]
-	AS ( SELECT … ),
+	CTE_B [(b1, b2, ...)]
+	AS ( SELECT ... ),
 ...
 SELECT ...
   FROM CTE_A, CTE_B, TAB1, TAB2 ...
@@ -60,7 +60,7 @@ SELECT ...
 Rules of non-recursive common table expressions :
  
 	Several table expressions can be defined at one query
-	Any SELECT’s clause can be used in table expressions
+	Any SELECTs clause can be used in table expressions
 	Table expressions can reference each other
 	Table expressions can be used within any part of main query or another 
 table expression
@@ -104,7 +104,7 @@ Rules of recursive common table expressions :
 	Non-recursive members are placed first in UNION
 	Recursive members are separated from anchor members and from each 
 other with UNION ALL clause
-	References between CTE’s should not have loops
+	References between CTEs should not have loops
 	Aggregates (DISTINCT, GROUP BY, HAVING) and aggregate functions (SUM, 
 COUNT, MAX etc) are not allowed in recursive members
 	Recursive member can have only one reference to itself and only in FROM clause

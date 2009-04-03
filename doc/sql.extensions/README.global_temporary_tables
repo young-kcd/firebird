@@ -67,11 +67,11 @@ database of course). This is much quicker than traditional row by row delete +
 garbage collection of deleted record versions. DELETE triggers are not fired in 
 this case.
 
-	Data and index pages of all of the GTT’s instances are placed in separate temporary 
-file’s. Each connection has its own temporary file created when this connection 
-first referenced some GTT. Also these temporary files are always opened with “Forced 
-Writes = OFF” setting despite of database setting. 
+	Data and index pages of all of the GTTs instances are placed in separate temporary 
+files. Each connection has its own temporary file created when this connection 
+first referenced some GTT. Also these temporary files are always opened with "Forced 
+Writes = OFF" setting despite of database setting. 
 
 	There's no limit on number of GTT instances. If you have N transactions 
-active simultaneously and each transaction has referenced some GTT then you’ll 
-have N GTT’s instances.
+active simultaneously and each transaction has referenced some GTT then you'll 
+have N GTT's instances.
