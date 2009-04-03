@@ -117,7 +117,7 @@ static ULONG high_key[] =
 };
 
 #ifdef SCROLLABLE_CURSORS
-static sort_record*	get_merge(merge_control*, sort_context*, RSE_GET_MODE);
+static sort_record*	get_merge(merge_control*, sort_context*, rse_get_mode);
 #else
 static void diddle_key(UCHAR*, sort_context*, bool);
 static sort_record*	get_merge(merge_control*, sort_context*);
@@ -509,7 +509,7 @@ void SORT_fini(sort_context* scb, Attachment* att)
 void SORT_get(thread_db* tdbb,
 			  sort_context* scb,
 			  ULONG ** record_address,
-			  RSE_GET_MODE mode)
+			  rse_get_mode mode)
 {
 /**************************************
  *
@@ -1583,7 +1583,7 @@ static inline void free_file_space(sort_context* scb, FB_UINT64 position, ULONG 
 
 static sort_record* get_merge(merge_control* merge, sort_context* scb
 #ifdef SCROLLABLE_CURSORS
-							  , RSE_GET_MODE mode
+							  , rse_get_mode mode
 #endif
 	)
 {

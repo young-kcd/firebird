@@ -133,7 +133,7 @@ static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
-static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T, bool);
+static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
@@ -3190,7 +3190,7 @@ static void expand_view_nodes(thread_db* tdbb,
 							  CompilerScratch* csb,
 							  USHORT stream,
 							  NodeStack& stack,
-							  NOD_T type,
+							  nod_t type,
 							  bool allStreams)
 {
 /**************************************
@@ -3938,7 +3938,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_rec_version:
 	case nod_dbkey:
 		{
-			const NOD_T type = node->nod_type;
+			const nod_t type = node->nod_type;
 			stream = (USHORT)(IPTR) node->nod_arg[0];
 
 			mark_variant(tdbb, csb, stream);

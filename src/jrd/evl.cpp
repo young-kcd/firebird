@@ -170,9 +170,9 @@ const SCHAR DIALECT_3_TIMESTAMP_SCALE	= -9;
 const SCHAR DIALECT_1_TIMESTAMP_SCALE	= 0;
 
 #ifdef SCROLLABLE_CURSORS
-static const RSE_GET_MODE g_RSE_get_mode = RSE_get_next;
+static const rse_get_mode g_RSE_get_mode = RSE_get_next;
 #else
-static const RSE_GET_MODE g_RSE_get_mode = RSE_get_forward;
+static const rse_get_mode g_RSE_get_mode = RSE_get_forward;
 #endif
 
 
@@ -1274,7 +1274,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 			if (temp_field && temp_field->fld_default_value && temp_field->fld_not_null)
 			{
-				const NOD_T temp_nod_type = temp_field->fld_default_value->nod_type;
+				const nod_t temp_nod_type = temp_field->fld_default_value->nod_type;
 
 				switch (temp_nod_type)
 				{

@@ -635,7 +635,7 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
 }
 
 
-jrd_nod* OPT_make_binary_node(NOD_T type, jrd_nod* arg1, jrd_nod* arg2, bool flag)
+jrd_nod* OPT_make_binary_node(nod_t type, jrd_nod* arg1, jrd_nod* arg2, bool flag)
 {
 /**************************************
  *
@@ -985,7 +985,7 @@ OptimizerRetrieval::~OptimizerRetrieval()
 }
 
 jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
-											  NOD_T node_type) const
+											  nod_t node_type) const
 {
 /**************************************
  *

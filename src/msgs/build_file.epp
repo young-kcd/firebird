@@ -329,7 +329,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 	global_file_position = 0;
 
 	// Format and write header
-	ISC_MSGHDR header;
+	isc_msghdr header;
 	header.msghdr_major_version = MSG_MAJOR_VERSION;
 	header.msghdr_minor_version = MSG_MINOR_VERSION;
 	header.msghdr_bucket_size = MSG_BUCKET;

@@ -72,7 +72,7 @@ bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*
 bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
-jrd_nod* OPT_make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
+jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
 USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
 
 inline int STREAM_INDEX(const jrd_nod* node)
@@ -177,7 +177,7 @@ public:
 	InversionCandidate* getInversion(RecordSource** rsb);
 
 protected:
-	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, NOD_T node_type) const;
+	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
 	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
 	VaryingString* getAlias();
 	InversionCandidate* generateInversion(RecordSource** rsb);

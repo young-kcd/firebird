@@ -3785,7 +3785,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 			}
 			p = buffer + 1;
 			--length;
-			switch ((RSR_T) buffer[0])
+			switch ((rsr_t) buffer[0])
 			{
 			case RSR_field_id:
 				if (field && field->fld_security_name.length() == 0 && !REL.RDB$DEFAULT_CLASS.NULL)

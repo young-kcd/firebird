@@ -52,8 +52,6 @@ enum rsr_t {
 	RSR_field_not_null
 };
 
-typedef rsr_t RSR_T;
-
 /* Temporary field block */
 
 class TemporaryField : public pool_alloc<type_tfb>

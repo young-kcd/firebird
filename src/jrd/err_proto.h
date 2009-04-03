@@ -43,7 +43,6 @@ enum idx_e {
 	idx_e_foreign_references_present
 };
 
-typedef idx_e IDX_E;
 
 class jrd_rel;
 } //namespace Jrd

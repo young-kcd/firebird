@@ -44,8 +44,6 @@ struct isc_msghdr
 	USHORT msghdr_levels;		// Levels in tree
 };
 
-typedef isc_msghdr ISC_MSGHDR;
-
 // Index node
 
 struct msgnod 

@@ -79,13 +79,13 @@ struct index_fast_load
 	USHORT ifl_key_length;
 };
 
-static IDX_E check_duplicates(thread_db*, Record*, index_desc*, index_insertion*, jrd_rel*);
-static IDX_E check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, jrd_rel**, USHORT *);
-static IDX_E check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, SSHORT);
+static idx_e check_duplicates(thread_db*, Record*, index_desc*, index_insertion*, jrd_rel*);
+static idx_e check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, jrd_rel**, USHORT *);
+static idx_e check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, SSHORT);
 static bool duplicate_key(const UCHAR*, const UCHAR*, void*);
 static PageNumber get_root_page(thread_db*, jrd_rel*);
 static int index_block_flush(void*);
-static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
+static idx_e insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
 static bool key_equal(const temporary_key*, const temporary_key*);
 static void release_index_block(thread_db*, IndexBlock*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
@@ -227,7 +227,7 @@ void IDX_create_index(thread_db* tdbb,
  *	Create and populate index.
  *
  **************************************/
-	IDX_E result = idx_e_ok;
+	idx_e result = idx_e_ok;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -638,7 +638,7 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 }
 
 
-IDX_E IDX_erase(thread_db* tdbb,
+idx_e IDX_erase(thread_db* tdbb,
 				record_param* rpb,
 				jrd_tra* transaction, jrd_rel** bad_relation, USHORT * bad_index)
 {
@@ -658,7 +658,7 @@ IDX_E IDX_erase(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	IDX_E error_code = idx_e_ok;
+	idx_e error_code = idx_e_ok;
 	idx.idx_id = (USHORT) -1;
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
@@ -761,7 +761,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 }
 
 
-IDX_E IDX_modify(thread_db* tdbb,
+idx_e IDX_modify(thread_db* tdbb,
 				 record_param* org_rpb,
 				 record_param* new_rpb,
 				 jrd_tra* transaction, jrd_rel** bad_relation, USHORT * bad_index)
@@ -789,7 +789,7 @@ IDX_E IDX_modify(thread_db* tdbb,
 	insertion.iib_key = &key1;
 	insertion.iib_descriptor = &idx;
 	insertion.iib_transaction = transaction;
-	IDX_E error_code = idx_e_ok;
+	idx_e error_code = idx_e_ok;
 	idx.idx_id = (USHORT) -1;
 
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
@@ -822,7 +822,7 @@ IDX_E IDX_modify(thread_db* tdbb,
 }
 
 
-IDX_E IDX_modify_check_constraints(thread_db* tdbb,
+idx_e IDX_modify_check_constraints(thread_db* tdbb,
 								   record_param* org_rpb,
 								   record_param* new_rpb,
 								   jrd_tra* transaction,
@@ -842,7 +842,7 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	IDX_E error_code = idx_e_ok;
+	idx_e error_code = idx_e_ok;
 	index_desc idx;
 	idx.idx_id = (USHORT) -1;
 
@@ -914,7 +914,7 @@ void IDX_statistics(thread_db* tdbb, jrd_rel* relation, USHORT id,
 }
 
 
-IDX_E IDX_store(thread_db* tdbb,
+idx_e IDX_store(thread_db* tdbb,
 				record_param* rpb,
 				jrd_tra* transaction, jrd_rel** bad_relation, USHORT * bad_index)
 {
@@ -942,7 +942,7 @@ IDX_E IDX_store(thread_db* tdbb,
 	insertion.iib_descriptor = &idx;
 	insertion.iib_transaction = transaction;
 
-	IDX_E error_code = idx_e_ok;
+	idx_e error_code = idx_e_ok;
 	idx.idx_id = (USHORT) -1;
 
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
@@ -968,7 +968,7 @@ IDX_E IDX_store(thread_db* tdbb,
 }
 
 
-static IDX_E check_duplicates(thread_db* tdbb,
+static idx_e check_duplicates(thread_db* tdbb,
 							  Record* record,
 							  index_desc* record_idx,
 							  index_insertion* insertion, jrd_rel* relation_2)
@@ -988,7 +988,7 @@ static IDX_E check_duplicates(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	IDX_E result = idx_e_ok;
+	idx_e result = idx_e_ok;
 	index_desc* insertion_idx = insertion->iib_descriptor;
 	record_param rpb, old_rpb;
 	rpb.rpb_relation = insertion->iib_relation;
@@ -1169,7 +1169,7 @@ static IDX_E check_duplicates(thread_db* tdbb,
 }
 
 
-static IDX_E check_foreign_key(thread_db* tdbb,
+static idx_e check_foreign_key(thread_db* tdbb,
 							   Record* record,
 							   jrd_rel* relation,
 							   jrd_tra* transaction,
@@ -1191,7 +1191,7 @@ static IDX_E check_foreign_key(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	IDX_E result = idx_e_ok;
+	idx_e result = idx_e_ok;
 
 	if (!MET_lookup_partner(tdbb, relation, idx, 0)) {
 		return result;
@@ -1266,7 +1266,7 @@ static IDX_E check_foreign_key(thread_db* tdbb,
 }
 
 
-static IDX_E check_partner_index(thread_db* tdbb,
+static idx_e check_partner_index(thread_db* tdbb,
 								 jrd_rel* relation,
 								 Record* record,
 								 jrd_tra* transaction,
@@ -1288,7 +1288,7 @@ static IDX_E check_partner_index(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	IDX_E result = idx_e_ok;
+	idx_e result = idx_e_ok;
 
 /* get the index root page for the partner relation */
 
@@ -1483,7 +1483,7 @@ static int index_block_flush(void* ast_object)
 }
 
 
-static IDX_E insert_key(thread_db* tdbb,
+static idx_e insert_key(thread_db* tdbb,
 						jrd_rel* relation,
 						Record* record,
 						jrd_tra* transaction,
@@ -1507,7 +1507,7 @@ static IDX_E insert_key(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	IDX_E result = idx_e_ok;
+	idx_e result = idx_e_ok;
 	index_desc* idx = insertion->iib_descriptor;
 
 /* Insert the key into the index.  If the index is unique, btr

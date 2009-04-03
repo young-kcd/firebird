@@ -61,10 +61,10 @@ static void expand_index(WIN *);
 #endif
 static btree_exp* find_current(exp_index_buf*, Ods::btree_page*, const UCHAR*);
 static bool find_saved_node(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN*, UCHAR**);
-static UCHAR* get_position(thread_db*, RecordSource*, IRSB_NAV, WIN *, RSE_GET_MODE, btree_exp**);
+static UCHAR* get_position(thread_db*, RecordSource*, IRSB_NAV, WIN *, rse_get_mode, btree_exp**);
 static bool get_record(thread_db* tdbb, RecordSource*, IRSB_NAV, record_param*, temporary_key*, bool);
 static void init_fetch(IRSB_NAV);
-static UCHAR* nav_open(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN *, RSE_GET_MODE, btree_exp**);
+static UCHAR* nav_open(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN *, rse_get_mode, btree_exp**);
 static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
 static bool setup_bitmaps(thread_db* tdbb, RecordSource*, IRSB_NAV);
 
@@ -143,7 +143,7 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
 
 
 bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
-					IRSB_NAV impure, record_param* rpb, RSE_GET_MODE direction)
+					IRSB_NAV impure, record_param* rpb, rse_get_mode direction)
 {
 /**************************************
  *
@@ -717,7 +717,7 @@ static UCHAR* get_position(
 						RecordSource* rsb,
 						IRSB_NAV impure,
 						WIN * window,
-						RSE_GET_MODE direction, btree_exp** expanded_node)
+						rse_get_mode direction, btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -937,7 +937,7 @@ static UCHAR* nav_open(
 					thread_db* tdbb,
 					RecordSource* rsb,
 					IRSB_NAV impure,
-					WIN * window, RSE_GET_MODE direction, btree_exp** expanded_node)
+					WIN * window, rse_get_mode direction, btree_exp** expanded_node)
 {
 /**************************************
  *

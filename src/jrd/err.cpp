@@ -119,7 +119,7 @@ void ERR_corrupt(int number)
 }
 
 
-void ERR_duplicate_error(IDX_E code, const jrd_rel* relation, USHORT index_number, const TEXT* idx_name)
+void ERR_duplicate_error(idx_e code, const jrd_rel* relation, USHORT index_number, const TEXT* idx_name)
 {
 /**************************************
  *

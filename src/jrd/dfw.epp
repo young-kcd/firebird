@@ -5108,7 +5108,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 }
 
 
-static void put_summary_blob(thread_db* tdbb, blb* blob, RSR_T type, bid* blob_id, jrd_tra* transaction)
+static void put_summary_blob(thread_db* tdbb, blb* blob, rsr_t type, bid* blob_id, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -5197,7 +5197,7 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 
 static void put_summary_record(thread_db* tdbb,
 							   blb*		blob,
-							   RSR_T	type,
+							   rsr_t	type,
 							   const UCHAR*	data,
 							   USHORT	length)
 {

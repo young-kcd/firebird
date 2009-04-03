@@ -87,12 +87,12 @@ static void close_procedure(thread_db*, RecordSource*);
 static SSHORT compare(thread_db*, jrd_nod*, jrd_nod*);
 static SSHORT compare_longs(const SLONG*, const SLONG*, USHORT);
 #ifdef SCROLLABLE_CURSORS
-static bool fetch_record(thread_db*, RecordSource*, USHORT, RSE_GET_MODE);
-static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
-static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
-static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat*, RSE_GET_MODE);
-static UCHAR *get_sort(thread_db*, RecordSource*, RSE_GET_MODE);
-static void resynch_merge(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
+static bool fetch_record(thread_db*, RecordSource*, USHORT, rse_get_mode);
+static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, rse_get_mode);
+static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT, rse_get_mode);
+static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat*, rse_get_mode);
+static UCHAR *get_sort(thread_db*, RecordSource*, rse_get_mode);
+static void resynch_merge(thread_db*, RecordSource*, irsb_mrg*, rse_get_mode);
 static void unget_sort(thread_db*, RecordSource*, UCHAR *);
 #else
 static bool fetch_record(thread_db*, RecordSource*, USHORT);
@@ -102,13 +102,13 @@ static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repe
 static UCHAR *get_sort(thread_db*, RecordSource*);
 #endif
 #ifdef SCROLLABLE_CURSORS
-static bool fetch_left(thread_db*, RecordSource*, IRSB, RSE_GET_MODE);
+static bool fetch_left(thread_db*, RecordSource*, IRSB, rse_get_mode);
 #else
 static bool fetch_left(thread_db*, RecordSource*, IRSB);
 #endif
 static UCHAR* get_merge_data(thread_db*, merge_file*, SLONG);
 static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_param*);
-static bool get_record(thread_db*, RecordSource*, RecordSource*, RSE_GET_MODE);
+static bool get_record(thread_db*, RecordSource*, RecordSource*, rse_get_mode);
 static bool get_union(thread_db*, RecordSource*, IRSB);
 static void invalidate_child_rpbs(thread_db*, RecordSource*);
 static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
@@ -264,7 +264,7 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
+bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, rse_get_mode mode)
 {
 /**************************************
  *
@@ -718,7 +718,7 @@ static SSHORT compare_longs(const SLONG* p, const SLONG* q, USHORT count)
 
 static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
 #ifdef SCROLLABLE_CURSORS
-							, RSE_GET_MODE mode
+							, rse_get_mode mode
 #endif
 	)
 {
@@ -785,7 +785,7 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n
 
 
 #ifdef SCROLLABLE_CURSORS
-static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_MODE mode)
+static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_mode mode)
 {
 /**************************************
  *
@@ -1085,7 +1085,7 @@ static UCHAR *get_merge_data(thread_db* tdbb, merge_file* mfb, SLONG record)
 
 #ifdef SCROLLABLE_CURSORS
 static bool get_merge_fetch(thread_db* tdbb,
-							RecordSource* rsb, SSHORT stream, RSE_GET_MODE mode)
+							RecordSource* rsb, SSHORT stream, rse_get_mode mode)
 {
 /**************************************
  *
@@ -1220,7 +1220,7 @@ static bool get_merge_fetch(thread_db* tdbb, RecordSource* rsb, SSHORT stream)
 
 #ifdef SCROLLABLE_CURSORS
 static bool get_merge_join(thread_db* tdbb,
-						   RecordSource* rsb, irsb_mrg* impure, RSE_GET_MODE mode)
+						   RecordSource* rsb, irsb_mrg* impure, rse_get_mode mode)
 {
 /**************************************
  *
@@ -1617,7 +1617,7 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 static SLONG get_merge_record(thread_db* tdbb,
 							  RecordSource* rsb, irsb_mrg::irsb_mrg_repeat * impure
 #ifdef SCROLLABLE_CURSORS
-, RSE_GET_MODE mode
+, rse_get_mode mode
 #endif
 	)
 {
@@ -1759,7 +1759,7 @@ static bool get_procedure(thread_db*			tdbb,
 static bool get_record(thread_db*	tdbb,
 						  RecordSource*	rsb,
 						  RecordSource*	parent_rsb,
-						  RSE_GET_MODE	mode)
+						  rse_get_mode	mode)
 {
 /**************************************
  *
@@ -2442,7 +2442,7 @@ static bool get_record(thread_db*	tdbb,
 
 static UCHAR *get_sort(thread_db* tdbb, RecordSource* rsb
 #ifdef SCROLLABLE_CURSORS
-					   , RSE_GET_MODE mode
+					   , rse_get_mode mode
 #endif
 	)
 {
@@ -3432,7 +3432,7 @@ static void restore_record(record_param* rpb)
 
 #ifdef SCROLLABLE_CURSORS
 static void resynch_merge(thread_db* tdbb,
-						  RecordSource* rsb, irsb_mrg* impure, RSE_GET_MODE mode)
+						  RecordSource* rsb, irsb_mrg* impure, rse_get_mode mode)
 {
 /**************************************
  *

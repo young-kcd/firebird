@@ -159,7 +159,6 @@ struct sh_mem
 //typedef sh_mem SH_MEM_T;
 //typedef sh_mem *SH_MEM;
 #define THREAD_HANDLE_DEFINED
-typedef void *THD_T;
 #endif // WIN_NT
 
 #ifndef SH_MEM_STRUCTURE_DEFINED
@@ -177,7 +176,6 @@ struct sh_mem
 
 #ifndef THREAD_HANDLE_DEFINED
 #define THREAD_HANDLE_DEFINED
-typedef ULONG THD_T;
 #endif
 #undef THREAD_HANDLE_DEFINED
 

@@ -474,8 +474,6 @@ enum rse_get_mode
 #endif
 };
 
-typedef rse_get_mode RSE_GET_MODE;
-
 } //namespace Jrd
 
 #endif // JRD_RSE_H

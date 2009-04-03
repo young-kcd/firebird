@@ -214,17 +214,15 @@ static bool GetProgramFilesDir(Firebird::PathName& output);
 
 /* Generic cleanup handlers */
 
-struct clean
+struct clean_t
 {
-	struct clean*	clean_next;
-	void			(*clean_routine)(void*);
-	void*			clean_arg;
+	clean_t*	clean_next;
+	void		(*clean_routine)(void*);
+	void*		clean_arg;
 };
 
-typedef clean *CLEAN;
-
 static Firebird::GlobalPtr<Firebird::Mutex> cleanup_handlers_mutex;
-static CLEAN cleanup_handlers = NULL;
+static clean_t* cleanup_handlers = NULL;
 static Firebird::GlobalPtr<Firebird::Mutex> global_msg_mutex;
 static gds_msg* global_default_msg = NULL;
 static bool volatile initialized = false;
@@ -1093,11 +1091,6 @@ void API_ROUTINE gds__trace(const TEXT * text)
  *  This function tries to be async-signal safe
  *
  **************************************/
-
-	char buffer[1024]; // 1K should be enough for the trace message
-	char* p = buffer;
-
-
 	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
 
 	// 07 Sept 2003, Nickolay Samofatov.
@@ -1113,6 +1106,9 @@ void API_ROUTINE gds__trace(const TEXT * text)
     rem %= SECS_PER_HOUR;
     today.tm_min = rem / 60;
     today.tm_sec = rem % 60;
+
+	char buffer[1024]; // 1K should be enough for the trace message
+	char* p = buffer;
 
 	gds__ulstr(p, today.tm_year + 1900, 4, '0');
 	p += 4;
@@ -2076,7 +2072,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 		init();
 	}
 
-	CLEAN clean = (CLEAN) gds__alloc((SLONG) sizeof(struct clean));
+	clean_t* clean = (clean_t*) gds__alloc((SLONG) sizeof(clean_t));
 	clean->clean_routine = routine;
 	clean->clean_arg = arg;
 
@@ -2394,7 +2390,6 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *	Unregister a cleanup handler.
  *
  **************************************/
-	CLEAN clean;
 	if (!initialized)
 	{
 		return;
@@ -2402,7 +2397,8 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 
-	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr; clean_ptr = &clean->clean_next)
+	clean_t* clean;
+	for (clean_t** clean_ptr = &cleanup_handlers; clean = *clean_ptr; clean_ptr = &clean->clean_next)
 	{
         if (clean->clean_routine == routine && clean->clean_arg == arg)
 		{
@@ -3443,12 +3439,13 @@ void gds__cleanup()
 	gds__msg_close(NULL);
 
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
-	CLEAN clean;
 
 	initialized = false;
 	Firebird::InstanceControl::registerGdsCleanup(0);
 
-	while ( (clean = cleanup_handlers) ) {
+	clean_t* clean;
+	while ( (clean = cleanup_handlers) ) 
+	{
 		cleanup_handlers = clean->clean_next;
 		FPTR_VOID_PTR routine = clean->clean_routine;
 		void* arg = clean->clean_arg;

@@ -1254,14 +1254,13 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_start_multiple(ISC_STATUS *user_status,
 	return (*m_api.isc_start_multiple) (user_status, tra_handle, count, vec);
 }
 
+
 struct why_teb
 {
 	FB_API_HANDLE *teb_database;
 	int teb_tpb_length;
 	const UCHAR *teb_tpb;
 };
-
-typedef why_teb WHY_TEB;
 
 ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_start_transaction(ISC_STATUS *user_status,
 											   isc_tr_handle *tra_handle,
@@ -1270,14 +1269,14 @@ ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_start_transaction(ISC_STATUS *user
 	if (!m_api.isc_start_multiple)				// !!!
 		return notImplemented(user_status);
 
-	Firebird::HalfStaticArray<WHY_TEB, 16> tebs;
-	WHY_TEB* teb = tebs.getBuffer(count);
+	Firebird::HalfStaticArray<why_teb, 16> tebs;
+	why_teb* teb = tebs.getBuffer(count);
 
-	const WHY_TEB* const end = teb + count;
+	const why_teb* const end = teb + count;
 	va_list ptr;
 	va_start(ptr, count);
 
-	for (WHY_TEB* teb_iter = teb; teb_iter < end; teb_iter++)
+	for (why_teb* teb_iter = teb; teb_iter < end; teb_iter++)
 	{
 		teb_iter->teb_database = va_arg(ptr, FB_API_HANDLE*);
 		teb_iter->teb_tpb_length = va_arg(ptr, int);
