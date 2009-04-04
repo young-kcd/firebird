@@ -57,7 +57,7 @@ private:
 
 public:
 	explicit ThreadData(ThreadDataType t)
-		: threadDataPriorContext(0), threadDataType(t) 
+		: threadDataPriorContext(0), threadDataType(t)
 	{}
 
 	ThreadDataType getType() const

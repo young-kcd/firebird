@@ -34,7 +34,7 @@
 
 const int EVENT_VERSION = 4;
 
-struct evh 
+struct evh
 {
 	ULONG evh_length;				// Current length of global section
 	UCHAR evh_version;				// Version number of global section
@@ -92,7 +92,7 @@ const int PRB_remap_over= 8;		// remap is over
 
 // Session block
 
-struct ses 
+struct ses
 {
 	event_hdr ses_header;
 	srq ses_sessions;				// Sessions within process
@@ -106,7 +106,7 @@ const int SES_purge			= 2;	// delete session after delivering an event
 
 // Event block
 
-struct evnt 
+struct evnt
 {
 	event_hdr evnt_header;
 	srq evnt_events;				// System event que (owned by header)
@@ -119,7 +119,7 @@ struct evnt
 
 // Request block
 
-struct evt_req 
+struct evt_req
 {
 	event_hdr req_header;
 	srq req_requests;				// Request que owned by session block
@@ -133,7 +133,7 @@ struct evt_req
 
 // Request interest block
 
-struct req_int 
+struct req_int
 {
 	event_hdr rint_header;
 	srq rint_interests;				// Que owned by event

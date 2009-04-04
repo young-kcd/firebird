@@ -37,10 +37,10 @@ namespace Jrd {
 
 class Database;
 
-// Performance counters for individual table 
-struct RelationCounts 
+// Performance counters for individual table
+struct RelationCounts
 {
-	SLONG rlc_relation_id;	// Relation ID 
+	SLONG rlc_relation_id;	// Relation ID
 	SINT64 rlc_counter[DBB_max_rel_count];
 
 #ifdef REL_COUNTS_PTR
@@ -53,16 +53,16 @@ struct RelationCounts
 	{
 		return item.rlc_relation_id;
 	}
-#endif	
+#endif
 };
 
 #if defined(REL_COUNTS_TREE)
 typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelCounters;
 #elif defined(REL_COUNTS_PTR)
-typedef Firebird::PointersArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>, 
+typedef Firebird::PointersArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>,
 	SLONG, RelationCounts> RelCounters;
 #else
-typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>, 
+typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>,
 	SLONG, RelationCounts> RelCounters;
 #endif
 
@@ -109,7 +109,7 @@ public:
 		allChgNumber = other.allChgNumber;
 		relChgNumber = other.relChgNumber;
 	}
-	
+
 	~RuntimeStatistics() {}
 
 	void reset()
@@ -135,7 +135,7 @@ public:
 
 	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.
-	PerformanceInfo* computeDifference(Database* dbb, const RuntimeStatistics& new_stat, 
+	PerformanceInfo* computeDifference(Database* dbb, const RuntimeStatistics& new_stat,
 		PerformanceInfo& dest, TraceCountsArray& temp);
 
 	// bool operator==(const RuntimeStatistics& other) const;
@@ -145,15 +145,15 @@ public:
 	// newStats and baseStats must be "in-sync"
 	void adjust(const RuntimeStatistics& baseStats, const RuntimeStatistics& newStats)
 	{
-		if (baseStats.allChgNumber != newStats.allChgNumber) 
+		if (baseStats.allChgNumber != newStats.allChgNumber)
 		{
 			allChgNumber++;
-			for (size_t i = 0; i < TOTAL_ITEMS; ++i) 
+			for (size_t i = 0; i < TOTAL_ITEMS; ++i)
 			{
 				values[i] += newStats.values[i] - baseStats.values[i];
 			}
 
-			if (baseStats.relChgNumber != newStats.relChgNumber) 
+			if (baseStats.relChgNumber != newStats.relChgNumber)
 			{
 				relChgNumber++;
 				addRelCounts(newStats.rel_counts, true);
@@ -168,13 +168,13 @@ public:
 	// allChgNumber and relChgNumber values
 	RuntimeStatistics& assign(const RuntimeStatistics& other)
 	{
-		if (allChgNumber != other.allChgNumber) 
+		if (allChgNumber != other.allChgNumber)
 		{
 			memcpy(values, other.values, sizeof(values));
 			allChgNumber = other.allChgNumber;
 		}
 
-		if (relChgNumber != other.relChgNumber) 
+		if (relChgNumber != other.relChgNumber)
 		{
 			rel_counts = other.rel_counts;
 			relChgNumber = other.relChgNumber;
@@ -196,7 +196,7 @@ private:
 
 	// These two numbers are used in adjust() and assign() methods as "generation"
 	// values in order to avoid costly operations when two instances of RuntimeStatistics
-	// contain equal counters values. This is intended to use *only* with the 
+	// contain equal counters values. This is intended to use *only* with the
 	// same pair of class instances, as in jrd_req.
 	ULONG allChgNumber;		// incremented when any counter changes
 	ULONG relChgNumber;		// incremented when relation counter changes

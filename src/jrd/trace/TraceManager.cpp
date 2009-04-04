@@ -26,7 +26,7 @@
  *  2008 Khorsun Vladyslav
  */
 
-#include "firebird.h" 
+#include "firebird.h"
 
 #include "../../jrd/common.h"
 #include "../../jrd/trace/TraceManager.h"
@@ -35,7 +35,7 @@
 #include "../config/ScanDir.h"
 
 #ifdef WIN_NT
-#include <process.h> 
+#include <process.h>
 #endif
 
 using namespace Firebird;
@@ -53,12 +53,12 @@ bool TraceManager::init_modules = false;
 
 StorageInstance TraceManager::storageInstance;
 
-bool TraceManager::check_result(const TracePlugin* plugin, const char* module, const char* function, bool result) 
+bool TraceManager::check_result(const TracePlugin* plugin, const char* module, const char* function, bool result)
 {
 	if (result)
 		return true;
 
-	if (!plugin) 
+	if (!plugin)
 	{
 		gds__log("Trace plugin %s returned error on call %s, "
 			"did not create plugin and provided no additional details on reasons of failure", module, function);
@@ -74,12 +74,12 @@ bool TraceManager::check_result(const TracePlugin* plugin, const char* module, c
 		return false;
 	}
 
-	gds__log("Trace plugin %s returned error on call %s.\n\tError details: %s", 
+	gds__log("Trace plugin %s returned error on call %s.\n\tError details: %s",
 		module, function, errorStr);
 	return false;
 }
 
-TraceManager::TraceManager(Attachment* in_att) : 
+TraceManager::TraceManager(Attachment* in_att) :
 	attachment(in_att),
 	service(NULL),
 	filename(NULL),
@@ -88,7 +88,7 @@ TraceManager::TraceManager(Attachment* in_att) :
 	init();
 }
 
-TraceManager::TraceManager(Service* in_svc) : 
+TraceManager::TraceManager(Service* in_svc) :
 	attachment(NULL),
 	service(in_svc),
 	filename(NULL),
@@ -97,7 +97,7 @@ TraceManager::TraceManager(Service* in_svc) :
 	init();
 }
 
-TraceManager::TraceManager(const char* in_filename) : 
+TraceManager::TraceManager(const char* in_filename) :
 	attachment(NULL),
 	service(NULL),
 	filename(in_filename),
@@ -106,12 +106,12 @@ TraceManager::TraceManager(const char* in_filename) :
 	init();
 }
 
-TraceManager::~TraceManager() 
+TraceManager::~TraceManager()
 {
 	// Destroy all plugins
 	for (SessionInfo* info = trace_sessions.begin(); info < trace_sessions.end(); info++)
 	{
-		check_result(NULL, info->module_info->module, "tpl_shutdown", 
+		check_result(NULL, info->module_info->module, "tpl_shutdown",
 			info->plugin->tpl_shutdown(info->plugin));
 	}
 }
@@ -124,7 +124,7 @@ void TraceManager::init()
 	changeNumber = 0;
 }
 
-void TraceManager::load_modules() 
+void TraceManager::load_modules()
 {
 	// Initialize all trace needs to false
 	memset(&trace_needs, 0, sizeof(trace_needs));
@@ -167,7 +167,7 @@ void TraceManager::load_modules()
 }
 
 
-void TraceManager::update_sessions() 
+void TraceManager::update_sessions()
 {
 	SortedArray<ULONG> liveSessions(*getDefaultMemoryPool());
 
@@ -178,9 +178,9 @@ void TraceManager::update_sessions()
 		storage->restart();
 
 		TraceSession session(*getDefaultMemoryPool());
-		while (storage->getNextSession(session)) 
+		while (storage->getNextSession(session))
 		{
-			if ((session.ses_flags & trs_active) && !(session.ses_flags & trs_log_full)) 
+			if ((session.ses_flags & trs_active) && !(session.ses_flags & trs_log_full))
 			{
 				update_session(session);
 				liveSessions.add(session.ses_id);
@@ -250,8 +250,8 @@ void TraceManager::update_session(const TraceSession& session)
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
 
 		const TracePlugin* plugin = NULL;
-		if (!check_result(plugin, info->module, NTRACE_ATTACH, 
-				info->ntrace_attach(&attachInfo, &plugin))) 
+		if (!check_result(plugin, info->module, NTRACE_ATTACH,
+				info->ntrace_attach(&attachInfo, &plugin)))
 		{
 			// This was a skeletal plugin to return an error
 			if (plugin && plugin->tpl_shutdown)
@@ -262,7 +262,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 		if (plugin && plugin->tpl_version != NTRACE_VERSION)
 		{
-			gds__log("Module \"%s\" created trace plugin version %d. Supported version %d", 
+			gds__log("Module \"%s\" created trace plugin version %d. Supported version %d",
 				info->module, plugin->tpl_version, NTRACE_VERSION);
 
 			// plugin->tpl_shutdown(plugin);
@@ -334,7 +334,7 @@ bool TraceManager::need_dsql_execute(Attachment* att)
 }
 
 void TraceManager::event_dsql_prepare(Attachment* att, jrd_tra* transaction,
-		TraceSQLStatement* statement, 
+		TraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	TraceConnectionImpl conn(att);
@@ -345,7 +345,7 @@ void TraceManager::event_dsql_prepare(Attachment* att, jrd_tra* transaction,
 		time_millis, req_result);
 }
 
-void TraceManager::event_dsql_free(Attachment* att,	TraceSQLStatement* statement, 
+void TraceManager::event_dsql_free(Attachment* att,	TraceSQLStatement* statement,
 		unsigned short option)
 {
 	TraceConnectionImpl conn(att);
@@ -353,7 +353,7 @@ void TraceManager::event_dsql_free(Attachment* att,	TraceSQLStatement* statement
 	att->att_trace_manager->event_dsql_free(&conn, statement, option);
 }
 
-void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction, 
+void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction,
 	TraceSQLStatement* statement, bool started, ntrace_result_t req_result)
 {
 	TraceConnectionImpl conn(att);
@@ -383,7 +383,7 @@ void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction,
 void TraceManager::event_attach(TraceConnection* connection,
 		bool create_db, ntrace_result_t att_result)
 {
-	EXECUTE_HOOKS(tpl_event_attach, 
+	EXECUTE_HOOKS(tpl_event_attach,
 		(plug_info->plugin, connection, create_db, att_result));
 }
 
@@ -392,47 +392,47 @@ void TraceManager::event_detach(TraceConnection* connection, bool drop_db)
 	EXECUTE_HOOKS(tpl_event_detach, (plug_info->plugin, connection, drop_db));
 }
 
-void TraceManager::event_transaction_start(TraceConnection* connection, 
-		TraceTransaction* transaction, size_t tpb_length, const ntrace_byte_t* tpb, 
+void TraceManager::event_transaction_start(TraceConnection* connection,
+		TraceTransaction* transaction, size_t tpb_length, const ntrace_byte_t* tpb,
 		ntrace_result_t tra_result)
 {
-	EXECUTE_HOOKS(tpl_event_transaction_start, 
+	EXECUTE_HOOKS(tpl_event_transaction_start,
 		(plug_info->plugin, connection, transaction, tpb_length, tpb, tra_result));
 }
 
-void TraceManager::event_transaction_end(TraceConnection* connection, 
-		TraceTransaction* transaction, bool commit, bool retain_context, 
+void TraceManager::event_transaction_end(TraceConnection* connection,
+		TraceTransaction* transaction, bool commit, bool retain_context,
 		ntrace_result_t tra_result)
 {
-	EXECUTE_HOOKS(tpl_event_transaction_end, 
+	EXECUTE_HOOKS(tpl_event_transaction_end,
 		(plug_info->plugin, connection, transaction, commit, retain_context, tra_result));
 }
 
-void TraceManager::event_set_context(TraceConnection* connection, 
+void TraceManager::event_set_context(TraceConnection* connection,
 		TraceTransaction* transaction, TraceContextVariable* variable)
 {
-	EXECUTE_HOOKS(tpl_event_set_context, 
+	EXECUTE_HOOKS(tpl_event_set_context,
 		(plug_info->plugin, connection, transaction, variable));
 }
 
- void TraceManager::event_proc_execute(TraceConnection* connection, TraceTransaction* transaction, 
+ void TraceManager::event_proc_execute(TraceConnection* connection, TraceTransaction* transaction,
 		TraceProcedure* procedure, bool started, ntrace_result_t proc_result)
 {
-	EXECUTE_HOOKS(tpl_event_proc_execute, 
+	EXECUTE_HOOKS(tpl_event_proc_execute,
 		(plug_info->plugin, connection, transaction, procedure, started, proc_result));
 }
 
-void TraceManager::event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction, 
+void TraceManager::event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
 {
-	EXECUTE_HOOKS(tpl_event_trigger_execute, 
+	EXECUTE_HOOKS(tpl_event_trigger_execute,
 		(plug_info->plugin, connection, transaction, trigger, started, trig_result));
 }
 
-void TraceManager::event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction, 
+void TraceManager::event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
 		TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
-	EXECUTE_HOOKS(tpl_event_dsql_prepare, 
+	EXECUTE_HOOKS(tpl_event_dsql_prepare,
 		(plug_info->plugin, connection, transaction, statement,
 		 time_millis, req_result));
 }
@@ -440,71 +440,71 @@ void TraceManager::event_dsql_prepare(TraceConnection* connection, TraceTransact
 void TraceManager::event_dsql_free(TraceConnection* connection,
 		TraceSQLStatement* statement, unsigned short option)
 {
-	EXECUTE_HOOKS(tpl_event_dsql_free, 
+	EXECUTE_HOOKS(tpl_event_dsql_free,
 		(plug_info->plugin, connection, statement, option));
 }
 
-void TraceManager::event_dsql_execute(TraceConnection* connection, TraceTransaction* transaction, 
+void TraceManager::event_dsql_execute(TraceConnection* connection, TraceTransaction* transaction,
 	TraceSQLStatement* statement, bool started, ntrace_result_t req_result)
 {
-	EXECUTE_HOOKS(tpl_event_dsql_execute, 
+	EXECUTE_HOOKS(tpl_event_dsql_execute,
 		(plug_info->plugin, connection, transaction, statement, started, req_result));
 }
 
 
-void TraceManager::event_blr_compile(TraceConnection* connection, 
-		TraceTransaction* transaction, TraceBLRStatement* statement, 
+void TraceManager::event_blr_compile(TraceConnection* connection,
+		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
-	EXECUTE_HOOKS(tpl_event_blr_compile, 
-		(plug_info->plugin, connection, transaction, statement, 
+	EXECUTE_HOOKS(tpl_event_blr_compile,
+		(plug_info->plugin, connection, transaction, statement,
 		 time_millis, req_result));
 }
 
-void TraceManager::event_blr_execute(TraceConnection* connection, 
-		TraceTransaction* transaction, TraceBLRStatement* statement, 
+void TraceManager::event_blr_execute(TraceConnection* connection,
+		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_result_t req_result)
 {
-	EXECUTE_HOOKS(tpl_event_blr_execute, 
+	EXECUTE_HOOKS(tpl_event_blr_execute,
 		(plug_info->plugin, connection, transaction, statement, req_result));
 }
 
 void TraceManager::event_dyn_execute(TraceConnection* connection,
-		TraceTransaction* transaction, TraceDYNRequest* request, 
+		TraceTransaction* transaction, TraceDYNRequest* request,
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
-	EXECUTE_HOOKS(tpl_event_dyn_execute, 
-		(plug_info->plugin, connection, transaction, request, time_millis, 
+	EXECUTE_HOOKS(tpl_event_dyn_execute,
+		(plug_info->plugin, connection, transaction, request, time_millis,
 			req_result));
 }
 
 void TraceManager::event_service_attach(TraceService* service, ntrace_result_t att_result)
 {
-	EXECUTE_HOOKS(tpl_event_service_attach, 
+	EXECUTE_HOOKS(tpl_event_service_attach,
 		(plug_info->plugin, service, att_result));
 }
 
-void TraceManager::event_service_start(TraceService* service, 
+void TraceManager::event_service_start(TraceService* service,
 		size_t switches_length, const char* switches,
 		ntrace_result_t start_result)
 {
-	EXECUTE_HOOKS(tpl_event_service_start, 
+	EXECUTE_HOOKS(tpl_event_service_start,
 		(plug_info->plugin, service, switches_length, switches, start_result));
 }
 
 void TraceManager::event_service_query(TraceService* service,
 		size_t send_item_length, const ntrace_byte_t* send_items,
-		size_t recv_item_length, const ntrace_byte_t* recv_items, 
+		size_t recv_item_length, const ntrace_byte_t* recv_items,
 		ntrace_result_t query_result)
 {
-	EXECUTE_HOOKS(tpl_event_service_query, 
-		(plug_info->plugin, service, send_item_length, send_items, 
+	EXECUTE_HOOKS(tpl_event_service_query,
+		(plug_info->plugin, service, send_item_length, send_items,
 		 recv_item_length, recv_items, query_result));
 }
 
 void TraceManager::event_service_detach(TraceService* service, ntrace_result_t detach_result)
 {
-	EXECUTE_HOOKS(tpl_event_service_detach, 
+	EXECUTE_HOOKS(tpl_event_service_detach,
 		(plug_info->plugin, service, detach_result));
 }
 

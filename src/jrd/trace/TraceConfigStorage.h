@@ -63,7 +63,7 @@ private:
 
 	void checkDirty()
 	{
-		if (m_dirty) 
+		if (m_dirty)
 		{
 			//_commit(m_cfg_file);
 			m_dirty = false;
@@ -72,7 +72,7 @@ private:
 
 	void setDirty()
 	{
-		if (!m_dirty) 
+		if (!m_dirty)
 		{
 			m_base->change_number++;
 			m_dirty = true;

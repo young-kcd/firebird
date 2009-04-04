@@ -173,7 +173,7 @@ void InternalConnection::doDetach(thread_db *tdbb)
 			m_attachment = NULL;
 			fb_utils::init_status(status);
 		}
-		if (status[1]) 
+		if (status[1])
 		{
 			raise(status, tdbb, "detach");
 		}

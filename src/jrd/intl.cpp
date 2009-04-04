@@ -304,7 +304,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 				charset_collations[id]->destroy();
 				delete charset_collations[id];
 			}
-			else 
+			else
 			{
 				to_delete = charset_collations[id];
 			}
@@ -375,7 +375,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 
 			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
-			// as we just obtained SR lock for new collation instance 
+			// as we just obtained SR lock for new collation instance
 			// we could safely delete obsolete instance
 			if (to_delete)
 			{

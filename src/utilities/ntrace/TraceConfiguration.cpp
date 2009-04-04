@@ -34,8 +34,8 @@
 using namespace Firebird;
 
 
-void TraceCfgReader::readTraceConfiguration(const char* text, 
-		const PathName& databaseName, 
+void TraceCfgReader::readTraceConfiguration(const char* text,
+		const PathName& databaseName,
 		TracePluginConfig& config)
 {
 	TraceCfgReader cfgReader(text, databaseName, config);
@@ -74,7 +74,7 @@ void TraceCfgReader::readConfig()
 
 	m_subpatterns[0].start = 0;
 	m_subpatterns[0].end = m_databaseName.length();
-	for (size_t i = 1; i < FB_NELEM(m_subpatterns); i++) 
+	for (size_t i = 1; i < FB_NELEM(m_subpatterns); i++)
 	{
 		m_subpatterns[i].start = -1;
 		m_subpatterns[i].end = -1;
@@ -99,26 +99,26 @@ void TraceCfgReader::readConfig()
 		bool match = false;
 		if (pattern.empty())
 		{
-			if (isDatabase) 
+			if (isDatabase)
 			{
 				if (defDB)
 				{
-					fatal_exception::raiseFmt("line %d: second default database section is not allowed", 
+					fatal_exception::raiseFmt("line %d: second default database section is not allowed",
 						section->lineNumber + 1);
 				}
 
 				match = !m_databaseName.empty();
-				defDB = true; 
+				defDB = true;
 			}
-			else 
+			else
 			{
 				if (defSvc)
 				{
-					fatal_exception::raiseFmt("line %d: second default service section is not allowed", 
+					fatal_exception::raiseFmt("line %d: second default service section is not allowed",
 						section->lineNumber + 1);
 				}
 				match = m_databaseName.empty();
-				defSvc = true; 
+				defSvc = true;
 			}
 		}
 		else if (isDatabase && !m_databaseName.empty())
@@ -160,12 +160,12 @@ void TraceCfgReader::readConfig()
 				{
 					if (regExpOk) {
 						fatal_exception::raiseFmt(
-							"line %d: error while processing string \"%s\" against regular expression \"%s\"", 
+							"line %d: error while processing string \"%s\" against regular expression \"%s\"",
 							section->lineNumber + 1, m_databaseName.c_str(), pattern.c_str());
 					}
 					else {
 						fatal_exception::raiseFmt(
-							"line %d: error while compiling regular expression \"%s\"", 
+							"line %d: error while compiling regular expression \"%s\"",
 							section->lineNumber + 1, pattern.c_str());
 					}
 				}
@@ -180,7 +180,7 @@ void TraceCfgReader::readConfig()
 		{
 			if (!el->getAttributes())
 			{
-				fatal_exception::raiseFmt("line %d: element \"%s\" have no attribute value set", 
+				fatal_exception::raiseFmt("line %d: element \"%s\" have no attribute value set",
 					el->lineNumber + 1, el->name.c_str());
 			}
 
@@ -200,7 +200,7 @@ void TraceCfgReader::readConfig()
 
 			if (!found)
 			{
-				fatal_exception::raiseFmt("line %d: element \"%s\" is unknown", 
+				fatal_exception::raiseFmt("line %d: element \"%s\" is unknown",
 					el->lineNumber + 1, el->name.c_str());
 			}
 		}
@@ -212,7 +212,7 @@ void TraceCfgReader::readConfig()
 #undef BOOL_PARAMETER
 #undef UINT_PARAMETER
 
-bool TraceCfgReader::parseBoolean(const string& value) const 
+bool TraceCfgReader::parseBoolean(const string& value) const
 {
 	string tempValue = value;
 	tempValue.upper();
@@ -225,7 +225,7 @@ bool TraceCfgReader::parseBoolean(const string& value) const
 	return false; // Silence the compiler
 }
 
-ULONG TraceCfgReader::parseUInteger(const string& value) const 
+ULONG TraceCfgReader::parseUInteger(const string& value) const
 {
 	ULONG result = 0;
 	if (!sscanf(value.c_str(), "%"ULONGFORMAT, &result)) {
@@ -234,17 +234,17 @@ ULONG TraceCfgReader::parseUInteger(const string& value) const
 	return result;
 }
 
-void TraceCfgReader::expandPattern(string& valueToExpand) 
+void TraceCfgReader::expandPattern(string& valueToExpand)
 {
 	string::size_type pos = 0;
-	while (pos < valueToExpand.length()) 
+	while (pos < valueToExpand.length())
 	{
 		string::char_type c = valueToExpand[pos];
-		if (c == '\\') 
+		if (c == '\\')
 		{
 			if (pos + 1 >= valueToExpand.length())
 				fatal_exception::raiseFmt("pattern is invalid");
-			
+
 			c = valueToExpand[pos + 1];
 			if (c == '\\')
 			{
@@ -253,16 +253,16 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 				pos++;
 				continue;
 			}
-			
-			if (c >= '0' && c <= '9') 
+
+			if (c >= '0' && c <= '9')
 			{
 				MatchPos* subpattern = m_subpatterns + (c - '0');
 				// Replace value with piece of database name
 				valueToExpand.erase(pos, 2);
-				if (subpattern->end != -1 && subpattern->start != -1) 
+				if (subpattern->end != -1 && subpattern->start != -1)
 				{
 					off_t subpattern_len = subpattern->end - subpattern->start;
-					valueToExpand.insert(pos, 
+					valueToExpand.insert(pos,
 						m_databaseName.substr(subpattern->start, subpattern_len).c_str(),
 						subpattern_len);
 					pos += subpattern_len;

@@ -609,13 +609,13 @@ namespace Firebird
 		PointersArray() : values(), pointers() { }
 		~PointersArray() { }
 
-		size_t getCount() const 
+		size_t getCount() const
 		{
 			fb_assert(values.getCount() == pointers.getCount());
 			return values.getCount();
 		}
 
-		size_t getCapacity() const 
+		size_t getCapacity() const
 		{
 			return values.getCapacity();
 		}

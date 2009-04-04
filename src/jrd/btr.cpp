@@ -2919,17 +2919,17 @@ static contents delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		// remove jump nodes pointing to the deleted node or node
 		// next to the deleted one.
 		jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
-		jumpNodeList* jumpNodes = &tmpJumpNodes; 
+		jumpNodeList* jumpNodes = &tmpJumpNodes;
 
 		IndexJumpInfo jumpInfo;
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
 
-		// We are going to rebuild jump nodes. In the end of this process we will either have 
-		// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset 
-		// by its definition is a good upper estimate for summary size of all existing 
+		// We are going to rebuild jump nodes. In the end of this process we will either have
+		// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset
+		// by its definition is a good upper estimate for summary size of all existing
 		// jump nodes data length's.
-		// After rebuild jump node next after removed one may have new length longer than 
-		// before rebuild but no longer than length of removed node. All other nodes didn't 
+		// After rebuild jump node next after removed one may have new length longer than
+		// before rebuild but no longer than length of removed node. All other nodes didn't
 		// change its lengths. Therefore jumpInfo.firstNodeOffset is valid upper estimate
 		// for summary size of all new jump nodes data length's too.
 		tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
@@ -2967,7 +2967,7 @@ static contents delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = tempData; 
+					newJumpNode.data = tempData;
 					tempData += newJumpNode.length;
 					fb_assert(tempData < tempEnd);
 					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);

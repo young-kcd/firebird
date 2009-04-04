@@ -1,6 +1,6 @@
 /*
  *	MODULE:		TraceService.h
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -90,10 +90,10 @@ static const struct in_sw_tab_t trace_auth_in_sw_table [] =
 
 namespace Firebird {
 
-class TraceSvcIntf 
+class TraceSvcIntf
 {
 public:
-	virtual void setAttachInfo(const string& service_name, const string& user, 
+	virtual void setAttachInfo(const string& service_name, const string& user,
 		const string& pwd, bool isAdmin) = 0;
 
 	virtual void startSession(TraceSession& session, bool interactive) = 0;

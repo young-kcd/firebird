@@ -14,7 +14,7 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Khorsun Vladyslav 
+ *  The Original Code was created by Khorsun Vladyslav
  *  for the Firebird Open Source RDBMS project.
  *
  *  Copyright (c) 2009 Khorsun Vladyslav <hvlad@users.sourceforge.net>
@@ -25,7 +25,7 @@
  *
  */
 
-#include "firebird.h" 
+#include "firebird.h"
 #include "../../jrd/common.h"
 #include "../../common/classes/auto.h"
 #include "../../common/utils_proto.h"
@@ -46,7 +46,7 @@
 #include "../../gpre/prett_proto.h"
 
 #ifdef WIN_NT
-#include <process.h> 
+#include <process.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -56,7 +56,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
-/// TraceConnectionImpl 
+/// TraceConnectionImpl
 
 int TraceConnectionImpl::getConnectionID()
 {
@@ -124,7 +124,7 @@ int TraceTransactionImpl::getWait()
 	return -m_tran->getLockWait();
 }
 
-ntrace_tra_isolation_t TraceTransactionImpl::getIsolation() 
+ntrace_tra_isolation_t TraceTransactionImpl::getIsolation()
 {
 	switch (m_tran->tra_flags & (TRA_read_committed | TRA_rec_version | TRA_degree3))
 	{
@@ -187,7 +187,7 @@ void BLRPrinter::print_blr(void* arg, SSHORT offset, const char* line)
 }
 
 
-/// TraceSQLStatementImpl 
+/// TraceSQLStatementImpl
 
 TraceSQLStatementImpl::~TraceSQLStatementImpl()
 {
@@ -208,7 +208,7 @@ const char* TraceSQLStatementImpl::getText()
 	return m_stmt->req_sql_text->c_str();
 }
 
-const char* TraceSQLStatementImpl::getPlan() 
+const char* TraceSQLStatementImpl::getPlan()
 {
 	if (!m_plan && m_stmt->req_request)
 	{
@@ -217,7 +217,7 @@ const char* TraceSQLStatementImpl::getPlan()
 
 		const int len = DSQL_get_plan_info(JRD_get_thread_data(),
 			m_stmt, sizeof(buff), &m_plan);
-		
+
 		if (len)
 			m_plan[len] = 0;
 		else
@@ -238,7 +238,7 @@ TraceParams* TraceSQLStatementImpl::getInputs()
 }
 
 
-/// TraceSQLStatementImpl::DSQLParamsImpl 
+/// TraceSQLStatementImpl::DSQLParamsImpl
 
 void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 {
@@ -248,14 +248,14 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 	USHORT first_index = 0;
 	for (const dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
 	{
-		if (parameter->par_index) 
+		if (parameter->par_index)
 		{
 			if (!first_index)
 				first_index = parameter->par_index;
 
 			// Use descriptor for nulls signaling
 			USHORT null_flag = 0;
-			if (parameter->par_null && 
+			if (parameter->par_null &&
 				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
 			{
 				null_flag = DSC_null;
@@ -327,15 +327,15 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		dsc desc;
 
 		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
-		switch (prm->nod_type) 
+		switch (prm->nod_type)
 		{
-			case nod_argument: 
+			case nod_argument:
 			{
 				//const impure_value* impure = (impure_value*) ((SCHAR*) m_request + prm->nod_impure);
 				const jrd_nod* message = prm->nod_arg[e_arg_message];
 				const Format* format = (Format*) message->nod_arg[e_msg_format];
 				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
-				
+
 				desc = format->fmt_desc[arg_number];
 				from_desc = &desc;
 				from_desc->dsc_address = (UCHAR *) m_request + message->nod_impure + (IPTR) desc.dsc_address;
@@ -351,7 +351,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 				break;
 			}
 
-			case nod_variable: 
+			case nod_variable:
 			{
 				impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
 				from_desc = &impure->vlu_desc;
@@ -372,13 +372,13 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 				break;
 		}
 
-		if (from_desc) 
+		if (from_desc)
 			m_descs.add(*from_desc);
 	}
 }
 
 
-/// TraceTriggerImpl 
+/// TraceTriggerImpl
 
 const char* TraceTriggerImpl::getTriggerName()
 {
@@ -406,9 +406,9 @@ public:
 
 	virtual size_t write(const void* buf, size_t size);
 
-	virtual void release()	
-	{ 
-		delete this; 
+	virtual void release()
+	{
+		delete this;
 	}
 
 private:
@@ -460,7 +460,7 @@ const char* TraceInitInfoImpl::getFirebirdRootDirectory()
 
 TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 {
-	if (!m_logWriter && !m_session.ses_logfile.empty()) 
+	if (!m_logWriter && !m_session.ses_logfile.empty())
 	{
 		MemoryPool &pool = *getDefaultMemoryPool();
 		m_logWriter = FB_NEW(pool) TraceLogWriterImpl(pool, m_session);
@@ -469,9 +469,9 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 }
 
 
-/// TraceServiceImpl 
+/// TraceServiceImpl
 
-const ntrace_service_t TraceServiceImpl::getServiceID() 
+const ntrace_service_t TraceServiceImpl::getServiceID()
 {
 	return (ntrace_service_t) m_svc;
 }
@@ -524,17 +524,17 @@ const char* TraceServiceImpl::getRemoteProcessName()
 
 /// TraceRuntimeStats
 
-TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats, 
+TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 	SINT64 clock, SINT64 records_fetched)
 {
 	m_info.pin_time = clock * 1000 / fb_utils::query_performance_frequency();
 	m_info.pin_records_fetched = records_fetched;
 
-	if (baseline) 
+	if (baseline)
 		baseline->computeDifference(dbb, *stats, m_info, m_counts);
-	else 
+	else
 	{
-		// Report all zero counts for the moment. 
+		// Report all zero counts for the moment.
 		memset(&m_info, 0, sizeof(m_info));
 		m_info.pin_counters = m_dummy_counts;
 	}
@@ -542,4 +542,4 @@ TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline,
 
 SINT64 TraceRuntimeStats::m_dummy_counts[DBB_max_dbb_count] = {0};
 
-} // namespace Jrd 
+} // namespace Jrd

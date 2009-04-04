@@ -82,7 +82,7 @@ public:
 
 	public:
 		explicit InstanceLink(T* l)
-			: InstanceControl::InstanceList(P), link(l) 
+			: InstanceControl::InstanceList(P), link(l)
 		{
 			fb_assert(link);
 		}

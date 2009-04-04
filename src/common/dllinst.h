@@ -38,6 +38,6 @@ namespace Firebird {
 extern HINSTANCE hDllInst;
 extern bool bEmbedded;
 
-} // namespace 
+} // namespace
 
 #endif // !FB_DLL_INST && WIN_NT

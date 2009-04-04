@@ -5780,7 +5780,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 	// hvlad: save size of inner impure area and context of mapped record
 	// for recursive processing later
-	if (recurse) 
+	if (recurse)
 	{
 		*rsb_ptr++ = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
 		*rsb_ptr = (RecordSource*) (IPTR) union_node->nod_arg[e_uni_map_stream];
@@ -6833,7 +6833,7 @@ static void mark_rsb_recursive(RecordSource* rsb)
 				{
 					RecordSource** ptr = rsb->rsb_arg;
 					const RecordSource* const* const end = ptr + rsb->rsb_count;
-					for (; ptr < end; ptr++) 
+					for (; ptr < end; ptr++)
 						mark_rsb_recursive(*ptr);
 				}
 				return;

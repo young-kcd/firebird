@@ -569,7 +569,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						portGuard.leave();
 					}
 
-					// link_request will increment port_requests_queued. Port is not locked 
+					// link_request will increment port_requests_queued. Port is not locked
 					// at this point but it is safe because :
 					// - port_requests_queued is atomic counter
 					// - the only place where we check its value is at the same thread (see above)

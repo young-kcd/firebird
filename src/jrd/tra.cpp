@@ -455,7 +455,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	}
 #endif
 
-	if (retaining_flag) 
+	if (retaining_flag)
 	{
 		trace.finish(res_successful);
 		retain_context(tdbb, transaction, true, tra_committed);
@@ -1332,7 +1332,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	// If this is a rollback retain abort this transaction and start a new one.
 
-	if (retaining_flag) 
+	if (retaining_flag)
 	{
 		trace.finish(res_successful);
 		retain_context(tdbb, transaction, false, state);
@@ -1563,7 +1563,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	temp->tra_lock_timeout = lock_timeout;
 
 	jrd_tra* transaction = NULL;
-	try 
+	try
 	{
 		transaction = transaction_start(tdbb, temp);
 	}

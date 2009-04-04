@@ -83,7 +83,7 @@ private:
 			m_log.lock();
 		}
 
-		~TraceLogGuard() 
+		~TraceLogGuard()
 		{
 			m_log.unlock();
 		}

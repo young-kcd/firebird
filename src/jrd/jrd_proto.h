@@ -100,7 +100,7 @@ int jrd8_shutdown_all(unsigned int);
 ISC_STATUS jrd8_allocate_statement(ISC_STATUS*, Jrd::Attachment**, Jrd::dsql_req**);
 ISC_STATUS jrd8_execute(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, const SCHAR*,
 						USHORT, USHORT, const SCHAR*, USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
-ISC_STATUS jrd8_execute_immediate(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const TEXT*, 
+ISC_STATUS jrd8_execute_immediate(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const TEXT*,
 								  USHORT, USHORT, const SCHAR*, USHORT, USHORT, const SCHAR*,
 								  USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
 #ifdef SCROLLABLE_CURSORS

@@ -807,21 +807,21 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 										{
 											const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
 											init_pages = sequence ? 64 : MIN(pip_page->pip_header.reserved / 16, 64);
-	
+
 											// don't touch pages belongs to the next PIP
 											init_pages =
 												MIN(init_pages, pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
-	
+
 											if (init_pages < minExtendPages)
 												init_pages = 1;
-	
+
 											next_init_pages = init_pages;
 										}
-	
+
 										ISC_STATUS_ARRAY status;
 										const ULONG start =
 											sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
-	
+
 										init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
 									}
 
@@ -856,7 +856,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									fb_assert(new_page);
 								}
 
-								if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled) 
+								if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled)
 								{
 									const ULONG initialized =
 										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;

@@ -1,6 +1,6 @@
 /*
  *	MODULE:		TraceSession.h
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -67,7 +67,7 @@ public:
 	}
 
 	ULONG	ses_id;
-	string	ses_name; 
+	string	ses_name;
 	string	ses_user;
 	string	ses_config;
 	time_t	ses_start;

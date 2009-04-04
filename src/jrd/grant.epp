@@ -71,7 +71,7 @@ inline void CHECK_AND_MOVE(Acl& to, UCHAR from)
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static void define_default_class(thread_db*, const TEXT*, Firebird::MetaName&, const Acl&, 
+static void define_default_class(thread_db*, const TEXT*, Firebird::MetaName&, const Acl&,
 							jrd_tra*);
 #ifdef NOT_USED_OR_REPLACED
 static void delete_security_class(thread_db*, const TEXT*);
@@ -85,7 +85,7 @@ static SecurityClass::flags_t get_public_privs(thread_db*, const TEXT*, SSHORT);
 static void get_user_privs(thread_db*, Acl&, const TEXT*, SSHORT, const Firebird::MetaName&,
 							SecurityClass::flags_t);
 static void grant_user(Acl&, const Firebird::MetaName&, SSHORT, SecurityClass::flags_t);
-static SecurityClass::flags_t save_field_privileges(thread_db*, Acl&, const TEXT*, 
+static SecurityClass::flags_t save_field_privileges(thread_db*, Acl&, const TEXT*,
 							const Firebird::MetaName&, SecurityClass::flags_t, jrd_tra*);
 static void save_security_class(thread_db*, const Firebird::MetaName&, const Acl&, jrd_tra*);
 static SecurityClass::flags_t trans_sql_priv(const TEXT*);

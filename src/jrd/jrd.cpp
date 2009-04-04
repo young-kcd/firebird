@@ -445,18 +445,18 @@ public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
 	  m_filename(filename),
 	  m_options(options)
-	{}	
+	{}
 
 	virtual int getConnectionID()				{ return 0; }
 	virtual int getProcessID()					{ return m_options->dpb_remote_pid; }
 	virtual const char* getDatabaseName()		{ return m_filename; }
 
-	virtual const char* getUserName()			
-	{ 
+	virtual const char* getUserName()
+	{
 		if (m_options->dpb_user_name.empty())
-			return m_options->dpb_trusted_login.c_str(); 
+			return m_options->dpb_trusted_login.c_str();
 
-		return m_options->dpb_user_name.c_str(); 
+		return m_options->dpb_user_name.c_str();
 	}
 
 	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
@@ -683,7 +683,7 @@ static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
 
-void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options, 
+void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options,
 	bool create, bool no_priv)
 {
 	// Report to Trace API that attachment has not been created
@@ -691,7 +691,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename, const
 	{
 		TraceManager tempMgr(filename);
 
-		if (tempMgr.needs().event_attach) 
+		if (tempMgr.needs().event_attach)
 		{
 			TraceFailedConnection conn(filename, &options);
 			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
@@ -1351,7 +1351,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	{
 		const ISC_LONG exc = ex.stuff_exception(user_status);
 		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL, 
+		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 			filename, options, false, no_priv);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
@@ -3137,7 +3137,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 
 		service->start(spb_length, reinterpret_cast<const UCHAR*>(spb));
 
-		if (service->getStatus()[1]) 
+		if (service->getStatus()[1])
 		{
 			memcpy(user_status, service->getStatus(), sizeof(ISC_STATUS_ARRAY));
 			return user_status[1];
@@ -5103,7 +5103,7 @@ void Attachment::backupStateReadUnLock(thread_db* tdbb)
 	if (--att_backup_state_counter == 0)
 		att_database->dbb_backup_manager->unlockStateRead(tdbb);
 }
- 
+
 Attachment::Attachment(MemoryPool* pool, Database* dbb)
 :	att_pool(pool),
 	att_memory_stats(&dbb->dbb_memory_stats),
@@ -5698,7 +5698,7 @@ static void purge_attachment(thread_db*		tdbb,
 		try
 		{
 			const trig_vec* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
-			if (!(attachment->att_flags & ATT_no_db_triggers) && 
+			if (!(attachment->att_flags & ATT_no_db_triggers) &&
 				!(attachment->att_flags & ATT_shutdown) &&
 				trig_disconnect && !trig_disconnect->isEmpty())
 			{
@@ -6501,13 +6501,13 @@ void JRD_compile(thread_db* tdbb,
 	request->req_request = attachment->att_requests;
 	attachment->att_requests = request;
 
-	if (!ref_str) 
+	if (!ref_str)
 	{
 		fb_assert(request->req_blr.isEmpty());
 
-		// hvlad: if\when we implement request's cache in the future and 
+		// hvlad: if\when we implement request's cache in the future and
 		// CMP_compile2 will return us previously compiled request with
-		// non-empty req_blr, then we must replace assertion by the line below 
+		// non-empty req_blr, then we must replace assertion by the line below
 		// if (!request->req_blr.isEmpty())
 
 		request->req_blr.insert(0, blr, blr_length);

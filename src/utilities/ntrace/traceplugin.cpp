@@ -32,21 +32,21 @@
 
 extern "C" {
 
-FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const TracePlugin** plugin) 
+FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const TracePlugin** plugin)
 {
-	try 
+	try
 	{
 		const char* dbname = initInfo->getDatabaseName();
 
 		TracePluginConfig config;
 		TraceCfgReader::readTraceConfiguration(
-			initInfo->getConfigText(), 
-			dbname ? dbname : "", 
+			initInfo->getConfigText(),
+			dbname ? dbname : "",
 			config);
 
 		TraceConnection* connection = initInfo->getConnection();
 		if (!config.enabled ||
-			(config.connection_id && connection && (connection->getConnectionID() != config.connection_id))) 
+			(config.connection_id && connection && (connection->getConnectionID() != config.connection_id)))
 		{
 			*plugin = NULL;
 			return true; // Plugin is not needed, no error happened.
@@ -61,10 +61,10 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 
 		return true; // Everything is ok, we created a plugin
 
-	} 
-	catch(Firebird::Exception& ex) 
+	}
+	catch(Firebird::Exception& ex)
 	{
-		try 
+		try
 		{
 			// Create skeletal plugin object in order to return error to caller
 			*plugin = TracePluginImpl::createSkeletalPlugin();
@@ -72,10 +72,10 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 			// Stuff exception to error buffer now
 			TracePluginImpl::marshal_exception(ex);
 
-		} 
-		catch (Firebird::Exception&) 
+		}
+		catch (Firebird::Exception&)
 		{
-			// We faced total lack of luck here. Most probably this is 
+			// We faced total lack of luck here. Most probably this is
 			// out-of-memory error, but nothing we can tell to our caller
 			// about it.
 			*plugin = NULL;
@@ -85,4 +85,4 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 	}
 }
 
-} // extern "C" 
+} // extern "C"

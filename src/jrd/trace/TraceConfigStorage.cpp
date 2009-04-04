@@ -58,7 +58,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
-	
+
 void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
 	if (errno == 0)
@@ -82,7 +82,7 @@ ConfigStorage::ConfigStorage()
 	m_base = NULL;
 	m_cfg_file = -1;
 	m_dirty = false;
-	
+
 	PathName filename;
 	filename.printf(TRACE_FILE); // TODO: it must be per engine instance
 
@@ -95,7 +95,7 @@ ConfigStorage::ConfigStorage()
 	}
 
 	fb_assert(m_base->version == 1);
-	
+
 	StorageGuard guard(this);
 	checkFile();
 	++m_base->cnt_uses;
@@ -115,7 +115,7 @@ ConfigStorage::~ConfigStorage()
 			memset(m_base->cfg_file_name, 0, sizeof(m_base->cfg_file_name));
 		}
 	}
-	
+
 	ISC_STATUS_ARRAY status;
 	ISC_unmap_file(status, &m_handle);
 }
@@ -175,7 +175,7 @@ void ConfigStorage::checkFile()
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
 		m_cfg_file = fb_utils::openCreateFile(cfg_file_name, O_BINARY);
 	}
-	else 
+	else
 	{
 		m_cfg_file = ::open(cfg_file_name, O_RDWR | O_BINARY);
 	}
@@ -189,14 +189,14 @@ void ConfigStorage::checkFile()
 	{
 		FILE* cfgFile = NULL;
 
-		try 
+		try
 		{
 			PathName configFileName(Config::getAuditTraceConfigFile());
 
 			if (configFileName.empty())
 				return;
 
-			if (PathUtils::isRelative(configFileName)) 
+			if (PathUtils::isRelative(configFileName))
 			{
 				PathName root(Config::getRootDirectory());
 				PathUtils::ensureSeparator(root);
@@ -227,11 +227,11 @@ void ConfigStorage::checkFile()
 			}
 
 			session.ses_user = SYSDBA_USER_NAME;
-			session.ses_name = "Firebird Audit"; 
+			session.ses_name = "Firebird Audit";
 			session.ses_flags = trs_admin | trs_system;
 
 			addSession(session);
-		} 
+		}
 		catch(const Exception& ex)
 		{
 			ISC_STATUS_ARRAY temp;
@@ -274,7 +274,7 @@ void ConfigStorage::addSession(TraceSession& session)
 	time(&session.ses_start);
 
 	const long pos1 = lseek(m_cfg_file, 0, SEEK_END);
-	if (pos1 < 0) 
+	if (pos1 < 0)
 	{
 		const char* fn = m_base->cfg_file_name;
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
@@ -362,12 +362,12 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 				fb_assert(false);
 		}
 
-		if (p) 
+		if (p)
 		{
-			if (::read(m_cfg_file, p, len) != len) 
+			if (::read(m_cfg_file, p, len) != len)
 				checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
 		}
-		else 
+		else
 		{
 			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
 				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
@@ -426,7 +426,7 @@ void ConfigStorage::restart()
 {
 	checkDirty();
 
-	if (lseek(m_cfg_file, 0, SEEK_SET) < 0) 
+	if (lseek(m_cfg_file, 0, SEEK_SET) < 0)
 		checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 }
 
@@ -465,7 +465,7 @@ void ConfigStorage::updateSession(TraceSession& session)
 				break;
 		}
 
-		if (p) 
+		if (p)
 		{
 			setDirty();
 			if (write(m_cfg_file, p, len) != len)
@@ -494,7 +494,7 @@ void ConfigStorage::putItem(ITEM tag, ULONG len, const void* data)
 	if (write(m_cfg_file, &len, to_write) != to_write)
 		checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 
-	if (len) 
+	if (len)
 	{
 		if (write(m_cfg_file, data, len) != len)
 			checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
@@ -525,4 +525,4 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 	return true;
 }
 
-} // namespace Jrd 
+} // namespace Jrd

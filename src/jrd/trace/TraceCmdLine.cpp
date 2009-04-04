@@ -1,6 +1,6 @@
 /*
  *	MODULE:		TraceCmdLine.cpp
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -155,7 +155,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 {
 	const char* const* end = uSvc->argv.end();
 
-	// search for "action" switch, set NULL into recognized argv 
+	// search for "action" switch, set NULL into recognized argv
 	const in_sw_tab_t* action_sw = NULL;
 	const char** argv = uSvc->argv.begin();
 	for (++argv; argv < end; argv++)
@@ -176,7 +176,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		usage(uSvc, TRACE_ERR_ACT_NOTFOUND);
 	}
 
-	// search for action's parameters, set NULL into recognized argv 
+	// search for action's parameters, set NULL into recognized argv
 	TraceSession session(*getDefaultMemoryPool());
 	argv = uSvc->argv.begin();
 	for (++argv; argv < end; argv++)
@@ -318,7 +318,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		case IN_SW_TRACE_TRUSTED_ROLE:
 			if (!uSvc->isService())
 				usage(uSvc, TRACE_ERR_SWITCH_SVC_ONLY, sw->in_sw_name);
-			
+
 			adminRole = true;
 			break;
 
@@ -341,7 +341,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 	}
 
 	// validate missed action's parameters and perform action
-	if (!session.ses_id) 
+	if (!session.ses_id)
 	{
 		switch (action_sw->in_sw)
 		{

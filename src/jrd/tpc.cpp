@@ -407,7 +407,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, SL
 
 	TRA_get_inventory(tdbb, NULL, oldest, top);
 
-	// hvlad: No need to cache TIP pages below hdr_oldest just refreshed from 
+	// hvlad: No need to cache TIP pages below hdr_oldest just refreshed from
 	// header page. Moreover out tip cache can now contain an gap between last
 	// cached tip page and new pages if our process was idle for long time
 

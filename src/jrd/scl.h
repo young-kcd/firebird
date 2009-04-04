@@ -38,8 +38,8 @@ class SecurityClass
 public:
     typedef USHORT flags_t;
 
-	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name) 
-		: scl_flags(0), scl_name(pool, name) 
+	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name)
+		: scl_flags(0), scl_name(pool, name)
 	{}
 
 	flags_t scl_flags;			// Access permissions
@@ -103,7 +103,7 @@ public:
 	}
 
 	UserId()
-		: usr_user_id(0), usr_group_id(0), usr_node_id(0), usr_flags(0) 
+		: usr_user_id(0), usr_group_id(0), usr_node_id(0), usr_flags(0)
 	{ }
 
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
@@ -114,7 +114,7 @@ public:
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_node_id(ui.usr_node_id),
-		  usr_flags(ui.usr_flags) 
+		  usr_flags(ui.usr_flags)
 	{ }
 
 	UserId(const UserId& ui)
@@ -125,9 +125,9 @@ public:
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
 		  usr_node_id(ui.usr_node_id),
-		  usr_flags(ui.usr_flags) 
+		  usr_flags(ui.usr_flags)
 	{ }
-	
+
 	UserId& operator=(const UserId& ui)
 	{
 		usr_user_name = ui.usr_user_name;

@@ -3645,7 +3645,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		{
 			MET_scan_relation(tdbb, relation);
 			check_dependencies(tdbb, relation->rel_name.c_str(), work->dfw_name.c_str(),
-							   relation->rel_view_rse ? obj_view : obj_relation, 
+							   relation->rel_view_rse ? obj_view : obj_relation,
 							   transaction);
 		}
 

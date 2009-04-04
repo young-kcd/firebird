@@ -14,7 +14,7 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Khorsun Vladyslav 
+ *  The Original Code was created by Khorsun Vladyslav
  *  for the Firebird Open Source RDBMS project.
  *
  *  Copyright (c) 2009 Khorsun Vladyslav <hvlad@users.sourceforge.net>
@@ -74,13 +74,13 @@ public:
 			return;
 
 		m_need_trace = false;
-		const SINT64 millis = (fb_utils::query_performance_counter() - m_start_clock) * 1000 / 
+		const SINT64 millis = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
 			fb_utils::query_performance_frequency();
 
 		if ((result == res_successful) && m_request)
 		{
 			TraceSQLStatementImpl stmt(m_request, NULL);
-			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction, 
+			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction,
 				&stmt, millis, result);
 		}
 		else
@@ -88,7 +88,7 @@ public:
 			Firebird::string str(*getDefaultMemoryPool(), m_string, m_string_len);
 
 			TraceFailedSQLStatement stmt(str);
-			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction, 
+			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction,
 				&stmt, millis, result);
 		}
 	}
@@ -127,7 +127,7 @@ public:
 		m_request->req_fetch_baseline = NULL;
 
 		jrd_req* jrd_request = m_request->req_request;
-		if (jrd_request) 
+		if (jrd_request)
 		{
 			MemoryPool* pool = MemoryPool::getContextPool();
 			m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, jrd_request->req_stats);
@@ -146,7 +146,7 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline, 
+		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
 			&m_request->req_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
@@ -204,13 +204,13 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline, 
-			&m_request->req_request->req_stats, m_request->req_fetch_elapsed, 
+		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
+			&m_request->req_request->req_stats, m_request->req_fetch_elapsed,
 			m_request->req_fetch_rowcount);
 
 		TraceSQLStatementImpl stmt(m_request, stats.getPerf());
 
-		TraceManager::event_dsql_execute(m_attachment, m_request->req_transaction, 
+		TraceManager::event_dsql_execute(m_attachment, m_request->req_transaction,
 			&stmt, false, result);
 
 		m_request->req_fetch_elapsed = 0;
@@ -225,6 +225,6 @@ private:
 };
 
 
-} // namespace Jrd 
+} // namespace Jrd
 
 #endif // JRD_TRACE_DSQL_HELPERS_H

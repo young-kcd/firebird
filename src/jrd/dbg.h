@@ -31,7 +31,7 @@ enum s_type {
 	symb_absolute
 };
 
-struct symb 
+struct symb
 {
 	char *symb_string;
 	int (**symb_value) ();

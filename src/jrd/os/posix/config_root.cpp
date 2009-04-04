@@ -69,7 +69,7 @@ void ConfigRoot::osConfigRoot()
 #ifdef SUPERSERVER
 	// Try getting the root path from the executable
 	root_dir = getRootPathFromExePath();
-    if (root_dir.hasData()) 
+    if (root_dir.hasData())
 	{
         return;
     }
@@ -85,7 +85,7 @@ void ConfigRoot::osConfigInstallDir()
 #ifdef SUPERSERVER
 	// Try getting the root path from the executable
 	install_dir = getRootPathFromExePath();
-    if (install_dir.hasData()) 
+    if (install_dir.hasData())
 	{
         return;
     }

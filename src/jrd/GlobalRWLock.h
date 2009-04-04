@@ -69,7 +69,7 @@ public:
 	bool lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump = false);
 	void unlockRead(thread_db* tdbb);
 	bool tryReleaseLock(thread_db* tdbb);
-	void shutdownLock();	
+	void shutdownLock();
 
 protected:
 	// Flag to indicate that somebody is waiting via lock manager.
@@ -98,7 +98,7 @@ private:
 	bool	currentWriter;
 	Firebird::Condition	writerFinished;
 
-	// true - unlock keep cached lock and release by AST. 
+	// true - unlock keep cached lock and release by AST.
 	// false - unlock releases cached lock if possible
 	bool	lockCaching;
 	bool	blocking; // Unprocessed AST pending

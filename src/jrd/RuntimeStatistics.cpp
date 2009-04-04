@@ -38,7 +38,7 @@ void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
-	
+
 	RelCounters::Accessor accessor(&rel_counts);
 	if (accessor.locate(relation_id))
 		accessor.current().rlc_counter[index]++;
@@ -60,7 +60,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 
 	if (second.getFirst())
 	{
-		do 
+		do
 		{
 			const RelationCounts& src = second.current();
 
@@ -100,7 +100,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 	// Calculate database-level statistics
 	for (int i = 0; i < TOTAL_ITEMS; i++)
 		values[i] = new_stat.values[i] - values[i];
- 
+
 	dest.pin_counters = values;
 
 	// Calculate relation-level statistics
@@ -117,7 +117,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 		do
 		{
 			const RelationCounts* counts = &new_acc.current();
-			if (base_found && base_acc.current().rlc_relation_id == counts->rlc_relation_id) 
+			if (base_found && base_acc.current().rlc_relation_id == counts->rlc_relation_id)
 			{
 				RelationCounts* base_counts = &base_acc.current();
 				bool all_zeros = true;
@@ -128,7 +128,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 				}
 
 				// Point TraceCounts to counts array from baseline object
-				if (!all_zeros) 
+				if (!all_zeros)
 				{
 					jrd_rel* relation = counts->rlc_relation_id < dbb->dbb_relations->count() ?
 						(*dbb->dbb_relations)[counts->rlc_relation_id] : NULL;
@@ -141,7 +141,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 
 				base_found = base_acc.getNext();
 			}
-			else 
+			else
 			{
 				jrd_rel* relation = counts->rlc_relation_id < dbb->dbb_relations->count() ?
 					(*dbb->dbb_relations)[counts->rlc_relation_id] : NULL;
@@ -169,7 +169,7 @@ void RuntimeStatistics::bumpValue(StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
-	
+
 	size_t pos;
 	if (rel_counts.find(relation_id, pos))
 		rel_counts[pos].rlc_counter[index]++;
@@ -199,7 +199,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 
 		while (pos < cnt && rel_counts[pos].rlc_relation_id < src->rlc_relation_id)
 			pos++;
-		
+
 		if (pos >= cnt || rel_counts[pos].rlc_relation_id > src->rlc_relation_id)
 		{
 			RelationCounts counts;
@@ -236,7 +236,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 	// Calculate database-level statistics
 	for (int i = 0; i < TOTAL_ITEMS; i++)
 		values[i] = new_stat.values[i] - values[i];
- 
+
 	dest.pin_counters = values;
 
 	// Calculate relation-level statistics
@@ -250,7 +250,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 	const RelCounters::const_iterator end = new_stat.rel_counts.end();
 	for (; new_cnts != end; ++new_cnts)
 	{
-		if (base_found && base_cnts->rlc_relation_id == new_cnts->rlc_relation_id) 
+		if (base_found && base_cnts->rlc_relation_id == new_cnts->rlc_relation_id)
 		{
 			bool all_zeros = true;
 			for (int i = 0; i < DBB_max_rel_count; i++)
@@ -260,7 +260,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 			}
 
 			// Point TraceCounts to counts array from baseline object
-			if (!all_zeros) 
+			if (!all_zeros)
 			{
 				jrd_rel* relation = new_cnts->rlc_relation_id < dbb->dbb_relations->count() ?
 					(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
@@ -274,7 +274,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 			++base_cnts;
 			base_found = (base_cnts != rel_counts.end());
 		}
-		else 
+		else
 		{
 			jrd_rel* relation = new_cnts->rlc_relation_id < dbb->dbb_relations->count() ?
 				(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;

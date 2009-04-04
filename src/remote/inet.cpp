@@ -1649,7 +1649,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	}
 
 	Firebird::string cmdLine;
-	cmdLine.printf("%s -i -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) new_handle, 
+	cmdLine.printf("%s -i -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) new_handle,
 		GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
@@ -1670,7 +1670,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	{
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
-		// hvlad: child process will close our handle of just accepted socket 
+		// hvlad: child process will close our handle of just accepted socket
 		return 1;
 	}
 

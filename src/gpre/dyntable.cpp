@@ -34,11 +34,11 @@
 
 #define NODE(dyn) {dyn, "dyn"},
 
-struct dyn 
+struct dyn
 {
 	SSHORT dyn_value;
 	const char* dyn_string;
-} dyn_table[] = 
+} dyn_table[] =
 {
 	NODE(gds__dyn_begin)
 		NODE(gds__dyn_end)

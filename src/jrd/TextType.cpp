@@ -195,8 +195,8 @@ USHORT TextType::key_length(USHORT len)
 }
 
 
-USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src, 
-							   USHORT dstLen, UCHAR* dst, 
+USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src,
+							   USHORT dstLen, UCHAR* dst,
 							   USHORT key_type)
 {
 	if (tt->texttype_fn_string_to_key)
@@ -217,7 +217,7 @@ USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src,
 		src = utf16Str.begin();
 
 		// convert charset space to UTF-16
-		spaceLength = 
+		spaceLength =
 			getCharSet()->getConvToUnicode().convert(spaceLength, space, sizeof(utf16Space), utf16Space);
 		fb_assert(spaceLength == 2);	// space character can't be surrogate for default string_to_key
 		space = utf16Space;
@@ -238,7 +238,7 @@ USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src,
 
 	if (getCharSet()->isMultiByte())
 	{
-		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), dstLen, 
+		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), dstLen,
 										 dst, key_type);
 	}
 	else
@@ -286,7 +286,7 @@ SSHORT TextType::compare(ULONG len1, const UCHAR* str1, ULONG len2, const UCHAR*
 		str2 = utf16Str2.begin();
 
 		// convert charset space to UTF-16
-		spaceLength = 
+		spaceLength =
 			getCharSet()->getConvToUnicode().convert(spaceLength, space, sizeof(utf16Space), utf16Space);
 		fb_assert(spaceLength == 2);	// space character can't be surrogate for default compare
 		space = utf16Space;

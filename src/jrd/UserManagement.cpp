@@ -132,7 +132,7 @@ void UserManagement::execute(USHORT id)
 	}
 
 	ISC_STATUS_ARRAY status;
-	int errcode = (!commands[id]->user_name_entered) ? GsecMsg18 : 
+	int errcode = (!commands[id]->user_name_entered) ? GsecMsg18 :
 		SECURITY_exec_line(status, database, transaction, commands[id], NULL, NULL);
 
 	switch (errcode)

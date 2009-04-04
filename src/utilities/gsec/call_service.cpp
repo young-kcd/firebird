@@ -319,7 +319,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	if (userInfo.operation != DIS_OPER && userInfo.operation != MAP_SET_OPER && 
+	if (userInfo.operation != DIS_OPER && userInfo.operation != MAP_SET_OPER &&
 		userInfo.operation != MAP_DROP_OPER && !userInfo.user_name_entered)
 	{
 	    status[0] = isc_arg_gds;

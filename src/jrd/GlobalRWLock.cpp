@@ -156,7 +156,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_write, wait))
 	{
-	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);  
+	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 		--pendingLock;
 	    if (--pendingWriters)
 	    {
@@ -241,7 +241,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 				Database::Checkout checkoutDbb(dbb);
 				writerFinished.wait(counterMutex);
 			}
-		
+
 			COS_TRACE(("(%p)->lockRead stage 3 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 				this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
 
@@ -267,7 +267,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_read, wait))
 	{
-	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);  
+	    Database::CheckoutLockGuard counterGuard(dbb, counterMutex);
 		--pendingLock;
 		return false;
 	}
@@ -280,7 +280,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 		COS_TRACE(("(%p)->lockRead end readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
-		
+
 		return fetch(tdbb);
 	}
 }
@@ -338,7 +338,7 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 /*	Noted by Roman Simakov: We don't checkout dbb_sync to prevent database shutting down.
 	dbb_sync protects counters.
 	Database::CheckoutLockGuard counterGuard(tdbb->getDatabase(), counterMutex);
-*/	
+*/
 
 	COS_TRACE(("(%p)->blockingAst readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));

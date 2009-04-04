@@ -1039,7 +1039,7 @@ void EventManager::free_global(frb* block)
 		block->frb_next = free->frb_next;
 	}
 
-	// Next, try to merge the free block with the prior block 
+	// Next, try to merge the free block with the prior block
 
 	if (prior && (SCHAR *) prior + prior->frb_header.hdr_length ==	(SCHAR *) block)
 	{

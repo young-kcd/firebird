@@ -93,7 +93,7 @@ const char INET_FLAG = ':';
 #elif defined(AIX)
 #error ancient versions of AIX that do not provide "<mntent.h>" are not
 #error supported. AIX 5.1+ provides this header.
-#endif 
+#endif
 
 #if   defined(_PATH_MOUNTED)
 const char* MTAB		= _PATH_MOUNTED;

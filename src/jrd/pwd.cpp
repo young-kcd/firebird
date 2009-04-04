@@ -48,7 +48,7 @@ using namespace Firebird;
 
 // BLR to search database for user name record
 
-const UCHAR SecurityDatabase::PWD_REQUEST[] = 
+const UCHAR SecurityDatabase::PWD_REQUEST[] =
 {
 	blr_version5,
 	blr_begin,
@@ -97,7 +97,7 @@ const UCHAR SecurityDatabase::PWD_REQUEST[] =
 
 // Transaction parameter buffer
 
-const UCHAR SecurityDatabase::TPB[4] = 
+const UCHAR SecurityDatabase::TPB[4] =
 {
 	isc_tpb_version1,
 	isc_tpb_read,
@@ -120,11 +120,11 @@ namespace {
 		time_t lastAttempt;
 
 		explicit FailedLogin(const string& l)
-			: login(l), failCount(1), lastAttempt(time(0)) 
+			: login(l), failCount(1), lastAttempt(time(0))
 		{}
 
 		FailedLogin(MemoryPool& p, const FailedLogin& fl)
-			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt) 
+			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt)
 		{}
 
 		static const string* generate(const void* sender, const FailedLogin* f)
@@ -151,8 +151,8 @@ namespace {
 			const string, FailedLogin> inherited;
 
 	public:
-		explicit FailedLogins(MemoryPool& p) 
-			: inherited(p) 
+		explicit FailedLogins(MemoryPool& p)
+			: inherited(p)
 		{}
 
 		void loginFail(const string& login)

@@ -3444,7 +3444,7 @@ void gds__cleanup()
 	Firebird::InstanceControl::registerGdsCleanup(0);
 
 	clean_t* clean;
-	while ( (clean = cleanup_handlers) ) 
+	while ( (clean = cleanup_handlers) )
 	{
 		cleanup_handlers = clean->clean_next;
 		FPTR_VOID_PTR routine = clean->clean_routine;

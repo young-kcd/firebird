@@ -129,7 +129,7 @@ public:
 class TraceContextVariable
 {
 public:
-	virtual const char* getNameSpace() = 0; 
+	virtual const char* getNameSpace() = 0;
 	virtual const char* getVarName() = 0;
 	virtual const char* getVarValue() = 0;
 
@@ -231,7 +231,7 @@ struct TraceCounts
 };
 
 /* Performance statistics for operation */
-struct PerformanceInfo 
+struct PerformanceInfo
 {
 	ntrace_counter_t pin_time;		/* Total operation time in milliseconds */
 	ntrace_counter_t* pin_counters;	/* Pointer to allow easy addition of new counters */
@@ -272,7 +272,7 @@ typedef	ntrace_boolean_t (*ntrace_event_proc_execute_t)(const struct TracePlugin
 	bool started, ntrace_result_t proc_result);
 
 typedef ntrace_boolean_t (*ntrace_event_trigger_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, 
+	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 	bool started, ntrace_result_t trig_result);
 
 /* DSQL statement lifecycle */
@@ -282,7 +282,7 @@ typedef ntrace_boolean_t (*ntrace_event_dsql_prepare_t)(const struct TracePlugin
 typedef ntrace_boolean_t (*ntrace_event_dsql_free_t)(const struct TracePlugin* tpl_plugin,
 	TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
 typedef ntrace_boolean_t (*ntrace_event_dsql_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, 
+	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
 	bool started, ntrace_result_t req_result);
 
 /* BLR requests */
@@ -314,7 +314,7 @@ typedef ntrace_boolean_t (*ntrace_event_service_detach_t)(const struct TracePlug
 
 
 /* API of trace plugin. Used to deliver notifications for each database */
-struct TracePlugin 
+struct TracePlugin
 {
 	/* API version */
 	ntrace_version_t tpl_version;

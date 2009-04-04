@@ -39,8 +39,8 @@ class traRpbListElement
 public:
 	record_param* lr_rpb;
 	int level;
-	traRpbListElement(record_param* r, USHORT l) 
-		: lr_rpb(r), level(l) 
+	traRpbListElement(record_param* r, USHORT l)
+		: lr_rpb(r), level(l)
 	{}
 	traRpbListElement() {}
 
@@ -66,8 +66,8 @@ typedef Firebird::SortedArray<traRpbListElement,
 class traRpbList : public traRpbArray
 {
 public:
-	explicit traRpbList(Firebird::MemoryPool& p) 
-		: traRpbArray(p) 
+	explicit traRpbList(Firebird::MemoryPool& p)
+		: traRpbArray(p)
 	{}
 	int PushRpb(record_param* value);
 	bool PopRpb(record_param* value, int Level);

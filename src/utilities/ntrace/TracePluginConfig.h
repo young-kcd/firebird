@@ -49,7 +49,7 @@ struct TracePluginConfig
 	Firebird::PathName db_filename;
 
 	// Default constructor. Pass pool to all string parameters, initialize everything to defaults
-	TracePluginConfig() : 
+	TracePluginConfig() :
 #define PATH_PARAMETER(NAME, VALUE) NAME(*getDefaultMemoryPool(), VALUE, strlen(VALUE)),
 #define STR_PARAMETER(NAME, VALUE) NAME(*getDefaultMemoryPool(), VALUE, strlen(VALUE)),
 #define BOOL_PARAMETER(NAME, VALUE) NAME(VALUE),

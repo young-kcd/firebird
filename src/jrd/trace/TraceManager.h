@@ -59,39 +59,39 @@ public:
 	static ConfigStorage* getStorage()
 	{ return storageInstance.getStorage(); }
 
-	void event_attach(TraceConnection* connection, bool create_db, 
+	void event_attach(TraceConnection* connection, bool create_db,
 		ntrace_result_t att_result);
 
 	void event_detach(TraceConnection* connection, bool drop_db);
 
 	/* Start/end transaction */
-	void event_transaction_start(TraceConnection* connection, TraceTransaction* transaction, 
+	void event_transaction_start(TraceConnection* connection, TraceTransaction* transaction,
 		size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
 
-	void event_transaction_end(TraceConnection* connection, TraceTransaction* transaction, 
+	void event_transaction_end(TraceConnection* connection, TraceTransaction* transaction,
 		bool commit, bool retain_context, ntrace_result_t tra_result);
 
-	void event_set_context(TraceConnection* connection, 
+	void event_set_context(TraceConnection* connection,
 		TraceTransaction* transaction, TraceContextVariable* variable);
 
-	void event_proc_execute(TraceConnection* connection, TraceTransaction* transaction, 
+	void event_proc_execute(TraceConnection* connection, TraceTransaction* transaction,
 		TraceProcedure* procedure, bool started, ntrace_result_t proc_result);
 
 	void event_trigger_execute(TraceConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result);
 
 	void event_blr_compile(TraceConnection* connection,
-		TraceTransaction* transaction, TraceBLRStatement* statement, 
+		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	void event_blr_execute(TraceConnection* connection, 
-		TraceTransaction* transaction, TraceBLRStatement* statement, 
+	void event_blr_execute(TraceConnection* connection,
+		TraceTransaction* transaction, TraceBLRStatement* statement,
 		ntrace_result_t req_result);
 
 	void event_dyn_execute(TraceConnection* connection,
-		TraceTransaction* transaction, TraceDYNRequest* request, 
+		TraceTransaction* transaction, TraceDYNRequest* request,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
-	
+
 	void event_service_attach(TraceService* service, ntrace_result_t att_result);
 
 	void event_service_start(TraceService* service,
@@ -99,7 +99,7 @@ public:
 		ntrace_result_t start_result);
 
 	void event_service_query(TraceService* service,
-		size_t send_item_length, const ntrace_byte_t* send_items, 
+		size_t send_item_length, const ntrace_byte_t* send_items,
 		size_t recv_item_length, const ntrace_byte_t* recv_items,
 		ntrace_result_t query_result);
 
@@ -127,7 +127,7 @@ public:
 		bool event_service_detach;
 	};
 
-	inline const NotificationNeeds& needs() 
+	inline const NotificationNeeds& needs()
 	{
 		if (changeNumber != getStorage()->getChangeNumber())
 			update_sessions();
@@ -140,13 +140,13 @@ public:
 	static bool need_dsql_free(Attachment* att);
 	static bool need_dsql_execute(Attachment* att);
 
-	static void event_dsql_prepare(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement, 
+	static void event_dsql_prepare(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	static void event_dsql_free(Attachment* att, TraceSQLStatement* statement, 
+	static void event_dsql_free(Attachment* att, TraceSQLStatement* statement,
 		unsigned short option);
 
-	static void event_dsql_execute(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement, 
+	static void event_dsql_execute(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 
 private:
@@ -156,7 +156,7 @@ private:
 	NotificationNeeds trace_needs;
 
 	// This structure should be POD-like to be stored in Array
-	struct ModuleInfo 
+	struct ModuleInfo
 	{
 		ModuleInfo()
 		{
@@ -171,7 +171,7 @@ private:
 	static Firebird::GlobalPtr<Firebird::Mutex> init_modules_mtx;
 	static bool init_modules;
 
-	struct SessionInfo 
+	struct SessionInfo
 	{
 		const TracePlugin* plugin;
 		ModuleInfo* module_info;
@@ -180,7 +180,7 @@ private:
 		static ULONG generate(const void*, const SessionInfo& item)
 		{ return item.ses_id; }
 	};
-	Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, 
+	Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>,
 		ULONG, SessionInfo> trace_sessions;
 
 	void init();
@@ -191,15 +191,15 @@ private:
 	bool check_result(const TracePlugin* plugin, const char* module, const char* function, bool result);
 
 	/* DSQL statement lifecycle. To be moved to public and used directly when DSQL becomes a part of JRD */
-	void event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction, 
-		TraceSQLStatement* statement, 
+	void event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
+		TraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result);
 
 	void event_dsql_free(TraceConnection* connection,
 		TraceSQLStatement* statement, unsigned short option);
 
-	void event_dsql_execute(TraceConnection* connection, TraceTransaction* transaction, 
-		TraceSQLStatement* statement, 
+	void event_dsql_execute(TraceConnection* connection, TraceTransaction* transaction,
+		TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 
 	static StorageInstance storageInstance;

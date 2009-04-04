@@ -32,15 +32,15 @@
 
 TLS_DECLARE(char*, error_string);
 
-const char* get_error_string() 
+const char* get_error_string()
 {
 	return TLS_GET(error_string);
 }
 
-void set_error_string(const char* str) 
+void set_error_string(const char* str)
 {
 	char* org_str = TLS_GET(error_string);
-	if (org_str) 
+	if (org_str)
 	{
 		LocalFree(org_str);
 		TLS_SET(error_string, NULL);
@@ -50,7 +50,7 @@ void set_error_string(const char* str)
 	{
 		const size_t size = strlen(str) + 1;
 		char* new_str = (char*) LocalAlloc(LMEM_FIXED, size);
-		if (new_str) 
+		if (new_str)
 		{
 			memcpy(new_str, str, size);
 			TLS_SET(error_string, new_str);
@@ -58,7 +58,7 @@ void set_error_string(const char* str)
 	}
 }
 
-SLONG get_process_id() 
+SLONG get_process_id()
 {
 	return GetCurrentProcessId();
 }
@@ -66,10 +66,10 @@ SLONG get_process_id()
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-	if (fdwReason == DLL_THREAD_DETACH) 
+	if (fdwReason == DLL_THREAD_DETACH)
 	{
 		char* str = TLS_GET(error_string);
-		if (str) 
+		if (str)
 		{
 			LocalFree(str);
 			TLS_SET(error_string, NULL);

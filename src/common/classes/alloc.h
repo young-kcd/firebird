@@ -571,7 +571,7 @@ namespace Firebird
 	public:
 		static MemoryPool& getAutoMemoryPool();
 	protected:
-		AutoStorage() 
+		AutoStorage()
 			: PermanentStorage(getAutoMemoryPool())
 		{
 #if defined(DEV_BUILD)

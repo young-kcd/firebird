@@ -138,8 +138,8 @@ void RSE_close(thread_db* tdbb, RecordSource* rsb)
  *
  * Functional description
  *
- * hvlad: for RSB's marked as part of recursive sub-tree we must free 
- * resources stored in impure area as this area is over-written when 
+ * hvlad: for RSB's marked as part of recursive sub-tree we must free
+ * resources stored in impure area as this area is over-written when
  * recursion returns to the upper level. See also RSBRecurse::get()
  *
  **************************************/
@@ -3662,7 +3662,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 				memmove(p, rpb, sizeof(record_param));
 				p += sizeof(record_param);
 
-				// Don't overwrite record contents at next level of recursion. 
+				// Don't overwrite record contents at next level of recursion.
 				// RSE_open and company will allocate new record if needed
 				rpb->rpb_record = NULL;
 			}
@@ -3712,7 +3712,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			memmove(rpb, p, sizeof(record_param));
 			p += sizeof(record_param);
 
-			// We just restored record of current recursion level, delete record 
+			// We just restored record of current recursion level, delete record
 			// from upper level. It may be optimized in the future if needed.
 			delete rec;
 		}

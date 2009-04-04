@@ -14,7 +14,7 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Khorsun Vladyslav 
+ *  The Original Code was created by Khorsun Vladyslav
  *  for the Firebird Open Source RDBMS project.
  *
  *  Copyright (c) 2009 Khorsun Vladyslav <hvlad@users.sourceforge.net>
@@ -66,9 +66,9 @@ public:
 
 		const Attachment* attachment = m_transaction->tra_attachment;
 
-		TraceRuntimeStats stats(attachment->att_database, m_baseline, &m_transaction->tra_stats, 
+		TraceRuntimeStats stats(attachment->att_database, m_baseline, &m_transaction->tra_stats,
 			fb_utils::query_performance_counter() - m_start_clock, 0);
-		
+
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(m_transaction, stats.getPerf());
 
@@ -198,7 +198,7 @@ public:
 		}
 
 		Database* dbb = m_tdbb->getDatabase();
-		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats, 
+		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
 			m_request->req_fetch_elapsed, m_request->req_fetch_rowcount);
 
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
@@ -231,7 +231,7 @@ public:
 		m_which_trig(which_trig)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = !(m_request->req_flags & req_sys_trigger) && 
+		m_need_trace = !(m_request->req_flags & req_sys_trigger) &&
 						trace_mgr->needs().event_trigger_execute;
 
 		if (!m_need_trace)
@@ -317,7 +317,7 @@ public:
 
 		m_need_trace = false;
 
-		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 / 
+		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
 						 fb_utils::query_performance_frequency();
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 
@@ -327,13 +327,13 @@ public:
 		if (request)
 		{
 			TraceBLRStatementImpl stmt(request, NULL);
-			trace_mgr->event_blr_compile(&conn, m_tdbb->getTransaction() ? &tran : NULL, &stmt, 
+			trace_mgr->event_blr_compile(&conn, m_tdbb->getTransaction() ? &tran : NULL, &stmt,
 				m_start_clock, result);
 		}
 		else
 		{
 			TraceFailedBLRStatement stmt(m_blr, m_blr_length);
-			trace_mgr->event_blr_compile(&conn, m_tdbb->getTransaction() ? &tran : NULL, &stmt, 
+			trace_mgr->event_blr_compile(&conn, m_tdbb->getTransaction() ? &tran : NULL, &stmt,
 				m_start_clock, result);
 		}
 	}
@@ -420,7 +420,7 @@ class TraceDynExecute
 public:
 	TraceDynExecute(thread_db* tdbb, size_t ddl_length, const SCHAR* ddl) :
 		m_tdbb(tdbb),
-		m_ddl_length(ddl_length), 
+		m_ddl_length(ddl_length),
 		m_ddl(ddl)
 	{
 		Attachment* attachment = m_tdbb->getAttachment();
@@ -441,7 +441,7 @@ public:
 
 		m_need_trace = false;
 
-		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 / 
+		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
 						 fb_utils::query_performance_frequency();
 
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
@@ -449,7 +449,7 @@ public:
 		TraceDYNRequestImpl request(m_ddl_length, m_ddl);
 
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		trace_mgr->event_dyn_execute(&conn, m_tdbb->getTransaction() ? &tran : NULL, &request, 
+		trace_mgr->event_dyn_execute(&conn, m_tdbb->getTransaction() ? &tran : NULL, &request,
 			m_start_clock, result);
 	}
 
@@ -466,6 +466,6 @@ private:
 	const SCHAR* const m_ddl;
 };
 
-} // namespace Jrd 
+} // namespace Jrd
 
 #endif // JRD_TRACE_JRD_HELPERS_H

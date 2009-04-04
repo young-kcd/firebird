@@ -133,7 +133,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			logname.insert(0, root);
 		}
 
-		logWriter = FB_NEW (*getDefaultMemoryPool()) 
+		logWriter = FB_NEW (*getDefaultMemoryPool())
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 

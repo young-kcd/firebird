@@ -132,7 +132,7 @@ public:		// utilities interface with service
 		return svc_trace_manager;
 	}
 
-	virtual bool finished() 
+	virtual bool finished()
 	{
 		return ((svc_flags & (SVC_finished | SVC_detached)) != 0)
 			|| checkForShutdown();
@@ -164,8 +164,8 @@ public:		// external interface with service
 	const char* getServiceMgr() const;
 	const char* getServiceName() const;
 
-	const Firebird::string&	getUserName() const	
-	{ 
+	const Firebird::string&	getUserName() const
+	{
 		if (svc_username.empty())
 			return svc_trusted_login;
 

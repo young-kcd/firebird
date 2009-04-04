@@ -70,19 +70,19 @@ enum SeekOrigin
 class FileObject : public Firebird::AutoStorage
 {
 public:
-	FileObject(const Firebird::PathName& afilename, int flags, int pflags = 0666) : 
+	FileObject(const Firebird::PathName& afilename, int flags, int pflags = 0666) :
 		filename(getPool(), afilename),
 #ifdef WIN_NT
 		file(INVALID_HANDLE_VALUE),
 		append_mutex(INVALID_HANDLE_VALUE)
 #else
 	  file(-1)
-#endif 
+#endif
 	{
 		open(flags, pflags);
 	}
 
-	FileObject(Firebird::MemoryPool& pool, const Firebird::PathName& afilename, int flags, int pflags = 0666) : 
+	FileObject(Firebird::MemoryPool& pool, const Firebird::PathName& afilename, int flags, int pflags = 0666) :
 		Firebird::AutoStorage(pool), filename(getPool(), afilename),
 #ifdef WIN_NT
 		file(INVALID_HANDLE_VALUE),

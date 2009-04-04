@@ -415,7 +415,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		GetModuleFileName(NULL, name, sizeof(name));
 
 		Firebird::string cmdLine;
-		cmdLine.printf("%s -w -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) port->port_handle, 
+		cmdLine.printf("%s -w -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) port->port_handle,
 			GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
@@ -434,7 +434,7 @@ rem_port* WNET_connect(const TEXT*		name,
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
 						  NULL, NULL, &start_crud, &pi))
 		{
-			// hvlad: child process will close our handle of client pipe 
+			// hvlad: child process will close our handle of client pipe
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}

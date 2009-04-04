@@ -19,10 +19,10 @@ typedef Firebird::PathName PathName;
 /// activation context API prototypes
 typedef HANDLE (WINAPI * PFN_CAC)(PCACTCTXA pActCtx);
 
-typedef BOOL (WINAPI * PFN_FINDAC)(DWORD dwFlags, 
-								   const GUID *lpExtensionGuid, 
-								   ULONG ulSectionId, 
-								   LPCSTR lpStringToFind, 
+typedef BOOL (WINAPI * PFN_FINDAC)(DWORD dwFlags,
+								   const GUID *lpExtensionGuid,
+								   ULONG ulSectionId,
+								   LPCSTR lpStringToFind,
 								   PACTCTX_SECTION_KEYED_DATA ReturnedData);
 
 typedef void (WINAPI * PFN_RAC)(HANDLE hActCtx);
@@ -86,9 +86,9 @@ public:
 		ackd.cbSize = sizeof(ackd);
 
 		// if CRT already present in some activation context then nothing to do
-		if ((*mFindActCtxSectionString) 
-				(0, NULL, 
-				ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION, 
+		if ((*mFindActCtxSectionString)
+				(0, NULL,
+				ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION,
 #if _MSC_VER == 1400
                     "msvcr80.dll",
 #elif _MSC_VER == 1500
@@ -107,7 +107,7 @@ public:
 		actCtx.cbSize = sizeof(actCtx);
 		actCtx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID;
 		actCtx.lpResourceName = ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
-		actCtx.hModule = Firebird::hDllInst; 
+		actCtx.hModule = Firebird::hDllInst;
 
 		if (actCtx.hModule)
 		{
@@ -137,7 +137,7 @@ private:
 	WinApiFunction<PFN_RAC> mReleaseActCtx;
 	WinApiFunction<PFN_AAC> mActivateActCtx;
 	WinApiFunction<PFN_DAC> mDeactivateActCtx;
-	
+
 	HANDLE		hActCtx;
 	ULONG_PTR	mCookie;
 };

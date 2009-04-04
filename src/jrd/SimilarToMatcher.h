@@ -245,7 +245,7 @@ private:
 		const CharType* bufferPos;
 		CharType metaCharacters[15];
 
-	public:	
+	public:
 		unsigned branchNum;
 		Range* branches;
 	};

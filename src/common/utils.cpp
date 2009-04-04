@@ -970,7 +970,7 @@ int openCreateFile(const char* pathname, int flags)
 	do {
 		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
-		
+
 	if (fd >= 0)
 	{
 #ifdef SUPERSERVER

@@ -130,7 +130,7 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	if (!file) {
 		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
 	}
-	
+
 	fseek(file, 0, SEEK_END);
 	const long len = ftell(file);
 	if (len == 0) {
@@ -774,9 +774,9 @@ static bool terminated = false;
 
 static void ctrl_c_handler(int signal)
 {
-	if (signal == SIGINT) 
-		terminated = true;	
-	
+	if (signal == SIGINT)
+		terminated = true;
+
 	if (prevCtrlCHandler)
 		prevCtrlCHandler(signal);
 }

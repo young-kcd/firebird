@@ -1547,7 +1547,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		}
 
 	}	// try
-	catch (const Firebird::Exception& ex) 
+	catch (const Firebird::Exception& ex)
 	{
 		const bool no_priv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
 		trace.finish(false, no_priv ? res_unauthorized : res_failed);
@@ -2865,7 +2865,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	} // while()
 
 	request->adjustCallerStats();
-	
+
 	fb_assert(request->req_auto_trans.getCount() == 0);
 
 	// If there is no node, assume we have finished processing the

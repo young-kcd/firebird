@@ -716,7 +716,7 @@ static const UCHAR trigger1[] =
 
 
 
-static const UCHAR trigger2[] = 
+static const UCHAR trigger2[] =
 {
 	blr_version5,
 	blr_if,
@@ -782,7 +782,7 @@ static const UCHAR trigger2[] =
 static const TEXT trigger_3_msg_0 [] = "cannot modify an existing user privilege";
 ******/
 
-static const UCHAR trigger3[] = 
+static const UCHAR trigger3[] =
 {
 	blr_version5,
 	blr_leave, 0,
@@ -794,7 +794,7 @@ static const UCHAR trigger3[] =
 static const TEXT trigger_4_msg_0 [] = "cannot modify or erase a system trigger";
 ******/
 
-static const UCHAR trigger4[] = 
+static const UCHAR trigger4[] =
 {
 	blr_version5,
 	blr_if,
@@ -808,7 +808,7 @@ static const UCHAR trigger4[] =
 };
 
 
-static const UCHAR trigger5[] = 
+static const UCHAR trigger5[] =
 {
 	blr_version5,
 	blr_if,
@@ -829,7 +829,7 @@ static const UCHAR trigger5[] =
 static const TEXT trigger_6_msg_0 [] = "only the owner of a relation may reassign ownership";
 ******/
 
-static const UCHAR trigger6[] = 
+static const UCHAR trigger6[] =
 {
 	blr_version5,
 	blr_if,
@@ -850,7 +850,7 @@ static const UCHAR trigger6[] =
 };
 
 
-static const UCHAR trigger7[] = 
+static const UCHAR trigger7[] =
 {
 	blr_version5,
 	blr_begin,
@@ -878,7 +878,7 @@ static const TEXT trigger_26_msg_1 [] = "internal gds software consistency check
 static const TEXT trigger_26_msg_2 [] = "Attempt to define a second primary key for the same relation";
 ******/
 
-static const UCHAR trigger26[] = 
+static const UCHAR trigger26[] =
 {
 	blr_version5,
 	blr_begin,
@@ -972,7 +972,7 @@ static const UCHAR trigger26[] =
 static const TEXT trigger_25_msg_0 [] = "Can't update constraints (RDB$RELATION_CONSTRAINTS).";
 ******/
 
-static const UCHAR trigger25[] = 
+static const UCHAR trigger25[] =
 {
 	blr_version5,
 	blr_begin,
@@ -990,7 +990,7 @@ static const TEXT trigger_10_msg_0 [] = "Cannot delete PRIMARY KEY being used in
 static const TEXT trigger_10_msg_1 [] = "Cannot drop NOT NULL constraint for fields in PRIMARY/UNIQUE constraints.";
 ******/
 
-static const UCHAR trigger10[] = 
+static const UCHAR trigger10[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1134,7 +1134,7 @@ static const UCHAR trigger10[] =
 
 /* define trigger post_delete_constraint for rdb$relation_constraints   */
 
-static const UCHAR trigger11[] = 
+static const UCHAR trigger11[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1283,7 +1283,7 @@ static const TEXT trigger_12_msg_0 [] = "Name of Referential Constraint not defi
 static const TEXT trigger_12_msg_1 [] = "Non-existent Primary or Unique key specifed for Foreign Key.";
 ******/
 
-static const UCHAR trigger12[] = 
+static const UCHAR trigger12[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1345,7 +1345,7 @@ static const UCHAR trigger12[] =
 static const TEXT trigger_13_msg_0 [] = "Can't update constraints (RDB$REF_CONSTRAINTS).";
 ******/
 
-static const UCHAR trigger13[] = 
+static const UCHAR trigger13[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1361,7 +1361,7 @@ static const UCHAR trigger13[] =
 static const TEXT trigger_14_msg_0 [] = "Can't update constraints (RDB$CHECK_CONSTRAINTS).";
 ******/
 
-static const UCHAR trigger14[] = 
+static const UCHAR trigger14[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1377,7 +1377,7 @@ static const UCHAR trigger14[] =
 static const TEXT trigger_15_msg_0 [] = "Can't delete CHECK constraint entry (RDB$CHECK_CONSTRAINTS)";
 ******/
 
-static const UCHAR trigger15[] = 
+static const UCHAR trigger15[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1402,7 +1402,7 @@ static const UCHAR trigger15[] =
 
 /* define trigger post_delete_check_constraint for rdb$check_constraints */
 
-static const UCHAR trigger16[] = 
+static const UCHAR trigger16[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1489,7 +1489,7 @@ static const UCHAR trigger16[] =
 static const TEXT trigger_17_msg_0 [] = "Can't delete index segment used by an Integrity Constraint";
 ******/
 
-static const UCHAR trigger17[] = 
+static const UCHAR trigger17[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1518,7 +1518,7 @@ static const UCHAR trigger17[] =
 static const TEXT trigger_18_msg_0 [] = "Can't update index segment used by an Integrity Constraint";
 ******/
 
-static const UCHAR trigger18[] = 
+static const UCHAR trigger18[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1567,7 +1567,7 @@ static const UCHAR trigger18[] =
 static const TEXT trigger_19_msg_0 [] = "Can't delete index used by an Integrity Constraint";
 ******/
 
-static const UCHAR trigger19[] = 
+static const UCHAR trigger19[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1598,7 +1598,7 @@ static const TEXT trigger_20_msg_1 [] = "Can't deactivate index used by an integ
 static const TEXT trigger_20_msg_2 [] = "Can't deactivate index used by a PRIMARY/UNIQUE constraint";
 ******/
 
-static const UCHAR trigger20[] = 
+static const UCHAR trigger20[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1762,7 +1762,7 @@ static const UCHAR trigger20[] =
 static const TEXT trigger_21_msg_0 [] = "Can't delete trigger used by a CHECK Constraint";
 ******/
 
-static const UCHAR trigger21[] = 
+static const UCHAR trigger21[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1804,7 +1804,7 @@ static const UCHAR trigger21[] =
 static const TEXT trigger_22_msg_0 [] = "Can't update trigger used by a CHECK Constraint";
 ******/
 
-static const UCHAR trigger22[] = 
+static const UCHAR trigger22[] =
 {
 	blr_version5,
 	blr_begin,
@@ -1893,7 +1893,7 @@ static const UCHAR trigger22[] =
 static const TEXT trigger_23_msg_0 [] = "Cannot delete field being used in an integrity constraint.";
 ******/
 
-static const UCHAR trigger23[] = 
+static const UCHAR trigger23[] =
 {
 	blr_version5,
     blr_begin,
@@ -2040,7 +2040,7 @@ static const UCHAR trigger23[] =
 static const TEXT trigger_24_msg_0 [] = "Cannot rename field being used in an integrity constraint.";
 ******/
 
-static const UCHAR trigger24[] = 
+static const UCHAR trigger24[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2111,7 +2111,7 @@ static const UCHAR trigger24[] =
 
 
 /* define trigger post_delete_field for rdb$relation_fields  */
-static const UCHAR trigger27[] = 
+static const UCHAR trigger27[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2154,7 +2154,7 @@ static const UCHAR trigger27[] =
 };
 
 
-static const UCHAR trigger28[] = 
+static const UCHAR trigger28[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2184,7 +2184,7 @@ static const UCHAR trigger28[] =
 };
 
 
-static const UCHAR trigger29[] = 
+static const UCHAR trigger29[] =
 {
 	blr_version5,
 	blr_if,
@@ -2205,7 +2205,7 @@ static const UCHAR trigger29[] =
 };
 
 
-static const UCHAR trigger30[] = 
+static const UCHAR trigger30[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2226,7 +2226,7 @@ static const UCHAR trigger30[] =
 
 
 /* new trigger to create ODS 8.1 (and to upgrade from ODS 8.0 to ODS 8.1 */
-static const UCHAR trigger31[] = 
+static const UCHAR trigger31[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2278,7 +2278,7 @@ static const UCHAR trigger31[] =
 
 
 /* ODS 8.1 trigger  */
-static const UCHAR trigger34[] = 
+static const UCHAR trigger34[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2324,7 +2324,7 @@ static const UCHAR trigger34[] =
 };
 
 /* ODS 8.1 trigger  */
-static const UCHAR trigger35[] = 
+static const UCHAR trigger35[] =
 {
 	blr_version5,
 	blr_begin,
@@ -2361,7 +2361,7 @@ static const UCHAR trigger35[] =
 };
 
 /* ODS 11.0 trigger  */
-static const UCHAR trigger36[] = 
+static const UCHAR trigger36[] =
 {
 	blr_version5,
 	blr_begin,

@@ -48,7 +48,7 @@ extern "C" {
 /*
  * Structure returned by times()
  */
-struct tms 
+struct tms
 {
 	time_t tms_utime;			/* user time */
 	time_t tms_stime;			/* system time */
@@ -66,7 +66,7 @@ struct tms
 extern "C" {
 #endif
 
-typedef struct perf 
+typedef struct perf
 {
 	long perf_fetches;
 	long perf_marks;

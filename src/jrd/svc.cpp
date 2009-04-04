@@ -870,7 +870,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			{
 				const ISC_LONG exc = ex.stuff_exception(status_vector);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-	
+
 				TraceServiceImpl service(this);
 				trace_manager->event_service_attach(&service, no_priv ? res_unauthorized : res_failed);
 			}
@@ -2398,7 +2398,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					break;
 				}
 			}
-			
+
 			switch (spb.getClumpTag())
 			{
 			case isc_spb_sql_role_name:

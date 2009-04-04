@@ -66,8 +66,8 @@ private:
 		SLONG tran;
 		PageBitmap *bm;
 
-		TranGarbage(PageBitmap* aBm, SLONG aTran) 
-			: tran(aTran), bm(aBm) 
+		TranGarbage(PageBitmap* aBm, SLONG aTran)
+			: tran(aTran), bm(aBm)
 		{}
 
 		static inline const SLONG generate(void const*, const TranGarbage& Item)
@@ -85,8 +85,8 @@ private:
 	TranGarbageArray array;
 
 public:
-	explicit RelationGarbage(MemoryPool& p) 
-		: array(p) 
+	explicit RelationGarbage(MemoryPool& p)
+		: array(p)
 	{}
 	~RelationGarbage() { clear(); }
 
@@ -268,7 +268,7 @@ private:
 
 public:
 	explicit jrd_rel(MemoryPool& p)
-		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p) 
+		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
 	{ }
 
 	bool hasTriggers() const;
@@ -334,7 +334,7 @@ public:
 
 public:
 	explicit jrd_fld(MemoryPool& p)
-		: fld_name(p), fld_security_name(p) 
+		: fld_name(p), fld_security_name(p)
 	{ }
 };
 

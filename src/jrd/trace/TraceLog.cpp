@@ -67,9 +67,9 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	}
 
 	PathUtils::concatPath(m_baseFileName, TempFile::getTempPath(), fileName);
-	
+
 	TraceLogGuard guard(this);
-	if (m_reader) 
+	if (m_reader)
 		m_fileNum = 0;
 	else
 		m_fileNum = m_base->writeFileNum;
@@ -81,7 +81,7 @@ TraceLog::~TraceLog()
 {
 	::close(m_fileHandle);
 
-	if (m_reader) 
+	if (m_reader)
 	{
 		// indicate reader is gone
 		m_base->readFileNum = MAX_FILE_NUM;
@@ -166,7 +166,7 @@ size_t TraceLog::read(void* buf, size_t size)
 		{
 			// io error
 			system_call_failed::raise("read", errno);
-			break; 
+			break;
 		}
 	}
 
@@ -182,7 +182,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 		return size;
 
 	TraceLogGuard guard(this);
-	
+
 	const char* p = (const char*) buf;
 	unsigned int writeLeft = size;
 	while (writeLeft)
@@ -192,7 +192,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 		if (!toWrite)
 		{
 			// While this instance of writer was idle, new log file was created.
-			// More, if current file was already read by reader, we must delete it. 
+			// More, if current file was already read by reader, we must delete it.
 			::close(m_fileHandle);
 			if (m_fileNum < m_base->readFileNum) {
 				removeFile(m_fileNum);
@@ -221,7 +221,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 
 size_t TraceLog::getApproxLogSize() const
 {
-	return (m_base->writeFileNum - m_base->readFileNum + 1) * 
+	return (m_base->writeFileNum - m_base->readFileNum + 1) *
 			(MAX_LOG_FILE_SIZE / (1024 * 1024));
 }
 
