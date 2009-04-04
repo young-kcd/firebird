@@ -1695,12 +1695,12 @@ static void share_name_from_unc(tstring& file_name,
 #endif /* WIN_NT */
 
 
-// Converts a PathName from the system charset to UTF-8.
-void ISC_systemToUtf8(Firebird::PathName& pathName)
+// Converts a string from the system charset to UTF-8.
+void ISC_systemToUtf8(Firebird::AbstractString& str)
 {
 #ifdef WIN_NT
 	WCHAR utf16Buffer[MAX_PATH];
-	int len = MultiByteToWideChar(CP_ACP, 0, pathName.c_str(), pathName.length(),
+	int len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(),
 		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
 
 	if (len == 0)
@@ -1713,17 +1713,17 @@ void ISC_systemToUtf8(Firebird::PathName& pathName)
 	if (len == 0)
 		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
-	pathName.assign(utf8Buffer, len);
+	memcpy(str.getBuffer(len), utf8Buffer, len);
 #endif
 }
 
 
-// Converts a PathName from UTF-8 to the system charset.
-void ISC_utf8ToSystem(Firebird::PathName& pathName)
+// Converts a string from UTF-8 to the system charset.
+void ISC_utf8ToSystem(Firebird::AbstractString& str)
 {
 #ifdef WIN_NT
 	WCHAR utf16Buffer[MAX_PATH];
-	int len = MultiByteToWideChar(CP_UTF8, 0, pathName.c_str(), pathName.length(),
+	int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(),
 		utf16Buffer, sizeof(utf16Buffer) / sizeof(WCHAR));
 
 	if (len == 0)
@@ -1737,7 +1737,7 @@ void ISC_utf8ToSystem(Firebird::PathName& pathName)
 	if (len == 0 || defaultCharUsed)
 		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
-	pathName.assign(ansiBuffer, len);
+	memcpy(str.getBuffer(len), ansiBuffer, len);
 #endif
 }
 

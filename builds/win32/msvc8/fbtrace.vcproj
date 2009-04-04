@@ -55,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="icuuc.lib"
+				AdditionalDependencies="mpr.lib icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -127,7 +127,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="icuuc.lib"
+				AdditionalDependencies="mpr.lib icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -197,7 +197,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="icuuc.lib"
+				AdditionalDependencies="mpr.lib icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -271,7 +271,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="icuuc.lib"
+				AdditionalDependencies="mpr.lib icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -397,6 +397,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\isc_file.cpp"
 				>
 			</File>
 			<File

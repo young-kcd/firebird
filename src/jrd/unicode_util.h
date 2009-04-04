@@ -30,8 +30,6 @@
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/os/mod_loader.h"
-//#include "unicode/ucol.h"
-//#include "unicode/ucnv.h"
 
 struct UCollator;
 struct USet;
@@ -42,6 +40,9 @@ class UnicodeUtil
 {
 private:
 	struct ICU;
+
+public:
+	static const char* const DEFAULT_ICU_VERSION;
 
 public:
 	class ICUModules;

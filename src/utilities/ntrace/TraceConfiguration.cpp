@@ -30,6 +30,8 @@
 #include "../../jrd/evl_string.h"
 #include "../../jrd/TextType.h"
 #include "../../jrd/SimilarToMatcher.h"
+#include "../../jrd/unicode_util.h"
+#include "../../jrd/isc_f_proto.h"
 
 using namespace Firebird;
 
@@ -66,6 +68,28 @@ void TraceCfgReader::readTraceConfiguration(const char* text,
 		found = true; \
 	}
 
+
+namespace
+{
+	template <typename PrevConverter>
+	class SystemToUtf8Converter : public PrevConverter
+	{
+	public:
+		SystemToUtf8Converter(MemoryPool& pool, Jrd::TextType* obj, const UCHAR*& str, SLONG& len)
+			: PrevConverter(pool, obj, str, len),
+			  buffer(string(reinterpret_cast<const char*>(str), len))
+		{
+			ISC_systemToUtf8(buffer);
+			str = reinterpret_cast<const UCHAR*>(buffer.c_str());
+			len = buffer.length();
+		}
+
+	private:
+		string buffer;
+	};
+}
+
+
 void TraceCfgReader::readConfig()
 {
 	Firebird::AutoPtr<ConfigFile> cfgFile(new ConfigFile(Lex::LEX_none));
@@ -81,9 +105,18 @@ void TraceCfgReader::readConfig()
 	}
 
 	charset cs;
-	IntlUtil::initAsciiCharset(&cs);
+	IntlUtil::initUtf8Charset(&cs);
 	texttype tt;
-	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, UCharBuffer(), string());
+
+	string collAttributes("ICU-VERSION=");
+	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	IntlUtil::setupIcuAttributes(&cs, collAttributes, "", collAttributes);
+
+	UCharBuffer collAttributesBuffer;
+	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
+		collAttributes.length());
+
+	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string());
 	AutoPtr<Jrd::CharSet> charSet(Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs));
 	Jrd::TextType textType(0, &tt, charSet);
 
@@ -131,12 +164,14 @@ void TraceCfgReader::readConfig()
 				try
 				{
 #ifdef WIN_NT	// !CASE_SENSITIVITY
-					typedef Jrd::UpcaseConverter<Jrd::NullStrConverter> SimilarConverter;
+					typedef Jrd::UpcaseConverter<SystemToUtf8Converter<Jrd::NullStrConverter> >
+						SimilarConverter;
 #else
-					typedef Jrd::NullStrConverter SimilarConverter;
+					typedef SystemToUtf8Converter<Jrd::NullStrConverter> SimilarConverter;
 #endif
-					SimilarToMatcher<SimilarConverter, UCHAR> matcher(*getDefaultMemoryPool(),
-						&textType, (const UCHAR*) pattern.c_str(), pattern.length(), '\\', true);
+					SimilarToMatcher<Jrd::CanonicalConverter<SimilarConverter>, ULONG> matcher(
+						*getDefaultMemoryPool(), &textType, (const UCHAR*) pattern.c_str(),
+						pattern.length(), '\\', true);
 
 					regExpOk = true;
 

@@ -49,6 +49,10 @@ using namespace Firebird;
 namespace Jrd {
 
 
+const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
+	STRINGIZE(U_ICU_VERSION_MAJOR_NUM)"."STRINGIZE(U_ICU_VERSION_MINOR_NUM);
+
+
 // encapsulate ICU collations libraries
 struct UnicodeUtil::ICU
 {

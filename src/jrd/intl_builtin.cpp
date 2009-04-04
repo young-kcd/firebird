@@ -1133,27 +1133,6 @@ static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* texttype_name, cons
  *      Start of Character set definitions
  */
 
-static INTL_BOOL cs_utf8_well_formed(charset* cs,
-									 ULONG len,
-									 const UCHAR* str,
-									 ULONG* offending_position)
-{
-/**************************************
- *
- *      c s _ u t f 8 _ w e l l _ f o r m e d
- *
- **************************************
- *
- * Functional description
- *      Check if UTF-8 string is weel-formed
- *
- *************************************/
-	fb_assert(cs != NULL);
-
-	return UnicodeUtil::utf8WellFormed(len, str, offending_position);
-}
-
-
 static INTL_BOOL cs_utf16_well_formed(charset* cs,
 									  ULONG len,
 									  const UCHAR* str,
@@ -1382,36 +1361,6 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 #endif
 
 
-static ULONG cvt_unicode_to_utf8(csconvert* obj,
-								 ULONG unicode_len,
-								 const UCHAR* unicode_str,
-								 ULONG utf8_len,
-								 UCHAR* utf8_str,
-								 USHORT* err_code,
-								 ULONG* err_position)
-{
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf8);
-	return UnicodeUtil::utf16ToUtf8(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len),
-		utf8_len, utf8_str, err_code, err_position);
-}
-
-
-static ULONG cvt_utf8_to_unicode(csconvert* obj,
-								 ULONG utf8_len,
-								 const UCHAR* utf8_str,
-								 ULONG unicode_len,
-								 UCHAR* unicode_str,
-								 USHORT* err_code,
-								 ULONG* err_position)
-{
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == cvt_utf8_to_unicode);
-	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str,
-		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
-}
-
-
 static ULONG cvt_unicode_to_utf32(csconvert* obj,
 								  ULONG unicode_len,
 								  const UCHAR* unicode_str,
@@ -1500,7 +1449,7 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name, 
 	IntlUtil::initConvert(&csptr->charset_from_unicode, internal_unicode_to_fss);
 	csptr->charset_fn_length = internal_fss_length;
 	csptr->charset_fn_substring = internal_fss_substring;
-	csptr->charset_fn_well_formed = cs_utf8_well_formed;
+	csptr->charset_fn_well_formed = IntlUtil::utf8WellFormed;
 
 	return true;
 }
@@ -1567,19 +1516,7 @@ static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name, const A
  *
  *************************************/
 
-	static UCHAR space = 32;
-
-	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "UTF8";
-	csptr->charset_flags |= CHARSET_ASCII_BASED;
-	csptr->charset_min_bytes_per_char = 1;
-	csptr->charset_max_bytes_per_char = 4;
-	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*)&space;
-	csptr->charset_fn_well_formed = cs_utf8_well_formed;
-
-	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_utf8_to_unicode);
-	IntlUtil::initConvert(&csptr->charset_from_unicode, cvt_unicode_to_utf8);
+	IntlUtil::initUtf8Charset(csptr);
 	return true;
 }
 

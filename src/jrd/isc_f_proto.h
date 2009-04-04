@@ -40,8 +40,8 @@ bool		ISC_analyze_xnet(Firebird::PathName&, Firebird::PathName&);
 bool		ISC_check_if_remote(const Firebird::PathName&, bool);
 iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
 bool		ISC_expand_filename(Firebird::PathName&, bool);
-void		ISC_systemToUtf8(Firebird::PathName& pathName);
-void		ISC_utf8ToSystem(Firebird::PathName& pathName);
+void		ISC_systemToUtf8(Firebird::AbstractString& str);
+void		ISC_utf8ToSystem(Firebird::AbstractString& str);
 void		ISC_escape(Firebird::PathName& pathName);
 void		ISC_unescape(Firebird::PathName& pathName);
 

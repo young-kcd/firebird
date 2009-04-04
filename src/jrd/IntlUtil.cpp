@@ -354,11 +354,50 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 }
 
 
+ULONG IntlUtil::cvtUtf8ToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
+	ULONG nDest, UCHAR* ppDest, USHORT* err_code, ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == cvtUtf8ToUtf16);
+	return UnicodeUtil::utf8ToUtf16(nSrc, pSrc,
+		nDest, Firebird::OutAligner<USHORT>(ppDest, nDest), err_code, err_position);
+}
+
+
+ULONG IntlUtil::cvtUtf16ToUtf8(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
+	ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == cvtUtf16ToUtf8);
+	return UnicodeUtil::utf16ToUtf8(nSrc, Firebird::Aligner<USHORT>(ppSrc, nSrc),
+		nDest, pDest, err_code, err_position);
+}
+
+
+INTL_BOOL IntlUtil::utf8WellFormed(charset* cs, ULONG len, const UCHAR* str,
+	ULONG* offendingPos)
+{
+	fb_assert(cs != NULL);
+	return UnicodeUtil::utf8WellFormed(len, str, offendingPos);
+}
+
+
 void IntlUtil::initAsciiCharset(charset* cs)
 {
 	initNarrowCharset(cs, "ASCII");
 	initConvert(&cs->charset_to_unicode, cvtAsciiToUtf16);
 	initConvert(&cs->charset_from_unicode, cvtUtf16ToAscii);
+}
+
+
+void IntlUtil::initUtf8Charset(charset* cs)
+{
+	initNarrowCharset(cs, "UTF8");
+	cs->charset_max_bytes_per_char = 4;
+	cs->charset_fn_well_formed = utf8WellFormed;
+
+	initConvert(&cs->charset_to_unicode, cvtUtf8ToUtf16);
+	initConvert(&cs->charset_from_unicode, cvtUtf16ToUtf8);
 }
 
 
@@ -397,10 +436,12 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 
 	tt->texttype_version = TEXTTYPE_VERSION_1;
 	tt->texttype_country = CC_INTL;
+	tt->texttype_canonical_width = 4;	// UTF-32
 	tt->texttype_fn_destroy = unicodeDestroy;
 	tt->texttype_fn_compare = unicodeCompare;
 	tt->texttype_fn_key_length = unicodeKeyLength;
 	tt->texttype_fn_string_to_key = unicodeStrToKey;
+	tt->texttype_fn_canonical = unicodeCanonical;
 
 	IntlUtil::SpecificAttributesMap map;
 
@@ -455,9 +496,6 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 		return false;
 
 	tt->texttype_impl = new TextTypeImpl(cs, collation);
-
-	if (tt->texttype_canonical_width != 0)
-		tt->texttype_fn_canonical = unicodeCanonical;
 
 	return true;
 }
