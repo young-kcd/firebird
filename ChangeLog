@@ -1,3 +1,61 @@
+2009-04-04 18:39  asfernandes
+
+	* firebird2/src/: common/dllinst.cpp (1.6), common/dllinst.h (1.7),
+	common/utils.cpp (1.68), common/classes/alloc.h (1.83),
+	common/classes/fb_string.h (1.21), common/classes/init.h (1.19),
+	common/classes/objects_array.h (1.28), dsql/preparse.cpp (1.52),
+	gpre/dyntable.cpp (1.13), intl/utils/mapdump.c (1.4),
+	jrd/GlobalRWLock.cpp (1.29), jrd/GlobalRWLock.h (1.26),
+	jrd/Relation.h (1.11), jrd/RuntimeStatistics.cpp (1.16),
+	jrd/RuntimeStatistics.h (1.20), jrd/SimilarToMatcher.h (1.23),
+	jrd/TextType.cpp (1.12), jrd/ThreadData.h (1.8),
+	jrd/ThreadStart.cpp (1.13), jrd/UserManagement.cpp (1.11),
+	jrd/alt.cpp (1.79), jrd/blob_filter.h (1.19), jrd/btr.cpp (1.236),
+	jrd/builtin.cpp (1.15), jrd/cch.h (1.47), jrd/dbg.h (1.7),
+	jrd/dfw.epp (1.270), jrd/dpm.epp (1.89), jrd/event.cpp (1.88),
+	jrd/event.h (1.26), jrd/exe.cpp (1.293), jrd/gds.cpp (1.280),
+	jrd/grant.epp (1.77), jrd/intl.cpp (1.121), jrd/isc_file.cpp
+	(1.130), jrd/jrd.cpp (1.536), jrd/jrd.h (1.266), jrd/jrd_proto.h
+	(1.77), jrd/msg.h (1.14), jrd/ntrace.h (1.12), jrd/opt.cpp (1.341),
+	jrd/pag.cpp (1.205), jrd/perf.h (1.11), jrd/pwd.cpp (1.77),
+	jrd/req.h (1.89), jrd/rpb_chain.h (1.16), jrd/rse.cpp (1.181),
+	jrd/rse.h (1.61), jrd/scl.h (1.27), jrd/sdl.h (1.12), jrd/sort.h
+	(1.40), jrd/svc.cpp (1.270), jrd/svc.h (1.76), jrd/tpc.cpp (1.41),
+	jrd/tra.cpp (1.202), jrd/trig.h (1.28), jrd/unicode_util.h (1.18),
+	jrd/vio.cpp (1.245), jrd/extds/InternalDS.cpp (1.19),
+	jrd/os/posix/config_root.cpp (1.19), jrd/os/win32/mod_loader.cpp
+	(1.24), jrd/trace/TraceCmdLine.cpp (1.6),
+	jrd/trace/TraceConfigStorage.cpp (1.20),
+	jrd/trace/TraceConfigStorage.h (1.10), jrd/trace/TraceDSQLHelpers.h
+	(1.8), jrd/trace/TraceJrdHelpers.h (1.5), jrd/trace/TraceLog.cpp
+	(1.13), jrd/trace/TraceLog.h (1.8), jrd/trace/TraceManager.cpp
+	(1.13), jrd/trace/TraceManager.h (1.5), jrd/trace/TraceObjects.cpp
+	(1.12), jrd/trace/TraceService.cpp (1.12), jrd/trace/TraceService.h
+	(1.6), jrd/trace/TraceSession.h (1.4), remote/inet.cpp (1.275),
+	remote/server.cpp (1.244), remote/os/win32/srvr_w32.cpp (1.70),
+	remote/os/win32/wnet.cpp (1.74), utilities/fbsvcmgr.cpp (1.27),
+	utilities/gsec/call_service.cpp (1.24), utilities/gsec/security.epp
+	(1.27), utilities/ntrace/TraceConfiguration.cpp (1.6),
+	utilities/ntrace/TracePluginConfig.h (1.4),
+	utilities/ntrace/TracePluginImpl.cpp (1.20),
+	utilities/ntrace/TracePluginImpl.h (1.8),
+	utilities/ntrace/traceplugin.cpp (1.4),
+	utilities/ntrace/os/FileObject.h (1.4),
+	utilities/ntrace/os/win32/platform.cpp (1.5):
+
+	Trim trailling spaces
+
+2009-04-04 18:28  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.global_temporary_tables
+	(1.5), src/jrd/err_proto.h (1.35), src/jrd/exe.h (1.133),
+	src/jrd/file_params.h (1.35), src/jrd/isc_s_proto.h (1.27),
+	src/jrd/jrd_pwd.h (1.37), src/jrd/nav.cpp (1.76), src/jrd/par.cpp
+	(1.234), src/misc/codes.epp (1.36), src/remote/inet_server.cpp
+	(1.92):
+
+	Misc
+
 2009-04-03 15:09  alexpeshkoff
 
 	* firebird2/src/common/classes/fb_atomic.h (1.19):
