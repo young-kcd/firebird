@@ -1820,7 +1820,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	if (node_type == blr_join || node_type == blr_merge) {
 		USHORT count = (USHORT) BLR_BYTE;
 		jrd_nod* plan = PAR_make_node(tdbb, count);
-		plan->nod_type = (nod_t) (USHORT) blr_table[node_type];
+		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
 
 		for (jrd_nod** arg = plan->nod_arg; count--;)
 			*arg++ = par_plan(tdbb, csb);
@@ -1832,7 +1832,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	if (node_type == blr_retrieve)
 	{
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
-		plan->nod_type = (nod_t) (USHORT) blr_table[node_type];
+		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
 
 		/* parse the relation name and context--the relation
 		   itself is redundant except in the case of a view,
@@ -3397,9 +3397,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	if (set_type)
 	{
 		if (csb->csb_g_flags & csb_blr_version4)
-			node->nod_type = (nod_t) (USHORT) blr_table4[(int) blr_operator];
+			node->nod_type = (nod_t)(USHORT) blr_table4[(int) blr_operator];
 		else
-			node->nod_type = (nod_t) (USHORT) blr_table[(int) blr_operator];
+			node->nod_type = (nod_t)(USHORT) blr_table[(int) blr_operator];
 	}
 
 	size_t pos = 0;

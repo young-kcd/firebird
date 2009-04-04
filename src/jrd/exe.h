@@ -71,7 +71,6 @@ enum nod_t {
 #undef NODE
 };
 
-
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;

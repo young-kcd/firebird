@@ -548,4 +548,3 @@ static int tryStopMainThread()
 	return serverClosing ? 1 : 0;
 }
 #endif
-

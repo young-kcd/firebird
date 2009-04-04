@@ -74,4 +74,4 @@ Writes = OFF" setting despite of database setting.
 
 	There's no limit on number of GTT instances. If you have N transactions 
 active simultaneously and each transaction has referenced some GTT then you'll 
-have N GTT's instances.
+have N GTTs instances.

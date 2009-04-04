@@ -89,7 +89,7 @@ const int FAC_SQL_POSITIVE	= 14;	// facility for positive SQL codes
 const int FAC_SQL_NEGATIVE	= 13;	// ditto for negative codes
 
 const int gds_facility_local	= 20;
-const int gds_base_local		= (SLONG) gds_facility_local << 24;
+const int gds_base_local		= gds_facility_local << 24;
 const int gds_factor_local		= 1;
 
 

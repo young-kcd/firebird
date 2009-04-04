@@ -48,14 +48,14 @@ int		ISC_mutex_init(struct mtx*, const TEXT*);
 int		ISC_mutex_init(struct mtx*);
 #endif
 
-int		ISC_mutex_lock(struct mtx *);
-int		ISC_mutex_lock_cond(struct mtx *);
-int		ISC_mutex_unlock(struct mtx *);
-void	ISC_mutex_fini(struct mtx *);
+int		ISC_mutex_lock(struct mtx*);
+int		ISC_mutex_lock_cond(struct mtx*);
+int		ISC_mutex_unlock(struct mtx*);
+void	ISC_mutex_fini(struct mtx*);
 
 #if defined HAVE_MMAP || defined WIN_NT
-UCHAR*	ISC_map_object(ISC_STATUS *, sh_mem*, ULONG, ULONG);
-void	ISC_unmap_object(ISC_STATUS *, sh_mem*, UCHAR **, ULONG);
+UCHAR*	ISC_map_object(ISC_STATUS*, sh_mem*, ULONG, ULONG);
+void	ISC_unmap_object(ISC_STATUS*, sh_mem*, UCHAR**, ULONG);
 #endif
 
 #ifdef UNIX
@@ -68,10 +68,10 @@ void	ISC_sync_signals_reset();
 ULONG	ISC_exception_post(ULONG, const TEXT*);
 #endif
 
-UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, ULONG, bool);
-void	ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
-void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void *, SLONG *, void **);
-void	ISC_unmap_file(ISC_STATUS *, struct sh_mem *);
+UCHAR*	ISC_remap_file(ISC_STATUS*, struct sh_mem*, ULONG, bool);
+void	ISC_reset_timer(FPTR_VOID_PTR, void*, SLONG*, void**);
+void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void*, SLONG*, void**);
+void	ISC_unmap_file(ISC_STATUS*, struct sh_mem*);
 
 
 #endif // JRD_ISC_S_PROTO_H

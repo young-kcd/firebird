@@ -937,7 +937,7 @@ static UCHAR* nav_open(
 					thread_db* tdbb,
 					RecordSource* rsb,
 					IRSB_NAV impure,
-					WIN * window, rse_get_mode direction, btree_exp** expanded_node)
+					WIN* window, rse_get_mode direction, btree_exp** expanded_node)
 {
 /**************************************
  *
