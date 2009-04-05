@@ -746,6 +746,7 @@ void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 		return;
 
 	const dsc* value1 = args[0];
+	const dsc* length = args[1];
 	const dsc* value2 = (argsCount >= 3 ? args[2] : NULL);
 
 	if (value1->isBlob())
@@ -762,7 +763,16 @@ void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 	result->setTextType(value1->getTextType());
 
 	if (!result->isBlob())
-		result->dsc_length = sizeof(USHORT) + dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
+	{
+		if (length->dsc_address)	// constant
+		{
+			result->dsc_length = sizeof(USHORT) + dataTypeUtil->fixLength(result,
+				CVT_get_long(length, 0, ERR_post) *
+					dataTypeUtil->maxBytesPerChar(result->getCharSet()));
+		}
+		else
+			result->dsc_length = sizeof(USHORT) + dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
+	}
 
 	result->setNullable(isNullable);
 }
