@@ -249,12 +249,7 @@ public:
 
 	counter_type setValue(counter_type val)
 	{
-		counter_type old;
-		do
-		{
-			old = counter;
-		} while (!atomic_cas_uint(&counter, old, val));
-		return old;
+		return atomic_swap_uint(&counter, val);
 	}
 
 private:
