@@ -973,18 +973,15 @@ int openCreateFile(const char* pathname, int flags)
 
 	if (fd >= 0)
 	{
-#ifdef SUPERSERVER
-		const mode_t mode = 0600;
-#else // SUPERSERVER
+#ifndef SUPERSERVER
 		const char* const FIREBIRD = "firebird";
 		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
 		gid_t gid = get_user_group_id(FIREBIRD);
-
 		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
 			;
+#endif //SUPERSERVER
 
 		const mode_t mode = 0660;
-#endif //SUPERSERVER
 		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
 			;
 	}
