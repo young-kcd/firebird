@@ -106,11 +106,7 @@ using namespace Firebird;
 #define O_BINARY	0
 #endif
 
-#ifdef SUPERSERVER
-#define MASK		0600
-#else
-#define MASK		0660
-#endif
+static const mode_t MASK = 0660;
 
 #define FCNTL_BROKEN
 // please undefine FCNTL_BROKEN for operating systems,
