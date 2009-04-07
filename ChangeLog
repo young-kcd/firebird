@@ -1,3 +1,9 @@
+2009-04-07 14:48  robocop
+
+	* firebird2/src/jrd/SysFunction.cpp (1.66):
+
+	Remove macro needed for VC6 only.
+
 2009-04-06 18:16  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/unix.cpp (1.116):
