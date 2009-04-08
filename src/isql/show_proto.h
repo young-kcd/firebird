@@ -25,7 +25,7 @@
 #define ISQL_SHOW_PROTO_H
 
 void	SHOW_comments(bool force);
-bool	SHOW_dbb_parameters (FB_API_HANDLE, SCHAR*, const SCHAR*, USHORT, bool);
+bool	SHOW_dbb_parameters (FB_API_HANDLE, SCHAR*, const SCHAR*, USHORT, bool, const char*);
 processing_state	SHOW_grants (const SCHAR*, const SCHAR*, USHORT);
 processing_state	SHOW_grants2 (const SCHAR*, const SCHAR*, USHORT, const TEXT*, bool);
 void	SHOW_grant_roles (const SCHAR*, bool*);

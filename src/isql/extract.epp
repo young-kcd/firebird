@@ -1732,7 +1732,7 @@ static void list_create_db()
 		strcpy(isqlGlob.global_Target_db, isqlGlob.global_Db_name);
 		nodb = true;
 	}
-	isqlGlob.printf("CREATE DATABASE '%s'", isqlGlob.global_Target_db);
+	isqlGlob.printf("CREATE DATABASE '%s' ", isqlGlob.global_Target_db);
 
 	// Get the page size from db_info call
 	SCHAR info_buf[20];
@@ -1740,15 +1740,15 @@ static void list_create_db()
 	// no longer exists. Localizing the messages means also not printing
 	// any CRLF and therefore the output looks ugly.
 	const bool translate = true;
-	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items), translate))
+	if (SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items), translate, " "))
 	{
-		isqlGlob.printf(" %s", info_buf);
+		isqlGlob.printf("%s", info_buf);
 	}
 
 	FOR DBP IN RDB$DATABASE
 		WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
 		AND DBP.RDB$CHARACTER_SET_NAME != " ";
-		isqlGlob.printf(" DEFAULT CHARACTER SET %s",
+		isqlGlob.printf("DEFAULT CHARACTER SET %s",
 			fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
 	END_FOR
 	ON_ERROR
