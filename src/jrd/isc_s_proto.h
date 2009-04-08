@@ -73,5 +73,6 @@ void	ISC_reset_timer(FPTR_VOID_PTR, void*, SLONG*, void**);
 void	ISC_set_timer(SLONG, FPTR_VOID_PTR, void*, SLONG*, void**);
 void	ISC_unmap_file(ISC_STATUS*, struct sh_mem*);
 
+void	ISC_remove_map_file(const TEXT* filename);
 
 #endif // JRD_ISC_S_PROTO_H

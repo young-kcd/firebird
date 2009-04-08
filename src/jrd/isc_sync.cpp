@@ -1845,6 +1845,13 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 }
 #endif // WIN_NT
 
+void ISC_remove_map_file(const TEXT* filename)
+{
+	TEXT expanded_filename[MAXPATHLEN];
+	gds__prefix_lock(expanded_filename, filename);
+	unlink(expanded_filename);	// we can't do much (specially in dtors) when it fails
+								// therefore do not check for errors - at least it's just /tmp
+}
 
 #ifdef UNIX
 

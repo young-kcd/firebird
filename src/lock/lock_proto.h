@@ -131,6 +131,9 @@ private:
 	void validate_shb(const SRQ_PTR);
 #endif
 	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
+	bool attach_shared_file(ISC_STATUS* status);
+	void detach_shared_file(ISC_STATUS* status);
+	void get_shared_file_name(Firebird::PathName&);
 
 	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 	{
