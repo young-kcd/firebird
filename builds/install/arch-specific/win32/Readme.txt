@@ -1,6 +1,6 @@
 
 ==========================================
-Firebird 2.5.0 Alpha 1 (Windows Build)
+Firebird 2.5.0 Beta 1 (Windows Build)
 ==========================================
 
 
@@ -18,7 +18,7 @@ Welcome to Firebird 2.5.
 Intended Users
 ==============
 
-This is an alpha version of Firebird. 
+This is a beta version of Firebird. 
 
 It is not intended for production use. It is for 
 test purposes only.

@@ -56,6 +56,7 @@
 #define PointRelease "0"
 #define BuildNumber "0"
 #define PackageNumber "0"
+#define FilenameSuffix ""
 
 
 ;-------Start of Innosetup script debug flags section
@@ -136,7 +137,7 @@
 #define MinorVer FB_MINOR_VER
 #endif
 
-#if Len(GetEnv("FB_REV_VER")) > 0
+#if Len(GetEnv("FB_REV_NO")) > 0
 #define FB_REV_NO GetEnv("FB_REV_NO")
 #endif
 #ifdef FB_REV_NO
@@ -157,6 +158,15 @@
 #define PackageNumber FBBUILD_PACKAGE_NUMBER
 #endif
 
+#if Len(GetEnv("FBBUILD_FILENAME_SUFFIX")) > 0
+#define FBBUILD_FILENAME_SUFFIX GetEnv("FBBUILD_FILENAME_SUFFIX")
+#endif
+#ifdef FBBUILD_FILENAME_SUFFIX
+#define FilenameSuffix FBBUILD_FILENAME_SUFFIX
+#if pos('_',FilenameSuffix) == 0
+#define FilenameSuffix "_" + FilenameSuffix
+#endif
+#endif
 
 
 #if BuildNumber == "0"
@@ -238,8 +248,8 @@ AppUpdatesURL={#MyAppURL}
 AppVersion={#MyAppVerString}
 
 SourceDir=..\..\..\..\
-OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}
-;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}_Setup-Manifest.txt
+OutputBaseFilename={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}
+;OutputManifestFile={#MyAppName}-{#MyAppVerString}_{#PackageNumber}_{#PlatformTarget}{#debug_str}{#pdb_str}{#FilenameSuffix}_Setup-Manifest.txt
 OutputDir=builds\install_images
 ;!!! These directories are as seen from SourceDir !!!
 #define ScriptsDir "builds\install\arch-specific\win32"
@@ -362,9 +372,9 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 
 [Run]
 #if msvc_version == 8
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
@@ -416,7 +426,7 @@ Name: {group}\Firebird {#FB_cur_ver} Installation Guide; Filename: {app}\doc\Fir
 Name: {group}\Firebird {#FB_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
 #endif
 #ifndef DONT_INCLUDE_FB21_DOCS
-; dummy define. for now (alpha 1) we include Fb 2.1 docs.
+; dummy define. for now (beta 1) we include Fb 2.1 docs.
 Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:InstallationGuide}
 Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver} {cm:BugFixes}
@@ -455,6 +465,8 @@ Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponen
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
+Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf.default; Components: ServerComponent;  check: fbtraceConfExists;
+Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: fbtraceConfExists;
 Source: {#FilesDir}\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
@@ -478,6 +490,7 @@ Source: {#FilesDir}\bin\instsvc.exe; DestDir: {app}\bin; Components: ServerCompo
 Source: {#FilesDir}\bin\isql.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\bin\nbackup.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\bin\qli.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
+Source: {#FilesDir}\bin\fbsvcmgr.exe; DestDir: {app}\bin; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\bin\fbclient.dll; DestDir: {app}\bin; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
 #if PlatformTarget == "x64"
 Source: {#WOW64Dir}\bin\fbclient.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: overwritereadonly sharedfile promptifolder
@@ -486,6 +499,9 @@ Source: {#WOW64Dir}\bin\instclient.exe; DestDir: {app}\WOW64; Components: Client
 Source: {#FilesDir}\bin\icuuc30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+#if PlatformTarget =="Win32"
+Source: {#FilesDir}\bin\fbrmclib.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
+#endif
 
 ;Rules for installation of MS runtimes
 ;MSVC6 and MSVC7
@@ -513,8 +529,8 @@ Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {sys}; Components: C
 #endif
 
 #if msvc_version >= 8
-;If Host O/S has Windows Installer 3.0 installed then we don't need to do local install of runtime libraries
-;In fact, local install is next to useless as the fbintl.dll will still fail to load.
+;If Host O/S has Windows Installer 3.0 installed then we use msiexec to deploy the runtime libraries
+;In fact, even if the runtime libraries did exist locally the system will alway load a shared assembly if it is available.
 Source: {#FilesDir}\bin\msvcr{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\msvcp{#msvc_version}?.dll; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
 Source: {#FilesDir}\bin\Microsoft.VC80.CRT.manifest; DestDir: {app}\bin; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile;
@@ -560,9 +576,15 @@ Source: {#FilesDir}\include\*.*; DestDir: {app}\include; Components: DevAdminCom
 Source: {#FilesDir}\intl\fbintl.dll; DestDir: {app}\intl; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: {#FilesDir}\intl\fbintl.conf; DestDir: {app}\intl; Components: ServerComponent; Flags: onlyifdoesntexist
 Source: {#FilesDir}\lib\*.*; DestDir: {app}\lib; Components: DevAdminComponent; Flags: ignoreversion;
+#if PlatformTarget == "x64"
+Source: {#WOW64Dir}\lib\*.lib; DestDir: {app}\WOW64\lib; Components: DevAdminComponent; Flags: ignoreversion
+#endif
 Source: {#FilesDir}\UDF\ib_udf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: {#FilesDir}\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerComponent; Flags: sharedfile ignoreversion;
 Source: {#FilesDir}\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\UDF\*.txt; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
+
+Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 
 Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
@@ -646,7 +668,7 @@ Var
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
                                 // user config files - firebird.conf, firebird.log,
-                                // aliases.conf and the security database.
+                                // aliases.conf, fbtrace.conf and the security database.
 
 #ifdef setuplogging
   OkToCopyLog : Boolean;        // Set when installation is complete.
@@ -1060,6 +1082,7 @@ begin
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb', false);
       end;
 
@@ -1128,6 +1151,16 @@ begin
   Result := not fileexists(GetAppPath+'\firebird.conf');
 end;
 
+function fbtraceConfExists: boolean;
+begin
+  Result := fileexists(GetAppPath+'\fbtrace.conf');
+end;
+
+function NofbtraceConfExists: boolean;
+begin
+  Result := not fileexists(GetAppPath+'\fbtrace.conf');
+end;
+
 function InitializeUninstall(): Boolean;
 var
   CommandLine: String;
@@ -1167,6 +1200,10 @@ begin
       if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf') then
         if CleanUninstall then
           DeleteFile(GetAppPath+'\aliases.conf');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\fbtrace.conf');
 
       if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb') then
         if CleanUninstall then

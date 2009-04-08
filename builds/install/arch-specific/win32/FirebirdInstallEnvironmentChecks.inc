@@ -692,7 +692,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,33);
+SetArrayLength(SharedFileArray,36);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -739,6 +739,9 @@ SharedFileArray[29].Filename := ExpandConstant('{app}')+'aliases.conf';
 SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
 SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
 SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
+SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbtrace.conf';
+SharedFileArray[34].Filename := ExpandConstant('{app}')+'\bin\fbsvcmgr.conf';
+SharedFileArray[35].Filename := ExpandConstant('{app}')+'\bin\fbrmclib.dll';
 
 end;
 
