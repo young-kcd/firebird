@@ -1841,11 +1841,11 @@ static void show_charsets(
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation) {
 		if (show_charset && !show_collation)
-			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
+			ISQL_get_character_sets(char_set_id, 0, false, false, char_sets);
 		else if (!show_charset && show_collation)
-			ISQL_get_character_sets(char_set_id, collation, true, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, true, false, char_sets);
 		else
-			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, false, false, char_sets);
 	}
 	if (char_sets[0]) {
 		if (doIndent)
@@ -1947,11 +1947,11 @@ static void show_proc_charsets(
 	if ((char_set_id != default_char_set_id) || collation)
 	{
 		if (show_charset && !show_collation)
-			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
+			ISQL_get_character_sets(char_set_id, 0, false, false, char_sets);
 		else if (!show_charset && show_collation)
-			ISQL_get_character_sets(char_set_id, collation, true, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, true, false, char_sets);
 		else
-			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, false, false, char_sets);
 	}
 
 	if (char_sets[0])

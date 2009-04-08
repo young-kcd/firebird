@@ -1190,6 +1190,7 @@ void ISQL_get_character_sets(
 	SSHORT char_set_id,
 	SSHORT collation,
 	bool collate_only,
+	bool not_null,
 	TEXT* string)
 {
 /**************************************
@@ -1205,6 +1206,7 @@ void ISQL_get_character_sets(
 	bool found = false;
 #endif
 
+	const char* notNullStr = not_null ? " NOT NULL" : "";
 	string[0] = 0;
 
 	// Transaction for all frontend commands
@@ -1233,13 +1235,13 @@ void ISQL_get_character_sets(
 			// Is specified collation the default collation for character set?
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0) {
 				if (!collate_only)
-					sprintf (string, " CHARACTER SET %s", CST.RDB$CHARACTER_SET_NAME);
+					sprintf (string, " CHARACTER SET%s %s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
 			}
 			else if (collate_only)
-				sprintf (string, " COLLATE %s", COL.RDB$COLLATION_NAME);
+				sprintf (string, "%s COLLATE %s", notNullStr, COL.RDB$COLLATION_NAME);
 			else
-				sprintf (string, " CHARACTER SET %s COLLATE %s",
-						 CST.RDB$CHARACTER_SET_NAME, COL.RDB$COLLATION_NAME);
+				sprintf (string, " CHARACTER SET %s%s COLLATE %s",
+						 CST.RDB$CHARACTER_SET_NAME, notNullStr, COL.RDB$COLLATION_NAME);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
@@ -1264,7 +1266,7 @@ void ISQL_get_character_sets(
 #endif
 			fb_utils::exact_name(CST.RDB$CHARACTER_SET_NAME);
 
-			sprintf (string, " CHARACTER SET %s", CST.RDB$CHARACTER_SET_NAME);
+			sprintf (string, " CHARACTER SET %s%s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(isc_status);
