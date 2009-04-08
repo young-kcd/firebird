@@ -184,6 +184,7 @@ LockManager* LockManager::create(const Firebird::string& id)
 LockManager::LockManager(const Firebird::string& id)
 	: PID(getpid()),
 	  m_bugcheck(false),
+	  m_sharedFileCreated(false),
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
@@ -1064,7 +1065,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		fb_assert(owner_offset == CREATE_OWNER);
 		owner_offset = DUMMY_OWNER;
 
-		if (m_header->lhb_active_owner != DUMMY_OWNER) {
+		if (! m_sharedFileCreated) {
 			ISC_STATUS_ARRAY local_status;
 
 			// Someone is going to delete shared file? Reattach.
@@ -1082,7 +1083,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		}
 		else {
 			// complete initialization
-			m_header->lhb_active_owner = 0;
+			m_sharedFileCreated = false;
 
 			// no sense thinking about statistics now
 			prior_active = 0;
@@ -1090,6 +1091,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			break;
 		}
 	}
+	fb_assert(!m_sharedFileCreated);
 
 
 	++m_header->lhb_acquires;
@@ -2243,6 +2245,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 #endif
 
 	m_header = (lhb*) shmem_data->sh_mem_address;
+	m_sharedFileCreated = initializeMemory;
 
 	if (!initializeMemory) {
 		return;
@@ -2337,7 +2340,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 	}
 
 	// Done initializing, unmark owner information
-	// m_header->lhb_active_owner = 0;
+	m_header->lhb_active_owner = 0;
 }
 
 

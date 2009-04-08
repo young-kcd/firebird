@@ -149,6 +149,7 @@ private:
 	}
 
 	bool m_bugcheck;
+	bool m_sharedFileCreated;
 	lhb* volatile m_header;
 	prc* m_process;
 	SRQ_PTR m_processOffset;
