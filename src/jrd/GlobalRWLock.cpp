@@ -101,6 +101,9 @@ void GlobalRWLock::shutdownLock()
 	COS_TRACE(("(%p)->shutdownLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
 
+	if (!cachedLock)
+		return;
+
 	LCK_release(tdbb, cachedLock);
 
 	delete cachedLock;
