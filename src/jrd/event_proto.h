@@ -82,6 +82,9 @@ private:
 	void remove_que(srq*);
 	bool request_completed(evt_req*);
 	void watcher_thread();
+	void attach_shared_file();
+	void detach_shared_file();
+	void get_shared_file_name(Firebird::PathName&);
 
 	static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM arg)
 	{
@@ -112,6 +115,8 @@ private:
 #ifdef WIN_NT
 	struct mtx m_mutex;
 #endif
+
+	bool m_sharedFileCreated;
 };
 
 } // namespace
