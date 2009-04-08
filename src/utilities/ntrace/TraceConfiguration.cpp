@@ -76,9 +76,9 @@ namespace
 	{
 	public:
 		SystemToUtf8Converter(MemoryPool& pool, Jrd::TextType* obj, const UCHAR*& str, SLONG& len)
-			: PrevConverter(pool, obj, str, len),
-			  buffer(string(reinterpret_cast<const char*>(str), len))
+			: PrevConverter(pool, obj, str, len)
 		{
+			buffer.assign(reinterpret_cast<const char*>(str), len);
 			ISC_systemToUtf8(buffer);
 			str = reinterpret_cast<const UCHAR*>(buffer.c_str());
 			len = buffer.length();
