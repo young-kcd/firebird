@@ -51,18 +51,18 @@ class vcl;
 // This structure must occupy 8 bytes
 struct bid
 {
-	union
+	// This is how bid structure represented in public API.
+	// Must be present to enforce alignment rules when structure is declared on stack
+	struct bid_quad_struct
+	{
+		ULONG bid_quad_high;
+		ULONG bid_quad_low;
+	};
+	union // anonymous union
 	{
 		// Internal decomposition of the structure
 		RecordNumber::Packed bid_internal;
-
-		// This is how bid structure represented in public API.
-		// Must be present to enforce alignment rules when structure is declared on stack
-		struct
-		{
-			ULONG bid_quad_high;
-			ULONG bid_quad_low;
-		} bid_quad;
+		struct bid_quad_struct bid_quad;
 	};
 
 	ULONG& bid_temp_id()
