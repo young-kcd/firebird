@@ -1,3 +1,88 @@
+2009-04-08 18:06  asfernandes
+
+	* firebird2/src/isql/: extract.epp (1.101), show.epp (1.144),
+	show_proto.h (1.20):
+
+	Fixed CORE-2407 - isql -ex PAGE_SIZE missing in CREATE DATABASE
+
+2009-04-08 17:43  asfernandes
+
+	* firebird2/src/isql/: extract.epp (1.100), isql.epp (1.269),
+	isql_proto.h (1.28), show.epp (1.143):
+
+	Fixed CORE-2408 - isql -ex puts default values of sp parameters
+	before the NOT NULL and COLLATE flags
+
+2009-04-08 17:00  paul_reeves
+
+	* firebird2/builds/:
+	install/arch-specific/win32/BuildExecutableInstall.bat (1.42),
+	install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.13), install/arch-specific/win32/FirebirdInstall_20.iss (1.36),
+	install/arch-specific/win32/Readme.txt (1.20),
+	install/arch-specific/win32/installation_readme.txt (1.20),
+	win32/run_all.bat (1.16):
+
+	Add files missing from install Misc.
+
+2009-04-08 16:44  roman-simakov
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.30):
+
+	Fixed AV while database shutting down after gfix -shut full.
+	Reported by Alex.
+
+2009-04-08 15:16  alexpeshkoff
+
+	* firebird2/src/jrd/: event.cpp (1.89), event_proto.h (1.19):
+
+	Fixed CORE-2402: bad permissions on temp files, /tmp is polluted
+	with a lot of files
+
+2009-04-08 13:30  alexpeshkoff
+
+	* firebird2/src/lock/: lock.cpp (1.186), lock_proto.h (1.29):
+
+	Better fix for lock files in CORE-2402
+
+2009-04-08 13:00  alexpeshkoff
+
+	* firebird2/src/: jrd/isc_s_proto.h (1.28), jrd/isc_sync.cpp
+	(1.177), lock/lock.cpp (1.185), lock/lock_proto.h (1.28):
+
+	Fix for CORE-2402: bad permissions on temp files, /tmp is polluted
+	with a lot of files
+
+2009-04-08 12:21  alexpeshkoff
+
+	* firebird2/src/: common/classes/alloc.h (1.84), jrd/blb.h (1.33):
+
+	Fixed xlC warnings
+
+2009-04-08 08:24  alexpeshkoff
+
+	* firebird2/builds/posix/firebird.hpux.vers (1.3):
+
+	Add new API calls to HPUX export list
+
+2009-04-08 04:13  asfernandes
+
+	* firebird2/: autogen.sh (1.23), binreloc.m4 (1.1), configure.in
+	(1.327), builds/posix/make.defaults (1.82),
+	builds/posix/make.shared.variables (1.110),
+	doc/README.incompatibilities.txt (1.11), extern/binreloc/binreloc.c
+	(1.1), extern/binreloc/binreloc.h (1.1), src/jrd/os/config_root.h
+	(1.22), src/jrd/os/posix/config_root.cpp (1.20):
+
+	Feature CORE-2398 - Make Firebird correct detect its installed path
+	in Linux
+
+2009-04-08 02:47  asfernandes
+
+	* firebird2/src/utilities/ntrace/TraceConfiguration.cpp (1.8):
+
+	Avoid temporary string creation - thanks to Claudio
+
 2009-04-07 14:48  robocop
 
 	* firebird2/src/jrd/SysFunction.cpp (1.66):
