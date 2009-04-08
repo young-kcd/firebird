@@ -228,6 +228,7 @@
 +e isc_print_status
 +e isc_sqlcode
 +e isc_sql_interprete
++e fb_sqlstate
 # Event functions
 +e isc_cancel_events
 +e isc_event_block
@@ -253,6 +254,7 @@
 +e isc_start_multiple
 +e isc_start_transaction
 +e isc_transaction_info
++e fb_disconnect_transaction
 # Other functions
 +e isc_compile_request
 +e isc_compile_request2
@@ -268,6 +270,7 @@
 +e isc_start_request
 +e isc_transact_request
 +e isc_unwind_request
++e fb_cancel_operation
 # Other SQL functions
 +e isc_close
 +e isc_declare
@@ -290,6 +293,9 @@
 +e BLOB_text_dump
 +e BLOB_text_load
 +e Bopen
+# Server shutdown support
++e fb_shutdown
++e fb_shutdown_callback
 # Other misc functions
 +e isc_ftof
 +e isc_free
