@@ -31,9 +31,9 @@
 
 #include "fb_types.h"
 #include "../common/classes/fb_string.h"
-
 #include "../jrd/os/config_root.h"
 #include "../jrd/os/path_utils.h"
+#include "../../extern/binreloc/binreloc.h"
 
 typedef Firebird::PathName string;
 
@@ -76,7 +76,7 @@ void ConfigRoot::osConfigRoot()
 #endif
 
     // As a last resort get it from the default install directory
-    root_dir = string(FB_PREFIX) + PathUtils::dir_sep;
+	root_dir = install_dir + PathUtils::dir_sep;
 }
 
 
@@ -89,6 +89,14 @@ void ConfigRoot::osConfigInstallDir()
 	{
         return;
     }
+#elif defined(ENABLE_BINRELOC)
+	BrInitError brError;
+	if (br_init_lib(&brError))
+	{
+		string temp;
+		PathUtils::splitLastComponent(install_dir, temp, br_find_exe_dir(FB_PREFIX));
+		return;
+	}
 #endif
 
     // As a last resort get it from the default install directory

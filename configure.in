@@ -19,6 +19,7 @@ dnl XE_PREPEND(value, varname)
 define([XE_PREPEND],[[$2]="[$1] $[$2]"])
 
 sinclude(acx_pthread.m4)
+sinclude(binreloc.m4)
 
 dnl ############################# ADD TESTS BELOW ##############################
 
@@ -303,6 +304,8 @@ esac
 if test "$INSTALL_PREFIX" = ""; then
   INSTALL_PREFIX=$MAKEFILE_PREFIX
 fi
+
+AM_BINRELOC
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
@@ -959,6 +962,7 @@ mkdir -p temp/boot/utilities/ntrace/os/posix
 mkdir -p temp/boot/utilities/ntrace/os/win32
 mkdir -p temp/boot/vulcan
 
+mkdir -p temp/extern/binreloc
 mkdir -p temp/std/alice
 mkdir -p temp/std/auth/trusted
 mkdir -p temp/std/burp
