@@ -200,26 +200,13 @@ void ConfigFile::checkLoadConfig()
  *	Load file immediately
  */
 
-namespace {
-	class FileClose
-	{
-	public:
-		static void clear(FILE *f)
-		{
-			if (f) {
-				fclose(f);
-			}
-		}
-	};
-} // namespace
-
 void ConfigFile::loadConfig()
 {
 	isLoadedFlg = true;
 
 	parameters.clear();
 
-	Firebird::AutoPtr<FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
+	Firebird::AutoPtr<FILE, Firebird::FileClose> ifile(fopen(configFile.c_str(), "rt"));
 
 #ifdef EXCEPTION_ON_NO_CONF
 	int BadLinesCount = 0;

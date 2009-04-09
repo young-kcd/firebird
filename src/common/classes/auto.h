@@ -31,6 +31,8 @@
 #ifndef CLASSES_AUTO_PTR_H
 #define CLASSES_AUTO_PTR_H
 
+#include <stdio.h>
+
 namespace Firebird {
 
 
@@ -167,6 +169,19 @@ private:
 	T2* pointer;
 	Setter setter;
 	T oldValue;
+};
+
+
+// One more typical class for AutoPtr cleanup
+class FileClose
+{
+public:
+	static void clear(FILE *f)
+	{
+		if (f) {
+			fclose(f);
+		}
+	}
 };
 
 
