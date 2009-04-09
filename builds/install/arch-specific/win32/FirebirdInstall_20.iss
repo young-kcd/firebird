@@ -466,7 +466,7 @@ Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponen
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
 Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf.default; Components: ServerComponent;  check: fbtraceConfExists;
-Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: fbtraceConfExists;
+Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: NofbtraceConfExists;
 Source: {#FilesDir}\aliases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\security2.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
