@@ -970,18 +970,21 @@ int openCreateFile(const char* pathname, int flags)
 	do {
 		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
-
+		
 	if (fd >= 0)
 	{
-#ifndef SUPERSERVER
+#ifdef SUPERSERVER
+		const mode_t mode = 0600;
+#else // SUPERSERVER
 		const char* const FIREBIRD = "firebird";
 		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
 		gid_t gid = get_user_group_id(FIREBIRD);
+
 		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
 			;
-#endif //SUPERSERVER
 
 		const mode_t mode = 0660;
+#endif //SUPERSERVER
 		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
 			;
 	}

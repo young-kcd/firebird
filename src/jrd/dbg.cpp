@@ -91,9 +91,9 @@ static SLONG trans_pool_mem;
 static SLONG other_pool_mem;
 
 static void go_column(int);
-static void prt_dsc(const DSC*, int);
-static int prt_fields(const SCHAR*, const int*);
-static int prt_que(const SCHAR*, const que*);
+static void prt_dsc(DSC *, int);
+static int prt_fields(SCHAR *, int *);
+static int prt_que(SCHAR *, que*);
 static int rsb_pretty(const RecordSource*, int);
 
 /* Pick up node names */
@@ -418,6 +418,7 @@ int DBG_block(BLK block)
  *	Print a formatted block
  *
  **************************************/
+	int *fields;
 	int i;
 	SCHAR s[10], string[100], *p;
 	DSC *desc;
@@ -439,15 +440,18 @@ int DBG_block(BLK block)
 	*/
 
 	if (!block->blk_length) {
-		fprintf(dbg_file, "%X\t*** BAD BLOCK LENGTH (%d) ***\n", block, block->blk_length);
+		fprintf(dbg_file, "%X\t*** BAD BLOCK LENGTH (%d) ***\n", block,
+				   block->blk_length);
 		return FALSE;
 	}
 
-	const int* fields = dbt_blocks[block->blk_type];
-	fprintf(dbg_file, "\n%X\t%s (%d)", block, *fields++, block->blk_length);
+	fields = dbt_blocks[block->blk_type];
+	fprintf(dbg_file, "\n%X\t%s (%d)", block, *fields++,
+			   block->blk_length);
 	/*
 	if (block->blk_type == (SCHAR) type_nod)
-		fprintf(dbg_file, " -- %s", node_names[(int) ((jrd_nod*) block)->nod_type]);
+		fprintf(dbg_file, " -- %s",
+				   node_names[(int) ((jrd_nod*) block)->nod_type]);
 	*/
 
 	prt_fields(reinterpret_cast<char*>(block), fields);
@@ -1108,7 +1112,7 @@ static void go_column(int column)
 }
 
 
-static void prt_dsc(const DSC* desc, int column)
+static void prt_dsc(DSC * desc, int column)
 {
 /**************************************
  *
@@ -1127,7 +1131,7 @@ static void prt_dsc(const DSC* desc, int column)
 }
 
 
-static int prt_fields(const SCHAR* block, const int* fields)
+static int prt_fields(SCHAR * block, int *fields)
 {
 /**************************************
  *
@@ -1139,16 +1143,15 @@ static int prt_fields(const SCHAR* block, const int* fields)
  *	Print structured block.
  *
  **************************************/
-	const TEXT* string;
-	TEXT s[80];
+	int length, offset;
+	TEXT *string, *ptr, *p, s[80];
 
 	int column = 99;
 
-	while ( (string = (TEXT*) *fields++) )
-	{
-		const int offset = *fields++;
-		int length = *fields++;
-		const TEXT* ptr = (SCHAR*) block + offset;
+	while ( (string = (TEXT *) * fields++) ) {
+		offset = *fields++;
+		length = *fields++;
+		ptr = (SCHAR *) block + offset;
 		switch (length)
 		{
 		case 0:
@@ -1157,15 +1160,14 @@ static int prt_fields(const SCHAR* block, const int* fields)
 			break;
 
 		case 2:
-			sprintf(s, string, *(SSHORT*) ptr);
+			sprintf(s, string, *(SSHORT *) ptr);
 			break;
 
 		case 4:
-			sprintf(s, string, *(SLONG*) ptr);
+			sprintf(s, string, *(SLONG *) ptr);
 			break;
 		}
-		length = 0;
-		for (const TEXT* p = s; *p++;)
+		for (p = s, length = 0; *p++;)
 			length++;
 		if ((column += length + 1) >= 60) {
 			fprintf(dbg_file, "\n\t");
@@ -1179,7 +1181,7 @@ static int prt_fields(const SCHAR* block, const int* fields)
 }
 
 
-static int prt_que(const SCHAR* string, const que* que_inst)
+static int prt_que(SCHAR * string, QUE que_inst)
 {
 /**************************************
  *

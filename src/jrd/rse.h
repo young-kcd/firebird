@@ -144,7 +144,7 @@ const int RSB_LEFT_count			= 4;
 
 // Merge (equivalence) file block
 
-struct merge_file
+struct merge_file 
 {
 	TempSpace*	mfb_space;				// merge file uses SORT I/O routines
 	ULONG mfb_equal_records;			// equality group cardinality
@@ -473,6 +473,8 @@ enum rse_get_mode
 	RSE_get_next
 #endif
 };
+
+typedef rse_get_mode RSE_GET_MODE;
 
 } //namespace Jrd
 

@@ -133,7 +133,6 @@ SSHORT LOCK_debug_level = 0;
 // It's LONG.
 
 const SRQ_PTR DUMMY_OWNER = -1;
-const SRQ_PTR CREATE_OWNER = -2;
 
 const SLONG HASH_MIN_SLOTS	= 101;
 const SLONG HASH_MAX_SLOTS	= 65521;
@@ -184,7 +183,6 @@ LockManager* LockManager::create(const Firebird::string& id)
 LockManager::LockManager(const Firebird::string& id)
 	: PID(getpid()),
 	  m_bugcheck(false),
-	  m_sharedFileCreated(false),
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
@@ -192,11 +190,20 @@ LockManager::LockManager(const Firebird::string& id)
 	  m_acquireSpins(Config::getLockAcquireSpins()),
 	  m_memorySize(Config::getLockMemSize())
 {
+	Firebird::string name;
+	name.printf(LOCK_FILE, m_dbId.c_str());
+
 	ISC_STATUS_ARRAY local_status;
-	if (!attach_shared_file(local_status))
+	if (!(m_header = (lhb*) ISC_map_file(local_status,
+										 name.c_str(),
+										 initialize, this,
+										 m_memorySize,
+										 &m_shmem)))
 	{
 		Firebird::status_exception::raise(local_status);
 	}
+
+	fb_assert(m_header->lhb_version == LHB_VERSION);
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -234,21 +241,19 @@ LockManager::~LockManager()
 #endif
 	}
 
-	acquire_shmem(DUMMY_OWNER);
 	if (process_offset)
 	{
+		acquire_shmem(DUMMY_OWNER);
 		prc* const process = (prc*) SRQ_ABS_PTR(process_offset);
 		purge_process(process);
+		release_mutex();
 	}
-	if (m_header && SRQ_EMPTY(m_header->lhb_processes))
-	{
-		Firebird::PathName name;
-		get_shared_file_name(name);
-		ISC_remove_map_file(name.c_str());
-	}
-	release_mutex();
 
-	detach_shared_file(local_status);
+	if (m_header)
+	{
+		ISC_mutex_fini(MUTEX);
+		ISC_unmap_file(local_status, &m_shmem);
+	}
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -256,41 +261,6 @@ LockManager::~LockManager()
 	{
 		fb_assert(false);
 	}
-}
-
-
-bool LockManager::attach_shared_file(ISC_STATUS* status)
-{
-	Firebird::PathName name;
-	get_shared_file_name(name);
-
-	if (!(m_header = (lhb*) ISC_map_file(status,
-										 name.c_str(),
-										 initialize, this,
-										 m_memorySize,
-										 &m_shmem)))
-	{
-		return false;
-	}
-
-	fb_assert(m_header->lhb_version == LHB_VERSION);
-	return true;
-}
-
-
-void LockManager::detach_shared_file(ISC_STATUS* status)
-{
-	if (m_header)
-	{
-		ISC_mutex_fini(MUTEX);
-		ISC_unmap_file(status, &m_shmem);
-	}
-}
-
-
-void LockManager::get_shared_file_name(Firebird::PathName& name)
-{
-	name.printf(LOCK_FILE, m_dbId.c_str());
 }
 
 
@@ -1055,47 +1025,12 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 	if (status != FB_SUCCESS) {
 		if (ISC_mutex_lock(MUTEX)) {
-			bug(NULL, "ISC_mutex_lock failed (acquire_shmem)");
+			bug(NULL, "semop failed (acquire_shmem)");
 		}
 	}
-
-	// Check for shared memory state consistency
-
-	while (SRQ_EMPTY(m_header->lhb_processes)) {
-		fb_assert(owner_offset == CREATE_OWNER);
-		owner_offset = DUMMY_OWNER;
-
-		if (! m_sharedFileCreated) {
-			ISC_STATUS_ARRAY local_status;
-
-			// Someone is going to delete shared file? Reattach.
-			ISC_mutex_unlock(MUTEX);
-			detach_shared_file(local_status);
-
-			THD_yield();
-
-			if (!attach_shared_file(local_status)) {
-				bug(local_status, "ISC_map_file failed (reattach shared file)");
-			}
-			if (ISC_mutex_lock(MUTEX)) {
-				bug(NULL, "ISC_mutex_lock failed (acquire_shmem)");
-			}
-		}
-		else {
-			// complete initialization
-			m_sharedFileCreated = false;
-
-			// no sense thinking about statistics now
-			prior_active = 0;
-
-			break;
-		}
-	}
-	fb_assert(!m_sharedFileCreated);
-
 
 	++m_header->lhb_acquires;
-	if (prior_active > 0) {
+	if (prior_active) {
 		++m_header->lhb_acquire_blocks;
 	}
 
@@ -1586,7 +1521,7 @@ bool LockManager::create_owner(ISC_STATUS* status_vector,
 		return false;
 	}
 
-	acquire_shmem(CREATE_OWNER);	// acquiring owner is being created
+	acquire_shmem(DUMMY_OWNER);	// acquiring owner is being created
 
 	// Allocate a process block, if required
 
@@ -2225,7 +2160,7 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 }
 
 
-void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
+void LockManager::initialize(SH_MEM shmem_data, bool initialize)
 {
 /**************************************
  *
@@ -2245,9 +2180,8 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 #endif
 
 	m_header = (lhb*) shmem_data->sh_mem_address;
-	m_sharedFileCreated = initializeMemory;
 
-	if (!initializeMemory) {
+	if (!initialize) {
 		return;
 	}
 

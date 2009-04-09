@@ -421,7 +421,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				char_sets[0] = '\0';
 				collation = RFR.RDB$COLLATION_ID;
 				char_set_id = FLD.RDB$CHARACTER_SET_ID;
-				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, false, char_sets);
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, char_sets);
 				if (char_sets[0])
 					isqlGlob.prints(char_sets);
 			}
@@ -539,7 +539,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				if (!FLD.RDB$CHARACTER_SET_ID.NULL)
 					char_set_id = FLD.RDB$CHARACTER_SET_ID;
 				if ((char_set_id != default_char_set_id) || collation)
-					ISQL_get_character_sets (char_set_id, 0, false, false, char_sets);
+					ISQL_get_character_sets (char_set_id, 0, false, char_sets);
 				if (char_sets[0])
 					isqlGlob.prints(char_sets);
 				// CVC: Someone deleted the code that checks intchar when handling collations
@@ -598,7 +598,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		if (collation)
 		{
 			char_sets[0] = '\0';
-			ISQL_get_character_sets (char_set_id, collation, true, false, char_sets);
+			ISQL_get_character_sets (char_set_id, collation, true, char_sets);
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -722,7 +722,7 @@ static void get_procedure_args(const char* proc_name)
  *	extract file
  *
  **************************************/
-	SCHAR char_sets[95];
+	SCHAR char_sets[86];
 
 // query to retrieve the parameters.
 
@@ -862,13 +862,10 @@ static void get_procedure_args(const char* proc_name)
 					!prm_collation_id_null && prm_collation_id)
 				{
 					char_sets[0] = '\0';
-					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true,
-						!prm_null_flag_null && prm_null_flag, char_sets);
+					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
-				else if (!prm_null_flag_null && prm_null_flag)
-					isqlGlob.printf(" NOT NULL");
 
 				if (ptype == 0) // input, try to extract default and make Vlad happy.
 				{
@@ -976,13 +973,10 @@ static void get_procedure_args(const char* proc_name)
 					if (FLD.RDB$CHARACTER_SET_ID.NULL)
 						FLD.RDB$CHARACTER_SET_ID = 0;
 
-					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, false,
-						!prm_null_flag_null && prm_null_flag, char_sets);
+					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, false, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
-				else if (!prm_null_flag_null && prm_null_flag)
-					isqlGlob.printf(" NOT NULL");
 
 				if (ptype == 0) // input, try to extract default and make Vlad happy.
 				{
@@ -998,6 +992,9 @@ static void get_procedure_args(const char* proc_name)
 					}
 				}
 			}
+
+			if (!prm_null_flag_null && prm_null_flag)
+				isqlGlob.printf(" NOT NULL");
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(gds_status);
@@ -1732,7 +1729,7 @@ static void list_create_db()
 		strcpy(isqlGlob.global_Target_db, isqlGlob.global_Db_name);
 		nodb = true;
 	}
-	isqlGlob.printf("CREATE DATABASE '%s' ", isqlGlob.global_Target_db);
+	isqlGlob.printf("CREATE DATABASE '%s'", isqlGlob.global_Target_db);
 
 	// Get the page size from db_info call
 	SCHAR info_buf[20];
@@ -1740,15 +1737,15 @@ static void list_create_db()
 	// no longer exists. Localizing the messages means also not printing
 	// any CRLF and therefore the output looks ugly.
 	const bool translate = true;
-	if (SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items), translate, " "))
+	if (!SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items), translate))
 	{
-		isqlGlob.printf("%s", info_buf);
+		isqlGlob.printf(" %s", info_buf);
 	}
 
 	FOR DBP IN RDB$DATABASE
 		WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
 		AND DBP.RDB$CHARACTER_SET_NAME != " ";
-		isqlGlob.printf("DEFAULT CHARACTER SET %s",
+		isqlGlob.printf(" DEFAULT CHARACTER SET %s",
 			fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
 	END_FOR
 	ON_ERROR
@@ -1994,7 +1991,7 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 			if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
 				(!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
 			{
-				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, false, char_sets);
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
 			}
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
@@ -2027,7 +2024,7 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 		if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
 			char_sets[0] = 0;
-			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, false, char_sets);
+			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, char_sets);
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -2175,7 +2172,7 @@ static void list_domains(SSHORT default_char_set_id)
 			if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
 				(!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
 			{
-				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, false, char_sets);
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, char_sets);
 			}
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
@@ -2208,7 +2205,7 @@ static void list_domains(SSHORT default_char_set_id)
 		if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
 			char_sets[0] = 0;
-			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, false, char_sets);
+			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, char_sets);
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}

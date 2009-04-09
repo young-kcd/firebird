@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="fbtrace"
 	ProjectGUID="{53F75437-15B8-4A5C-86BF-E238CC68FCBC}"
 	>
@@ -55,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -127,7 +127,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -197,7 +197,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -271,7 +271,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="icuuc.lib"
 				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
@@ -371,10 +371,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath="..\..\..\src\jrd\version.rc"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Other files"
@@ -401,10 +397,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc_file.cpp"
 				>
 			</File>
 			<File

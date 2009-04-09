@@ -98,10 +98,22 @@ EventManager::EventManager(const Firebird::string& id)
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
-	  m_dbId(getPool(), id),
-	  m_sharedFileCreated(false)
+	  m_dbId(getPool(), id)
 {
-	attach_shared_file();
+	Firebird::string name;
+	name.printf(EVENT_FILE, m_dbId.c_str());
+
+	ISC_STATUS_ARRAY local_status;
+	if (!(m_header = (evh*) ISC_map_file(local_status,
+										 name.c_str(),
+										 init_shmem, this,
+										 Config::getEventMemSize(),
+										 &m_shmemData)))
+	{
+		Firebird::status_exception::raise(local_status);
+	}
+
+	fb_assert(m_header->evh_version == EVENT_VERSION);
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -133,20 +145,18 @@ EventManager::~EventManager()
 #endif
 	}
 
-	acquire_shmem();
 	if (process_offset)
 	{
+		acquire_shmem();
 		delete_process(process_offset);
+		release_shmem();
 	}
-	if (m_header && SRQ_EMPTY(m_header->evh_processes))
-	{
-		Firebird::PathName name;
-		get_shared_file_name(name);
-		ISC_remove_map_file(name.c_str());
-	}
-	release_shmem();
 
-	detach_shared_file();
+	if (m_header)
+	{
+		ISC_mutex_fini(MUTEX);
+		ISC_unmap_file(local_status, &m_shmemData);
+	}
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
@@ -154,42 +164,6 @@ EventManager::~EventManager()
 	{
 		fb_assert(false);
 	}
-}
-
-
-void EventManager::attach_shared_file()
-{
-	Firebird::PathName name;
-	get_shared_file_name(name);
-
-	ISC_STATUS_ARRAY local_status;
-	if (!(m_header = (evh*) ISC_map_file(local_status,
-										 name.c_str(),
-										 init_shmem, this,
-										 Config::getEventMemSize(),
-										 &m_shmemData)))
-	{
-		Firebird::status_exception::raise(local_status);
-	}
-
-	fb_assert(m_header->evh_version == EVENT_VERSION);
-}
-
-
-void EventManager::detach_shared_file()
-{
-	ISC_STATUS_ARRAY local_status;
-	if (m_header)
-	{
-		ISC_mutex_fini(MUTEX);
-		ISC_unmap_file(local_status, &m_shmemData);
-	}
-}
-
-
-void EventManager::get_shared_file_name(Firebird::PathName& name)
-{
-	name.printf(EVENT_FILE, m_dbId.c_str());
 }
 
 
@@ -508,31 +482,6 @@ evh* EventManager::acquire_shmem()
 	int mutex_state;
 	if (mutex_state = ISC_mutex_lock(MUTEX))
 		mutex_bugcheck("mutex lock", mutex_state);
-
-	// Check for shared memory state consistency
-
-	while (SRQ_EMPTY(m_header->evh_processes)) {
-		if (! m_sharedFileCreated) {
-			// Someone is going to delete shared file? Reattach.
-			ISC_mutex_unlock(MUTEX);
-			detach_shared_file();
-
-			THD_yield();
-
-			attach_shared_file();
-			if (ISC_mutex_lock(MUTEX)) {
-				mutex_bugcheck("mutex lock", mutex_state);
-			}
-		}
-		else {
-			// complete initialization
-			m_sharedFileCreated = false;
-
-			break;
-		}
-	}
-	fb_assert(!m_sharedFileCreated);
-
 
 	m_header->evh_current_process = m_processOffset;
 
@@ -1090,7 +1039,7 @@ void EventManager::free_global(frb* block)
 		block->frb_next = free->frb_next;
 	}
 
-	// Next, try to merge the free block with the prior block
+	// Next, try to merge the free block with the prior block 
 
 	if (prior && (SCHAR *) prior + prior->frb_header.hdr_length ==	(SCHAR *) block)
 	{
@@ -1125,7 +1074,7 @@ req_int* EventManager::historical_interest(ses* session, SRQ_PTR event_offset)
 }
 
 
-void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
+void EventManager::init_shmem(SH_MEM shmem_data, bool initialize)
 {
 /**************************************
  *
@@ -1143,8 +1092,6 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
 	if ( (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
-
-	m_sharedFileCreated = initialize;
 
 	if (!initialize)
 		return;

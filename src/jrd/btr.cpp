@@ -170,12 +170,14 @@ enum contents {
 	contents_above_threshold
 };
 
+typedef contents CONTENTS;
+
 static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*,
 					  SLONG*, SLONG*);
 static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, USHORT);
 static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
-static contents delete_node(thread_db*, WIN*, UCHAR*);
+static CONTENTS delete_node(thread_db*, WIN*, UCHAR*);
 static void delete_tree(thread_db*, USHORT, USHORT, PageNumber, PageNumber);
 static DSC *eval(thread_db*, jrd_nod*, DSC*, bool*);
 static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, sort_context*, SelectivityList&);
@@ -190,7 +192,7 @@ static UCHAR* find_area_start_point(btree_page*, const temporary_key*, UCHAR *,
 static SLONG find_page(btree_page*, const temporary_key*, UCHAR, RecordNumber = NO_VALUE,
 					   bool = false);
 
-static contents garbage_collect(thread_db*, WIN*, SLONG);
+static CONTENTS garbage_collect(thread_db*, WIN*, SLONG);
 static void generate_jump_nodes(thread_db*, btree_page*, jumpNodeList*, USHORT,
 								USHORT*, USHORT*, USHORT*);
 
@@ -201,8 +203,8 @@ static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
 static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 #endif
-static contents remove_node(thread_db*, index_insertion*, WIN*);
-static contents remove_leaf_node(thread_db*, index_insertion*, WIN*);
+static CONTENTS remove_node(thread_db*, index_insertion*, WIN*);
+static CONTENTS remove_leaf_node(thread_db*, index_insertion*, WIN*);
 static bool scan(thread_db*, UCHAR*, RecordBitmap**, RecordBitmap*, index_desc*,
 				 IndexRetrieval*, USHORT, temporary_key*, const SCHAR,
 				 bool&, const temporary_key&);
@@ -826,7 +828,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		copy_key(retrieval->irb_key, upper);
 	}
 	else {
-		idx_e errorCode = idx_e_ok;
+		IDX_E errorCode = idx_e_ok;
 
 		if (retrieval->irb_upper_count) {
 			errorCode = BTR_make_key(tdbb, retrieval->irb_upper_count,
@@ -1105,7 +1107,7 @@ void BTR_insert(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 }
 
 
-idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
+IDX_E BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* idx,
 			  temporary_key* key, idx_null_state* null_state, bool fuzzy)
 {
 /**************************************
@@ -1133,7 +1135,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	idx_e result = idx_e_ok;
+	IDX_E result = idx_e_ok;
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
@@ -1488,7 +1490,7 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 }
 
 
-idx_e BTR_make_key(thread_db* tdbb,
+IDX_E BTR_make_key(thread_db* tdbb,
 				   USHORT count,
 				   jrd_nod** exprs,
 				   index_desc* idx,
@@ -1519,7 +1521,7 @@ idx_e BTR_make_key(thread_db* tdbb,
 	fb_assert(exprs != NULL);
 	fb_assert(key != NULL);
 
-	idx_e result = idx_e_ok;
+	IDX_E result = idx_e_ok;
 
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
@@ -1784,7 +1786,7 @@ void BTR_remove(thread_db* tdbb, WIN * root_window, index_insertion* insertion)
 	}
 
 	// remove the node from the index tree via recursive descent
-	contents result = remove_node(tdbb, insertion, &window);
+	CONTENTS result = remove_node(tdbb, insertion, &window);
 
 	// if the root page points at only one lower page, remove this
 	// level to prevent the tree from being deeper than necessary--
@@ -2832,7 +2834,7 @@ static void copy_key(const temporary_key* in, temporary_key* out)
 }
 
 
-static contents delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
+static CONTENTS delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 {
 /**************************************
  *
@@ -2919,17 +2921,17 @@ static contents delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 		// remove jump nodes pointing to the deleted node or node
 		// next to the deleted one.
 		jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
-		jumpNodeList* jumpNodes = &tmpJumpNodes;
+		jumpNodeList* jumpNodes = &tmpJumpNodes; 
 
 		IndexJumpInfo jumpInfo;
 		pointer = BTreeNode::getPointerFirstNode(page, &jumpInfo);
 
-		// We are going to rebuild jump nodes. In the end of this process we will either have
-		// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset
-		// by its definition is a good upper estimate for summary size of all existing
+		// We are going to rebuild jump nodes. In the end of this process we will either have 
+		// the same jump nodes as before or one jump node less. jumpInfo.firstNodeOffset 
+		// by its definition is a good upper estimate for summary size of all existing 
 		// jump nodes data length's.
-		// After rebuild jump node next after removed one may have new length longer than
-		// before rebuild but no longer than length of removed node. All other nodes didn't
+		// After rebuild jump node next after removed one may have new length longer than 
+		// before rebuild but no longer than length of removed node. All other nodes didn't 
 		// change its lengths. Therefore jumpInfo.firstNodeOffset is valid upper estimate
 		// for summary size of all new jump nodes data length's too.
 		tempData = tempBuf.getBuffer(jumpInfo.firstNodeOffset);
@@ -2967,7 +2969,7 @@ static contents delete_node(thread_db* tdbb, WIN *window, UCHAR *pointer)
 					if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
-					newJumpNode.data = tempData;
+					newJumpNode.data = tempData; 
 					tempData += newJumpNode.length;
 					fb_assert(tempData < tempEnd);
 					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
@@ -4724,7 +4726,7 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 }
 
 
-static contents garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_number)
+static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_number)
 {
 /**************************************
  *
@@ -4750,7 +4752,7 @@ static contents garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 
 	const USHORT pageSpaceID = window->win_page.getPageSpaceID();
 	btree_page* gc_page = (btree_page*) window->win_buffer;
-	contents result = contents_above_threshold;
+	CONTENTS result = contents_above_threshold;
 
 	// check to see if the page was marked not to be garbage collected
 	if ( !BtrPageGCLock::isPageGCAllowed(tdbb, window->win_page) ) {
@@ -6173,7 +6175,7 @@ static void print_int64_key(SINT64 value, SSHORT scale, INT64_KEY key)
 #endif /* DEBUG_INDEXKEY */
 
 
-static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* window)
+static CONTENTS remove_node(thread_db* tdbb, index_insertion* insertion, WIN* window)
 {
 /**************************************
  *
@@ -6222,7 +6224,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 			// if the removed node caused the page to go below the garbage collection
 			// threshold, and the database was created by a version of the engine greater
 			// than 8.2, then we can garbage-collect the page
-			const contents result = remove_node(tdbb, insertion, window);
+			const CONTENTS result = remove_node(tdbb, insertion, window);
 
 			if ((result != contents_above_threshold) && (dbb->dbb_ods_version >= ODS_VERSION9))
 			{
@@ -6244,7 +6246,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 }
 
 
-static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WIN* window)
+static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WIN* window)
 {
 /**************************************
  *

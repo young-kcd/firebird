@@ -89,8 +89,8 @@ const int FAC_SQL_POSITIVE	= 14;	// facility for positive SQL codes
 const int FAC_SQL_NEGATIVE	= 13;	// ditto for negative codes
 
 const int gds_facility_local	= 20;
-const int gds_base_local		= gds_facility_local << 24;
-const int gds_factor_local		= 1;
+const SLONG gds_base_local		= (SLONG) gds_facility_local << 24;
+const SLONG gds_factor_local	= 1;
 
 
 static const char *license[] = {
@@ -681,9 +681,7 @@ static void build_other_headers()
 *	files.
 *
 *********************************************/
-
-	// TEXT is varchar(118) but we need to double quotes and add \ after hardcoded newline for msgs.h
-	SCHAR text[512];
+	SCHAR text[256];
 	int i;
 	unsigned long new_code = 0L;
 
@@ -722,8 +720,8 @@ static void build_other_headers()
 	fprintf(pas_codes, "\n"
 		"const\n"
 		"\tgds_facility\t\t= %d;\n"
-		"\tgds_err_base\t\t= %d;\n"
-		"\tgds_err_factor\t\t= %d;\n",
+		"\tgds_err_base\t\t= %ld;\n"
+		"\tgds_err_factor\t\t= %ld;\n",
 		gds_facility_local, gds_base_local, gds_factor_local);
 
 	int numLines = FB_NELEM(pas_boiler_plate);
@@ -747,8 +745,8 @@ static void build_other_headers()
 	fprintf(ftn_codes, "\n"
 		"      PARAMETER (\n"
 		"     + GDS_FACILITY    = %d,\n"
-		"     + GDS_ERR_BASE    = %d,\n"
-		"     + GDS_ERR_FACTOR  = %d)\n",
+		"     + GDS_ERR_BASE    = %ld,\n"
+		"     + GDS_ERR_FACTOR  = %ld)\n",
 		gds_facility_local, gds_base_local, gds_factor_local);
 
 	numLines = FB_NELEM(ftn_boiler_plate_data);
@@ -809,29 +807,16 @@ static void build_other_headers()
 				   S.GDS_SYMBOL, S.GDS_SYMBOL, new_code);
 
 		SCHAR* q = text;
-		const SCHAR* const end = q + sizeof(text) - 1;
-		SCHAR* last = q;
+		SCHAR* end = q;
 		for (const SCHAR* p = N.TEXT; *p && p < N.TEXT + sizeof(N.TEXT); p++)
 		{
-			switch (*p)
-			{
-			case '"': // Double the quotes
-			case '\n': // We need a backslash to continue string literals in another line in C++
-				if (q + 2 <= end)
-				{
-					*q++ = '\\';
-					*q++ = *p;
-				}
-				break;
-			default:
-				if (q + 1 <= end)
-					*q++ = *p;
-			}
-
+			if (*p == '"')
+				*q++ = '\\';
+			*q++ = *p;
 			if (*p != ' ')
-				last = q;
+				end = q;
 		}
-		*last = 0;
+		*end = 0;
 
 		q = S.GDS_SYMBOL;
 		while (*q && *q != ' ' && q < S.GDS_SYMBOL + sizeof(S.GDS_SYMBOL) - 1)

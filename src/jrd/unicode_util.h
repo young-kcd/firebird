@@ -30,6 +30,8 @@
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/os/mod_loader.h"
+//#include "unicode/ucol.h"
+//#include "unicode/ucnv.h"
 
 struct UCollator;
 struct USet;
@@ -42,18 +44,15 @@ private:
 	struct ICU;
 
 public:
-	static const char* const DEFAULT_ICU_VERSION;
-
-public:
 	class ICUModules;
 	// routines semantically equivalent with intlobj_new.h
 
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1
 	static USHORT utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
 							 USHORT key_type);	// BOCU-1
-	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
+	static ULONG utf16LowerCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
 								const ULONG* exceptions);
-	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
+	static ULONG utf16UpperCase(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
 								const ULONG* exceptions);
 	static ULONG utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UCHAR* dst,
 							 USHORT* err_code, ULONG* err_position);

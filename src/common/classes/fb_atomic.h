@@ -205,60 +205,6 @@ private:
 
 } // namespace Firebird
 
-#elif defined(SOLARIS)
-
-#include <atomic.h>
-
-namespace Firebird {
-
-// Solaris version - uses Solaris atomic_ops
-class AtomicCounter
-{
-public:
-	typedef uint_t counter_type;
-
-	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
-	~AtomicCounter() {}
-
-	counter_type exchangeAdd(counter_type value)
-	{
-		return atomic_add_int_nv(&counter, value);
-	}
-
-	counter_type operator +=(counter_type value)
-	{
-		return exchangeAdd(value) + value;
-	}
-
-	counter_type operator -=(counter_type value)
-	{
-		return exchangeAdd(-value) - value;
-	}
-
-	counter_type operator ++()
-	{
-		return exchangeAdd(1) + 1;
-	}
-
-	counter_type operator --()
-	{
-		return exchangeAdd(-1) - 1;
-	}
-
-	counter_type value() const { return counter; }
-
-	counter_type setValue(counter_type val)
-	{
-		return atomic_swap_uint(&counter, val);
-	}
-
-private:
-	counter_type counter;
-};
-
-} // namespace Firebird
-
-
 #else
 
 #error AtomicCounter: implement appropriate code for your platform!

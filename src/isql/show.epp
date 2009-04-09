@@ -299,8 +299,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 						 SCHAR* info_buf,
 						 const SCHAR* db_itemsL,
 						 USHORT item_length,
-						 bool translate,
-						 const char* separator)
+						 bool translate)
 {
 /**************************************
  *
@@ -349,72 +348,72 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 
 		case isc_info_page_size:
 			value_out = isc_vax_integer(d, length);
-			sprintf(info, "PAGE_SIZE %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "PAGE_SIZE %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_db_size_in_pages:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
 				ISQL_msg_get(NUMBER_PAGES, msg, SafeArg() << value_out);
-				sprintf(info, "%s%s", msg, separator);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_sweep_interval:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
 				ISQL_msg_get(SWEEP_INTERV, msg, SafeArg() << value_out);
-				sprintf(info, "%s%s", msg, separator);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Sweep interval = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Sweep interval = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_forced_writes:
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Forced Writes are %s%s", (value_out == 1 ? "ON" : "OFF"), separator);
+			sprintf (info, "Forced Writes are %s %s", (value_out == 1 ? "ON" : "OFF"), NEWLINE);
 			break;
 
 		case isc_info_oldest_transaction :
 			value_out = isc_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "Transaction - oldest = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_oldest_active :
 			value_out = isc_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest active = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "Transaction - oldest active = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_oldest_snapshot :
 			value_out = isc_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest snapshot = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "Transaction - oldest snapshot = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_next_transaction :
 			value_out = isc_vax_integer (d, length);
-			sprintf (info, "Transaction - Next = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf (info, "Transaction - Next = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_base_level:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
 				ISQL_msg_get(BASE_LEVEL, msg, SafeArg() << value_out);
-				sprintf(info, "%s%s", msg, separator);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Base level = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Base level = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_limbo:
 			value_out = isc_vax_integer(d, length);
 			if (translate) {
 				ISQL_msg_get(LIMBO, msg, SafeArg() << value_out);
-				sprintf(info, "%s%s", msg, separator);
+				sprintf(info, "%s%s", msg, NEWLINE);
 			}
 			else
-				sprintf(info, "Transaction in limbo = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Transaction in limbo = %"SLONGFORMAT" %s", value_out, NEWLINE);
 			break;
 
 		case isc_info_ods_version:
@@ -423,7 +422,7 @@ bool SHOW_dbb_parameters(FB_API_HANDLE db_handle,
 		case isc_info_ods_minor_version:
 			value_out = isc_vax_integer(d, length);
 			sprintf(info, "ODS = %"SLONGFORMAT".%"SLONGFORMAT"%s",
-					(SLONG) isqlGlob.major_ods, value_out, separator);
+					(SLONG) isqlGlob.major_ods, value_out, NEWLINE);
 			break;
 
 #ifdef DEV_BUILD
@@ -1842,11 +1841,11 @@ static void show_charsets(
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation) {
 		if (show_charset && !show_collation)
-			ISQL_get_character_sets(char_set_id, 0, false, false, char_sets);
+			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
 		else if (!show_charset && show_collation)
-			ISQL_get_character_sets(char_set_id, collation, true, false, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, true, char_sets);
 		else
-			ISQL_get_character_sets(char_set_id, collation, false, false, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
 	}
 	if (char_sets[0]) {
 		if (doIndent)
@@ -1948,11 +1947,11 @@ static void show_proc_charsets(
 	if ((char_set_id != default_char_set_id) || collation)
 	{
 		if (show_charset && !show_collation)
-			ISQL_get_character_sets(char_set_id, 0, false, false, char_sets);
+			ISQL_get_character_sets(char_set_id, 0, false, char_sets);
 		else if (!show_charset && show_collation)
-			ISQL_get_character_sets(char_set_id, collation, true, false, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, true, char_sets);
 		else
-			ISQL_get_character_sets(char_set_id, collation, false, false, char_sets);
+			ISQL_get_character_sets(char_set_id, collation, false, char_sets);
 	}
 
 	if (char_sets[0])
@@ -2538,7 +2537,7 @@ static void show_db()
 
 	bool translate = true;
 
-	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate, NEWLINE)) {
+	if (SHOW_dbb_parameters(DB, info_buf, db_items, sizeof(db_items), translate)) {
 		isqlGlob.prints(info_buf);
 	}
 

@@ -245,7 +245,7 @@ private:
 		const CharType* bufferPos;
 		CharType metaCharacters[15];
 
-	public:
+	public:	
 		unsigned branchNum;
 		Range* branches;
 	};
@@ -389,7 +389,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 	bufferStart = bufferPos = (const CharType*) str;
 	bufferEnd = bufferStart + len / sizeof(CharType);
 
-	const bool matched =
+	bool matched =
 #ifdef RECURSIVE_SIMILAR
 		match(nodes.getCount(), 0);
 #else
@@ -1090,7 +1090,6 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 			case opRef:
 				if (node->branchNum != -1)
 				{
-					fb_assert(unsigned(node->branchNum) <= branchNum);
 					branches[node->branchNum].length =
 						bufferPos - bufferStart - branches[node->branchNum].start;
 				}
@@ -1336,7 +1335,6 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					{
 						if (node->branchNum != -1)
 						{
-							fb_assert(unsigned(node->branchNum) <= branchNum);
 							branches[node->branchNum].length =
 								bufferPos - bufferStart - branches[node->branchNum].start;
 						}

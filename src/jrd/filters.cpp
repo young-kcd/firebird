@@ -68,12 +68,14 @@ static const UCHAR char_tab[128] =
 
 /* Miscellaneous filter stuff (should be moved someday) */
 
-struct filter_tmp
+struct tmp
 {
-	filter_tmp* tmp_next;
+	tmp* tmp_next;
 	USHORT tmp_length;
 	TEXT tmp_string[1];
 };
+
+typedef tmp *TMP;
 
 const char* const WILD_CARD_UIC = "(*.*)";
 
@@ -347,7 +349,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 	bool blr = false;
 
 	TEXT line[128];
-	switch ((rsr_t) buff[0])
+	switch ((RSR_T) buff[0])
 	{
 	case RSR_field_name:
 		sprintf(line, "    name: %s", p);
@@ -1141,20 +1143,20 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
  *	and filter_acl.
  *
  **************************************/
-	filter_tmp* string;
+	TMP string;
 	USHORT length;
 
 	switch (action)
 	{
 	case isc_blob_filter_close:
-		while (string = (filter_tmp*) control->ctl_data[0]) {
+		while (string = (TMP) control->ctl_data[0]) {
 			control->ctl_data[0] = (IPTR) string->tmp_next;
 			gds__free(string);
 		}
 		return FB_SUCCESS;
 
 	case isc_blob_filter_get_segment:
-		if (!(string = (filter_tmp*) control->ctl_data[1]))
+		if (!(string = (TMP) control->ctl_data[1]))
 			return isc_segstr_eof;
 		length = string->tmp_length - control->ctl_data[2];
 		if (length > control->ctl_buffer_length)
@@ -1198,7 +1200,7 @@ static void string_put(BlobControl* control, const char* line)
  *
  **************************************/
 	const USHORT len = strlen(line);
-	filter_tmp* string = (filter_tmp*) gds__alloc((SLONG) (sizeof(filter_tmp) + len));
+	TMP string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + len));
 /* FREE: on isc_blob_filter_close in string_filter() */
 	if (!string) {				/* NOMEM: */
 		fb_assert(FALSE);			/* out of memory */
@@ -1208,7 +1210,7 @@ static void string_put(BlobControl* control, const char* line)
 	string->tmp_length = len;
 	memcpy(string->tmp_string, line, len);
 
-	filter_tmp* prior = (filter_tmp*) control->ctl_data[1];
+	TMP prior = (TMP) control->ctl_data[1];
 	if (prior)
 		prior->tmp_next = string;
 	else

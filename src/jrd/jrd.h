@@ -34,7 +34,9 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
+#include "../jrd/all.h"
 #include "../jrd/btn.h"
+#include "../jrd/all.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/val.h"
 
@@ -424,8 +426,8 @@ public:
 	USHORT prc_alter_count;					// No. of times the procedure was altered
 
 public:
-	explicit jrd_prc(MemoryPool& p)
-		: prc_security_name(p), prc_name(p)
+	explicit jrd_prc(MemoryPool& p) 
+		: prc_security_name(p), prc_name(p) 
 	{}
 };
 
@@ -458,8 +460,8 @@ public:
 	jrd_nod*	prm_default_value;
 	Firebird::MetaName prm_name;			// asciiz name
 //public:
-	explicit Parameter(MemoryPool& p)
-		: prm_name(p)
+	explicit Parameter(MemoryPool& p) 
+		: prm_name(p) 
 	{ }
 };
 
@@ -612,11 +614,11 @@ struct win
 	SSHORT win_scans;
 	USHORT win_flags;
 //	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
-	explicit win(const PageNumber& wp)
-		: win_page(wp), win_bdb(NULL), win_flags(0)
+	explicit win(const PageNumber& wp) 
+		: win_page(wp), win_bdb(NULL), win_flags(0) 
 	{}
-	win(const USHORT pageSpaceID, const SLONG pageNum)
-		: win_page(pageSpaceID, pageNum), win_bdb(NULL), win_flags(0)
+	win(const USHORT pageSpaceID, const SLONG pageNum) 
+		: win_page(pageSpaceID, pageNum), win_bdb(NULL), win_flags(0) 
 	{}
 };
 
@@ -631,8 +633,8 @@ typedef win WIN;
 // may get the default value of -1 to "wp".
 struct win_for_array: public win
 {
-	win_for_array()
-		: win(DB_PAGE_SPACE, -1)
+	win_for_array() 
+		: win(DB_PAGE_SPACE, -1) 
 	{}
 };
 

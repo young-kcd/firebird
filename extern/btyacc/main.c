@@ -100,7 +100,7 @@ void done(int k)
 }
 
 
-void onintr(int sig)
+void onintr()
 {
 	done(1);
 }

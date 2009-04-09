@@ -116,11 +116,9 @@ const char* FIREBIRD_USER_NAME		= "firebird";
 static void set_signal(int, void (*)(int));
 static void signal_handler(int);
 
-#ifdef SUPERSERVER
 static int shutdownInetServer(const int reason, const int, void*);
 static void shutdownInit();
 static int tryStopMainThread();
-#endif
 
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
@@ -482,7 +480,7 @@ static void signal_handler(int)
 	++INET_SERVER_start;
 }
 
-#ifdef SUPERSERVER
+
 static int shutdownInetServer(const int reason, const int, void*)
 {
 /****************************************************
@@ -517,7 +515,6 @@ static int shutdownInetServer(const int reason, const int, void*)
 	return reason == fb_shutrsn_exit_called ? FB_SUCCESS : FB_FAILURE;
 }
 
-
 static void shutdownInit()
 {
 	setStopMainThread(tryStopMainThread);
@@ -531,7 +528,6 @@ static void shutdownInit()
 		exit(STARTUP_ERROR);
 	}
 }
-
 
 static int tryStopMainThread()
 {
@@ -547,4 +543,3 @@ static int tryStopMainThread()
  **************************************/
 	return serverClosing ? 1 : 0;
 }
-#endif

@@ -379,24 +379,21 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	}
 
 	UCHAR* q = (to->dsc_dtype == dtype_varying) ? to->dsc_address + sizeof(USHORT) : to->dsc_address;
-	const UCHAR* start = q;
 
-	// If negative, put in minus sign
+/* If negative, put in minus sign */
 
 	if (neg)
 		*q++ = '-';
 
-	// If a decimal point is required, do the formatting. Otherwise just copy number.
+/* If a decimal point is required, do the formatting.  Otherwise just
+   copy number */
 
 	if (scale >= 0)
-	{
 		do {
 			*q++ = *--p;
 		} while (--l);
-	}
-	else
-	{
-		l += scale;	// l > 0 (see postassertion: l + scale > 0 above)
+	else {
+		l += scale;				/* l > 0 (see postassertion: l+scale > 0 above) */
 		do {
 			*q++ = *--p;
 		} while (--l);
@@ -406,18 +403,15 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		} while (++scale);
 	}
 
-	cb->validateLength(cb->getToCharset(to->getCharSet()), length, start, TEXT_LEN(to), cb->err);
-
-	// If padding is required, do it now.
+/* If padding is required, do it now. */
 
 	if (pad_count)
-	{
 		do {
 			*q++ = '0';
 		} while (--pad_count);
-	}
 
-	// Finish up by padding (if fixed) or computing the actual length (varying string).
+/* Finish up by padding (if fixed) or computing the actual length
+   (varying string) */
 
 	if (to->dsc_dtype == dtype_text)
 	{
@@ -1660,9 +1654,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	// Convert a date or time value into a timestamp for manipulation
 
-	tm times;
-	memset(&times, 0, sizeof(struct tm));
-
+	tm times = {0};
 	int	fractions = 0;
 
 	switch (from->dsc_dtype)

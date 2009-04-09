@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:	Interactive SQL utility
- *	MODULE:		show_proto.h
- *	DESCRIPTION:	Prototype header file for show.epp
+ *	PROGRAM:	JRD Access Method
+ *	MODULE:		all.h
+ *	DESCRIPTION:	Block allocator blocks
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -21,18 +21,21 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef ISQL_SHOW_PROTO_H
-#define ISQL_SHOW_PROTO_H
+#ifndef JRD_ALL_H
+#define JRD_ALL_H
 
-void	SHOW_comments(bool force);
-bool	SHOW_dbb_parameters (FB_API_HANDLE, SCHAR*, const SCHAR*, USHORT, bool);
-processing_state	SHOW_grants (const SCHAR*, const SCHAR*, USHORT);
-processing_state	SHOW_grants2 (const SCHAR*, const SCHAR*, USHORT, const TEXT*, bool);
-void	SHOW_grant_roles (const SCHAR*, bool*);
-void	SHOW_grant_roles2 (const SCHAR*, bool*, const TEXT*, bool);
-void	SHOW_print_metadata_text_blob(FILE*, ISC_QUAD*, bool escape_squote = false);
-processing_state	SHOW_metadata(const SCHAR* const*, SCHAR**);
-void	SHOW_read_owner();
+#include "../common/classes/alloc.h"
+#include "../jrd/lls.h"
 
-#endif // ISQL_SHOW_PROTO_H
 
+namespace Jrd {
+	class Database;
+}
+
+void ALL_print_memory_pool_info(FILE*, Jrd::Database*);
+
+#ifdef DEV_BUILD
+void ALL_check_memory();
+#endif
+
+#endif	// JRD_ALL_H

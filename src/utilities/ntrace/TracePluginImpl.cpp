@@ -133,11 +133,11 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			logname.insert(0, root);
 		}
 
-		logWriter = FB_NEW (*getDefaultMemoryPool())
+		logWriter = FB_NEW (*getDefaultMemoryPool()) 
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
-	IntlUtil::initUtf8Charset(&cs);
+	IntlUtil::initAsciiCharset(&cs);
 	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, UCharBuffer(), string());
 	charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
 	textType = FB_NEW(*getDefaultMemoryPool()) Jrd::TextType(0, &tt, charSet);

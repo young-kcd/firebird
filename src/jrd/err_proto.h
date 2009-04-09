@@ -43,8 +43,9 @@ enum idx_e {
 	idx_e_foreign_references_present
 };
 
-class jrd_rel;
+typedef idx_e IDX_E;
 
+class jrd_rel;
 } //namespace Jrd
 
 bool	ERR_post_warning(const Firebird::Arg::StatusVector& v);

@@ -73,7 +73,7 @@ private:
 	evnt* find_event(USHORT, const TEXT*, evnt*);
 	void free_global(frb*);
 	req_int* historical_interest(ses*, SLONG);
-	void init_shmem(sh_mem*, bool);
+	void init_shmem(SH_MEM, bool);
 	void insert_tail(srq*, srq*);
 	evnt* make_event(USHORT, const TEXT*, SLONG);
 	void post_process(prb*);
@@ -82,9 +82,6 @@ private:
 	void remove_que(srq*);
 	bool request_completed(evt_req*);
 	void watcher_thread();
-	void attach_shared_file();
-	void detach_shared_file();
-	void get_shared_file_name(Firebird::PathName&);
 
 	static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM arg)
 	{
@@ -93,7 +90,7 @@ private:
 		return 0;
 	}
 
-	static void init_shmem(void* arg, sh_mem* shmem, bool init)
+	static void init_shmem(void* arg, SH_MEM shmem, bool init)
 	{
 		EventManager* const eventMgr = static_cast<EventManager*>(arg);
 		eventMgr->init_shmem(shmem, init);
@@ -105,7 +102,7 @@ private:
 	evh* m_header;
 	prb* m_process;
 	SLONG m_processOffset;
-	sh_mem m_shmemData;
+	SH_MEM_T m_shmemData;
 
 	Firebird::string m_dbId;
 
@@ -115,8 +112,6 @@ private:
 #ifdef WIN_NT
 	struct mtx m_mutex;
 #endif
-
-	bool m_sharedFileCreated;
 };
 
 } // namespace

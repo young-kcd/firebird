@@ -1331,7 +1331,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 	case nod_extract:
 		MAKE_desc(statement, &desc1, node->nod_arg[e_extract_value], NULL);
 
-		switch (node->nod_arg[e_extract_part]->getSlong())
+		switch (*(ULONG*) node->nod_arg[e_extract_part]->nod_desc.dsc_address)
 		{
 			case blr_extract_second:
 				// QUADDATE - maybe this should be DECIMAL(6,4)

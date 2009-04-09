@@ -26,7 +26,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
         CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
-        blb.cpp btn.cpp btr.cpp builtin.cpp \
+        all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
 		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
 		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
 		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
@@ -286,8 +286,7 @@ CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_
 # just in case if make.platform defined some files
 OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp
 
-OS_SPECIFIC_Sources = $(addprefix jrd/, $(OS_SPECIFIC_Files)) common/dllinst.cpp \
-	$(ROOT)/extern/binreloc/binreloc.c
+OS_SPECIFIC_Sources = $(addprefix jrd/, $(OS_SPECIFIC_Files)) common/dllinst.cpp
 OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))
 
 

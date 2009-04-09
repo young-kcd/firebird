@@ -101,7 +101,7 @@ private:
 	void grant(lrq*, lbl*);
 	SRQ_PTR grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
 	void init_owner_block(own*, UCHAR, LOCK_OWNER_T) const;
-	void initialize(sh_mem*, bool);
+	void initialize(SH_MEM, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
 	bool internal_convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
@@ -131,9 +131,6 @@ private:
 	void validate_shb(const SRQ_PTR);
 #endif
 	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
-	bool attach_shared_file(ISC_STATUS* status);
-	void detach_shared_file(ISC_STATUS* status);
-	void get_shared_file_name(Firebird::PathName&);
 
 	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 	{
@@ -142,19 +139,18 @@ private:
 		return 0;
 	}
 
-	static void initialize(void* arg, sh_mem* shmem, bool init)
+	static void initialize(void* arg, SH_MEM shmem, bool init)
 	{
 		LockManager* const lockMgr = static_cast<LockManager*>(arg);
 		lockMgr->initialize(shmem, init);
 	}
 
 	bool m_bugcheck;
-	bool m_sharedFileCreated;
 	lhb* volatile m_header;
 	prc* m_process;
 	SRQ_PTR m_processOffset;
 
-	sh_mem m_shmem;
+	SH_MEM_T m_shmem;
 
 	Firebird::Mutex m_localMutex;
 	Firebird::RWLock m_remapSync;

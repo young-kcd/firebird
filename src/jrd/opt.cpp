@@ -99,7 +99,7 @@ static bool check_relationship(const OptimizerBlk*, USHORT, USHORT);
 static void check_sorts(RecordSelExpr*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
 static void clear_bounds(OptimizerBlk*, const index_desc*);
-static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
+static jrd_nod* compose(jrd_nod**, jrd_nod*, NOD_T);
 static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
 static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
@@ -131,7 +131,7 @@ static RecordSource* gen_navigation(thread_db*, OptimizerBlk*, USHORT, jrd_rel*,
 	index_desc*, jrd_nod**);
 #ifdef SCROLLABLE_CURSORS
 static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*,
-	index_desc*, rse_get_mode);
+	index_desc*, RSE_GET_MODE);
 #else
 static RecordSource* gen_nav_rsb(thread_db*, OptimizerBlk*, USHORT, jrd_rel*, VaryingString*, index_desc*);
 #endif
@@ -1738,7 +1738,7 @@ static void clear_bounds(OptimizerBlk* opt, const index_desc* idx)
 }
 
 
-static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
+static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, NOD_T node_type)
 {
 /**************************************
  *
@@ -3484,7 +3484,7 @@ static USHORT find_order(thread_db* tdbb,
 			fprintf(opt_debug_file, "%2.2d ", tail->opt_best_stream);
 		}
 		fprintf(opt_debug_file,
-				   "\n\t\t\tbest_cost: %g\tcombinations: %"SLONGFORMAT"\n",
+				   "\n\t\t\tbest_cost: %g\tcombinations: %ld\n",
 				   opt->opt_best_cost, opt->opt_combinations);
 	}
 #endif
@@ -4365,8 +4365,8 @@ static RecordSource* gen_navigation(thread_db* tdbb,
 	// to SCROLLABLE_CURSORS, but now descending sorts can use ascending indices
 	// and vice versa.
 #ifdef SCROLLABLE_CURSORS
-	rse_get_mode mode;
-	rse_get_mode last_mode = RSE_get_next;
+	RSE_GET_MODE mode;
+	RSE_GET_MODE last_mode = RSE_get_next;
 #endif
 
 	index_desc::idx_repeat* idx_tail = idx->idx_rpt;
@@ -4449,7 +4449,7 @@ static RecordSource* gen_nav_rsb(thread_db* tdbb,
 					   OptimizerBlk* opt,
 					   USHORT stream, jrd_rel* relation, VaryingString* alias, index_desc* idx
 #ifdef SCROLLABLE_CURSORS
-					   , rse_get_mode mode
+					   , RSE_GET_MODE mode
 #endif
 	)
 {
@@ -5780,7 +5780,7 @@ static RecordSource* gen_union(thread_db* tdbb,
 
 	// hvlad: save size of inner impure area and context of mapped record
 	// for recursive processing later
-	if (recurse)
+	if (recurse) 
 	{
 		*rsb_ptr++ = (RecordSource*)(IPTR) (csb->csb_impure - rsb->rsb_impure);
 		*rsb_ptr = (RecordSource*) (IPTR) union_node->nod_arg[e_uni_map_stream];
@@ -6833,7 +6833,7 @@ static void mark_rsb_recursive(RecordSource* rsb)
 				{
 					RecordSource** ptr = rsb->rsb_arg;
 					const RecordSource* const* const end = ptr + rsb->rsb_count;
-					for (; ptr < end; ptr++)
+					for (; ptr < end; ptr++) 
 						mark_rsb_recursive(*ptr);
 				}
 				return;

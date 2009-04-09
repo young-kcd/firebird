@@ -104,17 +104,17 @@ struct MemoryBlock
 {
 	USHORT mbk_flags;
 	SSHORT mbk_type;
-	struct mbk_small_struct
+	union
 	{
-	  // Length and offset are measured in bytes thus memory extent size is limited to 64k
-	  // Larger extents are not needed now, but this may be icreased later via using allocation units
-	  USHORT mbk_length; // Actual block size: header not included, redirection list is included if applicable
-	  USHORT mbk_prev_length;
-	};
-	union // anonymous union
-	{
-		ULONG mbk_large_length; // Measured in bytes
-		struct mbk_small_struct mbk_small;
+		struct
+		{
+		  // Length and offset are measured in bytes thus memory extent size is limited to 64k
+		  // Larger extents are not needed now, but this may be icreased later via using allocation units
+		  USHORT mbk_length; // Actual block size: header not included, redirection list is included if applicable
+		  USHORT mbk_prev_length;
+		} mbk_small;
+		// Measured in bytes
+		ULONG mbk_large_length;
 	};
 #ifdef DEBUG_GDS_ALLOC
 	const char* mbk_file;
@@ -571,7 +571,7 @@ namespace Firebird
 	public:
 		static MemoryPool& getAutoMemoryPool();
 	protected:
-		AutoStorage()
+		AutoStorage() 
 			: PermanentStorage(getAutoMemoryPool())
 		{
 #if defined(DEV_BUILD)

@@ -1845,13 +1845,6 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 }
 #endif // WIN_NT
 
-void ISC_remove_map_file(const TEXT* filename)
-{
-	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, filename);
-	unlink(expanded_filename);	// we can't do much (specially in dtors) when it fails
-								// therefore do not check for errors - at least it's just /tmp
-}
 
 #ifdef UNIX
 
@@ -1862,7 +1855,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
 					ULONG length,
-					sh_mem* shmem_data)
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2065,7 +2058,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
 					ULONG length,
-					sh_mem* shmem_data)
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2351,7 +2344,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
 					ULONG length,
-					sh_mem* shmem_data)
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -2605,7 +2598,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 #ifdef HAVE_MMAP
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  SH_MEM shmem_data,
 					  ULONG object_offset,
 					  ULONG object_length)
 {
@@ -2659,7 +2652,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  SH_MEM shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -2711,7 +2704,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 #ifdef WIN_NT
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  SH_MEM shmem_data,
 					  ULONG object_offset,
 					  ULONG object_length)
 {
@@ -2752,7 +2745,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  SH_MEM shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -3581,7 +3574,7 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
 UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  SH_MEM shmem_data,
 					  ULONG new_length,
 					  bool flag)
 {
@@ -3628,7 +3621,7 @@ UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
-					  sh_mem* shmem_data,
+					  SH_MEM shmem_data,
 					  ULONG new_length,
 					  bool flag)
 {
@@ -3723,7 +3716,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 
 #ifndef ISC_REMAP_FILE_DEFINED
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
-						sh_mem* shmem_data,
+						SH_MEM shmem_data,
 						ULONG new_length,
 						bool flag)
 {
@@ -3872,7 +3865,7 @@ void ISC_sync_signals_reset()
 
 #ifdef UNIX
 #ifdef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3913,7 +3906,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 
 #ifdef UNIX
 #ifndef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3935,7 +3928,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 
 
 #ifdef WIN_NT
-void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3955,10 +3948,6 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 	CloseHandle(shmem_data->sh_mem_handle);
 	UnmapViewOfFile(shmem_data->sh_mem_hdr_address);
 	CloseHandle(shmem_data->sh_mem_hdr_object);
-
-	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
-	DeleteFile(expanded_filename);
 }
 #endif
 

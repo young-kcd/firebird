@@ -71,6 +71,8 @@ enum nod_t {
 #undef NODE
 };
 
+typedef nod_t NOD_T;
+
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
@@ -89,7 +91,7 @@ class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
 public:
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
-	nod_t	nod_type;				/* Type of node */
+	NOD_T	nod_type;				/* Type of node */
 	USHORT	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
@@ -183,7 +185,7 @@ class AggregateSort : public pool_alloc<type_asb>
 public:
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Impure offset from request block */
-	nod_t	nod_type;				/* Type of node */
+	NOD_T	nod_type;				/* Type of node */
 	UCHAR	nod_flags;
 	SCHAR	nod_scale;
 	USHORT	nod_count;
@@ -704,21 +706,21 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
 // The three structs below are used for domains DEFAULT and constraints in PSQL
 struct Item
 {
-	Item(nod_t aType, UCHAR aSubType, USHORT aIndex)
+	Item(NOD_T aType, UCHAR aSubType, USHORT aIndex)
 		: type(aType),
 		  subType(aSubType),
 		  index(aIndex)
 	{
 	}
 
-	Item(nod_t aType, USHORT aIndex = 0)
+	Item(NOD_T aType, USHORT aIndex = 0)
 		: type(aType),
 		  subType(0),
 		  index(aIndex)
 	{
 	}
 
-	nod_t type;
+	NOD_T type;
 	UCHAR subType;
 	USHORT index;
 

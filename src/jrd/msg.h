@@ -34,7 +34,7 @@ const UCHAR MSG_MINOR_VERSION	= FB_MSG_MINOR_VERSION;
 
 // Message file header block
 
-struct isc_msghdr
+struct isc_msghdr 
 {
 	UCHAR msghdr_major_version;	// Version number
 	UCHAR msghdr_minor_version;	// Version number
@@ -44,9 +44,11 @@ struct isc_msghdr
 	USHORT msghdr_levels;		// Levels in tree
 };
 
+typedef isc_msghdr ISC_MSGHDR;
+
 // Index node
 
-struct msgnod
+struct msgnod 
 {
 	ULONG msgnod_code;			// Message code
 	ULONG msgnod_seek;			// Offset of next bucket or message
@@ -54,7 +56,7 @@ struct msgnod
 
 // Leaf node
 
-struct msgrec
+struct msgrec 
 {
 	ULONG msgrec_code;			// Message code
 	USHORT msgrec_length;		// Length of message text

@@ -1352,7 +1352,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		jrd_rel* bad_relation = 0;
 		USHORT bad_index;
 
-		const idx_e error_code = IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
+		const IDX_E error_code = IDX_erase(tdbb, rpb, transaction, &bad_relation, &bad_index);
 
 		if (error_code) {
 			ERR_duplicate_error(error_code, bad_relation, bad_index);
@@ -1547,7 +1547,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		}
 
 	}	// try
-	catch (const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex) 
 	{
 		const bool no_priv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
 		trace.finish(false, no_priv ? res_unauthorized : res_failed);
@@ -2865,7 +2865,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	} // while()
 
 	request->adjustCallerStats();
-
+	
 	fb_assert(request->req_auto_trans.getCount() == 0);
 
 	// If there is no node, assume we have finished processing the
@@ -3045,7 +3045,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				jrd_rel* bad_relation = 0;
 
 				VIO_modify(tdbb, org_rpb, new_rpb, transaction);
-				const idx_e error_code =
+				const IDX_E error_code =
 					IDX_modify(tdbb, org_rpb, new_rpb, transaction, &bad_relation, &bad_index);
 
 				if (error_code) {
@@ -3073,7 +3073,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				USHORT bad_index;
 				jrd_rel* bad_relation = 0;
 
-				const idx_e error_code =
+				const IDX_E error_code =
 					IDX_modify_check_constraints(tdbb, org_rpb, new_rpb, transaction,
 												 &bad_relation, &bad_index);
 
@@ -3839,7 +3839,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			jrd_rel* bad_relation = 0;
 
 			VIO_store(tdbb, rpb, transaction);
-			const idx_e error_code = IDX_store(tdbb, rpb, transaction, &bad_relation, &bad_index);
+			const IDX_E error_code = IDX_store(tdbb, rpb, transaction, &bad_relation, &bad_index);
 
 			if (error_code) {
 				ERR_duplicate_error(error_code, bad_relation, bad_index);

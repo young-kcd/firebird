@@ -569,7 +569,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						portGuard.leave();
 					}
 
-					// link_request will increment port_requests_queued. Port is not locked
+					// link_request will increment port_requests_queued. Port is not locked 
 					// at this point but it is safe because :
 					// - port_requests_queued is atomic counter
 					// - the only place where we check its value is at the same thread (see above)
@@ -1213,7 +1213,6 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
  *
  **************************************/
     ISC_STATUS_ARRAY status_vector;
-	success(status_vector);
 
 /* Which database ? */
 
@@ -1234,7 +1233,9 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 /* If no event found, pretend it was cancelled */
 
-	if (!event) {
+	if (!event)
+	{
+		success(status_vector);
 		return port->send_response(send, 0, 0, status_vector, false);
 	}
 

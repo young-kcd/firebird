@@ -435,9 +435,7 @@ namespace Firebird
 	class StringComparator
 	{
 	public:
-		static inline int compare(AbstractString::const_pointer s1,
-								  AbstractString::const_pointer s2,
-								  const AbstractString::size_type n)
+		static inline int compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n)
 		{
 			return memcmp(s1, s2, n);
 		}
@@ -445,9 +443,7 @@ namespace Firebird
 	class PathNameComparator
 	{
 	public:
-		static int compare(AbstractString::const_pointer s1,
-						   AbstractString::const_pointer s2,
-						   const AbstractString::size_type n);
+		static int compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n);
 	};
 
 	template<typename Comparator>

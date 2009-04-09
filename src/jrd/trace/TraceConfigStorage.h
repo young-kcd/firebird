@@ -57,13 +57,13 @@ public:
 
 private:
 	static void checkMutex(const TEXT*, int);
-	static void initShMem(void*, sh_mem*, bool);
+	static void initShMem(void*, SH_MEM_T*, bool);
 
 	void checkFile();
 
 	void checkDirty()
 	{
-		if (m_dirty)
+		if (m_dirty) 
 		{
 			//_commit(m_cfg_file);
 			m_dirty = false;
@@ -72,7 +72,7 @@ private:
 
 	void setDirty()
 	{
-		if (!m_dirty)
+		if (!m_dirty) 
 		{
 			m_base->change_number++;
 			m_dirty = true;
@@ -107,7 +107,7 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
-	sh_mem m_handle;
+	SH_MEM_T m_handle;
 	ShMemHeader* m_base;
 #ifdef WIN_NT
 	struct mtx m_mutex;

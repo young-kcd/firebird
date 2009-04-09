@@ -67,6 +67,7 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/val.h"
 #include "../jrd/rse.h"
+#include "../jrd/all.h"
 #include "../jrd/fil.h"
 #include "../jrd/intl.h"
 #include "../jrd/sbm.h"
@@ -445,18 +446,18 @@ public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
 	  m_filename(filename),
 	  m_options(options)
-	{}
+	{}	
 
 	virtual int getConnectionID()				{ return 0; }
 	virtual int getProcessID()					{ return m_options->dpb_remote_pid; }
 	virtual const char* getDatabaseName()		{ return m_filename; }
 
-	virtual const char* getUserName()
-	{
+	virtual const char* getUserName()			
+	{ 
 		if (m_options->dpb_user_name.empty())
-			return m_options->dpb_trusted_login.c_str();
+			return m_options->dpb_trusted_login.c_str(); 
 
-		return m_options->dpb_user_name.c_str();
+		return m_options->dpb_user_name.c_str(); 
 	}
 
 	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
@@ -683,7 +684,17 @@ static const char* ENCRYPT = "encrypt";
 static const char* DECRYPT = "decrypt";
 
 
-void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options,
+void JRD_print_pools(const char* filename)
+{
+	FILE* out = fopen(filename, "w");
+	if (out)
+	{
+		ALL_print_memory_pool_info(out, databases);
+		fclose(out);
+	}
+}
+
+void trace_failed_attach(TraceManager* traceManager, const char* filename, const DatabaseOptions& options, 
 	bool create, bool no_priv)
 {
 	// Report to Trace API that attachment has not been created
@@ -691,7 +702,7 @@ void trace_failed_attach(TraceManager* traceManager, const char* filename, const
 	{
 		TraceManager tempMgr(filename);
 
-		if (tempMgr.needs().event_attach)
+		if (tempMgr.needs().event_attach) 
 		{
 			TraceFailedConnection conn(filename, &options);
 			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
@@ -1351,7 +1362,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	{
 		const ISC_LONG exc = ex.stuff_exception(user_status);
 		const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
+		trace_failed_attach(attachment ? attachment->att_trace_manager : NULL, 
 			filename, options, false, no_priv);
 
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
@@ -3137,7 +3148,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 
 		service->start(spb_length, reinterpret_cast<const UCHAR*>(spb));
 
-		if (service->getStatus()[1])
+		if (service->getStatus()[1]) 
 		{
 			memcpy(user_status, service->getStatus(), sizeof(ISC_STATUS_ARRAY));
 			return user_status[1];
@@ -3950,66 +3961,80 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	{
 		// If database has been shutdown then get out
 
-		Attachment* const attachment = tdbb->getAttachment();
-		jrd_tra* const transaction = tdbb->getTransaction();
-		jrd_req* const request = tdbb->getRequest();
+		Attachment* attachment = tdbb->getAttachment();
+		jrd_tra* transaction = tdbb->getTransaction();
+		jrd_req* request = tdbb->getRequest();
 
-		try
+		if (attachment)
 		{
-			if (attachment)
+			if ((dbb->dbb_ast_flags & DBB_shutdown) && (attachment->att_flags & ATT_shutdown))
 			{
-				if (attachment->att_flags & ATT_shutdown)
+				const PathName& file_name = attachment->att_filename;
+				if (punt)
 				{
-					if (dbb->dbb_ast_flags & DBB_shutdown)
-					{
-						status_exception::raise(Arg::Gds(isc_shutdown) <<
-												Arg::Str(attachment->att_filename));
-					}
-					else if (!(tdbb->tdbb_flags & TDBB_shutdown_manager))
-					{
-						status_exception::raise(Arg::Gds(isc_att_shutdown));
-					}
+					CCH_unwind(tdbb, false);
+					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
 				}
-
-				// If a cancel has been raised, defer its acknowledgement
-				// when executing in the context of an internal request or
-				// the system transaction.
-
-				if ((attachment->att_flags & ATT_cancel_raise) &&
-					!(attachment->att_flags & ATT_cancel_disable))
+				else
 				{
-					if ((!request ||
-						 !(request->req_flags & (req_internal | req_sys_trigger))) &&
-						(!transaction || !(transaction->tra_flags & TRA_system)))
-					{
-						attachment->att_flags &= ~ATT_cancel_raise;
-						status_exception::raise(Arg::Gds(isc_cancelled));
-					}
+					ERR_build_status(tdbb->tdbb_status_vector,
+									 Arg::Gds(isc_shutdown) << Arg::Str(file_name));
+					return true;
+				}
+			}
+			else if ((attachment->att_flags & ATT_shutdown) && !(tdbb->tdbb_flags & TDBB_shutdown_manager))
+			{
+				if (punt)
+				{
+					CCH_unwind(tdbb, false);
+					ERR_post(Arg::Gds(isc_att_shutdown));
+				}
+				else
+				{
+					ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_att_shutdown));
+					return true;
 				}
 			}
 
-			// Handle request cancellation
+			// If a cancel has been raised, defer its acknowledgement
+			// when executing in the context of an internal request or
+			// the system transaction.
 
-			if (transaction && (transaction->tra_flags & TRA_cancel_request))
+			if ((attachment->att_flags & ATT_cancel_raise) &&
+				!(attachment->att_flags & ATT_cancel_disable))
 			{
-				transaction->tra_flags &= ~TRA_cancel_request;
-				status_exception::raise(Arg::Gds(isc_cancelled));
+				if ((!request ||
+					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+					(!transaction || !(transaction->tra_flags & TRA_system)))
+				{
+					attachment->att_flags &= ~ATT_cancel_raise;
+					if (punt)
+					{
+						CCH_unwind(tdbb, false);
+						ERR_post(Arg::Gds(isc_cancelled));
+					}
+					else
+					{
+						ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_cancelled));
+						return true;
+					}
+				}
 			}
 		}
-		catch (const status_exception& ex)
+
+		// Handle request cancellation
+
+		if (transaction && (transaction->tra_flags & TRA_cancel_request))
 		{
+			transaction->tra_flags &= ~TRA_cancel_request;
 			tdbb->tdbb_flags |= TDBB_sys_error;
 
-			const Arg::StatusVector status(ex.value());
-
-			if (punt)
-			{
+			if (punt) {
 				CCH_unwind(tdbb, false);
-				ERR_post(status);
+				ERR_post(Arg::Gds(isc_cancelled));
 			}
-			else
-			{
-				ERR_build_status(tdbb->tdbb_status_vector, status);
+			else {
+				ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_cancelled));
 				return true;
 			}
 		}
@@ -4017,8 +4042,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	// Enable signal handler for the monitoring stuff
 
-	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
+	if (dbb->dbb_ast_flags & DBB_monitor_off) {
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
 	}
@@ -4149,6 +4173,8 @@ static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
 	if (transaction && (transaction->tra_flags & TRA_cancel_request))
 	{
 		transaction->tra_flags &= ~TRA_cancel_request;
+		tdbb->tdbb_flags |= TDBB_sys_error;
+
 		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 }
@@ -5103,13 +5129,12 @@ void Attachment::backupStateReadUnLock(thread_db* tdbb)
 	if (--att_backup_state_counter == 0)
 		att_database->dbb_backup_manager->unlockStateRead(tdbb);
 }
-
+ 
 Attachment::Attachment(MemoryPool* pool, Database* dbb)
 :	att_pool(pool),
 	att_memory_stats(&dbb->dbb_memory_stats),
 	att_database(dbb),
 	att_lock_owner_id(Database::getLockOwnerId()),
-	att_backup_state_counter(0),
 	att_stats(*pool),
 	att_working_directory(*pool),
 	att_filename(*pool),
@@ -5122,7 +5147,8 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_udf_pointers(*pool),
 	att_strings_buffer(NULL),
 	att_ext_connection(NULL),
-	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
+	att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
+	att_backup_state_counter(0)
 {
 	att_mutex.enter();
 }
@@ -5698,7 +5724,7 @@ static void purge_attachment(thread_db*		tdbb,
 		try
 		{
 			const trig_vec* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
-			if (!(attachment->att_flags & ATT_no_db_triggers) &&
+			if (!(attachment->att_flags & ATT_no_db_triggers) && 
 				!(attachment->att_flags & ATT_shutdown) &&
 				trig_disconnect && !trig_disconnect->isEmpty())
 			{
@@ -6479,7 +6505,7 @@ void JRD_compile(thread_db* tdbb,
 				 jrd_req** req_handle,
 				 SSHORT blr_length,
 				 const UCHAR* blr,
-				 RefStrPtr ref_str,
+				 Firebird::RefStrPtr ref_str,
 				 USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
@@ -6501,13 +6527,13 @@ void JRD_compile(thread_db* tdbb,
 	request->req_request = attachment->att_requests;
 	attachment->att_requests = request;
 
-	if (!ref_str)
+	if (!ref_str) 
 	{
 		fb_assert(request->req_blr.isEmpty());
 
-		// hvlad: if\when we implement request's cache in the future and
+		// hvlad: if\when we implement request's cache in the future and 
 		// CMP_compile2 will return us previously compiled request with
-		// non-empty req_blr, then we must replace assertion by the line below
+		// non-empty req_blr, then we must replace assertion by the line below 
 		// if (!request->req_blr.isEmpty())
 
 		request->req_blr.insert(0, blr, blr_length);

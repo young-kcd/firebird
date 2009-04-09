@@ -100,7 +100,7 @@ int jrd8_shutdown_all(unsigned int);
 ISC_STATUS jrd8_allocate_statement(ISC_STATUS*, Jrd::Attachment**, Jrd::dsql_req**);
 ISC_STATUS jrd8_execute(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, const SCHAR*,
 						USHORT, USHORT, const SCHAR*, USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
-ISC_STATUS jrd8_execute_immediate(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const TEXT*,
+ISC_STATUS jrd8_execute_immediate(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const TEXT*, 
 								  USHORT, USHORT, const SCHAR*, USHORT, USHORT, const SCHAR*,
 								  USHORT, SCHAR*, USHORT, USHORT, SCHAR*);
 #ifdef SCROLLABLE_CURSORS
@@ -131,6 +131,9 @@ enum JRD_info_tag
 UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*);
 
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
+
+// Call this function from the debugger if desired
+void	JRD_print_pools(const char* filename);
 
 #ifdef DEBUG_PROCS
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
