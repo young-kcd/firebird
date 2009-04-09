@@ -77,9 +77,6 @@
 #endif
 
 static int process_id;
-#ifdef UNIX
-static UCHAR *next_shared_memory;
-#endif
 
 /* Unix specific stuff */
 
@@ -1849,6 +1846,27 @@ void ISC_remove_map_file(const TEXT* filename)
 {
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
+#if defined(UNIX) && (!defined(HAVE_MMAP))
+	key_t key = 0;
+
+	Firebird::AutoPtr<FILE, Firebird::FileClose> fp(fopen(expanded_filename, "r"));
+	if (fp)
+	{
+		Firebird::string s;
+		s.LoadFromFile(fp);
+		key = atoi(s.c_str());
+	}
+
+	if (key)
+	{
+		int shmid = shmget(key, 0, PRIV);
+		if (shmid > 0)
+		{
+			shmid_ds dummy;
+			shmctl(shmid, IPC_RMID, &dummy);
+		}
+	}
+#endif
 	unlink(expanded_filename);	// we can't do much (specially in dtors) when it fails
 								// therefore do not check for errors - at least it's just /tmp
 }
@@ -2278,22 +2296,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif /* SUPERSERVER */
 
 
-	UCHAR* address = 0;
-#ifdef SHMEM_PICKY
-	if (!next_shared_memory)
-		next_shared_memory = (UCHAR *) sbrk(0) + SHMEM_DELTA;
-	address = (UCHAR *) shmat(shmid, next_shared_memory, SHM_RND);
-	if ((U_IPTR) address != -1)
-#ifndef SYSV_SHMEM
-		next_shared_memory = address + length;
-#else
-		next_shared_memory = address + length + SHMLBA;
-#endif
-#else
-	address = (UCHAR *) shmat(shmid, NULL, 0);
-#endif
-
-	if ((U_IPTR) address == -1) {
+	UCHAR* address = (UCHAR *) shmat(shmid, NULL, 0);
+	if ((IPTR) address == (IPTR) -1) {
 		error(status_vector, "shmat", errno);
 		fclose(fp);
 		return NULL;
@@ -2302,7 +2306,6 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	if (shmctl(shmid, IPC_STAT, &buf) == -1) {
 		error(status_vector, "shmctl/IPC_STAT", errno);
 		shmdt(address);
-		next_shared_memory -= length;
 		fclose(fp);
 		return NULL;
 	}
@@ -2316,12 +2319,11 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	if (buf.shm_nattch == 1) {
 		if (!init_routine) {
 			shmdt(address);
-			next_shared_memory -= length;
 			fclose(fp);
 			Arg::Gds(isc_unavailable).copyTo(status_vector);
 			return NULL;
 		}
-		buf.shm_perm.mode = 0666;
+		buf.shm_perm.mode = 0660;
 		shmctl(shmid, IPC_SET, &buf);
 		init_flag = true;
 	}
