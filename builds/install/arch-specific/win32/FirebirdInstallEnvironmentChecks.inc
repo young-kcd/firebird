@@ -740,7 +740,7 @@ SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
 SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
 SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
 SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbtrace.conf';
-SharedFileArray[34].Filename := ExpandConstant('{app}')+'\bin\fbsvcmgr.conf';
+SharedFileArray[34].Filename := ExpandConstant('{app}')+'\bin\fbsvcmgr.exe';
 SharedFileArray[35].Filename := ExpandConstant('{app}')+'\bin\fbrmclib.dll';
 
 end;
