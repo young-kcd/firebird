@@ -53,6 +53,9 @@ export FIREBIRD
 export DYLD_FRAMEWORK_PATH
 export LD_LIBRARY_PATH
 
+CPU = 1
+CPU_OPTION = -j$(CPU)
+
 ######################################################################
 ###########  Build process overview  #################################
 #
@@ -227,13 +230,13 @@ boot_phase1_build: gpre_boot libfbstatic gpre_static
 
 
 gpre_boot:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.boot.gpre $@
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.boot.gpre $@
 
 libfbstatic:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbstatic $@
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.libfbstatic $@
 
 gpre_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gpre $@
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.static.gpre $@
 
 
 
@@ -263,10 +266,10 @@ create_db:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(CREATE_DB)
 
 gbak_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gbak
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.static.gbak
 
 isql_static:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.static.isql
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.static.isql
 
 empty_db :
 	$(MAKE) -f $(GEN_ROOT)/Makefile.refDatabases $@
@@ -311,7 +314,7 @@ msgs_intl:             # international version of msgs file
 	$(MAKE) -f $(GEN_ROOT)/Makefile.msgs $@
 
 intl:                  # international lang components $(FIREBIRD)/intl/
-	$(MAKE) -f $(GEN_ROOT)/Makefile.intl
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.intl
 
 extlib:                # external programs than can be called
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extlib
@@ -335,37 +338,37 @@ classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server fb_smp_server
 	embed_gpre libfbclient embed_util embed_gdef embed_qli embed_fbudf $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.libfbembed $@
 
 inet_server:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.inet_server
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.inet_server
 
 fb_smp_server:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.smp_server
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.smp_server
 
 embed_gfix:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gfix
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.gfix
 
 embed_gbak:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gbak
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.gbak
 
 embed_isql:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.isql
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.isql
 
 embed_gpre:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gpre
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.gpre
 
 embed_util:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util	
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.util	
 
 embed_gdef:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gdef
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.gdef
 
 embed_qli:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.qli
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.qli
 
 embed_fbudf:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.fbudf
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.embed.fbudf
 
 #_ Firebird Server Targets (super and super client)__________________________
 
@@ -376,40 +379,40 @@ super_targets: $(PLAT_SUPER_PRE_TARGET) fbserver libfbclient client_gfix client_
 			client_isql client_gpre client_util client_fbudf client_gdef client_qli $(PLAT_SUPER_POST_TRAGET) 
 
 fbserver:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.fbserver $@
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.fbserver $@
 
 libfbclient:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbclient $@
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.libfbclient $@
 
 client_gfix:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gfix
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.gfix
 
 client_gbak:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gbak
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.gbak
 
 client_gsec:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gsec
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.gsec
 
 client_gpre:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gpre
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.gpre
 
 client_isql:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.isql
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.isql
 
 client_util:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.util	
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.util	
 
 client_fbudf:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.fbudf
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.fbudf
 
 # Not sure we need this target in super - problems with WAL includes
 # MOD 04-Oct-2002
 
 client_gdef:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.gdef
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.gdef
 
 client_qli:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.client.qli
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.client.qli
 
 
 #sysdba_user gstat:			# add sysdba user and build gstat program
@@ -420,7 +423,7 @@ client_qli:
 #---------------------------------------------------------------------------
 
 fbtrace:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.fbtrace
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.fbtrace
 
 
 #---------------------------------------------------------------------------
