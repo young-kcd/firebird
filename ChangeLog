@@ -1,3 +1,57 @@
+2009-04-09 18:47  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.178):
+
+	Cleanup unused macro SHMEM_PICKY and related stuff.  Fixed code for
+	systems with broken mmap (like HPUX) - avoid shared memory leak.
+
+2009-04-09 18:44  alexpeshkoff
+
+	* firebird2/src/common/: classes/auto.h (1.21),
+	config/config_file.cpp (1.36):
+
+	Make class FileClose generally available
+
+2009-04-09 16:30  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.14):
+
+	Fix yet another dumb typo.  Thanks to Claudio for picking it up.
+
+2009-04-09 15:17  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.43), FirebirdInstall_20.iss (1.38),
+	installation_readme.txt (1.21):
+
+	Fix another dumb typo, repair an oversight and use whitespace
+	consistently.
+
+2009-04-09 14:15  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.linux (1.35):
+
+	Removed flags for ancient compilers
+
+2009-04-09 12:43  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstall_20.iss
+	(1.37):
+
+	typo
+
+2009-04-09 11:57  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.firebird (1.97):
+
+	Added minimum support for parallel build on SMP machines.  Due to
+	logic of phases in main makefile duirect use of -j switch breaks
+	build.	Now you may specify it in command line as "make CPU=4" and
+	in all safe places appropriate -j switch will be added.
+
 2009-04-08 18:06  asfernandes
 
 	* firebird2/src/isql/: extract.epp (1.101), show.epp (1.144),
