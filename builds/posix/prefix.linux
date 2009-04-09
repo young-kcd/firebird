@@ -18,11 +18,8 @@
 #
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
 
-# -fno-builtin is used because GCC 3.0-3.2.2 had bug with builtins expansion
-# you may remove it if engine is getting compiled with any other GCC version
-
 COMMON_FLAGS=-ggdb -DFB_SEND_FLAGS=MSG_NOSIGNAL -DLINUX -pipe -MMD -fPIC -fmessage-length=0
-OPTIMIZE_FLAGS=-O3 -march=i586 -mcpu=i686 -fno-omit-frame-pointer -fno-builtin
+OPTIMIZE_FLAGS=-O3 -march=i586 -mtune=i686 -fno-omit-frame-pointer
 WARN_FLAGS=-Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable
 
 PROD_FLAGS=-DNDEBUG $(COMMON_FLAGS) $(OPTIMIZE_FLAGS)
