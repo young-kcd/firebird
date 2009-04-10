@@ -3093,19 +3093,27 @@ static void transaction_options(thread_db* tdbb,
 															  Arg::Str("isc_tpb_lock_timeout"));
 				}
 
-				if (len > sizeof(transaction->tra_lock_timeout))
-				{
-					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
-							 Arg::Gds(isc_tpb_overflow_len) << Arg::Num(len) << Arg::Str("isc_tpb_lock_timeout"));
-				}
-
 				if (!len)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 							 Arg::Gds(isc_tpb_null_len) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
-				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
+				if (len > sizeof(ULONG))
+				{
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_overflow_len) << Arg::Num(len) << Arg::Str("isc_tpb_lock_timeout"));
+				}
+
+				const ULONG value = gds__vax_integer(tpb, len);
+
+				if (value > (ULONG) MAX_SSHORT)
+				{
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_invalid_value) << Arg::Num(value) << Arg::Str("isc_tpb_lock_timeout"));
+				}
+
+				transaction->tra_lock_timeout = (SSHORT) value;
 
 				if (transaction->tra_lock_timeout <= 0)
 				{
