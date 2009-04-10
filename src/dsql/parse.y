@@ -4384,19 +4384,19 @@ current_role	: CURRENT_ROLE
 
 internal_info	: CURRENT_CONNECTION
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_connection_id, true)); }
+						MAKE_const_slong (internal_connection_id)); }
 		| CURRENT_TRANSACTION
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_transaction_id, true)); }
+						MAKE_const_slong (internal_transaction_id)); }
 		| GDSCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_gdscode, true)); }
+						MAKE_const_slong (internal_gdscode)); }
 		| SQLCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_sqlcode, true)); }
+						MAKE_const_slong (internal_sqlcode)); }
 		| ROW_COUNT
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_rows_affected, true)); }
+						MAKE_const_slong (internal_rows_affected)); }
 		;
 
 sql_string	: STRING			/* string in current charset */
@@ -4538,20 +4538,20 @@ length_expression	: bit_length_expression
 
 bit_length_expression	: BIT_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_const_slong(blr_strlen_bit, true), $3); }
+					MAKE_const_slong(blr_strlen_bit), $3); }
 		;
 
 char_length_expression	: CHAR_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_const_slong(blr_strlen_char, true), $3); }
+					MAKE_const_slong(blr_strlen_char), $3); }
 		| CHARACTER_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_const_slong(blr_strlen_char, true), $3); }
+					MAKE_const_slong(blr_strlen_char), $3); }
 		;
 
 octet_length_expression	: OCTET_LENGTH '(' value ')'
 			{ $$ = make_node(nod_strlen, (int) e_strlen_count,
-					MAKE_const_slong(blr_strlen_octet, true), $3); }
+					MAKE_const_slong(blr_strlen_octet), $3); }
 		;
 
 system_function_expression
@@ -4675,20 +4675,20 @@ trim_function	: TRIM '(' trim_specification value FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, $4, $6); }
 		| TRIM '(' value FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count,
-				MAKE_const_slong (blr_trim_both, true), $3, $5); }
+				MAKE_const_slong (blr_trim_both), $3, $5); }
 		| TRIM '(' trim_specification FROM value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, NULL, $5); }
 		| TRIM '(' value ')'
 			{ $$ = make_node (nod_trim, (int) e_trim_count,
-				MAKE_const_slong (blr_trim_both, true), NULL, $3); }
+				MAKE_const_slong (blr_trim_both), NULL, $3); }
 		;
 
 trim_specification	: BOTH
-			{ $$ = MAKE_const_slong (blr_trim_both, true); }
+			{ $$ = MAKE_const_slong (blr_trim_both); }
 		| TRAILING
-			{ $$ = MAKE_const_slong (blr_trim_trailing, true); }
+			{ $$ = MAKE_const_slong (blr_trim_trailing); }
 		| LEADING
-			{ $$ = MAKE_const_slong (blr_trim_leading, true); }
+			{ $$ = MAKE_const_slong (blr_trim_leading); }
 		;
 
 udf		: symbol_UDF_call_name '(' value_list ')'
@@ -4788,25 +4788,25 @@ next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
 
 
 timestamp_part	: YEAR
-			{ $$ = MAKE_const_slong (blr_extract_year, true); }
+			{ $$ = MAKE_const_slong (blr_extract_year); }
 		| MONTH
-			{ $$ = MAKE_const_slong (blr_extract_month, true); }
+			{ $$ = MAKE_const_slong (blr_extract_month); }
 		| DAY
-			{ $$ = MAKE_const_slong (blr_extract_day, true); }
+			{ $$ = MAKE_const_slong (blr_extract_day); }
 		| HOUR
-			{ $$ = MAKE_const_slong (blr_extract_hour, true); }
+			{ $$ = MAKE_const_slong (blr_extract_hour); }
 		| MINUTE
-			{ $$ = MAKE_const_slong (blr_extract_minute, true); }
+			{ $$ = MAKE_const_slong (blr_extract_minute); }
 		| SECOND
-			{ $$ = MAKE_const_slong (blr_extract_second, true); }
+			{ $$ = MAKE_const_slong (blr_extract_second); }
 		| MILLISECOND
-			{ $$ = MAKE_const_slong (blr_extract_millisecond, true); }
+			{ $$ = MAKE_const_slong (blr_extract_millisecond); }
 		| WEEK
-			{ $$ = MAKE_const_slong (blr_extract_week, true); }
+			{ $$ = MAKE_const_slong (blr_extract_week); }
 		| WEEKDAY
-			{ $$ = MAKE_const_slong (blr_extract_weekday, true); }
+			{ $$ = MAKE_const_slong (blr_extract_weekday); }
 		| YEARDAY
-			{ $$ = MAKE_const_slong (blr_extract_yearday, true); }
+			{ $$ = MAKE_const_slong (blr_extract_yearday); }
 		;
 
 all_noise	: ALL
