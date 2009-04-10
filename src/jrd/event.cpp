@@ -183,6 +183,7 @@ void EventManager::detach_shared_file()
 	{
 		ISC_mutex_fini(MUTEX);
 		ISC_unmap_file(local_status, &m_shmemData);
+		m_header = NULL;
 	}
 }
 

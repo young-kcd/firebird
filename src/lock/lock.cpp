@@ -284,6 +284,7 @@ void LockManager::detach_shared_file(ISC_STATUS* status)
 	{
 		ISC_mutex_fini(MUTEX);
 		ISC_unmap_file(status, &m_shmem);
+		m_header = NULL;
 	}
 }
 
