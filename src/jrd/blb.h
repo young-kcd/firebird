@@ -62,7 +62,7 @@ struct bid
 	{
 		// Internal decomposition of the structure
 		RecordNumber::Packed bid_internal;
-		struct bid_quad_struct bid_quad;
+		bid_quad_struct bid_quad;
 	};
 
 	ULONG& bid_temp_id()

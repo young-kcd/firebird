@@ -114,7 +114,7 @@ struct MemoryBlock
 	union // anonymous union
 	{
 		ULONG mbk_large_length; // Measured in bytes
-		struct mbk_small_struct mbk_small;
+		mbk_small_struct mbk_small;
 	};
 #ifdef DEBUG_GDS_ALLOC
 	const char* mbk_file;

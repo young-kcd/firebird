@@ -84,7 +84,7 @@ private:
 	void watcher_thread();
 	void attach_shared_file();
 	void detach_shared_file();
-	void get_shared_file_name(Firebird::PathName&);
+	void get_shared_file_name(Firebird::PathName&) const;
 
 	static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM arg)
 	{

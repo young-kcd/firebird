@@ -65,7 +65,7 @@ public:
 
 	void repost(thread_db*, lock_ast_t, void*, SRQ_PTR);
 
-	SLONG queryData(SRQ_PTR, USHORT, USHORT);
+	SLONG queryData(SRQ_PTR, const USHORT, const USHORT);
 	SLONG readData(SRQ_PTR);
 	SLONG readData2(SRQ_PTR, USHORT, const UCHAR*, USHORT, SRQ_PTR);
 	SLONG writeData(SRQ_PTR, SLONG);
@@ -133,7 +133,7 @@ private:
 	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
 	bool attach_shared_file(ISC_STATUS* status);
 	void detach_shared_file(ISC_STATUS* status);
-	void get_shared_file_name(Firebird::PathName&);
+	void get_shared_file_name(Firebird::PathName&) const;
 
 	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 	{

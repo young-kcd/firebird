@@ -264,11 +264,8 @@ bool LockManager::attach_shared_file(ISC_STATUS* status)
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	if (!(m_header = (lhb*) ISC_map_file(status,
-										 name.c_str(),
-										 initialize, this,
-										 m_memorySize,
-										 &m_shmem)))
+	if (!(m_header =
+		(lhb*) ISC_map_file(status, name.c_str(), initialize, this, m_memorySize, &m_shmem)))
 	{
 		return false;
 	}
@@ -289,7 +286,7 @@ void LockManager::detach_shared_file(ISC_STATUS* status)
 }
 
 
-void LockManager::get_shared_file_name(Firebird::PathName& name)
+void LockManager::get_shared_file_name(Firebird::PathName& name) const
 {
 	name.printf(LOCK_FILE, m_dbId.c_str());
 }
@@ -795,7 +792,7 @@ void LockManager::repost(thread_db* tdbb, lock_ast_t ast, void* arg, SRQ_PTR own
 }
 
 
-SLONG LockManager::queryData(SRQ_PTR parent_request, USHORT series, USHORT aggregate)
+SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const USHORT aggregate)
 {
 /**************************************
  *
@@ -842,7 +839,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, USHORT series, USHORT aggre
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
 			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
@@ -880,7 +877,7 @@ SLONG LockManager::queryData(SRQ_PTR parent_request, USHORT series, USHORT aggre
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_backward);
 			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
 		{
-			lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* lock = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 			if (lock->lbl_parent != parent->lrq_lock)
 				continue;
@@ -972,7 +969,7 @@ SLONG LockManager::readData2(SRQ_PTR parent_request,
 
 	SLONG data;
 	USHORT junk;
-	lbl* lock = find_lock(parent, series, value, length, &junk);
+	const lbl* lock = find_lock(parent, series, value, length, &junk);
 	if (lock)
 		data = lock->lbl_data;
 	else
@@ -1062,11 +1059,13 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 	// Check for shared memory state consistency
 
-	while (SRQ_EMPTY(m_header->lhb_processes)) {
+	while (SRQ_EMPTY(m_header->lhb_processes))
+	{
 		fb_assert(owner_offset == CREATE_OWNER);
 		owner_offset = DUMMY_OWNER;
 
-		if (! m_sharedFileCreated) {
+		if (! m_sharedFileCreated)
+		{
 			ISC_STATUS_ARRAY local_status;
 
 			// Someone is going to delete shared file? Reattach.
@@ -1082,7 +1081,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 				bug(NULL, "ISC_mutex_lock failed (acquire_shmem)");
 			}
 		}
-		else {
+		else
+		{
 			// complete initialization
 			m_sharedFileCreated = false;
 
@@ -1467,7 +1467,7 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
  **************************************
  *
  * Functional description
- *	Disasterous lock manager bug.  Issue message and abort process.
+ *	Disastrous lock manager bug.  Issue message and abort process.
  *
  **************************************/
 	TEXT buffer[MAXPATHLEN + 100];
@@ -1493,7 +1493,7 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
  **************************************
  *
  * Functional description
- *	Disasterous lock manager bug.  Issue message and abort process.
+ *	Disastrous lock manager bug.  Issue message and abort process.
  *
  **************************************/
 	TEXT s[2 * MAXPATHLEN];
@@ -1626,8 +1626,7 @@ bool LockManager::create_owner(ISC_STATUS* status_vector,
 	}
 	else
 	{
-		owner = (own*) ((UCHAR *) SRQ_NEXT(m_header->lhb_free_owners) -
-					   OFFSET(own*, own_lhb_owners));
+		owner = (own*) ((UCHAR*) SRQ_NEXT(m_header->lhb_free_owners) - OFFSET(own*, own_lhb_owners));
 		remove_que(&owner->own_lhb_owners);
 	}
 
@@ -2148,10 +2147,9 @@ SRQ_PTR LockManager::grant_or_que(thread_db* tdbb, lrq* request, lbl* lock, SSHO
 	// Compatible requests are easy to satify.  Just post the request to the lock,
 	// update the lock state, release the data structure, and we're done.
 
-	if (compatibility[request->lrq_requested][lock->lbl_state]) {
-		if (!lockOrdering() ||
-			request->lrq_requested == LCK_null ||
-			(lock->lbl_pending_lrq_count == 0))
+	if (compatibility[request->lrq_requested][lock->lbl_state])
+	{
+		if (!lockOrdering() || request->lrq_requested == LCK_null || lock->lbl_pending_lrq_count == 0)
 		{
 			grant(request, lock);
 			post_pending(lock);
@@ -2367,7 +2365,7 @@ void LockManager::insert_data_que(lbl* lock)
 		for (lock_srq = (SRQ) SRQ_ABS_PTR(data_header->srq_forward);
 			 lock_srq != data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
-			lbl* lock2 = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			const lbl* lock2 = (lbl*) ((UCHAR *) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock2->lbl_series == lock->lbl_series);
 			if (lock2->lbl_parent != lock->lbl_parent)
 				continue;
@@ -2738,7 +2736,8 @@ void LockManager::post_pending(lbl* lock)
 			const UCHAR temp_state = lock_state(lock);
 			if (compatibility[request->lrq_requested][temp_state])
 				grant(request, lock);
-			else {
+			else
+			{
 #ifdef DEV_BUILD
 				pending_counter++;
 #endif
@@ -2753,7 +2752,8 @@ void LockManager::post_pending(lbl* lock)
 		}
 		else if (compatibility[request->lrq_requested][lock->lbl_state])
 			grant(request, lock);
-		else {
+		else
+		{
 #ifdef DEV_BUILD
 			pending_counter++;
 #endif
@@ -3434,7 +3434,8 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		// least one pending request in the queue (before this request
 		// but not including it).
 
-		if (request->lrq_flags & LRQ_pending) {
+		if (request->lrq_flags & LRQ_pending)
+		{
 			CHECK(!compatibility[request->lrq_requested][lock->lbl_state] ||
 				  (lockOrdering() && found_pending));
 
@@ -3536,7 +3537,8 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 		{
 			ULONG found = 0;
 			const srq* que2;
-			SRQ_LOOP(owner->own_blocks, que2) {
+			SRQ_LOOP(owner->own_blocks, que2)
+			{
 				// Validate that the next backpointer points back to us
 				const srq* const que2_next = SRQ_NEXT((*que2));
 				CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));
@@ -3579,7 +3581,8 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 
 		ULONG found = 0;
 		const srq* que2;
-		SRQ_LOOP(owner->own_requests, que2) {
+		SRQ_LOOP(owner->own_requests, que2)
+		{
 			// Validate that the next backpointer points back to us
 			const srq* const que2_next = SRQ_NEXT((*que2));
 			CHECK(que2_next->srq_backward == SRQ_REL_PTR(que2));

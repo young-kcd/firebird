@@ -188,7 +188,7 @@ void EventManager::detach_shared_file()
 }
 
 
-void EventManager::get_shared_file_name(Firebird::PathName& name)
+void EventManager::get_shared_file_name(Firebird::PathName& name) const
 {
 	name.printf(EVENT_FILE, m_dbId.c_str());
 }
@@ -512,7 +512,8 @@ evh* EventManager::acquire_shmem()
 
 	// Check for shared memory state consistency
 
-	while (SRQ_EMPTY(m_header->evh_processes)) {
+	while (SRQ_EMPTY(m_header->evh_processes))
+	{
 		if (! m_sharedFileCreated) {
 			// Someone is going to delete shared file? Reattach.
 			ISC_mutex_unlock(MUTEX);
@@ -533,7 +534,6 @@ evh* EventManager::acquire_shmem()
 		}
 	}
 	fb_assert(!m_sharedFileCreated);
-
 
 	m_header->evh_current_process = m_processOffset;
 
@@ -1061,7 +1061,7 @@ void EventManager::free_global(frb* block)
 	frb* free;
 
 	frb* prior = NULL;
-	SRQ_PTR offset = SRQ_REL_PTR(block);
+	const SRQ_PTR offset = SRQ_REL_PTR(block);
 	block->frb_header.hdr_type = type_frb;
 
 	for (ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
