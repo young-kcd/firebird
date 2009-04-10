@@ -257,17 +257,17 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian	  // CLASS_DARWIN_PPC64
 };
 
-#ifdef sun
-#ifdef i386
+#ifdef __sun
+#ifdef __i386
 const SSHORT CLASS		= CLASS_SOLARIS_I386;
-#endif
-#ifdef sparc
+#elif defined (__sparc)
 const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
-#endif
-#ifdef AMD64
+#elif defined (__amd64)
 const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
+#else
+#error no support for this hardware on SUN
 #endif
-#endif
+#endif // __sun
 
 #ifdef HPUX
 const SSHORT CLASS		= CLASS_HPUX_PA;

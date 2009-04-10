@@ -260,7 +260,7 @@
  * SUN platforms--the 386i is obsolete
 *****************************************************/
 
-#ifdef sun
+#ifdef __sun
 /* Defined KILLER_SIGNALS for Sun - as we were getting lots of lockups
  * using pipe server.
  * 1995-February-24 David Schnepper
@@ -308,29 +308,29 @@ extern "C" int remove(const char* path);
 
 //#define BSD_UNIX
 
-#endif /* SOLARIS */
+#endif // SOLARIS
 
 #define UNIX
 #define IEEE
 
-#ifdef sparc
+#ifdef __sparc
 //#define FB_ALIGNMENT       4
 //#define FB_DOUBLE_ALIGN    8
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #define RISC_ALIGNMENT
-#endif /* sparc */
 
-#ifdef i386
-#define I386
+#elif defined (__i386)
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
-#endif
-#ifdef AMD64
+
+#elif defined (__amd64)
 #define IMPLEMENTATION  isc_info_db_impl_sun_amd64 /* 74 */
-#endif /* AMD64 */
 
+#else
+#error What is IMPLEMENTATION for this Solaris platform????
+#endif
 
-#endif /* sun */
+#endif // __sun
 
 
 /*****************************************************
