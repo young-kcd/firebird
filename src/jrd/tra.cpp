@@ -3105,22 +3105,15 @@ static void transaction_options(thread_db* tdbb,
 							 Arg::Gds(isc_tpb_overflow_len) << Arg::Num(len) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
-				const ULONG value = gds__vax_integer(tpb, len);
+				const SLONG value = gds__vax_integer(tpb, len);
 
-				if (value > (ULONG) MAX_SSHORT)
+				if (value <= 0 || value > MAX_SSHORT)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 							 Arg::Gds(isc_tpb_invalid_value) << Arg::Num(value) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				transaction->tra_lock_timeout = (SSHORT) value;
-
-				if (transaction->tra_lock_timeout <= 0)
-				{
-					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
-							 Arg::Gds(isc_tpb_invalid_value) << Arg::Num(transaction->tra_lock_timeout) <<
-																Arg::Str("isc_tpb_lock_timeout"));
-				}
 
 				tpb += len;
 			}
