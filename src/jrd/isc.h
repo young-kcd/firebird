@@ -56,6 +56,17 @@ struct event_t
 };
 
 #elif defined(USE_POSIX_THREADS)
+
+#if defined(HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP) && defined(HAVE_PTHREAD_MUTEX_CONSISTENT_NP)
+
+#define USE_ROBUST_MUTEX
+
+#if defined(LINUX) && (!defined(__USE_GNU))
+#define __USE_GNU 1	// required on this OS to have this stuff declared
+#endif // LINUX		// should be defined before include <pthread.h> - AP 2009
+
+#endif // ROBUST mutex
+
 #include <pthread.h>
 
 #ifdef USE_SYS5SEMAPHORE

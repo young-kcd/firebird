@@ -681,6 +681,8 @@ CFLAGS="$savedFlags"
 fi
 AC_CHECK_FUNCS(semtimedop)
 AC_CHECK_FUNCS(posix_fadvise)
+AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
+AC_CHECK_FUNCS(pthread_mutex_consistent_np)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN

@@ -1235,15 +1235,16 @@ int ISC_event_wait(event_t*	event,
 #else //not USE_SYS5SEMAPHORE
 
 namespace {
-bool isPthreadError(int rc, const char* function)
+int isPthreadError(int rc, const char* function)
 {
 	if (rc == 0)
-		return false;
+		return 0;
 	iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) << Arg::Str(function) << Arg::Unix(rc)).value());
-	return true;
+	return rc;
 }
 }
 #define PTHREAD_ERROR(x) if (isPthreadError((x), #x)) return FB_FAILURE
+#define PTHREAD_ERRNO(x) {int tmpState = (x); if (isPthreadError((tmpState), #x)) return tmpState;}
 #define LOG_PTHREAD_ERROR(x) isPthreadError((x), #x)
 
 SLONG ISC_event_clear(event_t* event)
@@ -2592,18 +2593,19 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 /* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
-	const ULONG page_size = sysconf(_SC_PAGESIZE);
-	if (page_size == -1) {
+	const long ps = sysconf(_SC_PAGESIZE);
+	if (ps == -1) {
 		error(status_vector, "sysconf", errno);
 		return NULL;
 	}
 #else
-	const ULONG page_size = (int) getpagesize();
-	if (page_size == -1) {
+	const int ps = getpagesize();
+	if (ps == -1) {
 		error(status_vector, "getpagesize", errno);
 		return NULL;
 	}
 #endif
+	const ULONG page_size = (ULONG) ps;
 
 /* Compute the start and end page-aligned offsets which
    contain the object being mapped. */
@@ -2647,18 +2649,19 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 /* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
-	const ULONG page_size = sysconf(_SC_PAGESIZE);
-	if (page_size == -1) {
+	const long ps = sysconf(_SC_PAGESIZE);
+	if (ps == -1) {
 		error(status_vector, "sysconf", errno);
-		return; // false;
+		return;
 	}
 #else
-	const ULONG page_size = (int) getpagesize();
-	if (page_size == -1) {
+	const int ps = getpagesize();
+	if (ps == -1) {
 		error(status_vector, "getpagesize", errno);
-		return; // false;
+		return;
 	}
 #endif
+	const ULONG page_size = (ULONG) ps;
 
 /* Compute the start and end page-aligned addresses which
    contain the mapped object. */
@@ -3013,15 +3016,19 @@ int ISC_mutex_init(struct mtx* mutex)
  **************************************/
 	pthread_mutexattr_t mattr;
 
-	int state = pthread_mutexattr_init(&mattr);
-	if (state == 0)
-	{
+	PTHREAD_ERRNO(pthread_mutexattr_init(&mattr));
 #if _POSIX_THREAD_PROCESS_SHARED >= 200112L
-		pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+	PTHREAD_ERRNO(pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED));
+#else
+#error Your system must support PTHREAD_PROCESS_SHARED to use firebird.
 #endif
-		state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
-		pthread_mutexattr_destroy(&mattr);
-	}
+
+#ifdef USE_ROBUST_MUTEX
+	LOG_PTHREAD_ERROR(pthread_mutexattr_setrobust_np(&mattr, PTHREAD_MUTEX_ROBUST_NP));
+#endif
+
+	int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
+	LOG_PTHREAD_ERROR(pthread_mutexattr_destroy(&mattr));
 	return state;
 }
 
@@ -3055,7 +3062,17 @@ int ISC_mutex_lock(struct mtx* mutex)
  *
  **************************************/
 
-	return pthread_mutex_lock(mutex->mtx_mutex);
+	int state = pthread_mutex_lock(mutex->mtx_mutex);
+#ifdef USE_ROBUST_MUTEX
+	if (state == EOWNERDEAD)
+	{
+		// We always perform check for dead process
+		// Therefore may safely mark mutex as recovered
+		LOG_PTHREAD_ERROR(pthread_mutex_consistent_np(mutex->mtx_mutex));
+		state = 0;
+	}
+#endif
+	return state;
 }
 
 
