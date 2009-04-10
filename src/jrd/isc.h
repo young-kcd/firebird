@@ -36,11 +36,11 @@
 #if defined(DARWIN)
 #define USE_SYS5SEMAPHORE
 #endif
-//#define USE_SYS5SEMAPHORE
+
 
 #ifdef UNIX
 
-#ifdef SOLARIS_MT
+#if defined(SOLARIS_MT)
 #include <thread.h>
 
 struct mtx
@@ -55,9 +55,7 @@ struct event_t
 	cond_t event_cond[1];
 };
 
-#endif
-
-#ifdef USE_POSIX_THREADS
+#elif defined(USE_POSIX_THREADS)
 #include <pthread.h>
 
 #ifdef USE_SYS5SEMAPHORE
@@ -95,17 +93,19 @@ struct event_t
 
 #endif // USE_SYS5SEMAPHORE
 
-#endif // USE_POSIX_THREADS
+#else
+#error: Do not know how to declare shared mutex and event on this system.
+#endif
 
 #define SH_MEM_STRUCTURE_DEFINED
+
 struct sh_mem
 {
 	UCHAR *sh_mem_address;
 	ULONG sh_mem_length_mapped;
 	SLONG sh_mem_handle;
 };
-//typedef sh_mem SH_MEM_T;
-//typedef sh_mem *SH_MEM;
+
 #endif // UNIX
 
 
@@ -156,12 +156,11 @@ struct sh_mem
 	ULONG*	sh_mem_hdr_address;
 	TEXT	sh_mem_name[MAXPATHLEN];
 };
-//typedef sh_mem SH_MEM_T;
-//typedef sh_mem *SH_MEM;
-#define THREAD_HANDLE_DEFINED
+
 #endif // WIN_NT
 
 #ifndef SH_MEM_STRUCTURE_DEFINED
+
 #define SH_MEM_STRUCTURE_DEFINED
 struct sh_mem
 {
@@ -169,15 +168,9 @@ struct sh_mem
 	ULONG	sh_mem_length_mapped;
 	SLONG	sh_mem_handle;
 };
-//typedef sh_mem SH_MEM_T;
-//typedef sh_mem *SH_MEM;
+
 #endif
 #undef SH_MEM_STRUCTURE_DEFINED
-
-#ifndef THREAD_HANDLE_DEFINED
-#define THREAD_HANDLE_DEFINED
-#endif
-#undef THREAD_HANDLE_DEFINED
 
 
 // Interprocess communication configuration structure
