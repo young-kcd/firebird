@@ -172,47 +172,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	pthread_attr_t pattr;
 	int state;
 
-#if defined(HP10)
-	state = pthread_attr_create(&pattr);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_attr_create", state);
-
-/* The default HP's stack size is too small. HP's documentation
-   says it is "machine specific". My test showed it was less
-   than 64K. We definitly need more stack to be able to execute
-   concurrently many (at least 100) copies of the same request
-   (like, for example in case of recursive stored prcedure).
-   The following code sets threads stack size up to 256K if the
-   default stack size is less than this number
-*/
-	const long stack_size = pthread_attr_getstacksize(pattr);
-	if (stack_size == -1)
-		Firebird::system_call_failed::raise("pthread_attr_getstacksize");
-
-	if (stack_size < 0x40000L) {
-		state = pthread_attr_setstacksize(&pattr, 0x40000L);
-		if (state)
-			Firebird::system_call_failed::raise("pthread_attr_setstacksize", state);
-	}
-
-/* HP's Posix threads implementation does not support
-   bound attribute. It just a user level library.
-*/
-	state = pthread_create(&thread, pattr, THREAD_ENTRYPOINT, THREAD_ARG);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_create", state);
-
-	if (!thd_id)
-	{
-		state = pthread_detach(&thread);
-		if (state)
-			Firebird::system_call_failed::raise("pthread_detach", state);
-	}
-
-	state = pthread_attr_delete(&pattr);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_attr_delete", state);
-#elif defined (LINUX) || defined (FREEBSD)
+#if defined (LINUX) || defined (FREEBSD)
 	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
 		Firebird::system_call_failed::raise("pthread_create", state);
 	if (!thd_id)

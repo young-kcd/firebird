@@ -86,13 +86,8 @@ FB_THREAD_ID getThreadId()
 #endif
 
 #ifdef USE_POSIX_THREADS
-// The following is just a temp. decision.
-#ifdef HP10
-	id = (FB_THREAD_ID) (pthread_self().field1);
-#else
 	id = (FB_THREAD_ID) pthread_self();
-#endif // HP10
-#endif // USE_POSIX_THREADS
+#endif
 
 	return id;
 }

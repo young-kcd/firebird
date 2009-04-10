@@ -123,10 +123,8 @@ const char* MTAB		= "/etc/mtab";
 
 #endif //NO_NFS
 
-#ifdef HPUX
-#if !(defined HP10 || defined HP11)
+#if defined(HPUX) && (!defined HP11)
 #include <cluster.h>
-#endif
 #endif
 
 #ifndef MAXHOSTLEN
@@ -200,10 +198,8 @@ static void share_name_from_unc(tstring&, LPREMOTE_NAME_INFO);
 static bool get_full_path(const tstring&, tstring&);
 #endif
 
-#ifdef HPUX
-#if !(defined HP10 || defined HP11)
+#if defined(HPUX) && (!defined HP11)
 static bool get_server(tstring&, tstring&);
-#endif
 #endif
 
 
@@ -292,7 +288,7 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		expanded_filename.replace(0, len, max_path);
 		node_name = max_node;
 	}
-#if defined(HPUX) && (!(defined HP10 || defined HP11))
+#if defined(HPUX) && (!defined HP11)
 	else
 	{
 		flag = get_server(expanded_filename, node_name);
@@ -1562,8 +1558,7 @@ bool Mnt::get()
 }
 #endif // GET_MOUNTS
 
-#ifdef HPUX
-#if !(defined HP10 || defined HP11)
+#if defined(HPUX) && (!defined HP11)
 static bool get_server(tstring&, tstring& node_name)
 {
 /**************************************
@@ -1594,7 +1589,6 @@ static bool get_server(tstring&, tstring& node_name)
 	node_name = cnode->cnode_name;
 	return true;
 }
-#endif
 #endif // HPUX
 #endif // NO_NFS
 } // anonymous namespace

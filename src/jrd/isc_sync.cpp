@@ -1344,18 +1344,10 @@ int ISC_event_post(event_t* event)
 	const int ret = pthread_cond_broadcast(event->event_cond);
 	PTHREAD_ERROR(pthread_mutex_unlock(event->event_mutex));
 	if (ret)
-#ifdef HP10
-	{
-		fb_assert(ret == -1);
-		gds__log ("ISC_event_post: pthread_cond_broadcast failed with errno = %d", errno);
-		return FB_FAILURE;
-	}
-#else
 	{
 		gds__log ("ISC_event_post: pthread_cond_broadcast failed with errno = %d", ret);
 		return FB_FAILURE;
 	}
-#endif /* HP10 */
 
 	return FB_SUCCESS;
 }
@@ -1409,14 +1401,10 @@ int ISC_event_wait(event_t* event,
 		{
 			ret = pthread_cond_timedwait(event->event_cond, event->event_mutex, &timer);
 
-#ifdef HP10
-			if ((ret == -1) && (errno == EAGAIN))
-#else
 #if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
 			if (ret == ETIMEDOUT)
 #else
 			if (ret == ETIME)
-#endif
 #endif
 			{
 
@@ -2160,28 +2148,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 			   Let's find out what the problem is by getting the
 			   system-imposed limits.
-			 */
 
-#ifdef HP10
-			struct pst_ipcinfo pst;
-
-			if (pstat_getipc(&pst, sizeof(struct pst_ipcinfo), 1, 0) == -1) {
-				error(status_vector, "pstat_getipc", errno);
-				fclose(fp);
-				return NULL;
-			}
-
-			if ((length < pst.psi_shmmin) || (length > pst.psi_shmmax)) {
-				/* If pstat_getipc did not return an error "errno"
-				   is still EINVAL, exactly what we want.
-				 */
-				error(status_vector, "shmget", errno);
-				fclose(fp);
-				return NULL;
-			}
-#endif /* HP10 */
-
-			/* If we are here then the shared memory segment already
+			   If we are here then the shared memory segment already
 			   exists and the "length" we specified in shmget() is
 			   bigger than the size of the existing segment.
 
@@ -3054,10 +3022,6 @@ int ISC_mutex_init(struct mtx* mutex)
 		state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
 		pthread_mutexattr_destroy(&mattr);
 	}
-#ifdef HP10
-	if (state != 0)
-    	state = errno;
-#endif
 	return state;
 }
 
@@ -3090,18 +3054,8 @@ int ISC_mutex_lock(struct mtx* mutex)
  *	Sieze a mutex.
  *
  **************************************/
-#ifdef HP10
-	int state = pthread_mutex_lock(mutex->mtx_mutex);
-	if (!state)
-		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#else
 
 	return pthread_mutex_lock(mutex->mtx_mutex);
-
-#endif /* HP10 */
 }
 
 
@@ -3117,34 +3071,8 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  *	Conditionally sieze a mutex.
  *
  **************************************/
-#ifdef HP10
-	int state = pthread_mutex_trylock(mutex->mtx_mutex);
-
-/* HP's interpretation of return codes is different than Solaris
-   (and Posix Standard?). Usually in case of error they return
-   -1 and set errno to whatever error number is.
-   pthread_mutex_trylock() is a special case:
-
-	return	errno	description
-	  1		Success
-	  0		mutex has alreary been locked. Could not get it
-	 -1	EINVAL	invalid value of mutex
-*/
-	if (!state)
-		return -99;				/* we did not get the mutex for it had already      */
-	/* been locked, let's return something which is     */
-	/* not zero and negative (errno values are positive) */
-	if (state == 1)
-		return 0;
-
-	fb_assert(state == -1);		/* if state is not 0 or 1, it should be -1 */
-	return errno;
-
-#else
 
 	return pthread_mutex_trylock(mutex->mtx_mutex);
-
-#endif /* HP10 */
 }
 
 
@@ -3160,18 +3088,8 @@ int ISC_mutex_unlock(struct mtx* mutex)
  *	Release a mutex.
  *
  **************************************/
-#ifdef HP10
-	int state = pthread_mutex_unlock(mutex->mtx_mutex);
-	if (!state)
-		return 0;
-	fb_assert(state == -1);		/* if state is not 0, it should be -1 */
-	return errno;
-
-#else
 
 	return pthread_mutex_unlock(mutex->mtx_mutex);
-
-#endif /* HP10 */
 }
 
 #endif // USE_SYS5SEMAPHORE

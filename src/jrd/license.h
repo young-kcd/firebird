@@ -68,12 +68,7 @@
 #include "../jrd/isc_version.h"
 
 #ifdef HPUX
-#ifdef HP10
-#define FB_PLATFORM	"HU"
-#endif /* HP10 */
-#ifdef HP11
-#define FB_PLATFORM     "HU"
-#endif /* HP11 */
+#define FB_PLATFORM "HU"
 #endif
 
 #ifdef sun

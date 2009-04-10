@@ -228,8 +228,6 @@ static void stuff_stack_trace(const jrd_req*);
 
 #if (defined SUPERSERVER) && (defined WIN_NT || defined SOLARIS_MT)
 const int MAX_CLONES	= 750;
-#elif defined (HP10) && defined (SUPERSERVER)
-const int MAX_CLONES	= 110;
 #else
 const int MAX_CLONES	= 1000;
 #endif

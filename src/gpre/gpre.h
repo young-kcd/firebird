@@ -76,7 +76,7 @@
 #endif
 
 #ifdef GPRE_ADA
-#if (defined HPUX && defined HP10) || defined SCO_UNIX
+#if defined SCO_UNIX
 #define ALSYS_ADA
 #endif
 #endif
