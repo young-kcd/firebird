@@ -1,3 +1,10 @@
+2009-04-11 19:13  asfernandes
+
+	* firebird2/src/jrd/unicode_util.cpp (1.6.4.4):
+
+	Fixed CORE-2395 - Lost the supplementary characters(UTF-8 4byte) at
+	immediate API handling.
+
 2009-03-23 18:15  hvlad
 
 	* firebird2/src/remote/server.cpp (1.126.2.15):
