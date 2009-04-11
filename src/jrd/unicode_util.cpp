@@ -193,9 +193,9 @@ ULONG UnicodeUtil::utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UC
 			{
 				UChar32 c2;
 
-				if (UTF_IS_SURROGATE_FIRST(c) && src < srcEnd && UTF_IS_TRAIL(c2 = *src))
+				if (UTF_IS_SURROGATE_FIRST(c) && i < srcLen && UTF_IS_TRAIL(c2 = src[i]))
 				{
-					++src;
+					++i;
 					c = UTF16_GET_PAIR_VALUE(c, c2);
 				}
 				else
