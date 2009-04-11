@@ -1,3 +1,82 @@
+2009-04-11 07:47  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.181):
+
+	Misc.
+
+2009-04-10 22:18  asfernandes
+
+	* firebird2/src/dsql/: make.cpp (1.186), make_proto.h (1.36),
+	node.h (1.122), parse.y (1.302):
+
+	Cleanup for NOD_CONST_SPECIAL. It's not needed anymore.
+
+2009-04-10 22:17  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.444):
+
+	Fixed CORE-2417 - Index cannot be used with <field> LIKE <constant>
+	in HAVING clause.
+
+2009-04-10 18:52  alexpeshkoff
+
+	* firebird2/: configure.in (1.328), src/jrd/isc.h (1.43),
+	src/jrd/isc_sync.cpp (1.180):
+
+	Use shared robust mutexes if present.  This provides successfull
+	recovery in case when any of firebird processes died with locked
+	shared mutex (like it was with semaphores SystemV).
+
+2009-04-10 17:36  alexpeshkoff
+
+	* firebird2/src/: common/thd.cpp (1.6), gpre/cob.cpp (1.76),
+	gpre/gpre.h (1.103), jrd/ThreadStart.cpp (1.14), jrd/exe.cpp
+	(1.294), jrd/isc_file.cpp (1.132), jrd/isc_sync.cpp (1.179),
+	jrd/license.h (1.44):
+
+	Cleanup - unsupported port HP10
+
+2009-04-10 16:28  robocop
+
+	* firebird2/src/: common/classes/alloc.h (1.85), jrd/blb.h (1.34),
+	jrd/event.cpp (1.91), jrd/event_proto.h (1.20), lock/lock.cpp
+	(1.188), lock/lock_proto.h (1.30):
+
+	Misc.
+
+2009-04-10 13:43  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.204):
+
+	Simplification.
+
+2009-04-10 12:35  alexpeshkoff
+
+	* firebird2/src/: jrd/event.cpp (1.90), lock/lock.cpp (1.187):
+
+	No sense keeping old value of shared memory pointer when file is
+	already unmapped - thanks to Claudio
+
+2009-04-10 12:29  alexpeshkoff
+
+	* firebird2/src/jrd/: common.h (1.195), pag.cpp (1.206):
+
+	Solaris port
+
+2009-04-10 12:28  alexpeshkoff
+
+	* firebird2/src/jrd/tra.cpp (1.203):
+
+	Fixed check for length of isc_tpb_lock_timeout parameter - it can
+	be up to 4 bytes, but should not be numerically greater than
+	MAX_SSHORT
+
+2009-04-10 10:51  alexpeshkoff
+
+	* firebird2/src/jrd/isc.h (1.42):
+
+	misc
+
 2009-04-09 18:47  alexpeshkoff
 
 	* firebird2/src/jrd/isc_sync.cpp (1.178):
