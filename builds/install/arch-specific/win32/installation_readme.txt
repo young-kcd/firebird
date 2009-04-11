@@ -41,7 +41,7 @@ Much work has been done to ensure that the MS Visual
 C runtime libraries are correctly installed by the
 binary installer. Since v2.1.2 Firebird will work with
 locally deployed instances of the runtime libraries.
-This especially simplifies deployment of the firebird
+This especially simplifies deployment of the Firebird
 client or embedded dll with your own application.
 
 However, in case of problems it may be necessary to
@@ -158,5 +158,3 @@ Please see this document:
     installation_scripted.txt
 
 for full details.
-
-

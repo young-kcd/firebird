@@ -264,11 +264,10 @@ bool LockManager::attach_shared_file(ISC_STATUS* status)
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	if (!(m_header =
-		(lhb*) ISC_map_file(status, name.c_str(), initialize, this, m_memorySize, &m_shmem)))
-	{
+	m_header = (lhb*) ISC_map_file(status, name.c_str(), initialize, this, m_memorySize, &m_shmem);
+
+	if (!m_header)
 		return false;
-	}
 
 	fb_assert(m_header->lhb_version == LHB_VERSION);
 	return true;

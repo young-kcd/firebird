@@ -1244,7 +1244,7 @@ int isPthreadError(int rc, const char* function)
 }
 }
 #define PTHREAD_ERROR(x) if (isPthreadError((x), #x)) return FB_FAILURE
-#define PTHREAD_ERRNO(x) {int tmpState = (x); if (isPthreadError(tmpState, #x)) return tmpState;}
+#define PTHREAD_ERRNO(x) { int tmpState = (x); if (isPthreadError(tmpState, #x)) return tmpState; }
 #define LOG_PTHREAD_ERROR(x) isPthreadError((x), #x)
 
 SLONG ISC_event_clear(event_t* event)
@@ -1856,8 +1856,10 @@ void ISC_remove_map_file(const TEXT* filename)
 		}
 	}
 #endif
-	unlink(expanded_filename);	// we can't do much (specially in dtors) when it fails
-								// therefore do not check for errors - at least it's just /tmp
+
+	// We can't do much (specially in dtors) when it fails
+	// therefore do not check for errors - at least it's just /tmp.
+	unlink(expanded_filename);
 }
 
 #ifdef UNIX
@@ -2265,7 +2267,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif /* SUPERSERVER */
 
 
-	UCHAR* address = (UCHAR *) shmat(shmid, NULL, 0);
+	UCHAR* address = (UCHAR*) shmat(shmid, NULL, 0);
 	if ((IPTR) address == (IPTR) -1) {
 		error(status_vector, "shmat", errno);
 		fclose(fp);
@@ -3020,7 +3022,7 @@ int ISC_mutex_init(struct mtx* mutex)
 #if _POSIX_THREAD_PROCESS_SHARED >= 200112L
 	PTHREAD_ERRNO(pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED));
 #else
-#error Your system must support PTHREAD_PROCESS_SHARED to use firebird.
+#error Your system must support PTHREAD_PROCESS_SHARED to use Firebird.
 #endif
 
 #ifdef USE_ROBUST_MUTEX
@@ -3146,7 +3148,7 @@ static inline BOOL switchToThread()
 		SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
 #endif
 
-		res = (*fnSwitchToThread) ();
+		res = (*fnSwitchToThread)();
 
 #if !defined SUPERSERVER
 		SetThreadPriority(hThread, THREAD_PRIORITY_NORMAL);
