@@ -1244,7 +1244,7 @@ int isPthreadError(int rc, const char* function)
 }
 }
 #define PTHREAD_ERROR(x) if (isPthreadError((x), #x)) return FB_FAILURE
-#define PTHREAD_ERRNO(x) {int tmpState = (x); if (isPthreadError((tmpState), #x)) return tmpState;}
+#define PTHREAD_ERRNO(x) {int tmpState = (x); if (isPthreadError(tmpState, #x)) return tmpState;}
 #define LOG_PTHREAD_ERROR(x) isPthreadError((x), #x)
 
 SLONG ISC_event_clear(event_t* event)
@@ -2798,7 +2798,7 @@ int ISC_mutex_lock(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Sieze a mutex.
+ *	Seize a mutex.
  *
  **************************************/
 	for (;;) {
@@ -2822,7 +2822,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Conditionally sieze a mutex.
+ *	Conditionally seize a mutex.
  *
  **************************************/
 	for (;;) {
@@ -2923,7 +2923,7 @@ int ISC_mutex_lock(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Sieze a mutex.
+ *	Seize a mutex.
  *
  **************************************/
 	struct sembuf sop;
@@ -2952,7 +2952,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Conditionally sieze a mutex.
+ *	Conditionally seize a mutex.
  *
  **************************************/
 	struct sembuf sop;
@@ -3058,7 +3058,7 @@ int ISC_mutex_lock(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Sieze a mutex.
+ *	Seize a mutex.
  *
  **************************************/
 
@@ -3085,7 +3085,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Conditionally sieze a mutex.
+ *	Conditionally seize a mutex.
  *
  **************************************/
 
@@ -3452,7 +3452,7 @@ int ISC_mutex_lock(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Sieze a mutex.
+ *	Seize a mutex.
  *
  **************************************/
 
@@ -3473,7 +3473,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  **************************************
  *
  * Functional description
- *	Conditionally sieze a mutex.
+ *	Conditionally seize a mutex.
  *
  **************************************/
 
