@@ -1013,7 +1013,7 @@ static TokenType getToken(const char **begin, const char *end)
 			while (p < end && !( classes(c) & (CHR_DIGIT | CHR_IDENT | CHR_WHITE) ) &&
 				c != '/' && c != '-' && c != ':' && c != '?' && c != '\'' && c != '"')
 			{
-				c = *p++;
+				c = *++p;
 			}
 			ret = ttOther;
 		}
