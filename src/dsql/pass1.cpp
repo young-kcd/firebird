@@ -3468,6 +3468,34 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 			const dsql_par* parameter2 = (dsql_par*) node2->nod_arg[e_par_parameter];
 			return (parameter1->par_index == parameter2->par_index);
 		}
+
+	case nod_derived_table:
+		{
+			const dsql_ctx* ctx1 = (dsql_ctx*) node1->nod_arg[e_derived_table_context];
+			const dsql_ctx* ctx2 = (dsql_ctx*) node2->nod_arg[e_derived_table_context];
+			fb_assert(ctx1 && ctx2);
+			
+			if (ctx1->ctx_context != ctx2->ctx_context)
+				return false;
+
+			// hvlad: i'm not sure if we need comparison's below. I.e. if two DT have the 
+			// same context number how it can be different in other aspects ?
+
+			const dsql_str* alias1 = (dsql_str*) node1->nod_arg[e_derived_table_alias];
+			const dsql_str* alias2 = (dsql_str*) node2->nod_arg[e_derived_table_alias];
+			if (alias1 && !alias2 || !alias1 && alias2)
+				return false;
+
+			if (alias1 && (alias1->str_charset != alias2->str_charset || 
+				alias1->str_length != alias2->str_length ||
+				strncmp(alias1->str_data, alias2->str_data, alias1->str_length)))
+			{
+				return false;
+			}
+
+			return node_match(node1->nod_arg[e_derived_table_rse], node2->nod_arg[e_derived_table_rse], 
+				ignore_map_cast);
+		}
 	} // switch
 
 	const dsql_nod* const* ptr1 = node1->nod_arg;
