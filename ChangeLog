@@ -1,3 +1,26 @@
+2009-04-12 09:53  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.446):
+
+	Fixed bug CORE-2416 : AV preparing a query with aggregate over
+	derived table
+
+2009-04-12 09:32  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.445):
+
+	Fixed bug CORE-2419 : Assert in DEBUG build preparing query witn
+	UNION in derived table
+
+2009-04-11 21:40  asfernandes
+
+	* firebird2/:
+	builds/install/arch-specific/win32/FirebirdInstall_20.iss (1.39),
+	builds/install/arch-specific/win32/installation_readme.txt (1.22),
+	src/jrd/isc_sync.cpp (1.182), src/lock/lock.cpp (1.189):
+
+	Misc
+
 2009-04-11 07:47  robocop
 
 	* firebird2/src/jrd/isc_sync.cpp (1.181):
