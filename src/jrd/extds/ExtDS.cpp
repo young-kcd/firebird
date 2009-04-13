@@ -1004,16 +1004,16 @@ static TokenType getToken(const char **begin, const char *end)
 		else if (classes(c) & CHR_WHITE)
 		{
 			while (p < end && (classes(*p) & CHR_WHITE))
-				*p++;
+				p++;
 			ret = ttWhite;
 		}
 		else
 		{
-			c = *p;
-			while (p < end && !( classes(c) & (CHR_DIGIT | CHR_IDENT | CHR_WHITE) ) &&
-				c != '/' && c != '-' && c != ':' && c != '?' && c != '\'' && c != '"')
+			while (p < end && !( classes(*p) & (CHR_DIGIT | CHR_IDENT | CHR_WHITE) ) &&
+				   (*p != '/') && (*p != '-') && (*p != ':') && (*p != '?') && 
+				   (*p != '\'') && (*p != '"') )
 			{
-				c = *++p;
+				p++;
 			}
 			ret = ttOther;
 		}
