@@ -566,7 +566,7 @@ SRQ_PTR LockManager::enqueue(thread_db* tdbb,
 	// Maintain lock series data queue
 
 	SRQ_INIT(lock->lbl_lhb_data);
-	if (lock->lbl_data = data)
+	if ( (lock->lbl_data = data) )
 		insert_data_que(lock);
 
 	if (series < LCK_MAX_SERIES)
@@ -1003,7 +1003,7 @@ SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	// Re-init after a potential remap
 	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	remove_que(&lock->lbl_lhb_data);
-	if (lock->lbl_data = data)
+	if ( (lock->lbl_data = data) )
 		insert_data_que(lock);
 
 	if (lock->lbl_series < LCK_MAX_SERIES)
@@ -2110,7 +2110,7 @@ void LockManager::grant(lrq* request, lbl* lock)
 	request->lrq_state = request->lrq_requested;
 	if (request->lrq_data) {
 		remove_que(&lock->lbl_lhb_data);
-		if (lock->lbl_data = request->lrq_data)
+		if ( (lock->lbl_data = request->lrq_data) )
 			insert_data_que(lock);
 		request->lrq_data = 0;
 	}
