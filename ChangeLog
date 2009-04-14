@@ -1,3 +1,9 @@
+2009-04-14 10:27  alexpeshkoff
+
+	* firebird2/configure.in (1.329):
+
+	Take into an account Solaris library's specifics
+
 2009-04-13 10:24  dimitr
 
 	* firebird2/src/lock/lock.cpp (1.190):
