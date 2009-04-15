@@ -1,3 +1,48 @@
+2009-04-15 16:18  robocop
+
+	* firebird2/src/remote/server.cpp (1.245):
+
+	Comments.
+
+2009-04-15 15:47  robocop
+
+	* firebird2/src/remote/remote.cpp (1.85):
+
+	Comments.
+
+2009-04-15 15:41  robocop
+
+	* firebird2/src/remote/inet.cpp (1.278):
+
+	Comments.
+
+2009-04-15 11:58  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.277):
+
+	cleanup
+
+2009-04-15 08:40  robocop
+
+	* firebird2/src/: config/Args.cpp (1.7),
+	utilities/fbcpl/fbdialog.cpp (1.17), remote/protocol.h (1.49),
+	remote/remote.cpp (1.84), burp/restore.epp (1.162), jrd/rse.cpp
+	(1.182), utilities/ntrace/TraceConfiguration.cpp (1.9):
+
+	Misc.
+
+2009-04-15 08:28  robocop
+
+	* firebird2/: configure.in (1.330),
+	src/include/gen/autoconfig_msvc.h (1.116), src/jrd/common.h
+	(1.196), src/jrd/flu.cpp (1.70), src/jrd/isc.cpp (1.91),
+	src/jrd/isc_file.cpp (1.133), src/jrd/svc.cpp (1.271),
+	src/common/cvt.cpp (1.17), src/gpre/gpre.cpp (1.104),
+	src/gpre/gpre.h (1.104), src/gpre/gpreswi.h (1.23),
+	src/remote/inet.cpp (1.276), src/remote/remote_def.h (1.35):
+
+	Get rid of SCO.
+
 2009-04-14 10:27  alexpeshkoff
 
 	* firebird2/configure.in (1.329):
