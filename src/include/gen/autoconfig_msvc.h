@@ -124,6 +124,7 @@
 #undef HAVE_SYS_SOCKET_H
 #undef HAVE_SYS_SOCKIO_H
 #undef HAVE_WINSOCK2_H
+#define HAVE_FLOAT_H
 
 
 /* Functions */

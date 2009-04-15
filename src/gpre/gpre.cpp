@@ -146,7 +146,6 @@ static bool sw_standard_out;
 static bool sw_first;
 static bool sw_lines;
 static bool sw_trace;
-static bool sw_alsys;
 static int line_global;
 static int warnings_global;
 static int fatals_global;
@@ -220,10 +219,6 @@ static const ext_table_t dml_ext_table[] =
 	{ lang_ada, IN_SW_GPRE_ADA, ".eada", ".ada" },
 #else
 	{ lang_ada, IN_SW_GPRE_ADA, ".ea", ".a" },
-#endif
-
-#ifdef ALSYS_ADA
-	{ lang_ada, IN_SW_GPRE_ALSYS, ".eada", ".ada" },
 #endif
 #endif // GPRE_ADA
 
@@ -315,7 +310,6 @@ int main(int argc, char* argv[])
 	sw_lines					= true;
 	gpreGlob.sw_auto			= true;
 	gpreGlob.sw_cstring			= true;
-	sw_alsys					= false;
 	gpreGlob.sw_external		= false;
 	sw_standard_out				= false;
 #ifdef GPRE_COBOL
@@ -555,26 +549,6 @@ int main(int argc, char* argv[])
 				db->dbb_name->sym_string = "isc_database";
 			comment_stop = "--";
 			break;
-
-		case IN_SW_GPRE_ALSYS:
-			sw_alsys		= true;
-			gpreGlob.sw_case = true;
-			gpreGlob.sw_language = lang_ada;
-			sw_lines = false;
-			gpreGlob.sw_cstring = false;
-			gen_routine = ADA_action;
-			gpreGlob.utility_name = "isc_utility";
-			gpreGlob.count_name = "isc_count";
-			gpreGlob.slack_name = "isc_slack";
-			gpreGlob.transaction_name = "gds_trans";
-			gpreGlob.database_name = "isc_database";
-			gpreGlob.ident_pattern = "isc_%d";
-			gpreGlob.long_ident_pattern	= "isc_%ld";
-			comment_start = "--";
-			if (db)
-				db->dbb_name->sym_string = "isc_database";
-			comment_stop = "--";
-			break;
 #endif // GPRE_ADA
 
 
@@ -728,15 +702,6 @@ int main(int argc, char* argv[])
 
 	if (gpreGlob.sw_language == lang_cpp || gpreGlob.sw_language == lang_cplusplus)
 		gpreGlob.sw_language = lang_cxx;
-
-#ifdef ALSYS_ADA
-	if (sw_alsys)
-	{
-		for (src_ext_tab = dml_ext_table;; src_ext_tab++)
-			if (src_ext_tab->ext_in_sw == IN_SW_GPRE_ALSYS)
-				break;
-	}
-#endif
 
 #if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
 //  if cobol is defined we need both sw_cobol and sw_cob_dialect to

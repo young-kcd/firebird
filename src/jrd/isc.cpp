@@ -59,10 +59,6 @@
 #include <sys/utsname.h>
 #endif
 
-#ifdef SCO_EV
-#include <sys/utsname.h>
-#endif
-
 /* Win32 specific stuff */
 
 #ifdef WIN_NT
@@ -219,7 +215,7 @@ bool ISC_check_process_existence(SLONG pid)
 }
 
 
-#if (defined SOLARIS || defined SCO_EV)
+#if defined(SOLARIS)
 TEXT* ISC_get_host(TEXT* string, USHORT length)
 {
 /**************************************

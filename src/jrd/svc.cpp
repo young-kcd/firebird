@@ -87,26 +87,23 @@
 #include <vfork.h>
 #endif
 
-#ifdef SOLARIS
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 
-#ifdef SCO_UNIX
-#include <fcntl.h>
-#endif
 
 #if !defined(WIN_NT)
 #  include <signal.h>
 #  include <sys/param.h>
-#  include <sys/stat.h>
 #  include <errno.h>
 #else
 #  include <windows.h>
 #  include <io.h> // _open, _get_osfhandle
 #  include <stdlib.h>
-#  include <fcntl.h>
-#  include <sys/stat.h>
 #endif
+
+#  include <sys/stat.h>
+
 
 #define statistics	stat
 

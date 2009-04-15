@@ -110,16 +110,15 @@ const int INET_RETRY_CALL	= 5;
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 
-#if (defined HPUX || defined SCO_UNIX)
+// Please review. Maybe not needed. See H_ERRNO in common.h.
+#if defined HPUX
 extern int h_errno;
 #endif
 
 using namespace Firebird;
 
-const char* PROXY_FILE	= "/etc/gds_proxy";
-const char* HOSTS_FILE	= "/etc/hosts.equiv";
 const USHORT MAX_PTYPE	= ptype_lazy_send;
-const char* GDS_HOSTS_FILE	= "/etc/gds_hosts.equiv";
+
 
 #ifdef WIN_NT
 
@@ -155,9 +154,10 @@ const int NOTASOCKET = EBADF;
 #define INVALID_SOCKET  -1
 #endif
 
-#ifndef SIGURG
-#define SIGURG	SIGINT
-#endif
+// Can't find were it's used.
+//#ifndef SIGURG
+//#define SIGURG	SIGINT
+//#endif
 
 #ifndef ENOBUFS
 #define ENOBUFS	0
@@ -223,7 +223,7 @@ const SLONG MAX_DATA_LW		= 1448;		/* Low  Water mark */
 const SLONG MAX_DATA_HW		= 32768;	/* High Water mark */
 const SLONG DEF_MAX_DATA	= 8192;
 
-const int MAXHOSTLEN		= 64;
+//const int MAXHOSTLEN		= 64;
 
 const int SELECT_TIMEOUT	= 60;		/* Dispatch thread select timeout (sec) */
 
@@ -1037,16 +1037,12 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		switch (id.getClumpTag())
 		{
 		case CNCT_user:
-			{
-				id.getString(name);
-				break;
-			}
+			id.getString(name);
+			break;
 
 		case CNCT_passwd:
-			{
-				id.getString(password);
-				break;
-			}
+			id.getString(password);
+			break;
 
 		case CNCT_group:
 			{
@@ -1472,8 +1468,7 @@ static void disconnect( rem_port* port)
 
 	if (port->port_linger.l_onoff) {
 		setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
-					   (SCHAR *) & port->port_linger,
-					   sizeof(port->port_linger));
+					   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
 	}
 
 #if defined WIN_NT
@@ -1699,7 +1694,7 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 					break;
 
 				s = (*forkSockets)[0];
-				forkSockets->remove((size_t)0);
+				forkSockets->remove((size_t) 0);
 			}
 			fork(s, flag);
 			SOCLOSE(s);
@@ -2156,11 +2151,11 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 					if (!INET_shutting_down || port != main_port)
 					{
 						FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
-	#ifdef WIN_NT
+#ifdef WIN_NT
 						++selct->slct_width;
-	#else
+#else
 						selct->slct_width = MAX(selct->slct_width, (int) port->port_handle + 1);
-	#endif
+#endif
 						found = true;
 					}
 				}

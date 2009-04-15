@@ -55,17 +55,12 @@
 #include <sys/types.h>
 #endif
 
-#ifdef sun
-#define DBL_MAX_10_EXP          308
-#endif
-
-#ifdef SCO_UNIX
-#define DBL_MAX_10_EXP          308
-#endif
-
-#ifndef DBL_MAX_10_EXP
+#ifdef HAVE_FLOAT_H
 #include <float.h>
+#else
+#define DBL_MAX_10_EXP          308
 #endif
+
 
 using namespace Firebird;
 

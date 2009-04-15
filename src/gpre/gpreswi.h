@@ -76,7 +76,6 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_ADA,		/* source is ada */
 	IN_SW_GPRE_HANDLES,	/* ada handles package */
 	IN_SW_GPRE_Z, 		/* print software version */
-	IN_SW_GPRE_ALSYS, 	/* source is alsys ada */
 	IN_SW_GPRE_D_FLOAT, /* use blr_d_float for doubles */
 	IN_SW_GPRE_CXX, 	/* source is C++ */
 	IN_SW_GPRE_SCXX, 	/* source is C++ with Saber extension */
@@ -153,9 +152,6 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 {
 #ifdef GPRE_ADA
 	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
-#ifdef ALSYS_ADA
-	{IN_SW_GPRE_ALSYS	, 0, "ALSYS"		, 0, 0, 0, FALSE, 0, 0, "\t\textended ADA program"},
-#endif
 	{IN_SW_GPRE_HANDLES	, 0, "HANDLES"		, 0, 0, 0, FALSE, 0, 0, "\t\tADA handle package requires handle package name"},
 #endif
 	{IN_SW_GPRE_C		, 0, "C"			, 0, 0, 0, FALSE, 0, 0, "\t\textended C program"},

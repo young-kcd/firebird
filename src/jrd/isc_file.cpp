@@ -103,8 +103,6 @@ const char* MTAB		= "/etc/mnttab";
 const char* MTAB		= "/etc/mnttab";
 #elif defined(FREEBSD)
 const char* MTAB		= "/etc/fstab";
-#elif defined(SCO_UNIX)
-const char* MTAB		= "/etc/mount";
 #else
 const char* MTAB		= "/etc/mtab";
 #endif
@@ -112,10 +110,6 @@ const char* MTAB		= "/etc/mtab";
 #ifdef HAVE_SETMNTENT
 #define MTAB_OPEN(path,type)	setmntent(path, "r")
 #define MTAB_CLOSE(stream)	endmntent(stream)
-#elif defined(SCO_UNIX)
-/* EKU: popen/pclose to access a file??? */
-#define MTAB_OPEN(path,type)	popen (path, type)
-#define MTAB_CLOSE(stream)	pclose (stream)
 #else
 #define MTAB_OPEN(path,type)	fopen(path, type)
 #define MTAB_CLOSE(stream)	fclose(stream)
@@ -1271,6 +1265,7 @@ static bool get_full_path(const tstring& part, tstring& full)
 
 
 namespace {
+
 #ifndef NO_NFS
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
@@ -1318,7 +1313,9 @@ bool Mnt::get()
 	else
 		return false;
 }
+
 #else // !GETMNTENT_TAKES_TWO_ARGUMENTS
+
 bool Mnt::get()
 {
 /**************************************
@@ -1359,66 +1356,6 @@ bool Mnt::get()
 #endif // GETMNTENT_TAKES_TWO_ARGUMENTS
 #endif // HAVE_GETMNTENT && !SOLARIS
 
-#ifdef SCO_UNIX
-#define GET_MOUNTS
-bool Mnt::get()
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( S C O - U N I X )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
-
-/* Start by finding a mount point. */
-
-	TEXT* p = buffer;
-
-/* note that the mount point and device are inverted from normal systems */
-	for (;;) {
-		/* Sake of argument, inverted the mount_point, device */
-
-		int n = fscanf(file, "%s %s %s %s %s %s %s %s %s %s", mount_point,
-					   foo1, device, rw, foo1, foo1, foo1, foo1, foo1, foo1);
-		if (!strcmp(rw, "read"))
-			n = fscanf(file, "%s", foo1);
-
-		if (n < 0)
-			break;
-
-		/* Include non-NFS (local) mounts - some may be longer than
-		   NFS mount points */
-
-/****
-	if (strcmp (type, "nfs"))
-		continue;
-****/
-
-		mount->mnt_node = p;
-		const TEXT* q = device;
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-		while (*p++ = *q++); // empty loop's body
-		mount->mnt_mount = p;
-		q = mount_point;
-		while (*p++ = *q++); // empty loop's body
-		return true;
-	}
-
-	return false;
-}
-#endif // SCO_UNIX
 
 #ifdef SOLARIS
 #define GET_MOUNTS

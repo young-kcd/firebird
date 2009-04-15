@@ -470,29 +470,6 @@ extern "C" int remove(const char* path);
 
 
 /*****************************************************
-* SCO
-*****************************************************/
-#ifdef SCO_EV
-
-#define QUADFORMAT "ll"
-#define QUADCONST(n) (n##LL)
-#define I386
-#define UNIX
-#define SCO_UNIX
-#define IEEE
-//
-//#define KILLER_SIGNALS
-//
-#define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
-
-//  These functions are supported so we don't need the defines
-//#define setreuid(ruid, euid)     setuid(euid)
-//#define setregid(rgid, egid)     setgid(egid)
-//
-
-#endif /* SCO_EV */
-
-/*****************************************************
  * UNIX
 *****************************************************/
 #ifdef UNIX

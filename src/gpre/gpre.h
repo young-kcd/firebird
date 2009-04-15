@@ -75,11 +75,6 @@
 #endif
 #endif
 
-#ifdef GPRE_ADA
-#if defined SCO_UNIX
-#define ALSYS_ADA
-#endif
-#endif
 
 /* If the C compiler supports the ANSI const directive, we emit it before
    BLR string definitions */

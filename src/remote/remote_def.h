@@ -54,8 +54,6 @@ const P_ARCH ARCHITECTURE	= arch_sun;
 const P_ARCH ARCHITECTURE	= arch_hpux;
 #elif (defined AIX || defined AIX_PPC)
 const P_ARCH ARCHITECTURE	= arch_rt;
-#elif defined(SCO_EV)
-const P_ARCH ARCHITECTURE	= arch_sco_ev;
 #elif defined(LINUX)
 const P_ARCH ARCHITECTURE	= arch_linux;
 #elif defined(FREEBSD)
