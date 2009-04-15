@@ -158,10 +158,10 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
  *
  **************************************/
 
-	const USHORT MAX_PACKETS_PER_BATCH	= 4;	/* packets    - picked by SWAG */
-	const USHORT MIN_PACKETS_PER_BATCH	= 2;	/* packets    - picked by SWAG */
-	const USHORT DESIRED_ROWS_PER_BATCH	= 20;	/* data rows  - picked by SWAG */
-	const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
+	const USHORT MAX_PACKETS_PER_BATCH	= 4;	// packets    - picked by SWAG
+	const USHORT MIN_PACKETS_PER_BATCH	= 2;	// packets    - picked by SWAG
+	const USHORT DESIRED_ROWS_PER_BATCH	= 20;	// data rows  - picked by SWAG
+	const USHORT MIN_ROWS_PER_BATCH		= 10;	// data rows  - picked by SWAG
 
 	const USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
 
@@ -174,34 +174,34 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 
 	ULONG row_size;
 	if (port->port_flags & PORT_symmetric) {
-		/* Same architecture connection */
+		// Same architecture connection
 		row_size = (ROUNDUP(format->fmt_length, 4) + op_overhead);
 	}
 	else {
-		/* Using XDR for data transfer */
+		// Using XDR for data transfer
 		row_size = (ROUNDUP(format->fmt_net_length, 4) + op_overhead);
 	}
 
-	USHORT num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	/* data set */
-							 + buffer_used	/* used in 1st pkt */
-							 + (port->port_buff_size - 1))	/* to round up */
+	USHORT num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	// data set
+							 + buffer_used	// used in 1st pkt
+							 + (port->port_buff_size - 1))	// to round up
 							/ port->port_buff_size);
 	if (num_packets > MAX_PACKETS_PER_BATCH)
 	{
-		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	/* data set */
-								 + buffer_used	/* used in 1st pkt */
-								 + (port->port_buff_size - 1))	/* to round up */
+		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	// data set
+								 + buffer_used	// used in 1st pkt
+								 + (port->port_buff_size - 1))	// to round up
 								/ port->port_buff_size);
 	}
 	num_packets = MAX(num_packets, MIN_PACKETS_PER_BATCH);
 
-/* Now that we've picked the number of packets in a batch,
-   pack as many rows as we can into the set of packets */
+	// Now that we've picked the number of packets in a batch,
+	// pack as many rows as we can into the set of packets
 
 	ULONG result = (num_packets * port->port_buff_size - buffer_used) / row_size;
 
-/* Must always send some messages, even if message size is more
-   than packet size. */
+	// Must always send some messages, even if message size is more
+	// than packet size.
 
 	result = MAX(result, MIN_ROWS_PER_BATCH);
 
@@ -233,7 +233,7 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
  *
  **************************************/
 
-/* See if we already know about the request level */
+	// See if we already know about the request level
 
 	for (;;) {
 		if (request->rrq_level == level)
@@ -243,10 +243,10 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 		request = request->rrq_levels;
 	}
 
-/* This is a new level -- make up a new request block. */
+	// This is a new level -- make up a new request block.
 
 	request->rrq_levels = request->clone();
-/* FREE: REMOTE_remove_request() */
+	// FREE: REMOTE_remove_request()
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("REMOTE_find_request       allocate request %x\n", request->rrq_levels);
 #endif
@@ -254,7 +254,7 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 	request->rrq_level = level;
 	request->rrq_levels = NULL;
 
-/* Allocate message block for known messages */
+	// Allocate message block for known messages
 
 	Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
 	const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
@@ -436,7 +436,7 @@ void REMOTE_release_request( Rrq* request)
 		}
 	}
 
-/* Get rid of request and all levels */
+	// Get rid of request and all levels
 
 	for (;;)
 	{
@@ -503,7 +503,7 @@ void REMOTE_reset_request( Rrq* request, RMessage* active_message)
 		}
 	}
 
-/* Initialize the request status to FB_SUCCESS */
+	// Initialize the request status to FB_SUCCESS
 
 	request->rrq_status_vector[1] = 0;
 }
@@ -526,19 +526,19 @@ void REMOTE_reset_statement( Rsr* statement)
 	if (!statement || (!(message = statement->rsr_message)))
 		return;
 
-/* Reset all the pipeline counters */
+	// Reset all the pipeline counters
 
 	statement->rsr_rows_pending = 0;
 	statement->rsr_msgs_waiting = 0;
 	statement->rsr_reorder_level = 0;
 	statement->rsr_batch_count = 0;
 
-/* only one entry */
+	// only one entry
 
 	if (message->msg_next == message)
 		return;
 
-/* find the entry before statement->rsr_message */
+	// find the entry before statement->rsr_message
 
 	RMessage* temp = message->msg_next;
 	while (temp->msg_next != message)
@@ -579,9 +579,9 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 		try
 		{
 			attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
-			/* FREE: freed by exit handler cleanup_memory() */
+			// FREE: freed by exit handler cleanup_memory()
 		}
-		catch (const Firebird::BadAlloc&)	/* NOMEM: don't bother trying to copy */
+		catch (const Firebird::BadAlloc&)	// NOMEM: don't bother trying to copy
 		{
 			return;
 		}
@@ -710,7 +710,7 @@ rem_port* rem_port::request(PACKET* pckt)
 }
 
 #ifdef REM_SERVER
-bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
+bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -724,7 +724,7 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 
-/* Use memcpy to optimize bulk transfers. */
+	// Use memcpy to optimize bulk transfers.
 
 	while (bytecount > 0)
 	{
