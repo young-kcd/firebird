@@ -69,7 +69,7 @@
 #endif
 
 #ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h> /* for socket() */
+#include <sys/socket.h> // for socket()
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -175,13 +175,13 @@ const int NOTASOCKET = EBADF;
 #ifdef HAVE_SYS_TIMEB_H
 # include <sys/timeb.h>
 #endif
-const int TRACE_packets		= 1 << 0;	/* bit 0 */
-const int TRACE_operations	= 1 << 1;	/* bit 1 */
-const int TRACE_summary		= 1 << 2;	/* bit 2 */
+const int TRACE_packets		= 1 << 0;	// bit 0
+const int TRACE_operations	= 1 << 1;	// bit 1
+const int TRACE_summary		= 1 << 2;	// bit 2
 
 static int INET_trace = TRACE_summary | TRACE_packets | TRACE_operations;
 static time_t INET_start_time = 0;
-SLONG INET_force_error = -1;	/* simulate a network error */
+SLONG INET_force_error = -1;	// simulate a network error
 static ULONG INET_count_send = 0;
 static ULONG INET_count_recv = 0;
 static ULONG INET_bytes_send = 0;
@@ -211,17 +211,17 @@ static ULONG inet_debug_timer()
 	struct timeb now;
 	ftime(&now);
 	return (now.time * 1000 + now.millitm - INET_start_time);
-#endif /* HAVE_GETTIMEOFDAY */
+#endif // HAVE_GETTIMEOFDAY
 }
-#endif /* DEBUG */
+#endif // DEBUG
 
-const SLONG MAX_DATA_LW		= 1448;		/* Low  Water mark */
-const SLONG MAX_DATA_HW		= 32768;	/* High Water mark */
+const SLONG MAX_DATA_LW		= 1448;		// Low  Water mark
+const SLONG MAX_DATA_HW		= 32768;	// High Water mark
 const SLONG DEF_MAX_DATA	= 8192;
 
 //const int MAXHOSTLEN		= 64;
 
-const int SELECT_TIMEOUT	= 60;		/* Dispatch thread select timeout (sec) */
+const int SELECT_TIMEOUT	= 60;		// Dispatch thread select timeout (sec)
 
 struct slct_t
 {
@@ -332,7 +332,7 @@ static XDR::xdr_ops inet_ops =
 
 #define MAXCLIENTS	NOFILE - 10
 
-/* Select uses bit masks of file descriptors in longs. */
+// Select uses bit masks of file descriptors in longs.
 
 #ifndef NBBY
 #define	NBBY	8
@@ -393,13 +393,13 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
  *	If the "uv_flag" is non-zero, user verification also takes place.
  *
  **************************************/
-/* We need to establish a connection to a remote server.  Allocate the necessary
-   blocks and get ready to go. */
+	// We need to establish a connection to a remote server.  Allocate the necessary
+	// blocks and get ready to go.
 
 	Rdb* rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
-/* Pick up some user identification information */
+	// Pick up some user identification information
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 	Firebird::string buffer;
 	int eff_gid;
@@ -417,19 +417,19 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	}
 	else
 	{
-		/* Communicate group id info to server, as user maybe running under group
-		   id other than default specified in /etc/passwd. */
+		// Communicate group id info to server, as user maybe running under group
+		// id other than default specified in /etc/passwd.
 
 		eff_gid = htonl(eff_gid);
 		user_id.insertBytes(CNCT_group, reinterpret_cast<UCHAR*>(&eff_gid), sizeof(SLONG));
 	}
 
-/* Establish connection to server */
+	// Establish connection to server
 
-/* Note: prior to V3.1E a recievers could not in truth handle more
-   then 5 protocol descriptions, so we try them in chunks of 5 or less */
+	// Note: prior to V3.1E a recievers could not in truth handle more
+	// than 5 protocol descriptions, so we try them in chunks of 5 or less
 
-/* If we want user verification, we can't speak anything less than version 7 */
+	// If we want user verification, we can't speak anything less than version 7
 
 	P_CNCT*	cnct = &packet->p_cnct;
 
@@ -452,7 +452,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 	copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try1, cnct->p_cnct_count);
 
-/* Try connection using first set of protocols.  punt if error */
+	// Try connection using first set of protocols.  punt if error
 
 	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
 	if (!port) {
@@ -463,7 +463,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	{
 		disconnect(port);
 
-		/* try again with next set of known protocols */
+		// try again with next set of known protocols
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
@@ -488,7 +488,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	{
 		disconnect(port);
 
-		/* try again with next set of known protocols */
+		// try again with next set of known protocols
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
@@ -521,8 +521,8 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
 
-/* once we've decided on a protocol, concatenate the version
-   string to reflect it...  */
+	// once we've decided on a protocol, concatenate the version
+	// string to reflect it...
 	Firebird::string temp;
 	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
@@ -616,12 +616,12 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 
-/* Set up Inter-Net socket address */
+	// Set up Inter-Net socket address
 
 	struct sockaddr_in address;
 	memset(&address, 0, sizeof(address));
 
-/* U N I X style sockets */
+	// U N I X style sockets
 
 	address.sin_family = AF_INET;
 
@@ -662,12 +662,12 @@ rem_port* INET_connect(const TEXT* name,
 
 	const struct servent* service = getservbyname(protocol.c_str(), "tcp");
 #ifdef WIN_NT
-/* On Windows NT/9x, getservbyname can only accomodate
- * 1 call at a time.  In this case it returns the error
- * WSAEINPROGRESS.
- * If this happens, retry the operation a few times.
- * NOTE: This still does not guarantee success, but helps.
- */
+	/* On Windows NT/9x, getservbyname can only accomodate
+	 * 1 call at a time.  In this case it returns the error
+	 * WSAEINPROGRESS.
+	 * If this happens, retry the operation a few times.
+	 * NOTE: This still does not guarantee success, but helps.
+	 */
 	if (!service)
 	{
 		if (H_ERRNO == INET_RETRY_ERRNO) {
@@ -677,7 +677,7 @@ rem_port* INET_connect(const TEXT* name,
 			}
 		}
 	}
-#endif /* WIN_NT */
+#endif // WIN_NT
 
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
@@ -690,23 +690,22 @@ rem_port* INET_connect(const TEXT* name,
 	if (!service)
 	{
 		if (protocol == FB_SERVICE_NAME) {
-			/* apply hardwired translation */
+			// apply hardwired translation
 			address.sin_port = htons(FB_SERVICE_PORT);
 		}
-		/* modification by FSG 23.MAR.2001 */
+		// modification by FSG 23.MAR.2001
 		else {
-			/* modification by FSG 23.MAR.2001 */
-			/* The user has supplied something as protocol
-			 * let's see whether this is a port number
-			 * instead of a service name
-			 */
+			// modification by FSG 23.MAR.2001
+			// The user has supplied something as protocol
+			// let's see whether this is a port number
+			// instead of a service name
 			address.sin_port = htons(atoi(protocol.c_str()));
 		}
 
 		if (address.sin_port == 0)
 		{
-			/* end of modification by FSG */
-			/* this is the original code */
+			// end of modification by FSG
+			// this is the original code
 			gds__log("INET/INET_connect: getservbyname failed, error code = %d", H_ERRNO);
 			inet_gen_error(port,
                            Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
@@ -714,18 +713,18 @@ rem_port* INET_connect(const TEXT* name,
 						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) <<
 															Arg::Str("tcp"));
 			return NULL;
-		}						/* else / not hardwired gds_db translation */
+		}						// else / not hardwired gds_db translation
 	}
 	else {
-		/* if we have got a service-struct, get port number from there
-		   * (in case of hardwired gds_db to 3050 translation, address.sin_port was
-		   * already set above */
+		// if we have got a service-struct, get port number from there
+		// (in case of hardwired gds_db to 3050 translation, address.sin_port was
+		// already set above
 		address.sin_port = service->s_port;
-	}							/* else (service found) */
+	}							// else (service found)
 
-/* end of modifications by luz */
+	// end of modifications by luz
 
-/* Allocate a port block and initialize a socket for communications */
+	// Allocate a port block and initialize a socket for communications
 
 	port->port_handle = (HANDLE) socket(AF_INET, SOCK_STREAM, 0);
 
@@ -736,7 +735,7 @@ rem_port* INET_connect(const TEXT* name,
 		return NULL;
 	}
 
-/* If we're a host, just make the connection */
+	// If we're a host, just make the connection
 
     int n;
 
@@ -787,14 +786,14 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 
-		/* Get any values for SO_LINGER so that they can be reset during
-		 * disconnect.  SO_LINGER should be set by default on the socket
-		 */
+		// Get any values for SO_LINGER so that they can be reset during
+		// disconnect.  SO_LINGER should be set by default on the socket
+
 		socklen_t optlen = sizeof(port->port_linger);
 		n = getsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR *) & port->port_linger, &optlen);
 
-		if (n != 0)				/* getsockopt failed */
+		if (n != 0)				// getsockopt failed
 			port->port_linger.l_onoff = 0;
 
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
@@ -816,8 +815,8 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (n == -1)
 	{
-		/* On Linux platform, when the server dies the system holds a port
-		   for some time. */
+		// On Linux platform, when the server dies the system holds a port
+		// for some time.
 
 		if (INET_ERRNO == INET_ADDR_IN_USE) {
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
@@ -845,8 +844,7 @@ rem_port* INET_connect(const TEXT* name,
 	inet_ports->registerPort(port);
 
 	if (flag & SRVR_multi_client) {
-		/* Prevent the generation of dummy keepalive packets on the
-		   connect port. */
+		// Prevent the generation of dummy keepalive packets on the connect port.
 
 		port->port_dummy_packet_interval = 0;
 		port->port_dummy_timeout = 0;
@@ -1018,11 +1016,11 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
  *	response for protocol selection.
  *
  **************************************/
-/* Default account to "guest" (in theory all packets contain a name) */
+	// Default account to "guest" (in theory all packets contain a name)
 
 	Firebird::string name("guest"), password;
 
-/* Pick up account and password, if given */
+	// Pick up account and password, if given
 
 	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, cnct->p_cnct_user_id.cstr_address,
 									   cnct->p_cnct_user_id.cstr_length);
@@ -1051,9 +1049,9 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 				break;
 			}
 
-			/* this case indicates that the client has requested that
-			   we force the user name/password to be verified against
-			   the security database */
+			// this case indicates that the client has requested that
+			// we force the user name/password to be verified against
+			// the security database
 
 		case CNCT_user_verification:
 			user_verification = true;
@@ -1061,11 +1059,11 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		}
 	}
 
-/* See if user exists.  If not, reject connection */
+	// See if user exists.  If not, reject connection
 	if (user_verification)
 	{
 		eff_gid = eff_uid = -1;
-		//port->port_flags |= PORT_not_trusted; // never tested
+		// port->port_flags |= PORT_not_trusted; // never tested
 	}
 
 #ifndef WIN_NT
@@ -1092,13 +1090,13 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		{
 			if (chdir(home.c_str())) {
 				gds__log("inet_server: unable to cd to %s errno %d\n", home.c_str(), INET_ERRNO);
-				/* We continue after the error */
+				// We continue after the error
 			}
 		}
 	}
-#endif /* !WIN_NT */
+#endif // !WIN_NT
 
-/* store FULL user identity in port_user_name for security purposes */
+	// store FULL user identity in port_user_name for security purposes
 
 	Firebird::string temp;
 	temp.printf("%s.%ld.%ld", name.c_str(), eff_gid, eff_uid);
@@ -1236,7 +1234,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 	socklen_t l = sizeof(address);
 
-/* If this is a server, we're got an auxiliary connection.  Accept it */
+	// If this is a server, we're got an auxiliary connection.  Accept it
 
 	if (port->port_server_flags)
 	{
@@ -1263,7 +1261,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	new_port->port_flags |= PORT_async;
 	P_RESP* response = &packet->p_resp;
 
-/* Set up new socket */
+	// Set up new socket
 
 	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
 	if (n == INVALID_SOCKET) {
@@ -1325,7 +1323,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
  **************************************/
 	struct sockaddr_in address;
 
-/* Set up new socket */
+	// Set up new socket
 
 	address.sin_family = AF_INET;
 	in_addr bind_addr = get_bind_address();
@@ -1473,15 +1471,15 @@ static void disconnect( rem_port* port)
 		shutdown((int) port->port_handle, 2);
 	}
 
-#else /* WIN_NT */
+#else // WIN_NT
 
 	if (port->port_handle) {
 		shutdown((int) port->port_handle, 2);
 	}
 
-#endif /* WIN_NT */
+#endif // WIN_NT
 
-/* If this is a sub-port, unlink it from it's parent */
+	// If this is a sub-port, unlink it from it's parent
 	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
 
@@ -2074,8 +2072,8 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 		FD_ZERO(&selct->slct_fdset);
 		bool found = false;
 
-		/* Use the time interval between select() calls to expire
-		   keepalive timers on all ports. */
+		// Use the time interval between select() calls to expire
+		// keepalive timers on all ports.
 
 		time_t delta_time;
 		if (selct->slct_time)
@@ -2095,7 +2093,7 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 			{
 				if (port->port_state == rem_port::PENDING)
 				{
-					/* Adjust down the port's keepalive timer. */
+					// Adjust down the port's keepalive timer.
 
 					if (port->port_dummy_packet_interval)
 					{
@@ -2195,11 +2193,11 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 
 			if (selct->slct_count != -1)
 			{
-				/* if selct->slct_count is zero it means that we timed out of
-				   select with nothing to read or accept, so clear the fd_set
-				   bit as this value is undefined on some platforms (eg. HP-UX),
-				   when the select call times out. Once these bits are cleared
-				   they can be used in select_port() */
+				// if selct->slct_count is zero it means that we timed out of
+				// select with nothing to read or accept, so clear the fd_set
+				// bit as this value is undefined on some platforms (eg. HP-UX),
+				// when the select call times out. Once these bits are cleared
+				// they can be used in select_port()
 				if (selct->slct_count == 0)
 				{
 					Firebird::MutexLockGuard guard(port_mutex);
@@ -2398,7 +2396,7 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 	SLONG bytecount = count;
 
-/* Use memcpy to optimize bulk transfers. */
+	// Use memcpy to optimize bulk transfers.
 
 	while (bytecount > (SLONG) sizeof(ISC_QUAD))
 	{
@@ -2423,8 +2421,8 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 			return FALSE;
 }
 
-/* Scalar values and bulk transfer remainder fall thru
-   to be moved byte-by-byte to avoid memcpy setup costs. */
+	// Scalar values and bulk transfer remainder fall thru
+	// to be moved byte-by-byte to avoid memcpy setup costs.
 
 	if (!bytecount)
 		return TRUE;
@@ -2529,7 +2527,7 @@ static void inet_error(rem_port* port,
 		gds__log("INET/inet_error: %s errno = %d", function, status);
 	}
 	else {
-		/* No status value, just format the basic arguments. */
+		// No status value, just format the basic arguments.
 		inet_gen_error(port,
 					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
 					   Arg::Gds(operation));
@@ -2550,7 +2548,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 
-/* Use memcpy to optimize bulk transfers. */
+	// Use memcpy to optimize bulk transfers.
 
 	while (bytecount > (SLONG) sizeof(ISC_QUAD))
 	{
@@ -2575,8 +2573,8 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			return FALSE;
 	}
 
-/* Scalar values and bulk transfer remainder fall thru
-   to be moved byte-by-byte to avoid memcpy setup costs. */
+	// Scalar values and bulk transfer remainder fall thru
+	// to be moved byte-by-byte to avoid memcpy setup costs.
 
 	if (!bytecount)
 		return TRUE;
@@ -2599,7 +2597,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	return TRUE;
 }
 
-// CVC: It could be const SLONG* lp, but it should fit into xdr_ops' signature.
+
 static bool_t inet_putlong( XDR* xdrs, const SLONG* lp)
 {
 /**************************************
@@ -2635,7 +2633,7 @@ static bool_t inet_read( XDR * xdrs)
 	char* p = xdrs->x_base;
 	const char* const end = p + INET_remote_buffer;
 
-/* If buffer is not completely empty, slide down what's left */
+	// If buffer is not completely empty, slide down what's left
 
 	if (xdrs->x_handy > 0) {
 		memmove(p, xdrs->x_private, xdrs->x_handy);
@@ -2714,8 +2712,8 @@ static rem_port* inet_try_connect(PACKET* packet,
 	cnct->p_cnct_file.cstr_length = file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-/* If we can't talk to a server, punt.  Let somebody else generate
-   an error.  status_vector will have the network error info. */
+	// If we can't talk to a server, punt.  Let somebody else generate
+	// an error.  status_vector will have the network error info.
 
 	rem_port* port = INET_connect(node_name, packet, status_vector, FALSE, &dpb);
 	if (!port) {
@@ -2723,7 +2721,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 		return NULL;
 	}
 
-/* Get response packet from server. */
+	// Get response packet from server.
 
 	rdb->rdb_port = port;
 	port->port_context = rdb;
@@ -2751,14 +2749,14 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
  *	load.
  *
  **************************************/
-/* Encode the data portion of the packet */
+	// Encode the data portion of the packet
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 	const char* p = xdrs->x_base;
 	SSHORT length = xdrs->x_private - p;
 
-/* Send data in manageable hunks.  If a packet is partial, indicate
-   that with a negative length.  A positive length marks the end. */
+	// Send data in manageable hunks.  If a packet is partial, indicate
+	// that with a negative length.  A positive length marks the end.
 
 	//p = xdrs->x_base; redundant
 
@@ -2777,17 +2775,17 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 	return TRUE;
 
 #ifdef PIGGYBACK
-// CVC: Screwed logic here: if I initialize l2 to zero, nothing useful executes.
+	// CVC: Screwed logic here: if I initialize l2 to zero, nothing useful executes.
 	SCHAR aux_buffer[BUFFER_SIZE];
 	SSHORT l2 = 0;
 #error Assign l2 some meaningful value before running this.
-/* If the other end has not piggy-backed the next packet, we're done. */
+	// If the other end has not piggy-backed the next packet, we're done.
 
 	if (!l2)
 		return TRUE;
 
-/* We've got a piggy-backed response.  If the packet is partial,
-   send an ACK for part we did receive. */
+	// We've got a piggy-backed response.  If the packet is partial,
+	// send an ACK for part we did receive.
 
 	char* p2 = aux_buffer;
 
@@ -2820,9 +2818,9 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 	p2 += xdrs->x_handy;
 
 	xdrs->x_private = xdrs->x_base;
-/*
-xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
-*/
+
+	// xdrs->x_handy += JAP_decode (aux_buffer, length, p2);
+
 	return TRUE;
 #endif
 }
@@ -2915,8 +2913,8 @@ static bool packet_receive(rem_port* port,
 		   InterBase clients V4 or greater.  This protocol will detect when
 		   clients are lost abnormally through reboot or network disconnect. */
 
-		/* Don't send op_dummy packets on aux port; the server won't
-		   read them because it only writes to aux ports. */
+		// Don't send op_dummy packets on aux port; the server won't
+		// read them because it only writes to aux ports.
 
 		if ( !(port->port_flags & PORT_async) )
 		{
@@ -3071,7 +3069,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 #ifdef HAVE_SETITIMER
 	struct itimerval internal_timer, client_timer;
 	struct sigaction internal_handler, client_handler;
-#endif /* HAVE_SETITIMER */
+#endif // HAVE_SETITIMER
 
 	if ((port->port_flags & PORT_async) && !(port->port_flags & PORT_no_oob))
 	{
@@ -3095,10 +3093,10 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			sleep(1);
 #endif
 		} // end of while() loop for systems without setitimer.
-#else /* HAVE_SETITIMER */
+#else // HAVE_SETITIMER
 			if (count == 1)
 			{
-				/* Wait in a loop until the lock becomes available */
+				// Wait in a loop until the lock becomes available
 
 				internal_timer.it_interval.tv_sec = 0;
 				internal_timer.it_interval.tv_usec = 0;
@@ -3119,7 +3117,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 
 		if (count)
 		{
-			/* Restore user's outstanding alarm request and handler */
+			// Restore user's outstanding alarm request and handler
 
 			internal_timer.it_value.tv_sec = 0;
 			internal_timer.it_value.tv_usec = 0;
@@ -3127,7 +3125,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			sigaction(SIGALRM, &client_handler, NULL);
 			setitimer(ITIMER_REAL, &client_timer, NULL);
 		}
-#endif /* HAVE_SETITIMER */
+#endif // HAVE_SETITIMER
 
 		if (n == -1) {
 			inet_error(port, "send/oob", isc_net_write_err, inetErrNo);
