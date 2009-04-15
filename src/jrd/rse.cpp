@@ -2209,7 +2209,7 @@ static bool get_record(thread_db*	tdbb,
 
 			switch (mode)
 			{
-	#ifdef SCROLLABLE_CURSORS
+#ifdef SCROLLABLE_CURSORS
 			case RSE_get_backward:
 				if (skip->irsb_count > 0)
 				{
@@ -2237,7 +2237,7 @@ static bool get_record(thread_db*	tdbb,
 				if (!get_record(tdbb, rsb->rsb_next, NULL, mode))
 					return false;
 				break;
-	#endif
+#endif
 
 			case RSE_get_forward:
 				while (skip->irsb_count > 1) {

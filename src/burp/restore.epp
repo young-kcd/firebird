@@ -2607,9 +2607,9 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 	// Compile request
 
-	#ifdef DEBUG
+#ifdef DEBUG
 	isc_print_blr (reinterpret_cast<const char*>(blr_buffer), NULL, NULL, 0);
-	#endif
+#endif
 
 	FB_API_HANDLE request = 0;
 	ISC_STATUS_ARRAY status_vector;

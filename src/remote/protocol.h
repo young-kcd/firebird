@@ -158,27 +158,27 @@ enum P_ARCH
 	arch_max		= 43	// Keep this at the end
 };
 
-/* Protocol Types */
+// Protocol Types
 // p_acpt_type
-const USHORT ptype_page			= 1;	/* Page server protocol */
-const USHORT ptype_rpc			= 2;	/* Simple remote procedure call */
-const USHORT ptype_batch_send	= 3;	/* Batch sends, no asynchrony */
-const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification */
-const USHORT ptype_lazy_send	= 5;	/* Deferred packets delivery */
+//const USHORT ptype_page			= 1;	// Page server protocol
+const USHORT ptype_rpc			= 2;	// Simple remote procedure call
+const USHORT ptype_batch_send	= 3;	// Batch sends, no asynchrony
+const USHORT ptype_out_of_band	= 4;	// Batch sends w/ out of band notification
+const USHORT ptype_lazy_send	= 5;	// Deferred packets delivery
 
-/* Generic object id */
+// Generic object id
 
 typedef USHORT OBJCT;
 const int MAX_OBJCT_HANDLES	= 65000;
 const int INVALID_OBJECT = MAX_USHORT;
 
-/* Statement flags */
+// Statement flags
 
 const USHORT STMT_BLOB			= 1;
 const USHORT STMT_NO_BATCH		= 2;
 const USHORT STMT_DEFER_EXECUTE	= 4;
 
-/* Operation (packet) types */
+// Operation (packet) types
 
 enum P_OP
 {

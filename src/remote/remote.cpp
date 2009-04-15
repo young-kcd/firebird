@@ -158,10 +158,10 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
  *
  **************************************/
 
-const USHORT MAX_PACKETS_PER_BATCH	= 4;	/* packets    - picked by SWAG */
-const USHORT MIN_PACKETS_PER_BATCH	= 2;	/* packets    - picked by SWAG */
-const USHORT DESIRED_ROWS_PER_BATCH	= 20;	/* data rows  - picked by SWAG */
-const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
+	const USHORT MAX_PACKETS_PER_BATCH	= 4;	/* packets    - picked by SWAG */
+	const USHORT MIN_PACKETS_PER_BATCH	= 2;	/* packets    - picked by SWAG */
+	const USHORT DESIRED_ROWS_PER_BATCH	= 20;	/* data rows  - picked by SWAG */
+	const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 
 	const USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
 
@@ -523,7 +523,7 @@ void REMOTE_reset_statement( Rsr* statement)
  **************************************/
 	RMessage* message;
 
-	if ((!statement) || (!(message = statement->rsr_message)))
+	if (!statement || (!(message = statement->rsr_message)))
 		return;
 
 /* Reset all the pipeline counters */

@@ -53,12 +53,12 @@ namespace
 		ConsoleNoEcho();
 		~ConsoleNoEcho();
 	private:
-	#ifdef _WIN32
+#ifdef _WIN32
 		HANDLE m_stdin;
 		DWORD m_orgSettings;
-	#else
+#else
 		termios m_orgSettings;
-	#endif
+#endif
 	};
 
 	ConsoleNoEcho::ConsoleNoEcho()

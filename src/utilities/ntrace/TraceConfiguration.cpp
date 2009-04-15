@@ -128,7 +128,7 @@ void TraceCfgReader::readConfig()
 		if (!isDatabase && section->name != "services")
 			continue;
 
-		string pattern = section->getAttributes() ? section->getAttributeName(0) : "";
+		const string pattern = section->getAttributes() ? section->getAttributeName(0) : "";
 		bool match = false;
 		if (pattern.empty())
 		{
@@ -291,12 +291,12 @@ void TraceCfgReader::expandPattern(string& valueToExpand)
 
 			if (c >= '0' && c <= '9')
 			{
-				MatchPos* subpattern = m_subpatterns + (c - '0');
+				const MatchPos* subpattern = m_subpatterns + (c - '0');
 				// Replace value with piece of database name
 				valueToExpand.erase(pos, 2);
 				if (subpattern->end != -1 && subpattern->start != -1)
 				{
-					off_t subpattern_len = subpattern->end - subpattern->start;
+					const off_t subpattern_len = subpattern->end - subpattern->start;
 					valueToExpand.insert(pos,
 						m_databaseName.substr(subpattern->start, subpattern_len).c_str(),
 						subpattern_len);

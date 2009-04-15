@@ -1374,10 +1374,10 @@ bool CFBDialog::UpdateFirebirdConf(CString option, CString value)
 	}
 	 catch (CFileException *e)
 	{
-	#ifdef _DEBUG
+#ifdef _DEBUG
 		afxDump << "Problem updating " << e->m_strFileName << ".\n \
 					cause = " << e->m_cause << "\n";
-	#endif
+#endif
 	}
 
 
