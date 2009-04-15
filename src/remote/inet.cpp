@@ -90,10 +90,6 @@
 #include <sys/wait.h>
 #endif // !WIN_NT
 
-#if (defined DARWIN || defined HPUX)
-extern "C" int innetgr(const char*, const char*, const char*, const char*);
-#endif
-
 const int INET_RETRY_CALL	= 5;
 
 #include "../remote/remote.h"
