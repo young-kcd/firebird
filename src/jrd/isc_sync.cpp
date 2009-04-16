@@ -2165,7 +2165,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			   length
 			 */
 			if ((shmid = shmget(key, 0, PRIV)) == -1) {
-				error(status_vector, "shmget", errno);
+				string msg;
+				msg.printf("shmget(0x%x, 0, PRIV)", key);
+				error(status_vector, msg.c_str(), errno);
 				fclose(fp);
 				return NULL;
 			}
@@ -2185,7 +2187,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) ==
 				-1)
 			{
-				error(status_vector, "shmget", errno);
+				string msg;
+				msg.printf("shmget(0x%x, %d, IPC_CREAT | IPC_EXCL | PRIV)", key, length);
+				error(status_vector, msg.c_str(), errno);
 				fclose(fp);
 				return NULL;
 			}
@@ -2193,7 +2197,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		else					/* if errno != EINVAL) */
 #endif /* SUPERSERVER */
 		{
-			error(status_vector, "shmget", errno);
+			string msg;
+			msg.printf("shmget(0x%x, %d, IPC_CREAT | PRIV)", key, length);
+			error(status_vector, msg.c_str(), errno);
 			fclose(fp);
 			return NULL;
 		}
@@ -2230,7 +2236,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) == -1)
 			{
-				error(status_vector, "shmget", errno);
+				string msg;
+				msg.printf("shmget(0x%x, %d, IPC_CREAT | IPC_EXCL | PRIV)", key, length);
+				error(status_vector, msg.c_str(), errno);
 				fclose(fp);
 				return NULL;
 			}
@@ -2238,7 +2246,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		else {
 			length = buf.shm_segsz;
 			if ((shmid = shmget(key, length, PRIV)) == -1) {
-				error(status_vector, "shmget", errno);
+				string msg;
+				msg.printf("shmget(0x%x, %d, PRIV)", key, length);
+				error(status_vector, msg.c_str(), errno);
 				fclose(fp);
 				return NULL;
 			}
@@ -2259,7 +2269,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		/* Now remap with the new-found length */
 
 		if ((shmid = shmget(key, length, PRIV)) == -1) {
-			error(status_vector, "shmget", errno);
+			string msg;
+			msg.printf("shmget(0x%x, %d, PRIV)", key, length);
+			error(status_vector, msg.c_str(), errno);
 			fclose(fp);
 			return NULL;
 		}
@@ -3916,6 +3928,7 @@ static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS stat
  **************************************/
 
 	(Arg::Gds(isc_sys_request) << Arg::Str(string) << SYS_ERR(status)).copyTo(status_vector);
+	ERR_make_permanent(status_vector);
 }
 
 
