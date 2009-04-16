@@ -79,7 +79,7 @@ inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULO
 inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
 {
 }
-#endif /* DEBUG_XDR_MEMORY */
+#endif // DEBUG_XDR_MEMORY
 
 #define MAP(routine, ptr)	if (!routine (xdrs, &ptr)) return P_FALSE(xdrs, p);
 const ULONG MAX_OPAQUE		= 32768;
@@ -90,25 +90,25 @@ enum SQL_STMT_TYPE
 	TYPE_PREPARED
 };
 
-static bool alloc_cstring(XDR *, CSTRING *);
-static void free_cstring(XDR *, CSTRING *);
-static Rsr* get_statement(XDR *, SSHORT);
+static bool alloc_cstring(XDR*, CSTRING*);
+static void free_cstring(XDR*, CSTRING*);
+static Rsr* get_statement(XDR*, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
 static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
-static bool_t xdr_datum(XDR *, const DSC*, BLOB_PTR *);
+static bool_t xdr_datum(XDR*, const DSC*, BLOB_PTR*);
 #ifdef DEBUG_XDR_MEMORY
-static bool_t xdr_debug_packet(XDR *, enum xdr_op, PACKET *);
+static bool_t xdr_debug_packet(XDR*, enum xdr_op, PACKET*);
 #endif
-static bool_t xdr_longs(XDR *, CSTRING *);
-static bool_t xdr_message(XDR *, RMessage*, const rem_fmt*);
-static bool_t xdr_quad(XDR *, struct bid *);
-static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
+static bool_t xdr_longs(XDR*, CSTRING*);
+static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
+static bool_t xdr_quad(XDR*, struct bid*);
+static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
-static bool_t xdr_status_vector(XDR *, ISC_STATUS *, TEXT * strings[]);
+static bool_t xdr_status_vector(XDR*, ISC_STATUS*, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
-static bool_t xdr_sql_message(XDR *, SLONG);
+static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
-static bool_t xdr_trrq_message(XDR *, USHORT);
+static bool_t xdr_trrq_message(XDR*, USHORT);
 
 #ifdef NOT_USED_OR_REPLACED
 // TMN: Patched away this for now, it should probably be removed.
@@ -194,12 +194,12 @@ void xdr_debug_memory(XDR* xdrs,
 	fb_assert(port != 0);
 	fb_assert(port->port_header.blk_type == type_port);
 
-/* Compare the XDR variable address with the lower and upper bounds
-   of each packet to determine which packet contains it. Record or
-   delete an entry in that packet's memory allocation table. */
+	// Compare the XDR variable address with the lower and upper bounds
+	// of each packet to determine which packet contains it. Record or
+	// delete an entry in that packet's memory allocation table.
 
 	rem_vec* vector = port->port_packet_vector;
-	if (!vector)	/* Not tracking port's protocol */
+	if (!vector)	// Not tracking port's protocol
 		return;
 
 	ULONG i;
@@ -210,43 +210,43 @@ void xdr_debug_memory(XDR* xdrs,
 		{
 			fb_assert(packet->p_operation > op_void && packet->p_operation < op_max);
 
-			if ((SCHAR*) xdrvar >= (SCHAR *) packet &&
-				(SCHAR*) xdrvar < (SCHAR *) packet + sizeof(PACKET))
+			if ((SCHAR*) xdrvar >= (SCHAR*) packet &&
+				(SCHAR*) xdrvar < (SCHAR*) packet + sizeof(PACKET))
 			{
 				ULONG j;
 				for (j = 0; j < P_MALLOC_SIZE; j++)
 				{
 					if (xop == XDR_FREE)
 					{
-						if ((SCHAR *) packet->p_malloc[j].p_address == (SCHAR *) address)
+						if ((SCHAR*) packet->p_malloc[j].p_address == (SCHAR*) address)
 						{
 							packet->p_malloc[j].p_operation = op_void;
 							packet->p_malloc[j].p_allocated = NULL;
 							packet->p_malloc[j].p_address = 0;
-							/*  packet->p_malloc [j].p_xdrvar = 0; */
+							//  packet->p_malloc [j].p_xdrvar = 0;
 							return;
 						}
 					}
-					else {		/* XDR_ENCODE or XDR_DECODE */
+					else {		// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
 							packet->p_malloc[j].p_operation = packet->p_operation;
 							packet->p_malloc[j].p_allocated = length;
 							packet->p_malloc[j].p_address = address;
-							/*  packet->p_malloc [j].p_xdrvar = xdrvar; */
+							//  packet->p_malloc [j].p_xdrvar = xdrvar;
 							return;
 						}
 					}
 				}
-				/* Assertion failure if not enough entries to record every xdr
-				   memory allocation or an entry to be freed can't be found. */
+				// Assertion failure if not enough entries to record every xdr
+				// memory allocation or an entry to be freed can't be found.
 
-				fb_assert(j < P_MALLOC_SIZE);	/* Increase P_MALLOC_SIZE if necessary */
+				fb_assert(j < P_MALLOC_SIZE);	// Increase P_MALLOC_SIZE if necessary
 			}
 		}
 	}
-	fb_assert(i < vector->vec_count);	/* Couldn't find packet for this xdr arg */
+	fb_assert(i < vector->vec_count);	// Couldn't find packet for this xdr arg
 }
 #endif
 
@@ -408,7 +408,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_messages));
 
-		/* Changes to this op's protocol must mirror in xdr_protocol_overhead */
+		// Changes to this op's protocol must mirror in xdr_protocol_overhead
 
 		return xdr_request(xdrs, data->p_data_request,
 						   data->p_data_message_number,
@@ -417,8 +417,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_response:
 	case op_response_piggyback:
 
-		/* Changes to this op's protocol must be mirrored
-		   in xdr_protocol_overhead */
+		// Changes to this op's protocol must be mirrored
+		// in xdr_protocol_overhead
 
 		response = &p->p_resp;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
@@ -615,11 +615,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_transaction));
 		if (xdrs->x_op == XDR_DECODE)
 		{
-			/* the statement should be reset for each execution so that
-			   all prefetched information from a prior execute is properly
-			   cleared out.  This should be done before fetching any message
-			   information (for example: blr info)
-			 */
+			// the statement should be reset for each execution so that
+			// all prefetched information from a prior execute is properly
+			// cleared out.  This should be done before fetching any message
+			// information (for example: blr info)
 
 			Rsr* statement = NULL;
 			statement = get_statement(xdrs, sqldata->p_sqldata_statement);
@@ -653,7 +652,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		}
 		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_out_blr, true, TYPE_IMMEDIATE);
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_out_message_number));
-		/* Fall into ... */
+		// Fall into ...
 
 	case op_exec_immediate:
 	case op_prepare_statement:
@@ -682,7 +681,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_long, reinterpret_cast<SLONG&>(sqldata->p_sqldata_status));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
 
-		/* Changes to this op's protocol must mirror in xdr_protocol_overhead */
+		// Changes to this op's protocol must mirror in xdr_protocol_overhead
 
 		port = (rem_port*) xdrs->x_public;
 		if ((port->port_protocol > PROTOCOL_VERSION7 && sqldata->p_sqldata_messages) ||
@@ -799,40 +798,38 @@ ULONG xdr_protocol_overhead(P_OP op)
  *	OS.
  *
  **************************************/
-	ULONG size = 4 /* xdr_sizeof (xdr_enum, p->p_operation) */ ;
+	ULONG size = 4; // xdr_sizeof (xdr_enum, p->p_operation)
 
 	switch (op)
 	{
 	case op_fetch_response:
-		size += 4				/* xdr_sizeof (xdr_long, sqldata->p_sqldata_status) */
-			+ 4 /* xdr_sizeof (xdr_short, sqldata->p_sqldata_messages) */ ;
+		size += 4				// xdr_sizeof (xdr_long, sqldata->p_sqldata_status)
+			+ 4;				// xdr_sizeof (xdr_short, sqldata->p_sqldata_messages)
 		break;
 
 	case op_send:
 	case op_start_and_send:
 	case op_start_send_and_receive:
-		size += 4				/* xdr_sizeof (xdr_short, data->p_data_request) */
-			+ 4					/* xdr_sizeof (xdr_short, data->p_data_incarnation) */
-			+ 4					/* xdr_sizeof (xdr_short, data->p_data_transaction) */
-			+ 4					/* xdr_sizeof (xdr_short, data->p_data_message_number) */
-			+ 4 /* xdr_sizeof (xdr_short, data->p_data_messages) */ ;
+		size += 4				// xdr_sizeof (xdr_short, data->p_data_request)
+			+ 4					// xdr_sizeof (xdr_short, data->p_data_incarnation)
+			+ 4					// xdr_sizeof (xdr_short, data->p_data_transaction)
+			+ 4					// xdr_sizeof (xdr_short, data->p_data_message_number)
+			+ 4;				// xdr_sizeof (xdr_short, data->p_data_messages)
 		break;
 
 	case op_response:
 	case op_response_piggyback:
-		/* Note: minimal amounts are used for cstring & status_vector */
-		size += 4				/* xdr_sizeof (xdr_short, response->p_resp_object) */
-			+ 8					/* xdr_sizeof (xdr_quad, response->p_resp_blob_id) */
-			+ 4					/* xdr_sizeof (xdr_cstring, response->p_resp_data) */
+		// Note: minimal amounts are used for cstring & status_vector
+		size += 4				// xdr_sizeof (xdr_short, response->p_resp_object)
+			+ 8					// xdr_sizeof (xdr_quad, response->p_resp_blob_id)
+			+ 4					// xdr_sizeof (xdr_cstring, response->p_resp_data)
 			+
 			3 *
-			4
-			/* xdr_sizeof (xdr_status_vector (xdrs, response->p_resp_status_vector */
-			;
+			4;					// xdr_sizeof (xdr_status_vector (xdrs, response->p_resp_status_vector
 		break;
 
 	default:
-		fb_assert(FALSE);			/* Not supported operation */
+		fb_assert(FALSE);		// Not supported operation
 		return 0;
 	}
 	return size;
@@ -1067,9 +1064,9 @@ static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
 
 	case dtype_timestamp:
 		fb_assert(desc->dsc_length >= 2 * sizeof(SLONG));
-		if (!xdr_long(xdrs, &((SLONG *) p)[0]))
+		if (!xdr_long(xdrs, &((SLONG*) p)[0]))
 			return FALSE;
-		if (!xdr_long(xdrs, &((SLONG *) p)[1]))
+		if (!xdr_long(xdrs, &((SLONG*) p)[1]))
 			return FALSE;
 		break;
 
@@ -1083,7 +1080,7 @@ static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
 	case dtype_quad:
 	case dtype_blob:
 		fb_assert(desc->dsc_length >= sizeof(struct bid));
-		if (!xdr_quad(xdrs, (struct bid *) p))
+		if (!xdr_quad(xdrs, (struct bid*) p))
 			return FALSE;
 		break;
 
@@ -1118,7 +1115,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 
 	if (xop == XDR_FREE)
 	{
-		/* Free a slot in the packet tracking vector */
+		// Free a slot in the packet tracking vector
 
 		rem_vec* vector = port->port_packet_vector;
 		if (vector)
@@ -1133,10 +1130,10 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 	}
 	else
-	{						/* XDR_ENCODE or XDR_DECODE */
+	{						// XDR_ENCODE or XDR_DECODE
 
-		/* Allocate an unused slot in the packet tracking vector
-		   to start recording memory allocations for this packet. */
+		// Allocate an unused slot in the packet tracking vector
+		// to start recording memory allocations for this packet.
 
 		fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 		rem_vec* vector = A L L R _vector(&port->port_packet_vector, 0);
@@ -1181,7 +1178,7 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
 		return FALSE;
 	}
 
-/* Handle operation specific stuff, particularly memory allocation/deallocation */
+	// Handle operation specific stuff, particularly memory allocation/deallocation
 
 	switch (xdrs->x_op)
 	{
@@ -1228,8 +1225,8 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 
 	const rem_port* port = (rem_port*) xdrs->x_public;
 
-/* If we are running a symmetric version of the protocol, just slop
-   the bits and don't sweat the translations */
+	// If we are running a symmetric version of the protocol, just slop
+	// the bits and don't sweat the translations
 
 	if (port->port_flags & PORT_symmetric)
 	{
@@ -1330,7 +1327,7 @@ static bool_t xdr_request(XDR* xdrs,
 	tail->rrq_xdr = message->msg_next;
 	const rem_fmt* format = tail->rrq_format;
 
-/* Find the address of the record */
+	// Find the address of the record
 
 	if (!message->msg_address)
 		message->msg_address = message->msg_buffer;
@@ -1354,7 +1351,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, USHORT sdl_length, const UCHA
 	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&slice->lstr_length)))
 		return FALSE;
 
-/* Handle operation specific stuff, particularly memory allocation/deallocation */
+	// Handle operation specific stuff, particularly memory allocation/deallocation
 
 	switch (xdrs->x_op)
 	{
@@ -1394,7 +1391,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, USHORT sdl_length, const UCHA
 		return TRUE;
 	}
 
-/* Get descriptor of array element */
+	// Get descriptor of array element
 
 	ISC_STATUS_ARRAY status_vector;
 	struct sdl_info info;
@@ -1403,7 +1400,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, USHORT sdl_length, const UCHA
 
 	const dsc* desc = &info.sdl_info_element;
 	const rem_port* port = (rem_port*) xdrs->x_public;
-	BLOB_PTR* p = (BLOB_PTR *) slice->lstr_address;
+	BLOB_PTR* p = (BLOB_PTR*) slice->lstr_address;
 	ULONG n;
 
 	if (port->port_flags & PORT_symmetric)
@@ -1449,7 +1446,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	if (!xdr_cstring(xdrs, blr))
 		return FALSE;
 
-/* We care about all receives and sends from fetch */
+	// We care about all receives and sends from fetch
 
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
@@ -1474,26 +1471,26 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		return TRUE;
 	}
 
-/* Parse the blr describing the message. */
+	// Parse the blr describing the message.
 
 	rem_fmt** fmt_ptr = direction ? &statement->rsr_select_format : &statement->rsr_bind_format;
 
 	if (xdrs->x_op == XDR_DECODE)
 	{
-		/* For an immediate statement, flush out any previous format information
-		 * that might be hanging around from an earlier execution.
-		 * For all statements, if we have new blr, flush out the format information
-		 * for the old blr.
-		 */
+		// For an immediate statement, flush out any previous format information
+		// that might be hanging around from an earlier execution.
+		// For all statements, if we have new blr, flush out the format information
+		// for the old blr.
+
 		if (*fmt_ptr && ((stmt_type == TYPE_IMMEDIATE) || blr->cstr_length != 0))
 		{
 			delete *fmt_ptr;
 			*fmt_ptr = NULL;
 		}
 
-		/* If we have BLR describing a new input/output message, get ready by
-		 * setting up a format
-		 */
+		// If we have BLR describing a new input/output message, get ready by
+		// setting up a format
+
 		if (blr->cstr_length) {
 			RMessage* temp_msg = (RMessage*) PARSE_messages(blr->cstr_address, blr->cstr_length);
 			if (temp_msg != (RMessage*) -1) {
@@ -1503,8 +1500,8 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		}
 	}
 
-/* If we know the length of the message, make sure there is a buffer
-   large enough to hold it. */
+	// If we know the length of the message, make sure there is a buffer
+	// large enough to hold it.
 
 	if (!(statement->rsr_format = *fmt_ptr))
 		return TRUE;
@@ -1580,7 +1577,7 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
  *
  **************************************/
 
-/* If this is a free operation, release any allocated strings */
+	// If this is a free operation, release any allocated strings
 
 	if (xdrs->x_op == XDR_FREE)
 	{
@@ -1619,15 +1616,15 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
 			}
 			else
 			{
-				/* Use the first slot in the strings table */
+				// Use the first slot in the strings table
 				TEXT** sp = strings;
 				if (*sp)
 				{
-					/* Slot is used, by a string passed in a previous
-					 * status vector.  Free that string, and allocate
-					 * a new one to prevent any size mismatches trashing
-					 * memory.
-					 */
+					// Slot is used, by a string passed in a previous
+					// status vector.  Free that string, and allocate
+					// a new one to prevent any size mismatches trashing
+					// memory.
+
 					temp_xdrs.x_public = xdrs->x_public;
 					temp_xdrs.x_op = XDR_FREE;
 					if (!xdr_wrapstring(&temp_xdrs, sp))
@@ -1671,7 +1668,7 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	if (!xdr_cstring(xdrs, blr))
 		return FALSE;
 
-/* We care about all receives and sends from fetch */
+	// We care about all receives and sends from fetch
 
 	if (xdrs->x_op == XDR_FREE || xdrs->x_op == XDR_ENCODE)
 		return TRUE;
@@ -1681,7 +1678,7 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	if (!procedure)
 		procedure = port->port_rpr = new Rpr;
 
-/* Parse the blr describing the message. */
+	// Parse the blr describing the message.
 
 	delete procedure->rpr_in_msg;
 	procedure->rpr_in_msg = NULL;
@@ -1755,7 +1752,7 @@ static bool_t xdr_trrq_message( XDR* xdrs, USHORT msg_type)
 }
 
 
-static Rsr* get_statement( XDR * xdrs, SSHORT statement_id)
+static Rsr* get_statement( XDR* xdrs, SSHORT statement_id)
 {
 /**************************************
  *
@@ -1774,14 +1771,13 @@ static Rsr* get_statement( XDR * xdrs, SSHORT statement_id)
 	Rsr* statement = NULL;
 	rem_port* port = (rem_port*) xdrs->x_public;
 
-/* if the statement ID is -1, this seems to indicate that we are
-   re-executing the previous statement.  This is not a
-   well-understood area of the implementation.
+	// if the statement ID is -1, this seems to indicate that we are
+	// re-executing the previous statement.  This is not a
+	// well-understood area of the implementation.
 
-if (statement_id == -1)
-    statement = port->port_statement;
-else
-*/
+	//if (statement_id == -1)
+	//	statement = port->port_statement;
+	//else
 
 	fb_assert(statement_id >= -1);
 

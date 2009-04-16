@@ -86,7 +86,8 @@ static void FillSysdbaSPB(char*, const char*);
 // which is used in the help file.
 static DWORD aMenuHelpIDs1[][2] =
 {
-	{IDC_MODRES, ibs_modify},		// This has to be the first entry because
+	{IDC_MODRES, ibs_modify},
+	// This has to be the first entry because
 	// we modify the value of ibs_modify to
 	// ibs_reset when the button text changes.
 
@@ -204,11 +205,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			return TRUE;
 		}
 	case WM_CONTEXTMENU:
-		{
-			WinHelp((HWND) wParam, "IBSERVER.HLP",
-					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs1);
-			return TRUE;
-		}
+		WinHelp((HWND) wParam, "IBSERVER.HLP", HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs1);
+		return TRUE;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
@@ -251,19 +249,16 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 		switch (((LPNMHDR) lParam)->code)
 		{
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
-			{
-				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
-				break;
-			}
-		case PSN_SETACTIVE:	// When the page is about to recieve
-			{					// focus
-				// This modifies the bubble help table to bring up
-				// the appropriate help topic based on whether the text
-				// is "Modify..." or "Reset".  It assumes that the first
-				// entry is the first one.
-				aMenuHelpIDs1[0][1] = bModifyMode ? ibs_reset : ibs_modify;
-				break;
-			}
+			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+			break;
+		case PSN_SETACTIVE:
+			// When the page is about to receive focus
+			// This modifies the bubble help table to bring up
+			// the appropriate help topic based on whether the text
+			// is "Modify..." or "Reset".  It assumes that the first
+			// entry is the first one.
+			aMenuHelpIDs1[0][1] = bModifyMode ? ibs_reset : ibs_modify;
+			break;
 		case PSN_APPLY:		// When 'OK' or 'Apply Now' are clicked
 			if (bDirty)
 				if (WriteFBSettings(hDlg))	// Values written successfully
@@ -316,7 +311,7 @@ BOOL ReadFBSettings(HWND hDlg)
 	lMapSize = 0;
 	BOOL bSuccess = FALSE;
 
-// Attach to "anonymous" service
+	// Attach to "anonymous" service
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
@@ -332,9 +327,9 @@ BOOL ReadFBSettings(HWND hDlg)
 		SetDlgItemInt(hDlg, IDC_DBPAGES, lCachePages, TRUE);
 		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_RESETCONTENT, 0, 0);
 
-		/* To eliminate the flicker while closing the Property Sheet */
+		// To eliminate the flicker while closing the Property Sheet
 		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
-		/* Close the Property Sheet */
+		// Close the Property Sheet
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
 		return bSuccess;
@@ -354,10 +349,10 @@ BOOL ReadFBSettings(HWND hDlg)
 		bSuccess = TRUE;
 	}
 
-// Empty the Map Size Combo Box
+	// Empty the Map Size Combo Box
 	SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_RESETCONTENT, 0, 0);
 
-// Fill the Map Size Combo Box
+	// Fill the Map Size Combo Box
 	{
 		char szTmp[8];
 		int temp = 1024;
@@ -378,16 +373,16 @@ BOOL ReadFBSettings(HWND hDlg)
 		SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_SELECTSTRING, 0, (LPARAM) pchTmp);
 	}
 
-// Display the proper cache size
+	// Display the proper cache size
 	SetDlgItemInt(hDlg, IDC_DBPAGES, lCachePages, TRUE);
 
 	SetCursor(hOldCursor);
 	isc_service_detach(pdwStatus, &hService);
 
 	if (!bSuccess) {
-		/* To eliminate the flicker while closing the Property Sheet */
+		// To eliminate the flicker while closing the Property Sheet
 		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
-		/* Close the Property Sheet */
+		// Close the Property Sheet
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 	}
 
@@ -419,9 +414,9 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
 
 	SendDlgItemMessage(hDlg, IDC_MODRES, WM_SETTEXT, 0, (LPARAM) szButtonName);
 
-// This modifies the bubble help table to bring up the appropriate help
-// topic based on whether the text is "Modify..." or "Reset".  It assumes
-// that the first entry is the first one.
+	// This modifies the bubble help table to bring up the appropriate help
+	// topic based on whether the text is "Modify..." or "Reset".  It assumes
+	// that the first entry is the first one.
 	aMenuHelpIDs1[0][1] = bEnable ? ibs_reset : ibs_modify;
 
 }
@@ -463,7 +458,7 @@ BOOL WriteFBSettings(HWND hDlg)
 	char szSpb[SPB_BUFLEN];		// Server parameter block
 	FillSysdbaSPB(szSpb, szSysDbaPasswd);
 
-// Build the complete name to the service
+	// Build the complete name to the service
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* pchPtr = szService + strlen(szService);
 	strcat(szService, "query_server");
@@ -480,23 +475,23 @@ BOOL WriteFBSettings(HWND hDlg)
 		SetCursor(hOldCursor);
 		PrintCfgStatus(pdwStatus, IDS_CFGATTACH_FAILED, hDlg);
 
-		/* To eliminate the flicker while closing the Property Sheet */
+		// To eliminate the flicker while closing the Property Sheet
 		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
-		/* Close the Property Sheet */
+		// Close the Property Sheet
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
 		return FALSE;
 	}
 
-// Fill in the Send buffer's header
+	// Fill in the Send buffer's header
 	char pchSendBuf[SEND_BUFLEN];
 	pchPtr = pchSendBuf;
 	*pchPtr++ = isc_info_svc_set_config;
 	short* psLen = (short *) pchPtr;
 	pchPtr += sizeof(USHORT);
 
-// Fill in all the records
-/*
+	// Fill in all the records
+	/*
 	*pchPtr++ = ISCCFG_IPCMAP_KEY;
 	*pchPtr++ = sizeof(long);
 	*(ULONG *) pchPtr = isc_vax_integer((SCHAR *) & lMapSize, sizeof(long));
@@ -507,10 +502,10 @@ BOOL WriteFBSettings(HWND hDlg)
 	*(ULONG *) pchPtr =
 		isc_vax_integer((SCHAR *) & lCachePages, sizeof(long));
 	pchPtr += sizeof(long);
-*/
+	*/
 	*psLen = pchPtr - pchSendBuf - sizeof(short) - sizeof(char);
 	*psLen = (short) isc_vax_integer((SCHAR *) psLen, sizeof(short));
-// Query service with set_config
+	// Query service with set_config
 
 	char szResBuf[16];			// Response buffer
 	isc_service_query(pdwStatus, &hService, NULL, 0, NULL,
@@ -520,9 +515,9 @@ BOOL WriteFBSettings(HWND hDlg)
 	{
 		PrintCfgStatus(pdwStatus[1] ? pdwStatus : NULL, IDS_CFGWRITE_FAILED, hDlg);
 
-		/* To eliminate the flicker while closing the Property Sheet */
+		// To eliminate the flicker while closing the Property Sheet
 		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
-		/* Close the Property Sheet */
+		// Close the Property Sheet
 		SendMessage(GetParent(hDlg), WM_CLOSE, 0, 0);
 
 		bRetFlag = FALSE;
@@ -755,13 +750,13 @@ void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
 
 	GetModuleFileName(hInst, szPathFileName, sizeof(szPathFileName));
 
-/* Show hour glass cursor */
+	// Show hour glass cursor
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
 	strcpy(strrchr(szPathFileName, '\\') + 1, SERVER_HELP_FILE);
 	WinHelp(hWnd, szPathFileName, HELP_CONTEXT, wId);
 
-/* Restore old cursor */
+	// Restore old cursor
 	SetCursor(hOldCursor);
 
 	return;

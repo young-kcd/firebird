@@ -210,14 +210,13 @@ int FB_EXPORTED server_main( int argc, char** argv)
 				case 'U':
 					multi_threaded = false;
 					break;
-#endif /* SUPERSERVER */
+#endif // SUPERSERVER
 
 				case 'E':
 					if (ISC_set_prefix(p, *argv) == -1)
 						printf("Invalid argument Ignored\n");
 					else
-						argv++;	/* do not skip next argument if this one
-								   is invalid */
+						argv++;	// do not skip next argument if this one is invalid
 					done = true;
 					break;
 
@@ -292,14 +291,14 @@ int FB_EXPORTED server_main( int argc, char** argv)
 		// we need some writable directory for core file
 		// on any unix /tmp seems to be the best place
 		if (CHANGE_DIR(TEMP_DIR)) {
-			/* error on changing the directory */
+			// error on changing the directory
 			gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 		}
 	}
 #endif
 
-/* Fork off a server, wait for it to die, then fork off another,
-   but give up after 100 tries */
+	// Fork off a server, wait for it to die, then fork off another,
+	// but give up after 100 tries
 
 #ifndef SUPERSERVER
 	if (multi_client && !debug)
@@ -315,7 +314,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 				break;
 			while (wait(0) != child)
 				if (INET_SERVER_start) {
-					n = 0;		/* reset error counter on "real" signal */
+					n = 0;		// reset error counter on "real" signal
 					break;
 				}
 			gds__log("INET_SERVER/main: gds_inet_server restarted");
@@ -335,8 +334,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
             // Remove restriction on username, for DEV builds
             // restrict only for production builds.  MOD 21-July-2002
 #ifndef DEV_BUILD
-			Firebird::string user_name;	/* holds the user name */
-			/* check user id */
+			Firebird::string user_name;	// holds the user name
+			// check user id
 			ISC_get_user(&user_name, NULL, NULL, NULL);
 
 			if (user_name != "root" &&
@@ -344,7 +343,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 				user_name != INTERBASE_USER_NAME &&
 				user_name != INTERBASE_USER_SHORT)
 			{
-				/* invalid user -- bail out */
+				// invalid user -- bail out
 				fprintf(stderr, "%s: Invalid user (must be %s, %s, %s or root).\n",
 						   "fbserver", FIREBIRD_USER_NAME,
 						   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
@@ -381,18 +380,18 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	}
 
 #ifdef SUPERSERVER
-/* before starting the superserver stuff change directory to tmp */
+	// before starting the superserver stuff change directory to tmp
 	if (CHANGE_DIR(TEMP_DIR)) {
-		/* error on changing the directory */
+		// error on changing the directory
 		gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 	}
 
-/* Server tries to attach to security2.fdb to make sure everything is OK
-   This code fixes bug# 8429 + all other bug of that kind - from
-   now on the server exits if it cannot attach to the database
-   (wrong or no license, not enough memory, etc.
-*/
-	{
+	// Server tries to attach to security2.fdb to make sure everything is OK
+	// This code fixes bug# 8429 + all other bug of that kind - from
+	// now on the server exits if it cannot attach to the database
+	// (wrong or no license, not enough memory, etc.
+
+	{ // scope
 		TEXT path[MAXPATHLEN];
 		ISC_STATUS_ARRAY status;
 		isc_db_handle db_handle = 0L;
@@ -411,7 +410,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 			isc_print_status(status);
 			exit(STARTUP_ERROR);
 		}
-	}
+	} // end scope
 
 	shutdownInit();
 #endif
@@ -419,9 +418,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	SRVR_multi_thread(port, INET_SERVER_flag);
 
 #ifdef DEBUG_GDS_ALLOC
-/* In Debug mode - this will report all server-side memory leaks
- * due to remote access
- */
+	// In Debug mode - this will report all server-side memory leaks due to remote access
+
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");

@@ -34,7 +34,7 @@
 #include "../jrd/gds_proto.h"
 
 #ifdef BURP
-#include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
+#include "../burp/misc_proto.h"	// Was "../burp/misc_pro.h" -Jeevan
 inline UCHAR* XDR_ALLOC(ULONG size)
 {
 	return MISC_alloc_burp(size);
@@ -70,24 +70,24 @@ inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULO
 inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
 {
 }
-#endif /* DEBUG_XDR_MEMORY */
+#endif // DEBUG_XDR_MEMORY
 
-/* Sun's XDR documentation says this should be "MAXUNSIGNED", but
-   for Firebird purposes, limiting strings to 65K is more than
-   sufficient. */
+// Sun's XDR documentation says this should be "MAXUNSIGNED", but
+// for Firebird purposes, limiting strings to 65K is more than
+// sufficient.
 // This setting may be related to our max DSQL statement size.
 
 const u_int MAXSTRING_FOR_WRAPSTRING	= 65535;
 
 
-static XDR_INT mem_destroy(XDR *);
-static bool_t mem_getbytes(XDR *, SCHAR *, u_int);
-static bool_t mem_getlong(XDR *, SLONG *);
-static u_int mem_getpostn(XDR *);
-static caddr_t mem_inline(XDR *, u_int);
+static XDR_INT mem_destroy(XDR*);
+static bool_t mem_getbytes(XDR*, SCHAR*, u_int);
+static bool_t mem_getlong(XDR*, SLONG*);
+static u_int mem_getpostn(XDR*);
+static caddr_t mem_inline(XDR*, u_int);
 static bool_t mem_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t mem_putlong(XDR *, const SLONG*);
-static bool_t mem_setpostn(XDR *, u_int);
+static bool_t mem_putlong(XDR*, const SLONG*);
+static bool_t mem_setpostn(XDR*, u_int);
 
 
 static const XDR::xdr_ops mem_ops =
@@ -110,7 +110,7 @@ static const XDR::xdr_ops mem_ops =
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
 
-bool_t xdr_hyper( XDR * xdrs, void * pi64)
+bool_t xdr_hyper( XDR* xdrs, void* pi64)
 {
 /**************************************
  *
@@ -173,11 +173,11 @@ bool_t xdr_hyper( XDR * xdrs, void * pi64)
 	case XDR_FREE:
 		return TRUE;
 	}
-// TMN: added compiler silencier return FALSE.
+	// TMN: added compiler silencier return FALSE.
 	return FALSE;
 }
 
-bool_t xdr_bool( XDR * xdrs, bool_t * bp)
+bool_t xdr_bool( XDR* xdrs, bool_t* bp)
 {
 /**************************************
  *
@@ -211,7 +211,7 @@ bool_t xdr_bool( XDR * xdrs, bool_t * bp)
 }
 
 
-bool_t xdr_bytes(XDR * xdrs, SCHAR ** bpp, u_int * lp, u_int maxlength)
+bool_t xdr_bytes(XDR* xdrs, SCHAR** bpp, u_int* lp, u_int maxlength)
 {
 /**************************************
  *
@@ -240,9 +240,9 @@ bool_t xdr_bytes(XDR * xdrs, SCHAR ** bpp, u_int * lp, u_int maxlength)
 	case XDR_DECODE:
 		if (!*bpp)
 		{
-			*bpp = (SCHAR *) XDR_ALLOC((ULONG) (maxlength + 1));
-			/* FREE: via XDR_FREE call to this procedure */
-			if (!*bpp)			/* NOMEM: */
+			*bpp = (SCHAR*) XDR_ALLOC((ULONG) (maxlength + 1));
+			// FREE: via XDR_FREE call to this procedure
+			if (!*bpp)			// NOMEM:
 				return FALSE;
 			DEBUG_XDR_ALLOC(xdrs, bpp, *bpp, (maxlength + 1));
 		}
@@ -269,7 +269,7 @@ bool_t xdr_bytes(XDR * xdrs, SCHAR ** bpp, u_int * lp, u_int maxlength)
 }
 
 
-bool_t xdr_double(XDR * xdrs, double *ip)
+bool_t xdr_double(XDR* xdrs, double* ip)
 {
 /**************************************
  *
@@ -316,7 +316,7 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 }
 
 
-bool_t xdr_enum(XDR * xdrs, xdr_op * ip)
+bool_t xdr_enum(XDR* xdrs, xdr_op* ip)
 {
 /**************************************
  *
@@ -333,7 +333,7 @@ bool_t xdr_enum(XDR * xdrs, xdr_op * ip)
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
-		temp = (SLONG) * ip;
+		temp = (SLONG) *ip;
 		return PUTLONG(xdrs, &temp);
 
 	case XDR_DECODE:
@@ -350,7 +350,7 @@ bool_t xdr_enum(XDR * xdrs, xdr_op * ip)
 }
 
 
-bool_t xdr_float(XDR * xdrs, float *ip)
+bool_t xdr_float(XDR* xdrs, float* ip)
 {
 /**************************************
  *
@@ -379,7 +379,7 @@ bool_t xdr_float(XDR * xdrs, float *ip)
 }
 
 
-bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
+bool_t xdr_free(xdrproc_t proc, SCHAR* objp)
 {
 /**************************************
  *
@@ -399,7 +399,7 @@ bool_t xdr_free(xdrproc_t proc, SCHAR * objp)
 }
 
 
-bool_t xdr_int(XDR * xdrs, int *ip)
+bool_t xdr_int(XDR* xdrs, int* ip)
 {
 /**************************************
  *
@@ -433,7 +433,7 @@ bool_t xdr_int(XDR * xdrs, int *ip)
 }
 
 
-bool_t xdr_long(XDR * xdrs, SLONG * ip)
+bool_t xdr_long(XDR* xdrs, SLONG* ip)
 {
 /**************************************
  *
@@ -462,7 +462,7 @@ bool_t xdr_long(XDR * xdrs, SLONG * ip)
 }
 
 
-bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
+bool_t xdr_opaque(XDR* xdrs, SCHAR* p, u_int len)
 {
 /**************************************
  *
@@ -503,7 +503,7 @@ bool_t xdr_opaque(XDR * xdrs, SCHAR * p, u_int len)
 }
 
 
-bool_t xdr_short(XDR * xdrs, SSHORT * ip)
+bool_t xdr_short(XDR* xdrs, SSHORT* ip)
 {
 /**************************************
  *
@@ -537,7 +537,7 @@ bool_t xdr_short(XDR * xdrs, SSHORT * ip)
 }
 
 
-bool_t xdr_string(XDR * xdrs, SCHAR ** sp, u_int maxlength)
+bool_t xdr_string(XDR* xdrs, SCHAR** sp, u_int maxlength)
 {
 /**************************************
  *
@@ -570,9 +570,9 @@ bool_t xdr_string(XDR * xdrs, SCHAR ** sp, u_int maxlength)
 	case XDR_DECODE:
 		if (!*sp)
 		{
-			*sp = (SCHAR *) XDR_ALLOC((ULONG) (maxlength + 1));
-			/* FREE: via XDR_FREE call to this procedure */
-			if (!*sp)			/* NOMEM: return error */
+			*sp = (SCHAR*) XDR_ALLOC((ULONG) (maxlength + 1));
+			// FREE: via XDR_FREE call to this procedure
+			if (!*sp)			// NOMEM: return error
 				return FALSE;
 			DEBUG_XDR_ALLOC(xdrs, sp, *sp, (maxlength + 1));
 		}
@@ -600,7 +600,7 @@ bool_t xdr_string(XDR * xdrs, SCHAR ** sp, u_int maxlength)
 }
 
 
-bool_t xdr_u_int(XDR * xdrs, u_int * ip)
+bool_t xdr_u_int(XDR* xdrs, u_int* ip)
 {
 /**************************************
  *
@@ -635,7 +635,7 @@ bool_t xdr_u_int(XDR * xdrs, u_int * ip)
 }
 
 
-bool_t xdr_u_long(XDR * xdrs, ULONG * ip)
+bool_t xdr_u_long(XDR* xdrs, ULONG* ip)
 {
 /**************************************
  *
@@ -666,7 +666,7 @@ bool_t xdr_u_long(XDR * xdrs, ULONG * ip)
 }
 
 
-bool_t xdr_u_short(XDR * xdrs, u_short * ip)
+bool_t xdr_u_short(XDR* xdrs, u_short* ip)
 {
 /**************************************
  *
@@ -745,7 +745,7 @@ int xdr_union(	XDR*			xdrs,
 }
 
 
-bool_t xdr_wrapstring(XDR * xdrs, SCHAR ** strp)
+bool_t xdr_wrapstring(XDR* xdrs, SCHAR** strp)
 {
 /**************************************
  *
@@ -784,7 +784,7 @@ int xdrmem_create(	XDR* xdrs, SCHAR* addr, u_int len, xdr_op x_op)
 }
 
 
-static XDR_INT mem_destroy(XDR * xdrs)
+static XDR_INT mem_destroy(XDR* xdrs)
 {
 /**************************************
  *
@@ -830,7 +830,7 @@ static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, u_int count)
 }
 
 
-static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
+static bool_t mem_getlong( XDR* xdrs, SLONG* lp)
 {
 /**************************************
  *
@@ -848,9 +848,9 @@ static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
 		return FALSE;
 	}
 
-	SLONG* p = (SLONG *) xdrs->x_private;
+	SLONG* p = (SLONG*) xdrs->x_private;
 	*lp = ntohl(*p++);
-	xdrs->x_private = (SCHAR *) p;
+	xdrs->x_private = (SCHAR*) p;
 
 	return TRUE;
 }
@@ -878,7 +878,7 @@ SLONG getOperation(const void* data, size_t size)
 }
 
 
-static u_int mem_getpostn( XDR * xdrs)
+static u_int mem_getpostn( XDR* xdrs)
 {
 /**************************************
  *
@@ -895,7 +895,7 @@ static u_int mem_getpostn( XDR * xdrs)
 }
 
 
-static caddr_t mem_inline( XDR * xdrs, u_int bytecount)
+static caddr_t mem_inline( XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -945,7 +945,7 @@ static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t mem_putlong( XDR * xdrs, const SLONG* lp)
+static bool_t mem_putlong( XDR* xdrs, const SLONG* lp)
 {
 /**************************************
  *
@@ -963,15 +963,15 @@ static bool_t mem_putlong( XDR * xdrs, const SLONG* lp)
 		return FALSE;
 	}
 
-	SLONG* p = (SLONG *) xdrs->x_private;
+	SLONG* p = (SLONG*) xdrs->x_private;
 	*p++ = htonl(*lp);
-	xdrs->x_private = (SCHAR *) p;
+	xdrs->x_private = (SCHAR*) p;
 
 	return TRUE;
 }
 
 
-static bool_t mem_setpostn( XDR * xdrs, u_int bytecount)
+static bool_t mem_setpostn( XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *

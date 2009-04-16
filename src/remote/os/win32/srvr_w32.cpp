@@ -311,9 +311,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR lpszArgs, int
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-/* In Debug mode - this will report all server-side memory leaks
- * due to remote access
- */
+	// In Debug mode - this will report all server-side memory leaks
+	//	due to remote access
+
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");
@@ -693,9 +693,9 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					exit(FINI_OK);
 
 				default:
-					/* In case of something unrecognized, just
-					 * continue, since we have already taken it off
-					 * of p. */
+					// In case of something unrecognized, just
+					// continue, since we have already taken it off
+					// of p.
 					break;
 				}
 			}

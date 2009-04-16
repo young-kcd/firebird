@@ -32,7 +32,7 @@
 #include "../remote/parse_proto.h"
 
 #if !defined(DEV_BUILD) || (defined(DEV_BUILD) && defined(WIN_NT))
-#include "../jrd/gds_proto.h"	/* gds__log() */
+#include "../jrd/gds_proto.h"	// gds__log()
 #endif
 
 
@@ -100,7 +100,7 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				align = type_alignments[dtype_cstring];
 				break;
 
-				/* Parse the tagged blr types correctly */
+				// Parse the tagged blr types correctly
 
 			case blr_text2:
 				desc->dsc_dtype = dtype_text;
@@ -282,18 +282,18 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 			case blr_text2:
 			case blr_varying2:
 			case blr_cstring2:
-				blr += 4;		/* SUBTYPE word & LENGTH word */
+				blr += 4;		// SUBTYPE word & LENGTH word
 				break;
 			case blr_text:
 			case blr_varying:
 			case blr_cstring:
-				blr += 2;		/* LENGTH word */
+				blr += 2;		// LENGTH word
 				break;
 			case blr_short:
 			case blr_long:
 			case blr_int64:
 			case blr_quad:
-				blr++;			/* SCALE byte */
+				blr++;			// SCALE byte
 				break;
 			case blr_float:
 			case blr_double:
@@ -306,7 +306,7 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 				if (new_blr == old_blr)
 				{
 					new_blr = FB_NEW(*getDefaultMemoryPool()) UCHAR[blr_length];
-					/* FREE:  Never freed, blr_d_float is VMS specific */
+					// FREE:  Never freed, blr_d_float is VMS specific
 #ifdef DEBUG_REMOTE_MEMORY
 					printf("PARSE_prepare_messages    allocate blr     %x\n", new_blr);
 #endif
@@ -323,7 +323,7 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 
 			default:
 				DEV_REPORT("Unexpected BLR in PARSE_prepare_messages()");
-				/* This old code would return, so we will also */
+				// This old code would return, so we will also
 				return new_blr;
 			}
 	}

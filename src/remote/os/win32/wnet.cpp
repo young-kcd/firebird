@@ -22,7 +22,7 @@
  */
 
 #ifdef DEBUG
-/* define WNET_trace to 0 (zero) for no packet debugging */
+// define WNET_trace to 0 (zero) for no packet debugging
 #define WNET_trace
 #endif
 
@@ -74,29 +74,29 @@ static void		exit_handler(void*);
 #endif
 static void		force_close(rem_port*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
-static rem_port*		receive(rem_port*, PACKET *);
-static int		send_full(rem_port*, PACKET *);
-static int		send_partial(rem_port*, PACKET *);
-static int		xdrwnet_create(XDR *, rem_port*, UCHAR *, USHORT, xdr_op);
-static bool_t	xdrwnet_endofrecord(XDR *, int);
-static int		wnet_destroy(XDR *);
+static rem_port*		receive(rem_port*, PACKET*);
+static int		send_full(rem_port*, PACKET*);
+static int		send_partial(rem_port*, PACKET*);
+static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
+static bool_t	xdrwnet_endofrecord(XDR*, int);
+static int		wnet_destroy(XDR*);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static void		wnet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
-static bool_t	wnet_getbytes(XDR *, SCHAR *, u_int);
-static bool_t	wnet_getlong(XDR *, SLONG *);
-static u_int	wnet_getpostn(XDR *);
-static caddr_t	wnet_inline(XDR *, u_int);
-static bool_t	wnet_putlong(XDR *, const SLONG*);
+static bool_t	wnet_getbytes(XDR*, SCHAR*, u_int);
+static bool_t	wnet_getlong(XDR*, SLONG*);
+static u_int	wnet_getpostn(XDR*);
+static caddr_t	wnet_inline(XDR*, u_int);
+static bool_t	wnet_putlong(XDR*, const SLONG*);
 static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t	wnet_read(XDR *);
-static bool_t	wnet_setpostn(XDR *, u_int);
-static bool_t	wnet_write(XDR *, int);
+static bool_t	wnet_read(XDR*);
+static bool_t	wnet_setpostn(XDR*, u_int);
+static bool_t	wnet_write(XDR*, int);
 #ifdef DEBUG
 static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
-static bool		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
+static bool		packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
 static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
-static void		wnet_make_file_name(TEXT *, DWORD);
+static void		wnet_make_file_name(TEXT*, DWORD);
 
 static int		cleanup_ports(const int, const int, void*);
 
@@ -134,13 +134,13 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
  *
  **************************************/
 
-/* We need to establish a connection to a remote server.  Allocate the necessary
-   blocks and get ready to go. */
+	// We need to establish a connection to a remote server.  Allocate the necessary
+	// blocks and get ready to go.
 
 	Rdb* rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
-/* Pick up some user identification information */
+	// Pick up some user identification information
 	Firebird::string buffer;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
@@ -156,7 +156,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		user_id.insertTag(CNCT_user_verification);
 	}
 
-/* Establish connection to server */
+	// Establish connection to server
 
 	P_CNCT* const cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
@@ -166,11 +166,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_file.cstr_length = file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-/* Note: prior to V3.1E a receivers could not in truth handle more
-   then 5 protocol descriptions; however, this restriction does not
-   apply to Windows since it was created in 4.0 */
+	// Note: prior to V3.1E a receivers could not in truth handle more
+	// then 5 protocol descriptions; however, this restriction does not
+	// apply to Windows since it was created in 4.0
 
-/* If we want user verification, we can't speak anything less than version 7 */
+	// If we want user verification, we can't speak anything less than version 7
 
 	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
@@ -192,7 +192,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_versions[i] = protocols_to_try1[i];
 	}
 
-/* If we can't talk to a server, punt. Let somebody else generate an error. */
+	// If we can't talk to a server, punt. Let somebody else generate an error.
 
 	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
@@ -200,7 +200,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		return NULL;
 	}
 
-/* Get response packet from server. */
+	// Get response packet from server.
 
 	rdb->rdb_port = port;
 	port->port_context = rdb;
@@ -216,7 +216,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_file.cstr_length = file_name.length();
 		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-		/* try again with next set of known protocols */
+		// try again with next set of known protocols
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
@@ -238,7 +238,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 			return NULL;
 		}
 
-		/* Get response packet from server. */
+		// Get response packet from server.
 
 		rdb->rdb_port = port;
 		port->port_context = rdb;
@@ -255,7 +255,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_file.cstr_length = file_name.length();
 		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-		/* try again with next set of known protocols */
+		// try again with next set of known protocols
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
 		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
@@ -276,7 +276,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 			return NULL;
 		}
 
-		/* Get response packet from server. */
+		// Get response packet from server.
 
 		rdb->rdb_port = port;
 		port->port_context = rdb;
@@ -294,8 +294,8 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
 
-/* once we've decided on a protocol, concatenate the version
-   string to reflect it...  */
+	// once we've decided on a protocol, concatenate the version
+	// string to reflect it...
 
 	Firebird::string temp;
 	temp.printf("%s/P%d", port->port_version->str_data,
@@ -342,7 +342,7 @@ rem_port* WNET_connect(const TEXT*		name,
 	delete port->port_connection;
 	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
-/* If we're a host, just make the connection */
+	// If we're a host, just make the connection
 
 	if (packet)
 	{
@@ -366,7 +366,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		return port;
 	}
 
-/* We're a server, so wait for a host to show up */
+	// We're a server, so wait for a host to show up
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 
@@ -489,7 +489,7 @@ rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 }
 
 
-rem_port* WNET_server(void *handle)
+rem_port* WNET_server(void* handle)
 {
 /**************************************
  *
@@ -524,11 +524,11 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
  *	response for protocol selection.
  *
  **************************************/
-/* Default account to "guest" (in theory all packets contain a name) */
+	// Default account to "guest" (in theory all packets contain a name)
 
 	Firebird::string name("guest"), password;
 
-	/* Pick up account and password, if given. The password is ignored */
+	// Pick up account and password, if given. The password is ignored
 
 	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
 			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
@@ -617,7 +617,6 @@ static rem_port* alloc_port( rem_port* parent)
 }
 
 
-// Third param "ast" is unused.
 static rem_port* aux_connect( rem_port* port, PACKET* packet)
 {
 /**************************************
@@ -631,7 +630,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-/* If this is a server, we're got an auxiliary connection.  Accept it */
+	// If this is a server, we're got an auxiliary connection.  Accept it
 
 	if (port->port_server_flags) {
 		if (!connect_client(port))
@@ -641,9 +640,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 		return port;
 	}
 
-/* The server will be sending its process id in the packet to
- * create a unique pipe name.
- */
+	// The server will be sending its process id in the packet to
+	// create a unique pipe name.
 
 	P_RESP* response = &packet->p_resp;
 
@@ -794,7 +792,7 @@ static void disconnect(rem_port* port)
  *
  **************************************/
 
-/* If this is a sub-port, unlink it from it's parent */
+	// If this is a sub-port, unlink it from it's parent
 
 	rem_port* const parent = port->port_parent;
 	if (parent)
@@ -944,7 +942,7 @@ static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name
 }
 
 
-static rem_port* receive( rem_port* main_port, PACKET * packet)
+static rem_port* receive( rem_port* main_port, PACKET* packet)
 {
 /**************************************
  *
@@ -966,7 +964,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 }
 
 
-static int send_full( rem_port* port, PACKET * packet)
+static int send_full( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -986,7 +984,7 @@ static int send_full( rem_port* port, PACKET * packet)
 }
 
 
-static int send_partial( rem_port* port, PACKET * packet)
+static int send_partial( rem_port* port, PACKET* packet)
 {
 /**************************************
  *
@@ -1028,7 +1026,7 @@ static int xdrwnet_create(XDR* xdrs,
 }
 
 
-static bool_t xdrwnet_endofrecord( XDR * xdrs, bool_t flushnow)
+static bool_t xdrwnet_endofrecord( XDR* xdrs, bool_t flushnow)
 {
 /**************************************
  *
@@ -1045,7 +1043,7 @@ static bool_t xdrwnet_endofrecord( XDR * xdrs, bool_t flushnow)
 }
 
 
-static int wnet_destroy( XDR * xdrs)
+static int wnet_destroy( XDR* xdrs)
 {
 /**************************************
  *
@@ -1128,7 +1126,7 @@ static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 }
 
 
-static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -1142,7 +1140,7 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 
-/* Use memcpy to optimize bulk transfers. */
+	// Use memcpy to optimize bulk transfers.
 
 	while (bytecount > (SLONG) sizeof(ISC_QUAD))
 	{
@@ -1163,8 +1161,8 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 			return FALSE;
 	}
 
-/* Scalar values and bulk transfer remainder fall thru
-   to be moved byte-by-byte to avoid memcpy setup costs. */
+	// Scalar values and bulk transfer remainder fall thru
+	// to be moved byte-by-byte to avoid memcpy setup costs.
 
 	if (!bytecount)
 		return TRUE;
@@ -1188,7 +1186,7 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 }
 
 
-static bool_t wnet_getlong( XDR * xdrs, SLONG * lp)
+static bool_t wnet_getlong( XDR* xdrs, SLONG* lp)
 {
 /**************************************
  *
@@ -1211,7 +1209,7 @@ static bool_t wnet_getlong( XDR * xdrs, SLONG * lp)
 }
 
 
-static u_int wnet_getpostn( XDR * xdrs)
+static u_int wnet_getpostn( XDR* xdrs)
 {
 /**************************************
  *
@@ -1228,7 +1226,7 @@ static u_int wnet_getpostn( XDR * xdrs)
 }
 
 
-static caddr_t wnet_inline( XDR * xdrs, u_int bytecount)
+static caddr_t wnet_inline( XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -1262,7 +1260,7 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 
-/* Use memcpy to optimize bulk transfers. */
+	// Use memcpy to optimize bulk transfers.
 
 	while (bytecount > (SLONG) sizeof(ISC_QUAD))
 	{
@@ -1283,8 +1281,8 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			return FALSE;
 	}
 
-/* Scalar values and bulk transfer remainder fall thru
-   to be moved byte-by-byte to avoid memcpy setup costs. */
+	// Scalar values and bulk transfer remainder fall thru
+	// to be moved byte-by-byte to avoid memcpy setup costs.
 
 	if (!bytecount)
 		return TRUE;
@@ -1308,7 +1306,7 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t wnet_putlong( XDR * xdrs, const SLONG* lp)
+static bool_t wnet_putlong( XDR* xdrs, const SLONG* lp)
 {
 /**************************************
  *
@@ -1325,7 +1323,7 @@ static bool_t wnet_putlong( XDR * xdrs, const SLONG* lp)
 }
 
 
-static bool_t wnet_read( XDR * xdrs)
+static bool_t wnet_read( XDR* xdrs)
 {
 /**************************************
  *
@@ -1344,7 +1342,7 @@ static bool_t wnet_read( XDR * xdrs)
 	SCHAR* p = xdrs->x_base;
 	const SCHAR* const end = p + BUFFER_SIZE;
 
-/* If buffer is not completely empty, slide down what what's left */
+	// If buffer is not completely empty, slide down what what's left
 
 	if (xdrs->x_handy > 0) {
 		memmove(p, xdrs->x_private, xdrs->x_handy);
@@ -1374,7 +1372,7 @@ static bool_t wnet_read( XDR * xdrs)
 }
 
 
-static bool_t wnet_setpostn( XDR * xdrs, u_int bytecount)
+static bool_t wnet_setpostn( XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -1396,7 +1394,7 @@ static bool_t wnet_setpostn( XDR * xdrs, u_int bytecount)
 }
 
 
-static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
+static bool_t wnet_write( XDR* xdrs, bool_t end_flag)
 {
 /**************************************
  *
@@ -1410,14 +1408,14 @@ static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
  *	load.
  *
  **************************************/
-/* Encode the data portion of the packet */
+	// Encode the data portion of the packet
 
 	rem_port* vport = (rem_port*) xdrs->x_public;
 	const SCHAR* p = xdrs->x_base;
 	SSHORT length = xdrs->x_private - p;
 
-/* Send data in manageable hunks.  If a packet is partial, indicate
-   that with a negative length.  A positive length marks the end. */
+	// Send data in manageable hunks.  If a packet is partial, indicate
+	// that with a negative length.  A positive length marks the end.
 
 	while (length) {
 		const SSHORT l = MIN(length, MAX_DATA);

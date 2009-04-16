@@ -191,7 +191,7 @@ static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const 
 	PUT_WORD(*out, new_length);
 	PUT(*out, (UCHAR) count);
 
-/* Copy data portion of information sans original count */
+	// Copy data portion of information sans original count
 
 	if (--length)
 	{

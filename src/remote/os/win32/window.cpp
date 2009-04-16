@@ -92,7 +92,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 
 	fb_shutdown_callback(0, fb_shutdown_cb, fb_shut_postproviders, 0);
 
-/* initialize main window */
+	// initialize main window
 
 	WNDCLASS wcl;
 	wcl.hInstance = hInstance;
@@ -127,8 +127,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
 
-// Do the proper ShowWindow depending on if the app is an icon on
-// the desktop, or in the task bar.
+	// Do the proper ShowWindow depending on if the app is an icon on
+	// the desktop, or in the task bar.
 
 	SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
 	UpdateWindow(hWnd);
@@ -192,11 +192,11 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	switch (message)
 	{
 	case WM_QUERYENDSESSION:
-		/* If we are running as a non-service server, then query the user
-		 * to determine if we should end the session.  Otherwise, assume that
-		 * the server is a service  and could be servicing remote clients and
-		 * therefore should not be shut down.
-		 */
+		// If we are running as a non-service server, then query the user
+		// to determine if we should end the session.  Otherwise, assume that
+		// the server is a service  and could be servicing remote clients and
+		// therefore should not be shut down.
+
 		if (usServerFlags & SRVR_non_service) {
 			return CanEndServer(hWnd, true);
 		}
@@ -242,8 +242,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 				// The SetForegroundWindow() has to be called because our window
 				// does not become the Foreground one (inspite of clicking on
-				//the icon).  This is so because the icon is painted on the task
-				//bar and is not the same as a minimized window.
+				// the icon).  This is so because the icon is painted on the task
+				// bar and is not the same as a minimized window.
 				SetForegroundWindow(hWnd);
 
 				HMENU hPopup = CreatePopupMenu();
@@ -274,8 +274,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		case IDM_GUARDED:
 			{
-				/* Since we are going to be guarded, we do not need to
-				 * show the server icon.  The guardian will show its own. */
+				// Since we are going to be guarded, we do not need to
+				// show the server icon.  The guardian will show its own.
 				NOTIFYICONDATA nid;
 				nid.cbSize = sizeof(NOTIFYICONDATA);
 				nid.hWnd = hWnd;
@@ -524,7 +524,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 	char szMsgString[MSG_STRINGLEN];
 	sprintf(szMsgString, "%u ", usNumAtt);
 
-	if (!usNumAtt)				/* IF 0 CONNECTIONS, JUST SHUTDOWN */
+	if (!usNumAtt)				// IF 0 CONNECTIONS, JUST SHUTDOWN
 		return TRUE;
 
 	LoadString(hInstance, IDS_QUIT, szMsgString + strlen(szMsgString),

@@ -53,20 +53,20 @@ char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
  *
  **************************************/
 
-/* Set pointers to the beginning and the end */
+	// Set pointers to the beginning and the end
 	const char *pchLeft, *pchEnd;
 	pchLeft = pchEnd = szName;
 	while (*pchEnd)
 		pchEnd++;
 
-/* Check that the path is already short enough */
+	// Check that the path is already short enough
 	if (((ULONG) (pchEnd - pchLeft)) <= dwLen)
 	{
 		memcpy(szShortName, szName, pchEnd - pchLeft + 1);
 		return szShortName;
 	}
 
-/* Subtract the room needed for the three dots */
+	// Subtract the room needed for the three dots
 	dwLen -= 3;
 
 	const char* pchRight = pchEnd;

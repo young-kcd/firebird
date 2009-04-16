@@ -34,7 +34,7 @@
 #include <prsht.h>
 #include <dbt.h>
 
-/* Since it's a Win32-only file, we might as well assert it*/
+// Since it's a Win32-only file, we might as well assert it
 #if !defined(WIN_NT)
 #error This is a Win32 only file.
 #endif
@@ -57,9 +57,9 @@
 #include "../remote/os/win32/ibsvrhlp.h"
 #include "../remote/os/win32/chop_proto.h"
 
-#include "../common/thd.h"			/* get jrd_proto.h to declare the function */
-#include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
-#include <stdio.h>				/* sprintf() */
+#include "../common/thd.h"			// get jrd_proto.h to declare the function
+#include "../jrd/jrd_proto.h"	// JRD_num_attachments()
+#include <stdio.h>				// sprintf()
 
 static HINSTANCE hInstance = NULL;	// Handle to the current app. instance
 static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window
@@ -135,8 +135,8 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 	PSHdr.ppsp = (LPCPROPSHEETPAGE) & PSPages;
 	PSHdr.pfnCallback = NULL;
 
-// Initialize the gray brush to paint the background
-// for all prop. sheet pages and their controls
+	// Initialize the gray brush to paint the background
+	// for all prop. sheet pages and their controls
 	hGrayBrush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 
 	hPSDlg = (HWND) PropertySheet(&PSHdr);
@@ -198,7 +198,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 
 			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
-			*(pszPtr + 1) = 0x00;
+			pszPtr[1] = 0x00;
 
 			ChopFileName(szWindowText, szWindowText, 38);
 			SetDlgItemText(hDlg, IDC_PATH, szWindowText);
@@ -234,10 +234,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 		}
 		return TRUE;
 	case WM_CONTEXTMENU:
-		{
-			WinHelp((HWND) wParam, "IBSERVER.HLP",
-					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
-		}
+		WinHelp((HWND) wParam, "IBSERVER.HLP", HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
 		return TRUE;
 	case WM_COMMAND:
 		switch (wParam)
