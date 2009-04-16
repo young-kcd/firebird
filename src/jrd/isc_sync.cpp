@@ -3019,7 +3019,7 @@ int ISC_mutex_init(struct mtx* mutex)
 	pthread_mutexattr_t mattr;
 
 	PTHREAD_ERRNO(pthread_mutexattr_init(&mattr));
-#if _POSIX_THREAD_PROCESS_SHARED >= 200112L
+#ifdef PTHREAD_PROCESS_SHARED
 	PTHREAD_ERRNO(pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED));
 #else
 #error Your system must support PTHREAD_PROCESS_SHARED to use Firebird.
