@@ -25,8 +25,6 @@ DEV_FLAGS=-ggdb -march=i586 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -pedantic
 
 PLATFORM_PATH=os/win32
 
-JRDBOOT_Extra_Files=isc_sync.cpp ThreadData.cpp
-
 OS_SPECIFIC_Files=thd_priority.cpp
 
 OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/ibconfig.cpp os/win32/cntl.cpp 

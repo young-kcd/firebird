@@ -56,16 +56,7 @@ PROD_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_CC_FLAGS) $(PROD_CC_FLAGS) \
 DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_CC_FLAGS) $(DEBUG_CC_FLAGS) \
       $(LOCAL_CFLAGS)
 
-# extra modules needed on this platform during bootstrap phase
-JRDBOOT_Extra_Files=isc_sync.cpp 
-
-GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
-GPRECommon_Sources= $(GPRECOMMON_Files)
-
-
 OS_ServerFiles=inet_server.cpp
-GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp 
-DROP_Other_Sources= jrd/ThreadData.cpp
 LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
 
 Server_main_dummy = os/sun/server_main_dummy.cpp
@@ -76,8 +67,8 @@ LIB_PLATFORM_RPATH= -R $(1)
 LIB_LINK_SONAME= -h $(1)
 LIB_LINK_MAPFILE= -z -M
 
-EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
 
