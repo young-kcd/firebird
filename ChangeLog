@@ -1,3 +1,78 @@
+2009-04-16 13:54  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.util (1.61),
+	Makefile.in.embed.util (1.48), Makefile.in.fbtrace (1.9),
+	prefix.aix_powerpc (1.9), prefix.aix_powerpc_xlc (1.2),
+	prefix.darwin_powerpc (1.12), prefix.example (1.13), prefix.freebsd
+	(1.19), prefix.hpux (1.10), prefix.hpux_ia64 (1.2), prefix.linux
+	(1.36), prefix.linux_amd64 (1.16), prefix.linux_arm (1.6),
+	prefix.linux_generic (1.11), prefix.linux_ia64 (1.4),
+	prefix.linux_mips (1.5), prefix.linux_mipsel (1.8),
+	prefix.linux_powerpc (1.7), prefix.linux_sparc32 (1.15),
+	prefix.mingw (1.48), prefix.netbsd (1.8), prefix.solaris (1.26),
+	prefix.solaris-64SCC (1.9), prefix.solaris-64gcc (1.10),
+	prefix.solx86 (1.31), prefix.solx86gcc (1.35), prefix.solx86gcc_64
+	(1.6):
+
+	1. Added utilities/err.cpp where needed.
+
+	2. Cleaned up most of platform-specific additions - most opf them
+	are not needed any more, still causing troubles when porting. It
+	will be better to re-add that which are really needed.
+
+	3. Do not build gds_drop utility on platforms where not needed.
+
+2009-04-16 13:51  alexpeshkoff
+
+	* firebird2/src/utilities/: err.cpp (1.1), err_proto.h (1.1):
+
+	Trivial replacement at utilities level for complete server-side
+	function
+
+2009-04-16 10:59  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_atomic.h (1.21):
+
+	Fixed solaris atomic operations
+
+2009-04-16 10:55  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.184):
+
+	Enhanced shmget() error reporting
+
+2009-04-16 09:52  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.183):
+
+	Fixed error reported by Sergey Mereutsa
+
+2009-04-16 08:52  robocop
+
+	* firebird2/src/remote/: os/win32/chop.cpp (1.11),
+	os/win32/ibconfig.cpp (1.30), os/win32/property.cpp (1.25),
+	os/win32/srvr_w32.cpp (1.71), os/win32/window.cpp (1.39),
+	os/win32/wnet.cpp (1.75), inet_server.cpp (1.93), interface.cpp
+	(1.211), merge.cpp (1.26), parser.cpp (1.26), protocol.cpp (1.80),
+	xdr.cpp (1.46):
+
+	Comments.
+
+2009-04-16 06:40  dimitr
+
+	* firebird2/src/dsql/parse.y (1.303):
+
+	Fixed (fingers crossed) CORE-2430: Server adds "NOT" at the end of
+	default value for the TIMESTAMP field.
+
+2009-04-16 03:09  asfernandes
+
+	* firebird2/src/: jrd/isc_file.cpp (1.134), jrd/svc.cpp (1.272),
+	jrd/extds/ExtDS.cpp (1.36), remote/inet.cpp (1.279),
+	remote/protocol.h (1.50), remote/server.cpp (1.246):
+
+	Misc
+
 2009-04-15 16:18  robocop
 
 	* firebird2/src/remote/server.cpp (1.245):
