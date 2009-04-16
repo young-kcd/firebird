@@ -1067,7 +1067,7 @@ as_opt	: AS
 			{ $$ = NULL; }
 		;
 
-domain_default	: DEFAULT begin_trigger default_value end_trigger
+domain_default	: DEFAULT begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
 		;
 
@@ -1615,7 +1615,7 @@ proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 				$1, NULL, NULL, $3, NULL, NULL); }
 		;
 
-default_par_opt	: DEFAULT begin_trigger default_value end_trigger
+default_par_opt	: DEFAULT begin_trigger default_value end_default
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
 		| '=' begin_trigger default_value end_trigger
 			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
@@ -2124,6 +2124,13 @@ end_trigger	:
 			}
 		;
 
+end_default	:
+			{
+				const TEXT* start = lex.beginnings.pop();
+				$$ = (dsql_nod*) MAKE_string(start, 
+					(yychar <= 0 ? lex_position() : lex.last_token) - start); 
+			}
+		;
 
 check_opt	: WITH CHECK OPTION
 			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count,
