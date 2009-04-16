@@ -268,7 +268,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
  *
  **************************************/
 
-	ISC_enter();				// Setup floating point exception handler once and for all.
+	ISC_enter();	// Setup floating point exception handler once and for all.
 
 	// Setup context pool for main thread
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
@@ -476,17 +476,16 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	{
 		set_server(main_port, flags);
 
-		/* We need to have this error handler as there is so much underlaying code
-		 * that is depending on it being there.  The expected failure
-		 * that can occur in the call paths from here is out-of-memory
-		 * and it is unknown if other failures can get us here
-		 * Failures can occur from set_server as well as RECEIVE
-		 *
-		 * Note that if a failure DOES occur, we reenter the loop and try to continue
-		 * operations.  This is important as this is the main receive loop for
-		 * new incoming requests, if we exit here no new requests can come to the
-		 * server.
-		 */
+		// We need to have this error handler as there is so much underlaying code
+		// that is depending on it being there.  The expected failure
+		// that can occur in the call paths from here is out-of-memory
+		// and it is unknown if other failures can get us here
+		// Failures can occur from set_server as well as RECEIVE
+		//
+		// Note that if a failure DOES occur, we reenter the loop and try to continue
+		// operations.  This is important as this is the main receive loop for
+		// new incoming requests, if we exit here no new requests can come to the
+		// server.
 
 		try
 		{
@@ -1973,25 +1972,24 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 
 	FB_API_HANDLE handle = transaction ? transaction->rtr_handle : 0;
 
-	/* Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
-	 * be a way to send the parser version to DSQL so that the parser can compare the keyword
-	 * version to the parser version.  To accomplish this, the parser version is combined with
-	 * the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
-	 * and client dialect are separated and passed on to their final desintations.  The information
-	 * is combined as follows:
-	 *     Dialect * 10 + parser_version
-	 *
-	 * and is extracted in dsql8_execute_immediate as follows:
-	 *      parser_version = ((dialect * 10) + parser_version) % 10
-	 *      client_dialect = ((dialect * 10) + parser_version) / 10
-	 *
-	 * For example, parser_version = 1 and client dialect = 1
-	 *
-	 *  combined = (1 * 10) + 1 == 11
-	 *
-	 *  parser = (combined) % 10 == 1
-	 *  dialect = (combined) / 10 == 1
-	 */
+	// Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
+	// be a way to send the parser version to DSQL so that the parser can compare the keyword
+	// version to the parser version.  To accomplish this, the parser version is combined with
+	// the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
+	// and client dialect are separated and passed on to their final desintations.  The information
+	// is combined as follows:
+	//     Dialect * 10 + parser_version
+	//
+	// and is extracted in dsql8_execute_immediate as follows:
+	//      parser_version = ((dialect * 10) + parser_version) % 10
+	//      client_dialect = ((dialect * 10) + parser_version) / 10
+	//
+	// For example, parser_version = 1 and client dialect = 1
+	//
+	//  combined = (1 * 10) + 1 == 11
+	//
+	//  parser = (combined) % 10 == 1
+	//  dialect = (combined) / 10 == 1
 
 	parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
 
@@ -2985,25 +2983,24 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	FB_API_HANDLE handle = transaction ? transaction->rtr_handle : 0;
 
-	/* Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
-	 * be a way to send the parser version to DSQL so that the parser can compare the keyword
-	 * version to the parser version.  To accomplish this, the parser version is combined with
-	 * the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
-	 * and client dialect are separated and passed on to their final desintations.  The information
-	 * is combined as follows:
-	 *     Dialect * 10 + parser_version
-	 *
-	 * and is extracted in dsql8_prepare_statement as follows:
-	 *      parser_version = ((dialect * 10) + parser_version) % 10
-	 *      client_dialect = ((dialect * 10) + parser_version) / 10
-	 *
-	 * For example, parser_version = 1 and client dialect = 1
-	 *
-	 *  combined = (1 * 10) + 1 == 11
-	 *
-	 *  parser = (combined) % 10 == 1
-	 *  dialect = (combined) / 10 == 1
-	 */
+	// Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
+	// be a way to send the parser version to DSQL so that the parser can compare the keyword
+	// version to the parser version.  To accomplish this, the parser version is combined with
+	// the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
+	// and client dialect are separated and passed on to their final desintations.  The information
+	// is combined as follows:
+	//     Dialect * 10 + parser_version
+	//
+	// and is extracted in dsql8_prepare_statement as follows:
+	//      parser_version = ((dialect * 10) + parser_version) % 10
+	//      client_dialect = ((dialect * 10) + parser_version) / 10
+	//
+	// For example, parser_version = 1 and client dialect = 1
+	//
+	//  combined = (1 * 10) + 1 == 11
+	//
+	//  parser = (combined) % 10 == 1
+	//  dialect = (combined) / 10 == 1
 
 	const USHORT parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
 
@@ -3730,13 +3727,13 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	sendL->p_data.p_data_messages = 1;
 
 #ifdef SCROLLABLE_CURSORS
-	/* check the direction and offset for possible redirection; if the user
-	   scrolls in a direction other than we were going or an offset other
-	   than 1, then we need to resynchronize:
-	   if the direction is the same as the lookahead cache, scroll forward
-	   through the cache to see if we find the record; otherwise scroll the
-	   next layer down backward by an amount equal to the number of records
-	   in the cache, plus the amount asked for by the next level up */
+	// check the direction and offset for possible redirection; if the user
+	// scrolls in a direction other than we were going or an offset other
+	// than 1, then we need to resynchronize:
+	// if the direction is the same as the lookahead cache, scroll forward
+	// through the cache to see if we find the record; otherwise scroll the
+	// next layer down backward by an amount equal to the number of records
+	// in the cache, plus the amount asked for by the next level up
 
 	USHORT direction;
 	ULONG offset;
@@ -4946,7 +4943,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
  *
  **************************************/
 
-	ISC_enter();				// Setup floating point exception handler once and for all.
+	ISC_enter();	// Setup floating point exception handler once and for all.
 
 	Worker worker;
 	rem_port* port = NULL;

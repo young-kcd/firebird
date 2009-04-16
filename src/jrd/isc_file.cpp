@@ -1469,10 +1469,10 @@ bool Mnt::get()
 		/* Include non-NFS (local) mounts - some may be longer than
 		   NFS mount points */
 
-/****
-	if (strcmp (type, "nfs"))
-	continue;
-****/
+		/****
+		if (strcmp (type, "nfs"))
+			continue;
+		****/
 
 		mount->mnt_node = p;
 		const TEXT* q = device;

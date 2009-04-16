@@ -662,12 +662,11 @@ rem_port* INET_connect(const TEXT* name,
 
 	const struct servent* service = getservbyname(protocol.c_str(), "tcp");
 #ifdef WIN_NT
-	/* On Windows NT/9x, getservbyname can only accomodate
-	 * 1 call at a time.  In this case it returns the error
-	 * WSAEINPROGRESS.
-	 * If this happens, retry the operation a few times.
-	 * NOTE: This still does not guarantee success, but helps.
-	 */
+	// On Windows NT/9x, getservbyname can only accomodate
+	// 1 call at a time.  In this case it returns the error
+	// WSAEINPROGRESS.
+	// If this happens, retry the operation a few times.
+	// NOTE: This still does not guarantee success, but helps.
 	if (!service)
 	{
 		if (H_ERRNO == INET_RETRY_ERRNO) {

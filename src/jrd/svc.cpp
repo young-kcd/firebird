@@ -91,7 +91,6 @@
 #include <fcntl.h>
 #endif
 
-
 #if !defined(WIN_NT)
 #  include <signal.h>
 #  include <sys/param.h>
@@ -102,10 +101,10 @@
 #  include <stdlib.h>
 #endif
 
-#  include <sys/stat.h>
-
+#include <sys/stat.h>
 
 #define statistics	stat
+
 
 using namespace Firebird;
 
