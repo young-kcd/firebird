@@ -216,38 +216,39 @@ class AtomicCounter
 {
 public:
 	typedef uint_t counter_type;
+	typedef int delta_type;
 
 	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
 
-	counter_type exchangeAdd(counter_type value)
+	counter_type exchangeAdd(delta_type value)
 	{
 		return atomic_add_int_nv(&counter, value);
 	}
 
-	counter_type operator +=(counter_type value)
+	counter_type operator +=(delta_type value)
 	{
 		return exchangeAdd(value) + value;
 	}
 
-	counter_type operator -=(counter_type value)
+	counter_type operator -=(delta_type value)
 	{
 		return exchangeAdd(-value) - value;
 	}
 
 	counter_type operator ++()
 	{
-		return exchangeAdd(1) + 1;
+		return atomic_inc_uint_nv (&counter);
 	}
 
 	counter_type operator --()
 	{
-		return exchangeAdd(-1) - 1;
+		return atomic_dec_uint_nv (&counter);
 	}
 
 	counter_type value() const { return counter; }
 
-	counter_type setValue(counter_type val)
+	counter_type setValue(delta_type val)
 	{
 		return atomic_swap_uint(&counter, val);
 	}
