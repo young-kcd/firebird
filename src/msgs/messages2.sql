@@ -758,6 +758,7 @@ Data source : @4', NULL, NULL)
 ('missing_required_spb', 'process_switches', 'svc.cpp', NULL, 0, 650, NULL, 'Missing required item @1 in service parameter block', NULL, NULL)
 ('net_server_shutdown', NULL, NULL, NULL, 0, 651, NULL, '@1 server is shutdown', NULL, NULL)
 ('bad_conn_str', NULL, NULL, NULL, 0, 652, NULL, 'Invalid connection string', NULL, NULL);
+('bad_epb_form', 'EventManager::queEvents', 'event.cpp', NULL, 0, 653, NULL, 'unrecognized events block', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

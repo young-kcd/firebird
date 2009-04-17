@@ -259,6 +259,14 @@ SLONG EventManager::queEvents(SLONG session_id,
  * Functional description
  *
  **************************************/
+
+	// Sanity check
+
+	if (events[0] != EPB_version1)
+	{
+		Firebird::Arg::Gds(isc_bad_epb_form).raise();
+	}
+
 	acquire_shmem();
 
 	// Allocate request block
@@ -298,6 +306,14 @@ SLONG EventManager::queEvents(SLONG session_id,
 	while (p < end)
 	{
 		const USHORT count = *p++;
+
+		// Sanity check
+
+		if (count > end - events)
+		{
+			release_shmem();
+			Firebird::Arg::Gds(isc_bad_epb_form).raise();
+		}
 
 		// The data in the event block may have trailing blanks. Strip them off.
 

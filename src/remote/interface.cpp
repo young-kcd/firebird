@@ -5382,10 +5382,19 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				// Call the asynchronous event routine associated
 				// with this event
 
-				// CVC: Will try to review this function signature later.
-				(*event->rvnt_ast) (event->rvnt_arg,
-									pevent->p_event_items.cstr_length,
-									pevent->p_event_items.cstr_address);
+				USHORT length = pevent->p_event_items.cstr_length;
+				if (length <= event->rvnt_length)
+				{
+					// CVC: Will try to review this function signature later.
+					(*event->rvnt_ast) (event->rvnt_arg,
+										length,
+										pevent->p_event_items.cstr_address);
+				}
+				/*
+				else {....
+				This is error condition, but we have absolutely no ways to report it.
+				Therefore simply ignore such bad packet.
+				*/
 
 				event->rvnt_id = 0;
 			}

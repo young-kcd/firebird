@@ -673,6 +673,7 @@ static const struct {
 	{335544970, -902}, /* 650 missing_required_spb */
 	{335544971, -902}, /* 651 net_server_shutdown */
 	{335544972, -924}, /* 652 bad_conn_str */
+	{335544973, -901}, /* 653 bad_epb_form */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
