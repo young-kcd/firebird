@@ -25,5 +25,6 @@
 if svcs svc:/network/gds_db/tcp:default > /dev/null 2>&1; then
 	svcadm disable svc:network/gds_db/tcp:default
 	svccfg delete svc:network/gds_db/tcp:default
+	rm /var/svc/manifest/network/gds_db-tcp.xml
 fi
 
