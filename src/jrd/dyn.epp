@@ -2325,8 +2325,8 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			case isc_dyn_user_passwd:
 				if (text.isEmpty())
 				{
-					// 249: Password should not be empty string
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(249, DYN_MSG_FAC)));
+					// 250: Password should not be empty string
+					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(250, DYN_MSG_FAC)));
 				}
 				text.copyTo(userData->password, sizeof(userData->password));
 				userData->password_entered = true;
