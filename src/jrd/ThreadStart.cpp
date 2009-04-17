@@ -91,7 +91,7 @@ namespace
 THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 {
 	fb_assert(arg);
-	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
+	Firebird::MemoryPool::setContextPool(getDefaultMemoryPool());
 	{
 		ThreadPriorityScheduler* tps = static_cast<ThreadPriorityScheduler*>(arg);
 		try {
