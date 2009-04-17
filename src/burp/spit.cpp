@@ -77,10 +77,8 @@ static in_sw_tab_t spit_in_sw_table[] =
 	{IN_SW_SPIT_0,	0,	NULL,			 0, 0, 0, FALSE, 0, 0, NULL}
 };
 
-/*************************************
-** backup files header record
-**************************************
-*/
+
+// backup files header record
 
 struct header_rec
 {
@@ -97,10 +95,8 @@ struct header_rec
 const size_t header_rec_len = sizeof(header_rec);
 static const char *header_rec_name	= "InterBase/gsplit, ";
 
-/*************************************
-** backup files structure
-**************************************
-*/
+
+// backup files structure
 
 struct b_fil
 {
@@ -113,12 +109,7 @@ struct b_fil
 const size_t b_fil_len = sizeof(b_fil);
 
 
-	/*****************************************************
-	**
-	** local function declarations
-	**
-	******************************************************
-	*/
+// local function declarations
 
 static int conv_ntoc(SLONG, TEXT*);
 static int free_file_list(b_fil*);
@@ -139,12 +130,12 @@ static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT*);
 
 
 
-	/*****************************************************
-	**
-	**	M A I N              P R O G R A M
-	**
-	******************************************************
-	*/
+/*****************************************************
+**
+**	M A I N              P R O G R A M
+**
+******************************************************
+*/
 
 int main( int argc, char *argv[])
 {
@@ -156,10 +147,7 @@ int main( int argc, char *argv[])
 		return FB_FAILURE;
 	}
 
-/************************
-** Fields initialization
-*************************
-*/
+	// Fields initialization
 
 	b_fil* file_ptr = NULL;
 	b_fil* file_list = NULL;
@@ -167,20 +155,15 @@ int main( int argc, char *argv[])
 	SINT64 file_size = -1;
 	gsplit_option sw_replace = IN_SW_SPIT_0;
 
-/*******************************
- ** Initialize in_sw_table table.
- *******************************
-*/
+
+	// Initialize in_sw_table table.
 
 	for (in_sw_tab_t* in_sw_tab = spit_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
 		in_sw_tab->in_sw_state = false;
 	}
 
-	/**********************************
-	** validating command line options
-	***********************************
-	*/
+	// validating command line options
 
 	SLONG ret_cd, file_num = 0;
 	bool file_nm_sw = false;
@@ -318,12 +301,7 @@ int main( int argc, char *argv[])
 		break;
 	}
 
-/********************************************************
-**
-**	free all the storage allocated for backup files
-**
-*********************************************************
-*/
+	// free all the storage allocated for backup files
 
 	free_file_list(file_list);
 	return FB_SUCCESS;
@@ -533,13 +511,13 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 	TEXT header_str[header_rec_len], num_arr[5];
 	header_rec hdr_rec;
 
-// CVC: there's a can of worms here. First, this function assumes it can free
-// the io_buffer's allocated memory without keeping a second copy of that pointer.
-// However, io_buffer can't be declared UCHAR* const because its address is
-// passed to final_read_and_write() and read_and_write() and both functions
-// thus suggest, by taking a UCHAR** that they can change the pointer's address;
-// but in practice they never affect it, so fixing those functions to take simply
-// UCHAR* would allow the correct declaration for io_buffer to succeed.
+	// CVC: there's a can of worms here. First, this function assumes it can free
+	// the io_buffer's allocated memory without keeping a second copy of that pointer.
+	// However, io_buffer can't be declared UCHAR* const because its address is
+	// passed to final_read_and_write() and read_and_write() and both functions
+	// thus suggest, by taking a UCHAR** that they can change the pointer's address;
+	// but in practice they never affect it, so fixing those functions to take simply
+	// UCHAR* would allow the correct declaration for io_buffer to succeed.
 	//UCHAR* const io_buffer = (UCHAR *) malloc(IO_BUFFER_SIZE);
 	UCHAR* io_buffer = (UCHAR *) malloc(IO_BUFFER_SIZE);
 
@@ -675,9 +653,8 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 
 				case FILE_IS_FULL:
 					{
-						byte_read = 0;	/* reset byte read count,
-										   ** prepare for next read
-										 */
+						byte_read = 0;	// reset byte read count, prepare for next read
+
 						const UCHAR* remaining_io = io_buffer + byte_write;
 						SLONG remaining_io_len = IO_BUFFER_SIZE - byte_write;
 						while (!flush_done && (fl_ptr != NULL))
@@ -782,14 +759,11 @@ static int read_and_write(FILE_DESC input_file_desc,
 
 	SLONG read_cnt, last_read_size;
 
-	/********************************************************
-	**	when number of byte read + number of byte goint to
-	**	be read is greater then file size, then calculate
-	**	the size for the last read and do the last read for
-	**	the current backup file. Otherwise read as mush data
-	**	as will fit in the current backup file.
-	**********************************************************
-	*/
+	// when number of byte read + number of byte goint to
+	// be read is greater then file size, then calculate
+	// the size for the last read and do the last read for
+	// the current backup file. Otherwise read as mush data
+	// as will fit in the current backup file.
 
 	if (*byte_read + io_size > file_size) {
 		last_read_size = (SLONG) (file_size - *byte_read);
@@ -1194,7 +1168,7 @@ static int flush_io_buff(const UCHAR* remaining_io,
 	if (file_size > remaining_io_len) {
 		write_cnt = write(output_fl_desc, remaining_io, remaining_io_len);
 	}
-	else {						/* file_size <= remaining_io_len */
+	else {						// file_size <= remaining_io_len
 		write_cnt = write(output_fl_desc, remaining_io, (unsigned int) file_size);
 	}
 

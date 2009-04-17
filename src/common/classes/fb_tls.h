@@ -172,11 +172,9 @@ class TlsValue
 public:
 	static void  TlsV_on_thread_exit (void * pval)
 	{
-	/* Usually should delete pval like this
-		T* ptempT = (T*) pval;
-		delete ptempT;
-	*/
-
+		// Usually should delete pval like this
+		// T* ptempT = (T*) pval;
+		// delete ptempT;
 	}
 
 	TlsValue()

@@ -238,12 +238,12 @@ public:
 
 	counter_type operator ++()
 	{
-		return atomic_inc_uint_nv (&counter);
+		return atomic_inc_uint_nv(&counter);
 	}
 
 	counter_type operator --()
 	{
-		return atomic_dec_uint_nv (&counter);
+		return atomic_dec_uint_nv(&counter);
 	}
 
 	counter_type value() const { return counter; }

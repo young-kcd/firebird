@@ -60,10 +60,9 @@ static void parse_fullpath(tdr*);
 static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
 
 
-/*
-   table used to determine capabilities, checking for specific
-   fields in system relations
-*/
+// table used to determine capabilities, checking for specific
+// fields in system relations
+
 
 struct rfr_tab_t
 {
@@ -270,7 +269,7 @@ static USHORT get_capabilities(ISC_STATUS* user_status)
 	USHORT capabilities = CAP_none;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-//  Look for desired fields in system relations
+	// Look for desired fields in system relations
 	FB_API_HANDLE req = 0;
 
 	for (const rfr_tab_t* rel_field_table = rfr_table; rel_field_table->relation; rel_field_table++)
@@ -326,7 +325,7 @@ static tdr* get_description(ISC_QUAD* blob_id)
 	alice_str* host_site = NULL;
 	alice_str* database_path = NULL;
 
-//  skip version number
+	// skip version number
 	++p;
 
 	tdr* ptr = NULL; // silence uninitialized warning
@@ -391,7 +390,7 @@ static void parse_fullpath(tdr* trans)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-//  start at the end of the full pathname
+	// start at the end of the full pathname
 
  	const TEXT* p = (TEXT*) trans->tdr_fullpath->str_data;
 	const TEXT* const start = p;
@@ -399,14 +398,15 @@ static void parse_fullpath(tdr* trans)
 		p++;
 	const TEXT* const end = p;
 
-//  Check for a named pipes name - \\node\path\db or //node/path/db
+	// Check for a named pipes name - \\node\path\db or //node/path/db
 	while (p > start && !(*p == '/' && p[-1] == '/') && !(*p == '\\' && p[-1] == '\\'))
 	{
 		--p;
 	}
 
-	if (p > start) {
-		/* Increment p past slash, & search forward for end of node name */
+	if (p > start)
+	{
+		// Increment p past slash, & search forward for end of node name
 		p = p + 1;
 		const TEXT* q = p;
 
@@ -420,12 +420,13 @@ static void parse_fullpath(tdr* trans)
 			trans->tdr_remote_site->str_data[q - p] = '\0';
 		}
 	}
-	else {
+	else
+	{
 		p = end;
 
-		/* If not named pipes, check the other protocols
-		 * work backwards until we find a remote protocol specifier
-		 */
+		// If not named pipes, check the other protocols
+		// work backwards until we find a remote protocol specifier
+
 
 		while (p >= start && (*p != '^' && *p != ':' && *p != '@'))
 			p--;
@@ -479,7 +480,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
 		return 0;
 	}
 
-//  get the blob into the buffer, if it fits
+	// get the blob into the buffer, if it fits
 
 	TEXT* ptr = buffer;
 	const TEXT* const end = buffer + buffer_length;
@@ -495,7 +496,7 @@ static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
 		ptr += returned_length;
 	}
 
-//  snarf failed, get length of blob for retry
+	// snarf failed, get length of blob for retry
 
 	if (!buffer_length)
 	{

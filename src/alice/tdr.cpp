@@ -85,8 +85,8 @@ USHORT TDR_analyze(const tdr* trans)
 	if (trans == NULL)
 		return TRA_none;
 
-//  if the tdr for the first transaction is missing,
-//  we can assume it was committed
+	// if the tdr for the first transaction is missing,
+	// we can assume it was committed
 
 	USHORT state = trans->tdr_state;
 	if (state == TRA_none)
@@ -374,7 +374,7 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 {
 	ISC_STATUS_ARRAY status_vector;
 
-//  get the state of all the associated transactions
+	// get the state of all the associated transactions
 
 	tdr* trans = MET_get_transaction(status_vector, handle, id);
 	if (!trans)
@@ -383,8 +383,8 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 	reattach_databases(trans);
 	TDR_get_states(trans);
 
-//  analyze what to do with them; if the advice contradicts the user's
-//  desire, make them confirm it; otherwise go with the flow.
+	// analyze what to do with them; if the advice contradicts the user's
+	// desire, make them confirm it; otherwise go with the flow.
 
 	const USHORT advice = TDR_analyze(trans);
 
@@ -483,7 +483,7 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 		error = true;
 	}
 
-//  shutdown all the databases for cleanliness' sake
+	// shutdown all the databases for cleanliness' sake
 
 	TDR_shutdown_databases(trans);
 
@@ -589,7 +589,7 @@ static void print_description(const tdr* trans)
 
 			if (!tdgbl->uSvc->isService())
 			{
-				//msg 101: Remote Site: %s
+				// msg 101: Remote Site: %s
 				ALICE_print(101, SafeArg() << pszRemoteSite);
 			}
 			tdgbl->uSvc->putLine(isc_spb_tra_remote_site, pszRemoteSite);
@@ -608,7 +608,7 @@ static void print_description(const tdr* trans)
 		}
 	}
 
-//  let the user know what the suggested action is
+	// let the user know what the suggested action is
 
 	switch (TDR_analyze(trans))
 	{
@@ -697,8 +697,8 @@ static void reattach_database(tdr* trans)
 
 	ISC_get_host(buffer, sizeof(buffer));
 
- //  if this is being run from the same host,
- //  try to reconnect using the same pathname
+	// if this is being run from the same host,
+	// try to reconnect using the same pathname
 
 	if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
 	{
@@ -728,8 +728,8 @@ static void reattach_database(tdr* trans)
 		}
 	}
 
-//  attaching using the old method didn't work;
-//  try attaching to the remote node directly
+	// attaching using the old method didn't work;
+	// try attaching to the remote node directly
 
 	if (trans->tdr_remote_site) {
 		char* p = buffer;
@@ -747,8 +747,8 @@ static void reattach_database(tdr* trans)
 		}
 	}
 
-//  we have failed to reattach; notify the user
-//  and let them try to succeed where we have failed
+	// we have failed to reattach; notify the user
+	// and let them try to succeed where we have failed
 
 	ALICE_print(86, SafeArg() << trans->tdr_id);
 	// msg 86: Could not reattach to database for transaction %ld.

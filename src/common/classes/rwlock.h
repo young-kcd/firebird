@@ -336,9 +336,9 @@ public:
 
 } // namespace Firebird
 
-#endif /*solaris threading (not posix)*/
+#endif // solaris threading (not posix)
 
-#endif /*!WIN_NT*/
+#endif // !WIN_NT
 
 namespace Firebird {
 

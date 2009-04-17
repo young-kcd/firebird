@@ -51,13 +51,13 @@ namespace Firebird
 			iterator(ObjectsArray *l, size_t p) : lst(l), pos(p) { }
 		public:
 			iterator() : lst(0), pos(0) { }
-/*
+			/*
 			iterator& operator=(ObjectsArray& a)
 			{
 				lst = &a;
 				pos = 0;
 			}
- */
+			*/
 			iterator& operator++()
 			{
 				++pos;
@@ -117,13 +117,13 @@ namespace Firebird
 			const_iterator() : lst(0), pos(0) { }
 			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
 			explicit const_iterator(iterator& it) : lst(it.lst), pos(it.pos) {}
-/*
+			/*
 			const_iterator& operator=(const ObjectsArray& a)
 			{
 				lst = &a;
 				pos = 0;
 			}
- */
+			*/
 			const_iterator& operator++()
 			{
 				++pos;

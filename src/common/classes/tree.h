@@ -33,8 +33,7 @@
 #include "../jrd/gdsassert.h"
 #include <string.h>
 #ifdef HAVE_STDLIB_H
-#include <stdlib.h> /* XPG: prototypes for malloc/free have to be in
-					   stdlib.h (EKU) */
+#include <stdlib.h> // XPG: prototypes for malloc/free have to be in stdlib.h (EKU)
 #endif
 #include "vector.h"
 
@@ -636,7 +635,7 @@ private:
 	friend class Accessor;
 };
 
-/************************ BePlusTree implementation ******************/
+// ************************ BePlusTree implementation ******************
 
 template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
 bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::add(const Value& item, Accessor* accessor)

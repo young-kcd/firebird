@@ -26,7 +26,7 @@
  *
  */
 
-/*  PLEASE, DO NOT CONSTIFY THIS MODULE !!! */
+//  PLEASE, DO NOT CONSTIFY THIS MODULE !!!
 
 #include "firebird.h"
 #include "../common/classes/alloc.h"
@@ -75,7 +75,7 @@ inline void PATTERN_FILL(void*, size_t, unsigned int) { }
 // 7. shared pool locking
 // 8. red zones checking (not really needed because verify_pool is able to detect most corruption cases)
 
-/****************************** Local declarations *****************************/
+// ****************************** Local declarations *****************************
 
 namespace {
 
@@ -162,7 +162,7 @@ size_t get_page_size()
 #endif
 
 #if defined(HAVE_MMAP) && !defined(MAP_ANONYMOUS)
-int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
+int dev_zero_fd = -1; // Cached file descriptor for /dev/zero.
 #endif
 
 #if defined(WIN_NT) || defined(HAVE_MMAP)
@@ -207,7 +207,7 @@ size_t delayedExtentsPos = 0;
 
 namespace Firebird {
 
-/****************************** Firebird::MemoryPool ***************************/
+// ****************************** Firebird::MemoryPool ***************************
 
 static void print_block(FILE* file, MemoryBlock* blk, bool used_only,
 	const char* filter_path, const size_t filter_len);
@@ -550,7 +550,7 @@ void MemoryPool::external_free(void* blk, size_t& size, bool pool_destroying)
 #  else
 	if (munmap(blk, size))
 		system_call_failed::raise("munmap");
-#  endif /*Solaris*/
+#  endif // Solaris
 # else
 	::free(blk);
 # endif

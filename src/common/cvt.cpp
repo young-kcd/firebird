@@ -73,24 +73,24 @@ using namespace Firebird;
    So, instead of some including <limits.h> and others using these
    definitions, just always use these definitions (huh?) */
 
-#define LONG_MIN_real   -2147483648.	/* min decimal value of an "SLONG" */
-#define LONG_MAX_real   2147483647.	/* max decimal value of an "SLONG" */
-#define LONG_MIN_int    -2147483648	/* min integer value of an "SLONG" */
-#define LONG_MAX_int    2147483647	/* max integer value of an "SLONG" */
+#define LONG_MIN_real   -2147483648.	// min decimal value of an "SLONG"
+#define LONG_MAX_real   2147483647.	// max decimal value of an "SLONG"
+#define LONG_MIN_int    -2147483648	// min integer value of an "SLONG"
+#define LONG_MAX_int    2147483647	// max integer value of an "SLONG"
 
-/* It turns out to be tricky to write the INT64 versions of those constant in
-   a way that will do the right thing on all platforms.  Here we go. */
+// It turns out to be tricky to write the INT64 versions of those constant in
+// a way that will do the right thing on all platforms.  Here we go.
 
-#define LONG_MAX_int64 ((SINT64) 2147483647)	/* max int64 value of an SLONG */
-#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	/* min int64 value of an SLONG */
+#define LONG_MAX_int64 ((SINT64) 2147483647)	// max int64 value of an SLONG
+#define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	// min int64 value of an SLONG
 
-#define QUAD_MIN_real   -9223372036854775808.	/* min decimal value of quad */
-#define QUAD_MAX_real   9223372036854775807.	/* max decimal value of quad */
+#define QUAD_MIN_real   -9223372036854775808.	// min decimal value of quad
+#define QUAD_MAX_real   9223372036854775807.	// max decimal value of quad
 
-#define QUAD_MIN_int    quad_min_int	/* min integer value of quad */
-#define QUAD_MAX_int    quad_max_int	/* max integer value of quad */
+#define QUAD_MIN_int    quad_min_int	// min integer value of quad
+#define QUAD_MAX_int    quad_max_int	// max integer value of quad
 
-#define FLOAT_MAX       3.4e38	/* max float (32 bit) value  */
+#define FLOAT_MAX       3.4e38	// max float (32 bit) value
 
 #define LETTER7(c)      ((c) >= 'A' && (c) <= 'Z')
 #define DIGIT(c)        ((c) >= '0' && (c) <= '9')
@@ -105,9 +105,9 @@ using namespace Firebird;
 #define SHORT_LIMIT     ((1 << 14) / 5)
 #define LONG_LIMIT      ((1L << 30) / 5)
 
-/* NOTE: The syntax for the below line may need modification to ensure
- *	 the result of 1 << 62 is a quad
- */
+// NOTE: The syntax for the below line may need modification to ensure
+//	the result of 1 << 62 is a quad
+
 #define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
 
@@ -188,61 +188,61 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	int precision;
 	if (dtype_double == from->dsc_dtype) {
-		precision = 16;			/* minimum significant digits in a double */
+		precision = 16;			// minimum significant digits in a double
 		d = *(double*) from->dsc_address;
 	}
 	else {
 		fb_assert(dtype_real == from->dsc_dtype);
-		precision = 8;			/* minimum significant digits in a float */
+		precision = 8;			// minimum significant digits in a float
 		d = (double) *(float*) from->dsc_address;
 	}
 
-/* If this is a double with non-zero scale, then it is an old-style
-   NUMERIC(15, -scale): print it in fixed format with -scale digits
-   to the right of the ".". */
+	// If this is a double with non-zero scale, then it is an old-style
+	// NUMERIC(15, -scale): print it in fixed format with -scale digits
+	// to the right of the ".".
 
-/* CVC: Here sprintf was given an extra space in the two formatting
-		masks used below, "%- #*.*f" and "%- #*.*g" but certainly with positive
-		quantities and CAST it yields an annoying leading space.
-		However, by getting rid of the space you get in dialect 1:
-		cast(17/13 as char(5))  => 1.308
-		cast(-17/13 as char(5)) => -1.31
-		Since this is inconsistent with dialect 3, see workaround at the tail
-		of this function. */
+	// CVC: Here sprintf was given an extra space in the two formatting
+	// masks used below, "%- #*.*f" and "%- #*.*g" but certainly with positive
+	// quantities and CAST it yields an annoying leading space.
+	// However, by getting rid of the space you get in dialect 1:
+	// cast(17/13 as char(5))  => 1.308
+	// cast(-17/13 as char(5)) => -1.31
+	// Since this is inconsistent with dialect 3, see workaround at the tail
+	// of this function.
 
-	int chars_printed;			/* number of characters printed */
+	int chars_printed;			// number of characters printed
 	if ((dtype_double == from->dsc_dtype) && (from->dsc_scale < 0))
 		chars_printed = sprintf(temp, "%- #*.*f", width, -from->dsc_scale, d);
 	else
-		chars_printed = LONG_MAX_int;	/* sure to be greater than to_len */
+		chars_printed = LONG_MAX_int;	// sure to be greater than to_len
 
-/* If it's not an old-style numeric, or the f-format was too long for the
-   destination, try g-format with the maximum precision which makes sense
-   for the input type: if it fits, we're done. */
+	// If it's not an old-style numeric, or the f-format was too long for the
+	// destination, try g-format with the maximum precision which makes sense
+	// for the input type: if it fits, we're done.
 
 	if (chars_printed > width)
 	{
 		char num_format[] = "%- #*.*g";
 		chars_printed = sprintf(temp, num_format, width, precision, d);
 
-		/* If the full-precision result is too wide for the destination,
-		   reduce the precision and try again. */
+		// If the full-precision result is too wide for the destination,
+		// reduce the precision and try again.
 
 		if (chars_printed > width)
 		{
 			precision -= (chars_printed - width);
 
-			/* If we cannot print at least two digits, one on each side of the
-			   ".", report an overflow exception. */
+			// If we cannot print at least two digits, one on each side of the
+			// ".", report an overflow exception.
 			if (precision < 2)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 			chars_printed = sprintf(temp, num_format, width, precision, d);
 
-			/* It's possible that reducing the precision caused sprintf to switch
-			   from f-format to e-format, and that the output is still too long
-			   for the destination.  If so, reduce the precision once more.
-			   This is certain to give a short-enough result. */
+			// It's possible that reducing the precision caused sprintf to switch
+			// from f-format to e-format, and that the output is still too long
+			// for the destination.  If so, reduce the precision once more.
+			// This is certain to give a short-enough result.
 
 			if (chars_printed > width) {
 				precision -= (chars_printed - width);
@@ -264,10 +264,10 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	dsc intermediate;
 	intermediate.dsc_dtype = dtype_text;
 	intermediate.dsc_ttype() = ttype_ascii;
-	/* CVC: If you think this is dangerous, replace the "else" with a call to
-			MEMMOVE(temp, temp + 1, chars_printed) or something cleverer.
-			Paranoid assumption:
-			UCHAR is unsigned char as seen on jrd\common.h => same size. */
+	// CVC: If you think this is dangerous, replace the "else" with a call to
+	// MEMMOVE(temp, temp + 1, chars_printed) or something cleverer.
+	// Paranoid assumption:
+	// UCHAR is unsigned char as seen on jrd\common.h => same size.
 	if (d < 0)
 	{
 		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp);
@@ -299,8 +299,8 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
  *
  **************************************/
 #ifndef NATIVE_QUAD
-/* For now, this routine does not handle quadwords unless this is
-   supported by the platform as a native datatype. */
+	// For now, this routine does not handle quadwords unless this is
+	// supported by the platform as a native datatype.
 
 	if (from->dsc_dtype == dtype_quad)
 		cb->err(Arg::Gds(isc_badblk));	/* internal error */
@@ -308,8 +308,8 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	SSHORT pad_count = 0, decimal = 0, neg = 0;
 
-/* Save (or compute) scale of source.  Then convert source to ordinary
-   longword or int64. */
+	// Save (or compute) scale of source.  Then convert source to ordinary
+	// longword or int64.
 
 	SCHAR scale = from->dsc_scale;
 
@@ -328,7 +328,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	CVT_move_common(from, &intermediate, cb);
 
-/* Check for negation, then convert the number to a string of digits */
+	// Check for negation, then convert the number to a string of digits
 
 	FB_UINT64 u;
 	if (n >= 0)
@@ -348,21 +348,21 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	SSHORT l = p - temp;
 
-/* if scale < 0, we need at least abs(scale)+1 digits, so add
-   any leading zeroes required. */
+	// if scale < 0, we need at least abs(scale)+1 digits, so add
+	// any leading zeroes required.
 	while (l + scale <= 0) {
 		*p++ = '0';
 		l++;
 	}
-/* postassertion: l+scale > 0 */
+	// postassertion: l+scale > 0
 	fb_assert(l + scale > 0);
 
 	// CVC: also, we'll check for buffer overflow directly.
 	fb_assert(temp + sizeof(temp) >= p);
 
-/* Compute the total length of the field formatted.  Make sure it
-   fits.  Keep in mind that routine handles both string and varying
-   string fields. */
+	// Compute the total length of the field formatted.  Make sure it
+	// fits.  Keep in mind that routine handles both string and varying
+	// string fields.
 
 	const USHORT length = l + neg + decimal + pad_count;
 
@@ -846,9 +846,9 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	double d, eps;
 	SINT64 val64;
-	TEXT buffer[50];			/* long enough to represent largest long in ASCII */
+	TEXT buffer[50];			// long enough to represent largest long in ASCII
 
-/* adjust exact numeric values to same scaling */
+	// adjust exact numeric values to same scaling
 
 	if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		scale -= desc->dsc_scale;
@@ -868,7 +868,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_int64:
 		val64 = *((SINT64 *) p);
 
-		/* adjust for scale first, *before* range-checking the value. */
+		// adjust for scale first, *before* range-checking the value.
 		if (scale > 0) {
 			SLONG fraction = 0;
 			do {
@@ -878,12 +878,10 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 			} while (--scale);
 			if (fraction > 4)
 				val64++;
-			/*
-			 * The following 2 lines are correct for platforms where
-			 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-			 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-			 * we'll have to change this depending on the platform.
-			 */
+			// The following 2 lines are correct for platforms where
+			// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+			// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+			// we'll have to change this depending on the platform.
 			else if (fraction < -4)
 				val64--;
 		}
@@ -929,10 +927,9 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else
 			d -= 0.5 + eps;
 
-		/* make sure the cast will succeed - different machines
-		   do different things if the value is larger than a long
-		   can hold */
-		/* If rounding would yield a legitimate value, permit it */
+		// make sure the cast will succeed - different machines
+		// do different things if the value is larger than a long can hold
+		// If rounding would yield a legitimate value, permit it
 
 		if (d < (double) LONG_MIN_real) {
 			if (d > (double) LONG_MIN_real - 1.)
@@ -965,11 +962,11 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		break;
 
 	default:
-		err(Arg::Gds(isc_badblk));	/* internal error */
+		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
 
-/* Last, but not least, adjust for scale */
+	// Last, but not least, adjust for scale
 
 	if (scale > 0)
 	{
@@ -981,12 +978,10 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		} while (--scale);
 		if (fraction > 4)
 			value++;
-		/*
-		 * The following 2 lines are correct for platforms where
-		 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		 * we'll have to change this depending on the platform.
-		 */
+		// The following 2 lines are correct for platforms where
+		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		// we'll have to change this depending on the platform.
 		else if (fraction < -4)
 			value--;
 	}
@@ -1048,8 +1043,8 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 		return *((float*) desc->dsc_address);
 
 	case DEFAULT_DOUBLE:
-		/* memcpy is done in case dsc_address is on a platform dependant
-		   invalid alignment address for doubles */
+		// memcpy is done in case dsc_address is on a platform dependant
+		// invalid alignment address for doubles
 		memcpy(&value, desc->dsc_address, sizeof(double));
 		return value;
 
@@ -1057,7 +1052,7 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 	case dtype_cstring:
 	case dtype_text:
 		{
-			TEXT buffer[50];	/* must hold ascii of largest double */
+			TEXT buffer[50];	// must hold ascii of largest double
 			const char* p;
 
 			const USHORT length =
@@ -1112,15 +1107,14 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 					CVT_conversion_error(desc, err);
 			}
 
-			/* If we didn't see a digit then must be a funny string like "    ".  */
+			// If we didn't see a digit then must be a funny string like "    ".
 			if (!digit_seen)
 				CVT_conversion_error(desc, err);
 
 			if (sign == -1)
 				value = -value;
 
-			/* If there's still something left, there must be an explicit
-			   exponent */
+			// If there's still something left, there must be an explicit exponent
 
 			if (p < end)
 			{
@@ -1129,13 +1123,14 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 				SSHORT exp = 0;
 				for (p++; p < end; p++)
 				{
-					if (DIGIT(*p)) {
+					if (DIGIT(*p))
+					{
 						digit_seen = true;
 						exp = exp * 10 + *p - '0';
 
-						/* The following is a 'safe' test to prevent overflow of
-						   exp here and of scale below. A more precise test occurs
-						   later in this routine. */
+						// The following is a 'safe' test to prevent overflow of
+						// exp here and of scale below. A more precise test occurs
+						// later in this routine.
 
 						if (exp >= SHORT_LIMIT)
 							err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -1166,22 +1161,21 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 					scale -= exp;
 			}
 
-			/* if the scale is greater than the power of 10 representable
-			   in a double number, then something has gone wrong... let
-			   the user know...  */
+			// if the scale is greater than the power of 10 representable
+			// in a double number, then something has gone wrong... let
+			// the user know...
 
 			if (ABSOLUT(scale) > DBL_MAX_10_EXP)
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
-/*
-  Repeated division is a good way to mung the least significant bits
-  of your value, so we have replaced this iterative multiplication/division
-  by a single multiplication or division, depending on sign(scale).
-	if (scale > 0)
- 	    do value /= 10.; while (--scale);
- 	else if (scale)
- 	    do value *= 10.; while (++scale);
-*/
+
+			//  Repeated division is a good way to mung the least significant bits
+			//  of your value, so we have replaced this iterative multiplication/division
+			//  by a single multiplication or division, depending on sign(scale).
+			//if (scale > 0)
+		 	//	do value /= 10.; while (--scale);
+		 	//else if (scale)
+		 	//	do value *= 10.; while (++scale);
 			if (scale > 0)
 				value /= CVT_power_of_ten(scale);
 			else if (scale < 0)
@@ -1198,19 +1192,19 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 		break;
 
 	default:
-		err(Arg::Gds(isc_badblk));	/* internal error */
+		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
 
-/* Last, but not least, adjust for scale */
+	// Last, but not least, adjust for scale
 
 	const int dscale = desc->dsc_scale;
 	if (dscale == 0)
 		return value;
 
-/* if the scale is greater than the power of 10 representable
-   in a double number, then something has gone wrong... let
-   the user know... */
+	// if the scale is greater than the power of 10 representable
+	// in a double number, then something has gone wrong... let
+	// the user know...
 
 	if (ABSOLUT(dscale) > DBL_MAX_10_EXP)
 		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -1241,10 +1235,10 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
-/* If the datatypes and lengths are identical, just move the
-   stuff byte by byte.  Although this may seem slower than
-   optimal, it would cost more to find the fast move than the
-   fast move would gain. */
+	// If the datatypes and lengths are identical, just move the
+	// stuff byte by byte.  Although this may seem slower than
+	// optimal, it would cost more to find the fast move than the
+	// fast move would gain.
 
 	if (DSC_EQUIV(from, to, false)) {
 		if (length) {
@@ -1253,8 +1247,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 	}
 
-/* Do data type by data type conversions.  Not all are supported,
-   and some will drop out for additional handling. */
+	// Do data type by data type conversions.  Not all are supported,
+	// and some will drop out for additional handling.
 
 	switch (to->dsc_dtype)
 	{
@@ -1283,7 +1277,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			return;
 
 		default:
-			fb_assert(false);		/* Fall into ... */
+			fb_assert(false);		// Fall into ...
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
@@ -1313,7 +1307,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			return;
 
 		default:
-			fb_assert(false);		/* Fall into ... */
+			fb_assert(false);		// Fall into ...
 		case dtype_sql_time:
 		case dtype_short:
 		case dtype_long:
@@ -1344,7 +1338,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			return;
 
 		default:
-			fb_assert(false);		/* Fall into ... */
+			fb_assert(false);		// Fall into ...
 		case dtype_sql_date:
 		case dtype_short:
 		case dtype_long:
@@ -1417,8 +1411,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				toLength = length;
 
 				l -= length;
-				/* TMN: Here we should really have the following fb_assert */
-				/* fb_assert((to->dsc_length - length) <= MAX_SSHORT); */
+				// TMN: Here we should really have the following fb_assert
+				// fb_assert((to->dsc_length - length) <= MAX_SSHORT);
 				fill = to->dsc_length - length;
 
 				CVT_COPY_BUFF(q, p, length);
@@ -1432,9 +1426,9 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				break;
 
 			case dtype_cstring:
-				/* Note: Following is only correct for narrow and
-				   multibyte character sets which use a zero
-				   byte to represent end-of-string */
+				// Note: Following is only correct for narrow and
+				// multibyte character sets which use a zero
+				// byte to represent end-of-string
 
 				length = MIN(length, to->dsc_length - 1);
 				cb->validateData(toCharset, length, q, cb->err);
@@ -1451,8 +1445,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				toLength = length;
 
 				l -= length;
-				/* TMN: Here we should really have the following fb_assert */
-				/* fb_assert(length <= MAX_USHORT); */
+				// TMN: Here we should really have the following fb_assert
+				// fb_assert(length <= MAX_USHORT);
 				((vary*) p)->vary_length = (USHORT) length;
 				start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
 				CVT_COPY_BUFF(q, p, length);
@@ -1495,7 +1489,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			return;
 
 		default:
-			fb_assert(false);		/* Fall into ... */
+			fb_assert(false);		// Fall into ...
 		case dtype_blob:
 			CVT_conversion_error(from, cb->err);
 			return;
@@ -1513,19 +1507,18 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		if (to->dsc_dtype != from->dsc_dtype)
 			cb->err(Arg::Gds(isc_wish_list) << Arg::Gds(isc_blobnotsup) << "move");
 
-		/* Note: DSC_EQUIV failed above as the blob sub_types were different,
-		 * or their character sets were different.  In V4 we aren't trying
-		 * to provide blob type integrity, so we just assign the blob id
-		 */
+		// Note: DSC_EQUIV failed above as the blob sub_types were different,
+		// or their character sets were different.  In V4 we aren't trying
+		// to provide blob type integrity, so we just assign the blob id
 
-		/* Move blob_id byte-by-byte as that's the way it was done before */
+		// Move blob_id byte-by-byte as that's the way it was done before
 		CVT_COPY_BUFF(q, p, length);
 		return;
 
 	case dtype_short:
 		l = CVT_get_long(from, (SSHORT) to->dsc_scale, cb->err);
-		/* TMN: Here we should really have the following fb_assert */
-		/* fb_assert(l <= MAX_SSHORT); */
+		// TMN: Here we should really have the following fb_assert
+		// fb_assert(l <= MAX_SSHORT);
 		*(SSHORT *) p = (SSHORT) l;
 		if (*(SSHORT *) p != l)
 			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -1572,7 +1565,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		cb->err(Arg::Gds(isc_wish_list) << Arg::Gds(isc_blobnotsup) << "move");
 	}
 
-	cb->err(Arg::Gds(isc_badblk));	/* internal error */
+	cb->err(Arg::Gds(isc_badblk));	// internal error
 }
 
 
@@ -1798,7 +1791,7 @@ USHORT CVT_make_string(const dsc*          desc,
 		}
 	}
 
-/* Not string data, then  -- convert value to varying string. */
+	// Not string data, then  -- convert value to varying string.
 
 	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
@@ -1826,11 +1819,10 @@ double CVT_power_of_ten(const int scale)
  *
  *************************************/
 
-	/* Note that we could speed things up slightly by making the auxiliary
-	 * arrays global to this source module and replacing this function with
-	 * a macro, but the old code did up to 308 multiplies to our 1, and
-	 * that seems enough of a speed-up for now.
-	 */
+	// Note that we could speed things up slightly by making the auxiliary
+	// arrays global to this source module and replacing this function with
+	// a macro, but the old code did up to 308 multiplies to our 1, and
+	// that seems enough of a speed-up for now.
 
 	static const double upper_part[] =
 	{
@@ -1848,19 +1840,19 @@ double CVT_power_of_ten(const int scale)
 		1.e30, 1.e31
 	};
 
-	/* The sole caller of this function checks for scale <= 308 before calling,
-	 * but we just fb_assert the weakest precondition which lets the code work.
-	 * If the size of the exponent field, and thus the scaling, of doubles
-	 * gets bigger, increase the size of the upper_part array.
-	 */
+	// The sole caller of this function checks for scale <= 308 before calling,
+	// but we just fb_assert the weakest precondition which lets the code work.
+	// If the size of the exponent field, and thus the scaling, of doubles
+	// gets bigger, increase the size of the upper_part array.
+
 	fb_assert((scale >= 0) && (scale < 320));
 
-	/* Note that "scale >> 5" is another way of writing "scale / 32",
-	 * while "scale & 0x1f" is another way of writing "scale % 32".
-	 * We split the scale into the lower 5 bits and everything else,
-	 * then use the "everything else" to index into the upper_part array,
-	 * whose contents increase in steps of 1e32.
-	 */
+	// Note that "scale >> 5" is another way of writing "scale / 32",
+	// while "scale & 0x1f" is another way of writing "scale % 32".
+	// We split the scale into the lower 5 bits and everything else,
+	// then use the "everything else" to index into the upper_part array,
+	// whose contents increase in steps of 1e32.
+
 	return upper_part[scale >> 5] * lower_part[scale & 0x1f];
 }
 
@@ -1883,11 +1875,11 @@ SSHORT CVT_decompose(const char* string,
  *
  **************************************/
 #ifndef NATIVE_QUAD
-/* For now, this routine does not handle quadwords unless this is
-   supported by the platform as a native datatype. */
+	// For now, this routine does not handle quadwords unless this is
+	// supported by the platform as a native datatype.
 
 	if (dtype == dtype_quad)
-		err(Arg::Gds(isc_badblk));	/* internal error */
+		err(Arg::Gds(isc_badblk));	// internal error
 #endif
 
 	dsc errd;
@@ -1904,7 +1896,7 @@ SSHORT CVT_decompose(const char* string,
 	const SINT64 lower_limit = (dtype == dtype_long) ? MIN_SLONG : MIN_SINT64;
 	const SINT64 upper_limit = (dtype == dtype_long) ? MAX_SLONG : MAX_SINT64;
 
-	const SINT64 limit_by_10 = upper_limit / 10;	/* used to check for overflow */
+	const SINT64 limit_by_10 = upper_limit / 10;	// used to check for overflow
 
 	const char* p = string;
 	const char* end = p + length;
@@ -1962,13 +1954,13 @@ SSHORT CVT_decompose(const char* string,
 		{
 			digit_seen = true;
 
-			/* Before computing the next value, make sure there will be
-			   no overflow. Trying to detect overflow after the fact is
-			   tricky: the value doesn't always become negative after an
-			   overflow!  */
+			// Before computing the next value, make sure there will be
+			// no overflow. Trying to detect overflow after the fact is
+			// tricky: the value doesn't always become negative after an
+			// overflow!
 
 			if (value >= limit_by_10) {
-				/* possibility of an overflow */
+				// possibility of an overflow
 				if (value > limit_by_10)
 				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -2016,7 +2008,7 @@ SSHORT CVT_decompose(const char* string,
 	if ((sign == -1) && value != lower_limit)
 		value = -value;
 
-/* If there's still something left, there must be an explicit exponent */
+	// If there's still something left, there must be an explicit exponent
 	if (p < end)
 	{
 		sign = 0;
@@ -2029,10 +2021,10 @@ SSHORT CVT_decompose(const char* string,
 				digit_seen = true;
 				exp = exp * 10 + *p - '0';
 
-				/* The following is a 'safe' test to prevent overflow of
-				   exp here and of scale below. A more precise test will
-				   occur in the calling routine when the scale/exp is
-				   applied to the value. */
+				// The following is a 'safe' test to prevent overflow of
+				// exp here and of scale below. A more precise test will
+				// occur in the calling routine when the scale/exp is
+				// applied to the value.
 
 				if (exp >= SHORT_LIMIT)
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -2108,8 +2100,8 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 			desc->dsc_dtype == dtype_text ||
 			desc->dsc_dtype == dtype_cstring || desc->dsc_dtype == dtype_varying);
 
-/* If the value is already a string (fixed or varying), just return
-   the address and length. */
+	// If the value is already a string (fixed or varying), just return
+	// the address and length.
 
 	if (desc->dsc_dtype <= dtype_any_text)
 	{
@@ -2128,7 +2120,7 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 		}
 	}
 
-/* No luck -- convert value to varying string. */
+	// No luck -- convert value to varying string.
 
 	dsc temp_desc;
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
@@ -2159,9 +2151,9 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
  **************************************/
 	SQUAD value;
 	double d;
-	TEXT buffer[50];			/* long enough to represent largest quad in ASCII */
+	TEXT buffer[50];			// long enough to represent largest quad in ASCII
 
-/* adjust exact numeric values to same scaling */
+	// adjust exact numeric values to same scaling
 
 	if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		scale -= desc->dsc_scale;
@@ -2223,12 +2215,12 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else
 			d -= 0.5;
 
-		/* make sure the cast will succeed - different machines
-		   do different things if the value is larger than a quad
-		   can hold */
+		// make sure the cast will succeed - different machines
+		// do different things if the value is larger than a quad
+		// can hold
 
 		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d) {
-			/* If rounding would yield a legitimate value, permit it */
+			// If rounding would yield a legitimate value, permit it
 
 			if (d > (double) QUAD_MIN_real - 1.)
 				return QUAD_MIN_int;
@@ -2259,17 +2251,17 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		break;
 
 	default:
-		err(Arg::Gds(isc_badblk));	/* internal error */
+		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
 
-/* Last, but not least, adjust for scale */
+	// Last, but not least, adjust for scale
 
 	if (scale == 0)
 		return value;
 
 #ifndef NATIVE_QUAD
-	err(Arg::Gds(isc_badblk));	/* internal error */
+	err(Arg::Gds(isc_badblk));	// internal error
 #else
 	if (scale > 0)
 	{
@@ -2281,12 +2273,10 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		} while (--scale);
 		if (fraction > 4)
 			value++;
-		/*
-		 * The following 2 lines are correct for platforms where
-		 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		 * we'll have to change this depending on the platform.
-		 */
+		// The following 2 lines are correct for platforms where
+		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		// we'll have to change this depending on the platform.
 		else if (fraction < -4)
 			value--;
 	}
@@ -2319,9 +2309,9 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
  **************************************/
 	SINT64 value;
 	double d, eps;
-	TEXT buffer[50];			/* long enough to represent largest SINT64 in ASCII */
+	TEXT buffer[50];			// long enough to represent largest SINT64 in ASCII
 
-	/* adjust exact numeric values to same scaling */
+	// adjust exact numeric values to same scaling
 
 	if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		scale -= desc->dsc_scale;
@@ -2404,11 +2394,11 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 		break;
 
 	default:
-		err(Arg::Gds(isc_badblk));	/* internal error */
+		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
 
-/* Last, but not least, adjust for scale */
+	// Last, but not least, adjust for scale
 
 	if (scale > 0)
 	{
@@ -2420,12 +2410,10 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 		} while (--scale);
 		if (fraction > 4)
 			value++;
-		/*
-		 * The following 2 lines are correct for platforms where
-		 * ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		 * a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		 * we'll have to change this depending on the platform.
-		 */
+		// The following 2 lines are correct for platforms where
+		// (-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		// we'll have to change this depending on the platform.
 		else if (fraction < -4)
 			value--;
 	}

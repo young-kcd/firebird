@@ -369,8 +369,8 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 //
 UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR* ptr, ULONG count)
 {
-// To handle tape drives & Multi-volume boundaries, use the normal
-// read function, instead of doing a more optimal bulk read.
+	// To handle tape drives & Multi-volume boundaries, use the normal
+	// read function, instead of doing a more optimal bulk read.
 
 
 	while (count)
@@ -409,8 +409,8 @@ UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR* ptr, ULONG count)
 //
 void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
 {
-// To handle tape drives & Multi-volume boundaries, use the normal
-// read function, instead of doing a more optimal seek.
+	// To handle tape drives & Multi-volume boundaries, use the normal
+	// read function, instead of doing a more optimal seek.
 
 
 	while (count)
@@ -678,9 +678,9 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 	}
 #endif
 
-// After the first block of first volume is written (using a default block size)
-// change the block size to one that reflects the user's blocking factor.  By
-// making the first block a standard size we will avoid restore problems.
+	// After the first block of first volume is written (using a default block size)
+	// change the block size to one that reflects the user's blocking factor.  By
+	// making the first block a standard size we will avoid restore problems.
 
 	tdgbl->mvol_io_buffer_size = tdgbl->mvol_actual_buffer_size;
 
@@ -700,8 +700,8 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 //
 const UCHAR* MVOL_write_block(BurpGlobals* tdgbl, const UCHAR* ptr, ULONG count)
 {
-// To handle tape drives & Multi-volume boundaries, use the normal
-// write function, instead of doing a more optimal bulk write.
+	// To handle tape drives & Multi-volume boundaries, use the normal
+	// write function, instead of doing a more optimal bulk write.
 
 	while (count)
 	{
@@ -815,8 +815,8 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// We must  close the old handle before the user inserts
-// another tape, or something.
+	// We must close the old handle before the user inserts
+	// another tape, or something.
 
 #ifdef WIN_NT
 	if (handle != INVALID_HANDLE_VALUE)
@@ -840,15 +840,15 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		BURP_error_redirect(0, 50);	// msg 50 unexpected end of file on backup file
 	}
 
-// If we got here, we've got a live one... Up the volume number unless
-// the old file was empty
+	// If we got here, we've got a live one... Up the volume number unless
+	// the old file was empty
 
 	if (!tdgbl->mvol_empty_file)
 		++tdgbl->mvol_volume_count;
 
 	tdgbl->mvol_empty_file = true;
 
-// Loop until we have opened a file successfully
+	// Loop until we have opened a file successfully
 
 	SCHAR new_file[MAX_FILE_NAME_SIZE];
 	DESC new_desc = INVALID_HANDLE_VALUE;
@@ -935,8 +935,8 @@ static void prompt_for_name(SCHAR* name, int length)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// Unless we are operating as a service, stdin can't necessarily be trusted.
-// Get a location to read from.
+	// Unless we are operating as a service, stdin can't necessarily be trusted.
+	// Get a location to read from.
 	fb_assert(!tdgbl->uSvc->isService());
 
 	if (isatty(fileno(stdout)) || !(term_out = fopen(TERM_OUTPUT, "w")))
@@ -949,7 +949,7 @@ static void prompt_for_name(SCHAR* name, int length)
 		term_in = stdin;
 	}
 
-// Loop until we have a file name to try
+	// Loop until we have a file name to try
 
 	for (;;)
 	{
@@ -1073,7 +1073,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// Headers are a version number, and a volume number
+	// Headers are a version number, and a volume number
 
 #ifndef WIN_NT
 	tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size);

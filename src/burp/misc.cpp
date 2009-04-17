@@ -48,14 +48,14 @@ UCHAR *MISC_alloc_burp(ULONG size)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// Add some header space to store a list of blocks allocated for this gbak
+	// Add some header space to store a list of blocks allocated for this gbak
 	size += ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT);
 
 	UCHAR* block = (UCHAR*)gds__alloc(size);
 
 	if (!block)
-		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
+		// NOMEM: message & abort FREE: all items freed at gbak exit
 		BURP_error(238, true);
 		// msg 238: System memory exhaused
 		return NULL;
@@ -63,10 +63,10 @@ UCHAR *MISC_alloc_burp(ULONG size)
 
 	memset(block, 0, size);
 
-/* FREE: We keep a linked list of all gbak memory allocations, which
- *       are then freed when gbak exits.  This is important for
- *       NETWARE in particular.
- */
+	// FREE: We keep a linked list of all gbak memory allocations, which
+	// are then freed when gbak exits.  This is important for
+	// NETWARE in particular.
+
 	*((UCHAR**) block) = tdgbl->head_of_mem_list;
 	tdgbl->head_of_mem_list = block;
 

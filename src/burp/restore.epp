@@ -84,14 +84,14 @@ const int DB_VERSION_DDL11_2	= 112; // ods11.2 db, FB2.5
 
 const int DB_VERSION_OLDEST_SUPPORTED = DB_VERSION_DDL8;  // IB4.0 is ods8
 
-const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
-										* This setting is used temporarily while
-										* restoring a database. This was required
-										* in order to differentiate a partial
-										* "inactive" state of SOME indices from
-										* "inactive" state of ALL indices (gbak -i)
-										* -bsriram, 11-May-1999      BUG: 10016
-										*/
+const int DEFERRED_ACTIVE		= 3;	// RDB$INDEX_INACTIVE setting for Foreign Keys
+										// This setting is used temporarily while
+										// restoring a database. This was required
+										// in order to differentiate a partial
+										// "inactive" state of SOME indices from
+										// "inactive" state of ALL indices (gbak -i)
+										// -bsriram, 11-May-1999      BUG: 10016
+
 
 const int RESTORE_VERBOSE_INTERVAL	= 10000;
 const int cvtbl_len		= 28;
@@ -280,9 +280,9 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 
 	COMMIT;
 	ON_ERROR
-		/* Fix for bug_no 8055:
-		   don't throw away the database just because an index
-		   could not be made */
+		// Fix for bug_no 8055:
+		// don't throw away the database just because an index
+		// could not be made
 		long error_code;
 		while (error_code = tdgbl->status_vector[1])
 		{
@@ -385,15 +385,15 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 		if (gds_status[1])
 			EXEC SQL SET TRANSACTION;
 
-		/* Only activate Foreign keys that have been marked for deferred
-		 * activation.
-		 * -bsriram, 11-May-1999             BUG: 10016
-		 */
-		/* In case error happens creating FK, triggers don't let set
-		 * INACTIVE = TRUE for FK index. Therefore use separate
-		 * transaction be able to rollback when needed.
-		 * AP, 2005
-		 */
+		// Only activate Foreign keys that have been marked for deferred
+		// activation.
+		// -bsriram, 11-May-1999             BUG: 10016
+
+		// In case error happens creating FK, triggers don't let set
+		// INACTIVE = TRUE for FK index. Therefore use separate
+		// transaction be able to rollback when needed.
+		// AP, 2005
+
 		FOR (REQUEST_HANDLE req_handle1)
 			CNST IN RDB$RELATION_CONSTRAINTS
 			CROSS IDS IN RDB$INDICES WITH
@@ -479,9 +479,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	//
 	update_view_dbkey_lengths(tdgbl);
 
-	/*
-	** Change ownership of any procedures necessary
-	*/
+	// Change ownership of any procedures necessary
 
 	for (burp_prc* procedure = tdgbl->procedures; procedure; procedure = procedure->prc_next)
 	{
@@ -539,8 +537,8 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 
 	MISC_release_request_silent(req_handle2);
 
-	/* Now that changing ownership of tables is over, it is safe to
-	   update the database security class in RDB$DATABASE */
+	// Now that changing ownership of tables is over, it is safe to
+	// update the database security class in RDB$DATABASE
 
 	if (tdgbl->database_security_class[0]) // Do it only if it's not NULL
 	{
@@ -726,7 +724,7 @@ void add_files(BurpGlobals* tdgbl, const char* file_name)
 	if (count)
 	{
 		BURP_verbose (70);
-		  // msg 70 committing secondary files
+		// msg 70 committing secondary files
 		COMMIT
 		// existing ON_ERROR continues past error, beck
 		ON_ERROR
@@ -782,7 +780,7 @@ void bad_attribute(scan_attr_t scan_next_attr, att_type bad_attr, USHORT type)
 			skip_count = tdgbl->gbl_sw_skip_count;
 			get_skip(tdgbl, skip_count);
 			BURP_print (203, SafeArg() << skip_count << int(bad_attr));
-			//msg 203: skipped %d bytes after reading a bad attribute %d
+			// msg 203: skipped %d bytes after reading a bad attribute %d
 		}
 		else
 		{
@@ -966,9 +964,9 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 		db_read_only = tdgbl->gbl_sw_mode_val;
 	else
 	{
-		/* No access mode specified by user. Use attribute settings. Since the
-		 * database is set to readOnly only after making it Online in
-		 * RESTORE_restore(), pass on this information through Global structures */
+		// No access mode specified by user. Use attribute settings. Since the
+		// database is set to readOnly only after making it Online in
+		// RESTORE_restore(), pass on this information through Global structures
 		tdgbl->gbl_sw_mode = true;
 		tdgbl->gbl_sw_mode_val = db_read_only;
 	}
@@ -1012,13 +1010,10 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 	// Turn off sync writes during restore
 	dpb.insertByte(isc_dpb_force_write, 0);
 
-	/*
-	**
-	** which SQL dialect that this database speaks
-	** When we restore backup files that came from prior
-	** to V6, we force the SQL database dialect to 1
-	**
-	*/
+	// which SQL dialect that this database speaks
+	// When we restore backup files that came from prior
+	// to V6, we force the SQL database dialect to 1
+
 	dpb.insertByte(isc_dpb_sql_dialect, SQL_dialect_flag ? SQL_dialect : SQL_DIALECT_V5);
 
 	// start database up shut down,
@@ -1274,11 +1269,10 @@ bool get_acl(BurpGlobals*	tdgbl,
 
 		case isc_info_blob_num_segments:
 			num_segments = (USHORT) n;
-			/*
-			** we assume that the ACL list was written out as
-			** in one big segment
-			**
-			*/
+
+			// we assume that the ACL list was written out as
+			// in one big segment
+
 			if (num_segments > 1) {
 				// CVC: I can't see the effect of assert(true)
 				fb_assert (num_segments > 1);
@@ -1313,10 +1307,8 @@ bool get_acl(BurpGlobals*	tdgbl,
 	if (length < max_segment)
 		length = max_segment;
 
-	/*
-	** Allocate a buffer large enough for the largest segment and start
-	** grinding.
-	*/
+	// Allocate a buffer large enough for the largest segment and start grinding.
+
 	BlobBuffer static_buffer;
 	UCHAR* buffer = static_buffer.getBuffer(length);
 
@@ -1652,9 +1644,8 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 						last_element_dim[count] : (last_element_dim[count] - 1);
 					if (upper < range[0])
 					{
-						/**
-						see Special Case above
-						**/
+						// see Special Case above
+
 						dont_write = true;
 						break;
 					}
@@ -1766,7 +1757,8 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 		}
 	}
 	else
-	{ /** This is the regular case we've got the entire array **/
+	{
+		// This is the regular case we've got the entire array
 		UCHAR* blr = blr_buffer;
 
 		// build the sdl
@@ -2774,9 +2766,9 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 		// existing ON_ERROR continues past error, beck
 		ON_ERROR
 
-			/* Fix for bug_no 8055:
-			   don't throw away the database just because an index
-			   could not be made */
+			// Fix for bug_no 8055:
+			// don't throw away the database just because an index
+			// could not be made
 			ISC_STATUS error_code;
 			while (error_code = tdgbl->status_vector[1])
 			{
@@ -2807,7 +2799,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 									// msg 245 Set the TMP environment variable to a directory on a filesystem that does have enough space, and activate index with
 								}
 								BURP_print(243, index_name);
-								/* msg 243 ALTER INDEX \"%s\" ACTIVE; */
+								// msg 243 ALTER INDEX \"%s\" ACTIVE
 							END_MODIFY;
 						END_FOR;
 						// don't bring the database on-line
@@ -5552,9 +5544,9 @@ bool get_relation(BurpGlobals* tdgbl)
 	}
 
 	// If we fall thru, there are data records to be gotten
-	/* we can get here only when restoring ancient gbak'ed files where rec_data
-	   was once embedded into rec_relation ... otherwise, meta commit happens
-	   when we see the first rec_relation_data */
+	// we can get here only when restoring ancient gbak'ed files where rec_data
+	// was once embedded into rec_relation ... otherwise, meta commit happens
+	// when we see the first rec_relation_data
 
 	BURP_verbose (68);
 	// msg 68 committing meta data
@@ -5770,11 +5762,7 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 					X.RDB$ROLE_NAME.NULL = FALSE;
 					l = GET_TEXT(X.RDB$ROLE_NAME);
 					MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
-					/************************************************
-					**
-					** msg 251, restoring SQL role: %s
-					**
-					*************************************************/
+					// msg 251, restoring SQL role: %s
 					BURP_verbose (251, temp);
 					break;
 
@@ -5824,11 +5812,7 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 					X.RDB$ROLE_NAME.NULL = FALSE;
 					l = GET_TEXT(X.RDB$ROLE_NAME);
 					MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
-					/************************************************
-					**
-					** msg 251, restoring SQL role: %s
-					**
-					*************************************************/
+					// msg 251, restoring SQL role: %s
 					BURP_verbose (251, temp);
 					break;
 
@@ -5951,10 +5935,10 @@ bool get_mapping(BurpGlobals* tdgbl)
 		{
 			tdgbl->firstMap = false;
 			BURP_verbose(301);
-			//msg 301, restoring names mapping
+			// msg 301, restoring names mapping
 		}
 		BURP_verbose(298, ADMIN_ROLE);
-		//msg 298, restoring map @1
+		// msg 298, restoring map @1
 		Firebird::string sql;
 		sql.printf("%s ('%s', %d) %s",
 			"UPDATE OR INSERT INTO RDB$ROLES(RDB$ROLE_NAME, RDB$SYSTEM_FLAG) VALUES",
@@ -6025,13 +6009,13 @@ bool get_security_class(BurpGlobals* tdgbl)
 			case att_class_security_class:
 				l = GET_TEXT(X.RDB$SECURITY_CLASS);
 
-				/* Bug fix for bug_no 7299: There was a V3 bug that inserted
-				   garbage security class entry when doing GBAK. In order to
-				   restore the V3 gbak file with this bad security entry to
-				   V4 database. We should check if the security class is a
-				   valid ASCII name. If not, skip this entry by setting
-				   'is_valid_sec_class' to false.
-				 */
+				// Bug fix for bug_no 7299: There was a V3 bug that inserted
+				// garbage security class entry when doing GBAK. In order to
+				// restore the V3 gbak file with this bad security entry to
+				// V4 database. We should check if the security class is a
+				// valid ASCII name. If not, skip this entry by setting
+				// 'is_valid_sec_class' to false.
+
 				is_valid_sec_class = is_ascii_name(X.RDB$SECURITY_CLASS, l);
 				if (!is_valid_sec_class)
 				{
@@ -6927,14 +6911,12 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 				strcpy (X.RDB$FIELD_NAME, field_name);
 			}
 
-			   /*
-				* USER_TYPE & OBJECT_TYPE are fields that did not exist before
-				* V4.0. So, we have to reconstruct them and initialize them to
-				* reasonable values. If they existed before then user_type and
-				* object_type contain the proper values. If they didn't exist
-				* then user_type and object_type contain the reasonable default
-				* values.
-				*/
+			// USER_TYPE & OBJECT_TYPE are fields that did not exist before
+			// V4.0. So, we have to reconstruct them and initialize them to
+			// reasonable values. If they existed before then user_type and
+			// object_type contain the proper values. If they didn't exist
+			// then user_type and object_type contain the reasonable default
+			// values.
 
 			X.RDB$USER_TYPE.NULL = FALSE;
 			X.RDB$USER_TYPE = user_type;
@@ -6943,14 +6925,14 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 			X.RDB$OBJECT_TYPE = object_type;
 
 
-	   /*
-		* If OBJECT_TYPE didn't exist before and we have a field level
-		* user privileges, then use obj_field instead.
-		*
-		* NOTE: Scanning the V4.0 code base, obj_field has never been
-		*       used at all. The following code should be uncommented
-		*       in case we ever introduce obj_field to the picture.
-		*/
+
+			// If OBJECT_TYPE didn't exist before and we have a field level
+			// user privileges, then use obj_field instead.
+
+			// NOTE: Scanning the V4.0 code base, obj_field has never been
+			// used at all. The following code should be uncommented
+			// in case we ever introduce obj_field to the picture.
+
 /***********************************************************
 			if ( !(flags & USER_PRIV_OBJECT_TYPE) )
 			{
@@ -7408,10 +7390,9 @@ bool restore(BurpGlobals*	tdgbl,
 	if (gds_status[1])
 		EXEC SQL SET TRANSACTION;
 
-	/* For V4.0, start a read commited transaction.  This will be used
-	 * to create blobs for global fields and update the record in the
-	 * RDB$FIELDS table.
-	 */
+	// For V4.0, start a read commited transaction.  This will be used
+	// to create blobs for global fields and update the record in the
+	// RDB$FIELDS table.
 
 	EXEC SQL SET TRANSACTION NAME tdgbl->global_trans ISOLATION LEVEL READ COMMITTED;
 
@@ -7433,10 +7414,10 @@ bool restore(BurpGlobals*	tdgbl,
 		switch (attribute)
 		{
 		case att_database_security_class:
-			/* Instead of updating the security class in RDB$DATABASE,
-			   just store the value in tdgbl. It will be updated at
-			   the very end to prevent security class validation
-			   failures during change table ownership operation   */
+			// Instead of updating the security class in RDB$DATABASE,
+			// just store the value in tdgbl. It will be updated at
+			// the very end to prevent security class validation
+			// failures during change table ownership operation
 			GET_TEXT(tdgbl->database_security_class);
 			break;
 
@@ -7735,15 +7716,15 @@ bool restore(BurpGlobals*	tdgbl,
 		MISC_release_request_silent(req_handle4);
 	}
 
-	/* This piece of code is to fix bug 10098: restore of database with
-	only domains and no relations aborts with the message ERROR: deadlock
-	This is because insertion of domains into RDB$FIELDS is happening in
-	the default transaction, whereas updation of RDB$FIELDS to add
-	constraints to the domains is done in tdgbl->global_trans. In case of
-	no relations, no COMMIT of default transaction occurs till this point
-	because of which rows in RDB$FIELDS for domains are still locked by
-	default transaction. The below code COMMITs the default transaction
-	in that particular situation */
+	// This piece of code is to fix bug 10098: restore of database with
+	// only domains and no relations aborts with the message ERROR: deadlock
+	// This is because insertion of domains into RDB$FIELDS is happening in
+	// the default transaction, whereas updation of RDB$FIELDS to add
+	// constraints to the domains is done in tdgbl->global_trans. In case of
+	// no relations, no COMMIT of default transaction occurs till this point
+	// because of which rows in RDB$FIELDS for domains are still locked by
+	// default transaction. The below code COMMITs the default transaction
+	// in that particular situation
 
 	if (flag_norel)
 	{

@@ -122,219 +122,136 @@ class Config
 
 public:
 
-	/*
-	 Interface to support command line root specification.
-	*
-	 This ugly solution was required to make it possible to specify root
-	 in command line to load firebird.conf from that root, though in other
-	 cases firebird.conf may be also used to specify root.
-	*/
+	// Interface to support command line root specification.
+
+	// This ugly solution was required to make it possible to specify root
+	// in command line to load firebird.conf from that root, though in other
+	// cases firebird.conf may be also used to specify root.
+
 	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
 	static const Firebird::PathName* getCommandLineRootDirectory();
 
-	/*
-		Installation directory
-	*/
+	// Installation directory
 	static const char* getInstallDirectory();
 
-	/*
-		Root directory of current installation
-	*/
+	// Root directory of current installation
 	static const char* getRootDirectory();
 
-	/*
-		Allocation chunk for the temporary spaces
-	*/
+	// Allocation chunk for the temporary spaces
 	static int getTempBlockSize();
 
-	/*
-		Caching limit for the temporary data
-	*/
+	// Caching limit for the temporary data
 	static int getTempCacheLimit();
 
-	/*
-		Whether remote (NFS) files can be opened
-	*/
+	// Whether remote (NFS) files can be opened
 	static bool getRemoteFileOpenAbility();
 
-	/*
-		Startup option for the guardian
-	*/
+	// Startup option for the guardian
 	static int getGuardianOption();
 
-	/*
-		CPU affinity mask
-	*/
+	// CPU affinity mask
 	static int getCpuAffinityMask();
 
-	/*
-		XDR buffer size
-	*/
+	// XDR buffer size
 	static int getTcpRemoteBufferSize();
 
-	/*
-		Disable Nagle algorithm
-	*/
+	// Disable Nagle algorithm
 	static bool getTcpNoNagle();
 
-	/*
-		Default database cache size
-	*/
+	// Default database cache size
 	static int getDefaultDbCachePages();
 
-	/*
-		Connection timeout
-	*/
+	// Connection timeout
 	static int getConnectionTimeout();
 
-	/*
-		Dummy packet interval
-	*/
+	// Dummy packet interval
 	static int getDummyPacketInterval();
 
-	/*
-		Lock manager memory size
-	*/
+	// Lock manager memory size
 	static int getLockMemSize();
 
-	/*
-		Lock manager grant order
-	*/
+	// Lock manager grant order
 	static bool getLockGrantOrder();
 
-	/*
-		Lock manager hash slots
-	*/
+	// Lock manager hash slots
 	static int getLockHashSlots();
 
-	/*
-		Lock manager acquire spins
-	*/
+	// Lock manager acquire spins
 	static int getLockAcquireSpins();
 
-	/*
-		Event manager memory size
-	*/
+	// Event manager memory size
 	static int getEventMemSize();
 
-	/*
-		Deadlock timeout
-	*/
+	// Deadlock timeout
 	static int getDeadlockTimeout();
 
-	/*
-		Priority switch delay
-	*/
+	// Priority switch delay
 	static int getPrioritySwitchDelay();
 
-	/*
-		Use priority scheduler
-	*/
+	// Use priority scheduler
 	static bool getUsePriorityScheduler();
 
-	/*
-		Priority boost
-	*/
+	// Priority boost
 	static int getPriorityBoost();
 
-	/*
-		Service name for remote protocols
-	*/
+	// Service name for remote protocols
 	static const char *getRemoteServiceName();
 
-	/*
-		Service port for INET
-	*/
+	// Service port for INET
 	static unsigned short getRemoteServicePort();
 
-	/*
-		Pipe name for WNET
-	*/
+	// Pipe name for WNET
 	static const char *getRemotePipeName();
 
-	/*
-		Name for IPC-related objects
-	*/
+	// Name for IPC-related objects
 	static const char *getIpcName();
 
-	/*
-		Unflushed writes number
-	*/
+	// Unflushed writes number
 	static int getMaxUnflushedWrites();
 
-	/*
-		Unflushed write time
-	*/
+	// Unflushed write time
 	static int getMaxUnflushedWriteTime();
 
-	/*
-		Process priority level
-	*/
+	// Process priority level
 	static int getProcessPriorityLevel();
 
-	/*
-		Complete boolean evaluation
-	*/
+	// Complete boolean evaluation
 	static bool getCompleteBooleanEvaluation();
 
-	/*
-		Port for event processing
-	*/
+	// Port for event processing
 	static int getRemoteAuxPort();
 
-	/*
-		Server binding NIC address
-	*/
+	// Server binding NIC address
 	static const char *getRemoteBindAddress();
 
-	/*
-		Directory list for external tables
-	*/
+	// Directory list for external tables
 	static const char *getExternalFileAccess();
 
-	/*
-		Directory list for databases
-	*/
+	// Directory list for databases
 	static const char *getDatabaseAccess();
 
-	/*
-		Directory list for UDF libraries
-	*/
+	// Directory list for UDF libraries
 	static const char *getUdfAccess();
 
-	/*
-		Temporary directories list
-	*/
+	// Temporary directories list
 	static const char *getTempDirectories();
 
- 	/*
- 		Abort on BUGCHECK and structured exceptions
- 	*/
+	// Abort on BUGCHECK and structured exceptions
  	static bool getBugcheckAbort();
 
-	/*
-		Let use of des hash to verify passwords
-	*/
+	// Let use of des hash to verify passwords
 	static bool getLegacyHash();
 
-	/*
-		GC policy
-	*/
+	// GC policy
 	static const char *getGCPolicy();
 
-	/*
-		Redirection
-	*/
+	// Redirection
 	static bool getRedirection();
 
-	/*
-		Use old column naming rules (does not conform to SQL standard)
-	*/
+	// Use old column naming rules (does not conform to SQL standard)
 	static bool getOldColumnNaming();
 
-	/*
-		Use native, trusted or mixed authentication
-	*/
+	// Use native, trusted or mixed authentication
 	static const char *getAuthMethod();
 
 	static int getDatabaseGrowthIncrement();

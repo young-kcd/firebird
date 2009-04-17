@@ -234,7 +234,8 @@ namespace Firebird
 			return baseAssign(l);
 		}
 
-/*		inline void swap(AbstractString& str)
+		/*
+		inline void swap(AbstractString& str)
 		{
 			Storage *tmp = StringData;
 			StringData = str.StringData;

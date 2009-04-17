@@ -77,8 +77,8 @@ int EXE_action(const TEXT* database, const ULONG switches)
 			tdgbl->ALICE_data.ua_val_errors[i] = 0;
 		}
 
-//  generate the database parameter block for the attach,
-//  based on the various switches
+		// generate the database parameter block for the attach,
+		// based on the various switches
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE);
 		buildDpb(dpb, switches);
 
@@ -149,8 +149,8 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 			tdgbl->ALICE_data.ua_val_errors[i] = 0;
 		}
 
-//  generate the database parameter block for the attach,
-//  based on the various switches
+		// generate the database parameter block for the attach,
+		// based on the various switches
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE);
 		buildDpb(dpb, switches);
 
@@ -400,7 +400,7 @@ static void extract_db_info(const UCHAR* db_info_buffer, size_t buf_size)
 			break;
 
 		case isc_info_error:
-			/* has to be a < V4 database. */
+			// has to be a < V4 database.
 			tdgbl->ALICE_data.ua_val_errors[VAL_INVALID_DB_VERSION] = 1;
 			return;
 

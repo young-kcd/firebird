@@ -83,7 +83,7 @@ Firebird::GlobalPtr<InterlockedStringsBuffer> engine_failures;
 
 namespace Firebird {
 
-/********************************* StringsBuffer *******************************/
+// ******************************** StringsBuffer *******************************
 
 void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans)
 {
@@ -124,7 +124,7 @@ void StringsBuffer::makeEnginePermanentVector(ISC_STATUS* v)
 	engine_failures->makePermanentVector(v, v);
 }
 
-/********************************* status_exception *******************************/
+// ********************************* status_exception *******************************
 
 status_exception::status_exception() throw() :
 	m_strings_permanent(true)
@@ -199,7 +199,7 @@ status_exception::~status_exception() throw()
 	release_vector();
 }
 
-/********************************* fatal_exception *******************************/
+// ********************************* fatal_exception ******************************
 
 void fatal_exception::raiseFmt(const char* format, ...)
 {
@@ -254,7 +254,7 @@ ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector, St
 	return status_vector[1];
 }
 
-/********************************* BadAlloc ****************************/
+// ********************************* BadAlloc ****************************
 
 void BadAlloc::raise()
 {
@@ -272,7 +272,7 @@ ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	return status_vector[1];
 }
 
-/********************************* LongJump ****************************/
+// ********************************* LongJump ***************************
 
 void LongJump::raise()
 {
@@ -306,7 +306,7 @@ ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 }
 
 
-/********************************* system_error ****************************/
+// ********************************* system_error ***************************
 
 system_error::system_error(const char* syscall, int error_code) :
 	status_exception(0, false), errorCode(error_code)
@@ -336,7 +336,7 @@ int system_error::getSystemError()
 #endif
 }
 
-/********************************* system_call_failed ****************************/
+// ********************************* system_call_failed ***************************
 
 system_call_failed::system_call_failed(const char* syscall, int error_code) :
 	system_error(syscall, error_code)
@@ -358,7 +358,7 @@ void system_call_failed::raise(const char* syscall)
 	throw system_call_failed(syscall, getSystemError());
 }
 
-/********************************* fatal_exception ********************************/
+// ********************************* fatal_exception *******************************
 
 fatal_exception::fatal_exception(const char* message) :
 	status_exception(0, false)
@@ -388,7 +388,7 @@ void fatal_exception::raise(const char* message)
 	throw fatal_exception(message);
 }
 
-/************************** exception handling routines ***************************/
+// ************************** exception handling routines **************************
 
 // Serialize exception into status_vector, put transient strings from exception into given StringsBuffer
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex, StringsBuffer* sb) throw()

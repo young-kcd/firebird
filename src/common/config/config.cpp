@@ -139,7 +139,7 @@ static Firebird::InitInstance<ConfigImpl> sysConfig;
 
 ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 {
-	/* Prepare some stuff */
+	// Prepare some stuff
 
 	ConfigFile file(p, true);
 	root_dir = getRootDirectory();
@@ -149,7 +149,7 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 	//string val_sep = ",";
 	file.setConfigFilePath(getConfigFilePath());
 
-	/* Iterate through the known configuration entries */
+	// Iterate through the known configuration entries
 
 	for (int i = 0; i < size; i++)
 	{
@@ -158,13 +158,13 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 
 		if (!value.length())
 		{
-			/* Assign the default value */
+			// Assign the default value
 
 			values[i] = entries[i].default_value;
 			continue;
 		}
 
-		/* Assign the actual value */
+		// Assign the actual value
 
 		switch (entry.data_type)
 		{
@@ -192,7 +192,7 @@ ConfigImpl::~ConfigImpl()
 {
 	const int size = FB_NELEM(entries);
 
-	/* Free allocated memory */
+	// Free allocated memory
 
 	for (int i = 0; i < size; i++)
 	{

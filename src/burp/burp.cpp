@@ -188,7 +188,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 		case IN_SW_BURP_SE:				// service name
 			if (itr >= argc - 1)
 			{
-						   // user name parameter missing
+							// user name parameter missing
 				BURP_error(inSw->in_sw == IN_SW_BURP_USER ? 188 :
 								// password parameter missing
 						   		inSw->in_sw == IN_SW_BURP_PASS ? 189 :
@@ -252,12 +252,11 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 	try
 	{
 		Firebird::ClumpletWriter spb(Firebird::ClumpletWriter::SpbAttach, 4096, isc_spb_current_version);
-	/*
-	 * isc_spb_user_name
-	 * isc_spb_password
-	 * isc_spb_trusted_auth
-	 * isc_spb_options
-	 */
+
+		// isc_spb_user_name
+		// isc_spb_password
+		// isc_spb_trusted_auth
+		// isc_spb_options
 
 		if (usr.hasData())
 		{
@@ -533,8 +532,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 		{
 			if (!file || file->fil_length || !get_size(argv[itr], file))
 			{
-				/*  Miserable thing must be a filename
-				   (dummy in a length for the backup file */
+				// Miserable thing must be a filename
+				// (dummy in a length for the backup file
 
 				file = FB_NEW(*getDefaultMemoryPool()) burp_fil(*getDefaultMemoryPool());
 				file->fil_name = str.ToPathName();
@@ -1496,16 +1495,15 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 	if (*handle != 0)
 	{
 		ISC_STATUS_ARRAY status_vector;
-		if (action == RESTORE) {
-			/* Even if the restore failed, commit the transaction so that
-			 * a partial database is at least recovered.
-			 */
+		if (action == RESTORE)
+		{
+			// Even if the restore failed, commit the transaction so that
+			// a partial database is at least recovered.
 			isc_commit_transaction(status_vector, handle);
 			if (status_vector[1]) {
-				/* If we can't commit - have to roll it back, as
-				 * we need to close all outstanding transactions before
-				 * we can detach from the database.
-				 */
+				// If we can't commit - have to roll it back, as
+				// we need to close all outstanding transactions before
+				// we can detach from the database.
 				isc_rollback_transaction(status_vector, handle);
 				if (status_vector[1])
 					BURP_print_status(status_vector);
@@ -1513,10 +1511,9 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 		}
 		else
 		{
-			/* A backup shouldn't touch any data - we ensure that
-			 * by never writing data during a backup, but let's double
-			 * ensure it by doing a rollback
-			 */
+			// A backup shouldn't touch any data - we ensure that
+			// by never writing data during a backup, but let's double
+			// ensure it by doing a rollback
 			if (isc_rollback_transaction(status_vector, handle))
 				BURP_print_status(status_vector);
 		}
@@ -1575,7 +1572,7 @@ static gbak_action open_files(const TEXT* file1,
 	ISC_STATUS_ARRAY temp_status;
 	ISC_STATUS* status_vector = temp_status;
 
-// try to attach the database using the first file_name
+	// try to attach the database using the first file_name
 
 	if (sw_replace != IN_SW_BURP_C && sw_replace != IN_SW_BURP_R)
 	{
@@ -1663,9 +1660,9 @@ static gbak_action open_files(const TEXT* file1,
 					flag = QUIT;
 					break;
 				}
-				/* We ignore SIGPIPE so that we can report an IO error when we
-				 * try to write to the broken pipe.
-				 */
+				// We ignore SIGPIPE so that we can report an IO error when we
+				// try to write to the broken pipe.
+
 #ifndef WIN_NT
 				signal(SIGPIPE, SIG_IGN);
 #endif
@@ -1732,42 +1729,40 @@ static gbak_action open_files(const TEXT* file1,
 	}
 
 
-/*
- * If we got to here, then we're really not backing up a database,
- * so open a backup file.
- */
+	//	If we got to here, then we're really not backing up a database,
+	// so open a backup file.
 
-/* There are four possible cases such as:
- *
- *   1. restore single backup file to single db file
- *   2. restore single backup file to multiple db files
- *   3. restore multiple backup files (join operation) to single db file
- *   4. restore multiple backup files (join operation) to multiple db files
- *
- * Just looking at the command line, we can't say for sure whether it is a
- * specification of the last file to be join or it is a specification of the
- * primary db file (case 4), for example:
- *
- *     gbak -c gbk1 gbk2 gbk3 db1 200 db2 500 db3 -v
- *                            ^^^
- *     db1 could be either the last file to be join or primary db file
- *
- * Since 'gbk' and 'gsplit' formats are different (gsplit file has its own
- * header record) hence we can use it as follows:
- *
- *     - open first file
- *     - read & check a header record
- *
- *    If a header is identified as a 'gsplit' one then we know exactly how
- * many files need to be join and in which order. We keep opening a file by
- * file till we reach the last one to be join. During this step we check
- * that the files are accessible and are in proper order. It gives us
- * possibility to let silly customer know about an error as soon as possible.
- * Besides we have to find out which file is going to be a db file.
- *
- *    If header is not identified as a 'gsplit' record then we assume that
- * we got a single backup file.
- */
+	/* There are four possible cases such as:
+	 *
+	 *   1. restore single backup file to single db file
+	 *   2. restore single backup file to multiple db files
+	 *   3. restore multiple backup files (join operation) to single db file
+	 *   4. restore multiple backup files (join operation) to multiple db files
+	 *
+	 * Just looking at the command line, we can't say for sure whether it is a
+	 * specification of the last file to be join or it is a specification of the
+	 * primary db file (case 4), for example:
+	 *
+	 *     gbak -c gbk1 gbk2 gbk3 db1 200 db2 500 db3 -v
+	 *                            ^^^
+	 *     db1 could be either the last file to be join or primary db file
+	 *
+	 * Since 'gbk' and 'gsplit' formats are different (gsplit file has its own
+	 * header record) hence we can use it as follows:
+	 *
+	 *     - open first file
+	 *     - read & check a header record
+	 *
+	 *    If a header is identified as a 'gsplit' one then we know exactly how
+	 * many files need to be join and in which order. We keep opening a file by
+	 * file till we reach the last one to be join. During this step we check
+	 * that the files are accessible and are in proper order. It gives us
+	 * possibility to let silly customer know about an error as soon as possible.
+	 * Besides we have to find out which file is going to be a db file.
+	 *
+	 *    If header is not identified as a 'gsplit' record then we assume that
+	 * we got a single backup file.
+	 */
 
 	fil = tdgbl->gbl_sw_files;
 	tdgbl->gbl_sw_backup_files = tdgbl->gbl_sw_files;
@@ -1871,7 +1866,8 @@ static gbak_action open_files(const TEXT* file1,
 				return QUIT;
 			}
 		}
-		else {
+		else
+		{
 			// Move pointer to the begining of the file. At this point we
 			// assume -- this is a single backup file because we were
 			// not able to read a split header record.
@@ -1889,13 +1885,13 @@ static gbak_action open_files(const TEXT* file1,
 	}
 
 
-// If we got here, we've opened a backup file, and we're
-// thinking about creating or replacing a database.
+	// If we got here, we've opened a backup file, and we're
+	// thinking about creating or replacing a database.
 
 	*file2 = tdgbl->gbl_sw_files->fil_name.c_str();
 	if (tdgbl->gbl_sw_files->fil_size_code != size_n)
 		BURP_error(262, true, *file2);
-	// msg 262 size specification either missing or incorrect for file %s
+		// msg 262 size specification either missing or incorrect for file %s
 
 	if ((sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R) &&
 		!isc_attach_database(status_vector,
@@ -1930,24 +1926,23 @@ static gbak_action open_files(const TEXT* file1,
 		}
 	}
 	if (sw_replace == IN_SW_BURP_R && status_vector[1] == isc_adm_task_denied) {
-		/* if we got an error from attach database and we have replace switch set
-		 * then look for error from attach returned due to not owner, if we are
-		 * not owner then return the error status back up
-		 */
+		// if we got an error from attach database and we have replace switch set
+		// then look for error from attach returned due to not owner, if we are
+		// not owner then return the error status back up
 		BURP_error(274, true);
-		/* msg # 274 : Cannot restore over current database, must be sysdba
-		   * or owner of the existing database.
-		 */
+		// msg # 274 : Cannot restore over current database, must be sysdba
+		// or owner of the existing database.
 	}
-/* if we got here, then all is well, remove any error condition from the
- * status vector when running as a service thread.  If we don't then the
- * service will think that there is an error if isc_attach_database failed
- * like it should have (if creating a database).
- */
+
+	// if we got here, then all is well, remove any error condition from the
+	// status vector when running as a service thread.  If we don't then the
+	// service will think that there is an error if isc_attach_database failed
+	// like it should have (if creating a database).
+
 	if (tdgbl->uSvc->isService())
 		memset(tdgbl->status, 0, sizeof(ISC_STATUS_ARRAY));
 
-// check the file size specification
+	// check the file size specification
 	for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next)
 	{
 		if (fil->fil_size_code != size_n)

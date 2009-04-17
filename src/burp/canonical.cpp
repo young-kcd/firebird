@@ -197,7 +197,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 		}
 	}
 
-// Next, get null flags
+	// Next, get null flags
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -644,7 +644,7 @@ static bool_t xdr_slice(XDR* xdrs,
 	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&slice->lstr_length)))
 		  return FALSE;
 
-// Handle operation specific stuff, particularly memory allocation/deallocation
+	// Handle operation specific stuff, particularly memory allocation/deallocation
 
 	switch (xdrs->x_op)
 	{
@@ -681,7 +681,7 @@ static bool_t xdr_slice(XDR* xdrs,
 		return FALSE;
 	}
 
-// Get descriptor of array element
+	// Get descriptor of array element
 
 	ISC_STATUS_ARRAY status_vector;
 	sdl_info info;

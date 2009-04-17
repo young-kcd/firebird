@@ -312,8 +312,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			//		an unsigned number.  Therefore this check is useless.
 			// if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
 			// {
-			//	ALICE_error(114);	/* msg 114: positive or zero numeric value
-			//									   required */
+			//	ALICE_error(114);	// msg 114: positive or zero numeric value required
 			// }
 		}
 
