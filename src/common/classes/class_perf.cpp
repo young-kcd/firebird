@@ -41,7 +41,8 @@ void start() {
 
 const int TEST_ITEMS	= 5000000;
 
-void report(int scaleNode, int scaleTree) {
+void report(int scaleNode, int scaleTree)
+{
 	clock_t d = clock();
 	printf("Add+remove %d elements from tree of scale %d/%d took %d milliseconds. \n",
 		TEST_ITEMS,	scaleNode, scaleTree, (int)(d-t)*1000/CLOCKS_PER_SEC);
@@ -49,7 +50,8 @@ void report(int scaleNode, int scaleTree) {
 
 using namespace Firebird;
 
-static void testTree() {
+static void testTree()
+{
 	printf("Fill array with test data (%d items)...", TEST_ITEMS);
 	Vector<int, TEST_ITEMS> *v = new Vector<int, TEST_ITEMS>();
 	int n = 0;
@@ -140,7 +142,8 @@ static void testTree() {
 }
 
 
-void report() {
+void report()
+{
 	clock_t d = clock();
 	printf("Operation took %d milliseconds.\n", (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
@@ -150,7 +153,8 @@ const int MAX_ITEM_SIZE = 50;
 const int BIG_ITEMS		= ALLOC_ITEMS / 10;
 const int BIG_SIZE		= MAX_ITEM_SIZE * 5;
 
-struct AllocItem {
+struct AllocItem
+{
 	int order;
 	void *item;
 	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
@@ -158,7 +162,8 @@ struct AllocItem {
 	}
 };
 
-static void testAllocatorOverhead() {
+static void testAllocatorOverhead()
+{
 	printf("Calculating measurement overhead...\n");
 	start();
 	MallocAllocator allocator;
@@ -195,7 +200,8 @@ static void testAllocatorOverhead() {
 	report();
 }
 
-static void testAllocatorMemoryPool() {
+static void testAllocatorMemoryPool()
+{
 	printf("Test run for Firebird::MemoryPool...\n");
 	start();
 	Firebird::MemoryPool* pool = Firebird::MemoryPool::createPool();
@@ -233,7 +239,8 @@ static void testAllocatorMemoryPool() {
 	report();
 }
 
-static void testAllocatorMalloc() {
+static void testAllocatorMalloc()
+{
 	printf("Test reference run for ::malloc...\n");
 	start();
 	MallocAllocator allocator;
@@ -269,7 +276,8 @@ static void testAllocatorMalloc() {
 	report();
 }
 
-/*static void testAllocatorOldPool() {
+/*static void testAllocatorOldPool()
+{
 	printf("Test run for old MemoryPool...\n");
 	start();
 	::MemoryPool *pool = new ::MemoryPool(0, getDefaultMemoryPool());
@@ -308,10 +316,11 @@ static void testAllocatorMalloc() {
 	report();
 }*/
 
-int main() {
+int main()
+{
 	testTree();
 	testAllocatorOverhead();
 	testAllocatorMemoryPool();
 	testAllocatorMalloc();
-//	testAllocatorOldPool();
+	// testAllocatorOldPool();
 }

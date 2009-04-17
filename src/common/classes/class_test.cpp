@@ -35,7 +35,8 @@
 
 using namespace Firebird;
 
-void testVector() {
+void testVector()
+{
 	printf("Test Firebird::Vector: ");
 	Vector<int, 100> v;
 	int i;
@@ -50,7 +51,8 @@ void testVector() {
 	printf(passed ? "PASSED\n" : "FAILED\n");
 }
 
-void testSortedVector() {
+void testSortedVector()
+{
 	printf("Test Firebird::SortedVector: ");
 	SortedVector<int, 100> v;
 	int i;
@@ -59,7 +61,7 @@ void testSortedVector() {
 	for (i = 0; i < 50; i++)
 		v.remove(0);
 	bool passed = true;
-	for (i = 50;i < 100; i++)
+	for (i = 50; i < 100; i++)
 		if (v[i - 50] != i)
 			passed = false;
 	printf(passed ? "PASSED\n" : "FAILED\n");
@@ -67,7 +69,8 @@ void testSortedVector() {
 
 const int BITMAP_ITEMS = 1000000;
 
-void testBitmap() {
+void testBitmap()
+{
     MallocAllocator temp;
 
     printf("Test Firebird::SparseBitmap\n");
@@ -188,7 +191,8 @@ void testBitmap() {
 
 const size_t TEST_ITEMS = 10000;
 
-struct Test {
+struct Test
+{
 	int value;
 	int count;
 	static const int& generate(const void *sender, const Test& value) {
@@ -196,7 +200,8 @@ struct Test {
 	}
 };
 
-void testBePlusTree() {
+void testBePlusTree()
+{
     MallocAllocator temp;
     printf("Test Firebird::BePlusTree\n");
 
@@ -217,7 +222,8 @@ void testBePlusTree() {
 	BePlusTree<Test, int, MallocAllocator, Test,
 		DefaultComparator<int>, 13, 13> tree2(&temp);
 	int cnt1 = 0, cnt2 = 0;
-	for (i = 0; i < v.getCount(); i++) {
+	for (i = 0; i < v.getCount(); i++)
+	{
 		if (tree1.locate(locEqual, v[i]))
 			tree1.current().count++;
 		else {
@@ -244,7 +250,8 @@ void testBePlusTree() {
 	bool passed = true;
 
 	printf("Empty trees verifying fastRemove() result: ");
-	for (i = 0; i < v.getCount()-1; i++) {
+	for (i = 0; i < v.getCount()-1; i++)
+	{
 		if (!tree1.getLast())
 			passed = false;
 		tree1.current().count--;
@@ -280,7 +287,8 @@ void testBePlusTree() {
 
 	printf("Fill trees with data again: ");
 	cnt1 = 0; cnt2 = 0;
-	for (i = 0; i < v.getCount(); i++) {
+	for (i = 0; i < v.getCount(); i++)
+	{
 		if (tree1.locate(locEqual, v[i]))
 			tree1.current().count++;
 		else {
@@ -346,7 +354,8 @@ void testBePlusTree() {
 
 	printf("Remove half of data from the trees: ");
 	passed = true;
-	while (v.getCount() > TEST_ITEMS / 2) {
+	while (v.getCount() > TEST_ITEMS / 2)
+	{
 		if (!tree1.locate(locEqual, v[v.getCount() - 1]))
 			fb_assert(false);
 		if (tree1.current().count > 1)
@@ -438,7 +447,8 @@ void testBePlusTree() {
 	passed = true;
 
 	printf("Remove the rest of data from the trees: ");
-	for (i = 0;i < v.getCount(); i++) {
+	for (i = 0; i < v.getCount(); i++)
+	{
 		if (!tree1.locate(locEqual, v[i]))
 			fb_assert(false);
 		if (tree1.current().count > 1)
@@ -503,7 +513,8 @@ const size_t LARGE_ITEM_SIZE	= 300000;
 #define VERIFY_POOL(pool) pool->verify_pool(true)
 //#define VERIFY_POOL(pool)
 
-struct AllocItem {
+struct AllocItem
+{
 	int order;
 	void *item;
 	static bool greaterThan(const AllocItem &i1, const AllocItem &i2) {
@@ -511,7 +522,8 @@ struct AllocItem {
 	}
 };
 
-void testAllocator() {
+void testAllocator()
+{
 	printf("Test Firebird::MemoryPool\n");
 	MemoryPool* parent = getDefaultMemoryPool();
 	MemoryPool* pool = MemoryPool::createPool(parent);
@@ -535,7 +547,7 @@ void testAllocator() {
 	VERIFY_POOL(pool);
 	for (i = 0; i < ALLOC_ITEMS; i++) {
 		n = n * 47163 - 57412;
-//		n = n * 45578 - 17651;
+		// n = n * 45578 - 17651;
 		AllocItem temp = {n, pool->allocate((n % MAX_ITEM_SIZE + MAX_ITEM_SIZE) / 2 + 1)};
 		items.add(temp);
 	}
@@ -558,7 +570,7 @@ void testAllocator() {
 	VERIFY_POOL(pool);
 	for (i = 0; i < BIG_ITEMS; i++) {
 		n = n * 47163 - 57412;
-//		n = n * 45578 - 17651;
+		// n = n * 45578 - 17651;
 		AllocItem temp = {n, pool->allocate((n % BIG_SIZE + BIG_SIZE) / 2 + 1)};
 		bigItems.add(temp);
 	}
@@ -598,7 +610,8 @@ void testAllocator() {
 //  Test that tree correctly recovers in low-memory conditions
 }
 
-int main() {
+int main()
+{
 	testVector();
 	testSortedVector();
 	testBePlusTree();
