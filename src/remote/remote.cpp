@@ -825,3 +825,30 @@ void PortsCleanup::closePorts()
 		m_ports = NULL;
 	}
 }
+
+rem_port::~rem_port()
+{
+	if (port_events_shutdown)
+	{
+		port_events_shutdown(this);
+	}
+
+	delete port_version;
+	delete port_connection;
+	delete port_user_name;
+	delete port_host;
+	delete port_protocol_str;
+	delete port_address_str;
+
+#ifdef DEBUG_XDR_MEMORY
+	delete port_packet_vector;
+#endif
+
+#ifdef TRUSTED_AUTH
+	delete port_trusted_auth;
+#endif
+
+#ifdef DEV_BUILD
+	--portCounter;
+#endif
+}

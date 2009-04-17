@@ -3065,6 +3065,18 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 }
 
 
+namespace {
+	void portEventsShutdown(rem_port* port)
+	{
+		if (port->port_events_thread)
+		{
+			THD_wait_for_completion(port->port_events_thread);
+			port->port_events_thread = 0;
+		}
+	}
+}
+
+
 ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 						  Rdb** handle,
 						  SLONG* id,
@@ -3115,7 +3127,9 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 				return user_status[1];
 			}
 
-			gds__thread_start(event_thread, port->port_async, THREAD_high, 0, 0);
+			gds__thread_start(event_thread, port->port_async, THREAD_high, 0, 
+							  &port->port_async->port_events_thread);
+			port->port_async->port_events_shutdown = portEventsShutdown;
 
 			port->port_async->port_context = rdb;
 		}
@@ -5321,7 +5335,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	rem_port* port = (rem_port*)arg;
-	Reference portRef(*port);
+//	Reference portRef(*port);
 	PACKET packet;
 
 	for (;;)
@@ -6863,8 +6877,6 @@ static void server_death(rem_port* port)
 			}
 		}
 	}
-
-	port->disconnect();
 }
 
 

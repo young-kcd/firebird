@@ -1471,23 +1471,14 @@ static void disconnect(rem_port* port)
 
 	// If this is a sub-port, unlink it from it's parent
 
-	rem_port* const parent = port->port_parent;
-	if (parent != NULL) {
-
-		if (port->port_async) {
-			disconnect(port->port_async);
-			port->port_async = NULL;
-		}
-
-		port->unlinkParent();
-	}
-	else if (port->port_async) {
-#ifdef SUPERSERVER
+	if (port->port_async) {
 		disconnect(port->port_async);
 		port->port_async = NULL;
-#else
-		port->port_async->port_flags |= PORT_disconnect;
-#endif
+	}
+
+	rem_port* const parent = port->port_parent;
+	if (parent != NULL) {
+		port->unlinkParent();
 	}
 
 	if (port->port_flags & PORT_server)

@@ -33,6 +33,7 @@
 #include "gen/iberror.h"
 #include "../remote/remote_def.h"
 #include "../jrd/ThreadData.h"
+#include "../jrd/ThreadStart.h"
 #include "../common/thd.h"
 #include "../common/classes/objects_array.h"
 #include "../auth/trusted/AuthSspi.h"
@@ -620,6 +621,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	int				port_channel;		/* handle for connection (from by OS) */
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 	Rdb*			port_context;
+	ThreadHandle	port_events_thread;	// handle of thread, handling incoming events
+	void			(*port_events_shutdown)(rem_port*);	// hack - avoid changing API at beta stage
 #ifdef WIN_NT
 	HANDLE			port_event;			// event associated with port, Windows only
 #endif
@@ -666,7 +669,7 @@ public:
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
 		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0),
-		port_context(0),
+		port_context(0), port_events_thread(0), port_events_shutdown(0),
 #ifdef WIN_NT
 		port_event(INVALID_HANDLE_VALUE),
 #endif
@@ -694,27 +697,7 @@ public:
 	}
 
 private:		// this is refCounted object
-	~rem_port()
-	{
-		delete port_version;
-		delete port_connection;
-		delete port_user_name;
-		delete port_host;
-		delete port_protocol_str;
-		delete port_address_str;
-
-#ifdef DEBUG_XDR_MEMORY
-		delete port_packet_vector;
-#endif
-
-#ifdef TRUSTED_AUTH
-		delete port_trusted_auth;
-#endif
-
-#ifdef DEV_BUILD
-		--portCounter;
-#endif
-	}
+	~rem_port();
 
 public:
 	void linkParent(rem_port* parent);

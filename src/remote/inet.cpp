@@ -1482,17 +1482,14 @@ static void disconnect( rem_port* port)
 	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
 
+	if (port->port_async) {
+		disconnect(port->port_async);
+		port->port_async = NULL;
+	}
+
 	rem_port* parent = port->port_parent;
 	if (parent != NULL) {
-		if (port->port_async) {
-			disconnect(port->port_async);
-			port->port_async = NULL;
-		}
-
 		unhook_port(port, parent);
-	}
-	else if (port->port_async) {
-		port->port_async->port_flags |= PORT_disconnect;
 	}
 
 	inet_ports->unRegisterPort(port);
