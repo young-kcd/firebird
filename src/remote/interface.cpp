@@ -3127,7 +3127,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 				return user_status[1];
 			}
 
-			gds__thread_start(event_thread, port->port_async, THREAD_high, 0, 
+			gds__thread_start(event_thread, port->port_async, THREAD_high, 0,
 							  &port->port_async->port_events_thread);
 			port->port_async->port_events_shutdown = portEventsShutdown;
 
@@ -5390,11 +5390,9 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 										length,
 										pevent->p_event_items.cstr_address);
 				}
-				/*
-				else {....
-				This is error condition, but we have absolutely no ways to report it.
-				Therefore simply ignore such bad packet.
-				*/
+				//else {....
+				//This is error condition, but we have absolutely no ways to report it.
+				//Therefore simply ignore such bad packet.
 
 				event->rvnt_id = 0;
 			}

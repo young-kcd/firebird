@@ -620,7 +620,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			{
 /*
 #if defined(DEV_BUILD) && defined(DEBUG)
-			ConsolePrintf("%%ISERVER-F-NOPORT, no port in a storm\r\n");
+				ConsolePrintf("%%ISERVER-F-NOPORT, no port in a storm\r\n");
 #endif
 */
 				gds__log("SRVR_multi_thread: forcefully disconnecting a port");
@@ -635,8 +635,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						// Note that send_response() can post errors that wind up in this same handler
 /*
 #if defined(DEV_BUILD) && defined(DEBUG)
-						ConsolePrintf
-							("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
+						ConsolePrintf("%%ISERVER-F-NOMEM, virtual memory exhausted\r\n");
 #endif
 */
 						port->send_response(&request->req_send, 0, 0, status_vector, false);
@@ -673,11 +672,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		}
 	}
 	catch (const Firebird::Exception&) {
-		/* Some kind of unhandled error occured during server setup.  In lieu
-		 * of anything we CAN do, log something (and we might be so hosed
-		 * we can't log anything) and give up.
-		 * The likely error here is out-of-memory.
-		 */
+		// Some kind of unhandled error occured during server setup.  In lieu
+		// of anything we CAN do, log something (and we might be so hosed
+		// we can't log anything) and give up.
+		// The likely error here is out-of-memory.
 		gds__log("SRVR_multi_thread: error during startup, shutting down");
 	}
 	--cntServers;
@@ -1518,11 +1516,11 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		return;
 	}
 
-	/* For WNET and XNET we should send dummy op_disconnect packet
-	   to wakeup async port handling events on client side.
-	   For INET it's not necessary because INET client's async port
-	   wakes up while server performs shutdown(socket) call on its async port.
-	   See interface.cpp - event_thread(). */
+	// For WNET and XNET we should send dummy op_disconnect packet
+	// to wakeup async port handling events on client side.
+	// For INET it's not necessary because INET client's async port
+	// wakes up while server performs shutdown(socket) call on its async port.
+	// See interface.cpp - event_thread().
 
 	PACKET *packet = &rdb->rdb_packet;
 	if (this->port_async)
@@ -1555,10 +1553,10 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 				if (!transaction->rtr_limbo)
 					isc_rollback_transaction(status_vector, &transaction->rtr_handle);
 #ifdef SUPERSERVER
-				/* The underlying JRD subsystem will release all
-				   memory resources related to a limbo transaction
-				   as a side-effect of the database detach call below.
-				   However, the y-valve handle must be released. */
+				// The underlying JRD subsystem will release all
+				// memory resources related to a limbo transaction
+				// as a side-effect of the database detach call below.
+				// However, the y-valve handle must be released.
 				else
 					fb_disconnect_transaction(status_vector, &transaction->rtr_handle);
 #endif
@@ -4165,10 +4163,10 @@ static RMessage* scroll_cache(Rrq::rrq_repeat* tail, USHORT* direction, ULONG* o
 
 	if (*direction == blr_bof_forward || *direction == blr_eof_backward)
 	{
-		/* If offset is before our current position, just dump the cache because
-		   the server cache is purely a lookahead cache--we don't bother to cache
-		   back records because the client will cache those records, making it
-		   unlikely the client would be asking us for a record which is in our cache. */
+		// If offset is before our current position, just dump the cache because
+		// the server cache is purely a lookahead cache--we don't bother to cache
+		// back records because the client will cache those records, making it
+		// unlikely the client would be asking us for a record which is in our cache.
 
 		if (*offset < message->msg_absolute)
 			return dump_cache(tail);
@@ -4326,14 +4324,13 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 			*v++ = *status_vector++;
 
-			/* The status codes are converted to their offsets so that they
-			 * were compatible with the RDB implementation.  This was fine
-			 * when status codes were restricted to a single facility.  Now
-			 * that the facility is part of the status code we need to know
-			 * this on the client side, thus when talking with 6.0 and newer
-			 * clients, do not decode the status code, just send it to the
-			 * client.  The same check is made in interface.cpp::check_response
-			 */
+			// The status codes are converted to their offsets so that they
+			// were compatible with the RDB implementation.  This was fine
+			// when status codes were restricted to a single facility.  Now
+			// that the facility is part of the status code we need to know
+			// this on the client side, thus when talking with 6.0 and newer
+			// clients, do not decode the status code, just send it to the
+			// client.  The same check is made in interface.cpp::check_response
 
 			if (this->port_protocol < PROTOCOL_VERSION10) {
 				USHORT fac = 0, code_class = 0;

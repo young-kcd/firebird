@@ -678,14 +678,14 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif // WIN_NT
 
-/* Modification by luz (slightly modified by FSG)
-    instead of failing here, try applying hard-wired
-    translation of "gds_db" into "3050"
-    This way, a connection to a remote FB server
-    works even from clients with missing "gds_db"
-    entry in "services" file, which is important
-    for zero-installation clients.
-    */
+	// Modification by luz (slightly modified by FSG)
+	// instead of failing here, try applying hard-wired
+	// translation of "gds_db" into "3050"
+	// This way, a connection to a remote FB server
+	// works even from clients with missing "gds_db"
+	// entry in "services" file, which is important
+	// for zero-installation clients.
+
 	if (!service)
 	{
 		if (protocol == FB_SERVICE_NAME) {
@@ -1074,16 +1074,16 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		}
 	}
 
-	{
-/* If the environment varible ISC_INET_SERVER_HOME is set,
- * change the home directory to the specified directory.
- * Note that this will overrule the normal setting of
- * the current directory to the effective user's home directory.
- * This feature was added primarily for testing via remote
- * loopback - but does seem to be of good general use, so
- * is activated for the release version.
- * 1995-February-27 David Schnepper
- */
+	{ // scope
+		// If the environment varible ISC_INET_SERVER_HOME is set,
+		// change the home directory to the specified directory.
+		// Note that this will overrule the normal setting of
+		// the current directory to the effective user's home directory.
+		// This feature was added primarily for testing via remote
+		// loopback - but does seem to be of good general use, so
+		// is activated for the release version.
+		// 1995-February-27 David Schnepper
+
 		Firebird::PathName home;
 		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
 		{
@@ -1092,7 +1092,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 				// We continue after the error
 			}
 		}
-	}
+	} // end scope
 #endif // !WIN_NT
 
 	// store FULL user identity in port_user_name for security purposes
@@ -1268,16 +1268,14 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-/*
- * NJK - Determine address and port to use.
- *
- * The address returned by the server may be incorrect if it is behind a NAT box
- * so we must use the address that was used to connect the main socket, not the
- * address reported by the server.
- *
- * The port number reported by the server is used. For NAT support the port number
- * should be configured to be a fixed port number in the server configuration.
- */
+	// NJK - Determine address and port to use.
+	//
+	// The address returned by the server may be incorrect if it is behind a NAT box
+	// so we must use the address that was used to connect the main socket, not the
+	// address reported by the server.
+	//
+	// The port number reported by the server is used. For NAT support the port number
+	// should be configured to be a fixed port number in the server configuration.
 
 	memset(&address, 0, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
@@ -1449,15 +1447,14 @@ static void disconnect( rem_port* port)
  *
  **************************************/
 
-/* SO_LINGER was turned off on the initial bind when the server was started.
- * This will force a reset to be sent to the client when the socket is closed.
- * We only want this behavior in the case of the server terminiating
- * abnormally and not on an orderly shut down.  Because of this, turn the
- * SO_LINGER option back on for the socket.  The result of setsockopt isn't
- * too important at this stage since we are closing the socket anyway.  This
- * is an attempt to return the socket to a state where a graceful shutdown can
- * occur.
- */
+	// SO_LINGER was turned off on the initial bind when the server was started.
+	// This will force a reset to be sent to the client when the socket is closed.
+	// We only want this behavior in the case of the server terminiating
+	// abnormally and not on an orderly shut down.  Because of this, turn the
+	// SO_LINGER option back on for the socket.  The result of setsockopt isn't
+	// too important at this stage since we are closing the socket anyway.  This
+	// is an attempt to return the socket to a state where a graceful shutdown can
+	// occur.
 
 	if (port->port_linger.l_onoff) {
 		setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
@@ -1789,14 +1786,14 @@ static int get_host_address(const char* name,
 
 	const hostent* host = gethostbyname(name);
 
-	/* On Windows NT/9x, gethostbyname can only accomodate
-	 * 1 call at a time.  In this case it returns the error
-	 * WSAEINPROGRESS. On UNIX systems, this call may not succeed
-	 * because of a temporary error.  In this case, it returns
-	 * h_error set to TRY_AGAIN.  When these errors occur,
-	 * retry the operation a few times.
-	 * NOTE: This still does not guarantee success, but helps.
-	 */
+	// On Windows NT/9x, gethostbyname can only accomodate
+	// 1 call at a time.  In this case it returns the error
+	// WSAEINPROGRESS. On UNIX systems, this call may not succeed
+	// because of a temporary error.  In this case, it returns
+	// h_error set to TRY_AGAIN.  When these errors occur,
+	// retry the operation a few times.
+	// NOTE: This still does not guarantee success, but helps.
+
 	if ((!host) && (H_ERRNO == INET_RETRY_ERRNO)) {
 		for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 			if ( (host = gethostbyname(name)) )
@@ -1853,11 +1850,11 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
  *
  **************************************/
 
-	/* loop as long as we are receiving dummy packets, just
-	   throwing them away--note that if we are a server we won't
-	   be receiving them, but it is better to check for them at
-	   this level rather than try to catch them in all places where
-	   this routine is called */
+	// loop as long as we are receiving dummy packets, just
+	// throwing them away--note that if we are a server we won't
+	// be receiving them, but it is better to check for them at
+	// this level rather than try to catch them in all places where
+	// this routine is called
 
 	do {
 		if (!xdr_protocol(&main_port->port_receive, packet))
@@ -2799,10 +2796,10 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 
 	length = p2 - aux_buffer + l2;
 
-/* Now we're got a encode glump ready to stuff into the read buffer.
-   Unfortunately, if we just add it to the read buffer, we will shortly
-   overflow the buffer.  To avoid this, "scrumpf down" the active bits
-   in the read buffer, then add out stuff at the end. */
+	// Now we're got a encode glump ready to stuff into the read buffer.
+	// Unfortunately, if we just add it to the read buffer, we will shortly
+	// overflow the buffer.  To avoid this, "scrumpf down" the active bits
+	// in the read buffer, then add out stuff at the end.
 
 	xdrs = &port->port_receive;
 	p2 = xdrs->x_base;
@@ -2900,14 +2897,14 @@ static bool packet_receive(rem_port* port,
 
 	for (;;)
 	{
-		/* Implement an error-detection protocol to ensure that the client
-		   is still there.  Use the select() call with a timeout to wait on
-		   the connection for an incoming packet.  If none comes within a
-		   suitable time interval, write a dummy packet on the connection.
-		   If the client is not there, an error will be returned on the write.
-		   If the client is there, the dummy packet will be ignored by all
-		   InterBase clients V4 or greater.  This protocol will detect when
-		   clients are lost abnormally through reboot or network disconnect. */
+		// Implement an error-detection protocol to ensure that the client
+		// is still there.  Use the select() call with a timeout to wait on
+		// the connection for an incoming packet.  If none comes within a
+		// suitable time interval, write a dummy packet on the connection.
+		// If the client is not there, an error will be returned on the write.
+		// If the client is there, the dummy packet will be ignored by all
+		// InterBase clients V4 or greater.  This protocol will detect when
+		// clients are lost abnormally through reboot or network disconnect.
 
 		// Don't send op_dummy packets on aux port; the server won't
 		// read them because it only writes to aux ports.
