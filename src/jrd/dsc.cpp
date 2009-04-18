@@ -60,7 +60,7 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 	/*  -- in BLR_version4  DD-Mon-YYYY HH:MM:SS.MMMM */
 	9,							/* dtype_blob       FFFF:FFFF */
 	9,							/* dtype_array      FFFF:FFFF */
-	21							/* dtype_int64      -9223372036854775808 + decimal point */
+	20							/* dtype_int64      -9223372036854775808 */
 };
 
 /* blr to dsc type conversions */
@@ -760,7 +760,7 @@ int dsc::getStringLength() const
 USHORT DSC_convert_to_text_length(USHORT dsc_type)
 {
 	if (dsc_type < (sizeof(_DSC_convert_to_text_length) / sizeof(_DSC_convert_to_text_length[0])))
-		return _DSC_convert_to_text_length[dsc_type];
+		return _DSC_convert_to_text_length[dsc_type] + (dsc_type == dtype_int64 ? 1 : 0);
 	fb_assert(FALSE);
 	return 0;
 }
@@ -913,11 +913,11 @@ int DSC_string_length(const dsc* desc)
 	case dtype_varying:
 		return desc->dsc_length - sizeof(USHORT);
 	default:
-		if (desc->dsc_scale == 0)
-			return (int) DSC_convert_to_text_length(desc->dsc_dtype);
-		if (desc->dsc_scale < 0)
-			return (int) DSC_convert_to_text_length(desc->dsc_dtype) + 1;
-		return (int) DSC_convert_to_text_length(desc->dsc_dtype) + desc->dsc_scale;
+ 		if (!DTYPE_IS_EXACT(desc->dsc_dtype) || desc->dsc_scale == 0)
+ 			return (int) _DSC_convert_to_text_length[desc->dsc_dtype];
+ 		if (desc->dsc_scale < 0)
+			return (int) _DSC_convert_to_text_length[desc->dsc_dtype] + 1;
+		return (int) _DSC_convert_to_text_length[desc->dsc_dtype] + desc->dsc_scale;
 	}
 }
 

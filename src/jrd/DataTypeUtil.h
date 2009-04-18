@@ -48,6 +48,9 @@ public:
 	void makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length);
 	void makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args);
 
+private:
+	bool makeBlobOrText(dsc* result, const dsc* arg, bool force);
+
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;
 	virtual USHORT getDialect() const = 0;	// returns client dialect in DSQL and database dialect in JRD

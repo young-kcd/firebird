@@ -167,7 +167,7 @@ typedef struct dsc
 			return CS_BINARY;
 		}
 
-		return CS_ASCII;
+		return CS_NONE;
 	}
 
 	USHORT getTextType() const
@@ -183,7 +183,7 @@ typedef struct dsc
 			return CS_BINARY;
 		}
 
-		return CS_ASCII;
+		return CS_NONE;
 	}
 
 	void setTextType(USHORT ttype)
