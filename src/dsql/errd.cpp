@@ -219,7 +219,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 {
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
-// calculate length of the status
+	// calculate length of the status
 	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
@@ -309,16 +309,16 @@ void ERRD_punt(const ISC_STATUS* local)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-// copy local status into user status
+	// copy local status into user status
 	if (local) {
 		UTLD_copy_status(local, tdbb->tdbb_status_vector);
 	}
 
-// Save any strings in a permanent location
+	// Save any strings in a permanent location
 
 	UTLD_save_status_strings(tdbb->tdbb_status_vector);
 
-// Give up whatever we were doing and return to the user.
+	// Give up whatever we were doing and return to the user.
 
 	status_exception::raise(tdbb->tdbb_status_vector);
 }

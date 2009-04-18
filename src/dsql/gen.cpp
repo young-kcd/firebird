@@ -642,10 +642,10 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		GEN_expr(statement, *ptr);
 	}
 
-/* Check whether the node we just processed is for a dialect 3
-   operation which gives a different result than the corresponding
-   operation in dialect 1.  If it is, and if the client dialect is 2,
-   issue a warning about the difference. */
+	// Check whether the node we just processed is for a dialect 3
+	// operation which gives a different result than the corresponding
+	// operation in dialect 1.  If it is, and if the client dialect is 2,
+	// issue a warning about the difference.
 
 	switch (node->nod_type)
 	{
@@ -760,15 +760,14 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 				parameter->par_desc.setTextType(toCharSet);
 		}
 
-		/* For older clients - generate an error should they try and
-		   access data types which did not exist in the older dialect */
+		// For older clients - generate an error should they try and
+		// access data types which did not exist in the older dialect
 		if (statement->req_client_dialect <= SQL_DIALECT_V5)
 			switch (parameter->par_desc.dsc_dtype)
 			{
-
-				/* In V6.0 - older clients, which we distinguish by
-				   their use of SQL DIALECT 0 or 1, are forbidden
-				   from selecting values of new datatypes */
+				// In V6.0 - older clients, which we distinguish by
+				// their use of SQL DIALECT 0 or 1, are forbidden
+				// from selecting values of new datatypes
 				case dtype_sql_date:
 				case dtype_sql_time:
 				case dtype_int64:
@@ -936,7 +935,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		sw_reserve = false, sw_lock_timeout = false;
 	int misc_flags = 0;
 
-// Stuff some version info.
+	// Stuff some version info.
 	if (count = node->nod_count)
 		stuff(statement, isc_tpb_version1);
 
@@ -1258,23 +1257,23 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		stuff(statement, blr_abort);
 		string = (dsql_str*) node->nod_arg[e_xcps_name];
 		temp = node->nod_arg[e_xcps_msg];
-		/* if exception name is undefined,
-		   it means we have re-initiate semantics here,
-		   so blr_raise verb should be generated */
+		// if exception name is undefined,
+		// it means we have re-initiate semantics here,
+		// so blr_raise verb should be generated
 		if (!string)
 		{
 			stuff(statement, blr_raise);
 			return;
 		}
-		/* if exception value is defined,
-		   it means we have user-defined exception message here,
-		   so blr_exception_msg verb should be generated */
+		// if exception value is defined,
+		// it means we have user-defined exception message here,
+		// so blr_exception_msg verb should be generated
 		if (temp)
 		{
 			stuff(statement, blr_exception_msg);
 		}
-		/* otherwise go usual way,
-		   i.e. generate blr_exception */
+		// otherwise go usual way,
+		// i.e. generate blr_exception
 		else
 		{
 			stuff(statement, blr_exception);
@@ -1288,8 +1287,8 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			}
 		}
 		stuff_cstring(statement, string->str_data);
-		/* if exception value is defined,
-		   generate appropriate BLR verbs */
+		// if exception value is defined,
+		// generate appropriate BLR verbs
 		if (temp)
 		{
 			GEN_expr(statement, temp);
@@ -1406,7 +1405,7 @@ static void gen_aggregate( CompiledStatement* statement, const dsql_nod* node)
 	stuff_context(statement, context);
 	gen_rse(statement, node->nod_arg[e_agg_rse]);
 
-// Handle GROUP BY clause
+	// Handle GROUP BY clause
 
 	stuff(statement, blr_group_by);
 
@@ -1422,7 +1421,7 @@ static void gen_aggregate( CompiledStatement* statement, const dsql_nod* node)
 	else
 		stuff(statement, 0);
 
-// Generate value map
+	// Generate value map
 
 	gen_map(statement, context->ctx_map);
 }
@@ -1547,9 +1546,9 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 
 	case dtype_double:
 		{
-			/* this is used for approximate/large numeric literal
-			   which is transmitted to the engine as a string.
-			 */
+			// this is used for approximate/large numeric literal
+			// which is transmitted to the engine as a string.
+
 			GEN_descriptor(statement, desc, true);
 			// Length of string literal, cast because it could be > 127 bytes.
 			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
@@ -1573,24 +1572,24 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 			i64value = -i64value;
 		else if (i64value == MIN_SINT64)
 		{
-			/* UH OH!
-			 * yylex correctly recognized the digits as the most-negative
-			 * possible INT64 value, but unfortunately, there was no
-			 * preceding '-' (a fact which the lexer could not know).
-			 * The value is too big for a positive INT64 value, and it
-			 * didn't contain an exponent so it's not a valid DOUBLE
-			 * PRECISION literal either, so we have to bounce it.
-			 */
+			// UH OH!
+			// yylex correctly recognized the digits as the most-negative
+			// possible INT64 value, but unfortunately, there was no
+			// preceding '-' (a fact which the lexer could not know).
+			// The value is too big for a positive INT64 value, and it
+			// didn't contain an exponent so it's not a valid DOUBLE
+			// PRECISION literal either, so we have to bounce it.
+
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_arith_except) <<
 					  Arg::Gds(isc_numeric_out_of_range));
 		}
 
-		/* We and the lexer both agree that this is an SINT64 constant,
-		   * and if the value needed to be negated, it already has been.
-		   * If the value will fit into a 32-bit signed integer, generate
-		   * it that way, else as an INT64.
-		 */
+		// We and the lexer both agree that this is an SINT64 constant,
+		// and if the value needed to be negated, it already has been.
+		// If the value will fit into a 32-bit signed integer, generate
+		// it that way, else as an INT64.
+
 
 		if ((i64value >= (SINT64) MIN_SLONG) && (i64value <= (SINT64) MAX_SLONG))
 		{
@@ -1924,8 +1923,8 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 static void gen_field( CompiledStatement* statement, const dsql_ctx* context,
 	const dsql_fld* field, dsql_nod* indices)
 {
-/* For older clients - generate an error should they try and
- *    access data types which did not exist in the older dialect */
+	// For older clients - generate an error should they try and
+	// access data types which did not exist in the older dialect
 	if (statement->req_client_dialect <= SQL_DIALECT_V5)
 	{
 		switch (field->fld_dtype)
@@ -2183,7 +2182,7 @@ static void gen_parameter( CompiledStatement* statement, const dsql_par* paramet
  **/
 static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_expression)
 {
-// stuff the join type
+	// stuff the join type
 
 	const dsql_nod* list = plan_expression->nod_arg[1];
 	if (list->nod_count > 1) {
@@ -2194,7 +2193,7 @@ static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_express
 		stuff(statement, list->nod_count);
 	}
 
-// stuff one or more plan items
+	// stuff one or more plan items
 
 	const dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
@@ -2209,8 +2208,8 @@ static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_express
 
 		stuff(statement, blr_retrieve);
 
-		/* stuff the relation--the relation id itself is redundant except
-		   when there is a need to differentiate the base tables of views */
+		// stuff the relation--the relation id itself is redundant except
+		// when there is a need to differentiate the base tables of views
 
 		const dsql_nod* arg = node->nod_arg[0];
 		gen_relation(statement, (dsql_ctx*) arg->nod_arg[e_rel_context]);
@@ -2404,7 +2403,7 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 
 	dsql_nod* list = rse->nod_arg[e_rse_streams];
 
-// Handle source streams
+	// Handle source streams
 
 	if (list->nod_type == nod_union) {
 		stuff(statement, 1);
@@ -2468,7 +2467,7 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 		}
 	}
 
-// if the user specified an access plan to use, add it here
+	// if the user specified an access plan to use, add it here
 
 	if ((node = rse->nod_arg[e_rse_plan]) != NULL) {
 		stuff(statement, blr_plan);
@@ -2476,11 +2475,11 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 	}
 
 #ifdef SCROLLABLE_CURSORS
-/* generate a statement to be executed if the user scrolls
-   in a direction other than forward; a message is sent outside
-   the normal send/receive protocol to specify the direction
-   and offset to scroll; note that we do this only on a SELECT
-   type statement and only when talking to a 4.1 engine or greater */
+	// generate a statement to be executed if the user scrolls
+	// in a direction other than forward; a message is sent outside
+	// the normal send/receive protocol to specify the direction
+	// and offset to scroll; note that we do this only on a SELECT
+	// type statement and only when talking to a 4.1 engine or greater
 
 	if (statement->req_type == REQ_SELECT && statement->req_dbb->dbb_base_level >= 5)
 	{
@@ -2548,7 +2547,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 
 	fb_assert(rse->nod_type == nod_rse);
 
-// Set up parameter for things in the select list
+	// Set up parameter for things in the select list
 	const dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
@@ -2558,7 +2557,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 		MAKE_desc(statement, &parameter->par_desc, *ptr, NULL);
 	}
 
-// Set up parameter to handle EOF
+	// Set up parameter to handle EOF
 
 	dsql_par* parameter_eof = MAKE_parameter(statement->req_receive, false, false, 0, NULL);
 	statement->req_eof = parameter_eof;
@@ -2566,7 +2565,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	parameter_eof->par_desc.dsc_scale = 0;
 	parameter_eof->par_desc.dsc_length = sizeof(SSHORT);
 
-// Save DBKEYs for possible update later
+	// Save DBKEYs for possible update later
 
 	list = rse->nod_arg[e_rse_streams];
 
@@ -2601,8 +2600,8 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	}
 
 #ifdef SCROLLABLE_CURSORS
-/* define the parameters for the scrolling message--offset and direction,
-   in that order to make it easier to generate the statement */
+	// define the parameters for the scrolling message--offset and direction,
+	// in that order to make it easier to generate the statement
 
 	if (statement->req_type == REQ_SELECT && statement->req_dbb->dbb_base_level >= 5)
 	{
@@ -2622,7 +2621,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	}
 #endif
 
-// Generate definitions for the messages
+	// Generate definitions for the messages
 
 	GEN_port(statement, statement->req_receive);
 	dsql_msg* message = statement->req_send;
@@ -2635,14 +2634,14 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 		GEN_port(statement, statement->req_async);
 #endif
 
-// If there is a send message, build a RECEIVE
+	// If there is a send message, build a RECEIVE
 
 	if ((message = statement->req_send) != NULL) {
 		stuff(statement, blr_receive);
 		stuff(statement, message->msg_number);
 	}
 
-// Generate FOR loop
+	// Generate FOR loop
 
 	message = statement->req_receive;
 
@@ -2654,7 +2653,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	stuff(statement, message->msg_number);
 	stuff(statement, blr_begin);
 
-// Build body of FOR loop
+	// Build body of FOR loop
 
 	SSHORT constant;
 	dsc constant_desc;
@@ -3089,7 +3088,7 @@ static void gen_union( CompiledStatement* statement, const dsql_nod* union_node)
 		stuff(statement, blr_union);
 	}
 
-// Obtain the context for UNION from the first dsql_map* node
+	// Obtain the context for UNION from the first dsql_map* node
 	dsql_nod* items = union_node->nod_arg[e_rse_items];
 	dsql_nod* map_item = items->nod_arg[0];
 	// AB: First item could be a virtual field generated by derived table.

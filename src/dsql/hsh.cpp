@@ -230,9 +230,9 @@ dsql_sym* HSHD_lookup(const void* database,
 				symbol = symbol->sym_homonym;
 			}
 
-			/* If the symbol found was not part of the list of keywords for the
-			 * client connecting, then assume nothing was found
-			 */
+			// If the symbol found was not part of the list of keywords for the
+			// client connecting, then assume nothing was found
+
 			if (symbol)
 			{
 				if (parser_version < symbol->sym_version && type == SYM_keyword)
@@ -306,8 +306,8 @@ void HSHD_set_flag(const void* database,
 				   SYM_TYPE type,
 				   SSHORT flag)
 {
-/* as of now, there's no work to do if there is no database or if
-   the type is not a relation, procedure or function */
+	// as of now, there's no work to do if there is no database or if
+	// the type is not a relation, procedure or function
 
 	if (!database)
 		return;
@@ -339,9 +339,9 @@ void HSHD_set_flag(const void* database,
 				{
 					// the homonym is of the correct type
 
-					/* the next check is for the same relation or procedure ID,
-					   which indicates that it MAY be the same relation or
-					   procedure */
+					// the next check is for the same relation or procedure ID,
+					// which indicates that it MAY be the same relation or
+					// procedure
 
 					switch (type)
 					{

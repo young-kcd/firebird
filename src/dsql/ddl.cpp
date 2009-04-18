@@ -235,7 +235,7 @@ static const USHORT blr_dtypes[] =
 	blr_sql_date,				// dtype_sql_date
 	blr_sql_time,				// dtype_sql_time
 	blr_timestamp,				// dtype_timestamp
-	blr_blob,					// dtype_blob		// ASF: CAST use blr_blob2 because blr_blob don't fit in UCHAR
+	blr_blob,					// dtype_blob		// ASF: CAST use blr_blob2 because blr_blob doesn't fit in UCHAR
 	blr_short,					// dtype_array
 	blr_int64					// dtype_int64
 };
@@ -666,10 +666,10 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		}
 		else
 		{
-			/* If field is not specified with NATIONAL, or CHARACTER SET
-			 * treat it as a single-byte-per-character field of character set NONE.
-			 */
-			assign_field_length (field, 1);
+			// If field is not specified with NATIONAL, or CHARACTER SET
+			// treat it as a single-byte-per-character field of character set NONE.
+
+			assign_field_length(field, 1);
 			field->fld_ttype = 0;
 			if (!collation_name) {
 				return;
@@ -687,7 +687,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 	}
 
 
-// Find an intlsym for any specified character set name & collation name
+	// Find an intlsym for any specified character set name & collation name
 	const dsql_intlsym* resolved_type = NULL;
 
 	if (charset_name)
@@ -1184,8 +1184,8 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
  *
  **************************************/
 
-/* make the "define trigger" node the current statement ddl node so
-   that generating of BLR will be appropriate for trigger */
+	// make the "define trigger" node the current statement ddl node so
+	// that generating of BLR will be appropriate for trigger
 
 	dsql_nod* const saved_ddl_node = statement->req_ddl_node;
 
@@ -1232,10 +1232,10 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 		statement->begin_blr(isc_dyn_trg_blr);
 		statement->append_uchar(blr_begin);
 
-		/* create the "OLD" and "NEW" contexts for the trigger --
-		   the new one could be a dummy place holder to avoid resolving
-		   fields to that context but prevent relations referenced in
-		   the trigger actions from referencing the predefined "1" context */
+		// create the "OLD" and "NEW" contexts for the trigger --
+		// the new one could be a dummy place holder to avoid resolving
+		// fields to that context but prevent relations referenced in
+		// the trigger actions from referencing the predefined "1" context
 
 		reset_context_stack(statement);
 
@@ -1282,9 +1282,9 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 
 	statement->append_uchar(isc_dyn_end);
 
-/* the statement type may have been set incorrectly when parsing
-   the trigger actions, so reset it to reflect the fact that this
-   is a data definition statement; also reset the ddl node */
+	// the statement type may have been set incorrectly when parsing
+	// the trigger actions, so reset it to reflect the fact that this
+	// is a data definition statement; also reset the ddl node
 
 	statement->req_type = REQ_DDL;
 	statement->req_ddl_node = saved_ddl_node;
@@ -1313,9 +1313,8 @@ static void define_database(CompiledStatement* statement)
 	const dsql_nod* ddl_node = statement->req_ddl_node;
 
 	statement->append_uchar(isc_dyn_mod_database);
-/*
-statement->append_number(isc_dyn_rel_sql_protection, 1);
-*/
+
+	// statement->append_number(isc_dyn_rel_sql_protection, 1);
 
 	const dsql_nod* elements = ddl_node->nod_arg[e_database_initial_desc];
 
@@ -1516,23 +1515,23 @@ static void define_set_default_trg(	CompiledStatement*    statement,
 
 		statement->append_uchar(blr_assignment);
 
-		/* here stuff the default value as blr_literal .... or blr_null
-		   if this col. does not have an applicable default */
+		// here stuff the default value as blr_literal .... or blr_null
+		// if this col. does not have an applicable default
 
-		/* the default is determined in many cases:
-		   (1) the info. for the column is in memory. (This is because
-		   the column is being created in this ddl statement)
-		   (1-a) the table has a column level default. We get this by
-		   searching the dsql parse tree starting from the ddl node.
-		   (1-b) the table does not have a column level default, but
-		   has a domain default. We get the domain name from the dsql
-		   parse tree and call METD_get_domain_default to read the
-		   default from the system tables.
-		   (2) The default-info for this column is not in memory (This is
-		   because this is an alter table ddl statement). The table
-		   already exists; therefore we get the column and/or domain
-		   default value from the system tables by calling:
-		   METD_get_col_default().  */
+		// the default is determined in many cases:
+		// (1) the info. for the column is in memory. (This is because
+		// the column is being created in this ddl statement)
+		// (1-a) the table has a column level default. We get this by
+		// searching the dsql parse tree starting from the ddl node.
+		// (1-b) the table does not have a column level default, but
+		// has a domain default. We get the domain name from the dsql
+		// parse tree and call METD_get_domain_default to read the
+		// default from the system tables.
+		// (2) The default-info for this column is not in memory (This is
+		// because this is an alter table ddl statement). The table
+		// already exists; therefore we get the column and/or domain
+		// default value from the system tables by calling:
+		// METD_get_col_default().
 
 		bool found_default = false;
 		bool search_for_default = true;
@@ -1581,8 +1580,8 @@ static void define_set_default_trg(	CompiledStatement*    statement,
 					break;
 				}
 
-				/* case: (1-b): domain name is available. Column level default
-				   is not declared. so get the domain default */
+				// case: (1-b): domain name is available. Column level default
+				// is not declared. so get the domain default
 				const USHORT def_len =
 					METD_get_domain_default(statement, domain_name, &found_default,
 											default_val, sizeof(default_val));
@@ -1780,15 +1779,15 @@ static void define_domain(CompiledStatement* statement)
 						set_nod_value_attributes(node1->nod_arg[e_cnstr_condition], field);
 					}
 
-					/* Increment the context level for this statement, so
-					   that the context number for any RSE generated for a
-					   SELECT within the CHECK clause will be greater than
-					   0.  In the environment of a domain check
-					   constraint, context number 0 is reserved for the
-					   "blr_fid, 0, 0, 0," which is emitted for a
-					   nod_dom_value, corresponding to an occurance of the
-					   VALUE keyword in the body of the check constraint.
-					   -- chrisj 1999-08-20 */
+					// Increment the context level for this statement, so
+					// that the context number for any RSE generated for a
+					// SELECT within the CHECK clause will be greater than
+					// 0.  In the environment of a domain check
+					// constraint, context number 0 is reserved for the
+					// "blr_fid, 0, 0, 0," which is emitted for a
+					// nod_dom_value, corresponding to an occurance of the
+					// VALUE keyword in the body of the check constraint.
+					// -- chrisj 1999-08-20
 					statement->req_context_number++;
 					node = PASS1_node(statement, node1->nod_arg[e_cnstr_condition]);
 
@@ -1869,7 +1868,7 @@ static void define_field(CompiledStatement* statement,
  **************************************/
 	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dfl_field];
 
-// add the field to the relation being defined for parsing purposes
+	// add the field to the relation being defined for parsing purposes
 
 	bool permanent = false;
 	dsql_rel* relation = statement->req_relation;
@@ -2284,8 +2283,8 @@ static void define_index(CompiledStatement* statement)
 	statement->append_cstring(isc_dyn_def_idx, index_name->str_data);
 	statement->append_cstring(isc_dyn_rel_name, relation_name->str_data);
 
-/* go through the fields list, making an index segment for each field,
-   unless we have a computation, in which case generate an expression index */
+	// go through the fields list, making an index segment for each field,
+	// unless we have a computation, in which case generate an expression index
 
 	if (field_list->nod_type == nod_list)
 	{
@@ -2299,7 +2298,7 @@ static void define_index(CompiledStatement* statement)
 	else if (field_list->nod_type == nod_def_computed)
 		define_computed(statement, relation_node, NULL, field_list);
 
-// check for a unique index
+	// check for a unique index
 
 	if (ddl_node->nod_arg[e_idx_unique]) {
 		statement->append_number(isc_dyn_idx_unique, 1);
@@ -3066,8 +3065,8 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		statement->append_string(isc_dyn_mod_trigger, trigger_name->str_data, trigger_name->str_length);
 		if (trigger_node->nod_arg[e_trg_actions])
 		{
-			/* Since we will be updating the body of the trigger, we need
-			   to know what relation the trigger relates to. */
+			// Since we will be updating the body of the trigger, we need
+			// to know what relation the trigger relates to.
 
 			dsql_str* relation_name = NULL;
 			bool found = METD_get_trigger(statement, trigger_name, &relation_name, &trig_type);
@@ -3128,10 +3127,10 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 
 	if (actions)
 	{
-		/* create the "OLD" and "NEW" contexts for the trigger --
-		   the new one could be a dummy place holder to avoid resolving
-		   fields to that context but prevent relations referenced in
-		   the trigger actions from referencing the predefined "1" context */
+		// create the "OLD" and "NEW" contexts for the trigger --
+		// the new one could be a dummy place holder to avoid resolving
+		// fields to that context but prevent relations referenced in
+		// the trigger actions from referencing the predefined "1" context
 
 		reset_context_stack(statement);
 
@@ -3191,9 +3190,9 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		statement->append_uchar(blr_end);
 		statement->end_blr();
 
-		/* the statement type may have been set incorrectly when parsing
-		   the trigger actions, so reset it to reflect the fact that this
-		   is a data definition statement; also reset the ddl node */
+		// the statement type may have been set incorrectly when parsing
+		// the trigger actions, so reset it to reflect the fact that this
+		// is a data definition statement; also reset the ddl node
 
 		statement->req_type = REQ_DDL;
 	}
@@ -3244,8 +3243,8 @@ static void define_udf(CompiledStatement* statement)
 			post_607(Arg::Gds(isc_return_mode_err));
 		}
 
-		/* For functions returning a blob, coerce return argument position to
-		   be the last parameter. */
+		// For functions returning a blob, coerce return argument position to
+		// be the last parameter.
 
 		if (field->fld_dtype == dtype_blob)
 		{
@@ -3299,20 +3298,19 @@ static void define_udf(CompiledStatement* statement)
 		position = 1;
 	}
 
-// Now define all the arguments
+	// Now define all the arguments
 	if (!position)
 	{
-		/* CVC: This is case of "returns <type> [by value|reference]" */
+		// CVC: This is case of "returns <type> [by value|reference]"
 		if (field->fld_dtype == dtype_blob)
 		{
-		/* CVC: I need to test returning blobs by descriptor before allowing the
-		change there. For now, I ignore the return type specification. */
+			// CVC: I need to test returning blobs by descriptor before allowing the
+			// change there. For now, I ignore the return type specification.
 			const bool free_it = ((SSHORT) ret_val_ptr[1]->getSlong() < 0);
 			statement->append_number(isc_dyn_def_function_arg, blob_position);
 			statement->append_number(isc_dyn_func_mechanism,
 					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
-			/* if we have the free_it set then the blob has
-			   to be freed on return */
+			// if we have the free_it set then the blob has to be freed on return
 		}
 		else
 		{
@@ -3329,7 +3327,7 @@ static void define_udf(CompiledStatement* statement)
 
 	fb_assert(position == 1);
 
-	/* CVC: This for all params, including the case of "returns parameter <N>" */
+	// CVC: This for all params, including the case of "returns parameter <N>"
 
 	if (arguments)
 	{
@@ -3343,7 +3341,7 @@ static void define_udf(CompiledStatement* statement)
 				post_607(Arg::Gds(isc_extern_func_err));
 			}
 
-			/*field = (dsql_fld*) *ptr; */
+			// field = (dsql_fld*) *ptr;
 			dsql_nod** param_node = (*ptr)->nod_arg;
 			field = (dsql_fld*) param_node[e_udf_param_field];
 
@@ -3390,7 +3388,7 @@ static void define_update_action(CompiledStatement* statement,
  **************************************/
 	dsql_nod* ddl_node = statement->req_ddl_node;
 
-// check whether this is an updatable view definition
+	// check whether this is an updatable view definition
 
 	dsql_nod* select_node = NULL;
 	dsql_nod* select_expr = NULL;
@@ -3407,16 +3405,16 @@ static void define_update_action(CompiledStatement* statement,
 		fb_assert(false);
 	}
 
-// use the relation referenced in the select statement for rse
+	// use the relation referenced in the select statement for rse
 
 	dsql_nod* relation_node = MAKE_node(nod_relation_name, (int) e_rln_count);
 	relation_node->nod_arg[e_rln_name] = from_list->nod_arg[0]->nod_arg[e_rln_name];
 	relation_node->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
 	*base_relation = relation_node;
 
-/* get the list of values and fields to compare to -- if there is
-   no list of fields, get all fields in the base relation that
-   are not computed */
+	// get the list of values and fields to compare to -- if there is
+	// no list of fields, get all fields in the base relation that
+	// are not computed
 
 	dsql_nod* values_node = ddl_node->nod_arg[e_view_fields];
 	dsql_nod* fields_node = select_expr->nod_arg[e_qry_list];
@@ -3436,7 +3434,7 @@ static void define_update_action(CompiledStatement* statement,
 	if (!values_node)
 		values_node = fields_node;
 
-// generate the list of assignments to fields in the base relation
+	// generate the list of assignments to fields in the base relation
 
 	dsql_nod** ptr = fields_node->nod_arg;
 	const dsql_nod* const* const end = ptr + fields_node->nod_count;
@@ -3943,8 +3941,8 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 	select_expr = select_expr->nod_arg[e_sel_query_spec];
 	dsql_nod* view_fields = saved_ddl_node->nod_arg[e_view_fields];
 
-/* make the "define trigger" node the current statement ddl node so
-   that generating of BLR will be appropriate for trigger */
+	// make the "define trigger" node the current statement ddl node so
+	// that generating of BLR will be appropriate for trigger
 
 	statement->req_ddl_node = node;
 
@@ -3974,9 +3972,9 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 	}
 	else
 	{
-		/* If we don't have a trigger type assigned, then this is just a template
-		   definition for use with domains.  The real triggers are defined when
-		   the domain is used. */
+		// If we don't have a trigger type assigned, then this is just a template
+		// definition for use with domains.  The real triggers are defined when
+		// the domain is used.
 		trig_type = 0;
 	}
 
@@ -3989,16 +3987,16 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
 		statement->begin_blr(isc_dyn_trg_blr);
 		statement->append_uchar(blr_begin);
 
-		/* create the "OLD" and "NEW" contexts for the trigger --
-		   the new one could be a dummy place holder to avoid resolving
-		   fields to that context but prevent relations referenced in
-		   the trigger actions from referencing the predefined "1" context */
+		// create the "OLD" and "NEW" contexts for the trigger --
+		// the new one could be a dummy place holder to avoid resolving
+		// fields to that context but prevent relations referenced in
+		// the trigger actions from referencing the predefined "1" context
 
 		dsql_ctx* sav_context = 0;
 		dsql_ctx* context = 0;
 		if (statement->req_context_number) {
-			/* If an alias is specified for the single base table involved,
-			   save and then add the context                               */
+			// If an alias is specified for the single base table involved,
+			// save and then add the context
 
 			context = statement->req_context->object();
 			if (context->ctx_alias) {
@@ -4185,7 +4183,8 @@ static void delete_relation_view (CompiledStatement* statement, dsql_nod* node, 
 			post_607(Arg::Gds(isc_dsql_table_not_found) << Arg::Str(string->str_data));
 		}
 	}
-	else { /* node->nod_type == nod_del_view, nod_redef_view */
+	else {
+		// node->nod_type == nod_del_view, nod_redef_view
 		if (!relation && !silent_deletion || relation && !(relation->rel_flags & REL_view))
 		{
 			post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
@@ -4333,16 +4332,16 @@ static void foreign_key(CompiledStatement* statement, dsql_nod* element, const c
 	dsql_nod* relation2_node = element->nod_arg[e_for_reftable];
 	const dsql_str* relation2 = (dsql_str*) relation2_node->nod_arg[e_rln_name];
 
-/* If there is a referenced table name but no referenced field names, the
-   primary key of the referenced table designates the referenced fields. */
+	// If there is a referenced table name but no referenced field names, the
+	// primary key of the referenced table designates the referenced fields.
 	dsql_nod* columns2 = element->nod_arg[e_for_refcolumns];
 	if (!columns2)
 	{
 		element->nod_arg[e_for_refcolumns] = columns2 = METD_get_primary_key(statement, relation2);
 
-		/* If there is NEITHER an explicitly referenced field name, NOR does
-		   the referenced table have a primary key to serve as the implicitly
-		   referenced field, fail. */
+		// If there is NEITHER an explicitly referenced field name, NOR does
+		// the referenced table have a primary key to serve as the implicitly
+		// referenced field, fail.
 		if (!columns2)
 		{
 			// "REFERENCES table" without "(column)" requires PRIMARY
@@ -4357,8 +4356,8 @@ static void foreign_key(CompiledStatement* statement, dsql_nod* element, const c
 		post_607(Arg::Gds(isc_key_field_count_err));
 	}
 
-/* define the foreign key index and the triggers that may be needed
-   for referential integrity action. */
+	// define the foreign key index and the triggers that may be needed
+	// for referential integrity action.
 
 	make_index_trg_ref_int(statement, element, columns1, element->nod_arg[e_for_refcolumns],
 						   relation2->str_data, index_name);
@@ -4821,9 +4820,9 @@ static void make_index(	CompiledStatement*    statement,
  *
  **************************************/
 
-	/* stuff either user-defined name or
-	   zero-length name, indicating that an index name
-	   should be generated */
+	// stuff either user-defined name or
+	// zero-length name, indicating that an index name
+	// should be generated
 
 	fb_assert(element->nod_type != nod_foreign);
 
@@ -4890,17 +4889,17 @@ static void make_index_trg_ref_int(	CompiledStatement*    statement,
 
 	fb_assert(element->nod_type == nod_foreign)
 
-	/* for_rel_name_str is the name of the relation
-	   on which the ddl operation is being done,
-	   in this case the foreign key table  */
+	// for_rel_name_str is the name of the relation
+	// on which the ddl operation is being done,
+	// in this case the foreign key table
 
 	dsql_nod* ddl_node         = statement->req_ddl_node;
 	dsql_nod* for_rel_node     = ddl_node->nod_arg[e_drl_name];
 	const dsql_str* for_rel_name_str = (dsql_str*) for_rel_node->nod_arg[e_rln_name];
 
-	/* stuff either user-defined name or
-	   zero-length name, indicating that an index name
-	   should be generated */
+	// stuff either user-defined name or
+	// zero-length name, indicating that an index name
+	// should be generated
 
 	dsql_nod* index = element->nod_arg[e_for_index];
 	fb_assert(index);
@@ -5033,7 +5032,7 @@ static void modify_database( CompiledStatement* statement)
 	const dsql_nod* ddl_node = statement->req_ddl_node;
 
 	statement->append_uchar(isc_dyn_mod_database);
-// statement->append_number(isc_dyn_rel_sql_protection, 1);
+	// statement->append_number(isc_dyn_rel_sql_protection, 1);
 	bool drop_difference = false;
 
 	const dsql_nod* elements = ddl_node->nod_arg[e_adb_all];
@@ -5106,9 +5105,9 @@ static void modify_domain( CompiledStatement* statement)
 	dsql_str* string;
 	dsql_fld* field;
 	dsql_fld local_field(statement->req_pool);
-	/* CVC: This array used with check_one_call to ensure each modification
-	   option is called only once. Enlarge it if the switch() below gets more
-	   cases. */
+	// CVC: This array used with check_one_call to ensure each modification
+	// option is called only once. Enlarge it if the switch() below gets more
+	// cases.
 	USHORT repetition_count[6];
 
 	dsql_nod* ddl_node = statement->req_ddl_node;
@@ -5118,8 +5117,8 @@ static void modify_domain( CompiledStatement* statement)
 
 	statement->append_cstring(isc_dyn_mod_global_fld, domain_name->str_data);
 
-	/* Is MOVE_CLEAR enough for all platforms?
-	MOVE_CLEAR (repetition_count, sizeof (repetition_count)); */
+	// Is MOVE_CLEAR enough for all platforms?
+	// MOVE_CLEAR (repetition_count, sizeof (repetition_count));
 	const USHORT rtop = FB_NELEM(repetition_count);
 	USHORT* p = repetition_count;
 	while (p < repetition_count + rtop) {
@@ -5143,9 +5142,9 @@ static void modify_domain( CompiledStatement* statement)
 			statement->append_uchar(isc_dyn_single_validation);
 			statement->begin_blr(isc_dyn_fld_validation_blr);
 
-			/* Get the attributes of the domain, and set any occurances of
-			   nod_dom_value (corresponding to the keyword VALUE) to the
-			   correct type, length, scale, etc. */
+			// Get the attributes of the domain, and set any occurances of
+			// nod_dom_value (corresponding to the keyword VALUE) to the
+			// correct type, length, scale, etc.
 			if (!METD_get_domain(statement, &local_field, domain_name->str_data))
 			{
 				// Specified domain or source field does not exist
@@ -5155,14 +5154,14 @@ static void modify_domain( CompiledStatement* statement)
 			if (element->nod_arg[e_cnstr_condition])
 				set_nod_value_attributes(element->nod_arg[e_cnstr_condition], &local_field);
 
-			/* Increment the context level for this statement, so that
-			   the context number for any RSE generated for a SELECT
-			   within the CHECK clause will be greater than 0.  In the
-			   environment of a domain check constraint, context
-			   number 0 is reserved for the "blr_fid, 0, 0, 0," which
-			   is emitted for a nod_dom_value, corresponding to an
-			   occurance of the VALUE keyword in the body of the check
-			   constraint.  -- chrisj 1999-08-20 */
+			// Increment the context level for this statement, so that
+			// the context number for any RSE generated for a SELECT
+			// within the CHECK clause will be greater than 0.  In the
+			// environment of a domain check constraint, context
+			// number 0 is reserved for the "blr_fid, 0, 0, 0," which
+			// is emitted for a nod_dom_value, corresponding to an
+			// occurance of the VALUE keyword in the body of the check
+			// constraint.  -- chrisj 1999-08-20
 			statement->req_context_number++;
 
 			{
@@ -5289,9 +5288,9 @@ static void put_user_grant(CompiledStatement* statement, const dsql_nod* user)
 		break;
 
 	default:
-		/* CVC: Here we should complain: DYN doesn't check parameters
-		   and it will write trash in rdb$user_privileges. We probably
-		   should complain in most cases when "name" is blank, too. */
+		// CVC: Here we should complain: DYN doesn't check parameters
+		// and it will write trash in rdb$user_privileges. We probably
+		// should complain in most cases when "name" is blank, too.
 		break;
 	}
 }
@@ -5324,7 +5323,7 @@ static void modify_privilege(CompiledStatement* statement,
 		statement->append_uchar(isc_dyn_revoke);
 	}
 
-// stuff the privileges string
+	// stuff the privileges string
 
 	SSHORT priv_count = 0;
 	statement->append_ushort(0);
@@ -5486,9 +5485,8 @@ static void modify_relation(CompiledStatement* statement)
 				  Arg::Gds(isc_random) << Arg::Str(linecol));
 	}
 
-/* need to handle error that occur in generating dyn string.
- * If there is an error, get rid of the cached data
- */
+	// need to handle error that occur in generating dyn string.
+	// If there is an error, get rid of the cached data
 
 	try {
 
@@ -5543,16 +5541,15 @@ static void modify_relation(CompiledStatement* statement)
 
 		case nod_del_field:
 
-			/* Fix for bug 8054:
-
-			   [CASCADE | RESTRICT] syntax is available in IB4.5, but not
-			   required until v5.0.
-
-			   Option CASCADE causes an error :
-			   unsupported DSQL construct
-
-			   Option RESTRICT is default behaviour.
-			 */
+			// Fix for bug 8054:
+			//
+			// [CASCADE | RESTRICT] syntax is available in IB4.5, but not
+			// required until v5.0.
+			//
+			// Option CASCADE causes an error :
+			// unsupported DSQL construct
+			//
+			// Option RESTRICT is default behaviour.
 
 			field_node = element->nod_arg[0];
 			field_name = (dsql_str*) field_node->nod_arg[e_fln_name];
@@ -5847,7 +5844,7 @@ static void put_descriptor(CompiledStatement* statement, const dsc* desc)
 static void put_dtype(CompiledStatement* statement, const dsql_fld* field, bool use_subtype)
 {
 #ifdef DEV_BUILD
-// Check if the field describes a known datatype
+	// Check if the field describes a known datatype
 
 	if (field->fld_dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[field->fld_dtype])
 	{
@@ -6427,7 +6424,7 @@ static void stuff_matching_blr(CompiledStatement* statement, const dsql_nod* for
  *
  **************************************/
 
-// count of foreign key columns
+	// count of foreign key columns
 	fb_assert(prim_columns->nod_count == for_columns->nod_count);
 	fb_assert(prim_columns->nod_count != 0);
 
@@ -6688,12 +6685,11 @@ static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
 			}
 			else if ((nod_constant != child->nod_type) && (child->nod_count > 0))
 			{
-				/* A nod_constant can have nod_arg entries which are not really
-				   pointers to other nodes, but rather integer values, so
-				   it is not safe to scan through its children.  Fortunately,
-				   it cannot have a nod_dom_value as a child in any case, so
-				   we lose nothing by skipping it.
-				 */
+				// A nod_constant can have nod_arg entries which are not really
+				// pointers to other nodes, but rather integer values, so
+				// it is not safe to scan through its children.  Fortunately,
+				// it cannot have a nod_dom_value as a child in any case, so
+				// we lose nothing by skipping it.
 
 				set_nod_value_attributes(child, field);
 			}
@@ -6807,15 +6803,18 @@ void CompiledStatement::append_string(UCHAR verb, const char* string, USHORT len
 		append_uchar(length);
 	}
 
-	/* CVC: I preserve this code but it's inconsistent: we first log the length
-	then we check the null terminator. If we want this, we should recalculate the
-	length and log the correct length instead.
-	if (string) {
+	// CVC: I preserve this code but it's inconsistent: we first log the length
+	// then we check the null terminator. If we want this, we should recalculate the
+	// length and log the correct length instead.
+	/*
+	if (string)
+	{
 		for (; length-- && *string; string++) {
 			append_uchar(*string);
 		}
 	}
 	*/
+
 	if (string)
 		append_raw_string(string, length);
 }
@@ -6876,9 +6875,9 @@ void CompiledStatement::generate_unnamed_trigger_beginning(bool	on_update_trigge
 	// the trigger blr
 	begin_blr(isc_dyn_trg_blr);
 
-/* for ON UPDATE TRIGGER only: generate the trigger firing condition:
-   if prim_key.old_value != prim_key.new value.
-   Note that the key could consist of multiple columns */
+	// for ON UPDATE TRIGGER only: generate the trigger firing condition:
+	// if prim_key.old_value != prim_key.new value.
+	// Note that the key could consist of multiple columns
 
 	if (on_update_trigger) {
 		stuff_trg_firing_cond(this, prim_columns);

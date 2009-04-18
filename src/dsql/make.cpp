@@ -68,10 +68,9 @@ using namespace Jrd;
 using namespace Dsql;
 using namespace Firebird;
 
-/* Firebird provides transparent conversion from string to date in
- * contexts where it makes sense.  This macro checks a descriptor to
- * see if it is something that *could* represent a date value
- */
+// Firebird provides transparent conversion from string to date in
+// contexts where it makes sense.  This macro checks a descriptor to
+// see if it is something that *could* represent a date value
 static inline bool could_be_date(const dsc& d)
 {
 	return DTYPE_IS_DATE(d.dsc_dtype) || (d.dsc_dtype <= dtype_any_text);
@@ -146,12 +145,12 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 	case CONSTANT_DOUBLE:
 		DEV_BLKCHK(constant, dsql_type_str);
 
-		/* This is a numeric value which is transported to the engine as
-		 * a string.  The engine will convert it. Use dtype_double so that
-		 the engine can distinguish it from an actual string.
-		 Note: Due to the size of dsc_scale we are limited to numeric
-		 constants of less than 256 bytes.
-		 */
+		// This is a numeric value which is transported to the engine as
+		// a string.  The engine will convert it. Use dtype_double so that
+		// the engine can distinguish it from an actual string.
+		// Note: Due to the size of dsc_scale we are limited to numeric
+		// constants of less than 256 bytes.
+
 		node->nod_desc.dsc_dtype = dtype_double;
 		// Scale has no use for double
 		node->nod_desc.dsc_scale = static_cast<signed char>(constant->str_length);
@@ -352,7 +351,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
 	node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 	node->nod_desc.dsc_ttype() = character_set;
-// carry a pointer to the constant to resolve character set in pass1
+	// carry a pointer to the constant to resolve character set in pass1
 	node->nod_arg[0] = (dsql_nod*) constant;
 
 	return node;
@@ -426,9 +425,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_agg_count:
-/* count2
-    case nod_agg_distinct:
-*/
+// count2
+//    case nod_agg_distinct:
+
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_sub_type = 0;
@@ -671,15 +670,15 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				{
 					// <any date> - <any date>
 
-					/* Legal permutations are:
-					   <timestamp> - <timestamp>
-					   <timestamp> - <date>
-					   <date> - <date>
-					   <date> - <timestamp>
-					   <time> - <time>
-					   <timestamp> - <string>
-					   <string> - <timestamp>
-					   <string> - <string>   */
+					// Legal permutations are:
+					// <timestamp> - <timestamp>
+					// <timestamp> - <date>
+					// <date> - <date>
+					// <date> - <timestamp>
+					// <time> - <time>
+					// <timestamp> - <string>
+					// <string> - <timestamp>
+					// <string> - <string>
 
 					if (DTYPE_IS_TEXT(desc1.dsc_dtype))
 						dtype = dtype_timestamp;
@@ -801,10 +800,10 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 						Arg::Gds(isc_dsql_nostring_addsub_dial3));
 		}
 
-		/* Determine the TYPE of arithmetic to perform, store it
-		   in dtype.  Note:  this is different from the result of
-		   the operation, as <timestamp>-<timestamp> uses
-		   <timestamp> arithmetic, but returns a <double> */
+		// Determine the TYPE of arithmetic to perform, store it
+		// in dtype.  Note:  this is different from the result of
+		// the operation, as <timestamp>-<timestamp> uses
+		// <timestamp> arithmetic, but returns a <double>
 		if (DTYPE_IS_EXACT(dtype1) && DTYPE_IS_EXACT(dtype2))
 		{
 			dtype = dtype_int64;
@@ -841,12 +840,12 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				if (node->nod_type == nod_subtract2)
 				{
 					// <any date> - <any date>
-					/* Legal permutations are:
-					   <timestamp> - <timestamp>
-					   <timestamp> - <date>
-					   <date> - <date>
-					   <date> - <timestamp>
-					   <time> - <time> */
+					// Legal permutations are:
+					// <timestamp> - <timestamp>
+					// <timestamp> - <date>
+					// <date> - <date>
+					// <date> - <timestamp>
+					// <time> - <time>
 
 					if (dtype1 == dtype2)
 						dtype = dtype1;
@@ -882,8 +881,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				}
 				else if (is_date_and_time(desc1, desc2))
 				{
-					/* <date> + <time> */
-					/* <time> + <date> */
+					// <date> + <time>
+					// <time> + <date>
 					desc->dsc_dtype = dtype_timestamp;
 					desc->dsc_length = type_lengths[dtype_timestamp];
 					desc->dsc_scale = 0;
@@ -909,7 +908,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			}
 			else
 			{
-				/* <non-date> - <date> */
+				// <non-date> - <date>
 				fb_assert(node->nod_type == nod_subtract2);
 				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 							Arg::Gds(isc_dsql_invalid_type_minus_date));
@@ -934,9 +933,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			desc->dsc_sub_type = 0;
 			desc->dsc_length = sizeof(SINT64);
 
-			/* The result type is int64 because both operands are
-			   exact numeric: hence we don't need the NUMERIC_SCALE
-			   macro here. */
+			// The result type is int64 because both operands are
+			// exact numeric: hence we don't need the NUMERIC_SCALE
+			// macro here.
 			fb_assert(desc1.dsc_dtype == dtype_unknown || DTYPE_IS_EXACT(desc1.dsc_dtype));
 			fb_assert(desc2.dsc_dtype == dtype_unknown || DTYPE_IS_EXACT(desc2.dsc_dtype));
 
@@ -1204,9 +1203,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			desc->dsc_dtype = static_cast<UCHAR>(userFunc->udf_dtype);
 			desc->dsc_length = userFunc->udf_length;
 			desc->dsc_scale = static_cast<SCHAR>(userFunc->udf_scale);
-			/* CVC: Setting flags to zero obviously impeded DSQL to acknowledge
-			the fact that any UDF can return NULL simply returning a NULL
-			pointer. */
+			// CVC: Setting flags to zero obviously impeded DSQL to acknowledge
+			// the fact that any UDF can return NULL simply returning a NULL
+			// pointer.
 			desc->dsc_flags = DSC_nullable;
 
 			if (desc->dsc_dtype <= dtype_any_text) {
@@ -1272,7 +1271,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		}
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
-		desc->dsc_flags = 0; /* Can first/skip accept NULL in the future? */
+		desc->dsc_flags = 0; // Can first/skip accept NULL in the future?
 		return;
 
 	case nod_field:
@@ -1360,12 +1359,13 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_parameter:
-		/* We don't actually know the datatype of a parameter -
-		   we have to guess it based on the context that the
-		   parameter appears in. (This is done is pass1.c::set_parameter_type())
-		   However, a parameter can appear as part of an expression.
-		   As MAKE_desc is used for both determination of parameter
-		   types and for expression type checking, we just continue. */
+		// We don't actually know the datatype of a parameter -
+		// we have to guess it based on the context that the
+		// parameter appears in. (This is done is pass1.c::set_parameter_type())
+		// However, a parameter can appear as part of an expression.
+		// As MAKE_desc is used for both determination of parameter
+		// types and for expression type checking, we just continue.
+
 		if (node->nod_desc.dsc_dtype)
 		{
 			*desc = node->nod_desc;
@@ -1373,18 +1373,18 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_null:
-		/* This occurs when SQL statement specifies a literal NULL, eg:
-		 *  SELECT NULL FROM TABLE1;
-		 * As we don't have a <dtype_null, SQL_NULL> datatype pairing,
-		 * we don't know how to map this NULL to a host-language
-		 * datatype.  Therefore we now describe it as a
-		 * CHAR(1) CHARACTER SET NONE type.
-		 * No value will ever be sent back, as the value of the select
-		 * will be NULL - this is only for purposes of DESCRIBING
-		 * the statement.  Note that this mapping could be done in dsql.cpp
-		 * as part of the DESCRIBE statement - but I suspect other areas
-		 * of the code would break if this is declared dtype_unknown.
-		 */
+		// This occurs when SQL statement specifies a literal NULL, eg:
+		//  SELECT NULL FROM TABLE1;
+		// As we don't have a <dtype_null, SQL_NULL> datatype pairing,
+		// we don't know how to map this NULL to a host-language
+		// datatype.  Therefore we now describe it as a
+		// CHAR(1) CHARACTER SET NONE type.
+		// No value will ever be sent back, as the value of the select
+		// will be NULL - this is only for purposes of DESCRIBING
+		// the statement.  Note that this mapping could be done in dsql.cpp
+		// as part of the DESCRIBE statement - but I suspect other areas
+		// of the code would break if this is declared dtype_unknown.
+
 		if (null_replacement)
 		{
 			MAKE_desc(statement, desc, null_replacement, NULL);
@@ -1396,13 +1396,12 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 	case nod_via:
 		MAKE_desc(statement, desc, node->nod_arg[e_via_value_1], null_replacement);
-	/**
-	    Set the descriptor flag as nullable. The
-	    select expression may or may not return
-	    this row based on the WHERE clause. Setting this
-	    flag warns the client to expect null values.
-	    (bug 10379)
-	**/
+	    // Set the descriptor flag as nullable. The
+	    // select expression may or may not return
+	    // this row based on the WHERE clause. Setting this
+	    // flag warns the client to expect null values.
+	    // (bug 10379)
+
 		desc->dsc_flags |= DSC_nullable;
 		return;
 
@@ -1414,11 +1413,11 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		fb_assert(false);			// unexpected dsql_nod type
 
 	case nod_dom_value:		// computed value not used
-		/* By the time we get here, any nod_dom_value node should have had
-		   * its descriptor set to the type of the domain being created, or
-		   * to the type of the existing domain to which a CHECK constraint
-		   * is being added.
-		 */
+		// By the time we get here, any nod_dom_value node should have had
+		// its descriptor set to the type of the domain being created, or
+		// to the type of the existing domain to which a CHECK constraint
+		// is being added.
+
 		fb_assert(node->nod_desc.dsc_dtype != dtype_unknown);
 		if (desc != &node->nod_desc)
 			*desc = node->nod_desc;
@@ -1528,10 +1527,10 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 			MAKE_desc_from_field(&node->nod_desc, field);
 			node->nod_desc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
 			node->nod_desc.dsc_length = field->fld_element_length;
-			/*
-			   node->nod_desc.dsc_scale = field->fld_scale;
-			   node->nod_desc.dsc_sub_type = field->fld_sub_type;
-			 */
+
+			// node->nod_desc.dsc_scale = field->fld_scale;
+			// node->nod_desc.dsc_sub_type = field->fld_sub_type;
+
 		}
 		else
 		{
@@ -1693,7 +1692,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		make_parameter_names(parameter, node);
 	}
 
-// If the parameter is used declared, set SQLDA index
+	// If the parameter is used declared, set SQLDA index
 	if (sqlda_flag)
 	{
 		if (sqlda_index) {
@@ -1706,7 +1705,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		}
 	}
 
-// If a null handing has been requested, set up a null flag
+	// If a null handing has been requested, set up a null flag
 
 	if (null_flag) {
 		dsql_par* null = MAKE_parameter(message, false, false, 0, NULL);

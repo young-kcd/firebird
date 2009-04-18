@@ -407,12 +407,11 @@ static const TOK tokens[] =
 	{0, 0, 0, false}
 };
 
-/* This method is currently used in isql/isql.epp to check if a
-   user field is a reserved word, and hence needs to be quoted.
-   Obviously a hash table would make this a little quicker.
-
-   MOD 29-June-2002
-*/
+// This method is currently used in isql/isql.epp to check if a
+// user field is a reserved word, and hence needs to be quoted.
+// Obviously a hash table would make this a little quicker.
+//
+//   MOD 29-June-2002
 
 extern "C" {
 

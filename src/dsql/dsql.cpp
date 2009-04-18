@@ -233,7 +233,7 @@ void DSQL_execute(thread_db* tdbb,
 		request->req_type = REQ_EMBED_SELECT;
 	}
 
-// Only allow NULL trans_handle if we're starting a transaction
+	// Only allow NULL trans_handle if we're starting a transaction
 
 	if (!*tra_handle && request->req_type != REQ_START_TRANS)
 	{
@@ -241,8 +241,8 @@ void DSQL_execute(thread_db* tdbb,
 				  Arg::Gds(isc_bad_trans_handle));
 	}
 
-/* If the request is a SELECT or blob statement then this is an open.
-   Make sure the cursor is not already open. */
+	// If the request is a SELECT or blob statement then this is an open.
+	// Make sure the cursor is not already open.
 
 	if (reqTypeWithCursor(request->req_type)) {
 		if (request->req_flags & REQ_cursor_open)
@@ -252,7 +252,7 @@ void DSQL_execute(thread_db* tdbb,
 		}
 	}
 
-// A select with a non zero output length is a singleton select
+	// A select with a non zero output length is a singleton select
 	bool singleton;
 	if (request->req_type == REQ_SELECT && out_msg_length != 0) {
 		singleton = true;
@@ -273,12 +273,12 @@ void DSQL_execute(thread_db* tdbb,
 		request->req_transaction = *tra_handle;
 	}
 
-/* If the output message length is zero on a REQ_SELECT then we must
- * be doing an OPEN cursor operation.
- * If we do have an output message length, then we're doing
- * a singleton SELECT.  In that event, we don't add the cursor
- * to the list of open cursors (it's not really open).
- */
+	// If the output message length is zero on a REQ_SELECT then we must
+	// be doing an OPEN cursor operation.
+	// If we do have an output message length, then we're doing
+	// a singleton SELECT.  In that event, we don't add the cursor
+	// to the list of open cursors (it's not really open).
+
 	if (reqTypeWithCursor(request->req_type) && !singleton)
 	{
 		request->req_flags |= REQ_cursor_open;
@@ -369,10 +369,10 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 #ifdef SCROLLABLE_CURSORS
 
-/* check whether we need to send an asynchronous scrolling message
-   to the engine; the engine will automatically advance one record
-   in the same direction as before, so optimize out messages of that
-   type */
+	// check whether we need to send an asynchronous scrolling message
+	// to the engine; the engine will automatically advance one record
+	// in the same direction as before, so optimize out messages of that
+	// type
 
 	if (request->req_type == REQ_SELECT && request->req_dbb->dbb_base_level >= 5)
 	{
@@ -474,8 +474,8 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	Attachment* att = request->req_dbb->dbb_attachment;
 	TraceDSQLFetch trace(att, request);
 
-/* Insure that the blr for the message is parsed, regardless of
-   whether anything is found by the call to receive. */
+	// Insure that the blr for the message is parsed, regardless of
+	// whether anything is found by the call to receive.
 
 	if (blr_length) {
 		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
@@ -591,7 +591,7 @@ void DSQL_insert(thread_db* tdbb,
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
-// if the cursor isn't open, we've got a problem
+	// if the cursor isn't open, we've got a problem
 
 	if (request->req_type == REQ_PUT_SEGMENT)
 	{
@@ -605,8 +605,8 @@ void DSQL_insert(thread_db* tdbb,
 
 	dsql_msg* message = (dsql_msg*) request->req_receive;
 
-/* Insure that the blr for the message is parsed, regardless of
-   whether anything is found by the call to receive. */
+	// Insure that the blr for the message is parsed, regardless of
+	// whether anything is found by the call to receive.
 
 	if (blr_length)
 		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
@@ -686,29 +686,28 @@ void DSQL_prepare(thread_db* tdbb,
 
 	try {
 
-// Figure out which parser version to use
-/* Since the API to dsql8_prepare is public and can not be changed, there needs to
- * be a way to send the parser version to DSQL so that the parser can compare the keyword
- * version to the parser version.  To accomplish this, the parser version is combined with
- * the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
- * and client dialect are separated and passed on to their final destinations.  The information
- * is combined as follows:
- *     Dialect * 10 + parser_version
- *
- * and is extracted in dsql8_prepare_statement as follows:
- *      parser_version = ((dialect *10)+parser_version)%10
- *      client_dialect = ((dialect *10)+parser_version)/10
- *
- * For example, parser_version = 1 and client dialect = 1
- *
- *  combined = (1 * 10) + 1 == 11
- *
- *  parser = (combined) %10 == 1
- *  dialect = (combined) / 19 == 1
- *
- * If the parser version is not part of the dialect, then assume that the
- * connection being made is a local classic connection.
- */
+		// Figure out which parser version to use
+		// Since the API to dsql8_prepare is public and can not be changed, there needs to
+		// be a way to send the parser version to DSQL so that the parser can compare the keyword
+		// version to the parser version.  To accomplish this, the parser version is combined with
+		// the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
+		// and client dialect are separated and passed on to their final destinations.  The information
+		// is combined as follows:
+		//     Dialect * 10 + parser_version
+		//
+		// and is extracted in dsql8_prepare_statement as follows:
+		//      parser_version = ((dialect *10)+parser_version)%10
+		//      client_dialect = ((dialect *10)+parser_version)/10
+		//
+		// For example, parser_version = 1 and client dialect = 1
+		//
+		//  combined = (1 * 10) + 1 == 11
+		//
+		//  parser = (combined) %10 == 1
+		//  dialect = (combined) / 19 == 1
+		//
+		// If the parser version is not part of the dialect, then assume that the
+		// connection being made is a local classic connection.
 
 		USHORT parser_version;
 		if ((dialect / 10) == 0)
@@ -1107,29 +1106,28 @@ static void execute_immediate(thread_db* tdbb,
 
 	try {
 
-// Figure out which parser version to use
-/* Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
- * be a way to send the parser version to DSQL so that the parser can compare the keyword
- * version to the parser version.  To accomplish this, the parser version is combined with
- * the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
- * and client dialect are separated and passed on to their final destinations.  The information
- * is combined as follows:
- *     Dialect * 10 + parser_version
- *
- * and is extracted in dsql8_execute_immediate as follows:
- *      parser_version = ((dialect *10)+parser_version)%10
- *      client_dialect = ((dialect *10)+parser_version)/10
- *
- * For example, parser_version = 1 and client dialect = 1
- *
- *  combined = (1 * 10) + 1 == 11
- *
- *  parser = (combined) %10 == 1
- *  dialect = (combined) / 19 == 1
- *
- * If the parser version is not part of the dialect, then assume that the
- * connection being made is a local classic connection.
- */
+		// Figure out which parser version to use
+		// Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
+		// be a way to send the parser version to DSQL so that the parser can compare the keyword
+		// version to the parser version.  To accomplish this, the parser version is combined with
+		// the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
+		// and client dialect are separated and passed on to their final destinations.  The information
+		// is combined as follows:
+		//     Dialect * 10 + parser_version
+		//
+		// and is extracted in dsql8_execute_immediate as follows:
+		//      parser_version = ((dialect *10)+parser_version)%10
+		//      client_dialect = ((dialect *10)+parser_version)/10
+		//
+		// For example, parser_version = 1 and client dialect = 1
+		//
+		//  combined = (1 * 10) + 1 == 11
+		//
+		//  parser = (combined) %10 == 1
+		//  dialect = (combined) / 19 == 1
+		//
+		// If the parser version is not part of the dialect, then assume that the
+		// connection being made is a local classic connection.
 
 		USHORT parser_version;
 		if ((dialect / 10) == 0)
@@ -1292,8 +1290,8 @@ static void execute_request(thread_db* tdbb,
 		char temp_buffer[FB_DOUBLE_ALIGN * 2];
 		dsql_msg temp_msg;
 
-		/* Insure that the blr for the message is parsed, regardless of
-		   whether anything is found by the call to receive. */
+		// Insure that the blr for the message is parsed, regardless of
+		// whether anything is found by the call to receive.
 
 		if (out_msg_length && out_blr_length) {
 			parse_blr(out_blr_length, out_blr, out_msg_length, message->msg_parameters);
@@ -1317,10 +1315,10 @@ static void execute_request(thread_db* tdbb,
 		{
 			USHORT counter;
 
-			/* Create a temp message buffer and try two more receives.
-			   If both succeed then the first is the next record and the
-			   second is either another record or the end of record message.
-			   In either case, there's more than one record. */
+			// Create a temp message buffer and try two more receives.
+			// If both succeed then the first is the next record and the
+			// second is either another record or the end of record message.
+			// In either case, there's more than one record.
 
 			UCHAR* message_buffer = (UCHAR*) gds__alloc((ULONG) message->msg_length);
 
@@ -1344,9 +1342,9 @@ static void execute_request(thread_db* tdbb,
 
 			gds__free(message_buffer);
 
-			/* two successful receives means more than one record
-			   a req_sync error on the first pass above means no records
-			   a non-req_sync error on any of the passes above is an error */
+			// two successful receives means more than one record
+			// a req_sync error on the first pass above means no records
+			// a non-req_sync error on any of the passes above is an error
 
 			if (!status)
 			{
@@ -1451,8 +1449,8 @@ static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
 	SSHORT plan_length = *plan_length_ptr;
 	SCHAR* plan = *plan_ptr;
 
-/* go through the index tree information, just
-   extracting the indices used */
+	// go through the index tree information, just
+	// extracting the indices used
 
 	explain_length--;
 	switch (*explain++)
@@ -1573,8 +1571,8 @@ USHORT DSQL_get_plan_info(thread_db* tdbb,
 
 		plan = buffer_ptr;
 
-		/* CVC: What if we need to do 2nd pass? Those variables were only initialized
-		at the begining of the function hence they had trash the second time. */
+		// CVC: What if we need to do 2nd pass? Those variables were only initialized
+		// at the begining of the function hence they had trash the second time.
 		USHORT join_count = 0, level = 0;
 
 		// keep going until we reach the end of the explain info
@@ -1745,13 +1743,13 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		if (*level_ptr) {
 			(*level_ptr)--;
 		}
-		/* else --*parent_join_count; ??? */
+		// else --*parent_join_count; ???
 		break;
 
 	case isc_info_rsb_relation:
 
-		/* for the single relation case, initiate
-		   the relation with a parenthesis */
+		// for the single relation case, initiate
+		// the relation with a parenthesis
 
 		if (!*parent_join_count) {
 			if (--plan_length < 0)
@@ -1783,12 +1781,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 	case isc_info_rsb_type:
 		explain_length--;
+		// for stream types which have multiple substreams, print out
+		// the stream type and recursively print out the substreams so
+		// we will know where to put the parentheses
 		switch (rsb_type = *explain++)
 		{
-			/* for stream types which have multiple substreams, print out
-			   the stream type and recursively print out the substreams so
-			   we will know where to put the parentheses */
-
 		case isc_info_rsb_union:
 		case isc_info_rsb_recursive:
 
@@ -1812,8 +1809,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 						break;
 				}
 
-				/* for the rest of the members, start the level at 0 so each
-				   gets its own "PLAN ... " line */
+				// for the rest of the members, start the level at 0 so each
+				// gets its own "PLAN ... " line
 
 				while (union_count)
 				{
@@ -1838,8 +1835,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		case isc_info_rsb_left_cross:
 		case isc_info_rsb_merge:
 
-			/* if this join is itself part of a join list,
-			   but not the first item, then put out a comma */
+			// if this join is itself part of a join list,
+			// but not the first item, then put out a comma
 
 			if (*parent_join_count && plan[-1] != '(')
 			{
@@ -1962,10 +1959,10 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 		case isc_info_rsb_sort:
 
-			/* if this sort is on behalf of a union, don't bother to
-			   print out the sort, because unions handle the sort on all
-			   substreams at once, and a plan maps to each substream
-			   in the union, so the sort doesn't really apply to a particular plan */
+			// if this sort is on behalf of a union, don't bother to
+			// print out the sort, because unions handle the sort on all
+			// substreams at once, and a plan maps to each substream
+			// in the union, so the sort doesn't really apply to a particular plan
 
 			if (explain_length > 2 && (explain[0] == isc_info_rsb_begin) &&
 				(explain[1] == isc_info_rsb_type) && (explain[2] == isc_info_rsb_union))
@@ -1991,8 +1988,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (*p)
 				*plan++ = *p++;
 
-			/* the rsb_sort should always be followed by a begin...end block,
-			   allowing us to include everything inside the sort in parentheses */
+			// the rsb_sort should always be followed by a begin...end block,
+			// allowing us to include everything inside the sort in parentheses
 
 			{ // scope to have save_level local.
 				const USHORT save_level = *level_ptr;
@@ -2222,8 +2219,8 @@ static void map_in_out(	dsql_req*		request,
 		}
 	}
 
-/* If we got here because the loop was exited early or if part of the
-   message given to us hasn't been used, complain. */
+	// If we got here because the loop was exited early or if part of the
+	// message given to us hasn't been used, complain.
 
 	if (parameter || count)
 	{
@@ -2275,8 +2272,8 @@ static void map_in_out(	dsql_req*		request,
 static USHORT parse_blr(USHORT blr_length,
 						const UCHAR* blr, const USHORT msg_length, dsql_par* parameters)
 {
-/* If there's no blr length, then the format of the current message buffer
-   is identical to the format of the previous one. */
+	// If there's no blr length, then the format of the current message buffer
+	// is identical to the format of the previous one.
 
 	if (!blr_length)
 	{
@@ -2500,7 +2497,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		string_length = strlen(string);
 	}
 
-/* Get rid of the trailing ";" if there is one. */
+	// Get rid of the trailing ";" if there is one.
 
 	for (const TEXT* p = string + string_length; p-- > string;)
 	{
@@ -2553,8 +2550,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 #ifdef SCROLLABLE_CURSORS
 	if (statement->req_dbb->dbb_base_level >= 5) {
-		/* allocate a message in which to send scrolling information
-		   outside of the normal send/receive protocol */
+		// allocate a message in which to send scrolling information
+		// outside of the normal send/receive protocol
 
 		statement->req_async = message = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
 		message->msg_number = 2;
@@ -2564,12 +2561,10 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	statement->req_type = REQ_SELECT;
 	statement->req_flags &= ~REQ_cursor_open;
 
-	/*
-	 * No work is done during pass1 for set transaction - like
-	 * checking for valid table names.  This is because that will
-	 * require a valid transaction handle.
-	 * Error will be caught at execute time.
-	 */
+	// No work is done during pass1 for set transaction - like
+	// checking for valid table names.  This is because that will
+	// require a valid transaction handle.
+	// Error will be caught at execute time.
 
 	node = PASS1_statement(statement, node);
 	if (!node)
