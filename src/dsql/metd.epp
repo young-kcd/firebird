@@ -58,9 +58,9 @@
 using namespace Jrd;
 using namespace Firebird;
 
-/* NOTE: The static definition of DB and gds_trans by gpre will not
-		 be used by the meta data routines.  Each of those routines has
-		 its own local definition of these variables. */
+// NOTE: The static definition of DB and gds_trans by gpre will not
+//		 be used by the meta data routines.  Each of those routines has
+//		 its own local definition of these variables.
 
 DATABASE DB = STATIC "yachts.lnk";
 
@@ -813,7 +813,8 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 			// fetch segments. Assume buffer is big enough.
 			UCHAR* ptr_in_buffer = buffer;
-			while (true) {
+			while (true)
+			{
 				const USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
 
 				ptr_in_buffer += length;
@@ -843,8 +844,8 @@ USHORT METD_get_domain_default(dsql_req* request,
 			{
 			}
 
-			/* the default string must be of the form:
-			   blr_version4 blr_literal ..... blr_eoc  */
+			// the default string must be of the form:
+			// blr_version4 blr_literal ..... blr_eoc
 			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 			fb_assert(buffer[1] == blr_literal);
 		}
@@ -946,11 +947,10 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 			DSQL_REQUEST(irq_function) = handle1;
 
 		userFunc = FB_NEW(dbb->dbb_pool) dsql_udf(dbb->dbb_pool);
-		/* Moved below as still can't say for sure it will be stored.
-		   Following the same logic for MET_get_procedure and MET_get_relation
-		userFunc->udf_next = dbb->dbb_functions;
-		dbb->dbb_functions = userFunc;
-		*/
+		// Moved below as still can't say for sure it will be stored.
+		// Following the same logic for MET_get_procedure and MET_get_relation
+		// userFunc->udf_next = dbb->dbb_functions;
+		// dbb->dbb_functions = userFunc;
 
 		userFunc->udf_name = name->str_data;
 		return_arg = X.RDB$RETURN_ARGUMENT;
@@ -991,8 +991,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 			else {
 				userFunc->udf_sub_type = 0;
 			}
-			/* CVC: We are overcoming a bug in ddl.c:put_field()
-			   when any field is defined: the length is not given for blobs. */
+			// CVC: We are overcoming a bug in ddl.c:put_field()
+			// when any field is defined: the length is not given for blobs.
 			if (X.RDB$FIELD_TYPE == blr_blob)
 				userFunc->udf_length = sizeof(ISC_QUAD);
 			else
@@ -1334,7 +1334,8 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 	// store in the symbol table unless the procedure is not yet committed
 	// CVC: This is strange, because PRC_new_procedure is never set.
 
-	if (!(procedure->prc_flags & PRC_new_procedure)) {
+	if (!(procedure->prc_flags & PRC_new_procedure))
+	{
 		// add procedure in the front of the list
 
 		procedure->prc_next = dbb->dbb_procedures;
@@ -1886,7 +1887,7 @@ static void convert_dtype(dsql_fld* field, SSHORT field_type)
  *
  **************************************/
 
-// fill out the type descriptor
+	// fill out the type descriptor
 	switch (field_type)
 	{
 	case blr_text:
@@ -1923,7 +1924,7 @@ static void free_procedure(dsql_prc* procedure)
  **************************************/
 	dsql_fld* param;
 
-/* release the input & output parameter blocks */
+	// release the input & output parameter blocks
 
 	for (param = procedure->prc_inputs; param;) {
 		dsql_fld* temp = param;
@@ -1937,7 +1938,7 @@ static void free_procedure(dsql_prc* procedure)
 		delete temp;
 	}
 
-/* release the procedure & symbol blocks */
+	// release the procedure & symbol blocks
 
 	delete procedure;
 }
@@ -1956,7 +1957,7 @@ static void free_relation(dsql_rel* relation)
  *
  **************************************/
 
-// release the field blocks
+	// release the field blocks
 
 	for (dsql_fld* field = relation->rel_fields; field;)
 	{
@@ -1965,7 +1966,7 @@ static void free_relation(dsql_rel* relation)
 		delete temp;
 	}
 
-/* release the relation & symbol blocks */
+	// release the relation & symbol blocks
 
 	delete relation;
 }

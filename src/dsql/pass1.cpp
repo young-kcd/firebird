@@ -1272,7 +1272,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 	dsql_nod* node = NULL;
 	const DsqlContextStack::iterator base(*statement->req_context);
 
-// Dispatch on node type.  Fall thru on easy ones
+	// Dispatch on node type.  Fall thru on easy ones
 
 	switch (input->nod_type)
 	{
@@ -1362,7 +1362,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			if (variables)
 			{
 
-				// insure that variable names do not duplicate parameter names
+				// Ensure that variable names do not duplicate parameter names
 
 				const dsql_nod* const* ptr = variables->nod_arg;
 				for (const dsql_nod* const* const end = ptr + variables->nod_count; ptr < end; ptr++)
@@ -1874,12 +1874,12 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				statement->req_flags |= REQ_no_batch;
 				break;
 			}
-			/*
-			   ** If there is a union without ALL or order by or a select distinct
-			   ** buffering is OK even if stored procedure occurs in the select
-			   ** list. In these cases all of stored procedure is executed under
-			   ** savepoint for open cursor.
-			 */
+
+			// If there is a union without ALL or order by or a select distinct
+			// buffering is OK even if stored procedure occurs in the select
+			// list. In these cases all of stored procedure is executed under
+			// savepoint for open cursor.
+
 			if (node->nod_arg[e_rse_sort] || node->nod_arg[e_rse_reduced])
 			{
 				statement->req_flags &= ~REQ_no_batch;
@@ -2205,12 +2205,11 @@ static bool aggregate_found2(const CompiledStatement* statement, const dsql_nod*
 				if (lcontext->ctx_scope_level == statement->req_scope_level) {
 					return true;
 				}
-				else {
-					const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-					aggregate = aggregate_found2(statement, lmap->map_node, current_level,
-												 deepest_level, ignore_sub_selects);
-					return aggregate;
-				}
+
+				const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
+				aggregate = aggregate_found2(statement, lmap->map_node, current_level,
+											 deepest_level, ignore_sub_selects);
+				return aggregate;
 			}
 
 			// for expressions in which an aggregate might
@@ -3667,7 +3666,7 @@ static void pass1_blob( CompiledStatement* statement, dsql_nod* input)
 	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg;
 	blob->blb_segment_msg = statement->req_receive;
 
-// Create a parameter for the blob segment
+	// Create a parameter for the blob segment
 
 	dsql_par* parameter = MAKE_parameter(blob->blb_segment_msg, true, true, 0, NULL);
 	blob->blb_segment = parameter;
@@ -3676,14 +3675,14 @@ static void pass1_blob( CompiledStatement* statement, dsql_nod* input)
 	parameter->par_desc.dsc_length = ((dsql_fld*) field->nod_arg[e_fld_field])->fld_seg_length;
 	DEV_BLKCHK(field->nod_arg[e_fld_field], dsql_type_fld);
 
-/* The Null indicator is used to pass back the segment length,
- * set DSC_nullable so that the SQL_type is set to SQL_TEXT+1 instead
- * of SQL_TEXT.
- */
+	// The Null indicator is used to pass back the segment length,
+	// set DSC_nullable so that the SQL_type is set to SQL_TEXT+1 instead
+	// of SQL_TEXT.
+
 	if (input->nod_type == nod_get_segment)
 		parameter->par_desc.dsc_flags |= DSC_nullable;
 
-// Create a parameter for the blob id
+	// Create a parameter for the blob id
 
 	dsql_msg* temp_msg = (input->nod_type == nod_get_segment) ?
 		blob->blb_open_in_msg : blob->blb_open_out_msg;
@@ -3879,9 +3878,7 @@ static dsql_nod* pass1_constant( CompiledStatement* statement, dsql_nod* input)
 				METD_get_collation(statement, global_temp_collation_name, resolved->intlsym_charset_id);
 			if (!resolved_collation)
 			{
-				/*
-				** Specified collation not found
-				*/
+				// Specified collation not found
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(isc_dsql_datatype_err) <<
 						  Arg::Gds(isc_collation_not_found) << Arg::Str(global_temp_collation_name->str_data) <<
@@ -4094,7 +4091,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 	DEV_BLKCHK(cursor, dsql_type_nod);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
-// Lookup parent statement
+	// Lookup parent statement
 
 	const dsql_str* string = (dsql_str*) cursor->nod_arg[e_cur_name];
 	DEV_BLKCHK(string, dsql_type_str);
@@ -4112,7 +4109,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 
 	CompiledStatement* parent = (CompiledStatement*) symbol->sym_object;
 
-// Verify that the cursor is appropriate and updatable
+	// Verify that the cursor is appropriate and updatable
 
 	dsql_par* rv_source = find_record_version(parent, relation_name);
 
@@ -4131,7 +4128,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 	statement->req_sibling = parent->req_offspring;
 	parent->req_offspring = statement;
 
-// Build record selection expression
+	// Build record selection expression
 
 	dsql_nod* rse = MAKE_node(nod_rse, e_rse_count);
 	dsql_nod* temp = MAKE_node(nod_list, 1);
@@ -4151,7 +4148,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
 
-// record version will be set only for V4 - for the parent select cursor
+	// record version will be set only for V4 - for the parent select cursor
 	if (rv_source)
 	{
 		node = MAKE_node(nod_eql, 2);
@@ -5325,8 +5322,8 @@ static dsql_nod* pass1_field(CompiledStatement* statement, dsql_nod* input,
 	}
 
 
-/* Try to resolve field against various contexts;
-   if there is an alias, check only against the first matching */
+	// Try to resolve field against various contexts;
+	// if there is an alias, check only against the first matching
 
 	dsql_nod* node = NULL; // This var must be initialized.
 	DsqlContextStack ambiguous_ctx_stack;
@@ -5725,11 +5722,12 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 					found |= pass1_found_field(node->nod_arg[e_agg_function_expression],
 											   check_scope_level, match_type, &field);
 				}
-				if (!field) {
-					/* For example COUNT(*) is always same scope_level (node->nod_count = 0)
-					   Normaly COUNT(*) is the only way to come here but something stupid
-					   as SUM(5) is also possible.
-					   If current_scope_level_equal is FALSE scope_level is always higher */
+				if (!field)
+				{
+					// For example COUNT(*) is always same scope_level (node->nod_count = 0)
+					// Normaly COUNT(*) is the only way to come here but something stupid
+					// as SUM(5) is also possible.
+					// If current_scope_level_equal is FALSE scope_level is always higher
 					switch (match_type)
 					{
 						case FIELD_MATCH_TYPE_LOWER_EQUAL:
@@ -6371,7 +6369,8 @@ static dsql_nod* pass1_insert( CompiledStatement* statement, dsql_nod* input, bo
 
 	DsqlNodStack stack;
 
-	if (values) {
+	if (values)
+	{
 		if (fields->nod_count != values->nod_count) {
 			// count of column list and value list don't match
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
@@ -6774,7 +6773,8 @@ static dsql_nod* pass1_label(CompiledStatement* statement, dsql_nod* input)
 			number = statement->req_loop_level;
 		}
 	}
-	else {
+	else
+	{
 		if (position > 0) {
 			// ERROR: Label %s already exists in the current scope
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -7609,7 +7609,7 @@ static dsql_ctx* pass1_alias(CompiledStatement* statement, DsqlContextStack& sta
 		if (context->ctx_relation && context->ctx_relation->rel_name == alias->str_data)
 		{
 			if (relation_context) {
-				/* the table %s is referenced twice; use aliases to differentiate */
+				// the table %s is referenced twice; use aliases to differentiate
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_command_err) <<
 						  Arg::Gds(isc_dsql_self_join) << Arg::Str(alias->str_data));
@@ -7966,8 +7966,8 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		rse->nod_arg[e_rse_boolean] = pass1_node_psql(statement, node, false);
 		--statement->req_in_where_clause;
 
-		/* AB: An aggregate pointing to it's own parent_context isn't
-		   allowed, HAVING should be used instead */
+		// AB: An aggregate pointing to it's own parent_context isn't
+		// allowed, HAVING should be used instead
 		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean],
 				statement->req_scope_level, FIELD_MATCH_TYPE_EQUAL, true))
 		{
@@ -8753,18 +8753,17 @@ static dsql_nod* pass1_union( CompiledStatement* statement, dsql_nod* input,
 		}
 	}
 
-	// Comment below is belongs to the old code (way a union was handled).
+	// Comment below belongs to the old code (way a union was handled).
 
-		/* SQL II, section 9.3, pg 195 governs which data types
-		 * are considered equivalent for a UNION
-		 * The following restriction is in some ways more restrictive
-		 *  (cannot UNION CHAR with VARCHAR for instance)
-		 *  (or cannot union CHAR of different lengths)
-		 * and in someways less restrictive
-		 *  (SCALE is not looked at)
-		 * Workaround: use a direct CAST() statement in the SQL
-		 * statement to force desired datatype.
-		 */
+	// SQL II, section 9.3, pg 195 governs which data types
+	// are considered equivalent for a UNION
+	// The following restriction is in some ways more restrictive
+	// (cannot UNION CHAR with VARCHAR for instance)
+	// (or cannot union CHAR of different lengths)
+	// and in someways less restrictive
+	// (SCALE is not looked at)
+	// Workaround: use a direct CAST() statement in the SQL
+	// statement to force desired datatype.
 
 	// loop through the list nodes and cast whenever possible.
 	dsql_nod* tmp_list = MAKE_node(nod_list, union_node->nod_count);
@@ -9772,7 +9771,7 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-// Check to see if the item has already been posted
+	// Check to see if the item has already been posted
 
 	int count = 0;
 	dsql_map* map;
@@ -10247,12 +10246,12 @@ static dsql_fld* resolve_context( CompiledStatement* statement, const dsql_str* 
 			table_name = procedure->prc_name.c_str();
 	}
 
-// If a context qualifier is present, make sure this is the proper context
+	// If a context qualifier is present, make sure this is the proper context
 	if (qualifier && strcmp(qualifier->str_data, table_name)) {
 		return NULL;
 	}
 
-// Lookup field in relation or procedure
+	// Lookup field in relation or procedure
 
 	dsql_fld* field;
 	if (relation) {
@@ -10546,7 +10545,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 	if (!par_node)
 		return;
 
-/* Could it be something else ??? */
+	// Could it be something else ???
 	fb_assert(fld_node->nod_type == nod_field);
 
 	if (fld_node->nod_desc.dsc_dtype != dtype_array)
@@ -10810,9 +10809,9 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_agg_count:
 		verb = "agg_count";
 		break;
-/* count2
-	case nod_agg_distinct: verb = "agg_distinct";	break;
-*/
+// count2
+//	case nod_agg_distinct: verb = "agg_distinct";
+//		break;
 	case nod_agg_max:
 		verb = "agg_max";
 		break;
@@ -11226,7 +11225,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_rows:
 		verb = "rows";
 		break;
-	/* IOL:	missing	node types */
+	// IOL: missing node types
 	case nod_on_error:
 		verb = "on error";
 		break;
@@ -11674,10 +11673,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_udf:
 		trace_line ("%sfunction: \"", buffer);
-		/* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
-		/* CVC: The answer is that nod_arg[0] can be either the udf name or the
-		pointer to udf struct returned by METD_get_function, so we should resort
-		to the block type. The replacement happens in pass1_udf(). */
+		// nmcc: how are we supposed to tell which type of nod_udf this is ??
+		// CVC: The answer is that nod_arg[0] can be either the udf name or the
+		// pointer to udf struct returned by METD_get_function, so we should resort
+		// to the block type. The replacement happens in pass1_udf().
 		switch (node->nod_arg[e_udf_name]->getType())
 		{
 		case dsql_type_udf:
