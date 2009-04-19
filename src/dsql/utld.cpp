@@ -75,8 +75,8 @@ static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_fl
 	ch_stuff(p, value >> 8, same_flag);
 }
 
-/* these statics define a round-robin data area for storing
-   textual error messages returned to the user */
+// these statics define a round-robin data area for storing
+// textual error messages returned to the user
 
 static Firebird::GlobalPtr<Firebird::Mutex> failuresMutex;
 static TEXT *DSQL_failures, *DSQL_failures_ptr;
@@ -161,7 +161,7 @@ SCHAR* UTLD_skip_sql_info(SCHAR* info)
 USHORT UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar)
 {
 	return MIN(((MAX_COLUMN_SIZE - sizeof(USHORT)) / maxBytesPerChar) * maxBytesPerChar,
-			   lengthInChars * maxBytesPerChar);
+			   (ULONG) lengthInChars * maxBytesPerChar);
 }
 
 
@@ -217,9 +217,9 @@ ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS* status,
 	if (!xsqlda)
 		return 0;
 
-/* The first byte of the returned buffer is assumed to be either a
-   isc_info_sql_select or isc_info_sql_bind item.  The second byte
-   is assumed to be isc_info_sql_describe_vars. */
+	// The first byte of the returned buffer is assumed to be either a
+	// isc_info_sql_select or isc_info_sql_bind item.  The second byte
+	// is assumed to be isc_info_sql_describe_vars.
 
 	info += 2;
 
@@ -247,7 +247,7 @@ ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS* status,
 		xvar = &xsqlvar;
 	}
 
-// Loop over the variables being described.
+	// Loop over the variables being described.
 
 	SQLVAR* qvar = NULL;
 	USHORT last_index = 0;
@@ -396,18 +396,18 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 
 	if (msg_length)
 	{
-		/* This is a call from execute or open, or the first call from fetch.
-		   Determine the size of the blr, allocate a blr buffer, create the
-		   blr, and finally allocate a message buffer. */
+		// This is a call from execute or open, or the first call from fetch.
+		// Determine the size of the blr, allocate a blr buffer, create the
+		// blr, and finally allocate a message buffer.
 
-		/* The message buffer we are describing could be for a message to
-		   either IB 4.0 or IB 3.3 - thus we need to describe the buffer
-		   with the right set of blr.
-		   As the BLR is only used to describe space allocation and alignment,
-		   we can safely use blr_text for both 4.0 and 3.3. */
+		// The message buffer we are describing could be for a message to
+		// either IB 4.0 or IB 3.3 - thus we need to describe the buffer
+		// with the right set of blr.
+		// As the BLR is only used to describe space allocation and alignment,
+		// we can safely use blr_text for both 4.0 and 3.3.
 
-		/* Make a quick pass through the SQLDA to determine the amount of
-		   blr that will be generated. */
+		// Make a quick pass through the SQLDA to determine the amount of
+		// blr that will be generated.
 
 		USHORT blr_len = 8;
 		USHORT par_count = 0;
@@ -447,8 +447,8 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			par_count += 2;
 		}
 
-		/* Make sure the blr buffer is large enough.  If it isn't, allocate
-		   a new one. */
+		// Make sure the blr buffer is large enough.  If it isn't, allocate
+		// a new one.
 
 		if (blr_len > pClause->dasup_blr_buf_len)
 		{
@@ -466,23 +466,23 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 
 		bool same_flag = (blr_len == pClause->dasup_blr_length);
 
-		/* turn off same_flag because it breaks execute & execute2 when
-		   more than one statement is prepared */
+		// turn off same_flag because it breaks execute & execute2 when
+		// more than one statement is prepared
 
 		same_flag = false;
 
 		pClause->dasup_blr_length = blr_len;
 
-		/* Generate the blr for the message and at the same time, determine
-		   the size of the message buffer.  Allow for a null indicator with
-		   each variable in the SQLDA. */
+		// Generate the blr for the message and at the same time, determine
+		// the size of the message buffer.  Allow for a null indicator with
+		// each variable in the SQLDA.
 
 		// one huge pointer per line for LIBS
 		BLOB_PTR* p = reinterpret_cast<UCHAR*>(pClause->dasup_blr);
 
-	/** The define SQL_DIALECT_V5 is not available here, Hence using
-	constant 1.
-	**/
+		// The define SQL_DIALECT_V5 is not available here, Hence using
+		// constant 1.
+
 		if (dialect > 1) {
 			ch_stuff(p, blr_version5, same_flag);
 		}
@@ -607,8 +607,8 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 		ch_stuff(p, blr_end, same_flag);
 		ch_stuff(p, blr_eoc, same_flag);
 
-		/* Make sure the message buffer is large enough.  If it isn't, allocate
-		   a new one. */
+		// Make sure the message buffer is large enough.  If it isn't, allocate
+		// a new one.
 
 		if (msg_len > pClause->dasup_msg_buf_len)
 		{
@@ -634,7 +634,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			return 0;
 	}
 
-// Move the data between the SQLDA and the message buffer.
+	// Move the data between the SQLDA and the message buffer.
 
 	USHORT offset = 0;
 	// one huge pointer per line for LIBS
@@ -734,9 +734,9 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 		}
 		else
 		{
-			/* Move data from the SQLDA into the message.  If the
-			   indicator variable identifies a null value, permit
-			   the data value to be missing. */
+			// Move data from the SQLDA into the message.  If the
+			// indicator variable identifies a null value, permit
+			// the data value to be missing.
 
 			if (xvar->sqltype & 1)
 			{
@@ -817,8 +817,8 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
 
-			/* If there isn't any more room in the buffer,
-			   start at the beginning again */
+			// If there isn't any more room in the buffer,
+			// start at the beginning again
 
 			if (DSQL_failures_ptr + l > DSQL_failures + DSQL_FAILURE_SPACE)
 				DSQL_failures_ptr = DSQL_failures;
@@ -1049,7 +1049,7 @@ static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 	sqlvar->sqltype = xsqlvar->sqltype;
 	sqlvar->sqlname_length = xsqlvar->aliasname_length;
 
-// N.B., this may not NULL-terminate the name...
+	// N.B., this may not NULL-terminate the name...
 
 	memcpy(sqlvar->sqlname, xsqlvar->aliasname, sizeof(sqlvar->sqlname));
 
