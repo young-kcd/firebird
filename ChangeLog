@@ -1,3 +1,52 @@
+2009-04-19 12:06  robocop
+
+	* firebird2/src/dsql/: metd.epp (1.141), pass1.cpp (1.448):
+
+	Comments and style.
+
+2009-04-19 12:05  robocop
+
+	* firebird2/src/dsql/utld.cpp (1.63):
+
+	Comments and warning.
+
+2009-04-19 12:05  robocop
+
+	* firebird2/src/: jrd/DataTypeUtil.cpp (1.22), dsql/preparse.cpp
+	(1.53), dsql/user_dsql.cpp (1.62):
+
+	Comments.
+
+2009-04-19 00:20  asfernandes
+
+	* firebird2/src/jrd/: DataTypeUtil.cpp (1.21), DataTypeUtil.h
+	(1.13), dsc.cpp (1.37), dsc.h (1.48):
+
+	Fixed CORE-2361 - String truncation reading 8859-1 Spanish column
+	using isc_dsql_fetch with UTF-8 connection Sub-task CORE-2435 -
+	Recreate DataTypeUtilBase::makeFromList
+
+	Documentation for datatype deduction for lists (makeFromList):
+
+	The output type is figured out as based on this order: 1) If any
+	datatype is blob, returns blob; 2) If any datatype is a) varying or
+	b) any text and another datatype, returns varying; 3) If any
+	datatype is text or cstring, returns text; 4) If any datatype is
+	approximate numeric then each datatype in the list shall be numeric
+	(    otherwise an error is thrown), returns approximate numeric; 5)
+	If any datatype is a date/time/timestamp then each datatype in the
+	list shall be the same	  date/time/timestamp (otherwise an error
+	is thrown), returns a date/time/timestamp.
+
+	If a blob is returned, and there is a binary blob in the list, a
+	binary blob is returned.
+
+	If a blob/text is returned, the returned charset is figured out as
+	based on this order: 1) If there is a OCTETS blob/string, returns
+	OCTETS; 2) If there is a non-(NONE/ASCII) blob/string, returns it
+	charset; 3) If there is a ASCII blob/string, a numeric or a
+	date/time/timestamp, returns ASCII; 4) Otherwise, returns NONE.
+
 2009-04-18 16:13  robocop
 
 	* firebird2/src/dsql/: ddl.cpp (1.275), dsql.cpp (1.277), errd.cpp
