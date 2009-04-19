@@ -57,8 +57,8 @@ enum name_type {
 	NAME_cursor = 2
 };
 
-/* declare a structure which enables us to associate a cursor with a
-   statement and vice versa */
+// declare a structure which enables us to associate a cursor with a
+// statement and vice versa
 
 struct dsql_dbb
 {
@@ -607,16 +607,16 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 
 	if (name && name->name_stmt->stmt_db_handle == *db_handle)
 	{
-		/* The statement name already exists for this database.
-		   Re-use its statement handle. */
+		// The statement name already exists for this database.
+		// Re-use its statement handle.
 
 		statement = name->name_stmt;
 		stmt_handle = statement->stmt_handle;
 	}
 	else
 	{
-		/* This is a new statement name for this database.
-		   Allocate a statement handle for it. */
+		// This is a new statement name for this database.
+		// Allocate a statement handle for it.
 
 		if (name) {
 			isc_embed_dsql_release(user_status, stmt_name);
@@ -643,8 +643,8 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 		return error();
 	}
 
-/* If a new statement was allocated, add it to the symbol table and insert it
-   into the list of statements */
+	// If a new statement was allocated, add it to the symbol table and insert it
+	// into the list of statements
 
 	Firebird::WriteLockGuard guard(global_sync);
 
@@ -1238,7 +1238,7 @@ static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, dsq
  **************************************/
 	const USHORT l = name_length(symbol_name);
 	dsql_name* name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
-// FREE: by exit handler cleanup() or database_cleanup()
+	// FREE: by exit handler cleanup() or database_cleanup()
 	if (!name)					// NOMEM:
 		error_post(Arg::Gds(isc_virmemexh));
 	name->name_stmt = stmt;

@@ -126,7 +126,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 					*result = *arg;
 					result->dsc_scale = 0;	// clear it (for dialect 1)
 				}
-				else if (!(!result->isUnknown() && !result->isExact() && arg->isExact()))
+				else if (result->isUnknown() || result->isExact() || !arg->isExact())
 				{
 					result->dsc_dtype = MAX(result->dsc_dtype, arg->dsc_dtype);
 					result->dsc_length = MAX(result->dsc_length, arg->dsc_length);
@@ -152,7 +152,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 	}
 
-	// If we didn't had any blob or text but returns a blob or text, it means we have incomparable
+	// If we didn't have any blob or text but return a blob or text, it means we have incomparable
 	// types like date and time without a blob or string.
 	if (!anyBlobOrText && (result->isText() || result->isBlob()))
 	{
@@ -171,11 +171,14 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	if (result->isText())
 	{
 		// So convert its character length to max. byte length of the destination charset.
-		result->dsc_length = convertLength(result->dsc_length, CS_ASCII, result->getCharSet());
+		const ULONG len = convertLength(result->dsc_length, CS_ASCII, result->getCharSet());
+		fb_assert(len <= MAX_COLUMN_SIZE); // Maybe status_exception::raise?
+		result->dsc_length = len;
 
 		if (anyVarying)
 		{
 			// Adjust for varying, if it's the case.
+			fb_assert(len <= MAX_COLUMN_SIZE - sizeof(USHORT));
 			result->dsc_dtype = dtype_varying;
 			result->dsc_length += sizeof(USHORT);
 		}
@@ -288,7 +291,8 @@ bool DataTypeUtilBase::makeBlobOrText(dsc* result, const dsc* arg, bool force)
 		result->makeBlob(getResultBlobSubType(result, arg), getResultTextType(result, arg));
 		return true;
 	}
-	else if (force || arg->isText() || result->isText())
+
+	if (force || arg->isText() || result->isText())
 	{
 		USHORT argLen = convertLength(arg->getStringLength(), arg->getCharSet(), CS_ASCII);
 		USHORT resultLen = result->getStringLength();
@@ -297,8 +301,8 @@ bool DataTypeUtilBase::makeBlobOrText(dsc* result, const dsc* arg, bool force)
 
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 

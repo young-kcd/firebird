@@ -254,7 +254,7 @@ bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle, FB_API_
 
 		} while (matched);
 
-// This code is because 3.3 server does not recognize isc_dpb_overwrite.
+		// This code is because 3.3 server does not recognize isc_dpb_overwrite.
 		FB_API_HANDLE temp_db_handle = 0;
 		if (!isc_attach_database(user_status, 0, file_name.c_str(), &temp_db_handle,
 				dpb.getBufferLength(), reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
@@ -406,13 +406,13 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 			break;
 	}
 
-/* At this point c contains character and class contains character class.
-   s is pointing to next character. */
+	// At this point c contains character and class contains character class.
+	// s is pointing to next character.
 
 	const SCHAR* const start_of_token = s - 1;
 
-/* In here we handle only 4 cases, STRING, INTEGER, arbitrary
-   SYMBOL and single character punctuation. */
+	// In here we handle only 4 cases, STRING, INTEGER, arbitrary
+	// SYMBOL and single character punctuation.
 
 	if (char_class & CHR_QUOTE)
 	{
@@ -421,7 +421,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 			if (s >= stmt_end)
 				return UNEXPECTED_END_OF_COMMAND;
 
-			/* *s is quote - if next != quote we're at the end */
+			// *s is quote - if next != quote we're at the end
 
 			if ((*s == c) && ((++s == stmt_end) || (*s != c)))
 				break;
@@ -436,7 +436,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 		return STRING;
 	}
 
-/* Is it an integer? */
+	// Is it an integer?
 
 	if (char_class & CHR_DIGIT)
 	{
@@ -452,7 +452,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 		return NUMERIC;
 	}
 
-// Is is a symbol
+	// Is is a symbol?
 
 	if (char_class & CHR_LETTER)
 	{
@@ -469,7 +469,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 		return SYMBOL;
 	}
 
-// What remains at this point for us is the single character punctuation.
+	// What remains at this point for us is the single character punctuation.
 
 	*stmt = s;
 
@@ -518,7 +518,7 @@ static SSHORT get_token(ISC_STATUS* status,
 		return FB_FAILURE;
 	}
 
-// Some token was found
+	// Some token was found
 
 	if (result == token_type) {
 		*stmt = temp_stmt;
@@ -528,7 +528,7 @@ static SSHORT get_token(ISC_STATUS* status,
 	if (optional)
 		return FB_SUCCESS;
 
-/* generate error here and return failure; */
+	// generate error here and return failure;
 
 	*stmt = temp_stmt;
 	generate_error(status, token, UNEXPECTED_TOKEN,
