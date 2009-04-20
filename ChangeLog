@@ -1,3 +1,21 @@
+2009-04-20 16:57  alexpeshkoff
+
+	* firebird2/configure.in (1.331):
+
+	Avoid dumb '-g -O2' autoconf's default in make.defaults
+
+2009-04-20 15:19  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.94):
+
+	misc
+
+2009-04-20 12:34  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.185):
+
+	Fixed shared memory access rights issues
+
 2009-04-19 12:06  robocop
 
 	* firebird2/src/dsql/: metd.epp (1.141), pass1.cpp (1.448):
