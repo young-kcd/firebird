@@ -1848,7 +1848,7 @@ void ISC_remove_map_file(const TEXT* filename)
 
 	if (key)
 	{
-		int shmid = shmget(key, 0, PRIV);
+		int shmid = shmget(key, 0, 0);
 		if (shmid > 0)
 		{
 			shmid_ds dummy;
@@ -2069,6 +2069,27 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 #else // no HAVE_MMAP
 
+static bool setSharedMemoryAccessRights(ISC_STATUS* status_vector, SLONG shmid)
+{
+	char secDb[MAXPATHLEN];
+	SecurityDatabase::getPath(secDb);
+	struct stat st;
+	if (stat(secDb, &st) == 0)
+	{
+		shmid_ds ds;
+		ds.shm_perm.uid = geteuid() == 0 ? st.st_uid : geteuid();
+		ds.shm_perm.gid = st.st_gid;
+		ds.shm_perm.mode = st.st_mode;
+		if (shmctl(shmid, IPC_SET, &ds) == -1)
+		{
+			error(status_vector, "shmctl", errno);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
@@ -2136,8 +2157,20 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 /* Create the shared memory region if it doesn't already exist. */
 
 	struct shmid_ds buf;
-	SLONG shmid = shmget(key, length, IPC_CREAT | PRIV);
-	if (shmid == -1)
+	SLONG shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV);
+	if (shmid == -1) {
+		shmid = shmget(key, length, 0);
+	}
+	else
+	{
+		if (!setSharedMemoryAccessRights(status_vector, shmid))
+		{
+			fclose(fp);
+			return NULL;
+		}
+	}
+
+	if (shmid == -1) {
 #ifdef SUPERSERVER
 		if (errno == EINVAL) {
 			/* There are two cases when shmget() returns EINVAL error:
@@ -2164,7 +2197,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			   way to get shmid is to attach to the segment with zero
 			   length
 			 */
-			if ((shmid = shmget(key, 0, PRIV)) == -1) {
+			if ((shmid = shmget(key, 0, 0)) == -1) {
 				string msg;
 				msg.printf("shmget(0x%x, 0, PRIV)", key);
 				error(status_vector, msg.c_str(), errno);
@@ -2193,16 +2226,22 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 				fclose(fp);
 				return NULL;
 			}
+			if (!setSharedMemoryAccessRights(status_vector, shmid))
+			{
+				fclose(fp);
+				return NULL;
+			}
 		}
 		else					/* if errno != EINVAL) */
 #endif /* SUPERSERVER */
 		{
 			string msg;
-			msg.printf("shmget(0x%x, %d, IPC_CREAT | PRIV)", key, length);
+			msg.printf("shmget(0x%x, %d, 0)", key, length);
 			error(status_vector, msg.c_str(), errno);
 			fclose(fp);
 			return NULL;
 		}
+	}
 
 #ifdef SUPERSERVER
 /* If we are here there are two possibilities:
@@ -2242,10 +2281,15 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 				fclose(fp);
 				return NULL;
 			}
+			if (!setSharedMemoryAccessRights(status_vector, shmid))
+			{
+				fclose(fp);
+				return NULL;
+			}
 		}
 		else {
 			length = buf.shm_segsz;
-			if ((shmid = shmget(key, length, PRIV)) == -1) {
+			if ((shmid = shmget(key, length, 0)) == -1) {
 				string msg;
 				msg.printf("shmget(0x%x, %d, PRIV)", key, length);
 				error(status_vector, msg.c_str(), errno);
@@ -2268,7 +2312,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 		/* Now remap with the new-found length */
 
-		if ((shmid = shmget(key, length, PRIV)) == -1) {
+		if ((shmid = shmget(key, length, 0)) == -1) {
 			string msg;
 			msg.printf("shmget(0x%x, %d, PRIV)", key, length);
 			error(status_vector, msg.c_str(), errno);
