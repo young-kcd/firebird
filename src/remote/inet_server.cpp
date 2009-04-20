@@ -435,7 +435,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	// and get ready for normal at-exit shutdown from us
 	THD_yield();
 
-	exit(FINI_OK);
+	return FINI_OK;
 }
 
 }
