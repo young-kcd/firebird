@@ -345,6 +345,14 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="OTHER files"
+			>
+			<File
+				RelativePath="..\..\..\src\utilities\err.cpp"
+				>
+			</File>
+ 		</Filter>
+ 		<Filter
 			Name="Resource files"
 			>
 			<File
