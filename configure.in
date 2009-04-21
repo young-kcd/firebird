@@ -76,7 +76,13 @@ dnl CPU_TYPE=ppc64
     ;;
 
   powerpc-*-aix*)
-    MAKEFILE_PREFIX=aix_powerpc
+dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
+  	comp=$(echo "$CXX" | (cut -c1-3 | tr [:upper:] [:lower:]))
+  	if test "$comp" = "xlc"; then
+		MAKEFILE_PREFIX=aix_powerpc_xlc
+	else
+		MAKEFILE_PREFIX=aix_powerpc
+	fi
     MAKEFILE_POSTFIX=aix
     PLATFORM=AIX
     INSTALL_PREFIX=aix
