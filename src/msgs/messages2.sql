@@ -2906,7 +2906,7 @@ This message begins with a TAB (''\t'') and ends with a newline (''\n'').', 17, 
 This message is followed by one newline (''\n'').', 17, 37, NULL, 'SHOW     <object> [<name>] -- display system information', NULL, NULL);
 ('HLP_OBJTYPE', 'help', 'isql.e', 'This message goes together with No. 37.  Translate only "object type".
 The message begins with 2 blank spaces.
-There is a newline (''\n'') after "INDEX" and another at the end.', 17, 38, NULL, '    <object> = CHECK, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION, GENERATOR,', NULL, NULL);
+There is a newline (''\n'') after "INDEX" and another at the end.', 17, 38, NULL, '    <object> = CHECK, COLLATION, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION,', NULL, NULL);
 ('HLP_EXIT', 'help', 'isql.e', 'Do not translate the word "EXIT".
 This message is followed by one newline (''\n'').', 17, 39, NULL, 'EXIT                       -- exit and commit changes', NULL, NULL);
 ('HLP_QUIT', 'help', 'isql.e', 'Do not translate the word "QUIT".
@@ -2943,7 +2943,7 @@ Fetches = !f', NULL, NULL);
 ('HLP_EDIT2', 'help', 'isql.e', NULL, 17, 61, NULL, 'EDIT                       -- edit current command buffer and execute', NULL, NULL);
 ('HLP_OUTPUT2', 'help', 'isql.e', NULL, 17, 62, NULL, 'OUTput                     -- return output to stdout', NULL, NULL);
 ('HLP_SETNAMES', 'help', 'isql.e', NULL, 17, 63, NULL, '    SET NAMES <csname>     -- set name of runtime character set', NULL, NULL);
-('HLP_OBJTYPE2', 'help', 'isql.e', NULL, 17, 64, NULL, '               GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM, TABLE,', NULL, NULL);
+('HLP_OBJTYPE2', 'help', 'isql.e', NULL, 17, 64, NULL, '               GENERATOR, GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM,', NULL, NULL);
 ('HLP_SETBLOB2', 'help', '65', NULL, 17, 65, NULL, '    SET BLOB               -- turn off BLOB display', NULL, NULL);
 ('HLP_SET_ROOT', 'help', 'isql.e', NULL, 17, 66, NULL, 'SET      <option>          -- (Use HELP SET for complete list)', NULL, NULL);
 ('NO_TABLES', 'SHOW_metadata', 'show.e', NULL, 17, 67, NULL, 'There are no tables in this database', NULL, NULL);
@@ -2982,7 +2982,7 @@ Fetches = !f', NULL, NULL);
 ('NO_GRANT_ON_ROL', 'SHOW_metadata', 'show.e', NULL, 17, 97, NULL, 'There is no membership privilege granted on @1 in this database', NULL, NULL);
 ('UNEXPECTED_EOF', 'do_isql', 'isql.e', NULL, 17, 98, NULL, 'Expected end of statement, encountered EOF', NULL, NULL);
 ('TIME_ERR', 'add_row()', 'isql.e', NULL, 17, 101, NULL, 'Bad TIME: @1', NULL, NULL);
-('HLP_OBJTYPE3', 'help', 'isql.epp', NULL, 17, 102, NULL, '               TRIGGER, VERSION, USERS, VIEW', NULL, NULL);
+('HLP_OBJTYPE3', 'help', 'isql.epp', NULL, 17, 102, NULL, '               TABLE, TRIGGER, VERSION, USERS, VIEW', NULL, NULL);
 (NULL, 'SHOW_metadata', 'show.e', NULL, 17, 103, NULL, 'There is no role @1 in this database', NULL, NULL);
 ('USAGE_BAIL', 'ISQL_main', 'isql.epp', NULL, 17, 104, NULL, '	-b(ail)                 bail on errors (set bail on)', NULL, NULL);
 (NULL, 'create_db', 'isql.e', NULL, 17, 105, NULL, 'Incomplete string in @1', NULL, NULL);
