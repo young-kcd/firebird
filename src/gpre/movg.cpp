@@ -31,10 +31,10 @@
 
 #include "../jrd/dsc.h"
 #include "../gpre/movg_proto.h"
-//  TMN: Unfortunately we need to include gpre.h before gpre_proto.h since
-//  the latter references a macro from the former, and doesn't include that
-//  header file itself. We need to include gpre_proto.h since we use gpre
-//  functions.
+// TMN: Unfortunately we need to include gpre.h before gpre_proto.h since
+// the latter references a macro from the former, and doesn't include that
+// header file itself. We need to include gpre_proto.h since we use gpre
+// functions.
 //
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"

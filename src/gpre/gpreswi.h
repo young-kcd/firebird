@@ -48,99 +48,94 @@
 #include "../jrd/common.h"
 
 
-/*
- * Switch handling constants.  Note that IN_SW_COUNT must always be
- * one larger than the largest switch value
- */
+// Switch handling constants.  Note that IN_SW_COUNT must always be
+// one larger than the largest switch value
 
 enum gpre_cmd_switch
 {
-	IN_SW_GPRE_0,		/* not a known switch */
-	IN_SW_GPRE_C,		/* source is C */
-	IN_SW_GPRE_D,		/* SQL database declaration */
-	IN_SW_GPRE_E,		/* accept either case */
-	IN_SW_GPRE_F,		/* source is FORTRAN */
-	IN_SW_GPRE_G,		/* internal GDS module */
-	IN_SW_GPRE_GXX,		/* internal GDS C++ module */
-	IN_SW_GPRE_I,		/* use ID's rather than names */
-	IN_SW_GPRE_M,		/* don't generate READY/START_TRANS */
-	IN_SW_GPRE_N,		/* don't generate debug lines */
-	IN_SW_GPRE_O,		/* write output to standard out */
-	IN_SW_GPRE_P,		/* source is PASCAL */
-	IN_SW_GPRE_R,		/* generate raw BLR */
-	IN_SW_GPRE_S,		/* generate normal, rather than C strings */
-	IN_SW_GPRE_T,		/* print trace messages */
-	IN_SW_GPRE_X,		/* database is EXTERNAL (used with /DATABASE only) */
-	IN_SW_GPRE_COB,		/* source is (shudder) cobol */
-	IN_SW_GPRE_ANSI, 	/* source is (worse and worse!) ansi cobol format */
-	IN_SW_GPRE_ADA,		/* source is ada */
-	IN_SW_GPRE_HANDLES,	/* ada handles package */
-	IN_SW_GPRE_Z, 		/* print software version */
-	IN_SW_GPRE_D_FLOAT, /* use blr_d_float for doubles */
-	IN_SW_GPRE_CXX, 	/* source is C++ */
-	IN_SW_GPRE_SCXX, 	/* source is C++ with Saber extension */
-	IN_SW_GPRE_SQLDA, 	/* use old or new SQLDA */
-	IN_SW_GPRE_USER, 	/* default username to use when attaching database */
-	IN_SW_GPRE_PASSWORD, /* default password to use in attaching database */
-	IN_SW_GPRE_INTERP,	/* default character set/collation */
+	IN_SW_GPRE_0,		// not a known switch
+	IN_SW_GPRE_C,		// source is C
+	IN_SW_GPRE_D,		// SQL database declaration
+	IN_SW_GPRE_E,		// accept either case
+	IN_SW_GPRE_F,		// source is FORTRAN
+	IN_SW_GPRE_G,		// internal GDS module
+	IN_SW_GPRE_GXX,		// internal GDS C++ module
+	IN_SW_GPRE_I,		// use ID's rather than names
+	IN_SW_GPRE_M,		// don't generate READY/START_TRANS
+	IN_SW_GPRE_N,		// don't generate debug lines
+	IN_SW_GPRE_O,		// write output to standard out
+	IN_SW_GPRE_P,		// source is PASCAL
+	IN_SW_GPRE_R,		// generate raw BLR
+	IN_SW_GPRE_S,		// generate normal, rather than C strings
+	IN_SW_GPRE_T,		// print trace messages
+	IN_SW_GPRE_X,		// database is EXTERNAL (used with /DATABASE only)
+	IN_SW_GPRE_COB,		// source is (shudder) cobol
+	IN_SW_GPRE_ANSI, 	// source is (worse and worse!) ansi cobol format
+	IN_SW_GPRE_ADA,		// source is ada
+	IN_SW_GPRE_HANDLES,	// ada handles package
+	IN_SW_GPRE_Z, 		// print software version
+	IN_SW_GPRE_D_FLOAT, // use blr_d_float for doubles
+	IN_SW_GPRE_CXX, 	// source is C++
+	IN_SW_GPRE_SCXX, 	// source is C++ with Saber extension
+	IN_SW_GPRE_SQLDA, 	// use old or new SQLDA
+	IN_SW_GPRE_USER, 	// default username to use when attaching database
+	IN_SW_GPRE_PASSWORD, // default password to use in attaching database
+	IN_SW_GPRE_INTERP,	// default character set/collation
 
-	IN_SW_GPRE_CPLUSPLUS,	/* source is platform dependant C++ */
-	IN_SW_GPRE_SQLDIALECT,	/* SQL dialect passed */
+	IN_SW_GPRE_CPLUSPLUS,	// source is platform dependant C++
+	IN_SW_GPRE_SQLDIALECT,	// SQL dialect passed
 
-	/* Added this to let gpre dump the lines that it is parsing to stderr
-	   FSG 14.Nov.2000
-	*/
+	// Added this to let gpre dump the lines that it is parsing to stderr
+	// FSG 14.Nov.2000
+
 	IN_SW_GPRE_VERBOSE,
 
-	/* Added this to allow boot version of gpre to only resolve queries
-	 * against internal metadata
-	 */
+	// Added this to allow boot version of gpre to only resolve queries
+	// against internal metadata
+
 	IN_SW_GPRE_LANG_INTERNAL,
 
-	/* Added this to allow in builds to specify the compiletime database directory
-	 * without the need to edit the epp source
-	 */
+	// Added this to allow in builds to specify the compiletime database directory
+	// without the need to edit the epp source
+
 	IN_SW_GPRE_BASE,
 
-	/*
-	 * Added to allow generation of RM/Cobol compatible code
-	 * SWB 31.Aug.2006
-	 */
+	// Added to allow generation of RM/Cobol compatible code
+	// SWB 31.Aug.2006
+
 	IN_SW_GPRE_RMCOBOL,
 
-	/*
-	 * Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to
-	 * deliver dates to Cobol programs
-	 */
+	// Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to
+	// deliver dates to Cobol programs
+
 	IN_SW_GPRE_DATE_FMT,
-	/*
-	 * Added to allow QLI processing to be suppressed.  QLI and COBOL reserved word lists
-	 * intersect and since QLI reserved words are recognized no matter where they occur in the
-	 * source stream this was causing bogus errors while parsing COBOL programs.
-	 */
+
+	// Added to allow QLI processing to be suppressed.  QLI and COBOL reserved word lists
+	// intersect and since QLI reserved words are recognized no matter where they occur in the
+	// source stream this was causing bogus errors while parsing COBOL programs.
+
 	IN_SW_NO_QLI,
 #ifdef TRUSTED_AUTH
-	/*
-	 * Added to allow trusted authentication even with ISC_USER set in environment
-	 */
+
+	// Added to allow trusted authentication even with ISC_USER set in environment
+
 	IN_SW_GPRE_TRUSTED,
 #endif
-	IN_SW_GPRE_FETCH_PASS, /* fetch password to use from file */
+	IN_SW_GPRE_FETCH_PASS, // fetch password to use from file
 
-	/* As mentioned above: This should always be one larger than the largest
-	   switch value.
-	   FSG 14.Nov.2000
-	*/
+	// As mentioned above: This should always be one larger than the largest
+	// switch value.
+	// FSG 14.Nov.2000
 
-	IN_SW_GPRE_COUNT 	/* number of IN_SW values */
+
+	IN_SW_GPRE_COUNT 	// number of IN_SW values
 
 };	// enum gpre_cmd_switch
 
 
-/*
- * Dynamic switch table type declaration.  Used to indicate that a
- * switch was set.  Allocated in MAIN.
- */
+// Dynamic switch table type declaration.  Used to indicate that a
+// switch was set.  Allocated in MAIN.
+
 
 struct sw_tab_t
 {
@@ -188,7 +183,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_TRUSTED	, 0, "TRUSTED"		, 0, 0, 0, FALSE, 0, 0, "\t\tuse trusted authentication"},
 #endif
 	{IN_SW_GPRE_USER	, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
-/* FSG 14.Nov.2000 */
+	// FSG 14.Nov.2000
 	{IN_SW_GPRE_VERBOSE	, 0, "VERBOSE"		, 0, 0, 0, FALSE, 0, 0, "\t\tVerbose Output to stderr"},
 	{IN_SW_GPRE_X		, 0, "X"			, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with -DATABASE)"},
 #ifdef GPRE_COBOL

@@ -92,7 +92,7 @@ static inline void endp(const int column)
 void INT_CXX_action( const act* action, int column)
 {
 
-//  Put leading braces where required
+	// Put leading braces where required
 
 	switch (action->act_type)
 	{
@@ -158,7 +158,7 @@ void INT_CXX_action( const act* action, int column)
 		return;
 	}
 
-//  Put in a trailing brace for those actions still with us
+	// Put in a trailing brace for those actions still with us
 
 	endp(column);
 }
@@ -428,7 +428,6 @@ static void gen_for( const act* action, int column)
 
 static char* gen_name(char* const string, const ref* reference)
 {
-
 	fb_utils::snprintf(string, MAX_REF_SIZE, "jrd_%d.jrd_%d",
 					   reference->ref_port->por_ident, reference->ref_ident);
 
@@ -450,7 +449,8 @@ static void gen_raw( const gpre_req* request)
 	TEXT* p = buffer;
 	align(0);
 
-	while (--blr_length) {
+	while (--blr_length)
+	{
 		const UCHAR c = *blr++;
 		if ((c >= 'A' && c <= 'Z') || c == '$' || c == '_')
 			sprintf(p, "'%c',", c);
@@ -662,7 +662,7 @@ static void make_port( const gpre_port* port, int column)
 			fmtstr = "    SLONG  jrd_%d;\t// %s ";
 			break;
 
-// ** Begin sql date/time/timestamp *
+		// Begin sql date/time/timestamp
 		case dtype_sql_date:
 			fmtstr = "    ISC_DATE  jrd_%d;\t// %s ";
 			break;
@@ -674,7 +674,7 @@ static void make_port( const gpre_port* port, int column)
 		case dtype_timestamp:
 			fmtstr = "    ISC_TIMESTAMP  jrd_%d;\t// %s ";
 			break;
-// ** End sql date/time/timestamp *
+		// End sql date/time/timestamp
 
 		case dtype_int64:
 			fmtstr = "    ISC_INT64  jrd_%d;\t// %s ";

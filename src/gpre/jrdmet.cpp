@@ -117,7 +117,8 @@ void JRDMET_init( gpre_dbb* db)
 		relfld = fld + 1;
 	}
 
-	for (const rtyp* rtype = types; rtype->rtyp_name; rtype++) {
+	for (const rtyp* rtype = types; rtype->rtyp_name; rtype++)
+	{
 		field_type* type = (field_type*) MSC_alloc(TYP_LEN);
 		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
 		type->typ_symbol = symbol;

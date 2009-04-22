@@ -27,7 +27,7 @@
 #include "../gpre/words.h"
 #include "../gpre/gpre.h"
 
-/* Token block, used to hold a lexical token. */
+// Token block, used to hold a lexical token.
 
 enum tok_t {
 	tok_ident,
@@ -40,15 +40,15 @@ enum tok_t {
 
 struct tok
 {
-	tok_t tok_type;				/* type of token */
-	gpre_sym* tok_symbol;		/* hash block if recognized */
-	kwwords_t tok_keyword;		/* keyword number, if recognized */
-	SLONG tok_position;			/* byte number in input stream */
+	tok_t tok_type;				// type of token
+	gpre_sym* tok_symbol;		// hash block if recognized
+	kwwords_t tok_keyword;		// keyword number, if recognized
+	SLONG tok_position;			// byte number in input stream
 	USHORT tok_length;
 	USHORT tok_white_space;
 	SCHAR tok_string[MAX_SYM_SIZE];
-	bool tok_first;				/* is it the first token in a statement? */
-	gpre_sym* tok_charset;		/* Character set of token */
+	bool tok_first;				// is it the first token in a statement?
+	gpre_sym* tok_charset;		// Character set of token
 };
 
 const size_t TOK_LEN = sizeof(tok);

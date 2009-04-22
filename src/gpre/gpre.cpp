@@ -150,7 +150,6 @@ static int line_global;
 static int warnings_global;
 static int fatals_global;
 
-//static jmp_buf fatal_env;
 static const TEXT *comment_start, *comment_stop;
 
 typedef void (*pfn_gen_routine) (const act*, int);
@@ -175,10 +174,9 @@ bool isAnsiCobol(cob_t dialect)
 }
 #endif
 
-/*
- * Type and table definition for the extension tables.  Tells GPRE
- * the default extensions for DML and host languages.
- */
+
+// Type and table definition for the extension tables.  Tells GPRE
+// the default extensions for DML and host languages.
 
 struct ext_table_t
 {
@@ -265,7 +263,7 @@ int main(int argc, char* argv[])
 	bool use_lang_internal_gxx_output = false;
 	input_char = input_buffer;
 
-	//  Initialize character class table
+	// Initialize character class table
 	int i;
 	for (i = 0; i <= 127; ++i) {
 		set_classes(i, 0);
@@ -293,7 +291,7 @@ int main(int argc, char* argv[])
 	set_classes('\"', CHR_DBLQUOTE);
 	set_classes('#', CHR_IDENT);
 
-//  zorch 0 through 7 in the fortran label vector
+	// zorch 0 through 7 in the fortran label vector
 #ifdef GPRE_FORTRAN
 	gpreGlob.fortran_labels[0] = 255;
 #endif
@@ -302,7 +300,7 @@ int main(int argc, char* argv[])
 	gpreGlob.global_db_count	= 0;
 #endif
 
-//  set switches and so on to default (C) values
+	// set switches and so on to default (C) values
 
 	gpre_dbb* db = NULL;
 
@@ -340,13 +338,11 @@ int main(int argc, char* argv[])
 
 	gpreGlob.sw_know_interp		= false;
 	gpreGlob.sw_interp = 0;
-//  FSG 14.Nov.2000
+	// FSG 14.Nov.2000
 	sw_verbose = false;
 	gpreGlob.sw_sql_dialect = gpreGlob.compiletime_db_dialect = SQL_DIALECT_V5;
 
-//
-//  Call a subroutine to process the input line
-//
+	// Call a subroutine to process the input line
 
 	TEXT* filename_array[4] = { 0, 0, 0, 0 };
 
@@ -365,13 +361,11 @@ int main(int argc, char* argv[])
 		CPR_exit(FINI_ERROR);
 	}
 
-//
-//  Try to open the input file.
-//  If the language wasn't supplied, maybe the kind user included a language
-//  specific extension, and the file name fixer will find it.  The file name
-//  fixer returns FALSE if it can't add an extension, which means there's already
-//  one of the right type there.
-//
+	// Try to open the input file.
+	// If the language wasn't supplied, maybe the kind user included a language
+	// specific extension, and the file name fixer will find it.  The file name
+	// fixer returns FALSE if it can't add an extension, which means there's already
+	// one of the right type there.
 
 	TEXT spare_file_name[MAXPATHLEN];
 	if (gpreGlob.sw_language == lang_undef)
@@ -382,10 +376,8 @@ int main(int argc, char* argv[])
 				break;
 		}
 
-//
-//   Sigh.  No such luck. Maybe there's a file lying around with a plausible
-//   extension and we can use that.
-//
+	// Sigh.  No such luck. Maybe there's a file lying around with a plausible
+	// extension and we can use that.
 
 	if (gpreGlob.sw_language == lang_undef)
 		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
@@ -399,23 +391,19 @@ int main(int argc, char* argv[])
 			}
 		}
 
-//
-//   Well, if he won't tell me what language it is, or even give me a hint, I'm
-//   not going to spend all day figuring out what he wants done.
-//
+	// Well, if he won't tell me what language it is, or even give me a hint, I'm
+	// not going to spend all day figuring out what he wants done.
 
 	if (gpreGlob.sw_language == lang_undef) {
 		fprintf(stderr, "gpre: can't find %s with any known extension.  Giving up.\n", file_name);
 		CPR_exit(FINI_ERROR);
 	}
 
-//
-//  Having got here, we know the language, and might even have the file open.
-//  Better check before reopening it on ourselves.  Try the file with the
-//  extension first (even if we have to add the extension).   If we add an
-//  extension, and find a file with that extension, we make the file name
-//  point to the expanded file name string in a private buffer.
-//
+	// Having got here, we know the language, and might even have the file open.
+	// Better check before reopening it on ourselves.  Try the file with the
+	// extension first (even if we have to add the extension).   If we add an
+	// extension, and find a file with that extension, we make the file name
+	// point to the expanded file name string in a private buffer.
 
 	if (!input_file)
 	{
@@ -441,10 +429,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-//
-//  Now, apply the switches and defaults we've so painfully acquired;
-//  adding in the language switch in case we inferred it rather than parsing it.
-//
+	// Now, apply the switches and defaults we've so painfully acquired;
+	// adding in the language switch in case we inferred it rather than parsing it.
 
 	const ext_table_t* src_ext_tab = dml_ext_table;
 
@@ -624,20 +610,18 @@ int main(int argc, char* argv[])
 			break;
 
 		case IN_SW_GPRE_GXX:
-			/* When we get executed here the IN_SW_GPRE_G case
-			 * has already been executed.  So we just set the
-			 * gen_routine to point to the C++ action, and be
-			 * done with it.
-			 */
+			// When we get executed here the IN_SW_GPRE_G case
+			// has already been executed.  So we just set the
+			// gen_routine to point to the C++ action, and be
+			// done with it.
 			gen_routine			= INT_CXX_action;
 			use_lang_internal_gxx_output = true;
 			break;
 
 		case IN_SW_GPRE_LANG_INTERNAL:
-			/* We need to reset all the variables (except gpreGlob.sw_language) to the
- 			* default values because the IN_SW_GPRE_G case was already
- 			* executed in the for the very first switch.
- 			**/
+			// We need to reset all the variables (except gpreGlob.sw_language) to the
+ 			// default values because the IN_SW_GPRE_G case was already
+ 			// executed in the for the very first switch.
 			gpreGlob.sw_language = lang_internal;
 			gen_routine = C_CXX_action;
 			gpreGlob.sw_cstring = true;
@@ -680,7 +664,7 @@ int main(int argc, char* argv[])
 		case IN_SW_GPRE_T:
 			sw_trace = true;
 			break;
-//  FSG 14.Nov.2000
+		// FSG 14.Nov.2000
 		case IN_SW_GPRE_VERBOSE:
 			sw_verbose = true;
 			break;
@@ -695,21 +679,21 @@ int main(int argc, char* argv[])
 	{
 		CPR_warn("gpre: -user, -password and -charset switches require -manual");
 	}
-//
-//  If one of the C++ variants was used/discovered, convert to C++ for
-//  further internal use.
-//
+
+	// If one of the C++ variants was used/discovered, convert to C++ for
+	// further internal use.
+
 
 	if (gpreGlob.sw_language == lang_cpp || gpreGlob.sw_language == lang_cplusplus)
 		gpreGlob.sw_language = lang_cxx;
 
 #if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
-//  if cobol is defined we need both sw_cobol and sw_cob_dialect to
-//  determine how the string substitution table is set up
-//
+	// if cobol is defined we need both sw_cobol and sw_cob_dialect to
+	// determine how the string substitution table is set up
 
 	if (gpreGlob.sw_language == lang_cobol)
-		if (isAnsiCobol(gpreGlob.sw_cob_dialect)) {
+		if (isAnsiCobol(gpreGlob.sw_cob_dialect))
+		{
 			if (db)
 				db->dbb_name->sym_string = "isc-database";
 			comment_start = "      *  ";
@@ -721,7 +705,8 @@ int main(int argc, char* argv[])
 			gpreGlob.count_name = "isc-count";
 			gpreGlob.slack_name = "isc-slack";
 		}
-        else { // just to be sure :-)
+        else {
+	        // just to be sure :-)
             comment_start = "*      ";
             gpreGlob.transaction_name = "ISC_TRANS";
         }
@@ -729,15 +714,13 @@ int main(int argc, char* argv[])
 	COB_name_init(isAnsiCobol(gpreGlob.sw_cob_dialect));
 #endif
 
-//
-//  See if user has specified an interpretation on the command line,
-//  as might be used for SQL access.
-//
+	// See if user has specified an interpretation on the command line,
+	// as might be used for SQL access.
 
 	if (gpreGlob.default_lc_ctype)
 	{
 		if (all_digits(gpreGlob.default_lc_ctype)) {
-			/* Numeric name? if so assume user has hard-coded a subtype number */
+			// Numeric name? if so assume user has hard-coded a subtype number
 
 			gpreGlob.sw_interp = atoi(gpreGlob.default_lc_ctype);
 			gpreGlob.sw_know_interp = true;
@@ -755,16 +738,14 @@ int main(int argc, char* argv[])
 		}
 	}
 
-//
-//  Finally, open the output file, if we're not using standard out.
-//  If only one file name was given, make sure it has the preprocessor
-//  extension, then back up to that extension, zorch it, and add
-//  the language extension. Then you've got an output name.  Take it
-//  and add the correct extension.  If got an explicit output file
-//  name, use it as is unless it doesn't have an extension in which
-//  case use the default language extension.  Finally, open the file.
-//  What could be easier?
-//
+	// Finally, open the output file, if we're not using standard out.
+	// If only one file name was given, make sure it has the preprocessor
+	// extension, then back up to that extension, zorch it, and add
+	// the language extension. Then you've got an output name.  Take it
+	// and add the correct extension.  If got an explicit output file
+	// name, use it as is unless it doesn't have an extension in which
+	// case use the default language extension.  Finally, open the file.
+	// What could be easier?
 
 	TEXT spare_out_file_name[MAXPATHLEN];
 	if (!sw_standard_out)
@@ -816,7 +797,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-//  Compile modules until end of file
+	// Compile modules until end of file
 
 	sw_databases = gpreGlob.isc_databases;
 
@@ -984,7 +965,7 @@ tok* CPR_eol_token()
 	if (gpreGlob.sw_language != lang_fortran)
 		return CPR_token();
 
-//  Save the information from the previous token
+	// Save the information from the previous token
 
 	gpreGlob.prior_token = gpreGlob.token_global;
 	gpreGlob.prior_token.tok_position = last_position;
@@ -994,7 +975,7 @@ tok* CPR_eol_token()
 	TEXT* p = gpreGlob.token_global.tok_string;
 	SSHORT num_chars = 0;
 
-//  skip spaces
+	// skip spaces
 
 	SSHORT c;
 	for (c = nextchar(); c == ' '; c = nextchar()) {
@@ -1002,7 +983,7 @@ tok* CPR_eol_token()
 		*p++ = (TEXT) c;
 	}
 
-//  in-line comments are equivalent to end of line
+	// in-line comments are equivalent to end of line
 
 	if (c == '!')
 	{
@@ -1012,7 +993,7 @@ tok* CPR_eol_token()
 		}
 	}
 
-//  in-line SQL comments are equivalent to end of line
+	// in-line SQL comments are equivalent to end of line
 
 	if (gpreGlob.sw_sql && (c == '-'))
 	{
@@ -1034,7 +1015,7 @@ tok* CPR_eol_token()
 		return NULL;
 	}
 
-//  Not EOL so back up to the begining and try again
+	// Not EOL so back up to the begining and try again
 
 	if (c != '\n') {
 		return_char(c);
@@ -1043,9 +1024,9 @@ tok* CPR_eol_token()
 		return CPR_token();
 	}
 
-//  if we've got EOL, treat it like a semi-colon
-//  NOTE: the fact that the length of this token is set to 0, is used as an
-//  indicator elsewhere that it was a faked token
+	// if we've got EOL, treat it like a semi-colon
+	// NOTE: the fact that the length of this token is set to 0, is used as an
+	// indicator elsewhere that it was a faked token
 
 	gpreGlob.token_global.tok_string[0] = ';';
 	gpreGlob.token_global.tok_string[1] = 0;
@@ -1073,13 +1054,12 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 	SLONG start = text->txt_position;
 	int length = text->txt_length;
 
-//  On PC-like platforms, '\n' will be 2 bytes.  The txt_position
-//  will be incorrect for fseek.  The position is not adjusted
-//  just for PC-like platforms because, we use fseek () and
-//  getc to position ourselves at the token position.
-//  We should keep both character position and byte position
-//  and use them appropriately. for now use getc ()
-//
+	// On PC-like platforms, '\n' will be 2 bytes.  The txt_position
+	// will be incorrect for fseek.  The position is not adjusted
+	// just for PC-like platforms because, we use fseek () and
+	// getc to position ourselves at the token position.
+	// We should keep both character position and byte position
+	// and use them appropriately. for now use getc ()
 
 #if (defined WIN_NT)
 	if (fseek(trace_file, 0L, 0))
@@ -1091,7 +1071,7 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 		CPR_error("fseek failed for trace file");
 	}
 #if (defined WIN_NT)
-//  move forward to actual position
+	// move forward to actual position
 
 	while (start--)
 		getc(trace_file);
@@ -1315,14 +1295,14 @@ static SSHORT compare_ASCII7z(const char* str1, const char* str2)
 
 static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 {
-//  Reset miscellaneous pointers
+	// Reset miscellaneous pointers
 
 	gpreGlob.isc_databases = sw_databases;
 	gpreGlob.requests = NULL;
 	gpreGlob.events = NULL;
 	global_last_action = global_first_action = gpreGlob.global_functions = NULL;
 
-//  Position the input file and initialize various modules
+	// Position the input file and initialize various modules
 
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
@@ -1342,11 +1322,11 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	PAR_init();
 	CMP_init();
 
-//  Take a first pass at the module
+	// Take a first pass at the module
 
 	const SLONG end_position = pass1(base_directory);
 
-//  finish up any based_ons that got deferred
+	// finish up any based_ons that got deferred
 
 #ifdef GPRE_FORTRAN
 	if (gpreGlob.sw_language == lang_fortran)
@@ -1386,13 +1366,13 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 {
 	TEXT* p = file_nameL;
 
-	//  go to the end of the file name
+	// go to the end of the file name
 	while (*p)
 		p++;
 
 	TEXT* terminator = p;
 
-//  back up to the last extension (if any)
+	// back up to the last extension (if any)
 
 #ifdef WIN_NT
 	while (p != file_nameL && *p != '.' && *p != '/' && *p != '\\')
@@ -1402,10 +1382,8 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 		--p;
 #endif
 
-//
-//  There's a match and the file spec has no extension,
-//  so add extension.
-//
+	// There's a match and the file spec has no extension,
+	// so add extension.
 
 	if (*p != '.') {
 		while (*terminator++ = *extension++)
@@ -1413,11 +1391,9 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 		return true;
 	}
 
-//
-//  There's a match and an extension.  If the extension in
-//  the table matches the one on the file, we don't want
-//  to add a duplicate.  Otherwise add it.
-//
+	// There's a match and an extension.  If the extension in
+	// the table matches the one on the file, we don't want
+	// to add a duplicate.  Otherwise add it.
 
 	TEXT* ext = p;
 	for (const TEXT* q = extension; *p == *q; p++, q++)
@@ -1433,7 +1409,7 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 		}
 	}
 
-//  Didn't match extension, so add the extension
+	// Didn't match extension, so add the extension
 	while (*terminator++ = *extension++)
 		;
 
@@ -1468,8 +1444,8 @@ static void finish_based( act* action)
 		if (action->act_type != ACT_basedon)
 			continue;
 
-		/* If there are no databases either on the command line or in
-		   this subroutine or main program, can't do a BASED_ON. */
+		// If there are no databases either on the command line or in
+		// this subroutine or main program, can't do a BASED_ON.
 
 		if (!gpreGlob.isc_databases) {
 			CPR_error("No database defined.  Needed for a BASED_ON operation");
@@ -1505,9 +1481,9 @@ static void finish_based( act* action)
 			else
 			{
 				if (based_on->bas_flags & BAS_ambiguous) {
-					/* The reference could have been DB.RELATION.FIELD or
-					   RELATION.FIELD.SEGMENT.  It's not the former.  Try
-					   the latter. */
+					// The reference could have been DB.RELATION.FIELD or
+					// RELATION.FIELD.SEGMENT.  It's not the former.  Try
+					// the latter.
 
 					based_on->bas_fld_name = based_on->bas_rel_name;
 					based_on->bas_rel_name = based_on->bas_db_name;
@@ -1530,8 +1506,8 @@ static void finish_based( act* action)
 				if (relation = MET_get_relation(db, based_on->bas_rel_name->str_string, ""))
 				{
 					if (field) {
-						/* The field reference is ambiguous.  It exists in more
-						   than one database. */
+						// The field reference is ambiguous.  It exists in more
+						// than one database.
 
 						fb_utils::snprintf(s, sizeof(s), "field %s in relation %s ambiguous",
 								based_on->bas_fld_name->str_string, based_on->bas_rel_name->str_string);
@@ -1581,10 +1557,10 @@ static int get_char( FILE* file)
 
 	const USHORT pc = getc(file);
 
-	//  Dump this char to stderr, so we can see
-	//  what input line will cause this ugly
-	//  core dump.
-	//  FSG 14.Nov.2000
+	// Dump this char to stderr, so we can see
+	// what input line will cause this ugly
+	// core dump.
+	// FSG 14.Nov.2000
 	if (sw_verbose) {
 		fprintf(stderr, "%c", pc);
 	}
@@ -1610,11 +1586,9 @@ static bool get_switches(int			argc,
 {
 	USHORT in_sw = 0; // silence uninitialized warning
 
-//
-//  Read all the switches and arguments, acting only on those
-//  that apply immediately, since we may find out more when
-//  we try to open the file.
-//
+	// Read all the switches and arguments, acting only on those
+	// that apply immediately, since we may find out more when
+	// we try to open the file.
 
 	sw_tab_t* sw_table_iterator = sw_table;
 
@@ -1677,11 +1651,9 @@ static bool get_switches(int			argc,
 			}
 		}
 
-		/*
-		 * Check here for switches that affect file look ups
-		 * and -D so we don't lose their arguments.
-		 * Give up here if we find a bad switch.
-		 */
+		// Check here for switches that affect file look ups
+		// and -D so we don't lose their arguments.
+		// Give up here if we find a bad switch.
 
 		if (*string == '?') {
 			in_sw = IN_SW_GPRE_0;
@@ -1705,13 +1677,12 @@ static bool get_switches(int			argc,
 			break;
 
 		case IN_SW_GPRE_GXX:
-			/* If we decrement sw_tab the switch is removed
-			 * from the table and not processed in the main
-			 * switch statement.  Since IN_SW_GPRE_G will always
-			 * be processed for lang_internal, we leave our
-			 * switch in so we can clean up the mess left behind
-			 * by IN_SW_GPRE_G
-			 */
+			// If we decrement sw_tab the switch is removed
+			// from the table and not processed in the main
+			// switch statement.  Since IN_SW_GPRE_G will always
+			// be processed for lang_internal, we leave our
+			// switch in so we can clean up the mess left behind
+			// by IN_SW_GPRE_G
 			gpreGlob.sw_language = lang_internal;
 			break;
 
@@ -1744,7 +1715,7 @@ static bool get_switches(int			argc,
 #endif
 		case IN_SW_GPRE_LANG_INTERNAL :
 			gpreGlob.sw_language = lang_internal;
-			/*sw_tab--;*/
+			//sw_tab--;
 			break;
 
 		case IN_SW_GPRE_D:
@@ -1919,7 +1890,7 @@ static bool get_switches(int			argc,
 
 static tok* get_token()
 {
-//  Save the information from the previous token
+	// Save the information from the previous token
 
 	gpreGlob.prior_token = gpreGlob.token_global;
 	gpreGlob.prior_token.tok_position = last_position;
@@ -1937,7 +1908,7 @@ static tok* get_token()
 	SSHORT c = skip_white();
 
 #ifdef GPRE_COBOL
-//  Skip over cobol line continuation characters
+	// Skip over cobol line continuation characters
 	if (gpreGlob.sw_language == lang_cobol && !isAnsiCobol(gpreGlob.sw_cob_dialect))
 		while (line_position == 1) {
 			c = skip_white();
@@ -1945,7 +1916,7 @@ static tok* get_token()
 		}
 #endif
 
-//  Skip fortran line continuation characters
+	// Skip fortran line continuation characters
 
 #ifdef GPRE_FORTRAN
 	if (gpreGlob.sw_language == lang_fortran)
@@ -1968,7 +1939,7 @@ static tok* get_token()
 		}
 	}
 #endif
-//  Get token rolling
+	// Get token rolling
 
 	TEXT* p = gpreGlob.token_global.tok_string;
 	const TEXT* const end = p + sizeof(gpreGlob.token_global.tok_string);
@@ -2015,7 +1986,8 @@ static tok* get_token()
 	}
 	else if (char_class & CHR_LETTER)
 	{
-		while (true) {
+		while (true)
+		{
 			while (get_classes(c = nextchar()) & CHR_IDENT)
 				*p++ = (TEXT) c;
 			if (c != '-' || gpreGlob.sw_language != lang_cobol)
@@ -2099,8 +2071,8 @@ static tok* get_token()
 			{
 				return_char(*p);
 
-				/*  Decrement, then increment line counter, for accuracy of
-				   the error message for an unterminated quoted string. */
+				// Decrement, then increment line counter, for accuracy of
+				// the error message for an unterminated quoted string.
 
 				line_global--;
 				CPR_error("unterminated quoted string");
@@ -2108,8 +2080,8 @@ static tok* get_token()
 				break;
 			}
 
-			/* If we can hold the literal do so, else assume it is in part
-			   of program we do not care about */
+			// If we can hold the literal do so, else assume it is in part
+			// of program we do not care about
 
 			if (next == '\\' && !gpreGlob.sw_sql &&
 				(gpreGlob.sw_language == lang_c || isLangCpp(gpreGlob.sw_language)))
@@ -2128,8 +2100,7 @@ static tok* get_token()
 			}
 			if (p < end)
 				*p++ = (TEXT) next;
-			if (next == c)
-				/* If 2 quotes in a row, treat 2nd as literal - bug #1530 */
+			if (next == c) // If 2 quotes in a row, treat 2nd as literal - bug #1530
 			{
 				const USHORT peek = nextchar();
 				if (peek != c) {
@@ -2186,10 +2157,9 @@ static tok* get_token()
 	if (isQuoted(gpreGlob.token_global.tok_type))
 	{
 		strip_quotes(gpreGlob.token_global);
-	/** If the dialect is 1 then anything that is quoted is
-	a string. Don not lookup in the hash table to prevent
-	parsing confusion.
-    **/
+		// If the dialect is 1 then anything that is quoted is
+		// a string. Don not lookup in the hash table to prevent
+		// parsing confusion.
 		if (gpreGlob.sw_sql_dialect != SQL_DIALECT_V5)
 			gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 		else
@@ -2226,13 +2196,13 @@ static tok* get_token()
 			gpreGlob.token_global.tok_keyword = KW_none;
 	}
 
-// ** Take care of GDML context variables. Context variables are inserted
-//into the hash table as it is. There is no upper casing of the variable
-//name done. Hence in all likelyhood we might have missed it while looking it
-//up if -e switch was specified. Hence
-//IF symbol is null AND it is not a quoted string AND -e switch was specified
-//THEN search again using HSH_lookup2().
-//*
+	// Take care of GDML context variables. Context variables are inserted
+	// into the hash table as it is. There is no upper casing of the variable
+	// name done. Hence in all likelyhood we might have missed it while looking it
+	// up if -e switch was specified. Hence
+	// IF symbol is null AND it is not a quoted string AND -e switch was specified
+	// THEN search again using HSH_lookup2().
+
 	if (gpreGlob.token_global.tok_symbol == NULL && !isQuoted(gpreGlob.token_global.tok_type) &&
 		gpreGlob.sw_case)
 	{
@@ -2243,7 +2213,7 @@ static tok* get_token()
 			gpreGlob.token_global.tok_keyword = KW_none;
 	}
 
-//  for FORTRAN, make note of the first token in a statement
+	// for FORTRAN, make note of the first token in a statement
 
 	gpreGlob.token_global.tok_first = first_position;
 	first_position = false;
@@ -2272,16 +2242,16 @@ static int nextchar()
 		line_position = 0;
 	}
 
-//  For silly fortran, mark the first token in a statement so
-//  we can decide to start the database field substitution string
-//  with a continuation indicator if appropriate.
+	// For silly fortran, mark the first token in a statement so
+	// we can decide to start the database field substitution string
+	// with a continuation indicator if appropriate.
 
 	if (line_position == 1)
 	{
 		first_position = true;
 
-		/* If the first character on a Fortran line is a tab, bump up the
-		   position indicator. */
+		// If the first character on a Fortran line is a tab, bump up the
+		// position indicator.
 
 #ifdef GPRE_FORTRAN
 		if (gpreGlob.sw_language == lang_fortran && c == '\t')
@@ -2289,8 +2259,8 @@ static int nextchar()
 #endif
 	}
 
-//  if this is a continuation line, the next token is not
-//  the start of a statement.
+	// if this is a continuation line, the next token is not
+	// the start of a statement.
 
 #ifdef GPRE_FORTRAN
 	if (gpreGlob.sw_language == lang_fortran && line_position == 6 && c != ' ' && c != '0')
@@ -2329,7 +2299,7 @@ static int nextchar()
 
 static SLONG pass1(const TEXT* base_directory)
 {
-//  FSG 14.Nov.2000
+	// FSG 14.Nov.2000
 	if (sw_verbose) {
 		fprintf(stderr, "*********************** PASS 1 ***************************\n");
 	}
@@ -2367,9 +2337,9 @@ static SLONG pass1(const TEXT* base_directory)
 					{
 						if (action->act_type == ACT_database)
 						{
-							/* CREATE DATABASE has two actions the second one
-							   is do generate global decl at the start of the
-							   program file. */
+							// CREATE DATABASE has two actions, the second one
+							// is to generate global decl at the start of the
+							// program file.
 
 							global_last_action->act_rest = NULL;
 							action->act_rest = global_first_action;
@@ -2418,7 +2388,7 @@ static void pass2( SLONG start_position)
 {
 	SSHORT c = 0;
 
-//  FSG 14.Nov.2000
+	// FSG 14.Nov.2000
 	if (sw_verbose) {
 		fprintf(stderr, "*********************** PASS 2 ***************************\n");
 	}
@@ -2428,7 +2398,7 @@ static void pass2( SLONG start_position)
 	const bool sw_block_comments = gpreGlob.sw_language == lang_c ||
 		isLangCpp(gpreGlob.sw_language) || gpreGlob.sw_language == lang_pascal;
 
-//  Put out a distintive module header
+	// Put out a distintive module header
 
 	if (!sw_first)
 	{
@@ -2464,10 +2434,8 @@ static void pass2( SLONG start_position)
 		*p = 0;
 	} // scope
 
-//
-//if (sw_lines)
-//   fprintf (gpreGlob.out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
-//
+	//if (sw_lines)
+	//	fprintf (gpreGlob.out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
 
 	SLONG line = 0;
 	bool line_pending = sw_lines;
@@ -2477,12 +2445,12 @@ static void pass2( SLONG start_position)
 	SSHORT comment_start_len = strlen(comment_start);
 	SSHORT to_skip = 0;
 
-//  Dump text until the start of the next action, then process the action.
+	// Dump text until the start of the next action, then process the action.
 
 	for (const act* action = global_first_action; action; action = action->act_rest)
 	{
-		/* Dump text until the start of the next action.  If a line marker
-		   is pending and we see an end of line, dump out the marker. */
+		// Dump text until the start of the next action.  If a line marker
+		// is pending and we see an end of line, dump out the marker.
 
 		for (; current < action->act_position; current++)
 		{
@@ -2623,7 +2591,7 @@ static void pass2( SLONG start_position)
 		to_skip = 0;
 	}
 
-//  We're out of actions -- dump the remaining text to the output stream.
+	// We're out of actions -- dump the remaining text to the output stream.
 
 	if (!line && line_pending) {
 		fprintf(gpreGlob.out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
@@ -2644,7 +2612,7 @@ static void pass2( SLONG start_position)
 		putc(c, gpreGlob.out_file);
 	}
 
-//  Last but not least, generate any remaining functions
+	// Last but not least, generate any remaining functions
 
 	for (; gpreGlob.global_functions; gpreGlob.global_functions = gpreGlob.global_functions->act_next)
 		(*gen_routine) (gpreGlob.global_functions, 0);
@@ -2711,7 +2679,7 @@ static void return_char( SSHORT c)
 	--position;
 	--line_position;
 
-//  note putting back a new line results in incorrect line_position value
+	// note putting back a new line results in incorrect line_position value
 
 	if (c == '\n') {
 		--line_global;
@@ -2792,7 +2760,7 @@ static SSHORT skip_white()
 			}
 		}
 
-		/* skip C, C++ and PL/I comments */
+		// skip C, C++ and PL/I comments
 
 		if (c == '/' && (gpreGlob.sw_language == lang_c || isLangCpp(gpreGlob.sw_language)))
 		{
@@ -2817,9 +2785,9 @@ static SSHORT skip_white()
 
 		if (c == '!' && (gpreGlob.sw_language == lang_fortran))
 		{
-			/* If this character is a '!' followed by a '=', this is an
-			   Interbase 'not equal' operator, not a Fortran comment.
-			   Bug #307.  mao 6/14/89  */
+			// If this character is a '!' followed by a '=', this is an
+			// Interbase 'not equal' operator, not a Fortran comment.
+			// Bug #307.  mao 6/14/89
 
 			const SSHORT c3 = nextchar();
 			if (c3 == '=') {
@@ -2837,7 +2805,8 @@ static SSHORT skip_white()
 		}
 #endif
 
-		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada)) {
+		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada))
+		{
 			SSHORT next = nextchar();
 			if (next != '-') {
 				return_char(next);
@@ -2856,7 +2825,8 @@ static SSHORT skip_white()
 			continue;
 		}
 
-		if (c == '(' && gpreGlob.sw_language == lang_pascal) {
+		if (c == '(' && gpreGlob.sw_language == lang_pascal)
+		{
 			SSHORT next = nextchar();
 			if (next != '*') {
 				return_char(next);

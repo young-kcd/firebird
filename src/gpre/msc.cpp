@@ -30,20 +30,16 @@
 //
 
 // ***************************************************
-//  THIS MODULE HAS SEVERAL KISSING COUSINS; IF YOU
-//  SHOULD CHANGE ONE OF THE MODULES IN THE FOLLOWING
-//  LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
-//  SIMILAR CHANGES:
+// THIS MODULE HAS SEVERAL KISSING COUSINS; IF YOU
+// SHOULD CHANGE ONE OF THE MODULES IN THE FOLLOWING
+// LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
+// SIMILAR CHANGES:
 //
-//                  dsql/all.cpp
-//                  jrd/all.cpp
-//                  pipe/allp.cpp
 //                  qli/all.cpp
-//                  remote/allr.cpp
 //                  gpre/msc.cpp
 //
-//  - THANK YOU
-//**************************************************
+// - THANK YOU
+// **************************************************
 
 #include "firebird.h"
 #include <stdio.h>
@@ -93,7 +89,8 @@ UCHAR* MSC_alloc(int size)
 {
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 
-	if (!space || size > space->spc_remaining) {
+	if (!space || size > space->spc_remaining)
+	{
 		const int n = MAX(size, 4096);
 		gpre_space* next = (gpre_space*) gds__alloc((SLONG) (n + sizeof(gpre_space)));
 		if (!next)
@@ -124,7 +121,8 @@ UCHAR* MSC_alloc_permanent(int size)
 {
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 
-	if (!permanent_space || size > permanent_space->spc_remaining) {
+	if (!permanent_space || size > permanent_space->spc_remaining)
+	{
 		const int n = MAX(size, 4096);
 		gpre_space* next = (gpre_space*) gds__alloc((SLONG) (n + sizeof(gpre_space)));
 		if (!next)
@@ -168,14 +166,14 @@ gpre_nod* MSC_binary(nod_t type, gpre_nod* arg1, gpre_nod* arg2)
 
 gpre_ctx* MSC_context(gpre_req* request)
 {
-//  allocate and initialize
+	// allocate and initialize
 
 	gpre_ctx* context = (gpre_ctx*) MSC_alloc(CTX_LEN);
 	context->ctx_request = request;
 	context->ctx_internal = request->req_internal++;
 	context->ctx_scope_level = request->req_scope_level;
 
-//  link in with the request block
+	// link in with the request block
 
 	context->ctx_next = request->req_contexts;
 	request->req_contexts = context;
@@ -283,7 +281,8 @@ void MSC_init()
 bool MSC_match(const kwwords_t keyword)
 {
 
-	if (gpreGlob.token_global.tok_keyword == KW_none && gpreGlob.token_global.tok_symbol) {
+	if (gpreGlob.token_global.tok_keyword == KW_none && gpreGlob.token_global.tok_symbol)
+	{
 		gpre_sym* symbol;
 		for (symbol = gpreGlob.token_global.tok_symbol->sym_collision; symbol;
 			symbol = symbol->sym_collision)
@@ -312,7 +311,7 @@ bool MSC_match(const kwwords_t keyword)
 //		represented on a linked list stack.
 //
 
-bool MSC_member(const gpre_nod* object, gpre_lls* stack)
+bool MSC_member(const gpre_nod* object, const gpre_lls* stack)
 {
 
 	for (; stack; stack = stack->lls_next)
@@ -325,7 +324,7 @@ bool MSC_member(const gpre_nod* object, gpre_lls* stack)
 
 //____________________________________________________________
 //
-//		Allocate an initialize a syntax node.
+//		Allocate and initialize a syntax node.
 //
 
 gpre_nod* MSC_node(nod_t type, SSHORT count)

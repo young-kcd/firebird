@@ -41,7 +41,7 @@
 
 //typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*,
 //									  void*
-//									  /* TMN: NOTE, parameter type unknown! */
+//									  // TMN: NOTE, parameter type unknown!
 //									  );
 // CVC: This was an unaceptable hack in the original code and Mike only
 // found the problem when C++ couldn't compile. Let's see, the
@@ -122,7 +122,7 @@ int CMD_compile_ddl(gpre_req* request)
 	gpre_index* index;
 	gpre_rel* relation;
 
-//  Initialize the blr string
+	// Initialize the blr string
 
 	act* action = request->req_actions;
 	request->req_blr = request->req_base = MSC_alloc(250);
@@ -289,17 +289,19 @@ static void alter_database( gpre_req* request, act* action)
 
 	request->add_byte(isc_dyn_mod_database);
 
-//  Reverse the order of files (parser left them backwards)
+	// Reverse the order of files (parser left them backwards)
 
 	gpre_file* next;
 	gpre_file* files = db->dbb_files;
-	for (file = files, files = NULL; file; file = next) {
+	for (file = files, files = NULL; file; file = next)
+	{
 		next = file->fil_next;
 		file->fil_next = files;
 		files = file;
 	}
 
-	for (file = files; file != NULL; file = file->fil_next) {
+	for (file = files; file != NULL; file = file->fil_next)
+	{
 		put_cstring(request, isc_dyn_def_file, file->fil_name);
 		request->add_byte(isc_dyn_file_start);
 		request->add_word(4);
@@ -311,7 +313,7 @@ static void alter_database( gpre_req* request, act* action)
 		request->add_end();
 	}
 
-//  Drop cache
+	// Drop cache
 /*
 	if (db->dbb_flags & DBB_drop_cache)
 		request->add_byte(isc_dyn_drop_cache);
@@ -336,12 +338,13 @@ static void alter_domain( gpre_req* request, const act* action)
 {
 	const gpre_fld* field = (gpre_fld*) action->act_object;
 
-//  modify field info
+	// modify field info
 
 	put_symbol(request, isc_dyn_mod_global_fld, field->fld_symbol);
 
 	const gpre_nod* default_node = field->fld_default_value;
-	if (default_node) {
+	if (default_node)
+	{
 		if (default_node->nod_type == nod_erase) {
 			request->add_byte(isc_dyn_del_default);
 		}
@@ -353,7 +356,8 @@ static void alter_domain( gpre_req* request, const act* action)
 		}
 	}
 
-	if (field->fld_constraints) {
+	if (field->fld_constraints)
+	{
 		request->add_byte(isc_dyn_single_validation);
 		for (const cnstrt* constraint = field->fld_constraints;
 			 constraint;
@@ -393,12 +397,12 @@ static void alter_index( gpre_req* request, const act* action)
 
 static void alter_table( gpre_req* request, const act* action)
 {
-//  add relation name
+	// add relation name
 
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 	put_symbol(request, isc_dyn_mod_rel, relation->rel_symbol);
 
-//  add field info
+	// add field info
 
 	for (const gpre_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -406,7 +410,8 @@ static void alter_table( gpre_req* request, const act* action)
 			put_symbol(request, isc_dyn_delete_local_fld, field->fld_symbol);
 			request->add_end();
 		}
-		else if (field->fld_flags & FLD_meta) {
+		else if (field->fld_flags & FLD_meta)
+		{
 			if (field->fld_global) {
 				put_symbol(request, isc_dyn_def_local_fld, field->fld_symbol);
 				put_symbol(request, isc_dyn_fld_source, field->fld_global);
@@ -432,9 +437,10 @@ static void alter_table( gpre_req* request, const act* action)
 		}
 	}
 
-//  Check for any relation level ADD/DROP of constraints
+	// Check for any relation level ADD/DROP of constraints
 
-	if (relation->rel_constraints) {
+	if (relation->rel_constraints)
+	{
 		for (const cnstrt* constraint = relation->rel_constraints;
 			 constraint;
 			 constraint = constraint->cnstrt_next)
@@ -460,11 +466,11 @@ static void create_check_constraint( gpre_req* request, const act* action,
 {
 	gpre_trg* trigger = (gpre_trg*) MSC_alloc(TRG_LEN);
 
-//  create the INSERT trigger
+	// create the INSERT trigger
 
 	trigger->trg_type = PRE_STORE_TRIGGER;
 
-//  "insert violates CHECK constraint on table"
+	// "insert violates CHECK constraint on table"
 
 	trigger->trg_message = NULL;
 	trigger->trg_boolean = constraint->cnstrt_boolean;
@@ -472,11 +478,11 @@ static void create_check_constraint( gpre_req* request, const act* action,
 	CPR_get_text(trigger->trg_source->str_string, constraint->cnstrt_text);
 	create_trigger(request, action, trigger, CME_expr);
 
-//  create the UPDATE trigger
+	// create the UPDATE trigger
 
 	trigger->trg_type = PRE_MODIFY_TRIGGER;
 
-//  "update violates CHECK constraint on table"
+	// "update violates CHECK constraint on table"
 
 	create_trigger(request, action, trigger, CME_expr);
 }
@@ -491,7 +497,7 @@ static void create_check_constraint( gpre_req* request, const act* action,
 
 static void create_trg_firing_cond( gpre_req* request, const cnstrt* constraint)
 {
-//  count primary key columns
+	// count primary key columns
 	const gpre_lls* prim_key_fld = constraint->cnstrt_referred_fields;
 	const gpre_lls* field = prim_key_fld;
 
@@ -505,13 +511,14 @@ static void create_trg_firing_cond( gpre_req* request, const cnstrt* constraint)
 
 	fb_assert(prim_key_num_flds > 0);
 
-//  generate blr
+	// generate blr
 	request->add_byte(blr_if);
 	if (prim_key_num_flds > 1)
 		request->add_byte(blr_or);
 
 	USHORT num_flds = 0;
-	for (; prim_key_fld; prim_key_fld = prim_key_fld->lls_next) {
+	for (; prim_key_fld; prim_key_fld = prim_key_fld->lls_next)
+	{
 		request->add_byte(blr_neq);
 
 		const str* prim_key_fld_name = (STR) prim_key_fld->lls_object;
@@ -541,7 +548,7 @@ static void create_trg_firing_cond( gpre_req* request, const cnstrt* constraint)
 
 static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 {
-//  count primary key columns
+	// count primary key columns
 	const gpre_lls*  prim_key_fld = constraint->cnstrt_referred_fields;
 	const gpre_lls* field = prim_key_fld;
 
@@ -555,7 +562,7 @@ static void create_matching_blr(gpre_req* request, const cnstrt* constraint)
 
 	fb_assert(prim_key_num_flds > 0);
 
-//  count of foreign key columns
+	// count of foreign key columns
 	const gpre_lls* for_key_fld = constraint->cnstrt_fields;
 	field = for_key_fld;
 
@@ -638,7 +645,7 @@ static void create_upd_cascade_trg( gpre_req* request, const act* action,
 	gpre_lls* prim_key_fld = constraint->cnstrt_referred_fields;
 	gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  no trigger name is generated here. Let the engine make one up
+	// no trigger name is generated here. Let the engine make one up
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
 
 	put_numeric(request, isc_dyn_trg_type, (SSHORT) POST_MODIFY_TRIGGER);
@@ -648,7 +655,7 @@ static void create_upd_cascade_trg( gpre_req* request, const act* action,
 	put_numeric(request, isc_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, isc_dyn_rel_name, constraint->cnstrt_referred_rel->str_string);
 
-//  the trigger blr
+	// the trigger blr
 
 	request->add_byte(isc_dyn_trg_blr);
 	const USHORT offset = request->req_blr - request->req_base;
@@ -667,15 +674,15 @@ static void create_upd_cascade_trg( gpre_req* request, const act* action,
 	request->add_byte(blr_for);
 	request->add_byte(blr_rse);
 
-//  the new context for the prim. key relation
+	// the new context for the prim. key relation
 	request->add_byte(1);
 
 	request->add_byte(blr_relation);
 	put_cstring(request, 0, relation->rel_symbol->sym_string);
-//  the context for the foreign key relation
+	// the context for the foreign key relation
 	request->add_byte(2);
 
-//  generate the blr for: foreign_key == primary_key
+	// generate the blr for: foreign_key == primary_key
 	create_matching_blr(request, constraint);
 
 	request->add_byte(blr_modify);
@@ -707,9 +714,9 @@ static void create_upd_cascade_trg( gpre_req* request, const act* action,
 	const USHORT length = request->req_blr - request->req_base - offset - 2;
 	request->req_base[offset] = (UCHAR) length;
 	request->req_base[offset + 1] = (UCHAR) (length >> 8);
-//  end of the blr
+	// end of the blr
 
-//  no trg_source and no trg_description
+	// no trg_source and no trg_description
 	request->add_byte(isc_dyn_end);
 }
 
@@ -725,7 +732,7 @@ static void create_del_cascade_trg( gpre_req* request, const act* action,
 {
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  stuff a trigger_name of size 0. So the dyn-parser will make one up.
+	// stuff a trigger_name of size 0. So the dyn-parser will make one up.
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
 
 	put_numeric(request, isc_dyn_trg_type, (SSHORT) POST_ERASE_TRIGGER);
@@ -735,7 +742,7 @@ static void create_del_cascade_trg( gpre_req* request, const act* action,
 	put_numeric(request, isc_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, isc_dyn_rel_name, constraint->cnstrt_referred_rel->str_string);
 
-//  the trigger blr
+	// the trigger blr
 	request->add_byte(isc_dyn_trg_blr);
 	const USHORT offset = request->req_blr - request->req_base;
 
@@ -748,12 +755,12 @@ static void create_del_cascade_trg( gpre_req* request, const act* action,
 	request->add_byte(blr_for);
 	request->add_byte(blr_rse);
 
-//  the context for the prim. key relation
+	// the context for the prim. key relation
 	request->add_byte(1);
 
 	request->add_byte(blr_relation);
 	put_cstring(request, 0, relation->rel_symbol->sym_string);
-//  the context for the foreign key relation
+	// the context for the foreign key relation
 	request->add_byte(2);
 
 	create_matching_blr(request, constraint);
@@ -764,11 +771,10 @@ static void create_del_cascade_trg( gpre_req* request, const act* action,
 	const USHORT length = request->req_blr - request->req_base - offset - 2;
 	request->req_base[offset] = (UCHAR) length;
 	request->req_base[offset + 1] = (UCHAR) (length >> 8);
-//  end of the blr
+	// end of the blr
 
-//  no trg_source and no trg_description
+	// no trg_source and no trg_description
 	request->add_byte(isc_dyn_end);
-
 }
 
 
@@ -796,7 +802,7 @@ static void create_set_default_trg(gpre_req* request,
 	gpre_lls* for_key_fld = constraint->cnstrt_fields;
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  no trigger name. It is generated by the engine
+	// no trigger name. It is generated by the engine
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
 
 	put_numeric(request, isc_dyn_trg_type,
@@ -807,7 +813,7 @@ static void create_set_default_trg(gpre_req* request,
 	put_numeric(request, isc_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, isc_dyn_rel_name, constraint->cnstrt_referred_rel->str_string);
 
-//  the trigger blr
+	// the trigger blr
 
 	request->add_byte(isc_dyn_trg_blr);
 	const USHORT offset = request->req_blr - request->req_base;
@@ -818,9 +824,9 @@ static void create_set_default_trg(gpre_req* request,
 	else
 		request->add_byte(blr_version5);
 
-//  for ON UPDATE TRIGGER only: generate the trigger firing condition:
-//  if prim_key.old_value != prim_key.new value.
-//  Note that the key could consist of multiple columns
+	// for ON UPDATE TRIGGER only: generate the trigger firing condition:
+	// if prim_key.old_value != prim_key.new value.
+	// Note that the key could consist of multiple columns
 
 	if (on_upd_trg) {
 		create_trg_firing_cond(request, constraint);
@@ -831,12 +837,12 @@ static void create_set_default_trg(gpre_req* request,
 	request->add_byte(blr_for);
 	request->add_byte(blr_rse);
 
-//  the context for the prim. key relation
+	// the context for the prim. key relation
 	request->add_byte(1);
 
 	request->add_byte(blr_relation);
 	put_cstring(request, 0, relation->rel_symbol->sym_string);
-//  the context for the foreign key relation
+	// the context for the foreign key relation
 	request->add_byte(2);
 
 	create_matching_blr(request, constraint);
@@ -846,28 +852,28 @@ static void create_set_default_trg(gpre_req* request,
 	request->add_byte((SSHORT) 2);
 	request->add_byte(blr_begin);
 
-	for (; for_key_fld; for_key_fld = for_key_fld->lls_next) {
+	for (; for_key_fld; for_key_fld = for_key_fld->lls_next)
+	{
 		// for every column in the foreign key ....
 		const str* for_key_fld_name = (STR) for_key_fld->lls_object;
 
 		request->add_byte(blr_assignment);
 
-		/* here stuff the default value as blr_literal .... or blr_null
-		   if this column does not have an applicable default */
+		// here stuff the default value as blr_literal .... or blr_null
+		// if this column does not have an applicable default
 
-		/* the default is determined in many cases:
-		   (1) The default-info for the column is in memory. (This is because
-		   the column is being created in this application)
-
-		   (1-a) the table has a column level default. We get this by
-		   searching both current ddl statement and requests
-		   linked list.
-		   (1-b) the table does not have a column level default, but
-		   has a domain default. We get this by searching
-		   requests linked list.
-		   (2) The default-info for the column is not in memory.
-		   We get the column and/or domain default value from the system
-		   tables by calling MET_get_column_default/MET_get_domain_defult */
+		// the default is determined in many cases:
+		// (1) The default-info for the column is in memory. (This is because
+		// the column is being created in this application)
+		// (1-a) the table has a column level default. We get this by
+		// searching both current ddl statement and requests
+		// linked list.
+		// (1-b) the table does not have a column level default, but
+		// has a domain default. We get this by searching
+		// requests linked list.
+		// (2) The default-info for the column is not in memory.
+		// We get the column and/or domain default value from the system
+		// tables by calling MET_get_column_default/MET_get_domain_default
 
 		bool search_for_default = true;
 		bool search_for_column = false;
@@ -882,7 +888,8 @@ static void create_set_default_trg(gpre_req* request,
 			}
 		}
 
-		if (field) {
+		if (field)
+		{
 			// Yes. The column is being created in this ddl statement
 			if (field->fld_default_value) {
 				// (1-a)
@@ -901,7 +908,8 @@ static void create_set_default_trg(gpre_req* request,
 				}
 			}
 		}
-		else {
+		else
+		{
 			// Nop. The column is not being created in this ddl statement
 			if (request->req_actions->act_type == ACT_create_table) {
 				sprintf(s, "field \"%s\" does not exist in relation \"%s\"",
@@ -912,8 +920,9 @@ static void create_set_default_trg(gpre_req* request,
 			// Thus we have an ALTER TABLE statement.
 
 			// If somebody is 'clever' enough to create table and then to alter it
-			//   within the same application ...
-			for (req = gpreGlob.requests; req; req = req->req_next) {
+			// within the same application ...
+			for (req = gpreGlob.requests; req; req = req->req_next)
+			{
 				if (req->req_type == REQ_ddl && (request_action = req->req_actions) &&
 					(request_action->act_type == ACT_create_table ||
 						request_action->act_type == ACT_alter_table) &&
@@ -951,11 +960,13 @@ static void create_set_default_trg(gpre_req* request,
 				search_for_column = true;
 		}
 
-		if (search_for_default && search_for_domain != NULL) {
+		if (search_for_default && search_for_domain != NULL)
+		{
 			// search for domain level default
 			fb_assert(search_for_column == false);
 			// search for domain in memory
-			for (req = gpreGlob.requests; req; req = req->req_next) {
+			for (req = gpreGlob.requests; req; req = req->req_next)
+			{
 				gpre_fld* domain;
 				if (req->req_type == REQ_ddl &&
 					(request_action = req->req_actions) &&
@@ -979,7 +990,8 @@ static void create_set_default_trg(gpre_req* request,
 				}
 			}
 
-			if (search_for_default) {
+			if (search_for_default)
+			{
 				// search for domain in db system tables
 				if (MET_get_domain_default(relation->rel_database, search_for_domain,
 										   default_val, sizeof(default_val)))
@@ -993,7 +1005,8 @@ static void create_set_default_trg(gpre_req* request,
 			}
 		}						// end of search for domain level default
 
-		if (search_for_default && search_for_column) {
+		if (search_for_default && search_for_column)
+		{
 			// nothing is found in memory, try to check db system tables
 			fb_assert(search_for_domain == NULL);
 			if (MET_get_column_default(relation, for_key_fld_name->str_string,
@@ -1024,9 +1037,9 @@ static void create_set_default_trg(gpre_req* request,
 	const USHORT length = request->req_blr - request->req_base - offset - 2;
 	request->req_base[offset] = (UCHAR) length;
 	request->req_base[offset + 1] = (UCHAR) (length >> 8);
-//  end of the blr
+	// end of the blr
 
-//  no trg_source and no trg_description
+	// no trg_source and no trg_description
 	request->add_byte(isc_dyn_end);
 
 }
@@ -1049,7 +1062,7 @@ static void create_set_null_trg(gpre_req* request,
 	gpre_lls* for_key_fld = constraint->cnstrt_fields;
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  no trigger name. It is generated by the engine
+	// no trigger name. It is generated by the engine
 	put_string(request, isc_dyn_def_trigger, "", (USHORT) 0);
 
 	put_numeric(request, isc_dyn_trg_type,
@@ -1060,7 +1073,7 @@ static void create_set_null_trg(gpre_req* request,
 	put_numeric(request, isc_dyn_trg_inactive, (SSHORT) 0);
 	put_cstring(request, isc_dyn_rel_name, constraint->cnstrt_referred_rel->str_string);
 
-//  the trigger blr
+	// the trigger blr
 
 	request->add_byte(isc_dyn_trg_blr);
 	const USHORT offset = request->req_blr - request->req_base;
@@ -1071,9 +1084,9 @@ static void create_set_null_trg(gpre_req* request,
 	else
 		request->add_byte(blr_version5);
 
-//  for ON UPDATE TRIGGER only: generate the trigger firing condition:
-//  if prim_key.old_value != prim_key.new value.
-//  Note that the key could consist of multiple columns
+	// for ON UPDATE TRIGGER only: generate the trigger firing condition:
+	// if prim_key.old_value != prim_key.new value.
+	// Note that the key could consist of multiple columns
 
 	if (on_upd_trg) {
 		create_trg_firing_cond(request, constraint);
@@ -1084,12 +1097,12 @@ static void create_set_null_trg(gpre_req* request,
 	request->add_byte(blr_for);
 	request->add_byte(blr_rse);
 
-//  the context for the prim. key relation
+	// the context for the prim. key relation
 	request->add_byte(1);
 
 	request->add_byte(blr_relation);
 	put_cstring(request, 0, relation->rel_symbol->sym_string);
-//  the context for the foreign key relation
+	// the context for the foreign key relation
 	request->add_byte(2);
 
 	create_matching_blr(request, constraint);
@@ -1099,7 +1112,8 @@ static void create_set_null_trg(gpre_req* request,
 	request->add_byte((SSHORT) 2);
 	request->add_byte(blr_begin);
 
-	for (; for_key_fld; for_key_fld = for_key_fld->lls_next) {
+	for (; for_key_fld; for_key_fld = for_key_fld->lls_next)
+	{
 		const str* for_key_fld_name = (STR) for_key_fld->lls_object;
 
 		request->add_byte(blr_assignment);
@@ -1120,9 +1134,9 @@ static void create_set_null_trg(gpre_req* request,
 	const USHORT length = request->req_blr - request->req_base - offset - 2;
 	request->req_base[offset] = (UCHAR) length;
 	request->req_base[offset + 1] = (UCHAR) (length >> 8);
-//  end of the blr
+	// end of the blr
 
-//  no trg_source and no trg_description
+	// no trg_source and no trg_description
 	request->add_byte(isc_dyn_end);
 }
 
@@ -1137,7 +1151,8 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 	TEXT s[512];
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-	for (gpre_req* req = gpreGlob.requests; req; req = req->req_next) {
+	for (gpre_req* req = gpreGlob.requests; req; req = req->req_next)
+	{
 		const act* request_action;
 		const gpre_rel* rel;
 		if (req->req_type == REQ_ddl && (request_action = req->req_actions) &&
@@ -1171,14 +1186,16 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 		constraint->cnstrt_referred_fields =
 			MET_get_primary_key(relation->rel_database, constraint->cnstrt_referred_rel->str_string);
 
-	if (constraint->cnstrt_referred_fields == NULL) {
+	if (constraint->cnstrt_referred_fields == NULL)
+	{
 		// Nothing is in system tables.
 		sprintf(s,
 				"\"REFERENCES %s\" without \"(column list)\" requires PRIMARY KEY on referenced table",
 				constraint->cnstrt_referred_rel->str_string);
 		CPR_error(s);
 	}
-	else {
+	else
+	{
 		// count both primary key and foreign key columns
 		USHORT prim_key_num_flds = 0, for_key_num_flds = 0;
 		const gpre_lls* field = constraint->cnstrt_referred_fields;
@@ -1210,7 +1227,8 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 static void create_constraint( gpre_req* request, const act* action,
 							  cnstrt* constraint)
 {
-	for (; constraint; constraint = constraint->cnstrt_next) {
+	for (; constraint; constraint = constraint->cnstrt_next)
+	{
 		if (constraint->cnstrt_flags & CNSTRT_delete)
 			continue;
 		put_cstring(request, isc_dyn_rel_constraint, constraint->cnstrt_name->str_string);
@@ -1243,13 +1261,15 @@ static void create_constraint( gpre_req* request, const act* action,
 
 		request->add_word(0);
 
-		if (constraint->cnstrt_type == CNSTRT_FOREIGN_KEY) {
+		if (constraint->cnstrt_type == CNSTRT_FOREIGN_KEY)
+		{
 			// If <referenced column list> is not specified try to catch
 			// them right here
 			if (constraint->cnstrt_referred_fields == NULL)
 				get_referred_fields(action, constraint);
 
-			if (constraint->cnstrt_fkey_def_type & REF_UPDATE_ACTION) {
+			if (constraint->cnstrt_fkey_def_type & REF_UPDATE_ACTION)
+			{
 				request->add_byte(isc_dyn_foreign_key_update);
 				switch (constraint->cnstrt_fkey_def_type & REF_UPDATE_MASK)
 				{
@@ -1275,7 +1295,8 @@ static void create_constraint( gpre_req* request, const act* action,
 					break;
 				}
 			}
-			if (constraint->cnstrt_fkey_def_type & REF_DELETE_ACTION) {
+			if (constraint->cnstrt_fkey_def_type & REF_DELETE_ACTION)
+			{
 				request->add_byte(isc_dyn_foreign_key_delete);
 				switch (constraint->cnstrt_fkey_def_type & REF_DELETE_MASK)
 				{
@@ -1344,11 +1365,13 @@ static void create_database( gpre_req* request, const act* action)
 		def_db_dial = gpreGlob.sw_sql_dialect;
 	request->add_long(def_db_dial);
 
+#ifdef NOT_USED_OR_REPLACED
 	if (db->dbb_allocation) {
 		request->add_byte(isc_dpb_allocation);
 		request->add_byte(4);
 		request->add_long(db->dbb_allocation);
 	}
+#endif
 
 	if (db->dbb_pagesize) {
 		request->add_byte(isc_dpb_page_size);
@@ -1402,11 +1425,12 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 	request->add_byte(isc_dyn_mod_database);
 
 	gpre_file* file;
-//  Reverse the order of files (parser left them backwards)
+	// Reverse the order of files (parser left them backwards)
 
 	gpre_file* files = db->dbb_files;
 	gpre_file* next;
-	for (file = files, files = NULL; file; file = next) {
+	for (file = files, files = NULL; file; file = next)
+	{
 		next = file->fil_next;
 		file->fil_next = files;
 		files = file;
@@ -1414,7 +1438,8 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 
 	SLONG start = db->dbb_length;
 
-	for (file = files; file != NULL; file = file->fil_next) {
+	for (file = files; file != NULL; file = file->fil_next)
+	{
 		put_cstring(request, isc_dyn_def_file, file->fil_name);
 		request->add_byte(isc_dyn_file_start);
 		request->add_word(4);
@@ -1448,7 +1473,7 @@ static void create_domain( gpre_req* request, const act* action)
 {
 	const gpre_fld* field = (gpre_fld*) action->act_object;
 
-//  add field info
+	// add field info
 
 	put_symbol(request, isc_dyn_def_global_fld, field->fld_symbol);
 	put_field_attributes(request, field);
@@ -1480,9 +1505,8 @@ static void create_domain_constraint(gpre_req* request, const act* action,
 		if (constraint->cnstrt_flags & CNSTRT_delete)
 			continue;
 
-// ****    this will be used later
-//   put_cstring (request, isc_dyn_rel_constraint, constraint->cnstrt_name->str_string);
-//***
+		// this will be used later
+		// put_cstring (request, isc_dyn_rel_constraint, constraint->cnstrt_name->str_string);
 
 		if (constraint->cnstrt_type == CNSTRT_CHECK) {
 			TEXT* source = (TEXT*) MSC_alloc(constraint->cnstrt_text->txt_length + 1);
@@ -1537,8 +1561,7 @@ static void create_index( gpre_req* request, const gpre_index* index)
 		}
 	}
 	else {
-		// An index created on this one field because of the
-		//   UNIQUE constraint on this field.
+		// An index created on this one field because of the UNIQUE constraint on this field.
 		put_symbol(request, isc_dyn_fld_name, index->ind_fields->fld_symbol);
 	}
 
@@ -1556,16 +1579,18 @@ static void create_shadow( gpre_req* request, act* action)
 	gpre_file* files = (gpre_file*) action->act_object;
 	gpre_file* file;
 
-//  Reverse the order of files (parser left them backwards)
+	// Reverse the order of files (parser left them backwards)
 	gpre_file* next;
-	for (file = files, files = NULL; file; file = next) {
+	for (file = files, files = NULL; file; file = next)
+	{
 		next = file->fil_next;
 		file->fil_next = files;
 		files = file;
 	}
 	put_numeric(request, isc_dyn_def_shadow, (SSHORT) files->fil_shadow_number);
 
-	for (file = files; file != NULL; file = file->fil_next) {
+	for (file = files; file != NULL; file = file->fil_next)
+	{
 		put_cstring(request, isc_dyn_def_file, file->fil_name);
 		request->add_byte(isc_dyn_file_start);
 		request->add_word(4);
@@ -1591,22 +1616,23 @@ static void create_shadow( gpre_req* request, act* action)
 
 static void create_table( gpre_req* request, const act* action)
 {
-//  add relation name
+	// add relation name
 
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 	put_symbol(request, isc_dyn_def_rel, relation->rel_symbol);
 
-//  If the relation is defined as an external file, add dyn for that
+	// If the relation is defined as an external file, add dyn for that
 
 	if (relation->rel_ext_file)
 		put_cstring(request, isc_dyn_rel_ext_file, relation->rel_ext_file);
 
 	put_numeric(request, isc_dyn_rel_sql_protection, 1);
 
-//  add field info
+	// add field info
 	const gpre_fld* field;
 	USHORT position = 0;
-	for (field = relation->rel_fields; field; field = field->fld_next) {
+	for (field = relation->rel_fields; field; field = field->fld_next)
+	{
 		if (field->fld_global) {
 			put_symbol(request, isc_dyn_def_local_fld, field->fld_symbol);
 			put_symbol(request, isc_dyn_fld_source, field->fld_global);
@@ -1635,8 +1661,7 @@ static void create_table( gpre_req* request, const act* action)
 
 	request->add_end();
 
-//  Need to create an index for any fields (columns) declared with
-//  the UNIQUE constraint.
+	// Need to create an index for any fields (columns) declared with the UNIQUE constraint.
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -1657,7 +1682,7 @@ static void create_trigger(gpre_req* request,
 {
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  Name of trigger to be generated
+	// Name of trigger to be generated
 
 	put_cstring(request, isc_dyn_def_trigger, "");
 
@@ -1676,7 +1701,7 @@ static void create_trigger(gpre_req* request,
 		request->add_byte(isc_dyn_end);
 	}
 
-//  Generate the BLR for firing the trigger
+	// Generate the BLR for firing the trigger
 
 	put_trigger_blr(request, isc_dyn_trg_blr, trigger->trg_boolean, routine);
 
@@ -1692,24 +1717,24 @@ static void create_trigger(gpre_req* request,
 static bool create_view(gpre_req* request,
 						act* action)
 {
-//  add relation name
+	// add relation name
 
 	gpre_rel* relation = (gpre_rel*) action->act_object;
 	put_symbol(request, isc_dyn_def_view, relation->rel_symbol);
 	put_numeric(request, isc_dyn_rel_sql_protection, 1);
 
-//  write out blr
+	// write out blr
 
 	put_blr(request, isc_dyn_view_blr, (gpre_nod*) relation->rel_view_rse,
 			reinterpret_cast<pfn_local_trigger_cb>(CME_rse));
 
-//  write out view source
+	// write out view source
 
 	TEXT* view_source = (TEXT *) MSC_alloc(relation->rel_view_text->txt_length + 1);
 	CPR_get_text(view_source, relation->rel_view_text);
 	put_cstring(request, isc_dyn_view_source, view_source);
 
-//  Write out view context info
+	// Write out view context info
 	gpre_rel* sub_relation = 0;
 	gpre_ctx* context;
 	for (context = request->req_contexts; context; context = context->ctx_next)
@@ -1724,7 +1749,7 @@ static bool create_view(gpre_req* request,
 		request->add_end();
 	}
 
-//  add the mapping from the rse to the view fields
+	// add the mapping from the rse to the view fields
 
 	gpre_fld* field = relation->rel_fields;
 	gpre_nod* fields = relation->rel_view_rse->rse_fields;
@@ -1739,7 +1764,8 @@ static bool create_view(gpre_req* request,
 	{
 		const gpre_fld* fld = NULL;
 		gpre_nod* value = *ptr;
-		if (value->nod_type == nod_field) {
+		if (value->nod_type == nod_field)
+		{
 			const ref* reference = (ref*) value->nod_arg[0];
 			fld = reference->ref_field;
 			const gpre_req* slice_req;
@@ -1779,7 +1805,9 @@ static bool create_view(gpre_req* request,
 		request->add_end();
 	}
 
-	if (relation->rel_flags & REL_view_check) {	// VIEW WITH CHECK OPTION
+	if (relation->rel_flags & REL_view_check)
+	{
+		// VIEW WITH CHECK OPTION
 		// Make sure VIEW is updateable
 		gpre_rse* select = relation->rel_view_rse;
 		if (select->rse_aggregate || non_updateable || select->rse_count != 1) {
@@ -1818,9 +1846,9 @@ static bool create_view(gpre_req* request,
 		context->ctx_relation = sub_relation;
 
 		// Make lists to assign from NEW fields to fields in the base relation.
-		/* Also make sure rows in base relation correspond to rows in VIEW by
-		   making sure values in fields inherited by the VIEW are same as
-		   values in base relation.  */
+		// Also make sure rows in base relation correspond to rows in VIEW by
+		// making sure values in fields inherited by the VIEW are same as
+		// values in base relation.
 
 		field = relation->rel_fields;
 		fields = relation->rel_view_rse->rse_fields;
@@ -1919,7 +1947,7 @@ static void create_view_trigger(gpre_req* request,
 {
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  Name of trigger to be generated
+	// Name of trigger to be generated
 
 	put_cstring(request, isc_dyn_def_trigger, "");
 
@@ -1937,7 +1965,7 @@ static void create_view_trigger(gpre_req* request,
 		request->add_byte(isc_dyn_end);
 	}
 
-//  Generate the BLR for firing the trigger
+	// Generate the BLR for firing the trigger
 
 	put_view_trigger_blr(request, relation, isc_dyn_trg_blr, trigger, view_boolean, contexts, set_list);
 
@@ -1977,32 +2005,33 @@ static void declare_udf( gpre_req* request, const act* action)
 	put_cstring(request, isc_dyn_func_entry_point, udf_declaration->decl_udf_entry_point);
 	put_cstring(request, isc_dyn_func_module_name, udf_declaration->decl_udf_module_name);
 
-//  Reverse the order of arguments which parse left backwords.
+	// Reverse the order of arguments which parse left backwords.
 
-//
-//for (field = udf_declaration->decl_udf_arg_list, udf_declaration->decl_udf_arg_list = NULL; field; field = next)
-//   {
-//   next = field->fld_next;
-//   field->fld_next = udf_declaration->decl_udf_arg_list;
-//   udf_declaration->decl_udf_arg_list = field;
-//   }
-//
+	//for (field = udf_declaration->decl_udf_arg_list, udf_declaration->decl_udf_arg_list = NULL; field; field = next)
+	//{
+	//	next = field->fld_next;
+	//	field->fld_next = udf_declaration->decl_udf_arg_list;
+	//	udf_declaration->decl_udf_arg_list = field;
+	//}
 
 	SSHORT position, blob_position = 0;
 	const gpre_fld* field = udf_declaration->decl_udf_return_type;
-	if (field) {
+	if (field)
+	{
 		// Function returns a value
 
 		// Some data types can not be returned as value
-		if ((udf_declaration->decl_udf_return_mode == FUN_value) &&
-			(field->fld_dtype == dtype_text ||
-			 field->fld_dtype == dtype_varying ||
-			 field->fld_dtype == dtype_cstring ||
-			 field->fld_dtype == dtype_blob ||
-			 field->fld_dtype == dtype_timestamp))
+		if (udf_declaration->decl_udf_return_mode == FUN_value)
 		{
-				CPR_error
-				("return mode by value not allowed for this data type");
+			switch (field->fld_dtype)
+			{
+			case dtype_text:
+			case dtype_varying:
+			case dtype_cstring:
+			case dtype_blob:
+			case dtype_timestamp:
+				CPR_error("return mode by value not allowed for this data type");
+			}
 		}
 
 		// For functions returning a blob, coerce return argument position to
@@ -2029,9 +2058,10 @@ static void declare_udf( gpre_req* request, const act* action)
 		put_numeric(request, isc_dyn_func_return_argument, udf_declaration->decl_udf_return_parameter);
 	}
 
-//  Now define all the arguments
+	// Now define all the arguments
 
-	if (!position) {
+	if (!position)
+	{
 		if (field->fld_dtype == dtype_blob) {
 			put_numeric(request, isc_dyn_def_function_arg, blob_position);
 			put_numeric(request, isc_dyn_func_mechanism, FUN_blob_struct);
@@ -2047,7 +2077,8 @@ static void declare_udf( gpre_req* request, const act* action)
 		position = 1;
 	}
 
-	for (field = udf_declaration->decl_udf_arg_list; field; field = field->fld_next) {
+	for (field = udf_declaration->decl_udf_arg_list; field; field = field->fld_next)
+	{
 		if (position > 10)
 			CPR_error("External functions can not have more than 10 parameters");
 		put_numeric(request, isc_dyn_def_function_arg, position++);
@@ -2098,15 +2129,16 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 	*p = 0;
 
-//  If there are any select, insert, or delete privileges to be granted
-//  or revoked output the necessary DYN strings
+	// If there are any select, insert, or delete privileges to be granted
+	// or revoked output the necessary DYN strings
 
 	if (p != privileges)
+	{
 		for (priv_block = (PRV) action->act_object; priv_block; priv_block = priv_block->prv_next)
 		{
 			if (action->act_type == ACT_dyn_grant)
 				put_cstring(request, isc_dyn_grant, privileges);
-			else				//  action = ACT_dyn_revoke
+			else				// action = ACT_dyn_revoke
 				put_cstring(request, isc_dyn_revoke, privileges);
 
 			put_cstring(request, priv_block->prv_object_dyn, priv_block->prv_relation->str_string);
@@ -2120,8 +2152,9 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 			request->add_end();
 		}
+	}
 
-//  If there are no UPDATE privileges to be granted or revoked, we've finished
+	// If there are no UPDATE privileges to be granted or revoked, we've finished
 
 	if (!(((PRV) action->act_object)->prv_privileges & PRV_update))
 		return;
@@ -2132,12 +2165,13 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 	for (priv_block = (PRV) action->act_object; priv_block; priv_block = priv_block->prv_next)
 	{
-		if (priv_block->prv_fields) {
+		if (priv_block->prv_fields)
+		{
 			for (const gpre_lls* field = priv_block->prv_fields; field; field = field->lls_next)
 			{
 				if (action->act_type == ACT_dyn_grant)
 					put_cstring(request, isc_dyn_grant, privileges);
-				else			//  action->act_type == ACT_dyn_revoke
+				else			// action->act_type == ACT_dyn_revoke
 					put_cstring(request, isc_dyn_revoke, privileges);
 
 				put_cstring(request, priv_block->prv_object_dyn, priv_block->prv_relation->str_string);
@@ -2154,11 +2188,13 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 				request->add_end();
 			}
 		}
-		else {					//  No specific fields mentioned;
-								//   UPDATE privilege granted or revoked on all fields
+		else
+		{
+			// No specific fields mentioned;
+			// UPDATE privilege granted or revoked on all fields
 			if (action->act_type == ACT_dyn_grant)
 				put_cstring(request, isc_dyn_grant, privileges);
-			else				//  action->act_type == ACT_dyn_revoke
+			else				// action->act_type == ACT_dyn_revoke
 				put_cstring(request, isc_dyn_revoke, privileges);
 
 			put_cstring(request, priv_block->prv_object_dyn, priv_block->prv_relation->str_string);
@@ -2270,7 +2306,7 @@ static void put_computed_blr( gpre_req* request, const gpre_fld* field)
 	//const act* action = request->req_actions;
 	//const gpre_rel* relation = (gpre_rel*) action->act_object;
 
-//  Computed field context has to be 0 - so force it
+	// Computed field context has to be 0 - so force it
 
 	gpre_ctx* context = request->req_contexts;
 	const USHORT save_ctx_int = context->ctx_internal;
@@ -2438,7 +2474,7 @@ static void put_dtype( gpre_req* request, const gpre_fld* field)
 		length = sizeof(double);
 		break;
 
-// ** Begin sql date/time/timestamp *
+	// Begin sql date/time/timestamp
 	case dtype_sql_date:
 		dtype = blr_sql_date;
 		length = sizeof(ISC_DATE);
@@ -2453,7 +2489,7 @@ static void put_dtype( gpre_req* request, const gpre_fld* field)
 		dtype = blr_timestamp;
 		length = sizeof(ISC_TIMESTAMP);
 		break;
-// ** End sql date/time/timestamp *
+	// End sql date/time/timestamp
 
 	case dtype_int64:
 		dtype = blr_int64;
@@ -2496,7 +2532,7 @@ static void put_field_attributes( gpre_req* request, const gpre_fld* field)
 	if (!field->fld_global)
 		put_dtype(request, field);
 
-//  Put the DDL for local field instances
+	// Put the DDL for local field instances
 
 	if (field->fld_array_info)
 		put_array_info(request, field);
@@ -2611,7 +2647,7 @@ static void put_trigger_blr(gpre_req* request,
 	request->add_byte(blr_begin);
 	request->add_byte(blr_end);
 
-//  Generate the action for the trigger to be abort
+	// Generate the action for the trigger to be abort
 
 	request->add_byte(blr_abort);
 	put_short_cstring(request, blr_gds_code, "check_constraint");
@@ -2650,7 +2686,8 @@ static void put_view_trigger_blr(gpre_req* request,
 		request->add_byte(blr_version5);
 	request->add_byte(blr_begin);
 
-	if (trigger->trg_type == PRE_MODIFY_TRIGGER) {
+	if (trigger->trg_type == PRE_MODIFY_TRIGGER)
+	{
 		request->add_byte(blr_for);
 		CME_rse(node, request);
 
@@ -2676,7 +2713,8 @@ static void put_view_trigger_blr(gpre_req* request,
 		request->add_byte(blr_eoc);
 	}							// end of PRE_MODIFY_TRIGGER trigger
 
-	if (trigger->trg_type == PRE_STORE_TRIGGER) {
+	if (trigger->trg_type == PRE_STORE_TRIGGER)
+	{
 		replace_field_names(view_boolean, node->rse_fields, relation->rel_fields, true, contexts);
 
 		request->add_byte(blr_if);
@@ -2691,7 +2729,6 @@ static void put_view_trigger_blr(gpre_req* request,
 		put_short_cstring(request, blr_gds_code, "check_constraint");
 		request->add_byte(blr_end);
 		request->add_byte(blr_eoc);
-
 	}							// end of PRE_STORE_TRIGGER trigger
 
 	const USHORT length = request->req_blr - request->req_base - offset - 2;
@@ -2731,7 +2768,8 @@ static void replace_field_names(gpre_nod* const input,
 	gpre_nod** ptr = input->nod_arg;
 	for (const gpre_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type == nod_field) {
+		if ((*ptr)->nod_type == nod_field)
+		{
 			ref* reference = (ref*) (*ptr)->nod_arg[0];
 			gpre_fld* rse_field = reference->ref_field;
 			if (null_them) {

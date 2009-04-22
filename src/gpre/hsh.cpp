@@ -85,7 +85,8 @@ void HSH_init()
 
 	fflush(stdout);
 	const word* a_word;
-	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++) {
+	for (i = 0, a_word = keywords; i < FB_NELEM(keywords); i++, a_word++)
+	{
 		// Unused code: SYM_LEN is used always.
 		//for (string = a_word->keyword; *string; string++);
 		gpre_sym* symbol = (gpre_sym*) MSC_alloc(SYM_LEN);
@@ -116,13 +117,14 @@ void HSH_insert( gpre_sym* symbol)
 				return;
 		}
 
-		if (scompare(symbol->sym_string, (*next)->sym_string)) {
-			/* insert in most recently seen order;
-			   This is important for alias resolution in subqueries.
-			   BUT insert tokens AFTER keyword!
-			   In a lookup, keyword should be found first.
-			   This assumes that KEYWORDS are inserted before any other token.
-			   No one should be using a keywords as an alias anyway. */
+		if (scompare(symbol->sym_string, (*next)->sym_string))
+		{
+			// insert in most recently seen order;
+			// This is important for alias resolution in subqueries.
+			// BUT insert tokens AFTER keyword!
+			// In a lookup, keyword should be found first.
+			// This assumes that KEYWORDS are inserted before any other token.
+			// No one should be using a keywords as an alias anyway.
 
 			if ((*next)->sym_type == SYM_keyword) {
 				symbol->sym_homonym = (*next)->sym_homonym;

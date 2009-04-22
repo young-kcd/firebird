@@ -155,8 +155,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	for (USHORT n = column; n; --n)
 		*p++ = ' ';
 
-	SSHORT value;				/* value needs to be signed since some of the
-								   values printed out are signed.  */
+	SSHORT value;				// value needs to be signed since some of the
+								// values printed out are signed.
 	SLONG long_value;
 	TEXT c;
 	while (c = *pattern++)
@@ -427,28 +427,25 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	switch (gpreGlob.sw_language)
 	{
 #ifdef GPRE_ADA
-		/*  Ada lines can be up to 120 characters long.  ADA_print_buffer
-		   handles this problem and ensures that GPRE output is <=120 characters.
-		 */
+		// Ada lines can be up to 120 characters long.  ADA_print_buffer
+		// handles this problem and ensures that GPRE output is <=120 characters.
 	case lang_ada:
 		ADA_print_buffer(buffer, 0);
 		break;
 #endif
 
 #ifdef GPRE_COBOL
-		/*  COBOL lines can be up to 72 characters long.  COB_print_buffer
-		   handles this problem and ensures that GPRE output is <= 72 characters.
-		 */
+		// COBOL lines can be up to 72 characters long.  COB_print_buffer
+		// handles this problem and ensures that GPRE output is <= 72 characters.
 	case lang_cobol:
 		COB_print_buffer(buffer, true);
 		break;
 #endif
 
 #ifdef GPRE_FORTRAN
-		/*  In FORTRAN, characters beyond column 72 are ignored.  FTN_print_buffer
-		   handles this problem and ensures that GPRE output does not exceed this
-		   limit.
-		 */
+		// In FORTRAN, characters beyond column 72 are ignored.  FTN_print_buffer
+		// handles this problem and ensures that GPRE output does not exceed this
+		// limit.
 	case lang_fortran:
 		FTN_print_buffer(buffer);
 		break;

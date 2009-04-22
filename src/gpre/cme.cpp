@@ -108,9 +108,8 @@ const op_table operators[] =
 	{ nod_negate		, blr_negate },
 	{ nod_null		, blr_null },
 	{ nod_user_name	, blr_user_name },
-//  { count2 }
-//   { nod_count, blr_count2 },
-//
+	//{ count2 }
+	//{ nod_count, blr_count2 },
 	{ nod_count		, blr_count },
 	{ nod_max			, blr_maximum },
 	{ nod_min			, blr_minimum },
@@ -267,7 +266,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 			request->add_byte(blr_agg_count);
 		return;
 
-// ** Begin date/time/timestamp support *
+	// Begin date/time/timestamp support
 	case nod_extract:
 		request->add_byte(blr_extract);
 		switch ((kwwords_t) (IPTR) node->nod_arg[0])
@@ -301,16 +300,15 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		}
 		CME_expr(node->nod_arg[1], request);
 		return;
+	// End date/time/timestamp support
 
-// ** End date/time/timestamp support *
-//  count2
-//   case nod_count:
-// if (node->nod_arg [1])
-//    break;
-// STUFF (blr_count);
-// CME_rse (node->nod_arg [0], request);
-// return;
-//
+	// count2
+	//case nod_count:
+	//	if (node->nod_arg [1])
+	//		break;
+	//STUFF (blr_count);
+	//CME_rse (node->nod_arg [0], request);
+	//return;
 
 	case nod_agg_total:
 		if (node->nod_arg[1] && !(request->req_database->dbb_flags & DBB_v3))
@@ -334,7 +332,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 
 	case nod_dom_value:
 		request->add_byte(blr_fid);
-		request->add_byte(0);				// Context
+		request->add_byte(0);			// Context
 		request->add_word(0);			// Field id
 		return;
 
@@ -470,7 +468,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 	case nod_ansi_any:
 	case nod_ansi_all:
 	case nod_unique:
-//  count2 next line would be deleted
+	// count2 next line would be deleted
 	case nod_count:
 		CME_rse((gpre_rse*) node->nod_arg[0], request);
 		break;
@@ -481,7 +479,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 	case nod_total:
 	case nod_from:
 //
-//   case nod_count:
+//	case nod_count:
 //
 		CME_rse((gpre_rse*) node->nod_arg[0], request);
 		CME_expr(node->nod_arg[1], request);
@@ -520,18 +518,18 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 	switch (node->nod_type)
 	{
 	case nod_null:
-		/* This occurs when SQL statement specifies a literal NULL, eg:
-		 *  SELECT NULL FROM TABLE1;
-		 * As we don't have a <dtype_null, HOSTTYPE> datatype pairing,
-		 * we don't know how to map this NULL to a host-language
-		 * datatype.  Therefore we now describe it as a
-		 * CHAR(1) CHARACTER SET NONE type.
-		 * No value will ever be sent back, as the value of the select
-		 * will be NULL - this is only for purposes of allocating
-		 * values in the message DESCRIBING
-		 * the statement.
-		 * Other parts of gpre aren't too happy with a dtype_unknown datatype
-		 */
+		// This occurs when SQL statement specifies a literal NULL, eg:
+		// SELECT NULL FROM TABLE1;
+		// As we don't have a <dtype_null, HOSTTYPE> datatype pairing,
+		// we don't know how to map this NULL to a host-language
+		// datatype.  Therefore we now describe it as a
+		// CHAR(1) CHARACTER SET NONE type.
+		// No value will ever be sent back, as the value of the select
+		// will be NULL - this is only for purposes of allocating
+		// values in the message DESCRIBING
+		// the statement.
+		// Other parts of gpre aren't too happy with a dtype_unknown datatype
+
 		f->fld_dtype = dtype_text;
 		f->fld_length = 1;
 		f->fld_ttype = ttype_none;
@@ -595,7 +593,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		}
 		return;
 
-// ** Begin date/time/timestamp support *
+	// Begin date/time/timestamp support
 	case nod_extract:
 		{
 			const kwwords_t kw_word = (kwwords_t) (IPTR) node->nod_arg[0];
@@ -660,7 +658,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		f->fld_length = sizeof(ISC_TIMESTAMP);
 		return;
 
-// ** End date/time/timestamp support *
+	// End date/time/timestamp support
 
 	case nod_times:
 		CME_get_dtype(node->nod_arg[0], &field1);
@@ -781,7 +779,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		}
 		else
 		{
-// ** Dialect is > 1 *
+			// Dialect is > 1
 
 			if (node->nod_type == nod_plus)
 				dtype_max = DSC_add_result[field1.fld_dtype][field2.fld_dtype];
@@ -814,7 +812,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			f->fld_length = sizeof(ISC_QUAD);
 			break;
 #endif
-// ** Begin date/time/timestamp support *
+		// Begin date/time/timestamp support
 		case dtype_sql_date:
 			f->fld_dtype = dtype_sql_date;
 			f->fld_scale = 0;
@@ -830,7 +828,8 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			f->fld_scale = 0;
 			f->fld_length = sizeof(ISC_TIMESTAMP);
 			break;
-// ** End date/time/timestamp support *
+		// End date/time/timestamp support
+
 		case dtype_int64:
 			f->fld_dtype = dtype_int64;
 			f->fld_scale = MIN(field1.fld_scale, field2.fld_scale);
@@ -948,7 +947,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		}
 		else
 		{
-// **  Dialect is 2 or 3 *
+			// Dialect is 2 or 3
 
 			if (DTYPE_IS_EXACT(f->fld_dtype))
 			{
@@ -968,8 +967,8 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		string = reference->ref_value;
 		if (*string != '"' && *string != '\'')
 		{
-			/* Value didn't start with a quotemark - must be a numeric
-			   that we stuffed away as a string during the parse */
+			// Value didn't start with a quotemark - must be a numeric
+			// that we stuffed away as a string during the parse
 			if (strpbrk(string, "Ee"))
 			{
 				f->fld_dtype = dtype_double;
@@ -981,7 +980,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 
 				const char* s_ptr = string;
 
-				/** Get the scale **/
+				// Get the scale
 				const char* ptr = strpbrk(string, ".");
 				if (ptr)
 				{
@@ -989,7 +988,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 					scale = -scale;
 				}
 
-				/** Get rid of the decimal point **/
+				// Get rid of the decimal point
 				FB_UINT64 uint64_val = 0;
 				while (*s_ptr)
 				{
@@ -1014,7 +1013,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		}
 		else
 		{
-			/* Did the reference include a character set specification? */
+			// Did the reference include a character set specification?
 
 			if (reference->ref_flags & REF_ttype)
 				f->fld_ttype = reference->ref_ttype;
@@ -1036,7 +1035,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			}
 			else
 			{
-				/* subtract 2 for starting & terminating quote */
+				// subtract 2 for starting & terminating quote
 
 				f->fld_length = strlen(string) - 2;
 				if (gpreGlob.sw_cstring)
@@ -1084,8 +1083,8 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		if (f->fld_dtype <= dtype_any_text)
 			return;
 
-		/* User has specified UPPER(5) - while silly, we'll cast
-		   the value into a string, and upcase it anyway */
+		// User has specified UPPER(5) - while silly, we'll cast
+		// the value into a string, and upcase it anyway
 
 		f->fld_length = get_string_len(f) + sizeof(USHORT);
 		f->fld_dtype = dtype_cstring;
@@ -1216,7 +1215,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	else
 		request->add_byte(blr_rs_stream);
 
-	//  Process unions, if any, otherwise process relations
+	// Process unions, if any, otherwise process relations
 
 	gpre_rse* sub_rse = 0;
 	gpre_nod* union_node = selection->rse_union;
@@ -1264,7 +1263,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 			request->add_byte(blr_writelock);
 	}
 
-	//  Process the clauses present
+	// Process the clauses present
 
 	if (selection->rse_first)
 	{
@@ -1335,11 +1334,11 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	}
 
 #ifdef SCROLLABLE_CURSORS
-	//  generate a statement to be executed if the user scrolls
-	//  in a direction other than forward; a message is sent outside
-	//  the normal send/receive protocol to specify the direction
-	//  and offset to scroll; note that we do this only on a SELECT
-	//  type statement and only when talking to a 4.1 engine or greater
+	// generate a statement to be executed if the user scrolls
+	// in a direction other than forward; a message is sent outside
+	// the normal send/receive protocol to specify the direction
+	// and offset to scroll; note that we do this only on a SELECT
+	// type statement and only when talking to a 4.1 engine or greater
 
 	if (request->req_flags & REQ_sql_cursor && request->req_database->dbb_base_level >= 5)
 	{
@@ -1355,7 +1354,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	}
 #endif
 
-	//  Finish up by making a BLR_END
+	// Finish up by making a BLR_END
 
 	request->add_byte(blr_end);
 }
@@ -1386,7 +1385,7 @@ static void cmp_array( gpre_nod* node, gpre_req* request)
 		return; // NULL;
 	}
 
-	//  Header stuff
+	// Header stuff
 
 	reference->ref_sdl = reference->ref_sdl_base = MSC_alloc(500);
 	reference->ref_sdl_length = 500;
@@ -1395,11 +1394,11 @@ static void cmp_array( gpre_nod* node, gpre_req* request)
 	reference->add_byte(isc_sdl_struct);
 	reference->add_byte(1);
 
-	//  The datatype of the array elements
+	// The datatype of the array elements
 
 	cmp_sdl_dtype(field->fld_array, reference);
 
-	//  The relation and field identifiers or strings
+	// The relation and field identifiers or strings
 
 	if (gpreGlob.sw_ids)
 	{
@@ -1421,11 +1420,11 @@ static void cmp_array( gpre_nod* node, gpre_req* request)
 			reference->add_byte(*p);
 	}
 
-	//  The loops for the dimensions
+	// The loops for the dimensions
 
 	stuff_sdl_loops(reference, field);
 
-	//  The array element and its "subscripts"
+	// The array element and its "subscripts"
 
 	stuff_sdl_element(reference, field);
 
@@ -1557,9 +1556,9 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 
 	if (*string != '"' && *string != '\'')
 	{
-	/** If the numeric string contains an 'E' or 'e' in it
-	then the datatype is double.
-    **/
+		// If the numeric string contains an 'E' or 'e' in it
+		// then the datatype is double.
+
 		if (strpbrk(string, "Ee"))
 		{
 			string = reference->ref_value;
@@ -1567,7 +1566,8 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 			if (!(request->req_database->dbb_flags & DBB_v3))
 				request->add_byte(blr_double);
 			else if (gpreGlob.sw_know_interp)
-			{	// then must be using blr_version5
+			{
+				// then must be using blr_version5
 				request->add_byte(blr_text2);
 				request->add_word(ttype_ascii);
 			}
@@ -1580,18 +1580,18 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 		}
 		else
 		{
-			/** The numeric string doesn't contain 'E' or 'e' in it.
-			    Then this must be a scaled int.  Figure out if there
-			    is a '.' in it and calculate its scale.
-			**/
+			// The numeric string doesn't contain 'E' or 'e' in it.
+			// Then this must be a scaled int.  Figure out if there
+			// is a '.' in it and calculate its scale.
+
 			const char* s_ptr = string;
 
-			/** Get the scale **/
+			// Get the scale
 			int scale = 0;
 			const char* ptr = strpbrk(string, ".");
 			if (ptr)
 			{
-				/** Aha!, there is a '.'. find the scale **/
+				// Aha!, there is a '.'. find the scale
 				scale = (string + (strlen(string) - 1)) - ptr;
 				scale = -scale;
 			}
@@ -1604,7 +1604,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 				s_ptr++;
 			}
 
-			/** see if we can fit the value in a long or INT64.  **/
+			// see if we can fit the value in a long or INT64.
 			if ((uint64_val <= MAX_SLONG) || ((uint64_val == (MAX_SLONG + (FB_UINT64) 1)) && negate))
 			{
 				long long_val;
@@ -1744,7 +1744,7 @@ static void cmp_map(map* a_map, gpre_req* request)
 
 static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 {
-//  stuff the join type
+	// stuff the join type
 
 	const gpre_nod* list = plan_expression->nod_arg[1];
 	if (list->nod_count > 1)
@@ -1757,7 +1757,7 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 		request->add_byte(list->nod_count);
 	}
 
-//  stuff one or more plan items
+	// stuff one or more plan items
 
 	gpre_nod* const* ptr = list->nod_arg;
 	for (gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
@@ -1773,8 +1773,8 @@ static void cmp_plan(const gpre_nod* plan_expression, gpre_req* request)
 
 		request->add_byte(blr_retrieve);
 
-		/* stuff the relation--the relation id itself is redundant except
-		   when there is a need to differentiate the base tables of views */
+		// stuff the relation--the relation id itself is redundant except
+		// when there is a need to differentiate the base tables of views
 
 		CME_relation((gpre_ctx*) node->nod_arg[2], request);
 
@@ -1882,7 +1882,7 @@ static void cmp_sdl_dtype( const gpre_fld* field, ref* reference)
 		reference->add_byte(field->fld_scale);
 		break;
 
-// ** Begin date/time/timestamp support *
+	// Begin date/time/timestamp support
 	case dtype_sql_date:
 		reference->add_byte(blr_sql_date);
 		break;
@@ -1893,7 +1893,7 @@ static void cmp_sdl_dtype( const gpre_fld* field, ref* reference)
 	case dtype_timestamp:
 		reference->add_byte(blr_timestamp);
 		break;
-// ** End date/time/timestamp support *
+	// End date/time/timestamp support
 
 	case dtype_int64:
 		reference->add_byte(blr_int64);
@@ -2016,8 +2016,8 @@ static USHORT get_string_len( const gpre_fld* field)
 static void stuff_sdl_dimension(const dim* dimension, ref* reference, SSHORT dimension_count)
 {
 
-//   In the future, when we support slices, new code to handle the
-//   user-defined slice ranges will be here.
+	// In the future, when we support slices, new code to handle the
+	// user-defined slice ranges will be here.
 
 	if (dimension->dim_lower == 1)
 	{
@@ -2051,7 +2051,7 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 
 	reference->add_byte(field->fld_array_info->ary_dimension_count);
 
-//  Fortran needs the array in column-major order
+	// Fortran needs the array in column-major order
 
 	if (gpreGlob.sw_language == lang_fortran)
 	{
@@ -2080,7 +2080,7 @@ static void stuff_sdl_element(ref* reference, const gpre_fld* field)
 
 static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 {
-//  Fortran needs the array in column-major order
+	// Fortran needs the array in column-major order
 
 	if (gpreGlob.sw_language == lang_fortran)
 	{
@@ -2114,7 +2114,6 @@ static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 
 static void stuff_sdl_number(const SLONG number, ref* reference)
 {
-
 	if ((number > -16) && (number < 15))
 	{
 		reference->add_byte(isc_sdl_tiny_integer);
@@ -2191,32 +2190,32 @@ static void get_dtype_of_case(const gpre_nod* node, gpre_fld* f)
 // Set the dtype, etc. of the given node from the list of expressions contained in that node
 // using the same algorithm used in DataTypeUtilBase::makeFromList.
 
-//  If any datatype has a character type then :
-//  - the output will always be a character type except unconvertable types.
-//    (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
-//  !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
-//  - first character-set and collation are used as output descriptor.
-//  - if all types have datatype CHAR then output should be CHAR else
-//    VARCHAR and with the maximum length used from the given list.
+// If any datatype has a character type then :
+// - the output will always be a character type except unconvertable types.
+//   (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
+// !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
+// - first character-set and collation are used as output descriptor.
+// - if all types have datatype CHAR then output should be CHAR else
+//   VARCHAR and with the maximum length used from the given list.
 //
-//  If all of the datatypes are EXACT numeric then the output descriptor
-//  shall be EXACT numeric with the maximum scale and the maximum precision
-//  used. (dtype_byte, dtype_short, dtype_long, dtype_int64)
+// If all of the datatypes are EXACT numeric then the output descriptor
+// shall be EXACT numeric with the maximum scale and the maximum precision
+// used. (dtype_byte, dtype_short, dtype_long, dtype_int64)
 //
-//  If any of the datatypes is APPROXIMATE numeric then each datatype in the
-//  list shall be numeric else a error is thrown and the output descriptor
-//  shall be APPROXIMATE numeric. (dtype_real, dtype_double, dtype_d_float)
+// If any of the datatypes is APPROXIMATE numeric then each datatype in the
+// list shall be numeric else a error is thrown and the output descriptor
+// shall be APPROXIMATE numeric. (dtype_real, dtype_double, dtype_d_float)
 //
-//  If any of the datatypes is a datetime type then each datatype in the
-//  list shall be the same datetime type else a error is thrown.
-//  numeric. (dtype_sql_date, dtype_sql_time, dtype_timestamp)
+// If any of the datatypes is a datetime type then each datatype in the
+// list shall be the same datetime type else a error is thrown.
+// numeric. (dtype_sql_date, dtype_sql_time, dtype_timestamp)
 //
-//  If any of the datatypes is a BLOB datatype then :
-//  - all types should be a BLOB else throw error.
-//  - all types should have the same sub_type else throw error.
-//  - when TEXT type then use first character-set and collation as output
-//    descriptor.
-//  (dtype_blob)
+// If any of the datatypes is a BLOB datatype then :
+// - all types should be a BLOB else throw error.
+// - all types should have the same sub_type else throw error.
+// - when TEXT type then use first character-set and collation as output
+//   descriptor.
+// (dtype_blob)
 
 static void get_dtype_of_list(const gpre_nod* node, gpre_fld* f)
 {

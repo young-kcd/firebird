@@ -524,11 +524,11 @@ static void ParseDateFormat(const ISC_UCHAR* s, date_fmt* fmt)
 	}
 }
 
-//  RM/Cobol entry points.
+// RM/Cobol entry points.
 //
-//  All entry points start with rmc_ to avoid conflicts with ibase.h.
-//  These are all mapped to the corresponding isc_ entry point names
-//  in fbrmc.def
+// All entry points start with rmc_ to avoid conflicts with ibase.h.
+// These are all mapped to the corresponding isc_ entry point names
+// in fbrmc.def
 
 EXPORT RM_ENTRY(rmc_embed_dsql_length)
 {

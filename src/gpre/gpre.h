@@ -76,8 +76,8 @@
 #endif
 
 
-/* If the C compiler supports the ANSI const directive, we emit it before
-   BLR string definitions */
+// If the C compiler supports the ANSI const directive, we emit it before
+// BLR string definitions
 
 #if (defined (SOLARIS) || defined (AIX) || defined (WIN_NT))
 static const char* const CONST_STR	= "const ";
@@ -147,43 +147,39 @@ bool isAnsiCobol(cob_t dialect);
 #endif
 
 
-/* Structure used by Fortran and Basic to determine whether or not
-   an array has been declared in a subroutine. */
+// Structure used by Fortran and Basic to determine whether or not
+// an array has been declared in a subroutine.
 
 struct adl
 {
-	ULONG adl_gds_ident;		/* Identifier of array for which Gpre has
-								   generated a declaration in main or a
-								   subroutine */
-	adl* adl_next;				/* Next declared array identifier */
+	ULONG adl_gds_ident;		// Identifier of array for which Gpre has
+								// generated a declaration in main or a subroutine
+	adl* adl_next;				// Next declared array identifier
 };
 
 const size_t ADL_LEN = sizeof(adl);
 
 
-/* database block data, for generating block data section in fussy fortran */
+// database block data, for generating block data section in fussy fortran
 
 struct dbd
 {
 	enum {dbb_size = 128};
-	TEXT dbb_name[dbb_size];			/* database name */
+	TEXT dbb_name[dbb_size];			// database name
 };
 
 
-/* Dimension block, used for arrays
- *
- * Note: this structure is being phased out.  Please use the
- * repeating tail on the ARY structure instead
- *
- */
+// Dimension block, used for arrays
+// Note: this structure is being phased out.  Please use the
+// repeating tail on the ARY structure instead
 
 struct dim
 {
-	int dim_number;				/* Dimension number i (i=1 to n) */
-	SLONG dim_lower;			/* Lower bound */
-	SLONG dim_upper;			/* Upper bound */
-	dim* dim_next;				/* Information for dimension i+1 */
-	dim* dim_previous;			/* Information for dimension i-1 */
+	int dim_number;				// Dimension number i (i=1 to n)
+	SLONG dim_lower;			// Lower bound
+	SLONG dim_upper;			// Upper bound
+	dim* dim_next;				// Information for dimension i+1
+	dim* dim_previous;			// Information for dimension i-1
 };
 
 const size_t DIM_LEN = sizeof(dim);
@@ -191,11 +187,11 @@ const size_t DIM_LEN = sizeof(dim);
 
 struct gpre_file
 {
-	SLONG fil_length;			/* File length in pages */
-	SLONG fil_start;			/* Starting page */
-	TEXT *fil_name;				/* File name */
-	gpre_file* fil_next;		/* next file */
-	USHORT fil_shadow_number;	/* shadow number if part of shadow */
+	SLONG fil_length;			// File length in pages
+	SLONG fil_start;			// Starting page
+	TEXT *fil_name;				// File name
+	gpre_file* fil_next;		// next file
+	USHORT fil_shadow_number;	// shadow number if part of shadow
 	USHORT fil_flags;
 };
 
@@ -208,7 +204,7 @@ enum fil_flags_vals {
 const size_t FIL_LEN = sizeof(gpre_file);
 
 
-/* filter block */
+// filter block
 
 struct gpre_filter
 {
@@ -222,7 +218,7 @@ struct gpre_filter
 const size_t FLTR_LEN = sizeof(gpre_filter);
 
 
-/* General Syntax node, produced by parser */
+// General Syntax node, produced by parser
 
 enum nod_t {
 	nod_nothing = 0,
@@ -262,14 +258,14 @@ enum nod_t {
 	nod_current_role, nod_current_transaction,
 	nod_coalesce, nod_case, nod_case1,
 	nod_substring,
-	nod_LASTNOD					/* Leave this debugging gpre_nod last */
+	nod_LASTNOD					// Leave this debugging gpre_nod last
 };
 
 struct gpre_nod
 {
-	nod_t nod_type;				/* node type */
-	USHORT nod_count;			/* number of sub-items */
-	gpre_nod* nod_arg[1];		/* argument */
+	nod_t nod_type;				// node type
+	USHORT nod_count;			// number of sub-items
+	gpre_nod* nod_arg[1];		// argument
 };
 
 inline size_t NOD_LEN(const size_t cnt)
@@ -280,13 +276,13 @@ inline size_t NOD_LEN(const size_t cnt)
 
 struct set_dialect
 {
-	USHORT sdt_dialect;			/* Dialect  value as specified by SET stmt */
+	USHORT sdt_dialect;			// Dialect  value as specified by SET stmt
 };
 
 const size_t SDT_LEN = sizeof(set_dialect);
 
 
-/* Set generator block */
+// Set generator block
 
 struct set_gen
 {
@@ -299,10 +295,10 @@ struct set_gen
 const size_t SGEN_LEN = sizeof(set_gen);
 
 
-/* STRing block - holds a null terminated string */
+// STRing block - holds a null terminated string
 
 typedef struct str {
-	TEXT str_string[1];			/* pretty simple, no? */
+	TEXT str_string[1];			// pretty simple, no?
 } *STR;
 
 inline size_t STR_LEN(const size_t size)
@@ -311,7 +307,7 @@ inline size_t STR_LEN(const size_t size)
 }
 
 
-/* SQL WHENEVER BLOCK */
+// SQL WHENEVER BLOCK
 
 enum swe_condition_vals {
 	SWE_error,
@@ -329,7 +325,7 @@ struct swe
 };
 
 
-/* Text block */
+// Text block
 
 struct gpre_txt
 {
@@ -340,42 +336,42 @@ struct gpre_txt
 const size_t TXT_LEN = sizeof(gpre_txt);
 
 
-/* User name -- used for SQL GRANT/REVOKE */
+// User name -- used for SQL GRANT/REVOKE
 
 struct gpre_usn
 {
 	gpre_usn* usn_next;
 	SCHAR *usn_name;
-	USHORT usn_dyn;				/* describes the type of user via a dyn-verb,
-								   i.e. gds__dyn_grant_user/view/proc/trig */
+	USHORT usn_dyn;				// describes the type of user via a dyn-verb,
+								// i.e. gds__dyn_grant_user/view/proc/trig
 };
 
 const size_t USN_LEN = sizeof(gpre_usn);
 
 
-/* value block, used to store a set of values */
+// value block, used to store a set of values
 
 struct gpre_value
 {
-	gpre_value* val_next;			/* next value in list */
-	const TEXT* val_value;			/* value */
+	gpre_value* val_next;			// next value in list
+	const TEXT* val_value;			// value
 };
 
 const size_t VAL_LEN = sizeof(gpre_value);
 
 
-/* Array information block.  Used to hold info about an array field.
-   Note: the dimension (dim) block used to hold dimension information.
-   The preferred mechanism is the repeating tail on the array block. */
+// Array information block.  Used to hold info about an array field.
+// Note: the dimension (dim) block used to hold dimension information.
+// The preferred mechanism is the repeating tail on the array block.
 
 struct ary
 {
-	USHORT ary_dtype;			/* data type of array */
-	int ary_dimension_count;	/* Number of dimensions in this array */
-	dim* ary_dimension;			/* Linked list of range info for each dimension */
-	SLONG ary_size;				/* Size of the array */
-	ULONG ary_ident;			/* Array identifier */
-	bool ary_declared;			/* True if a declaration already was generated */
+	USHORT ary_dtype;			// data type of array
+	int ary_dimension_count;	// Number of dimensions in this array
+	dim* ary_dimension;			// Linked list of range info for each dimension
+	SLONG ary_size;				// Size of the array
+	ULONG ary_ident;			// Array identifier
+	bool ary_declared;			// True if a declaration already was generated
 	struct ary_repeat
 	{
 		SLONG ary_lower;
@@ -388,18 +384,18 @@ const size_t ARY_LEN = sizeof(ary);
 
 
 
-/* Trigger block */
-/* Note: This structure will need expansion later.  Currently its
-   use is to create a trigger for CHECK constraints which always
-   abort on error                                                   */
+// Trigger block
+// Note: This structure will need expansion later.  Currently its
+// use is to create a trigger for CHECK constraints which always
+// abort on error
 
 struct gpre_trg
 {
 	str* trg_name;
-	USHORT trg_type;			/* Type of trigger */
-	str* trg_source;			/* source for trigger */
-	gpre_nod* trg_boolean;		/* boolean expression, for trigger */
-	str* trg_message;			/* Message the trigger prints */
+	USHORT trg_type;			// Type of trigger
+	str* trg_source;			// source for trigger
+	gpre_nod* trg_boolean;		// boolean expression, for trigger
+	str* trg_message;			// Message the trigger prints
 };
 
 const size_t TRG_LEN = sizeof(gpre_trg);
@@ -414,36 +410,35 @@ enum gpre_trg_types {
 };
 
 
-/* Linked list stack stuff */
+// Linked list stack stuff
 
 struct gpre_lls {
-	gpre_nod* lls_object;		/* object on stack */
-	gpre_lls* lls_next;				/* next item on stack */
+	gpre_nod* lls_object;		// object on stack
+	gpre_lls* lls_next;			// next item on stack
 };
 
 const size_t LLS_LEN = sizeof(gpre_lls);
 
 
-/* Constraint block, used to hold information about integrity constraints */
+// Constraint block, used to hold information about integrity constraints
 
 struct cnstrt
 {
-	str* cnstrt_name;				/* Name of constraint */
-	USHORT cnstrt_type;				/* Type of constraint */
-	gpre_lls* cnstrt_fields;				/* list of fields */
-	USHORT cnstrt_fkey_def_type;	/* extended foreign key definition */
-	str* cnstrt_referred_rel;		/* referred relation, if foreign key */
-	gpre_lls* cnstrt_referred_fields;	/* optional list of fields from
-									   referred relation */
-	cnstrt* cnstrt_next;			/* next contraint for field or relation */
-	gpre_txt* cnstrt_text;			/* source for CHECK constraints */
-	gpre_nod* cnstrt_boolean;		/* boolean expression, for CHECK constraints */
-	USHORT cnstrt_flags;			/* see below */
+	str* cnstrt_name;					// Name of constraint
+	USHORT cnstrt_type;					// Type of constraint
+	gpre_lls* cnstrt_fields;			// list of fields
+	USHORT cnstrt_fkey_def_type;		// extended foreign key definition
+	str* cnstrt_referred_rel;			// referred relation, if foreign key
+	gpre_lls* cnstrt_referred_fields;	// optional list of fields from referred relation
+	cnstrt* cnstrt_next;				// next contraint for field or relation
+	gpre_txt* cnstrt_text;				// source for CHECK constraints
+	gpre_nod* cnstrt_boolean;			// boolean expression, for CHECK constraints
+	USHORT cnstrt_flags;				// see below
 };
 
 const size_t CNSTRT_LEN = sizeof(cnstrt);
 
-/* Values for cnstrt_fkey_def_type */
+// Values for cnstrt_fkey_def_type
 
 enum cnstrt_fkey_def_type_vals {
 	REF_UPDATE_ACTION	= 0x0001,
@@ -461,7 +456,7 @@ enum cnstrt_fkey_def_type_vals {
 	REF_DELETE_MASK		= 0x03C0
 };
 
-/* Values for cnstrt_type */
+// Values for cnstrt_type
 
 enum cnstrt_type_vals {
 	CNSTRT_NOT_NULL = 1,
@@ -471,7 +466,7 @@ enum cnstrt_type_vals {
 	CNSTRT_CHECK
 };
 
-/* Values for cnstrt_flags */
+// Values for cnstrt_flags
 
 enum cnstrt_flags_vals {
 	CNSTRT_DEFERRABLE			= 1,
@@ -480,61 +475,61 @@ enum cnstrt_flags_vals {
 };
 
 
-/* Grant/revoke block */
+// Grant/revoke block
 
 typedef struct prv
 {
-	USHORT prv_privileges;		/* holds privileges being granted or revoked */
-	SCHAR* prv_username;		/* user having privileges granted or revoked */
-	USHORT prv_user_dyn;		/* the dyn-verb to be used with prv_username
-								   i.e. gds__dyn_grant_user/proc/trig/view */
-	str* prv_relation;			/* relation on which we're doing grant/revoke */
-	USHORT prv_object_dyn;		/* the dyn-verb to be used with prv_relation
-								   i.e. gds__dyn_rel/proc_name */
-	gpre_lls* prv_fields;			/* fields on which we're doing grant/revoke */
-	prv* prv_next;				/* next grant/revoke block (with different user) */
+	USHORT prv_privileges;		// holds privileges being granted or revoked
+	SCHAR* prv_username;		// user having privileges granted or revoked
+	USHORT prv_user_dyn;		// the dyn-verb to be used with prv_username
+								// i.e. gds__dyn_grant_user/proc/trig/view
+	str* prv_relation;			// relation on which we're doing grant/revoke
+	USHORT prv_object_dyn;		// the dyn-verb to be used with prv_relation
+								// i.e. gds__dyn_rel/proc_name
+	gpre_lls* prv_fields;		// fields on which we're doing grant/revoke
+	prv* prv_next;				// next grant/revoke block (with different user)
 } *PRV;
 
 const size_t PRV_LEN = sizeof(prv);
 
 enum priv_types
 {
-	PRV_no_privs	= 0,		/* no privileges being granted or revoked */
-	PRV_select		= 1,		/* select privilege being granted or revoked */
-	PRV_insert		= 2,		/* insert privilege being granted or revoked */
-	PRV_delete		= 4,		/* delete privilege being granted or revoked */
-	PRV_update		= 8,		/* update privilege being granted or revoked */
-	PRV_execute		= 16,		/* execute privilege being granted or revoked */
-	PRV_references	= 32,		/* reference privilege */
-	PRV_grant_option= 64,		/* privilege to grant privileges being granted */
-	PRV_all			= 128		/* all privileges being granted/revoked */
+	PRV_no_privs	= 0,		// no privileges being granted or revoked
+	PRV_select		= 1,		// select privilege being granted or revoked
+	PRV_insert		= 2,		// insert privilege being granted or revoked
+	PRV_delete		= 4,		// delete privilege being granted or revoked
+	PRV_update		= 8,		// update privilege being granted or revoked
+	PRV_execute		= 16,		// execute privilege being granted or revoked
+	PRV_references	= 32,		// reference privilege
+	PRV_grant_option= 64,		// privilege to grant privileges being granted
+	PRV_all			= 128		// all privileges being granted/revoked
 };
 
 
-/* statistic block. Used for all statistics commands */
+// statistic block. Used for all statistics commands
 
 typedef struct sts
 {
-	str* sts_name;				/* object name */
-	USHORT sts_flags;			/* Miscellaneous flags */
+	str* sts_name;				// object name
+	USHORT sts_flags;			// Miscellaneous flags
 } *STS;
 
 const size_t STS_LEN = sizeof(sts);
 enum sts_flags_vals {
-	STS_index = 1		/* Object is an index */
+	STS_index = 1		// Object is an index
 };
 
 
-/* Computed field block */
+// Computed field block
 
 typedef struct cmpf {
-	gpre_txt* cmpf_text;		/* source for computed field */
-	gpre_nod* cmpf_boolean;		/* expression, for computed field */
+	gpre_txt* cmpf_text;		// source for computed field
+	gpre_nod* cmpf_boolean;		// expression, for computed field
 } *CMPF;
 
 const size_t CMPF_LEN = sizeof(cmpf);
 
-/***************** end of tree top **********************/
+// ***************** end of tree top **********************
 
 
 // Forward declarations
@@ -654,40 +649,40 @@ enum act_t {
 	ACT_put_slice,
 	ACT_sql_dialect,
 
-	ACT_LASTACT					/* leave this debugging ACT last */
+	ACT_LASTACT					// leave this debugging ACT last
 };
 
-/* Action block, used to make action points in source */
+// Action block, used to make action points in source
 
 struct act {
-	SLONG act_position;			/* position in input stream */
-	SLONG act_length;			/* length to be commented out */
-	act_t act_type;				/* type of action */
-	act* act_next;				/* next action in request */
-	act* act_rest;				/* remaining actions in module */
-	act* act_error;				/* on-error action (maybe) */
-	act* act_pair;				/* begin/end action (maybe) */
-	gpre_req* act_request;		/* parent request */
-	ref* act_object;			/* dependent on action type */
-	swe* act_whenever;			/* SQL whenever blocks */
-	USHORT act_flags;			/* flags that affect the action */
-	USHORT act_count;			/* used to hold begin/end count for routines */
+	SLONG act_position;			// position in input stream
+	SLONG act_length;			// length to be commented out
+	act_t act_type;				// type of action
+	act* act_next;				// next action in request
+	act* act_rest;				// remaining actions in module
+	act* act_error;				// on-error action (maybe)
+	act* act_pair;				// begin/end action (maybe)
+	gpre_req* act_request;		// parent request
+	ref* act_object;			// dependent on action type
+	swe* act_whenever;			// SQL whenever blocks
+	USHORT act_flags;			// flags that affect the action
+	USHORT act_count;			// used to hold begin/end count for routines
 };
 
 enum act_flags_vals {
-	ACT_mark	= 1,		/* action is mark only - no comment */
-	ACT_first	= 2,		/* action is first on line.  No FTN continuation */
-	ACT_break	= 4,		/* module boundary break */
-	ACT_sql		= 8,		/* action is SQL statement */
-	ACT_decl	= 16,		/* action is a PASCAL forward or extern routine */
-	ACT_main	= 32,		/* action is the main routine in the program/module */
-	ACT_back_token	= 128	/* end of action marked by prior token */
+	ACT_mark	= 1,		// action is mark only - no comment
+	ACT_first	= 2,		// action is first on line.  No FTN continuation
+	ACT_break	= 4,		// module boundary break
+	ACT_sql		= 8,		// action is SQL statement
+	ACT_decl	= 16,		// action is a PASCAL forward or extern routine
+	ACT_main	= 32,		// action is the main routine in the program/module
+	ACT_back_token	= 128	// end of action marked by prior token
 };
 
 const size_t ACT_LEN = sizeof(act);
 
 
-/* Symbol block, also used for hash table */
+// Symbol block, also used for hash table
 
 enum sym_t {
 	SYM_keyword,
@@ -712,41 +707,41 @@ enum sym_t {
 	SYM_generator,
 	SYM_dummy,
 
-	SYM_LASTSYM					/* Leave this debugging sym last */
+	SYM_LASTSYM					// Leave this debugging sym last
 };
 
 struct gpre_sym {
-	const char* sym_string;		/* address of asciz string */
-	sym_t sym_type;				/* symbol type */
-	USHORT sym_keyword;			/* keyword number, if keyword */
-	gpre_ctx* sym_object;		/* general pointer to object */
-	gpre_sym* sym_collision;	/* collision pointer */
-	gpre_sym* sym_homonym;		/* homonym pointer */
-	SCHAR sym_name[1];			/* space for name, if necessary */
+	const char* sym_string;		// address of asciz string
+	sym_t sym_type;				// symbol type
+	USHORT sym_keyword;			// keyword number, if keyword
+	gpre_ctx* sym_object;		// general pointer to object
+	gpre_sym* sym_collision;	// collision pointer
+	gpre_sym* sym_homonym;		// homonym pointer
+	SCHAR sym_name[1];			// space for name, if necessary
 };
 
 const size_t SYM_LEN = sizeof(gpre_sym);
 
 
-/* Blob block.  Used for blob calls */
+// Blob block.  Used for blob calls
 
 class blb
 {
 public:
-	gpre_req* blb_request;		/* parent request */
-	blb* blb_next;				/* next blob in request */
-	ref* blb_reference;			/* field reference for blob field */
-	gpre_sym* blb_symbol;		/* Blob context variable */
-	ULONG blb_ident;			/* Blob handle */
-	ULONG blb_buff_ident;		/* Ident of segment buffer */
-	ULONG blb_len_ident;		/* Ident of segment length */
-	ULONG blb_seg_length;		/* Segment length of blob */
-	USHORT blb_flags;			/* Misc and various blobs */
-	USHORT blb_top_label;		/* fortran label for top of request */
-	USHORT blb_btm_label;		/* fortran label for request exit */
-	USHORT blb_bpb_length;		/* Length of blob parameter block */
-	USHORT blb_bpb_ident;		/* Ident for blob parameter block */
-	USHORT blb_type;			/* Blob type (0 = default segmented) */
+	gpre_req* blb_request;		// parent request
+	blb* blb_next;				// next blob in request
+	ref* blb_reference;			// field reference for blob field
+	gpre_sym* blb_symbol;		// Blob context variable
+	ULONG blb_ident;			// Blob handle
+	ULONG blb_buff_ident;		// Ident of segment buffer
+	ULONG blb_len_ident;		// Ident of segment length
+	ULONG blb_seg_length;		// Segment length of blob
+	USHORT blb_flags;			// Misc and various blobs
+	USHORT blb_top_label;		// fortran label for top of request
+	USHORT blb_btm_label;		// fortran label for request exit
+	USHORT blb_bpb_length;		// Length of blob parameter block
+	USHORT blb_bpb_ident;		// Ident for blob parameter block
+	USHORT blb_type;			// Blob type (0 = default segmented)
 	SSHORT blb_const_from_type;
 	// Constant value for subtype from which this blob is to be filtered
 	//TEXT *blb_var_from_type;
@@ -755,8 +750,8 @@ public:
 	// Constant value for subtype to which this blob is to be filtered
 	//TEXT *blb_var_to_type;
 	// Variable whose value is the subtype to which this blob is to be filtered
-	USHORT blb_from_charset;	/* charset to translate from */
-	USHORT blb_to_charset;		/* charset to translate to */
+	USHORT blb_from_charset;	// charset to translate from
+	USHORT blb_to_charset;		// charset to translate to
 	UCHAR blb_bpb[24];
 };
 
@@ -768,14 +763,14 @@ enum blb_flags_vals {
 };
 
 
-/* Reserved relation lock block */
+// Reserved relation lock block
 
 struct rrl
 {
-	rrl* rrl_next;				/* next locked relation */
-	UCHAR rrl_lock_level;		/* lock level (SHARE, PROT, EXC */
-	UCHAR rrl_lock_mode;		/* lock mode (READ/WRITE) */
-	gpre_rel* rrl_relation;		/* relation block */
+	rrl* rrl_next;				// next locked relation
+	UCHAR rrl_lock_level;		// lock level (SHARE, PROT, EXC
+	UCHAR rrl_lock_mode;		// lock mode (READ/WRITE)
+	gpre_rel* rrl_relation;		// relation block
 };
 
 const size_t RRL_LEN = sizeof(rrl);
@@ -783,35 +778,37 @@ const size_t RRL_LEN = sizeof(rrl);
 
 struct tpb; // forward declaration
 
-/* Database block, more or less the granddaddy */
+// Database block, more or less the granddaddy
 
 struct gpre_dbb
 {
-	gpre_dbb* dbb_next;				/* next database in program */
-	gpre_rel* dbb_relations;	/* relations in database */
-	gpre_rel* dbb_procedures;	/* procedures in database */
-	USHORT dbb_id;				/* database id in program */
-	USHORT dbb_flags;			/* Misc flag bytes */
-	gpre_sym* dbb_name;			/* database name */
-	FB_API_HANDLE dbb_handle;			/* OUR db handle */
-	FB_API_HANDLE dbb_transaction;		/* default transaction */
-	rrl* dbb_rrls;				/* temporary list of relation locks */
-	tpb* dbb_tpbs;				/* real tpbs for this db */
+	gpre_dbb* dbb_next;				// next database in program
+	gpre_rel* dbb_relations;		// relations in database
+	gpre_rel* dbb_procedures;		// procedures in database
+#ifdef GPRE_COBOL
+	USHORT dbb_id;					// database id in program
+#endif
+	USHORT dbb_flags;				// Misc flag bytes
+	gpre_sym* dbb_name;				// database name
+	FB_API_HANDLE dbb_handle;		// OUR db handle
+	FB_API_HANDLE dbb_transaction;	// default transaction
+	rrl* dbb_rrls;					// temporary list of relation locks
+	const tpb* dbb_tpbs;			// real tpbs for this db
 	const TEXT* dbb_filename;
 	const TEXT* dbb_runtime;
-	const TEXT* dbb_c_user;		/* compiletime user name */
-	const TEXT* dbb_c_password;	/* compiletime password */
-	const TEXT* dbb_c_sql_role;	/* compiletime SQL role */
-	const TEXT* dbb_r_user;		/* runtime user name */
-	const TEXT* dbb_r_password;	/* runtime password */
-	const TEXT* dbb_r_sql_role;	/* runtime SQL role */
-	const TEXT* dbb_c_lc_messages;	/* compiletime user natural language */
-	const TEXT* dbb_c_lc_ctype;	/* compiletime user character set */
-	const TEXT* dbb_r_lc_messages;	/* runtime user natural language */
-	const TEXT* dbb_r_lc_ctype;	/* runtime user character set */
-	const TEXT* dbb_def_charset;	/* charset for CREATE DATABASE */
-	SSHORT dbb_know_subtype;	/* Use an charset subtype id on messages */
-	SSHORT dbb_char_subtype;	/* subtype to use for all SCHAR messages */
+	const TEXT* dbb_c_user;			// compiletime user name
+	const TEXT* dbb_c_password;		// compiletime password
+	const TEXT* dbb_c_sql_role;		// compiletime SQL role
+	const TEXT* dbb_r_user;			// runtime user name
+	const TEXT* dbb_r_password;		// runtime password
+	const TEXT* dbb_r_sql_role;		// runtime SQL role
+	const TEXT* dbb_c_lc_messages;	// compiletime user natural language
+	const TEXT* dbb_c_lc_ctype;		// compiletime user character set
+	const TEXT* dbb_r_lc_messages;	// runtime user natural language
+	const TEXT* dbb_r_lc_ctype;		// runtime user character set
+	const TEXT* dbb_def_charset;	// charset for CREATE DATABASE
+	SSHORT dbb_know_subtype;		// Use a charset subtype id on messages
+	SSHORT dbb_char_subtype;		// subtype to use for all SCHAR messages
 	FB_API_HANDLE dbb_field_request;
 	FB_API_HANDLE dbb_flds_request;
 	FB_API_HANDLE dbb_relation_request;
@@ -828,14 +825,16 @@ struct gpre_dbb
 	FB_API_HANDLE dbb_generator_request;
 	FB_API_HANDLE dbb_view_request;
 	FB_API_HANDLE dbb_primary_key_request;
-	int dbb_scope;				/* scope of the database handle */
+	int dbb_scope;					// scope of the database handle
+#ifdef NOT_USED_OR_REPLACED
 	int dbb_allocation;
+#endif
 	int dbb_pagesize;
 	int dbb_buffercount;
-	ULONG dbb_length;			/* Length of database in pages, if known */
+	ULONG dbb_length;				// Length of database in pages, if known
 	gpre_file* dbb_logfiles;
 #ifdef SCROLLABLE_CURSORS
-	SSHORT dbb_base_level;		/* code level of the engine we are talking to */
+	SSHORT dbb_base_level;			// code level of the engine we are talking to
 #endif
 #ifdef FLINT_CACHE // In practice, never used.
 	gpre_file* dbb_cache_file;
@@ -847,15 +846,15 @@ const size_t DBB_LEN = sizeof(gpre_dbb);
 
 enum dbb_flags_valss {
 	DBB_no_arrays	= 1,
-	DBB_sqlca		= 2,	/* Created as default for a sqlca */
-	DBB_in_trans	= 4,	/* included in this transaction */
+	DBB_sqlca		= 2,	// Created as default for a sqlca
+	DBB_in_trans	= 4,	// included in this transaction
 //	DBB_drop_log	= 8,
 	DBB_log_serial	= 16,
 //	DBB_log_default	= 32,
 	DBB_cascade		= 64,
 	DBB_drop_cache	= 128,
 	DBB_create_database	= 256,
-	DBB_v3			= 512	/* Database is V3 */
+	DBB_v3			= 512	// Database is V3
 };
 
 enum dbb_scope_vals {
@@ -864,15 +863,15 @@ enum dbb_scope_vals {
 	DBB_STATIC
 };
 
-/* TPB block */
+// TPB block
 
 struct tpb {
-	tpb* tpb_tra_next;			/* next TPB for this transaction */
-	tpb* tpb_dbb_next;			/* next TPB for this database */
-	gpre_dbb* tpb_database;		/* gpre_dbb of this part of the transaction */
-	USHORT tpb_length;			/* length of actual TPB */
-	ULONG tpb_ident;			/* unique part of name for this TPB */
-	UCHAR tpb_string[1];		/* actual TPB */
+	tpb* tpb_tra_next;			// next TPB for this transaction
+	const tpb* tpb_dbb_next;	// next TPB for this database
+	gpre_dbb* tpb_database;		// gpre_dbb of this part of the transaction
+	USHORT tpb_length;			// length of actual TPB
+	ULONG tpb_ident;			// unique part of name for this TPB
+	UCHAR tpb_string[1];		// actual TPB
 };
 
 inline size_t TPB_LEN(const size_t tpb_string_len)
@@ -881,20 +880,20 @@ inline size_t TPB_LEN(const size_t tpb_string_len)
 }
 
 
-/* Procedure structure */
+// Procedure structure
 
 struct gpre_prc
 {
-	gpre_sym* prc_symbol;		/* symbol for relation */
-	SSHORT prc_id;				/* procedure id */
-	gpre_sym* prc_owner;		/* owner of procedure, if any */
-	gpre_dbb* prc_database;		/* parent database */
-	gpre_prc* prc_next;			/* next procedure in database */
-	gpre_fld* prc_inputs;		/* linked list of input parameters */
-	gpre_fld* prc_outputs;		/* linked list of output parameters */
-	SSHORT prc_in_count;		/* count of input parameters */
-	SSHORT prc_out_count;		/* count of output parameters */
-	SSHORT prc_flags;			/* procedure flags */
+	gpre_sym* prc_symbol;		// symbol for relation
+	SSHORT prc_id;				// procedure id
+	gpre_sym* prc_owner;		// owner of procedure, if any
+	gpre_dbb* prc_database;		// parent database
+	gpre_prc* prc_next;			// next procedure in database
+	gpre_fld* prc_inputs;		// linked list of input parameters
+	gpre_fld* prc_outputs;		// linked list of output parameters
+	SSHORT prc_in_count;		// count of input parameters
+	SSHORT prc_out_count;		// count of output parameters
+	SSHORT prc_flags;			// procedure flags
 };
 
 const size_t PRC_LEN = sizeof(gpre_prc);
@@ -903,47 +902,47 @@ enum prc_flags_vals {
 };
 
 
-/* Maps used by union and global aggregates */
+// Maps used by union and global aggregates
 
 struct mel
 {
-	mel* mel_next;				/* Next element in map */
-	gpre_nod* mel_expr;			/* Expression */
+	mel* mel_next;				// Next element in map
+	gpre_nod* mel_expr;			// Expression
 	ref* mel_reference;
 	gpre_ctx* mel_context;
-	USHORT mel_position;		/* Position in map */
+	USHORT mel_position;		// Position in map
 };
 
 struct map
 {
-	gpre_ctx* map_context;		/* Pseudo context for map */
-	mel* map_elements;			/* Map elements */
-	USHORT map_count;			/* Number of things in map */
+	gpre_ctx* map_context;		// Pseudo context for map
+	mel* map_elements;			// Map elements
+	USHORT map_count;			// Number of things in map
 };
 
 
-/* Record selection expresion syntax node */
+// Record selection expresion syntax node
 
 struct gpre_rse
 {
 	//USHORT rse_type;			// node type, UNUSED
-	gpre_nod* rse_boolean;		/* boolean expression, if present */
-	gpre_nod* rse_first;		/* "first n" clause, if present */
-	gpre_nod* rse_sqlfirst;		/* SQL "first n" clause if present */
-	gpre_nod* rse_sqlskip;		/* SQL "skip n" clause if present */
-	gpre_nod* rse_reduced;		/* projection clause, if present */
-	gpre_nod* rse_sort;			/* sort clause, if present */
-	gpre_nod* rse_fields;		/* list of fields */
-	gpre_nod* rse_into;			/* list of output variables */
-	gpre_nod* rse_union;		/* if union, list of sub-rses */
-	gpre_nod* rse_group_by;		/* list of grouping fields */
-	gpre_nod* rse_plan;			/* user-specified access plan */
-	map* rse_map;				/* map for aggregates */
-	gpre_rse* rse_aggregate;	/* Aggregate rse */
-	nod_t rse_join_type;		/* Join type */
-	USHORT rse_flags;			/* flags */
-	USHORT rse_count;			/* number of relations */
-	gpre_ctx* rse_context[1];	/* context block */
+	gpre_nod* rse_boolean;		// boolean expression, if present
+	gpre_nod* rse_first;		// "first n" clause, if present
+	gpre_nod* rse_sqlfirst;		// SQL "first n" clause if present
+	gpre_nod* rse_sqlskip;		// SQL "skip n" clause if present
+	gpre_nod* rse_reduced;		// projection clause, if present
+	gpre_nod* rse_sort;			// sort clause, if present
+	gpre_nod* rse_fields;		// list of fields
+	gpre_nod* rse_into;			// list of output variables
+	gpre_nod* rse_union;		// if union, list of sub-rses
+	gpre_nod* rse_group_by;		// list of grouping fields
+	gpre_nod* rse_plan;			// user-specified access plan
+	map* rse_map;				// map for aggregates
+	gpre_rse* rse_aggregate;	// Aggregate rse
+	nod_t rse_join_type;		// Join type
+	USHORT rse_flags;			// flags
+	USHORT rse_count;			// number of relations
+	gpre_ctx* rse_context[1];	// context block
 };
 
 
@@ -962,67 +961,66 @@ enum rse_flags_vals {
 };
 
 
-/* Relation block, not to be confused with siblings or in-laws */
+// Relation block, not to be confused with siblings or in-laws
 
 struct gpre_rel
 {
-	USHORT rel_id;				/* relation id */
-	gpre_fld* rel_fields;		/* linked list of known fields */
-	gpre_fld* rel_dbkey;		/* linked list of known fields */
-	gpre_sym* rel_symbol;		/* symbol for relation */
-	gpre_dbb* rel_database;		/* parent database */
-	gpre_rel* rel_next;			/* next relation in database */
-	bool rel_meta;				/* if true, created for a metadata operation */
+	USHORT rel_id;				// relation id
+	gpre_fld* rel_fields;		// linked list of known fields
+	gpre_fld* rel_dbkey;		// linked list of known fields
+	gpre_sym* rel_symbol;		// symbol for relation
+	gpre_dbb* rel_database;		// parent database
+	gpre_rel* rel_next;			// next relation in database
+	bool rel_meta;				// if true, created for a metadata operation
 	gpre_rse* rel_view_rse;
-	gpre_txt* rel_view_text;	/* source for VIEW definition */
-	gpre_sym* rel_owner;		/* owner of relation, if any */
-	cnstrt* rel_constraints;	/* linked list of constraints defined
-								   during a meta operation */
-	TEXT *rel_ext_file;			/* external file name */
+	gpre_txt* rel_view_text;	// source for VIEW definition
+	gpre_sym* rel_owner;		// owner of relation, if any
+	cnstrt* rel_constraints;	// linked list of constraints defined during a meta operation
+	TEXT *rel_ext_file;			// external file name
 	USHORT rel_flags;
 };
 
 const size_t REL_LEN = sizeof(gpre_rel);
 
 enum rel_flags_vals {
-	REL_view_check	= 1		/* View created with check option */
+	REL_view_check	= 1		// View created with check option
 };
 
 
-/* Index block. Used for DDL INDEX commands */
+// Index block. Used for DDL INDEX commands
 
 struct gpre_index
 {
-	gpre_sym* ind_symbol;		/* index name */
-	gpre_rel* ind_relation;		/* relation name */
-	gpre_fld* ind_fields;		/* list of fields */
-	USHORT ind_flags;			/* Miscellaneous flags */
+	gpre_sym* ind_symbol;		// index name
+	gpre_rel* ind_relation;		// relation name
+	gpre_fld* ind_fields;		// list of fields
+	USHORT ind_flags;			// Miscellaneous flags
 };
 
 const size_t IND_LEN = sizeof(gpre_index);
 
 enum ind_flags_vals {
-	IND_dup_flag	= 1,	/* if false, duplicates not allowed */
-	IND_meta		= 2,	/* if true, created for a metadata operation */
-	IND_descend		= 4,	/* if true, a descending-order index */
-	IND_active		= 8,	/* activate index */
-	IND_inactive	= 16	/* de-activate index */
+	IND_dup_flag	= 1,	// if false, duplicates not allowed
+	IND_meta		= 2,	// if true, created for a metadata operation
+	IND_descend		= 4,	// if true, a descending-order index
+	IND_active		= 8,	// activate index
+	IND_inactive	= 16	// de-activate index
 };
 
 
-/* Symbolic names for international text types */
-/* (either collation or character set name)    */
+// Symbolic names for international text types
+// (either collation or character set name)
 
 // International symbol
 
 struct intlsym
 {
 	gpre_dbb* intlsym_database;
-	gpre_sym* intlsym_symbol;	/* Hash symbol for intlsym */
+	gpre_sym* intlsym_symbol;	// Hash symbol for intlsym
 	intlsym* intlsym_next;
-	USHORT intlsym_type;		/* what type of name */
+	USHORT intlsym_type;		// what type of name
 	USHORT intlsym_flags;
-	SSHORT intlsym_ttype;		/* id of implementation */
+	SSHORT intlsym_ttype;		// id of implementation
 	SSHORT intlsym_charset_id;
 	SSHORT intlsym_collate_id;
 	USHORT intlsym_bytes_per_char;
@@ -1031,47 +1029,45 @@ struct intlsym
 
 const size_t INTLSYM_LEN = sizeof(intlsym);
 
-/* values used in intlsym_type */
+// values used in intlsym_type
 enum intlsym_type_vals {
 	INTLSYM_collation	= 1,
 	INTLSYM_charset		= 2
 };
 
-/* values used in intlsym_flags */
+// values used in intlsym_flags
 
-/* Field block.  Fields are what farms and databases are all about */
+// Field block.  Fields are what farms and databases are all about
 
 struct gpre_fld
 {
-	USHORT fld_dtype;			/* data type of field */
-	FLD_LENGTH fld_length;		/* field length in bytes */
-	SSHORT fld_scale;			/* scale factor */
-	USHORT fld_id;				/* field id in meta data */
-	USHORT fld_flags;			/* Misc flags */
-	USHORT fld_seg_length;		/* Segment length for blobs */
-	USHORT fld_position;		/* Field position in relation */
-	USHORT fld_precision;		/* Field precision */
-	SSHORT fld_sub_type;		/* Field sub-type */
-	gpre_fld* fld_next;			/* next field in relation */
-	gpre_fld* fld_array;		/* array element if field is array */
-	gpre_rel* fld_relation;		/* relation */
-	gpre_prc* fld_procedure;	/* procedure */
-	gpre_sym* fld_symbol;		/* symbol for field */
-	gpre_sym* fld_global;		/* symbol for global field */
-	ary* fld_array_info;		/* Dimension and range information about an
-								   array field */
-	gpre_nod* fld_default_value;/* field's default value */
-	gpre_txt* fld_default_source;	/* source for field default value */
-	gpre_index* fld_index;		/* If CREATE TABLE, specifies field with the unique constraint */
-	cnstrt* fld_constraints;	/* linked list of constraints defined
-								   during a meta operation */
-	intlsym* fld_character_set; /* character set for SQL declared field */
-	intlsym* fld_collate;		/* collation clause for SQL declared field */
-	cmpf* fld_computed;			/* computed field definition */
-	USHORT fld_char_length;		/* field length in CHARACTERS */
-	SSHORT fld_charset_id;		/* Field character set id for text */
-	SSHORT fld_collate_id;		/* Field collation id for text */
-	SSHORT fld_ttype;			/* ID of text type's implementation */
+	USHORT fld_dtype;			// data type of field
+	FLD_LENGTH fld_length;		// field length in bytes
+	SSHORT fld_scale;			// scale factor
+	USHORT fld_id;				// field id in meta data
+	USHORT fld_flags;			// Misc flags
+	USHORT fld_seg_length;		// Segment length for blobs
+	USHORT fld_position;		// Field position in relation
+	USHORT fld_precision;		// Field precision
+	SSHORT fld_sub_type;		// Field sub-type
+	gpre_fld* fld_next;			// next field in relation
+	gpre_fld* fld_array;		// array element if field is array
+	gpre_rel* fld_relation;		// relation
+	gpre_prc* fld_procedure;	// procedure
+	gpre_sym* fld_symbol;		// symbol for field
+	gpre_sym* fld_global;		// symbol for global field
+	ary* fld_array_info;		// Dimension and range information about an array field
+	gpre_nod* fld_default_value;// field's default value
+	gpre_txt* fld_default_source;	// source for field default value
+	gpre_index* fld_index;		// If CREATE TABLE, specifies field with the unique constraint
+	cnstrt* fld_constraints;	// linked list of constraints defined during a meta operation
+	intlsym* fld_character_set; // character set for SQL declared field
+	intlsym* fld_collate;		// collation clause for SQL declared field
+	cmpf* fld_computed;			// computed field definition
+	USHORT fld_char_length;		// field length in CHARACTERS
+	SSHORT fld_charset_id;		// Field character set id for text
+	SSHORT fld_collate_id;		// Field collation id for text
+	SSHORT fld_ttype;			// ID of text type's implementation
 };
 
 const size_t FLD_LEN = sizeof(gpre_fld);
@@ -1081,13 +1077,13 @@ enum fld_flags_vals {
 	FLD_text		= 2,
 	FLD_stream_blob	= 4,
 	FLD_dbkey		= 8,
-	FLD_not_null	= 32,	/* if CREATE TABLE specifies not null */
-	FLD_delete		= 64,	/* if ALTER TABLE specifies delete of field */
-	FLD_meta		= 128,	/* if true, created for a metadata operation */
-	FLD_national	= 256,	/* uses SQL "NATIONAL" character set */
-	FLD_charset		= 512,	/* field has a specific character set */
-	FLD_computed	= 1024,	/* field is computed */
-	FLD_meta_cstring= 2048	/* field is being defined as cstring by the user. */
+	FLD_not_null	= 32,	// if CREATE TABLE specifies not null
+	FLD_delete		= 64,	// if ALTER TABLE specifies delete of field
+	FLD_meta		= 128,	// if true, created for a metadata operation
+	FLD_national	= 256,	// uses SQL "NATIONAL" character set
+	FLD_charset		= 512,	// field has a specific character set
+	FLD_computed	= 1024,	// field is computed
+	FLD_meta_cstring= 2048	// field is being defined as cstring by the user.
 };
 
 
@@ -1100,31 +1096,31 @@ enum  fun_t {
 };
 
 
-/* Port block */
+// Port block
 
 struct gpre_port
 {
-	USHORT por_msg_number;		/* message number within request */
-	ULONG por_ident;			/* ident in source */
-	int por_length;				/* length of port in bytes */
-	ref* por_references;		/* linked list of field references */
-	gpre_port* por_next;		/* next port in request */
-	USHORT por_count;			/* number of items in port */
+	USHORT por_msg_number;		// message number within request
+	ULONG por_ident;			// ident in source
+	int por_length;				// length of port in bytes
+	ref* por_references;		// linked list of field references
+	gpre_port* por_next;		// next port in request
+	USHORT por_count;			// number of items in port
 };
 
 const size_t POR_LEN = sizeof(gpre_port);
 
 
-/* Slice description block */
+// Slice description block
 
 struct slc
 {
-	gpre_req* slc_parent_request;	/* request for blob id */
-	gpre_fld* slc_field;			/* database array field */
-	gpre_nod* slc_array;			/* user defined array */
-	ref* slc_field_ref;				/* array field reference */
-	USHORT slc_dimensions;			/* dimensions */
-	USHORT slc_parameters;			/* number of parameters */
+	gpre_req* slc_parent_request;	// request for blob id
+	gpre_fld* slc_field;			// database array field
+	gpre_nod* slc_array;			// user defined array
+	ref* slc_field_ref;				// array field reference
+	USHORT slc_dimensions;			// dimensions
+	USHORT slc_parameters;			// number of parameters
 	struct slc_repeat
 	{
 		gpre_nod* slc_lower;
@@ -1138,7 +1134,7 @@ inline size_t SLC_LEN(const size_t count)
 }
 
 
-/* Request block, corresponds to a single JRD request */
+// Request block, corresponds to a single JRD request
 
 enum req_t {
 	REQ_for,
@@ -1157,61 +1153,61 @@ enum req_t {
 	REQ_procedure,
 	REQ_set_generator,
 
-	REQ_LASTREQUEST				/* Leave this debugging gpre_req last */
+	REQ_LASTREQUEST				// Leave this debugging gpre_req last
 };
 
 class gpre_req
 {
 public:
 
-	req_t req_type;				/* request type */
-	ULONG req_ident;			/* ident for request handle */
-	USHORT req_act_flag;		/* activity flag ident, if used */
-	int req_length;				/* blr length of request */
-	UCHAR *req_base;			/* base of blr string during generation */
-	UCHAR *req_blr;				/* raw blr string */
-	SCHAR *req_handle;			/* request handle */
-	const TEXT* req_trans;		/* transaction handle */
-	const SCHAR* req_request_level;	/* request level expression */
-	USHORT req_level;			/* access level */
-	USHORT req_count;			/* number of ports in request */
-	USHORT req_internal;		/* next internal context number */
-	USHORT req_labels;			/* next available label */
-	USHORT req_top_label;		/* fortran label for top of request */
-	USHORT req_btm_label;		/* fortran label for request exit */
-	gpre_nod* req_node;			/* request definition tree */
-	gpre_dbb* req_database;		/* database */
-	act* req_actions;			/* actions within request */
-	gpre_ctx* req_contexts;		/* contexts within request */
-	gpre_ctx* req_update;		/* update context for mass insert */
-	gpre_req* req_next;			/* next request in module or metadata action */
-	ref* req_values;			/* host values required */
+	req_t req_type;				// request type
+	ULONG req_ident;			// ident for request handle
+	USHORT req_act_flag;		// activity flag ident, if used
+	int req_length;				// blr length of request
+	UCHAR *req_base;			// base of blr string during generation
+	UCHAR *req_blr;				// raw blr string
+	SCHAR *req_handle;			// request handle
+	const TEXT* req_trans;		// transaction handle
+	const SCHAR* req_request_level;	// request level expression
+	USHORT req_level;			// access level
+	USHORT req_count;			// number of ports in request
+	USHORT req_internal;		// next internal context number
+	USHORT req_labels;			// next available label
+	USHORT req_top_label;		// fortran label for top of request
+	USHORT req_btm_label;		// fortran label for request exit
+	gpre_nod* req_node;			// request definition tree
+	gpre_dbb* req_database;		// database
+	act* req_actions;			// actions within request
+	gpre_ctx* req_contexts;		// contexts within request
+	gpre_ctx* req_update;		// update context for mass insert
+	gpre_req* req_next;			// next request in module or metadata action
+	ref* req_values;			// host values required
 #ifdef SCROLLABLE_CURSORS
-	ref* req_avalues;			/* parameters to pass to asynchronous message */
+	ref* req_avalues;			// parameters to pass to asynchronous message
 #endif
-	ref* req_eof;				/* eof reference for FOR */
-	ref* req_index;				/* index variable */
-	ref* req_references;		/* fields referenced in context */
-	map* req_map;				/* map for aggregates, etc */
-	gpre_rse* req_rse;			/* record selection expression */
-	gpre_port* req_ports;		/* linked list of ports */
-	gpre_port* req_primary;		/* primary input or output port */
-	gpre_port* req_sync;		/* synchronization port */
-	gpre_port* req_vport;		/* port to send values in */
+	ref* req_eof;				// eof reference for FOR
+	ref* req_index;				// index variable
+	ref* req_references;		// fields referenced in context
+	map* req_map;				// map for aggregates, etc
+	gpre_rse* req_rse;			// record selection expression
+	gpre_port* req_ports;		// linked list of ports
+	gpre_port* req_primary;		// primary input or output port
+	gpre_port* req_sync;		// synchronization port
+	gpre_port* req_vport;		// port to send values in
 #ifdef SCROLLABLE_CURSORS
-	gpre_port* req_aport;		/* port for asynchronous message */
+	gpre_port* req_aport;		// port for asynchronous message
 #endif
-	gpre_req* req_routine;		/* other requests in routine */
-	blb*		req_blobs;		/* blobs in request */
-	slc* req_slice;				/* slice for request */
-	ref* req_array_references;	/* array fields referenced in context */
-	USHORT req_scope_level;		/* scope level for SQL subquery parsing */
-	USHORT req_in_aggregate;	/* now processing value expr for aggr */
-	USHORT req_in_select_list;	/* processing select list */
-	USHORT req_in_where_clause;	/* processing where clause */
-	USHORT req_in_having_clause;	/* processing having clause */
-	USHORT req_in_order_by_clause;	/* processing order by clause */
-	USHORT req_in_subselect;	/* processing a subselect clause */
+	gpre_req* req_routine;		// other requests in routine
+	blb*		req_blobs;		// blobs in request
+	slc* req_slice;				// slice for request
+	ref* req_array_references;	// array fields referenced in context
+	USHORT req_scope_level;		// scope level for SQL subquery parsing
+	USHORT req_in_aggregate;	// now processing value expr for aggr
+	USHORT req_in_select_list;	// processing select list
+	USHORT req_in_where_clause;	// processing where clause
+	USHORT req_in_having_clause;	// processing having clause
+	USHORT req_in_order_by_clause;	// processing order by clause
+	USHORT req_in_subselect;	// processing a subselect clause
 	ULONG req_flags;
 
 	inline void add_end()
@@ -1245,71 +1241,71 @@ public:
 
 enum req_flags_vals {
 	REQ_exp_hand			= 1,
-	REQ_local				= 2,		/* defined in an included routine */
-	REQ_sql_cursor			= 1024,		/* request is an SQL cursor */
-	REQ_extend_dpb			= 2048,		/* we need to extend dpb at runtime */
-	REQ_sql_declare_cursor	= 4096,		/* request is declare cursor */
-	REQ_sql_blob_open		= 8192,		/* request is SQL open blob cursor */
-	REQ_sql_blob_create		= 16384,	/* request is SQL create blob cursor */
-	REQ_sql_database_dyn	= 32768,	/* request is to generate DYN to add files o database */
+	REQ_local				= 2,		// defined in an included routine
+	REQ_sql_cursor			= 1024,		// request is an SQL cursor
+	REQ_extend_dpb			= 2048,		// we need to extend dpb at runtime
+	REQ_sql_declare_cursor	= 4096,		// request is declare cursor
+	REQ_sql_blob_open		= 8192,		// request is SQL open blob cursor
+	REQ_sql_blob_create		= 16384,	// request is SQL create blob cursor
+	REQ_sql_database_dyn	= 32768,	// request is to generate DYN to add files o database
 #ifdef SCROLLABLE_CURSORS
-	REQ_scroll				= 65536,	/* request is a scrollable cursor */
-	REQ_backwards			= 131072,	/* request was last scrolled backwards */
+	REQ_scroll				= 65536,	// request is a scrollable cursor
+	REQ_backwards			= 131072,	// request was last scrolled backwards
 #endif
-	REQ_blr_version4		= 262144	/* request must generate blr_version4 */
+	REQ_blr_version4		= 262144	// request must generate blr_version4
 };
 
 const size_t REQ_LEN = sizeof(gpre_req);
 
 
-/* Context block, used to define context symbols, etc. */
+// Context block, used to define context symbols, etc.
 
 struct gpre_ctx {
-	USHORT ctx_internal;		/* internal context number */
-	USHORT ctx_scope_level;		/* scope level for SQL alias subquery scoping */
-	gpre_req* ctx_request;		/* parent request */
-	gpre_ctx* ctx_next;			/* next context in request */
-	gpre_sym* ctx_symbol;		/* symbol for context */
-	gpre_rel* ctx_relation;		/* relation for context */
-	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
-	gpre_prc* ctx_procedure;	/* procedure for context */
-	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
-	gpre_rse* ctx_stream;			/* stream for context */
+	USHORT ctx_internal;		// internal context number
+	USHORT ctx_scope_level;		// scope level for SQL alias subquery scoping
+	gpre_req* ctx_request;		// parent request
+	gpre_ctx* ctx_next;			// next context in request
+	gpre_sym* ctx_symbol;		// symbol for context
+	gpre_rel* ctx_relation;		// relation for context
+	TEXT *ctx_alias;			// holds SQL alias for passing to engine
+	gpre_prc* ctx_procedure;	// procedure for context
+	gpre_nod* ctx_prc_inputs;	// procedure input parameters
+	gpre_rse* ctx_stream;		// stream for context
 };
 
 const size_t CTX_LEN = sizeof(gpre_ctx);
 
 
-/* Field reference */
+// Field reference
 
 class ref
 {
 public:
 
-	USHORT ref_ident;			/* identifier */
-	USHORT ref_level;			/* highest level of access */
-	USHORT ref_parameter;		/* parameter in port */
-	USHORT ref_id;				/* id of reference in union */
-	gpre_fld* ref_field;		/* field in question */
-	gpre_ctx* ref_context;		/* context for reference */
-	ref* ref_next;				/* next reference in context */
-	gpre_port* ref_port;		/* associated port */
-	ref* ref_source;			/* source reference for modified field */
-	ref* ref_null;				/* reference for null value */
-	ref* ref_master;			/* master field for null value */
-	ref* ref_friend;			/* value for variable */
-	gpre_nod* ref_expr;			/* expression, if node is expression */
-	const TEXT* ref_value;		/* value string if host language value */
-	gpre_value* ref_values;		/* linked list of values */
-	const TEXT* ref_null_value;	/* value string if host language value */
-	UCHAR* ref_sdl;				/* Raw slice description language for an array */
-	UCHAR* ref_sdl_base;		/* base of sdl string during generation */
-	int ref_sdl_length;			/* sdl length for this reference */
-	slc* ref_slice;				/* Slice, if field referenced is sliced */
-	ULONG ref_sdl_ident;		/* identifier of sdl structure */
-	USHORT ref_offset;			/* offset of field in port */
+	USHORT ref_ident;			// identifier
+	USHORT ref_level;			// highest level of access
+	USHORT ref_parameter;		// parameter in port
+	USHORT ref_id;				// id of reference in union
+	gpre_fld* ref_field;		// field in question
+	gpre_ctx* ref_context;		// context for reference
+	ref* ref_next;				// next reference in context
+	gpre_port* ref_port;		// associated port
+	ref* ref_source;			// source reference for modified field
+	ref* ref_null;				// reference for null value
+	ref* ref_master;			// master field for null value
+	ref* ref_friend;			// value for variable
+	gpre_nod* ref_expr;			// expression, if node is expression
+	const TEXT* ref_value;		// value string if host language value
+	gpre_value* ref_values;		// linked list of values
+	const TEXT* ref_null_value;	// value string if host language value
+	UCHAR* ref_sdl;				// Raw slice description language for an array
+	UCHAR* ref_sdl_base;		// base of sdl string during generation
+	int ref_sdl_length;			// sdl length for this reference
+	slc* ref_slice;				// Slice, if field referenced is sliced
+	ULONG ref_sdl_ident;		// identifier of sdl structure
+	USHORT ref_offset;			// offset of field in port
 	USHORT ref_flags;
-	SSHORT ref_ttype;			/* Character set type for literals */
+	SSHORT ref_ttype;			// Character set type for literals
 
 	inline void add_byte(const int byte)
 	{
@@ -1329,45 +1325,45 @@ public:
 };
 
 enum ref_flags_vals {
-	REF_union		= 1,	/* Pseudo field for union */
-	REF_pseudo		= 2,	/* Other pseudo field (probably for forms) */
-	REF_null		= 4,	/* Only here cause of related null reference */
-	REF_fetch_array	= 8,	/* Need to fetch full array */
-	REF_literal		= 16,	/* Reference is to a constant */
-	REF_ttype		= 32,	/* Reference contains character set spec */
-	REF_array_elem	= 64,	/* Reference to an array element */
-	REF_sql_date	= 128,	/* Reference is to a date constant */
-	REF_sql_time	= 256,	/* Reference is to a time constant */
-	REF_timestamp	= 512	/* Reference is to a timestamp constant */
+	REF_union		= 1,	// Pseudo field for union
+	REF_pseudo		= 2,	// Other pseudo field (probably for forms)
+	REF_null		= 4,	// Only here cause of related null reference
+	REF_fetch_array	= 8,	// Need to fetch full array
+	REF_literal		= 16,	// Reference is to a constant
+	REF_ttype		= 32,	// Reference contains character set spec
+	REF_array_elem	= 64,	// Reference to an array element
+	REF_sql_date	= 128,	// Reference is to a date constant
+	REF_sql_time	= 256,	// Reference is to a time constant
+	REF_timestamp	= 512	// Reference is to a timestamp constant
 };
 
 const size_t REF_LEN = sizeof(ref);
 
 
-/**************** start of tree roots *****************/
+// *************** start of tree roots ****************
 
-/* Based on block.  Used for based on clause */
+// Based on block.  Used for based on clause
 
 struct bas
 {
-	gpre_fld* bas_field;		/* database field referenced */
-	gpre_lls* bas_variables;			/* list of variables based on above */
-	str* bas_db_name;			/* database name if present and required */
-	str* bas_rel_name;			/* relation name if no db statement */
-	str* bas_fld_name;			/* field if no db statement */
+	gpre_fld* bas_field;		// database field referenced
+	gpre_lls* bas_variables;	// list of variables based on above
+	str* bas_db_name;			// database name if present and required
+	str* bas_rel_name;			// relation name if no db statement
+	str* bas_fld_name;			// field if no db statement
 	USHORT bas_flags;
-	char bas_terminator[2];		/* terminating character */
+	char bas_terminator[2];		// terminating character
 };
 
 const size_t BAS_LEN = sizeof(bas);
 
 enum bas_flags_vals {
-	BAS_segment		= 1,		/* Based on a blob segment length */
-	BAS_ambiguous	= 2		/* Ambiguous reference to segment */
+	BAS_segment		= 1,		// Based on a blob segment length
+	BAS_ambiguous	= 2			// Ambiguous reference to segment
 };
 
 
-/* declare udf block */
+// declare udf block
 
 struct decl_udf
 {
@@ -1376,7 +1372,7 @@ struct decl_udf
 	const TEXT *decl_udf_module_name;
 	gpre_fld* decl_udf_arg_list;
 	gpre_fld* decl_udf_return_type;
-	USHORT decl_udf_return_mode;	/* BY VALUE or BY REFERENCE */
+	USHORT decl_udf_return_mode;	// BY VALUE or BY REFERENCE
 	SSHORT decl_udf_return_parameter;
 };
 
@@ -1384,37 +1380,37 @@ struct decl_udf
 const size_t DECL_UDF_LEN = sizeof(decl_udf);
 
 
-/* Dynamic statement block, used for dynamic SQL */
+// Dynamic statement block, used for dynamic SQL
 
 struct dyn
 {
-	gpre_dbb* dyn_database;			/* Database involved */
-	gpre_sym* dyn_statement_name;	/* Name of dynamic statement */
-	gpre_sym* dyn_cursor_name;		/* Cursor name */
-	const TEXT* dyn_trans;			/* Transaction handle */
-	TEXT *dyn_string;			/* Dynamic string or variable name */
-	TEXT *dyn_sqlda;			/* Name of SQLDA structure, if any */
-	TEXT *dyn_sqlda2;			/* Name of second SQLDA structure, if any */
-	gpre_nod* dyn_using;		/* dependent on action type */
+	gpre_dbb* dyn_database;			// Database involved
+	gpre_sym* dyn_statement_name;	// Name of dynamic statement
+	gpre_sym* dyn_cursor_name;		// Cursor name
+	const TEXT* dyn_trans;			// Transaction handle
+	TEXT *dyn_string;			// Dynamic string or variable name
+	TEXT *dyn_sqlda;			// Name of SQLDA structure, if any
+	TEXT *dyn_sqlda2;			// Name of second SQLDA structure, if any
+	gpre_nod* dyn_using;		// dependent on action type
 };
 
 const size_t DYN_LEN = sizeof(dyn);
 
 
-/* Start transaction block */
+// Start transaction block
 
 struct gpre_tra {
-	gpre_tra* tra_next;			/* next transaction */
-	TEXT *tra_handle;			/* this handle */
-	USHORT tra_flags;			/* transaction options */
-	tpb* tra_tpb;				/* TPB's for this transaction */
-	int tra_db_count;			/* number of db's and TPB's */
+	gpre_tra* tra_next;			// next transaction
+	TEXT *tra_handle;			// this handle
+	USHORT tra_flags;			// transaction options
+	tpb* tra_tpb;				// TPB's for this transaction
+	int tra_db_count;			// number of db's and TPB's
 };
 
 const size_t TRA_LEN = sizeof(gpre_tra);
 
 
-/* values for tra_flags */
+// values for tra_flags
 enum tra_flags_vals {
 	TRA_ro				= 1,
 	TRA_nw				= 2,
@@ -1430,7 +1426,7 @@ enum tra_flags_vals {
 const int MAX_TRA_OPTIONS	= 8;
 
 
-/* act_object block for SQL database commands. */
+// act_object block for SQL database commands.
 
 struct mdbb {
 	gpre_dbb* mdbb_database;
@@ -1439,57 +1435,57 @@ struct mdbb {
 };
 
 
-/* Open cursor block */
+// Open cursor block
 
 struct open_cursor {
-	gpre_sym* opn_cursor;		/* Symbol block of cursor */
-	const TEXT* opn_trans;		/* Transaction handle */
-	ref* opn_using;				/* Using variables */
+	gpre_sym* opn_cursor;		// Symbol block of cursor
+	const TEXT* opn_trans;		// Transaction handle
+	ref* opn_using;				// Using variables
 };
 
 const size_t OPN_LEN = sizeof(open_cursor);
 
 
-/* Ready block */
+// Ready block
 
 struct rdy {
-	gpre_req* rdy_request;		/* dpb message & info */
+	gpre_req* rdy_request;		// dpb message & info
 	rdy* rdy_next;
 	gpre_dbb* rdy_database;
-	USHORT rdy_id;				/* id for unique string variable- MPEXL COB */
+	USHORT rdy_id;				// id for unique string variable- MPEXL COB
 	TEXT *rdy_filename;
 };
 
 const size_t RDY_LEN = sizeof(rdy);
 
 
-/* Enumerated field type block */
+// Enumerated field type block
 
 struct field_type {
-	gpre_sym* typ_symbol;		/* Actual symbol */
-	gpre_fld* typ_field;		/* Owner */
-	SSHORT typ_value;			/* Value of type */
+	gpre_sym* typ_symbol;		// Actual symbol
+	gpre_fld* typ_field;		// Owner
+	SSHORT typ_value;			// Value of type
 };
 
 const size_t TYP_LEN = sizeof(field_type);
 
 
-/* User Defined Function */
+// User Defined Function
 
 struct udf {
 	gpre_dbb* udf_database;
-	gpre_sym* udf_symbol;		/* Function name or query name */
-	USHORT udf_args;			/* Number of arguments */
-	USHORT udf_flags;			/* udf flags */
-	USHORT udf_dtype;			/* Return data type */
-	SSHORT udf_scale;			/* Return scale */
-	USHORT udf_length;			/* Return length */
-	USHORT udf_sub_type;		/* Return sub-type */
-	USHORT udf_charset_id;		/* Return character set */
-	USHORT udf_ttype;			/* Return text type */
-	USHORT udf_type;			/* Function type */
-	gpre_fld* udf_inputs;		/* List of udf input arguments */
-	TEXT udf_function[1];		/* Function name */
+	gpre_sym* udf_symbol;		// Function name or query name
+	USHORT udf_args;			// Number of arguments
+	USHORT udf_flags;			// udf flags
+	USHORT udf_dtype;			// Return data type
+	SSHORT udf_scale;			// Return scale
+	USHORT udf_length;			// Return length
+	USHORT udf_sub_type;		// Return sub-type
+	USHORT udf_charset_id;		// Return character set
+	USHORT udf_ttype;			// Return text type
+	USHORT udf_type;			// Function type
+	gpre_fld* udf_inputs;		// List of udf input arguments
+	TEXT udf_function[1];		// Function name
 };
 
 const size_t UDF_LEN = sizeof(udf);
@@ -1507,15 +1503,15 @@ enum udf_flags_vals {
 // Update block -- used for (at least) MODIFY
 
 struct upd {
-	USHORT upd_level;			/* reference level */
-	gpre_req* upd_request;		/* parent request */
-	ref* upd_references;		/* references under modify */
-	gpre_ctx* upd_source;		/* context being modified */
-	gpre_ctx* upd_update;		/* update context */
-	gpre_port* upd_port;		/* port for update */
-	upd* upd_outer;				/* outer modify, if any */
-	gpre_nod* upd_assignments;	/* assignments to port */
-	ref* upd_array_references;	/* array references under modify */
+	USHORT upd_level;			// reference level
+	gpre_req* upd_request;		// parent request
+	ref* upd_references;		// references under modify
+	gpre_ctx* upd_source;		// context being modified
+	gpre_ctx* upd_update;		// update context
+	gpre_port* upd_port;		// port for update
+	upd* upd_outer;				// outer modify, if any
+	gpre_nod* upd_assignments;	// assignments to port
+	ref* upd_array_references;	// array references under modify
 };
 
 const size_t UPD_LEN = sizeof(upd);
@@ -1615,9 +1611,9 @@ extern GpreGlobals gpreGlob;
 #endif // fb_assert
 
 #define assert_IS_REQ(x) fb_assert(!(x) || ((x)->req_type >= 0 && (x)->req_type < REQ_LASTREQUEST))
-#define assert_IS_SYM(x) fb_assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
+//#define assert_IS_SYM(x) fb_assert(!(x) || ((x)->sym_type >= 0 && (x)->sym_type < SYM_LASTSYM))
 #define assert_IS_NOD(x) fb_assert(!(x) || ((x)->nod_type >= 1 && (x)->nod_type < nod_LASTNOD))
-#define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
+//#define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
 
 class gpre_exception: public Firebird::LongJump
@@ -1639,5 +1635,5 @@ public:
 	}
 };
 
-#endif /* GPRE_GPRE_H */
+#endif // GPRE_GPRE_H
 

@@ -315,8 +315,8 @@ static int print_blr_dtype(ctl* control, bool print_object)
 
 	const USHORT dtype = BLR_BYTE;
 
-//  Special case blob (261) to keep down the size of the
-//  jump table
+	// Special case blob (261) to keep down the size of the
+	// jump table
 
 	switch (dtype)
 	{
@@ -335,7 +335,7 @@ static int print_blr_dtype(ctl* control, bool print_object)
 		length = 8;
 		break;
 
-// ** Begin date/time/timestamp *
+	// Begin date/time/timestamp
 	case blr_sql_date:
 		string = "sql_date";
 		length = sizeof(ISC_DATE);
@@ -350,7 +350,7 @@ static int print_blr_dtype(ctl* control, bool print_object)
 		string = "timestamp";
 		length = sizeof(ISC_TIMESTAMP);
 		break;
-// ** End date/time/timestamp *
+	// End date/time/timestamp
 
 	case blr_int64:
 		string = "int64";
@@ -410,9 +410,9 @@ static int print_blr_dtype(ctl* control, bool print_object)
 	if (!print_object)
 		return length;
 
-//  TMN: FIX FIX Note that offset is not initialized to anything useful
-//  for e.g. print_word(control, (SSHORT)offset). I assume it's better to initialize it to zero
-//  than letting it be random.
+	// TMN: FIX FIX Note that offset is not initialized to anything useful
+	// for e.g. print_word(control, (SSHORT)offset). I assume it's better to initialize it to zero
+	// than letting it be random.
 	SSHORT offset = 0;
 
 	switch (dtype)

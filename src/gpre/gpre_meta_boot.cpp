@@ -56,7 +56,7 @@ static const UCHAR blr_bpb[] =
 static SCHAR db_version_info[] = { isc_info_base_level };
 #endif
 #ifdef NOT_USED_OR_REPLACED
-static SLONG array_size(gpre_fld*);
+static SLONG array_size(const gpre_fld*);
 static void get_array(gpre_dbb*, const TEXT*, gpre_fld*);
 static bool get_intl_char_subtype(SSHORT*, const UCHAR*, USHORT, gpre_dbb*);
 static bool resolve_charset_and_collation(SSHORT*, const UCHAR*, const UCHAR*);
@@ -84,9 +84,8 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 	strcpy(name, string);
 	gpre_prc* procedure = context->ctx_procedure;
 
-/*  At this point the procedure should have been scanned, so all
- *  its fields are in the symbol table.
- */
+	// At this point the procedure should have been scanned, so all
+	// its fields are in the symbol table.
 
 	gpre_fld* field = NULL;
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
@@ -109,16 +108,14 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 
 bool MET_database(gpre_dbb* db, bool print_version)
 {
-	/*
-	   ** Each info item requested will return
-	   **
-	   **     1 byte for the info item tag
-	   **     2 bytes for the length of the information that follows
-	   **     1 to 4 bytes of integer information
-	   **
-	   ** isc_info_end will not have a 2-byte length - which gives us
-	   ** some padding in the buffer.
-	 */
+	// Each info item requested will return
+	//
+	//     1 byte for the info item tag
+	//     2 bytes for the length of the information that follows
+	//     1 to 4 bytes of integer information
+	//
+	// isc_info_end will not have a 2-byte length - which gives us
+	// some padding in the buffer.
 
 	JRDMET_init(db);
 	return true;
@@ -137,10 +134,9 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 
 	strcpy(name, string);
 
-/*  Lookup domain.  If we find it in the hash table, and it is not the
- *  field we a currently looking at, use it.  Else look it up from the
- *  database.
- */
+	// Lookup domain.  If we find it in the hash table, and it is not the
+	// field we a currently looking at, use it.  Else look it up from the
+	// database.
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
@@ -240,9 +236,8 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 	strcpy(name, string);
 	//const SSHORT length = strlen(name);
 
-/*  Lookup field.  If we find it, nifty.  If not, look it up in the
- *  database.
- */
+	// Lookup field.  If we find it, nifty.  If not, look it up in the
+	// database.
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 	{
@@ -273,7 +268,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 	gpre_fld* field;
 
 	gpre_prc* procedure = context->ctx_procedure;
-	if (procedure) {
+	if (procedure)
+	{
 		gpre_nod* node = MSC_node(nod_list, procedure->prc_out_count);
 		//int count = 0;
 		for (field = procedure->prc_outputs; field; field = field->fld_next) {
@@ -288,7 +284,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 	}
 
 	gpre_rel* relation = context->ctx_relation;
-	if (relation->rel_meta) {
+	if (relation->rel_meta)
+	{
 		int count = 0;
 		for (field = relation->rel_fields; field; field = field->fld_next) {
 			count++;
@@ -400,7 +397,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 		l = sizeof(ISC_QUAD);
 		break;
 
-/** Begin sql date/time/timestamp **/
+	// Begin sql date/time/timestamp
 	case blr_sql_date:
 		dtype = dtype_sql_date;
 		l = sizeof(ISC_DATE);
@@ -415,7 +412,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 		dtype = dtype_timestamp;
 		l = sizeof(ISC_TIMESTAMP);
 		break;
-/** Begin sql date/time/timestamp **/
+	// End sql date/time/timestamp
 
 	case blr_int64:
 		dtype = dtype_int64;
@@ -547,8 +544,8 @@ udf* MET_get_udf(gpre_dbb* db, const TEXT* string)
  */
 
 gpre_rel* MET_get_view_relation(gpre_req* request,
-						  const char* view_name,
-						  const char* relation_or_alias, USHORT level)
+								const char* view_name,
+								const char* relation_or_alias, USHORT level)
 {
 	fb_assert(0);
 	return NULL;
@@ -589,9 +586,7 @@ gpre_index* MET_index(gpre_dbb* db, const TEXT* string)
 
 void MET_load_hash_table( gpre_dbb* db)
 {
-/*  If this is an internal ISC access method invocation, don't do any of this
- *  stuff
- */
+	// If this is an internal ISC access method invocation, don't do any of this stuff
 
 	return;
 }
@@ -694,9 +689,9 @@ bool MET_trigger_exists(gpre_dbb* db, const TEXT* trigger_name)
  *		Compute and return the size of the array.
  */
 
-static SLONG array_size( gpre_fld* field)
+static SLONG array_size(const gpre_fld* field)
 {
-	ary* array_block = field->fld_array_info;
+	const ary* array_block = field->fld_array_info;
 	SLONG count = field->fld_array->fld_length;
 	for (dim* dimension = array_block->ary_dimension; dimension; dimension = dimension->dim_next)
 	{

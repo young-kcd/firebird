@@ -387,10 +387,10 @@ void SQL_adjust_field_dtype( gpre_fld* field)
 		}
 
 		if (!(field->fld_flags & FLD_meta))
-		{	/* field for meta operation? */
-			/* Field isn't for meta-data operation, so adjust it's
-			 * type definition for local use
-			 */
+		{
+			// field for meta operation?
+			// Field isn't for meta-data operation, so adjust it's
+			// type definition for local use
 			if (field->fld_dtype != dtype_cstring)
 			{
 				field->fld_dtype =
@@ -430,7 +430,7 @@ void SQL_adjust_field_dtype( gpre_fld* field)
 			field->fld_length = sizeof(double);
 			break;
 
-// ** Begin sql/date/time/timestamp *
+		// Begin sql/date/time/timestamp
 		case dtype_sql_date:
 			field->fld_length = sizeof(ISC_DATE);
 			break;
@@ -442,7 +442,7 @@ void SQL_adjust_field_dtype( gpre_fld* field)
 		case dtype_timestamp:
 			field->fld_length = sizeof(ISC_TIMESTAMP);
 			break;
-// ** End sql/date/time/timestamp *
+		// End sql/date/time/timestamp
 
 		case dtype_int64:
 			field->fld_length = sizeof(ISC_INT64);
@@ -503,10 +503,10 @@ void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
 			PAR_error("The named COLLATION was not found");
 		field->fld_collate = (intlsym*) symbol->sym_object;
 
-		/* Is the collation valid for declared character set?
-		 * The character set is either declared (fld_character_set) or inferered
-		 * from the global domain (fld_global & fld_charset_id)
-		 */
+		// Is the collation valid for declared character set?
+		// The character set is either declared (fld_character_set) or inferered
+		// from the global domain (fld_global & fld_charset_id)
+
 
 		if ((field->fld_character_set &&
 				field->fld_character_set->intlsym_charset_id != field->fld_collate->intlsym_charset_id)
@@ -541,9 +541,9 @@ void SQL_par_field_dtype(gpre_req* request, gpre_fld* field, bool is_udf)
 	case KW_REAL:
 	case KW_DOUBLE:
 	case KW_LONG:
-// ** Begin sql/date/time/timestamp *
+	// Begin sql/date/time/timestamp
 	case KW_TIMESTAMP:
-// ** End sql/date/time/timestamp *
+	// End sql/date/time/timestamp
 	case KW_CHAR:
 	case KW_NCHAR:
 	case KW_VARCHAR:
@@ -646,13 +646,13 @@ void SQL_par_field_dtype(gpre_req* request, gpre_fld* field, bool is_udf)
 		field->fld_dtype = dtype_double;
 		break;
 
-// ** Begin sql/date/time/timestamp *
+	// Begin sql/date/time/timestamp
 	case KW_DATE:
 	case KW_TIME:
 	case KW_TIMESTAMP:
 		field->fld_dtype = resolve_dtypes(keyword, sql_date);
 		break;
-// ** End sql/date/time/timestamp *
+	// End sql/date/time/timestamp
 
 	case KW_NCHAR:
 		field->fld_flags |= FLD_national;
@@ -738,7 +738,8 @@ void SQL_par_field_dtype(gpre_req* request, gpre_fld* field, bool is_udf)
 	case KW_BLOB:
 		field->fld_dtype = dtype_blob;
 		field->fld_seg_length = DEFAULT_BLOB_SEGMENT_LENGTH;
-		if (MSC_match(KW_LEFT_PAREN)) {
+		if (MSC_match(KW_LEFT_PAREN))
+		{
 			if (MSC_match(KW_COMMA))
 				field->fld_sub_type = EXP_SSHORT_ordinal(true);
 			else {
@@ -748,7 +749,8 @@ void SQL_par_field_dtype(gpre_req* request, gpre_fld* field, bool is_udf)
 			}
 			EXP_match_paren();
 		}
-		else {
+		else
+		{
 			if (MSC_match(KW_SUB_TYPE)) {
 				field->fld_sub_type = PAR_blob_subtype(request->req_database);
 			}
@@ -763,14 +765,15 @@ void SQL_par_field_dtype(gpre_req* request, gpre_fld* field, bool is_udf)
 		CPR_s_error("<data type>");
 	}
 
-//   Check for array declaration
+	// Check for array declaration
 
 	if ((keyword != KW_BLOB) && !is_udf && (MSC_match(KW_L_BRCKET))) {
 		field->fld_array_info = (ary*) MSC_alloc(sizeof(ary));
 		par_array(field);
 	}
 
-	if (MSC_match(KW_CHAR)) {
+	if (MSC_match(KW_CHAR))
+	{
 		if ((field->fld_dtype != dtype_text) &&
 			(field->fld_dtype != dtype_cstring) &&
 			(field->fld_dtype != dtype_varying) &&
@@ -800,7 +803,8 @@ void SQL_par_field_dtype(gpre_req* request, gpre_fld* field, bool is_udf)
 		PAR_get_token();
 	}
 
-	if (field->fld_flags & FLD_national) {
+	if (field->fld_flags & FLD_national)
+	{
         gpre_sym* symbol = MSC_find_symbol(HSH_lookup(DEFAULT_CHARACTER_SET_NAME), SYM_charset);
 		if (!symbol)
 		{
@@ -840,7 +844,8 @@ gpre_prc* SQL_procedure(gpre_req* request,
 {
 	SCHAR s[ERROR_LENGTH];
 
-	if (db_string && db_string[0]) {
+	if (db_string && db_string[0])
+	{
 		// a database was specified for the procedure
 		// search the known symbols for the database name
 
@@ -859,15 +864,17 @@ gpre_prc* SQL_procedure(gpre_req* request,
 
 	if (request->req_database)
 		procedure = MET_get_procedure(request->req_database, prc_string, owner_string);
-	else {
+	else
+	{
 		// no database was specified, check the metadata for all the databases
-		//   for the existence of the procedure
+		// for the existence of the procedure
 
 		procedure = NULL; // redundant
 		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_prc* tmp_procedure = MET_get_procedure(db, prc_string, owner_string);
-			if (tmp_procedure) {
+			if (tmp_procedure)
+			{
 				if (procedure) {
 					// relation was found in more than one database
 
@@ -882,7 +889,8 @@ gpre_prc* SQL_procedure(gpre_req* request,
 		}
 	}
 
-	if (!procedure) {
+	if (!procedure)
+	{
 		if (!err_flag)
 			return NULL;
 		if (owner_string[0])
@@ -908,9 +916,10 @@ gpre_rel* SQL_relation(gpre_req* request,
 					  const TEXT* owner_string,
 					  bool err_flag)
 {
-	if (db_string && db_string[0]) {
-		/* a database was specified for the relation,
-		   search the known symbols for the database name */
+	if (db_string && db_string[0])
+	{
+		// a database was specified for the relation,
+		// search the known symbols for the database name
 
 		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(db_string), SYM_database);
 		if (!symbol)
@@ -928,15 +937,17 @@ gpre_rel* SQL_relation(gpre_req* request,
 
 	if (request->req_database)
 		relation = MET_get_relation(request->req_database, rel_string, owner_string);
-	else {
-		/* no database was specified, check the metadata for all the databases
-		   for the existence of the relation */
+	else
+	{
+		// no database was specified, check the metadata for all the databases
+		// for the existence of the relation
 
 		relation = NULL; // redundant
 		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			gpre_rel* tmp_relation = MET_get_relation(db, rel_string, owner_string);
-			if (tmp_relation) {
+			if (tmp_relation)
+			{
 				if (relation) {
 					// relation was found in more than one database
 
@@ -951,7 +962,8 @@ gpre_rel* SQL_relation(gpre_req* request,
 		}
 	}
 
-	if (!relation) {
+	if (!relation)
+	{
 		if (!err_flag)
 			return (NULL);
 		if (owner_string[0])
@@ -980,7 +992,8 @@ void SQL_relation_name(TEXT* r_name, TEXT* db_name, TEXT* owner_name)
 		PAR_error("Database alias too long");
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
-	if (symbol) {
+	if (symbol)
+	{
 		if (strlen(symbol->sym_name) >= unsigned(NAME_SIZE))
 			PAR_error("Database alias too long");
 
@@ -997,7 +1010,8 @@ void SQL_relation_name(TEXT* r_name, TEXT* db_name, TEXT* owner_name)
 	strcpy(r_name, gpreGlob.token_global.tok_string);
 	PAR_get_token();
 
-	if (MSC_match(KW_DOT)) {
+	if (MSC_match(KW_DOT))
+	{
 		// the table name was really a owner specifier
 		strcpy(owner_name, r_name);
 		SQL_resolve_identifier("<Table name>", NULL, NAME_SIZE);
@@ -1084,7 +1098,7 @@ static act* act_alter_database()
 
 	PAR_get_token();
 
-	//  create action block
+	// create action block
 	act* action = MSC_action(request, ACT_alter_database);
 	action->act_whenever = gen_whenever();
 	gpre_dbb* database = (gpre_dbb*) MSC_alloc(DBB_LEN);
@@ -1128,7 +1142,8 @@ static act* act_alter_database()
 				logdefined = true;
 				if (MSC_match(KW_LEFT_PAREN))
 				{
-					while (true) {
+					while (true)
+					{
 						gpre_file* logfile = define_log_file(false);
 						logfile->fil_next = database->dbb_logfiles;
 						database->dbb_logfiles = logfile;
@@ -1157,7 +1172,8 @@ static act* act_alter_database()
 		}
 		else if (MSC_match(KW_SET))
 		{
-			while (true) {
+			while (true)
+			{
 				if (MSC_match(KW_CHECK_POINT_LEN)) {
 					MSC_match(KW_EQUALS);
 					EXP_ULONG_ordinal(true); // skip
@@ -1196,7 +1212,7 @@ static act* act_alter_database()
 
 static act* act_alter_domain()
 {
-//  create request block
+	// create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
@@ -1204,7 +1220,7 @@ static act* act_alter_domain()
 	else
 		PAR_error("Can only ALTER a domain in context of single database");
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_alter_domain);
 
@@ -1212,11 +1228,12 @@ static act* act_alter_domain()
 	gpre_fld* field = make_field(0);
 	cnstrt** cnstrt_ptr = &field->fld_constraints;
 
-//  Check if default value was specified
+	// Check if default value was specified
 
 	while (!end_of_command())
 	{
-		if (MSC_match(KW_SET)) {
+		if (MSC_match(KW_SET))
+		{
 			if (gpreGlob.token_global.tok_keyword == KW_DEFAULT) {
 				field->fld_default_source = CPR_start_text();
 				PAR_get_token();
@@ -1228,7 +1245,8 @@ static act* act_alter_domain()
 				field->fld_default_value = MSC_node(nod_user_name, 0);
 			else if (MSC_match(KW_NULL))
 				field->fld_default_value = MSC_node(nod_null, 0);
-			else {
+			else
+			{
 				if (MSC_match(KW_MINUS)) {
 					if (gpreGlob.token_global.tok_type != tok_number)
 						CPR_s_error("<number>");
@@ -1241,7 +1259,8 @@ static act* act_alter_domain()
 			}
 			CPR_end_text(field->fld_default_source);
 		}
-		else if (MSC_match(KW_ADD)) {
+		else if (MSC_match(KW_ADD))
+		{
 			MSC_match(KW_CONSTRAINT);
 			if (gpreGlob.token_global.tok_keyword == KW_CHECK) {
 				cnstrt* cnstrt_str = par_field_constraint(request, field, 0);
@@ -1251,7 +1270,8 @@ static act* act_alter_domain()
 			else
 				PAR_error("Invalid constraint.");
 		}
-		else if (MSC_match(KW_DROP)) {
+		else if (MSC_match(KW_DROP))
+		{
 			if (MSC_match(KW_CONSTRAINT)) {
 				cnstrt* cnstrt_str = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 				cnstrt_str->cnstrt_flags |= CNSTRT_delete;
@@ -1283,7 +1303,7 @@ static act* act_alter_domain()
 
 static act* act_alter_index()
 {
-//  create request block
+	// create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
@@ -1318,34 +1338,34 @@ static act* act_alter_index()
 
 static act* act_alter_table()
 {
-//  create request block
+	// create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
-//  get table name and create relation block
+	// get table name and create relation block
 
 	gpre_rel* relation = par_relation(request);
 
-//  CHECK Constraints require the context to be set to the
-//  current relation
+	// CHECK Constraints require the context to be set to the
+	// current relation
 
 	gpre_ctx* context = MSC_context(request);
 	request->req_contexts = context;
 	context->ctx_relation = relation;
 
-//  Reserve context 1 for relation on which constraint is
-//  being defined
+	// Reserve context 1 for relation on which constraint is
+	// being defined
 
 	context->ctx_internal++;
 	request->req_internal++;
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_alter_table);
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) relation;
 
-//  parse action list and create corresponding field blocks
+	// parse action list and create corresponding field blocks
 
 	gpre_fld** ptr = &relation->rel_fields;
 	cnstrt** cnstrt_ptr = &relation->rel_constraints;
@@ -1397,16 +1417,13 @@ static act* act_alter_table()
 				field->fld_flags |= FLD_delete;
 				*ptr = field;
 				ptr = &field->fld_next;
-				/* Fix for bug 8054:
 
-				   [CASCADE | RESTRICT] syntax is available in IB4.5, but not
-				   required until v5.0.
-
-				   Option CASCADE causes an error :
-				   unsupported construct
-
-				   Option RESTRICT is default behaviour.
-				 */
+				// Fix for bug 8054:
+				// [CASCADE | RESTRICT] syntax is available in IB4.5, but not
+				// required until v5.0.
+				// Option CASCADE causes an error :
+				// unsupported construct
+				// Option RESTRICT is default behaviour.
 				if (gpreGlob.token_global.tok_keyword == KW_CASCADE) {
 					PAR_error("Unsupported construct CASCADE");
 					PAR_get_token();
@@ -1434,7 +1451,6 @@ static act* act_alter_table()
 
 static act* act_comment()
 {
-
 	PAR_error("SQL COMMENT ON request not allowed");
 	return NULL;				// silence compiler
 }
@@ -1470,7 +1486,8 @@ static act* act_connect()
 			}
 
 			symbol = gpreGlob.token_global.tok_symbol;
-			if (!symbol || symbol->sym_type != SYM_database) {
+			if (!symbol || symbol->sym_type != SYM_database)
+			{
 				if (!gpreGlob.isc_databases || gpreGlob.isc_databases->dbb_next || need_handle) {
 					need_handle = false;
 					CPR_s_error("<database handle>");
@@ -1495,9 +1512,9 @@ static act* act_connect()
 			if (buffers)
 				request = PAR_set_up_dpb_info(ready, action, buffers);
 
-			/* if there are any options that take host variables as arguments,
-			   make sure that we generate variables for the request so that the
-			   dpb can be extended at runtime */
+			// if there are any options that take host variables as arguments,
+			// make sure that we generate variables for the request so that the
+			// dpb can be extended at runtime
 
 			if (db->dbb_r_user || db->dbb_r_password || db->dbb_r_sql_role ||
 				db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
@@ -1507,8 +1524,8 @@ static act* act_connect()
 				request->req_flags |= REQ_extend_dpb;
 			}
 
-			/* ...and if there are compile time user or password specified,
-			   make sure there will be a dpb generated for them */
+			// ...and if there are compile time user or password specified,
+			// make sure there will be a dpb generated for them
 
 			if (!request && (db->dbb_c_user || db->dbb_c_password || db->dbb_c_sql_role ||
 							 db->dbb_c_lc_messages || db->dbb_c_lc_ctype))
@@ -1524,7 +1541,7 @@ static act* act_connect()
 	if (action->act_object)
 		return action;
 
-//  No explicit databases -- pick up all known
+	// No explicit databases -- pick up all known
 
 	const TEXT* lc_messages = NULL;
 	const TEXT *user = NULL, *password = NULL, *sql_role = NULL;
@@ -1555,12 +1572,13 @@ static act* act_connect()
 			else
 				request = ready->rdy_request;
 
-			/* if there are any options that take host variables as arguments,
-			   make sure that we generate variables for the request so that the
-			   dpb can be extended at runtime */
+			// if there are any options that take host variables as arguments,
+			// make sure that we generate variables for the request so that the
+			// dpb can be extended at runtime
 
 			gpre_dbb* db = ready->rdy_database;
-			if (user || password || lc_messages || db->dbb_r_lc_ctype) {
+			if (user || password || lc_messages || db->dbb_r_lc_ctype)
+			{
 				db->dbb_r_user = user;
 				db->dbb_r_password = password;
 				db->dbb_r_lc_messages = lc_messages;
@@ -1569,8 +1587,8 @@ static act* act_connect()
 				request->req_flags |= REQ_extend_dpb;
 			}
 
-			/* ...and if there are compile time user or password specified,
-			   make sure there will be a dpb generated for them */
+			// ...and if there are compile time user or password specified,
+			// make sure there will be a dpb generated for them
 
 			if (!request && (db->dbb_c_user || db->dbb_c_password || db->dbb_c_sql_role ||
 							 db->dbb_c_lc_ctype || db->dbb_c_lc_messages))
@@ -1679,10 +1697,11 @@ static act* act_create_database()
 	else
 		dummy = false;
 
-//  get database name
+	// get database name
 
 	gpre_dbb* db = NULL;
-	if (isQuoted(gpreGlob.token_global.tok_type)) {
+	if (isQuoted(gpreGlob.token_global.tok_type))
+	{
 		db = dup_dbb(gpreGlob.isc_databases);
 		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		db->dbb_filename = string;
@@ -1694,14 +1713,14 @@ static act* act_create_database()
 	else
 		CPR_s_error("<quoted database name>");
 
-//  Create a request for generating DYN to add files to database.
+	// Create a request for generating DYN to add files to database.
 
-//  gpre_req* request = MSC_request (REQ_create_database);
+	//gpre_req* request = MSC_request (REQ_create_database);
 	gpre_req* request = MSC_request(REQ_ddl);
 	request->req_flags |= REQ_sql_database_dyn;
 	request->req_database = db;
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_create_database);
 
@@ -1710,18 +1729,19 @@ static act* act_create_database()
 	action->act_object = (ref*) mdb;
 	action->act_whenever = gen_whenever();
 
-	if (dummy) {
+	if (dummy)
+	{
 		// Create a ACT_database action
 
 		action->act_rest = MSC_action(0, ACT_database);
 		action->act_rest->act_flags |= ACT_mark;
 	}
 
-//  Get optional specifications
+	// Get optional specifications
 
 	const bool extend_dpb = tail_database(ACT_create_database, db);
 
-//  Create a request to generate dpb
+	// Create a request to generate dpb
 #ifdef GPRE_ADA
 	gpreGlob.ada_flags |= gpreGlob.ADA_create_database;
 #endif
@@ -1744,7 +1764,7 @@ static act* act_create_database()
 
 static act* act_create_domain()
 {
-//  create request block
+	// create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
@@ -1752,7 +1772,7 @@ static act* act_create_domain()
 	else
 		PAR_error("Can only CREATE DOMAIN in context of single database");
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_create_domain);
 
@@ -1760,7 +1780,7 @@ static act* act_create_domain()
 	MSC_match(KW_AS);
 	SQL_par_field_dtype(request, field, false);
 
-//  Check if default value was specified
+	// Check if default value was specified
 
 	if (gpreGlob.token_global.tok_keyword == KW_DEFAULT)
 	{
@@ -1771,7 +1791,8 @@ static act* act_create_domain()
 			field->fld_default_value = MSC_node(nod_user_name, 0);
 		else if (MSC_match(KW_NULL))
 			field->fld_default_value = MSC_node(nod_null, 0);
-		else {
+		else
+		{
 			if (MSC_match(KW_MINUS)) {
 				if (gpreGlob.token_global.tok_type != tok_number)
 					CPR_s_error("<number>");
@@ -1786,7 +1807,7 @@ static act* act_create_domain()
 	}
 
 
-//  Check for any column level constraints
+	// Check for any column level constraints
 
 	cnstrt** cnstrt_ptr = &field->fld_constraints;
 	bool in_constraints = true;
@@ -1836,7 +1857,7 @@ static act* act_create_generator()
 	else
 		PAR_error("Can only CREATE GENERATOR in context of single database");
 
-//  create action block
+	// create action block
 	act* action = MSC_action(request, ACT_create_generator);
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) generator_name;
@@ -1853,11 +1874,11 @@ static act* act_create_generator()
 
 static act* act_create_index(bool dups, bool descending)
 {
-//  create request block
+	// create request block
 
 	gpre_req* request = MSC_request(REQ_ddl);
 
-//  get index and table names and create index and relation blocks
+	// get index and table names and create index and relation blocks
 
 	SCHAR i_name[NAME_SIZE + 1];
 	SQL_resolve_identifier("<index name>", i_name, NAME_SIZE + 1);
@@ -1876,18 +1897,19 @@ static act* act_create_index(bool dups, bool descending)
 	index->ind_flags |= dups ? IND_dup_flag : 0;
 	index->ind_flags |= descending ? IND_descend : 0;
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_create_index);
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) index;
 
-//  parse field list and create corresponding field blocks
+	// parse field list and create corresponding field blocks
 
 	EXP_left_paren(0);
 	gpre_fld** ptr = &index->ind_fields;
 
-	for (;;) {
+	for (;;)
+	{
 		*ptr = make_field(relation);
 		ptr = &(*ptr)->fld_next;
 		if (!MSC_match(KW_COMMA))
@@ -1939,7 +1961,8 @@ static act* act_create_shadow()
 	file->fil_flags = file_flags;
 	file->fil_shadow_number = (SSHORT) shadow_number;
 
-	while (MSC_match(KW_FILE)) {
+	while (MSC_match(KW_FILE))
+	{
 		file = define_file();
 		if (!length && !file->fil_start) {
 			TEXT err_string[1024];
@@ -1968,7 +1991,8 @@ static act* act_create_table()
 	gpre_req* request = MSC_request(REQ_ddl);
 	gpre_rel* relation = par_relation(request);
 
-	if (MSC_match(KW_EXTERNAL)) {
+	if (MSC_match(KW_EXTERNAL))
+	{
 		TEXT* string = NULL;
 		MSC_match(KW_FILE);
 		if (isQuoted(gpreGlob.token_global.tok_type)) {
@@ -1984,19 +2008,19 @@ static act* act_create_table()
 			PAR_error("node name not permitted");	// a node name is not permitted in external file name
 	}
 
-//  CHECK Constraints require the context to be set to the
-//  current relation
+	// CHECK Constraints require the context to be set to the
+	// current relation
 
 	gpre_ctx* context = MSC_context(request);
 	request->req_contexts = context;
 	context->ctx_relation = relation;
 
-//  Reserve context 1 for relation on which constraint is
-//  being defined
+	// Reserve context 1 for relation on which constraint is
+	// being defined
 	context->ctx_internal++;
 	request->req_internal++;
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_create_table);
 	action->act_whenever = gen_whenever();
@@ -2044,15 +2068,16 @@ static act* act_create_view()
 	gpre_req* request = MSC_request(REQ_ddl);
 	gpre_rel* relation = par_relation(request);
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, ACT_create_view);
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) relation;
 
-//  if field list is present parse it and create corresponding field blocks
+	// if field list is present parse it and create corresponding field blocks
 
-	if (MSC_match(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN))
+	{
 		gpre_fld** ptr = &relation->rel_fields;
 		for (;;) {
 			*ptr = make_field(relation);
@@ -2063,7 +2088,7 @@ static act* act_create_view()
 		}
 	}
 
-//  skip 'AS SELECT'
+	// skip 'AS SELECT'
 
 	if (!MSC_match(KW_AS))
 		CPR_s_error("AS");
@@ -2072,17 +2097,18 @@ static act* act_create_view()
 	if (!MSC_match(KW_SELECT))
 		CPR_s_error("SELECT");
 
-//  reserve context variable 0 for view
+	// reserve context variable 0 for view
 
 	request->req_internal++;
 
-//  parse the view SELECT
+	// parse the view SELECT
 
 	gpre_rse* select = SQE_select(request, true);
 	relation->rel_view_rse = select;
 	EXP_rse_cleanup(select);
 
-	if (MSC_match(KW_WITH)) {
+	if (MSC_match(KW_WITH))
+	{
 		if (!MSC_match(KW_CHECK))
 			CPR_s_error("CHECK");
 		if (!MSC_match(KW_OPTION))
@@ -2119,7 +2145,8 @@ static act* act_d_section(act_t type)
 	if (type == ACT_b_declare)
 		gpreGlob.cur_routine = action; // Hmm, global var.
 
-	if (!gpreGlob.isc_databases) {
+	if (!gpreGlob.isc_databases)
+	{
 		// allocate database block and link to db chain
 
 		gpreGlob.isc_databases = (gpre_dbb*) MSC_alloc_permanent(DBB_LEN);
@@ -2144,14 +2171,15 @@ static act* act_d_section(act_t type)
 			gpreGlob.isc_databases->dbb_scope = DBB_EXTERN;
 	}
 	else {
-		/* Load up the symbol (hash) table with relation names from this database */
+		// Load up the symbol (hash) table with relation names from this database
 
 		MET_load_hash_table(gpreGlob.isc_databases);
 	}
 
 	HSH_insert(gpreGlob.isc_databases->dbb_name);
 
-	if (MSC_match(KW_SQL)) {
+	if (MSC_match(KW_SQL))
+	{
 		if (!MSC_match(KW_NAMES))
 			CPR_s_error("NAMES ARE");
 		if (!MSC_match(KW_ARE))
@@ -2223,8 +2251,7 @@ static act* act_declare()
 			symb = HSH_lookup2(t_str);
 		}
 		if (symb &&
-			(symb->sym_type == SYM_cursor ||
-			 symb->sym_type == SYM_delimited_cursor))
+			(symb->sym_type == SYM_cursor || symb->sym_type == SYM_delimited_cursor))
 		{
 			char s[ERROR_LENGTH];
 			fb_utils::snprintf(s, sizeof(s), "symbol %s is already in use", t_str);
@@ -2254,7 +2281,8 @@ static act* act_declare()
 		PAR_get_token();
 		if (!MSC_match(KW_FOR))
 			CPR_s_error("FOR");
-		if (MSC_match(KW_SELECT)) {
+		if (MSC_match(KW_SELECT))
+		{
 			gpre_req* request = MSC_request(REQ_cursor);
 			request->req_flags |= REQ_sql_cursor | REQ_sql_declare_cursor;
 #ifdef SCROLLABLE_CURSORS
@@ -2268,18 +2296,22 @@ static act* act_declare()
 			request->req_rse = SQE_select(request, false);
 			EXP_rse_cleanup(request->req_rse);
 		}
-		else if (MSC_match(KW_READ)) {
+		else if (MSC_match(KW_READ))
+		{
 			action = act_open_blob(ACT_blob_open, symbol);
 			symbol->sym_type = delimited ? SYM_delimited_cursor : SYM_cursor;
 		}
-		else if (MSC_match(KW_INSERT)) {
+		else if (MSC_match(KW_INSERT))
+		{
 			action = act_open_blob(ACT_blob_create, symbol);
 			symbol->sym_type = delimited ? SYM_delimited_cursor : SYM_cursor;
 		}
-		else {
+		else
+		{
 			dyn* statement = par_statement();
 			symbol->sym_object = (gpre_ctx*) statement;
-			if (MSC_match(KW_FOR)) {
+			if (MSC_match(KW_FOR))
+			{
 				if (!MSC_match(KW_UPDATE))
 					CPR_s_error("UPDATE");
 				if (!MSC_match(KW_OF))
@@ -2336,7 +2368,7 @@ static act* act_declare_filter()
 
 	PAR_get_token();
 
-//  create action block
+	// create action block
 	act* action = MSC_action(request, ACT_declare_filter);
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) filter;
@@ -2380,12 +2412,12 @@ static act* act_declare_filter()
 
 static act* act_declare_table( gpre_sym* symbol, gpre_dbb* db)
 {
-//  create a local request block
+	// create a local request block
 
 	gpre_req* request = (gpre_req*) MSC_alloc(REQ_LEN);
 	request->req_type = REQ_ddl;
 
-//  create relation block
+	// create relation block
 
 	gpre_rel* relation = make_relation(0, symbol->sym_string);
 
@@ -2401,13 +2433,14 @@ static act* act_declare_table( gpre_sym* symbol, gpre_dbb* db)
 	dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
 	dbkey->fld_ttype = ttype_binary;
 
-//  if relation name already in incore metadata, remove it & its fields
+	// if relation name already in incore metadata, remove it & its fields
 
 	gpre_sym* old_symbol = HSH_lookup(relation->rel_symbol->sym_string);
 
 	while (old_symbol)
 	{
-		if (old_symbol->sym_type == SYM_relation) {
+		if (old_symbol->sym_type == SYM_relation)
+		{
 			gpre_rel* tmp_relation = (gpre_rel*) old_symbol->sym_object;
 			if (tmp_relation->rel_meta)
 				PAR_error("Multiple DECLARE TABLE statements for table");
@@ -2423,25 +2456,26 @@ static act* act_declare_table( gpre_sym* symbol, gpre_dbb* db)
 			old_symbol = old_symbol->sym_homonym;
 	}
 
-//  add new symbol to incore metadata
+	// add new symbol to incore metadata
 
 	HSH_insert(relation->rel_symbol);
 
-//  create action block
+	// create action block
 
 	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = ACT_noop;
 	action->act_object = (ref*) relation;
 
-//  parse field list and create corresponding field blocks
-//  include size information for message length calculations
+	// parse field list and create corresponding field blocks
+	// include size information for message length calculations
 
 	PAR_get_token();
 	EXP_left_paren(0);
 	USHORT count = 0;
 	gpre_fld** ptr = &relation->rel_fields;
 
-	for (;;) {
+	for (;;)
+	{
 		gpre_fld* field = par_field(request, relation);
 		*ptr = field;
 		ptr = &field->fld_next;
@@ -2483,7 +2517,7 @@ static act* act_declare_udf()
 	udf_declaration->decl_udf_name = udf_name;
 	PAR_get_token();
 
-//  create action block
+	// create action block
 	act* action = MSC_action(request, ACT_declare_udf);
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) udf_declaration;
@@ -2493,14 +2527,16 @@ static act* act_declare_udf()
 	{
 		if (MSC_match(KW_RETURNS))
 		{
-			if (MSC_match(KW_PARAMETER)) {
+			if (MSC_match(KW_PARAMETER))
+			{
 				const SLONG return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
 					PAR_error("return parameter not in range");
 				fb_assert(return_parameter <= MAX_SSHORT);
 				udf_declaration->decl_udf_return_parameter = (SSHORT) return_parameter;
 			}
-			else {
+			else
+			{
 				gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 				field->fld_flags |= (FLD_meta | FLD_meta_cstring);
 				SQL_par_field_dtype(request, field, true);
@@ -2554,19 +2590,19 @@ static act* act_delete()
 	if (!MSC_match(KW_FROM))
 		CPR_s_error("FROM");
 
-//  First comes the relation.  Unfortunately, there is no way to identify
-//  its database until the cursor is known.  Sigh.  Save the token.
+	// First comes the relation.  Unfortunately, there is no way to identify
+	// its database until the cursor is known.  Sigh.  Save the token.
 
 	TEXT r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 	SQL_relation_name(r_name, db_name, owner_name);
 
-//  Parse the optional alias (context variable)
+	// Parse the optional alias (context variable)
 
 	gpre_sym* alias = gpreGlob.token_global.tok_symbol ? NULL : PAR_symbol(SYM_dummy);
 
-//  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
-//  then this is a sub-action of an existing request.  If not, then it is
-//  a free standing request
+	// Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
+	// then this is a sub-action of an existing request.  If not, then it is
+	// a free standing request
 
 	gpre_req* request = MSC_request(REQ_mass_update);
 	upd* update = (upd*) MSC_alloc(UPD_LEN);
@@ -2585,8 +2621,9 @@ static act* act_delete()
 		{
 			if (transaction)
 				PAR_error("different transaction for select and delete");
-			else {				// does not specify transaction clause in
-				//   "delete ... where current of cursor" stmt
+			else {
+				// does not specify transaction clause in
+				// "delete ... where current of cursor" stmt
 				const size_t trans_nm_len = strlen(request->req_trans);
 				char* str_2 = (char*) MSC_alloc(trans_nm_len + 1);
 				memcpy(str_2, request->req_trans, trans_nm_len);
@@ -2616,9 +2653,9 @@ static act* act_delete()
 
 	request->req_trans = transaction;
 
-//  How amusing.  After all that work, it wasn't a sub-action at all.
-//  Neat.  Take the pieces and build a complete request.  Start by
-//  figuring out what database is involved.
+	// How amusing.  After all that work, it wasn't a sub-action at all.
+	// Neat.  Take the pieces and build a complete request.  Start by
+	// figuring out what database is involved.
 
 	gpre_rel* relation = SQL_relation(request, r_name, db_name, owner_name, true);
 
@@ -2630,7 +2667,8 @@ static act* act_delete()
 	context->ctx_relation = relation;
 
 	bool hsh_rm = false;
-	if (alias && !gpreGlob.token_global.tok_symbol) {
+	if (alias && !gpreGlob.token_global.tok_symbol)
+	{
 		alias->sym_type = SYM_context;
 		alias->sym_object = context;
 		context->ctx_symbol = alias;
@@ -2673,9 +2711,10 @@ static act* act_describe()
 
 	dyn* statement = par_statement();
 
-	if (!MSC_match(KW_INTO)) {
-		/* check for SQL2 syntax
-		   "USING SQL DESCRIPTOR sqlda" */
+	if (!MSC_match(KW_INTO))
+	{
+		// check for SQL2 syntax
+		// "USING SQL DESCRIPTOR sqlda"
 
 		if (!MSC_match(KW_USING) || !MSC_match(KW_SQL) || !MSC_match(KW_DESCRIPTOR))
 			CPR_s_error("INTO or USING SQL DESCRIPTOR sqlda");
@@ -2716,7 +2755,8 @@ static act* act_disconnect()
 		{
 			CPR_s_error("ALL, DEFAULT, or <database handle>");
 		}
-		while (true) {
+		while (true)
+		{
 			gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
 			if (symbol && symbol->sym_type == SYM_database) {
 				rdy* ready = (rdy*) MSC_alloc(RDY_LEN);
@@ -2932,11 +2972,12 @@ static act* act_execute()
 	if (MSC_match(KW_PROCEDURE))
 		return act_procedure();
 
-//  EXECUTE IMMEDIATE is a different sort of duck
+	// EXECUTE IMMEDIATE is a different sort of duck
 
 	if (MSC_match(KW_IMMEDIATE))
 	{
-		if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next) {
+		if (gpreGlob.isc_databases && gpreGlob.isc_databases->dbb_next)
+		{
 			TEXT s[ERROR_LENGTH];
 			sprintf(s, "Executing dynamic SQL statement in context of database %s",
 					gpreGlob.isc_databases->dbb_name->sym_string);
@@ -2971,7 +3012,7 @@ static act* act_execute()
 		return action;
 	}
 
-//  Ordinary form of EXECUTE
+	// Ordinary form of EXECUTE
 
 	const TEXT* transaction;
 	par_options(&transaction);
@@ -2999,7 +3040,7 @@ static act* act_execute()
 
 static act* act_fetch()
 {
-//  Handle dynamic SQL statement, if appropriate
+	// Handle dynamic SQL statement, if appropriate
 
 	dyn* cursor = par_dynamic_cursor();
 	if (cursor)
@@ -3007,7 +3048,8 @@ static act* act_fetch()
 		dyn* statement = (dyn*) MSC_alloc(DYN_LEN);
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
-		if (MSC_match(KW_USING) || MSC_match(KW_INTO)) {
+		if (MSC_match(KW_USING) || MSC_match(KW_INTO))
+		{
 			MSC_match(KW_SQL);		// optional for backward compatibility
 
 			if (MSC_match(KW_DESCRIPTOR))
@@ -3024,10 +3066,10 @@ static act* act_fetch()
 		return action;
 	}
 
-//  Statement is static SQL
+	// Statement is static SQL
 
 #ifdef SCROLLABLE_CURSORS
-//  parse the fetch orientation
+	// parse the fetch orientation
 
 	USHORT direction = blr_forward;
 	const TEXT* direction_string = NULL;
@@ -3067,10 +3109,10 @@ static act* act_fetch()
 	gpre_req* request = par_cursor(NULL);
 
 #ifdef SCROLLABLE_CURSORS
-//  if scrolling is required, set up the offset and direction parameters
-//  to be passed to the running request via the asynchronous message--
-//  there could be multiple FETCH statements, so we need to store multiple
-//  value blocks, one for each FETCH statement
+	// if scrolling is required, set up the offset and direction parameters
+	// to be passed to the running request via the asynchronous message--
+	// there could be multiple FETCH statements, so we need to store multiple
+	// value blocks, one for each FETCH statement
 
 	if (direction != blr_forward)
 	{
@@ -3160,9 +3202,10 @@ static act* act_grant_revoke(act_t type)
 	gpre_req* request = MSC_request(REQ_ddl);
 	PRV priv_block = MSC_privilege_block();
 
-//  if it is revoke action, parse the optional grant option for
+	// if it is revoke action, parse the optional grant option for
 
-	if (type == ACT_dyn_revoke) {
+	if (type == ACT_dyn_revoke)
+	{
 		if (MSC_match(KW_GRANT)) {
 			if (!MSC_match(KW_OPTION))
 				CPR_s_error("OPTION");
@@ -3175,7 +3218,7 @@ static act* act_grant_revoke(act_t type)
 	bool execute_priv = false;
 
 	if (MSC_match(KW_ALL)) {
-		MSC_match(KW_PRIVILEGES);	//  Keyword 'privileges' is optional
+		MSC_match(KW_PRIVILEGES);	// Keyword 'privileges' is optional
 		priv_block->prv_privileges = PRV_all;
 	}
 	else if (MSC_match(KW_EXECUTE)) {
@@ -3226,7 +3269,8 @@ static act* act_grant_revoke(act_t type)
 	STR relation_name = NULL;
 	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 
-	if (execute_priv) {
+	if (execute_priv)
+	{
 		if (!MSC_match(KW_PROCEDURE))
 			CPR_s_error("PROCEDURE");
 		SQL_relation_name(r_name, db_name, owner_name);
@@ -3235,7 +3279,8 @@ static act* act_grant_revoke(act_t type)
 		priv_block->prv_relation = relation_name;
 		priv_block->prv_object_dyn = isc_dyn_prc_name;
 	}
-	else {
+	else
+	{
 		MSC_match(KW_TABLE);		// filler word
 		SQL_relation_name(r_name, db_name, owner_name);
 		SQL_relation(request, r_name, db_name, owner_name, true);
@@ -3248,7 +3293,7 @@ static act* act_grant_revoke(act_t type)
 		if (!MSC_match(KW_TO))
 			CPR_s_error("TO");
 	}
-	else {						/*  type == ACT_dyn_revoke  */
+	else {						//  type == ACT_dyn_revoke
 
 		if (!MSC_match(KW_FROM))
 			CPR_s_error("FROM");
@@ -3262,13 +3307,15 @@ static act* act_grant_revoke(act_t type)
 
 	while (true)
 	{
-		if (MSC_match(KW_PROCEDURE)) {
+		if (MSC_match(KW_PROCEDURE))
+		{
 			SQL_relation_name(r_name, db_name, owner_name);
 			SQL_procedure(request, r_name, db_name, owner_name, true);
 			user_dyn = isc_dyn_grant_proc;
 			grant_option_legal = false;
 		}
-		else if (MSC_match(KW_TRIGGER)) {
+		else if (MSC_match(KW_TRIGGER))
+		{
 			SQL_relation_name(r_name, db_name, owner_name);
 			if (!MET_trigger_exists(request->req_database, r_name)) {
 				sprintf(s, "TRIGGER %s not defined", r_name);
@@ -3277,7 +3324,8 @@ static act* act_grant_revoke(act_t type)
 			user_dyn = isc_dyn_grant_trig;
 			grant_option_legal = false;
 		}
-		else if (MSC_match(KW_VIEW)) {
+		else if (MSC_match(KW_VIEW))
+		{
 			SQL_relation_name(r_name, db_name, owner_name);
 			if (!MET_get_view_relation(request, r_name, relation_name->str_string, 0))
 			{
@@ -3287,11 +3335,13 @@ static act* act_grant_revoke(act_t type)
 			user_dyn = isc_dyn_grant_view;
 			grant_option_legal = false;
 		}
-		else if (MSC_match(KW_PUBLIC)) {
+		else if (MSC_match(KW_PUBLIC))
+		{
 			strcpy(r_name, "PUBLIC");
 			user_dyn = isc_dyn_grant_user;
 		}
-		else {
+		else
+		{
 			MSC_match(KW_USER);
 			if (gpreGlob.token_global.tok_type != tok_ident)
 				CPR_s_error("<user name identifier>");
@@ -3314,7 +3364,7 @@ static act* act_grant_revoke(act_t type)
 			break;
 	}
 
-//  If this is a grant, do we have the optional WITH GRANT OPTION specification?
+	// If this is a grant, do we have the optional WITH GRANT OPTION specification?
 
 	if ((type == ACT_dyn_grant) && grant_option_legal)
 	{
@@ -3327,7 +3377,7 @@ static act* act_grant_revoke(act_t type)
 		}
 	}
 
-//  create action block
+	// create action block
 
 	act* action = MSC_action(request, type);
 	action->act_next = 0;
@@ -3400,7 +3450,7 @@ static act* act_include()
 			gpreGlob.isc_databases->dbb_scope = DBB_EXTERN;
 	}
 	else
-		/* Load the symbol (hash) table with relation names from this database. */
+		// Load the symbol (hash) table with relation names from this database.
 		MET_load_hash_table(gpreGlob.isc_databases);
 
 	HSH_insert(gpreGlob.isc_databases->dbb_name);
@@ -3433,9 +3483,10 @@ static act* act_insert()
 	int count = 0, count2 = 0;
 	gpre_lls* fields = NULL;
 
-//  Pick up a field list
+	// Pick up a field list
 
-	if (!MSC_match(KW_LEFT_PAREN)) {
+	if (!MSC_match(KW_LEFT_PAREN))
+	{
 		gpre_nod* list = MET_fields(context);
 		count = list->nod_count;
 		for (int i = 0; i < count; i++)
@@ -3445,7 +3496,8 @@ static act* act_insert()
 	{
 		do {
 			gpre_nod* node = SQE_field(request, false);
-			if (node->nod_type == nod_array) {
+			if (node->nod_type == nod_array)
+			{
 				node->nod_type = nod_field;
 
 				// Make sure no subscripts are specified
@@ -3479,7 +3531,8 @@ static act* act_insert()
 		// Now pick up a value list
 
 		EXP_left_paren(0);
-		for (;;) {
+		for (;;)
+		{
 			if (MSC_match(KW_NULL))
 				MSC_push(MSC_node(nod_null, 0), &values);
 			else
@@ -3517,9 +3570,9 @@ static act* act_insert()
 	if (!MSC_match(KW_SELECT))
 		CPR_s_error("VALUES or SELECT");
 
-//  OK, we've got a mass insert on our hands.  Start by picking
-//  up the select statement.  First, however, remove the INSERT
-//  context to avoid resolving SELECT fields to the insert relation.
+	// OK, we've got a mass insert on our hands.  Start by picking
+	// up the select statement.  First, however, remove the INSERT
+	// context to avoid resolving SELECT fields to the insert relation.
 
 	request->req_type = REQ_mass_update;
 	request->req_contexts = NULL;
@@ -3529,7 +3582,7 @@ static act* act_insert()
 	context->ctx_next = request->req_contexts;
 	request->req_contexts = context;
 
-//  Build an assignment list from select expressions into target list
+	// Build an assignment list from select expressions into target list
 
 	gpre_nod* select_list = select->rse_fields;
 
@@ -3571,10 +3624,11 @@ static act* act_insert()
 // TEXT is supposedly to be transaction.
 static act* act_insert_blob(const TEXT* transaction)
 {
-//  Handle dynamic SQL statement, if appropriate
+	// Handle dynamic SQL statement, if appropriate
 
 	dyn* cursor = par_dynamic_cursor();
-	if (cursor) {
+	if (cursor)
+	{
 		dyn* statement = (dyn*) MSC_alloc(DYN_LEN);
 		statement->dyn_statement_name = cursor->dyn_statement_name;
 		statement->dyn_cursor_name = cursor->dyn_cursor_name;
@@ -3589,7 +3643,7 @@ static act* act_insert_blob(const TEXT* transaction)
 		return action;
 	}
 
-//  Statement is static SQL
+	// Statement is static SQL
 
 	gpre_req* request = par_cursor(NULL);
 	if (request->req_flags & REQ_sql_blob_open)
@@ -3619,7 +3673,6 @@ static act* act_insert_blob(const TEXT* transaction)
 
 static act* act_lock()
 {
-
 	PAR_error("SQL LOCK TABLE request not allowed");
 	return NULL;				// silence compiler
 }
@@ -3637,7 +3690,7 @@ static act* act_openclose(act_t type)
 	if (type == ACT_open)
 		par_options(&transaction);
 
-//  Handle dynamic SQL statement, if appropriate
+	// Handle dynamic SQL statement, if appropriate
 
 	dyn* cursor = par_dynamic_cursor();
 	if (cursor)
@@ -3648,7 +3701,8 @@ static act* act_openclose(act_t type)
 		act* action = (act*) MSC_alloc(ACT_LEN);
 		action->act_object = (ref*) statement;
 		action->act_whenever = gen_whenever();
-		if (type == ACT_open) {
+		if (type == ACT_open)
+		{
 			action->act_type = ACT_dyn_open;
 			statement->dyn_trans = transaction;
 			par_using(statement);
@@ -3661,7 +3715,7 @@ static act* act_openclose(act_t type)
 		return action;
 	}
 
-//  Statement is static SQL
+	// Statement is static SQL
 
 	gpre_sym* symbol = NULL;
 	gpre_req* request = par_cursor(&symbol);
@@ -3696,9 +3750,11 @@ static act* act_openclose(act_t type)
 	action->act_whenever = gen_whenever();
 
 	if (request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
+	{
 		action->act_type = (type == ACT_close) ?
 			ACT_blob_close : (request->req_flags & REQ_sql_blob_open) ?
 				ACT_blob_open : ACT_blob_create;
+	}
 
 	return action;
 }
@@ -3715,7 +3771,7 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 	if (!MSC_match(KW_BLOB))
 		CPR_s_error("BLOB");
 
-//  if the token isn't an identifier, complain
+	// if the token isn't an identifier, complain
 
 	tok* f_token = (tok*) MSC_alloc(TOK_LEN);
 	f_token->tok_length = gpreGlob.token_global.tok_length;
@@ -3782,7 +3838,8 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 		{
 			blob->blb_const_from_type = PAR_blob_subtype(request->req_database);
 			if (gpreGlob.token_global.tok_keyword == KW_CHAR)
-				if (blob->blb_const_from_type == isc_blob_text) {
+				if (blob->blb_const_from_type == isc_blob_text)
+				{
 					blob->blb_from_charset = par_char_set();
 					if (act_op == ACT_blob_open && blob->blb_from_charset != field->fld_charset_id)
 					{
@@ -3797,7 +3854,8 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 				else
 					blob->blb_from_charset = field->fld_charset_id;
 		}
-		else {
+		else
+		{
 			blob->blb_const_from_type = field->fld_sub_type;
 			if (blob->blb_const_from_type == isc_blob_text)
 				if (act_op == ACT_blob_create)
@@ -3809,7 +3867,8 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 			CPR_s_error("TO");
 		blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
 		if (gpreGlob.token_global.tok_keyword == KW_CHAR)
-			if (blob->blb_const_to_type == isc_blob_text) {
+			if (blob->blb_const_to_type == isc_blob_text)
+			{
 				blob->blb_to_charset = par_char_set();
 				if (act_op == ACT_blob_create && blob->blb_to_charset != field->fld_charset_id)
 				{
@@ -3825,18 +3884,18 @@ static act* act_open_blob( act_t act_op, gpre_sym* symbol)
 				blob->blb_to_charset = CS_dynamic;
 	}
 	else
-	{						// No FILTER keyword seen
+	{
+		// No FILTER keyword seen
 
-		/*
-		 *  Even if no FILTER was specified, we set one up for the special
-		 *  case of Firebird TEXT blobs, in order to do character set
-		 *  transliteration from the column-declared character set of the
-		 *  blob to the process character set (CS_dynamic).
-		 *
-		 *  It is necessary to pass this information in the bpb as blob
-		 *  operations are done using blob_ids, and we cannot determine
-		 *  this information from the blob_id within the engine.
-		 */
+		// Even if no FILTER was specified, we set one up for the special
+		// case of Firebird TEXT blobs, in order to do character set
+		// transliteration from the column-declared character set of the
+		// blob to the process character set (CS_dynamic).
+		//
+		// It is necessary to pass this information in the bpb as blob
+		// operations are done using blob_ids, and we cannot determine
+		// this information from the blob_id within the engine.
+
 		if (field->fld_sub_type == isc_blob_text && (field->fld_charset_id != CS_NONE))
 		{
 			blob->blb_const_from_type = isc_blob_text;
@@ -4002,6 +4061,8 @@ static act* act_procedure()
 
 	return action;
 }
+
+
 //____________________________________________________________
 //
 //		Parse a RELEASE_REQUESTS statement
@@ -4020,6 +4081,8 @@ static act* act_release()
 
 	return action;
 }
+
+
 //____________________________________________________________
 //
 //		Handle the stand alone SQL select statement.
@@ -4105,7 +4168,8 @@ static act* act_set_dialect()
 		dialect = SQL_DIALECT_V5;
 		CPR_warn(warn_mesg);
 	}
-	else if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect) {
+	else if (gpreGlob.isc_databases && dialect != gpreGlob.compiletime_db_dialect)
+	{
 		char warn_mesg[100];
 		sprintf(warn_mesg, "Client dialect set to %d. Compiletime database dialect is %d\n",
 				dialect, gpreGlob.compiletime_db_dialect);
@@ -4115,7 +4179,7 @@ static act* act_set_dialect()
 	action->act_object = (ref*) MSC_alloc(SDT_LEN);
 	((set_dialect*) action->act_object)->sdt_dialect = dialect;
 
-//  Needed because subsequent parsing pass1 looks at sw_Sql_dialect value
+	// Needed because subsequent parsing pass1 looks at sw_Sql_dialect value
 	gpreGlob.sw_sql_dialect = dialect;
 	gpreGlob.dialect_specified = true;
 
@@ -4158,7 +4222,7 @@ static act* act_set_generator()
 		setgen->sgen_dialect = SQL_DIALECT_V5;
 	}
 	else {
-// ** dialect is > 1. Server can handle int64 *
+		// dialect is > 1. Server can handle int64
 
 		setgen->sgen_int64value = EXP_SINT64_ordinal(true);
 		setgen->sgen_dialect = SQL_DIALECT_V5 + 1;
@@ -4186,13 +4250,14 @@ static act* act_set_names()
 
 	if (MSC_match(KW_COLON))
 	{
-		/* User is specifying a host variable or string as
-		 * the character set.  Make this the run-time set.
-		 */
+		// User is specifying a host variable or string as
+		// the character set.  Make this the run-time set.
+
 		TEXT* value = PAR_native_value(false, false);
 		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
-			if (db->dbb_r_lc_ctype) {
+			if (db->dbb_r_lc_ctype)
+			{
 				char buffer[ERROR_LENGTH];
 				fb_utils::snprintf(buffer, sizeof(buffer),
 						"Supersedes runtime character set for database %s",
@@ -4211,9 +4276,9 @@ static act* act_set_names()
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, value);
 		value[gpreGlob.token_global.tok_length] = '\0';
 
-		/* Due to the ambiguities involved in having modules expressed
-		 * in multiple compile-time character sets, we disallow it.
-		 */
+		// Due to the ambiguities involved in having modules expressed
+		// in multiple compile-time character sets, we disallow it.
+
 		if (gpreGlob.module_lc_ctype && strcmp(gpreGlob.module_lc_ctype, value) != 0)
 			PAR_error("Duplicate declaration of module CHARACTER SET");
 
@@ -4229,12 +4294,13 @@ static act* act_set_names()
 			}
 
 			db->dbb_c_lc_ctype = value;
-			if (!(db->dbb_flags & DBB_sqlca)) {
-				/* Verify that character set name is valid,
-				 * this requires a database to be previously declared
-				 * so we can resolve against it.
-				 * So what if we go through this code once for each database...
-				 */
+			if (!(db->dbb_flags & DBB_sqlca))
+			{
+				// Verify that character set name is valid,
+				// this requires a database to be previously declared
+				// so we can resolve against it.
+				// So what if we go through this code once for each database...
+
 				if (!MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset))
 					PAR_error("The named CHARACTER SET was not found");
 			}
@@ -4263,7 +4329,8 @@ static act* act_set_statistics()
 	else
 		PAR_error("Can SET STATISTICS in context of single database only");
 
-	if (MSC_match(KW_INDEX)) {
+	if (MSC_match(KW_INDEX))
+	{
 		stats->sts_flags = STS_index;
 		stats->sts_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<index name>", stats->sts_name->str_string, NAME_SIZE + 1);
@@ -4293,7 +4360,7 @@ static act* act_set_transaction()
 	if (MSC_match(KW_NAME))
 		trans->tra_handle = PAR_native_value(false, true);
 
-//  Get all the transaction parameters
+	// Get all the transaction parameters
 
 	while (true)
 	{
@@ -4334,7 +4401,7 @@ static act* act_set_transaction()
 		break;
 	}
 
-//  send out for the list of reserved relations
+	// send out for the list of reserved relations
 
 	if (MSC_match(KW_RESERVING)) {
 		trans->tra_flags |= TRA_rrl;
@@ -4373,7 +4440,8 @@ static act* act_transaction(act_t type)
 	action->act_whenever = gen_whenever();
 	action->act_object = (ref*) transaction;
 
-	if (MSC_match(KW_RELEASE)) {
+	if (MSC_match(KW_RELEASE))
+	{
 		type = (type == ACT_commit) ? ACT_finish : ACT_rfinish;
 		if (transaction) {
 			action->act_rest = (act*) MSC_alloc(ACT_LEN);
@@ -4382,11 +4450,13 @@ static act* act_transaction(act_t type)
 		else
 			action->act_type = type;
 	}
-	else if ((type == ACT_commit) && (MSC_match(KW_RETAIN))) {
+	else if ((type == ACT_commit) && (MSC_match(KW_RETAIN)))
+	{
 		MSC_match(KW_SNAPSHOT);
 		action->act_type = type = ACT_commit_retain_context;
 	}
-	else if ((type == ACT_rollback) && (MSC_match(KW_RETAIN))) {
+	else if ((type == ACT_rollback) && (MSC_match(KW_RETAIN)))
+	{
 		MSC_match(KW_SNAPSHOT);
 		action->act_type = type = ACT_rollback_retain_context;
 	}
@@ -4408,17 +4478,17 @@ static act* act_update()
 
 	par_options(&transaction);
 
-//  First comes the relation.  Unfortunately, there is no way to identify
-//  its database until the cursor is known.  Sigh.  Save the token.
+	// First comes the relation.  Unfortunately, there is no way to identify
+	// its database until the cursor is known.  Sigh.  Save the token.
 
 	SCHAR r_name[NAME_SIZE], db_name[NAME_SIZE], owner_name[NAME_SIZE];
 	SQL_relation_name(r_name, db_name, owner_name);
 
-//  Parse the optional alias (context variable)
+	// Parse the optional alias (context variable)
 
 	gpre_sym* alias = gpreGlob.token_global.tok_symbol ? NULL : PAR_symbol(SYM_dummy);
 
-//  Now we need the SET list list.  Do this thru a linked list stack
+	// Now we need the SET list list.  Do this thru a linked list stack
 
 	if (!MSC_match(KW_SET))
 		CPR_s_error("SET");
@@ -4458,9 +4528,9 @@ static act* act_update()
 	while (stack)
 		*--ptr = (gpre_nod*) MSC_pop(&stack);
 
-//  Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
-//  then this is a sub-action of an existing request.  If not, then it is
-//  a free standing request
+	// Now the moment of truth.  If the next few tokens are WHERE CURRENT OF
+	// then this is a sub-action of an existing request.  If not, then it is
+	// a free standing request
 
 	const bool where = MSC_match(KW_WITH);
 	if (where && MSC_match(KW_CURRENT))
@@ -4468,8 +4538,8 @@ static act* act_update()
 		if (!MSC_match(KW_OF))
 			CPR_s_error("OF cursor");
 
-		/* Allocate update block, flush old request block, then
-		   find the right request block, and the target relation */
+		// Allocate update block, flush old request block, then
+		// find the right request block, and the target relation
 
 		upd* update = (upd*) MSC_alloc(UPD_LEN);
 		update->upd_references = request->req_values;
@@ -4484,7 +4554,7 @@ static act* act_update()
 			if (transaction)
 				PAR_error("different transaction for select and update");
 			else {				// does not specify transaction clause in
-				//   "update ... where cuurent of cursor" stmt
+				// "update ... where cuurent of cursor" stmt
 				const USHORT trans_nm_len = strlen(request->req_trans);
 				char* newtrans = (SCHAR *) MSC_alloc(trans_nm_len + 1);
 				transaction = newtrans;
@@ -4555,9 +4625,9 @@ static act* act_update()
 				slice->slc_parent_request = request;
 				slice_action->act_type = ACT_put_slice;
 
-				/* If slice ref is not yet posted, post it.
-				   This is required to receive the handle for the
-				   array being updated */
+				// If slice ref is not yet posted, post it.
+				// This is required to receive the handle for the
+				// array being updated
 
 				bool found = false;
 				for (ref* req_ref = request->req_references; req_ref; req_ref = req_ref->ref_next)
@@ -4590,11 +4660,11 @@ static act* act_update()
 
 	request->req_trans = transaction;
 
-//  How amusing.  After all that work, it wasn't a sub-action at all.
-//  Neat.  Take the pieces and build a complete request.  Start by
-//  figuring out what database is involved.
+	// How amusing.  After all that work, it wasn't a sub-action at all.
+	// Neat.  Take the pieces and build a complete request.  Start by
+	// figuring out what database is involved.
 
-//  Generate record select expression, then resolve input values
+	// Generate record select expression, then resolve input values
 
 	gpre_rse* select = (gpre_rse*) MSC_alloc(RSE_LEN(1));
 	request->req_rse = select;
@@ -4610,12 +4680,12 @@ static act* act_update()
 		SQE_resolve(set_item->nod_arg[0], request, select);
 	}
 
-//  Process boolean, if any
+	// Process boolean, if any
 
 	if (where)
 		select->rse_boolean = SQE_boolean(request, 0);
 
-//  Resolve update fields to update context
+	// Resolve update fields to update context
 
 	gpre_ctx* update_context = MSC_context(request);
 	request->req_update = update_context;
@@ -4637,13 +4707,14 @@ static act* act_update()
 			PAR_error("Updates of slices not allowed in searched updates");
 		}
 
-		/* In dialect 1, neither the value being assigned (nod_arg[0])
-		   nor the field to which it is being assigned (nod_arg[1]) may
-		   be of a data type added in V6. */
+		// In dialect 1, neither the value being assigned (nod_arg[0])
+		// nor the field to which it is being assigned (nod_arg[1]) may
+		// be of a data type added in V6.
 		if (SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect)
 		{
 			for (int arg_num = 0; arg_num <= 1; arg_num++)
-				if (nod_field == set_item->nod_arg[arg_num]->nod_type) {
+				if (nod_field == set_item->nod_arg[arg_num]->nod_type)
+				{
 					const USHORT field_dtype =
 						((ref*) set_item->nod_arg[arg_num]->nod_arg[0])->ref_field->fld_dtype;
 					if (dtype_sql_date == field_dtype || dtype_sql_time == field_dtype ||
@@ -4681,7 +4752,7 @@ static act* act_whenever()
 {
 	global_whenever_list = NULL; // global var
 
-//  Pick up condition
+	// Pick up condition
 
 	swe_condition_vals condition = SWE_max;
 	if (MSC_match(KW_SQLERROR))
@@ -4693,7 +4764,7 @@ static act* act_whenever()
 	else
 		CPR_s_error("WHENEVER condition");
 
-//  Pick up action
+	// Pick up action
 
 	swe* label = NULL;
 	if (MSC_match(KW_CONTINUE))
@@ -4714,7 +4785,7 @@ static act* act_whenever()
 	else
 		CPR_s_error("GO TO or CONTINUE");
 
-//  Set up condition vector
+	// Set up condition vector
 
 	global_whenever[condition] = label;
 
@@ -4767,7 +4838,8 @@ static void connect_opts(const TEXT** user,
 {
 	for (;;)
 	{
-		if (MSC_match(KW_CACHE)) {
+		if (MSC_match(KW_CACHE))
+		{
 			*buffers = atoi(gpreGlob.token_global.tok_string);
 			PAR_get_token();
 			MSC_match(KW_BUFFERS);
@@ -4776,8 +4848,10 @@ static void connect_opts(const TEXT** user,
 			*user = SQL_var_or_string(false);
 		else if (MSC_match(KW_PASSWORD))
 			*password = SQL_var_or_string(false);
-		else if (MSC_match(KW_ROLE)) {
-			if (gpreGlob.token_global.tok_type == tok_ident) {
+		else if (MSC_match(KW_ROLE))
+		{
+			if (gpreGlob.token_global.tok_type == tok_ident)
+			{
 				// reserve extra bytes for quotes and NULL
 				//TEXT* s = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 				TEXT* s = (TEXT*) MSC_alloc(NAME_SIZE + 2);
@@ -4807,7 +4881,8 @@ static void connect_opts(const TEXT** user,
 static gpre_file* define_cache()
 {
 	gpre_file* file = (gpre_file*) MSC_alloc(FIL_LEN);
-	if (isQuoted(gpreGlob.token_global.tok_type)) {
+	if (isQuoted(gpreGlob.token_global.tok_type))
+	{
 		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		file->fil_name = string;
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
@@ -4818,7 +4893,8 @@ static gpre_file* define_cache()
 	if (!check_filename(file->fil_name))
 		PAR_error("node name not permitted");	// a node name is not permitted in a shared cache file name
 
-	if (MSC_match(KW_LENGTH)) {
+	if (MSC_match(KW_LENGTH))
+	{
 		file->fil_length = EXP_ULONG_ordinal(true);
 		if (file->fil_length < MIN_CACHE_BUFFERS) {
 			TEXT err_string[ERROR_LENGTH];
@@ -4884,7 +4960,8 @@ static gpre_file* define_file()
 static gpre_file* define_log_file(bool log_serial)
 {
 	gpre_file* file = (gpre_file*) MSC_alloc(FIL_LEN);
-	if (isQuoted(gpreGlob.token_global.tok_type)) {
+	if (isQuoted(gpreGlob.token_global.tok_type))
+	{
 		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		file->fil_name = string;
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
@@ -4896,7 +4973,8 @@ static gpre_file* define_log_file(bool log_serial)
 	if (!check_filename(file->fil_name))
 		PAR_error("node name not permitted");	// A node name is not permitted in a shadow or secondary file name
 
-	while (true) {
+	while (true)
+	{
 		if (MSC_match(KW_SIZE)) {
 			MSC_match(KW_EQUALS);
 			file->fil_length = EXP_ULONG_ordinal(true);
@@ -5097,7 +5175,8 @@ static gpre_index* make_index( gpre_req* request, const TEXT* string)
 {
 	gpre_index* index = NULL;
 
-	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+	{
 		// CVC: I've kept this silly code. What's the idea of the copy here?
 		// If we are trying to limit the index name, the correct length is NAME_SIZE.
 		TEXT s[ERROR_LENGTH];
@@ -5124,7 +5203,8 @@ static gpre_rel* make_relation( gpre_req* request, const TEXT* relation_name)
 {
 	gpre_rel* relation = NULL;
 
-	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
+	{
 		TEXT r[ERROR_LENGTH];
 		strncpy(r, relation_name, sizeof(r));
 		r[sizeof(r) - 1] = 0;
@@ -5165,9 +5245,9 @@ static void pair( gpre_nod* expr, gpre_nod* field_expr)
 			ref* ref1 = (ref*) field_expr->nod_arg[0];
 			ref* ref2 = (ref*) expr->nod_arg[0];
 
-			/* We're done if we've already determined the type of this reference
-			 * (if, for instance, it's a parameter to a udf or PROCEDURE)
-			 */
+			// We're done if we've already determined the type of this reference
+			// (if, for instance, it's a parameter to a udf or PROCEDURE)
+
 			if (ref2->ref_field)
 				return;
 
@@ -5210,7 +5290,7 @@ static void par_array( gpre_fld* field)
 {
 	USHORT i = 0;
 
-//  Pick up ranges
+	// Pick up ranges
 
 	ary* array_info = field->fld_array_info;
 
@@ -5286,13 +5366,13 @@ static void par_computed( gpre_req* request, gpre_fld* field)
 {
 	MSC_match(KW_BY);
 
-//  If field size has been specified, save it.  Then NULL it
-//  till the new size is calculated from the specified expression.
-//  This will catch self references.
-//
-//  The user specified values will be restored to override calculated
-//  values.
-//
+	// If field size has been specified, save it.  Then NULL it
+	// till the new size is calculated from the specified expression.
+	// This will catch self references.
+	//
+	// The user specified values will be restored to override calculated
+	// values.
+	//
 	// Don't move this initialization below.
 	const gpre_fld save_fld = *field;
 
@@ -5306,9 +5386,10 @@ static void par_computed( gpre_req* request, gpre_fld* field)
 
 	CME_get_dtype(field->fld_computed->cmpf_boolean, field);
 
-//  If there was user specified data type/size, restore it
+	// If there was user specified data type/size, restore it
 
-	if (save_fld.fld_dtype) {
+	if (save_fld.fld_dtype)
+	{
 		field->fld_dtype = save_fld.fld_dtype;
 		field->fld_length = save_fld.fld_length;
 		field->fld_scale = save_fld.fld_scale;
@@ -5330,21 +5411,19 @@ static void par_computed( gpre_req* request, gpre_fld* field)
 
 static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 {
-// **
-//   par_cursor() is called to use a previously declared cursor.
-//   tok_symbol == NULL means one of the two things.
-//   a) The name does not belong to a cursor. OR
-//   b) get_token() function in gpre.cpp was not able to find the cursor
-//      in hash table.
-//
-//   case a) is an error condition.
-//   case b) Could have resulted because the cursor name was upcased and
-//    inserted into hash table since it was not quoted and it is
-//    now being refered as it was declared.
-//
-//   Hence, Try and lookup the cursor name after resolving it once more. If
-//   it still cannot be located, Its an error
-//*
+	// par_cursor() is called to use a previously declared cursor.
+	// tok_symbol == NULL means one of the two things.
+	// a) The name does not belong to a cursor. OR
+	// b) get_token() function in gpre.cpp was not able to find the cursor
+	//    in hash table.
+	//
+	// case a) is an error condition.
+	// case b) Could have resulted because the cursor name was upcased and
+	//  inserted into hash table since it was not quoted and it is
+	//  now being refered as it was declared.
+	//
+	// Hence, Try and lookup the cursor name after resolving it once more. If
+	// it still cannot be located, Its an error
 
 	SQL_resolve_identifier("<cursor name>", NULL, MAX_CURSOR_SIZE);
 	gpre_sym* symbol = HSH_lookup(gpreGlob.token_global.tok_string);
@@ -5384,7 +5463,8 @@ static dyn* par_dynamic_cursor()
 {
 	gpre_sym* symbol = NULL;
 
-	if (gpreGlob.token_global.tok_symbol == NULL) {
+	if (gpreGlob.token_global.tok_symbol == NULL)
+	{
 		SQL_resolve_identifier("<cursor name>", NULL, MAX_CURSOR_SIZE);
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)
@@ -5413,7 +5493,8 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 
 	SQL_par_field_dtype(request, field, false);
 
-	if (MSC_match(KW_COMPUTED)) {
+	if (MSC_match(KW_COMPUTED))
+	{
 		if (field->fld_global)
 			PAR_error("Cannot use domains to override computed column size");
 		if (field->fld_array_info)
@@ -5422,7 +5503,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 		par_computed(request, field);
 	}
 
-//  Check if default value was specified
+	// Check if default value was specified
 
 	if (gpreGlob.token_global.tok_keyword == KW_DEFAULT)
 	{
@@ -5431,17 +5512,18 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 
 		if (MSC_match(KW_USER))
 			field->fld_default_value = MSC_node(nod_user_name, 0);
-// ** Begin sql/date/time/timestamp *
+		// Begin sql/date/time/timestamp
 		else if (MSC_match(KW_CURRENT_DATE))
 			field->fld_default_value = MSC_node(nod_current_date, 0);
 		else if (MSC_match(KW_CURRENT_TIME))
 			field->fld_default_value = MSC_node(nod_current_time, 0);
 		else if (MSC_match(KW_CURRENT_TIMESTAMP))
 			field->fld_default_value = MSC_node(nod_current_timestamp, 0);
-// ** End sql/date/time/timestamp *
+		// End sql/date/time/timestamp
 		else if (MSC_match(KW_NULL))
 			field->fld_default_value = MSC_node(nod_null, 0);
-		else {
+		else
+		{
 			if (MSC_match(KW_MINUS)) {
 				if (gpreGlob.token_global.tok_type != tok_number)
 					CPR_s_error("<number>");
@@ -5456,7 +5538,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 	}
 
 
-//  Check for any column level constraints
+	// Check for any column level constraints
 
 	cnstrt** constraint_ref = &field->fld_constraints;
 	bool in_constraints = true;
@@ -5480,22 +5562,22 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 			break;
 		}
 	}
-//    if (MSC_match (KW_NOT))
-//   if (MSC_match (KW_NULL))
-// {
-// field->fld_flags |= FLD_not_null;
-// if (MSC_match (KW_UNIQUE))
-//    {
-//    index = (gpre_index*) MSC_alloc (IND_LEN);
-//    index->ind_relation = relation;
-//    index->ind_fields = field;
-//    index->ind_flags |= IND_dup_flag | IND_meta;
-//    index->ind_flags &= ~IND_descend;
-//    field->fld_index = index;
-//    }
-// }
-//   else
-// CPR_s_error ("NULL");
+	//if (MSC_match (KW_NOT))
+	//if (MSC_match (KW_NULL))
+	//{
+	//	field->fld_flags |= FLD_not_null;
+	//	if (MSC_match (KW_UNIQUE))
+	//	{
+	//		index = (gpre_index*) MSC_alloc (IND_LEN);
+	//		index->ind_relation = relation;
+	//		index->ind_fields = field;
+	//		index->ind_flags |= IND_dup_flag | IND_meta;
+	//		index->ind_flags &= ~IND_descend;
+	//		field->fld_index = index;
+	//	}
+	//}
+	//else
+	//	CPR_s_error ("NULL");
 
 	SQL_par_field_collate(request, field);
 	SQL_adjust_field_dtype(field);
@@ -5514,7 +5596,8 @@ static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field, gpr
 {
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
-	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
+	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT)
+	{
 		PAR_get_token();
 		new_constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
@@ -5574,7 +5657,8 @@ static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field, gpr
 
 			PAR_get_token();
 
-			if (MSC_match(KW_LEFT_PAREN)) {
+			if (MSC_match(KW_LEFT_PAREN))
+			{
 				// Field specified for referred relation
 
 				field_name = (STR) MSC_alloc(NAME_SIZE + 1);
@@ -5587,7 +5671,8 @@ static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field, gpr
 				EXP_match_paren();
 			}
 
-			if (gpreGlob.token_global.tok_keyword == KW_ON) {
+			if (gpreGlob.token_global.tok_keyword == KW_ON)
+			{
 				par_fkey_extension(new_constraint);
 				PAR_get_token();
 				if (gpreGlob.token_global.tok_keyword == KW_ON) {
@@ -5722,12 +5807,10 @@ static dyn* par_statement()
 
 static void par_fkey_extension(cnstrt* cnstrt_val)
 {
-//
-//   Extended foreign key definition could be as follows :
-//
-//   [ON DELETE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
-//   [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
-//
+	// Extended foreign key definition could be as follows :
+	//
+	// [ON DELETE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
+	// [ON UPDATE { NO ACTION | CASCADE | SET DEFAULT | SET NULL } ]
 
 	fb_assert(gpreGlob.token_global.tok_keyword == KW_ON);
 	fb_assert(cnstrt_val != NULL);
@@ -5816,7 +5899,8 @@ static cnstrt* par_table_constraint( gpre_req* request, gpre_rel* relation)
 {
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
-	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT) {
+	if (gpreGlob.token_global.tok_keyword == KW_CONSTRAINT)
+	{
 		PAR_get_token();
 		constraint->cnstrt_name = (STR) MSC_alloc(NAME_SIZE + 1);
 		SQL_resolve_identifier("<constraint name>",
@@ -5837,23 +5921,25 @@ static cnstrt* par_table_constraint( gpre_req* request, gpre_rel* relation)
 	case KW_UNIQUE:
 	case KW_FOREIGN:
 		PAR_get_token();
-		if (keyword == KW_PRIMARY) {
+		switch (keyword)
+		{
+		case KW_PRIMARY:
 			if (!MSC_match(KW_KEY))
 				CPR_s_error("KEY");
 			constraint->cnstrt_type = CNSTRT_PRIMARY_KEY;
-		}
-		else if (keyword == KW_FOREIGN) {
+			break;
+		case KW_FOREIGN:
 			if (!MSC_match(KW_KEY))
 				CPR_s_error("KEY");
 			constraint->cnstrt_type = CNSTRT_FOREIGN_KEY;
-		}
-		else
+			break;
+		default:
 			constraint->cnstrt_type = CNSTRT_UNIQUE;
+		}
 
 		EXP_left_paren(0);
 
-		/* Get list of fields for PRIMARY KEY or FOREIGN KEY or UNIQUE
-		   constraint */
+		// Get list of fields for PRIMARY KEY or FOREIGN KEY or UNIQUE constraint
 
 		fields = &constraint->cnstrt_fields;
 		do {
@@ -5872,7 +5958,8 @@ static cnstrt* par_table_constraint( gpre_req* request, gpre_rel* relation)
 			num_for_key_flds = 0;
 
 		EXP_match_paren();
-		if (keyword == KW_FOREIGN) {
+		if (keyword == KW_FOREIGN)
+		{
 			if (!MSC_match(KW_REFERENCES))
 				CPR_s_error("REFERENCES");
 
@@ -5909,14 +5996,15 @@ static cnstrt* par_table_constraint( gpre_req* request, gpre_rel* relation)
 				EXP_match_paren();
 			}
 
-			/* Don't print error message in case if <referenced column list>
-			   is not specified. Try to catch them in cmd.c[create_constraint]
-			   later on */
+			// Don't print error message in case if <referenced column list>
+			// is not specified. Try to catch them in cmd.c[create_constraint]
+			// later on
 			if (constraint->cnstrt_referred_fields != NULL && num_prim_key_flds != num_for_key_flds)
 			{
 				PAR_error("FOREIGN KEY column count does not match PRIMARY KEY");
 			}
-			if (gpreGlob.token_global.tok_keyword == KW_ON) {
+			if (gpreGlob.token_global.tok_keyword == KW_ON)
+			{
 				par_fkey_extension(constraint);
 				PAR_get_token();
 				if (gpreGlob.token_global.tok_keyword == KW_ON) {
@@ -5955,7 +6043,8 @@ static bool par_transaction_modes(gpre_tra* trans, bool expect_iso)
 
 	if (MSC_match(KW_READ))
 	{
-		if (MSC_match(KW_ONLY)) {
+		if (MSC_match(KW_ONLY))
+		{
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
 
@@ -5963,7 +6052,8 @@ static bool par_transaction_modes(gpre_tra* trans, bool expect_iso)
 			return true;
 		}
 
-		if (MSC_match(KW_WRITE)) {
+		if (MSC_match(KW_WRITE))
+		{
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
 
@@ -5975,7 +6065,8 @@ static bool par_transaction_modes(gpre_tra* trans, bool expect_iso)
 
 		trans->tra_flags |= TRA_read_committed;
 
-		if (MSC_match(KW_NO)) {
+		if (MSC_match(KW_NO))
+		{
 			if (MSC_match(KW_VERSION))
 				return true;
 			if (MSC_match(KW_WAIT)) {
@@ -5991,7 +6082,8 @@ static bool par_transaction_modes(gpre_tra* trans, bool expect_iso)
 		return true;
 	}
 
-	if (MSC_match(KW_SNAPSHOT)) {
+	if (MSC_match(KW_SNAPSHOT))
+	{
 		if (MSC_match(KW_TABLE)) {
 			trans->tra_flags |= TRA_con;
 
@@ -5999,6 +6091,7 @@ static bool par_transaction_modes(gpre_tra* trans, bool expect_iso)
 		}
 		return true;
 	}
+
 	return false;
 }
 
@@ -6048,15 +6141,16 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 						gpreGlob.sw_sql_dialect);
 				PAR_error(err_mesg);
 				return dtype_unknown;	// TMN: FIX FIX
-				/* return; */
+				// return;
 			default:
 				sprintf(err_mesg,
 						"Encountered column type DATE which is not supported in ods version %d\n",
 						gpreGlob.sw_ods_version);
 				PAR_error(err_mesg);
 			}
-		else {
-		/** column definition SQL DATE is unambiguous in any dialect **/
+		else
+		{
+			// column definition SQL DATE is unambiguous in any dialect
 			if (sql_date)
 				return dtype_sql_date;
 
@@ -6069,7 +6163,7 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 						gpreGlob.sw_sql_dialect);
 				PAR_error(err_mesg);
 				return dtype_unknown;	// TMN: FIX FIX
-				/* return; */
+				// return;
 			default:
 				return dtype_sql_date;
 			}
@@ -6083,7 +6177,7 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 					"Encountered column type TIME which is not supported by pre 6.0 Servers\n");
 			PAR_error(err_mesg);
 			return dtype_unknown;	// TMN: FIX FIX
-			/* return; */
+			// return;
 		}
 		return dtype_sql_time;
 
@@ -6095,10 +6189,10 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 		PAR_error(err_mesg);
 		break;
 	}
-//
-//  TMN: FIX FIX Added "return dtype_unknown;" to silence compiler, but
-//  this is really a logic error we have to fix.
-//
+
+	// TMN: FIX FIX Added "return dtype_unknown;" to silence compiler, but
+	// this is really a logic error we have to fix.
+
 	return dtype_unknown;
 }
 
@@ -6112,7 +6206,7 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 {
 	TEXT* string = NULL;
 
-//  parse options for the database parameter block
+	// parse options for the database parameter block
 
 	bool extend_dpb = false;
 
@@ -6125,7 +6219,8 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 		}
 		else if (MSC_match(KW_USER))
 		{
-			if (isQuoted(gpreGlob.token_global.tok_type)) {
+			if (isQuoted(gpreGlob.token_global.tok_type))
+			{
 				database->dbb_c_user = string =
 					(TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 				MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
@@ -6135,27 +6230,31 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				PAR_get_token();
 			}
 			else
-				/* Some non-C languages (such as Fortran) have problems
-				 * with extending the static DPB to add the runtime options
-				 * needed for a runtime user name or password.
-				 * 11 April 1995
-				 */
-			if (gpreGlob.sw_language == lang_c) {
-				if (!MSC_match(KW_COLON))
-					CPR_s_error("<colon> or <quoted string>");
-		/** Should I bother about dialects here ?? **/
-				if (isQuoted(gpreGlob.token_global.tok_type))
-					CPR_s_error("<host variable>");
-				database->dbb_r_user = PAR_native_value(false, false);
-				extend_dpb = true;
+			{
+				// Some non-C languages (such as Fortran) have problems
+				// with extending the static DPB to add the runtime options
+				// needed for a runtime user name or password.
+				// 11 April 1995
+
+				if (gpreGlob.sw_language == lang_c)
+				{
+					if (!MSC_match(KW_COLON))
+						CPR_s_error("<colon> or <quoted string>");
+					// Should I bother about dialects here ??
+					if (isQuoted(gpreGlob.token_global.tok_type))
+						CPR_s_error("<host variable>");
+					database->dbb_r_user = PAR_native_value(false, false);
+					extend_dpb = true;
+				}
+				else
+					CPR_s_error("<quoted string>");
 			}
-			else
-				CPR_s_error("<quoted string>");
 
 		}
 		else if (MSC_match(KW_PASSWORD))
 		{
-			if (isQuoted(gpreGlob.token_global.tok_type)) {
+			if (isQuoted(gpreGlob.token_global.tok_type))
+			{
 				database->dbb_c_password = string =
 					(TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 				MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
@@ -6163,21 +6262,24 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				PAR_get_token();
 			}
 			else
-				/* Some non-C languages (such as Fortran) have problems
-				 * with extending the static DPB to add the runtime options
-				 * needed for a runtime user name or password.
-				 * 11 April 1995
-				 */
-			if (gpreGlob.sw_language == lang_c) {
-				if (!MSC_match(KW_COLON))
-					CPR_s_error("<colon> or <quoted string>");
-				if (isQuoted(gpreGlob.token_global.tok_type))
-					CPR_s_error("<host variable>");
-				database->dbb_r_password = PAR_native_value(false, false);
-				extend_dpb = true;
+			{
+				// Some non-C languages (such as Fortran) have problems
+				// with extending the static DPB to add the runtime options
+				// needed for a runtime user name or password.
+				// 11 April 1995
+
+				if (gpreGlob.sw_language == lang_c)
+				{
+					if (!MSC_match(KW_COLON))
+						CPR_s_error("<colon> or <quoted string>");
+					if (isQuoted(gpreGlob.token_global.tok_type))
+						CPR_s_error("<host variable>");
+					database->dbb_r_password = PAR_native_value(false, false);
+					extend_dpb = true;
+				}
+				else
+					CPR_s_error("<quoted string>");
 			}
-			else
-				CPR_s_error("<quoted string>");
 		}
 		else if (MSC_match(KW_DEFAULT))
 		{
@@ -6189,17 +6291,18 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 			break;
 	}
 
-	if (action_type == ACT_drop_database) {
+	if (action_type == ACT_drop_database)
+	{
 		if (MSC_match(KW_CASCADE))
 			database->dbb_flags |= DBB_cascade;
-		/* TMN: ERROR ERROR we cant return _nothing* from a function returning */
+		// TMN: ERROR ERROR we cant return _nothing* from a function returning
 		// a bool. I changed this to false to flag an error, but we have to
 		// look into this.
 		return false;
-		/* return; */
+		// return;
 	}
 
-//  parse add/drop items
+	// parse add/drop items
 	bool logdefined = false;
 	while (true)
 	{
@@ -6220,19 +6323,17 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				PAR_error("only log files can be dropped");	// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
 #endif // FLINT_CACHE
 
-// ****
-// else if (MSC_match (KW_DESCRIP))
-//    database->dbb_flags	|= DBB_null_description;
-// else if (MSC_match (KW_SECURITY_CLASS))
-//    database->dbb_flags |= DBB_null_security_class;
-//***
+			//else if (MSC_match (KW_DESCRIP))
+			//	database->dbb_flags	|= DBB_null_description;
+			//else if (MSC_match (KW_SECURITY_CLASS))
+			//	database->dbb_flags |= DBB_null_security_class;
 		}
-// ****
-//   else if (gpreGlob.token_global.tok_keyword == KW_DESCRIPTION)
-// database->dbb_description = parse_description();
-//   else if (MSC_match (KW_SECURITY_CLASS))
-// database->dbb_security_class = PARSE_symbol (tok_ident);
-//***
+
+		//else if (gpreGlob.token_global.tok_keyword == KW_DESCRIPTION)
+		//	database->dbb_description = parse_description();
+		//else if (MSC_match (KW_SECURITY_CLASS))
+		//	database->dbb_security_class = PARSE_symbol (tok_ident);
+
 		else if (MSC_match(KW_FILE)) {
 			gpre_file* file = define_file();
 			file->fil_next = database->dbb_files;
@@ -6266,7 +6367,8 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 			logdefined = true;
 			if (MSC_match(KW_LEFT_PAREN))
 			{
-				while (true) {
+				while (true)
+				{
 					gpre_file* logfile = define_log_file(false);
 					logfile->fil_next = database->dbb_logfiles;
 					database->dbb_logfiles = logfile;
@@ -6317,7 +6419,7 @@ static void to_upcase(const TEXT* p, TEXT* q, int target_size)
 
 //____________________________________________________________
 //
-//  To do: move these to the correct position in the file.
+// To do: move these to the correct position in the file.
 // Idea: if we don't need a result in a variable, we don't pass it, since the
 // internal buffer will be used instead (in that case, bigger size cannot surpass
 // the size of a cursor). We can provide a size smaller than MAX_CURSOR size
