@@ -288,7 +288,14 @@ bool DataTypeUtilBase::makeBlobOrText(dsc* result, const dsc* arg, bool force)
 {
 	if (arg->isBlob() || result->isBlob())
 	{
-		result->makeBlob(getResultBlobSubType(result, arg), getResultTextType(result, arg));
+		if (result->isUnknown())
+		{
+			*result = *arg;
+		}
+		else
+		{
+			result->makeBlob(getResultBlobSubType(result, arg), getResultTextType(result, arg));
+		}
 		return true;
 	}
 
