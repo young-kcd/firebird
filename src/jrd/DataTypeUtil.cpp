@@ -44,6 +44,12 @@ SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* valu
 	SSHORT subType1 = value1->getBlobSubType();
 	SSHORT subType2 = value2->getBlobSubType();
 
+	if (value1->isUnknown())
+		return subType2;
+
+	if (value2->isUnknown())
+		return subType1;
+
 	if (subType2 == isc_blob_untyped)	// binary
 		return subType2;
 
@@ -290,14 +296,7 @@ bool DataTypeUtilBase::makeBlobOrText(dsc* result, const dsc* arg, bool force)
 {
 	if (arg->isBlob() || result->isBlob())
 	{
-		if (result->isUnknown())
-		{
-			*result = *arg;
-		}
-		else
-		{
-			result->makeBlob(getResultBlobSubType(result, arg), getResultTextType(result, arg));
-		}
+		result->makeBlob(getResultBlobSubType(result, arg), getResultTextType(result, arg));
 		return true;
 	}
 
