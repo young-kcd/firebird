@@ -503,8 +503,10 @@ BOOL WriteFBSettings(HWND hDlg)
 		isc_vax_integer((SCHAR *) & lCachePages, sizeof(long));
 	pchPtr += sizeof(long);
 	*/
+
 	*psLen = pchPtr - pchSendBuf - sizeof(short) - sizeof(char);
 	*psLen = (short) isc_vax_integer((SCHAR *) psLen, sizeof(short));
+
 	// Query service with set_config
 
 	char szResBuf[16];			// Response buffer

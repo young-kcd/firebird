@@ -106,7 +106,7 @@ using namespace Firebird;
 #define LONG_LIMIT      ((1L << 30) / 5)
 
 // NOTE: The syntax for the below line may need modification to ensure
-//	the result of 1 << 62 is a quad
+// the result of 1 << 62 is a quad
 
 #define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
@@ -869,7 +869,8 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		val64 = *((SINT64 *) p);
 
 		// adjust for scale first, *before* range-checking the value.
-		if (scale > 0) {
+		if (scale > 0)
+		{
 			SLONG fraction = 0;
 			do {
 				if (scale == 1)
@@ -886,11 +887,13 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 				val64--;
 		}
 		else if (scale < 0)
+		{
 			do {
 				if ((val64 > INT64_LIMIT) || (val64 < -INT64_LIMIT))
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 				val64 *= 10;
 			} while (++scale);
+		}
 
 		if ((val64 > LONG_MAX_int64) || (val64 < LONG_MIN_int64))
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
@@ -976,6 +979,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 				fraction = value % 10;
 			value /= 10;
 		} while (--scale);
+
 		if (fraction > 4)
 			value++;
 		// The following 2 lines are correct for platforms where

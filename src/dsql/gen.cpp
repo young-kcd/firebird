@@ -1590,7 +1590,6 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 		// If the value will fit into a 32-bit signed integer, generate
 		// it that way, else as an INT64.
 
-
 		if ((i64value >= (SINT64) MIN_SLONG) && (i64value <= (SINT64) MAX_SLONG))
 		{
 			stuff(statement, blr_long);

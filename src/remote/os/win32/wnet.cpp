@@ -74,7 +74,7 @@ static void		exit_handler(void*);
 #endif
 static void		force_close(rem_port*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
-static rem_port*		receive(rem_port*, PACKET*);
+static rem_port*	receive(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
 static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
@@ -167,7 +167,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// Note: prior to V3.1E a receivers could not in truth handle more
-	// then 5 protocol descriptions; however, this restriction does not
+	// than 5 protocol descriptions; however, this restriction does not
 	// apply to Windows since it was created in 4.0
 
 	// If we want user verification, we can't speak anything less than version 7
@@ -798,7 +798,7 @@ static void disconnect(rem_port* port)
 		port->port_async = NULL;
 	}
 
-	// If this is a sub-port, unlink it from it's parent
+	// If this is a sub-port, unlink it from its parent
 
 	rem_port* const parent = port->port_parent;
 	if (parent)

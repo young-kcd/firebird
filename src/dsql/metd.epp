@@ -59,8 +59,8 @@ using namespace Jrd;
 using namespace Firebird;
 
 // NOTE: The static definition of DB and gds_trans by gpre will not
-//		 be used by the meta data routines.  Each of those routines has
-//		 its own local definition of these variables.
+// be used by the meta data routines.  Each of those routines has
+// its own local definition of these variables.
 
 DATABASE DB = STATIC "yachts.lnk";
 

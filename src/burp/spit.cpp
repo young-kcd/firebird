@@ -1165,12 +1165,10 @@ static int flush_io_buff(const UCHAR* remaining_io,
 
 	SLONG write_cnt;
 
-	if (file_size > remaining_io_len) {
+	if (file_size > remaining_io_len)
 		write_cnt = write(output_fl_desc, remaining_io, remaining_io_len);
-	}
-	else {						// file_size <= remaining_io_len
+	else	// file_size <= remaining_io_len
 		write_cnt = write(output_fl_desc, remaining_io, (unsigned int) file_size);
-	}
 
 	switch (write_cnt)
 	{

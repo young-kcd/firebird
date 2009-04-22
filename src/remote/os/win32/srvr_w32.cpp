@@ -312,7 +312,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR lpszArgs, int
 
 #ifdef DEBUG_GDS_ALLOC
 	// In Debug mode - this will report all server-side memory leaks
-	//	due to remote access
+	// due to remote access
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char name[MAXPATHLEN];

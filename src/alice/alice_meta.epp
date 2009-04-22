@@ -1,6 +1,4 @@
 /*
- * tab=4
- *
  *____________________________________________________________
  *
  *		PROGRAM:	Alice (All Else) Utility
@@ -62,7 +60,6 @@ static USHORT snarf_blob(ISC_QUAD*, USHORT, TEXT*);
 
 // table used to determine capabilities, checking for specific
 // fields in system relations
-
 
 struct rfr_tab_t
 {

@@ -188,7 +188,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 		case IN_SW_BURP_SE:				// service name
 			if (itr >= argc - 1)
 			{
-							// user name parameter missing
+				// user name parameter missing
 				BURP_error(inSw->in_sw == IN_SW_BURP_USER ? 188 :
 								// password parameter missing
 						   		inSw->in_sw == IN_SW_BURP_PASS ? 189 :
@@ -1660,6 +1660,7 @@ static gbak_action open_files(const TEXT* file1,
 					flag = QUIT;
 					break;
 				}
+
 				// We ignore SIGPIPE so that we can report an IO error when we
 				// try to write to the broken pipe.
 
@@ -1729,40 +1730,39 @@ static gbak_action open_files(const TEXT* file1,
 	}
 
 
-	//	If we got to here, then we're really not backing up a database,
+	// If we got to here, then we're really not backing up a database,
 	// so open a backup file.
 
-	/* There are four possible cases such as:
-	 *
-	 *   1. restore single backup file to single db file
-	 *   2. restore single backup file to multiple db files
-	 *   3. restore multiple backup files (join operation) to single db file
-	 *   4. restore multiple backup files (join operation) to multiple db files
-	 *
-	 * Just looking at the command line, we can't say for sure whether it is a
-	 * specification of the last file to be join or it is a specification of the
-	 * primary db file (case 4), for example:
-	 *
-	 *     gbak -c gbk1 gbk2 gbk3 db1 200 db2 500 db3 -v
-	 *                            ^^^
-	 *     db1 could be either the last file to be join or primary db file
-	 *
-	 * Since 'gbk' and 'gsplit' formats are different (gsplit file has its own
-	 * header record) hence we can use it as follows:
-	 *
-	 *     - open first file
-	 *     - read & check a header record
-	 *
-	 *    If a header is identified as a 'gsplit' one then we know exactly how
-	 * many files need to be join and in which order. We keep opening a file by
-	 * file till we reach the last one to be join. During this step we check
-	 * that the files are accessible and are in proper order. It gives us
-	 * possibility to let silly customer know about an error as soon as possible.
-	 * Besides we have to find out which file is going to be a db file.
-	 *
-	 *    If header is not identified as a 'gsplit' record then we assume that
-	 * we got a single backup file.
-	 */
+	// There are four possible cases such as:
+	//
+	//   1. restore single backup file to single db file
+	//   2. restore single backup file to multiple db files
+	//   3. restore multiple backup files (join operation) to single db file
+	//   4. restore multiple backup files (join operation) to multiple db files
+	//
+	// Just looking at the command line, we can't say for sure whether it is a
+	// specification of the last file to be join or it is a specification of the
+	// primary db file (case 4), for example:
+	//
+	//     gbak -c gbk1 gbk2 gbk3 db1 200 db2 500 db3 -v
+	//                            ^^^
+	//     db1 could be either the last file to be join or primary db file
+	//
+	// Since 'gbk' and 'gsplit' formats are different (gsplit file has its own
+	// header record) hence we can use it as follows:
+	//
+	//     - open first file
+	//     - read & check a header record
+	//
+	// If a header is identified as a 'gsplit' one then we know exactly how
+	// many files need to be join and in which order. We keep opening a file by
+	// file till we reach the last one to be join. During this step we check
+	// that the files are accessible and are in proper order. It gives us
+	// possibility to let silly customer know about an error as soon as possible.
+	// Besides we have to find out which file is going to be a db file.
+	//
+	// If header is not identified as a 'gsplit' record then we assume that
+	// we got a single backup file.
 
 	fil = tdgbl->gbl_sw_files;
 	tdgbl->gbl_sw_backup_files = tdgbl->gbl_sw_files;
@@ -1929,6 +1929,7 @@ static gbak_action open_files(const TEXT* file1,
 		// if we got an error from attach database and we have replace switch set
 		// then look for error from attach returned due to not owner, if we are
 		// not owner then return the error status back up
+
 		BURP_error(274, true);
 		// msg # 274 : Cannot restore over current database, must be sysdba
 		// or owner of the existing database.

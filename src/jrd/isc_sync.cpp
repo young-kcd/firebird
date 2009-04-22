@@ -2074,6 +2074,7 @@ static bool setSharedMemoryAccessRights(ISC_STATUS* status_vector, SLONG shmid)
 	char secDb[MAXPATHLEN];
 	SecurityDatabase::getPath(secDb);
 	struct stat st;
+
 	if (stat(secDb, &st) == 0)
 	{
 		shmid_ds ds;
@@ -2199,7 +2200,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			 */
 			if ((shmid = shmget(key, 0, 0)) == -1) {
 				string msg;
-				msg.printf("shmget(0x%x, 0, PRIV)", key);
+				msg.printf("shmget(0x%x, 0, 0)", key);
 				error(status_vector, msg.c_str(), errno);
 				fclose(fp);
 				return NULL;
@@ -2217,8 +2218,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			   we use IPC_EXCL flag to get an error if by some miracle
 			   the sagment with the same key is already exists
 			 */
-			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) ==
-				-1)
+			if ((shmid = shmget(key, length, IPC_CREAT | IPC_EXCL | PRIV)) == -1)
 			{
 				string msg;
 				msg.printf("shmget(0x%x, %d, IPC_CREAT | IPC_EXCL | PRIV)", key, length);
@@ -2291,7 +2291,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			length = buf.shm_segsz;
 			if ((shmid = shmget(key, length, 0)) == -1) {
 				string msg;
-				msg.printf("shmget(0x%x, %d, PRIV)", key, length);
+				msg.printf("shmget(0x%x, %d, 0)", key, length);
 				error(status_vector, msg.c_str(), errno);
 				fclose(fp);
 				return NULL;
@@ -2314,7 +2314,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 		if ((shmid = shmget(key, length, 0)) == -1) {
 			string msg;
-			msg.printf("shmget(0x%x, %d, PRIV)", key, length);
+			msg.printf("shmget(0x%x, %d, 0)", key, length);
 			error(status_vector, msg.c_str(), errno);
 			fclose(fp);
 			return NULL;

@@ -34,7 +34,7 @@
 #include "../jrd/gds_proto.h"
 
 #ifdef BURP
-#include "../burp/misc_proto.h"	// Was "../burp/misc_pro.h" -Jeevan
+#include "../burp/misc_proto.h"
 inline UCHAR* XDR_ALLOC(ULONG size)
 {
 	return MISC_alloc_burp(size);
