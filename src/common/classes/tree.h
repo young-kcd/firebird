@@ -42,7 +42,9 @@ namespace Firebird {
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less
 // Be careful while changing this expression. N=2 must always cause merge
-static inline bool NEED_MERGE(size_t current_count, size_t page_count)
+
+// 2009-04 Please do not make this function static, it will break xlC build!
+inline bool NEED_MERGE(size_t current_count, size_t page_count)
 {
 	return current_count * 4 / 3 <= page_count;
 }
@@ -103,11 +105,11 @@ enum LocType { locEqual, locLess, locGreat, locGreatEqual, locLessEqual };
 //
 template <typename Value, typename Key = Value, typename Allocator = MallocAllocator,
 	typename KeyOfValue = DefaultKeyValue<Value>,
-	typename Cmp = DefaultComparator<Key>,
-	int LeafCount = LEAF_PAGE_SIZE / sizeof(Value),
-	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
+	typename Cmp = DefaultComparator<Key> >
 class BePlusTree
 {
+static const int LeafCount = LEAF_PAGE_SIZE / sizeof(Value);
+static const int NodeCount = NODE_PAGE_SIZE / sizeof(void*);
 public:
 	explicit BePlusTree(Allocator *_pool)
 		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
@@ -637,8 +639,8 @@ private:
 
 // ************************ BePlusTree implementation ******************
 
-template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
-bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::add(const Value& item, Accessor* accessor)
+template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp>
+bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, Accessor* accessor)
 {
 	// Finish initialization of the tree if necessary
 	if (!root)
@@ -858,8 +860,8 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 	return true;
 }
 
-template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
-void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_removePage(const int nodeLevel, void *node)
+template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp>
+void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::_removePage(const int nodeLevel, void *node)
 {
 	NodeList *list;
 	// Get parent and adjust the links
