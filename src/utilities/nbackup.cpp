@@ -321,10 +321,12 @@ void nbackup::open_database_scan()
   	if (dbase < 0)
   		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
 #ifdef HAVE_POSIX_FADVISE
-	if (posix_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL) < 0)
-		b_error::raise("Error (%d) in posix_fadvise(SEQUENTIAL) for %s", errno, dbname.c_str());
-	if (posix_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE) < 0)
-		b_error::raise("Error (%d) in posix_fadvise(NOREUSE) for %s", errno, dbname.c_str());
+	int rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (rc)
+		b_error::raise("Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
+	rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
+	if (rc)
+		b_error::raise("Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
 #endif //HAVE_POSIX_FADVISE
 #endif //WIN_NT
 }
