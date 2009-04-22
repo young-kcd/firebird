@@ -27,11 +27,7 @@
    LIST, PLEASE BE SURE TO CHECK THE OTHERS FOR
    SIMILAR CHANGES:
 
-                  /dsql/all.cpp
-                  /jrd/all.cpp
-                  /pipe/allp.cpp
                   /qli/all.cpp
-                  /remote/allr.cpp
                   /gpre/msc.cpp
 
    - THANK YOU
