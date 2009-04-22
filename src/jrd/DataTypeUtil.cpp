@@ -75,11 +75,13 @@ USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 //
 // The output type is figured out as based on this order:
 // 1) If any datatype is blob, returns blob;
-// 2) If any datatype is a) varying or b) any text and another datatype, returns varying;
+// 2) If any datatype is a) varying or b) any text/cstring and another datatype, returns varying;
 // 3) If any datatype is text or cstring, returns text;
 // 4) If any datatype is approximate numeric then each datatype in the list shall be numeric (
 //    otherwise an error is thrown), returns approximate numeric;
-// 5) If any datatype is a date/time/timestamp then each datatype in the list shall be the same
+// 5) If all datatypes are exact numeric, returns exact numeric with the maximum scale and the
+//    maximum precision used.
+// 6) If any datatype is a date/time/timestamp then each datatype in the list shall be the same
 //    date/time/timestamp (otherwise an error is thrown), returns a date/time/timestamp.
 //
 // If a blob is returned, and there is a binary blob in the list, a binary blob is returned.
