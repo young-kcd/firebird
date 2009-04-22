@@ -53,7 +53,7 @@ fi
 
 # Ensure correct utilities are called by AUTORECONF
 autopath=`dirname $AUTORECONF`
-if [ "$autopath" != x. ]; then
+if [ "x$autopath" != "x" ]; then
 	PATH=$autopath:$PATH
 	export PATH
 fi
