@@ -194,7 +194,7 @@ ifeq ($(STD_ICU),false)
 endif
 ifeq ($(STD_EDITLINE),false)
 ifeq ($(EDITLINE_FLG),Y)
-	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.editline
+	$(MAKE) CFLAGS="@CFLAGS@" $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.extern.editline
 endif
 endif
 
