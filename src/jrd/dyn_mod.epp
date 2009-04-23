@@ -3054,6 +3054,8 @@ void DYN_modify_sql_field(Global* gbl,
 					RFR.RDB$UPDATE_FLAG.NULL = FALSE;
 					RFR.RDB$UPDATE_FLAG = 1;
 				}
+
+				RFR.RDB$COLLATION_ID.NULL = TRUE;	// CORE-2426
 			END_MODIFY;
 			first_request = request;
 			request = NULL;
