@@ -72,60 +72,92 @@ const size_t SECTOR_ALIGNMENT = MIN_PAGE_SIZE;
 
 using namespace Firebird;
 
-void usage(UtilSvc* uSvc, const char* message, ...)
-{
-	string msg;
-	va_list params;
-	va_start(params, message);
-	msg.vprintf(message, params);
-	va_end(params);
-
-	if (uSvc->isService())
-		(Arg::Gds(isc_random) << msg).raise();
-
-	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
-	fprintf(stderr,
-		"Physical Backup Manager    Copyright (C) 2004 Firebird development team\n"
-		"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
-		"  Designed and implemented by Nickolay Samofatov <skidder@bssys.com>\n"
-		"  This work was funded through a grant from BroadView Software, Inc.\n\n"
-		"Usage: nbackup <options>\n"
-		"valid options are: \n"
-		"  -L <database>                         Lock database for filesystem copy\n"
-		"  -N <database>                         Unlock previously locked database\n"
-		"  -F <database>                         Fixup database after filesystem copy\n"
-		"  -B <level> <database> [<filename>]    Create incremental backup\n"
-		"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
-		"  -U <user>                             User name\n"
-		"  -P <password>                         Password\n"
-		"  -FE <file>                            Fetch password from file\n"
-		"  -T                                    Do not run database triggers\n"
-		"  -S                                    Print database size in pages after lock\n"
-		"Notes:\n"
-		"  <database> may specify database alias\n"
-		"  incremental backups of multi-file databases are not supported yet\n"
-		"  \"stdout\" may be used as a value of <filename> for -B option\n"
-					);
-	exit(FINI_ERROR);
-}
-
-void missing_parameter_for_switch(UtilSvc* uSvc, const char* sw)
-{
-	usage(uSvc, "Missing parameter for switch %s", sw);
-}
-
-void singleAction(UtilSvc* uSvc)
-{
-	usage(uSvc, "Only one of -L, -N, -F, -B or -R should be specified");
-}
-
 namespace
 {
+
+	void usage(UtilSvc* uSvc, const char* message, ...)
+	{
+		string msg;
+		va_list params;
+		va_start(params, message);
+		msg.vprintf(message, params);
+		va_end(params);
+
+		if (uSvc->isService())
+			(Arg::Gds(isc_random) << msg).raise();
+
+		fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
+		fprintf(stderr,
+			"Physical Backup Manager    Copyright (C) 2004 Firebird development team\n"
+			"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
+			"  Designed and implemented by Nickolay Samofatov <skidder@bssys.com>\n"
+			"  This work was funded through a grant from BroadView Software, Inc.\n\n"
+			"Usage: nbackup <options>\n"
+			"valid options are: \n"
+			"  -L <database>                         Lock database for filesystem copy\n"
+			"  -N <database>                         Unlock previously locked database\n"
+			"  -F <database>                         Fixup database after filesystem copy\n"
+			"  -B <level> <database> [<filename>]    Create incremental backup\n"
+			"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
+			"  -U <user>                             User name\n"
+			"  -P <password>                         Password\n"
+			"  -FE <file>                            Fetch password from file\n"
+			"  -T                                    Do not run database triggers\n"
+			"  -S                                    Print database size in pages after lock\n"
+			"Notes:\n"
+			"  <database> may specify database alias\n"
+			"  incremental backups of multi-file databases are not supported yet\n"
+			"  \"stdout\" may be used as a value of <filename> for -B option\n"
+		);
+		exit(FINI_ERROR);
+	}
+
+	void missing_parameter_for_switch(UtilSvc* uSvc, const char* sw)
+	{
+		usage(uSvc, "Missing parameter for switch %s", sw);
+	}
+
+	void singleAction(UtilSvc* uSvc)
+	{
+		usage(uSvc, "Only one of -L, -N, -F, -B or -R should be specified");
+	}
+
     const int MSG_LEN = 1024;
 	const size_t NBACKUP_FAILURE_SPACE = MSG_LEN * 4;
 	typedef Firebird::CircularStringsBuffer<NBACKUP_FAILURE_SPACE> NbkStringsBuffer;
 	GlobalPtr<NbkStringsBuffer> nbkStringsBuffer;
 	GlobalPtr<Mutex> nbkBufMutex;
+
+/*
+ HPUX has non-posix-conformant method to return error codes from posix_fadvise().
+ Instead of error code, directly returned by function (like specified by posix), 
+ -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
+ May be sometimes this function should be moved to fb_util namespace.
+*/
+#ifdef HAVE_POSIX_FADVISE
+	int fb_fadvise(int fd, off_t offset, size_t len, int advice)
+	{
+		int rc = posix_fadvise(fd, offset, len, advice);
+
+		if (rc < 0)
+		{
+			rc = errno;
+		}
+		if (rc == ENOTTY ||		// posix_fadvise is not supported by underlying file system
+			rc == ENOSYS)		// hint is not supported by the underlying file object
+		{
+			rc = 0;				// ignore such errors
+		}
+
+		return rc;
+	}
+#else // HAVE_POSIX_FADVISE
+	int fb_fadvise(int, off_t, size_t, int)
+	{
+		return 0;
+	}
+#endif // HAVE_POSIX_FADVISE
+
 }
 
 class b_error : public LongJump
@@ -352,6 +384,7 @@ void NBackup::open_database_write()
 void NBackup::open_database_scan()
 {
 #ifdef WIN_NT
+
 	// On Windows we use unbuffered IO to work around bug in Windows Server 2003
 	// which has little problems with managing size of disk cache. If you read
 	// very large file (5 GB or more) on this platform filesystem page cache
@@ -365,21 +398,24 @@ void NBackup::open_database_scan()
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
+
 #else // WIN_NT
+
 #ifndef O_NOATIME
 #define O_NOATIME 0
 #endif // O_NOATIME
+
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
 	if (dbase < 0)
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
-#ifdef HAVE_POSIX_FADVISE
-	int rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
+
+	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
-	rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
+	rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_NOREUSE);
 	if (rc)
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
-#endif // HAVE_POSIX_FADVISE
+
 #endif // WIN_NT
 }
 
