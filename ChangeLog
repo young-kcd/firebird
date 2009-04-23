@@ -1,3 +1,15 @@
+2009-04-23 17:31  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.112):
+
+	Fixed CORE-2426 - Alter table not respecting collation
+
+2009-04-23 13:07  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.83):
+
+	More posix_fadvise related improvements, misc
+
 2009-04-22 18:35  alexpeshkoff
 
 	* firebird2/autogen.sh (1.26):
