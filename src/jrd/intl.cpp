@@ -1196,6 +1196,7 @@ int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
 	USHORT ttype;
 	int len = CVT_get_string_ptr(pString, &ttype, &src, reinterpret_cast<vary*>(buffer),
 		sizeof(buffer), ERR_post);
+	int i;
 
 	UCHAR* dest;
 	switch (ttype) {
@@ -1206,7 +1207,8 @@ int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
 	case ttype_none:
 	case ttype_ascii:
 		dest = src;
-		while (len--) {
+		for (i = 0; i < len; ++i)
+		{
 			*dest++ = UPPER7(*src);
 			src++;
 		}
@@ -1245,6 +1247,7 @@ int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
 	USHORT ttype;
 	int len = CVT_get_string_ptr(pString, &ttype, &src, reinterpret_cast<vary*>(buffer),
 		sizeof(buffer), ERR_post);
+	int i;
 
 	UCHAR* dest;
 	switch (ttype) {
@@ -1255,7 +1258,8 @@ int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
 	case ttype_none:
 	case ttype_ascii:
 		dest = src;
-		while (len--) {
+		for (i = 0; i < len; ++i)
+		{
 			*dest++ = LOWWER7(*src);
 			src++;
 		}
