@@ -104,7 +104,7 @@ enum lang_t
 	lang_internal,
 	lang_pascal,
 	lang_fortran,
-	lang_epascal,
+	//lang_epascal,
 	lang_cobol,
 	lang_c,
 	lang_ada,
@@ -147,9 +147,10 @@ bool isAnsiCobol(cob_t dialect);
 #endif
 
 
-// Structure used by Fortran and Basic to determine whether or not
+// Structure used by Fortran to determine whether or not
 // an array has been declared in a subroutine.
 
+#ifdef GPRE_FORTRAN
 struct adl
 {
 	ULONG adl_gds_ident;		// Identifier of array for which Gpre has
@@ -164,9 +165,10 @@ const size_t ADL_LEN = sizeof(adl);
 
 struct dbd
 {
-	enum {dbb_size = 128};
-	TEXT dbb_name[dbb_size];			// database name
+	enum {dbd_size = 128};
+	TEXT dbd_name[dbd_size];			// database name
 };
+#endif
 
 
 // Dimension block, used for arrays
@@ -197,7 +199,7 @@ struct gpre_file
 
 enum fil_flags_vals {
 	FIL_manual	= 1,	// Manual shadow
-	FIL_raw		= 2,	// On raw device
+	//FIL_raw		= 2,	// On raw device; unused
 	FIL_conditional	= 4	// Conditional shadow
 };
 
@@ -219,6 +221,7 @@ const size_t FLTR_LEN = sizeof(gpre_filter);
 
 
 // General Syntax node, produced by parser
+// CVC: several node types are unused!!!
 
 enum nod_t {
 	nod_nothing = 0,
@@ -229,17 +232,31 @@ enum nod_t {
 	nod_containing, nod_matches, nod_any,
 	nod_unique, nod_plus, nod_times,
 	nod_divide, nod_minus, nod_negate,
-	nod_msg, nod_for, nod_send,
-	nod_receive, nod_block, nod_select,
-	nod_boolean, nod_projection, nod_sort,
+	//nod_msg,
+	//nod_for,
+	//nod_send,
+	//nod_receive,
+	//nod_block,
+	//nod_select,
+	//nod_boolean,
+	nod_projection,
+	nod_sort,
 	nod_store, nod_modify, nod_erase,
-	nod_if, nod_assignment, nod_rse,
-	nod_first, nod_relation, nod_end,
-	nod_label, nod_leave, nod_loop,
+	//nod_if,
+	nod_assignment,
+	//nod_rse,
+	//nod_first,
+	//nod_relation,
+	//nod_end,
+	//nod_label,
+	//nod_leave,
+	//nod_loop,
 	nod_max, nod_min, nod_count,
 	nod_total, nod_average, nod_list,
 	nod_deferred, nod_missing, nod_between,
-	nod_union, nod_map, nod_starting,
+	nod_union,
+	//nod_map,
+	nod_starting,
 	nod_like, nod_agg_count, nod_agg_max,
 	nod_agg_min, nod_agg_total, nod_agg_average,
 	nod_aggregate, nod_from, nod_null,
@@ -249,7 +266,8 @@ enum nod_t {
 	nod_via, nod_join_inner, nod_join_left,
 	nod_join_right, nod_join_full, nod_join,
 	nod_concatenate, nod_cast, nod_dom_value,
-	nod_ansi_any, nod_gen_id, nod_set_generator,
+	nod_ansi_any, nod_gen_id,
+	//nod_set_generator,
 	nod_merge, nod_plan_expr, nod_plan_item,
 	nod_natural, nod_index_order, nod_ansi_all,
 	nod_extract, nod_current_date,
@@ -340,9 +358,9 @@ const size_t TXT_LEN = sizeof(gpre_txt);
 
 struct gpre_usn
 {
-	gpre_usn* usn_next;
-	SCHAR *usn_name;
-	USHORT usn_dyn;				// describes the type of user via a dyn-verb,
+	gpre_usn*		usn_next;
+	const SCHAR*	usn_name;
+	USHORT			usn_dyn;	// describes the type of user via a dyn-verb,
 								// i.e. gds__dyn_grant_user/view/proc/trig
 };
 
@@ -391,7 +409,7 @@ const size_t ARY_LEN = sizeof(ary);
 
 struct gpre_trg
 {
-	str* trg_name;
+	//str* trg_name;			// unused
 	USHORT trg_type;			// Type of trigger
 	str* trg_source;			// source for trigger
 	gpre_nod* trg_boolean;		// boolean expression, for trigger
@@ -400,13 +418,14 @@ struct gpre_trg
 
 const size_t TRG_LEN = sizeof(gpre_trg);
 
+// Beware the numbers cannot change
 enum gpre_trg_types {
 	PRE_STORE_TRIGGER = 1,
-	POST_STORE_TRIGGER,
-	PRE_MODIFY_TRIGGER,
-	POST_MODIFY_TRIGGER,
-	PRE_ERASE_TRIGGER,
-	POST_ERASE_TRIGGER
+	//POST_STORE_TRIGGER = 2,
+	PRE_MODIFY_TRIGGER = 3,
+	POST_MODIFY_TRIGGER = 4,
+	//PRE_ERASE_TRIGGER = 5,
+	POST_ERASE_TRIGGER = 6
 };
 
 
@@ -469,8 +488,8 @@ enum cnstrt_type_vals {
 // Values for cnstrt_flags
 
 enum cnstrt_flags_vals {
-	CNSTRT_DEFERRABLE			= 1,
-	CNSTRT_INITIALLY_DEFERRED	= 2,
+	//CNSTRT_DEFERRABLE			= 1,
+	//CNSTRT_INITIALLY_DEFERRED	= 2,
 	CNSTRT_delete				= 4
 };
 
@@ -480,7 +499,7 @@ enum cnstrt_flags_vals {
 typedef struct prv
 {
 	USHORT prv_privileges;		// holds privileges being granted or revoked
-	SCHAR* prv_username;		// user having privileges granted or revoked
+	const SCHAR* prv_username;	// user having privileges granted or revoked
 	USHORT prv_user_dyn;		// the dyn-verb to be used with prv_username
 								// i.e. gds__dyn_grant_user/proc/trig/view
 	str* prv_relation;			// relation on which we're doing grant/revoke
@@ -547,7 +566,7 @@ enum act_t {
 	ACT_alter_index,
 	ACT_alter_table,
 	ACT_at_end,
-	ACT_average,
+	//ACT_average,
 	ACT_b_declare,
 	ACT_basedon,
 	ACT_blob_cancel,
@@ -556,7 +575,7 @@ enum act_t {
 	ACT_blob_for,
 	ACT_blob_handle,
 	ACT_blob_open,
-	ACT_block_data,
+	//ACT_block_data,
 	ACT_close,
 	ACT_commit,
 	ACT_commit_retain_context,
@@ -571,7 +590,7 @@ enum act_t {
 	ACT_database,
 	ACT_declare_filter,
 	ACT_declare_udf,
-	ACT_delete,
+	//ACT_delete,
 	ACT_disconnect,
 	ACT_drop_database,
 	ACT_drop_domain,
@@ -584,7 +603,7 @@ enum act_t {
 
 	ACT_dyn_close,
 	ACT_dyn_cursor,
-	ACT_dyn_declare,
+	//ACT_dyn_declare,
 	ACT_dyn_describe,
 	ACT_dyn_describe_input,
 	ACT_dyn_execute,
@@ -615,8 +634,8 @@ enum act_t {
 	ACT_hctef,
 	ACT_insert,
 	ACT_loop,
-	ACT_max,
-	ACT_min,
+	//ACT_max,
+	//ACT_min,
 	ACT_modify,
 	ACT_on_error,
 	ACT_open,
@@ -639,7 +658,7 @@ enum act_t {
 	ACT_statistics,
 	ACT_store,
 	ACT_store2,
-	ACT_total,
+	//ACT_total,
 	ACT_update,
 	ACT_variable,
 	ACT_clear_handles,
@@ -690,13 +709,13 @@ enum sym_t {
 	SYM_database,
 	SYM_relation,
 	SYM_field,
-	SYM_variable,
+	SYM_variable, // it's tested in sql.cpp but it's never activated
 	SYM_stream,
 	SYM_cursor,
 	SYM_delimited_cursor,
 	SYM_index,
 	SYM_blob,
-	SYM_statement,
+	//SYM_statement,
 	SYM_dyn_cursor,
 	SYM_type,
 	SYM_udf,
@@ -737,8 +756,10 @@ public:
 	ULONG blb_len_ident;		// Ident of segment length
 	ULONG blb_seg_length;		// Segment length of blob
 	USHORT blb_flags;			// Misc and various blobs
+#ifdef GPRE_FORTRAN
 	USHORT blb_top_label;		// fortran label for top of request
 	USHORT blb_btm_label;		// fortran label for request exit
+#endif
 	USHORT blb_bpb_length;		// Length of blob parameter block
 	USHORT blb_bpb_ident;		// Ident for blob parameter block
 	USHORT blb_type;			// Blob type (0 = default segmented)
@@ -758,7 +779,7 @@ public:
 const size_t BLB_LEN = sizeof(blb);
 
 enum blb_flags_vals {
-	BLB_create	= 1,
+	//BLB_create	= 1,	// unused
 	BLB_symbol_released	= 2
 };
 
@@ -775,8 +796,9 @@ struct rrl
 
 const size_t RRL_LEN = sizeof(rrl);
 
-
-struct tpb; // forward declaration
+// forward declarations
+struct tpb;
+struct gpre_prc;
 
 // Database block, more or less the granddaddy
 
@@ -784,7 +806,7 @@ struct gpre_dbb
 {
 	gpre_dbb* dbb_next;				// next database in program
 	gpre_rel* dbb_relations;		// relations in database
-	gpre_rel* dbb_procedures;		// procedures in database
+	gpre_prc* dbb_procedures;		// procedures in database
 #ifdef GPRE_COBOL
 	USHORT dbb_id;					// database id in program
 #endif
@@ -811,7 +833,7 @@ struct gpre_dbb
 	SSHORT dbb_char_subtype;		// subtype to use for all SCHAR messages
 	FB_API_HANDLE dbb_field_request;
 	FB_API_HANDLE dbb_flds_request;
-	FB_API_HANDLE dbb_relation_request;
+	//FB_API_HANDLE dbb_relation_request;
 	FB_API_HANDLE dbb_procedure_request;
 	FB_API_HANDLE dbb_udf_request;
 	FB_API_HANDLE dbb_trigger_request;
@@ -822,7 +844,7 @@ struct gpre_dbb
 	FB_API_HANDLE dbb_array_request;
 	FB_API_HANDLE dbb_dimension_request;
 	FB_API_HANDLE dbb_domain_request;
-	FB_API_HANDLE dbb_generator_request;
+	//FB_API_HANDLE dbb_generator_request;
 	FB_API_HANDLE dbb_view_request;
 	FB_API_HANDLE dbb_primary_key_request;
 	int dbb_scope;					// scope of the database handle
@@ -845,21 +867,21 @@ struct gpre_dbb
 const size_t DBB_LEN = sizeof(gpre_dbb);
 
 enum dbb_flags_valss {
-	DBB_no_arrays	= 1,
-	DBB_sqlca		= 2,	// Created as default for a sqlca
-	DBB_in_trans	= 4,	// included in this transaction
+	//DBB_no_arrays	= 1,		// Obsolete: used for databases before IB4
+	DBB_sqlca		= 2,		// Created as default for a sqlca
+	DBB_in_trans	= 4,		// included in this transaction
 //	DBB_drop_log	= 8,
 	DBB_log_serial	= 16,
 //	DBB_log_default	= 32,
-	DBB_cascade		= 64,
-	DBB_drop_cache	= 128,
-	DBB_create_database	= 256,
-	DBB_v3			= 512	// Database is V3
+//	DBB_cascade		= 64,		// only set but not used
+//	DBB_drop_cache	= 128,		// only set but not used
+//	DBB_create_database	= 256,	// unused
+//	DBB_v3			= 512		// Database is V3; not supported anymore in FB2.5
 };
 
 enum dbb_scope_vals {
-	DBB_GLOBAL,
-	DBB_EXTERN,
+	//DBB_GLOBAL,
+	DBB_EXTERN = 1,
 	DBB_STATIC
 };
 
@@ -888,7 +910,8 @@ struct gpre_prc
 	SSHORT prc_id;				// procedure id
 	gpre_sym* prc_owner;		// owner of procedure, if any
 	gpre_dbb* prc_database;		// parent database
-	gpre_prc* prc_next;			// next procedure in database
+	gpre_prc* prc_next;			// next procedure in database, a linked list is created with
+								// head in database->dbb_procedures, but never used
 	gpre_fld* prc_inputs;		// linked list of input parameters
 	gpre_fld* prc_outputs;		// linked list of output parameters
 	SSHORT prc_in_count;		// count of input parameters
@@ -908,7 +931,7 @@ struct mel
 {
 	mel* mel_next;				// Next element in map
 	gpre_nod* mel_expr;			// Expression
-	ref* mel_reference;
+	//ref* mel_reference;		// unused
 	gpre_ctx* mel_context;
 	USHORT mel_position;		// Position in map
 };
@@ -1001,7 +1024,7 @@ const size_t IND_LEN = sizeof(gpre_index);
 
 enum ind_flags_vals {
 	IND_dup_flag	= 1,	// if false, duplicates not allowed
-	IND_meta		= 2,	// if true, created for a metadata operation
+//	IND_meta		= 2,	// if true, created for a metadata operation; set but not used
 	IND_descend		= 4,	// if true, a descending-order index
 	IND_active		= 8,	// activate index
 	IND_inactive	= 16	// de-activate index
@@ -1075,7 +1098,7 @@ const size_t FLD_LEN = sizeof(gpre_fld);
 enum fld_flags_vals {
 	FLD_blob		= 1,
 	FLD_text		= 2,
-	FLD_stream_blob	= 4,
+	//FLD_stream_blob	= 4,	// unused
 	FLD_dbkey		= 8,
 	FLD_not_null	= 32,	// if CREATE TABLE specifies not null
 	FLD_delete		= 64,	// if ALTER TABLE specifies delete of field
@@ -1142,10 +1165,10 @@ enum req_t {
 	REQ_store2,
 	REQ_insert,
 	REQ_cursor,
-	REQ_select,
+	//REQ_select,		// unused
 	REQ_mass_update,
 	REQ_any,
-	REQ_statistical,
+	//REQ_statistical,	// unused
 	REQ_ddl,
 	REQ_create_database,
 	REQ_slice,
@@ -1162,7 +1185,7 @@ public:
 
 	req_t req_type;				// request type
 	ULONG req_ident;			// ident for request handle
-	USHORT req_act_flag;		// activity flag ident, if used
+	//USHORT req_act_flag;		// activity flag ident, if used; unused
 	int req_length;				// blr length of request
 	UCHAR *req_base;			// base of blr string during generation
 	UCHAR *req_blr;				// raw blr string
@@ -1172,9 +1195,11 @@ public:
 	USHORT req_level;			// access level
 	USHORT req_count;			// number of ports in request
 	USHORT req_internal;		// next internal context number
-	USHORT req_labels;			// next available label
+	//USHORT req_labels;			// next available label; unused
+#ifdef GPRE_FORTRAN
 	USHORT req_top_label;		// fortran label for top of request
 	USHORT req_btm_label;		// fortran label for request exit
+#endif
 	gpre_nod* req_node;			// request definition tree
 	gpre_dbb* req_database;		// database
 	act* req_actions;			// actions within request
@@ -1186,7 +1211,7 @@ public:
 	ref* req_avalues;			// parameters to pass to asynchronous message
 #endif
 	ref* req_eof;				// eof reference for FOR
-	ref* req_index;				// index variable
+	//ref* req_index;				// index variable; unused
 	ref* req_references;		// fields referenced in context
 	map* req_map;				// map for aggregates, etc
 	gpre_rse* req_rse;			// record selection expression
@@ -1303,7 +1328,9 @@ public:
 	int ref_sdl_length;			// sdl length for this reference
 	slc* ref_slice;				// Slice, if field referenced is sliced
 	ULONG ref_sdl_ident;		// identifier of sdl structure
+#ifdef GPRE_FORTRAN
 	USHORT ref_offset;			// offset of field in port
+#endif
 	USHORT ref_flags;
 	SSHORT ref_ttype;			// Character set type for literals
 
@@ -1325,8 +1352,8 @@ public:
 };
 
 enum ref_flags_vals {
-	REF_union		= 1,	// Pseudo field for union
-	REF_pseudo		= 2,	// Other pseudo field (probably for forms)
+	//REF_union		= 1,	// Pseudo field for union, never set
+	//REF_pseudo		= 2,	// Other pseudo field (probably for forms), unused
 	REF_null		= 4,	// Only here cause of related null reference
 	REF_fetch_array	= 8,	// Need to fetch full array
 	REF_literal		= 16,	// Reference is to a constant
@@ -1431,7 +1458,7 @@ const int MAX_TRA_OPTIONS	= 8;
 struct mdbb {
 	gpre_dbb* mdbb_database;
 	gpre_req* mdbb_dpb_request;
-	gpre_req* mdbb_dpb_extend_request;
+	//gpre_req* mdbb_dpb_extend_request;	// unused
 };
 
 
@@ -1452,7 +1479,9 @@ struct rdy {
 	gpre_req* rdy_request;		// dpb message & info
 	rdy* rdy_next;
 	gpre_dbb* rdy_database;
+#ifdef GPRE_COBOL
 	USHORT rdy_id;				// id for unique string variable- MPEXL COB
+#endif
 	TEXT *rdy_filename;
 };
 
@@ -1462,7 +1491,7 @@ const size_t RDY_LEN = sizeof(rdy);
 // Enumerated field type block
 
 struct field_type {
-	gpre_sym* typ_symbol;		// Actual symbol
+	gpre_sym* typ_symbol;		// Actual symbol, set but never used
 	gpre_fld* typ_field;		// Owner
 	SSHORT typ_value;			// Value of type
 };
@@ -1509,9 +1538,9 @@ struct upd {
 	gpre_ctx* upd_source;		// context being modified
 	gpre_ctx* upd_update;		// update context
 	gpre_port* upd_port;		// port for update
-	upd* upd_outer;				// outer modify, if any
+	//upd* upd_outer;				// outer modify, if any; unused
 	gpre_nod* upd_assignments;	// assignments to port
-	ref* upd_array_references;	// array references under modify
+	//ref* upd_array_references;	// array references under modify; unused
 };
 
 const size_t UPD_LEN = sizeof(upd);

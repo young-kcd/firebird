@@ -47,7 +47,7 @@ gpre_req*	MSC_request(req_t);
 SCHAR*		MSC_string(const TEXT*);
 gpre_sym*	MSC_symbol(sym_t, const TEXT*, USHORT, gpre_ctx*);
 gpre_nod*	MSC_unary(nod_t, gpre_nod*);
-gpre_usn*	MSC_username(SCHAR*, USHORT);
+gpre_usn*	MSC_username(const SCHAR*, USHORT);
 
 #endif // GPRE_MSC_PROTO_H
 

@@ -2144,8 +2144,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 			put_cstring(request, priv_block->prv_object_dyn, priv_block->prv_relation->str_string);
 			put_cstring(request, priv_block->prv_user_dyn, priv_block->prv_username);
 
-			if ((priv_block->prv_privileges & PRV_grant_option) &&
-				(action->act_type == ACT_dyn_grant || !(request->req_database->dbb_flags & DBB_v3)))
+			if (priv_block->prv_privileges & PRV_grant_option)
 			{
 				put_numeric(request, isc_dyn_grant_options, 1);
 			}
@@ -2179,8 +2178,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 				put_cstring(request, isc_dyn_fld_name, string->str_string);
 				put_cstring(request, priv_block->prv_user_dyn, priv_block->prv_username);
 
-				if ((priv_block->prv_privileges & PRV_grant_option) &&
-					(action->act_type == ACT_dyn_grant || !(request->req_database->dbb_flags & DBB_v3)))
+				if (priv_block->prv_privileges & PRV_grant_option)
 				{
 					put_numeric(request, isc_dyn_grant_options, 1);
 				}
@@ -2200,8 +2198,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 			put_cstring(request, priv_block->prv_object_dyn, priv_block->prv_relation->str_string);
 			put_cstring(request, priv_block->prv_user_dyn, priv_block->prv_username);
 
-			if ((priv_block->prv_privileges & PRV_grant_option) &&
-				(action->act_type == ACT_dyn_grant || !(request->req_database->dbb_flags & DBB_v3)))
+			if (priv_block->prv_privileges & PRV_grant_option)
 			{
 				put_numeric(request, isc_dyn_grant_options, 1);
 			}

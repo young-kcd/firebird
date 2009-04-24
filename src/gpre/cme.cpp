@@ -254,7 +254,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		return;
 
 	case nod_agg_count:
-		if (node->nod_arg[0] && !(request->req_database->dbb_flags & DBB_v3))
+		if (node->nod_arg[0])
 		{
 			if (node->nod_arg[1])
 				request->add_byte(blr_agg_count_distinct);
@@ -311,7 +311,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 	//return;
 
 	case nod_agg_total:
-		if (node->nod_arg[1] && !(request->req_database->dbb_flags & DBB_v3))
+		if (node->nod_arg[1])
 		{
 			request->add_byte(blr_agg_total_distinct);
 		}
@@ -321,7 +321,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 		return;
 
 	case nod_agg_average:
-		if (node->nod_arg[1] && !(request->req_database->dbb_flags & DBB_v3))
+		if (node->nod_arg[1])
 		{
 			request->add_byte(blr_agg_average_distinct);
 		}
@@ -1142,7 +1142,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 	{
 		if (gpreGlob.sw_ids)
 		{
-			if (context->ctx_alias && !(request->req_database->dbb_flags & DBB_v3))
+			if (context->ctx_alias)
 			{
 				request->add_byte(blr_rid2);
 			}
@@ -1154,7 +1154,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 		}
 		else
 		{
-			if (context->ctx_alias && !(request->req_database->dbb_flags & DBB_v3))
+			if (context->ctx_alias)
 			{
 				request->add_byte(blr_relation2);
 			}
@@ -1163,7 +1163,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 			CMP_stuff_symbol(request, relation->rel_symbol);
 		}
 
-		if (context->ctx_alias && !(request->req_database->dbb_flags & DBB_v3))
+		if (context->ctx_alias)
 		{
 			request->add_cstring(context->ctx_alias);
 		}
@@ -1206,7 +1206,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 
 	if (selection->rse_join_type == nod_nothing)
 	{
-		if ((selection->rse_flags & RSE_singleton) && !(request->req_database->dbb_flags & DBB_v3))
+		if (selection->rse_flags & RSE_singleton)
 		{
 			request->add_byte(blr_singular);
 		}
@@ -1512,12 +1512,14 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 		request->add_byte(blr_dbkey);
 		request->add_byte(context->ctx_internal);
 	}
+	/* This code cannot run because REF_union is never activated, parser bug?
 	else if (reference->ref_flags & REF_union)
 	{
 		request->add_byte(blr_fid);
 		request->add_byte(context->ctx_internal);
 		request->add_word(reference->ref_id);
 	}
+	*/
 	else if (gpreGlob.sw_ids)
 	{
 		request->add_byte(blr_fid);
@@ -1563,17 +1565,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 		{
 			string = reference->ref_value;
 
-			if (!(request->req_database->dbb_flags & DBB_v3))
-				request->add_byte(blr_double);
-			else if (gpreGlob.sw_know_interp)
-			{
-				// then must be using blr_version5
-				request->add_byte(blr_text2);
-				request->add_word(ttype_ascii);
-			}
-			else
-				request->add_byte(blr_text);
-
+			request->add_byte(blr_double);
 			request->add_word(strlen(string));
 			while (*string)
 				request->add_byte(*string++);

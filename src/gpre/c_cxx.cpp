@@ -109,7 +109,7 @@ static void gen_s_start(const act*, int);
 static void gen_segment(const act*, int);
 static void gen_select(const act*, int);
 static void gen_send(const act*, const gpre_port*, int);
-static void gen_slice(const act*, ref*, int);
+static void gen_slice(const act*, const ref*, int);
 static void gen_start(const act*, const gpre_port*, int, bool);
 static void gen_store(const act*, int);
 static void gen_t_start(const act*, int);
@@ -3093,11 +3093,6 @@ static void gen_select( const act* action, int column)
 			asgn_to(action, (ref*) var_list->nod_arg[i], column);
 		}
 
-	if (request->req_database->dbb_flags & DBB_v3) {
-		gen_receive(action, column, port);
-		printa(column, "if (!SQLCODE && %s)", name);
-		printa(column + INDENT, "SQLCODE = -1;");
-	}
 	endp(column);
 
 	printa(column - INDENT, "else");
@@ -3133,7 +3128,7 @@ static void gen_send( const act* action, const gpre_port* port, int column)
 //		Generate support for get/put slice statement.
 //
 
-static void gen_slice( const act* action, ref* var_reference, int column)
+static void gen_slice( const act* action, const ref* var_reference, int column)
 {
 	const TEXT* pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
 (char*) %I1, (short) %N2, %I1v, %I1s, %S5, &isc_array_length);";

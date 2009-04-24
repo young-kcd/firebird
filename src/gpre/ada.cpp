@@ -2795,12 +2795,6 @@ static void gen_select( const act* action, int column)
 		for (int i = 0; i < var_list->nod_count; i++)
 			asgn_to(action, (ref*) var_list->nod_arg[i], column);
 	}
-	if (request->req_database->dbb_flags & DBB_v3) {
-		gen_receive(action, column, port);
-		printa(column, "if (SQLCODE = 0) AND (%s /= 0) then", name);
-		printa(column + INDENT, "SQLCODE := -1;");
-		endif(column);
-	}
 
 	printa(column - INDENT, "else");
 	printa(column, "SQLCODE := 100;");
@@ -2841,15 +2835,15 @@ static void gen_slice( const act* action, int column)
 		"firebird.PUT_SLICE (%V1 %RF%DH%RE, %RF%RT%RE, %RF%FR%RE, %N1, \
 %I1, %N2, %I1v, %I1s, %RF%S5'address%RE);";
 
-	gpre_req* request = action->act_request;
-	slc* slice = (slc*) action->act_object;
-	gpre_req* parent_request = slice->slc_parent_request;
+	const gpre_req* request = action->act_request;
+	const slc* slice = (slc*) action->act_object;
+	const gpre_req* parent_request = slice->slc_parent_request;
 
 	// Compute array size
 
 	printa(column, "isc_%ds := %d", request->req_ident, slice->slc_field->fld_array->fld_length);
 
-	slc::slc_repeat* tail = slice->slc_rpt;
+	const slc::slc_repeat* tail = slice->slc_rpt;
 	for (const slc::slc_repeat* const end = tail + slice->slc_dimensions; tail < end; ++tail)
 	{
 		if (tail->slc_upper != tail->slc_lower) {
@@ -2866,7 +2860,7 @@ static void gen_slice( const act* action, int column)
 
 	// Make assignments to variable vector
 
-	ref* reference;
+	const ref* reference;
 	for (reference = request->req_values; reference; reference = reference->ref_next)
 	{
 		printa(column, "isc_%dv (%d) := %s;", request->req_ident,

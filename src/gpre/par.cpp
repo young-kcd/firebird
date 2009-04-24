@@ -1212,7 +1212,7 @@ static void block_data_list( const gpre_dbb* db)
 		return;
 
 	const TEXT* name = db->dbb_name->sym_string;
-	dbd* list = gpreGlob.global_db_list;
+	const dbd* list = gpreGlob.global_db_list;
 
 	if (gpreGlob.global_db_count)
 		if (gpreGlob.global_db_count > MAX_DATABASES) {
@@ -1222,7 +1222,7 @@ static void block_data_list( const gpre_dbb* db)
 			for (const dbd* const end = gpreGlob.global_db_list + gpreGlob.global_db_count;
 				list < end; list++)
 			{
-				if (!strcmp(name, list->dbb_name))
+				if (!strcmp(name, list->dbd_name))
 					return;
 			}
 		}
@@ -1230,7 +1230,7 @@ static void block_data_list( const gpre_dbb* db)
 	if (gpreGlob.global_db_count >= MAX_DATABASES)
 		return;
 
-	strcpy(list->dbb_name, name);
+	strcpy(list->dbd_name, name); // safe while dbd_name is defined bigger than dbb_name->sym_string
 	gpreGlob.global_db_count++;
 }
 #endif
@@ -1464,7 +1464,7 @@ static act* par_based()
 	{
 	case lang_internal:
 	case lang_fortran:
-	case lang_epascal:
+	//case lang_epascal:
 	case lang_c:
 	case lang_cxx:
 		do {

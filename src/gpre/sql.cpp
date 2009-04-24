@@ -83,7 +83,7 @@ static act* act_fetch();
 static act* act_grant_revoke(act_t);
 static act* act_include();
 static act* act_insert();
-static act* act_insert_blob(const TEXT *);
+static act* act_insert_blob();
 static act* act_lock();
 static act* act_openclose(act_t);
 static act* act_open_blob(act_t, gpre_sym*);
@@ -107,7 +107,7 @@ static void			connect_opts(const TEXT**, const TEXT**, const TEXT**, const TEXT*
 static gpre_file*	define_cache();
 #endif
 static gpre_file*	define_file();
-static gpre_file*	define_log_file(bool);
+static gpre_file*	define_log_file();
 static gpre_dbb*	dup_dbb(const gpre_dbb*);
 static void			error(const TEXT *, const TEXT *);
 static TEXT*		extract_string(bool);
@@ -123,14 +123,14 @@ static void			par_computed(gpre_req*, gpre_fld*);
 static gpre_req*	par_cursor(gpre_sym**);
 static dyn*			par_dynamic_cursor();
 static gpre_fld*	par_field(gpre_req*, gpre_rel*);
-static cnstrt*		par_field_constraint(gpre_req*, gpre_fld*, gpre_rel*);
+static cnstrt*		par_field_constraint(gpre_req*, gpre_fld*);
 static void			par_fkey_extension(cnstrt*);
 static bool			par_into(dyn*);
 static void			par_options(const TEXT**);
 static int			par_page_size();
 static gpre_rel*	par_relation(gpre_req*);
 static dyn*			par_statement();
-static cnstrt*		par_table_constraint(gpre_req*, gpre_rel*);
+static cnstrt*		par_table_constraint(gpre_req*);
 static bool			par_transaction_modes(gpre_tra*, bool);
 static bool			par_using(dyn*);
 static USHORT		resolve_dtypes(kwwords_t, bool);
@@ -485,7 +485,8 @@ void SQL_init()
 //
 //
 
-void SQL_par_field_collate( gpre_req* request, gpre_fld* field)
+void SQL_par_field_collate(gpre_req*, //request, 
+						   gpre_fld* field)
 {
 	if (MSC_match(KW_COLLATE))
 	{
@@ -1113,10 +1114,10 @@ static act* act_alter_database()
 			if (MSC_match(KW_LOG_FILE))
 				; // ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
-				database->dbb_flags |= DBB_cascade;
+				; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
 #ifdef FLINT_CACHE
 			else if (MSC_match(KW_CACHE))
-				database->dbb_flags |= DBB_drop_cache;
+				; // ignore DROP CACHE database->dbb_flags |= DBB_drop_cache;
 			else
 				PAR_error("only log or cache can be dropped");
 #else
@@ -1144,7 +1145,7 @@ static act* act_alter_database()
 				{
 					while (true)
 					{
-						gpre_file* logfile = define_log_file(false);
+						gpre_file* logfile = define_log_file();
 						logfile->fil_next = database->dbb_logfiles;
 						database->dbb_logfiles = logfile;
 						if (!MSC_match(KW_COMMA)) {
@@ -1154,7 +1155,7 @@ static act* act_alter_database()
 					}
 
 					if (MSC_match(KW_OVERFLOW))
-						define_log_file(true); // skip
+						define_log_file();
 					else
 						PAR_error("Overflow log specification required for this configuration");
 
@@ -1162,7 +1163,7 @@ static act* act_alter_database()
 				else if (MSC_match(KW_BASE_NAME))
 				{
 					database->dbb_flags |= DBB_log_serial;
-					database->dbb_logfiles = define_log_file(true);
+					database->dbb_logfiles = define_log_file();
 				}
 			}
 #ifdef FLINT_CACHE
@@ -1263,7 +1264,7 @@ static act* act_alter_domain()
 		{
 			MSC_match(KW_CONSTRAINT);
 			if (gpreGlob.token_global.tok_keyword == KW_CHECK) {
-				cnstrt* cnstrt_str = par_field_constraint(request, field, 0);
+				cnstrt* cnstrt_str = par_field_constraint(request, field);
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 			}
@@ -1383,7 +1384,7 @@ static act* act_alter_table()
 			case KW_UNIQUE:
 			case KW_FOREIGN:
 			case KW_CHECK:
-				cnstrt_str = par_table_constraint(request, relation);
+				cnstrt_str = par_table_constraint(request);
 				*cnstrt_ptr = cnstrt_str;
 				cnstrt_ptr = &cnstrt_str->cnstrt_next;
 				break;
@@ -1819,7 +1820,7 @@ static act* act_create_domain()
 		case KW_CONSTRAINT:
 		case KW_CHECK:
 		case KW_NOT:
-			*cnstrt_ptr = par_field_constraint(request, field, 0);
+			*cnstrt_ptr = par_field_constraint(request, field);
 			cnstrt_ptr = &(*cnstrt_ptr)->cnstrt_next;
 			break;
 
@@ -2039,7 +2040,7 @@ static act* act_create_table()
 		case KW_UNIQUE:
 		case KW_FOREIGN:
 		case KW_CHECK:
-			*cnstrt_ptr = par_table_constraint(request, relation);
+			*cnstrt_ptr = par_table_constraint(request);
 			cnstrt_ptr = &(*cnstrt_ptr)->cnstrt_next;
 			break;
 
@@ -3471,7 +3472,7 @@ static act* act_insert()
 	par_options(&transaction);
 
 	if (MSC_match(KW_CURSOR))
-		return act_insert_blob(transaction);
+		return act_insert_blob();
 
 	if (!MSC_match(KW_INTO))
 		CPR_s_error("INTO");
@@ -3620,9 +3621,7 @@ static act* act_insert()
 //		Process SQL INSERT statement.
 //
 
-// Do I miss anything here? The parameter is not used!
-// TEXT is supposedly to be transaction.
-static act* act_insert_blob(const TEXT* transaction)
+static act* act_insert_blob()
 {
 	// Handle dynamic SQL statement, if appropriate
 
@@ -4957,7 +4956,7 @@ static gpre_file* define_file()
 //		define a log file
 //
 
-static gpre_file* define_log_file(bool log_serial)
+static gpre_file* define_log_file()
 {
 	gpre_file* file = (gpre_file*) MSC_alloc(FIL_LEN);
 	if (isQuoted(gpreGlob.token_global.tok_type))
@@ -5185,7 +5184,7 @@ static gpre_index* make_index( gpre_req* request, const TEXT* string)
 		index = MET_make_index(s);
 		if (request)
 			request->req_database = gpreGlob.isc_databases;
-		index->ind_flags |= IND_meta;
+		//index->ind_flags |= IND_meta; // nobody uses this info
 	}
 	else
 		PAR_error("Can only reference INDEX in context of single database");
@@ -5553,7 +5552,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 		case KW_REFERENCES:
 		case KW_CHECK:
 		case KW_NOT:
-			*constraint_ref = par_field_constraint(request, field, relation);
+			*constraint_ref = par_field_constraint(request, field);
 			constraint_ref = &(*constraint_ref)->cnstrt_next;
 			break;
 
@@ -5592,7 +5591,7 @@ static gpre_fld* par_field( gpre_req* request, gpre_rel* relation)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //
 
-static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field, gpre_rel* relation)
+static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field)
 {
 	cnstrt* new_constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
@@ -5895,7 +5894,7 @@ static void par_fkey_extension(cnstrt* cnstrt_val)
 //		ALTER TABLE statement. Constraint maybe table or column level.
 //
 
-static cnstrt* par_table_constraint( gpre_req* request, gpre_rel* relation)
+static cnstrt* par_table_constraint( gpre_req* request)
 {
 	cnstrt* constraint = (cnstrt*) MSC_alloc(CNSTRT_LEN);
 
@@ -6293,8 +6292,9 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 
 	if (action_type == ACT_drop_database)
 	{
-		if (MSC_match(KW_CASCADE))
-			database->dbb_flags |= DBB_cascade;
+		MSC_match(KW_CASCADE); // Commented the original code to avoid a warning
+		//if (MSC_match(KW_CASCADE))
+		//	; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
 		// TMN: ERROR ERROR we cant return _nothing* from a function returning
 		// a bool. I changed this to false to flag an error, but we have to
 		// look into this.
@@ -6312,10 +6312,10 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 			if (MSC_match(KW_LOG_FILE))
 				; // Ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
-				database->dbb_flags |= DBB_cascade;
+				; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
 #ifdef FLINT_CACHE
 			else if (MSC_match(KW_CACHE))
-				database->dbb_flags |= DBB_drop_cache;
+				; // ignore DROP CACHE database->dbb_flags |= DBB_drop_cache;
 			else
 				PAR_error("only log files or shared cache can be dropped");	// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
 #else
@@ -6369,7 +6369,7 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 			{
 				while (true)
 				{
-					gpre_file* logfile = define_log_file(false);
+					gpre_file* logfile = define_log_file();
 					logfile->fil_next = database->dbb_logfiles;
 					database->dbb_logfiles = logfile;
 					if (!MSC_match(KW_COMMA)) {
@@ -6379,13 +6379,13 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				}
 
 				if (MSC_match(KW_OVERFLOW))
-					define_log_file(true); // skip
+					define_log_file();
 				else
 					PAR_error("Overflow log specification required for this configuration");
 			}
 			else if (MSC_match(KW_BASE_NAME)) {
 				database->dbb_flags |= DBB_log_serial;
-				database->dbb_logfiles = define_log_file(true);
+				database->dbb_logfiles = define_log_file();
 			}
 		}
 #ifdef FLINT_CACHE

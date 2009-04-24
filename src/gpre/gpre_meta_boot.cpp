@@ -324,14 +324,14 @@ void MET_fini( gpre_dbb* end)
  *		If found, return string. If not, return NULL.
  */
 
-const SCHAR* MET_generator(const TEXT* string, gpre_dbb* db)
+const SCHAR* MET_generator(const TEXT* string, const gpre_dbb* db)
 {
 	SCHAR name[NAME_SIZE];
 
 	strcpy(name, string);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_generator) && (db == (gpre_dbb*) (symbol->sym_object)))
+		if ((symbol->sym_type == SYM_generator) && (db == (gpre_dbb*) symbol->sym_object))
 		{
 			return symbol->sym_string;
 		}

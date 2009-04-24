@@ -499,9 +499,9 @@ int main(int argc, char* argv[])
 #ifdef FTN_BLK_DATA
 			else {
 				gpreGlob.global_db_count = 1;
-				char* dbn = gpreGlob.global_db_list[0].dbb_name;
-				strncpy(dbn, db->dbb_name->sym_string, dbd::dbb_size);
-				dbn[dbd::dbb_size - 1] = 0;
+				char* dbn = gpreGlob.global_db_list[0].dbd_name;
+				strncpy(dbn, db->dbd_name->sym_string, dbd::dbd_size);
+				dbn[dbd::dbd_size - 1] = 0;
 			}
 #endif
 			break;

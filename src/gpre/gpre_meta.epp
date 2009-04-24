@@ -47,6 +47,9 @@
 const int MAX_USER_LENGTH	= 33;
 const int MAX_PASSWORD_LENGTH	= 33;
 
+const char NEED_IB4_AT_LEAST[] = "Databases before IB4 are not supported";
+
+
 DATABASE DB = FILENAME "yachts.lnk" RUNTIME database->dbb_filename;
 
 static const UCHAR blr_bpb[] =
@@ -232,7 +235,7 @@ bool MET_database(gpre_dbb* database, bool print_version)
 
 		case isc_info_error:
 			// Error indicates that one of the  option
-			// was not understood by thr server. Make sure it was
+			// was not understood by the server. Make sure it was
 			// isc_info_db_sql_dialect and assume
 			// that the database dialect is SQL_DIALECT_V5
 			if ((gpreGlob.sw_server_version != 0) && (gpreGlob.sw_ods_version != 0))
@@ -250,6 +253,13 @@ bool MET_database(gpre_dbb* database, bool print_version)
 
 	if (!gpreGlob.dialect_specified)
 		gpreGlob.sw_sql_dialect = gpreGlob.compiletime_db_dialect;
+
+	if (gpreGlob.sw_ods_version < 8)
+	{
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
+	}
+
 	if (gpreGlob.sw_ods_version < 10)
 	{
 		if (gpreGlob.sw_sql_dialect != gpreGlob.compiletime_db_dialect)
@@ -379,71 +389,40 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 	DB = database->dbb_handle;
 	gds_trans = database->dbb_transaction;
 
-	if (!(database->dbb_flags & DBB_v3))
-	{
-		FOR(REQUEST_HANDLE database->dbb_domain_request)
-		F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ name
-			found = true;
-			field->fld_length = F.RDB$FIELD_LENGTH;
-			field->fld_scale = F.RDB$FIELD_SCALE;
-			field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-			field->fld_dtype =
-				MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
+	FOR(REQUEST_HANDLE database->dbb_domain_request)
+	F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ name
+		found = true;
+		field->fld_length = F.RDB$FIELD_LENGTH;
+		field->fld_scale = F.RDB$FIELD_SCALE;
+		field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
+		field->fld_dtype =
+			MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype)
-			{
-			case dtype_text:
-			case dtype_cstring:
-				field->fld_flags |= FLD_text;
-				break;
+		switch (field->fld_dtype)
+		{
+		case dtype_text:
+		case dtype_cstring:
+			field->fld_flags |= FLD_text;
+			break;
 
-			case dtype_blob:
-				field->fld_flags |= FLD_blob;
-				field->fld_seg_length = F.RDB$SEGMENT_LENGTH;
-				break;
-			}
+		case dtype_blob:
+			field->fld_flags |= FLD_blob;
+			field->fld_seg_length = F.RDB$SEGMENT_LENGTH;
+			break;
+		}
 
-			if (field->fld_dtype <= dtype_any_text) {
-				if (!F.RDB$CHARACTER_LENGTH.NULL)
-					field->fld_char_length = F.RDB$CHARACTER_LENGTH;
-				if (!F.RDB$CHARACTER_SET_ID.NULL)
-					field->fld_charset_id = F.RDB$CHARACTER_SET_ID;
-				if (!F.RDB$COLLATION_ID.NULL)
-					field->fld_collate_id = F.RDB$COLLATION_ID;
-			}
+		if (field->fld_dtype <= dtype_any_text) {
+			if (!F.RDB$CHARACTER_LENGTH.NULL)
+				field->fld_char_length = F.RDB$CHARACTER_LENGTH;
+			if (!F.RDB$CHARACTER_SET_ID.NULL)
+				field->fld_charset_id = F.RDB$CHARACTER_SET_ID;
+			if (!F.RDB$COLLATION_ID.NULL)
+				field->fld_collate_id = F.RDB$COLLATION_ID;
+		}
 
-			field->fld_ttype = INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
+		field->fld_ttype = INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
 
-		END_FOR;
-	}
-	else
-	{
-		FOR(REQUEST_HANDLE database->dbb_domain_request)
-		F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ name
-			found = true;
-			field->fld_length = F.RDB$FIELD_LENGTH;
-			field->fld_scale = F.RDB$FIELD_SCALE;
-			field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-			field->fld_dtype =
-				MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
-
-			switch (field->fld_dtype)
-			{
-			case dtype_text:
-			case dtype_cstring:
-				field->fld_flags |= FLD_text;
-				break;
-
-			case dtype_blob:
-				field->fld_flags |= FLD_blob;
-				field->fld_seg_length = F.RDB$SEGMENT_LENGTH;
-				break;
-			}
-
-			field->fld_ttype = INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
-
-		END_FOR;
-	}
+	END_FOR;
 
 	return found;
 }
@@ -735,104 +714,59 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 	gds_trans = database->dbb_transaction;
 
 	gpre_fld* field = NULL;
-	if (!(database->dbb_flags & DBB_v3))
-	{
-		FOR(REQUEST_HANDLE database->dbb_field_request)
-		RFR IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS WITH
-			RFR.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
-			RFR.RDB$FIELD_NAME EQ name AND
-			RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
-			field = (gpre_fld*) MSC_alloc(FLD_LEN);
-			field->fld_relation = relation;
-			field->fld_next = relation->rel_fields;
-			relation->rel_fields = field;
-			field->fld_id = RFR.RDB$FIELD_ID;
-			field->fld_length = F.RDB$FIELD_LENGTH;
-			field->fld_scale = F.RDB$FIELD_SCALE;
-			field->fld_position = RFR.RDB$FIELD_POSITION;
-			field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-			field->fld_dtype =
-				MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
+	FOR(REQUEST_HANDLE database->dbb_field_request)
+	RFR IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS WITH
+		RFR.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
+		RFR.RDB$FIELD_NAME EQ name AND
+		RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
+		field = (gpre_fld*) MSC_alloc(FLD_LEN);
+		field->fld_relation = relation;
+		field->fld_next = relation->rel_fields;
+		relation->rel_fields = field;
+		field->fld_id = RFR.RDB$FIELD_ID;
+		field->fld_length = F.RDB$FIELD_LENGTH;
+		field->fld_scale = F.RDB$FIELD_SCALE;
+		field->fld_position = RFR.RDB$FIELD_POSITION;
+		field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
+		field->fld_dtype =
+			MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
 
-			switch (field->fld_dtype)
-			{
-			case dtype_text:
-			case dtype_cstring:
-				field->fld_flags |= FLD_text;
-				break;
+		switch (field->fld_dtype)
+		{
+		case dtype_text:
+		case dtype_cstring:
+			field->fld_flags |= FLD_text;
+			break;
 
-			case dtype_blob:
-				field->fld_flags |= FLD_blob;
-				field->fld_seg_length = F.RDB$SEGMENT_LENGTH;
-				break;
-			}
+		case dtype_blob:
+			field->fld_flags |= FLD_blob;
+			field->fld_seg_length = F.RDB$SEGMENT_LENGTH;
+			break;
+		}
 
-			if (F.RDB$DIMENSIONS && !(database->dbb_flags & DBB_no_arrays))
-				get_array(database, F.RDB$FIELD_NAME, field);
+		if (F.RDB$DIMENSIONS)
+			get_array(database, F.RDB$FIELD_NAME, field);
 
-			if ((field->fld_dtype <= dtype_any_text) || (field->fld_dtype == dtype_blob))
-			{
-				if (!F.RDB$CHARACTER_LENGTH.NULL)
-					field->fld_char_length = F.RDB$CHARACTER_LENGTH;
-				if (!F.RDB$CHARACTER_SET_ID.NULL)
-					field->fld_charset_id = F.RDB$CHARACTER_SET_ID;
-				if (!RFR.RDB$COLLATION_ID.NULL)
-					field->fld_collate_id = RFR.RDB$COLLATION_ID;
-				else if (!F.RDB$COLLATION_ID.NULL)
-					field->fld_collate_id = F.RDB$COLLATION_ID;
-			}
+		if ((field->fld_dtype <= dtype_any_text) || (field->fld_dtype == dtype_blob))
+		{
+			if (!F.RDB$CHARACTER_LENGTH.NULL)
+				field->fld_char_length = F.RDB$CHARACTER_LENGTH;
+			if (!F.RDB$CHARACTER_SET_ID.NULL)
+				field->fld_charset_id = F.RDB$CHARACTER_SET_ID;
+			if (!RFR.RDB$COLLATION_ID.NULL)
+				field->fld_collate_id = RFR.RDB$COLLATION_ID;
+			else if (!F.RDB$COLLATION_ID.NULL)
+				field->fld_collate_id = F.RDB$COLLATION_ID;
+		}
 
-			field->fld_ttype =
-				INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
-			field->fld_symbol = symbol = MSC_symbol(SYM_field, name, length, (gpre_ctx*) field);
-			HSH_insert(symbol);
-			field->fld_global = symbol =
-				MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
-						   fb_utils::name_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
-		END_FOR;
-	}
-	else
-	{
-		FOR(REQUEST_HANDLE database->dbb_field_request)
-		RFR IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS WITH
-			RFR.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
-			RFR.RDB$FIELD_NAME EQ name AND
-			RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
-			field = (gpre_fld*) MSC_alloc(FLD_LEN);
-			field->fld_relation = relation;
-			field->fld_next = relation->rel_fields;
-			relation->rel_fields = field;
-			field->fld_id = RFR.RDB$FIELD_ID;
-			field->fld_length = F.RDB$FIELD_LENGTH;
-			field->fld_scale = F.RDB$FIELD_SCALE;
-			field->fld_position = RFR.RDB$FIELD_POSITION;
-			field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-			field->fld_dtype = MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
-
-			switch (field->fld_dtype)
-			{
-			case dtype_text:
-			case dtype_cstring:
-				field->fld_flags |= FLD_text;
-				break;
-
-			case dtype_blob:
-				field->fld_flags |= FLD_blob;
-				field->fld_seg_length = F.RDB$SEGMENT_LENGTH;
-				break;
-			}
-
-			if (!(database->dbb_flags & DBB_no_arrays))
-				get_array(database, F.RDB$FIELD_NAME, field);
-
-			field->fld_ttype = INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
-			field->fld_symbol = symbol = MSC_symbol(SYM_field, name, length, (gpre_ctx*) field);
-			HSH_insert(symbol);
-			field->fld_global = symbol =
-				MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
-						   fb_utils::name_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
-		END_FOR;
-	}
+		field->fld_ttype =
+			INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
+		field->fld_symbol = symbol = MSC_symbol(SYM_field, name, length, (gpre_ctx*) field);
+		HSH_insert(symbol);
+		field->fld_global = symbol =
+			MSC_symbol(SYM_field, RFR.RDB$FIELD_SOURCE,
+					   fb_utils::name_length(RFR.RDB$FIELD_SOURCE), (gpre_ctx*) field);
+	END_FOR;
 
 	return field;
 }
@@ -944,7 +878,7 @@ void MET_fini(gpre_dbb* end)
 
 			database->dbb_field_request = 0;
 			database->dbb_flds_request = 0;
-			database->dbb_relation_request = 0;
+			//database->dbb_relation_request = 0;
 			database->dbb_procedure_request = 0;
 			database->dbb_udf_request = 0;
 			database->dbb_trigger_request = 0;
@@ -955,7 +889,7 @@ void MET_fini(gpre_dbb* end)
 			database->dbb_array_request = 0;
 			database->dbb_dimension_request = 0;
 			database->dbb_domain_request = 0;
-			database->dbb_generator_request = 0;
+			//database->dbb_generator_request = 0;
 			database->dbb_view_request = 0;
 			database->dbb_primary_key_request = 0;
 		}
@@ -969,12 +903,12 @@ void MET_fini(gpre_dbb* end)
  *		If found, return string. If not, return NULL.
  */
 
-const SCHAR* MET_generator(const TEXT* string, gpre_dbb* database)
+const SCHAR* MET_generator(const TEXT* string, const gpre_dbb* database)
 {
 	const MetIdentifier name(string);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
-		if ((symbol->sym_type == SYM_generator) && (database == (gpre_dbb*) (symbol->sym_object)))
+		if ((symbol->sym_type == SYM_generator) && (database == (gpre_dbb*) symbol->sym_object))
 		{
 			return symbol->sym_string;
 		}
@@ -1253,80 +1187,41 @@ udf* MET_get_udf(gpre_dbb* database, const TEXT* string)
 	if (the_udf->udf_flags & UDF_scanned)
 		return the_udf;
 
-	if (database->dbb_flags & DBB_v3)
-	{
-		// Version of V4 request without new V4 metadata
-		FOR(REQUEST_HANDLE database->dbb_udf_request)
-		UDF_DEF IN RDB$FUNCTIONS CROSS
-			UDF_ARG IN RDB$FUNCTION_ARGUMENTS
-			WITH UDF_DEF.RDB$FUNCTION_NAME EQ name AND
-			UDF_DEF.RDB$FUNCTION_NAME EQ UDF_ARG.RDB$FUNCTION_NAME AND
-			UDF_DEF.RDB$RETURN_ARGUMENT != UDF_ARG.RDB$ARGUMENT_POSITION
-			SORTED BY DESCENDING UDF_ARG.RDB$ARGUMENT_POSITION;
+	FOR(REQUEST_HANDLE database->dbb_udf_request)
+	UDF_DEF IN RDB$FUNCTIONS CROSS
+		UDF_ARG IN RDB$FUNCTION_ARGUMENTS
+		WITH UDF_DEF.RDB$FUNCTION_NAME EQ name AND
+		UDF_DEF.RDB$FUNCTION_NAME EQ UDF_ARG.RDB$FUNCTION_NAME AND
+		UDF_DEF.RDB$RETURN_ARGUMENT != UDF_ARG.RDB$ARGUMENT_POSITION
+		SORTED BY DESCENDING UDF_ARG.RDB$ARGUMENT_POSITION;
 
-			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
-			field->fld_next = the_udf->udf_inputs;
-			the_udf->udf_inputs = field;
-			the_udf->udf_args++;
-			field->fld_position = UDF_ARG.RDB$ARGUMENT_POSITION;
-			field->fld_length = UDF_ARG.RDB$FIELD_LENGTH;
-			field->fld_scale = UDF_ARG.RDB$FIELD_SCALE;
-			field->fld_sub_type = UDF_ARG.RDB$FIELD_SUB_TYPE;
-			field->fld_dtype =
-				MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE, &field->fld_length);
+		gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
+		field->fld_next = the_udf->udf_inputs;
+		the_udf->udf_inputs = field;
+		the_udf->udf_args++;
+		field->fld_position = UDF_ARG.RDB$ARGUMENT_POSITION;
+		field->fld_length = UDF_ARG.RDB$FIELD_LENGTH;
+		field->fld_scale = UDF_ARG.RDB$FIELD_SCALE;
+		field->fld_sub_type = UDF_ARG.RDB$FIELD_SUB_TYPE;
+		field->fld_dtype =
+			MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE, &field->fld_length);
+		switch (field->fld_dtype)
+		{
+		case dtype_text:
+		case dtype_cstring:
+			field->fld_flags |= FLD_text;
+			if (!UDF_ARG.RDB$CHARACTER_SET_ID.NULL)
+				field->fld_charset_id = UDF_ARG.RDB$CHARACTER_SET_ID;
+			field->fld_ttype = INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
+			break;
 
-			switch (field->fld_dtype)
-			{
-			case dtype_text:
-			case dtype_cstring:
-				field->fld_flags |= FLD_text;
-				break;
-
-			case dtype_blob:
-				field->fld_flags |= FLD_blob;
-				break;
-			}
-		END_FOR;
-	}
-	else
-	{
-		// Same request as above, but with V4 metadata also fetched
-		FOR(REQUEST_HANDLE database->dbb_udf_request)
-		UDF_DEF IN RDB$FUNCTIONS CROSS
-			UDF_ARG IN RDB$FUNCTION_ARGUMENTS
-			WITH UDF_DEF.RDB$FUNCTION_NAME EQ name AND
-			UDF_DEF.RDB$FUNCTION_NAME EQ UDF_ARG.RDB$FUNCTION_NAME AND
-			UDF_DEF.RDB$RETURN_ARGUMENT != UDF_ARG.RDB$ARGUMENT_POSITION
-			SORTED BY DESCENDING UDF_ARG.RDB$ARGUMENT_POSITION;
-
-			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
-			field->fld_next = the_udf->udf_inputs;
-			the_udf->udf_inputs = field;
-			the_udf->udf_args++;
-			field->fld_position = UDF_ARG.RDB$ARGUMENT_POSITION;
-			field->fld_length = UDF_ARG.RDB$FIELD_LENGTH;
-			field->fld_scale = UDF_ARG.RDB$FIELD_SCALE;
-			field->fld_sub_type = UDF_ARG.RDB$FIELD_SUB_TYPE;
-			field->fld_dtype =
-				MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE, &field->fld_length);
-			switch (field->fld_dtype)
-			{
-			case dtype_text:
-			case dtype_cstring:
-				field->fld_flags |= FLD_text;
-				if (!UDF_ARG.RDB$CHARACTER_SET_ID.NULL)
-					field->fld_charset_id = UDF_ARG.RDB$CHARACTER_SET_ID;
-				field->fld_ttype = INTL_CS_COLL_TO_TTYPE(field->fld_charset_id, field->fld_collate_id);
-				break;
-
-			case dtype_blob:
-				field->fld_flags |= FLD_blob;
-				if (!UDF_ARG.RDB$CHARACTER_SET_ID.NULL)
-					field->fld_charset_id = UDF_ARG.RDB$CHARACTER_SET_ID;
-				break;
-			}
-		END_FOR;
-	}
+		case dtype_blob:
+			field->fld_flags |= FLD_blob;
+			if (!UDF_ARG.RDB$CHARACTER_SET_ID.NULL)
+				field->fld_charset_id = UDF_ARG.RDB$CHARACTER_SET_ID;
+			break;
+		}
+	END_FOR;
 
 	the_udf->udf_flags |= UDF_scanned;
 
@@ -1464,7 +1359,8 @@ void MET_load_hash_table(gpre_dbb* database)
 	bool post_v3_flag = false;
 	FB_API_HANDLE handle = 0;
 	FOR(REQUEST_HANDLE handle)
-	X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME = 'RDB$PROCEDURES' AND
+	X IN RDB$RELATIONS WITH
+		X.RDB$RELATION_NAME = 'RDB$PROCEDURES' AND
 		X.RDB$SYSTEM_FLAG = 1
 		post_v3_flag = true;
 
@@ -1472,60 +1368,38 @@ void MET_load_hash_table(gpre_dbb* database)
 	isc_release_request(gds_status, &handle);
 
 	if (!post_v3_flag)
-		database->dbb_flags |= DBB_v3;
+	{
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
+	}
 
-	gpre_sym* symbol;
 	SLONG length;
 
 	// Pick up all relations (necessary to parse parts of the GDML grammar)
 
-	if (database->dbb_flags & DBB_v3)
-	{
-		FOR(REQUEST_HANDLE handle)
-		X IN RDB$RELATIONS
-			gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
-			relation->rel_database = database;
-			relation->rel_next = database->dbb_relations;
-			database->dbb_relations = relation;
-			relation->rel_id = X.RDB$RELATION_ID;
-			relation->rel_symbol = symbol =
-				MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
-						   fb_utils::name_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
-			HSH_insert(symbol);
-			const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
-			gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text, dbk_len, false);
-			relation->rel_dbkey = dbkey;
-			dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
-			dbkey->fld_ttype = ttype_binary;
+	FOR(REQUEST_HANDLE handle)
+	X IN RDB$RELATIONS
+		gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
+		relation->rel_database = database;
+		relation->rel_next = database->dbb_relations;
+		database->dbb_relations = relation;
+		relation->rel_id = X.RDB$RELATION_ID;
+		gpre_sym* symbol = relation->rel_symbol =
+			MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
+					   fb_utils::name_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
+		HSH_insert(symbol);
+		const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
+		gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text, dbk_len, false);
+		relation->rel_dbkey = dbkey;
+		dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
+		dbkey->fld_ttype = ttype_binary;
 
-		END_FOR;
-	}
-	else
-	{
-		FOR(REQUEST_HANDLE handle)
-		X IN RDB$RELATIONS
-			gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
-			relation->rel_database = database;
-			relation->rel_next = database->dbb_relations;
-			database->dbb_relations = relation;
-			relation->rel_id = X.RDB$RELATION_ID;
-			relation->rel_symbol = symbol =
-				MSC_symbol(SYM_relation, X.RDB$RELATION_NAME,
-						   fb_utils::name_length(X.RDB$RELATION_NAME), (gpre_ctx*) relation);
-			HSH_insert(symbol);
-			const USHORT dbk_len = (X.RDB$DBKEY_LENGTH) ? X.RDB$DBKEY_LENGTH : 8;
-			gpre_fld* dbkey = MET_make_field("rdb$db_key", dtype_text, dbk_len, false);
-			relation->rel_dbkey = dbkey;
-			dbkey->fld_flags |= FLD_dbkey | FLD_text | FLD_charset;
-			dbkey->fld_ttype = ttype_binary;
+		if (!X.RDB$OWNER_NAME.NULL && (length = fb_utils::name_length(X.RDB$OWNER_NAME)))
+		{
+			relation->rel_owner = MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
+		}
 
-			if (!X.RDB$OWNER_NAME.NULL && (length = fb_utils::name_length(X.RDB$OWNER_NAME)))
-			{
-				relation->rel_owner = MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
-			}
-
-		END_FOR;
-	}
+	END_FOR;
 
 	isc_release_request(gds_status, &handle);
 
@@ -1535,10 +1409,10 @@ void MET_load_hash_table(gpre_dbb* database)
 	X IN RDB$PROCEDURES
 		gpre_prc* procedure = (gpre_prc*) MSC_alloc(REL_LEN);
 		procedure->prc_database = database;
-		procedure->prc_next = (gpre_prc*) database->dbb_procedures;
-		database->dbb_procedures = (gpre_rel*) procedure;
+		procedure->prc_next = database->dbb_procedures;
+		database->dbb_procedures = procedure;
 		procedure->prc_id = X.RDB$PROCEDURE_ID;
-		procedure->prc_symbol = symbol =
+		gpre_sym* symbol = procedure->prc_symbol =
 			MSC_symbol(SYM_procedure, X.RDB$PROCEDURE_NAME,
 					   fb_utils::name_length(X.RDB$PROCEDURE_NAME), (gpre_ctx*) procedure);
 		HSH_insert(symbol);
@@ -1546,7 +1420,8 @@ void MET_load_hash_table(gpre_dbb* database)
 			procedure->prc_owner = MSC_symbol(SYM_username, X.RDB$OWNER_NAME, length, NULL);
 	END_FOR
 	ON_ERROR
-		// assume pre V4 database, no procedures
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
 	END_ERROR;
 
 	if (handle)
@@ -1575,7 +1450,7 @@ void MET_load_hash_table(gpre_dbb* database)
 			p = FUN.RDB$QUERY_NAME;
 			p[length] = 0;
 		}
-		an_udf->udf_symbol = symbol = MSC_symbol(SYM_udf, p, strlen(p), (gpre_ctx*) an_udf);
+		gpre_sym* symbol = an_udf->udf_symbol = MSC_symbol(SYM_udf, p, strlen(p), (gpre_ctx*) an_udf);
 		HSH_insert(symbol);
 
 		an_udf->udf_length = ARG.RDB$FIELD_LENGTH;
@@ -1584,7 +1459,7 @@ void MET_load_hash_table(gpre_dbb* database)
 		an_udf->udf_dtype =
 			MET_get_dtype(ARG.RDB$FIELD_TYPE, ARG.RDB$FIELD_SUB_TYPE, &an_udf->udf_length);
 
-		if (post_v3_flag)
+		if (an_udf->udf_dtype == dtype_text || an_udf->udf_dtype == dtype_cstring)
 		{
 			FOR(REQUEST_HANDLE handle2)
 			V4ARG IN RDB$FUNCTION_ARGUMENTS
@@ -1600,12 +1475,12 @@ void MET_load_hash_table(gpre_dbb* database)
 				an_udf->udf_ttype =
 					INTL_CS_COLL_TO_TTYPE(an_udf->udf_charset_id, COLL.RDB$COLLATION_ID);
 
-			END_FOR;
+			END_FOR
 		}
-
 	END_FOR
 	ON_ERROR
-		// Nothing
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
@@ -1626,7 +1501,7 @@ void MET_load_hash_table(gpre_dbb* database)
 		intlsym* iname = (intlsym*) MSC_alloc(INTLSYM_LEN + length);
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
-		iname->intlsym_symbol = symbol =
+		gpre_sym* symbol = iname->intlsym_symbol =
 			MSC_symbol(SYM_collate, p, strlen(p), (gpre_ctx*) iname);
 		HSH_insert(symbol);
 		iname->intlsym_type = INTLSYM_collation;
@@ -1658,7 +1533,8 @@ void MET_load_hash_table(gpre_dbb* database)
 
 	END_FOR
 	ON_ERROR
-		// assume pre V4 database, no collations
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
@@ -1678,7 +1554,7 @@ void MET_load_hash_table(gpre_dbb* database)
 		intlsym* iname = (intlsym*) MSC_alloc(INTLSYM_LEN + length);
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
-		iname->intlsym_symbol = symbol =
+		gpre_sym* symbol = iname->intlsym_symbol =
 			MSC_symbol(SYM_charset, p, strlen(p), (gpre_ctx*) iname);
 		HSH_insert(symbol);
 		iname->intlsym_type = INTLSYM_collation;
@@ -1708,7 +1584,8 @@ void MET_load_hash_table(gpre_dbb* database)
 
 	END_FOR
 	ON_ERROR
-		// assume pre V4 database, no character sets
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
@@ -1730,7 +1607,8 @@ void MET_load_hash_table(gpre_dbb* database)
 			CPR_warn("Default character set for database is not known");
 	END_FOR
 	ON_ERROR
-		// Assume V3 Db, no default charset
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
 	END_ERROR;
 
 	isc_release_request(gds_status, &handle);
@@ -1739,7 +1617,7 @@ void MET_load_hash_table(gpre_dbb* database)
 
 	FOR(REQUEST_HANDLE handle)
 	X IN RDB$GENERATORS
-		symbol = MSC_symbol(SYM_generator, X.RDB$GENERATOR_NAME,
+		gpre_sym* symbol = MSC_symbol(SYM_generator, X.RDB$GENERATOR_NAME,
 							fb_utils::name_length(X.RDB$GENERATOR_NAME), (gpre_ctx*) database);
 		HSH_insert(symbol);
 
@@ -1948,8 +1826,8 @@ static void get_array(gpre_dbb* database, const TEXT* field_name, gpre_fld* fiel
 		}
 	END_FOR
 	ON_ERROR
-		database->dbb_flags |= DBB_no_arrays;
-		return;
+		CPR_error(NEED_IB4_AT_LEAST);
+		CPR_abort();
 	END_ERROR;
 
 	if (!array_block)
@@ -2099,14 +1977,14 @@ static bool resolve_charset_and_collation(SSHORT* id, const UCHAR* charset, cons
 
 			END_FOR
 			ON_ERROR
-				// Assume V3 DB, without default character set
+				CPR_error(NEED_IB4_AT_LEAST);
+				CPR_abort();
 			END_ERROR;
 
 			isc_release_request(gds_status, &request);
 
 			if (charset == NULL)
 				charset = (UCHAR*) DEFAULT_CHARACTER_SET_NAME;
-
 		}
 
 		FOR(REQUEST_HANDLE request)

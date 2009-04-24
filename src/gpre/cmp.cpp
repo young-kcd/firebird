@@ -1664,7 +1664,9 @@ static gpre_port* make_port( gpre_req* request, ref* reference)
 		reference->ref_ident = CMP_next_ident();
 		reference->ref_parameter = port->por_count++;
 		reference->ref_port = port;
+#ifdef GPRE_FORTRAN
 		reference->ref_offset = port->por_length;
+#endif
 		port->por_length += field->fld_length;
 	}
 

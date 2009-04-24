@@ -592,7 +592,7 @@ void FTN_fini()
 	for (const dbd* const end = gpreGlob.global_db_list + gpreGlob.global_db_count;
 		 db_list < end; ++db_list)
 	{
-		const TEXT* name = db_list->dbb_name;
+		const TEXT* name = db_list->dbd_name;
 		fprintf(gpreGlob.out_file, "%sINTEGER*4  %s                %s{ database handle }\n",
 				   COLUMN, name, INLINE_COMMENT);
 		fprintf(gpreGlob.out_file, "%sCOMMON /%s/ %s\n", COLUMN, name, name);
@@ -3107,15 +3107,6 @@ static void gen_select(const act* action)
 			asgn_to(action, (const ref*) var_list->nod_arg[i]);
 	}
 
-	if (request->req_database->dbb_flags & DBB_v3) {
-		gen_receive(action, port);
-		printa(COLUMN, "IF (%s .NE. 0) THEN", name);
-		printa(COLUMN, "SQLCODE = -1");
-		printa(COLUMN, "ELSE");
-		printa(COLUMN, "SQLCODE = 0");
-		printa(COLUMN, "END IF");
-	}
-
 	printa(COLUMN, "ELSE");
 	printa(COLUMN, "SQLCODE = 100");
 	printa(COLUMN, "END IF");
@@ -3159,15 +3150,15 @@ static void gen_slice(const act* action)
 %I1, %N2, %I1v, %I1s, %RF%S5%RE)";
 
 	const gpre_req* request = action->act_request;
-	slc* slice = (slc*) action->act_object;
+	const slc* slice = (slc*) action->act_object;
 	const gpre_req* parent_request = slice->slc_parent_request;
 
 	// Compute array size
 
 	sprintf(buffer, "isc_%ds = %d", request->req_ident, slice->slc_field->fld_array->fld_length);
 
-	slc::slc_repeat* tail = slice->slc_rpt;
-	for (slc::slc_repeat* const end = tail + slice->slc_dimensions; tail < end; ++tail)
+	const slc::slc_repeat* tail = slice->slc_rpt;
+	for (const slc::slc_repeat* const end = tail + slice->slc_dimensions; tail < end; ++tail)
 	{
 		if (tail->slc_upper != tail->slc_lower) {
 			const ref* lower = (const ref*) tail->slc_lower->nod_arg[0];

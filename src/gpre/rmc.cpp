@@ -3460,15 +3460,6 @@ static void gen_select( const act* action)
 			asgn_to(action, (ref*) var_list->nod_arg[i]);
 		}
 
-	if (request->req_database->dbb_flags & DBB_v3) {
-		gen_receive(action, port);
-		printa(names[COLUMN], false, "IF %s NOT = 0 THEN", name);
-		printa(names[COLUMN], false, "MOVE -1 TO SQLCODE");
-		printa(names[COLUMN], false, "ELSE");
-		printa(names[COLUMN], false, "MOVE 0 TO SQLCODE");
-		printa(names[COLUMN], false, "END-IF");
-	}
-
 	printa(names[COLUMN], false, "ELSE");
 	printa(names[COLUMN], false, "MOVE 100 TO SQLCODE");
 	printa(names[COLUMN], false, "END-IF");

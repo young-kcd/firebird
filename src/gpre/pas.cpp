@@ -2755,13 +2755,6 @@ static void gen_select( const act* action, int column)
 		}
 	}
 
-	if (request->req_database->dbb_flags & DBB_v3) {
-		gen_receive(action, column, port);
-		printa(column, "if (SQLCODE = 0) AND (%s <> 0) then", name);
-		printa(column + INDENT, "SQLCODE := -1");
-		endp(column);
-	}
-
 	printa(column - INDENT, "else");
 	printa(column, "SQLCODE := 100;");
 	column -= INDENT;
@@ -2803,7 +2796,7 @@ static void gen_slice( const act* action, int column)
 %I1, %N2, %I1v, %I1s, %RF%S5%RE);";
 
 	const gpre_req* request = action->act_request;
-	slc* slice = (slc*) action->act_object;
+	const slc* slice = (slc*) action->act_object;
 	const gpre_req* parent_request = slice->slc_parent_request;
 
 	// Compute array size
@@ -2811,7 +2804,7 @@ static void gen_slice( const act* action, int column)
 	printa(column, "gds__%ds := %d", request->req_ident,
 		   slice->slc_field->fld_array->fld_length);
 
-	slc::slc_repeat *tail, *end;
+	const slc::slc_repeat *tail, *end;
 	for (tail = slice->slc_rpt, end = tail + slice->slc_dimensions; tail < end; ++tail)
 	{
 		if (tail->slc_upper != tail->slc_lower) {

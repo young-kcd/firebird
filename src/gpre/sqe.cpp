@@ -768,6 +768,7 @@ ref* SQE_parameter(gpre_req* request, bool aster_ok)
 
 	reference = (ref*) MSC_alloc(REF_LEN);
 
+	// This loop is a waste of time because the flag SYM_variable is never activated
 	for (gpre_sym* symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 	{
 		if (symbol->sym_type == SYM_variable) {
@@ -1232,6 +1233,7 @@ gpre_nod* SQE_variable(gpre_req* request, bool aster_ok, USHORT* paren_count, bo
 
 	ref* reference = (ref*) MSC_alloc(REF_LEN);
 
+	// This loop is a waste of time because the flag SYM_variable is never activated
 	for (gpre_sym* symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
 	{
 		if (symbol->sym_type == SYM_variable) {
@@ -1495,10 +1497,8 @@ static gpre_nod* implicit_any(gpre_req* request,
 			selection->rse_boolean = merge(selection->rse_boolean, node);
 			if (any_all == nod_ansi_all)
 				node = MSC_node(nod_ansi_all, 1);
-			else if (!(request->req_database->dbb_flags & DBB_v3))
-				node = MSC_node(nod_ansi_any, 1);
 			else
-				node = MSC_node(nod_any, 1);
+				node = MSC_node(nod_ansi_any, 1);
 			node->nod_count = 0;
 			node->nod_arg[0] = (gpre_nod*) selection;
 		}
@@ -1520,10 +1520,8 @@ static gpre_nod* implicit_any(gpre_req* request,
 		selection->rse_boolean = merge(selection->rse_boolean, node);
 		if (any_all == nod_ansi_all)
 			node = MSC_node(nod_ansi_all, 1);
-		else if (!(request->req_database->dbb_flags & DBB_v3))
-			node = MSC_node(nod_ansi_any, 1);
 		else
-			node = MSC_node(nod_any, 1);
+			node = MSC_node(nod_ansi_any, 1);
 		node->nod_count = 0;
 		node->nod_arg[0] = (gpre_nod*) selection;
 	}
@@ -2795,20 +2793,6 @@ static bool resolve_fields(gpre_nod*& fields, gpre_req* request, gpre_rse* selec
 		{
 			aggregate |= SQE_resolve(node, NULL, selection);
 			pair(node, 0);
-
-			switch (node->nod_type)
-			{
-				case nod_agg_count:
-				case nod_agg_max:
-				case nod_agg_min:
-				case nod_agg_average:
-				case nod_agg_total:
-					if (node->nod_arg[1] && (request->req_database->dbb_flags & DBB_v3))
-					{
-						selection->rse_reduced = MSC_unary(nod_sort, node->nod_arg[1]);
-					}
-					break;
-			}
 		}
 	}
 

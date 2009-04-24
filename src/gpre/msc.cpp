@@ -489,11 +489,12 @@ gpre_nod* MSC_unary(nod_t type, gpre_nod* arg)
 //		Set up for a new username.
 //
 
-gpre_usn* MSC_username(SCHAR* name, USHORT name_dyn)
+gpre_usn* MSC_username(const SCHAR* name, USHORT name_dyn)
 {
 	gpre_usn* username = (gpre_usn*) MSC_alloc(USN_LEN);
-	username->usn_name = (SCHAR*) MSC_alloc(strlen(name) + 1);
-	strcpy(username->usn_name, name);
+	char* newname = (char*) MSC_alloc(strlen(name) + 1);
+	username->usn_name = newname;
+	strcpy(newname, name);
 	username->usn_dyn = name_dyn;
 
 	username->usn_next = 0;
