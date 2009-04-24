@@ -76,14 +76,8 @@
 #endif
 
 
-// If the C compiler supports the ANSI const directive, we emit it before
-// BLR string definitions
-
-#if (defined (SOLARIS) || defined (AIX) || defined (WIN_NT))
 static const char* const CONST_STR	= "const ";
-#else
-static const char* const CONST_STR	= "";
-#endif
+
 
 const int MAX_SYM_SIZE		= 512;		// max length of symbol + terminator
 const int NAME_SIZE 	= 32;
