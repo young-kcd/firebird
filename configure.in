@@ -77,12 +77,12 @@ dnl CPU_TYPE=ppc64
 
   powerpc-*-aix*)
 dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
-  	comp=$(echo "$CXX" | (cut -c1-3 | tr [:upper:] [:lower:]))
-  	if test "$comp" = "xlc"; then
-		MAKEFILE_PREFIX=aix_powerpc_xlc
-	else
-		MAKEFILE_PREFIX=aix_powerpc
-	fi
+    comp=$(echo "$CXX" | cut -c1-3 | dd conv=lcase 2>/dev/null)
+    if test "$comp" = "xlc"; then
+        MAKEFILE_PREFIX=aix_powerpc_xlc
+    else
+        MAKEFILE_PREFIX=aix_powerpc
+    fi
     MAKEFILE_POSTFIX=aix
     PLATFORM=AIX
     INSTALL_PREFIX=aix
@@ -461,8 +461,7 @@ AC_SUBST(GPRE_LANGUAGE_MODULES)
 
 dnl Checks for programs.
 AC_PROG_AWK
-AC_PROG_CC  dnl EKU: C++ programs should not use CC, but at the moment all
-            dnl makefiles use $(CC) to link objects. This has to be changed!
+AC_PROG_CC_STDC
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_CXX
 AC_PROG_CPP
