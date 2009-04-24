@@ -1,3 +1,11 @@
+2009-04-24 17:56  alexpeshkoff
+
+	* firebird2/src/: jrd/ThreadData.cpp (1.4.4.1), remote/server.cpp
+	(1.126.2.16):
+
+	Backported fix for CORE-2306: fbserver terminated abnormally when
+	thread start failed
+
 2009-04-22 09:13  alexpeshkoff
 
 	* firebird2/src/utilities/nbackup.cpp (1.48.4.5):
