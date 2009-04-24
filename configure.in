@@ -668,7 +668,15 @@ fi
 CFLAGS="$savedFlags"
 fi
 AC_CHECK_FUNCS(semtimedop)
-AC_CHECK_FUNCS(posix_fadvise)
+
+# HPUX has a bug in .h files. To detect it we need C++ here.
+AC_LANG_PUSH(C++)
+#AC_CHECK_FUNCS(posix_fadvise)
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[#include <fcntl.h>]], [[posix_fadvise(0, 0, 0, 0);]])],
+	AC_DEFINE(HAVE_POSIX_FADVISE, 1, [Define this if posix_fadvise() is present on the platform]))
+AC_LANG_POP(C++)
+
 AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
 AC_CHECK_FUNCS(pthread_mutex_consistent_np)
 
