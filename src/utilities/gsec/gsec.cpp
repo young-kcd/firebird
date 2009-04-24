@@ -364,7 +364,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 		tdsec->tsec_throw = false;
 
-		GSEC_print_status(status, false);
+		GSEC_print_status(status);
 		if (uSvc->getStatus())
 		{
 			fb_utils::init_status(uSvc->getStatus());
@@ -1164,7 +1164,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 	return ret;
 }
 
-void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
+void GSEC_print_status(const ISC_STATUS* status_vector)
 {
 /**************************************
  *

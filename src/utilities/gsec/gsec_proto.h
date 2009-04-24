@@ -5,7 +5,7 @@
 #include "../common/UtilSvc.h"
 
 // Output reporting utilities
-void	GSEC_print_status(const ISC_STATUS*, bool exitOnError = true);
+void	GSEC_print_status(const ISC_STATUS*);
 void	GSEC_error_redirect(const ISC_STATUS*, USHORT);
 void	GSEC_error(USHORT);
 void	GSEC_print(USHORT, const char* str = 0);
