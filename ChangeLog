@@ -1,3 +1,73 @@
+2009-04-24 19:04  robocop
+
+	* firebird2/src/gpre/gpre.h (1.107):
+
+	Alex says all compilers should support "const" today.
+
+2009-04-24 17:52  robocop
+
+	* firebird2/src/utilities/gsec/: gsec.cpp (1.108), gsec_proto.h
+	(1.16):
+
+	Delete unused function params
+
+2009-04-24 17:51  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.94),
+	lang_helpers/gds_codes.pas (1.93), src/include/gen/codetext.h
+	(1.103), src/include/gen/iberror.h (1.107), src/include/gen/msgs.h
+	(1.132), src/include/gen/sql_code.h (1.109),
+	src/include/gen/sql_state.h (1.38), src/msgs/facilities2.sql
+	(1.62), src/msgs/messages2.sql (1.85), src/msgs/system_errors2.sql
+	(1.54), src/remote/server.cpp (1.248):
+
+	Fixed CORE-2306: fbserver terminated abnormally when thread start
+	failed
+
+2009-04-24 17:39  asfernandes
+
+	* firebird2/src/jrd/met.epp (1.279):
+
+	Fixed CORE-2427 - ALTER VIEW doesn't clear dependencies on old
+	views
+
+2009-04-24 17:26  robocop
+
+	* firebird2/src/gpre/: ada.cpp (1.62), c_cxx.cpp (1.85), cmd.cpp
+	(1.55), cme.cpp (1.55), cmp.cpp (1.47), cob.cpp (1.78), ftn.cpp
+	(1.73), gpre.cpp (1.106), gpre.h (1.106), gpre_meta.epp (1.70),
+	gpre_meta.h (1.20), gpre_meta_boot.cpp (1.65), msc.cpp (1.31),
+	msc_proto.h (1.20), par.cpp (1.82), pas.cpp (1.66), rmc.cpp (1.21),
+	sqe.cpp (1.66), sql.cpp (1.85):
+
+	Cleanup: - get rrid of IB3 support, - commnent unused enumeration
+	members, - delete unused function params
+
+2009-04-24 17:25  robocop
+
+	* firebird2/src/common/classes/tree.h (1.87):
+
+	Misc.
+
+2009-04-24 10:57  alexpeshkoff
+
+	* firebird2/configure.in (1.335):
+
+	Change method to detect presence of posix_fadvise()
+
+2009-04-24 10:35  alexpeshkoff
+
+	* firebird2/configure.in (1.334):
+
+	1. Better check for xlC presence.  2. Run tests in STDC mode
+	instead K&R.
+
+2009-04-24 10:16  alexpeshkoff
+
+	* firebird2/extern/btyacc/reader.c (1.3):
+
+	fixed warning
+
 2009-04-23 17:31  asfernandes
 
 	* firebird2/src/jrd/dyn_mod.epp (1.112):
