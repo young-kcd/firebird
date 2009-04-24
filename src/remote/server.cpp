@@ -198,6 +198,7 @@ inline bool bad_service(ISC_STATUS* status_vector, RDB rdb)
 // static data - NOT THREAD SAFE!
 
 static SLONG		threads_waiting		= 0;
+static SLONG		threads_total		= 0;
 static SLONG		extra_threads		= 0;
 static SERVER_REQ	request_que			= NULL;
 static SERVER_REQ	free_requests		= NULL;
@@ -526,11 +527,15 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					 */
 					extra_threads = threads_waiting - pending_requests;
 					if (extra_threads < 0) {
-						gds__thread_start(	loopThread,
-											(void*)(IPTR) flags,
-											THREAD_medium,
-											THREAD_ast,
-											0);
+						if (gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium,
+											  THREAD_ast, 0) != 0)
+						{
+							if (!threads_total)
+							{
+								gds__log("Could not start first worker thread - shutdown");
+								break;
+							}
+						}
 					}
 
 					REMOTE_TRACE(("Post event"));
@@ -4903,7 +4908,9 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 
 	USHORT inactive_count = 0;
 	USHORT timedout_count = 0;
+
 	THREAD_ENTER();
+	++threads_total;
 
 	rem_port* port;
 
@@ -5047,6 +5054,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 		}
 	}
 
+	--threads_total;
 	THREAD_EXIT();
 
 #ifdef WIN_NT

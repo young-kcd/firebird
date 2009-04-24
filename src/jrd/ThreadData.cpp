@@ -96,6 +96,8 @@ int API_ROUTINE gds__thread_start(
 	}
 	catch(const Firebird::status_exception& status) {
 		rc = status.value()[1];
+		// Thread start error is severe error - log it
+		gds__log_status("ThreadData::start() failed:", status.value());
 	}
 	return rc;
 }
