@@ -686,6 +686,7 @@ const
 	gds_net_server_shutdown              = 335544971;
 	gds_bad_conn_str                     = 335544972;
 	gds_bad_epb_form                     = 335544973;
+	gds_no_threads                       = 335544974;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

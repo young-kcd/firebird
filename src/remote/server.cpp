@@ -5398,6 +5398,10 @@ void Worker::start(USHORT flags)
 		{
 			++m_cntAll;
 		}
+		else if (!m_cntAll)
+		{
+			Firebird::Arg::Gds(isc_no_threads).raise();
+		}
 	}
 }
 

@@ -674,6 +674,7 @@ static const struct {
 	{335544971, "08006"}, // 651 net_server_shutdown
 	{335544972, "08001"}, // 652 bad_conn_str
 	{335544973, "HY000"}, // 653 bad_epb_form
+	{335544974, "08004"}, // 654 no_threads
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

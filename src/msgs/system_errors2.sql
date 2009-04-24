@@ -656,6 +656,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-902, '08', '006', 0, 651, 'net_server_shutdown', NULL, NULL)
 (-924, '08', '001', 0, 652, 'bad_conn_str', NULL, NULL)
 (-901, 'HY', '000', 0, 653, 'bad_epb_form', NULL, NULL)
+(-902, '08', '004', 0, 654, 'no_threads', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
