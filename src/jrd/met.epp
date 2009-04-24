@@ -1437,6 +1437,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 		CMP_release(tdbb, handle);
 	}
 
+	MET_delete_dependencies(tdbb, object_name, type, transaction);
 	store_dependencies(tdbb, csb, relation, object_name, type, transaction);
 
 	if (csb_ptr)
