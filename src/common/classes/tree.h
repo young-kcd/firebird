@@ -108,8 +108,8 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	typename Cmp = DefaultComparator<Key> >
 class BePlusTree
 {
-	static const int LeafCount = LEAF_PAGE_SIZE / sizeof(Value);
-	static const int NodeCount = NODE_PAGE_SIZE / sizeof(void*);
+	static const size_t LeafCount = LEAF_PAGE_SIZE / sizeof(Value);
+	static const size_t NodeCount = NODE_PAGE_SIZE / sizeof(void*);
 public:
 	explicit BePlusTree(Allocator *_pool)
 		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
