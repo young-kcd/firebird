@@ -1,3 +1,9 @@
+2009-04-25 17:10  asfernandes
+
+	* firebird2/src/common/classes/tree.h (1.88):
+
+	Fix warnings
+
 2009-04-24 19:04  robocop
 
 	* firebird2/src/gpre/gpre.h (1.107):
