@@ -892,10 +892,10 @@ static void gen_based( const act* action, int column)
 			if (*variable != '*' && field->fld_dtype <= dtype_varying &&
 				(field->fld_sub_type != 1 || field->fld_length > 1))
 			{
-			// *???????
-			//if (*variable != '*' && field->fld_dtype <= dtype_varying &&
-			//	field->fld_length > 1)
-			//
+				// *???????
+				//if (*variable != '*' && field->fld_dtype <= dtype_varying &&
+				//	field->fld_length > 1)
+				//
 				fprintf(gpreGlob.out_file, "[%d]", field->fld_length);
 			}
 	}
@@ -1408,8 +1408,8 @@ static void gen_database( const act* action, int column)
 	bool all_extern = true;
 
 	const gpre_dbb* db;
-	for (db = gpreGlob.isc_databases; db; db = db->dbb_next) {
-
+	for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
+	{
 		all_static = all_static && (db->dbb_scope == DBB_STATIC);
 		all_extern = all_extern && (db->dbb_scope == DBB_EXTERN);
 		if (db->dbb_scope == DBB_STATIC)
@@ -2222,6 +2222,7 @@ static void gen_finish( const act* action, int column)
 	// no hanbdles, so we finish all known databases
 
 	if (!db)
+	{
 		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			if ((action->act_error || (action->act_flags & ACT_sql)) && db != gpreGlob.isc_databases)
@@ -2233,6 +2234,7 @@ static void gen_finish( const act* action, int column)
 			printa(column + INDENT, "isc_detach_database (%s, &%s);",
 				   status_vector(action), db->dbb_name->sym_string);
 		}
+	}
 
 	set_sqlcode(action, column);
 }
@@ -2878,6 +2880,7 @@ static void gen_request(const gpre_req* request)
 	// Print out slice description language if there are arrays associated with request
 
 	for (const gpre_port* port = request->req_ports; port; port = port->por_next)
+	{
 		for (const ref* reference = port->por_references; reference; reference = reference->ref_next)
 		{
 			if (reference->ref_sdl) {
@@ -2893,19 +2896,23 @@ static void gen_request(const gpre_req* request)
 					   reference->ref_sdl_ident);
 			}
 		}
+	}
 
 	// Print out any blob parameter blocks required
 
 	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
+	{
 		if (blob->blb_bpb_length) {
 			printa(0, "static %schar\n   isc_%d [] = {", CONST_STR, blob->blb_bpb_ident);
 			gen_raw(blob->blb_bpb, blob->blb_bpb_length);
 			printa(INDENT, "};\n");
 		}
+	}
 
 	// If this is a GET_SLICE/PUT_slice, allocate some variables
 
-	if (request->req_type == REQ_slice) {
+	if (request->req_type == REQ_slice)
+	{
 		printa(0, "static %s", DCL_LONG);
 		printa(INDENT, "isc_%dv [%d],", request->req_ident,
 			   MAX(request->req_slice->slc_parameters, 1));

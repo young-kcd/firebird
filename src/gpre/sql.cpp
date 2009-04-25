@@ -485,7 +485,7 @@ void SQL_init()
 //
 //
 
-void SQL_par_field_collate(gpre_req*, //request, 
+void SQL_par_field_collate(gpre_req*, //request,
 						   gpre_fld* field)
 {
 	if (MSC_match(KW_COLLATE))

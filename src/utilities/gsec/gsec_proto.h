@@ -8,7 +8,7 @@
 void	GSEC_print_status(const ISC_STATUS*);
 void	GSEC_error_redirect(const ISC_STATUS*, USHORT);
 void	GSEC_error(USHORT);
-void	GSEC_print(USHORT, const char* str = 0);
+void	GSEC_print(USHORT, const char* str = NULL);
 void	GSEC_print_partial(USHORT);
 void	GSEC_diag(USHORT);
 
