@@ -25,12 +25,14 @@ INSTALLATION/CONFIGURATION
   * Parameters LockSemCount and LockSignal of firebird.conf don't require tuning
     in the new lock manager implementation, so they have been removed as well.
 
-  * Now Firebird is relocatable in POSIX environments. That means the installation
-    directory is based on Firebird executables and libraries, and libraries are not
-    hard-coded loaded from /opt/firebird/lib. If you used to copy utilities to
-    different places and rely on libraries being loaded from /opt/firebird, that
-    will not work any more. The correct approach would be the creation of symbolic
-    links.
+  * Now Firebird can be built to be relocatable in POSIX environments. That means the
+    installation directory is based on Firebird executables and libraries, and libraries
+    are not hard-coded loaded from /opt/firebird/lib.
+    To enable this feature, --enable-binreloc parameter should be passed to autogen.sh.
+    It is expected that this feature is turned on by default in v3.0.
+    If you used to copy utilities to different places and rely on libraries being loaded
+    from /opt/firebird, that will not work in this mode. The correct approach would be
+    the creation of symbolic links.
 
 SQL SYNTAX
 --------------------------
