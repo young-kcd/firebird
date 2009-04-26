@@ -683,6 +683,7 @@ void DYN_modify_global_field(Global* gbl,
 		orig_dom.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 		orig_dom.dyn_dtype = FLD.RDB$FIELD_TYPE;
 		orig_dom.dyn_precision = FLD.RDB$FIELD_PRECISION;
+		orig_dom.dyn_sub_type = FLD.RDB$FIELD_SUB_TYPE;
 		orig_dom.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 		orig_dom.dyn_collation = FLD.RDB$COLLATION_ID;
 		orig_dom.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
@@ -853,7 +854,7 @@ void DYN_modify_global_field(Global* gbl,
 
 			case isc_dyn_fld_sub_type:
 				subtype = true;
-				new_dom.dyn_dsc.dsc_sub_type = DYN_get_number(ptr);
+				new_dom.dyn_sub_type = DYN_get_number(ptr);
 				break;
 
 			case isc_dyn_fld_char_length:
@@ -995,7 +996,7 @@ void DYN_modify_global_field(Global* gbl,
 								new_dom.dyn_dtype,
 								new_dom.dyn_dsc.dsc_scale,
 								new_dom.dyn_dsc.dsc_length,
-								new_dom.dyn_dsc.dsc_sub_type,
+								new_dom.dyn_sub_type,
 								new_dom.dyn_charset,
 								new_dom.dyn_collation);
 			const ULONG retval = check_update_fld_type(orig_dom, new_dom);
@@ -1036,7 +1037,7 @@ void DYN_modify_global_field(Global* gbl,
 			}
 
 			if (subtype) {
-				FLD.RDB$FIELD_SUB_TYPE = new_dom.dyn_dsc.dsc_sub_type;
+				FLD.RDB$FIELD_SUB_TYPE = new_dom.dyn_sub_type;
 				FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 			}
 
@@ -2761,6 +2762,7 @@ void DYN_modify_sql_field(Global* gbl,
 			orig_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 			orig_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
 			orig_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
+			orig_fld.dyn_sub_type = FLD.RDB$FIELD_SUB_TYPE;
 			orig_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 			orig_fld.dyn_collation = FLD.RDB$COLLATION_ID;
 			orig_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
@@ -2879,7 +2881,7 @@ void DYN_modify_sql_field(Global* gbl,
 
 				case isc_dyn_fld_sub_type:
 					subtype = true;
-					new_fld.dyn_dsc.dsc_sub_type = DYN_get_number(ptr);
+					new_fld.dyn_sub_type = DYN_get_number(ptr);
 					break;
 
 				case isc_dyn_fld_char_length:
@@ -3020,7 +3022,7 @@ void DYN_modify_sql_field(Global* gbl,
 								dom_fld.dyn_dtype,
 								dom_fld.dyn_dsc.dsc_scale,
 								dom_fld.dyn_dsc.dsc_length,
-								dom_fld.dyn_dsc.dsc_sub_type,
+								dom_fld.dyn_sub_type,
 								dom_fld.dyn_charset, dom_fld.dyn_collation);
 			*/
 
@@ -3105,7 +3107,7 @@ void DYN_modify_sql_field(Global* gbl,
 								new_fld.dyn_dtype,
 								new_fld.dyn_dsc.dsc_scale,
 								new_fld.dyn_dsc.dsc_length,
-								new_fld.dyn_dsc.dsc_sub_type,
+								new_fld.dyn_sub_type,
 								new_fld.dyn_charset, new_fld.dyn_collation);
 
 			if (!changeComputed && !orig_computed && !is_view)
@@ -3168,8 +3170,7 @@ void DYN_modify_sql_field(Global* gbl,
 					}
 
 					if (subtype) {
-						FLD.RDB$FIELD_SUB_TYPE =
-							new_fld.dyn_dsc.dsc_sub_type;
+						FLD.RDB$FIELD_SUB_TYPE = new_fld.dyn_sub_type;
 						FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					}
 
@@ -3311,8 +3312,7 @@ void DYN_modify_sql_field(Global* gbl,
 						}
 
 						if (subtype) {
-							FLD.RDB$FIELD_SUB_TYPE =
-								new_fld.dyn_dsc.dsc_sub_type;
+							FLD.RDB$FIELD_SUB_TYPE = new_fld.dyn_sub_type;
 							FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 						}
 
@@ -3509,6 +3509,7 @@ void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_f
 		dom_fld.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
 		dom_fld.dyn_dtype = FLD.RDB$FIELD_TYPE;
 		dom_fld.dyn_precision = FLD.RDB$FIELD_PRECISION;
+		dom_fld.dyn_sub_type = FLD.RDB$FIELD_SUB_TYPE;
 		dom_fld.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
 		dom_fld.dyn_collation = FLD.RDB$COLLATION_ID;
 		dom_fld.dyn_null_flag = FLD.RDB$NULL_FLAG != 0;
@@ -3806,7 +3807,7 @@ static ULONG check_update_numeric_type(const dyn_fld& orig_fld, const dyn_fld& n
 
  	// Since dsc_scale is negative, the sum of precision and scale produces
 	// the width of the integral part.
-	if (orig_fld.dyn_dsc.dsc_sub_type && new_fld.dyn_dsc.dsc_sub_type &&
+	if (orig_fld.dyn_sub_type && new_fld.dyn_sub_type &&
 		orig_fld.dyn_precision + orig_fld.dyn_dsc.dsc_scale >
 			new_fld.dyn_precision + new_fld.dyn_dsc.dsc_scale)
 	{

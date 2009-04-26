@@ -63,6 +63,7 @@ public:
 	USHORT dyn_charlen;
 	SSHORT dyn_collation;
 	SSHORT dyn_charset;
+	SSHORT dyn_sub_type;
 	Firebird::MetaName dyn_fld_source;
 	Firebird::MetaName dyn_rel_name;
 	Firebird::MetaName dyn_fld_name;
@@ -76,7 +77,7 @@ public:
 public:
 	explicit dyn_fld(MemoryPool& p)
 		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
-		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
+		dyn_collation(0), dyn_charset(0), dyn_sub_type(0), dyn_fld_source(p), dyn_rel_name(p),
 		dyn_fld_name(p), dyn_charbytelen(0),
 		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
 		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false)
