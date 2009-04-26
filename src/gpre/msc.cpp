@@ -233,7 +233,7 @@ gpre_sym* MSC_find_symbol(gpre_sym* symbol, sym_t type)
 //		Free a block.
 //
 
-void MSC_free(void* block)
+void MSC_free(void*)
 {
 
 }

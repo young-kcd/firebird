@@ -210,7 +210,7 @@ protected:
 	{
 		T start_value; // starting value, BUNCH_BITS-aligned
 		BUNCH_T bits;  // bits data
-		inline static const T& generate(const void* sender, const Bucket& i)
+		inline static const T& generate(const void* /*sender*/, const Bucket& i)
 		{
 			return i.start_value;
 		}

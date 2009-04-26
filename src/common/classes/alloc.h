@@ -150,7 +150,7 @@ struct BlockInfo
 {
 	size_t bli_length;
 	FreeMemoryBlock* bli_fragments;
-	inline static const size_t& generate(const void* sender, const BlockInfo& i)
+	inline static const size_t& generate(const void* /*sender*/, const BlockInfo& i)
 	{
 		return i.bli_length;
 	}

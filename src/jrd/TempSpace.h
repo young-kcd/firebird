@@ -102,7 +102,7 @@ private:
 			return NULL;
 		}
 
-		bool sameFile(const TempFile* file) const
+		bool sameFile(const TempFile*) const
 		{
 			return false;
 		}
@@ -120,7 +120,7 @@ private:
 		size_t read(offset_t offset, void* buffer, size_t length);
 		size_t write(offset_t offset, const void* buffer, size_t length);
 
-		char* inMemory(offset_t offset, size_t a_size) const
+		char* inMemory(offset_t /*offset*/, size_t /*a_size*/) const
 		{
 			return NULL;
 		}

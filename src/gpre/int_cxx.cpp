@@ -46,7 +46,7 @@ static void asgn_to(ref*);
 static void gen_at_end(const act*, int);
 static void gen_blr(void*, SSHORT, const char*);
 static void gen_compile(const gpre_req*, int);
-static void gen_database(const act*, int);
+static void gen_database();
 static void gen_emodify(const act*, int);
 static void gen_estore(const act*, int, bool);
 static void gen_endfor(const act*, int);
@@ -113,7 +113,7 @@ void INT_CXX_action( const act* action, int column)
 		return;
 	case ACT_b_declare:
 	case ACT_database:
-		gen_database(action, column);
+		gen_database();
 		return;
 	case ACT_endfor:
 		gen_endfor(action, column);
@@ -273,7 +273,7 @@ static void gen_at_end( const act* action, int column)
 //		Callback routine for BLR pretty printer.
 //
 
-static void gen_blr(void* user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	fprintf(gpreGlob.out_file, "%s\n", string);
 }
@@ -301,7 +301,7 @@ static void gen_compile( const gpre_req* request, int column)
 //		Generate insertion text for the database statement.
 //
 
-static void gen_database( const act* action, int column)
+static void gen_database()
 {
 	if (global_first_flag)
 		return;

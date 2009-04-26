@@ -580,7 +580,7 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
 
 #ifdef DEV_BUILD
 
-void GDS_breakpoint(int parameter)
+void GDS_breakpoint(int /*parameter*/)
 {
 /**************************************
  *
@@ -636,7 +636,7 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
 	return value;
 }
 
-void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
+void API_ROUTINE gds_alloc_flag_unfreed(void* /*blk*/)
 {
 /**************************************
  *
@@ -655,7 +655,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
 }
 
 
-void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int lineno)
+void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int /*lineno*/)
 {
 /**************************************
  *
@@ -3571,13 +3571,13 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 }
 
 
-void FB_EXPORTED gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
+void FB_EXPORTED gds__default_printer(void* /*arg*/, SSHORT offset, const TEXT* line)
 {
 	printf("%4d %s\n", offset, line);
 }
 
 
-void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
+void gds__trace_printer(void* /*arg*/, SSHORT offset, const TEXT* line)
 {
 	// Assume that line is not too long
 	char buffer[PRETTY_BUFFER_SIZE + 10];

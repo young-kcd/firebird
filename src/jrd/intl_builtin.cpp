@@ -671,7 +671,7 @@ static USHORT utf16_string_to_key(texttype* obj,
 		padUtf16(alSrc, srcLen);
 	}
 
-	return UnicodeUtil::utf16ToKey(srcLen, alSrc, dstLen, dst, key_type);
+	return UnicodeUtil::utf16ToKey(srcLen, alSrc, dstLen, dst);
 }
 
 static SSHORT utf16_compare(texttype* obj,
@@ -799,7 +799,7 @@ static USHORT utf32_string_to_key(texttype* obj,
 		padUtf16(s, sLen);
 	}
 
-	return UnicodeUtil::utf16ToKey(sLen, s, dstLen, dst, key_type);
+	return UnicodeUtil::utf16ToKey(sLen, s, dstLen, dst);
 }
 
 

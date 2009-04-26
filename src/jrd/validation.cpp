@@ -2148,7 +2148,7 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 			corrupt(tdbb, control, VAL_TIP_LOST_SEQUENCE, 0, sequence);
 			if (!(control->vdr_flags & vdr_repair))
 				continue;
-			TRA_extend_tip(tdbb, sequence, 0);
+			TRA_extend_tip(tdbb, sequence);
 			vector = dbb->dbb_t_pages;
 		}
 

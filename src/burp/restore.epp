@@ -134,7 +134,7 @@ void	get_function_arg(BurpGlobals* tdgbl, bool skip_arguments);
 bool	get_generator(BurpGlobals* tdgbl);
 bool	get_global_field(BurpGlobals* tdgbl);
 bool	get_index(BurpGlobals* tdgbl, const burp_rel*);
-void	get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD&, USHORT, bool);
+void	get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 SLONG	get_numeric(BurpGlobals* tdgbl);
 SINT64  get_int64(BurpGlobals* tdgbl);
 bool	get_procedure(BurpGlobals* tdgbl);
@@ -159,7 +159,9 @@ void	ignore_array(BurpGlobals* tdgbl, burp_rel*);
 void	ignore_blob(BurpGlobals* tdgbl);
 rec_type	ignore_data(BurpGlobals* tdgbl, burp_rel*);
 void	realign(BurpGlobals* tdgbl, UCHAR*, const burp_rel*);
+#ifdef sparc
 USHORT	recompute_length(BurpGlobals* tdgbl, burp_rel*);
+#endif
 bool	restore(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 void	restore_security_class(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT);
@@ -1733,7 +1735,7 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 					get_block(tdgbl, p, lcount);
 
 				if (tdgbl->gbl_sw_transportable)
-					CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
+					CAN_slice (&xdr_buffer, &xdr_slice, FALSE, /*blr_length,*/ blr_buffer);
 			}
 
 			if (isc_put_slice(status_vector, &DB, &gds_trans,
@@ -1858,7 +1860,7 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 			get_block(tdgbl, p, lcount);
 
 		if (tdgbl->gbl_sw_transportable)
-			CAN_slice (&xdr_buffer, &xdr_slice, FALSE, blr_length, blr_buffer);
+			CAN_slice (&xdr_buffer, &xdr_slice, FALSE, /*blr_length,*/ blr_buffer);
 
 
 		if (isc_put_slice(status_vector, &DB, &gds_trans,
@@ -2644,8 +2646,10 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 		USHORT l = (USHORT) get_numeric(tdgbl);
 		if (!tdgbl->gbl_sw_transportable && l != length)
 		{
+#ifdef sparc
 			if (!old_length)
-				old_length = recompute_length (tdgbl, relation);
+				old_length = recompute_length(tdgbl, relation);
+#endif
 			if (l != old_length)
 			{
 				BURP_error(40, true, SafeArg() << length << l);
@@ -2886,7 +2890,7 @@ bool get_exception(BurpGlobals* tdgbl)
 				else
 				{
 					msg_seen = false;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 				}
 				break;
@@ -3123,7 +3127,7 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 			case att_field_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, global_tr);
+				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, global_tr);
 				break;
 
 			case att_field_description2:
@@ -3365,7 +3369,7 @@ bool get_filter(BurpGlobals* tdgbl)
 
 			case att_filter_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, false);
+				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 				break;
 
 			case att_filter_description2:
@@ -3443,7 +3447,7 @@ bool get_function(BurpGlobals* tdgbl)
 
 			case att_function_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 				break;
 
 			case att_function_description2:
@@ -3913,13 +3917,13 @@ bool get_global_field(BurpGlobals* tdgbl)
 						if (!gfield)
 							gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
 
-						get_misc_blob (tdgbl, gfield->gfld_computed_source, 1, true);
+						get_misc_blob (tdgbl, gfield->gfld_computed_source, true);
 						gfield->gfld_flags |= GFLD_computed_source;
 					}
 					else
 					{
 						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
-						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, 1, false);
+						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
 					}
 					break;
 
@@ -3979,13 +3983,13 @@ bool get_global_field(BurpGlobals* tdgbl)
 							if (!gfield)
 								gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
 
-							get_misc_blob (tdgbl, gfield->gfld_vs, 0, true);
+							get_misc_blob (tdgbl, gfield->gfld_vs, true);
 							gfield->gfld_flags |= GFLD_validation_source;
 						}
 						else
 						{
 							X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-							get_misc_blob (tdgbl, X.RDB$VALIDATION_SOURCE, 0, false);
+							get_misc_blob (tdgbl, X.RDB$VALIDATION_SOURCE, false);
 						}
 					}
 					break;
@@ -4041,7 +4045,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_description:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, false);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 					break;
 
 				case att_field_description2:
@@ -4255,13 +4259,13 @@ bool get_global_field(BurpGlobals* tdgbl)
 						if (!gfield)
 							gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
 
-						get_misc_blob (tdgbl, gfield->gfld_computed_source, 1, true);
+						get_misc_blob (tdgbl, gfield->gfld_computed_source, true);
 						gfield->gfld_flags |= GFLD_computed_source;
 					}
 					else
 					{
 						X.RDB$COMPUTED_SOURCE.NULL = FALSE;
-						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, 1, false);
+						get_misc_blob (tdgbl, X.RDB$COMPUTED_SOURCE, false);
 					}
 					break;
 
@@ -4321,13 +4325,13 @@ bool get_global_field(BurpGlobals* tdgbl)
 							if (!gfield)
 								gfield = (gfld*) BURP_alloc_zero(sizeof(gfld));
 
-							get_misc_blob (tdgbl, gfield->gfld_vs, 0, true);
+							get_misc_blob (tdgbl, gfield->gfld_vs, true);
 							gfield->gfld_flags |= GFLD_validation_source;
 						}
 						else
 						{
 							X.RDB$VALIDATION_SOURCE.NULL = FALSE;
-							get_misc_blob (tdgbl, X.RDB$VALIDATION_SOURCE, 0, false);
+							get_misc_blob (tdgbl, X.RDB$VALIDATION_SOURCE, false);
 						}
 					}
 					break;
@@ -4383,7 +4387,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_description:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, false);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 					break;
 
 				case att_field_description2:
@@ -4583,7 +4587,7 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 
 			case att_index_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 				break;
 
 			case att_index_description2:
@@ -4654,7 +4658,6 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 
 void get_misc_blob(BurpGlobals* tdgbl,
 				   ISC_QUAD&	blob_id,
-				   USHORT		sub_type, // unused
 				   bool			glb_trans)
 {
 /**************************************
@@ -4811,7 +4814,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_description:
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, true);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
@@ -4821,7 +4824,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_source:
-					get_misc_blob (tdgbl, X.RDB$PROCEDURE_SOURCE, 0, true);
+					get_misc_blob (tdgbl, X.RDB$PROCEDURE_SOURCE, true);
 					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
 					break;
 
@@ -4877,7 +4880,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 8)
 					{
 						X.RDB$DEBUG_INFO.NULL = FALSE;
-						get_misc_blob (tdgbl, X.RDB$DEBUG_INFO, 9, true);
+						get_misc_blob (tdgbl, X.RDB$DEBUG_INFO, true);
 					}
 					else
 						bad_attribute (scan_next_attr, attribute, 290);
@@ -4922,7 +4925,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_description:
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, true);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
@@ -4932,7 +4935,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_source:
-					get_misc_blob (tdgbl, X.RDB$PROCEDURE_SOURCE, 0, true);
+					get_misc_blob (tdgbl, X.RDB$PROCEDURE_SOURCE, true);
 					X.RDB$PROCEDURE_SOURCE.NULL = FALSE;
 					break;
 
@@ -5068,7 +5071,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 					break;
 
 				case att_procedureprm_description:
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, true);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
@@ -5179,7 +5182,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 					break;
 
 				case att_procedureprm_description:
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, true);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					X.RDB$DESCRIPTION.NULL = FALSE;
 					break;
 
@@ -5357,7 +5360,7 @@ bool get_relation(BurpGlobals* tdgbl)
 
 		case att_relation_view_source:
 			view_src_null = false;
-			get_misc_blob (tdgbl, view_src, 1, !view_blr_null);
+			get_misc_blob (tdgbl, view_src, !view_blr_null);
 			break;
 
 		case att_relation_view_source2:
@@ -5367,7 +5370,7 @@ bool get_relation(BurpGlobals* tdgbl)
 
 		case att_relation_description:
 			rel_desc_null = false;
-			get_misc_blob(tdgbl, rel_desc, 1, !view_blr_null);
+			get_misc_blob(tdgbl, rel_desc, !view_blr_null);
 			break;
 
 		case att_relation_description2:
@@ -5386,7 +5389,7 @@ bool get_relation(BurpGlobals* tdgbl)
 
 		case att_relation_ext_description:
 			ext_desc_null = false;
-			get_misc_blob(tdgbl, ext_desc, 1, !view_blr_null);
+			get_misc_blob(tdgbl, ext_desc, !view_blr_null);
 			break;
 
 		case att_relation_ext_description2:
@@ -6031,12 +6034,12 @@ bool get_security_class(BurpGlobals* tdgbl)
 				break;
 
 			case att_class_acl:
-				get_misc_blob (tdgbl, X.RDB$ACL, 0, false);
+				get_misc_blob (tdgbl, X.RDB$ACL, false);
 				break;
 
 			case att_class_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 0, false);
+				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 				break;
 
 			case att_class_description2:
@@ -6254,7 +6257,7 @@ bool get_trigger_old (BurpGlobals*	tdgbl,
 
 			case att_trig_source:
 				X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$TRIGGER_SOURCE, 1, false);
+				get_misc_blob (tdgbl, X.RDB$TRIGGER_SOURCE, false);
 				break;
 
 			case att_trig_source2:
@@ -6389,7 +6392,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 				case att_trig_source:
 					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$TRIGGER_SOURCE, 1, true);
+					get_misc_blob (tdgbl, X.RDB$TRIGGER_SOURCE, true);
 					break;
 
 				case att_trig_source2:
@@ -6415,7 +6418,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 				case att_trig_description:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, true);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					break;
 
 				case att_trig_description2:
@@ -6446,7 +6449,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 8)
 					{
 						X.RDB$DEBUG_INFO.NULL = FALSE;
-						get_misc_blob (tdgbl, X.RDB$DEBUG_INFO, 9, true);
+						get_misc_blob (tdgbl, X.RDB$DEBUG_INFO, true);
 					}
 					else
 						bad_attribute (scan_next_attr, attribute, 134);
@@ -6498,7 +6501,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 				case att_trig_source:
 					X.RDB$TRIGGER_SOURCE.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$TRIGGER_SOURCE, 1, true);
+					get_misc_blob (tdgbl, X.RDB$TRIGGER_SOURCE, true);
 					break;
 
 				case att_trig_source2:
@@ -6524,7 +6527,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 				case att_trig_description:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, true);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					break;
 
 				case att_trig_description2:
@@ -6713,7 +6716,7 @@ bool get_type(BurpGlobals* tdgbl)
 
 			case att_type_description:
 				X.RDB$DESCRIPTION.NULL = FALSE;
-				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, false);
+				get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 				break;
 
 			case att_type_description2:
@@ -7282,6 +7285,7 @@ void realign(BurpGlobals*		tdgbl,
 	}
 }
 
+#ifdef sparc
 USHORT recompute_length(BurpGlobals*	tdgbl,
 						burp_rel*		relation)
 {
@@ -7298,7 +7302,6 @@ USHORT recompute_length(BurpGlobals*	tdgbl,
  *
  **************************************/
 
-#ifdef sparc
 	ULONG	offset = 0; // there was garbage, possibly nobody uses sparc define?
 	const SSHORT* alignments = old_sparcs;
 
@@ -7343,10 +7346,8 @@ USHORT recompute_length(BurpGlobals*	tdgbl,
 	}
 
 	return offset;
-#else
-	return 0;
-#endif
 }
+#endif
 
 bool restore(BurpGlobals*	tdgbl,
 			 const TEXT*	file_name,
@@ -7365,8 +7366,7 @@ bool restore(BurpGlobals*	tdgbl,
 
 	// Read burp record first
 
-	MVOL_init_read (tdgbl->gbl_database_file_name, file_name,
-		&tdgbl->RESTORE_format, &tdgbl->io_cnt, &tdgbl->io_ptr);
+	MVOL_init_read (file_name, &tdgbl->RESTORE_format, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
 	if (tdgbl->gbl_sw_transportable)
 		BURP_verbose (133);
@@ -7429,7 +7429,7 @@ bool restore(BurpGlobals*	tdgbl,
 					if (attribute == att_database_description2)
 						get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
 					else
-						get_misc_blob (tdgbl, X.RDB$DESCRIPTION, 1, false);
+						get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
 				END_MODIFY;
 				ON_ERROR
 					general_on_error ();

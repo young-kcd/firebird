@@ -499,7 +499,7 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 }
 
 
-bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* rsb,
+bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 							  jrd_tra* transaction,
 							  MemoryPool* pool, bool writelock)
 {
@@ -1681,7 +1681,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* transaction, MemoryPool* pool)
+bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPool* pool)
 {
 /**************************************
  *
@@ -1710,7 +1710,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 	const USHORT lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
 	if (!DPM_get(tdbb, rpb, lock_type) ||
-		!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool, false))
+		!VIO_chase_record_version(tdbb, rpb, transaction, pool, false))
 	{
 		return false;
 	}
@@ -1743,7 +1743,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, RecordSource* rsb, jrd_tra* tra
 
 
 bool VIO_get_current(thread_db* tdbb,
-					record_param* old_rpb,
+					//record_param* old_rpb,
 					record_param* rpb,
 					jrd_tra* transaction,
 					MemoryPool* pool,
@@ -2386,7 +2386,7 @@ bool VIO_next_record(thread_db* tdbb,
 	do {
 		if (!DPM_next(tdbb, rpb, lock_type, backwards, onepage))
 			return false;
-	} while (!VIO_chase_record_version(tdbb, rpb, rsb, transaction, pool, false));
+	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
 
 	if (pool) {
 		if (rpb->rpb_stream_flags & RPB_s_no_data) {
@@ -2491,7 +2491,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 	const SLONG tid_fetch = rpb->rpb_transaction_nr;
 
 	if (!DPM_get(tdbb, rpb, LCK_read) ||
-		!VIO_chase_record_version(tdbb, rpb, NULL, transaction, tdbb->getDefaultPool(), false))
+		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), false))
 	{
 		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
@@ -3164,8 +3164,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 		if (org_rpb->rpb_stream_flags & RPB_s_refetch) {
 			// const SLONG tid_fetch = org_rpb->rpb_transaction_nr;
 			if ((!DPM_get(tdbb, org_rpb, LCK_read)) ||
-				(!VIO_chase_record_version(tdbb, org_rpb, NULL, transaction,
-										   tdbb->getDefaultPool(), true)))
+				(!VIO_chase_record_version(tdbb, org_rpb, transaction, tdbb->getDefaultPool(), true)))
 			{
 				return false;
 			}

@@ -116,7 +116,7 @@ public:
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual ISC_STATUS* getStatus() { return 0; }
-	virtual void getAddressPath(ClumpletWriter& dpb) { }
+	virtual void getAddressPath(ClumpletWriter&) { }
 	virtual bool finished() { return m_finished; };
 
 private:

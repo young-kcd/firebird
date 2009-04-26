@@ -113,7 +113,7 @@ SINT64 get_gen_id(const TEXT *, SSHORT);
 void get_ranges(burp_fld*);
 void put_array(burp_fld*, burp_rel*, ISC_QUAD*);
 void put_asciz(const att_type, const TEXT*);
-void put_blob(burp_fld*, ISC_QUAD&, ULONG);
+void put_blob(burp_fld*, ISC_QUAD&);
 bool put_blr_blob(att_type, ISC_QUAD&);
 void put_data(burp_rel*);
 void put_index(burp_rel*);
@@ -354,7 +354,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		tdgbl->action->act_file = tdgbl->gbl_sw_files;
 	}
 
-	MVOL_init_write(dbb_file, file_name, &tdgbl->io_cnt, &tdgbl->io_ptr);
+	MVOL_init_write(file_name, &tdgbl->io_cnt, &tdgbl->io_ptr);
 
 	// Write database record
 
@@ -1298,7 +1298,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			lstring xdr_slice;
 			xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 			xdr_slice.lstr_address = slice;
-			return_length = CAN_slice(&xdr_buffer, &xdr_slice, TRUE, blr_length, blr_buffer);
+			return_length = CAN_slice(&xdr_buffer, &xdr_slice, TRUE, /*blr_length,*/ blr_buffer);
 			put(tdgbl, att_xdr_array);
 			put(tdgbl, (UCHAR) (return_length));
 			put(tdgbl, (UCHAR) (return_length >> 8));
@@ -1350,7 +1350,7 @@ void put_asciz( const att_type attribute, const TEXT* string)
 }
 
 
-void put_blob( burp_fld* field, ISC_QUAD& blob_id, ULONG count)
+void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 {
 /**************************************
  *
@@ -1900,7 +1900,7 @@ void put_data(burp_rel* relation)
 			if (field->fld_type == blr_blob &&
 				!(field->fld_flags & FLD_computed) && !(field->fld_flags & FLD_array))
 			{
-				put_blob(field, *(ISC_QUAD*) (buffer + field->fld_offset), records);
+				put_blob(field, *(ISC_QUAD*) (buffer + field->fld_offset));
 			}
 		}
 

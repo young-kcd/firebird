@@ -111,7 +111,7 @@ static bool get_procedure(thread_db*, RecordSource*, irsb_procedure*, record_par
 static bool get_record(thread_db*, RecordSource*, RecordSource*, rse_get_mode);
 static bool get_union(thread_db*, RecordSource*, IRSB);
 static void invalidate_child_rpbs(thread_db*, RecordSource*);
-static void join_to_nulls(thread_db*, RecordSource*, StreamStack*);
+static void join_to_nulls(thread_db*, StreamStack*);
 static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
@@ -844,7 +844,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
-					join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
+					join_to_nulls(tdbb, rsb->rsb_left_streams);
 					return true;
 				}
 
@@ -874,7 +874,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 			   the left stream to a null valued right sub-stream */
 
 			if (!(impure->irsb_flags & irsb_joined)) {
-				join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
+				join_to_nulls(tdbb, rsb->rsb_left_streams);
 				return true;
 			}
 		}
@@ -924,7 +924,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, rse_get_
 				goto return_to_outer;
 			}
 
-			join_to_nulls(tdbb, rsb, rsb->rsb_left_inner_streams);
+			join_to_nulls(tdbb, rsb->rsb_left_inner_streams);
 			return true;
 
 return_to_outer:
@@ -988,7 +988,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 				{
 					/* The boolean pertaining to the left sub-stream is false
 					   so just join sub-stream to a null valued right sub-stream */
-					join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
+					join_to_nulls(tdbb, rsb->rsb_left_streams);
 					return true;
 				}
 				impure->irsb_flags &= ~(irsb_mustread | irsb_joined);
@@ -1012,7 +1012,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 			{
 				/* The current left sub-stream record has not been joined
 				   to anything.  Join it to a null valued right sub-stream */
-				join_to_nulls(tdbb, rsb, rsb->rsb_left_streams);
+				join_to_nulls(tdbb, rsb->rsb_left_streams);
 				return true;
 			}
 		}
@@ -1051,7 +1051,7 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure)
 	else if (!get_record(tdbb, full, NULL, RSE_get_forward))
 		return false;
 
-	join_to_nulls(tdbb, rsb, rsb->rsb_left_inner_streams);
+	join_to_nulls(tdbb, rsb->rsb_left_inner_streams);
 
 	return true;
 }
@@ -1865,7 +1865,7 @@ static bool get_record(thread_db*	tdbb,
 							DPM_prefetch_bitmap(tdbb, rpb->rpb_relation, *bitmap, rpb->rpb_number);
 					}
 #endif
-					if (VIO_get(tdbb, rpb, rsb, request->req_transaction, request->req_pool))
+					if (VIO_get(tdbb, rpb, request->req_transaction, request->req_pool))
 					{
 						result = true;
 						break;
@@ -2608,7 +2608,7 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-static void join_to_nulls(thread_db* tdbb, RecordSource* rsb, StreamStack* stream)
+static void join_to_nulls(thread_db* tdbb, StreamStack* stream)
 {
 /**************************************
  *
@@ -2889,7 +2889,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 
 	impure->irsb_sort_handle =
 		SORT_init(tdbb, map->smb_length, map->smb_keys, map->smb_keys, map->smb_key_desc,
-         		  ((map->smb_flags & SMB_project) ? reject : NULL), 0, max_records);
+         		  ((map->smb_flags & SMB_project) ? reject : NULL), 0); //, max_records);
 
 	// Mark sort_context with the impure area pointer
 
@@ -3361,7 +3361,7 @@ static ULONG read_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 }
 
 
-static bool reject(const UCHAR* record_a, const UCHAR* record_b, void* user_arg)
+static bool reject(const UCHAR* /*record_a*/, const UCHAR* /*record_b*/, void* /*user_arg*/)
 {
 /**************************************
  *

@@ -126,7 +126,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-void VirtualTable::modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
+void VirtualTable::modify(thread_db*, record_param* /*org_rpb*/, record_param* /*new_rpb*/)
 {
 	ERR_post(Arg::Gds(isc_read_only));
 }
@@ -176,7 +176,7 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 }
 
 
-void VirtualTable::store(thread_db* tdbb, record_param* rpb)
+void VirtualTable::store(thread_db*, record_param*)
 {
 	ERR_post(Arg::Gds(isc_read_only));
 }

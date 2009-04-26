@@ -106,7 +106,7 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
  *		database can't be opened, return false.
  */
 
-bool MET_database(gpre_dbb* db, bool print_version)
+bool MET_database(gpre_dbb* db, bool /*print_version*/)
 {
 	// Each info item requested will return
 	//
@@ -169,7 +169,8 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
  *		Gets the default value for a domain of an existing table
  */
 
-bool MET_get_domain_default(gpre_dbb* db, const TEXT* domain_name, TEXT* buffer, USHORT buff_length)
+bool MET_get_domain_default(gpre_dbb* /*db*/, const TEXT* /*domain_name*/, TEXT* /*buffer*/,
+	USHORT /*buff_length*/)
 {
 	fb_assert(0);
 	return false;
@@ -312,7 +313,7 @@ gpre_nod* MET_fields(gpre_ctx* context)
  *		Shutdown all attached databases.
  */
 
-void MET_fini( gpre_dbb* end)
+void MET_fini( gpre_dbb*)
 {
 	return;
 }
@@ -543,9 +544,9 @@ udf* MET_get_udf(gpre_dbb* db, const TEXT* string)
  *		(the relation could be an alias).
  */
 
-gpre_rel* MET_get_view_relation(gpre_req* request,
-								const char* view_name,
-								const char* relation_or_alias, USHORT level)
+gpre_rel* MET_get_view_relation(gpre_req* /*request*/,
+								const char* /*view_name*/,
+								const char* /*relation_or_alias*/, USHORT /*level*/)
 {
 	fb_assert(0);
 	return NULL;
@@ -584,7 +585,7 @@ gpre_index* MET_index(gpre_dbb* db, const TEXT* string)
  *       into the symbol (hash) table.
  */
 
-void MET_load_hash_table( gpre_dbb* db)
+void MET_load_hash_table( gpre_dbb*)
 {
 	// If this is an internal ISC access method invocation, don't do any of this stuff
 
@@ -673,12 +674,8 @@ bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
  *		   false otherwise
  */
 
-bool MET_trigger_exists(gpre_dbb* db, const TEXT* trigger_name)
+bool MET_trigger_exists(gpre_dbb* /*db*/, const TEXT* /*trigger_name*/)
 {
-	//SCHAR name[NAME_SIZE];
-
-	//strcpy(name, trigger_name);
-
 	fb_assert(0);
 	return false;
 }
@@ -810,11 +807,11 @@ ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
 
 extern "C" {
 
-void ERR_bugcheck(int number)
+void ERR_bugcheck(int)
 {
 }
 
-void ERR_post(ISC_STATUS status, ...)
+void ERR_post(ISC_STATUS, ...)
 {
 }
 

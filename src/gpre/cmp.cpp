@@ -59,7 +59,7 @@ static void cmp_ready(gpre_req*);
 static void cmp_sdl_fudge(gpre_req*, SLONG);
 static bool cmp_sdl_loop(gpre_req*, USHORT, const slc*, const ary*);
 static void cmp_sdl_number(gpre_req*, SLONG);
-static void cmp_sdl_subscript(gpre_req*, USHORT, const slc*, const ary*);
+static void cmp_sdl_subscript(gpre_req*, USHORT, const slc*);
 static void cmp_sdl_value(gpre_req*, const gpre_nod*);
 static void cmp_set_generator(gpre_req*);
 static void cmp_slice(gpre_req*);
@@ -93,7 +93,7 @@ const int MAX_TPB = 4000;
 
 void CMP_check( gpre_req* request, SSHORT min_reqd)
 {
-	int length = request->req_blr - request->req_base;
+	const int length = request->req_blr - request->req_base;
 	if (!min_reqd && (length < request->req_length - 100))
 		return;
 
@@ -1377,8 +1377,7 @@ static void cmp_sdl_number( gpre_req* request, SLONG number)
 //		lower bounds are constant.
 //
 
-static void cmp_sdl_subscript(gpre_req* request, USHORT index, const slc* slice,
-	const ary* array)
+static void cmp_sdl_subscript(gpre_req* request, USHORT index, const slc* slice)
 {
 
 	const slc::slc_repeat* ranges = slice->slc_rpt + index;
@@ -1505,7 +1504,7 @@ static void cmp_slice( gpre_req* request)
 		for (const bool* p = loop_flags; n < slice->slc_dimensions; n++, p++) {
 			if (!*p)
 				cmp_sdl_fudge(request, array->ary_rpt[n].ary_lower);
-			cmp_sdl_subscript(request, n, slice, array);
+			cmp_sdl_subscript(request, n, slice);
 		}
 	} // end scope block
 

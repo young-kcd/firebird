@@ -186,7 +186,7 @@ protected:
 		IndexScratchList* indexScratches, USHORT scope) const;
 	jrd_nod* makeIndexNode(const index_desc* idx) const;
 	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
-	InversionCandidate* makeInversion(InversionCandidateList* inversions, bool top = false) const;
+	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
 	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		jrd_nod* boolean, USHORT scope) const;

@@ -381,7 +381,7 @@ bool ISC_get_user(Firebird::string*	name,
 bool ISC_get_user(Firebird::string*	name,
 				  int*	id,
 				  int*	group,
-				  const TEXT*	user_string)
+				  const TEXT*	/*user_string*/)
 {
 /**************************************
  *

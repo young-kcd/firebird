@@ -836,7 +836,7 @@ ISC_STATUS API_ROUTINE isc_describe_bind(ISC_STATUS* status_vector,
 										DIALECT_sqlda, reinterpret_cast<XSQLDA*>(sqlda));
 }
 
-ISC_STATUS API_ROUTINE isc_dsql_finish(FB_API_HANDLE* db_handle)
+ISC_STATUS API_ROUTINE isc_dsql_finish(FB_API_HANDLE* /*db_handle*/)
 {
 	return 0;
 }
@@ -899,11 +899,11 @@ ISC_STATUS API_ROUTINE isc_dsql_release(ISC_STATUS*	status_vector, const SCHAR* 
 	return isc_embed_dsql_release(status_vector, statement_name);
 }
 
-int API_ROUTINE isc_to_sqlda(SQLDA*	sqlda,
-							int		number,
-							SCHAR*	host_var,
-							int		host_var_size,
-							SCHAR*	name)
+int API_ROUTINE isc_to_sqlda(SQLDA*	,	// sqlda
+							int		,	// number
+							SCHAR*	,	// host_var
+							int		,	// host_var_size
+							SCHAR*	)	// name
 {
 	// no longer supported
 	return 0;
@@ -1047,7 +1047,7 @@ static void free_all_names(dsql_name*& names)
 //
 //		Cleanup handler to free all dynamically allocated memory.
 //
-static void cleanup(void* arg)
+static void cleanup(void*)
 {
 	if (!init_flag) {
 		return;
@@ -1075,7 +1075,7 @@ static void cleanup(void* arg)
 //
 //		the cleanup handler called when a database is closed
 //
-static void cleanup_database(FB_API_HANDLE* db_handle, void* dummy)
+static void cleanup_database(FB_API_HANDLE* db_handle, void* /*dummy*/)
 {
 	if (!db_handle || !databases) {
 		return;

@@ -35,7 +35,7 @@ namespace Jrd {
 DATABASE DB = STATIC "ODS.RDB";
 
 
-void AlterCharSetNode::print(string& text, Array<dsql_nod*>& nodes) const
+void AlterCharSetNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"alter character set\n"

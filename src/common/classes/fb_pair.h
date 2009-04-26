@@ -38,13 +38,14 @@ namespace Firebird
 // constructor (typically POD or builtin type).
 
 template<typename parLeft, typename parRight>
-	struct NonPooled {
+	struct NonPooled
+	{
 		typedef parLeft first_type;
 		typedef parRight second_type;
-		explicit NonPooled(MemoryPool& p) : first(), second() { }
-		explicit NonPooled(MemoryPool& p, const parLeft& v1, const parRight& v2)
+		explicit NonPooled(MemoryPool&) : first(), second() { }
+		explicit NonPooled(MemoryPool&, const parLeft& v1, const parRight& v2)
 			: first(v1), second(v2) { }
-		explicit NonPooled(MemoryPool& p, const NonPooled& lp)
+		explicit NonPooled(MemoryPool&, const NonPooled& lp)
 			: first(lp.first), second(lp.second) { }
 		parLeft first;
 		parRight second;
@@ -54,7 +55,8 @@ template<typename parLeft, typename parRight>
 //	left one - doesn't (typically POD or builtin type)
 
 template<typename parLeft, typename parRight>
-	struct Right {
+	struct Right
+	{
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit Right(MemoryPool& p) : first(), second(p) { }
@@ -70,7 +72,8 @@ template<typename parLeft, typename parRight>
 //	right one - doesn't (typically POD or builtin type)
 
 template<typename parLeft, typename parRight>
-	struct Left {
+	struct Left
+	{
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit Left(MemoryPool& p) : first(p), second() { }
@@ -85,7 +88,8 @@ template<typename parLeft, typename parRight>
 // Full pair - both objects in such pair have MemoryPool'ed constructors.
 
 template<typename parLeft, typename parRight>
-	struct Full {
+	struct Full
+	{
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit Full(MemoryPool& p) : first(p), second(p) { }
@@ -100,7 +104,8 @@ template<typename parLeft, typename parRight>
 // Pair - template providing full bool op-s set
 
 template<typename BasePair>
-	struct Pair : public BasePair {
+	struct Pair : public BasePair
+	{
 		typedef typename Pair::first_type Pair_first_type;
 		typedef typename Pair::second_type Pair_second_type;
 		explicit Pair(MemoryPool& p) : BasePair(p) { }
@@ -144,8 +149,7 @@ template <typename P>
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
-		static const Pair_first_type&
-			generate(const void* sender, const P& Item)
+		static const Pair_first_type& generate(const void* /*sender*/, const P& Item)
 		{
 			return Item.first;
 		}
@@ -156,8 +160,7 @@ template <typename P>
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
-		static const Pair_first_type*
-			generate(const void* sender, const P* Item)
+		static const Pair_first_type* generate(const void* /*sender*/, const P* Item)
 		{
 			return &Item->first;
 		}
@@ -168,8 +171,7 @@ template <typename P>
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
-		static const Pair_first_type&
-			generate(const void* sender, const P* Item)
+		static const Pair_first_type& generate(const void* /*sender*/, const P* Item)
 		{
 			return Item->first;
 		}

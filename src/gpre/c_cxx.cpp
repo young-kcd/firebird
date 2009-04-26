@@ -59,14 +59,14 @@ static void gen_blob_end(const act*, USHORT);
 static void gen_blob_for(const act*, USHORT);
 static void gen_blob_open(const act*, USHORT);
 static void gen_blr(void*, SSHORT, const char*);
-static void gen_clear_handles(const act*, int);
+static void gen_clear_handles(int);
 static void gen_compatibility_symbol(const TEXT*, const TEXT*, const TEXT*);
 static void gen_compile(const act*, int);
 static void gen_create_database(const act*, int);
 static int gen_cursor_close(const act*, const gpre_req*, int);
 static void gen_cursor_init(const act*, int);
 static int gen_cursor_open(const act*, const gpre_req*, int);
-static void gen_database(const act*, int);
+static void gen_database(int);
 static void gen_ddl(const act*, int);
 static void gen_drop_database(const act*, int);
 static void gen_dyn_close(const act*, int);
@@ -261,7 +261,7 @@ void C_CXX_action(const act* action, int column)
 		gen_at_end(action, column);
 		return;
 	case ACT_b_declare:
-		gen_database(action, column);
+		gen_database(column);
 		gen_routine(action, column);
 		return;
 	case ACT_basedon:
@@ -286,7 +286,7 @@ void C_CXX_action(const act* action, int column)
 		gen_blob_open(action, (USHORT) column);
 		break;
 	case ACT_clear_handles:
-		gen_clear_handles(action, column);
+		gen_clear_handles(column);
 		break;
 	case ACT_close:
 		gen_s_end(action, column);
@@ -312,7 +312,7 @@ void C_CXX_action(const act* action, int column)
 		gen_cursor_init(action, column);
 		return;
 	case ACT_database:
-		gen_database(action, column);
+		gen_database(column);
 		return;
 	case ACT_declare_filter:
 	case ACT_declare_udf:
@@ -1069,7 +1069,7 @@ static void gen_blob_open( const act* action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //
 
-static void gen_blr(void* user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	char line[256];
 
@@ -1146,7 +1146,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 //		Zap all know handles.
 //
 
-static void gen_clear_handles( const act* action, int column)
+static void gen_clear_handles(int column)
 {
 	for (gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
@@ -1387,7 +1387,7 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 //		Generate insertion text for the database statement.
 //
 
-static void gen_database( const act* action, int column)
+static void gen_database(int column)
 {
 	if (global_first_flag)
 		return;

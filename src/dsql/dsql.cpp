@@ -86,7 +86,7 @@ static void		execute_immediate(thread_db*, Attachment*, jrd_tra**,
 							  USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
-static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
+static SSHORT	filter_sub_type(const dsql_nod*);
 static bool		get_indices(SSHORT*, const SCHAR**, SSHORT*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SSHORT, UCHAR*);
 static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*, USHORT*);
@@ -1007,14 +1007,14 @@ static void execute_blob(thread_db* tdbb,
 
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
-	SSHORT filter = filter_sub_type(request, blob->blb_to);
+	SSHORT filter = filter_sub_type(blob->blb_to);
 	if (filter) {
 		*p++ = isc_bpb_target_type;
 		*p++ = 2;
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
 	}
-	filter = filter_sub_type(request, blob->blb_from);
+	filter = filter_sub_type(blob->blb_from);
 	if (filter) {
 		*p++ = isc_bpb_source_type;
 		*p++ = 2;
@@ -1403,11 +1403,10 @@ static void execute_request(thread_db* tdbb,
  	a blob.
 
 
-    @param request
     @param node
 
  **/
-static SSHORT filter_sub_type( dsql_req* request, const dsql_nod* node)
+static SSHORT filter_sub_type(const dsql_nod* node)
 {
 	if (node->nod_type == nod_constant)
 		return (SSHORT) node->getSlong();

@@ -14,12 +14,12 @@ public:
 	Win32DirItr(MemoryPool& p, const Firebird::PathName& path)
 		: dir_iterator(p, path), dir(0), file(getPool()), done(false)
 	{
-		Win32DirInit(path);
+		Win32DirInit();
 	}
 	Win32DirItr(const Firebird::PathName& path)
 		: dir_iterator(path), dir(0), file(getPool()), done(false)
 	{
-		Win32DirInit(path);
+		Win32DirInit();
 	}
 	~Win32DirItr();
 	const PathUtils::dir_iterator& operator++();
@@ -32,10 +32,10 @@ private:
 	Firebird::PathName file;
 	bool done;
 
-	void Win32DirInit(const Firebird::PathName& path);
+	void Win32DirInit();
 };
 
-void Win32DirItr::Win32DirInit(const Firebird::PathName& path)
+void Win32DirItr::Win32DirInit()
 {
 	Firebird::PathName dirPrefix2 = dirPrefix;
 
@@ -143,7 +143,8 @@ void PathUtils::ensureSeparator(Firebird::PathName& in_out)
 
 bool PathUtils::isRelative(const Firebird::PathName& path)
 {
-	if (path.length() > 0) {
+	if (path.length() > 0)
+	{
 		char ds = path[0];
 		if (path.length() > 2) {
 			if (path[1] == ':' &&
@@ -158,7 +159,9 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 	return true;
 }
 
-bool PathUtils::isSymLink(const Firebird::PathName& path)
+// This function can be made to return something util if we consider junctions (since w2k)
+// and NTFS symbolic links (since WinVista).
+bool PathUtils::isSymLink(const Firebird::PathName&)
 {
 	return false;
 }

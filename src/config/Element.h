@@ -86,7 +86,7 @@ public:
 	InputStream	*inputStream;
 	static int analyseText(const char* text);
 	void putQuotedText(const char* text, Stream* stream) const;
-	static int analyzeData(int length, const UCHAR* data);
+	static int analyzeData(const UCHAR* data);
 private:
 	void init(const Firebird::string& elementName);
 	Firebird::string	innerText;

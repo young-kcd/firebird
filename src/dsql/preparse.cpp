@@ -111,7 +111,8 @@ using namespace Firebird;
     @param dialect
 
  **/
-bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle, FB_API_HANDLE* trans_handle,
+bool PREPARSE_execute(ISC_STATUS* user_status, FB_API_HANDLE* db_handle,
+					  FB_API_HANDLE*, // trans_handle,
 					  USHORT stmt_length, const SCHAR* stmt, bool* stmt_eaten, USHORT dialect)
 {
 	// no use creating separate pool for a couple of strings

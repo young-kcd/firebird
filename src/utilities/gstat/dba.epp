@@ -115,11 +115,11 @@ struct dba_rel
 	SCHAR rel_name[MAX_SQL_IDENTIFIER_SIZE];
 };
 
-/* kidnapped from jrd/pio.h and abused */
+// kidnapped from jrd/pio.h and abused
 
 struct dba_fil
 {
-	dba_fil* fil_next;	/* Next file in database */
+	dba_fil* fil_next;			/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
 	USHORT fil_fudge;			/* Fudge factor for page relocation */
@@ -137,7 +137,7 @@ static void analyze_data(dba_rel*, bool);
 static bool analyze_data_page(dba_rel*, const data_page*, bool);
 static ULONG analyze_fragments(const dba_rel*, const rhdf*);
 static ULONG analyze_versions(dba_rel*, const rhdf*);
-static void analyze_index(dba_rel*, dba_idx*);
+static void analyze_index(const dba_rel*, dba_idx*);
 
 #if (defined WIN_NT)
 static void db_error(SLONG);
@@ -718,8 +718,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	dba_print(10);
 	// msg 10: \nAnalyzing database pages ...\n
 
-	for (dba_rel* relation = tddba->relations; relation;
-		relation = relation->rel_next)
+	for (dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 	{
 		if (relation->rel_id == -1) {
 			continue;
@@ -727,8 +726,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (sw_data) {
 			analyze_data(relation, sw_record);
 		}
-		for (dba_idx* index = relation->rel_indexes; index;
-			index = index->idx_next)
+		for (dba_idx* index = relation->rel_indexes; index; index = index->idx_next)
 		{
 			analyze_index(relation, index);
 		}
@@ -736,8 +734,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 /* Print results */
 
-	for (const dba_rel* relation = tddba->relations; relation;
-		relation = relation->rel_next)
+	for (const dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 	{
 		if (relation->rel_id == -1) {
 			continue;
@@ -1042,7 +1039,7 @@ static ULONG analyze_fragments(const dba_rel* relation, const rhdf* header)
 }
 
 
-static void analyze_index( dba_rel* relation, dba_idx* index)
+static void analyze_index( const dba_rel* relation, dba_idx* index)
 {
 /**************************************
  *
@@ -1283,18 +1280,18 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
-		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
-		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
 
 	fil->fil_next = NULL;
 	strcpy(fil->fil_string, file_name);
-	fil->fil_length = strlen(file_name);
+	fil->fil_length = file_length;
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
@@ -1458,19 +1455,19 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	dba_fil* fil;
 	if (tddba->files) {
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
-		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
 	else {						/* empty list */
 
-		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + strlen(file_name) + 1);
+		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
 
 	fil->fil_next = NULL;
 	strcpy(fil->fil_string, file_name);
-	fil->fil_length = strlen(file_name);
+	fil->fil_length = file_length;
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 

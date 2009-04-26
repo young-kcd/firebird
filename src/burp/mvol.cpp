@@ -173,11 +173,10 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const char* database_name, // unused?
-					const char* file_name,
-					USHORT*	format,
-					int*	cnt,
-					UCHAR**	ptr)
+void MVOL_init_read(const char*	file_name,
+					USHORT*		format,
+					int*		cnt,
+					UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -220,10 +219,9 @@ void MVOL_init_read(const char* database_name, // unused?
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const char*		database_name, // unused?
-					 const char*		file_name,
-					 int*		cnt,
-					 UCHAR**	ptr)
+void MVOL_init_write(const char*	file_name,
+					 int*			cnt,
+					 UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 

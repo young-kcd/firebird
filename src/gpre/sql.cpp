@@ -4009,7 +4009,7 @@ static act* act_procedure()
 			if (MSC_match(KW_NULL))
 				MSC_push(MSC_node(nod_null, 0), &values);
 			else {
-				ref* reference = SQE_parameter(request, false);
+				ref* reference = SQE_parameter(request);
 				*ref_ptr = reference;
 				reference->ref_field = field;
 				MSC_push(MSC_unary(nod_value, (gpre_nod*) reference), &values);

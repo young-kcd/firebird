@@ -42,7 +42,7 @@ FB_UINT64 SORT_read_block(ISC_STATUS*, TempSpace*, FB_UINT64, BLOB_PTR *, ULONG)
 
 void SORT_fini(Jrd::sort_context*, Jrd::Attachment*);
 Jrd::sort_context* SORT_init(Jrd::thread_db*, USHORT, USHORT, USHORT, const Jrd::sort_key_def*,
-						Jrd::FPTR_REJECT_DUP_CALLBACK, void*, FB_UINT64);
+						Jrd::FPTR_REJECT_DUP_CALLBACK, void*); //, FB_UINT64);
 void SORT_put(Jrd::thread_db*, Jrd::sort_context*, ULONG **);
 void SORT_shutdown(Jrd::Attachment*);
 void SORT_sort(Jrd::thread_db*, Jrd::sort_context*);

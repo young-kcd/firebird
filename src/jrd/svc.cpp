@@ -2260,7 +2260,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 }
 
 
-void Service::put(const SCHAR* buffer, USHORT length)
+void Service::put(const SCHAR* /*buffer*/, USHORT /*length*/)
 {
 	// Nothing
 }
@@ -2811,7 +2811,7 @@ THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM)
 	return FINI_OK;
 }
 
-void test_cmd(USHORT spb_length, SCHAR* spb, TEXT** switches)
+void test_cmd(USHORT /*spb_length*/, SCHAR* /*spb*/, TEXT** /*switches*/)
 {
 	gds__log("test_cmd called");
 }

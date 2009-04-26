@@ -878,7 +878,7 @@ static bool get_record(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
 	impure->irsb_flags &= ~(irsb_bof | irsb_eof);
 #endif
 
-	result = VIO_get(tdbb, rpb, rsb, request->req_transaction, request->req_pool);
+	result = VIO_get(tdbb, rpb, request->req_transaction, request->req_pool);
 
 	temporary_key value;
 	if (result)

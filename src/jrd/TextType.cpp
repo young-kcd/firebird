@@ -238,8 +238,7 @@ USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src,
 
 	if (getCharSet()->isMultiByte())
 	{
-		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), dstLen,
-										 dst, key_type);
+		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), dstLen, dst);
 	}
 	else
 	{

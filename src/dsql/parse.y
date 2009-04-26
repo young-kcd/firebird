@@ -2127,8 +2127,8 @@ end_trigger	:
 end_default	:
 			{
 				const TEXT* start = lex.beginnings.pop();
-				$$ = (dsql_nod*) MAKE_string(start, 
-					(yychar <= 0 ? lex_position() : lex.last_token) - start); 
+				$$ = (dsql_nod*) MAKE_string(start,
+					(yychar <= 0 ? lex_position() : lex.last_token) - start);
 			}
 		;
 
@@ -6140,7 +6140,7 @@ int Parser::yylexAux()
 }
 
 
-void Parser::yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
+void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&, YYPOSN&)
 {
 /**************************************
  *

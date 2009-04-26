@@ -25,7 +25,7 @@
 #define BURP_CANON_PROTO_H
 
 ULONG	CAN_encode_decode (burp_rel*, lstring*, UCHAR*, int);
-ULONG	CAN_slice (lstring*, lstring*, int, USHORT, UCHAR*);
+ULONG	CAN_slice (lstring*, lstring*, int, /*USHORT,*/ UCHAR*);
 
 #endif	// BURP_CANON_PROTO_H
 

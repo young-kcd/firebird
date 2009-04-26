@@ -36,7 +36,11 @@
 #include "../gpre/prett_proto.h"
 #include "../jrd/gds_proto.h"
 
-#define ADVANCE_PTR(ptr) while (*ptr) ptr++;
+static inline void ADVANCE_PTR(TEXT*& ptr)
+{
+	while (*ptr)
+		ptr++;
+}
 
 //#define PRINT_VERB 	if (print_verb (control, level)) return -1
 #define PRINT_DYN_VERB 	if (print_dyn_verb (control, level)) return -1
@@ -44,8 +48,6 @@
 #define BLR_BYTE	*(control->ctl_blr)++
 #define PUT_BYTE(byte)	*(control->ctl_ptr)++ = byte
 #define NEXT_BYTE	*(control->ctl_blr)
-#define CHECK_BUFFER	if (control->ctl_ptr > control->ctl_buffer + sizeof (control->ctl_buffer) - 20) \
-							print_line(control, (SSHORT)offset)
 
 
 struct ctl
@@ -60,19 +62,28 @@ struct ctl
 	TEXT ctl_buffer[PRETTY_BUFFER_SIZE];
 };
 
+
 static int blr_format(ctl*, const char *, ...);
 static int error(ctl*, SSHORT, const TEXT *, int);
 static int indent(ctl*, SSHORT);
 static int print_blr_dtype(ctl*, bool);
 static void print_blr_line(void*, SSHORT, const char*);
-static int print_byte(ctl*, SSHORT);
+static int print_byte(ctl*);
 static int print_char(ctl*, SSHORT);
 static int print_dyn_verb(ctl*, SSHORT);
 static int print_line(ctl*, SSHORT);
-static SLONG print_long(ctl*, SSHORT);
+static SLONG print_long(ctl*);
 static int print_sdl_verb(ctl*, SSHORT);
 static int print_string(ctl*, SSHORT);
-static int print_word(ctl*, SSHORT);
+static int print_word(ctl*);
+
+
+static inline void CHECK_BUFFER(ctl* control, SSHORT offset)
+{
+	if (control->ctl_ptr > control->ctl_buffer + sizeof(control->ctl_buffer) - 20)
+		print_line(control, offset);
+}
+
 
 const char *dyn_table[] =
 {
@@ -154,7 +165,7 @@ int PRETTY_print_cdb( UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, S
 		indent(control, level);
 		blr_format(control, p);
 		PUT_BYTE(',');
-		SSHORT length = print_byte(control, offset);
+		int length = print_byte(control);
 		if (length) {
 			do {
 				print_char(control, offset);
@@ -410,48 +421,43 @@ static int print_blr_dtype(ctl* control, bool print_object)
 	if (!print_object)
 		return length;
 
-	// TMN: FIX FIX Note that offset is not initialized to anything useful
-	// for e.g. print_word(control, (SSHORT)offset). I assume it's better to initialize it to zero
-	// than letting it be random.
-	SSHORT offset = 0;
-
 	switch (dtype)
 	{
 	case blr_text:
-		length = print_word(control, offset);
+		length = print_word(control);
 		break;
 
 	case blr_varying:
-		length = print_word(control, offset) + 2;
+		length = print_word(control) + 2;
 		break;
 
 	case blr_text2:
-		print_word(control, offset);
-		length = print_word(control, offset);
+		print_word(control);
+		length = print_word(control);
 		break;
 
 	case blr_varying2:
-		print_word(control, offset);
-		length = print_word(control, offset) + 2;
+		print_word(control);
+		length = print_word(control) + 2;
 		break;
 
 	case blr_short:
 	case blr_long:
 	case blr_int64:
 	case blr_quad:
-		print_byte(control, offset);
+		print_byte(control);
 		break;
 
 	case blr_blob_id:
-		print_word(control, offset);
+		print_word(control);
 		break;
 
 	default:
 		if (dtype == blr_cstring)
-			length = print_word(control, offset);
+			length = print_word(control);
 		else if (dtype == blr_cstring2) {
-			print_word(control, offset);
-			length = print_word(control, offset);
+			print_word(control);
+			length = print_word(control);
 		}
 		break;
 	}
@@ -494,7 +500,7 @@ static void print_blr_line(void* arg, SSHORT offset, const char* line)
 //		Print a byte as a numeric value and return same.
 //
 
-static int print_byte( ctl* control, SSHORT offset)
+static int print_byte( ctl* control)
 {
 	const UCHAR v = BLR_BYTE;
 	sprintf(control->ctl_ptr, control->ctl_language ? "chr(%d), " : "%d, ", v);
@@ -518,7 +524,7 @@ static int print_char( ctl* control, SSHORT offset)
 	sprintf(control->ctl_ptr, printable ? "'%c'," : control->ctl_language ? "chr(%d)," : "%d,", c);
 	ADVANCE_PTR(control->ctl_ptr);
 
-	CHECK_BUFFER;
+	CHECK_BUFFER(control, offset);
 
 	return c;
 }
@@ -569,7 +575,7 @@ static int print_dyn_verb( ctl* control, SSHORT level)
 	case isc_dyn_fld_missing_value:
 	case isc_dyn_prc_blr:
 	case isc_dyn_fld_default_value:
-		length = print_word(control, offset);
+		length = print_word(control);
 		print_line(control, offset);
 		if (length) {
 			control->ctl_level = level;
@@ -584,9 +590,9 @@ static int print_dyn_verb( ctl* control, SSHORT level)
 //	case isc_dyn_log_buffer_size:
 //	case isc_dyn_log_group_commit_wait:
 	case isc_dyn_idx_inactive:
-		length = print_word(control, offset);
+		length = print_word(control);
 		while (length--)
-			print_byte(control, offset);
+			print_byte(control);
 		print_line(control, offset);
 		return 0;
 
@@ -596,14 +602,14 @@ static int print_dyn_verb( ctl* control, SSHORT level)
 	case isc_dyn_description:
 	case isc_dyn_prc_source:
 	case isc_dyn_fld_default_source:
-		length = print_word(control, offset);
+		length = print_word(control);
 		while (length--)
 			print_char(control, offset);
 		print_line(control, offset);
 		return 0;
 
 	case isc_dyn_del_exception:
-		if (length = print_word(control, offset))
+		if (length = print_word(control))
 			do {
 				print_char(control, offset);
 			} while (--length);
@@ -637,7 +643,7 @@ static int print_dyn_verb( ctl* control, SSHORT level)
 		return 0;
 	}
 
-	if (length = print_word(control, offset))
+	if (length = print_word(control))
 		do {
 			print_char(control, offset);
 		} while (--length);
@@ -727,7 +733,7 @@ static int print_line( ctl* control, SSHORT offset)
 //		Print a VAX word as a numeric value an return same.
 //
 
-static SLONG print_long( ctl* control, SSHORT offset)
+static SLONG print_long( ctl* control)
 {
 	const UCHAR v1 = BLR_BYTE;
 	const UCHAR v2 = BLR_BYTE;
@@ -776,7 +782,7 @@ static int print_sdl_verb( ctl* control, SSHORT level)
 		return 0;
 
 	case isc_sdl_struct:
-		n = print_byte(control, offset);
+		n = print_byte(control);
 		while (n--) {
 			print_line(control, offset);
 			indent(control, level + 1);
@@ -786,10 +792,10 @@ static int print_sdl_verb( ctl* control, SSHORT level)
 		break;
 
 	case isc_sdl_scalar:
-		print_byte(control, offset);
+		print_byte(control);
 
 	case isc_sdl_element:
-		n = print_byte(control, offset);
+		n = print_byte(control);
 		print_line(control, offset);
 		while (n--)
 			PRINT_SDL_VERB;
@@ -803,16 +809,16 @@ static int print_sdl_verb( ctl* control, SSHORT level)
 	case isc_sdl_fid:
 	case isc_sdl_rid:
 	case isc_sdl_short_integer:
-		print_word(control, offset);
+		print_word(control);
 		break;
 
 	case isc_sdl_variable:
 	case isc_sdl_tiny_integer:
-		print_byte(control, offset);
+		print_byte(control);
 		break;
 
 	case isc_sdl_long_integer:
-		print_long(control, offset);
+		print_long(control);
 		break;
 
 	case isc_sdl_add:
@@ -835,7 +841,7 @@ static int print_sdl_verb( ctl* control, SSHORT level)
 		n++;
 	case isc_sdl_do1:
 		n += 2;
-		print_byte(control, offset);
+		print_byte(control);
 		print_line(control, offset);
 		while (n--)
 			PRINT_SDL_VERB;
@@ -855,7 +861,7 @@ static int print_sdl_verb( ctl* control, SSHORT level)
 
 static int print_string( ctl* control, SSHORT offset)
 {
-	SSHORT n = print_byte(control, offset);
+	SSHORT n = print_byte(control);
 	while (--n >= 0)
 		print_char(control, offset);
 
@@ -869,7 +875,7 @@ static int print_string( ctl* control, SSHORT offset)
 //		Print a VAX word as a numeric value an return same.
 //
 
-static int print_word( ctl* control, SSHORT offset)
+static int print_word( ctl* control)
 {
 	const UCHAR v1 = BLR_BYTE;
 	const UCHAR v2 = BLR_BYTE;

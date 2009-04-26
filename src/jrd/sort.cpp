@@ -648,8 +648,8 @@ sort_context* SORT_init(thread_db* tdbb,
 						USHORT unique_keys,
 						const sort_key_def* key_description,
 						FPTR_REJECT_DUP_CALLBACK call_back,
-						void* user_arg,
-						FB_UINT64 max_records)
+						void* user_arg)
+						//FB_UINT64 max_records)
 {
 /**************************************
  *

@@ -53,7 +53,7 @@ public:
 			   i1.level > i2.level;
 	}
 
-	static inline const traRpbListElement& generate(const void *sender, const traRpbListElement& Item)
+	static inline const traRpbListElement& generate(const void* /*sender*/, const traRpbListElement& Item)
 	{
 		return Item;
 	}

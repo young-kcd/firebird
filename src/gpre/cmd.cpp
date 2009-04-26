@@ -68,7 +68,7 @@ static void create_database_modify_dyn(gpre_req*, act*);
 static void create_default_blr(gpre_req*, const TEXT*, const USHORT);
 static void create_del_cascade_trg(gpre_req*, const act*, cnstrt*);
 static void create_domain(gpre_req*, const act*);
-static void create_domain_constraint(gpre_req*, const act*, const cnstrt*);
+static void create_domain_constraint(gpre_req*, const cnstrt*);
 static void create_generator(gpre_req*, const act*);
 static void create_index(gpre_req*, const gpre_index*);
 static void create_matching_blr(gpre_req*, const cnstrt*);
@@ -80,7 +80,7 @@ static void create_trg_firing_cond(gpre_req*, const cnstrt*);
 static void create_trigger(gpre_req*, const act*, gpre_trg*, pfn_local_trigger_cb);
 static void create_upd_cascade_trg(gpre_req*, const act*, cnstrt*);
 static bool create_view(gpre_req*, act*);
-static void create_view_trigger(gpre_req*, const act*, gpre_trg*, gpre_nod*, gpre_ctx**, gpre_nod*);
+static void create_view_trigger(gpre_req*, const act*, gpre_trg*, gpre_nod*, gpre_ctx**);
 static void declare_filter(gpre_req*, const act*);
 static void declare_udf(gpre_req*, const act*);
 static void get_referred_fields(const act*, cnstrt*);
@@ -99,13 +99,17 @@ static void put_string(gpre_req*, USHORT, const TEXT*, USHORT);
 static void put_symbol(gpre_req*, int, const gpre_sym*);
 static void put_trigger_blr(gpre_req*, USHORT, gpre_nod*, pfn_local_trigger_cb);
 static void put_view_trigger_blr(gpre_req*, const gpre_rel*, USHORT, gpre_trg*,
-								 gpre_nod*, gpre_ctx**, gpre_nod*);
+								 gpre_nod*, gpre_ctx**);
 static void replace_field_names(gpre_nod* const, const gpre_nod* const,
 								gpre_fld* const, bool, gpre_ctx**);
 static void set_statistics(gpre_req*, const act*);
 
-#define STUFF_CHECK(n)	if (request->req_base - request->req_blr + request->req_length <= (n) + 50)\
-			CMP_check (request,(n))
+static inline void STUFF_CHECK(gpre_req* request, int n)
+{
+	if (request->req_base - request->req_blr + request->req_length <= n + 50)
+		CMP_check(request, n);
+}
+
 
 const int BLOB_BUFFER_SIZE = 4096;	// to read in blr blob for default values
 
@@ -119,9 +123,6 @@ const int BLOB_BUFFER_SIZE = 4096;	// to read in blr blob for default values
 
 int CMD_compile_ddl(gpre_req* request)
 {
-	gpre_index* index;
-	gpre_rel* relation;
-
 	// Initialize the blr string
 
 	act* action = request->req_actions;
@@ -167,8 +168,10 @@ int CMD_compile_ddl(gpre_req* request)
 		break;
 
 	case ACT_create_index:
-		index = (gpre_index*) action->act_object;
-		create_index(request, index);
+		{
+			const gpre_index* index = (gpre_index*) action->act_object;
+			create_index(request, index);
+		}
 		break;
 
 	case ACT_create_shadow:
@@ -198,9 +201,11 @@ int CMD_compile_ddl(gpre_req* request)
 		break;
 
 	case ACT_drop_index:
-		index = (gpre_index*) action->act_object;
-		put_symbol(request, isc_dyn_delete_idx, index->ind_symbol);
-		request->add_end();
+		{
+			const gpre_index* index = (gpre_index*) action->act_object;
+			put_symbol(request, isc_dyn_delete_idx, index->ind_symbol);
+			request->add_end();
+		}
 		break;
 
 	case ACT_drop_shadow:
@@ -210,9 +215,11 @@ int CMD_compile_ddl(gpre_req* request)
 
 	case ACT_drop_table:
 	case ACT_drop_view:
-		relation = (gpre_rel*) action->act_object;
-		put_symbol(request, isc_dyn_delete_rel, relation->rel_symbol);
-		request->add_end();
+		{
+			const gpre_rel* relation = (gpre_rel*) action->act_object;
+			put_symbol(request, isc_dyn_delete_rel, relation->rel_symbol);
+			request->add_end();
+		}
 		break;
 
 	case ACT_drop_udf:
@@ -366,7 +373,7 @@ static void alter_domain( gpre_req* request, const act* action)
 			if (constraint->cnstrt_flags & CNSTRT_delete)
 				request->add_byte(isc_dyn_del_validation);
 		}
-		create_domain_constraint(request, action, field->fld_constraints);
+		create_domain_constraint(request, field->fld_constraints);
 	}
 
 	request->add_end();
@@ -1486,7 +1493,7 @@ static void create_domain( gpre_req* request, const act* action)
 	}
 
 	if (field->fld_constraints)
-		create_domain_constraint(request, action, field->fld_constraints);
+		create_domain_constraint(request, field->fld_constraints);
 
 	request->add_end();
 }
@@ -1497,8 +1504,7 @@ static void create_domain( gpre_req* request, const act* action)
 //		Generate dyn for creating a constraints for domains.
 //
 
-static void create_domain_constraint(gpre_req* request, const act* action,
-									 const cnstrt* constraint)
+static void create_domain_constraint(gpre_req* request, const cnstrt* constraint)
 {
 	for (; constraint; constraint = constraint->cnstrt_next)
 	{
@@ -1917,7 +1923,7 @@ static bool create_view(gpre_req* request,
 
 		trigger->trg_message = NULL;
 		trigger->trg_boolean = (gpre_nod*) select;
-		create_view_trigger(request, action, trigger, view_boolean, contexts, set_list);
+		create_view_trigger(request, action, trigger, view_boolean, contexts);
 
 		// create the Pre-store trigger
 
@@ -1925,7 +1931,7 @@ static bool create_view(gpre_req* request,
 
 		// "insert violates CHECK constraint on view"
 
-		create_view_trigger(request, action, trigger, view_boolean, contexts, set_list);
+		create_view_trigger(request, action, trigger, view_boolean, contexts);
 	}
 
 	request->add_end();
@@ -1943,7 +1949,7 @@ static void create_view_trigger(gpre_req* request,
 								const act* action,
 								gpre_trg* trigger,
 								gpre_nod* view_boolean,
-								gpre_ctx** contexts, gpre_nod* set_list)
+								gpre_ctx** contexts)
 {
 	const gpre_rel* relation = (gpre_rel*) action->act_object;
 
@@ -1967,7 +1973,7 @@ static void create_view_trigger(gpre_req* request,
 
 	// Generate the BLR for firing the trigger
 
-	put_view_trigger_blr(request, relation, isc_dyn_trg_blr, trigger, view_boolean, contexts, set_list);
+	put_view_trigger_blr(request, relation, isc_dyn_trg_blr, trigger, view_boolean, contexts);
 
 	request->add_end();
 }
@@ -2573,7 +2579,7 @@ static void put_short_cstring(gpre_req* request, USHORT ddl_operator, const TEXT
 	if (string != NULL)
 		length = strlen(string);
 
-	STUFF_CHECK(length);
+	STUFF_CHECK(request, length);
 
 	request->add_byte(ddl_operator);
 	request->add_byte(length);
@@ -2593,7 +2599,7 @@ static void put_short_cstring(gpre_req* request, USHORT ddl_operator, const TEXT
 static void put_string(gpre_req* request, USHORT ddl_operator, const TEXT* string, USHORT length)
 {
 
-	STUFF_CHECK(length);
+	STUFF_CHECK(request, length);
 
 	if (ddl_operator) {
 		request->add_byte(ddl_operator);
@@ -2671,7 +2677,7 @@ static void put_view_trigger_blr(gpre_req* request,
 								 const gpre_rel* relation,
 								 USHORT blr_operator,
 								 gpre_trg* trigger,
-	gpre_nod* view_boolean, gpre_ctx** contexts, gpre_nod* set_list)
+								 gpre_nod* view_boolean, gpre_ctx** contexts)
 {
 	gpre_rse* node = (gpre_rse*) trigger->trg_boolean;
 	request->add_byte(blr_operator);

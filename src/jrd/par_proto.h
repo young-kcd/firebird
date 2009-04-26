@@ -58,8 +58,7 @@ SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
 
 typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool, Jrd::CompilerScratch* csb);
 
-Jrd::jrd_nod* PAR_parse_node(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, USHORT expected,
-	USHORT expected_optional = 0);
+Jrd::jrd_nod* PAR_parse_node(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, USHORT expected);
 void PAR_register(UCHAR blr, NodeParseFunc parseFunc);
 void PAR_syntax_error(Jrd::CompilerScratch* csb, const TEXT* string);
 

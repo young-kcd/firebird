@@ -25,7 +25,7 @@
 
 using namespace Firebird;
 
-SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, ErrorFunction err)
+SQUAD QUAD_add(const SQUAD*, const SQUAD*, ErrorFunction err)
 {
 /**************************************
  *
@@ -71,7 +71,7 @@ SSHORT QUAD_compare(const SQUAD* arg1, const SQUAD* arg2)
 }
 
 
-SQUAD QUAD_from_double(const double* d, ErrorFunction err)
+SQUAD QUAD_from_double(const double*, ErrorFunction err)
 {
 /**************************************
  *
@@ -94,7 +94,7 @@ SQUAD QUAD_from_double(const double* d, ErrorFunction err)
 }
 
 
-SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, ErrorFunction err)
+SQUAD QUAD_multiply(const SQUAD*, const SQUAD*, ErrorFunction err)
 {
 /**************************************
  *
@@ -115,7 +115,7 @@ SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, ErrorFunction err)
 }
 
 
-SQUAD QUAD_negate(const SQUAD* arg1, ErrorFunction err)
+SQUAD QUAD_negate(const SQUAD*, ErrorFunction err)
 {
 /**************************************
  *
@@ -136,7 +136,7 @@ SQUAD QUAD_negate(const SQUAD* arg1, ErrorFunction err)
 }
 
 
-SQUAD QUAD_subtract(const SQUAD* arg1, const SQUAD* arg2, ErrorFunction err)
+SQUAD QUAD_subtract(const SQUAD*, const SQUAD*, ErrorFunction err)
 {
 /**************************************
  *

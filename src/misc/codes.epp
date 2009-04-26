@@ -78,8 +78,7 @@ static void check_open(FILE*& f, const char* name, const char* tmp, const char* 
    }
 }
 
-static void check_close(FILE* f, const char* name, const char* tmp, const char* mode,
-	 const char* directory)
+static void check_close(FILE* f, const char* name, const char* tmp, const char* directory)
 {
 	fclose(f);
 	move_if_not_identical(name, tmp, directory);
@@ -358,7 +357,7 @@ static void build_msgfac_h()
 
 	fprintf(msgfac, "\t{0, NULL}\n};\n\n");
 	fprintf(msgfac, "\n");
-	check_close(msgfac, MSGFAC_H, "tmpcode1", "w", genDirectory);
+	check_close(msgfac, MSGFAC_H, "tmpcode1", genDirectory);
 }
 
 static void build_iberror_h()
@@ -481,7 +480,7 @@ static void build_iberror_h()
 	fprintf(iberror, "\n");
 	fprintf(iberror, "#endif\n\n");
 	fprintf(iberror, "#endif /* JRD_GEN_IBERROR_H */\n");
-	check_close(iberror, IBERROR_H, "tmpcode2", "w", genDirectory);
+	check_close(iberror, IBERROR_H, "tmpcode2", genDirectory);
 }
 
 
@@ -664,7 +663,7 @@ static void build_iberror_h()
 //
 //	fprintf(c_codes, "#endif /* JRD_GEN_CODES_H */\n");
 //
-//	check_close(c_codes, CODES_H, "tmpcode3", "w", genDirectory);
+//	check_close(c_codes, CODES_H, "tmpcode3", genDirectory);
 //}
 
 
@@ -886,12 +885,12 @@ static void build_other_headers()
 	fprintf(sql_states, "\t{0, NULL}\n");
 	fprintf(sql_states, "};\n");
 
-	check_close(pas_codes, CODES_PAS, "tmpcode4", "w", genFtnPasDirectory);
-	check_close(ftn_codes, CODES_FTN, "tmpcode5", "w", genFtnPasDirectory);
-	check_close(code_text, CODETEXT_H, "tmpcode6", "w", genDirectory);
-	check_close(msgs, MSGS_H, "tmpcode7", "w", genDirectory);
-	check_close(sql_codes, SQL_CODES_H, "tmpcode9", "w", genDirectory);
-	check_close(sql_states, SQL_STATES_H, "tmpcode10", "w", genDirectory);
+	check_close(pas_codes, CODES_PAS, "tmpcode4", genFtnPasDirectory);
+	check_close(ftn_codes, CODES_FTN, "tmpcode5", genFtnPasDirectory);
+	check_close(code_text, CODETEXT_H, "tmpcode6", genDirectory);
+	check_close(msgs, MSGS_H, "tmpcode7", genDirectory);
+	check_close(sql_codes, SQL_CODES_H, "tmpcode9", genDirectory);
+	check_close(sql_states, SQL_STATES_H, "tmpcode10", genDirectory);
 }
 
 

@@ -856,7 +856,7 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
     @param arg
 
  **/
-static void cleanup(void* arg)
+static void cleanup(void*)
 {
 	Firebird::MutexLockGuard guard(failuresMutex);
 

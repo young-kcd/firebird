@@ -476,7 +476,7 @@ void Element::putQuotedText(const char* text, Stream* stream) const
 		stream->putSegment(p - start, start, true);
 }
 
-int Element::analyzeData(int length, const UCHAR* bytes)
+int Element::analyzeData(const UCHAR* bytes)
 {
 	int count = 0;
 

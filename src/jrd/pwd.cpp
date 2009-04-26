@@ -127,9 +127,9 @@ namespace {
 			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt)
 		{}
 
-		static const string* generate(const void* sender, const FailedLogin* f)
+		static const string* generate(const void* /*sender*/, const FailedLogin* f)
 		{
-			return &(f->login);
+			return &f->login;
 		}
 	};
 

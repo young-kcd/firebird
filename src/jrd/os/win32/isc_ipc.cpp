@@ -258,7 +258,7 @@ void ISC_signal_init()
 }
 
 
-static void cleanup(void *arg)
+static void cleanup(void*)
 {
 /**************************************
  *

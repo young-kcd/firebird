@@ -78,7 +78,7 @@ struct BlobIndex
 		bid bli_blob_id; // ID of materialized blob
 		blb* bli_blob_object; // Blob object
 	};
-    static const ULONG& generate(const void *sender, const BlobIndex& item)
+    static const ULONG& generate(const void* /*sender*/, const BlobIndex& item)
 	{
 		return item.bli_temp_id;
     }
@@ -434,7 +434,7 @@ public:
 class UndoItem
 {
 public:
-    static const SINT64& generate(const void *sender, const UndoItem& item)
+    static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
 	{
 		return item.number;
     }

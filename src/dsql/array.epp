@@ -323,7 +323,7 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 }
 
 
-static void adjust_length( ISC_ARRAY_DESC* desc)
+static void adjust_length( ISC_ARRAY_DESC*)
 {
 /**************************************
  *

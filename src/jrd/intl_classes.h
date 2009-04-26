@@ -64,7 +64,7 @@ protected:
 class NullStrConverter
 {
 public:
-	NullStrConverter(MemoryPool& pool, const TextType* obj, const UCHAR* str, SLONG len)
+	NullStrConverter(MemoryPool& /*pool*/, const TextType* /*obj*/, const UCHAR* /*str*/, SLONG /*len*/)
 	{
 	}
 };

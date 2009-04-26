@@ -162,13 +162,12 @@ static void foreign_key(CompiledStatement*, dsql_nod*, const char* index_name);
 static void generate_dyn(CompiledStatement*, dsql_nod*);
 static void grant_revoke(CompiledStatement*);
 static void make_comment(CompiledStatement*);
-static void make_index(CompiledStatement*, const dsql_nod*, const dsql_nod*,
-	const dsql_nod*, const char*, const char*);
+static void make_index(CompiledStatement*, const dsql_nod*, const dsql_nod*, const char*);
 static void make_index_trg_ref_int(CompiledStatement*, dsql_nod*, dsql_nod*, dsql_nod*,
 	const char*, const char*);
 static void modify_database(CompiledStatement*);
 static void modify_domain(CompiledStatement*);
-static void modify_field(CompiledStatement*, dsql_nod*, SSHORT, const dsql_str*);
+static void modify_field(CompiledStatement*, dsql_nod*, const dsql_str*);
 static void modify_index(CompiledStatement*);
 static void modify_privilege(CompiledStatement* statement, NOD_TYPE type, SSHORT option,
 							 const UCHAR* privs, const dsql_nod* table,
@@ -2785,7 +2784,7 @@ static void define_rel_constraint(CompiledStatement* statement, dsql_nod* elemen
 	{
 	case nod_unique:
 	case nod_primary:
-		make_index(statement, node, node->nod_arg[e_pri_columns], 0, 0, constraint_name);
+		make_index(statement, node, node->nod_arg[e_pri_columns], constraint_name);
 		break;
 	case nod_foreign:
 		foreign_key(statement, node, constraint_name);
@@ -4809,8 +4808,6 @@ static void make_comment(CompiledStatement* statement)
 static void make_index(	CompiledStatement*    statement,
 						const dsql_nod*    element,
 						const dsql_nod*    columns,
-						const dsql_nod*    referenced_columns, // unused
-						const char* relation_name,
 						const char* index_name)
 {
 /**************************************
@@ -5539,7 +5536,7 @@ static void modify_relation(CompiledStatement* statement)
 
 
 		case nod_mod_field_type:
-			modify_field(statement, element, (SSHORT) -1, relation_name);
+			modify_field(statement, element, relation_name);
 			break;
 
 		case nod_def_field:
@@ -6521,7 +6518,6 @@ static void stuff_trg_firing_cond(CompiledStatement* statement,
 
 static void modify_field(CompiledStatement*	statement,
 						 dsql_nod*	element,
-						 SSHORT	position,
 						 const dsql_str*	relation_name)
 {
 /**************************************

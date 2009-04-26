@@ -57,14 +57,14 @@ protected:
 		virtual int firstWarning() const throw() { return 0; }
 		virtual bool hasData() const throw() { return false; }
 		virtual void clear() throw() { }
-		virtual void append(const StatusVector& v) throw() { }
-		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return 0; }
+		virtual void append(const StatusVector&) throw() { }
+		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
 
-		virtual void shiftLeft(const Base& arg) throw() { }
-		virtual void shiftLeft(const Warning& arg) throw() { }
-		virtual void shiftLeft(const char* text) throw() { }
-		virtual void shiftLeft(const AbstractString& text) throw() { }
-		virtual void shiftLeft(const MetaName& text) throw() { }
+		virtual void shiftLeft(const Base&) throw() { }
+		virtual void shiftLeft(const Warning&) throw() { }
+		virtual void shiftLeft(const char*) throw() { }
+		virtual void shiftLeft(const AbstractString&) throw() { }
+		virtual void shiftLeft(const MetaName&) throw() { }
 
 		ImplBase(ISC_STATUS k, ISC_STATUS c) throw() : kind(k), code(c) { }
 		virtual ~ImplBase() { }

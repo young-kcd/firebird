@@ -570,7 +570,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 
 
 #if defined(UNIX) || defined(WIN_NT)
-int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
+int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
 {
 /**************************************
  *
@@ -894,7 +894,7 @@ int API_ROUTINE isc_get_client_minor_version()
 }
 
 
-void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
+void API_ROUTINE gds__map_blobs(int* /*handle1*/, int* /*handle2*/)
 {
 /**************************************
  *
@@ -909,7 +909,7 @@ void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
 }
 
 
-void API_ROUTINE isc_set_debug(int value)
+void API_ROUTINE isc_set_debug(int /*value*/)
 {
 /**************************************
  *
@@ -1041,7 +1041,7 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 }
 
-static void print_version(void* dummy, const char* version)
+static void print_version(void*, const char* version)
 {
 	printf("\t%s\n", version);
 }
@@ -1309,7 +1309,7 @@ int API_ROUTINE blob__display(SLONG blob_id[2],
 int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 							 FB_API_HANDLE database,
 							 FB_API_HANDLE transaction,
-							 const TEXT* field_name)
+							 const TEXT* /*field_name*/)
 {
 /**************************************
  *

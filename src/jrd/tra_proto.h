@@ -34,7 +34,7 @@ namespace Jrd {
 bool	TRA_active_transactions(Jrd::thread_db*, Jrd::Database*);
 void	TRA_cleanup(Jrd::thread_db*);
 void	TRA_commit(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
-void	TRA_extend_tip(Jrd::thread_db*, ULONG, struct Jrd::win *);
+void	TRA_extend_tip(Jrd::thread_db*, ULONG /*, struct Jrd::win* */);
 int		TRA_fetch_state(Jrd::thread_db*, SLONG);
 void	TRA_get_inventory(Jrd::thread_db*, UCHAR*, ULONG, ULONG);
 int		TRA_get_state(Jrd::thread_db*, SLONG);

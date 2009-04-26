@@ -293,7 +293,7 @@ namespace
 		~BaseHandle();
 
 		// required to put pointers to it into the tree
-		static const FB_API_HANDLE& generate(const void* sender, const BaseHandle* value)
+		static const FB_API_HANDLE& generate(const void* /*sender*/, const BaseHandle* value)
 		{
 			return value->public_handle;
 		}

@@ -68,7 +68,7 @@ public:
 			description = NULL;
 		}
 
-		static const int& generate(const void* sender, const ConnectionData& item)
+		static const int& generate(const void* /*sender*/, const ConnectionData& item)
 		{
 			return item.id;
 		}
@@ -90,7 +90,7 @@ public:
 			description = NULL;
 		}
 
-		static const int& generate(const void* sender, const TransactionData& item)
+		static const int& generate(const void* /*sender*/, const TransactionData& item)
 		{
 			return item.id;
 		}
@@ -105,7 +105,7 @@ public:
 		unsigned int id;
 		Firebird::string* description; // NULL in this field indicates that tracing of this statement is not desired
 
-		static const unsigned int& generate(const void* sender, const StatementData& item)
+		static const unsigned int& generate(const void* /*sender*/, const StatementData& item)
 		{
 			return item.id;
 		}
@@ -126,7 +126,7 @@ public:
 			description = NULL;
 		}
 
-		static const ntrace_service_t& generate(const void* sender, const ServiceData& item)
+		static const ntrace_service_t& generate(const void* /*sender*/, const ServiceData& item)
 		{
 			return item.id;
 		}

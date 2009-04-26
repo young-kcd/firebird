@@ -138,7 +138,7 @@ template <typename T>
 class DefaultKeyValue
 {
 public:
-	static const T& generate(const void* sender, const T& Item) { return Item; }
+	static const T& generate(const void* /*sender*/, const T& Item) { return Item; }
 };
 
 // Fast sorted array of simple objects

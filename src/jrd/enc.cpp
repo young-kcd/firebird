@@ -262,7 +262,7 @@ union C_block
 
 STATIC void init_des();
 STATIC void init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
-					  unsigned char p[64], int chars_in, int chars_out);
+					  unsigned char p[64], int chars_out);
 
 
 STATIC void permute(unsigned char *cp, C_block * out, C_block * p, int chars_in)
@@ -771,7 +771,7 @@ STATIC void init_des()
 		}
 		perm[i] = (unsigned char) k;
 	}
-	init_perm(PC1ROT, perm, 8, 8);
+	init_perm(PC1ROT, perm, 8);
 
 	/*
 	 * PC2ROT - PC2 inverse, then Rotate (once or twice), then PC2.
@@ -793,7 +793,7 @@ STATIC void init_des()
 				k -= 28;
 			perm[i] = pc2inv[k];
 		}
-		init_perm(PC2ROT[j], perm, 8, 8);
+		init_perm(PC2ROT[j], perm, 8);
 	}
 
 	/*
@@ -814,7 +814,7 @@ STATIC void init_des()
 			perm[i * 8 + j] = (unsigned char) k;
 		}
 	}
-	init_perm(IE3264, perm, 4, 8);
+	init_perm(IE3264, perm, 8);
 
 	/*
 	 * Compression, then final permutation, then bit reverse.
@@ -828,7 +828,7 @@ STATIC void init_des()
 		}
 		perm[k - 1] = i + 1;
 	}
-	init_perm(CF6464, perm, 8, 8);
+	init_perm(CF6464, perm, 8);
 
 	/*
 	 * SPE table
@@ -874,13 +874,13 @@ STATIC void init_des()
  */
 STATIC void
 init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
-		  unsigned char p[64], int chars_in, int chars_out)
+		  unsigned char p[64], int chars_out)
 {
 	for (int k = 0; k < chars_out * 8; k++) {	/* each output bit position */
 		int l = p[k] - 1;			/* where this bit comes from */
 		if (l < 0)
 			continue;			/* output bit is always 0 */
-		int i = l >> LGCHUNKBITS;	/* which chunk this bit comes from */
+		const int i = l >> LGCHUNKBITS;	/* which chunk this bit comes from */
 		l = 1 << (l & (CHUNKBITS - 1));	/* mask for this bit */
 		for (int j = 0; j < (1 << CHUNKBITS); j++) {	/* each chunk value */
 			if ((j & l) != 0)

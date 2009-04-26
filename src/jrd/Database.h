@@ -493,8 +493,8 @@ private:
 	// Database's own permanent pool.  That pool has already been released by the Database
 	// destructor, so the memory has already been released.  Hence the operator
 	// delete no-op.
-	void operator delete(void *mem) {}
-	void operator delete[](void *mem) {}
+	void operator delete(void*) {}
+	void operator delete[](void*) {}
 
 	Database(const Database&);			// no impl.
 	const Database& operator =(const Database&) { return *this; }

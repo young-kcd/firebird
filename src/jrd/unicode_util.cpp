@@ -189,8 +189,7 @@ USHORT UnicodeUtil::utf16KeyLength(USHORT len)
 
 
 // BOCU-1
-USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
-							   USHORT key_type)
+USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst)
 {
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);

@@ -85,6 +85,8 @@ namespace Firebird {
 
 // ******************************** StringsBuffer *******************************
 
+// CVC: Do not let "perm" be incremented before "trans", because it may lead to serious memory errors,
+// since several places in our code blindly pass the same vector twice.
 void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans)
 {
 	while (true)
@@ -100,7 +102,7 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 				size_t len = *perm++ = *trans++;
 				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
-				perm[-2] = len;
+				//perm[-2] = len; redundant
 			}
 			break;
 		case isc_arg_string:
@@ -261,7 +263,7 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
-ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb) const throw()
+ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer*) const throw()
 {
 	ISC_STATUS *sv = status_vector;
 
@@ -279,7 +281,7 @@ void LongJump::raise()
 	throw LongJump();
 }
 
-ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb) const throw()
+ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer*) const throw()
 {
    /*
 	* Do nothing for a while - not all utilities are ready,

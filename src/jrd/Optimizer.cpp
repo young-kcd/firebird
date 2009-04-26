@@ -1276,7 +1276,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	printCandidates(&inversions);
 #endif
 
-	invCandidate = makeInversion(&inversions, true);
+	invCandidate = makeInversion(&inversions); //, true);
 
 	// Add the streams where this stream is depending on.
 	if (invCandidate) {
@@ -1884,8 +1884,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	return node;
 }
 
-InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions,
-													  bool top)	const
+InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions) const
 {
 /**************************************
  *
@@ -1895,6 +1894,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
  *
  * Select best available inversion candidates
  * and compose them to 1 inversion.
+ * This was never implemented:
  * If top is true the datapages-cost is
  * also used in the calculation (only needed
  * for top InversionNode generation).

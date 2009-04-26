@@ -59,7 +59,7 @@ static bool_t expand_buffer(XDR*);
 static bool_t xdr_datum(XDR*, DSC*, UCHAR*);
 static bool_t xdr_quad(XDR*, SLONG*);
 static int xdr_init(XDR*, lstring*, enum xdr_op);
-static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
+static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
 
 static xdr_t::xdr_ops burp_ops =
 {
@@ -216,7 +216,7 @@ ULONG CAN_encode_decode(burp_rel* relation,
 ULONG CAN_slice(lstring* buffer,
 				lstring* slice,
 				bool_t direction,
-				USHORT sdl_length,
+				//USHORT sdl_length,
 				UCHAR* sdl)
 {
 /**************************************
@@ -234,12 +234,12 @@ ULONG CAN_slice(lstring* buffer,
 
 	xdr_init(xdrs, buffer, direction ? XDR_ENCODE : XDR_DECODE);
 
-	xdr_slice(xdrs, slice, sdl_length, sdl);
+	xdr_slice(xdrs, slice, /*sdl_length,*/ sdl);
 	return (xdrs->x_private - xdrs->x_base);
 }
 
 
-static XDR_INT burp_destroy( XDR * xdrs)
+static XDR_INT burp_destroy(XDR*)
 {
 /**************************************
  *
@@ -628,7 +628,7 @@ static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
 
 static bool_t xdr_slice(XDR* xdrs,
 						lstring* slice,
-						USHORT sdl_length,
+						//USHORT sdl_length,
 						const UCHAR* sdl)
 {
 /**************************************

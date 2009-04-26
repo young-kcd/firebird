@@ -85,7 +85,7 @@ static gpre_rel* par_base_table(gpre_req*, const gpre_rel*, const TEXT*);
 static gpre_nod* par_case(gpre_req*);
 static gpre_nod* par_collate(gpre_req*, gpre_nod*);
 static gpre_nod* par_in(gpre_req*, gpre_nod*);
-static gpre_ctx* par_joined_relation(gpre_req*, gpre_ctx*);
+static gpre_ctx* par_joined_relation(gpre_req*);
 static gpre_ctx* par_join_clause(gpre_req*, gpre_ctx*);
 static nod_t par_join_type();
 static gpre_nod* par_multiply(gpre_req*, bool, USHORT *, bool *);
@@ -112,7 +112,7 @@ static gpre_nod* post_select_list(gpre_nod*, map*);
 static void pop_scope(gpre_req*, scope*);
 static void push_scope(gpre_req*, scope*);
 static gpre_fld* resolve(gpre_nod*, gpre_ctx*, gpre_ctx**, act**);
-static bool resolve_fields(gpre_nod*& fields, gpre_req* request, gpre_rse* selection);
+static bool resolve_fields(gpre_nod*& fields, gpre_rse* selection);
 static gpre_ctx* resolve_asterisk(const tok*, gpre_rse*);
 static void set_ref(gpre_nod*, gpre_fld*);
 static char* upcase_string(const char*);
@@ -703,7 +703,7 @@ gpre_nod* SQE_list(pfn_SQE_list_cb routine, gpre_req* request, bool aster_ok)
 //       "INDICATOR".
 //
 
-ref* SQE_parameter(gpre_req* request, bool aster_ok)
+ref* SQE_parameter(gpre_req* request)
 {
 	ref* reference;
 	SCHAR* string;
@@ -1221,7 +1221,7 @@ gpre_nod* SQE_value_or_null(gpre_req* request, bool aster_ok, USHORT* paren_coun
 //       "INDICATOR".
 //
 
-gpre_nod* SQE_variable(gpre_req* request, bool aster_ok, USHORT* paren_count, bool* bool_flag)
+gpre_nod* SQE_variable(gpre_req* request, bool /*aster_ok*/, USHORT* /*paren_count*/, bool* /*bool_flag*/)
 {
 	assert_IS_REQ(request);
 
@@ -2039,14 +2039,14 @@ static gpre_nod* par_in( gpre_req* request, gpre_nod* value)
 //		Parse a join relation clause.
 //
 
-static gpre_ctx* par_joined_relation( gpre_req* request, gpre_ctx* prior_context)
+static gpre_ctx* par_joined_relation( gpre_req* request)
 {
 	gpre_ctx* context1;
 
 	assert_IS_REQ(request);
 
 	if (MSC_match(KW_LEFT_PAREN)) {
-		context1 = par_joined_relation(request, NULL);
+		context1 = par_joined_relation(request);
 		EXP_match_paren();
 	}
 	else if (!(context1 = SQE_context(request)))
@@ -2069,7 +2069,7 @@ static gpre_ctx* par_join_clause( gpre_req* request, gpre_ctx* context1)
 	if (join_type == nod_nothing)
 		return context1;
 
-	gpre_ctx* context2 = par_joined_relation(request, context1);
+	gpre_ctx* context2 = par_joined_relation(request);
 	if (!context2)
 		CPR_s_error("<joined table clause>");
 
@@ -2347,7 +2347,7 @@ static gpre_nod* par_plan( gpre_req* request)
 //		access plan.
 //
 
-static gpre_nod* par_plan_item(gpre_req* request, bool aster_ok, USHORT* paren_count, bool* bool_flag)
+static gpre_nod* par_plan_item(gpre_req* request, bool /*aster_ok*/, USHORT* /*paren_count*/, bool* /*bool_flag*/)
 {
 	assert_IS_REQ(request);
 
@@ -2770,7 +2770,7 @@ static gpre_nod* par_relational(gpre_req* request,
 
 
 // Out of alphabetical order.
-static bool resolve_fields(gpre_nod*& fields, gpre_req* request, gpre_rse* selection)
+static bool resolve_fields(gpre_nod*& fields, gpre_rse* selection)
 {
 	bool aggregate = false;
 
@@ -2822,7 +2822,7 @@ static gpre_rse* par_rse(gpre_req* request, gpre_nod* fields, bool distinct)
 	int count = 0;
 	gpre_ctx* context;
 	do {
-		if (context = par_joined_relation(request, NULL)) {
+		if (context = par_joined_relation(request)) {
 			MSC_push((gpre_nod*) context, &stack);
 			count++;
 		}
@@ -2844,7 +2844,7 @@ static gpre_rse* par_rse(gpre_req* request, gpre_nod* fields, bool distinct)
 	bool aggregate = false;
 
 	if (fields)
-		aggregate = resolve_fields(fields, request, select);
+		aggregate = resolve_fields(fields, select);
 
 	select->rse_fields = fields;
 	if (distinct)
@@ -2958,11 +2958,11 @@ static gpre_rse* par_select( gpre_req* request, gpre_rse* union_rse)
 	gpre_rse* select = par_rse(request, s_list, distinct);
 
 	if (rse_first)
-		resolve_fields(rse_first, request, select);
+		resolve_fields(rse_first, select);
 	select->rse_sqlfirst = rse_first;
 
 	if (rse_skip)
-		resolve_fields(rse_skip, request, select);
+		resolve_fields(rse_skip, select);
 	select->rse_sqlskip = rse_skip;
 
 	if (select->rse_into = into_list)
@@ -3374,7 +3374,7 @@ static gpre_nod* par_udf_or_field(gpre_req* request, bool aster_ok)
 //
 
 static gpre_nod* par_udf_or_field_with_collate(gpre_req* request,
-											  bool aster_ok, USHORT* paren_count, bool* bool_flag)
+											  bool aster_ok, USHORT* /*paren_count*/, bool* /*bool_flag*/)
 
 {
 	assert_IS_REQ(request);

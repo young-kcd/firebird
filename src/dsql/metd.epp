@@ -74,7 +74,7 @@ static const UCHAR blr_bpb[] =
 static void convert_dtype(dsql_fld*, SSHORT);
 static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
-static void insert_symbol(dsql_dbb*, dsql_sym*);
+static void insert_symbol(dsql_sym*);
 static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, const SYM_TYPE, USHORT = 0);
 static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
 
@@ -349,7 +349,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 	symbol->sym_length = name->str_length;
 	symbol->sym_type = SYM_intlsym_collation;
 	symbol->sym_dbb = dbb;
-	insert_symbol(request->req_dbb, symbol);
+	insert_symbol(symbol);
 
 	return iname;
 }
@@ -546,7 +546,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	symbol->sym_length = length;
 	symbol->sym_type = SYM_intlsym_charset;
 	symbol->sym_dbb = dbb;
-	insert_symbol(request->req_dbb, symbol);
+	insert_symbol(symbol);
 
 	dbb->dbb_charsets_by_id.add(iname);
 
@@ -1078,7 +1078,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	symbol->sym_length = userFunc->udf_name.length();
 	symbol->sym_type = SYM_udf;
 	symbol->sym_dbb = dbb;
-	insert_symbol(request->req_dbb, symbol);
+	insert_symbol(symbol);
 
 	return userFunc;
 }
@@ -1347,7 +1347,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 		symbol->sym_length = procedure->prc_name.length();
 		symbol->sym_type = SYM_procedure;
 		symbol->sym_dbb = dbb;
-		insert_symbol(statement->req_dbb, symbol);
+		insert_symbol(symbol);
 	}
 
 	return procedure;
@@ -1569,7 +1569,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 		symbol->sym_length = relation->rel_name.length();
 		symbol->sym_type = SYM_relation;
 		symbol->sym_dbb = dbb;
-		insert_symbol(statement->req_dbb, symbol);
+		insert_symbol(symbol);
 	}
 	else {
 		relation->rel_flags |= REL_new_relation;
@@ -1972,7 +1972,7 @@ static void free_relation(dsql_rel* relation)
 }
 
 
-static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
+static void insert_symbol(dsql_sym* symbol)
 {
 /**************************************
  *

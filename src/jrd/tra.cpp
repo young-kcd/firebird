@@ -484,7 +484,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 }
 
 
-void TRA_extend_tip(thread_db* tdbb, ULONG sequence, WIN * precedence_window)
+void TRA_extend_tip(thread_db* tdbb, ULONG sequence) //, WIN* precedence_window)
 {
 /**************************************
  *
@@ -1939,7 +1939,7 @@ static int blocking_ast_transaction(void* ast_object)
 
 
 #ifdef SUPERSERVER_V2
-static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
+static SLONG bump_transaction_id(thread_db* tdbb, WIN* window)
 {
 /**************************************
  *
@@ -1973,7 +1973,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip) {
-		TRA_extend_tip(tdbb, (ULONG) (number / dbb->dbb_page_manager.transPerTIP), window);
+		TRA_extend_tip(tdbb, (ULONG) (number / dbb->dbb_page_manager.transPerTIP)); //, window);
 	}
 
 	return number;
@@ -1981,7 +1981,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 #else
 
 
-static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
+static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 {
 /**************************************
  *
@@ -2023,7 +2023,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip) {
-		TRA_extend_tip(tdbb, (ULONG) (number / dbb->dbb_page_manager.transPerTIP), window);
+		TRA_extend_tip(tdbb, (ULONG) (number / dbb->dbb_page_manager.transPerTIP)); //, window);
 	}
 
 /* Extend, if necessary, has apparently succeeded.  Next, update header

@@ -108,7 +108,7 @@ static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 static jrd_nod* par_sys_function(thread_db*, CompilerScratch*);
 static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
 static USHORT par_word(CompilerScratch*);
-static void warning(CompilerScratch* csb, const Arg::StatusVector& v);
+static void warning(const Arg::StatusVector& v);
 
 #define BLR_PEEK	*(csb->csb_running)
 #define BLR_BYTE	csb->getBlrByte()
@@ -1354,7 +1354,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
  					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
-						warning(csb, Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
+						warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
 																	Arg::Str(relation->rel_name));
 					}
 					else if (!(relation->rel_flags & REL_deleted))
@@ -1452,7 +1452,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	if (!homonyms)
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
-			warning(csb, Arg::Warning(isc_funnotdef) << Arg::Str(name) <<
+			warning(Arg::Warning(isc_funnotdef) << Arg::Str(name) <<
 						 Arg::Warning(isc_modnotfound));
 		}
 		else {
@@ -1891,7 +1891,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				{
 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
-						warning(csb, Arg::Warning(isc_indexname) << Arg::Str(name) <<
+						warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
 																	Arg::Str(relation->rel_name));
 					}
 					else
@@ -1957,7 +1957,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					{
 						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 						{
-							warning(csb, Arg::Warning(isc_indexname) << Arg::Str(name) <<
+							warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
 																		Arg::Str(relation->rel_name));
 						}
 						else
@@ -2308,7 +2308,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 
 	while (--count >= 0) {
 		// AB: Added TYPE_RSE for derived table support
-		*ptr++ = PAR_parse_node(tdbb, csb, RELATION, TYPE_RSE);
+		*ptr++ = PAR_parse_node(tdbb, csb, RELATION); // TYPE_RSE);
 		//*ptr++ = PAR_parse_node(tdbb, csb, RELATION);
 	}
 
@@ -2598,8 +2598,7 @@ static USHORT par_word(CompilerScratch* csb)
 }
 
 
-jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
-	USHORT expected_optional)
+jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 {
 /**************************************
  *
@@ -3439,7 +3438,7 @@ void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
 }
 
 
-static void warning(CompilerScratch* csb, const Arg::StatusVector& v)
+static void warning(const Arg::StatusVector& v)
 {
 /**************************************
  *

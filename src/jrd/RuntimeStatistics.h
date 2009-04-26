@@ -44,12 +44,12 @@ struct RelationCounts
 	SINT64 rlc_counter[DBB_max_rel_count];
 
 #ifdef REL_COUNTS_PTR
-	inline static const SLONG* generate(const void* sender, const RelationCounts* item)
+	inline static const SLONG* generate(const void* /*sender*/, const RelationCounts* item)
 	{
 		return &item->rlc_relation_id;
 	}
 #else
-	inline static const SLONG& generate(const void* sender, const RelationCounts& item)
+	inline static const SLONG& generate(const void* /*sender*/, const RelationCounts& item)
 	{
 		return item.rlc_relation_id;
 	}

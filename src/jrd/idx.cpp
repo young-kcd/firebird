@@ -307,7 +307,7 @@ void IDX_create_index(thread_db* tdbb,
 
 	sort_context* sort_handle =
 		SORT_init(tdbb, key_length + sizeof(index_sort_record),
-				  2, 1, key_desc, callback, callback_arg, 0);
+				  2, 1, key_desc, callback, callback_arg);
 
 	try {
 
@@ -1012,7 +1012,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 		rpb.rpb_number.setValue(accessor.current());
 
 		if (rpb.rpb_number != insertion->iib_number &&
-			VIO_get_current(tdbb, &old_rpb, &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
+			VIO_get_current(tdbb, /*&old_rpb,*/ &rpb, insertion->iib_transaction, tdbb->getDefaultPool(),
 							is_fk, has_old_values) )
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place

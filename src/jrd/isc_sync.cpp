@@ -912,7 +912,7 @@ struct TimerEntry
 	int semId;
 	USHORT semNum;
 
-	static const SINT64& generate(const void* sender, const TimerEntry& item) { return item.fireTime; }
+	static const SINT64& generate(const void* /*sender*/, const TimerEntry& item) { return item.fireTime; }
 	static THREAD_ENTRY_DECLARE timeThread(THREAD_ENTRY_PARAM);
 
 	static void init()

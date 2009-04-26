@@ -30,7 +30,7 @@ gpre_nod*	SQE_boolean(gpre_req*, USHORT*);
 gpre_ctx*	SQE_context(gpre_req*);
 gpre_nod*	SQE_field(gpre_req*, bool);
 gpre_nod*	SQE_list(pfn_SQE_list_cb, gpre_req*, bool);
-ref*		SQE_parameter(gpre_req*, bool);
+ref*		SQE_parameter(gpre_req*);
 void		SQE_post_field(gpre_nod*, gpre_fld*);
 ref*		SQE_post_reference(gpre_req*, gpre_fld*, gpre_ctx*, gpre_nod*);
 bool		SQE_resolve(gpre_nod*, gpre_req*, gpre_rse*);
