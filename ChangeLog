@@ -1,3 +1,72 @@
+2009-04-26 15:51  robocop
+
+	* firebird2/src/: jrd/ThreadStart.cpp (1.16), jrd/dmp.cpp (1.40),
+	jrd/evl_string.h (1.34), jrd/os/posix/unix.cpp (1.117),
+	jrd/os/win32/winnt.cpp (1.82), msgs/modify_msgs.epp (1.16),
+	utilities/relay.cpp (1.11):
+
+	Misc.
+
+2009-04-26 12:24  robocop
+
+	* firebird2/src/: alice/alice_meta.epp (1.57), burp/backup.epp
+	(1.121), burp/canon_proto.h (1.11), burp/canonical.cpp (1.44),
+	burp/mvol.cpp (1.64), burp/mvol_proto.h (1.13), burp/restore.epp
+	(1.164), common/StatusArg.h (1.15), common/UtilSvc.cpp (1.14),
+	common/fb_exception.cpp (1.50), common/classes/alloc.cpp (1.121),
+	common/classes/alloc.h (1.86), common/classes/fb_pair.h (1.17),
+	common/classes/objects_array.h (1.30),
+	common/classes/sparse_bitmap.h (1.28), common/classes/vector.h
+	(1.21), config/Element.cpp (1.14), config/Element.h (1.9),
+	dsql/DdlNodes.epp (1.5), dsql/array.epp (1.44), dsql/ddl.cpp
+	(1.277), dsql/dsql.cpp (1.278), dsql/metd.epp (1.143), dsql/parse.y
+	(1.304), dsql/preparse.cpp (1.54), dsql/user_dsql.cpp (1.63),
+	dsql/utld.cpp (1.64), gpre/c_cxx.cpp (1.87), gpre/cmd.cpp (1.56),
+	gpre/cmp.cpp (1.48), gpre/gpre_meta_boot.cpp (1.66),
+	gpre/int_cxx.cpp (1.49), gpre/msc.cpp (1.32), gpre/pretty.cpp
+	(1.42), gpre/sqe.cpp (1.67), gpre/sqe_proto.h (1.14), gpre/sql.cpp
+	(1.87), jrd/Database.h (1.38), jrd/Optimizer.cpp (1.110),
+	jrd/Optimizer.h (1.32), jrd/RuntimeStatistics.h (1.21),
+	jrd/SysFunction.cpp (1.67), jrd/TempSpace.h (1.14),
+	jrd/TextType.cpp (1.13), jrd/VirtualTable.cpp (1.14), jrd/enc.cpp
+	(1.31), jrd/evl.cpp (1.292), jrd/gds.cpp (1.281), jrd/idx.cpp
+	(1.151), jrd/intl_builtin.cpp (1.49), jrd/intl_classes.h (1.31),
+	jrd/isc.cpp (1.92), jrd/isc_sync.cpp (1.187), jrd/nav.cpp (1.77),
+	jrd/nbak.h (1.38), jrd/par.cpp (1.235), jrd/par_proto.h (1.24),
+	jrd/pwd.cpp (1.78), jrd/quad.cpp (1.12), jrd/rpb_chain.h (1.17),
+	jrd/rse.cpp (1.183), jrd/sort.cpp (1.125), jrd/sort_proto.h (1.22),
+	jrd/svc.cpp (1.273), jrd/tra.cpp (1.205), jrd/tra.h (1.99),
+	jrd/tra_proto.h (1.26), jrd/unicode_util.cpp (1.50),
+	jrd/unicode_util.h (1.20), jrd/utl.cpp (1.130), jrd/validation.cpp
+	(1.49), jrd/vio.cpp (1.246), jrd/vio_proto.h (1.31), jrd/why.cpp
+	(1.237), jrd/os/win32/isc_ipc.cpp (1.30),
+	jrd/os/win32/path_utils.cpp (1.18), misc/codes.epp (1.37),
+	utilities/gstat/dba.epp (1.112), utilities/ntrace/TracePluginImpl.h
+	(1.9):
+
+	Unused function params.
+
+2009-04-26 03:37  asfernandes
+
+	* firebird2/src/jrd/: dyn.h (1.44), dyn_mod.epp (1.113):
+
+	Fixed CORE-2331 - ALTER DOMAIN invalid RDB$FIELD_SUB_TYPE
+
+2009-04-25 22:45  asfernandes
+
+	* firebird2/doc/README.incompatibilities.txt (1.12):
+
+	Adjust doc. re. --enable-binreloc
+
+2009-04-25 22:36  asfernandes
+
+	* firebird2/: extern/btyacc/reader.c (1.4), src/gpre/c_cxx.cpp
+	(1.86), src/gpre/sql.cpp (1.86), src/msgs/history2.sql (1.13),
+	src/utilities/nbackup.cpp (1.84), src/utilities/gsec/gsec_proto.h
+	(1.17):
+
+	Misc
+
 2009-04-25 17:10  asfernandes
 
 	* firebird2/src/common/classes/tree.h (1.88):
