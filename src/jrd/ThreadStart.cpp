@@ -308,7 +308,8 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 
 	int priority;
 
-	switch (priority_arg) {
+	switch (priority_arg)
+	{
 	case THREAD_critical:
 		priority = THREAD_PRIORITY_TIME_CRITICAL;
 		break;

@@ -360,7 +360,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		// underscore
 		if (c == sql_match_one)
 		{
-			switch (item->type) {
+			switch (item->type)
+			{
 			case piSearch:
 			case piEscapedString:
 				patternItems.grow(patternItems.getCount() + 1);

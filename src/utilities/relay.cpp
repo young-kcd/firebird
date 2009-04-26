@@ -84,7 +84,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		{
 			TEXT c;
 			while (c = *p++)
-				switch (UPPER(c)) {
+				switch (UPPER(c))
+				{
 				case 'Z':
 					printf("Firebird relay version %s\n", GDS_VERSION);
 					exit(FINI_OK);

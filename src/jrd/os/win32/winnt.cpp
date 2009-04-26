@@ -809,8 +809,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
-	file = seek_file(file, bdb, status_vector, &overlapped,
-				   &overlapped_ptr);
+	file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr);
 	if (!file) {
 		return false;
 	}
@@ -962,7 +961,7 @@ static jrd_file* seek_file(jrd_file*			file,
  **************************************
  *
  * Functional description
- *	Given a buffer descriptor block, find the appropropriate
+ *	Given a buffer descriptor block, find the appropriate
  *	file block and seek to the proper page in that file.
  *
  **************************************/

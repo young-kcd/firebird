@@ -798,7 +798,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
  **************************************
  *
  * Functional description
- *	Given a buffer descriptor block, find the appropropriate
+ *	Given a buffer descriptor block, find the appropriate
  *	file block and seek to the proper page in that file.
  *
  **************************************/

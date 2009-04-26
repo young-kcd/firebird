@@ -81,10 +81,13 @@ int main( int argc, char **argv)
 					const SCHAR* q = newtext;
 
 					/* translate scape sequences to single bytes */
-					while (*q) {
-						if (*q == '\\') {
+					while (*q)
+					{
+						if (*q == '\\')
+						{
 							*q++;
-							switch (*q) {
+							switch (*q)
+							{
 							case 'n':
 								*p++ = '\n';
 								break;
@@ -155,8 +158,10 @@ static void explicit_print( const TEXT* string)
  **************************************/
 	const TEXT* p = string;
 
-	while (*p) {
-		switch (*p) {
+	while (*p)
+	{
+		switch (*p)
+		{
 		case '\n':
 			putchar('\\');
 			putchar('n');

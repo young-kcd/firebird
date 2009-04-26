@@ -696,7 +696,8 @@ static void dmp_header(const header_page* page)
 	for (const char* const end = p + page->hdr_page_size;
 		 p < end && *p != HDR_end; p += 2 + p[1])
 	{
-		switch (*p) {
+		switch (*p)
+		{
 		case HDR_root_file_name:
 			printf("\tRoot file name: %*s\n", p[1], p + 2);
 			break;
