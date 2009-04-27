@@ -1,3 +1,9 @@
+2009-04-27 18:29  alexpeshkoff
+
+	* firebird2/src/dsql/pass1.cpp (1.449):
+
+	Fixed CORE-2441: Server crashes on UPDATE OR INSERT statement
+
 2009-04-26 15:51  robocop
 
 	* firebird2/src/: jrd/ThreadStart.cpp (1.16), jrd/dmp.cpp (1.40),
