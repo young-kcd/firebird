@@ -3718,15 +3718,31 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		dsql_nod* field_node = *i_ptr;
 		const dsql_str* alias_name = NULL;
 
-		if (field_node->nod_type == nod_alias)
+		while (field_node->nod_type == nod_alias ||
+			field_node->nod_type == nod_derived_field ||
+			field_node->nod_type == nod_map)
 		{
-			alias_name = (dsql_str*) field_node->nod_arg[e_alias_alias];
-			field_node = field_node->nod_arg[e_alias_value];
-		}
-		else if (field_node->nod_type == nod_map)
-		{
-			const dsql_map* map = (dsql_map*) field_node->nod_arg[e_map_map];
-			field_node = map->map_node;
+			if (field_node->nod_type == nod_alias)
+			{
+				if (!alias_name)
+				{
+					alias_name = (dsql_str*) field_node->nod_arg[e_alias_alias];
+				}
+				field_node = field_node->nod_arg[e_alias_value];
+			}
+			else if (field_node->nod_type == nod_derived_field)
+			{
+				if (!alias_name)
+				{
+					alias_name = (dsql_str*) field_node->nod_arg[e_derived_field_name];
+				}
+				field_node = field_node->nod_arg[e_derived_field_value];
+			}
+			else if (field_node->nod_type == nod_map)
+			{
+				const dsql_map* map = (dsql_map*) field_node->nod_arg[e_map_map];
+				field_node = map->map_node;
+			}
 		}
 
 		// check if this is a field or an expression
@@ -3740,7 +3756,9 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			context = (dsql_ctx*) field_node->nod_arg[e_fld_context];
 		}
 		else
+		{
 			updatable = false;
+		}
 
 		// determine the proper field name, replacing the default if necessary
 
@@ -3748,8 +3766,6 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			field_string = alias_name->str_data;
 		else if (field)
 			field_string = field->fld_name.c_str();
-		else if (field_node->nod_type == nod_derived_field)
-			field_string = ((dsql_str*) field_node->nod_arg[e_derived_field_name])->str_data;
 		else
 			field_string = NULL;
 
