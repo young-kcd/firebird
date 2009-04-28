@@ -165,7 +165,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 #else  // REL_COUNTS_TREE
 
 
-void RuntimeStatistics::bumpValue(StatType index, SLONG relation_id)
+void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
