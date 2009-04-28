@@ -90,15 +90,15 @@ const int MAX_CHARS_FLOAT	= 13;	/* 7 digits + 2 signs + E + decimal + 2 digit ex
 static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
 static void change_backup_mode(Global*, UCHAR verb);
 
-static void modify_lfield_position(thread_db*, Database*, Global*, const MetaName&, const MetaName&,
+static void modify_lfield_position(thread_db*, Global*, const MetaName&, const MetaName&,
 	USHORT, USHORT);
-static bool check_view_dependency(thread_db*, Database*, Global*, const MetaName&, const MetaName&);
-static bool check_sptrig_dependency(thread_db*, Database*, Global*,  const MetaName&, const MetaName&);
-static void modify_lfield_index(thread_db*, Database*, Global*, const MetaName&, const MetaName&,
+static bool check_view_dependency(thread_db*, Global*, const MetaName&, const MetaName&);
+static bool check_sptrig_dependency(thread_db*, Global*,  const MetaName&, const MetaName&);
+static void modify_lfield_index(thread_db*, Global*, const MetaName&, const MetaName&,
 	const MetaName&);
-static bool field_exists(thread_db*, Database*, Global*, const MetaName&, const MetaName&);
-static bool domain_exists(thread_db*, Database*, Global*, const MetaName&);
-static void get_domain_type(thread_db*, Database*, Global*, dyn_fld&);
+static bool field_exists(thread_db*, Global*, const MetaName&, const MetaName&);
+static bool domain_exists(thread_db*, Global*, const MetaName&);
+static void get_domain_type(thread_db*, Global*, dyn_fld&);
 static ULONG check_update_fld_type(const dyn_fld&, const dyn_fld&);
 static ULONG check_update_numeric_type(const dyn_fld&, const dyn_fld&);
 static void modify_err_punt(thread_db*, ULONG, const dyn_fld&, const dyn_fld&);
@@ -709,7 +709,7 @@ void DYN_modify_global_field(Global* gbl,
 
 					if (GET_STRING(ptr, newfld))
 					{
-						if (!domain_exists(tdbb, dbb, gbl, newfld))
+						if (!domain_exists(tdbb, gbl, newfld))
 						{
 							MODIFY FLD USING
 								strcpy(FLD.RDB$FIELD_NAME, newfld.c_str());
@@ -738,7 +738,7 @@ void DYN_modify_global_field(Global* gbl,
 										strcpy(DOM.RDB$FIELD_SOURCE, newfld.c_str());
 										DOM.RDB$FIELD_SOURCE.NULL = FALSE;
 									END_MODIFY;
-									modify_lfield_index(tdbb, dbb, gbl,
+									modify_lfield_index(tdbb, gbl,
 														DOM.RDB$RELATION_NAME,
 														DOM.RDB$FIELD_NAME,
 														DOM.RDB$FIELD_NAME);
@@ -1016,7 +1016,7 @@ void DYN_modify_global_field(Global* gbl,
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 					DOM IN RDB$RELATION_FIELDS
 					WITH DOM.RDB$FIELD_SOURCE EQ orig_dom.dyn_fld_name.c_str()
-					modify_lfield_index(tdbb, dbb, gbl,
+					modify_lfield_index(tdbb, gbl,
 										DOM.RDB$RELATION_NAME,
 										DOM.RDB$FIELD_NAME,
 										DOM.RDB$FIELD_NAME);
@@ -1386,11 +1386,11 @@ void DYN_modify_local_field(Global* gbl,
 					/* msg 212: "Zero length identifiers not allowed" */
 				}
 
-				check_view_dependency(tdbb, dbb, gbl, r, f);
-				check_sptrig_dependency(tdbb, dbb, gbl, r, f);
-				if (!field_exists(tdbb, dbb, gbl, r, new_fld)) {
+				check_view_dependency(tdbb, gbl, r, f);
+				check_sptrig_dependency(tdbb, gbl, r, f);
+				if (!field_exists(tdbb, gbl, r, new_fld)) {
 					strcpy(FLD.RDB$FIELD_NAME, new_fld.c_str());
-					modify_lfield_index(tdbb, dbb, gbl, r, f, FLD.RDB$FIELD_NAME);
+					modify_lfield_index(tdbb, gbl, r, f, FLD.RDB$FIELD_NAME);
 				}
 				else {
 					DYN_error_punt(false, 205, SafeArg() << f.c_str() << new_fld.c_str() <<
@@ -1434,7 +1434,7 @@ void DYN_modify_local_field(Global* gbl,
 		DYN_REQUEST(drq_m_lfield) = request;
 
 	if (npflag && found && position != existing_position)
-		modify_lfield_position(tdbb, dbb, gbl, r, f, position, existing_position);
+		modify_lfield_position(tdbb, gbl, r, f, position, existing_position);
 	} // try
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -2356,7 +2356,6 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 
 static void modify_lfield_position(thread_db* tdbb,
-								   Database* dbb,
 								   Global* gbl,
 								   const MetaName& relation_name,
 								   const MetaName& field_name,
@@ -2469,7 +2468,6 @@ static void modify_lfield_position(thread_db* tdbb,
 
 
 static bool check_view_dependency(thread_db* tdbb,
-									 Database* dbb,
 									 Global* gbl,
 									 const MetaName& relation_name,
 									 const MetaName& field_name)
@@ -2516,7 +2514,6 @@ static bool check_view_dependency(thread_db* tdbb,
 
 
 static bool check_sptrig_dependency(thread_db* tdbb,
-									   Database* dbb,
 									   Global* gbl,
 									   const MetaName& relation_name,
 									   const MetaName& field_name)
@@ -2556,7 +2553,6 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 
 
 static void modify_lfield_index(thread_db* tdbb,
-								Database* dbb,
 								Global* gbl,
 								const MetaName&	relation_name,
 								const MetaName&	field_name,
@@ -2597,7 +2593,6 @@ static void modify_lfield_index(thread_db* tdbb,
 
 
 static bool field_exists(thread_db* tdbb,
-						 Database* dbb,
 						 Global* gbl,
 						 const MetaName& relation_name,
 						 const MetaName& field_name)
@@ -2626,7 +2621,6 @@ static bool field_exists(thread_db* tdbb,
 
 
 static bool domain_exists(thread_db* tdbb,
-						  Database* dbb,
 						  Global* gbl,
 						  const MetaName& field_name)
 {
@@ -2713,7 +2707,7 @@ void DYN_modify_sql_field(Global* gbl,
 
 	// ASF: check disabled to allow change of field type to be used
 	// with TYPE OF COLUMN table.column feature.
-	//check_sptrig_dependency(tdbb, dbb, gbl, *relation_name,
+	//check_sptrig_dependency(tdbb, gbl, *relation_name,
 	//						orig_fld.dyn_fld_name);
 
 	jrd_req* request = NULL;
@@ -2791,7 +2785,7 @@ void DYN_modify_sql_field(Global* gbl,
 										orig_fld.dyn_fld_name.c_str());
 						// msg 224: "Cannot use the internal domain %s as new type for field %s".
 					}
-					get_domain_type(tdbb, dbb, gbl, dom_fld);
+					get_domain_type(tdbb, gbl, dom_fld);
 					update_domain = true;
 					break;
 
@@ -3403,7 +3397,7 @@ void DYN_modify_sql_field(Global* gbl,
 	}
 
 	// Update any indices that exist
-	modify_lfield_index(tdbb, dbb, gbl, *relation_name, orig_fld.dyn_fld_name, orig_fld.dyn_fld_name);
+	modify_lfield_index(tdbb, gbl, *relation_name, orig_fld.dyn_fld_name, orig_fld.dyn_fld_name);
 
 	}
 	catch (const Exception& ex) {
@@ -3479,7 +3473,7 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 	}
 }
 
-void get_domain_type(thread_db* tdbb, Database* dbb, Global* gbl, dyn_fld& dom_fld)
+void get_domain_type(thread_db* tdbb, Global* gbl, dyn_fld& dom_fld)
 {
 /**************************************
  *
@@ -3817,7 +3811,7 @@ static ULONG check_update_numeric_type(const dyn_fld& orig_fld, const dyn_fld& n
 }
 
 
-static void modify_err_punt(thread_db* tdbb,
+static void modify_err_punt(thread_db* /*tdbb*/,
 							ULONG errorcode,
 							const dyn_fld& orig_fld_def,
 							const dyn_fld& new_fld_def)

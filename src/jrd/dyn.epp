@@ -570,7 +570,7 @@ void DYN_execute(Global* gbl,
 			break;
 
 		case isc_dyn_delete_local_fld:
-			DYN_delete_local_field(gbl, ptr, relation_name, field_name);
+			DYN_delete_local_field(gbl, ptr, relation_name); //, field_name);
 			break;
 
 		case isc_dyn_mod_sql_fld:
@@ -610,7 +610,7 @@ void DYN_execute(Global* gbl,
 			break;
 
 		case isc_dyn_delete_dimensions:
-			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
+			DYN_delete_dimensions(gbl, ptr); // relation_name, field_name);
 			break;
 
 		case isc_dyn_mod_charset:

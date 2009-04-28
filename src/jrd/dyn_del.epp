@@ -257,9 +257,9 @@ void DYN_delete_constraint (Global* gbl, const UCHAR** ptr, const Firebird::Meta
 
 
 void DYN_delete_dimensions(Global* gbl,
-						   const UCHAR** ptr,
-						   const Firebird::MetaName* relation_name,
-						   Firebird::MetaName* field_name)
+						   const UCHAR** ptr)
+						   //const Firebird::MetaName* relation_name,
+						   //Firebird::MetaName* field_name) // Obtained from the stream
 {
 /**************************************
  *
@@ -701,8 +701,8 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 
 void DYN_delete_local_field(Global* gbl,
 							const UCHAR** ptr,
-							const Firebird::MetaName* relation_name,
-							Firebird::MetaName* field_name)
+							const Firebird::MetaName* relation_name)
+							//Firebird::MetaName* field_name) // Obtained from the stream
 {
 /**************************************
  *

@@ -496,7 +496,7 @@ static bool process_statement(bool flush_flag)
 }
 
 
-static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
+static void CLIB_ROUTINE signal_arith_excp(USHORT /*sig*/, USHORT code, USHORT /*scp*/)
 {
 /**************************************
  *

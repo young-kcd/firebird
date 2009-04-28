@@ -3722,26 +3722,26 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			field_node->nod_type == nod_derived_field ||
 			field_node->nod_type == nod_map)
 		{
-			if (field_node->nod_type == nod_alias)
+			switch (field_node->nod_type)
 			{
+			case nod_alias:
 				if (!alias_name)
 				{
 					alias_name = (dsql_str*) field_node->nod_arg[e_alias_alias];
 				}
 				field_node = field_node->nod_arg[e_alias_value];
-			}
-			else if (field_node->nod_type == nod_derived_field)
-			{
+				break;
+			case nod_derived_field:
 				if (!alias_name)
 				{
 					alias_name = (dsql_str*) field_node->nod_arg[e_derived_field_name];
 				}
 				field_node = field_node->nod_arg[e_derived_field_value];
-			}
-			else if (field_node->nod_type == nod_map)
-			{
+				break;
+			case nod_map:
 				const dsql_map* map = (dsql_map*) field_node->nod_arg[e_map_map];
 				field_node = map->map_node;
+				break;
 			}
 		}
 
