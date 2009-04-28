@@ -143,7 +143,7 @@ const int HLP_SETECHO				= 34;		// \tSET ECHO  -- toggle command echo on/off \n
 const int HLP_SETSTAT				= 35;		// \tSET STATs -- toggles performance statistics display\n
 const int HLP_SETTERM				= 36;		// \tSET TERM <string> -- changes termination character\n
 const int HLP_SHOW					= 37;		// SHOW <object type> [<object name>] -- displays information on metadata\n
-const int HLP_OBJTYPE				= 38;		// "  <object type> = 'DB', 'TABLE', 'PROCedure', 'INDEX',\n   'GRANT', 'DOMAIN', 'VERSION'\n"
+const int HLP_OBJTYPE				= 38;		// "    <object> = CHECK, COLLATION, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION,"
 const int HLP_EXIT					= 39;		// EXIT -- Exit program and commit changes\n
 const int HLP_QUIT					= 40;		// QUIT -- Exit program and rollback changes\n\n
 const int HLP_ALL					= 41;		// All commands may be abbreviated to letters in CAPs\n

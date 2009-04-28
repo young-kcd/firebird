@@ -52,13 +52,15 @@
 #include "../isql/isqlw_proto.h"
 #include "../isql/isql_proto.h"
 
-struct scrollkeys {
+struct scrollkeys
+{
 	WORD wVirtkey;
 	int iMessage;
 	WORD wRequest;
 };
 
-scrollkeys key2scroll[] = {
+scrollkeys key2scroll[] =
+{
 	{VK_HOME, WM_COMMAND, IDM_HOME},
 	{VK_END, WM_VSCROLL, SB_BOTTOM},
 	{VK_PRIOR, WM_VSCROLL, SB_PAGEUP},
@@ -71,7 +73,8 @@ scrollkeys key2scroll[] = {
 
 // data initialized by first instance
 
-struct tagSETUPDATA {
+struct tagSETUPDATA
+{
 	SCHAR appName[20];
 	SCHAR menuName[20];
 	SCHAR iconName[20];
@@ -154,9 +157,7 @@ static SSHORT allblobsflag;
 static SSHORT allobjectsflag;
 
 
-int PASCAL WinMain(
-				   HINSTANCE hInstance,
-				   HINSTANCE hPrevInstance, LPSTR pCmdLine, int cmdShow)
+int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int cmdShow)
 {
 /**************************************************
  *
@@ -187,14 +188,12 @@ int PASCAL WinMain(
 
 	if (pCmdLine && *pCmdLine)
 		return cmdline_isql(hInstance, pCmdLine);
-	else
-		return windows_isql(hInstance, hPrevInstance, cmdShow);
+
+	return windows_isql(hInstance, hPrevInstance, cmdShow);
 }
 
 
-LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
-									 UINT message,
-									 WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK _export ISQLWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -223,14 +222,16 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 	SSHORT i;
 	int ret;
 
-	switch (message) {
+	switch (message)
+	{
 	case WM_CREATE:
 		nVscrollPos = 0;
 		nHscrollPos = 0;
 		return (DefWindowProc(hWnd, message, wParam, lParam));
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDM_QUIT:
 			// User selected Quit on menu
 			PostMessage(hWnd, WM_CLOSE, 0, 0L);
@@ -244,8 +245,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 
 		case IDM_ABOUT:
 			// Display about box.
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) aboutDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) aboutDlgProc, hInst);
 			DialogBox(hInst, MAKEINTRESOURCE(ABOUT), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			break;
@@ -255,7 +255,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			lpproc = (DLGPROC) MakeProcInstance((FARPROC) execDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(EXEC_SQL), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
-			if (ret) {
+			if (ret)
+			{
 				fprintf(sss, "%s\n\r", tmpDialogParam);
 				fflush(sss);
 				test_overwrite();
@@ -269,8 +270,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			newDataBase[0] = '\0';
 			newUserName[0] = '\0';
 			newPassword[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) dbNameDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) dbNameDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(CONNECT_DB), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
@@ -285,11 +285,11 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			newDataBase[0] = '\0';
 			newUserName[0] = '\0';
 			newPassword[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) createDbDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) createDbDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(CREATE_DB), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
-			if (ret) {
+			if (ret)
+			{
 				ISQL_exit_db();
 				if (newUserName[0])
 					sprintf(unbuf, " USER \"%s\" ", newUserName);
@@ -307,8 +307,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			break;
 
 		case IDM_DROP_DB:
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) dropDbDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) dropDbDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(DROP_DB), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
@@ -319,10 +318,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 
 		case IDM_SAVE_SESSION:
 			tmpDialogParam[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) sessionDlgProc, hInst);
-			ret =
-				DialogBox(hInst, MAKEINTRESOURCE(SAVE_SESSION), hWnd, lpproc);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) sessionDlgProc, hInst);
+			ret = DialogBox(hInst, MAKEINTRESOURCE(SAVE_SESSION), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
 				fflush(chf);
@@ -334,10 +331,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 
 		case IDM_SAVE_OUTPUT:
 			tmpDialogParam[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) outputDlgProc, hInst);
-			ret =
-				DialogBox(hInst, MAKEINTRESOURCE(SAVE_OUTPUT), hWnd, lpproc);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) outputDlgProc, hInst);
+			ret = DialogBox(hInst, MAKEINTRESOURCE(SAVE_OUTPUT), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
 				fflush(opf);
@@ -350,12 +345,11 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		case IDM_EXEC_SCRIPT:
 			scriptName[0] = '\0';
 			scriptOutput[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) scriptDlgProc, hInst);
-			ret =
-				DialogBox(hInst, MAKEINTRESOURCE(EXEC_SCRIPT), hWnd, lpproc);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) scriptDlgProc, hInst);
+			ret = DialogBox(hInst, MAKEINTRESOURCE(EXEC_SCRIPT), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
-			if (ret) {
+			if (ret)
+			{
 				// generate an argc/argv
 
 				ISQL_cursor = ISQL_args;
@@ -396,8 +390,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 				ipf = fopen(defInputFile, "r");
 				opf = fopen(defOutputFile, "a");
 				if (gflags & DBINITED)
-					ISQL_init(newDataBase, newUserName, newPassword, ipf,
-							  opf);
+					ISQL_init(newDataBase, newUserName, newPassword, ipf, opf);
 				fprintf(opf, "\n\r\n\r");
 				display_page(hWnd);
 			}
@@ -407,11 +400,11 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 			extractOutput[0] = '\0';
 			extractDbName[0] = '\0';
 			extractTarget[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) extractDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) extractDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(EXTRACT_DB), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
-			if (ret) {
+			if (ret)
+			{
 				// create an argument vector for ISQL
 
 				ISQL_cursor = ISQL_args;
@@ -493,10 +486,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 
 		case IDM_TRANSACTION:
 			tmpDialogParam[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) transDlgProc, hInst);
-			ret =
-				DialogBox(hInst, MAKEINTRESOURCE(TRANS_STRING), hWnd, lpproc);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) transDlgProc, hInst);
+			ret = DialogBox(hInst, MAKEINTRESOURCE(TRANS_STRING), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
 				sprintf(buf, "SET TRANSACTION %s", tmpDialogParam);
@@ -521,8 +512,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 
 		case IDM_CHAR_SET:
 			tmpDialogParam[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) charSetDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) charSetDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(CHAR_SET), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
 			if (ret) {
@@ -574,12 +564,13 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		case IDM_SHOW_VIEW:
 		case IDM_SHOW_TABLE:
 			tmpDialogParam[0] = '\0';
-			lpproc =
-				(DLGPROC) MakeProcInstance((FARPROC) objectDlgProc, hInst);
+			lpproc = (DLGPROC) MakeProcInstance((FARPROC) objectDlgProc, hInst);
 			ret = DialogBox(hInst, MAKEINTRESOURCE(DB_OBJECT), hWnd, lpproc);
 			FreeProcInstance((FARPROC) lpproc);
-			if (ret) {
-				switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+			if (ret)
+			{
+				switch (GET_WM_COMMAND_ID(wParam, lParam))
+				{
 				case IDM_SHOW_CHECK:
 					sprintf(buf, "SHOW CHECK %s", tmpDialogParam);
 					break;
@@ -649,7 +640,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 
 	case WM_SIZE:
 		// Save size of window client area.
-		if (lParam) {
+		if (lParam)
+		{
 			yClient = HIWORD(lParam);
 			xClient = LOWORD(lParam);
 			yClient = (yClient / yCharnl + 1) * yCharnl;
@@ -666,7 +658,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 	case WM_VSCROLL:
 		// React to the various vertical scroll related actions.
 
-		switch (GET_WM_VSCROLL_CODE(wParam, lParam)) {
+		switch (GET_WM_VSCROLL_CODE(wParam, lParam))
+		{
 		case SB_TOP:
 			nVscrollInc = -nVscrollPos;
 			break;
@@ -694,8 +687,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		default:
 			nVscrollInc = 0;
 		}
-		nVscrollInc = max(-nVscrollPos,
-						  min(nVscrollInc, nVscrollMax - nVscrollPos));
+		nVscrollInc = max(-nVscrollPos, min(nVscrollInc, nVscrollMax - nVscrollPos));
 		if (nVscrollInc) {
 			nVscrollPos += nVscrollInc;
 			ScrollWindow(hWnd, 0, -yChar * nVscrollInc, NULL, NULL);
@@ -707,7 +699,8 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 	case WM_HSCROLL:
 		// React to the various horizontal scroll related actions.
 
-		switch (GET_WM_HSCROLL_CODE(wParam, lParam)) {
+		switch (GET_WM_HSCROLL_CODE(wParam, lParam))
+		{
 		case SB_LINEUP:
 			nHscrollInc = -1;
 			break;
@@ -729,8 +722,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		default:
 			nHscrollInc = 0;
 		}
-		nHscrollInc = max(-nHscrollPos,
-						  min(nHscrollInc, nHscrollMax - nHscrollPos));
+		nHscrollInc = max(-nHscrollPos, min(nHscrollInc, nHscrollMax - nHscrollPos));
 		if (nHscrollInc) {
 			nHscrollPos += nHscrollInc;
 			ScrollWindow(hWnd, -xChar * nHscrollInc, 0, NULL, NULL);
@@ -743,10 +735,10 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd,
 		// Translate various keydown messages to appropriate horizontal
 		// and vertical scroll actions.
 
-		for (i = 0; i < FB_NELEM(key2scroll); i++) {
+		for (i = 0; i < FB_NELEM(key2scroll); i++)
+		{
 			if (wParam == key2scroll[i].wVirtkey) {
-				SendMessage(hWnd, key2scroll[i].iMessage,
-							key2scroll[i].wRequest, 0L);
+				SendMessage(hWnd, key2scroll[i].iMessage, key2scroll[i].wRequest, 0L);
 				break;
 			}
 		}
@@ -801,8 +793,7 @@ void ISQL_win_err(const char* string)
 	if (Merge_stderr)
 		fprintf(Out, "%s\n", string);
 	else
-		MessageBox(NULL, string, SetUpData.errorString,
-				   MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(NULL, string, SetUpData.errorString, MB_ICONEXCLAMATION | MB_OK);
 }
 
 
@@ -867,10 +858,10 @@ static int cmdline_isql( HINSTANCE hInstance, LPSTR pCmdLine)
 
 // create default input and output files
 
-	if (!open_temp_file
-		(hInstance, &inputfile, inputfilename, IDS_TEMP_IN_FILE)) return 0;
-	if (!open_temp_file
-		(hInstance, &outputfile, outputfilename, IDS_TEMP_OUT_FILE)) return 0;
+	if (!open_temp_file(hInstance, &inputfile, inputfilename, IDS_TEMP_IN_FILE))
+		return 0;
+	if (!open_temp_file(hInstance, &outputfile, outputfilename, IDS_TEMP_OUT_FILE))
+		return 0;
 
 // create failsafe input file
 
@@ -888,7 +879,8 @@ static int cmdline_isql( HINSTANCE hInstance, LPSTR pCmdLine)
 	pusharg("-output");
 	pusharg(outputfilename);
 	ap = arg;
-	for (cp = (SCHAR *) pCmdLine; *cp; cp++) {
+	for (cp = (SCHAR *) pCmdLine; *cp; cp++)
+	{
 		*ap = *cp++;
 		if (*ap == ' ') {
 			*ap = '\0';
@@ -929,7 +921,8 @@ static void display_page( HWND hWnd)
 	fflush(opf);
 	fclose(opf);
 	fh = fopen(defOutputFile, "r+b");
-	if (fh) {
+	if (fh)
+	{
 		while (fgets(tmpDialogParam, sizeof(tmpDialogParam), fh)) {
 			numlines++;
 			if (strlen(tmpDialogParam) > maxwidth)
@@ -950,9 +943,7 @@ static void display_page( HWND hWnd)
 }
 
 
-static SSHORT init_isql(
-						HINSTANCE hInstance,
-						HINSTANCE hPrevInstance, int cmdShow)
+static SSHORT init_isql(HINSTANCE hInstance, HINSTANCE hPrevInstance, int cmdShow)
 {
 /********************************************************************
  *
@@ -1014,8 +1005,7 @@ static SSHORT init_isql(
 	newUserName[0] = '\0';
 	newPassword[0] = '\0';
 	dlgProc = (DLGPROC) MakeProcInstance((FARPROC) dbNameDlgProc, hInst);
-	iReturn =
-		DialogBox(hInst, MAKEINTRESOURCE(CONNECT_DB), hWndMain, dlgProc);
+	iReturn = DialogBox(hInst, MAKEINTRESOURCE(CONNECT_DB), hWndMain, dlgProc);
 	FreeProcInstance((FARPROC) dlgProc);
 	if (iReturn)
 		if (ISQL_init(newDataBase, newUserName, newPassword, ipf, opf))
@@ -1178,8 +1168,7 @@ static void init_isql_first( HINSTANCE hInstance)
 }
 
 
-static SSHORT open_temp_file(
-							 HINSTANCE hInstance,
+static SSHORT open_temp_file(HINSTANCE hInstance,
 							 FILE** file,
 							 SCHAR* fileName, SSHORT errStrNum)
 {
@@ -1209,9 +1198,7 @@ static SSHORT open_temp_file(
 }
 
 
-static int windows_isql(
-						HINSTANCE hInstance,
-						HINSTANCE hPrevInstance, int cmdShow)
+static int windows_isql(HINSTANCE hInstance, HINSTANCE hPrevInstance, int cmdShow)
 {
 /********************************************************************
  *
@@ -1285,12 +1272,14 @@ static void paint_isql( HWND hWnd)
 
 	SelectObject(hDC, hnewsfont);
 
-	if (numlines) {
+	if (numlines)
+	{
 		// Open the file to display
 		// (files should not stay open over multiple windows messages)
 
 		hfile = fopen(defOutputFile, "r");
-		if (hfile) {
+		if (hfile)
+		{
 			// Skip lines outside window limits
 
 			for (i = 0; i < nVscrollPos; i++)
@@ -1395,7 +1384,8 @@ static void test_overwrite()
  *
  ***************************************************************/
 
-	if (gflags & OVERWRITE) {
+	if (gflags & OVERWRITE)
+	{
 		fclose(opf);
 		opf = fopen(defOutputFile, "w");
 		nVscrollPos = 0;
@@ -1404,8 +1394,7 @@ static void test_overwrite()
 }
 
 
-static void xfer_file(
-					  const char* inFileName,
+static void xfer_file(const char* inFileName,
 					  const char* outFileName, bool appendFlag)
 {
 /***************************************************************
@@ -1421,7 +1410,8 @@ static void xfer_file(
 	SCHAR xferbuff[1024];
 
 	FILE* xferin = fopen(inFileName, "r");
-	if (xferin) {
+	if (xferin)
+	{
         FILE* xferout;
 		if (appendFlag)
 			xferout = fopen(outFileName, "a");
@@ -1438,8 +1428,7 @@ static void xfer_file(
 }
 
 
-BOOL CALLBACK _export aboutDlgProc(HWND hDlg,
-								   UINT message, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export aboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1461,8 +1450,11 @@ BOOL CALLBACK _export aboutDlgProc(HWND hDlg,
 
 	if (message == WM_INITDIALOG)
 		return TRUE;
-	else if (message == WM_COMMAND) {
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+
+	if (message == WM_COMMAND)
+	{
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDOK:
 			EndDialog(hDlg, TRUE);
 			return TRUE;
@@ -1475,8 +1467,7 @@ BOOL CALLBACK _export aboutDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export blobDlgProc(HWND hDlg,
-								  UINT iMessage, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export blobDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1499,13 +1490,15 @@ BOOL CALLBACK _export blobDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_BLOB_TYPE, EM_LIMITTEXT, 10, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_ALL_BLOBS:
 			allblobsflag = TRUE;
 			tmpDialogParam[0] = '\0';
@@ -1516,8 +1509,7 @@ BOOL CALLBACK _export blobDlgProc(HWND hDlg,
 			allblobsflag = FALSE;
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
@@ -1547,9 +1539,7 @@ BOOL CALLBACK _export blobDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export charSetDlgProc(HWND hDlg,
-									 UINT iMessage,
-									 WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export charSetDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1571,18 +1561,19 @@ BOOL CALLBACK _export charSetDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_CHAR_SET, EM_LIMITTEXT, 100, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_CHAR_SET:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
@@ -1612,9 +1603,7 @@ BOOL CALLBACK _export charSetDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export createDbDlgProc(HWND hDlg,
-									  UINT iMessage,
-									  WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export createDbDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1637,7 +1626,8 @@ BOOL CALLBACK _export createDbDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_DB_DBNAME, EM_LIMITTEXT, 256, 0L);
 		SendDlgItemMessage(hDlg, IDD_DB_USERNAME, EM_LIMITTEXT, 32, 0L);
@@ -1645,12 +1635,12 @@ BOOL CALLBACK _export createDbDlgProc(HWND hDlg,
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_CREATE_DBNAME:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDD_CREATE_USERNAME:
@@ -1686,9 +1676,7 @@ BOOL CALLBACK _export createDbDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export dbNameDlgProc(HWND hDlg,
-									UINT iMessage,
-									WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export dbNameDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1711,7 +1699,8 @@ BOOL CALLBACK _export dbNameDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_DB_DBNAME, EM_LIMITTEXT, 256, 0L);
 		SendDlgItemMessage(hDlg, IDD_DB_USERNAME, EM_LIMITTEXT, 32, 0L);
@@ -1719,12 +1708,12 @@ BOOL CALLBACK _export dbNameDlgProc(HWND hDlg,
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_DB_DBNAME:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDD_DB_USERNAME:
@@ -1760,9 +1749,7 @@ BOOL CALLBACK _export dbNameDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export dropDbDlgProc(HWND hDlg,
-									UINT iMessage,
-									WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export dropDbDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1784,12 +1771,14 @@ BOOL CALLBACK _export dropDbDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDOK:
 			EndDialog(hDlg, TRUE);
 			break;
@@ -1816,8 +1805,7 @@ BOOL CALLBACK _export dropDbDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export execDlgProc(HWND hDlg,
-								  UINT iMessage, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export execDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1842,13 +1830,15 @@ BOOL CALLBACK _export execDlgProc(HWND hDlg,
 	SCHAR buf[256];
 	SSHORT i;
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_SQL_COMMAND, EM_LIMITTEXT, 1024, 0L);
 		fflush(sss);
 		fclose(sss);
 		fh = fopen(defSessionFile, "r");
-		if (fh) {
+		if (fh)
+		{
 			while (fgets(buf, sizeof(buf), fh)) {
 				for (i = strlen(buf); i; i--)
 					if (buf[i] >= ' ' && buf[i] <= '~')
@@ -1856,8 +1846,7 @@ BOOL CALLBACK _export execDlgProc(HWND hDlg,
 				if (!i)
 					break;
 				buf[i + 1] = '\0';
-				SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY),
-							LB_ADDSTRING, 0, (SLONG) buf);
+				SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY), LB_ADDSTRING, 0, (SLONG) buf);
 			}
 			fclose(fh);
 		}
@@ -1865,21 +1854,19 @@ BOOL CALLBACK _export execDlgProc(HWND hDlg,
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_SQL_COMMAND:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE) {
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			}
 			break;
 
 		case IDD_SQL_HISTORY:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == LBN_DBLCLK) {
-				i = (SSHORT) SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY),
-										 LB_GETCURSEL, 0, 0);
-				SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY),
-							LB_GETTEXT, i, (SLONG) buf);
+				i = (SSHORT) SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY), LB_GETCURSEL, 0, 0);
+				SendMessage(GetDlgItem(hDlg, IDD_SQL_HISTORY), LB_GETTEXT, i, (SLONG) buf);
 				SetDlgItemText(hDlg, IDD_SQL_COMMAND, buf);
 			}
 			break;
@@ -1910,9 +1897,7 @@ BOOL CALLBACK _export execDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export extractDlgProc(HWND hDlg,
-									 UINT iMessage,
-									 WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export extractDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -1935,7 +1920,8 @@ BOOL CALLBACK _export extractDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_EXTRACT_DBNAME, EM_LIMITTEXT, 256, 0L);
 		SendDlgItemMessage(hDlg, IDD_EXTRACT_OUTPUT, EM_LIMITTEXT, 256, 0L);
@@ -1943,12 +1929,12 @@ BOOL CALLBACK _export extractDlgProc(HWND hDlg,
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_EXTRACT_DBNAME:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDD_EXTRACT_TARGET:
@@ -1984,9 +1970,7 @@ BOOL CALLBACK _export extractDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export objectDlgProc(HWND hDlg,
-									UINT iMessage,
-									WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export objectDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -2009,13 +1993,15 @@ BOOL CALLBACK _export objectDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_OBJECT, EM_LIMITTEXT, 256, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_ALL_OBJECTS:
 			allobjectsflag = TRUE;
 			tmpDialogParam[0] = '\0';
@@ -2026,8 +2012,7 @@ BOOL CALLBACK _export objectDlgProc(HWND hDlg,
 			allobjectsflag = FALSE;
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
@@ -2057,9 +2042,7 @@ BOOL CALLBACK _export objectDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export outputDlgProc(HWND hDlg,
-									UINT iMessage,
-									WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export outputDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -2082,18 +2065,19 @@ BOOL CALLBACK _export outputDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_SAVE_OUTPUT_FILE, EM_LIMITTEXT, 256, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_SAVE_OUTPUT_FILE:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
@@ -2123,9 +2107,7 @@ BOOL CALLBACK _export outputDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export scriptDlgProc(HWND hDlg,
-									UINT iMessage,
-									WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export scriptDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -2148,19 +2130,20 @@ BOOL CALLBACK _export scriptDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_SCRIPT_INPUT, EM_LIMITTEXT, 256, 0L);
 		SendDlgItemMessage(hDlg, IDD_SCRIPT_OUTPUT, EM_LIMITTEXT, 256, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_SCRIPT_INPUT:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDD_SCRIPT_OUTPUT:
@@ -2194,9 +2177,7 @@ BOOL CALLBACK _export scriptDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export sessionDlgProc(HWND hDlg,
-									 UINT iMessage,
-									 WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export sessionDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -2219,19 +2200,19 @@ BOOL CALLBACK _export sessionDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
-		SendDlgItemMessage(hDlg, IDD_SAVE_SESSION_FILE, EM_LIMITTEXT, 256,
-						   0L);
+		SendDlgItemMessage(hDlg, IDD_SAVE_SESSION_FILE, EM_LIMITTEXT, 256, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_SAVE_SESSION_FILE:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
@@ -2261,8 +2242,7 @@ BOOL CALLBACK _export sessionDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export termDlgProc(HWND hDlg,
-								  UINT iMessage, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export termDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -2284,18 +2264,19 @@ BOOL CALLBACK _export termDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_TERMINATOR, EM_LIMITTEXT, 10, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_TERMINATOR:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
@@ -2325,9 +2306,7 @@ BOOL CALLBACK _export termDlgProc(HWND hDlg,
 }
 
 
-BOOL CALLBACK _export transDlgProc(HWND hDlg,
-								   UINT iMessage,
-								   WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK _export transDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 /********************************************************************
  *
@@ -2349,18 +2328,19 @@ BOOL CALLBACK _export transDlgProc(HWND hDlg,
  *
 /********************************************************************/
 
-	switch (iMessage) {
+	switch (iMessage)
+	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_TRANS_STRING, EM_LIMITTEXT, 256, 0L);
 		return (TRUE);
 
 	case WM_COMMAND:
-		switch (GET_WM_COMMAND_ID(wParam, lParam)) {
+		switch (GET_WM_COMMAND_ID(wParam, lParam))
+		{
 		case IDD_TRANS_STRING:
 			if (GET_WM_COMMAND_CMD(wParam, lParam) == EN_CHANGE)
 				EnableWindow(GetDlgItem(hDlg, IDOK),
-							 (BOOL) SendMessage((HWND) lParam,
-												WM_GETTEXTLENGTH, 0, 0L));
+							 (BOOL) SendMessage((HWND) lParam, WM_GETTEXTLENGTH, 0, 0L));
 			break;
 
 		case IDOK:
