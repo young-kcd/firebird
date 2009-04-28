@@ -66,6 +66,8 @@
 
 #ifdef SOLARIS
 #include <nan.h>
+#elif defined(WIN_NT)
+#include <float.h>
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -341,7 +343,7 @@ static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
 static processing_state newRowCount(const TEXT* newRowCountStr);
 static processing_state newtrans(const TEXT*);
-static processing_state parse_arg(int, SCHAR**, SCHAR*, FILE**);
+static processing_state parse_arg(int, SCHAR**, SCHAR*); //, FILE**);
 #ifdef DEV_BUILD
 static processing_state passthrough(const char* cmd);
 #endif
@@ -587,7 +589,7 @@ int ISQL_main(int argc,
 	isqlGlob.Out = stdout;
 	isqlGlob.Errfp = stderr;
 
-	const processing_state ret = parse_arg(argc, argv, tabname, NULL);
+	const processing_state ret = parse_arg(argc, argv, tabname);
 
 	// Can't do a simple assignment because parse_arg may set Interactive to false.
 	if (stdin_redirected())
@@ -6720,7 +6722,8 @@ static processing_state newtrans(const TEXT* statement)
 }
 
 
-static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname, FILE** sess)
+static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
+//	, FILE** sess) Last param was for wisql
 {
 /**************************************
  *
@@ -7142,6 +7145,11 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
 	if (IsNANorINF(value))
 	{
 	    t = IsINF(value) ? "Infinity" : "NaN";
+	}
+#elif defined(WIN_NT)
+	if (!_finite(value))
+	{
+		t = _isnan(value) ? "NaN" : "Infinity";
 	}
 #endif
 	if (! t)
