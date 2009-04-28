@@ -152,6 +152,8 @@ namespace
 		return rc;
 	}
 #else // HAVE_POSIX_FADVISE
+#define POSIX_FADV_SEQUENTIAL 0
+#define POSIX_FADV_NOREUSE 0
 	int fb_fadvise(int, off_t, size_t, int)
 	{
 		return 0;
@@ -404,6 +406,14 @@ void NBackup::open_database_scan()
 #ifndef O_NOATIME
 #define O_NOATIME 0
 #endif // O_NOATIME
+
+//
+// Solaris does not have O_DIRECT!!!
+// TODO: Implement using Solaris directio or suffer performance problems. :-(
+//
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif // O_DIRECT
 
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
 	if (dbase < 0)
