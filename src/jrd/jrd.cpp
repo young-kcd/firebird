@@ -3630,7 +3630,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 							USHORT in_blr_length, const SCHAR* in_blr,
 							USHORT in_msg_type, USHORT in_msg_length, const SCHAR* in_msg,
 							USHORT out_blr_length, SCHAR* out_blr,
-							USHORT out_msg_type, USHORT out_msg_length, SCHAR* out_msg)
+							USHORT /*out_msg_type*/, USHORT out_msg_length, SCHAR* out_msg)
 {
 	try
 	{
@@ -3649,7 +3649,7 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 					 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
 					 in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
 					 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-					 out_msg_type, out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+					 /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
 	}
 	catch (const Exception& ex)
 	{
@@ -3665,9 +3665,9 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 									  jrd_tra** tra_handle,
 									  USHORT length, const TEXT* string, USHORT dialect,
 									  USHORT in_blr_length, const SCHAR* in_blr,
-									  USHORT in_msg_type, USHORT in_msg_length, const SCHAR* in_msg,
+									  USHORT /*in_msg_type*/, USHORT in_msg_length, const SCHAR* in_msg,
 									  USHORT out_blr_length, SCHAR* out_blr,
-									  USHORT out_msg_type, USHORT out_msg_length, SCHAR* out_msg)
+									  USHORT /*out_msg_type*/, USHORT out_msg_length, SCHAR* out_msg)
 {
 	try
 	{
@@ -3685,9 +3685,9 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 		DSQL_execute_immediate(tdbb, attachment, tra_handle,
 							   length, string, dialect,
 							   in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
-							   in_msg_type, in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
+							   /*in_msg_type,*/ in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
 							   out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-							   out_msg_type, out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
+							   /*out_msg_type,*/ out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
 	}
 	catch (const Exception& ex)
 	{
@@ -3701,7 +3701,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 						  dsql_req** stmt_handle,
 						  USHORT blr_length, const SCHAR* blr,
-						  USHORT msg_type, USHORT msg_length, SCHAR* dsql_msg_buf
+						  USHORT /*msg_type*/, USHORT msg_length, SCHAR* dsql_msg_buf
 #ifdef SCROLLABLE_CURSORS
 						  , USHORT direction, SLONG offset
 #endif
@@ -3719,7 +3719,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		check_database(tdbb);
 
 		return_code = DSQL_fetch(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-						msg_type, msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
+						/*msg_type,*/ msg_length, reinterpret_cast<UCHAR*>(dsql_msg_buf)
 #ifdef SCROLLABLE_CURSORS
 						  , direction, offset
 #endif
@@ -3764,7 +3764,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
 ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 						   dsql_req** stmt_handle,
 						   USHORT blr_length, const SCHAR* blr,
-						   USHORT msg_type, USHORT msg_length, const SCHAR*	dsql_msg_buf)
+						   USHORT /*msg_type*/, USHORT msg_length, const SCHAR*	dsql_msg_buf)
 {
 	try
 	{
@@ -3776,7 +3776,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 		check_database(tdbb);
 
 		DSQL_insert(tdbb, statement, blr_length, reinterpret_cast<const UCHAR*>(blr),
-					msg_type, msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
+					/*msg_type,*/ msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
 	}
 	catch (const Exception& ex)
 	{
@@ -3823,7 +3823,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 							   dsql_req** stmt_handle,
 							   const TEXT* cursor,
-							   USHORT type)
+							   USHORT /*type*/)
 {
 	try
 	{
@@ -3834,7 +3834,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		DSQL_set_cursor(tdbb, statement, cursor, type);
+		DSQL_set_cursor(tdbb, statement, cursor); //, type);
 	}
 	catch (const Exception& ex)
 	{
@@ -4695,8 +4695,8 @@ static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code)
 
 
 static Database* init(thread_db* tdbb,
-					  const PathName& expanded_filename,
-					  bool attach_flag)
+					  const PathName& expanded_filename, // only for SS
+					  bool attach_flag) // only for SS
 {
 /**************************************
  *

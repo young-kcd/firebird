@@ -82,8 +82,8 @@ static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, c
 						 USHORT, UCHAR*, USHORT, UCHAR*);
 static void		execute_immediate(thread_db*, Attachment*, jrd_tra**,
 							  USHORT, const TEXT*, USHORT,
-							  USHORT, const UCHAR*, USHORT, USHORT, const UCHAR*,
-							  USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
+							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, const UCHAR*,
+							  USHORT, UCHAR*, /*USHORT,*/ USHORT, UCHAR*);
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(const dsql_nod*);
@@ -206,7 +206,7 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Attachment* attachment)
     @param in_msg
     @param out_blr_length
     @param out_blr
-    @param out_msg_type
+    @param out_msg_type OBSOLETE
     @param out_msg_length
     @param out_msg
 
@@ -217,7 +217,7 @@ void DSQL_execute(thread_db* tdbb,
 				  USHORT in_blr_length, const UCHAR* in_blr,
 				  USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
 				  USHORT out_blr_length, UCHAR* out_blr,
-				  USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg)
+				  /*USHORT out_msg_type,*/ USHORT out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -302,12 +302,12 @@ void DSQL_execute(thread_db* tdbb,
     @param dialect
     @param in_blr_length
     @param in_blr
-    @param in_msg_type
+    @param in_msg_type OBSOLETE
     @param in_msg_length
     @param in_msg
     @param out_blr_length
     @param out_blr
-    @param out_msg_type
+    @param out_msg_type OBSOLETE
     @param out_msg_length
     @param out_msg
 
@@ -317,14 +317,14 @@ void DSQL_execute_immediate(thread_db* tdbb,
 							jrd_tra** tra_handle,
 							USHORT length, const TEXT* string, USHORT dialect,
 							USHORT in_blr_length, const UCHAR* in_blr,
-							USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
+							/*USHORT in_msg_type,*/ USHORT in_msg_length, const UCHAR* in_msg,
 							USHORT out_blr_length, UCHAR* out_blr,
-							USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg)
+							/*USHORT out_msg_type,*/ USHORT out_msg_length, UCHAR* out_msg)
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
 		string, dialect,
-		in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
-		out_blr_length, out_blr, out_msg_type, out_msg_length, out_msg);
+		in_blr_length, in_blr, /*in_msg_type,*/ in_msg_length, in_msg,
+		out_blr_length, out_blr, /*out_msg_type,*/ out_msg_length, out_msg);
 }
 
 
@@ -339,7 +339,7 @@ void DSQL_execute_immediate(thread_db* tdbb,
     @param req_handle
     @param blr_length
     @param blr
-    @param msg_type
+    @param msg_type OBSOLETE
     @param msg_length
     @param dsql_msg
     @param direction
@@ -349,7 +349,7 @@ void DSQL_execute_immediate(thread_db* tdbb,
 ISC_STATUS DSQL_fetch(thread_db* tdbb,
 					  dsql_req* request,
 					  USHORT blr_length, const UCHAR* blr,
-					  USHORT msg_type, USHORT msg_length, UCHAR* dsql_msg_buf
+					  /*USHORT msg_type,*/ USHORT msg_length, UCHAR* dsql_msg_buf
 #ifdef SCROLLABLE_CURSORS
 						  , USHORT direction, SLONG offset
 #endif
@@ -571,7 +571,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
     @param req_handle
     @param blr_length
     @param blr
-    @param msg_type
+    @param msg_type OBSOLETE
     @param msg_length
     @param dsql_msg
 
@@ -579,7 +579,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 void DSQL_insert(thread_db* tdbb,
 				 dsql_req* request,
 				 USHORT blr_length, const UCHAR* blr,
-				 USHORT msg_type, USHORT msg_length, const UCHAR* dsql_msg_buf)
+				 /*USHORT msg_type,*/ USHORT msg_length, const UCHAR* dsql_msg_buf)
 {
 	SET_TDBB(tdbb);
 
@@ -771,13 +771,13 @@ void DSQL_prepare(thread_db* tdbb,
     @param user_status
     @param req_handle
     @param input_cursor
-    @param type
+    @param type OBSOLETE
 
  **/
 void DSQL_set_cursor(thread_db* tdbb,
 				     dsql_req* request,
-					 const TEXT* input_cursor,
-					 USHORT type)
+					 const TEXT* input_cursor)
+					 //USHORT type)
 {
 	SET_TDBB(tdbb);
 
@@ -1068,15 +1068,14 @@ static void execute_blob(thread_db* tdbb,
 	@param dialect
     @param in_blr_length
     @param in_blr
-    @param in_msg_type
+    @param in_msg_type OBSOLETE
     @param in_msg_length
     @param in_msg
     @param out_blr_length
     @param out_blr
-    @param out_msg_type
+    @param out_msg_type OBSOLETE
     @param out_msg_length
     @param out_msg
-	@param possible_requests
 
  **/
 static void execute_immediate(thread_db* tdbb,
@@ -1084,9 +1083,9 @@ static void execute_immediate(thread_db* tdbb,
 							  jrd_tra** tra_handle,
 							  USHORT length, const TEXT* string, USHORT dialect,
 							  USHORT in_blr_length, const UCHAR* in_blr,
-							  USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
+							  /*USHORT in_msg_type,*/ USHORT in_msg_length, const UCHAR* in_msg,
 							  USHORT out_blr_length, UCHAR* out_blr,
-							  USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg)
+							  /*USHORT out_msg_type,*/ USHORT out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 

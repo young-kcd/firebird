@@ -38,32 +38,32 @@ void DSQL_execute(Jrd::thread_db*,  Jrd::jrd_tra**, Jrd::dsql_req*,
 				  USHORT, const UCHAR*,
 				  USHORT, USHORT, const UCHAR*,
 				  USHORT, UCHAR*,
-				  USHORT, USHORT, UCHAR*);
+				  /*USHORT,*/ USHORT, UCHAR*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
 							USHORT, const TEXT*, USHORT,
 							USHORT, const UCHAR*,
-							USHORT, USHORT, const UCHAR*,
+							/*USHORT,*/ USHORT, const UCHAR*,
 							USHORT, UCHAR*,
-							USHORT, USHORT, UCHAR*);
+							/*USHORT,*/ USHORT, UCHAR*);
 #ifdef SCROLLABLE_CURSORS
 ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*,
 					  USHORT, const UCHAR*,
-					  USHORT, USHORT, UCHAR*,
+					  /*USHORT,*/ USHORT, UCHAR*,
 					  USHORT, SLONG);
 #else
 ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*,
 					  USHORT, const UCHAR*,
-					  USHORT, USHORT, UCHAR*);
+					  /*USHORT,*/ USHORT, UCHAR*);
 #endif // SCROLLABLE_CURSORS
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
 void DSQL_insert(Jrd::thread_db*, Jrd::dsql_req*,
 				 USHORT, const UCHAR*,
-				 USHORT, USHORT, const UCHAR*);
+				 /*USHORT,*/ USHORT, const UCHAR*);
 void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
 				  USHORT, const TEXT*,
 				  USHORT, USHORT, const UCHAR*,
 				  USHORT, UCHAR*);
-void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*, USHORT);
+void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*); //, USHORT);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
 				   USHORT, const UCHAR*,
 				   USHORT, UCHAR*);
