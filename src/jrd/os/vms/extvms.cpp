@@ -125,8 +125,7 @@ void EXT_erase(record_param* rpb, jrd_tra *transaction)
 }
 
 
-// Third param is unused.
-ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
+ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name); //, bid* description)
 {
 /**************************************
  *
@@ -502,7 +501,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(record_param* rpb, jrd_tra *transaction)
+void EXT_store(Jrd::thread_db*, record_param* rpb)
 {
 /**************************************
  *

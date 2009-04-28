@@ -913,7 +913,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 			MERGE_database_info(temp_buffer, buffer, buffer_length,
 								IMPLEMENTATION, 3, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
-								reinterpret_cast<const UCHAR*>(port->port_host->str_data), 0);
+								reinterpret_cast<const UCHAR*>(port->port_host->str_data));
 		}
 	}
 	catch (const Exception& ex)
@@ -3945,7 +3945,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Rdb** handle)
 
 ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 							 Rdb** svc_handle,
-							 ULONG* reserved,
+							 ULONG* /*reserved*/,
 							 USHORT item_length,
 							 const UCHAR* items,
 							 USHORT recv_item_length,
@@ -4002,7 +4002,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_SERVICE_START(ISC_STATUS* user_status,
 							 Rdb** svc_handle,
-							 ULONG* reserved,
+							 ULONG* /*reserved*/,
 							 USHORT item_length,
 							 const UCHAR* items)
 {
@@ -4609,7 +4609,7 @@ static rem_port* analyze(PathName& file_name,
 
 #if defined(WIN_NT)
 	if (ISC_analyze_pclan(file_name, node_name)) {
-		return WNET_analyze(file_name, status_vector, node_name.c_str(), user_string, uv_flag);
+		return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
 
@@ -4658,7 +4658,7 @@ static rem_port* analyze(PathName& file_name,
 
 	if (!port && node_name.isEmpty())
 	{
-		return XNET_analyze(file_name, status_vector, node_name.c_str(), user_string, uv_flag);
+		return XNET_analyze(file_name, status_vector, /*node_name.c_str(), user_string,*/ uv_flag);
 	}
 
 #endif // USE_XNET
@@ -4671,7 +4671,7 @@ static rem_port* analyze(PathName& file_name,
 	{
 		file_name.insert(0, "\\\\.\\");
 		if (ISC_analyze_pclan(file_name, node_name))
-			return WNET_analyze(file_name, status_vector, node_name.c_str(), user_string, uv_flag);
+			return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif // WIN_NT
 
@@ -4729,7 +4729,7 @@ static rem_port* analyze_service(PathName& service_name,
 
 #if defined(WIN_NT)
 	if (ISC_analyze_pclan(service_name, node_name)) {
-		return WNET_analyze(service_name, status_vector, node_name.c_str(), user_string, uv_flag);
+		return WNET_analyze(service_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
 	if (!port) {
@@ -4745,7 +4745,7 @@ static rem_port* analyze_service(PathName& service_name,
 	// interprocess server
 
 	if (!port && node_name.isEmpty()) {
-		port = XNET_analyze(service_name, status_vector, node_name.c_str(), user_string, uv_flag);
+		port = XNET_analyze(service_name, status_vector, /*node_name.c_str(), user_string,*/ uv_flag);
 	}
 #endif
 

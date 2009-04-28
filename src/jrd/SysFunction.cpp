@@ -876,7 +876,7 @@ void makeRound(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 }
 
 
-void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
+void makeTrunc(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount >= function->minArgCount);
@@ -2025,7 +2025,7 @@ dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 }
 
 
-dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
@@ -2421,7 +2421,7 @@ dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* arg
 }
 
 
-dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
@@ -2591,7 +2591,7 @@ dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* a
 }
 
 
-dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
@@ -2607,7 +2607,7 @@ dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* ar
 }
 
 
-dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
@@ -2757,7 +2757,7 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 }
 
 
-dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
@@ -2858,7 +2858,7 @@ dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 }
 
 
-dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
@@ -2946,7 +2946,7 @@ dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* a
 }
 
 
-dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);

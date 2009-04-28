@@ -2689,7 +2689,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  //sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -2783,9 +2783,9 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  sh_mem* shmem_data,
+					  //sh_mem* shmem_data,
 					  UCHAR** object_pointer,
-					  ULONG object_length)
+					  ULONG /*object_length*/)
 {
 /**************************************
  *
@@ -2806,7 +2806,11 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 	// contain the object being mapped.
 
 	const UCHAR* start = (UCHAR*) ((U_IPTR) *object_pointer & ~(page_size - 1));
-	UnmapViewOfFile(start);
+	if (UnmapViewOfFile(start) == 0)
+	{
+		error(status_vector, "UnmapViewOfFile", GetLastError());
+		return;
+	}
 
 	*object_pointer = NULL;
 }
@@ -3944,16 +3948,28 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
  **************************************/
 
 	CloseHandle(shmem_data->sh_mem_interest);
-	UnmapViewOfFile(shmem_data->sh_mem_address);
+	if (UnmapViewOfFile(shmem_data->sh_mem_address) == 0)
+	{
+		error(status_vector, "UnmapViewOfFile", GetLastError());
+		return;
+	}
 	CloseHandle(shmem_data->sh_mem_object);
 
 	CloseHandle(shmem_data->sh_mem_handle);
-	UnmapViewOfFile(shmem_data->sh_mem_hdr_address);
+	if (UnmapViewOfFile(shmem_data->sh_mem_hdr_address) == 0)
+	{
+		error(status_vector, "UnmapViewOfFile", GetLastError());
+		return;
+	}
 	CloseHandle(shmem_data->sh_mem_hdr_object);
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
-	DeleteFile(expanded_filename);
+	if (DeleteFile(expanded_filename) == 0)
+	{
+		error(status_vector, "DeleteFile", GetLastError());
+		return;
+	}
 }
 #endif
 

@@ -136,7 +136,7 @@ static void unmark(thread_db*, WIN *);
 static bool writeable(BufferDesc*);
 static bool is_writeable(BufferDesc*, const ULONG);
 static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS*, const bool);
-static bool write_page(thread_db*, BufferDesc*, const bool, ISC_STATUS*, const bool);
+static bool write_page(thread_db*, BufferDesc*, /*const bool,*/ ISC_STATUS*, const bool);
 static void set_diff_page(thread_db*, BufferDesc*);
 static void set_dirty_flag(thread_db*, BufferDesc*);
 static void clear_dirty_flag(thread_db*, BufferDesc*);
@@ -767,7 +767,7 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	CCH_TRACE(("FE %d:%06d", window->win_page.getPageSpaceID(), window->win_page.getPageNum()));
 
@@ -1837,7 +1837,7 @@ void CCH_must_write(WIN * window)
  **************************************/
 	Jrd::thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	//Database* dbb = tdbb->getDatabase();
 
 	BufferDesc* bdb = window->win_bdb;
 	BLKCHK(bdb, type_bdb);
@@ -4478,7 +4478,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 /* Everything is clear to write this buffer.  Do so and reduce the lock */
 
-	if (invalid || !write_page(tdbb, bdb, false, tdbb->tdbb_status_vector, true))
+	if (invalid || !write_page(tdbb, bdb, /*false,*/ tdbb->tdbb_status_vector, true))
 	{
 		bdb->bdb_flags |= BDB_not_valid;
 		clear_dirty_flag(tdbb, bdb);
@@ -6165,7 +6165,7 @@ static int write_buffer(thread_db* tdbb,
 	if ((bdb->bdb_flags & BDB_dirty || (write_thru && bdb->bdb_flags & BDB_db_dirty)) &&
 		!(bdb->bdb_flags & BDB_marked))
 	{
-		if ( (result = write_page(tdbb, bdb, write_thru, status, false)) ) {
+		if ( (result = write_page(tdbb, bdb, /*write_thru,*/ status, false)) ) {
 			clear_precedence(tdbb, bdb);
 		}
 	}
@@ -6191,7 +6191,8 @@ static int write_buffer(thread_db* tdbb,
 
 static bool write_page(thread_db* tdbb,
 					   BufferDesc* bdb,
-					   const bool write_thru, ISC_STATUS* status,
+					   //const bool write_thru, 
+					   ISC_STATUS* status,
 					   const bool inAst)
 {
 /**************************************

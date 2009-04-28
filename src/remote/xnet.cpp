@@ -85,7 +85,7 @@ static bool fork(ULONG, USHORT, ULONG*);
 
 static int xdrxnet_create(XDR *, rem_port*, UCHAR *, USHORT, xdr_op);
 
-static int xnet_destroy(XDR *);
+static int xnet_destroy(XDR*);
 static bool_t xnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t xnet_getlong(XDR *, SLONG *);
 static u_int xnet_getpostn(XDR *);
@@ -197,8 +197,8 @@ static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
 
 rem_port* XNET_analyze(const Firebird::PathName& file_name,
 					   ISC_STATUS* status_vector,
-					   const TEXT* node_name,
-					   const TEXT* user_string,
+					   //const TEXT* node_name,
+					   //const TEXT* user_string,
 					   bool uv_flag)
 {
 /**************************************
@@ -274,7 +274,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = XNET_connect(node_name, packet, status_vector, 0);
+	rem_port* port = XNET_connect(/*node_name,*/ packet, status_vector, 0);
 	if (!port) {
 		delete rdb;
 		return NULL;
@@ -312,7 +312,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		if (!(port = XNET_connect(node_name, packet, status_vector, 0))) {
+		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0))) {
 			delete rdb;
 			return NULL;
 		}
@@ -349,7 +349,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		if (!(port = XNET_connect(node_name, packet, status_vector, 0))) {
+		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0))) {
 			delete rdb;
 			return NULL;
 		}
@@ -395,7 +395,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 }
 
 
-rem_port* XNET_connect(const TEXT* name,
+rem_port* XNET_connect(//const TEXT* name,
 					   PACKET* packet,
 					   ISC_STATUS* status_vector,
 					   USHORT flag)
@@ -682,7 +682,7 @@ static rem_port* alloc_port(rem_port* parent,
 	port->port_buff_size = send_length;
 	port->port_status_vector = NULL;
 
-	xdrxnet_create(&port->port_send, port, send_buffer,	send_length, XDR_ENCODE);
+	xdrxnet_create(&port->port_send, port, send_buffer, send_length, XDR_ENCODE);
 	xdrxnet_create(&port->port_receive, port, receive_buffer, 0, XDR_DECODE);
 
 	if (parent)
@@ -697,8 +697,7 @@ static rem_port* alloc_port(rem_port* parent,
 }
 
 
-// Third param "ast" is unused.
-static rem_port* aux_connect(rem_port* port, PACKET* packet)
+static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 {
 /**************************************
  *
@@ -1552,7 +1551,7 @@ static void exit_handler(rem_port* main_port)
 	}
 }
 
-static int cleanup_ports(const int, const int, void* arg)
+static int cleanup_ports(const int, const int, void* /*arg*/)
 {
 /**************************************
  *
@@ -1702,7 +1701,7 @@ static int xdrxnet_create(XDR * xdrs, rem_port* port, UCHAR* buffer, USHORT leng
 }
 
 
-static int xnet_destroy( XDR * xdrs)
+static int xnet_destroy( XDR* /*xdrs*/)
 {
 /**************************************
  *

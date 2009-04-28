@@ -124,7 +124,7 @@ namespace {
 } // namespace
 
 
-void EXT_close(RecordSource* rsb)
+void EXT_close(RecordSource*)
 {
 /**************************************
  *
@@ -139,7 +139,7 @@ void EXT_close(RecordSource* rsb)
 }
 
 
-void EXT_erase(record_param* rpb, jrd_tra* transaction)
+void EXT_erase(record_param*, jrd_tra*)
 {
 /**************************************
  *
@@ -157,7 +157,7 @@ void EXT_erase(record_param* rpb, jrd_tra* transaction)
 
 
 // Third param is unused.
-ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* description)
+ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* description)
 {
 /**************************************
  *
@@ -311,7 +311,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transaction)
+void EXT_modify(record_param* /*old_rpb*/, record_param* /*new_rpb*/, jrd_tra* /*transaction*/)
 {
 /**************************************
  *
@@ -360,7 +360,8 @@ void EXT_open(thread_db* tdbb, RecordSource* rsb)
 }
 
 
-RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
+// Only extvms.cpp needs the third param.
+RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream) //, jrd_nod** sort_ptr)
 {
 /**************************************
  *
@@ -423,7 +424,7 @@ SSHORT		i, size;
 }
 
 
-void EXT_ready(jrd_rel* relation)
+void EXT_ready(jrd_rel*)
 {
 /**************************************
  *
@@ -438,7 +439,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
+void EXT_store(thread_db* tdbb, record_param* rpb)
 {
 /**************************************
  *
@@ -526,7 +527,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 }
 
 
-void EXT_trans_commit(jrd_tra* transaction)
+void EXT_trans_commit(jrd_tra*)
 {
 /**************************************
  *
@@ -541,7 +542,7 @@ void EXT_trans_commit(jrd_tra* transaction)
 }
 
 
-void EXT_trans_prepare(jrd_tra* transaction)
+void EXT_trans_prepare(jrd_tra*)
 {
 /**************************************
  *
@@ -556,7 +557,7 @@ void EXT_trans_prepare(jrd_tra* transaction)
 }
 
 
-void EXT_trans_rollback(jrd_tra* transaction)
+void EXT_trans_rollback(jrd_tra*)
 {
 /**************************************
  *
@@ -571,7 +572,7 @@ void EXT_trans_rollback(jrd_tra* transaction)
 }
 
 
-void EXT_trans_start(jrd_tra* transaction)
+void EXT_trans_start(jrd_tra*)
 {
 /**************************************
  *

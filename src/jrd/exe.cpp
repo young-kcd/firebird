@@ -201,7 +201,7 @@ static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
 static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
 	jrd_req::req_ta, SSHORT);
 static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&);
-static void looper_seh(thread_db*, jrd_req*, jrd_nod*);
+static void looper_seh(thread_db*, jrd_req*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
 static void release_blobs(thread_db*, jrd_req*);
@@ -1078,7 +1078,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_src_line = 0;
 	request->req_src_column = 0;
 
-	looper_seh(tdbb, request, request->req_top_node);
+	looper_seh(tdbb, request); //, request->req_top_node);
 
 	// If any requested modify/delete/insert ops have completed, forget them
 
@@ -2934,7 +2934,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 
 // Start looper under Windows SEH (Structured Exception Handling) control
-static void looper_seh(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
+static void looper_seh(thread_db* tdbb, jrd_req* request)
 {
 #ifdef WIN_NT
 	START_CHECK_FOR_EXCEPTIONS(NULL);
@@ -3826,7 +3826,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		cleanup_rpb(tdbb, rpb);
 
 		if (relation->rel_file) {
-			EXT_store(tdbb, rpb, transaction);
+			EXT_store(tdbb, rpb);
 		}
 		else if (relation->isVirtual()) {
 			VirtualTable::store(tdbb, rpb);

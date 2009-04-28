@@ -379,7 +379,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 }
 
 
-static void data_print(void* arg, const internal_user_data* data, bool first)
+static void data_print(void* /*arg*/, const internal_user_data* data, bool first)
 {
 /**************************************
  *

@@ -121,7 +121,7 @@ static void find_used_streams(const RecordSource*, UCHAR*);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverStack&,
 	jrd_nod**, jrd_nod**, jrd_nod*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, const UCHAR*, UCHAR*,
-	RiverStack&, jrd_nod**, jrd_nod**, jrd_nod*);
+	RiverStack&, jrd_nod**, jrd_nod**);
 static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
 static RecordSource* gen_boolean(thread_db*, OptimizerBlk*, RecordSource*, jrd_nod*);
 static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
@@ -3734,7 +3734,7 @@ static void form_rivers(thread_db*		tdbb,
 		do {
 			count = innerJoin ? innerJoin->findJoinOrder() : find_order(tdbb, opt, temp, plan_node);
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				 project_clause, 0));
+				 project_clause));
 
 		delete innerJoin;
 	}
@@ -3748,8 +3748,8 @@ static bool form_river(thread_db*		tdbb,
 					   UCHAR*			temp,
 					   RiverStack&		river_stack,
 					   jrd_nod**		sort_clause,
-					   jrd_nod**		project_clause,
-					   jrd_nod*			plan_clause)
+					   jrd_nod**		project_clause)
+					   //jrd_nod*			plan_clause) always zero
 {
 /**************************************
  *
@@ -4198,7 +4198,7 @@ static void gen_join(thread_db*		tdbb,
 		do {
 			count = innerJoin->findJoinOrder();
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				 project_clause, 0));
+				 project_clause));
 
 		delete innerJoin;
 		return;
@@ -4290,7 +4290,7 @@ static void gen_join(thread_db*		tdbb,
 		do {
 			count = find_order(tdbb, opt, temp, 0);
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				project_clause, 0));
+				project_clause));
 
 	}
 }
@@ -4797,7 +4797,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	}
 	else if (relation->rel_file) {
 		// External
-		rsb = EXT_optimize(opt, stream, sort_ptr ? sort_ptr : project_ptr);
+		rsb = EXT_optimize(opt, stream); //, sort_ptr ? sort_ptr : project_ptr);
 	}
 	else if (relation->isVirtual()) {
 		// Virtual

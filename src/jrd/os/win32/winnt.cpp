@@ -950,7 +950,7 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 
 static jrd_file* seek_file(jrd_file*			file,
 					 BufferDesc*			bdb,
-					 ISC_STATUS*		status_vector,
+					 ISC_STATUS*		/*status_vector*/,
 					 OVERLAPPED*	overlapped,
 					 OVERLAPPED**	overlapped_ptr)
 {

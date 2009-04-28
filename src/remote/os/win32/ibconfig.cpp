@@ -561,7 +561,7 @@ BOOL ValidateUser(HWND hParentWnd)
 						MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd, (DLGPROC) PasswordDlgProc) > 0);
 }
 
-BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM)
 {
 /******************************************************************************
  *

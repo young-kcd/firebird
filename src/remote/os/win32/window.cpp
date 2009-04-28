@@ -60,14 +60,14 @@ static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
 #ifdef NOT_USED_OR_REPLACED
 static char *MakeVersionString(char *, int, USHORT);
 #endif
-static BOOL CanEndServer(HWND, bool);
+static BOOL CanEndServer(HWND); //, bool);
 
 // Window Procedure
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
 static int fb_shutdown_cb(const int, const int, void*);
 
-int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
+int WINDOW_main( HINSTANCE hThisInst, int /*nWndMode*/, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -198,7 +198,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		// therefore should not be shut down.
 
 		if (usServerFlags & SRVR_non_service) {
-			return CanEndServer(hWnd, true);
+			return CanEndServer(hWnd /*, true*/);
 		}
 
 		return TRUE;
@@ -213,7 +213,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		 */
 		if (usServerFlags & SRVR_non_service)
 		{
-			if (CanEndServer(hWnd, false)) {
+			if (CanEndServer(hWnd /*, false*/)) {
 				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
@@ -500,7 +500,7 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 }
 
 
-BOOL CanEndServer(HWND hWnd, bool bSysExit)
+BOOL CanEndServer(HWND hWnd) //, bool bSysExit)
 {
 /******************************************************************************
  *

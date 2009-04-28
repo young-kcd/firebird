@@ -78,7 +78,7 @@ static rem_port*	receive(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
 static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
-static bool_t	xdrwnet_endofrecord(XDR*, int);
+static bool_t	xdrwnet_endofrecord(XDR*);//, int);
 static int		wnet_destroy(XDR*);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static void		wnet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
@@ -90,7 +90,7 @@ static bool_t	wnet_putlong(XDR*, const SLONG*);
 static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	wnet_read(XDR*);
 static bool_t	wnet_setpostn(XDR*, u_int);
-static bool_t	wnet_write(XDR*, int);
+static bool_t	wnet_write(XDR*); //, int);
 #ifdef DEBUG
 static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
@@ -116,7 +116,7 @@ static xdr_t::xdr_ops wnet_ops =
 rem_port* WNET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
-					const TEXT*	user_string,
+					//const TEXT*	user_string,
 					bool	uv_flag)
 {
 /**************************************
@@ -971,7 +971,7 @@ static int send_full( rem_port* port, PACKET* packet)
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
-	return xdrwnet_endofrecord(&port->port_send, TRUE);
+	return xdrwnet_endofrecord(&port->port_send); //, TRUE);
 }
 
 
@@ -1017,7 +1017,7 @@ static int xdrwnet_create(XDR* xdrs,
 }
 
 
-static bool_t xdrwnet_endofrecord( XDR* xdrs, bool_t flushnow)
+static bool_t xdrwnet_endofrecord( XDR* xdrs) //, bool_t flushnow)
 {
 /**************************************
  *
@@ -1030,11 +1030,11 @@ static bool_t xdrwnet_endofrecord( XDR* xdrs, bool_t flushnow)
  *
  **************************************/
 
-	return wnet_write(xdrs, flushnow);
+	return wnet_write(xdrs); //, flushnow);
 }
 
 
-static int wnet_destroy( XDR* xdrs)
+static int wnet_destroy( XDR*)
 {
 /**************************************
  *
@@ -1268,7 +1268,7 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			bytecount -= xdrs->x_handy;
 			xdrs->x_handy = 0;
 		}
-		if (!wnet_write(xdrs, 0))
+		if (!wnet_write(xdrs /*, 0*/))
 			return FALSE;
 	}
 
@@ -1287,7 +1287,7 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	}
 
 	while (--bytecount >= 0) {
-		if (xdrs->x_handy <= 0 && !wnet_write(xdrs, 0))
+		if (xdrs->x_handy <= 0 && !wnet_write(xdrs /*, 0*/))
 			return FALSE;
 		--xdrs->x_handy;
 		*xdrs->x_private++ = *buff++;
@@ -1385,7 +1385,7 @@ static bool_t wnet_setpostn( XDR* xdrs, u_int bytecount)
 }
 
 
-static bool_t wnet_write( XDR* xdrs, bool_t end_flag)
+static bool_t wnet_write( XDR* xdrs /*, bool_t end_flag*/)
 {
 /**************************************
  *
@@ -1394,7 +1394,8 @@ static bool_t wnet_write( XDR* xdrs, bool_t end_flag)
  **************************************
  *
  * Functional description
- *	Write a buffer fulll of data.  If the end_flag isn't set, indicate
+ *	Write a buffer fulll of data.
+ *  Obsolete: If the end_flag isn't set, indicate
  *	that the buffer is a fragment, and reset the XDR for another buffer
  *	load.
  *

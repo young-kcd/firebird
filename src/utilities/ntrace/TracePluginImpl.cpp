@@ -1066,8 +1066,8 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 
 
 void TracePluginImpl::log_event_transaction_start(TraceConnection* connection,
-		TraceTransaction* transaction, size_t tpb_length,
-		const ntrace_byte_t* tpb, ntrace_result_t tra_result)
+		TraceTransaction* transaction, size_t /*tpb_length*/,
+		const ntrace_byte_t* /*tpb*/, ntrace_result_t tra_result)
 {
 	if (config.log_transactions)
 	{
@@ -1885,7 +1885,7 @@ ntrace_boolean_t TracePluginImpl::ntrace_shutdown(const TracePlugin* tpl_plugin)
 	return true;
 }
 
-const char* TracePluginImpl::ntrace_get_error(const TracePlugin* tpl_plugin)
+const char* TracePluginImpl::ntrace_get_error(const TracePlugin* /*tpl_plugin*/)
 {
 	return get_error_string();
 }

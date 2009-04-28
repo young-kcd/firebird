@@ -106,7 +106,7 @@ static server_req_t* alloc_request();
 static bool		link_request(rem_port*, server_req_t*);
 
 static bool		accept_connection(rem_port*, P_CNCT*, PACKET*);
-static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
+static ISC_STATUS	allocate_statement(rem_port*, /*P_RLSE*,*/ PACKET*);
 static void		append_request_chain(server_req_t*, server_req_t**);
 static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
@@ -121,7 +121,7 @@ static bool		canUseTrusted();
 #ifdef NOT_USED_OR_REPLACED
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 #endif
-static void		aux_request(rem_port*, P_REQ*, PACKET*);
+static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
@@ -777,7 +777,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 }
 
 
-static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET* send)
+static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACKET* send)
 {
 /**************************************
  *
@@ -1141,7 +1141,7 @@ static void aux_connect( rem_port* port, P_REQ * request, PACKET* send)
 #endif
 
 
-static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
+static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 {
 /**************************************
  *
@@ -1630,7 +1630,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 }
 
 
-void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
+void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 {
 /**************************************
  *
@@ -1740,7 +1740,7 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 }
 
 
-ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
+ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 {
 /**************************************
  *
@@ -2709,8 +2709,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 								buffer, stuff->p_info_buffer_length,
 								IMPLEMENTATION, 4, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
-								reinterpret_cast<const UCHAR*>(this->port_host->str_data),
-								0);
+								reinterpret_cast<const UCHAR*>(this->port_host->str_data));
 		}
 		break;
 
@@ -3272,7 +3271,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_connect_request:
-			aux_request(port, &receive->p_req, sendL);
+			aux_request(port, /*&receive->p_req,*/ sendL);
 			break;
 
 #ifdef NOT_USED_OR_REPLACED
@@ -3294,7 +3293,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_allocate_statement:
-			allocate_statement(port, &receive->p_rlse, sendL);
+			allocate_statement(port, /*&receive->p_rlse,*/ sendL);
 			break;
 
 		case op_execute:
@@ -4636,7 +4635,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 }
 
 
-ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* sendL)
+ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
 {
 /**************************************
  *

@@ -105,7 +105,10 @@
 /* Pick up relation ids */
 #include "../jrd/ini.h"
 
-#define BLR_BYTE        *(csb->csb_running)++
+// Replaced by the definition taken from par.cpp
+//#define BLR_BYTE        *(csb->csb_running)++
+#define BLR_BYTE	csb->getBlrByte()
+//#define BLR_PEEK    *(control->ctl_blr)
 const char BLANK	= '\040';
 
 DATABASE DB = FILENAME "ODS.RDB";
@@ -125,7 +128,7 @@ static void make_relation_scope_name(const TEXT*, const USHORT, Firebird::string
 static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::MetaName name = Firebird::MetaName());
 static jrd_nod* parse_param_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
 static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*);
-static void par_messages(thread_db*, const UCHAR*, USHORT, jrd_prc*, CompilerScratch*);
+static void par_messages(thread_db*, const UCHAR* const, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*, bid*,
 	const TEXT*, UCHAR, bool, USHORT);
@@ -3756,7 +3759,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		relation->rel_flags |= REL_scanned;
 		if (REL.RDB$EXTERNAL_FILE[0])
 		{
-			EXT_file(relation, REL.RDB$EXTERNAL_FILE, &REL.RDB$EXTERNAL_DESCRIPTION);
+			EXT_file(relation, REL.RDB$EXTERNAL_FILE); //, &REL.RDB$EXTERNAL_DESCRIPTION);
 		}
 
 		/* Pick up field specific stuff */
@@ -4532,17 +4535,16 @@ static jrd_nod* parse_procedure_blr(thread_db* tdbb,
 	Firebird::HalfStaticArray<UCHAR, 512> tmp;
 	UCHAR* temp = tmp.getBuffer(length);
 	csb->csb_blr = temp;
-	BLB_get_data(tdbb, blob, temp, length);
-	// CVC: Why don't we check this function's return value!
-	// Trashed memory may be a cause of failure here
-	par_messages(tdbb, csb->csb_blr, (USHORT) length, procedure, csb);
+	const ULONG real_len = BLB_get_data(tdbb, blob, temp, length);
+	fb_assert(real_len >= length - 10 && real_len <= ULONG(MAX_USHORT));
+	par_messages(tdbb, csb->csb_blr, (USHORT) real_len, procedure, csb);
 
 	return PAR_blr(tdbb, NULL, csb->csb_blr, NULL, &csb, &procedure->prc_request, false, 0);
 }
 
 
 static void par_messages(thread_db* tdbb,
-						 const UCHAR* blr,
+						 const UCHAR* const blr,
 						 USHORT blr_length,
 						 jrd_prc* procedure,
 						 CompilerScratch* csb)
@@ -4558,6 +4560,11 @@ static void par_messages(thread_db* tdbb,
  *      a format (Format) block.
  *
  **************************************/
+
+ 	if (blr_length < 2)
+ 		ERR_post(Arg::Gds(isc_metadata_corrupt));
+ 	blr_length -= 2;
+
 	csb->csb_running = blr;
 	const SSHORT version = BLR_BYTE;
 	if (version != blr_version4 && version != blr_version5) {
@@ -4571,7 +4578,11 @@ static void par_messages(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	while (BLR_BYTE == blr_message) {
+	while (BLR_BYTE == blr_message)
+	{
+		if (blr_length < 4) // Covers the call above and the next three
+			ERR_post(Arg::Gds(isc_metadata_corrupt));
+		blr_length -= 4;
 		const USHORT msg_number = BLR_BYTE;
 		USHORT count = BLR_BYTE;
 		count += (BLR_BYTE) << 8;
@@ -4580,12 +4591,27 @@ static void par_messages(thread_db* tdbb,
 		ULONG offset = 0;
 		for (Format::fmt_desc_iterator desc = format->fmt_desc.begin(); count; --count, ++desc)
 		{
+			// CVC: I can't find an elegant way to make PAR_desc aware of the BLR length, so
+			// for now I know that at least should consume one byte. I would have to change the
+			// current 6 calls to it. Maybe a new member in CompilerScratch may be the solution?
+			if (blr_length < 2)
+				ERR_post(Arg::Gds(isc_metadata_corrupt));
+
+			const UCHAR* const savePos = csb->csb_running;
+
 			const USHORT align = PAR_desc(tdbb, csb, &*desc);
 			if (align) {
 				offset = FB_ALIGN(offset, align);
 			}
 			desc->dsc_address = (UCHAR *) (IPTR) offset;
 			offset += desc->dsc_length;
+
+			// This solution only checks that PAR_desc doesn't run out of bounds, but it
+			// does after the disaster happened.
+			const int diff = csb->csb_running - savePos;
+			if (diff > blr_length)
+				ERR_post(Arg::Gds(isc_metadata_corrupt));
+			blr_length -= diff;
 		}
 
 		if (offset > MAX_FORMAT_SIZE) {

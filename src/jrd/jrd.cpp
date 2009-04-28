@@ -502,7 +502,7 @@ static void		detachLocksFromAttachment(Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(string&);
-static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
+static void		purge_attachment(thread_db*, Attachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&);
 static bool		shutdown_dbb(thread_db*, Database*);
 
@@ -2220,7 +2220,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 				{
 					// Purge attachment, don't rollback open transactions
 					attachment->att_flags |= ATT_cancel_disable;
-					purge_attachment(tdbb, user_status, attachment, false);
+					purge_attachment(tdbb, attachment, false);
 				}
 				catch (const Exception&)
 				{
@@ -3044,7 +3044,7 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
 
 ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 							Service**	svc_handle,
-							ULONG*	reserved,
+							ULONG*	/*reserved*/,
 							USHORT	send_item_length,
 							const SCHAR*	send_items,
 							USHORT	recv_item_length,
@@ -3109,7 +3109,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 
 ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 							Service**	svc_handle,
-							ULONG*	reserved,
+							ULONG*	/*reserved*/,
 							USHORT	spb_length,
 							const SCHAR*	spb)
 {
@@ -5397,6 +5397,8 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 			tdbb->setAttachment(attach);
 
 			// purge_attachment() below can do an ERR_post
+#pragma FB_COMPILER_MESSAGE("Please review the usage of temp_status v/s purge_attachment")
+			// CVC: I see a problem here because purge_attachment doesn't use the passed vector.
 			ISC_STATUS_ARRAY temp_status;
 			fb_utils::init_status(temp_status);
 			tdbb->tdbb_status_vector = temp_status;
@@ -5404,7 +5406,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 			try
 			{
 				// purge attachment, rollback any open transactions
-				purge_attachment(tdbb, temp_status, attach, true);
+				purge_attachment(tdbb, attach, true);
 			}
 			catch (const Exception& ex)
 			{
@@ -5673,7 +5675,6 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 
 
 static void purge_attachment(thread_db*		tdbb,
-							 ISC_STATUS*	user_status,
 							 Attachment*	attachment,
 							 const bool		force_flag)
 {

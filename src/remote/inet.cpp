@@ -293,7 +293,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									const TEXT*,
 									ISC_STATUS*,
 									Firebird::ClumpletReader&);
-static bool_t	inet_write(XDR *, int);
+static bool_t	inet_write(XDR*); //, int);
 
 #ifdef DEBUG
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
@@ -1551,7 +1551,7 @@ static void force_close(rem_port* port)
 }
 
 
-static int cleanup_ports(const int, const int, void* arg)
+static int cleanup_ports(const int, const int, void* /*arg*/)
 {
 /**************************************
  *
@@ -2248,7 +2248,7 @@ static int send_full( rem_port* port, PACKET * packet)
 	}
 #endif
 
-	return inet_write(&port->port_send, TRUE);
+	return inet_write(&port->port_send /*, TRUE*/);
 }
 
 static int send_partial( rem_port* port, PACKET * packet)
@@ -2321,7 +2321,7 @@ static void alarm_handler( int x)
 }
 #endif
 
-static XDR_INT inet_destroy( XDR* xdrs)
+static XDR_INT inet_destroy( XDR*)
 {
 /**************************************
  *
@@ -2562,7 +2562,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			xdrs->x_handy = 0;
 		}
 
-		if (!inet_write(xdrs, 0))
+		if (!inet_write(xdrs /*, 0*/))
 			return FALSE;
 	}
 
@@ -2581,7 +2581,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	}
 
 	while (--bytecount >= 0) {
-		if (xdrs->x_handy <= 0 && !inet_write(xdrs, 0))
+		if (xdrs->x_handy <= 0 && !inet_write(xdrs /*, 0*/))
 			return FALSE;
 		--xdrs->x_handy;
 		*xdrs->x_private++ = *buff++;
@@ -2728,7 +2728,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	return port;
 }
 
-static bool_t inet_write( XDR * xdrs, bool_t end_flag)
+static bool_t inet_write( XDR * xdrs /*, bool_t end_flag*/)
 {
 /**************************************
  *
@@ -2737,7 +2737,8 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
  **************************************
  *
  * Functional description
- *	Write a buffer full of data.  If the end_flag isn't set, indicate
+ *	Write a buffer full of data.
+ *  Obsolete: If the end_flag isn't set, indicate
  *	that the buffer is a fragment, and reset the XDR for another buffer
  *	load.
  *

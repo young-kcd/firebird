@@ -64,7 +64,7 @@ SLONG get_process_id()
 }
 
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+BOOL WINAPI DllMain(HINSTANCE /*hinstDLL*/, DWORD fdwReason, LPVOID /*lpvReserved*/)
 {
 	if (fdwReason == DLL_THREAD_DETACH)
 	{

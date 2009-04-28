@@ -40,8 +40,7 @@ namespace Jrd {
 	class Record;
 }
 
-void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*,
-							 Jrd::jrd_fld*);
+void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*);
 bool IDX_check_master_types (Jrd::thread_db*, Jrd::index_desc&, Jrd::jrd_rel*, int&);
 void IDX_create_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, const TEXT*,
 					  USHORT*, Jrd::jrd_tra*, Jrd::SelectivityList&);

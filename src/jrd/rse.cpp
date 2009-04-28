@@ -115,7 +115,7 @@ static void join_to_nulls(thread_db*, StreamStack*);
 static void map_sort_data(thread_db*, jrd_req*, SortMap*, UCHAR *);
 static void open_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void open_procedure(thread_db*, RecordSource*, irsb_procedure*);
-static void open_sort(thread_db*, RecordSource*, irsb_sort*, FB_UINT64);
+static void open_sort(thread_db*, RecordSource*, irsb_sort*); //, FB_UINT64);
 static void proc_assignment(thread_db*, const dsc*, const dsc*, UCHAR*, const dsc*, SSHORT, Record*);
 static void pop_rpbs(jrd_req*, RecordSource*);
 static void push_rpbs(thread_db*, jrd_req*, RecordSource*);
@@ -459,8 +459,8 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 			// dimitr:	we can avoid reading and sorting the entire
 			//			record set, if there's actually nothing to return
 			if (first_records) {
-				open_sort(tdbb, rsb, (irsb_sort*) impure,
-					(first_records < 0) ? 0 : (FB_UINT64) first_records + skip_records);
+				open_sort(tdbb, rsb, (irsb_sort*) impure);//,
+					//(first_records < 0) ? 0 : (FB_UINT64) first_records + skip_records);
 			}
 			else {
 				((irsb_sort*) impure)->irsb_sort_handle = NULL;
@@ -1821,7 +1821,7 @@ static bool get_record(thread_db*	tdbb,
 		}
 #endif
 
-		if (!VIO_next_record(tdbb, rpb, rsb, request->req_transaction, request->req_pool,
+		if (!VIO_next_record(tdbb, rpb, /*rsb,*/ request->req_transaction, request->req_pool,
 #ifdef SCROLLABLE_CURSORS
 							(mode == RSE_get_backward),
 #else
@@ -2857,7 +2857,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 }
 
 
-static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_UINT64 max_records)
+static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure) //, FB_UINT64 max_records)
 {
 /**************************************
  *

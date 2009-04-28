@@ -159,7 +159,7 @@ Firebird::AtomicCounter ThreadCounter::m_count;
 Firebird::Semaphore ThreadCounter::m_semaphore;
 
 
-int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE hPrevInst, LPSTR lpszArgs, int nWndMode)
+int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs, int nWndMode)
 {
 /**************************************
  *
@@ -444,7 +444,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	while (!server_shutdown)
 	{
 		fb_utils::init_status(status_vector);
-		rem_port* port = XNET_connect(NULL, NULL, status_vector, server_flag);
+		rem_port* port = XNET_connect(/*NULL,*/ NULL, status_vector, server_flag);
 
 		if (!port)
 		{

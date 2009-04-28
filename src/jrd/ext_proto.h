@@ -37,7 +37,7 @@ namespace Jrd {
 
 void	EXT_close(Jrd::RecordSource*);
 void	EXT_erase(Jrd::record_param*, Jrd::jrd_tra*);
-Jrd::ExternalFile*	EXT_file(Jrd::jrd_rel*, const TEXT*, Jrd::bid*);
+Jrd::ExternalFile*	EXT_file(Jrd::jrd_rel*, const TEXT*); //, Jrd::bid*);
 void	EXT_fini(Jrd::jrd_rel*, bool);
 bool	EXT_get(Jrd::thread_db*, Jrd::RecordSource*);
 void	EXT_modify(Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
@@ -47,9 +47,9 @@ int	EXT_open(Jrd::RecordSource*);
 #else
 void	EXT_open(Jrd::thread_db*, Jrd::RecordSource*);
 #endif
-Jrd::RecordSource*	EXT_optimize(Jrd::OptimizerBlk*, SSHORT, Jrd::jrd_nod**);
+Jrd::RecordSource*	EXT_optimize(Jrd::OptimizerBlk*, SSHORT); //, Jrd::jrd_nod**);
 void	EXT_ready(Jrd::jrd_rel*);
-void	EXT_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
+void	EXT_store(Jrd::thread_db*, Jrd::record_param*);
 void	EXT_trans_commit(Jrd::jrd_tra*);
 void	EXT_trans_prepare(Jrd::jrd_tra*);
 void	EXT_trans_rollback(Jrd::jrd_tra*);

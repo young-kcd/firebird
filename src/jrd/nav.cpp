@@ -64,7 +64,7 @@ static bool find_saved_node(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN*, UCHA
 static UCHAR* get_position(thread_db*, RecordSource*, IRSB_NAV, WIN *, rse_get_mode, btree_exp**);
 static bool get_record(thread_db* tdbb, RecordSource*, IRSB_NAV, record_param*, temporary_key*, bool);
 static void init_fetch(IRSB_NAV);
-static UCHAR* nav_open(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN *, rse_get_mode, btree_exp**);
+static UCHAR* nav_open(thread_db* tdbb, RecordSource*, IRSB_NAV, WIN *, rse_get_mode); //, btree_exp**);
 static void set_position(IRSB_NAV, record_param*, WIN*, const UCHAR*, btree_exp*, const UCHAR*, USHORT);
 static bool setup_bitmaps(thread_db* tdbb, RecordSource*, IRSB_NAV);
 
@@ -741,7 +741,7 @@ static UCHAR* get_position(
 	if (!window->win_page.getPageNum())
 #endif
 	{
-		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
+		return nav_open(tdbb, rsb, impure, window, direction); //, expanded_node);
 	}
 
 	exp_index_buf* expanded_page = NULL;
@@ -797,7 +797,7 @@ static UCHAR* get_position(
 	// stored position in the page, go back to it if possible.
 	CCH_RELEASE(tdbb, window);
 	if (!impure->irsb_nav_page) {
-		return nav_open(tdbb, rsb, impure, window, direction, expanded_node);
+		return nav_open(tdbb, rsb, impure, window, direction); //, expanded_node);
 	}
 
 	const bool found = find_saved_node(tdbb, rsb, impure, window, &pointer);
@@ -933,11 +933,10 @@ static void init_fetch(IRSB_NAV impure)
 }
 
 
-static UCHAR* nav_open(
-					thread_db* tdbb,
-					RecordSource* rsb,
-					IRSB_NAV impure,
-					WIN* window, rse_get_mode direction, btree_exp** expanded_node)
+static UCHAR* nav_open(thread_db* tdbb,
+					   RecordSource* rsb,
+					   IRSB_NAV impure,
+					   WIN* window, rse_get_mode direction) //, btree_exp** expanded_node)
 {
 /**************************************
  *

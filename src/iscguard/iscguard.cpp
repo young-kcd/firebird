@@ -98,7 +98,7 @@ static log_info* log_entry;
 
 
 int WINAPI WinMain(HINSTANCE hInstance,
-				   HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
+				   HINSTANCE /*hPrevInstance*/, LPSTR lpszCmdLine, int /*nCmdShow*/)
 {
 /**************************************
 *
@@ -709,7 +709,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 				CloseServiceHandle(hScManager);
 				CloseServiceHandle(hService);
-				CNTL_stop_service(service_name->c_str());
+				CNTL_stop_service(); //service_name->c_str());
 			}
 			else
 			{
@@ -794,7 +794,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 	if (service_flag) {
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
-		CNTL_stop_service(service_name->c_str());
+		CNTL_stop_service(); //(service_name->c_str());
 	}
 	else
 		PostMessage(hWndGbl, WM_CLOSE, 0, 0);

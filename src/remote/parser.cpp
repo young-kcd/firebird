@@ -36,6 +36,8 @@
 #endif
 
 
+static RMessage* parse_error(rem_fmt* format, RMessage* mesage);
+
 
 RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 {
@@ -51,20 +53,28 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
  *	messages found.  If an error occurs, return -1;
  *
  **************************************/
-	RMessage* next;
+
+	if (blr_length < 2)
+		return (RMessage*) -1;
+	blr_length -= 2;
 
 	const SSHORT version = *blr++;
 	if ((version != blr_version4) && (version != blr_version5))
-		return (RMessage*) - 1;
+		return (RMessage*) -1;
 
 	if (*blr++ != blr_begin)
 		return 0;
+
 
 	RMessage* message = NULL;
 	USHORT net_length = 0;
 
 	while (*blr++ == blr_message)
 	{
+		if (blr_length < 4)
+			return parse_error(0, message);
+		blr_length -= 4;
+
 		const USHORT msg_number = *blr++;
 		USHORT count = *blr++;
 		count += (*blr++) << 8;
@@ -76,10 +86,16 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		USHORT offset = 0;
 		for (dsc* desc = format->fmt_desc.begin(); count; --count, ++desc)
 		{
+			if (blr_length-- == 0)
+				return parse_error(format, message);
+
 			USHORT align = 4;
 			switch (*blr++)
 			{
 			case blr_text:
+				if (blr_length < 2)
+					return parse_error(format, message);
+				blr_length -= 2;
 				desc->dsc_dtype = dtype_text;
 				desc->dsc_length = *blr++;
 				desc->dsc_length += (*blr++) << 8;
@@ -87,6 +103,9 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_varying:
+				if (blr_length < 2)
+					return parse_error(format, message);
+				blr_length -= 2;
 				desc->dsc_dtype = dtype_varying;
 				desc->dsc_length = *blr++ + sizeof(SSHORT);
 				desc->dsc_length += (*blr++) << 8;
@@ -94,6 +113,9 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_cstring:
+				if (blr_length < 2)
+					return parse_error(format, message);
+				blr_length -= 2;
 				desc->dsc_dtype = dtype_cstring;
 				desc->dsc_length = *blr++;
 				desc->dsc_length += (*blr++) << 8;
@@ -103,6 +125,9 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				// Parse the tagged blr types correctly
 
 			case blr_text2:
+				if (blr_length < 4)
+					return parse_error(format, message);
+				blr_length -= 4;
 				desc->dsc_dtype = dtype_text;
 				desc->dsc_scale = *blr++;
 				desc->dsc_scale += (*blr++) << 8;
@@ -112,6 +137,9 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_varying2:
+				if (blr_length < 4)
+					return parse_error(format, message);
+				blr_length -= 4;
 				desc->dsc_dtype = dtype_varying;
 				desc->dsc_scale = *blr++;
 				desc->dsc_scale += (*blr++) << 8;
@@ -121,6 +149,9 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_cstring2:
+				if (blr_length < 4)
+					return parse_error(format, message);
+				blr_length -= 4;
 				desc->dsc_dtype = dtype_cstring;
 				desc->dsc_scale = *blr++;
 				desc->dsc_scale += (*blr++) << 8;
@@ -130,6 +161,8 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_short:
+				if (blr_length-- == 0)
+					return parse_error(format, message);
 				desc->dsc_dtype = dtype_short;
 				desc->dsc_length = sizeof(SSHORT);
 				desc->dsc_scale = *blr++;
@@ -137,6 +170,8 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_long:
+				if (blr_length-- == 0)
+					return parse_error(format, message);
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
 				desc->dsc_scale = *blr++;
@@ -144,6 +179,8 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_int64:
+				if (blr_length-- == 0)
+					return parse_error(format, message);
 				desc->dsc_dtype = dtype_int64;
 				desc->dsc_length = sizeof(SINT64);
 				desc->dsc_scale = *blr++;
@@ -151,6 +188,8 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				break;
 
 			case blr_quad:
+				if (blr_length-- == 0)
+					return parse_error(format, message);
 				desc->dsc_dtype = dtype_quad;
 				desc->dsc_length = sizeof(SLONG) * 2;
 				desc->dsc_scale = *blr++;
@@ -170,17 +209,20 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 				align = type_alignments[dtype_double];
 				break;
 
-/*          this case cannot occur as switch paramater is char and blr_blob
-            is 261. blob_ids are actually passed around as blr_quad.
+			// this case cannot occur as switch paramater is char and blr_blob
+            // is 261. blob_ids are actually passed around as blr_quad.
 
-	    case blr_blob:
-		desc->dsc_dtype = dtype_blob;
-		desc->dsc_length = sizeof (SLONG) * 2;
-		align = type_alignments [dtype_blob];
-		break;
-*/
+		    //case blr_blob:
+			//	desc->dsc_dtype = dtype_blob;
+			//	desc->dsc_length = sizeof (SLONG) * 2;
+			//	align = type_alignments [dtype_blob];
+			//	break;
+
 			case blr_blob2:
 				{
+					if (blr_length < 4)
+						return parse_error(format, message);
+					blr_length -= 4;
 					desc->dsc_dtype = dtype_blob;
 					desc->dsc_length = sizeof(SLONG) * 2;
 					desc->dsc_sub_type = *blr++;
@@ -214,13 +256,7 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 
 			default:
 				fb_assert(FALSE);
-				delete format;
-				while (next = message) {
-					message = message->msg_next;
-					delete next->msg_address;
-					delete next;
-				}
-				return (RMessage*) - 1;
+				return parse_error(format, message);
 			}
 			if (desc->dsc_dtype == dtype_varying)
 				net_length += 4 + ((desc->dsc_length - 2 + 3) & ~3);
@@ -233,7 +269,7 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		}
 		format->fmt_length = offset;
 		format->fmt_net_length = net_length;
-		next = new RMessage(format->fmt_length);
+		RMessage* next = new RMessage(format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("PARSE_messages            allocate message %x\n", next);
 #endif
@@ -244,6 +280,19 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 	}
 
 	return message;
+}
+
+
+static RMessage* parse_error(rem_fmt* format, RMessage* message)
+{
+	delete format;
+	for (RMessage* next = message; next; next = message)
+	{
+		message = message->msg_next;
+		delete next->msg_address;
+		delete next;
+	}
+	return (RMessage*) -1;
 }
 
 

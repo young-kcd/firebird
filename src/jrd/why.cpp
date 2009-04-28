@@ -723,7 +723,7 @@ inline Transaction* findTransaction(FB_API_HANDLE* public_handle, Attachment *a)
 	return t;
 }
 
-static int get_database_info(ISC_STATUS *, Transaction*, TEXT **);
+static int get_database_info(Transaction*, TEXT**);
 static const PTR get_entrypoint(int, int);
 static USHORT sqlda_buffer_size(USHORT, const XSQLDA*, USHORT);
 static ISC_STATUS get_transaction_info(ISC_STATUS *, Transaction*, TEXT **);
@@ -1813,7 +1813,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 										   FB_API_HANDLE* public_handle,
 										   SSHORT dpb_length,
 										   const UCHAR* dpb,
-										   USHORT db_type)
+										   USHORT /*db_type*/)
 {
 /**************************************
  *
@@ -2137,7 +2137,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 	return status[1];
 }
 
-int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
+int API_ROUTINE gds__disable_subsystem(TEXT* /*subsystem*/)
 {
 /**************************************
  *
@@ -3589,7 +3589,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 }
 
 
-int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
+int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 {
 /**************************************
  *
@@ -4543,7 +4543,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_DETACH(ISC_STATUS* user_status, FB_API_HANDLE
 
 ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 										 FB_API_HANDLE* handle,
-										 ULONG* reserved,
+										 ULONG* /*reserved*/,
 										 USHORT send_item_length,
 										 const SCHAR* send_items,
 										 USHORT recv_item_length,
@@ -4590,7 +4590,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 
 ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS* user_status,
 										 FB_API_HANDLE* handle,
-										 ULONG* reserved,
+										 ULONG* /*reserved*/,
 										 USHORT spb_length,
 										 const SCHAR* spb)
 {
@@ -5241,9 +5241,8 @@ static void free_block(void* block)
 }
 
 
-static int get_database_info(ISC_STATUS * status,
-							 Transaction* transaction,
-							 TEXT ** ptr)
+static int get_database_info(Transaction* transaction,
+							 TEXT** ptr)
 {
 /**************************************
  *
@@ -5580,7 +5579,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction* transaction)
 /* Get database and transaction stuff for each sub-transaction */
 
 	for (sub = transaction->next; sub; sub = sub->next) {
-		get_database_info(status, sub, &p);
+		get_database_info(sub, &p);
 		get_transaction_info(status, sub, &p);
 	}
 

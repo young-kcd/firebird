@@ -62,21 +62,21 @@ inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULON
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len);
 }
 #else
-inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
+inline bool_t P_TRUE(XDR*, PACKET*)
 {
 	return TRUE;
 }
-inline bool_t P_FALSE(XDR* xdrs, PACKET* p)
+inline bool_t P_FALSE(XDR*, PACKET*)
 {
 	return FALSE;
 }
-inline void DEBUG_XDR_PACKET(XDR* xdrs, PACKET* p)
+inline void DEBUG_XDR_PACKET(XDR*, PACKET*)
 {
 }
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+inline void DEBUG_XDR_ALLOC(XDR*, const void*, const void*, ULONG)
 {
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+inline void DEBUG_XDR_FREE(XDR*, const void*, const void*, ULONG)
 {
 }
 #endif // DEBUG_XDR_MEMORY
@@ -103,7 +103,7 @@ static bool_t xdr_longs(XDR*, CSTRING*);
 static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
 static bool_t xdr_quad(XDR*, struct bid*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
-static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
+static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
 static bool_t xdr_status_vector(XDR*, ISC_STATUS*, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
@@ -149,7 +149,7 @@ inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p)
 			(xdrs->x_handy - xdr_save_size) : (xdr_save_size - xdrs->x_handy)));
 }
 #else
-inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p)
+inline void DEBUG_PRINTSIZE(XDR*, P_OP)
 {
 }
 #endif
@@ -582,14 +582,14 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_longs, slice->p_slc_parameters);
 		slice_response = &p->p_slr;
 		if (slice_response->p_slr_sdl) {
-			if (!xdr_slice(xdrs, &slice->p_slc_slice, slice_response->p_slr_sdl_length,
+			if (!xdr_slice(xdrs, &slice->p_slc_slice, //slice_response->p_slr_sdl_length,
 						   slice_response->p_slr_sdl))
 			{
 				return P_FALSE(xdrs, p);
 			}
 		}
 		else
-			if (!xdr_slice(xdrs, &slice->p_slc_slice, slice->p_slc_sdl.cstr_length,
+			if (!xdr_slice(xdrs, &slice->p_slc_slice, //slice->p_slc_sdl.cstr_length,
 						   slice->p_slc_sdl.cstr_address))
 			{
 				return P_FALSE(xdrs, p);
@@ -600,7 +600,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_slice:
 		slice_response = &p->p_slr;
 		MAP(xdr_long, reinterpret_cast<SLONG&>(slice_response->p_slr_length));
-		if (!xdr_slice (xdrs, &slice_response->p_slr_slice, slice_response->p_slr_sdl_length,
+		if (!xdr_slice (xdrs, &slice_response->p_slr_slice, //slice_response->p_slr_sdl_length,
 			 slice_response->p_slr_sdl))
 		{
 			return P_FALSE(xdrs, p);
@@ -1336,7 +1336,8 @@ static bool_t xdr_request(XDR* xdrs,
 }
 
 
-static bool_t xdr_slice(XDR* xdrs, lstring* slice, USHORT sdl_length, const UCHAR* sdl)
+// Maybe it's better to take sdl_length into account?
+static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const UCHAR* sdl)
 {
 /**************************************
  *

@@ -40,7 +40,7 @@ public:
 
 
 void FUN_evaluate(Jrd::thread_db*, Jrd::UserFunction*, Jrd::jrd_nod*, Jrd::impure_value*);
-Jrd::UserFunction* FUN_lookup_function(Jrd::thread_db*, const Firebird::MetaName&, bool ShowAccessError);
+Jrd::UserFunction* FUN_lookup_function(Jrd::thread_db*, const Firebird::MetaName&); //, bool ShowAccessError);
 Jrd::UserFunction* FUN_resolve(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::UserFunction*, Jrd::jrd_nod*);
 
 #endif // JRD_FUN_PROTO_H

@@ -49,8 +49,8 @@ USHORT MERGE_database_info(const UCHAR* in,
 							USHORT class_,
 							USHORT base_level,
 							const UCHAR* version,
-							const UCHAR* id,
-							ULONG mask)
+							const UCHAR* id)
+							//ULONG mask Was always zero
 {
 /**************************************
  *

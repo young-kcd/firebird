@@ -672,7 +672,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 }
 
 
-UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool ShowAccessError)
+UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name) //, bool ShowAccessError)
 {
 /**************************************
  *

@@ -32,8 +32,8 @@
 #define rem_port void
 #endif
 
-rem_port* XNET_analyze(const Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*, bool);
-rem_port* XNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
+rem_port* XNET_analyze(const Firebird::PathName&, ISC_STATUS*, /*const TEXT*, const TEXT*,*/ bool);
+rem_port* XNET_connect(/*const TEXT*,*/ struct packet*, ISC_STATUS*, USHORT);
 
 #ifndef SUPERCLIENT
 rem_port* XNET_reconnect(ULONG, ISC_STATUS*);

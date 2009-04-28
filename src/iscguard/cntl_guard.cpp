@@ -72,7 +72,7 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
 }
 
 
-void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
+void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 {
 /**************************************
  *
@@ -161,7 +161,7 @@ void CNTL_shutdown_service(const TEXT* message)
 }
 
 
-void CNTL_stop_service(const TEXT* service) // unused param
+void CNTL_stop_service() //const TEXT* service) // unused param
 {
 /**************************************
  *

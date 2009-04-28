@@ -131,7 +131,7 @@ using namespace Firebird;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
-static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
+static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
@@ -2586,11 +2586,10 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 //
 // Because the second form can use indexes.
 // Returns NULL when not converted, and a new node to be processed when converted.
-static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
+static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node)
 {
 	SET_TDBB(tdbb);
 
-	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
 	fb_assert(node->nod_type == nod_ansi_all);
@@ -3685,7 +3684,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			if (((tail->csb_flags & csb_modify) || (tail->csb_flags & csb_store)) &&
 				!(relation->rel_view_rse || relation->rel_file))
 			{
-				IDX_check_access(tdbb, csb, tail->csb_view, relation, field);
+				IDX_check_access(tdbb, csb, tail->csb_view, relation);
 			}
 */
 
@@ -4061,7 +4060,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_ansi_all:
 		{
-			jrd_nod* newNode = convertNeqAllToNotAny(tdbb, csb, node);
+			jrd_nod* newNode = convertNeqAllToNotAny(tdbb, node);
 			if (newNode)
 				return CMP_pass1(tdbb, csb, newNode);
 

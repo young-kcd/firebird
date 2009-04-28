@@ -1428,8 +1428,9 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
+	// Isn't it strange that gbak presence means nothing to this function now?
 	UserFunction* function =
-		FUN_lookup_function(tdbb, name, !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
+		FUN_lookup_function(tdbb, name); //, !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
 			jrd_nod* anode = PAR_make_node(tdbb, e_fun_length);

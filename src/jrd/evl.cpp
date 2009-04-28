@@ -4444,7 +4444,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 }
 
 
-static bool reject_duplicate(const UCHAR* data1, const UCHAR* data2, void* user_arg)
+static bool reject_duplicate(const UCHAR* /*data1*/, const UCHAR* /*data2*/, void* /*user_arg*/)
 {
 /**************************************
  *

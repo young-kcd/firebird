@@ -64,10 +64,10 @@ inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULON
 	xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len);
 }
 #else
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+inline void DEBUG_XDR_ALLOC(XDR*, const void*, const void*, ULONG)
 {
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+inline void DEBUG_XDR_FREE(XDR*, const void*, const void*, ULONG)
 {
 }
 #endif // DEBUG_XDR_MEMORY
@@ -784,7 +784,7 @@ int xdrmem_create(	XDR* xdrs, SCHAR* addr, u_int len, xdr_op x_op)
 }
 
 
-static XDR_INT mem_destroy(XDR* xdrs)
+static XDR_INT mem_destroy(XDR*)
 {
 /**************************************
  *

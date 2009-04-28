@@ -71,7 +71,7 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
 }
 
 
-void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
+void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 {
 /**************************************
  *
