@@ -371,7 +371,8 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	static unsigned long thread_id;
 
 	hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
-	switch (message) {
+	switch (message)
+	{
 	case WM_CLOSE:
 		{
 			/* Clean up memory for log_entry */
