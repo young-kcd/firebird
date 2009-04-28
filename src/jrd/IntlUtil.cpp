@@ -611,7 +611,8 @@ string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 
 	while (readOneChar(cs, &p, end, &size))
 	{
-		UCHAR uc[sizeof(ULONG)];
+		ULONG l;
+		UCHAR* uc = (UCHAR*)(&l);
 
 		const ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
