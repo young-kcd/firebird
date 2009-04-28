@@ -1,3 +1,94 @@
+2009-04-28 19:15  robocop
+
+	* firebird2/src/isql/isql.epp (1.271):
+
+	Solve the display problem in Windows where select cot(0) + 1 from
+	rdb$database; produces 1.#INF00000000000 Now it says Infinity but
+	only Windows and Solaris are covered.
+
+2009-04-28 16:16  robocop
+
+	* firebird2/src/: iscguard/cntl_guard.cpp (1.30),
+	iscguard/iscguard.cpp (1.66), isql/isql.epp (1.270):
+
+	Misc and style.
+
+2009-04-28 16:13  robocop
+
+	* firebird2/src/: dsql/dsql.cpp (1.279), dsql/dsql_proto.h (1.25),
+	jrd/PreparedStatement.cpp (1.13), jrd/ResultSet.cpp (1.5),
+	jrd/jrd.cpp (1.538):
+
+	More unused params.
+
+2009-04-28 15:48  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.279), jrd/dyn.epp (1.145),
+	jrd/dyn_del.epp (1.81), jrd/dyn_dl_proto.h (1.9), jrd/dyn_mod.epp
+	(1.114), qli/dtr.cpp (1.67):
+
+	More unused params.
+
+2009-04-28 15:37  alexpeshkoff
+
+	* firebird2/src/jrd/IntlUtil.cpp (1.29):
+
+	Fixed alignment issue on sparc
+
+2009-04-28 15:11  robocop
+
+	* firebird2/src/isql/: isql.h (1.71), isql_win.cpp (1.20):
+
+	Misc.
+
+2009-04-28 15:07  robocop
+
+	* firebird2/src/: iscguard/cntl_guard.cpp (1.29),
+	iscguard/cntlg_proto.h (1.9), iscguard/iscguard.cpp (1.65),
+	jrd/SysFunction.cpp (1.68), jrd/cch.cpp (1.230), jrd/cmp.cpp
+	(1.340), jrd/dfw.epp (1.271), jrd/event.cpp (1.93), jrd/evl.cpp
+	(1.293), jrd/exe.cpp (1.295), jrd/ext.cpp (1.85), jrd/ext_proto.h
+	(1.18), jrd/fun.epp (1.118), jrd/fun_proto.h (1.18), jrd/idx.cpp
+	(1.152), jrd/idx_proto.h (1.28), jrd/isc_s_proto.h (1.29),
+	jrd/isc_sync.cpp (1.188), jrd/jrd.cpp (1.537), jrd/met.epp (1.280),
+	jrd/nav.cpp (1.78), jrd/opt.cpp (1.342), jrd/par.cpp (1.236),
+	jrd/rse.cpp (1.184), jrd/vio.cpp (1.247), jrd/vio_proto.h (1.32),
+	jrd/why.cpp (1.238), jrd/os/vms/extvms.cpp (1.33),
+	jrd/os/win32/winnt.cpp (1.83), lock/lock.cpp (1.191),
+	remote/inet.cpp (1.282), remote/interface.cpp (1.215),
+	remote/merge.cpp (1.27), remote/merge_proto.h (1.6),
+	remote/parser.cpp (1.27), remote/protocol.cpp (1.81),
+	remote/remote.cpp (1.87), remote/server.cpp (1.249), remote/xdr.cpp
+	(1.48), remote/xnet.cpp (1.132), remote/xnet_proto.h (1.18),
+	remote/os/win32/cntl.cpp (1.45), remote/os/win32/ibconfig.cpp
+	(1.32), remote/os/win32/srvr_w32.cpp (1.73),
+	remote/os/win32/window.cpp (1.40), remote/os/win32/wnet.cpp (1.78),
+	remote/os/win32/wnet_proto.h (1.11), utilities/gsec/gsec.cpp
+	(1.109), utilities/ntrace/TracePluginImpl.cpp (1.22),
+	utilities/ntrace/os/win32/platform.cpp (1.6):
+
+	Unused params Some BLR checks
+
+2009-04-28 12:57  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.85):
+
+	Solaris port
+
+2009-04-28 12:54  alexpeshkoff
+
+	* firebird2/src/jrd/RuntimeStatistics.cpp (1.17):
+
+	misc
+
+2009-04-27 20:41  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.278):
+
+	More detailed (hopefully) fix for CORE-2424 which cares about
+	nested maps/aliases/etc.  It also resolves CORE-1402 and provides
+	better check for view updatability.
+
 2009-04-27 18:29  alexpeshkoff
 
 	* firebird2/src/dsql/pass1.cpp (1.449):
