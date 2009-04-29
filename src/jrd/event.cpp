@@ -1371,7 +1371,7 @@ static void post_process(PRB process)
 
 	process->prb_flags &= ~PRB_wakeup;
 	process->prb_flags |= PRB_pending;
-	release();
+	//release();
 
 #ifdef SERVER
 	deliver();
@@ -1387,7 +1387,7 @@ static void post_process(PRB process)
 #endif
 
 #endif
-	acquire();
+	//acquire();
 #endif
 }
 
@@ -1615,7 +1615,7 @@ static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 			break;
 		}
 #ifdef WIN_NT
-		if (process->prb_flags & PRB_remap) {
+		while (process->prb_flags & PRB_remap) {
 			process->prb_flags |= PRB_remap_over;
 			process->prb_flags &= ~PRB_remap;
 			release();
