@@ -2005,7 +2005,8 @@ static processing_state add_row(TEXT* tabname)
 	insertstring[strlen(insertstring) - 1] = ')';
 	strcat(insertstring, " VALUES (");
 
-	for (int i = 0; i < n_cols; i++) {
+	for (int i = 0; i < n_cols; i++)
+	{
 		if (colnumber[i] != -1)
 			strcat(insertstring, " ?,");
 	}
@@ -2382,8 +2383,10 @@ static processing_state add_row(TEXT* tabname)
 	{
 		XSQLVAR* ivar = isqlda->sqlvar;
 		for (int i = 0; i < i_cols; i++, ivar++)
+		{
 			if (ivar->sqldata)
 				ISQL_FREE(ivar->sqldata);
+		}
 
 		ISQL_FREE(isqlda);
 	}
@@ -5903,20 +5906,23 @@ void ISQL_remove_and_unescape_quotes(TEXT* string, const char quote)
 	for (size_t cnt = 1; cnt < cmd_len && p < end_of_str; cnt++)
 	{
 		p++;
-		if (cnt < cmd_len - 1) {
+		if (cnt < cmd_len - 1)
+		{
 			*q = *p;
-			if (p + 1 < end_of_str) {
+			if (p + 1 < end_of_str)
+			{
 				if (*(p + 1) == quote)	// skip the escape double quote
 					p++;
 			}
-			else {
+			else
+			{
 				p++;
 				*q = '\0';
 			}
 		}
-		else {
+		else
 			*q = '\0';
-		}
+
 		q++;
 	}
 	*q = '\0';

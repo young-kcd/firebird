@@ -6191,7 +6191,7 @@ static int write_buffer(thread_db* tdbb,
 
 static bool write_page(thread_db* tdbb,
 					   BufferDesc* bdb,
-					   //const bool write_thru, 
+					   //const bool write_thru,
 					   ISC_STATUS* status,
 					   const bool inAst)
 {

@@ -3734,7 +3734,7 @@ static void form_rivers(thread_db*		tdbb,
 		do {
 			count = innerJoin ? innerJoin->findJoinOrder() : find_order(tdbb, opt, temp, plan_node);
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				 project_clause));
+					project_clause));
 
 		delete innerJoin;
 	}
@@ -3749,7 +3749,7 @@ static bool form_river(thread_db*		tdbb,
 					   RiverStack&		river_stack,
 					   jrd_nod**		sort_clause,
 					   jrd_nod**		project_clause)
-					   //jrd_nod*			plan_clause) always zero
+					   //jrd_nod*			plan_clause) always NULL
 {
 /**************************************
  *
@@ -4198,7 +4198,7 @@ static void gen_join(thread_db*		tdbb,
 		do {
 			count = innerJoin->findJoinOrder();
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				 project_clause));
+					project_clause));
 
 		delete innerJoin;
 		return;
@@ -4290,7 +4290,7 @@ static void gen_join(thread_db*		tdbb,
 		do {
 			count = find_order(tdbb, opt, temp, 0);
 		} while (form_river(tdbb, opt, count, streams, temp, river_stack, sort_clause,
-				project_clause));
+					project_clause));
 
 	}
 }

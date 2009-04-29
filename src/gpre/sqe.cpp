@@ -3375,7 +3375,6 @@ static gpre_nod* par_udf_or_field(gpre_req* request, bool aster_ok)
 
 static gpre_nod* par_udf_or_field_with_collate(gpre_req* request,
 											  bool aster_ok, USHORT* /*paren_count*/, bool* /*bool_flag*/)
-
 {
 	assert_IS_REQ(request);
 

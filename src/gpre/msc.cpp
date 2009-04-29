@@ -235,7 +235,6 @@ gpre_sym* MSC_find_symbol(gpre_sym* symbol, sym_t type)
 
 void MSC_free(void*)
 {
-
 }
 
 

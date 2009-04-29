@@ -1355,7 +1355,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
  					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
 						warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
-																	Arg::Str(relation->rel_name));
+															   Arg::Str(relation->rel_name));
 					}
 					else if (!(relation->rel_flags & REL_deleted))
 					{
@@ -1454,7 +1454,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
 			warning(Arg::Warning(isc_funnotdef) << Arg::Str(name) <<
-						 Arg::Warning(isc_modnotfound));
+					Arg::Warning(isc_modnotfound));
 		}
 		else {
 			csb->csb_running -= count;
@@ -1893,7 +1893,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
 						warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
-																	Arg::Str(relation->rel_name));
+															   Arg::Str(relation->rel_name));
 					}
 					else
 					{
@@ -1959,7 +1959,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 						{
 							warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
-																		Arg::Str(relation->rel_name));
+																   Arg::Str(relation->rel_name));
 						}
 						else
 						{

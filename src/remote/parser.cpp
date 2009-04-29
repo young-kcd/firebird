@@ -59,7 +59,7 @@ RMessage* PARSE_messages(const UCHAR* blr, USHORT blr_length)
 	blr_length -= 2;
 
 	const SSHORT version = *blr++;
-	if ((version != blr_version4) && (version != blr_version5))
+	if (version != blr_version4 && version != blr_version5)
 		return (RMessage*) -1;
 
 	if (*blr++ != blr_begin)

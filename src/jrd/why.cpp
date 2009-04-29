@@ -5241,8 +5241,7 @@ static void free_block(void* block)
 }
 
 
-static int get_database_info(Transaction* transaction,
-							 TEXT** ptr)
+static int get_database_info(Transaction* transaction, TEXT** ptr)
 {
 /**************************************
  *

@@ -526,7 +526,8 @@ void EXT_store(Jrd::thread_db*, record_param* rpb)
 
 	if (file->ext_file_type == FAB$C_IDX)
 		rab.rab$b_rac = RAB$C_KEY;
-	else if (!(file->ext_flags & EXT_eof)) {
+	else if (!(file->ext_flags & EXT_eof))
+	{
 		disconnect(file);
 		rab.rab$l_rop |= RAB$M_EOF;
 		file->ext_isi = connect(file, 0);
@@ -536,11 +537,12 @@ void EXT_store(Jrd::thread_db*, record_param* rpb)
 
 	const int status = sys$put(&rab);
 	if (!(status & 1))
+	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "sys$put",
 				 isc_arg_string, file->ext_filename,
 				 isc_arg_gds, isc_io_write_err, isc_arg_vms, status, 0);
-
+	}
 }
 
 

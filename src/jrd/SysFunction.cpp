@@ -565,8 +565,10 @@ void makeBinShift(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 			isNullable = true;
 
 		if (!args[i]->isExact() || args[i]->dsc_scale != 0)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_argmustbe_exact) << Arg::Str(function->name));
+		}
 	}
 
 	result->setNullable(isNullable);
