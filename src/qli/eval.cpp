@@ -38,6 +38,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../common/classes/UserBlob.h"
+#include "../common/classes/VaryStr.h"
 #include "../jrd/gdsassert.h"
 
 
@@ -600,13 +601,13 @@ static dsc* execute_concatenate( qli_nod* node, const dsc* value1, const dsc* va
  *	Concatenate two strings.
  *
  **************************************/
-	TEXT temp1[32];
+	Firebird::VaryStr<32> temp1;
 	const TEXT* address1;
-	USHORT length1 = MOVQ_get_string(value1, &address1, (vary*)temp1, sizeof(temp1));
+	USHORT length1 = MOVQ_get_string(value1, &address1, &temp1, sizeof(temp1));
 
-	TEXT temp2[32];
+	Firebird::VaryStr<32> temp2;
 	const TEXT* address2;
-	USHORT length2 = MOVQ_get_string(value2, &address2, (vary*)temp2, sizeof(temp2));
+	USHORT length2 = MOVQ_get_string(value2, &address2, &temp2, sizeof(temp2));
 
 	dsc* desc = &node->nod_desc;
 	vary* avary = (vary*) desc->dsc_address;
@@ -930,15 +931,15 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 
 // Get operator definition string (control string)
 
-	TEXT temp1[TEMP_LENGTH];
+	Firebird::VaryStr<TEMP_LENGTH> temp1;
 	const TEXT* p1;
-	SSHORT l1 = MOVQ_get_string(desc3, &p1, (vary*) temp1, TEMP_LENGTH);
+	SSHORT l1 = MOVQ_get_string(desc3, &p1, &temp1, TEMP_LENGTH);
 
 // Get address and length of search string
 
-	TEXT temp2[TEMP_LENGTH];
+	Firebird::VaryStr<TEMP_LENGTH> temp2;
 	const TEXT* p2;
-	SSHORT l2 = MOVQ_get_string(desc2, &p2, (vary*) temp2, TEMP_LENGTH);
+	SSHORT l2 = MOVQ_get_string(desc2, &p2, &temp2, TEMP_LENGTH);
 
 // Merge search and control strings
 
@@ -950,7 +951,7 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 // If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
-		l1 = MOVQ_get_string(desc1, &p1, (vary*) temp1, TEMP_LENGTH);
+		l1 = MOVQ_get_string(desc1, &p1, &temp1, TEMP_LENGTH);
 		return sleuth_check(0, (const UCHAR*) p1, (const UCHAR*) (p1 + l1), control, control + l2);
 	}
 
@@ -1269,15 +1270,15 @@ static bool string_boolean( qli_nod* node)
 // Get address and length of strings
 
 	const TEXT* p2;
-	TEXT temp2[TEMP_LENGTH];
-	SSHORT l2 = MOVQ_get_string(desc2, &p2, (vary*) temp2, TEMP_LENGTH);
+	Firebird::VaryStr<TEMP_LENGTH> temp2;
+	SSHORT l2 = MOVQ_get_string(desc2, &p2, &temp2, TEMP_LENGTH);
 
 // If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
-		TEXT temp1[TEMP_LENGTH];
+		Firebird::VaryStr<TEMP_LENGTH> temp1;
 		const TEXT* p1;
-		SSHORT l1 = MOVQ_get_string(desc1, &p1, (vary*) temp1, TEMP_LENGTH);
+		SSHORT l1 = MOVQ_get_string(desc1, &p1, &temp1, TEMP_LENGTH);
 		return string_function(node, l1, p1, l2, p2);
 	}
 
@@ -1371,10 +1372,10 @@ static bool string_function(qli_nod* node,
 	if (node->nod_type == nod_like)
 	{
 		TEXT c1 = 0;
-		TEXT temp[16];
+		Firebird::VaryStr<16> temp;
 		const TEXT* q1 = NULL;
 		if (node->nod_count > 2 &&
-			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (vary*) temp, sizeof(temp)))
+			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, &temp, sizeof(temp)))
 		{
 			c1 = *q1;
 		}

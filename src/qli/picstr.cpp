@@ -37,6 +37,7 @@
 #include "../qli/picst_proto.h"
 #include "../qli/mov_proto.h"
 #include "../common/classes/timestamp.h"
+#include "../common/classes/VaryStr.h"
 #include "../jrd/gds_proto.h"
 
 const int PRECISION	= 10000;
@@ -502,10 +503,10 @@ static void edit_alpha(const dsc* desc,
  *	output pointer.
  *
  **************************************/
-	TEXT temp[512];
+	Firebird::VaryStr<512> temp;
 
 	const TEXT* p = NULL;
-	const USHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
+	const USHORT l = MOVQ_get_string(desc, &p, &temp, sizeof(temp));
 	const TEXT* const end = p + l;
 	picture->pic_pointer = picture->pic_string;
 	picture->pic_count = 0;

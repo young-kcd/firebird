@@ -28,9 +28,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
+
 #include "memory_routines.h"
 #include "../common/classes/vector.h"
-#include <stdio.h>
+#include "../common/classes/VaryStr.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/val.h"
@@ -2456,7 +2458,6 @@ static void compress(thread_db* tdbb,
 	if (itype == idx_string || itype == idx_byte_array || itype == idx_metadata ||
 		itype >= idx_first_intl_string)
 	{
-		UCHAR buffer[MAX_KEY];
 		const UCHAR pad = (itype == idx_string) ? ' ' : 0;
 		UCHAR* ptr;
 
@@ -2467,6 +2468,7 @@ static void compress(thread_db* tdbb,
 		else if (itype >= idx_first_intl_string || itype == idx_metadata)
 		{
 			DSC to;
+			UCHAR buffer[MAX_KEY];
 
 			// convert to an international byte array
 			to.dsc_dtype = dtype_text;
@@ -2480,7 +2482,8 @@ static void compress(thread_db* tdbb,
 		}
 		else {
 			USHORT ttype;
-			length = MOV_get_string_ptr(desc, &ttype, &ptr, (vary*) buffer, MAX_KEY);
+			VaryStr<MAX_KEY> buffer;
+			length = MOV_get_string_ptr(desc, &ttype, &ptr, &buffer, MAX_KEY);
 		}
 
 		if (length) {

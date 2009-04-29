@@ -41,6 +41,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../common/classes/UserBlob.h"
+#include "../common/classes/VaryStr.h"
 
 using MsgFormat::SafeArg;
 
@@ -280,8 +281,8 @@ FILE* EXEC_open_output(qli_nod* node)
 
 	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
 	const TEXT* p = NULL;
-	TEXT temp[64];
-	SSHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
+	Firebird::VaryStr<64> temp;
+	SSHORT l = MOVQ_get_string(desc, &p, &temp, sizeof(temp));
 	if (l >= MAXPATHLEN)
 		l = MAXPATHLEN - 1;
 
@@ -774,9 +775,9 @@ static void execute_abort( qli_nod* node)
 	if (node->nod_count)
 	{
 	    const TEXT* ptr = NULL;
-		UCHAR temp[80];
+		Firebird::VaryStr<80> temp;
 		const USHORT l =
-			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr, (vary*) temp, sizeof(temp));
+			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr, &temp, sizeof(temp));
 
 		UCHAR msg[128];
 		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));

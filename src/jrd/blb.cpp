@@ -71,6 +71,7 @@
 #include "../jrd/sdl_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../common/classes/array.h"
+#include "../common/classes/VaryStr.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -2658,11 +2659,11 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 			   to slice callback routines */
 			/*thread_db* tdbb = */ JRD_get_thread_data();
 
-			HalfStaticArray<char, 1024> tmp_buffer;
-			const USHORT tmp_len = array_desc->dsc_length;
+			DynamicVaryStr<1024> tmp_buffer;
+			const USHORT tmp_len = (array_desc->dsc_length / sizeof(USHORT)) + 1;
 			const char* p;
 			const USHORT len = MOV_make_string(slice_desc, INTL_TEXT_TYPE(*array_desc), &p,
-									reinterpret_cast<vary*>(tmp_buffer.getBuffer(tmp_len)), tmp_len);
+											   tmp_buffer.getBuffer(tmp_len), tmp_len);
 			memcpy(array_desc->dsc_address, &len, sizeof(USHORT));
 			memcpy(array_desc->dsc_address + sizeof(USHORT), p, (int) len);
 		}

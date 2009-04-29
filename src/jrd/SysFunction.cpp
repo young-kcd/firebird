@@ -29,6 +29,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/VaryStr.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../include/fb_blk.h"
@@ -3310,11 +3311,10 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 		//		- The types that can cause an error() issued inside the low level MOV/CVT
 		//		routines because the "temp" is not enough are blob and array but at this time
 		//		they aren't accepted, so they will cause error() to be called anyway.
-		UCHAR temp[32];
+		VaryStr<32> temp;
 		USHORT ttype;
 		desc.dsc_length =
-			MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-							   reinterpret_cast<vary*>(temp), sizeof(temp));
+			MOV_get_string_ptr(value, &ttype, &desc.dsc_address, &temp, sizeof(temp));
 		desc.setTextType(ttype);
 
 		// CVC: Why bother? If the offset is greater or equal than the length in bytes,

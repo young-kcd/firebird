@@ -48,7 +48,6 @@ class jrd_req;
 class jrd_tra;
 class Symbol;
 
-
 class Format : public pool_alloc<type_fmt>
 {
 public:
@@ -70,11 +69,6 @@ public:
 	typedef Firebird::Array<dsc>::const_iterator fmt_desc_const_iterator;
 };
 
-
-/* A macro to define a local vary stack variable of a given length
-   Usage:  VARY_STR(5)	my_var;        */
-
-#define VARY_STR(x)	struct { USHORT vary_length; UCHAR vary_string [x]; }
 
 // Parameter passing mechanism. Also used for returning values, except for scalar_array.
 enum FUN_T {

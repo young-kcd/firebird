@@ -54,6 +54,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/UserBlob.h"
+#include "../common/classes/VaryStr.h"
 #include "../isql/OptionsBase.h"
 
 #ifdef HAVE_CTYPE_H
@@ -4656,7 +4657,7 @@ static processing_state show_users()
 
 	TEXT msg[MSG_LENGTH]; // When messages can be translated.
 
-	char my_user[128] = "";
+	Firebird::VaryStr<128> my_user;
 	XSQLDA osqlda; // XSQLDA comes with one XSQLVAR inside.
 	memset(&osqlda, 0, XSQLDA_LENGTH(1));
 	osqlda.version = SQLDA_VERSION1;
@@ -4664,7 +4665,7 @@ static processing_state show_users()
 	osqlda.sqld = 1;
 	XSQLVAR& ovar = osqlda.sqlvar[0];
 	ovar.sqlind = 0;
-	ovar.sqldata = my_user;
+	ovar.sqldata = reinterpret_cast<char*>(&my_user);
 	ovar.sqltype = SQL_VARYING;
 	ovar.sqllen = sizeof(my_user) - 3;
 	const char* getuser = isqlGlob.major_ods < ODS_VERSION10 ?
@@ -4690,10 +4691,6 @@ static processing_state show_users()
 		ISQL_errmsg(isc_status);
 		return OBJECT_NOT_FOUND;
 	}
-
-	vary* avary = reinterpret_cast<vary*>(my_user);
-	fb_assert(avary->vary_length < sizeof(my_user) - sizeof(avary->vary_length));
-	avary->vary_string[avary->vary_length] = 0; // Just for the debugger.
 
 	UCHAR buffer[BUFFER_LENGTH512];
 	ISC_STATUS_ARRAY status_vector;
@@ -4732,7 +4729,7 @@ static processing_state show_users()
 				fb_assert(len == length - 1);
 				const UCHAR* uname = data + 1;
 				// Let's mark all attachments with our same user with a # prefix.
-				if (len == avary->vary_length && !memcmp(avary->vary_string, uname, len))
+				if (len == my_user.vary_length && !memcmp(my_user.vary_string, uname, len))
 					isqlGlob.printf("# %-37.*s", len, uname);
 				else
 					isqlGlob.printf("  %-37.*s", len, uname);

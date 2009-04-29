@@ -48,6 +48,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/quad.h"
 #include "../jrd/val.h"
+#include "../common/classes/VaryStr.h"
 #include "../jrd/dsc_proto.h"
 
 
@@ -508,10 +509,10 @@ static void string_to_datetime(const dsc* desc,
 	unsigned int position_day = 2;
 	bool have_english_month = false;
 	bool dot_separator_seen = false;
-	TEXT buffer[100];			// arbitrarily large
+	VaryStr<100> buffer;			// arbitrarily large
 
 	const char* p = NULL;
-	const USHORT length = CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
+	const USHORT length = CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
 
 	const char* const end = p + length;
 
@@ -846,7 +847,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	double d, eps;
 	SINT64 val64;
-	TEXT buffer[50];			// long enough to represent largest long in ASCII
+	VaryStr<50> buffer;			// long enough to represent largest long in ASCII
 
 	// adjust exact numeric values to same scaling
 
@@ -951,7 +952,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
 			scale -= CVT_decompose(p, length, dtype_long, &value, err);
 		}
 		break;
@@ -1056,11 +1057,11 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 	case dtype_cstring:
 	case dtype_text:
 		{
-			TEXT buffer[50];	// must hold ascii of largest double
+			VaryStr<50> buffer;	// must hold ascii of largest double
 			const char* p;
 
 			const USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
 			value = 0.0;
 			int scale = 0;
 			SSHORT sign = 0;
@@ -1586,7 +1587,7 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
  *
  **************************************/
 	const char* p;
-	TEXT s[41];
+	VaryStr<41> s;
 
 	if (desc->dsc_dtype == dtype_blob)
 		p = "BLOB";
@@ -1607,7 +1608,7 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		try
 	    {
 			const USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) s, sizeof(s) - 1, localError);
+				CVT_make_string(desc, ttype_ascii, &p, &s, sizeof(s) - 1, localError);
 			const_cast<char*>(p)[length] = 0;
 		}
 		/*
@@ -2155,7 +2156,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
  **************************************/
 	SQUAD value;
 	double d;
-	TEXT buffer[50];			// long enough to represent largest quad in ASCII
+	VaryStr<50> buffer;			// long enough to represent largest quad in ASCII
 
 	// adjust exact numeric values to same scaling
 
@@ -2241,7 +2242,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
 			scale -= CVT_decompose(p, length, dtype_quad, &value.high, err);
 		}
 		break;
@@ -2313,7 +2314,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
  **************************************/
 	SINT64 value;
 	double d, eps;
-	TEXT buffer[50];			// long enough to represent largest SINT64 in ASCII
+	VaryStr<50> buffer;			// long enough to represent largest SINT64 in ASCII
 
 	// adjust exact numeric values to same scaling
 
@@ -2384,7 +2385,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
+				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
 			scale -= CVT_decompose(p, length, dtype_int64, (SLONG *) & value, err);
 		}
 		break;

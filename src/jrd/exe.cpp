@@ -57,6 +57,7 @@
 
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
+#include "../common/classes/VaryStr.h"
 #include <string.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
@@ -3628,9 +3629,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	Firebird::MetaName name, relation_name;
 	TEXT message[XCP_MESSAGE_LENGTH + 1];
 
-	// since temp used as vary, we need size of vary::vary_length
-	// (USHORT) extra chars
-	TEXT temp[XCP_MESSAGE_LENGTH + sizeof(USHORT)];
+	VaryStr<XCP_MESSAGE_LENGTH> temp;
 
 	SET_TDBB(tdbb);
 
@@ -3653,7 +3652,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		if (desc && !(request->req_flags & req_null))
 		{
 			length = MOV_make_string(desc, tdbb->getAttachment()->att_charset, &string,
-									 reinterpret_cast<vary*>(temp), sizeof(temp));
+									 &temp, sizeof(temp));
 			length = MIN(length, sizeof(message) - 1);
 
 			/* dimitr: or should we throw an error here, i.e.
@@ -3690,12 +3689,13 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	case xcp_xcp_code:
 		// CVC: If we have the exception name, use it instead of the number.
 		// Solves SF Bug #494981.
-		MET_lookup_exception(tdbb, exception->xcp_code, name, temp, sizeof(temp));
+		MET_lookup_exception(tdbb, exception->xcp_code, name, 
+							 temp.vary_string, sizeof(temp) - sizeof(USHORT));
 
 		if (message[0])
 			s = message;
-		else if (temp[0])
-			s = temp;
+		else if (temp.vary_string[0])
+			s = temp.vary_string;
 		else
 			s = NULL;
 
@@ -4066,13 +4066,13 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 		{
 			/* Validation error -- report result */
 			const char* value;
-			TEXT temp[128];
+			VaryStr<128> temp;
 
 			jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
 			const dsc* desc = EVL_expr(tdbb, node);
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
 				MOV_make_string(desc, ttype_dynamic, &value,
-								reinterpret_cast<vary*>(temp), sizeof(temp) - 1) : 0;
+								&temp, sizeof(temp) - 1) : 0;
 
 			if (!desc || (request->req_flags & req_null))
 			{

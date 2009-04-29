@@ -61,9 +61,11 @@
  */
 
 #include "firebird.h"
-#include "../common/classes/fb_string.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "../common/classes/fb_string.h"
+#include "../common/classes/VaryStr.h"
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
@@ -5037,7 +5039,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
  **************************************/
 	const char* string;
 	USHORT length;
-	TEXT temp[MAXPATHLEN];				// Must hold largest metadata field or filename
+	VaryStr<MAXPATHLEN> temp;				// Must hold largest metadata field or filename
 
 	if (!desc)
 	{
@@ -5049,7 +5051,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 		/* Find the actual length of the string, searching until the claimed
 		   end of the string, or the terminating \0, whichever comes first. */
 
-		length = MOV_make_string(desc, ttype_metadata, &string, (vary*) temp, sizeof(temp));
+		length = MOV_make_string(desc, ttype_metadata, &string, &temp, sizeof(temp));
 
 		const char* p = string;
 		const char* const q = string + length;

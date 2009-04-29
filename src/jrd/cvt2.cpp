@@ -50,6 +50,7 @@
 #include "../jrd/req.h"
 #include "../jrd/constants.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/VaryStr.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -603,10 +604,10 @@ void CVT2_get_name(const dsc* desc, TEXT* string)
  *	Get a name (max length 31, NULL terminated) from a descriptor.
  *
  **************************************/
-	VARY_STR(MAX_SQL_IDENTIFIER_SIZE) temp;			/* 31 bytes + 1 NULL */
+	VaryStr<MAX_SQL_IDENTIFIER_SIZE> temp;			/* 31 bytes + 1 NULL */
 	const char* p;
 
-	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, (vary*) &temp, sizeof(temp), ERR_post);
+	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, &temp, sizeof(temp), ERR_post);
 
 	memcpy(string, p, length);
 	string[length] = 0;

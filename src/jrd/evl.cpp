@@ -86,6 +86,7 @@
 #include "../jrd/gdsassert.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/timestamp.h"
+#include "../common/classes/VaryStr.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cvt_proto.h"
@@ -1959,7 +1960,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		break;
 	}
 
-	UCHAR temp[128];
+	VaryStr<128> temp;
 	UCHAR* address;
 	USHORT ttype;
 
@@ -1967,8 +1968,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	// temporary buffer.  Since this will always be the result of a conversion,
 	// this isn't a serious problem.
 
-	const USHORT length =
-		MOV_get_string_ptr(&from, &ttype, &address, reinterpret_cast<vary*>(temp), sizeof(temp));
+	const USHORT length = MOV_get_string_ptr(&from, &ttype, &address, &temp, sizeof(temp));
 
 	// Allocate a string block of sufficient size.
 	VaryingString* string = value->vlu_string;
@@ -2017,7 +2017,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		err = true;
 
 	const char* value = NULL_STRING_MARK;
-	TEXT temp[128];
+	VaryStr<128> temp;
 
 	MapFieldInfo::ValueType fieldInfo;
 	if (!err && itemInfo->fullDomain &&
@@ -2036,9 +2036,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		if (!EVL_boolean(tdbb, fieldInfo.validation) && !(request->req_flags & req_null))
 		{
 			const USHORT length = desc_is_null ? 0 :
-				MOV_make_string(desc, ttype_dynamic, &value,
-								reinterpret_cast<vary*>(temp),
-								sizeof(temp) - 1);
+				MOV_make_string(desc, ttype_dynamic, &value, &temp, sizeof(temp) - 1);
 
 			if (desc_is_null)
 				value = NULL_STRING_MARK;
@@ -3966,12 +3964,11 @@ static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
 	}
 	else
 	{
-		USHORT temp[16];
+		VaryStr<32> temp;
 		USHORT ttype;
 		dsc desc;
 
-		desc.dsc_length = MOV_get_string_ptr(value, &ttype, &desc.dsc_address,
-											 reinterpret_cast<vary*>(temp), sizeof(temp));
+		desc.dsc_length = MOV_get_string_ptr(value, &ttype, &desc.dsc_address, &temp, sizeof(temp));
 		desc.dsc_dtype = dtype_text;
 		INTL_ASSIGN_TTYPE(&desc, ttype);
 		EVL_make_value(tdbb, &desc, impure);
@@ -4639,10 +4636,9 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 		}
 
-		UCHAR temp1[256];
+		VaryStr<256> temp1;
 		USHORT xtype1;
-		const USHORT l1 =
-			MOV_get_string_ptr(desc1, &xtype1, &p1, reinterpret_cast<vary*>(temp1), sizeof(temp1));
+		const USHORT l1 = MOV_get_string_ptr(desc1, &xtype1, &p1, &temp1, sizeof(temp1));
 
 		fb_assert(xtype1 == type1);
 
@@ -4663,10 +4659,10 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	// Get address and length of search string - make it string if necessary
 	// but don't transliterate character set if the source blob is binary
-	UCHAR temp2[256];
+	VaryStr<256> temp2;
 	if (!computed_invariant) {
 		if (type1 == ttype_none) {
-			l2 = MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2), sizeof(temp2));
+			l2 = MOV_get_string(desc2, &p2, &temp2, sizeof(temp2));
 		}
 		else {
 			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
@@ -4691,7 +4687,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 	case nod_like:
 	case nod_similar:
 		{
-			UCHAR temp3[TEMP_LENGTH];
+			VaryStr<TEMP_LENGTH> temp3;
 			const UCHAR* escape_str = NULL;
 			USHORT escape_length = 0;
 
@@ -4711,7 +4707,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 				escape_length = MOV_make_string(dsc, type1,
 												reinterpret_cast<const char**>(&escape_str),
-												(vary*) temp3, sizeof(temp3));
+												&temp3, sizeof(temp3));
 				if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 				{
 					/* If characters left, or null byte character, return error */
@@ -4910,7 +4906,7 @@ static bool string_function(thread_db* tdbb,
 	// Handle LIKE and SIMILAR
 	if (node->nod_type == nod_like || node->nod_type == nod_similar)
 	{
-		UCHAR temp3[TEMP_LENGTH];
+		VaryStr<TEMP_LENGTH> temp3;
 		const UCHAR* escape_str = NULL;
 		USHORT escape_length = 0;
 		/* ensure 3rd argument (escape char) is in operation text type */
@@ -4927,7 +4923,7 @@ static bool string_function(thread_db* tdbb,
 			}
 			escape_length = MOV_make_string(dsc, ttype,
 											reinterpret_cast<const char**>(&escape_str),
-											(vary*) temp3, sizeof(temp3));
+											&temp3, sizeof(temp3));
 			if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 			{
 				/* If characters left, or null byte character, return error */
@@ -5070,11 +5066,11 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		return &impure->vlu_desc;
 	}
 
-	UCHAR temp[32];
+	VaryStr<32> temp;
 	USHORT ttype;
 	UCHAR* p;
 
-	length = MOV_get_string_ptr(value, &ttype, &p, reinterpret_cast<vary*>(temp), sizeof(temp));
+	length = MOV_get_string_ptr(value, &ttype, &p, &temp, sizeof(temp));
 
 	switch (length_type)
 	{
