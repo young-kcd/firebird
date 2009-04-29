@@ -1,3 +1,19 @@
+2009-04-29 14:32  hvlad
+
+	* firebird2/src/jrd/event.cpp (1.55.4.4):
+
+	More fixes for bug CORE-2444 : When more than one attachment
+	register interests in events simultaneously and free space in
+	events table is exhausted engine could hung
+
+2009-04-29 11:02  hvlad
+
+	* firebird2/src/jrd/event.cpp (1.55.4.3):
+
+	Fixed bug CORE-2444 : When more than one attachment register
+	interests in events simultaneously and free space in events table
+	is exhausted engine could hung
+
 2009-04-24 17:56  alexpeshkoff
 
 	* firebird2/src/: jrd/ThreadData.cpp (1.4.4.1), remote/server.cpp
