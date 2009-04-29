@@ -2831,7 +2831,8 @@ int ISC_mutex_init(struct mtx* mutex)
  *
  **************************************/
 
-	return mutex_init(mutex->mtx_mutex, USYNC_PROCESS, NULL);
+	memset(mutex->mtx_mutex, 0, sizeof(mutex_t));
+	return mutex_init(mutex->mtx_mutex, USYNC_PROCESS | LOCK_ROBUST, NULL);
 }
 
 
@@ -3085,8 +3086,17 @@ int ISC_mutex_init(struct mtx* mutex)
 #error Your system must support PTHREAD_PROCESS_SHARED to use Firebird.
 #endif
 
+#ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+	int protocolRc = pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+	if (protocolRc && (protocolRc != ENOTSUP)) 
+	{
+		iscLogStatus("Pthread Error", 
+			(Arg::Gds(isc_sys_request) << "pthread_mutexattr_setprotocol" << Arg::Unix(rc)).value());
+	}
+#endif
 #ifdef USE_ROBUST_MUTEX
 	LOG_PTHREAD_ERROR(pthread_mutexattr_setrobust_np(&mattr, PTHREAD_MUTEX_ROBUST_NP));
+	memset(mutex->mtx_mutex, 0, sizeof(pthread_mutex_t));
 #endif
 
 	int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
