@@ -3090,8 +3090,8 @@ int ISC_mutex_init(struct mtx* mutex)
 	int protocolRc = pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
 	if (protocolRc && (protocolRc != ENOTSUP)) 
 	{
-		iscLogStatus("Pthread Error", 
-			(Arg::Gds(isc_sys_request) << "pthread_mutexattr_setprotocol" << Arg::Unix(rc)).value());
+		iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) 
+			<< "pthread_mutexattr_setprotocol" << Arg::Unix(protocolRc)).value());
 	}
 #endif
 #ifdef USE_ROBUST_MUTEX
