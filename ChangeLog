@@ -1,3 +1,23 @@
+2009-04-30 09:27  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.191):
+
+	misc
+
+2009-04-30 09:26  alexpeshkoff
+
+	* firebird2/configure.in (1.338):
+
+	Fixed pthread functions detection
+
+2009-04-30 09:07  hvlad
+
+	* firebird2/src/jrd/event.cpp (1.94):
+
+	Fixed bug CORE-2444 : When more than one attachment register
+	interests in events simultaneously and free space in events table
+	is exhausted engine could hung
+
 2009-04-29 16:00  alexpeshkoff
 
 	* firebird2/src/: common/cvt.cpp (1.20), common/classes/VaryStr.h
