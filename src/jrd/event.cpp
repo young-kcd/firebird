@@ -553,6 +553,10 @@ evh* EventManager::acquire_shmem()
 
 	m_header->evh_current_process = m_processOffset;
 
+	// hvlad: condition below never can be true and we change evh_length
+	// after remapping only. Also code below looks not complete, compare 
+	// it with remapping code in alloc_global
+/***
 	if (m_header->evh_length > m_shmemData.sh_mem_length_mapped)
 	{
 		const ULONG length = m_header->evh_length;
@@ -598,7 +602,7 @@ evh* EventManager::acquire_shmem()
 		process->prb_flags &= ~PRB_remap_over;
 #endif
 	}
-
+***/
 	return m_header;
 }
 
@@ -622,6 +626,20 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = FB_ALIGN(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
+#if (defined HAVE_MMAP || defined WIN_NT)
+	// hvlad: wait for end of shared memory remapping if it is in progress
+
+	prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
+	while (process->prb_flags & (PRB_remap | PRB_remap_over))
+	{
+		release_shmem();
+		THREAD_YIELD();
+		acquire_shmem();
+
+		process = (prb*) SRQ_ABS_PTR(m_processOffset);
+	}
+#endif
+
 	for (ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		ptr = &free->frb_next)
 	{
@@ -642,7 +660,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 		// Before remapping the memory, wakeup the watcher thread.
 		// Then remap the shared memory and allow the watcher thread to remap.
 
-		prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
+		process = (prb*) SRQ_ABS_PTR(m_processOffset);
 		process->prb_flags |= PRB_remap;
 
 		post_process(process);
@@ -1467,7 +1485,7 @@ void EventManager::watcher_thread()
 			process->prb_flags &= ~PRB_wakeup;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-			if (process->prb_flags & PRB_remap)
+			while (process->prb_flags & PRB_remap)
 			{
 				process->prb_flags |= PRB_remap_over;
 				process->prb_flags &= ~PRB_remap;
