@@ -648,9 +648,17 @@ AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
 AC_CHECK_FUNCS(fchmod)
-if test "$ac_cv_header_semaphore_h" = "yes"; then
+AC_CHECK_FUNCS(semtimedop)
+
+# Checks for pthread functions
 savedFlags="$CFLAGS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+
+AC_CHECK_FUNCS(pthread_mutexattr_setprotocol)
+AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
+AC_CHECK_FUNCS(pthread_mutex_consistent_np)
+
+if test "$ac_cv_header_semaphore_h" = "yes"; then
 AC_CHECK_FUNCS(sem_timedwait)
 AC_CHECK_FUNCS(sem_init)
 if test "$ac_cv_func_sem_init" = "yes"; then
@@ -665,10 +673,9 @@ AC_TRY_RUN([#include <semaphore.h>
 AC_MSG_RESULT(yes)],
 [AC_MSG_RESULT(no)])
 fi
-CFLAGS="$savedFlags"
 fi
-AC_CHECK_FUNCS(semtimedop)
-AC_CHECK_FUNCS(pthread_mutexattr_setprotocol)
+
+CFLAGS="$savedFlags"
 
 # HPUX has a bug in .h files. To detect it we need C++ here.
 AC_LANG_PUSH(C++)
@@ -676,9 +683,6 @@ AC_LINK_IFELSE(
 	[AC_LANG_PROGRAM([[#include <fcntl.h>]], [[posix_fadvise(0, 0, 0, 0);]])],
 	AC_DEFINE(HAVE_POSIX_FADVISE, 1, [Define this if posix_fadvise() is present on the platform]))
 AC_LANG_POP(C++)
-
-AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
-AC_CHECK_FUNCS(pthread_mutex_consistent_np)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
