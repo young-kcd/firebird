@@ -54,7 +54,7 @@ protected:
 public:
 	virtual bool matches(MemoryPool& pool, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d) = 0;
 	virtual bool sleuthCheck(MemoryPool& pool, USHORT a, const UCHAR* b, SLONG c, const UCHAR* d, SLONG e) = 0;
-	virtual ULONG sleuthMerge(MemoryPool& pool, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d, UCHAR* e, SLONG f) = 0;
+	virtual ULONG sleuthMerge(MemoryPool& pool, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d, UCHAR* e/*, SLONG f*/) = 0;
 
 	virtual bool starts(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl) = 0;
 	virtual PatternMatcher* createStartsMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl) = 0;

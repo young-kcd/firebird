@@ -467,7 +467,7 @@ struct
 };
 
 
-INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const ASCII* config_info)
+INTL_BOOL FB_DLL_EXPORT LD_lookup_charset(charset* cs, const ASCII* name, const ASCII* /*config_info*/)
 {
 	// ASF: We can't read config_info if version < INTL_VERSION_2,
 	// since it wasn't pushed in the stack by the engine.

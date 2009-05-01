@@ -668,9 +668,9 @@ static CON parse_literal()
 		TEXT* p = (TEXT *) constant->con_data;
 		constant->con_desc.dsc_address = (UCHAR*) p;
 		if (constant->con_desc.dsc_length = l)
-			do
+			do {
 				*p++ = *q++;
-			while (--l);
+			} while (--l);
 	}
 	else if (dudleyGlob.DDL_token.tok_type == tok_number) {
 		constant = make_numeric_constant(dudleyGlob.DDL_token.tok_string,
@@ -1151,7 +1151,7 @@ static void parse_terminating_parens(USHORT * paren_count,
  **************************************/
 
 	if (*paren_count && paren_count == local_count)
-		do
+		do {
 			parse_matching_paren();
-		while (--(*paren_count));
+		} while (--(*paren_count));
 }

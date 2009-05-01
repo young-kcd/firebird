@@ -53,10 +53,7 @@ struct charset;
 #define INTL_BAD_STR_LENGTH ((ULONG) -1)
 
 /* Returned value of INTL_BAD_KEY_LENGTH means that proposed key is too long */
-typedef USHORT (*pfn_INTL_keylength) (
-	texttype* tt,
-	USHORT len
-);
+typedef USHORT (*pfn_INTL_keylength) (texttype* tt, USHORT len);
 
 /* Types of the keys which may be returned by str2key routine */
 
@@ -112,9 +109,7 @@ typedef ULONG (*pfn_INTL_canonical) (
 );
 
 /* Releases resources associated with collation */
-typedef void (*pfn_INTL_tt_destroy) (
-	texttype* tt
-);
+typedef void (*pfn_INTL_tt_destroy) (texttype* tt);
 
 /* texttype version */
 #define TEXTTYPE_VERSION_1	1

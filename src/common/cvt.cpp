@@ -2522,7 +2522,7 @@ static SLONG getCurDate()
 }
 
 
-static void isVersion4(bool& v4)
+static void isVersion4(bool& /*v4*/)
 {
 }
 

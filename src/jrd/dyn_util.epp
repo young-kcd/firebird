@@ -107,7 +107,7 @@ static const UCHAR prot_blr[] =
 
 
 SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
-							  Global* gbl,
+							  Global* /*gbl*/,
 							  SSHORT id,
 							  const char* generator_name)
 {
@@ -294,7 +294,7 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 
 
 void DYN_UTIL_generate_field_position(thread_db* tdbb,
-									  Global* gbl,
+									  Global* /*gbl*/,
 									  const Firebird::MetaName& relation_name,
 									  SLONG* field_pos)
 {

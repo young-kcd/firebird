@@ -154,7 +154,7 @@ void Manager::jrdAttachmentEnd(thread_db *tdbb, Jrd::Attachment* att)
 	}
 }
 
-int Manager::shutdown(const int reason, const int mask, void* arg)
+int Manager::shutdown(const int /*reason*/, const int /*mask*/, void* /*arg*/)
 {
 	thread_db *tdbb = JRD_get_thread_data();
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
@@ -289,7 +289,7 @@ Connection::~Connection()
 }
 
 void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
-	const string &dbName, const string &user, const string &pwd) const
+	const string& /*dbName*/, const string &user, const string &pwd) const
 {
 	dpb.reset(isc_dpb_version1);
 
@@ -1204,7 +1204,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	}
 }
 
-void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
+void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/, jrd_nod** params)
 {
 	if (count != getInputs())
 	{

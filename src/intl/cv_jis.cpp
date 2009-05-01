@@ -550,7 +550,7 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 }
 
 
-INTL_BOOL CVJIS_check_euc(charset* cs, ULONG euc_len, const UCHAR* euc_str, ULONG* offending_position)
+INTL_BOOL CVJIS_check_euc(charset* /*cs*/, ULONG euc_len, const UCHAR* euc_str, ULONG* offending_position)
 {
 /**************************************
  *
@@ -588,7 +588,7 @@ INTL_BOOL CVJIS_check_euc(charset* cs, ULONG euc_len, const UCHAR* euc_str, ULON
 }
 
 
-INTL_BOOL CVJIS_check_sjis(charset* cs, ULONG sjis_len, const UCHAR* sjis_str, ULONG* offending_position)
+INTL_BOOL CVJIS_check_sjis(charset* /*cs*/, ULONG sjis_len, const UCHAR* sjis_str, ULONG* offending_position)
 {
 /**************************************
  *

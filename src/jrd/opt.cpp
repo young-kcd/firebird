@@ -3727,7 +3727,7 @@ static void form_rivers(thread_db*		tdbb,
 		if (dbb->dbb_ods_version >= ODS_VERSION11) {
 			// For ODS11 and higher databases we can use new calculations
 			innerJoin = FB_NEW(*tdbb->getDefaultPool())
-				OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, river_stack,
+				OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, //river_stack,
 				sort_clause, project_clause, plan_clause);
 		}
 
@@ -4188,7 +4188,7 @@ static void gen_join(thread_db*		tdbb,
 		}
 
 		OptimizerInnerJoin* innerJoin = FB_NEW(*tdbb->getDefaultPool())
-			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, river_stack,
+			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, //river_stack,
 			sort_clause, project_clause, plan_clause);
 
 		stream_array_t temp;

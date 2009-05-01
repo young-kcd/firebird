@@ -89,7 +89,7 @@ static void show_sys_trigs(qli_dbb*);
 static void show_text_blob(qli_dbb*, const TEXT*, USHORT, ISC_QUAD*, USHORT, ISC_QUAD*, bool);
 static void show_trig(qli_rel*);
 static int show_trigger_detail(qli_dbb*, const TEXT*);
-static void show_trigger_header(TEXT*, USHORT, USHORT, USHORT, ISC_QUAD&, qli_dbb*, const TEXT*);
+static void show_trigger_header(TEXT*, USHORT, USHORT, USHORT, ISC_QUAD&, qli_dbb*); // const TEXT*);
 static void show_trigger_messages(qli_dbb*, const TEXT*);
 static void show_trigger_status(TEXT*, USHORT, USHORT, USHORT);
 static void show_trigs(qli_dbb*);
@@ -2313,7 +2313,7 @@ static void show_sys_trigs( qli_dbb* database)
 			show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
 								X.RDB$TRIGGER_SEQUENCE,
 								X.RDB$TRIGGER_INACTIVE, X.RDB$DESCRIPTION,
-								database, X.RDB$RELATION_NAME);
+								database); //, X.RDB$RELATION_NAME);
 			show_blob_info(X.RDB$TRIGGER_BLR, X.RDB$TRIGGER_SOURCE,
 							377,	// Msg377 Source for the trigger is not available.  Trigger BLR:
 							376,	// Msg376 Source for the trigger
@@ -2422,8 +2422,8 @@ static int show_trigger_detail( qli_dbb* database, const TEXT* relation_name)
 				show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
 									X.RDB$TRIGGER_SEQUENCE,
 									X.RDB$TRIGGER_INACTIVE,
-									X.RDB$DESCRIPTION, database,
-									relation_name);
+									X.RDB$DESCRIPTION, database);
+									//relation_name);
 				show_blob_info(X.RDB$TRIGGER_BLR, X.RDB$TRIGGER_SOURCE,
 								377,	// Msg377 Source for the trigger is not available.  Trigger BLR:
 								376,	// Msg376 Source for the trigger
@@ -2455,8 +2455,8 @@ static void show_trigger_header(TEXT* name,
 								USHORT sequence,
 								USHORT inactive,
 								ISC_QUAD& description,
-								qli_dbb* database,
-								const TEXT* relation_name) // unused param
+								qli_dbb* database)
+								//const TEXT* relation_name) // unused param
 {
 /*****************************************************
  *
@@ -2623,8 +2623,8 @@ static int show_triggers_detail( qli_dbb* database)
 				show_trigger_header(X.RDB$TRIGGER_NAME, X.RDB$TRIGGER_TYPE,
 									X.RDB$TRIGGER_SEQUENCE,
 									X.RDB$TRIGGER_INACTIVE,
-									X.RDB$DESCRIPTION, database,
-									X.RDB$RELATION_NAME);
+									X.RDB$DESCRIPTION, database);
+									//X.RDB$RELATION_NAME);
 				show_blob_info(X.RDB$TRIGGER_BLR, X.RDB$TRIGGER_SOURCE,
 							   377,	// Msg377 Source for the trigger is not available.  Trigger BLR:
 							   376,	// Msg376 Source for the trigger

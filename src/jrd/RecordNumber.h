@@ -154,10 +154,8 @@ public:
 
 	bool isValid() const { return valid; }
 
-	inline bool checkNumber(
-		USHORT records_per_page, // ~400 (8k page)
-		USHORT data_pages_per_pointer_page  // ~2000 (8k page)
-	) const
+	inline bool checkNumber(USHORT records_per_page, // ~400 (8k page)
+							USHORT data_pages_per_pointer_page) const  // ~2000 (8k page)
 	{
 		// We limit record number value to 40 bits and make sure decomposed value
 		// fits into 3 USHORTs. This all makes practical table size limit (not
@@ -173,13 +171,11 @@ public:
 			value < (SINT64) MAX_USHORT * records_per_page * data_pages_per_pointer_page;
 	}
 
-	inline void decompose(
-		USHORT records_per_page, // ~400 (8k page)
-		USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
-		SSHORT& line,
-		SSHORT& slot,
-		USHORT& pp_sequence
-	) const
+	inline void decompose(USHORT records_per_page, // ~400 (8k page)
+						  USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
+						  SSHORT& line,
+						  SSHORT& slot,
+						  USHORT& pp_sequence) const
 	{
 		line = value % records_per_page;
 		const ULONG sequence = value / records_per_page;
@@ -187,13 +183,11 @@ public:
 		pp_sequence = sequence / data_pages_per_pointer_page;
 	}
 
-	inline void compose(
-		USHORT records_per_page, // ~400 (8k page)
-		USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
-		SSHORT line,
-		SSHORT slot,
-		USHORT pp_sequence
-	)
+	inline void compose(USHORT records_per_page, // ~400 (8k page)
+						USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
+						SSHORT line,
+						SSHORT slot,
+						USHORT pp_sequence)
 	{
 		value = (((SINT64) pp_sequence) * data_pages_per_pointer_page + slot) * records_per_page + line;
 	}

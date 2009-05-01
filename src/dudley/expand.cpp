@@ -195,9 +195,7 @@ static void expand_action( ACT action)
 }
 
 
-static void expand_error(
-						 USHORT number,
-						 const SafeArg& arg)
+static void expand_error(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *

@@ -241,9 +241,7 @@ static void WINAPI control_thread( DWORD action)
 }
 
 
-static USHORT report_status(
-							DWORD state,
-							DWORD exit_code, DWORD checkpoint, DWORD hint)
+static USHORT report_status(DWORD state, DWORD exit_code, DWORD checkpoint, DWORD hint)
 {
 /**************************************
  *

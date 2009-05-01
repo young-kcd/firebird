@@ -49,7 +49,7 @@ public:
 			loadAPI();
 	}
 
-	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att) {}
+	virtual void jrdAttachmentEnd(Jrd::thread_db* /*tdbb*/, Jrd::Attachment* /*att*/) {}
 	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err) const;
 
 protected:

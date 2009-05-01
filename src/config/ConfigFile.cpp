@@ -221,7 +221,7 @@ const char* ConfigFile::getRootDirectory()
 	return Config::getRootDirectory();
 }
 
-ConfObject* ConfigFile::getObject(const char* objectType)
+ConfObject* ConfigFile::getObject(const char* /*objectType*/)
 {
 	return new ConfObject (this);
 }

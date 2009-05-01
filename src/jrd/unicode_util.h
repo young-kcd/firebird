@@ -79,10 +79,9 @@ public:
 	class Utf16Collation
 	{
 	public:
-		static Utf16Collation* create(
-			texttype* tt, USHORT attributes,
-			Firebird::IntlUtil::SpecificAttributesMap& specificAttributes,
-			const Firebird::string& configInfo);
+		static Utf16Collation* create(texttype* tt, USHORT attributes,
+									  Firebird::IntlUtil::SpecificAttributesMap& specificAttributes,
+									  const Firebird::string& configInfo);
 
 		~Utf16Collation();
 

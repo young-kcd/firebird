@@ -4558,7 +4558,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 
 /* Merge search and control strings */
 	UCHAR control[BUFFER_SMALL];
-	SLONG control_length = obj->sleuthMerge(*tdbb->getDefaultPool(), p2, l2, p1, l1, control, BUFFER_SMALL);
+	SLONG control_length = obj->sleuthMerge(*tdbb->getDefaultPool(), p2, l2, p1, l1, control); //, BUFFER_SMALL);
 
 /* Note: resulting string from sleuthMerge is either USHORT or UCHAR
    and never Multibyte (see note in EVL_mb_sleuthCheck) */

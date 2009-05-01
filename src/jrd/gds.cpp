@@ -759,11 +759,13 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 	const ISC_STATUS* v;
 	ISC_STATUS code;
 	// Handle a case: "no errors, some warning(s)"
-	if ((*vector)[1] == 0 && (*vector)[2] == isc_arg_warning) {
+	if ((*vector)[1] == 0 && (*vector)[2] == isc_arg_warning)
+	{
 		v = *vector + 4;
 		code = (*vector)[3];
 	}
-	else {
+	else
+	{
 		v = *vector + 2;
 		code = (*vector)[1];
 	}
@@ -804,7 +806,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 			continue;
 
 		case isc_arg_cstring:
-			if (!temp) {
+			if (!temp)
+			{
 				// We need a temporary buffer when cstrings are involved.
 				// Give up if we can't get one.
 
@@ -863,7 +866,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 			{
 				bool found = false;
 
-				for (int i = 0; messages[i].code_number; ++i) {
+				for (int i = 0; messages[i].code_number; ++i)
+				{
 					if (code == messages[i].code_number) {
 						if (legacy && strchr(messages[i].code_text, '%'))
 						{
@@ -1039,8 +1043,10 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly.
 	// Slowly enough to make such trace useless. Thus we cache file handle !
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
-	while (true) {
-		if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE) {
+	while (true)
+	{
+		if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE)
+		{
 			TEXT name[MAXPATHLEN];
 			gds__prefix(name, LOGFILE);
 			// We do not care to close this file.
@@ -1054,7 +1060,8 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 		DWORD bytesWritten;
 		SetFilePointer(CleanupTraceHandles::trace_file_handle, 0, NULL, FILE_END);
 		WriteFile(CleanupTraceHandles::trace_file_handle, text, length, &bytesWritten, NULL);
-		if (bytesWritten != length) {
+		if (bytesWritten != length)
+		{
 			// Handle the case when file was deleted by another process on Win9x
 			// On WinNT we are not going to notice that fact :(
 			CloseHandle(CleanupTraceHandles::trace_file_handle);
@@ -1319,7 +1326,8 @@ int API_ROUTINE gds__msg_close(void *handle)
 
 	Firebird::MutexLockGuard guard(global_msg_mutex);
 
-	if (!messageL) {
+	if (!messageL)
+	{
 		if (!global_default_msg) {
 			return 0;
 		}
@@ -1390,7 +1398,8 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 		s.printf("can't format message %d:%d -- ", facility, number);
 		if (n == -1)
 			s += "message text not found";
-		else if (n == -2) {
+		else if (n == -2)
+		{
 			s += "message file ";
 			TEXT temp[MAXPATHLEN];
 			gds__prefix_msg(temp, MSG_FILE);
@@ -1442,7 +1451,8 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 
 	Firebird::MutexLockGuard guard(global_msg_mutex);
 
-	if (!messageL && !(messageL = global_default_msg)) {
+	if (!messageL && !(messageL = global_default_msg))
+	{
 		/* Try environment variable setting first */
 
 		Firebird::string p;
@@ -1478,7 +1488,8 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			else
 				status = 1;
 
-			if (status) {
+			if (status)
+			{
 				/* Default to standard message file */
 
 				gds__prefix_msg(msg_file, MSG_FILE);
@@ -1500,15 +1511,18 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 	ULONG position = messageL->msg_top_tree;
 
 	status = 0;
-	for (USHORT n = 1; !status; n++) {
+	for (USHORT n = 1; !status; n++)
+	{
 		if (lseek(messageL->msg_file, LSEEK_OFFSET_CAST position, 0) < 0)
 			status = -6;
 		else if (read(messageL->msg_file, messageL->msg_bucket, messageL->msg_bucket_size) < 0)
 			status = -7;
 		else if (n == messageL->msg_levels)
 			break;
-		else {
-			for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++) {
+		else
+		{
+			for (const msgnod* node = (msgnod*) messageL->msg_bucket; !status; node++)
+			{
 				if (node >= end) {
 					status = -8;
 					break;
@@ -1521,15 +1535,18 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		}
 	}
 
-	if (!status) {
+	if (!status)
+	{
 		/* Search the leaf */
 		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = NEXT_LEAF(leaf))
 		{
-			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code) {
+			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code)
+			{
 				status = -1;
 				break;
 			}
-			if (leaf->msgrec_code == code) {
+			if (leaf->msgrec_code == code)
+			{
 				/* We found the correct message, so return it to the user */
 				const USHORT n = MIN(length - 1, leaf->msgrec_length);
 				memcpy(buffer, leaf->msgrec_text, n);
@@ -1871,7 +1888,8 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 	if (*p++ != isc_bpb_version1)
 		return type;
 
-	while (p < end) {
+	while (p < end)
+	{
 		const UCHAR op = *p++;
 		const USHORT length = *p++;
 		switch (op)
@@ -2439,7 +2457,8 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	}
 
 	TEXT abs_module[MAXPATHLEN];
-	if (EXPAND_PATH(module, abs_module)) {
+	if (EXPAND_PATH(module, abs_module))
+	{
 		/* Extract the path from the absolute module name */
 		const TEXT* q = NULL;
 		for (const TEXT* mp = abs_module; *mp; mp++)
@@ -2461,7 +2480,8 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 
 		// Warning: ib_ext_lib_path.length() is not coherent since strtok is applied to it.
 		const TEXT* token = strtok(ib_ext_lib_path.begin(), ";");
-		while (token != NULL) {
+		while (token != NULL)
+		{
 			strncpy(path, token, sizeof(path));
 			path[sizeof(path) - 1] = 0;
 			/* make sure that there is no traing slash on the path */
@@ -2507,8 +2527,7 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 }
 
 
-void API_ROUTINE gds__vtof(const SCHAR* string,
-						   SCHAR* fieldL, USHORT length)
+void API_ROUTINE gds__vtof(const SCHAR* string, SCHAR* fieldL, USHORT length)
 {
 /**************************************
  *
@@ -2523,7 +2542,8 @@ void API_ROUTINE gds__vtof(const SCHAR* string,
  *
  **************************************/
 
-	while (*string) {
+	while (*string)
+	{
 		*fieldL++ = *string++;
 		if (--length <= 0)
 			return;
@@ -2595,8 +2615,7 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 }
 
 
-void API_ROUTINE isc_sql_interprete(SSHORT sqlcode,
-									TEXT* buffer, SSHORT length)
+void API_ROUTINE isc_sql_interprete(SSHORT sqlcode, TEXT* buffer, SSHORT length)
 {
 /**************************************
  *
@@ -3111,7 +3130,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 	blr_indent(control, level);
 	UCHAR blr_operator = BLR_BYTE;
 
-	if ((SCHAR) blr_operator == (SCHAR) blr_end) {
+	if (blr_operator == blr_end)
+	{
 		blr_format(control, "blr_end, ");
 		blr_print_line(control, (SSHORT) offset);
 		return;
@@ -3217,7 +3237,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_literals:
-			while (--n >= 0) {
+			while (--n >= 0)
+			{
 				blr_indent(control, level);
 				SSHORT n2 = blr_print_byte(control);
 				while (--n2 >= 0)
@@ -3253,7 +3274,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				blr_print_word(control);
 			break;
 
-		case op_exec_into: {
+		case op_exec_into:
 			blr_print_verb(control, level);
 			if (! blr_print_byte(control)) {
 				blr_print_verb(control, level);
@@ -3262,7 +3283,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				blr_print_verb(control, level);
 			}
 			break;
-		}
 
 		case op_exec_stmt:
 		{
@@ -3380,7 +3400,8 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 		case op_cursor_stmt: {
 			blr_operator = blr_print_byte(control);
 			blr_print_word(control);
-			if (blr_operator == blr_cursor_fetch) {
+			if (blr_operator == blr_cursor_fetch)
+			{
 #ifdef SCROLLABLE_CURSORS
 				if (BLR_PEEK == blr_seek) {
 					blr_print_verb(control, level);
@@ -3491,7 +3512,8 @@ static void init()
 
 		struct rlimit old;
 
-		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max) {
+		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max)
+		{
 			struct rlimit new_max;
 			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
 			if (!setrlimit(RLIMIT_NOFILE, &new_max))
@@ -3722,12 +3744,10 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 	output.reserve(size);
 	BYTE* answer = reinterpret_cast<BYTE*>(output.begin());
 	rc = RegQueryValueEx(hkey, pvalue, NULL, &type, answer, &size);
-	if (rc != ERROR_SUCCESS)
-	{
-		RegCloseKey(hkey);
-		return false;
-	}
 	RegCloseKey(hkey);
+	if (rc != ERROR_SUCCESS)
+		return false;
+
 	output.recalculate_length();
 	output += "\\Firebird\\";
 	return true;
@@ -3739,19 +3759,20 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 
 // Deprecated private API functions
 
-extern "C" {
-int API_ROUTINE gds__thread_enable(int)
+extern "C"
 {
-	return true;
-}
+	int API_ROUTINE gds__thread_enable(int)
+	{
+		return true;
+	}
 
 
-void API_ROUTINE gds__thread_enter()
-{
-}
+	void API_ROUTINE gds__thread_enter()
+	{
+	}
 
 
-void API_ROUTINE gds__thread_exit()
-{
-}
+	void API_ROUTINE gds__thread_exit()
+	{
+	}
 } // extern "C"

@@ -1365,8 +1365,7 @@ static gpre_nod* par_over( gpre_ctx* context)
 		}
 		boolean = make_and(boolean, MSC_binary(nod_eq, field1, field2));
 		PAR_get_token();
-	}
-	while (MSC_match(KW_COMMA));
+	} while (MSC_match(KW_COMMA));
 
 	return boolean;
 }

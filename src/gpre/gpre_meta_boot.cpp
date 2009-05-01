@@ -189,10 +189,10 @@ bool MET_get_domain_default(gpre_dbb* /*db*/, const TEXT* /*domain_name*/, TEXT*
  *		Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
  */
 
-bool MET_get_column_default(const gpre_rel* relation,
-							const TEXT* column_name,
-							TEXT* buffer,
-							USHORT buff_length)
+bool MET_get_column_default(const gpre_rel*, //relation,
+							const TEXT*, // column_name,
+							TEXT*, // buffer,
+							USHORT) // buff_length)
 {
 	fb_assert(0);
 	return false;

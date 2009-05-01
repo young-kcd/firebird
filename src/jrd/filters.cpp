@@ -1093,7 +1093,7 @@ static ISC_STATUS caller(USHORT action,
 }
 
 
-static void dump_blr(void* arg, SSHORT offset, const char* line)
+static void dump_blr(void* arg, SSHORT /*offset*/, const char* line)
 {
 /**************************************
  *

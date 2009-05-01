@@ -1285,9 +1285,9 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			break;
 		}
 		if (complement && n)
-			do
+			do {
 				*p++ ^= -1;
-			while (--n);
+			} while (--n);
 
 		// Flatter but don't complement control info for non-fixed
 		// data types when restoring the data

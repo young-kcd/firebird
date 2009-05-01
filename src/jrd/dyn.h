@@ -31,7 +31,7 @@ const char* const ALL_PRIVILEGES = "SIUDR";
 const char* const ALL_PROC_PRIVILEGES = "X";
 		/* all applicable grant/revoke privileges for a procedure */
 const int DYN_MSG_FAC		= 8;
-const int STUFF_COUNT		= 4;
+const int STUFF_COUNT		= 4; // Is this the same value defined in ods.h???
 const int TEXT_BLOB_LENGTH	= 512;
 
 
@@ -46,11 +46,13 @@ class jrd_tra;
 class Global
 {
 public:
-	explicit Global(jrd_tra* t)
-		: gbl_transaction(t)
+	Global(jrd_tra* t) //, const UCHAR* dyn, size_t length)
+		: gbl_transaction(t)//, gbl_length(length), gbl_end(dyn + length)
 	{ }
 
-	jrd_tra* gbl_transaction;
+	jrd_tra* const gbl_transaction;
+	//size_t gbl_length;			// length of BLR stream
+	//const UCHAR* const gbl_end;	// end of BLR sream
 };
 
 class dyn_fld

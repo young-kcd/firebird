@@ -88,7 +88,7 @@
 #define blr_version4		(unsigned char)4
 #define blr_version5		(unsigned char)5
 #define blr_eoc			(unsigned char)76
-#define blr_end			(unsigned char)255	/* note: defined as -1 in gds.h */
+#define blr_end			(unsigned char)255
 
 #define blr_assignment		(unsigned char)1
 #define blr_begin		(unsigned char)2

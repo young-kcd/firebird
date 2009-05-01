@@ -440,8 +440,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 }
 
 
-static void propagate(
-					  msgnod** buckets,
+static void propagate(msgnod** buckets,
 					  msgnod** nodes, ULONG prior_code, ULONG position)
 {
 /**************************************

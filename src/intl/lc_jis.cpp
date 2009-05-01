@@ -36,7 +36,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
-									const UCHAR* specific_attributes,
+									const UCHAR* /*specific_attributes*/,
 									ULONG specific_attributes_length)
 //#define FAMILY_MULTIBYTE(id_number, name, charset, country)
 {

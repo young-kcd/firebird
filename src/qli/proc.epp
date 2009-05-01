@@ -35,6 +35,7 @@
 #include "../qli/meta_proto.h"
 #include "../qli/parse_proto.h"
 #include "../qli/proc_proto.h"
+#include "../jrd/constants.h"
 
 using MsgFormat::SafeArg;
 
@@ -882,7 +883,7 @@ static int upcase_name(const TEXT* name, TEXT* buffer)
 		*buffer++ = UPPER(c);
 		if (!c)
 			return l;
-		if (++l > 31)
+		if (++l > MAX_SQL_IDENTIFIER_LEN)
 			IBERROR(79);		// Msg 79 procedure name over 31 characters
 
 	}

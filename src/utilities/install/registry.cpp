@@ -171,8 +171,7 @@ static void cleanup_key(HKEY hkey_rootnode, const char* key)
 
 #ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE
 // I keep it here for possible re-use after FB 1.5 release. OM, sept 30, 2003.
-static USHORT remove_subkeys(
-							 HKEY hkey,
+static USHORT remove_subkeys(HKEY hkey,
 							 bool silent_flag,
 							 pfnRegError err_handler)
 {

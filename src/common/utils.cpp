@@ -992,21 +992,21 @@ int openCreateFile(const char* pathname, int flags)
 #else // UNIX
 
 // waits for implementation
-SLONG get_user_group_id(const TEXT* user_group_name)
+SLONG get_user_group_id(const TEXT* /*user_group_name*/)
 {
 	return 0;
 }
 
 
 // waits for implementation
-SLONG get_user_id(const TEXT* user_name)
+SLONG get_user_id(const TEXT* /*user_name*/)
 {
 	return -1;
 }
 
 
 // waits for implementation
-bool get_user_home(int user_id, Firebird::PathName& homeDir)
+bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 {
 	return false;
 }

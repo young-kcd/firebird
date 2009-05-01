@@ -387,7 +387,7 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
 		{
 #ifdef SCROLLABLE_CURSORS
 			if (direction == RSE_get_backward) {
-				nextPointer = BTreeNode::previousNode(&node, pointer, flags, &expanded_node);
+				nextPointer = BTreeNode::previousNode(/*&node,*/ pointer, /*flags,*/ &expanded_node);
 				expanded_next = expanded_node;
 				continue;
 			}
@@ -422,10 +422,9 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
 }
 
 
-static int compare_keys(
-						   const index_desc* idx,
-						   const UCHAR* key_string1,
-						   USHORT length1, const temporary_key* key2, USHORT flags)
+static int compare_keys(const index_desc* idx,
+						const UCHAR* key_string1, USHORT length1, const temporary_key* key2,
+						USHORT flags)
 {
 /**************************************
  *
@@ -712,12 +711,11 @@ static bool find_saved_node(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
 }
 
 
-static UCHAR* get_position(
-						thread_db* tdbb,
-						RecordSource* rsb,
-						IRSB_NAV impure,
-						WIN * window,
-						rse_get_mode direction, btree_exp** expanded_node)
+static UCHAR* get_position(thread_db* tdbb,
+						   RecordSource* rsb,
+						   IRSB_NAV impure,
+						   WIN* window,
+						   rse_get_mode direction, btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -782,7 +780,7 @@ static UCHAR* get_position(
 		// backward from that point accordingly.
 #ifdef SCROLLABLE_CURSORS
 		if (direction == RSE_get_backward) {
-			pointer = BTreeNode::previousNode(&node, pointer, flags, expanded_node);
+			pointer = BTreeNode::previousNode(/*&node,*/ pointer, /*flags,*/ expanded_node);
 			//node = (btree_nod*) BTR_previous_node( (UCHAR*)node, expanded_node);
 		}
 		else
@@ -806,7 +804,7 @@ static UCHAR* get_position(
 		*expanded_node = find_current(window->win_expanded_buffer, page, pointer);
 #ifdef SCROLLABLE_CURSORS
 		if (direction == RSE_get_backward) {
-			pointer = BTreeNode::previousNode(&node, pointer, flags, expanded_node);
+			pointer = BTreeNode::previousNode(/*&node,*/ pointer, /*flags,*/ expanded_node);
 			//node = (btree_nod*) BTR_previous_node((UCHAR*) node, expanded_node);
 		}
 		else

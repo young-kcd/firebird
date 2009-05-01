@@ -123,7 +123,7 @@ static int gen_multy_bakup_files(b_fil*, FILE_DESC, SLONG);
 static int set_hdr_str(TEXT*, const TEXT*, SLONG, SLONG);
 static int join_multy_bakup_files(b_fil*);
 static void print_clo(const TEXT*);
-static int read_and_write(FILE_DESC, FILE_DESC, const TEXT*, SLONG,
+static int read_and_write(FILE_DESC, FILE_DESC, /*const TEXT*,*/ SLONG,
 						  SINT64, UCHAR**, bool*, SINT64*, SLONG*);
 static int read_and_write_for_join(FILE_DESC, const TEXT*, UCHAR**, SLONG, SLONG*);
 static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT*);
@@ -642,7 +642,7 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 			while ((file_size > byte_read) && (fl_ptr != NULL))
 			{
 				ret_cd = read_and_write(input_file_desc, output_fl_desc,
-										file_name, io_size, file_size,
+										/*file_name,*/ io_size, file_size,
 										&io_buffer, &end_of_input,
 										&byte_read, &byte_write);
 				switch (ret_cd)
@@ -734,7 +734,7 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 
 static int read_and_write(FILE_DESC input_file_desc,
 						  FILE_DESC output_fl_desc,
-						  const TEXT* file_name,
+						  //const TEXT* file_name,
 						  SLONG io_size,
 						  SINT64 file_size,
 						  UCHAR** io_buffer,

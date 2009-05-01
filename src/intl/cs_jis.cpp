@@ -54,7 +54,7 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 
 CHARSET_ENTRY(CS_sjis)
 {
-	CS_jis_0208_1990(csptr, cs_name);
+	CS_jis_0208_1990(csptr, NULL); //, cs_name); Second param is unused
 	csptr->charset_name = (const ASCII*) "SJIS";
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 	csptr->charset_min_bytes_per_char = 1;
@@ -69,7 +69,7 @@ CHARSET_ENTRY(CS_sjis)
 
 CHARSET_ENTRY(CS_euc_j)
 {
-	CS_jis_0208_1990(csptr, cs_name);
+	CS_jis_0208_1990(csptr, NULL); //cs_name); Second param is unused
 	csptr->charset_name = (const ASCII*) "EUC-J";
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 	csptr->charset_min_bytes_per_char = 1;

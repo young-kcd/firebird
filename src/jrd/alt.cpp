@@ -94,7 +94,8 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 /* FREE: apparently never freed */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
-	if ((*result_buffer = (UCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
+	if ((*result_buffer = (UCHAR *) gds__alloc((SLONG) length)) == NULL)
+	{	/* NOMEM: */
 		/* FREE: apparently never freed */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
@@ -115,7 +116,8 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 	va_start(ptr, count);
 
 	i = count;
-	while (i--) {
+	while (i--)
+	{
 		const char* q = va_arg(ptr, SCHAR *);
 
 		/* Strip the blanks from the ends */
@@ -162,7 +164,8 @@ const int MAX_NAME_LENGTH		= 31;
 	USHORT i = count;
 	TEXT** nb = name_buffer;
 	SLONG length = 0;
-	while (i--) {
+	while (i--)
+	{
 		const TEXT* const q = *nb++;
 
 		/* Strip trailing blanks from string */
@@ -178,7 +181,8 @@ const int MAX_NAME_LENGTH		= 31;
 /* FREE: apparently never freed */
 	if (!(*event_buffer))		/* NOMEM: */
 		return 0;
-	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL) {	/* NOMEM: */
+	if ((*result_buffer = (SCHAR *) gds__alloc((SLONG) length)) == NULL)
+	{	/* NOMEM: */
 		/* FREE: apparently never freed */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
@@ -196,7 +200,8 @@ const int MAX_NAME_LENGTH		= 31;
 
 	nb = name_buffer;
 
-	while (i--) {
+	while (i--)
+	{
 		const TEXT* q = *nb++;
 
 		/* Strip trailing blanks from string */
@@ -847,13 +852,14 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
  *
  **************************************/
 #ifdef BOOT_BUILD
-return 1;
+	return 1;
 #else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = ADD_OPER;
 
-	if (input_user_data->user_name) {
-		if (strlen(input_user_data->user_name) > 31) {
+	if (input_user_data->user_name)
+	{
+		if (strlen(input_user_data->user_name) > USERNAME_LENGTH) {
 			return user_error(status, isc_usrname_too_long);
 		}
 		size_t l;
@@ -871,7 +877,8 @@ return 1;
 		return user_error(status, isc_usrname_required);
 	}
 
-	if (input_user_data->password) {
+	if (input_user_data->password)
+	{
 		if (strlen(input_user_data->password) > 8) {
 			return user_error(status, isc_password_too_long);
 		}
@@ -952,7 +959,8 @@ return 1;
 		userInfo.middle_name_specified = false;
 	}
 
-	if ((input_user_data->sec_flags & sec_last_name_spec) && input_user_data->last_name) {
+	if ((input_user_data->sec_flags & sec_last_name_spec) && input_user_data->last_name)
+	{
 		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
 		strncpy(userInfo.last_name, input_user_data->last_name, l);
 		userInfo.last_name[l] = '\0';
@@ -985,13 +993,14 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *
  **************************************/
 #ifdef BOOT_BUILD
-return 1;
+	return 1;
 #else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = DEL_OPER;
 
-	if (input_user_data->user_name) {
-		if (strlen(input_user_data->user_name) > 32) {
+	if (input_user_data->user_name)
+	{
+		if (strlen(input_user_data->user_name) > USERNAME_LENGTH) {
 			return user_error(status, isc_usrname_too_long);
 		}
 		size_t l;
@@ -1030,13 +1039,14 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *
  **************************************/
 #ifdef BOOT_BUILD
-return 1;
+	return 1;
 #else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = MOD_OPER;
 
-	if (input_user_data->user_name) {
-		if (strlen(input_user_data->user_name) > 32) {
+	if (input_user_data->user_name)
+	{
+		if (strlen(input_user_data->user_name) > USERNAME_LENGTH) {
 			return user_error(status, isc_usrname_too_long);
 		}
 		size_t l;
@@ -1054,7 +1064,8 @@ return 1;
 		return user_error(status, isc_usrname_required);
 	}
 
-	if (input_user_data->sec_flags & sec_password_spec) {
+	if (input_user_data->sec_flags & sec_password_spec)
+	{
 		if (strlen(input_user_data->password) > 8) {
 			return user_error(status, isc_password_too_long);
 		}
@@ -1076,7 +1087,8 @@ return 1;
 	}
 
 
-	if (input_user_data->sec_flags & sec_uid_spec) {
+	if (input_user_data->sec_flags & sec_uid_spec)
+	{
 		userInfo.uid = input_user_data->uid;
 		userInfo.uid_specified = true;
 		userInfo.uid_entered = true;
@@ -1086,7 +1098,8 @@ return 1;
 		userInfo.uid_entered = false;
 	}
 
-	if (input_user_data->sec_flags & sec_gid_spec) {
+	if (input_user_data->sec_flags & sec_gid_spec)
+	{
 		userInfo.gid = input_user_data->gid;
 		userInfo.gid_specified = true;
 		userInfo.gid_entered = true;
@@ -1096,7 +1109,8 @@ return 1;
 		userInfo.gid_entered = false;
 	}
 
-	if (input_user_data->sec_flags & sec_group_name_spec) {
+	if (input_user_data->sec_flags & sec_group_name_spec)
+	{
 		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
 		strncpy(userInfo.group_name, input_user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
@@ -1108,7 +1122,8 @@ return 1;
 		userInfo.group_name_specified = false;
 	}
 
-	if (input_user_data->sec_flags & sec_first_name_spec) {
+	if (input_user_data->sec_flags & sec_first_name_spec)
+	{
 		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
 		strncpy(userInfo.first_name, input_user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
@@ -1120,7 +1135,8 @@ return 1;
 		userInfo.first_name_specified = false;
 	}
 
-	if (input_user_data->sec_flags & sec_middle_name_spec) {
+	if (input_user_data->sec_flags & sec_middle_name_spec)
+	{
 		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
 		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
 		userInfo.middle_name[l] = '\0';
@@ -1132,7 +1148,8 @@ return 1;
 		userInfo.middle_name_specified = false;
 	}
 
-	if (input_user_data->sec_flags & sec_last_name_spec) {
+	if (input_user_data->sec_flags & sec_last_name_spec)
+	{
 		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
 		strncpy(userInfo.last_name, input_user_data->last_name, l);
 		userInfo.last_name[l] = '\0';

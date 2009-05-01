@@ -2629,8 +2629,8 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, jrd_nod* node)
 	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_count = 1;
 	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = (jrd_nod*) innerRse;
 
-	RecordSelExpr* newInnerRse = (RecordSelExpr*) PAR_make_node(
-		tdbb, innerRse->rse_count + rse_delta + 2);
+	RecordSelExpr* newInnerRse =
+		(RecordSelExpr*) PAR_make_node(tdbb, innerRse->rse_count + rse_delta + 2);
 
 	*newInnerRse = *innerRse;
 

@@ -58,12 +58,12 @@ static void	gen_blob_end (const act*, USHORT);
 static void	gen_blob_for (const act*, USHORT);
 static void	gen_blob_open (const act*, USHORT);
 static void	gen_blr (void*, SSHORT, const char*);
-static void	gen_clear_handles (const act*, int);
+static void	gen_clear_handles(int);
 static void	gen_compile (const act*, int);
 static void	gen_create_database (const act*, int);
-static int	gen_cursor_close (const act*, gpre_req*, int);
+static int	gen_cursor_close(int);
 static void	gen_cursor_init (const act*, int);
-static void	gen_database (const act*, int);
+static void	gen_database(int);
 static void	gen_ddl (const act*, int);
 static void	gen_drop_database (const act*, int);
 static void	gen_dyn_close (const act*, int);
@@ -93,7 +93,7 @@ static TEXT* gen_name(TEXT* const, const ref*, bool);
 static void	gen_on_error (const act*, USHORT);
 static void	gen_procedure (const act*, int);
 static void	gen_put_segment (const act*, int);
-static void	gen_raw (const UCHAR *, req_t, const int, int);
+static void	gen_raw (const UCHAR*, const int);
 static void	gen_ready (const act*, int);
 static void	gen_receive (const act*, int, gpre_port*);
 static void	gen_release (const act*, int);
@@ -210,7 +210,7 @@ void ADA_action( const act* action, int column)
 		gen_trans(action, column);
 		break;
 	case ACT_b_declare:
-		gen_database(action, column);
+		gen_database(column);
 		gen_routine(action, column);
 		return;
 	case ACT_basedon:
@@ -235,7 +235,7 @@ void ADA_action( const act* action, int column)
 		gen_blob_open(action, column);
 		return;
 	case ACT_clear_handles:
-		gen_clear_handles(action, column);
+		gen_clear_handles(column);
 		break;
 	case ACT_close:
 		gen_s_end(action, column);
@@ -247,7 +247,7 @@ void ADA_action( const act* action, int column)
 		gen_cursor_init(action, column);
 		return;
 	case ACT_database:
-		gen_database(action, column);
+		gen_database(column);
 		return;
 	case ACT_disconnect:
 		gen_finish(action, column);
@@ -734,7 +734,7 @@ static void gen_blob_close( const act* action, USHORT column)
 	blb* blob;
 
 	if (action->act_flags & ACT_sql) {
-		column = gen_cursor_close(action, action->act_request, column);
+		column = gen_cursor_close(column);
 		blob = (blb*) action->act_request->req_blobs;
 	}
 	else
@@ -890,7 +890,7 @@ static void gen_blob_open( const act* action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //
 
-static void gen_blr(void* user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	const int c_len = strlen(COMMENT);
 	const int len = strlen(string);
@@ -918,7 +918,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 //       Zap all know handles.
 //
 
-static void gen_clear_handles( const act* action, int column)
+static void gen_clear_handles(int column)
 {
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
@@ -1078,7 +1078,7 @@ static void gen_create_database( const act* action, int column)
 //		Generate substitution text for END_STREAM.
 //
 
-static int gen_cursor_close( const act* action, gpre_req* request, int column)
+static int gen_cursor_close(int column)
 {
 	return column;
 }
@@ -1119,7 +1119,7 @@ static int gen_cursor_open( const act* action, gpre_req* request, int column)
 //		and port declarations for gpreGlob.requests in the main routine.
 //
 
-static void gen_database( const act* action, int column)
+static void gen_database(int column)
 {
 	if (first_flag)
 		return;
@@ -2349,7 +2349,7 @@ static void gen_put_segment( const act* action, int column)
 //		Generate BLR in raw, numeric form.  Ugly but dense.
 //
 
-static void gen_raw(const UCHAR* blr, req_t request_type, const int request_length, int column)
+static void gen_raw(const UCHAR* blr, const int request_length)
 {
 	TEXT buffer[80];
 
@@ -2514,7 +2514,7 @@ static void gen_request( gpre_req* request, int column)
 #endif
 			printa(column, "isc_%d\t: CONSTANT firebird.blr (1..%d) := (", request->req_ident, length);
 		}
-		gen_raw(request->req_blr, request->req_type, request->req_length, column);
+		gen_raw(request->req_blr, request->req_length);
 		printa(column, ");\n");
 		const TEXT* string_type;
 		if (!gpreGlob.sw_raw)
@@ -2578,7 +2578,7 @@ static void gen_request( gpre_req* request, int column)
 			if (reference->ref_sdl) {
 				printa(column, "isc_%d\t: CONSTANT firebird.blr (1..%d) := (",
 					   reference->ref_sdl_ident, reference->ref_sdl_length);
-				gen_raw(reference->ref_sdl, REQ_slice, reference->ref_sdl_length, column);
+				gen_raw(reference->ref_sdl, reference->ref_sdl_length);
 				printa(column, "); \t--- end of SDL string for isc_%d\n", reference->ref_sdl_ident);
 				if (!gpreGlob.sw_raw) {
 					printa(column, "---");
@@ -2596,7 +2596,7 @@ static void gen_request( gpre_req* request, int column)
 		if (blob->blb_bpb_length) {
 			printa(column, "isc_%d\t: CONSTANT firebird.blr (1..%d) := (",
 				   blob->blb_bpb_ident, blob->blb_bpb_length);
-			gen_raw(blob->blb_bpb, request->req_type, blob->blb_bpb_length, column);
+			gen_raw(blob->blb_bpb, blob->blb_bpb_length);
 			printa(INDENT, ");\n");
 		}
 

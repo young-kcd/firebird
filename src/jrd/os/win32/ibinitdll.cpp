@@ -30,7 +30,7 @@
 using namespace Firebird;
 
 
-BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
+BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 {
 	switch (reason)
 	{

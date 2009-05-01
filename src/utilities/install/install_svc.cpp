@@ -407,7 +407,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				CloseServiceHandle(service);
 
 				status = SERVICES_remove(manager, guard_service_name.c_str(),
-										 guard_display_name.c_str(), svc_error);
+										 /*guard_display_name.c_str(),*/ svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -430,7 +430,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				CloseServiceHandle(service);
 
 				status2 = SERVICES_remove(manager, remote_service_name.c_str(),
-										  remote_display_name.c_str(), svc_error);
+										  /*remote_display_name.c_str(),*/ svc_error);
 
 				if (status2 == FB_SUCCESS)
 				{
@@ -460,7 +460,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				CloseServiceHandle(service);
 
 				status = SERVICES_start(manager, guard_service_name.c_str(),
-										guard_display_name.c_str(), sw_mode, svc_error);
+										/*guard_display_name.c_str(),*/ sw_mode, svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -472,7 +472,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				CloseServiceHandle(service);
 
 				status = SERVICES_start(manager, remote_service_name.c_str(),
-										remote_display_name.c_str(), sw_mode, svc_error);
+										/*remote_display_name.c_str(),*/ sw_mode, svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -489,7 +489,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				CloseServiceHandle(service);
 
 				status = SERVICES_stop(manager, guard_service_name.c_str(),
-									   guard_display_name.c_str(), svc_error);
+									   /*guard_display_name.c_str(),*/ svc_error);
 
 				if (status == FB_SUCCESS)
 				{
@@ -501,7 +501,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				CloseServiceHandle(service);
 
 				status = SERVICES_stop(manager, remote_service_name.c_str(),
-									   remote_display_name.c_str(), svc_error);
+									   /*remote_display_name.c_str(),*/ svc_error);
 
 				if (status == FB_SUCCESS)
 				{

@@ -182,7 +182,7 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 }
 
 
-INTL_BOOL CVBIG5_check_big5(charset* cs,
+INTL_BOOL CVBIG5_check_big5(charset*, // cs,
 							ULONG big5_len,
 							const UCHAR* big5_str,
 							ULONG* offending_position)

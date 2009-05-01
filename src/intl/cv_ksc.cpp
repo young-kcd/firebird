@@ -185,7 +185,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 }
 
 
-INTL_BOOL CVKSC_check_ksc(charset* cs,
+INTL_BOOL CVKSC_check_ksc(charset*, // cs,
 						  ULONG ksc_len,
 						  const UCHAR* ksc_str,
 						  ULONG* offending_position)

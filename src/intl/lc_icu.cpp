@@ -47,9 +47,9 @@ static bool texttype_default_init(texttype* tt,
 								  const ASCII* name,
 								  const ASCII* charSetName,
 								  USHORT attributes,
-								  const UCHAR* specificAttributes,
-								  ULONG specificAttributesLength,
-								  const ASCII* configInfo)
+								  const UCHAR*, // specificAttributes,
+								  ULONG specificAttributesLength)
+								  //const ASCII* configInfo)
 {
 	charset cs;
 	memset(&cs, 0, sizeof(cs));
@@ -147,7 +147,7 @@ bool LCICU_texttype_init(texttype* tt,
 	{
 		return texttype_default_init(
 			tt, name, charSetName, attributes,
-			specificAttributes, specificAttributesLength, configInfo);
+			specificAttributes, specificAttributesLength); //, configInfo);
 	}
 
 	const size_t len = strlen(name);

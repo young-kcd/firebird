@@ -161,7 +161,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 
 USHORT SERVICES_remove(SC_HANDLE manager,
 					   const char* service_name,
-					   const char* display_name,
+					   //const char* display_name,
 					   pfnSvcError err_handler)
 {
 /**************************************
@@ -215,7 +215,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 
 USHORT SERVICES_start(SC_HANDLE manager,
 					  const char* service_name,
-					  const char* display_name,
+					  //const char* display_name,
 					  USHORT sw_mode,
 					  pfnSvcError err_handler)
 {
@@ -279,7 +279,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 
 USHORT SERVICES_stop(SC_HANDLE manager,
 					 const char* service_name,
-					 const char* display_name,
+					 //const char* display_name,
 					 pfnSvcError err_handler)
 {
 /**************************************

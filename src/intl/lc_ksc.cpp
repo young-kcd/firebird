@@ -33,13 +33,13 @@ static USHORT LCKSC_key_length(texttype* obj, USHORT inLen);
 static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, INTL_BOOL* error_flag);
 
 static int GetGenHanNdx(UCHAR b1, UCHAR b2);
-static int GetSpeHanNdx(UCHAR b1, UCHAR b2);
+static int GetSpeHanNdx(UCHAR b2);
 
 static inline bool FAMILY_MULTIBYTE(texttype* cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
-									const UCHAR* specific_attributes,
+									const UCHAR*, // specific_attributes,
 									ULONG specific_attributes_length)
 {
 //static inline void FAMILY_MULTIBYTE(id_number, name, charset, country)
@@ -135,7 +135,7 @@ const BYTE	ASCII_SPACE	= 32;
 
 static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar,
-	USHORT key_type) // unused
+	USHORT /*key_type*/)
 {
 	fb_assert(pOutChar != NULL);
 	fb_assert(pInChar != NULL);
@@ -174,7 +174,7 @@ static USHORT LCKSC_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInC
 			i++;
 		}
 		else if (SPE_HAN(*pInChar, *(pInChar + 1))) {	/* special hangul */
-			const int idx = GetSpeHanNdx(*pInChar, *(pInChar + 1));
+			const int idx = GetSpeHanNdx(*(pInChar + 1));
 			fb_assert(idx >= 0);
 
 			if (iOutLen < 3)
@@ -230,7 +230,7 @@ static int GetGenHanNdx(UCHAR b1, UCHAR b2)
 *	description	:	in case of spe_han, get index from spe_han table
 */
 
-static int GetSpeHanNdx(UCHAR b1, UCHAR b2)
+static int GetSpeHanNdx(const UCHAR b2)
 {
 	for (int i = 0; i < 18; i++) {
 		if (b2 == spe_han[i][1])
@@ -240,7 +240,7 @@ static int GetSpeHanNdx(UCHAR b1, UCHAR b2)
 }
 
 
-static USHORT LCKSC_key_length(texttype* obj, USHORT inLen)
+static USHORT LCKSC_key_length(texttype* /*obj*/, USHORT inLen)
 {
 	const USHORT len = inLen + (inLen / 2);
 
@@ -261,8 +261,8 @@ static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, c
 
 	*error_flag = false;
 
-	const ULONG len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, FALSE);
-	const ULONG len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, FALSE);
+	const ULONG len1 = LCKSC_string_to_key(obj, l1, s1, sizeof(key1), key1, 0);
+	const ULONG len2 = LCKSC_string_to_key(obj, l2, s2, sizeof(key2), key2, 0);
 	const ULONG len = MIN(len1, len2);
 	for (ULONG i = 0; i < len; i++) {
 		if (key1[i] == key2[i])

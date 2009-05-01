@@ -379,7 +379,7 @@ void DDL_execute(dsql_req* request)
 	}
 	else
 	{
-		JRD_ddl(tdbb, request->req_dbb->dbb_attachment, request->req_transaction,
+		JRD_ddl(tdbb, /*request->req_dbb->dbb_attachment,*/ request->req_transaction,
 			request->req_blr_data.getCount(), request->req_blr_data.begin());
 	}
 }

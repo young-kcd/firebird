@@ -252,7 +252,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-		RiverStack& river_stack, jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
+		/*RiverStack& river_stack,*/ jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();

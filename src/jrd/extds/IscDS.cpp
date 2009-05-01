@@ -172,7 +172,7 @@ void IscConnection::doDetach(thread_db *tdbb)
 		raise(status, tdbb, "detach");
 }
 
-bool IscConnection::cancelExecution(thread_db *tdbb)
+bool IscConnection::cancelExecution(thread_db* /*tdbb*/)
 {
 	ISC_STATUS_ARRAY status = {0, 0, 0};
 	if (m_handle)
@@ -235,7 +235,7 @@ void IscTransaction::doStart(ISC_STATUS* status, thread_db *tdbb, Firebird::Clum
 		tpb.getBufferLength(), tpb.getBuffer());
 }
 
-void IscTransaction::doPrepare(ISC_STATUS* status, thread_db *tdbb, int info_len, const char* info)
+void IscTransaction::doPrepare(ISC_STATUS* /*status*/, thread_db* /*tdbb*/, int /*info_len*/, const char* /*info*/)
 {
 }
 

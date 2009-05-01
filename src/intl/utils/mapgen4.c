@@ -325,8 +325,7 @@ void print_indexed_table(char *name, TABLE * table,
 						  table->table[codepoint].name, index);
 			index++;
 			codepoint++;
-		}
-		while (index % 256);
+		} while (index % 256);
 	}
 	printf("\t0 /* END OF MAP TABLE */\n");
 	printf("};\n");
@@ -402,8 +401,7 @@ void print_condensed_indexed_table(
 				printf(" ");
 			index++;
 			codepoint++;
-		}
-		while (index % 256);
+		} while (index % 256);
 	}
 	printf("\t0 /* END OF MAP TABLE */\n");
 	printf("};\n");

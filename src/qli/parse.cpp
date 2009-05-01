@@ -124,7 +124,7 @@ static int parse_sql_dtype(USHORT* length, USHORT* scale, USHORT* precision, USH
 static qli_fld* parse_sql_field();
 static qli_syntax* parse_sql_grant_revoke(const nod_t type);
 static qli_syntax* parse_sql_index_create(const bool, const bool);
-static qli_syntax* parse_sql_joined_relation(qli_syntax*);
+static qli_syntax* parse_sql_joined_relation(); //(qli_syntax*);
 static qli_syntax* parse_sql_join_clause(qli_syntax*);
 static qli_syntax* parse_sql_table_create();
 #ifdef NOT_USED_OR_REPLACED
@@ -4725,7 +4725,7 @@ static qli_syntax* parse_sql_index_create(const bool unique, const bool descendi
 }
 
 
-static qli_syntax* parse_sql_joined_relation( qli_syntax* prior_context)
+static qli_syntax* parse_sql_joined_relation() //( qli_syntax* prior_context)
 {
 /**************************************
  *
@@ -4740,7 +4740,7 @@ static qli_syntax* parse_sql_joined_relation( qli_syntax* prior_context)
 	qli_syntax* left;
 
 	if (PAR_match(KW_LEFT_PAREN)) {
-		left = parse_sql_joined_relation(0);
+		left = parse_sql_joined_relation(); // (0)
 		parse_matching_paren();
 	}
 	else if (!(left = parse_sql_relation()))
@@ -4766,7 +4766,7 @@ static qli_syntax* parse_sql_join_clause( qli_syntax* left)
 	if (join_type == nod_nothing)
 		return left;
 
-	qli_syntax* right = parse_sql_joined_relation(left);
+	qli_syntax* right = parse_sql_joined_relation(); //(left);
 	if (!right)
 		ERRQ_syntax(490);		// Msg490 joined relation clause
 
@@ -4926,7 +4926,7 @@ static qli_syntax* parse_sql_rse()
 
 	while (true) {
 		count++;
-		ALLQ_push((blk*) parse_sql_joined_relation(0), &stack);
+		ALLQ_push((blk*) parse_sql_joined_relation(/*0*/), &stack);
 		if (!PAR_match(KW_COMMA))
 			break;
 	}

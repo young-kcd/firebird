@@ -255,8 +255,7 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
 }
 
 
-int MOV_get_string_ptr(
-					   const dsc* desc,
+int MOV_get_string_ptr(const dsc* desc,
 					   USHORT* ttype,
 					   UCHAR** address, vary* temp, USHORT length)
 {

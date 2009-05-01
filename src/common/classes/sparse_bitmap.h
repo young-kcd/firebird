@@ -563,9 +563,8 @@ private:
 
 template <typename T, typename InternalTypes>
 SparseBitmap<T, InternalTypes>**
-SparseBitmap<T, InternalTypes>::bit_or(
-	SparseBitmap<T, InternalTypes>** bitmap1,
-	SparseBitmap<T, InternalTypes>** bitmap2
+SparseBitmap<T, InternalTypes>::bit_or(SparseBitmap<T, InternalTypes>** bitmap1,
+									   SparseBitmap<T, InternalTypes>** bitmap2
 )
 {
 	SparseBitmap *map1, *map2;
@@ -680,9 +679,8 @@ SparseBitmap<T, InternalTypes>::bit_or(
 
 template <typename T, typename InternalTypes>
 SparseBitmap<T, InternalTypes>**
-SparseBitmap<T, InternalTypes>::bit_and(
-	SparseBitmap<T, InternalTypes>** bitmap1,
-	SparseBitmap<T, InternalTypes>** bitmap2
+SparseBitmap<T, InternalTypes>::bit_and(SparseBitmap<T, InternalTypes>** bitmap1,
+										SparseBitmap<T, InternalTypes>** bitmap2
 )
 {
 	SparseBitmap *map1, *map2;

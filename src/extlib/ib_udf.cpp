@@ -49,7 +49,7 @@ extern "C"
 #else
 #define exception_type __exception
 #endif
-int MATHERR(struct exception_type *e)
+int MATHERR(struct exception_type*)
 {
 	return 1;
 }

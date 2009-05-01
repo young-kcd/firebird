@@ -24,10 +24,10 @@ const int UPPERCASE_LEN			= 256;
 const int NOCASESORT_LEN		= 256;
 const int LDRV_TIEBREAK			= SECONDARY;
 
-const int MAX_NCO_PRIMARY		= 46;
+//const int MAX_NCO_PRIMARY		= 46;
 const int MAX_NCO_SECONDARY		= 6;
 const int MAX_NCO_TERTIARY		= 1;
-const int MAX_NCO_IGNORE		= 122;
+//const int MAX_NCO_IGNORE		= 122;
 const int NULL_SECONDARY		= 0;
 const int NULL_TERTIARY			= 0;
 const int FIRST_IGNORE			= 1;

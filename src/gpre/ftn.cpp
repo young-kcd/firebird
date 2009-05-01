@@ -64,18 +64,18 @@ static void	gen_blob_end (const act*);
 static void	gen_blob_for (const act*);
 static void	gen_blob_open (const act*);
 static void	gen_blr (void*, SSHORT, const char*);
-static void	gen_clear_handles(const act*);
+static void	gen_clear_handles(); //(const act*);
 #ifdef NOT_USED_OR_REPLACED
 static void	gen_compatibility_symbol(const TEXT*, const TEXT*, const TEXT*);
 #endif
 static void	gen_compile (const act*);
 static void	gen_create_database (const act*);
-static void	gen_cursor_close (const act*, const gpre_req*);
+static void	gen_cursor_close(const gpre_req*);
 static void	gen_cursor_init (const act*);
 static void	gen_cursor_open (const act*, const gpre_req*);
-static void	gen_database (const act*);
-static void	gen_database_data (const act*);
-static void	gen_database_decls (const act*);
+static void	gen_database();
+static void	gen_database_data(); // (const act*);
+static void	gen_database_decls(); // (const act*);
 static void	gen_ddl (const act*);
 static void	gen_drop_database (const act*);
 static void	gen_dyn_close (const act*);
@@ -150,7 +150,7 @@ static void	printb(const TEXT*,  ...);
 #endif
 static const TEXT* request_trans (const act*, const gpre_req*);
 static void	status_and_stop (const act*);
-static const TEXT* status_vector (const act*);
+static const TEXT* status_vector(); // (const act*);
 static void	t_start_auto (const gpre_req*, const TEXT*, const act*, bool);
 
 
@@ -315,7 +315,7 @@ const char* const NULL_SQLDA	= "0";
 //
 //
 
-void FTN_action(const act* action, int column)
+void FTN_action(const act* action, int /*column*/)
 {
 	if (action->act_flags & ACT_break)
 		global_first_flag = false;
@@ -360,7 +360,7 @@ void FTN_action(const act* action, int column)
 		gen_based(action);
 		return;
 	case ACT_b_declare:
-		gen_database(action);
+		gen_database();
 		return;
 	case ACT_blob_cancel:
 		gen_blob_close(action);
@@ -381,7 +381,7 @@ void FTN_action(const act* action, int column)
 		gen_blob_open(action);
 		break;
 	case ACT_clear_handles:
-		gen_clear_handles(action);
+		gen_clear_handles(); //(action);
 		break;
 	case ACT_create_database:
 		gen_create_database(action);
@@ -390,7 +390,7 @@ void FTN_action(const act* action, int column)
 		gen_cursor_init(action);
 		return;
 	case ACT_database:
-		gen_database(action);
+		gen_database();
 		return;
 	case ACT_disconnect:
 		gen_finish(action);
@@ -912,14 +912,14 @@ static void gen_blob_close(const act* action)
 	blb* blob;
 
 	if (action->act_flags & ACT_sql) {
-		gen_cursor_close(action, action->act_request);
+		gen_cursor_close(action->act_request);
 		blob = (blb*) action->act_request->req_blobs;
 	}
 	else
 		blob = (blb*) action->act_object;
 
 	const TEXT* command = (action->act_type == ACT_blob_cancel) ? "CANCEL" : "CLOSE";
-	printa(COLUMN, "CALL ISC_%s_BLOB (%s, isc_%d)", command, status_vector(action), blob->blb_ident);
+	printa(COLUMN, "CALL ISC_%s_BLOB (%s, isc_%d)", command, status_vector(), blob->blb_ident);
 
 	if (action->act_flags & ACT_sql) {
 		printa(COLUMN, "END IF");
@@ -943,7 +943,7 @@ static void gen_blob_end(const act* action)
 	if (action->act_error)
 		printa(COLUMN, "CALL ISC_CANCEL_BLOB (ISC_STATUS2, isc_%d)", blob->blb_ident);
 	else
-		printa(COLUMN, "CALL ISC_CANCEL_BLOB (%s, isc_%d)", status_vector(0), blob->blb_ident);
+		printa(COLUMN, "CALL ISC_CANCEL_BLOB (%s, isc_%d)", status_vector(), blob->blb_ident);
 }
 
 
@@ -986,7 +986,7 @@ static void gen_blob_open(const act* action)
 	if (action->act_flags & ACT_sql)
 	{
 		if (gpreGlob.sw_auto) {
-			t_start_auto(action->act_request, status_vector(action), action, true);
+			t_start_auto(action->act_request, status_vector(), action, true);
 			printa(COLUMN, "if (%s .ne. 0) then", request_trans(action, action->act_request));
 		}
 
@@ -1002,7 +1002,7 @@ static void gen_blob_open(const act* action)
 
 	PAT args;
 	args.pat_condition = (action->act_type == ACT_blob_create);	// open or create blob
-	args.pat_vector1 = status_vector(action);	// status vector
+	args.pat_vector1 = status_vector();
 	args.pat_database = blob->blb_request->req_database;	// database handle
 	args.pat_request = blob->blb_request;	// transaction handle
 	args.pat_blob = blob;		// blob handle
@@ -1044,7 +1044,7 @@ static void gen_blob_open(const act* action)
 //		Callback routine for BLR pretty printer.
 //
 
-static void gen_blr(void* user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	const int c_len = strlen(COMMENT);
 	const int len = strlen(string);
@@ -1080,7 +1080,7 @@ static void gen_compile(const act* action)
 	// generate automatic ready if appropriate
 
 	if (gpreGlob.sw_auto)
-		t_start_auto(request, status_vector(action), action, true);
+		t_start_auto(request, status_vector(), action, true);
 
 	// always generate a compile, a test for the success of the compile,
 	// and an end to the 'if not compiled test
@@ -1095,7 +1095,7 @@ static void gen_compile(const act* action)
 
 	sprintf(output_buffer, "%sCALL ISC_COMPILE_REQUEST%s (%s, %s, %s, %s%d%s, %sisc_%d%s)\n",
 			COLUMN, (request->req_flags & REQ_exp_hand) ? "" : "2",
-			status_vector(action), symbol->sym_string, request->req_handle,
+			status_vector(), symbol->sym_string, request->req_handle,
 			I2CONST_1, request->req_length, I2CONST_2, REF_1,
 			request->req_ident, REF_2);
 	FTN_print_buffer(output_buffer);
@@ -1194,14 +1194,14 @@ static void gen_create_database(const act* action)
 		sprintf(output_buffer,
 				"%sCALL ISC_CREATE_DATABASE (%s, %s%d%s, %s'%s'%s, %s, %s%s%s, %s, 0)\n",
 				COLUMN,
-				status_vector(action),
+				status_vector(),
 				I2CONST_1, strlen(db->dbb_filename), I2CONST_2,
 				REF_1, db->dbb_filename, REF_2,
 				db->dbb_name->sym_string, I2CONST_1, s1, I2CONST_2, s2);
 	else
 		sprintf(output_buffer, "%sCALL ISC_CREATE_DATABASE (%s, %s%d%s, %s'%s'%s, %s, %s0%s, 0, 0)\n",
 				COLUMN,
-				status_vector(action),
+				status_vector(),
 				I2CONST_1, strlen(db->dbb_filename), I2CONST_2,
 				REF_1, db->dbb_filename, REF_2,
 				db->dbb_name->sym_string, I2CONST_1, I2CONST_2);
@@ -1236,12 +1236,12 @@ static void gen_create_database(const act* action)
 //		Generate substitution text for END_STREAM.
 //
 
-static void gen_cursor_close(const act* action, const gpre_req* request)
+static void gen_cursor_close(const gpre_req* request)
 {
 	printa(COLUMN, "IF (isc_%ds .NE. 0) THEN", request->req_ident);
 	printa(COLUMN, "CALL %s (%s, isc_%ds, %s1%s)",
 		   ISC_DSQL_FREE,
-		   status_vector(action),
+		   status_vector(),
 		   request->req_ident, DSQL_I2CONST_1, DSQL_I2CONST_2);
 	printa(COLUMN, "IF (isc_status(2) .EQ. 0) THEN");
 }
@@ -1295,7 +1295,7 @@ static void gen_cursor_open(const act* action, const gpre_req* request)
 
 	printa(COLUMN, "CALL %s (%s, %s, isc_%ds)",
 		   ISC_DSQL_ALLOCATE,
-		   status_vector(action),
+		   status_vector(),
 		   request->req_database->dbb_name->sym_string, request->req_ident);
 	printa(COLUMN, "END IF");
 
@@ -1306,14 +1306,14 @@ static void gen_cursor_open(const act* action, const gpre_req* request)
 		printa(COLUMN, "IF (isc_%ds .NE. 0) THEN", request->req_ident);
 	printa(COLUMN, "CALL %s (%s, isc_%ds, %s, %s0%s)",
 		   ISC_DSQL_SET_CURSOR,
-		   status_vector(action),
+		   status_vector(),
 		   request->req_ident,
 		   make_name(s, ((open_cursor*) action->act_object)->opn_cursor),
 		   DSQL_I2CONST_1, DSQL_I2CONST_2);
 	printa(COLUMN, "IF (isc_status(2) .EQ. 0) THEN");
 	printa(COLUMN, "CALL %s (%s, %s, isc_%ds, %s0%s, 0, %s-1%s, %s0%s, 0)",
 		   ISC_DSQL_EXECUTE,
-		   status_vector(action),
+		   status_vector(),
 		   request_trans(action, request),
 		   request->req_ident,
 		   DSQL_I2CONST_1, DSQL_I2CONST_2,
@@ -1327,7 +1327,7 @@ static void gen_cursor_open(const act* action, const gpre_req* request)
 //		Generate insertion text for the database statement.
 //
 
-static void gen_database(const act* action)
+static void gen_database()
 {
 	if (global_first_flag)
 		return;
@@ -1337,8 +1337,8 @@ static void gen_database(const act* action)
 	sprintf(output_buffer, "\n%s      **** GDS Preprocessor Definitions ****\n\n", COMMENT);
 	FTN_print_buffer(output_buffer);
 
-	gen_database_decls(action);
-	gen_database_data(action);
+	gen_database_decls(); //(action);
+	gen_database_data(); //(action);
 
 	printa(COMMENT, "**** end of GPRE definitions ****\n");
 }
@@ -1349,7 +1349,7 @@ static void gen_database(const act* action)
 //		Generate insertion text for global DATA statements.
 //
 
-static void gen_database_data(const act* action)
+static void gen_database_data() //(const act* action)
 {
 	TEXT include_buffer[MAXPATHLEN];
 
@@ -1397,7 +1397,7 @@ static void gen_database_data(const act* action)
 //       data declarations.
 //
 
-static void gen_database_decls(const act* action)
+static void gen_database_decls() //const act* action)
 {
 	fprintf(gpreGlob.out_file, "%sINTEGER*4  ISC_BLOB_NULL(2)  %s{ null blob handle }\n",
 			COLUMN, INLINE_COMMENT);
@@ -1548,7 +1548,7 @@ static void gen_database_decls(const act* action)
 static void gen_ddl(const act* action)
 {
 	if (gpreGlob.sw_auto) {
-		t_start_auto(0, status_vector(action), action, true);
+		t_start_auto(0, status_vector(), action, true);
 		printa(COLUMN, "if (gds__trans .ne. 0) then");
 	}
 
@@ -1557,7 +1557,7 @@ static void gen_ddl(const act* action)
 	const gpre_req* request = action->act_request;
 
 	sprintf(output_buffer, "%sCALL isc_ddl (%s, %s, gds__trans, %s%d%s, isc_%d)\n", COLUMN,
-			status_vector(action),
+			status_vector(),
 			request->req_database->dbb_name->sym_string, I2CONST_1,
 			request->req_length, I2CONST_2, request->req_ident);
 
@@ -1566,7 +1566,7 @@ static void gen_ddl(const act* action)
 	if (gpreGlob.sw_auto) {
 		printa(COLUMN, "END IF");
 		printa(COLUMN, "if (isc_status(2) .eq. 0)");
-		printa(CONTINUE, "CALL isc_commit_transaction (%s, gds__trans)", status_vector(action));
+		printa(CONTINUE, "CALL isc_commit_transaction (%s, gds__trans)", status_vector());
 		printa(COLUMN, "if (isc_status(2) .ne. 0)");
 		printa(CONTINUE, "CALL isc_rollback_transaction (isc_status2, gds__trans)");
 	}
@@ -1586,7 +1586,7 @@ static void gen_drop_database(const act* action)
 
 	sprintf(output_buffer, "%s CALL ISC_DROP_DATABASE (%s, %s%d%s, %s\'%s\'%s, RDB_K_DB_TYPE_GDS)\n",
 			COLUMN,
-			status_vector(action),
+			status_vector(),
 			I2_1, strlen(db->dbb_filename), I2_2,
 			REF_1, db->dbb_filename, REF_2);
 	FTN_print_buffer(output_buffer);
@@ -1671,7 +1671,7 @@ static void gen_dyn_execute(const act* action)
 	}
 
 	if (gpreGlob.sw_auto) {
-		t_start_auto(request, status_vector(action), action, true);
+		t_start_auto(request, status_vector(), action, true);
 		printa(COLUMN, "if (%s .ne. 0) then", transaction);
 	}
 
@@ -1761,7 +1761,7 @@ static void gen_dyn_immediate(const act* action)
 	const gpre_dbb* database = statement->dyn_database;
 
 	if (gpreGlob.sw_auto) {
-		t_start_auto(request, status_vector(action), action, true);
+		t_start_auto(request, status_vector(), action, true);
 		printa(COLUMN, "if (%s .ne. 0) then", transaction);
 	}
 
@@ -1850,7 +1850,7 @@ static void gen_dyn_open(const act* action)
 	}
 
 	if (gpreGlob.sw_auto) {
-		t_start_auto(request, status_vector(action), action, true);
+		t_start_auto(request, status_vector(), action, true);
 		printa(COLUMN, "if (%s .ne. 0) then", transaction);
 	}
 
@@ -1911,7 +1911,7 @@ static void gen_dyn_prepare(const act* action)
 	}
 
 	if (gpreGlob.sw_auto) {
-		t_start_auto(request, status_vector(action), action, true);
+		t_start_auto(request, status_vector(), action, true);
 		printa(COLUMN, "if (%s .ne. 0) then", transaction);
 	}
 
@@ -2084,7 +2084,7 @@ static void gen_event_init(const act* action)
 
 	PAT args;
 	args.pat_database = (gpre_dbb*) init->nod_arg[3];
-	args.pat_vector1 = status_vector(action);
+	args.pat_vector1 = status_vector();
 	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 	args.pat_string1 = ISC_EVENT_WAIT;
@@ -2172,7 +2172,7 @@ static void gen_event_wait(const act* action)
 
 	PAT args;
 	args.pat_database = database;
-	args.pat_vector1 = status_vector(action);
+	args.pat_vector1 = status_vector();
 	args.pat_value1 = ident;
 	args.pat_string1 = ISC_EVENT_WAIT;
 	args.pat_string2 = ISC_EVENT_COUNTS;
@@ -2237,7 +2237,7 @@ static void gen_finish(const act* action)
 		printa(COLUMN, "IF (GDS__TRANS .NE. 0) THEN");
 		printa(COLUMN, "    CALL ISC_%s_TRANSACTION (%s, GDS__TRANS)",
 			   (action->act_type != ACT_rfinish) ? "COMMIT" : "ROLLBACK",
-			   status_vector(action));
+			   status_vector());
 		status_and_stop(action);
 		printa(COLUMN, "END IF");
 	}
@@ -2249,7 +2249,7 @@ static void gen_finish(const act* action)
 		db = ready->rdy_database;
 		printa(COLUMN, "IF (%s .NE. 0) THEN", db->dbb_name->sym_string);
 		printa(COLUMN, "CALL ISC_DETACH_DATABASE (%s, %s)",
-			   status_vector(action), db->dbb_name->sym_string);
+			   status_vector(), db->dbb_name->sym_string);
 		status_and_stop(action);
 		printa(COLUMN, "END IF");
 	}
@@ -2265,7 +2265,7 @@ static void gen_finish(const act* action)
 			else
 				printa(COLUMN, "IF (%s .NE. 0) THEN", db->dbb_name->sym_string);
 			printa(COLUMN, "CALL ISC_DETACH_DATABASE (%s, %s)",
-				   status_vector(action), db->dbb_name->sym_string);
+				   status_vector(), db->dbb_name->sym_string);
 			status_and_stop(action);
 			printa(COLUMN, "END IF");
 		}
@@ -2328,7 +2328,7 @@ static void gen_get_or_put_slice(const act* action, const ref* reference, bool g
 					"%sCALL ISC_GET_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
 					SLONGFORMAT"%s, %s, ISC_ARRAY_LENGTH)\n",
 					COLUMN,
-					status_vector(action),
+					status_vector(),
 					action->act_request->req_database->dbb_name->sym_string,
 					action->act_request->req_trans,
 					gen_name(s, reference, true),
@@ -2345,7 +2345,7 @@ static void gen_get_or_put_slice(const act* action, const ref* reference, bool g
 					"%sCALL ISC_GET_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
 					SLONGFORMAT"%s, isc_%d, ISC_ARRAY_LENGTH)\n",
 					COLUMN,
-					status_vector(action),
+					status_vector(),
 					action->act_request->req_database->dbb_name->sym_string,
 					action->act_request->req_trans,
 					gen_name(s, reference, true),
@@ -2366,7 +2366,7 @@ static void gen_get_or_put_slice(const act* action, const ref* reference, bool g
 					"%sCALL ISC_PUT_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
 					SLONGFORMAT"%s, %s)\n",
 					COLUMN,
-					status_vector(action),
+					status_vector(),
 					action->act_request->req_database->dbb_name->sym_string,
 					action->act_request->req_trans,
 					gen_name(s, reference, true),
@@ -2383,7 +2383,7 @@ static void gen_get_or_put_slice(const act* action, const ref* reference, bool g
 					"%sCALL ISC_PUT_SLICE (%s, %s, %s, %s, %s%d%s, isc_%d, %s0%s, %s0%s, %s%"
 					SLONGFORMAT"%s, isc_%d)\n",
 					COLUMN,
-					status_vector(action),
+					status_vector(),
 					action->act_request->req_database->dbb_name->sym_string,
 					action->act_request->req_trans,
 					gen_name(s, reference, true),
@@ -2418,7 +2418,7 @@ static void gen_get_segment(const act* action)
 	sprintf(output_buffer,
 			"%sISC_STATUS(2) = ISC_GET_SEGMENT (%s, isc_%d, isc_%d, %sLEN(isc_%d)%s, %sisc_%d%s)\n",
 			COLUMN,
-			status_vector(action),
+			status_vector(),
 			blob->blb_ident,
 			blob->blb_len_ident,
 			I2CONST_1, blob->blb_buff_ident, I2CONST_2,
@@ -2524,7 +2524,7 @@ static void gen_procedure(const act* action)
 	PAT args;
 	args.pat_database = database;
 	args.pat_request = action->act_request;
-	args.pat_vector1 = status_vector(action);
+	args.pat_vector1 = status_vector();
 	args.pat_request = request;
 	args.pat_port = in_port;
 	args.pat_port2 = out_port;
@@ -2540,7 +2540,7 @@ static void gen_procedure(const act* action)
 	// Get database attach and transaction started
 
 	if (gpreGlob.sw_auto)
-		t_start_auto(0, status_vector(action), action, true);
+		t_start_auto(0, status_vector(), action, true);
 
 	// Move in input values
 
@@ -2583,7 +2583,7 @@ static void gen_put_segment(const act* action)
 
 	sprintf(output_buffer, "%sISC_STATUS(2) = ISC_PUT_SEGMENT (%s, isc_%d, %sisc_%d%s, %sisc_%d%s)\n",
 			COLUMN,
-			status_vector(action),
+			status_vector(),
 			blob->blb_ident,
 			VAL_1, blob->blb_len_ident, VAL_2,
 			REF_1, blob->blb_buff_ident, REF_2);
@@ -2655,7 +2655,7 @@ static void gen_raw(const UCHAR* blr, req_t request_type, int request_length, in
 
 static void gen_ready(const act* action)
 {
-	const TEXT* vector = status_vector(action);
+	const TEXT* vector = status_vector();
 
 	for (rdy* ready = (rdy*) action->act_object; ready; ready = ready->rdy_next)
 	{
@@ -2683,7 +2683,7 @@ static void gen_receive(const act* action, const gpre_port* port)
 	const gpre_req* request = action->act_request;
 
 	sprintf(output_buffer, "%sCALL ISC_RECEIVE (%s, %s, %s%d%s, %s%d%s, %sisc_%d%s, %s%s%s)\n",
-			COLUMN, status_vector(action), request->req_handle, I2CONST_1,
+			COLUMN, status_vector(), request->req_handle, I2CONST_1,
 			port->por_msg_number, I2CONST_2, I2CONST_1, port->por_length,
 			I2CONST_2, REF_1, port->por_ident, REF_2, VAL_1,
 			request->req_request_level, VAL_2);
@@ -3001,10 +3001,10 @@ static void gen_s_end(const act* action)
 	const gpre_req* request = action->act_request;
 
 	if (action->act_type == ACT_close)
-		gen_cursor_close(action, request);
+		gen_cursor_close(request);
 
 	printa(COLUMN, "CALL ISC_UNWIND_REQUEST (%s, %s, %s%s%s)",
-		   status_vector(action),
+		   status_vector(),
 		   request->req_handle, VAL_1, request->req_request_level, VAL_2);
 
 	if (action->act_type == ACT_close) {
@@ -3123,7 +3123,7 @@ static void gen_send(const act* action, const gpre_port* port)
 {
 	const gpre_req* request = action->act_request;
 	sprintf(output_buffer, "%s CALL ISC_SEND (%s, %s, %s%d%s, %s%d%s, %sisc_%d%s, %s%s%s)\n",
-			COLUMN, status_vector(action), request->req_handle, I2CONST_1,
+			COLUMN, status_vector(), request->req_handle, I2CONST_1,
 			port->por_msg_number, I2CONST_2, I2CONST_1, port->por_length,
 			I2CONST_2, REF_1, port->por_ident, REF_2, VAL_1,
 			request->req_request_level, VAL_2);
@@ -3184,7 +3184,7 @@ static void gen_slice(const act* action)
 	PAT args;
 	args.pat_reference = slice->slc_field_ref;
 	args.pat_request = parent_request;	// blob id request
-	args.pat_vector1 = status_vector(action);	// status vector
+	args.pat_vector1 = status_vector();	// status vector
 	args.pat_database = parent_request->req_database;	// database handle
 	args.pat_string1 = action->act_request->req_trans;	// transaction handle
 	args.pat_value1 = request->req_length;	// slice descr. length
@@ -3210,7 +3210,7 @@ static void gen_slice(const act* action)
 static void gen_start(const act* action, const gpre_port* port)
 {
 	const gpre_req* request = action->act_request;
-	const TEXT* vector = status_vector(action);
+	const TEXT* vector = status_vector();
 
 	if (port)
 	{
@@ -3277,7 +3277,7 @@ static void gen_t_start(const act* action)
 	// if this is a purely default transaction, just let it through
 	gpre_tra* trans;
 	if (!action || !(trans = (gpre_tra*) action->act_object)) {
-		t_start_auto(0, status_vector(action), action, false);
+		t_start_auto(0, status_vector(), action, false);
 		return;
 	}
 
@@ -3291,7 +3291,7 @@ static void gen_t_start(const act* action)
 			const TEXT* filename = db->dbb_runtime;
 			if (filename || !(db->dbb_flags & DBB_sqlca)) {
 				printa(COLUMN, "IF (%s .EQ. 0) THEN", db->dbb_name->sym_string);
-				make_ready(db, filename, status_vector(action), 0);
+				make_ready(db, filename, status_vector(), 0);
 				status_and_stop(action);
 				printa(COLUMN, "END IF");
 			}
@@ -3312,14 +3312,14 @@ static void gen_t_start(const act* action)
 	}
 
 	printa(COLUMN, "CALL ISC_START_MULTIPLE (%s, %s, %d, ISC_TEB)",
-		   status_vector(action),
+		   status_vector(),
 		   trans->tra_handle ? trans->tra_handle : "gds__trans",
 		   trans->tra_db_count);
 
 #else
 
 	printa(COLUMN, "CALL ISC_START_TRANSACTION (%s, %s, %s%d%s",
-		   status_vector(action),
+		   status_vector(),
 		   trans->tra_handle ? trans->tra_handle : "GDS__TRANS",
 		   I2CONST_1, trans->tra_db_count, I2CONST_2);
 
@@ -3413,16 +3413,16 @@ static void gen_trans(const act* action)
 	switch (action->act_type)
 	{
 	case ACT_commit_retain_context:
-		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)", status_vector(action), tranText);
+		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)", status_vector(), tranText);
 		break;
 	case ACT_rollback_retain_context:
-		printa(COLUMN, "CALL ISC_ROLLBACK_RETAINING (%s, %s)", status_vector(action), tranText);
+		printa(COLUMN, "CALL ISC_ROLLBACK_RETAINING (%s, %s)", status_vector(), tranText);
 		break;
 	default:
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
 			   (action->act_type == ACT_commit) ?
 					"COMMIT" : (action->act_type == ACT_rollback) ? "ROLLBACK" : "PREPARE",
-				status_vector(action), tranText);
+				status_vector(), tranText);
 	}
 
 	status_and_stop(action);
@@ -3909,7 +3909,7 @@ static void status_and_stop(const act* action)
 //		call depending on where or not the action has an error clause.
 //
 
-static const TEXT* status_vector(const act* action)
+static const TEXT* status_vector() //(const act* action)
 {
 	return "ISC_STATUS";
 //	return (!action || !action->act_error) ? "ISC_NULL" : "ISC_STATUS";
@@ -4045,7 +4045,7 @@ static void gen_any(const act* action)
 //		Zap all know handles.
 //
 
-static void gen_clear_handles(const act* action)
+static void gen_clear_handles() //const act* action)
 {
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))

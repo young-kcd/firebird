@@ -743,7 +743,7 @@ static void expand_edit_string( qli_nod* node, qli_print_item* item)
 }
 
 
-static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* left)
+static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* /*left*/)
 {
 /**************************************
  *
@@ -1310,7 +1310,7 @@ static qli_nod* expand_output( qli_syntax* input, qli_lls* right, qli_prt** prin
 }
 
 
-static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
+static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left*/)
 {
 /**************************************
  *
@@ -1540,7 +1540,7 @@ static qli_nod* expand_print_list( qli_syntax* input, qli_lls* stack)
 }
 
 
-static qli_nod* expand_report( qli_syntax* input, qli_lls* right, qli_lls* left)
+static qli_nod* expand_report( qli_syntax* input, qli_lls* right, qli_lls* /*left*/)
 {
 /**************************************
  *
@@ -1591,7 +1591,7 @@ static qli_nod* expand_report( qli_syntax* input, qli_lls* right, qli_lls* left)
 }
 
 
-static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* left)
+static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* /*left*/)
 {
 /**************************************
  *

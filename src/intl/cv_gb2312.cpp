@@ -181,7 +181,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 }
 
 
-INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULONG* offending_position)
+INTL_BOOL CVGB_check_gb2312(charset* /*cs*/, ULONG gb_len, const UCHAR *gb_str, ULONG* offending_position)
 {
 /**************************************
  * Functional description

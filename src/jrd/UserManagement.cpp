@@ -106,7 +106,7 @@ void UserManagement::commit()
 
 USHORT UserManagement::put(internal_user_data* userData)
 {
-	size_t ret = commands.getCount();
+	const size_t ret = commands.getCount();
 	if (ret > MAX_USHORT)
 	{
 		status_exception::raise(Arg::Gds(isc_random) << "Too many user management DDL per transaction)");

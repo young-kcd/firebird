@@ -765,7 +765,7 @@ bool CFBDialog::ServerStart( CFBDialog::STATUS status )
 		{
 			try
 			{
-				m_Error_Status = SERVICES_start (hScManager, service, display_name, 0, svc_error);
+				m_Error_Status = SERVICES_start (hScManager, service, /*display_name,*/ 0, svc_error);
 				if (m_Error_Status == FB_SUCCESS)
 					result = true;
 			}
@@ -840,7 +840,7 @@ bool CFBDialog::ServerStop()
 					service = GetServiceName(REMOTE_SERVICE);
 					display_name = GetServiceName(REMOTE_DISPLAY_NAME);
 				}
-				m_Error_Status = SERVICES_stop(hScManager, service, display_name, svc_error);
+				m_Error_Status = SERVICES_stop(hScManager, service, /*display_name,*/ svc_error);
 
 				result = !m_Error_Status;
 
@@ -969,15 +969,14 @@ bool CFBDialog::ServiceRemove()
 		const CString remote_service = GetServiceName(REMOTE_SERVICE);
 		const CString remote_display_name = GetServiceName(REMOTE_DISPLAY_NAME);
 
-		m_Error_Status = SERVICES_remove (hScManager, guard_service,
-			guard_display_name, svc_error);
+		m_Error_Status = SERVICES_remove (hScManager, guard_service, /*guard_display_name,*/ svc_error);
 		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
 			return false;
 		}
 
-		m_Error_Status = SERVICES_remove (hScManager, remote_service, remote_display_name, svc_error);
+		m_Error_Status = SERVICES_remove (hScManager, remote_service,/* remote_display_name,*/ svc_error);
 		if (m_Error_Status == IB_SERVICE_RUNNING)
 		{
 			CloseServiceManager();
@@ -1223,7 +1222,7 @@ void CFBDialog::DisableApplyButton()
 }
 
 
-void CFBDialog::OnTimer(UINT_PTR nIDEvent)
+void CFBDialog::OnTimer(UINT_PTR /*nIDEvent*/)
 {
 	UpdateServerStatus();
 }

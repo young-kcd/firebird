@@ -248,17 +248,13 @@ private:
 		TraceDYNRequest* request, ntrace_counter_t time_millis,
 		ntrace_result_t req_result);
 
-	void log_event_service_attach(
-		TraceService* service, ntrace_result_t att_result);
-	void log_event_service_start(
-		TraceService* service, size_t switches_length, const char* switches,
-		ntrace_result_t start_result);
-	void log_event_service_query(
-		TraceService* service, size_t send_item_length,
-		const ntrace_byte_t* send_items, size_t recv_item_length,
-		const ntrace_byte_t* recv_items, ntrace_result_t query_result);
-	void log_event_service_detach(
-		TraceService* service, ntrace_result_t detach_result);
+	void log_event_service_attach(TraceService* service, ntrace_result_t att_result);
+	void log_event_service_start(TraceService* service, size_t switches_length, const char* switches,
+								 ntrace_result_t start_result);
+	void log_event_service_query(TraceService* service, size_t send_item_length,
+								 const ntrace_byte_t* send_items, size_t recv_item_length,
+								 const ntrace_byte_t* recv_items, ntrace_result_t query_result);
+	void log_event_service_detach(TraceService* service, ntrace_result_t detach_result);
 
 	/* Finalize plugin. Called when database is closed by the engine */
 	static ntrace_boolean_t ntrace_shutdown(const TracePlugin* tpl_plugin);

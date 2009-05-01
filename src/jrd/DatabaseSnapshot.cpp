@@ -1103,7 +1103,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, ClumpletWriter& writer
 	else {
 		writer.insertInt(f_mon_stmt_state, mon_state_idle);
 		writer.insertInt(f_mon_stmt_tra_id, 0);
-		ISC_TIMESTAMP empty = {0, 0};
+		const ISC_TIMESTAMP empty = {0, 0};
 		writer.insertTimeStamp(f_mon_stmt_timestamp, empty);
 	}
 	// sql text

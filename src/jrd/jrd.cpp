@@ -2162,7 +2162,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 		TraceDynExecute trace(tdbb, ddl_length, ddl);
 		try
 		{
-			JRD_ddl(tdbb, attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
+			JRD_ddl(tdbb, /*attachment,*/ transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
 
 			trace.finish(res_successful);
 		}
@@ -2409,7 +2409,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 						Attachment** db_handle,
 						jrd_tra** tra_handle,
 						ISC_QUAD* array_id,
-						USHORT sdl_length,
+						USHORT /*sdl_length*/,
 						const UCHAR* sdl,
 						USHORT param_length,
 						const UCHAR* param,
@@ -2576,7 +2576,7 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 						Attachment** db_handle,
 						jrd_tra** tra_handle,
 						ISC_QUAD* array_id,
-						USHORT sdl_length,
+						USHORT /*sdl_length*/,
 						const UCHAR* sdl,
 						USHORT param_length,
 						const UCHAR* param,
@@ -3398,7 +3398,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 								Attachment**		db_handle,
 								jrd_tra**		tra_handle,
-								USHORT	blr_length,
+								USHORT	/*blr_length*/,
 								const SCHAR*	blr,
 								USHORT	in_msg_length,
 								const SCHAR*	in_msg,
@@ -6149,7 +6149,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
+void JRD_ddl(thread_db* tdbb, /*Jrd::Attachment* attachment,*/ jrd_tra* transaction,
 	USHORT ddl_length, const UCHAR* ddl)
 {
 /**************************************
@@ -6162,7 +6162,7 @@ void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
  *
  **************************************/
 
-	DYN_ddl(attachment, transaction, ddl_length, ddl);
+	DYN_ddl(/*attachment,*/ transaction, ddl_length, ddl);
 	JRD_autocommit_ddl(tdbb, transaction);
 }
 

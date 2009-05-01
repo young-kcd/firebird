@@ -47,8 +47,8 @@ public:
 
 public:
 	static string generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributesMap& map);
-	static bool parseSpecificAttributes(
-		Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
+	static bool parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR* s,
+										SpecificAttributesMap* map);
 
 	static string convertAsciiToUtf16(const string& ascii);
 	static string convertUtf16ToAscii(const string& utf16, bool* error);

@@ -37,7 +37,7 @@ static inline bool FAMILY1(texttype* cache,
 							const ExpandChar* ExpansionTbl,
 							const ASCII* POSIX,
 							USHORT attributes,
-							const UCHAR* specific_attributes,
+							const UCHAR*, // specific_attributes,
 							ULONG specific_attributes_length)
 //#define FAMILY1(id_number, name, charset, country)
 {

@@ -98,7 +98,8 @@ void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
 /* Sign off from filter */
 /* Walk the chain again, telling each filter stage to close */
 	BlobControl* control;
-	for (next = *filter_handle; (control = next);) {
+	for (next = *filter_handle; (control = next);)
+	{
 		/* Close this stage of the filter */
 
 		control->ctl_status = localStatus;
@@ -212,7 +213,8 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 
 /* Check for system defined filter */
 
-	if (to == isc_blob_text && from >= 0 && from < FB_NELEM(filters)) {
+	if (to == isc_blob_text && from >= 0 && from < FB_NELEM(filters))
+	{
 		BlobFilter* result = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 		result->blf_next = NULL;
 		result->blf_from = from;
@@ -313,16 +315,15 @@ inline void initializeFilter(thread_db *tdbb,
 	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 }
 
-static void open_blob(
-					thread_db* tdbb,
-					jrd_tra* tra_handle,
-					BlobControl** filter_handle,
-					bid* blob_id,
-					USHORT bpb_length,
-					const UCHAR* bpb,
-					FPTR_BFILTER_CALLBACK callback,
-					USHORT action,
-					BlobFilter* filter)
+static void open_blob(thread_db* tdbb,
+					  jrd_tra* tra_handle,
+					  BlobControl** filter_handle,
+					  bid* blob_id,
+					  USHORT bpb_length,
+					  const UCHAR* bpb,
+					  FPTR_BFILTER_CALLBACK callback,
+					  USHORT action,
+					  BlobFilter* filter)
 {
 /**************************************
  *
@@ -386,7 +387,8 @@ static void open_blob(
  * to tell the filter what character sets to translate between.
  */
 
-	if (filter->blf_filter == filter_transliterate_text) {
+	if (filter->blf_filter == filter_transliterate_text)
+	{
 		fb_assert(to == isc_blob_text);
 		fb_assert(from == isc_blob_text);
 		control->ctl_to_sub_type = to_charset;

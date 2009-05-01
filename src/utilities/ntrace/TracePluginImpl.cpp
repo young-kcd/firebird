@@ -1141,9 +1141,8 @@ void TracePluginImpl::log_event_transaction_end(TraceConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_set_context(
-		TraceConnection* connection, TraceTransaction* transaction,
-		TraceContextVariable* variable)
+void TracePluginImpl::log_event_set_context(TraceConnection* connection,
+		TraceTransaction* transaction, TraceContextVariable* variable)
 {
 	const char* ns = variable->getNameSpace();
 	const char* name = variable->getVarName();

@@ -340,9 +340,8 @@ void TraceManager::event_dsql_prepare(Attachment* att, jrd_tra* transaction,
 	TraceConnectionImpl conn(att);
 	TraceTransactionImpl tran(transaction);
 
-	att->att_trace_manager->event_dsql_prepare(
-		&conn, transaction ? &tran : NULL, statement,
-		time_millis, req_result);
+	att->att_trace_manager->event_dsql_prepare(&conn, transaction ? &tran : NULL, statement,
+											   time_millis, req_result);
 }
 
 void TraceManager::event_dsql_free(Attachment* att,	TraceSQLStatement* statement,

@@ -235,9 +235,9 @@ static void binary_to_ascii(SLONG value, SSHORT scale, TEXT * buffer)
 		while (*p)
 			p++;
 		if (scale)
-			do
+			do {
 				*p++ = '0';
-			while (--scale);
+			} while (--scale);
 		return;
 	}
 

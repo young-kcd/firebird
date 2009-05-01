@@ -909,9 +909,7 @@ int getNextInputChar()
 	return (unsigned char)lastInputLine[getColumn++];
 }
 
-void ISQL_copy_SQL_id(const TEXT* in_str,
-					  TEXT* output_str,
-					  TEXT escape_char)
+void ISQL_copy_SQL_id(const TEXT* in_str, TEXT* output_str, TEXT escape_char)
 {
 /**************************************
  *
@@ -1190,12 +1188,8 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 }
 
 
-void ISQL_get_character_sets(
-	SSHORT char_set_id,
-	SSHORT collation,
-	bool collate_only,
-	bool not_null,
-	TEXT* string)
+void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_only,
+							 bool not_null, TEXT* string)
 {
 /**************************************
  *

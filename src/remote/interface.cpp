@@ -1224,7 +1224,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 							 USHORT in_blr_length,
 							 const UCHAR* in_blr,
 							 USHORT in_msg_type,
-							 USHORT in_msg_length,
+							 USHORT /*in_msg_length*/,
 							 UCHAR* in_msg,
 							 USHORT out_blr_length,
 							 UCHAR* out_blr,
@@ -2009,7 +2009,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 						   USHORT blr_length,
 						   const UCHAR* blr,
 						   USHORT msg_type,
-						   USHORT msg_length,
+						   USHORT /*msg_length*/,
 						   UCHAR* msg)
 {
 /**************************************
@@ -3753,10 +3753,10 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
+ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 					Rrq** req_handle,
 					USHORT msg_type,
-					USHORT msg_length,
+					USHORT /*msg_length*/,
 					const UCHAR* msg,
 					SSHORT level)
 {
@@ -4055,7 +4055,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 							  Rrq** req_handle,
 							  Rtr** rtr_handle,
 							  USHORT msg_type,
-							  USHORT msg_length,
+							  USHORT /*msg_length*/,
 							  UCHAR* msg,
 							  SSHORT level)
 {
@@ -4214,7 +4214,7 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 								 Rtr** rtr_handle,
-								 SSHORT count,
+								 SSHORT /*count*/,
 								 Rdb** db_handle,
 								 SSHORT tpb_length,
 								 const UCHAR* tpb)
@@ -4274,7 +4274,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 								UCHAR* blr,
 								USHORT in_msg_length,
 								UCHAR* in_msg,
-								USHORT out_msg_length,
+								USHORT /*out_msg_length*/,
 								UCHAR* out_msg)
 {
 /**************************************
@@ -5411,7 +5411,7 @@ static ISC_STATUS fetch_blob(ISC_STATUS* user_status,
 							 USHORT blr_length,
 							 UCHAR* blr,
 							 USHORT msg_type,
-							 USHORT msg_length,
+							 USHORT /*msg_length*/,
 							 UCHAR* msg)
 {
 /**************************************

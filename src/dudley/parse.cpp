@@ -4016,8 +4016,7 @@ static DUDLEY_NOD set_generator()
 }
 
 
-static void sort_out_attributes(
-								DUDLEY_TRG trigger,
+static void sort_out_attributes(DUDLEY_TRG trigger,
 								SLONG flags, SLONG type, SLONG sequence)
 {
 /**************************************

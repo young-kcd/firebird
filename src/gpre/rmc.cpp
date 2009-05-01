@@ -141,7 +141,7 @@ static void	gen_blob_end (const act*);
 static void	gen_blob_for (const act*);
 static void	gen_blob_open (const act*);
 static void	gen_blr (void*, SSHORT, const char*);
-static void	gen_clear_handles (const act*);
+static void	gen_clear_handles(); // (const act*);
 static void	gen_compile (const act*);
 static void	gen_create_database (const act*);
 static void	gen_cursor_close (const act*, const gpre_req*);
@@ -160,7 +160,7 @@ static void	gen_dyn_open (const act*);
 static void	gen_dyn_prepare (const act*);
 static void	gen_emodify (const act*);
 static void	gen_estore (const act*);
-static void	gen_end_fetch (const act*);
+static void	gen_end_fetch(); // (const act*);
 static void	gen_endfor (const act*);
 static void	gen_erase (const act*);
 static SSHORT	gen_event_block (const act*);
@@ -174,7 +174,7 @@ static void	gen_get_or_put_slice(const act*, const ref*, bool);
 static void	gen_get_segment (const act*);
 static void	gen_loop (const act*);
 static TEXT* gen_name(TEXT* const, const ref*, bool);
-static void	gen_on_error (const act*);
+static void	gen_on_error(); // (const act*);
 static void	gen_procedure (const act*);
 static void	gen_put_segment (const act*);
 static void	gen_raw (const UCHAR*, req_t, int, int);
@@ -289,7 +289,7 @@ static const char* const INDENT		= "   ";
 //
 //
 
-void RMC_action(const act* action, int column)
+void RMC_action(const act* action, int /*column*/)
 {
 
 	if (action->act_flags & ACT_break)
@@ -356,7 +356,7 @@ void RMC_action(const act* action, int column)
 		gen_blob_open(action);
 		break;
 	case ACT_clear_handles:
-		gen_clear_handles(action);
+		gen_clear_handles(); //(action);
 		break;
 	case ACT_close:
 		gen_s_end(action);
@@ -453,7 +453,7 @@ void RMC_action(const act* action, int column)
 		gen_slice(action);
 		return;
 	case ACT_hctef:
-		gen_end_fetch(action);
+		gen_end_fetch(); //(action);
 		return;
 	case ACT_insert:
 		gen_s_start(action);
@@ -465,7 +465,7 @@ void RMC_action(const act* action, int column)
 		gen_s_start(action);
 		break;
 	case ACT_on_error:
-		gen_on_error(action);
+		gen_on_error(); //(action);
 		return;
 	case ACT_prepare:
 		gen_trans(action);
@@ -1296,7 +1296,7 @@ static void gen_blob_open( const act* action)
 //		Callback routine for BLR pretty printer.
 //
 
-static void gen_blr(void* user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	const int max_line = 70, max_diff = 7;
 	const int comment = strlen(names[COMMENT]);
@@ -1357,7 +1357,7 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 //		Zap all know handles.
 //
 
-static void gen_clear_handles( const act* action)
+static void gen_clear_handles() //( const act* action)
 {
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next) {
 		if (!(request->req_flags & REQ_exp_hand))
@@ -2280,7 +2280,7 @@ static void gen_estore( const act* action)
 //		Generate end-if for AT_END if statement
 //
 
-static void gen_end_fetch( const act* action)
+static void gen_end_fetch() //( const act* action)
 {
 
 	printa(names[COLUMN], false, "END-IF");
@@ -2842,7 +2842,7 @@ static TEXT* gen_name(TEXT* const string, const ref* reference, bool as_blob)
 //		Generate a block to handle errors.
 //
 
-static void gen_on_error( const act* action)
+static void gen_on_error() // ( const act* action)
 {
 
 	printa(names[COLUMN], false, "IF %s (2) NOT = 0 THEN", names[isc_status_pos]);

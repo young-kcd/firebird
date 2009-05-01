@@ -100,8 +100,7 @@ static void	set_field_class_name(Global*, const MetaName&, const MetaName&);
 static void dyn_user(Global*, const UCHAR**);
 
 
-void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
-	const UCHAR* ddl)
+void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, const UCHAR* ddl)
 {
 /**************************************
  *
@@ -2271,7 +2270,7 @@ static void store_privilege(Global* gbl,
 }
 
 
-static void dyn_user(Global* gbl, const UCHAR** ptr)
+static void dyn_user(Global* /*gbl*/, const UCHAR** ptr)
 {
 /**************************************
  *

@@ -267,9 +267,7 @@ bool ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
 }
 
 
-static bool isc_signal2(
-						int signal_number,
-						FPTR_VOID handler, void* arg, ULONG flags)
+static bool isc_signal2(int signal_number, FPTR_VOID handler, void* arg, ULONG flags)
 {
 /**************************************
  *
@@ -331,9 +329,7 @@ static bool isc_signal2(
 }
 
 
-void ISC_signal_cancel(
-								   int signal_number,
-								   FPTR_VOID_PTR handler, void* arg)
+void ISC_signal_cancel(int signal_number, FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *

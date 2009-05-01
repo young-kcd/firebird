@@ -44,11 +44,11 @@ USHORT SERVICES_install(SC_HANDLE manager,
 						bool		auto_restart,
 						pfnSvcError err_handler);
 
-USHORT	SERVICES_remove(SC_HANDLE, const char*, const char*, pfnSvcError);
+USHORT	SERVICES_remove(SC_HANDLE, const char*, /*const char*,*/ pfnSvcError);
 
-USHORT	SERVICES_start(SC_HANDLE, const char*, const char*, USHORT, pfnSvcError);
+USHORT	SERVICES_start(SC_HANDLE, const char*, /*const char*,*/ USHORT, pfnSvcError);
 
-USHORT	SERVICES_stop(SC_HANDLE, const char*, const char*, pfnSvcError);
+USHORT	SERVICES_stop(SC_HANDLE, const char*, /*const char*,*/ pfnSvcError);
 
 USHORT	SERVICES_status(const char*);
 

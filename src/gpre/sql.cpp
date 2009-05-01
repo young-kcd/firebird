@@ -1133,8 +1133,7 @@ static act* act_alter_database()
 					gpre_file* file = define_file();
 					file->fil_next = database->dbb_files;
 					database->dbb_files = file;
-				}
-				while (MSC_match(KW_FILE));
+				} while (MSC_match(KW_FILE));
 			}
 			else if (MSC_match(KW_LOG_FILE))
 			{

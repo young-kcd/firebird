@@ -411,16 +411,16 @@ public:
 	static ULONG merge(MemoryPool& pool, TextType* ttype,
 		const UCHAR* match, SLONG match_bytes,
 		const UCHAR* control, SLONG control_bytes,
-		UCHAR* combined, SLONG combined_bytes)
+		UCHAR* combined) //, SLONG combined_bytes)
 	{
 		StrConverter cvt1(pool, ttype, match, match_bytes);
 		StrConverter cvt2(pool, ttype, control, control_bytes);
 		fb_assert(match_bytes % sizeof(CharType) == 0);
 		fb_assert(control_bytes % sizeof(CharType) == 0);
-		return actualMerge(pool, ttype,
+		return actualMerge(/*pool,*/ ttype,
 						   reinterpret_cast<const CharType*>(match), match_bytes,
 						   reinterpret_cast<const CharType*>(control), control_bytes,
-						   reinterpret_cast<CharType*>(combined), combined_bytes);
+						   reinterpret_cast<CharType*>(combined)); //, combined_bytes);
 	}
 
 private:
@@ -501,7 +501,7 @@ private:
 				const CharType* const end_class = match - 1;
 				if (match >= end_match || *match != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))
 				{
-					if (!className(obj, flags, char_class, end_class, *search++))
+					if (!className(obj, /*flags,*/ char_class, end_class, *search++))
 						return false;
 				}
 				else {
@@ -513,7 +513,7 @@ private:
 
 						if (search < end_search)
 						{
-							if (!className(obj, flags, char_class, end_class, *search++))
+							if (!className(obj, /*flags,*/ char_class, end_class, *search++))
 								return false;
 						}
 						else
@@ -550,7 +550,7 @@ private:
 	// See if a character is a member of a class.
 	// Japanese version operates on short-based buffer,
 	// instead of SCHAR-based.
-	static bool className(Jrd::TextType* obj, USHORT flags,
+	static bool className(Jrd::TextType* obj, // USHORT flags,
 		const CharType* char_class, const CharType* const end_class, CharType character)
 	{
 		fb_assert(char_class != NULL);
@@ -596,10 +596,10 @@ private:
 	// The silly loop setting *v++ to zero initializes the array up to the
 	// highest character defined (also max_op).  Believe it or not, that part
 	// is not a bug.
-	static ULONG actualMerge(MemoryPool& pool, Jrd::TextType* obj,
+	static ULONG actualMerge(/*MemoryPool& pool,*/ Jrd::TextType* obj,
 		const CharType* match, SLONG match_bytes,
 		const CharType* control, SLONG control_bytes,
-		CharType* combined, SLONG combined_bytes)
+		CharType* combined) //, SLONG combined_bytes)
 	{
 		fb_assert(match != NULL);
 		fb_assert(control != NULL);
@@ -729,9 +729,9 @@ public:
 	}
 
 	virtual ULONG sleuthMerge(MemoryPool& pool, const UCHAR* a, SLONG b,
-		const UCHAR* c, SLONG d, UCHAR* e, SLONG f)
+		const UCHAR* c, SLONG d, UCHAR* e) //, SLONG f)
 	{
-		return pSleuthMatcher::merge(pool, this, a, b, c, d, e, f);
+		return pSleuthMatcher::merge(pool, this, a, b, c, d, e); //, f);
 	}
 
 	virtual bool starts(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)

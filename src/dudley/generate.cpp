@@ -156,9 +156,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
-			do
+			do {
 				blr->add_byte(*p++);
-			while (--l);
+			} while (--l);
 		}
 		if (sub) {
 			check_blr(blr, 1);
@@ -176,9 +176,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
-			do
+			do {
 				blr->add_byte(*p++);
-			while (--l);
+			} while (--l);
 		}
 		sub = node->nod_arg[0];
 		check_blr(blr, 1);
@@ -197,9 +197,9 @@ static void generate( STR blr, DUDLEY_NOD node)
 		p = symbol->sym_string;
 		if (l) {
 			check_blr(blr, l);
-			do
+			do {
 				blr->add_byte(*p++);
-			while (--l);
+			} while (--l);
 		}
 		check_blr(blr, 1);
 		blr->add_byte(context->ctx_context_id);

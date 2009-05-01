@@ -58,7 +58,7 @@ static void gen_function(qli_nod*, qli_req*);
 static void gen_if(qli_nod*, qli_req*);
 static void gen_literal(const dsc*, qli_req*);
 static void gen_map(qli_map*, qli_req*);
-static void gen_modify(qli_nod*, qli_req*);
+static void gen_modify(qli_nod*); //, qli_req*);
 static void gen_parameter(const qli_par*, qli_req*);
 static void gen_print_list(qli_nod*, qli_req*);
 static void gen_report(qli_nod*, qli_req*);
@@ -1344,7 +1344,7 @@ static void gen_map(qli_map* map, qli_req* request)
 }
 
 
-static void gen_modify( qli_nod* node, qli_req* org_request)
+static void gen_modify( qli_nod* node) //, qli_req* org_request)
 {
 /**************************************
  *
@@ -1724,7 +1724,7 @@ static void gen_statement( qli_nod* node, qli_req* request)
 		}
 
 	case nod_modify:
-		gen_modify(node, request);
+		gen_modify(node); //, request);
 		return;
 
 	case nod_output:

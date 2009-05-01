@@ -53,7 +53,8 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 	SLONG i = 0;
 	SLONG j = kmpNext[0] = -1;
 
-	while (i < m - 1) {
+	while (i < m - 1)
+	{
 		while (j > -1 && x[i] != x[j])
 			j = kmpNext[j];
 		i++;
@@ -191,7 +192,8 @@ public:
 			return false;
 
 		SLONG data_pos = 0;
-		while (data_pos < data_len) {
+		while (data_pos < data_len)
+		{
 			while (offset > -1 && pattern_str[offset] != data[data_pos])
 				offset = kmpNext[offset];
 			offset++;
@@ -407,16 +409,17 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		PatternItem *itemL = &patternItems[i];
 		switch (itemL->type)
 		{
-		case piEscapedString: {
-			const CharType *curPos = itemL->str.data;
-			itemL->str.data = static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
-			for (SLONG j = 0; j < itemL->str.length; j++) {
-				if (use_escape && *curPos == escape_char)
-					curPos++;
-				itemL->str.data[j] = *curPos++;
-			}
-			itemL->type = piSearch;
-			// Note: fall into
+		case piEscapedString:
+			{
+				const CharType *curPos = itemL->str.data;
+				itemL->str.data = static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
+				for (SLONG j = 0; j < itemL->str.length; j++) {
+					if (use_escape && *curPos == escape_char)
+						curPos++;
+					itemL->str.data[j] = *curPos++;
+				}
+				itemL->type = piSearch;
+				// Note: fall into
 			}
 		case piSearch:
 			if (directMatch)
@@ -431,7 +434,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		case piSkipMore:
 			// Optimize out piSkipMore
 			directMatch = false;
-			if (itemL->skipCount != 0) {
+			if (itemL->skipCount != 0)
+			{
 				// Convert this node to SkipFixed if possible
 				itemL->type = piSkipFixed;
 				itemL->match_any = true;
@@ -491,7 +495,8 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 			switch (current_pattern->type)
 			{
 			case piDirectMatch:
-				if (data[data_pos] != current_pattern->str.data[current_branch->offset]) {
+				if (data[data_pos] != current_pattern->str.data[current_branch->offset])
+				{
 					// Terminate matching branch
 					branches.remove(branch_number);
 					if (branches.getCount() == 0)
@@ -523,7 +528,8 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 					{
 						finishCandidate = data_pos;
 						branches.remove(branch_number);
-						if (branches.getCount() == 0) {
+						if (branches.getCount() == 0)
+						{
 							if (data_pos == data_len - 1) {
 								match_type = MATCH_FIXED;
 								return true;
@@ -547,7 +553,8 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 				if (current_branch->offset >= current_pattern->str.length)
 				{
 					PatternItem *next_pattern = current_pattern + 1;
-					if (next_pattern >= patternItems.end()) {
+					if (next_pattern >= patternItems.end())
+					{
 						if (current_pattern->match_any) {
 							branches.shrink(0);
 							match_type = MATCH_ANY;
@@ -557,13 +564,15 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 						current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 						finishCandidate = data_pos;
 					}
-					else {
+					else
+					{
 						if (next_pattern->type == piSearch) {
 							// Search for the next pattern
 							current_branch->pattern = next_pattern;
 							current_branch->offset = 0;
 						}
-						else {
+						else
+						{
 							// Try to apply further non-search patterns and continue searching
 							current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];
 							BranchItem temp = {next_pattern, 0};

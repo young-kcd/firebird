@@ -1649,7 +1649,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 }
 
 
-static void local_fprintf(void* format_ignored, const char* string)
+static void local_fprintf(void* /*format_ignored*/, const char* string)
 {
 /**************************************
  *
@@ -1772,13 +1772,9 @@ static processing_state show_all_tables(SSHORT sys_flag)
 }
 
 
-static void show_charsets(
-	const SCHAR* relation_name,
-	const SCHAR* field_name,
-	bool show_charset,
-	bool show_collation,
-	bool doIndent,
-	bool doNewLine)
+static void show_charsets(const SCHAR* relation_name, const SCHAR* field_name,
+						  bool show_charset, bool show_collation,
+						  bool doIndent, bool doNewLine)
 {
 /*************************************
 *
@@ -1859,12 +1855,9 @@ static void show_charsets(
 }
 
 
-static void show_proc_charsets(
-	const SCHAR* procedure_name,
-	const SCHAR* parameter_name,
-	bool show_charset,
-	bool show_collation,
-	bool doIndent)
+static void show_proc_charsets(const SCHAR* procedure_name, const SCHAR* parameter_name,
+							   bool show_charset, bool show_collation,
+							   bool doIndent)
 {
 	SSHORT collation = -1, char_set_id = -1;
 	const SSHORT default_char_set_id = ISQL_get_default_char_set_id();

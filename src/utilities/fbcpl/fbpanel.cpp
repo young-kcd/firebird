@@ -47,7 +47,7 @@
 #include <Shlwapi.h>
 
 
-LONG CFBPanel::OnInquire(UINT uAppNum, NEWCPLINFO* pInfo)
+LONG CFBPanel::OnInquire(UINT /*uAppNum*/, NEWCPLINFO* pInfo)
 {
 
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());
@@ -65,7 +65,7 @@ LONG CFBPanel::OnInquire(UINT uAppNum, NEWCPLINFO* pInfo)
 }
 
 
-LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT uAppNum, LONG lData)
+LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT /*uAppNum*/, LONG /*lData*/)
 {
 
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());

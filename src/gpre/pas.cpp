@@ -66,7 +66,7 @@ static void gen_create_database(const act*, int);
 static int gen_cursor_close(const act*, const gpre_req*, int);
 static void gen_cursor_init(const act*, int);
 static int gen_cursor_open(const act*, const gpre_req*, int);
-static void gen_database(const act*, int);
+static void gen_database(/*const act*,*/ int);
 static void gen_ddl(const act*, int);
 static void gen_drop_database(const act*, int);
 static void gen_dyn_close(const act*, int);
@@ -95,7 +95,7 @@ static TEXT*	gen_name(TEXT* const, const ref*, bool);
 static void gen_on_error(const act*, USHORT);
 static void gen_procedure(const act*, int);
 static void gen_put_segment(const act*, int);
-static void gen_raw(const UCHAR*, int, int);
+static void gen_raw(const UCHAR*, int); //, int);
 static void gen_ready(const act*, int);
 static void gen_receive(const act*, int, const gpre_port*);
 static void gen_release(const act*, int);
@@ -269,7 +269,7 @@ void PAS_action(const act* action, int column)
 		gen_at_end(action, column);
 		return;
 	case ACT_b_declare:
-		gen_database(action, column);
+		gen_database(/*action,*/ column);
 		gen_routine(action, column);
 		return;
 	case ACT_basedon:
@@ -318,7 +318,7 @@ void PAS_action(const act* action, int column)
 		gen_cursor_init(action, column);
 		return;
 	case ACT_database:
-		gen_database(action, column);
+		gen_database(/*action,*/ column);
 		return;
 	case ACT_disconnect:
 		gen_finish(action, column);
@@ -915,7 +915,7 @@ static void gen_blob_open( const act* action, USHORT column)
 //		Callback routine for BLR pretty printer.
 //
 
-static void gen_blr(void* user_arg, SSHORT offset, const char* string)
+static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	bool first_line = true;
 
@@ -1131,7 +1131,7 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 //		ans port declarations for gpreGlob.requests in the main routine.
 //
 
-static void gen_database( const act* action, int column)
+static void gen_database(/* const act* action,*/ int column)
 {
 	const gpre_req* request;
 
@@ -2320,7 +2320,7 @@ static void gen_put_segment( const act* action, int column)
 //		Generate BLR in raw, numeric form.  Ughly but dense.
 //
 
-static void gen_raw(const UCHAR* blr, int request_length, int column)
+static void gen_raw(const UCHAR* blr, int request_length) //, int column)
 {
 	TEXT buffer[80];
 
@@ -2474,7 +2474,7 @@ static void gen_request( const gpre_req* request, int column)
 		const TEXT* string_type = "BLR";
 		if (gpreGlob.sw_raw)
 		{
-			gen_raw(request->req_blr, request->req_length, column);
+			gen_raw(request->req_blr, request->req_length); //, column);
 			switch (request->req_type)
 			{
 			case REQ_create_database:
@@ -2535,7 +2535,7 @@ static void gen_request( const gpre_req* request, int column)
 					   reference->ref_sdl_ident, PACKED_ARRAY,
 					   reference->ref_sdl_length, OPEN_BRACKET);
 				if (gpreGlob.sw_raw)
-					gen_raw(reference->ref_sdl, reference->ref_sdl_length, column);
+					gen_raw(reference->ref_sdl, reference->ref_sdl_length); //, column);
 				else if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 1))
 					CPR_error("internal error during SDL generation");
 				printa(column, "%s; \t(* end of SDL string for gds__%d *)\n",
@@ -2549,7 +2549,7 @@ static void gen_request( const gpre_req* request, int column)
 		if (blob->blb_bpb_length) {
 			printa(column, "gds__%d\t: %s [1..%d] of char := %s",
 				   blob->blb_bpb_ident, PACKED_ARRAY, blob->blb_bpb_length, OPEN_BRACKET);
-			gen_raw(blob->blb_bpb, blob->blb_bpb_length, column);
+			gen_raw(blob->blb_bpb, blob->blb_bpb_length); //, column);
 			printa(column, "%s;\n", CLOSE_BRACKET);
 		}
 	// If this is GET_SLICE/PUT_SLICE, allocate some variables

@@ -39,7 +39,7 @@
 
 const USHORT PROMPT_LENGTH	= 80;
 
-static qli_nod* compile_any(qli_nod*, qli_req*, bool);
+static qli_nod* compile_any(qli_nod*, qli_req*);
 static qli_nod* compile_assignment(qli_nod*, qli_req*, bool);
 static void compile_context(qli_nod*, qli_req*, bool);
 static void compile_control_break(qli_brk*, qli_req*);
@@ -198,7 +198,7 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 }
 
 
-static qli_nod* compile_any( qli_nod* node, qli_req* old_request, bool internal_flag)
+static qli_nod* compile_any( qli_nod* node, qli_req* old_request)
 {
 /**************************************
  *
@@ -485,7 +485,7 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	{
 	case nod_any:
 	case nod_unique:
-		return compile_any(node, request, internal_flag);
+		return compile_any(node, request);
 
 	case nod_max:
 	case nod_min:

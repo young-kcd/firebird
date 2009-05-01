@@ -1777,9 +1777,8 @@ lrq* LockManager::deadlock_scan(own* owner, lrq* request)
  *	If no deadlock is found, return null.
  *
  **************************************/
-	LOCK_TRACE(
-			   ("deadlock_scan: owner %ld request %ld\n", SRQ_REL_PTR(owner),
-				SRQ_REL_PTR(request)));
+	LOCK_TRACE(("deadlock_scan: owner %ld request %ld\n", SRQ_REL_PTR(owner),
+			   SRQ_REL_PTR(request)));
 
 	ASSERT_ACQUIRED;
 	++m_header->lhb_scans;

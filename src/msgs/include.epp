@@ -110,9 +110,8 @@ void main( int argc, char **argv)
 }
 
 
-static bool check_option(
-						const SCHAR* string,
-						SSHORT * option_ptr, SCHAR ** format_ptr)
+static bool check_option(const SCHAR* string,
+						SSHORT* option_ptr, SCHAR ** format_ptr)
 {
 /**************************************
  *
@@ -312,9 +311,8 @@ static void process_line( FILE * file, const SCHAR* line_ptr)
 }
 
 
-static void put_error(
-					 FILE * file,
-					 SCHAR ** words, const SCHAR* format, SSHORT options)
+static void put_error(FILE* file,
+					 SCHAR** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *
@@ -341,8 +339,7 @@ static void put_error(
 }
 
 
-static void put_symbol(
-					  FILE * file,
+static void put_symbol(FILE* file,
 					  const SCHAR* format,
 					  const SCHAR* symbol, SLONG value, SSHORT options)
 {
@@ -385,9 +382,8 @@ static void put_symbol(
 }
 
 
-static void put_symbols(
-					   FILE * file,
-					   SCHAR ** words, const SCHAR* format, SSHORT options)
+static void put_symbols(FILE* file,
+					   SCHAR** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *

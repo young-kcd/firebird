@@ -54,7 +54,7 @@ const char* TARGET	= "help/help.fdb";
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;
 
 static int additional_topics(const TEXT*, const TEXT*, const TEXT*);
-static void print_more(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool);
+static void print_more(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*); //, bool);
 static void print_topic(USHORT, USHORT, const TEXT**, USHORT*, const TEXT*, bool);
 static const TEXT* strip(const TEXT*);
 
@@ -182,8 +182,8 @@ static void print_more(USHORT level,
 					   USHORT depth,
 					   const TEXT** topics,
 					   USHORT* max_level,
-					   const TEXT* parent,
-					   bool error_flag) // unused
+					   const TEXT* parent)
+					   //bool error_flag) // unused
 {
 /**************************************
  *
@@ -307,7 +307,7 @@ static void print_topic(USHORT level,
 			ERRQ_msg_format(81, sizeof(banner), banner, SafeArg() << INDENT);
 			// Msg81 %sSub-topics available:
 			if (additional_topics(string, banner, INDENT))
-				print_more(level, depth, topics, max_level, string, error_flag);
+				print_more(level, depth, topics, max_level, string); //, error_flag);
 		}
 	END_FOR;
 

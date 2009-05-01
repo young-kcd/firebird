@@ -92,9 +92,11 @@ namespace BTreeNode {
 #endif
 
 	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer,
-				UCHAR flags,  btree_exp** expanded_node);
-	UCHAR* previousNode(Ods::IndexNode* node, UCHAR* pointer,
-				UCHAR flags,  btree_exp** expanded_node);
+				UCHAR flags, btree_exp** expanded_node);
+#ifdef SCROLLABLE_CURSORS
+	UCHAR* previousNode(/*Ods::IndexNode* node,*/ UCHAR* pointer,
+				/*UCHAR flags,*/ btree_exp** expanded_node);
+#endif
 
 	//void quad_put(SLONG value, UCHAR *data);
 
@@ -108,8 +110,8 @@ namespace BTreeNode {
 	UCHAR* writeNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
 		bool leafNode, bool withData = true);
 
-	void setEndBucket(Ods::IndexNode* indexNode, bool leafNode = true);
-	void setEndLevel(Ods::IndexNode* indexNode, bool leafNode = true);
+	void setEndBucket(Ods::IndexNode* indexNode); //, bool leafNode = true);
+	void setEndLevel(Ods::IndexNode* indexNode); //, bool leafNode = true);
 	void setNode(Ods::IndexNode* indexNode, USHORT prefix = 0, USHORT length = 0,
 		RecordNumber recordNumber = RecordNumber(0), SLONG pageNumber = 0,
 		bool isEndBucket = false, bool isEndLevel = false);

@@ -1101,8 +1101,7 @@ void DYN_modify_global_field(Global* gbl,
 			}
 
 			if (bfldvaldsrc) {
-				if (DYN_put_text_blob(
-					gbl, &fldvaldsrc, &FLD.RDB$VALIDATION_SOURCE))
+				if (DYN_put_text_blob(gbl, &fldvaldsrc, &FLD.RDB$VALIDATION_SOURCE))
 				{
 					FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
 				}

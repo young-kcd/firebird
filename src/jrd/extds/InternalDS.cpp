@@ -196,7 +196,7 @@ bool InternalConnection::cancelExecution(thread_db *tdbb)
 // a) is current conenction and current thread's attachment is equal to
 //	  this attachment, or
 // b) is not current conenction
-bool InternalConnection::isAvailable(thread_db *tdbb, TraScope traScope) const
+bool InternalConnection::isAvailable(thread_db *tdbb, TraScope /*traScope*/) const
 {
 	return !m_isCurrent ||
 		(m_isCurrent && (tdbb->getAttachment() == m_attachment));
@@ -246,14 +246,14 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db *tdbb, ClumpletW
 	}
 }
 
-void InternalTransaction::doPrepare(ISC_STATUS* status, thread_db *tdbb,
-		int info_len, const char* info)
+void InternalTransaction::doPrepare(ISC_STATUS* /*status*/, thread_db* /*tdbb*/,
+		int /*info_len*/, const char* /*info*/)
 {
 	fb_assert(m_transaction);
 	fb_assert(false);
 }
 
-void InternalTransaction::doCommit(ISC_STATUS* status, thread_db *tdbb, bool retain)
+void InternalTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool retain)
 {
 	fb_assert(m_transaction);
 

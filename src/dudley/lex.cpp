@@ -380,8 +380,7 @@ TOK LEX_token()
 				break;
 			}
 			*p++ = next;
-		}
-		while (next != c);
+		} while (next != c);
 	}
 	else if (c == '\n')
 		token->tok_type = tok_eol;

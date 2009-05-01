@@ -27,9 +27,8 @@
 
 namespace {
 
-typedef HANDLE WINAPI tRegisterEventSource(
-		LPCTSTR lpUNCServerName,
-		LPCTSTR lpSourceName);
+typedef HANDLE WINAPI tRegisterEventSource(LPCTSTR lpUNCServerName, LPCTSTR lpSourceName);
+
 typedef BOOL WINAPI tReportEvent(
 		HANDLE hEventLog,
 		WORD wType,
