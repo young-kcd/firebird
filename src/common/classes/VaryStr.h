@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	Template to define a local vary stack variable.
- *	MODULE:		array.h
+ *	MODULE:		VaryStr.h
  *	DESCRIPTION:	Both automatic and dynamic memory allocation is available.
  *
  *  The contents of this file are subject to the Initial
@@ -32,9 +32,9 @@
 namespace Firebird {
 
 template <size_t x>
-class VaryStr : public vary 
-{ 
-	char vary_tail [x - 1];
+class VaryStr : public vary
+{
+	char vary_tail[x - 1];
 
 public:
 	VaryStr()
@@ -46,7 +46,7 @@ public:
 
 template <size_t x>
 class DynamicVaryStr : public VaryStr<x>
-{ 
+{
 	vary* buffer;
 
 	void clear()
@@ -55,7 +55,7 @@ class DynamicVaryStr : public VaryStr<x>
 	}
 
 public:
-	DynamicVaryStr() : buffer(0) { }
+	DynamicVaryStr() : buffer(NULL) { }
 
 	// It does not preserve string data! Not hard to do, but not required today. AP, 2009.
 	vary* getBuffer(size_t len)
@@ -64,10 +64,12 @@ public:
 		{
 			return this;
 		}
+
 		clear();
 		buffer = reinterpret_cast<vary*>(FB_NEW(*getDefaultMemoryPool()) char[len + sizeof(USHORT)]);
 		buffer->vary_length = 0;
 		buffer->vary_string[0] = 0;
+
 		return buffer;
 	}
 
@@ -79,4 +81,4 @@ public:
 
 }
 
-#endif //CLASSES_VARYSTR_H
+#endif // CLASSES_VARYSTR_H

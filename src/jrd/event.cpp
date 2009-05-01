@@ -554,7 +554,7 @@ evh* EventManager::acquire_shmem()
 	m_header->evh_current_process = m_processOffset;
 
 	// hvlad: condition below never can be true and we change evh_length
-	// after remapping only. Also code below looks not complete, compare 
+	// after remapping only. Also code below looks not complete, compare
 	// it with remapping code in alloc_global
 /***
 	if (m_header->evh_length > m_shmemData.sh_mem_length_mapped)
@@ -603,6 +603,7 @@ evh* EventManager::acquire_shmem()
 #endif
 	}
 ***/
+
 	return m_header;
 }
 

@@ -3689,7 +3689,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	case xcp_xcp_code:
 		// CVC: If we have the exception name, use it instead of the number.
 		// Solves SF Bug #494981.
-		MET_lookup_exception(tdbb, exception->xcp_code, name, 
+		MET_lookup_exception(tdbb, exception->xcp_code, name,
 							 temp.vary_string, sizeof(temp) - sizeof(USHORT));
 
 		if (message[0])
