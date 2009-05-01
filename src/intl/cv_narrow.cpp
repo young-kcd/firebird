@@ -35,7 +35,7 @@ void CV_convert_init(csconvert* csptr,
 					 const void* datatable2)
 {
 	csptr->csconvert_version = CSCONVERT_VERSION_1;
-	csptr->csconvert_name = (const ASCII*) "DIRECT";
+	csptr->csconvert_name = "DIRECT";
 	csptr->csconvert_fn_convert = cvt_fn;
 	csptr->csconvert_fn_destroy = CV_convert_destroy;
 	csptr->csconvert_impl = new CsConvertImpl();

@@ -1421,7 +1421,7 @@ static INTL_BOOL cs_none_init(charset* csptr, const ASCII* /*charset_name*/, con
  *
  *************************************/
 
-	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "NONE");
+	IntlUtil::initNarrowCharset(csptr, "NONE");
 
 	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_none_to_unicode);
 	IntlUtil::initConvert(&csptr->charset_from_unicode, wc_to_nc);
@@ -1441,7 +1441,7 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* /*charset_name
  *
  *************************************/
 
-	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "UNICODE_FSS");
+	IntlUtil::initNarrowCharset(csptr, "UNICODE_FSS");
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 
@@ -1496,7 +1496,7 @@ static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* /*charset_name*/, c
  *
  *************************************/
 
-	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "BINARY");
+	IntlUtil::initNarrowCharset(csptr, "BINARY");
 	csptr->charset_space_character = (const BYTE*) "\0";
 	IntlUtil::initConvert(&csptr->charset_to_unicode, mb_to_wc);
 	IntlUtil::initConvert(&csptr->charset_from_unicode, wc_to_mb);

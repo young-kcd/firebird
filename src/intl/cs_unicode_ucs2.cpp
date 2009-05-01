@@ -30,7 +30,7 @@ CHARSET_ENTRY(CS_unicode_ucs2)
 	static const USHORT space = 0x0020;
 
 	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = (const ASCII*) "UNICODE";
+	csptr->charset_name = "UNICODE";
 	csptr->charset_flags |= CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;

@@ -33,7 +33,7 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 #include "../intl/charsets/cs_jis_0208_1990.h"
 
 	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = (const ASCII*) "JIS_0208_1990";
+	csptr->charset_name = "JIS_0208_1990";
 	csptr->charset_flags |= CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
@@ -55,7 +55,7 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 CHARSET_ENTRY(CS_sjis)
 {
 	CS_jis_0208_1990(csptr, NULL); //, cs_name); Second param is unused
-	csptr->charset_name = (const ASCII*) "SJIS";
+	csptr->charset_name = "SJIS";
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_space_length = 1;
@@ -70,7 +70,7 @@ CHARSET_ENTRY(CS_sjis)
 CHARSET_ENTRY(CS_euc_j)
 {
 	CS_jis_0208_1990(csptr, NULL); //cs_name); Second param is unused
-	csptr->charset_name = (const ASCII*) "EUC-J";
+	csptr->charset_name = "EUC-J";
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_space_length = 1;

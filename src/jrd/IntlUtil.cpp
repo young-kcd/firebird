@@ -405,7 +405,7 @@ void IntlUtil::initConvert(csconvert* cvt, pfn_INTL_convert func)
 {
 	memset(cvt, 0, sizeof(*cvt));
 	cvt->csconvert_version = CSCONVERT_VERSION_1;
-	cvt->csconvert_name = (const ASCII*) "DIRECT";
+	cvt->csconvert_name = "DIRECT";
 	cvt->csconvert_fn_convert = func;
 }
 
