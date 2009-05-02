@@ -596,7 +596,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string)
 {
 /**************************************
  *
- *	C V T _ g e t _ n a m e
+ *	C V T 2 _ g e t _ n a m e
  *
  **************************************
  *
@@ -619,7 +619,7 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 {
 /**************************************
  *
- *	C V T _ m a k e _ s t r i n g 2
+ *	C V T 2 _ m a k e _ s t r i n g 2
  *
  **************************************
  *

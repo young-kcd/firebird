@@ -3759,9 +3759,9 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	jrd_req* request = tdbb->getRequest();
 	TEXT* p1 = NULL;
 	TEXT* p2 = NULL;
-	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
-
 	SqlIdentifier relation_name, field_name;
+
+	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
 	if (!(request->req_flags & req_null)) {
 		p1 = relation_name;
 		MOV_get_name(value, p1);

@@ -712,7 +712,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
  *	Return the size of the block.
  *
  **************************************/
-
+	const int MAX_NAME_LENGTH = 31;
 	// calculate length of event parameter block,
 	// setting initial length to include version
 	// and counts for each argument
@@ -724,7 +724,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 		const SCHAR* q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const SCHAR* end = q + 31;
+		const SCHAR* end = q + MAX_NAME_LENGTH;
 		while (--end >= q && *end == ' '); // null body
 		length += end - q + 1 + 5;
 	}
@@ -757,7 +757,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 		const SCHAR* q = *nb++;
 
 		/* Strip trailing blanks from string */
-		const SCHAR* end = q + 31;
+		const SCHAR* end = q + MAX_NAME_LENGTH;
 		while (--end >= q && *end == ' ')
 			; // null body
 		*p++ = end - q + 1;

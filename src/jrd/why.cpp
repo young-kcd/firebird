@@ -5309,14 +5309,14 @@ static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda, USH
  *
  **************************************/
 	USHORT n_variables;
-	USHORT sql_dialect;
 
 /* If dialect / 10 == 0, then it has not been combined with the
    parser version for a prepare statement.  If it has been combined, then
    the dialect needs to be pulled out to compare to DIALECT_xsqlda
 */
 
-	if ((sql_dialect = dialect / 10) == 0)
+	USHORT sql_dialect = dialect / 10;
+	if (sql_dialect == 0)
 		sql_dialect = dialect;
 
 	if (!sqlda)
