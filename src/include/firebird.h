@@ -70,9 +70,9 @@ using namespace NAMESPACE;
 // Macro for function attribute definition
 //
 #if defined(__GNUC__)
-#define ATTRIBUTE_FORMAT(a,b) __attribute__ ((format(printf,a,b)))
+#define ATTRIBUTE_FORMAT(a, b) __attribute__ ((format(printf, a, b)))
 #else
-#define ATTRIBUTE_FORMAT(a,b)
+#define ATTRIBUTE_FORMAT(a, b)
 #endif
 
 #ifdef __cplusplus

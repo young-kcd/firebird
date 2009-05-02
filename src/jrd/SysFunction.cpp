@@ -114,7 +114,7 @@ void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeUuidToChar(DataTypeUtilBase* dataTypeUtil,const  SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 
 // generic stdmath function
 dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);

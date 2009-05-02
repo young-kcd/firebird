@@ -24,12 +24,6 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 
-/* These macros have a duplicate in cv_gb2312.cpp */
-#define	GB1(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 1st-byte */
-#define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
-
 #include "lc_ascii.h"
 #include "cv_gb2312.h"
 
@@ -58,7 +52,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 }
 
 
-TEXTTYPE_ENTRY(GB_2312_init)
+TEXTTYPE_ENTRY3(GB_2312_init)
 {
 	static const ASCII POSIX[] = "C.GB_2312";
 

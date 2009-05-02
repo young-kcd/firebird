@@ -55,7 +55,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 }
 
 
-TEXTTYPE_ENTRY(JIS220_init)
+TEXTTYPE_ENTRY3(JIS220_init)
 {
 	static const ASCII POSIX[] = "C.SJIS";
 
@@ -70,7 +70,7 @@ TEXTTYPE_ENTRY(JIS220_init)
 }
 
 
-TEXTTYPE_ENTRY(JIS230_init)
+TEXTTYPE_ENTRY3(JIS230_init)
 {
 	static const ASCII POSIX[] = "C.EUC_J";
 

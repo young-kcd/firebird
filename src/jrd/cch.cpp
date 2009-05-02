@@ -6339,7 +6339,7 @@ static bool write_page(thread_db* tdbb,
 			// We cannot call normal trace functions here as they are signal-unsafe
 			// "Write page=%d, dir=%d, diff=%d, scn=%d"
 			char buffer[1000], *ptr = buffer;
-			strcpy(ptr, "NBAK,Write page ");
+			strcpy(ptr, "NBAK, Write page ");
 			ptr += strlen(ptr);
 			gds__ulstr(ptr, bdb->bdb_page.getPageNum(), 0, 0);
 			ptr += strlen(ptr);

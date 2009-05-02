@@ -1476,7 +1476,7 @@ static void gen_database_decls() //const act* action)
 		const SSHORT index = i++ * length + 1;
 		printa(COLUMN, "EQUIVALENCE    (ISC_TEB(%d), ISC_TEB%d_DBB )", index, i);
 		printa(COLUMN, "EQUIVALENCE    (ISC_TEB(%d), ISC_TEB%d_LEN )", index + 4, i);
-		printa(COLUMN, "EQUIVALENCE    (ISC_TEB(%d) ,ISC_TEB%d_TPB )", index + 8, i);
+		printa(COLUMN, "EQUIVALENCE    (ISC_TEB(%d), ISC_TEB%d_TPB )", index + 8, i);
 	}
 #endif
 

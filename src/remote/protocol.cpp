@@ -668,7 +668,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 	case op_fetch:
 		sqldata = &p->p_sqldata;
-		MAP(xdr_short,reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
 		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
 					&sqldata->p_sqldata_blr, true, TYPE_PREPARED);
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));

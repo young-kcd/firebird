@@ -38,7 +38,7 @@ CHARSET_ENTRY(CS_ksc_5601)
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*) & space;
+	csptr->charset_space_character = (const BYTE*) &space;
 	csptr->charset_fn_well_formed = CVKSC_check_ksc;
 
 	CV_convert_init(&csptr->charset_to_unicode,

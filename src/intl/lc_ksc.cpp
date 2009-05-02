@@ -59,7 +59,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 	return true;
 }
 
-TEXTTYPE_ENTRY(KSC_5601_init)
+TEXTTYPE_ENTRY3(KSC_5601_init)
 {
 	static const ASCII POSIX[] = "C.KSC_5601";
 
@@ -67,7 +67,7 @@ TEXTTYPE_ENTRY(KSC_5601_init)
 }
 
 
-TEXTTYPE_ENTRY(ksc_5601_dict_init)
+TEXTTYPE_ENTRY3(ksc_5601_dict_init)
 {
 	static const ASCII POSIX[] = "HANGUL.KSC_5601";
 

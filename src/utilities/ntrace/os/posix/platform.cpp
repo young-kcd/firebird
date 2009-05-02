@@ -87,7 +87,7 @@ void set_error_string(const char* str)
 	if (org_str)
 	{
 		free(org_str);
-		TLS_SET(error_string,NULL);
+		TLS_SET(error_string, NULL);
 	}
 	if (str)
 	{

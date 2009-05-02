@@ -4684,6 +4684,7 @@ static processing_state show_users()
 		ISQL_errmsg(isc_status);
 		return OBJECT_NOT_FOUND;
 	}
+	my_user.vary_string[my_user.vary_length] = 0; // Just for the debugger.
 
 	UCHAR buffer[BUFFER_LENGTH512];
 	ISC_STATUS_ARRAY status_vector;

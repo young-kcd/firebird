@@ -66,7 +66,7 @@ const USHORT TIMESTAMP_SIZE	= 8;
 /* Pick up global ids */
 
 
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	type,
+#define FIELD(type, name, dtype, length, sub_type, ods, dflt_blr)	type,
 enum gflds {
 #include "../jrd/fields.h"
 gfld_MAX};
@@ -77,10 +77,10 @@ typedef gflds GFLDS;
 /* Pick up actual global fields */
 
 #ifndef GPRE
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
+#define FIELD(type, name, dtype, length, sub_type, ods, dflt_blr)	\
 	{ (int) type, (int) name, dtype, length, sub_type, ods, dflt_blr, sizeof(dflt_blr) },
 #else
-#define FIELD(type,name,dtype,length,sub_type,ods,dflt_blr)	\
+#define FIELD(type, name, dtype, length, sub_type, ods, dflt_blr)	\
 	{ (int) type, (int) name, dtype, length, sub_type, ods, NULL, 0 },
 #endif
 

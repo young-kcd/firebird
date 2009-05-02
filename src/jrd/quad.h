@@ -52,7 +52,7 @@ const int HIGH_WORD		= 0;
 #define QUAD_FROM_DOUBLE(a, e)   a
 #define QUAD_MULTIPLY(a, b, e)    ((a) * (b))
 #define QUAD_NEGATE(a, e)        (-(a))
-#define QUAD_SUBTRACT(a,b,e)    ((a) - (b))
+#define QUAD_SUBTRACT(a, b, e)    ((a) - (b))
 #else
 #define QUAD_ADD(a, b, e)         QUAD_add (&(a), &(b), e)
 #define QUAD_COMPARE(a, b)       QUAD_compare (&(a), &(b))

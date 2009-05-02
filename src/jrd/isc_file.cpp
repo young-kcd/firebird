@@ -108,10 +108,10 @@ const char* MTAB		= "/etc/mtab";
 #endif
 
 #ifdef HAVE_SETMNTENT
-#define MTAB_OPEN(path,type)	setmntent(path, "r")
+#define MTAB_OPEN(path, type)	setmntent(path, "r")
 #define MTAB_CLOSE(stream)	endmntent(stream)
 #else
-#define MTAB_OPEN(path,type)	fopen(path, type)
+#define MTAB_OPEN(path, type)	fopen(path, type)
 #define MTAB_CLOSE(stream)	fclose(stream)
 #endif
 
@@ -1375,7 +1375,7 @@ bool Mnt::get()
  /* This code is tested on Solaris 2.6 IA */
  TEXT device[128], mount_point[128], type[16], opts[256], ftime[128];
 
-	const int n = fscanf(mtab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts,ftime);
+	const int n = fscanf(mtab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
 	const char* start = device;
 
 	if (n<5)

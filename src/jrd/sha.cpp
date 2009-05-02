@@ -82,10 +82,10 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 
 /* SHA f()-functions */
 
-#define f1(x,y,z)	((x & y) | (~x & z))
-#define f2(x,y,z)	(x ^ y ^ z)
-#define f3(x,y,z)	((x & y) | (x & z) | (y & z))
-#define f4(x,y,z)	(x ^ y ^ z)
+#define f1(x, y, z)	((x & y) | (~x & z))
+#define f2(x, y, z)	(x ^ y ^ z)
+#define f3(x, y, z)	((x & y) | (x & z) | (y & z))
+#define f4(x, y, z)	(x ^ y ^ z)
 
 
 /* SHA constants */
@@ -101,33 +101,33 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 
 /* 32-bit rotate */
 
-#define R32(x,n)	T32(((x << n) | (x >> (32 - n))))
+#define R32(x, n)	T32(((x << n) | (x >> (32 - n))))
 
 /* the generic case, for when the overall rotation is not unraveled */
 
 #define FG(n)	\
-    T = T32(R32(A,5) + f##n(B,C,D) + E + *WP++ + CONST##n);	\
-    E = D; D = C; C = R32(B,30); B = A; A = T
+    T = T32(R32(A, 5) + f##n(B, C, D) + E + *WP++ + CONST##n);	\
+    E = D; D = C; C = R32(B, 30); B = A; A = T
 
 /* specific cases, for when the overall rotation is unraveled */
 
 #define FA(n)	\
-    T = T32(R32(A,5) + f##n(B,C,D) + E + *WP++ + CONST##n); B = R32(B,30)
+    T = T32(R32(A, 5) + f##n(B, C, D) + E + *WP++ + CONST##n); B = R32(B, 30)
 
 #define FB(n)	\
-    E = T32(R32(T,5) + f##n(A,B,C) + D + *WP++ + CONST##n); A = R32(A,30)
+    E = T32(R32(T, 5) + f##n(A, B, C) + D + *WP++ + CONST##n); A = R32(A, 30)
 
 #define FC(n)	\
-    D = T32(R32(E,5) + f##n(T,A,B) + C + *WP++ + CONST##n); T = R32(T,30)
+    D = T32(R32(E, 5) + f##n(T, A, B) + C + *WP++ + CONST##n); T = R32(T, 30)
 
 #define FD(n)	\
-    C = T32(R32(D,5) + f##n(E,T,A) + B + *WP++ + CONST##n); E = R32(E,30)
+    C = T32(R32(D, 5) + f##n(E, T, A) + B + *WP++ + CONST##n); E = R32(E, 30)
 
 #define FE(n)	\
-    B = T32(R32(C,5) + f##n(D,E,T) + A + *WP++ + CONST##n); D = R32(D,30)
+    B = T32(R32(C, 5) + f##n(D, E, T) + A + *WP++ + CONST##n); D = R32(D, 30)
 
 #define FT(n)	\
-    A = T32(R32(B,5) + f##n(C,D,E) + T + *WP++ + CONST##n); C = R32(C,30)
+    A = T32(R32(B, 5) + f##n(C, D, E) + T + *WP++ + CONST##n); C = R32(C, 30)
 
 
 /* do SHA transformation */

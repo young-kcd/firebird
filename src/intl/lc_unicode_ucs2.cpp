@@ -76,7 +76,7 @@ static inline bool FAMILY_UNICODE_MB_BIN(texttype* cache,
 }
 
 
-TEXTTYPE_ENTRY(UNI200_init)
+TEXTTYPE_ENTRY3(UNI200_init)
 {
 	static ASCII POSIX[] = "C.UNICODE";
 
@@ -84,7 +84,7 @@ TEXTTYPE_ENTRY(UNI200_init)
 }
 
 
-TEXTTYPE_ENTRY(UNI201_init)
+TEXTTYPE_ENTRY3(UNI201_init)
 {
 	static ASCII POSIX[] = "C.UNICODE_FSS";
 

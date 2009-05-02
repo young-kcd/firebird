@@ -1474,7 +1474,7 @@ static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* /*charset_nam
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
+	csptr->charset_space_character = (const BYTE*) &space;	/* 0x0020 */
 	csptr->charset_fn_well_formed = NULL;
 
 	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_unicode_to_unicode);
@@ -1541,7 +1541,7 @@ static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* /*charset_name*/, co
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 4;
 	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (const BYTE*)&space;
+	csptr->charset_space_character = (const BYTE*) &space;
 	csptr->charset_fn_well_formed = cs_utf16_well_formed;
 	csptr->charset_fn_length = cs_utf16_length;
 	csptr->charset_fn_substring = cs_utf16_substring;
@@ -1572,7 +1572,7 @@ static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* /*charset_name*/, co
 	csptr->charset_min_bytes_per_char = 4;
 	csptr->charset_max_bytes_per_char = 4;
 	csptr->charset_space_length = 4;
-	csptr->charset_space_character = (const BYTE*)&space;
+	csptr->charset_space_character = (const BYTE*) &space;
 	csptr->charset_fn_well_formed = cs_utf32_well_formed;
 
 	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_utf32_to_unicode);

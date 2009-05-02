@@ -114,7 +114,7 @@ enum set_t {
     set_count,
     set_charset
 #ifdef DEV_BUILD
-    ,set_hex_output,
+    , set_hex_output,
     set_explain
 #endif
 };

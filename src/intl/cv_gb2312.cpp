@@ -27,6 +27,12 @@
 #include "../intl/cv_narrow.h"
 #include "ld_proto.h"
 
+#define	GB1(uc)	((UCHAR)((uc) & 0xff) >= 0xa1 && \
+			 (UCHAR)((uc) & 0xff) <= 0xfe)	// GB2312 1st-byte
+#define	GB2(uc)	((UCHAR)((uc) & 0xff) >= 0xa1 && \
+			 (UCHAR)((uc) & 0xff) <= 0xfe)	// GB2312 2nd-byte
+
+
 ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 							 ULONG src_len,
 							 const UCHAR* src_ptr,

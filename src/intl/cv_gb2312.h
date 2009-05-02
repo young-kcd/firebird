@@ -21,12 +21,6 @@
  * Contributor(s): ______________________________________.
  */
 
-/* These macros have a duplicate in lc_gb2312.cpp */
-#define	GB1(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 1st-byte */
-#define	GB2(uc)	((UCHAR)((uc)&0xff)>=0xa1 && \
-			 (UCHAR)((uc)&0xff)<=0xfe)	/* GB2312 2nd-byte */
-
 ULONG CVGB_gb2312_to_unicode(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
 							 ULONG dest_len, UCHAR *dest_ptr,
 							 USHORT *err_code, ULONG *err_position);
