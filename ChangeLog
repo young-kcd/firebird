@@ -1,3 +1,35 @@
+2009-05-02 16:56  robocop
+
+	* firebird2/src/jrd/: alt.cpp (1.81), cvt2.cpp (1.67), evl.cpp
+	(1.296), utl.cpp (1.131), why.cpp (1.240):
+
+	Misc.
+
+2009-05-02 15:05  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.196), btr.cpp (1.239):
+
+	Undo two of Alex' suspicious or wrong changes until he can return
+	and rethink them.
+
+2009-05-02 15:00  robocop
+
+	* firebird2/src/: config/Stream.cpp (1.10),
+	config/StreamSegment.cpp (1.7), gpre/ftn.cpp (1.75),
+	include/firebird.h (1.51), intl/cs_jis.cpp (1.10), intl/cs_ksc.cpp
+	(1.7), intl/cs_unicode_ucs2.cpp (1.7), intl/cv_gb2312.cpp (1.19),
+	intl/cv_gb2312.h (1.7), intl/lc_dos.cpp (1.14), intl/lc_gb2312.cpp
+	(1.11), intl/lc_jis.cpp (1.17), intl/lc_ksc.cpp (1.19),
+	intl/lc_unicode_ucs2.cpp (1.14), intl/ldcommon.h (1.30),
+	isql/show.epp (1.147), jrd/SysFunction.cpp (1.71), jrd/cch.cpp
+	(1.233), jrd/enc.cpp (1.32), jrd/ibase.h (1.141), jrd/idx.h (1.21),
+	jrd/ini.h (1.31), jrd/intl_builtin.cpp (1.52), jrd/isc_file.cpp
+	(1.135), jrd/quad.h (1.5), jrd/sha.cpp (1.11), qli/compile.h
+	(1.15), remote/protocol.cpp (1.82),
+	utilities/ntrace/os/posix/platform.cpp (1.6):
+
+	More unused params; style.
+
 2009-05-01 19:24  robocop
 
 	* firebird2/src/: intl/cs_jis.cpp (1.9), intl/cs_ksc.cpp (1.6),
