@@ -1,3 +1,38 @@
+2009-05-03 16:21  robocop
+
+	* firebird2/src/qli/picstr.cpp (1.40):
+
+	Detecting values that aren't finite quantities (same fix as in
+	isql).
+
+2009-05-03 16:19  robocop
+
+	* firebird2/src/: qli/command.cpp (1.32), qli/compile.cpp (1.39),
+	qli/dtr.cpp (1.68), qli/eval.cpp (1.58), qli/exe.cpp (1.63),
+	qli/expand.cpp (1.46), qli/format.cpp (1.45), qli/gener.cpp (1.51),
+	qli/help.epp (1.30), qli/hsh.cpp (1.23), qli/lex.cpp (1.47),
+	qli/report.cpp (1.24), remote/inet_server.cpp (1.95),
+	utilities/gsec/gsecswi.h (1.14):
+
+	Style and misc.
+
+2009-05-03 16:09  robocop
+
+	* firebird2/src/: gpre/gpre_meta.epp (1.71),
+	gpre/gpre_meta_boot.cpp (1.68), utilities/ibmgr/ibmgr.h (1.17),
+	utilities/nbackup/nbkswi.h (1.2):
+
+	Misc.
+
+2009-05-03 16:08  robocop
+
+	* firebird2/src/: gpre/cme.cpp (1.56), isql/isql_win.cpp (1.21),
+	jrd/fields.h (1.21), jrd/ini.h (1.32), qli/gener.cpp (1.50):
+
+	Use named constants to represent field lengths. In the future it
+	will have to be split between logical length (characters) and
+	physical fields (bytes, for the internal buffers).
+
 2009-05-02 16:56  robocop
 
 	* firebird2/src/jrd/: alt.cpp (1.81), cvt2.cpp (1.67), evl.cpp
