@@ -27,7 +27,10 @@
 
 #ifdef SOLARIS
 #include <nan.h>
+#elif defined(WIN_NT)
+#include <float.h>
 #endif
+
 
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
@@ -275,7 +278,8 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		picture->pic_meridian;
 
 
-	if (picture->pic_missing) {
+	if (picture->pic_missing)
+	{
 		picture->pic_length = MAX(picture->pic_print_length, picture->pic_missing->pic_print_length);
 		picture->pic_missing->pic_length = picture->pic_length;
 	}
@@ -737,6 +741,12 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	if (IsNANorINF(number))
 	{
 	    sprintf(temp, IsINF(number) ? "Infinity" : "NaN");
+	}
+	else
+#elif defined(WIN_NT)
+	if (!_finite(number))
+	{
+		sprintf(temp, _isnan(number) ? "NaN" : "Infinity");
 	}
 	else
 #endif
