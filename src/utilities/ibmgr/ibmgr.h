@@ -80,7 +80,8 @@ const USHORT REA_USER		= ENT_USER;
 
 /* structure to hold all information
 */
-struct ibmgr_data_t {
+struct ibmgr_data_t
+{
 
     USHORT		operation;	/* what's to be done */
     USHORT		suboperation;	/* suboperation */
@@ -107,7 +108,7 @@ const USHORT MSG_VERSION	= 2;	// fbmgr version
 const USHORT MSG_OPSPEC		= 5;	// operation already specified
 const USHORT MSG_NOOPSPEC	= 6;	// no operation specified
 const USHORT MSG_INVSW		= 7;	// invalid switch
-const USHORT MSG_INVOP		= 8;	// invalid operation
+//const USHORT MSG_INVOP		= 8;	// invalid operation
 const USHORT MSG_INVSWSW	= 9;	// invalid switch combination
 const USHORT MSG_INVSWOP	= 10;	// invalid operation/switch combination
 const USHORT MSG_AMBSW		= 11;	// ambiguous switch

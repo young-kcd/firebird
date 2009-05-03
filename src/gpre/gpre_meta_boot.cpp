@@ -42,9 +42,6 @@
 #include "../gpre/par_proto.h"
 #include "../jrd/gds_proto.h"
 
-//const int MAX_USER_LENGTH		= 33;
-//const int MAX_PASSWORD_LENGTH	= 33;
-
 static const UCHAR blr_bpb[] =
 {
 	isc_bpb_version1,

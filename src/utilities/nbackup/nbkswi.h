@@ -33,15 +33,15 @@
 // Switch handling constants
 
 const int IN_SW_NBK_0				= 0;
-const int IN_SW_NBK_LOCK			= 1;
-const int IN_SW_NBK_UNLOCK			= 2;
-const int IN_SW_NBK_FIXUP			= 3;
+//const int IN_SW_NBK_LOCK			= 1;
+//const int IN_SW_NBK_UNLOCK			= 2;
+//const int IN_SW_NBK_FIXUP			= 3;
 const int IN_SW_NBK_BACKUP			= 4;
 const int IN_SW_NBK_RESTORE			= 5;
 const int IN_SW_NBK_NODBTRIG		= 6;
-const int IN_SW_NBK_USER_NAME		= 7;
-const int IN_SW_NBK_PASSWORD		= 8;
-const int IN_SW_NBK_SIZE			= 9;
+//const int IN_SW_NBK_USER_NAME		= 7;
+//const int IN_SW_NBK_PASSWORD		= 8;
+//const int IN_SW_NBK_SIZE			= 9;
 
 // taking into an account that this is used only by services, describe only interesting switches
 

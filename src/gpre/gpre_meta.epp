@@ -44,9 +44,6 @@
 #include "../common/classes/ClumpletWriter.h"
 
 
-const int MAX_USER_LENGTH	= 33;
-const int MAX_PASSWORD_LENGTH	= 33;
-
 const char NEED_IB4_AT_LEAST[] = "Databases before IB4 are not supported";
 
 
