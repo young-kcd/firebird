@@ -40,6 +40,7 @@
 #include "../jrd/gds_proto.h"
 
 #ifdef DEV_BUILD
+#include "../jrd/constants.h"
 static void explain(qli_dbb* db, const UCHAR*);
 static void explain_index_tree(qli_dbb* db, SSHORT, const TEXT*, const UCHAR**, SSHORT*);
 static void explain_printf(SSHORT, const TEXT*, const TEXT*);
@@ -198,8 +199,8 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
  *
  **************************************/
 	SSHORT level = 0;
-	SCHAR relation_name[32];
-	// CVC: This function may have the same bugs than the internal function
+	SCHAR relation_name[MAX_SQL_IDENTIFIER_SIZE];
+	// CVC: This function may have the same bugs as the internal function
 	// used in the engine, that received fixes in FB1 & FB1.5.
 
 	if (*explain_buffer++ != isc_info_access_path)
@@ -367,7 +368,7 @@ static void explain_index_tree(qli_dbb* db, SSHORT level, const TEXT* relation_n
  *	Print out an index tree access path.
  *
  **************************************/
-	TEXT index_name[32];
+	TEXT index_name[MAX_SQL_IDENTIFIER_SIZE];
 	SCHAR index_info[256];
 	SSHORT length;
 

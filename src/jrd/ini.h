@@ -31,6 +31,7 @@
 #include "../intl/charsets.h"
 #include "../jrd/obj.h"
 #include "../jrd/dflt.h"
+#include "../jrd/constants.h"
 
 //******************************
 // names.h

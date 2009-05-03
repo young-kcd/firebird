@@ -51,6 +51,7 @@
 #include "../jrd/ibase.h"
 #include "../isql/isqlw_proto.h"
 #include "../isql/isql_proto.h"
+#inclue "../jrd/constants.h"
 
 struct scrollkeys
 {
@@ -141,7 +142,7 @@ char *ISQL_cursor;				// cursor into arguments
 // database startup parameters
 
 static SCHAR newDataBase[256];
-static SCHAR newUserName[32];
+static SCHAR newUserName[MAX_SQL_IDENTIFIER_SIZE];
 static SCHAR newPassword[16];
 
 // script parameters
@@ -1630,7 +1631,7 @@ BOOL CALLBACK _export createDbDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, L
 	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_DB_DBNAME, EM_LIMITTEXT, 256, 0L);
-		SendDlgItemMessage(hDlg, IDD_DB_USERNAME, EM_LIMITTEXT, 32, 0L);
+		SendDlgItemMessage(hDlg, IDD_DB_USERNAME, EM_LIMITTEXT, MAX_SQL_IDENTIFIER_SIZE, 0L);
 		SendDlgItemMessage(hDlg, IDD_DB_PASSWORD, EM_LIMITTEXT, 16, 0L);
 		return (TRUE);
 
@@ -1649,7 +1650,7 @@ BOOL CALLBACK _export createDbDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, L
 
 		case IDOK:
 			GetDlgItemText(hDlg, IDD_DB_DBNAME, newDataBase, 256);
-			GetDlgItemText(hDlg, IDD_DB_USERNAME, newUserName, 32);
+			GetDlgItemText(hDlg, IDD_DB_USERNAME, newUserName, MAX_SQL_IDENTIFIER_SIZE);
 			GetDlgItemText(hDlg, IDD_DB_PASSWORD, newPassword, 16);
 			EndDialog(hDlg, TRUE);
 			break;
@@ -1703,7 +1704,7 @@ BOOL CALLBACK _export dbNameDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPA
 	{
 	case WM_INITDIALOG:
 		SendDlgItemMessage(hDlg, IDD_DB_DBNAME, EM_LIMITTEXT, 256, 0L);
-		SendDlgItemMessage(hDlg, IDD_DB_USERNAME, EM_LIMITTEXT, 32, 0L);
+		SendDlgItemMessage(hDlg, IDD_DB_USERNAME, EM_LIMITTEXT, MAX_SQL_IDENTIFIER_SIZE, 0L);
 		SendDlgItemMessage(hDlg, IDD_DB_PASSWORD, EM_LIMITTEXT, 16, 0L);
 		return (TRUE);
 
@@ -1722,7 +1723,7 @@ BOOL CALLBACK _export dbNameDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPA
 
 		case IDOK:
 			GetDlgItemText(hDlg, IDD_DB_DBNAME, newDataBase, 256);
-			GetDlgItemText(hDlg, IDD_DB_USERNAME, newUserName, 32);
+			GetDlgItemText(hDlg, IDD_DB_USERNAME, newUserName, MAX_SQL_IDENTIFIER_SIZE);
 			GetDlgItemText(hDlg, IDD_DB_PASSWORD, newPassword, 16);
 			EndDialog(hDlg, TRUE);
 			break;

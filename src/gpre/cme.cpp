@@ -64,8 +64,6 @@ static void stuff_sdl_element(ref*, const gpre_fld*);
 static void stuff_sdl_loops(ref*, const gpre_fld*);
 static void stuff_sdl_number(const SLONG, ref*);
 
-const int USER_LENGTH = 32;
-const int ROLE_LENGTH = 32;
 //#define STUFF(blr)		*request->req_blr++ = (UCHAR) (blr)
 //#define STUFF_WORD(blr)		STUFF (blr); STUFF (blr >> 8)
 //#define STUFF_CSTRING(blr)	stuff_cstring (request, blr)
@@ -1053,7 +1051,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 
 	case nod_user_name:
 		f->fld_dtype = dtype_text;
-		f->fld_length = USER_LENGTH;
+		f->fld_length = MAX_SQL_IDENTIFIER_SIZE; // why 32?
 		f->fld_ttype = ttype_ascii;
 		f->fld_charset_id = CS_ASCII;
 		return;
@@ -1102,7 +1100,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 		f->fld_dtype = dtype_text;
 		f->fld_ttype = ttype_ascii;
 		f->fld_charset_id = CS_ASCII;
-		f->fld_length = ROLE_LENGTH;
+		f->fld_length = MAX_SQL_IDENTIFIER_SIZE; // why 32?
 		return;
 
 	case nod_coalesce:
