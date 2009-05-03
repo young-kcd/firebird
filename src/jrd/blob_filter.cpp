@@ -394,7 +394,8 @@ static void open_blob(thread_db* tdbb,
 		control->ctl_to_sub_type = to_charset;
 		control->ctl_from_sub_type = from_charset;
 	}
-	else {
+	else
+	{
 		control->ctl_to_sub_type = to;
 		control->ctl_from_sub_type = from;
 	}

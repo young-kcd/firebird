@@ -4650,7 +4650,7 @@ static processing_state show_users()
 
 	TEXT msg[MSG_LENGTH]; // When messages can be translated.
 
-	Firebird::VaryStr<128> my_user;
+	Firebird::VaryStr<MAX_SQL_IDENTIFIER_SIZE * 4> my_user;
 	XSQLDA osqlda; // XSQLDA comes with one XSQLVAR inside.
 	memset(&osqlda, 0, XSQLDA_LENGTH(1));
 	osqlda.version = SQLDA_VERSION1;

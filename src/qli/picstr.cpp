@@ -31,7 +31,6 @@
 #include <float.h>
 #endif
 
-
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/format.h"

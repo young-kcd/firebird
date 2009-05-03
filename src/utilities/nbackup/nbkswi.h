@@ -34,7 +34,7 @@
 
 const int IN_SW_NBK_0				= 0;
 //const int IN_SW_NBK_LOCK			= 1;
-//const int IN_SW_NBK_UNLOCK			= 2;
+//const int IN_SW_NBK_UNLOCK		= 2;
 //const int IN_SW_NBK_FIXUP			= 3;
 const int IN_SW_NBK_BACKUP			= 4;
 const int IN_SW_NBK_RESTORE			= 5;

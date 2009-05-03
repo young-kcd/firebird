@@ -51,7 +51,7 @@
 #include "../jrd/ibase.h"
 #include "../isql/isqlw_proto.h"
 #include "../isql/isql_proto.h"
-#inclue "../jrd/constants.h"
+#include "../jrd/constants.h"
 
 struct scrollkeys
 {

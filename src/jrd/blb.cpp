@@ -694,7 +694,6 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 
 	while (true)
 	{
-
 		/* If the blob is segmented, and this isn't a fragment, pick up
 		   the length of the next segment. */
 
@@ -2659,7 +2658,6 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 
 	if (arg->slice_direction == array_slice::slc_writing_array)
 	{
-
 		/* Storing INTO array */
 		/* FROM slice_desc TO array_desc */
 
@@ -2704,7 +2702,6 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 	}
 	else
 	{
-
 		/* Fetching FROM array */
 		/* FROM array_desc TO slice_desc */
 

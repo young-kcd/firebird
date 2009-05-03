@@ -1741,6 +1741,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 			const qli_syntax* field = value->syn_arg[e_itm_value];
 			if (!field)
 				continue;
+
 			if (global_agg(field, input->syn_arg[s_rse_group_by]))
 			{
 				if (!parent_context)
@@ -2182,6 +2183,7 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 				qli_lls* temp = NULL;
 				for (; right; right = right->lls_next)
 					ALLQ_push(right->lls_object, &temp);
+
 				while (temp)
 				{
 					qli_ctx* context = (qli_ctx*) ALLQ_pop(&temp);

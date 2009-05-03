@@ -59,7 +59,7 @@ typedef USHORT UNICODE;
 												const ASCII* config_info)
 
 #define	TEXTTYPE_ENTRY3(name)	INTL_BOOL name (texttype* cache, charset* /*cs*/,									\
-												const ASCII* /*tt_name*/, const ASCII* /*cs_name*/,						\
+												const ASCII* /*tt_name*/, const ASCII* /*cs_name*/,					\
 												USHORT attributes,													\
 												const UCHAR* specific_attributes, ULONG specific_attributes_length,	\
 												const ASCII* /*config_info*/)

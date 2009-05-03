@@ -907,6 +907,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 		}
 		else
 			fprintf(gpreGlob.out_file, "%s%s\n", COMMENT, string + from);
+
 		from = to;
 		to = to + 120 - c_len;
 	}

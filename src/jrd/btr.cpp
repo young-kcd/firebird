@@ -5518,7 +5518,6 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 	{
 		while (pointer < endpoint)
 		{
-
 			btree_nod* node = (btree_nod*)pointer;
 			if (!leafPage && (flags & btr_all_record_number)) {
 				pointer = (UCHAR*)NEXT_NODE_RECNR(node);
@@ -6398,7 +6397,8 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 		USHORT l = node.length;
 		if (l)
 		{
-			do {
+			do
+			{
 				if (*p++ != *q++)
 				{
 #ifdef DEBUG_BTR

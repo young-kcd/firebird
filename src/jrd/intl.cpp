@@ -759,9 +759,12 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			from_fill = from_len - to_len;
 			to_fill = to_size - to_len;
 			if (to_len)
-				do {
+			{
+				do
+				{
 					*p++ = *q++;
 				} while (--to_len);
+			}
 		}
 
 		if (to_fill > 0)
@@ -786,9 +789,12 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			if (to_len)
-				do {
+			{
+				do
+				{
 					*p++ = *q++;
 				} while (--to_len);
+			}
 			*p = 0;
 		}
 		break;
@@ -815,9 +821,12 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			((vary*) p)->vary_length = to_len;
 			start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
 			if (to_len)
-				do {
+			{
+				do
+				{
 					*p++ = *q++;
 				} while (--to_len);
+			}
 		}
 		break;
 	}
