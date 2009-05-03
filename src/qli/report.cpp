@@ -126,7 +126,8 @@ void RPT_report( qli_nod* loop)
 
 		for (control = report->rpt_bottom_breaks; control; control = control->brk_next)
 		{
-			if (test_break(control, report, message)) {
+			if (test_break(control, report, message))
+			{
 				swap_uchar(message->msg_buffer, report->rpt_buffer);
 				bottom_break(control, print);
 				swap_uchar(message->msg_buffer, report->rpt_buffer);
@@ -343,7 +344,8 @@ static void top_of_page(qli_prt* print, bool first_flag)
 
 	if (control = report->rpt_top_page)
 		FMT_print((qli_nod*) control->brk_line, print);
-	else if (report->rpt_column_header) {
+	else if (report->rpt_column_header)
+	{
 		if (report->rpt_header)
 			FMT_put(report->rpt_header, print);
 		if (report->rpt_column_header)

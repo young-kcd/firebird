@@ -71,7 +71,8 @@ void HELP_fini()
  *
  **************************************/
 
-	if (HELP_DB) {
+	if (HELP_DB)
+	{
 		COMMIT;
 		FINISH;
 	}
@@ -92,7 +93,8 @@ void HELP_help( qli_syntax* node)
  **************************************/
 	TEXT target[MAXPATHLEN];
 
-	if (!HELP_DB) {
+	if (!HELP_DB)
+	{
 		gds__prefix(target, TARGET);
 		READY
 		ON_ERROR
@@ -155,7 +157,8 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 		p =
 			line +
 			((ptr - line + COLUMN_WIDTH - 1) / COLUMN_WIDTH) * COLUMN_WIDTH;
-		if (p + l > line + RIGHT_MARGIN) {
+		if (p + l > line + RIGHT_MARGIN)
+		{
 			*ptr = 0;
 			printf("%s%s\n", INDENT, line);
 			p = ptr = line;
@@ -169,7 +172,8 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 		*ptr++ = ' ';
 	END_FOR;
 
-	if (ptr != line) {
+	if (ptr != line)
+	{
 		*ptr = 0;
 		printf("%s%s\n", INDENT, line);
 	}
@@ -248,7 +252,8 @@ static void print_topic(USHORT level,
 
 	TEXT* p = string;
 
-	if (*parent) {
+	if (*parent)
+	{
 		const TEXT* q = parent;
 		while (*q)
 			*p++ = *q++;
@@ -279,7 +284,8 @@ static void print_topic(USHORT level,
         if (QLI_abort)
 			  return;
 
-		if (count) {
+		if (count)
+		{
 			ERRQ_msg_get(503, prompt, sizeof(prompt));
 			/* Msg503 "\ntype <cr> for next topic or <EOF> to stop: " */
 			if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
@@ -295,7 +301,8 @@ static void print_topic(USHORT level,
 		*p = 0;
 		if (level < depth)
 			print_topic(level + 1, depth, topics + 1, max_level, string, error_flag);
-		else {
+		else
+		{
 			printf("\n%s\n\n", strip(string));
 			QLI_skip_line = true;
 			FOR B IN X.TEXT
@@ -311,7 +318,8 @@ static void print_topic(USHORT level,
 		}
 	END_FOR;
 
-	if (!count && error_flag && level > *max_level) {
+	if (!count && error_flag && level > *max_level)
+	{
 		const TEXT* path = strip(parent);
 		ERRQ_msg_put(82, SafeArg() << path << *topics);	// Msg82 No help is available for %s %s
 		ERRQ_msg_format(83, sizeof(banner), banner, SafeArg() << path);

@@ -197,7 +197,8 @@ void CMD_extract( qli_syntax* node)
 			dump_procedure(database, file, name->nam_string, name->nam_length, blob);
 		}
 	}
-	else {
+	else
+	{
 		CMD_check_ready();
 		for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
 		{

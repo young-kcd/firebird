@@ -70,7 +70,8 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
 static int async_quit(const int, const int, void*);
 static bool yes_no(USHORT, const TEXT*);
 
-struct answer_t {
+struct answer_t
+{
 	TEXT answer[30];
 	bool value;
 };
@@ -142,7 +143,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	while (argv < arg_end)
 	{
 		const TEXT* p = *argv++;
-		if (*p++ != '-') {
+		if (*p++ != '-')
+		{
 			banner_flag = false;
 			LEX_pop_line();
 			LEX_push_string(p - 1);
@@ -268,7 +270,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 // Loop until end of file or forced exit
 
-	while (QLI_line) {
+	while (QLI_line)
+	{
 		plb* temp = QLI_default_pool = ALLQ_pool();
 		flush_flag = process_statement(flush_flag);
 		ERRQ_pending();
@@ -611,7 +614,8 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 
 	ERRQ_msg_format(number, sizeof(prompt), prompt, SafeArg() << arg1);
 
-	if (!yes_no_loaded) {
+	if (!yes_no_loaded)
+	{
 		yes_no_loaded = true;
 		// Msg498 NO
 		if (!ERRQ_msg_get(498, answer_table[0].answer, sizeof(answer_table[0].answer)))

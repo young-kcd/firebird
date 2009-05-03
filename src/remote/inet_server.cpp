@@ -371,7 +371,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 			}
 		} // end scope block
 	}
-	else {
+	else
+	{
 		port = INET_server(channel);
 		if (!port) {
 			fprintf(stderr, "fbserver: Unable to start INET_server\n");

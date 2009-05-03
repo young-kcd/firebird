@@ -245,7 +245,8 @@ void EVAL_break_increment( qli_nod* node)
 // If this is the first value, just move it in.
 
 	const SLONG count = (IPTR) node->nod_arg[e_stt_default] + 1;
-	if (count == 1) {
+	if (count == 1)
+	{
 		if (desc2->dsc_missing)
 			desc1->dsc_missing = DSC_missing;
 		else {
@@ -361,7 +362,8 @@ dsc* EVAL_value(qli_nod* node)
 	qli_nod** ptr = node->nod_arg;
 	const qli_nod* const* const end_ptr = ptr + node->nod_count;
 
-	for (dsc** value = values; ptr < end_ptr; ptr++, value++) {
+	for (dsc** value = values; ptr < end_ptr; ptr++, value++)
+	{
 		*value = EVAL_value(*ptr);
 		if (node->nod_flags & nod_partial)
 			break;
@@ -522,7 +524,8 @@ dsc* EVAL_value(qli_nod* node)
 	case nod_running_total:
 		{
 			dsc* desc2 = EVAL_value(node->nod_arg[e_stt_value]);
-			if (desc2) {
+			if (desc2)
+			{
 				if (desc2->dsc_missing & DSC_missing)
 					return desc;
 				if (desc->dsc_dtype == dtype_long)
@@ -650,7 +653,8 @@ static DSC *execute_edit( qli_nod* node)
 
 	dsc* desc = NULL;
 
-	if (node->nod_arg[e_edt_input]) {
+	if (node->nod_arg[e_edt_input])
+	{
 		desc = EVAL_value(node->nod_arg[e_edt_input]);
 		if (desc && (desc->dsc_dtype == dtype_blob)) {
 			desc->dsc_dtype = dtype_quad;
@@ -726,20 +730,23 @@ static DSC *execute_prompt( qli_nod* node)
 	for (;;)
 	{
 		++QLI_prompt_count;
-		if (node->nod_arg[e_prm_prompt]) {
+		if (node->nod_arg[e_prm_prompt])
+		{
 			if (reprompt)
 				sprintf(string, "\07%s %s: ", prompt[0], (TEXT*) node->nod_arg[e_prm_prompt]);
 			else
 				sprintf(string, "%s %s: ", prompt[1], (TEXT*) node->nod_arg[e_prm_prompt]);
 		}
-		else {
+		else
+		{
 			if (reprompt)
 				sprintf(string, "\07%s: ", prompt[0]);	// Msg497 Re-enter
 			else
 				sprintf(string, "%s: ", prompt[1]);	// Msg498 Enter
 		}
 
-		if (!LEX_get_line(string, value, length)) {
+		if (!LEX_get_line(string, value, length))
+		{
 			QLI_abort = true;
 			EXEC_poll_abort();
 		}
@@ -753,14 +760,16 @@ static DSC *execute_prompt( qli_nod* node)
 
 		// Get rid of trailing blanks on non-text data types
 
-		if (desc->dsc_dtype > dtype_varying) {
+		if (desc->dsc_dtype > dtype_varying)
+		{
 			while (p > value && p[-1] == ' ')
 				--p;
 			*p = 0;
 		}
 
 		const int l = p - value;
-		if (l <= desc->dsc_length - 2) {
+		if (l <= desc->dsc_length - 2)
+		{
 			if (value != data->vary_string)
 				memcpy(data->vary_string, value, l);
 			data->vary_length = l;
@@ -866,7 +875,8 @@ static TEXT* make_blob_buffer(FB_API_HANDLE blob, USHORT* length)
 
 	gds__blob_size(&blob, &size, &segment_count, &max_segment);
 
-	if (max_segment >= *length) {
+	if (max_segment >= *length)
+	{
 		*length = max_segment;
 		TEXT* buffer = (TEXT*) gds__alloc((SLONG) *length);
 #ifdef DEBUG_GDS_ALLOC
@@ -979,7 +989,8 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (isc_close_blob(status_vector, &blob)) {
+	if (isc_close_blob(status_vector, &blob))
+	{
 		qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 		qli_req* request = context->ctx_request;
 		qli_dbb* dbb = request->req_database;
@@ -1037,12 +1048,14 @@ static bool sleuth_check(USHORT flags,
 		}
 		else if (c == '?')
 		{
-			if (match >= end_match || *match != '*') {
+			if (match >= end_match || *match != '*')
+			{
 				if (search >= end_search)
 					return false;
 				search++;
 			}
-			else {
+			else
+			{
 				if (++match >= end_match)
 					return true;
 				for (;;)
@@ -1064,11 +1077,13 @@ static bool sleuth_check(USHORT flags,
 			}
 
 			const UCHAR* const end_class = match - 1;
-			if (match >= end_match || *match != '*') {
+			if (match >= end_match || *match != '*')
+			{
 				if (!sleuth_class(flags, char_class, end_class, *search++))
 					return false;
 			}
-			else {
+			else
+			{
 				++match;
 				for (;;)
 				{
@@ -1084,12 +1099,14 @@ static bool sleuth_check(USHORT flags,
 				}
 			}
 		}
-		else if (c == '+') {
+		else if (c == '+')
+		{
 			c = *match++;
 			if (c == 'S' || c == 's')
 				flags &= ~SLEUTH_insensitive;
 		}
-		else if (c == '-') {
+		else if (c == '-')
+		{
 			c = *match++;
 			if (c == 'S' || c == 's')
 				flags |= SLEUTH_insensitive;
@@ -1189,7 +1206,8 @@ static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 				*v++ = 0;
 			*end_vector = t;
 			++control;
-			while (control < end_control) {
+			while (control < end_control)
+			{
 				c = *control++;
 				if ((t[-1] == '@') || ((c != ',') && (c != ')')))
 					*t++ = c;
@@ -1225,7 +1243,8 @@ static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 				*comb++ = *match++;
 		}
 		// at this point we've got a non-match, but as it might be one of ours, quote it.
-		else {
+		else
+		{
 			if (special[c] && comb[-1] != '@')
 				*comb++ = '@';
 			*comb++ = c;
@@ -1275,7 +1294,8 @@ static bool string_boolean( qli_nod* node)
 
 // If source is not a blob, do a simple search
 
-	if (desc1->dsc_dtype != dtype_blob) {
+	if (desc1->dsc_dtype != dtype_blob)
+	{
 		Firebird::VaryStr<TEMP_LENGTH> temp1;
 		const TEXT* p1;
 		SSHORT l1 = MOVQ_get_string(desc1, &p1, &temp1, TEMP_LENGTH);
@@ -1307,7 +1327,8 @@ static bool string_boolean( qli_nod* node)
 	if (buffer != fixed_buffer)
 		gds__free(buffer);
 
-	if (isc_close_blob(status_vector, &blob)) {
+	if (isc_close_blob(status_vector, &blob))
+	{
 		qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 		qli_req* request = context->ctx_request;
 		qli_dbb* database = request->req_database;

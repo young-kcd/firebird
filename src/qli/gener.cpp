@@ -42,8 +42,8 @@
 #ifdef DEV_BUILD
 #include "../jrd/constants.h"
 static void explain(qli_dbb* db, const UCHAR*);
-static void explain_index_tree(qli_dbb* db, SSHORT, const TEXT*, const UCHAR**, SSHORT*);
-static void explain_printf(SSHORT, const TEXT*, const TEXT*);
+static void explain_index_tree(qli_dbb* db, int, const TEXT*, const UCHAR**, int*);
+static void explain_printf(int, const TEXT*, const TEXT*);
 #endif
 
 static void gen_any(qli_nod*, qli_req*);
@@ -198,7 +198,7 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
  *	request in pretty-printed form.
  *
  **************************************/
-	SSHORT level = 0;
+	int level = 0;
 	SCHAR relation_name[MAX_SQL_IDENTIFIER_SIZE];
 	// CVC: This function may have the same bugs as the internal function
 	// used in the engine, that received fixes in FB1 & FB1.5.
@@ -206,7 +206,7 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 	if (*explain_buffer++ != isc_info_access_path)
 		return;
 
-	SSHORT buffer_length = *explain_buffer++;
+	int buffer_length = *explain_buffer++;
 	buffer_length += (*explain_buffer++) << 8;
 
 	while (buffer_length > 0)
@@ -229,18 +229,15 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 				explain_printf(level, "isc_info_rsb_relation, ", 0);
 
 				buffer_length--;
-				SSHORT length = *explain_buffer++;
+				const size_t length = *explain_buffer++;
 				buffer_length -= length;
 
-				char* r = relation_name;
-				while (length--) {
-					*r++ = *explain_buffer;
-					putchar(*explain_buffer++);
-				}
-				printf(",\n");
-				*r++ = 0;
-				break;
+				memcpy(relation_name, explain_buffer, length);
+				relation_name[length] = 0;
+				explain_buffer += length;
+				printf("%s,\n", relation_name);
 			}
+			break;
 
 		case isc_info_rsb_type:
 			buffer_length--;
@@ -355,8 +352,8 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 
 
 #ifdef DEV_BUILD
-static void explain_index_tree(qli_dbb* db, SSHORT level, const TEXT* relation_name,
-							   const UCHAR** explain_buffer_ptr, SSHORT* buffer_length)
+static void explain_index_tree(qli_dbb* db, int level, const TEXT* relation_name,
+							   const UCHAR** explain_buffer_ptr, int* buffer_length)
 {
 /**************************************
  *
@@ -368,9 +365,6 @@ static void explain_index_tree(qli_dbb* db, SSHORT level, const TEXT* relation_n
  *	Print out an index tree access path.
  *
  **************************************/
-	TEXT index_name[MAX_SQL_IDENTIFIER_SIZE];
-	SCHAR index_info[256];
-	SSHORT length;
 
 	const UCHAR* explain_buffer = *explain_buffer_ptr;
 
@@ -399,18 +393,22 @@ static void explain_index_tree(qli_dbb* db, SSHORT level, const TEXT* relation_n
 		break;
 
 	case isc_info_rsb_index:
-		explain_printf(level, "isc_info_rsb_index, ", 0);
-		(*buffer_length)--;
+		{
+			explain_printf(level, "isc_info_rsb_index, ", 0);
+			(*buffer_length)--;
 
-		length = (SSHORT) *explain_buffer++;
-		memcpy(index_name, explain_buffer, length);
-		index_name[length] = 0;
+			const size_t length = *explain_buffer++;
+			TEXT index_name[MAX_SQL_IDENTIFIER_SIZE];
+			memcpy(index_name, explain_buffer, length);
+			index_name[length] = 0;
 
-		*buffer_length -= length;
-		explain_buffer += length;
+			*buffer_length -= length;
+			explain_buffer += length;
 
-		MET_index_info(db, relation_name, index_name, index_info, sizeof(index_info));
-		printf("%s\n", index_info);
+			SCHAR index_info[256];
+			MET_index_info(db, relation_name, index_name, index_info, sizeof(index_info));
+			printf("%s\n", index_info);
+		}
 		break;
 	}
 
@@ -426,7 +424,7 @@ static void explain_index_tree(qli_dbb* db, SSHORT level, const TEXT* relation_n
 
 
 #ifdef DEV_BUILD
-static void explain_printf( SSHORT level, const TEXT* control, const TEXT* string)
+static void explain_printf(int level, const TEXT* control, const TEXT* string)
 {
 /**************************************
  *
@@ -1003,7 +1001,8 @@ static void gen_field( qli_nod* node, qli_req* request)
 		STUFF(blr_fid);
 		STUFF(context->ctx_context);
 		STUFF_WORD(field->fld_id);
-		if (args) {
+		if (args)
+		{
 			STUFF(args->nod_count);
 			qli_nod** ptr = args->nod_arg;
 			for (const qli_nod* const* const end = ptr + args->nod_count; ptr < end; ++ptr)
@@ -1128,7 +1127,8 @@ static void gen_for( qli_nod* node, qli_req* request)
 
 // Finish off by building a SEND to indicate end of file
 
-	if (message) {
+	if (message)
+	{
 		gen_send_receive(message, blr_send);
 		STUFF(blr_assignment);
 		value = TRUE;
@@ -1492,7 +1492,8 @@ static void gen_request( qli_req* request)
 			param->par_offset = message->msg_length;
 			message->msg_length += desc->dsc_length;
 			qli_par* missing_param = param->par_missing;
-			if (missing_param) {
+			if (missing_param)
+			{
 				missing_param->par_parameter = message->msg_parameter++;
 				message->msg_length = FB_ALIGN(message->msg_length, sizeof(USHORT));
 				desc = &missing_param->par_desc;
@@ -1508,7 +1509,8 @@ static void gen_request( qli_req* request)
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length + FB_DOUBLE_ALIGN - 1);
 		message->msg_buffer = (UCHAR*) FB_ALIGN((FB_UINT64)(U_IPTR) string->str_data, FB_DOUBLE_ALIGN);
 
-		for (param = message->msg_parameters; param; param = param->par_next) {
+		for (param = message->msg_parameters; param; param = param->par_next)
+		{
 			gen_descriptor(&param->par_desc, request);
 			qli_par* missing_param = param->par_missing;
 			if (missing_param)

@@ -63,7 +63,8 @@ void HSH_fini()
  *	Release space used by keywords.
  *
  **************************************/
-	while (key_symbols) {
+	while (key_symbols)
+	{
 		qli_symbol* symbol = key_symbols;
 		key_symbols = (qli_symbol*) key_symbols->sym_object;
 		HSH_remove(symbol);
@@ -182,7 +183,8 @@ void HSH_remove( qli_symbol* symbol)
 		if (symbol == *next)
 		{
 			qli_symbol* homonym = symbol->sym_homonym;
-			if (homonym) {
+			if (homonym)
+			{
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 			}
@@ -194,7 +196,8 @@ void HSH_remove( qli_symbol* symbol)
 
 		for (qli_symbol** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
 		{
-			if (symbol == *ptr) {
+			if (symbol == *ptr)
+			{
 				*ptr = symbol->sym_homonym;
 				return;
 			}
@@ -219,7 +222,8 @@ static int hash(const SCHAR* string, int length)
  **************************************/
 	int value = 0;
 
-	while (length--) {
+	while (length--)
+	{
 		const UCHAR c = *string++;
 		value = (value << 1) + UPPER(c);
 	}

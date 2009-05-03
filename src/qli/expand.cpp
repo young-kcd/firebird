@@ -237,7 +237,8 @@ qli_nod* EXP_expand( qli_syntax* node)
 	qli_lls* right = NULL;
 	qli_lls* left = NULL;
 
-	if (QLI_variables) {
+	if (QLI_variables)
+	{
 		qli_ctx* context = (qli_ctx*) ALLOCD(type_ctx);
 		context->ctx_type = CTX_VARIABLE;
 		context->ctx_variable = QLI_variables;
@@ -249,7 +250,8 @@ qli_nod* EXP_expand( qli_syntax* node)
 	if (!expanded)
 		return NULL;
 
-	while (global_output_stack) {
+	while (global_output_stack)
+	{
 		qli_nod* output = (qli_nod*) ALLQ_pop(&global_output_stack);
 		output->nod_arg[e_out_statement] = expanded;
 		expanded = output;
@@ -395,13 +397,15 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 // Copy query_name, edit string, query header
 
 	TEXT* p = (TEXT*) new_fld->fld_data + new_fld->fld_length;
-	if (q = variable->fld_edit_string) {
+	if (q = variable->fld_edit_string)
+	{
 		new_fld->fld_edit_string = p;
 		while (*p++ = *q++);
 	}
 	if (variable->fld_query_name)
 		new_fld->fld_query_name = copy_symbol(variable->fld_query_name);
-	if (q = variable->fld_query_header) {
+	if (q = variable->fld_query_header)
+	{
 		new_fld->fld_query_header = p;
 		while (*p++ = *q++);
 	}
@@ -437,7 +441,8 @@ static qli_syntax* decompile_field( qli_fld* field, qli_ctx* context)
 	qli_name* name = decompile_symbol(field->fld_name);
 	node->syn_arg[0] = (qli_syntax*) name;
 
-	if (context) {
+	if (context)
+	{
 		node->syn_arg[1] = node->syn_arg[0];
 		if (context->ctx_symbol)
 			name = decompile_symbol(context->ctx_symbol);
@@ -544,7 +549,8 @@ static qli_nod* expand_any( qli_syntax* input, qli_lls* stack)
 	qli_nod* rse = expand_rse(input->syn_arg[0], &stack);
 	node->nod_arg[e_any_rse] = rse;
 
-	if (input->syn_count >= 2 && input->syn_arg[1]) {
+	if (input->syn_count >= 2 && input->syn_arg[1])
+	{
 		qli_nod* boolean = make_node(nod_missing, 1);
 		boolean->nod_arg[0] = expand_expression(input->syn_arg[1], stack);
 		qli_nod* negation = make_node(nod_not, 1);
@@ -759,7 +765,8 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* /*left
 
 // If there is an rse, make up a FOR loop
 
-	if (input->syn_arg[s_era_rse]) {
+	if (input->syn_arg[s_era_rse])
+	{
 		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_era_rse], &right);
 	}
@@ -862,7 +869,8 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 	case nod_agg_average:
 	case nod_agg_total:
 		node = make_node(input->syn_type, e_stt_count);
-		for (; stack; stack = stack->lls_next) {
+		for (; stack; stack = stack->lls_next)
+		{
 			context = (qli_ctx*) stack->lls_object;
 			if (context->ctx_type == CTX_AGGREGATE)
 				break;
@@ -1007,7 +1015,8 @@ static qli_nod* expand_field( qli_syntax* input, qli_lls* stack, qli_syntax* sub
 			qli_name* name = (qli_name*) input->syn_arg[i];
 			const TEXT* q = name->nam_string;
 			USHORT l = name->nam_length;
-			if (p < limit) {
+			if (p < limit)
+			{
 				if (l)
 					do {
 						*p++ = *q++;
@@ -1030,7 +1039,8 @@ static qli_nod* expand_field( qli_syntax* input, qli_lls* stack, qli_syntax* sub
 
 	qli_ctx* parent = NULL;
 	qli_lls* save_stack;
-	for (save_stack = stack; stack; stack = stack->lls_next) {
+	for (save_stack = stack; stack; stack = stack->lls_next)
+	{
 		parent = (qli_ctx*) stack->lls_object;
 		if (parent->ctx_type == CTX_AGGREGATE)
 			break;
@@ -1121,7 +1131,8 @@ static qli_nod* expand_function( qli_syntax* input, qli_lls* stack)
 		for (symbol = (qli_symbol*) input->syn_arg[s_fun_function]; symbol;
 			symbol = symbol->sym_homonym)
 		{
-			if (symbol->sym_type == SYM_function) {
+			if (symbol->sym_type == SYM_function)
+			{
 				function = (qli_fun*) symbol->sym_object;
 				if (function->fun_database == database)
 					break;
@@ -1134,7 +1145,8 @@ static qli_nod* expand_function( qli_syntax* input, qli_lls* stack)
 			for (symbol = (qli_symbol*) input->syn_arg[s_fun_function]; symbol;
 				 symbol = symbol->sym_homonym)
 			{
-				if (symbol->sym_type == SYM_function) {
+				if (symbol->sym_type == SYM_function)
+				{
 					function = (qli_fun*) symbol->sym_object;
 					if (function->fun_database == database)
 						break;
@@ -1200,7 +1212,8 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 // If there is an rse, make up a FOR loop
 
-	if (input->syn_arg[s_mod_rse]) {
+	if (input->syn_arg[s_mod_rse])
+	{
 		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_mod_rse], &right);
 	}
@@ -1209,7 +1222,8 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 // Loop thru contexts counting them.
 	USHORT count = 0;
-	for (contexts = right; contexts; contexts = contexts->lls_next) {
+	for (contexts = right; contexts; contexts = contexts->lls_next)
+	{
 		qli_ctx* context = (qli_ctx*) contexts->lls_object;
 		if (context->ctx_variable)
 			continue;
@@ -1335,7 +1349,8 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 
 	qli_nod* loop = NULL;
 	qli_nod* rse = NULL;
-	if (syn_rse) {
+	if (syn_rse)
+	{
 		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = rse = expand_rse(syn_rse, &new_right);
 	}
@@ -1430,7 +1445,8 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 		for (USHORT i = 0; i < list->nod_count; i++)
 		{
 			qli_print_item* item = (qli_print_item*) list->nod_arg[i];
-			if (item->itm_value) {
+			if (item->itm_value)
+			{
 				*ptr++ = item->itm_value;
 				ptr++;
 				reduced->nod_count++;
@@ -1442,7 +1458,8 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 
 // If a FOR loop was generated, splice it in here.
 
-	if (loop) {
+	if (loop)
+	{
 		loop->nod_arg[e_for_statement] = node;
 		node = loop;
 		if (input->syn_arg[s_prt_order])
@@ -1665,7 +1682,8 @@ static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* 
 						}
 					}
 
-				if (fld) {
+				if (fld)
+				{
 					qli_nod* assignment = make_node(nod_assign, e_asn_count);
 					assignment->nod_count = e_asn_count - 1;
 					assignment->nod_arg[e_asn_to] = make_field(field, context);
@@ -1717,22 +1735,27 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 	qli_syntax* list = input->syn_arg[s_rse_list];
 	if (list)
 	{
-		for (USHORT i = 0; i < list->syn_count; i++) {
+		for (USHORT i = 0; i < list->syn_count; i++)
+		{
 			const qli_syntax* value = list->syn_arg[i];
 			const qli_syntax* field = value->syn_arg[e_itm_value];
 			if (!field)
 				continue;
-			if (global_agg(field, input->syn_arg[s_rse_group_by])) {
+			if (global_agg(field, input->syn_arg[s_rse_group_by]))
+			{
 				if (!parent_context)
 					parent_context = (qli_ctx*) ALLOCD(type_ctx);
 			}
 			else if (parent_context)
+			{
 				if (invalid_syn_field(field, input->syn_arg[s_rse_group_by]))
 					IBERROR(451);
+			}
 		}
 	}
 
-	if (parent_context) {
+	if (parent_context)
+	{
 		parent_context->ctx_type = CTX_AGGREGATE;
 		parent_rse = make_node(nod_rse, e_rse_count + 1);
 		parent_rse->nod_count = 1;
@@ -1757,7 +1780,8 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 		*ptr2++ = (qli_nod*) context;
 		if (i == 0)
 			context->ctx_rse = node;
-		if (rel_node->syn_type == nod_rse) {
+		if (rel_node->syn_type == nod_rse)
+		{
 			context->ctx_type = CTX_STREAM;
 			context->ctx_stream = expand_rse(rel_node, &new_stack);
 		}
@@ -1770,10 +1794,12 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 			qli_symbol* symbol = context->ctx_symbol = (qli_symbol*) rel_node->syn_arg[s_rel_context];
 			if (symbol)
 				symbol->sym_object = (BLK) context;
-			if (over) {
+			if (over)
+			{
 				qli_lls* short_stack = NULL;
 				ALLQ_push((blk*) context, &short_stack);
-				for (USHORT j = 0; j < over->syn_count; j++) {
+				for (USHORT j = 0; j < over->syn_count; j++)
+				{
 					qli_syntax* field = over->syn_arg[j];
 					qli_nod* eql_node = make_node(nod_eql, 2);
 					eql_node->nod_arg[0] = expand_expression(field, short_stack);
@@ -1793,7 +1819,8 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 
 // Handle implicit boolean from SQL xxx IN (yyy FROM relation)
 
-	if (input->syn_arg[s_rse_outer]) {
+	if (input->syn_arg[s_rse_outer])
+	{
 		qli_nod* eql_node = make_node((enum nod_t)(IPTR)input->syn_arg[s_rse_op], 2);
 		eql_node->nod_arg[0] = expand_expression(input->syn_arg[s_rse_outer], old_stack);
 		eql_node->nod_arg[1] = expand_expression(input->syn_arg[s_rse_inner], new_stack);
@@ -1804,7 +1831,8 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 
 	node->nod_arg[e_rse_boolean] = boolean;
 
-	if (input->syn_arg[s_rse_sort]) {
+	if (input->syn_arg[s_rse_sort])
+	{
 		qli_nod* temp = expand_sort(input->syn_arg[e_rse_sort], new_stack, 0);
 		if (parent_rse)
 			parent_rse->nod_arg[e_rse_sort] = temp;
@@ -1873,7 +1901,8 @@ static qli_nod* expand_sort( qli_syntax* input, qli_lls* stack, qli_nod* list)
 	for (USHORT i = 0; i < node->nod_count; i++)
 	{
 		qli_syntax* expr = *syn_ptr++;
-		if (expr->syn_type == nod_position) {
+		if (expr->syn_type == nod_position)
+		{
 			const IPTR position = (IPTR) expr->syn_arg[0];
 			if (!list || !position || position > list->nod_count)
 				IBERROR(152);	// Msg152 invalid ORDER BY ordinal
@@ -1982,7 +2011,8 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 					qli_ctx* context = (qli_ctx*) ALLOCD(type_ctx);
 					context->ctx_type = CTX_VARIABLE;
 					qli_syntax* field_node = syn_node->syn_arg[1];
-					if (field_node) {
+					if (field_node)
+					{
 						if (field_node->syn_type == nod_index)
 							field_node = field_node->syn_arg[s_idx_field];
 						resolve_really((qli_fld*) syn_node->syn_arg[0], field_node);
@@ -2052,7 +2082,8 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 	if (input->syn_arg[s_sto_values])
 	{
-		if (!input->syn_arg[s_sto_fields]) {
+		if (!input->syn_arg[s_sto_fields])
+		{
 			qli_lls* stack = NULL;
 			for (qli_fld* field = relation->rel_fields; field; field = field->fld_next)
 			{
@@ -2151,7 +2182,8 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 				qli_lls* temp = NULL;
 				for (; right; right = right->lls_next)
 					ALLQ_push(right->lls_object, &temp);
-				while (temp) {
+				while (temp)
+				{
 					qli_ctx* context = (qli_ctx*) ALLQ_pop(&temp);
 					value_count +=
 						generate_fields(context, (qli_lls*) &values, input->syn_arg[s_sto_rse]);
@@ -2160,13 +2192,15 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 			else
 				IBERROR(542);	// this was a prompting expression.  won't do at all
 		}
-		else if (input->syn_arg[s_sto_rse] && (value->syn_type == nod_star)) {
+		else if (input->syn_arg[s_sto_rse] && (value->syn_type == nod_star))
+		{
 			qli_ctx* context = find_context((const qli_name*) value->syn_arg[0], right);
 			if (!context)
 				IBERROR(154);	// Msg154 unrecognized context
 			value_count += generate_fields(context, (qli_lls*) &values, input->syn_arg[s_sto_rse]);
 		}
-		else {
+		else
+		{
 			ALLQ_push((blk*) value, &values);
 			value_count++;
 		}
@@ -2184,7 +2218,8 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 	input->syn_arg[s_sto_statement] = list;
 	qli_syntax** ptr = list->syn_arg + value_count;
 
-	while (values) {
+	while (values)
+	{
 	    qli_syntax* assignment = (qli_syntax*) ALLOCDV(type_syn, s_asn_count);
 		*--ptr = assignment;
 		assignment->syn_type = nod_assign;
@@ -2425,7 +2460,8 @@ static bool invalid_nod_field( const qli_nod* node, const qli_nod* list)
 		}
 		return true;
 	}
-	else {
+	else
+	{
 		const qli_nod* const* ptr = node->nod_arg;
 		for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 		{
@@ -2486,7 +2522,8 @@ static bool invalid_syn_field( const qli_syntax* syn_node, const qli_syntax* lis
 	{
 		const qli_name* fctx = NULL;
 		const qli_name* fname = (qli_name*) syn_node->syn_arg[0];
-		if (syn_node->syn_count == 2) {
+		if (syn_node->syn_count == 2)
+		{
 			fctx = fname;
 			fname = (qli_name*) syn_node->syn_arg[1];
 		}
@@ -2496,7 +2533,8 @@ static bool invalid_syn_field( const qli_syntax* syn_node, const qli_syntax* lis
 			const qli_name* gctx = NULL;
 			const qli_syntax* element = list->syn_arg[--count];
 			const qli_name* gname = (qli_name*) element->syn_arg[0];
-			if (element->syn_count == 2) {
+			if (element->syn_count == 2)
+			{
 				gctx = gname;
 				gname = (qli_name*) element->syn_arg[1];
 			}
@@ -2510,7 +2548,8 @@ static bool invalid_syn_field( const qli_syntax* syn_node, const qli_syntax* lis
 		}
 		return true;
 	}
-	else {
+	else
+	{
 		const qli_syntax* const* ptr = syn_node->syn_arg;
 		for (const qli_syntax* const* const end = ptr + syn_node->syn_count; ptr < end; ptr++)
 		{
@@ -2588,12 +2627,14 @@ static qli_nod* make_assignment( qli_nod* target, qli_nod* initial, qli_lls* rig
 		prompt = make_node(nod_edit_blob, e_edt_count);
 		prompt->nod_count = 0;
 		prompt->nod_arg[e_edt_name] = (qli_nod*) field->fld_name->sym_string;
-		if (initial) {
+		if (initial)
+		{
 			prompt->nod_count = 1;
 			prompt->nod_arg[e_edt_input] = expand_expression((qli_syntax*) initial, right);
 		}
 	}
-	else {
+	else
+	{
 		prompt = make_node(nod_prompt, e_prm_count);
 		prompt->nod_arg[e_prm_prompt] = (qli_nod*) field->fld_name->sym_string;
 		prompt->nod_arg[e_prm_field] = (qli_nod*) field;
@@ -2654,7 +2695,8 @@ static qli_nod* make_list( qli_lls* stack)
 	qli_lls* temp = stack;
 	USHORT count = 0;
 
-	while (temp) {
+	while (temp)
+	{
 		count++;
 		temp = temp->lls_next;
 	}
@@ -2786,7 +2828,8 @@ static qli_nod* post_map( qli_nod* node, qli_ctx* context)
 			break;
 	}
 
-	if (!map) {
+	if (!map)
+	{
 		map = (qli_map*) ALLOCD(type_map);
 		map->map_next = context->ctx_map;
 		context->ctx_map = map;
@@ -2849,7 +2892,8 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 			break;
 
 		case CTX_RELATION:
-			if (context->ctx_primary) {
+			if (context->ctx_primary)
+			{
 				*out_context = context = context->ctx_primary;
 				if (!compare_names((qli_name*) node->syn_arg[0], context->ctx_symbol))
 					break;
@@ -2912,7 +2956,8 @@ static void resolve_really( qli_fld* variable, const qli_syntax* field_node)
 
 	qli_name* rel_name = NULL;
 	//qli_name* db_name = NULL;
-	if (offset) {
+	if (offset)
+	{
 		rel_name = (qli_name*) field_node->syn_arg[--offset];
 		//if (offset)
 		//	db_name = (qli_name*) field_node->syn_arg[--offset];
@@ -2929,7 +2974,8 @@ static void resolve_really( qli_fld* variable, const qli_syntax* field_node)
 		qli_symbol *symbol;
 		for (symbol = rel_name->nam_symbol; symbol; symbol = symbol->sym_homonym)
 		{
-			if (symbol->sym_type == SYM_database) {
+			if (symbol->sym_type == SYM_database)
+			{
 				qli_dbb* dbb = (qli_dbb*) symbol->sym_object;
 				resolved = MET_declare(dbb, variable, fld_name);
 				break;			// should be only one db in homonym list

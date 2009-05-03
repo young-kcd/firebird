@@ -52,7 +52,7 @@ const int IN_SW_GSEC_DBA_USER_NAME	= 17;	// Database Admin. User name
 const int IN_SW_GSEC_DBA_PASSWORD	= 18;	// Database Admin. Password
 const int IN_SW_GSEC_SQL_ROLE_NAME	= 19;	// SQL Role to assume
 const int IN_SW_GSEC_AMBIG			= 20;	// ambiguous switch
-const int IN_SW_GSEC_USERNAME		= 21;	// placeholder for the username
+//const int IN_SW_GSEC_USERNAME		= 21;	// placeholder for the username
 const int IN_SW_GSEC_DBA_TRUST_USER	= 22;	// Database Admin. Trusted User name
 const int IN_SW_GSEC_DBA_TRUST_ROLE	= 23;	// use trusted role for auth
 #ifdef TRUSTED_AUTH

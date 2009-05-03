@@ -294,7 +294,8 @@ FILE* EXEC_open_output(qli_nod* node)
 
 // If output is to a file, just do it
 
-	if (!node->nod_arg[e_out_pipe]) {
+	if (!node->nod_arg[e_out_pipe])
+	{
 	    FILE* out_file = fopen(filename, FOPEN_WRITE_TYPE);
 		if (out_file)
 			return out_file;
@@ -314,7 +315,8 @@ FILE* EXEC_open_output(qli_nod* node)
 	TEXT** arg = argv;
 	TEXT** const end = argv + FB_NELEM(argv) - 1; // The last element should be NULL
 	TEXT* pp = filename;
-	while (*pp && arg < end) {
+	while (*pp && arg < end)
+	{
 		*arg++ = pp;
 		while (*pp && *pp != ' ')
 			pp++;
@@ -330,7 +332,8 @@ FILE* EXEC_open_output(qli_nod* node)
 	if (pipe(pair) < 0)
 		IBERROR(36);			// Msg36 couldn't create pipe
 
-	if (!vfork()) {
+	if (!vfork())
+	{
 		close(pair[1]);
 		close(0);
 		dup(pair[0]);
@@ -538,7 +541,8 @@ static DSC *assignment(	qli_nod*		from_node,
 		return from_desc;
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		if (QLI_abort || !QLI_prompt_count) {
 			throw;
 		}
@@ -578,7 +582,8 @@ static void commit_retaining( qli_nod* node)
 		commit_retaining(node);
 		node->nod_type = nod_commit_retaining;
 	}
-	else if (node->nod_count == 1) {
+	else if (node->nod_count == 1)
+	{
 		qli_dbb* database = (qli_dbb*) node->nod_arg[0];
 		database->dbb_flags |= DBB_prepared;
 	}
@@ -661,7 +666,8 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 
 	// We've got a blob copy on our hands.
 
-	if (!from_desc) {
+	if (!from_desc)
+	{
 		*to_desc->dsc_address = 0;
 		return true;
 	}
@@ -705,7 +711,8 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
     UCHAR fixed_buffer[4096];
 	UCHAR* buffer;
 	USHORT buffer_length;
-	if (max_segment < (SLONG) sizeof(fixed_buffer)) {
+	if (max_segment < (SLONG) sizeof(fixed_buffer))
+	{
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
 	}
@@ -861,7 +868,8 @@ static void execute_for( qli_nod* node)
 	qli_req* request = (qli_req*) node->nod_arg[e_for_request];
 	if (request)
 		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_for_send]);
-	else {
+	else
+	{
 	    qli_msg* amessage = (qli_msg*) node->nod_arg[e_for_send];
 		if (amessage)
 			EXEC_send(amessage);
@@ -943,7 +951,8 @@ static void execute_output( qli_nod* node)
 		fclose(print->prt_file);
 
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		if (print->prt_file) {
 			fclose(print->prt_file);
 		}
@@ -1049,7 +1058,8 @@ static void map_data( qli_msg* message)
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
 		QLI_validate_desc(desc);
 		qli_par* missing_parameter = parameter->par_missing;
-		if (missing_parameter) {
+		if (missing_parameter)
+		{
 			USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);
 			*missing_flag = (desc->dsc_missing & DSC_missing) ? DSC_missing : 0;
 		}
@@ -1139,7 +1149,8 @@ static void set_null( qli_msg* message)
 	for (qli_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
 	{
 		qli_nod* from = parameter->par_value;
-		if (from->nod_type == nod_field) {
+		if (from->nod_type == nod_field)
+		{
 			dsc* desc = EVAL_value(from);
 			desc->dsc_missing |= DSC_missing;
 		}
@@ -1169,11 +1180,13 @@ static void transaction_state( qli_nod* node, qli_dbb* database)
 
 	if (database->dbb_transaction)
 	{
-		if (node->nod_type == nod_commit_retaining) {
+		if (node->nod_type == nod_commit_retaining)
+		{
 			if (isc_commit_retaining(status, &database->dbb_transaction))
 				ERRQ_database_error(database, status);
 		}
-		else if (node->nod_type == nod_prepare) {
+		else if (node->nod_type == nod_prepare)
+		{
 			if (isc_prepare_transaction(status, &database->dbb_transaction))
 				ERRQ_database_error(database, status);
 		}
