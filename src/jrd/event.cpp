@@ -594,6 +594,22 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = ROUNDUP(length, sizeof(IPTR));
 	SRQ_PTR* best = NULL;
 
+#ifdef WIN_NT
+	// hvlad: wait for end of shared memory remapping if it is in progress
+
+	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
+	while (process->prb_flags & (PRB_remap | PRB_remap_over))
+	{
+		release();
+		THREAD_EXIT();
+		Sleep(3);
+		THREAD_ENTER();
+		acquire();
+
+		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
+	}
+#endif
+
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) SRQ_ABS_PTR(*ptr)) && *ptr;
 		 ptr = &free->frb_next) 
 	{
@@ -615,7 +631,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 		 * to remap.
 		 */
 
-		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
+		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		process->prb_flags |= PRB_remap;
 		event_t* event = process->prb_event;
 		post_process(process);
@@ -1327,7 +1343,7 @@ static void post_process(PRB process)
 
 	process->prb_flags &= ~PRB_wakeup;
 	process->prb_flags |= PRB_pending;
-	release();
+//	release();
 
 #ifdef MULTI_THREAD
 	ISC_event_post(process->prb_event);
@@ -1339,7 +1355,7 @@ static void post_process(PRB process)
 #endif
 
 #endif
-	acquire();
+//	acquire();
 }
 
 
@@ -1564,7 +1580,7 @@ static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 			break;
 		}
 #ifdef WIN_NT
-		if (process->prb_flags & PRB_remap) {
+		while (process->prb_flags & PRB_remap) {
 			process->prb_flags |= PRB_remap_over;
 			process->prb_flags &= ~PRB_remap;
 			release();
