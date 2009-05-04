@@ -4413,6 +4413,13 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					if (!RFR.RDB$FIELD_ID.NULL && RFR.RDB$FIELD_ID >= REL.RDB$FIELD_ID)
 						REL.RDB$FIELD_ID = RFR.RDB$FIELD_ID + 1;
 
+					// force recalculation of RDB$UPDATE_FLAG if field is calculated 
+					if (!FLD.RDB$COMPUTED_BLR.isEmpty())
+					{
+						RFR.RDB$UPDATE_FLAG.NULL = TRUE;
+						computed_field = true;
+					}
+
 					if (RFR.RDB$FIELD_ID.NULL || RFR.RDB$UPDATE_FLAG.NULL)
 					{
 						MODIFY RFR USING
@@ -4442,7 +4449,6 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								if (!FLD.RDB$COMPUTED_BLR.isEmpty())
 								{
 									RFR.RDB$UPDATE_FLAG = 0;
-									computed_field = true;
 								}
 								if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
 								{
