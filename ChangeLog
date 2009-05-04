@@ -1,3 +1,65 @@
+2009-05-04 13:59  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.273):
+
+	Fixed bug CORE-2448 : Not all dependencies is created at restore
+
+2009-05-04 13:47  hvlad
+
+	* firebird2/src/burp/restore.epp (1.165):
+
+	Fixed bug CORE-2440 : Restoring DB with computed index on computed
+	field provides wrong index and wrong select results
+
+2009-05-04 00:21  asfernandes
+
+	* firebird2/extern/regex/: COPYRIGHT (1.3), INSTALL (1.3),
+	Makefile.am (1.3), Makefile.in (1.4), Makefile.orig (1.3), README
+	(1.3), WHATSNEW (1.3), aclocal.m4 (1.4), autogen.sh (1.3), cclass.h
+	(1.3), cname.h (1.3), config.guess (1.4), config.sub (1.4),
+	configure (1.4), configure.in (1.3), debug.c (1.3), debug.ih (1.3),
+	engine.c (1.3), engine.ih (1.3), install-sh (1.3), ltmain.sh (1.4),
+	main.c (1.5), missing (1.3), mkh (1.3), mkinstalldirs (1.3),
+	regcomp.c (1.5), regcomp.ih (1.3), regerror.c (1.6), regerror.ih
+	(1.3), regex.h (1.5), regex2.h (1.3), regexec.c (1.5), regfree.c
+	(1.5), rxspencer.3 (1.3), rxspencer.7 (1.3), split.c (1.3),
+	test1.sh (1.3), test2.sh (1.3), test3.sh (1.3), tests (1.3),
+	utils.h (1.3), fake/limits.h (1.3), fake/memmove.c (1.3),
+	fake/stdlib.h (1.3):
+
+	Remove the extern regex library
+
+2009-05-04 00:11  asfernandes
+
+	* firebird2/src/jrd/enc.cpp (1.34):
+
+	Looks like some problem with my keyboard :D
+
+2009-05-03 23:57  asfernandes
+
+	* firebird2/src/: dudley/expr.cpp (1.32), dudley/extract.epp
+	(1.57), gpre/ada.cpp (1.64), intl/ldcommon.h (1.31),
+	intl/collations/bl88591ptbr0.h (1.5), intl/collations/bl88591us0.h
+	(1.7), intl/collations/blNEXTus0.h (1.7),
+	intl/collations/db437de0.h (1.7), intl/collations/db437es1.h (1.8),
+	intl/collations/db437fi0.h (1.7), intl/collations/db437fr0.h (1.7),
+	intl/collations/db437it0.h (1.7), intl/collations/db437nl0.h (1.7),
+	intl/collations/db437sv0.h (1.7), intl/collations/db437uk0.h (1.7),
+	intl/collations/db437us0.h (1.7), intl/collations/db850cf0.h (1.7),
+	intl/collations/db850de0.h (1.7), intl/collations/db850es0.h (1.8),
+	intl/collations/db850fr0.h (1.7), intl/collations/db850it1.h (1.7),
+	intl/collations/db850nl0.h (1.7), intl/collations/db850pt0.h (1.7),
+	intl/collations/db850sv1.h (1.7), intl/collations/db850uk0.h (1.7),
+	intl/collations/db850us0.h (1.7), intl/collations/db852cz0.h (1.8),
+	intl/collations/db852po0.h (1.7), isql/isql_win.cpp (1.22),
+	isql/show.epp (1.148), jrd/CsConvert.h (1.18), jrd/blb.cpp (1.197),
+	jrd/blob_filter.cpp (1.43), jrd/btr.cpp (1.240), jrd/enc.cpp
+	(1.33), jrd/intl.cpp (1.123), jrd/quad.h (1.6), jrd/sort.cpp
+	(1.127), qli/expand.cpp (1.47), qli/picstr.cpp (1.41),
+	utilities/ibmgr/ibmgr.h (1.18), utilities/nbackup/nbkswi.h (1.3):
+
+	Misc
+
 2009-05-03 16:21  robocop
 
 	* firebird2/src/qli/picstr.cpp (1.40):
