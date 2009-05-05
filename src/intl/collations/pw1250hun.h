@@ -32,8 +32,8 @@ const int NULL_SECONDARY		= 0;
 const int NULL_TERTIARY			= 0;
 //const int FIRST_IGNORE			= 1;
 const int FIRST_TERTIARY		= 1;
-const int FIRST_SECONDARY		= (FIRST_TERTIARY+MAX_NCO_TERTIARY+1);
-const int FIRST_PRIMARY			= (FIRST_SECONDARY+MAX_NCO_SECONDARY+1);
+const int FIRST_SECONDARY		= (FIRST_TERTIARY + MAX_NCO_TERTIARY + 1);
+const int FIRST_PRIMARY			= (FIRST_SECONDARY + MAX_NCO_SECONDARY + 1);
 
 static const BYTE ToUpperConversionTbl [ UPPERCASE_LEN ] = {
      0, /*     0 ->     0 */
