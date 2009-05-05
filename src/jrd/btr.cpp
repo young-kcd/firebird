@@ -30,6 +30,7 @@
 #include <math.h>
 #include "memory_routines.h"
 #include "../common/classes/vector.h"
+#include "../common/classes/VaryStr.h"
 #include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
@@ -2493,7 +2494,7 @@ static void compress(thread_db* tdbb,
 	if (itype == idx_string || itype == idx_byte_array || itype == idx_metadata ||
 		itype >= idx_first_intl_string)
 	{
-		UCHAR buffer[MAX_KEY];
+		VaryStr<MAX_KEY> buffer;
 		const UCHAR pad = (itype == idx_string) ? ' ' : 0;
 		UCHAR* ptr;
 
@@ -2512,12 +2513,12 @@ static void compress(thread_db* tdbb,
 			to.dsc_scale = 0;
 			to.dsc_ttype() = ttype_sort_key;
 			to.dsc_length = sizeof(buffer);
-			ptr = to.dsc_address = buffer;
+			ptr = to.dsc_address = reinterpret_cast<UCHAR*>(buffer.vary_string);
 			length = INTL_string_to_key(tdbb, itype, desc, &to, key_type);
 		}
 		else {
 			USHORT ttype;
-			length = MOV_get_string_ptr(desc, &ttype, &ptr, (vary*) buffer, MAX_KEY);
+			length = MOV_get_string_ptr(desc, &ttype, &ptr, &buffer, MAX_KEY);
 		}
 
 		if (length)
