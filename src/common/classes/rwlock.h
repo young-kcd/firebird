@@ -174,85 +174,6 @@ public:
 
 #else
 
-#ifdef SOLARIS_MT
-
-#include <thread.h>
-#include <synch.h>
-#include <errno.h>
-
-namespace Firebird
-{
-
-class RWLock
-{
-private:
-	rwlock_t lock;
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
-
-	void init()
-	{
-		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
-		{
-			system_call_failed::raise("rwlock_init");
-		}
-	}
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(Firebird::MemoryPool&) { init(); }
-	~RWLock()
-	{
-		if (rwlock_destroy(&lock))
-			system_call_failed::raise("rwlock_destroy");
-	}
-	void beginRead()
-	{
-		if (rw_rdlock(&lock))
-			system_call_failed::raise("rw_rdlock");
-	}
-	bool tryBeginRead()
-	{
-		const int code = rw_tryrdlock(&lock);
-		if (code == EBUSY)
-			return false;
-		if (code)
-			system_call_failed::raise("rw_tryrdlock");
-		return true;
-	}
-	void endRead()
-	{
-		if (rw_unlock(&lock))
-			system_call_failed::raise("rw_unlock");
-	}
-	bool tryBeginWrite()
-	{
-		const int code = rw_trywrlock(&lock);
-		if (code == EBUSY)
-			return false;
-		if (code)
-			system_call_failed::raise("rw_trywrlock");
-		return true;
-	}
-	void beginWrite()
-	{
-		if (rw_wrlock(&lock))
-			system_call_failed::raise("rw_wrlock");
-	}
-	void endWrite()
-	{
-		if (rw_unlock(&lock))
-			system_call_failed::raise("rw_unlock");
-	}
-};
-
-} // namespace Firebird
-
-
-
-
-#else
-
 #include <pthread.h>
 #include <errno.h>
 
@@ -335,8 +256,6 @@ public:
 };
 
 } // namespace Firebird
-
-#endif // solaris threading (not posix)
 
 #endif // !WIN_NT
 

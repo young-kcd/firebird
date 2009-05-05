@@ -79,10 +79,6 @@ void Spinlock::init()
 	SetCriticalSectionSpinCount(&spinlock, 4000);
 }
 
-#elif defined(SOLARIS_MT)
-
-// no support needed for solaris threads
-
 #else //posix mutex
 
 pthread_mutexattr_t Mutex::attr;

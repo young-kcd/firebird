@@ -30,7 +30,7 @@
 # LINK_LIBS and STATICLINK_LIBS e.g. -lncurses -leditline
 
 WARNINGS=-Wall -Wno-switch -Wno-parentheses -Wno-unused-variable
-COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS_MT -DBSD_COMP -DAMD64 -pipe -fmessage-length=0 -MMD -fPIC
+COMM_SOLX_FLAGS:=-DSOLARIS -DBSD_COMP -DAMD64 -pipe -fmessage-length=0 -MMD -fPIC
 
 SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@

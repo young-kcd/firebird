@@ -49,7 +49,7 @@
 					   stdlib.h (EKU) */
 #endif
 
-#ifdef _MSC_VER
+#if defined (_MSC_VER) || defined (__SUNPRO_CC)
 #define THROW_BAD_ALLOC
 #else
 #define THROW_BAD_ALLOC throw (Firebird::BadAlloc)

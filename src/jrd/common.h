@@ -269,12 +269,6 @@
 
 #ifdef SOLARIS
 
-/* This is NOT defined when building the special shared-pipe library
- * which customers can use to avoid the problems with signals & threads
- * in Solaris
- */
-#define SOLARIS_MT
-
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.

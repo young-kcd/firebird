@@ -22,10 +22,6 @@
  */
 
 #include "firebird.h"
-#ifdef SOLARIS_MT
-#include <thread.h>
-#endif
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -105,7 +101,7 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
-#if (defined SOLARIS_MT)
+#if (defined SOLARIS)
 	pid_t pid = fork1();
 	if (!pid) {
 		if (execv(string, argv) == -1) {

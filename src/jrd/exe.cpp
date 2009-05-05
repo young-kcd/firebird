@@ -227,7 +227,7 @@ static void stuff_stack_trace(const jrd_req*);
 
 /* macro definitions */
 
-#if (defined SUPERSERVER) && (defined WIN_NT || defined SOLARIS_MT)
+#if (defined SUPERSERVER) && (defined WIN_NT)
 const int MAX_CLONES	= 750;
 #else
 const int MAX_CLONES	= 1000;

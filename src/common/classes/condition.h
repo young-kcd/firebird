@@ -124,11 +124,6 @@ public:
 
 #else // WIN_NT
 
-// This implementation will NOT work with FB > 2.1
-#ifdef SOLARIS
-#error Mutex/Condition based semaphore is NOT OK for Solaris
-#endif
-
 #include <pthread.h>
 #include <errno.h>
 

@@ -47,11 +47,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef SOLARIS_MT
-#include <thread.h>
-#include <signal.h>
-#endif
-
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
 
@@ -237,54 +232,6 @@ void THD_wait_for_completion(ThreadHandle& thread)
 		Firebird::system_call_failed::raise("pthread_join", state);
 }
 #endif /* USE_POSIX_THREADS */
-
-
-#ifdef SOLARIS_MT
-#define START_THREAD
-void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg,
-						int priority_arg,
-						void* thd_id)
-{
-/**************************************
- *
- *	t h r e a d _ s t a r t		( S o l a r i s )
- *
- **************************************
- *
- * Functional description
- *	Start a new thread.  Return 0 if successful,
- *	status if not.
- *
- **************************************/
-	int rval;
-	thread_t thread_id;
-	sigset_t new_mask, orig_mask;
-
-	sigfillset(&new_mask);
-	sigdelset(&new_mask, SIGALRM);
-	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
-		Firebird::system_call_failed::raise("thr_sigsetmask", rval);
-	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG,
-			  (thd_id ? 0 : THR_DETACHED) | THR_NEW_LWP, &thread_id);
-	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
-
-	if (rval)
-		Firebird::system_call_failed::raise("thr_create", rval);
-
-	if (thd_id)
-	{
-		*static_cast<thread_t*>(thd_id) = thread_id;
-	}
-}
-
-void THD_wait_for_completion(ThreadHandle& thread)
-{
-	int state = thr_join(thread, NULL, NULL);
-	if (state)
-		Firebird::system_call_failed::raise("thread_join", state);
-}
-#endif  // SOLARIS_MT
 
 
 #ifdef WIN_NT

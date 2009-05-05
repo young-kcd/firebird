@@ -5291,7 +5291,14 @@ static const PTR get_entrypoint(int proc, int implementation)
  **************************************/
 
 	const PTR* const entry = entrypoints + implementation * PROC_count + proc;
-	return *entry ? *entry : &no_entrypoint;
+
+	// static qualifier on &noentrypoint disallows use of conditional operator on Solaris
+	// return *entry ? *entry : &no_entrypoint;
+	if (*entry)
+		return *entry;
+	else
+		return &no_entrypoint;
+	
 }
 
 

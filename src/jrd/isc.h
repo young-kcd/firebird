@@ -40,22 +40,7 @@
 
 #ifdef UNIX
 
-#if defined(SOLARIS_MT)
-#include <thread.h>
-
-struct mtx
-{
-	mutex_t mtx_mutex[1];
-};
-
-struct event_t
-{
-	SLONG event_count;
-	mutex_t event_mutex[1];
-	cond_t event_cond[1];
-};
-
-#elif defined(USE_POSIX_THREADS)
+#if defined(USE_POSIX_THREADS)
 
 #if defined(HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP) && defined(HAVE_PTHREAD_MUTEX_CONSISTENT_NP)
 

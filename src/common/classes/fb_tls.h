@@ -102,14 +102,11 @@ private:
 //# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #else
 
-#ifndef SOLARIS_MT
-
 #include "../common/classes/init.h"
 
 #include <pthread.h>
 
 namespace Firebird {
-
 
 template <typename T>
 class TlsValue : private InstanceControl
@@ -159,55 +156,6 @@ private:
 	bool keySet;	// This is used to avoid conflicts when destroying global variables
 #endif
 };
-#else //SOLARIS_MT
-#include <thread.h>
-#include <string.h>
-
-namespace Firebird {
-
-
-template <typename T>
-class TlsValue
-{
-public:
-	static void  TlsV_on_thread_exit (void * pval)
-	{
-		// Usually should delete pval like this
-		// T* ptempT = (T*) pval;
-		// delete ptempT;
-	}
-
-	TlsValue()
-	{
-		if (thr_keycreate(&key, TlsV_on_thread_exit))
-			system_call_failed::raise("thr_key_create");
-	}
-	const T get()
-	{
-		// We use double C-style cast to allow using scalar datatypes
-		// with sizes up to size of pointer without warnings
-		T* valuep;
-		if (thr_getspecific(key, (void**) &valuep) == 0)
-			return (T)(IPTR) valuep;
-
-		system_call_failed::raise("thr_getspecific");
-		return (T) NULL;
-	}
-	void set(const T value)
-	{
-		if (thr_setspecific(key, (void*)(IPTR) value))
-			system_call_failed::raise("thr_setspecific");
-	}
-	~TlsValue()
-	{
-		// Do nothing if no pthread_key_delete
-	}
-private:
-	thread_key_t key;
-};
-
-
-#endif //SOLARIS_MT
 
 } // namespace Firebird
 

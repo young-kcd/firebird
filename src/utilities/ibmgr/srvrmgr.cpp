@@ -23,10 +23,6 @@
  */
 
 #include "firebird.h"
-#ifdef SOLARIS_MT
-#include <thread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -515,7 +511,7 @@ static bool start_server( ibmgr_data_t* data)
 #endif
 
 	pid_t pid;
-#if (defined SOLARIS_MT)
+#if (defined SOLARIS)
 /* Accoding Sun's documentation vfork()  is not MT-safe
    while linking with libthreads, fork1 - fork one thread
 */
@@ -560,7 +556,7 @@ static bool start_server( ibmgr_data_t* data)
 		   0 if an exit status of a child process is unavailable (that
 		   means in our case that the server is running).
 		 */
-#if (defined SOLARIS_MT)
+#if (defined SOLARIS)
 		// Trying to understand why it died
 		if (ret_value == pid &&
 			(WIFEXITED(exit_status) || WCOREDUMP(exit_status) || WIFSIGNALED(exit_status)))
@@ -579,7 +575,7 @@ static bool start_server( ibmgr_data_t* data)
 			break;
 		}
 
-#endif /* SOLARIS_MT */
+#endif /* SOLARIS */
 
 #ifdef DEBUG
 		else if (ret_value == -1) {

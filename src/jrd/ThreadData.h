@@ -82,10 +82,6 @@ public:
 #define THREAD_ENTRY_PARAM void*
 #define THREAD_ENTRY_RETURN void*
 #define THREAD_ENTRY_CALL
-#elif defined(SOLARIS_MT)
-#define THREAD_ENTRY_PARAM void*
-#define THREAD_ENTRY_RETURN void *
-#define THREAD_ENTRY_CALL
 #else
 // Define correct types for other platforms
 #define THREAD_ENTRY_PARAM void*

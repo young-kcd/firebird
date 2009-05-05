@@ -37,12 +37,7 @@
 // in thd.h ? This is Windows platform maintainers choice
 #include <windows.h>
 #else
-#ifndef SOLARIS_MT
 #include <pthread.h>
-#else
-#include <thread.h>
-#include <synch.h>
-#endif
 #include <errno.h>
 #endif
 
@@ -154,59 +149,6 @@ public:
 
 #else //WIN_NT
 
-#ifdef SOLARIS_MT
-
-class Mutex
-{
-private:
-	mutex_t mlock;
-
-	void init()
-	{
-		int rc = mutex_init(&mlock, USYNC_THREAD | LOCK_RECURSIVE, NULL);
-		if (rc)
-			system_call_failed::raise("mutex_init", rc);
-	}
-
-public:
-	Mutex() { init(); }
-	explicit Mutex(MemoryPool&) { init(); }
-	~Mutex()
-	{
-		int rc = mutex_destroy(&mlock);
-		if (rc)
-			system_call_failed::raise("mutex_destroy", rc);
-	}
-	void enter()
-	{
-		int rc = mutex_lock(&mlock);
-		if (rc)
-			system_call_failed::raise("mutex_lock", rc);
-	}
-	bool tryEnter()
-	{
-		int rc = mutex_trylock(&mlock);
-		if (rc == EBUSY)
-			return false;
-		if (rc)
-			system_call_failed::raise("mutex_trylock", rc);
-		return true;
-	}
-	void leave()
-	{
-		int rc = mutex_unlock(&mlock);
-		if (rc)
-			system_call_failed::raise("mutex_unlock", rc);
-	}
-
-public:
-	static void initMutexes() { }
-};
-
-typedef Mutex Spinlock;
-
-#else  //SOLARIS_MT
-
 // Pthreads version of the class
 class Mutex
 {
@@ -293,8 +235,6 @@ public:
 #else // have spinlocks
 typedef Mutex Spinlock;
 #endif // have spinlocks
-
-#endif //SOLARIS_MT
 
 #endif //WIN_NT
 

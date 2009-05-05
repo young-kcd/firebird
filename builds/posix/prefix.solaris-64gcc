@@ -13,7 +13,7 @@
 #
 
 # Firebird defines specific to Solaris (and x86) build
-CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc
+CFLAGS_COMMON= -DSOLARIS -DBSD_COMP -Dsparc
 
 # compile flags for GCC compiler
 COMMON_GCC_FLAGS=  -MMD -fPIC -m64   -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9 

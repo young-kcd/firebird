@@ -14,7 +14,7 @@
 #
 
 # Firebird defines specific to Solaris (sparc) build
-CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc -DSUNCC
+CFLAGS_COMMON= -DSOLARIS -DBSD_COMP -Dsparc -DSUNCC
 #-DSUNCC - correcting gnuc C++ extentions
 
 # compile flags for SUNWspro/Forte/CC/Sun Studio compiler

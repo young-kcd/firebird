@@ -3133,7 +3133,7 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 
 
-#ifdef _MSC_VER
+#if defined (_MSC_VER) || defined (__SUNPRO_CC)
 typedef StdMathFunc VoidPtrStdMathFunc;
 #else
 typedef void* VoidPtrStdMathFunc;

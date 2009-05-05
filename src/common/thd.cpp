@@ -55,11 +55,6 @@
 # endif
 #endif
 
-#ifdef SOLARIS_MT
-#include <thread.h>
-#include <signal.h>
-#endif
-
 #ifdef USE_POSIX_THREADS
 #include <pthread.h>
 #endif
@@ -79,10 +74,6 @@ FB_THREAD_ID getThreadId()
 	FB_THREAD_ID id = 1;
 #ifdef WIN_NT
 	id = GetCurrentThreadId();
-#endif
-
-#ifdef SOLARIS_MT
-	id = thr_self();
 #endif
 
 #ifdef USE_POSIX_THREADS
@@ -155,10 +146,6 @@ void THD_yield()
 #else
 	pthread_yield();
 #endif // _POSIX_PRIORITY_SCHEDULING
-#endif
-
-#ifdef SOLARIS_MT
-	thr_yield();
 #endif
 
 #ifdef WIN_NT
