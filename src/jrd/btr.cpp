@@ -289,11 +289,17 @@ public:
 		BtrPageLocks* locks = getLocksCache(tdbb);
 		GlobalRWLock *lock = locks->get(tdbb, key);
 
+		ISC_STATUS_ARRAY temp_status;
+		ISC_STATUS* const org_status = tdbb->tdbb_status_vector;
+		tdbb->tdbb_status_vector = temp_status;
+
 		const bool res = lock->lock(tdbb, LCK_write, LCK_NO_WAIT);
 
 		if (res) {
 			lock->unlock(tdbb, LCK_write);
 		}
+
+		tdbb->tdbb_status_vector = org_status;
 
 		return res;
 	}
