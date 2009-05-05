@@ -296,7 +296,8 @@ void SHOW_stuff( qli_syntax* node)
 				show_dbb(dbb);
 				for (relation = dbb->dbb_relations; relation; relation = relation->rel_next)
 				{
-					if (!(relation->rel_flags & (REL_system | REL_view))) {
+					if (!(relation->rel_flags & (REL_system | REL_view)))
+					{
 						show_rel(relation);
 						if (!show_indices_detail(relation)) {
 							ERRQ_msg_put(94);
@@ -312,7 +313,8 @@ void SHOW_stuff( qli_syntax* node)
 			show_dbb(dbb);
 			for (relation = dbb->dbb_relations; relation; relation = relation->rel_next)
 			{
-				if (!(relation->rel_flags & (REL_system | REL_view))) {
+				if (!(relation->rel_flags & (REL_system | REL_view)))
+				{
 					show_rel(relation);
 					if (!show_indices_detail(relation)) {
 						ERRQ_msg_put(94);
@@ -514,7 +516,8 @@ static void display_blob(qli_dbb* dbb,
 		buffer[length--] = 0;
 		if (strip_line)
 		{
-			for (TEXT* b = buffer + length; b >= buffer;) {
+			for (TEXT* b = buffer + length; b >= buffer;)
+			{
 				if (*b == '\n' || *b == '\t' || *b == ' ')
 					*b-- = 0;
 				else
@@ -662,7 +665,8 @@ static void show_blr(qli_dbb* database,
 
 	if (!UserBlob::blobIsNull(source))
 		show_text_blob(database, "\t", source_msg, &source, 0, NULL, false);
-	else if (!UserBlob::blobIsNull(blr)) {
+	else if (!UserBlob::blobIsNull(blr))
+	{
 		if (blr_msg)
 			ERRQ_msg_put(blr_msg);
 		display_blr(database, blr);
@@ -907,7 +911,8 @@ static void show_dbb_parameters( qli_dbb* database)
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_files])
 				F IN DB.RDB$FILES SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
 
-				if (F.RDB$SHADOW_NUMBER) {
+				if (F.RDB$SHADOW_NUMBER)
+				{
 					if (!(F.RDB$FILE_FLAGS & FILE_conditional)) {
 						ERRQ_msg_put(385, SafeArg() << F.RDB$SHADOW_NUMBER <<
 										F.RDB$FILE_NAME << F.RDB$FILE_START);
@@ -1070,7 +1075,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
  **************************************/
 	qli_dbb* database;
 
-// Find the long field name (including query name)
+	// Find the long field name (including query name)
 
 	if (relation) {
 		if (!(relation->rel_flags & REL_fields))
@@ -1094,7 +1099,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 		max_name = MAX(max_name, l);
 	}
 
-// Now print the fields
+	// Now print the fields
 
 	for (field = fields; field; field = field->fld_next)
 	{
@@ -1388,13 +1393,15 @@ static void show_func( qli_func* func)
 	else
 	{
 		bool any_supported = false;
-		for (database = QLI_databases; database; database = database->dbb_next) {
+		for (database = QLI_databases; database; database = database->dbb_next)
+		{
 			if (database->dbb_capabilities & DBB_cap_functions) {
 				any_supported = true;
 				count += show_func_detail(database, name->nam_string);
 			}
 		}
-		if (!count) {
+		if (!count)
+		{
 			if (any_supported) {
 				// Msg423 Function is %s not defined in any open database
 				ERRQ_msg_put(423, name->nam_string);
@@ -1438,12 +1445,14 @@ static int show_func_detail( qli_dbb* database, const TEXT* func_name)
 		BASED ON RDB$FUNCTIONS.RDB$QUERY_NAME fq_name;
 		strcpy(fq_name, F.RDB$FUNCTION_NAME);
 
-		if (F.RDB$QUERY_NAME[0]) {
+		if (F.RDB$QUERY_NAME[0])
+		{
 			ERRQ_msg_put(424,	// Msg424 Function %s (%s) in database \"%s\" (%s):
 						 SafeArg() << F.RDB$FUNCTION_NAME << F.RDB$QUERY_NAME <<
 						 database->dbb_filename << database->dbb_symbol->sym_string);
 		}
-		else {
+		else
+		{
 			ERRQ_msg_put(425,	// Msg425 Function %s in database \"%s\" (%s):
 						 SafeArg() << F.RDB$FUNCTION_NAME << database->dbb_filename <<
 						 database->dbb_symbol->sym_string);
@@ -1931,7 +1940,8 @@ static void show_matching()
  **************************************/
 	if (QLI_abort)
 		return;
-	if (QLI_matching_language) {
+	if (QLI_matching_language)
+	{
 		buf_type buffer;
 		strncpy(buffer, (char*) QLI_matching_language->con_data,
 				QLI_matching_language->con_desc.dsc_length);
@@ -1957,7 +1967,8 @@ static void show_names( const TEXT* name, USHORT width, TEXT* buffer)
 	TEXT* s = buffer + strlen(buffer);
 	SSHORT len = sizeof(padded_name) - 1;
 	const SSHORT l1 = s - buffer;
-	if ((s != buffer) && ((l1 + len + 4) > width)) {
+	if ((s != buffer) && ((l1 + len + 4) > width))
+	{
 		printf("%s\n", buffer);
 		buffer[0] = 0;
 		s = buffer;
@@ -2096,23 +2107,23 @@ static void show_rel_detail( qli_rel* relation)
 		show_text_blob(database, "\t", 291, &R.RDB$DESCRIPTION, 0, NULL, false);
 
 		if (database->dbb_capabilities & DBB_cap_security)
-		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_secur])
-			S IN RDB$RELATIONS WITH S.RDB$RELATION_NAME = R.RDB$RELATION_NAME
-				AND S.RDB$SECURITY_CLASS NOT MISSING
-			show_string(292, S.RDB$SECURITY_CLASS, 0, NULL);
-		END_FOR;
+			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_secur])
+				S IN RDB$RELATIONS WITH S.RDB$RELATION_NAME = R.RDB$RELATION_NAME
+					AND S.RDB$SECURITY_CLASS NOT MISSING
+				show_string(292, S.RDB$SECURITY_CLASS, 0, NULL);
+			END_FOR;
 
 		if (database->dbb_capabilities & DBB_cap_extern_file)
-		FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_extern])
-			E IN RDB$RELATIONS WITH E.RDB$RELATION_NAME = R.RDB$RELATION_NAME
-				AND E.RDB$EXTERNAL_FILE NOT MISSING
-			ERRQ_msg_put(293, E.RDB$EXTERNAL_FILE);	// Msg293 Stored in external file %s
-		END_FOR;
+			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_extern])
+				E IN RDB$RELATIONS WITH E.RDB$RELATION_NAME = R.RDB$RELATION_NAME
+					AND E.RDB$EXTERNAL_FILE NOT MISSING
+				ERRQ_msg_put(293, E.RDB$EXTERNAL_FILE);	// Msg293 Stored in external file %s
+			END_FOR;
 
-// OBSOLETE - Handling of DBB_cap_triggers (old V2 style triggers)
-// OBSOLETE - Msg294 An erase trigger is defined for %s
-// OBSOLETE - Msg295 A modify trigger is defined for %s
-// OBSOLETE - Msg296 A store trigger is defined for %s
+		// OBSOLETE - Handling of DBB_cap_triggers (old V2 style triggers)
+		// OBSOLETE - Msg294 An erase trigger is defined for %s
+		// OBSOLETE - Msg295 A modify trigger is defined for %s
+		// OBSOLETE - Msg296 A store trigger is defined for %s
 
 		if (database->dbb_capabilities & DBB_cap_new_triggers)
 		{
@@ -2320,7 +2331,7 @@ static void show_sys_trigs( qli_dbb* database)
 							database, X.RDB$RELATION_NAME);
 			show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 			count++;
-	}
+		}
 	END_FOR;
 
 	if (!count)
@@ -2406,7 +2417,7 @@ static int show_trigger_detail( qli_dbb* database, const TEXT* relation_name)
 	MET_meta_transaction(database, false);
 	int count = 0;
 
-// New style triggers
+	// New style triggers
 
 	if (database->dbb_capabilities & DBB_cap_new_triggers)
 	{
@@ -2435,16 +2446,16 @@ static int show_trigger_detail( qli_dbb* database, const TEXT* relation_name)
 		return count;
 	}
 
-// Old style triggers
-// OBSOLETE - 1996-Aug-06 David Schnepper
+	// Old style triggers
+	// OBSOLETE - 1996-Aug-06 David Schnepper
 
-// OBSOLETE - Msg298 Triggers for relation %s:
-// OBSOLETE - Msg299 Source for the erase trigger is not available.  Trigger BLR:
-// OBSOLETE - Msg300 Erase trigger for relation %s:
-// OBSOLETE - Msg301 Source for the modify trigger is not available.  Trigger BLR:
-// OBSOLETE - Msg302 Modify trigger for relation %s:
-// OBSOLETE - Msg303 Source for the store trigger is not available.  Trigger BLR:
-// OBSOLETE - Msg304 Store trigger for relation %s:
+	// OBSOLETE - Msg298 Triggers for relation %s:
+	// OBSOLETE - Msg299 Source for the erase trigger is not available.  Trigger BLR:
+	// OBSOLETE - Msg300 Erase trigger for relation %s:
+	// OBSOLETE - Msg301 Source for the modify trigger is not available.  Trigger BLR:
+	// OBSOLETE - Msg302 Modify trigger for relation %s:
+	// OBSOLETE - Msg303 Source for the store trigger is not available.  Trigger BLR:
+	// OBSOLETE - Msg304 Store trigger for relation %s:
 
 	return count;
 }
@@ -2616,7 +2627,8 @@ static int show_triggers_detail( qli_dbb* database)
 			X IN RDB$TRIGGERS WITH X.RDB$SYSTEM_FLAG MISSING
 				OR X.RDB$SYSTEM_FLAG EQ 0 SORTED BY X.RDB$RELATION_NAME,
 				X.RDB$TRIGGER_TYPE, X.RDB$TRIGGER_SEQUENCE, X.RDB$TRIGGER_NAME
-			if (!X.RDB$TRIGGER_BLR.NULL) {
+			if (!X.RDB$TRIGGER_BLR.NULL)
+			{
 				fb_utils::exact_name(X.RDB$RELATION_NAME);
 				ERRQ_msg_put(381, X.RDB$RELATION_NAME);
 				// Msg365 Triggers for relation %s
@@ -2631,24 +2643,23 @@ static int show_triggers_detail( qli_dbb* database)
 							   database, X.RDB$RELATION_NAME);
 				show_trigger_messages(database, X.RDB$TRIGGER_NAME);
 				count++;
-		}
+			}
 		END_FOR;
 	}
 	else
 	{
+		// Old style triggers
+		// OBSOLETE - 1996-Aug-06 David Schnepper
+		// OBSOLETE - Msg305 Triggers for relation %s:
 
-// Old style triggers
-// OBSOLETE - 1996-Aug-06 David Schnepper
-// OBSOLETE - Msg305 Triggers for relation %s:
+		// OBSOLETE - Msg306 Source for the erase trigger is not available.  Trigger BLR:
+		// OBSOLETE - Msg307 Erase trigger for relation %s:
 
-// OBSOLETE - Msg306 Source for the erase trigger is not available.  Trigger BLR:
-// OBSOLETE - Msg307 Erase trigger for relation %s:
+		// OBSOLETE - Msg308 Source for the modify trigger is not available.  Trigger BLR:
+		// OBSOLETE - Msg309 Modify trigger for relation %s:
 
-// OBSOLETE - Msg308 Source for the modify trigger is not available.  Trigger BLR:
-// OBSOLETE - Msg309 Modify trigger for relation %s:
-
-// OBSOLETE - Msg310 Source for the store trigger is not available.  Trigger BLR:
-// OBSOLETE - Msg311 Store trigger for relation %s:
+		// OBSOLETE - Msg310 Source for the store trigger is not available.  Trigger BLR:
+		// OBSOLETE - Msg311 Store trigger for relation %s:
 	}
 
 	return count;

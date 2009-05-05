@@ -204,12 +204,12 @@ static void print_more(USHORT level,
 
 	ERRQ_msg_get(502, prompt, sizeof(prompt));	/* Msg502 "Subtopic? "  */
 
-// Prompt the user for a line
+	// Prompt the user for a line
 
 	if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 		return;
 
-// Upcase the response and zap the blanks
+	// Upcase the response and zap the blanks
 	TEXT* p = topic;
 	topics[1] = p;
 
@@ -218,7 +218,7 @@ static void print_more(USHORT level,
 			*p++ = UPPER(*q);
 	*p = 0;
 
-// If we got anything, print the new topic
+	// If we got anything, print the new topic
 
 	if (p != topic)
 	{
@@ -248,7 +248,7 @@ static void print_topic(USHORT level,
  **************************************/
 	TEXT string[128], banner[128], buffer[128], prompt[80];
 
-// Copy the parent string inserting a blank at the end
+	// Copy the parent string inserting a blank at the end
 
 	TEXT* p = string;
 

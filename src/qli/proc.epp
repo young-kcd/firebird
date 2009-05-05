@@ -187,7 +187,7 @@ void PRO_copy_procedure(qli_dbb* old_database, const TEXT* old_name,
 		PRO_close(new_database, new_blob);
 	END_STORE;
 
-// Release the FOR and STORE requests
+	// Release the FOR and STORE requests
 	isc_release_request(gds_status, &store_request);
 	PRO_commit(new_database);
 }
@@ -209,7 +209,7 @@ void PRO_create( qli_dbb* database, const TEXT* name)
 	ISC_STATUS_ARRAY status_vector;
 	UCHAR bpb[20];
 
-// See if procedure is already in use
+	// See if procedure is already in use
 
 	probe(database, name);
 
@@ -248,7 +248,7 @@ void PRO_create( qli_dbb* database, const TEXT* name)
 		isc_close_blob(status_vector, &blob);
 	END_STORE;
 
-// Commit the procedure transaction, if there is one
+	// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 }
@@ -279,7 +279,7 @@ int PRO_delete_procedure( qli_dbb* database, const TEXT* name)
 
 	isc_release_request(gds_status, &request);
 
-// Commit the procedure transaction, if there is one
+	// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 
@@ -330,7 +330,7 @@ void PRO_edit_procedure( qli_dbb* database, const TEXT* name)
 		isc_vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
 	END_STORE
 
-// Commit the procedure transaction, if there is one
+	// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 }
@@ -427,7 +427,7 @@ void PRO_invoke( qli_dbb* database, const TEXT* name)
 
 	if (!blob)
 		ERRQ_print_error(72, name);
-// Msg 72 procedure \"%s\" is undefined
+	// Msg 72 procedure \"%s\" is undefined
 
 	LEX_procedure((qli_dbb*)database, blob);
 	LEX_token();
@@ -497,7 +497,7 @@ int PRO_rename_procedure( qli_dbb* database, const TEXT* old_name, const TEXT* n
 
 	isc_release_request(gds_status, &request);
 
-// Commit the procedure transaction, if there is one
+	// Commit the procedure transaction, if there is one
 
 	PRO_commit(database);
 
@@ -574,7 +574,7 @@ void PRO_setup( qli_dbb* dbb)
 
 	if (!dbb)
 		IBERROR(77);
-// Msg 77 database handle required
+	// Msg 77 database handle required
 
 	// If we don't have a QLI$PROCEDURES relation, and can't get one, punt
 	/* CVC: We consider VMS dead.
@@ -593,7 +593,7 @@ void PRO_setup( qli_dbb* dbb)
 		return;
 	}
 
-// Sigh.  Relation doesn't exist.  So make it exist.
+	// Sigh.  Relation doesn't exist.  So make it exist.
 
 	create_qli_procedures(dbb);
 
@@ -644,11 +644,11 @@ FB_API_HANDLE PRO_transaction( qli_dbb* database, bool update_flag)
 			database->dbb_capabilities |= DBB_cap_multi_trans;
 	}
 
-// If we already have a procedure transaction, there's more nothing to do
+	// If we already have a procedure transaction, there's more nothing to do
 
 	gds_trans = transaction;
 
-// If we only support a single transaction, use the data transaction
+	// If we only support a single transaction, use the data transaction
 
 	if (!gds_trans && (database->dbb_capabilities & DBB_cap_single_trans))
 	{
@@ -850,7 +850,7 @@ static void probe( qli_dbb* database, const TEXT* name)
  *	return if it is.
  *
  **************************************/
-// Probe to see if procedure is already in use
+	// Probe to see if procedure is already in use
 
 	FB_API_HANDLE blob = PRO_fetch_procedure(database, name);
 	if (blob) {

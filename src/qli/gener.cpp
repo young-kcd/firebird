@@ -523,14 +523,14 @@ static void gen_assignment( qli_nod* node, qli_req* request)
  **************************************/
 	qli_nod* from = node->nod_arg[e_asn_from];
 
-// Handle a local expression locally
+	// Handle a local expression locally
 
 	if (node->nod_flags & NOD_local) {
 		gen_expression(from, 0);
 		return;
 	}
 
-// Generate a remote assignment
+	// Generate a remote assignment
 
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
@@ -980,7 +980,7 @@ static void gen_field( qli_nod* node, qli_req* request)
  *	requests or not.
  *
  **************************************/
-// If there isn't a request specified, this is a reference.
+	// If there isn't a request specified, this is a reference.
 
 	if (!request)
 		return;
@@ -1050,18 +1050,18 @@ static void gen_for( qli_nod* node, qli_req* request)
 	if (message)
 		STUFF(blr_begin);
 
-// If there is a message to be sent, build a receive for it
+	// If there is a message to be sent, build a receive for it
 
 	if (node->nod_arg[e_for_send])
 		gen_send_receive((qli_msg*) node->nod_arg[e_for_send], blr_receive);
 
-// Generate the FOR loop proper.
+	// Generate the FOR loop proper.
 
 	STUFF(blr_for);
 	gen_rse(node->nod_arg[e_for_rse], request);
 	STUFF(blr_begin);
 
-// If data is to be received (included EOF), build a send
+	// If data is to be received (included EOF), build a send
 
 	const qli_par* eof = 0;
 	dsc desc;
@@ -1102,7 +1102,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 		STUFF(blr_end);
 	}
 
-// Build  the body of the loop.
+	// Build  the body of the loop.
 
 	const qli_msg* continuation = request->req_continue;
 	if (continuation)
@@ -1125,7 +1125,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 	if (continuation)
 		STUFF(blr_end);
 
-// Finish off by building a SEND to indicate end of file
+	// Finish off by building a SEND to indicate end of file
 
 	if (message)
 	{
@@ -1137,7 +1137,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 		STUFF(blr_end);
 	}
 
-// If this is our request, compile it.
+	// If this is our request, compile it.
 
 	if (node->nod_arg[e_for_request])
 		gen_compile(request);
@@ -1182,7 +1182,7 @@ static void gen_function( qli_nod* node, qli_req* request)
 	else
 		rlb = CHECK_RLB(request->req_blr);
 
-// Generate function body
+	// Generate function body
 
 	STUFF(blr_function);
 	qli_fun* function = (qli_fun*) node->nod_arg[e_fun_function];
@@ -1191,7 +1191,7 @@ static void gen_function( qli_nod* node, qli_req* request)
 	for (const UCHAR* p = (UCHAR*) symbol->sym_string; *p;)
 		STUFF(*p++);
 
-// Generate function arguments
+	// Generate function arguments
 
 	qli_nod* args = node->nod_arg[e_fun_args];
 	STUFF(args->nod_count);
@@ -1477,7 +1477,7 @@ static void gen_request( qli_req* request)
 	STUFF(blr_version4);
 	STUFF(blr_begin);
 
-// Build declarations for all messages.
+	// Build declarations for all messages.
 
 	for (qli_msg* message = request->req_messages; message; message = message->msg_next)
 	{
@@ -1541,7 +1541,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 		STUFF(blr_rs_stream);
 	STUFF(node->nod_count);
 
-// Check for aggregate case
+	// Check for aggregate case
 	qli_nod* list;
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_rse_count];
 
@@ -1575,7 +1575,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 		return;
 	}
 
-// Make relation clauses for all relations
+	// Make relation clauses for all relations
 
 	qli_nod** ptr = &node->nod_arg[e_rse_count];
 	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
@@ -1591,7 +1591,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 		}
 	}
 
-// Handle various clauses
+	// Handle various clauses
 
 	if (list = node->nod_arg[e_rse_first]) {
 		STUFF(blr_first);
@@ -1894,12 +1894,12 @@ static void gen_store( qli_nod* node, qli_req* request)
 
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
-// If there is a message to be sent, build a receive for it
+	// If there is a message to be sent, build a receive for it
 
 	if (node->nod_arg[e_sto_send])
 		gen_send_receive((qli_msg*) node->nod_arg[e_sto_send], blr_receive);
 
-// Generate the STORE statement proper.
+	// Generate the STORE statement proper.
 
 	STUFF(blr_store);
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_sto_context];
@@ -1908,13 +1908,13 @@ static void gen_store( qli_nod* node, qli_req* request)
 	STUFF_WORD(relation->rel_id);
 	STUFF(context->ctx_context);
 
-// Build  the body of the loop.
+	// Build  the body of the loop.
 
 	STUFF(blr_begin);
 	gen_statement(node->nod_arg[e_sto_statement], request);
 	STUFF(blr_end);
 
-// If this is our request, compile it.
+	// If this is our request, compile it.
 
 	if (node->nod_arg[e_sto_request])
 		gen_compile(request);

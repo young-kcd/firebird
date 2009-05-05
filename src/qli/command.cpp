@@ -420,7 +420,7 @@ void CMD_shell( qli_syntax* node)
  **************************************/
 	TEXT buffer[256];
 
-// Copy command, inserting extra blank at end.
+	// Copy command, inserting extra blank at end.
 
 	TEXT* p = buffer;
 	const qli_const* constant = (qli_const*) node->syn_arg[0];

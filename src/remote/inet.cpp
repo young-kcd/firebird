@@ -276,17 +276,17 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
 										size_t							nEntries);
 
-static int		inet_destroy(XDR *);
+static int		inet_destroy(XDR*);
 static void		inet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
-static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
-static bool_t	inet_getlong(XDR *, SLONG *);
-static u_int	inet_getpostn(XDR *);
-static caddr_t	inet_inline(XDR *, u_int);
+static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
+static bool_t	inet_getlong(XDR*, SLONG *);
+static u_int	inet_getpostn(XDR*);
+static caddr_t	inet_inline(XDR*, u_int);
 static void		inet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putlong(XDR*, const SLONG*);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t	inet_read(XDR *);
-static bool_t	inet_setpostn(XDR *, u_int);
+static bool_t	inet_read(XDR*);
+static bool_t	inet_setpostn(XDR*, u_int);
 static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
 									const Firebird::PathName&,
@@ -311,7 +311,7 @@ static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
 static void		unhook_port(rem_port*, rem_port*);
-static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
+static int		xdrinet_create(XDR*, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_INT	tryStopMainThread = 0;
 
@@ -589,7 +589,8 @@ rem_port* INET_connect(const TEXT* name,
 	Firebird::string host;
 	Firebird::string protocol;
 
-	if (name) {
+	if (name)
+	{
 		host = name;
 		const size_t pos = host.find("/");
 		if (pos != Firebird::string::npos) {
@@ -606,7 +607,8 @@ rem_port* INET_connect(const TEXT* name,
 		host = port->port_host->str_data;
 	}
 
-	if (protocol.isEmpty()) {
+	if (protocol.isEmpty())
+	{
 		const unsigned short port2 = Config::getRemoteServicePort();
 		if (port2) {
 			protocol.printf("%hu", port2);
@@ -817,7 +819,8 @@ rem_port* INET_connect(const TEXT* name,
 		// On Linux platform, when the server dies the system holds a port
 		// for some time.
 
-		if (INET_ERRNO == INET_ADDR_IN_USE) {
+		if (INET_ERRNO == INET_ADDR_IN_USE)
+		{
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 				sleep(10);
 				n = bind((SOCKET) port->port_handle, (struct sockaddr *) &address, sizeof(address));
@@ -842,7 +845,8 @@ rem_port* INET_connect(const TEXT* name,
 
 	inet_ports->registerPort(port);
 
-	if (flag & SRVR_multi_client) {
+	if (flag & SRVR_multi_client)
+	{
 		// Prevent the generation of dummy keepalive packets on the connect port.
 
 		port->port_dummy_packet_interval = 0;
@@ -857,7 +861,8 @@ rem_port* INET_connect(const TEXT* name,
 		socklen_t l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle, (struct sockaddr*) &address, &l);
 		const int inetErrNo = INET_ERRNO;
-		if (s == INVALID_SOCKET) {
+		if (s == INVALID_SOCKET)
+		{
 			if (!INET_shutting_down)
 			{
 				inet_error(port, "accept", isc_net_connect_err, inetErrNo);
@@ -1039,7 +1044,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 		case CNCT_group:
 			{
-				int length = id.getClumpLength();
+				const int length = id.getClumpLength();
 				if (length != 0) {
 					eff_gid = 0;
 					memcpy(&eff_gid, id.getBytes(), length);
@@ -1108,7 +1113,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 
 	memset(&address, 0, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
-	if (status == 0) {
+	if (status == 0)
+	{
 		Firebird::string addr_str;
 		const UCHAR* ip = (UCHAR*) &address.sin_addr;
 		addr_str.printf(
@@ -1498,7 +1504,8 @@ static void disconnect( rem_port* port)
 	port->release();
 
 #ifdef DEBUG
-	if (INET_trace & TRACE_summary) {
+	if (INET_trace & TRACE_summary)
+	{
 		fprintf(stdout, "INET_count_send = %lu packets\n", INET_count_send);
 		fprintf(stdout, "INET_bytes_send = %lu bytes\n", INET_bytes_send);
 		fprintf(stdout, "INET_count_recv = %lu packets\n", INET_count_recv);
@@ -1794,7 +1801,8 @@ static int get_host_address(const char* name,
 	// retry the operation a few times.
 	// NOTE: This still does not guarantee success, but helps.
 
-	if ((!host) && (H_ERRNO == INET_RETRY_ERRNO)) {
+	if ((!host) && (H_ERRNO == INET_RETRY_ERRNO))
+	{
 		for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 			if ( (host = gethostbyname(name)) )
 				break;
@@ -2236,7 +2244,7 @@ static int send_full( rem_port* port, PACKET * packet)
 		return FALSE;
 
 #ifdef DEBUG
-	{
+	{ // scope
 		static ULONG op_sent_count = 0;
 		op_sent_count++;
 		if (INET_trace & TRACE_operations) {
@@ -2245,7 +2253,7 @@ static int send_full( rem_port* port, PACKET * packet)
 					   op_sent_count, packet->p_operation);
 			fflush(stdout);
 		}
-	}
+	} // end scope
 #endif
 
 	return inet_write(&port->port_send /*, TRUE*/);
@@ -2265,7 +2273,7 @@ static int send_partial( rem_port* port, PACKET * packet)
  **************************************/
 
 #ifdef DEBUG
-	{
+	{ // scope
 		static ULONG op_sentp_count = 0;
 		op_sentp_count++;
 		if (INET_trace & TRACE_operations) {
@@ -2274,7 +2282,7 @@ static int send_partial( rem_port* port, PACKET * packet)
 					   op_sentp_count, packet->p_operation);
 			fflush(stdout);
 		}
-	}
+	} // end scope
 #endif
 
 	return xdr_protocol(&port->port_send, packet);
@@ -2367,7 +2375,7 @@ static void inet_gen_error (rem_port* port, const Arg::StatusVector& v)
 }
 
 
-static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
+static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
  *
@@ -2420,7 +2428,8 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 	if (!bytecount)
 		return TRUE;
 
-	if (xdrs->x_handy >= bytecount) {
+	if (xdrs->x_handy >= bytecount)
+	{
 		xdrs->x_handy -= bytecount;
 		while (bytecount--)
 			*buff++ = *xdrs->x_private++;
@@ -2428,7 +2437,8 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0) {
+	while (--bytecount >= 0)
+	{
 		if (!xdrs->x_handy && !inet_read(xdrs))
 			return FALSE;
 		*buff++ = *xdrs->x_private++;
@@ -2439,7 +2449,7 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 }
 
 
-static bool_t inet_getlong( XDR * xdrs, SLONG * lp)
+static bool_t inet_getlong( XDR* xdrs, SLONG* lp)
 {
 /**************************************
  *
@@ -2462,7 +2472,7 @@ static bool_t inet_getlong( XDR * xdrs, SLONG * lp)
 	return TRUE;
 }
 
-static u_int inet_getpostn( XDR * xdrs)
+static u_int inet_getpostn( XDR* xdrs)
 {
 /**************************************
  *
@@ -2497,8 +2507,7 @@ static caddr_t inet_inline( XDR* xdrs, u_int bytecount)
 	return xdrs->x_base + bytecount;
 }
 
-static void inet_error(rem_port* port,
-					   const TEXT* function, ISC_STATUS operation, int status)
+static void inet_error(rem_port* port, const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
  *
@@ -2512,14 +2521,16 @@ static void inet_error(rem_port* port,
  *	to format the status vector if any.
  *
  **************************************/
-	if (status) {
+	if (status)
+	{
 		inet_gen_error(port,
 					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
 					   Arg::Gds(operation) << SYS_ERR(status));
 
 		gds__log("INET/inet_error: %s errno = %d", function, status);
 	}
-	else {
+	else
+	{
 		// No status value, just format the basic arguments.
 		inet_gen_error(port,
 					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
@@ -2572,7 +2583,8 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	if (!bytecount)
 		return TRUE;
 
-	if (xdrs->x_handy >= bytecount) {
+	if (xdrs->x_handy >= bytecount)
+	{
 		xdrs->x_handy -= bytecount;
 		while (bytecount--)
 			*xdrs->x_private++ = *buff++;
@@ -2580,7 +2592,8 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0) {
+	while (--bytecount >= 0)
+	{
 		if (xdrs->x_handy <= 0 && !inet_write(xdrs /*, 0*/))
 			return FALSE;
 		--xdrs->x_handy;
@@ -2607,7 +2620,7 @@ static bool_t inet_putlong( XDR* xdrs, const SLONG* lp)
 	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(&l), 4);
 }
 
-static bool_t inet_read( XDR * xdrs)
+static bool_t inet_read( XDR* xdrs)
 {
 /**************************************
  *
@@ -2655,7 +2668,7 @@ static bool_t inet_read( XDR * xdrs)
 	return TRUE;
 }
 
-static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
+static bool_t inet_setpostn( XDR* xdrs, u_int bytecount)
 {
 /**************************************
  *
@@ -2718,7 +2731,8 @@ static rem_port* inet_try_connect(PACKET* packet,
 
 	rdb->rdb_port = port;
 	port->port_context = rdb;
-	if (!port->receive(packet)) {
+	if (!port->receive(packet))
+	{
 		inet_error(port, "receive in try_connect", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
 		delete rdb;
@@ -2728,7 +2742,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	return port;
 }
 
-static bool_t inet_write( XDR * xdrs /*, bool_t end_flag*/)
+static bool_t inet_write( XDR* xdrs /*, bool_t end_flag*/)
 {
 /**************************************
  *
@@ -2820,8 +2834,7 @@ static bool_t inet_write( XDR * xdrs /*, bool_t end_flag*/)
 }
 
 #ifdef DEBUG
-static void packet_print(const TEXT* string,
-						 const UCHAR* packet, int length, ULONG counter)
+static void packet_print(const TEXT* string, const UCHAR* packet, int length, ULONG counter)
 {
 /**************************************
  *
@@ -2990,7 +3003,7 @@ static bool packet_receive(rem_port* port,
 	}
 
 #ifdef DEBUG
-	{
+	{ // scope
 		INET_count_recv++;
 		INET_bytes_recv += n;
 		if (INET_trace & TRACE_packets)
@@ -3001,7 +3014,7 @@ static bool packet_receive(rem_port* port,
 			inet_error(port, "simulated error - read", isc_net_read_err, 0);
 			return false;
 		}
-	}
+	} // end scope
 #endif
 
 	*length = n;
@@ -3128,7 +3141,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 	}
 
 #ifdef DEBUG
-	{
+	{ // scope
 		INET_count_send++;
 		INET_bytes_send += buffer_length;
 		if (INET_trace & TRACE_packets)
@@ -3139,7 +3152,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			inet_error(port, "simulated error - send", isc_net_write_err, 0);
 			return false;
 		}
-	}
+	} // end scope
 #endif
 
 	return true;
@@ -3159,7 +3172,8 @@ static void unhook_port( rem_port* port, rem_port* parent)
  *
  **************************************/
 
-	for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next) {
+	for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+	{
 		if (*ptr == port) {
 			*ptr = port->port_next;
 			if (ptr == &parent->port_clients) {

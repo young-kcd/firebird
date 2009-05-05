@@ -412,7 +412,7 @@ static qli_nod* compile_edit( qli_nod* node, qli_req* request)
 	if (!request)
 		ERRQ_bugcheck(358);			// Msg358 can't find database for blob edit
 
-// If there is an input blob, get it now.
+	// If there is an input blob, get it now.
 
 	qli_nod* value = node->nod_arg[e_edt_input];
 	if (value) {
@@ -695,7 +695,7 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
  *
  **************************************/
 
-// Pick up field characteristics
+	// Pick up field characteristics
 
 	node->nod_count = 0;
 	qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
@@ -850,7 +850,7 @@ static qli_nod* compile_function( qli_nod* node, qli_req* old_request, bool inte
 	else
 		request = old_request;
 
-// If there is a value, compile it here
+	// If there is a value, compile it here
 
 	qli_par* parameter = 0;
 	if (!internal_flag) {
@@ -1077,7 +1077,7 @@ static qli_nod* compile_prompt( qli_nod* node)
  **************************************/
 	USHORT prompt_length;
 
-// Make up a plausible prompt length
+	// Make up a plausible prompt length
 
 	qli_fld* field = (qli_fld*) node->nod_arg[e_prm_field];
 	if (!field)
@@ -1224,7 +1224,7 @@ static qli_req* compile_rse(qli_nod* node, qli_req* old_request, bool internal_f
 		database = &local_dbb;
 	}
 
-// Loop thru relations to make sure only a single database is presented
+	// Loop thru relations to make sure only a single database is presented
 
 	qli_ctx** ctx_ptr = (qli_ctx**) node->nod_arg + e_rse_count;
 	const qli_ctx* const* const ctx_end = ctx_ptr + node->nod_count;
@@ -1266,7 +1266,7 @@ static qli_req* compile_rse(qli_nod* node, qli_req* old_request, bool internal_f
 
 	compile_context(node, request, internal_flag);
 
-// Process various clauses
+	// Process various clauses
 
 	if (node->nod_arg[e_rse_first])
 		compile_expression(node->nod_arg[e_rse_first], request, true);
@@ -1298,7 +1298,7 @@ static qli_req* compile_rse(qli_nod* node, qli_req* old_request, bool internal_f
 	if (node->nod_arg[e_rse_having])
 		compile_expression(node->nod_arg[e_rse_having], request, true);
 
-// If we didn't allocate a new request block, say so by returning NULL
+	// If we didn't allocate a new request block, say so by returning NULL
 
 	if (request == original_request)
 		return NULL;
@@ -1431,7 +1431,7 @@ static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request, bool i
 	else
 		request = old_request;
 
-// If there is a value, compile it here
+	// If there is a value, compile it here
 
 	if (!internal_flag) {
 		qli_par* parameter = make_parameter(request->req_receive, 0);
@@ -1477,7 +1477,7 @@ static qli_nod* compile_store( qli_nod* node, qli_req* request, bool internal_fl
  *	Compile a STORE statement.
  *
  **************************************/
-// Find or make up request for statement
+	// Find or make up request for statement
 
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_sto_context];
 	qli_rel* relation = context->ctx_relation;
@@ -2020,7 +2020,7 @@ static qli_nod* make_reference( qli_nod* node, qli_msg* message)
 			break;
 	}
 
-// Parameter doesn't exist -- make a new one.
+	// Parameter doesn't exist -- make a new one.
 
 	if (!parm) {
 		parm = make_parameter(message, node);

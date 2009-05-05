@@ -227,7 +227,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 	if (!desc)
 		return 0;
 
-// Starting from the print item, work our way back to the database block
+	// Starting from the print item, work our way back to the database block
 
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
@@ -240,7 +240,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 	qli_dbb* dbb = request->req_database;
 	FB_API_HANDLE blob = 0;
 
-// Format blob parameter block
+	// Format blob parameter block
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
@@ -277,7 +277,7 @@ FILE* EXEC_open_output(qli_nod* node)
  *	Open output stream to re-direct output.
  *
  **************************************/
-// Evaluate filename and copy to a null terminated string
+	// Evaluate filename and copy to a null terminated string
 
 	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
 	const TEXT* p = NULL;
@@ -292,7 +292,7 @@ FILE* EXEC_open_output(qli_nod* node)
 
 	filename[l] = 0;
 
-// If output is to a file, just do it
+	// If output is to a file, just do it
 
 	if (!node->nod_arg[e_out_pipe])
 	{
@@ -304,7 +304,7 @@ FILE* EXEC_open_output(qli_nod* node)
 		// Msg42 Can't open output file %s
 	}
 
-// Output is to a file.  Setup file and fork process
+	// Output is to a file.  Setup file and fork process
 
 #ifdef WIN_NT
 	FILE* out_file = _popen(filename, "w");
@@ -833,7 +833,7 @@ static void execute_assignment( qli_nod* node)
 
 	assignment(from, EVAL_value(to), node->nod_arg[e_asn_valid], initial, parameter);
 
-// propagate the missing flag in variable assignments
+	// propagate the missing flag in variable assignments
 
 	if (to->nod_type == nod_variable)
 	{
@@ -1095,7 +1095,7 @@ static void print_counts( qli_req* request)
 		return;
 	}
 
-// print out the counts of any records affected
+	// print out the counts of any records affected
 
 	int length = 0;
 	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length)

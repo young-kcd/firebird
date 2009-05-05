@@ -101,7 +101,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-// Handle the simple (matched) ones first
+	// Handle the simple (matched) ones first
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
 	{
@@ -184,7 +184,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		}
 	}
 
-// Handle mixed string comparisons
+	// Handle mixed string comparisons
 
 	if (arg1->dsc_dtype <= dtype_varying && arg2->dsc_dtype <= dtype_varying)
 	{
@@ -221,7 +221,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 		return 0;
 	}
 
-// Handle hetergeneous compares
+	// Handle hetergeneous compares
 
 	if (arg1->dsc_dtype < arg2->dsc_dtype)
 		return (-MOVQ_compare(arg2, arg1));
@@ -320,7 +320,7 @@ double MOVQ_date_to_double(const dsc* desc)
  **************************************/
 	SLONG temp[2], *date;
 
-// If the input descriptor is not in date form, convert it.
+	// If the input descriptor is not in date form, convert it.
 
 	if (desc->dsc_dtype == dtype_timestamp)
 		date = (SLONG *) desc->dsc_address;
@@ -367,14 +367,16 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 		if (*p == ',')
 			continue;
 
-		if (DIGIT(*p)) {
+		if (DIGIT(*p))
+		{
 			value = value * 10 + *p - '0';
 			if (fraction)
 				--scale;
 		}
 		else if (*p == '.')
 		{
-			if (fraction) {
+			if (fraction)
+			{
 				MOVQ_terminate(string, temp, length, sizeof(temp));
 				ERRQ_error(411, temp);
 			}
@@ -387,7 +389,8 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 			sign = false;
 		else if (*p == 'e' || *p == 'E')
 			break;
-		else if (*p != ' ') {
+		else if (*p != ' ')
+		{
 			MOVQ_terminate(string, temp, length, sizeof(temp));
 			ERRQ_error(411, temp);
 		}
@@ -411,7 +414,8 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 				sign = true;
 			else if (*p == '+' && !exp && !sign)
 				continue;
-			else if (*p != ' ') {
+			else if (*p != ' ')
+			{
 				MOVQ_terminate(string, temp, length, sizeof(temp));
 				ERRQ_error(411, temp);
 			}
@@ -492,7 +496,7 @@ double MOVQ_get_double(const dsc* desc)
 		mover_error(410, desc->dsc_dtype, dtype_double);
 	}
 
-// Last, but not least, adjust for scale
+	// Last, but not least, adjust for scale
 
 	int scale = desc->dsc_scale;
 	if (scale == 0)
@@ -589,7 +593,7 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 		mover_error(410, desc->dsc_dtype, dtype_long);
 	}
 
-// Last, but not least, adjust for scale
+	// Last, but not least, adjust for scale
 
 	if (scale == 0)
 		return value;
@@ -643,21 +647,24 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT le
 /* If the value is already a string (fixed or varying), just return
    the address and length. */
 
-	if (desc->dsc_dtype == dtype_text) {
+	if (desc->dsc_dtype == dtype_text)
+	{
 		*address = (TEXT*) desc->dsc_address;
 		return desc->dsc_length;
 	}
 
-// Perhaps it a "C" type string?
+	// Perhaps it a "C" type string?
 
-	if (desc->dsc_dtype == dtype_cstring) {
+	if (desc->dsc_dtype == dtype_cstring)
+	{
 		*address = (TEXT*) desc->dsc_address;
 		return MIN(static_cast<int>(strlen((char*)desc->dsc_address)), desc->dsc_length - 1);
 	}
 
-// No luck -- convert value to varying string.
+	// No luck -- convert value to varying string.
 
-	if (desc->dsc_dtype == dtype_varying) {
+	if (desc->dsc_dtype == dtype_varying)
+	{
 		vary* varying = (vary*) desc->dsc_address;
 		*address = varying->vary_string;
 		return varying->vary_length;
@@ -845,7 +852,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		break;
 
 	case dtype_blob:
-		if (from->dsc_dtype == dtype_quad) {
+		if (from->dsc_dtype == dtype_quad)
+		{
 			((SLONG*) p)[0] = ((SLONG*) q)[0];
 			((SLONG*) p)[1] = ((SLONG*) q)[1];
 			return;
@@ -853,7 +861,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 		break;
 
 	case dtype_quad:
-		if (from->dsc_dtype == dtype_blob) {
+		if (from->dsc_dtype == dtype_blob)
+		{
 			((SLONG*) p)[0] = ((SLONG*) q)[0];
 			((SLONG*) p)[1] = ((SLONG*) q)[1];
 			return;
@@ -909,7 +918,8 @@ void MOVQ_terminate(const SCHAR* from, SCHAR* to, USHORT length, USHORT max_leng
  **************************************/
 
 	fb_assert(max_length != 0);
-	if (length) {
+	if (length)
+	{
 		length = MIN(length, max_length - 1);
 		memcpy(to, from, length);
 		to[length] = '\0';
@@ -952,7 +962,8 @@ static double double_from_text(const dsc* desc)
 		if (*p == ',')
 			continue;
 
-		if (DIGIT(*p)) {
+		if (DIGIT(*p))
+		{
 			value = value * 10. + (*p - '0');
 			if (fraction)
 				scale++;
@@ -1112,7 +1123,8 @@ static void timestamp_to_text( const SLONG date[2], DSC* to)
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
 			FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 
-	if (times.tm_hour || times.tm_min || times.tm_sec || date[1]) {
+	if (times.tm_hour || times.tm_min || times.tm_sec || date[1])
+	{
 		TEXT time[15];
 		sprintf(time, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
 				times.tm_sec, date[1] % PRECISION);
@@ -1154,13 +1166,15 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 	ERRQ_msg_get(504, msg_unknown, sizeof(msg_unknown));	// Msg504 unknown datatype %d
 
 	const TEXT* in = type_name(in_type);
-	if (!in) {
+	if (!in)
+	{
 		in = in_name;
 		sprintf(in_name, msg_unknown, in_type);
 	}
 
 	const TEXT* out = type_name(out_type);
-	if (!out) {
+	if (!out)
+	{
 		out = out_name;
 		sprintf(out_name, msg_unknown, out_type);
 	}
@@ -1225,10 +1239,11 @@ static void numeric_to_text(const dsc* from, dsc* to)
 
 	MOVQ_move(from, &intermediate);
 
-// Check for negation, then convert the number to a string of digits
+	// Check for negation, then convert the number to a string of digits
 
 	SSHORT neg = 0;
-	if (n < 0) {
+	if (n < 0)
+	{
 		neg = 1;
 		n = -n;
 	}
@@ -1259,7 +1274,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	TEXT* q = (TEXT*) ((to->dsc_dtype == dtype_text) ?
 		to->dsc_address : to->dsc_address + sizeof(SSHORT));
 
-// If negative, put in minus sign
+	// If negative, put in minus sign
 
 	if (neg)
 		*q++ = '-';
@@ -1283,7 +1298,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 			*q++ = *--p;
 		} while (--l);
 
-// If padding is required, do it now.
+	// If padding is required, do it now.
 
 	if (pad)
 		do {
@@ -1302,7 +1317,8 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		return;
 	}
 
-	if (to->dsc_dtype == dtype_cstring) {
+	if (to->dsc_dtype == dtype_cstring)
+	{
 		*q = 0;
 		return;
 	}
@@ -1323,7 +1339,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
  *	Convert an arbitrary string to a date.
  *
  **************************************/
-	if (!length) {
+	if (!length)
+	{
 		date[0] = date[1] = 0;
 		return;
 	}
@@ -1341,7 +1358,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-// Parse components
+	// Parse components
 
 	TEXT temp[15];
 	USHORT n, precision;
@@ -1364,7 +1381,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 		if (DIGIT(c))
 		{
 			precision = n = 0;
-			while (p < end && DIGIT(*p)) {
+			while (p < end && DIGIT(*p))
+			{
 				n = n * 10 + *p++ - '0';
 				precision++;
 			}
@@ -1374,7 +1392,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 		else if (LETTER(c))
 		{
 			TEXT* t = temp;
-			while (p < end && LETTER(c)) {
+			while (p < end && LETTER(c))
+			{
 				c = UPPER(*p);
 				if (!LETTER(c))
 					break;
@@ -1391,7 +1410,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							date_error(string, length);
 
-					if (strcmp(temp, NOW) == 0) {
+					if (strcmp(temp, NOW) == 0)
+					{
 						now_to_date(today, date);
 						return;
 					}
@@ -1399,11 +1419,13 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 					isc_encode_date(today, (ISC_QUAD*)date);
 					if (strcmp(temp, TODAY) == 0)
 						return;
-					if (strcmp(temp, TOMORROW) == 0) {
+					if (strcmp(temp, TOMORROW) == 0)
+					{
 						++date[0];
 						return;
 					}
-					if (strcmp(temp, YESTERDAY) == 0) {
+					if (strcmp(temp, YESTERDAY) == 0)
+					{
 						--date[0];
 						return;
 					}
@@ -1417,7 +1439,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 			n = month_ptr - FB_LONG_MONTHS_UPPER;
 			month_position = i;
 		}
-		else {
+		else
+		{
 			date_error(string, length);
 			return;
 		}
@@ -1440,19 +1463,21 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 		}
 	}
 
-// Slide things into day, month, year form
+	// Slide things into day, month, year form
 
 	tm times;
-	if (month_position) {
+	if (month_position)
+	{
 		times.tm_mon = components[1];
 		times.tm_mday = components[0];
 	}
-	else {
+	else
+	{
 		times.tm_mon = components[0];
 		times.tm_mday = components[1];
 	}
 
-// Handle defaulting of year
+	// Handle defaulting of year
 
 	if (((times.tm_year = components[2]) == 0) && !year)
 		times.tm_year = today->tm_year + 1900;
@@ -1470,7 +1495,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	times.tm_min = components[4];
 	times.tm_sec = components[5];
 
-// convert day/month/year to Julian and validate result
+	// convert day/month/year to Julian and validate result
 
 	isc_encode_date(&times, (ISC_QUAD*)date);
 	tm times2;
@@ -1502,7 +1527,8 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
  *	Convert an arbitrary string to a time.
  *
  **************************************/
-	if (!length) {
+	if (!length)
+	{
 		date[0] = date[1] = 0;
 		return;
 	}
@@ -1518,7 +1544,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
 
-// Parse components
+	// Parse components
 
 	TEXT temp[15];
 	USHORT n, precision;
@@ -1540,7 +1566,8 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 		if (DIGIT(c))
 		{
 			precision = n = 0;
-			while (p < end && DIGIT(*p)) {
+			while (p < end && DIGIT(*p))
+			{
 				n = n * 10 + *p++ - '0';
 				precision++;
 			}
@@ -1548,7 +1575,8 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 		else if (LETTER(c))
 		{
 			TEXT* t = temp;
-			while (p < end && LETTER(c)) {
+			while (p < end && LETTER(c))
+			{
 				c = UPPER(*p);
 				if (!LETTER(c))
 					break;
@@ -1562,13 +1590,15 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 					date_error(string, length);
 			}
 
-			if (strcmp(temp, NOW) == 0) {
+			if (strcmp(temp, NOW) == 0)
+			{
 				now_to_date(today, date);
 				return;
 			}
 			date_error(string, length);
 		}
-		else {
+		else
+		{
 			date_error(string, length);
 			return;
 		}
@@ -1576,7 +1606,8 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 		while (p < end && *p == ' ')
 			p++;
 
-		if (*p == '/' || *p == '-' || *p == ',' || *p == ':' || *p == '.') {
+		if (*p == '/' || *p == '-' || *p == ',' || *p == ':' || *p == '.')
+		{
 			p++;
 			continue;
 		}
@@ -1588,7 +1619,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	times.tm_min = components[4];
 	times.tm_sec = components[5];
 
-// convert day/month/year to Julian and validate result
+	// convert day/month/year to Julian and validate result
 
 	isc_encode_date(&times, (ISC_QUAD*)date);
 
@@ -1612,7 +1643,8 @@ static const TEXT* type_name( USHORT dtype)
  *	Return the name of a data type.
  *
  **************************************/
-	for (const dtypes_t* names = dtypes_table; names->description; names++) {
+	for (const dtypes_t* names = dtypes_table; names->description; names++)
+	{
 		if (names->type == dtype)
 			return names->description;
 	}

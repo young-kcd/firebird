@@ -84,7 +84,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	if (type <= (SCHAR) type_MIN || type >= (SCHAR) type_MAX)
 		ERRQ_bugcheck(1);			// Msg1 bad block type
 
-// Compute block length
+	// Compute block length
 
 	size_t size = block_sizes[type].typ_root_length;
 
@@ -299,7 +299,7 @@ PLB ALLQ_pool()
  **************************************/
 	USHORT pool_id;
 
-// Start by assigning a pool id
+	// Start by assigning a pool id
 
 	for (pool_id = 0; pool_id < global_pools->vec_count; pool_id++)
 	{
@@ -417,12 +417,12 @@ void ALLQ_release( FRB block)
 	if ((SCHAR *) block == (SCHAR *) free)
 		ERRQ_bugcheck(435);			// block released twice
 
-// Merge block into list first, then try to combine blocks
+	// Merge block into list first, then try to combine blocks
 
 	block->frb_next = free;
 	*ptr = block;
 
-// Try to merge the free block with the next one down.
+	// Try to merge the free block with the next one down.
 
 	if (free) {
 		if ((SCHAR *) block + block->frb_header.blk_length == (SCHAR *) free)
@@ -434,7 +434,7 @@ void ALLQ_release( FRB block)
 			ERRQ_bugcheck(436);		// released block overlaps following free block
 	}
 
-// Try and merge the block with the prior free block
+	// Try and merge the block with the prior free block
 
 	if (prior) {
 		if ((SCHAR *) prior + prior->frb_header.blk_length == (SCHAR *) block)

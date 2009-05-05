@@ -231,7 +231,7 @@ qli_nod* EXP_expand( qli_syntax* node)
 		return NULL;
 	} // end switch, no default case for error
 
-// If there are any variables, make up a context now
+	// If there are any variables, make up a context now
 
 	global_output_stack = NULL;
 	qli_lls* right = NULL;
@@ -350,7 +350,7 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
  *
  **************************************/
 
-// If it's based_on, flesh it out & check datatype.
+	// If it's based_on, flesh it out & check datatype.
 
 	if (field_node)
 	{
@@ -361,7 +361,7 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 			IBERROR(137);		// Msg137 variables may not be based on blob fields.
 	}
 
-// Get rid of any other variables of the same name
+	// Get rid of any other variables of the same name
 
 	qli_fld* field;
 	for (qli_fld** ptr = &QLI_variables; field = *ptr; ptr = &field->fld_next)
@@ -375,8 +375,8 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 			break;
 		}
 
-// Next, copy temporary field block into permanent pool.  Fold edit_string
-//   query_header into main block to save space and complexity.
+	// Next, copy temporary field block into permanent pool.  Fold edit_string
+	//   query_header into main block to save space and complexity.
 
 	const TEXT* q;
 	USHORT l = variable->fld_length;
@@ -394,7 +394,7 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 	new_fld->fld_sub_type_missing = variable->fld_sub_type_missing;
 	new_fld->fld_flags = variable->fld_flags | FLD_missing;
 
-// Copy query_name, edit string, query header
+	// Copy query_name, edit string, query header
 
 	TEXT* p = (TEXT*) new_fld->fld_data + new_fld->fld_length;
 	if (q = variable->fld_edit_string)
@@ -410,7 +410,7 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 		while (*p++ = *q++);
 	}
 
-// Link new variable into variable chain
+	// Link new variable into variable chain
 
 	new_fld->fld_next = QLI_variables;
 	QLI_variables = new_fld;
@@ -574,7 +574,7 @@ static qli_nod* expand_boolean( qli_syntax* input, qli_lls* stack)
  *	Expand a statement.
  *
  **************************************/
-// Make node and process arguments
+	// Make node and process arguments
 
 	qli_nod* node = make_node(input->syn_type, input->syn_count);
 	qli_nod** ptr = node->nod_arg;
@@ -588,7 +588,7 @@ static qli_nod* expand_boolean( qli_syntax* input, qli_lls* stack)
 			*ptr = expand_expression(input->syn_arg[i], stack);
 	}
 
-// Try to match any prompts against fields to determine prompt length
+	// Try to match any prompts against fields to determine prompt length
 
 	if (value->nod_type != nod_field)
 		return node;
@@ -736,7 +736,7 @@ static void expand_edit_string( qli_nod* node, qli_print_item* item)
 		return;
 	}
 
-// Handle fields
+	// Handle fields
 
 	qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
 
@@ -763,7 +763,7 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* /*left
  **************************************/
 	qli_nod* loop = NULL;
 
-// If there is an rse, make up a FOR loop
+	// If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_era_rse])
 	{
@@ -771,7 +771,7 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* /*left
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_era_rse], &right);
 	}
 
-// Loop thru contexts counting them.
+	// Loop thru contexts counting them.
 	int count = 0;
 	qli_ctx* context = NULL;
 	for (qli_lls* contexts = right; contexts; contexts = contexts->lls_next)
@@ -789,7 +789,7 @@ static qli_nod* expand_erase( qli_syntax* input, qli_lls* right, qli_lls* /*left
 	else if (count > 1)
 		IBERROR(140);			// Msg140 can't erase from a join
 
-// Make up node big enough to hold fixed fields plus all contexts
+	// Make up node big enough to hold fixed fields plus all contexts
 
 	qli_nod* node = make_node(nod_erase, e_era_count);
 	node->nod_arg[e_era_context] = (qli_nod*) context;
@@ -858,7 +858,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		{
 			expand_distinct(node->nod_arg[e_stt_rse], node->nod_arg[e_stt_value]);
 		}
-// count2 next 2 lines go
+		// count2 next 2 lines go
 		if (input->syn_type == nod_count)
 			node->nod_arg[e_stt_value] = 0;
 		return node;
@@ -1210,7 +1210,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
  **************************************/
 	qli_nod* loop = NULL;
 
-// If there is an rse, make up a FOR loop
+	// If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_mod_rse])
 	{
@@ -1220,7 +1220,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 
     qli_lls* contexts;
 
-// Loop thru contexts counting them.
+	// Loop thru contexts counting them.
 	USHORT count = 0;
 	for (contexts = right; contexts; contexts = contexts->lls_next)
 	{
@@ -1235,13 +1235,13 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 	if (!count)
 		IBERROR(148);			// Msg148 no context for modify
 
-// Make up node big enough to hold fixed fields plus all contexts
+	// Make up node big enough to hold fixed fields plus all contexts
 
 	qli_nod* node = make_node(nod_modify, (int) e_mod_count + count);
 	node->nod_count = count;
 	qli_nod** ptr = &node->nod_arg[e_mod_count];
 
-// Loop thru contexts augmenting left context
+	// Loop thru contexts augmenting left context
 
 	for (contexts = right; contexts; contexts = contexts->lls_next)
 	{
@@ -1259,7 +1259,7 @@ static qli_nod* expand_modify( qli_syntax* input, qli_lls* right, qli_lls* left)
 			break;
 	}
 
-// Process sub-statement, list of fields, or, sigh, none of the above
+	// Process sub-statement, list of fields, or, sigh, none of the above
 
 	qli_syntax* syn_list;
 	if (input->syn_arg[s_mod_statement])
@@ -1339,13 +1339,13 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 	qli_syntax* syn_rse = input->syn_arg[s_prt_rse];
 	qli_lls* new_right = right;
 
-// If an output file or pipe is present, make up an output node
+	// If an output file or pipe is present, make up an output node
 
 	qli_prt* print;
 	expand_output(input->syn_arg[s_prt_output], right, &print);
 
-// If a record select expression is present, expand it and build a FOR
-// statement.
+	// If a record select expression is present, expand it and build a FOR
+	// statement.
 
 	qli_nod* loop = NULL;
 	qli_nod* rse = NULL;
@@ -1422,7 +1422,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 				break;
 		}
 
-// If no print object showed up, complain!
+	// If no print object showed up, complain!
 
 	if (!count)
 		IBERROR(150);			// Msg150 No items in print list
@@ -1435,7 +1435,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 	node->nod_arg[e_prt_list] = list;
 	node->nod_arg[e_prt_output] = (qli_nod*) print;
 
-// If DISTINCT was requested, make up a reduced list.
+	// If DISTINCT was requested, make up a reduced list.
 
 	if (rse && input->syn_arg[s_prt_distinct])
 	{
@@ -1456,7 +1456,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 			rse->nod_arg[e_rse_reduced] = reduced;
 	}
 
-// If a FOR loop was generated, splice it in here.
+	// If a FOR loop was generated, splice it in here.
 
 	if (loop)
 	{
@@ -1571,7 +1571,7 @@ static qli_nod* expand_report( qli_syntax* input, qli_lls* right, qli_lls* /*lef
  **************************************/
 	qli_prt* print;
 
-// Start by processing record selection expression
+	// Start by processing record selection expression
 
 	expand_output(input->syn_arg[s_prt_output], right, &print);
 	qli_rpt* report = print->prt_report = (qli_rpt*) input->syn_arg[s_prt_list];
@@ -1590,7 +1590,7 @@ static qli_nod* expand_report( qli_syntax* input, qli_lls* right, qli_lls* /*lef
 	node->nod_arg[e_prt_list] = (qli_nod*) report;
 	node->nod_arg[e_prt_output] = (qli_nod*) print;
 
-// Process clauses where they exist
+	// Process clauses where they exist
 
 	expand_control_break(&report->rpt_top_rpt, right);
 	expand_control_break(&report->rpt_top_page, right);
@@ -1621,12 +1621,12 @@ static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* 
  *
  **************************************/
 
-// Make a FOR loop to drive the restructure
+	// Make a FOR loop to drive the restructure
 
 	qli_nod* loop = make_node(nod_for, e_for_count);
 	loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_asn_from], &right);
 
-// Make a STORE node.
+	// Make a STORE node.
 
 	qli_nod* node = make_node(nod_store, e_sto_count);
 	loop->nod_arg[e_for_statement] = node;
@@ -1637,7 +1637,7 @@ static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* 
 	context->ctx_rse = (qli_nod*) -1;
 	qli_rel* relation = context->ctx_relation = (qli_rel*) rel_node->syn_arg[s_rel_relation];
 
-// If we don't already know about the relation, find out now.
+	// If we don't already know about the relation, find out now.
 
 	if (!(relation->rel_flags & REL_fields))
 		MET_fields(relation);
@@ -1764,12 +1764,12 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 		parent_context->ctx_sub_rse = node;
 	}
 
-// Process the FIRST clause before the context gets augmented
+	// Process the FIRST clause before the context gets augmented
 
 	if (input->syn_arg[s_rse_first])
 		node->nod_arg[e_rse_first] = expand_expression(input->syn_arg[e_rse_first], old_stack);
 
-// Process relations
+	// Process relations
 
 	qli_syntax** ptr = input->syn_arg + s_rse_count;
 
@@ -1813,12 +1813,12 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 		ALLQ_push((blk*) context, &new_stack);
 	}
 
-// Handle explicit boolean
+	// Handle explicit boolean
 
 	if (input->syn_arg[e_rse_boolean])
 		boolean = make_and(boolean, expand_expression(input->syn_arg[e_rse_boolean], new_stack));
 
-// Handle implicit boolean from SQL xxx IN (yyy FROM relation)
+	// Handle implicit boolean from SQL xxx IN (yyy FROM relation)
 
 	if (input->syn_arg[s_rse_outer])
 	{
@@ -1852,7 +1852,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 
 	node->nod_arg[e_rse_join_type] = (qli_nod*) input->syn_arg[s_rse_join_type];
 
-// If there is a parent context, set it up here
+	// If there is a parent context, set it up here
 
 	*stack = new_stack;
 
@@ -2054,7 +2054,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
  **************************************/
 	qli_nod* loop = NULL;
 
-// If there is an rse, make up a FOR loop
+	// If there is an rse, make up a FOR loop
 
 	if (input->syn_arg[s_sto_rse]) {
 		loop = make_node(nod_for, e_for_count);
@@ -2079,7 +2079,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 	ALLQ_push((blk*) context, &left);
 
-//  If there are field and value lists, process them
+	//  If there are field and value lists, process them
 
 	if (input->syn_arg[s_sto_values])
 	{
@@ -2156,7 +2156,7 @@ static void expand_values( qli_syntax* input, qli_lls* right)
  *
  **************************************/
 
-// fields have already been checked and expanded.  Just count them
+	// fields have already been checked and expanded.  Just count them
 
 	qli_lls* fields = (qli_lls*) input->syn_arg[s_sto_fields];
 	qli_lls* stack;
@@ -2164,13 +2164,13 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 	for (stack = fields; stack; stack = stack->lls_next)
 		field_count++;
 
-// We're going to want the values in the order listed in the command
+	// We're going to want the values in the order listed in the command
 
 	qli_lls* values = (qli_lls*) input->syn_arg[s_sto_values];
 	while (values)
 		ALLQ_push(ALLQ_pop(&values), &stack);
 
-// now go through, count, and expand where needed
+	// now go through, count, and expand where needed
 
 	int value_count = 0;
 	while (stack)
@@ -2208,7 +2208,7 @@ static void expand_values( qli_syntax* input, qli_lls* right)
 		}
 	}
 
-// Make assignments from values to fields
+	// Make assignments from values to fields
 
 	if (field_count != value_count)
 		IBERROR(189);
@@ -2322,7 +2322,7 @@ static int generate_items(const qli_syntax* symbol, qli_lls* right, qli_lls* ite
  **************************************/
 	qli_nod* group_list = rse ? rse->nod_arg[e_rse_group_by] : NULL;
 
-// first identify the relation or context
+	// first identify the relation or context
 
 	const qli_name* name;
 	if (symbol->syn_count == 1)
@@ -2822,7 +2822,7 @@ static qli_nod* post_map( qli_nod* node, qli_ctx* context)
  **************************************/
 	qli_map* map;
 
-// Check to see if the item has already been posted
+	// Check to see if the item has already been posted
 
 	for (map = context->ctx_map; map; map = map->map_next)
 	{
@@ -2929,7 +2929,7 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 		}
 	}
 
-// We didn't resolve all name segments.  Let somebody else worry about it.
+	// We didn't resolve all name segments.  Let somebody else worry about it.
 
 	return NULL;
 }

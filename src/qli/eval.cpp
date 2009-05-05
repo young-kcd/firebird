@@ -228,7 +228,7 @@ void EVAL_break_increment( qli_nod* node)
  **************************************/
 	DSC* desc1 = &node->nod_desc;
 
-// Knock off count as trivial
+	// Knock off count as trivial
 
 	if (node->nod_type == nod_rpt_count) {
 		*(SLONG *) node->nod_desc.dsc_address += 1;
@@ -242,7 +242,7 @@ void EVAL_break_increment( qli_nod* node)
 	if (!desc2)
 		return;
 
-// If this is the first value, just move it in.
+	// If this is the first value, just move it in.
 
 	const SLONG count = (IPTR) node->nod_arg[e_stt_default] + 1;
 	if (count == 1)
@@ -262,7 +262,7 @@ void EVAL_break_increment( qli_nod* node)
 	node->nod_arg[e_stt_default] = (qli_nod*) (IPTR) count;
 	desc1->dsc_missing = FALSE;
 
-// Finish off as per operator
+	// Finish off as per operator
 
 	SSHORT comparison;
 
@@ -355,7 +355,7 @@ dsc* EVAL_value(qli_nod* node)
  **************************************/
 	DSC *values[4];
 
-// Start by evaluating sub-expressions (where appropriate)
+	// Start by evaluating sub-expressions (where appropriate)
 
 	dsc* desc = &node->nod_desc;
 	fb_assert(node->nod_count < 5);
@@ -939,33 +939,33 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
  *
  **************************************/
 
-// Get operator definition string (control string)
+	// Get operator definition string (control string)
 
 	Firebird::VaryStr<TEMP_LENGTH> temp1;
 	const TEXT* p1;
 	SSHORT l1 = MOVQ_get_string(desc3, &p1, &temp1, TEMP_LENGTH);
 
-// Get address and length of search string
+	// Get address and length of search string
 
 	Firebird::VaryStr<TEMP_LENGTH> temp2;
 	const TEXT* p2;
 	SSHORT l2 = MOVQ_get_string(desc2, &p2, &temp2, TEMP_LENGTH);
 
-// Merge search and control strings
+	// Merge search and control strings
 
 	UCHAR control[256];
 	l2 = sleuth_merge((const UCHAR*) p2, //(const UCHAR*) (p2 + l2),
 					  (const UCHAR*) p1, (const UCHAR*) (p1 + l1),
 					  control);
 
-// If source is not a blob, do a simple search
+	// If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob) {
 		l1 = MOVQ_get_string(desc1, &p1, &temp1, TEMP_LENGTH);
 		return sleuth_check(0, (const UCHAR*) p1, (const UCHAR*) (p1 + l1), control, control + l2);
 	}
 
-// Source string is a blob, things get interesting
+	// Source string is a blob, things get interesting
 
 	bool result = false;
 
@@ -1194,7 +1194,7 @@ static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 	UCHAR temp[256];
 	UCHAR* t = temp;
 
-// Parse control string into substitution strings and initializing string
+	// Parse control string into substitution strings and initializing string
 
 	while (control < end_control)
 	{
@@ -1226,7 +1226,7 @@ static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 
 	const UCHAR max_op = v - vector;
 
-// Interpret matching string, substituting where appropriate
+	// Interpret matching string, substituting where appropriate
 
 	UCHAR c;
 	while (c = *match++)
@@ -1251,7 +1251,7 @@ static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 		}
 	}
 
-// Put in trailing stuff
+	// Put in trailing stuff
 
 	while (control < end_control)
 		*comb++ = *control++;
@@ -1286,13 +1286,13 @@ static bool string_boolean( qli_nod* node)
 	if (node->nod_type == nod_sleuth)
 		return sleuth(node, desc1, desc2, desc3);
 
-// Get address and length of strings
+	// Get address and length of strings
 
 	const TEXT* p2;
 	Firebird::VaryStr<TEMP_LENGTH> temp2;
 	SSHORT l2 = MOVQ_get_string(desc2, &p2, &temp2, TEMP_LENGTH);
 
-// If source is not a blob, do a simple search
+	// If source is not a blob, do a simple search
 
 	if (desc1->dsc_dtype != dtype_blob)
 	{
@@ -1302,7 +1302,7 @@ static bool string_boolean( qli_nod* node)
 		return string_function(node, l1, p1, l2, p2);
 	}
 
-// Source string is a blob, things get interesting
+	// Source string is a blob, things get interesting
 
 	bool result = false;
 	FB_API_HANDLE blob = EXEC_open_blob(node->nod_arg[0]);
@@ -1354,7 +1354,7 @@ static bool string_function(qli_nod* node,
  *
  **************************************/
 
-// Handle "STARTS WITH"
+	// Handle "STARTS WITH"
 
 	if (node->nod_type == nod_starts)
 	{
@@ -1367,7 +1367,7 @@ static bool string_function(qli_nod* node,
 		return true;
 	}
 
-// Handle CONTAINS
+	// Handle CONTAINS
 
 	if (node->nod_type == nod_containing)
 	{
@@ -1388,7 +1388,7 @@ static bool string_function(qli_nod* node,
 		return false;
 	}
 
-// Handle LIKE
+	// Handle LIKE
 
 	if (node->nod_type == nod_like)
 	{
@@ -1405,7 +1405,7 @@ static bool string_function(qli_nod* node,
 		return false;
 	}
 
-// Handle MATCHES
+	// Handle MATCHES
 
 	return node->nod_type == nod_matches && matches(p1, l1, p2, l2);
 }

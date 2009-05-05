@@ -291,7 +291,7 @@ qli_tok* LEX_filename()
 	TEXT* p = token->tok_string;
 	*p++ = c;
 
-// If there isn't a line, we're all done
+	// If there isn't a line, we're all done
 
 	if (!QLI_line)
 	{
@@ -300,7 +300,7 @@ qli_tok* LEX_filename()
 		return NULL;
 	}
 
-// notice if this looks like a quoted file name
+	// notice if this looks like a quoted file name
 
 	SSHORT save = 0;
 	if (classes(c) & CHR_quote)
@@ -309,7 +309,7 @@ qli_tok* LEX_filename()
 		save = c;
 	}
 
-// Look for white space or end of line, allowing embedded quoted strings.
+	// Look for white space or end of line, allowing embedded quoted strings.
 
 	for (;;)
 	{
@@ -335,7 +335,7 @@ qli_tok* LEX_filename()
 
 	retchar();
 
-// Drop trailing semi-colon to avoid confusion
+	// Drop trailing semi-colon to avoid confusion
 
 	if (p[-1] == ';')
 	{
@@ -343,7 +343,7 @@ qli_tok* LEX_filename()
 		--p;
 	}
 
-// complain on unterminated quoted string
+	// complain on unterminated quoted string
 
 	if ((token->tok_type == tok_quoted) && (p[-1] != save))
 		IBERROR(60);			// Msg 60 unterminated quoted string
@@ -399,12 +399,12 @@ void LEX_flush()
 	if (!QLI_line)
 		return;
 
-// Pop off line sources until we're down to the last one.
+	// Pop off line sources until we're down to the last one.
 
 	while (QLI_line->line_next)
 		LEX_pop_line();
 
-// Look for a semi-colon
+	// Look for a semi-colon
 
 	if (QLI_semi)
 	{
@@ -434,7 +434,7 @@ bool LEX_get_line(const TEXT* prompt, TEXT* buffer, int size)
  *	return false.  Regardless, a null terminated string is returned.
  *
  **************************************/
-// UNIX flavor
+	// UNIX flavor
 
 	if (prompt)
 		printf(prompt);
@@ -778,7 +778,7 @@ qli_tok* LEX_token()
 	qli_tok* token = QLI_token;
 	TEXT* p = token->tok_string;
 
-// Get next significant byte.  If it's the last EOL of a blob, throw it away
+	// Get next significant byte.  If it's the last EOL of a blob, throw it away
 
 	SSHORT c;
 
@@ -793,7 +793,7 @@ qli_tok* LEX_token()
 			break;
 	}
 
-// If we hit end of file, make up a phoney token
+	// If we hit end of file, make up a phoney token
 
 	if (!QLI_line)
 	{
@@ -807,7 +807,7 @@ qli_tok* LEX_token()
 	*p++ = c;
 	QLI_token->tok_position = QLI_line->line_position + QLI_line->line_ptr - QLI_line->line_data - 1;
 
-// On end of file, generate furious but phone end of line tokens
+	// On end of file, generate furious but phone end of line tokens
 
 	char char_class = classes(c);
 
@@ -969,10 +969,10 @@ static int nextchar(const bool eof_ok)
  *	Get the next character from the input stream.
  *
  **************************************/
-// Get the next character in the current line.  If we run out,
-// get the next line.  If the line source runs out, pop the
-// line source.  If we run out of line sources, we are distinctly
-// at end of file.
+	// Get the next character in the current line.  If we run out,
+	// get the next line.  If the line source runs out, pop the
+	// line source.  If we run out of line sources, we are distinctly
+	// at end of file.
 
 	while (QLI_line)
 	{
@@ -1099,7 +1099,7 @@ static void next_line(const bool eof_ok)
 
 	QLI_line->line_position = QLI_position;
 
-// Dump output to the trace file
+	// Dump output to the trace file
 
 	if (QLI_line->line_type == line_blob)
 	{
@@ -1136,7 +1136,7 @@ static void retchar()
  *
  **************************************/
 
-// CVC: Too naive implementation: what if the pointer is at the beginning?
+	// CVC: Too naive implementation: what if the pointer is at the beginning?
 	fb_assert(QLI_line)
 	--QLI_line->line_ptr;
 }
@@ -1156,8 +1156,8 @@ static bool scan_number(SSHORT c, TEXT** ptr)
  **************************************/
 	bool dot = false;
 
-// If this is a leading decimal point, check that the next
-//   character is really a digit, otherwise backout
+	// If this is a leading decimal point, check that the next
+	//   character is really a digit, otherwise backout
 
 	if (c == '.')
 	{
@@ -1170,7 +1170,7 @@ static bool scan_number(SSHORT c, TEXT** ptr)
 
 	TEXT* p = *ptr;
 
-// Gobble up digits up to a single decimal point
+	// Gobble up digits up to a single decimal point
 
 	for (;;)
 	{
@@ -1186,7 +1186,7 @@ static bool scan_number(SSHORT c, TEXT** ptr)
 			break;
 	}
 
-// If this is an exponential, eat the exponent sign and digits
+	// If this is an exponential, eat the exponent sign and digits
 
 	if (UPPER(c) == 'E')
 	{

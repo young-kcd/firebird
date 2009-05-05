@@ -66,7 +66,7 @@ void RPT_report( qli_nod* loop)
  *
  **************************************/
 
-// Get to actual report node
+	// Get to actual report node
 
 	qli_nod* node = loop->nod_arg[e_for_statement];
 	qli_rpt* report = (qli_rpt*) node->nod_arg[e_prt_list];
@@ -74,7 +74,7 @@ void RPT_report( qli_nod* loop)
 	print->prt_new_page = top_of_page;
 	print->prt_page_number = 0;
 
-// Get to actual report node
+	// Get to actual report node
 
 /* If there is a request associated  with the loop, start it and possibly
    send a message slong with it. */
@@ -115,7 +115,7 @@ void RPT_report( qli_nod* loop)
 	initialize_break(report->rpt_bottom_page);
 	initialize_break(report->rpt_bottom_rpt);
 
-// Force TOP breaks for all fields
+	// Force TOP breaks for all fields
 
 	for (control = report->rpt_top_breaks; control; control = control->brk_next)
 		FMT_print((qli_nod*) control->brk_line, print);
@@ -166,7 +166,7 @@ void RPT_report( qli_nod* loop)
 			break;
 	}
 
-// Force BOTTOM breaks for all fields
+	// Force BOTTOM breaks for all fields
 
 	swap_uchar(message->msg_buffer, report->rpt_buffer);
 	bottom_break(report->rpt_bottom_breaks, print);
@@ -256,7 +256,7 @@ static bool test_break(qli_brk* control, qli_rpt* report, qli_msg* message)
  **************************************/
 	DSC desc1, desc2;
 
-// Evaluate the two versions of the expression
+	// Evaluate the two versions of the expression
 
 	dsc* ptr1 = EVAL_value((qli_nod*) control->brk_field);
 	if (ptr1)
@@ -272,7 +272,7 @@ static bool test_break(qli_brk* control, qli_rpt* report, qli_msg* message)
 	// An error in EVAL_value will prevent msg_buffer from being restored to its old value.
 	message->msg_buffer = buf;
 
-// Check for consistently missing
+	// Check for consistently missing
 
 	if (!ptr1 || !ptr2)
 		return (ptr1 != ptr2);

@@ -104,7 +104,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 	pics* picture = (pics*) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
 
-// Make a first pass just counting characters
+	// Make a first pass just counting characters
 
 	bool debit = false;
 	TEXT c;
@@ -250,7 +250,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 	if (c == '?')
 		picture->pic_missing = PIC_analyze(picture->pic_pointer, 0);
 
-// if a DB showed up, and the string is numeric, treat the DB as DeBit
+	// if a DB showed up, and the string is numeric, treat the DB as DeBit
 
 	if (debit && (picture->pic_digits || picture->pic_hex_digits))
 	{

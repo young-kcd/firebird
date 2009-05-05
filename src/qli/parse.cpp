@@ -312,7 +312,8 @@ bool PAR_match( kwwords keyword)
  *	If so, advance the token stream.
  *
  **************************************/
-	if (KEYWORD(keyword)) {
+	if (KEYWORD(keyword))
+	{
 		PAR_token();
 		return true;
 	}
@@ -349,7 +350,8 @@ void PAR_real()
 	while ((QLI_token->tok_type == tok_eol) || KEYWORD(KW_continuation))
 		LEX_token();
 
-	if (PAR_match(KW_COLON)) {
+	if (PAR_match(KW_COLON))
+	{
 		qli_dbb* database = parse_database();
 		PRO_invoke(database, QLI_token->tok_string);
 	}
@@ -400,12 +402,14 @@ void PAR_token()
 
 	if (PAR_match(KW_COLON))
 	{
-		if (!QLI_databases) {
+		if (!QLI_databases)
+		{
 			ERRQ_error_format(159);	// Msg159 no databases are ready
 			ERRQ_pending();
 			LEX_token();
 		}
-		else {
+		else
+		{
 			qli_dbb* database = parse_database();
 			PRO_invoke(database, QLI_token->tok_string);
 		}
@@ -450,7 +454,8 @@ static void command_end()
  *
  **************************************/
 
-	if (QLI_token->tok_type == tok_eol || KEYWORD(KW_SEMI)) {
+	if (QLI_token->tok_type == tok_eol || KEYWORD(KW_SEMI))
+	{
 		sw_statement = false;
 		return;
 	}
@@ -499,7 +504,8 @@ static qli_syntax* make_list( qli_lls* stack)
 	qli_lls* temp = stack;
 	USHORT count = 0;
 
-	while (temp) {
+	while (temp)
+	{
 		count++;
 		temp = temp->lls_next;
 	}
@@ -576,7 +582,7 @@ static qli_const* make_numeric_constant(const TEXT* string, USHORT length)
  **************************************/
 	qli_const* constant;
 
-// If there are a reasonable number of digits, convert to binary
+	// If there are a reasonable number of digits, convert to binary
 
 	if (length < 9)
 	{
@@ -806,12 +812,14 @@ static qli_syntax* parse_assignment()
 	qli_rel* relation = NULL;
 	if (field->syn_count == 1)
 		relation = resolve_relation(0, name->nam_symbol);
-	else if (field->syn_count == 2 && name->nam_symbol) {
+	else if (field->syn_count == 2 && name->nam_symbol)
+	{
 		qli_name* name2 = (qli_name*) field->syn_arg[1];
 		relation = resolve_relation(name->nam_symbol, name2->nam_symbol);
 	}
 
-	if (relation) {
+	if (relation)
+	{
 		ALLQ_release((FRB) field);
 		node->syn_type = nod_restructure;
 		node->syn_arg[s_asn_to] = field = syntax_node(nod_relation, s_rel_count);
@@ -840,7 +848,8 @@ static qli_syntax* parse_boolean( USHORT * paren_count)
  **************************************/
 	USHORT local_count;
 
-	if (!paren_count) {
+	if (!paren_count)
+	{
 		local_count = 0;
 		paren_count = &local_count;
 	}
@@ -855,7 +864,8 @@ while (*paren_count && KEYWORD (KW_RIGHT_PAREN))
     }
 */
 
-	if (!PAR_match(KW_OR)) {
+	if (!PAR_match(KW_OR))
+	{
 		parse_terminating_parens(paren_count, &local_count);
 		return expr;
 	}
@@ -1077,14 +1087,16 @@ static qli_syntax* parse_define()
  **************************************/
 	PAR_real_token();
 
-	if (PAR_match(KW_PROCEDURE)) {
+	if (PAR_match(KW_PROCEDURE))
+	{
 		PAR_real();
 		qli_syntax* anode = syntax_node(nod_define, 1);
 		anode->syn_arg[0] = (qli_syntax*) parse_qualified_procedure();
 		return anode;
 	}
 
-	if (PAR_match(KW_FIELD)) {
+	if (PAR_match(KW_FIELD))
+	{
 		PAR_real();
 		qli_syntax* node = syntax_node(nod_def_field, 2);
 		node->syn_arg[0] = (qli_syntax*) parse_database();
@@ -1149,7 +1161,8 @@ static qli_syntax* parse_def_index()
 	}
 
 	qli_lls* stack = NULL;
-	for (;;) {
+	for (;;)
+	{
 		ALLQ_push((blk*) parse_name(), &stack);
 		if (!PAR_match(KW_COMMA))
 			break;
@@ -1246,7 +1259,7 @@ static qli_syntax* parse_delete()
 	rse->syn_count = 1;
 	rse->syn_arg[s_rse_count] = parse_sql_relation();
 
-// Pick up boolean, if present
+	// Pick up boolean, if present
 
 	if (PAR_match(KW_WITH))
 		rse->syn_arg[s_rse_boolean] = parse_boolean(0);
@@ -1278,7 +1291,8 @@ static qli_syntax* parse_drop()
 
 	PAR_real_token();
 
-	if (PAR_match(KW_RELATION) || PAR_match(KW_VIEW) || PAR_match(KW_TABLE)) {
+	if (PAR_match(KW_RELATION) || PAR_match(KW_VIEW) || PAR_match(KW_TABLE))
+	{
 		node = syntax_node(nod_del_relation, 1);
 		if (!(node->syn_arg[0] = (qli_syntax*) parse_qualified_relation()))
 			ERRQ_syntax(173);	// Msg173 relation or view name
@@ -1304,7 +1318,8 @@ static qli_syntax* parse_drop()
 		if (!(l = QLI_token->tok_length))
 			ERRQ_error(429);	// Msg429 database file name required on DROP DATABASE
 		q = QLI_token->tok_string;
-		if (QLI_token->tok_type == tok_quoted) {
+		if (QLI_token->tok_type == tok_quoted)
+		{
 			l -= 2;
 			q++;
 		}
@@ -1339,7 +1354,8 @@ static qli_syntax* parse_drop()
 
 	if (type == nod_delete_proc)
 		node->syn_arg[0] = (qli_syntax*) parse_qualified_procedure();
-	else {
+	else
+	{
 		node->syn_arg[0] = (qli_syntax*) parse_database();
 		node->syn_arg[1] = (qli_syntax*) parse_name();
 	}
@@ -1456,7 +1472,7 @@ static int parse_dtype_subtype()
  *	Returns the numeric subtype value,
  *
  **************************************/
-// grab KW_SUB_TYPE
+	// grab KW_SUB_TYPE
 
 	PAR_token();
 	PAR_match(KW_IS);
@@ -1576,7 +1592,8 @@ static qli_syntax* parse_erase()
 	PAR_match(KW_OF);
 	qli_syntax* node = syntax_node(nod_erase, s_era_count);
 
-	if (PAR_match(KW_ALL) || potential_rse()) {
+	if (PAR_match(KW_ALL) || potential_rse())
+	{
 		PAR_match(KW_OF);
 		node->syn_arg[s_era_rse] = parse_rse();
 	}
@@ -1606,7 +1623,8 @@ static qli_syntax* parse_extract()
 	if (!PAR_match(KW_ALL))
 	{
 		qli_lls* stack = NULL;
-		for (;;) {
+		for (;;)
+		{
 			ALLQ_push((blk*) parse_qualified_procedure(), &stack);
 			if (!PAR_match(KW_COMMA))
 				break;
@@ -1754,7 +1772,7 @@ static qli_syntax* parse_field_name( qli_syntax** fld_ptr)
 	if (!(PAR_match(KW_L_BRCKET)))
 		return field;
 
-// Parse an array reference
+	// Parse an array reference
 
 	stack = NULL;
 	for (;;)
@@ -1857,7 +1875,8 @@ static qli_syntax* parse_function()
 
 	if (PAR_match(KW_LEFT_PAREN))
 	{
-		for (;;) {
+		for (;;)
+		{
 			ALLQ_push((blk*) parse_value(0, 0), &stack);
 			if (PAR_match(KW_RIGHT_PAREN))
 				break;
@@ -1931,7 +1950,8 @@ static qli_syntax* parse_help()
 	qli_lls* stack = NULL;
 	PAR_token();
 
-	while (!KEYWORD(KW_SEMI)) {
+	while (!KEYWORD(KW_SEMI))
+	{
 		ALLQ_push((blk*) parse_name(), &stack);
 		PAR_match(KW_COMMA);
 	}
@@ -1993,7 +2013,7 @@ static qli_syntax* parse_in( qli_syntax* value, nod_t operatr, bool all_flag)
 	if (!PAR_match(KW_LEFT_PAREN))
 		ERRQ_syntax(185);		// Msg185 left parenthesis
 
-// Time to chose between two forms of the expression
+	// Time to chose between two forms of the expression
 
 	if (!PAR_match(KW_SELECT))
 	{
@@ -2015,7 +2035,7 @@ static qli_syntax* parse_in( qli_syntax* value, nod_t operatr, bool all_flag)
 
 	qli_syntax* value2 = parse_value(0, 0);
 
-// We have the "hard" -- an implicit ANY
+	// We have the "hard" -- an implicit ANY
 
 	qli_syntax* rse = parse_sql_rse();
 	parse_matching_paren();
@@ -2025,7 +2045,7 @@ static qli_syntax* parse_in( qli_syntax* value, nod_t operatr, bool all_flag)
 	rse->syn_arg[s_rse_op] = INT_CAST operatr;
 	rse->syn_arg[s_rse_all_flag] = INT_CAST (all_flag ? TRUE: FALSE);
 
-// Finally, construct an ANY node
+	// Finally, construct an ANY node
 
 	qli_syntax* node = syntax_node(nod_any, 1);
 	node->syn_arg[0] = rse;
@@ -2051,18 +2071,19 @@ static qli_syntax* parse_insert()
 	PAR_match(KW_INTO);
 	qli_syntax* node = syntax_node(nod_store, s_sto_count);
 
-// Pick up relation name for insert
+	// Pick up relation name for insert
 
 	node->syn_arg[s_sto_relation] = parse_sql_relation();
 
-// Pick up field list, provided one is present
+	// Pick up field list, provided one is present
 
 	PAR_real();
 
 	qli_lls* fields = NULL;
 	if (PAR_match(KW_LEFT_PAREN))
 	{
-		while (true) {
+		while (true)
+		{
 			ALLQ_push((blk*) parse_field_name(0), &fields);
 			if (PAR_match(KW_RIGHT_PAREN))
 				break;
@@ -2071,12 +2092,13 @@ static qli_syntax* parse_insert()
 		}
 	}
 
-// Pick up value list or SELECT statement
+	// Pick up value list or SELECT statement
 
 	PAR_real();
 
 	bool select_flag;
-	if (PAR_match(KW_VALUES)) {
+	if (PAR_match(KW_VALUES))
+	{
 		select_flag = false;
 		if (!PAR_match(KW_LEFT_PAREN))
 			ERRQ_syntax(187);	// Msg187 left parenthesis
@@ -2091,7 +2113,8 @@ static qli_syntax* parse_insert()
 	qli_lls* distinct = NULL;
 	while (true)
 	{
-		if (distinct || PAR_match(KW_DISTINCT)) {
+		if (distinct || PAR_match(KW_DISTINCT))
+		{
 			ALLQ_push((blk*) parse_value(0, 0), &distinct);
 			ALLQ_push(distinct->lls_object, &values);
 			ALLQ_push(0, &distinct);
@@ -2274,12 +2297,14 @@ static qli_syntax* parse_matches()
 	node->syn_arg[1] = parse_value(0, 0);
 	if (PAR_match(KW_USING))
 		node->syn_arg[2] = parse_value(0, 0);
-	else if (QLI_matching_language) {
+	else if (QLI_matching_language)
+	{
 		qli_syntax* language = syntax_node(nod_constant, 1);
 		node->syn_arg[2] = language;
 		language->syn_arg[0] = (qli_syntax*) QLI_matching_language;
 	}
-	else {
+	else
+	{
 		node->syn_type = nod_matches;
 		node->syn_count = 2;
 	}
@@ -2329,12 +2354,13 @@ static qli_syntax* parse_modify()
  **************************************/
 	PAR_token();
 
-// If this is a meta-data change, handle it elsewhere
+	// If this is a meta-data change, handle it elsewhere
 
 	if (PAR_match(KW_INDEX))
 		return parse_modify_index();
 
-	if (PAR_match(KW_FIELD)) {
+	if (PAR_match(KW_FIELD))
+	{
 		qli_syntax* anode = syntax_node(nod_mod_field, 1);
 		anode->syn_arg[0] = (qli_syntax*) parse_database();
 		anode->syn_arg[1] = (qli_syntax*) parse_field(true);
@@ -2344,7 +2370,7 @@ static qli_syntax* parse_modify()
 	if (PAR_match(KW_RELATION))
 		return parse_modify_relation();
 
-// Not a meta-data modification, just a simple data modify
+	// Not a meta-data modification, just a simple data modify
 
 	PAR_match(KW_ALL);
 	qli_syntax* node = syntax_node(nod_modify, s_mod_count);
@@ -2354,7 +2380,8 @@ static qli_syntax* parse_modify()
 	else if (!KEYWORD(KW_SEMI))
 	{
 		qli_lls* stack = NULL;
-		while (true) {
+		while (true)
+		{
 			ALLQ_push((blk*) parse_field_name(0), &stack);
 			if (!PAR_match(KW_COMMA))
 				break;
@@ -2390,19 +2417,22 @@ static qli_syntax* parse_modify_index()
 	{
 		if (PAR_match(KW_UNIQUE))
 			node->syn_flags |= (s_dfi_flag_selectivity | s_dfi_flag_unique);
-		else if (PAR_match(KW_DUPLICATE)) {
+		else if (PAR_match(KW_DUPLICATE))
+		{
 			node->syn_flags |= s_dfi_flag_selectivity;
 			node->syn_flags &= ~s_dfi_flag_unique;
 		}
 		else if (PAR_match(KW_INACTIVE))
 			node->syn_flags |= (s_dfi_flag_activity | s_dfi_flag_inactive);
-		else if (PAR_match(KW_ACTIVE)) {
+		else if (PAR_match(KW_ACTIVE))
+		{
 			node->syn_flags |= s_dfi_flag_activity;
 			node->syn_flags &= ~s_dfi_flag_inactive;
 		}
 		else if (PAR_match(KW_DESCENDING))
 			node->syn_flags |= (s_dfi_flag_order | s_dfi_flag_descending);
-		else if (PAR_match(KW_ASCENDING)) {
+		else if (PAR_match(KW_ASCENDING))
+		{
 			node->syn_flags |= s_dfi_flag_order;
 			node->syn_flags &= ~s_dfi_flag_inactive;
 		}
@@ -2444,18 +2474,21 @@ static qli_syntax* parse_modify_relation()
 	{
 		PAR_real();
 		qli_fld* field;
-		if (PAR_match(KW_ADD)) {
+		if (PAR_match(KW_ADD))
+		{
 			PAR_real();
 			PAR_match(KW_FIELD);
 			field = parse_field(false);
 		}
-		else if (PAR_match(KW_MODIFY)) {
+		else if (PAR_match(KW_MODIFY))
+		{
 			PAR_real();
 			PAR_match(KW_FIELD);
 			field = parse_field(false);
 			field->fld_flags |= FLD_modify;
 		}
-		else if (PAR_match(KW_DROP)) {
+		else if (PAR_match(KW_DROP))
+		{
 			PAR_real();
 			PAR_match(KW_FIELD);
 			field = parse_field(false);
@@ -2644,7 +2677,8 @@ static qli_syntax* parse_primitive_value( USHORT* paren_count, bool* bool_flag)
  **************************************/
 	USHORT local_count;
 
-	if (!paren_count) {
+	if (!paren_count)
+	{
 		local_count = 0;
 		paren_count = &local_count;
 	}
@@ -2678,7 +2712,8 @@ static qli_syntax* parse_primitive_value( USHORT* paren_count, bool* bool_flag)
 		{
 			PAR_token();
 			qli_syntax* sub = parse_primitive_value(paren_count, 0);
-			if (sub->syn_type == nod_constant) {
+			if (sub->syn_type == nod_constant)
+			{
 				qli_const* constant = (qli_const*) sub->syn_arg[0];
 				UCHAR* p = constant->con_desc.dsc_address;
 				switch (constant->con_desc.dsc_dtype)
@@ -2739,7 +2774,8 @@ static qli_syntax* parse_primitive_value( USHORT* paren_count, bool* bool_flag)
 		node = syntax_node(nod_running_total, s_stt_count);
 		if (PAR_match(KW_COUNT))
 			node->syn_type = nod_running_count;
-		else {
+		else
+		{
 			PAR_match(KW_TOTAL);
 			node->syn_arg[s_stt_value] = parse_value(0, 0);
 		}
@@ -2811,7 +2847,8 @@ static qli_syntax* parse_print_list()
 			op = nod_print_item;
 			node = syntax_node(nod_print_item, s_itm_count);
 			node->syn_arg[s_itm_value] = parse_value(0, 0);
-			if (PAR_match(KW_LEFT_PAREN)) {
+			if (PAR_match(KW_LEFT_PAREN))
+			{
 				if (PAR_match(KW_MINUS))
 					node->syn_arg[s_itm_header] = (qli_syntax*) "-";
 				else
@@ -2887,7 +2924,8 @@ static qli_syntax* parse_print()
 			node->syn_arg[s_prt_rse] = parse_rse();
 	}
 
-	if (!node->syn_arg[s_prt_list] && PAR_match(KW_USING)) {
+	if (!node->syn_arg[s_prt_list] && PAR_match(KW_USING))
+	{
 		IBERROR(484);			// FORMs not supported
 	}
 	else
@@ -2912,14 +2950,15 @@ static qli_syntax* parse_prompt()
 	PAR_token();
 	qli_syntax* node = syntax_node(nod_prompt, 1);
 
-// If there is a period, get the prompt string and make a string node
+	// If there is a period, get the prompt string and make a string node
 
 	if (PAR_match(KW_DOT))
 	{
 		PAR_real();
 		USHORT l = QLI_token->tok_length;
 		const TEXT* q = QLI_token->tok_string;
-		if (QLI_token->tok_type == tok_quoted) {
+		if (QLI_token->tok_type == tok_quoted)
+		{
 			q++;
 			l -= 2;
 		}
@@ -3021,7 +3060,7 @@ static qli_rel* parse_qualified_relation()
  **************************************/
 	PAR_real();
 
-// If the next token is a database symbol, take it as a qualifier
+	// If the next token is a database symbol, take it as a qualifier
 
 	qli_symbol* db_symbol = QLI_token->tok_symbol;
 	if (db_symbol && db_symbol->sym_type == SYM_database)
@@ -3031,7 +3070,8 @@ static qli_rel* parse_qualified_relation()
 			ERRQ_syntax(202);	// Msg202 period in qualified relation name
 		PAR_real();
 		qli_rel* relation = resolve_relation(db_symbol, QLI_token->tok_symbol);
-		if (relation) {
+		if (relation)
+		{
 			PAR_token();
 			return relation;
 		}
@@ -3071,7 +3111,8 @@ static qli_syntax* parse_ready( nod_t node_type)
 			ERRQ_error(204);
 			// Msg204 database file name required on READY
 		const TEXT* q = QLI_token->tok_string;
-		if (QLI_token->tok_type == tok_quoted) {
+		if (QLI_token->tok_type == tok_quoted)
+		{
 			l -= 2;
 			q++;
 		}
@@ -3084,7 +3125,8 @@ static qli_syntax* parse_ready( nod_t node_type)
 		{
 		case nod_def_database:
 		case nod_ready:
-			if (PAR_match(KW_AS)) {
+			if (PAR_match(KW_AS))
+			{
 				qli_name* name = parse_name();
 				database->dbb_symbol = (qli_symbol*) name;
 				if (HSH_lookup(name->nam_string, name->nam_length))
@@ -3095,7 +3137,8 @@ static qli_syntax* parse_ready( nod_t node_type)
 				database->dbb_symbol = (qli_symbol*) make_name();
 			break;
 		case nod_sql_database:
-			if (PAR_match(KW_PAGESIZE)) {
+			if (PAR_match(KW_PAGESIZE))
+			{
 				if (database->dbb_pagesize)
 					ERRQ_syntax(390);	// Msg390 Multiple page size specifications
 				if (!PAR_match(KW_EQUALS))
@@ -3141,7 +3184,8 @@ static qli_syntax* parse_relational( USHORT * paren_count)
  *	Parse a relational expression.
  *
  **************************************/
-	if (PAR_match(KW_ANY)) {
+	if (PAR_match(KW_ANY))
+	{
 		qli_syntax* anode = syntax_node(nod_any, 1);
 		anode->syn_arg[0] = parse_rse();
 		return anode;
@@ -3176,7 +3220,8 @@ static qli_syntax* parse_relational( USHORT * paren_count)
 			ERRQ_syntax(488);	/* Msg488 SINGULAR (SELECT * <sql rse>) */
 	}
 
-	if (PAR_match(KW_UNIQUE)) {
+	if (PAR_match(KW_UNIQUE))
+	{
 		qli_syntax* node = syntax_node(nod_unique, 1);
 		node->syn_arg[0] = parse_rse();
 		return node;
@@ -3203,7 +3248,8 @@ static qli_syntax* parse_relational( USHORT * paren_count)
 	PAR_match(KW_IS);
 	PAR_real();
 
-	if (PAR_match(KW_NOT)) {
+	if (PAR_match(KW_NOT))
+	{
 		negation = true;
 		PAR_real();
 	}
@@ -3315,7 +3361,7 @@ static qli_syntax* parse_relational( USHORT * paren_count)
 		node->syn_arg[1] = parse_value(paren_count, &local_flag);
 	}
 
-// If a negation remains to be handled, zap the node under a NOT.
+	// If a negation remains to be handled, zap the node under a NOT.
 
 	if (negation)
 		node = negate(node);
@@ -3361,13 +3407,14 @@ static qli_syntax* parse_relation()
  **************************************/
 	qli_syntax* node = syntax_node(nod_relation, s_rel_count);
 
-// Token wasn't a relation name, maybe it's a context variable.
+	// Token wasn't a relation name, maybe it's a context variable.
 
 	if (!(node->syn_arg[s_rel_relation] = (qli_syntax*) parse_qualified_relation()))
 	{
 		qli_symbol* context = parse_symbol();
 		node->syn_arg[s_rel_context] = (qli_syntax*) context;
-		if (sql_flag || !PAR_match(KW_IN)) {
+		if (sql_flag || !PAR_match(KW_IN))
+		{
 			if (!QLI_databases)
 				IBERROR(207);	// Msg207 a database has not been readied
 			ERRQ_print_error(208, context->sym_string);
@@ -3448,12 +3495,12 @@ static qli_syntax* parse_report()
 	qli_syntax* node = syntax_node(nod_report, s_prt_count);
 	node->syn_arg[s_prt_list] = (qli_syntax*) report;
 
-// Pick up record select expression
+	// Pick up record select expression
 
 	qli_syntax* rse = node->syn_arg[s_prt_rse] = parse_rse();
 	node->syn_arg[s_prt_output] = parse_output();
 
-// Pick up report clauses
+	// Pick up report clauses
 
 	bool top;
 
@@ -3523,7 +3570,8 @@ static qli_syntax* parse_report()
 						/* reverse the 'at bottom' control break list as the
 						   lower control breaks should be performed prior to the higher ones. */
 						qli_brk* control = 0;
-						for (qli_brk* tmpptr1 = tmpptr->brk_next; tmpptr;) {
+						for (qli_brk* tmpptr1 = tmpptr->brk_next; tmpptr;)
+						{
 							tmpptr->brk_next = control;
 							control = tmpptr;
 							if (tmpptr = tmpptr1)
@@ -3549,7 +3597,8 @@ static qli_syntax* parse_report()
 					if (syn_count != qli_fld->syn_count)
 						ctl_syn = qli_fld->syn_count - syn_count;
 					USHORT i;
-					for (i = 0; i < syn_count; i++) {
+					for (i = 0; i < syn_count; i++)
+					{
 						const qli_name* name1 = (qli_name*) rse_fld->syn_arg[i + srt_syn];
 						const qli_name* name2 = (qli_name*) qli_fld->syn_arg[i + ctl_syn];
 						if (strcmp(name1->nam_string, name2->nam_string))
@@ -3568,15 +3617,18 @@ static qli_syntax* parse_report()
 
 		case KW_SET:
 			PAR_token();
-			if (PAR_match(KW_COLUMNS)) {
+			if (PAR_match(KW_COLUMNS))
+			{
 				PAR_match(KW_EQUALS);
 				report->rpt_columns = parse_ordinal();
 			}
-			else if (PAR_match(KW_LINES)) {
+			else if (PAR_match(KW_LINES))
+			{
 				PAR_match(KW_EQUALS);
 				report->rpt_lines = parse_ordinal();
 			}
-			else if (PAR_match(KW_REPORT_NAME)) {
+			else if (PAR_match(KW_REPORT_NAME))
+			{
 				PAR_match(KW_EQUALS);
 				report->rpt_name = parse_header();
 			}
@@ -3631,7 +3683,8 @@ static qli_syntax* parse_rse()
 		if (PAR_match(KW_OVER))
 		{
 			qli_lls* field_stack = NULL;
-			while (true) {
+			while (true)
+			{
 				ALLQ_push((blk*) parse_field_name(0), &field_stack);
 				if (!PAR_match(KW_COMMA))
 					break;
@@ -3651,14 +3704,15 @@ static qli_syntax* parse_rse()
 	while (stack)
 		*--ptr = (qli_syntax*) ALLQ_pop(&stack);
 
-// Pick up various other clauses
+	// Pick up various other clauses
 
 	USHORT sw_with = 0;
 	while (true)
 	{
 		if (PAR_match(KW_WITH))
 		{
-			if (!sw_with) {
+			if (!sw_with)
+			{
 				sw_with++;
 				node->syn_arg[s_rse_boolean] = parse_boolean(0);
 			}
@@ -3682,7 +3736,8 @@ static qli_syntax* parse_rse()
 			PAR_real();
 			PAR_match(KW_BY);
 			stack = NULL;
-			while (true) {
+			while (true)
+			{
 				ALLQ_push((blk*) parse_udf_or_field(), &stack);
 				if (!PAR_match(KW_COMMA))
 					break;
@@ -3716,12 +3771,13 @@ static qli_syntax* parse_select()
 	if (!PAR_match(KW_ALL) && PAR_match(KW_DISTINCT))
 		node->syn_arg[s_prt_distinct] = INT_CAST TRUE;
 
-// Get list of items
+	// Get list of items
 
 	if (!PAR_match(KW_ASTERISK))
 	{
 		qli_lls* stack = NULL;
-		while (true) {
+		while (true)
+		{
 			qli_syntax* item = syntax_node(nod_print_item, s_itm_count);
 			item->syn_arg[s_itm_value] = parse_value(0, 0);
 			ALLQ_push((blk*) item, &stack);
@@ -3735,7 +3791,8 @@ static qli_syntax* parse_select()
 	node->syn_arg[s_prt_rse] = rse;
 	rse->syn_arg[s_rse_list] = node->syn_arg[s_prt_list];
 
-	if (PAR_match(KW_ORDER)) {
+	if (PAR_match(KW_ORDER))
+	{
 		PAR_real();
 		PAR_match(KW_BY);
 		node->syn_arg[s_prt_order] = parse_sort();
@@ -3767,7 +3824,8 @@ static qli_syntax* parse_set()
 	{
 		PAR_real();
 		U_IPTR value = TRUE;
-		if (PAR_match(KW_NO)) {
+		if (PAR_match(KW_NO))
+		{
 			value = FALSE;
 			PAR_real();
 		}
@@ -3850,7 +3908,8 @@ static qli_syntax* parse_set()
 			sw = set_charset;
 			PAR_token();
 			PAR_match(KW_SET);
-			if (value) {		// allow for NO
+			if (value)
+			{		// allow for NO
 				PAR_match(KW_EQUALS);
 				value = (U_IPTR) parse_name();
 			}
@@ -3961,30 +4020,36 @@ static qli_syntax* parse_show()
 			else
 				sw = show_relation;
 		}
-		else if (PAR_match(KW_FILTER)) {
+		else if (PAR_match(KW_FILTER))
+		{
 			sw = show_filter;
 			value = (BLK) parse_qualified_filter();
 		}
-		else if (PAR_match(KW_FUNCTION)) {
+		else if (PAR_match(KW_FUNCTION))
+		{
 			sw = show_function;
 			value = (BLK) parse_qualified_function();
 		}
 		else if ((PAR_match(KW_DATABASES)) || (PAR_match(KW_READY)))
 			sw = show_databases;
-		else if (PAR_match(KW_DATABASE)) {
+		else if (PAR_match(KW_DATABASE))
+		{
 			sw = show_database;
 			if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 				PAR_token();
 		}
-		else if (PAR_match(KW_FIELD)) {
+		else if (PAR_match(KW_FIELD))
+		{
 			sw = show_field;
 			value = (BLK) parse_field_name(0);
 		}
-		else if (PAR_match(KW_PROCEDURE)) {
+		else if (PAR_match(KW_PROCEDURE))
+		{
 			sw = show_procedure;
 			value = (BLK) parse_qualified_procedure();
 		}
-		else if (PAR_match(KW_VARIABLE)) {
+		else if (PAR_match(KW_VARIABLE))
+		{
 			sw = show_variable;
 			value = (BLK) parse_name();
 		}
@@ -3994,14 +4059,16 @@ static qli_syntax* parse_show()
 		{
 			if (PAR_match(KW_FOR))
 			{
-				if (PAR_match(KW_DATABASE)) {
+				if (PAR_match(KW_DATABASE))
+				{
 					if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 						PAR_token();
 					else
 						ERRQ_syntax(221);	// Msg221 database name
 					sw = show_db_fields;
 				}
-				else {
+				else
+				{
 					PAR_match(KW_RELATION);
 					if (!(value = (BLK) parse_qualified_relation()))
 						ERRQ_syntax(218);	// Msg218 relation name
@@ -4016,7 +4083,8 @@ static qli_syntax* parse_show()
 		{
 			sw = show_indices;
 			if (PAR_match(KW_FOR))
-				if (PAR_match(KW_DATABASE)) {
+				if (PAR_match(KW_DATABASE))
+				{
 					if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 						PAR_token();
 					else
@@ -4026,21 +4094,25 @@ static qli_syntax* parse_show()
 				else if (!(value = (BLK) parse_qualified_relation()))
 					ERRQ_syntax(220);	// Msg220 relation name
 		}
-		else if (PAR_match(KW_SECURITY_CLASS)) {
+		else if (PAR_match(KW_SECURITY_CLASS))
+		{
 			sw = show_security_class;
 			value = (BLK) parse_name();
 		}
 		else if (PAR_match(KW_TRIGGERS))
 		{
 			sw = show_triggers;
-			if (PAR_match(KW_FOR)) {
-				if (PAR_match(KW_DATABASE)) {
+			if (PAR_match(KW_FOR))
+			{
+				if (PAR_match(KW_DATABASE))
+				{
 					if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 						PAR_token();
 					else
 						ERRQ_syntax(221);	// Msg221 database name
 				}
-				else {
+				else
+				{
 					PAR_match(KW_RELATION);
 					if (!(value = (BLK) parse_qualified_relation()))
 						ERRQ_syntax(222);	// Msg222 relation_name
@@ -4075,7 +4147,8 @@ static qli_syntax* parse_show()
 		else if (PAR_match(KW_GLOBAL))
 		{
 			PAR_real();
-			if (PAR_match(KW_FIELD)) {
+			if (PAR_match(KW_FIELD))
+			{
 				sw = show_global_field;
 				value = (BLK) parse_field_name(0);
 			}
@@ -4129,7 +4202,8 @@ static qli_syntax* parse_show()
 				else if (PAR_match(KW_GLOBAL))
 				{
 					PAR_real();
-					if (PAR_match(KW_FIELD)) {
+					if (PAR_match(KW_FIELD))
+					{
 						sw = show_global_field;
 						value = (BLK) parse_field_name(0);
 					}
@@ -4140,12 +4214,14 @@ static qli_syntax* parse_show()
 				{
 					qli_rel* relation =
 						resolve_relation(symbol, QLI_token->tok_symbol);
-					if (relation) {
+					if (relation)
+					{
 						sw = show_relation;
 						value = relation->rel_symbol->sym_object;
 						PAR_token();
 					}
-					else {
+					else
+					{
 						sw = show_procedure;
 						qli_proc* proc = (qli_proc*) ALLOCD(type_qpr);
 						proc->qpr_database = (qli_dbb*) value;
@@ -4155,7 +4231,8 @@ static qli_syntax* parse_show()
 				}
 			}
 		}
-		else {
+		else
+		{
 			sw = show_procedure;
 			value = (BLK) parse_qualified_procedure();
 		}
@@ -4165,7 +4242,8 @@ static qli_syntax* parse_show()
 			sw == show_system_triggers || sw == show_system_relations || sw == show_procedures ||
 			sw == show_filters || sw == show_functions || sw == show_global_fields))
 		{
-			if (PAR_match(KW_FOR)) {
+			if (PAR_match(KW_FOR))
+			{
 				PAR_match(KW_DATABASE);
 				if (value = (BLK) get_dbb(QLI_token->tok_symbol))
 					PAR_token();
@@ -4210,31 +4288,37 @@ static qli_syntax* parse_sort()
 		PAR_real();
 		if (!sql_flag)
 		{
-			if (PAR_match(KW_ASCENDING)) {
+			if (PAR_match(KW_ASCENDING))
+			{
 				direction = 0;
 				continue;
 			}
-			if (PAR_match(KW_DESCENDING)) {
+			if (PAR_match(KW_DESCENDING))
+			{
 				direction = 1;
 				continue;
 			}
-			if (PAR_match(KW_EXACTCASE)) {
+			if (PAR_match(KW_EXACTCASE))
+			{
 				sensitive = false;
 				continue;
 			}
-			if (PAR_match(KW_ANYCASE)) {
+			if (PAR_match(KW_ANYCASE))
+			{
 				sensitive = true;
 				continue;
 			}
 		}
 		qli_syntax* node;
-		if (sql_flag && QLI_token->tok_type == tok_number) {
+		if (sql_flag && QLI_token->tok_type == tok_number)
+		{
 			node = syntax_node(nod_position, 1);
 			node->syn_arg[0] = INT_CAST parse_ordinal();
 		}
 		else
 			node = parse_value(0, 0);
-		if (sensitive) {
+		if (sensitive)
+		{
 			qli_syntax* upcase = syntax_node(nod_upcase, 1);
 			upcase->syn_arg[0] = node;
 			ALLQ_push((blk*) upcase, &stack);
@@ -4279,11 +4363,13 @@ static qli_syntax* parse_sql_alter()
 	for (;;)
 	{
 	    qli_fld* field;
-		if (PAR_match(KW_ADD)) {
+		if (PAR_match(KW_ADD))
+		{
 			field = parse_sql_field();
 			field->fld_flags |= FLD_add;
 		}
-		else if (PAR_match(KW_DROP)) {
+		else if (PAR_match(KW_DROP))
+		{
 			field = parse_field(false);
 			field->fld_flags |= FLD_drop;
 		}
@@ -4435,7 +4521,7 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision, US
 	}
 
 	// CVC: SQL doesn't accept arbitrary types with scale specification.
-	//if (dtype == dtype_long || dtype == dtype_real || dtype == dtype_double) {
+	//if (dtype == dtype_long || dtype == dtype_real || dtype == dtype_double)
 	if (keyword == KW_DECIMAL || keyword == KW_NUMERIC)
 	{
 		if (PAR_match(KW_LEFT_PAREN))
@@ -4572,7 +4658,8 @@ static qli_syntax* parse_sql_grant_revoke(const nod_t type)
 	qli_lls* stack = NULL;
 	USHORT privileges = 0;
 
-	if (PAR_match(KW_ALL)) {
+	if (PAR_match(KW_ALL))
+	{
 		PAR_match(KW_PRIVILEGES);
 		privileges |= PRV_all;
 	}
@@ -4581,15 +4668,18 @@ static qli_syntax* parse_sql_grant_revoke(const nod_t type)
 		while (true)
 		{
 			PAR_real();
-			if (PAR_match(KW_SELECT)) {
+			if (PAR_match(KW_SELECT))
+			{
 				privileges |= PRV_select;
 				continue;
 			}
-			if (PAR_match(KW_INSERT)) {
+			if (PAR_match(KW_INSERT))
+			{
 				privileges |= PRV_insert;
 				continue;
 			}
-			if (PAR_match(KW_DELETE)) {
+			if (PAR_match(KW_DELETE))
+			{
 				privileges |= PRV_delete;
 				continue;
 			}
@@ -4638,18 +4728,21 @@ static qli_syntax* parse_sql_grant_revoke(const nod_t type)
 	if (!(node->syn_arg[s_grant_relation] = (qli_syntax*) parse_qualified_relation()))
 		ERRQ_syntax(170);		// Msg170 relation name
 
-	if (type == nod_sql_grant) {
+	if (type == nod_sql_grant)
+	{
 		if (!PAR_match(KW_TO))
 			ERRQ_syntax(404);	// Msg404 TO
 	}
-	else {
+	else
+	{
 		if (!PAR_match(KW_FROM))
 			ERRQ_syntax(403);	// Msg403 FROM
 	}
 
 	stack = NULL;
 
-	while (true) {
+	while (true)
+	{
 		PAR_real();
 		ALLQ_push((blk*) parse_name(), &stack);
 		if (!PAR_match(KW_COMMA))
@@ -4659,7 +4752,8 @@ static qli_syntax* parse_sql_grant_revoke(const nod_t type)
 	node->syn_arg[s_grant_users] = make_list(stack);
 
 	if (type == nod_sql_grant)
-		if (PAR_match(KW_WITH)) {
+		if (PAR_match(KW_WITH))
+		{
 			PAR_real();
 			if (!PAR_match(KW_GRANT))
 				ERRQ_syntax(401);	// Msg401 GRANT
@@ -4709,7 +4803,8 @@ static qli_syntax* parse_sql_index_create(const bool unique, const bool descendi
 
 	qli_lls* stack = NULL;
 
-	for (;;) {
+	for (;;)
+	{
 		ALLQ_push((blk*) parse_name(), &stack);
 		if (PAR_match(KW_RIGHT_PAREN))
 			break;
@@ -4739,7 +4834,8 @@ static qli_syntax* parse_sql_joined_relation() //( qli_syntax* prior_context)
  **************************************/
 	qli_syntax* left;
 
-	if (PAR_match(KW_LEFT_PAREN)) {
+	if (PAR_match(KW_LEFT_PAREN))
+	{
 		left = parse_sql_joined_relation(); // (0)
 		parse_matching_paren();
 	}
@@ -4850,11 +4946,12 @@ static qli_syntax* parse_sql_view_create()
 	relation->rel_database = parse_database();
 	relation->rel_symbol = parse_symbol();
 
-// if field list is present parse it and create corresponding field blocks
+	// if field list is present parse it and create corresponding field blocks
 
 	if (PAR_match(KW_LEFT_PAREN))
 	{
-		for (;;) {
+		for (;;)
+		{
 			ALLQ_push(parse_name(), &stack);
 			if (PAR_match(KW_RIGHT_PAREN))
 				break;
@@ -4922,9 +5019,10 @@ static qli_syntax* parse_sql_rse()
 	if (!PAR_match(KW_FROM))
 		ERRQ_syntax(224);		// Msg224 FROM clause
 
-// Parse FROM list of relations
+	// Parse FROM list of relations
 
-	while (true) {
+	while (true)
+	{
 		count++;
 		ALLQ_push((blk*) parse_sql_joined_relation(/*0*/), &stack);
 		if (!PAR_match(KW_COMMA))
@@ -4938,7 +5036,8 @@ static qli_syntax* parse_sql_rse()
 	node->syn_count = count;
 	qli_syntax** ptr = &node->syn_arg[(int) s_rse_count + 2 * count];
 
-	while (stack) {
+	while (stack)
+	{
 		--ptr;
 		*--ptr = (qli_syntax*) ALLQ_pop(&stack);
 	}
@@ -4953,7 +5052,8 @@ static qli_syntax* parse_sql_rse()
 		PAR_real();
 		PAR_match(KW_BY);
 		stack = NULL;
-		while (true) {
+		while (true)
+		{
 			ALLQ_push((blk*) parse_udf_or_field(), &stack);
 			if (!PAR_match(KW_COMMA))
 				break;
@@ -5034,7 +5134,8 @@ static qli_syntax* parse_sql_subquery()
 
 	PAR_match(KW_LEFT_PAREN);
 
-	if (node->syn_type != nod_count || !PAR_match(KW_ASTERISK)) {
+	if (node->syn_type != nod_count || !PAR_match(KW_ASTERISK))
+	{
 		if (PAR_match(KW_DISTINCT))
 			node->syn_arg[s_prt_distinct] = INT_CAST TRUE;
 		node->syn_arg[s_stt_value] = parse_value(0, 0);
@@ -5145,7 +5246,8 @@ static qli_syntax* parse_statement()
 	    {
 			qli_lls* stack = NULL;
 			PAR_token();
-			while (true) {
+			while (true)
+			{
 				PAR_real();
 				if (PAR_match(KW_END))
 					break;
@@ -5162,7 +5264,7 @@ static qli_syntax* parse_statement()
 
 	check_end();
 
-// Check for the "THEN" connective.  If found, make a list of statements.
+	// Check for the "THEN" connective.  If found, make a list of statements.
 
 	if (QLI_token->tok_type != tok_eol || (QLI_semi && !KEYWORD(KW_SEMI)))
 		PAR_match(KW_SEMI);
@@ -5203,14 +5305,15 @@ static qli_syntax* parse_statistical()
 	if (ntypes >= endtypes)
 	    return NULL;
 
-// Handle SQL statisticals a little differently
+	// Handle SQL statisticals a little differently
 
 	if (sql_flag)
 	{
 		qli_syntax* anode = syntax_node(ntypes->nod_t_sql_node, s_stt_count);
 		if (!PAR_match(KW_LEFT_PAREN))
 			ERRQ_syntax(227);	// Msg227 left parenthesis
-		if (anode->syn_type != nod_agg_count || !PAR_match(KW_ASTERISK)) {
+		if (anode->syn_type != nod_agg_count || !PAR_match(KW_ASTERISK))
+		{
 			if (PAR_match(KW_DISTINCT))
 				anode->syn_arg[s_prt_distinct] = INT_CAST TRUE;
 			anode->syn_arg[s_stt_value] = parse_value(0, 0);
@@ -5219,15 +5322,17 @@ static qli_syntax* parse_statistical()
 		return anode;
 	}
 
-// Handle GDML statisticals
+	// Handle GDML statisticals
 
 	qli_syntax* node = syntax_node(ntypes->nod_t_node, s_stt_count);
 
 	if (node->syn_type != nod_count)
 		node->syn_arg[s_stt_value] = parse_value(0, 0);
 
-	if (!PAR_match(KW_OF)) {
-		if (sw_report) {
+	if (!PAR_match(KW_OF))
+	{
+		if (sw_report)
+		{
 			if (function_count > 0)
 				IBERROR(487);	// Msg487 Invalid argument for UDF
 			node->syn_type = ntypes->nod_t_rpt_node;
@@ -5428,17 +5533,18 @@ static qli_syntax* parse_update()
 	if (!PAR_match(KW_SET))
 		ERRQ_syntax(230);		// Msg230 SET
 
-// Pick up assignments
+	// Pick up assignments
 
 	qli_lls* stack = NULL;
 
-	while (true) {
+	while (true)
+	{
 		ALLQ_push((blk*) parse_assignment(), &stack);
 		if (!PAR_match(KW_COMMA))
 			break;
 	}
 
-// Pick up boolean, if present
+	// Pick up boolean, if present
 
 	if (PAR_match(KW_WITH))
 		rse->syn_arg[s_rse_boolean] = parse_boolean(0);
@@ -5465,13 +5571,15 @@ static qli_syntax* parse_value( USHORT* paren_count, bool* bool_flag)
  **************************************/
 	USHORT local_count;
 
-	if (!paren_count) {
+	if (!paren_count)
+	{
 		local_count = 0;
 		paren_count = &local_count;
 	}
 
 	bool local_flag;
-	if (!bool_flag) {
+	if (!bool_flag)
+	{
 		local_flag = false;
 		bool_flag = &local_flag;
 	}
@@ -5480,7 +5588,8 @@ static qli_syntax* parse_value( USHORT* paren_count, bool* bool_flag)
 
 	while (true)
 	{
-		if (!PAR_match(KW_BAR)) {
+		if (!PAR_match(KW_BAR))
+		{
 			parse_terminating_parens(paren_count, &local_count);
 			return node;
 		}
@@ -5533,7 +5642,7 @@ static qli_rel* resolve_relation( qli_symbol* db_symbol, qli_symbol* relation_sy
  *
  **************************************/
 
-// If we don't recognize the relation, punt.
+	// If we don't recognize the relation, punt.
 
 	if (!relation_symbol)
 		return NULL;
@@ -5556,7 +5665,7 @@ static qli_rel* resolve_relation( qli_symbol* db_symbol, qli_symbol* relation_sy
 		return NULL;
 	}
 
-// No database qualifier, so search all databases.
+	// No database qualifier, so search all databases.
 
 	for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 	{

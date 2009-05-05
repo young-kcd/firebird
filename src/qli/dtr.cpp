@@ -98,12 +98,12 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 
-// Look at options, if any
+	// Look at options, if any
 
 	Firebird::PathName startup_file = STARTUP_FILE;
 
 #ifdef UNIX
-// If a Unix system, get home directory from environment
+	// If a Unix system, get home directory from environment
 	SCHAR home_directory[MAXPATHLEN];
 	if (!fb_utils::readenv("HOME", startup_file))
 		startup_file = ".qli_startup";
@@ -119,7 +119,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
-// Let's define the default number of columns on a machine by machine basis
+	// Let's define the default number of columns on a machine by machine basis
 	QLI_columns = 80;
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
@@ -268,7 +268,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	}
 	QLI_error = NULL;
 
-// Loop until end of file or forced exit
+	// Loop until end of file or forced exit
 
 	while (QLI_line)
 	{
@@ -334,14 +334,14 @@ static bool process_statement(bool flush_flag)
  **************************************/
 	qli_dbb* dbb;
 
-// Clear database active flags in preparation for a new statement
+	// Clear database active flags in preparation for a new statement
 
 	QLI_abort = false;
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
 
-// If the last statement wrote out anything to the terminal, skip a line
+	// If the last statement wrote out anything to the terminal, skip a line
 
 	if (QLI_skip_line) {
 		printf("\n");
@@ -354,7 +354,7 @@ static bool process_statement(bool flush_flag)
 
 	enable_signals();
 
-// Enable error unwinding and enable the unwinding environment
+	// Enable error unwinding and enable the unwinding environment
 
 	try {
 
@@ -366,7 +366,7 @@ static bool process_statement(bool flush_flag)
 /* This needs to be done after setting QLI_prompt to prevent
  * and infinite loop in LEX/next_line.
  */
-// If there was a prior syntax error, flush the token stream
+	// If there was a prior syntax error, flush the token stream
 
 	if (flush_flag)
 		LEX_flush();
@@ -397,14 +397,14 @@ static bool process_statement(bool flush_flag)
 
 	EXEC_poll_abort();
 
-// If the statement was EXIT, force end of file on command input
+	// If the statement was EXIT, force end of file on command input
 
 	if (syntax_tree->syn_type == nod_exit) {
 		QLI_line = NULL;
 		return false;
 	}
 
-// If the statement was quit, ask the user if he want to rollback
+	// If the statement was quit, ask the user if he want to rollback
 
 	if (syntax_tree->syn_type == nod_quit)
 	{
@@ -429,13 +429,13 @@ static bool process_statement(bool flush_flag)
 	if (!expanded_tree)
 		return false;
 
-// Compile the statement
+	// Compile the statement
 
 	qli_nod* execution_tree = CMPQ_compile(expanded_tree);
 	if (!execution_tree)
 		return false;
 
-// Generate any BLR needed to support the request
+	// Generate any BLR needed to support the request
 
 	if (!GEN_generate(execution_tree))
 		return false;
@@ -459,7 +459,7 @@ static bool process_statement(bool flush_flag)
 		}
 	}
 
-// Execute the request, for better or worse
+	// Execute the request, for better or worse
 
 	EXEC_top(execution_tree);
 
@@ -485,7 +485,7 @@ static bool process_statement(bool flush_flag)
 		}
 	}
 
-// Release resources associated with the request
+	// Release resources associated with the request
 
 	GEN_release();
 

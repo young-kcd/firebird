@@ -86,8 +86,6 @@
 #define sleep(seconds)		Sleep ((seconds) * 1000)
 #endif // WIN_NT
 
-//const int MAX_USER_LENGTH	= 33;
-//const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
 
 using namespace Firebird;
 
@@ -398,7 +396,8 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, Rbl** blob_handle)
  *
  **************************************/
 	Rbl* blob = *blob_handle;
-	if (!blob) {
+	if (!blob)
+	{
 		if (user_status) {
 			*user_status++ = isc_arg_gds;
 			*user_status++ = FB_SUCCESS;
@@ -1282,7 +1281,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 
 		// Parse the blr describing the message, if there is any.
 
-		if (in_blr_length) {
+		if (in_blr_length)
+		{
 			RMessage* message = PARSE_messages(in_blr, in_blr_length);
 			if (message != (RMessage*) - 1) {
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
@@ -1396,7 +1396,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		if (user_status[1])
 			return user_status[1];
 
-		if (transaction && !packet->p_resp.p_resp_object) {
+		if (transaction && !packet->p_resp.p_resp_object)
+		{
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			*rtr_handle = NULL;
@@ -1732,7 +1733,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		}
 
 
-		if (!statement->rsr_buffer) {
+		if (!statement->rsr_buffer)
+		{
 			statement->rsr_buffer = new RMessage(0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
@@ -1783,17 +1785,17 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			{
 				if (!(port->port_flags &PORT_rpc))
 				{
-				sqldata->p_sqldata_messages =
-					static_cast<USHORT>(REMOTE_compute_batch_size(port,
-						0, op_fetch_response, statement->rsr_select_format));
-				sqldata->p_sqldata_messages *= 4;
+					sqldata->p_sqldata_messages =
+						static_cast<USHORT>(REMOTE_compute_batch_size(port,
+							0, op_fetch_response, statement->rsr_select_format));
+					sqldata->p_sqldata_messages *= 4;
 
-				// Reorder data when the local buffer is half empty
+					// Reorder data when the local buffer is half empty
 
 					statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
 #ifdef DEBUG
-				fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
-						   statement->rsr_rows_pending);
+					fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
+							   statement->rsr_rows_pending);
 #endif
 				}
 			}
@@ -1945,7 +1947,8 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 				release_sql_request(statement);
 				*stmt_handle = NULL;
 			}
-			else {
+			else
+			{
 				statement->rsr_flags.clear(Rsr::FETCHED);
 				statement->rsr_rtr = NULL;
 
@@ -1985,7 +1988,8 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 			release_sql_request(statement);
 			*stmt_handle = NULL;
 		}
-		else {
+		else
+		{
 			statement->rsr_flags.clear(Rsr::FETCHED);
 			statement->rsr_rtr = NULL;
 
@@ -2048,7 +2052,8 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 
 		// Parse the blr describing the message, if there is any.
 
-		if (blr_length) {
+		if (blr_length)
+		{
 			RMessage* message = PARSE_messages(blr, blr_length);
 			if (message != (RMessage*) - 1) {
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
@@ -2078,7 +2083,8 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 
 		PACKET* packet = &rdb->rdb_packet;
 
-		if (statement->rsr_flags.test(Rsr::LAZY)) {
+		if (statement->rsr_flags.test(Rsr::LAZY))
+		{
 			packet->p_operation = op_allocate_statement;
 			packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
@@ -2189,7 +2195,8 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status, Rtr** rtr_handle,
 
 		PACKET* packet = &rdb->rdb_packet;
 
-		if (statement->rsr_flags.test(Rsr::LAZY)) {
+		if (statement->rsr_flags.test(Rsr::LAZY))
+		{
 			packet->p_operation = op_allocate_statement;
 			packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
@@ -4085,7 +4092,8 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 
 	try
 	{
-		if ((*rtr_handle)->rtr_rdb != rdb) {
+		if ((*rtr_handle)->rtr_rdb != rdb)
+		{
 			user_status[0] = isc_arg_gds;
 			user_status[1] = isc_trareqmis;
 			user_status[2] = isc_arg_end;
@@ -4169,7 +4177,8 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 
 	try
 	{
-		if ((*rtr_handle)->rtr_rdb != rdb) {
+		if ((*rtr_handle)->rtr_rdb != rdb)
+		{
 			user_status[0] = isc_arg_gds;
 			user_status[1] = isc_trareqmis;
 			user_status[2] = isc_arg_end;
@@ -4309,7 +4318,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 			procedure = port->port_rpr = new Rpr;
 		}
 
-		if ((*rtr_handle)->rtr_rdb != rdb) {
+		if ((*rtr_handle)->rtr_rdb != rdb)
+		{
 			user_status[0] = isc_arg_gds;
 			user_status[1] = isc_trareqmis;
 			user_status[2] = isc_arg_end;
@@ -4642,9 +4652,8 @@ static rem_port* analyze(PathName& file_name,
 						// retry in case multiclient inet server not forked yet
 
 						sleep(2);
-						port =
-							INET_analyze(file_name, status_vector,
-										 node_name.c_str(), user_string, uv_flag, dpb);
+						port = INET_analyze(file_name, status_vector,
+											node_name.c_str(), user_string, uv_flag, dpb);
 					}
 				}
 			}
@@ -4752,7 +4761,8 @@ static rem_port* analyze_service(PathName& service_name,
 #ifdef SUPERCLIENT
 #ifdef UNIX
 
-	if (!port && node_name.isEmpty()) {
+	if (!port && node_name.isEmpty())
+	{
 		service_name.insert(0, "localhost:");
 		if (ISC_analyze_tcp(service_name, node_name))
 		{
@@ -5306,7 +5316,8 @@ static RMessage* dump_cache(rem_port* port, ISC_STATUS * user_status, Rrq::rrq_r
 		return NULL;
 
 	RMessage* message = tail->rrq_message;
-	while (true) {
+	while (true)
+	{
 		message->msg_address = NULL;
 		message = message->msg_next;
 		if (message == tail->rrq_message)
@@ -5363,7 +5374,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				server_death(port);
 				break;
 			}
-		}
+		} // end scope
 
 		// If the packet was an event, we handle it
 
@@ -5504,7 +5515,8 @@ static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const Paramete
  *	Analyze and prepare dpb for attachment to remote server.
  *
  **************************************/
-    if (!Config::getRedirection()) {
+    if (!Config::getRedirection())
+    {
 	    if (dpb.find(par.address_path)) {
 			status_exception::raise(Arg::Gds(isc_unavailable));
 		}
