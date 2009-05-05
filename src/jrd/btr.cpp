@@ -257,6 +257,8 @@ public:
 		BtrPageGCLock lock(tdbb);
 		page.getLockStr(lock.lck_key.lck_string);
 
+		ThreadStatusGuard temp_status(tdbb);
+
 		const bool res = LCK_lock(tdbb, &lock, LCK_write, LCK_NO_WAIT);
 
 		if (res) {
