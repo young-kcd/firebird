@@ -56,7 +56,7 @@ endif
 # -D_REENTRANT is added by -mt switch, explicit definition not needed
 COMMON_FLAGS= -DSOLARIS -DBSD_COMP -DSUNCC -D__EXTENSIONS__ \
 	-D_POSIX_THREAD_SEMANTICS -D_POSIX_THREAD_PRIO_INHERIT -D_POSIX_C_SOURCE=199506L -mt -KPIC \
-	-erroff=nothrowneww -DUSE_POSIX_THREADS $(ISA_COMMON_FLAGS)
+	-erroff=nothrowneww,wvarhidemem $(ISA_COMMON_FLAGS)
 
 # if we keep sfio this needs to be set by configure (or move in to extern directory)
 # must use full sfio not stdio emulation to get file handle number fix
