@@ -5298,7 +5298,7 @@ static const PTR get_entrypoint(int proc, int implementation)
 		return *entry;
 	else
 		return &no_entrypoint;
-	
+
 }
 
 

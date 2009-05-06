@@ -168,18 +168,21 @@ private:
 public:
 	Mutex() { init(); }
 	explicit Mutex(MemoryPool&) { init(); }
+
 	~Mutex()
 	{
 		int rc = pthread_mutex_destroy(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
+
 	void enter()
 	{
 		int rc = pthread_mutex_lock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
 	}
+
 	bool tryEnter()
 	{
 		int rc = pthread_mutex_trylock(&mlock);
@@ -189,6 +192,7 @@ public:
 			system_call_failed::raise("pthread_mutex_trylock", rc);
 		return true;
 	}
+
 	void leave()
 	{
 		int rc = pthread_mutex_unlock(&mlock);
@@ -211,21 +215,25 @@ public:
 		if (pthread_spin_init(&spinlock, false))
 			system_call_failed::raise("pthread_spin_init");
 	}
+
 	explicit Spinlock(MemoryPool&)
 	{
 		if (pthread_spin_init(&spinlock, false))
 			system_call_failed::raise("pthread_spin_init");
 	}
+
 	~Spinlock()
 	{
 		if (pthread_spin_destroy(&spinlock))
 			system_call_failed::raise("pthread_spin_destroy");
 	}
+
 	void enter()
 	{
 		if (pthread_spin_lock(&spinlock))
 			system_call_failed::raise("pthread_spin_lock");
 	}
+
 	void leave()
 	{
 		if (pthread_spin_unlock(&spinlock))

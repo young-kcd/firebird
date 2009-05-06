@@ -4413,7 +4413,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					if (!RFR.RDB$FIELD_ID.NULL && RFR.RDB$FIELD_ID >= REL.RDB$FIELD_ID)
 						REL.RDB$FIELD_ID = RFR.RDB$FIELD_ID + 1;
 
-					// force recalculation of RDB$UPDATE_FLAG if field is calculated 
+					// force recalculation of RDB$UPDATE_FLAG if field is calculated
 					if (!FLD.RDB$COMPUTED_BLR.isEmpty())
 					{
 						RFR.RDB$UPDATE_FLAG.NULL = TRUE;

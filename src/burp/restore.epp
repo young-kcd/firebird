@@ -333,7 +333,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 			END_ERROR
 		}
 	END_ERROR;
-	
+
 	if (tdgbl->global_trans)
 	{
 		BURP_verbose (68);

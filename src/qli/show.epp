@@ -2107,18 +2107,22 @@ static void show_rel_detail( qli_rel* relation)
 		show_text_blob(database, "\t", 291, &R.RDB$DESCRIPTION, 0, NULL, false);
 
 		if (database->dbb_capabilities & DBB_cap_security)
+		{
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_secur])
 				S IN RDB$RELATIONS WITH S.RDB$RELATION_NAME = R.RDB$RELATION_NAME
 					AND S.RDB$SECURITY_CLASS NOT MISSING
 				show_string(292, S.RDB$SECURITY_CLASS, 0, NULL);
 			END_FOR;
+		}
 
 		if (database->dbb_capabilities & DBB_cap_extern_file)
+		{
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_rel_extern])
 				E IN RDB$RELATIONS WITH E.RDB$RELATION_NAME = R.RDB$RELATION_NAME
 					AND E.RDB$EXTERNAL_FILE NOT MISSING
 				ERRQ_msg_put(293, E.RDB$EXTERNAL_FILE);	// Msg293 Stored in external file %s
 			END_FOR;
+		}
 
 		// OBSOLETE - Handling of DBB_cap_triggers (old V2 style triggers)
 		// OBSOLETE - Msg294 An erase trigger is defined for %s
