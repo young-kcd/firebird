@@ -249,7 +249,7 @@ dnl detect native compiler, Sun Studio Pro
            ICU_PLATFORM=SOLARISX86 ;;
        *)  MAKEFILE_PREFIX=solx86gcc ;
            ICU_PLATFORM=SOLARISX86GCC ;
-	   PTHREAD_CFLAGS=-pthreads ;;
+           PTHREAD_CFLAGS=-pthreads ;;
     esac
 dnl if this is amd64 system, we should install our libraries in /usr/lib/amd64
     isa=`isainfo -k`
