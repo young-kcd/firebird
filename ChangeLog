@@ -1,3 +1,42 @@
+2009-05-06 19:05  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.281):
+
+	An attempt to fix the regression(s) reported by Bill Oliver.
+
+2009-05-06 18:34  asfernandes
+
+	* firebird2/src/jrd/btr.cpp (1.243):
+
+	Fix assertion at INTL due to much longer buffer
+
+2009-05-06 11:18  robocop
+
+	* firebird2/src/utilities/gsec/: gsec.cpp (1.110), gsec.h (1.39),
+	security.epp (1.28):
+
+	More constants instead of hardcoded numbers.
+
+2009-05-06 09:13  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.solaris (1.28):
+
+	Solaris port
+
+2009-05-06 09:13  alexpeshkoff
+
+	* firebird2/configure.in (1.340):
+
+	misc
+
+2009-05-06 04:02  asfernandes
+
+	* firebird2/src/: burp/restore.epp (1.166), common/classes/locks.h
+	(1.57), jrd/dfw.epp (1.274), jrd/why.cpp (1.242), qli/show.epp
+	(1.52):
+
+	Misc
+
 2009-05-05 16:46  robocop
 
 	* firebird2/src/intl/collations/: koi8r_ru.h (1.4), koi8u_ua.h
