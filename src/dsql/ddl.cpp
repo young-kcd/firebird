@@ -3716,36 +3716,62 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		i_ptr < i_end; i_ptr++, position++)
 	{
 		dsql_nod* field_node = *i_ptr;
+
+		// determine the proper field name, replacing the default if necessary
+
+		const dsql_nod* name_node = field_node;
 		const dsql_str* alias_name = NULL;
 
-		while (field_node->nod_type == nod_alias ||
-			field_node->nod_type == nod_derived_field ||
-			field_node->nod_type == nod_map)
+		while (name_node->nod_type == nod_alias ||
+			name_node->nod_type == nod_derived_field ||
+			name_node->nod_type == nod_map)
 		{
-			switch (field_node->nod_type)
+			switch (name_node->nod_type)
 			{
 			case nod_alias:
 				if (!alias_name)
 				{
-					alias_name = (dsql_str*) field_node->nod_arg[e_alias_alias];
+					alias_name = (dsql_str*) name_node->nod_arg[e_alias_alias];
 				}
-				field_node = field_node->nod_arg[e_alias_value];
+				name_node = name_node->nod_arg[e_alias_value];
 				break;
+
 			case nod_derived_field:
 				if (!alias_name)
 				{
-					alias_name = (dsql_str*) field_node->nod_arg[e_derived_field_name];
+					alias_name = (dsql_str*) name_node->nod_arg[e_derived_field_name];
 				}
-				field_node = field_node->nod_arg[e_derived_field_value];
+				name_node = name_node->nod_arg[e_derived_field_value];
 				break;
+
 			case nod_map:
-				const dsql_map* map = (dsql_map*) field_node->nod_arg[e_map_map];
-				field_node = map->map_node;
+				{
+					const dsql_map* map = (dsql_map*) name_node->nod_arg[e_map_map];
+					name_node = map->map_node;
+				}
+				break;
+
+			default:
 				break;
 			}
 		}
 
+		const dsql_fld* name_field = NULL;
+
+		if (name_node->nod_type == nod_field)
+			name_field = (dsql_fld*) name_node->nod_arg[e_fld_field];
+
+		if (alias_name)
+			field_string = alias_name->str_data;
+		else if (name_field)
+			field_string = name_field->fld_name.c_str();
+		else
+			field_string = NULL;
+
 		// check if this is a field or an expression
+
+		if (field_node->nod_type == nod_alias)
+			field_node = field_node->nod_arg[e_alias_value];
 
 		const dsql_fld* field = NULL;
 		const dsql_ctx* context = NULL;
@@ -3759,15 +3785,6 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		{
 			updatable = false;
 		}
-
-		// determine the proper field name, replacing the default if necessary
-
-		if (alias_name)
-			field_string = alias_name->str_data;
-		else if (field)
-			field_string = field->fld_name.c_str();
-		else
-			field_string = NULL;
 
 		// if this is an expression, check to make sure there is a name specified
 
