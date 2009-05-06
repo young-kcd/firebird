@@ -40,7 +40,6 @@
 
 DATABASE DB = STATIC FILENAME "security2.fdb";
 
-static const char* SYSDBA_USER_NAME	= "SYSDBA";
 static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,

@@ -412,7 +412,8 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 /* msg27: "-------------------------------------------------------------------------------------------" */
 		}
 
-		util_output("%-31.31s %5d %5d      %s %s %s\n", data->user_name,
+		util_output("%-*.*s %5d %5d      %s %s %s\n",
+					USERNAME_LENGTH, USERNAME_LENGTH, data->user_name,
 					data->uid, data->gid, data->first_name, data->middle_name,
 					data->last_name);
 	}
@@ -530,7 +531,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			case IN_SW_GSEC_DIS:
 			case IN_SW_GSEC_MOD:
 				quote = ' ';
-				for (l = 0; l < 32 && string[l] && string[l] != quote; )
+				for (l = 0; l < MAX_SQL_IDENTIFIER_SIZE && string[l] && string[l] != quote; )
 				{
 					if (l == 0 && (*string == '\'' || *string == '"'))
 					{
@@ -540,7 +541,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->user_name[l] = UPPER(string[l]);
 					++l;
 				}
-				if (l == 32) {
+				if (l == MAX_SQL_IDENTIFIER_SIZE) {
 					GSEC_diag(GsecMsg76);
 					/* invalid user name (maximum 31 bytes allowed) */
 					return false;

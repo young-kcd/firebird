@@ -26,6 +26,7 @@
 
 #include "../jrd/ThreadData.h"
 #include "../jrd/jrd_pwd.h"
+#include "../jrd/constants.h"
 
 const USHORT GSEC_MSG_FAC	= 18;
 const int MSG_LENGTH		= 128;
@@ -41,14 +42,14 @@ const int DIS_OPER		= 3;
 const int MOD_OPER		= 4;
 const int QUIT_OPER		= 5;
 const int HELP_OPER		= 6;
-const int VERSION_OPER	= 7;
+//const int VERSION_OPER	= 7;
 const int MAP_SET_OPER	= 8;
 const int MAP_DROP_OPER	= 9;
 
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;
-const int NAME_LEN		= 33;
-const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
+const int NAME_LEN		= MAX_SQL_IDENTIFIER_SIZE;
+//const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
 
@@ -91,9 +92,9 @@ struct internal_user_data
 	TEXT	dba_password [NAME_LEN];		// the user's name
 	bool	dba_password_entered;			// user name entered flag
 	bool	dba_password_specified;			// database specified flag
-	TEXT	sql_role_name [NAME_LEN];		// the user's name
-	bool	sql_role_name_entered;			// user name entered flag
-	bool	sql_role_name_specified;		// database specified flag
+	TEXT	sql_role_name [NAME_LEN];		// the user's role
+	bool	sql_role_name_entered;			// role entered flag
+	bool	sql_role_name_specified;		// role specified flag
 	TEXT	database_name [DATABASE_LEN];	// database to manage name
 	bool	database_name_entered;			// database entered flag
 	bool	database_name_specified;		// database specified flag
