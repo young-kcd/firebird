@@ -99,7 +99,8 @@ EventManager::EventManager(const Firebird::string& id)
 	  m_process(NULL),
 	  m_processOffset(0),
 	  m_dbId(getPool(), id),
-	  m_sharedFileCreated(false)
+	  m_sharedFileCreated(false),
+	  m_exiting(false)
 {
 	attach_shared_file();
 
@@ -114,8 +115,8 @@ EventManager::EventManager(const Firebird::string& id)
 
 EventManager::~EventManager()
 {
+	m_exiting = true;
 	const SLONG process_offset = m_processOffset;
-	m_processOffset = 0;
 
 	ISC_STATUS_ARRAY local_status;
 
@@ -134,6 +135,7 @@ EventManager::~EventManager()
 	}
 
 	acquire_shmem();
+	m_processOffset = 0;
 	if (process_offset)
 	{
 		delete_process(process_offset);
@@ -553,34 +555,9 @@ evh* EventManager::acquire_shmem()
 
 	m_header->evh_current_process = m_processOffset;
 
-	// hvlad: condition below never can be true and we change evh_length
-	// after remapping only. Also code below looks not complete, compare
-	// it with remapping code in alloc_global
-/***
 	if (m_header->evh_length > m_shmemData.sh_mem_length_mapped)
 	{
 		const ULONG length = m_header->evh_length;
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-		// Before remapping the memory, wakeup the watcher thread.
-		// Then remap the shared memory and allow the watcher thread to remap.
-
-		prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
-		process->prb_flags |= PRB_remap;
-
-		post_process(process);
-
-		while (true)
-		{
-			release_shmem();
-			THREAD_YIELD();
-			acquire_shmem();
-
-			process = (prb*) SRQ_ABS_PTR(m_processOffset);
-			if (!(process->prb_flags & PRB_remap))
-				break;
-		}
-#endif
 
 		evh* header = NULL;
 
@@ -596,13 +573,7 @@ evh* EventManager::acquire_shmem()
 		}
 
 		m_header = header;
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-		process = (prb*) SRQ_ABS_PTR(m_processOffset);
-		process->prb_flags &= ~PRB_remap_over;
-#endif
 	}
-***/
 
 	return m_header;
 }
@@ -627,20 +598,6 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = FB_ALIGN(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
-#if (defined HAVE_MMAP || defined WIN_NT)
-	// hvlad: wait for end of shared memory remapping if it is in progress
-
-	prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
-	while (process->prb_flags & (PRB_remap | PRB_remap_over))
-	{
-		release_shmem();
-		THREAD_YIELD();
-		acquire_shmem();
-
-		process = (prb*) SRQ_ABS_PTR(m_processOffset);
-	}
-#endif
-
 	for (ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		ptr = &free->frb_next)
 	{
@@ -656,27 +613,6 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	{
 		const ULONG old_length = m_shmemData.sh_mem_length_mapped;
 		const ULONG ev_length = old_length + Config::getEventMemSize();
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-		// Before remapping the memory, wakeup the watcher thread.
-		// Then remap the shared memory and allow the watcher thread to remap.
-
-		process = (prb*) SRQ_ABS_PTR(m_processOffset);
-		process->prb_flags |= PRB_remap;
-
-		post_process(process);
-
-		while (true)
-		{
-			release_shmem();
-			THREAD_YIELD();
-			acquire_shmem();
-
-			process = (prb*) SRQ_ABS_PTR(m_processOffset);
-			if (!(process->prb_flags & PRB_remap))
-				break;
-		}
-#endif
 
 		evh* header = NULL;
 
@@ -698,11 +634,6 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 			m_header->evh_length = m_shmemData.sh_mem_length_mapped;
 
 			free_global(free);
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-			process = (prb*) SRQ_ABS_PTR(m_processOffset);
-			process->prb_flags &= ~PRB_remap_over;
-#endif
 
 			return alloc_global(type, length, true);
 		}
@@ -1478,32 +1409,13 @@ void EventManager::watcher_thread()
 
 	try
 	{
-		while (m_processOffset)
+		while (!m_exiting)
 		{
 			acquire_shmem();
 
 			prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
 			process->prb_flags &= ~PRB_wakeup;
-
-#if (defined HAVE_MMAP || defined WIN_NT)
-			while (process->prb_flags & PRB_remap)
-			{
-				process->prb_flags |= PRB_remap_over;
-				process->prb_flags &= ~PRB_remap;
-
-				while (true)
-				{
-					release_shmem();
-					THREAD_YIELD();
-					acquire_shmem();
-
-					process = (prb*) SRQ_ABS_PTR(m_processOffset);
-					if (!(process->prb_flags & PRB_remap_over))
-						break;
-				}
-			}
-#endif
-
+			
 			const SLONG value = ISC_event_clear(&process->prb_event);
 
 			if (process->prb_flags & PRB_pending)
@@ -1519,7 +1431,7 @@ void EventManager::watcher_thread()
 				m_startupSemaphore.release();
 			}
 
-			if (!m_processOffset)
+			if (m_exiting)
 				break;
 
 			ISC_event_wait(&m_process->prb_event, value, 0);

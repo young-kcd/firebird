@@ -117,6 +117,7 @@ private:
 #endif
 
 	bool m_sharedFileCreated;
+	bool m_exiting;
 };
 
 } // namespace

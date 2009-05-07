@@ -85,10 +85,6 @@ struct prb
 
 const int PRB_wakeup	= 1;		// Schedule a wakeup for process
 const int PRB_pending	= 2;		// Wakeup has been requested, and is dangling
-#if (defined HAVE_MMAP || defined WIN_NT)
-const int PRB_remap		= 4;		// need to remap shared memory
-const int PRB_remap_over= 8;		// remap is over
-#endif
 
 // Session block
 
