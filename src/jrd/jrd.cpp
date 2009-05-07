@@ -5461,7 +5461,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 	ULONG num_att = 0;
 	ULONG drive_mask = 0L;
 	ULONG total = 0;
-	HalfStaticArray<PathName, 8> dbFiles;
+	SortedObjectsArray<PathName> dbFiles(*getDefaultMemoryPool());
 
 	try
 	{
