@@ -126,6 +126,8 @@ typedef struct xcc
 // XCC structure flags
 
 const ULONG XCCF_SERVER_SHUTDOWN	= 1;	// server has shutdown detected
+const ULONG XCCF_ASYNC				= 2;	// secondary XCC for events processing
+
 
 // This structure (xps) is mapped to the start of the allocated
 // communications area between the client and server

@@ -866,7 +866,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		DuplicateHandle(GetCurrentProcess(), parent_xcc->xcc_proc_h,
 						GetCurrentProcess(), &xcc->xcc_proc_h,
 						0, FALSE, DUPLICATE_SAME_ACCESS);
-		xcc->xcc_flags = 0;
+		xcc->xcc_flags = XCCF_ASYNC;
 		xcc->xcc_map_handle = parent_xcc->xcc_map_handle;
 		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
 		xcc->xcc_xpm->xpm_count++;
@@ -1001,7 +1001,7 @@ static void cleanup_comm(XCC xcc)
 	}
 
 	XPM xpm = xcc->xcc_xpm;
-	if (xpm) {
+	if (xpm && !(xcc->xcc_flags & XCCF_ASYNC)) {
 		cleanup_mapping(xpm);
 	}
 
