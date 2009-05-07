@@ -175,7 +175,7 @@ const char* const I4CONST_2			= ")";
 const char* const COMMENT			= "C     ";
 const char* const INLINE_COMMENT	= "!";
 const char* const COMMA				= ",";
-#elif defined(sun)
+#elif defined(__sun)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -617,7 +617,7 @@ void FTN_print_buffer( TEXT* output_bufferL)
 	for (const TEXT* q = output_bufferL; *q; q++)
 	{
 		*p++ = *q;
-#ifdef sun
+#ifdef __sun
 		if (q[0] == '\n' && q[1] == '\0') {
 			*p = 0;
 			fprintf(gpreGlob.out_file, "%s", s);

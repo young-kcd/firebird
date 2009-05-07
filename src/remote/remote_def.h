@@ -42,7 +42,7 @@
 
 #include "../remote/protocol.h"
 
-#if defined(sun)
+#if defined(__sun)
 #	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
 #elif (defined i386 || defined AMD64)

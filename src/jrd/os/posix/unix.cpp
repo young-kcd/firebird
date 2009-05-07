@@ -414,14 +414,6 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 
 	const FB_UINT64 length = statistics.st_size;
 
-/****
-#ifndef sun
-length = statistics.st_size;
-#else
-length = statistics.st_blocks * statistics.st_blksize;
-#endif
-****/
-
 	return (length + pagesize - 1) / pagesize;
 }
 

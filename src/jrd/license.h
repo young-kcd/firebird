@@ -71,7 +71,7 @@
 #define FB_PLATFORM "HU"
 #endif
 
-#ifdef sun
+#ifdef __sun
 #ifdef sparc
 #ifdef SOLARIS
 #define FB_PLATFORM	"SO"
@@ -88,7 +88,7 @@
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
 #endif
-#endif /* sun */
+#endif /* __sun */
 
 #ifdef AIX
 #ifdef AIX_PPC

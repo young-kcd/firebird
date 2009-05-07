@@ -545,7 +545,7 @@ int main(int argc, char* argv[])
 			sw_lines = false;
 			gpreGlob.sw_cstring = false;
 			gen_routine = FTN_action;
-#ifdef sun
+#ifdef __sun
 			comment_start = "*      ";
 #else
 			comment_start = "C      ";
@@ -2780,7 +2780,7 @@ static SSHORT skip_white()
 			continue;
 		}
 
-#if !defined(sun) && defined(GPRE_FORTRAN)
+#if !defined(__sun) && defined(GPRE_FORTRAN)
 		// skip fortran embedded comments on hpux or sgi
 
 		if (c == '!' && (gpreGlob.sw_language == lang_fortran))
