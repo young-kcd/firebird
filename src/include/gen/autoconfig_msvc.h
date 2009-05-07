@@ -32,7 +32,7 @@
 // New warnings at level W4
 
 //#pragma warning(disable:4018)  // signed/unsigned mismatch
-#pragma warning(disable:4100)  // unreferenced formal parameter
+//#pragma warning(disable:4100)  // unreferenced formal parameter
 #pragma warning(disable:4127)  // conditional expression is constant
 //#pragma warning(disable:4131)  // uses old-style declarator
 //#pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
@@ -59,7 +59,7 @@
 
 // Warning from Microsoft Visual Studio\VC98\include\fstream
 
-#pragma warning(disable:4097)  // typedef-name '......' used as synonym for class-name '.....'
+//#pragma warning(disable:4097)  // typedef-name '......' used as synonym for class-name '.....'
 
 // New MSVC8 warnings
 
@@ -166,6 +166,8 @@
 #undef HAVE_LLRINT
 #undef HAVE_LOCALTIME_R
 #undef HAVE_GMTIME_R
+#undef HAVE_SYS_SELECT_H
+
 
 #if defined _MSC_VER && _MSC_VER < 1500
 #define vsnprintf _vsnprintf
@@ -251,9 +253,10 @@
 /* CPU types */
 #undef PowerPC
 #undef sparc
+#undef __sparc
 #define i386
-#undef mips
-#undef alpha
+#undef MIPS
+#undef MIPSEL
 
 /* various OS efforts */
 #undef DARWIN
@@ -261,6 +264,7 @@
 #undef FREEBSD
 #undef NETBSD
 #undef sun
+#undef __sun
 #undef SOLARIS
 #undef HPUX
 #undef VMS
