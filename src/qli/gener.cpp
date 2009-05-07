@@ -255,8 +255,8 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 				level--;
 				break;
 
-				/* for join types, advance past the count byte
-				   of substreams; we don't need it */
+				// for join types, advance past the count byte
+				// of substreams; we don't need it
 
 			case isc_info_rsb_merge:
 				buffer_length--;
@@ -462,8 +462,8 @@ static void gen_any( qli_nod* node, qli_req* request)
  **************************************/
 	qli_rlb* rlb;
 
-/* If there is a request associated with the statement, prepare to
-   generate BLR.  Otherwise assume that a request is alrealdy initialized. */
+	// If there is a request associated with the statement, prepare to
+	// generate BLR.  Otherwise assume that a request is alrealdy initialized.
 
 	qli_req* new_request = (qli_req*) node->nod_arg[e_any_request];
 	if (new_request)
@@ -537,9 +537,9 @@ static void gen_assignment( qli_nod* node, qli_req* request)
 	STUFF(blr_assignment);
 	qli_nod* target = node->nod_arg[e_asn_to];
 
-/* If we are referencing a parameter of another request, compile
-   the request first, the make a reference.  Otherwise, just compile
-   the expression in the context of this request */
+	// If we are referencing a parameter of another request, compile
+	// the request first, the make a reference.  Otherwise, just compile
+	// the expression in the context of this request
 
 	const qli_nod* reference = target->nod_arg[e_fld_reference];
 	if (reference) {
@@ -746,8 +746,10 @@ static void gen_expression(qli_nod* node, qli_req* request)
 	qli_rlb* rlb = 0;
 
 	if (node->nod_flags & NOD_local)
+	{
 		request = NULL;
-/*    return;*/
+		//return;
+	}
 	else if (request)
 		rlb = CHECK_RLB(request->req_blr);
 
@@ -990,8 +992,7 @@ static void gen_field( qli_nod* node, qli_req* request)
 	const qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
 	const qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 
-/* If the field referenced is in this request, just generate a field
-   reference. */
+	// If the field referenced is in this request, just generate a field reference.
 
 	if (context->ctx_request == request)
 	{
@@ -1013,8 +1014,7 @@ static void gen_field( qli_nod* node, qli_req* request)
 		return;
 	}
 
-/* The field is in a different request.  Make a parameter reference
-   instead. */
+	// The field is in a different request.  Make a parameter reference instead.
 
 	gen_parameter(node->nod_export, request);
 }
@@ -1033,8 +1033,8 @@ static void gen_for( qli_nod* node, qli_req* request)
  *
  **************************************/
 
-/* If there is a request associated with the statement, prepare to
-   generate BLR.  Otherwise assume that a request is alrealdy initialized. */
+	// If there is a request associated with the statement, prepare to
+	// generate BLR.  Otherwise assume that a request is alrealdy initialized.
 
 	if (node->nod_arg[e_for_request]) {
 		request = (qli_req*) node->nod_arg[e_for_request];
@@ -1043,8 +1043,8 @@ static void gen_for( qli_nod* node, qli_req* request)
 
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
-/* If the statement requires an end of file marker, build a BEGIN/END around
-   the whole statement. */
+	// If the statement requires an end of file marker, build a BEGIN/END around
+	// the whole statement.
 
 	const qli_msg* message = (qli_msg*) node->nod_arg[e_for_receive];
 	if (message)
@@ -1159,8 +1159,8 @@ static void gen_function( qli_nod* node, qli_req* request)
 	qli_req* new_request;
 	qli_rlb* rlb;
 
-/* If there is a request associated with the statement, prepare to
-   generate BLR.  Otherwise assume that a request is already initialized. */
+	// If there is a request associated with the statement, prepare to
+	// generate BLR.  Otherwise assume that a request is already initialized.
 
 	if (request && (request->req_flags & (REQ_project | REQ_group_by)))
 	{
@@ -1222,9 +1222,8 @@ static void gen_if( qli_nod* node, qli_req* request)
  *
  **************************************/
 
-/* If the statement is local to QLI, force the sub-
-   statements/expressions to be local also.  If not
-   local, generate BLR. */
+	// If the statement is local to QLI, force the sub- statements/expressions to be local also.
+	// If not local, generate BLR.
 
 	if (node->nod_flags & NOD_local)
 	{
@@ -1781,9 +1780,8 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 		break;
 
 	case nod_count:
-/* count2
-	operatr = node->nod_arg [e_stt_value] ? blr_count2 : blr_count;
-*/
+		// count2
+		// operatr = node->nod_arg [e_stt_value] ? blr_count2 : blr_count;
 		operatr = blr_count;
 		break;
 
@@ -1804,9 +1802,8 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 		break;
 
 	case nod_agg_count:
-/* count2
-	operatr = node->nod_arg [e_stt_value] ? blr_agg_count2 : blr_agg_count;
-*/
+		// count2
+		// operatr = node->nod_arg [e_stt_value] ? blr_agg_count2 : blr_agg_count;
 		operatr = blr_agg_count;
 		break;
 
@@ -1830,8 +1827,8 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 		ERRQ_bugcheck(355);			// Msg355 gen_statistical: not understood
 	}
 
-/* If there is a request associated with the statement, prepare to
-   generate BLR.  Otherwise assume that a request is alrealdy initialized. */
+	// If there is a request associated with the statement, prepare to
+	// generate BLR.  Otherwise assume that a request is alrealdy initialized.
 
 	qli_rlb* rlb;
 	qli_req* new_request = (qli_req*) node->nod_arg[e_stt_request];
@@ -1855,9 +1852,9 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 	if (node->nod_arg[e_stt_rse])
 		gen_rse(node->nod_arg[e_stt_rse], request);
 
-/*count 2
-if (node->nod_arg [e_stt_value])
-*/
+	// count 2
+	// if (node->nod_arg [e_stt_value])
+
 	if (node->nod_arg[e_stt_value] && node->nod_type != nod_agg_count)
 		gen_expression(node->nod_arg[e_stt_value], request);
 
@@ -1884,8 +1881,8 @@ static void gen_store( qli_nod* node, qli_req* request)
  *
  **************************************/
 
-/* If there is a request associated with the statement, prepare to
-   generate BLR.  Otherwise assume that a request is alrealdy initialized. */
+	// If there is a request associated with the statement, prepare to
+	// generate BLR.  Otherwise assume that a request is alrealdy initialized.
 
 	if (node->nod_arg[e_sto_request]) {
 		request = (qli_req*) node->nod_arg[e_sto_request];

@@ -90,10 +90,9 @@ static const UCHAR tpb[] = { isc_tpb_version1, isc_tpb_write };
 static const UCHAR db_info[] = { isc_info_implementation, isc_info_end };
 static UCHAR global_parm_buffer[256];
 
-/*
-static const UCHAR	dpb_trace [] =	{ isc_dpb_version1, isc_dpb_trace, 1, 1 };
-static const UCHAR	dpb_num_buffers [ ] = { isc_dpb_version1, isc_dpb_num_buffers, 1, 1 };
-*/
+// static const UCHAR	dpb_trace [] =	{ isc_dpb_version1, isc_dpb_trace, 1, 1 };
+// static const UCHAR	dpb_num_buffers [ ] = { isc_dpb_version1, isc_dpb_num_buffers, 1, 1 };
+
 
 #define STUFF_STRING(str)	put_dyn_string (rlb, str)
 #define BLR_BYTE	*blr++
@@ -123,10 +122,9 @@ static const USHORT blr_dtypes[] =
 };
 
 
-/*
-   table used to determine capabilities, checking for specific
-   fields in system relations
-*/
+// table used to determine capabilities, checking for specific
+// fields in system relations
+
 
 struct rfr_tab_t
 {
@@ -138,9 +136,8 @@ struct rfr_tab_t
 static const rfr_tab_t rfr_table[] =
 {
 	{ "RDB$INDICES", "RDB$INDEX_INACTIVE", DBB_cap_idx_inactive },
-/* OBSOLETE - 1996-Aug-06 David Schnepper
-	{ "RDB$RELATIONS",	"RDB$STORE_TRIGGER",	DBB_cap_triggers },
-*/
+	// OBSOLETE - 1996-Aug-06 David Schnepper
+	//{ "RDB$RELATIONS",	"RDB$STORE_TRIGGER",	DBB_cap_triggers },
 	{ "RDB$RELATIONS", "RDB$EXTERNAL_FILE", DBB_cap_extern_file },
 	{ "RDB$SECURITY_CLASSES", "RDB$SECURITY_CLASS", DBB_cap_security },
 	{ "RDB$FILES", "RDB$FILE_NAME", DBB_cap_files },
@@ -258,11 +255,10 @@ void MET_define_index( qli_syntax* node)
 	END_ERROR;
 
 
-/* at this point force garbage collection of any index segments left over
-   from previous failures.  The system transaction (which might notice them
-   later does NOT recognize rolled back stuff!  Should someone have actually
-   left an orphanned segment around, kill that too.
-*/
+	// at this point force garbage collection of any index segments left over
+	// from previous failures.  The system transaction (which might notice them
+	// later does NOT recognize rolled back stuff!  Should someone have actually
+	// left an orphanned segment around, kill that too.
 
 	FOR(REQUEST_HANDLE database->dbb_requests[REQ_scan_index])
 		X IN DB.RDB$INDEX_SEGMENTS WITH X.RDB$INDEX_NAME = symbol->sym_string
@@ -489,8 +485,7 @@ void MET_delete_database( qli_dbb* dbb)
  *
  **************************************/
 
-/* generate a database parameter block to
-   include the user/password, if necessary */
+	// generate a database parameter block to include the user/password, if necessary
 
 	const TEXT* user;
 	USHORT user_length;
@@ -765,8 +760,7 @@ void MET_fields( qli_rel* relation)
  *
  **************************************/
 
-/* If we already have fetched the fields for the relation,
-   don't do it again. */
+	// If we already have fetched the fields for the relation, don't do it again.
 
 	if (relation->rel_flags & REL_fields)
 		return;
@@ -877,8 +871,8 @@ void MET_finish( qli_dbb* dbb)
 	{
 		dbb->dbb_functions = function->fun_next;
 		HSH_remove(function->fun_symbol);
-		ALLQ_release((FRB) function->fun_symbol);
-		ALLQ_release((FRB) function);
+		ALLQ_release((qli_frb*) function->fun_symbol);
+		ALLQ_release((qli_frb*) function);
 	}
 
 	// Finally, actually close down database connection.
@@ -889,7 +883,7 @@ void MET_finish( qli_dbb* dbb)
 	if (dbb->dbb_symbol)
 	{
 		HSH_remove(dbb->dbb_symbol);
-		ALLQ_release((FRB) dbb->dbb_symbol);
+		ALLQ_release((qli_frb*) dbb->dbb_symbol);
 	}
 
 	int count = 0;
@@ -898,7 +892,7 @@ void MET_finish( qli_dbb* dbb)
 		if (*ptr == dbb)
 		{
 			*ptr = dbb->dbb_next;
-			ALLQ_release((FRB) dbb);
+			ALLQ_release((qli_frb*) dbb);
 			count++;
 			if (!*ptr) {
 				break;
@@ -1120,8 +1114,8 @@ FB_API_HANDLE MET_meta_transaction(qli_dbb* database, bool update_flag)
 
 	DB = database->dbb_handle;
 
-/* If we don't know whether or not the database can handle
-   multiple transactions, find out now */
+	// If we don't know whether or not the database can handle
+	// multiple transactions, find out now
 
 	if (!transaction &&
 		((database->dbb_capabilities & DBB_cap_multi_trans) ||
@@ -1392,8 +1386,8 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 
 	qli_dbb* temp = (qli_dbb*) node->syn_arg[0];
 
-/* Only a SQL CREATE DATABASE will have a pagesize parameter,
-   so only looking at the first pointer is justified.	*/
+	// Only a SQL CREATE DATABASE will have a pagesize parameter,
+	// so only looking at the first pointer is justified.
 
 	SSHORT length;
 	const TEXT* lc_ctype = QLI_charset;
@@ -1731,9 +1725,9 @@ static void add_field( qli_rel* relation, qli_fld* field, USHORT position)
 		define_global_field(database, field, global_field);
 	}
 
-/* Finally, store into RFR.  If we defined a global field, assume that
-   the query name and edit string will be inherited from there, otherwise
-   include them here */
+	// Finally, store into RFR.  If we defined a global field, assume that
+	// the query name and edit string will be inherited from there, otherwise
+	// include them here
 
 	STORE(REQUEST_HANDLE database->dbb_requests[REQ_store_rfr])
 		X IN DB.RDB$RELATION_FIELDS
@@ -2607,10 +2601,10 @@ static void delete_fields( qli_rel* relation)
 	while (qli_fld* field = relation->rel_fields)
 	{
 		relation->rel_fields = field->fld_next;
-		ALLQ_release((FRB) field->fld_name);
+		ALLQ_release((qli_frb*) field->fld_name);
 		if (field->fld_query_name)
-			ALLQ_release((FRB) field->fld_query_name);
-		ALLQ_release((FRB) field);
+			ALLQ_release((qli_frb*) field->fld_query_name);
+		ALLQ_release((qli_frb*) field);
 	}
 
 	relation->rel_flags &= ~REL_fields;
@@ -2750,7 +2744,7 @@ static void get_database_type( qli_dbb* new_dbb)
 	while (*p != isc_info_end && p < buffer + sizeof(buffer))
 	{
 		UCHAR item = *p++;
-		USHORT l = gds__vax_integer(p, 2);
+		const USHORT l = gds__vax_integer(p, 2);
 		p += 2;
 		switch (item)
 		{
@@ -2760,7 +2754,8 @@ static void get_database_type( qli_dbb* new_dbb)
 				int count = *q++;
 				while (count--)
 				{
-					new_dbb->dbb_type = *q++;
+					//new_dbb->dbb_type = *q++; // Not used
+					++q;
 					if (*q++ == isc_info_db_class_access)
 						break;
 				}
@@ -2886,16 +2881,16 @@ static void install( qli_dbb* old_dbb)
 
 	gds_trans = MET_transaction(nod_start_trans, new_dbb);
 
-/* Find out whose database this is so later we don't ask Rdb/VMS
-   or its pals to do any unnatural acts.  While we're at it get
-   general capabilities */
+	// Find out whose database this is so later we don't ask Rdb/VMS
+	// or its pals to do any unnatural acts.  While we're at it get
+	// general capabilities
 
 	get_database_type(new_dbb);
 	set_capabilities(new_dbb);
 
-/* Get all relations in database.  For each relation make up a
-   relation block, make up a symbol block, and insert the symbol
-   into the hash table. */
+	// Get all relations in database.  For each relation make up a
+	// relation block, make up a symbol block, and insert the symbol
+	// into the hash table.
 
 	FB_API_HANDLE request = 0;
 
@@ -2934,7 +2929,8 @@ static void install( qli_dbb* old_dbb)
 		    qli_symbol* fsymbol = make_symbol(X.RDB$FUNCTION_NAME, sizeof(X.RDB$FUNCTION_NAME));
 			if (!fsymbol)
                 continue;
-			qli_fun* function = (qli_fun*) ALLOCPV(type_fun, 0);
+			//qli_fun* function = (qli_fun*) ALLOCPV(type_fun, 0);
+			qli_fun* function = (qli_fun*) ALLOCP(type_fun);
 			function->fun_next = new_dbb->dbb_functions;
 			new_dbb->dbb_functions = function;
 			function->fun_symbol = fsymbol;
@@ -3436,14 +3432,14 @@ static void purge_relation(qli_rel* relation)
 	while (field = relation->rel_fields)
 	{
 		relation->rel_fields = field->fld_next;
-		ALLQ_release((FRB) field->fld_name);
+		ALLQ_release((qli_frb*) field->fld_name);
 		if (symbol = field->fld_query_name) {
-			ALLQ_release((FRB) symbol);
+			ALLQ_release((qli_frb*) symbol);
 		}
-		ALLQ_release((FRB) field);
+		ALLQ_release((qli_frb*) field);
 	}
 
-	ALLQ_release((FRB) relation);
+	ALLQ_release((qli_frb*) relation);
 }
 
 

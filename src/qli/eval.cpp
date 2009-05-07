@@ -235,8 +235,8 @@ void EVAL_break_increment( qli_nod* node)
 		return;
 	}
 
-/* Evaluate the sub-expression.  If null, don't bother to do anything
-   more.  If not, bump the number of records involved */
+	// Evaluate the sub-expression.  If null, don't bother to do anything
+	// more.  If not, bump the number of records involved
 
 	dsc* desc2 = EVAL_value(node->nod_arg[e_stt_value]);
 	if (!desc2)
@@ -478,12 +478,12 @@ dsc* EVAL_value(qli_nod* node)
 			*((SLONG*) desc->dsc_address) = -MOVQ_get_long(values[0], desc->dsc_scale);
 			break;
 
-/*   	lets throw arithmetic not supported until fixed
-        case dtype_int64:
-			*((SINT64*) desc->dsc_address) = -MOVQ_get_long(values[0], desc->dsc_scale);
-			break;
+		// lets throw arithmetic not supported until fixed
+        //case dtype_int64:
+		//	*((SINT64*) desc->dsc_address) = -MOVQ_get_long(values[0], desc->dsc_scale);
+		//	break;
 
-*/		case dtype_real:
+		case dtype_real:
 			*((float*) desc->dsc_address) = -MOVQ_get_double(values[0]);
 			break;
 
@@ -576,8 +576,8 @@ static SLONG execute_any( qli_nod* node)
  **************************************/
 	qli_msg* message;
 
-/* If there is a request associated  with the node, start it and possibly
-   send a message along with it. */
+	// If there is a request associated  with the node, start it and possibly
+	// send a message along with it.
 
 	qli_req* request = (qli_req*) node->nod_arg[e_any_request];
 	if (request)
@@ -688,8 +688,8 @@ static DSC *execute_function( qli_nod* node)
  **************************************/
 	qli_msg* message;
 
-/* If there is a request associated  with the node, start it and possibly
-   send a message along with it. */
+	// If there is a request associated  with the node, start it and possibly
+	// send a message along with it.
 
 	qli_req* request = (qli_req*) node->nod_arg[e_fun_request];
 	if (request)
@@ -718,7 +718,7 @@ static DSC *execute_prompt( qli_nod* node)
 	TEXT string[128], buffer[256];
 
 	ERRQ_pending();
-	USHORT reprompt = QLI_reprompt;
+	bool reprompt = QLI_reprompt;
 	dsc* desc = &node->nod_desc;
 	vary* data = (vary*) desc->dsc_address;
 
@@ -778,7 +778,7 @@ static DSC *execute_prompt( qli_nod* node)
 		}
 
 		ERRQ_msg_put(32);	// Msg32 Input value is too long
-		reprompt = TRUE;
+		reprompt = true;
 	}
 }
 
@@ -797,8 +797,8 @@ static DSC *execute_statistical( qli_nod* node)
  **************************************/
 	qli_msg* message;
 
-/* If there is a request associated  with the node, start it and possibly
-   send a message along with it. */
+	// If there is a request associated  with the node, start it and possibly
+	// send a message along with it.
 
 	qli_req* request = (qli_req*) node->nod_arg[e_stt_request];
 	if (request)

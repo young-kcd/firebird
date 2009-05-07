@@ -222,9 +222,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				isc_set_debug(debug_value);
 				break;
 
-				/* This switch's name is arbitrary; since it is an internal
-				   mechanism it can be changed at will */
-
+				// This switch's name is arbitrary; since it is an internal
+				// mechanism it can be changed at will
 			case 'Y':
 				QLI_trace = true;
 				break;
@@ -272,7 +271,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 	while (QLI_line)
 	{
-		plb* temp = QLI_default_pool = ALLQ_pool();
+		qli_plb* temp = QLI_default_pool = ALLQ_pool();
 		flush_flag = process_statement(flush_flag);
 		ERRQ_pending();
 		ALLQ_rlpool(temp);
@@ -282,12 +281,12 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	LEX_fini();
 	ALLQ_fini();
 #ifdef DEBUG_GDS_ALLOC
-/* Report any memory leaks noticed.
- * We don't particularly care about QLI specific memory leaks, so all
- * QLI allocations have been marked as "don't report".  However, much
- * of the test-base uses QLI so having a report when QLI finishes
- * could find leaks within the engine.
- */
+	// Report any memory leaks noticed.
+	// We don't particularly care about QLI specific memory leaks, so all
+	// QLI allocations have been marked as "don't report".  However, much
+	// of the test-base uses QLI so having a report when QLI finishes
+	// could find leaks within the engine.
+
 	gds_alloc_report(0, __FILE__, __LINE__);
 #endif
 	return (FINI_OK);
@@ -348,9 +347,9 @@ static bool process_statement(bool flush_flag)
 		QLI_skip_line = false;
 	}
 
-/* Enable signal handling for the next statement.  Each signal will
-   be caught at least once, then reset to allow the user to really
-   kill the process */
+	// Enable signal handling for the next statement.  Each signal will
+	// be caught at least once, then reset to allow the user to really
+	// kill the process
 
 	enable_signals();
 
@@ -358,14 +357,13 @@ static bool process_statement(bool flush_flag)
 
 	try {
 
-/* Set up the appropriate prompt and get the first significant token.  If
-   we don't get one, we're at end of file */
+	// Set up the appropriate prompt and get the first significant token.  If
+	// we don't get one, we're at end of file
 
 	QLI_prompt = QLI_prompt_string;
 
-/* This needs to be done after setting QLI_prompt to prevent
- * and infinite loop in LEX/next_line.
- */
+	// This needs to be done after setting QLI_prompt to prevent
+	// and infinite loop in LEX/next_line.
 	// If there was a prior syntax error, flush the token stream
 
 	if (flush_flag)
@@ -381,13 +379,13 @@ static bool process_statement(bool flush_flag)
 
 	EXEC_poll_abort();
 
-/* Mark the current token as starting the statement.  This is allows
-   the EDIT command to find the last statement */
+	// Mark the current token as starting the statement.  This is allows
+	// the EDIT command to find the last statement
 
 	LEX_mark_statement();
 
-/* Change the prompt string to the continuation prompt, and parse
-   the next statement */
+	// Change the prompt string to the continuation prompt, and parse
+	// the next statement
 
 	QLI_prompt = QLI_cont_string;
 
@@ -413,7 +411,7 @@ static bool process_statement(bool flush_flag)
 		{
 			if ((dbb->dbb_transaction) && (dbb->dbb_flags & DBB_updates))
 			{
-				if (yes_no(460, dbb->dbb_symbol->sym_string))	/* Msg460 Do you want to rollback updates for <dbb>? */
+				if (yes_no(460, dbb->dbb_symbol->sym_string))	// Msg460 Do you want to rollback updates for <dbb>?
 					MET_transaction(nod_rollback, dbb);
 				else
 					MET_transaction(nod_commit, dbb);
@@ -422,8 +420,8 @@ static bool process_statement(bool flush_flag)
 		return false;
 	}
 
-/* Expand the statement.  It will return NULL is the statement was
-   a command.  An error will be unwound */
+	// Expand the statement.  It will return NULL is the statement was
+	// a command.  An error will be unwound
 
 	qli_nod* expanded_tree = EXP_expand(syntax_tree);
 	if (!expanded_tree)

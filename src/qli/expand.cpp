@@ -219,12 +219,10 @@ qli_nod* EXP_expand( qli_syntax* node)
 		MET_define_sql_relation((qli_rel*) node->syn_arg[0]);
 		return NULL;
 
-/****
-    case nod_sql_cr_view:
-	MET_sql_cr_view (node);
-	GEN_release();
-	return NULL;
-****/
+    //case nod_sql_cr_view:
+	//	MET_sql_cr_view (node);
+	//	GEN_release();
+	//	return NULL;
 
 	case nod_sql_al_table:
 		MET_sql_alter_table((qli_rel*) node->syn_arg[0], (qli_fld*) node->syn_arg[1]);
@@ -368,10 +366,10 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 		if (!strcmp(field->fld_name->sym_string, variable->fld_name->sym_string))
 		{
 			*ptr = field->fld_next;
-			ALLQ_release((FRB) field->fld_name);
+			ALLQ_release((qli_frb*) field->fld_name);
 			if (field->fld_query_name)
-				ALLQ_release((FRB) field->fld_query_name);
-			ALLQ_release((FRB) field);
+				ALLQ_release((qli_frb*) field->fld_query_name);
+			ALLQ_release((qli_frb*) field);
 			break;
 		}
 
@@ -1051,8 +1049,8 @@ static qli_nod* expand_field( qli_syntax* input, qli_lls* stack, qli_syntax* sub
 
 	if (context->ctx_parent != parent)
 	{
-		/* The parent context may be hidden because we are part of
-		   a stream context.  Check out this possibility. */
+		// The parent context may be hidden because we are part of
+		// a stream context.  Check out this possibility.
 
 		for (; save_stack; save_stack = save_stack->lls_next)
 		{
@@ -1355,9 +1353,9 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 		loop->nod_arg[e_for_rse] = rse = expand_rse(syn_rse, &new_right);
 	}
 
-/* If there were any print items, process them now.  Look first for things that
-   look like items, but are actually lists.  If there aren't items of any kind,
-   pick up all fields in the relations from the record selection expression. */
+	// If there were any print items, process them now.  Look first for things that
+	// look like items, but are actually lists.  If there aren't items of any kind,
+	// pick up all fields in the relations from the record selection expression.
 	qli_lls* items = NULL;
 	USHORT count = 0;
 	qli_syntax* syn_list = input->syn_arg[s_prt_list];
@@ -1427,8 +1425,8 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 	if (!count)
 		IBERROR(150);			// Msg150 No items in print list
 
-/* Build new print statement.  Unlike the syntax node, the print statement
-   has only print items in it. */
+	// Build new print statement.  Unlike the syntax node, the print statement
+	// has only print items in it.
 
 	qli_nod* node = make_node(input->syn_type, e_prt_count);
 	qli_nod* list = make_list(items);
@@ -1642,8 +1640,8 @@ static qli_nod* expand_restructure( qli_syntax* input, qli_lls* right, qli_lls* 
 	if (!(relation->rel_flags & REL_fields))
 		MET_fields(relation);
 
-/* Match fields in target relation against fields in the input rse.  Fields
-   may match on either name or query name. */
+	// Match fields in target relation against fields in the input rse.  Fields
+	// may match on either name or query name.
 
 	qli_lls* stack = NULL;
 
@@ -1724,8 +1722,8 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 	node->nod_count = input->syn_count;
 	qli_nod** ptr2 = &node->nod_arg[e_rse_count];
 
-/* Decide whether or not this is a GROUP BY, real or imagined
-   If it is, disallow normal field type references */
+	// Decide whether or not this is a GROUP BY, real or imagined
+	// If it is, disallow normal field type references
 
 	qli_ctx* parent_context = NULL;
 	qli_nod* parent_rse = NULL;
@@ -2095,8 +2093,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 		expand_values(input, right);
 	}
 
-/* Process sub-statement.  If there isn't one, make up a series of
-   assignments. */
+	// Process sub-statement.  If there isn't one, make up a series of assignments.
 
 	if (input->syn_arg[s_sto_statement])
 	{
@@ -2768,8 +2765,8 @@ static qli_nod* possible_literal(qli_syntax* input, qli_lls* stack, bool upper_f
  **************************************/
 	qli_ctx* context;
 
-/* If the value isn't a field, is qualified, or can be resolved,
-   it doesn't qualify for conversion.  Return NULL. */
+	// If the value isn't a field, is qualified, or can be resolved,
+	// it doesn't qualify for conversion.  Return NULL.
 
 	if (input->syn_type != nod_field || input->syn_count != 1 || resolve(input, stack, &context))
 	{
@@ -2865,10 +2862,10 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 	qli_rel* relation;
 	qli_fld* field;
 
-/* Look thru context stack looking for a context that will resolve
-   all name segments.  If the context is a secondary context, require
-   that the context name be given explicitly (used for special STORE
-   context). */
+	// Look thru context stack looking for a context that will resolve
+	// all name segments.  If the context is a secondary context, require
+	// that the context name be given explicitly (used for special STORE
+	// context).
 
 	qli_name** base = (qli_name**) node->syn_arg;
 
@@ -2949,9 +2946,9 @@ static void resolve_really( qli_fld* variable, const qli_syntax* field_node)
  *
  **************************************/
 
-/* For ease, break down the syntax block.
-   It should contain at least one name; two names are a  potential ambiguity:
-   check for a qli_dbb (<db>.<glo_fld>), then for a rel (<rel>.<fld>). */
+	// For ease, break down the syntax block.
+	// It should contain at least one name; two names are a  potential ambiguity:
+	// check for a qli_dbb (<db>.<glo_fld>), then for a rel (<rel>.<fld>).
 
 	USHORT offset = field_node->syn_count;
 	const qli_name* fld_name = (qli_name*) field_node->syn_arg[--offset];

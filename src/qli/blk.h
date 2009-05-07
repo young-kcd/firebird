@@ -21,9 +21,9 @@
  * Contributor(s): ______________________________________.
  */
 
-BLKDEF (type_frb, frb, 0)
-BLKDEF (type_hnk, hnk, 0)
-BLKDEF (type_plb, plb, 0)
+BLKDEF (type_frb, qli_frb, 0)
+BLKDEF (type_hnk, qli_hnk, 0)
+BLKDEF (type_plb, qli_plb, 0)
 BLKDEF (type_vec, qli_vec, sizeof (((qli_vec*) NULL)->vec_object[0]))
 BLKDEF (type_dbb, qli_dbb, 1)
 BLKDEF (type_rel, qli_rel, 0)
@@ -51,5 +51,5 @@ BLKDEF (type_map, qli_map, 0)
 BLKDEF (type_qpr, qli_proc, 0)
 BLKDEF (type_qfn, qli_func, 0)
 BLKDEF (type_qfl, qli_filter, 0)
-BLKDEF (type_fun, qli_fun, sizeof(dsc)) // sizeof (((FUN) NULL)->fun_arg[0]))
+BLKDEF (type_fun, qli_fun, 0) //, sizeof(dsc)) // sizeof (((FUN) NULL)->fun_arg[0]))
 BLKDEF (type_rlb, qli_rlb, 0)			// Request language block

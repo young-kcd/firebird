@@ -61,14 +61,14 @@ static const struct
 
 #undef BLKDEF
 
-static void extend_pool(PLB, USHORT);
+static void extend_pool(qli_plb*, USHORT);
 
 static qli_vec* global_pools;
 
 const int MIN_ALLOCATION	= 1024;
 
 
-BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
+BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 {
 /**************************************
  *
@@ -97,18 +97,18 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	if (size <= 4 || size > 65535)
 		ERRQ_bugcheck(2);			// Msg2 bad block size
 
-/* Find best fit.  Best fit is defined to be the free block of SHORTest
-   tail.  If there isn't a fit, extend the pool and try, try again. */
+	// Find best fit.  Best fit is defined to be the free block of SHORTest
+	// tail.  If there isn't a fit, extend the pool and try, try again.
 
-	FRB free;
-	FRB* best;
+	qli_frb* free;
+	qli_frb** best;
 	size_t best_tail;
 
 	while (true)
 	{
 		best = NULL;
 		best_tail = 32767;
-		for (FRB* ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
+		for (qli_frb** ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
 		{
 			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
 				ERRQ_bugcheck(434);	// memory pool free list is incorrect
@@ -126,15 +126,15 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 		extend_pool(pool, size);
 	}
 
-/* We've got our free block.  If there's enough left of the free block
-   after taking out our block, chop out out block.  If not, allocate
-   the entire free block as our block (a little extra won't hurt). */
+	// We've got our free block.  If there's enough left of the free block
+	// after taking out our block, chop out out block.  If not, allocate
+	// the entire free block as our block (a little extra won't hurt).
 
 	free = *best;
-	FRB block;
-	if (best_tail > sizeof(frb)) {
+	qli_frb* block;
+	if (best_tail > sizeof(qli_frb)) {
 		USHORT l = free->frb_header.blk_length - size;
-		block = (FRB) ((SCHAR *) free + l);
+		block = (qli_frb*) ((SCHAR *) free + l);
 		free->frb_header.blk_length -= size;
 	}
 	else {
@@ -167,11 +167,11 @@ BLK ALLQ_extend(BLK* pointer, int size)
  *
  **************************************/
 	BLK block = *pointer;
-	BLK new_blk = (BLK) ALLQ_alloc((PLB) global_pools->vec_object[block->blk_pool_id],
+	BLK new_blk = (BLK) ALLQ_alloc((qli_plb*) global_pools->vec_object[block->blk_pool_id],
 						   block->blk_type, size);
 	const int length = MIN(block->blk_length, new_blk->blk_length) - sizeof(blk);
 	memcpy((SCHAR*) new_blk + sizeof(blk), (SCHAR*) block + sizeof(blk), length);
-	ALLQ_release((FRB) block);
+	ALLQ_release((qli_frb*) block);
 
 	if (new_blk->blk_type == (SCHAR) type_vec)
 		((qli_vec*) new_blk)->vec_count = size;
@@ -196,15 +196,15 @@ void ALLQ_fini()
  *	Get rid of everything.
  *
  **************************************/
-	PLB* vector = (PLB*) global_pools->vec_object + global_pools->vec_count;
-	PLB* until = (PLB*) global_pools->vec_object;
+	qli_plb** vector = (qli_plb**) global_pools->vec_object + global_pools->vec_count;
+	qli_plb** until = (qli_plb**) global_pools->vec_object;
 	while (--vector >= until)
 	{
-	    PLB pool = *vector;
+	    qli_plb* pool = *vector;
 		if (pool)
 		{
-			HNK hunks, hunk;
-			for (hunks = pool->plb_hunks; hunk = hunks;) {
+			qli_hnk* hunk;
+			for (qli_hnk* hunks = pool->plb_hunks; hunk = hunks;) {
 				hunks = hunk->hnk_next;
 				ALLQ_free(hunk->hnk_address);
 			}
@@ -249,7 +249,7 @@ void ALLQ_init()
 	global_pools->vec_count = 1;
 	global_pools->vec_object[0] = NULL;
 
-    PLB pool = ALLQ_pool();
+    qli_plb* const pool = ALLQ_pool();
 	QLI_default_pool = QLI_permanent_pool = pool;
 	global_pools = (qli_vec*) ALLQ_alloc(pool, type_vec, 10);
 	global_pools->vec_count = 10;
@@ -283,7 +283,7 @@ SCHAR *ALLQ_malloc(SLONG size)
 }
 
 
-PLB ALLQ_pool()
+qli_plb* ALLQ_pool()
 {
 /**************************************
  *
@@ -310,7 +310,7 @@ PLB ALLQ_pool()
 	if (pool_id >= global_pools->vec_count)
 		ALLQ_extend((BLK*) &global_pools, pool_id + 10);
 
-	plb temp_pool;
+	qli_plb temp_pool;
 	global_pools->vec_object[pool_id] = (BLK) &temp_pool;
 	temp_pool.plb_free = NULL;
 	temp_pool.plb_hunks = NULL;
@@ -318,7 +318,7 @@ PLB ALLQ_pool()
 	if (pool_id == 0)
 		QLI_permanent_pool = &temp_pool;
 
-	PLB pool = (PLB) ALLQ_alloc(&temp_pool, type_plb, 0);
+	qli_plb* const pool = (qli_plb*) ALLQ_alloc(&temp_pool, type_plb, 0);
 	pool->plb_pool_id = pool_id;
 	pool->plb_free = temp_pool.plb_free;
 	pool->plb_hunks = temp_pool.plb_hunks;
@@ -343,7 +343,7 @@ void ALLQ_push( BLK object, qli_lls** stack)
  *	Push an object on a qli_lls stack.
  *
  **************************************/
-	PLB pool = QLI_default_pool;
+	qli_plb* pool = QLI_default_pool;
 
     qli_lls* node = pool->plb_lls;
 	if (node)
@@ -371,7 +371,7 @@ BLK ALLQ_pop(qli_lls** stack)
  *
  **************************************/
 	qli_lls* node = *stack;
-	PLB pool = (PLB) global_pools->vec_object[node->lls_header.blk_pool_id];
+	qli_plb* pool = (qli_plb*) global_pools->vec_object[node->lls_header.blk_pool_id];
 	*stack = node->lls_next;
 	node->lls_next = pool->plb_lls;
 	pool->plb_lls = node;
@@ -380,7 +380,7 @@ BLK ALLQ_pop(qli_lls** stack)
 }
 
 
-void ALLQ_release( FRB block)
+void ALLQ_release( qli_frb* block)
 {
 /**************************************
  *
@@ -398,16 +398,16 @@ void ALLQ_release( FRB block)
 	block->frb_header.blk_type = (SCHAR) type_frb;
 	UCHAR pool_id = block->frb_header.blk_pool_id;
 
-	PLB pool;
-	if (pool_id >= global_pools->vec_count || !(pool = (PLB) global_pools->vec_object[pool_id]))
+	qli_plb* pool;
+	if (pool_id >= global_pools->vec_count || !(pool = (qli_plb*) global_pools->vec_object[pool_id]))
 	{
 		ERRQ_bugcheck(4);
 		// Msg4 bad pool id
 	}
 
-	FRB prior = NULL;
-	FRB free;
-	FRB* ptr;
+	qli_frb* prior = NULL;
+	qli_frb* free;
+	qli_frb** ptr;
 	for (ptr = &pool->plb_free; free = *ptr; prior = free, ptr = &free->frb_next)
 	{
 		if ((SCHAR *) block <= (SCHAR *) free)
@@ -448,7 +448,7 @@ void ALLQ_release( FRB block)
 }
 
 
-void ALLQ_rlpool( PLB pool)
+void ALLQ_rlpool( qli_plb* pool)
 {
 /**************************************
  *
@@ -463,15 +463,15 @@ void ALLQ_rlpool( PLB pool)
  **************************************/
 	global_pools->vec_object[pool->plb_pool_id] = NULL;
 
-	HNK hunk, hunks;
-	for (hunks = pool->plb_hunks; hunk = hunks;) {
+	qli_hnk* hunk;
+	for (qli_hnk* hunks = pool->plb_hunks; hunk = hunks;) {
 		hunks = hunk->hnk_next;
 		gds__free(hunk->hnk_address);
 	}
 }
 
 
-static void extend_pool( PLB pool, USHORT count)
+static void extend_pool( qli_plb* pool, USHORT count)
 {
 /**************************************
  *
@@ -484,7 +484,7 @@ static void extend_pool( PLB pool, USHORT count)
  *	of given size.
  *
  **************************************/
-	const SLONG size = (count + sizeof(hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
+	const SLONG size = (count + sizeof(qli_hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
 
 	if ((USHORT) size < count)
 		IBERROR(481);			// msg 481 unsuccessful attempt to extend pool beyond 64KB
@@ -493,10 +493,10 @@ static void extend_pool( PLB pool, USHORT count)
 	block->blk_length = size;
 	block->blk_type = (SCHAR) type_frb;
 	block->blk_pool_id = pool->plb_pool_id;
-	ALLQ_release((FRB) block);
+	ALLQ_release((qli_frb*) block);
 
-	HNK hunk = (HNK) ALLQ_alloc(pool, type_hnk, 0);
-	hunk->hnk_address = (SCHAR *) block;
+	qli_hnk* const hunk = (qli_hnk*) ALLQ_alloc(pool, type_hnk, 0);
+	hunk->hnk_address = block;
 	hunk->hnk_length = size;
 	hunk->hnk_next = pool->plb_hunks;
 	pool->plb_hunks = hunk;

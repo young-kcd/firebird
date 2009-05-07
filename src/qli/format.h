@@ -24,19 +24,6 @@
 #ifndef QLI_FORMAT_H
 #define QLI_FORMAT_H
 
-// Logical column block
-
-/*
-typedef struct col {
-    blk		col_header;
-    col*	col_next;		// Next logical column
-    qli_nod*	col_expression;	// Definitive expression
-    TEXT	*col_head;		// Column header
-    USHORT	col_column;		// Starting column number
-    USHORT	col_print_length;	// Max print length
-} *COL;
-*/
-
 /* Picture string elements:
 
     A		any alpha character (interpreted as X)

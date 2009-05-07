@@ -24,17 +24,17 @@
 #ifndef QLI_ALL_PROTO_H
 #define QLI_ALL_PROTO_H
 
-blk*	ALLQ_alloc(plb*, UCHAR, int);
-blk*	ALLQ_extend(blk**, int);
-void	ALLQ_fini();
-void	ALLQ_free(void*);
-void	ALLQ_init();
-SCHAR*	ALLQ_malloc(SLONG);
-plb*	ALLQ_pool();
-void	ALLQ_push(blk*, qli_lls**);
-blk*	ALLQ_pop(qli_lls**);
-void	ALLQ_release(frb*);
-void	ALLQ_rlpool(plb*);
+blk*		ALLQ_alloc(qli_plb*, UCHAR, int);
+blk*		ALLQ_extend(blk**, int);
+void		ALLQ_fini();
+void		ALLQ_free(void*);
+void		ALLQ_init();
+SCHAR*		ALLQ_malloc(SLONG);
+qli_plb*	ALLQ_pool();
+void		ALLQ_push(blk*, qli_lls**);
+blk*		ALLQ_pop(qli_lls**);
+void		ALLQ_release(qli_frb*);
+void		ALLQ_rlpool(qli_plb*);
 
 #endif // QLI_ALL_PROTO_H
 

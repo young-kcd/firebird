@@ -171,9 +171,9 @@ The following flags are:
 	sw_sql_view	indicates parsing a SQL VIEW, so restrict the select.
 */
 
-static USHORT sql_flag, else_count, sw_report;
+static int sql_flag, else_count, sw_report;
 static bool sw_statement, sw_sql_view;
-static SSHORT function_count;	// indicates the depth of UDF calls
+static int function_count;	// indicates the depth of UDF calls
 
 struct nod_types
 {
@@ -759,13 +759,13 @@ static qli_syntax* parse_and( USHORT* paren_count)
  **************************************/
 	qli_syntax* expr = parse_not(paren_count);
 
-/*
-while (*paren_count && KEYWORD (KW_RIGHT_PAREN))
-    {
-    parse_matching_paren();
-    (*paren_count)--;
-    }
-*/
+	/*
+	while (*paren_count && KEYWORD (KW_RIGHT_PAREN))
+	{
+		parse_matching_paren();
+		(*paren_count)--;
+	}
+	*/
 
 	if (!PAR_match(KW_AND))
 		return expr;
@@ -800,14 +800,14 @@ static qli_syntax* parse_assignment()
 	node->syn_arg[s_asn_to] = parse_field_name(&field);
 	qli_name* name = (qli_name*) field->syn_arg[0];
 
-/* If the next token is an equals sign, the statement really is an
-   assignment, and we're off the hook. */
+	// If the next token is an equals sign, the statement really is an
+	// assignment, and we're off the hook.
 
 	if (!PAR_match(KW_EQUALS))
 		ERRQ_print_error(156, name->nam_string);	// Msg156 expected statement, encountered %s
 
-/* See if the "field name" is really a relation reference.  If so,
-   turn the assignment into a restructure. */
+	// See if the "field name" is really a relation reference.  If so,
+	// turn the assignment into a restructure.
 
 	qli_rel* relation = NULL;
 	if (field->syn_count == 1)
@@ -820,7 +820,7 @@ static qli_syntax* parse_assignment()
 
 	if (relation)
 	{
-		ALLQ_release((FRB) field);
+		ALLQ_release((qli_frb*) field);
 		node->syn_type = nod_restructure;
 		node->syn_arg[s_asn_to] = field = syntax_node(nod_relation, s_rel_count);
 		field->syn_arg[s_rel_relation] = (qli_syntax*) relation;
@@ -856,13 +856,13 @@ static qli_syntax* parse_boolean( USHORT * paren_count)
 
 	qli_syntax* expr = parse_and(paren_count);
 
-/*
-while (*paren_count && KEYWORD (KW_RIGHT_PAREN))
-    {
-    parse_matching_paren();
-    (*paren_count)--;
-    }
-*/
+	/*
+	while (*paren_count && KEYWORD (KW_RIGHT_PAREN))
+	{
+		parse_matching_paren();
+		(*paren_count)--;
+	}
+	*/
 
 	if (!PAR_match(KW_OR))
 	{
@@ -966,7 +966,8 @@ static qli_syntax* parse_declare()
 
 	qli_symbol* name = parse_symbol();
 
-/*if (global_flag) PAR_real();*/
+	// if (global_flag)
+	//	PAR_real();
 
 	while (!KEYWORD(KW_SEMI) && !KEYWORD(KW_COMMA))
 	{
@@ -1441,7 +1442,7 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 	case dtype_varying:
 		{
 			if (!PAR_match(KW_L_BRCKET) && !PAR_match(KW_LT))
-				ERRQ_syntax(174);	/* Msg174 "[" */
+				ERRQ_syntax(174);	// Msg174 "["
 
 			USHORT l = parse_ordinal();
 			if (dtype == dtype_varying)
@@ -1449,7 +1450,7 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 			*length = l;
 
 			if (!PAR_match(KW_R_BRCKET) && !PAR_match(KW_GT))
-				ERRQ_syntax(175);	/* Msg175 "]" */
+				ERRQ_syntax(175);	// Msg175 "]"
 		}
 	}
 
@@ -1504,10 +1505,8 @@ static qli_syntax* parse_edit()
  **************************************/
 	LEX_token();
 
-/*
- * edit previous statements.  The top of the statment list
- * is this edit command, which we conveniently ignore.
- */
+	// edit previous statements.  The top of the statment list
+	// is this edit command, which we conveniently ignore.
 
 	if (KEYWORD(KW_SEMI) || (QLI_token->tok_type == tok_number) || (KEYWORD(KW_ASTERISK)))
 	{
@@ -2204,9 +2203,9 @@ static qli_syntax* parse_list_fields()
 	if (test_end())
 		return node;
 
-/* If there is a potential record selection expression, there obviously
-   can't be a print list.  Get the rse.  Otherwise, pick up the print
-   list. */
+	// If there is a potential record selection expression, there obviously
+	// can't be a print list.  Get the rse.  Otherwise, pick up the print
+	// list.
 
 	if (potential_rse())
 		node->syn_arg[s_prt_rse] = parse_rse();
@@ -2865,7 +2864,7 @@ static qli_syntax* parse_print_list()
 			if (op == nod_column || QLI_token->tok_type == tok_number)
 				node->syn_arg[0] = INT_CAST parse_ordinal();
 			if ((op == nod_skip) && ((IPTR) node->syn_arg[0] < 1))
-				ERRQ_syntax(478);	/* Msg478 number > 0 */
+				ERRQ_syntax(478);	// Msg478 number > 0
 		}
 		ALLQ_push((blk*) node, &stack);
 		if (!PAR_match(KW_COMMA) && !PAR_match(KW_AND))
@@ -2910,9 +2909,9 @@ static qli_syntax* parse_print()
 	if (test_end())
 		return node;
 
-/* If there is a potential record selection expression, there obviously
-   can't be a print list.  Get the rse.  Otherwise, pick up the print
-   list. */
+	// If there is a potential record selection expression, there obviously
+	// can't be a print list.  Get the rse.  Otherwise, pick up the print
+	// list.
 
 	if (potential_rse())
 		node->syn_arg[s_prt_rse] = parse_rse();
@@ -3215,9 +3214,9 @@ static qli_syntax* parse_relational( USHORT * paren_count)
 			}
 		}
 		if (operatr == nod_any)
-			ERRQ_syntax(205);	/* Msg205 EXISTS (SELECT * <sql rse>) */
+			ERRQ_syntax(205);	// Msg205 EXISTS (SELECT * <sql rse>)
 		else
-			ERRQ_syntax(488);	/* Msg488 SINGULAR (SELECT * <sql rse>) */
+			ERRQ_syntax(488);	// Msg488 SINGULAR (SELECT * <sql rse>)
 	}
 
 	if (PAR_match(KW_UNIQUE))
@@ -3346,8 +3345,8 @@ static qli_syntax* parse_relational( USHORT * paren_count)
 		ERRQ_syntax(206);		// Msg206 relational operatr
 	}
 
-/* If we haven't already built a node, it must be an ordinary binary operatr.
-   Build it. */
+	// If we haven't already built a node, it must be an ordinary binary operatr.
+	// Build it.
 
 	if (!node)
 	{
@@ -3366,14 +3365,14 @@ static qli_syntax* parse_relational( USHORT * paren_count)
 	if (negation)
 		node = negate(node);
 
-/*  If the node isn't an equality, we've done.  Since equalities can be
-    structured as implicit ORs, build them here. */
+	// If the node isn't an equality, we've done.  Since equalities can be
+	// structured as implicit ORs, build them here.
 
 	if (operatr != nod_eql)
 		return node;
 
-/* We have an equality operation, which can take a number of values.  Generate
-   implicit ORs */
+	// We have an equality operation, which can take a number of values.  Generate
+	// implicit ORs
 
 	while (PAR_match(KW_COMMA))
 	{
@@ -3549,9 +3548,9 @@ static qli_syntax* parse_report()
 				qli_brk** ptr = top ? &report->rpt_top_breaks : &report->rpt_bottom_breaks;
 				if (!*ptr)
 				{
-					/* control breaks should only be on sorted fields, set up list
-					   of control breaks based on sorted fields and then add action (print)
-					   items to that list. */
+					// control breaks should only be on sorted fields, set up list
+					// of control breaks based on sorted fields and then add action (print)
+					// items to that list.
 					qli_syntax* flds = rse->syn_arg[s_rse_sort];
 					if (!flds)
 						ERRQ_syntax(383);	// Msg383 sort field
@@ -3567,8 +3566,8 @@ static qli_syntax* parse_report()
 					}
 					if (!top)
 					{
-						/* reverse the 'at bottom' control break list as the
-						   lower control breaks should be performed prior to the higher ones. */
+						// reverse the 'at bottom' control break list as the
+						// lower control breaks should be performed prior to the higher ones.
 						qli_brk* control = 0;
 						for (qli_brk* tmpptr1 = tmpptr->brk_next; tmpptr;)
 						{
@@ -3588,8 +3587,8 @@ static qli_syntax* parse_report()
 					qli_syntax* rse_fld = (qli_syntax*) control->brk_field;
 					if (rse_fld->syn_type != qli_fld->syn_type)
 						continue;
-					/* if number of field qualifiers on sort field and control field
-					   are not equal test match of rightmost set */
+					// if number of field qualifiers on sort field and control field
+					// are not equal test match of rightmost set
 					const USHORT syn_count = MIN(rse_fld->syn_count, qli_fld->syn_count);
 					USHORT srt_syn = 0, ctl_syn = 0;
 					if (syn_count != rse_fld->syn_count)
@@ -4429,10 +4428,8 @@ static qli_syntax* parse_sql_create()
 		return parse_sql_table_create();
 
 #ifdef NOT_USED_OR_REPLACED
-/***
-if (PAR_match (KW_VIEW))
-    return parse_sql_view_create();
-***/
+	//if (PAR_match (KW_VIEW))
+	//	return parse_sql_view_create();
 #endif
 
 	ERRQ_syntax(386);			// Msg386 object type for CREATE
@@ -4960,7 +4957,7 @@ static qli_syntax* parse_sql_view_create()
 		}
 	}
 
-/* node->syn_arg [s_crv_fields] = make_list (stack); */
+	// node->syn_arg [s_crv_fields] = make_list (stack);
 
 	if (!PAR_match(KW_AS))
 		ERRQ_syntax(394);		// Msg394 As
@@ -5029,8 +5026,8 @@ static qli_syntax* parse_sql_rse()
 			break;
 	}
 
-/* Build a syntax node.  Since SQL doesn't support OVER, only every
-   other slot will be used in the RSE. */
+	// Build a syntax node.  Since SQL doesn't support OVER, only every
+	// other slot will be used in the RSE.
 
 	qli_syntax* node = syntax_node(nod_rse, (int) s_rse_count + 2 * count);
 	node->syn_count = count;
@@ -5647,8 +5644,8 @@ static qli_rel* resolve_relation( qli_symbol* db_symbol, qli_symbol* relation_sy
 	if (!relation_symbol)
 		return NULL;
 
-/* If a database symbol is present, resolve the relation against the
-   the given database. */
+	// If a database symbol is present, resolve the relation against the
+	// the given database.
 
 	if (db_symbol)			// && db_symbol->sym_type == SYM_database ?
 	{

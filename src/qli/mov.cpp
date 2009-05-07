@@ -399,8 +399,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 	if (sign)
 		value = -value;
 
-/* If there's still something left, there must be an explicit
-   exponent */
+	// If there's still something left, there must be an explicit exponent
 
 	if (p < end)
 	{
@@ -644,8 +643,8 @@ int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, USHORT le
  *
  **************************************/
 
-/* If the value is already a string (fixed or varying), just return
-   the address and length. */
+	// If the value is already a string (fixed or varying), just return
+	// the address and length.
 
 	if (desc->dsc_dtype == dtype_text)
 	{
@@ -700,15 +699,13 @@ void MOVQ_move(const dsc* from, dsc* to)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
-/* If the datatypes and lengths are identical, just move the
-   stuff byte by byte.  Although this may seem slower than
-   optimal, it would cost more to find the fast move than the
-   fast move would gain. */
+	// If the datatypes and lengths are identical, just move the
+	// stuff byte by byte.  Although this may seem slower than
+	// optimal, it would cost more to find the fast move than the
+	// fast move would gain.
 
-	if (DSC_EQUIV(from, to, false))
-/*
-if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
-*/
+	// if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
+   	if (DSC_EQUIV(from, to, false))
 	{
 		if (length)
 			memcpy(p, q, length);
@@ -718,8 +715,8 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 
 	const TEXT* ptr;
 
-/* Do data type by data type conversions.  Not all are supported,
-   and some will drop out for additional handling. */
+	// Do data type by data type conversions.  Not all are supported,
+	// and some will drop out for additional handling.
 
 	switch (to->dsc_dtype)
 	{
@@ -988,8 +985,7 @@ static double double_from_text(const dsc* desc)
 	if (sign)
 		value = -value;
 
-	/* If there's still something left, there must be an explicit
-	   exponent */
+	// If there's still something left, there must be an explicit exponent
 
 	if (p < end)
 	{
@@ -1217,8 +1213,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
  *
  **************************************/
 
-/* Save (or compute) scale of source.  Then convert source to ordinary
-   longword. */
+	// Save (or compute) scale of source.  Then convert source to ordinary longword.
 
 	SSHORT scale = from->dsc_scale;
 
@@ -1256,9 +1251,9 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		n /= 10;
 	} while (n);
 
-/* Compute the total length off the field formatted.  Make sure it
-   fits.  Keep in mind that routine handles both string and varying
-   string fields. */
+	// Compute the total length off the field formatted.  Make sure it
+	// fits.  Keep in mind that routine handles both string and varying
+	// string fields.
 
 	SSHORT l = p - temp;
 	const size_t length = l + neg + decimal + pad;
@@ -1279,8 +1274,8 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	if (neg)
 		*q++ = '-';
 
-/* If a decimal point is required, do the formatting.  Otherwise just
-   copy number */
+	// If a decimal point is required, do the formatting.  Otherwise just
+	// copy number
 
 	if (scale < 0)
 	{
@@ -1305,8 +1300,8 @@ static void numeric_to_text(const dsc* from, dsc* to)
 			*q++ = '0';
 		} while (--pad);
 
-/* Finish up by padding (if fixed) or computing the actual length
-   (varying string) */
+	// Finish up by padding (if fixed) or computing the actual length
+	// (varying string)
 
 	if (to->dsc_dtype == dtype_text)
 	{
@@ -1367,8 +1362,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	for (i = 0; i < 7; i++)
 	{
 
-		/* Skip leading blanks.  If we run out of characters, we're done
-		   with parse.  */
+		// Skip leading blanks.  If we run out of characters, we're done with parse.
 
 		while (p < end && *p == ' ')
 			p++;
@@ -1552,8 +1546,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	for (i = 3; i < 7; i++)
 	{
 
-		/* Skip leading blanks.  If we run out of characters, we're done
-		   with parse.  */
+		// Skip leading blanks.  If we run out of characters, we're done with parse.
 
 		while (p < end && *p == ' ')
 			p++;

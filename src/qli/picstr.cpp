@@ -122,9 +122,9 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		case '9':
 		case 'Z':
 		case '*':
-			/* Count all digits;
-			   count them as fractions only after a decimal pt and
-			   before an E */
+			// Count all digits;
+			// count them as fractions only after a decimal pt and
+			// before an E
 			++picture->pic_digits;
 			if (picture->pic_decimals && !picture->pic_exponents)
 				++picture->pic_fractions;
@@ -452,9 +452,9 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 		break;
 
 	case dtype_int64:
-        /* replace 16 with 20 later
-		   (as soon as I have sorted out the rounding issues)
-		   FSG*/
+        // replace 16 with 20 later
+		// (as soon as I have sorted out the rounding issues)
+		// FSG
 		if (!scale)
 			return "-(16)9";
 		if (scale < 0 && scale > -16)
@@ -750,10 +750,10 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	else
 #endif
 
-/* If exponents are explicitly requested (E-format edit_string), generate them.
-   Otherwise, the rules are: if the number in f-format will fit into the allotted
-   space, print it in f-format; otherwise print it in e-format.
-   (G-format is untrustworthy.) */
+	// If exponents are explicitly requested (E-format edit_string), generate them.
+	// Otherwise, the rules are: if the number in f-format will fit into the allotted
+	// space, print it in f-format; otherwise print it in e-format.
+	// (G-format is untrustworthy.)
 
 	if (picture->pic_exponents)
 	{
@@ -784,9 +784,9 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		}
 		if ((w_digits > width) || (!f_digits && w_digits == 1 && temp[0] == '0'))
 		{
-			/* if the number doesn't fit in the default window, revert
-			   to exponential notation; displaying the maximum number of
-			   mantissa digits. */
+			// if the number doesn't fit in the default window, revert
+			// to exponential notation; displaying the maximum number of
+			// mantissa digits.
 
 			if (number < 1e100)
 				decimal_digits = (width > 6) ? width - 6 : 0;
@@ -800,10 +800,10 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	}
 
 #ifdef WIN_NT
-/* On Windows NT exponents have three digits regardless of the magnitude
-   of the number being formatted.  To maintain compatiblity with other
-   platforms, if the first digit of the exponent is '0', shift the other
-   digits one to the left. */
+	// On Windows NT exponents have three digits regardless of the magnitude
+	// of the number being formatted.  To maintain compatiblity with other
+	// platforms, if the first digit of the exponent is '0', shift the other
+	// digits one to the left.
 
 	if (hack_for_nt_flag)
 	{
@@ -1160,8 +1160,8 @@ static int generate( pics* picture)
 		if (picture->pic_flags & PIC_literal)
 			break;
 
-		/* If the next character is also a paren, it is a debit indicating
-		   bracket.  If so, swallow the second. */
+		// If the next character is also a paren, it is a debit indicating
+		// bracket.  If so, swallow the second.
 
 		if ((c == ')' || c == '(') && *picture->pic_pointer == c) {
 			picture->pic_pointer++;
@@ -1189,9 +1189,9 @@ static int generate( pics* picture)
 
 		picture->pic_pointer = p;
 
-		/* Someone may have done something very stupid, like specify a repeat
-		   count of zero.  It's too late, as we've already gen'd one instance
-		   of the edit character -- but let's not access violate, shall we? */
+		// Someone may have done something very stupid, like specify a repeat
+		// count of zero.  It's too late, as we've already gen'd one instance
+		// of the edit character -- but let's not access violate, shall we?
 
 		if (picture->pic_count)
 			--picture->pic_count;

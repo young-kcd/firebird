@@ -76,8 +76,8 @@ void RPT_report( qli_nod* loop)
 
 	// Get to actual report node
 
-/* If there is a request associated  with the loop, start it and possibly
-   send a message slong with it. */
+	// If there is a request associated  with the loop, start it and possibly
+	// send a message slong with it.
 
 	qli_msg* message;
 	qli_req* request = (qli_req*) loop->nod_arg[e_for_request];
@@ -86,13 +86,12 @@ void RPT_report( qli_nod* loop)
 	else if (message = (qli_msg*) loop->nod_arg[e_for_send])
 		EXEC_send(message);
 
-/* Receive messages in a loop until the end of file field comes up
-   true. */
+	// Receive messages in a loop until the end of file field comes up true.
 
 	message = (qli_msg*) loop->nod_arg[e_for_receive];
 
-/* Get the first record of the record.  If there isn't anything,
-   don't worry about anything. */
+	// Get the first record of the record.  If there isn't anything,
+	// don't worry about anything.
 
 	const dsc* desc = EXEC_receive(message, (qli_par*) loop->nod_arg[e_for_eof]);
 	if (*(USHORT*) desc->dsc_address)
@@ -277,8 +276,8 @@ static bool test_break(qli_brk* control, qli_rpt* report, qli_msg* message)
 	if (!ptr1 || !ptr2)
 		return (ptr1 != ptr2);
 
-/* Both fields are present.  Check values.  Luckily, there's no need
-   to worry about datatypes. */
+	// Both fields are present.  Check values.  Luckily, there's no need
+	// to worry about datatypes.
 
 	const UCHAR* p1 = desc1.dsc_address;
 	const UCHAR* p2 = desc2.dsc_address;

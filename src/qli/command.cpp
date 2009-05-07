@@ -37,6 +37,7 @@
 #include "../qli/meta_proto.h"
 #include "../qli/proc_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h"
 
 using MsgFormat::SafeArg;
 
@@ -327,37 +328,34 @@ void CMD_set( qli_syntax* node)
 
 		case set_password:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length, sizeof(QLI_default_password));
-			strncpy(QLI_default_password, (char*) string->con_data, length);
-			QLI_default_password[length] = 0;
+			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_password));
+			fb_utils::copy_terminate(QLI_default_password, (char*) string->con_data, length);
 			break;
 
 		case set_prompt:
 			string = (qli_const*) value;
-			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
+			if (string->con_desc.dsc_length >= sizeof(QLI_prompt_string))
 				ERRQ_error(86);	// Msg86 substitute prompt string too long
-			strncpy(QLI_prompt_string, (char*) string->con_data, string->con_desc.dsc_length);
-			QLI_prompt_string[string->con_desc.dsc_length] = 0;
+			fb_utils::copy_terminate(QLI_prompt_string, (char*) string->con_data, string->con_desc.dsc_length + 1);
 			break;
 
 		case set_continuation:
 			string = (qli_const*) value;
-			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
+			if (string->con_desc.dsc_length >= sizeof(QLI_cont_string))
 				ERRQ_error(87);	// Msg87 substitute prompt string too long
-			strncpy(QLI_cont_string, (char*) string->con_data, string->con_desc.dsc_length);
-			QLI_cont_string[string->con_desc.dsc_length] = 0;
+			fb_utils::copy_terminate(QLI_cont_string, (char*) string->con_data, string->con_desc.dsc_length + 1);
 			break;
 
 		case set_matching_language:
 			if (QLI_matching_language)
-				ALLQ_release((FRB) QLI_matching_language);
+				ALLQ_release((qli_frb*) QLI_matching_language);
 			if (!(string = (qli_const*) value)) {
 				QLI_matching_language = NULL;
 				break;
 			}
 			QLI_matching_language = (qli_const*) ALLOCPV(type_con, string->con_desc.dsc_length);
-			strncpy((char*)QLI_matching_language->con_data, (char*)string->con_data,
-					string->con_desc.dsc_length);
+			fb_utils::copy_terminate((char*) QLI_matching_language->con_data, (char*) string->con_data,
+					string->con_desc.dsc_length + 1);
 			QLI_matching_language->con_desc.dsc_dtype = dtype_text;
 			QLI_matching_language->con_desc.dsc_address = QLI_matching_language->con_data;
 			QLI_matching_language->con_desc.dsc_length = string->con_desc.dsc_length;
@@ -365,9 +363,8 @@ void CMD_set( qli_syntax* node)
 
 		case set_user:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length, sizeof(QLI_default_user));
-			strncpy(QLI_default_user, (char*)string->con_data, length);
-			QLI_default_user[length] = 0;
+			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_user));
+			fb_utils::copy_terminate(QLI_default_user, (char*) string->con_data, length);
 			break;
 
 			break;
@@ -383,9 +380,7 @@ void CMD_set( qli_syntax* node)
 					break;
 				}
 				const TEXT* name = ((qli_name*) value)->nam_string;
-				length = MIN(strlen(name), sizeof(QLI_charset));
-				strncpy(QLI_charset, name, length);
-				QLI_charset[length] = 0;
+				fb_utils::copy_terminate(QLI_charset, name, sizeof(QLI_charset));
 				break;
 			}
 
@@ -461,8 +456,8 @@ void CMD_transaction( qli_syntax* node)
  *
  **************************************/
 
-/* If there aren't any open databases then obviously
-   there isn't anything to commit. */
+	// If there aren't any open databases then obviously
+	// there isn't anything to commit.
 
 	if (node->syn_count == 0 && !QLI_databases)
 		return;

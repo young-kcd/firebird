@@ -223,8 +223,8 @@ void PRO_create( qli_dbb* database, const TEXT* name)
 
 	PRO_setup(database);
 
-/* Store record in QLI$PROCEDURES.  Eat tokens until we run into
-   END_PROCEDURE, then have LEX store the procedure in blobs. */
+	// Store record in QLI$PROCEDURES.  Eat tokens until we run into
+	// END_PROCEDURE, then have LEX store the procedure in blobs.
 
 	STORE(REQUEST_HANDLE database->dbb_store_blob) X IN DB.QLI$PROCEDURES
 		isc_vtof(name, X.QLI$PROCEDURE_NAME, sizeof(X.QLI$PROCEDURE_NAME));
@@ -576,16 +576,6 @@ void PRO_setup( qli_dbb* dbb)
 		IBERROR(77);
 	// Msg 77 database handle required
 
-	// If we don't have a QLI$PROCEDURES relation, and can't get one, punt
-	/* CVC: We consider VMS dead.
-	if (dbb->dbb_type == isc_info_db_impl_rdb_vms &&
-		!(dbb->dbb_flags & DBB_procedures))
-	{
-		IBERROR(78);
-		// Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases
-	}
-	*/
-
 	DB = dbb->dbb_handle;
 
 	if (dbb->dbb_flags & DBB_procedures) {
@@ -627,8 +617,8 @@ FB_API_HANDLE PRO_transaction( qli_dbb* database, bool update_flag)
 
 	DB = database->dbb_handle;
 
-/* If we don't know whether or not the database can handle
-   multiple transactions, find out now */
+	// If we don't know whether or not the database can handle
+	// multiple transactions, find out now
 
 	ISC_STATUS_ARRAY status_vector;
 	if (!transaction &&

@@ -136,8 +136,7 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
  **************************************/
 	TEXT line[256];
 
-/* Print list of know topics.  When we find the first,
-   print the banner, if any */
+	// Print list of know topics.  When we find the first, print the banner, if any
 
 	TEXT* ptr = line;
 	USHORT topics = 0;
@@ -202,7 +201,7 @@ static void print_more(USHORT level,
  **************************************/
 	TEXT buffer[256], topic[80], prompt[80];
 
-	ERRQ_msg_get(502, prompt, sizeof(prompt));	/* Msg502 "Subtopic? "  */
+	ERRQ_msg_get(502, prompt, sizeof(prompt));	// Msg502 "Subtopic? "
 
 	// Prompt the user for a line
 
@@ -271,7 +270,7 @@ static void print_topic(USHORT level,
 	END_FOR;
 
 	if (count > 1)
-		ERRQ_msg_put(80, SafeArg() << count << *topics);	/* Msg80 [%d topics matched %s] */
+		ERRQ_msg_put(80, SafeArg() << count << *topics);	// Msg80 [%d topics matched %s]
 
 	count = 0;
 
@@ -287,7 +286,7 @@ static void print_topic(USHORT level,
 		if (count)
 		{
 			ERRQ_msg_get(503, prompt, sizeof(prompt));
-			/* Msg503 "\ntype <cr> for next topic or <EOF> to stop: " */
+			// Msg503 "\ntype <cr> for next topic or <EOF> to stop: "
 			if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 				return;
 		}

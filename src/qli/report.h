@@ -45,8 +45,8 @@ struct qli_rpt
     qli_brk*	rpt_bottom_page;	// Bottom of page print list
     qli_brk*	rpt_top_rpt;		// Top of report print list
     qli_brk*	rpt_bottom_rpt;		// Bottom of report print list
-    qli_brk*	rpt_top_breaks;		/* Top of <field> break list */
-    qli_brk*	rpt_bottom_breaks;	/* Bottom of <field> break list */
+    qli_brk*	rpt_top_breaks;		// Top of <field> break list
+    qli_brk*	rpt_bottom_breaks;	// Bottom of <field> break list
     const TEXT*	rpt_column_header;
     const TEXT*	rpt_name;			// Parsed report name
     const TEXT*	rpt_header;			// Expanded report header

@@ -282,16 +282,15 @@ static qli_nod* compile_assignment( qli_nod* node, qli_req* request,
  *
  **************************************/
 
-/* Start by assuming that the assignment will ultimately
-   take place in the DBMS */
+	// Start by assuming that the assignment will ultimately
+	// take place in the DBMS
 
 	qli_nod* to = node->nod_arg[e_asn_to];
 	to->nod_flags |= NOD_parameter2;
 	qli_nod* from = node->nod_arg[e_asn_from];
 	from->nod_flags |= NOD_parameter2;
 
-/* If the assignment is to a variable, the assignment is
-   completely local */
+	// If the assignment is to a variable, the assignment is completely local
 
 	if (to->nod_type == nod_variable) {
 		statement_internal = false;
@@ -406,8 +405,8 @@ static qli_nod* compile_edit( qli_nod* node, qli_req* request)
  *
  **************************************/
 
-/* Make sure there is a message.  If there isn't a message, we
-   can't find the target database. */
+	// Make sure there is a message.  If there isn't a message, we
+	// can't find the target database.
 
 	if (!request)
 		ERRQ_bugcheck(358);			// Msg358 can't find database for blob edit
@@ -714,9 +713,9 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
 	}
 	node->nod_flags |= NOD_parameter2;
 
-/* If the reference is external, or the value is computable in the
-   current request, there is nothing to do.  If the value is not computable,
-   make up a parameter to send the value into the request. */
+	// If the reference is external, or the value is computable in the
+	// current request, there is nothing to do.  If the value is not computable,
+	// make up a parameter to send the value into the request.
 
 	if (internal_flag)
 	{
@@ -757,8 +756,8 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
  *
  **************************************/
 
-/* Compile rse.  This will set up both send and receive message.  If the
-   messages aren't needed, we can release them later. */
+	// Compile rse.  This will set up both send and receive message.  If the
+	// messages aren't needed, we can release them later.
 
 	qli_msg* old_send = NULL;
 	qli_msg* old_receive = NULL;
@@ -775,8 +774,8 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
 	else
 		request = old_request;
 
-/* If nothing is required for sub-statement, and no data is required in
-   either direction, we don't need  to execute the statement. */
+	// If nothing is required for sub-statement, and no data is required in
+	// either direction, we don't need  to execute the statement.
 
 	if (!compile_statement(node->nod_arg[e_for_statement], request, internal_flag) &&
 		 !receive->msg_parameters)
@@ -902,8 +901,8 @@ static qli_nod* compile_if( qli_nod* node, qli_req* request, bool internal_flag)
  *
  **************************************/
 
-/* If the statement can't be executed in database context,
-   make sure it gets executed locally */
+	// If the statement can't be executed in database context,
+	// make sure it gets executed locally
 
 	if (!internal_flag || !computable(node, request)) {
 		internal_flag = false;
@@ -959,8 +958,8 @@ static qli_nod* compile_modify( qli_nod* node, qli_req* org_request, bool intern
  *
  **************************************/
 
-/* If this is a different request from the current one, this will require an
-   optional action and a "continue" mesasge */
+	// If this is a different request from the current one, this will require an
+	// optional action and a "continue" message
 
 	qli_nod** ptr = node->nod_arg + e_mod_count;
 	qli_ctx* context = (qli_ctx*) *ptr;
@@ -982,8 +981,8 @@ static qli_nod* compile_modify( qli_nod* node, qli_req* org_request, bool intern
 		context->ctx_message = send;
 	}
 
-/* If nothing is required for sub-statement, and no data is required in
-   either direction, we don't need  to execute the statement. */
+	// If nothing is required for sub-statement, and no data is required in
+	// either direction, we don't need  to execute the statement.
 
 	if (internal_flag)
 		internal_flag = computable(node->nod_arg[e_mod_statement], request);
@@ -1110,8 +1109,8 @@ static qli_nod* compile_prompt( qli_nod* node)
 		}
 	}
 
-/* Allocate string buffer to hold data, a two byte count,
-  a possible carriage return, and a null */
+	// Allocate string buffer to hold data, a two byte count,
+	// a possible carriage return, and a null
 
 	fb_assert(prompt_length <= MAX_USHORT - 2 - sizeof(SSHORT));
 	prompt_length += 2 + sizeof(SSHORT);
@@ -1403,15 +1402,14 @@ static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request, bool i
 	qli_msg* old_send = NULL;
 	qli_msg* old_receive = NULL;
 
-/* If a default value is present, compile it outside the context of
-   the rse. */
+	// If a default value is present, compile it outside the context of the rse.
 
 	qli_nod* value = node->nod_arg[e_stt_default];
 	if (value)
 		compile_expression(value, old_request, true);
 
-/* Compile rse.  This will set up both send and receive message.  If the
-   messages aren't needed, we can release them later. */
+	// Compile rse.  This will set up both send and receive message.  If the
+	// messages aren't needed, we can release them later.
 
 	if (!internal_flag)
 		old_request = NULL;
@@ -1494,8 +1492,8 @@ static qli_nod* compile_store( qli_nod* node, qli_req* request, bool internal_fl
 	qli_msg* send = make_message(request);
 	context->ctx_message = request->req_send = send;
 
-/* If nothing is required for sub-statement, and no data is required in
-   either direction, we don't need to execute the statement. */
+	// If nothing is required for sub-statement, and no data is required in
+	// either direction, we don't need to execute the statement.
 
 	if (internal_flag)
 		internal_flag = computable(node->nod_arg[e_sto_statement], request);
@@ -1654,9 +1652,8 @@ static bool computable( qli_nod* node, qli_req* request)
 		if (node->nod_arg[e_asn_valid])
 		{
 			sub = node->nod_arg[e_asn_from];
+			// Try to do validation in QLI as soon as the user responds to the prompt
 			if (sub->nod_type == nod_prompt)
-				/* Try to do validation in QLI as soon as
-				   the user responds to the prompt */
 				return false;
 		}
 	case nod_list:
@@ -2087,7 +2084,7 @@ static void release_message( qli_msg* message)
 		ERRQ_bugcheck(364);			// Msg 364 lost message
 
 	*ptr = message->msg_next;
-	ALLQ_release((FRB) message);
+	ALLQ_release((qli_frb*) message);
 }
 
 

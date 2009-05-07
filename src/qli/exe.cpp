@@ -503,7 +503,7 @@ static DSC *assignment(	qli_nod*		from_node,
  *	goes wrong and there was a prompt, try again.
  *
  **************************************/
-	QLI_reprompt = FALSE;
+	QLI_reprompt = false;
 	QLI_prompt_count = 0;
 
 	USHORT trash;
@@ -522,7 +522,7 @@ static DSC *assignment(	qli_nod*		from_node,
 			from_desc = EVAL_value(initial);
 		}
 
-/* If there is a value present, do any assignment; otherwise null fill */
+		// If there is a value present, do any assignment; otherwise null fill
 
 		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing)
 		{
@@ -537,7 +537,7 @@ static DSC *assignment(	qli_nod*		from_node,
 			IBERROR(39);			// Msg39 field validation error
 		}
 
-		QLI_reprompt = FALSE;
+		QLI_reprompt = false;
 		return from_desc;
 
 	}
@@ -547,7 +547,7 @@ static DSC *assignment(	qli_nod*		from_node,
 			throw;
 		}
 
-		QLI_reprompt = TRUE;
+		QLI_reprompt = true;
 		QLI_prompt_count = 0;
 		return NULL;
 	}
@@ -569,8 +569,8 @@ static void commit_retaining( qli_nod* node)
  *
  **************************************/
 
-/* If there aren't any open databases then obviously
-   there isn't anything to commit. */
+	// If there aren't any open databases then obviously
+	// there isn't anything to commit.
 
 	if (node->nod_count == 0 && !QLI_databases)
 		return;
@@ -639,14 +639,14 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
  *
  **************************************/
 
-/* If assignment isn't from a field, there isn't a blob copy, so
-   do a dumb assignment. */
+	// If assignment isn't from a field, there isn't a blob copy, so
+	// do a dumb assignment.
 
 	if (value->nod_type != nod_field)
 		return false;
 
-/* Find the sending and receiving requests.  If they are the same
-   and no filtering is necessary, a simple assignment will suffice. */
+	// Find the sending and receiving requests.  If they are the same
+	// and no filtering is necessary, a simple assignment will suffice.
 
 	qli_ctx* context = (qli_ctx*) value->nod_arg[e_fld_context];
 	qli_req* from_request = context->ctx_request;
@@ -862,8 +862,8 @@ static void execute_for( qli_nod* node)
  *
  **************************************/
 
-/* If there is a request associated  with the node, start it and possibly
-   send a message along with it. */
+	// If there is a request associated  with the node, start it and possibly
+	// send a message along with it.
 
 	qli_req* request = (qli_req*) node->nod_arg[e_for_request];
 	if (request)
@@ -875,15 +875,14 @@ static void execute_for( qli_nod* node)
 			EXEC_send(amessage);
 	}
 
-/* If there isn't a receive message, the body of the loop has been
-   optimized out of existence.  So skip it. */
+	// If there isn't a receive message, the body of the loop has been
+	// optimized out of existence.  So skip it.
 
 	qli_msg* message = (qli_msg*) node->nod_arg[e_for_receive];
 	if (!message)
 		goto count;
 
-/* Receive messages in a loop until the end of file field comes up
-   true. */
+	// Receive messages in a loop until the end of file field comes up true.
 
 	while (true)
 	{
@@ -1026,8 +1025,8 @@ static void execute_store( qli_nod* node)
 	if (!(node->nod_flags & NOD_remote))
 		EXEC_execute(node->nod_arg[e_sto_statement]);
 
-/* If there is a request associated  with the node, start it and possibly
-   send a message along with it. */
+	// If there is a request associated  with the node, start it and possibly
+	// send a message along with it.
 
 	qli_req* request = (qli_req*) node->nod_arg[e_sto_request];
 	if (request)

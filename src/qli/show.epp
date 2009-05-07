@@ -69,7 +69,6 @@ static int show_func_detail(qli_dbb*, const TEXT*);
 static void show_funcs(qli_dbb*);
 static int show_funcs_detail(qli_dbb*);
 static int show_insecure_fields(qli_dbb*, const TEXT*, const TEXT*);
-//static void show_forms_db(qli_dbb*);
 static void show_gbl_field(qli_syntax*);
 static int show_gbl_field_detail(qli_dbb*, const TEXT*);
 static void show_gbl_fields(qli_dbb*);
@@ -118,11 +117,9 @@ static const UCHAR blr_bpb[] =
 
 DATABASE DB = EXTERN FILENAME "yachts.lnk";
 
-/*
-values for rdb$trigger_type, based from types.h
-** Some better way should be found to pick this up dynamically (?) **
-until then, this must be kept in sync with jrd/types.h manually.
-*/
+// values for rdb$trigger_type, based from types.h
+// ** Some better way should be found to pick this up dynamically (?) **
+// until then, this must be kept in sync with jrd/types.h manually.
 
 const USHORT PRE_STORE		= 1;
 const USHORT POST_STORE		= 2;
@@ -340,17 +337,6 @@ void SHOW_stuff( qli_syntax* node)
 					show_filts(dbb);
 			}
 			break;
-
-		/*
-		case show_forms:
-			if (value)
-				show_forms_db((qli_dbb*) value);
-			else {
-				for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
-					show_forms_db(dbb);
-			}
-			break;
-		*/
 
 		case show_function:
 			show_func((qli_func*) value);
@@ -1623,25 +1609,6 @@ static int show_insecure_fields(qli_dbb* database,
 	return count;
 }
 
-#ifdef NOT_USED_OR_REPLACED
-static void show_forms_db( qli_dbb* database)
-{
-/**************************************
- *
- *	s h o w _ f o r m s _ d b
- *
- **************************************
- *
- * Functional description
- *	Show what we know about forms
- *	for one database.
- *
- **************************************/
-
-	ERRQ_msg_put(120, database->dbb_symbol->sym_string);
-	// Msg120 There are no forms defined for database %s
-}
-#endif	// NOT_USED_OR_REPLACED
 
 static void show_gbl_field( qli_syntax* field_node)
 {

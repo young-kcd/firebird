@@ -129,7 +129,7 @@ TEXT* FMT_format(qli_lls* stack)
 
 	if (global_fmt_buffer)
 	{
-		ALLQ_release((FRB) global_fmt_buffer);
+		ALLQ_release((qli_frb*) global_fmt_buffer);
 		global_fmt_buffer = NULL;
 	}
 
@@ -139,8 +139,8 @@ TEXT* FMT_format(qli_lls* stack)
 		ALLQ_push((blk*) item, &stack);
 	}
 
-/* Make a pass thru print items computing print lengths and header
-   lengths, and the number of header segments. */
+	// Make a pass thru print items computing print lengths and header
+	// lengths, and the number of header segments.
 
 	USHORT offset, max_offset, number_segments;
 	number_segments = offset = max_offset = 0;
@@ -198,8 +198,8 @@ TEXT* FMT_format(qli_lls* stack)
 		if (offset + MAX(item->itm_print_length, item->itm_header_length) > QLI_columns)
 			offset = 0;
 
-		/* Before we blindly format the header, make sure there already isn't
-		   header information in the same location */
+		// Before we blindly format the header, make sure there already isn't
+		// header information in the same location
 
 		if (item->itm_query_header)
 		{
@@ -238,8 +238,8 @@ TEXT* FMT_format(qli_lls* stack)
 			}
 		}
 
-		/* Now that have settled the issue of header, decide where to put
-		   the field and header */
+		// Now that have settled the issue of header, decide where to put
+		// the field and header
 
 		const USHORT n = MAX(item->itm_print_length, item->itm_header_length);
 		item->itm_print_offset = offset + (n - item->itm_print_length) / 2;
@@ -477,8 +477,8 @@ void FMT_print( qli_nod* list, qli_prt* print)
 	{
 		qli_print_item* item = (qli_print_item*) *ptr;
 
-		/* Handle formating directives.  Most have been translated into
-		   column assignments and are no-ops. */
+		// Handle formating directives.  Most have been translated into
+		// column assignments and are no-ops.
 
 		buffer = BUFFER_BEGINNING;
 
@@ -533,8 +533,8 @@ void FMT_print( qli_nod* list, qli_prt* print)
 			continue;
 		}
 
-		/* Handle print items.  Start by by spacing out to the correct column,
-		   forcing a new line if required. */
+		// Handle print items.  Start by by spacing out to the correct column,
+		// forcing a new line if required.
 
 		BUFFER_CHECK(p, item->itm_print_offset + item->itm_print_length + 2);
 		buffer = BUFFER_BEGINNING;
@@ -656,7 +656,7 @@ void FMT_report( qli_rpt* report)
  **************************************/
 	if (global_fmt_buffer)
 	{
-		ALLQ_release((FRB) global_fmt_buffer);
+		ALLQ_release((qli_frb*) global_fmt_buffer);
 		global_fmt_buffer = NULL;
 	}
 
@@ -774,8 +774,8 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
  **************************************/
 	qli_nod* args = 0;
 
-/* Don't bother with anything except non-indexed fields.  Also
-   ignore subscripted fields with user specified query headers. */
+	// Don't bother with anything except non-indexed fields.  Also
+	// ignore subscripted fields with user specified query headers.
 
 	{ // scope
 		const TEXT* qh;
@@ -840,7 +840,7 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
 		default:
 			// Punt on anything but constants, fields, and variables
 
-			ALLQ_release((FRB) str);
+			ALLQ_release((qli_frb*) str);
 			return;
 		}
 
@@ -877,8 +877,8 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
 	USHORT lengths[10];
 	const TEXT* segments[10];
 
-/* Make a pass thru print items computing print lengths and header
-   lengths, and the number of header segments. */
+	// Make a pass thru print items computing print lengths and header
+	// lengths, and the number of header segments.
 
 	USHORT number_segments, offset, max_offset;
 	number_segments = offset = max_offset = 0;
@@ -955,8 +955,8 @@ static TEXT* format_report( qli_vec* columns_vec, USHORT width, USHORT* max_widt
 
 			item->itm_header_offset = offset + column_width / 2;
 
-			/* Before we blindly format the header, make sure there already isn't
-			   header information in the same location */
+			// Before we blindly format the header, make sure there already isn't
+			// header information in the same location
 
 			if (item->itm_query_header)
 			{
@@ -1148,7 +1148,7 @@ static TEXT* get_buffer(qli_str** str, TEXT* ptr, USHORT length)
 			*p++ = *q++;
 		} while (--l);
 
-	ALLQ_release((FRB) *str);
+	ALLQ_release((qli_frb*) *str);
 	*str = temp_str;
 
 	return p;
@@ -1342,8 +1342,8 @@ static int print_line( qli_print_item* item, TEXT** ptr)
 		return EOF;
 	}
 
-/* If this is not a partial segment and the last character
-   is a newline, throw away the newline */
+	// If this is not a partial segment and the last character
+	// is a newline, throw away the newline
 
 	if (!status && length && p[length - 1] == '\n')
 		if (length > 1)
@@ -1353,8 +1353,8 @@ static int print_line( qli_print_item* item, TEXT** ptr)
 
 	*ptr = p + length;
 
-/* Return the last character in the segment.
-   If the segment is null, return a newline. */
+	// Return the last character in the segment.
+	// If the segment is null, return a newline.
 
 	return length ? p[length - 1] : '\n';
 }
@@ -1442,9 +1442,9 @@ static void report_item( qli_print_item* item, qli_vec** columns_vec, USHORT* co
 		return;
 	}
 
-/* Loop thru remaining logical columns looking for an equivalent
-   expression.  If we find one, the item beSLONGs in that column;
-   otherwise, someplace else. */
+	// Loop thru remaining logical columns looking for an equivalent
+	// expression.  If we find one, the item beSLONGs in that column;
+	// otherwise, someplace else.
 
 	qli_lls** col = (qli_lls**) (columns->vec_object + *col_ndx);
 	const qli_lls* const* const col_end = (qli_lls**) (columns->vec_object + columns->vec_count);

@@ -569,7 +569,7 @@ void LEX_pop_line()
  *	and release the line block.
  *
  **************************************/
-	qli_line* temp = QLI_line;
+	qli_line* const temp = QLI_line;
 	QLI_line = temp->line_next;
 
 	if (temp->line_type == line_blob)
@@ -577,7 +577,7 @@ void LEX_pop_line()
 	else if (temp->line_type == line_file)
 		fclose(temp->line_source_file);
 
-	ALLQ_release((FRB) temp);
+	ALLQ_release((qli_frb*) temp);
 }
 
 
