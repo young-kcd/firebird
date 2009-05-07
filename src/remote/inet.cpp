@@ -88,6 +88,9 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
 #endif // !WIN_NT
 
 const int INET_RETRY_CALL	= 5;

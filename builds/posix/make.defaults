@@ -112,6 +112,9 @@ STD_ICU=@STD_ICU@
 THR_FLAGS=@PTHREAD_CFLAGS@
 THR_LIBS=@PTHREAD_LIBS@
 
+# thread local storage options - set by configure
+TLS_OPTIONS=@TLS_OPTIONS@
+
 # Default programs and tools to be used in the build process
 
 SH=			sh -c
@@ -128,7 +131,7 @@ ECHO=			echo
 QUIET_ECHO=		@echo
 CD=			cd
 CAT=			cat
-AR=			ar crsu
+AR=			ar @AR_OPTIONS@ crsu
 LN=			@LN_S@
 RANLIB=			@RANLIB@
 BTYACC=$(ROOT)/extern/btyacc/btyacc

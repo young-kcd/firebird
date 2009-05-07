@@ -40,21 +40,63 @@
 #
 #    export CC=cc_r
 #    export CXX=xlC_r
+#    export CFLAGS="-q64 -qtls=default"
+#    export CXXFLAGS="-q64 -qtls=default"
 #
 
+# Useful predefined macros from IBM XL C++
+# __IBMCPP__, indicates the level of the XL C++ compiler, e.g. 1010
+
+# These macros are predefined by the compiler
 # xlC does not define _POWER or _AIX, which gcc does. xlC does define
 # __powerpc and __PPC, which Firebird code base doesn't check.
+# __BIG_ENDIAN__
+# __powerpc
+# __PPC
+# __unix
 
-# qstaticinline, http://www-01.ibm.com/support/docview.wss?uid=swg21044588
-PROD_FLAGS=-O3 -qchars=signed -qstaticinline -qlanglvl=newexcp -DNDEBUG -D_AIX -D_POWER
-DEV_FLAGS=-O0 -qchars=signed -qstaticinline -qlanglvl=newexcp -D_AIX -D_POWER
 
 # AIX ld option to set run-time library path is -Wl-blibpath:path1:path2
 # Additional -blibpath options are not additive! All paths must be provided as a colon separated list.
-# LIB_LINK_RPATH:=-Wl-blibpath:
-# LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/lib:/lib
+LIB_PATH_OPTS= -Wl,-blibpath:$(FirebirdInstallPrefix)/lib:$(FirebirdInstallPrefix)/intl:/usr/local/lib:/usr/lib:/lib
+
+# Flags shared by production and debug build
+# -qstaticinline, treat inline functions as static instead of extern
+#    -qstaticinline removed, interferes with FB's placement new
+COMMON_FLAGS= -qchars=signed -qlanglvl=newexcp -qroconst \
+	-D__IBM_ALLOW_OVERRIDE_PLACEMENT_NEW \
+	$(TLS_OPTIONS)
+
+# -qinfo=all:noppt:nopor:notrd:nouse, useful, but gives *so* many warnings!
+# -qextchk, ***AVOID***, causes "type mismatches for symbol" building gpre_static
+# -qcheck, generate code to perform *runtime* bounds, null-pointer, and div by zero checking
+# -qformat, warn of problems with string put and output format specifiers.
+#    most qformat options tested useless to us, but zln (zero-length formats) and
+#    exarg (excess arguments) are handy
+# -qinitauto, initialize uninitialized automatic vars to value for debugging
+# -qwarn64, warn about data conversion problems between 32-bit and 64-bit modes
+# -qstrict, ensure optimizations don't alter the semantics of the program
+PROD_FLAGS=$(COMMON_FLAGS) -O3 -qstaticinline -qstrict
+DEV_FLAGS=$(COMMON_FLAGS) -g -O0 \
+	-qcheck -qformat=noall:exarg:zln
+
+LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -Wl,-bbigtoc,-brtl
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) $(LIB_PATH_OPTS) -bM:SRE -bnoentry -Wl,-G,-bbigtoc,-bexpall
+
+# AIX ld uses "export files" to manage symbol visibility. Export files are
+# functionally similar to "version files" on ELF systems and are specified
+# with the "-Wl,-bE:exportfile.exp" option.
+LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.exp
+LINK_FIREBIRD_EMBED_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
+LINK_FIREBIRD_CLIENT_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
+LINK_TRACE_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.exp
+LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.exp
+LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.exp
+LIB_LINK_MAPFILE=-Wl,-bE:
+
+# These options aren't used by AIX (XCOFF) object files...
 LIB_LINK_RPATH=
-LIB_PATH_OPTS=
+LIB_LINK_SONAME=
 
 OS_ServerFiles=inet_server.cpp
 

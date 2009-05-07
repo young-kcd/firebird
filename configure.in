@@ -47,6 +47,9 @@ RPM64=
 dnl Test for realtime library presence?
 RT_LIB_CHECK=false
 
+dnl Test for special ar options?
+AR_OPT_CHECK=false
+
 case "$target" in
   i686-*-darwin*)
     MAKEFILE_PREFIX=darwin_i386
@@ -79,7 +82,10 @@ dnl CPU_TYPE=ppc64
 dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
     comp=`echo "$CXX" | cut -c1-3 | dd conv=lcase 2>/dev/null`
     if test "$comp" = "xlc"; then
+		AR_OPT_CHECK=true
+        TLS_OPTIONS="-qtls=default"
         MAKEFILE_PREFIX=aix_powerpc_xlc
+        ICU_PLATFORM=AIXPPCXLC
     else
         MAKEFILE_PREFIX=aix_powerpc
     fi
@@ -89,7 +95,6 @@ dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
     AC_DEFINE(AIX, 1, [Define this if OS is AIX])
     EDITLINE_FLG=N
     SHRLIB_EXT=so
-dnl ICU_PLATFORM=AIXPPCXLC
     ;;
 
   amd64-*-freebsd*)
@@ -304,6 +309,7 @@ fi
 AM_BINRELOC
 
 AC_SUBST(MAKEFILE_PREFIX)
+AC_SUBST(AR_OPTIONS)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
@@ -493,6 +499,7 @@ AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
 AC_CHECK_HEADERS(sys/mount.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
+AC_CHECK_HEADERS(sys/select.h)
 AC_CHECK_HEADERS(limits.h)
 AC_CHECK_HEADERS(setjmp.h)
 AC_CHECK_HEADERS(stdarg.h)
@@ -572,6 +579,13 @@ AC_COMPILE_IFELSE(
 		void vafun(const char* fmt, ...) {va_list par, par2; va_start(par, fmt); va_copy(par2, par); va_end(par2); va_end(par);}]], 
 		[[return 0;]])],
 	AC_DEFINE(HAVE_VA_COPY, 1, [Define this if va_copy() is defined in stdarg.h]))
+
+if test "$AR_OPT_CHECK" = "true"; then
+dnl if 64-bit mode, then archive tool, ar, needs -X64 option
+    AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(,[[int lp64 = __64BIT__; ]])],
+        [AR_OPTIONS=-X64],)
+fi
 AC_LANG_POP(C++)
 
 dnl Check for functions
@@ -836,9 +850,13 @@ case "$PLATFORM" in
 esac
 
 dnl Detect support for ISO syntax for thread-locals
+pre_tls_cxxflags=$CXXFLAGS
+CXXFLAGS=$TLS_OPTIONS
 AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM([[__thread int a = 42;]],[[a = a + 1;]])],
   AC_DEFINE(HAVE___THREAD, 1, [Define it if compiler supports ISO syntax for thread-local storage]),)
+CXXFLAGS=$pre_tls_cxxflags
+AC_SUBST(TLS_OPTIONS)
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
