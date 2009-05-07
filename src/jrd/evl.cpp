@@ -3324,123 +3324,140 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	ULONG flag = req_null;
 	double d;
 
-	// Handle each variety separately
-
-	switch (node->nod_type)
+	try 
 	{
-	case nod_count:
-		flag = 0;
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
-		{
-			++impure->vlu_misc.vlu_long;
-		}
-		break;
+		// Handle each variety separately
 
-	/*
-	case nod_count2:
-		flag = 0;
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		switch (node->nod_type)
 		{
-			EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (!(request->req_flags & req_null)) {
+		case nod_count:
+			flag = 0;
+			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			{
 				++impure->vlu_misc.vlu_long;
 			}
-		}
-		break;
-	*/
+			break;
 
-	case nod_min:
-	case nod_max:
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
-		{
-			dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (request->req_flags & req_null) {
-				continue;
-			}
-			int result;
-			if (flag || ((result = MOV_compare(value, desc)) < 0 && node->nod_type == nod_min) ||
-				(node->nod_type != nod_min && result > 0))
+		/*
+		case nod_count2:
+			flag = 0;
+			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 			{
-				flag = 0;
-				EVL_make_value(tdbb, value, impure);
+				EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+				if (!(request->req_flags & req_null)) {
+					++impure->vlu_misc.vlu_long;
+				}
 			}
-		}
-		break;
+			break;
+		*/
 
-	case nod_from:
-		if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
-		{
-			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-		}
-		else
-		{
-			if (node->nod_arg[e_stat_default])
-				desc = EVL_expr(tdbb, node->nod_arg[e_stat_default]);
+		case nod_min:
+		case nod_max:
+			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			{
+				dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+				if (request->req_flags & req_null) {
+					continue;
+				}
+				int result;
+				if (flag || ((result = MOV_compare(value, desc)) < 0 && node->nod_type == nod_min) ||
+					(node->nod_type != nod_min && result > 0))
+				{
+					flag = 0;
+					EVL_make_value(tdbb, value, impure);
+				}
+			}
+			break;
+
+		case nod_from:
+			if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			{
+				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+			}
 			else
-				ERR_post(Arg::Gds(isc_from_no_match));
-		}
-		flag = request->req_flags;
-		break;
-
-	case nod_average:			/* total or average with dialect-1 semantics */
-	case nod_total:
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
-		{
-			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (request->req_flags & req_null) {
-				continue;
+			{
+				if (node->nod_arg[e_stat_default])
+					desc = EVL_expr(tdbb, node->nod_arg[e_stat_default]);
+				else
+					ERR_post(Arg::Gds(isc_from_no_match));
 			}
-			/* Note: if the field being SUMed or AVERAGEd is short or long,
-			   impure will stay long, and the first add() will
-			   set the correct scale; if it is approximate numeric,
-			   the first add() will convert impure to double. */
-			add(desc, node, impure);
-			count++;
-		}
-		desc = &impure->vlu_desc;
-		if (node->nod_type == nod_total) {
+			flag = request->req_flags;
+			break;
+
+		case nod_average:			/* total or average with dialect-1 semantics */
+		case nod_total:
+			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			{
+				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+				if (request->req_flags & req_null) {
+					continue;
+				}
+				/* Note: if the field being SUMed or AVERAGEd is short or long,
+				   impure will stay long, and the first add() will
+				   set the correct scale; if it is approximate numeric,
+				   the first add() will convert impure to double. */
+				add(desc, node, impure);
+				count++;
+			}
+			desc = &impure->vlu_desc;
+			if (node->nod_type == nod_total) {
+				flag = 0;
+				break;
+			}
+			if (!count)
+				break;
+			d = MOV_get_double(&impure->vlu_desc);
+			impure->vlu_misc.vlu_double = d / count;
+			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
+			impure->vlu_desc.dsc_length = sizeof(double);
+			impure->vlu_desc.dsc_scale = 0;
 			flag = 0;
 			break;
-		}
-		if (!count)
-			break;
-		d = MOV_get_double(&impure->vlu_desc);
-		impure->vlu_misc.vlu_double = d / count;
-		impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
-		impure->vlu_desc.dsc_length = sizeof(double);
-		impure->vlu_desc.dsc_scale = 0;
-		flag = 0;
-		break;
 
-	case nod_average2:			/* average with dialect-3 semantics */
-		while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+		case nod_average2:			/* average with dialect-3 semantics */
+			while (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
+			{
+				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
+				if (request->req_flags & req_null)
+					continue;
+				/* Note: if the field being SUMed or AVERAGEd is exact
+				   numeric, impure will stay int64, and the first add() will
+				   set the correct scale; if it is approximate numeric,
+				   the first add() will convert impure to double. */
+				add(desc, node, impure);
+				count++;
+			}
+			desc = &impure->vlu_desc;
+			if (!count)
+				break;
+			/* We know the sum, but we want the average.  To get it, divide
+			   the sum by the count.  Since count is exact, dividing an int64
+			   sum by count should leave an int64 average, while dividing a
+			   double sum by count should leave a double average. */
+			if (dtype_int64 == impure->vlu_desc.dsc_dtype)
+				impure->vlu_misc.vlu_int64 /= count;
+			else
+				impure->vlu_misc.vlu_double /= count;
+			flag = 0;
+			break;
+
+		default:
+			BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
+		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		// close stream 
+		// ignore any error during it to keep original
+		try
 		{
-			desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			if (request->req_flags & req_null)
-				continue;
-			/* Note: if the field being SUMed or AVERAGEd is exact
-			   numeric, impure will stay int64, and the first add() will
-			   set the correct scale; if it is approximate numeric,
-			   the first add() will convert impure to double. */
-			add(desc, node, impure);
-			count++;
+			RSE_close(tdbb, rsb);
+			request->req_flags &= ~req_null;
+			request->req_flags |= flag;
 		}
-		desc = &impure->vlu_desc;
-		if (!count)
-			break;
-		/* We know the sum, but we want the average.  To get it, divide
-		   the sum by the count.  Since count is exact, dividing an int64
-		   sum by count should leave an int64 average, while dividing a
-		   double sum by count should leave a double average. */
-		if (dtype_int64 == impure->vlu_desc.dsc_dtype)
-			impure->vlu_misc.vlu_int64 /= count;
-		else
-			impure->vlu_misc.vlu_double /= count;
-		flag = 0;
-		break;
+		catch (const Firebird::Exception&) { }
 
-	default:
-		BUGCHECK(233);			/* msg 233 eval_statistical: invalid operation */
+		throw;
 	}
 
 /* Close stream and return value */
