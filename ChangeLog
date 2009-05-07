@@ -1,3 +1,74 @@
+2009-05-07 18:48  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp (1.297):
+
+	Fixed CORE-2455: Server fails when doing DROP DATABASE right after
+	error in statistical function
+
+2009-05-07 17:52  robocop
+
+	* firebird2/src/include/gen/autoconfig_msvc.h (1.117):
+
+	Undefine definitions used in other platforms (just in case).
+
+2009-05-07 16:49  alexpeshkoff
+
+	* firebird2/: configure.in (1.341), builds/posix/make.defaults
+	(1.84), builds/posix/prefix.aix_powerpc_xlc (1.3),
+	src/common/classes/alloc.h (1.88), src/jrd/SysFunction.cpp (1.73),
+	src/remote/inet.cpp (1.284):
+
+	AIX port - native compiler support
+
+2009-05-07 16:29  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.540):
+
+	Fixed bug CORE-2454 : AV enumerating attachments in SS\SC if more
+	than 8 databases is attached
+
+2009-05-07 15:05  hvlad
+
+	* firebird2/src/jrd/: event.cpp (1.96), event.h (1.27),
+	event_proto.h (1.21):
+
+	More fixes for bug CORE-2444 : When more than one attachment
+	register interests in events simultaneously and free space in
+	events table is exhausted engine could hung a) uncomment remapping
+	code in acquire_shmem(), it used by Classic b) removed silly code
+	for synchronisation with watcher_thread during remapping. Its not
+	needed and not worked.	c) don't set to zero m_processOffset in
+	~EventManager() as it could by used by busy watcher_thread
+	delivering events
+
+2009-05-07 13:32  robocop
+
+	* firebird2/src/qli/: all.cpp (1.40), all_proto.h (1.8), blk.h
+	(1.19), command.cpp (1.34), compile.cpp (1.41), dtr.cpp (1.70),
+	dtr.h (1.36), err.cpp (1.27), eval.cpp (1.60), exe.cpp (1.65),
+	expand.cpp (1.49), format.cpp (1.47), format.h (1.17), gener.cpp
+	(1.53), help.epp (1.32), hsh.cpp (1.24), lex.cpp (1.49), meta.epp
+	(1.81), mov.cpp (1.54), parse.cpp (1.54), picstr.cpp (1.43),
+	proc.epp (1.36), report.cpp (1.26), report.h (1.11), show.epp
+	(1.53):
+
+	Cleanup.
+
+2009-05-07 13:11  hvlad
+
+	* firebird2/src/remote/: xnet.cpp (1.133), xnet.h (1.20):
+
+	Fixed bug CORE-2453 : AV at engine when client used events
+	disconnects
+
+2009-05-07 09:11  alexpeshkoff
+
+	* firebird2/src/: gpre/ftn.cpp (1.76), gpre/gpre.cpp (1.107),
+	gpre/gpre.h (1.109), jrd/license.h (1.45), jrd/os/posix/unix.cpp
+	(1.118), remote/remote_def.h (1.36):
+
+	Use macro __sun instead of sun for this platform
+
 2009-05-06 19:05  dimitr
 
 	* firebird2/src/dsql/ddl.cpp (1.281):
