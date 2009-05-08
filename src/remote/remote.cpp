@@ -618,12 +618,13 @@ static void cleanup_memory(void* /*block*/)
 void rem_port::linkParent(rem_port* const parent)
 {
 	fb_assert(parent);
+	fb_assert(this->port_parent == NULL);
 
-	port_parent = parent;
-	port_next = parent->port_clients;
-	port_handle = parent->port_handle;
-	port_server = parent->port_server;
-	port_server_flags = parent->port_server_flags;
+	this->port_parent = parent;
+	this->port_next = parent->port_clients;
+	this->port_handle = parent->port_handle;
+	this->port_server = parent->port_server;
+	this->port_server_flags = parent->port_server_flags;
 
 	parent->port_clients = parent->port_next = this;
 }
@@ -635,7 +636,7 @@ void rem_port::unlinkParent()
 	if (this->port_parent == NULL)
 		return;
 
-#if DEV_BUILD
+#ifdef DEV_BUILD
 	bool found = false;
 #endif
 
@@ -652,7 +653,7 @@ void rem_port::unlinkParent()
 				this->port_parent->port_next = *ptr;
 			}
 
-#if DEV_BUILD
+#ifdef DEV_BUILD
 			found = true;
 #endif
 			break;

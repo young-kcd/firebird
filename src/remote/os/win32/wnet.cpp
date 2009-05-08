@@ -799,12 +799,7 @@ static void disconnect(rem_port* port)
 	}
 
 	// If this is a sub-port, unlink it from its parent
-
-	rem_port* const parent = port->port_parent;
-	if (parent)
-	{
-		port->unlinkParent();
-	}
+	port->unlinkParent();
 
 	if (port->port_server_flags & SRVR_server)
 	{

@@ -313,7 +313,6 @@ static bool		select_wait(rem_port*, slct_t*);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
-static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR*, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_INT	tryStopMainThread = 0;
@@ -582,7 +581,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif
 
-	rem_port* port = alloc_port(0);
+	rem_port* port = alloc_port(NULL);
 	port->port_status_vector = status_vector;
 	REMOTE_get_timeout_params(port, dpb);
 	status_vector[0] = isc_arg_gds;
@@ -936,7 +935,7 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  *	a port block.
  *
  **************************************/
-	rem_port* port = alloc_port(0);
+	rem_port* port = alloc_port(NULL);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
@@ -974,7 +973,7 @@ rem_port* INET_server(int sock)
  *
  **************************************/
 	int n = 0;
-	rem_port* port = alloc_port(0);
+	rem_port* port = alloc_port(NULL);
 	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
@@ -1133,7 +1132,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 }
 
 
-static rem_port* alloc_port( rem_port* parent)
+static rem_port* alloc_port(rem_port* const parent)
 {
 /**************************************
  *
@@ -1443,7 +1442,7 @@ static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
 }
 #endif // !defined(WIN_NT)
 
-static void disconnect( rem_port* port)
+static void disconnect(rem_port* const port)
 {
 /**************************************
  *
@@ -1484,7 +1483,6 @@ static void disconnect( rem_port* port)
 
 #endif // WIN_NT
 
-	// If this is a sub-port, unlink it from it's parent
 	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
 
@@ -1493,10 +1491,8 @@ static void disconnect( rem_port* port)
 		port->port_async = NULL;
 	}
 
-	rem_port* parent = port->port_parent;
-	if (parent != NULL) {
-		unhook_port(port, parent);
-	}
+	// If this is a sub-port, unlink it from it's parent
+	port->unlinkParent();
 
 	inet_ports->unRegisterPort(port);
 
@@ -3159,32 +3155,6 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 #endif
 
 	return true;
-}
-
-static void unhook_port( rem_port* port, rem_port* parent)
-{
-/**************************************
- *
- *      u n h o o k _ p a r e n t
- *
- **************************************
- *
- * Functional description
- *      Disconnect a port from its parent
- *      This must be done under port_mutex control.
- *
- **************************************/
-
-	for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
-	{
-		if (*ptr == port) {
-			*ptr = port->port_next;
-			if (ptr == &parent->port_clients) {
-				parent->port_next = *ptr;
-			}
-			break;
-		}
-	}
 }
 
 static bool setNoNagleOption(rem_port* port)

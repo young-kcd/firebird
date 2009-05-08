@@ -1320,7 +1320,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		UCHAR* const channel_s2c_client_ptr = start_ptr + avail;
 
 		rem_port* port =
-			alloc_port(0,
+			alloc_port(NULL,
 					   channel_c2s_client_ptr,
 					   xcc->xcc_send_channel->xch_size,
 					   channel_s2c_client_ptr,
@@ -1468,17 +1468,13 @@ static void disconnect(rem_port* port)
  *
  **************************************/
 
-	// If this is a sub-port, unlink it from it's parent
-
 	if (port->port_async) {
 		disconnect(port->port_async);
 		port->port_async = NULL;
 	}
 
-	rem_port* const parent = port->port_parent;
-	if (parent != NULL) {
-		port->unlinkParent();
-	}
+	// If this is a sub-port, unlink it from it's parent
+	port->unlinkParent();
 
 	if (port->port_flags & PORT_server)
 		xnet_ports->unRegisterPort(port);
@@ -2601,7 +2597,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 		// finally, allocate and set the port structure for this client
 
-		port = alloc_port(0,
+		port = alloc_port(NULL,
 						  channel_s2c_data_buffer,
 						  xcc->xcc_send_channel->xch_size,
 						  channel_c2s_data_buffer,
