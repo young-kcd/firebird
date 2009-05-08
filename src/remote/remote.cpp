@@ -631,8 +631,6 @@ void rem_port::linkParent(rem_port* const parent)
 
 void rem_port::unlinkParent()
 {
-	fb_assert(this->port_parent != NULL);
-
 	if (this->port_parent == NULL)
 		return;
 
