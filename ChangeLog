@@ -1,3 +1,11 @@
+2009-05-08 13:57  alexpeshkoff
+
+	* firebird2/src/: jrd/event.cpp (1.55.4.5), remote/interface.cpp
+	(1.119.4.5), remote/remote.h (1.46.4.2):
+
+	Backported fix for CORE-2437: Buffer overflow on client when
+	delivering events
+
 2009-04-29 14:32  hvlad
 
 	* firebird2/src/jrd/event.cpp (1.55.4.4):
