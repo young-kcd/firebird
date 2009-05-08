@@ -10113,11 +10113,14 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 				if (par_node->nod_type == nod_parameter) {
 					dsql_par* parameter =
 						(dsql_par*) par_node->nod_arg[e_par_parameter];
-					DEV_BLKCHK(parameter, dsql_type_par);
-					parameter->par_desc = par_node->nod_desc;
-					parameter->par_node = par_node;
-					MAKE_desc_from_field(&parameter->par_desc, field);
-					return true;
+					if (parameter)
+					{
+						DEV_BLKCHK(parameter, dsql_type_par);
+						parameter->par_desc = par_node->nod_desc;
+						parameter->par_node = par_node;
+						MAKE_desc_from_field(&parameter->par_desc, field);
+						return true;
+					}
 				}
 				return false;
 			}
