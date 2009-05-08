@@ -143,7 +143,6 @@ static const TOK tokens[] =
 	{DATEADD, "DATEADD", 2, false},
 	{DATEDIFF, "DATEDIFF", 2, false},
 	{DAY, "DAY", 2, false},
-	{KW_DEBUG, "DEBUG", 1, false},
 	{KW_DEC, "DEC", 1, false},
 	{DECIMAL, "DECIMAL", 1, false},
 	{DECLARE, "DECLARE", 1, false},

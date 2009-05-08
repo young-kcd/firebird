@@ -151,7 +151,6 @@ static bool		long_int(dsql_nod*, SLONG*);
 #endif
 static dsql_fld*	make_field (dsql_nod*);
 static dsql_fil*	make_file();
-static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
 static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
@@ -219,7 +218,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token DATABASE
 %token DATE
 %token DB_KEY
-%token KW_DEBUG
 %token DECIMAL
 %token DECLARE
 %token DEFAULT
@@ -618,9 +616,6 @@ statement	: alter
 		| set
 		| update
 		| update_or_insert
-		| KW_DEBUG signed_short_integer
-			{ prepare_console_debug ((IPTR) $2, &yydebug);
-			  $$ = make_node (nod_null, (int) 0, NULL); }
 		;
 
 
@@ -5311,27 +5306,6 @@ dsql_nod* Parser::make_flag_node(NOD_TYPE type, SSHORT flag, int count, ...)
 	return node;
 }
 
-
-static void prepare_console_debug (int level, int *yydeb)
-{
-/*************************************
- *
- *	p r e p a r e _ c o n s o l e _ d e b u g
- *
- *************************************
- *
- * Functional description
- *	Activate debug info. In WinNT, redirect the standard
- *	output so one can see the generated information.
- *	Feel free to add your platform specific code.
- *
- *************************************/
-#ifdef DSQL_DEBUG
-	DSQL_debug = level;
-#endif
-	if (level >> 8)
-		*yydeb = level >> 8;
-}
 
 #ifdef NOT_USED_OR_REPLACED
 static bool short_int(dsql_nod* string,
