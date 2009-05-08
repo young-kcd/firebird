@@ -377,14 +377,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Other files"
-			>
-			<File
-				RelativePath="..\..\..\src\utilities\err.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="JRD files"
 			>
 			<File
