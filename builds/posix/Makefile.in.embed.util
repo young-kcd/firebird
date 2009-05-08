@@ -41,7 +41,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 LOCKPRINT_Other_Sources += jrd/isc_ipc.cpp jrd/isc_sync.cpp jrd/isc.cpp jrd/db_alias.cpp \
-common/config/config.cpp common/config/config_file.cpp utilities/err.cpp $(OS_SPECIFIC_Sources)
+common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 LOCKPRINT_Files= print.cpp
 LOCKPRINT_Sources = $(addprefix lock/, $(LOCKPRINT_Files)) $(LOCKPRINT_Other_Sources)
