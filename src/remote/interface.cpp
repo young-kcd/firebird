@@ -5399,11 +5399,19 @@ static void event_handler( rem_port* port)
 			P_EVENT* pevent = &packet.p_event;
 			RVNT event = find_event(port, pevent->p_event_rid);
 			if (event) {
-				/* Call the asynchronous trap function associated with the event. */
-
-				(*event->rvnt_ast) (event->rvnt_arg,
-									pevent->p_event_items.cstr_length,
-									pevent->p_event_items.cstr_address);
+				USHORT length = pevent->p_event_items.cstr_length;
+				if (length <= event->rvnt_length)
+				{
+					/* Call the asynchronous trap function associated with the event. */
+					(*event->rvnt_ast) (event->rvnt_arg,
+										length,
+										pevent->p_event_items.cstr_address);
+				}
+				/*
+				else {....
+				In general this is error condition, but we have absolutely no ways to report it.
+				Therefore simply ignore such bad packet.
+				*/
 
 				event->rvnt_id = 0;
 			}

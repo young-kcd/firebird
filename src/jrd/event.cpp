@@ -417,6 +417,12 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
  * Functional description
  *
  **************************************/
+// Sanity check
+
+	if (events[0] != EPB_version1) {
+		ERR_post(isc_random, isc_arg_string, "Invalid EPB form", isc_arg_end);
+	}
+
 // Allocate request block
 
 	acquire();
@@ -453,6 +459,13 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
 	while (p < end) {
 
 		const USHORT count = *p++;
+
+		/* Sanity check */
+
+		if (count > end - events) {
+			release();
+			ERR_post(isc_random, isc_arg_string, "Invalid EPB form", isc_arg_end);
+		}
 
 		/* The data in the event block may have trailing blanks.  Strip them off. */
 

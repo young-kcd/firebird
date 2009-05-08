@@ -146,7 +146,7 @@ typedef struct rvnt
 	SLONG		rvnt_rid;	/* used by server to store client-side id */
 	rem_port*	rvnt_port;	/* used to id server from whence async came */
 	const UCHAR*		rvnt_items;
-	SSHORT		rvnt_length;
+	USHORT		rvnt_length;
 } *RVNT;
 
 struct rem_vec
