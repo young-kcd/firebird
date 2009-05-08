@@ -85,9 +85,10 @@ dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
 		AR_OPT_CHECK=true
         TLS_OPTIONS="-qtls=default"
         MAKEFILE_PREFIX=aix_powerpc_xlc
-        ICU_PLATFORM=AIXPPCXLC
+        ICU_PLATFORM=AIX4.3VA
     else
         MAKEFILE_PREFIX=aix_powerpc
+        ICU_PLATFORM=AIXGCC
     fi
     MAKEFILE_POSTFIX=aix
     PLATFORM=AIX
