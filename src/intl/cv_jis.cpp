@@ -51,7 +51,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
 		return sizeof(USHORT) * src_len;
 
@@ -62,38 +62,41 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 	USHORT wide;
 	USHORT this_len;
 	const USHORT* const start = dest_ptr;
-	while ((src_len) && (dest_len > 1)) {
+	while ((src_len) && (dest_len > 1))
+	{
 		const UCHAR ch1 = *src_ptr++;
 
-		/* Step 1: Convert from EUC to JIS */
-		if (!(ch1 & 0x80)) {	/* 1 byte SCHAR */
-			/* Plane 0 of EUC-J is defined as ASCII */
+		// Step 1: Convert from EUC to JIS
+		if (!(ch1 & 0x80))
+		{	// 1 byte SCHAR
+			// Plane 0 of EUC-J is defined as ASCII
 			wide = ch1;
 			this_len = 1;
 
-			/* Step 2: Convert from ASCII to UNICODE */
+			// Step 2: Convert from ASCII to UNICODE
 			ch = ch1;
 		}
-		else if (src_len == 1 || !(*src_ptr & 0x80)) {
-			/* We received a multi-byte indicator, but either
-			   there isn't a 2nd byte or the 2nd byte isn't marked */
+		else if (src_len == 1 || !(*src_ptr & 0x80))
+		{
+			// We received a multi-byte indicator, but either
+			// there isn't a 2nd byte or the 2nd byte isn't marked
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
-		else {
+		else
+		{
 			wide = ((ch1 << 8) + (*src_ptr++)) & ~0x8080;
 			this_len = 2;
 
-			/* Step 2: Convert from JIS to UNICODE */
+			// Step 2: Convert from JIS to UNICODE
 			ch = ((const USHORT*) impl->csconvert_datatable)
 				[((const USHORT*) impl->csconvert_misc)
 					[(USHORT)wide /	256] + (wide % 256)];
 		}
 
 
-		/* No need to check for CS_CONVERT_ERROR -
-		 * EUCJ must convert to Unicode
-		 */
+		// No need to check for CS_CONVERT_ERROR -
+		// EUCJ must convert to Unicode
 
 		*dest_ptr++ = ch;
 		dest_len -= sizeof(*dest_ptr);
@@ -109,14 +112,16 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 
 static void S2E(const UCHAR s1, const UCHAR s2, UCHAR& j1, UCHAR& j2)
 {
-	if (s2 >= 0x9f) {
+	if (s2 >= 0x9f)
+	{
 		if (s1 >= 0xe0)
 			j1 = (s1 * 2 - 0xe0);
 		else
 			j1 = (s1 * 2 - 0x60);
 		j2 = (s2 + 2);
 	}
-	else {
+	else
+	{
 		if (s1 >= 0xe0)
 			j1 = (s1 * 2 - 0xe1);
 		else
@@ -151,9 +156,9 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 	const ULONG src_start = sjis_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
-		return (sjis_len * 2);	/* worst case - all ascii input */
+		return (sjis_len * 2);	// worst case - all ascii input
 
 	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
 	USHORT* dest_ptr = d;
@@ -162,62 +167,71 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 	USHORT this_len;
 	USHORT wide;
 	const USHORT* const start = dest_ptr;
-	while (sjis_len && dest_len > 1) {
-		/* Step 1: Convert from SJIS to JIS code */
-		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
+	while (sjis_len && dest_len > 1)
+	{
+		// Step 1: Convert from SJIS to JIS code
+		if (*sjis_str & 0x80)
+		{	// Non-Ascii - High bit set
 			const UCHAR c1 = *sjis_str++;
 
-			if (SJIS1(c1)) {	/* First byte is a KANJI */
-				if (sjis_len == 1) {	/* truncated KANJI */
+			if (SJIS1(c1))
+			{	// First byte is a KANJI
+				if (sjis_len == 1) {	// truncated KANJI
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				const UCHAR c2 = *sjis_str++;
-				if (!(SJIS2(c2))) {	/* Bad second byte */
+				if (!(SJIS2(c2))) {	// Bad second byte
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
-				/* Step 1b: Convert 2 byte SJIS to EUC-J */
+				// Step 1b: Convert 2 byte SJIS to EUC-J
 				UCHAR tmp1, tmp2;
 				S2E(c1, c2, tmp1, tmp2);
 
-				/* Step 2b: Convert 2 byte EUC-J to JIS */
+				// Step 2b: Convert 2 byte EUC-J to JIS
 				wide = ((tmp1 << 8) + tmp2) & ~0x8080;
 				this_len = 2;
 				table = 1;
 			}
-			else if (SJIS_SINGLE(c1)) {
+			else if (SJIS_SINGLE(c1))
+			{
 				wide = c1;
 				this_len = 1;
 				table = 2;
 			}
-			else {				/* It is some bad character */
+			else
+			{				// It is some bad character
 
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
-		else {					/* it is a ASCII */
+		else
+		{					// it is a ASCII
 
 			wide = *sjis_str++;
 			this_len = 1;
 			table = 2;
 		}
 
-		/* Step 2: Convert from JIS code (in wide) to UNICODE */
+		// Step 2: Convert from JIS code (in wide) to UNICODE
 		USHORT ch;
 		if (table == 1)
+		{
 			ch = ((const USHORT*) impl->csconvert_datatable)
 				[((const USHORT*) impl->csconvert_misc)
 					[(USHORT)wide /	256] + (wide % 256)];
-		else {
+		}
+		else
+		{
 			fb_assert(table == 2);
 			fb_assert(wide <= 255);
 			ch = sjis_to_unicode_mapping_array
 				[sjis_to_unicode_map[(USHORT) wide / 256] + (wide % 256)];
 		}
 
-		/* This is only important for bad-SJIS in input stream */
+		// This is only important for bad-SJIS in input stream
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -291,13 +305,15 @@ static void seven2eight(USHORT *p1, USHORT *p2)
 	if ((*p2 >= 127) && (*p2 < 158))
 		(*p2)++;
 
-	if ((*p1 >= 33) && (*p1 <= 94)) {
+	if ((*p1 >= 33) && (*p1 <= 94))
+	{
 		if (isodd(*p1))
 			*p1 = ((*p1 - 1) / 2) + 113;
 		else
 			*p1 = (*p1 / 2) + 112;
 	}
-	else if ((*p1 >= 95) && (*p1 <= 126)) {
+	else if ((*p1 >= 95) && (*p1 <= 126))
+	{
 		if (isodd(*p1))
 			*p1 = ((*p1 - 1) / 2) + 177;
 		else
@@ -413,24 +429,26 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (sjis_str == NULL)
-		return (unicode_len);	/* worst case - all han character input */
+		return (unicode_len);	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = sjis_str;
-	while ((sjis_len) && (unicode_len > 1)) {
-		/* Step 1: Convert from UNICODE to JIS code */
+	while ((sjis_len) && (unicode_len > 1))
+	{
+		// Step 1: Convert from UNICODE to JIS code
 		const USHORT wide = *unicode_str++;
 
 		USHORT jis_ch = ((const USHORT*) impl->csconvert_datatable)
 			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 
-		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
+		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP))
+		{
 
-			/* Handle the non-JIS codes in SJIS (ASCII & half-width Kana) */
+			// Handle the non-JIS codes in SJIS (ASCII & half-width Kana)
 			jis_ch = sjis_from_unicode_mapping_array
 					[sjis_from_unicode_map[(USHORT) wide / 256] + (wide % 256)];
 			if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -439,27 +457,31 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 			}
 		}
 
-		/* Step 2: Convert from JIS code to SJIS */
+		// Step 2: Convert from JIS code to SJIS
 		USHORT tmp1 = jis_ch / 256;
 		USHORT tmp2 = jis_ch % 256;
-		if (tmp1 == 0) {		/* ASCII character */
+		if (tmp1 == 0)
+		{		// ASCII character
 			*sjis_str++ = tmp2;
 			sjis_len--;
 			unicode_len -= sizeof(*unicode_str);
 			continue;
 		}
 		seven2eight(&tmp1, &tmp2);
-		if (tmp1 == 0) {		/* half-width kana ? */
+		if (tmp1 == 0)
+		{		// half-width kana ?
 			fb_assert(SJIS_SINGLE(tmp2));
 			*sjis_str++ = tmp2;
 			unicode_len -= sizeof(*unicode_str);
 			sjis_len--;
 		}
-		else if (sjis_len < 2) {
+		else if (sjis_len < 2)
+		{
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
-		else {
+		else
+		{
 			fb_assert(SJIS1(tmp1));
 			fb_assert(SJIS2(tmp2));
 			*sjis_str++ = tmp1;
@@ -496,17 +518,18 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 
 	// See if we're only after a length estimate
 	if (eucj_str == NULL)
-		return (unicode_len);	/* worst case - all han character input */
+		return (unicode_len);	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = eucj_str;
-	while ((eucj_len) && (unicode_len > 1)) {
-		/* Step 1: Convert from UNICODE to JIS code */
+	while ((eucj_len) && (unicode_len > 1))
+	{
+		// Step 1: Convert from UNICODE to JIS code
 		const USHORT wide = *unicode_str++;
 
-		/* ASCII range characters map directly -- others go to the table */
+		// ASCII range characters map directly -- others go to the table
 		USHORT jis_ch;
 		if (wide <= 0x007F)
 			jis_ch = wide;
@@ -519,21 +542,24 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 			break;
 		}
 
-		/* Step 2: Convert from JIS code to EUC-J */
+		// Step 2: Convert from JIS code to EUC-J
 		const USHORT tmp1 = jis_ch / 256;
 		const USHORT tmp2 = jis_ch % 256;
-		if (tmp1 == 0) {		/* ASCII character */
+		if (tmp1 == 0)
+		{		// ASCII character
 			fb_assert(!(tmp2 & 0x80));
 			*eucj_str++ = tmp2;
 			eucj_len--;
 			unicode_len -= sizeof(*unicode_str);
 			continue;
 		}
-		if (eucj_len < 2) {
+		if (eucj_len < 2)
+		{
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
-		else {
+		else
+		{
 			fb_assert(!(tmp1 & 0x80));
 			fb_assert(!(tmp2 & 0x80));
 			*eucj_str++ = tmp1 | 0x80;
@@ -656,34 +682,39 @@ static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 	const USHORT src_start = euc_len;
 	*err_code = 0;
 
-/* Length estimate needed? */
+	// Length estimate needed?
 	if (sjis_str == NULL)
-		return (euc_len);		/* worst case */
+		return (euc_len);		// worst case
 
 	const UCHAR* const sjis_start = sjis_str;
-	while (euc_len && sjis_len) {
-		if (*euc_str & 0x80) {	/* Non-Ascii - High bit set */
+	while (euc_len && sjis_len)
+	{
+		if (*euc_str & 0x80)
+		{	// Non-Ascii - High bit set
 
 			UCHAR c1 = *euc_str++;
 
-			if (EUC1(c1)) {		/* It is a EUC */
+			if (EUC1(c1))
+			{		// It is a EUC
 				if (euc_len == 1) {
-					*err_code = CS_BAD_INPUT;	/* truncated EUC */
+					*err_code = CS_BAD_INPUT;	// truncated EUC
 					break;
 				}
 				UCHAR c2 = *euc_str++;
 				if (!(EUC2(c2))) {
-					*err_code = CS_BAD_INPUT;	/* Bad EUC */
+					*err_code = CS_BAD_INPUT;	// Bad EUC
 					break;
 				}
-				if (c1 == 0x8e) {	/* Kana */
+				if (c1 == 0x8e)
+				{	// Kana
 					sjis_len--;
 					*sjis_str++ = c2;
 					euc_len -= 2;
 				}
-				else {			/* Kanji */
+				else
+				{			// Kanji
 
-					if (sjis_len < 2) {	/*buffer full */
+					if (sjis_len < 2) {	// buffer full
 						*err_code = CS_TRUNCATION_ERROR;
 						break;
 					}
@@ -691,22 +722,22 @@ static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 					euc_len -= 2;
 					c1 ^= 0x80;
 					c2 ^= 0x80;
-					*sjis_str++ =
-						(USHORT) (c1 - 0x21) / 2 +
-						((c1 <= 0x5e) ? 0x81 : 0xc1);
-					if (c1 & 1)	/* odd */
+					*sjis_str++ = (USHORT) (c1 - 0x21) / 2 + ((c1 <= 0x5e) ? 0x81 : 0xc1);
+					if (c1 & 1)	// odd
 						*sjis_str++ = c2 + ((c2 <= 0x5f) ? 0x1f : 0x20);
 					else
 						*sjis_str++ = c2 + 0x7e;
 				}
 			}
-			else {				/* It is some bad character */
+			else
+			{				// It is some bad character
 
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
-		else {					/* ASCII */
+		else
+		{					// ASCII
 			euc_len--;
 			sjis_len--;
 			*sjis_str++ = *euc_str++;
@@ -741,24 +772,27 @@ static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 	const USHORT src_start = sjis_len;
 	*err_code = 0;
 	if (euc_str == NULL)
-		return (2 * sjis_len);	/* worst case */
+		return (2 * sjis_len);	// worst case
 
 	const UCHAR* const euc_start = euc_str;
-	while (sjis_len && euc_len) {
+	while (sjis_len && euc_len)
+	{
 
-		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
+		if (*sjis_str & 0x80)
+		{	// Non-Ascii - High bit set
 			const UCHAR c1 = *sjis_str++;
-			if (SJIS1(c1)) {	/* First byte is a KANJI */
-				if (sjis_len == 1) {	/* truncated KANJI */
+			if (SJIS1(c1))
+			{	// First byte is a KANJI
+				if (sjis_len == 1) {	// truncated KANJI
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				const UCHAR c2 = *sjis_str++;
-				if (!(SJIS2(c2))) {	/* Bad second byte */
+				if (!(SJIS2(c2))) {	// Bad second byte
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
-				if (euc_len < 2) {	/*buffer full */
+				if (euc_len < 2) {	// buffer full
 					*err_code = CS_TRUNCATION_ERROR;
 					break;
 				}
@@ -767,22 +801,25 @@ static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 				euc_len -= 2;
 				sjis_len -= 2;
 			}
-			else if (SJIS_SINGLE(c1)) {
-				if (euc_len < 2) {	/*buffer full */
+			else if (SJIS_SINGLE(c1))
+			{
+				if (euc_len < 2) {	// buffer full
 					*err_code = CS_TRUNCATION_ERROR;
 					break;
 				}
-				euc_len -= 2;	/* Kana */
+				euc_len -= 2;	// Kana
 				sjis_len--;
 				*euc_str++ = 0x8e;
 				*euc_str++ = c1;
 			}
-			else {				/* It is some bad character */
+			else
+			{				// It is some bad character
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
-		else {					/* it is a ASCII */
+		else
+		{					// it is a ASCII
 			euc_len--;
 			sjis_len--;
 			*euc_str++ = *sjis_str++;

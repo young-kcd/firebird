@@ -581,7 +581,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif
 
-	rem_port* port = alloc_port(NULL);
+	rem_port* const port = alloc_port(NULL);
 	port->port_status_vector = status_vector;
 	REMOTE_get_timeout_params(port, dpb);
 	status_vector[0] = isc_arg_gds;
@@ -935,7 +935,7 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  *	a port block.
  *
  **************************************/
-	rem_port* port = alloc_port(NULL);
+	rem_port* const port = alloc_port(NULL);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
@@ -973,7 +973,7 @@ rem_port* INET_server(int sock)
  *
  **************************************/
 	int n = 0;
-	rem_port* port = alloc_port(NULL);
+	rem_port* const port = alloc_port(NULL);
 	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
@@ -1185,7 +1185,7 @@ static rem_port* alloc_port(rem_port* const parent)
 		}
 	}
 
-	rem_port* port = new rem_port(rem_port::INET, INET_remote_buffer * 2);
+	rem_port* const port = new rem_port(rem_port::INET, INET_remote_buffer * 2);
 	REMOTE_get_timeout_params(port, 0);
 
 	TEXT buffer[BUFFER_SMALL];
@@ -1260,7 +1260,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		return port;
 	}
 
-	rem_port* new_port = alloc_port(port->port_parent);
+	rem_port* const new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1366,7 +1366,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-    rem_port* new_port = alloc_port(port->port_parent);
+    rem_port* const new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1978,7 +1978,7 @@ static rem_port* select_accept( rem_port* main_port)
  **************************************/
 	struct sockaddr_in address;
 
-	rem_port* port = alloc_port(main_port);
+	rem_port* const port = alloc_port(main_port);
 	socklen_t l = sizeof(address);
 	inet_ports->registerPort(port);
 

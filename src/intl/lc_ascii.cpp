@@ -493,7 +493,7 @@ const BYTE ASCII_SPACE			= 32;			// ASCII code for space
  */
 USHORT famasc_key_length(texttype* /*obj*/, USHORT inLen)
 {
-/* fb_assert (inLen <= LANGASCII_MAX_KEY); - possible upper logic error if true */
+	// fb_assert (inLen <= LANGASCII_MAX_KEY); - possible upper logic error if true
 	return (MIN(inLen, LANGASCII_MAX_KEY));
 }
 
@@ -517,12 +517,12 @@ USHORT famasc_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar, U
 	fb_assert(iOutLen <= LANGASCII_MAX_KEY);
 	fb_assert(iOutLen >= famasc_key_length(obj, iInLen));
 
-/* point inbuff at last character */
+	// point inbuff at last character
 	const BYTE* inbuff = pInChar + iInLen - 1;
 
 	if (obj->texttype_pad_option)
 	{
-		/* skip backwards over all spaces & reset input length */
+		// skip backwards over all spaces & reset input length
 		while ((inbuff >= pInChar) && (*inbuff == ASCII_SPACE))
 			inbuff--;
 	}
@@ -541,7 +541,8 @@ static bool all_spaces(const BYTE* s, SLONG len)
 {
 	fb_assert(s != NULL);
 
-	while (len-- > 0) {
+	while (len-- > 0)
+	{
 		if (*s++ != ASCII_SPACE)
 			return false;
 	}
@@ -560,7 +561,8 @@ SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const B
 	*error_flag = false;
 
 	const ULONG len = MIN(l1, l2);
-	for (ULONG i = 0; i < len; i++) {
+	for (ULONG i = 0; i < len; i++)
+	{
 		if (s1[i] == s2[i])
 			continue;
 		if (all_spaces(&s1[i], (SLONG) (l1 - i)))
@@ -573,12 +575,14 @@ SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const B
 		return 1;
 	}
 
-	if (l1 > len) {
+	if (l1 > len)
+	{
 		if (obj->texttype_pad_option && all_spaces(&s1[len], (SLONG) (l1 - len)))
 			return 0;
 		return 1;
 	}
-	if (l2 > len) {
+	if (l2 > len)
+	{
 		if (obj->texttype_pad_option && all_spaces(&s2[len], (SLONG) (l2 - len)))
 			return 0;
 		return -1;

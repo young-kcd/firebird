@@ -66,12 +66,13 @@ ULONG CV_unicode_to_nc(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (dest_ptr == NULL)
 		return ((ULONG) (src_len + 1) / 2);
 
 	const BYTE* const start = dest_ptr;
-	while ((src_len > 1) && dest_len) {
+	while ((src_len > 1) && dest_len)
+	{
 		const UNICODE uni = *((const UNICODE*) src_ptr);
 		const UCHAR ch = impl->csconvert_datatable[
 			((const USHORT*) impl->csconvert_misc)[(USHORT) uni / 256] + (uni % 256)];
@@ -84,7 +85,8 @@ ULONG CV_unicode_to_nc(csconvert* obj,
 		src_len -= 2;
 		dest_len -= 1;
 	}
-	if (src_len && !*err_code) {
+	if (src_len && !*err_code)
+	{
 		if (src_len == 1)
 			*err_code = CS_BAD_INPUT;
 		else
@@ -117,7 +119,7 @@ ULONG CV_wc_to_wc(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
 		return (src_len);
 
@@ -127,7 +129,8 @@ ULONG CV_wc_to_wc(csconvert* obj,
 	USHORT* dest_ptr = d;
 
 	const USHORT* const start = dest_ptr;
-	while ((src_len > 1) && (dest_len > 1)) {
+	while ((src_len > 1) && (dest_len > 1))
+	{
 		const UNICODE uni = *((const UNICODE*) src_ptr);
 		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)[
 			((const USHORT*) impl->csconvert_misc)[(USHORT) uni / 256] + (uni % 256)];
@@ -140,7 +143,8 @@ ULONG CV_wc_to_wc(csconvert* obj,
 		src_len -= 2;
 		dest_len -= 2;
 	}
-	if (src_len && !*err_code) {
+	if (src_len && !*err_code)
+	{
 		if (src_len == 1)
 			*err_code = CS_BAD_INPUT;
 		else
@@ -173,16 +177,16 @@ ULONG CV_nc_to_unicode(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (dest_ptr == NULL)
 		return (src_len * 2);
 
 	const BYTE* const start = dest_ptr;
-	while (src_len && (dest_len > 1)) {
+	while (src_len && (dest_len > 1))
+	{
 		const UNICODE ch = ((const UNICODE*) (impl->csconvert_datatable))[*src_ptr];
-		/* No need to check for CS_CONVERT_ERROR, all charsets
-		 * must convert to unicode.
-		 */
+		// No need to check for CS_CONVERT_ERROR, all charsets
+		// must convert to unicode.
 
 		*((UNICODE *) dest_ptr) = ch;
 		src_ptr++;
@@ -215,18 +219,20 @@ ULONG CV_wc_copy(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (dest_ptr == NULL)
 		return (src_len);
 
 	const BYTE* const start = dest_ptr;
-	while ((src_len > 1) && (dest_len > 1)) {
-		*dest_ptr++ = *src_ptr++;	/* first byte of unicode */
-		*dest_ptr++ = *src_ptr++;	/* 2nd   byte of unicode */
+	while ((src_len > 1) && (dest_len > 1))
+	{
+		*dest_ptr++ = *src_ptr++;	// first byte of unicode
+		*dest_ptr++ = *src_ptr++;	// 2nd   byte of unicode
 		src_len -= 2;
 		dest_len -= 2;
 	}
-	if (src_len && !*err_code) {
+	if (src_len && !*err_code)
+	{
 		if (src_len == 1)
 			*err_code = CS_BAD_INPUT;
 		else
@@ -258,12 +264,13 @@ ULONG eight_bit_convert(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (dest_ptr == NULL)
 		return (src_len);
 
 	const BYTE* const start = dest_ptr;
-	while (src_len && dest_len) {
+	while (src_len && dest_len)
+	{
 		const UCHAR ch = impl->csconvert_datatable[*src_ptr];
 		if ((ch == CS_CANT_MAP) && (*src_ptr != CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;

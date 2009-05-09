@@ -646,9 +646,9 @@ static bool accept_connection(rem_port* port, const P_CNCT*)
 
 
 static rem_port* alloc_port(rem_port* parent,
-							UCHAR * send_buffer,
+							UCHAR* send_buffer,
 							ULONG send_length,
-							UCHAR * receive_buffer,
+							UCHAR* receive_buffer,
 							ULONG receive_length)
 {
 /**************************************
@@ -662,7 +662,7 @@ static rem_port* alloc_port(rem_port* parent,
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* port = new rem_port(rem_port::XNET, 0);
+	rem_port* const port = new rem_port(rem_port::XNET, 0);
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
@@ -719,7 +719,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		return port;
 	}
 
- 	rem_port* new_port = NULL;
 	XCC parent_xcc = NULL;
 	XCC xcc = NULL;
 	TEXT name_buffer[BUFFER_TINY];
@@ -788,11 +787,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps) + (XNET_EVENT_SPACE));
 
 		// alloc new port and link xcc to it
-		new_port = alloc_port(NULL,
-							  channel_c2s_client_ptr,
-							  xcc->xcc_send_channel->xch_size,
-							  channel_s2c_client_ptr,
-							  xcc->xcc_recv_channel->xch_size);
+		rem_port* const new_port = alloc_port(NULL,
+											  channel_c2s_client_ptr, xcc->xcc_send_channel->xch_size,
+											  channel_s2c_client_ptr, xcc->xcc_recv_channel->xch_size);
 
 		port->port_async = new_port;
 		new_port->port_flags = port->port_flags & PORT_no_oob;
@@ -844,23 +841,19 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
  *
  **************************************/
 
- 	rem_port* new_port = NULL;
-	XCC parent_xcc = NULL;
 	XCC xcc = NULL;
 	TEXT name_buffer[BUFFER_TINY];
-	XPS xps = NULL;
-	XPM xpm = NULL;
 
 	try {
 
 		// make a new xcc
 
-		parent_xcc = port->port_xcc;
-		xps = (XPS) parent_xcc->xcc_mapped_addr;
+		XCC parent_xcc = port->port_xcc;
+		XPS xps = (XPS) parent_xcc->xcc_mapped_addr;
 
 		xcc = new struct xcc;
 
-		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
+		XPM xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
 		xcc->xcc_slot = parent_xcc->xcc_slot;
 		DuplicateHandle(GetCurrentProcess(), parent_xcc->xcc_proc_h,
@@ -922,11 +915,9 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			((UCHAR *) xcc->xcc_mapped_addr + sizeof(struct xps));
 
 		// alloc new port and link xcc to it
-		new_port = alloc_port(NULL,
-							  channel_s2c_client_ptr,
-							  xcc->xcc_send_channel->xch_size,
-							  channel_c2s_client_ptr,
-							  xcc->xcc_recv_channel->xch_size);
+		rem_port* const new_port = alloc_port(NULL,
+											  channel_s2c_client_ptr, xcc->xcc_send_channel->xch_size,
+											  channel_c2s_client_ptr, xcc->xcc_recv_channel->xch_size);
 
 		port->port_async = new_port;
 		new_port->port_xcc = xcc;
@@ -1319,12 +1310,10 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		UCHAR* const channel_c2s_client_ptr = start_ptr;
 		UCHAR* const channel_s2c_client_ptr = start_ptr + avail;
 
-		rem_port* port =
+		rem_port* const port =
 			alloc_port(NULL,
-					   channel_c2s_client_ptr,
-					   xcc->xcc_send_channel->xch_size,
-					   channel_s2c_client_ptr,
-					   xcc->xcc_recv_channel->xch_size);
+					   channel_c2s_client_ptr, xcc->xcc_send_channel->xch_size,
+					   channel_s2c_client_ptr, xcc->xcc_recv_channel->xch_size);
 
 		status_vector[1] = FB_SUCCESS;
 		port->port_status_vector = status_vector;
@@ -1342,7 +1331,8 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			cleanup_comm(xcc);
 		else if (xpm)
 			cleanup_mapping(xpm);
-		else if (file_handle) {
+		else if (file_handle)
+		{
 			if (mapped_address) {
 				UnmapViewOfFile(mapped_address);
 			}
@@ -1790,7 +1780,8 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 	while (bytecount && !xnet_shutdown)
 	{
 #ifdef SUPERCLIENT
-		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
+		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+		{
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_lost_db_connection, 0);
@@ -1804,7 +1795,8 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 		else
 			to_copy = xdrs->x_handy;
 
-		if (xdrs->x_handy) {
+		if (xdrs->x_handy)
+		{
 			if (to_copy == sizeof(SLONG))
 				*((SLONG*)buff)	= *((SLONG*)xdrs->x_private);
 			else
@@ -2598,10 +2590,8 @@ static rem_port* get_server_port(ULONG client_pid,
 		// finally, allocate and set the port structure for this client
 
 		port = alloc_port(NULL,
-						  channel_s2c_data_buffer,
-						  xcc->xcc_send_channel->xch_size,
-						  channel_c2s_data_buffer,
-						  xcc->xcc_recv_channel->xch_size);
+						  channel_s2c_data_buffer, xcc->xcc_send_channel->xch_size,
+						  channel_c2s_data_buffer, xcc->xcc_recv_channel->xch_size);
 
 		port->port_xcc = xcc;
 		port->port_server_flags |= SRVR_server;

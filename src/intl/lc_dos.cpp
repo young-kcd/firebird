@@ -547,7 +547,8 @@ ULONG fam1_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutL
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
+	while (iLen && iOutLen)
+	{
 		*pOutStr++ = LOCALE_UPPER(*pStr);
 		pStr++;
 		iLen--;
@@ -568,7 +569,8 @@ ULONG fam1_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutL
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
+	while (iLen && iOutLen)
+	{
 		*pOutStr++ = LOCALE_LOWER(*pStr);
 		pStr++;
 		iLen--;

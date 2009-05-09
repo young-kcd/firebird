@@ -27,11 +27,10 @@
 #include "cv_ksc.h"
 #include "ld_proto.h"
 
-/*
-*	KSC-5601 -> unicode
-*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting
-*	KSC-5601 to EUC is not needed.
-*/
+// KSC-5601 -> unicode
+// % KSC-5601 is same to EUC cs1(codeset 1). Then converting
+// KSC-5601 to EUC is not needed.
+
 
 ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 						   ULONG src_len,
@@ -65,29 +64,34 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 	USHORT wide;
 	USHORT this_len;
 	const USHORT* const start = dest_ptr;
-	while (src_len && (dest_len > 1)) {
-		if (*src_ptr & 0x80) {
+	while (src_len && (dest_len > 1))
+	{
+		if (*src_ptr & 0x80)
+		{
 			const UCHAR c1 = *src_ptr++;
 
-			if (KSC1(c1)) {	/* first byte is KSC */
+			if (KSC1(c1))
+			{	// first byte is KSC
 				if (src_len == 1) {
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				const UCHAR c2 = *src_ptr++;
-				if (!(KSC2(c2))) {	/* Bad second byte */
+				if (!(KSC2(c2))) {	// Bad second byte
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				wide = (c1 << 8) + c2;
 				this_len = 2;
 			}
-			else {
+			else
+			{
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
-		else {					/* it is ASCII */
+		else
+		{					// it is ASCII
 			wide = *src_ptr++;
 			this_len = 1;
 		}
@@ -143,7 +147,8 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = ksc_str;
-	while (ksc_len && unicode_len > 1) {
+	while (ksc_len && unicode_len > 1)
+	{
 		const USHORT wide = *unicode_str++;
 
 		const USHORT ksc_ch = ((const USHORT*) impl->csconvert_datatable)
@@ -155,7 +160,8 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 
 		const int tmp1 = ksc_ch / 256;
 		const int tmp2 = ksc_ch % 256;
-		if (tmp1 == 0) {		/* ASCII character */
+		if (tmp1 == 0)
+		{		// ASCII character
 
 			fb_assert((UCHAR(tmp2) & 0x80) == 0);
 
@@ -164,11 +170,13 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 			unicode_len -= sizeof(*unicode_str);
 			continue;
 		}
-		if (ksc_len < 2) {
+		if (ksc_len < 2)
+		{
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
-		else {
+		else
+		{
 			fb_assert(KSC1(tmp1));
 			fb_assert(KSC2(tmp2));
 			*ksc_str++ = tmp1;
@@ -176,7 +184,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 			unicode_len -= sizeof(*unicode_str);
 			ksc_len -= 2;
 		}
-	}							/* end-while */
+	}							// end-while
 	if (unicode_len && !*err_code) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
@@ -192,10 +200,12 @@ INTL_BOOL CVKSC_check_ksc(charset*, // cs,
 {
 	const UCHAR* ksc_str_start = ksc_str;
 
-	while (ksc_len--) {
+	while (ksc_len--)
+	{
 		const UCHAR c1 = *ksc_str;
-		if (KSC1(c1)) {			/* Is it KSC-5601 ? */
-			if (ksc_len == 0)	/* truncated KSC */
+		if (KSC1(c1))
+		{			// Is it KSC-5601 ?
+			if (ksc_len == 0)	// truncated KSC
 			{
 				if (offending_position)
 					*offending_position = ksc_str - ksc_str_start;
@@ -205,13 +215,13 @@ INTL_BOOL CVKSC_check_ksc(charset*, // cs,
 			ksc_str += 2;
 			ksc_len -= 1;
 		}
-		else if (c1 > 0x7f)		/* error */
+		else if (c1 > 0x7f)		// error
 		{
 			if (offending_position)
 				*offending_position = ksc_str - ksc_str_start;
 			return false;
 		}
-		else					/* ASCII */
+		else					// ASCII
 			ksc_str++;
 	}
 	return (true);

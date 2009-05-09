@@ -31,16 +31,16 @@
 #include "fb_exception.h"
 
 #ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h> /* for MAXPATHLEN */
+#include <sys/param.h> // for MAXPATHLEN
 #endif
 #include <stdio.h>
 
 using namespace Firebird;
 
-/* Commented out to make Linux version work because it is inaccessiable on all
-  known platforms. Nickolay Samofatov, 10 Sept 2002
-void gds__log(UCHAR*, ...);
-*/
+// Commented out to make Linux version work because it is inaccessiable on all
+// known platforms. Nickolay Samofatov, 10 Sept 2002
+// void gds__log(UCHAR*, ...);
+
 
 #define	EXTERN_texttype(name)	INTL_BOOL name (texttype*, charset*, const ASCII*, const ASCII*, USHORT, const UCHAR*, ULONG, const ASCII*)
 // #define EXTERN_convert(name)	INTL_BOOL name (csconvert*, const ASCII*, const ASCII*)
@@ -99,10 +99,10 @@ EXTERN_texttype(CYRL_c0_init);
 EXTERN_texttype(CYRL_c1_init);
 EXTERN_texttype(CYRL_c2_init);
 
-/* Latin 1 character set */
+// Latin 1 character set
 EXTERN_texttype(ISO88591_cp_init);
 
-/* Latin 1 collations */
+// Latin 1 collations
 EXTERN_texttype(ISO88591_39_init);
 EXTERN_texttype(ISO88591_40_init);
 EXTERN_texttype(ISO88591_41_init);
@@ -120,10 +120,10 @@ EXTERN_texttype(ISO88591_54_init);
 EXTERN_texttype(ISO88591_55_init);
 EXTERN_texttype(ISO88591_56_init);
 
-/* Latin 2 character set */
+// Latin 2 character set
 EXTERN_texttype (ISO88592_cp_init);
 
-/* latin 2 collations */
+// latin 2 collations
 EXTERN_texttype (ISO88592_c1_init);
 EXTERN_texttype (ISO88592_c2_init);
 EXTERN_texttype (ISO88592_c3_init);

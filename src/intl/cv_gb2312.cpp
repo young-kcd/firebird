@@ -65,35 +65,40 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 	USHORT wide;
 	USHORT this_len;
 	const USHORT* const start = dest_ptr;
-	while ((src_len) && (dest_len > 1)) {
-		if (*src_ptr & 0x80) {
+	while ((src_len) && (dest_len > 1))
+	{
+		if (*src_ptr & 0x80)
+		{
 			const UCHAR c1 = *src_ptr++;
 
-			if (GB1(c1)) {		/* first byte is GB2312 */
+			if (GB1(c1))
+			{		// first byte is GB2312
 				if (src_len == 1) {
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				const UCHAR c2 = *src_ptr++;
-				if (!(GB2(c2))) {	/* Bad second byte */
+				if (!(GB2(c2))) {	// Bad second byte
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				wide = (c1 << 8) + c2;
 				this_len = 2;
 			}
-			else {
+			else
+			{
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
-		else {					/* it is ASCII */
+		else
+		{					// it is ASCII
 
 			wide = *src_ptr++;
 			this_len = 1;
 		}
 
-		/* Convert from GB2312 to UNICODE */
+		// Convert from GB2312 to UNICODE
 		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
 			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
@@ -136,16 +141,17 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (gb_str == NULL)
-		return (unicode_len);	/* worst case - all han character input */
+		return (unicode_len);	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = gb_str;
-	while ((gb_len) && (unicode_len > 1)) {
-		/* Convert from UNICODE to GB2312 code */
+	while ((gb_len) && (unicode_len > 1))
+	{
+		// Convert from UNICODE to GB2312 code
 		const USHORT wide = *unicode_str++;
 
 		const USHORT gb_ch = ((const USHORT*) impl->csconvert_datatable)
@@ -157,7 +163,8 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 
 		const int tmp1 = gb_ch / 256;
 		const int tmp2 = gb_ch % 256;
-		if (tmp1 == 0) {		/* ASCII character */
+		if (tmp1 == 0)
+		{		// ASCII character
 
 			fb_assert((UCHAR(tmp2) & 0x80) == 0);
 
@@ -166,11 +173,13 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 			unicode_len -= sizeof(*unicode_str);
 			continue;
 		}
-		if (gb_len < 2) {
+		if (gb_len < 2)
+		{
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
-		else {
+		else
+		{
 			fb_assert(GB1(tmp1));
 			fb_assert(GB2(tmp2));
 			*gb_str++ = tmp1;

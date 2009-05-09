@@ -59,35 +59,40 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 	USHORT wide;
 	USHORT this_len;
 	const USHORT* const start = dest_ptr;
-	while ((src_len) && (dest_len > 1)) {
-		if (*src_ptr & 0x80) {
+	while ((src_len) && (dest_len > 1))
+	{
+		if (*src_ptr & 0x80)
+		{
 			const UCHAR c1 = *src_ptr++;
 
-			if (BIG51(c1)) {	/* first byte is Big5 */
+			if (BIG51(c1))
+			{	// first byte is Big5
 				if (src_len == 1) {
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				const UCHAR c2 = *src_ptr++;
-				if (!(BIG52(c2))) {	/* Bad second byte */
+				if (!(BIG52(c2))) {	// Bad second byte
 					*err_code = CS_BAD_INPUT;
 					break;
 				}
 				wide = (c1 << 8) + c2;
 				this_len = 2;
 			}
-			else {
+			else
+			{
 				*err_code = CS_BAD_INPUT;
 				break;
 			}
 		}
-		else {					/* it is ASCII */
+		else
+		{					// it is ASCII
 
 			wide = *src_ptr++;
 			this_len = 1;
 		}
 
-		/* Convert from BIG5 to UNICODE */
+		// Convert from BIG5 to UNICODE
 		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
 			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
@@ -130,16 +135,17 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (big5_str == NULL)
-		return (unicode_len);	/* worst case - all han character input */
+		return (unicode_len);	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = big5_str;
-	while ((big5_len) && (unicode_len > 1)) {
-		/* Convert from UNICODE to BIG5 code */
+	while ((big5_len) && (unicode_len > 1))
+	{
+		// Convert from UNICODE to BIG5 code
 		const USHORT wide = *unicode_str++;
 
 		const USHORT big5_ch = ((const USHORT*) impl->csconvert_datatable)
@@ -152,7 +158,8 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 		// int ???
 		const int tmp1 = big5_ch / 256;
 		const int tmp2 = big5_ch % 256;
-		if (tmp1 == 0) {		/* ASCII character */
+		if (tmp1 == 0)
+		{		// ASCII character
 
 			fb_assert((UCHAR(tmp2) & 0x80) == 0);
 
@@ -161,11 +168,13 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 			unicode_len -= sizeof(*unicode_str);
 			continue;
 		}
-		if (big5_len < 2) {
+		if (big5_len < 2)
+		{
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
-		else {
+		else
+		{
 			fb_assert(BIG51(tmp1));
 			fb_assert(BIG52(tmp2));
 			*big5_str++ = tmp1;
@@ -203,7 +212,7 @@ INTL_BOOL CVBIG5_check_big5(charset*, // cs,
 
 		if (BIG51(c1))	// Is it  BIG-5
 		{
-			if (big5_len == 0)	/* truncated BIG-5 */
+			if (big5_len == 0)	// truncated BIG-5
 			{
 				if (offending_position)
 					*offending_position = big5_str - big5_str_start;

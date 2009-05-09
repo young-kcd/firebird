@@ -333,7 +333,7 @@ rem_port* WNET_connect(const TEXT*		name,
  *	connect is for a server process.
  *
  **************************************/
-	rem_port* port = alloc_port(0);
+	rem_port* const port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
@@ -355,7 +355,8 @@ rem_port* WNET_connect(const TEXT*		name,
 				break;
 			}
 			const ISC_STATUS status = GetLastError();
-			if (status != ERROR_PIPE_BUSY) {
+			if (status != ERROR_PIPE_BUSY)
+			{
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
 				disconnect(port);
 				return NULL;
@@ -473,7 +474,7 @@ rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  *	a port block.
  *
  **************************************/
-	rem_port* port = alloc_port(0);
+	rem_port* const port = alloc_port(0);
 	port->port_status_vector = status_vector;
 	status_vector[0] = isc_arg_gds;
 	status_vector[1] = 0;
@@ -502,7 +503,7 @@ rem_port* WNET_server(void* handle)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
-	rem_port* port = alloc_port(0);
+	rem_port* const port = alloc_port(0);
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) handle;
 
@@ -655,7 +656,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 		p = str_pid;
 	}
 
-	rem_port* new_port = alloc_port(port->port_parent);
+	rem_port* const new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
@@ -696,11 +697,11 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
  *	generate a unique id based on connection.
  *
  **************************************/
-	rem_port* new_port = NULL;  // If this is the client, we will return NULL
 
 	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ?
 		++event_counter : GetCurrentProcessId();
-	vport->port_async = new_port = alloc_port(vport->port_parent);
+	rem_port* const new_port = alloc_port(vport->port_parent);
+	vport->port_async = new_port;
 	new_port->port_server_flags = vport->port_server_flags;
 	new_port->port_flags = vport->port_flags & PORT_no_oob;
 

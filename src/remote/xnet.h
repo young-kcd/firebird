@@ -94,7 +94,7 @@ typedef struct xch
 {
     ULONG		xch_length;					// message length
     ULONG		xch_size;					// channel data size
-    USHORT		xch_flags;					// flags
+    USHORT		xch_flags;					// flags, UNUSED
 	ULONG		xch_dummy1;					// for binary compatibility
 	ULONG		xch_dummy2;					// with 32-bit builds
 } *XCH;
@@ -140,7 +140,7 @@ typedef struct xps
     PID_T       xps_client_proc_id;			// client's process id
     USHORT      xps_flags;					// flags word
     struct xch  xps_channels[4];			// comm channels
-    ULONG       xps_data[1];				// start of data area
+    ULONG       xps_data[1];				// start of data area, UNUSED at least directly
 } *XPS;
 
 // XPS flags
@@ -175,21 +175,21 @@ const size_t XNET_CONNECT_RESPONZE_SIZE	= sizeof(XNET_RESPONSE);
 
 // Windows names used to identify various named objects
 
-const char* XNET_MAPPED_FILE_NAME		= "%s_MAP_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_MAPPED_FILE_NAME		= "%s_MAP_%"ULONGFORMAT"_%"ULONGFORMAT;
 
-const char* XNET_CONNECT_MAP			= "%s_CONNECT_MAP";
-const char* XNET_CONNECT_MUTEX			= "%s_CONNECT_MUTEX";
-const char* XNET_CONNECT_EVENT			= "%s_CONNECT_EVENT";
-const char* XNET_RESPONSE_EVENT			= "%s_RESPONSE_EVENT";
+const char* const XNET_CONNECT_MAP			= "%s_CONNECT_MAP";
+const char* const XNET_CONNECT_MUTEX			= "%s_CONNECT_MUTEX";
+const char* const XNET_CONNECT_EVENT			= "%s_CONNECT_EVENT";
+const char* const XNET_RESPONSE_EVENT			= "%s_RESPONSE_EVENT";
 
-const char* XNET_E_C2S_DATA_CHAN_FILLED	= "%s_E_C2S_DATA_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
-const char* XNET_E_C2S_DATA_CHAN_EMPTED	= "%s_E_C2S_DATA_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
-const char* XNET_E_S2C_DATA_CHAN_FILLED	= "%s_E_S2C_DATA_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
-const char* XNET_E_S2C_DATA_CHAN_EMPTED	= "%s_E_S2C_DATA_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_C2S_DATA_CHAN_FILLED	= "%s_E_C2S_DATA_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_C2S_DATA_CHAN_EMPTED	= "%s_E_C2S_DATA_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_S2C_DATA_CHAN_FILLED	= "%s_E_S2C_DATA_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_S2C_DATA_CHAN_EMPTED	= "%s_E_S2C_DATA_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
 
-const char* XNET_E_C2S_EVNT_CHAN_FILLED	= "%s_E_C2S_EVNT_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
-const char* XNET_E_C2S_EVNT_CHAN_EMPTED	= "%s_E_C2S_EVNT_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
-const char* XNET_E_S2C_EVNT_CHAN_FILLED	= "%s_E_S2C_EVNT_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
-const char* XNET_E_S2C_EVNT_CHAN_EMPTED	= "%s_E_S2C_EVNT_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_C2S_EVNT_CHAN_FILLED	= "%s_E_C2S_EVNT_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_C2S_EVNT_CHAN_EMPTED	= "%s_E_C2S_EVNT_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_S2C_EVNT_CHAN_FILLED	= "%s_E_S2C_EVNT_FILLED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_E_S2C_EVNT_CHAN_EMPTED	= "%s_E_S2C_EVNT_EMPTED_%"ULONGFORMAT"_%"ULONGFORMAT"_%"ULONGFORMAT;
 
 #endif // REMOTE_XNET_H

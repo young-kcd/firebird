@@ -54,7 +54,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 
 
 
-TEXTTYPE_ENTRY(BIG5_init)
+TEXTTYPE_ENTRY3(BIG5_init)
 {
 	static const ASCII POSIX[] = "C.BIG5";
 
@@ -65,8 +65,6 @@ TEXTTYPE_ENTRY(BIG5_init)
 #ifdef NOT_USED_OR_REPLACED
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
- */
-/*
  *	Note: This function expects Multibyte input
  */
 static ULONG big5_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
@@ -77,7 +75,8 @@ static ULONG big5_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
+	while (iLen && iOutLen)
+	{
 		BYTE c = *pStr++;
 		if (waiting_for_big52 || BIG51(c)) {
 			waiting_for_big52 = !waiting_for_big52;
@@ -91,15 +90,13 @@ static ULONG big5_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
+		return (INTL_BAD_STR_LENGTH);			// Must have ran out of output space
 	return (pOutStr - p);
 }
 
 
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
- */
-/*
  *	Note: This function expects Multibyte input
  */
 static ULONG big5_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
@@ -110,7 +107,8 @@ static ULONG big5_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen) {
+	while (iLen && iOutLen)
+	{
 		BYTE c = *pStr++;
 		if (waiting_for_big52 || BIG51(c)) {
 			waiting_for_big52 = !waiting_for_big52;
@@ -124,7 +122,7 @@ static ULONG big5_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
+		return (INTL_BAD_STR_LENGTH);			// Must have ran out of output space
 	return (pOutStr - p);
 }
 #endif //NOT_USED_OR_REPLACED
