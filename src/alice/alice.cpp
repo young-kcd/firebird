@@ -164,16 +164,6 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 			database = *argv++;
 
-#if defined (WIN95)
-//  There is a small problem with SuperServer on NT, since it is a
-//  Windows app, it uses the ANSI character set.  All the console
-//  apps use the OEM character set.  We need to pass the database
-//  name in the correct character set.
-// if (GetConsoleCP != GetACP())
-//    OemToAnsi(database, database);
-//
-#else
-#endif
 			continue;
 		}
 		ALICE_down_case(*argv++, string, sizeof(string));
