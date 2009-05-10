@@ -3324,7 +3324,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	ULONG flag = req_null;
 	double d;
 
-	try 
+	try
 	{
 		// Handle each variety separately
 
@@ -3447,7 +3447,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	}
 	catch (const Firebird::Exception&)
 	{
-		// close stream 
+		// close stream
 		// ignore any error during it to keep original
 		try
 		{
@@ -3455,7 +3455,9 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			request->req_flags &= ~req_null;
 			request->req_flags |= flag;
 		}
-		catch (const Firebird::Exception&) { }
+		catch (const Firebird::Exception&)
+		{
+		}
 
 		throw;
 	}

@@ -1491,7 +1491,7 @@ static void disconnect(rem_port* const port)
 		port->port_async = NULL;
 	}
 
-	// If this is a sub-port, unlink it from it's parent
+	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();
 
 	inet_ports->unRegisterPort(port);

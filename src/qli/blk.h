@@ -51,5 +51,5 @@ BLKDEF (type_map, qli_map, 0)
 BLKDEF (type_qpr, qli_proc, 0)
 BLKDEF (type_qfn, qli_func, 0)
 BLKDEF (type_qfl, qli_filter, 0)
-BLKDEF (type_fun, qli_fun, 0) //, sizeof(dsc)) // sizeof (((FUN) NULL)->fun_arg[0]))
+BLKDEF (type_fun, qli_fun, 0) 			//, sizeof(dsc)) // sizeof (((FUN) NULL)->fun_arg[0]))
 BLKDEF (type_rlb, qli_rlb, 0)			// Request language block

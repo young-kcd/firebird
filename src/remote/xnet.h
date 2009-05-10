@@ -175,9 +175,9 @@ const size_t XNET_CONNECT_RESPONZE_SIZE	= sizeof(XNET_RESPONSE);
 
 // Windows names used to identify various named objects
 
-const char* const XNET_MAPPED_FILE_NAME		= "%s_MAP_%"ULONGFORMAT"_%"ULONGFORMAT;
+const char* const XNET_MAPPED_FILE_NAME			= "%s_MAP_%"ULONGFORMAT"_%"ULONGFORMAT;
 
-const char* const XNET_CONNECT_MAP			= "%s_CONNECT_MAP";
+const char* const XNET_CONNECT_MAP				= "%s_CONNECT_MAP";
 const char* const XNET_CONNECT_MUTEX			= "%s_CONNECT_MUTEX";
 const char* const XNET_CONNECT_EVENT			= "%s_CONNECT_EVENT";
 const char* const XNET_RESPONSE_EVENT			= "%s_RESPONSE_EVENT";

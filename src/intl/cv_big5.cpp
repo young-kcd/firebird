@@ -137,7 +137,7 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 
 	// See if we're only after a length estimate
 	if (big5_str == NULL)
-		return (unicode_len);	// worst case - all han character input
+		return unicode_len;	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;

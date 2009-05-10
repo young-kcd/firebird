@@ -158,7 +158,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 
 	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
-		return (sjis_len * 2);	// worst case - all ascii input
+		return sjis_len * 2;	// worst case - all ascii input
 
 	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
 	USHORT* dest_ptr = d;
@@ -431,7 +431,7 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 
 	// See if we're only after a length estimate
 	if (sjis_str == NULL)
-		return (unicode_len);	// worst case - all han character input
+		return unicode_len;	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;
@@ -524,7 +524,7 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = eucj_str;
-	while ((eucj_len) && (unicode_len > 1))
+	while (eucj_len && unicode_len > 1)
 	{
 		// Step 1: Convert from UNICODE to JIS code
 		const USHORT wide = *unicode_str++;
@@ -684,7 +684,7 @@ static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len,
 
 	// Length estimate needed?
 	if (sjis_str == NULL)
-		return (euc_len);		// worst case
+		return euc_len;		// worst case
 
 	const UCHAR* const sjis_start = sjis_str;
 	while (euc_len && sjis_len)
@@ -772,7 +772,7 @@ static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len,
 	const USHORT src_start = sjis_len;
 	*err_code = 0;
 	if (euc_str == NULL)
-		return (2 * sjis_len);	// worst case
+		return 2 * sjis_len;	// worst case
 
 	const UCHAR* const euc_start = euc_str;
 	while (sjis_len && euc_len)

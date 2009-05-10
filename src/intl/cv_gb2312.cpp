@@ -65,7 +65,7 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 	USHORT wide;
 	USHORT this_len;
 	const USHORT* const start = dest_ptr;
-	while ((src_len) && (dest_len > 1))
+	while (src_len && dest_len > 1)
 	{
 		if (*src_ptr & 0x80)
 		{
@@ -143,13 +143,13 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 
 	// See if we're only after a length estimate
 	if (gb_str == NULL)
-		return (unicode_len);	// worst case - all han character input
+		return unicode_len;	// worst case - all han character input
 
 	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
 	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = gb_str;
-	while ((gb_len) && (unicode_len > 1))
+	while (gb_len && unicode_len > 1)
 	{
 		// Convert from UNICODE to GB2312 code
 		const USHORT wide = *unicode_str++;

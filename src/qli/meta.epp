@@ -125,7 +125,6 @@ static const USHORT blr_dtypes[] =
 // table used to determine capabilities, checking for specific
 // fields in system relations
 
-
 struct rfr_tab_t
 {
 	const TEXT* relation;
@@ -253,7 +252,6 @@ void MET_define_index( qli_syntax* node)
 		rollback_update(database);
 		ERRQ_database_error(database, gds_status);
 	END_ERROR;
-
 
 	// at this point force garbage collection of any index segments left over
 	// from previous failures.  The system transaction (which might notice them
@@ -2754,7 +2752,7 @@ static void get_database_type( qli_dbb* new_dbb)
 				int count = *q++;
 				while (count--)
 				{
-					//new_dbb->dbb_type = *q++; // Not used
+					//new_dbb->dbb_type = *q; // Not used
 					++q;
 					if (*q++ == isc_info_db_class_access)
 						break;

@@ -5177,7 +5177,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (RecordSource**) & node->nod_arg[e_stat_rsb];
+		rsb_ptr = (RecordSource**) &node->nod_arg[e_stat_rsb];
 		break;
 
 	case nod_ansi_all:
@@ -5190,7 +5190,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
-		rsb_ptr = (RecordSource**) & node->nod_arg[e_any_rsb];
+		rsb_ptr = (RecordSource**) &node->nod_arg[e_any_rsb];
 		break;
 
 	case nod_like:

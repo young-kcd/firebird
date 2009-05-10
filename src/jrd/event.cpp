@@ -1415,7 +1415,7 @@ void EventManager::watcher_thread()
 
 			prb* process = (prb*) SRQ_ABS_PTR(m_processOffset);
 			process->prb_flags &= ~PRB_wakeup;
-			
+
 			const SLONG value = ISC_event_clear(&process->prb_event);
 
 			if (process->prb_flags & PRB_pending)

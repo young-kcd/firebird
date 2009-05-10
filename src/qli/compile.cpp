@@ -2103,5 +2103,3 @@ static int string_length(const dsc* desc)
 
 	return DSC_string_length(desc);
 }
-
-
