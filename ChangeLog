@@ -1,3 +1,41 @@
+2009-05-10 17:23  asfernandes
+
+	* firebird2/src/: intl/cv_big5.cpp (1.22), intl/cv_gb2312.cpp
+	(1.21), intl/cv_jis.cpp (1.26), jrd/cmp.cpp (1.342), jrd/event.cpp
+	(1.97), jrd/evl.cpp (1.298), qli/blk.h (1.20), qli/compile.cpp
+	(1.42), qli/meta.epp (1.82), remote/inet.cpp (1.287), remote/xnet.h
+	(1.22):
+
+	Misc
+
+2009-05-10 12:26  robocop
+
+	* firebird2/src/jrd/pag.cpp (1.207):
+
+	Cleanup.
+
+2009-05-10 12:09  robocop
+
+	* firebird2/src/alice/alice.cpp (1.115):
+
+	Cleanup.
+
+2009-05-09 15:46  robocop
+
+	* firebird2/src/: intl/cs_gb2312.cpp (1.6), intl/cs_jis.cpp (1.11),
+	intl/cs_unicode_fss.cpp (1.7), intl/cs_unicode_ucs2.cpp (1.8),
+	intl/cv_big5.cpp (1.21), intl/cv_gb2312.cpp (1.20), intl/cv_jis.cpp
+	(1.25), intl/cv_ksc.cpp (1.22), intl/cv_narrow.cpp (1.16),
+	intl/cv_unicode_fss.cpp (1.14), intl/kanji.cpp (1.12),
+	intl/lc_ascii.cpp (1.28), intl/lc_big5.cpp (1.17), intl/lc_dos.cpp
+	(1.15), intl/lc_jis.cpp (1.18), intl/lc_ksc.cpp (1.20),
+	intl/lc_narrow.cpp (1.38), intl/ld.cpp (1.40),
+	intl/utils/maptest.cpp (1.7), remote/inet.cpp (1.286),
+	remote/xnet.cpp (1.135), remote/xnet.h (1.21),
+	remote/os/win32/wnet.cpp (1.80):
+
+	Style.
+
 2009-05-08 17:31  dimitr
 
 	* firebird2/src/remote/remote.cpp (1.89):
