@@ -113,6 +113,7 @@ void	eat_blob(BurpGlobals* tdgbl);
 void	eat_text(BurpGlobals* tdgbl);
 void	eat_text2(BurpGlobals* tdgbl);
 burp_rel*	find_relation(BurpGlobals* tdgbl, const TEXT*);
+void	fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
 // returned value is not checked by the caller!
@@ -1177,6 +1178,97 @@ burp_rel* find_relation(BurpGlobals* tdgbl, const TEXT* name)
 	// msg 35 can't find relation %s
 
 	return NULL;
+}
+
+void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class)
+{
+/**************************************
+ *
+ *	f i x _ s e c u r i t y _ c l a s s _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Reassign a proper (unique) name for auto-generated
+ *  security classes.
+ *
+ **************************************/
+
+	if (strncmp(sec_class, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+		return;
+
+	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
+		return;
+
+	ISC_STATUS_ARRAY status_vector;
+
+	isc_req_handle& handle = tdgbl->handles_fix_security_class_name_req_handle1;
+
+	if (!handle)
+	{
+		UCHAR blr_buffer[BUFFER_TINY];
+		UCHAR* blr = blr_buffer;
+
+		add_byte(blr, blr_version5);
+		add_byte(blr, blr_begin);
+
+		add_byte(blr, blr_message);
+		add_byte(blr, 0);
+		add_word(blr, 1);
+
+		add_byte(blr, blr_int64);
+		add_byte(blr, 0);
+
+		add_byte(blr, blr_send);
+		add_byte(blr, 0);
+
+		add_byte(blr, blr_begin);
+		add_byte(blr, blr_assignment);
+	
+		add_byte(blr, blr_gen_id);
+		add_string(blr, SQL_SECCLASS_GENERATOR);
+	
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_int64);
+		add_byte(blr, 0);
+		add_int64(blr, 1);
+
+		add_byte(blr, blr_parameter);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+
+		add_byte(blr, blr_end);
+		add_byte(blr, blr_end);
+		add_byte(blr, blr_eoc);
+
+		const USHORT blr_length = blr - blr_buffer;
+		fb_assert(blr_length <= sizeof(blr_buffer));
+
+		if (isc_compile_request(status_vector, &DB, &handle,
+							    blr_length, (const SCHAR*) blr_buffer))
+		{
+			BURP_error_redirect(status_vector, 316);
+			// msg 316 Failed while fixing the security class name
+		}
+	}
+
+	if (isc_start_request(status_vector, &handle, &gds_trans, 0))
+	{
+		BURP_error_redirect(status_vector, 316);
+		// msg 316 Failed while fixing the security class name
+	}
+
+	SINT64 id = 0;
+
+	if (isc_receive(status_vector, &handle, 0, sizeof(SINT64), &id, 0))
+	{
+		BURP_error_redirect(status_vector, 316);
+		// msg 316 Failed while fixing the security class name
+	}
+
+	fb_assert(id);
+
+	snprintf(sec_class, MAX_SQL_IDENTIFIER_SIZE, "%s%"QUADFORMAT"d", SQL_SECCLASS_PREFIX, id);
 }
 
 void general_on_error()
@@ -3062,8 +3154,8 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 			case att_field_security_class:
 				GET_TEXT(X.RDB$SECURITY_CLASS);
-				if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
-					X.RDB$SECURITY_CLASS.NULL = FALSE;
+				fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS);
+				X.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
 			case att_field_query_name:
@@ -4840,8 +4932,8 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_security_class:
 					GET_TEXT(X.RDB$SECURITY_CLASS);
-					if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
-						X.RDB$SECURITY_CLASS.NULL = FALSE;
+					fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS);
+					X.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
 				case att_procedure_owner_name:
@@ -4951,8 +5043,8 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_security_class:
 					GET_TEXT(X.RDB$SECURITY_CLASS);
-					if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
-						X.RDB$SECURITY_CLASS.NULL = FALSE;
+					fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS);
+					X.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
 				case att_procedure_owner_name:
@@ -5348,9 +5440,9 @@ bool get_relation(BurpGlobals* tdgbl)
 			break;
 
 		case att_relation_security_class:
+			sec_class_null = false;
 			GET_TEXT(sec_class);
-			if (strncmp(sec_class, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
-				sec_class_null = false;
+			fix_security_class_name(tdgbl, sec_class);
 			break;
 
 		case att_relation_view_blr:

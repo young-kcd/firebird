@@ -954,6 +954,7 @@ public:
 	isc_req_handle	handles_write_function_args_req_handle1;
 	isc_req_handle	handles_write_function_args_req_handle2;
 	isc_req_handle	handles_write_procedure_prms_req_handle1;
+	isc_req_handle	handles_fix_security_class_name_req_handle1;
 	bool			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update
 
