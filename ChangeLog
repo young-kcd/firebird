@@ -1,3 +1,25 @@
+2009-05-13 09:40  dimitr
+
+	* firebird2/src/include/gen/sql_state.h (1.39):
+
+	SQLSTATE adjustments.
+
+2009-05-13 09:35  dimitr
+
+	* firebird2/src/: burp/burp.h (1.101), burp/restore.epp (1.168),
+	jrd/constants.h (1.61), msgs/facilities2.sql (1.63),
+	msgs/messages2.sql (1.86):
+
+	Fixed CORE-2461: Deadlock error terminates the restore process
+	while restoring privileges.
+
+2009-05-13 08:31  dimitr
+
+	* firebird2/src/msgs/: sqlstates.sql (1.7), system_errors2.sql
+	(1.55):
+
+	SQLSTATE adjustments.
+
 2009-05-10 17:23  asfernandes
 
 	* firebird2/src/: intl/cv_big5.cpp (1.22), intl/cv_gb2312.cpp
