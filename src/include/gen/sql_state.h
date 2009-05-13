@@ -80,7 +80,7 @@ static const struct {
 	{335544377, "HY000"}, //  57 uns_ext
 	{335544378, "0A000"}, //  58 wish_list
 	{335544379, "HY000"}, //  59 wrong_ods
-	{335544380, "07001"}, //  60 wronumarg
+	{335544380, "07002"}, //  60 wronumarg
 	{335544381, "54000"}, //  61 imp_exc
 	{335544382, "00000"}, //  62 random
 	{335544383, "HY000"}, //  63 fatal_conflict
@@ -129,7 +129,7 @@ static const struct {
 	{335544426, "HY000"}, // 106 ctxnotdef
 	{335544427, "42000"}, // 107 datnotsup
 	{335544428, "HY000"}, // 108 badmsgnum
-	{335544429, "07001"}, // 109 badparnum
+	{335544429, "HY000"}, // 109 badparnum
 	{335544430, "HY001"}, // 110 virmemexh
 	{335544431, "HY000"}, // 111 blocking_signal
 	{335544432, "40001"}, // 112 lockmanerr
@@ -212,7 +212,7 @@ static const struct {
 	{335544509, "2C000"}, // 189 charset_not_found
 	{335544510, "40001"}, // 190 lock_timeout
 	{335544511, "42000"}, // 191 prcnotdef
-	{335544512, "07000"}, // 192 prcmismat
+	{335544512, "07001"}, // 192 prcmismat
 	{335544513, "XX000"}, // 193 wal_bugcheck
 	{335544514, "HY000"}, // 194 wal_cant_expand
 	{335544515, "HY000"}, // 195 codnotdef
@@ -550,7 +550,7 @@ static const struct {
 	{335544847, "37001"}, // 527 identifier_too_long
 	{335544848, "HY000"}, // 528 except2
 	{335544849, "22000"}, // 529 malformed_string
-	{335544850, "07001"}, // 530 prc_out_param_mismatch
+	{335544850, "07002"}, // 530 prc_out_param_mismatch
 	{335544851, "42000"}, // 531 command_end_err2
 	{335544852, "42000"}, // 532 partner_idx_incompat_type
 	{335544853, "22011"}, // 533 bad_substring_length
