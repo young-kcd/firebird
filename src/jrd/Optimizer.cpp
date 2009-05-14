@@ -1610,9 +1610,9 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					FB_NEW(pool) InversionCandidate(pool);
 				invCandidate->unique = unique;
 				invCandidate->selectivity = scratch.selectivity;
-				// When selectivty is zero the statement is prepared on an
+				// When selectivity is zero the statement is prepared on an
 				// empty table or the statistics aren't updated.
-				// Assume a half of the maximum selectivty, so at least some
+				// Assume a half of the maximum selectivity, so at least some
 				// indexes are chosen by the optimizer. This avoids some slowdown
 				// statements on growing tables.
 				if (invCandidate->selectivity <= 0) {
@@ -1622,7 +1622,7 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				// The constant DEFAULT_INDEX_COST 1 is an average for 
 				// the rootpage and non-leaf pages.
 				// Assuming the rootpage will stay in cache else the index
-				// cost is calculted to high. Better would be including
+				// cost is calculted too high. Better would be including
 				// the index-depth, but this is not possible due lack 
 				// on information at this time.
 				invCandidate->cost = DEFAULT_INDEX_COST + (scratch.selectivity * scratch.cardinality);
@@ -3060,19 +3060,22 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	double selectivity = candidate->selectivity;
 	*cost = candidate->cost;
 
-	// Adjust the effective selectivity based on non-indexed conjunctions
-	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		tail < optimizer->opt_conjuncts.end(); tail++)
+	if (!candidate->indexes)
 	{
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
-			!candidate->matches.exist(node))
+		// If indices are not involved, adjust the effective selectivity
+		// by treating computable conjunctions as filters
+		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+			tail < optimizer->opt_conjuncts.end(); tail++)
 		{
-			const double factor = (node->nod_type == nod_eql) ?
-				REDUCE_SELECTIVITY_FACTOR_EQUALITY :
-				REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-			selectivity *= factor;
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				OPT_computable(optimizer->opt_csb, node, stream, false, true))
+			{
+				const double factor = (node->nod_type == nod_eql) ?
+					REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+					REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+				selectivity *= factor;
+			}
 		}
 	}
 
