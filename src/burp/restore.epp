@@ -94,7 +94,6 @@ const int DEFERRED_ACTIVE		= 3;	// RDB$INDEX_INACTIVE setting for Foreign Keys
 
 
 const int RESTORE_VERBOSE_INTERVAL	= 10000;
-const int cvtbl_len		= 28;
 const int burp_msg_fac				= 12;
 
 enum scan_attr_t
