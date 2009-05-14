@@ -1,3 +1,42 @@
+2009-05-14 17:41  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.112):
+
+	Slightly changed a bugfix for CORE-2078 to avoid affecting indexed
+	retrievals.  It's a compromise targeted to resolve any regressions
+	in v2.1.2 (like CORE-2411).
+
+2009-05-14 12:47  robocop
+
+	* firebird2/src/burp/restore.epp (1.169):
+
+	Misc.
+
+2009-05-14 12:37  hvlad
+
+	* firebird2/doc/sql.extensions/README.execute_statement2 (1.7):
+
+	Documentation for improvement CORE-2452 : Add Role Name in input
+	parameters for EXECUTE STATEMENT
+
+2009-05-14 12:25  hvlad
+
+	* firebird2/src/jrd/gds.cpp (1.284):
+
+	Undo not needed commit, sorry
+
+2009-05-14 12:21  hvlad
+
+	* firebird2/src/: dsql/gen.cpp (1.184), dsql/node.h (1.123),
+	dsql/parse.y (1.306), dsql/pass1.cpp (1.450), jrd/blr.h (1.44),
+	jrd/exe.cpp (1.299), jrd/exe.h (1.134), jrd/gds.cpp (1.283),
+	jrd/par.cpp (1.238), jrd/extds/ExtDS.cpp (1.38), jrd/extds/ExtDS.h
+	(1.17), jrd/extds/InternalDS.cpp (1.21), jrd/extds/InternalDS.h
+	(1.11), jrd/extds/IscDS.cpp (1.27), jrd/extds/IscDS.h (1.15):
+
+	Implement improvement CORE-2452 : Add Role Name in input parameters
+	for EXECUTE STATEMENT
+
 2009-05-13 09:40  dimitr
 
 	* firebird2/src/include/gen/sql_state.h (1.39):
