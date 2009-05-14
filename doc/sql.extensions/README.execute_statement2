@@ -15,6 +15,7 @@ Syntax and notes :
     [WITH AUTONOMOUS | COMMON TRANSACTION]
     [AS USER <user_name>]
     [PASSWORD <password>]
+    [ROLE <role_name>]
     [WITH CALLER PRIVILEGES]
     [INTO <variables>]
     
@@ -23,6 +24,7 @@ Syntax and notes :
     [WITH AUTONOMOUS | COMMON TRANSACTION]
     [AS USER <user_name>]
     [PASSWORD <password>]
+    [ROLE <role_name>]
     [WITH CALLER PRIVILEGES]
 	
 - Duplicate clauses are not allowed
@@ -49,10 +51,11 @@ Syntax and notes :
 - if ON EXTERNAL DATA SOURCE clause is omitted then 
 	a) statement will be executed against current (local) database
 	b) if AS USER clause is omitted or <user_name> equal to CURRENT_USER 
+	and if ROLE clause is omitted or <role_name> equal to CURRENT_ROLE 
 	then the statement is executed in current connection context
-	c) if <user_name> not equal to CURRENT_USER then the statement is executed in separate 
-	connection established inside the same engine instance (i.e. created new internal 
-	connection without Y-Valve and remote layers).
+	c) if <user_name> not equal to CURRENT_USER or <role_name> not equal to CURRENT_ROLE 
+	then the statement is executed in separate connection established inside the same 
+	engine instance (i.e. created new internal connection without Y-Valve and remote layers).
 
 - <connection_string> is usual connection string accepted by isc_attach_database, 
     i.e. [<host_name><protocol_delimiter>]database_path.
@@ -76,16 +79,17 @@ Syntax and notes :
 - if AS USER clause is omitted then CURRENT_USER is used
 
 - if PASSWORD clause is omitted then 
-	a) if <user_name> is omitted, NULL or equal to CURRENT_USER value
+	a) if <user_name> is omitted, NULL or equal to CURRENT_USER value and
+		if <role_name> is omitted, NULL or equal to CURRENT_ROLE value 
 		then trusted autentication is performed, and
 		a1) for current connection (ON EXTERNAL DATA SOURCE is omitted) - 
-			CURRENT_USER is effective user account
+			CURRENT_USER\CURRENT_ROLE is effective user account and role
 		a2) for local database (<connection_string> refers to the current database) - 
-			CURRENT_USER is effective user account
+			CURRENT_USER\CURRENT_ROLE is effective user account and role
 		a3) for remote database - operating system account under which engine
-			process is currently run is effective user account.
-	b) else only isc_dpb_user_name will be present in DPB and native autentication 
-		is performed.
+			process is currently run is effective user account. 
+	b) else only isc_dpb_user_name (and isc_dpb_sql_role_name) will be present in DPB and 
+		native autentication is performed.
 
 - if WITH CALLER PRIVILEGES is specified and ON EXTERNAL DATA SOURCE is omitted, then
 	the statement is prepared using additional privileges of caller stored procedure or trigger
