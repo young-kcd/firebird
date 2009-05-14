@@ -3057,19 +3057,22 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	double selectivity = candidate->selectivity;
 	*cost = candidate->cost;
 
-	// Adjust the effective selectivity based on non-indexed conjunctions
-	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		tail < optimizer->opt_conjuncts.end(); tail++)
+	if (!candidate->indexes)
 	{
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
-			!candidate->matches.exist(node))
+		// If indices are not involved, adjust the effective selectivity
+		// by treating computable conjunctions as filters
+		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+			tail < optimizer->opt_conjuncts.end(); tail++)
 		{
-			const double factor = (node->nod_type == nod_eql) ?
-				REDUCE_SELECTIVITY_FACTOR_EQUALITY :
-				REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-			selectivity *= factor;
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				OPT_computable(optimizer->opt_csb, node, stream, false, true))
+			{
+				const double factor = (node->nod_type == nod_eql) ?
+					REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+					REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+				selectivity *= factor;
+			}
 		}
 	}
 
