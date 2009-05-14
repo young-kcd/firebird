@@ -2844,6 +2844,10 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 					node->nod_arg[e_exec_stmt_password] = PAR_parse_node(tdbb, csb, VALUE);
 					break;
 
+				case blr_exec_stmt_role:
+					node->nod_arg[e_exec_stmt_role] = PAR_parse_node(tdbb, csb, VALUE);
+					break;
+
 				case blr_exec_stmt_tran:
 					PAR_syntax_error(csb, "external transaction parameters");
 					break;

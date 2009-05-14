@@ -112,14 +112,16 @@ InternalConnection::~InternalConnection()
 }
 
 void InternalConnection::attach(thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd)
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role)
 {
 	fb_assert(!m_attachment);
 	Database* dbb = tdbb->getDatabase();
 	fb_assert(dbName.isEmpty() || dbName == dbb->dbb_database_name.c_str());
 
 	Attachment* attachment = tdbb->getAttachment();
-	if (user.isEmpty() || user == attachment->att_user->usr_user_name)
+	if ((user.isEmpty() || user == attachment->att_user->usr_user_name) &&
+		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
 	{
 		m_isCurrent = true;
 		m_attachment = attachment;
@@ -128,7 +130,7 @@ void InternalConnection::attach(thread_db *tdbb, const Firebird::string &dbName,
 	{
 		m_isCurrent = false;
 		m_dbName = dbb->dbb_database_name.c_str();
-		generateDPB(tdbb, m_dpb, m_dbName, user, pwd);
+		generateDPB(tdbb, m_dpb, user, pwd, role);
 
 		ISC_STATUS_ARRAY status = {0};
 
@@ -203,12 +205,13 @@ bool InternalConnection::isAvailable(thread_db *tdbb, TraScope /*traScope*/) con
 }
 
 bool InternalConnection::isSameDatabase(thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd) const
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role) const
 {
 	if (m_isCurrent)
 		return (tdbb->getAttachment() == m_attachment);
 	else
-		return Connection::isSameDatabase(tdbb, dbName, user, pwd);
+		return Connection::isSameDatabase(tdbb, dbName, user, pwd, role);
 }
 
 Transaction* InternalConnection::doCreateTransaction()

@@ -1770,7 +1770,7 @@ exec_sql
 	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
-					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL);
+					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
@@ -1779,7 +1779,7 @@ exec_into
 			INTO variable_list
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
-					($3)->nod_arg[0], ($3)->nod_arg[1], make_list($6), NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL);
+					($3)->nod_arg[0], ($3)->nod_arg[1], make_list($6), NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
@@ -1789,7 +1789,7 @@ for_exec_into
 			DO proc_block
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
-					($5)->nod_arg[0], ($5)->nod_arg[1], make_list($8), $10, $1, make_list($6), NULL, NULL, NULL, NULL, NULL);
+					($5)->nod_arg[0], ($5)->nod_arg[1], make_list($8), $10, $1, make_list($6), NULL, NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
@@ -1840,6 +1840,7 @@ exec_stmt_option
 	: ext_datasrc
 	| ext_user
 	| ext_pwd
+	| ext_role
 	| ext_tran
 	| ext_privs
 	;
@@ -1859,6 +1860,11 @@ ext_user
 ext_pwd
 	: PASSWORD value
 		{ $$ = make_node (nod_exec_stmt_pwd, 1, $2); }
+	;
+
+ext_role
+	: ROLE value
+		{ $$ = make_node (nod_exec_stmt_role, 1, $2); }
 	;
 
 ext_tran

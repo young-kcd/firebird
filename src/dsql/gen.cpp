@@ -1852,10 +1852,11 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 		GEN_statement(statement, temp2);
 	}
 
-	// external data source, user and password
+	// external data source, user, password and role
 	gen_optional_expr(statement, blr_exec_stmt_data_src, node->nod_arg[e_exec_stmt_data_src]);
 	gen_optional_expr(statement, blr_exec_stmt_user, node->nod_arg[e_exec_stmt_user]);
 	gen_optional_expr(statement, blr_exec_stmt_pwd, node->nod_arg[e_exec_stmt_pwd]);
+	gen_optional_expr(statement, blr_exec_stmt_role, node->nod_arg[e_exec_stmt_role]);
 
 	// statement's transaction behavior
 	temp = node->nod_arg[e_exec_stmt_tran];

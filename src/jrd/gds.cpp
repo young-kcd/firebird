@@ -1589,9 +1589,7 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	}
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION
-#if FB_MSG_MINOR_VERSION > 0
-		|| header.msghdr_minor_version < MSG_MINOR_VERSION
-#endif
+		|| header.msghdr_minor_version > MSG_MINOR_VERSION
 		)
 	{
 		close(n);
@@ -3327,6 +3325,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				case blr_exec_stmt_data_src:
 				case blr_exec_stmt_user:
 				case blr_exec_stmt_pwd:
+				case blr_exec_stmt_role:
 					offset = blr_print_line(control, offset);
 					level++;
 					blr_print_verb(control, level);

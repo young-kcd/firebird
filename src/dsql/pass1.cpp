@@ -1803,6 +1803,13 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 						node->nod_arg[e_exec_stmt_pwd] = PASS1_node(statement, opt->nod_arg[0]);
 					break;
 
+				case nod_exec_stmt_role:
+					if (node->nod_arg[e_exec_stmt_role])
+						dupClause = "ROLE";
+					else
+						node->nod_arg[e_exec_stmt_role] = PASS1_node(statement, opt->nod_arg[0]);
+					break;
+
 				case nod_tran_params:
 					if (node->nod_arg[e_exec_stmt_tran])
 						dupClause = "TRANSACTION";

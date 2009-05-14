@@ -547,8 +547,9 @@ const int e_exec_stmt_stmt_sql		= 0;
 const int e_exec_stmt_data_src		= 1;
 const int e_exec_stmt_user			= 2;
 const int e_exec_stmt_password		= 3;
-const int e_exec_stmt_proc_block	= 4;
-const int e_exec_stmt_fixed_count	= 5;
+const int e_exec_stmt_role			= 4;
+const int e_exec_stmt_proc_block	= 5;
+const int e_exec_stmt_fixed_count	= 6;
 
 const int e_exec_stmt_extra_inputs		= 0;
 const int e_exec_stmt_extra_input_names	= 1;

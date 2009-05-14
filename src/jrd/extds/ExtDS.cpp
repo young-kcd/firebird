@@ -103,7 +103,7 @@ Provider* Manager::getProvider(const string &prvName)
 }
 
 Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
-	const string &user, const string &pwd, TraScope tra_scope)
+	const string &user, const string &pwd, const string &role, TraScope tra_scope)
 {
 	if (!m_initialized)
 	{
@@ -144,7 +144,7 @@ Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 	}
 
 	Provider* prv = getProvider(prvName);
-	return prv->getConnection(tdbb, dbName, user, pwd, tra_scope);
+	return prv->getConnection(tdbb, dbName, user, pwd, role, tra_scope);
 }
 
 void Manager::jrdAttachmentEnd(thread_db *tdbb, Jrd::Attachment* att)
@@ -181,7 +181,7 @@ Provider::~Provider()
 }
 
 Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
-	const string &user, const string &pwd, TraScope tra_scope)
+	const string &user, const string &pwd, const string &role, TraScope tra_scope)
 {
 	MutexLockGuard guard(m_mutex);
 
@@ -191,7 +191,7 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 	for (; conn_ptr < end; conn_ptr++)
 	{
 		Connection *conn = *conn_ptr;
-		if (conn->isSameDatabase(tdbb, dbName, user, pwd) &&
+		if (conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
 			conn->isAvailable(tdbb, tra_scope))
 		{
 			return conn;
@@ -200,7 +200,7 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 
 	Connection *conn = doCreateConnection();
 	try {
-		conn->attach(tdbb, dbName, user, pwd);
+		conn->attach(tdbb, dbName, user, pwd, role);
 	}
 	catch (...)
 	{
@@ -289,16 +289,19 @@ Connection::~Connection()
 }
 
 void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
-	const string& /*dbName*/, const string &user, const string &pwd) const
+	const string &user, const string &pwd, const string &role) const
 {
 	dpb.reset(isc_dpb_version1);
 
-	Firebird::string &attUser = tdbb->getAttachment()->att_user->usr_user_name;
+	string &attUser = tdbb->getAttachment()->att_user->usr_user_name;
+	string &attRole = tdbb->getAttachment()->att_user->usr_sql_role_name;
 
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
-		(user.isEmpty() || user == attUser) && pwd.isEmpty())
+		(user.isEmpty() || user == attUser) && pwd.isEmpty() &&
+		(role.isEmpty() || role == attRole))
 	{
 		dpb.insertString(isc_dpb_trusted_auth, attUser);
+		dpb.insertString(isc_dpb_trusted_role, attRole);
 	}
 	else
 	{
@@ -307,6 +310,9 @@ void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
 		}
 		if (!pwd.isEmpty()) {
 			dpb.insertString(isc_dpb_password, pwd);
+		}
+		if (!role.isEmpty()) {
+			dpb.insertString(isc_dpb_sql_role_name, role);
 		}
 	}
 
@@ -317,13 +323,13 @@ void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
 }
 
 bool Connection::isSameDatabase(thread_db *tdbb, const string &dbName,
-	const string &user, const string &pwd) const
+	const string &user, const string &pwd, const string &role) const
 {
 	if (m_dbName != dbName)
 		return false;
 
 	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	generateDPB(tdbb, dpb, dbName, user, pwd);
+	generateDPB(tdbb, dpb, user, pwd, role);
 
 	return m_dpb.simpleCompare(dpb);
 }

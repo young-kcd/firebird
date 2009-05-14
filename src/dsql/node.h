@@ -369,12 +369,13 @@ enum nod_t
 	nod_exec_stmt_datasrc,
 	nod_exec_stmt_user,
 	nod_exec_stmt_pwd,
+	nod_exec_stmt_role,
 	nod_exec_stmt_privs,
 	nod_tran_params,
 	nod_named_param,
 	nod_dfl_collate,
 	nod_class_node,
-	nod_hidden_var
+	nod_hidden_var	// 300
 };
 
 /* enumerations of the arguments to a node, offsets
@@ -445,6 +446,7 @@ enum node_args {
 	e_exec_stmt_data_src,
 	e_exec_stmt_user,
 	e_exec_stmt_pwd,
+	e_exec_stmt_role,
 	e_exec_stmt_tran,
 	e_exec_stmt_privs,
 	e_exec_stmt_count,

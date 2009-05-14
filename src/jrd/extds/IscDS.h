@@ -511,7 +511,8 @@ public:
 	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd);
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role);
 
 	virtual bool cancelExecution(Jrd::thread_db *tdbb);
 

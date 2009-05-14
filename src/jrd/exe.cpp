@@ -1625,7 +1625,10 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 		Firebird::string sPwd;
 		get_string(tdbb, request, node->nod_arg[e_exec_stmt_password], sPwd);
 
-		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, sDataSrc, sUser, sPwd, tra_scope);
+		Firebird::string sRole;
+		get_string(tdbb, request, node->nod_arg[e_exec_stmt_role], sRole);
+
+		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, sDataSrc, sUser, sPwd, sRole, tra_scope);
 
 		stmt = conn->createStatement(sSql);
 

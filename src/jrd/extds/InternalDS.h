@@ -64,7 +64,8 @@ protected:
 
 public:
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd);
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role);
 
 	virtual bool cancelExecution(Jrd::thread_db *tdbb);
 
@@ -73,7 +74,8 @@ public:
 	virtual bool isConnected() const { return (m_attachment != 0); }
 
 	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd) const;
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role) const;
 
 	bool isCurrent() const { return m_isCurrent; }
 

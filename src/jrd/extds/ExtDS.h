@@ -65,7 +65,7 @@ public:
 	static Provider* getProvider(const Firebird::string &prvName);
 	static Connection* getConnection(Jrd::thread_db *tdbb,
 		const Firebird::string &dataSource, const Firebird::string &user,
-		const Firebird::string &pwd, TraScope tra_scope);
+		const Firebird::string &pwd, const Firebird::string &role, TraScope tra_scope);
 
 	// Notify providers when some jrd attachment is about to be released
 	static void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
@@ -94,7 +94,8 @@ public:
 
 	// return existing or create new Connection
 	virtual Connection* getConnection(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, TraScope tra_scope);
+		const Firebird::string &user, const Firebird::string &pwd, const Firebird::string &role, 
+		TraScope tra_scope);
 
 	// Connection gets unused, release it into pool or delete it completely
 	virtual void releaseConnection(Jrd::thread_db *tdbb, Connection& conn, bool inPool = true);
@@ -156,7 +157,8 @@ public:
 	Provider* getProvider() { return &m_provider; }
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd) = 0;
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role) = 0;
 	virtual void detach(Jrd::thread_db *tdbb);
 
 	virtual bool cancelExecution(Jrd::thread_db *tdbb) = 0;
@@ -172,7 +174,8 @@ public:
 	virtual bool isConnected() const = 0;
 
 	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd) const;
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role) const;
 
 	// Search for existing transaction of given scope, may return NULL.
 	Transaction* findTransaction(Jrd::thread_db *tdbb, TraScope traScope) const;
@@ -203,8 +206,8 @@ public:
 
 protected:
 	void generateDPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &dpb,
-		const Firebird::string &dbName, const Firebird::string &user,
-		const Firebird::string &pwd) const;
+		const Firebird::string &user, const Firebird::string &pwd, 
+		const Firebird::string &role) const;
 
 	virtual Transaction* doCreateTransaction() = 0;
 	virtual Statement* doCreateStatement() = 0;
