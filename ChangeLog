@@ -1,3 +1,11 @@
+2009-05-14 17:48  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.11):
+
+	Slightly changed a bugfix for CORE-2078 to avoid affecting indexed
+	retrievals.  It's a compromise targeted to resolve any regressions
+	in v2.1.2 (like CORE-2411).
+
 2009-05-08 13:57  alexpeshkoff
 
 	* firebird2/src/: jrd/event.cpp (1.55.4.5), remote/interface.cpp
