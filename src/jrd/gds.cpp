@@ -1589,7 +1589,9 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	}
 
 	if (header.msghdr_major_version != MSG_MAJOR_VERSION
-		|| header.msghdr_minor_version > MSG_MINOR_VERSION
+#if FB_MSG_MINOR_VERSION > 0
+		|| header.msghdr_minor_version < MSG_MINOR_VERSION
+#endif
 		)
 	{
 		close(n);
