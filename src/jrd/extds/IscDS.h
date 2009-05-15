@@ -50,7 +50,7 @@ public:
 	}
 
 	virtual void jrdAttachmentEnd(Jrd::thread_db* /*tdbb*/, Jrd::Attachment* /*att*/) {}
-	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err) const;
+	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const;
 
 protected:
 	ISC_STATUS notImplemented(ISC_STATUS*) const;
@@ -504,19 +504,19 @@ class IscConnection : public Connection
 	friend class IscProvider;
 
 protected:
-	explicit IscConnection(IscProvider &prov);
+	explicit IscConnection(IscProvider& prov);
 	virtual ~IscConnection();
 
 public:
 	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
-	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, 
-		const Firebird::string &role);
+	virtual void attach(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+		const Firebird::string& user, const Firebird::string& pwd,
+		const Firebird::string& role);
 
-	virtual bool cancelExecution(Jrd::thread_db *tdbb);
+	virtual bool cancelExecution(Jrd::thread_db* tdbb);
 
-	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
+	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
 
 	virtual bool isConnected() const { return (m_handle != 0); }
 
@@ -525,7 +525,7 @@ public:
 protected:
 	virtual Transaction* doCreateTransaction();
 	virtual Statement* doCreateStatement();
-	virtual void doDetach(Jrd::thread_db *tdbb);
+	virtual void doDetach(Jrd::thread_db* tdbb);
 
 	IscProvider& m_iscProvider;
 	FB_API_HANDLE m_handle;
@@ -540,7 +540,7 @@ public:
 	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
 protected:
-	explicit IscTransaction(IscConnection &conn) :
+	explicit IscTransaction(IscConnection& conn) :
 	  Transaction(conn),
 	  m_iscProvider(*(IscProvider*) conn.getProvider()),
 	  m_iscConnection(conn),
@@ -549,13 +549,13 @@ protected:
 
 	virtual ~IscTransaction() {}
 
-	virtual void doStart(ISC_STATUS* status, Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb);
-	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db *tdbb, int info_len, const char* info);
-	virtual void doCommit(ISC_STATUS* status, Jrd::thread_db *tdbb, bool retain);
-	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db *tdbb, bool retain);
+	virtual void doStart(ISC_STATUS* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb);
+	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db* tdbb, int info_len, const char* info);
+	virtual void doCommit(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
+	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
 
-	IscProvider &m_iscProvider;
-	IscConnection &m_iscConnection;
+	IscProvider& m_iscProvider;
+	IscConnection& m_iscConnection;
 	FB_API_HANDLE m_handle;
 };
 
@@ -568,23 +568,23 @@ public:
 	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
 protected:
-	explicit IscStatement(IscConnection &conn);
+	explicit IscStatement(IscConnection& conn);
 	virtual ~IscStatement();
 
 protected:
-	virtual void doPrepare(Jrd::thread_db *tdbb, const Firebird::string &sql);
-	virtual void doExecute(Jrd::thread_db *tdbb);
-	virtual void doOpen(Jrd::thread_db *tdbb);
-	virtual bool doFetch(Jrd::thread_db *tdbb);
-	virtual void doClose(Jrd::thread_db *tdbb, bool drop);
+	virtual void doPrepare(Jrd::thread_db* tdbb, const Firebird::string& sql);
+	virtual void doExecute(Jrd::thread_db* tdbb);
+	virtual void doOpen(Jrd::thread_db* tdbb);
+	virtual bool doFetch(Jrd::thread_db* tdbb);
+	virtual void doClose(Jrd::thread_db* tdbb, bool drop);
 
-	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string *const *names,
-		Jrd::jrd_nod **params);
+	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
+		Jrd::jrd_nod** params);
 
-	IscTransaction *getIscTransaction() { return (IscTransaction*) m_transaction; }
+	IscTransaction* getIscTransaction() { return (IscTransaction*) m_transaction; }
 
-	IscProvider &m_iscProvider;
-	IscConnection &m_iscConnection;
+	IscProvider& m_iscProvider;
+	IscConnection& m_iscConnection;
 	FB_API_HANDLE m_handle;
 	XSQLDA	*m_in_xsqlda;
 	XSQLDA	*m_out_xsqlda;
@@ -594,24 +594,24 @@ class IscBlob : public Blob
 {
 	friend class IscConnection;
 protected:
-	explicit IscBlob(IscConnection &conn);
+	explicit IscBlob(IscConnection& conn);
 
 public:
 	~IscBlob();
 
 public:
-	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc,
+	virtual void open(Jrd::thread_db* tdbb, Transaction& tran, const dsc& desc,
 		const Firebird::UCharBuffer* bpb);
-	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc,
+	virtual void create(Jrd::thread_db* tdbb, Transaction& tran, dsc& desc,
 		const Firebird::UCharBuffer* bpb);
-	virtual USHORT read(Jrd::thread_db *tdbb, char *buff, USHORT len);
-	virtual void write(Jrd::thread_db *tdbb, const char* buff, USHORT len);
-	virtual void close(Jrd::thread_db *tdbb);
-	virtual void cancel(Jrd::thread_db *tdbb);
+	virtual USHORT read(Jrd::thread_db* tdbb, char* buff, USHORT len);
+	virtual void write(Jrd::thread_db* tdbb, const char* buff, USHORT len);
+	virtual void close(Jrd::thread_db* tdbb);
+	virtual void cancel(Jrd::thread_db* tdbb);
 
 private:
-	IscProvider &m_iscProvider;
-	IscConnection &m_iscConnection;
+	IscProvider& m_iscProvider;
+	IscConnection& m_iscConnection;
 	FB_API_HANDLE m_handle;
 	ISC_QUAD m_blob_id;
 };

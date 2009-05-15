@@ -50,25 +50,25 @@ enum TraModes {traReadCommited, traReadCommitedRecVersions, traConcurrency, traC
 enum TraScope {traAutonomous = 1, traCommon, traTwoPhase};
 
 // Known built-in provider's names
-extern const char *FIREBIRD_PROVIDER_NAME;
-extern const char *INTERNAL_PROVIDER_NAME;
+extern const char* FIREBIRD_PROVIDER_NAME;
+extern const char* INTERNAL_PROVIDER_NAME;
 
 
 // Manage providers
 class Manager : public Firebird::PermanentStorage
 {
 public:
-	explicit Manager(Firebird::MemoryPool &pool);
+	explicit Manager(Firebird::MemoryPool& pool);
 	~Manager();
 
-	static void addProvider(Provider *provider);
-	static Provider* getProvider(const Firebird::string &prvName);
-	static Connection* getConnection(Jrd::thread_db *tdbb,
-		const Firebird::string &dataSource, const Firebird::string &user,
-		const Firebird::string &pwd, const Firebird::string &role, TraScope tra_scope);
+	static void addProvider(Provider* provider);
+	static Provider* getProvider(const Firebird::string& prvName);
+	static Connection* getConnection(Jrd::thread_db* tdbb,
+		const Firebird::string& dataSource, const Firebird::string& user,
+		const Firebird::string& pwd, const Firebird::string& role, TraScope tra_scope);
 
 	// Notify providers when some jrd attachment is about to be released
-	static void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
+	static void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att);
 
 private:
 	static void init();
@@ -93,18 +93,18 @@ public:
 	virtual ~Provider();
 
 	// return existing or create new Connection
-	virtual Connection* getConnection(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, const Firebird::string &role, 
+	virtual Connection* getConnection(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+		const Firebird::string& user, const Firebird::string& pwd, const Firebird::string& role,
 		TraScope tra_scope);
 
 	// Connection gets unused, release it into pool or delete it completely
-	virtual void releaseConnection(Jrd::thread_db *tdbb, Connection& conn, bool inPool = true);
+	virtual void releaseConnection(Jrd::thread_db* tdbb, Connection& conn, bool inPool = true);
 
 	// Notify provider when some jrd attachment is about to be released
-	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att) = 0;
+	virtual void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att) = 0;
 
 	// cancel execution of every connection
-	void cancelConnections(Jrd::thread_db *tdbb);
+	void cancelConnections(Jrd::thread_db* tdbb);
 
 	const Firebird::string& getName() const { return m_name; }
 
@@ -114,7 +114,7 @@ public:
 	int getFlags() const { return m_flags; }
 
 	// Interprete status and put error description into passed string
-	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err) const = 0;
+	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const = 0;
 
 	static const Firebird::string* generate(const void*, const Provider* item)
 	{
@@ -122,7 +122,7 @@ public:
 	}
 
 protected:
-	void clearConnections(Jrd::thread_db *tdbb);
+	void clearConnections(Jrd::thread_db* tdbb);
 	virtual Connection* doCreateConnection() = 0;
 
 	// Protection against simultaneous attach database calls. Not sure we still
@@ -148,20 +148,20 @@ class Connection : public Firebird::PermanentStorage
 protected:
 	friend class EngineCallbackGuard;
 
-	explicit Connection(Provider &prov);
+	explicit Connection(Provider& prov);
 	virtual ~Connection();
 
 public:
-	static void deleteConnection(Jrd::thread_db *tdbb, Connection *conn);
+	static void deleteConnection(Jrd::thread_db* tdbb, Connection* conn);
 
 	Provider* getProvider() { return &m_provider; }
 
-	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, 
-		const Firebird::string &role) = 0;
-	virtual void detach(Jrd::thread_db *tdbb);
+	virtual void attach(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+		const Firebird::string& user, const Firebird::string& pwd,
+		const Firebird::string& role) = 0;
+	virtual void detach(Jrd::thread_db* tdbb);
 
-	virtual bool cancelExecution(Jrd::thread_db *tdbb) = 0;
+	virtual bool cancelExecution(Jrd::thread_db* tdbb) = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 
@@ -169,16 +169,16 @@ public:
 	// allows to use same connection in more than one transaction and\or
 	// to have more than on active statement at time. See also provider
 	// flags above.
-	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const = 0;
+	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const = 0;
 
 	virtual bool isConnected() const = 0;
 
-	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, 
-		const Firebird::string &role) const;
+	virtual bool isSameDatabase(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+		const Firebird::string& user, const Firebird::string& pwd,
+		const Firebird::string& role) const;
 
 	// Search for existing transaction of given scope, may return NULL.
-	Transaction* findTransaction(Jrd::thread_db *tdbb, TraScope traScope) const;
+	Transaction* findTransaction(Jrd::thread_db* tdbb, TraScope traScope) const;
 
 	const Firebird::string getDataSourceName() const
 	{
@@ -187,40 +187,40 @@ public:
 
 	// Get error description from provider and put it with additional context
 	// info into locally raised exception
-	void raise(ISC_STATUS* status, Jrd::thread_db *tdbb, const char* sWhere);
+	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
 
 	// Transactions management within connection scope : put newly created
 	// transaction into m_transactions array and delete not needed transaction
 	// immediately (as we didn't pool transactions)
 	Transaction* createTransaction();
-	void deleteTransaction(Transaction *tran);
+	void deleteTransaction(Transaction* tran);
 
 	// Statements management within connection scope : put newly created
 	// statement into m_statements array, but don't delete freed statement
 	// immediately (as we did pooled statements). Instead keep it in
 	// m_freeStatements list for reuse later
-	Statement* createStatement(const Firebird::string &sql);
-	void releaseStatement(Jrd::thread_db *tdbb, Statement *stmt);
+	Statement* createStatement(const Firebird::string& sql);
+	void releaseStatement(Jrd::thread_db* tdbb, Statement* stmt);
 
 	virtual Blob* createBlob() = 0;
 
 protected:
-	void generateDPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &dpb,
-		const Firebird::string &user, const Firebird::string &pwd, 
-		const Firebird::string &role) const;
+	void generateDPB(Jrd::thread_db* tdbb, Firebird::ClumpletWriter& dpb,
+		const Firebird::string& user, const Firebird::string& pwd,
+		const Firebird::string& role) const;
 
 	virtual Transaction* doCreateTransaction() = 0;
 	virtual Statement* doCreateStatement() = 0;
 
-	void clearTransactions(Jrd::thread_db *tdbb);
-	void clearStatements(Jrd::thread_db *tdbb);
+	void clearTransactions(Jrd::thread_db* tdbb);
+	void clearStatements(Jrd::thread_db* tdbb);
 
-	virtual void doDetach(Jrd::thread_db *tdbb) = 0;
+	virtual void doDetach(Jrd::thread_db* tdbb) = 0;
 
 	// Protection against simultaneous ISC API calls for the same connection
 	Firebird::Mutex m_mutex;
 
-	Provider &m_provider;
+	Provider& m_provider;
 	Firebird::string m_dbName;
 	Firebird::ClumpletWriter m_dpb;
 
@@ -242,7 +242,7 @@ protected:
 	friend class Connection;
 
 	// Create and delete only via parent Connection
-	explicit Transaction(Connection &conn);
+	explicit Transaction(Connection& conn);
 	virtual ~Transaction();
 
 public:
@@ -253,35 +253,35 @@ public:
 
 	TraScope getScope() const { return m_scope; }
 
-	virtual void start(Jrd::thread_db *tdbb, TraScope traScope, TraModes traMode,
+	virtual void start(Jrd::thread_db* tdbb, TraScope traScope, TraModes traMode,
 		bool readOnly, bool wait, int lockTimeout);
-	virtual void prepare(Jrd::thread_db *tdbb, int info_len, const char* info);
-	virtual void commit(Jrd::thread_db *tdbb, bool retain);
-	virtual void rollback(Jrd::thread_db *tdbb, bool retain);
+	virtual void prepare(Jrd::thread_db* tdbb, int info_len, const char* info);
+	virtual void commit(Jrd::thread_db* tdbb, bool retain);
+	virtual void rollback(Jrd::thread_db* tdbb, bool retain);
 
-	static Transaction* getTransaction(Jrd::thread_db *tdbb,
-		Connection *conn, TraScope tra_scope);
+	static Transaction* getTransaction(Jrd::thread_db* tdbb,
+		Connection* conn, TraScope tra_scope);
 
 	// Notification about end of some jrd transaction. Bound external transaction
 	// (with traCommon scope) must be ended the same way as local jrd transaction
-	static void jrdTransactionEnd(Jrd::thread_db *tdbb, Jrd::jrd_tra* tran,
+	static void jrdTransactionEnd(Jrd::thread_db* tdbb, Jrd::jrd_tra* tran,
 		bool commit, bool retain, bool force);
 
 protected:
-	virtual void generateTPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb,
+	virtual void generateTPB(Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb,
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const;
 	void detachFromJrdTran();
 
-	virtual void doStart(ISC_STATUS* status, Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb) = 0;
-	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db *tdbb, int info_len, const char* info) = 0;
-	virtual void doCommit(ISC_STATUS* status, Jrd::thread_db *tdbb, bool retain) = 0;
-	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db *tdbb, bool retain) = 0;
+	virtual void doStart(ISC_STATUS* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb) = 0;
+	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db* tdbb, int info_len, const char* info) = 0;
+	virtual void doCommit(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain) = 0;
+	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain) = 0;
 
-	Provider &m_provider;
-	Connection &m_connection;
+	Provider& m_provider;
+	Connection& m_connection;
 	TraScope m_scope;
-	Transaction *m_nextTran;		// next common transaction
-	Jrd::jrd_tra *m_jrdTran;		// parent JRD transaction
+	Transaction* m_nextTran;		// next common transaction
+	Jrd::jrd_tra* m_jrdTran;		// parent JRD transaction
 };
 
 
@@ -293,11 +293,11 @@ protected:
 	friend class Connection;
 
 	// Create and delete only via parent Connection
-	explicit Statement(Connection &conn);
+	explicit Statement(Connection& conn);
 	virtual ~Statement();
 
 public:
-	static void deleteStatement(Jrd::thread_db *tdbb, Statement *stmt);
+	static void deleteStatement(Jrd::thread_db* tdbb, Statement* stmt);
 
 	Provider* getProvider() { return &m_provider; }
 
@@ -305,15 +305,15 @@ public:
 
 	Transaction* getTransaction() { return m_transaction; }
 
-	void prepare(Jrd::thread_db *tdbb, Transaction *tran, const Firebird::string& sql, bool named);
-	void execute(Jrd::thread_db *tdbb, Transaction *tran, int in_count,
+	void prepare(Jrd::thread_db* tdbb, Transaction* tran, const Firebird::string& sql, bool named);
+	void execute(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
 		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params,
 		int out_count, Jrd::jrd_nod** out_params);
-	void open(Jrd::thread_db *tdbb, Transaction *tran, int in_count,
+	void open(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
 		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params, bool singleton);
-	bool fetch(Jrd::thread_db *tdbb, int out_count, Jrd::jrd_nod **out_params);
-	void close(Jrd::thread_db *tdbb);
-	void deallocate(Jrd::thread_db *tdbb);
+	bool fetch(Jrd::thread_db* tdbb, int out_count, Jrd::jrd_nod** out_params);
+	void close(Jrd::thread_db* tdbb);
+	void deallocate(Jrd::thread_db* tdbb);
 
 	const Firebird::string& getSql() const { return m_sql; }
 
@@ -331,7 +331,7 @@ public:
 
 	// Get error description from provider and put it with additional contex
 	// info into locally raised exception
-	void raise(ISC_STATUS* status, Jrd::thread_db *tdbb, const char* sWhere,
+	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere,
 		const Firebird::string* sQuery = NULL);
 
 	// Active statement must be bound to parent jrd request
@@ -339,21 +339,21 @@ public:
 	void unBindFromRequest();
 
 protected:
-	virtual void doPrepare(Jrd::thread_db *tdbb, const Firebird::string &sql) = 0;
-	virtual void doExecute(Jrd::thread_db *tdbb) = 0;
-	virtual void doOpen(Jrd::thread_db *tdbb) = 0;
-	virtual bool doFetch(Jrd::thread_db *tdbb) = 0;
-	virtual void doClose(Jrd::thread_db *tdbb, bool drop) = 0;
+	virtual void doPrepare(Jrd::thread_db* tdbb, const Firebird::string& sql) = 0;
+	virtual void doExecute(Jrd::thread_db* tdbb) = 0;
+	virtual void doOpen(Jrd::thread_db* tdbb) = 0;
+	virtual bool doFetch(Jrd::thread_db* tdbb) = 0;
+	virtual void doClose(Jrd::thread_db* tdbb, bool drop) = 0;
 
-	void setInParams(Jrd::thread_db *tdbb, int count, const Firebird::string* const* names,
+	void setInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
 		Jrd::jrd_nod** params);
-	virtual void getOutParams(Jrd::thread_db *tdbb, int count, Jrd::jrd_nod **params);
+	virtual void getOutParams(Jrd::thread_db* tdbb, int count, Jrd::jrd_nod** params);
 
-	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string* const* names,
+	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
 		Jrd::jrd_nod** params);
 
-	virtual void putExtBlob(Jrd::thread_db *tdbb, dsc &src, dsc &dst);
-	virtual void getExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
+	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
+	virtual void getExtBlob(Jrd::thread_db* tdbb, const dsc& src, dsc& dst);
 
 	// Preprocess user sql string : replace parameter names by placeholders (?)
 	// and remember correspondence between logical parameter names and unnamed
@@ -411,38 +411,38 @@ class Blob : public Firebird::PermanentStorage
 {
 	friend class Connection;
 protected:
-	explicit Blob(Connection &conn) :
+	explicit Blob(Connection& conn) :
 		 PermanentStorage(conn.getProvider()->getPool())
 	{}
 
 public:
 	virtual ~Blob() {}
 
-	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc,
-		const Firebird::UCharBuffer *bpb) = 0;
-	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc,
+	virtual void open(Jrd::thread_db* tdbb, Transaction& tran, const dsc& desc,
 		const Firebird::UCharBuffer* bpb) = 0;
-	virtual USHORT read(Jrd::thread_db *tdbb, char *buff, USHORT len) = 0;
-	virtual void write(Jrd::thread_db *tdbb, const char* buff, USHORT len) = 0;
-	virtual void close(Jrd::thread_db *tdbb) = 0;
-	virtual void cancel(Jrd::thread_db *tdbb) = 0;
+	virtual void create(Jrd::thread_db* tdbb, Transaction& tran, dsc& desc,
+		const Firebird::UCharBuffer* bpb) = 0;
+	virtual USHORT read(Jrd::thread_db* tdbb, char* buff, USHORT len) = 0;
+	virtual void write(Jrd::thread_db* tdbb, const char* buff, USHORT len) = 0;
+	virtual void close(Jrd::thread_db* tdbb) = 0;
+	virtual void cancel(Jrd::thread_db* tdbb) = 0;
 };
 
 
 class EngineCallbackGuard
 {
 public:
-	EngineCallbackGuard(Jrd::thread_db *tdbb, Connection &conn)
+	EngineCallbackGuard(Jrd::thread_db* tdbb, Connection& conn)
 	{
 		init(tdbb, conn);
 	}
 
-	EngineCallbackGuard(Jrd::thread_db *tdbb, Transaction &tran)
+	EngineCallbackGuard(Jrd::thread_db* tdbb, Transaction& tran)
 	{
 		init(tdbb, *tran.getConnection());
 	}
 
-	EngineCallbackGuard(Jrd::thread_db *tdbb, Statement &stmt)
+	EngineCallbackGuard(Jrd::thread_db* tdbb, Statement& stmt)
 	{
 		init(tdbb, *stmt.getConnection());
 	}
@@ -450,10 +450,10 @@ public:
 	~EngineCallbackGuard();
 
 private:
-	void init(Jrd::thread_db *tdbb, Connection &conn);
+	void init(Jrd::thread_db* tdbb, Connection& conn);
 
 	Jrd::thread_db* m_tdbb;
-	Firebird::Mutex *m_mutex;
+	Firebird::Mutex* m_mutex;
 };
 
 } // namespace EDS

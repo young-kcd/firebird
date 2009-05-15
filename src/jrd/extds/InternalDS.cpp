@@ -47,7 +47,7 @@ using namespace Firebird;
 
 namespace EDS {
 
-const char *INTERNAL_PROVIDER_NAME = "Internal";
+const char* INTERNAL_PROVIDER_NAME = "Internal";
 
 class RegisterInternalProvider
 {
@@ -63,23 +63,23 @@ static RegisterInternalProvider reg;
 
 // InternalProvider
 
-void InternalProvider::jrdAttachmentEnd(thread_db *tdbb, Attachment* att)
+void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Attachment* att)
 {
 	if (m_connections.getCount() == 0)
 		return;
 
-	Connection **ptr = m_connections.end();
-	Connection **begin = m_connections.begin();
+	Connection** ptr = m_connections.end();
+	Connection** begin = m_connections.begin();
 
 	for (ptr--; ptr >= begin; ptr--)
 	{
-		InternalConnection *conn = (InternalConnection*) *ptr;
+		InternalConnection* conn = (InternalConnection*) *ptr;
 		if (conn->getJrdAtt() == att)
 			releaseConnection(tdbb, *conn, false);
 	}
 }
 
-void InternalProvider::getRemoteError(ISC_STATUS* status, string &err) const
+void InternalProvider::getRemoteError(ISC_STATUS* status, string& err) const
 {
 	err = "";
 
@@ -111,9 +111,9 @@ InternalConnection::~InternalConnection()
 {
 }
 
-void InternalConnection::attach(thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, 
-		const Firebird::string &role)
+void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
+		const Firebird::string& user, const Firebird::string& pwd,
+		const Firebird::string& role)
 {
 	fb_assert(!m_attachment);
 	Database* dbb = tdbb->getDatabase();
@@ -148,7 +148,7 @@ void InternalConnection::attach(thread_db *tdbb, const Firebird::string &dbName,
 					SQL_DIALECT_V6 : SQL_DIALECT_V5;
 }
 
-void InternalConnection::doDetach(thread_db *tdbb)
+void InternalConnection::doDetach(thread_db* tdbb)
 {
 	fb_assert(m_attachment);
 
@@ -184,7 +184,7 @@ void InternalConnection::doDetach(thread_db *tdbb)
 	fb_assert(!m_attachment)
 }
 
-bool InternalConnection::cancelExecution(thread_db *tdbb)
+bool InternalConnection::cancelExecution(thread_db* tdbb)
 {
 	if (m_isCurrent)
 		return true;
@@ -198,15 +198,15 @@ bool InternalConnection::cancelExecution(thread_db *tdbb)
 // a) is current conenction and current thread's attachment is equal to
 //	  this attachment, or
 // b) is not current conenction
-bool InternalConnection::isAvailable(thread_db *tdbb, TraScope /*traScope*/) const
+bool InternalConnection::isAvailable(thread_db* tdbb, TraScope /*traScope*/) const
 {
 	return !m_isCurrent ||
 		(m_isCurrent && (tdbb->getAttachment() == m_attachment));
 }
 
-bool InternalConnection::isSameDatabase(thread_db *tdbb, const Firebird::string &dbName,
-		const Firebird::string &user, const Firebird::string &pwd, 
-		const Firebird::string &role) const
+bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string& dbName,
+		const Firebird::string& user, const Firebird::string& pwd,
+		const Firebird::string& role) const
 {
 	if (m_isCurrent)
 		return (tdbb->getAttachment() == m_attachment);
@@ -232,7 +232,7 @@ Blob* InternalConnection::createBlob()
 
 // InternalTransaction()
 
-void InternalTransaction::doStart(ISC_STATUS* status, thread_db *tdbb, ClumpletWriter &tpb)
+void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletWriter& tpb)
 {
 	fb_assert(!m_transaction);
 
@@ -241,7 +241,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db *tdbb, ClumpletW
 	}
 	else
 	{
-		Attachment *att = m_IntConnection.getJrdAtt();
+		Attachment* att = m_IntConnection.getJrdAtt();
 
 		EngineCallbackGuard guard(tdbb, *this);
 		jrd8_start_transaction(status, &m_transaction, 1, &att,
@@ -275,7 +275,7 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool ret
 	}
 }
 
-void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool retain)
+void InternalTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool retain)
 {
 	fb_assert(m_transaction);
 
@@ -303,7 +303,7 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 
 // InternalStatement
 
-InternalStatement::InternalStatement(InternalConnection &conn) :
+InternalStatement::InternalStatement(InternalConnection& conn) :
 	Statement(conn),
 	m_intConnection(conn),
 	m_intTransaction(0),
@@ -317,13 +317,13 @@ InternalStatement::~InternalStatement()
 {
 }
 
-void InternalStatement::doPrepare(thread_db *tdbb, const string &sql)
+void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 {
 	m_inBlr.clear();
 	m_outBlr.clear();
 
-	Attachment *att = m_intConnection.getJrdAtt();
-	jrd_tra *tran = getIntTransaction()->getJrdTran();
+	Attachment* att = m_intConnection.getJrdAtt();
+	jrd_tra* tran = getIntTransaction()->getJrdTran();
 
 	ISC_STATUS_ARRAY status = {0};
 	if (!m_request)
@@ -414,9 +414,9 @@ void InternalStatement::doPrepare(thread_db *tdbb, const string &sql)
 }
 
 
-void InternalStatement::doExecute(thread_db *tdbb)
+void InternalStatement::doExecute(thread_db* tdbb)
 {
-	jrd_tra *transaction = getIntTransaction()->getJrdTran();
+	jrd_tra* transaction = getIntTransaction()->getJrdTran();
 
 	ISC_STATUS_ARRAY status = {0};
 	{
@@ -434,9 +434,9 @@ void InternalStatement::doExecute(thread_db *tdbb)
 }
 
 
-void InternalStatement::doOpen(thread_db *tdbb)
+void InternalStatement::doOpen(thread_db* tdbb)
 {
-	jrd_tra *transaction = getIntTransaction()->getJrdTran();
+	jrd_tra* transaction = getIntTransaction()->getJrdTran();
 
 	ISC_STATUS_ARRAY status = {0};
 	{
@@ -452,7 +452,7 @@ void InternalStatement::doOpen(thread_db *tdbb)
 }
 
 
-bool InternalStatement::doFetch(thread_db *tdbb)
+bool InternalStatement::doFetch(thread_db* tdbb)
 {
 	ISC_STATUS_ARRAY status = {0};
 	ISC_STATUS res = 0;
@@ -470,7 +470,7 @@ bool InternalStatement::doFetch(thread_db *tdbb)
 }
 
 
-void InternalStatement::doClose(thread_db *tdbb, bool drop)
+void InternalStatement::doClose(thread_db* tdbb, bool drop)
 {
 	ISC_STATUS_ARRAY status = {0};
 	{
@@ -485,7 +485,7 @@ void InternalStatement::doClose(thread_db *tdbb, bool drop)
 	}
 }
 
-void InternalStatement::putExtBlob(thread_db *tdbb, dsc &src, dsc &dst)
+void InternalStatement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 {
 	if (m_transaction->getScope() == traCommon)
 		MOV_move(tdbb, &src, &dst);
@@ -493,7 +493,7 @@ void InternalStatement::putExtBlob(thread_db *tdbb, dsc &src, dsc &dst)
 		Statement::putExtBlob(tdbb, src, dst);
 }
 
-void InternalStatement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
+void InternalStatement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 {
 	fb_assert(dst.dsc_length == src.dsc_length);
 	fb_assert(dst.dsc_length == sizeof(bid));
@@ -508,7 +508,7 @@ void InternalStatement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 
 // InternalBlob
 
-InternalBlob::InternalBlob(InternalConnection &conn) :
+InternalBlob::InternalBlob(InternalConnection& conn) :
 	Blob(conn),
 	m_connection(conn),
 	m_blob(NULL)
@@ -521,12 +521,12 @@ InternalBlob::~InternalBlob()
 	fb_assert(!m_blob);
 }
 
-void InternalBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, const UCharBuffer* bpb)
+void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, const UCharBuffer* bpb)
 {
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Attachment *att = m_connection.getJrdAtt();
+	Attachment* att = m_connection.getJrdAtt();
 	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
 	memcpy(&m_blob_id, desc.dsc_address, sizeof(m_blob_id));
 
@@ -546,12 +546,12 @@ void InternalBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, con
 	fb_assert(m_blob);
 }
 
-void InternalBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, const UCharBuffer* bpb)
+void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const UCharBuffer* bpb)
 {
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Attachment *att = m_connection.getJrdAtt();
+	Attachment* att = m_connection.getJrdAtt();
 	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
 	m_blob_id.clear();
 
@@ -572,7 +572,7 @@ void InternalBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, const U
 	fb_assert(m_blob);
 }
 
-USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
+USHORT InternalBlob::read(thread_db* tdbb, char* buff, USHORT len)
 {
 	fb_assert(m_blob);
 
@@ -611,7 +611,7 @@ void InternalBlob::write(thread_db* tdbb, const char* buff, USHORT len)
 	}
 }
 
-void InternalBlob::close(thread_db *tdbb)
+void InternalBlob::close(thread_db* tdbb)
 {
 	fb_assert(m_blob);
 	ISC_STATUS_ARRAY status = {0};
@@ -625,7 +625,7 @@ void InternalBlob::close(thread_db *tdbb)
 	fb_assert(!m_blob);
 }
 
-void InternalBlob::cancel(thread_db *tdbb)
+void InternalBlob::cancel(thread_db* tdbb)
 {
 	if (!m_blob) {
 		return;

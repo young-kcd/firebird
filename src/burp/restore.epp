@@ -1223,10 +1223,10 @@ void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class)
 
 		add_byte(blr, blr_begin);
 		add_byte(blr, blr_assignment);
-	
+
 		add_byte(blr, blr_gen_id);
 		add_string(blr, SQL_SECCLASS_GENERATOR);
-	
+
 		add_byte(blr, blr_literal);
 		add_byte(blr, blr_int64);
 		add_byte(blr, 0);
