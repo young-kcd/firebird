@@ -1,3 +1,13 @@
+2009-05-15 02:51  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.execute_statement2 (1.8),
+	src/burp/restore.epp (1.170), src/jrd/extds/ExtDS.cpp (1.39),
+	src/jrd/extds/ExtDS.h (1.18), src/jrd/extds/InternalDS.cpp (1.22),
+	src/jrd/extds/InternalDS.h (1.12), src/jrd/extds/IscDS.cpp (1.28),
+	src/jrd/extds/IscDS.h (1.16):
+
+	Misc
+
 2009-05-14 17:41  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.112):
