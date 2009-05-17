@@ -65,9 +65,9 @@ static PAG db_read(SLONG);
 static FILE *trace;
 static int file;
 
-/* Physical IO trace events */
+// Physical IO trace events
 
-const SSHORT trace_create	= 1;
+//const SSHORT trace_create	= 1;
 const SSHORT trace_open		= 2;
 const SSHORT trace_page_size	= 3;
 const SSHORT trace_read		= 4;
@@ -116,7 +116,6 @@ void main( int argc, char **argv)
 	struct tms before;
 	time_t elapsed = times(&before);
 
-	SLONG n;
 	SCHAR string[128] = "";
 
 	const pag* page;
@@ -128,7 +127,7 @@ void main( int argc, char **argv)
 		case trace_open:
 			{
 				const SLONG length = getc(trace);
-				n = length;
+				SLONG n = length;
 				SCHAR* p = string;
 				while (--n >= 0)
 					*p++ = getc(trace);
@@ -144,23 +143,27 @@ void main( int argc, char **argv)
 			break;
 
 		case trace_read:
-			n = get_long();
-			if (n < MAX_PAGES)
-				++read_counts[n];
+			{
+				const SLONG n = get_long();
+				if (n < MAX_PAGES)
+					++read_counts[n];
 
-			if (detail && (page = db_read(n)))
-				analyse(n, "Read", page, ++sequence);
-			reads++;
+				if (detail && (page = db_read(n)))
+					analyse(n, "Read", page, ++sequence);
+				reads++;
+			}
 			break;
 
 		case trace_write:
-			n = get_long();
-			if (n < MAX_PAGES)
-				++write_counts[n];
+			{
+				const SLONG n = get_long();
+				if (n < MAX_PAGES)
+					++write_counts[n];
 
-			if (detail && (page = db_read(n)))
-				analyse(n, "Write", page, ++sequence);
-			writes++;
+				if (detail && (page = db_read(n)))
+					analyse(n, "Write", page, ++sequence);
+				writes++;
+			}
 			break;
 
 		default:
@@ -183,6 +186,7 @@ void main( int argc, char **argv)
 	printf("High activity pages:\n");
 
 	const USHORT *r, *w;
+	SLONG n;
 	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES; n++, r++, w++)
 	{
 		if (*r > 1 || *w > 1) {

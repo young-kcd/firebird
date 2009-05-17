@@ -83,9 +83,9 @@ Syntax and notes :
 		if <role_name> is omitted, NULL or equal to CURRENT_ROLE value
 		then trusted autentication is performed, and
 		a1) for current connection (ON EXTERNAL DATA SOURCE is omitted) -
-			CURRENT_USER\CURRENT_ROLE is effective user account and role
+			CURRENT_USER/CURRENT_ROLE is effective user account and role
 		a2) for local database (<connection_string> refers to the current database) -
-			CURRENT_USER\CURRENT_ROLE is effective user account and role
+			CURRENT_USER/CURRENT_ROLE is effective user account and role
 		a3) for remote database - operating system account under which engine
 			process is currently run is effective user account.
 	b) else only isc_dpb_user_name (and isc_dpb_sql_role_name) will be present in DPB and

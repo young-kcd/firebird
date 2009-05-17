@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
+#include "../jrd/ods.h"
 #include "../utilities/rebuild/rebuild.h"
 #include "../utilities/rebuild/rebui_proto.h"
 #include "../utilities/rebuild/rstor_proto.h"
@@ -31,6 +32,8 @@
 DATABASE DB = STATIC FILENAME "rebuild.fdb";
 
 static void store_headers(RBDB);
+
+using namespace Ods;
 
 
 void RSTORE( RBDB rbdb)
@@ -79,14 +82,14 @@ static void store_headers( RBDB rbdb)
  *	into a database.
  *
  **************************************/
-	PAG page;
-	header_page* header;
-	BLP blob;
-	BTR bucket;
-	DPG data;
-	IRT index_root;
-	page_inv_page* pip;
-	PPG pointer;
+	const pag* page;
+	const header_page* header;
+	const blob_page* blob;
+	const btree_page* bucket;
+	const data_page* data;
+	const index_root_page* index_root;
+	const page_inv_page* pip;
+	const pointer_page* pointer;
 	ISC_QUAD temp;
 
 	ULONG page_number = 0;
@@ -173,7 +176,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_pointer:
-					pointer = (PPG) page;
+					pointer = (pointer_page*) page;
 					P.PPG_NEXT.NULL = FALSE;
 					P.PPG_COUNT.NULL = FALSE;
 					P.PPG_MIN_SPACE.NULL = FALSE;
@@ -189,7 +192,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_data:
-					data = (DPG) page;
+					data = (data_page*) page;
 					P.DPG_COUNT.NULL = FALSE;
 					P.RELATION.NULL = FALSE;
 					P.SEQUENCE.NULL = FALSE;
@@ -199,7 +202,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_root:
-					index_root = (IRT) page;
+					index_root = (index_root_page*) page;
 					P.IRT_COUNT.NULL = FALSE;
 					P.RELATION.NULL = FALSE;
 					P.IRT_COUNT = index_root->irt_count;
@@ -207,7 +210,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_index:
-					bucket = (BTR) page;
+					bucket = (btree_page*) page;
 					P.BTR_SIBLING.NULL = FALSE;
 					P.BTR_LENGTH.NULL = FALSE;
 					P.BTR_ID.NULL = FALSE;
@@ -221,7 +224,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_blob:
-					blob = (BLP) page;
+					blob = (blob_page*) page;
 					P.BLP_LEAD_PAGE.NULL = FALSE;
 					P.BLP_LENGTH.NULL = FALSE;
 					P.SEQUENCE.NULL = FALSE;

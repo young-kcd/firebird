@@ -559,7 +559,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 	{
 		EngineCallbackGuard guard(tdbb, m_connection);
 
-		USHORT bpb_len = bpb ? bpb->getCount() : 0;
+		const USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		jrd8_create_blob2(status, &att, &transaction, &m_blob, &m_blob_id,

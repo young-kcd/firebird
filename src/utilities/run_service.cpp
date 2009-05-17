@@ -53,16 +53,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	char spb_buffer[2048];
 	char* spb = spb_buffer;
+	const char* const spb_end = spb_buffer + sizeof(spb_buffer) - 1;
 	if (argc > 2)
 	{
 		*spb++ = isc_spb_version1;
 		*spb++ = isc_spb_command_line;
 		spb++;
-		for (argv += 2, argc -= 2; argc--;) {
-			for (const char* p = *argv++; *spb = *p++; spb++);
+		for (argv += 2, argc -= 2; argc && spb < spb_end; --argc) {
+			for (const char* p = *argv++; spb < spb_end && (*spb = *p++); spb++);
 			*spb++ = ' ';
 		}
 		*--spb = 0;
+		fb_assert(spb < spb_end);
 		spb_buffer[2] = strlen(spb_buffer + 3);
 	}
 
@@ -100,12 +102,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		{
 			SSHORT len = gds__vax_integer(p + 1, 2);
 			p += 2;
-			while (len--) {
+			while (len--)
+			{
 				p++;
 				if (*p != '\001')
 					putchar(*p);
 			}
-			if (*p++ == '\001') {
+			if (*p++ == '\001')
+			{
 				send_buffer[0] = isc_info_svc_line;
 				fgets(send_buffer + 3, sizeof(send_buffer) - 3, stdin);
 				len = strlen(send_buffer + 3);

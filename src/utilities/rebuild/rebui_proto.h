@@ -24,7 +24,7 @@
 #ifndef UTILITIES_REBUI_PROTO_H
 #define UTILITIES_REBUI_PROTO_H
 
-namespace Jrd {
+namespace Ods {
 	struct pag;
 }
 

@@ -94,14 +94,14 @@ static void event_list()
 	{
 		EVNT database_event = (EVNT) ((UCHAR*) database_que - OFFSET(EVNT, evnt_events));
 
-		/* Skip non-database entries */
+		// Skip non-database entries
 
 		if (database_event->evnt_parent)
 			continue;
 
-		/* Print out the magic name for the database, this name
-		   comes from the lock key_id for the database, on Unix
-		   this is comprised of the device number and inode */
+		// Print out the magic name for the database, this name
+		// comes from the lock key_id for the database, on Unix
+		// this is comprised of the device number and inode
 
 		printf("Database: ");
 		const UCHAR* p = (UCHAR *) database_event->evnt_name;
@@ -112,7 +112,7 @@ static void event_list()
 
 		{ // scope
 			srq *interest_que;
-			/* Print out the interest list for this event */
+			// Print out the interest list for this event
 
 			SRQ_LOOP(database_event->evnt_interests, interest_que)
 			{
@@ -127,7 +127,7 @@ static void event_list()
 			}
 		} // scope
 
-		/* Print out each event belonging to this database */
+		// Print out each event belonging to this database
 
 		srq* que_inst;
 		SRQ_LOOP(EVENT_header->evh_events, que_inst)
@@ -141,7 +141,7 @@ static void event_list()
 
 			{ // scope
 				srq *interest_que;
-				/* Print out the interest list for this event */
+				// Print out the interest list for this event
 
 				SRQ_LOOP(event->evnt_interests, interest_que)
 				{

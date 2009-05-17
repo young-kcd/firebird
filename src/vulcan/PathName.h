@@ -23,8 +23,8 @@
  *  All Rights Reserved.
  */
 
-#ifndef _PATHNAME_H_
-#define _PATHNAME_H_
+#ifndef VULCAN_PATHNAME_H_
+#define VULCAN_PATHNAME_H_
 
 #if defined _MSC_VER  && _MSC_VER >= 1000
 #pragma once

@@ -61,17 +61,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	setpgrp();
 #else
 	setpgrp(0, 0);
-#endif /* SETPGRP_VOID */
+#endif // SETPGRP_VOID
 #else
 #ifdef HAVE_SETPGID
 	setpgid(0, 0);
-#endif /* HAVE_SETPGID */
-#endif /* HAVE_SETPGRP */
+#endif // HAVE_SETPGID
+#endif // HAVE_SETPGRP
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-#endif /* !DEBUG */
+#endif // !DEBUG
 
-/* Get the file descriptor ID - if it is present - make sure it's valid */
+	// Get the file descriptor ID - if it is present - make sure it's valid
 	int fd;
 	if (argc < 2 || (!(fd = atoi(argv[1])) && strcmp(argv[1], "0")))
 		fd = -1;
@@ -96,11 +96,11 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (fd == -1)
 		exit(FINI_OK);
 
-/* Close all files, except for the pipe input */
+	// Close all files, except for the pipe input
 	for (int n = 0; n < NOFILE; n++)
 	{
 #ifdef DEV_BUILD
-		/* Don't close stderr - we might need to report something */
+		// Don't close stderr - we might need to report something
 		if ((n != fd) && (n != 2))
 #else
 		if (n != fd)
@@ -112,11 +112,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	while (read(fd, msg, sizeof(msg)) == sizeof(msg))
 	{
 #ifdef DEV_BUILD
-		/* This is #ifdef for DEV_BUILD just in case a V3 client will
-		 * attempt communication with this V4 version.
-		 */
+		// This is #ifdef for DEV_BUILD just in case a V3 client will
+		// attempt communication with this V4 version.
 		if (msg[2] != (msg[0] ^ msg[1])) {
-			fprintf(stderr, "gds_relay received inconsistant message");
+			fprintf(stderr, "gds_relay received inconsistent message");
 		}
 #endif
 		if (kill(msg[0], msg[1])) {

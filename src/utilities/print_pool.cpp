@@ -42,8 +42,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	char buffer[512];
 	char fname[512];
 	ISC_STATUS_ARRAY status;
-	isc_svc_handle svc_handle = NULL;
-	char svc_name[256];
 
 	if (argc != 2 && argc != 1) {
 		printf("Usage %s \n      %s filename\n");
@@ -58,7 +56,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	strcpy(buffer, fname);
 	printf("Filename to dump pool info = %s \n", buffer);
+	char svc_name[256];
 	sprintf(svc_name, "localhost:anonymous");
+
+	isc_svc_handle svc_handle = NULL;
 	if (isc_service_attach(status, 0, svc_name, &svc_handle, 0, NULL)) {
 		printf("Failed to attach service\n");
 		return 0;

@@ -69,8 +69,8 @@ static void dummy_init();
 static int shm_exclusive(SLONG, SLONG);
 #endif
 
-static int orig_argc;
-static SCHAR **orig_argv;
+//static int orig_argc;
+//static SCHAR **orig_argv;
 
 
 int CLIB_ROUTINE main( int argc, char *argv[])
@@ -90,8 +90,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	bool sw_version = false;
 	bool sw_shutmngr = false;
 
-	orig_argc = argc;
-	orig_argv = argv;
+	//orig_argc = argc;
+	//orig_argv = argv;
 
 	SCHAR** const end = argv + argc;
 	while (++argv < end)
@@ -178,7 +178,7 @@ static SLONG get_key(const TEXT* filename)
 	sprintf(expanded_filename, filename, ISC_get_host(hostname, sizeof(hostname)));
 #endif
 
-/* Produce shared memory key for file */
+	// Produce shared memory key for file
 
 	return ftok(expanded_filename, FTOK_KEY);
 }

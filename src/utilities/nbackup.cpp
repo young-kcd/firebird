@@ -128,12 +128,11 @@ namespace
 	GlobalPtr<NbkStringsBuffer> nbkStringsBuffer;
 	GlobalPtr<Mutex> nbkBufMutex;
 
-/*
- HPUX has non-posix-conformant method to return error codes from posix_fadvise().
- Instead of error code, directly returned by function (like specified by posix),
- -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
- May be sometimes this function should be moved to fb_util namespace.
-*/
+	// HPUX has non-posix-conformant method to return error codes from posix_fadvise().
+	// Instead of error code, directly returned by function (like specified by posix),
+	// -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
+	// May be sometimes this function should be moved to fb_util namespace.
+
 #ifdef HAVE_POSIX_FADVISE
 	int fb_fadvise(int fd, off_t offset, size_t len, int advice)
 	{
@@ -308,18 +307,22 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 #ifdef WIN_NT
 	DWORD bytesDone;
 	if (!ReadFile(file, buffer, bufsize, &bytesDone, NULL))
+	{
 		b_error::raise(uSvc, "IO error (%d) reading file: %s",
 			GetLastError(),
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
+	}
 	return bytesDone;
 #else
 	const ssize_t res = read(file, buffer, bufsize);
 	if (res < 0)
+	{
 		b_error::raise(uSvc, "IO error (%d) reading file: %s",
 			errno,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
+	}
 	return res;
 #endif
 }
@@ -337,10 +340,12 @@ void NBackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	}
 #else
 	if (write(file, buffer, bufsize) != (ssize_t) bufsize)
+	{
 		b_error::raise(uSvc, "IO error (%d) writing file: %s",
 			errno,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
+	}
 #endif
 }
 
@@ -361,10 +366,12 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	}
 #else
 	if (lseek(file, pos, SEEK_SET) == (off_t) - 1)
+	{
 		b_error::raise(uSvc, "IO error (%d) seeking file: %s",
 			errno,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
+	}
 #endif
 }
 
@@ -720,7 +727,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		if (fname.hasData())
 			bakname = fname;
-		else {
+		else
+		{
 			// Let's generate nice new filename
 			PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
@@ -801,7 +809,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		// Write data to backup file
 		ULONG backup_scn = header->hdr_header.pag_scn - 1;
-		if (level) {
+		if (level)
+		{
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
 			bh.version = 1;
@@ -1001,7 +1010,8 @@ void NBackup::restore_database(const BackupFiles& files)
 					}
 				}
 			}
-			else {
+			else
+			{
 				if (curLevel >= filecount) {
 					close_database();
 					fixup_database();
@@ -1066,7 +1076,8 @@ void NBackup::restore_database(const BackupFiles& files)
 #else
 				// Use relatively small buffer to make use of prefetch and lazy flush
 				char buffer[65536];
-				while (true) {
+				while (true)
+				{
 					const size_t bytesRead = read_file(backup, buffer, sizeof(buffer));
 					if (bytesRead == 0)
 						break;

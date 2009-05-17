@@ -39,6 +39,7 @@
 #include "../utilities/rebuild/rstor_proto.h"
 #include "../jrd/dmp_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/utils_proto.h
 
 #ifndef O_RDWR
 #include <fcntl.h>
@@ -53,30 +54,30 @@ const ULONG* tips;
 
 FILE* dbg_file;
 
-static void checksum(RBDB, ULONG, ULONG, bool);
-static USHORT compute_checksum(RBDB, PAG);
+static void checksum(rbdb*, ULONG, ULONG, bool);
+static USHORT compute_checksum(const rbdb*, PAG);
 static void db_error(int);
-static void dump(FILE *, RBDB, ULONG, ULONG, UCHAR);
-static void dump_tips(FILE *, RBDB);
-static void format_header(RBDB, header_page*, int, ULONG, ULONG, ULONG, ULONG);
+static void dump(FILE*, rbdb*, ULONG, ULONG, UCHAR);
+static void dump_tips(FILE*, rbdb*);
+static void format_header(const rbdb*, header_page*, int, ULONG, ULONG, ULONG, ULONG);
 static void format_index_root(index_root_page*, int, SSHORT, SSHORT);
 static void format_pointer(pointer_page*, int, SSHORT, SSHORT, bool, SSHORT, SLONG *);
 static void format_pip(page_inv_page*, int, int);
 static void format_tip(tx_inv_page*, int, SLONG);
-static void get_next_file(RBDB, header_page*);
+static void get_next_file(rbdb*, header_page*);
 static void get_range(TEXT***, const TEXT* const* const, ULONG*, ULONG*);
 static void get_switch(TEXT**, swc*);
-static header_page* open_database(RBDB, ULONG);
+static header_page* open_database(rbdb*, ULONG);
 static void print_db_header(FILE*, const header_page*);
-static void rebuild(RBDB);
-static void write_headers(FILE*, RBDB, ULONG, ULONG);
+static void rebuild(rbdb*);
+static void write_headers(FILE*, rbdb*, ULONG, ULONG);
 
 static bool sw_rebuild;
 static bool sw_print;
 static bool sw_store;
 static bool sw_dump_pages;
 static bool sw_checksum;
-static bool sw_fudge;
+//static bool sw_fudge;
 static bool sw_fix;
 static bool sw_dump_tips;
 
@@ -108,7 +109,7 @@ int main( int argc, char *argv[])
 
 	dbg_file = stdout;
 	sw_rebuild = sw_print = sw_store = sw_dump_pages = sw_checksum = false;
-	sw_dump_tips = sw_fudge = sw_fix = false;
+	sw_dump_tips = /*sw_fudge = */ sw_fix = false;
 
 	ULONG c_lower_bound, c_upper_bound, d_lower_bound, d_upper_bound,
 		p_lower_bound, p_upper_bound, pg_size;
@@ -118,10 +119,10 @@ int main( int argc, char *argv[])
 
 	const TEXT* const* const end = argv + argc;
 	++argv;
-	struct swc switch_space;
+	swc switch_space;
 	swc* token = &switch_space;
 
-	RBDB rbdb = NULL;
+	rbdb* rbdb = NULL;
 	header_page* header = NULL;
 	TEXT* ascii_out = NULL;
 	TEXT* db_in = NULL;
@@ -161,11 +162,12 @@ int main( int argc, char *argv[])
 				break;
 
 			case 'o':
-				if (argv < end) {
+				if (argv < end)
+				{
 					get_switch(argv, token);
 					if (token->swc_switch)
 						break;
-					strcpy(out_file, token->swc_string);
+					fb_utils::copy_terminate(out_file, token->swc_string, sizeof(out_file));
 					ascii_out = out_file;
 					argv++;
 				}
@@ -192,14 +194,15 @@ int main( int argc, char *argv[])
 
 	if (db_in)
 	{
-		rbdb = (RBDB) RBDB_alloc((SLONG) (sizeof(struct rbdb) + strlen(db_in) + 1));
+		rbdb = (rbdb*) RBDB_alloc((SLONG) (sizeof(struct rbdb) + strlen(db_in)));
 		strcpy(rbdb->rbdb_file.fil_name, db_in);
 		rbdb->rbdb_file.fil_length = strlen(db_in);
 		if (header = open_database(rbdb, pg_size))
 			get_next_file(rbdb, header);
 
-		/* some systems don't care for this write sharing stuff... */
-		if (rbdb && (sw_dump_tips || sw_dump_pages)) {
+		// some systems don't care for this write sharing stuff...
+		if (rbdb && (sw_dump_tips || sw_dump_pages))
+		{
 			RBDB_close(rbdb);
 			if (rbdb->rbdb_valid)
 				tips = RMET_tips(db_in);
@@ -253,7 +256,7 @@ int main( int argc, char *argv[])
 
 	while (rbdb)
 	{
-		RBDB next_db = rbdb->rbdb_next;
+		rbdb* const next_db = rbdb->rbdb_next;
 		if (rbdb->rbdb_buffer1)
 			gds__free(rbdb->rbdb_buffer1);
 		if (rbdb->rbdb_buffer2)
@@ -267,7 +270,7 @@ int main( int argc, char *argv[])
 
 
 #ifdef HPUX
-PAG CCH_fetch(WIN * x, USHORT y, int z)
+PAG CCH_fetch(WIN* x, USHORT y, int z)
 {
 /**************************************
  *
@@ -284,7 +287,7 @@ PAG CCH_fetch(WIN * x, USHORT y, int z)
 }
 
 
-PAG CCH_release(WIN * x)
+PAG CCH_release(WIN* x)
 {
 /**************************************
  *
@@ -318,7 +321,7 @@ void* RBDB_alloc(SLONG size)
 }
 
 
-void RBDB_close( RBDB rbdb)
+void RBDB_close( rbdb* rbdb)
 {
 /**************************************
  *
@@ -334,7 +337,7 @@ void RBDB_close( RBDB rbdb)
 }
 
 
-void RBDB_open( RBDB rbdb)
+void RBDB_open( rbdb* rbdb)
 {
 /**************************************
  *
@@ -353,7 +356,7 @@ void RBDB_open( RBDB rbdb)
 }
 
 
-PAG RBDB_read(RBDB rbdb, SLONG page_number)
+PAG RBDB_read(rbdb* rbdb, SLONG page_number)
 {
 /**************************************
  *
@@ -387,7 +390,7 @@ PAG RBDB_read(RBDB rbdb, SLONG page_number)
 }
 
 
-void RBDB_write( RBDB rbdb, PAG page, SLONG page_number)
+void RBDB_write( rbdb* rbdb, PAG page, SLONG page_number)
 {
 /**************************************
  *
@@ -411,7 +414,7 @@ void RBDB_write( RBDB rbdb, PAG page, SLONG page_number)
 }
 
 
-static void checksum( RBDB rbdb, ULONG lower, ULONG upper, bool sw_fix)
+static void checksum( rbdb* rbdb, ULONG lower, ULONG upper, bool sw_fix)
 {
 /**************************************
  *
@@ -445,7 +448,7 @@ static void checksum( RBDB rbdb, ULONG lower, ULONG upper, bool sw_fix)
 }
 
 
-static USHORT compute_checksum( RBDB rbdb, PAG page)
+static USHORT compute_checksum( const rbdb* rbdb, PAG page)
 {
 /**************************************
  *
@@ -479,7 +482,7 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
 	if (checksum)
 		return checksum;
 
-/* If the page is all zeros, return an artificial checksum */
+	// If the page is all zeros, return an artificial checksum
 
 	for (p = (ULONG *) page; p < end;)
 	{
@@ -487,7 +490,7 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
 			return checksum;
 	}
 
-/* Page is all zeros -- invent a checksum */
+	// Page is all zeros -- invent a checksum
 
 	return 12345;
 }
@@ -508,7 +511,7 @@ static void db_error( int status)
 }
 
 
-static void dump(FILE* file, RBDB rbdb, ULONG lower, ULONG upper, UCHAR pg_type)
+static void dump(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper, UCHAR pg_type)
 {
 /**************************************
  *
@@ -545,8 +548,7 @@ static void dump(FILE* file, RBDB rbdb, ULONG lower, ULONG upper, UCHAR pg_type)
 			sequence = 0;
 		if (pg_type && (page->pag_type != pg_type))
 		{
-			printf("\nChanging page %d type from %d to %d\n", lower,
-					  page->pag_type, pg_type);
+			fprintf(file, "\nChanging page %d type from %d to %d\n", lower, page->pag_type, pg_type);
 			page->pag_type = pg_type;
 		}
 		DMP_fetched_page(page, lower, sequence, rbdb->rbdb_page_size);
@@ -555,16 +557,17 @@ static void dump(FILE* file, RBDB rbdb, ULONG lower, ULONG upper, UCHAR pg_type)
 		while (!*p && p < end)
 			++p;
 		if (!*p)
-			printf("    Page is all zeroes.\n");
-		if (sw_fudge)
-			RBDB_write(rbdb, page, lower);
+			fprintf(file, "    Page is all zeroes.\n");
+		// This cannot be true because sw_fudge is never activated
+		//if (sw_fudge)
+		//	RBDB_write(rbdb, page, lower);
 		if (++lower > upper)
 			break;
 	}
 }
 
 
-static void dump_tips( FILE * file, RBDB rbdb)
+static void dump_tips( FILE* file, rbdb* rbdb)
 {
 /**************************************
  *
@@ -578,7 +581,7 @@ static void dump_tips( FILE * file, RBDB rbdb)
  *
  **************************************/
 	if (!tips)
-		printf("not enough database.  Store headers and look there\n");
+		fprintf(file, "not enough database.  Store headers and look there\n");
 
 	PAG page;
 	ULONG sequence = 1;
@@ -589,7 +592,7 @@ static void dump_tips( FILE * file, RBDB rbdb)
 }
 
 
-static void format_header(RBDB rbdb,
+static void format_header(const rbdb* rbdb,
 						  header_page* page,
 						  int page_size,
 						  ULONG oldest, ULONG active, ULONG next, ULONG imp)
@@ -685,15 +688,15 @@ static void format_pip( page_inv_page* page, int page_size, int last_flag)
 	page->pag_type = pag_pages;
 	page->pag_flags = 0;
 
-/* Set all page bits to zero, indicating RBDB_allocated */
+	// Set all page bits to zero, indicating RBDB_allocated
 
 	const SSHORT bytes = page_size - OFFSETA(page_inv_page*, pip_bits);
 	memset(page->pip_bits, 0, bytes);
 
-/* If this is the last pip, make sure the last page (which
-   will become the next pip) is marked free.  When the
-   time comes to RBDB_allocate the next page, that page will
-   be formatted as the next pip. */
+	// If this is the last pip, make sure the last page (which
+	// will become the next pip) is marked free.  When the
+	// time comes to RBDB_allocate the next page, that page will
+	// be formatted as the next pip.
 
 	if (last_flag)
 		page->pip_bits[bytes - 1] |= 1 << 7;
@@ -715,22 +718,20 @@ static void format_tip( tx_inv_page* page, int page_size, SLONG next_page)
 	page->pag_type = pag_transactions;
 	page->pag_flags = 0;
 
-/* The "next" tip page number is included for redundancy, but is not actually
-   read by the engine, so can be safely left zero.  If known, it would nice
-   to supply it.
-*/
+	// The "next" tip page number is included for redundancy, but is not actually
+	// read by the engine, so can be safely left zero.  If known, it would nice
+	// to supply it.
 
 	page->tip_next = next_page;
 
-/* Code for committed transaction is 3, so just fill all
-   bytes with -1 */
+	// Code for committed transaction is 3, so just fill all bytes with -1
 
 	const SSHORT bytes = page_size - OFFSETA(tx_inv_page*, tip_transactions);
 	memset(page->tip_transactions, -1, bytes);
 }
 
 
-static void get_next_file( RBDB rbdb, header_page* header)
+static void get_next_file( rbdb* rbdb, header_page* header)
 {
 /**************************************
  *
@@ -743,13 +744,13 @@ static void get_next_file( RBDB rbdb, header_page* header)
  *	this database, get it now.
  *
  **************************************/
-	RBDB* next = &rbdb->rbdb_next;
+	rbdb** next = &rbdb->rbdb_next;
 	const UCHAR* p = header->hdr_data;
 	for (const UCHAR* const end = p + header->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
 	{
 		if (*p == HDR_file)
 		{
-			RBDB next_rbdb = (RBDB) RBDB_alloc(sizeof(rbdb) + (SSHORT) p[1]);
+			rbdb* next_rbdb = (rbdb*) RBDB_alloc(sizeof(struct rbdb) + (SSHORT) p[1]);
 			next_rbdb->rbdb_file.fil_length = (SSHORT) p[1];
 			strncpy(next_rbdb->rbdb_file.fil_name, p + 2, (SSHORT) p[1]);
 			*next = next_rbdb;
@@ -791,7 +792,8 @@ static void get_range(TEXT*** argv, const TEXT* const* const end, ULONG* lower, 
 				break;
 			}
 		*upper = *lower = (ULONG) atoi(token->swc_string);
-		if (*p && (c == ':' || c == ',')) {
+		if (*p && (c == ':' || c == ','))
+		{
 			if (*p == '*')
 				*upper = BIG_NUMBER;
 			else
@@ -807,13 +809,15 @@ static void get_range(TEXT*** argv, const TEXT* const* const end, ULONG* lower, 
 		if ((*token->swc_string == ':') || (*token->swc_string == ','))
 		{
 			const TEXT* p = token->swc_string;
-			if (*++p) {
+			if (*++p)
+			{
 				if (*p == '*')
 					*upper = BIG_NUMBER;
 				else
 					*upper = (ULONG) atoi(p);
 			}
-			else if (*argv++ < end) {
+			else if (*argv++ < end)
+			{
 				get_switch(*argv, token);
 				if (token->swc_switch)
 					return;
@@ -854,14 +858,14 @@ static void get_switch( TEXT** argv, swc* token)
 
 	if (token->swc_string[temp] == ',') {
 		token->swc_string[temp] = '\0';
-		token->swc_comma = true;
+		//token->swc_comma = true;
 	}
-	else
-		token->swc_comma = false;
+	//else
+	//	token->swc_comma = false;
 }
 
 
-static header_page* open_database( RBDB rbdb, ULONG pg_size)
+static header_page* open_database( rbdb* rbdb, ULONG pg_size)
 {
 /**************************************
  *
@@ -890,7 +894,8 @@ static header_page* open_database( RBDB rbdb, ULONG pg_size)
 		rbdb->rbdb_valid = false;
 	}
 
-	if (header->hdr_ods_version != ODS_VERSION | ODS_TYPE_CURRENT) {
+	if (header->hdr_ods_version != ODS_VERSION | ODS_TYPE_CURRENT)
+	{
 		printf("Wrong ODS version, expected %d type %04x, encountered %d type %04x.\n",
 				  ODS_VERSION, ODS_TYPE_CURRENT,
 				  header->hdr_ods_version & ~ODS_TYPE_MASK,
@@ -941,28 +946,19 @@ static void print_db_header( FILE* file, const header_page* header)
 		header->hdr_ods_version & ODS_TYPE_MASK);
 	fprintf(file, "    PAGES\t\t\t%d\n", header->hdr_PAGES);
 	fprintf(file, "    next page\t\t\t%d\n", header->hdr_next_page);
-	fprintf(file, "    Oldest transaction\t\t%ld\n",
-			   header->hdr_oldest_transaction);
+	fprintf(file, "    Oldest transaction\t\t%ld\n", header->hdr_oldest_transaction);
 	fprintf(file, "    Oldest active\t\t%ld\n", header->hdr_oldest_active);
-	fprintf(file, "    Oldest snapshot\t\t%ld\n",
-			   header->hdr_oldest_snapshot);
-	fprintf(file, "    Next transaction\t\t%ld\n",
-			   header->hdr_next_transaction);
+	fprintf(file, "    Oldest snapshot\t\t%ld\n", header->hdr_oldest_snapshot);
+	fprintf(file, "    Next transaction\t\t%ld\n", header->hdr_next_transaction);
 
-	fprintf(file, "    Data pages per pointer page\t%ld\n",
-			   gdbb->tdbb_database->dbb_dp_per_pp);
-	fprintf(file, "    Max records per page\t%ld\n",
-			   gdbb->tdbb_database->dbb_max_records);
+	fprintf(file, "    Data pages per pointer page\t%ld\n", gdbb->tdbb_database->dbb_dp_per_pp);
+	fprintf(file, "    Max records per page\t%ld\n", gdbb->tdbb_database->dbb_max_records);
 
-/*
-fprintf ("    Sequence number    %d\n", header->hdr_sequence);
-fprintf ("    Creation date    \n", header->hdr_creation_date);
-*/
+	//fprintf ("    Sequence number    %d\n", header->hdr_sequence);
+	//fprintf ("    Creation date    \n", header->hdr_creation_date);
 
-	fprintf(file, "    Next attachment ID\t\t%ld\n",
-			   header->hdr_attachment_id);
-	fprintf(file, "    Implementation ID\t\t%ld\n",
-			   header->hdr_implementation);
+	fprintf(file, "    Next attachment ID\t\t%ld\n", header->hdr_attachment_id);
+	fprintf(file, "    Implementation ID\t\t%ld\n", header->hdr_implementation);
 	fprintf(file, "    Shadow count\t\t%ld\n", header->hdr_shadow_count);
 
 	tm time;
@@ -972,8 +968,7 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 	fprintf(file, "    Cache buffers\t\t%ld\n", header->hdr_cache_buffers);
-	fprintf(file, "    Bumped transaction\t\t%ld\n",
-			   header->hdr_bumped_transaction);
+	fprintf(file, "    Bumped transaction\t\t%ld\n", header->hdr_bumped_transaction);
 
 	fprintf(file, "\n    Variable header data:\n");
 
@@ -1032,8 +1027,7 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 			break;
 */
 		default:
-			fprintf(file, "\tUnrecognized option %d, length %d\n", p[0],
-					   p[1]);
+			fprintf(file, "\tUnrecognized option %d, length %d\n", p[0], p[1]);
 		}
 	}
 
@@ -1041,7 +1035,7 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 }
 
 
-static void rebuild( RBDB rbdb)
+static void rebuild( rbdb* rbdb)
 {
 /**************************************
  *
@@ -1056,18 +1050,17 @@ static void rebuild( RBDB rbdb)
 	const ULONG page_size = rbdb->rbdb_page_size;
 	pag* page = rbdb->rbdb_buffer1;
 	const ULONG* page_numbers = PPG_NUMBERS;
-	for (ULONG number = 5898; (number < 5899) && (page = RBDB_read(rbdb, number));
-		 number++)
+	for (ULONG number = 5898; (number < 5899) && (page = RBDB_read(rbdb, number)); number++)
 	{
 		pointer_page* pointer = (pointer_page*) page;
-/*    format_pointer (page, page_size, 25, 3, true, 37, page_numbers);   */
+		// format_pointer (page, page_size, 25, 3, true, 37, page_numbers);
 
 		RBDB_write(rbdb, page, number);
 	}
 }
 
 
-static void write_headers(FILE* file, RBDB rbdb, ULONG lower, ULONG upper)
+static void write_headers(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper)
 {
 /**************************************
  *
@@ -1079,7 +1072,7 @@ static void write_headers(FILE* file, RBDB rbdb, ULONG lower, ULONG upper)
  *	Print out the page headers.
  *
  **************************************/
-	pag* page;
+	const pag* page;
 	for (ULONG page_number = lower;
 		(page_number <= upper) && (page = RBDB_read(rbdb, page_number));
 		page_number++)
@@ -1089,109 +1082,94 @@ static void write_headers(FILE* file, RBDB rbdb, ULONG lower, ULONG upper)
 		switch (page->pag_type)
 		{
 		case pag_header:
-			fprintf(file, "header page, checksum %d\n",
-					   page->pag_checksum);
+			fprintf(file, "header page, checksum %d\n", page->pag_checksum);
 			print_db_header(file, (header_page*) page);
 			break;
 
 		case pag_pages:
 			{
-			fprintf(file, "page inventory page, checksum %d\n",
-					   page->pag_checksum);
-			page_inv_page* pip = (page_inv_page*) page;
-			fprintf(file, "\tlowest free page %d\n\n", pip->pip_min);
-			break;
+				fprintf(file, "page inventory page, checksum %d\n", page->pag_checksum);
+				const page_inv_page* pip = (page_inv_page*) page;
+				fprintf(file, "\tlowest free page %d\n\n", pip->pip_min);
 			}
+			break;
 
 		case pag_transactions:
 			fprintf(file, "TIP page, checksum %d\n", page->pag_checksum);
-			fprintf(file, "\tnext tip for database %ld\n\n",
-					   ((tx_inv_page*) page)->tip_next);
+			fprintf(file, "\tnext tip for database %ld\n\n", ((tx_inv_page*) page)->tip_next);
 			break;
 
 		case pag_pointer:
 			{
-			fprintf(file, "pointer page, checksum %d\n",
-					   page->pag_checksum);
-			const pointer_page* pointer = (pointer_page*) page;
-			fprintf(file,
-					   "\trelation %d, sequence %ld, next pip %ld, active slots %d\n",
-					   pointer->ppg_relation, pointer->ppg_sequence,
-					   pointer->ppg_next, pointer->ppg_count);
-			fprintf(file,
-					   "\tfirst slot with space %d, last slot with space %d\n",
-					   pointer->ppg_min_space, pointer->ppg_max_space);
-			fprintf(file, "\t%s\n",
-					   (pointer->pag_flags & ppg_eof) ?
-							"last pointer for relation\n" : "");
-			break;
+				fprintf(file, "pointer page, checksum %d\n", page->pag_checksum);
+				const pointer_page* pointer = (pointer_page*) page;
+				fprintf(file, "\trelation %d, sequence %ld, next pip %ld, active slots %d\n",
+						   pointer->ppg_relation, pointer->ppg_sequence,
+						   pointer->ppg_next, pointer->ppg_count);
+				fprintf(file, "\tfirst slot with space %d, last slot with space %d\n",
+						   pointer->ppg_min_space, pointer->ppg_max_space);
+				fprintf(file, "\t%s\n",
+						   (pointer->pag_flags & ppg_eof) ? "last pointer for relation\n" : "");
 			}
+			break;
 
 		case pag_data:
 			{
-			fprintf(file, "data page, checksum %d\n", page->pag_checksum);
-			const data_page* data = (data_page*) page;
-			fprintf(file,
-					   "\trelation %d, sequence %ld, records on page %d\n",
-					   data->dpg_relation, data->dpg_sequence,
-					   data->dpg_count);
-			fprintf(file, "\t%s%s%s%s\n",
-					   (data->pag_flags & dpg_orphan) ? "orphan " : "",
-					   (data->pag_flags & dpg_full) ? "full " : "",
-					   (data->pag_flags & dpg_large) ?
-					   		"contains a large object" : "",
-					   (data->pag_flags) ? "\n" : "");
-			break;
+				fprintf(file, "data page, checksum %d\n", page->pag_checksum);
+				const data_page* data = (data_page*) page;
+				fprintf(file, "\trelation %d, sequence %ld, records on page %d\n",
+						   data->dpg_relation, data->dpg_sequence,
+						   data->dpg_count);
+				fprintf(file, "\t%s%s%s%s\n",
+						   (data->pag_flags & dpg_orphan) ? "orphan " : "",
+						   (data->pag_flags & dpg_full) ? "full " : "",
+						   (data->pag_flags & dpg_large) ? "contains a large object" : "",
+						   (data->pag_flags) ? "\n" : "");
 			}
+			break;
 
 		case pag_root:
 			{
-			fprintf(file, "index root page, checksum %d\n",
-					   page->pag_checksum);
-			const index_root_page* index_root = (index_root_page*) page;
-			fprintf(file, "\trelation %d, number of indexes %d\n\n",
-					   index_root->irt_relation, index_root->irt_count);
-			break;
+				fprintf(file, "index root page, checksum %d\n", page->pag_checksum);
+				const index_root_page* index_root = (index_root_page*) page;
+				fprintf(file, "\trelation %d, number of indexes %d\n\n",
+						   index_root->irt_relation, index_root->irt_count);
 			}
+			break;
 
 		case pag_index:
 			{
-			fprintf(file, "btree page (bucket), checksum %d\n",
-					   page->pag_checksum);
-			const btree_page* bucket = (btree_page*) page;
-			fprintf(file, "\trelation %d, right sibling bucket: %ld,\n",
-					   bucket->btr_relation, bucket->btr_sibling);
-			fprintf(file, "\tdata length %d, index id %d, level %d\n",
-					   bucket->btr_length, bucket->btr_id, bucket->btr_level);
-			fprintf(file, "\t%s%s%s\n",
-					   (bucket->pag_flags & btr_leftmost) ? "leftmost " : "",
-					   (bucket->pag_flags & btr_not_prop) ?
-					   		"all duplicates " : "",
-					   (bucket->Pag_flags & btr_marked) ?
-					   		"marked for delete" : "");
-			break;
+				fprintf(file, "btree page (bucket), checksum %d\n", page->pag_checksum);
+				const btree_page* bucket = (btree_page*) page;
+				fprintf(file, "\trelation %d, right sibling bucket: %ld,\n",
+						   bucket->btr_relation, bucket->btr_sibling);
+				fprintf(file, "\tdata length %d, index id %d, level %d\n",
+						   bucket->btr_length, bucket->btr_id, bucket->btr_level);
+				fprintf(file, "\t%s%s%s\n",
+						   (bucket->pag_flags & btr_leftmost) ? "leftmost " : "",
+						   (bucket->pag_flags & btr_not_prop) ? "all duplicates " : "",
+						   (bucket->Pag_flags & btr_marked) ? "marked for delete" : "");
 			}
+			break;
 
 		case pag_blob:
 			{
-			fprintf(file, "blob page, checksum %d\n", page->pag_checksum);
-			const blob_page* blob = (blob_page*) page;
-			fprintf(file, "\tlead page: %ld, sequence: %ld, length: %d\n",
-					   blob->blp_lead_page, blob->blp_sequence,
-					   blob->blp_length);
-			fprintf(file, "\tcontains %s\n",
-					   (blob->pag_flags & blp_pointers) ? "pointers" : "data");
-			break;
+				fprintf(file, "blob page, checksum %d\n", page->pag_checksum);
+				const blob_page* blob = (blob_page*) page;
+				fprintf(file, "\tlead page: %ld, sequence: %ld, length: %d\n",
+						   blob->blp_lead_page, blob->blp_sequence,
+						   blob->blp_length);
+				fprintf(file, "\tcontains %s\n",
+						   (blob->pag_flags & blp_pointers) ? "pointers" : "data");
 			}
+			break;
 
 		case pag_ids:
-			fprintf(file, "generator page, checksum %d\n\n",
-					   page->pag_checksum);
+			fprintf(file, "generator page, checksum %d\n\n", page->pag_checksum);
 			break;
 
 		case pag_log:
-			fprintf(dbg_file, "write-ahead log info page, checksum %d\n\n",
-					   page->pag_checksum);
+			fprintf(dbg_file, "write-ahead log info page, checksum %d\n\n", page->pag_checksum);
 			break;
 
 		default:

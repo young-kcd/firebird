@@ -294,8 +294,8 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 {
 	dpb.reset(isc_dpb_version1);
 
-	string& attUser = tdbb->getAttachment()->att_user->usr_user_name;
-	string& attRole = tdbb->getAttachment()->att_user->usr_sql_role_name;
+	const string& attUser = tdbb->getAttachment()->att_user->usr_user_name;
+	const string& attRole = tdbb->getAttachment()->att_user->usr_sql_role_name;
 
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
 		(user.isEmpty() || user == attUser) && pwd.isEmpty() &&

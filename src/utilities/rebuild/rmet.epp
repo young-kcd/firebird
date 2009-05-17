@@ -34,7 +34,7 @@
 DATABASE DB = STATIC FILENAME "rebuild.fdb";
 
 
-ULONG *RMET_tips(TEXT * db_in)
+ULONG* RMET_tips(TEXT* db_in)
 {
 /**************************************
  *

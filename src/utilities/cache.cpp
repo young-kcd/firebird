@@ -54,9 +54,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 
-/* Perform some special handling when run as a Firebird service.  The
-   first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-   by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
+	// Perform some special handling when run as a Firebird service.  The
+	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	if (argc > 1 && !strcmp(argv[1], "-svc"))
 	{
@@ -95,12 +95,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	setpgrp();
 #else
 	setpgrp(0, 0);
-#endif /* SETPGRP_VOID */
+#endif // SETPGRP_VOID
 #else
 #ifdef HAVE_SETPGID
 	setpgid(0, 0);
-#endif /* HAVE_SETPGID */
-#endif /* HAVE_SETPGRP */
+#endif // HAVE_SETPGID
+#endif // HAVE_SETPGRP
 
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);

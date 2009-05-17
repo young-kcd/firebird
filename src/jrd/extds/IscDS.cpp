@@ -71,7 +71,8 @@ void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
 	err = "";
 
 	char buff[512];
-	ISC_STATUS* p = status, *end = status + ISC_STATUS_LENGTH;
+	ISC_STATUS* p = status;
+	const ISC_STATUS* const end = status + ISC_STATUS_LENGTH;
 	while (p < end)
 	{
 		const ISC_STATUS code = *p ? p[1] : 0;
@@ -556,7 +557,7 @@ void IscBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const UCharB
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection);
 
-		short bpb_len = bpb ? bpb->getCount() : 0;
+		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const char* bpb_buff = bpb ? reinterpret_cast<const char*>(bpb->begin()) : NULL;
 
 		m_iscProvider.isc_create_blob2(status, &h_db, &h_tran, &m_handle, &m_blob_id,
@@ -1521,7 +1522,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 	XSQLVAR* xVar = xsqlda->sqlvar;
     for (; i < xsqlda->sqld; xVar++, i++)
 	{
-		UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
+		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		xVar->sqltype |= 1;
 
 		if (type_alignments[dtype])
@@ -1545,7 +1546,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 	xVar = xsqlda->sqlvar;
     for (i = 0; i < xsqlda->sqld; xVar++, i++)
 	{
-		UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
+		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		if (type_alignments[dtype])
 			offset = FB_ALIGN(offset, type_alignments[dtype]);
 
