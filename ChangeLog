@@ -1,3 +1,31 @@
+2009-05-17 13:25  robocop
+
+	* firebird2/src/: jrd/os/posix/unix.cpp (1.119),
+	remote/inet_server.cpp (1.96), utilities/drop.cpp (1.42),
+	utilities/guard/util.cpp (1.21), utilities/ibmgr/srvrmgr.cpp
+	(1.40):
+
+	Some #if should be #ifdef instead.
+
+2009-05-17 13:20  robocop
+
+	* firebird2/: doc/sql.extensions/README.execute_statement2 (1.9),
+	src/jrd/extds/ExtDS.cpp (1.40), src/jrd/extds/InternalDS.cpp
+	(1.23), src/jrd/extds/IscDS.cpp (1.29), src/utilities/analyse.cpp
+	(1.20), src/utilities/cache.cpp (1.23), src/utilities/drop.cpp
+	(1.41), src/utilities/fbsvcmgr.cpp (1.28),
+	src/utilities/nbackup.cpp (1.86), src/utilities/print_event.cpp
+	(1.14), src/utilities/print_pool.cpp (1.13),
+	src/utilities/relay.cpp (1.12), src/utilities/run_service.cpp
+	(1.16), src/utilities/rebuild/rebui_proto.h (1.7),
+	src/utilities/rebuild/rebuild.cpp (1.33),
+	src/utilities/rebuild/rebuild.h (1.8),
+	src/utilities/rebuild/rmet.epp (1.8),
+	src/utilities/rebuild/rstore.epp (1.10), src/vulcan/PathName.h
+	(1.9):
+
+	Misc & style.
+
 2009-05-15 02:51  asfernandes
 
 	* firebird2/: doc/sql.extensions/README.execute_statement2 (1.8),
