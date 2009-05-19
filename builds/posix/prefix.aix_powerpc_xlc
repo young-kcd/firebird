@@ -82,9 +82,13 @@ COMMON_FLAGS= -qchars=signed -qlanglvl=newexcp -qroconst -qpic \
 #    exarg (excess arguments) are handy
 # -qinitauto, initialize uninitialized automatic vars to value for debugging
 # -qwarn64, warn about data conversion problems between 32-bit and 64-bit modes
-# -qstrict, ensure optimizations don't alter the semantics of the program
-PROD_FLAGS=$(COMMON_FLAGS) -O3 -qstaticinline -qstrict
-DEV_FLAGS=$(COMMON_FLAGS) -g -O0 \
+# -qstrict, ensure optimizations don't alter the semantics of the program.
+#    -O2 implies -qstrict, but -O3 and higher does not.
+# -qmaxmem, limits the amount of memory that the compiler allocates while performing
+#    specific, memory-intensive optimizations. Only need when using -O | -O2.
+# -O, same as -O2. 2009-05, tried -O3 unsuccessfully.
+PROD_FLAGS=$(COMMON_FLAGS) -O -qstaticinline -qmaxmem=-1
+DEV_FLAGS=$(COMMON_FLAGS) -g \
 	-qcheck -qformat=noall:exarg:zln
 
 LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -brtl
