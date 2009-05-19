@@ -1,3 +1,20 @@
+2009-05-19 16:33  alexpeshkoff
+
+	* firebird2/: builds/posix/make.shared.variables (1.112),
+	src/common/utils.cpp (1.71), src/common/utils_proto.h (1.38),
+	src/jrd/isc_file.cpp (1.136), src/jrd/isc_sync.cpp (1.195),
+	src/jrd/scl.epp (1.107), src/jrd/os/os_utils.h (1.1),
+	src/jrd/os/posix/os_utils.cpp (1.1), src/jrd/os/win32/os_utils.cpp
+	(1.1), src/jrd/trace/TraceConfigStorage.cpp (1.21):
+
+	Fixed CORE-2467: security risk in 2.5 beta1
+
+2009-05-19 08:48  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.aix_powerpc_xlc (1.5):
+
+	AIX xlC port
+
 2009-05-17 13:25  robocop
 
 	* firebird2/src/: jrd/os/posix/unix.cpp (1.119),
