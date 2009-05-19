@@ -962,33 +962,6 @@ bool get_user_home(int user_id, Firebird::PathName& homeDir)
 	return false;
 }
 
-
-// open (or create if missing) and set appropriate access rights
-int openCreateFile(const char* pathname, int flags)
-{
-	int fd;
-	do {
-		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
-	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
-
-	if (fd >= 0)
-	{
-#ifndef SUPERSERVER
-		const char* const FIREBIRD = "firebird";
-		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
-		gid_t gid = get_user_group_id(FIREBIRD);
-		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
-			;
-#endif //SUPERSERVER
-
-		const mode_t mode = 0660;
-		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
-			;
-	}
-
-	return fd;
-}
-
 #else // UNIX
 
 // waits for implementation
@@ -1009,13 +982,6 @@ SLONG get_user_id(const TEXT* /*user_name*/)
 bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 {
 	return false;
-}
-
-
-// open (or create if missing) and set appropriate access rights
-int openCreateFile(const char* pathname, int flags)
-{
-	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 }
 
 #endif //UNIX

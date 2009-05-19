@@ -57,6 +57,7 @@
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
 #include "../common/utils_proto.h"
+#include "../jrd/os/os_utils.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -1046,7 +1047,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring q;
 		while (*from && *from != '/')
 			q += *from++;
-		if (fb_utils::get_user_home(q.hasData() ? fb_utils::get_user_id(q.c_str()) : geteuid(),
+		if (os_utils::get_user_home(q.hasData() ? os_utils::get_user_id(q.c_str()) : geteuid(),
 									buff))
 		{
 			expand_filename2(buff, expand_mounts);

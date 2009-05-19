@@ -1,0 +1,132 @@
+/*
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Alexander Peshkoff
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2009 Alexander Peshkoff <peshkoff@mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ *
+ */
+
+
+// =====================================
+// File functions
+
+#include "firebird.h"
+#include "../jrd/common.h"
+
+#include "../common/classes/init.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/os/os_utils.h"
+#include "../jrd/constants.h"
+#include "../jrd/os/path_utils.h"
+
+#ifdef WIN_NT
+#include <direct.h>
+#include <io.h> // isatty()
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#include <fcntl.h>
+
+namespace os_utils
+{
+
+#ifdef AIX_PPC
+#define _UNIX95
+#endif
+#include <grp.h>
+#ifdef AIX_PPC
+#undef _UNIX95
+#endif
+
+#include <pwd.h>
+
+static Firebird::GlobalPtr<Firebird::Mutex> grMutex;
+
+// Return user group id if user group name found, otherwise return 0.
+SLONG get_user_group_id(const TEXT* user_group_name)
+{
+	Firebird::MutexLockGuard guard(grMutex);
+
+	const struct group* user_group = getgrnam(user_group_name);
+	return user_group ? user_group->gr_gid : 0;
+}
+
+static Firebird::GlobalPtr<Firebird::Mutex> pwMutex;
+
+// Return user id if user found, otherwise return -1.
+SLONG get_user_id(const TEXT* user_name)
+{
+	Firebird::MutexLockGuard guard(pwMutex);
+
+	const struct passwd* user = getpwnam(user_name);
+	return user ? user->pw_uid : -1;
+}
+
+
+// Fills the buffer with home directory if user found
+bool get_user_home(int user_id, Firebird::PathName& homeDir)
+{
+	Firebird::MutexLockGuard guard(pwMutex);
+
+	const struct passwd* user = getpwuid(user_id);
+	if (user)
+	{
+		homeDir = user->pw_dir;
+		return true;
+	}
+	return false;
+}
+
+// open (or create if missing) and set appropriate access rights
+int openCreateFile(const char* pathname, int flags)
+{
+	int fd;
+	do {
+		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
+	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+
+	if (fd >= 0)
+	{
+		// Security check - avoid symbolic links in /tmp.
+		// Malicious user can create a symlink with this name pointing to say
+		// security2.fdb and when the lock file is created the file will be damaged.
+		if (PathUtils::isSymLink(pathname))
+		{
+			close(fd);
+			errno = EMLINK;
+			return -1;
+		}
+
+#ifndef SUPERSERVER
+		const char* const FIREBIRD = "firebird";
+		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
+		gid_t gid = get_user_group_id(FIREBIRD);
+		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
+#endif //SUPERSERVER
+
+		const mode_t mode = 0660;
+		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
+	}
+
+	return fd;
+}
+
+} // namespace os_utils

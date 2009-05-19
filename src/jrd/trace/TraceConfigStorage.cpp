@@ -28,7 +28,6 @@
 #include "firebird.h"
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
-#include "../../common/utils_proto.h"
 #include "../../jrd/common.h"
 #include "../../jrd/err_proto.h"
 #include "../../jrd/isc_proto.h"
@@ -36,6 +35,7 @@
 #include "../../jrd/jrd.h"
 #include "../../jrd/os/path_utils.h"
 #include "../../jrd/os/config_root.h"
+#include "../../jrd/os/os_utils.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 
 #ifdef HAVE_UNISTD_H
@@ -173,7 +173,7 @@ void ConfigStorage::checkFile()
 
 		PathName filename = TempFile::create("fb_trace_");
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
-		m_cfg_file = fb_utils::openCreateFile(cfg_file_name, O_BINARY);
+		m_cfg_file = os_utils::openCreateFile(cfg_file_name, O_BINARY);
 	}
 	else
 	{
