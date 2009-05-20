@@ -73,6 +73,7 @@ void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
 	char buff[512];
 	ISC_STATUS* p = status;
 	const ISC_STATUS* const end = status + ISC_STATUS_LENGTH;
+
 	while (p < end)
 	{
 		const ISC_STATUS code = *p ? p[1] : 0;
@@ -1520,6 +1521,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 	size_t offset = 0;
     int i = 0;
 	XSQLVAR* xVar = xsqlda->sqlvar;
+
     for (; i < xsqlda->sqld; xVar++, i++)
 	{
 		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
@@ -1544,6 +1546,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 
 	offset = 0;
 	xVar = xsqlda->sqlvar;
+
     for (i = 0; i < xsqlda->sqld; xVar++, i++)
 	{
 		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);

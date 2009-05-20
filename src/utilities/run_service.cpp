@@ -60,7 +60,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		*spb++ = isc_spb_command_line;
 		spb++;
 		for (argv += 2, argc -= 2; argc && spb < spb_end; --argc) {
-			for (const char* p = *argv++; spb < spb_end && (*spb = *p++); spb++);
+			for (const char* p = *argv++; spb < spb_end && (*spb = *p++); spb++)
+				;
 			*spb++ = ' ';
 		}
 		*--spb = 0;

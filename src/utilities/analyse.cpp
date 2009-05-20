@@ -187,6 +187,7 @@ void main( int argc, char **argv)
 
 	const USHORT *r, *w;
 	SLONG n;
+
 	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES; n++, r++, w++)
 	{
 		if (*r > 1 || *w > 1) {

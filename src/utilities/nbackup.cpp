@@ -131,7 +131,7 @@ namespace
 	// HPUX has non-posix-conformant method to return error codes from posix_fadvise().
 	// Instead of error code, directly returned by function (like specified by posix),
 	// -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
-	// May be sometimes this function should be moved to fb_util namespace.
+	// May be sometimes this function should be moved to os_util namespace.
 
 #ifdef HAVE_POSIX_FADVISE
 	int fb_fadvise(int fd, off_t offset, size_t len, int advice)

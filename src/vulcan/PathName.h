@@ -51,4 +51,4 @@ public:
 	static bool pathsEquivalent(const char* path1, const char* path2);
 };
 
-#endif
+#endif	// VULCAN_PATHNAME_H_
