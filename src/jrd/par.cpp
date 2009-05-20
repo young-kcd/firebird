@@ -2757,12 +2757,14 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			*arg++ = NULL;		// e_exec_stmt_data_src
 			*arg++ = NULL;		// e_exec_stmt_user
 			*arg++ = NULL;		// e_exec_stmt_password
+			*arg++ = NULL;		// e_exec_stmt_role;
 			*arg++ = NULL;		// e_exec_stmt_proc_block;
 
 			*arg++ = NULL;		// e_exec_stmt_extra_inputs
 			*arg++ = NULL;		// e_exec_stmt_extra_input_names
 			*arg++ = NULL;		// e_exec_stmt_extra_outputs
 			*arg++ = NULL;		// e_exec_stmt_extra_tran
+			*arg++ = NULL;		// e_exec_stmt_extra_privs
 		}
 		break;
 
@@ -2781,6 +2783,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			*arg++ = NULL;		// e_exec_stmt_data_src
 			*arg++ = NULL;		// e_exec_stmt_user
 			*arg++ = NULL;		// e_exec_stmt_password
+			*arg++ = NULL;		// e_exec_stmt_role;
 
 			if (BLR_BYTE)	// singleton flag
 				*arg++ = NULL;							// e_exec_stmt_proc_block
@@ -2796,6 +2799,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			*arg++ = NULL;		// e_exec_stmt_extra_input_names
 			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs
 			*arg++ = NULL;		// e_exec_stmt_extra_tran
+			*arg++ = NULL;		// e_exec_stmt_extra_privs
 		}
 		break;
 
