@@ -43,9 +43,6 @@
 #endif
 #include <fcntl.h>
 
-namespace os_utils
-{
-
 #ifdef AIX_PPC
 #define _UNIX95
 #endif
@@ -55,6 +52,9 @@ namespace os_utils
 #endif
 
 #include <pwd.h>
+
+namespace os_utils
+{
 
 static Firebird::GlobalPtr<Firebird::Mutex> grMutex;
 
