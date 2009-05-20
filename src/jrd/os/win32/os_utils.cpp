@@ -34,9 +34,10 @@
 #include "../jrd/constants.h"
 #include "../jrd/os/path_utils.h"
 
-#ifdef WIN_NT
 #include <direct.h>
 #include <io.h> // isatty()
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
