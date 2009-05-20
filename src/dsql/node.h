@@ -39,6 +39,7 @@
 #define DSQL_NODE_H
 
 #include "../dsql/dsql.h"
+#include "../common/classes/Aligner.h"
 
 // an enumeration of the possible node types in a syntax tree
 
@@ -1031,7 +1032,8 @@ public:
 	USHORT nod_column;			// Source column of the statement.
 	USHORT nod_count;			// Number of arguments
 	USHORT nod_flags;
-	dsql_nod* nod_arg[1];
+	// In two adjacent elements (0 and 1) 64-bit value is placed sometimes
+	RPT_ALIGN(dsql_nod* nod_arg[1]);
 
 	dsql_nod() : nod_type(Dsql::nod_unknown_type), nod_count(0), nod_flags(0) {}
 
