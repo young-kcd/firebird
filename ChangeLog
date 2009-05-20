@@ -1,3 +1,46 @@
+2009-05-20 17:21  asfernandes
+
+	* firebird2/: builds/win32/msvc8/engine.vcproj (1.34),
+	builds/win32/msvc8/engine_classic.vcproj (1.35),
+	builds/win32/msvc8/engine_embed.vcproj (1.32),
+	src/jrd/os/win32/os_utils.cpp (1.2):
+
+	Fix MSVC8 build
+
+2009-05-20 15:13  alexpeshkoff
+
+	* firebird2/src/: common/classes/Aligner.h (1.5), dsql/node.h
+	(1.124):
+
+	Fixed alignment errors in 32-bit SPARC-64 port
+
+2009-05-20 11:43  hvlad
+
+	* firebird2/src/jrd/par.cpp (1.239):
+
+	Missed code after introduce of ROLE clause in EXECUTE STATEMENT.
+	Thanks to Alex.
+
+2009-05-20 10:17  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/os_utils.cpp (1.2):
+
+	It was bad idea to include .h-files inside namespace
+
+2009-05-20 10:16  alexpeshkoff
+
+	* firebird2/src/common/utils.cpp (1.72):
+
+	cleanup
+
+2009-05-20 02:45  asfernandes
+
+	* firebird2/src/: jrd/extds/IscDS.cpp (1.30), utilities/analyse.cpp
+	(1.21), utilities/nbackup.cpp (1.87), utilities/run_service.cpp
+	(1.17), vulcan/PathName.h (1.10):
+
+	Misc
+
 2009-05-19 16:33  alexpeshkoff
 
 	* firebird2/: builds/posix/make.shared.variables (1.112),
