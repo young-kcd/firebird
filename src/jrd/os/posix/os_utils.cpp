@@ -32,7 +32,6 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/os/os_utils.h"
 #include "../jrd/constants.h"
-#include "../jrd/os/path_utils.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -106,7 +105,8 @@ int openCreateFile(const char* pathname, int flags)
 		// Security check - avoid symbolic links in /tmp.
 		// Malicious user can create a symlink with this name pointing to say
 		// security2.fdb and when the lock file is created the file will be damaged.
-		if (PathUtils::isSymLink(pathname))
+		struct stat fst, lst;
+		if ((fstat(fd, &fst) != 0) || (lstat(pathname, &lst) != 0) || (fst.st_ino != lst.st_ino))
 		{
 			close(fd);
 			errno = EMLINK;
