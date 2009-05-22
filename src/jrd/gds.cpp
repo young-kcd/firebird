@@ -3685,7 +3685,7 @@ public:
 		Firebird::PathName lockPrefix;
 		if (!fb_utils::readenv(FB_LOCK_ENV, lockPrefix))
 		{
-			PathUtils::concatPath(lockPrefix, tempDir, LOCKDIR);
+			PathUtils::concatPath(lockPrefix, WORKFILE, LOCKDIR);
 		}
 		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
 		fb_prefix_lock = fb_prefix_lock_val;
