@@ -66,6 +66,7 @@ static const char* const WORKFILE	= "/tmp/";
 static const char MSG_FILE_LANG[]	= "intl/%.10s.msg";
 #endif
 
+static const char* const LOCKDIR	= "firebird";		// created in WORKFILE
 static const char* const LOGFILE	= "firebird.log";
 static const char* const MSG_FILE	= "firebird.msg";
 // Keep in sync with MSG_FILE_LANG

@@ -33,14 +33,18 @@
 #include "../jrd/os/os_utils.h"
 #include "../jrd/constants.h"
 
-#ifdef WIN_NT
-#include <direct.h>
-#include <io.h> // isatty()
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
 
 #ifdef AIX_PPC
 #define _UNIX95
@@ -50,7 +54,9 @@
 #undef _UNIX95
 #endif
 
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
 
 namespace os_utils
 {
@@ -77,7 +83,6 @@ SLONG get_user_id(const TEXT* user_name)
 	return user ? user->pw_uid : -1;
 }
 
-
 // Fills the buffer with home directory if user found
 bool get_user_home(int user_id, Firebird::PathName& homeDir)
 {
@@ -92,8 +97,55 @@ bool get_user_home(int user_id, Firebird::PathName& homeDir)
 	return false;
 }
 
+static const char* const FIREBIRD = "firebird";
+
+// create directory for lock files and set appropriate access rights
+void createLockDirectory(const char* pathname)
+{
+	do {
+		if (access(pathname, R_OK | W_OK | X_OK) == 0)
+		{
+			struct stat st;
+			while (stat(pathname, &st) != 0)
+			{
+				if (SYSCALL_INTERRUPTED(errno))
+				{
+					continue;
+				}
+				Firebird::system_call_failed::raise("stat");
+			}
+			if (S_ISDIR(st.st_mode))
+			{
+				return;
+			}
+			// not exactly original meaning, but very close to it
+			Firebird::system_call_failed::raise("access", ENOTDIR);
+		}
+	} while (SYSCALL_INTERRUPTED(errno));
+
+	while (mkdir(pathname, 0700) != 0)		// anyway need chmod to avoid umask effects
+	{
+		if (SYSCALL_INTERRUPTED(errno))
+		{
+			continue;
+		}
+		Firebird::system_call_failed::raise("mkdir");
+	}
+
+#ifndef SUPERSERVER
+	uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
+	gid_t gid = get_user_group_id(FIREBIRD);
+	while (chown(pathname, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
+		;
+#endif //SUPERSERVER
+
+	const mode_t mode = 0770;
+	while (chmod(pathname, mode) < 0 && SYSCALL_INTERRUPTED(errno))
+		;
+}
+
 // open (or create if missing) and set appropriate access rights
-int openCreateFile(const char* pathname, int flags)
+int openCreateLockFile(const char* pathname, int flags)
 {
 	int fd;
 	do {
@@ -114,7 +166,6 @@ int openCreateFile(const char* pathname, int flags)
 		}
 
 #ifndef SUPERSERVER
-		const char* const FIREBIRD = "firebird";
 		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
 		gid_t gid = get_user_group_id(FIREBIRD);
 		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))

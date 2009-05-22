@@ -41,7 +41,8 @@ namespace os_utils
 	SLONG get_user_id(const TEXT* user_name);
 	bool get_user_home(int user_id, Firebird::PathName& homeDir);
 
-	int openCreateFile(const char* pathname, int flags);
+	void createLockDirectory(const char* pathname);
+	int openCreateLockFile(const char* pathname, int flags);
 
 } // namespace os_utils
 

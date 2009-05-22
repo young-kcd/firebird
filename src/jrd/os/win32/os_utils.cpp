@@ -67,8 +67,20 @@ bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 	return false;
 }
 
+// create directory for lock files and set appropriate access rights
+void createLockDirectory(const char* pathname)
+{
+	// to be reviewed by Vlad ..............
+	if (access(pathname, 6) == 0) // read and write access
+	{
+		return;
+	}
+
+	mkdir(pathname);
+}
+
 // open (or create if missing) and set appropriate access rights
-int openCreateFile(const char* pathname, int flags)
+int openCreateLockFile(const char* pathname, int flags)
 {
 	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 }

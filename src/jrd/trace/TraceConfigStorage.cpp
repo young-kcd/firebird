@@ -173,7 +173,7 @@ void ConfigStorage::checkFile()
 
 		PathName filename = TempFile::create("fb_trace_");
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
-		m_cfg_file = os_utils::openCreateFile(cfg_file_name, O_BINARY);
+		m_cfg_file = os_utils::openCreateLockFile(cfg_file_name, O_BINARY);
 	}
 	else
 	{

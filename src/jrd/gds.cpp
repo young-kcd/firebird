@@ -48,6 +48,7 @@
 #include "../jrd/dsc.h"
 #include "../jrd/constants.h"
 #include "../jrd/status.h"
+#include "../jrd/os/os_utils.h"
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/locks.h"
@@ -1748,6 +1749,11 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	gdsPrefixInit();
 
 	strcpy(string, fb_prefix_lock);	// safe - no BO
+
+	// if someone wants to know prefix for lock files, 
+	// sooner of all he wants that directory to exist
+	os_utils::createLockDirectory(string);
+
 	safe_concat_path(string, root);
 }
 
@@ -3679,7 +3685,7 @@ public:
 		Firebird::PathName lockPrefix;
 		if (!fb_utils::readenv(FB_LOCK_ENV, lockPrefix))
 		{
-			lockPrefix = tempDir;
+			PathUtils::concatPath(lockPrefix, tempDir, LOCKDIR);
 		}
 		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
 		fb_prefix_lock = fb_prefix_lock_val;
