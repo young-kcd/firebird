@@ -70,13 +70,61 @@ bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 // create directory for lock files and set appropriate access rights
 void createLockDirectory(const char* pathname)
 {
-	// to be reviewed by Vlad ..............
-	if (access(pathname, 6) == 0) // read and write access
+	static bool errorLogged = false;
+
+	DWORD attr = GetFileAttributes(pathname);
+	DWORD errcode = 0;
+	if (attr == INVALID_FILE_ATTRIBUTES)
 	{
-		return;
+		errcode = GetLastError();
+		if (errcode == ERROR_FILE_NOT_FOUND)
+		{
+			if (!CreateDirectory(pathname, NULL)) {
+				errcode = GetLastError();
+			}
+			else
+			{
+				attr = GetFileAttributes(pathname);
+				if (attr == INVALID_FILE_ATTRIBUTES) {
+					errcode = GetLastError();
+				}
+			}
+		}
 	}
 
-	mkdir(pathname);
+	Firebird::string err;
+	if (attr == INVALID_FILE_ATTRIBUTES)
+	{
+		err.printf("Can't create directory \"%s\". OS errno is %d", pathname, errcode);
+		if (!errorLogged)
+		{
+			errorLogged = true;
+			gds__log(err.c_str());
+		}
+		Firebird::system_call_failed::raise(err.c_str(), errcode);
+	}
+
+	if (!(attr & FILE_ATTRIBUTE_DIRECTORY))
+	{
+		err.printf("Can't create directory \"%s\". File with same name already exists", pathname);
+		if (!errorLogged)
+		{
+			errorLogged = true;
+			gds__log(err.c_str());
+		}
+		Firebird::fatal_exception::raise(err.c_str());
+	}
+
+	if (attr & FILE_ATTRIBUTE_READONLY)
+	{
+		err.printf("Can't create directory \"%s\". Readonly directory with same name already exists", pathname);
+		if (!errorLogged)
+		{
+			errorLogged = true;
+			gds__log(err.c_str());
+		}
+		Firebird::fatal_exception::raise(err.c_str());
+	}
 }
 
 // open (or create if missing) and set appropriate access rights
