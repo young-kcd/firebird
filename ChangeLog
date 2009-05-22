@@ -1,3 +1,25 @@
+2009-05-22 16:48  hvlad
+
+	* firebird2/src/jrd/os/win32/os_utils.cpp (1.4):
+
+	Make engine create lock files in /tmp/firebird : Windows part
+
+2009-05-22 15:50  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.286):
+
+	Lock files location should not be affected by value of TMP
+	environment variable
+
+2009-05-22 15:47  alexpeshkoff
+
+	* firebird2/src/jrd/: file_params.h (1.36), gds.cpp (1.285),
+	isc_sync.cpp (1.196), os/os_utils.h (1.2), os/posix/os_utils.cpp
+	(1.4), os/win32/os_utils.cpp (1.3), trace/TraceConfigStorage.cpp
+	(1.22):
+
+	Make engine create lock files in /tmp/firebird
+
 2009-05-21 09:48  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/os_utils.cpp (1.3):
