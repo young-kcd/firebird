@@ -49,9 +49,7 @@
 					   stdlib.h (EKU) */
 #endif
 
-#ifdef __xlC__
 #include <new>
-#endif
 
 #if defined (_MSC_VER) || defined (__SUNPRO_CC) || defined(__xlC__)
 #define THROW_BAD_ALLOC
@@ -478,15 +476,6 @@ inline void* operator new[](size_t s) THROW_BAD_ALLOC
 	  ,__FILE__, __LINE__
 #endif
 	);
-}
-
-inline void* operator new(size_t, void* ptr) throw()
-{
-	return ptr;
-}
-inline void* operator new[](size_t, void* ptr) throw()
-{
-	return ptr;
 }
 
 inline void operator delete(void* mem) throw()
