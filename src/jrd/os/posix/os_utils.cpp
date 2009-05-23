@@ -102,7 +102,8 @@ static const char* const FIREBIRD = "firebird";
 // create directory for lock files and set appropriate access rights
 void createLockDirectory(const char* pathname)
 {
-	do {
+	do
+	{
 		if (access(pathname, R_OK | W_OK | X_OK) == 0)
 		{
 			struct stat st;
@@ -114,10 +115,12 @@ void createLockDirectory(const char* pathname)
 				}
 				Firebird::system_call_failed::raise("stat");
 			}
+
 			if (S_ISDIR(st.st_mode))
 			{
 				return;
 			}
+
 			// not exactly original meaning, but very close to it
 			Firebird::system_call_failed::raise("access", ENOTDIR);
 		}

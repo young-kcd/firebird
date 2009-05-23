@@ -1750,7 +1750,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 
 	strcpy(string, fb_prefix_lock);	// safe - no BO
 
-	// if someone wants to know prefix for lock files, 
+	// if someone wants to know prefix for lock files,
 	// sooner of all he wants that directory to exist
 	os_utils::createLockDirectory(string);
 
