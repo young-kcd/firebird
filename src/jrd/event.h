@@ -48,7 +48,7 @@ struct evh
 
 // Common block header
 
-const int type_hdr	= 1;			// Event header
+//const int type_hdr	= 1;		// Event header
 const int type_frb	= 2;			// Free block
 const int type_prb	= 3;			// Process block
 const int type_rint	= 4;			// Request interest block
@@ -123,7 +123,7 @@ struct evt_req
 	SRQ_PTR req_session;			// Parent session block
 	SRQ_PTR req_interests;			// First interest in request
 	FPTR_EVENT_CALLBACK req_ast;	// Asynchronous routine
-	void *req_ast_arg;				// Argument for ast
+	void* req_ast_arg;				// Argument for ast
 	SLONG req_request_id;			// Request id, dummy
 };
 
