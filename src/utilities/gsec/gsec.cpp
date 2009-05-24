@@ -57,8 +57,8 @@ using MsgFormat::SafeArg;
 #include <io.h>
 #endif
 
-const int MAXARGS	= 20;		/* max number of args allowed on command line */
-const int MAXSTUFF	= 1000;		/* longest interactive command line */
+const int MAXARGS	= 20;		// max number of args allowed on command line
+const int MAXSTUFF	= 1000;		// longest interactive command line
 
 static void util_output(const SCHAR*, ...);
 
@@ -256,10 +256,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 	{
 		if (ret == 0)
 		{
-			/* Signal the start of the service here ONLY if we are displaying users
-			 * since the number of users may exceed the service buffer.  This
-			 * will cause the service to wait for the client to request data.  However,
-			 * if the server is not signaled, then the client can never request anything */
+			// Signal the start of the service here ONLY if we are displaying users
+			// since the number of users may exceed the service buffer.  This
+			// will cause the service to wait for the client to request data.  However,
+			// if the server is not signaled, then the client can never request anything
 			if (user_data->operation == DIS_OPER)
 				uSvc->started();
 			if (! useServices)
@@ -292,7 +292,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		for (;;)
 		{
 			MOVE_CLEAR(status, sizeof(ISC_STATUS_ARRAY));
-			/* Clear out user data each time through this loop. */
+			// Clear out user data each time through this loop.
 			MOVE_CLEAR(user_data, sizeof(internal_user_data));
 			if (get_line(local_argv, stuff, sizeof(stuff)))
 				break;
@@ -319,7 +319,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 				user_data->database_name_entered = databaseNameEntered;
-				if (ret == 0) {
+				if (ret == 0)
+				{
 					callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
 					if (status[1])
 					{
@@ -351,7 +352,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}	// try
 	catch (const Firebird::LongJump&)
 	{
-		/* All error exit calls to GSEC_error() wind up here */
+		// All error exit calls to GSEC_error() wind up here
 		exit_code = tdsec->tsec_exit_code;
 
 		tdsec->tsec_throw = false;
@@ -405,11 +406,12 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 	}
 	else
 	{
-		if (first) {
+		if (first)
+		{
 			GSEC_print(GsecMsg26);
 			GSEC_print(GsecMsg27);
-/* msg26: "    user name                    uid   gid     full name" */
-/* msg27: "-------------------------------------------------------------------------------------------" */
+			// msg26: "    user name                    uid   gid     full name"
+			// msg27: "-------------------------------------------------------------------------------------------"
 		}
 
 		util_output("%-*.*s %5d %5d      %s %s %s\n",
@@ -441,21 +443,22 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 	int count = (int) maxstuff - 1;
 	bool first = true;
 
-/* for each input character, if it's white space (or any non-printable,
-   non-newline for that matter), ignore it; if it's a newline, we're
-   done; otherwise, put it in the current argument */
+	// for each input character, if it's white space (or any non-printable,
+	// non-newline for that matter), ignore it; if it's a newline, we're
+	// done; otherwise, put it in the current argument
 
 	while (count > 0)
 	{
 		TEXT c = getc(stdin);
 		if (c > ' ' && c <= '~')
 		{
-			/* note that the first argument gets a '-' appended to the front to fool
-			   the switch checker into thinking it came from the command line */
+			// note that the first argument gets a '-' appended to the front to fool
+			// the switch checker into thinking it came from the command line
 
 			for (argv.push(cursor); count > 0; count--)
 			{
-				if (first) {
+				if (first)
+				{
 					first = false;
 					if (c != '?') {
 						*cursor++ = '-';
@@ -472,7 +475,8 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 		}
 		if (c == '\n')
 			break;
-		if (c == EOF) {
+		if (c == EOF)
+		{
 			if (SYSCALL_INTERRUPTED(errno)) {
 				errno = 0;
 				continue;
@@ -502,11 +506,11 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
  *
  **************************************/
 
-/* look at each argument.   it's either a switch or a parameter.
-   parameters must always follow a switch, but not all switches
-   need parameters.   this is how, for example, parameters are
-   cleared (like a -fname switch followed by no first name
-   parameter). */
+	// look at each argument.   it's either a switch or a parameter.
+	// parameters must always follow a switch, but not all switches
+	// need parameters.   this is how, for example, parameters are
+	// cleared (like a -fname switch followed by no first name
+	// parameter).
 
 	internal_user_data* user_data = tdsec->tsec_user_data;
 	*quitflag = false;
@@ -519,8 +523,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			user_data->operation = HELP_OPER;
 		else if (*string != '-')
 		{
-			/* this is not a switch, so it must be a parameter for
-			   the previous switch, if any */
+			// this is not a switch, so it must be a parameter for
+			// the previous switch, if any
 			char quote;
 			int l;
 
@@ -543,7 +547,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				}
 				if (l == MAX_SQL_IDENTIFIER_SIZE) {
 					GSEC_diag(GsecMsg76);
-					/* invalid user name (maximum 31 bytes allowed) */
+					// invalid user name (maximum 31 bytes allowed)
 					return false;
 				}
 				user_data->user_name[l] = '\0';
@@ -639,7 +643,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					}
 					else {
 						GSEC_diag(GsecMsg99);
-						/* gsec - invalid parameter value for -MAPPING, only SET or DROP is accepted */
+						// gsec - invalid parameter value for -MAPPING, only SET or DROP is accepted
 						return false;
 					}
 				}
@@ -647,14 +651,14 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			case IN_SW_GSEC_Z:
 			case IN_SW_GSEC_0:
 				GSEC_diag(GsecMsg29);
-				/* gsec - invalid parameter, no switch defined */
+				// gsec - invalid parameter, no switch defined
 				return false;
 			}
 			last_sw = IN_SW_GSEC_0;
 		}
 		else
 		{
-			/* iterate through the switch table, looking for matches */
+			// iterate through the switch table, looking for matches
 
 			USHORT in_sw = IN_SW_GSEC_0;
 			for (const in_sw_tab_t* in_sw_tab = in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
@@ -662,12 +666,12 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				const TEXT* q = in_sw_tab->in_sw_name;
 				const TEXT* p = string + 1;
 
-				/* handle orphaned hyphen case */
+				// handle orphaned hyphen case
 
 				if (!*p--)
 					break;
 
-				/* compare switch to switch name in table */
+				// compare switch to switch name in table
 
 				for (int l = 0; *p; ++l)
 				{
@@ -681,17 +685,17 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 						break;
 				}
 
-				/* end of input means we got a match.  stop looking */
+				// end of input means we got a match.  stop looking
 
 				if (!*p)
 					break;
 			}
 
-			/* this checks to make sure that the switch is not a duplicate.   if
-			   it is a duplicate, it's an error.   if it's not a duplicate, the
-			   appropriate specified flag is set (to later check for duplicates),
-			   and the applicable parameter value is set to its null value, in
-			   case the user really wants to remove an existing parameter. */
+			// this checks to make sure that the switch is not a duplicate.   if
+			// it is a duplicate, it's an error.   if it's not a duplicate, the
+			// appropriate specified flag is set (to later check for duplicates),
+			// and the applicable parameter value is set to its null value, in
+			// case the user really wants to remove an existing parameter.
 
 			SSHORT err_msg_no;
 
@@ -704,9 +708,10 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			case IN_SW_GSEC_QUIT:
 			case IN_SW_GSEC_HELP:
 			case IN_SW_GSEC_MAPPING:
-				if (user_data->operation) {
+				if (user_data->operation)
+				{
 					GSEC_error(GsecMsg30);
-					/* gsec - operation already specified */
+					// gsec - operation already specified
 					return false;
 				}
 				switch (in_sw)
@@ -871,7 +876,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				}
 				break;
 			case IN_SW_GSEC_Z:
-				if (!tdsec->tsec_sw_version) {
+				if (!tdsec->tsec_sw_version)
+				{
 					TEXT msg[MSG_LENGTH];
 					msg_get(GsecMsg39, msg);
 					util_output("%s %s\n", msg, GDS_VERSION);
@@ -885,18 +891,18 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 #endif
 			case IN_SW_GSEC_0:
 				GSEC_diag(GsecMsg40);
-				/* gsec - invalid switch specified */
+				// gsec - invalid switch specified
 				return false;
 			case IN_SW_GSEC_AMBIG:
 				GSEC_diag(GsecMsg41);
-				/* gsec - ambiguous switch specified */
+				// gsec - ambiguous switch specified
 				return false;
 			}
 			last_sw = in_sw;
 		}
 
-		/* make sure that the current suite of switches and parameters
-		   is valid, and if not, indicate why not */
+		// make sure that the current suite of switches and parameters
+		// is valid, and if not, indicate why not
 
 		if (user_data->uid_entered || user_data->gid_entered ||
 			user_data->sys_user_entered || user_data->group_name_entered ||
@@ -907,18 +913,18 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			{
 			case 0:
 				GSEC_error(GsecMsg42);
-				/* gsec - no operation specified for parameters */
+				// gsec - no operation specified for parameters
 				return false;
 			case ADD_OPER:
 			case MOD_OPER:
-				/* any parameter is ok for these operation states */
+				// any parameter is ok for these operation states
 				break;
 			case DEL_OPER:
 			case DIS_OPER:
 			case QUIT_OPER:
 			case HELP_OPER:
 				GSEC_error(GsecMsg43);
-				/* gsec - no parameters allowed for this operation */
+				// gsec - no parameters allowed for this operation
 				return false;
 			}
 		}
@@ -945,7 +951,7 @@ static void printhelp()
 
 	util_output("\n%s", "   ");
 	GSEC_print(GsecMsg45);
-/* gsec utility - maintains user password database */
+	// gsec utility - maintains user password database
 
 	util_output("\n%s", "   ");
 	GSEC_print(GsecMsg46);
@@ -953,162 +959,162 @@ static void printhelp()
 	GSEC_print_partial(GsecMsg2);
 	GSEC_print_partial(GsecMsg82);
 	GSEC_print(GsecMsg47);
-/* gsec [ <options> ... ] -<command> [ <parameter> ... ] */
+	// gsec [ <options> ... ] -<command> [ <parameter> ... ]
 
 	util_output("\n%s", "   ");
 	GSEC_print(GsecMsg48);
-/* interactive usage: */
+	// interactive usage:
 
 	util_output("%s", "     ");
 	GSEC_print_partial(GsecMsg2);
 	GSEC_print(GsecMsg82);
-/* gsec [ <options> ... ] */
+	// gsec [ <options> ... ]
 
 	util_output("%s", "     ");
 	GSEC_print_partial(GsecMsg1);
 	util_output("\n%s", "     ");
 	GSEC_print(GsecMsg47);
-/* GSEC> <command> [ <parameter> ... ] */
+	// GSEC> <command> [ <parameter> ... ]
 
 	util_output("\n%s", "   ");
 	GSEC_print(GsecMsg83);
-/* available options: */
+	// available options:
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg84);
-/* -user <database administrator name> */
+	// -user <database administrator name>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg85);
-/* -password <database administrator password> */
+	// -password <database administrator password>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg95);
-/* -fetch_password <fetch database administrator password from file> */
+	// -fetch_password <fetch database administrator password from file>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg86);
-/* -role <database administrator SQL role name> */
+	// -role <database administrator SQL role name>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg91);
-/* -trusted (use trusted authentication) */
+	// -trusted (use trusted authentication)
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg87);
-/* -database <database to manage> */
+	// -database <database to manage>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg88);
-/* -z */
+	// -nz
 
 	util_output("\n%s", "   ");
 	GSEC_print(GsecMsg49);
-/* available commands: */
+	// available commands:
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg50);
-/* adding a new user: */
+	// adding a new user:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg51);
-/* add <name> [ <parameter> ... ] */
+	// add <name> [ <parameter> ... ]
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg52);
-/* deleting a current user: */
+	// deleting a current user:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg53);
-/* delete <name> */
+	// delete <name>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg54);
-/* displaying all users: */
+	// displaying all users:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg55);
-/* display */
+	// display
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg56);
-/* displaying one user: */
+	// displaying one user:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg57);
-/* display <name> */
+	// display <name>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg58);
-/* modifying a user's parameters: */
+	// modifying a user's parameters:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg59);
-/* modify <name> <parameter> [ <parameter> ... ] */
+	// modify <name> <parameter> [ <parameter> ... ]
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg98);
-/* changing admins mapping to SYSDBA: */
+	// changing admins mapping to SYSDBA:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg100);
-/* -ma(pping) {set|drop} */
+	// -ma(pping) {set|drop}
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg60);
-/* help: */
+	// help:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg61);
-/* ? (interactive only) */
+	// ? (interactive only)
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg62);
-/* help */
+	// help
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg89);
-/* displaying version number: */
+	// displaying version number:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg90);
-/* z (interactive only) */
+	// z (interactive only)
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg63);
-/* quit interactive session: */
+	// quit interactive session:
 
 	util_output("%s", "       ");
 	GSEC_print(GsecMsg64);
-/* quit (interactive only) */
+	// quit (interactive only)
 
 	util_output("\n%s", "   ");
 	GSEC_print(GsecMsg65);
-/* available parameters: */
+	// available parameters:
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg66);
-/* -pw <password> */
+	// -pw <password>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg67);
-/* -uid <uid> */
+	// -uid <uid>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg68);
-/* -gid <gid> */
+	// -gid <gid>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg71);
-/* -fname <firstname> */
+	// -fname <firstname>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg72);
-/* -mname <middlename> */
+	// -mname <middlename>
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg73);
-/* -lname <lastname> */
+	// -lname <lastname>
 	util_output("\n", NULL);
 }
 
@@ -1132,12 +1138,13 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 	internal_user_data* user_data = tdsec->tsec_user_data;
 	memset(user_data, 0, sizeof(internal_user_data));
 
-/* Call a subroutine to process the input line. */
+	// Call a subroutine to process the input line.
 
 	SSHORT ret = 0;
-	if (!get_switches(argv, gsec_in_sw_table, tdsec, &quitflag)) {
+	if (!get_switches(argv, gsec_in_sw_table, tdsec, &quitflag))
+	{
 		GSEC_diag(GsecMsg16);
-		/* gsec - error in switch specifications */
+		// gsec - error in switch specifications
 		ret = -1;
 	}
 	else if (user_data->operation)
@@ -1151,7 +1158,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 				 !user_data->user_name_entered)
 		{
 			GSEC_error(GsecMsg18);
-			/* gsec - no user name specified */
+			// gsec - no user name specified
 			ret = -1;
 		}
 	}
@@ -1379,31 +1386,31 @@ static void get_security_error(ISC_STATUS* status, int gsec_err)
 
 	switch (gsec_err)
 	{
-	case GsecMsg19:			/* gsec - add record error */
+	case GsecMsg19:			// gsec - add record error
 		insert_error(status, isc_error_adding_sec_record);
 		return;
 
-	case GsecMsg20:			/* gsec - modify record error */
+	case GsecMsg20:			// gsec - modify record error
 		insert_error(status, isc_error_modifying_sec_record);
 		return;
 
-	case GsecMsg21:			/* gsec - find/modify record error */
+	case GsecMsg21:			// gsec - find/modify record error
 		insert_error(status, isc_error_modifying_sec_record);
 		return;
 
-	case GsecMsg22:			/* gsec - record not found for user: */
+	case GsecMsg22:			// gsec - record not found for user:
 		insert_error(status, isc_usrname_not_found);
 		return;
 
-	case GsecMsg23:			/* gsec - delete record error */
+	case GsecMsg23:			// gsec - delete record error
 		insert_error(status, isc_error_deleting_sec_record);
 		return;
 
-	case GsecMsg24:			/* gsec - find/delete record error */
+	case GsecMsg24:			// gsec - find/delete record error
 		insert_error(status, isc_error_deleting_sec_record);
 		return;
 
-	case GsecMsg75:			/* gsec error */
+	case GsecMsg75:			// gsec error
 		insert_error(status, isc_error_updating_sec_db);
 		return;
 

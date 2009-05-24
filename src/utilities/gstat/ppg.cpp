@@ -88,10 +88,9 @@ void PPG_print_header(const header_page* header, SLONG page,
 	if (page == HEADER_PAGE)
 	{
 
-		/* If the database dialect is not set to 3, then we need to
-		 * assume it was set to 1.  The reason for this is that a dialect
-		 * 1 database has no dialect information written to the header.
-		 */
+		// If the database dialect is not set to 3, then we need to
+		// assume it was set to 1.  The reason for this is that a dialect
+		// 1 database has no dialect information written to the header.
 		if (header->hdr_flags & hdr_SQL_dialect_3)
 			uSvc->printf("\tDatabase dialect\t3\n");
 		else
@@ -164,13 +163,17 @@ void PPG_print_header(const header_page* header, SLONG page,
 		{
 			if (flag_count++)
 				uSvc->printf(", ");
-			if ((flags & hdr_backup_mask) == Jrd::nbak_state_stalled)
+			switch (flags & hdr_backup_mask)
+			{
+			case Jrd::nbak_state_stalled:
 				uSvc->printf("backup lock");
-			else
-				if ((flags & hdr_backup_mask) == Jrd::nbak_state_merge)
-					uSvc->printf("backup merge");
-				else
-					uSvc->printf("wrong backup state %d", flags & hdr_backup_mask);
+				break;
+			case Jrd::nbak_state_merge:
+				uSvc->printf("backup merge");
+				break;
+			default:
+				uSvc->printf("wrong backup state %d", flags & hdr_backup_mask);
+			}
 		}
 		uSvc->printf("\n");
 	}

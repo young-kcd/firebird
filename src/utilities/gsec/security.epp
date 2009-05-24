@@ -141,8 +141,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		}
 		break;
 	case ADD_OPER:
-		/* this checks the "entered" flags for each parameter (except the name)
-		   and makes all non-entered parameters null valued */
+		// this checks the "entered" flags for each parameter (except the name)
+		// and makes all non-entered parameters null valued
 
 		STORE (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS USING
 			strcpy(U.USER_NAME, io_user_data->user_name);
@@ -164,7 +164,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			}
 			else
 				U.GROUP_NAME.NULL = ISC_TRUE;
-			if (io_user_data->password_entered) {
+			if (io_user_data->password_entered)
+			{
 				ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, PASSWORD_SALT);
 				Jrd::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
 				strcpy(U.PASSWD, encrypted2.c_str());
@@ -192,14 +193,14 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				U.LAST_NAME.NULL = ISC_TRUE;
 		END_STORE
 		ON_ERROR
-			ret = GsecMsg19;	/* gsec - add record error */
+			ret = GsecMsg19;	// gsec - add record error
 		END_ERROR;
 		break;
 
 	case MOD_OPER:
-		/* this updates an existing record, replacing all fields that are
-		   entered, and for those that were specified but not entered, it
-		   changes the current value to the null value */
+		// this updates an existing record, replacing all fields that are
+		// entered, and for those that were specified but not entered, it
+		// changes the current value to the null value
 
 		found = false;
 		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
@@ -224,7 +225,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				}
 				else if (io_user_data->group_name_specified)
 					U.GROUP_NAME.NULL = ISC_TRUE;
-				if (io_user_data->password_entered) {
+				if (io_user_data->password_entered)
+				{
 					ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, PASSWORD_SALT);
 					Jrd::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
 					strcpy(U.PASSWD, encrypted2.c_str());
@@ -263,10 +265,10 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		break;
 
 	case DEL_OPER:
-		/* looks up the specified user record and deletes it */
+		// looks up the specified user record and deletes it
 
 		found = false;
-		/* Do not allow SYSDBA user to be deleted */
+		// Do not allow SYSDBA user to be deleted
 		if (!fb_utils::stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else
@@ -276,20 +278,20 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				found = true;
 				ERASE U
 				ON_ERROR
-					ret = GsecMsg23;	/* gsec - delete record error */
+					ret = GsecMsg23;	// gsec - delete record error
 				END_ERROR;
 			END_FOR
 			ON_ERROR
-				ret = GsecMsg24;	/* gsec - find/delete record error */
+				ret = GsecMsg24;	// gsec - find/delete record error
 			END_ERROR;
 		}
 
 		if (!ret && !found)
-			ret = GsecMsg22;	/* gsec - record not found for user: */
+			ret = GsecMsg22;	// gsec - record not found for user:
 		break;
 
 	case DIS_OPER:
-		/* gets either the desired record, or all records, and displays them */
+		// gets either the desired record, or all records, and displays them
 
 		found = false;
 		if (!io_user_data->user_name_entered)
@@ -309,7 +311,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				found = true;
 			END_FOR
 			ON_ERROR
-				ret = GsecMsg28;	/* gsec - find/display record error */
+				ret = GsecMsg28;	// gsec - find/display record error
 			END_ERROR;
 		}
 		else
@@ -330,13 +332,13 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				found = true;
 			END_FOR
 			ON_ERROR
-				ret = GsecMsg28;	/* gsec - find/display record error */
+				ret = GsecMsg28;	// gsec - find/display record error
 			END_ERROR;
 		}
 		break;
 
 	default:
-		ret = GsecMsg16;		/* gsec - error in switch specifications */
+		ret = GsecMsg16;		// gsec - error in switch specifications
 		break;
 	}
 
@@ -365,7 +367,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 	START_TRANSACTION
 	ON_ERROR
-		return GsecMsg75;		/* gsec error */
+		return GsecMsg75;		// gsec error
 	END_ERROR;
 
 	SSHORT ret = SECURITY_exec_line(isc_status, DB, gds_trans, io_user_data, display_func, callback_arg);
@@ -380,7 +382,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	else {
 		COMMIT
 		ON_ERROR
-			return GsecMsg75;	/* gsec error */
+			return GsecMsg75;	// gsec error
 		END_ERROR;
 	}
 

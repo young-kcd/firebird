@@ -51,7 +51,8 @@ PathName ParsedPath::subPath(size_t n) const
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
-	for (size_t i = 1; i < n; i++) {
+	for (size_t i = 1; i < n; i++)
+	{
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
 		rc = newpath;
@@ -77,12 +78,14 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 	}
 
 	size_t i;
-	for (i = 0; i < nFullElem; i++) {
+	for (i = 0; i < nFullElem; i++)
+	{
 		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
-	for (i = nFullElem + 1; i <= pPath.getCount(); i++) {
+	for (i = nFullElem + 1; i <= pPath.getCount(); i++)
+	{
 		PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;
@@ -100,7 +103,8 @@ bool DirectoryList::keyword(const ListMode keyMode, PathName& value, PathName ke
 	if (keyValue != key) {
 		return false;
 	}
-	if (next.length() > 0) {
+	if (next.length() > 0)
+	{
 		if (value.length() == key.length()) {
 			return false;
 		}
@@ -114,7 +118,8 @@ bool DirectoryList::keyword(const ListMode keyMode, PathName& value, PathName ke
 		}
 		value = keyValue.substr(startPos);
 	}
-	else {
+	else
+	{
 		if (value.length() > key.length()) {
 			return false;
 		}
@@ -136,13 +141,13 @@ void DirectoryList::initialize(bool simple_mode)
 	if (simple_mode) {
 		mode = SimpleList;
 	}
-	else {
+	else
+	{
 		if (keyword(None, val, "None", "") || keyword(Full, val, "Full", "")) {
 			return;
 		}
 		if (! keyword(Restrict, val, "Restrict", " \t")) {
-			gds__log("DirectoryList: unknown parameter '%s', "
-				"defaulting to None", val.c_str());
+			gds__log("DirectoryList: unknown parameter '%s', defaulting to None", val.c_str());
 			mode = None;
 			return;
 		}
@@ -151,8 +156,10 @@ void DirectoryList::initialize(bool simple_mode)
 	size_t last = 0;
 	PathName root = Config::getRootDirectory();
 	size_t i;
-	for (i = 0; i < val.length(); i++) {
-		if (val[i] == ';') {
+	for (i = 0; i < val.length(); i++)
+	{
+		if (val[i] == ';')
+		{
 			PathName dir = "";
 			if (i > last) {
 				dir = val.substr(last, i - last);
@@ -212,7 +219,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 	ParsedPath pPath(varpath);
     bool rc = false;
-    for (size_t i = 0; i < getCount(); i++) {
+    for (size_t i = 0; i < getCount(); i++)
+    {
 		if ((*this)[i].contains(pPath)) {
 			rc = true;
 			break;
@@ -225,7 +233,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 bool DirectoryList::expandFileName(PathName& path, const PathName& name) const
 {
 	fb_assert(mode != NotInitialized);
-    for (size_t i = 0; i < getCount(); i++) {
+    for (size_t i = 0; i < getCount(); i++)
+    {
 		PathUtils::concatPath(path, (*this)[i], name);
 		if (PathUtils::canAccess(path, 4)) {
 			return true;

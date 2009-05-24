@@ -88,11 +88,11 @@ static void event_list()
  *	This format is more readable for humans.
  *
  **************************************/
-	srq *database_que;
+	const srq* database_que;
 
 	SRQ_LOOP(EVENT_header->evh_events, database_que)
 	{
-		EVNT database_event = (EVNT) ((UCHAR*) database_que - OFFSET(EVNT, evnt_events));
+		const evnt* database_event = (evnt*) ((UCHAR*) database_que - OFFSET(evnt*, evnt_events));
 
 		// Skip non-database entries
 
@@ -111,17 +111,17 @@ static void event_list()
 		printf(" count: %6ld\n", database_event->evnt_count);
 
 		{ // scope
-			srq *interest_que;
+			const srq* interest_que;
 			// Print out the interest list for this event
 
 			SRQ_LOOP(database_event->evnt_interests, interest_que)
 			{
-				RINT interest = (RINT) ((UCHAR*) interest_que - OFFSET(RINT, rint_interests));
+				const req_int* interest = (req_int*) ((UCHAR*) interest_que - OFFSET(req_int*, rint_interests));
 				if (!interest->rint_request)
 					printf("(0)");
 				else {
-					evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
-					PRB process = (PRB) SRQ_ABS_PTR(request->req_process);
+					const evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
+					const prb* process = (prb*) SRQ_ABS_PTR(request->req_process);
 					printf("%6d ", process->prb_process_id);
 				}
 			}
@@ -129,28 +129,28 @@ static void event_list()
 
 		// Print out each event belonging to this database
 
-		srq* que_inst;
+		const srq* que_inst;
 		SRQ_LOOP(EVENT_header->evh_events, que_inst)
 		{
 
-			EVNT event = (EVNT) ((UCHAR *) que_inst - OFFSET(EVNT, evnt_events));
+			const evnt* event = (evnt*) ((UCHAR *) que_inst - OFFSET(evnt*, evnt_events));
 			fb_assert(event->evnt_header.hdr_type == type_evnt);
 			if (event->evnt_parent != SRQ_REL_PTR(database_event))
 				continue;
 			printf("    \"%-15s\" count: %6ld Interest", event->evnt_name, event->evnt_count);
 
 			{ // scope
-				srq *interest_que;
+				const srq* interest_que;
 				// Print out the interest list for this event
 
 				SRQ_LOOP(event->evnt_interests, interest_que)
 				{
-					RINT interest = (RINT) ((UCHAR*) interest_que - OFFSET(RINT, rint_interests));
+					const req_int* interest = (req_int*) ((UCHAR*) interest_que - OFFSET(req_int*, rint_interests));
 					if (!interest->rint_request)
 						printf("(0)");
 					else {
-						evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
-						PRB process = (PRB) SRQ_ABS_PTR(request->req_process);
+						const evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
+						const prb* process = (prb*) SRQ_ABS_PTR(request->req_process);
 						printf("%6d ", process->prb_process_id);
 					}
 				}
@@ -185,17 +185,16 @@ static void event_table_dump()
 	prt_que("\tProcesses", &EVENT_header->evh_processes);
 	prt_que("\tEvents", &EVENT_header->evh_events);
 
-	event_hdr* block = 0;
 	for (SLONG offset = sizeof(evh); offset < EVENT_header->evh_length; offset += block->hdr_length)
 	{
 		printf("\n%.5ld ", offset);
-		block = (event_hdr*) SRQ_ABS_PTR(offset);
+		const event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
 		switch (block->hdr_type)
 		{
 		case type_prb:
 			{
 				printf("PROCESS_BLOCK (%ld)\n", block->hdr_length);
-				PRB process = (PRB) block;
+				const prb* process = (prb*) block;
 				printf("\tFlags: %d, pid: %d\n", process->prb_flags, process->prb_process_id);
 				prt_que("\tProcesses", &process->prb_processes);
 				prt_que("\tSessions", &process->prb_sessions);
@@ -205,7 +204,7 @@ static void event_table_dump()
 		case type_frb:
 			{
 				printf("FREE BLOCK (%ld)\n", block->hdr_length);
-				FRB free = (FRB) block;
+				const frb* free = (frb*) block;
 				printf("\tNext: %ld\n", free->frb_next);
 			}
 			break;
@@ -213,7 +212,7 @@ static void event_table_dump()
 		case type_reqb:
 			{
 				printf("REQUEST BLOCK (%ld)\n", block->hdr_length);
-				evt_req* request = (evt_req*) block;
+				const evt_req* request = (evt_req*) block;
 				printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
 						  request->req_process, request->req_interests,
 						  request->req_ast, request->req_ast_arg);
@@ -225,7 +224,7 @@ static void event_table_dump()
 		case type_evnt:
 			{
 				printf("EVENT (%ld)\n", block->hdr_length);
-				EVNT event = (EVNT) block;
+				const evnt* event = (evnt*) block;
 				printf("\t\"%s\", count: %ld, parent: %ld\n",
 						  event->evnt_name, event->evnt_count, event->evnt_parent);
 				prt_que("\tInterests", &event->evnt_interests);
@@ -236,7 +235,7 @@ static void event_table_dump()
 		case type_ses:
 			{
 				printf("SESSION (%ld)\n", block->hdr_length);
-				SES session = (SES) block;
+				const ses* session = (ses*) block;
 				printf("\tInterests: %ld\n", session->ses_interests);
 				prt_que("\tSessions", &session->ses_sessions);
 				prt_que("\tRequests", &session->ses_requests);
@@ -246,12 +245,12 @@ static void event_table_dump()
 		case type_rint:
 			{
 				printf("INTEREST (%ld)\n", block->hdr_length);
-				RINT interest = (RINT) block;
+				const req_int* interest = (req_int*) block;
 				if (interest->rint_event)
 				{
-					EVNT event = (EVNT) SRQ_ABS_PTR(interest->rint_event);
+					const evnt* event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
 					if (event->evnt_parent) {
-						EVNT parent = (EVNT) SRQ_ABS_PTR(event->evnt_parent);
+						const evnt* parent = (evnt*) SRQ_ABS_PTR(event->evnt_parent);
 						printf("\t\"%s\".\"%s\"\n", parent->evnt_name, event->evnt_name);
 					}
 					else

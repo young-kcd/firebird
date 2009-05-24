@@ -25,11 +25,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>				/* for open() and fcntl() */
+#include <fcntl.h>				// for open() and fcntl()
 #include <errno.h>
 
 #ifdef HAVE_FLOCK
-#include <sys/file.h>			/* for flock() */
+#include <sys/file.h>			// for flock()
 #endif
 
 #ifdef HAVE_STRING_H
@@ -37,11 +37,11 @@
 #endif
 
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>				/* for fork() */
+#include <unistd.h>				// for fork()
 #endif
 
 #ifdef HAVE_WAIT_H
-#include <wait.h>				/* for waitpid() */
+#include <wait.h>				// for waitpid()
 #endif
 
 #ifdef HAVE_SYS_WAIT_H
@@ -95,19 +95,17 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 		gds__prefix(string, process2);
 	}
 	if (prog_name) {
-		gds__log("%s: guardian starting %s\n",
-                 prog_name, string);
+		gds__log("%s: guardian starting %s\n", prog_name, string);
 	}
 
-/* add place in argv for visibility to "ps" */
+	// add place in argv for visibility to "ps"
 	strcpy(argv[0], string);
 #if (defined SOLARIS)
 	pid_t pid = fork1();
-	if (!pid) {
+	if (!pid)
+	{
 		if (execv(string, argv) == -1) {
-/*			ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n",
-				   string, argv);
-*/
+			//ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n", string, argv);
 		}
 		exit(FINI_ERROR);
 	}
@@ -147,7 +145,7 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 
 	fb_assert(child_pid != 0);
 
-/* wait for the child process with child_pid to exit */
+	// wait for the child process with child_pid to exit
 
 	while (waitpid(child_pid, &child_exit_status, 0) == -1)
 	{
@@ -174,8 +172,7 @@ void alrm_handler(int)
 }
 
 
-int UTIL_shutdown_child(pid_t child_pid,
-	unsigned timeout_term, unsigned timeout_kill)
+int UTIL_shutdown_child(pid_t child_pid, unsigned timeout_term, unsigned timeout_kill)
 {
 /**************************************
  *
@@ -254,21 +251,20 @@ int UTIL_ex_lock(const TEXT* file)
 
 	TEXT expanded_filename[MAXPATHLEN];
 
-/* get the file name and prepend the complete path etc */
+	// get the file name and prepend the complete path etc
 	gds__prefix(expanded_filename, file);
 
-/* file fd for the opened and locked file */
+	// file fd for the opened and locked file
 	int fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666);
 	if (fd_file == -1) {
-		fprintf(stderr, "Could not open %s for write\n",
-				   expanded_filename);
+		fprintf(stderr, "Could not open %s for write\n", expanded_filename);
 		return (-1);
 	}
 
 	fb_assert(fd_file != -2);
 
 #ifndef HAVE_FLOCK
-/* get an exclusive lock on the GUARD file without blocking on the call */
+	// get an exclusive lock on the GUARD file without blocking on the call
 	struct flock lock;
 	lock.l_type = F_WRLCK;
 	lock.l_whence = 0;
@@ -305,7 +301,7 @@ void UTIL_ex_unlock( int fd_file)
 
 	struct flock lock;
 
-/* get an exclusive lock on the GUARD file with a block */
+	// get an exclusive lock on the GUARD file with a block
 	lock.l_type = F_UNLCK;
 	lock.l_whence = 0;
 	lock.l_start = 0;

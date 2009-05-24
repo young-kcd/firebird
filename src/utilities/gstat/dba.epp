@@ -72,9 +72,9 @@ using MsgFormat::SafeArg;
 using namespace Ods;
 
 
-/* For Netware the follow DB handle and isc_status is #defined to be a  */
-/* local variable on the stack in main.  This is to avoid multiple      */
-/* threading problems with module level statics.                        */
+// For Netware the follow DB handle and isc_status is #defined to be a
+// local variable on the stack in main.  This is to avoid multiple
+// threading problems with module level statics.
 DATABASE DB = STATIC "yachts.lnk";
 #define DB          db_handle
 #define isc_status  status_vector
@@ -119,17 +119,17 @@ struct dba_rel
 
 struct dba_fil
 {
-	dba_fil* fil_next;			/* Next file in database */
-	ULONG fil_min_page;			/* Minimum page number in file */
-	ULONG fil_max_page;			/* Maximum page number in file */
-	USHORT fil_fudge;			/* Fudge factor for page relocation */
+	dba_fil* fil_next;			// Next file in database
+	ULONG fil_min_page;			// Minimum page number in file
+	ULONG fil_max_page;			// Maximum page number in file
+	USHORT fil_fudge;			// Fudge factor for page relocation
 #ifdef WIN_NT
 	void *fil_desc;
 #else
 	int fil_desc;
 #endif
-	USHORT fil_length;			/* Length of expanded file name */
-	SCHAR fil_string[1];		/* Expanded file name */
+	USHORT fil_length;			// Length of expanded file name
+	SCHAR fil_string[1];		// Expanded file name
 };
 
 static char* alloc(size_t);
@@ -173,16 +173,16 @@ struct open_files
 #else
 	int desc;
 #endif
-	struct open_files *open_files_next;
+	open_files *open_files_next;
 };
 
 struct dba_mem
 {
 	char *memory;
-	struct dba_mem *mem_next;
+	dba_mem *mem_next;
 };
 
-/* threading declarations for thread data */
+// threading declarations for thread data
 
 class tdba : public ThreadData
 {
@@ -358,15 +358,15 @@ int gstat(Firebird::UtilSvc* uSvc)
 		switch (in_sw_tab->in_sw)
 		{
 		case 0:
-			dba_print(20, SafeArg() << (str + 1));	/* msg 20: unknown switch "%s" */
-			dba_print(21);	/* msg 21: Available switches: */
+			dba_print(20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
+			dba_print(21);	// msg 21: Available switches:
 			for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
 			{
 				if (in_sw_tab->in_sw_msg)
 					dba_print(in_sw_tab->in_sw_msg);
 			}
 			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg());
-			dba_error(1);	/* msg 1: found unknown switch */
+			dba_error(1);	// msg 1: found unknown switch
 			break;
 		case IN_SW_DBA_USERNAME:
 			if (argv < end)
@@ -453,11 +453,11 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 
 	if (sw_version)
-		dba_print(5, SafeArg() << GDS_VERSION);	/* msg 5: gstat version %s */
+		dba_print(5, SafeArg() << GDS_VERSION);	// msg 5: gstat version %s
 
 	if (!name) {
 		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 2, SafeArg());
-		dba_error(2);	/* msg 2: please retry, giving a database name */
+		dba_error(2);	// msg 2: please retry, giving a database name
 	}
 
 	if (!sw_data && !sw_index)
@@ -466,7 +466,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	if (sw_record && !sw_data)
 		sw_data = true;
 
-/* Open database and go to work */
+	// Open database and go to work
 
 	Firebird::PathName fileName = name;
 	const Firebird::PathName connName = fileName;
@@ -501,18 +501,16 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
-		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 3,
-								SafeArg() << ODS_VERSION <<
-								(header->hdr_ods_version & ~ODS_FIREBIRD_FLAG));
-		dba_error(3, SafeArg() << ODS_VERSION <<
-					(header->hdr_ods_version & ~ODS_FIREBIRD_FLAG));
-		/* msg 3: Wrong ODS version, expected %d, encountered %d? */
+		const int oversion = (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG);
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 3, SafeArg() << ODS_VERSION << oversion);
+		dba_error(3, SafeArg() << ODS_VERSION << oversion);
+		// msg 3: Wrong ODS version, expected %d, encountered %d?
 	}
 
 	char file_name[1024];
 	fileName.copyTo(file_name, sizeof(file_name));
 
-	dba_print(6, SafeArg() << file_name);	/* msg 6: \nDatabase \"%s\"\n */
+	dba_print(6, SafeArg() << file_name);	// msg 6: \nDatabase \"%s\"\n
 
 	tddba->page_size = header->hdr_page_size;
 	tddba->buffer1 = (pag*) alloc(tddba->page_size);
@@ -520,7 +518,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	tddba->global_buffer = (pag*) alloc(tddba->page_size);
 	tddba->page_number = -1;
 
-/* gather continuation files */
+	// gather continuation files
 
 	SLONG page = HEADER_PAGE;
 	do {
@@ -529,7 +527,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		do {
 			header = (const header_page*) db_read(page);
 			if (current != tddba->files)
-				current->fil_fudge = 1;	/* ignore header page once read it */
+				current->fil_fudge = 1;	// ignore header page once read it
 			*file_name = '\0';
 			const UCHAR* vp = header->hdr_data;
 			for (const UCHAR* const vend = vp + header->hdr_page_size;
@@ -544,10 +542,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 				}
 			}
 		} while (page = header->hdr_next_page);
-		page = current->fil_max_page + 1;	/* first page of next file */
+		page = current->fil_max_page + 1;	// first page of next file
 	} while (*file_name);
 
-/* Print header page */
+	// Print header page
 
 	page = HEADER_PAGE;
 	do {
@@ -559,20 +557,20 @@ int gstat(Firebird::UtilSvc* uSvc)
 	if (sw_header)
 		dba_exit(FINI_OK, tddba);
 
-/* print continuation file sequence */
+	// print continuation file sequence
 
 	dba_print(7);
 	// msg 7: \n\nDatabase file sequence:
 	for (current = tddba->files; current->fil_next; current = current->fil_next)
 	{
 		dba_print(8, SafeArg() << current->fil_string << current->fil_next->fil_string);
-		//* msg 8: File %s continues as file %s
+		// msg 8: File %s continues as file %s
 	}
 	dba_print(9, SafeArg() << current->fil_string << ((current == tddba->files) ? "only" : "last"));
 	// msg 9: File %s is the %s file\n
 
-/* Check to make sure that the user accessing the database is either
- * SYSDBA or owner of the database */
+	// Check to make sure that the user accessing the database is either
+	// SYSDBA or owner of the database
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	uSvc->getAddressPath(dpb);
@@ -636,8 +634,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (sw_relation)
 		{
 			fb_utils::exact_name(X.RDB$RELATION_NAME);
-			for (relation = tddba->relations; relation;
-				relation = relation->rel_next)
+			for (relation = tddba->relations; relation; relation = relation->rel_next)
 			{
                 if (!(strcmp(relation->rel_name, X.RDB$RELATION_NAME))) {
 					relation->rel_id = X.RDB$RELATION_ID;
@@ -732,7 +729,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-/* Print results */
+	// Print results
 
 	for (const dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 	{
@@ -770,8 +767,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 				((double) relation->rel_data_pages * (tddba->page_size - DPG_SIZE)) : 0.0;
 			sprintf((char*) buf, "%.0f%%", average);
 			dba_print(12, SafeArg() << relation->rel_data_pages << relation->rel_slots << buf);
-			/* msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s */
-			dba_print(13);	/* msg 13: "    Fill distribution:" */
+			// msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s
+			dba_print(13);	// msg 13: "    Fill distribution:"
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
 		uSvc->printf("\n");
@@ -800,7 +797,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
-		/* free mem */
+		// free mem
 
 		if (status_vector[1])
 		{
@@ -817,33 +814,35 @@ int gstat(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		/* if there still exists a database handle, disconnect from the
-		 * server
-		 */
+		// if there still exists a database handle, disconnect from the server
 		FINISH;
 
 		uSvc->started();
 		dba_mem* alloced = tddba->head_of_mem_list;
-		while (alloced != 0) {
+		while (alloced != 0)
+		{
 			delete[] alloced->memory;
 			alloced = alloced->mem_next;
 		}
 
-		/* close files */
+		// close files
 		open_files* open_file = tddba->head_of_files_list;
-		while (open_file) {
+		while (open_file)
+		{
 			db_close(open_file->desc);
 			open_file = open_file->open_files_next;
 		}
 
-		/* free linked lists */
-		while (tddba->head_of_files_list != 0) {
+		// free linked lists
+		while (tddba->head_of_files_list != 0)
+		{
 			open_files* tmp1 = tddba->head_of_files_list;
 			tddba->head_of_files_list = tddba->head_of_files_list->open_files_next;
 			delete tmp1;
 		}
 
-		while (tddba->head_of_mem_list != 0) {
+		while (tddba->head_of_mem_list != 0)
+		{
 			dba_mem* tmp2 = tddba->head_of_mem_list;
 			tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
 			delete tmp2;
@@ -878,7 +877,7 @@ static char* alloc(size_t size)
 	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
 
 	if (!block) {
-		/* NOMEM: return error */
+		// NOMEM: return error
 		dba_error(31);
 	}
 
@@ -886,7 +885,7 @@ static char* alloc(size_t size)
 
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list) {
-		/* NOMEM: return error */
+		// NOMEM: return error
 		dba_error(31);
 	}
 	mem_list->memory = block;
@@ -926,12 +925,13 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 		for (const SLONG* const end = ptr + ptr_page->ppg_count; ptr < end; ptr++)
 		{
 			++relation->rel_slots;
-			if (*ptr) {
+			if (*ptr)
+			{
 				++relation->rel_data_pages;
 				if (!analyze_data_page(relation, (const data_page*) db_read(*ptr), sw_record))
 				{
 					dba_print(18, SafeArg() << *ptr);
-					// msg 18: "    Expected data on page %ld" */
+					// msg 18: "    Expected data on page %ld"
 				}
 			}
 		}
@@ -1278,13 +1278,14 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	dba_fil* fil;
 
-	if (tddba->files) {
+	if (tddba->files)
+	{
 		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
 		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
-	else {						/* empty list */
+	else {						// empty list
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
@@ -1313,7 +1314,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
-		/* NOMEM: return error */
+		// NOMEM: return error
 		dba_error(31);
 	}
 	file_list->desc = fil->fil_desc;
@@ -1426,9 +1427,9 @@ static void db_error( int status)
 	tdba* tddba = tdba::getSpecific();
 	tddba->page_number = -1;
 
-	/* FIXME: The strerror() function returns the appropriate description
-	   string, or an unknown error message if the error code is unknown.
-	   EKU: p cannot be NULL! */
+	// FIXME: The strerror() function returns the appropriate description
+	// string, or an unknown error message if the error code is unknown.
+	// EKU: p cannot be NULL!
 	tddba->uSvc->printf("%s\n", strerror(status));
 	dba_exit(FINI_ERROR, tddba);
 }
@@ -1453,13 +1454,15 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	tdba* tddba = tdba::getSpecific();
 
 	dba_fil* fil;
-	if (tddba->files) {
-		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next);
+	if (tddba->files)
+	{
+		for (fil = tddba->files; fil->fil_next; fil = fil->fil_next)
+			;
 		fil->fil_next = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
-	else {						/* empty list */
+	else {						// empty list
 
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
@@ -1480,7 +1483,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
 	if (!file_list) {
-		/* NOMEM: return error */
+		// NOMEM: return error
 		dba_error(31);
 	}
 	file_list->desc = fil->fil_desc;
@@ -1607,7 +1610,8 @@ static void print_distribution(const SCHAR* prefix, const SLONG* vector)
  **************************************/
 	tdba* tddba = tdba::getSpecific();
 
-	for (SSHORT n = 0; n < BUCKETS; n++) {
+	for (SSHORT n = 0; n < BUCKETS; n++)
+	{
 		tddba->uSvc->printf("%s%2d - %2d%% = %ld\n",
 				prefix, n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
