@@ -2784,6 +2784,7 @@ bool get_exception(void)
 		{
 			switch (attribute)
 			{
+			case att_exception_name:
 				if (!X.RDB$EXCEPTION_NAME.NULL)
 					BURP_error(311, true, isc_arg_number, (void*) att_exception_name,
 						isc_arg_string, X.RDB$EXCEPTION_NAME, NULL, NULL, NULL, NULL, NULL, NULL);
