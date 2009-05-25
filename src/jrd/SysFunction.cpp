@@ -72,7 +72,7 @@ const int oneDay = 86400;
 
 // auxiliary functions
 void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier);
-double cot(double value);
+double fbcot(double value) throw();
 
 // generic setParams functions
 void setParamsDouble(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -178,7 +178,7 @@ void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
 }
 
 
-double cot(double value)
+double fbcot(double value) throw()
 {
 	return 1.0 / tan(value);
 }
@@ -3133,20 +3133,14 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 
 
-#if defined (_MSC_VER) || defined (__SUNPRO_CC) || defined(__xlC__)
-typedef StdMathFunc VoidPtrStdMathFunc;
-#else
-typedef void* VoidPtrStdMathFunc;
-#endif
-
 const SysFunction SysFunction::functions[] =
 	{
 		{"ABS", 1, 1, setParamsDouble, makeAbs, evlAbs, NULL},
-		{"ACOS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) acos},
+		{"ACOS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) acos},
 		{"ASCII_CHAR", 1, 1, setParamsInteger, makeAsciiChar, evlAsciiChar, NULL},
 		{"ASCII_VAL", 1, 1, setParamsAsciiVal, makeShortResult, evlAsciiVal, NULL},
-		{"ASIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) asin},
-		{"ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) atan},
+		{"ASIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) asin},
+		{"ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) atan},
 		{"ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL},
 		{"BIN_AND", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd},
 		{"BIN_NOT", 1, 1, setParamsInteger, makeBin, evlBin, (void*) funBinNot},
@@ -3157,9 +3151,9 @@ const SysFunction SysFunction::functions[] =
 		{"CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
-		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cos},
-		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cosh},
-		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) cot},
+		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) cos},
+		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) cosh},
+		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) fbcot},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
 		{"EXP", 1, 1, setParamsDouble, makeDoubleResult, evlExp, NULL},
@@ -3169,7 +3163,7 @@ const SysFunction SysFunction::functions[] =
 		{"LEFT", 2, 2, setParamsSecondInteger, makeLeftRight, evlLeft, NULL},
 		{"LN", 1, 1, setParamsDouble, makeDoubleResult, evlLn, NULL},
 		{"LOG", 2, 2, setParamsDouble, makeDoubleResult, evlLog, NULL},
-		{"LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) log10},
+		{"LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) log10},
 		{"LPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funLPad},
 		{"MAXVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMaxValue},
 		{"MINVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMinValue},
@@ -3185,11 +3179,11 @@ const SysFunction SysFunction::functions[] =
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
 		{"SIGN", 1, 1, setParamsDouble, makeShortResult, evlSign, NULL},
-		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sin},
-		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) sinh},
+		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) sin},
+		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) sinh},
 		{"SQRT", 1, 1, setParamsDouble, makeDoubleResult, evlSqrt, NULL},
-		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tan},
-		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) tanh},
+		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) tan},
+		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) (StdMathFunc) tanh},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
 		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
