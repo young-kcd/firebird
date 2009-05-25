@@ -42,7 +42,7 @@ namespace os_utils
 	bool get_user_home(int user_id, Firebird::PathName& homeDir);
 
 	void createLockDirectory(const char* pathname);
-	int openCreateLockFile(const char* pathname, int flags);
+	int openCreateShmemFile(const char* pathname, int flags);
 
 } // namespace os_utils
 

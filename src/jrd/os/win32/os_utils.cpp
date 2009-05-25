@@ -128,7 +128,7 @@ void createLockDirectory(const char* pathname)
 }
 
 // open (or create if missing) and set appropriate access rights
-int openCreateLockFile(const char* pathname, int flags)
+int openCreateShmemFile(const char* pathname, int flags)
 {
 	return ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 }

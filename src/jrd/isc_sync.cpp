@@ -1753,7 +1753,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #else
 	int
 #endif
-		fd_init = os_utils::openCreateLockFile(init_filename, 0);
+		fd_init = os_utils::openCreateShmemFile(init_filename, 0);
 	if (fd_init == -1) {
 		error(status_vector, "open", errno);
 		return NULL;
@@ -1774,7 +1774,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		TEXT sem_filename[MAXPATHLEN];
 		gds__prefix_lock(sem_filename, SEM_FILE);
-		int f = os_utils::openCreateLockFile(sem_filename, 0);
+		int f = os_utils::openCreateShmemFile(sem_filename, 0);
 		if (f == -1) {
 			error(status_vector, "open", errno);
 			return NULL;
@@ -1802,7 +1802,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif
 
 /* open the file to be inited */
-	const int fd = os_utils::openCreateLockFile(expanded_filename, 0);
+	const int fd = os_utils::openCreateShmemFile(expanded_filename, 0);
 	if (fd == -1) {
 		error(status_vector, "open", errno);
 		return NULL;
@@ -1973,7 +1973,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	MutexLockGuard guard(openFdInit);
 
-	int fd = os_utils::openCreateLockFile(expanded_filename, O_TRUNC);
+	int fd = os_utils::openCreateShmemFile(expanded_filename, O_TRUNC);
 	if (fd < 0) {
 		error(status_vector, "open", errno);
 		return NULL;
@@ -3864,7 +3864,7 @@ static SLONG find_key(ISC_STATUS* status_vector, const TEXT* filename)
 
 	key_t key = ftok(filename, FTOK_KEY);
 	if (key == -1) {
-		int fd = os_utils::openCreateLockFile(filename, O_TRUNC);
+		int fd = os_utils::openCreateShmemFile(filename, O_TRUNC);
 		if (fd == -1) {
 			error(status_vector, "open", errno);
 			return 0L;
