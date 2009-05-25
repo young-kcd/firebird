@@ -63,6 +63,8 @@
       </File>
       <File RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
       </File>
+      <File RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp">
+      </File>
       <File RelativePath="..\..\..\src\jrd\isc_sync.cpp">
       </File>
     </Filter>
