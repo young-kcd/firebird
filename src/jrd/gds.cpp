@@ -121,6 +121,7 @@ static const char* FB_PID_FILE = "fb_%d";
 #include "../jrd/os/isc_i_proto.h"
 
 #ifdef WIN_NT
+#include <shlobj.h>
 #define _WINSOCKAPI_
 #include <share.h>
 #include "err_proto.h"
@@ -285,7 +286,7 @@ static const UCHAR
 	two[]		= { op_line, op_verb, op_verb, 0},
 	three[]		= { op_line, op_verb, op_verb, op_verb, 0},
 	field[]		= { op_byte, op_byte, op_literal, op_pad, op_line, 0},
-	byte[]		= { op_byte, op_line, 0},
+	byte_line[]		= { op_byte, op_line, 0},
 	byte_args[] = { op_byte, op_line, op_args, 0},
 	byte_verb[] = { op_byte, op_line, op_verb, 0},
 	byte_verb_verb[] = { op_byte, op_line, op_verb, op_verb, 0},
@@ -3685,7 +3686,15 @@ public:
 		Firebird::PathName lockPrefix;
 		if (!fb_utils::readenv(FB_LOCK_ENV, lockPrefix))
 		{
-			PathUtils::concatPath(lockPrefix, fbTempDir, LOCKDIR);
+#ifdef WIN_NT
+			char cmnData[MAXPATHLEN];
+			if (!SHGetSpecialFolderPath(NULL, cmnData, CSIDL_COMMON_APPDATA, TRUE)) {
+				Firebird::system_call_failed::raise("SHGetSpecialFolderPath");
+			}
+			PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
+#else
+			PathUtils::concatPath(lockPrefix, WORKFILE, LOCKDIR);
+#endif
 		}
 		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
 		fb_prefix_lock = fb_prefix_lock_val;
