@@ -72,6 +72,7 @@ SHRLIB_FOREIGN_EXT=a
 #    -qstaticinline removed, interferes with FB's placement new
 COMMON_FLAGS= -qchars=signed -qlanglvl=newexcp -qroconst -qpic \
 	-D__IBM_ALLOW_OVERRIDE_PLACEMENT_NEW \
+	-qsuppress=1540-1103 \
 	$(TLS_OPTIONS)
 
 # -qinfo=all:noppt:nopor:notrd:nouse, useful, but gives *so* many warnings!
