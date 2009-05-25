@@ -97,6 +97,7 @@ bool get_user_home(int user_id, Firebird::PathName& homeDir)
 	return false;
 }
 
+// runuser/rungroup
 static const char* const FIREBIRD = "firebird";
 
 // create directory for lock files and set appropriate access rights
