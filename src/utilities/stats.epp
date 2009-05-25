@@ -42,7 +42,7 @@ const SSHORT ITEM_count		= 8;
 struct fb_stats
 {
 	SSHORT stats_count;
-	SSHORT stats_items;			/* Number of item per relation */
+	SSHORT stats_items;			// Number of item per relation
 	SLONG stats_counts[1];
 };
 
@@ -50,6 +50,8 @@ typedef int (print_callback)(SCHAR*, SSHORT, SSHORT, const SCHAR* const*, const 
 
 
 static fb_stats* expand_stats(fb_stats** ptr, SSHORT count);
+static int get_counts(ISC_STATUS *status_vector, const SCHAR *info, SSHORT length,
+		fb_stats** stats_ptr, SSHORT item);
 static int print_line(SCHAR* arg, SSHORT relation_id, SSHORT count,
 				const SCHAR* const* headers, const SLONG* counts);
 
@@ -109,12 +111,14 @@ void stats_analyze(const fb_stats* before, const fb_stats* after, print_callback
 	for (const SLONG* tail = after->stats_counts; relation_id < after->stats_count; ++relation_id)
 	{
 		SLONG total = 0;
-		for (SLONG* p = delta; p < end;) {
+		for (SLONG* p = delta; p < end;)
+		{
 			total += *tail;
 			*p++ = *tail++;
 		}
 		if (before && relation_id < before->stats_count)
-			for (SLONG* p = delta; p < end;) {
+			for (SLONG* p = delta; p < end;)
+			{
 				total -= *tail2;
 				*p++ -= *tail2++;
 			}
@@ -151,7 +155,8 @@ int stats_fetch(SLONG *status_vector, int **db_handle, fb_stats** stats_ptr)
 	else
 		stats = expand_stats(stats_ptr, 64);
 
-	if (!stats) {
+	if (!stats)
+	{
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_virmemexh;
 		status_vector[2] = isc_arg_end;
@@ -190,14 +195,16 @@ int stats_fetch(SLONG *status_vector, int **db_handle, fb_stats** stats_ptr)
 			item = ITEM_expunges;
 			break;
 		}
-		if (item >= 0) {
+		if (item >= 0)
+		{
 			if (get_counts(status_vector, p + 3, length, stats_ptr, item))
 				break;
 			p += 3 + length;
 		}
 
-	} /** MOD I have added this just to compile - it matches the for loop
-          but will need to be checkout out before actually being used */
+	}
+	// MOD I have added this just to compile - it matches the for loop
+	// but will need to be checkout out before actually being used
 
     return status_vector[1];
 
@@ -239,7 +246,7 @@ static fb_stats* expand_stats(fb_stats** ptr, SSHORT count)
  *
  **************************************/
 
-/* If the thing is already big enough, don't do nothing */
+	// If the thing is already big enough, don't do anything
 	fb_stats* old = *ptr;
 	if (old && old->stats_count < count)
 		return old;
@@ -247,14 +254,15 @@ static fb_stats* expand_stats(fb_stats** ptr, SSHORT count)
 	count += 20;
 	const SLONG length = sizeof(fb_stats) + (ITEM_count * count - 1) * sizeof(SLONG);
 	fb_stats* stats = (fb_stats*) gds__alloc(length);
-/* FREE: apparently never freed */
-	if (!stats)					/* NOMEM: out of memory */
-		return NULL;			/* leave *ptr unchanged */
+	// FREE: apparently never freed
+	if (!stats)					// NOMEM: out of memory
+		return NULL;			// leave *ptr unchanged
 	zap_longs(stats->stats_counts, count * ITEM_count);
 	stats->stats_count = count;
 	stats->stats_items = ITEM_count;
 
-	if (old) {
+	if (old)
+	{
 		SLONG* p = stats->stats_counts;
 		const SLONG* q = old->stats_counts;
 		const SLONG* const end = q + ITEM_count * old->stats_count;
@@ -268,7 +276,7 @@ static fb_stats* expand_stats(fb_stats** ptr, SSHORT count)
 }
 
 
-static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
+static int get_counts(ISC_STATUS *status_vector, const SCHAR *info, SSHORT length,
 		fb_stats** stats_ptr, SSHORT item)
 {
 /**************************************
@@ -284,9 +292,11 @@ static int get_counts(ISC_STATUS *status_vector, SCHAR *info, SSHORT length,
 	fb_stats* stats = *stats_ptr;
 
 	const SCHAR* p = info;
-	for (const SCHAR* const end = p + length; p < end; p += 6) {
+	for (const SCHAR* const end = p + length; p < end; p += 6)
+	{
 		const SSHORT relation_id = gds__vax_integer(p, 2);
-		if (relation_id >= stats->stats_count) {
+		if (relation_id >= stats->stats_count)
+		{
 			if (!expand_stats(&stats, relation_id)) {
 				status_vector[0] = isc_arg_gds;
 				status_vector[1] = isc_virmemexh;
@@ -316,7 +326,8 @@ static int print_line(SCHAR* arg, SSHORT relation_id, SSHORT count,
  *	Display data.
  *
  **************************************/
-	if (!*arg) {
+	if (!*arg)
+	{
 		*arg = 1;
 		printf("%32s ", " ");
 		for (SSHORT n = count; n; --n)
@@ -353,7 +364,7 @@ static int zap_longs(SLONG* ptr, SSHORT count)
  *
  **************************************/
 
-	if (count) {
+	if (count > 0) {
 		do {
 			*ptr++ = 0;
 		} while (--count);
