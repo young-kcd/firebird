@@ -292,11 +292,6 @@ private:
 	BePlusTree(Allocator *_pool, void *rootPage) : 	pool(_pool), level(0),
 		root(new(rootPage) ItemList()), defaultAccessor(this) {}
 
-#ifdef SUNCC
-public:
-// Class ItemList is not visible from Class Accessor
-// for Sun C++ compiler
-#endif
 	class NodeList;
 
     class ItemList : public SortedVector<Value, LeafCount, Key, KeyOfValue, Cmp>

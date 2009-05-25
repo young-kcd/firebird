@@ -38,11 +38,6 @@
 class ConfigImpl : public ConfigRoot
 {
 	friend class Config;
-#ifdef SUNCC
-public:
-// All of following typedef's is not visible from struct ConfigEntry
-// for Sun C++ compiler
-#endif
 	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
 

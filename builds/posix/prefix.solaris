@@ -54,7 +54,7 @@ endif
 # -erroff=nothrowneww, suppress warning for redefined new with different
 #   exception specification
 # -D_REENTRANT is added by -mt switch, explicit definition not needed
-COMMON_FLAGS= -DSOLARIS -DBSD_COMP -DSUNCC -D__EXTENSIONS__ \
+COMMON_FLAGS= -DSOLARIS -DBSD_COMP -D__EXTENSIONS__ \
 	-D_POSIX_THREAD_SEMANTICS -D_POSIX_THREAD_PRIO_INHERIT -D_POSIX_C_SOURCE=199506L -mt -KPIC \
 	-erroff=nothrowneww,wvarhidemem $(ISA_COMMON_FLAGS)
 
