@@ -1,4 +1,152 @@
   ***************************
+  * v2.1.3
+  ***************************
+
+    * Bugfix CORE-2449
+        Unexpected "lock conflict" error can be thrown instead of other (expected) exception
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2441
+        Server crashes on UPDATE OR INSERT statement
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2437
+        Buffer overflow on client when delivering events
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2415
+        Firebird crashes when out of temporary space
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2411
+        Optimizer chooses slower plan in v2.0.5/v2.1.2 as compared to v2.0.4/v2.1.1
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2397
+        Database corruption may happen after dropping two different indexes within the same transaction
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2368
+        Access violation after the isc_cancel_events() call if event was not found
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2355
+        Incorrect handling of LOWER/UPPER when result string shrinks in terms of byte length
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2354
+        "fb_lock_print -ia" output is not flushed to a file between iterations
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2340
+        Bugcheck 258 (page slot not empty) could occurs under high concurrent load
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2320
+        Complex recursive query may produce not all rows
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2313
+        INF_* functions may invalidate the whole output buffer
+        with isc_info_truncated at the beginning due to a boundary condition
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2311
+        Possible memory leak in WITH RECURSIVE query
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2306
+        fbserver terminates abnormally when thread start failed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2291
+        Bugcheck 284 (cannot restore singleton select data)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2282
+        *truncate UDFs are broken for numbers below -1
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2281
+        *round UDFs are broken for negative numbers
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2272
+        Server starts returning garbage when killing events connection attempt
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2270
+        ISQL consumes all memory and crashes when running in zlogin console
+      Contributor(s):
+        Jaroslaw Swierczynski <swiergot at gmail.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2249
+        Error while building Firebird 2.1 on FreeBSD 7.0
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2247
+        Message and descriptor buffers are not aligned properly (RISC machines only)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2245
+        Error on restoring a database with long exception texts from backup
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1961
+        Bugcheck 210 (page in use during flush) is thrown during database validation
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Roman Simakov <roman.simakov at red-soft.biz>
+
+    * Bugfix CORE-1923
+        "instsvc remove" returns 1 when succefully executed
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1690
+        Arithmetic exception, numeric overflow, or string truncation in UTF8 tables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1607
+        Correlated subquery is optimized badly if it depends on the union stream
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-2376
+        Change default value for the authentication method configuration parameter
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-2316
+        Throttling NBackup on large databases
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  ***************************
   * v2.1.2
   ***************************
 
