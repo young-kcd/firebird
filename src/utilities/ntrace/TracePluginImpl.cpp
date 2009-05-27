@@ -138,7 +138,10 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	}
 
 	IntlUtil::initUtf8Charset(&cs);
-	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, UCharBuffer(), string());
+
+	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, UCharBuffer(), string()))
+		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
+
 	charSet = Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs);
 	textType = FB_NEW(*getDefaultMemoryPool()) Jrd::TextType(0, &tt, charSet);
 

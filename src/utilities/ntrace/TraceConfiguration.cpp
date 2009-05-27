@@ -106,7 +106,6 @@ void TraceCfgReader::readConfig()
 
 	charset cs;
 	IntlUtil::initUtf8Charset(&cs);
-	texttype tt;
 
 	string collAttributes("ICU-VERSION=");
 	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
@@ -116,7 +115,10 @@ void TraceCfgReader::readConfig()
 	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
 		collAttributes.length());
 
-	IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string());
+	texttype tt;
+	if (!IntlUtil::initUnicodeCollation(&tt, &cs, "UNICODE", 0, collAttributesBuffer, string()))
+		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
+
 	AutoPtr<Jrd::CharSet> charSet(Jrd::CharSet::createInstance(*getDefaultMemoryPool(), 0, &cs));
 	Jrd::TextType textType(0, &tt, charSet);
 
