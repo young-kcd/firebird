@@ -259,7 +259,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 			// Signal the start of the service here ONLY if we are displaying users
 			// since the number of users may exceed the service buffer.  This
 			// will cause the service to wait for the client to request data.  However,
-			// if the server is not signaled, then the client can never request anything
+			// if the server is not signaled, then the client can never request anything.
 			if (user_data->operation == DIS_OPER)
 				uSvc->started();
 			if (! useServices)
@@ -460,7 +460,8 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 				if (first)
 				{
 					first = false;
-					if (c != '?') {
+					if (c != '?')
+					{
 						*cursor++ = '-';
 						count--;
 					}
@@ -477,7 +478,8 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 			break;
 		if (c == EOF)
 		{
-			if (SYSCALL_INTERRUPTED(errno)) {
+			if (SYSCALL_INTERRUPTED(errno))
+			{
 				errno = 0;
 				continue;
 			}

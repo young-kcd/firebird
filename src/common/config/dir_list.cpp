@@ -218,9 +218,9 @@ bool DirectoryList::isPathInList(const PathName& path) const
 	}
 
 	ParsedPath pPath(varpath);
-    bool rc = false;
-    for (size_t i = 0; i < getCount(); i++)
-    {
+	bool rc = false;
+	for (size_t i = 0; i < getCount(); i++)
+	{
 		if ((*this)[i].contains(pPath)) {
 			rc = true;
 			break;
@@ -233,8 +233,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 bool DirectoryList::expandFileName(PathName& path, const PathName& name) const
 {
 	fb_assert(mode != NotInitialized);
-    for (size_t i = 0; i < getCount(); i++)
-    {
+	for (size_t i = 0; i < getCount(); i++)
+	{
 		PathUtils::concatPath(path, (*this)[i], name);
 		if (PathUtils::canAccess(path, 4)) {
 			return true;

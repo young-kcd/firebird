@@ -400,7 +400,7 @@ static SSHORT get_switches(int argc,
 				fprintf(OUTFILE, "%s\n", msg);
 				return ERR_SYNTAX;
 
-				// The following switches do not take any parameters
+			// The following switches do not take any parameters
 			case IN_SW_IBMGR_START:
 			case IN_SW_IBMGR_ONCE:
 			case IN_SW_IBMGR_FOREVER:

@@ -76,9 +76,9 @@ static const struct in_sw_tab_t ibmgr_in_sw_table [] =
 //    {IN_SW_IBMGR_NOAT,		0,	"NOAT",		0, 0, 0, FALSE,	0,	3,      NULL},  // no new attachments
 //    {IN_SW_IBMGR_NOTR,		0,	"NOTR",		0, 0, 0, FALSE,	0,	3,      NULL},  // no new transaction
 //    {IN_SW_IBMGR_IGNORE,	0,	"IGN",		0, 0, 0, FALSE,	0,	1,      NULL},   // do not shutdown
-    {IN_SW_IBMGR_PASSWORD,	0,	"PASSWORD",	0, 0, 0, FALSE,	0,	2,      NULL},	// DB admin's password
+    {IN_SW_IBMGR_PASSWORD,	0,	"PASSWORD",	0, 0, 0, FALSE,	0,	2,      NULL},   // DB admin's password
     {IN_SW_IBMGR_USER,		0,	"USER",		0, 0, 0, FALSE,	0,	1,      NULL},   // user's name
-    {IN_SW_IBMGR_PIDFILE,	0,	"PIDFILE",		0, 0, 0, FALSE,	0,	1,      NULL},   // file for fbserver's PID
+    {IN_SW_IBMGR_PIDFILE,	0,	"PIDFILE",	0, 0, 0, FALSE,	0,	1,      NULL},   // file for fbserver's PID
 
 // We can shutdown any server, but can start only local
 // thus we do not allow to change host for time being

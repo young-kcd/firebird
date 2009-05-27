@@ -50,7 +50,7 @@ typedef int (print_callback)(SCHAR*, SSHORT, SSHORT, const SCHAR* const*, const 
 
 
 static fb_stats* expand_stats(fb_stats** ptr, SSHORT count);
-static int get_counts(ISC_STATUS *status_vector, const SCHAR *info, SSHORT length,
+static int get_counts(ISC_STATUS* status_vector, const SCHAR* info, SSHORT length,
 		fb_stats** stats_ptr, SSHORT item);
 static int print_line(SCHAR* arg, SSHORT relation_id, SSHORT count,
 				const SCHAR* const* headers, const SLONG* counts);

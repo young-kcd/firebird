@@ -173,13 +173,13 @@ struct open_files
 #else
 	int desc;
 #endif
-	open_files *open_files_next;
+	open_files* open_files_next;
 };
 
 struct dba_mem
 {
-	char *memory;
-	dba_mem *mem_next;
+	char* memory;
+	dba_mem* mem_next;
 };
 
 // threading declarations for thread data
