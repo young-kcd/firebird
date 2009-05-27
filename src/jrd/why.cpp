@@ -91,6 +91,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/fb_atomic.h"
+#include "../common/classes/FpeControl.h"
 #include "../jrd/constants.h"
 #include "../jrd/ThreadStart.h"
 #ifdef SCROLLABLE_CURSORS
@@ -736,8 +737,6 @@ static ISC_STATUS prepare(ISC_STATUS *, Transaction*);
 static void release_dsql_support(sqlda_sup&);
 static void save_error_string(ISC_STATUS *);
 static bool set_path(const PathName&, PathName&);
-static void subsystem_enter() throw();
-static void subsystem_exit() throw();
 
 GlobalPtr<Semaphore> why_sem;
 static bool why_initialized = false;
@@ -765,8 +764,6 @@ static bool why_initialized = false;
 static const USHORT FPE_RESET_INIT_ONLY			= 0x0;	/* Don't reset FPE after init */
 static const USHORT FPE_RESET_NEXT_API_CALL		= 0x1;	/* Reset FPE on next gds call */
 static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
-
-static AtomicCounter isc_enter_count;
 
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
 static ULONG subsystem_usage = 0;
@@ -921,15 +918,14 @@ namespace
 	};
 #endif //UNIX
 
-	// YEntry:	Tracks subsystem_enter/exit() calls.
+	// YEntry:	Tracks FP exceptions state (via FpeControl).
 	//			Accounts activity per different attachments.
-	class YEntry : public Status
+	class YEntry : public Status, public FpeControl
 	{
 	public:
 		explicit YEntry(ISC_STATUS* v) throw()
 			: Status(v), att(0)
 		{
-			subsystem_enter();
 #ifdef UNIX
 			static GlobalPtr<CtrlCHandler> ctrlCHandler;
 #endif //UNIX
@@ -952,7 +948,6 @@ namespace
 				MutexLockGuard guard(att->enterMutex);
 				att->enterCount--;
 			}
-			subsystem_exit();
 		}
 
 	private:
@@ -5763,84 +5758,6 @@ static bool set_path(const PathName& file_name, PathName& expanded_name)
 	expanded_name.append(file_name);
 
 	return true;
-}
-
-
-static void subsystem_enter() throw()
-{
-/**************************************
- *
- *	s u b s y s t e m _ e n t e r
- *
- **************************************
- *
- * Functional description
- *	Enter subsystem.
- *
- **************************************/
-
-	try
-	{
-		++isc_enter_count;
-#if !(defined SUPERCLIENT || defined SUPERSERVER)
-		if (subsystem_usage == 0 ||
-			(subsystem_FPE_reset & (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
-		{
-			ISC_enter();
-			subsystem_FPE_reset &= ~FPE_RESET_NEXT_API_CALL;
-		}
-#endif
-
-#ifdef DEBUG_FPE_HANDLING
-		{
-/* It's difficult to make a FPE to occur inside the engine - for debugging
- * just force one to occur every-so-often. */
-			static ULONG counter = 0;
-			if (((counter++) % 10) == 0)
-			{
-				fprintf(stderr, "Forcing FPE to occur within engine\n");
-				kill(getpid(), SIGFPE);
-			}
-		}
-#endif /* DEBUG_FPE_HANDLING */
-	}
-	catch (const Exception&)
-	{
-		// ToDo: show full exception message here
-		gds__log("Unexpected exception in subsystem_enter()");
-	}
-}
-
-
-static void subsystem_exit() throw()
-{
-/**************************************
- *
- *	s u b s y s t e m _ e x i t
- *
- **************************************
- *
- * Functional description
- *	Exit subsystem.
- *
- **************************************/
-
-	try
-	{
-#if !(defined SUPERCLIENT || defined SUPERSERVER)
-		if (subsystem_usage == 0 ||
-			(subsystem_FPE_reset & (FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
-		{
-			ISC_exit();
-		}
-#endif
-		--isc_enter_count;
-	}
-	catch (const Exception&)
-	{
-		// ToDo: show full exception message here
-		gds__log("Unexpected exception in subsystem_exit()");
-	}
 }
 
 

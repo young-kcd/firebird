@@ -24,10 +24,6 @@
 #ifndef JRD_ISC_I_PROTO_H
 #define JRD_ISC_I_PROTO_H
 
-// This will install FP overflow signal handler
-void	ISC_enter();
-void	ISC_exit();
-
 #ifdef WIN_NT
 // This will poke event
 int		ISC_kill(SLONG, SLONG, void *);

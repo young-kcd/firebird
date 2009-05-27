@@ -49,6 +49,7 @@
 #include "../jrd/quad.h"
 #include "../jrd/val.h"
 #include "../common/classes/VaryStr.h"
+#include "../common/classes/FpeControl.h"
 #include "../jrd/dsc_proto.h"
 
 
@@ -1185,6 +1186,10 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 				value /= CVT_power_of_ten(scale);
 			else if (scale < 0)
 				value *= CVT_power_of_ten(-scale);
+
+			if (isinf (value))
+				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+
 		}
 		return value;
 

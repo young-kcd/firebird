@@ -106,6 +106,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../../../common/classes/semaphore.h"
+#include "../../../common/classes/FpeControl.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -243,7 +244,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// Initialize the service
 
 	ISC_signal_init();
-	ISC_enter();
+	Firebird::FpeControl::maskAll();
 
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;

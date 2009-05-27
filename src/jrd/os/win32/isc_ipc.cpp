@@ -64,7 +64,6 @@
 #endif
 
 static bool initialized_signals = false;
-static SLONG volatile overflow_count = 0;
 
 static int process_id = 0;
 
@@ -83,56 +82,7 @@ static struct opn_event_t opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
 
-static void (*system_overflow_handler)(int);
 static void cleanup(void*);
-static void overflow_handler(int, int);
-
-// Not thread-safe
-
-ULONG isc_enter_count = 0;
-
-void ISC_enter()
-{
-/**************************************
- *
- *	I S C _ e n t e r
- *
- **************************************
- *
- * Functional description
- *	Enter ISC world from caller.
- *
- **************************************/
-/* Setup overflow handler - with chaining to any user handler */
-	void (*temp)(int) = signal(SIGFPE,
-		reinterpret_cast<void(*)(int)>(overflow_handler));
-	if (temp != reinterpret_cast<void(*)(int)>(overflow_handler))
-		system_overflow_handler = temp;
-
-#ifdef DEBUG_FPE_HANDLING
-/* Debug code to simulate an FPE occuring during DB Operation */
-	if (overflow_count < 100)
-		kill(getpid(), SIGFPE);
-#endif
-}
-
-
-void ISC_exit()
-{
-/**************************************
- *
- *	I S C _ e x i t
- *
- **************************************
- *
- * Functional description
- *	Exit ISC world, return to caller.
- *
- **************************************/
-/* No longer attempt to handle overflow internally */
-	signal(SIGFPE, system_overflow_handler);
-}
-
 
 int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 {
@@ -245,15 +195,8 @@ void ISC_signal_init()
 		return;
 
 	initialized_signals = true;
-
-	overflow_count = 0;
 	gds__register_cleanup(cleanup, 0);
-
 	process_id = getpid();
-
-	system_overflow_handler =
-		signal(SIGFPE, reinterpret_cast<void(*)(int)>(overflow_handler));
-
 	ISC_get_security_desc();
 }
 
@@ -278,47 +221,4 @@ static void cleanup(void*)
 		CloseHandle(opn_event->opn_event_lhandle);
 
 	initialized_signals = false;
-}
-
-static void overflow_handler(int signal, int code)
-{
-/**************************************
- *
- *	o v e r f l o w _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	Somebody overflowed.  Ho hum.
- *
- **************************************/
-
-#ifdef DEBUG_FPE_HANDLING
-	fprintf(stderr, "overflow_handler (%x)\n", arg);
-#endif
-
-/* If we're within ISC world (inside why-value) when the FPE occurs
- * we handle it (basically by ignoring it).  If it occurs outside of
- * ISC world, return back a code that tells signal_handler to call any
- * customer provided handler.
- */
-	if (isc_enter_count) {
-		++overflow_count;
-#ifdef DEBUG_FPE_HANDLING
-		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
-				   overflow_count);
-#endif
-		/* We've "handled" the FPE */
-	}
-	else {
-		/* We've NOT "handled" the FPE - let's chain
-		   the signal to other handlers */
-		if (system_overflow_handler != SIG_DFL &&
-			system_overflow_handler != SIG_IGN &&
-			system_overflow_handler != SIG_SGE &&
-			system_overflow_handler != SIG_ACK)
-		{
-			reinterpret_cast<void (*)(int, int)>(system_overflow_handler)(signal, code);
-		}
-	}
 }

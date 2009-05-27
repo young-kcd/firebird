@@ -60,7 +60,7 @@
 #ifdef DEBUG
 #include "gen/iberror.h"
 #endif
-#include "../jrd/os/isc_i_proto.h"
+#include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../jrd/scroll_cursors.h"
 
@@ -268,7 +268,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
  *
  **************************************/
 
-	ISC_enter();	// Setup floating point exception handler once and for all.
+	Firebird::FpeControl::maskAll();
 
 	// Setup context pool for main thread
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
@@ -4939,7 +4939,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
  *
  **************************************/
 
-	ISC_enter();	// Setup floating point exception handler once and for all.
+	Firebird::FpeControl::maskAll();
 
 	Worker worker;
 	rem_port* port = NULL;

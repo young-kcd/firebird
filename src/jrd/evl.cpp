@@ -112,6 +112,7 @@
 #include "../jrd/misc_func_ids.h"
 #include "../common/config/config.h"
 #include "../jrd/SysFunction.h"
+#include "../common/classes/FpeControl.h"
 
 const int TEMP_LENGTH	= 128;
 
@@ -4025,6 +4026,11 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
+		if (isinf(value->vlu_misc.vlu_double))
+		{
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_exception_float_overflow));
+		}
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
 		value->vlu_desc.dsc_scale = 0;
@@ -4117,6 +4123,11 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_MULTIPLY(d1, d2);
+		if (isinf(value->vlu_misc.vlu_double))
+		{
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_exception_float_overflow));
+		}
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
 		value->vlu_desc.dsc_scale = 0;
@@ -4216,6 +4227,11 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		}
 		const double d1 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_DIVIDE(d1, d2);
+		if (isinf(value->vlu_misc.vlu_double))
+		{
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_exception_float_overflow));
+		}
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 		value->vlu_desc.dsc_length = sizeof(double);
 		value->vlu_desc.dsc_scale = 0;
