@@ -149,7 +149,8 @@ private:
 
 // getting a portable isinf() is harder than you would expect
 #ifdef WIN_NT
-inline bool isinf(double x) {
+inline bool isinf(double x)
+{
 	return (!_finite (x) && !_isnan(x));
 }
 #else
