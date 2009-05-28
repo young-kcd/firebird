@@ -74,6 +74,7 @@ bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 // in case of any error just log it and don't stop engine execution
 void adjustLockDirectoryAccess(const char* pathname)
 {
+	PSECURITY_DESCRIPTOR pSecDesc = NULL;
 	PSID pSID = NULL;
 	PACL pNewACL = NULL;
 	try
@@ -99,7 +100,6 @@ void adjustLockDirectoryAccess(const char* pathname)
 		// Adjust security for our new folder : allow BUILTIN\Users group to 
 		// read\write\delete files
 		PACL pOldACL = NULL;
-		PSECURITY_DESCRIPTOR pSecDesc = NULL;
 
 		if (GetNamedSecurityInfo((LPSTR)pathname, 
 				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
@@ -149,6 +149,9 @@ void adjustLockDirectoryAccess(const char* pathname)
 	}
 	if (pNewACL) {
 		LocalFree(pNewACL);
+	}
+	if (pSecDesc) {
+		LocalFree(pSecDesc);
 	}
 }
 
