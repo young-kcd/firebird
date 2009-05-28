@@ -1,3 +1,202 @@
+2009-05-28 11:48  hvlad
+
+	* firebird2/src/common/classes/: TempFile.cpp (1.18), TempFile.h
+	(1.11):
+
+	Ability to create temporary files in specified folder
+
+2009-05-28 11:46  hvlad
+
+	* firebird2/src/jrd/os/win32/os_utils.cpp (1.6):
+
+	Set appropriate access rights for files in lock directory
+
+2009-05-28 09:57  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.101):
+
+	Better error reporting. Also, don't block the requester in the case
+	of error.
+
+2009-05-28 09:55  alexpeshkoff
+
+	* firebird2/src/: jrd/evl_string.h (1.36), dsql/user_dsql.cpp
+	(1.64):
+
+	AIX port - fixed warnings
+
+2009-05-28 07:47  robocop
+
+	* firebird2/src/common/classes/FpeControl.h (1.3):
+
+	Style.
+
+2009-05-28 03:53  asfernandes
+
+	* firebird2/src/common/: cvt.cpp (1.23), classes/FpeControl.h
+	(1.2):
+
+	Misc
+
+2009-05-27 13:32  alexpeshkoff
+
+	* firebird2/src/jrd/btr.h (1.50):
+
+	Solaris port
+
+2009-05-27 09:55  alexpeshkoff
+
+	* firebird2/src/: common/cvt.cpp (1.22), jrd/evl.cpp (1.299),
+	jrd/why.cpp (1.243), jrd/os/isc_i_proto.h (1.12),
+	jrd/os/win32/isc_ipc.cpp (1.31), remote/server.cpp (1.250),
+	remote/os/win32/srvr_w32.cpp (1.74), common/classes/FpeControl.h
+	(1.1):
+
+	MT safe floating point exceptions control. Raise error in case of
+	FP overflow according to SQL standard requirements.
+
+2009-05-27 03:35  asfernandes
+
+	* firebird2/src/: common/config/dir_list.cpp (1.41),
+	jrd/SysFunction.cpp (1.75), utilities/stats.epp (1.20),
+	utilities/gsec/gsec.cpp (1.112), utilities/gstat/dba.epp (1.114),
+	utilities/guard/guard.cpp (1.26), utilities/ibmgr/ibmgr.cpp (1.36),
+	utilities/ibmgr/ibmgrswi.h (1.9):
+
+	Misc
+
+2009-05-27 02:09  asfernandes
+
+	* firebird2/src/utilities/ntrace/: TraceConfiguration.cpp (1.10),
+	TracePluginImpl.cpp (1.24):
+
+	Fix AV in trace when UNICODE collation is not found - thanks to
+	Alex
+
+2009-05-26 08:34  dimitr
+
+	* firebird2/builds/win32/msvc8/gpre_boot.vcproj (1.9):
+
+	Fixed the MSVC8 build.
+
+2009-05-25 22:50  dimitr
+
+	* firebird2/builds/win32/setenvvar.bat (1.21):
+
+	Fixed the MSVC71 build.
+
+2009-05-25 22:45  dimitr
+
+	* firebird2/builds/win32/msvc7/: fb_inet_server.vcproj (1.27),
+	fb_lock_print.vcproj (1.27), fbclient.vcproj (1.53), fbembed.vcproj
+	(1.39), fbserver.vcproj (1.28), gpre_boot.vcproj (1.33),
+	intl.vcproj (1.38):
+
+	Fixed the MSVC71 build.
+
+2009-05-25 17:47  alexpeshkoff
+
+	* firebird2/: builds/posix/prefix.solaris (1.29),
+	builds/posix/prefix.solaris-64SCC (1.11), src/common/classes/tree.h
+	(1.89), src/common/config/config_impl.h (1.20):
+
+	Solaris port, related cleanup
+
+2009-05-25 14:36  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/os_utils.cpp (1.7):
+
+	comment
+
+2009-05-25 14:28  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.aix_powerpc_xlc (1.6):
+
+	Avoid annoying warning
+
+2009-05-25 14:27  alexpeshkoff
+
+	* firebird2/src/jrd/SysFunction.cpp (1.74):
+
+	Make it build with aCC and avoid #ifdefs
+
+2009-05-25 13:31  alexpeshkoff
+
+	* firebird2/src/jrd/: isc_sync.cpp (1.197), os/os_utils.h (1.3),
+	os/posix/os_utils.cpp (1.6), os/win32/os_utils.cpp (1.5),
+	trace/TraceConfigStorage.cpp (1.23):
+
+	Renamed function to better match it's tasks
+
+2009-05-25 12:57  hvlad
+
+	* firebird2/src/jrd/: blp.h (1.39), gds.cpp (1.289):
+
+	Use COMMONAPPDATA folder on Windows for shared memory files
+	placement (lock table, even table, etc).
+
+2009-05-25 10:53  hvlad
+
+	* firebird2/builds/win32/msvc8/: fb_lock_print.vcproj (1.10),
+	fbclient.vcproj (1.17), fbtrace.vcproj (1.9):
+
+	Fix MSVC8 build
+
+2009-05-25 09:32  robocop
+
+	* firebird2/src/utilities/: print_pool.cpp (1.14), stats.epp
+	(1.19):
+
+	Style.
+
+2009-05-24 07:36  robocop
+
+	* firebird2/src/jrd/event.h (1.28):
+
+	Misc.
+
+2009-05-24 07:24  robocop
+
+	* firebird2/src/: common/config/dir_list.cpp (1.40),
+	utilities/print_event.cpp (1.15), utilities/gsec/gsec.cpp (1.111),
+	utilities/gsec/security.epp (1.29), utilities/gstat/dba.epp
+	(1.113), utilities/gstat/ppg.cpp (1.35), utilities/guard/guard.cpp
+	(1.25), utilities/guard/util.cpp (1.22),
+	utilities/guard/util_proto.h (1.8), utilities/ibmgr/ibmgr.cpp
+	(1.35), utilities/ibmgr/ibmgrswi.h (1.8),
+	utilities/ibmgr/srvrmgr.cpp (1.41):
+
+	Style.
+
+2009-05-23 08:58  robocop
+
+	* firebird2/builds/win32/msvc9/: engine.vcproj (1.5),
+	engine_classic.vcproj (1.5), engine_embed.vcproj (1.5),
+	fb_lock_print.vcproj (1.4), fbclient.vcproj (1.3), fbtrace.vcproj
+	(1.8), gpre_boot.vcproj (1.4):
+
+	Fix the VC9 project files.
+
+2009-05-23 04:27  asfernandes
+
+	* firebird2/src/common/classes/alloc.h (1.89):
+
+	Do not overload placement new operator. That is not valid
+	accordingly to C++ standard.
+
+2009-05-23 03:33  asfernandes
+
+	* firebird2/src/: common/classes/Aligner.h (1.6), jrd/gds.cpp
+	(1.288), jrd/os/posix/os_utils.cpp (1.5):
+
+	Misc
+
+2009-05-23 00:40  hvlad
+
+	* firebird2/src/jrd/gds.cpp (1.287):
+
+	Correction
+
 2009-05-22 16:48  hvlad
 
 	* firebird2/src/jrd/os/win32/os_utils.cpp (1.4):
