@@ -93,7 +93,7 @@ DatabaseSnapshot::SharedMemory::SharedMemory()
 								  &handle);
 	if (!base)
 	{
-		gds__log("Cannot initialize the shared memory region");
+		gds__log_status("Cannot initialize the shared memory region", statusVector);
 		status_exception::raise(statusVector);
 	}
 
