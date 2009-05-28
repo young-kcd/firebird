@@ -65,7 +65,7 @@ public:
 	}
 
 	static Firebird::PathName getTempPath();
-	static Firebird::PathName create(const Firebird::PathName&);
+	static Firebird::PathName create(const Firebird::PathName& prefix, const Firebird::PathName& directory = "");
 
 private:
 	void init(const Firebird::PathName&, const Firebird::PathName&);

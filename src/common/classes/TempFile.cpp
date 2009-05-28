@@ -105,12 +105,12 @@ Firebird::PathName TempFile::getTempPath()
 // Creates a temporary file and returns its name
 //
 
-Firebird::PathName TempFile::create(const Firebird::PathName& prefix)
+Firebird::PathName TempFile::create(const Firebird::PathName& prefix, const Firebird::PathName& directory)
 {
 	Firebird::PathName filename;
 
 	try {
-		TempFile file(prefix, false);
+		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
 		filename = file.getName();
 	}
 	catch (const Firebird::Exception&) {
