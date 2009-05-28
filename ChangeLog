@@ -1,3 +1,9 @@
+2009-05-25 08:10  dimitr
+
+	* firebird2/src/burp/restore.epp (1.101.4.8):
+
+	Fixed the logic.
+
 2009-05-14 17:48  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.56.4.11):
