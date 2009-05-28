@@ -66,7 +66,9 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 		status_exception::raise(status);
 	}
 
-	PathUtils::concatPath(m_baseFileName, TempFile::getTempPath(), fileName);
+	char dir[MAXPATHLEN];
+	gds__prefix_lock(dir, "");
+	PathUtils::concatPath(m_baseFileName, dir, fileName);
 
 	TraceLogGuard guard(this);
 	if (m_reader)

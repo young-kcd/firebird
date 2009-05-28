@@ -171,7 +171,10 @@ void ConfigStorage::checkFile()
 	{
 		fb_assert(m_base->cnt_uses == 0);
 
-		PathName filename = TempFile::create("fb_trace_");
+		char dir[MAXPATHLEN];
+		gds__prefix_lock(dir, "");
+
+		PathName filename = TempFile::create("fb_trace_", dir);
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
 		m_cfg_file = os_utils::openCreateShmemFile(cfg_file_name, O_BINARY);
 	}
