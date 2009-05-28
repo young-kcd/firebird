@@ -1187,9 +1187,8 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 			else if (scale < 0)
 				value *= CVT_power_of_ten(-scale);
 
-			if (isinf (value))
+			if (isinf(value))
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-
 		}
 		return value;
 

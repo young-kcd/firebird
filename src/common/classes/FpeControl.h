@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	FPE handling
  *	MODULE:		FpeControl.h
- *	DESCRIPTION:	handle state of math coprocessor when thread 
+ *	DESCRIPTION:	handle state of math coprocessor when thread
  *					enters / leaves engine
  *
  *  The contents of this file are subject to the Initial
@@ -42,9 +42,9 @@ namespace Firebird
 
 // class to hold the state of the Floating Point Exception mask
 
-// the firebird server *must* run with FP exceptions masked, as we may
+// The firebird server *must* run with FP exceptions masked, as we may
 // intentionally overflow and then check for infinity to raise an error.
-// most hosts run with FP exceptions masked by default, but we need
+// Most hosts run with FP exceptions masked by default, but we need
 // to save the mask for cases where Firebird is used as an embedded
 // database.
 class FpeControl
@@ -53,7 +53,7 @@ public:
 	// the constructor (1) saves the current floating point mask, and
 	// (2) masks all floating point exceptions. Use is similar to
 	// the ContextPoolHolder for memory allocation.
-	
+
 	// on modern systems, the default is to mask exceptions
 	FpeControl() throw()
 	{
@@ -77,7 +77,7 @@ public:
 	static void maskAll() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
-		_controlfp (_CW_DEFAULT, _MCW_EM);
+		_controlfp(_CW_DEFAULT, _MCW_EM);
 	}
 
 private:
