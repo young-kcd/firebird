@@ -401,17 +401,21 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 	if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 	{
-		try {
-			// Write the data to the shared memory
+		// Write the data to the shared memory
+		try
+		{
 			dumpData(tdbb);
+		}
+		catch (const Exception& ex)
+		{
+			ISC_STATUS_ARRAY status;
+			ex.stuff_exception(status);
+			gds__log_status("Cannot dump the monitoring data", status);
+		}
 
-			// Release the lock and mark dbb as requesting a new one
-			LCK_release(tdbb, lock);
-			dbb->dbb_ast_flags |= DBB_monitor_off;
-		}
-		catch (const Exception&) {
-			gds__log("Unexpected exception at the AST level");
-		}
+		// Release the lock and mark dbb as requesting a new one
+		LCK_release(tdbb, lock);
+		dbb->dbb_ast_flags |= DBB_monitor_off;
 	}
 
 	JRD_restore_thread_data();
