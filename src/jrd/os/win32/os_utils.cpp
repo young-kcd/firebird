@@ -33,6 +33,7 @@
 #include "../jrd/os/os_utils.h"
 #include "../jrd/constants.h"
 #include "../jrd/os/path_utils.h"
+#include "../jrd/isc_proto.h"
 
 #include <direct.h>
 #include <io.h> // isatty()
@@ -43,6 +44,8 @@
 #include <unistd.h>
 #endif
 #include <fcntl.h>
+
+#include <Aclapi.h>
 
 namespace os_utils
 {
@@ -67,6 +70,89 @@ bool get_user_home(int /*user_id*/, Firebird::PathName& /*homeDir*/)
 	return false;
 }
 
+// allow different users to read\write\delete files in lock directory
+// in case of any error just log it and don't stop engine execution
+void adjustLockDirectoryAccess(const char* pathname)
+{
+	PSID pSID = NULL;
+	PACL pNewACL = NULL;
+	try
+	{
+		// We should pass root directory in format "C:\" into GetVolumeInformation(). 
+		// In case of pathname is not local folder (i.e. \\share\folder) let
+		// GetVolumeInformation() return an error.
+		Firebird::PathName root(pathname);
+		const size_t pos = root.find(':', 0);
+		if (pos == 1)
+		{
+			root.erase(pos + 1, root.length());
+			PathUtils::ensureSeparator(root);
+		}
+
+		DWORD fsflags;
+		if (!GetVolumeInformation(root.c_str(), NULL, 0, NULL, NULL, &fsflags, NULL, 0))
+			Firebird::system_error::raise("GetVolumeInformation");
+
+		if (!(fsflags & FS_PERSISTENT_ACLS))
+			return;
+
+		// Adjust security for our new folder : allow BUILTIN\Users group to 
+		// read\write\delete files
+		PACL pOldACL = NULL;
+		PSECURITY_DESCRIPTOR pSecDesc = NULL;
+
+		if (GetNamedSecurityInfo((LPSTR)pathname, 
+				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+				NULL, NULL, &pOldACL, NULL,
+				&pSecDesc) != ERROR_SUCCESS)
+		{
+			Firebird::system_error::raise("GetNamedSecurityInfo");
+		}
+
+		SID_IDENTIFIER_AUTHORITY sidAuth = SECURITY_NT_AUTHORITY;
+		if (!AllocateAndInitializeSid(&sidAuth, 2, SECURITY_BUILTIN_DOMAIN_RID,
+				DOMAIN_ALIAS_RID_USERS, 0, 0, 0, 0, 0, 0, &pSID))
+		{
+			Firebird::system_error::raise("AllocateAndInitializeSid");
+		}
+
+		EXPLICIT_ACCESS ea;
+		memset(&ea, 0, sizeof(ea));
+
+		ea.grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | DELETE;
+		ea.grfAccessMode = GRANT_ACCESS;
+		ea.grfInheritance = SUB_OBJECTS_ONLY_INHERIT;
+		ea.Trustee.TrusteeForm = TRUSTEE_IS_SID; 
+		ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+		ea.Trustee.ptstrName  = (LPSTR) pSID;
+
+		if (SetEntriesInAcl(1, &ea, pOldACL, &pNewACL) != ERROR_SUCCESS)
+			Firebird::system_error::raise("SetEntriesInAcl");
+
+		if (SetNamedSecurityInfo((LPSTR)pathname, 
+				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+				NULL, NULL, pNewACL, NULL) != ERROR_SUCCESS)
+		{
+			Firebird::system_error::raise("SetNamedSecurityInfo");
+		}
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::string str;
+		str.printf("Error adjusting access rights for folder \"%s\" :", pathname);
+
+		iscLogException(str.c_str(), ex);
+	}
+
+	if (pSID) {
+		FreeSid(pSID);
+	}
+	if (pNewACL) {
+		LocalFree(pNewACL);
+	}
+}
+
+
 // create directory for lock files and set appropriate access rights
 void createLockDirectory(const char* pathname)
 {
@@ -84,6 +170,8 @@ void createLockDirectory(const char* pathname)
 			}
 			else
 			{
+				adjustLockDirectoryAccess(pathname);
+
 				attr = GetFileAttributes(pathname);
 				if (attr == INVALID_FILE_ATTRIBUTES) {
 					errcode = GetLastError();
