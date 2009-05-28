@@ -1138,6 +1138,8 @@ static ISC_STATUS error(const Firebird::Exception& ex)
 	gds__print_status(UDSQL_error->dsql_status);
 
 	exit(UDSQL_error->dsql_status[1]);
+
+	return 0; // suppress compiler warning
 }
 
 
@@ -1150,6 +1152,8 @@ static ISC_STATUS error()
 	gds__print_status(UDSQL_error->dsql_status);
 
 	exit(UDSQL_error->dsql_status[1]);
+
+	return 0; // suppress compiler warning
 }
 
 //____________________________________________________________

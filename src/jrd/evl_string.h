@@ -267,14 +267,15 @@ private:
 	struct PatternItem
 	{
 		PatternItemType type;
-		union
+		struct str_struct
 		{
-			struct
-			{
-				SLONG length;
-				CharType* data;
-				SLONG* kmpNext; // Jump table for Knuth-Morris-Pratt algorithm
-			} str;
+			SLONG length;
+			CharType* data;
+			SLONG* kmpNext; // Jump table for Knuth-Morris-Pratt algorithm
+		};
+		union // anonymous union
+		{
+			str_struct str;
 			SLONG skipCount;
 		};
 		bool match_any;
