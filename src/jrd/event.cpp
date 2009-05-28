@@ -122,7 +122,6 @@ static SH_MEM_T EVENT_data;
 static MTX_T event_mutex[1];
 #endif
 
-
 void EVENT_cancel(SLONG request_id)
 {
 /**************************************
@@ -527,34 +526,16 @@ static EVH acquire(void)
 	if (EVENT_header->evh_length > EVENT_data.sh_mem_length_mapped) {
 		const SLONG length = EVENT_header->evh_length;
 
-#ifdef WIN_NT
-		/* Before remapping the memory, wakeup the watcher thread.
-		 * Then remap the shared memory and allow the watcher thread
-		 * to remap.
-		 */
-		/* Need to make the following code generic to all SUPERSERVER
-		 * platforms. Postponed for now. B.Sriram, 10-Jul-1997
-		 */
-
+		EVH header = NULL;
+#if (defined HAVE_MMAP || defined WIN_NT)
 		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-		process->prb_flags |= PRB_remap;
-		event_t* event = process->prb_event;
-
-		post_process(process);
-
-		while (true) {
-			release();
-			Sleep(3);
-			acquire();
-
-			process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-			if (!(process->prb_flags & PRB_remap))
-				break;
+		if (process->prb_flags & PRB_dont_remap)
+		{
+			ISC_event_post(process->prb_event);
+			while (process->prb_flags & PRB_dont_remap)
+				THREAD_SLEEP(10);
 		}
-#endif /* WIN_NT */
 
-	EVH header = NULL;
-#if (!(defined SUPERSERVER) && (defined HAVE_MMAP))
 		ISC_STATUS_ARRAY status_vector;
 		header = (evh*) ISC_remap_file(status_vector, &EVENT_data, length, false);
 #endif
@@ -564,11 +545,6 @@ static EVH acquire(void)
 			exit(FINI_ERROR);
 		}
 		EVENT_header = header;
-
-#ifdef WIN_NT
-		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-		process->prb_flags &= ~PRB_remap_over;
-#endif /* WIN_NT */
 	}
 
 	return EVENT_header;
@@ -594,22 +570,6 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = ROUNDUP(length, sizeof(IPTR));
 	SRQ_PTR* best = NULL;
 
-#ifdef WIN_NT
-	// hvlad: wait for end of shared memory remapping if it is in progress
-
-	PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-	while (process->prb_flags & (PRB_remap | PRB_remap_over))
-	{
-		release();
-		THREAD_EXIT();
-		Sleep(3);
-		THREAD_ENTER();
-		acquire();
-
-		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-	}
-#endif
-
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) SRQ_ABS_PTR(*ptr)) && *ptr;
 		 ptr = &free->frb_next) 
 	{
@@ -624,33 +584,16 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 		const SLONG old_length = EVENT_data.sh_mem_length_mapped;
 		const SLONG ev_length = old_length + EVENT_EXTEND_SIZE;
 
-#ifdef WIN_NT
-
-		/* Before remapping the memory, wakeup the watcher thread.
-		 * Then remap the shared memory and allow the watcher thread
-		 * to remap.
-		 */
-
-		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-		process->prb_flags |= PRB_remap;
-		event_t* event = process->prb_event;
-		post_process(process);
-
-		while (true) {
-			release();
-			THREAD_EXIT();
-			Sleep(3);
-			THREAD_ENTER();
-			acquire();
-
-			process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-			if (!(process->prb_flags & PRB_remap))
-				break;
-		}
-#endif /* WIN_NT */
-
 		EVH header = 0;
-#if !((defined SUPERSERVER) && (defined HAVE_MMAP))
+#if (defined HAVE_MMAP || defined WIN_NT)
+		PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
+		if (process->prb_flags & PRB_dont_remap)
+		{
+			ISC_event_post(process->prb_event);
+			while (process->prb_flags & PRB_dont_remap)
+				THREAD_SLEEP(10);
+		}
+
 		ISC_STATUS_ARRAY status_vector;
 		header =
 			reinterpret_cast<EVH>
@@ -670,11 +613,6 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 			EVENT_header->evh_length = EVENT_data.sh_mem_length_mapped;
 
 			free_global(free);
-
-#ifdef WIN_NT
-			process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-			process->prb_flags &= ~PRB_remap_over;
-#endif /* WIN_NT */
 
 			return alloc_global(type, length, true);
 		}
@@ -798,37 +736,28 @@ static void delete_process(SLONG process_offset)
 		delete_session(SRQ_REL_PTR(session));
 	}
 
-/* Untangle and release process block */
-
-	remove_que(&process->prb_processes);
-	free_global((FRB) process);
-
 	if (EVENT_process_offset == process_offset) {
 #ifdef MULTI_THREAD
 		/* Terminate the event watcher thread */
-		/* When we come through the exit handler, the event semaphore might
-		   have already been released by another exit handler.  So we cannot
-		   use that semaphore to post the event.  Besides, the watcher thread 
-		   would be terminated anyway because the whole NLM is being unloaded. */
-		// CVC: NLM??? is this Novell Netware specific code???
 
 		process->prb_flags |= PRB_exiting;
-		BOOLEAN timeout = FALSE;
-		while (process->prb_flags & PRB_exiting && !timeout) {
+		while (process->prb_flags & PRB_exiting) {
 			ISC_event_post(process->prb_event);
-			SLONG value = ISC_event_clear(process->prb_event);
+
 			release();
-#ifdef SOLARIS_MT
-			event_t* events = EVENT_process->prb_event;
-#else
-			event_t* events = process->prb_event;
-#endif
-			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000, 0, 0);
+			THREAD_SLEEP(10);
 			acquire();
+
+			process = (PRB) SRQ_ABS_PTR(process_offset);
 		}
 		EVENT_process_offset = 0;
 #endif
 	}
+
+/* Untangle and release process block */
+
+	remove_que(&process->prb_processes);
+	free_global((FRB) process);
 }
 
 
@@ -1575,40 +1504,28 @@ static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 
 		if (process->prb_flags & PRB_exiting) {
 			process->prb_flags &= ~PRB_exiting;
-			ISC_event_post(process->prb_event);
 			release();
 			break;
 		}
-#ifdef WIN_NT
-		while (process->prb_flags & PRB_remap) {
-			process->prb_flags |= PRB_remap_over;
-			process->prb_flags &= ~PRB_remap;
-			release();
-			while (true) {
-				Sleep(3);
-				acquire();
-				process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-				release();
-				if (!(process->prb_flags & PRB_remap_over))
-					break;
-			}
-			acquire();
-			process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-		}
-#endif
 
 		SLONG value = ISC_event_clear(process->prb_event);
 		release();
 		deliver(NULL);
 		acquire();
 		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
-		release();
+		
+		// we going to wait on event, allocated in shared memory
+		// forbid shared memory remapping until waiting
+		process->prb_flags |= PRB_dont_remap;
 #ifdef SOLARIS_MT
 		event_t* events = EVENT_process->prb_event;
 #else
 		event_t* events = process->prb_event;
 #endif
+		release();
+
 		ISC_event_wait(1, &events, &value, 0, 0, 0);
+		process->prb_flags &= ~PRB_dont_remap;
 	}
 	return 0;
 }
