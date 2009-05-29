@@ -27,11 +27,11 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#if TIME_WITH_SYS_TIME
+#ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# if HAVE_SYS_TIME_H
+# ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -96,7 +96,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			default:
 				sw_bad = true;
 			}
-		if (sw_bad) {
+		if (sw_bad)
+		{
 			printf("Invalid option \"%s\".  Valid options are:\n", p);
 			printf("\t-D\tDatabase name\n");
 			printf("\t-L\tCheck all locales\n");
@@ -106,7 +107,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	flag_jrd = flag_msg = true;
 
-	if (ind_jrd = fopen(INCLUDE_INDICATOR, "r")) {
+	if (ind_jrd = fopen(INCLUDE_INDICATOR, "r"))
+	{
 		if (!fstat(fileno(ind_jrd), &file_stat)) {
 			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_jrd);
 			flag_jrd = false;
@@ -114,7 +116,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		fclose(ind_jrd);
 	}
 
-	if (ind_msg = fopen(MESSAGE_INDICATOR, "r")) {
+	if (ind_msg = fopen(MESSAGE_INDICATOR, "r"))
+	{
 		if (!fstat(fileno(ind_msg), &file_stat)) {
 			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_msg);
 			flag_msg = false;
@@ -122,23 +125,26 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		fclose(ind_msg);
 	}
 
-	if (do_locales) {
+	if (do_locales)
+	{
 		flag_loc = true;
-		if (ind_loc = fopen(LOCALE_INDICATOR, "r")) {
+		if (ind_loc = fopen(LOCALE_INDICATOR, "r"))
+		{
 			if (!fstat(fileno(ind_loc), &file_stat)) {
 				isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_loc);
 				flag_loc = false;
 			}
-/* Earlier the following fclose was closing ind_msg again, due to which
-   check_messages was crashing with SEGV signal - */
-			fclose(ind_loc);	/* A bug in check_messages is fixed */
+			// Earlier the following fclose was closing ind_msg again, due to which
+			// check_messages was crashing with SEGV signal -
+			fclose(ind_loc);	// A bug in check_messages is fixed
 		}
 	}
 
 	READY db_file AS DB;
 	START_TRANSACTION;
 
-	if (!flag_jrd) {
+	if (!flag_jrd)
+	{
 		FOR FIRST 1 X IN FACILITIES WITH
 			X.FACILITY EQ 'JRD' AND X.LAST_CHANGE GE date_jrd
 
@@ -146,7 +152,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		END_FOR;
 	}
 
-	if (!flag_msg) {
+	if (!flag_msg)
+	{
 		FOR FIRST 1 X IN FACILITIES WITH
 			X.LAST_CHANGE GE date_msg
 
@@ -154,7 +161,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		END_FOR;
 	}
 
-	if (!flag_loc) {
+	if (!flag_loc)
+	{
 		FOR FIRST 1 T IN TRANSMSGS WITH
 			T.TRANS_DATE GE date_loc
 
