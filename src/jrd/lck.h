@@ -101,7 +101,7 @@ public:
 	void* lck_compatible;			// Enter into internal_enqueue() and treat as compatible
 	void* lck_compatible2;			// Sub-level for internal compatibility
 
-	Database* lck_dbb;				// Database object is contained in */
+	Database* lck_dbb;				// Database object is contained in 
 	Attachment* lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
 
 	lock_ast_t lck_ast;				// Blocking AST routine

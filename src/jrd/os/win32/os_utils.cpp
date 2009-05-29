@@ -101,7 +101,7 @@ void adjustLockDirectoryAccess(const char* pathname)
 		// read\write\delete files
 		PACL pOldACL = NULL;
 
-		if (GetNamedSecurityInfo((LPSTR)pathname, 
+		if (GetNamedSecurityInfo((LPSTR) pathname, 
 				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
 				NULL, NULL, &pOldACL, NULL,
 				&pSecDesc) != ERROR_SUCCESS)
@@ -129,7 +129,7 @@ void adjustLockDirectoryAccess(const char* pathname)
 		if (SetEntriesInAcl(1, &ea, pOldACL, &pNewACL) != ERROR_SUCCESS)
 			Firebird::system_error::raise("SetEntriesInAcl");
 
-		if (SetNamedSecurityInfo((LPSTR)pathname, 
+		if (SetNamedSecurityInfo((LPSTR) pathname, 
 				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
 				NULL, NULL, pNewACL, NULL) != ERROR_SUCCESS)
 		{

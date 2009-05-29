@@ -1042,7 +1042,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 #ifdef WIN_NT
 	// Note: thread-safe code
 
-	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly.
+	// Nickolay Samofatov, 12 Sept 2003. Windows opens files extremely slowly.
 	// Slowly enough to make such trace useless. Thus we cache file handle !
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 	while (true)
