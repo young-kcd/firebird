@@ -133,7 +133,7 @@ private:
 	static SINT64 getGlobalId(int);
 
 	static void putDatabase(const Database*, Firebird::ClumpletWriter&, int);
-	static void putAttachment(const Attachment*, Firebird::ClumpletWriter&, int);
+	static bool putAttachment(const Attachment*, Firebird::ClumpletWriter&, int);
 	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&, int);
 	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
