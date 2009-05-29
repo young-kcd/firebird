@@ -406,7 +406,6 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_shadow:
 	case LCK_retaining:
 	case LCK_expression:
-	case LCK_record_locking:
 	case LCK_prc_exist:
 	case LCK_backup_alloc:
 	case LCK_backup_database:

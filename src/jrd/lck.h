@@ -29,37 +29,36 @@ namespace Jrd {
 class Database;
 class Attachment;
 
-/* Lock types */
+// Lock types
 
 enum lck_t {
-	LCK_database = 1,			/* Root of lock tree */
-	LCK_relation,				/* Individual relation lock */
-	LCK_bdb,					/* Individual buffer block */
-	LCK_tra,					/* Individual transaction lock */
-	LCK_rel_exist,				/* Relation existence lock */
-	LCK_idx_exist,				/* Index existence lock */
-	LCK_attachment,				/* Attachment lock */
-	LCK_shadow,					/* Lock to synchronize addition of shadows */
-	LCK_sweep,					/* Sweep lock for single sweeper */
-	LCK_retaining,				/* Youngest commit retaining transaction */
-	LCK_expression,				/* Expression index caching mechanism */
-	LCK_record_locking,			/* Lock on existence of record locking for this database */
-	LCK_prc_exist,				/* Procedure existence lock */
-	LCK_update_shadow,			/* shadow update sync lock */
-	LCK_backup_alloc,           /* Lock for page allocation table in backup spare file */
-	LCK_backup_database,        /* Lock to protect writing to database file */
-	LCK_backup_end,				/* Lock to protect end_backup consistency */
-	LCK_rel_partners,			/* Relation partners lock */
-	LCK_page_space,				/* Page space ID lock */
-	LCK_dsql_cache,				/* DSQL cache lock */
-	LCK_monitor,				/* Lock to dump the monitoring data */
-	LCK_tt_exist,				/* TextType existence lock */
-	LCK_cancel,					/* Cancellation lock */
+	LCK_database = 1,			// Root of lock tree
+	LCK_relation,				// Individual relation lock
+	LCK_bdb,					// Individual buffer block
+	LCK_tra,					// Individual transaction lock
+	LCK_rel_exist,				// Relation existence lock
+	LCK_idx_exist,				// Index existence lock
+	LCK_attachment,				// Attachment lock
+	LCK_shadow,					// Lock to synchronize addition of shadows
+	LCK_sweep,					// Sweep lock for single sweeper
+	LCK_retaining,				// Youngest commit retaining transaction
+	LCK_expression,				// Expression index caching mechanism
+	LCK_prc_exist,				// Procedure existence lock
+	LCK_update_shadow,			// shadow update sync lock
+	LCK_backup_alloc,           // Lock for page allocation table in backup spare file
+	LCK_backup_database,        // Lock to protect writing to database file
+	LCK_backup_end,				// Lock to protect end_backup consistency
+	LCK_rel_partners,			// Relation partners lock
+	LCK_page_space,				// Page space ID lock
+	LCK_dsql_cache,				// DSQL cache lock
+	LCK_monitor,				// Lock to dump the monitoring data
+	LCK_tt_exist,				// TextType existence lock
+	LCK_cancel,					// Cancellation lock
 	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
 	LCK_shared_counter			// Database-wide shared counter
 };
 
-/* Lock owner types */
+// Lock owner types
 
 enum lck_owner_t {
 	LCK_OWNER_database = 1,		// A database is the owner of the lock
@@ -92,31 +91,37 @@ public:
 		lck_tail[0] = 0;
 	}
 
-	Lock*	lck_parent;
-	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks
-							   bound to attachment */
-	Lock*	lck_prior;
-	Lock*	lck_collision;	/* collisions in compatibility table */
-	Lock*	lck_identical;	/* identical locks in compatibility table */
-	Database*	lck_dbb;	/* database object is contained in */
-	void*	lck_object;		/* argument to be passed to ast */
-	void*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
-	void*	lck_compatible2;	/* Sub-level for internal compatibility */
-	Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
-	lock_ast_t	lck_ast;	        /* Blocking AST routine */
-	SLONG		lck_id;				/* Lock id from lock manager */
-	SLONG		lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */
-	SSHORT		lck_length;			/* Length of lock string */
-	UCHAR		lck_logical;			/* Logical lock level */
-	UCHAR		lck_physical;			/* Physical lock level */
-	SLONG		lck_data;				/* Data associated with a lock */
-	lck_t lck_type;
+	Lock* lck_parent;
+
+	Lock* lck_next;					// lck_next and lck_prior form a doubly linked list of locks
+	Lock* lck_prior;				// bound to attachment
+	
+	Lock* lck_collision;			// Collisions in compatibility table
+	Lock* lck_identical;			// Identical locks in compatibility table
+	void* lck_compatible;			// Enter into internal_enqueue() and treat as compatible
+	void* lck_compatible2;			// Sub-level for internal compatibility
+
+	Database* lck_dbb;				// Database object is contained in */
+	Attachment* lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
+
+	lock_ast_t lck_ast;				// Blocking AST routine
+	void* lck_object;				// Argument to be passed to AST
+
+	lck_t lck_type;					// Lock type
+	SLONG lck_id;					// Lock id from the lock manager
+	SLONG lck_owner_handle;			// Lock owner handle from the lock manager's point of view
+	SSHORT lck_length;				// Length of lock key string
+	UCHAR lck_logical;				// Logical lock level
+	UCHAR lck_physical;				// Physical lock level
+	SLONG lck_data;					// Data associated with a lock
+
 	union
 	{
 		UCHAR lck_string[1];
 		SLONG lck_long;
-	} lck_key;
-	UCHAR lck_tail[1];			/* Makes the allocator happy */
+	} lck_key;						// Lock key string
+
+	UCHAR lck_tail[1];				// Makes the allocator happy
 };
 
 } //namespace Jrd
