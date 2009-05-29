@@ -815,6 +815,11 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	if (dbb->dbb_flags & DBB_not_in_use)
+	{
+		return;
+	}
+
 	ClumpletWriter writer(ClumpletReader::WideUnTagged, MAX_ULONG);
 
 	// Database information
@@ -825,7 +830,9 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		putAttachment(attachment, writer, fb_utils::genUniqueId());
+		if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
+			continue;
+
 		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
 
 		jrd_tra* transaction = NULL;
@@ -974,9 +981,14 @@ void DatabaseSnapshot::putDatabase(const Database* database, ClumpletWriter& wri
 }
 
 
-void DatabaseSnapshot::putAttachment(const Attachment* attachment, ClumpletWriter& writer, int stat_id)
+bool DatabaseSnapshot::putAttachment(const Attachment* attachment, ClumpletWriter& writer, int stat_id)
 {
 	fb_assert(attachment);
+
+	if (!attachment->att_user)
+	{
+		return false;
+	}
 
 	writer.insertByte(TAG_RECORD, rel_mon_attachments);
 
@@ -1023,6 +1035,8 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment, ClumpletWrite
 	writer.insertBigInt(f_mon_att_stat_id, getGlobalId(stat_id));
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 	putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
+
+	return true;
 }
 
 
