@@ -1354,12 +1354,12 @@ static void release(void)
 #ifdef MULTI_THREAD
 	EVENT_header->evh_current_process = 0;
 	if (mutex_state = ISC_mutex_unlock(MUTEX))
-		mutex_bugcheck("mutex lock", mutex_state);
+		mutex_bugcheck("mutex unlock", mutex_state);
 #else
 	if (!--acquire_count) {
 		EVENT_header->evh_current_process = 0;
 		if (mutex_state = ISC_mutex_unlock(MUTEX))
-			mutex_bugcheck("mutex lock", mutex_state);
+			mutex_bugcheck("mutex unlock", mutex_state);
 #ifdef UNIX
 		if (EVENT_process_offset) {
 			PRB process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
