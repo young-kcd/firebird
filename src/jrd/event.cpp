@@ -524,8 +524,8 @@ evh* EventManager::acquire_shmem()
  *
  **************************************/
 
-	int mutex_state;
-	if (mutex_state = ISC_mutex_lock(MUTEX))
+	int mutex_state = ISC_mutex_lock(MUTEX);
+	if (mutex_state)
 		mutex_bugcheck("mutex lock", mutex_state);
 
 	// Check for shared memory state consistency
@@ -540,7 +540,8 @@ evh* EventManager::acquire_shmem()
 			THD_yield();
 
 			attach_shared_file();
-			if (ISC_mutex_lock(MUTEX)) {
+			mutex_state = ISC_mutex_lock(MUTEX);
+			if (mutex_state) {
 				mutex_bugcheck("mutex lock", mutex_state);
 			}
 		}
@@ -1104,9 +1105,10 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
  *	Initialize global region header.
  *
  **************************************/
-	int mutex_state;
 
 #ifdef WIN_NT
+	int mutex_state;
+
 	if ( (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
@@ -1286,16 +1288,15 @@ void EventManager::release_shmem()
  *	Release exclusive control of shared global region.
  *
  **************************************/
-	int mutex_state;
-
 #ifdef DEBUG_EVENT
 	validate();
 #endif
 
 	m_header->evh_current_process = 0;
 
-	if (mutex_state = ISC_mutex_unlock(MUTEX))
-		mutex_bugcheck("mutex lock", mutex_state);
+	const int mutex_state = ISC_mutex_unlock(MUTEX);
+	if (mutex_state)
+		mutex_bugcheck("mutex unlock", mutex_state);
 }
 
 
