@@ -1,3 +1,10 @@
+2009-05-30 11:10  hvlad
+
+	* firebird2/src/jrd/: event.cpp (1.55.4.6), event.h (1.18.12.2):
+
+	More fixes for bug CORE-2444 : make remapping of shared memory work
+	correctly
+
 2009-05-25 08:10  dimitr
 
 	* firebird2/src/burp/restore.epp (1.101.4.8):
