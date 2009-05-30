@@ -534,7 +534,9 @@ evh* EventManager::acquire_shmem()
 	{
 		if (! m_sharedFileCreated) {
 			// Someone is going to delete shared file? Reattach.
-			ISC_mutex_unlock(MUTEX);
+			mutex_state = ISC_mutex_unlock(MUTEX);
+			if (mutex_state)
+				mutex_bugcheck("mutex unlock", mutex_state);
 			detach_shared_file();
 
 			THD_yield();
