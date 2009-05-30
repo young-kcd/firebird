@@ -98,9 +98,8 @@ typedef prb *PRB;
 
 const int PRB_wakeup	= 1;		/* Schedule a wakeup for process */
 const int PRB_pending	= 2;		/* Wakeup has been requested, and is dangling */
-const int PRB_remap		= 4;		/* need to remap shared memory */
-const int PRB_remap_over= 8;		/* remap is over */
-const int PRB_exiting	= 16;		/* Process is exiting */
+const int PRB_exiting	= 4;		/* Process is exiting */
+const int PRB_dont_remap	= 8;	/* Don't remap shared memory until watcher thread waits */
 
 /* Session block */
 
