@@ -1,3 +1,9 @@
+2009-05-30 15:43  robocop
+
+	* firebird2/src/jrd/event.cpp (1.99):
+
+	One more mutex-related call that was checked in previous versions.
+
 2009-05-30 07:34  robocop
 
 	* firebird2/src/jrd/event.cpp (1.98):
