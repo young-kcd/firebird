@@ -1108,9 +1108,9 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
  *
  **************************************/
 
-#ifdef WIN_NT
 	int mutex_state;
 
+#ifdef WIN_NT
 	if ( (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
