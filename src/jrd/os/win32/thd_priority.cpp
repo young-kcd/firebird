@@ -35,9 +35,6 @@
 #include "../jrd/common.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/os/thd_priority.h"
-#ifdef WIN_NT
-#include <windows.h> // HANDLE
-#endif
 #include "../common/config/config.h"
 #include "../jrd/gds_proto.h"
 #include "../common/classes/fb_tls.h"
@@ -166,7 +163,8 @@ void ThreadPriorityScheduler::attach()
 	TLS_SET(currentScheduler, this);
 }
 
-void ThreadPriorityScheduler::run() {
+void ThreadPriorityScheduler::run()
+{
 	attach();
 	routine(arg);
 }
