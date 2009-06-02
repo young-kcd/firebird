@@ -35,9 +35,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/init.h"
 
-#ifdef WIN_NT
 #include <windows.h>
-#endif
 
 const unsigned int SHUTDOWN_TIMEOUT = 10 * 1000;	// 10 seconds
 
