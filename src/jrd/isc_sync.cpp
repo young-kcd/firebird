@@ -113,13 +113,13 @@ static int process_id;
 #define FTOK_KEY	15
 #define PRIV		0666
 
-#ifndef SHMEM_DELTA
-#define SHMEM_DELTA	(1 << 22)
-#endif
+//#ifndef SHMEM_DELTA
+//#define SHMEM_DELTA	(1 << 22)
+//#endif
 
-#ifndef SIGURG
-#define SIGURG		SIGINT
-#endif
+//#ifndef SIGURG
+//#define SIGURG		SIGINT
+//#endif
 
 #ifndef HAVE_SEMUN
 union semun
@@ -314,7 +314,7 @@ namespace {
 
 #ifdef USE_SYS5SEMAPHORE
 
-static void		alarm_handler(void* arg);
+static void		alarm_handler(void* arg); // I don't see who uses this function.
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 
 namespace {
@@ -411,7 +411,7 @@ namespace {
 					// may be some old data about really active semaphore sets?
 					if (version == CURRENT_VERSION)
 					{
-						int semId = semget(set[i].semKey, SEM_PER_SET, 0);
+						const int semId = semget(set[i].semKey, SEM_PER_SET, 0);
 						if (semId > 0)
 						{
 							semctl(semId, 0, IPC_RMID);
@@ -823,7 +823,7 @@ void delTimer(Sys5Semaphore* sem)
 
 	for (unsigned int i = 0; i < timerQueue->getCount(); ++i)
 	{
-		TimerEntry& e(timerQueue->operator[](i));
+		const TimerEntry& e(timerQueue->operator[](i));
 		if (e.semNum == sem->semNum && e.semId == id)
 		{
 			timerQueue->remove(i);
@@ -848,7 +848,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 			const SINT64 cur = curTime();
 			while (timerQueue->getCount() > 0)
 			{
-				TimerEntry& e(timerQueue->operator[](0));
+				const TimerEntry& e(timerQueue->operator[](0));
 				if (e.fireTime <= cur)
 				{
 					for (;;)
@@ -1393,9 +1393,6 @@ int ISC_event_wait(event_t* event,
 		return FB_SUCCESS;
 	}
 
-	HANDLE handles[1];
-	handles[0] = event->event_handle;
-
 	/* Go into wait loop */
 
 	const DWORD timeout = (micro_seconds > 0) ? micro_seconds / 1000 : INFINITE;
@@ -1405,9 +1402,9 @@ int ISC_event_wait(event_t* event,
 			return FB_SUCCESS;
 		}
 
-		const DWORD status = WaitForMultipleObjects((DWORD) 1, handles, TRUE, timeout);
+		const DWORD status = WaitForSingleObject(event->event_handle, timeout);
 
-		if (!((status >= WAIT_OBJECT_0) && (status < WAIT_OBJECT_0 + (DWORD) 1)))
+		if (status != WAIT_OBJECT_0)
 		{
 			return FB_FAILURE;
 		}
