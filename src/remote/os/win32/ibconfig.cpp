@@ -1,7 +1,7 @@
 /*
- *      PROGRAM:        IB Server and Server Manager
+ *      PROGRAM:        FB Server and Server Manager
  *      MODULE:         ibconfig.cpp
- *      DESCRIPTION:    IB Configuration implementation for both
+ *      DESCRIPTION:    FB Configuration implementation for both
  *                  Server Manager and Server Property sheet
  *
  * The contents of this file are subject to the Interbase Public
@@ -104,7 +104,7 @@ static DWORD aMenuHelpIDs1[][2] =
 	{0, 0}
 };
 
-// IB Parameters to get/set
+// FB Parameters to get/set
 SLONG lCachePages = 0;
 SLONG lMapSize = 0;
 
@@ -159,8 +159,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
  *  Return: FALSE if message is not processed
  *          TRUE if message is processed here
  *
- *  Description: This is the window procedure for - the IB Settings page in the
- *               Server property sheet , or for the IB Settings dialog in the
+ *  Description: This is the window procedure for - the FB Settings page in the
+ *               Server property sheet , or for the FB Settings dialog in the
  *               Server manager. Contains logic to view and modify the
  *               the settings. When the user clicks on the modify button for
  *               the first time, it SYSDBA password is validated.
@@ -292,12 +292,12 @@ BOOL ReadFBSettings(HWND hDlg)
  *
  ******************************************************************************
  *
- *  Input:  hDlg - Handle to the IB settings page dialog
+ *  Input:  hDlg - Handle to the FB settings page dialog
  *
  *  Return: void
  *
  *  Description: This method uses the Services API to read the
- *               current IB settings in the config file and then sets these
+ *               current FB settings in the config file and then sets these
  *               values to the corresponding controls.
  *****************************************************************************/
 
@@ -397,7 +397,7 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
  *
  ******************************************************************************
  *
- *  Input:  hDlg - Handle to the IB settings page dialog
+ *  Input:  hDlg - Handle to the FB settings page dialog
  *          bEnable - Flag to indicate an enable/disable
  *
  *  Return: void
@@ -699,14 +699,14 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 	}
 
 	if (szErrStr[0]) {
-		strcpy(szHdrStr, "IB Configuration - ");
+		strcpy(szHdrStr, "FB Configuration - ");
 		LoadString(hAppInstance, nErrCode, szHdrStr + strlen(szHdrStr),
 				   sizeof(szHdrStr) - strlen(szHdrStr));
 		MessageBox(hDlg, szErrStr, szHdrStr, MB_ICONSTOP | MB_OK);
 	}
 	else {
 		LoadString(hAppInstance, nErrCode, szErrStr, sizeof(szErrStr));
-		MessageBox(hDlg, szErrStr, "IB Configuration", MB_ICONSTOP | MB_OK);
+		MessageBox(hDlg, szErrStr, "FB Configuration", MB_ICONSTOP | MB_OK);
 	}
 }
 

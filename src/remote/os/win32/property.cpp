@@ -22,7 +22,7 @@
 
 
 /*
- *      PROGRAM:        IB Server
+ *      PROGRAM:        FB Server
  *      MODULE:         property.cpp
  *      DESCRIPTION:    Property sheet implementation for WIN32 server
  *
