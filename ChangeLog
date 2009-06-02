@@ -1,3 +1,39 @@
+2009-06-02 11:18  robocop
+
+	* firebird2/src/: remote/os/win32/ibconfig.cpp (1.34),
+	remote/os/win32/property.cpp (1.28), utilities/fbcpl/fbdialog.cpp
+	(1.19), utilities/fbcpl/fbdialog.h (1.9),
+	utilities/install/install_nt.h (1.18):
+
+	Misc.
+
+2009-06-02 08:37  robocop
+
+	* firebird2/src/remote/os/win32/: ibconfig.cpp (1.33), property.cpp
+	(1.27):
+
+	Misc.
+
+2009-06-02 08:34  robocop
+
+	* firebird2/src/remote/os/win32/cntl.cpp (1.46):
+
+	This is already a Windows file, no need to check for the WIN_NT
+	macro.
+
+2009-06-02 08:27  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.198):
+
+	Simplification.
+
+2009-06-02 08:26  robocop
+
+	* firebird2/src/jrd/os/win32/thd_priority.cpp (1.38):
+
+	This is already a Windows file, no need to check for the WIN_NT
+	macro.
+
 2009-06-01 13:26  alexpeshkoff
 
 	* firebird2/src/jrd/event.cpp (1.100):
