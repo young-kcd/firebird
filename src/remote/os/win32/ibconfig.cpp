@@ -185,9 +185,10 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 	case WM_CTLCOLORBTN:
 		{
 			OSVERSIONINFO OsVersionInfo;
+			ZeroMemory(&OsVersionInfo, sizeof(OsVersionInfo));
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx(&OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -589,9 +590,10 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM)
 	case WM_CTLCOLORBTN:
 		{
 			OSVERSIONINFO OsVersionInfo;
+			ZeroMemory(&OsVersionInfo, sizeof(OsVersionInfo));
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx(&OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;

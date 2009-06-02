@@ -214,9 +214,10 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	case WM_CTLCOLORBTN:
 		{
 			OSVERSIONINFO OsVersionInfo;
+			ZeroMemory(&OsVersionInfo, sizeof(OsVersionInfo));
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
+			if (GetVersionEx(&OsVersionInfo) && OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hGrayBrush;

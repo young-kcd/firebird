@@ -189,8 +189,8 @@ public:
 	void ViewRegistryEntries();
 
 //Set stuff
-	bool ConfigureRegistryForApp( CFBDialog::STATUS status );
-	void SetAutoStart( CFBDialog::STATUS status );
+	bool ConfigureRegistryForApp(const CFBDialog::STATUS status );
+	void SetAutoStart(const CFBDialog::STATUS status );
 #ifdef FBCPL_UPDATE_CONF
 	void SetGuardianUseInConf( bool UseGuardian );
 #endif
@@ -204,7 +204,7 @@ public:
 
 //Do stuff
 	void ApplyChanges();
-	bool AppInstall( CFBDialog::STATUS status );
+	bool AppInstall(const CFBDialog::STATUS status );
 	bool AppRemove();
 	void CloseServiceManager();
 	void DisableApplyButton();
@@ -212,10 +212,10 @@ public:
 	void KillApp();
 	bool OpenServiceManager( DWORD DesiredAccess );
 	void ProcessMessages();
-	void ResetCheckBoxes( CFBDialog::STATUS status );
+	void ResetCheckBoxes(const CFBDialog::STATUS status );
 	bool ServerStop();
-	bool ServerStart( CFBDialog::STATUS status );
-	bool ServiceInstall( CFBDialog::STATUS status );
+	bool ServerStart(const CFBDialog::STATUS status );
+	bool ServiceInstall(CFBDialog::STATUS status );
 	bool ServiceRemove();
 	static void HandleSvcError(SLONG status, const TEXT* string);
 	void HandleError(bool silent, const TEXT* string );

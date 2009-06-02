@@ -667,7 +667,7 @@ void CFBDialog::ApplyChanges()
 }
 
 
-void CFBDialog::ResetCheckBoxes(CFBDialog::STATUS status)
+void CFBDialog::ResetCheckBoxes(const CFBDialog::STATUS status)
 {
 	switch (status.ServerStatus)
 	{
@@ -737,7 +737,7 @@ int CFBDialog::DatabasesConnected()
 }
 
 
-bool CFBDialog::ServerStart( CFBDialog::STATUS status )
+bool CFBDialog::ServerStart(const CFBDialog::STATUS status )
 {
 	bool result = false;
 
@@ -903,7 +903,7 @@ void CFBDialog::KillApp()
 }
 
 
-bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
+bool CFBDialog::ServiceInstall(CFBDialog::STATUS status )
 {
 	OpenServiceManager( GENERIC_READ | GENERIC_EXECUTE | GENERIC_WRITE );
 
@@ -927,7 +927,7 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 				return false;
 			}
 
-			/* Set AutoStart to manual in preparation for installing the ib_server service */
+			/* Set AutoStart to manual in preparation for installing the fb_server service */
 			status.AutoStart = false;
 
 		}
@@ -990,7 +990,7 @@ bool CFBDialog::ServiceRemove()
 }
 
 
-bool CFBDialog::AppInstall( CFBDialog::STATUS status)
+bool CFBDialog::AppInstall(const CFBDialog::STATUS status)
 // This method is supplied as a corollary to ServiceInstall,
 // but doesn't do very much as there isn't much to do.
 {
@@ -998,14 +998,14 @@ bool CFBDialog::AppInstall( CFBDialog::STATUS status)
 }
 
 
-bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
+bool CFBDialog::ConfigureRegistryForApp(const CFBDialog::STATUS status)
 {
 	// The calling procedure will have already removed the
 	// service. All we need to do now
 	// is configure the registry if AutoStart has been set.
 	if ( status.AutoStart )
 	{
-		//Add line to registry
+		// Add line to registry
 		HKEY hkey;
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
 				0, KEY_WRITE, &hkey) == ERROR_SUCCESS)
@@ -1028,7 +1028,7 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 	}
 	else
 	{
-		//Remove registry entry if set to start automatically on boot.
+		// Remove registry entry if set to start automatically on boot.
 		HKEY hkey;
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
 				0, KEY_QUERY_VALUE | KEY_WRITE, &hkey) == ERROR_SUCCESS)
@@ -1071,13 +1071,7 @@ static USHORT svc_error (SLONG	error_status, const TEXT* string, SC_HANDLE servi
 	switch ( error_status )
 	{
 		case ERROR_SERVICE_CANNOT_ACCEPT_CTRL:
-			RaiseError = false;
-			break;
-
 		case ERROR_SERVICE_ALREADY_RUNNING:
-			RaiseError = false;
-			break;
-
 		case ERROR_SERVICE_DOES_NOT_EXIST:
 			RaiseError = false;
 			break;
@@ -1405,7 +1399,7 @@ bool CFBDialog::UpdateFirebirdConf(CString option, CString value)
 #endif //#ifdef FBCPL_UPDATE_CONF
 
 
-void CFBDialog::SetAutoStart( CFBDialog::STATUS status )
+void CFBDialog::SetAutoStart(const CFBDialog::STATUS status )
 {
 	if (status.UseService)
 	{
@@ -1535,11 +1529,12 @@ HWND CFBDialog::GetGuardianHandle() const
 bool CFBDialog::ServiceSupportAvailable() const
 {
 	OSVERSIONINFO   OsVersionInfo;
+	ZeroMemory(&OsVersionInfo, sizeof(OsVersionInfo));
 
 	/* need to set the sizeof this structure for NT to work */
 	OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-	GetVersionEx (&OsVersionInfo);
+	GetVersionEx(&OsVersionInfo);
 
 	/* true for NT family, false for 95 family */
 	return (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
