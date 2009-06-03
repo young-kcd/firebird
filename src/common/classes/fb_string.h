@@ -92,7 +92,7 @@ namespace Firebird
 
 				// Grow buffer exponentially to prevent memory fragmentation
 				if (newSize / 2 < bufferSize)
-					newSize = bufferSize * 2;
+					newSize = bufferSize * 2u;
 
 				// Do not grow buffer beyond string length limit
 				if (newSize > max_length() + 1)
@@ -102,7 +102,7 @@ namespace Firebird
 				char_type *newBuffer = FB_NEW(getPool()) char_type[newSize];
 
 				// Carefully copy string data including null terminator
-				memcpy(newBuffer, stringBuffer, sizeof(char_type) * (stringLength + 1));
+				memcpy(newBuffer, stringBuffer, sizeof(char_type) * (stringLength + 1u));
 
 				// Deallocate old buffer if needed
 				if (stringBuffer != inlineBuffer)
@@ -365,7 +365,7 @@ namespace Firebird
 		}
 		inline size_type capacity() const
 		{
-			return bufferSize - 1;
+			return bufferSize - 1u;
 		}
 		inline bool empty() const
 		{
