@@ -90,10 +90,17 @@ $(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
 
+$(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_PATH)/%.cpp
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+
 ifneq ($(strip $(PLATFORM_FALLBACK)),)
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+
+$(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_FALLBACK)/%.cpp
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
 endif
+
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
 	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
 
