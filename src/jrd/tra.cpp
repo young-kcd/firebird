@@ -847,6 +847,9 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 				{
 				case Resource::rsc_relation:
 					MET_post_existence(tdbb, rsc->rsc_rel);
+					if (rsc->rsc_rel->rel_file) {
+						EXT_tra_attach(rsc->rsc_rel->rel_file, transaction);
+					}
 					break;
 				case Resource::rsc_procedure:
 					rsc->rsc_prc->prc_use_count++;
@@ -1114,6 +1117,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		{
 		case Resource::rsc_relation:
 			MET_release_existence(tdbb, rsc->rsc_rel);
+			if (rsc->rsc_rel->rel_file) {
+				EXT_tra_detach(rsc->rsc_rel->rel_file, transaction);
+			}
 			break;
 		case Resource::rsc_procedure:
 			CMP_decrement_prc_use_count(tdbb, rsc->rsc_prc);

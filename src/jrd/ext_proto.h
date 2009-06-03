@@ -55,5 +55,8 @@ void	EXT_trans_prepare(Jrd::jrd_tra*);
 void	EXT_trans_rollback(Jrd::jrd_tra*);
 void	EXT_trans_start(Jrd::jrd_tra*);
 
+void EXT_tra_attach(Jrd::ExternalFile*, Jrd::jrd_tra*);
+void EXT_tra_detach(Jrd::ExternalFile*, Jrd::jrd_tra*);
+
 #endif // JRD_EXT_PROTO_H
 
