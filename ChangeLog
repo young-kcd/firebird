@@ -1,3 +1,26 @@
+2009-06-03 14:41  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.199):
+
+	Fixed SYSV semaphores + const correctness + cleanup
+
+2009-06-03 11:59  hvlad
+
+	* firebird2/src/jrd/: ext.cpp (1.87), ext_proto.h (1.19), tra.cpp
+	(1.206):
+
+	Implement sub-task CORE-1647 : Close external table's file even if
+	it used by some cached (inactive) requests.  It also fixed bug
+	CORE-2475 : External table data not visible to other sessions in
+	Classic.
+
+2009-06-03 11:56  hvlad
+
+	* firebird2/src/jrd/: ext.cpp (1.86), ext.h (1.16), req.h (1.90):
+
+	Implement improvement CORE-2492 : Work correctly with external
+	tables larger then 2GB
+
 2009-06-02 11:18  robocop
 
 	* firebird2/src/: remote/os/win32/ibconfig.cpp (1.34),
