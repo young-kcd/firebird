@@ -314,7 +314,6 @@ namespace {
 
 #ifdef USE_SYS5SEMAPHORE
 
-static void		alarm_handler(void* arg); // I don't see who uses this function.
 static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 
 namespace {
@@ -323,10 +322,10 @@ namespace {
 	int sharedCount = 0;
 	int fd_init = -1;
 
+	// this struct is mapped into shared file
 	class SemTable
 	{
 	public:
-		// this struct is mapped into shared file
 		const static int N_FILES = 8;
 		const static int N_SETS = 256;
 #ifdef DEV_BUILD
@@ -580,8 +579,8 @@ namespace {
 
 	private:
 		int fileNum;
-		UCHAR* from;
-		UCHAR* to;
+		const UCHAR* from;
+		const UCHAR* to;
 		static Storage sharedFiles;
 		static GlobalPtr<Mutex> mutex;
 
@@ -616,7 +615,10 @@ namespace {
 	{
 		fb_assert(fNum > 0 && fNum <= N_FILES);
 
-		filesTable[fNum - 1].name[0] = 0;
+		if (release)
+		{
+			filesTable[fNum - 1].name[0] = 0;
+		}
 
 		MutexLockGuard guard(idCacheMutex);
 		for (int n = 0; n < lastSet; ++n)
@@ -884,6 +886,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 	}
 
 	timerFini->release();
+	return 0;
 }
 
 }
@@ -3811,20 +3814,6 @@ static SLONG create_semaphores(ISC_STATUS* status_vector,
 	}
 }
 
-
-static void alarm_handler(void* arg)
-{
-/**************************************
- *
- *	a l a r m _ h a n d l e r	( U N I X )
- *
- **************************************
- *
- * Functional description
- *	Handle an alarm clock interrupt.
- *
- **************************************/
-}
 #endif
 
 void longjmp_sig_handler(int sig_num)
