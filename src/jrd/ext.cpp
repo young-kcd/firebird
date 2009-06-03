@@ -58,6 +58,14 @@
 #include "../jrd/os/path_utils.h"
 #include "../common/classes/init.h"
 
+#ifdef WIN_NT
+#define FTELL64 _ftelli64
+#define FSEEK64 _fseeki64
+#else
+#define FTELL64 ftello
+#define FSEEK64 fseeko
+#endif
+
 using namespace Jrd;
 using namespace Firebird;
 
@@ -268,8 +276,8 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 	// call it if it is not necessary. Note that we must flush file buffer if we
 	// do read after write
 	if (file->ext_ifi == NULL ||
-		((ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
-			(fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
+		((FTELL64(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
+			(FSEEK64(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
@@ -509,7 +517,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	// call it if it is not necessary.	Note that we must flush file buffer if we
 	// do write after read
 	if (file->ext_ifi == NULL ||
-		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
+		(!(file->ext_flags & EXT_last_write) && FSEEK64(file->ext_ifi, (SINT64) 0, 2) != 0) )
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));

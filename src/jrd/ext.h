@@ -38,6 +38,7 @@ public:
 #endif
 	//UCHAR*	ext_stuff;			// Random stuff
 	USHORT	ext_flags;			/* Misc and cruddy flags */
+	USHORT	ext_tra_cnt;		// How many transactions used file
 #ifdef VMS
 	int		ext_ifi;			/* Internal file identifier */
 	int		ext_isi;			/* Internal stream (default) */
@@ -73,7 +74,6 @@ struct irsb_ext
 
 /* Overload record parameter block with external file stuff */
 
-#define rpb_ext_pos	rpb_page
 #ifdef VMS
 #define rpb_ext_isi	rpb_f_page
 #define rpb_ext_dbkey	rpb_b_page
