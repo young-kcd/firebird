@@ -112,7 +112,7 @@ void	eat_blob(BurpGlobals* tdgbl);
 void	eat_text(BurpGlobals* tdgbl);
 void	eat_text2(BurpGlobals* tdgbl);
 burp_rel*	find_relation(BurpGlobals* tdgbl, const TEXT*);
-void	fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class);
+void	fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class, bool is_field);
 // CVC: when do these functions return false indeed???
 // get_acl and get_index are the only exceptions but ironically their
 // returned value is not checked by the caller!
@@ -1179,7 +1179,7 @@ burp_rel* find_relation(BurpGlobals* tdgbl, const TEXT* name)
 	return NULL;
 }
 
-void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class)
+void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class, bool is_field)
 {
 /**************************************
  *
@@ -1193,7 +1193,10 @@ void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class)
  *
  **************************************/
 
-	if (strncmp(sec_class, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN))
+	const char* const prefix = is_field ? SQL_FLD_SECCLASS_PREFIX : SQL_SECCLASS_PREFIX;
+	const int prefix_length = is_field ? SQL_FLD_SECCLASS_PREFIX_LEN : SQL_SECCLASS_PREFIX_LEN;
+
+	if (strncmp(sec_class, prefix, prefix_length))
 		return;
 
 	if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
@@ -1267,7 +1270,7 @@ void fix_security_class_name(BurpGlobals* tdgbl, TEXT* sec_class)
 
 	fb_assert(id);
 
-	snprintf(sec_class, MAX_SQL_IDENTIFIER_SIZE, "%s%"QUADFORMAT"d", SQL_SECCLASS_PREFIX, id);
+	snprintf(sec_class, MAX_SQL_IDENTIFIER_SIZE, "%s%"SQUADFORMAT, prefix, id);
 }
 
 void general_on_error()
@@ -3153,7 +3156,7 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 			case att_field_security_class:
 				GET_TEXT(X.RDB$SECURITY_CLASS);
-				fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS);
+				fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, true);
 				X.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
@@ -4931,7 +4934,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_security_class:
 					GET_TEXT(X.RDB$SECURITY_CLASS);
-					fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS);
+					fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 					X.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
@@ -5042,7 +5045,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_security_class:
 					GET_TEXT(X.RDB$SECURITY_CLASS);
-					fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS);
+					fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 					X.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
@@ -5441,7 +5444,7 @@ bool get_relation(BurpGlobals* tdgbl)
 		case att_relation_security_class:
 			sec_class_null = false;
 			GET_TEXT(sec_class);
-			fix_security_class_name(tdgbl, sec_class);
+			fix_security_class_name(tdgbl, sec_class, false);
 			break;
 
 		case att_relation_view_blr:

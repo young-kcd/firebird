@@ -115,6 +115,8 @@ const int IMPLICIT_PK_PREFIX_LEN = 11;
 const char* const SQL_SECCLASS_GENERATOR = "RDB$SECURITY_CLASS";
 const char* const SQL_SECCLASS_PREFIX = "SQL$";
 const int SQL_SECCLASS_PREFIX_LEN = 4;
+const char* const SQL_FLD_SECCLASS_PREFIX = "SQL$GRANT";
+const int SQL_FLD_SECCLASS_PREFIX_LEN = 9;
 
 // Automatically created check constraints for unnamed PRIMARY and UNIQUE declarations.
 const char* const IMPLICIT_INTEGRITY_PREFIX = "INTEG_";
