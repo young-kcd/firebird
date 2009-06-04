@@ -369,8 +369,6 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	// We're a server, so wait for a host to show up
 
-	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
-
 	wnet_ports->registerPort(port);
 	while (!wnet_shutdown)
 	{
@@ -382,7 +380,7 @@ rem_port* WNET_connect(const TEXT*		name,
 							MAX_DATA,
 							MAX_DATA,
 							0,
-							security_attr);
+							ISC_get_security_desc());
 		if (port->port_handle == INVALID_HANDLE_VALUE)
 		{
 			const DWORD dwError = GetLastError();
@@ -710,8 +708,6 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	new_port->port_connection =
 		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
-	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
-
 	new_port->port_handle =
 		CreateNamedPipe(new_port->port_connection->str_data,
 						PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -720,7 +716,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 						MAX_DATA,
 						MAX_DATA,
 						0,
-						security_attr);
+						ISC_get_security_desc());
 
 	if (new_port->port_handle == INVALID_HANDLE_VALUE) {
 		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err, ERRNO);
