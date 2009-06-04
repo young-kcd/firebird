@@ -1106,8 +1106,8 @@ void API_ROUTINE gds__trace(const TEXT * text)
 	// Since we cannot call ctime/localtime_r or anything else like this from
 	// signal hanlders we need to decode time by hand.
 
-	const int days = now / SECS_PER_DAY;
-	int rem = now % SECS_PER_DAY;
+	const int days = static_cast<int>(now / SECS_PER_DAY);
+	int rem = static_cast<int>(now % SECS_PER_DAY);
 
 	tm today;
 	TimeStamp::decode_date(days + TimeStamp::GDS_EPOCH_START, &today);
