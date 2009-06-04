@@ -594,14 +594,13 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
  *	Allocate a block in shared global region.
  *
  **************************************/
-	SRQ_PTR *ptr;
 	frb* free;
 	SLONG best_tail = MAX_SLONG;
 
 	length = FB_ALIGN(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
-	for (ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (SRQ_PTR* ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		ptr = &free->frb_next)
 	{
 		const SLONG tail = free->frb_header.hdr_length - length;
@@ -820,7 +819,7 @@ void EventManager::delete_session(SLONG session_id)
  *	Delete a session.
  *
  **************************************/
-	ses* session = (ses*) SRQ_ABS_PTR(session_id);
+	ses* const session = (ses*) SRQ_ABS_PTR(session_id);
 
 	// if session currently delivered events, delay its deletion until deliver ends
 	if (session->ses_flags & SES_delivering)
@@ -848,8 +847,8 @@ void EventManager::delete_session(SLONG session_id)
 
 	while (session->ses_interests)
 	{
-		req_int* interest = (req_int*) SRQ_ABS_PTR(session->ses_interests);
-		evnt* event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
+		req_int* const interest = (req_int*) SRQ_ABS_PTR(session->ses_interests);
+		evnt* const event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
 		session->ses_interests = interest->rint_next;
 		remove_que(&interest->rint_interests);
 		free_global((frb*) interest);
@@ -949,8 +948,8 @@ void EventManager::deliver_request(evt_req* request)
 			 next && (interest = (req_int*) SRQ_ABS_PTR(next));
 			 next = interest->rint_next)
 		{
-			interest = (req_int*) SRQ_ABS_PTR(next);
-			evnt* event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
+			//interest = (req_int*) SRQ_ABS_PTR(next); same line as in the condition above
+			evnt* const event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
 
 			const size_t length = buffer.getCount();
 			const size_t extent = event->evnt_length + sizeof(UCHAR) + sizeof(SLONG);
@@ -1027,7 +1026,7 @@ void EventManager::free_global(frb* block)
  *
  **************************************/
 	SRQ_PTR *ptr;
-	frb* free;
+	frb* free = NULL;
 
 	frb* prior = NULL;
 	const SRQ_PTR offset = SRQ_REL_PTR(block);
@@ -1314,10 +1313,10 @@ void EventManager::remove_que(srq* node)
  *	Remove a node from a self-relative event_srq.
  *
  **************************************/
-	srq* event_srq = (srq *) SRQ_ABS_PTR(node->srq_forward);
+	srq* event_srq = (srq*) SRQ_ABS_PTR(node->srq_forward);
 	event_srq->srq_backward = node->srq_backward;
 
-	event_srq = (srq *) SRQ_ABS_PTR(node->srq_backward);
+	event_srq = (srq*) SRQ_ABS_PTR(node->srq_backward);
 	event_srq->srq_forward = node->srq_forward;
 	node->srq_forward = node->srq_backward = 0;
 }

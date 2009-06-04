@@ -335,8 +335,9 @@ bool ISC_get_user(Firebird::string*	name,
 
 	if (user_string && *user_string) {
 		const TEXT* q = user_string;
-		char* un;
-		for (un = user_name; (*un = *q++) && *un != '.'; un++);
+		char* un = user_name;
+		while ((*un = *q++) && *un != '.')
+			++un;
 		*un = 0;
 		p = user_name;
 		egid = euid = -1;
