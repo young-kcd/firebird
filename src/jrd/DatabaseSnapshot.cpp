@@ -122,12 +122,12 @@ void DatabaseSnapshot::SharedMemory::acquire()
 		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, FALSE);
 		if (!base)
 		{
-			Firebird::status_exception::raise(statusVector);
+			status_exception::raise(statusVector);
 		}
 #else
-		Firebird::status_exception::raise(isc_random, isc_arg_string,
-										  "Monitoring table space exhausted",
-										  isc_arg_end);
+		status_exception::raise(isc_random, isc_arg_string,
+							    "Monitoring table space exhausted",
+								isc_arg_end);
 #endif
 	}
 }
@@ -292,13 +292,13 @@ void DatabaseSnapshot::SharedMemory::extend()
 	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, TRUE);
 	if (!base)
 	{
-		Firebird::status_exception::raise(statusVector);
+		status_exception::raise(statusVector);
 	}
 	base->allocated = handle.sh_mem_length_mapped;
 #else
-	Firebird::status_exception::raise(isc_random, isc_arg_string,
-									  "Monitoring table space exhausted",
-									  isc_arg_end);
+	status_exception::raise(isc_random, isc_arg_string,
+							"Monitoring table space exhausted",
+							isc_arg_end);
 #endif
 }
 
@@ -400,7 +400,16 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	ISC_STATUS_ARRAY ast_status;
 	tdbb->tdbb_status_vector = ast_status;
 
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+#ifdef MULTI_THREAD
+	JrdMemoryPool* const pool = dbb->dbb_permanent;
+#else
+	// We create a static pool in order to avoid dbb_permanent being a point of
+	// concurrency conflicts. This pool will be automagically destroyed during
+	// database detach. This is safe in Classic, as a process holds single dbb.
+	static JrdMemoryPool* const pool = JrdMemoryPool::createPool();
+#endif
+
+	Jrd::ContextPoolHolder context(tdbb, pool);
 
 	if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 	{
@@ -640,7 +649,7 @@ void DatabaseSnapshot::clearRecord(Record* record)
 }
 
 
-void DatabaseSnapshot::putField(Record* record, int id, const Firebird::ClumpletReader& reader, bool makeNull)
+void DatabaseSnapshot::putField(Record* record, int id, const ClumpletReader& reader, bool makeNull)
 {
 	fb_assert(record);
 
@@ -1206,7 +1215,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 }
 
 void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
-									 Firebird::ClumpletWriter& writer,
+									 ClumpletWriter& writer,
 									 int stat_id,
 									 int stat_group)
 {
