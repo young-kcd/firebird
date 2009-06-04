@@ -724,7 +724,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
 					MODIFY RFR
 						while (!unique)
 						{
-							sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, "SQL$GRANT",
+							sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, SQL_FLD_SECCLASS_PREFIX,
 								DPM_gen_id(tdbb, MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"),
 										   false, 1));
 
