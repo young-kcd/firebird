@@ -93,7 +93,7 @@
 #endif
 #endif // !WIN_NT
 
-const int INET_RETRY_CALL	= 5;
+const int INET_RETRY_CALL = 5;
 
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
@@ -780,6 +780,12 @@ rem_port* INET_connect(const TEXT* name,
 		lingerInfo.l_onoff = 0;
 		lingerInfo.l_linger = 0;
 
+#ifndef WIN_NT
+		// dimitr:	on Windows, lack of SO_REUSEADDR works the same way as it was specified on POSIX,
+		//			i.e. it allows binding to a port in a TIME_WAIT/FIN_WAIT state. If this option
+		//			is turned on explicitly, then a port can be re-bound regardless of its state,
+		//			e.g. while it's listening. This is surely not what we want.
+
 		int optval = TRUE;
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_REUSEADDR,
 					   (SCHAR*) &optval, sizeof(optval));
@@ -788,6 +794,7 @@ rem_port* INET_connect(const TEXT* name,
 			disconnect(port);
 			return NULL;
 		}
+#endif
 
 		// Get any values for SO_LINGER so that they can be reset during
 		// disconnect.  SO_LINGER should be set by default on the socket
@@ -826,7 +833,7 @@ rem_port* INET_connect(const TEXT* name,
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 				sleep(10);
 				n = bind((SOCKET) port->port_handle, (struct sockaddr *) &address, sizeof(address));
-				if (n == 0)
+				if (n == 0 || INET_ERRNO != INET_ADDR_IN_USE)
 					break;
 			}
 		}
@@ -1238,22 +1245,58 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
  *
  **************************************/
 	struct sockaddr_in address;
-
 	socklen_t l = sizeof(address);
 
 	// If this is a server, we're got an auxiliary connection.  Accept it
 
 	if (port->port_server_flags)
 	{
+		struct timeval timeout;
+		timeout.tv_sec = port->port_connect_timeout;
+		timeout.tv_usec = 0;
 
-		SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
-		const int inetErrNo = INET_ERRNO;
+		fd_set slct_fdset;
+		FD_ZERO(&slct_fdset);
+		FD_SET(port->port_channel, &slct_fdset);
+
+		int inetErrNo = 0;
+
+		while (true)
+		{
+			const int count =
+#ifdef WIN_NT
+				select(FD_SETSIZE, &slct_fdset, NULL, NULL, &timeout);
+#else
+				select((SOCKET) port->port_channel + 1, &slct_fdset, NULL, NULL, &timeout);
+#endif
+			inetErrNo = INET_ERRNO;
+
+			if (count != -1 || !INTERRUPT_ERROR(inetErrNo))
+			{
+				if (count == 1)
+				{
+					break;
+				}
+				else
+				{
+					const ISC_STATUS error_code =
+						(count == 0) ? isc_net_event_connect_timeout : isc_net_event_connect_err;
+					inet_error(port, "select", error_code, inetErrNo);
+					SOCLOSE(port->port_channel);
+					return NULL;
+				}
+			}
+		}
+
+		const SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
+		inetErrNo = INET_ERRNO;
 
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, inetErrNo);
 			SOCLOSE(port->port_channel);
 			return NULL;
 		}
+
 		SOCLOSE(port->port_channel);
 		port->port_handle = (HANDLE) n;
 		port->port_flags |= PORT_async;
@@ -1341,13 +1384,18 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-	int optval = TRUE;
-	int ret = setsockopt(n, SOL_SOCKET, SO_REUSEADDR, (SCHAR*) &optval, sizeof(optval));
+#ifndef WIN_NT
+	// dimitr:	on Windows, lack of SO_REUSEADDR works the same way as it was specified on POSIX,
+	//			i.e. it allows binding to a port in a TIME_WAIT/FIN_WAIT state. If this option
+	//			is turned on explicitly, then a port can be re-bound regardless of its state,
+	//			e.g. while it's listening. This is surely not what we want.
 
-	if (ret == -1) {
+	int optval = TRUE;
+	if (setsockopt(n, SOL_SOCKET, SO_REUSEADDR, (SCHAR*) &optval, sizeof(optval)) < 0) {
 		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
+#endif
 
 	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
 		inet_error(port, "bind", isc_net_event_listen_err, INET_ERRNO);
