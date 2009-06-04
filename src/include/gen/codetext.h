@@ -676,6 +676,7 @@ static const struct {
 	{"bad_conn_str", 335544972},
 	{"bad_epb_form", 335544973},
 	{"no_threads", 335544974},
+	{"net_event_connect_timeout", 335544975},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

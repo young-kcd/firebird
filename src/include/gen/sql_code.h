@@ -675,6 +675,7 @@ static const struct {
 	{335544972, -924}, /* 652 bad_conn_str */
 	{335544973, -901}, /* 653 bad_epb_form */
 	{335544974, -902}, /* 654 no_threads */
+	{335544975, -902}, /* 655 net_event_connect_timeout */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
