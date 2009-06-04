@@ -1360,6 +1360,8 @@ C --
       PARAMETER (GDS__bad_epb_form                     = 335544973)
       INTEGER*4 GDS__no_threads                      
       PARAMETER (GDS__no_threads                       = 335544974)
+      INTEGER*4 GDS__net_event_connect_timeout       
+      PARAMETER (GDS__net_event_connect_timeout        = 335544975)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
