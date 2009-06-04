@@ -1,3 +1,79 @@
+2009-06-04 14:23  dimitr
+
+	* firebird2/src/remote/os/win32/wnet.cpp (1.81):
+
+	Misc.
+
+2009-06-04 14:00  dimitr
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.95), gds_codes.pas
+	(1.94):
+
+	Added timeouts to the network event listener code.  Fixed wrong
+	usage of SO_REUSEADDR on Windows.
+
+2009-06-04 13:05  dimitr
+
+	* firebird2/src/: msgs/facilities2.sql (1.64), msgs/messages2.sql
+	(1.87), msgs/system_errors2.sql (1.56), include/gen/codetext.h
+	(1.104), include/gen/iberror.h (1.108), include/gen/msgs.h (1.133),
+	include/gen/sql_code.h (1.110), include/gen/sql_state.h (1.40):
+
+	Added timeouts to the network event listener code.  Fixed wrong
+	usage of SO_REUSEADDR on Windows.
+
+2009-06-04 12:53  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.288):
+
+	Added timeouts to the network event listener code.  Fixed wrong
+	usage of SO_REUSEADDR on Windows.
+
+2009-06-04 11:32  alexpeshkoff
+
+	* firebird2/src/: common/StatusArg.cpp (1.18), jrd/gds.cpp (1.292):
+
+	Fixed Sun compiler warnings
+
+2009-06-04 11:14  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.291):
+
+	Fixed Sun compiler warnings
+
+2009-06-04 08:17  dimitr
+
+	* firebird2/src/jrd/: dyn.epp (1.147), grant.epp (1.78):
+
+	Misc.
+
+2009-06-04 08:16  dimitr
+
+	* firebird2/src/: burp/restore.epp (1.171), jrd/constants.h (1.62):
+
+	Fixed a bug in one of my recent commits.
+
+2009-06-03 15:13  alexpeshkoff
+
+	* firebird2/src/common/classes/fb_string.h (1.23):
+
+	Fixed Sun compiler warnings
+
+2009-06-03 15:05  alexpeshkoff
+
+	* firebird2/: configure.in (1.343),
+	builds/posix/Makefile.in.fbtrace (1.11), builds/posix/make.rules
+	(1.43):
+
+	Better way to compile utilities/ntrace/os/*/platform.cpp for
+	different platforms
+
+2009-06-03 14:55  alexpeshkoff
+
+	* firebird2/src/jrd/lck.h (1.49):
+
+	gcc warnings
+
 2009-06-03 14:41  alexpeshkoff
 
 	* firebird2/src/jrd/isc_sync.cpp (1.199):
