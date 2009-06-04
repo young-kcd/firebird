@@ -79,16 +79,17 @@
 
 static int process_id;
 
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
+
 /* Unix specific stuff */
 
 #ifdef UNIX
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
 
 #ifdef HAVE_SYS_SIGNAL_H
 #include <sys/signal.h>
@@ -154,7 +155,6 @@ static size_t getpagesize()
 #ifdef WIN_NT
 
 #include <process.h>
-#include <signal.h>
 #include <windows.h>
 
 #endif
@@ -295,7 +295,6 @@ namespace {
 			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
 #endif
 			{
-
 				error(status, NAME, errno);
 				return false;
 			}
@@ -1020,7 +1019,7 @@ int ISC_event_wait(event_t*	event,
  *	FB_FAILURE else return FB_SUCCESS.
  *
  **************************************/
-	sigset_t mask, oldmask;
+	//sigset_t mask, oldmask;
 
 /* If we're not blocked, the rest is a gross waste of time */
 	if (!event_blocked(event, value))
@@ -1028,10 +1027,10 @@ int ISC_event_wait(event_t*	event,
 
 /* Set up timers if a timeout period was specified. */
 
-	struct itimerval user_timer;
-	struct sigaction user_handler;
-	struct timeval cur_time;
-	struct timezone tzUnused;
+	//struct itimerval user_timer;
+	//struct sigaction user_handler;
+	//struct timeval cur_time;
+	//struct timezone tzUnused;
 	SINT64 timeout = 0;
 	if (micro_seconds > 0)
 	{
@@ -1774,7 +1773,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		TEXT sem_filename[MAXPATHLEN];
 		gds__prefix_lock(sem_filename, SEM_FILE);
-		int f = os_utils::openCreateShmemFile(sem_filename, 0);
+		const int f = os_utils::openCreateShmemFile(sem_filename, 0);
 		if (f == -1) {
 			error(status_vector, "open", errno);
 			return NULL;
@@ -1829,7 +1828,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	}
 
 /* map file to memory */
-	UCHAR* address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	UCHAR* const address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);
 		return NULL;
@@ -1845,7 +1844,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	class sfHolder
 	{
 	public:
-		sfHolder(const SharedFile& sf) : pop(true)
+		explicit sfHolder(const SharedFile& sf) : pop(true)
 		{
 			SharedFile::push(sf);
 		}
@@ -1973,13 +1972,13 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	MutexLockGuard guard(openFdInit);
 
-	int fd = os_utils::openCreateShmemFile(expanded_filename, O_TRUNC);
+	const int fd = os_utils::openCreateShmemFile(expanded_filename, O_TRUNC);
 	if (fd < 0) {
 		error(status_vector, "open", errno);
 		return NULL;
 	}
 
-	FILE* fp = fdopen(fd, "w");
+	FILE* const fp = fdopen(fd, "w");
 	if (!fp) {
 		error(status_vector, "fdopen", errno);
 		return NULL;
@@ -2169,7 +2168,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 #endif /* SUPERSERVER */
 
 
-	UCHAR* address = (UCHAR*) shmat(shmid, NULL, 0);
+	UCHAR* const address = (UCHAR*) shmat(shmid, NULL, 0);
 	if ((IPTR) address == (IPTR) -1) {
 		error(status_vector, "shmat", errno);
 		fclose(fp);
@@ -2570,7 +2569,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 /* Compute the start and end page-aligned addresses which
    contain the mapped object. */
 
-	UCHAR* start = (UCHAR *) ((U_IPTR) * object_pointer & ~(page_size - 1));
+	UCHAR* const start = (UCHAR *) ((U_IPTR) * object_pointer & ~(page_size - 1));
 	const UCHAR* end =
 		(UCHAR*) ((U_IPTR) ((*object_pointer + object_length) + (page_size - 1)) & ~(page_size - 1));
 	const ULONG length = end - start;
@@ -2610,7 +2609,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 	// Compute the start and end page-aligned offsets which
 	// contain the object being mapped.
 
-	const ULONG start = (object_offset / page_size) * page_size;
+	const ULONG const start = (object_offset / page_size) * page_size;
 	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
 	const ULONG length = end - start;
 	const HANDLE handle = shmem_data->sh_mem_object;
@@ -3343,7 +3342,7 @@ UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 	if (flag)
 		ftruncate(shmem_data->sh_mem_handle, new_length);
 
-	UCHAR* address = (UCHAR*)
+	UCHAR* const address = (UCHAR*)
 		mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, shmem_data->sh_mem_handle, 0);
 	if ((U_IPTR) address == (U_IPTR) -1)
 		return NULL;
@@ -3435,7 +3434,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 		return NULL;
 	}
 
-	LPVOID address = MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	void* const address = MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
 		error(status_vector, "MapViewOfFile", GetLastError());
@@ -3670,8 +3669,8 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
  *	Detach from the shared memory
  *
  **************************************/
-	struct shmid_ds buf;
-	union semun arg;
+	//struct shmid_ds buf;
+	//union semun arg;
 
 	shmdt(shmem_data->sh_mem_address);
 }
@@ -3755,11 +3754,10 @@ static SLONG create_semaphores(ISC_STATUS* status_vector,
  *	Create or find a block of semaphores.
  *
  **************************************/
-	SLONG semid;
 	while (true)
 	{
 		// Try to open existing semaphore set
-		semid = semget(key, 0, 0);
+		SLONG semid = semget(key, 0, 0);
 		if (semid == -1) {
 			if (errno != ENOENT) {
 				error(status_vector, "semget", errno);
