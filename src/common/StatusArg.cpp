@@ -113,7 +113,7 @@ bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) thr
 
 bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
-	int copied = 0;
+	unsigned int copied = 0;
 
 	for (int i = 0; i < count; )
 	{
@@ -183,7 +183,7 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 {
 	if (hasData())
 	{
-		memcpy(dest, value(), (length() + 1) * sizeof(ISC_STATUS));
+		memcpy(dest, value(), (length() + 1u) * sizeof(ISC_STATUS));
 	}
 	else {
 		dest[0] = isc_arg_gds;

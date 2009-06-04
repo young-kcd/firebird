@@ -3587,15 +3587,15 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
  *	Thread/signal safe code.
  *
  **************************************/
-	int len = strlen(resultString);
+	size_t len = strlen(resultString);
 	if (resultString[len - 1] != PathUtils::dir_sep && len < MAXPATHLEN - 1) {
 		resultString[len++] = PathUtils::dir_sep;
 		resultString[len] = 0;
 	}
-	int alen = strlen(appendString);
+	size_t alen = strlen(appendString);
 	if (len + alen > MAXPATHLEN - 1)
 		alen = MAXPATHLEN - 1 - len;
-	fb_assert(alen >= 0);
+	fb_assert(len + alen <= MAXPATHLEN);
 	memcpy(&resultString[len], appendString, alen);
 	resultString[len + alen] = 0;
 }
