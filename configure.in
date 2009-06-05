@@ -6,6 +6,11 @@ AC_CONFIG_AUX_DIR(builds/make.new/config)
 AC_CACHE_VAL(ac_cv_prog_make_set, [AC_PROG_MAKE_SET])
 AC_PREFIX_DEFAULT(/usr/local/firebird)
 
+m4_ifdef([AC_CONFIG_MACRO_DIR],
+         [],
+         [m4_define([AC_CONFIG_MACRO_DIR], [])])
+AC_CONFIG_MACRO_DIR(m4)
+
 AC_CONFIG_HEADER(src/include/gen/autoconfig.h:builds/make.new/config/config.h.in)
 
 dnl XE_APPEND(value, varname)
@@ -485,12 +490,10 @@ AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-dnl EKU: AC_PROG_RANLIB has been superseded by AC_PROG_LIBTOOL
 AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
-
 
 dnl Check for system header files
 AC_HEADER_DIRENT
