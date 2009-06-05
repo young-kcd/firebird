@@ -1,3 +1,42 @@
+2009-06-05 12:24  robocop
+
+	* firebird2/src/: burp/restore.epp (1.172), common/StatusArg.cpp
+	(1.19), common/cvt.cpp (1.24), jrd/ext.cpp (1.88), lock/lock.cpp
+	(1.194):
+
+	Misc.
+
+2009-06-05 12:04  alexpeshkoff
+
+	* firebird2/: configure.in (1.344), src/common/classes/fb_atomic.h
+	(1.23):
+
+	HPUX port
+
+2009-06-04 17:17  asfernandes
+
+	* firebird2/src/jrd/RuntimeStatistics.cpp (1.18):
+
+	Warnings
+
+2009-06-04 15:16  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.200):
+
+	Minor cleanup. To be checked by Alex.
+
+2009-06-04 15:15  robocop
+
+	* firebird2/src/jrd/: isc.cpp (1.93), event.cpp (1.101):
+
+	Misc.
+
+2009-06-04 15:01  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.293):
+
+	style, better asserts - thanks to Claudio
+
 2009-06-04 14:23  dimitr
 
 	* firebird2/src/remote/os/win32/wnet.cpp (1.81):
