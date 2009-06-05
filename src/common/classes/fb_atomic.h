@@ -205,6 +205,65 @@ private:
 
 } // namespace Firebird
 
+#elif defined(HPUX)
+
+#include <atomic.h>
+
+namespace Firebird {
+
+// HPUX version - uses atomic API library
+class AtomicCounter
+{
+public:
+	typedef uint32_t counter_type;
+
+	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	~AtomicCounter() {}
+
+	counter_type exchangeAdd(counter_type value)
+	{
+		counter_type old = counter;
+		do
+		{
+			old = counter;
+			errno = 0;
+		} while (atomic_cas_32(&counter, old, old + value) != old);
+		return old;
+	}
+
+	counter_type operator +=(counter_type value)
+	{
+		return exchangeAdd(value) + value;
+	}
+
+	counter_type operator -=(counter_type value)
+	{
+		return exchangeAdd(-value) - value;
+	}
+
+	counter_type operator ++()
+	{
+		return atomic_inc_32(&counter) + 1;
+	}
+
+	counter_type operator --()
+	{
+		return atomic_dec_32(&counter) - 1;
+	}
+
+	counter_type value() const { return counter; }
+
+	counter_type setValue(counter_type val)
+	{
+		return atomic_swap_32(&counter, val);
+	}
+
+private:
+	volatile counter_type counter;
+};
+
+} // namespace Firebird
+
 #elif defined(SOLARIS)
 
 #include <atomic.h>

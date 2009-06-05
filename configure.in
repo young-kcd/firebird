@@ -228,22 +228,40 @@ dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
     ;;
 
   ia64-*-hpux*)
-    MAKEFILE_PREFIX=hpux_ia64
+    comp=`echo "$CXX" | cut -c1-3`
+    case $comp in
+       aCC) MAKEFILE_PREFIX=hpux-aCC ;
+           ICU_PLATFORM=HP-UX11ACC ;
+           AC_DEFINE(HPUXACC, 1, [Define this if using native compilers])
+           libdir=/opt/aCC/lib ;;
+       *)  MAKEFILE_PREFIX=hpux_ia64 ;
+           libdir=/opt/hp-gcc-4.3.1/lib ;;
+    esac
+    INSTALL_PREFIX=hpux
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
-    libdir=/usr/lib/pa20_64
+dnl    libdir=/opt/hp-gcc-4.3.1/lib
+dnl    libdir=/usr/lib/pa20_64
     RT_LIB_CHECK=true
     ;;
 
   *-*-hpux*)
-    MAKEFILE_PREFIX=hpux
+    comp=`echo "$CXX" | cut -c1-3`
+    case $comp in
+       aCC) MAKEFILE_PREFIX=hpux-aCC ;
+           ICU_PLATFORM=HP-UX11ACC ;
+           AC_DEFINE(HPUXACC, 1, [Define this if using native compilers])
+           libdir=/opt/aCC/lib ;;
+       *)  MAKEFILE_PREFIX=hpux ;
+           libdir=/opt/hp-gcc-4.3.1/lib ;;
+    esac
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
-    libdir=/usr/lib/pa20_64
+dnl    libdir=/usr/lib/pa20_64
     RT_LIB_CHECK=true
     ;;
 
