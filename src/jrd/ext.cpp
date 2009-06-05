@@ -74,11 +74,10 @@ namespace {
 
 #ifdef WIN_NT
 	static const char* FOPEN_TYPE		= "a+b";
-	static const char* FOPEN_READ_ONLY	= "rb";
 #else
 	static const char* FOPEN_TYPE		= "a+";
-	static const char* FOPEN_READ_ONLY	= "rb";
 #endif
+	static const char* FOPEN_READ_ONLY	= "rb";
 
 	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file);
 

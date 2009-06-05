@@ -133,7 +133,7 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 	m_length += copied;
 	m_status_vector[m_length] = isc_arg_end;
 
-	return copied == count;
+	return copied == static_cast<unsigned int>(count);
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const Base& arg) throw()

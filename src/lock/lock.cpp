@@ -1149,7 +1149,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	if (prior_active)
 	{
 		post_history(his_active, owner_offset, prior_active, (SRQ_PTR) 0, false);
-		shb* recover = (shb*) SRQ_ABS_PTR(m_header->lhb_secondary);
+		shb* const recover = (shb*) SRQ_ABS_PTR(m_header->lhb_secondary);
 		if (recover->shb_remove_node) {
 			// There was a remove_que operation in progress when the prior_owner died
 			DEBUG_MSG(0, ("Got to the funky shb_remove_node code\n"));
@@ -1310,14 +1310,14 @@ void LockManager::blocking_action(thread_db* tdbb,
 
 	while (owner->own_count)
 	{
-		srq* lock_srq = SRQ_NEXT(owner->own_blocks);
+		srq* const lock_srq = SRQ_NEXT(owner->own_blocks);
 		if (lock_srq == &owner->own_blocks) {
 			// We've processed the own_blocks queue, reset the "we've been
 			// signaled" flag and start winding out of here
 			owner->own_flags &= ~OWN_signaled;
 			break;
 		}
-		lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
+		lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		lock_ast_t routine = request->lrq_ast_routine;
 		void* arg = request->lrq_ast_argument;
 		remove_que(&request->lrq_own_blocks);
@@ -1895,7 +1895,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		// Don't pursue lock owners that are not blocked themselves
 		// (they can't cause a deadlock).
 
-		own* owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
+		own* const owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
 		// hvlad: don't pursue lock owners that wait with timeout as such
 		// circle in wait-for graph will be broken automatically when permitted
@@ -1942,10 +1942,10 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		if (target = deadlock_walk(target, maybe_deadlock))
 		{
 #ifdef DEBUG_TRACE_DEADLOCKS
-			const own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
-			const prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
+			const own* owner2 = (own*) SRQ_ABS_PTR(request->lrq_owner);
+			const prc* proc = (prc*) SRQ_ABS_PTR(owner2->own_process);
 			gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ",
-				request->lrq_owner, proc->prc_process_id, owner->own_flags);
+				request->lrq_owner, proc->prc_process_id, owner2->own_flags);
 #endif
 			return target;
 		}
@@ -2037,7 +2037,7 @@ lbl* LockManager::find_lock(SRQ_PTR parent,
 
 	const USHORT hash_slot = *slot = (USHORT) (hash_value % m_header->lhb_hash_slots);
 	ASSERT_ACQUIRED;
-	srq* hash_header = &m_header->lhb_hash[hash_slot];
+	srq* const hash_header = &m_header->lhb_hash[hash_slot];
 
 	for (srq* lock_srq = (SRQ) SRQ_ABS_PTR(hash_header->srq_forward);
 		 lock_srq != hash_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
@@ -2399,7 +2399,7 @@ void LockManager::insert_tail(SRQ lock_srq, SRQ node)
  *
  **************************************/
 	ASSERT_ACQUIRED;
-	shb* recover = (shb*) SRQ_ABS_PTR(m_header->lhb_secondary);
+	shb* const recover = (shb*) SRQ_ABS_PTR(m_header->lhb_secondary);
 	DEBUG_DELAY;
 	recover->shb_insert_que = SRQ_REL_PTR(lock_srq);
 	DEBUG_DELAY;
@@ -2622,7 +2622,7 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 			continue;
 		}
 
-		own* blocking_owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
+		own* const blocking_owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
 		// Add the blocking request to the list of blocks if it's not
 		// there already (LRQ_blocking)
@@ -2725,7 +2725,7 @@ void LockManager::post_pending(lbl* lock)
 	SRQ lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
-		lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 		if (!(request->lrq_flags & LRQ_pending))
 			continue;
 		if (request->lrq_state)
@@ -2769,7 +2769,7 @@ void LockManager::post_pending(lbl* lock)
 	if (lock->lbl_pending_lrq_count) {
 		SRQ_LOOP(lock->lbl_requests, lock_srq)
 		{
-			lrq* request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+			lrq* const request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 			if (request->lrq_flags & LRQ_pending)
 				break;
 
@@ -2868,7 +2868,7 @@ void LockManager::purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 	// Release any repost requests left dangling on blocking queue
 
 	while ((lock_srq = SRQ_NEXT(owner->own_blocks)) != &owner->own_blocks) {
-		lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
+		lrq* const request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		remove_que(&request->lrq_own_blocks);
 		request->lrq_type = type_null;
 		insert_tail(&m_header->lhb_free_requests, &request->lrq_lbl_requests);
@@ -3098,7 +3098,7 @@ void LockManager::release_request(lrq* request)
 
 	request->lrq_type = type_null;
 	insert_tail(&m_header->lhb_free_requests, &request->lrq_lbl_requests);
-	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+	lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 
 	// If the request is marked as blocking, clean it up
 
@@ -3192,7 +3192,7 @@ bool LockManager::signal_owner(thread_db* tdbb, own* blocking_owner, SRQ_PTR blo
 	blocking_owner->own_flags |= OWN_signaled;
 	DEBUG_DELAY;
 
-	prc* process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
+	prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
 
 	// Deliver signal either locally or remotely
 
@@ -3494,7 +3494,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
  **************************************/
 	LOCK_TRACE(("validate_owner: %ld\n", own_ptr));
 
-	const own* owner = (own*) SRQ_ABS_PTR(own_ptr);
+	const own* const owner = (own*) SRQ_ABS_PTR(own_ptr);
 
 	// Note that owner->own_pending_request can be reset without the lock
 	// table being acquired - eg: by another process.  That being the case,
@@ -3648,7 +3648,7 @@ void LockManager::validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT r
  **************************************/
 	LOCK_TRACE(("validate_request: %ld\n", lrq_ptr));
 
-	const lrq* request = (lrq*) SRQ_ABS_PTR(lrq_ptr);
+	const lrq* const request = (lrq*) SRQ_ABS_PTR(lrq_ptr);
 
 	if (freed == EXPECT_freed)
 		CHECK(request->lrq_type == type_null)
@@ -3743,8 +3743,8 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 
 	request->lrq_flags &= ~LRQ_rejected;
 	request->lrq_flags |= LRQ_pending;
-	SRQ_PTR owner_offset = request->lrq_owner;
-	SRQ_PTR lock_offset = request->lrq_lock;
+	const SRQ_PTR owner_offset = request->lrq_owner;
+	const SRQ_PTR lock_offset = request->lrq_lock;
 	lbl* lock = (lbl*) SRQ_ABS_PTR(lock_offset);
 	lock->lbl_pending_lrq_count++;
 	if (lockOrdering()) {
@@ -3916,7 +3916,6 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// do a deadlock scan
 		deadlock_timeout = current_time + scan_interval;
 
-		lrq* blocking_request;
 		// Handle lock event first
 		if (ret == FB_SUCCESS)
 		{
@@ -3944,6 +3943,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// If we've not previously been scanned for a deadlock and going to wait
 		// forever, go do a deadlock scan
 
+		lrq* blocking_request;
 		if (!(owner->own_flags & (OWN_scanned | OWN_timeout)) &&
 			(blocking_request = deadlock_scan(owner, request)))
 		{
@@ -3959,7 +3959,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			lbl* blocking_lock = (lbl*) SRQ_ABS_PTR(blocking_request->lrq_lock);
 			blocking_lock->lbl_pending_lrq_count--;
 
-			own* blocking_owner = (own*) SRQ_ABS_PTR(blocking_request->lrq_owner);
+			own* const blocking_owner = (own*) SRQ_ABS_PTR(blocking_request->lrq_owner);
 			blocking_owner->own_pending_request = 0;
 			blocking_owner->own_flags &= ~OWN_scanned;
 			if (blocking_request != request)

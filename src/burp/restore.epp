@@ -5389,9 +5389,6 @@ bool get_relation(BurpGlobals* tdgbl)
  **************************************/
 	TEXT		temp[GDS_NAME_LEN];
 	SSHORT		l;
-	att_type	attribute;
-	rec_type	record;
-	scan_attr_t		scan_next_attr;
 
 	SLONG		rel_flags = 0, sys_flag = 0, type = 0;
 	bool		rel_flags_null = true, type_null = true;
@@ -5428,6 +5425,8 @@ bool get_relation(BurpGlobals* tdgbl)
 		X.RDB$EXTERNAL_DESCRIPTION.NULL = TRUE;
 	*/
 
+	att_type attribute;
+	scan_attr_t scan_next_attr;
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -5597,6 +5596,7 @@ bool get_relation(BurpGlobals* tdgbl)
 	burp_fld* field = NULL;
 	burp_fld** ptr = &relation->rel_fields;
 
+	rec_type record;
 	while (get_record(&record, tdgbl) != rec_data)
 	{
 		switch (record)

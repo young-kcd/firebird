@@ -224,7 +224,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	if (chars_printed > width)
 	{
-		char num_format[] = "%- #*.*g";
+		const char num_format[] = "%- #*.*g";
 		chars_printed = sprintf(temp, num_format, width, precision, d);
 
 		// If the full-precision result is too wide for the destination,
