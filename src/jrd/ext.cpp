@@ -601,3 +601,43 @@ void EXT_trans_start(jrd_tra* transaction)
  **************************************/
 }
 
+void EXT_tra_attach(ExternalFile* file, jrd_tra*)
+{
+/**************************************
+ *
+ *	E X T _ t r a _ a t t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Transaction going to use external table.
+ *  Increment transactions use count.
+ *
+ **************************************/
+
+	file->ext_tra_cnt++;
+}
+
+void EXT_tra_detach(ExternalFile* file, jrd_tra*)
+{
+/**************************************
+ *
+ *	E X T _ t r a _ d e t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Transaction used external table is finished. 
+ *  Decrement transactions use count and close
+ *  external file if count is zero.
+ *
+ **************************************/
+
+	file->ext_tra_cnt--;
+	if (!file->ext_tra_cnt && file->ext_ifi)
+	{
+		fclose(file->ext_ifi);
+		file->ext_ifi = NULL;
+	}
+}
+

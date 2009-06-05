@@ -38,6 +38,7 @@ class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 #endif
 	//UCHAR*	ext_stuff;			// Random stuff
 	USHORT	ext_flags;			/* Misc and cruddy flags */
+	USHORT	ext_tra_cnt;		// How many transactions used file
 #ifdef VMS
 	int		ext_ifi;			/* Internal file identifier */
 	int		ext_isi;			/* Internal stream (default) */
