@@ -12,6 +12,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-2475 
+        External table data not visible to other sessions in Classic. 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2449
         Unexpected "lock conflict" error can be thrown instead of other (expected) exception
       Contributor(s):
@@ -32,6 +37,11 @@
         Buffer overflow on client when delivering events
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2416 
+        AV preparing a query with aggregate over derived table
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2415
         Firebird crashes when out of temporary space
@@ -62,6 +72,11 @@
         "fb_lock_print -ia" output is not flushed to a file between iterations
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2348 
+        More problems with transaction numbers overflowing 32-bit signed integer and corrupting database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2340
         Bugcheck 258 (page slot not empty) could occurs under high concurrent load
@@ -145,6 +160,11 @@
         Arithmetic exception, numeric overflow, or string truncation in UTF8 tables
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1647 
+        Close external table's file even if it used by some cached (inactive) requests.
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1607
         Correlated subquery is optimized badly if it depends on the union stream
