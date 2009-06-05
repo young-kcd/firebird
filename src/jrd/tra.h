@@ -55,6 +55,8 @@ class VerbAction;
 class ArrayField;
 class Attachment;
 
+const SLONG MAX_TRA_NUMBER = MAX_SLONG;
+
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
 struct BlobIndex {

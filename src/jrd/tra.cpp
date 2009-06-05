@@ -92,8 +92,6 @@ static const SCHAR lock_types[] =
 };
 #endif /* VMS */
 
-static const SLONG MAX_TRA_NUMBER = MAX_SLONG;
-
 using namespace Jrd;
 using namespace Ods;
 
