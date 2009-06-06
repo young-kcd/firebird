@@ -679,7 +679,7 @@ Data source : @4"},		/* 606, eds_statement */
 	{335544972, "Invalid connection string"},		/* 652, bad_conn_str */
 	{335544973, "Unrecognized events block"},		/* 653, bad_epb_form */
 	{335544974, "Could not start first worker thread - shutdown server"},		/* 654, no_threads */
-	{335544975, "Timeout occurred while waiting for a secondary connection for event processing."},		/* 655, net_event_connect_timeout */
+	{335544975, "Timeout occurred while waiting for a secondary connection for event processing"},		/* 655, net_event_connect_timeout */
 	{335740929, "data base file name (@1) already given"},		/* 656, gfix_db_name */
 	{335740930, "invalid switch @1"},		/* 657, gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* 658, gfix_incmp_sw */
