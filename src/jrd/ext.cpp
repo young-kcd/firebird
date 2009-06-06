@@ -276,7 +276,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 	// do read after write
 	if (file->ext_ifi == NULL ||
 		((FTELL64(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
-			(FSEEK64(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
+			(FSEEK64(file->ext_ifi, rpb->rpb_ext_pos, SEEK_SET) != 0)) )
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
@@ -516,7 +516,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	// call it if it is not necessary.	Note that we must flush file buffer if we
 	// do write after read
 	if (file->ext_ifi == NULL ||
-		(!(file->ext_flags & EXT_last_write) && FSEEK64(file->ext_ifi, (SINT64) 0, 2) != 0) )
+		(!(file->ext_flags & EXT_last_write) && FSEEK64(file->ext_ifi, (SINT64) 0, SEEK_END) != 0) )
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
