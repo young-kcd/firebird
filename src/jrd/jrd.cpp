@@ -219,24 +219,51 @@ namespace
 			status_exception::raise(Arg::Gds(isc_bad_svc_handle));
 	}
 
-	class DatabaseContextHolder : public Database::SyncGuard, public Jrd::ContextPoolHolder
+	class AttachmentHolder
 	{
 	public:
-		explicit DatabaseContextHolder(thread_db* arg, bool lockAtt = true)
-			: Database::SyncGuard(arg->getDatabase()),
-			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
-			  tdbb(arg)
+		AttachmentHolder(thread_db* arg, bool lockAtt)
+			: tdbb(arg)
 		{
-			Attachment *attachment = tdbb->getAttachment();
+			Attachment* attachment = tdbb->getAttachment();
 			if (lockAtt && attachment)
 			{
-				attLocked = attachment->att_mutex.tryEnter();
-				if (!attLocked || engineShuttingDown)
-					status_exception::raise(Arg::Gds(isc_att_handle_busy));
+				if (engineShuttingDown)
+					status_exception::raise(Arg::Gds(isc_att_shutdown));
+
+				attachment->att_mutex.enter();
+				attLocked = true;
 			}
 			else
 				attLocked = false;
+		}
 
+		~AttachmentHolder()
+		{
+			Attachment* attachment = tdbb->getAttachment();
+			if (attLocked && attachment)
+				attachment->att_mutex.leave();
+		}
+
+	private:
+		thread_db* tdbb;
+		bool attLocked;
+
+	private:
+		// copying is prohibited
+		AttachmentHolder(const AttachmentHolder&);
+		AttachmentHolder& operator =(const AttachmentHolder&);
+	};
+
+	class DatabaseContextHolder : public AttachmentHolder, Database::SyncGuard, public Jrd::ContextPoolHolder
+	{
+	public:
+		explicit DatabaseContextHolder(thread_db* arg, bool lockAtt = true)
+			: AttachmentHolder(arg, lockAtt),
+			  Database::SyncGuard(arg->getDatabase()),
+			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
+			  tdbb(arg)
+		{
 			Database* dbb = tdbb->getDatabase();
 			++dbb->dbb_use_count;
 		}
@@ -248,10 +275,6 @@ namespace
 			{
 				--dbb->dbb_use_count;
 			}
-
-			Attachment* attachment = tdbb->getAttachment();
-			if (attLocked && attachment)
-				attachment->att_mutex.leave();
 		}
 
 	private:
@@ -260,7 +283,6 @@ namespace
 		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
 
 		thread_db* tdbb;
-		bool attLocked;
 	};
 
 	void validateAccess(const Attachment* attachment)
