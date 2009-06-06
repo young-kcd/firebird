@@ -234,7 +234,7 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	const Firebird::PathName filename = TempFile::create(SCRATCH);
+	const Firebird::PathName filename = Firebird::TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 	if (!trace_file)

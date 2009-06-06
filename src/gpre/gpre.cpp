@@ -1307,7 +1307,7 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	fseek(input_file, start_position, 0);
 	input_char = input_buffer;
 
-	const Firebird::PathName filename = TempFile::create(SCRATCH);
+	const Firebird::PathName filename = Firebird::TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 

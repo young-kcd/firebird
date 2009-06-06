@@ -78,7 +78,7 @@ private:
 		virtual size_t write(offset_t offset, const void* buffer, size_t length) = 0;
 
 		virtual char* inMemory(offset_t offset, size_t size) const = 0;
-		virtual bool sameFile(const TempFile* file) const = 0;
+		virtual bool sameFile(const Firebird::TempFile* file) const = 0;
 
 		Block *prev;
 		Block *next;
@@ -102,7 +102,7 @@ private:
 			return NULL;
 		}
 
-		bool sameFile(const TempFile*) const
+		bool sameFile(const Firebird::TempFile*) const
 		{
 			return false;
 		}
@@ -114,7 +114,7 @@ private:
 	class FileBlock : public Block
 	{
 	public:
-		FileBlock(TempFile* file, Block* tail, size_t length);
+		FileBlock(Firebird::TempFile* file, Block* tail, size_t length);
 		~FileBlock();
 
 		size_t read(offset_t offset, void* buffer, size_t length);
@@ -125,18 +125,18 @@ private:
 			return NULL;
 		}
 
-		bool sameFile(const TempFile* aFile) const
+		bool sameFile(const Firebird::TempFile* aFile) const
 		{
 			return (aFile == this->file);
 		}
 
 	private:
-		TempFile* file;
+		Firebird::TempFile* file;
 		offset_t seek;
 	};
 
 	Block* findBlock(offset_t& offset) const;
-	TempFile* setupFile(size_t size);
+	Firebird::TempFile* setupFile(size_t size);
 
 	virtual bool adjustCacheSize(long) const
 	{
@@ -168,7 +168,7 @@ private:
 	offset_t localCacheUsage;
 	Block* head;
 	Block* tail;
-	Firebird::Array<TempFile*> tempFiles;
+	Firebird::Array<Firebird::TempFile*> tempFiles;
 
 	Segment* freeSegments;
 	Segment* notUsedSegments;

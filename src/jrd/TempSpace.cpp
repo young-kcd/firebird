@@ -31,6 +31,8 @@
 
 #include "../jrd/TempSpace.h"
 
+using Firebird::TempFile;
+
 // Static definitions/initializations
 
 Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;

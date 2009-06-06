@@ -49,6 +49,8 @@
 
 #include "../common/classes/TempFile.h"
 
+namespace Firebird {
+
 // Const definitions
 
 static const char* ENV_VAR = "FIREBIRD_TMP";
@@ -71,10 +73,10 @@ static const size_t MAX_TRIES = 256;
 // Returns a pathname to the system temporary directory
 //
 
-Firebird::PathName TempFile::getTempPath()
+PathName TempFile::getTempPath()
 {
 	const char* env_temp = getenv(ENV_VAR);
-	Firebird::PathName path = env_temp ? env_temp : "";
+	PathName path = env_temp ? env_temp : "";
 	if (path.empty())
 	{
 #if defined(WIN_NT)
@@ -105,15 +107,15 @@ Firebird::PathName TempFile::getTempPath()
 // Creates a temporary file and returns its name
 //
 
-Firebird::PathName TempFile::create(const Firebird::PathName& prefix, const Firebird::PathName& directory)
+PathName TempFile::create(const PathName& prefix, const PathName& directory)
 {
-	Firebird::PathName filename;
+	PathName filename;
 
 	try {
 		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
 		filename = file.getName();
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Exception&) {
 		// do nothing
 	}
 
@@ -126,7 +128,7 @@ Firebird::PathName TempFile::create(const Firebird::PathName& prefix, const Fire
 // Creates temporary file with a unique filename
 //
 
-void TempFile::init(const Firebird::PathName& directory, const Firebird::PathName& prefix)
+void TempFile::init(const PathName& directory, const PathName& prefix)
 {
 	// set up temporary directory, if not specified
 	filename = directory;
@@ -142,10 +144,10 @@ void TempFile::init(const Firebird::PathName& directory, const Firebird::PathNam
 	__int64 randomness = t.time;
 	randomness *= 1000;
 	randomness += t.millitm;
-	Firebird::PathName suffix = NAME_PATTERN;
+	PathName suffix = NAME_PATTERN;
 	for (int tries = 0; tries < MAX_TRIES; tries++)
 	{
-		Firebird::PathName name = filename + prefix;
+		PathName name = filename + prefix;
 		__int64 temp = randomness;
 		for (size_t i = 0; i < suffix.length(); i++)
 		{
@@ -169,7 +171,7 @@ void TempFile::init(const Firebird::PathName& directory, const Firebird::PathNam
 	}
 	if (handle == INVALID_HANDLE_VALUE)
 	{
-		Firebird::system_call_failed::raise("CreateFile");
+		system_call_failed::raise("CreateFile");
 	}
 #else
 	filename += prefix;
@@ -180,7 +182,7 @@ void TempFile::init(const Firebird::PathName& directory, const Firebird::PathNam
 #else
 	if (!mktemp(filename.begin()))
 	{
-		Firebird::system_call_failed::raise("mktemp");
+		system_call_failed::raise("mktemp");
 	}
 
 	do {
@@ -190,7 +192,7 @@ void TempFile::init(const Firebird::PathName& directory, const Firebird::PathNam
 
 	if (handle == -1)
 	{
-		Firebird::system_call_failed::raise("open");
+		system_call_failed::raise("open");
 	}
 
 	if (doUnlink)
@@ -239,13 +241,13 @@ void TempFile::seek(const offset_t offset)
 		SetFilePointer(handle, (LONG) liOffset.LowPart, &liOffset.HighPart, FILE_BEGIN);
 	if (seek_result == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
 	{
-		Firebird::system_call_failed::raise("SetFilePointer");
+		system_call_failed::raise("SetFilePointer");
 	}
 #else
 	const off_t seek_result = ::lseek(handle, (off_t) offset, SEEK_SET);
 	if (seek_result == (off_t) -1)
 	{
-		Firebird::system_call_failed::raise("lseek");
+		system_call_failed::raise("lseek");
 	}
 #endif
 	position = offset;
@@ -278,13 +280,13 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	DWORD bytes = 0;
 	if (!ReadFile(handle, buffer, length, &bytes, NULL) || bytes != length)
 	{
-		Firebird::system_call_failed::raise("ReadFile");
+		system_call_failed::raise("ReadFile");
 	}
 #else
 	const int bytes = ::read(handle, buffer, length);
 	if (bytes < 0 || size_t(bytes) != length)
 	{
-		Firebird::system_call_failed::raise("read");
+		system_call_failed::raise("read");
 	}
 #endif
 	position += bytes;
@@ -305,13 +307,13 @@ size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
 	DWORD bytes = 0;
 	if (!WriteFile(handle, buffer, length, &bytes, NULL) || bytes != length)
 	{
-		Firebird::system_call_failed::raise("WriteFile");
+		system_call_failed::raise("WriteFile");
 	}
 #else
 	const int bytes = ::write(handle, buffer, length);
 	if (bytes < 0 || size_t(bytes) != length)
 	{
-		Firebird::system_call_failed::raise("write");
+		system_call_failed::raise("write");
 	}
 #endif
 	position += bytes;
@@ -334,3 +336,5 @@ void TempFile::unlink()
 	::unlink(filename.c_str());
 #endif
 }
+
+}	// namespace Firebird

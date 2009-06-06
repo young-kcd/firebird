@@ -1846,7 +1846,7 @@ static int edit(ISC_QUAD* blob_id,
    Would have saved me a lot of time, if I had seen this earlier :-(
    FSG 15.Oct.2000
 */
-	Firebird::PathName tmpf = TempFile::create(buffer);
+	Firebird::PathName tmpf = Firebird::TempFile::create(buffer);
 	if (tmpf.empty()) {
 		return FALSE;
 	}

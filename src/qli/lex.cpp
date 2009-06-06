@@ -42,6 +42,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/TempFile.h"
 
+using Firebird::TempFile;
 using MsgFormat::SafeArg;
 
 

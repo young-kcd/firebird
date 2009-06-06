@@ -130,6 +130,7 @@ enum literal_string_type
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/MsgPrint.h"
 
+using Firebird::TempFile;
 using MsgFormat::SafeArg;
 
 #include "../isql/ColList.h"

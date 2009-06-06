@@ -2381,7 +2381,7 @@ VoidPtr API_ROUTINE gds__temp_file(BOOLEAN stdio_flag, const TEXT* string, TEXT*
 		// Fortunately, utilities never pass non-default values.
 		fb_assert(!dir && !unlink_flag);
 
-		Firebird::PathName filename = TempFile::create(string);
+		Firebird::PathName filename = Firebird::TempFile::create(string);
 
 		if (expanded_string)
 		{

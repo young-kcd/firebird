@@ -27,19 +27,19 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/File.h"
 
-class TempFile : public Firebird::File
+namespace Firebird {
+
+class TempFile : public File
 {
 public:
-	TempFile(MemoryPool& pool,
-			 const Firebird::PathName& prefix,
-			 const Firebird::PathName& directory,
+	TempFile(MemoryPool& pool, const PathName& prefix, const PathName& directory,
 			 bool do_unlink = true)
 		: filename(pool), position(0), size(0), doUnlink(do_unlink)
 	{
 		init(directory, prefix);
 	}
 
-	TempFile(const Firebird::PathName& prefix, bool do_unlink = true)
+	TempFile(const PathName& prefix, bool do_unlink = true)
 		: position(0), size(0), doUnlink(do_unlink)
 	{
 		init("", prefix);
@@ -59,16 +59,16 @@ public:
 
 	void extend(size_t);
 
-	const Firebird::PathName& getName() const
+	const PathName& getName() const
 	{
 		return filename;
 	}
 
-	static Firebird::PathName getTempPath();
-	static Firebird::PathName create(const Firebird::PathName& prefix, const Firebird::PathName& directory = "");
+	static PathName getTempPath();
+	static PathName create(const PathName& prefix, const PathName& directory = "");
 
 private:
-	void init(const Firebird::PathName&, const Firebird::PathName&);
+	void init(const PathName&, const PathName&);
 	void seek(const offset_t);
 
 #if defined(WIN_NT)
@@ -77,10 +77,12 @@ private:
 	int handle;
 #endif
 
-	Firebird::PathName filename;
+	PathName filename;
 	offset_t position;
 	offset_t size;
 	bool doUnlink;
 };
+
+}	// namespace Firebird
 
 #endif // CLASSES_TEMP_FILE_H
