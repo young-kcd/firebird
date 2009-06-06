@@ -760,7 +760,7 @@ Data source : @4', NULL, NULL)
 ('bad_conn_str', NULL, NULL, NULL, 0, 652, NULL, 'Invalid connection string', NULL, NULL);
 ('bad_epb_form', 'EventManager::queEvents', 'event.cpp', NULL, 0, 653, NULL, 'Unrecognized events block', NULL, NULL);
 ('no_threads', 'Worker::start', 'server.cpp', NULL, 0, 654, NULL, 'Could not start first worker thread - shutdown server', NULL, NULL);
-('net_event_connect_timeout', 'aux_connect', 'inet.cpp', NULL, 0, 655, NULL, 'Timeout occured while waiting for a secondary connection for event processing.', NULL, NULL);
+('net_event_connect_timeout', 'aux_connect', 'inet.cpp', NULL, 0, 655, NULL, 'Timeout occurred while waiting for a secondary connection for event processing.', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2680,6 +2680,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_invalid_type_div_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 966, NULL, 'Invalid data type for division in dialect 3', NULL, NULL)
 ('dsql_nostring_neg_dial3',  'MAKE_desc', 'make.cpp', NULL, 13, 967, NULL, 'Strings cannot be negated (applied the minus operator) in dialect 3', NULL, NULL)
 ('dsql_invalid_type_neg', 'MAKE_desc', 'make.cpp', NULL, 13, 968, NULL, 'Invalid data type for negation (minus operator)', NULL, NULL)
+('dsql_max_distinct_items', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 969, NULL, 'Cannot have more than 255 items in DISTINCT list', NULL, NULL);
 -- End of extras for isc_expression_eval_err
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);

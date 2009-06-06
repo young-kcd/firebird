@@ -6196,7 +6196,7 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(selectList, dsql_type_nod);
 
-	if (input->nod_count > MAX_SORT_ITEMS) // sort and group have the same limit for now.
+	if (input->nod_count > MAX_SORT_ITEMS) // sort, group and distinct have the same limit for now
 	{
 		// cannot group on more than 255 items
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -8105,6 +8105,15 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		// generated inside the view body, and not in view fields.
 		target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(statement, selectList, false);
 		--statement->req_in_select_list;
+
+		// sort, group and distinct have the same limit for now
+		if (selectList->nod_count > MAX_SORT_ITEMS)
+		{
+			// Cannot have more than 255 items in DISTINCT list.
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_dsql_command_err) <<
+					  Arg::Gds(isc_dsql_max_distinct_items));
+		}
 	}
 
 	// Unless there was a parent, we're done

@@ -899,6 +899,7 @@ static const struct {
 	{336397254, "42000"}, // 966 dsql_invalid_type_div_dial3
 	{336397255, "42000"}, // 967 dsql_nostring_neg_dial3
 	{336397256, "42000"}, // 968 dsql_invalid_type_neg
+	{336397257, "54011"}, // 969 dsql_max_distinct_items
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

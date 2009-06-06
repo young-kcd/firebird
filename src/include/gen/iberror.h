@@ -934,6 +934,7 @@ const ISC_STATUS isc_dsql_nostring_div_dial3          = 336397253L;
 const ISC_STATUS isc_dsql_invalid_type_div_dial3      = 336397254L;
 const ISC_STATUS isc_dsql_nostring_neg_dial3          = 336397255L;
 const ISC_STATUS isc_dsql_invalid_type_neg            = 336397256L;
+const ISC_STATUS isc_dsql_max_distinct_items          = 336397257L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1004,7 +1005,7 @@ const ISC_STATUS isc_fbsvcmgr_fp_open                 = 336986160L;
 const ISC_STATUS isc_fbsvcmgr_fp_read                 = 336986161L;
 const ISC_STATUS isc_fbsvcmgr_fp_empty                = 336986162L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 948;
+const ISC_STATUS isc_err_max                          = 949;
 
 #else /* c definitions */
 
@@ -1908,6 +1909,7 @@ const ISC_STATUS isc_err_max                          = 948;
 #define isc_dsql_invalid_type_div_dial3      336397254L
 #define isc_dsql_nostring_neg_dial3          336397255L
 #define isc_dsql_invalid_type_neg            336397256L
+#define isc_dsql_max_distinct_items          336397257L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1978,7 +1980,7 @@ const ISC_STATUS isc_err_max                          = 948;
 #define isc_fbsvcmgr_fp_read                 336986161L
 #define isc_fbsvcmgr_fp_empty                336986162L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          948
+#define isc_err_max                          949
 
 #endif
 

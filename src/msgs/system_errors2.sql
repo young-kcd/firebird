@@ -889,6 +889,7 @@ COMMIT WORK;
 (-833, '42', '000', 13, 967, 'dsql_nostring_neg_dial3', NULL, NULL)
 (-833, '42', '000', 13, 968, 'dsql_invalid_type_neg', NULL, NULL)
 -- End of expression_eval_err subcodes
+(-104, '54', '011', 13, 969, 'dsql_max_distinct_items', NULL, NULL)
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

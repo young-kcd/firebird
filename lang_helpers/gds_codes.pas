@@ -911,6 +911,7 @@ const
 	gds_dsql_invalid_type_div_dial3      = 336397254;
 	gds_dsql_nostring_neg_dial3          = 336397255;
 	gds_dsql_invalid_type_neg            = 336397256;
+	gds_dsql_max_distinct_items          = 336397257;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

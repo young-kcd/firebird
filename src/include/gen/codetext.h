@@ -900,6 +900,7 @@ static const struct {
 	{"dsql_invalid_type_div_dial3", 336397254},
 	{"dsql_nostring_neg_dial3", 336397255},
 	{"dsql_invalid_type_neg", 336397256},
+	{"dsql_max_distinct_items", 336397257},
 	{"gsec_cant_open_db", 336723983},
 	{"gsec_switches_error", 336723984},
 	{"gsec_no_op_spec", 336723985},
