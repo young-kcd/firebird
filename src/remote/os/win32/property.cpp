@@ -1,4 +1,8 @@
 /*
+ *      PROGRAM:        FB Server
+ *      MODULE:         property.cpp
+ *      DESCRIPTION:    Property sheet implementation for WIN32 server
+ *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
@@ -17,14 +21,6 @@
  * Contributor(s): ______________________________________.
  *
  * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
- *
-*/
-
-
-/*
- *      PROGRAM:        FB Server
- *      MODULE:         property.cpp
- *      DESCRIPTION:    Property sheet implementation for WIN32 server
  *
  */
 

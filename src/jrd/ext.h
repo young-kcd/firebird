@@ -38,7 +38,7 @@ public:
 #endif
 	//UCHAR*	ext_stuff;			// Random stuff
 	USHORT	ext_flags;			/* Misc and cruddy flags */
-	USHORT	ext_tra_cnt;		// How many transactions used file
+	USHORT	ext_tra_cnt;		// How many transactions used the file
 #ifdef VMS
 	int		ext_ifi;			/* Internal file identifier */
 	int		ext_isi;			/* Internal stream (default) */

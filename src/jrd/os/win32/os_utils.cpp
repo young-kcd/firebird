@@ -45,7 +45,7 @@
 #endif
 #include <fcntl.h>
 
-#include <Aclapi.h>
+#include <aclapi.h>
 
 namespace os_utils
 {
@@ -79,7 +79,7 @@ void adjustLockDirectoryAccess(const char* pathname)
 	PACL pNewACL = NULL;
 	try
 	{
-		// We should pass root directory in format "C:\" into GetVolumeInformation(). 
+		// We should pass root directory in format "C:\" into GetVolumeInformation().
 		// In case of pathname is not local folder (i.e. \\share\folder) let
 		// GetVolumeInformation() return an error.
 		Firebird::PathName root(pathname);
@@ -97,11 +97,11 @@ void adjustLockDirectoryAccess(const char* pathname)
 		if (!(fsflags & FS_PERSISTENT_ACLS))
 			return;
 
-		// Adjust security for our new folder : allow BUILTIN\Users group to 
+		// Adjust security for our new folder : allow BUILTIN\Users group to
 		// read\write\delete files
 		PACL pOldACL = NULL;
 
-		if (GetNamedSecurityInfo((LPSTR) pathname, 
+		if (GetNamedSecurityInfo((LPSTR) pathname,
 				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
 				NULL, NULL, &pOldACL, NULL,
 				&pSecDesc) != ERROR_SUCCESS)
@@ -122,14 +122,14 @@ void adjustLockDirectoryAccess(const char* pathname)
 		ea.grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | DELETE;
 		ea.grfAccessMode = GRANT_ACCESS;
 		ea.grfInheritance = SUB_OBJECTS_ONLY_INHERIT;
-		ea.Trustee.TrusteeForm = TRUSTEE_IS_SID; 
+		ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
 		ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
 		ea.Trustee.ptstrName  = (LPSTR) pSID;
 
 		if (SetEntriesInAcl(1, &ea, pOldACL, &pNewACL) != ERROR_SUCCESS)
 			Firebird::system_error::raise("SetEntriesInAcl");
 
-		if (SetNamedSecurityInfo((LPSTR) pathname, 
+		if (SetNamedSecurityInfo((LPSTR) pathname,
 				SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
 				NULL, NULL, pNewACL, NULL) != ERROR_SUCCESS)
 		{

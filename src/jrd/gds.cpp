@@ -3588,7 +3588,9 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
  *
  **************************************/
 	size_t len = strlen(resultString);
-	if (resultString[len - 1] != PathUtils::dir_sep && len < MAXPATHLEN - 1) 
+	fb_assert(len > 0);
+
+	if (resultString[len - 1] != PathUtils::dir_sep && len < MAXPATHLEN - 1)
 	{
 		resultString[len++] = PathUtils::dir_sep;
 		resultString[len] = 0;

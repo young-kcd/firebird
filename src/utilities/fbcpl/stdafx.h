@@ -47,7 +47,6 @@
 #include <locale.h>
 #endif
 
-
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif

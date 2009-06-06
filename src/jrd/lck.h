@@ -95,13 +95,13 @@ public:
 
 	Lock* lck_next;					// lck_next and lck_prior form a doubly linked list of locks
 	Lock* lck_prior;				// bound to attachment
-	
+
 	Lock* lck_collision;			// Collisions in compatibility table
 	Lock* lck_identical;			// Identical locks in compatibility table
 	void* lck_compatible;			// Enter into internal_enqueue() and treat as compatible
 	void* lck_compatible2;			// Sub-level for internal compatibility
 
-	Database* lck_dbb;				// Database object is contained in 
+	Database* lck_dbb;				// Database object is contained in
 	Attachment* lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
 
 	lock_ast_t lck_ast;				// Blocking AST routine
@@ -124,7 +124,6 @@ public:
 	UCHAR lck_tail[1];				// Makes the allocator happy
 };
 
-} //namespace Jrd
+} // namespace Jrd
 
 #endif // JRD_LCK_H
-

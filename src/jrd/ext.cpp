@@ -619,7 +619,7 @@ void EXT_tra_detach(ExternalFile* file, jrd_tra*)
  **************************************
  *
  * Functional description
- *	Transaction used external table is finished. 
+ *	Transaction used external table is finished.
  *  Decrement transactions use count and close
  *  external file if count is zero.
  *

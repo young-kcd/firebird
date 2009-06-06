@@ -5428,6 +5428,7 @@ bool get_relation(BurpGlobals* tdgbl)
 	att_type attribute;
 	scan_attr_t scan_next_attr;
 	skip_init(&scan_next_attr);
+
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
 		switch (attribute)

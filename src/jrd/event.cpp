@@ -1106,7 +1106,6 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
  *	Initialize global region header.
  *
  **************************************/
-
 	int mutex_state;
 
 #ifdef WIN_NT

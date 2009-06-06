@@ -116,5 +116,3 @@ $(OBJ)/%.o: $(SRC_ROOT)/%.cpp
 
 $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
 	windres --output-format=coff --include-dir=$(<D) $< $@
-
-

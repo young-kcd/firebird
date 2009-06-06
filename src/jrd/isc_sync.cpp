@@ -83,7 +83,6 @@ static int process_id;
 #include <signal.h>
 #endif
 
-
 /* Unix specific stuff */
 
 #ifdef UNIX
@@ -321,7 +320,7 @@ namespace {
 	int sharedCount = 0;
 	int fd_init = -1;
 
-	// this struct is mapped into shared file
+	// this class is mapped into shared file
 	class SemTable
 	{
 	public:

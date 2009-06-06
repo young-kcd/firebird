@@ -760,7 +760,7 @@ Data source : @4', NULL, NULL)
 ('bad_conn_str', NULL, NULL, NULL, 0, 652, NULL, 'Invalid connection string', NULL, NULL);
 ('bad_epb_form', 'EventManager::queEvents', 'event.cpp', NULL, 0, 653, NULL, 'Unrecognized events block', NULL, NULL);
 ('no_threads', 'Worker::start', 'server.cpp', NULL, 0, 654, NULL, 'Could not start first worker thread - shutdown server', NULL, NULL);
-('net_event_connect_timeout', 'aux_connect', 'inet.cpp', NULL, 0, 655, NULL, 'Timeout occurred while waiting for a secondary connection for event processing.', NULL, NULL);
+('net_event_connect_timeout', 'aux_connect', 'inet.cpp', NULL, 0, 655, NULL, 'Timeout occurred while waiting for a secondary connection for event processing', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

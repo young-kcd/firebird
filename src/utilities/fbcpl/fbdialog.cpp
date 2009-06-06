@@ -1528,7 +1528,7 @@ HWND CFBDialog::GetGuardianHandle() const
 
 bool CFBDialog::ServiceSupportAvailable() const
 {
-	OSVERSIONINFO   OsVersionInfo;
+	OSVERSIONINFO OsVersionInfo;
 	ZeroMemory(&OsVersionInfo, sizeof(OsVersionInfo));
 
 	/* need to set the sizeof this structure for NT to work */
