@@ -2608,7 +2608,7 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 	// Compute the start and end page-aligned offsets which
 	// contain the object being mapped.
 
-	const ULONG const start = (object_offset / page_size) * page_size;
+	const ULONG start = (object_offset / page_size) * page_size;
 	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
 	const ULONG length = end - start;
 	const HANDLE handle = shmem_data->sh_mem_object;
