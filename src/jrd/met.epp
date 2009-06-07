@@ -3046,7 +3046,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 	if (!noscan)
 	{
-		SSHORT valid_blr = TRUE;
+		// CVC: Where is this set to false? I made it const to draw attention here.
+		const bool valid_blr = true;
 
 		jrd_req* request = CMP_find_request(tdbb, irq_r_procedure, IRQ_REQUESTS);
 
@@ -3286,6 +3287,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 		procedure->prc_flags |= PRC_scanned;
 
+		// CVC: This condition is always false because valid_blr is always true.
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1 &&
 			!(dbb->dbb_flags & DBB_read_only) && !valid_blr)
 		{
