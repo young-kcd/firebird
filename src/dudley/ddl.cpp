@@ -89,33 +89,33 @@ enum in_sw_values
 
 static const in_sw_tab_t gdef_in_sw_table[] =
 {
-	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, false, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
-	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, false, 0, 0,
 		"\t\treplace existing database"},	/* replace database */
-	{ IN_SW_GDEF_D, 0, "DYNAMIC", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_D, 0, "DYNAMIC", 0, 0, 0, false, 0, 0,
 		"\t\tgenerate dynamic DDL"},
-	{ IN_SW_GDEF_T, 0, "T", 0, 0, 0, FALSE, 0, 0, NULL },
-	{ IN_SW_GDEF_C, 0, "C", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C" },
-	{ IN_SW_GDEF_F, 0, "FORTRAN", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for FORTRAN" },
-	{ IN_SW_GDEF_P, 0, "PASCAL", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for PASCAL" },
-	{ IN_SW_GDEF_COB, 0, "COB", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for COBOL" },
-	{ IN_SW_GDEF_ANSI, 0, "ANSI", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_T, 0, "T", 0, 0, 0, false, 0, 0, NULL },
+	{ IN_SW_GDEF_C, 0, "C", 0, 0, 0, false, 0, 0, "\t\tDYN for C" },
+	{ IN_SW_GDEF_F, 0, "FORTRAN", 0, 0, 0, false, 0, 0, "\t\tDYN for FORTRAN" },
+	{ IN_SW_GDEF_P, 0, "PASCAL", 0, 0, 0, false, 0, 0, "\t\tDYN for PASCAL" },
+	{ IN_SW_GDEF_COB, 0, "COB", 0, 0, 0, false, 0, 0, "\t\tDYN for COBOL" },
+	{ IN_SW_GDEF_ANSI, 0, "ANSI", 0, 0, 0, false, 0, 0,
 		"\t\tDYN for ANSI COBOL" },
-	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for ADA" },
-	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C++" },
-	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, false, 0, 0, "\t\tDYN for ADA" },
+	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, false, 0, 0, "\t\tDYN for C++" },
+	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, false, 0, 0,
 		"\t\tuser name to use in attaching database" },
-	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, false, 0, 0,
 		"\t\tpassword to use with user name" },
-	{ IN_SW_GDEF_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, false, 0, 0,
 		"\t\tfetch password from file" },
 #ifdef TRUSTED_AUTH
-	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, FALSE, 0, 0,
+	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, false, 0, 0,
 		"\t\tuse trusted authentication" },
 #endif
-	{ IN_SW_GDEF_Z, 0, "Z", 0, 0, 0, FALSE, 0, 0, "\t\tprint version number" },
-	{ IN_SW_GDEF_0, 0, NULL, 0, 0, 0, FALSE, 0, 0, NULL }
+	{ IN_SW_GDEF_Z, 0, "Z", 0, 0, 0, false, 0, 0, "\t\tprint version number" },
+	{ IN_SW_GDEF_0, 0, NULL, 0, 0, 0, false, 0, 0, NULL }
 };
 
 #ifndef SUPERSERVER

@@ -63,39 +63,39 @@ const int IN_SW_IBMGR_AMBIG		= 99;	// ambiguous switch
 
 static const struct in_sw_tab_t ibmgr_in_sw_table [] =
 {
-    {IN_SW_IBMGR_START,		0,	"START",	0, 0, 0, FALSE,	0,	2,	NULL},   // start server
-    {IN_SW_IBMGR_ONCE,		0,	"ONCE",		0, 0, 0, FALSE,	0,	1,	NULL},	// start server once
-    {IN_SW_IBMGR_FOREVER,	0,	"FOREVER",	0, 0, 0, FALSE,	0,	1,	NULL},	// restart when server dies
-    {IN_SW_IBMGR_SIGNORE, 0, "SIGNORE", 0, 0, 0, FALSE, 0, 1, NULL},   // dito, ignore start up error
-    {IN_SW_IBMGR_SHUT,		0,	"SHUT",		0, 0, 0, FALSE,	0,	3, NULL},   // shutdown server
-    {IN_SW_IBMGR_NOW,		0,	"NOW",		0, 0, 0, FALSE,	0,	3, NULL},   // immidiate shutdown
+    {IN_SW_IBMGR_START,		0,	"START",	0, 0, 0, false,	0,	2,	NULL},   // start server
+    {IN_SW_IBMGR_ONCE,		0,	"ONCE",		0, 0, 0, false,	0,	1,	NULL},	// start server once
+    {IN_SW_IBMGR_FOREVER,	0,	"FOREVER",	0, 0, 0, false,	0,	1,	NULL},	// restart when server dies
+    {IN_SW_IBMGR_SIGNORE, 0, "SIGNORE", 0, 0, 0, false, 0, 1, NULL},   // dito, ignore start up error
+    {IN_SW_IBMGR_SHUT,		0,	"SHUT",		0, 0, 0, false,	0,	3, NULL},   // shutdown server
+    {IN_SW_IBMGR_NOW,		0,	"NOW",		0, 0, 0, false,	0,	3, NULL},   // immidiate shutdown
 
 // The following switches should be activated when
 // appropriate functionality is implemented
 
-//    {IN_SW_IBMGR_NOAT,		0,	"NOAT",		0, 0, 0, FALSE,	0,	3,      NULL},  // no new attachments
-//    {IN_SW_IBMGR_NOTR,		0,	"NOTR",		0, 0, 0, FALSE,	0,	3,      NULL},  // no new transaction
-//    {IN_SW_IBMGR_IGNORE,	0,	"IGN",		0, 0, 0, FALSE,	0,	1,      NULL},   // do not shutdown
-    {IN_SW_IBMGR_PASSWORD,	0,	"PASSWORD",	0, 0, 0, FALSE,	0,	2,      NULL},   // DB admin's password
-    {IN_SW_IBMGR_USER,		0,	"USER",		0, 0, 0, FALSE,	0,	1,      NULL},   // user's name
-    {IN_SW_IBMGR_PIDFILE,	0,	"PIDFILE",	0, 0, 0, FALSE,	0,	1,      NULL},   // file for fbserver's PID
+//    {IN_SW_IBMGR_NOAT,		0,	"NOAT",		0, 0, 0, false,	0,	3,      NULL},  // no new attachments
+//    {IN_SW_IBMGR_NOTR,		0,	"NOTR",		0, 0, 0, false,	0,	3,      NULL},  // no new transaction
+//    {IN_SW_IBMGR_IGNORE,	0,	"IGN",		0, 0, 0, false,	0,	1,      NULL},   // do not shutdown
+    {IN_SW_IBMGR_PASSWORD,	0,	"PASSWORD",	0, 0, 0, false,	0,	2,      NULL},   // DB admin's password
+    {IN_SW_IBMGR_USER,		0,	"USER",		0, 0, 0, false,	0,	1,      NULL},   // user's name
+    {IN_SW_IBMGR_PIDFILE,	0,	"PIDFILE",	0, 0, 0, false,	0,	1,      NULL},   // file for fbserver's PID
 
 // We can shutdown any server, but can start only local
 // thus we do not allow to change host for time being
 
-//    {IN_SW_IBMGR_HOST,		0,	"HOST",		0, 0, 0, FALSE,	0,	2,      NULL},  // where server's running
+//    {IN_SW_IBMGR_HOST,		0,	"HOST",		0, 0, 0, false,	0,	2,      NULL},  // where server's running
 
 // SET is an internal operation and should not be activated
 // (unless we want a user to use it
 
-//    {IN_SW_IBMGR_SET,		0,	"SET",		0, 0, 0, FALSE,	0,	2,	NULL},   // sets host/user/password
-    {IN_SW_IBMGR_SHOW,		0,	"SHOW",		0, 0, 0, FALSE,	0,	3,	NULL},	// shows host/user/password
-    {IN_SW_IBMGR_QUIT,		0,	"QUIT",		0, 0, 0, FALSE,	0,	1,      NULL},	// exit command line
-    {IN_SW_IBMGR_HELP,		0,	"HELP",		0, 0, 0, FALSE,	0,	2,      NULL},	// print help
-    {IN_SW_IBMGR_Z,		0,	"Z",		0, 0, 0, FALSE,	0,	1,      NULL},	// version
-    {IN_SW_IBMGR_PRINT,     	0,	"PRINT",	0, 0, 0, FALSE,	0,	2,      NULL},	// Print stats
-    {IN_SW_IBMGR_POOL,     	0,	"POOL",		0, 0, 0, FALSE,	0,	2,      NULL},   // Print pool
-    {IN_SW_IBMGR_0,		0,      NULL,		0, 0, 0, FALSE,	0,	0,	NULL}	// End of List
+//    {IN_SW_IBMGR_SET,		0,	"SET",		0, 0, 0, false,	0,	2,	NULL},   // sets host/user/password
+    {IN_SW_IBMGR_SHOW,		0,	"SHOW",		0, 0, 0, false,	0,	3,	NULL},	// shows host/user/password
+    {IN_SW_IBMGR_QUIT,		0,	"QUIT",		0, 0, 0, false,	0,	1,      NULL},	// exit command line
+    {IN_SW_IBMGR_HELP,		0,	"HELP",		0, 0, 0, false,	0,	2,      NULL},	// print help
+    {IN_SW_IBMGR_Z,		0,	"Z",		0, 0, 0, false,	0,	1,      NULL},	// version
+    {IN_SW_IBMGR_PRINT,     	0,	"PRINT",	0, 0, 0, false,	0,	2,      NULL},	// Print stats
+    {IN_SW_IBMGR_POOL,     	0,	"POOL",		0, 0, 0, false,	0,	2,      NULL},   // Print pool
+    {IN_SW_IBMGR_0,		0,      NULL,		0, 0, 0, false,	0,	0,	NULL}	// End of List
 };
 
 #endif // IBMGR_IBMGRSWI_H

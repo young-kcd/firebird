@@ -47,15 +47,15 @@ const int IN_SW_NBK_NODBTRIG		= 6;
 
 static const struct in_sw_tab_t nbackup_in_sw_table [] =
 {
-    {IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",	0, 0, 0, FALSE,	0,	1, NULL},
-    {IN_SW_NBK_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		// End of List
+    {IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",	0, 0, 0, false,	0,	1, NULL},
+    {IN_SW_NBK_0,		0,				NULL,		0, 0, 0, false,	0,	0, NULL}		// End of List
 };
 
 static const struct in_sw_tab_t nbackup_action_in_sw_table [] =
 {
-    {IN_SW_NBK_BACKUP,	isc_action_svc_nbak,	"B",	0, 0, 0, FALSE,	0,	1, NULL},
-    {IN_SW_NBK_RESTORE,	isc_action_svc_nrest,	"R",	0, 0, 0, FALSE,	0,	1, NULL},
-    {IN_SW_NBK_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		// End of List
+    {IN_SW_NBK_BACKUP,	isc_action_svc_nbak,	"B",	0, 0, 0, false,	0,	1, NULL},
+    {IN_SW_NBK_RESTORE,	isc_action_svc_nrest,	"R",	0, 0, 0, false,	0,	1, NULL},
+    {IN_SW_NBK_0,		0,				NULL,		0, 0, 0, false,	0,	0, NULL}		// End of List
 };
 #endif // NBACKUP_NBKSWI_H
 
