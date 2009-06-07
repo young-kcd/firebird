@@ -1,3 +1,125 @@
+2009-06-07 12:31  robocop
+
+	* firebird2/src/jrd/dyn.epp (1.148):
+
+	Misc.
+
+2009-06-07 12:19  robocop
+
+	* firebird2/src/jrd/intl.cpp (1.125):
+
+	Style.
+
+2009-06-07 12:17  robocop
+
+	* firebird2/src/: install/arch-specific/solx86gcc/CS/preinstall.in
+	(1.4), isql/isql.h (1.72):
+
+	Misc.
+
+2009-06-07 12:16  robocop
+
+	* firebird2/src/: dsql/metd.epp (1.144), dsql/metd_proto.h (1.33),
+	jrd/blb.cpp (1.199), jrd/cch.cpp (1.235):
+
+	bool, style.
+
+2009-06-07 12:13  robocop
+
+	* firebird2/src/: alice/aliceswi.h (1.26), burp/spit.cpp (1.46),
+	dudley/ddl.cpp (1.47), gpre/gpreswi.h (1.25),
+	jrd/trace/TraceService.h (1.7), utilities/gsec/gsecswi.h (1.15),
+	utilities/gstat/dbaswi.h (1.13), utilities/ibmgr/ibmgrswi.h (1.10),
+	utilities/nbackup/nbkswi.h (1.4):
+
+	in_sw_tab_t data member in_sw_state is bool.
+
+2009-06-07 11:51  robocop
+
+	* firebird2/src/jrd/met.epp (1.281):
+
+	Mark code maybe done for future extension.
+
+2009-06-07 11:49  robocop
+
+	* firebird2/src/: dsql/dsql.h (1.152), dsql/pass1.cpp (1.452),
+	gpre/gpre.cpp (1.109),
+	install/arch-specific/solx86gcc/CS/preinstall.in (1.3), jrd/dpm.epp
+	(1.90), jrd/dyn_def.epp (1.180), jrd/evl.cpp (1.300), jrd/intl.cpp
+	(1.124), jrd/intl_proto.h (1.25), jrd/isc.cpp (1.94),
+	jrd/isc_sync.cpp (1.202), jrd/pag.cpp (1.208), jrd/par.cpp (1.240),
+	jrd/sort.cpp (1.128), jrd/tra.cpp (1.207), jrd/utl.cpp (1.133),
+	jrd/why.cpp (1.244), lock/lock.cpp (1.195), lock/lock.h (1.52),
+	msgs/history2.sql (1.14), msgs/messages2.sql (1.90),
+	msgs/transmsgs.de_DE.sql (1.3), msgs/transmsgs.fr_FR.sql (1.3),
+	remote/server.cpp (1.251), utilities/nbackup.cpp (1.88),
+	jrd/trace/TraceCmdLine.cpp (1.7):
+
+	Misc.
+
+2009-06-06 20:39  asfernandes
+
+	* firebird2/src/: common/classes/TempFile.cpp (1.19),
+	common/classes/TempFile.h (1.12), dudley/lex.cpp (1.40),
+	gpre/gpre.cpp (1.108), isql/isql.epp (1.274), jrd/TempSpace.cpp
+	(1.23), jrd/TempSpace.h (1.15), jrd/gds.cpp (1.295), jrd/utl.cpp
+	(1.132), qli/lex.cpp (1.50):
+
+	Put TempFile in Firebird namespace
+
+2009-06-06 20:38  asfernandes
+
+	* firebird2/src/include/gen/msgs.h (1.135):
+
+	Misc
+
+2009-06-06 20:28  asfernandes
+
+	* firebird2/src/jrd/ext.cpp (1.90):
+
+	Use system constants
+
+2009-06-06 20:13  asfernandes
+
+	* firebird2/: builds/posix/make.rules (1.44), src/burp/restore.epp
+	(1.173), src/jrd/event.cpp (1.102), src/jrd/ext.cpp (1.89),
+	src/jrd/ext.h (1.17), src/jrd/gds.cpp (1.294), src/jrd/isc_sync.cpp
+	(1.201), src/jrd/lck.h (1.50), src/jrd/req.h (1.91),
+	src/jrd/os/win32/os_utils.cpp (1.9), src/msgs/facilities2.sql
+	(1.66), src/msgs/messages2.sql (1.89),
+	src/remote/os/win32/property.cpp (1.29),
+	src/utilities/fbcpl/fbdialog.cpp (1.20),
+	src/utilities/fbcpl/stdafx.h (1.4),
+	src/utilities/install/install_nt.h (1.19):
+
+	Misc
+
+2009-06-06 11:05  robocop
+
+	* firebird2/src/jrd/cch.cpp (1.234):
+
+	Misc.
+
+2009-06-06 04:21  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.96),
+	lang_helpers/gds_codes.pas (1.95), src/dsql/pass1.cpp (1.451),
+	src/include/gen/codetext.h (1.105), src/include/gen/iberror.h
+	(1.109), src/include/gen/msgs.h (1.134), src/include/gen/sql_code.h
+	(1.111), src/include/gen/sql_state.h (1.41),
+	src/msgs/facilities2.sql (1.65), src/msgs/messages2.sql (1.88),
+	src/msgs/system_errors2.sql (1.57):
+
+	Fixed CORE-2499 - Implementation limit of DISTINCT items are not
+	enforced, causing generation of incorrect BLR
+
+2009-06-06 03:08  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.541):
+
+	Improvement CORE-2498 - Make a single attachment usabe by more than
+	one simultaneous threads in embedded
+
 2009-06-05 12:24  robocop
 
 	* firebird2/src/: burp/restore.epp (1.172), common/StatusArg.cpp
