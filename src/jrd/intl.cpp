@@ -713,8 +713,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	fb_assert(from != NULL);
 	fb_assert(IS_TEXT(to) && IS_TEXT(from));
 
-	CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from));
-	CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to));
+	const CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from));
+	const CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to));
 
 	UCHAR* p = to->dsc_address;
 	const UCHAR* start = p;
@@ -725,12 +725,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	USHORT from_type;
 	const USHORT from_len = CVT_get_string_ptr(from, &from_type, &from_ptr, NULL, 0, err);
 
-	ULONG to_size, to_len, to_fill;
-	to_size = to_len = TEXT_LEN(to);
-	ULONG from_fill;
+	const ULONG to_size = TEXT_LEN(to);
+	ULONG from_fill, to_fill;
 
 	const UCHAR* q = from_ptr;
-	CharSet* toCharSet = INTL_charset_lookup(tdbb, to_cs);
+	CharSet* const toCharSet = INTL_charset_lookup(tdbb, to_cs);
 	ULONG toLength;
 
 	switch (to->dsc_dtype)
@@ -739,7 +738,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
 
-			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
+			const ULONG to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			to_fill = to_size - to_len;
@@ -749,7 +748,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		else {
 			/* binary string can always be converted TO by byte-copy */
 
-			to_len = MIN(from_len, to_size);
+			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
 				err(Arg::Gds(isc_malformed_string));
 			toLength = to_len;
@@ -771,7 +770,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	case dtype_cstring:
 		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
-			to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
+			const ULONG to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			to->dsc_address[to_len] = 0;
@@ -780,7 +779,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		else {
 			/* binary string can always be converted TO by byte-copy */
 
-			to_len = MIN(from_len, to_size);
+			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
 				err(Arg::Gds(isc_malformed_string));
 			toLength = to_len;
@@ -801,7 +800,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		{
 			UCHAR* vstr = reinterpret_cast<UCHAR*>(((vary*) to->dsc_address)->vary_string);
 			start = vstr;
-			to_len = INTL_convert_bytes(tdbb, to_cs, vstr,
+			const ULONG to_len = INTL_convert_bytes(tdbb, to_cs, vstr,
 										to_size, from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			((vary*) to->dsc_address)->vary_length = to_len;
@@ -809,7 +808,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		}
 		else {
 			/* binary string can always be converted TO by byte-copy */
-			to_len = MIN(from_len, to_size);
+			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
 				err(Arg::Gds(isc_malformed_string));
 			toLength = to_len;
