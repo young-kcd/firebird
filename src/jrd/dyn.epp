@@ -122,8 +122,7 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 		ERR_post(Arg::Gds(isc_wrodynver));
 	}
 
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
-	fb_utils::init_status(status);
+	fb_utils::init_status(tdbb->tdbb_status_vector);
 
 	Global gbl(transaction);
 
