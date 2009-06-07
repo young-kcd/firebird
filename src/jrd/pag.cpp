@@ -831,7 +831,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									else
 									{
 										// PIO_init_data returns zero - perhaps it is not supported, no space
-										// left on disk or IO error occured. Try to write one page and handle
+										// left on disk or IO error occurred. Try to write one page and handle
 										// IO errors if any
 										CCH_must_write(window);
 										try {

@@ -525,7 +525,7 @@ void NBackup::fixup_database()
 
 /*
  *    Print the status, the SQLCODE, and exit.
- *    Also, indicate which operation the error occured on.
+ *    Also, indicate which operation the error occurred on.
  */
 void NBackup::pr_error (const ISC_STATUS* status, const char* operation) const
 {

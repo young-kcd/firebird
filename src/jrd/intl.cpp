@@ -597,9 +597,6 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
  *      calls (err) if conversion error occurs.
  *
  **************************************/
-	ULONG len;
-
-
 	SET_TDBB(tdbb);
 
 	fb_assert(src_ptr != NULL);
@@ -626,7 +623,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 				err(Arg::Gds(isc_malformed_string));
 		}
 
-		len = MIN(dest_len, src_len);
+		ULONG len = MIN(dest_len, src_len);
 		if (len)
 			do {
 				*dest_ptr++ = *src_ptr++;
@@ -702,7 +699,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
  *      0 if no error in conversion
  *      non-zero otherwise.
  *      CVC: Unfortunately, this function puts the source in the 2nd param,
- *      as opposed to the CVT routines, so const help mitigating coding mistakes.
+ *      as opposed to the CVT routines, so const helps mitigating coding mistakes.
  *
  **************************************/
 
@@ -719,8 +716,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	CHARSET_ID from_cs = INTL_charset(tdbb, INTL_TTYPE(from));
 	CHARSET_ID to_cs = INTL_charset(tdbb, INTL_TTYPE(to));
 
-	UCHAR* start = to->dsc_address;
-	UCHAR* p = start;
+	UCHAR* p = to->dsc_address;
+	const UCHAR* start = p;
 
 /* Must convert dtype(cstring,text,vary) and ttype(ascii,binary,..intl..) */
 
@@ -802,11 +799,10 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	case dtype_varying:
 		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
-
-			to_len =
-				INTL_convert_bytes(tdbb, to_cs,
-								   (start = reinterpret_cast<UCHAR*>(((vary*) to->dsc_address)->vary_string)),
-								   to_size, from_cs, from_ptr, from_len, err);
+			UCHAR* vstr = reinterpret_cast<UCHAR*>(((vary*) to->dsc_address)->vary_string);
+			start = vstr;
+			to_len = INTL_convert_bytes(tdbb, to_cs, vstr,
+										to_size, from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			((vary*) to->dsc_address)->vary_length = to_len;
 			from_fill = 0;		/* Convert_bytes handles source truncation */
@@ -850,7 +846,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 }
 
 
-int INTL_data(const dsc* pText)
+bool INTL_data(const dsc* pText)
 {
 /**************************************
  *
@@ -860,7 +856,7 @@ int INTL_data(const dsc* pText)
  *
  * Functional description
  *      Given an input text descriptor,
- *      return TRUE if the data pointed to represents
+ *      return true if the data pointed to represents
  *      international text (subject to user defined or non-binary
  *      collation or comparison).
  *
@@ -869,15 +865,15 @@ int INTL_data(const dsc* pText)
 	fb_assert(pText != NULL);
 
 	if (!IS_TEXT(pText))
-		return FALSE;
+		return false;
 
 	if (!INTERNAL_TTYPE(pText))
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
-int INTL_data_or_binary(const dsc* pText)
+bool INTL_data_or_binary(const dsc* pText)
 {
 /**************************************
  *

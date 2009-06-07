@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
 	// Try to open the input file.
 	// If the language wasn't supplied, maybe the kind user included a language
 	// specific extension, and the file name fixer will find it.  The file name
-	// fixer returns FALSE if it can't add an extension, which means there's already
+	// fixer returns false if it can't add an extension, which means there's already
 	// one of the right type there.
 
 	TEXT spare_file_name[MAXPATHLEN];

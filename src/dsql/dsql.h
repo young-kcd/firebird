@@ -513,7 +513,7 @@ public:
 	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via
 	// CTE name or via alias. We need to substitute this aliases when processing CTE
 	// member to resolve field names. Therefore we store all aliases in order of
-	// occurence and later use it in backward order (since our parser is right-to-left).
+	// occurrence and later use it in backward order (since our parser is right-to-left).
 	// We also need to repeat this process if main select expression contains union with
 	// recursive CTE
 	void addCTEAlias(const dsql_str* alias)

@@ -4079,10 +4079,8 @@ void DYN_define_sql_field(Global*		gbl,
 					break;
 
 				case isc_dyn_system_flag:
-					RFR.RDB$SYSTEM_FLAG = FLD.RDB$SYSTEM_FLAG =
-						DYN_get_number(ptr);
-					RFR.RDB$SYSTEM_FLAG.NULL = FLD.RDB$SYSTEM_FLAG.NULL =
-						FALSE;
+					RFR.RDB$SYSTEM_FLAG = FLD.RDB$SYSTEM_FLAG = DYN_get_number(ptr);
+					RFR.RDB$SYSTEM_FLAG.NULL = FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case isc_dyn_update_flag:

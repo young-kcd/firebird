@@ -2093,8 +2093,8 @@ static void compute_oldest_retaining(thread_db* tdbb, jrd_tra* transaction, cons
  *	Read the oldest active for all transactions
  *	younger than us up to the youngest retaining
  *	transaction. If an "older" oldest active is
- *	found, by all means use it. Write flag is TRUE
- *	to write retaining lock and FALSE to read it.
+ *	found, by all means use it. Write flag is true
+ *	to write retaining lock and false to read it.
  *	The retaining lock holds the youngest commit
  *	retaining transaction.
  *

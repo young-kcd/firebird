@@ -269,7 +269,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
  *	Note that we also return false if the record fetched doesn't
  *	match the state of the input rpb, or if there is no record for
  *	that record number.  The caller has to check the results to
- *	see what failed if FALSE is returned.  At the moment, there is
+ *	see what failed if false is returned.  At the moment, there is
  *	only one caller, VIO_erase.
  *
  **************************************/

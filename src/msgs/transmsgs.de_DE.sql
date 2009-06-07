@@ -271,7 +271,7 @@ preclude successful execution of subsequent statements', NULL, NULL, 13, 99, 'de
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('The insert, update, delete, ddl or authorization statement cannot
  be executed because the transaction is inquiry only', NULL, NULL, 13, 183, 'de_DE', 'Transaktion ist READ ONLY. INSERT, UPDATE, DELETE sowie Datendefinitions/Authorisierungsanwsgn. sind nicht ausführbar', NULL, NULL, 'daves', '1993-07-16 12:15:58');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('An error was found in the application program input parameters for the sql statement.', NULL, NULL, 13, 196, 'de_DE', 'Die Anwendungsprogramm-Eingabeparameter für die SQL-Anweisung sind fehlerhaft', NULL, NULL, 'daves', '1993-07-16 12:15:58');
-INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Arithmetic overflow or division by zero has occured.', NULL, NULL, 13, 198, 'de_DE', 'Arithmetischer Überlauf oder Division durch Null', NULL, NULL, 'daves', '1993-07-16 12:15:58');
+INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Arithmetic overflow or division by zero has occurred.', NULL, NULL, 13, 198, 'de_DE', 'Arithmetischer Überlauf oder Division durch Null', NULL, NULL, 'daves', '1993-07-16 12:15:58');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Invalid insert or update value(s): object columns are
 constrained - no 2 table rows can have duplicate column values', NULL, NULL, 13, 197, 'de_DE', 'INSERT- oder UPDATE-Wert(e) ungültig. 2 Tabellenreihen könnnen nicht dieselben Spaltenwerte haben', NULL, NULL, 'daves', '1993-07-16 12:15:58');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('This operation is not defined for system tables.', NULL, NULL, 13, 393, 'de_DE', 'Diese Operation ist nicht für Systemtabellen definiert', NULL, NULL, 'daves', '1993-07-16 12:15:58');
@@ -332,7 +332,7 @@ INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, 
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('illegal instruction or address, recovering...', NULL, NULL, 1, 22, 'de_DE', 'Instruktion oder Adresse unzulässig! Wiederherstellungsverfahren läuft ...', NULL, NULL, 'daves', '1993-07-16 12:15:59');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Please retry, supplying an application script file name', NULL, NULL, 1, 23, 'de_DE', 'Bitte nochmals den Namen einer Anwendungs-Skriptdatei eingeben', NULL, NULL, 'daves', '1993-07-16 12:15:59');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Welcome to QLI
-Query Language Interpreter', NULL, NULL, 1, 24, 'de_DE', 'Willkommen bei QLI, dem 
+Query Language Interpreter', NULL, NULL, 1, 24, 'de_DE', 'Willkommen bei QLI, dem
 Query Language Interpreter', NULL, NULL, 'daves', '1993-07-16 12:15:59');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('qli version %s', NULL, NULL, 1, 25, 'de_DE', 'QLI-Version %s', NULL, NULL, 'daves', '1993-07-16 12:16:00');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('
@@ -752,14 +752,14 @@ INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, 
 problem may be an obvious one, such as incorrect file name or
 a file protection problem.  If that does not eliminate the
 problem, check your program logic.  To avoid errors when
-the user enters a database name interactively, 
-add an error handler to the statement that causes this 
+the user enters a database name interactively,
+add an error handler to the statement that causes this
 message to appear.', 'Your program encountered an input or output error.', 0, 24, 'de_DE', 'E/A-Fehler bei der Operation "%s" an Datei "%s"', 'Check secondary messages for more information.  The
 problem may be an obvious one, such as incorrect file name or
 a file protection problem.  If that does not eliminate the
 problem, check your program logic.  To avoid errors when
-the user enters a database name interactively, 
-add an error handler to the statement that causes this 
+the user enters a database name interactively,
+add an error handler to the statement that causes this
 message to appear.', 'Your program encountered an input or output error.', 'daves', '1993-07-16 12:16:08');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('lock conflict on no wait transaction', NULL, NULL, 0, 25, 'de_DE', 'Sperrkonflikt bei ''No wait''-Transaktion', NULL, NULL, 'daves', '1993-07-16 12:16:08');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('corrupt system relation', NULL, NULL, 0, 26, 'de_DE', 'Die System-Relation ist fehlerhaft', NULL, NULL, 'daves', '1993-07-16 12:16:08');
@@ -794,12 +794,12 @@ receive this error while using GDML or SQL, please submit
 a bug report.', 'The actual length of a buffer does not correspond to what
 the request language says it should be.', 'daves', '1993-07-16 12:16:09');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('attempted update of read-only field', 'If the read-only field is in a system relation, change your
-program.  If the field is a COMPUTED field, you have to 
+program.  If the field is a COMPUTED field, you have to
 change the source fields to change its value.  If the field
 takes part in a view, update it in its source relations.', 'Your program tried to change the value of a read-only
 field in a system relation, a COMPUTED field, or a field
 used in a view.', 0, 39, 'de_DE', 'Update-Versuch eines ''Read Only''-Feldes', 'If the read-only field is in a system relation, change your
-program.  If the field is a COMPUTED field, you have to 
+program.  If the field is a COMPUTED field, you have to
 change the source fields to change its value.  If the field
 takes part in a view, update it in its source relations.', 'Your program tried to change the value of a read-only
 field in a system relation, a COMPUTED field, or a field
@@ -811,17 +811,17 @@ INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, 
 transaction.', 'Your program tried to update during a READ_ONLY translation.', 0, 41, 'de_DE', 'Update-Versuch während einer ''Read Only''-Transaktion', 'If you want to update the database, use a READ_WRITE
 transaction.', 'Your program tried to update during a READ_ONLY translation.', 'daves', '1993-07-16 12:16:09');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('can''t update read only view %s', 'Views that include a record select, join, or project cannot
-be updated.  If you want to perform updates, you must do so 
+be updated.  If you want to perform updates, you must do so
 through the source relations.  If you are updating join terms,
 make sure that you change them in all relations.  In any case,
- update the source relations in a single transaction so that 
-you make the changes consistently.', 'Your program tried to update a view that contains a 
+ update the source relations in a single transaction so that
+you make the changes consistently.', 'Your program tried to update a view that contains a
 record select, join, or project operation.', 0, 42, 'de_DE', 'Update der ''Read Only''-View %s nicht möglich', 'Views that include a record select, join, or project cannot
-be updated.  If you want to perform updates, you must do so 
+be updated.  If you want to perform updates, you must do so
 through the source relations.  If you are updating join terms,
 make sure that you change them in all relations.  In any case,
- update the source relations in a single transaction so that 
-you make the changes consistently.', 'Your program tried to update a view that contains a 
+ update the source relations in a single transaction so that
+you make the changes consistently.', 'Your program tried to update a view that contains a
 record select, join, or project operation.', 'daves', '1993-07-16 12:16:09');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('no transaction for request', 'Check and correct your program logic.  Commit or roll back
 the transaction only after you have completed all operations
@@ -830,29 +830,29 @@ transaction had been committed or rolled back.', 0, 43, 'de_DE', 'Für die Anford
 the transaction only after you have completed all operations
 that you want in the transaction.', 'Your program tried to continue a request after the enveloping
 transaction had been committed or rolled back.', 'daves', '1993-07-16 12:16:09');
-INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('request synchronization error', 'For call interface programs, locate and correct the program 
-error.  If you received this error while using GDML or SQL, 
+INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('request synchronization error', 'For call interface programs, locate and correct the program
+error.  If you received this error while using GDML or SQL,
 please submit a bug report. ', 'Your program issued a send or receive for a message type
-that did not match the logic of the BLR request.', 0, 44, 'de_DE', 'Anforderungs-Synchronisationsfehler', 'For call interface programs, locate and correct the program 
-error.  If you received this error while using GDML or SQL, 
+that did not match the logic of the BLR request.', 0, 44, 'de_DE', 'Anforderungs-Synchronisationsfehler', 'For call interface programs, locate and correct the program
+error.  If you received this error while using GDML or SQL,
 please submit a bug report. ', 'Your program issued a send or receive for a message type
 that did not match the logic of the BLR request.', 'daves', '1993-07-16 12:16:09');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('request referenced an unavailable database', 'Change your program so that the required database is
-within the scope of the transaction.', 'Your program referenced a relation from a database that is 
+within the scope of the transaction.', 'Your program referenced a relation from a database that is
 not available within the current transaction.', 0, 45, 'de_DE', 'Die von der Anforderung referenzierte Datenbank ist nicht verfügbar', 'Change your program so that the required database is
-within the scope of the transaction.', 'Your program referenced a relation from a database that is 
+within the scope of the transaction.', 'Your program referenced a relation from a database that is
 not available within the current transaction.', 'daves', '1993-07-16 12:16:10');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('segment buffer length shorter than expected', 'Check the segment_buffer_length parameter on the blob calls
 and make sure that it is long enough for handling the
 segments of the blob field you are accessing.  Alternately,
 you could trap for this error and accept truncated values.', 'The length of the segment_buffer on a blob call was shorter
-than the segment returned by the database software.  
+than the segment returned by the database software.
 Therefore, the database software could return only part of
 the segment.', 0, 46, 'de_DE', 'Segment-Pufferlänge ist kürzer als erwartet', 'Check the segment_buffer_length parameter on the blob calls
 and make sure that it is long enough for handling the
 segments of the blob field you are accessing.  Alternately,
 you could trap for this error and accept truncated values.', 'The length of the segment_buffer on a blob call was shorter
-than the segment returned by the database software.  
+than the segment returned by the database software.
 Therefore, the database software could return only part of
 the segment.', 'daves', '1993-07-16 12:16:10');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('attempted retrieval of more segments than exist', 'Change your program so that it tests for this condition
@@ -879,11 +879,11 @@ creating.', 'daves', '1993-07-16 12:16:10');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('attempted action on blob outside transaction', 'Change your program so that you perform whatever data
 manipulation is required in a transaction before you end
 that transaction.', 'Your program reference a blob field after it committed or
-rolled back the transaction that had been processing the 
+rolled back the transaction that had been processing the
 field.', 0, 50, 'de_DE', 'Es wurde versucht, einen BLOB außerhalb einer Transaktion anzusprechen', 'Change your program so that you perform whatever data
 manipulation is required in a transaction before you end
 that transaction.', 'Your program reference a blob field after it committed or
-rolled back the transaction that had been processing the 
+rolled back the transaction that had been processing the
 field.', 'daves', '1993-07-16 12:16:10');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('attempted write to read-only blob', 'If you are using the call interface, open the blob for
 by calling gds_$create_blob.  If you are using GDML, open
@@ -893,11 +893,11 @@ by calling gds_$create_blob.  If you are using GDML, open
 the blob with the create_blob statement.', 'Your program tried to write to a blob field that
 that had been opened for read access.', 'daves', '1993-07-16 12:16:10');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('attempted reference to blob in unavailable database', 'Change your program so that the required database is
-available to the current transaction.', 'Your program referenced a blob field from a relation 
-in a database that is not available to the current 
+available to the current transaction.', 'Your program referenced a blob field from a relation
+in a database that is not available to the current
 transaction.', 0, 52, 'de_DE', 'Referenzierungsversuch eines BLOBs in einer nicht verfügbaren Datenbank', 'Change your program so that the required database is
-available to the current transaction.', 'Your program referenced a blob field from a relation 
-in a database that is not available to the current 
+available to the current transaction.', 'Your program referenced a blob field from a relation
+in a database that is not available to the current
 transaction.', 'daves', '1993-07-16 12:16:11');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('operating system directive %s failed', 'Check secondary messages for more information.  When you
 isolate the problem, you may want to include an error handler
@@ -1141,7 +1141,7 @@ INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, 
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Trigger %s doesn''t exist', NULL, NULL, 2, 73, 'de_DE', 'Der Trigger %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Trigger message number %d for trigger %s doesn''t exist', NULL, NULL, 2, 74, 'de_DE', 'Die Trigger-Mitteilungsnummer %d für den Trigger %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Type %s for field %s doesn''t exist', NULL, NULL, 2, 75, 'de_DE', 'Der Typ %s für das Feld %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16');
-INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('User privilege %s on field %s in relation %s 
+INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('User privilege %s on field %s in relation %s
 for user %s doesn''t exist', NULL, NULL, 2, 76, 'de_DE', 'Das Zugriffsprivileg %s für das Feld %s der Relation %s für den Benutzer %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('User privilege %s on relation %s for user %s doesn''t exist', NULL, NULL, 2, 77, 'de_DE', 'Das Zugriffsprivileg %s für die Relation %s für den Benutzer %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('field %s is unknown in relation %s', NULL, NULL, 2, 78, 'de_DE', 'Das Feld %s ist in der Relation %s nicht bekannt', NULL, NULL, 'daves', '1993-07-16 12:16:16');
@@ -1582,7 +1582,7 @@ INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, 
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('    message %ld:  %s', NULL, NULL, 1, 457, 'de_DE', '    Mitteilung %ld:  %s', NULL, NULL, 'daves', '1993-07-16 12:16:25');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('	%sT(RANSPORTABLE)      transportable backup -- data in XDR format', NULL, NULL, 12, 175, 'de_DE', '	%sT(RANSPORTABLE)      Transportables Backup -- Daten im XDR-Format', NULL, NULL, 'daves', '1993-07-16 12:16:25');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('Connection to database %s lost
-	Please FINISH the database!', NULL, NULL, 1, 458, 'de_DE', 'Verbindung zur Datenbank %s abgebochen.    
+	Please FINISH the database!', NULL, NULL, 1, 458, 'de_DE', 'Verbindung zur Datenbank %s abgebochen.
 	Datenbank mit FINISH abmelden!', NULL, NULL, 'daves', '1993-07-16 12:16:25');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('argument mode ''by value'' requires a return mode', NULL, NULL, 2, 293, 'de_DE', 'Für ein Argument, das durch einen Wert übergeben wurde, ist ein Rückgabe-Modus erforderlich', NULL, NULL, 'daves', '1993-07-16 12:16:25');
 INSERT INTO TRANSMSGS (ENG_TEXT, ENG_ACTION, ENG_EXPLANATION, FAC_CODE, NUMBER, LOCALE, TEXT, "ACTION", EXPLANATION, TRANSLATOR, TRANS_DATE) VALUES ('unexpected end of file, semi_colon missing?', NULL, NULL, 2, 294, 'de_DE', 'Unerwartetes Dateiende (EOF). Fehlendes Semikolon?', NULL, NULL, 'daves', '1993-07-16 12:16:25');

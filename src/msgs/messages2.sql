@@ -147,7 +147,7 @@ to trap for this condition.', 'The operating system returned an error.');
 ('bdbincon', NULL, NULL, NULL, 0, 72, NULL, 'internal error', NULL, NULL);
 ('reqinuse', NULL, NULL, NULL, 0, 73, NULL, 'request in use', NULL, NULL);
 ('badodsver', NULL, NULL, NULL, 0, 74, NULL, 'incompatible version of on-disk structure', 'Look further in the status vector for more detail
-and fix the error.', 'Some dynamic SQL error occured - more to follow');
+and fix the error.', 'Some dynamic SQL error occurred - more to follow');
 ('relnotdef', NULL, NULL, NULL, 0, 75, NULL, 'table @1 is not defined', NULL, NULL);
 ('fldnotdef', NULL, NULL, NULL, 0, 76, NULL, 'column @1 is not defined in table @2', NULL, 'An undefined field was referenced in blr.');
 ('dirtypage', NULL, NULL, NULL, 0, 77, NULL, 'internal error', NULL, 'An external function was defined but was incompatible with either the

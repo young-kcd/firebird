@@ -672,7 +672,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		}
 	}
 	catch (const Firebird::Exception&) {
-		// Some kind of unhandled error occured during server setup.  In lieu
+		// Some kind of unhandled error occurred during server setup.  In lieu
 		// of anything we CAN do, log something (and we might be so hosed
 		// we can't log anything) and give up.
 		// The likely error here is out-of-memory.

@@ -5734,7 +5734,7 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 					// For example COUNT(*) is always same scope_level (node->nod_count = 0)
 					// Normaly COUNT(*) is the only way to come here but something stupid
 					// as SUM(5) is also possible.
-					// If current_scope_level_equal is FALSE scope_level is always higher
+					// If current_scope_level_equal is false scope_level is always higher
 					switch (match_type)
 					{
 						case FIELD_MATCH_TYPE_LOWER_EQUAL:

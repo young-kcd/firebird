@@ -5771,9 +5771,9 @@ bool WHY_set_shutdown(bool flag)
  **************************************
  *
  * Functional description
- *	Set disableConnections to either TRUE or FALSE.
- *		TRUE = refuse new connections
- *		FALSE= accept new connections
+ *	Set disableConnections to either true or false.
+ *		true  = refuse new connections
+ *		false = accept new connections
  *	Returns the prior state of the flag (server).
  *
  **************************************/

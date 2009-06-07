@@ -586,7 +586,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			request->req_flags &= ~req_null;
 
 			if ((!value && !firstnull) || (!value2 && !secondnull)) {
-				return false;	/* at least one operand was FALSE */
+				return false;	/* at least one operand was false */
 			}
 
 			if (value && value2) {

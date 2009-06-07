@@ -3473,7 +3473,7 @@ static void warning(const Arg::StatusVector& v)
 	thread_db* tdbb = JRD_get_thread_data();
 
 /* Make sure that the [1] position is 0
-   indicating that no error has occured */
+   indicating that no error has occurred */
 	Arg::Gds p(FB_SUCCESS);
 
 /* Now place your warning messages */

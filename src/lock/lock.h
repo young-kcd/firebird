@@ -273,7 +273,7 @@ const USHORT OWN_timeout	= 32;		// Owner is waiting with timeout
 struct his
 {
 	UCHAR his_type;					// memory tag - always type_his
-	UCHAR his_operation;			// operation that occured
+	UCHAR his_operation;			// operation that occurred
 	SRQ_PTR his_next;				// SRQ_PTR to next item in history list
 	SRQ_PTR his_process;			// owner to record for this operation
 	SRQ_PTR his_lock;				// lock to record for operation

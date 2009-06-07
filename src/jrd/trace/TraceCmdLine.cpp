@@ -140,15 +140,15 @@ static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
 	return 0;
 }
 
-const char* TRACE_ERR_CONFLICT_ACTS		= "conflicting actions \"%s\" and \"%s\" found";
-const char* TRACE_ERR_ACT_NOTFOUND		= "action switch not found";
-const char* TRACE_ERR_SWITCH_ONCE		= "switch \"%s\" must be set only once";
-const char* TRACE_ERR_PARAM_VAL_MISS	= "value for switch \"%s\" is missing";
-const char* TRACE_ERR_PARAM_INVALID		= "invalid value (\"%s\") for switch \"%s\"";
-const char* TRACE_ERR_SWITCH_UNKNOWN	= "unknown switch \"%s\" encountered";
-const char* TRACE_ERR_SWITCH_SVC_ONLY	= "switch \"%s\" can be used by service only";
-const char* TRACE_ERR_SWITCH_PARAM_MISS	= "mandatory parameter \"%s\" for switch \"%s\" is missing";
-const char* TRACE_ERR_PARAM_ACT_NOTCOMPAT	= "parameter \"%s\" is incompatible with action \"%s\"";
+const char TRACE_ERR_CONFLICT_ACTS[]		= "conflicting actions \"%s\" and \"%s\" found";
+const char TRACE_ERR_ACT_NOTFOUND[]			= "action switch not found";
+const char TRACE_ERR_SWITCH_ONCE[]			= "switch \"%s\" must be set only once";
+const char TRACE_ERR_PARAM_VAL_MISS[]		= "value for switch \"%s\" is missing";
+const char TRACE_ERR_PARAM_INVALID[]		= "invalid value (\"%s\") for switch \"%s\"";
+const char TRACE_ERR_SWITCH_UNKNOWN[]		= "unknown switch \"%s\" encountered";
+const char TRACE_ERR_SWITCH_SVC_ONLY[]		= "switch \"%s\" can be used by service only";
+const char TRACE_ERR_SWITCH_PARAM_MISS[]	= "mandatory parameter \"%s\" for switch \"%s\" is missing";
+const char TRACE_ERR_PARAM_ACT_NOTCOMPAT[]	= "parameter \"%s\" is incompatible with action \"%s\"";
 
 
 void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)

@@ -1199,7 +1199,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *      Perform transformation between the natural form of a record
  *      and a form that can be sorted in unsigned comparison order.
  *
- *      direction - TRUE for SORT_put() and FALSE for SORT_get()
+ *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
 	UCHAR *fill_pos, fill_char;
@@ -1323,7 +1323,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *      Perform transformation between the natural form of a record
  *      and a form that can be sorted in unsigned comparison order.
  *
- *      direction - TRUE for SORT_put() and FALSE for SORT_get()
+ *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
 	UCHAR c1, fill_char, *fill_pos;

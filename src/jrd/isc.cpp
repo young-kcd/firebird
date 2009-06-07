@@ -193,8 +193,8 @@ bool ISC_check_process_existence(SLONG pid)
  **************************************
  *
  * Functional description
- *      Return TRUE if the indicated process
- *      exists.  FALSE otherwise.
+ *      Return true if the indicated process
+ *      exists;  false otherwise.
  *
  **************************************/
 

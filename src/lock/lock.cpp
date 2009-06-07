@@ -1817,7 +1817,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
  *
  * Functional description
  *	Given a request that is waiting, determine whether a deadlock has
- *	occured.
+ *	occurred.
  *
  **************************************/
 

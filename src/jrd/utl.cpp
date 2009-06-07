@@ -243,7 +243,7 @@ int API_ROUTINE gds__blob_size(FB_API_HANDLE* b,
  *
  * Functional description
  *	Get the size, number of segments, and max
- *	segment length of a blob.  Return true
+ *	segment length of a blob.  Return TRUE
  *	if it happens to succeed.
  *
  **************************************/

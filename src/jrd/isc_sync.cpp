@@ -1256,7 +1256,7 @@ int ISC_event_wait(event_t* event,
 #endif
 			{
 
-				/* The timer expired - see if the event occured and return
+				/* The timer expired - see if the event occurred and return
 				   FB_SUCCESS or FB_FAILURE accordingly. */
 
 				if (event_blocked(event, value))
@@ -1443,7 +1443,7 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 		err_msg = "";
 	}
 
-	TEXT* log_msg = (TEXT *) gds__alloc(strlen(err_msg) + 256);
+	TEXT* const log_msg = (TEXT *) gds__alloc(strlen(err_msg) + 256);
 	// NOMEM: crash!
 	log_msg[0] = '\0';
 
