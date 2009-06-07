@@ -702,7 +702,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 }
 
 
-USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UTF-8
+bool METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UTF-8
 {
 /**************************************
  *
@@ -762,7 +762,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 	if (!DSQL_REQUEST(irq_domain))
 		DSQL_REQUEST(irq_domain) = handle;
 
-	return found ? TRUE : FALSE;
+	return found;
 }
 
 

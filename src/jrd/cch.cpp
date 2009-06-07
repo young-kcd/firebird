@@ -6298,8 +6298,7 @@ static bool write_page(thread_db* tdbb,
 		return false;
 	}
 
-	bool result = true;
-	Database* dbb = bdb->bdb_dbb;
+	Database* const dbb = bdb->bdb_dbb;
 	pag* const page = bdb->bdb_buffer;
 
 /* Before writing db header page, make sure that the next_transaction > oldest_active
@@ -6320,6 +6319,7 @@ static bool write_page(thread_db* tdbb,
 	}
 
 	page->pag_generation++;
+	bool result = true;
 
 //	if (!dbb->dbb_wal || write_thru) becomes
 //	if (true || write_thru) then finally if (true)

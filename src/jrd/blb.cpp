@@ -518,6 +518,7 @@ void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR target
 		*p++ = 1;
 		*p++ = targetCharset;
 	}
+	fb_assert(static_cast<size_t>(p - bpb.begin()) <= bpb.getCount());
 
 	// set the array count to the number of bytes we used
 	bpb.shrink(p - bpb.begin());
@@ -1258,7 +1259,7 @@ blb* BLB_open2(thread_db* tdbb,
 					&from_type_specified, &from_charset_specified,
 					&to_type_specified, &to_charset_specified);
 
-	blb* blob = allocate_blob(tdbb, transaction);
+	blb* const blob = allocate_blob(tdbb, transaction);
 
 	bool try_relations = false;
 	BlobIndex* current = NULL;
@@ -1926,7 +1927,7 @@ static ISC_STATUS blob_filter(USHORT	action,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	jrd_tra* transaction = (jrd_tra*) control->ctl_internal[1];
+	jrd_tra* const transaction = (jrd_tra*) control->ctl_internal[1];
 	bid* blob_id = reinterpret_cast<bid*>(control->ctl_internal[2]);
 
 #ifdef DEV_BUILD
@@ -2100,7 +2101,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	window.win_scans = 1;
 
 	Array<UCHAR> data(dbb->dbb_page_size);
-	UCHAR* buffer = data.begin();
+	UCHAR* const buffer = data.begin();
 
 	for (; ptr < end; ptr++)
 	{
@@ -2245,13 +2246,10 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	SET_TDBB(tdbb);
 #ifdef SUPERSERVER_V2
 	Database* dbb = tdbb->getDatabase();
-#endif
-	vcl* vector = blob->blb_pages;
-
-#ifdef SUPERSERVER_V2
 	SLONG pages[PREFETCH_MAX_PAGES];
 #endif
 
+	const vcl* vector = blob->blb_pages;
 
 	blob_page* page = 0;
 /* Level 1 blobs are much easier -- page number is in vector. */
@@ -2440,15 +2438,10 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	SET_TDBB (tdbb);
 
 	const UCHAR charSet = INTL_GET_CHARSET(from_desc);
-	blb* blob = 0;
-	UCHAR *fromstr = 0;
-	bid temp_bid;
-	DSC blob_desc;
-	temp_bid.clear();
-	MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
+	UCHAR* fromstr = 0;
 
 	MoveBuffer buffer;
-	int length = MOV_make_string2(tdbb, from_desc, charSet, &fromstr, buffer);
+	const int length = MOV_make_string2(tdbb, from_desc, charSet, &fromstr, buffer);
 	const UCHAR toCharSet = to_desc->getCharSet();
 
 	if ((charSet == CS_NONE || charSet == CS_BINARY || charSet == toCharSet) &&
@@ -2461,7 +2454,12 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
-	blob = BLB_create2(tdbb, tdbb->getRequest()->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
+	bid temp_bid;
+	temp_bid.clear();
+	blb* blob = BLB_create2(tdbb, tdbb->getRequest()->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
+
+	DSC blob_desc;
+	MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
 
 	blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
 	blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation
@@ -2558,8 +2556,8 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
 		(bid*) fromDesc->dsc_address, bpb.getCount(), bpb.begin());
 
-	CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);
-	CharSet* toCharSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&blobAsText));
+	const CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);
+	const CharSet* toCharSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&blobAsText));
 
 	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) * toCharSet->maxBytesPerChar());
@@ -2589,7 +2587,7 @@ static void release_blob(blb* blob, const bool purge_flag)
  *      is false, then only release the associated blocks.
  *
  **************************************/
-	jrd_tra* transaction = blob->blb_transaction;
+	jrd_tra* const transaction = blob->blb_transaction;
 
 	// Disconnect blob from transaction block.
 
@@ -2760,7 +2758,7 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 /* Validate array */
 
-	ArrayField* array = find_array(transaction, blob_id);
+	const ArrayField* array = find_array(transaction, blob_id);
 	if (!array)
 		return NULL;
 
