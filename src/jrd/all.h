@@ -49,7 +49,7 @@ protected:
 	~JrdMemoryPool();
 public:
 	static JrdMemoryPool *createDbPool(Firebird::MemoryStats &stats);
-	static JrdMemoryPool *createPool();
+	static JrdMemoryPool *createPool(bool withParent = true);
 	static JrdMemoryPool** deletePool(JrdMemoryPool* pool);
 	static void noDbbDeletePool(JrdMemoryPool* pool);
 

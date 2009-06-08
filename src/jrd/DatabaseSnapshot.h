@@ -127,7 +127,7 @@ private:
 	void clearRecord(Record*);
 	void putField(Record*, int, const Firebird::ClumpletReader&, bool);
 
-	static void dumpData(thread_db*);
+	static void dumpData(thread_db*, bool ast);
 	static const char* checkNull(int, int, const char*, size_t);
 
 	static SINT64 getGlobalId(int);

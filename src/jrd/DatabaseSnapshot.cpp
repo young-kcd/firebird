@@ -406,7 +406,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	// We create a static pool in order to avoid dbb_permanent being a point of
 	// concurrency conflicts. This pool will be automagically destroyed during
 	// database detach. This is safe in Classic, as a process holds single dbb.
-	static JrdMemoryPool* const pool = JrdMemoryPool::createPool();
+	static JrdMemoryPool* const pool = JrdMemoryPool::createPool(false);
 #endif
 
 	Jrd::ContextPoolHolder context(tdbb, pool);
@@ -416,7 +416,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 		// Write the data to the shared memory
 		try
 		{
-			dumpData(tdbb);
+			dumpData(tdbb, true);
 		}
 		catch (const Exception& ex)
 		{
@@ -465,7 +465,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	LCK_release(tdbb, dbb->dbb_monitor_lock);
 
 	// Dump our own data
-	dumpData(tdbb);
+	dumpData(tdbb, false);
 
 	// Signal other processes to dump their data
 	Lock temp_lock, *lock = &temp_lock;
@@ -830,14 +830,14 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 }
 
 
-void DatabaseSnapshot::dumpData(thread_db* tdbb)
+void DatabaseSnapshot::dumpData(thread_db* tdbb, bool ast)
 {
 	fb_assert(tdbb);
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	if (dbb->dbb_flags & DBB_not_in_use)
+	if (ast && dbb->dbb_flags & DBB_not_in_use)
 	{
 		return;
 	}

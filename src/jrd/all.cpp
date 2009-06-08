@@ -83,15 +83,16 @@ JrdMemoryPool *JrdMemoryPool::createDbPool(Firebird::MemoryStats &stats) {
 	return result;
 }
 
-JrdMemoryPool *JrdMemoryPool::createPool() {
+JrdMemoryPool *JrdMemoryPool::createPool(bool withParent) {
     Database* dbb = GET_DBB();
 	fb_assert(dbb);
 		
 #ifdef SUPERSERVER
 	JrdMemoryPool* result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool),
-		dbb->dbb_permanent,	dbb->dbb_memory_stats);
+		withParent ? dbb->dbb_permanent : NULL, dbb->dbb_memory_stats);
 #else
-	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), dbb->dbb_permanent);
+	JrdMemoryPool *result = (JrdMemoryPool *)internal_create(sizeof(JrdMemoryPool), 
+		withParent ? dbb->dbb_permanent : NULL);
 #endif
 	result->plb_dccs = NULL;
 	dbb->dbb_pools.push(result);
