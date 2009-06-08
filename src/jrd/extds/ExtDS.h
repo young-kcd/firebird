@@ -422,8 +422,8 @@ public:
 		const Firebird::UCharBuffer* bpb) = 0;
 	virtual void create(Jrd::thread_db* tdbb, Transaction& tran, dsc& desc,
 		const Firebird::UCharBuffer* bpb) = 0;
-	virtual USHORT read(Jrd::thread_db* tdbb, char* buff, USHORT len) = 0;
-	virtual void write(Jrd::thread_db* tdbb, const char* buff, USHORT len) = 0;
+	virtual USHORT read(Jrd::thread_db* tdbb, UCHAR* buff, USHORT len) = 0;
+	virtual void write(Jrd::thread_db* tdbb, const UCHAR* buff, USHORT len) = 0;
 	virtual void close(Jrd::thread_db* tdbb) = 0;
 	virtual void cancel(Jrd::thread_db* tdbb) = 0;
 };

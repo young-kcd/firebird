@@ -1342,9 +1342,9 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		destBlob->blb_sub_type = src.getBlobSubType();
 		destBlob->blb_charset = src.getCharSet();
 
-		Firebird::Array<char> buffer;
+		Firebird::Array<UCHAR> buffer;
 		const int bufSize = 32 * 1024 - 2/*input->blb_max_segment*/;
-		char* buff = buffer.getBuffer(bufSize);
+		UCHAR* buff = buffer.getBuffer(bufSize);
 
 		while (true)
 		{
@@ -1352,7 +1352,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 			if (!length)
 				break;
 
-			BLB_put_segment(tdbb, destBlob, reinterpret_cast<const UCHAR*>(buff), length);
+			BLB_put_segment(tdbb, destBlob, buff, length);
 		}
 
 		extBlob->close(tdbb);
@@ -1384,13 +1384,13 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 		BLB_gen_bpb_from_descs(&src, &dst, bpb);
 		srcBlob = BLB_open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
 
-		Firebird::HalfStaticArray<char, 2048> buffer;
+		Firebird::HalfStaticArray<UCHAR, 2048> buffer;
 		const int bufSize = srcBlob->blb_max_segment;
-		char* buff = buffer.getBuffer(bufSize);
+		UCHAR* buff = buffer.getBuffer(bufSize);
 
 		while (true)
 		{
-			USHORT length = BLB_get_segment(tdbb, srcBlob, reinterpret_cast<UCHAR*>(buff), srcBlob->blb_max_segment);
+			USHORT length = BLB_get_segment(tdbb, srcBlob, buff, srcBlob->blb_max_segment);
 			if (srcBlob->blb_flags & BLB_eof) {
 				break;
 			}

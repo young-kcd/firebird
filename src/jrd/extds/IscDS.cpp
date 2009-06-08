@@ -571,7 +571,7 @@ void IscBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const UCharB
 	fb_assert(m_handle);
 }
 
-USHORT IscBlob::read(thread_db* tdbb, char* buff, USHORT len)
+USHORT IscBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 {
 	fb_assert(m_handle);
 
@@ -579,7 +579,7 @@ USHORT IscBlob::read(thread_db* tdbb, char* buff, USHORT len)
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection);
-		m_iscProvider.isc_get_segment(status, &m_handle, &result, len, buff);
+		m_iscProvider.isc_get_segment(status, &m_handle, &result, len, reinterpret_cast<SCHAR*>(buff));
 	}
 	switch (status[1])
 	{
@@ -596,14 +596,14 @@ USHORT IscBlob::read(thread_db* tdbb, char* buff, USHORT len)
 	return result;
 }
 
-void IscBlob::write(thread_db* tdbb, const char* buff, USHORT len)
+void IscBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 {
 	fb_assert(m_handle);
 
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection);
-		m_iscProvider.isc_put_segment(status, &m_handle, len, buff);
+		m_iscProvider.isc_put_segment(status, &m_handle, len, reinterpret_cast<const SCHAR*>(buff));
 	}
 	if (status[1]) {
 		m_iscConnection.raise(status, tdbb, "isc_put_segment");

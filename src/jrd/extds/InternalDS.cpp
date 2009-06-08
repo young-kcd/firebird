@@ -572,7 +572,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 	fb_assert(m_blob);
 }
 
-USHORT InternalBlob::read(thread_db* tdbb, char* buff, USHORT len)
+USHORT InternalBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 {
 	fb_assert(m_blob);
 
@@ -580,7 +580,7 @@ USHORT InternalBlob::read(thread_db* tdbb, char* buff, USHORT len)
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, m_connection);
-		jrd8_get_segment(status, &m_blob, &result, len, reinterpret_cast<UCHAR*>(buff));
+		jrd8_get_segment(status, &m_blob, &result, len, buff);
 	}
 	switch (status[1])
 	{
@@ -597,14 +597,14 @@ USHORT InternalBlob::read(thread_db* tdbb, char* buff, USHORT len)
 	return result;
 }
 
-void InternalBlob::write(thread_db* tdbb, const char* buff, USHORT len)
+void InternalBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 {
 	fb_assert(m_blob);
 
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, m_connection);
-		jrd8_put_segment(status, &m_blob, len, reinterpret_cast<const UCHAR*>(buff));
+		jrd8_put_segment(status, &m_blob, len, buff);
 	}
 	if (status[1]) {
 		m_connection.raise(status, tdbb, "jrd8_put_segment");
