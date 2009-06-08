@@ -40,6 +40,7 @@ static const char* const TRACE_FILE		= "fb_trace";
 #ifdef UNIX
 static const char* const INIT_FILE		= "fb_init";
 static const char* const SEM_FILE		= "fb_sem";
+static const char* const PORT_FILE		= "fb_port_%d";
 #endif
 
 #ifdef HAVE_SYS_TYPES_H

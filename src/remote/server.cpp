@@ -57,6 +57,7 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 #ifdef DEBUG
 #include "gen/iberror.h"
 #endif
@@ -99,7 +100,101 @@ namespace {
 	};
 	const ParametersSet dpbParam = {isc_dpb_address_path};
 	const ParametersSet spbParam = {isc_spb_address_path};
-}
+
+#ifdef WIN_NT
+	class GlobalPortLock
+	{
+	public:
+		explicit GlobalPortLock(int id)
+			: handle(INVALID_HANDLE_VALUE)
+		{
+			if (id)
+			{
+				TEXT mutex_name[MAXPATHLEN];
+				fb_utils::snprintf(mutex_name, sizeof(mutex_name), "FirebirdPortMutex%d", id);
+				fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
+
+				if (!(handle = CreateMutex(ISC_get_security_desc(), FALSE, mutex_name)))
+				{
+					Firebird::system_call_failed::raise("CreateMutex");
+				}
+
+				if (WaitForSingleObject(handle, INFINITE) == WAIT_FAILED)
+				{
+					Firebird::system_call_failed::raise("WaitForSingleObject");
+				}
+			}
+		}
+
+		~GlobalPortLock()
+		{
+			if (handle != INVALID_HANDLE_VALUE)
+			{
+				if (!ReleaseMutex(handle))
+				{
+					Firebird::system_call_failed::raise("ReleaseMutex");
+				}
+
+				CloseHandle(handle);
+			}
+		}
+
+	private:
+		HANDLE handle;
+	};
+#else
+	class GlobalPortLock
+	{
+	public:
+		explicit GlobalPortLock(int id)
+			: fd(-1)
+		{
+			if (id)
+			{
+				TEXT filename[MAXPATHLEN];
+				fb_utils::snprintf(filename, sizeof(filename), PORT_FILE, id);
+				gds__prefix_lock(filename, filename);
+				if ((fd = open(pathname, O_WRONLY | O_CREAT, 0666)) < 0)
+				{
+					Firebird::system_call_failed::raise("open");
+				}
+
+				struct flock lock;
+				lock.l_type = F_WRLCK;
+				lock.l_whence = 0;
+				lock.l_start = 0;
+				lock.l_len = 0;
+				if (fcntl(fd, F_SETLK, &lock) == -1)
+				{
+					Firebird::system_call_failed::raise("fcntl");
+				}
+			}
+		}
+
+		~GlobalPortLock()
+		{
+			if (fd != -1)
+			{
+				struct flock lock;
+				lock.l_type = F_UNLCK;
+				lock.l_whence = 0;
+				lock.l_start = 0;
+				lock.l_len = 0;
+				if (fcntl(fd, F_SETLK, &lock) == -1)
+				{
+					Firebird::system_call_failed::raise("fcntl");
+				}
+
+				close(fd);
+			}
+		}
+
+	private:
+		int fd;
+	};
+#endif
+
+} // anonymous
 
 static void		free_request(server_req_t*);
 static server_req_t* alloc_request();
@@ -1167,6 +1262,10 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 	// to return the server identification string
 	UCHAR buffer[BUFFER_TINY];
 	send->p_resp.p_resp_data.cstr_address = buffer;
+
+	// To be retrieved via an overloaded class member once our ports become real classes
+	const int aux_port_id = (port->port_type == rem_port::INET) ? Config::getRemoteAuxPort() : 0;
+	GlobalPortLock auxPortLock(aux_port_id);
 
 	rem_port* aux_port = port->request(send);
 	Rdb* rdb = port->port_context;

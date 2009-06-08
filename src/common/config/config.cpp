@@ -418,11 +418,7 @@ bool Config::getCompleteBooleanEvaluation()
 
 int Config::getRemoteAuxPort()
 {
-#ifdef SUPERSERVER
 	return (int) sysConfig().values[KEY_REMOTE_AUX_PORT];
-#else
-	return 0;
-#endif
 }
 
 const char *Config::getRemoteBindAddress()
