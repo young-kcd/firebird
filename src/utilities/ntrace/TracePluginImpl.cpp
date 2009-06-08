@@ -736,7 +736,7 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 	string send_query;
 	string recv_query;
 	USHORT l;
-	SCHAR item;
+	UCHAR item;
 	//USHORT timeout = 0; // Unused
 
 	const UCHAR* items = send_items;

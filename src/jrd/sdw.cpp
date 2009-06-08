@@ -994,8 +994,9 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 		   still around, then there is a possibility for shadow corruption */
 
 		const int string_length = (USHORT) *p++;
-		if (strncmp(dbb_file->fil_string, reinterpret_cast<const char*>(p), string_length) &&
-			check_for_file(tdbb, reinterpret_cast<const char*>(p), string_length))
+		const char* fname = reinterpret_cast<const char*>(p);
+		if (strncmp(dbb_file->fil_string, fname, string_length) &&
+			check_for_file(tdbb, fname, string_length))
 		{
 			ERR_punt();
 		}

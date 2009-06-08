@@ -1354,8 +1354,8 @@ void PAG_header_init(thread_db* tdbb)
 	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
 	SCHAR* temp_page = (SCHAR *) FB_ALIGN((IPTR) temp_buffer, MIN_PAGE_SIZE);
 
-	header_page* header = (header_page*) temp_page;
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
+	const header_page* header = (header_page*) temp_page;
 
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));

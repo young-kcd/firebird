@@ -1927,7 +1927,7 @@ static ISC_STATUS blob_filter(USHORT	action,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	jrd_tra* const transaction = (jrd_tra*) control->ctl_internal[1];
+	jrd_tra* const transaction = reinterpret_cast<jrd_tra*>(control->ctl_internal[1]);
 	bid* blob_id = reinterpret_cast<bid*>(control->ctl_internal[2]);
 
 #ifdef DEV_BUILD
