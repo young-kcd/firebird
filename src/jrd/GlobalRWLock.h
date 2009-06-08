@@ -78,8 +78,8 @@ protected:
 	Lock* cachedLock;
 
 	// Load the object from shared location.
-	virtual bool fetch(thread_db* tdbb) { return true; }
-	virtual void invalidate(thread_db* tdbb)
+	virtual bool fetch(thread_db* /*tdbb*/) { return true; }
+	virtual void invalidate(thread_db* /*tdbb*/)
 	{
 		fb_assert(readers == 0);
 		blocking = false;
