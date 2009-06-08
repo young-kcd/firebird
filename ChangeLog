@@ -1,3 +1,65 @@
+2009-06-08 14:34  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.289):
+
+	Slightly improve the retry loops in inet.cpp. Let's give up as soon
+	as the call fails with any unexpected error.
+
+2009-06-08 14:21  dimitr
+
+	* firebird2/src/: jrd/file_params.h (1.37),
+	common/config/config.cpp (1.97):
+
+	CORE-2263: RemoteAuxPort for SuperClassic and regular Classic.
+	This change also fixes the possible races in SuperServer (possible
+	after getting rid of the global mutex in the remote subsystem).
+
+2009-06-08 14:18  dimitr
+
+	* firebird2/src/remote/server.cpp (1.252):
+
+	CORE-2263: RemoteAuxPort for SuperClassic and regular Classic.
+	This change also fixes the possible races in SuperServer (possible
+	after getting rid of the global mutex in the remote subsystem).
+
+2009-06-08 14:15  robocop
+
+	* firebird2/src/utilities/ntrace/TracePluginImpl.cpp (1.25):
+
+	Misc.
+
+2009-06-08 14:14  robocop
+
+	* firebird2/src/jrd/why.cpp (1.245):
+
+	Minimizing casts.
+
+2009-06-08 14:11  robocop
+
+	* firebird2/src/jrd/: intl.cpp (1.126), sha.cpp (1.12), utl.cpp
+	(1.134):
+
+	Minimizing casts.
+
+2009-06-08 14:10  robocop
+
+	* firebird2/src/jrd/: blb.cpp (1.200), pag.cpp (1.209), sdw.cpp
+	(1.91):
+
+	Misc.
+
+2009-06-08 11:57  robocop
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.27):
+
+	Misc.
+
+2009-06-07 14:54  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.203):
+
+	Foolish mistake.
+
 2009-06-07 12:31  robocop
 
 	* firebird2/src/jrd/dyn.epp (1.148):
