@@ -673,11 +673,10 @@ rem_port* INET_connect(const TEXT* name,
 	// NOTE: This still does not guarantee success, but helps.
 	if (!service)
 	{
-		if (H_ERRNO == INET_RETRY_ERRNO) {
-			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-				if ( (service = getservbyname(protocol.c_str(), "tcp")) )
-					break;
-			}
+		for (int retry = 0; H_ERRNO == INET_RETRY_ERRNO && retry < INET_RETRY_CALL; retry++)
+		{
+			if ( (service = getservbyname(protocol.c_str(), "tcp")) )
+				break;
 		}
 	}
 #endif // WIN_NT
@@ -828,14 +827,12 @@ rem_port* INET_connect(const TEXT* name,
 		// On Linux platform, when the server dies the system holds a port
 		// for some time.
 
-		if (INET_ERRNO == INET_ADDR_IN_USE)
+		for (int retry = 0; INET_ERRNO == INET_ADDR_IN_USE && retry < INET_RETRY_CALL; retry++)
 		{
-			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-				sleep(10);
-				n = bind((SOCKET) port->port_handle, (struct sockaddr *) &address, sizeof(address));
-				if (n == 0 || INET_ERRNO != INET_ADDR_IN_USE)
-					break;
-			}
+			sleep(10);
+			n = bind((SOCKET) port->port_handle, (struct sockaddr *) &address, sizeof(address));
+			if (n == 0)
+				break;
 		}
 	}
 
@@ -1848,9 +1845,10 @@ static int get_host_address(const char* name,
 	// retry the operation a few times.
 	// NOTE: This still does not guarantee success, but helps.
 
-	if ((!host) && (H_ERRNO == INET_RETRY_ERRNO))
+	if (!host)
 	{
-		for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
+		for (int retry = 0; H_ERRNO == INET_RETRY_ERRNO && retry < INET_RETRY_CALL; retry++)
+		{
 			if ( (host = gethostbyname(name)) )
 				break;
 		}
