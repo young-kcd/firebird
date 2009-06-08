@@ -351,7 +351,7 @@ typedef Firebird::HalfStaticArray<unsigned char, SHA_DIGESTSIZE> BinHash;
 void base64(Firebird::string& b64, const BinHash& bin)
 {
 	b64.erase();
-	const unsigned char* f = reinterpret_cast<const unsigned char*>(bin.begin());
+	const unsigned char* f = bin.begin();
 	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
 	{
 		if (i >= 3)

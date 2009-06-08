@@ -1863,7 +1863,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
 		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
-				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
+				dpb, dpb_length, isc_dpb_version1);
 
 		bool utfFilename = newDpb.find(isc_dpb_utf8_filename);
 
@@ -5639,7 +5639,7 @@ static void release_dsql_support(sqlda_sup& dasup)
 }
 
 
-static void save_error_string(ISC_STATUS * status)
+static void save_error_string(ISC_STATUS* status)
 {
 /**************************************
  *

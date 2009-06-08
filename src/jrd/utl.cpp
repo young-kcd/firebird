@@ -317,7 +317,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
  *
  **************************************/
 	SSHORT	length;
-	char*	p = 0;
+	UCHAR*	p = 0;
 	const char*	q;
 	va_list	args;
 	USHORT	type;
@@ -367,7 +367,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 		/* Note: gds__free done by GPRE generated code */
 
 		new_dpb = (UCHAR*)gds__alloc((SLONG)(sizeof(UCHAR) * new_dpb_length));
-		p = reinterpret_cast<char*>(new_dpb);
+		p = new_dpb;
 		/* FREE: done by client process in GPRE generated code */
 		if (!new_dpb)
 		{			/* NOMEM: don't trash existing dpb */
@@ -394,7 +394,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 		// tail, it would be a memory failure, unless the caller lies and is
 		// always passing a dpb bigger than *dpb_size.
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
-		p = reinterpret_cast<char*>(new_dpb + *dpb_size);
+		p = new_dpb + *dpb_size;
 	}
 
 	if (!*dpb_size)
@@ -419,9 +419,9 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 			{
 				length = strlen(q);
 				fb_assert(type <= CHAR_MAX);
-				*p++ = (char) type;
+				*p++ = (UCHAR) type;
 				fb_assert(length <= CHAR_MAX);
-				*p++ = (char) length;
+				*p++ = (UCHAR) length;
 				while (length--)
 					*p++ = *q++;
 			}
@@ -434,7 +434,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	va_end(args);
 
-	*dpb_size = p - reinterpret_cast<char*>(new_dpb);
+	*dpb_size = p - new_dpb;
 	*dpb = reinterpret_cast<SCHAR*>(new_dpb);
 }
 

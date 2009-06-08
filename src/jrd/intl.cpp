@@ -1114,8 +1114,6 @@ USHORT INTL_string_to_key(thread_db* tdbb,
  *      Return the length of the resulting byte string.
  *
  **************************************/
-	UCHAR pad_char;
-	USHORT ttype;
 
 	SET_TDBB(tdbb);
 
@@ -1126,6 +1124,9 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	fb_assert(pString->dsc_address != NULL);
 	fb_assert(pByte->dsc_address != NULL);
 	fb_assert(pByte->dsc_dtype == dtype_text);
+
+	UCHAR pad_char;
+	USHORT ttype;
 
 	switch (idxType)
 	{
@@ -1154,7 +1155,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	USHORT len = MOV_make_string2(tdbb, pString, ttype, &src, temp);
 
 	USHORT outlen;
-	char* dest = reinterpret_cast<char*>(pByte->dsc_address);
+	UCHAR* dest = pByte->dsc_address;
 	USHORT destLen = pByte->dsc_length;
 
 	switch (ttype)
@@ -1166,21 +1167,17 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		while (len-- && destLen-- > 0)
 			*dest++ = *src++;
 		/* strip off ending pad characters */
-		while (dest > (const char*)pByte->dsc_address) {
+		while (dest > pByte->dsc_address) {
 			if (*(dest - 1) == pad_char)
 				dest--;
 			else
 				break;
 		}
-		outlen = (dest - (const char*)pByte->dsc_address);
+		outlen = (dest - pByte->dsc_address);
 		break;
 	default:
 		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
-		outlen = obj->string_to_key(len,
-									reinterpret_cast<const unsigned char*>(src),
-									pByte->dsc_length,
-									reinterpret_cast<unsigned char*>(dest),
-									key_type);
+		outlen = obj->string_to_key(len, src, pByte->dsc_length, dest, key_type);
 		break;
 	}
 
