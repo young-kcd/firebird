@@ -92,20 +92,20 @@ private:
 class TraceDYNRequestImpl : public TraceDYNRequest
 {
 public:
-	TraceDYNRequestImpl(size_t length, const char* ddl) :
+	TraceDYNRequestImpl(size_t length, const unsigned char* ddl) :
 		m_ddl(ddl),
 		m_length(length),
 		m_text(*getDefaultMemoryPool())
 	{}
 
-	virtual const char* getData()	{ return m_ddl; }
+	virtual const unsigned char* getData()	{ return m_ddl; }
 	virtual size_t getDataLength()	{ return m_length; }
 	virtual const char* getText();
 
 private:
 	static void print_dyn(void* arg, SSHORT offset, const char* line);
 
-	const char* const m_ddl;
+	const unsigned char* const m_ddl;
 	const size_t m_length;
 	Firebird::string m_text;
 };
@@ -114,20 +114,20 @@ private:
 class BLRPrinter : public TraceBLRStatement
 {
 public:
-	BLRPrinter(const char* blr, size_t length) :
+	BLRPrinter(const unsigned char* blr, size_t length) :
 		m_blr(blr),
 		m_length(length),
 		m_text(*getDefaultMemoryPool())
 	{}
 
-	virtual const char* getData()	{ return m_blr; }
+	virtual const unsigned char* getData()	{ return m_blr; }
 	virtual size_t getDataLength()	{ return m_length; }
 	virtual const char* getText();
 
 private:
 	static void print_blr(void* arg, SSHORT offset, const char* line);
 
-	const char* const m_blr;
+	const unsigned char* const m_blr;
 	const size_t m_length;
 	Firebird::string m_text;
 };
@@ -137,7 +137,7 @@ class TraceBLRStatementImpl : public BLRPrinter
 {
 public:
 	TraceBLRStatementImpl(const jrd_req* stmt, PerformanceInfo* perf) :
-		BLRPrinter((char*)stmt->req_blr.begin(), stmt->req_blr.getCount()),
+		BLRPrinter(stmt->req_blr.begin(), stmt->req_blr.getCount()),
 		m_stmt(stmt),
 		m_perf(perf)
 	{}
@@ -154,7 +154,7 @@ private:
 class TraceFailedBLRStatement : public BLRPrinter
 {
 public:
-	TraceFailedBLRStatement(const char* blr, size_t length) :
+	TraceFailedBLRStatement(const unsigned char* blr, size_t length) :
 		BLRPrinter(blr, length)
 	{}
 

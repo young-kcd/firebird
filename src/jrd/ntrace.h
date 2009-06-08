@@ -111,7 +111,7 @@ public:
 class TraceBLRStatement : public TraceStatement
 {
 public:
-	virtual const char* getData() = 0;
+	virtual const unsigned char* getData() = 0;
 	virtual size_t getDataLength() = 0;
 	virtual const char* getText() = 0;
 };
@@ -119,7 +119,7 @@ public:
 class TraceDYNRequest
 {
 public:
-	virtual const char* getData() = 0;
+	virtual const unsigned char* getData() = 0;
 	virtual size_t getDataLength() = 0;
 	virtual const char* getText() = 0;
 

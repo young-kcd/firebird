@@ -291,7 +291,7 @@ private:
 class TraceBlrCompile
 {
 public:
-	TraceBlrCompile(thread_db* tdbb, size_t blr_length, const SCHAR* blr) :
+	TraceBlrCompile(thread_db* tdbb, size_t blr_length, const UCHAR* blr) :
 		m_tdbb(tdbb),
 		m_blr_length(blr_length),
 		m_blr(blr)
@@ -348,7 +348,7 @@ private:
 	thread_db* const m_tdbb;
 	SINT64 m_start_clock;
 	const size_t m_blr_length;
-	const SCHAR* const m_blr;
+	const UCHAR* const m_blr;
 };
 
 
@@ -418,7 +418,7 @@ private:
 class TraceDynExecute
 {
 public:
-	TraceDynExecute(thread_db* tdbb, size_t ddl_length, const SCHAR* ddl) :
+	TraceDynExecute(thread_db* tdbb, size_t ddl_length, const UCHAR* ddl) :
 		m_tdbb(tdbb),
 		m_ddl_length(ddl_length),
 		m_ddl(ddl)
@@ -463,7 +463,7 @@ private:
 	thread_db* const m_tdbb;
 	SINT64 m_start_clock;
 	const size_t m_ddl_length;
-	const SCHAR* const m_ddl;
+	const UCHAR* const m_ddl;
 };
 
 } // namespace Jrd

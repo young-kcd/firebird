@@ -1668,7 +1668,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		TraceBlrCompile trace(tdbb, blr_length, blr);
+		TraceBlrCompile trace(tdbb, blr_length, (UCHAR*)blr);
 		try
 		{
 			JRD_compile(tdbb, attachment, req_handle, blr_length, reinterpret_cast<const UCHAR*>(blr),
@@ -2181,7 +2181,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		TraceDynExecute trace(tdbb, ddl_length, ddl);
+		TraceDynExecute trace(tdbb, ddl_length, (UCHAR*) ddl);
 		try
 		{
 			JRD_ddl(tdbb, /*attachment,*/ transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
