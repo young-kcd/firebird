@@ -4113,6 +4113,9 @@ static void do_isql()
 
 #ifdef WIN_NT
 	SetConsoleCtrlHandler(query_abort, TRUE);
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+	_set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 #elif defined(HAVE_SIGACTION)
 	struct sigaction sig_action;
 	if (sigaction(SIGINT, NULL, &sig_action) == 0) {
