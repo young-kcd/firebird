@@ -218,7 +218,7 @@ namespace Firebird
 
 	void InstanceControl::registerGdsCleanup(FPTR_VOID cleanup)
 	{
-		fb_assert(!gdsCleanup || !cleanup);
+		fb_assert(!gdsCleanup || !cleanup || gdsCleanup == cleanup);
 		gdsCleanup = cleanup;
 	}
 

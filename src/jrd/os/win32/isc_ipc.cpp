@@ -63,8 +63,6 @@
 #define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
-static bool initialized_signals = false;
-
 static int process_id = 0;
 
 const USHORT MAX_OPN_EVENTS	= 40;
@@ -82,7 +80,7 @@ static struct opn_event_t opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
 
-static void cleanup(void*);
+static void signal_cleanup(void*);
 
 int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 {
@@ -98,8 +96,7 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
  **************************************/
 
 /* If we're simply trying to poke ourselves, do so directly. */
-	if (!process_id)
-		process_id = GetCurrentProcessId();
+	ISC_signal_init();
 
 	if (pid == process_id) {
 		SetEvent(object_hndl);
@@ -159,6 +156,7 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
  *	in naming the object.
  *
  **************************************/
+	ISC_signal_init();
 
 	const BOOLEAN man_rst = manual_reset ? TRUE : FALSE;
 
@@ -178,6 +176,31 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
 	return hEvent;
 }
 
+namespace {
+class SignalInit
+{
+public:
+	static void init()
+	{
+		gds__register_cleanup(signal_cleanup, 0);
+		process_id = getpid();
+		ISC_get_security_desc();
+	}
+
+	static void cleanup()
+	{
+		process_id = 0;
+
+		opn_event_t* opn_event = opn_events + opn_event_count;
+		opn_event_count = 0;
+		while (opn_event-- > opn_events)
+			CloseHandle(opn_event->opn_event_lhandle);
+	}
+};
+
+Firebird::InitMutex<SignalInit> signalInit;
+} // anonymous namespace
+
 void ISC_signal_init()
 {
 /**************************************
@@ -191,17 +214,11 @@ void ISC_signal_init()
  *
  **************************************/
 
-	if (initialized_signals)
-		return;
-
-	initialized_signals = true;
-	gds__register_cleanup(cleanup, 0);
-	process_id = getpid();
-	ISC_get_security_desc();
+	signalInit.init();
 }
 
 
-static void cleanup(void*)
+static void signal_cleanup(void*)
 {
 /**************************************
  *
@@ -213,12 +230,5 @@ static void cleanup(void*)
  *	Module level cleanup handler.
  *
  **************************************/
-	process_id = 0;
-
-	opn_event_t* opn_event = opn_events + opn_event_count;
-	opn_event_count = 0;
-	while (opn_event-- > opn_events)
-		CloseHandle(opn_event->opn_event_lhandle);
-
-	initialized_signals = false;
+	signalInit.cleanup();
 }

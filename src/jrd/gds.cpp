@@ -135,7 +135,6 @@ static char fbTempDir[MAXPATHLEN];
 static char *fb_prefix = 0;
 static char *fb_prefix_lock = 0;
 static char *fb_prefix_msg = 0;
-static void gdsPrefixInit();
 
 #include "gen/msgs.h"
 
@@ -199,7 +198,6 @@ static SLONG	blr_print_line(gds_ctl*, SSHORT);
 static void		blr_print_verb(gds_ctl*, SSHORT);
 static int		blr_print_word(gds_ctl*);
 
-static void		init();
 static void		sanitize(Firebird::string& locale);
 
 static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
@@ -2087,15 +2085,13 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
  *
  **************************************/
 
-/*
- * Ifdef out for windows client.  We have not implemented any way of
- * determining when a task ends, therefore this never gets called.
-*/
+#ifdef UNIX
+	// Copied old logic from other place.
+	// No idea why gds__cleanup() should not execute after fork().
+	gds_pid = getpid();
+#endif
 
-	if (!initialized)
-	{
-		init();
-	}
+	Firebird::InstanceControl::registerGdsCleanup(gds__cleanup);
 
 	clean_t* clean = (clean_t*) gds__alloc((SLONG) sizeof(clean_t));
 	clean->clean_routine = routine;
@@ -3489,67 +3485,6 @@ void gds__cleanup()
 	}
 }
 
-static void init()
-{
-/**************************************
- *
- *	i n i t
- *
- **************************************
- *
- * Functional description
- *	Do anything necessary to initialize module/system.
- *
- **************************************/
-	if (initialized)
-		return;
-
-	static Firebird::GlobalPtr<Firebird::Mutex> gdsInitMutex;
-	Firebird::MutexLockGuard guard(gdsInitMutex);
-
-	if (initialized)
-		return;
-
-#ifdef UNIX
-	gds_pid = getpid();
-#ifdef SUPERSERVER
-#if (defined SOLARIS || defined HPUX || defined LINUX)
-	{
-		/* Increase max open files to hard limit for Unix
-		   platforms which are known to have low soft limits. */
-
-		struct rlimit old;
-
-		if (!getrlimit(RLIMIT_NOFILE, &old) && old.rlim_cur < old.rlim_max)
-		{
-			struct rlimit new_max;
-			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
-			if (!setrlimit(RLIMIT_NOFILE, &new_max))
-			{
-#if _FILE_OFFSET_BITS == 64
-				gds__log("64 bit i/o support is on.");
-				gds__log("Open file limit increased from %lld to %lld",
-						 old.rlim_cur, new_max.rlim_cur);
-
-#else
-				gds__log("Open file limit increased from %d to %d",
-						 old.rlim_cur, new_max.rlim_cur);
-#endif
-			}
-		}
-	}
-#endif
-#endif /* SUPERSERVER */
-#endif /* UNIX */
-
-	initialized = true;
-
-	Firebird::InstanceControl::registerGdsCleanup(gds__cleanup);
-
-	gdsPrefixInit();
-
-	ISC_signal_init();
-}
 
 static void sanitize(Firebird::string& locale)
 {
@@ -3725,7 +3660,7 @@ public:
 
 static Firebird::InitMutex<InitPrefix> initPrefix;
 
-static void gdsPrefixInit()
+void gdsPrefixInit()
 {
 /**************************************
  *

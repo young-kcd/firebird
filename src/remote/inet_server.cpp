@@ -295,6 +295,34 @@ int FB_EXPORTED server_main( int argc, char** argv)
 			gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 		}
 	}
+
+#if defined(SUPERSERVER) && (defined SOLARIS || defined HPUX || defined LINUX)
+	{
+		/* Increase max open files to hard limit for Unix
+		   platforms which are known to have low soft limits. */
+
+		struct rlimit old;
+
+		if (getrlimit(RLIMIT_NOFILE, &old) == 0 && old.rlim_cur < old.rlim_max)
+		{
+			struct rlimit new_max;
+			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
+			if (setrlimit(RLIMIT_NOFILE, &new_max) == 0)
+			{
+#if _FILE_OFFSET_BITS == 64
+				gds__log("64 bit i/o support is on.");
+				gds__log("Open file limit increased from %lld to %lld",
+						 old.rlim_cur, new_max.rlim_cur);
+
+#else
+				gds__log("Open file limit increased from %d to %d",
+						 old.rlim_cur, new_max.rlim_cur);
+#endif
+			}
+		}
+	}
+#endif
+
 #endif
 
 	// Fork off a server, wait for it to die, then fork off another,

@@ -122,7 +122,7 @@ const char* GDS_RELAY	= "/bin/gds_relay";
 static int volatile relay_pipe = 0;
 
 
-static void cleanup(void* arg);
+static void signal_cleanup(void* arg);
 static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SLONG overflow_handler(void* arg);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
@@ -263,6 +263,8 @@ bool ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
  *	Multiplex multiple handers into single signal.
  *
  **************************************/
+	ISC_signal_init();
+
 	return isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
 }
 
@@ -342,6 +344,8 @@ void ISC_signal_cancel(int signal_number, FPTR_VOID_PTR handler, void* arg)
  *	If handler == NULL, cancel all handlers for a given signal.
  *
  **************************************/
+	ISC_signal_init();
+
 	SIG sig;
 	volatile SIG* ptr;
 
@@ -361,6 +365,27 @@ void ISC_signal_cancel(int signal_number, FPTR_VOID_PTR handler, void* arg)
 }
 
 
+namespace {
+class SignalInit
+{
+public:
+	static void init()
+	{
+		overflow_count = 0;
+		gds__register_cleanup(signal_cleanup, 0);
+
+		isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
+	}
+
+	static void cleanup()
+	{
+		signals = NULL;
+	}
+};
+
+Firebird::InitMutex<SignalInit> signalInit;
+} // anonymous namespace
+
 void ISC_signal_init()
 {
 /**************************************
@@ -374,20 +399,11 @@ void ISC_signal_init()
  *
  **************************************/
 
-	if (initialized_signals)
-		return;
-
-	initialized_signals = true;
-
-	overflow_count = 0;
-	gds__register_cleanup(cleanup, 0);
-
-	isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
-
+	signalInit.init();
 }
 
 
-static void cleanup(void* arg)
+static void signal_cleanup(void*)
 {
 /**************************************
  *
@@ -399,10 +415,9 @@ static void cleanup(void* arg)
  *	Module level cleanup handler.
  *
  **************************************/
-	signals = NULL;
-
-	initialized_signals = false;
+	signalInit.cleanup();
 }
+
 
 static SLONG overflow_handler(void* arg)
 {
