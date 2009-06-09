@@ -47,6 +47,9 @@
 #include "../remote/os/win32/cntl_proto.h"
 #include <stdlib.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
@@ -156,10 +159,11 @@ namespace {
 		{
 			if (id)
 			{
+				Firebird::string firebirdPortMutex;
+				firebirdPortMutex.printf("FirebirdPortMutex%d", id);
 				TEXT filename[MAXPATHLEN];
-				fb_utils::snprintf(filename, sizeof(filename), PORT_FILE, id);
-				gds__prefix_lock(filename, filename);
-				if ((fd = open(pathname, O_WRONLY | O_CREAT, 0666)) < 0)
+				gds__prefix_lock(filename, firebirdPortMutex.c_str());
+				if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
 				{
 					Firebird::system_call_failed::raise("open");
 				}
