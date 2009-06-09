@@ -1,3 +1,98 @@
+2009-06-09 13:06  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.256):
+
+	Use PORT_FILE for port file lock - thanks to Claudio
+
+2009-06-09 12:31  alexpeshkoff
+
+	* firebird2/src/extlib/ib_util.cpp (1.7):
+
+	Fixed a bug in my recent commit
+
+2009-06-09 12:08  alexpeshkoff
+
+	* firebird2/src/: common/classes/init.cpp (1.18), jrd/gds.cpp
+	(1.296), jrd/gds_proto.h (1.55), jrd/os/posix/isc_ipc.cpp (1.38),
+	jrd/os/win32/isc_ipc.cpp (1.32), remote/inet_server.cpp (1.98):
+
+	Make initialization distributed - each subsystem does what it needs
+	when needs, removed gds.cpp:init()
+
+2009-06-09 11:48  robocop
+
+	* firebird2/src/isql/isql.epp (1.277):
+
+	After asking Alex, he confirms that calling fb_shutdown_callback in
+	isql is for everything except WIN_NT (make code equivalent to
+	previous versions).
+
+2009-06-09 11:44  robocop
+
+	* firebird2/src/isql/isql.epp (1.276):
+
+	 Improvement CORE-1171: make floating point's exponential format
+	the same across platforms.
+
+2009-06-09 11:02  robocop
+
+	* firebird2/src/isql/isql.epp (1.275):
+
+	Misc.
+
+2009-06-09 10:40  alexpeshkoff
+
+	* firebird2/src/extlib/ib_util.cpp (1.6):
+
+	Declare exported functions correctly - thanks to Paul Beach
+
+2009-06-09 10:39  alexpeshkoff
+
+	* firebird2/src/remote/server.cpp (1.255):
+
+	Make it compile on posix
+
+2009-06-09 10:20  robocop
+
+	* firebird2/src/remote/server.cpp (1.254):
+
+	Paranoid checks.
+
+2009-06-09 07:55  robocop
+
+	* firebird2/src/remote/server.cpp (1.253):
+
+	Style.
+
+2009-06-09 02:56  asfernandes
+
+	* firebird2/src/: gpre/gpreswi.h (1.26), jrd/blb.cpp (1.201),
+	jrd/intl.cpp (1.127), jrd/intl_proto.h (1.26), jrd/jrd.cpp (1.543),
+	jrd/utl.cpp (1.135), utilities/ibmgr/ibmgrswi.h (1.11):
+
+	Misc
+
+2009-06-08 16:59  hvlad
+
+	* firebird2/src/jrd/: jrd.cpp (1.542), ntrace.h (1.13),
+	trace/TraceJrdHelpers.h (1.6), trace/TraceObjects.h (1.5):
+
+	Use unsigned char in ntrace.h where appropriate, as Claudio suggest
+
+2009-06-08 16:57  hvlad
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.41), ExtDS.h (1.19),
+	InternalDS.cpp (1.24), InternalDS.h (1.13), IscDS.cpp (1.31),
+	IscDS.h (1.17):
+
+	Use UCHAR instead of char for EDS::Blob, as Claudio suggest
+
+2009-06-08 15:09  alexpeshkoff
+
+	* firebird2/extern/icu/source/config/mh-hpux-gcc (1.3):
+
+	HPUX port
+
 2009-06-08 14:34  dimitr
 
 	* firebird2/src/remote/inet.cpp (1.289):
