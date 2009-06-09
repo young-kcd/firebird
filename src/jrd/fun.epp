@@ -78,8 +78,10 @@ namespace
 	{
 		IbUtilStartup(MemoryPool& p) : libUtilPath(p)
 		{
-#ifdef WIN_NT
+#if defined(WIN_NT)
 			libUtilPath.assign("ib_util");
+#elif defined(DARWIN)
+			libUtilPath = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libib_util";
 #else
 			const PathName id(Config::getInstallDirectory());
 			PathUtils::concatPath(libUtilPath, id, "lib/libib_util");
