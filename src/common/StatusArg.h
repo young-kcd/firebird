@@ -178,6 +178,12 @@ public:
 	explicit Unix(ISC_STATUS s) throw();
 };
 
+class Mach : public Base
+{
+public:
+	explicit Mach(ISC_STATUS s) throw();
+};
+
 class Windows : public Base
 {
 public:

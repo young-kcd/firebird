@@ -63,6 +63,7 @@ public:
 			system_call_failed::raise("CloseHandle");
 	}
 
+#define CLASSES_SEMAPHORE_H_HAS_TRYENTER 1
 	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
 		milliseconds += seconds * 1000;
@@ -86,26 +87,75 @@ public:
 
 } // namespace Firebird
 
-#else // WIN_NT
+#else // WINNT
+
+#ifdef DARWIN
+
+// Mach semaphore
+#define COMMON_CLASSES_SEMAPHORE_MACH
+#include <mach/mach.h>
+#include <mach/semaphore.h>
+#include <mach/task.h>
+
+namespace Firebird
+{
+
+class MemoryPool;
+
+class SignalSafeSemaphore
+{
+private:
+	semaphore_t sem;
+
+	static void machErrorCheck(kern_return_t rc, const char* function);
+	void init();
+
+public:
+	SignalSafeSemaphore() { init(); }
+	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
+
+	~SignalSafeSemaphore();
+
+	void enter()
+	{
+		machErrorCheck(semaphore_wait(sem), "semaphore_wait");
+	}
+
+	void release(SLONG count = 1)
+	{
+		fb_assert(count >= 0);
+		while (count--)
+		{
+			machErrorCheck(semaphore_signal(sem), "semaphore_signal");
+		}
+	}
+};
+
+} // namespace Firebird
+
+
+#else // DARWIN
 
 #ifdef HAVE_SEMAPHORE_H
 
+#define COMMON_CLASSES_SEMAPHORE_POSIX_RT
 #include <semaphore.h>
 #include <errno.h>
 #include <time.h>
 #ifndef WORKING_SEM_INIT
 #include <fcntl.h>
-#if defined(DARWIN)
-#ifdef SUPERSERVER
-#define MIXED_SEMAPHORE_AND_FILE_HANDLE
-#endif
-#endif
 #endif // WORKING_SEM_INIT
 
 namespace Firebird
 {
 #ifndef WORKING_SEM_INIT
 static const char* semName = "/firebird_temp_sem";
+#endif
+#ifndef SEM_FAILED
+#define SEM_FAILED ((sem_t*) (-1))
+#endif
+#ifndef SEM_FAILED
+#define SEM_FAILED ((sem_t*) (-1))
 #endif
 
 class SignalSafeSemaphore
@@ -115,70 +165,16 @@ private:
 	sem_t sem[1];
 #else
 	sem_t* sem;
-#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
-	static bool divorceDone;
-	static SignalSafeSemaphore* initialList;
-	void linkToInitialList();
-	SignalSafeSemaphore* next;
-#endif
 #endif // WORKING_SEM_INIT
 
-	void init()
-	{
-#ifdef WORKING_SEM_INIT
-		if (sem_init(sem, 0, 0) == -1) {
-			system_call_failed::raise("sem_init");
-		}
-#else
-		sem = sem_open(semName, O_CREAT | O_EXCL, 0700, 0);
-
-#ifdef HPUX
-#define SEM_FAILED ((sem_t*) (-1))
-#endif
-
-#if (defined(DARWIN) && !defined(DARWIN64)) || defined(HPUX)
-		if (sem == (sem_t*) SEM_FAILED) {
-#else
-		if (sem == SEM_FAILED) {
-#endif
-			system_call_failed::raise("sem_open");
-		}
-		sem_unlink(semName);
-#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
-		linkToInitialList();
-#endif
-#endif
-	}
+	void init();
 
 public:
 	SignalSafeSemaphore() { init(); }
 	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
 
-#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
-	static bool checkHandle(int n);
-#endif
-
-	~SignalSafeSemaphore()
-	{
-#ifdef WORKING_SEM_INIT
-		if (sem_destroy(sem) == -1) {
-			system_call_failed::raise("sem_destroy");
-		}
-#else
-		if (sem_close(sem) == -1) {
-			system_call_failed::raise("sem_close");
-		}
-#endif
-	}
-
-	void enter()
-	{
-		do {
-			if (sem_wait(sem) != -1)
-				return;
-		} while (errno == EINTR);
-		system_call_failed::raise("semaphore.h: enter: sem_wait()");
-	}
+	~SignalSafeSemaphore();
+	void enter();
 
 	void release(SLONG count = 1)
 	{
@@ -194,177 +190,32 @@ public:
 #ifdef HAVE_SEM_TIMEDWAIT
 	// In case when sem_timedwait() is implemented by host OS,
 	// class SignalSafeSemaphore may have this function:
-	bool tryEnter(const int seconds = 0, int milliseconds = 0)
-	{
-		milliseconds += seconds * 1000;
-		// Return true in case of success
-		if (milliseconds == 0)
-		{
-			// Instant try
-			do {
-				if (sem_trywait(sem) != -1)
-					return true;
-			} while (errno == EINTR);
-			if (errno == EAGAIN)
-				return false;
-			system_call_failed::raise("sem_trywait");
-		}
-		if (milliseconds < 0)
-		{
-			// Unlimited wait, like enter()
-			do {
-				if (sem_wait(sem) != -1)
-					return true;
-			} while (errno == EINTR);
-			system_call_failed::raise("sem_wait");
-		}
-		// Wait with timeout
-		struct timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
-		int errcode = 0;
-		do {
-			int rc = sem_timedwait(sem, &timeout);
-			if (rc == 0)
-				return true;
-			// fix for CORE-988, also please see
-			// http://carcino.gen.nz/tech/linux/glibc_sem_timedwait_errors.php
-			errcode = rc > 0 ? rc : errno;
-		} while (errcode == EINTR);
-		if (errcode == ETIMEDOUT) {
-			return false;
-		}
-		system_call_failed::raise("sem_timedwait", errcode);
-		return false;	// avoid warnings
-	}
+#define CLASSES_SEMAPHORE_H_HAS_TRYENTER 1
+	bool tryEnter(const int seconds = 0, int milliseconds = 0);
 #endif // HAVE_SEM_TIMEDWAIT
-};
 
-#ifdef HAVE_SEM_TIMEDWAIT
-// In case when sem_timedwait() is implemented by host OS,
-// SignalSafeSemaphore and Semaphore are just the same
-typedef SignalSafeSemaphore Semaphore;
-#endif // HAVE_SEM_TIMEDWAIT
+};
 
 } // namespace Firebird
 
 #endif // HAVE_SEMAPHORE_H
 
-#ifndef HAVE_SEM_TIMEDWAIT
-// Should implement Semaphore independent from SignalSafeSemaphore.
-// In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
+#endif // DARWIN
 
-#if defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
+#ifdef CLASSES_SEMAPHORE_H_HAS_TRYENTER
 
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-
+// In case when sem_timedwait() is implemented by host OS,
+// SignalSafeSemaphore and Semaphore are just the same
 namespace Firebird
 {
+typedef SignalSafeSemaphore Semaphore;
+}
 
-class Semaphore
-{
-private:
-	int semId;
-	union semun
-	{
-		int					val;
-		struct semid_ds*	buf;
-		unsigned short*		array;
-	};
+#else // CLASSES_SEMAPHORE_H_HAS_TRYENTER
 
-	void init()
-	{
-		semId = semget(IPC_PRIVATE, 1, 0600);
-		if (semId < 0)
-			system_call_failed::raise("semaphore.h: Semaphore: semget()");
-		semun arg;
-		arg.val = 0;
-		if (semctl(semId, 0, SETVAL, arg) < 0)
-			system_call_failed::raise("semaphore.h: Semaphore: semctl()");
-	}
-
-public:
-	Semaphore() { init(); }
-	explicit Semaphore(MemoryPool&) { init(); }
-
-	~Semaphore()
-	{
-		semun arg;
-		if (semctl(semId, 0, IPC_RMID, arg) < 0)
-			system_call_failed::raise("semaphore.h: ~Semaphore: semctl()");
-	}
-
-	bool tryEnter(const int seconds = 0, int milliseconds = 0) // Returns true in case of success
-	{
-		milliseconds += seconds * 1000;
-		timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
-		timespec* t = &timeout;
-
-		sembuf sb;
-		sb.sem_num = 0;
-		sb.sem_op = -1;
-		sb.sem_flg = 0;
-
-		if (milliseconds < 0) {
-			// Unlimited wait
-			t = 0;
-		}
-		else if (milliseconds == 0) {
-			// just try
-			t = 0;
-			sb.sem_flg = IPC_NOWAIT;
-		}
-
-		while (semtimedop(semId, &sb, 1, t) < 0)
-		{
-			switch (errno)
-			{
-			case EAGAIN:
-				return false;
-			case EINTR:
-				continue;
-			}
-			system_call_failed::raise("semaphore.h: tryEnter: semop()");
-		}
-
-		return true;
-	}
-
-	void enter()
-	{
-		tryEnter(-1);
-	}
-
-	void release(SLONG count = 1)
-	{
-		sembuf sb;
-		sb.sem_num = 0;
-		sb.sem_op = 1;
-		sb.sem_flg = 0;
-
-		while (semop(semId, &sb, 1) < 0)
-		{
-			if (errno == EINTR) {
-				continue;
-			}
-			system_call_failed::raise("semaphore.h: release: semop()");
-		}
-	}
-};
-
-} // namespace Firebird
-
-#else // defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
-
-// This implementation will NOT work with FB > 2.1
-#ifdef SOLARIS
-#error Mutex/Condition based semaphore is NOT OK for Solaris
-#endif
-
+// Should implement Semaphore independent from SignalSafeSemaphore.
+// In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
+#define COMMON_CLASSES_SEMAPHORE_COND_VAR
 #include <pthread.h>
 #include <errno.h>
 
@@ -376,175 +227,26 @@ class Semaphore
 private:
 	pthread_mutex_t	mu;
 	pthread_cond_t	cv;
+	int value;
 
-	void init()
-	{
-		int err = pthread_mutex_init(&mu, NULL);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("pthread_mutex_init", err);
-		}
-		err = pthread_cond_init(&cv, NULL);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("pthread_cond_init", err);
-		}
-	}
+	void init();
+	void mtxLock();
+	void mtxUnlock();
 
 public:
 	Semaphore() { init(); }
 	explicit Semaphore(MemoryPool&) { init(); }
 
-	~Semaphore()
-	{
-		int err = pthread_mutex_destroy(&mu);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: destructor");
-			//system_call_failed::raise("pthread_mutex_destroy", err);
-		}
-		err = pthread_cond_destroy(&cv);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: destructor");
-			//system_call_failed::raise("pthread_cond_destroy", err);
-		}
-	}
+	~Semaphore();
 
-	bool tryEnter(const int seconds = 0, int milliseconds = 0)
-	{
-		bool rt = false;
-		// Return true in case of success
-		int err2 = 0;
-		int err = 0;
-		milliseconds += seconds * 1000;
-
-		if (milliseconds == 0)
-		{
-			// Instant try
-			err2 = pthread_mutex_trylock(&mu);
-			if (err2 == 0)
-			{
-				do {
-					err = pthread_cond_wait(&cv, &mu);
-					if (err != 0) {
-						rt = false;
-					}
-					else
-						rt = true;
-				} while (err == EINTR);
-			    if (err == ETIMEDOUT)
-					rt = false;
-
-				pthread_mutex_unlock(&mu);
-				return rt;
-			}
-			if (err2 == EBUSY)
-				return false;
-
-			system_call_failed::raise("pthread_mutex_trylock", err2);
-		}
-
-		if (milliseconds < 0)
-		{
-			// Unlimited wait, like enter()
-			err2 = pthread_mutex_lock(&mu);
-			if (err2 == 0)
-			{
-				do {
-					err = pthread_cond_wait(&cv, &mu);
-					if (err != 0) {
-						rt = false;
-					}
-					else
-						rt = true;
-				} while (err == EINTR);
-				if (err == ETIMEDOUT)
-					rt = false;
-
-				pthread_mutex_unlock(&mu);
-				return rt;
-			}
-			if (err2 == EBUSY)
-				return false;
-
-			system_call_failed::raise("pthread_mutex_lock", err2);
-		}
-
-		// Wait with timeout
-		timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
-		err2 = pthread_mutex_lock(&mu);
-
-		if (err2 == 0)
-		{
-			do {
-				err = pthread_cond_timedwait(&cv, &mu, &timeout);
-				if (err != 0) {
-					rt = false;
-				}
-				else
-					rt = true;
-			} while (err == EINTR);
-			if (err == ETIMEDOUT)
-				rt = false;
-
-			pthread_mutex_unlock(&mu);
-			return rt;
-		}
-		if (err2 == EBUSY)
-			return false;
-
-		system_call_failed::raise("pthread_mutex_lock", err2);
-
-		return false; //compiler silencer
-	}
-
-	void enter()
-	{
-		int err = 0;
-		int	err2 = pthread_mutex_lock(&mu);
-		if (err2 == 0)
-		{
-			do {
-				err = pthread_cond_wait(&cv, &mu);
-				if (err == 0) {
-				   break;
-				}
-			} while (err == EINTR);
-
-			pthread_mutex_unlock(&mu);
-		}
-		else
-			system_call_failed::raise("pthread_mutex_lock", err2);
-	}
-
-	void release(SLONG count = 1)
-	{
-		int err = 0;
-		for (int i = 0; i < count; i++)
-		{
-			err = pthread_mutex_lock(&mu) ;
-			if (err == 0) {
-				err = pthread_cond_broadcast(&cv);
-				if (err != 0) {
-					system_call_failed::raise("pthread_cond_broadcast", err);
-				}
-
-				pthread_mutex_unlock(&mu);
-			}
-			else {
-				//gds__log("Error on semaphore.h: release");
-				system_call_failed::raise("pthread_mutex_lock", err);
-			}
-		}
-	}
+	bool tryEnter(const int seconds = 0, int milliseconds = 0);
+	void enter();
+	void release(SLONG count = 1);
 };
 
 } // namespace Firebird
 
-#endif // defined(HAVE_SYS_SEM_H) && defined(HAVE_SEMTIMEDOP)
-
-#endif // HAVE_SEM_TIMEDWAIT
+#endif // CLASSES_SEMAPHORE_H_HAS_TRYENTER
 
 #endif // WIN_NT
 

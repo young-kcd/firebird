@@ -208,6 +208,9 @@ Interpreted::Interpreted(const AbstractString& text) throw() :
 Unix::Unix(ISC_STATUS s) throw() :
 	Base(isc_arg_unix, s) { }
 
+Mach::Mach(ISC_STATUS s) throw() :
+	Base(isc_arg_next_mach, s) { }
+
 Windows::Windows(ISC_STATUS s) throw() :
 	Base(isc_arg_win32, s) { }
 
