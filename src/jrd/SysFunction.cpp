@@ -1145,14 +1145,21 @@ dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
+	const SINT64 shift = MOV_get_int64(value2, 0);
+	if (shift < 0)
+	{
+		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
+	}
+
 	switch ((Function)(IPTR) function->misc)
 	{
 		case funBinShl:
-			impure->vlu_misc.vlu_int64 = MOV_get_int64(value1, 0) << MOV_get_int64(value2, 0);
+			impure->vlu_misc.vlu_int64 = MOV_get_int64(value1, 0) << shift;
 			break;
 
 		case funBinShr:
-			impure->vlu_misc.vlu_int64 = MOV_get_int64(value1, 0) >> MOV_get_int64(value2, 0);
+			impure->vlu_misc.vlu_int64 = MOV_get_int64(value1, 0) >> shift;
 			break;
 
 		default:
@@ -2638,7 +2645,6 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	MoveBuffer buffers[3];
 	UCHAR* addresses[3];
 	ULONG lengths[3];
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicals[2];	// searched, find
 
 	for (i = 0; i < 3; ++i)
 	{
@@ -2658,6 +2664,7 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	if (lengths[1] == 0)
 		return values[0];
 
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicals[2];	// searched, find
 	for (i = 0; i < 2; ++i)
 	{
 		canonicals[i].getBuffer(lengths[i] / cs->minBytesPerChar() * canonicalWidth);
@@ -2991,8 +2998,7 @@ dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* ar
 	if (impure->vlu_misc.vlu_double < 0)
 	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_sysf_argmustbe_nonneg) <<
-										Arg::Str(function->name));
+									Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
 	}
 
 	impure->vlu_misc.vlu_double = sqrt(impure->vlu_misc.vlu_double);
