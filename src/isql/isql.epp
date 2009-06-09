@@ -4090,6 +4090,9 @@ static void do_isql()
 
 #ifdef WIN_NT
 	SetConsoleCtrlHandler(query_abort, TRUE);
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+	_set_output_format(_TWO_DIGIT_EXPONENT);
+#endif
 #elif defined(HAVE_SIGACTION)
 	fb_shutdown_callback(0, query_abort, fb_shut_confirmation, 0);
 #endif
