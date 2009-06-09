@@ -79,10 +79,10 @@ public:
 
 struct srvr : public Firebird::GlobalStorage
 {
-	srvr*			srvr_next;
-	rem_port*		srvr_parent_port;
-	rem_port::rem_port_t	srvr_port_type;
-	USHORT			srvr_flags;
+	srvr* const		srvr_next;
+	const rem_port*	const		srvr_parent_port;
+	const rem_port::rem_port_t	srvr_port_type;
+	const USHORT	srvr_flags;
 
 public:
 	srvr(srvr* servers, rem_port* port, USHORT flags) :
@@ -116,7 +116,12 @@ namespace {
 
 				if (!(handle = CreateMutex(ISC_get_security_desc(), FALSE, mutex_name)))
 				{
-					Firebird::system_call_failed::raise("CreateMutex");
+					// MSDN: if the caller has limited access rights, the function will fail with
+					// ERROR_ACCESS_DENIED and the caller should use the OpenMutex function.
+					if (GetLastError() == ERROR_ACCESS_DENIED)
+						Firebird::system_call_failed::raise("CreateMutex - cannot open existing mutex");
+					else
+						Firebird::system_call_failed::raise("CreateMutex");
 				}
 
 				if (WaitForSingleObject(handle, INFINITE) == WAIT_FAILED)
