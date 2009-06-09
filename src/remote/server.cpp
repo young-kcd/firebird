@@ -77,9 +77,9 @@ public:
 	server_req_t() : req_next(0), req_chain(0) { }
 };
 
-typedef struct srvr : public Firebird::GlobalStorage
+struct srvr : public Firebird::GlobalStorage
 {
-	struct srvr*	srvr_next;
+	srvr*			srvr_next;
 	rem_port*		srvr_parent_port;
 	rem_port::rem_port_t	srvr_port_type;
 	USHORT			srvr_flags;
@@ -89,7 +89,7 @@ public:
 		srvr_next(servers), srvr_parent_port(port),
 		srvr_port_type(port->port_type), srvr_flags(flags)
 	{ }
-} *SRVR;
+};
 
 namespace {
 	// this sets of parameters help use same functions
@@ -320,7 +320,7 @@ static server_req_t* free_requests		= NULL;
 static server_req_t* active_requests	= NULL;
 
 static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
-static SRVR			servers;
+static srvr* servers;
 static Firebird::AtomicCounter cntServers;
 static bool	server_shutdown = false;
 
@@ -3252,7 +3252,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		case op_disconnect:
 		case op_exit:
 			{
-				SRVR server = port->port_server;
+				const srvr* server = port->port_server;
 				if (!server)
 					break;
 
@@ -4836,7 +4836,7 @@ void set_server( rem_port* port, USHORT flags)
  *
  **************************************/
 	Firebird::MutexLockGuard srvrGuard(servers_mutex);
-	SRVR server;
+	srvr* server;
 
 	for (server = servers; server; server = server->srvr_next) {
 		if (port->port_type == server->srvr_port_type) {
