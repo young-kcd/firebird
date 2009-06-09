@@ -316,11 +316,11 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
  * use than the natural alternative.
  *
  **************************************/
-	SSHORT	length;
-	UCHAR*	p = 0;
+	SSHORT length;
+	UCHAR* p = NULL;
 	const char*	q;
 	va_list	args;
-	USHORT	type;
+	USHORT type;
 	UCHAR* new_dpb;
 
 /* calculate length of database parameter block,

@@ -161,7 +161,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #endif
 	{IN_SW_GPRE_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, false, 0, 0, "\tfetch password from file"},
 	{IN_SW_GPRE_G		, 0, "GDS"			, 0, 0, 0, false, 0, 0, NULL},
-	{IN_SW_GPRE_GXX		, 0, "GDS_CXX"			, 0, 0, 0, false, 0, 0, NULL},
+	{IN_SW_GPRE_GXX		, 0, "GDS_CXX"		, 0, 0, 0, false, 0, 0, NULL},
 	{IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, false, 0, 0, NULL},
 	{IN_SW_GPRE_I		, 0, "IDS"			, 0, 0, 0, false, 0, 0, NULL},
 	{IN_SW_GPRE_INTERP	, 0, "CHARSET"		, 0, 0, 0, false, 0, 0, "\t\tDefault character set & format"},

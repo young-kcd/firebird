@@ -1668,7 +1668,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		TraceBlrCompile trace(tdbb, blr_length, (UCHAR*)blr);
+		TraceBlrCompile trace(tdbb, blr_length, (UCHAR*) blr);
 		try
 		{
 			JRD_compile(tdbb, attachment, req_handle, blr_length, reinterpret_cast<const UCHAR*>(blr),

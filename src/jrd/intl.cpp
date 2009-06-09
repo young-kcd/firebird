@@ -737,7 +737,6 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	case dtype_text:
 		if (from_cs != to_cs && to_cs != CS_BINARY && to_cs != CS_NONE && from_cs != CS_NONE)
 		{
-
 			const ULONG to_len = INTL_convert_bytes(tdbb, to_cs, to->dsc_address, to_size,
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
@@ -1167,7 +1166,8 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		while (len-- && destLen-- > 0)
 			*dest++ = *src++;
 		/* strip off ending pad characters */
-		while (dest > pByte->dsc_address) {
+		while (dest > pByte->dsc_address)
+		{
 			if (*(dest - 1) == pad_char)
 				dest--;
 			else

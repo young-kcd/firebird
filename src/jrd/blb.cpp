@@ -2438,7 +2438,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	SET_TDBB (tdbb);
 
 	const UCHAR charSet = INTL_GET_CHARSET(from_desc);
-	UCHAR* fromstr = 0;
+	UCHAR* fromstr = NULL;
 
 	MoveBuffer buffer;
 	const int length = MOV_make_string2(tdbb, from_desc, charSet, &fromstr, buffer);
@@ -2459,7 +2459,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	blb* blob = BLB_create2(tdbb, tdbb->getRequest()->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
 
 	DSC blob_desc;
-	MOVE_CLEAR(&blob_desc, sizeof(blob_desc));
+	blob_desc.clear();
 
 	blob_desc.dsc_scale = to_desc->dsc_scale;	// blob charset
 	blob_desc.dsc_flags = (blob_desc.dsc_flags & 0xFF) | (to_desc->dsc_flags & 0xFF00);	// blob collation

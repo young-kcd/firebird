@@ -40,8 +40,8 @@ ULONG		INTL_convert_bytes(Jrd::thread_db*, CHARSET_ID, UCHAR*, ULONG, CHARSET_ID
 								const BYTE*, ULONG, ErrorFunction);
 Jrd::CsConvert	INTL_convert_lookup(Jrd::thread_db*, CHARSET_ID, CHARSET_ID);
 int			INTL_convert_string(dsc*, const dsc*, ErrorFunction);
-bool			INTL_data(const dsc*);
-bool			INTL_data_or_binary(const dsc*);
+bool		INTL_data(const dsc*);
+bool		INTL_data_or_binary(const dsc*);
 bool		INTL_defined_type(Jrd::thread_db*, USHORT);
 USHORT		INTL_key_length(Jrd::thread_db*, USHORT, USHORT);
 Jrd::CharSet*	INTL_charset_lookup(Jrd::thread_db* tdbb, USHORT parm1);
