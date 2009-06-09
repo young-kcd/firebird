@@ -29,12 +29,12 @@ typedef void* VoidPtr;
 // initialized by the engine
 static void* (*allocFunc)(long) = NULL;
 
-extern "C" void API_ROUTINE ib_util_init(void* (*aAllocFunc)(long))
+extern "C" void FB_DLL_EXPORT ib_util_init(void* (*aAllocFunc)(long))
 {
 	allocFunc = aAllocFunc;
 }
 
-extern "C" VoidPtr API_ROUTINE ib_util_malloc(long size)
+extern "C" VoidPtr FB_DLL_EXPORT ib_util_malloc(long size)
 {
 	return allocFunc ? allocFunc(size) : NULL;
 }
