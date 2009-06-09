@@ -227,6 +227,7 @@ static bool		canUseTrusted();
 static void		aux_connect(rem_port*, P_REQ*, PACKET*);
 #endif
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
+static bool		bad_port_context(ISC_STATUS*, Rdb*, const ISC_LONG);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
@@ -253,6 +254,7 @@ static void		release_transaction(Rtr*);
 static RMessage*	scroll_cache(Rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
+static void		send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode);
 static void		server_ast(void*, USHORT, const UCHAR*);
 static void		set_server(rem_port*, USHORT);
 static void		success(ISC_STATUS*);
@@ -260,7 +262,7 @@ static int		shut_server(const int, const int, void*);
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 static void		zap_packet(PACKET*, bool);
 
-static bool		bad_port_context(ISC_STATUS*, Rdb*, const ISC_LONG);
+
 
 
 inline bool bad_db(ISC_STATUS* status_vector, Rdb* rdb)
@@ -1302,6 +1304,29 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 	// restore the port status vector
 
 	port->port_status_vector = save_status;
+}
+
+
+static bool bad_port_context(ISC_STATUS* status_vector, Rdb* rdb, const ISC_LONG error)
+{
+/**************************************
+ *
+ *	b a d _ p o r t _ c o n t e x t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check rdb pointer, in case of error create status vector
+ *
+ **************************************/
+	if (rdb)
+	{
+		return false;
+	}
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = error;
+	status_vector[2] = isc_arg_end;
+	return true;
 }
 
 
@@ -3240,19 +3265,14 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		case op_trusted_auth:
 #ifdef TRUSTED_AUTH
 			trusted_auth(port, &receive->p_trau, sendL);
-			break;
-//else
-//			fall down ...
+#else
+			send_error(port, sendL, isc_wish_list);
 #endif
+			break;
+
 		case op_update_account_info:
 		case op_authenticate_user:
-			{
-				ISC_STATUS_ARRAY status_vector;
-				status_vector[0] = isc_arg_gds;
-				status_vector[1] = isc_wish_list;
-				status_vector[2] = isc_arg_end;
-				port->send_response(sendL, 0, 0, status_vector, false);
-			}
+			send_error(port, sendL, isc_wish_list);
 			break;
 
 		case op_service_start:
@@ -3512,15 +3532,10 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
  *	Server side of trusted auth handshake.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
 	ServerAuth* sa = port->port_trusted_auth;
 	if (! sa)
-	{
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = isc_unavailable;
-		status_vector[2] = isc_arg_end;
-		port->send_response(send, 0, 0, status_vector, false);
-	}
+		send_error(port, send, isc_unavailable);
+
 	try
 	{
 		AuthSspi::DataHolder data;
@@ -3542,7 +3557,7 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 	}
 	catch (const Firebird::status_exception& e)
 	{
-		// ISC_STATUS_ARRAY status_vector; It exists in the outer scope.
+		ISC_STATUS_ARRAY status_vector;
 		Firebird::stuff_exception(status_vector, e);
 		port->send_response(send, 0, 0, status_vector, false);
 		return;
@@ -4538,6 +4553,16 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	return exit_code;
 }
 
+// Maybe this can be a member of rem_port?
+static void send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode)
+{
+	ISC_STATUS_ARRAY status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = errcode;
+	status_vector[2] = isc_arg_end;
+	port->send_response(apacket, 0, 0, status_vector, false);
+}
+
 
 static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 {
@@ -5349,7 +5374,6 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	return FB_SUCCESS;
 }
 
-
 static void zap_packet(PACKET* packet, bool new_packet)
 {
 /**************************************
@@ -5376,27 +5400,6 @@ static void zap_packet(PACKET* packet, bool new_packet)
 	}
 }
 
-static bool bad_port_context(ISC_STATUS* status_vector, Rdb* rdb, const ISC_LONG error)
-{
-/**************************************
- *
- *	b a d _ p o r t _ c o n t e x t
- *
- **************************************
- *
- * Functional description
- *	Check rdb pointer, in case of error create status vector
- *
- **************************************/
-	if (rdb)
-	{
-		return false;
-	}
-	status_vector[0] = isc_arg_gds;
-	status_vector[1] = error;
-	status_vector[2] = isc_arg_end;
-	return true;
-}
 
 
 
