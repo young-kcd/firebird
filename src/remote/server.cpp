@@ -37,6 +37,7 @@
 #include "../remote/remote.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/license.h"
+#include "../jrd/file_params.h"
 #include "../common/classes/timestamp.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
@@ -160,7 +161,7 @@ namespace {
 			if (id)
 			{
 				Firebird::string firebirdPortMutex;
-				firebirdPortMutex.printf("FirebirdPortMutex%d", id);
+				firebirdPortMutex.printf(PORT_FILE, id);
 				TEXT filename[MAXPATHLEN];
 				gds__prefix_lock(filename, firebirdPortMutex.c_str());
 				if ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
