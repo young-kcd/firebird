@@ -79,8 +79,8 @@ dbt_record_param[] =
 	FLD(record_param*, "Relation %x", rpb_relation),
 	FLD(record_param*, "Number %"SQUADFORMAT, rpb_number.getValue()),
 	FLD(record_param*, "Trans %ld", rpb_transaction_nr),
-	FLD(record_param*, "Page %ld", rpb_pos.rpb_page),
-	FLD(record_param*, "Line %x", rpb_pos.rpb_line),
+	FLD(record_param*, "Page %ld", rpb_page),
+	FLD(record_param*, "Line %x", rpb_line),
 	FLD(record_param*, "Back page %ld", rpb_b_page),
 	FLD(record_param*, "Line %x", rpb_b_line),
 	FLD(record_param*, "Fragment page %ld", rpb_f_page),
@@ -315,13 +315,6 @@ str[] =
 {
 	"string",
 		FLD(STR, "length: %d", str_length),
-		0
-},
-DataComprControl[] =
-{
-	"DATA COMPRESSION CONTROL",
-		FLD(DataComprControl*, "next: %x", dcc_next),
-		FLD(DataComprControl*, "end: %x", dcc_end),
 		0
 },
 SparseBitmap[] =

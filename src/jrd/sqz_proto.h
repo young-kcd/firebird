@@ -28,7 +28,6 @@
 #include "../jrd/sqz.h"
 
 namespace Jrd {
-	class DataComprControl;
 	class Record;
 }
 
@@ -39,7 +38,7 @@ UCHAR*	SQZ_decompress(const SCHAR*, USHORT, UCHAR*, const UCHAR* const);
 USHORT	SQZ_differences(const SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
 USHORT	SQZ_no_differences(SCHAR* const, int);
 void	SQZ_fast(Jrd::DataComprControl*, const SCHAR*, SCHAR*);
-USHORT	SQZ_length(Jrd::thread_db*, const SCHAR*, int, Jrd::DataComprControl*);
+USHORT	SQZ_length(const SCHAR*, int, Jrd::DataComprControl*);
 
 #endif // JRD_SQZ_PROTO_H
 

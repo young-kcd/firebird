@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
-#include "../jrd/jrd.h"
 #include "../jrd/sqz.h"
 #include "../jrd/req.h"
 #include "../jrd/err_proto.h"
@@ -94,18 +93,17 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
  **************************************
  *
  * Functional description
- *	Compress a string into an area of known length.  If it doesn't fit,
- *	return the number of bytes that did.
+ *	Compress a string into an area of known length.  
+ *	If it doesn't fit, throw BUGCHECK error.
  *
  **************************************/
 	SSHORT length;
 
 	const SCHAR* const start = input;
 
-	while (true)
-	{
-		const SCHAR* control = dcc->dcc_string;
-		while (control < dcc->dcc_end)
+	const SCHAR* control = dcc->begin();
+	const SCHAR* dcc_end = dcc->end();
+	while (control < dcc_end)
 		{
 			if (--space <= 0)
 			{
@@ -143,11 +141,9 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 				}
 			}
 		}
-		if (!(dcc = dcc->dcc_next))
-		{
+	
 			BUGCHECK(178);		/* msg 178 record length inconsistent */
-		}
-	}
+	return input - start;	// shut up compiler warning
 }
 
 
@@ -168,9 +164,9 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 
 	const SCHAR* const start = input;
 
-	while (true) {
-		const SCHAR* control = dcc->dcc_string;
-		while (control < dcc->dcc_end)
+	const SCHAR* control = dcc->begin();
+	const SCHAR* dcc_end = dcc->end();
+	while (control < dcc_end)
 		{
 			if (--space <= 0)
 				return input - start;
@@ -188,9 +184,9 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 				input += length;
 			}
 		}
-		if (!(dcc = dcc->dcc_next))
+
 			BUGCHECK(178);		/* msg 178 record length inconsistent */
-	}
+	return input - start;	// shut up compiler warning
 }
 
 
@@ -387,10 +383,9 @@ void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
  *	check nuttin' -- go for speed, man, raw SPEED!
  *
  **************************************/
-	while (true)
-	{
-		const SCHAR* control = dcc->dcc_string;
-		while (control < dcc->dcc_end)
+	const SCHAR* control = dcc->begin();
+	const SCHAR* dcc_end = dcc->end();
+	while (control < dcc_end)
 		{
 			const SSHORT length = *control++;
 			*output++ = length;
@@ -406,16 +401,10 @@ void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 				input += length;
 			}
 		}
-		dcc = dcc->dcc_next;
-		if (!dcc)
-		{
-			break;
-		}
-	}
 }
 
 
-USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprControl* dcc)
+USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
 {
 /**************************************
  *
@@ -428,12 +417,9 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
  *	the control string for subsequent compression.
  *
  **************************************/
-	SET_TDBB(tdbb);
 
-	dcc->dcc_next = NULL;
-	SCHAR* control = dcc->dcc_string;
-	// end_control may be updated
-	const SCHAR* end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
+	// allocate buffer big enough for worst case
+	SCHAR* control = dcc->getBuffer((length + 1) / 2, false);
 	const SCHAR* const end = &data[length];
 	length = 0;
 
@@ -469,14 +455,6 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
 			length += 1 + max;
 			count -= max;
 			*control++ = max;
-			if (control == end_control)
-			{
-				dcc->dcc_end = control;
-				dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
-				dcc = dcc->dcc_next;
-				control = dcc->dcc_string;
-				end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
-			}
 		}
 
 		/* Find compressible run.  Compressable runs are limited to 128 bytes */
@@ -496,18 +474,11 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
 
 			*control++ = start - data;
 			length += 2;
-			if (control == end_control)
-			{
-				dcc->dcc_end = control;
-				dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
-				dcc = dcc->dcc_next;
-				control = dcc->dcc_string;
-				end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
-			}
 		}
 	}
 
-	dcc->dcc_end = control;
+	// set array size to really used length
+	dcc->shrink(control - dcc->begin());
 
 	return length;
 }

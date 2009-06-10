@@ -338,9 +338,9 @@ public:
 	}
 
 	// prepare array to be used as a buffer of capacity items
-	T* getBuffer(const size_t capacityL)
+	T* getBuffer(const size_t capacityL, bool preserve = true)
 	{
-		ensureCapacity(capacityL);
+		ensureCapacity(capacityL, preserve);
 		count = capacityL;
 		return data;
 	}
