@@ -98,9 +98,12 @@ static int process_id;
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#ifdef USE_SYS5SEMAPHORE
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
+#endif
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
