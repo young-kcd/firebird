@@ -81,15 +81,16 @@ public:
 		// The same applies to bid_decode routine below.
 		inline void bid_encode(SINT64 value)
 		{
+			// Use explicit casts to suppress 64-bit truncation warnings
 			// Store lower 32 bits of number
-			bid_number = value;
+			bid_number = static_cast<ULONG>(value);
 			// Store high 8 bits of number
-			bid_number_up = value >> 32;
+			bid_number_up = static_cast<UCHAR>(value >> 32);
 		}
 
 		inline SINT64 bid_decode() const
 		{
-			return bid_number + (((FB_UINT64) bid_number_up) << 32);
+			return bid_number + (static_cast<FB_UINT64>(bid_number_up) << 32);
 		}
 	};
 
@@ -177,8 +178,9 @@ public:
 						  SSHORT& slot,
 						  USHORT& pp_sequence) const
 	{
-		line = value % records_per_page;
-		const ULONG sequence = value / records_per_page;
+		// Use explicit casts to suppress 64-bit truncation warnings
+		line = static_cast<SSHORT>(value % records_per_page);
+		const ULONG sequence = static_cast<ULONG>(value / records_per_page);
 		slot = sequence % data_pages_per_pointer_page;
 		pp_sequence = sequence / data_pages_per_pointer_page;
 	}
