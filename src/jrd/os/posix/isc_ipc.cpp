@@ -371,6 +371,8 @@ class SignalInit
 public:
 	static void init()
 	{
+		GDS_init_prefix();
+
 		overflow_count = 0;
 		gds__register_cleanup(signal_cleanup, 0);
 
