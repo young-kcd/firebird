@@ -84,7 +84,7 @@ USHORT SQZ_apply_differences(Record* record, const SCHAR* differences, const SCH
 }
 
 
-USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, int space)
+USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* output, int space)
 {
 /**************************************
  *
@@ -93,7 +93,7 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
  **************************************
  *
  * Functional description
- *	Compress a string into an area of known length.  
+ *	Compress a string into an area of known length.
  *	If it doesn't fit, throw BUGCHECK error.
  *
  **************************************/
@@ -141,13 +141,13 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 			}
 		}
 	}
-	
+
 	BUGCHECK(178);		/* msg 178 record length inconsistent */
 	return input - start;	// shut up compiler warning
 }
 
 
-USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
+USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int space)
 {
 /**************************************
  *
@@ -370,7 +370,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 }
 
 
-void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
+void SQZ_fast(const DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 {
 /**************************************
  *
@@ -417,6 +417,8 @@ USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
  *	the control string for subsequent compression.
  *
  **************************************/
+
+ 	fb_assert(length >= 0);
 
 	// allocate buffer big enough for worst case
 	SCHAR* control = dcc->getBuffer((length + 1) / 2, false);
