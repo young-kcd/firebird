@@ -40,7 +40,7 @@ Problems with installation of MS VC runtime libraries
 
 Much work has been done to ensure that the MS Visual
 C runtime libraries are correctly installed by the
-binary installer. Since v2.1.2 Firebird will work with
+binary installer. Since v2.1.3 Firebird will work with
 locally deployed instances of the runtime libraries.
 This especially simplifies deployment of the firebird
 client or embedded dll with your own application.
@@ -73,13 +73,13 @@ o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
   - The service installer (instsvc) uses the same
-    default instance name for 32-bit and 64-bit
-    installations. This is by design. Services exist
-    in a single name space.
+	default instance name for 32-bit and 64-bit
+	installations. This is by design. Services exist
+	in a single name space.
 
   - If the 32-bit and 64-bit control panel applets are
-    installed they will both point to the same default
-    instance.
+	installed they will both point to the same default
+	instance.
 
 o When installing under Vista be sure to install as an
   administrator. ie, if using the binary installer
@@ -145,7 +145,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -156,7 +156,7 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 for full details.
 
