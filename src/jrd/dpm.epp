@@ -146,7 +146,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 		printf
 			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
 			SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -154,7 +154,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
-	data_page::dpg_repeat* index1 = page->dpg_rpt + rpb->rpb_line;
+	data_page::dpg_repeat* index1 = page->dpg_rpt + rpb->rpb_pos.rpb_line;
 	data_page::dpg_repeat* index2 = page->dpg_rpt + rpb->rpb_b_line;
 	*index1 = *index2;
 	index2->dpg_offset = index2->dpg_length = 0;
@@ -167,7 +167,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 		printf
 			("    old record %"SLONGFORMAT":%d, new record %"SLONGFORMAT
 			":%d, old dpg_count %d, ",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_b_page,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_b_page,
 			 rpb->rpb_b_line, page->dpg_count);
 	}
 #endif
@@ -287,7 +287,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 		printf
 			("    org record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
 			" back %"SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
+			 org_rpb->rpb_pos.rpb_page, org_rpb->rpb_pos.rpb_line, org_rpb->rpb_transaction_nr,
 			 org_rpb->rpb_b_page, org_rpb->rpb_b_line, org_rpb->rpb_f_page,
 			 org_rpb->rpb_f_line, org_rpb->rpb_flags);
 
@@ -424,11 +424,11 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 /* Swap the old record into the new slot and the new record into
    the old slot */
 
-	new_rpb->rpb_b_page = new_rpb->rpb_page = org_rpb->rpb_page;
+	new_rpb->rpb_b_page = new_rpb->rpb_pos.rpb_page = org_rpb->rpb_pos.rpb_page;
 	new_rpb->rpb_b_line = slot;
-	new_rpb->rpb_line = org_rpb->rpb_line;
+	new_rpb->rpb_pos.rpb_line = org_rpb->rpb_pos.rpb_line;
 
-	data_page::dpg_repeat* index2 = page->dpg_rpt + org_rpb->rpb_line;
+	data_page::dpg_repeat* index2 = page->dpg_rpt + org_rpb->rpb_pos.rpb_line;
 	rhd* header = (rhd*) ((SCHAR *) page + index2->dpg_offset);
 	header->rhd_flags |= rhd_chain;
 	page->dpg_rpt[slot] = *index2;
@@ -678,7 +678,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 		printf
 			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
 			SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -687,10 +687,10 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 	WIN* window = &rpb->getWindow(tdbb);
 	data_page* page = (data_page*) window->win_buffer;
 	SLONG sequence = page->dpg_sequence;
-	data_page::dpg_repeat* index = &page->dpg_rpt[rpb->rpb_line];
+	data_page::dpg_repeat* index = &page->dpg_rpt[rpb->rpb_pos.rpb_line];
 	const RecordNumber number = rpb->rpb_number;
 
-	if (!get_header(window, rpb->rpb_line, rpb)) {
+	if (!get_header(window, rpb->rpb_pos.rpb_line, rpb)) {
 		CCH_RELEASE(tdbb, window);
 		BUGCHECK(244);			/* msg 244 Fragment does not exist */
 	}
@@ -970,15 +970,15 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 			rpb->rpb_number.getValue(), lock);
 	}
 	if (debug_flag > DEBUG_READS_INFO)
-		printf("    record %"SLONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
+		printf("    record %"SLONGFORMAT":%d\n", rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line);
 #endif
 
 	const RecordNumber number = rpb->rpb_number;
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
-	rpb->getWindow(tdbb).win_page = PageNumber(relPages->rel_pg_space_id, rpb->rpb_page);
+	rpb->getWindow(tdbb).win_page = PageNumber(relPages->rel_pg_space_id, rpb->rpb_pos.rpb_page);
 	CCH_FETCH(tdbb, &rpb->getWindow(tdbb), lock, pag_data);
 
-	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_line, rpb)) {
+	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_pos.rpb_line, rpb)) {
 		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		return false;
 	}
@@ -988,7 +988,7 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 		printf
 			("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
 			 SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -1038,7 +1038,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 	{
 		printf("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
 				  " back %"SLONGFORMAT":%d\n",
-				  rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+				  rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 				  rpb->rpb_b_page, rpb->rpb_b_line);
 	}
 #endif
@@ -1056,9 +1056,9 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 	}
 
 	const RecordNumber number = rpb->rpb_number;
-	rpb->rpb_page = rpb->rpb_b_page;
-	rpb->rpb_line = rpb->rpb_b_line;
-	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_line, rpb))
+	rpb->rpb_pos.rpb_page = rpb->rpb_b_page;
+	rpb->rpb_pos.rpb_line = rpb->rpb_b_line;
+	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_pos.rpb_line, rpb))
 	{
 		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		BUGCHECK(291);			/* msg 291 cannot find record back version */
@@ -1070,7 +1070,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb,
 		printf("    record fetched  %"SLONGFORMAT":%d transaction %"
 			 SLONGFORMAT" back %"SLONGFORMAT":%d fragment %"SLONGFORMAT
 			 ":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -1104,17 +1104,17 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 	if (debug_flag > DEBUG_READS_INFO) {
 		printf("    record  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
 				  " back %"SLONGFORMAT":%d\n",
-				  rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+				  rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 				  rpb->rpb_b_page, rpb->rpb_b_line);
 	}
 #endif
 
 	const RecordNumber number = rpb->rpb_number;
-	rpb->rpb_page = rpb->rpb_f_page;
-	rpb->rpb_line = rpb->rpb_f_line;
-	CCH_HANDOFF(tdbb, &rpb->getWindow(tdbb), rpb->rpb_page, lock, pag_data);
+	rpb->rpb_pos.rpb_page = rpb->rpb_f_page;
+	rpb->rpb_pos.rpb_line = rpb->rpb_f_line;
+	CCH_HANDOFF(tdbb, &rpb->getWindow(tdbb), rpb->rpb_pos.rpb_page, lock, pag_data);
 
-	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_line, rpb)) {
+	if (!get_header(&rpb->getWindow(tdbb), rpb->rpb_pos.rpb_line, rpb)) {
 		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		BUGCHECK(248);			/* msg 248 cannot find record fragment */
 	}
@@ -1124,7 +1124,7 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 		printf
 			("    record fetched  %"SLONGFORMAT":%d transaction %"SLONGFORMAT
 			 " back %"SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -1476,10 +1476,10 @@ ULONG DPM_get_blob(thread_db* tdbb,
 		// We've been asked (nicely) to delete the blob.  So do so.
 
 		rpb.rpb_relation = blob->blb_relation;
-		rpb.rpb_page = rpb.getWindow(tdbb).win_page.getPageNum();
-		rpb.rpb_line = line;
+		rpb.rpb_pos.rpb_page = rpb.getWindow(tdbb).win_page.getPageNum();
+		rpb.rpb_pos.rpb_line = line;
 		DPM_delete(tdbb, &rpb, prior_page);
-		return rpb.rpb_page;
+		return rpb.rpb_pos.rpb_page;
 	} // scope
 
 punt:
@@ -1907,7 +1907,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 		printf
 			("    record to store %"SLONGFORMAT":%d transaction %"SLONGFORMAT
 			 " back %"SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -1948,7 +1948,7 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT typ
 			("    record %"SLONGFORMAT":%d, length %"SLONGFORMAT
 			 ", rpb_flags %d, f_page %"SLONGFORMAT":%d, b_page %"SLONGFORMAT
 			 ":%d\n",
-			 rpb->rpb_page, rpb->rpb_line, length, rpb->rpb_flags,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, length, rpb->rpb_flags,
 			 rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_b_page,
 			 rpb->rpb_b_line);
 	}
@@ -2093,12 +2093,12 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 	if (debug_flag > DEBUG_WRITES)
 		printf("DPM_rewrite_header (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 	if (debug_flag > DEBUG_WRITES_INFO)
-		printf("    record  %"SLONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
+		printf("    record  %"SLONGFORMAT":%d\n", rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line);
 #endif
 
 	WIN* window = &rpb->getWindow(tdbb);
 	data_page* page = (data_page*) window->win_buffer;
-	rhd* header = (rhd*) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_line].dpg_offset);
+	rhd* header = (rhd*) ((SCHAR *) page + page->dpg_rpt[rpb->rpb_pos.rpb_line].dpg_offset);
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO) {
@@ -2149,7 +2149,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 		printf
 			("    record %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
 			 SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -2183,7 +2183,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 
 	/* Accomodate max record size i.e. 64K */
 	const SLONG length = ROUNDUP(RHD_SIZE + size + fill, ODS_ALIGNMENT);
-	const SSHORT slot = rpb->rpb_line;
+	const SSHORT slot = rpb->rpb_pos.rpb_line;
 
 /* Find space on page */
 	SSHORT space = dbb->dbb_page_size;
@@ -2231,7 +2231,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack,
 			("    record %"SLONGFORMAT
 			 ":%d, dpg_length %d, rpb_flags %d, rpb_f record %"SLONGFORMAT
 			 ":%d, rpb_b record %"SLONGFORMAT":%d\n",
-			 rpb->rpb_page, rpb->rpb_line, page->dpg_rpt[slot].dpg_length,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, page->dpg_rpt[slot].dpg_length,
 			 rpb->rpb_flags, rpb->rpb_f_page, rpb->rpb_f_line,
 			 rpb->rpb_b_page, rpb->rpb_b_line);
 	}
@@ -2399,7 +2399,7 @@ static void fragment(thread_db* tdbb,
 		printf
 			("    record %"SLONGFORMAT":%d transaction %"SLONGFORMAT" back %"
 			 SLONGFORMAT":%d fragment %"SLONGFORMAT":%d flags %d\n",
-			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 			 rpb->rpb_f_line, rpb->rpb_flags);
 	}
@@ -2415,7 +2415,7 @@ static void fragment(thread_db* tdbb,
 
 	WIN* window = &rpb->getWindow(tdbb);
 	data_page* page = (data_page*) window->win_buffer;
-	const SSHORT line = rpb->rpb_line;
+	const SSHORT line = rpb->rpb_pos.rpb_line;
 
 	rhdf* header;
 	if (transaction->tra_number != rpb->rpb_transaction_nr)
@@ -2488,15 +2488,15 @@ static void fragment(thread_db* tdbb,
    fill in the fragment pointer */
 
 	page = (data_page*) CCH_FETCH(tdbb, window, LCK_write, pag_data);
-	CCH_precedence(tdbb, window, tail_rpb.rpb_page);
+	CCH_precedence(tdbb, window, tail_rpb.rpb_pos.rpb_page);
 	CCH_MARK(tdbb, window);
 
 	header = (rhdf*) ((SCHAR *) page + page->dpg_rpt[line].dpg_offset);
 	header->rhdf_flags = rhd_incomplete | rpb->rpb_flags;
 	header->rhdf_transaction = rpb->rpb_transaction_nr;
 	header->rhdf_format = rpb->rpb_format_number;
-	header->rhdf_f_page = tail_rpb.rpb_page;
-	header->rhdf_f_line = tail_rpb.rpb_line;
+	header->rhdf_f_page = tail_rpb.rpb_pos.rpb_page;
+	header->rhdf_f_line = tail_rpb.rpb_pos.rpb_line;
 
 	if (transaction->tra_number != rpb->rpb_transaction_nr) {
 		header->rhdf_b_page = rpb->rpb_b_page;
@@ -2788,12 +2788,12 @@ static UCHAR* find_space(thread_db*	tdbb,
 	data_page::dpg_repeat* index = &page->dpg_rpt[slot];
 	index->dpg_length = size;
 	index->dpg_offset = space;
-	rpb->rpb_page = rpb->getWindow(tdbb).win_page.getPageNum();
-	rpb->rpb_line = slot;
+	rpb->rpb_pos.rpb_page = rpb->getWindow(tdbb).win_page.getPageNum();
+	rpb->rpb_pos.rpb_line = slot;
 	rpb->rpb_number.setValue(((SINT64) page->dpg_sequence) * dbb->dbb_max_records + slot);
 
 	if (record) {
-		record->rec_precedence.push(rpb->rpb_page);
+		record->rec_precedence.push(rpb->rpb_pos.rpb_page);
 	}
 
 	return (UCHAR*) page + space;
@@ -2824,8 +2824,8 @@ static bool get_header( WIN * window, SSHORT line, record_param* rpb)
 	}
 
 	rhdf* header = (rhdf*) ((SCHAR *) page + index->dpg_offset);
-	rpb->rpb_page = window->win_page.getPageNum();
-	rpb->rpb_line = line;
+	rpb->rpb_pos.rpb_page = window->win_page.getPageNum();
+	rpb->rpb_pos.rpb_line = line;
 	rpb->rpb_flags = header->rhdf_flags;
 
 	if (!(rpb->rpb_flags & rpb_fragment)) {
@@ -3293,7 +3293,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 			 ":%d, dpg_length %d \n\trhdf_flags %d, rhdf_f record %"SLONGFORMAT
 			 ":%d, rhdf_b record %"SLONGFORMAT":%d\n",
 			 header->rhdf_transaction, rpb->getWindow(tdbb).win_page.getPageNum(),
-			 rpb->rpb_line, page->dpg_rpt[rpb->rpb_line].dpg_length,
+			 rpb->rpb_pos.rpb_line, page->dpg_rpt[rpb->rpb_pos.rpb_line].dpg_length,
 			 header->rhdf_flags, header->rhdf_f_page, header->rhdf_f_line,
 			 header->rhdf_b_page, header->rhdf_b_line);
 	}

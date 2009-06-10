@@ -352,17 +352,17 @@ void IDX_create_index(thread_db* tdbb,
 			gc_record = primary.rpb_record;
 			stack.push(primary.rpb_record);
 		}
-		secondary.rpb_page = primary.rpb_b_page;
-		secondary.rpb_line = primary.rpb_b_line;
+		secondary.rpb_pos.rpb_page = primary.rpb_b_page;
+		secondary.rpb_pos.rpb_line = primary.rpb_b_line;
 		secondary.rpb_prior = primary.rpb_prior;
-		while (secondary.rpb_page) {
+		while (secondary.rpb_pos.rpb_page) {
 			if (!DPM_fetch(tdbb, &secondary, LCK_read))
 				break;			/* must be garbage collected */
 			secondary.rpb_record = NULL;
 			VIO_data(tdbb, &secondary, tdbb->getDefaultPool());
 			stack.push(secondary.rpb_record);
-			secondary.rpb_page = secondary.rpb_b_page;
-			secondary.rpb_line = secondary.rpb_b_line;
+			secondary.rpb_pos.rpb_page = secondary.rpb_b_page;
+			secondary.rpb_pos.rpb_line = secondary.rpb_b_line;
 		}
 
 		while (stack.hasData())
