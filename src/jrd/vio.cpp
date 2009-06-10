@@ -1121,7 +1121,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
  *	stub.
  *
  **************************************/
-	DSC desc, desc2;
+
 	// Revokee is only 32 bytes. UserId would be truncated.
 	SqlIdentifier relation_name, revokee, privilege, procedure_name;
 
@@ -1172,6 +1172,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 /* If we're about to erase a system relation, check to make sure
    everything is completely kosher. */
+
+	DSC desc, desc2;
 
 	if (needDfw(tdbb, transaction))
 	{
@@ -2086,8 +2088,6 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
  *	Modify an existing record.
  *
  **************************************/
-	DSC desc1, desc2;
-
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
@@ -2135,6 +2135,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 /* If we're about to modify a system relation, check to make sure
    everything is completely kosher. */
+
+	DSC desc1, desc2;
 
 	if (needDfw(tdbb, transaction))
 	{
@@ -2530,9 +2532,9 @@ void VIO_start_save_point(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Savepoint* sav_point;
+	Savepoint* sav_point = transaction->tra_save_free;
 
-	if ( (sav_point = transaction->tra_save_free) ) {
+	if (sav_point) {
 		transaction->tra_save_free = sav_point->sav_next;
 	}
 	else {
@@ -2557,8 +2559,6 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
  *	Store a new record.
  *
  **************************************/
-	DSC desc, desc2;
-
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
 	DeferredWork* work = NULL;
@@ -2573,6 +2573,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	transaction->tra_flags |= TRA_write;
 	jrd_rel* relation = rpb->rpb_relation;
+	DSC desc, desc2;
 
 	if (needDfw(tdbb, transaction))
 	{
@@ -3750,11 +3751,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	CHECK_DBB(dbb);
 	Database::SyncGuard dsGuard(dbb);
 
-	record_param rpb;
-	MOVE_CLEAR(&rpb, sizeof(record_param));
-	jrd_rel* relation = NULL;
-	jrd_tra* transaction = NULL;
-
 	ISC_STATUS_ARRAY status_vector;
 	MOVE_CLEAR(status_vector, sizeof(status_vector));
 
@@ -3769,6 +3765,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 /* Surrender if resources to start up aren't available. */
 	bool found = false, flush = false;
+	record_param rpb;
+	MOVE_CLEAR(&rpb, sizeof(record_param));
 
 	try {
 /* Pseudo attachment needed for lock owner identification. */
@@ -3790,6 +3788,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception&) {
 		goto gc_exit;
 	}
+
+	jrd_rel* relation = NULL;
+	jrd_tra* transaction = NULL;
 
 	try {
 
@@ -4897,7 +4898,7 @@ static void update_in_place(thread_db* tdbb,
 		temp2.rpb_line = line;
 	}
 
-	UCHAR* address = org_rpb->rpb_address;
+	UCHAR* const save_address = org_rpb->rpb_address;
 	const USHORT length = org_rpb->rpb_length;
 	const USHORT format_number = org_rpb->rpb_format_number;
 	org_rpb->rpb_address = new_rpb->rpb_address;
@@ -4909,7 +4910,7 @@ static void update_in_place(thread_db* tdbb,
 	replace_record(tdbb, org_rpb, &stack, transaction);
 	DEBUG;
 
-	org_rpb->rpb_address = address;
+	org_rpb->rpb_address = save_address;
 	org_rpb->rpb_length = length;
 	org_rpb->rpb_format_number = format_number;
 	org_rpb->rpb_undo = old_data;
