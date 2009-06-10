@@ -407,7 +407,7 @@ static void signal_cleanup(void*)
 {
 /**************************************
  *
- *	c l e a n u p
+ *	s i g n a l _ c l e a n u p
  *
  **************************************
  *
