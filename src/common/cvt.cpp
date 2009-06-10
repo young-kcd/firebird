@@ -418,7 +418,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	if (to->dsc_dtype == dtype_text)
 	{
-		int trailing = to->dsc_length - length;
+		USHORT trailing = to->dsc_length - length;
 		if (trailing > 0)
 		{
 			CHARSET_ID chid = cb->getChid(to); // : DSC_GET_CHARSET(to);
@@ -1240,7 +1240,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
  *
  **************************************/
 	SLONG l;
-	SLONG length = from->dsc_length;
+	USHORT length = from->dsc_length;
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
@@ -1407,7 +1407,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			UCHAR fill_char = ASCII_SPACE;
 			Jrd::CharSet* toCharset = cb->getToCharset(charset2);
 			USHORT toLength;
-			int fill;
+			USHORT fill;
 
 			if (charset2 == ttype_binary)
 				fill_char = 0x00;
@@ -1420,8 +1420,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				toLength = length;
 
 				l -= length;
-				// TMN: Here we should really have the following fb_assert
-				// fb_assert((to->dsc_length - length) <= MAX_SSHORT);
 				fill = to->dsc_length - length;
 
 				CVT_COPY_BUFF(q, p, length);
