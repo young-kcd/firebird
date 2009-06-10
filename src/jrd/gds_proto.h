@@ -134,11 +134,6 @@ void	gds__trace_printer(void*, SSHORT, const TEXT*);
 void	gds__print_pool(Firebird::MemoryPool*, const TEXT*, ...);
 void	GDS_init_prefix();
 
-#if (defined SOLARIS && !defined(MAP_ANON))
-UCHAR*   mmap_anon(SLONG);
-#endif
-
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
