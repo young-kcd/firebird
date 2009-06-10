@@ -104,45 +104,45 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 	const SCHAR* control = dcc->begin();
 	const SCHAR* dcc_end = dcc->end();
 	while (control < dcc_end)
+	{
+		if (--space <= 0)
 		{
-			if (--space <= 0)
+			if (space == 0)
+				*output = 0;
+			return input - start;
+		}
+
+		if ((length = *output++ = *control++) & 128)
+		{
+			// TMN: This is bad code. It assumes char is 8 bits
+			// and that bit 7 is the sign-bit.
+			--space;
+			*output++ = *input;
+			input += (-length) & 255;
+		}
+		else
+		{
+			if ((space -= length) < 0)
 			{
-				if (space == 0)
-					*output = 0;
+				length += space;
+				output[-1] = length;
+				if (length > 0)
+				{
+					memcpy(output, input, length);
+					input += length;
+				}
 				return input - start;
 			}
 
-			if ((length = *output++ = *control++) & 128)
-			{
-				// TMN: This is bad code. It assumes char is 8 bits
-				// and that bit 7 is the sign-bit.
-				--space;
-				*output++ = *input;
-				input += (-length) & 255;
-			}
-			else
-			{
-				if ((space -= length) < 0)
-				{
-					length += space;
-					output[-1] = length;
-					if (length > 0)
-					{
-						memcpy(output, input, length);
-						input += length;
-					}
-					return input - start;
-				}
-
-				if (length > 0) {
-					memcpy(output, input, length);
-					output += length;
-					input += length;
-				}
+			if (length > 0) {
+				memcpy(output, input, length);
+				output += length;
+				input += length;
 			}
 		}
+	}
 	
-			BUGCHECK(178);		/* msg 178 record length inconsistent */
+	BUGCHECK(178);		/* msg 178 record length inconsistent */
 	return input - start;	// shut up compiler warning
 }
 
@@ -167,25 +167,25 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 	const SCHAR* control = dcc->begin();
 	const SCHAR* dcc_end = dcc->end();
 	while (control < dcc_end)
-		{
-			if (--space <= 0)
-				return input - start;
+	{
+		if (--space <= 0)
+			return input - start;
 
-			if ((length = *control++) & 128) {
-				--space;
-				input += (-length) & 255;
-			}
-			else {
-				if ((space -= length) < 0) {
-					length += space;
-					input += length;
-					return input - start;
-				}
-				input += length;
-			}
+		if ((length = *control++) & 128) {
+			--space;
+			input += (-length) & 255;
 		}
+		else {
+			if ((space -= length) < 0) {
+				length += space;
+				input += length;
+				return input - start;
+			}
+			input += length;
+		}
+	}
 
-			BUGCHECK(178);		/* msg 178 record length inconsistent */
+	BUGCHECK(178);		/* msg 178 record length inconsistent */
 	return input - start;	// shut up compiler warning
 }
 
@@ -386,21 +386,21 @@ void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 	const SCHAR* control = dcc->begin();
 	const SCHAR* dcc_end = dcc->end();
 	while (control < dcc_end)
+	{
+		const SSHORT length = *control++;
+		*output++ = length;
+		if (length < 0)
 		{
-			const SSHORT length = *control++;
-			*output++ = length;
-			if (length < 0)
-			{
-				*output++ = *input;
-				input -= length;
-			}
-			else if (length > 0)
-			{
-				memcpy(output, input, length);
-				output += length;
-				input += length;
-			}
+			*output++ = *input;
+			input -= length;
 		}
+		else if (length > 0)
+		{
+			memcpy(output, input, length);
+			output += length;
+			input += length;
+		}
+	}
 }
 
 
