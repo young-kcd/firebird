@@ -15,16 +15,13 @@
 # All Rights Reserved.
 # Contributor(s): Bill Oliver
 #
-## NOTE
-## NOTE This file is work in progress, and Firebird 2.5 with xlC does not
-## NOTE currently build!!! You should be using g++ when building on AIX!
-## NOTE
+# Compiler settings for AIX/powerpc, using the IBM XL C/C++ compiler.
+# "xlC_r" is the preferred C++ invocation.
 #
-# Compiler settings for AIX/powerpc, using IBM native compiler xlc.
-# "xlC" is the C++ invocation for the xlc compiler.
-#
-# Tested with AIX 6.1.0.0. Requires AIX 5.1+
-#
+# History
+# May-2009 Firebird 2.5 tested ok against AIX 6.1
+# Jun-2009 Firebird 2.5 tested ok against AIX 5.3
+# 
 # From the xlc documentation... Firebird requires xlC_r invocation.
 # All _r-suffixed invocations allow for threadsafe compilation and you
 # can use them to link the programs that use multi-threading. Use these
