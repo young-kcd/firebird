@@ -1,3 +1,151 @@
+2009-06-10 14:41  hvlad
+
+	* firebird2/src/: common/classes/array.h (1.59), jrd/dbt.cpp
+	(1.44), jrd/dpm.epp (1.93), jrd/sqz.cpp (1.31), jrd/sqz.h (1.10),
+	jrd/sqz_proto.h (1.14):
+
+	Patch by DS and VKh to speed up SQZ in some cases
+
+2009-06-10 14:30  alexpeshkoff
+
+	* firebird2/src/common/cvt.cpp (1.25):
+
+	Avoid sign extension problems in CVT
+
+2009-06-10 14:15  hvlad
+
+	* firebird2/src/jrd/req.h (1.94):
+
+	Much more easy way to please Sun compiler and not touch anything
+	more
+
+2009-06-10 14:11  hvlad
+
+	* firebird2/src/jrd/: dpm.epp (1.92), req.h (1.93), vio.cpp
+	(1.250):
+
+	Undo huge and not friendly fix for Sun compiler
+
+2009-06-10 13:30  alexpeshkoff
+
+	* firebird2/src/jrd/RecordNumber.h (1.15):
+
+	Sun compiler warnings fix
+
+2009-06-10 13:28  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.299):
+
+	Fixed gds__cleanup after my last commits
+
+2009-06-10 12:50  robocop
+
+	* firebird2/src/jrd/: dbt.cpp (1.43), vio.cpp (1.249):
+
+	Missing rpb_page/rpb_line changes and misc.
+
+2009-06-10 12:26  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.205):
+
+	Avoid including unneeded in mosr cases files
+
+2009-06-10 12:09  alexpeshkoff
+
+	* firebird2/src/jrd/: dpm.epp (1.91), idx.cpp (1.153), req.h
+	(1.92), vio.cpp (1.248):
+
+	Fixed Sun compiler build
+
+2009-06-10 11:48  alexpeshkoff
+
+	* firebird2/src/jrd/gds_proto.h (1.57):
+
+	cleanup
+
+2009-06-10 11:18  alexpeshkoff
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre (1.32),
+	builds/posix/Makefile.in.client.util (1.63),
+	builds/posix/Makefile.in.embed.util (1.50),
+	builds/posix/Makefile.in.fbtrace (1.12),
+	builds/posix/Makefile.in.smp_server (1.6), src/jrd/isc_s_proto.h
+	(1.30), src/jrd/isc_sync.cpp (1.204):
+
+	isc_ipc usage cleanup
+
+2009-06-10 11:18  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.40):
+
+	Though we do not actively use signals since 2.5, let's better
+	initialize paths before setting handlers
+
+2009-06-10 10:39  robocop
+
+	* firebird2/src/jrd/: gds.cpp (1.298), gds_proto.h (1.56), isc.cpp
+	(1.95):
+
+	Rename function as agreed with Alex and Dmitry.
+
+2009-06-10 10:06  alexpeshkoff
+
+	* firebird2/src/common/classes/semaphore.h (1.64):
+
+	Cleanup - thanks to Claudio
+
+2009-06-10 09:33  hvlad
+
+	* firebird2/src/jrd/os/win32/isc_ipc.cpp (1.34):
+
+	Fix Windows build
+
+2009-06-10 08:30  robocop
+
+	* firebird2/src/jrd/os/: posix/isc_ipc.cpp (1.39),
+	win32/isc_ipc.cpp (1.33):
+
+	Totally misc.
+
+2009-06-09 16:29  aafemt
+
+	* firebird2/builds/posix/prefix.mingw (1.49):
+
+	Don't be strictive
+
+2009-06-09 15:58  alexpeshkoff
+
+	* firebird2/src/: common/StatusArg.cpp (1.20), common/StatusArg.h
+	(1.16), common/classes/semaphore.cpp (1.4),
+	common/classes/semaphore.h (1.63), jrd/gds.cpp (1.297):
+
+
+	Reworked class Semaphore:
+
+	1. Mach semaphores on Darwin.  2. No more local SysV semaphores.
+	3. Fixed bugs in conditional var based semaphore.  4. Moved big
+	methods from .h to .cpp file.
+
+2009-06-09 15:56  alexpeshkoff
+
+	* firebird2/src/jrd/fun.epp (1.119):
+
+	Mac port - use correct full name for libib_util
+
+2009-06-09 15:02  robocop
+
+	* firebird2/src/jrd/SysFunction.cpp (1.76):
+
+	Fix CORE-2501: bin_shl and bin_shr shouldn't accept negative
+	shifts.
+
+2009-06-09 14:52  robocop
+
+	* firebird2/src/remote/server.cpp (1.257):
+
+	Put bad_port_context() in alphabetical order and created a little
+	helper, send_error().
+
 2009-06-09 13:06  alexpeshkoff
 
 	* firebird2/src/remote/server.cpp (1.256):
