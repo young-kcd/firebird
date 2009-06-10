@@ -148,15 +148,6 @@ public:
 
 namespace Firebird
 {
-#ifndef WORKING_SEM_INIT
-static const char* semName = "/firebird_temp_sem";
-#endif
-#ifndef SEM_FAILED
-#define SEM_FAILED ((sem_t*) (-1))
-#endif
-#ifndef SEM_FAILED
-#define SEM_FAILED ((sem_t*) (-1))
-#endif
 
 class SignalSafeSemaphore
 {
