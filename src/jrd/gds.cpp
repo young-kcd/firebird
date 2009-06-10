@@ -225,7 +225,6 @@ static Firebird::GlobalPtr<Firebird::Mutex> cleanup_handlers_mutex;
 static clean_t* cleanup_handlers = NULL;
 static Firebird::GlobalPtr<Firebird::Mutex> global_msg_mutex;
 static gds_msg* global_default_msg = NULL;
-static bool volatile initialized = false;
 
 VoidPtr API_ROUTINE gds__alloc_debug(SLONG size_request, const TEXT* filename, ULONG lineno)
 {
@@ -2415,11 +2414,6 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *	Unregister a cleanup handler.
  *
  **************************************/
-	if (!initialized)
-	{
-		return;
-	}
-
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 
 	clean_t* clean;
@@ -3469,7 +3463,6 @@ void gds__cleanup()
 
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 
-	initialized = false;
 	Firebird::InstanceControl::registerGdsCleanup(0);
 
 	clean_t* clean;
@@ -3487,6 +3480,7 @@ void gds__cleanup()
 
 		(*routine)(arg);
 	}
+	cleanup_handlers = NULL;
 }
 
 
