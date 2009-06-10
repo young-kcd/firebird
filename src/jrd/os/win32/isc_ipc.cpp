@@ -38,6 +38,7 @@
 
 
 #include "firebird.h"
+#include "../../../common/classes/init.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/isc.h"
