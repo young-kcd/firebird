@@ -40,7 +40,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-JRDBOOT_Files =	dsc.cpp gds.cpp isc.cpp isc_ipc.cpp $(JRDBOOT_Extra_Files)
+JRDBOOT_Files =	dsc.cpp gds.cpp isc.cpp $(JRDBOOT_Extra_Files)
 JRDBOOT_Sources = $(addprefix jrd/, $(JRDBOOT_Files))
 JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sources))))
 
