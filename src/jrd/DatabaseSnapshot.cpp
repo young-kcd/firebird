@@ -603,7 +603,7 @@ void DatabaseSnapshot::clearRecord(Record* record)
 
 	// Initialize all fields to NULLs
 	memset(record->rec_data, 0, record->rec_length);
-	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
+	const size_t null_bytes = (record->rec_format->fmt_count + 7u) >> 3;
 	memset(record->rec_data, 0xFF, null_bytes);
 }
 
