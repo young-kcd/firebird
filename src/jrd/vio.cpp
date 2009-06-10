@@ -271,7 +271,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 temp.rpb_pos.rpb_page, temp.rpb_pos.rpb_line, temp.rpb_transaction_nr,
+			 temp.rpb_page, temp.rpb_line, temp.rpb_transaction_nr,
 			 temp.rpb_flags, temp.rpb_b_page, temp.rpb_b_line,
 			 temp.rpb_f_page, temp.rpb_f_line);
 	}
@@ -341,8 +341,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			else
 				VIO_data(tdbb, &temp, dbb->dbb_permanent);
 			gc_rec1 = temp.rpb_record;
-			temp.rpb_pos.rpb_page = rpb->rpb_b_page;
-			temp.rpb_pos.rpb_line = rpb->rpb_b_line;
+			temp.rpb_page = rpb->rpb_b_page;
+			temp.rpb_line = rpb->rpb_b_line;
 
 			break;
 		}
@@ -385,7 +385,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		delete_record(tdbb, rpb, (SLONG) 0, 0);
 		if (!(rpb->rpb_flags & rpb_deleted)) {
 			RecordStack empty_staying;
-			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_pos.rpb_page, relation);
+			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
 			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
 			going.pop();
 		}
@@ -395,11 +395,11 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 /* If both record versions are on the same page, things are a little
    simpler */
 
-	if (rpb->rpb_pos.rpb_page == temp.rpb_pos.rpb_page && !rpb->rpb_prior) {
+	if (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior) {
 		DPM_backout(tdbb, rpb);
 		if (temp2.rpb_flags & rpb_deleted)
 			goto gc_cleanup;
-		delete_tail(tdbb, &temp2, rpb->rpb_pos.rpb_page, 0, 0);
+		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
 	}
 	else {
 		/* Bring the old version forward.  If the outgoing version was deleted,
@@ -419,7 +419,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			replace_record(tdbb, rpb, 0, transaction);
 			if (!DPM_fetch(tdbb, &temp, LCK_write))
 				BUGCHECK(291);	/* msg 291 cannot find record back version */
-			delete_record(tdbb, &temp, rpb->rpb_pos.rpb_page, 0);
+			delete_record(tdbb, &temp, rpb->rpb_page, 0);
 			goto gc_cleanup;
 		}
 
@@ -427,19 +427,19 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 		rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
 		DPM_update(tdbb, rpb, 0, transaction);
-		delete_tail(tdbb, &temp2, rpb->rpb_pos.rpb_page, 0, 0);
+		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
 
 		/* Next, delete the old copy of the now current version. */
 
 		if (!DPM_fetch(tdbb, &temp, LCK_write))
 			BUGCHECK(291);		/* msg 291 cannot find record back version */
-		delete_record(tdbb, &temp, rpb->rpb_pos.rpb_page, 0);
+		delete_record(tdbb, &temp, rpb->rpb_page, 0);
 	}
 
 
 	rpb->rpb_prior = NULL;
 	list_staying(tdbb, rpb, staying);
-	BLB_garbage_collect(tdbb, going, staying, rpb->rpb_pos.rpb_page, relation);
+	BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
 
 	if (going.hasData())
@@ -539,7 +539,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -598,7 +598,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			printf
 				("   chase record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 				 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-				 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+				 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 				 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
 		}
@@ -700,8 +700,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				if ((!(rpb->rpb_flags & rpb_deleted)) || (rpb->rpb_flags & rpb_delta))
 				{
 					VIO_data(tdbb, rpb, pool);
-					rpb->rpb_pos.rpb_page = temp.rpb_pos.rpb_page;
-					rpb->rpb_pos.rpb_line = temp.rpb_pos.rpb_line;
+					rpb->rpb_page = temp.rpb_page;
+					rpb->rpb_line = temp.rpb_line;
 
 					if (!(DPM_fetch(tdbb, rpb, LCK_read)))
 					{
@@ -814,8 +814,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				record_param temp = *rpb;
 				VIO_data(tdbb, rpb, pool);
 				if (temp.rpb_flags & rpb_chained) {
-					rpb->rpb_pos.rpb_page = temp.rpb_b_page;
-					rpb->rpb_pos.rpb_line = temp.rpb_b_line;
+					rpb->rpb_page = temp.rpb_b_page;
+					rpb->rpb_line = temp.rpb_b_line;
 					if (!DPM_fetch(tdbb, rpb, LCK_read)) {
 						/* Things have changed, start all over again. */
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
@@ -825,8 +825,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					}
 				}
 				else {
-					rpb->rpb_pos.rpb_page = temp.rpb_pos.rpb_page;
-					rpb->rpb_pos.rpb_line = temp.rpb_pos.rpb_line;
+					rpb->rpb_page = temp.rpb_page;
+					rpb->rpb_line = temp.rpb_line;
 					if (!DPM_fetch(tdbb, rpb, LCK_read)) {
 						/* Things have changed, start all over again. */
 						if (!DPM_get(tdbb, rpb, LCK_read)) {
@@ -1001,7 +1001,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	{
 		printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 				 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-				 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line,
+				 rpb->rpb_page, rpb->rpb_line,
 				 rpb->rpb_transaction_nr, rpb->rpb_flags,
 				 rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -1093,7 +1093,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 		if (debug_flag > DEBUG_WRITES_INFO) {
 			printf ("   record  %"SLONGFORMAT"d:%d, rpb_trans %"SLONGFORMAT
 					   "d, flags %d, back %"SLONGFORMAT"d:%d, fragment %"SLONGFORMAT"d:%d\n",
-				rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr, rpb->rpb_flags,
+				rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr, rpb->rpb_flags,
 			    rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
 		}
 #endif
@@ -1138,7 +1138,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	{
 		printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -1442,8 +1442,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
 
 		rpb->rpb_transaction_nr = transaction->tra_number;
-		rpb->rpb_b_page = temp.rpb_pos.rpb_page;
-		rpb->rpb_b_line = temp.rpb_pos.rpb_line;
+		rpb->rpb_b_page = temp.rpb_page;
+		rpb->rpb_b_line = temp.rpb_line;
 		rpb->rpb_address = NULL;
 		rpb->rpb_length = 0;
 		rpb->rpb_flags |= rpb_deleted;
@@ -1551,7 +1551,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 	{
 		printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -1723,7 +1723,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -1796,7 +1796,7 @@ bool VIO_get_current(thread_db* tdbb,
 			printf
 				("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 				 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-				 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+				 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 				 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
 		}
@@ -2101,7 +2101,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 		printf
 			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 org_rpb->rpb_pos.rpb_page, org_rpb->rpb_pos.rpb_line, org_rpb->rpb_transaction_nr,
+			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
 			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
 	}
@@ -2312,8 +2312,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 	org_rpb->rpb_transaction_nr = new_rpb->rpb_transaction_nr;
 	org_rpb->rpb_format_number = new_rpb->rpb_format_number;
-	org_rpb->rpb_b_page = temp.rpb_pos.rpb_page;
-	org_rpb->rpb_b_line = temp.rpb_pos.rpb_line;
+	org_rpb->rpb_b_page = temp.rpb_page;
+	org_rpb->rpb_b_line = temp.rpb_line;
 	org_rpb->rpb_address = new_rpb->rpb_address;
 	org_rpb->rpb_length = new_rpb->rpb_length;
 	org_rpb->rpb_flags &= ~(rpb_delta | rpb_uk_modified);
@@ -2380,7 +2380,7 @@ bool VIO_next_record(thread_db* tdbb,
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -2407,7 +2407,7 @@ bool VIO_next_record(thread_db* tdbb,
 			("VIO_next_record got record  %"SLONGFORMAT":%d, rpb_trans %"
 			 SLONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"
 			 SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -2742,7 +2742,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3138,7 +3138,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 		printf
 			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 org_rpb->rpb_pos.rpb_page, org_rpb->rpb_pos.rpb_line, org_rpb->rpb_transaction_nr,
+			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
 			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
 	}
@@ -3210,8 +3210,8 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 
 		org_rpb->rpb_transaction_nr = transaction->tra_number;
 		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
-		org_rpb->rpb_b_page = temp.rpb_pos.rpb_page;
-		org_rpb->rpb_b_line = temp.rpb_pos.rpb_line;
+		org_rpb->rpb_b_page = temp.rpb_page;
+		org_rpb->rpb_b_line = temp.rpb_line;
 		org_rpb->rpb_address = org_record->rec_data;
 		org_rpb->rpb_length = org_record->rec_format->fmt_length;
 		org_rpb->rpb_flags |= rpb_delta;
@@ -3393,7 +3393,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 		printf
 			("   delete_record record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3437,7 +3437,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 
 	record_param temp_rpb = *rpb;
 	DPM_delete(tdbb, &temp_rpb, prior_page);
-	tail = delete_tail(tdbb, &temp_rpb, temp_rpb.rpb_pos.rpb_page, tail, tail_end);
+	tail = delete_tail(tdbb, &temp_rpb, temp_rpb.rpb_page, tail, tail_end);
 
 	if (pool && prior) {
 		SQZ_apply_differences(record, reinterpret_cast<const char*>(differences),
@@ -3473,15 +3473,15 @@ static UCHAR* delete_tail(thread_db* tdbb,
 		printf
 			("   tail of record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
 #endif
 
 	while (rpb->rpb_flags & rpb_incomplete) {
-		rpb->rpb_pos.rpb_page = rpb->rpb_f_page;
-		rpb->rpb_pos.rpb_line = rpb->rpb_f_line;
+		rpb->rpb_page = rpb->rpb_f_page;
+		rpb->rpb_line = rpb->rpb_f_line;
 
 		/* Since the callers are modifying this record, it should not be
 		   garbage collected. */
@@ -3494,7 +3494,7 @@ static UCHAR* delete_tail(thread_db* tdbb,
 									rpb->rpb_length, tail, tail_end);
 		}
 		DPM_delete(tdbb, rpb, prior_page);
-		prior_page = rpb->rpb_pos.rpb_page;
+		prior_page = rpb->rpb_page;
 	}
 
 	return tail;
@@ -3575,7 +3575,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 		printf
 			("   expunge record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3608,7 +3608,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 
 	record_param temp = *rpb;
 	RecordStack empty_staying;
-	garbage_collect(tdbb, &temp, rpb->rpb_pos.rpb_page, empty_staying);
+	garbage_collect(tdbb, &temp, rpb->rpb_page, empty_staying);
 	VIO_bump_count(tdbb, DBB_expunge_count, rpb->rpb_relation);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_EXPUNGES);
 }
@@ -3647,7 +3647,7 @@ static void garbage_collect(thread_db* tdbb,
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3659,9 +3659,9 @@ static void garbage_collect(thread_db* tdbb,
 
 	while (rpb->rpb_b_page != 0) {
 		rpb->rpb_record = NULL;
-		prior_page = rpb->rpb_pos.rpb_page;
-		rpb->rpb_pos.rpb_page = rpb->rpb_b_page;
-		rpb->rpb_pos.rpb_line = rpb->rpb_b_line;
+		prior_page = rpb->rpb_page;
+		rpb->rpb_page = rpb->rpb_b_page;
+		rpb->rpb_line = rpb->rpb_b_line;
 		if (!DPM_fetch(tdbb, rpb, LCK_write)) {
 			BUGCHECK(291);		/* msg 291 cannot find record back version */
 		}
@@ -3717,7 +3717,7 @@ static void garbage_collect_idx(thread_db* tdbb,
 
 	going.push(old_data ? old_data : org_rpb->rpb_record);
 
-	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_pos.rpb_page, org_rpb->rpb_relation);
+	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, org_rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
 	going.pop();
@@ -4057,8 +4057,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 	SET_TDBB(tdbb);
 
 	Record* data = rpb->rpb_prior;
-	ULONG next_page = rpb->rpb_pos.rpb_page;
-	USHORT next_line = rpb->rpb_pos.rpb_line;
+	ULONG next_page = rpb->rpb_page;
+	USHORT next_line = rpb->rpb_line;
 	USHORT max_depth = 0;
 	USHORT depth = 0;
 
@@ -4082,8 +4082,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			temp.rpb_flags != rpb->rpb_flags)
 		{
 			clearRecordStack(staying);
-			next_page = temp.rpb_pos.rpb_page;
-			next_line = temp.rpb_pos.rpb_line;
+			next_page = temp.rpb_page;
+			next_line = temp.rpb_line;
 			max_depth = 0;
 			*rpb = temp;
 		}
@@ -4095,7 +4095,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 		bool timed_out = false;
 		while (temp.rpb_b_page &&
-			!(temp.rpb_pos.rpb_page == (SLONG) next_page && temp.rpb_pos.rpb_line == (SSHORT) next_line))
+			!(temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line))
 		{
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
 
@@ -4104,8 +4104,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				fb_utils::init_status(tdbb->tdbb_status_vector);
 
 				clearRecordStack(staying);
-				next_page = rpb->rpb_pos.rpb_page;
-				next_line = rpb->rpb_pos.rpb_line;
+				next_page = rpb->rpb_page;
+				next_line = rpb->rpb_line;
 				max_depth = 0;
 				timed_out = true;
 				break;
@@ -4123,7 +4123,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 		/* If there is a next older version, then process it: remember that
 		   version's data in 'staying'. */
 
-		if (temp.rpb_pos.rpb_page == (SLONG) next_page && temp.rpb_pos.rpb_line == (SSHORT) next_line)
+		if (temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line)
 		{
 			next_page = temp.rpb_b_page;
 			next_line = temp.rpb_b_line;
@@ -4295,7 +4295,7 @@ static int prepare_update(	thread_db*		tdbb,
 			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT
 			 ":%d, prior %p\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line, (void*) rpb->rpb_prior);
 	}
@@ -4522,7 +4522,7 @@ static int prepare_update(	thread_db*		tdbb,
 				DPM_store(tdbb, temp, stack, DPM_secondary);
 				continue;
 			}
-			stack.push(temp->rpb_pos.rpb_page);
+			stack.push(temp->rpb_page);
 			return PREPARE_OK;
 
 		case tra_active:
@@ -4645,7 +4645,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -4696,7 +4696,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 	RecordStack staying;
 	staying.push(record);
-	garbage_collect(tdbb, &temp, rpb->rpb_pos.rpb_page, staying);
+	garbage_collect(tdbb, &temp, rpb->rpb_page, staying);
 	gc_rec->rec_flags &= ~REC_gc_active;
 	VIO_bump_count(tdbb, DBB_purge_count, relation);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_PURGES);
@@ -4764,7 +4764,7 @@ static void replace_record(thread_db*		tdbb,
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT
 			 ":%d, prior %p\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line, (void*) rpb->rpb_prior);
 	}
@@ -4773,7 +4773,7 @@ static void replace_record(thread_db*		tdbb,
 	record_param temp = *rpb;
 	rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
 	DPM_update(tdbb, rpb, stack, transaction);
-	delete_tail(tdbb, &temp, rpb->rpb_pos.rpb_page, 0, 0);
+	delete_tail(tdbb, &temp, rpb->rpb_page, 0, 0);
 
 	if ((rpb->rpb_flags & rpb_delta) && !rpb->rpb_prior) {
 		rpb->rpb_prior = rpb->rpb_record;
@@ -4842,7 +4842,7 @@ static void update_in_place(thread_db* tdbb,
 		printf
 			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 org_rpb->rpb_pos.rpb_page, org_rpb->rpb_pos.rpb_line, org_rpb->rpb_transaction_nr,
+			 org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
 			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
 	}
@@ -4864,8 +4864,8 @@ static void update_in_place(thread_db* tdbb,
 	if (prior) {
 		temp2 = *org_rpb;
 		temp2.rpb_record = VIO_gc_record(tdbb, relation);
-		temp2.rpb_pos.rpb_page = org_rpb->rpb_b_page;
-		temp2.rpb_pos.rpb_line = org_rpb->rpb_b_line;
+		temp2.rpb_page = org_rpb->rpb_b_page;
+		temp2.rpb_line = org_rpb->rpb_b_line;
 		if (! DPM_fetch(tdbb, &temp2, LCK_read)) {
 			BUGCHECK(291);	 // msg 291 cannot find record back version
 		}
@@ -4879,7 +4879,7 @@ static void update_in_place(thread_db* tdbb,
 		temp2.rpb_number = org_rpb->rpb_number;
 		DPM_store(tdbb, &temp2, stack, DPM_secondary);
 
-		stack.push(temp2.rpb_pos.rpb_page);
+		stack.push(temp2.rpb_page);
 	}
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {
@@ -4889,12 +4889,12 @@ static void update_in_place(thread_db* tdbb,
 	if (prior) {
 		const SLONG page = org_rpb->rpb_b_page;
 		const USHORT line = org_rpb->rpb_b_line;
-		org_rpb->rpb_b_page = temp2.rpb_pos.rpb_page;
-		org_rpb->rpb_b_line = temp2.rpb_pos.rpb_line;
+		org_rpb->rpb_b_page = temp2.rpb_page;
+		org_rpb->rpb_b_line = temp2.rpb_line;
 		org_rpb->rpb_flags &= ~rpb_delta;
 		org_rpb->rpb_prior = NULL;
-		temp2.rpb_pos.rpb_page = page;
-		temp2.rpb_pos.rpb_line = line;
+		temp2.rpb_page = page;
+		temp2.rpb_line = line;
 	}
 
 	UCHAR* address = org_rpb->rpb_address;
@@ -4925,7 +4925,7 @@ static void update_in_place(thread_db* tdbb,
 		RecordStack going;
 		going.push(org_rpb->rpb_record);
 
-		BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_pos.rpb_page, relation);
+		BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, relation);
 		IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
 		staying.pop();
@@ -4936,7 +4936,7 @@ static void update_in_place(thread_db* tdbb,
 		if (!DPM_fetch(tdbb, &temp2, LCK_write)) {
 			BUGCHECK(291);		/* msg 291 cannot find record back version */
 		}
-		delete_record(tdbb, &temp2, org_rpb->rpb_pos.rpb_page, 0);
+		delete_record(tdbb, &temp2, org_rpb->rpb_page, 0);
 	}
 
 	if (gc_rec) {

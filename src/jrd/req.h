@@ -71,15 +71,13 @@ struct record_param
 	Record*		rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
-	struct rpb_pos_struct
+	union
 	{
-		SLONG rpb_page;			// page number
-		USHORT rpb_line;		// line number on page
-	};
-
-	union // anonymous union
-	{
-		rpb_pos_struct rpb_pos;
+		struct
+		{
+			SLONG rpb_page;			// page number
+			USHORT rpb_line;		// line number on page
+		};
 		FB_UINT64 rpb_ext_pos;		// position in external file
 	};
 
