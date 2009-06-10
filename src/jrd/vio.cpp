@@ -255,11 +255,6 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	jrd_rel* relation = rpb->rpb_relation;
 	VIO_bump_count(tdbb, DBB_backout_count, relation);
 	tdbb->bumpStats(RuntimeStatistics::RECORD_BACKOUTS);
-	RecordStack going, staying;
-	Record* data = NULL;
-	Record* old_data = NULL;
-	Record* gc_rec1 = NULL;
-	Record* gc_rec2 = NULL;
 
 /* If there is data in the record, fetch it now.  If the old version
    is a differences record, we will need it sooner.  In any case, we
@@ -276,7 +271,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 temp.rpb_pos.rpb_page, temp.rpb_line, temp.rpb_transaction_nr,
+			 temp.rpb_pos.rpb_page, temp.rpb_pos.rpb_line, temp.rpb_transaction_nr,
 			 temp.rpb_flags, temp.rpb_b_page, temp.rpb_b_line,
 			 temp.rpb_f_page, temp.rpb_f_line);
 	}
@@ -294,6 +289,12 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 		return;
 	}
+
+	RecordStack going, staying;
+	Record* data = NULL;
+	Record* old_data = NULL;
+	Record* gc_rec2 = NULL;
+
 	if ((temp.rpb_flags & rpb_deleted) && (!(temp.rpb_flags & rpb_delta)))
 		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 	else {
@@ -312,6 +313,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	record_param temp2 = temp = *rpb;
 
 /* If there is an old version of the record, fetch it's data now. */
+
+	Record* gc_rec1 = NULL;
 
 	if (rpb->rpb_b_page) {
 		temp.rpb_record = gc_rec1 = VIO_gc_record(tdbb, relation);
@@ -536,7 +539,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -595,7 +598,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			printf
 				("   chase record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 				 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-				 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+				 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 				 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
 		}
@@ -998,7 +1001,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	{
 		printf("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 				 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-				 rpb->rpb_page, rpb->rpb_line,
+				 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line,
 				 rpb->rpb_transaction_nr, rpb->rpb_flags,
 				 rpb->rpb_b_page, rpb->rpb_b_line,
 				 rpb->rpb_f_page, rpb->rpb_f_line);
@@ -2377,7 +2380,7 @@ bool VIO_next_record(thread_db* tdbb,
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -2739,7 +2742,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		printf
 			("   record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3135,7 +3138,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb, jr
 		printf
 			("   old record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 org_rpb->rpb_pos.rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
+			 org_rpb->rpb_pos.rpb_page, org_rpb->rpb_pos.rpb_line, org_rpb->rpb_transaction_nr,
 			 org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
 			 org_rpb->rpb_f_page, org_rpb->rpb_f_line);
 	}
@@ -3390,7 +3393,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 		printf
 			("   delete_record record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3470,7 +3473,7 @@ static UCHAR* delete_tail(thread_db* tdbb,
 		printf
 			("   tail of record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -3572,7 +3575,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 		printf
 			("   expunge record  %"SLONGFORMAT":%d, rpb_trans %"SLONGFORMAT
 			 ", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
-			 rpb->rpb_pos.rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+			 rpb->rpb_pos.rpb_page, rpb->rpb_pos.rpb_line, rpb->rpb_transaction_nr,
 			 rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
@@ -4847,7 +4850,7 @@ static void update_in_place(thread_db* tdbb,
 
 	PageStack& stack = new_rpb->rpb_record->rec_precedence;
 	jrd_rel* relation = org_rpb->rpb_relation;
-	Record* old_data = org_rpb->rpb_record;
+	Record* const old_data = org_rpb->rpb_record;
 
 /* If the old version has been stored as a delta, things get complicated.  Clearly,
    if we overwrite the current record, the differences from the current version
