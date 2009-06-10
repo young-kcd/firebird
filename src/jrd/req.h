@@ -71,15 +71,8 @@ struct record_param
 	Record*		rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
-	union
-	{
-		struct
-		{
-			SLONG rpb_page;			// page number
-			USHORT rpb_line;		// line number on page
-		};
-		FB_UINT64 rpb_ext_pos;		// position in external file
-	};
+	SLONG rpb_page;			// page number
+	USHORT rpb_line;		// line number on page
 
 	SLONG rpb_f_page;			/* fragment page number */
 	USHORT rpb_f_line;			/* fragment line number on page */
@@ -92,6 +85,8 @@ struct record_param
 	USHORT rpb_flags;			/* record ODS flags replica */
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
+
+	FB_UINT64 rpb_ext_pos;		// position in external file
 
 	inline WIN& getWindow(thread_db* tdbb)
 	{
