@@ -457,7 +457,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 
 	/*
 	 * We can't call gds__get_prefix() at once when switch is found.
-	 * gds__get_prefix() invokes gdsPrefixInit(), which in turn causes
+	 * gds__get_prefix() invokes GDS_init_prefix(), which in turn causes
 	 * config file to be loaded. And in case when -el or -em is given
 	 * before -e, this leads to use of wrong firebird.conf.
 	 * To avoid it accumulate values for switches locally,
@@ -529,7 +529,7 @@ void iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector)
 {
 /**************************************
  *
- *	g d s _ $ l o g _ s t a t u s
+ *	i s c L o g S t a t u s
  *
  **************************************
  *
@@ -564,7 +564,7 @@ void iscLogException(const char* text, const Firebird::Exception& e)
 {
 /**************************************
  *
- *      l o g E x c e p t i o n
+ *	i s c L o g E x c e p t i o n
  *
  **************************************
  *

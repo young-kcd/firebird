@@ -1689,11 +1689,11 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 
 	if (arg_type == IB_PREFIX_TYPE)
 	{
-		// it's very important to do it BEFORE gdsPrefixInit()
+		// it's very important to do it BEFORE GDS_init_prefix()
 		Config::setRootDirectoryFromCommandLine(prefix);
 	}
 
-	gdsPrefixInit();
+	GDS_init_prefix();
 
 	switch (arg_type)
 	{
@@ -1728,7 +1728,7 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
  **************************************/
 	resultString[0] = 0;
 
-	gdsPrefixInit();
+	GDS_init_prefix();
 
 	strcpy(resultString, fb_prefix);	// safe - no BO
 	safe_concat_path(resultString, file);
@@ -1749,7 +1749,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
  **************************************/
 	string[0] = 0;
 
-	gdsPrefixInit();
+	GDS_init_prefix();
 
 	strcpy(string, fb_prefix_lock);	// safe - no BO
 
@@ -1778,7 +1778,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
  **************************************/
 	string[0] = 0;
 
-	gdsPrefixInit();
+	GDS_init_prefix();
 
 	strcpy(string, fb_prefix_msg);	// safe - no BO
 	safe_concat_path(string, root);
@@ -3664,11 +3664,11 @@ public:
 
 static Firebird::InitMutex<InitPrefix> initPrefix;
 
-void gdsPrefixInit()
+void GDS_init_prefix()
 {
 /**************************************
  *
- *	g d s P r e f i x I n i t
+ *	G D S _ i n i t _ p r e f i x
  *
  **************************************
  *
@@ -3676,7 +3676,7 @@ void gdsPrefixInit()
  *	Initialize all data in various fb_prefixes.
  *	Calling it before any signal can be caught (from init())
  *	makes gds__prefix* family of functions signal-safe.
- *	In order not to break external API, call to gdsPrefixInit
+ *	In order not to break external API, call to GDS_init_prefix
  *	must be present in all gds__prefix functions. Due to correct
  *	init this doesn't make them unsafe.
  *

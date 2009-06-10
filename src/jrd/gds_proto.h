@@ -132,7 +132,7 @@ void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 void	FB_EXPORTED gds__default_printer(void*, SSHORT, const TEXT*);
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
 void	gds__print_pool(Firebird::MemoryPool*, const TEXT*, ...);
-void	gdsPrefixInit();
+void	GDS_init_prefix();
 
 #if (defined SOLARIS && !defined(MAP_ANON))
 UCHAR*   mmap_anon(SLONG);
