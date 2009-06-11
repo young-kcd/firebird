@@ -1,3 +1,46 @@
+2009-06-11 10:15  robocop
+
+	* firebird2/builds/win32/msvc9/gpre_boot.vcproj (1.5):
+
+	Remove unneeded reference to isc_ipc, since this file is not needed
+	to build gpre_boot.
+
+2009-06-10 16:25  robocop
+
+	* firebird2/src/jrd/: sqz.cpp (1.33), sqz_proto.h (1.15):
+
+	Opportunist developer sees the place to constify the code.  :-)
+
+2009-06-10 16:09  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.251):
+
+	Misc.
+
+2009-06-10 15:42  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.aix_powerpc_xlc (1.7):
+
+	comments
+
+2009-06-10 15:31  hvlad
+
+	* firebird2/src/jrd/sqz.cpp (1.32):
+
+	Fix identation after my commit.
+
+2009-06-10 15:00  hvlad
+
+	* firebird2/src/jrd/idx.cpp (1.154):
+
+	Undo huge and not friendly fix for Sun compiler. Missed file
+
+2009-06-10 14:48  alexpeshkoff
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.103):
+
+	misc
+
 2009-06-10 14:41  hvlad
 
 	* firebird2/src/: common/classes/array.h (1.59), jrd/dbt.cpp
