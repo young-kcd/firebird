@@ -220,6 +220,7 @@ enum shut_mode_t {
 // backup states
 
 enum backup_state_t {
+	backup_state_unknown = -1,
 	backup_state_normal = 0,
 	backup_state_stalled = 1,
 	backup_state_merge = 2

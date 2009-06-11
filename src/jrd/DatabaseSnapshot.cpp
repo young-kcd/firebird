@@ -835,8 +835,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	record.storeInteger(f_mon_db_pages, PageSpace::actAlloc(database));
 
 	// database state
-	thread_db* tdbb = JRD_get_thread_data();
-	database->dbb_backup_manager->lock_shared_database(tdbb, true);
 	switch (database->dbb_backup_manager->get_state())
 	{
 		case nbak_state_normal:
@@ -849,10 +847,10 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 			temp = backup_state_merge;
 			break;
 		default:
-			fb_assert(false);
+			temp = backup_state_unknown;
 	}
-	database->dbb_backup_manager->unlock_shared_database(tdbb);
 	record.storeInteger(f_mon_db_backup_state, temp);
+
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
