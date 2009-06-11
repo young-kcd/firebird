@@ -220,13 +220,14 @@ ULONG DatabaseSnapshot::SharedMemory::setupData(Database* dbb)
 	ensureSpace(sizeof(Element));
 
 	// Put an up-to-date element at the tail
-	UCHAR* const ptr = (UCHAR*) base + base->used;
+	const ULONG offset = base->used;
+	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	element->processId = getpid();
 	element->localId = dbb->dbb_monitoring_id;
 	element->length = 0;
 	base->used += sizeof(Element);
-	return ptr - (UCHAR*) base;
+	return offset;
 }
 
 
