@@ -40,7 +40,7 @@ Problems with installation of MS VC runtime libraries
 
 Much work has been done to ensure that the MS Visual
 C runtime libraries are correctly installed by the
-binary installer. Since v2.1.3 Firebird will work with
+binary installer. Since v2.1.2 Firebird will work with
 locally deployed instances of the runtime libraries.
 This especially simplifies deployment of the firebird
 client or embedded dll with your own application.
