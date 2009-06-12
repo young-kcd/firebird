@@ -68,6 +68,34 @@
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
+#ifdef _MSC_VER // don't know if this is useful for MinGW
+#define NOATOM
+//#define NOGDI
+//#define NOGDICAPMASKS
+#define NOMETAFILE
+#define NOMINMAX
+//#define NOMSG
+#define NOOPENFILE
+#define NORASTEROPS
+#define NOSCROLL
+#define NOSOUND
+#define NOSYSMETRICS
+#define NOTEXTMETRIC
+#define NOWH
+#define NOCOMM
+#define NOKANJI
+#define NOCRYPT
+#define NOMCX
+//#define NOWINMESSAGES
+//#define NOWINSTYLES
+//#define NOMENUS
+#define NOICONS
+#define NOCLIPBOARD
+//#define NOCOLOR
+//#define NOSERVICE
+//#define NOHELP
+#endif
+
 /* Headers */
 #define HAVE_ASSERT_H
 #define HAVE_CTYPE_H
@@ -169,8 +197,11 @@
 #undef HAVE_SYS_SELECT_H
 
 
-#if defined _MSC_VER && _MSC_VER < 1500
+#if defined _MSC_VER
+#if _MSC_VER < 1500
 #define vsnprintf _vsnprintf
+#endif
+#define isnan _isnan
 #endif
 
 
