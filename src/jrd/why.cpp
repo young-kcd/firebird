@@ -3555,7 +3555,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 				(items[1] == isc_info_end || items[1] == 0) ) &&
 			(statement->flags & HANDLE_STATEMENT_prepared) && statement->das.dasup_stmt_type)
 		{
-			if (buffer_length >= 8)
+			if (USHORT(buffer_length) >= 8)
 			{
 				*buffer++ = isc_info_sql_stmt_type;
 				put_vax_short((UCHAR*) buffer, 4);
