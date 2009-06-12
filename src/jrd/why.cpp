@@ -2823,11 +2823,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 			if (!GDS_DATABASE_INFO(status, db_handle, 1, &ch, sizeof(buffer), buffer))
 			{
 				if ((buffer[0] != isc_info_base_level) || (buffer[4] > 3))
+				{
 					GDS_DSQL_EXEC_IMM3_M(status, db_handle, &crdb_trans_handle, length, string,
 										 dialect, in_blr_length, in_blr,
 										 in_msg_type, in_msg_length, in_msg,
 										 out_blr_length, out_blr,
 										 out_msg_type, out_msg_length, out_msg);
+				}
 				else
 					ret_v3_error = true;
 			}
@@ -4225,11 +4227,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
 	switch (fpe_status)
 	{
 	case FPE_RESET_INIT_ONLY:
-		subsystem_FPE_reset = fpe_status;
-		break;
 	case FPE_RESET_NEXT_API_CALL:
-		subsystem_FPE_reset = fpe_status;
-		break;
 	case FPE_RESET_ALL_API_CALL:
 		subsystem_FPE_reset = fpe_status;
 		break;
@@ -4932,7 +4930,8 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 																	  item_length, items,
 																	  buffer_length, buffer);
 		}
-		else {
+		else
+		{
 			SSHORT item_len = item_length;
 			SSHORT buffer_len = buffer_length;
 			for (Transaction* sub = transaction->next; sub; sub = sub->next) {
@@ -5291,8 +5290,8 @@ static const PTR get_entrypoint(int proc, int implementation)
 	// return *entry ? *entry : &no_entrypoint;
 	if (*entry)
 		return *entry;
-	else
-		return &no_entrypoint;
+
+	return &no_entrypoint;
 
 }
 
@@ -5328,7 +5327,7 @@ static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda, USH
 	else
 		n_variables = ((SQLDA *) sqlda)->sqln;
 
-	ULONG length = 32 + n_variables * 172;
+	ULONG length = 32 + ULONG(n_variables) * 172;
 	if (length < min_buffer_size)
 		length = min_buffer_size;
 

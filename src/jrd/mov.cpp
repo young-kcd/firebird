@@ -392,7 +392,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
  *
  * Functional description
  *	Make a string, in a specified text type, out of a descriptor.
- *	The address of the resultant string is returned.
+ *	The address of the resultant string is returned by reference.
  *	MOV_make_string2 returns the length of the string in bytes.
  *
  **************************************/
