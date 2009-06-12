@@ -151,14 +151,14 @@ private:
 #ifdef WIN_NT
 inline bool isinf(double x)
 {
-	return (!_finite (x) && !_isnan(x));
+	return (!_finite (x) && !isnan(x));
 }
 #else
 #ifndef isinf
 template <typename F>
 inline bool isinf(F x)
 {
-	return isnan(x - x);
+	return !isnan(x) && isnan(x - x);
 }
 #endif // isinf
 #endif // WIN_NT
