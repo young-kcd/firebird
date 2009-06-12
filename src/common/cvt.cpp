@@ -418,7 +418,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	if (to->dsc_dtype == dtype_text)
 	{
-		USHORT trailing = to->dsc_length - length;
+		ULONG trailing = ULONG(to->dsc_length) - length;
 		if (trailing > 0)
 		{
 			CHARSET_ID chid = cb->getChid(to); // : DSC_GET_CHARSET(to);
@@ -1239,8 +1239,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	SLONG l;
-	USHORT length = from->dsc_length;
+	ULONG l;
+	ULONG length = from->dsc_length;
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
@@ -1406,8 +1406,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			const UCHAR* start = to->dsc_address;
 			UCHAR fill_char = ASCII_SPACE;
 			Jrd::CharSet* toCharset = cb->getToCharset(charset2);
-			USHORT toLength;
-			USHORT fill;
+			ULONG toLength;
+			ULONG fill;
 
 			if (charset2 == ttype_binary)
 				fill_char = 0x00;
@@ -1420,7 +1420,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				toLength = length;
 
 				l -= length;
-				fill = to->dsc_length - length;
+				fill = ULONG(to->dsc_length) - length;
 
 				CVT_COPY_BUFF(q, p, length);
 				if (fill > 0) {
@@ -1447,7 +1447,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				break;
 
 			case dtype_varying:
-				length = MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
+				length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
 				cb->validateData(toCharset, length, q, cb->err);
 				toLength = length;
 
