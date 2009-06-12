@@ -55,17 +55,20 @@ class DatabaseSnapshot
 		{
 			offset = 0;
 			sizeLimit = sizeof(buffer);
+			fb_assert(rel_id > 0 && rel_id <= ULONG(MAX_UCHAR));
 			buffer[offset++] = (UCHAR) rel_id;
 		}
 
-		void assign(USHORT length, UCHAR* ptr)
+		void assign(USHORT length, const UCHAR* ptr)
 		{
+			// CVC: While length is USHORT, this assertion is redundant.
+			fb_assert(length <= MAX_FORMAT_SIZE);
 			offset = 0;
 			sizeLimit = length;
 			memcpy(buffer, ptr, length);
 		}
 
-		USHORT getLength() const
+		ULONG getLength() const
 		{
 			return offset;
 		}
@@ -120,7 +123,7 @@ class DatabaseSnapshot
 		int getRelationId()
 		{
 			fb_assert(!offset);
-			return buffer[offset++];
+			return (ULONG) buffer[offset++];
 		}
 
 		bool getField(DumpField& field)
@@ -131,6 +134,7 @@ class DatabaseSnapshot
 			{
 				field.id = (USHORT) buffer[offset++];
 				field.type = (ValueType) buffer[offset++];
+				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_STRING);
 				memcpy(&field.length, buffer + offset, sizeof(USHORT));
 				offset += sizeof(USHORT);
 				field.data = buffer + offset;
@@ -153,6 +157,7 @@ class DatabaseSnapshot
 			}
 
 			UCHAR* ptr = buffer + offset;
+			fb_assert(field_id <= ULONG(MAX_UCHAR));
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
 			const USHORT adjusted_length = (USHORT) length;
@@ -163,8 +168,8 @@ class DatabaseSnapshot
 		}
 
 		UCHAR buffer[MAX_FORMAT_SIZE];
-		USHORT offset;
-		USHORT sizeLimit;
+		ULONG offset;
+		ULONG sizeLimit;
 	};
 
 	struct RelationData
@@ -259,7 +264,7 @@ class DatabaseSnapshot
 
 		void putRecord(const DumpRecord& record)
 		{
-			const USHORT length = record.getLength();
+			const USHORT length = (USHORT) record.getLength();
 			dump->writeData(offset, sizeof(USHORT), &length);
 			dump->writeData(offset, length, record.getData());
 		}
@@ -293,7 +298,7 @@ class DatabaseSnapshot
 
 	private:
 		ULONG sizeLimit;
-		UCHAR* buffer;
+		const UCHAR* buffer;
 		ULONG offset;
 	};
 
