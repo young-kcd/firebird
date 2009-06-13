@@ -373,7 +373,7 @@ const UCHAR dtype_max_comp	= dtype_d_float;
 inline USHORT TEXT_LEN(const dsc* desc)
 {
 	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length :
-		(desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
+		(desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1u : desc->dsc_length - sizeof(USHORT));
 }
 
 
