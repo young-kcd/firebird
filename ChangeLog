@@ -1,3 +1,21 @@
+2009-06-13 07:40  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.252):
+
+	Style.
+
+2009-06-13 07:19  robocop
+
+	* firebird2/src/jrd/dsc.h (1.49):
+
+	Sign extension problem, thanks Bill Oliver.
+
+2009-06-12 15:18  robocop
+
+	* firebird2/src/common/cvt.cpp (1.26):
+
+	Sign extension test.
+
 2009-06-12 14:07  robocop
 
 	* firebird2/src/jrd/why.cpp (1.247):
