@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <new>
 #include "fb_types.h"
 #include "../common/StatusArg.h"
 
@@ -112,13 +113,13 @@ public:
 };
 
 // Used in MemoryPool
-class BadAlloc : public Exception
+class BadAlloc : public std::bad_alloc, public Exception
 {
 public:
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
 	virtual const char* what() const throw() { return "Firebird::BadAlloc"; }
 	static void raise();
-	BadAlloc() throw() : Exception() { }
+	BadAlloc() throw() : std::bad_alloc(), Exception() { }
 };
 
 // Main exception class in firebird

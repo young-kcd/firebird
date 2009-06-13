@@ -49,13 +49,14 @@
 					   stdlib.h (EKU) */
 #endif
 
-#include <new>
-
-#if defined (_MSC_VER) || defined (__SUNPRO_CC) || defined(__xlC__)
-#define THROW_BAD_ALLOC
-#else
-#define THROW_BAD_ALLOC throw (Firebird::BadAlloc)
-#endif
+// MSVC does not support exception specification, so it's unknown if that will be correct or not
+// from its POV. For now, use it and disable the C4290 warning.
+//
+//#if defined (_MSC_VER)
+//#define THROW_BAD_ALLOC
+//#else
+#define THROW_BAD_ALLOC throw (std::bad_alloc)
+//#endif
 
 #ifdef USE_VALGRIND
 

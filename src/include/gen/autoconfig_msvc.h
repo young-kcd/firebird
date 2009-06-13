@@ -41,6 +41,7 @@
 #pragma warning(disable:4214)  // nonstandard extension used : bit field types other than int
 #pragma warning(disable:4244)  // conversion from '.......' to '......', possible loss of data
 #pragma warning(disable:4245)  // conversion from '.......' to '......', signed/unsigned mismatch
+#pragma warning(disable:4290)  // C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
 #pragma warning(disable:4291)  // no matching operator delete found; memory will not be freed if initialization throws an exception
 #pragma warning(disable:4309)  // truncation of constant value
 #pragma warning(disable:4310)  // cast truncates constant value
