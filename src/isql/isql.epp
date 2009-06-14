@@ -8010,15 +8010,60 @@ static void process_plan()
 	const SCHAR plan_info[] = { isc_info_sql_get_plan };
 	TEXT plan_buffer[PRINT_BUFFER_LENGTH];
 	memset(plan_buffer, 0, sizeof(plan_buffer));
-	if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(plan_info), plan_info,
-						  sizeof(plan_buffer), plan_buffer))
+	char* planPtr = plan_buffer;
+	size_t planSize = sizeof(plan_buffer);
+	PtrSentry<char> planSentry;
+
+	for (int i = 0; i < 3; ++i)
 	{
-		ISQL_errmsg(isc_status);
-	}
-	else if (plan_buffer[0] == isc_info_sql_get_plan)
-	{
-		const int l = gds__vax_integer(reinterpret_cast<const UCHAR*>(plan_buffer) + 1, 2);
-		ISQL_printf2(Diag, "%.*s%s", l, plan_buffer + 3, NEWLINE);
+		if (isc_dsql_sql_info(isc_status, &global_Stmt, sizeof(plan_info), plan_info,
+							  planSize, planPtr))
+		{
+			ISQL_errmsg(isc_status);
+			return;
+		}
+
+		switch (planPtr[0])
+		{
+		case isc_info_sql_get_plan:
+			{
+				int l = gds__vax_integer(reinterpret_cast<const UCHAR*>(planPtr) + 1, 2);
+				if (l > planSize - 3)
+					l = planSize - 3;
+				ISQL_printf2(Diag, "%.*s%s", l, planPtr + 3, NEWLINE);
+			}
+			return;
+		case isc_info_truncated:
+			switch (i)
+			{
+			case 0:
+				planSentry.exchange((planPtr = new char[planSize = MAX_SSHORT]), true);
+				break;
+			case 1:
+				// Probably FB 2.1 and before will crash with MAX_USHORT.
+				if (isqlGlob.major_ods == 11 && isqlGlob.minor_ods >= 2 || // FB2.5
+					isqlGlob.major_ods > 11)
+				{
+					planSentry.clean();
+					planSentry.exchange((planPtr = new char[planSize = MAX_USHORT]), true);
+					break;
+				}
+				// else fall into
+			case 2:
+				ISQL_printf2(Diag, "Plan truncated%s", NEWLINE);
+				return;
+			default:
+				ISQL_printf2(Diag, "Logical error in isql%s", NEWLINE);
+				fb_assert(false);
+				return;
+			}
+			break;
+		case isc_info_end:
+			return; // Assume no plan.
+		default:
+			ISQL_printf2(Diag, "Unknown error while retrieving plan%s", NEWLINE);
+			return;
+		}
 	}
 }
 
@@ -8405,9 +8450,10 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		statement_type == isc_info_sql_stmt_exec_procedure ||
 		statement_type == isc_info_sql_stmt_get_segment;
 
-	// if PLAN is set, print out the plan now
+	// if PLAN is set and this is not DDL, print out the plan now
 
-	if (Plan) {
+	if (Plan && statement_type != isc_info_sql_stmt_ddl)
+	{
 		process_plan();
 		if (Planonly && !is_selectable)
 		{
