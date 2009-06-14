@@ -134,7 +134,8 @@ USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* outp
 				return input - start;
 			}
 
-			if (length > 0) {
+			if (length > 0)
+			{
 				memcpy(output, input, length);
 				output += length;
 				input += length;
@@ -171,12 +172,15 @@ USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int 
 		if (--space <= 0)
 			return input - start;
 
-		if ((length = *control++) & 128) {
+		if ((length = *control++) & 128)
+		{
 			--space;
 			input += (-length) & 255;
 		}
-		else {
-			if ((space -= length) < 0) {
+		else
+		{
+			if ((space -= length) < 0)
+			{
 				length += space;
 				input += length;
 				return input - start;
@@ -190,8 +194,7 @@ USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int 
 }
 
 
-
-UCHAR* SQZ_decompress(const SCHAR*	input,
+UCHAR* SQZ_decompress(const UCHAR*	input,
 					  USHORT		length,
 					  UCHAR*		output,
 					  const UCHAR* const	output_end)
@@ -207,31 +210,31 @@ UCHAR* SQZ_decompress(const SCHAR*	input,
  *	where the output stopped.
  *
  **************************************/
-	const SCHAR* const last = input + length;
+	const UCHAR* const last = input + length;
 
 	while (input < last)
 	{
-		const int l = (signed char) *input++;
-		if (l < 0)
+		const int len = (signed char) *input++;
+		if (len < 0)
 		{
 			const UCHAR c = *input++;
 
-			if ((output - l) > output_end)
+			if ((output - len) > output_end)
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
-			memset(output, c, (-1 * l));
-			output -= l;
+			memset(output, c, (-1 * len));
+			output -= len;
 		}
 		else
 		{
-			if ((output + l) > output_end)
+			if ((output + len) > output_end)
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
-			memcpy(output, input, l);
-			output += l;
-			input += l;
+			memcpy(output, input, len);
+			output += len;
+			input += len;
 		}
 	}
 
@@ -257,7 +260,8 @@ USHORT SQZ_no_differences(SCHAR* const out, int length)
  *
  **************************************/
 	SCHAR* temp = out;
-	while (length > 127) {
+	while (length > 127)
+	{
 	  *temp++ = -127;
 	  length -= 127;
 	}
@@ -266,6 +270,7 @@ USHORT SQZ_no_differences(SCHAR* const out, int length)
 	}
 	return temp - out;
 }
+
 
 USHORT SQZ_differences(const SCHAR*	rec1,
 					   USHORT	length1,
@@ -319,8 +324,10 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 	const SCHAR* const end1 = rec1 + MIN(length1, length2);
 	const SCHAR* const end2 = rec2 + length2;
 
-	while (end1 - rec1 > 2) {
-		if (rec1[0] != rec2[0] || rec1[1] != rec2[1]) {
+	while (end1 - rec1 > 2)
+	{
+		if (rec1[0] != rec2[0] || rec1[1] != rec2[1])
+		{
 			p = out++;
 
 			/* cast this to LONG to take care of OS/2 pointer arithmetic

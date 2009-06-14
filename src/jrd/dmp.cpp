@@ -612,7 +612,7 @@ static void dmp_data(const data_page* page)
 
 					buffer[0] = 0;
 					const char* const end =
-						SQZ_decompress(p_save, length_save, &buffer[1],
+						SQZ_decompress((const UCHAR*) p_save, length_save, &buffer[1],
 										 &buffer[sizeof(buffer)]);
 					cnt = 0;
 					p = &buffer[1];

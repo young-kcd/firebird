@@ -562,7 +562,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
    and doesn't have an old version that is a candidate for garbage collection,
    return without further ado */
 
-	USHORT state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
+	int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
 /* Reset the garbage collect active flag if the transaction state is
    in a terminal state. If committed it must have been a precommitted
@@ -652,7 +652,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					/* error if we cannot ignore limbo, else fall through
 					 * to next version
 					 */
-					if (!(transaction->tra_flags & TRA_ignore_limbo)) {
+					if (!(transaction->tra_flags & TRA_ignore_limbo))
+					{
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 						ERR_post(Arg::Gds(isc_deadlock) <<
 								 Arg::Gds(isc_trainlim));
@@ -1088,8 +1089,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 
 	// Snarf data from record
 
-	tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
-							rpb->rpb_length, tail, tail_end);
+	tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
 
 	if (rpb->rpb_flags & rpb_incomplete)
 	{
@@ -1099,8 +1099,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 		{
 			DPM_fetch_fragment(tdbb, rpb, LCK_read);
 
-			const SCHAR* pIn = reinterpret_cast<const char*>(rpb->rpb_address);
-			tail = SQZ_decompress(pIn, rpb->rpb_length, tail, tail_end);
+			tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
 		}
 		rpb->rpb_b_page = back_page;
 		rpb->rpb_b_line = back_line;
@@ -1613,7 +1612,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 			return false;
 		}
 
-		USHORT state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
+		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
 		/* Reset the garbage collect active flag if the transaction state is
 		   in a terminal state. If committed it must have been a precommitted
@@ -1873,7 +1872,7 @@ bool VIO_get_current(thread_db* tdbb,
 		 * record is committed (most cases), this will be faster.
 		 */
 
-		USHORT state;
+		int state;
 		if (transaction->tra_flags & TRA_read_committed) {
 			state = TPC_cache_state(tdbb, rpb->rpb_transaction_nr);
 		}
@@ -3526,8 +3525,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 			tail = record->rec_data;
 			tail_end = tail + record->rec_length;
 		}
-		tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address), rpb->rpb_length,
-								tail, tail_end);
+		tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
 		rpb->rpb_prior = (rpb->rpb_flags & rpb_delta) ? record : 0;
 	}
 
@@ -3590,8 +3588,7 @@ static UCHAR* delete_tail(thread_db* tdbb,
 			BUGCHECK(248);		/* msg 248 cannot find record fragment */
 		}
 		if (tail) {
-			tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
-									rpb->rpb_length, tail, tail_end);
+			tail = SQZ_decompress(rpb->rpb_address, rpb->rpb_length, tail, tail_end);
 		}
 		DPM_delete(tdbb, rpb, prior_page);
 		prior_page = rpb->rpb_page;
@@ -4181,8 +4178,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 	Record* data = rpb->rpb_prior;
 	ULONG next_page = rpb->rpb_page;
 	USHORT next_line = rpb->rpb_line;
-	USHORT max_depth = 0;
-	USHORT depth = 0;
+	int max_depth = 0;
+	int depth = 0;
 
 	for (;;)
 	{
@@ -4303,7 +4300,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
  *
  **************************************/
 	Database* dbb = tdbb->getDatabase();
-	jrd_rel* relation = rpb->rpb_relation;
+	jrd_rel* const relation = rpb->rpb_relation;
 
 	if (relation->isTemporary())
 		return;
@@ -4530,7 +4527,7 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 		}
 
-		USHORT state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
+		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
 		/* Reset the garbage collect active flag if the transaction state is
 		   in a terminal state. If committed it must have been a precommitted

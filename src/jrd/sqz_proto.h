@@ -34,7 +34,7 @@ namespace Jrd {
 USHORT	SQZ_apply_differences(Jrd::Record*, const SCHAR*, const SCHAR* const);
 USHORT	SQZ_compress(const Jrd::DataComprControl*, const SCHAR*, SCHAR*, int);
 USHORT	SQZ_compress_length(const Jrd::DataComprControl*, const SCHAR*, int);
-UCHAR*	SQZ_decompress(const SCHAR*, USHORT, UCHAR*, const UCHAR* const);
+UCHAR*	SQZ_decompress(const UCHAR*, USHORT, UCHAR*, const UCHAR* const);
 USHORT	SQZ_differences(const SCHAR*, USHORT, SCHAR*, USHORT, SCHAR*, int);
 USHORT	SQZ_no_differences(SCHAR* const, int);
 void	SQZ_fast(const Jrd::DataComprControl*, const SCHAR*, SCHAR*);
