@@ -658,6 +658,12 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, 'HY', '000', 0, 653, 'bad_epb_form', NULL, NULL)
 (-902, '08', '004', 0, 654, 'no_threads', NULL, NULL)
 (-902, '08', '006', 0, 655, 'net_event_connect_timeout', NULL, NULL)
+-- More extras for isc_expression_eval_err
+(-833, '42', '000', 0, 656, 'sysf_argmustbe_nonzero', NULL, NULL)
+(-833, '42', '000', 0, 657, 'sysf_argmustbe_range_inc1_1', NULL, NULL)
+(-833, '42', '000', 0, 658, 'sysf_argmustbe_gteq_one', NULL, NULL)
+(-833, '42', '000', 0, 659, 'sysf_argmustbe_range_exc1_1', NULL, NULL)
+-- End of extras for isc_expression_eval_err
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

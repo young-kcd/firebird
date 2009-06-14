@@ -1362,6 +1362,14 @@ C --
       PARAMETER (GDS__no_threads                       = 335544974)
       INTEGER*4 GDS__net_event_connect_timeout       
       PARAMETER (GDS__net_event_connect_timeout        = 335544975)
+      INTEGER*4 GDS__sysf_argmustbe_nonzero          
+      PARAMETER (GDS__sysf_argmustbe_nonzero           = 335544976)
+      INTEGER*4 GDS__sysf_argmustbe_range_inc1_1     
+      PARAMETER (GDS__sysf_argmustbe_range_inc1_1      = 335544977)
+      INTEGER*4 GDS__sysf_argmustbe_gteq_one         
+      PARAMETER (GDS__sysf_argmustbe_gteq_one          = 335544978)
+      INTEGER*4 GDS__sysf_argmustbe_range_exc1_1     
+      PARAMETER (GDS__sysf_argmustbe_range_exc1_1      = 335544979)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

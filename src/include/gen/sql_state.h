@@ -676,6 +676,10 @@ static const struct {
 	{335544973, "HY000"}, // 653 bad_epb_form
 	{335544974, "08004"}, // 654 no_threads
 	{335544975, "08006"}, // 655 net_event_connect_timeout
+	{335544976, "42000"}, // 656 sysf_argmustbe_nonzero
+	{335544977, "42000"}, // 657 sysf_argmustbe_range_inc1_1
+	{335544978, "42000"}, // 658 sysf_argmustbe_gteq_one
+	{335544979, "42000"}, // 659 sysf_argmustbe_range_exc1_1
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

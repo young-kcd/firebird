@@ -735,25 +735,25 @@ Data source : @4', NULL, NULL)
 ('sysf_argviolates_uuidfmt', 'evlCharToUuid', 'SysFunction.cpp', NULL, 0, 629, NULL, 'Human readable UUID argument for @3 must have "-" at position @2 instead of "@1"', NULL, NULL)
 ('sysf_argviolates_guidigits', 'evlCharToUuid', 'SysFunction.cpp', NULL, 0, 630, NULL, 'Human readable UUID argument for @3 must have hex digit at position @2 instead of "@1"', NULL, NULL)
 ('sysf_invalid_addpart_time', 'evlDateAdd', 'SysFunction.cpp', NULL, 0, 631, NULL, 'Only HOUR, MINUTE, SECOND and MILLISECOND can be added to TIME values in @1', NULL, NULL)
-('sysf_invalid_add_datetime', 'evlDateAdd', 'evl.cpp', NULL, 0, 632, NULL, 'Invalid data type in addition of part to DATE/TIME/TIMESTAMP in @1', NULL, NULL)
-('sysf_invalid_addpart_dtime', 'evlDateAdd', 'evl.cpp', NULL, 0, 633, NULL, 'Invalid part @1 to be added to a DATE/TIME/TIMESTAMP value in @2', NULL, NULL)
-('sysf_invalid_add_dtime_rc', 'evlDateAdd', 'evl.cpp', NULL, 0, 634, NULL, 'Expected DATE/TIME/TIMESTAMP type in evlDateAdd() result', NULL, NULL)
-('sysf_invalid_diff_dtime', 'evlDateDiff', 'evl.cpp', NULL, 0, 635, NULL, 'Expected DATE/TIME/TIMESTAMP type as first and second argument to @1', NULL, NULL)
-('sysf_invalid_timediff', 'evlDateDiff', 'evl.cpp', NULL, 0, 636, NULL, 'The result of TIME-<value> in @1 cannot be expressed in YEAR, MONTH, DAY or WEEK', NULL, NULL)
-('sysf_invalid_tstamptimediff', 'evlDateDiff', 'evl.cpp', NULL, 0, 637, NULL, 'The result of TIME-TIMESTAMP or TIMESTAMP-TIME in @1 cannot be expressed in HOUR, MINUTE, SECOND or MILLISECOND', NULL, NULL)
-('sysf_invalid_datetimediff', 'evlDateDiff', 'evl.cpp', NULL, 0, 638, NULL, 'The result of DATE-TIME or TIME-DATE in @1 cannot be expressed in HOUR, MINUTE, SECOND and MILLISECOND', NULL, NULL)
-('sysf_invalid_diffpart', 'evlDateDiff', 'evl.cpp', NULL, 0, 639, NULL, 'Invalid part @1 to express the difference between two DATE/TIME/TIMESTAMP values in @2', NULL, NULL)
-('sysf_argmustbe_positive', 'evlLn/evlLn', 'evl.cpp', NULL, 0, 640, NULL, 'Argument for @1 must be positive', NULL, NULL)
-('sysf_basemustbe_positive', 'evlLog/evlPosition', 'evl.cpp', NULL, 0, 641, NULL, 'Base for @1 must be positive', NULL, NULL)
-('sysf_argnmustbe_nonneg', 'evlOverlay/evlPad', 'evl.cpp', NULL, 0, 642, NULL, 'Argument #@1 for @2 must be zero or positive', NULL, NULL)
-('sysf_argnmustbe_positive', 'evlOverlay', 'evl.cpp', NULL, 0, 643, NULL, 'Argument #@1 for @2 must be positive', NULL, NULL)
-('sysf_invalid_zeropowneg', 'evlPower', 'evl.cpp', NULL, 0, 644, NULL, 'Base for @1 cannot be zero if exponent is negative', NULL, NULL)
-('sysf_invalid_negpowfp', 'evlPower', 'evl.cpp', NULL, 0, 645, NULL, 'Base for @1 cannot be negative if exponent is not an integral value', NULL, NULL)
+('sysf_invalid_add_datetime', 'evlDateAdd', 'SysFunction.cpp', NULL, 0, 632, NULL, 'Invalid data type in addition of part to DATE/TIME/TIMESTAMP in @1', NULL, NULL)
+('sysf_invalid_addpart_dtime', 'evlDateAdd', 'SysFunction.cpp', NULL, 0, 633, NULL, 'Invalid part @1 to be added to a DATE/TIME/TIMESTAMP value in @2', NULL, NULL)
+('sysf_invalid_add_dtime_rc', 'evlDateAdd', 'SysFunction.cpp', NULL, 0, 634, NULL, 'Expected DATE/TIME/TIMESTAMP type in evlDateAdd() result', NULL, NULL)
+('sysf_invalid_diff_dtime', 'evlDateDiff', 'SysFunction.cpp', NULL, 0, 635, NULL, 'Expected DATE/TIME/TIMESTAMP type as first and second argument to @1', NULL, NULL)
+('sysf_invalid_timediff', 'evlDateDiff', 'SysFunction.cpp', NULL, 0, 636, NULL, 'The result of TIME-<value> in @1 cannot be expressed in YEAR, MONTH, DAY or WEEK', NULL, NULL)
+('sysf_invalid_tstamptimediff', 'evlDateDiff', 'SysFunction.cpp', NULL, 0, 637, NULL, 'The result of TIME-TIMESTAMP or TIMESTAMP-TIME in @1 cannot be expressed in HOUR, MINUTE, SECOND or MILLISECOND', NULL, NULL)
+('sysf_invalid_datetimediff', 'evlDateDiff', 'SysFunction.cpp', NULL, 0, 638, NULL, 'The result of DATE-TIME or TIME-DATE in @1 cannot be expressed in HOUR, MINUTE, SECOND and MILLISECOND', NULL, NULL)
+('sysf_invalid_diffpart', 'evlDateDiff', 'SysFunction.cpp', NULL, 0, 639, NULL, 'Invalid part @1 to express the difference between two DATE/TIME/TIMESTAMP values in @2', NULL, NULL)
+('sysf_argmustbe_positive', 'evlLnLog10/evlLog', 'SysFunction.cpp', NULL, 0, 640, NULL, 'Argument for @1 must be positive', NULL, NULL)
+('sysf_basemustbe_positive', 'evlLog/evlPosition', 'SysFunction.cpp', NULL, 0, 641, NULL, 'Base for @1 must be positive', NULL, NULL)
+('sysf_argnmustbe_nonneg', 'evlOverlay/evlPad', 'SysFunction.cpp', NULL, 0, 642, NULL, 'Argument #@1 for @2 must be zero or positive', NULL, NULL)
+('sysf_argnmustbe_positive', 'evlOverlay', 'SysFunction.cpp', NULL, 0, 643, NULL, 'Argument #@1 for @2 must be positive', NULL, NULL)
+('sysf_invalid_zeropowneg', 'evlPower', 'SysFunction.cpp', NULL, 0, 644, NULL, 'Base for @1 cannot be zero if exponent is negative', NULL, NULL)
+('sysf_invalid_negpowfp', 'evlPower', 'SysFunction.cpp', NULL, 0, 645, NULL, 'Base for @1 cannot be negative if exponent is not an integral value', NULL, NULL)
 -- Validate that arg is integer?
-('sysf_invalid_scale', 'evlRound/evlTrunc', 'evl.cpp', NULL, 0, 646, NULL, 'The numeric scale must be between -128 and 127 in @1', NULL, NULL)
-('sysf_argmustbe_nonneg', 'evlSqrt', 'evl.cpp', NULL, 0, 647, NULL, 'Argument for @1 must be zero or positive', NULL, NULL)
-('sysf_binuuid_mustbe_str', 'evlUuidToChar', 'evl.cpp', NULL, 0, 648, NULL, 'Binary UUID argument for @1 must be of string type', NULL, NULL)
-('sysf_binuuid_wrongsize', 'evlUuidToChar', 'evl.cpp', NULL, 0, 649, NULL, 'Binary UUID argument for @2 must use @1 bytes', NULL, NULL)
+('sysf_invalid_scale', 'evlRound/evlTrunc', 'SysFunction.cpp', NULL, 0, 646, NULL, 'The numeric scale must be between -128 and 127 in @1', NULL, NULL)
+('sysf_argmustbe_nonneg', 'evlSqrt', 'SysFunction.cpp', NULL, 0, 647, NULL, 'Argument for @1 must be zero or positive', NULL, NULL)
+('sysf_binuuid_mustbe_str', 'evlUuidToChar', 'SysFunction.cpp', NULL, 0, 648, NULL, 'Binary UUID argument for @1 must be of string type', NULL, NULL)
+('sysf_binuuid_wrongsize', 'evlUuidToChar', 'SysFunction.cpp', NULL, 0, 649, NULL, 'Binary UUID argument for @2 must use @1 bytes', NULL, NULL)
 -- End of extras for isc_expression_eval_err
 ('missing_required_spb', 'process_switches', 'svc.cpp', NULL, 0, 650, NULL, 'Missing required item @1 in service parameter block', NULL, NULL)
 ('net_server_shutdown', NULL, NULL, NULL, 0, 651, NULL, '@1 server is shutdown', NULL, NULL)
@@ -761,6 +761,12 @@ Data source : @4', NULL, NULL)
 ('bad_epb_form', 'EventManager::queEvents', 'event.cpp', NULL, 0, 653, NULL, 'Unrecognized events block', NULL, NULL);
 ('no_threads', 'Worker::start', 'server.cpp', NULL, 0, 654, NULL, 'Could not start first worker thread - shutdown server', NULL, NULL);
 ('net_event_connect_timeout', 'aux_connect', 'inet.cpp', NULL, 0, 655, NULL, 'Timeout occurred while waiting for a secondary connection for event processing', NULL, NULL);
+-- More extras for isc_expression_eval_err
+('sysf_argmustbe_nonzero', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 656, NULL, 'Argument for @1 must be different than zero', NULL, NULL);
+('sysf_argmustbe_range_inc1_1', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 657, NULL, 'Argument for @1 must be in the range [-1, 1]', NULL, NULL);
+('sysf_argmustbe_gteq_one', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 658, NULL, 'Argument for @1 must be greater o equal than one', NULL, NULL);
+('sysf_argmustbe_range_exc1_1', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 659, NULL, 'Argument for @1 must be in the range ]-1, 1[', NULL, NULL);
+-- End of extras for isc_expression_eval_err
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
