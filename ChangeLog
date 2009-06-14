@@ -1,3 +1,41 @@
+2009-06-14 14:28  robocop
+
+	* firebird2/src/isql/isql.epp (1.278):
+
+	Fix CORE-2370: SQL Plan greater than 2048 characters is not printed
+	at all in ISQL.  This is the client side fix. Server-side fixes
+	will follow.  We should be careful to not upset FB2.1 and before.
+
+2009-06-14 14:22  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.97),
+	lang_helpers/gds_codes.pas (1.96), src/include/gen/codetext.h
+	(1.106), src/include/gen/iberror.h (1.110), src/include/gen/msgs.h
+	(1.136), src/include/gen/sql_code.h (1.112),
+	src/include/gen/sql_state.h (1.42), src/msgs/facilities2.sql
+	(1.67), src/msgs/messages2.sql (1.91), src/msgs/system_errors2.sql
+	(1.58):
+
+	New messages to fix CORE-2505: beware of built-in functions
+	returning NaN and Inf. Code will follow in one day.
+
+2009-06-14 14:19  robocop
+
+	* firebird2/src/jrd/: dmp.cpp (1.41), sqz.cpp (1.34), sqz_proto.h
+	(1.16), vio.cpp (1.253):
+
+	- Better input type for SQZ_decompress plus a bit of style.  - Txn
+	state is int.  - Some internal data is better handled as plain int.
+
+2009-06-13 18:36  asfernandes
+
+	* firebird2/src/: common/classes/alloc.h (1.90),
+	include/fb_exception.h (1.35), include/gen/autoconfig_msvc.h
+	(1.119):
+
+	Apply Alex/Bill/Jerry/me patch re. portability in redefinition of
+	operator new
+
 2009-06-13 07:40  robocop
 
 	* firebird2/src/jrd/vio.cpp (1.252):
