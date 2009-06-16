@@ -1,3 +1,9 @@
+2009-06-16 14:25  robocop
+
+	* firebird2/src/jrd/rse.cpp (1.185):
+
+	Misc.
+
 2009-06-14 14:28  robocop
 
 	* firebird2/src/isql/isql.epp (1.278):
