@@ -3650,7 +3650,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 				ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
 
 			// Save where we are
-			char* tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];
+			char* const tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];
 			memcpy(tmp, irsb, inner_size);
 
 			char* p = tmp + inner_size;
@@ -3699,7 +3699,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		RSE_close(tdbb, *rsb_ptr);
 		delete[] irsb->irsb_data;
 
-		char* tmp = irsb->irsb_stack;
+		char* const tmp = irsb->irsb_stack;
 		memcpy(irsb, tmp, inner_size);
 
 		char* p = tmp + inner_size;
