@@ -446,8 +446,14 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	// Release our own lock
 	LCK_release(tdbb, dbb->dbb_monitor_lock);
 
-	// Dump our own data
-	dumpData(tdbb, false);
+	{ // scope for the RAII object
+
+		// Ensure we'll be dealing with a valid backup state inside the call below
+		BackupManager::SharedDatabaseHolder holder(tdbb, dbb->dbb_backup_manager);
+
+		// Dump our own data
+		dumpData(tdbb, false);
+	}
 
 	// Signal other processes to dump their data
 	Lock temp_lock, *lock = &temp_lock;
