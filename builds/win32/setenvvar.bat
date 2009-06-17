@@ -60,10 +60,12 @@ if DEFINED VS71COMNTOOLS (
 ::=================
 :SET_MSVC_VER
 
-@vcexpress /? >nul 2>nul
-@if not errorlevel 9009 ((set MSVC_VERSION=8) & (set VS_VER=msvc8) & (set VS_VER_EXPRESS=1) & (goto :SET_FB_TARGET_PLATFORM))
+@if "%VS_VER_EXPRESS%" == "" (
+  @vcexpress /? >nul 2>nul
+  @if not errorlevel 9009 ((set MSVC_VERSION=8) & (set VS_VER=msvc8) & (set VS_VER_EXPRESS=1) & (goto :SET_FB_TARGET_PLATFORM))
 
-@set VS_VER_EXPRESS=
+  @set VS_VER_EXPRESS=
+)
 
 @for /f "delims=." %%a in ('@devenv /?') do (
   @for /f "tokens=6" %%b in ("%%a") do ((set MSVC_VERSION=%%b) & (set VS_VER=msvc%%b) & (goto :SET_FB_TARGET_PLATFORM))
