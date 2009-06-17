@@ -25,12 +25,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SOLARIS
-#include <nan.h>
-#elif defined(WIN_NT)
-#include <float.h>
-#endif
-
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/format.h"
@@ -41,6 +35,7 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/VaryStr.h"
 #include "../jrd/gds_proto.h"
+#include "../common/classes/FpeControl.h"
 
 const int PRECISION	= 10000;
 
@@ -723,46 +718,27 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
  *
  **************************************/
 	TEXT temp[512];
-	bool negative = false;
 	USHORT l, width, decimal_digits, w_digits, f_digits;
 
-#ifdef WIN_NT
-	bool hack_for_nt_flag = false;
-#endif
-
 	double number = MOVQ_get_double(desc);
-	if (number < 0) {
-		negative = true;
+	const bool negative = (number < 0);
+	if (negative)
 		number = -number;
-	}
-
-#ifdef SOLARIS
-	if (IsNANorINF(number))
-	{
-	    sprintf(temp, IsINF(number) ? "Infinity" : "NaN");
-	}
-	else
-#elif defined(WIN_NT)
-	if (!_finite(number))
-	{
-		sprintf(temp, _isnan(number) ? "NaN" : "Infinity");
-	}
-	else
-#endif
 
 	// If exponents are explicitly requested (E-format edit_string), generate them.
 	// Otherwise, the rules are: if the number in f-format will fit into the allotted
 	// space, print it in f-format; otherwise print it in e-format.
 	// (G-format is untrustworthy.)
 
-	if (picture->pic_exponents)
+	if (isnan(number))
+		sprintf(temp, "NaN");
+	else if (isinf(number))
+		sprintf(temp, "Infinity");
+	else if (picture->pic_exponents)
 	{
 		width = picture->pic_print_length - picture->pic_floats - picture->pic_literals;
 		decimal_digits = picture->pic_fractions;
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
-#ifdef WIN_NT
-		hack_for_nt_flag = true;
-#endif
 	}
 	else if (number == 0)
 		sprintf(temp, "%.0f", number);
@@ -793,29 +769,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			else
 				decimal_digits = (width > 7) ? width - 7 : 0;
 			sprintf(temp, "%.*e", decimal_digits, number);
-#ifdef WIN_NT
-			hack_for_nt_flag = true;
-#endif
 		}
 	}
-
-#ifdef WIN_NT
-	// On Windows NT exponents have three digits regardless of the magnitude
-	// of the number being formatted.  To maintain compatiblity with other
-	// platforms, if the first digit of the exponent is '0', shift the other
-	// digits one to the left.
-
-	if (hack_for_nt_flag)
-	{
-		TEXT* p = temp;
-		while (*p != 'e' && *p != 'E')
-			++p;
-		p += 2;
-		if (*p == '0')
-			while (*p = *(p + 1))
-				++p;
-	}
-#endif
 
 	TEXT* p = temp;
 	picture->pic_pointer = picture->pic_string;
@@ -933,17 +888,15 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
  *	output pointer.
  *
  **************************************/
-	bool negative = false;
 	bool overflow = false;
 
 	TEXT* out = *output;
-	TEXT* float_ptr = NULL;
 
 	double number = MOVQ_get_double(desc);
-	if (number < 0)
+	const bool negative = (number < 0);
+	if (negative)
 	{
 		number = -number;
-		negative = true;
 		if (!(picture->pic_flags & PIC_signed))
 			overflow = true;
 	}
@@ -1008,6 +961,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 
 	const SLONG n = (number + 0.5 < 1) ? 0 : 1;
 
+	TEXT* float_ptr = NULL;
 	TEXT float_char;
 	TEXT d;
 	bool signif = false;
