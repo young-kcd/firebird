@@ -1,3 +1,25 @@
+2009-06-17 14:25  robocop
+
+	* firebird2/src/jrd/SysFunction.cpp (1.77):
+
+	Fix CORE-2505: beware of built-in functions returning NaN and Inf.
+	Some functions were added, but they are called from the debugger
+	only because they aren't exposed through DSQL.
+
+2009-06-17 14:23  robocop
+
+	* firebird2/src/qli/: dtr.cpp (1.71), picstr.cpp (1.44):
+
+	- Use our common code to deal with NaN and Infinity.  - Get rid of
+	the custom hack to show same number of digits in the exponent for
+	FP numbers in any platform.
+
+2009-06-17 14:22  robocop
+
+	* firebird2/src/isql/isql.epp (1.279):
+
+	Use our common code to deal with NaN and Infinity.
+
 2009-06-16 14:25  robocop
 
 	* firebird2/src/jrd/rse.cpp (1.185):
