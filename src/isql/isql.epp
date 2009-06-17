@@ -63,12 +63,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
-
-#ifdef SOLARIS
-#include <nan.h>
-#elif defined(WIN_NT)
-#include <float.h>
-#endif
+#include "../common/classes/FpeControl.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -4960,7 +4955,7 @@ static void frontend_load_parms(const TEXT* p, TEXT* parms[], TEXT* lparms[],
 				++p;
 			}
 		}
-		fb_assert(!quoted || strlen(buffer) == j);
+		fb_assert(!quoted || strlen(buffer) == size_t(j));
 		const size_t length = quoted ? strlen(buffer) : j;
 		parms[i] = (TEXT*) ISQL_ALLOC((SLONG) (length + 1));
 		lparms[i] = (TEXT*) ISQL_ALLOC((SLONG) (length + 1));
@@ -7147,21 +7142,12 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
  *
  **************************************/
 	const TEXT* t = NULL;
-#ifdef SOLARIS
-	if (IsNANorINF(value))
-	{
-	    t = IsINF(value) ? "Infinity" : "NaN";
-	}
-#elif defined(WIN_NT)
-	if (!_finite(value))
-	{
-		t = _isnan(value) ? "NaN" : "Infinity";
-	}
-#endif
-	if (! t)
-	{
-	    return false;
-	}
+	if (isnan(value))
+		t = "NaN";
+	else if (isinf(value))
+		t = "Infinity";
+	else
+		return false;
 
 	if (List) {
 		isqlGlob.printf("%s%s", t, NEWLINE);
@@ -8027,7 +8013,7 @@ static void process_plan()
 		{
 		case isc_info_sql_get_plan:
 			{
-				int l = gds__vax_integer(reinterpret_cast<const UCHAR*>(planPtr) + 1, 2);
+				ULONG l = gds__vax_integer(reinterpret_cast<const UCHAR*>(planPtr) + 1, 2);
 				if (l > planSize - 3)
 					l = planSize - 3;
 				ISQL_printf2(Diag, "%.*s%s", l, planPtr + 3, NEWLINE);
