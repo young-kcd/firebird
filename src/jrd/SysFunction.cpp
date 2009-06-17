@@ -43,6 +43,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/os/guid.h"
+#include "../common/classes/FpeControl.h"
 #include <math.h>
 
 using namespace Firebird;
@@ -50,22 +51,44 @@ using namespace Jrd;
 
 namespace {
 
-typedef double (*StdMathFunc)(double);	// std math function type
-
 // function types handled in generic functions
 enum Function
 {
+	funNone, // do not use
 	funBinAnd,
 	funBinOr,
 	funBinShl,
 	funBinShr,
+	funBinShlRot,
+	funBinShrRot,
 	funBinXor,
 	funBinNot,
 	funMaxValue,
 	funMinValue,
 	funLPad,
-	funRPad
+	funRPad,
+	funLnat,
+	funLog10
 };
+
+enum TrigonFunction
+{
+	trfNone, // do not use
+	trfSin,
+	trfCos,
+	trfTan,
+	trfCot,
+	trfAsin,
+	trfAcos,
+	trfAtan,
+	trfSinh,
+	trfCosh,
+	trfTanh,
+	trfAsinh,
+	trfAcosh,
+	trfAtanh
+};
+
 
 // constants
 const int oneDay = 86400;
@@ -135,7 +158,7 @@ dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* a
 dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
-dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlLnLog10(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
@@ -958,8 +981,75 @@ dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 		return NULL;
 
 	const double v = MOV_get_double(value);
+	double rc;
 
-	impure->vlu_misc.vlu_double = ((StdMathFunc) function->misc)(v);
+	// CVC: Apparently, gcc has built-in inverse hyperbolic functions, but since
+	// VC doesn't, I'm taking the definitions from Wikipedia
+
+	switch ((TrigonFunction)(IPTR) function->misc)
+	{
+	case trfSin:
+		rc = sin(v);
+		break;
+	case trfCos:
+		rc = cos(v);
+		break;
+	case trfTan:
+		rc = tan(v);
+		break;
+	case trfCot:
+		if (!v)
+			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_sysf_argmustbe_nonzero) << Arg::Str(function->name));;
+		rc = fbcot(v);
+		break;
+	case trfAsin:
+		if (v < -1 || v > 1)
+			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_sysf_argmustbe_range_inc1_1) << Arg::Str(function->name));
+		rc = asin(v);
+		break;
+	case trfAcos:
+		if (v < -1 || v > 1)
+			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_sysf_argmustbe_range_inc1_1) << Arg::Str(function->name));
+		rc = acos(v);
+		break;
+	case trfAtan:
+		rc = atan(v);
+		break;
+	case trfSinh:
+		rc = sinh(v);
+		break;
+	case trfCosh:
+		rc = cosh(v);
+		break;
+	case trfTanh:
+		rc = tanh(v);
+		break;
+	case trfAsinh:
+		rc = log(v + sqrt(v * v + 1));
+		break;
+	case trfAcosh:
+		if (v < 1)
+			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_sysf_argmustbe_gteq_one) << Arg::Str(function->name));
+		rc = log(v + sqrt(v - 1) * sqrt (v + 1));
+		break;
+	case trfAtanh:
+		if (v <= -1 || v >= 1)
+			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_sysf_argmustbe_range_exc1_1) << Arg::Str(function->name));
+		rc = log((1 + v) / (1 - v)) / 2;
+		break;
+	default:
+		fb_assert(0);
+	}
+
+	if (isinf(rc))
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
+
+	impure->vlu_misc.vlu_double = rc;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
@@ -1086,6 +1176,7 @@ dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* arg
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
+	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
@@ -1134,6 +1225,7 @@ dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
+	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
@@ -1152,14 +1244,29 @@ dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod
 									Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
 	}
 
+	const SINT64 rotshift = shift % sizeof(SINT64);
+	SINT64 tempbits = 0;
+
+	const SINT64 target = MOV_get_int64(value1, 0);
+
 	switch ((Function)(IPTR) function->misc)
 	{
 		case funBinShl:
-			impure->vlu_misc.vlu_int64 = MOV_get_int64(value1, 0) << shift;
+			impure->vlu_misc.vlu_int64 = target << shift;
 			break;
 
 		case funBinShr:
-			impure->vlu_misc.vlu_int64 = MOV_get_int64(value1, 0) >> shift;
+			impure->vlu_misc.vlu_int64 = target >> shift;
+			break;
+
+		case funBinShlRot:
+			tempbits = target >> (sizeof(SINT64) - rotshift);
+			impure->vlu_misc.vlu_int64 = (target << rotshift) | tempbits;
+			break;
+
+		case funBinShrRot:
+			tempbits = target << (sizeof(SINT64) - rotshift);
+			impure->vlu_misc.vlu_int64 = (target >> rotshift) | tempbits;
 			break;
 
 		default:
@@ -1761,11 +1868,14 @@ dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	impure->vlu_misc.vlu_double = exp(MOV_get_double(value));
-	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
+	const double rc = exp(MOV_get_double(value));
+	if (rc == HUGE_VAL) // unlikely to trap anything
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
+	if (isinf(rc))
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
 
-	if (impure->vlu_misc.vlu_double == HUGE_VAL)
-		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	impure->vlu_misc.vlu_double = rc;
+	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
 }
@@ -1929,10 +2039,11 @@ dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 }
 
 
-dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+dsc* evlLnLog10(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
 	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
+	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
@@ -1949,7 +2060,21 @@ dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args
 										Arg::Str(function->name));
 	}
 
-	impure->vlu_misc.vlu_double = log(v);
+	double rc;
+
+	switch ((Function)(IPTR) function->misc)
+	{
+	case funLnat:
+		rc = log(v); 
+		break;
+	case funLog10:
+		rc = log10(v);
+		break;
+	default:
+		fb_assert(0);
+	}
+
+	impure->vlu_misc.vlu_double = rc;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
@@ -1999,6 +2124,7 @@ dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	Jrd::impure_value*)
 {
 	fb_assert(args->nod_count >= 1);
+	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 	dsc* result = NULL;
@@ -2595,7 +2721,11 @@ dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* a
 										Arg::Str(function->name));
 	}
 
-	impure->vlu_misc.vlu_double = pow(v1, v2);
+	const double rc = pow(v1, v2);
+	if (isinf(rc))
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
+
+	impure->vlu_misc.vlu_double = rc;
 
 	return &impure->vlu_desc;
 }
@@ -3142,24 +3272,29 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 const SysFunction SysFunction::functions[] =
 	{
 		{"ABS", 1, 1, setParamsDouble, makeAbs, evlAbs, NULL},
-		{"ACOS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) acos},
+		{"ACOS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAcos},
+		{"ACOSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAcosh},
 		{"ASCII_CHAR", 1, 1, setParamsInteger, makeAsciiChar, evlAsciiChar, NULL},
 		{"ASCII_VAL", 1, 1, setParamsAsciiVal, makeShortResult, evlAsciiVal, NULL},
-		{"ASIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) asin},
-		{"ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) atan},
+		{"ASIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAsin},
+		{"ASINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAsinh},
+		{"ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAtan},
+		{"ATANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAtanh},
 		{"ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL},
 		{"BIN_AND", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd},
 		{"BIN_NOT", 1, 1, setParamsInteger, makeBin, evlBin, (void*) funBinNot},
 		{"BIN_OR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinOr},
 		{"BIN_SHL", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShl},
 		{"BIN_SHR", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShr},
+		{"BIN_SHL_ROT", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShlRot},
+		{"BIN_SHR_ROT", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShrRot},
 		{"BIN_XOR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor},
 		{"CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL},
 		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
-		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) cos},
-		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) cosh},
-		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) fbcot},
+		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
+		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
+		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
 		{"EXP", 1, 1, setParamsDouble, makeDoubleResult, evlExp, NULL},
@@ -3167,9 +3302,9 @@ const SysFunction SysFunction::functions[] =
 		{"GEN_UUID", 0, 0, NULL, makeUuid, evlGenUuid, NULL},
 		{"HASH", 1, 1, NULL, makeInt64Result, evlHash, NULL},
 		{"LEFT", 2, 2, setParamsSecondInteger, makeLeftRight, evlLeft, NULL},
-		{"LN", 1, 1, setParamsDouble, makeDoubleResult, evlLn, NULL},
+		{"LN", 1, 1, setParamsDouble, makeDoubleResult, evlLnLog10, (void*) funLnat},
 		{"LOG", 2, 2, setParamsDouble, makeDoubleResult, evlLog, NULL},
-		{"LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) log10},
+		{"LOG10", 1, 1, setParamsDouble, makeDoubleResult, evlLnLog10, (void*) funLog10},
 		{"LPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funLPad},
 		{"MAXVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMaxValue},
 		{"MINVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMinValue},
@@ -3185,11 +3320,11 @@ const SysFunction SysFunction::functions[] =
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
 		{"SIGN", 1, 1, setParamsDouble, makeShortResult, evlSign, NULL},
-		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) sin},
-		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) sinh},
+		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSin},
+		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSinh},
 		{"SQRT", 1, 1, setParamsDouble, makeDoubleResult, evlSqrt, NULL},
-		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) tan},
-		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*)(StdMathFunc) tanh},
+		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTan},
+		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
 		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
