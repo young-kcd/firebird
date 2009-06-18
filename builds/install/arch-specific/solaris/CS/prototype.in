@@ -209,6 +209,7 @@ f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0444 firebird firebird
 d none @prefix@/doc 0751 firebird firebird
 d none @prefix@/doc/sql.extensions 0755 firebird firebird
 f none @prefix@/doc/sql.extensions/README.aggregate_tracking=$SRCDIR/../../doc/sql.extensions/README.aggregate_tracking 0644 firebird firebird
+f none @prefix@/doc/sql.extensions/README.builtin_functions=$SRCDIR/../../doc/sql.extensions/README.builtin_functions.txt 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.case=$SRCDIR/../../doc/sql.extensions/README.case 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.coalesce=$SRCDIR/../../doc/sql.extensions/README.coalesce 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.common_table_expressions=$SRCDIR/../../doc/sql.extensions/README.common_table_expressions 0644 firebird firebird
