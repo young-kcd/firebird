@@ -2587,7 +2587,7 @@ static bool dump_rsb(const jrd_req* request,
 
 	case rsb_union:
 	case rsb_recursive_union:
-		fb_assert((rsb->rsb->count & 1 == 0) && rsb->rsb_count / 2 <= USHORT(MAX_UCHAR));
+		fb_assert((rsb->rsb_count & 1 == 0) && rsb->rsb_count / 2 <= USHORT(MAX_UCHAR));
 		*buffer++ = rsb->rsb_count / 2;
 		ptr = rsb->rsb_arg;
 		for (end = ptr + rsb->rsb_count; ptr < end; ptr++) {
