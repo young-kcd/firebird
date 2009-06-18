@@ -106,8 +106,8 @@ static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UC
 static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
-static bool dump_index(const jrd_nod*, SCHAR**, SSHORT*);
-static bool dump_rsb(const jrd_req*, const RecordSource*, SCHAR**, SSHORT*);
+static bool dump_index(const jrd_nod*, UCHAR**, SLONG*);
+static bool dump_rsb(const jrd_req*, const RecordSource*, UCHAR**, SLONG*);
 static void estimate_cost(thread_db*, OptimizerBlk*, USHORT, double *, double *);
 static bool expression_possible_unknown(const jrd_nod*);
 static bool expression_contains_stream(CompilerScratch*, const jrd_nod*, UCHAR, bool*);
@@ -255,8 +255,8 @@ typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 
 bool OPT_access_path(const jrd_req* request,
-						SCHAR* buffer,
-						SSHORT buffer_length, USHORT* return_length)
+						UCHAR* buffer,
+						SLONG buffer_length, ULONG* return_length)
 {
 /**************************************
  *
@@ -271,14 +271,18 @@ bool OPT_access_path(const jrd_req* request,
  **************************************/
 	DEV_BLKCHK(request, type_req);
 
-	const SCHAR* const begin = buffer;
+	if (!buffer || buffer_length < 0 || !return_length)
+		return false;
+
+	const UCHAR* const begin = buffer;
 
 /* loop through all RSEs in the request,
    and describe the rsb tree for that rsb */
 
 	size_t i;
-	for (i = 0; i < request->req_fors.getCount(); i++) {
-		RecordSource* rsb = request->req_fors[i];
+	for (i = 0; i < request->req_fors.getCount(); i++)
+	{
+		const RecordSource* rsb = request->req_fors[i];
 		if (rsb && !dump_rsb(request, rsb, &buffer, &buffer_length))
 			break;
 	}
@@ -2230,7 +2234,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 }
 
 
-static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_length)
+static bool dump_index(const jrd_nod* node, UCHAR** buffer_ptr, SLONG* buffer_length)
 {
 /**************************************
  *
@@ -2247,7 +2251,7 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 
 	DEV_BLKCHK(node, type_nod);
 
-	SCHAR* buffer = *buffer_ptr;
+	UCHAR* buffer = *buffer_ptr;
 
 	if (--(*buffer_length) < 0) {
 		return false;
@@ -2287,11 +2291,11 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 		break;
 	case nod_index:
 		{
-			IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
+			const IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
 			MET_lookup_index(tdbb, index_name, retrieval->irb_relation->rel_name,
 							 (USHORT) (retrieval->irb_index + 1));
 
-			SSHORT length = index_name.length();
+			USHORT length = index_name.length();
 			MoveBuffer nameBuffer;
 			const char* namePtr = index_name.c_str();
 
@@ -2305,11 +2309,12 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 					CS_METADATA, (const BYTE*) index_name.c_str(), length, ERR_post);
 			}
 
-			*buffer_length -= 1 + length;
+			fb_assert(length <= MAX_UCHAR);
+			*buffer_length -= 1U + length;
 			if (*buffer_length < 0) {
 				return false;
 			}
-			*buffer++ = (SCHAR) length;
+			*buffer++ = (UCHAR) length;
 			memcpy(buffer, namePtr, length);
 			buffer += length;
 		}
@@ -2323,7 +2328,7 @@ static bool dump_index(const jrd_nod* node, SCHAR** buffer_ptr, SSHORT* buffer_l
 
 
 static bool dump_rsb(const jrd_req* request,
-					 const RecordSource* rsb, SCHAR** buffer_ptr, SSHORT* buffer_length)
+					 const RecordSource* rsb, UCHAR** buffer_ptr, SLONG* buffer_length)
 {
 /**************************************
  *
@@ -2342,7 +2347,7 @@ static bool dump_rsb(const jrd_req* request,
 
 	DEV_BLKCHK(rsb, type_rsb);
 
-	SCHAR* buffer = *buffer_ptr;
+	UCHAR* buffer = *buffer_ptr;
 
 	// leave room for the rsb begin, type, and end.
 	*buffer_length -= 4;
@@ -2354,16 +2359,16 @@ static bool dump_rsb(const jrd_req* request,
 	// dump out the alias or relation name if it exists.
 	const jrd_rel* relation = rsb->rsb_relation;
 	USHORT length = 0;
-	const SCHAR* name = NULL;
+	const UCHAR* name = NULL;
 
 	const VaryingString* alias = rsb->rsb_alias;
 	if (alias) {
 		length = alias->str_length;
-		name = (SCHAR *) alias->str_data;
+		name = alias->str_data;
 	}
 	else if (relation) {
 		length = relation->rel_name.length();
-		name = relation->rel_name.c_str();
+		name = (UCHAR*) relation->rel_name.c_str();
 	}
 
 	MoveBuffer nameBuffer;
@@ -2377,23 +2382,24 @@ static bool dump_rsb(const jrd_req* request,
 
 			length = INTL_convert_bytes(tdbb,
 				charset, nameBuffer.begin(), nameBuffer.getCapacity(),
-				CS_METADATA, (const BYTE*) name, length, ERR_post);
-			name = reinterpret_cast<SCHAR*>(nameBuffer.begin());
+				CS_METADATA, name, length, ERR_post);
+			name = nameBuffer.begin();
 		}
 
-		*buffer_length -= 2 + length;
+		fb_assert(length <= MAX_UCHAR);
+		*buffer_length -= 2U + length;
 		if (*buffer_length < 0) {
 			return false;
 		}
 		*buffer++ = isc_info_rsb_relation;
-		*buffer++ = (SCHAR) length;
+		*buffer++ = (UCHAR) length;
 		memcpy(buffer, name, length);
 		buffer += length;
 	}
 
 /* print out the type followed immediately by any
    type-specific data */
-	USHORT return_length;
+	ULONG return_length;
 	*buffer++ = isc_info_rsb_type;
 
 	switch (rsb->rsb_type)
@@ -2411,7 +2417,7 @@ static bool dump_rsb(const jrd_req* request,
 		{
 			return false;
 		}
-		// dimitr:	here we report indicies used to limit
+		// dimitr:	here we report indices used to limit
 		//			the navigational-based retrieval
 		if (rsb->rsb_arg[RSB_NAV_inversion]) {
 			*buffer_length -= 2;
@@ -2466,21 +2472,22 @@ static bool dump_rsb(const jrd_req* request,
 				length = INTL_convert_bytes(tdbb,
 					charset, nameBuffer.begin(), nameBuffer.getCapacity(),
 					CS_METADATA, (const BYTE*) n.c_str(), n.length(), ERR_post);
-				name = reinterpret_cast<SCHAR*>(nameBuffer.begin());
+				name = nameBuffer.begin();
 			}
 			else
 			{
-				name = n.c_str();
+				name = (UCHAR*) n.c_str();
 				length = n.length();
 			}
 
-			*buffer_length -= 6 + length;
+			fb_assert(length <= MAX_UCHAR);
+			*buffer_length -= 6U + length;
             if (*buffer_length < 0) {
                 return false;
 			}
             *buffer++ = isc_info_rsb_begin;
             *buffer++ = isc_info_rsb_relation;
-			*buffer++ = (SCHAR) length;
+			*buffer++ = (UCHAR) length;
 			memcpy(buffer, name, length);
 			buffer += length;
             *buffer++ = isc_info_rsb_type;
@@ -2567,6 +2574,8 @@ static bool dump_rsb(const jrd_req* request,
 	switch (rsb->rsb_type)
 	{
 	case rsb_cross:
+		// This place must be reviewed if we allow more than 255 joins.
+		fb_assert(rsb->rsb_count <= USHORT(MAX_UCHAR));
 		*buffer++ = (UCHAR) rsb->rsb_count;
 		ptr = rsb->rsb_arg;
 		for (end = ptr + rsb->rsb_count; ptr < end; ptr++) {
@@ -2578,6 +2587,7 @@ static bool dump_rsb(const jrd_req* request,
 
 	case rsb_union:
 	case rsb_recursive_union:
+		fb_assert((rsb->rsb->count & 1 == 0) && rsb->rsb_count / 2 <= USHORT(MAX_UCHAR));
 		*buffer++ = rsb->rsb_count / 2;
 		ptr = rsb->rsb_arg;
 		for (end = ptr + rsb->rsb_count; ptr < end; ptr++) {
@@ -2589,7 +2599,8 @@ static bool dump_rsb(const jrd_req* request,
 		break;
 
 	case rsb_merge:
-		*buffer++ = (SCHAR) rsb->rsb_count;
+		fb_assert(rsb->rsb_count <= USHORT(MAX_UCHAR));
+		*buffer++ = (UCHAR) rsb->rsb_count;
 		ptr = rsb->rsb_arg;
 		for (end = ptr + rsb->rsb_count * 2; ptr < end; ptr += 2)
 		{
@@ -2652,8 +2663,8 @@ static void estimate_cost(thread_db* tdbb,
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = opt->opt_csb;
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	CompilerScratch* const csb = opt->opt_csb;
+	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
 	csb_tail->csb_flags |= csb_active;
 	double cardinality = MAX(csb_tail->csb_cardinality, 10);
 	double index_selectivity = 1.0;

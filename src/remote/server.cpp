@@ -2894,8 +2894,9 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	{
 		skip_len = gds__vax_integer(buffer + 1, 2);
 		const SLONG val = gds__vax_integer(buffer + 3, skip_len);
+		fb_assert(val >= 0);
 		skip_len += 3;
-		if (val && val <= response_len) {
+		if (val && ULONG(val) < ULONG(response_len)) {
 			response_len = val;
 		}
 	}

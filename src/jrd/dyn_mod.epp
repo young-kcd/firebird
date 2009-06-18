@@ -251,8 +251,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-	INF_database_info(reinterpret_cast<const SCHAR*>(alloc_info), sizeof(alloc_info),
-		reinterpret_cast<SCHAR*>(s), sizeof(s));
+	INF_database_info(alloc_info, sizeof(alloc_info), s, sizeof(s));
 
 	if (s[0] != isc_info_allocation) {
 		goto dyn_punt_84;
@@ -3585,7 +3584,7 @@ static ULONG check_update_fld_type(const dyn_fld& orig_fld,
 
 				/* We can have this assertion since this case is for both string fields. */
 				const ULONG new_len = DSC_string_length(&new_fld.dyn_dsc);
-				fb_assert(new_len - maxflen == new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
+				fb_assert(new_len - maxflen == (ULONG) new_fld.dyn_charbytelen - orig_fld.dyn_charbytelen);
 				// if (new_fld.dyn_dsc.dsc_length < maxflen)
 				if (new_len < maxflen)
 					return isc_dyn_char_fld_too_small;

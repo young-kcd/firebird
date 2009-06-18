@@ -40,7 +40,7 @@ namespace Jrd {
 	class OptimizerBlk;
 }
 
-bool OPT_access_path(const Jrd::jrd_req*, SCHAR*, SSHORT, USHORT*);
+bool OPT_access_path(const Jrd::jrd_req*, UCHAR*, SLONG, ULONG*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
 							   Jrd::RecordSelExpr*, Jrd::NodeStack*);
 

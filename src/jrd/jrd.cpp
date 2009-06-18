@@ -1410,7 +1410,9 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		INF_blob_info(blob, items, item_length, buffer, buffer_length);
+		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+		INF_blob_info(blob, items2, item_length, buffer2, buffer_length);
 	}
 	catch (const Exception& ex)
 	{
@@ -2143,7 +2145,9 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		INF_database_info(items, item_length, buffer, buffer_length);
+		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+		INF_database_info(items2, item_length, buffer2, buffer_length);
 	}
 	catch (const Exception& ex)
 	{
@@ -2837,7 +2841,10 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_request_info(tdbb, request, level, item_length, items, buffer_length, buffer);
+		// I can't change the GDS_REQUEST_INFO's signature, so I do the casts here.
+		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+		JRD_request_info(tdbb, request, level, item_length, items2, buffer_length, buffer2);
 	}
 	catch (const Exception& ex)
 	{
@@ -3097,17 +3104,21 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 		Service* const service = *svc_handle;
 		validateHandle(service);
 
+		const UCHAR* send_items2 = reinterpret_cast<const UCHAR*>(send_items);
+		const UCHAR* recv_items2 = reinterpret_cast<const UCHAR*>(recv_items);
+		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+
 		if (service->getVersion() == isc_spb_version1) {
-			service->query(send_item_length, send_items, recv_item_length,
-					recv_items, buffer_length, buffer);
+			service->query(send_item_length, send_items2, recv_item_length,
+					recv_items2, buffer_length, buffer2);
 		}
 		else {
 			// For SVC_query2, we are going to completly dismantle user_status (since at this point it is
 			// meaningless anyway).  The status vector returned by this function can hold information about
 			// the call to query the service manager and/or a service thread that may have been running.
 
-			service->query2(tdbb, send_item_length, send_items,
-					recv_item_length, recv_items, buffer_length, buffer);
+			service->query2(tdbb, send_item_length, send_items2,
+					recv_item_length, recv_items2, buffer_length, buffer2);
 
 			// If there is a status vector from a service thread, copy it into the thread status
 			int len, warning;
@@ -3208,7 +3219,8 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 		TraceBlrExecute trace(tdbb, request);
 		try
 		{
-			JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg, level);
+			JRD_start_and_send(tdbb, request, transaction, msg_type,
+								msg_length, reinterpret_cast<UCHAR*>(msg), level);
 
 			// Notify Trace API about blr execution
 			trace.finish(res_successful);
@@ -3571,7 +3583,9 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		INF_transaction_info(transaction, items, item_length, buffer, buffer_length);
+		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
+		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
+		INF_transaction_info(transaction, items2, item_length, buffer2, buffer_length);
 	}
 	catch (const Exception& ex)
 	{
@@ -6223,7 +6237,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
 
 
 void JRD_request_info(Jrd::thread_db*, jrd_req* request, SSHORT level, SSHORT item_length,
-	const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
+	const UCHAR* items, SLONG buffer_length, UCHAR* buffer)
 {
 /**************************************
  *
@@ -6232,7 +6246,7 @@ void JRD_request_info(Jrd::thread_db*, jrd_req* request, SSHORT level, SSHORT it
  **************************************
  *
  * Functional description
- *	Provide information on blob object.
+ *	Return information about requests.
  *
  **************************************/
 
@@ -6335,7 +6349,7 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra** transaction)
 
 
 void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction, USHORT msg_type,
-	USHORT msg_length, SCHAR* msg, SSHORT level)
+	USHORT msg_length, UCHAR* msg, SSHORT level)
 {
 /**************************************
  *
@@ -6354,7 +6368,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
-	EXE_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
+	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
 	check_autocommit(request, tdbb);
 

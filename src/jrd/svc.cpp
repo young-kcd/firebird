@@ -556,7 +556,7 @@ void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
 	status << Arg::Gds(isc_insufficient_svc_privileges) << Arg::Str(message);
 }
 
-bool Service::ck_space_for_numeric(char*& info, const char* const end)
+bool Service::ck_space_for_numeric(UCHAR*& info, const UCHAR* const end)
 {
 	if ((info + 1 + sizeof(ULONG)) > end)
     {
@@ -998,14 +998,14 @@ void Service::shutdownServices()
 
 ISC_STATUS Service::query2(thread_db* tdbb,
 						   USHORT send_item_length,
-						   const SCHAR* send_items,
+						   const UCHAR* send_items,
 						   USHORT recv_item_length,
-						   const SCHAR* recv_items,
+						   const UCHAR* recv_items,
 						   USHORT buffer_length,
-						   SCHAR* info)
+						   UCHAR* info)
 {
-	SCHAR item;
-	char buffer[MAXPATHLEN];
+	UCHAR item;
+	UCHAR buffer[MAXPATHLEN];
 	USHORT l, length, version, get_flags;
 
 	// Setup the status vector
@@ -1015,8 +1015,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	{
 	// Process the send portion of the query first.
 	USHORT timeout = 0;
-	const SCHAR* items = send_items;
-	const SCHAR* const end_items = items + send_item_length;
+	const UCHAR* items = send_items;
+	const UCHAR* const end_items = items + send_item_length;
 	while (items < end_items && *items != isc_info_end)
 	{
 		switch ((item = *items++))
@@ -1026,7 +1026,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 		default:
 			if (items + 2 <= end_items) {
-				l = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), 2);
+				l = (USHORT) gds__vax_integer(items, 2);
 				items += 2;
 				if (items + l <= end_items) {
 					switch (item)
@@ -1039,11 +1039,11 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 						break;
 					case isc_info_svc_timeout:
 						timeout =
-							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
+							(USHORT) gds__vax_integer(items, l);
 						break;
 					case isc_info_svc_version:
 						version =
-							(USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
+							(USHORT) gds__vax_integer(items, l);
 						break;
 					}
 				}
@@ -1056,11 +1056,11 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	}
 
 	// Process the receive portion of the query now.
-	const SCHAR* const end = info + buffer_length;
+	const UCHAR* const end = info + buffer_length;
 	items = recv_items;
-	const SCHAR* const end_items2 = items + recv_item_length;
+	const UCHAR* const end_items2 = items + recv_item_length;
 
-	SCHAR* start_info;
+	UCHAR* start_info;
 
 	if (*items == isc_info_length) {
 		start_info = info;
@@ -1119,13 +1119,13 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				ADD_SPB_NUMERIC(info, num_dbs);
 
 				/* Move db names into the info buffer */
-				const TEXT* ptr2 = reinterpret_cast<const TEXT*>(ptr);
+				const UCHAR* ptr2 = ptr;
 				if (ptr2) {
-					USHORT num = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
+					USHORT num = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
 					fb_assert(num == num_dbs);
 					ptr2 += sizeof(USHORT);
 					for (; num; num--) {
-						length = (USHORT) isc_vax_integer(ptr2, sizeof(USHORT));
+						length = (USHORT) gds__vax_integer(ptr2, sizeof(USHORT));
 						ptr2 += sizeof(USHORT);
 						if (!(info = INF_put_item(isc_spb_dbname, length, ptr2, info, end)))
 						{
@@ -1178,22 +1178,23 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_get_env_msg:
 			if (svc_user_flag & SVC_user_dba)
 			{
+				char* const auxBuf = reinterpret_cast<char*>(buffer);
 				switch (item)
 				{
 				case isc_info_svc_get_env:
-					gds__prefix(buffer, "");
+					gds__prefix(auxBuf, "");
 					break;
 				case isc_info_svc_get_env_lock:
-					gds__prefix_lock(buffer, "");
+					gds__prefix_lock(auxBuf, "");
 					break;
 				case isc_info_svc_get_env_msg:
-					gds__prefix_msg(buffer, "");
+					gds__prefix_msg(auxBuf, "");
 				}
 
 				// Note: it is safe to use strlen to get a length of "buffer"
-				// because gds_prefix[_lock|_msg] return a zero-terminated
+				// because gds_prefix[_lock|_msg] returns a zero-terminated
 				// string.
-				info = INF_put_item(item, strlen(buffer), buffer, info, end);
+				info = INF_put_item(item, strlen(auxBuf), buffer, info, end);
 				if (!info)
 				{
 					return 0;
@@ -1209,11 +1210,11 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
-				size_t length2 = isc_vax_integer(items, sizeof(USHORT));
+				size_t length2 = gds__vax_integer(items, sizeof(USHORT));
 				if (length2 >= sizeof(fname))
 					length2 = sizeof(fname) - 1; // truncation
 				items += sizeof(USHORT);
-				strncpy(fname, items, length2);
+				strncpy(fname, (const char*) items, length2);
 				fname[length2] = 0;
 				break;
 			}
@@ -1273,21 +1274,25 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 		case isc_info_svc_server_version:
 			/* The version of the server engine */
-			info = INF_put_item(item, strlen(GDS_VERSION), GDS_VERSION, info, end);
-			if (!info) {
-				return 0;
-			}
+			{ // scope
+				static const UCHAR* pv = reinterpret_cast<const UCHAR*>(GDS_VERSION);
+				info = INF_put_item(item, strlen(GDS_VERSION), pv, info, end);
+				if (!info) {
+					return 0;
+				}
+			} // scope
 			break;
 
 		case isc_info_svc_implementation:
 			/* The server implementation - e.g. Firebird/sun4 */
-			isc_format_implementation(IMPLEMENTATION, sizeof(buffer), buffer,
-									  0, 0, NULL);
-			info = INF_put_item(item, strlen(buffer), buffer, info, end);
-			if (!info) {
-				return 0;
-			}
-
+			{ // scope
+				char* buf2 = reinterpret_cast<char*>(buffer);
+				isc_format_implementation(IMPLEMENTATION, sizeof(buffer), buf2, 0, 0, NULL);
+				info = INF_put_item(item, strlen(buf2), buffer, info, end);
+				if (!info) {
+					return 0;
+				}
+			} // scope
 			break;
 
 
@@ -1295,9 +1300,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			if (svc_user_flag & SVC_user_dba)
 			{
 				/* The path to the user security database (security2.fdb) */
-				SecurityDatabase::getPath(buffer);
+				char* pb = reinterpret_cast<char*>(buffer);
+				SecurityDatabase::getPath(pb);
 
-				if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
+				if (!(info = INF_put_item(item, strlen(pb), buffer, info, end)))
 				{
 					return 0;
 				}
@@ -1315,7 +1321,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
+			l = (USHORT) gds__vax_integer(buffer, 2);
 			length = MIN(end - (info + 5), l);
 			get(info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1333,7 +1339,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					}
 					svc_resp_buf_len = l;
 				}
-				get(reinterpret_cast<char*>(svc_resp_buf), l, GET_BINARY, 0, &length);
+				get(svc_resp_buf, l, GET_BINARY, 0, &length);
 				svc_resp_ptr = svc_resp_buf;
 				svc_resp_len = l;
 			}
@@ -1344,7 +1350,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				length = MIN(end - (info + 5), l);
 			if (!
 				(info =
-				 INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr), info, end)))
+				 INF_put_item(item, length, svc_resp_ptr, info, end)))
 			{
 				return 0;
 			}
@@ -1358,7 +1364,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
+			l = (USHORT) gds__vax_integer(buffer, 2);
 			get(buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end))) {
 				return 0;
@@ -1430,8 +1436,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	if (start_info && (end - info >= 7))
 	{
 		const SLONG number = info - start_info;
+		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
 		USHORT length2 = INF_convert(number, buffer);
+		fb_assert(length == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length2, buffer, start_info, end, true);
 	}
 
@@ -1439,8 +1447,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	{
 		TraceServiceImpl service(this);
 		svc_trace_manager->event_service_query(&service,
-			send_item_length, reinterpret_cast<const UCHAR*>(send_items),
-			recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+			send_item_length, send_items,
+			recv_item_length, recv_items,
 			res_successful);
 	}
 
@@ -1457,8 +1465,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service,
-				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
-				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+				send_item_length, send_items,
+				recv_item_length, recv_items,
 				no_priv ? res_unauthorized : res_failed);
 		}
 		throw;
@@ -1475,23 +1483,22 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 
 void Service::query(USHORT			send_item_length,
-					const SCHAR*	send_items,
+					const UCHAR*	send_items,
 					USHORT			recv_item_length,
-					const SCHAR*	recv_items,
+					const UCHAR*	recv_items,
 					USHORT			buffer_length,
-					SCHAR*			info)
+					UCHAR*			info)
 {
-	SCHAR item, *p;
-	char buffer[256];
-	TEXT PathBuffer[MAXPATHLEN];
+	UCHAR item, *p;
+	UCHAR buffer[256];
 	USHORT l, length, version, get_flags;
 
 	try
 	{
 	// Process the send portion of the query first.
 	USHORT timeout = 0;
-	const SCHAR* items = send_items;
-	const SCHAR* const end_items = items + send_item_length;
+	const UCHAR* items = send_items;
+	const UCHAR* const end_items = items + send_item_length;
 	while (items < end_items && *items != isc_info_end)
 	{
 		switch ((item = *items++))
@@ -1502,7 +1509,7 @@ void Service::query(USHORT			send_item_length,
 		default:
 			if (items + 2 <= end_items)
 			{
-				l = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), 2);
+				l = (USHORT) gds__vax_integer(items, 2);
 				items += 2;
 				if (items + l <= end_items)
 				{
@@ -1515,10 +1522,10 @@ void Service::query(USHORT			send_item_length,
 						put(items - 3, l + 3);
 						break;
 					case isc_info_svc_timeout:
-						timeout = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
+						timeout = (USHORT) gds__vax_integer(items, l);
 						break;
 					case isc_info_svc_version:
-						version = (USHORT) gds__vax_integer(reinterpret_cast<const UCHAR*>(items), l);
+						version = (USHORT) gds__vax_integer(items, l);
 						break;
 					}
 				}
@@ -1531,10 +1538,10 @@ void Service::query(USHORT			send_item_length,
 	}
 
 	// Process the receive portion of the query now.
-	const SCHAR* const end = info + buffer_length;
+	const UCHAR* const end = info + buffer_length;
 
 	items = recv_items;
-	const SCHAR* const end_items2 = items + recv_item_length;
+	const UCHAR* const end_items2 = items + recv_item_length;
 	while (items < end_items2 && *items != isc_info_end)
 	{
 		switch ((item = *items++))
@@ -1598,6 +1605,7 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_get_env_msg:
 			if (svc_user_flag & SVC_user_dba)
 			{
+				TEXT PathBuffer[MAXPATHLEN];
 				switch (item)
 				{
 				case isc_info_svc_get_env:
@@ -1613,7 +1621,8 @@ void Service::query(USHORT			send_item_length,
 				// Note: it is safe to use strlen to get a length of "buffer"
 				// because gds_prefix[_lock|_msg] return a zero-terminated
 				// string.
-				if (!(info = INF_put_item(item, strlen(PathBuffer), PathBuffer, info, end)))
+				const UCHAR* pb = reinterpret_cast<const UCHAR*>(PathBuffer);
+				if (!(info = INF_put_item(item, strlen(PathBuffer), pb, info, end)))
 					return;
 			}
 			/*
@@ -1627,11 +1636,11 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_dump_pool_info:
 			{
 				char fname[MAXPATHLEN];
-				size_t length2 = isc_vax_integer(items, sizeof(USHORT));
+				size_t length2 = gds__vax_integer(items, sizeof(USHORT));
 				if (length2 >= sizeof(fname))
 					length2 = sizeof(fname) - 1; // truncation
 				items += sizeof(USHORT);
-				strncpy(fname, items, length2);
+				memcpy(fname, items, length2);
 				fname[length2] = 0;
 				break;
 			}
@@ -1717,9 +1726,10 @@ void Service::query(USHORT			send_item_length,
             if (svc_user_flag & SVC_user_dba)
             {
 				/* The path to the user security database (security2.fdb) */
-				SecurityDatabase::getPath(buffer);
+				char* pb = reinterpret_cast<char*>(buffer);
+				SecurityDatabase::getPath(pb);
 
-				if (!(info = INF_put_item(item, strlen(buffer), buffer, info, end)))
+				if (!(info = INF_put_item(item, strlen(pb), buffer, info, end)))
 				{
 					return;
 				}
@@ -1741,7 +1751,7 @@ void Service::query(USHORT			send_item_length,
 			put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
+			l = (USHORT) gds__vax_integer(buffer, 2);
 			length = MIN(end - (info + 4), l);
 			get(info + 3, length, GET_BINARY, 0, &length);
 			info = INF_put_item(item, length, info + 3, info, end);
@@ -1761,7 +1771,7 @@ void Service::query(USHORT			send_item_length,
 					}
 					svc_resp_buf_len = l;
 				}
-				get(reinterpret_cast<char*>(svc_resp_buf), l, GET_BINARY, 0, &length);
+				get(svc_resp_buf, l, GET_BINARY, 0, &length);
 				svc_resp_ptr = svc_resp_buf;
 				svc_resp_len = l;
 			}
@@ -1770,8 +1780,7 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_response_more:
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 4), l);
-			if (!(info = INF_put_item(item, length, reinterpret_cast<const char*>(svc_resp_ptr),
-									  info, end)))
+			if (!(info = INF_put_item(item, length, svc_resp_ptr, info, end)))
 			{
 				return;
 			}
@@ -1785,7 +1794,7 @@ void Service::query(USHORT			send_item_length,
 			put(&item, 1);
 			get(&item, 1, GET_BINARY, 0, &length);
 			get(buffer, 2, GET_BINARY, 0, &length);
-			l = (USHORT) gds__vax_integer(reinterpret_cast<UCHAR*>(buffer), 2);
+			l = (USHORT) gds__vax_integer(buffer, 2);
 			get(buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end)))
 			{
@@ -1843,8 +1852,8 @@ void Service::query(USHORT			send_item_length,
 			// Report to Trace API that query failed
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service,
-				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
-				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+				send_item_length, send_items,
+				recv_item_length, recv_items,
 				no_priv ? res_unauthorized : res_failed);
 		}
 		throw;
@@ -1857,8 +1866,8 @@ void Service::query(USHORT			send_item_length,
 		{
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service,
-				send_item_length, reinterpret_cast<const UCHAR*>(send_items),
-				recv_item_length, reinterpret_cast<const UCHAR*>(recv_items),
+				send_item_length, send_items,
+				recv_item_length, recv_items,
 				res_successful);
 		}
 
@@ -2191,7 +2200,7 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 }
 
 
-void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length)
+void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval start_time, end_time;
@@ -2260,7 +2269,7 @@ void Service::get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 }
 
 
-void Service::put(const SCHAR* /*buffer*/, USHORT /*length*/)
+void Service::put(const UCHAR* /*buffer*/, USHORT /*length*/)
 {
 	// Nothing
 }

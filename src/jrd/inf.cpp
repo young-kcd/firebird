@@ -81,15 +81,15 @@ using namespace Jrd;
 #define STUFF_WORD(p, value)	{*p++ = value; *p++ = value >> 8;}
 #define STUFF(p, value)		*p++ = value
 
-typedef Firebird::HalfStaticArray<SCHAR, BUFFER_SMALL> CountsBuffer;
+typedef Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> CountsBuffer;
 
 static USHORT get_counts(USHORT, CountsBuffer&);
 
 
 void INF_blob_info(const blb* blob,
-				   const SCHAR* items,
+				   const UCHAR* items,
 				   const SSHORT item_length,
-				   SCHAR* info,
+				   UCHAR* info,
 				   const SSHORT output_length)
 {
 /**************************************
@@ -102,14 +102,14 @@ void INF_blob_info(const blb* blob,
  *	Process requests for blob info.
  *
  **************************************/
-	SCHAR buffer[BUFFER_TINY];
+	UCHAR buffer[BUFFER_TINY];
 	USHORT length;
 
-	const SCHAR* const end_items = items + item_length;
-	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
+	const UCHAR* const end_items = items + item_length;
+	const UCHAR* const end = info + output_length;
+	UCHAR* start_info;
 
-	if (*items == isc_info_length) {
+	if (items[0] == isc_info_length) {
 		start_info = info;
 		items++;
 	}
@@ -119,7 +119,7 @@ void INF_blob_info(const blb* blob,
 
 	while (items < end_items && *items != isc_info_end)
 	{
-		SCHAR item = *items++;
+		UCHAR item = *items++;
 
 		switch (item)
 		{
@@ -158,15 +158,17 @@ void INF_blob_info(const blb* blob,
 
 	if (start_info && (end - info >= 7))
 	{
-		SLONG number = info - start_info;
+		const SLONG number = info - start_info;
+		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
 		length = INF_convert(number, buffer);
+		fb_assert(length == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length, buffer, start_info, end, true);
 	}
 }
 
 
-USHORT INF_convert(SINT64 number, SCHAR* buffer)
+USHORT INF_convert(SINT64 number, UCHAR* buffer)
 {
 /**************************************
  *
@@ -181,20 +183,20 @@ USHORT INF_convert(SINT64 number, SCHAR* buffer)
  **************************************/
 	if (number >= MIN_SLONG && number <= MAX_SLONG)
 	{
-		put_vax_long((UCHAR*) buffer, (SLONG) number);
+		put_vax_long(buffer, (SLONG) number);
 		return sizeof(SLONG);
 	}
 	else
 	{
-		put_vax_int64((UCHAR*) buffer, number);
+		put_vax_int64(buffer, number);
 		return sizeof(SINT64);
 	}
 }
 
 
-void INF_database_info(const SCHAR* items,
+void INF_database_info(const UCHAR* items,
 					   const SSHORT item_length,
-					   SCHAR* info,
+					   UCHAR* info,
 					   const SSHORT output_length)
 {
 /**************************************
@@ -208,7 +210,7 @@ void INF_database_info(const SCHAR* items,
  *
  **************************************/
 	CountsBuffer counts_buffer;
-	SCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
+	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
 	SSHORT length;
 	SLONG id;
 	SLONG err_val;
@@ -219,16 +221,15 @@ void INF_database_info(const SCHAR* items,
 	CHECK_DBB(dbb);
 
 	jrd_tra* transaction = NULL;
-	const SCHAR* const end_items = items + item_length;
-	const SCHAR* const end = info + output_length;
+	const UCHAR* const end_items = items + item_length;
+	const UCHAR* const end = info + output_length;
 
 	const Attachment* err_att = tdbb->getAttachment();
-	const SCHAR* q;
 
 	while (items < end_items && *items != isc_info_end)
 	{
-		SCHAR* p = buffer;
-		SCHAR item = *items++;
+		UCHAR* p = buffer;
+		UCHAR item = *items++;
 
 		switch (item)
 		{
@@ -397,7 +398,7 @@ void INF_database_info(const SCHAR* items,
 		case isc_info_isc_version:
 			STUFF(p, 1);
 			STUFF(p, sizeof(ISC_VERSION) - 1);
-			for (q = ISC_VERSION; *q;)
+			for (const char* q = ISC_VERSION; *q;)
 				STUFF(p, *q++);
 			length = p - buffer;
 			break;
@@ -405,7 +406,7 @@ void INF_database_info(const SCHAR* items,
 		case isc_info_firebird_version:
 		    STUFF(p, 1);
 			STUFF(p, sizeof(FB_VERSION) - 1);
-			for (q = FB_VERSION; *q;)
+			for (const char* q = FB_VERSION; *q;)
 				STUFF(p, *q++);
 			length = p - buffer;
 			break;
@@ -413,7 +414,7 @@ void INF_database_info(const SCHAR* items,
 		case isc_info_db_id:
 			{
 				counts_buffer.resize(BUFFER_SMALL);
-				const SCHAR* const end_buf = counts_buffer.end();
+				const UCHAR* const end_buf = counts_buffer.end();
 				// May be simpler to code using a server-side version of isql's Extender class.
 				const Firebird::PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
@@ -752,15 +753,15 @@ void INF_database_info(const SCHAR* items,
 		case fb_info_page_contents:
 			if (tdbb->getAttachment()->locksmith())
 			{
-				length = isc_vax_integer(items, 2);
+				length = gds__vax_integer(items, 2);
 				items += 2;
-				const SLONG page_num = isc_vax_integer(items, length);
+				const SLONG page_num = gds__vax_integer(items, length);
 				items += length;
 
 				win window(PageNumber(DB_PAGE_SPACE, page_num));
 
 				Ods::pag* page = CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_WAIT, pag_undefined);
-				info = INF_put_item(item, dbb->dbb_page_size, reinterpret_cast<SCHAR*>(page), info, end);
+				info = INF_put_item(item, dbb->dbb_page_size, reinterpret_cast<UCHAR*>(page), info, end);
 				CCH_RELEASE_TAIL(tdbb, &window);
 
 				if (!info) {
@@ -797,11 +798,11 @@ void INF_database_info(const SCHAR* items,
 }
 
 
-SCHAR* INF_put_item(SCHAR item,
+UCHAR* INF_put_item(UCHAR item,
 					USHORT length,
-					const SCHAR* string,
-					SCHAR* ptr,
-					const SCHAR* end, const bool inserting)
+					const UCHAR* string,
+					UCHAR* ptr,
+					const UCHAR* end, const bool inserting)
 {
 /**************************************
  *
@@ -822,7 +823,6 @@ SCHAR* INF_put_item(SCHAR item,
 		return NULL;
 	}
 
-	// Typically, in other places, STUFF_WORD is applied to UCHAR*
 	*ptr++ = item;
 	STUFF_WORD(ptr, length);
 
@@ -836,10 +836,10 @@ SCHAR* INF_put_item(SCHAR item,
 
 
 void INF_request_info(const jrd_req* request,
-					  const SCHAR* items,
+					  const UCHAR* items,
 					  const SSHORT item_length,
-					  SCHAR* info,
-					  const SSHORT output_length)
+					  UCHAR* info,
+					  const SLONG output_length)
 {
 /**************************************
  *
@@ -851,15 +851,13 @@ void INF_request_info(const jrd_req* request,
  *	Return information about requests.
  *
  **************************************/
-	jrd_nod* node;
-	SSHORT state;
-	USHORT length = 0;
+	ULONG length = 0;
 
-	const SCHAR* const end_items = items + item_length;
-	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
+	const UCHAR* const end_items = items + item_length;
+	const UCHAR* const end = info + output_length;
+	UCHAR* start_info;
 
-	if (*items == isc_info_length) {
+	if (items[0] == isc_info_length) {
 		start_info = info;
 		items++;
 	}
@@ -867,12 +865,12 @@ void INF_request_info(const jrd_req* request,
 		start_info = 0;
 	}
 
-	Firebird::HalfStaticArray<SCHAR, BUFFER_LARGE> buffer;
-	SCHAR* buffer_ptr = buffer.getBuffer(BUFFER_TINY);
+	Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+	UCHAR* buffer_ptr = buffer.getBuffer(BUFFER_TINY);
 
 	while (items < end_items && *items != isc_info_end)
 	{
-		SCHAR item = *items++;
+		UCHAR item = *items++;
 
 		switch (item)
 		{
@@ -922,27 +920,35 @@ void INF_request_info(const jrd_req* request,
 				*info = isc_info_truncated;
 				return;
 			}
+			if (length > MAX_USHORT) // damn INF_put_item, it only handles USHORT lengths
+			{
+				*info = isc_info_truncated;
+				return;
+			}
 			break;
 
 		case isc_info_state:
-			state = isc_info_req_active;
-			if (request->req_operation == jrd_req::req_send)
-				state = isc_info_req_send;
-			else if (request->req_operation == jrd_req::req_receive) {
-				node = request->req_next;
-				if (node->nod_type == nod_select)
-					state = isc_info_req_select;
-				else
-					state = isc_info_req_receive;
-			}
-			else if ((request->req_operation == jrd_req::req_return) &&
-				(request->req_flags & req_stall))
-			{
-				state = isc_info_req_sql_stall;
-			}
 			if (!(request->req_flags & req_active))
-				state = isc_info_req_inactive;
-			length = INF_convert(state, buffer_ptr);
+				length = INF_convert(isc_info_req_inactive, buffer_ptr);
+			else
+			{
+				SSHORT state = isc_info_req_active;
+				if (request->req_operation == jrd_req::req_send)
+					state = isc_info_req_send;
+				else if (request->req_operation == jrd_req::req_receive) {
+					const jrd_nod* node = request->req_next;
+					if (node->nod_type == nod_select)
+						state = isc_info_req_select;
+					else
+						state = isc_info_req_receive;
+				}
+				else if ((request->req_operation == jrd_req::req_return) &&
+					(request->req_flags & req_stall))
+				{
+					state = isc_info_req_sql_stall;
+				}
+				length = INF_convert(state, buffer_ptr);
+			}
 			break;
 
 		case isc_info_message_number:
@@ -956,13 +962,15 @@ void INF_request_info(const jrd_req* request,
 				length = 1 + INF_convert(isc_infinap, buffer_ptr + 1);
 				break;
 			}
-			node = request->req_message;
-			if (item == isc_info_message_number)
-				length = INF_convert((IPTR) node->nod_arg[e_msg_number], buffer_ptr);
-			else {
-				const Format* format = (Format*) node->nod_arg[e_msg_format];
-				length = INF_convert(format->fmt_length, buffer_ptr);
-			}
+			{ // scope
+				const jrd_nod* node = request->req_message;
+				if (item == isc_info_message_number)
+					length = INF_convert((IPTR) node->nod_arg[e_msg_number], buffer_ptr);
+				else {
+					const Format* format = (Format*) node->nod_arg[e_msg_format];
+					length = INF_convert(format->fmt_length, buffer_ptr);
+				}
+			} // end scope
 			break;
 
 		case isc_info_request_cost:
@@ -983,18 +991,20 @@ void INF_request_info(const jrd_req* request,
 
 	if (start_info && (end - info >= 7))
 	{
-		SLONG number = info - start_info;
+		const SLONG number = info - start_info;
+		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
 		length = INF_convert(number, buffer.begin());
+		fb_assert(length == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length, buffer.begin(), start_info, end, true);
 	}
 }
 
 
 void INF_transaction_info(const jrd_tra* transaction,
-						  const SCHAR* items,
+						  const UCHAR* items,
 						  const SSHORT item_length,
-						  SCHAR* info,
+						  UCHAR* info,
 						  const SSHORT output_length)
 {
 /**************************************
@@ -1007,14 +1017,14 @@ void INF_transaction_info(const jrd_tra* transaction,
  *	Process requests for blob info.
  *
  **************************************/
-	SCHAR buffer[BUFFER_TINY];
+	UCHAR buffer[BUFFER_TINY];
 	USHORT length;
 
-	const SCHAR* const end_items = items + item_length;
-	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
+	const UCHAR* const end_items = items + item_length;
+	const UCHAR* const end = info + output_length;
+	UCHAR* start_info;
 
-	if (*items == isc_info_length) {
+	if (items[0] == isc_info_length) {
 		start_info = info;
 		items++;
 	}
@@ -1024,7 +1034,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 
 	while (items < end_items && *items != isc_info_end)
 	{
-		SCHAR item = *items++;
+		UCHAR item = *items++;
 
 		switch (item)
 		{
@@ -1051,7 +1061,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 
 		case isc_info_tra_isolation:
 		{
-			SCHAR* p = buffer;
+			UCHAR* p = buffer;
 			if (transaction->tra_flags & TRA_read_committed)
 			{
 				*p++ = isc_info_tra_read_committed;
@@ -1071,7 +1081,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 
 		case isc_info_tra_access:
 		{
-			SCHAR* p = buffer;
+			UCHAR* p = buffer;
 			if (transaction->tra_flags & TRA_readonly)
 				*p++ = isc_info_tra_readonly;
 			else
@@ -1100,9 +1110,11 @@ void INF_transaction_info(const jrd_tra* transaction,
 
 	if (start_info && (end - info >= 7))
 	{
-		SLONG number = info - start_info;
+		const SLONG number = info - start_info;
+		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
 		length = INF_convert(number, buffer);
+		fb_assert(length == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length, buffer, start_info, end, true);
 	}
 }
@@ -1126,7 +1138,7 @@ static USHORT get_counts(USHORT count_id, CountsBuffer& buffer)
 	if (!vector)
 		return 0;
 
-	SCHAR num_buffer[BUFFER_TINY];
+	UCHAR num_buffer[BUFFER_TINY];
 
 	buffer.clear();
 	size_t buffer_length = 0;
@@ -1139,7 +1151,7 @@ static USHORT get_counts(USHORT count_id, CountsBuffer& buffer)
 			const USHORT length = INF_convert(n, num_buffer);
 			const size_t new_buffer_length = buffer_length + length + sizeof(USHORT);
 			buffer.grow(new_buffer_length);
-			UCHAR* p = (UCHAR*) buffer.begin() + buffer_length;
+			UCHAR* p = buffer.begin() + buffer_length;
 			STUFF_WORD(p, relation_id);
 			memcpy(p, num_buffer, length);
 			p += length;

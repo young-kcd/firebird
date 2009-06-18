@@ -87,16 +87,16 @@ static void		execute_immediate(thread_db*, Attachment*, jrd_tra**,
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(const dsql_nod*);
-static bool		get_indices(SSHORT*, const SCHAR**, SSHORT*, SCHAR**);
-static USHORT	get_request_info(thread_db*, dsql_req*, SSHORT, UCHAR*);
-static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*, USHORT*);
+static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
+static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
+static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
-static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
+static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_request(thread_db*, dsql_req*, bool);
-static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
+static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
 
@@ -122,7 +122,7 @@ unsigned DSQL_debug = 0;
 
 namespace
 {
-	const SCHAR db_hdr_info_items[] =
+	const UCHAR db_hdr_info_items[] =
 	{
 		isc_info_db_sql_dialect,
 		isc_info_ods_version,
@@ -132,12 +132,12 @@ namespace
 		isc_info_end
 	};
 
-	const SCHAR explain_info[] =
+	const UCHAR explain_info[] =
 	{
 		isc_info_access_path
 	};
 
-	const SCHAR record_info[] =
+	const UCHAR record_info[] =
 	{
 		isc_info_req_update_count, isc_info_req_delete_count,
 		isc_info_req_select_count, isc_info_req_insert_count
@@ -866,7 +866,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 void DSQL_sql_info(thread_db* tdbb,
 				   dsql_req* request,
 				   USHORT item_length, const UCHAR* items,
-				   USHORT info_length, UCHAR* info)
+				   ULONG info_length, UCHAR* info)
 {
 	SET_TDBB(tdbb);
 
@@ -1274,7 +1274,7 @@ static void execute_request(thread_db* tdbb,
 	else
 	{
 		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
-						   message->msg_length, reinterpret_cast<SCHAR*>(message->msg_buffer),
+						   message->msg_length, message->msg_buffer,
 						   0);
 	}
 
@@ -1437,15 +1437,15 @@ static SSHORT filter_sub_type(const dsql_nod* node)
     @param plan_ptr
 
  **/
-static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
-						SSHORT* plan_length_ptr, SCHAR** plan_ptr)
+static bool get_indices(SLONG* explain_length_ptr, const UCHAR** explain_ptr,
+						SLONG* plan_length_ptr, SCHAR** plan_ptr)
 {
 	USHORT length;
 
-	SSHORT explain_length = *explain_length_ptr;
-	const SCHAR* explain = *explain_ptr;
-	SSHORT plan_length = *plan_length_ptr;
-	SCHAR* plan = *plan_ptr;
+	SLONG explain_length = *explain_length_ptr;
+	const UCHAR* explain = *explain_ptr;
+	SLONG& plan_length = *plan_length_ptr;
+	SCHAR*& plan = *plan_ptr;
 
 	// go through the index tree information, just
 	// extracting the indices used
@@ -1493,8 +1493,8 @@ static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
 
 	*explain_length_ptr = explain_length;
 	*explain_ptr = explain;
-	*plan_length_ptr = plan_length;
-	*plan_ptr = plan;
+	//*plan_length_ptr = plan_length;
+	//*plan_ptr = plan;
 
 	return true;
 }
@@ -1511,21 +1511,21 @@ static bool get_indices(SSHORT* explain_length_ptr, const SCHAR** explain_ptr,
 
     @param request
     @param buffer_length
-    @param buffer
+    @param out_buffer
+	@param realloc
 
  **/
-USHORT DSQL_get_plan_info(thread_db* tdbb,
+ULONG DSQL_get_plan_info(thread_db* tdbb,
 							const dsql_req* request,
-							SSHORT buffer_length,
-							SCHAR** out_buffer)
+							SLONG buffer_length,
+							SCHAR** out_buffer,
+							const bool realloc)
 {
 	if (!request->req_request)	// DDL
 		return 0;
 
-	Firebird::HalfStaticArray<SCHAR, BUFFER_LARGE> explain_buffer;
+	Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> explain_buffer;
 	explain_buffer.resize(BUFFER_LARGE);
-
-	SCHAR* buffer_ptr = *out_buffer;
 
 	// get the access path info for the underlying request from the engine
 
@@ -1537,7 +1537,7 @@ USHORT DSQL_get_plan_info(thread_db* tdbb,
 
 		if (explain_buffer[0] == isc_info_truncated)
 		{
-			explain_buffer.resize(MAX_SSHORT);
+			explain_buffer.resize(MAX_USHORT);
 
 			JRD_request_info(tdbb, request->req_request, 0,
 							 sizeof(explain_info), explain_info,
@@ -1554,18 +1554,19 @@ USHORT DSQL_get_plan_info(thread_db* tdbb,
 		return 0;
 	}
 
+	SCHAR* buffer_ptr = *out_buffer;
 	SCHAR* plan;
 	for (int i = 0; i < 2; i++)
 	{
-		const SCHAR* explain = explain_buffer.begin();
+		const UCHAR* explain = explain_buffer.begin();
 
 		if (*explain++ != isc_info_access_path)
 		{
 			return 0;
 		}
 
-		SSHORT explain_length = (UCHAR) *explain++;
-		explain_length += (UCHAR) (*explain++) << 8;
+		SLONG explain_length = (ULONG) *explain++;
+		explain_length += (ULONG) (*explain++) << 8;
 
 		plan = buffer_ptr;
 
@@ -1573,35 +1574,61 @@ USHORT DSQL_get_plan_info(thread_db* tdbb,
 		// at the begining of the function hence they had trash the second time.
 		USHORT join_count = 0, level = 0;
 
-		// keep going until we reach the end of the explain info
+		const ULONG full_len = buffer_length;
+		memset(plan, 0, full_len);
+		// This is testing code for the limit case,
+		// please do not enable for normal operations.
+		/*
+		if (full_len == ULONG(MAX_USHORT) - 4)
+		{
+			const size_t test_offset = 55000;
+			memset(plan, '.', test_offset);
+			plan += test_offset;
+			buffer_length -= test_offset;
+		}
+		*/
 
+		// keep going until we reach the end of the explain info
 		while (explain_length > 0 && buffer_length > 0)
 		{
 			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan, &join_count, &level))
 			{
 				// don't allocate buffer of the same length second time
 				// and let user know plan is incomplete
-				if (buffer_ptr != *out_buffer) {
-					if (buffer_length < 3) {
-						plan -= 3 - buffer_length;
+
+				if (buffer_ptr != *out_buffer ||
+					!realloc && full_len == ULONG(MAX_USHORT) - 4)
+				{
+					const ptrdiff_t diff = buffer_ptr + full_length - plan;
+					if (diff < 3) {
+						plan -= 3 - diff;
 					}
+					fb_assert(plan > buffer_ptr);
 					*plan++ = '.';
 					*plan++ = '.';
 					*plan++ = '.';
+					if (!realloc)
+						return plan - buffer_ptr;
+
+					++i;
 					break;
 				}
 
+				if (!realloc)
+					return full_len - buffer_length;
+
+
 				// assume we have run out of room in the buffer, try again with a larger one
-				const size_t new_length = MAX_SSHORT;
+				const size_t new_length = MAX_USHORT;
 				char* const temp = static_cast<char*>(gds__alloc(new_length));
 				if (!temp) {
 					// NOMEM. Do not attempt one more try
 					i++;
-					continue;
+					break;
 				}
 
 				buffer_ptr = temp;
-				buffer_length = (SSHORT) new_length;
+				buffer_length = (SLONG) new_length;
 				break;
 			}
 		}
@@ -1629,7 +1656,7 @@ USHORT DSQL_get_plan_info(thread_db* tdbb,
  **/
 static USHORT get_request_info(thread_db* tdbb,
 							   dsql_req* request,
-							   SSHORT buffer_length,
+							   SLONG buffer_length,
 							   UCHAR* buffer)
 {
 	if (!request->req_request)	// DDL
@@ -1641,7 +1668,7 @@ static USHORT get_request_info(thread_db* tdbb,
 	{
 		JRD_request_info(tdbb, request->req_request, 0,
 						 sizeof(record_info), record_info,
-						 buffer_length, reinterpret_cast<char*>(buffer));
+						 buffer_length, buffer);
 	}
 	catch (Firebird::Exception&)
 	{
@@ -1705,9 +1732,9 @@ static USHORT get_request_info(thread_db* tdbb,
     @param level_ptr
 
  **/
-static bool get_rsb_item(SSHORT*		explain_length_ptr,
-							const SCHAR**	explain_ptr,
-							SSHORT*		plan_length_ptr,
+static bool get_rsb_item(SLONG*		explain_length_ptr,
+							const UCHAR**	explain_ptr,
+							SLONG*		plan_length_ptr,
 							SCHAR**		plan_ptr,
 							USHORT*		parent_join_count,
 							USHORT*		level_ptr)
@@ -1715,16 +1742,17 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 	const SCHAR* p;
 	SSHORT rsb_type;
 
-	SSHORT explain_length = *explain_length_ptr;
-	const SCHAR* explain = *explain_ptr;
-	SSHORT plan_length = *plan_length_ptr;
-	SCHAR* plan = *plan_ptr;
+	SLONG explain_length = *explain_length_ptr;
+	const UCHAR* explain = *explain_ptr;
+	SLONG& plan_length = *plan_length_ptr;
+	SCHAR*& plan = *plan_ptr;
 
 	explain_length--;
 	switch (*explain++)
 	{
 	case isc_info_rsb_begin:
-		if (!*level_ptr) {
+		if (!*level_ptr)
+		{
 			// put out the PLAN prefix
 
 			p = "\nPLAN ";
@@ -1768,7 +1796,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		// put out the relation name
 		{ // scope to keep length local.
 			explain_length--;
-			SSHORT length = (UCHAR) *explain++;
+			SSHORT length = (USHORT) *explain++;
 			explain_length -= length;
 			if ((plan_length -= length) < 0)
 				return false;
@@ -1790,7 +1818,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			// put out all the substreams of the join
 			{ // scope to have union_count, union_level and union_join_count local.
 				explain_length--;
-				USHORT union_count = (USHORT) * explain++ - 1;
+				fb_assert(*explain > 0U);
+				USHORT union_count = (USHORT) *explain++ - 1;
 
 				// finish the first union member
 
@@ -1864,7 +1893,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 			explain_length--;
 			{ // scope to have join_count local.
-				USHORT join_count = (USHORT) * explain++;
+				USHORT join_count = (USHORT) *explain++;
 				while (join_count && explain_length > 0 && plan_length > 0)
 				{
 					if (!get_rsb_item(&explain_length, &explain, &plan_length,
@@ -2019,8 +2048,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 	*explain_length_ptr = explain_length;
 	*explain_ptr = explain;
-	*plan_length_ptr = plan_length;
-	*plan_ptr = plan;
+	//*plan_length_ptr = plan_length;
+	//*plan_ptr = plan;
 
 	return true;
 }
@@ -2048,7 +2077,7 @@ static dsql_dbb* init(Attachment* attachment)
 		database->dbb_database = attachment->att_database;
 		attachment->att_dsql_instance = database;
 
-		SCHAR buffer[BUFFER_TINY];
+		UCHAR buffer[BUFFER_TINY];
 
 		try
 		{
@@ -2061,7 +2090,7 @@ static dsql_dbb* init(Attachment* attachment)
 			return database;
 		}
 
-		const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
+		const UCHAR* data = buffer;
 		UCHAR p;
 		while ((p = *data++) != isc_info_end)
 		{
@@ -2724,15 +2753,16 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
     @param string
     @param ptr
     @param end
+	@param copy
 
  **/
 static UCHAR* put_item(	UCHAR	item,
 						const USHORT	length,
 						const UCHAR* string,
 						UCHAR*	ptr,
-						const UCHAR* const end)
+						const UCHAR* const end,
+						const bool copy)
 {
-
 	if (ptr + length + 3 >= end) {
 		*ptr = isc_info_truncated;
 		return NULL;
@@ -2743,7 +2773,7 @@ static UCHAR* put_item(	UCHAR	item,
 	*ptr++ = (UCHAR) length;
 	*ptr++ = length >> 8;
 
-	if (length)
+	if (length && copy)
 		memcpy(ptr, string, length);
 
 	return ptr + length;
@@ -2865,7 +2895,7 @@ static void sql_info(thread_db* tdbb,
 					 dsql_req* request,
 					 USHORT item_length,
 					 const UCHAR* items,
-					 USHORT info_length,
+					 ULONG info_length,
 					 UCHAR* info)
 {
 	if (!item_length || !items || !info_length || !info)
@@ -2895,7 +2925,8 @@ static void sql_info(thread_db* tdbb,
 
 	while (items < end_items && *items != isc_info_end)
 	{
-		USHORT length, number;
+		ULONG length;
+		USHORT number;
 		const UCHAR item = *items++;
 		switch (item)
 		{
@@ -2991,7 +3022,7 @@ static void sql_info(thread_db* tdbb,
 			}
 			break;
 		case isc_info_sql_records:
-			length = get_request_info(tdbb, request, (SSHORT) sizeof(buffer), buffer);
+			length = get_request_info(tdbb, request, sizeof(buffer), buffer);
 			if (length && !(info = put_item(item, length, buffer, info, end_info)))
 			{
 				return;
@@ -3001,18 +3032,43 @@ static void sql_info(thread_db* tdbb,
 			{
 				// be careful, get_plan_info() will reallocate the buffer to a
 				// larger size if it is not big enough
+				//UCHAR* buffer_ptr = buffer;
+				UCHAR* buffer_ptr = info + 3;
+				// Somebody decided to put a platform-dependent NEWLINE at the beginning,
+				// see get_rsb_item! This idea predates FB1.
+				static const size_t minPlan = strlen("\nPLAN (T NATURAL)");
 
-				UCHAR* buffer_ptr = buffer;
-				length = DSQL_get_plan_info(tdbb, request,
-					(SSHORT) sizeof(buffer), reinterpret_cast<SCHAR**>(&buffer_ptr));
-
-				if (length) {
-					info = put_item(item, length, buffer_ptr, info, end_info);
+				if (info + minPlan + 3 >= end_info)
+				{
+					fb_assert(info < end_info);
+					*info = isc_info_truncated;
+					info = NULL;
+					length = 0;
+				}
+				else
+				{
+					//length = DSQL_get_plan_info(tdbb, request, sizeof(buffer),
+					//					reinterpret_cast<SCHAR**>(&buffer_ptr));
+					length = DSQL_get_plan_info(tdbb, request, (end_info - info - 4),
+										reinterpret_cast<SCHAR**>(&buffer_ptr),
+										false);
 				}
 
-				if (length > sizeof(buffer) || buffer_ptr != buffer) {
-					gds__free(buffer_ptr);
+				if (length)
+				{
+					if (length > MAX_USHORT)
+					{
+						fb_assert(info < end_info);
+						*info = isc_info_truncated;
+						info = NULL;
+					}
+					else
+						info = put_item(item, length, buffer_ptr, info, end_info, false);
 				}
+
+				//if (length > sizeof(buffer) || buffer_ptr != buffer) {
+				//	gds__free(buffer_ptr);
+				//}
 
 				if (!info) {
 					return;
@@ -3065,9 +3121,11 @@ static void sql_info(thread_db* tdbb,
 
 	if (start_info && (end_info - info >= 7))
 	{
-		SLONG number = info - start_info;
+		const SLONG number = info - start_info;
+		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
 		USHORT length = convert(number, buffer);
+		fb_assert(length == 4); // We only accept SLONG
 		put_item(isc_info_length, length, buffer, start_info, end_info);
 	}
 }

@@ -147,7 +147,7 @@ void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, U
 #endif
 	);
 void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level, SSHORT item_length,
-	const SCHAR* items, SSHORT buffer_length, SCHAR* buffer);
+	const UCHAR* items, SLONG buffer_length, UCHAR* buffer);
 void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction, SSHORT level);
 
 void JRD_commit_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
@@ -155,7 +155,7 @@ void JRD_commit_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
-	USHORT msg_type, USHORT msg_length, SCHAR* msg, SSHORT level);
+	USHORT msg_type, USHORT msg_length, UCHAR* msg, SSHORT level);
 void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count, Jrd::teb* vector);
 void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level);

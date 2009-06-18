@@ -144,10 +144,10 @@ public:		// external interface with service
 	// Start service thread
 	void start(USHORT spb_length, const UCHAR* spb_data);
 	// Query service state (v. 1 & 2)
-	void query(USHORT send_item_length, const SCHAR* send_items, USHORT recv_item_length,
-			   const SCHAR* recv_items, USHORT buffer_length, SCHAR* info);
-	ISC_STATUS query2(thread_db* tdbb, USHORT send_item_length, const SCHAR* send_items,
-			   USHORT recv_item_length, const SCHAR* recv_items, USHORT buffer_length, SCHAR* info);
+	void query(USHORT send_item_length, const UCHAR* send_items, USHORT recv_item_length,
+			   const UCHAR* recv_items, USHORT buffer_length, UCHAR* info);
+	ISC_STATUS query2(thread_db* tdbb, USHORT send_item_length, const UCHAR* send_items,
+			   USHORT recv_item_length, const UCHAR* recv_items, USHORT buffer_length, UCHAR* info);
 	// Detach from service
 	void detach();
 	// get service version
@@ -202,9 +202,9 @@ private:
 	// Throws shutdown exception if global flag is set for it
 	bool	checkForShutdown();
 	// Transfer data from svc_stdout into buffer
-	void	get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length);
+	void	get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length);
 	// Designed to send output to a service - does nothing.
-	void	put(const SCHAR* buffer, USHORT length);
+	void	put(const UCHAR* buffer, USHORT length);
 
 	// Increment circular buffer pointer
 	static ULONG		add_one(ULONG i);
@@ -229,7 +229,7 @@ private:
 	// Create 'SYSDBA needed' error in status vector
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?
-	static bool ck_space_for_numeric(char*& info, const char* const end);
+	static bool ck_space_for_numeric(UCHAR*& info, const UCHAR* const end);
 
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
