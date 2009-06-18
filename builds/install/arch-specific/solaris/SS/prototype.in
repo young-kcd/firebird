@@ -33,7 +33,6 @@ d none @prefix@/bin  0755 firebird firebird
 s none /usr/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.2
 s none /usr/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.2
 
-
 # include
 
 d none @prefix@/include 0755 firebird firebird
@@ -209,6 +208,7 @@ f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0666 firebird firebird
 d none @prefix@/doc 0755 firebird firebird
 d none @prefix@/doc/sql.extensions 0755 firebird firebird
 f none @prefix@/doc/sql.extensions/README.aggregate_tracking=$SRCDIR/../../doc/sql.extensions/README.aggregate_tracking 0644 firebird firebird
+f none @prefix@/doc/sql.extensions/README.builtin_functions=$SRCDIR/../../doc/sql.extensions/README.builtin_functions.txt 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.case=$SRCDIR/../../doc/sql.extensions/README.case 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.coalesce=$SRCDIR/../../doc/sql.extensions/README.coalesce 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.common_table_expressions=$SRCDIR/../../doc/sql.extensions/README.common_table_expressions 0644 firebird firebird
@@ -248,7 +248,7 @@ f none @prefix@/doc/sql.extensions/README.rows=$SRCDIR/../../doc/sql.extensions/
 f none @prefix@/doc/sql.extensions/README.savepoints=$SRCDIR/../../doc/sql.extensions/README.savepoints 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.select_expressions=$SRCDIR/../../doc/sql.extensions/README.select_expressions 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.sequence_generators=$SRCDIR/../../doc/sql.extensions/README.sequence_generators 0644 firebird firebird
-f none @prefix@/doc/sql.extensions/README.set_transaction=$SRCDIR/../../doc/sql.extensions/README.set_transaction.txt 0644 firebird firebird
+f none @prefix@/doc/sql.extensions/README.set_transaction=$SRCDIR/../../doc/sql.extensions/README.set_transaction.txt
 f none @prefix@/doc/sql.extensions/README.trim=$SRCDIR/../../doc/sql.extensions/README.trim 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.universal_triggers=$SRCDIR/../../doc/sql.extensions/README.universal_triggers 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.update_or_insert=$SRCDIR/../../doc/sql.extensions/README.update_or_insert 0644 firebird firebird
