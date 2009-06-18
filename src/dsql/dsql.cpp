@@ -1599,7 +1599,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 				if (buffer_ptr != *out_buffer ||
 					!realloc && full_len == ULONG(MAX_USHORT) - 4)
 				{
-					const ptrdiff_t diff = buffer_ptr + full_length - plan;
+					const ptrdiff_t diff = buffer_ptr + full_len - plan;
 					if (diff < 3) {
 						plan -= 3 - diff;
 					}
