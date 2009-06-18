@@ -1,3 +1,29 @@
+2009-06-18 14:06  robocop
+
+	* firebird2/src/: dsql/dsql.cpp (1.280), dsql/dsql_proto.h (1.26),
+	jrd/dyn_mod.epp (1.116), jrd/inf.cpp (1.99), jrd/inf_proto.h
+	(1.14), jrd/jrd.cpp (1.544), jrd/jrd_proto.h (1.79), jrd/opt.cpp
+	(1.345), jrd/opt_proto.h (1.16), jrd/svc.cpp (1.274), jrd/svc.h
+	(1.77), jrd/trace/TraceObjects.cpp (1.13), remote/server.cpp
+	(1.258):
+
+	CORE-2509. Took the opportunity to fix several data types.
+
+2009-06-18 11:35  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/: CS/prototype.in
+	(1.10), SS/prototype.in (1.8):
+
+	Make sure that 21 Solaris install changes are in Head (where
+	relevant)
+
+2009-06-17 17:37  asfernandes
+
+	* firebird2/builds/win32/setenvvar.bat (1.22):
+
+	Make the VC++ Express build not show a popup everytime setenv.bat
+	is called - one time is enough
+
 2009-06-17 14:25  robocop
 
 	* firebird2/src/jrd/SysFunction.cpp (1.77):
