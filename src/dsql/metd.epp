@@ -734,6 +734,7 @@ bool METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // UT
 		field->fld_length = FLX.RDB$FIELD_LENGTH;
 		field->fld_scale = FLX.RDB$FIELD_SCALE;
 		field->fld_sub_type = FLX.RDB$FIELD_SUB_TYPE;
+		field->fld_dimensions = FLX.RDB$DIMENSIONS.NULL ? 0 : FLX.RDB$DIMENSIONS;
 
 		field->fld_character_set_id = 0;
 		if (!FLX.RDB$CHARACTER_SET_ID.NULL)

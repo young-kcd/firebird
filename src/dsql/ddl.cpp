@@ -524,6 +524,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 				{
 					if (fieldName == fld->fld_name)
 					{
+						field->fld_dimensions = fld->fld_dimensions;
 						field->fld_source = fld->fld_source;
 						field->fld_length = fld->fld_length;
 						field->fld_scale = fld->fld_scale;
@@ -555,6 +556,13 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 				// Specified domain or source field does not exist
 				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));
 			}
+		}
+
+		if (field->fld_dimensions != 0)
+		{
+			ERRD_post(Arg::Gds(isc_wish_list) <<
+				Arg::Gds(isc_random) <<
+				Arg::Str("Usage of domain or TYPE OF COLUMN of array type in PSQL"));
 		}
 	}
 
