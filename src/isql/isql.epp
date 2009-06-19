@@ -4083,11 +4083,12 @@ static void do_isql()
 		}
 	}
 
-#ifdef WIN_NT
-	SetConsoleCtrlHandler(query_abort, TRUE);
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 	_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
+
+#ifdef WIN_NT
+	SetConsoleCtrlHandler(query_abort, TRUE);
 #else
 	fb_shutdown_callback(0, query_abort, fb_shut_confirmation, 0);
 #endif
@@ -8027,7 +8028,7 @@ static void process_plan()
 				break;
 			case 1:
 				// Probably FB 2.1 and before will crash with MAX_USHORT.
-				if (isqlGlob.major_ods == 11 && isqlGlob.minor_ods >= 2 || // FB2.5
+				if ((isqlGlob.major_ods == 11 && isqlGlob.minor_ods >= 2) || // FB2.5
 					isqlGlob.major_ods > 11)
 				{
 					planSentry.clean();
