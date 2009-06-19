@@ -38,6 +38,7 @@
 #include "../qli/meta_proto.h"
 #include "../qli/mov_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/constants.h"
@@ -206,8 +207,8 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 	if (*explain_buffer++ != isc_info_access_path)
 		return;
 
-	int buffer_length = *explain_buffer++;
-	buffer_length += (*explain_buffer++) << 8;
+	int buffer_length = (unsigned int) *explain_buffer++;
+	buffer_length += (unsigned int)(*explain_buffer++) << 8;
 
 	while (buffer_length > 0)
 	{
@@ -230,6 +231,7 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 
 				buffer_length--;
 				const size_t length = *explain_buffer++;
+				fb_assert(length < MAX_SQL_IDENTIFIER_SIZE);
 				buffer_length -= length;
 
 				memcpy(relation_name, explain_buffer, length);
