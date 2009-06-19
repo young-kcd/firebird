@@ -392,7 +392,7 @@ void NBackup::open_database_write()
 
 void NBackup::open_database_scan()
 {
-#if def WIN_NT
+#ifdef WIN_NT
 
 	// On Windows we use unbuffered IO to work around bug in Windows Server 2003
 	// which has little problems with managing size of disk cache. If you read
@@ -407,24 +407,17 @@ void NBackup::open_database_scan()
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
-#endif
 
-//
-// Solaris does not have O_DIRECT!!!
-// TODO: Implement using Solaris directio or suffer performance problems. :-(
-// Note to Alex - Same problem on DARWIN.
-//
-
-#if defined(DARWIN) || defined (SOLARIS)
-	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE);
-	if (dbase < 0)
-		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
-#else
+#else // WIN_NT
 
 #ifndef O_NOATIME
 #define O_NOATIME 0
 #endif // O_NOATIME
 
+//
+// Solaris does not have O_DIRECT!!!
+// TODO: Implement using Solaris directio or suffer performance problems. :-(
+//
 #ifndef O_DIRECT
 #define O_DIRECT 0
 #endif // O_DIRECT
@@ -440,7 +433,7 @@ void NBackup::open_database_scan()
 	if (rc)
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(NOREUSE) for %s", rc, dbname.c_str());
 
-#endif
+#endif // WIN_NT
 }
 
 void NBackup::create_database()
