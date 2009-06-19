@@ -850,8 +850,8 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 		factor = 0.7;
 	}
 	Database* dbb = tdbb->getDatabase();
-	cardinality =
-		(csb_tail->csb_cardinality * (2 + (length * factor))) / (dbb->dbb_page_size - BTR_SIZE);
+	cardinality = (csb_tail->csb_cardinality * (2 + (length * factor))) / (dbb->dbb_page_size - BTR_SIZE);
+	cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 }
 
 IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
@@ -1276,12 +1276,40 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	printCandidates(&inversions);
 #endif
 
-	invCandidate = makeInversion(&inversions); //, true);
+	invCandidate = makeInversion(&inversions);
 
-	// Add the streams where this stream is depending on.
-	if (invCandidate) {
+	if (invCandidate)
+	{
+		if (invCandidate->unique) {
+			// Set up the unique retrieval cost to be fixed and not dependent on
+			// possibly outdated statistics
+			invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
+		}
+		else {
+			// Add the records retrieval cost to the priorly calculated index scan cost
+			invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
+		}
+
+		// Add the streams where this stream is depending on.
 		for (size_t i = 0; i < invCandidate->matches.getCount(); i++) {
 			findDependentFromStreams(invCandidate->matches[i], &invCandidate->dependentFromStreams);
+		}
+
+		if (setConjunctionsMatched)
+		{
+			Firebird::SortedArray<jrd_nod*> matches;
+			// AB: Putting a unsorted array in a sorted array directly by join isn't
+			// very safe at the moment, but in our case Array holds a sorted list.
+			// However SortedArray class should be updated to handle join right!
+			matches.join(invCandidate->matches);
+			tail = optimizer->opt_conjuncts.begin();
+			for (; tail < opt_end; tail++) {
+				if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
+					if (matches.exist(tail->opt_conjunct_node)) {
+						tail->opt_conjunct_flags |= opt_conjunct_matched;
+					}
+				}
+			}
 		}
 	}
 
@@ -1289,23 +1317,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	// Debug
 	printFinalCandidate(invCandidate);
 #endif
-
-	if (invCandidate && setConjunctionsMatched)
-	{
-		Firebird::SortedArray<jrd_nod*> matches;
-		// AB: Putting a unsorted array in a sorted array directly by join isn't
-		// very safe at the moment, but in our case Array holds a sorted list.
-		// However SortedArray class should be updated to handle join right!
-		matches.join(invCandidate->matches);
-		tail = optimizer->opt_conjuncts.begin();
-		for (; tail < opt_end; tail++) {
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
-				if (matches.exist(tail->opt_conjunct_node)) {
-					tail->opt_conjunct_flags |= opt_conjunct_matched;
-				}
-			}
-		}
-	}
 
 	// Clean up inversion list
 	InversionCandidate** inversion = inversions.begin();
@@ -1543,6 +1554,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
  * Functional description
  *
  **************************************/
+	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
 	// Walk through indexes to calculate selectivity / candidate
 	Firebird::Array<jrd_nod*> matches;
@@ -1662,17 +1674,22 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 
 			if (scratch.scopeCandidate)
 			{
-				InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-				invCandidate->unique = unique;
-				invCandidate->selectivity = scratch.selectivity;
 				// When selectivity is zero the statement is prepared on an
 				// empty table or the statistics aren't updated.
-				// Assume a half of the maximum selectivity, so at least some
-				// indexes are chosen by the optimizer. This avoids some slowdown
-				// statements on growing tables.
-				if (invCandidate->selectivity <= 0) {
-					invCandidate->selectivity = MAXIMUM_SELECTIVITY / 2;
+				// For an unique index, estimate the selectivity via the stream cardinality.
+				// For a non-unique one, assume 1/10 of the maximum selectivity, so that
+				// at least some indexes could be chosen by the optimizer.
+				double selectivity = scratch.selectivity;
+				if (selectivity <= 0) {
+					if (unique && cardinality)
+						selectivity = 1 / cardinality;
+					else
+						selectivity = MAXIMUM_SELECTIVITY / 10;
 				}
+
+				InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+				invCandidate->unique = unique;
+				invCandidate->selectivity = selectivity;
 				// Calculate the cost (only index pages) for this index.
 				// The constant DEFAULT_INDEX_COST 1 is an average for
 				// the rootpage and non-leaf pages.
@@ -3105,21 +3122,18 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	double selectivity = candidate->selectivity;
 	*cost = candidate->cost;
 
-	if (!candidate->indexes)
+	// Adjust the effective selectivity by treating computable conjunctions as filters
+	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+		tail < optimizer->opt_conjuncts.end(); tail++)
 	{
-		// If indices are not involved, adjust the effective selectivity
-		// by treating computable conjunctions as filters
-		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-			tail < optimizer->opt_conjuncts.end(); tail++)
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
+			!candidate->matches.exist(node))
 		{
-			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				OPT_computable(optimizer->opt_csb, node, stream, false, true))
-			{
-				const double factor = (node->nod_type == nod_eql) ?
-					REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-				selectivity *= factor;
-			}
+			const double factor = (node->nod_type == nod_eql) ?
+				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+			selectivity *= factor;
 		}
 	}
 
@@ -3127,12 +3141,7 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
 	const double cardinality = csb_tail->csb_cardinality * selectivity;
 
-	if (candidate->unique) {
-		*resulting_cardinality = cardinality;
-	}
-	else {
-		*resulting_cardinality = MAX(cardinality, MAXIMUM_SELECTIVITY);
-	}
+	*resulting_cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 
 	delete candidate;
 	delete optimizerRetrieval;
@@ -3385,37 +3394,27 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
 		OptimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
 	InversionCandidate* candidate = optimizerRetrieval->getCost();
-	double cost = candidate->cost;
-	if (candidate->unique) {
-		// If we've an unique index retrieval the cost is equal to 1
-		// The cost calculation can be far away from the real cost value if there
-		// are only a few datapages with almost no records on the last datapage.
-		// This ensures a more realistic value (only for unique) for these relations.
-		cost = 1 * candidate->indexes;
-	}
 
 	if (candidate->dependentFromStreams.exist(baseStream->stream))
 	{
-//		if (candidate->indexes) {
-			// If we could use more conjunctions on the testing stream
-			// with the base stream active as without the base stream
-			// then the test stream has a indexed relationship with the base stream.
-			IndexRelationship* indexRelationship = FB_NEW(pool) IndexRelationship();
-			indexRelationship->stream = testStream->stream;
-			indexRelationship->unique = candidate->unique;
-			indexRelationship->cost = cost;
-			indexRelationship->cardinality = csb_tail->csb_cardinality;
+		// If we could use more conjunctions on the testing stream
+		// with the base stream active as without the base stream
+		// then the test stream has a indexed relationship with the base stream.
+		IndexRelationship* indexRelationship = FB_NEW(pool) IndexRelationship();
+		indexRelationship->stream = testStream->stream;
+		indexRelationship->unique = candidate->unique;
+		indexRelationship->cost = candidate->cost;
+		indexRelationship->cardinality = csb_tail->csb_cardinality * candidate->selectivity;
 
-			// indexRelationship are kept sorted on cost and unique in the indexRelations array.
-			// The unique and cheapest indexed relatioships are on the first position.
-			size_t index = 0;
-			for (; index < baseStream->indexedRelationships.getCount(); index++) {
-				if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index])) {
-					break;
-				}
+		// indexRelationship are kept sorted on cost and unique in the indexRelations array.
+		// The unique and cheapest indexed relatioships are on the first position.
+		size_t index = 0;
+		for (; index < baseStream->indexedRelationships.getCount(); index++) {
+			if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index])) {
+				break;
 			}
-			baseStream->indexedRelationships.insert(index, indexRelationship);
-//		}
+		}
+		baseStream->indexedRelationships.insert(index, indexRelationship);
 		testStream->previousExpectedStreams++;
 	}
 	delete candidate;
