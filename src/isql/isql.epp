@@ -5364,6 +5364,8 @@ static processing_state get_statement(TEXT* const statement,
 
 	size_t count = 0;
 	size_t valuable_count = 0; // counter of valuable (non-space) chars
+	size_t comment_pos = 0; // position of block comment start
+	size_t non_comment_pos = 0; // position of char after block comment
 	const size_t term_length = Termlen - 1; // additional variable for decreasing calculation
 
 	Filelist->Ifp().indev_line = Filelist->Ifp().indev_aux;
@@ -5477,9 +5479,10 @@ static processing_state get_statement(TEXT* const statement,
 			// not forward.
 			// Ignore possibilities of a comment beginning inside
 			// quoted strings.
-			if (state == normal && count > 0 && p[-1] == '/')
+			if (state == normal && count > 0 && p[-1] == '/' && count > non_comment_pos)
 			{
 				state = in_block_comment;
+				comment_pos = count-1;
 				if (valuable_count == 1)
 					valuable_count = 0;
 			}
@@ -5489,10 +5492,11 @@ static processing_state get_statement(TEXT* const statement,
 			// Perhaps this is the end of a comment.
 			// Ignore possibilities of a comment ending inside
 			// quoted strings.
-			// Ignore things like /*/ since it isn't a block comment; only the start of it.
-			if (state == in_block_comment && count > 2 && p[-1] == '*')
+			// Ignore things like /*/ since it isn't a block comment; only the start of it. Or end.
+			if (state == in_block_comment && count > 2 && p[-1] == '*' && count > comment_pos+2)
 			{
 				state = normal;
+				non_comment_pos = count+1; // mark start of non-comment to track this: /**/*
 				valuable_count--; // This char is not valuable
 			}
 			break;
