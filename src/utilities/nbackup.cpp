@@ -335,6 +335,8 @@ void nbackup::open_database_scan()
 
 #if defined (DARWIN) || defined(SOLARIS)
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE);
+  	if (dbase < 0)
+  		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
 #else
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
   	if (dbase < 0)
