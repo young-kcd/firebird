@@ -1,3 +1,52 @@
+2009-06-19 13:33  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.113), Optimizer.h (1.34):
+
+	Fixed some issues with the optimizer, namely: (1) incorrect cost
+	calculation for indexed retrievals in joins and (2) too pessimistic
+	heuristics for indices with zero selectivity.  Also, I removed the
+	restricition I put recently to address some issues reported in the
+	tracker (it's no longer necessary).
+
+2009-06-19 13:17  aafemt
+
+	* firebird2/src/isql/isql.epp (1.281):
+
+	Fix parsing of constructions like /*/ and /**/*
+
+2009-06-19 13:10  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.545):
+
+	Related to CORE-2509.
+
+2009-06-19 04:29  asfernandes
+
+	* firebird2/src/: common/classes/semaphore.cpp (1.5), dsql/dsql.cpp
+	(1.282), jrd/SysFunction.cpp (1.78), jrd/dpm.epp (1.94),
+	jrd/gds.cpp (1.300), jrd/inf_proto.h (1.15),
+	jrd/os/posix/isc_ipc.cpp (1.41), jrd/os/win32/isc_ipc.cpp (1.35):
+
+	Misc
+
+2009-06-19 04:03  asfernandes
+
+	* firebird2/src/isql/isql.epp (1.280):
+
+	Put apples and oranges in different baskets
+
+2009-06-19 01:24  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.346):
+
+	Fix build
+
+2009-06-18 18:53  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.281):
+
+	Correct typo
+
 2009-06-18 14:06  robocop
 
 	* firebird2/src/: dsql/dsql.cpp (1.280), dsql/dsql_proto.h (1.26),
