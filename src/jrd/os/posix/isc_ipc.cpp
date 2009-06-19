@@ -365,27 +365,28 @@ void ISC_signal_cancel(int signal_number, FPTR_VOID_PTR handler, void* arg)
 }
 
 
-namespace {
-class SignalInit
+namespace
 {
-public:
-	static void init()
+	class SignalInit
 	{
-		GDS_init_prefix();
+	public:
+		static void init()
+		{
+			GDS_init_prefix();
 
-		overflow_count = 0;
-		gds__register_cleanup(signal_cleanup, 0);
+			overflow_count = 0;
+			gds__register_cleanup(signal_cleanup, 0);
 
-		isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
-	}
+			isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
+		}
 
-	static void cleanup()
-	{
-		signals = NULL;
-	}
-};
+		static void cleanup()
+		{
+			signals = NULL;
+		}
+	};
 
-Firebird::InitMutex<SignalInit> signalInit;
+	Firebird::InitMutex<SignalInit> signalInit;
 } // anonymous namespace
 
 void ISC_signal_init()

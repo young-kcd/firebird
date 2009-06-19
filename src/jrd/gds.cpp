@@ -132,9 +132,9 @@ static char fb_prefix_val[MAXPATHLEN];
 static char fb_prefix_lock_val[MAXPATHLEN];
 static char fb_prefix_msg_val[MAXPATHLEN];
 static char fbTempDir[MAXPATHLEN];
-static char *fb_prefix = 0;
-static char *fb_prefix_lock = 0;
-static char *fb_prefix_msg = 0;
+static char* fb_prefix = NULL;
+static char* fb_prefix_lock = NULL;
+static char* fb_prefix_msg = NULL;
 
 #include "gen/msgs.h"
 

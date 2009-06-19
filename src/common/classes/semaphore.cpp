@@ -241,7 +241,7 @@ static const char* semName = "/firebird_temp_sem";
 
 		// Wait with timeout
 		mtxLock();
-		
+
 		if (--value >= 0)
 		{
 			mtxUnlock();
@@ -255,15 +255,15 @@ static const char* semName = "/firebird_temp_sem";
 
 		mtxUnlock();
 
-		if (err == ETIMEDOUT) 
+		if (err == ETIMEDOUT)
 		{
 			++value;
 		}
-		else if (err != 0) 
+		else if (err != 0)
 		{
 			system_call_failed::raise("pthread_cond_timedwait", err);
 		}
-		else 
+		else
 		{
 			rt = true;
 		}
@@ -285,7 +285,7 @@ static const char* semName = "/firebird_temp_sem";
 
 		mtxUnlock();
 
-		if (err != 0) 
+		if (err != 0)
 		{
 			system_call_failed::raise("pthread_cond_timedwait", err);
 		}
@@ -308,7 +308,7 @@ static const char* semName = "/firebird_temp_sem";
 
 			mtxUnlock();
 
-			if (err != 0) 
+			if (err != 0)
 			{
 				system_call_failed::raise("pthread_cond_broadcast", err);
 			}

@@ -1597,7 +1597,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 				// and let user know plan is incomplete
 
 				if (buffer_ptr != *out_buffer ||
-					!realloc && full_len == ULONG(MAX_USHORT) - 4)
+					(!realloc && full_len == ULONG(MAX_USHORT) - 4))
 				{
 					const ptrdiff_t diff = buffer_ptr + full_len - plan;
 					if (diff < 3) {
@@ -1616,7 +1616,6 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 
 				if (!realloc)
 					return full_len - buffer_length;
-
 
 				// assume we have run out of room in the buffer, try again with a larger one
 				const size_t new_length = MAX_USHORT;

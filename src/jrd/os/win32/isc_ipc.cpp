@@ -177,29 +177,30 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
 	return hEvent;
 }
 
-namespace {
-class SignalInit
+namespace
 {
-public:
-	static void init()
+	class SignalInit
 	{
-		gds__register_cleanup(signal_cleanup, 0);
-		process_id = getpid();
-		ISC_get_security_desc();
-	}
+	public:
+		static void init()
+		{
+			gds__register_cleanup(signal_cleanup, 0);
+			process_id = getpid();
+			ISC_get_security_desc();
+		}
 
-	static void cleanup()
-	{
-		process_id = 0;
+		static void cleanup()
+		{
+			process_id = 0;
 
-		opn_event_t* opn_event = opn_events + opn_event_count;
-		opn_event_count = 0;
-		while (opn_event-- > opn_events)
-			CloseHandle(opn_event->opn_event_lhandle);
-	}
-};
+			opn_event_t* opn_event = opn_events + opn_event_count;
+			opn_event_count = 0;
+			while (opn_event-- > opn_events)
+				CloseHandle(opn_event->opn_event_lhandle);
+		}
+	};
 
-Firebird::InitMutex<SignalInit> signalInit;
+	Firebird::InitMutex<SignalInit> signalInit;
 } // anonymous namespace
 
 void ISC_signal_init()

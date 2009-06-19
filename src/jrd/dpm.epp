@@ -3224,8 +3224,7 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 /* What's left fits on a page.  Luckily, we don't have to store it
    ourselves. */
 
-	// SD: Why we can't use already existing data in head_dcc?
-	size = SQZ_length((SCHAR*) rpb->rpb_address, in - (SCHAR *) rpb->rpb_address, dcc);
+	size = SQZ_length((SCHAR*) rpb->rpb_address, in - (SCHAR*) rpb->rpb_address, dcc);
 	rhdf* header = (rhdf*)locate_space(tdbb, rpb, (SSHORT)(RHDF_SIZE + size), stack, NULL, DPM_other);
 
 	header->rhdf_flags = rhd_incomplete | rhd_large | rpb->rpb_flags;

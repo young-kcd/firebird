@@ -999,20 +999,26 @@ dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 		break;
 	case trfCot:
 		if (!v)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_nonzero) << Arg::Str(function->name));;
+		}
 		rc = fbcot(v);
 		break;
 	case trfAsin:
 		if (v < -1 || v > 1)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_range_inc1_1) << Arg::Str(function->name));
+		}
 		rc = asin(v);
 		break;
 	case trfAcos:
 		if (v < -1 || v > 1)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_range_inc1_1) << Arg::Str(function->name));
+		}
 		rc = acos(v);
 		break;
 	case trfAtan:
@@ -1032,14 +1038,18 @@ dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 		break;
 	case trfAcosh:
 		if (v < 1)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_gteq_one) << Arg::Str(function->name));
+		}
 		rc = log(v + sqrt(v - 1) * sqrt (v + 1));
 		break;
 	case trfAtanh:
 		if (v <= -1 || v >= 1)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_range_exc1_1) << Arg::Str(function->name));
+		}
 		rc = log((1 + v) / (1 - v)) / 2;
 		break;
 	default:
@@ -1241,7 +1251,7 @@ dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod
 	if (shift < 0)
 	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
+								Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
 	}
 
 	const SINT64 rotshift = shift % sizeof(SINT64);
@@ -2065,7 +2075,7 @@ dsc* evlLnLog10(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 	switch ((Function)(IPTR) function->misc)
 	{
 	case funLnat:
-		rc = log(v); 
+		rc = log(v);
 		break;
 	case funLog10:
 		rc = log10(v);

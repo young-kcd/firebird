@@ -38,4 +38,3 @@ void INF_request_info(const Jrd::jrd_req*, const UCHAR*, const SSHORT, UCHAR*, c
 void INF_transaction_info(const Jrd::jrd_tra*, const UCHAR*, const SSHORT, UCHAR*, const SSHORT);
 
 #endif // JRD_INF_PROTO_H
-
