@@ -3871,6 +3871,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	record_param rpb;
 	MOVE_CLEAR(&rpb, sizeof(record_param));
 
+	jrd_rel* relation = NULL;
+	jrd_tra* transaction = NULL;
+
 	try {
 /* Pseudo attachment needed for lock owner identification. */
 
@@ -3891,9 +3894,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception&) {
 		goto gc_exit;
 	}
-
-	jrd_rel* relation = NULL;
-	jrd_tra* transaction = NULL;
 
 	try {
 
