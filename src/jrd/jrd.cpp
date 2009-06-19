@@ -2844,7 +2844,8 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 		// I can't change the GDS_REQUEST_INFO's signature, so I do the casts here.
 		const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
 		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
-		JRD_request_info(tdbb, request, level, item_length, items2, buffer_length, buffer2);
+		SLONG buffer_length2 = (ULONG) (USHORT) buffer_length;
+		JRD_request_info(tdbb, request, level, item_length, items2, buffer_length2, buffer2);
 	}
 	catch (const Exception& ex)
 	{
