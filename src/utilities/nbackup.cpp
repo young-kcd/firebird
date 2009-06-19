@@ -314,7 +314,7 @@ void nbackup::open_database_write()
 
 void nbackup::open_database_scan()
 {
-#ifdef WIN_NT
+#if defined(WIN_NT)
 	// On Windows we use unbuffered IO to work around bug in Windows Server 2003
 	// which has little problems with managing size of disk cache. If you read
 	// very large file (5 GB or more) on this platform filesystem page cache 
@@ -328,13 +328,19 @@ void nbackup::open_database_scan()
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
-#else
+
 #ifndef O_NOATIME
 #define O_NOATIME 0
 #endif
+
+#if defined (DARWIN) || defined(SOLARIS)
+	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE);
+#else
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | O_DIRECT);
   	if (dbase < 0)
   		b_error::raise("Error (%d) opening database file: %s", errno, dbname.c_str());
+#endif
+
 #ifdef HAVE_POSIX_FADVISE
 	int rc = posix_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
