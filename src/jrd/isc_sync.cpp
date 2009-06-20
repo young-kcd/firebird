@@ -2569,11 +2569,7 @@ UCHAR* ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 OPEN_ALWAYS,
-#ifdef EMBEDDED
-				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
-#else
 				 FILE_ATTRIBUTE_NORMAL,
-#endif
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		error(status_vector, "CreateFile", GetLastError());
