@@ -3974,6 +3974,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					rpb.rpb_relation = relation;
 
 					if (relation->rel_gc_bitmap)
+					{
 						while (relation->rel_gc_bitmap->getFirst())
 						{
 							const ULONG dp_sequence = relation->rel_gc_bitmap->current();
@@ -4030,6 +4031,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 								}
 							}
 						}
+					}
 
 rel_exit:
 					if (relation->rel_gc_bitmap)

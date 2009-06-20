@@ -208,7 +208,7 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 		return;
 
 	int buffer_length = (unsigned int) *explain_buffer++;
-	buffer_length += (unsigned int)(*explain_buffer++) << 8;
+	buffer_length += (unsigned int) (*explain_buffer++) << 8;
 
 	while (buffer_length > 0)
 	{

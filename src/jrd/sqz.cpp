@@ -103,6 +103,7 @@ USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* outp
 
 	const SCHAR* control = dcc->begin();
 	const SCHAR* dcc_end = dcc->end();
+
 	while (control < dcc_end)
 	{
 		if (--space <= 0)
@@ -143,7 +144,7 @@ USHORT SQZ_compress(const DataComprControl* dcc, const SCHAR* input, SCHAR* outp
 		}
 	}
 
-	BUGCHECK(178);		/* msg 178 record length inconsistent */
+	BUGCHECK(178);	// msg 178 record length inconsistent
 	return input - start;	// shut up compiler warning
 }
 
@@ -167,6 +168,7 @@ USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int 
 
 	const SCHAR* control = dcc->begin();
 	const SCHAR* dcc_end = dcc->end();
+
 	while (control < dcc_end)
 	{
 		if (--space <= 0)
@@ -189,7 +191,7 @@ USHORT SQZ_compress_length(const DataComprControl* dcc, const SCHAR* input, int 
 		}
 	}
 
-	BUGCHECK(178);		/* msg 178 record length inconsistent */
+	BUGCHECK(178);	// msg 178 record length inconsistent
 	return input - start;	// shut up compiler warning
 }
 
@@ -392,6 +394,7 @@ void SQZ_fast(const DataComprControl* dcc, const SCHAR* input, SCHAR* output)
  **************************************/
 	const SCHAR* control = dcc->begin();
 	const SCHAR* dcc_end = dcc->end();
+
 	while (control < dcc_end)
 	{
 		const SSHORT length = *control++;
@@ -491,4 +494,3 @@ USHORT SQZ_length(const SCHAR* data, int length, DataComprControl* dcc)
 
 	return length;
 }
-

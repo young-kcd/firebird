@@ -83,10 +83,10 @@ public:
 
 struct srvr : public Firebird::GlobalStorage
 {
-	srvr* const		srvr_next;
-	const rem_port*	const		srvr_parent_port;
-	const rem_port::rem_port_t	srvr_port_type;
-	const USHORT	srvr_flags;
+	srvr* const srvr_next;
+	const rem_port*	const srvr_parent_port;
+	const rem_port::rem_port_t srvr_port_type;
+	const USHORT srvr_flags;
 
 public:
 	srvr(srvr* servers, rem_port* port, USHORT flags) :
@@ -263,8 +263,6 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 static void		zap_packet(PACKET*, bool);
 
 
-
-
 inline bool bad_db(ISC_STATUS* status_vector, Rdb* rdb)
 {
 	return bad_port_context(status_vector, rdb, isc_bad_db_handle);
@@ -332,7 +330,7 @@ static server_req_t* free_requests		= NULL;
 static server_req_t* active_requests	= NULL;
 
 static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
-static srvr* servers;
+static srvr* servers = NULL;
 static Firebird::AtomicCounter cntServers;
 static bool	server_shutdown = false;
 

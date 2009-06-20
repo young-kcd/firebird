@@ -71,8 +71,8 @@ struct record_param
 	Record*		rpb_undo;		/* our first version of data if this is a second modification */
 	USHORT rpb_format_number;	/* format number in relation */
 
-	SLONG rpb_page;			// page number
-	USHORT rpb_line;		// line number on page
+	SLONG rpb_page;				// page number
+	USHORT rpb_line;			// line number on page
 
 	SLONG rpb_f_page;			/* fragment page number */
 	USHORT rpb_f_line;			/* fragment line number on page */

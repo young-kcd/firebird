@@ -764,7 +764,7 @@ Data source : @4', NULL, NULL)
 -- More extras for isc_expression_eval_err
 ('sysf_argmustbe_nonzero', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 656, NULL, 'Argument for @1 must be different than zero', NULL, NULL);
 ('sysf_argmustbe_range_inc1_1', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 657, NULL, 'Argument for @1 must be in the range [-1, 1]', NULL, NULL);
-('sysf_argmustbe_gteq_one', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 658, NULL, 'Argument for @1 must be greater o equal than one', NULL, NULL);
+('sysf_argmustbe_gteq_one', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 658, NULL, 'Argument for @1 must be greater or equal than one', NULL, NULL);
 ('sysf_argmustbe_range_exc1_1', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 659, NULL, 'Argument for @1 must be in the range ]-1, 1[', NULL, NULL);
 -- End of extras for isc_expression_eval_err
 -- QLI

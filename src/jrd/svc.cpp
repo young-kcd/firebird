@@ -1038,12 +1038,10 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 						put(items - 3, l + 3);
 						break;
 					case isc_info_svc_timeout:
-						timeout =
-							(USHORT) gds__vax_integer(items, l);
+						timeout = (USHORT) gds__vax_integer(items, l);
 						break;
 					case isc_info_svc_version:
-						version =
-							(USHORT) gds__vax_integer(items, l);
+						version = (USHORT) gds__vax_integer(items, l);
 						break;
 					}
 				}
@@ -1067,7 +1065,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		items++;
 	}
 	else {
-		start_info = 0;
+		start_info = NULL;
 	}
 
 	while (items < end_items2 && *items != isc_info_end)
@@ -1295,7 +1293,6 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			} // scope
 			break;
 
-
 		case isc_info_svc_user_dbpath:
 			if (svc_user_flag & SVC_user_dba)
 			{
@@ -1348,9 +1345,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_response_more:
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 5), l);
-			if (!
-				(info =
-				 INF_put_item(item, length, svc_resp_ptr, info, end)))
+			if (!(info = INF_put_item(item, length, svc_resp_ptr, info, end)))
 			{
 				return 0;
 			}
@@ -1446,10 +1441,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	if (svc_trace_manager->needs().event_service_query)
 	{
 		TraceServiceImpl service(this);
-		svc_trace_manager->event_service_query(&service,
-			send_item_length, send_items,
-			recv_item_length, recv_items,
-			res_successful);
+		svc_trace_manager->event_service_query(&service, send_item_length, send_items,
+			recv_item_length, recv_items, res_successful);
 	}
 
 	}	// try
@@ -1464,10 +1457,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 							exc == isc_insufficient_svc_privileges);
 
 			TraceServiceImpl service(this);
-			svc_trace_manager->event_service_query(&service,
-				send_item_length, send_items,
-				recv_item_length, recv_items,
-				no_priv ? res_unauthorized : res_failed);
+			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
+				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
 		}
 		throw;
 	}
@@ -1851,10 +1842,8 @@ void Service::query(USHORT			send_item_length,
 
 			// Report to Trace API that query failed
 			TraceServiceImpl service(this);
-			svc_trace_manager->event_service_query(&service,
-				send_item_length, send_items,
-				recv_item_length, recv_items,
-				no_priv ? res_unauthorized : res_failed);
+			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
+				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
 		}
 		throw;
 	}
@@ -1865,10 +1854,8 @@ void Service::query(USHORT			send_item_length,
 			svc_trace_manager->needs().event_service_query)
 		{
 			TraceServiceImpl service(this);
-			svc_trace_manager->event_service_query(&service,
-				send_item_length, send_items,
-				recv_item_length, recv_items,
-				res_successful);
+			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
+				recv_item_length, recv_items, res_successful);
 		}
 
 		finish(SVC_finished);
