@@ -1,3 +1,41 @@
+2009-06-19 17:47  asfernandes
+
+	* firebird2/src/dsql/: ddl.cpp (1.282), metd.epp (1.145):
+
+	Fixed CORE-2516 - Wrong processing SP parameters with arrays
+
+2009-06-19 16:38  asfernandes
+
+	* firebird2/src/utilities/nbackup.cpp (1.91):
+
+	Revert this change. HEAD was fine.
+
+2009-06-19 16:14  paulbeach
+
+	* firebird2/src/utilities/nbackup.cpp (1.90):
+
+	O_DIRECT and MacOSX problem (lack of) - better ifdefs (I hope)
+
+2009-06-19 15:34  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.254):
+
+	Initialize variables before it could be used.  GCC complains about
+	potential use of not initialized variables : if exception occurs
+	"goto gc_exit" will bypass initialization.
+
+2009-06-19 15:03  paulbeach
+
+	* firebird2/src/utilities/nbackup.cpp (1.89):
+
+	O_DIRECT and MacOSX problem (lack of)
+
+2009-06-19 15:00  robocop
+
+	* firebird2/src/: jrd/opt.cpp (1.347), qli/gener.cpp (1.54):
+
+	Misc.
+
 2009-06-19 13:33  dimitr
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.113), Optimizer.h (1.34):
