@@ -1,3 +1,59 @@
+2009-06-21 13:16  robocop
+
+	* firebird2/: src/include/gen/codetext.h (1.107),
+	src/include/gen/iberror.h (1.111), src/include/gen/msgs.h (1.137),
+	src/include/gen/sql_code.h (1.113), src/include/gen/sql_state.h
+	(1.43), src/msgs/facilities2.sql (1.68), src/msgs/messages2.sql
+	(1.93), src/msgs/system_errors2.sql (1.59),
+	lang_helpers/gds_codes.ftn (1.98), lang_helpers/gds_codes.pas
+	(1.97), src/jrd/inf.cpp (1.100):
+
+	Validations (do not crash).
+
+2009-06-21 12:35  robocop
+
+	* firebird2/src/alice/tdr.cpp (1.62):
+
+	Misc.
+
+2009-06-21 12:34  robocop
+
+	* firebird2/src/jrd/: nav.cpp (1.80), opt.cpp (1.348):
+
+	Style.
+
+2009-06-21 10:32  robocop
+
+	* firebird2/src/jrd/: btn.cpp (1.30), btr.cpp (1.246):
+
+	Simplification.
+
+2009-06-21 08:04  robocop
+
+	* firebird2/src/jrd/: btr.cpp (1.245), btr.h (1.52), btr_proto.h
+	(1.44), dfw.epp (1.275), idx.cpp (1.156), met.epp (1.282):
+
+	Give idx_id and associated values a consistent data type and
+	treatment.
+
+2009-06-21 07:46  robocop
+
+	* firebird2/src/: jrd/alt.cpp (1.82), jrd/btn.cpp (1.29),
+	jrd/btr.cpp (1.244), jrd/btr.h (1.51), jrd/btr_proto.h (1.43),
+	jrd/idx.cpp (1.155), jrd/rlck.cpp (1.45), jrd/sdw.cpp (1.92),
+	jrd/tpc.cpp (1.42), isql/isql.epp (1.282):
+
+	Style.
+
+2009-06-20 20:46  asfernandes
+
+	* firebird2/src/: jrd/jrd.cpp (1.546), jrd/req.h (1.95),
+	jrd/sqz.cpp (1.35), jrd/svc.cpp (1.275), jrd/vio.cpp (1.255),
+	msgs/messages2.sql (1.92), qli/gener.cpp (1.55), remote/server.cpp
+	(1.259):
+
+	Misc
+
 2009-06-19 17:47  asfernandes
 
 	* firebird2/src/dsql/: ddl.cpp (1.282), metd.epp (1.145):
