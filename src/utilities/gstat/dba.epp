@@ -92,27 +92,27 @@ struct dba_idx {
 	SSHORT idx_id;
 	SSHORT idx_depth;
 	ULONG idx_leaf_buckets;
-	ULONG idx_total_duplicates;
-	ULONG idx_max_duplicates;
-	ULONG idx_nodes;
+	FB_UINT64 idx_total_duplicates;
+	FB_UINT64 idx_max_duplicates;
+	FB_UINT64 idx_nodes;
 	FB_UINT64 idx_data_length;
-	SLONG idx_fill_distribution[BUCKETS];
+	ULONG idx_fill_distribution[BUCKETS];
 	SCHAR idx_name[MAX_SQL_IDENTIFIER_SIZE];
 };
 
 struct dba_rel {
 	dba_rel* rel_next;
 	dba_idx* rel_indexes;
-	SLONG rel_index_root;
-	SLONG rel_pointer_page;
-	SLONG rel_slots;
+	ULONG rel_index_root;
+	ULONG rel_pointer_page;
+	ULONG rel_slots;
 	ULONG rel_data_pages;
-	ULONG rel_records;
+	FB_UINT64 rel_records;
 	FB_UINT64 rel_record_space;
-	ULONG rel_versions;
+	FB_UINT64 rel_versions;
 	FB_UINT64 rel_version_space;
-	ULONG rel_max_versions;
-	SLONG rel_fill_distribution[BUCKETS];
+	FB_UINT64 rel_max_versions;
+	ULONG rel_fill_distribution[BUCKETS];
 	FB_UINT64 rel_total_space;
 	SSHORT rel_id;
 	SCHAR rel_name[MAX_SQL_IDENTIFIER_SIZE];
@@ -153,7 +153,7 @@ static const pag* db_read(SLONG);
 static void db_close(int);
 #endif
 static void move(const SCHAR*, SCHAR*, SSHORT);
-static void print_distribution(const SCHAR*, const SLONG*);
+static void print_distribution(const SCHAR*, const ULONG*);
 static void dba_error(USHORT, const SafeArg& arg = SafeArg());
 static void dba_print(USHORT, const SafeArg& arg = SafeArg());
 
@@ -850,7 +850,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					relation->rel_records : 0.0;
 				sprintf((char*) buf, "%.2f", average);
 				FPRINTF(sw_outfile,
-						"    Average record length: %s, total records: %ld\n",
+						"    Average record length: %s, total records: %" UQUADFORMAT "\n",
 						buf, relation->rel_records);
 				// dba_print(18, SafeArg() << buf << relation->rel_records);
 				// msg 18: "    Average record length: %s, total records: %ld 
@@ -859,7 +859,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 					relation->rel_versions : 0.0;
 				sprintf((char*) buf, "%.2f", average);
 				FPRINTF(sw_outfile,
-						"    Average version length: %s, total versions: %ld, max versions: %ld\n",
+						"    Average version length: %s, total versions: %" UQUADFORMAT ", max versions: %" UQUADFORMAT "\n",
 						buf, relation->rel_versions,
 						relation->rel_max_versions);
 				// dba_print(19, SafeArg() << buf << relation->rel_versions <<
@@ -1222,7 +1222,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 
 	bool firstLeafNode = true;
 	SLONG number;
-	ULONG duplicates = 0;
+	FB_UINT64 duplicates = 0;
 	// AB: In fact length for KEY should be MAX_KEY (1/4 of used page-size)
 	// This value should be kept equal with size declared in btr.h
 	//UCHAR key[4096];
@@ -1816,7 +1816,7 @@ static void move(const SCHAR* from, SCHAR* to, SSHORT length)
 }
 
 
-static void print_distribution(const SCHAR* prefix, const SLONG* vector)
+static void print_distribution(const SCHAR* prefix, const ULONG* vector)
 {
 /**************************************
  *
