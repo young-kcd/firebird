@@ -90,6 +90,9 @@ struct IndexDescAlloc : public pool_alloc_rpt<index_desc>
 	index_desc items[1];
 };
 
+
+const USHORT idx_invalid = USHORT(~0);		// Applies to idx_id as special value
+
 // index types and flags
 
 // See jrd/intl.h for notes on idx_itype and dsc_sub_type considerations

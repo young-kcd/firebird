@@ -418,7 +418,7 @@ bool BTR_delete_index(thread_db* tdbb, WIN* window, USHORT id)
 
 
 bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, index_desc* idx,
-					 SSHORT id)
+					 USHORT id)
 {
 /**************************************
  *
@@ -445,8 +445,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 		return false;
 	}
 
-	//fb_assert(id <= MAX_USHORT);
-	idx->idx_id = (USHORT) id;
+	idx->idx_id = id;
 	idx->idx_root = irt_desc->irt_root;
 	idx->idx_count = irt_desc->irt_keys;
 	idx->idx_flags = irt_desc->irt_flags;
@@ -1744,8 +1743,8 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
  **************************************/
 	SET_TDBB(tdbb);
 
-	SSHORT id;
-	if (idx->idx_id == (USHORT) -1)
+	USHORT id;
+	if (idx->idx_id == idx_invalid)
 	{
 		id = 0;
 		window->win_bdb = NULL;
@@ -1921,7 +1920,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 	// already assigned, use it.
 	const bool use_idx_id = (relPages->rel_instance_id != 0);
 	if (use_idx_id) {
-		fb_assert((idx->idx_id >= 0) && (idx->idx_id <= dbb->dbb_max_idx));
+		fb_assert(idx->idx_id <= dbb->dbb_max_idx);
 	}
 
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);

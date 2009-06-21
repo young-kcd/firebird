@@ -2015,7 +2015,7 @@ static bool create_index(thread_db*	tdbb,
 
 			if (idx.idx_flags & idx_foreign)
 			{
-				idx.idx_id = MAX_USHORT;
+				idx.idx_id = idx_invalid;
 
 				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
 				{
@@ -3035,7 +3035,11 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		arg = arg->dfw_next;
 
 	fb_assert(arg);
+	fb_assert(arg->dfw_id > 0);
 	const USHORT id = arg->dfw_id - 1;
+	// Maybe a permanent check?
+	//if (id == idx_invalid)
+	//	ERR_post(...);
 
 	// Look up the relation.  If we can't find the relation,
 	// don't worry about the index.

@@ -81,7 +81,7 @@ struct index_fast_load
 
 static idx_e check_duplicates(thread_db*, Record*, index_desc*, index_insertion*, jrd_rel*);
 static idx_e check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, jrd_rel**, USHORT *);
-static idx_e check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, SSHORT);
+static idx_e check_partner_index(thread_db*, jrd_rel*, Record*, jrd_tra*, index_desc*, jrd_rel*, USHORT);
 static bool duplicate_key(const UCHAR*, const UCHAR*, void*);
 static PageNumber get_root_page(thread_db*, jrd_rel*);
 static int index_block_flush(void*);
@@ -110,7 +110,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 	SET_TDBB(tdbb);
 
 	index_desc idx;
-	idx.idx_id = (USHORT) -1;
+	idx.idx_id = idx_invalid;
 	RelationPages* relPages = relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
 	WIN referenced_window(relPages->rel_pg_space_id, -1);
@@ -125,7 +125,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 			}
 			jrd_rel* referenced_relation = MET_relation(tdbb, idx.idx_primary_relation);
 			MET_scan_relation(tdbb, referenced_relation);
-			const USHORT index_id = (USHORT) idx.idx_primary_index;
+			const USHORT index_id = idx.idx_primary_index;
 
 			/* get the description of the primary key index */
 
@@ -323,7 +323,7 @@ void IDX_create_index(thread_db* tdbb,
 			BUGCHECK(173);		/* msg 173 referenced index description not found */
 		}
 		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
-		partner_index_id = (USHORT) idx->idx_primary_index;
+		partner_index_id = idx->idx_primary_index;
 	}
 
 /* Checkout a garbage collect record block for fetching data. */
@@ -624,8 +624,6 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
  *	complete relation.
  *
  **************************************/
-	SSHORT i;
-
 	SET_TDBB(tdbb);
 
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
@@ -633,7 +631,7 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 
 	const bool is_temp = (relation->rel_flags & REL_temp_conn) && (relPages->rel_instance_id != 0);
 
-	for (i = 0; i < root->irt_count; i++)
+	for (USHORT i = 0; i < root->irt_count; i++)
 	{
 		const bool tree_exists = BTR_delete_index(tdbb, &window, i);
 		root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
@@ -674,7 +672,7 @@ idx_e IDX_erase(thread_db* tdbb, record_param* rpb,
 	SET_TDBB(tdbb);
 
 	idx_e error_code = idx_e_ok;
-	idx.idx_id = (USHORT) -1;
+	idx.idx_id = idx_invalid;
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
 
@@ -814,7 +812,7 @@ idx_e IDX_modify(thread_db* tdbb,
 	insertion.iib_descriptor = &idx;
 	insertion.iib_transaction = transaction;
 	idx_e error_code = idx_e_ok;
-	idx.idx_id = (USHORT) -1;
+	idx.idx_id = idx_invalid;
 
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
@@ -869,7 +867,7 @@ idx_e IDX_modify_check_constraints(thread_db* tdbb,
 
 	idx_e error_code = idx_e_ok;
 	index_desc idx;
-	idx.idx_id = (USHORT) -1;
+	idx.idx_id = idx_invalid;
 
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
@@ -968,7 +966,7 @@ idx_e IDX_store(thread_db* tdbb, record_param* rpb,
 	insertion.iib_transaction = transaction;
 
 	idx_e error_code = idx_e_ok;
-	idx.idx_id = (USHORT) -1;
+	idx.idx_id = idx_invalid;
 
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
@@ -1235,7 +1233,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 	if (idx->idx_flags & idx_foreign)
 	{
 		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
-		index_id = (USHORT) idx->idx_primary_index;
+		index_id = idx->idx_primary_index;
 		result = check_partner_index(tdbb, relation, record, transaction, idx,
 									 partner_relation, index_id);
 	}
@@ -1308,7 +1306,7 @@ static idx_e check_partner_index(thread_db* tdbb,
 								 jrd_tra* transaction,
 								 index_desc* idx,
 								 jrd_rel* partner_relation,
-								 SSHORT index_id)
+								 USHORT index_id)
 {
 /**************************************
  *
@@ -1624,7 +1622,7 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 
 	DSC desc1, desc2;
 	index_desc idx;
-	idx.idx_id = (USHORT) -1;
+	idx.idx_id = idx_invalid;
 
 	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{

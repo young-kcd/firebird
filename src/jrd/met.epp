@@ -2381,6 +2381,7 @@ bool MET_lookup_partner(thread_db*	tdbb,
 				{
 					idx->idx_primary_relation = partner_relation->rel_id;
 					idx->idx_primary_index = IND.RDB$INDEX_ID - 1;
+					fb_assert(idx->idx_primary_index != idx_invalid);
 					found = true;
 				}
 			END_FOR;
@@ -2392,8 +2393,8 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		frgn* references = &relation->rel_foreign_refs;
 		if (references->frgn_reference_ids)
 		{
-			for (int index_number = 0;
-				index_number < (int) references->frgn_reference_ids->count();
+			for (unsigned int index_number = 0;
+				index_number < references->frgn_reference_ids->count();
 				index_number++)
 			{
 				if (idx->idx_id == (*references->frgn_reference_ids)[index_number])
@@ -2411,8 +2412,8 @@ bool MET_lookup_partner(thread_db*	tdbb,
 		const prim* dependencies = &relation->rel_primary_dpnds;
 		if (dependencies->prim_reference_ids)
 		{
-			for (int index_number = 0;
-				 index_number < (int) dependencies->prim_reference_ids->count();
+			for (unsigned int index_number = 0;
+				 index_number < dependencies->prim_reference_ids->count();
 				 index_number++)
 			{
 				if (idx->idx_id == (*dependencies->prim_reference_ids)[index_number])
