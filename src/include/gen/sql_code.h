@@ -680,6 +680,7 @@ static const struct {
 	{335544977, -833}, /* 657 sysf_argmustbe_range_inc1_1 */
 	{335544978, -833}, /* 658 sysf_argmustbe_gteq_one */
 	{335544979, -833}, /* 659 sysf_argmustbe_range_exc1_1 */
+	{335544980, -104}, /* 660 internal_rejected_params */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

@@ -715,6 +715,7 @@ const ISC_STATUS isc_sysf_argmustbe_nonzero           = 335544976L;
 const ISC_STATUS isc_sysf_argmustbe_range_inc1_1      = 335544977L;
 const ISC_STATUS isc_sysf_argmustbe_gteq_one          = 335544978L;
 const ISC_STATUS isc_sysf_argmustbe_range_exc1_1      = 335544979L;
+const ISC_STATUS isc_internal_rejected_params         = 335544980L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1009,7 +1010,7 @@ const ISC_STATUS isc_fbsvcmgr_fp_open                 = 336986160L;
 const ISC_STATUS isc_fbsvcmgr_fp_read                 = 336986161L;
 const ISC_STATUS isc_fbsvcmgr_fp_empty                = 336986162L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 953;
+const ISC_STATUS isc_err_max                          = 954;
 
 #else /* c definitions */
 
@@ -1694,6 +1695,7 @@ const ISC_STATUS isc_err_max                          = 953;
 #define isc_sysf_argmustbe_range_inc1_1      335544977L
 #define isc_sysf_argmustbe_gteq_one          335544978L
 #define isc_sysf_argmustbe_range_exc1_1      335544979L
+#define isc_internal_rejected_params         335544980L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1988,7 +1990,7 @@ const ISC_STATUS isc_err_max                          = 953;
 #define isc_fbsvcmgr_fp_read                 336986161L
 #define isc_fbsvcmgr_fp_empty                336986162L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          953
+#define isc_err_max                          954
 
 #endif
 

@@ -62,6 +62,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/nbak.h"
+#include "../common/StatusArg.h"
 
 using namespace Jrd;
 
@@ -85,6 +86,13 @@ typedef Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> CountsBuffer;
 
 static USHORT get_counts(USHORT, CountsBuffer&);
 
+#define CHECK_INPUT(fcn) \
+	if (!items || item_length <= 0 || !info || output_length <= 0) \
+	{ \
+		ERR_post(Firebird::Arg::Gds(isc_internal_rejected_params) << Firebird::Arg::Str(fcn)); \
+	} \
+
+
 
 void INF_blob_info(const blb* blob,
 				   const UCHAR* items,
@@ -102,6 +110,8 @@ void INF_blob_info(const blb* blob,
  *	Process requests for blob info.
  *
  **************************************/
+	CHECK_INPUT("INF_blob_info");
+
 	UCHAR buffer[BUFFER_TINY];
 	USHORT length;
 
@@ -131,7 +141,7 @@ void INF_blob_info(const blb* blob,
 			break;
 
 		case isc_info_blob_max_segment:
-			length = INF_convert(blob->blb_max_segment, buffer);
+			length = INF_convert(static_cast<ULONG>(blob->blb_max_segment), buffer);
 			break;
 
 		case isc_info_blob_total_length:
@@ -209,6 +219,8 @@ void INF_database_info(const UCHAR* items,
  *	Process requests for database info.
  *
  **************************************/
+ 	CHECK_INPUT("INF_database_info");
+
 	CountsBuffer counts_buffer;
 	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
 	SSHORT length;
@@ -851,6 +863,8 @@ void INF_request_info(const jrd_req* request,
  *	Return information about requests.
  *
  **************************************/
+	CHECK_INPUT("INF_request_info");
+
 	ULONG length = 0;
 
 	const UCHAR* const end_items = items + item_length;
@@ -1014,9 +1028,11 @@ void INF_transaction_info(const jrd_tra* transaction,
  **************************************
  *
  * Functional description
- *	Process requests for blob info.
+ *	Process requests for transaction info.
  *
  **************************************/
+	CHECK_INPUT("INF_transaction_info");
+
 	UCHAR buffer[BUFFER_TINY];
 	USHORT length;
 
