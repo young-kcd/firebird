@@ -339,6 +339,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 			{
 				ALICE_print(72);
 				// msg 72: More limbo transactions than fit.  Try again
+				// And how it's going to retry with a bigger buffer if the buffer is fixed size?
 			}
 			// fall through
 
