@@ -6475,26 +6475,15 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 		return contents_above_threshold;
 	}
 
-	{ // scope, may we replace this by memcmp???
-	// check to make sure the node has the same value
-		const UCHAR* p = node.data;
-		const UCHAR* q = key->key_data + node.prefix;
-		USHORT l = node.length;
-		if (l)
-		{
-			do
-			{
-				if (*p++ != *q++)
-				{
+	if (node.length && memcmp(node.data, key->key_data + node.prefix, node.length))
+	{
 #ifdef DEBUG_BTR
-					CCH_RELEASE(tdbb, window);
-					CORRUPT(204);	// msg 204 index inconsistent
+		CCH_RELEASE(tdbb, window);
+		CORRUPT(204);	// msg 204 index inconsistent
 #endif
-					return contents_above_threshold;
-				}
-			} while (--l);
-		}
-	} // scope
+		return contents_above_threshold;
+	}
+
 
 	// *****************************************************
 	// AB: This becomes a very expensive task if there are
@@ -6546,8 +6535,8 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 
 		pointer = BTreeNode::getPointerFirstNode(page);
 		pointer = BTreeNode::readNode(&node, pointer, flags, true);
-		USHORT l = node.length;
-		if (l != key->key_length)
+		const USHORT len = node.length;
+		if (len != key->key_length)
 		{
 #ifdef DEBUG_BTR
 			CCH_RELEASE(tdbb, window);
@@ -6556,21 +6545,13 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 			return contents_above_threshold;
 		}
 
-		if (l)
+		if (len && memcmp(node.data, key->key_data, len))
 		{
-			// may we replace this by memcmp???
-			const UCHAR* p = node.data;
-			const UCHAR* q = key->key_data;
-			do {
-				if (*p++ != *q++)
-				{
 #ifdef DEBUG_BTR
-					CCH_RELEASE(tdbb, window);
-					CORRUPT(204);	// msg 204 index inconsistent
+			CCH_RELEASE(tdbb, window);
+			CORRUPT(204);	// msg 204 index inconsistent
 #endif
-					return contents_above_threshold;
-				}
-			} while (--l);
+			return contents_above_threshold;
 		}
 
 		// Until deletion of duplicate nodes becomes efficient, limit

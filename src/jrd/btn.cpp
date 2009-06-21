@@ -391,22 +391,12 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 		return false;
 	}
 
-	USHORT l = indexNode->length;
-	if (!l) {
+	USHORT len = indexNode->length;
+	if (!len) {
 		return true;
 	}
 
-	const UCHAR* p = indexNode->data;
-	const UCHAR* q = data + indexNode->prefix;
-	while (l)
-	{
-		if (*p++ != *q++) {
-			return false;
-		}
-		--l;
-	}
-
-	return true;
+	return !memcmp(indexNode->data, data + indexNode->prefix, len);
 }
 
 
