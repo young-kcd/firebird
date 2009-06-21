@@ -5482,7 +5482,7 @@ static processing_state get_statement(TEXT* const statement,
 			if (state == normal && count > 0 && p[-1] == '/' && count > non_comment_pos)
 			{
 				state = in_block_comment;
-				comment_pos = count-1;
+				comment_pos = count - 1;
 				if (valuable_count == 1)
 					valuable_count = 0;
 			}
@@ -5493,10 +5493,10 @@ static processing_state get_statement(TEXT* const statement,
 			// Ignore possibilities of a comment ending inside
 			// quoted strings.
 			// Ignore things like /*/ since it isn't a block comment; only the start of it. Or end.
-			if (state == in_block_comment && count > 2 && p[-1] == '*' && count > comment_pos+2)
+			if (state == in_block_comment && count > 2 && p[-1] == '*' && count > comment_pos + 2)
 			{
 				state = normal;
-				non_comment_pos = count+1; // mark start of non-comment to track this: /**/*
+				non_comment_pos = count + 1; // mark start of non-comment to track this: /**/*
 				valuable_count--; // This char is not valuable
 			}
 			break;

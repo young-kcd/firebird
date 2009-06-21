@@ -42,10 +42,10 @@ DSC*	BTR_eval_expression(Jrd::thread_db*, Jrd::index_desc*, Jrd::Record*, bool&)
 void	BTR_evaluate(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::RecordBitmap**, Jrd::RecordBitmap*);
 UCHAR*	BTR_find_leaf(Ods::btree_page*, Jrd::temporary_key*, UCHAR*, USHORT*, bool, bool);
 Ods::btree_page*	BTR_find_page(Jrd::thread_db*, Jrd::IndexRetrieval*, Jrd::win*, Jrd::index_desc*,
-								 Jrd::temporary_key*, Jrd::temporary_key*, bool);
+								 Jrd::temporary_key*, Jrd::temporary_key*, const bool);
 void	BTR_insert(Jrd::thread_db*, Jrd::win*, Jrd::index_insertion*);
 Jrd::idx_e	BTR_key(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::Record*, Jrd::index_desc*, Jrd::temporary_key*,
-					Jrd::idx_null_state*, bool);
+					Jrd::idx_null_state*, const bool);
 USHORT	BTR_key_length(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
 UCHAR*	BTR_last_node(Ods::btree_page*, exp_index_buf*, btree_exp**);
 Ods::btree_page*	BTR_left_handoff(Jrd::thread_db*, Jrd::win*, Ods::btree_page*, SSHORT);

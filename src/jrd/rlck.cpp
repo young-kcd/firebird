@@ -65,13 +65,15 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 	// Next, figure out what kind of lock we need
 
 	USHORT level;
-	if (transaction->tra_flags & TRA_degree3) {
+	if (transaction->tra_flags & TRA_degree3)
+	{
 		if (write_flag)
 			level = LCK_EX;
 		else
 			level = LCK_PR;
 	}
-	else {
+	else
+	{
 		if (write_flag)
 			level = LCK_SW;
 		else

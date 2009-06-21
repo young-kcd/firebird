@@ -65,12 +65,14 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 	CHECK_DBB(dbb);
 
 	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
-	if (!tip_cache) {
+	if (!tip_cache)
+	{
 		TPC_initialize_tpc(tdbb, number);
 		tip_cache = dbb->dbb_tip_cache;
 	}
 
-	if (number && dbb->dbb_pc_transactions) {
+	if (number && dbb->dbb_pc_transactions)
+	{
 		if (TRA_precommited(tdbb, number, number))
 			return tra_precommitted;
 	}
@@ -85,7 +87,8 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 /* locate the specific TIP cache block for the transaction */
 
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
-	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
+	for (; tip_cache; tip_cache = tip_cache->tpc_next)
+	{
 		if ((ULONG) number < (ULONG) (tip_cache->tpc_base + trans_per_tip)) {
 			return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
 		}
@@ -115,7 +118,8 @@ void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 	CHECK_DBB(dbb);
 
 	TxPageCache* tip_cache = dbb->dbb_tip_cache;
-	if (!tip_cache) {
+	if (!tip_cache)
+	{
 		cache_transactions(tdbb, NULL, 0);
 		return;
 	}
@@ -200,12 +204,14 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 	CHECK_DBB(dbb);
 
 	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
-	if (!tip_cache) {
+	if (!tip_cache)
+	{
 		cache_transactions(tdbb, NULL, 0);
 		tip_cache = dbb->dbb_tip_cache;
 	}
 
-	if (number && dbb->dbb_pc_transactions) {
+	if (number && dbb->dbb_pc_transactions)
+	{
 		if (TRA_precommited(tdbb, number, number)) {
 			return tra_precommitted;
 		}
@@ -247,7 +253,8 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 
 			/* If we can't get a lock on the transaction, it must be active. */
 
-			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
+			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT))
+			{
 				fb_utils::init_status(tdbb->tdbb_status_vector);
 				return tra_active;
 			}
@@ -299,7 +306,8 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
    easier than finding out when a TIP page is dropped */
 
 	TxPageCache* tip_cache;
-	while ( (tip_cache = dbb->dbb_tip_cache) ) {
+	while ( (tip_cache = dbb->dbb_tip_cache) )
+	{
 		if ((ULONG) dbb->dbb_oldest_transaction >= (ULONG) (tip_cache->tpc_base + trans_per_tip))
 		{
 			dbb->dbb_tip_cache = tip_cache->tpc_next;
@@ -312,8 +320,10 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
 /* find the appropriate page in the TIP cache and assign all transaction
    bits -- it's not worth figuring out which ones are actually used */
 
-	for (; tip_cache; tip_cache = tip_cache->tpc_next) {
-		if (first_trans == tip_cache->tpc_base) {
+	for (; tip_cache; tip_cache = tip_cache->tpc_next)
+	{
+		if (first_trans == tip_cache->tpc_base)
+		{
 			const USHORT l = TRANS_OFFSET(trans_per_tip);
 			memcpy(tip_cache->tpc_transactions, tip_page->tip_transactions, l);
 			break;

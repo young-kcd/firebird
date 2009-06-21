@@ -357,7 +357,8 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
  **************************************/
 	if (page->btr_header.pag_flags & btr_jump_info)
 	{
-		if (jumpInfo) {
+		if (jumpInfo)
+		{
 			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			return readJumpInfo(jumpInfo, pointer);
 		}
@@ -397,7 +398,8 @@ bool keyEquality(USHORT length, const UCHAR* data, const IndexNode* indexNode)
 
 	const UCHAR* p = indexNode->data;
 	const UCHAR* q = data + indexNode->prefix;
-	while (l) {
+	while (l)
+	{
 		if (*p++ != *q++) {
 			return false;
 		}
@@ -465,7 +467,8 @@ UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
 
 	pointer = readNode(node, pointer, flags, true);
 
-	if (*expanded_node) {
+	if (*expanded_node)
+	{
 		*expanded_node = (btree_exp*) ((UCHAR*) (*expanded_node)->btx_data +
 			node->prefix + node->length);
 	}
@@ -543,19 +546,22 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
 		// Get prefix
 		UCHAR tmp = *pagePointer++;
 		jumpNode->prefix = (tmp & 0x7F);
-		if (tmp & 0x80) {
+		if (tmp & 0x80)
+		{
 			tmp = *pagePointer++;
 			jumpNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 		}
 		// Get length
 		tmp = *pagePointer++;
 		jumpNode->length = (tmp & 0x7F);
-		if (tmp & 0x80) {
+		if (tmp & 0x80)
+		{
 			tmp = *pagePointer++;
 			jumpNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
 		}
 	}
-	else {
+	else
+	{
 		jumpNode->prefix = (USHORT)(*pagePointer++);
 		jumpNode->length = (USHORT)(*pagePointer++);
 	}
@@ -614,7 +620,8 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
 			tmp |= 0x80;
 		}
 		*pagePointer++ = tmp;
-		if (tmp & 0x80) {
+		if (tmp & 0x80)
+		{
 			tmp = (number & 0x7F);
 			*pagePointer++ = tmp;
 		}
@@ -627,12 +634,14 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, UCHAR flags)
 			tmp |= 0x80;
 		}
 		*pagePointer++ = tmp;
-		if (tmp & 0x80) {
+		if (tmp & 0x80)
+		{
 			tmp = (number & 0x7F);
 			*pagePointer++ = tmp;
 		}
 	}
-	else {
+	else
+	{
 		*pagePointer++ = (UCHAR) jumpNode->prefix;
 		*pagePointer++ = (UCHAR) jumpNode->length;
 	}
@@ -889,7 +898,8 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
 				tmp |= 0x80;
 			}
 			*pagePointer++ = tmp;
-			if (number > 0) {
+			if (number > 0)
+			{
 				tmp = (number & 0x7F);
 				*pagePointer++ = tmp;
 			}
@@ -907,7 +917,8 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
 				tmp |= 0x80;
 			}
 			*pagePointer++ = tmp;
-			if (number > 0) {
+			if (number > 0)
+			{
 				tmp = (number & 0x7F);
 				*pagePointer++ = tmp;
 			}
@@ -949,7 +960,8 @@ UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
 		{
 			USHORT size = indexNode->length;
 			const UCHAR* ptr = indexNode->data;
-			while (size) {
+			while (size)
+			{
 				*pagePointer++ = *ptr++;
 				size--;
 			}

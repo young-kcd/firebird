@@ -84,7 +84,8 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 
 	SLONG length = 1;
 	USHORT i = count;
-	while (i--) {
+	while (i--)
+	{
 		const char* q = va_arg(ptr, SCHAR *);
 		length += strlen(q) + 5;
 	}
@@ -259,7 +260,8 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS* status_vector,
 		teb = (teb_t*) gds__alloc(((SLONG) sizeof(teb_t) * count));
 	/* FREE: later in this module */
 
-	if (!teb) {					/* NOMEM: */
+	if (!teb)
+	{					/* NOMEM: */
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_virmemexh;
 		status_vector[2] = isc_arg_end;
@@ -270,7 +272,8 @@ ISC_STATUS API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS* status_vector,
 	va_list ptr;
 	va_start(ptr, count);
 
-	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter) {
+	for (teb_t* teb_iter = teb; teb_iter < end; ++teb_iter)
+	{
 		teb_iter->teb_database = va_arg(ptr, FB_API_HANDLE*);
 		teb_iter->teb_tpb_length = va_arg(ptr, int);
 		teb_iter->teb_tpb = va_arg(ptr, UCHAR *);
@@ -905,7 +908,8 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 		userInfo.uid = input_user_data->uid;
 		userInfo.uid_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.uid_specified = false;
 		userInfo.uid_entered = false;
 	}
@@ -916,31 +920,36 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 		userInfo.gid = input_user_data->gid;
 		userInfo.gid_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.gid_specified = false;
 		userInfo.gid_entered = false;
 	}
 
-	if ((input_user_data->sec_flags & sec_group_name_spec) && input_user_data->group_name) {
+	if ((input_user_data->sec_flags & sec_group_name_spec) && input_user_data->group_name)
+	{
 		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
 		strncpy(userInfo.group_name, input_user_data->group_name, l);
 		userInfo.group_name[l] = '\0';
 		userInfo.group_name_entered = true;
 		userInfo.group_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.group_name_entered = false;
 		userInfo.group_name_specified = false;
 	}
 
-	if ((input_user_data->sec_flags & sec_first_name_spec) && input_user_data->first_name) {
+	if ((input_user_data->sec_flags & sec_first_name_spec) && input_user_data->first_name)
+	{
 		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
 		strncpy(userInfo.first_name, input_user_data->first_name, l);
 		userInfo.first_name[l] = '\0';
 		userInfo.first_name_entered = true;
 		userInfo.first_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.first_name_entered = false;
 		userInfo.first_name_specified = false;
 	}
@@ -954,7 +963,8 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 		userInfo.middle_name_entered = true;
 		userInfo.middle_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.middle_name_entered = false;
 		userInfo.middle_name_specified = false;
 	}
@@ -967,7 +977,8 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 		userInfo.last_name_entered = true;
 		userInfo.last_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.last_name_entered = false;
 		userInfo.last_name_specified = false;
 	}
@@ -1081,7 +1092,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.password_entered = true;
 		userInfo.password_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.password_specified = false;
 		userInfo.password_entered = false;
 	}
@@ -1093,7 +1105,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.uid_specified = true;
 		userInfo.uid_entered = true;
 	}
-	else {
+	else
+	{
 		userInfo.uid_specified = false;
 		userInfo.uid_entered = false;
 	}
@@ -1104,7 +1117,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.gid_specified = true;
 		userInfo.gid_entered = true;
 	}
-	else {
+	else
+	{
 		userInfo.gid_specified = false;
 		userInfo.gid_entered = false;
 	}
@@ -1117,7 +1131,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.group_name_entered = true;
 		userInfo.group_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.group_name_entered = false;
 		userInfo.group_name_specified = false;
 	}
@@ -1130,7 +1145,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.first_name_entered = true;
 		userInfo.first_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.first_name_entered = false;
 		userInfo.first_name_specified = false;
 	}
@@ -1143,7 +1159,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.middle_name_entered = true;
 		userInfo.middle_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.middle_name_entered = false;
 		userInfo.middle_name_specified = false;
 	}
@@ -1156,7 +1173,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		userInfo.last_name_entered = true;
 		userInfo.last_name_specified = true;
 	}
-	else {
+	else
+	{
 		userInfo.last_name_entered = false;
 		userInfo.last_name_specified = false;
 	}
