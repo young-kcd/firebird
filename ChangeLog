@@ -1,3 +1,9 @@
+2009-06-20 22:40  hvlad
+
+	* firebird2/src/jrd/isc_sync.cpp (1.103.2.6):
+
+	Fixed bug CORE-2507 : Intermittent CreateFile failure
+
 2009-05-30 16:17  robocop
 
 	* firebird2/src/jrd/event.cpp (1.55.4.7):
