@@ -611,13 +611,15 @@ private:
 enum req_flags_vals {
 	REQ_cursor_open			= 0x00001,
 	REQ_save_metadata		= 0x00002,
-	REQ_prepared			= 0x00004,
+	REQ_prepared			= 0x00004, // Set in DSQL_prepare but never checked
 	REQ_procedure			= 0x00008,
 	REQ_trigger				= 0x00010,
 	REQ_orphan				= 0x00020,
-	REQ_enforce_scope		= 0x00040,
+	//REQ_enforce_scope		= 0x00040, // NOT USED
 	REQ_no_batch			= 0x00080,
+#ifdef SCROLLABLE_CURSORS
 	REQ_backwards			= 0x00100,
+#endif
 	REQ_blr_version4		= 0x00200,
 	REQ_blr_version5		= 0x00400,
 	REQ_block				= 0x00800,
