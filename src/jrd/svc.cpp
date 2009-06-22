@@ -1434,7 +1434,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
 		USHORT length2 = INF_convert(number, buffer);
-		fb_assert(length == 4); // We only accept SLONG
+		fb_assert(length2 == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length2, buffer, start_info, end, true);
 	}
 
