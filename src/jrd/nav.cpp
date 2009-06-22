@@ -1013,10 +1013,10 @@ static UCHAR* nav_open(thread_db* tdbb,
 	index_desc* idx = (index_desc*) ((SCHAR *) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	temporary_key lower, upper;
 #ifdef SCROLLABLE_CURSORS
-	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower,
-		&upper, (direction == RSE_get_backward));
+	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper,
+											(direction == RSE_get_backward));
 #else
-	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper, false);
+	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper);
 #endif
 	impure->irsb_nav_page = window->win_page.getPageNum();
 

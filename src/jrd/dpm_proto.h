@@ -56,7 +56,11 @@ void	DPM_fetch_fragment(Jrd::thread_db*, Jrd::record_param*, USHORT);
 SINT64	DPM_gen_id(Jrd::thread_db*, SLONG, bool, SINT64);
 bool	DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
 ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, RecordNumber, bool, SLONG);
-bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT, bool, bool);
+bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT,
+#ifdef SCROLLABLE_CURSORS
+				bool,
+#endif
+				bool);
 void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, SLONG);
 SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::PageBitmap*, SLONG);
 void	DPM_scan_pages(Jrd::thread_db*);

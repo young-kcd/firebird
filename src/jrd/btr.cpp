@@ -648,7 +648,11 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 	lower.key_length = 0;
 	upper.key_flags = 0;
 	upper.key_length = 0;
-	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper, false);
+	btree_page* page = BTR_find_page(tdbb, retrieval, &window, &idx, &lower, &upper
+#ifdef SCROLLABLE_CURSORS
+							, false
+#endif
+							);
 
 	const bool descending = (idx.idx_flags & idx_descending);
 	bool skipLowerKey = (retrieval->irb_generic & irb_exclude_lower);
@@ -815,8 +819,12 @@ btree_page* BTR_find_page(thread_db* tdbb,
 						  WIN* window,
 						  index_desc* idx,
 						  temporary_key* lower,
-						  temporary_key* upper,
-						  const bool backwards)
+						  temporary_key* upper
+#ifdef SCROLLABLE_CURSORS
+						  ,
+						  const bool backwards
+#endif
+						  )
 {
 /**************************************
  *
@@ -888,8 +896,14 @@ btree_page* BTR_find_page(thread_db* tdbb,
 	const bool ignoreNulls = ((idx->idx_count == 1) && !(idx->idx_flags & idx_descending) &&
 		(retrieval->irb_generic & irb_ignore_null_value_key) && !(retrieval->irb_lower_count));
 
-	if ((!backwards && retrieval->irb_lower_count) || (!backwards && ignoreNulls) ||
-		(backwards && retrieval->irb_upper_count))
+#ifdef SCROLLABLE_CURSORS
+	const bool firstData =
+		((!backwards && retrieval->irb_lower_count) || (!backwards && ignoreNulls) ||
+			(backwards && retrieval->irb_upper_count));
+#else
+	const bool firstData = (retrieval->irb_lower_count || ignoreNulls);
+#endif
+	if (firstData)
 	{
 		// Make a temporary key with length 1 and zero byte, this will return
 		// the first data value after the NULLs for an ASC index.
@@ -902,8 +916,13 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		{
 			while (true)
 			{
-				const SLONG number = find_page(page,
-					backwards ? upper : ignoreNulls ? &firstNotNullKey : lower, idx->idx_flags,
+#ifdef SCROLLABLE_CURSORS
+				const temporary_key* tkey =
+					backwards ? upper : ignoreNulls ? &firstNotNullKey : lower;
+#else
+				const temporary_key* tkey = ignoreNulls ? &firstNotNullKey : lower;
+#endif
+				const SLONG number = find_page(page, tkey, idx->idx_flags,
 					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET)
 				{
@@ -921,7 +940,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 		while (page->btr_level > 0)
 		{
 			UCHAR* pointer;
-			const UCHAR* const endPointer = (UCHAR*)page + page->btr_length;
+			const UCHAR* const endPointer = (UCHAR*) page + page->btr_length;
 #ifdef SCROLLABLE_CURSORS
 			if (backwards) {
 				pointer = BTR_last_node(page, NAV_expand_index(window, 0), 0);
@@ -944,7 +963,8 @@ btree_page* BTR_find_page(thread_db* tdbb,
 #ifdef SCROLLABLE_CURSORS
 			if (backwards)
 			{
-				while (page->btr_sibling) {
+				while (page->btr_sibling) 
+				{
 					page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 													 LCK_read, pag_index);
 				}

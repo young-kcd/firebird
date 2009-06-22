@@ -2407,7 +2407,9 @@ bool VIO_next_record(thread_db* tdbb,
 					 //RecordSource* rsb,
 					 jrd_tra* transaction,
 					 MemoryPool* pool,
+#ifdef SCROLLABLE_CURSORS
 					 bool backwards,
+#endif
 					 bool onepage)
 {
 /**************************************
@@ -2447,8 +2449,14 @@ bool VIO_next_record(thread_db* tdbb,
 #endif
 
 	do {
-		if (!DPM_next(tdbb, rpb, lock_type, backwards, onepage))
+		if (!DPM_next(tdbb, rpb, lock_type,
+#ifdef SCROLLABLE_CURSORS
+			backwards,
+#endif
+			onepage))
+		{
 			return false;
+		}
 	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
 
 	if (pool)
@@ -2883,7 +2891,11 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 					relation->rel_garbage->clear();
 				}
 #endif
-				while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, 0, false, false))
+				while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, 0,
+#ifdef SCROLLABLE_CURSORS
+					false,
+#endif
+					false))
 				{
 					CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 					if (relation->rel_flags & REL_deleting) {
@@ -4011,7 +4023,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 							/* Attempt to garbage collect all records on the data page. */
 
-							while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, NULL, false, true))
+							while (VIO_next_record(tdbb, &rpb, /*NULL,*/ transaction, NULL,
+#ifdef SCROLLABLE_CURSORS
+								false,
+#endif
+								true))
 							{
 								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 
