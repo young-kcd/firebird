@@ -298,7 +298,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 	bool sw_relation = false;
 	bool sw_nocreation = false;
 	isc_db_handle db_handle = 0;
-	UCHAR buf[256];
 
 	TEXT pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
@@ -316,7 +315,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	tdba::putSpecific(tddba, &thd_context);
 	int exit_code = FINI_OK;
 
-	int argc = uSvc->argv.getCount();
+	const int argc = uSvc->argv.getCount();
 	const char** argv = uSvc->argv.begin();
 
 	ISC_STATUS* status_vector = NULL;
@@ -346,7 +345,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
 			TEXT c;
-			for (const TEXT* p = str + 1; c = *p++;) {
+			for (const TEXT* p = str + 1; c = *p++;)
+			{
 				if (UPPER(c) != *q++)
 					break;
 			}
@@ -431,7 +431,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 			sw_relation = true;
 			while (argv < end && **argv != '-')
 			{
-				if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
+				if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN)
+				{
 					argv++;
 					continue;
 				}
@@ -455,7 +456,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 	if (sw_version)
 		dba_print(5, SafeArg() << GDS_VERSION);	// msg 5: gstat version %s
 
-	if (!name) {
+	if (!name)
+	{
 		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 2, SafeArg());
 		dba_error(2);	// msg 2: please retry, giving a database name
 	}
@@ -533,7 +535,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 			for (const UCHAR* const vend = vp + header->hdr_page_size;
 				 vp < vend && *vp != HDR_end; vp += 2 + vp[1])
 			{
-				if (*vp == HDR_file) {
+				if (*vp == HDR_file)
+				{
 					memcpy(file_name, vp + 2, vp[1]);
 					*(file_name + vp[1]) = '\0';
 				}
@@ -636,7 +639,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 			fb_utils::exact_name(X.RDB$RELATION_NAME);
 			for (relation = tddba->relations; relation; relation = relation->rel_next)
 			{
-                if (!(strcmp(relation->rel_name, X.RDB$RELATION_NAME))) {
+                if (!(strcmp(relation->rel_name, X.RDB$RELATION_NAME)))
+                {
 					relation->rel_id = X.RDB$RELATION_ID;
 					break;
                 }
@@ -731,13 +735,14 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	// Print results
 
+	UCHAR buf[256];
+
 	for (const dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 	{
 		if (relation->rel_id == -1) {
 			continue;
 		}
-		uSvc->printf("%s (%d)\n", relation->rel_name,
-				relation->rel_id);
+		uSvc->printf("%s (%d)\n", relation->rel_name, relation->rel_id);
 		if (sw_data)
 		{
 			dba_print(11, SafeArg() << relation->rel_pointer_page << relation->rel_index_root);
@@ -876,7 +881,8 @@ static char* alloc(size_t size)
 	tdba* tddba = tdba::getSpecific();
 	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
 
-	if (!block) {
+	if (!block)
+	{
 		// NOMEM: return error
 		dba_error(31);
 	}
@@ -884,7 +890,8 @@ static char* alloc(size_t size)
 	memset(block, 0, size);
 
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
-	if (!mem_list) {
+	if (!mem_list)
+	{
 		// NOMEM: return error
 		dba_error(31);
 	}
@@ -893,7 +900,8 @@ static char* alloc(size_t size)
 
 	if (tddba->head_of_mem_list == 0)
 		tddba->head_of_mem_list = mem_list;
-	else {
+	else
+	{
 		mem_list->mem_next = tddba->head_of_mem_list;
 		tddba->head_of_mem_list = mem_list;
 	}
@@ -956,7 +964,8 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 	if (page->dpg_header.pag_type != pag_data)
 		return false;
 
-	if (sw_record) {
+	if (sw_record)
+	{
 		memcpy(tddba->buffer2, (const SCHAR*) page, tddba->page_size);
 		page = (const data_page*) tddba->buffer2;
 	}
@@ -976,7 +985,8 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 				{
 					++relation->rel_records;
 					relation->rel_record_space += tail->dpg_length;
-					if (header->rhdf_flags & rhd_incomplete) {
+					if (header->rhdf_flags & rhd_incomplete)
+					{
 						relation->rel_record_space -= RHDF_SIZE;
 						relation->rel_record_space += analyze_fragments(relation, header);
 					}
@@ -1107,15 +1117,18 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 			else {
 				dup = (!node.length) && (l == key_length);
 			}
-			if (firstLeafNode) {
+			if (firstLeafNode)
+			{
 				dup = false;
 				firstLeafNode = false;
 			}
-			if (dup) {
+			if (dup)
+			{
 				++index->idx_total_duplicates;
 				++duplicates;
 			}
-			else {
+			else
+			{
 				if (duplicates > index->idx_max_duplicates) {
 					index->idx_max_duplicates = duplicates;
 				}
@@ -1146,7 +1159,8 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 		number = page;
 		page = bucket->btr_sibling;
 		bucket = (const btree_page*) db_read(page);
-		if (bucket->btr_header.pag_type != pag_index) {
+		if (bucket->btr_header.pag_type != pag_index)
+		{
 			dba_print(19, SafeArg() << page << number);
 			// mag 19: "    Expected b-tree bucket on page %ld from %ld"
 			break;
@@ -1189,7 +1203,8 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 		header = (const rhdf*) ((SCHAR *) page + index->dpg_offset);
 		b_page = header->rhdf_b_page;
 		b_line = header->rhdf_b_line;
-		if (header->rhdf_flags & rhd_incomplete) {
+		if (header->rhdf_flags & rhd_incomplete)
+		{
 			space -= RHDF_SIZE;
 			space += analyze_fragments(relation, header);
 		}
@@ -1285,7 +1300,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
-	else {						// empty list
+	else
+	{						// empty list
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
 	}
@@ -1313,7 +1329,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	}
 
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
-	if (!file_list) {
+	if (!file_list)
+	{
 		// NOMEM: return error
 		dba_error(31);
 	}
@@ -1322,7 +1339,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (tddba->head_of_files_list == 0)
 		tddba->head_of_files_list = file_list;
-	else {
+	else
+	{
 		file_list->open_files_next = tddba->head_of_files_list;
 		tddba->head_of_files_list = file_list;
 	}
@@ -1386,7 +1404,8 @@ static const pag* db_read( SLONG page_number)
 		// msg 30: Can't read a database page
 		db_error(GetLastError());
 	}
-	if (actual_length != tddba->page_size) {
+	if (actual_length != tddba->page_size)
+	{
 		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
 		dba_error(4);
 		// msg 4: Unexpected end of database file.
@@ -1462,7 +1481,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		fil->fil_next->fil_min_page = fil->fil_max_page + 1;
 		fil = fil->fil_next;
 	}
-	else {						// empty list
+	else
+	{						// empty list
 
 		fil = tddba->files = (dba_fil*) alloc(sizeof(dba_fil) + file_length + 1);
 		fil->fil_min_page = 0L;
@@ -1482,7 +1502,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	}
 
 	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
-	if (!file_list) {
+	if (!file_list)
+	{
 		// NOMEM: return error
 		dba_error(31);
 	}
@@ -1491,7 +1512,8 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (tddba->head_of_files_list == 0)
 		tddba->head_of_files_list = file_list;
-	else {
+	else
+	{
 		file_list->open_files_next = tddba->head_of_files_list;
 		tddba->head_of_files_list = file_list;
 	}
@@ -1527,7 +1549,8 @@ static const pag* db_read( SLONG page_number)
 
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) tddba->page_size);
-	if (lseek (fil->fil_desc, offset, 0) == -1) {
+	if (lseek (fil->fil_desc, offset, 0) == -1)
+	{
 		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
 		// msg 30: Can't read a database page
 		db_error(errno);
@@ -1537,12 +1560,14 @@ static const pag* db_read( SLONG page_number)
 	for (SCHAR* p = (SCHAR *) tddba->global_buffer; length > 0;)
 	{
 		const SSHORT l = read(fil->fil_desc, p, length);
-		if (l < 0) {
+		if (l < 0)
+		{
 			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
 			// msg 30: Can't read a database page
 			db_error(errno);
 		}
-		if (!l) {
+		if (!l)
+		{
 			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
 			dba_error(4);
 			// msg 4: Unexpected end of database file.
