@@ -1,3 +1,15 @@
+2009-06-23 13:59  aafemt
+
+	* firebird2/src/isql/isql.epp (1.283):
+
+	Fix for my previous commit
+
+2009-06-23 06:12  robocop
+
+	* firebird2/src/jrd/dpm.epp (1.96):
+
+	Style.
+
 2009-06-22 10:56  robocop
 
 	* firebird2/src/dsql/dsql.h (1.153):
