@@ -3333,10 +3333,10 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 21, NULL, 'Available switches:', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 22, NULL, '    -a      analyze data and index pages', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 23, NULL, '    -d      analyze data pages', NULL, NULL);
-(NULL, 'main', 'dba.e', NULL, 21, 24, NULL, '    -h      analyze header page', NULL, NULL);
+(NULL, 'main', 'dba.e', NULL, 21, 24, NULL, '    -h      analyze header page ONLY', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 25, NULL, '    -i      analyze index leaf pages', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 26, NULL, '    -l      analyze log page', NULL, NULL);
-(NULL, 'main', 'dba.e', NULL, 21, 27, NULL, '    -s      analyze system relations', NULL, NULL);
+(NULL, 'main', 'dba.e', NULL, 21, 27, NULL, '    -s      analyze system relations in addition to user tables', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 28, NULL, '    -z      display version number', NULL, NULL);
 ('gstat_open_err', 'db_open', 'dba.e', NULL, 21, 29, NULL, 'Can''t open database file @1', NULL, NULL);
 ('gstat_read_err', 'db_read', 'dba.e', NULL, 21, 30, NULL, 'Can''t read a database page', NULL, NULL);
@@ -3344,11 +3344,19 @@ Analyzing database pages ...', NULL, NULL);
 ('gstat_username', NULL, 'dba.e', NULL, 21, 32, NULL, '    -u      username', NULL, NULL);
 ('gstat_password', NULL, 'dba.e', NULL, 21, 33, NULL, '    -p      password', NULL, NULL);
 (NULL, 'main', 'dba.e', NULL, 21, 34, NULL, '    -r      analyze average record and version length', NULL, NULL);
-(NULL, 'main', 'dba.e', NULL, 21, 35, NULL, '    -t      tablename', NULL, NULL);
+(NULL, 'main', 'dba.e', NULL, 21, 35, NULL, '    -t      tablename <tablename2...> (case sensitive)', NULL, NULL);
 -- Do not change the arguments of the previous GSTAT messages.
 -- Write the new GSTAT messages here.
 (NULL, 'main', 'dba.epp', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 37, NULL, '    -fetch  fetch password from file', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 38, NULL, 'option -h is incompatible with options -a, -d, -i, -r, -s and -t', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 39, NULL, 'usage:   gstat [options] <database> or gstat <database> [options]', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 40, NULL, 'database name was already specified', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 41, NULL, 'option -t needs a table name', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 42, NULL, 'option -t got a too long table name @1', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 43, NULL, 'option -t accepts several table names only if used after <database>', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 44, NULL, 'table "@1" not found', NULL, NULL)
+(NULL, 'main', 'dba.epp', NULL, 21, 45, NULL, 'use gstat -? to get help', NULL, NULL)
 -- FBSVCMGR
 -- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);

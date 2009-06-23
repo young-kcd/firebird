@@ -1202,6 +1202,9 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1197, 'asfernandes', '2009-04-21 11:18:00', 17, 38, '    <object> = CHECK, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION, GENERATOR,', NULL, NULL, 'c_pg')
 (1198, 'asfernandes', '2009-04-21 11:19:00', 17, 64, '               GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM, TABLE,', NULL, NULL, 'c_pg')
 (1199, 'asfernandes', '2009-04-21 11:20:00', 17, 102, '               TRIGGER, VERSION, USERS, VIEW', NULL, NULL, 'c_pg')
+(1200, 'cvc', '2009-06-22 05:53:30', 21, 27, '    -s      analyze system relations', NULL, NULL, 'c_pg')
+(1201, 'cvc', '2009-06-22 05:54:50', 21, 24, '    -h      analyze header page', NULL, NULL, 'c_pg')
+(1202, 'cvc', '2009-06-22 05:56:20', 21, 35, '    -t      tablename', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

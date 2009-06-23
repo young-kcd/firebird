@@ -152,9 +152,11 @@ static void db_close(void* file_desc);
 #else
 static void db_close(int);
 #endif
-static void print_distribution(const SCHAR*, const ULONG*);
 static void dba_error(USHORT, const SafeArg& arg = SafeArg());
 static void dba_print(USHORT, const SafeArg& arg = SafeArg());
+static void print_distribution(const SCHAR*, const ULONG*);
+static void print_help();
+
 
 #include "../jrd/db_alias.h"
 
@@ -287,16 +289,6 @@ int gstat(Firebird::UtilSvc* uSvc)
  *	of a database.
  *
  **************************************/
-	SCHAR temp[1024];
-	bool sw_system = false;
-	bool sw_data = false;
-	bool sw_index = false;
-	bool sw_version = false;
-	bool sw_header = false;
-	//bool sw_log = false;
-	bool sw_record = false;
-	bool sw_relation = false;
-	bool sw_nocreation = false;
 	isc_db_handle db_handle = 0;
 
 	TEXT pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
@@ -325,6 +317,22 @@ int gstat(Firebird::UtilSvc* uSvc)
 	tddba->dba_status = tddba->dba_status_vector;
 	status_vector = tddba->dba_status;
 
+	if (argc == 1) // no parameters at all.
+	{
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 45, SafeArg());
+		dba_error(45);	// use gstat -? to get help'
+	}
+
+	bool sw_system = false;
+	bool sw_data = false;
+	bool sw_index = false;
+	bool sw_version = false;
+	bool sw_header = false;
+	//bool sw_log = false;
+	bool sw_record = false;
+	bool sw_relation = false;
+	bool sw_nocreation = false;
+
 	const char* name = NULL;
 
 	const TEXT* const* const end = argv + argc;
@@ -334,6 +342,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 		const TEXT* str = *argv++;
 		if (*str != '-')
 		{
+			if (name)
+			{
+				tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 40, SafeArg());
+				dba_error(40);	// database name was already specified
+			}
+
 			name = str;
 			continue;
 		}
@@ -353,20 +367,18 @@ int gstat(Firebird::UtilSvc* uSvc)
 			if (!c)
 				break;
 		}
-		//in_sw_tab->in_sw_state = true;
 
 		switch (in_sw_tab->in_sw)
 		{
-		case 0:
+		case IN_SW_DBA_0:
 			dba_print(20, SafeArg() << (str + 1));	// msg 20: unknown switch "%s"
-			dba_print(21);	// msg 21: Available switches:
-			for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
-			{
-				if (in_sw_tab->in_sw_msg)
-					dba_print(in_sw_tab->in_sw_msg);
-			}
-			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg());
+			print_help();
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg() << (str + 1));
 			dba_error(1);	// msg 1: found unknown switch
+			break;
+		case IN_SW_DBA_HELP:
+			print_help();
+			dba_exit(FINI_OK, tddba);
 			break;
 		case IN_SW_DBA_USERNAME:
 			if (argv < end)
@@ -433,9 +445,14 @@ int gstat(Firebird::UtilSvc* uSvc)
 			{
 				if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN)
 				{
-					argv++;
-					continue;
+					char tbname[MAX_SQL_IDENTIFIER_LEN + 5];
+					fb_utils::copy_terminate(tbname, *argv, MAX_SQL_IDENTIFIER_SIZE);
+					memcpy(tbname + MAX_SQL_IDENTIFIER_LEN, "...\0", 4);
+					tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 42, SafeArg() << tbname);
+					dba_error(42, SafeArg() << tbname);	// option -t got a too long table name @1
+					break;
 				}
+
 				dba_rel* relation = (dba_rel*) alloc(sizeof(struct dba_rel));
 				strcpy(relation->rel_name, *argv++);
 				fb_utils::exact_name(relation->rel_name);
@@ -445,6 +462,11 @@ int gstat(Firebird::UtilSvc* uSvc)
 					next = &(*next)->rel_next;
 				}
 				*next = relation;
+
+				// CVC: If the db name wasn't given yet, only one table name can be specified
+				// after -t to avoid ambiguity.
+				if (!name)
+					break;
 			}
 			break;
 		case IN_SW_DBA_NOCREATION:
@@ -456,10 +478,22 @@ int gstat(Firebird::UtilSvc* uSvc)
 	if (sw_version)
 		dba_print(5, SafeArg() << GDS_VERSION);	// msg 5: gstat version %s
 
+	if (sw_header && (sw_system || sw_data || sw_index || sw_record || sw_relation))
+	{
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 38, SafeArg());
+		dba_error(38);	//option -h is incompatible with options -a, -d, -i, -r, -s and -t
+	}
+
 	if (!name)
 	{
 		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 2, SafeArg());
 		dba_error(2);	// msg 2: please retry, giving a database name
+	}
+
+	if (sw_relation && !tddba->relations)
+	{
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 41, SafeArg());
+		dba_error(41);	// option -t needs a table name.
 	}
 
 	if (!sw_data && !sw_index)
@@ -494,6 +528,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 
 	dba_fil* current = db_open(fileName.c_str(), fileName.length());
+
+	SCHAR temp[1024];
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (pag*) temp;
 	tddba->page_number = -1;
@@ -632,6 +668,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (!X.RDB$VIEW_BLR.NULL || !X.RDB$EXTERNAL_FILE.NULL) {
 			continue;
 		}
+		//rel_virtual, rel_global_temp_preserve, rel_global_temp_delete
+		if (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == fb_sysflag_system &&
+			X.RDB$RELATION_TYPE >= rel_virtual && X.RDB$RELATION_TYPE <= rel_global_temp_delete)
+		{
+			continue;
+		}
 
 		dba_rel* relation;
 		if (sw_relation)
@@ -716,14 +758,32 @@ int gstat(Firebird::UtilSvc* uSvc)
 		dba_exit(FINI_ERROR, tddba);
 	END_ERROR
 
+	if (sw_relation)
+	{
+		for (const dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
+		{
+			if (relation->rel_id == -1)
+			{
+				tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 44, SafeArg() << relation->rel_name);
+				dba_error(44, SafeArg() << relation->rel_name);
+				// msg 44: table "@1" not found
+			}
+		}
+	}
+
+
 	dba_print(10);
 	// msg 10: \nAnalyzing database pages ...\n
 
 	for (dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 	{
-		if (relation->rel_id == -1) {
+		// This condition should never happen because relations not found cause an error before.
+		if (relation->rel_id == -1)
+		{
+			fb_assert(sw_relation && relation->rel_id >= 0);
 			continue;
 		}
+
 		if (sw_data) {
 			analyze_data(relation, sw_record);
 		}
@@ -820,6 +880,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		}
 
 		// if there still exists a database handle, disconnect from the server
+		// This is isc_detach_database
 		FINISH;
 
 		uSvc->started();
@@ -1640,4 +1701,18 @@ static void print_distribution(const SCHAR* prefix, const ULONG* vector)
 		tddba->uSvc->printf("%s%2d - %2d%% = %ld\n",
 				prefix, n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
+}
+
+
+// Print the help explanation
+static void print_help()
+{
+	dba_print(39);	// msg 39: usage:   gstat [options] <database> or gstat <database> [options]
+	dba_print(21);	// msg 21: Available switches:
+	for (const in_sw_tab_t* in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
+	{
+		if (in_sw_tab->in_sw_msg)
+			dba_print(in_sw_tab->in_sw_msg);
+	}
+	dba_print(43);	// option -t accepts...
 }
