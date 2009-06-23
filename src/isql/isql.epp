@@ -5479,7 +5479,7 @@ static processing_state get_statement(TEXT* const statement,
 			// not forward.
 			// Ignore possibilities of a comment beginning inside
 			// quoted strings.
-			if (state == normal && count > 0 && p[-1] == '/' && count > non_comment_pos)
+			if (state == normal && count > 0 && p[-1] == '/' && count != non_comment_pos)
 			{
 				state = in_block_comment;
 				comment_pos = count - 1;
@@ -5550,6 +5550,7 @@ static processing_state get_statement(TEXT* const statement,
 			{	// ignore all previous crap
 				p = statement;
 				count = 0;
+				non_comment_pos = 0;
 			}
 		}
 
