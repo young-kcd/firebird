@@ -160,19 +160,22 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
         bool all_wild;
 		UCHAR c;
 		while (c = *p++)
+		{
 			switch (c)
 			{
 			case ACL_id_list:
 				all_wild = true;
 				*out++ = '\t';
-				while ((c = *p++) != 0) {
+				while ((c = *p++) != 0)
+				{
 					all_wild = false;
 					sprintf(out, "%s%.*s, ", acl_ids[c], *p, p + 1);
 					p += *p + 1;
 					while (*out)
 						++out;
 				}
-				if (all_wild) {
+				if (all_wild)
+				{
 					sprintf(out, "all users: %s, ", WILD_CARD_UIC);
 					while (*out)
 						++out;
@@ -191,6 +194,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 				out = line;
 				break;
 			}
+		}
 	}
 
 	control->ctl_data[1] = control->ctl_data[0];
@@ -231,7 +235,8 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
 	USHORT length;
 	const ISC_STATUS status = caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 
-	if (!status) {
+	if (!status)
+	{
 		if ((l > length) && (temp[length - 1] != blr_eoc))
 			temp[length] = blr_eoc;
 		gds__print_blr(temp, dump_blr, control, 0);
@@ -316,7 +321,8 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 
 /* If there is a string filter active, use it first */
 
-	if (control->ctl_data[0]) {
+	if (control->ctl_data[0])
+	{
 		const ISC_STATUS astatus = string_filter(action, control);
 		if (astatus != isc_segstr_eof)
 			return astatus;
@@ -405,7 +411,8 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		sprintf(line, "*** unknown verb %d ***", (int) buff[0]);
 	}
 
-	if ((length = strlen(line)) > control->ctl_buffer_length) {
+	if ((length = strlen(line)) > control->ctl_buffer_length)
+	{
 		/* The string is too long for the caller's buffer.  Save the
 		   entire string for output by the string_filter routine. */
 
@@ -413,12 +420,14 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		length = 0;
 	}
 
-	if (blr) {
+	if (blr)
+	{
 		gds__print_blr(p, dump_blr, control, 0);
 		control->ctl_data[1] = control->ctl_data[0];
 	}
 
-	if (!length) {
+	if (!length)
+	{
 		/* The string was too long for the caller's buffer.  Return
 		   as much as possible to the user. */
 
@@ -465,7 +474,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	case isc_blob_filter_close:
-		if (control->ctl_data[1]) {
+		if (control->ctl_data[1])
+		{
 			gds__free((void*) control->ctl_data[1]);
 			control->ctl_data[1] = 0;
 		}
@@ -498,17 +508,20 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
    user's buffer will hold */
 
 	const USHORT length = control->ctl_data[0];
-	if (length) {
+	if (length)
+	{
 		buffer_used = MIN(length, control->ctl_buffer_length);
 		memcpy(control->ctl_buffer, (void*) control->ctl_data[1], buffer_used);
 
 		/* remember how much did not get used */
 
-		if (length > buffer_used) {
+		if (length > buffer_used)
+		{
 			left_over = (TEXT *) control->ctl_data[1] + buffer_used;
 			left_length = length - buffer_used;
 		}
-		else {
+		else
+		{
 			left_over = 0;
 			left_length = 0;
 		}
@@ -543,7 +556,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 	USHORT l = buffer_used;
 	for (UCHAR* p = control->ctl_buffer; l; p++, --l)
 	{
-		if (*p == (UCHAR) '\n') {
+		if (*p == (UCHAR) '\n')
+		{
 			/* Found a newline.  First save what comes after the newline. */
 
 			control->ctl_segment_length = p - control->ctl_buffer;
@@ -561,7 +575,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 			/* if there is no control buffer allocate one */
 
-			if (!control->ctl_data[1]) {
+			if (!control->ctl_data[1])
+			{
 				control->ctl_data[1] = (IPTR) gds__alloc((SLONG) control->ctl_buffer_length);
 				/* FREE: above & isc_blob_filter_close in this procedure */
 				if (!control->ctl_data[1])	/* NOMEM: */
@@ -581,7 +596,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 			   2. what we moved back from user's buffer was able to fit in
 			   control buffer before what was left over. */
 
-			if (left_over) {
+			if (left_over)
+			{
 				p = reinterpret_cast<UCHAR*>(control->ctl_data[1]) + l - 1;
 				memcpy(p, left_over, left_length);
 				control->ctl_data[0] += left_length;
@@ -600,7 +616,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
    left over or whether or not control buffer did not hold end of segment */
 
 	control->ctl_segment_length = buffer_used;
-	if (left_over) {
+	if (left_over)
+	{
 		memcpy((void*) control->ctl_data[1], left_over, left_length);
 		control->ctl_data[0] = left_length;
 		return isc_segment;
@@ -685,7 +702,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		SET_TDBB(tdbb);
 		aux->ctlaux_obj1 = INTL_convert_lookup(tdbb, dest_cs, source_cs);
 
-		if (action == isc_blob_filter_open) {
+		if (action == isc_blob_filter_open)
+		{
 			// hvlad: avoid possible overflow of USHORT variables converting long
 			// blob segments into multibyte encoding
 			// Also buffer must contain integer number of utf16 characters as we
@@ -709,7 +727,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			aux->ctlaux_buffer1_len =
 				MAX(aux->ctlaux_buffer1_len, (80 * aux->ctlaux_expansion_factor) / EXP_SCALE);
 		}
-		else {					/* isc_blob_filter_create */
+		else
+		{					/* isc_blob_filter_create */
 			/* In a create, the source->ctl_max_segment size isn't set (as
 			 * nothing has been written!).  Therefore, take a best guess
 			 * for an appropriate buffer size, allocate that, and re-allocate
@@ -750,13 +769,15 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 			return isc_transliteration_failed;
 		}
 
-		if (aux && aux->ctlaux_buffer1) {
+		if (aux && aux->ctlaux_buffer1)
+		{
 			gds__free(aux->ctlaux_buffer1);
 			aux->ctlaux_buffer1 = NULL;
 			aux->ctlaux_buffer1_len = 0;
 		}
 
-		if (aux) {
+		if (aux)
+		{
 			gds__free(aux);
 			control->ctl_data[0] = 0;
 			aux = NULL;
@@ -793,7 +814,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 				result_length = MIN(MAX_USHORT, cvt_len);
 
 				/* Allocate a new buffer if we don't have enough */
-				if (result_length > aux->ctlaux_buffer1_len) {
+				if (result_length > aux->ctlaux_buffer1_len)
+				{
 					gds__free(aux->ctlaux_buffer1);
 					aux->ctlaux_buffer1_len = result_length;
 					aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
@@ -863,9 +885,10 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 
 	bool can_use_more;
 	USHORT length = aux->ctlaux_buffer1_unused;
-	if (length) {
-		if (control->ctl_buffer_length <
-			(length * aux->ctlaux_expansion_factor / EXP_SCALE)) {
+	if (length)
+	{
+		if (control->ctl_buffer_length < (length * aux->ctlaux_expansion_factor / EXP_SCALE))
+		{
 			/* No need to fetch more bytes, we have enough pending */
 			can_use_more = false;
 		}
@@ -1004,7 +1027,8 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 	USHORT length;
 	const ISC_STATUS status = caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
 
-	if (!status) {
+	if (!status)
+	{
         TEXT line[BUFFER_SMALL];
 		sprintf(line, "Transaction description version: %d", (int) *p++);
 		string_put(control, line);
@@ -1112,7 +1136,8 @@ static void dump_blr(void* arg, SSHORT /*offset*/, const char* line)
 	const size_t l = data_len + strlen(line);
 	TEXT* const temp = (l < sizeof(buffer)) ? buffer : (TEXT*) gds__alloc((SLONG) l + 1);
 /* FREE: at procedure exit */
-	if (!temp) {				/* NOMEM: */
+	if (!temp)
+	{				/* NOMEM: */
 		/* No memory left - ignore the padding spaces and put the data */
 		string_put(control, line);
 		return;
@@ -1147,7 +1172,8 @@ static ISC_STATUS string_filter(USHORT action, BlobControl* control)
 	switch (action)
 	{
 	case isc_blob_filter_close:
-		while (string = (filter_tmp*) control->ctl_data[0]) {
+		while (string = (filter_tmp*) control->ctl_data[0])
+		{
 			control->ctl_data[0] = (IPTR) string->tmp_next;
 			gds__free(string);
 		}
@@ -1200,7 +1226,8 @@ static void string_put(BlobControl* control, const char* line)
 	const USHORT len = strlen(line);
 	filter_tmp* string = (filter_tmp*) gds__alloc((SLONG) (sizeof(filter_tmp) + len));
 /* FREE: on isc_blob_filter_close in string_filter() */
-	if (!string) {				/* NOMEM: */
+	if (!string)
+	{				/* NOMEM: */
 		fb_assert(FALSE);			/* out of memory */
 		return;					/* & No error handling at this level */
 	}

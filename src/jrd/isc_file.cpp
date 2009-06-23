@@ -457,7 +457,8 @@ iscProtocol ISC_extract_host(Firebird::PathName& file_name,
 		return ISC_PROTOCOL_WLAN;
 	}
 
-	if (implicit_flag) {
+	if (implicit_flag)
+	{
 		/* Check for a file on a shared drive.  First try to expand
 		   the path.  Then check the expanded path for a TCP or
 		   named pipe. */
@@ -825,19 +826,22 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	if (!fully_qualified_path)
 	{
 		fb_utils::getCwd(file_name);
-		if (device.hasData() && device[0] == file_name[0]) {
+		if (device.hasData() && device[0] == file_name[0])
+		{
 			// case where temp is of the form "c:foo.fdb" and
 			// expanded_name is "c:\x\y".
 			file_name += '\\';
 			file_name.append (temp, 2, npos);
 		}
-		else if (device.empty()) {
+		else if (device.empty())
+		{
 			// case where temp is of the form "foo.fdb" and
 			// expanded_name is "c:\x\y".
 			file_name += '\\';
 			file_name += temp;
 		}
-		else {
+		else
+		{
 			// case where temp is of the form "d:foo.fdb" and
 			// expanded_name is "c:\x\y".
 			// Discard expanded_name and use temp as it is.
@@ -916,7 +920,8 @@ void ISC_expand_share(tstring& file_name)
 	}
 
 	DWORD ret = WNetEnumResource(handle, &nument, resources, &bufSize);
-	if (ret == ERROR_MORE_DATA) {
+	if (ret == ERROR_MORE_DATA)
+	{
 		gds__free(resources);
 		resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
 		/* FREE: in this routine */
@@ -929,7 +934,8 @@ void ISC_expand_share(tstring& file_name)
 
 	LPNETRESOURCE res = resources;
 	DWORD i = 0;
-	while (i < nument && (!res->lpLocalName || (device[0] != *(res->lpLocalName)))) {
+	while (i < nument && (!res->lpLocalName || (device[0] != *(res->lpLocalName))))
+	{
 		i++;
 		res++;
 	}
@@ -943,11 +949,13 @@ void ISC_expand_share(tstring& file_name)
 /* Win95 doesn't seem to return shared drives, so the following
    has been added... */
 
-	if (i == nument) {
+	if (i == nument)
+	{
 		device += ':';
 		LPREMOTE_NAME_INFO res2 = (LPREMOTE_NAME_INFO) resources;
 		ret = WNetGetUniversalName(device.c_str(), REMOTE_NAME_INFO_LEVEL, res2, &bufSize);
-		if (ret == ERROR_MORE_DATA) {
+		if (ret == ERROR_MORE_DATA)
+		{
 			gds__free(resources);
 			resources = (LPNETRESOURCE) gds__alloc((SLONG) bufSize);
 			if (!resources)		/* NOMEM: don't expand the filename */
@@ -994,7 +1002,8 @@ int ISC_strip_extension(TEXT* file_name)
 	TEXT* p = strrchr(file_name, '/');
 	TEXT* q = strrchr(file_name, '\\');
 
-	if (p || q) {
+	if (p || q)
+	{
 		/* Get the maximum of the two */
 
 		if (q > p)
@@ -1205,22 +1214,26 @@ static void expand_share_name(tstring& share_name)
 	LPBYTE data = data_buf;
 
 	DWORD ret = RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
-	if (ret == ERROR_MORE_DATA) {
+	if (ret == ERROR_MORE_DATA)
+	{
 		d_size++;
 		data = (LPBYTE) gds__alloc((SLONG) d_size);
 		// FREE: unknown
-		if (!data) {			// NOMEM:
+		if (!data)
+		{			// NOMEM:
 			RegCloseKey(hkey);
 			return;				// Error not really handled
 		}
 		ret = RegQueryValueEx(hkey, workspace, NULL, &type_code, data, &d_size);
 	}
 
-	if (ret == ERROR_SUCCESS) {
+	if (ret == ERROR_SUCCESS)
+	{
 		for (const TEXT* s = reinterpret_cast<const TEXT*>(data); s && *s;
 			s = (type_code == REG_MULTI_SZ) ? s + strlen(s) + 1 : NULL)
 		{
-			if (!strnicmp(s, "path", 4)) {
+			if (!strnicmp(s, "path", 4))
+			{
 				// CVC: Paranoid protection against buffer overrun.
 				// MAXPATHLEN minus NULL terminator, the possible backslash and p==db_name.
 				// Otherwise, it's possible to create long share plus long db_name => crash.
@@ -1256,10 +1269,12 @@ static bool get_full_path(const tstring& part, tstring& full)
 	TEXT buf[MAXPATHLEN];
 	TEXT *p;
 	const int l = GetFullPathName(part.c_str(), MAXPATHLEN, buf, &p);
-	if (l && l < MAXPATHLEN) {
+	if (l && l < MAXPATHLEN)
+	{
 		full = buf;
 		return true;
 	}
+
 	return false;
 }
 #endif
@@ -1293,7 +1308,8 @@ bool Mnt::get()
 	TEXT* p = buffer;
 
 	mptr = &mnttab;
-	if (getmntent(file, mptr) == 0) {
+	if (getmntent(file, mptr) == 0)
+	{
 		/* Include non-NFS (local) mounts - some may be longer than
 		   NFS mount points */
 
@@ -1311,8 +1327,8 @@ bool Mnt::get()
 		mount->mnt_mount = mptr->mnt_mountp;
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 #else // !GETMNTENT_TAKES_TWO_ARGUMENTS
@@ -1347,7 +1363,8 @@ bool Mnt::get()
 		node = tstring(mptr->mnt_fsname, iflag - mptr->mnt_fsname);
 		path = tstring(++iflag);
 	}
-	else {
+	else
+	{
 		node.erase();
 		path.erase();
 	}
@@ -1388,7 +1405,8 @@ bool Mnt::get()
 		node = tstring( start , size_t(iflag - start) );
 		path = tstring( ++iflag );
 	}
-	else {
+	else
+	{
 		node.erase();
 		path.erase();
 	}
@@ -1416,11 +1434,13 @@ bool Mnt::get()
 	const char* start = this->mnt_info[this->mnt_i].f_mntfromname;
 	const char* iflag = strchr(this->mnt_info[this->mnt_i].f_mntfromname, ':');
 
-	if (iflag) {
+	if (iflag)
+	{
 		node = tstring(start, size_t(iflag - start));
 		path = tstring(++iflag);
 	}
-	else {
+	else
+	{
 		node.erase();
 		path.erase();
 	}
@@ -1458,7 +1478,8 @@ bool Mnt::get()
 
 	TEXT* p = buffer;
 
-	for (;;) {
+	for (;;)
+	{
 		const int n = fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
 #ifdef SOLARIS
 		if (n != 5)
@@ -1533,8 +1554,7 @@ static bool get_server(tstring&, tstring& node_name)
 
 
 #ifdef WIN_NT
-static void share_name_from_resource(tstring& file_name,
-									 LPNETRESOURCE resource)
+static void share_name_from_resource(tstring& file_name, LPNETRESOURCE resource)
 {
 /**************************************
  *
@@ -1552,7 +1572,8 @@ static void share_name_from_resource(tstring& file_name,
 	tstring expanded_name = resource->lpRemoteName;
 
 	const TEXT* mwn = "Microsoft Windows Network";
-	if (!strnicmp(resource->lpProvider, mwn, strlen(mwn))) {
+	if (!strnicmp(resource->lpProvider, mwn, strlen(mwn)))
+	{
 		/* If the shared drive is via Windows
 		   package it up so that resolution of the share name can
 		   occur on the remote machine. The name
@@ -1564,7 +1585,8 @@ static void share_name_from_resource(tstring& file_name,
 		expanded_name += '!';
 		file_name.replace(0, 2, expanded_name);
 	}
-	else {
+	else
+	{
 		// we're guessing that it might be an NFS shared drive
 
 		iter q = expanded_name.end() - 1;
@@ -1592,8 +1614,7 @@ static void share_name_from_resource(tstring& file_name,
 }
 
 
-static void share_name_from_unc(tstring& file_name,
-								LPREMOTE_NAME_INFO unc_remote)
+static void share_name_from_unc(tstring& file_name, LPREMOTE_NAME_INFO unc_remote)
 {
 /**************************************
  *
@@ -1692,15 +1713,18 @@ static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
 	if ((unsigned int) c <= 0x7f) {
 		s[i++] = (unsigned char) c;
 	}
-	else {
+	else
+	{
 		if ((unsigned int) c <= 0x7ff) {
 			s[i++] = (unsigned char) ((c >> 6) | 0xc0);
 		}
-		else {
+		else
+		{
 			if ((unsigned int) c <= 0xffff) {
 				s[i++] = (unsigned char) ((c >> 12) | 0xe0);
 			}
-			else {
+			else
+			{
 				s[i++] = (unsigned char) ((c >> 18) | 0xf0);
 				s[i++] = (unsigned char) (((c >> 12) & 0x3f) | 0x80);
 			}
