@@ -108,53 +108,61 @@ void PPG_print_header(const header_page* header, SLONG page,
 	}
 
 	ULONG flags;
-	int flag_count = 0;
-
 	if ((page == HEADER_PAGE) && (flags = header->hdr_flags))
 	{
+		int flag_count = 0;
+
 		uSvc->printf("\tAttributes\t\t");
-		if (flags & hdr_force_write) {
+		if (flags & hdr_force_write)
+		{
 			uSvc->printf("force write");
 			flag_count++;
 		}
-		if (flags & hdr_no_reserve) {
+		if (flags & hdr_no_reserve)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("no reserve");
 		}
 /*
-		if (flags & hdr_disable_cache) {
+		if (flags & hdr_disable_cache)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("shared cache disabled");
 		}
 */
-		if (flags & hdr_active_shadow) {
+		if (flags & hdr_active_shadow)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("active shadow");
 		}
 
 		const USHORT sd_flags = flags & hdr_shutdown_mask;
-		if (sd_flags == hdr_shutdown_multi) {
+		if (sd_flags == hdr_shutdown_multi)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("multi-user maintenance");
 		}
 
-		if (sd_flags == hdr_shutdown_single) {
+		if (sd_flags == hdr_shutdown_single)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("single-user maintenance");
 		}
 
-		if (sd_flags == hdr_shutdown_full) {
+		if (sd_flags == hdr_shutdown_full)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("full shutdown");
 		}
 
-		if (flags & hdr_read_only) {
+		if (flags & hdr_read_only)
+		{
 			if (flag_count++)
 				uSvc->printf(", ");
 			uSvc->printf("read only");
@@ -180,12 +188,13 @@ void PPG_print_header(const header_page* header, SLONG page,
 
 	uSvc->printf("\n    Variable header data:\n");
 
-	SLONG number;
 	TEXT temp[257];
 
 	const UCHAR* p = header->hdr_data;
 	for (const UCHAR* const end = p + header->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
 	{
+		SLONG number;
+
 		switch (*p)
 		{
 		case HDR_root_file_name:
