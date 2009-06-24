@@ -603,7 +603,7 @@ void ALICE_print(USHORT	number,
 
 void ALICE_print_status(const ISC_STATUS* status_vector)
 {
-	if (status_vector)
+	if (status_vector && status_vector[1])
 	{
 		const ISC_STATUS* vector = status_vector;
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
