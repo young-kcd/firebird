@@ -1,3 +1,47 @@
+2009-06-24 14:11  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.117), alice/alice_meta.epp
+	(1.58), alice/exe.cpp (1.61), alice/tdr.cpp (1.63),
+	utilities/gsec/call_service.cpp (1.25), utilities/gsec/gsec.cpp
+	(1.113), utilities/gsec/security.epp (1.30):
+
+	Style.
+
+2009-06-24 13:47  hvlad
+
+	* firebird2/src/alice/alice.cpp (1.116):
+
+	Fixed bug CORE-2523 : gfix reports "unknown ISC error 0" in some
+	cases
+
+2009-06-24 13:45  hvlad
+
+	* firebird2/src/jrd/tra.cpp (1.208):
+
+	Fixed bug CORE-2268 : GFIX causes BUGCHECK errors with non valid
+	transaction numbers
+
+2009-06-23 16:45  robocop
+
+	* firebird2/src/utilities/gstat/ppg.cpp (1.36):
+
+	Style.
+
+2009-06-23 16:45  robocop
+
+	* firebird2/src/: utilities/gstat/dba.epp (1.117),
+	utilities/gstat/dbaswi.h (1.14), msgs/facilities2.sql (1.69),
+	msgs/history2.sql (1.15), msgs/messages2.sql (1.94):
+
+	CORE-1411 and CORE-1412.
+
+2009-06-23 15:26  robocop
+
+	* firebird2/src/jrd/: filters.cpp (1.73), isc.cpp (1.96),
+	isc_file.cpp (1.137), isc_sync.cpp (1.206):
+
+	Style.
+
 2009-06-23 13:59  aafemt
 
 	* firebird2/src/isql/isql.epp (1.283):
