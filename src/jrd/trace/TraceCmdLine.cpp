@@ -30,8 +30,8 @@
 #include "iberror.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/StatusArg.h"
+#include "../../common/utils_proto.h"
 #include "../../common/UtilSvc.h"
-#include "../../jrd/ThreadData.h"
 #include "../../jrd/trace/TraceService.h"
 
 
@@ -49,33 +49,39 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 		(Arg::Gds(isc_random) << msg).raise();
 
 	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
+
 	fprintf(stderr,
 		"Firebird Trace utility.\n"
-		"Usage: fbtrace <action> [<parameters>]\n"
+		"Usage: fbtracemgr <action> [<parameters>]\n"
+		"\n"
 		"Actions: \n"
 		"  -STA[RT]                              Start trace session\n"
 		"  -STO[P]                               Stop trace session\n"
 		"  -S[USPEND]                            Suspend trace session\n"
 		"  -R[ESUME]                             Resume trace session\n"
 		"  -L[IST]                               List existing trace sessions\n\n"
-		"Parameters: \n"
-		"  -N[AME] <string>                      Session name\n"
-		"  -I[D]   <number>                      Session ID\n"
-		"  -C[ONFIG]   <string>                  Trace configuration file name\n"
-		"  -O[UTPUT]   <string>                  Output file name\n"
+		"\n"
+		"Action parameters: \n"
+		"  -N[AME]    <string>                   Session name\n"
+		"  -I[D]      <number>                   Session ID\n"
+		"  -C[ONFIG]  <string>                   Trace configuration file name\n"
+		"\n"
+		"Connection parameters: \n"
+		"  -SE[RVICE]  <string>                  Service name\n"
 		"  -U[SER]     <string>                  User name\n"
 		"  -P[ASSWORD] <string>                  Password\n"
 		"  -FE[TCH]    <string>                  Fetch password from file\n"
-		"  -SE[RVICE]  <string>                  Service name\n\n"
-		"Examples: \n"
-		"  fbtrace -START -NAME my_trace -CONFIG my_cfg.txt\n"
-		"  fbtrace -START -CONFIG my_cfg.txt -OUTPUT log.txt\n"
-		"  fbtrace -STOP -ID 12"
-		"  fbtrace -LIST -OUTPUT stdout"
+		"  -T[RUSTED]  <string>                  Force trusted authentication\n"
 		"\n"
+		"Examples: \n"
+		"  fbtracemgr -LIST\n"
+		"  fbtracemgr -START -NAME my_trace -CONFIG my_cfg.txt\n"
+		"  fbtracemgr -SUSPEND -ID 2\n"
+		"  fbtracemgr -RESUME -ID 2\n"
+		"  fbtracemgr -STOP -ID 4\n"
 		"\n"
 		"Notes:\n"
-		"  Press CTRL+C to stop interactive trace session"
+		"  Press CTRL+C to stop interactive trace session\n"
 	);
 	exit(FINI_ERROR);
 }
@@ -131,7 +137,8 @@ static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
 
 	for (const in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
-		if (switchMatch(sw, in_sw_tab->in_sw_name))
+		if ((sw.length() >= in_sw_tab->in_sw_min_length) && 
+			switchMatch(sw, in_sw_tab->in_sw_name))
 		{
 			return in_sw_tab;
 		}
@@ -147,8 +154,10 @@ const char TRACE_ERR_PARAM_VAL_MISS[]		= "value for switch \"%s\" is missing";
 const char TRACE_ERR_PARAM_INVALID[]		= "invalid value (\"%s\") for switch \"%s\"";
 const char TRACE_ERR_SWITCH_UNKNOWN[]		= "unknown switch \"%s\" encountered";
 const char TRACE_ERR_SWITCH_SVC_ONLY[]		= "switch \"%s\" can be used by service only";
+const char TRACE_ERR_SWITCH_USER_ONLY[]		= "switch \"%s\" can be used by user only";
 const char TRACE_ERR_SWITCH_PARAM_MISS[]	= "mandatory parameter \"%s\" for switch \"%s\" is missing";
 const char TRACE_ERR_PARAM_ACT_NOTCOMPAT[]	= "parameter \"%s\" is incompatible with action \"%s\"";
+const char TRACE_ERR_MANDATORY_SWITCH_MISS[]= "mandatory switch \"%s\" is missing";
 
 
 void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
@@ -301,6 +310,47 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
 			break;
 
+		case IN_SW_TRACE_FETCH_PWD:
+			if (uSvc->isService())
+				usage(uSvc, TRACE_ERR_SWITCH_USER_ONLY, sw->in_sw_name);
+
+			if (!pwd.empty())
+				usage(uSvc, TRACE_ERR_SWITCH_ONCE, sw->in_sw_name);
+
+			argv++;
+			if (argv < end)
+			{
+				const PathName fileName(*argv);
+				const char *s = NULL;
+				switch (fb_utils::fetchPassword(fileName, s))
+				{
+					case fb_utils::FETCH_PASS_OK:
+						pwd = s;
+						break;
+
+					case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
+						(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(fileName) <<
+							Arg::Gds(isc_io_open_err) << Arg::OsError()).raise();
+						break;
+
+					case fb_utils::FETCH_PASS_FILE_READ_ERROR:
+					case fb_utils::FETCH_PASS_FILE_EMPTY:
+						(Arg::Gds(isc_io_error) << Arg::Str("read") << Arg::Str(fileName) <<
+							Arg::Gds(isc_io_read_err) << Arg::OsError()).raise();
+						break;
+				}
+			}
+			else
+				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+			break;
+
+		case IN_SW_TRACE_TRUSTED_AUTH:
+			if (uSvc->isService())
+				usage(uSvc, TRACE_ERR_SWITCH_USER_ONLY, sw->in_sw_name);
+
+			adminRole = true;
+			break;
+
 		case IN_SW_TRACE_TRUSTED_USER:
 			if (!uSvc->isService())
 				usage(uSvc, TRACE_ERR_SWITCH_SVC_ONLY, sw->in_sw_name);
@@ -334,6 +384,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				svc_name = *argv;
 			else
 				usage(uSvc, TRACE_ERR_PARAM_VAL_MISS, sw->in_sw_name);
+			break;
 
 		default:
 			fb_assert(false);
@@ -341,6 +392,10 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 	}
 
 	// validate missed action's parameters and perform action
+	if (!uSvc->isService() && svc_name.isEmpty()) {
+		usage(uSvc, TRACE_ERR_MANDATORY_SWITCH_MISS, "SERVICE");
+	}
+
 	if (!session.ses_id)
 	{
 		switch (action_sw->in_sw)

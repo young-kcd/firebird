@@ -34,7 +34,6 @@
 #include "../../common/config/config.h"
 #include "../../common/StatusArg.h"
 #include "../../common/thd.h"
-#include "../../jrd/ThreadData.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"
@@ -63,9 +62,9 @@ public:
 	virtual void stopSession(ULONG id);
 	virtual void setActive(ULONG id, bool active);
 	virtual void listSessions();
-	virtual void readSession(TraceSession& session);
 
 private:
+	void readSession(TraceSession& session);
 	bool changeFlags(ULONG id, int setFlags, int clearFlags);
 	bool checkAliveAndFlags(ULONG sesId, int& flags);
 
