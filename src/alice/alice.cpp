@@ -173,7 +173,8 @@ int alice(Firebird::UtilSvc* uSvc)
 		for (table = alice_in_sw_table; true; ++table)
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
-			if (!p) {
+			if (!p)
+			{
 				ALICE_print(2, SafeArg() << (*--argv));	// msg 2: invalid switch %s
 				error = true;
 				break;
@@ -193,7 +194,8 @@ int alice(Firebird::UtilSvc* uSvc)
 		if (*table->in_sw_name == 'x') {
 			tdgbl->ALICE_data.ua_debug++;
 		}
-        if (table->in_sw_value & sw_trusted_svc) {
+        if (table->in_sw_value & sw_trusted_svc)
+        {
 			uSvc->checkService();
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required
@@ -201,13 +203,15 @@ int alice(Firebird::UtilSvc* uSvc)
 			tdgbl->ALICE_data.ua_tr_user = *argv++;
 			continue;
 		}
-        if (table->in_sw_value & sw_trusted_role) {
+        if (table->in_sw_value & sw_trusted_role)
+        {
 			uSvc->checkService();
 			tdgbl->ALICE_data.ua_tr_role = true;
 			continue;
 		}
 #ifdef TRUSTED_AUTH
-        if (table->in_sw_value & sw_trusted_auth) {
+        if (table->in_sw_value & sw_trusted_auth)
+        {
 			tdgbl->ALICE_data.ua_trusted = true;
 			continue;
 		}
@@ -240,7 +244,8 @@ int alice(Firebird::UtilSvc* uSvc)
 				found = false;
 			// Consume argument only if we identified mode
 			// Let's hope that database with names of modes above are unusual
-			if (found) {
+			if (found)
+			{
 				argv++;
 				argc--;
 			}
@@ -248,7 +253,8 @@ int alice(Firebird::UtilSvc* uSvc)
 
 #ifdef DEV_BUILD
 		/*
-		if (table->in_sw_value & sw_begin_log) {
+		if (table->in_sw_value & sw_begin_log)
+		{
 			if (--argc <= 0) {
 				ALICE_error(5);	// msg 5: replay log pathname required
 			}
@@ -257,7 +263,8 @@ int alice(Firebird::UtilSvc* uSvc)
 		*/
 #endif
 
-		if (table->in_sw_value & sw_buffers) {
+		if (table->in_sw_value & sw_buffers)
+		{
 			if (--argc <= 0) {
 				ALICE_error(6);	// msg 6: number of page buffers for cache required
 			}
@@ -271,7 +278,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_housekeeping) {
+		if (table->in_sw_value & sw_housekeeping)
+		{
 			if (--argc <= 0) {
 				ALICE_error(9);	// msg 9: number of transactions per sweep required
 			}
@@ -285,15 +293,15 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_set_db_dialect) {
+		if (table->in_sw_value & sw_set_db_dialect)
+		{
 			if (--argc <= 0) {
 				ALICE_error(113);	// msg 113: dialect number required
 			}
 
 			ALICE_down_case(*argv++, string, sizeof(string));
 
-			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) &&
-				(strcmp(string, "0")))
+			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
 			}
@@ -306,12 +314,14 @@ int alice(Firebird::UtilSvc* uSvc)
 			// }
 		}
 
-		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase)) {
+		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase))
+		{
 			if (--argc <= 0) {
 				ALICE_error(10);	// msg 10: transaction number or "all" required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
-			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string))) {
+			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string)))
+			{
 				if (strcmp(string, "all")) {
 					ALICE_error(10);	// msg 10: transaction number or "all" required
 				}
@@ -321,7 +331,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_write) {
+		if (table->in_sw_value & sw_write)
+		{
 			if (--argc <= 0) {
 				ALICE_error(11);	// msg 11: "sync" or "async" required
 			}
@@ -337,7 +348,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_no_reserve) {
+		if (table->in_sw_value & sw_no_reserve)
+		{
 			if (--argc <= 0) {
 				ALICE_error(12);	// msg 12: "full" or "reserve" required
 			}
@@ -353,14 +365,16 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_user) {
+		if (table->in_sw_value & sw_user)
+		{
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required
 			}
 			tdgbl->ALICE_data.ua_user = *argv++;
 		}
 
-		if (table->in_sw_value & sw_password) {
+		if (table->in_sw_value & sw_password)
+		{
 			if (--argc <= 0) {
 				ALICE_error(14);	// msg 14: password required
 			}
@@ -393,7 +407,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			++argv;
 		}
 
-		if (table->in_sw_value & sw_disable) {
+		if (table->in_sw_value & sw_disable)
+		{
 			if (--argc <= 0) {
 				ALICE_error(15);	// msg 15: subsystem name
 			}
@@ -403,7 +418,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & (sw_attach | sw_force | sw_tran | sw_cache)) {
+		if (table->in_sw_value & (sw_attach | sw_force | sw_tran | sw_cache))
+		{
 			if (--argc <= 0) {
 				ALICE_error(17);	// msg 17: number of seconds required
 			}
@@ -419,7 +435,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_mode) {
+		if (table->in_sw_value & sw_mode)
+		{
 			if (--argc <= 0) {
 				ALICE_error(110);	// msg 110: "read_only" or "read_write" required
 			}
@@ -503,17 +520,21 @@ int alice(Firebird::UtilSvc* uSvc)
 		{
 			bool any_error = false;
 
-			for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
-				if (ua_val_errors[i]) {
+			for (int i = 0; i < MAX_VAL_ERRORS; ++i)
+			{
+				if (ua_val_errors[i])
+				{
 					any_error = true;
 					break;
 				}
 			}
 
-			if (any_error) {
+			if (any_error)
+			{
 				ALICE_print(24);	// msg 24: Summary of validation errors\n
 
-				for (int i = 0; i < MAX_VAL_ERRORS; ++i) {
+				for (int i = 0; i < MAX_VAL_ERRORS; ++i)
+				{
 					if (ua_val_errors[i]) {
 						ALICE_print(val_err_table[i], SafeArg() << ua_val_errors[i]);
 					}
@@ -522,7 +543,8 @@ int alice(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	if (ret == FINI_ERROR) {
+	if (ret == FINI_ERROR)
+	{
 		ALICE_print_status(tdgbl->status);
 		ALICE_exit(FINI_ERROR, tdgbl);
 	}

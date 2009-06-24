@@ -261,11 +261,13 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 static void userInfoToSpb(char*& spb, const internal_user_data& userInfo)
 {
 	stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
-	if (userInfo.uid_entered) {
+	if (userInfo.uid_entered)
+	{
 		stuffSpbByte(spb, isc_spb_sec_userid);
 		stuffSpbLong(spb, userInfo.uid);
 	}
-	if (userInfo.gid_entered) {
+	if (userInfo.gid_entered)
+	{
 		stuffSpbByte(spb, isc_spb_sec_groupid);
 		stuffSpbLong(spb, userInfo.gid);
 	}
@@ -418,7 +420,8 @@ void callRemoteServiceManager(ISC_STATUS* status,
 			outputFunction(functionArg, &uData, !uData.user_name_entered);
 		}
 	}
-	else {
+	else
+	{
 		const char request = isc_info_svc_line;
 		for (;;)
 		{

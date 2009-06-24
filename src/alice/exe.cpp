@@ -207,7 +207,8 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 	else if (switches & sw_activate) {
 		dpb.insertTag(isc_dpb_activate_shadow);
 	}
-	else if (switches & sw_validate) {
+	else if (switches & sw_validate)
+	{
 		UCHAR b = isc_dpb_pages;
 		if (switches & sw_full)
 			b |= isc_dpb_records;
@@ -223,7 +224,8 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertInt(isc_dpb_sweep_interval, tdgbl->ALICE_data.ua_sweep_interval);
 	}
 /*
-	else if (switches & sw_begin_log) {
+	else if (switches & sw_begin_log)
+	{
 		dpb.insertString(isc_dpb_begin_log,
 						 tdgbl->ALICE_data.ua_log_file,
 						 strlen(tdgbl->ALICE_data.ua_log_file));
@@ -318,25 +320,30 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertInt(isc_dpb_set_db_sql_dialect, tdgbl->ALICE_data.ua_db_SQL_dialect);
 	}
 
-	if (tdgbl->ALICE_data.ua_user) {
+	if (tdgbl->ALICE_data.ua_user)
+	{
 		dpb.insertString(isc_dpb_user_name,
 						 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 	}
-	if (tdgbl->ALICE_data.ua_password) {
+	if (tdgbl->ALICE_data.ua_password)
+	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 						 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
 	}
-	if (tdgbl->ALICE_data.ua_tr_user) {
+	if (tdgbl->ALICE_data.ua_tr_user)
+	{
 		tdgbl->uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_auth,
 						 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
 	}
-	if (tdgbl->ALICE_data.ua_tr_role) {
+	if (tdgbl->ALICE_data.ua_tr_role)
+	{
 		tdgbl->uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 	}
 #ifdef TRUSTED_AUTH
-	if (tdgbl->ALICE_data.ua_trusted) {
+	if (tdgbl->ALICE_data.ua_trusted)
+	{
 		if (!dpb.find(isc_dpb_trusted_auth)) {
 			dpb.insertTag(isc_dpb_trusted_auth);
 		}

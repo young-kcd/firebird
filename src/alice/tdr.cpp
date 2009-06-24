@@ -102,7 +102,8 @@ USHORT TDR_analyze(const tdr* trans)
 			// perverse case of a rollback, otherwise a commit if at all possible
 
 		case TRA_commit:
-			if (state == TRA_rollback) {
+			if (state == TRA_rollback)
+			{
 				ALICE_print(105);
 				// msg 105: Warning: Multidatabase transaction is in inconsistent state for recovery.
 				ALICE_print(106, SafeArg() << trans->tdr_id);
@@ -134,7 +135,8 @@ USHORT TDR_analyze(const tdr* trans)
 			// transaction has committed or is assumed committed
 
 		case TRA_rollback:
-			if ((state == TRA_commit) || (state == TRA_none)) {
+			if ((state == TRA_commit) || (state == TRA_none))
+			{
 				ALICE_print(105);
 				// msg 105: Warning: Multidatabase transaction is in inconsistent state for recovery.
 				ALICE_print(107, SafeArg() << trans->tdr_id);
@@ -196,17 +198,20 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 	if (tdgbl->ALICE_data.ua_user) {
 		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 	}
-	if (tdgbl->ALICE_data.ua_password) {
+	if (tdgbl->ALICE_data.ua_password)
+	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 						tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
 	}
-	if (tdgbl->ALICE_data.ua_tr_user) {
+	if (tdgbl->ALICE_data.ua_tr_user)
+	{
 		tdgbl->uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_auth,
 						tdgbl->ALICE_data.ua_tr_user,
 						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
 	}
-	if (tdgbl->ALICE_data.ua_tr_role) {
+	if (tdgbl->ALICE_data.ua_tr_role)
+	{
 		tdgbl->uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 	}
@@ -217,8 +222,10 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 						 &trans->tdr_db_handle, dpb.getBufferLength(),
 						 reinterpret_cast<const char*>(dpb.getBuffer()));
 
-	if (status_vector[1]) {
-		if (tdgbl->ALICE_data.ua_debug) {
+	if (status_vector[1])
+	{
+		if (tdgbl->ALICE_data.ua_debug)
+		{
 			ALICE_print(69);	// msg 69:  failed
 			ALICE_print_status(status_vector);
 		}
@@ -389,7 +396,8 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 
 	const USHORT advice = TDR_analyze(trans);
 
-	if (!advice) {
+	if (!advice)
+	{
 		print_description(trans);
 		switches = ask();
 	}
@@ -398,7 +406,8 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 		switch (advice)
 		{
 		case TRA_rollback:
-			if (switches & sw_commit) {
+			if (switches & sw_commit)
+			{
 				ALICE_print(74, SafeArg() << trans->tdr_id);
 				// msg 74: A commit of transaction %ld will violate two-phase commit.
 				print_description(trans);
@@ -408,7 +417,8 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 				switches |= sw_rollback;
 			else if (switches & sw_two_phase)
 				switches |= sw_rollback;
-			else if (switches & sw_prompt) {
+			else if (switches & sw_prompt)
+			{
 				ALICE_print(75, SafeArg() << trans->tdr_id);
 				// msg 75: A rollback of transaction %ld is needed to preserve two-phase commit.
 				print_description(trans);
@@ -417,7 +427,8 @@ bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, UL
 			break;
 
 		case TRA_commit:
-			if (switches & sw_rollback) {
+			if (switches & sw_rollback)
+			{
 				ALICE_print(76, SafeArg() << trans->tdr_id);
 				// msg 76: Transaction %ld has already been partially committed.
 				ALICE_print(77);
@@ -732,7 +743,8 @@ static void reattach_database(tdr* trans)
 	// attaching using the old method didn't work;
 	// try attaching to the remote node directly
 
-	if (trans->tdr_remote_site) {
+	if (trans->tdr_remote_site)
+	{
 		char* p = buffer;
 		const UCHAR* q = trans->tdr_remote_site->str_data;
 		while (*q && p < end)
@@ -823,11 +835,13 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, ULON
 		return true;
 	}
 
-	if (!(switches & (sw_commit | sw_rollback))) {
+	if (!(switches & (sw_commit | sw_rollback)))
+	{
 		ALICE_print(91, SafeArg() << number);
 		// msg 91: Transaction %ld:
 		switches = ask();
-		if (switches == ULONG(~0)) {
+		if (switches == ULONG(~0))
+		{
 			ALICE_print(84);
 			// msg 84: unexpected end of input
 			return true;
@@ -841,7 +855,8 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, ULON
 	else
 		return false;
 
-	if (status_vector[1]) {
+	if (status_vector[1])
+	{
 		ALICE_print_status(status_vector);
 		return true;
 	}

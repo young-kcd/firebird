@@ -141,7 +141,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tdsec->tsec_interactive = !uSvc->isService();
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
-	ISC_STATUS_ARRAY status;
+
 	SSHORT ret = parse_cmd_line(argv, tdsec);
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
@@ -176,6 +176,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
 
 	FB_API_HANDLE db_handle = 0;
+	ISC_STATUS_ARRAY status;
 
 	if (! useServices)
 	{
@@ -214,7 +215,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (user_data->sql_role_name_entered) {
+		if (user_data->sql_role_name_entered)
+		{
 			dpb.insertString(isc_dpb_sql_role_name,
 				user_data->sql_role_name, strlen(user_data->sql_role_name));
 		}
@@ -336,7 +338,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		uSvc->setServiceStatus(status);
 	}
 
-	if (db_handle) {
+	if (db_handle)
+	{
 		if (isc_detach_database(status, &db_handle)) {
 			GSEC_error_redirect(status, GsecMsg93);
 		}
@@ -547,7 +550,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->user_name[l] = UPPER(string[l]);
 					++l;
 				}
-				if (l == MAX_SQL_IDENTIFIER_SIZE) {
+				if (l == MAX_SQL_IDENTIFIER_SIZE)
+				{
 					GSEC_diag(GsecMsg76);
 					// invalid user name (maximum 31 bytes allowed)
 					return false;
@@ -643,7 +647,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					else if (val == "DROP") {
 						user_data->operation = MAP_DROP_OPER;
 					}
-					else {
+					else
+					{
 						GSEC_diag(GsecMsg99);
 						// gsec - invalid parameter value for -MAPPING, only SET or DROP is accepted
 						return false;
@@ -677,7 +682,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 
 				for (int l = 0; *p; ++l)
 				{
-					if (!*++p) {
+					if (!*++p)
+					{
 						if (l >= in_sw_tab->in_sw_min_length)
 							in_sw = in_sw_tab->in_sw;
 						else
@@ -762,7 +768,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				switch (in_sw)
 				{
 				case IN_SW_GSEC_PASSWORD:
-					if (user_data->password_specified) {
+					if (user_data->password_specified)
+					{
 						err_msg_no = GsecMsg31;
 						break;
 					}
@@ -770,7 +777,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->password[0] = '\0';
 					break;
 				case IN_SW_GSEC_UID:
-					if (user_data->uid_specified) {
+					if (user_data->uid_specified)
+					{
 						err_msg_no = GsecMsg32;
 						break;
 					}
@@ -778,7 +786,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->uid = 0;
 					break;
 				case IN_SW_GSEC_GID:
-					if (user_data->gid_specified) {
+					if (user_data->gid_specified)
+					{
 						err_msg_no = GsecMsg33;
 						break;
 					}
@@ -786,7 +795,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->gid = 0;
 					break;
 				case IN_SW_GSEC_SYSU:
-					if (user_data->sys_user_specified) {
+					if (user_data->sys_user_specified)
+					{
 						err_msg_no = GsecMsg34;
 						break;
 					}
@@ -794,7 +804,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->sys_user_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_GROUP:
-					if (user_data->group_name_specified) {
+					if (user_data->group_name_specified)
+					{
 						err_msg_no = GsecMsg35;
 						break;
 					}
@@ -802,7 +813,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->group_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_FNAME:
-					if (user_data->first_name_specified) {
+					if (user_data->first_name_specified)
+					{
 						err_msg_no = GsecMsg36;
 						break;
 					}
@@ -810,7 +822,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->first_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_MNAME:
-					if (user_data->middle_name_specified) {
+					if (user_data->middle_name_specified)
+					{
 						err_msg_no = GsecMsg37;
 						break;
 					}
@@ -818,7 +831,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->middle_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_LNAME:
-					if (user_data->last_name_specified) {
+					if (user_data->last_name_specified)
+					{
 						err_msg_no = GsecMsg38;
 						break;
 					}
@@ -826,7 +840,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->last_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DATABASE:
-					if (user_data->database_name_specified) {
+					if (user_data->database_name_specified)
+					{
 						err_msg_no = GsecMsg78;
 						break;
 					}
@@ -834,7 +849,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->database_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_DBA_USER_NAME:
-					if (user_data->dba_user_name_specified) {
+					if (user_data->dba_user_name_specified)
+					{
 						err_msg_no = GsecMsg79;
 						break;
 					}
@@ -843,7 +859,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					break;
 				case IN_SW_GSEC_DBA_TRUST_USER:
 					tdsec->utilSvc->checkService();
-					if (user_data->dba_trust_user_name_specified) {
+					if (user_data->dba_trust_user_name_specified)
+					{
 						err_msg_no = GsecMsg79;
 						break;
 					}
@@ -856,7 +873,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					break;
 				case IN_SW_GSEC_DBA_PASSWORD:
 				case IN_SW_GSEC_FETCH_PASSWORD:
-					if (user_data->dba_password_specified) {
+					if (user_data->dba_password_specified)
+					{
 						err_msg_no = GsecMsg80;
 						break;
 					}
@@ -864,7 +882,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->dba_password[0] = '\0';
 					break;
 				case IN_SW_GSEC_SQL_ROLE_NAME:
-					if (user_data->sql_role_name_specified) {
+					if (user_data->sql_role_name_specified)
+					{
 						err_msg_no = GsecMsg81;
 						break;
 					}
@@ -872,7 +891,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->sql_role_name[0] = '\0';
 					break;
 				}
-				if (err_msg_no) {
+				if (err_msg_no)
+				{
 					GSEC_error(err_msg_no);
 					return false;
 				}
@@ -1151,7 +1171,8 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 	}
 	else if (user_data->operation)
 	{
-		if (user_data->operation == HELP_OPER) {
+		if (user_data->operation == HELP_OPER)
+		{
 			printhelp();
 			ret = -1;
 		}

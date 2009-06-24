@@ -177,7 +177,8 @@ tdr* MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id
 
 	const USHORT capabilities = get_capabilities(user_status);
 
-	if (capabilities & CAP_transactions) {
+	if (capabilities & CAP_transactions)
+	{
 		FOR(REQUEST_HANDLE request)
 		TRA IN RDB$TRANSACTIONS WITH
 			TRA.RDB$TRANSACTION_ID = id AND
@@ -305,9 +306,11 @@ static tdr* get_description(ISC_QUAD* blob_id)
 
 	const TEXT* p = buffer;
 	const USHORT length = snarf_blob(blob_id, (USHORT) sizeof(buffer), buffer);
-	if (length) {
+	if (length)
+	{
 		p = bigger_buffer = (TEXT *) gds__alloc((SLONG) length);
-		if (!p) {
+		if (!p)
+		{
 			tdgbl->status[0] = isc_arg_gds;
 			tdgbl->status[1] = isc_virmemexh;
 			tdgbl->status[2] = isc_arg_end;
@@ -347,7 +350,8 @@ static tdr* get_description(ISC_QUAD* blob_id)
 			if (!trans) {
 				trans = ptr = FB_NEW(*tdgbl->getDefaultPool()) tdr;
 			}
-			else {
+			else
+			{
 				ptr->tdr_next = FB_NEW(*tdgbl->getDefaultPool()) tdr;
 				ptr = ptr->tdr_next;
 			}
@@ -409,7 +413,8 @@ static void parse_fullpath(tdr* trans)
 
 		while (*q && *q != '/' && *q != '\\')
 			q++;
-		if (*q) {
+		if (*q)
+		{
 			trans->tdr_filename = q + 1;
 
 			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->getDefaultPool(), q - p + 1) alice_str;
@@ -443,7 +448,8 @@ static void parse_fullpath(tdr* trans)
 			--p;
 		++p;
 
-		if (length) {
+		if (length)
+		{
 			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->getDefaultPool(), length + 1) alice_str;
 			TEXT* q = (TEXT *) trans->tdr_remote_site->str_data;
 			while (length--)
@@ -481,7 +487,8 @@ static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
 
 	TEXT* ptr = buffer;
 	const TEXT* const end = buffer + buffer_length;
-	for (;;) {
+	for (;;)
+	{
 		if (ptr >= end)
 			break;
 		if (!(buffer_length = end - ptr))
@@ -497,7 +504,8 @@ static USHORT snarf_blob(ISC_QUAD* blob_id, USHORT buffer_length, TEXT* buffer)
 
 	if (!buffer_length)
 	{
-		for (;;) {
+		for (;;)
+		{
 			USHORT returned_length;
 			ISC_STATUS status =
 				isc_get_segment(gds_status, &blob, &returned_length, buffer_length, buffer);
