@@ -57,6 +57,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/pag_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
@@ -1017,13 +1018,13 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(Arg::Gds(isc_read_only_database));
 
-	MemoryPool* const pool = dbb->createPool();
-	Jrd::ContextPoolHolder context(tdbb, pool);
-	jrd_tra* const trans = jrd_tra::create(pool, attachment, NULL);
-	trans->tra_number = gds__vax_integer(id, length);
-	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
+	const SLONG number = gds__vax_integer(id, length);
+	if (number > dbb->dbb_next_transaction)
+		PAG_header(tdbb, true);
+	
+	const UCHAR state = (number > dbb->dbb_next_transaction) ?
+		255 : limbo_transaction(tdbb, number);
 
-	const UCHAR state = limbo_transaction(tdbb, trans->tra_number);
 	if (state != tra_limbo) {
 		USHORT message;
 
@@ -1043,9 +1044,6 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 			break;
 		}
 
-		const SLONG number = trans->tra_number;
-		jrd_tra::destroy(dbb, trans);
-
 		TEXT text[128];
 		USHORT flags = 0;
 		gds__msg_lookup(NULL, JRD_BUGCHK, message, sizeof(text), text, &flags);
@@ -1053,6 +1051,12 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		ERR_post(Arg::Gds(isc_no_recon) <<
 				 Arg::Gds(isc_tra_state) << Arg::Num(number) << Arg::Str(text));
 	}
+
+	MemoryPool* const pool = dbb->createPool();
+	Jrd::ContextPoolHolder context(tdbb, pool);
+	jrd_tra* const trans = jrd_tra::create(pool, attachment, NULL);
+	trans->tra_number = number;
+	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
 	link_transaction(tdbb, trans);
 
