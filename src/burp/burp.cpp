@@ -349,6 +349,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 						break;
 				}
 
+				fb_assert(p + len < respbuf + sizeof(respbuf));
 				p[len] = '\0';
 				burp_output("%s\n", p);
 			}
