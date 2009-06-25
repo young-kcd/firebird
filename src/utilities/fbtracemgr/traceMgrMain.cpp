@@ -224,12 +224,21 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 	}
 
 	const char query[] = {isc_info_svc_to_eof, isc_info_end};
-	const char send[] = {isc_info_svc_timeout, 2, 0, 1, 0, 0, 0, isc_info_end};
+
+	// use one second timeout to poll service
+	char send[16];
+	char *p = send;
+	*p++ = isc_info_svc_timeout;
+	ADD_SPB_LENGTH(p, 4);
+	ADD_SPB_NUMERIC(p, 1);
+	*p++ = isc_info_end;
 
 	char results[MAXBUF];
+	bool noData;
 	do
 	{
-		if (isc_service_query(status, &m_svcHandle, 0,  sizeof(send), send,
+		if (isc_service_query(status, &m_svcHandle, 0,
+				p - send, send,
 				sizeof(query), query,
 				sizeof(results) - 1, results))
 		{
@@ -238,6 +247,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 		char* p = results;
 		bool ignoreTruncation = false;
+		noData = true;
 
 		while (*p != isc_info_end)
 		{
@@ -259,8 +269,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 						p[l] = ch;
 						p += l;
 					}
-					else
-						m_stop = true;
+					noData = (l == 0);
 				}
 				break;
 
@@ -273,7 +282,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 				break;
 
 			case isc_info_svc_timeout:
-				m_stop = false;
+				noData = false;
 				break;
 
 			default:
@@ -281,7 +290,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 										Arg::Num(static_cast<unsigned char>(p[-1])));
 			}
 		}
-	} while (!m_stop);
+	} while (!(m_stop || noData));
 }
 
 } // namespace Firebird
