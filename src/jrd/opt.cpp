@@ -428,6 +428,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_uni_stream];
 			}
 			break;
+
 		case nod_aggregate:
 			{
 				fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
@@ -446,11 +447,13 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_agg_stream];
 			}
 			break;
+
 		case nod_procedure:
 			rsb = gen_procedure(tdbb, opt, node);
 			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
 			local_streams[++local_streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
 			break;
+
 		case nod_rse:
 			compute_rse_streams(csb, (RecordSelExpr*) node, beds);
 			compute_rse_streams(csb, (RecordSelExpr*) node, local_streams);
@@ -3769,7 +3772,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 		}
 		if (!found)
 		{
-			fb_assert(streams[0] < MAX_UCHAR);
+			fb_assert(streams[0] < MAX_STREAMS);
 			streams[++streams[0]] = stream;
 		}
 	}
