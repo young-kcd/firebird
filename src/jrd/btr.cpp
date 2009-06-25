@@ -1954,13 +1954,9 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_max_idx) << Arg::Num(dbb->dbb_max_idx));
 	}
+
 	// Scan the index page looking for the high water mark of the descriptions and,
 	// perhaps, an empty index slot
-
-	UCHAR* desc;
-	USHORT l, space;
-	index_root_page::irt_repeat * root_idx, *end, *slot;
-	bool maybe_no_room = false;
 
 	if (use_idx_id && (idx->idx_id >= root->irt_count))
 	{
@@ -1969,47 +1965,55 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, 
 		root->irt_count = idx->idx_id + 1;
 	}
 
-retry:
-	// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
-	if (dbb->dbb_ods_version < ODS_VERSION11)
-		l = idx->idx_count * sizeof(irtd_ods10);
-	else
-		l = idx->idx_count * sizeof(irtd);
+	UCHAR* desc = 0;
+	USHORT len, space;
+	index_root_page::irt_repeat* slot = NULL;
+	index_root_page::irt_repeat* end = NULL;
 
-	space = dbb->dbb_page_size;
-	slot = NULL;
-
-	for (root_idx = root->irt_rpt, end = root_idx + root->irt_count; root_idx < end; root_idx++)
+	for (int retry = 0; retry < 2; ++retry)
 	{
-		if (root_idx->irt_root || (root_idx->irt_flags & irt_in_progress)) {
-			space = MIN(space, root_idx->irt_desc);
-		}
-		if (!root_idx->irt_root && !slot && !(root_idx->irt_flags & irt_in_progress))
+		// dimitr: irtd_selectivity member of IRTD is introduced in ODS11
+		if (dbb->dbb_ods_version < ODS_VERSION11)
+			len = idx->idx_count * sizeof(irtd_ods10);
+		else
+			len = idx->idx_count * sizeof(irtd);
+
+		space = dbb->dbb_page_size;
+		slot = NULL;
+
+		end = root->irt_rpt + root->irt_count;
+		for (index_root_page::irt_repeat* root_idx = root->irt_rpt; root_idx < end; root_idx++)
 		{
-			if (!use_idx_id || (root_idx - root->irt_rpt) == idx->idx_id)
+			if (root_idx->irt_root || (root_idx->irt_flags & irt_in_progress)) {
+				space = MIN(space, root_idx->irt_desc);
+			}
+			if (!root_idx->irt_root && !slot && !(root_idx->irt_flags & irt_in_progress))
 			{
-				slot = root_idx;
+				if (!use_idx_id || (root_idx - root->irt_rpt) == idx->idx_id)
+				{
+					slot = root_idx;
+				}
 			}
 		}
-	}
 
-	space -= l;
-	desc = (UCHAR*)root + space;
+		space -= len;
+		desc = (UCHAR*)root + space;
 
-	// Verify that there is enough room on the Index root page.
-	if (desc < (UCHAR*) (end + 1))
-	{
-		// Not enough room:  Attempt to compress the index root page and try again.
-		// If this is the second try already, then there really is no more room.
-		if (maybe_no_room)
+		// Verify that there is enough room on the Index root page.
+		if (desc < (UCHAR*) (end + 1))
 		{
-			CCH_RELEASE(tdbb, &window);
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_index_root_page_full));
+			// Not enough room:  Attempt to compress the index root page and try again.
+			// If this is the second try already, then there really is no more room.
+			if (retry)
+			{
+				CCH_RELEASE(tdbb, &window);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_index_root_page_full));
+			}
+			compress_root(tdbb, root);
 		}
-		compress_root(tdbb, root);
-		maybe_no_room = true;
-		goto retry;
+		else
+			break;
 	}
 
 	// If we didn't pick up an empty slot, allocate a new one
@@ -2045,7 +2049,7 @@ retry:
 	}
 	else {
 		// Exploit the fact idx_repeat structure matches ODS IRTD one
-		memcpy(desc, idx->idx_rpt, l);
+		memcpy(desc, idx->idx_rpt, len);
 	}
 	CCH_RELEASE(tdbb, &window);
 }
@@ -4174,8 +4178,7 @@ static UCHAR* find_node_start_point(btree_page* bucket, temporary_key* key,
 	else {
 		pointer = BTreeNode::getPointerFirstNode(bucket);
 	}
-	UCHAR* p = key->key_data + prefix;
-
+	const UCHAR* p = key->key_data + prefix;
 
 	if (flags & btr_large_keys)
 	{

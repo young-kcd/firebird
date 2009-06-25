@@ -73,7 +73,7 @@
 DATABASE DB = FILENAME "ODS.RDB";
 
 #define DECOMPOSE(n, divisor, q, r) {r = n % divisor; q = n / divisor;}
-#define DECOMPOSE_QUOTIENT(n, divisor, q) {q = n / divisor;}
+//#define DECOMPOSE_QUOTIENT(n, divisor, q) {q = n / divisor;}
 #define HIGH_WATER(x)	((SSHORT) sizeof (data_page) + (SSHORT) sizeof (data_page::dpg_repeat) * (x - 1))
 #define SPACE_FUDGE	RHDF_SIZE
 
@@ -696,7 +696,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 	}
 #endif
 
-	WIN* window = &rpb->getWindow(tdbb);
+	WIN* const window = &rpb->getWindow(tdbb);
 	data_page* page = (data_page*) window->win_buffer;
 	SLONG sequence = page->dpg_sequence;
 	data_page::dpg_repeat* index = &page->dpg_rpt[rpb->rpb_line];
@@ -774,34 +774,39 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 	pointer_page* ppage;
 	SSHORT slot;
 	USHORT pp_sequence;
-	SLONG *ptr;
 
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
-retry_after_latch_timeout:
-	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb, rpb->rpb_transaction_nr);
-	WIN pwindow(relPages->rel_pg_space_id, -1);
-	if (!(ppage =
-		get_pointer_page(tdbb, rpb->rpb_relation, relPages, &pwindow, pp_sequence, LCK_write)))
+	RelationPages* relPages	= NULL;
+	WIN pwindow(DB_PAGE_SPACE, -1);
+
+	for (;;)
 	{
-		BUGCHECK(245);	/* msg 245 pointer page disappeared in DPM_delete */
+		relPages = rpb->rpb_relation->getPages(tdbb, rpb->rpb_transaction_nr);
+		pwindow = WIN(relPages->rel_pg_space_id, -1);
+		if (!(ppage =
+			get_pointer_page(tdbb, rpb->rpb_relation, relPages, &pwindow, pp_sequence, LCK_write)))
+		{
+			BUGCHECK(245);	/* msg 245 pointer page disappeared in DPM_delete */
+		}
+
+		if (slot >= ppage->ppg_count || !(window->win_page = ppage->ppg_page[slot]))
+		{
+			CCH_RELEASE(tdbb, &pwindow);
+			return;
+		}
+
+		/* Since this fetch for exclusive access follows a (pointer page) fetch for
+		exclusive access, put a timeout on this fetch to be able to recover from
+		possible deadlocks. */
+		page = (data_page*) CCH_FETCH_TIMEOUT(tdbb, window, LCK_write, pag_data, -1);
+		if (!page) {
+			CCH_RELEASE(tdbb, &pwindow);
+		}
+		else
+			break;
 	}
 
-	if (slot >= ppage->ppg_count || !(window->win_page = ppage->ppg_page[slot]))
-	{
-		CCH_RELEASE(tdbb, &pwindow);
-		return;
-	}
-
-	/* Since this fetch for exclusive access follows a (pointer page) fetch for
-	exclusive access, put a timeout on this fetch to be able to recover from
-	possible deadlocks. */
-	page = (data_page*) CCH_FETCH_TIMEOUT(tdbb, window, LCK_write, pag_data, -1);
-	if (!page)
-	{
-		CCH_RELEASE(tdbb, &pwindow);
-		goto retry_after_latch_timeout;
-	}
 	if (page->dpg_count)
 	{
 		CCH_RELEASE(tdbb, &pwindow);
@@ -830,6 +835,7 @@ retry_after_latch_timeout:
 	CCH_MARK(tdbb, &pwindow);
 	ppage->ppg_page[slot] = 0;
 
+	const SLONG* ptr;
 	for (ptr = &ppage->ppg_page[ppage->ppg_count]; ptr > ppage->ppg_page; --ptr)
 	{
 		if (ptr[-1])
@@ -2660,89 +2666,91 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 
 	pointer_page* ppage = 0;
 	USHORT pp_sequence, slot = 0;
+	data_page* dpage = 0;
 
-  retry_after_latch_timeout:
-
-	for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
+	for (;;)
 	{
-		if (!(ppage = get_pointer_page(tdbb, relation, relPages, &pp_window,
-										pp_sequence, LCK_write)))
+		for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
 		{
-			BUGCHECK(253);	/* msg 253 pointer page vanished from extend_relation */
-		}
-		SLONG* slots = ppage->ppg_page;
-		for (slot = 0; slot < ppage->ppg_count; slot++, slots++)
-		{
-			if (*slots == 0) {
+			if (!(ppage = get_pointer_page(tdbb, relation, relPages, &pp_window,
+											pp_sequence, LCK_write)))
+			{
+				BUGCHECK(253);	/* msg 253 pointer page vanished from extend_relation */
+			}
+			SLONG* slots = ppage->ppg_page;
+			for (slot = 0; slot < ppage->ppg_count; slot++, slots++)
+			{
+				if (*slots == 0) {
+					break;
+				}
+			}
+			if (slot < ppage->ppg_count) {
 				break;
 			}
-		}
-		if (slot < ppage->ppg_count) {
-			break;
-		}
-		if ((pp_sequence && ppage->ppg_count < dbb->dbb_dp_per_pp) ||
-			(ppage->ppg_count < dbb->dbb_dp_per_pp - 1))
-		{
-			slot = ppage->ppg_count;
-			break;
-		}
-		if (ppage->ppg_header.pag_flags & ppg_eof)
-		{
-			ppage = (pointer_page*) DPM_allocate(tdbb, &new_pp_window);
-			ppage->ppg_header.pag_type = pag_pointer;
-			ppage->ppg_header.pag_flags |= ppg_eof;
-			ppage->ppg_relation = relation->rel_id;
-			ppage->ppg_sequence = ++pp_sequence;
-			slot = 0;
-			CCH_must_write(&new_pp_window);
-			CCH_RELEASE(tdbb, &new_pp_window);
-
-			vcl* vector = relPages->rel_pages =
-				vcl::newVector(*dbb->dbb_permanent, relPages->rel_pages, pp_sequence + 1);
-			(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
-
-			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
-			if (relation->rel_id && (relPages->rel_instance_id == 0))
+			if ((pp_sequence && ppage->ppg_count < dbb->dbb_dp_per_pp) ||
+				(ppage->ppg_count < dbb->dbb_dp_per_pp - 1))
 			{
-				DPM_pages(tdbb, relation->rel_id, pag_pointer,
-						  (SLONG) pp_sequence, new_pp_window.win_page.getPageNum());
+				slot = ppage->ppg_count;
+				break;
 			}
-			relPages->rel_slot_space = pp_sequence;
+			if (ppage->ppg_header.pag_flags & ppg_eof)
+			{
+				ppage = (pointer_page*) DPM_allocate(tdbb, &new_pp_window);
+				ppage->ppg_header.pag_type = pag_pointer;
+				ppage->ppg_header.pag_flags |= ppg_eof;
+				ppage->ppg_relation = relation->rel_id;
+				ppage->ppg_sequence = ++pp_sequence;
+				slot = 0;
+				CCH_must_write(&new_pp_window);
+				CCH_RELEASE(tdbb, &new_pp_window);
 
-			ppage = (pointer_page*) pp_window.win_buffer;
-			CCH_MARK(tdbb, &pp_window);
-			ppage->ppg_header.pag_flags &= ~ppg_eof;
-			ppage->ppg_next = new_pp_window.win_page.getPageNum();
-			--pp_sequence;
+				vcl* vector = relPages->rel_pages =
+					vcl::newVector(*dbb->dbb_permanent, relPages->rel_pages, pp_sequence + 1);
+				(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
+
+				// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
+				if (relation->rel_id && (relPages->rel_instance_id == 0))
+				{
+					DPM_pages(tdbb, relation->rel_id, pag_pointer,
+							  (SLONG) pp_sequence, new_pp_window.win_page.getPageNum());
+				}
+				relPages->rel_slot_space = pp_sequence;
+
+				ppage = (pointer_page*) pp_window.win_buffer;
+				CCH_MARK(tdbb, &pp_window);
+				ppage->ppg_header.pag_flags &= ~ppg_eof;
+				ppage->ppg_next = new_pp_window.win_page.getPageNum();
+				--pp_sequence;
+			}
+			CCH_RELEASE(tdbb, &pp_window);
 		}
-		CCH_RELEASE(tdbb, &pp_window);
-	}
 
-	/* We've found a slot.  Stick in the pointer to the data page */
+		/* We've found a slot.  Stick in the pointer to the data page */
 
-	if (ppage->ppg_page[slot])
-	{
-		CCH_RELEASE(tdbb, &pp_window);
-		CORRUPT(258);			/* msg 258 page slot not empty */
-	}
+		if (ppage->ppg_page[slot])
+		{
+			CCH_RELEASE(tdbb, &pp_window);
+			CORRUPT(258);			/* msg 258 page slot not empty */
+		}
 
-	/* Refetch newly allocated page that was released above.
-	   To prevent possible deadlocks (since we own already an exlusive latch and we
-	   are asking for another exclusive latch), time out on the latch after 1 second. */
+		/* Refetch newly allocated page that was released above.
+		   To prevent possible deadlocks (since we own already an exlusive latch and we
+		   are asking for another exclusive latch), time out on the latch after 1 second. */
 
-	data_page* dpage = (data_page*) CCH_FETCH_TIMEOUT(tdbb, window, LCK_write, pag_undefined, -1);
+		dpage = (data_page*) CCH_FETCH_TIMEOUT(tdbb, window, LCK_write, pag_undefined, -1);
 
-	/* In the case of a timeout, retry the whole thing. */
+		/* In the case of a timeout, retry the whole thing. */
 
-	if (!dpage)
-	{
-		CCH_RELEASE(tdbb, &pp_window);
-		goto retry_after_latch_timeout;
+		if (!dpage) {
+			CCH_RELEASE(tdbb, &pp_window);
+		}
+		else
+			break;
 	}
 
 
 	CCH_MARK(tdbb, window);
-	dpage->dpg_sequence = (SLONG) pp_sequence *dbb->dbb_dp_per_pp + slot;
+	dpage->dpg_sequence = (SLONG) pp_sequence * dbb->dbb_dp_per_pp + slot;
 	dpage->dpg_relation = relation->rel_id;
 	dpage->dpg_header.pag_type = pag_data;
 	relPages->rel_data_space = pp_sequence;
