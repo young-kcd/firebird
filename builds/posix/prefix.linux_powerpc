@@ -24,7 +24,7 @@ DEV_FLAGS=-ggdb -O0 -DLINUX -pipe -MMD -p -fPIC -Wall -Wno-switch -Wno-parenthes
 
 OS_ServerFiles=inet_server.cpp
 
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr
-CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
+CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr fbtracemgr
 
 Physical_IO_Module=os/posix/unix.cpp

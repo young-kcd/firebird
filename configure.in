@@ -977,6 +977,7 @@ mkdir -p temp/boot/remote/os/win32
 mkdir -p temp/boot/remote/os/sun
 mkdir -p temp/boot/remote/os/darwin
 mkdir -p temp/boot/utilities/common
+mkdir -p temp/boot/utilities/fbtracemgr
 mkdir -p temp/boot/utilities/gsec
 mkdir -p temp/boot/utilities/gstat
 mkdir -p temp/boot/utilities/guard
@@ -1018,6 +1019,7 @@ mkdir -p temp/std/remote/os/win32
 mkdir -p temp/std/remote/os/sun
 mkdir -p temp/std/remote/os/darwin
 mkdir -p temp/std/utilities/common
+mkdir -p temp/std/utilities/fbtracemgr
 mkdir -p temp/std/utilities/gsec
 mkdir -p temp/std/utilities/gstat
 mkdir -p temp/std/utilities/guard
@@ -1058,6 +1060,7 @@ mkdir -p temp/superclient/remote/os/win32
 mkdir -p temp/superclient/remote/os/sun
 mkdir -p temp/superclient/remote/os/darwin
 mkdir -p temp/superclient/utilities/common
+mkdir -p temp/superclient/utilities/fbtracemgr
 mkdir -p temp/superclient/utilities/gsec
 mkdir -p temp/superclient/utilities/gstat
 mkdir -p temp/superclient/utilities/guard
@@ -1098,6 +1101,7 @@ mkdir -p temp/superserver/remote/os/win32
 mkdir -p temp/superserver/remote/os/sun
 mkdir -p temp/superserver/remote/os/darwin
 mkdir -p temp/superserver/utilities/common
+mkdir -p temp/superserver/utilities/fbtracemgr
 mkdir -p temp/superserver/utilities/gsec
 mkdir -p temp/superserver/utilities/gstat
 mkdir -p temp/superserver/utilities/guard

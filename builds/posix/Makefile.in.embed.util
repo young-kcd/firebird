@@ -97,6 +97,16 @@ FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_So
 $(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 
+FBTRACEMGR_Files= fbtracemgr/traceMgrMain.cpp
+FBTRACEMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
+	common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp common/UtilSvc.cpp \
+	jrd/trace/TraceCmdLine.cpp
+
+FBTRACEMGR_Sources = $(addprefix utilities/, $(FBTRACEMGR_Files)) $(FBTRACEMGR_Other_Sources)
+FBTRACEMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACEMGR_Sources)))) \
+	$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
+
+
 FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
 FBGUARD_Files =  guard.cpp util.cpp
 FBGUARD_Sources = $(addprefix utilities/guard/, $(FBGUARD_Files)) $(FBGUARD_Other_Sources)
@@ -124,7 +134,8 @@ AllObjects = $(CREATEDB_Object) $(DROP_Object) $(FBSVCMGR_Objects) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec fbguard ibmgr_bin nbackup fb_lock_print fbsvcmgr
+.PHONY: create_db gstat gds_drop gds_relay gsec fbguard ibmgr_bin nbackup fb_lock_print \
+	fbsvcmgr fbtracemgr
 
 all: $(EMBED_UTIL_TARGETS)
 
@@ -167,6 +178,12 @@ $(GDS_DROP):	$(DROP_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
 fbsvcmgr: $(FBSVCMGR)
 
 $(FBSVCMGR):	$(FBSVCMGR_Objects) $(LIBFBEMBED_SO)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+
+
+fbtracemgr: $(FBTRACEMGR)
+
+$(FBTRACEMGR):	$(FBTRACEMGR_Objects) $(LIBFBEMBED_SO)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 

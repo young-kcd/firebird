@@ -28,8 +28,8 @@ DEV_FLAGS=-ggdb -DLINUX -DARM -pipe -p -MMD -fPIC -Wall -fsigned-char -fmessage-
 
 OS_ServerFiles=inet_server.cpp
 
-EMBED_UTIL_TARGETS=gstat gds_relay gsec nbackup fb_lock_print fbguard fbsvcmgr
-CLIENT_UTIL_TARGETS=gstat gds_relay gsec nbackup fb_lock_print fbguard fbmgr_bin fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_relay gsec nbackup fb_lock_print fbguard fbsvcmgr fbtracemgr
+CLIENT_UTIL_TARGETS=gstat gds_relay gsec nbackup fb_lock_print fbguard fbmgr_bin fbsvcmgr fbtracemgr
 
 Physical_IO_Module=unix.cpp
 

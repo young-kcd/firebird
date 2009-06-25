@@ -74,6 +74,7 @@ GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) $(CLUMPLETS_Objects)
 
+
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
 common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp
@@ -81,6 +82,16 @@ common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
 $(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
+
+
+FBTRACEMGR_Files= fbtracemgr/traceMgrMain.cpp
+FBTRACEMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
+	common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp common/UtilSvc.cpp \
+	jrd/trace/TraceCmdLine.cpp
+
+FBTRACEMGR_Sources = $(addprefix utilities/, $(FBTRACEMGR_Files)) $(FBTRACEMGR_Other_Sources)
+FBTRACEMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACEMGR_Sources)))) \
+	$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 
 FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
@@ -123,13 +134,15 @@ RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
 AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
-			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(FBSVCMGR_Objects)
+			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(FBSVCMGR_Objects) \
+			  $(FBTRACEMGR_Objects)
 
 
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay create_db fb_lock_print fbsvcmgr
+.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay create_db fb_lock_print \
+	fbsvcmgr fbtracemgr
 
 all: $(CLIENT_UTIL_TARGETS)
 
@@ -165,6 +178,12 @@ $(GDS_DROP):	$(DROP_Objects) $(LIBFBCLIENT_SO)
 fbsvcmgr: $(FBSVCMGR)
 
 $(FBSVCMGR):	$(FBSVCMGR_Objects) $(LIBFBCLIENT_SO)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+
+
+fbtracemgr: $(FBTRACEMGR)
+
+$(FBTRACEMGR):	$(FBTRACEMGR_Objects) $(LIBFBCLIENT_SO)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
 
 
