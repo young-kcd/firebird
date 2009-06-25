@@ -190,11 +190,13 @@ void EXEC_execute( qli_nod* node)
 			return;
 
 		case nod_if:
-			if (EVAL_boolean(node->nod_arg[e_if_boolean])) {
+			if (EVAL_boolean(node->nod_arg[e_if_boolean]))
+			{
 				EXEC_execute(node->nod_arg[e_if_true]);
 				return;
 			}
-			if (node->nod_arg[e_if_false]) {
+			if (node->nod_arg[e_if_false])
+			{
 				EXEC_execute(node->nod_arg[e_if_false]);
 				return;
 			}
@@ -509,7 +511,8 @@ static DSC *assignment(	qli_nod*		from_node,
 	USHORT trash;
 	USHORT* missing_flag = &trash;
 	qli_msg* message = NULL;
-	if (parameter) {
+	if (parameter)
+	{
 		message = parameter->par_message;
 		missing_flag = (USHORT *) (message->msg_buffer + parameter->par_offset);
 	}
@@ -974,7 +977,8 @@ static void execute_print( qli_nod* node)
  *
  **************************************/
 
-	if (node->nod_arg[e_prt_header]) {
+	if (node->nod_arg[e_prt_header])
+	{
 		FMT_put((TEXT*) node->nod_arg[e_prt_header], (qli_prt*) node->nod_arg[e_prt_output]);
 		node->nod_arg[e_prt_header] = NULL;
 	}

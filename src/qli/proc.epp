@@ -107,7 +107,8 @@ void PRO_commit( qli_dbb* database)
 
 	if ((database->dbb_capabilities & DBB_cap_multi_trans) && !(LEX_active_procedure()))
 	{
-		if (isc_commit_transaction(status_vector, &database->dbb_proc_trans)) {
+		if (isc_commit_transaction(status_vector, &database->dbb_proc_trans))
+		{
 			PRO_rollback(database);
 			ERRQ_database_error(database, status_vector);
 		}
@@ -134,7 +135,8 @@ void PRO_copy_procedure(qli_dbb* old_database, const TEXT* old_name,
 		new_database = QLI_databases;
 
 	FB_API_HANDLE old_blob;
-	if (!old_database) {
+	if (!old_database)
+	{
 		for (old_database = QLI_databases; old_database; old_database = old_database->dbb_next)
 		{
 			if (old_blob = PRO_fetch_procedure(old_database, old_name))
@@ -411,7 +413,8 @@ void PRO_invoke( qli_dbb* database, const TEXT* name)
  *
  **************************************/
 	FB_API_HANDLE blob = 0;
-	if (database) {
+	if (database)
+	{
 		if (!(blob = PRO_fetch_procedure(database, name)))
 		{
 			ERRQ_print_error(71, SafeArg() << name << database->dbb_symbol->sym_string);
@@ -520,7 +523,8 @@ void PRO_rollback( qli_dbb* database)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (database->dbb_capabilities & DBB_cap_multi_trans) {
+	if (database->dbb_capabilities & DBB_cap_multi_trans)
+	{
 		isc_rollback_transaction(status_vector, &database->dbb_proc_trans);
 
 		gds_trans = 0;
@@ -578,7 +582,8 @@ void PRO_setup( qli_dbb* dbb)
 
 	DB = dbb->dbb_handle;
 
-	if (dbb->dbb_flags & DBB_procedures) {
+	if (dbb->dbb_flags & DBB_procedures)
+	{
 		gds_trans = PRO_transaction(dbb, false);
 		return;
 	}
@@ -695,7 +700,8 @@ static int clear_out_qli_procedures( qli_dbb* dbb)
 	END_ERROR;
 	isc_release_request(status_vector, &req);
 
-	if (count >= 2) {
+	if (count >= 2)
+	{
 		dbb->dbb_flags |= DBB_procedures;
 		return 0;
 	}
@@ -781,7 +787,8 @@ static void create_qli_procedures( qli_dbb* dbb)
 
 	gds_trans = PRO_transaction(dbb, true);
 
-	if (clear_out_qli_procedures(dbb)) {
+	if (clear_out_qli_procedures(dbb))
+	{
 		PRO_commit(dbb);
 		gds_trans = PRO_transaction(dbb, true);
 	}
@@ -843,7 +850,8 @@ static void probe( qli_dbb* database, const TEXT* name)
 	// Probe to see if procedure is already in use
 
 	FB_API_HANDLE blob = PRO_fetch_procedure(database, name);
-	if (blob) {
+	if (blob)
+	{
 		ISC_STATUS_ARRAY status_vector;
 		isc_close_blob(status_vector, &blob);
 		ERRQ_print_error(76, SafeArg() << name << database->dbb_symbol->sym_string);

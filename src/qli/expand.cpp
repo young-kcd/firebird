@@ -511,7 +511,8 @@ static qli_nod* expand_assignment( qli_syntax* input, qli_lls* right, qli_lls* l
 	if (to->nod_type == nod_field || to->nod_type == nod_variable)
 	{
 		qli_fld* field = (qli_fld*) to->nod_arg[e_fld_field];
-		if (field->fld_flags & FLD_computed) {
+		if (field->fld_flags & FLD_computed)
+		{
 			ERRQ_print_error(138, field->fld_name->sym_string);
 			// Msg138 can't do assignment to computed field
 		}
@@ -936,7 +937,8 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 	case nod_edit_blob:
 		node = make_node(input->syn_type, e_edt_count);
 		node->nod_count = 0;
-		if (input->syn_arg[0]) {
+		if (input->syn_arg[0])
+		{
 			node->nod_count = 1;
 			node->nod_arg[0] = expand_expression(input->syn_arg[0], stack);
 		}
@@ -1155,7 +1157,8 @@ static qli_nod* expand_function( qli_syntax* input, qli_lls* stack)
 		}
 
 
-	if (!symbol) {
+	if (!symbol)
+	{
 		symbol = (qli_symbol*) input->syn_arg[s_fun_function];
 		ERRQ_error(412, SafeArg() << symbol->sym_string << database->dbb_filename);
 	}
@@ -1370,7 +1373,8 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* /*left
 			{
 				count += generate_items(syn_item, new_right, (qli_lls*) &items, rse);
 			}
-			else {
+			else
+			{
 				ALLQ_push((blk*) expand_print_item(*sub, new_right), &items);
 				count++;
 			}
@@ -2054,7 +2058,8 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 
 	// If there is an rse, make up a FOR loop
 
-	if (input->syn_arg[s_sto_rse]) {
+	if (input->syn_arg[s_sto_rse])
+	{
 		loop = make_node(nod_for, e_for_count);
 		loop->nod_arg[e_for_rse] = expand_rse(input->syn_arg[s_sto_rse], &right);
 	}

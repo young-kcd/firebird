@@ -132,12 +132,14 @@ BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 
 	free = *best;
 	qli_frb* block;
-	if (best_tail > sizeof(qli_frb)) {
+	if (best_tail > sizeof(qli_frb))
+	{
 		USHORT l = free->frb_header.blk_length - size;
 		block = (qli_frb*) ((SCHAR *) free + l);
 		free->frb_header.blk_length -= size;
 	}
-	else {
+	else
+	{
 		*best = free->frb_next;
 		size += best_tail;
 		block = free;
@@ -204,7 +206,8 @@ void ALLQ_fini()
 		if (pool)
 		{
 			qli_hnk* hunk;
-			for (qli_hnk* hunks = pool->plb_hunks; hunk = hunks;) {
+			for (qli_hnk* hunks = pool->plb_hunks; hunk = hunks;)
+			{
 				hunks = hunk->hnk_next;
 				ALLQ_free(hunk->hnk_address);
 			}
@@ -271,7 +274,8 @@ SCHAR *ALLQ_malloc(SLONG size)
  **************************************/
 	SCHAR *memory = (SCHAR*) gds__alloc(size);
 
-	if (memory) {
+	if (memory)
+	{
 #ifdef DEBUG_GDS_ALLOC
 		gds_alloc_flag_unfreed((void *) memory);	// Don't care about QLI leaks
 #endif
@@ -424,7 +428,8 @@ void ALLQ_release( qli_frb* block)
 
 	// Try to merge the free block with the next one down.
 
-	if (free) {
+	if (free)
+	{
 		if ((SCHAR *) block + block->frb_header.blk_length == (SCHAR *) free)
 		{
 			block->frb_header.blk_length += free->frb_header.blk_length;
@@ -436,7 +441,8 @@ void ALLQ_release( qli_frb* block)
 
 	// Try and merge the block with the prior free block
 
-	if (prior) {
+	if (prior)
+	{
 		if ((SCHAR *) prior + prior->frb_header.blk_length == (SCHAR *) block)
 		{
 			prior->frb_header.blk_length += block->frb_header.blk_length;
@@ -464,7 +470,8 @@ void ALLQ_rlpool( qli_plb* pool)
 	global_pools->vec_object[pool->plb_pool_id] = NULL;
 
 	qli_hnk* hunk;
-	for (qli_hnk* hunks = pool->plb_hunks; hunk = hunks;) {
+	for (qli_hnk* hunks = pool->plb_hunks; hunk = hunks;)
+	{
 		hunks = hunk->hnk_next;
 		gds__free(hunk->hnk_address);
 	}

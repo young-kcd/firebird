@@ -114,7 +114,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	const TEXT* application_file = NULL;
 	ALLQ_init();
 	LEX_init();
-	bool version_flag = false, flush_flag = false;
+	bool version_flag = false;
 	bool banner_flag = true;
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
@@ -155,7 +155,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			switch (UPPER(c))
 			{
 			case 'A':
-				if (argv >= arg_end) {
+				if (argv >= arg_end)
+				{
 					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name
 					exit(FINI_ERROR);
 				}
@@ -263,7 +264,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 		try {
 			PAR_token();
 		}
-		catch (const Firebird::Exception&) {
+		catch (const Firebird::Exception&)
+		{
 			// try again
 			got_started = false;
 			ERRQ_pending();
@@ -273,6 +275,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 	// Loop until end of file or forced exit
 
+	bool flush_flag = false;
 	while (QLI_line)
 	{
 		qli_plb* temp = QLI_default_pool = ALLQ_pool();
@@ -335,18 +338,18 @@ static bool process_statement(bool flush_flag)
  *	is required, return true (or status), otherwise return false.
  *
  **************************************/
-	qli_dbb* dbb;
 
 	// Clear database active flags in preparation for a new statement
 
 	QLI_abort = false;
 
-	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+	for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
 
 	// If the last statement wrote out anything to the terminal, skip a line
 
-	if (QLI_skip_line) {
+	if (QLI_skip_line)
+	{
 		printf("\n");
 		QLI_skip_line = false;
 	}
@@ -361,140 +364,144 @@ static bool process_statement(bool flush_flag)
 
 	try {
 
-	// Set up the appropriate prompt and get the first significant token.  If
-	// we don't get one, we're at end of file
+		// Set up the appropriate prompt and get the first significant token.  If
+		// we don't get one, we're at end of file
 
-	QLI_prompt = QLI_prompt_string;
+		QLI_prompt = QLI_prompt_string;
 
-	// This needs to be done after setting QLI_prompt to prevent
-	// and infinite loop in LEX/next_line.
-	// If there was a prior syntax error, flush the token stream
+		// This needs to be done after setting QLI_prompt to prevent
+		// and infinite loop in LEX/next_line.
+		// If there was a prior syntax error, flush the token stream
 
-	if (flush_flag)
-		LEX_flush();
+		if (flush_flag)
+			LEX_flush();
 
-	while (QLI_token->tok_keyword == KW_SEMI)
-		LEX_token();
+		while (QLI_token->tok_keyword == KW_SEMI)
+			LEX_token();
 
-	PAR_real();
+		PAR_real();
 
-	if (!QLI_line)
-		return false;
+		if (!QLI_line)
+			return false;
 
-	EXEC_poll_abort();
+		EXEC_poll_abort();
 
-	// Mark the current token as starting the statement.  This is allows
-	// the EDIT command to find the last statement
+		// Mark the current token as starting the statement.  This is allows
+		// the EDIT command to find the last statement
 
-	LEX_mark_statement();
+		LEX_mark_statement();
 
-	// Change the prompt string to the continuation prompt, and parse
-	// the next statement
+		// Change the prompt string to the continuation prompt, and parse
+		// the next statement
 
-	QLI_prompt = QLI_cont_string;
+		QLI_prompt = QLI_cont_string;
 
-	qli_syntax* syntax_tree = PARQ_parse();
-	if (!syntax_tree)
-		return false;
+		qli_syntax* syntax_tree = PARQ_parse();
+		if (!syntax_tree)
+			return false;
 
-	EXEC_poll_abort();
+		EXEC_poll_abort();
 
-	// If the statement was EXIT, force end of file on command input
+		// If the statement was EXIT, force end of file on command input
 
-	if (syntax_tree->syn_type == nod_exit) {
-		QLI_line = NULL;
-		return false;
-	}
-
-	// If the statement was quit, ask the user if he want to rollback
-
-	if (syntax_tree->syn_type == nod_quit)
-	{
-		QLI_line = NULL;
-		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+		if (syntax_tree->syn_type == nod_exit)
 		{
-			if ((dbb->dbb_transaction) && (dbb->dbb_flags & DBB_updates))
-			{
-				if (yes_no(460, dbb->dbb_symbol->sym_string))	// Msg460 Do you want to rollback updates for <dbb>?
-					MET_transaction(nod_rollback, dbb);
-				else
-					MET_transaction(nod_commit, dbb);
-			}
+			QLI_line = NULL;
+			return false;
 		}
-		return false;
-	}
 
-	// Expand the statement.  It will return NULL is the statement was
-	// a command.  An error will be unwound
+		// If the statement was quit, ask the user if he want to rollback
 
-	qli_nod* expanded_tree = EXP_expand(syntax_tree);
-	if (!expanded_tree)
-		return false;
-
-	// Compile the statement
-
-	qli_nod* execution_tree = CMPQ_compile(expanded_tree);
-	if (!execution_tree)
-		return false;
-
-	// Generate any BLR needed to support the request
-
-	if (!GEN_generate(execution_tree))
-		return false;
-
-	if (QLI_statistics)
-	{
-		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+		if (syntax_tree->syn_type == nod_quit)
 		{
-			if (dbb->dbb_flags & DBB_active)
+			QLI_line = NULL;
+			for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 			{
-				if (!dbb->dbb_statistics)
+				if ((dbb->dbb_transaction) && (dbb->dbb_flags & DBB_updates))
 				{
-					dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF));
-#ifdef DEBUG_GDS_ALLOC
-					// We don't care about QLI specific memory leaks for V4.0
-					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
-#endif
+					// Msg460 Do you want to rollback updates for <dbb>?
+					if (yes_no(460, dbb->dbb_symbol->sym_string))
+						MET_transaction(nod_rollback, dbb);
+					else
+						MET_transaction(nod_commit, dbb);
 				}
-				perf_get_info(&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
 			}
+			return false;
 		}
-	}
 
-	// Execute the request, for better or worse
+		// Expand the statement.  It will return NULL is the statement was
+		// a command.  An error will be unwound
 
-	EXEC_top(execution_tree);
+		qli_nod* expanded_tree = EXP_expand(syntax_tree);
+		if (!expanded_tree)
+			return false;
 
-	if (QLI_statistics)
-	{
-		PERF statistics;
-		TEXT buffer[512], report[256];
-		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+		// Compile the statement
+
+		qli_nod* execution_tree = CMPQ_compile(expanded_tree);
+		if (!execution_tree)
+			return false;
+
+		// Generate any BLR needed to support the request
+
+		if (!GEN_generate(execution_tree))
+			return false;
+
+		if (QLI_statistics)
 		{
-			report[0] = 0;
-			if (dbb->dbb_flags & DBB_active)
+			for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 			{
-				ERRQ_msg_get(505, report, sizeof(report));
-				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n"
-				size_t used_len = strlen(report);
-				ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
-				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
-				perf_get_info(&dbb->dbb_handle, &statistics);
-				perf_format((perf*) dbb->dbb_statistics, &statistics, report, buffer, 0);
-				ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);	// Msg26 Statistics for database %s %s
-				QLI_skip_line = true;
+				if (dbb->dbb_flags & DBB_active)
+				{
+					if (!dbb->dbb_statistics)
+					{
+						dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF));
+#ifdef DEBUG_GDS_ALLOC
+						// We don't care about QLI specific memory leaks for V4.0
+						gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
+#endif
+					}
+					perf_get_info(&dbb->dbb_handle, (perf*) dbb->dbb_statistics);
+				}
 			}
 		}
-	}
 
-	// Release resources associated with the request
+		// Execute the request, for better or worse
 
-	GEN_release();
+		EXEC_top(execution_tree);
 
-	return false;
+		if (QLI_statistics)
+		{
+			PERF statistics;
+			TEXT buffer[512], report[256];
+			for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
+			{
+				report[0] = 0;
+				if (dbb->dbb_flags & DBB_active)
+				{
+					ERRQ_msg_get(505, report, sizeof(report));
+					// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n"
+					size_t used_len = strlen(report);
+					ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
+					// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
+					perf_get_info(&dbb->dbb_handle, &statistics);
+					perf_format((perf*) dbb->dbb_statistics, &statistics, report, buffer, 0);
+					ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);
+					// Msg26 Statistics for database %s %s
+					QLI_skip_line = true;
+				}
+			}
+		}
+
+		// Release resources associated with the request
+
+		GEN_release();
+
+		return false;
 
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		GEN_release();
 		return true;
 	}

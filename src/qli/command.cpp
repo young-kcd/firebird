@@ -46,8 +46,7 @@ static void dump_procedure(qli_dbb*, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
 static void extract_procedure(void*, const TEXT*, USHORT, qli_dbb*, ISC_QUAD&);
 
 #ifdef NOT_USED_OR_REPLACED
-static SCHAR db_items[] =
-	{ gds_info_page_size, gds_info_allocation, gds_info_end };
+static SCHAR db_items[] = { gds_info_page_size, gds_info_allocation, gds_info_end };
 #endif
 
 bool CMD_check_ready()
@@ -228,7 +227,8 @@ void CMD_finish( qli_syntax* node)
  *	Perform FINISH.  Either finish listed databases or everything.
  *
  **************************************/
-	if (node->syn_count == 0) {
+	if (node->syn_count == 0)
+	{
 		while (QLI_databases)
 			MET_finish(QLI_databases);
 		return;
@@ -349,7 +349,8 @@ void CMD_set( qli_syntax* node)
 		case set_matching_language:
 			if (QLI_matching_language)
 				ALLQ_release((qli_frb*) QLI_matching_language);
-			if (!(string = (qli_const*) value)) {
+			if (!(string = (qli_const*) value))
+			{
 				QLI_matching_language = NULL;
 				break;
 			}
@@ -375,7 +376,8 @@ void CMD_set( qli_syntax* node)
 
 		case set_charset:
 			{
-				if (!value) {
+				if (!value)
+				{
 					QLI_charset[0] = 0;
 					break;
 				}
@@ -470,7 +472,8 @@ void CMD_transaction( qli_syntax* node)
 			CMD_transaction(node);
 			node->syn_type = nod_commit;
 		}
-		else if (node->syn_count == 1) {
+		else if (node->syn_count == 1)
+		{
 			qli_dbb* tmp_db = (qli_dbb*) node->syn_arg[0];
 			tmp_db->dbb_flags |= DBB_prepared;
 		}

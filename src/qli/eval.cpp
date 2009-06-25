@@ -230,7 +230,8 @@ void EVAL_break_increment( qli_nod* node)
 
 	// Knock off count as trivial
 
-	if (node->nod_type == nod_rpt_count) {
+	if (node->nod_type == nod_rpt_count)
+	{
 		*(SLONG *) node->nod_desc.dsc_address += 1;
 		return;
 	}
@@ -249,7 +250,8 @@ void EVAL_break_increment( qli_nod* node)
 	{
 		if (desc2->dsc_missing)
 			desc1->dsc_missing = DSC_missing;
-		else {
+		else
+		{
 			desc1->dsc_missing = FALSE;
 			MOVQ_move(desc2, desc1);
 			node->nod_arg[e_stt_default] = (qli_nod*) (IPTR) count;
@@ -329,7 +331,8 @@ dsc* EVAL_parameter(qli_par* parameter)
 	desc->dsc_missing = FALSE;
 	qli_msg* message = parameter->par_message;
 
-	if (missing_parameter = parameter->par_missing) {
+	if (missing_parameter = parameter->par_missing)
+	{
 		const USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);
 		desc->dsc_missing = *missing_flag ? DSC_missing : 0;
 	}
@@ -408,7 +411,8 @@ dsc* EVAL_value(qli_nod* node)
 			return desc;
 		}
 		desc->dsc_missing = FALSE;
-		if (node->nod_flags & nod_date) {
+		if (node->nod_flags & nod_date)
+		{
 			double d1 = MOVQ_date_to_double(values[0]) + MOVQ_get_double(values[1]);
 			MOVQ_double_to_date(d1, (SLONG*) desc->dsc_address);
 		}
@@ -426,7 +430,8 @@ dsc* EVAL_value(qli_nod* node)
 			return desc;
 		}
 		desc->dsc_missing = FALSE;
-		if (node->nod_flags & nod_date) {
+		if (node->nod_flags & nod_date)
+		{
 			*((double*) desc->dsc_address) =
 				MOVQ_date_to_double(values[0]) - MOVQ_date_to_double(values[1]);
 		}
@@ -463,7 +468,8 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_negate:
-		if (values[0]->dsc_missing & DSC_missing) {
+		if (values[0]->dsc_missing & DSC_missing)
+		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
 		}
@@ -497,7 +503,8 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_prompt:
-		if (!prompt[0][0]) {
+		if (!prompt[0][0])
+		{
 			ERRQ_msg_get(499, prompt[0], sizeof(prompt[0]));	// Msg499 Re-enter
 			ERRQ_msg_get(500, prompt[1], sizeof(prompt[1]));	// Msg500 Enter
 		}
@@ -656,7 +663,8 @@ static DSC *execute_edit( qli_nod* node)
 	if (node->nod_arg[e_edt_input])
 	{
 		desc = EVAL_value(node->nod_arg[e_edt_input]);
-		if (desc && (desc->dsc_dtype == dtype_blob)) {
+		if (desc && (desc->dsc_dtype == dtype_blob))
+		{
 			desc->dsc_dtype = dtype_quad;
 			MOVQ_move(desc, &node->nod_desc);
 			desc->dsc_dtype = dtype_blob;
@@ -831,7 +839,8 @@ static bool like(const UCHAR* p1, SSHORT l1, const UCHAR* p2, SSHORT l2, const U
 	while (--l2 >= 0)
 	{
 		const UCHAR c = *p2++;
-		if (escape_char && !escape && c == escape_char) {
+		if (escape_char && !escape && c == escape_char)
+		{
 			escape = true;
 			continue;
 		}
@@ -839,7 +848,8 @@ static bool like(const UCHAR* p1, SSHORT l1, const UCHAR* p2, SSHORT l2, const U
 		{
 			if (l2 == 0)
 				return true;
-			while (l1) {
+			while (l1)
+			{
 				if (like(p1++, l1--, p2, l2, escape_char))
 					return true;
 			}
@@ -960,7 +970,8 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 
 	// If source is not a blob, do a simple search
 
-	if (desc1->dsc_dtype != dtype_blob) {
+	if (desc1->dsc_dtype != dtype_blob)
+	{
 		l1 = MOVQ_get_string(desc1, &p1, &temp1, TEMP_LENGTH);
 		return sleuth_check(0, (const UCHAR*) p1, (const UCHAR*) (p1 + l1), control, control + l2);
 	}
@@ -1137,7 +1148,8 @@ static bool sleuth_class( const USHORT flags,
 	bool result = true;
 	character = cond_upper(character, flags);
 
-	if (*char_class == '~') {
+	if (*char_class == '~')
+	{
 		++char_class;
 		result = false;
 	}
@@ -1145,11 +1157,13 @@ static bool sleuth_class( const USHORT flags,
 	while (char_class < end_class)
 	{
 		const UCHAR c = *char_class++;
-		if (c == '@') {
+		if (c == '@')
+		{
 			if (*char_class++ == character)
 				return true;
 		}
-		else if (*char_class == '-') {
+		else if (*char_class == '-')
+		{
 			char_class += 2;
 			if (character >= c && character <= char_class[-1])
 				return result;
@@ -1318,7 +1332,8 @@ static bool string_boolean( qli_nod* node)
 	SSHORT l3 = 0;
 	while (!isc_get_segment(status_vector, &blob, (USHORT*) &l3, buffer_length, buffer))
 	{
-		if (string_function(node, l3, buffer, l2, p2)) {
+		if (string_function(node, l3, buffer, l2, p2))
+		{
 			result = true;
 			break;
 		}

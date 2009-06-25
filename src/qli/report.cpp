@@ -97,7 +97,8 @@ void RPT_report( qli_nod* loop)
 	if (*(USHORT*) desc->dsc_address)
 		return;
 
-	if (!report->rpt_buffer) {
+	if (!report->rpt_buffer)
+	{
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length);
 		report->rpt_buffer = (UCHAR*) string->str_data;
 	}
@@ -142,7 +143,8 @@ void RPT_report( qli_nod* loop)
 
 		for (control = report->rpt_top_breaks; control; control = control->brk_next)
 		{
-			if (test_break(control, report, message)) {
+			if (test_break(control, report, message))
+			{
 				top_break(control, print);
 				break;
 			}
@@ -333,7 +335,8 @@ static void top_of_page(qli_prt* print, bool first_flag)
 	++print->prt_page_number;
 	qli_rpt* report = print->prt_report;
 
-	if (!first_flag) {
+	if (!first_flag)
+	{
 		if (control = report->rpt_bottom_page)
 			FMT_print((qli_nod*) control->brk_line, print);
 		FMT_put("\f", print);

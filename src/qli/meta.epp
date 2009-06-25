@@ -1349,7 +1349,8 @@ void MET_modify_relation( qli_rel* relation, qli_fld* fields)
 				rollback_update(database);
 				ERRQ_database_error(database, gds_status);
 			END_ERROR;
-			if (!count) {
+			if (!count)
+			{
 				rollback_update(database);
 				ERRQ_print_error(247, field_name->sym_string);	// Msg247 field %s doesn't exist
 			}
@@ -3420,7 +3421,8 @@ static void purge_relation(qli_rel* relation)
 
 	for (qli_rel** ptr = &database->dbb_relations; *ptr; ptr = &(*ptr)->rel_next)
 	{
-		if (*ptr == relation) {
+		if (*ptr == relation)
+		{
 			*ptr = relation->rel_next;
 			break;
 		}

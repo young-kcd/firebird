@@ -382,7 +382,8 @@ static TEXT* cvt_to_ascii( SLONG number, TEXT* pointer, int length)
 	TEXT* p = pointer;
 	*--p = 0;
 
-	while (--length >= 0) {
+	while (--length >= 0)
+	{
 		*--p = (number % 10) + '0';
 		number /= 10;
 	}
@@ -477,7 +478,8 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 		return "X(11)";
 	}
 
-	if (buff == buffer) {
+	if (buff == buffer)
+	{
 		qli_str* string = (qli_str*) ALLOCDV(type_str, strlen(buff));
 		strcpy(string->str_data, buff);
 		buff = string->str_data;
@@ -598,7 +600,8 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 	const TEXT* meridian = "";
 	if (picture->pic_meridian)
 	{
-		if (times.tm_hour >= 12) {
+		if (times.tm_hour >= 12)
+		{
 			meridian = "PM";
 			if (times.tm_hour > 12)
 				times.tm_hour -= 12;
@@ -656,7 +659,8 @@ static void edit_date( const dsc* desc, pics* picture, TEXT** output)
 			d = *day++;
 			if (!sig_day && d == '0' && blank)
 				*out++ = ' ';
-			else {
+			else
+			{
 				sig_day = true;
 				*out++ = d;
 			}
@@ -859,7 +863,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			}
 			else if (*p == '-' || c == '+')
 				*out++ = *p++;
-			else {
+			else
+			{
 				*out++ = ' ';
 				p++;
 			}
@@ -930,7 +935,8 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			check /= 10.0;
 		if (check >= 1)
 			overflow = true;
-		else {
+		else
+		{
 			sprintf(digits, "%0*.0f", picture->pic_digits, number);
 			p = digits + strlen(digits);
 		}
@@ -947,9 +953,11 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			check /= 16.0;
 		if (check >= 1)
 			hex_overflow = true;
-		else {
+		else
+		{
 			SLONG nh = static_cast<SLONG>(number);
-			while (p-- > hex) {
+			while (p-- > hex)
+			{
 				*p = "0123456789abcdef"[nh & 15];
 				nh >>= 4;
 			}
@@ -973,7 +981,8 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			break;
 
 		c = UPPER(c);
-		if (overflow && c != 'H') {
+		if (overflow && c != 'H')
+		{
 			*out++ = '*';
 			continue;
 		}
@@ -986,14 +995,16 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			break;
 
 		case 'H':
-			if (hex_overflow) {
+			if (hex_overflow)
+			{
 				*out++ = '*';
 				continue;
 			}
 		case '*':
 		case 'Z':
 			d = (c == 'H') ? *hex++ : *digits++;
-			if (signif || d != '0') {
+			if (signif || d != '0')
+			{
 				*out++ = d;
 				signif = true;
 			}
@@ -1009,13 +1020,15 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			else if (c == '-' && !negative)
 				c = ' ';
 			float_char = c;
-			if (!float_ptr) {
+			if (!float_ptr)
+			{
 				float_ptr = out;
 				*out++ = n ? c : ' ';
 				break;
 			}
 			d = *digits++;
-			if (signif || d != '0') {
+			if (signif || d != '0')
+			{
 				*out++ = d;
 				signif = true;
 				break;
@@ -1033,11 +1046,13 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 		case 'C':
 		case 'D':
 			d = generate(picture);
-			if (negative) {
+			if (negative)
+			{
 				*out++ = c;
 				*out++ = UPPER(d);
 			}
-			else if (d) {
+			else if (d)
+			{
 				*out++ = ' ';
 				*out++ = ' ';
 			}
@@ -1061,7 +1076,8 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 		case ',':
 			if (signif)
 				*out++ = c;
-			else if (float_ptr) {
+			else if (float_ptr)
+			{
 				*float_ptr = ' ';
 				float_ptr = out;
 				*out++ = float_char;
@@ -1100,7 +1116,8 @@ static int generate( pics* picture)
 	{
 		// If we're in a repeat, pass it back
 
-		if (picture->pic_count > 0) {
+		if (picture->pic_count > 0)
+		{
 			--picture->pic_count;
 			return picture->pic_character;
 		}
@@ -1117,7 +1134,8 @@ static int generate( pics* picture)
 		// If the next character is also a paren, it is a debit indicating
 		// bracket.  If so, swallow the second.
 
-		if ((c == ')' || c == '(') && *picture->pic_pointer == c) {
+		if ((c == ')' || c == '(') && *picture->pic_pointer == c)
+		{
 			picture->pic_pointer++;
 			return (picture->pic_character = c);
 		}
@@ -1133,7 +1151,8 @@ static int generate( pics* picture)
 		while (*p >= '0' && *p <= '9')
 			picture->pic_count = picture->pic_count * 10 + *p++ - '0';
 
-		if (p == picture->pic_pointer) {
+		if (p == picture->pic_pointer)
+		{
 			c = '(';
 			break;
 		}

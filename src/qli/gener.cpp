@@ -144,7 +144,8 @@ qli_rlb* GEN_rlb_extend(qli_rlb* rlb)
 	const ULONG len = rlb->rlb_data - rlb->rlb_base;
 	rlb->rlb_length += RLB_BUFFER_SIZE;
 	UCHAR* new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
-	if (old_string) {
+	if (old_string)
+	{
 		memcpy(new_string, old_string, len);
 		ALLQ_free(old_string);
 	}
@@ -175,7 +176,8 @@ void GEN_rlb_release( qli_rlb* rlb)
 	if (!rlb)
 		return;
 
-	if (rlb->rlb_base) {
+	if (rlb->rlb_base)
+	{
 		ALLQ_free(rlb->rlb_base);
 		rlb->rlb_base = NULL;
 		rlb->rlb_length = 0;
@@ -414,7 +416,8 @@ static void explain_index_tree(qli_dbb* db, int level, const TEXT* relation_name
 		break;
 	}
 
-	if (*explain_buffer == isc_info_rsb_end) {
+	if (*explain_buffer == isc_info_rsb_end)
+	{
 		explain_buffer++;
 		(*buffer_length)--;
 	}
@@ -527,7 +530,8 @@ static void gen_assignment( qli_nod* node, qli_req* request)
 
 	// Handle a local expression locally
 
-	if (node->nod_flags & NOD_local) {
+	if (node->nod_flags & NOD_local)
+	{
 		gen_expression(from, 0);
 		return;
 	}
@@ -544,7 +548,8 @@ static void gen_assignment( qli_nod* node, qli_req* request)
 	// the expression in the context of this request
 
 	const qli_nod* reference = target->nod_arg[e_fld_reference];
-	if (reference) {
+	if (reference)
+	{
 		gen_expression(from, 0);
 		gen_parameter(reference->nod_import, request);
 	}
@@ -572,7 +577,8 @@ static void gen_control_break( qli_brk* control, qli_req* request)
  *
  **************************************/
 
-	for (; control; control = control->brk_next) {
+	for (; control; control = control->brk_next)
+	{
 		if (control->brk_field)
 			gen_expression((qli_nod*) control->brk_field, request);
 		if (control->brk_line)
@@ -720,7 +726,8 @@ static void gen_erase( qli_nod* node, qli_req* request)
  *
  **************************************/
 	const qli_msg* message = (qli_msg*) node->nod_arg[e_era_message];
-	if (message) {
+	if (message)
+	{
 		request = (qli_req*) node->nod_arg[e_era_request];
 		gen_send_receive(message, blr_receive);
 	}
@@ -762,7 +769,8 @@ static void gen_expression(qli_nod* node, qli_req* request)
 		return;
 
 	case nod_unique:
-		if (request) {
+		if (request)
+		{
 			STUFF(blr_unique);
 			gen_rse(node->nod_arg[e_any_rse], request);
 		}
@@ -949,14 +957,16 @@ static void gen_expression(qli_nod* node, qli_req* request)
 		break;
 
 	default:
-		if (request && node->nod_export) {
+		if (request && node->nod_export)
+		{
 			gen_parameter(node->nod_export, request);
 			return;
 		}
 		ERRQ_bugcheck(353);			// Msg353 gen_expression: not understood
 	}
 
-	if (request) {
+	if (request)
+	{
 		rlb = CHECK_RLB(request->req_blr);
 		STUFF(operatr);
 	}
@@ -1038,7 +1048,8 @@ static void gen_for( qli_nod* node, qli_req* request)
 	// If there is a request associated with the statement, prepare to
 	// generate BLR.  Otherwise assume that a request is alrealdy initialized.
 
-	if (node->nod_arg[e_for_request]) {
+	if (node->nod_arg[e_for_request])
+	{
 		request = (qli_req*) node->nod_arg[e_for_request];
 		gen_request(request);
 	}
@@ -1079,7 +1090,8 @@ static void gen_for( qli_nod* node, qli_req* request)
 		for (const qli_par* parameter = message->msg_parameters; parameter;
 			parameter = parameter->par_next)
 		{
-			if (parameter->par_value) {
+			if (parameter->par_value)
+			{
 				STUFF(blr_assignment);
 				gen_expression(parameter->par_value, request);
 				gen_parameter(parameter, request);
@@ -1202,7 +1214,8 @@ static void gen_function( qli_nod* node, qli_req* request)
 	for (const qli_nod* const* const end = ptr + args->nod_count; ptr < end; ptr++)
 		gen_expression(*ptr, request);
 
-	if (new_request) {
+	if (new_request)
+	{
 		gen_parameter(node->nod_import, request);
 		gen_compile(request);
 	}
@@ -1244,7 +1257,8 @@ static void gen_if( qli_nod* node, qli_req* request)
 		STUFF(blr_begin);
 		gen_statement(node->nod_arg[e_if_true], request);
 		STUFF(blr_end);
-		if (node->nod_arg[e_if_false]) {
+		if (node->nod_arg[e_if_false])
+		{
 			STUFF(blr_begin);
 			gen_statement(node->nod_arg[e_if_false], request);
 			STUFF(blr_end);
@@ -1338,7 +1352,8 @@ static void gen_map(qli_map* map, qli_req* request)
 
 	for (temp = map; temp; temp = temp->map_next)
 	{
-		if (temp->map_node->nod_type != nod_function) {
+		if (temp->map_node->nod_type != nod_function)
+		{
 			STUFF_WORD(temp->map_position);
 			gen_expression(temp->map_node, request);
 		}
@@ -1395,12 +1410,14 @@ static void gen_parameter(const qli_par* parameter, qli_req* request)
 	qli_rlb* rlb = CHECK_RLB(request->req_blr);
 
 	const qli_msg* message = parameter->par_message;
-	if (!parameter->par_missing) {
+	if (!parameter->par_missing)
+	{
 		STUFF(blr_parameter);
 		STUFF(message->msg_number);
 		STUFF_WORD(parameter->par_parameter);
 	}
-	else {
+	else
+	{
 		STUFF(blr_parameter2);
 		STUFF(message->msg_number);
 		STUFF_WORD(parameter->par_parameter);
@@ -1566,7 +1583,8 @@ static void gen_rse( qli_nod* node, qli_req* request)
 		else
 			STUFF(0);
 		gen_map(context->ctx_map, request);
-		if (list = node->nod_arg[e_rse_having]) {
+		if (list = node->nod_arg[e_rse_having])
+		{
 			STUFF(blr_boolean);
 			gen_expression(list, request);
 		}
@@ -1584,7 +1602,8 @@ static void gen_rse( qli_nod* node, qli_req* request)
 		context = (qli_ctx*) *ptr;
 		if (context->ctx_stream)
 			gen_rse(context->ctx_stream, request);
-		else {
+		else
+		{
 			const qli_rel* relation = context->ctx_relation;
 			STUFF(blr_rid);
 			STUFF_WORD(relation->rel_id);
@@ -1594,12 +1613,14 @@ static void gen_rse( qli_nod* node, qli_req* request)
 
 	// Handle various clauses
 
-	if (list = node->nod_arg[e_rse_first]) {
+	if (list = node->nod_arg[e_rse_first])
+	{
 		STUFF(blr_first);
 		gen_expression(list, request);
 	}
 
-	if (list = node->nod_arg[e_rse_boolean]) {
+	if (list = node->nod_arg[e_rse_boolean])
+	{
 		STUFF(blr_boolean);
 		gen_expression(list, request);
 	}
@@ -1863,7 +1884,8 @@ static void gen_statistical( qli_nod* node, qli_req* request)
 	if (node->nod_arg[e_stt_default])
 		gen_expression(node->nod_arg[e_stt_default], request);
 
-	if (new_request) {
+	if (new_request)
+	{
 		gen_parameter(node->nod_import, request);
 		gen_compile(request);
 	}
@@ -1886,7 +1908,8 @@ static void gen_store( qli_nod* node, qli_req* request)
 	// If there is a request associated with the statement, prepare to
 	// generate BLR.  Otherwise assume that a request is alrealdy initialized.
 
-	if (node->nod_arg[e_sto_request]) {
+	if (node->nod_arg[e_sto_request])
+	{
 		request = (qli_req*) node->nod_arg[e_sto_request];
 		gen_request(request);
 	}

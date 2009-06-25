@@ -213,7 +213,8 @@ static qli_nod* compile_any( qli_nod* node, qli_req* old_request)
 	qli_msg* old_send = NULL;
 	qli_msg* old_receive = NULL;
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_send = old_request->req_send;
 		old_receive = old_request->req_receive;
 	}
@@ -226,12 +227,14 @@ static qli_nod* compile_any( qli_nod* node, qli_req* old_request)
 	else
 		request = old_request;
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_request->req_send = old_send;
 		old_request->req_receive = old_receive;
 	}
 
-	if ((send != old_send) && !send->msg_parameters) {
+	if ((send != old_send) && !send->msg_parameters)
+	{
 		release_message(send);
 		send = NULL;
 		if (!receive)
@@ -241,13 +244,15 @@ static qli_nod* compile_any( qli_nod* node, qli_req* old_request)
 	if (old_request && request->req_database != old_request->req_database)
 		IBERROR(357);			// Msg357 relations from multiple databases in single rse
 
-	if (old_request && (!receive || !receive->msg_parameters)) {
+	if (old_request && (!receive || !receive->msg_parameters))
+	{
 		if (receive)
 			release_message(receive);
 		receive = NULL;
 	}
 
-	if (receive) {
+	if (receive)
+	{
 		qli_par* parameter = make_parameter(receive, 0);
 		node->nod_import = parameter;
 		parameter->par_desc.dsc_dtype = dtype_short;
@@ -261,8 +266,7 @@ static qli_nod* compile_any( qli_nod* node, qli_req* old_request)
 }
 
 
-static qli_nod* compile_assignment( qli_nod* node, qli_req* request,
-	bool statement_internal)
+static qli_nod* compile_assignment( qli_nod* node, qli_req* request, bool statement_internal)
 {
 /**************************************
  *
@@ -292,7 +296,8 @@ static qli_nod* compile_assignment( qli_nod* node, qli_req* request,
 
 	// If the assignment is to a variable, the assignment is completely local
 
-	if (to->nod_type == nod_variable) {
+	if (to->nod_type == nod_variable)
+	{
 		statement_internal = false;
 		node->nod_flags |= NOD_local;
 	}
@@ -317,8 +322,10 @@ static qli_nod* compile_assignment( qli_nod* node, qli_req* request,
 	{
 		if (node->nod_arg[e_asn_valid])
 			compile_expression(node->nod_arg[e_asn_valid], request, false);
-		if (target->nod_type == nod_field) {
-			if (!request) {
+		if (target->nod_type == nod_field)
+		{
+			if (!request)
+			{
 				qli_ctx* context = (qli_ctx*) target->nod_arg[e_fld_context];
 				request = context->ctx_request;
 			}
@@ -414,7 +421,8 @@ static qli_nod* compile_edit( qli_nod* node, qli_req* request)
 	// If there is an input blob, get it now.
 
 	qli_nod* value = node->nod_arg[e_edt_input];
-	if (value) {
+	if (value)
+	{
 		qli_fld* field = (qli_fld*) value->nod_arg[e_fld_field];
 		if (value->nod_type != nod_field || field->fld_dtype != dtype_blob)
 			IBERROR(356);		// Msg356 EDIT argument must be a blob field
@@ -508,18 +516,21 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	case nod_running_total:
 	case nod_running_count:
 		node->nod_count = 0;
-		if (value = node->nod_arg[e_stt_value]) {
+		if (value = node->nod_arg[e_stt_value])
+		{
 			value->nod_flags |= NOD_parameter2;
 			node->nod_arg[e_stt_value] = compile_expression(value, request, false);
 		}
 		make_descriptor(node, &node->nod_desc);
-		if (internal_flag) {
+		if (internal_flag)
+		{
 			qli_par* parm = make_parameter(request->req_send, 0);
 			node->nod_export = parm;
 			parm->par_desc = node->nod_desc;
 			parm->par_value = node;
 		}
-		else {
+		else
+		{
 			CMP_alloc_temp(node);
 			if (request && value && computable(value, request))
 				node->nod_arg[e_stt_value] = make_reference(value, request->req_receive);
@@ -532,7 +543,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	case nod_agg_average:
 	case nod_agg_total:
 		node->nod_count = 0;
-		if (value = node->nod_arg[e_stt_value]) {
+		if (value = node->nod_arg[e_stt_value])
+		{
 			value->nod_flags |= NOD_parameter2;
 			node->nod_arg[e_stt_value] = compile_expression(value, request, true);
 		}
@@ -600,7 +612,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 			*ptr = compile_expression(*ptr, request, internal_flag);
 		}
 		make_descriptor(node, &node->nod_desc);
-		if (!internal_flag) {
+		if (!internal_flag)
+		{
 			node->nod_flags |= NOD_local;
 			CMP_alloc_temp(node);
 		}
@@ -639,7 +652,8 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 				parm->par_desc.dsc_length = field->fld_length;
 				parm->par_desc.dsc_scale = field->fld_scale;
 				parm->par_desc.dsc_sub_type = field->fld_sub_type;
-				if (parm->par_desc.dsc_dtype == dtype_text) {
+				if (parm->par_desc.dsc_dtype == dtype_text)
+				{
 					parm->par_desc.dsc_dtype = dtype_varying;
 					parm->par_desc.dsc_length += sizeof(SSHORT);
 				}
@@ -699,13 +713,15 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
 	node->nod_count = 0;
 	qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
-	if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs]) {
+	if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
+	{
 		node->nod_desc.dsc_dtype = dtype_quad;
 		node->nod_desc.dsc_length = 8;
 		node->nod_desc.dsc_scale = 0;
 		node->nod_desc.dsc_sub_type = 0;
 	}
-	else {
+	else
+	{
 		node->nod_desc.dsc_dtype = field->fld_dtype;
 		node->nod_desc.dsc_length = field->fld_length;
 		node->nod_desc.dsc_scale = field->fld_scale;
@@ -761,7 +777,8 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
 
 	qli_msg* old_send = NULL;
 	qli_msg* old_receive = NULL;
-	if (old_request) {
+	if (old_request)
+	{
 		old_send = old_request->req_send;
 		old_receive = old_request->req_receive;
 	}
@@ -784,19 +801,22 @@ static qli_nod* compile_for( qli_nod* node, qli_req* old_request, bool internal_
 		receive = NULL;
 	}
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_request->req_send = old_send;
 		old_request->req_receive = old_receive;
 	}
 
-	if ((send != old_send) && !send->msg_parameters) {
+	if ((send != old_send) && !send->msg_parameters)
+	{
 		release_message(send);
 		send = NULL;
 		if (!receive)
 			return NULL;
 	}
 
-	if (receive) {
+	if (receive)
+	{
 		qli_par* parameter = make_parameter(receive, 0);
 		node->nod_arg[e_for_eof] = (qli_nod*) parameter;
 		parameter->par_desc.dsc_dtype = dtype_short;
@@ -832,7 +852,8 @@ static qli_nod* compile_function( qli_nod* node, qli_req* old_request, bool inte
 	if (!internal_flag)
 		old_request = NULL;
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_send = old_request->req_send;
 		old_receive = old_request->req_receive;
 	}
@@ -852,7 +873,8 @@ static qli_nod* compile_function( qli_nod* node, qli_req* old_request, bool inte
 	// If there is a value, compile it here
 
 	qli_par* parameter = 0;
-	if (!internal_flag) {
+	if (!internal_flag)
+	{
 		node->nod_import = parameter = make_parameter(request->req_receive, 0);
 		make_descriptor(node, &parameter->par_desc);
 	}
@@ -863,17 +885,20 @@ static qli_nod* compile_function( qli_nod* node, qli_req* old_request, bool inte
 	for (const qli_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 		compile_expression(*ptr, request, true);
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_request->req_send = old_send;
 		old_request->req_receive = old_receive;
 	}
 
-	if (!internal_flag && request == old_request && computable(node, request)) {
+	if (!internal_flag && request == old_request && computable(node, request))
+	{
 		make_descriptor(node, &node->nod_desc);
 		return make_reference(node, request->req_receive);
 	}
 
-	if (send && (send != old_send) && !send->msg_parameters) {
+	if (send && (send != old_send) && !send->msg_parameters)
+	{
 		release_message(send);
 		send = NULL;
 	}
@@ -904,7 +929,8 @@ static qli_nod* compile_if( qli_nod* node, qli_req* request, bool internal_flag)
 	// If the statement can't be executed in database context,
 	// make sure it gets executed locally
 
-	if (!internal_flag || !computable(node, request)) {
+	if (!internal_flag || !computable(node, request))
+	{
 		internal_flag = false;
 		node->nod_flags |= NOD_local;
 		request = NULL;
@@ -1174,10 +1200,12 @@ static qli_nod* compile_report( qli_nod* node, qli_req* request)
 	if (list)
 		compile_print_list(list, request, 0);
 
-	if (control = report->rpt_bottom_breaks) {
+	if (control = report->rpt_bottom_breaks)
+	{
 		compile_control_break(control, request);
 		report->rpt_bottom_breaks = NULL;
-		while (control) {
+		while (control)
+		{
 			qli_brk* temp = control;
 			control = control->brk_next;
 			temp->brk_next = report->rpt_bottom_breaks;
@@ -1218,7 +1246,8 @@ static qli_req* compile_rse(qli_nod* node, qli_req* old_request, bool internal_f
 
 	qli_req* const original_request = old_request;
 
-	if (!database) {
+	if (!database)
+	{
 		local_dbb = NULL;
 		database = &local_dbb;
 	}
@@ -1414,7 +1443,8 @@ static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request, bool i
 	if (!internal_flag)
 		old_request = NULL;
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_send = old_request->req_send;
 		old_receive = old_request->req_receive;
 	}
@@ -1431,7 +1461,8 @@ static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request, bool i
 
 	// If there is a value, compile it here
 
-	if (!internal_flag) {
+	if (!internal_flag)
+	{
 		qli_par* parameter = make_parameter(request->req_receive, 0);
 		node->nod_import = parameter;
 		make_descriptor(node, &parameter->par_desc);
@@ -1441,17 +1472,20 @@ static qli_nod* compile_statistical( qli_nod* node, qli_req* old_request, bool i
 	if (value)
 		compile_expression(value, request, true);
 
-	if (old_request) {
+	if (old_request)
+	{
 		old_request->req_send = old_send;
 		old_request->req_receive = old_receive;
 	}
 
-	if (!internal_flag && request == old_request && computable(node, request)) {
+	if (!internal_flag && request == old_request && computable(node, request))
+	{
 		make_descriptor(node, &node->nod_desc);
 		return make_reference(node, request->req_receive);
 	}
 
-	if ((send != old_send) && !send->msg_parameters) {
+	if ((send != old_send) && !send->msg_parameters)
+	{
 		release_message(send);
 		send = NULL;
 	}
@@ -1480,7 +1514,8 @@ static qli_nod* compile_store( qli_nod* node, qli_req* request, bool internal_fl
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_sto_context];
 	qli_rel* relation = context->ctx_relation;
 
-	if (!request || request->req_database != relation->rel_database) {
+	if (!request || request->req_database != relation->rel_database)
+	{
 		request = make_request(relation->rel_database);
 		node->nod_arg[e_sto_request] = (qli_nod*) request;
 	}
@@ -1866,11 +1901,13 @@ static void make_descriptor( qli_nod* node, dsc* desc)
 	case nod_rpt_total:
 	case nod_running_total:
 		make_descriptor(node->nod_arg[e_stt_value], desc);
-		if (desc->dsc_dtype == dtype_short) {
+		if (desc->dsc_dtype == dtype_short)
+		{
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof(SLONG);
 		}
-		else if (desc->dsc_dtype == dtype_real) {
+		else if (desc->dsc_dtype == dtype_real)
+		{
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
 		}
@@ -2019,7 +2056,8 @@ static qli_nod* make_reference( qli_nod* node, qli_msg* message)
 
 	// Parameter doesn't exist -- make a new one.
 
-	if (!parm) {
+	if (!parm)
+	{
 		parm = make_parameter(message, node);
 		parm->par_value = node;
 		parm->par_desc = node->nod_desc;

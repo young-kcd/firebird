@@ -72,11 +72,13 @@ void ERRQ_database_error( qli_dbb* dbb, ISC_STATUS* status_vector)
  *
  **************************************/
 
-	if (dbb) {
+	if (dbb)
+	{
 		ERRQ_msg_put(10, dbb->dbb_filename);	// Msg10 ** QLI error from database %s **
 		gds__print_status(status_vector);
 	}
-	else {
+	else
+	{
 		ERRQ_msg_put(11);	// Msg11 ** QLI error from database **
 		gds__print_status(status_vector);
 	}
@@ -114,7 +116,8 @@ void ERRQ_error(USHORT number, const SafeArg& arg)
 
 	Firebird::LongJump::raise();
 	/*
-	else {
+	else
+	{
 		ERRQ_pending();
 		ERRQ_exit(FINI_ERROR);
 	}
@@ -287,7 +290,8 @@ void ERRQ_pending()
  *
  **************************************/
 
-	if (QLI_error) {
+	if (QLI_error)
+	{
 		printf("%s\n", QLI_error);
 		QLI_error = NULL;
 	}
