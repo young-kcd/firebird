@@ -1070,6 +1070,7 @@ static UCHAR* nav_open(thread_db* tdbb,
 	}
 	else
 	{
+		fb_assert(direction == RSE_get_forward);
 		if (retrieval->irb_lower_count)
 		{
 			impure->irsb_nav_lower_length = lower.key_length;
