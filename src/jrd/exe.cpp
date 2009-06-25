@@ -251,6 +251,14 @@ const size_t MAX_STACK_TRACE = 2048;
 const int RECORD_LOCK_CHECK_INTERVAL	= 10;
 
 
+#ifdef SCROLLABLE_CURSORS
+static const rse_get_mode g_RSE_get_mode = RSE_get_next;
+#else
+static const rse_get_mode g_RSE_get_mode = RSE_get_forward;
+#endif
+
+
+
 void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
@@ -2027,12 +2035,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					break;
 				}
 			case jrd_req::req_sync:
-				if (RSE_get_record(tdbb, (RecordSource*) node->nod_arg[e_for_rsb],
-#ifdef SCROLLABLE_CURSORS
-								   RSE_get_next))
-#else
-								   RSE_get_forward))
-#endif
+				if (RSE_get_record(tdbb, (RecordSource*) node->nod_arg[e_for_rsb], g_RSE_get_mode))
 				{
 					node = node->nod_arg[e_for_statement];
 					request->req_operation = jrd_req::req_evaluate;
@@ -2110,12 +2113,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 							break;
 						}
 						// fetch one record
-						if (RSE_get_record(tdbb, rsb,
-#ifdef SCROLLABLE_CURSORS
-										   RSE_get_next))
-#else
-										   RSE_get_forward))
-#endif
+						if (RSE_get_record(tdbb, rsb, g_RSE_get_mode))
 						{
 							node = node->nod_arg[e_cursor_stmt_into];
 							request->req_operation = jrd_req::req_evaluate;
