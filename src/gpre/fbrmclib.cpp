@@ -186,7 +186,8 @@ static ISC_USHORT	*shortPool[MAX_PARAMS];
 // Clear the stringPool, freeing any previously allocated strings
 static void ClearStringPool()
 {
-	for (int i = 0; i < MAX_PARAMS; i++) {
+	for (int i = 0; i < MAX_PARAMS; i++)
+	{
 		if (stringPoolInitialized && stringPool[i])
 			free(stringPool[i]);
 		stringPool[i] = NULL;
@@ -197,7 +198,8 @@ static void ClearStringPool()
 // Clear the intPool, freeing any previously allocated ints
 static void ClearIntPool()
 {
-	for (int i = 0; i < MAX_PARAMS; i++) {
+	for (int i = 0; i < MAX_PARAMS; i++)
+	{
 		if (intPoolInitialized && intPool[i])
 			free(intPool);
 		intPool[i] = NULL;
@@ -208,7 +210,8 @@ static void ClearIntPool()
 // Clear the shortPool, freeing any previously allocated ints
 static void ClearShortPool()
 {
-	for (int i = 0; i < MAX_PARAMS; i++) {
+	for (int i = 0; i < MAX_PARAMS; i++)
+	{
 		if (shortPoolInitialized && intPool[i])
 			free(shortPool);
 		shortPool[i] = NULL;
@@ -228,8 +231,10 @@ static void ClearParamPool()
 // Return a NULL pointer if the pool is exhausted
 static ISC_UCHAR* AllocStringPool(int n)
 {
-	for (int i = 0; i < MAX_PARAMS; i++) {
-		if (! stringPool[i]) {
+	for (int i = 0; i < MAX_PARAMS; i++)
+	{
+		if (! stringPool[i])
+		{
 			stringPool[i] = (ISC_UCHAR *)malloc(n);
 			return (stringPool[i]);
 		}
@@ -241,8 +246,10 @@ static ISC_UCHAR* AllocStringPool(int n)
 // pointer if the pool is exhausted
 static ISC_ULONG* AllocIntPool()
 {
-	for (int i = 0; i < MAX_PARAMS; i++) {
-		if (! intPool[i]) {
+	for (int i = 0; i < MAX_PARAMS; i++)
+	{
+		if (! intPool[i])
+		{
 			intPool[i] = (ISC_ULONG *)malloc(sizeof(int));
 			return (intPool[i]);
 		}
@@ -254,8 +261,10 @@ static ISC_ULONG* AllocIntPool()
 // pointer if the pool is exhausted
 static ISC_USHORT* AllocShortPool()
 {
-	for (int i = 0; i < MAX_PARAMS; i++) {
-		if (! shortPool[i]) {
+	for (int i = 0; i < MAX_PARAMS; i++)
+	{
+		if (! shortPool[i])
+		{
 			shortPool[i] = (ISC_USHORT *)malloc(sizeof(short));
 			return (shortPool[i]);
 		}
@@ -276,9 +285,11 @@ static ISC_UCHAR* CobolToString(const argument_entry *arg)
 {
 	ISC_UCHAR		*s = NULL;
 
-	if (arg->a_address) {
+	if (arg->a_address)
+	{
 		s = AllocStringPool(arg->a_length + 1);
-		if (s) {
+		if (s)
+		{
 			memset(s, 0, arg->a_length + 1);
 			memmove(s, arg->a_address, arg->a_length);
 			// Truncate trailing spaces
@@ -354,7 +365,8 @@ static ISC_ULONG CvtArgToInt(const argument_entry *arg)
 static ISC_ULONG* CobolToInt(const argument_entry *arg)
 {
 	ISC_ULONG		*i = NULL;
-	if (arg->a_address) {
+	if (arg->a_address)
+	{
 		ISC_ULONG temp = CvtArgToInt(arg);
 		i = AllocIntPool();
 		if (i)
@@ -367,7 +379,8 @@ static ISC_ULONG* CobolToInt(const argument_entry *arg)
 static ISC_USHORT* CobolToShort(const argument_entry *arg)
 {
 	ISC_USHORT		*i = NULL;
-	if (arg->a_address) {
+	if (arg->a_address)
+	{
 		ISC_USHORT temp = (ISC_USHORT)CvtArgToInt(arg);
 		i = AllocShortPool();
 		if (i)
@@ -381,7 +394,8 @@ static void CobolToStatus(ISC_STATUS *stat, const argument_entry *arg)
 {
 	const ISC_UCHAR *src = arg->a_address;
 	if (src)
-		for (int i = 0; i < ISC_STATUS_LENGTH; i++) {
+		for (int i = 0; i < ISC_STATUS_LENGTH; i++)
+		{
 			*(stat++) = (ISC_STATUS)((*src << 24) +
 									 (*(src + 1) << 16) +
 									 (*(src + 2) << 8) +
@@ -426,7 +440,8 @@ static void ShortToCobol(argument_entry *arg, const ISC_USHORT *i)
 // Store a C string into a COBOL PIC X field
 static void StringToCobol(argument_entry *arg, const ISC_UCHAR *s)
 {
-	if (arg->a_address) {
+	if (arg->a_address)
+	{
 		memset(arg->a_address, ' ', arg->a_length);
 		memmove(arg->a_address,
 				s,
@@ -438,8 +453,10 @@ static void StringToCobol(argument_entry *arg, const ISC_UCHAR *s)
 static void StatusToCobol(argument_entry *arg, const ISC_STATUS *stat)
 {
 	ISC_UCHAR	*dest = arg->a_address;
-	if (arg->a_address) {
-		for (int i = 0; i < ISC_STATUS_LENGTH; i++) {
+	if (arg->a_address)
+	{
+		for (int i = 0; i < ISC_STATUS_LENGTH; i++)
+		{
 			*(dest++) = (ISC_UCHAR)((*stat >> 24) & 0xff);
 			*(dest++) = (ISC_UCHAR)((*stat >> 16) & 0xff);
 			*(dest++) = (ISC_UCHAR)((*stat >> 8) & 0xff);
@@ -467,8 +484,10 @@ static void ParseDateFormat(const ISC_UCHAR* s, date_fmt* fmt)
 	short			i = 0;
 
 	memset(fmt, -1, sizeof(*fmt));
-	while (*s) {
-		if (toupper(*s) != spec) {
+	while (*s)
+	{
+		if (toupper(*s) != spec)
+		{
 			switch (spec)
 			{
 			case 'Y':
@@ -1011,7 +1030,8 @@ EXPORT RM_ENTRY(rmc_start_transaction)
 	if (*dbCount > MAX_PARAMS)
 		*dbCount = MAX_PARAMS;
 	ISC_TEB *teb = (ISC_TEB *)malloc(sizeof(ISC_TEB) * *dbCount);
-	for (int i = 0; i < *dbCount; i++) {
+	for (int i = 0; i < *dbCount; i++)
+	{
 		teb[i].dbb_ptr = (isc_db_handle *)arg_vector[(i * 3) + 3].a_address;
 		teb[i].tpb_len = (int)*CobolToInt(&arg_vector[(i * 3) + 4]);
 		teb[i].tpb_ptr = arg_vector[(i * 3) + 5].a_address;
@@ -1377,7 +1397,8 @@ EXPORT RM_ENTRY(rmc_dtoc)
 
 	ParseDateFormat(fmtString, &fmt);
 	memset(&tim, 0, sizeof(tim));
-	if (fmt.yr_start != -1) {
+	if (fmt.yr_start != -1)
+	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.yr_start, fmt.yr_len);
 		tim.tm_year = atoi(stemp);
@@ -1389,27 +1410,32 @@ EXPORT RM_ENTRY(rmc_dtoc)
 		else
 			tim.tm_year += 100;
 	}
-	if (fmt.mon_start != -1) {
+	if (fmt.mon_start != -1)
+	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.mon_start, 2);
 		tim.tm_mon = atoi(stemp) - 1;
 	}
-	if (fmt.day_start != -1) {
+	if (fmt.day_start != -1)
+	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.day_start, 2);
 		tim.tm_mday = atoi(stemp);
 	}
-	if (fmt.hr_start != -1) {
+	if (fmt.hr_start != -1)
+	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.hr_start, 2);
 		tim.tm_hour = atoi(stemp);
 	}
-	if (fmt.min_start != -1) {
+	if (fmt.min_start != -1)
+	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.min_start, 2);
 		tim.tm_min = atoi(stemp);
 	}
-	if (fmt.sec_start != -1) {
+	if (fmt.sec_start != -1)
+	{
 		memset(stemp, 0, sizeof(stemp));
 		memmove(stemp, dt + fmt.sec_start, 2);
 		tim.tm_sec = atoi(stemp);
@@ -1436,27 +1462,33 @@ EXPORT RM_ENTRY(rmc_ctod)
 	isc_decode_date((ISC_QUAD *)arg_vector[1].a_address, &tim);
 	ParseDateFormat(fmtString, &fmt);
 
-	if (fmt.yr_start != -1) {
+	if (fmt.yr_start != -1)
+	{
 		sprintf(stemp, "%*.*d", fmt.yr_len, fmt.yr_len, tim.tm_year + 1900);
 		memmove(dt + fmt.yr_start, stemp, fmt.yr_len);
 	}
-	if (fmt.mon_start != -1) {
+	if (fmt.mon_start != -1)
+	{
 		sprintf(stemp, "%2.2d", tim.tm_mon + 1);
 		memmove(dt + fmt.mon_start, stemp, 2);
 	}
-	if (fmt.day_start != -1) {
+	if (fmt.day_start != -1)
+	{
 		sprintf(stemp, "%2.2d", tim.tm_mday);
 		memmove(dt + fmt.day_start, stemp, 2);
 	}
-	if (fmt.hr_start != -1) {
+	if (fmt.hr_start != -1)
+	{
 		sprintf(stemp, "%2.2d", tim.tm_hour);
 		memmove(dt + fmt.hr_start, stemp, 2);
 	}
-	if (fmt.min_start != -1) {
+	if (fmt.min_start != -1)
+	{
 		sprintf(stemp, "%2.2d", tim.tm_min);
 		memmove(dt + fmt.min_start, stemp, 2);
 	}
-	if (fmt.sec_start != -1) {
+	if (fmt.sec_start != -1)
+	{
 		sprintf(stemp, "%2.2d", tim.tm_sec);
 		memmove(dt + fmt.sec_start, stemp, 2);
 	}
@@ -1488,13 +1520,15 @@ EXPORT RM_ENTRY(rmc_ctof)
 		intPart--;
 	// Save as a Cobol format BINARY value
 	ISC_UCHAR *s = (ISC_UCHAR *)arg_vector[-1].a_address;
-	if (arg_vector[-1].a_length == 4) {
+	if (arg_vector[-1].a_length == 4)
+	{
 		*(s) = (ISC_UCHAR)((intPart >> 24) & 0xff);
 		*(s + 1) = (ISC_UCHAR)((intPart >> 16) & 0xff);
 		*(s + 2) = (ISC_UCHAR)((intPart >> 8) & 0xff);
 		*(s + 3) = (ISC_UCHAR)(intPart & 0xff);
 	}
-	else {
+	else
+	{
 		*(s) = (ISC_UCHAR)((intPart >> 56) & 0xff);
 		*(s + 1) = (ISC_UCHAR)((intPart >> 48) & 0xff);
 		*(s + 2) = (ISC_UCHAR)((intPart >> 40) & 0xff);
@@ -1517,13 +1551,15 @@ EXPORT RM_ENTRY(rmc_ftoc)
 
 	// Get Cobol value as a C 64 bit integer
 	ISC_UCHAR *s = (ISC_UCHAR *)arg_vector[0].a_address;
-	if (arg_vector[0].a_length == 4) {
+	if (arg_vector[0].a_length == 4)
+	{
 		intPart = ((ISC_INT64)*(s) << 24) +
 				  ((ISC_INT64)*(s + 1) << 16) +
 				  ((ISC_INT64)*(s + 2) << 8) +
 				  (ISC_INT64)*(s + 3);
 	}
-	else {
+	else
+	{
 		intPart = ((ISC_INT64)*(s) << 56) +
 				  ((ISC_INT64)*(s + 1) << 48) +
 				  ((ISC_INT64)*(s + 2) << 40) +
@@ -1604,7 +1640,8 @@ char* RM_AddOnLoadMessage()
 }
 
 // RM/Cobol entry point table. Required for linux/unix support
-EXPORT entry_table RM_EntryPoints[] = {
+EXPORT entry_table RM_EntryPoints[] =
+{
 	{ "isc_embed_dsql_length", rmc_embed_dsql_length, "rmc_embed_dsql_length" },
 	{ "isc_cancel_blob", rmc_cancel_blob, "rmc_cancel_blob" },
 	{ "isc_close_blob", rmc_close_blob, "rmc_close_blob" },

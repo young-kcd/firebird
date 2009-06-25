@@ -129,7 +129,8 @@ int PRETTY_print_cdb( UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, S
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
 
-	if (!routine) {
+	if (!routine)
+	{
 		routine = gds__default_printer;
 		user_arg = NULL;
 	}
@@ -166,7 +167,8 @@ int PRETTY_print_cdb( UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, S
 		blr_format(control, p);
 		PUT_BYTE(',');
 		int length = print_byte(control);
-		if (length) {
+		if (length)
+		{
 			do {
 				print_char(control, offset);
 			} while (--length);
@@ -188,7 +190,8 @@ int PRETTY_print_dyn(UCHAR* blr, FPTR_PRINT_CALLBACK routine, void* user_arg, SS
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
 
-	if (!routine) {
+	if (!routine)
+	{
 		routine = gds__default_printer;
 		user_arg = NULL;
 	}
@@ -229,7 +232,8 @@ int PRETTY_print_sdl(UCHAR* blr, FPTR_PRINT_CALLBACK routine, void *user_arg, SS
 	ctl ctl_buffer;
 	ctl* control = &ctl_buffer;
 
-	if (!routine) {
+	if (!routine)
+	{
 		routine = gds__default_printer;
 		user_arg = NULL;
 	}
@@ -455,7 +459,8 @@ static int print_blr_dtype(ctl* control, bool print_object)
 	default:
 		if (dtype == blr_cstring)
 			length = print_word(control);
-		else if (dtype == blr_cstring2) {
+		else if (dtype == blr_cstring2)
+		{
 			print_word(control);
 			length = print_word(control);
 		}
@@ -480,7 +485,8 @@ static void print_blr_line(void* arg, SSHORT offset, const char* line)
 
 	indent(control, control->ctl_level);
 
-	while (c = *line++) {
+	while (c = *line++)
+	{
 		PUT_BYTE(c);
 		if (c == ',')
 			comma = true;
@@ -577,7 +583,8 @@ static int print_dyn_verb( ctl* control, SSHORT level)
 	case isc_dyn_fld_default_value:
 		length = print_word(control);
 		print_line(control, offset);
-		if (length) {
+		if (length)
+		{
 			control->ctl_level = level;
 			gds__print_blr(control->ctl_blr, print_blr_line, control, control->ctl_language);
 			control->ctl_blr += length;
@@ -783,7 +790,8 @@ static int print_sdl_verb( ctl* control, SSHORT level)
 
 	case isc_sdl_struct:
 		n = print_byte(control);
-		while (n--) {
+		while (n--)
+		{
 			print_line(control, offset);
 			indent(control, level + 1);
 			offset = control->ctl_blr - control->ctl_blr_start;

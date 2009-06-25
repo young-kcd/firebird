@@ -157,7 +157,8 @@ gpre_fld* EXP_cast(gpre_fld* field)
 		// fall back
 
 	case dtype_text:
-		if (gpreGlob.sw_cstring && !(cast->fld_dtype == dtype_cstring)) {
+		if (gpreGlob.sw_cstring && !(cast->fld_dtype == dtype_cstring))
+		{
 			cast->fld_length++;
 			cast->fld_dtype = dtype_cstring;
 		}
@@ -233,9 +234,11 @@ gpre_ctx* EXP_context(gpre_req* request, gpre_sym* initial_symbol)
 	// the symbol.  If things look kosher, continue.
 
 	gpre_sym* symbol = initial_symbol;
-	if (!symbol) {
+	if (!symbol)
+	{
 		symbol = PAR_symbol(SYM_context);
-		if (!MSC_match(KW_IN)) {
+		if (!MSC_match(KW_IN))
+		{
 			MSC_free(symbol);
 			CPR_s_error("IN");
 		}
@@ -263,7 +266,8 @@ gpre_ctx* EXP_context(gpre_req* request, gpre_sym* initial_symbol)
 gpre_fld* EXP_field(gpre_ctx** rcontext)
 {
 	gpre_sym* symbol;
-	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym) {
+	for (symbol = gpreGlob.token_global.tok_symbol; symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_context)
 			break;
 	}
@@ -280,7 +284,8 @@ gpre_fld* EXP_field(gpre_ctx** rcontext)
 
 	SQL_resolve_identifier("<Field Name>", NULL, NAME_SIZE);
 	gpre_fld* field = MET_field(relation, gpreGlob.token_global.tok_string);
-	if (!field) {
+	if (!field)
+	{
 		TEXT s[ERROR_LENGTH];
 		sprintf(s, "field \"%s\" is not defined in relation %s",
 				gpreGlob.token_global.tok_string, relation->rel_symbol->sym_string);
@@ -326,7 +331,8 @@ gpre_nod* EXP_literal()
 
 	ref* reference = (ref*) MSC_alloc(REF_LEN);
 	gpre_nod* node = MSC_unary(nod_literal, (gpre_nod*) reference);
-	if (isQuoted(gpreGlob.token_global.tok_type)) {
+	if (isQuoted(gpreGlob.token_global.tok_type))
+	{
 	    TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 3);
 		reference->ref_value = string;
 		strcat(string, "\'");
@@ -335,7 +341,8 @@ gpre_nod* EXP_literal()
 		// What kind of hack is this? The token has not been enlarged nor modified.
 		gpreGlob.token_global.tok_length += 2;
 	}
-	else {
+	else
+	{
 		TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		reference->ref_value = string;
 		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
@@ -367,7 +374,8 @@ gpre_nod* EXP_literal()
 		gpre_sym* symbol = gpreGlob.token_global.tok_charset;
 		reference->ref_ttype = ((intlsym*) (symbol->sym_object))->intlsym_ttype;
 	}
-	else if (gpreGlob.sw_language == lang_internal) {
+	else if (gpreGlob.sw_language == lang_internal)
+	{
 		// literals referenced in an Internal request are always correct charset
 		reference->ref_flags |= REF_ttype;
 		reference->ref_ttype = ttype_metadata;
@@ -584,7 +592,8 @@ ref* EXP_post_field(gpre_fld* field, gpre_ctx* context, bool null_flag)
 				{
 					if (reference->ref_flags & REF_null)
 						reference->ref_field = field;
-					else {
+					else
+					{
 						sprintf(s, "field %s is inconsistently cast", field->fld_symbol->sym_string);
 						PAR_error(s);
 					}
@@ -662,10 +671,12 @@ gpre_rel* EXP_relation()
 		for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 		    gpre_rel* temp = MET_get_relation(db, gpreGlob.token_global.tok_string, "");
-			if (temp) {
+			if (temp)
+			{
 				if (!relation)
 					relation = temp;
-				else {
+				else
+				{
 					TEXT s[ERROR_LENGTH];
 					sprintf(s, "relation %s is ambiguous", gpreGlob.token_global.tok_string);
 					PAR_get_token();
@@ -700,7 +711,8 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 	// parse FIRST n clause, if present
 
 	gpre_nod* first = NULL;
-	if (MSC_match(KW_FIRST)) {
+	if (MSC_match(KW_FIRST))
+	{
 		if (!global_count_field)
 			global_count_field = MET_make_field("jrd_count", dtype_long, 4, false);
 		first = par_value(request, global_count_field);
@@ -716,7 +728,8 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 
 	// parse subsequent context clauses if this is a join
 	gpre_nod* boolean = NULL;
-	while (MSC_match(KW_CROSS)) {
+	while (MSC_match(KW_CROSS))
+	{
 		context = EXP_context(request, 0);
 		count++;
 		if (MSC_match(KW_OVER))
@@ -734,7 +747,8 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 	rec_expr->rse_first = first;
 	rec_expr->rse_boolean = boolean;
 
-	while (count) {
+	while (count)
+	{
 		rec_expr->rse_context[--count] = context;
 		HSH_insert(context->ctx_symbol);
 		context = context->ctx_next;
@@ -765,26 +779,31 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 			count = 0;
 			while (true)
 			{
-				if (MSC_match(KW_ASCENDING)) {
+				if (MSC_match(KW_ASCENDING))
+				{
 					direction = false;
 					continue;
 				}
-				if (MSC_match(KW_DESCENDING)) {
+				if (MSC_match(KW_DESCENDING))
+				{
 					direction = true;
 					continue;
 				}
-				if (MSC_match(KW_EXACTCASE)) {
+				if (MSC_match(KW_EXACTCASE))
+				{
 					insensitive = false;
 					continue;
 				}
-				if (MSC_match(KW_ANYCASE)) {
+				if (MSC_match(KW_ANYCASE))
+				{
 					insensitive = true;
 					continue;
 				}
 				gpre_nod* item = par_value(request, 0);
 				count++;
 				MSC_push((gpre_nod*) (IPTR) (direction ? 1 : 0), &directions);
-				if (insensitive) {
+				if (insensitive)
+				{
 					gpre_nod* upcase = MSC_node(nod_upcase, 1);
 					upcase->nod_arg[0] = item;
 					MSC_push(upcase, &items);
@@ -798,7 +817,8 @@ gpre_rse* EXP_rse(gpre_req* request, gpre_sym* initial_symbol)
 			rec_expr->rse_sort = sort;
 			sort->nod_count = count;
 			gpre_nod** ptr = sort->nod_arg + count * 2;
-			while (--count >= 0) {
+			while (--count >= 0)
+			{
 				*--ptr = (gpre_nod*) MSC_pop(&items);
 				*--ptr = (gpre_nod*) MSC_pop(&directions);
 			}
@@ -859,7 +879,8 @@ void EXP_rse_cleanup( gpre_rse* rs)
 	// If this is a union, clean up each of the primitive rse's
 
 	gpre_nod* node = rs->rse_union;
-	if (node) {
+	if (node)
+	{
 		for (int i = 0; i < node->nod_count; i++)
 			EXP_rse_cleanup((gpre_rse*) node->nod_arg[i]);
 	}
@@ -878,7 +899,8 @@ gpre_nod* EXP_subscript(gpre_req* request)
 
 	// Special case literals
 
-	if (gpreGlob.token_global.tok_type == tok_number) {
+	if (gpreGlob.token_global.tok_type == tok_number)
+	{
 		node->nod_type = nod_literal;
 		TEXT* string = (TEXT *) MSC_alloc(gpreGlob.token_global.tok_length + 1);
 		reference->ref_value = string;
@@ -889,7 +911,8 @@ gpre_nod* EXP_subscript(gpre_req* request)
 
 	reference->ref_value = PAR_native_value(true, false);
 
-	if (request) {
+	if (request)
+	{
 		reference->ref_next = request->req_values;
 		request->req_values = reference;
 	}
@@ -914,7 +937,8 @@ static bool check_relation()
 	if (symbol && symbol->sym_type == SYM_database)
 		return true;
 
-	for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next) {
+	for (gpre_dbb* db = gpreGlob.isc_databases; db; db = db->dbb_next)
+	{
 		if (MET_get_relation(db, gpreGlob.token_global.tok_string, ""))
 			return true;
 	}
@@ -1092,7 +1116,8 @@ static gpre_nod* par_array(gpre_req* request, gpre_fld* field, bool subscript_fl
 		    gpre_nod* node;
 			if (!sql_flag)
 				node = par_value(request, global_subscript_field);
-			else {
+			else
+			{
 				node = SQE_value(request, false, NULL, NULL);
 				// For all values referenced, post the subscript field
 				SQE_post_field(node, global_subscript_field);
@@ -1190,7 +1215,8 @@ static gpre_nod* par_field( gpre_req* request)
 		if (field->fld_array_info)
 			node = par_array(request, field, false, false);
 
-		if (MSC_match(KW_DOT)) {
+		if (MSC_match(KW_DOT))
+		{
 			gpre_fld* cast = EXP_cast(field);
 			if (cast)
 				field = cast;
@@ -1236,7 +1262,8 @@ static gpre_nod* par_field( gpre_req* request)
 		node->nod_arg[0] = (gpre_nod*) value_reference;
 	}
 
-	if (upcase_flag) {
+	if (upcase_flag)
+	{
 		if (!MSC_match(KW_RIGHT_PAREN))
 			CPR_s_error("right parenthesis");
 		return prefix_node;
@@ -1299,7 +1326,8 @@ static gpre_nod* par_native_value( gpre_req* request, gpre_fld* field)
 
 	reference->ref_value = PAR_native_value(false, false);
 
-	if (!field) {
+	if (!field)
+	{
 		sprintf(s, "no reference field for %s", reference->ref_value);
 		PAR_error(s);
 	}
@@ -1319,7 +1347,8 @@ static gpre_nod* par_native_value( gpre_req* request, gpre_fld* field)
 
 static gpre_nod* par_not( gpre_req* request)
 {
-	if (MSC_match(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN))
+	{
 		gpre_nod* anode = par_boolean(request);
 		EXP_match_paren();
 		return anode;
@@ -1349,7 +1378,8 @@ static gpre_nod* par_over( gpre_ctx* context)
 
 	do {
 		gpre_nod* field1 = lookup_field(context);
-		if (!field1) {
+		if (!field1)
+		{
 			sprintf(s, "OVER field %s undefined", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
@@ -1359,7 +1389,8 @@ static gpre_nod* par_over( gpre_ctx* context)
 			if (field2 = lookup_field(next))
 				break;
 		}
-		if (!field2) {
+		if (!field2)
+		{
 			sprintf(s, "OVER field %s undefined", gpreGlob.token_global.tok_string);
 			PAR_error(s);
 		}
@@ -1382,13 +1413,15 @@ static gpre_nod* par_primitive_value( gpre_req* request, gpre_fld* field)
 	if (MSC_match(KW_MINUS))
 		return MSC_unary(nod_negate, par_primitive_value(request, field));
 
-	if (MSC_match(KW_LEFT_PAREN)) {
+	if (MSC_match(KW_LEFT_PAREN))
+	{
 		gpre_nod* node = par_value(request, field);
 		EXP_match_paren();
 		return node;
 	}
 
-	if (MSC_match(KW_UPPERCASE)) {
+	if (MSC_match(KW_UPPERCASE))
+	{
 		gpre_nod* node = MSC_node(nod_upcase, 1);
 		gpre_nod* sub = par_primitive_value(request, field);
 		node->nod_arg[0] = sub;
@@ -1456,7 +1489,8 @@ static gpre_nod* par_relational( gpre_req* request)
 	ref* reference;
 	if (expr1)
 		reference = (ref*) (expr1->nod_arg[0]->nod_arg[0]->nod_arg[0]);
-	else {
+	else
+	{
 		expr1 = par_field(request);
 		reference = (ref*) expr1->nod_arg[0];
 	}
@@ -1566,7 +1600,8 @@ static gpre_nod* par_udf( gpre_req* request, USHORT type, gpre_fld* field)
 			if (!MSC_match(KW_LEFT_PAREN))
 				EXP_left_paren(0);
 			gpre_lls* stack = NULL;
-			for (;;) {
+			for (;;)
+			{
 				MSC_push(par_value(request, field), &stack);
 				if (!MSC_match(KW_COMMA))
 					break;

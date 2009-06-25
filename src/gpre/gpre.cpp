@@ -356,7 +356,8 @@ int main(int argc, char* argv[])
 	const TEXT* db_filename = filename_array[2];
 	//TEXT* db_base_directory = filename_array[3];
 
-	if (!file_name) {
+	if (!file_name)
+	{
 		fprintf(stderr, "gpre:  no source file named.\n");
 		CPR_exit(FINI_ERROR);
 	}
@@ -394,7 +395,8 @@ int main(int argc, char* argv[])
 	// Well, if he won't tell me what language it is, or even give me a hint, I'm
 	// not going to spend all day figuring out what he wants done.
 
-	if (gpreGlob.sw_language == lang_undef) {
+	if (gpreGlob.sw_language == lang_undef)
+	{
 		fprintf(stderr, "gpre: can't find %s with any known extension.  Giving up.\n", file_name);
 		CPR_exit(FINI_ERROR);
 	}
@@ -497,7 +499,8 @@ int main(int argc, char* argv[])
 			if (gpreGlob.sw_external)
 				db->dbb_scope = DBB_EXTERN;
 #ifdef FTN_BLK_DATA
-			else {
+			else
+			{
 				gpreGlob.global_db_count = 1;
 				char* dbn = gpreGlob.global_db_list[0].dbd_name;
 				strncpy(dbn, db->dbd_name->sym_string, dbd::dbd_size);
@@ -705,7 +708,8 @@ int main(int argc, char* argv[])
 			gpreGlob.count_name = "isc-count";
 			gpreGlob.slack_name = "isc-slack";
 		}
-        else {
+        else
+        {
 	        // just to be sure :-)
             comment_start = "*      ";
             gpreGlob.transaction_name = "ISC_TRANS";
@@ -719,19 +723,22 @@ int main(int argc, char* argv[])
 
 	if (gpreGlob.default_lc_ctype)
 	{
-		if (all_digits(gpreGlob.default_lc_ctype)) {
+		if (all_digits(gpreGlob.default_lc_ctype))
+		{
 			// Numeric name? if so assume user has hard-coded a subtype number
 
 			gpreGlob.sw_interp = atoi(gpreGlob.default_lc_ctype);
 			gpreGlob.sw_know_interp = true;
 		}
-		else if (compare_ASCII7z(gpreGlob.default_lc_ctype, "DYNAMIC") == 0) {
+		else if (compare_ASCII7z(gpreGlob.default_lc_ctype, "DYNAMIC") == 0)
+		{
 			// Dynamic means use the interpretation declared at runtime
 
 			gpreGlob.sw_interp = ttype_dynamic;
 			gpreGlob.sw_know_interp = true;
 		}
-		else if (gpreGlob.isc_databases) {
+		else if (gpreGlob.isc_databases)
+		{
 			// Name resolution done by MET_load_hash_table
 
 			gpreGlob.isc_databases->dbb_c_lc_ctype = gpreGlob.default_lc_ctype;
@@ -751,7 +758,8 @@ int main(int argc, char* argv[])
 	if (!sw_standard_out)
 	{
 		const ext_table_t* out_src_ext_tab = src_ext_tab;
-		if (use_lang_internal_gxx_output) {
+		if (use_lang_internal_gxx_output)
+		{
 			out_src_ext_tab = dml_ext_table;
     		while (out_src_ext_tab->ext_language != lang_internal_cxx) {
         		++out_src_ext_tab;
@@ -760,7 +768,8 @@ int main(int argc, char* argv[])
 
 		bool renamed = true;
 		bool explicitt = true;
-		if (!out_file_name) {
+		if (!out_file_name)
+		{
 			out_file_name = spare_out_file_name;
 			strcpy(spare_out_file_name, file_name);
 			if (renamed = file_rename(spare_out_file_name, out_src_ext_tab->in, out_src_ext_tab->out))
@@ -780,18 +789,21 @@ int main(int argc, char* argv[])
 			if (!explicitt)
 				*p = 0;
 
-			if (*p != '.') {
+			if (*p != '.')
+			{
 				strcpy(spare_out_file_name, out_file_name);
 				out_file_name = spare_out_file_name;
 				file_rename(out_file_name, out_src_ext_tab->out, NULL);
 			}
 		}
 
-		if (!strcmp(out_file_name, file_name)) {
+		if (!strcmp(out_file_name, file_name))
+		{
 			fprintf(stderr, "gpre: output file %s would duplicate input\n", out_file_name);
 			CPR_exit(FINI_ERROR);
 		}
-		if ((gpreGlob.out_file = fopen(out_file_name, FOPEN_WRITE_TYPE)) == NULL) {
+		if ((gpreGlob.out_file = fopen(out_file_name, FOPEN_WRITE_TYPE)) == NULL)
+		{
 			fprintf(stderr, "gpre: can't open output file %s\n", out_file_name);
 			CPR_exit(FINI_ERROR);
 		}
@@ -816,7 +828,8 @@ int main(int argc, char* argv[])
 	MET_fini(NULL);
 	fclose(input_file);
 
-	if (!sw_standard_out) {
+	if (!sw_standard_out)
+	{
 		fclose(gpreGlob.out_file);
 		if (gpreGlob.errors_global)
 			unlink(out_file_name);
@@ -978,7 +991,8 @@ tok* CPR_eol_token()
 	// skip spaces
 
 	SSHORT c;
-	for (c = nextchar(); c == ' '; c = nextchar()) {
+	for (c = nextchar(); c == ' '; c = nextchar())
+	{
 		num_chars++;
 		*p++ = (TEXT) c;
 	}
@@ -987,7 +1001,8 @@ tok* CPR_eol_token()
 
 	if (c == '!')
 	{
-		while (c != '\n' && c != EOF) {
+		while (c != '\n' && c != EOF)
+		{
 			c = nextchar();
 			num_chars++;
 		}
@@ -1000,8 +1015,10 @@ tok* CPR_eol_token()
 		const SSHORT peek = nextchar();
 		if (peek != '-')
 			return_char(peek);
-		else {
-			while (c != '\n' && c != EOF) {
+		else
+		{
+			while (c != '\n' && c != EOF)
+			{
 				c = nextchar();
 				num_chars++;
 			}
@@ -1009,7 +1026,8 @@ tok* CPR_eol_token()
 		}
 	}
 
-	if (c == EOF) {
+	if (c == EOF)
+	{
 		gpreGlob.token_global.tok_symbol = NULL;
 		gpreGlob.token_global.tok_keyword = KW_none;
 		return NULL;
@@ -1017,7 +1035,8 @@ tok* CPR_eol_token()
 
 	// Not EOL so back up to the begining and try again
 
-	if (c != '\n') {
+	if (c != '\n')
+	{
 		return_char(c);
 		while (--num_chars > 0)
 			return_char(*--p);
@@ -1104,7 +1123,8 @@ void CPR_raw_read()
 	while (c = get_char(input_file))
 	{
 		position++;
-		if ((get_classes(c) == CHR_WHITE) && sw_trace && token_string) {
+		if ((get_classes(c) == CHR_WHITE) && sw_trace && token_string)
+		{
 			*p = 0;
 			puts(token_string);
 			token_string[0] = 0;
@@ -1113,14 +1133,16 @@ void CPR_raw_read()
 		else
 			*p++ = (SCHAR) c;
 
-		if (c == '\n') { // Changed assignment to comparison. Probable archaic bug
+		if (c == '\n') // Changed assignment to comparison. Probable archaic bug
+		{
 			line_global++;
 			line_position = 0;
 			if (!continue_char)
 				return;
 			continue_char = false;
 		}
-		else {
+		else
+		{
 			line_position++;
 			if (get_classes(c) != CHR_WHITE)
 				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
@@ -1177,7 +1199,8 @@ tok* CPR_token()
 	if (token->tok_type == tok_introducer)
 	{
 		gpre_sym* symbol = MSC_find_symbol(HSH_lookup(token->tok_string + 1), SYM_charset);
-		if (!symbol) {
+		if (!symbol)
+		{
 			TEXT err_buffer[100];
 
 			sprintf(err_buffer, "Character set not recognized: '%.50s'", token->tok_string);
@@ -1210,13 +1233,15 @@ tok* CPR_token()
 		switch (gpreGlob.sw_sql_dialect)
 		{
 		case SQL_DIALECT_V5:
-			if (isQuoted(token->tok_type)) {
+			if (isQuoted(token->tok_type))
+			{
 				token->tok_charset =
 					MSC_find_symbol(HSH_lookup(gpreGlob.default_lc_ctype), SYM_charset);
 			}
 			break;
 		default:
-			if (token->tok_type == tok_sglquoted) {
+			if (token->tok_type == tok_sglquoted)
+			{
 				token->tok_charset =
 					MSC_find_symbol(HSH_lookup(gpreGlob.default_lc_ctype), SYM_charset);
 			}
@@ -1255,7 +1280,8 @@ static bool arg_is_string(SLONG argc, TEXT** argvstring, const TEXT* errstring)
 {
 	const TEXT* str = *++argvstring;
 
-	if (!argc || *str == '-') {
+	if (!argc || *str == '-')
+	{
 		fprintf(stderr, "%s", errstring);
 		print_switches();
 		return false;
@@ -1311,7 +1337,8 @@ static SLONG compile_module( SLONG start_position, const TEXT* base_directory)
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 
-	if (!trace_file) {
+	if (!trace_file)
+	{
 		CPR_error("Couldn't open scratch file");
 		return 0;
 	}
@@ -1385,7 +1412,8 @@ static bool file_rename(TEXT* file_nameL, const TEXT* extension, const TEXT* new
 	// There's a match and the file spec has no extension,
 	// so add extension.
 
-	if (*p != '.') {
+	if (*p != '.')
+	{
 		while (*terminator++ = *extension++)
 			;
 		return true;
@@ -1447,7 +1475,8 @@ static void finish_based( act* action)
 		// If there are no databases either on the command line or in
 		// this subroutine or main program, can't do a BASED_ON.
 
-		if (!gpreGlob.isc_databases) {
+		if (!gpreGlob.isc_databases)
+		{
 			CPR_error("No database defined.  Needed for a BASED_ON operation");
 			continue;
 		}
@@ -1470,7 +1499,8 @@ static void finish_based( act* action)
 			{
 				db = (gpre_dbb*) symbol->sym_object;
 				relation = MET_get_relation(db, based_on->bas_rel_name->str_string, "");
-				if (!relation) {
+				if (!relation)
+				{
 					fb_utils::snprintf(s, sizeof(s), "relation %s is not defined in database %s",
 							based_on->bas_rel_name->str_string, based_on->bas_db_name->str_string);
 					CPR_error(s);
@@ -1480,7 +1510,8 @@ static void finish_based( act* action)
 			}
 			else
 			{
-				if (based_on->bas_flags & BAS_ambiguous) {
+				if (based_on->bas_flags & BAS_ambiguous)
+				{
 					// The reference could have been DB.RELATION.FIELD or
 					// RELATION.FIELD.SEGMENT.  It's not the former.  Try
 					// the latter.
@@ -1490,7 +1521,8 @@ static void finish_based( act* action)
 					based_on->bas_db_name = NULL;
 					based_on->bas_flags |= BAS_segment;
 				}
-				else {
+				else
+				{
 					fb_utils::snprintf(s, sizeof(s), "database %s is not defined",
 							based_on->bas_db_name->str_string);
 					CPR_error(s);
@@ -1505,7 +1537,8 @@ static void finish_based( act* action)
 			for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 				if (relation = MET_get_relation(db, based_on->bas_rel_name->str_string, ""))
 				{
-					if (field) {
+					if (field)
+					{
 						// The field reference is ambiguous.  It exists in more
 						// than one database.
 
@@ -1519,14 +1552,16 @@ static void finish_based( act* action)
 
 			if (db)
 				continue;
-			if (!relation && !field) {
+			if (!relation && !field)
+			{
 				sprintf(s, "relation %s is not defined", based_on->bas_rel_name->str_string);
 				CPR_error(s);
 				continue;
 			}
 		}
 
-		if (!field) {
+		if (!field)
+		{
 			sprintf(s, "field %s is not defined in relation %s",
 					based_on->bas_fld_name->str_string, based_on->bas_rel_name->str_string);
 			CPR_error(s);
@@ -1634,7 +1669,8 @@ static bool get_switches(int			argc,
 
 					// compare switch to switch name in table
 
-					while (*p) {
+					while (*p)
+					{
 						if (!*++p) {
 							sw_table_iterator->sw_in_sw = (gpre_cmd_switch) in_sw_table_iterator->in_sw;
 						}
@@ -1774,7 +1810,8 @@ static bool get_switches(int			argc,
 				return false;
 			}
 
-			if (**argv != 'n' || **argv != 'N') {
+			if (**argv != 'n' || **argv != 'N')
+			{
 				fprintf(stderr, "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();
 				return false;
@@ -1791,7 +1828,8 @@ static bool get_switches(int			argc,
 				}
 				++argv;
 				inp = atoi(*argv);
-				if (inp < 1 || inp > 3) {
+				if (inp < 1 || inp > 3)
+				{
 					fprintf(stderr, "Command line syntax: -SQL_DIALECT requires value 1, 2 or 3 \n ");
 					print_switches();
 					return false;
@@ -1910,7 +1948,8 @@ static tok* get_token()
 #ifdef GPRE_COBOL
 	// Skip over cobol line continuation characters
 	if (gpreGlob.sw_language == lang_cobol && !isAnsiCobol(gpreGlob.sw_cob_dialect))
-		while (line_position == 1) {
+		while (line_position == 1)
+		{
 			c = skip_white();
 			start_line = line_global;
 		}
@@ -1921,11 +1960,13 @@ static tok* get_token()
 #ifdef GPRE_FORTRAN
 	if (gpreGlob.sw_language == lang_fortran)
 	{
-		while (line_position == 6) {
+		while (line_position == 6)
+		{
 			c = skip_white();
 			start_line = line_global;
 		}
-		if (gpreGlob.sw_sql && line_global != start_line) {
+		if (gpreGlob.sw_sql && line_global != start_line)
+		{
 			return_char(c);
 			gpreGlob.token_global.tok_string[0] = ';';
 			gpreGlob.token_global.tok_string[1] = 0;
@@ -1945,7 +1986,8 @@ static tok* get_token()
 	const TEXT* const end = p + sizeof(gpreGlob.token_global.tok_string);
 	*p++ = (TEXT) c;
 
-	if (c == EOF) {
+	if (c == EOF)
+	{
 		gpreGlob.token_global.tok_symbol = NULL;
 		gpreGlob.token_global.tok_keyword = KW_none;
 		return NULL;
@@ -1976,7 +2018,8 @@ static tok* get_token()
 
 	if (gpreGlob.sw_sql && (char_class & CHR_INTRODUCER))
 	{
-		while (get_classes(c = nextchar()) & CHR_IDENT) {
+		while (get_classes(c = nextchar()) & CHR_IDENT)
+		{
 			if (p < end) {
 				*p++ = (TEXT) c;
 			}
@@ -2011,17 +2054,20 @@ static tok* get_token()
 		while (get_classes(c = nextchar()) & CHR_DIGIT)
 			*p++ = (TEXT) c;
 #ifdef GPRE_FORTRAN
-		if (label) {
+		if (label)
+		{
 			*p = 0;
 			remember_label(gpreGlob.token_global.tok_string);
 		}
 #endif
-		if (c == '.') {
+		if (c == '.')
+		{
 			*p++ = (TEXT) c;
 			while (get_classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
 		}
-		if (!label && (c == 'E' || c == 'e')) {
+		if (!label && (c == 'E' || c == 'e'))
+		{
 			*p++ = (TEXT) c;
 			c = nextchar();
 			if (c == '+' || c == '-')
@@ -2048,19 +2094,22 @@ static tok* get_token()
 				{
 					// should be a split literal
 					next = skip_white();
-					if (next != '-' || line_position != 7) {
+					if (next != '-' || line_position != 7)
+					{
 						CPR_error("unterminated quoted string");
 						break;
 					}
 					next = skip_white();
-					if (next != c) {
+					if (next != c)
+					{
 						CPR_error("unterminated quoted string");
 						break;
 					}
 					next = nextchar();
 					gpreGlob.token_global.tok_white_space += line_position - 1;
 				}
-				else {
+				else
+				{
 					CPR_error("unterminated quoted string");
 					break;
 				}
@@ -2090,7 +2139,8 @@ static tok* get_token()
 				if (peek == '\n') {
 					gpreGlob.token_global.tok_white_space += 2;
 				}
-				else if (p < end) {
+				else if (p < end)
+				{
 					*p++ = (TEXT) next;
 					if (p < end) {
 						*p++ = (TEXT) peek;
@@ -2103,7 +2153,8 @@ static tok* get_token()
 			if (next == c) // If 2 quotes in a row, treat 2nd as literal - bug #1530
 			{
 				const USHORT peek = nextchar();
-				if (peek != c) {
+				if (peek != c)
+				{
 					return_char(peek);
 					break;
 				}
@@ -2118,7 +2169,8 @@ static tok* get_token()
 			*p++ = (TEXT) c;
 			while (get_classes(c = nextchar()) & CHR_DIGIT)
 				*p++ = (TEXT) c;
-			if ((c == 'E' || c == 'e')) {
+			if ((c == 'E' || c == 'e'))
+			{
 				*p++ = (TEXT) c;
 				c = nextchar();
 				if (c == '+' || c == '-')
@@ -2171,14 +2223,16 @@ static tok* get_token()
 	}
 	else if (gpreGlob.sw_case)
 	{
-		if (!gpreGlob.override_case) {
+		if (!gpreGlob.override_case)
+		{
 			gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
 				gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
 			else
 				gpreGlob.token_global.tok_keyword = KW_none;
 		}
-		else {
+		else
+		{
 			gpreGlob.token_global.tok_symbol = symbol = HSH_lookup(gpreGlob.token_global.tok_string);
 			if (symbol && symbol->sym_type == SYM_keyword)
 				gpreGlob.token_global.tok_keyword = (kwwords_t) symbol->sym_keyword;
@@ -2236,7 +2290,8 @@ static int nextchar()
 	position++;
 	line_position++;
 	const SSHORT c = get_char(input_file);
-	if (c == '\n') {
+	if (c == '\n')
+	{
 		line_global++;
 		prior_line_position = line_position;
 		line_position = 0;
@@ -2278,7 +2333,8 @@ static int nextchar()
 	}
 #endif
 
-	if (position > traced_position) {
+	if (position > traced_position)
+	{
 		traced_position = position;
 		fputc(c, trace_file);
 	}
@@ -2316,7 +2372,8 @@ static SLONG pass1(const TEXT* base_directory)
 				if (!(action->act_flags & ACT_back_token)) {
 					action->act_length = last_position - start;
 				}
-				else {
+				else
+				{
 					action->act_length =
 						gpreGlob.prior_token.tok_position +
 						gpreGlob.prior_token.tok_length - 1 - start;
@@ -2455,14 +2512,16 @@ static void pass2( SLONG start_position)
 		for (; current < action->act_position; current++)
 		{
 			c = get_char(input_file);
-			if (c == EOF) {
+			if (c == EOF)
+			{
 				CPR_error("internal error -- unexpected EOF between actions");
 				return;
 			}
 			if (c == '\n' || !line)
 			{
 				line++;
-				if (line_pending) {
+				if (line_pending)
+				{
 					if (line == 1)
 						fprintf(gpreGlob.out_file, "#line %"SLONGFORMAT" \"%s\"\n", line, backlash_fixed_file_name);
 					else
@@ -2504,7 +2563,8 @@ static void pass2( SLONG start_position)
 			case lang_cobol:
 				if (continue_flag)
 					suppress_output = true;
-				else {
+				else
+				{
 					fputc('\n', gpreGlob.out_file);
 					fputs(comment_start, gpreGlob.out_file);
 					to_skip = (column < 7) ? comment_start_len - column : 0;
@@ -2520,7 +2580,8 @@ static void pass2( SLONG start_position)
 
 		for (SLONG i = 0; i <= action->act_length; ++i, ++current)
 		{
-			if (c == EOF) {
+			if (c == EOF)
+			{
 				CPR_error("internal error -- unexpected EOF in action");
 				return;
 			}
@@ -2568,7 +2629,8 @@ static void pass2( SLONG start_position)
 
 		// Unless action was purely a marker, insert a comment terminator.
 
-		if (!(action->act_flags & ACT_mark) && !suppress_output) {
+		if (!(action->act_flags & ACT_mark) && !suppress_output)
+		{
 			fputs(comment_stop, gpreGlob.out_file);
 			if (gpreGlob.sw_language == lang_fortran || gpreGlob.sw_language == lang_cobol)
 				fputc('\n', gpreGlob.out_file);
@@ -2593,7 +2655,8 @@ static void pass2( SLONG start_position)
 
 	// We're out of actions -- dump the remaining text to the output stream.
 
-	if (!line && line_pending) {
+	if (!line && line_pending)
+	{
 		fprintf(gpreGlob.out_file, "#line 1 \"%s\"\n", backlash_fixed_file_name);
 		line_pending = false;
 	}
@@ -2601,11 +2664,13 @@ static void pass2( SLONG start_position)
 
 	while ((c = get_char(input_file)) != EOF)
 	{
-		if (c == '\n' && line_pending) {
+		if (c == '\n' && line_pending)
+		{
 			fprintf(gpreGlob.out_file, "\n#line %"SLONGFORMAT" \"%s\"", line + 1, backlash_fixed_file_name);
 			line_pending = false;
 		}
-		if (c == EOF) {
+		if (c == EOF)
+		{
 			CPR_error("internal error -- unexpected EOF in tail");
 			return;
 		}
@@ -2632,7 +2697,8 @@ static void print_switches()
 	fprintf(stderr, "\tlegal switches are:\n");
 	for (in_sw_table_iterator = gpre_in_sw_table; in_sw_table_iterator->in_sw; in_sw_table_iterator++)
 	{
-		if (in_sw_table_iterator->in_sw_text) {
+		if (in_sw_table_iterator->in_sw_text)
+		{
 			fprintf(stderr, "%s%s\n", in_sw_table_iterator->in_sw_name,
 					   in_sw_table_iterator->in_sw_text);
         }
@@ -2659,7 +2725,8 @@ static void print_switches()
 static void remember_label(const TEXT* label_string)
 {
 	SLONG label = atoi(label_string);
-	if (label < 8192) {
+	if (label < 8192)
+	{
 		const UCHAR target_byte = label & 7;
 		label >>= 3;
 		gpreGlob.fortran_labels[label] |= 1 << target_byte;
@@ -2720,7 +2787,8 @@ static SSHORT skip_white()
 #ifdef GPRE_COBOL
 		// skip sequence numbers when ansi COBOL
 
-		if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect)) {
+		if (gpreGlob.sw_language == lang_cobol && isAnsiCobol(gpreGlob.sw_cob_dialect))
+		{
 			while (line_position < 7 && (c = nextchar()) != '\n' && c != EOF)
 				;
 		}
@@ -2752,7 +2820,8 @@ static SSHORT skip_white()
 			const SSHORT c2 = nextchar();
 			if (c2 != '-')
 				return_char(c2);
-			else {
+			else
+			{
 				while ((c = nextchar()) != '\n' && c != EOF)
 					;
 				last_position = position - 1;
@@ -2765,8 +2834,10 @@ static SSHORT skip_white()
 		if (c == '/' && (gpreGlob.sw_language == lang_c || isLangCpp(gpreGlob.sw_language)))
 		{
 			SSHORT next = nextchar();
-			if (next != '*') {
-				if (isLangCpp(gpreGlob.sw_language) && next == '/') {
+			if (next != '*')
+			{
+				if (isLangCpp(gpreGlob.sw_language) && next == '/')
+				{
 					while ((c = nextchar()) != '\n' && c != EOF)
 						; // empty loop
 					continue;
@@ -2790,7 +2861,8 @@ static SSHORT skip_white()
 			// Bug #307.  mao 6/14/89
 
 			const SSHORT c3 = nextchar();
-			if (c3 == '=') {
+			if (c3 == '=')
+			{
 				return_char(c3);
 				return c;
 			}
@@ -2808,7 +2880,8 @@ static SSHORT skip_white()
 		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada))
 		{
 			SSHORT next = nextchar();
-			if (next != '-') {
+			if (next != '-')
+			{
 				return_char(next);
 				return c;
 			}
@@ -2819,7 +2892,8 @@ static SSHORT skip_white()
 
 		// skip PASCAL comments - both types
 #ifdef GPRE_PASCAL
-		if (c == '{' && gpreGlob.sw_language == lang_pascal) {
+		if (c == '{' && gpreGlob.sw_language == lang_pascal)
+		{
 			while ((c = nextchar()) != EOF && c != '}')
 				;
 			continue;
@@ -2828,7 +2902,8 @@ static SSHORT skip_white()
 		if (c == '(' && gpreGlob.sw_language == lang_pascal)
 		{
 			SSHORT next = nextchar();
-			if (next != '*') {
+			if (next != '*')
+			{
 				return_char(next);
 				return c;
 			}

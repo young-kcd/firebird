@@ -770,7 +770,8 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			}
 
 			dtype_max = MAX(field1.fld_dtype, field2.fld_dtype);
-			if (DTYPE_IS_BLOB(dtype_max)) {
+			if (DTYPE_IS_BLOB(dtype_max))
+			{
 				CPR_error("Invalid use of blob/array value");
 				return; // silence non initialized warning
 			}
@@ -784,12 +785,14 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			else
 				dtype_max = DSC_sub_result[field1.fld_dtype][field2.fld_dtype];
 
-			if (dtype_max == dtype_unknown) {
+			if (dtype_max == dtype_unknown)
+			{
 				CPR_error("Illegal operands used in addition");
 				return; // silence non initialized warning
 			}
 
-			if (dtype_max == DTYPE_CANNOT) {
+			if (dtype_max == DTYPE_CANNOT)
+			{
 				CPR_error("expression evaluation not supported");
 				return; // silence non initialized warning
 			}
@@ -1182,7 +1185,8 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 		request->add_byte(context->ctx_internal);
 		request->add_word(procedure->prc_in_count);
 		gpre_nod* inputs = context->ctx_prc_inputs;
-		if (inputs) {
+		if (inputs)
+		{
 			gpre_nod** ptr = inputs->nod_arg;
 			for (const gpre_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
 			{
@@ -2084,7 +2088,8 @@ static void stuff_sdl_loops(ref* reference, const gpre_fld* field)
 			stuff_sdl_dimension(dimension, reference, i);
 		}
 	}
-	else {
+	else
+	{
 		SSHORT i = 0;
 		for (const dim* dimension = field->fld_array_info->ary_dimension;
 			 i < field->fld_array_info->ary_dimension_count;
@@ -2357,7 +2362,8 @@ static void get_dtype_of_list(const gpre_nod* node, gpre_fld* f)
 		if (field.fld_dtype == dtype_blob)
 		{
 			// When there was already an other data type, raise immediate error
-			if (!all_blob || !all_same_sub_type) {
+			if (!all_blob || !all_same_sub_type)
+			{
 				CPR_error("Incompatible data types");
 				return;
 			}

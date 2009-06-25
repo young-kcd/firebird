@@ -71,7 +71,8 @@ act* MSC_action( gpre_req* request, act_t type)
 	act* action = (act*) MSC_alloc(ACT_LEN);
 	action->act_type = type;
 
-	if (request) {
+	if (request)
+	{
 		action->act_next = request->req_actions;
 		request->req_actions = action;
 		action->act_request = request;
@@ -263,7 +264,8 @@ void MSC_init()
 	free_lls = NULL;
 
     gpre_space* stuff;
-	while (stuff = space) {
+	while (stuff = space)
+	{
 		space = space->spc_next;
 		gds__free(stuff);
 	}
@@ -401,7 +403,8 @@ ref* MSC_reference(ref** link)
 {
 	ref* reference = (ref*) MSC_alloc(REF_LEN);
 
-	if (link) {
+	if (link)
+	{
 		reference->ref_next = *link;
 		*link = reference;
 	}

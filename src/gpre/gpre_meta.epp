@@ -147,14 +147,16 @@ bool MET_database(gpre_dbb* database, bool print_version)
 
 	UCHAR sql_buffer[sizeof(sql_version_info) * (1 + 2 + 4)];
 
-	if (gpreGlob.sw_language == lang_internal) {
+	if (gpreGlob.sw_language == lang_internal)
+	{
 		JRDMET_init(database);
 		return true;
 	}
 
 	DB = 0;
 
-	if (!database->dbb_filename) {
+	if (!database->dbb_filename)
+	{
 		CPR_error("No database specified");
 		return false;
 	}
@@ -194,7 +196,8 @@ bool MET_database(gpre_dbb* database, bool print_version)
 
 	database->dbb_handle = DB;
 
-	if (gpreGlob.sw_version && print_version) {
+	if (gpreGlob.sw_version && print_version)
+	{
 		printf("    Version(s) for database \"%s\"\n", database->dbb_filename);
 		isc_version(&DB, NULL, NULL);
 	}
@@ -408,7 +411,8 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 			break;
 		}
 
-		if (field->fld_dtype <= dtype_any_text) {
+		if (field->fld_dtype <= dtype_any_text)
+		{
 			if (!F.RDB$CHARACTER_LENGTH.NULL)
 				field->fld_char_length = F.RDB$CHARACTER_LENGTH;
 			if (!F.RDB$CHARACTER_SET_ID.NULL)
@@ -461,7 +465,8 @@ bool MET_get_domain_default(gpre_dbb* database,
 			isc_blob_handle blob_handle = 0;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 									&blob_handle, blob_id, sizeof(blr_bpb), blr_bpb);
-			if (stat) {
+			if (stat)
+			{
 				isc_print_status(status_vect);
 				CPR_exit(FINI_ERROR);
 			}
@@ -477,7 +482,8 @@ bool MET_get_domain_default(gpre_dbb* database,
 
 				if (!stat)
 					continue;
-				if (stat == isc_segstr_eof) {
+				if (stat == isc_segstr_eof)
+				{
 					// null terminate the buffer
 					*ptr_in_buffer = 0;
 					break;
@@ -495,7 +501,8 @@ bool MET_get_domain_default(gpre_dbb* database,
 
 			has_default = true;
 		}
-		else {						// default not found
+		else
+		{						// default not found
 
 			if (gpreGlob.sw_sql_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
@@ -550,11 +557,13 @@ bool MET_get_column_default(const gpre_rel* relation,
 		RFR.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 
 		ISC_QUAD* blob_id;
-		if (!RFR.RDB$DEFAULT_VALUE.NULL) {
+		if (!RFR.RDB$DEFAULT_VALUE.NULL)
+		{
 			blob_id = &RFR.RDB$DEFAULT_VALUE;
 			has_default = true;
 		}
-		else if (!F.RDB$DEFAULT_VALUE.NULL) {
+		else if (!F.RDB$DEFAULT_VALUE.NULL)
+		{
 			blob_id = &F.RDB$DEFAULT_VALUE;
 			has_default = true;
 		}
@@ -568,7 +577,8 @@ bool MET_get_column_default(const gpre_rel* relation,
 			isc_blob_handle blob_handle = 0;
 			ISC_STATUS stat = isc_open_blob2(status_vect, &DB, &gds_trans,
 								  &blob_handle, blob_id, sizeof(blr_bpb), blr_bpb);
-			if (stat) {
+			if (stat)
+			{
 				isc_print_status(status_vect);
 				CPR_exit(FINI_ERROR);
 			}
@@ -584,7 +594,8 @@ bool MET_get_column_default(const gpre_rel* relation,
 				buff_length = buff_length - length;
 				if (!stat)
 					continue;
-				if (stat == isc_segstr_eof) {
+				if (stat == isc_segstr_eof)
+				{
 					// null terminate the buffer
 					*ptr_in_buffer = 0;
 					break;
@@ -601,7 +612,8 @@ bool MET_get_column_default(const gpre_rel* relation,
 			fb_assert(buffer[0] == blr_version4 || buffer[0] == blr_version5);
 			fb_assert(buffer[1] == blr_literal || buffer[1] == blr_null || buffer[1] == blr_user_name);
 		}
-		else {
+		else
+		{
 			if (gpreGlob.sw_sql_dialect > SQL_DIALECT_V5)
 				buffer[0] = blr_version5;
 			else
@@ -785,7 +797,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 	{
 		gpre_nod* node = MSC_node(nod_list, procedure->prc_out_count);
 		//count = 0;
-		for (field = procedure->prc_outputs; field; field = field->fld_next) {
+		for (field = procedure->prc_outputs; field; field = field->fld_next)
+		{
 			reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
@@ -805,7 +818,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 		}
 		gpre_nod* anode = MSC_node(nod_list, count);
 		//count = 0;
-		for (field = relation->rel_fields; field; field = field->fld_next) {
+		for (field = relation->rel_fields; field; field = field->fld_next)
+		{
 			reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
@@ -841,7 +855,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 
 	gpre_nod* node = MSC_node(nod_list, count);
 
-	while (stack) {
+	while (stack)
+	{
 		field = (gpre_fld*) MSC_pop(&stack);
 		reference = (ref*) MSC_alloc(REF_LEN);
 		reference->ref_field = field;
@@ -930,7 +945,8 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed) {
+		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed)
+		{
 			++l;
 			dtype = dtype_cstring;
 		}
@@ -1339,7 +1355,8 @@ void MET_load_hash_table(gpre_dbb* database)
 			CPR_exit(FINI_ERROR);
 	}
 
-	if (database->dbb_transaction) {
+	if (database->dbb_transaction)
+	{
 		// we must have already loaded this one
 		return;
 	}
@@ -1443,7 +1460,8 @@ void MET_load_hash_table(gpre_dbb* database)
 		an_udf->udf_database = database;
 		an_udf->udf_type = FUN.RDB$FUNCTION_TYPE;
 
-		if (length = fb_utils::name_length(FUN.RDB$QUERY_NAME)) {
+		if (length = fb_utils::name_length(FUN.RDB$QUERY_NAME))
+		{
 			p = FUN.RDB$QUERY_NAME;
 			p[length] = 0;
 		}
@@ -1635,7 +1653,8 @@ void MET_load_hash_table(gpre_dbb* database)
 		{
 			database->dbb_know_subtype = 1;
 		}
-		else {
+		else
+		{
 			TEXT buffer[200];
 
 			sprintf(buffer, "Cannot recognize character set '%s'", database->dbb_c_lc_ctype);
@@ -1842,7 +1861,8 @@ static void get_array(gpre_dbb* database, const TEXT* field_name, gpre_fld* fiel
 		dimension_block->dim_lower = D.RDB$LOWER_BOUND;
 		dimension_block->dim_upper = D.RDB$UPPER_BOUND;
 
-		if (D.RDB$DIMENSION != 0) {
+		if (D.RDB$DIMENSION != 0)
+		{
 			last_dimension_block->dim_next = dimension_block;
 			dimension_block->dim_previous = last_dimension_block;
 		}
@@ -1909,14 +1929,16 @@ static bool get_intl_char_subtype(SSHORT* id, const UCHAR* name, USHORT length, 
 	*p = 0;
 
 	// Is there a period, separating collation name from character set?
-	if (period) {
+	if (period)
+	{
 		*period = 0;
 		return resolve_charset_and_collation(id, period + 1, buffer);
 	}
 
 	// Is it a character set name (implying charset default collation sequence)
 	bool res = resolve_charset_and_collation(id, buffer, NULL);
-	if (!res) {
+	if (!res)
+	{
 		// Is it a collation name (implying implementation-default character set)
 		res = resolve_charset_and_collation(id, NULL, buffer);
 	}
@@ -1962,7 +1984,7 @@ static bool resolve_charset_and_collation(SSHORT* id, const UCHAR* charset, cons
 	FB_API_HANDLE request = 0;
 
 	if (collation == NULL)
-{
+	{
 		if (charset == NULL)
 		{
 			FOR(REQUEST_HANDLE request)

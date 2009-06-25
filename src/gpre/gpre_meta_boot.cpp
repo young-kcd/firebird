@@ -85,7 +85,8 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 	// its fields are in the symbol table.
 
 	gpre_fld* field = NULL;
-	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym) {
+	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_field && (field = (gpre_fld*) symbol->sym_object) &&
 			field->fld_procedure == procedure)
 		{
@@ -270,7 +271,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 	{
 		gpre_nod* node = MSC_node(nod_list, procedure->prc_out_count);
 		//int count = 0;
-		for (field = procedure->prc_outputs; field; field = field->fld_next) {
+		for (field = procedure->prc_outputs; field; field = field->fld_next)
+		{
 			ref* reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
@@ -290,7 +292,8 @@ gpre_nod* MET_fields(gpre_ctx* context)
 		}
 		gpre_nod* node = MSC_node(nod_list, count);
 		//count = 0;
-		for (field = relation->rel_fields; field; field = field->fld_next) {
+		for (field = relation->rel_fields; field; field = field->fld_next)
+		{
 			ref* reference = (ref*) MSC_alloc(REF_LEN);
 			reference->ref_field = field;
 			reference->ref_context = context;
@@ -354,7 +357,8 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	case blr_varying:
 	case blr_text:
 		dtype = dtype_text;
-		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed) {
+		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed)
+		{
 			++l;
 			dtype = dtype_cstring;
 		}

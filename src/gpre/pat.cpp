@@ -125,21 +125,25 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	const TEXT* lang_val = "";
 	const TEXT* valend = "";
 
-	if ((gpreGlob.sw_language == lang_c) || (isLangCpp(gpreGlob.sw_language))) {
+	if ((gpreGlob.sw_language == lang_c) || (isLangCpp(gpreGlob.sw_language)))
+	{
 		lang_ref = "&";
 		refend = "";
 	}
-	else if (gpreGlob.sw_language == lang_pascal) {
+	else if (gpreGlob.sw_language == lang_pascal)
+	{
 		lang_ref = "%%REF ";
 		refend = "";
 	}
-	else if (gpreGlob.sw_language == lang_cobol) {
+	else if (gpreGlob.sw_language == lang_cobol)
+	{
 		lang_ref = "BY REFERENCE ";
 		refend = "";
 		lang_val = "BY VALUE ";
 		valend = "";
 	}
-	else if (gpreGlob.sw_language == lang_fortran) {
+	else if (gpreGlob.sw_language == lang_fortran)
+	{
 #if (defined AIX || defined AIX_PPC)
 		lang_ref = "%REF(";
 		refend = ")";
@@ -163,7 +167,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 	{
 		if (c != '%')
 		{
-			if (sw_gen) {
+			if (sw_gen)
+			{
 				*p++ = c;
 				if ((c == '\n') && (*pattern))
 					for (USHORT n = column; n; --n)
@@ -394,7 +399,8 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		{
 			if (!reference->ref_port)
 				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);
-			else {
+			else
+			{
 				TEXT temp1[16], temp2[16];
 				sprintf(temp1, gpreGlob.ident_pattern, reference->ref_port->por_ident);
 				sprintf(temp2, gpreGlob.ident_pattern, reference->ref_ident);

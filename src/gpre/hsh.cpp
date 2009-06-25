@@ -60,7 +60,8 @@ static struct word
 
 void HSH_fini()
 {
-	while (key_symbols) {
+	while (key_symbols)
+	{
 		gpre_sym* symbol = key_symbols;
 		key_symbols = (gpre_sym*) key_symbols->sym_object;
 		HSH_remove(symbol);
@@ -126,12 +127,14 @@ void HSH_insert( gpre_sym* symbol)
 			// This assumes that KEYWORDS are inserted before any other token.
 			// No one should be using a keywords as an alias anyway.
 
-			if ((*next)->sym_type == SYM_keyword) {
+			if ((*next)->sym_type == SYM_keyword)
+			{
 				symbol->sym_homonym = (*next)->sym_homonym;
 				symbol->sym_collision = NULL;
 				(*next)->sym_homonym = symbol;
 			}
-			else {
+			else
+			{
 				symbol->sym_homonym = *next;
 				symbol->sym_collision = (*next)->sym_collision;
 				(*next)->sym_collision = NULL;
@@ -195,7 +198,8 @@ void HSH_remove( gpre_sym* symbol)
 		if (symbol == *next)
 		{
 			gpre_sym* homonym = symbol->sym_homonym;
-			if (homonym) {
+			if (homonym)
+			{
 				homonym->sym_collision = symbol->sym_collision;
 				*next = homonym;
 			}
@@ -207,7 +211,8 @@ void HSH_remove( gpre_sym* symbol)
 
 		for (gpre_sym** ptr = &(*next)->sym_homonym; *ptr; ptr = &(*ptr)->sym_homonym)
 		{
-			if (symbol == *ptr) {
+			if (symbol == *ptr)
+			{
 				*ptr = symbol->sym_homonym;
 				return;
 			}
