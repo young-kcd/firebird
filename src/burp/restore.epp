@@ -1343,9 +1343,10 @@ bool get_acl(BurpGlobals*	tdgbl,
 		BURP_error_redirect (status_vector, 20);
 	}
 
-	SLONG length = 0;
+	ULONG length = 0;
 	UCHAR item;
-	USHORT max_segment, num_segments;
+	USHORT max_segment;
+	ULONG num_segments;
 	const UCHAR* p = blob_info;
 
 	while ((item = *p++) != isc_info_end)
@@ -1365,7 +1366,7 @@ bool get_acl(BurpGlobals*	tdgbl,
 			break;
 
 		case isc_info_blob_num_segments:
-			num_segments = (USHORT) n;
+			num_segments = n;
 
 			// we assume that the ACL list was written out as
 			// in one big segment
@@ -1404,6 +1405,8 @@ bool get_acl(BurpGlobals*	tdgbl,
 	if (length < max_segment)
 		length = max_segment;
 
+	fb_assert(length <= ULONG(MAX_SLONG));
+
 	// Allocate a buffer large enough for the largest segment and start grinding.
 
 	BlobBuffer static_buffer;
@@ -1415,7 +1418,7 @@ bool get_acl(BurpGlobals*	tdgbl,
 		// msg 22 gds_$get_segment failed
 		BURP_error_redirect (status_vector, 22);
 	}
-	// protect ourself
+	// protect ourselves
 	length = return_length;
 
 	if (!blob.close())
@@ -1428,21 +1431,25 @@ bool get_acl(BurpGlobals*	tdgbl,
 	const SLONG id_person_len = (SLONG) *from;
 
 	const UCHAR* c_1 = (UCHAR*) owner_nm;
-	const UCHAR owner_nm_len = strlen(owner_nm);
+	const size_t owner_nm_len = strlen(owner_nm);
+	fb_assert(owner_nm_len <= size_t(MAX_UCHAR));
 
+	// If some day, ACLs become bigger than MAX_SLONG, we should review this code.
+	const SLONG bufSize = SLONG(length) - id_person_len + SLONG(owner_nm_len);
+	fb_assert(bufSize > 0);
 	BlobBuffer new_static_buffer;
-	UCHAR* new_buffer = new_static_buffer.getBuffer(length - id_person_len + owner_nm_len);
+	UCHAR* const new_buffer = new_static_buffer.getBuffer(bufSize);
 
 	from = buffer;
 	UCHAR* to = new_buffer;
 	*to++ = *from++; // copy ACL_verion
 	*to++ = *from++; // copy ACL_id_list
 	*to++ = *from++; // copy id_person
-	*to++ = owner_nm_len;
+	*to++ = UCHAR(owner_nm_len);
 
 	size_t new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
 	// from = buffer + id_person_len + 4; redundant, see 2nd loop below.
-	for (SLONG cnt = 0; cnt < owner_nm_len; cnt++)
+	for (ULONG cnt = 0; cnt < owner_nm_len; cnt++)
 	{
 		*to++ = *c_1++;
 		new_len++;

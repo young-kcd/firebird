@@ -1364,7 +1364,6 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR  blob_info[32], static_buffer[1024];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -1385,6 +1384,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 		return;
 	}
 
+	UCHAR blob_info[32];
 	if (!blob.getInfo(sizeof(blob_items), blob_items, sizeof(blob_info), blob_info))
 	{
 		BURP_error_redirect(status_vector, 20);
@@ -1402,9 +1402,9 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 	UCHAR item;
 	while ((item = *p++) != isc_info_end)
 	{
-		const USHORT l = isc_vax_integer((const char*) p, 2);
+		const USHORT l = gds__vax_integer(p, 2);
 		p += 2;
-		const ULONG n = isc_vax_integer((const char*) p, l);
+		const ULONG n = gds__vax_integer(p, l);
 		p += l;
 		switch (item)
 		{
@@ -1448,6 +1448,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 	put_numeric(att_blob_type, blob_type);
 
 	// Allocate a buffer large enough for the largest segment and start grinding.
+	UCHAR static_buffer[1024];
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
 		buffer = static_buffer;
@@ -1501,8 +1502,6 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR blob_info[32], static_buffer[1024];
-
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If the blob is null, don't store it.  It will be restored as null.
@@ -1520,6 +1519,7 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 		// msg 24 isc_open_blob failed
 	}
 
+	UCHAR blob_info[32];
 	if (!blob.getInfo(sizeof(blr_items), blr_items, sizeof(blob_info), blob_info))
 	{
 		BURP_error_redirect(status_vector, 20);
@@ -1574,6 +1574,7 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 
 	// Allocate a buffer large enough for the largest segment and start grinding.
 
+	UCHAR static_buffer[1024];
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
 		buffer = static_buffer;
@@ -2414,8 +2415,6 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
  *
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
-	UCHAR blob_info[48], static_buffer[1024];
-
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If the blob is null, don't store it.  It will be restored as null.
@@ -2436,14 +2435,16 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 		// msg 24 isc_open_blob failed
 	}
 
+	UCHAR blob_info[48];
 	if (!blob.getInfo(sizeof(source_items), source_items, sizeof(blob_info), blob_info))
 	{
 		BURP_error_redirect(status_vector, 20);
 		// msg 20 isc_blob_info failed
 	}
 
-	SLONG length = 0;
-	USHORT max_segment = 0, num_seg = 0;
+	ULONG length = 0;
+	ULONG num_seg = 0;
+	USHORT max_segment = 0;
 	const UCHAR* p = blob_info;
 	UCHAR item;
 
@@ -2494,10 +2495,12 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 	if (length < max_segment)
 		length = max_segment;
 
+	fb_assert(FB_UINT64(length) + num_seg <= FB_UINT64(MAX_ULONG));
 	put_numeric(attribute, length + num_seg);
 
 	// Allocate a buffer large enough for the largest segment and start grinding.
 
+	UCHAR static_buffer[1024];
 	UCHAR* buffer;
 	if (!max_segment || max_segment <= sizeof(static_buffer))
 		buffer = static_buffer;
