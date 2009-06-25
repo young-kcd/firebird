@@ -918,7 +918,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 			{
 #ifdef SCROLLABLE_CURSORS
 				const temporary_key* tkey =
-					backwards ? upper : ignoreNulls ? &firstNotNullKey : lower;
+					backwards ? upper : (ignoreNulls ? &firstNotNullKey : lower);
 #else
 				const temporary_key* tkey = ignoreNulls ? &firstNotNullKey : lower;
 #endif
@@ -963,7 +963,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 #ifdef SCROLLABLE_CURSORS
 			if (backwards)
 			{
-				while (page->btr_sibling) 
+				while (page->btr_sibling)
 				{
 					page = (btree_page*) CCH_HANDOFF(tdbb, window, page->btr_sibling,
 													 LCK_read, pag_index);

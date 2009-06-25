@@ -141,7 +141,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tdsec->tsec_interactive = !uSvc->isService();
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
-
 	SSHORT ret = parse_cmd_line(argv, tdsec);
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;

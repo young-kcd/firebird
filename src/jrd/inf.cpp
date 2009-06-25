@@ -70,7 +70,7 @@ using namespace Jrd;
 /*
  * The variable DBSERVER_BASE_LEVEL was originally IB_MAJOR_VER but with
  * the change to Firebird this number could no longer be used.
- * The DBSERVER_BASE_LEVEL for firebird starts at 6 which is the base level
+ * The DBSERVER_BASE_LEVEL for Firebird starts at 6 which is the base level
  * of InterBase(r) from which Firebird was derived.
  * It is expected that this value will increase as changes are added to
  * Firebird
@@ -87,10 +87,10 @@ typedef Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> CountsBuffer;
 static USHORT get_counts(USHORT, CountsBuffer&);
 
 #define CHECK_INPUT(fcn) \
-	if (!items || item_length <= 0 || !info || output_length <= 0) \
-	{ \
-		ERR_post(Firebird::Arg::Gds(isc_internal_rejected_params) << Firebird::Arg::Str(fcn)); \
-	} \
+	do { \
+		if (!items || item_length <= 0 || !info || output_length <= 0) \
+			ERR_post(Firebird::Arg::Gds(isc_internal_rejected_params) << Firebird::Arg::Str(fcn)); \
+	} while (false)
 
 
 

@@ -137,7 +137,7 @@ static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
 
 	for (const in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
-		if ((sw.length() >= in_sw_tab->in_sw_min_length) && 
+		if ((sw.length() >= in_sw_tab->in_sw_min_length) &&
 			switchMatch(sw, in_sw_tab->in_sw_name))
 		{
 			return in_sw_tab;

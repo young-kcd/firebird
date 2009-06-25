@@ -1623,6 +1623,7 @@ bool DPM_next(thread_db* tdbb,
 			slot = ppage->ppg_count - 1;
 		}
 #endif
+
 		for (; slot >= 0 && slot < ppage->ppg_count;)
 		{
 			const SLONG page_number = ppage->ppg_page[slot];
@@ -1660,11 +1661,13 @@ bool DPM_next(thread_db* tdbb,
 #endif
 				const data_page* dpage = (data_page*) CCH_HANDOFF(tdbb, window,
 									page_number, lock_type, pag_data);
+
 #ifdef SCROLLABLE_CURSORS
 				if (backwards && line >= dpage->dpg_count) {
 					line = dpage->dpg_count - 1;
 				}
 #endif
+
 				for (; line >= 0 && line < dpage->dpg_count;
 #ifdef SCROLLABLE_CURSORS
 					backwards ? line-- : line++

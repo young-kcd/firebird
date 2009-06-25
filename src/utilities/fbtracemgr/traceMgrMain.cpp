@@ -83,9 +83,9 @@ void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
 	const string& pwd, bool isAdmin)
 {
 	ISC_STATUS_ARRAY status = {0};
-	
+
 	ClumpletWriter spb(ClumpletWriter::SpbAttach, MAXBUF, isc_spb_current_version);
-	
+
 	if (user.isEmpty() && !isAdmin)
 	{
 		string isc_user;
@@ -164,14 +164,14 @@ void TraceSvcUtil::startSession(TraceSession& session, bool /*interactive*/)
 	}
 
 	ClumpletWriter spb(ClumpletWriter::SpbStart, MAXBUF);
-	
+
 	spb.insertTag(isc_action_svc_trace_start);
 	spb.insertBytes(isc_spb_trc_cfg, p, len);
 
 	if (session.ses_name.hasData())
 	{
-		spb.insertBytes(isc_spb_trc_name, 
-			reinterpret_cast<const UCHAR*> (session.ses_name.c_str()), 
+		spb.insertBytes(isc_spb_trc_name,
+			reinterpret_cast<const UCHAR*> (session.ses_name.c_str()),
 			session.ses_name.length());
 	}
 
@@ -236,7 +236,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 			status_exception::raise(status);
 		}
 
-		char *p = results;
+		char* p = results;
 		bool ignoreTruncation = false;
 
 		while (*p != isc_info_end)
@@ -249,7 +249,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 			case isc_info_svc_line:
 				{
-					unsigned short l = isc_vax_integer (p, sizeof(l));
+					unsigned short l = isc_vax_integer(p, sizeof(l));
 					p += sizeof(l);
 					if (l)
 					{
@@ -281,7 +281,6 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 										Arg::Num(static_cast<unsigned char>(p[-1])));
 			}
 		}
-
 	} while (!m_stop);
 }
 
@@ -315,7 +314,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  **************************************
  *
  * Functional description
- *	Invoke real nbackup main function
+ *	Invoke real trace main function
  *
  **************************************/
 

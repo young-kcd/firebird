@@ -1021,7 +1021,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	const SLONG number = gds__vax_integer(id, length);
 	if (number > dbb->dbb_next_transaction)
 		PAG_header(tdbb, true);
-	
+
 	const UCHAR state = (number > dbb->dbb_next_transaction) ?
 		255 : limbo_transaction(tdbb, number);
 
