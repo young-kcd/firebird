@@ -248,6 +248,7 @@ const USHORT GsecMsg97	= 97;	// error changing AUTO ADMINS MAPPING in security d
 const USHORT GsecMsg98	= 98;	// changing admins mapping to SYSDBA:\n
 const USHORT GsecMsg99	= 99;	// invalid parameter for -MAPPING, only SET or DROP is accepted
 const USHORT GsecMsg100	= 100;	// -ma(pping) {set|drop}
+const USHORT GsecMsg101 = 101;	// use gsec -? to get help
 
 #endif // UTILITIES_GSEC_H
 

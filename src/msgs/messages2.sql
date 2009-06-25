@@ -3162,6 +3162,7 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg98', 'printhelp', 'gsec.cpp', NULL, 18, 98, NULL, 'changing admins mapping to RDB$ADMIN role in security database:', NULL, NULL);
 ('GsecMsg99', 'get_switches', 'gsec.cpp', NULL, 18, 99, NULL, 'invalid parameter for -MAPPING, only SET or DROP is accepted', NULL, NULL);
 ('GsecMsg100', 'printhelp', 'gsec.cpp', NULL, 18, 100, NULL, 'mapping {set|drop}', NULL, NULL);
+('GsecMsg101', 'gsec', 'gsec.cpp', NULL, 18, 101, NULL, 'use gsec -? to get help', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in

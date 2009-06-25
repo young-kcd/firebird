@@ -397,6 +397,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	{
 		COMMIT
 		ON_ERROR
+			// CVC: Shouldn't we call isc_rollback_transaction() here?
 			return GsecMsg75;	// gsec error
 		END_ERROR;
 	}

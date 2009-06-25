@@ -57,7 +57,7 @@ using MsgFormat::SafeArg;
 #include <io.h>
 #endif
 
-const int MAXARGS	= 20;		// max number of args allowed on command line
+//const int MAXARGS	= 20;		// max number of args allowed on command line
 const int MAXSTUFF	= 1000;		// longest interactive command line
 
 static void util_output(const SCHAR*, ...);
@@ -141,7 +141,14 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tdsec->tsec_interactive = !uSvc->isService();
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
+	//if (!uSvc->isService() && argv.getCount() == 1)
+	//	GSEC_error(GsecMsg101); // use gsec -? to get help
+
 	SSHORT ret = parse_cmd_line(argv, tdsec);
+	if (!uSvc->isService() && ret == -2) // user asked for help
+		GSEC_exit();
+
+
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
@@ -249,6 +256,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 					serverName.c_str());
 		if (! sHandle)
 		{
+			GSEC_print(GsecMsg101); // use gsec -? to get help
 			GSEC_error_redirect(status, GsecMsg15);
 		}
 	}
@@ -392,7 +400,7 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
  *
  * Functional description
  *	print out user data row by row
- *	if first is TRUE print the header then the data
+ *	if first is true print the header then the data
  *
  **************************************/
 	tsec* tdsec = tsec::getSpecific();
@@ -434,7 +442,7 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
  *
  * Functional description
  *	Read the current line and put its pieces into an argv
- *	structure.   Reads a max of MAXARGS - 1 pieces (argv [0] is
+ *	structure.   Reads pieces (argv [0] is
  *	unused), and a max of MAXSTUFF characters, at which point
  *
  **************************************/
@@ -523,7 +531,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 	for (size_t argc = 1; argc < argv.getCount(); ++argc)
 	{
 		const char* string = argv[argc];
-		if (*string == '?')
+		if (*string == '?' || string[0] == '-' && string[1] == '?')
 			user_data->operation = HELP_OPER;
 		else if (*string != '-')
 		{
@@ -1173,7 +1181,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 		if (user_data->operation == HELP_OPER)
 		{
 			printhelp();
-			ret = -1;
+			ret = -2;
 		}
 		else if (user_data->operation != DIS_OPER && user_data->operation != QUIT_OPER &&
 				 user_data->operation != MAP_SET_OPER && user_data->operation != MAP_DROP_OPER &&
@@ -1302,9 +1310,24 @@ void GSEC_error(USHORT errcode)
 	tdsec->utilSvc->started();
 
 	GSEC_print(errcode);
+	// CVC: copy the errcode to exit with a value !=0
+	tdsec->tsec_exit_code = errcode;
 	if (tdsec->tsec_throw)
 		Firebird::LongJump::raise();
 }
+
+//**************************
+// G S E C _ e x i t
+//**************************
+// Exit without error
+void GSEC_exit()
+{
+	tsec* tdsec = tsec::getSpecific();
+	tdsec->utilSvc->started();
+	if (tdsec->tsec_throw)
+		Firebird::LongJump::raise();
+}
+
 
 void GSEC_print(USHORT number, const char* str)
 {
