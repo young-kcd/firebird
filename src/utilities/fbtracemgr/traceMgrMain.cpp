@@ -251,7 +251,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 		while (*p != isc_info_end)
 		{
-			const char item = *p++;
+			const UCHAR item = *p++;
 			switch (item)
 			{
 			case isc_info_svc_to_eof:
@@ -263,7 +263,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 					p += sizeof(l);
 					if (l)
 					{
-						char ch = p[l];
+						const char ch = p[l];
 						p[l] = 0;
 						fprintf(stdout, "%s", p);
 						p[l] = ch;
