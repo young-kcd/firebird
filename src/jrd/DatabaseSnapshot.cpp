@@ -684,7 +684,7 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 	else if (field.type == VALUE_STRING)
 	{
 		dsc from_desc;
-		from_desc.makeText(field.length, ttype_ascii, (UCHAR*) field.data);
+		from_desc.makeText(field.length, ttype_dynamic, (UCHAR*) field.data);
 		MOV_move(tdbb, &from_desc, &to_desc);
 	}
 	else
