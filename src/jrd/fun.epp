@@ -101,11 +101,11 @@ namespace
 void IbUtil::initialize()
 {
 #ifndef BOOT_BUILD
-#ifdef WIN_NT
-	PathName path = "ib_util";
-#else
-	PathName path = "libib_util";
-#endif
+//#ifdef WIN_NT
+//	PathName path = "ib_util";
+//#else
+//	PathName path = "libib_util";
+//#endif
 
 	ModuleLoader::Module* module = ModuleLoader::loadModule(ibUtilStartup().libUtilPath);
 

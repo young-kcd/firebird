@@ -64,7 +64,7 @@
 #include <io.h> // lseek, read, write, close
 #endif
 
-const ULONG IO_RETRY			= 20;
+//const ULONG IO_RETRY			= 20;
 const USHORT RUN_GROUP			= 8;
 const USHORT MAX_MERGE_LEVEL	= 2;
 

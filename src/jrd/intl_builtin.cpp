@@ -84,7 +84,6 @@ static inline bool FAMILY_INTERNAL_UTF(texttype* tt,
 }
 
 
-typedef unsigned char FILECHAR;
 typedef USHORT UNICODE;
 
 typedef USHORT fss_wchar_t;

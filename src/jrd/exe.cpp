@@ -239,17 +239,6 @@ const int POST_TRIG	= 2;
 
 const size_t MAX_STACK_TRACE = 2048;
 
-/* this constant defines how many records are locked
-   before we check whether record locking has been
-   turned off for a given relation; if we set the
-   constant to a low number, we will do too much
-   locking in the case where record locking is always
-   turned on; too high and we will do too much record
-   locking in the case where someone is only occasionally
-   locking a record */
-
-const int RECORD_LOCK_CHECK_INTERVAL	= 10;
-
 
 #ifdef SCROLLABLE_CURSORS
 static const rse_get_mode g_RSE_get_mode = RSE_get_next;

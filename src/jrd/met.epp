@@ -109,7 +109,7 @@
 //#define BLR_BYTE        *(csb->csb_running)++
 #define BLR_BYTE	csb->getBlrByte()
 //#define BLR_PEEK    *(control->ctl_blr)
-const char BLANK	= '\040';
+//const char BLANK	= '\040';
 
 DATABASE DB = FILENAME "ODS.RDB";
 

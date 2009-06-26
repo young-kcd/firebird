@@ -106,7 +106,6 @@ static const TEXT gdslogid[] = "";
 #endif
 #endif
 
-static const char* FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
 #include "gen/sql_state.h"
