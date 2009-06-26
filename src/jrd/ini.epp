@@ -55,6 +55,8 @@
 #include "../jrd/acl.h"
 #include "../jrd/irq.h"
 #include "../jrd/IntlManager.h"
+#include "../jrd/constants.h"
+
 
 using namespace Jrd;
 
@@ -62,7 +64,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 #define PAD(string, field) jrd_vtof ((char*)(string), field, sizeof (field))
 const int FB_MAX_ACL_SIZE	= 4096;
-const char* DEFAULT_CLASS	= "SQL$DEFAULT";
+
 
 static void add_index_set(Database*, bool, USHORT, USHORT);
 static void add_relation_fields(thread_db*, USHORT);

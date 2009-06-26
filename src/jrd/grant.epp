@@ -54,15 +54,15 @@
 #include "../jrd/scl_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/array.h"
+#include "../jrd/constants.h"
 
 using namespace Jrd;
 
 /* privileges given to the owner of a relation */
 
 const SecurityClass::flags_t OWNER_PRIVS	= SCL_control | SCL_read | SCL_write | SCL_delete | SCL_protect;
-const SecurityClass::flags_t VIEW_PRIVS		= SCL_read | SCL_write | SCL_delete;
-const ULONG ACL_BUFFER_SIZE	= 4096;
-static const char* DEFAULT_CLASS	= "SQL$DEFAULT";
+//const SecurityClass::flags_t VIEW_PRIVS		= SCL_read | SCL_write | SCL_delete;
+//const ULONG ACL_BUFFER_SIZE	= 4096;
 
 inline void CHECK_AND_MOVE(Acl& to, UCHAR from)
 {
