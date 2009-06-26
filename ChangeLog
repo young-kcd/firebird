@@ -1,3 +1,74 @@
+2009-06-26 13:19  robocop
+
+	* firebird2/src/jrd/dyn_mod.epp (1.117):
+
+	Small cleanup.
+
+2009-06-26 13:18  robocop
+
+	* firebird2/src/jrd/: constants.h (1.63), grant.epp (1.79), ini.epp
+	(1.109), trig.h (1.29):
+
+	Moved DEFAULT_CLASS to constants.h; a Buil | Clean Solution + F7
+	may be needed in VC (otherwise linker errors appear).
+
+2009-06-26 12:19  robocop
+
+	* firebird2/src/jrd/: exe.cpp (1.302), fun.epp (1.120), gds.cpp
+	(1.301), intl_builtin.cpp (1.53), met.epp (1.283), sort.cpp
+	(1.129):
+
+	Small cleanup.
+
+2009-06-26 12:18  robocop
+
+	* firebird2/src/jrd/inf.cpp (1.102):
+
+	Style.
+
+2009-06-26 06:12  robocop
+
+	* firebird2/src/jrd/: DataTypeUtil.cpp (1.27), btr.cpp (1.250),
+	cch.cpp (1.236), db_alias.cpp (1.23), ext.cpp (1.91), isc_file.cpp
+	(1.138), lck.cpp (1.100):
+
+	Style.
+
+2009-06-26 06:11  robocop
+
+	* firebird2/src/utilities/fbtracemgr/traceMgrMain.cpp (1.4):
+
+	Misc.
+
+2009-06-26 00:33  hvlad
+
+	* firebird2/src/utilities/: fbsvcmgr.cpp (1.29),
+	fbtracemgr/traceMgrMain.cpp (1.3):
+
+	Replace hard-coded array with isc_info_svc_timeout by correct
+	endianess code.  Make service poll loop correctly terminate on
+	Ctrl+C pressed by user.
+
+2009-06-25 18:04  robocop
+
+	* firebird2/src/jrd/nav.cpp (1.82):
+
+	I'm putting this strange assertion because I bet this code will
+	never be called.
+
+2009-06-25 17:58  robocop
+
+	* firebird2/src/jrd/exe.cpp (1.301):
+
+	Apply the same trick as in evl.cpp for scrollable cursors'
+	conditional code.
+
+2009-06-25 17:13  asfernandes
+
+	* firebird2/src/common/cvt.cpp (1.27):
+
+	Warning
+
 2009-06-25 13:34  robocop
 
 	* firebird2/src/burp/: backup.epp (1.122), restore.epp (1.174):
