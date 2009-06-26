@@ -672,7 +672,8 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 		}
 
 		// Compute the number of matching characters in lower and upper bounds
-		if (retrieval->irb_upper_count) {
+		if (retrieval->irb_upper_count)
+		{
 			prefix = BTreeNode::computePrefix(upper.key_data, upper.key_length,
 											  lower.key_data, lower.key_length);
 		}
@@ -689,7 +690,8 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 				const UCHAR* const end = lower.key_data + lower.key_length;
 				while (q < end)
 				{
-					if (*p++ != *q++) {
+					if (*p++ != *q++)
+					{
 						skipLowerKey = false;
 						break;
 					}
@@ -768,7 +770,8 @@ void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bit
 					checkForLowerKeySkip(skipLowerKey, partLower, node, lower, idx, retrieval);
 				}
 
-				if (!skipLowerKey) {
+				if (!skipLowerKey)
+				{
 					if (!bitmap_and || bitmap_and->test(node.recordNumber.getValue()))
 						RBM_SET(tdbb->getDefaultPool(), bitmap, node.recordNumber.getValue());
 				}
@@ -861,7 +864,8 @@ btree_page* BTR_find_page(thread_db* tdbb,
 
 		if (errorCode == idx_e_ok)
 		{
-			if (retrieval->irb_lower_count) {
+			if (retrieval->irb_lower_count)
+			{
 				errorCode = BTR_make_key(tdbb, retrieval->irb_lower_count,
 										 retrieval->irb_value, &retrieval->irb_desc, lower,
 										 (retrieval->irb_generic & irb_starting) != 0);
@@ -1629,7 +1633,8 @@ idx_e BTR_make_key(thread_db* tdbb,
 			const UCHAR* q = temp.key_data;
 			for (USHORT l = temp.key_length; l; --l, --stuff_count)
 			{
-				if (stuff_count == 0) {
+				if (stuff_count == 0)
+				{
 					*p++ = idx->idx_count - n;
 					stuff_count = STUFF_COUNT;
 				}
@@ -2157,7 +2162,8 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 					const SSHORT pos = node.prefix;
 					// find the segment number were we're starting.
 					const SSHORT i = (pos / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
-					if (i == pos) {
+					if (i == pos)
+					{
 						// We _should_ pick number from data if available
 						count = *p2;
 					}
@@ -2174,7 +2180,8 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 				{
 					if (stuff_count == 0)
 					{
-						if (*p1 != *p2) {
+						if (*p1 != *p2)
+						{
 							// We're done
 							break;
 						}
@@ -2183,7 +2190,8 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 						p2++;
 						stuff_count = STUFF_COUNT;
 					}
-					if (*p1 != *p2) {
+					if (*p1 != *p2)
+					{
 						//We're done
 						break;
 					}
@@ -3624,7 +3632,8 @@ static SLONG fast_load(thread_db* tdbb,
 					const SSHORT pos = newNode.prefix;
 					// find the segment number were we're starting.
 					const SSHORT i = (pos / (STUFF_COUNT + 1)) * (STUFF_COUNT + 1);
-					if (i == pos) {
+					if (i == pos)
+					{
 						// We _should_ pick number from data if available
 						segment = *p2;
 					}
@@ -3641,7 +3650,8 @@ static SLONG fast_load(thread_db* tdbb,
 				{
 					if (stuff_count == 0)
 					{
-						if (*p1 != *p2) {
+						if (*p1 != *p2)
+						{
 							// We're done
 							break;
 						}
@@ -3650,7 +3660,8 @@ static SLONG fast_load(thread_db* tdbb,
 						p2++;
 						stuff_count = STUFF_COUNT;
 					}
-					if (*p1 != *p2) {
+					if (*p1 != *p2)
+					{
 						//We're done
 						break;
 					}
@@ -4952,7 +4963,8 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 	contents result = contents_above_threshold;
 
 	// check to see if the page was marked not to be garbage collected
-	if ( !BtrPageGCLock::isPageGCAllowed(tdbb, window->win_page) ) {
+	if ( !BtrPageGCLock::isPageGCAllowed(tdbb, window->win_page) )
+	{
 		CCH_RELEASE(tdbb, window);
 		return contents_above_threshold;
 	}
@@ -5027,7 +5039,8 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_numbe
 	}
 
 	// we should always find the node, but just in case we don't, bow out gracefully
-	if (parentNode.isEndLevel) {
+	if (parentNode.isEndLevel)
+	{
 		CCH_RELEASE(tdbb, &parent_window);
 #ifdef DEBUG_BTR
 		CORRUPT(204);	// msg 204 index inconsistent
@@ -5790,7 +5803,8 @@ static SLONG insert_node(thread_db* tdbb,
 		}
 		// AB: Never insert a duplicate node with the same record number.
 		// This would lead to nodes which will never be deleted.
-		/*if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber)) {
+		/*if (leafPage && (newRecordNumber == beforeInsertNode.recordNumber))
+		{
 			// AB: It seems this is not enough, because on mass duplicate
 			// update to many nodes are deleted, possible staying and
 			// going are wrong checked before BTR_remove is called.
@@ -6756,7 +6770,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 				}
 			}
 
-			if (node.isEndBucket) {
+			if (node.isEndBucket)
+			{
 				// Our caller will fetch the next page
 				return true;
 			}
@@ -6918,7 +6933,8 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 						return false;
 					}
 				}
-				else {
+				else
+				{
 					// Ascending (prefix + length == 0)
 					ignore = (node->btn_prefix + node->btn_length == 0);
 				}

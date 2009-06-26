@@ -97,15 +97,15 @@ const char INET_FLAG = ':';
 #endif
 
 #if   defined(_PATH_MOUNTED)
-const char* MTAB		= _PATH_MOUNTED;
+const char* const MTAB		= _PATH_MOUNTED;
 #elif defined(HPUX)
-const char* MTAB		= "/etc/mnttab";
+const char* const MTAB		= "/etc/mnttab";
 #elif defined(SOLARIS)
-const char* MTAB		= "/etc/mnttab";
+const char* const MTAB		= "/etc/mnttab";
 #elif defined(FREEBSD)
-const char* MTAB		= "/etc/fstab";
+const char* const MTAB		= "/etc/fstab";
 #else
-const char* MTAB		= "/etc/mtab";
+const char* const MTAB		= "/etc/mtab";
 #endif
 
 #ifdef HAVE_SETMNTENT

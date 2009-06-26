@@ -28,7 +28,7 @@
 
 using namespace Firebird;
 
-const char* ALIAS_FILE = "aliases.conf";
+const char* const ALIAS_FILE = "aliases.conf";
 
 static void replace_dir_sep(PathName& s)
 {

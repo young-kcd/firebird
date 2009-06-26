@@ -41,8 +41,8 @@ using namespace Firebird;
 
 SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* value2)
 {
-	SSHORT subType1 = value1->getBlobSubType();
-	SSHORT subType2 = value2->getBlobSubType();
+	const SSHORT subType1 = value1->getBlobSubType();
+	const SSHORT subType2 = value2->getBlobSubType();
 
 	if (value1->isUnknown())
 		return subType2;
@@ -59,11 +59,11 @@ SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* valu
 
 USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 {
-	USHORT cs1 = value1->getCharSet();
-	USHORT cs2 = value2->getCharSet();
+	const USHORT cs1 = value1->getCharSet();
+	const USHORT cs2 = value2->getCharSet();
 
-	USHORT ttype1 = value1->getTextType();
-	USHORT ttype2 = value2->getTextType();
+	const USHORT ttype1 = value1->getTextType();
+	const USHORT ttype2 = value2->getTextType();
 
 	if (cs1 == CS_NONE || cs2 == CS_BINARY)
 		return ttype2;

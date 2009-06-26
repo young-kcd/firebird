@@ -73,11 +73,11 @@ using namespace Firebird;
 namespace {
 
 #ifdef WIN_NT
-	static const char* FOPEN_TYPE		= "a+b";
+	static const char* const FOPEN_TYPE			= "a+b";
 #else
-	static const char* FOPEN_TYPE		= "a+";
+	static const char* const FOPEN_TYPE			= "a+";
 #endif
-	static const char* FOPEN_READ_ONLY	= "rb";
+	static const char* const FOPEN_READ_ONLY	= "rb";
 
 	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file);
 
