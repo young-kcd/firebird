@@ -245,7 +245,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 			status_exception::raise(status);
 		}
 
-		char* p = results;
+		p = results;
 		bool ignoreTruncation = false;
 		noData = true;
 
