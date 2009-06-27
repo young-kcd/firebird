@@ -7089,10 +7089,9 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 		fb_assert(list->nod_type == nod_list);
 
 		Firebird::Array<dsql_nod*> org_values, new_values;
-		int i;
 
 		// separate the new and org values to process in correct contexts
-		for (i = 0; i < list->nod_count; ++i)
+		for (int i = 0; i < list->nod_count; ++i)
 		{
 			const dsql_nod* const assign = list->nod_arg[i];
 			fb_assert(assign->nod_type == nod_assign);
@@ -7131,7 +7130,7 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 		// recreate list of assignments
 		modify->nod_arg[e_mdc_statement] = list = MAKE_node(nod_list, list->nod_count);
 
-		for (i = 0; i < list->nod_count; ++i)
+		for (int i = 0; i < list->nod_count; ++i)
 		{
 			if (!set_parameter_type(statement, org_values[i], new_values[i], false))
 				set_parameter_type(statement, new_values[i], org_values[i], false);

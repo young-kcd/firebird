@@ -6071,8 +6071,7 @@ static SLONG insert_node(thread_db* tdbb,
 			USHORT index = 1;
 			IndexJumpNode* jn = 0;
 			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			size_t i;
-			for (i = 0; i < jumpNodes->getCount(); i++, index++)
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
 			{
 				UCHAR* q = new_key->key_data + walkJumpNode[i].prefix;
 				memcpy(q, walkJumpNode[i].data, walkJumpNode[i].length);
@@ -6093,7 +6092,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Rebuild first jumpnode on splitpage
 			index = 1;
 			walkJumpNode = jumpNodes->begin();
-			for (i = 0; i < jumpNodes->getCount(); i++, index++)
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
 			{
 				if (index > splitJumpNodeIndex)
 				{
@@ -6113,7 +6112,7 @@ static SLONG insert_node(thread_db* tdbb,
 			// Initalize new offsets for original page and split page.
 			index = 1;
 			walkJumpNode = jumpNodes->begin();
-			for (i = 0; i < jumpNodes->getCount(); i++, index++)
+			for (size_t i = 0; i < jumpNodes->getCount(); i++, index++)
 			{
 				// The jump node where the split is done isn't included anymore!
 				if (index < splitJumpNodeIndex) {
@@ -6644,8 +6643,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 		!(flag & irb_starting) && !(flag & irb_descending))
 	{
 		count = STUFF_COUNT - ((key->key_length + STUFF_COUNT) % (STUFF_COUNT + 1));
-		USHORT i;
-		for (i = 0; i < count; i++) {
+		for (ULONG i = 0; i < count; i++) {
 			key->key_data[key->key_length + i] = 0;
 		}
 		count += key->key_length;

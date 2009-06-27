@@ -264,20 +264,19 @@ int main(int argc, char* argv[])
 	input_char = input_buffer;
 
 	// Initialize character class table
-	int i;
-	for (i = 0; i <= 127; ++i) {
+	for (int i = 0; i <= 127; ++i) {
 		set_classes(i, 0);
 	}
-	for (i = 128; i <= 255; ++i) {
+	for (int i = 128; i <= 255; ++i) {
 		set_classes(i, CHR_LETTER | CHR_IDENT);
 	}
-	for (i = 'a'; i <= 'z'; ++i) {
+	for (int i = 'a'; i <= 'z'; ++i) {
 		set_classes(i, CHR_LETTER | CHR_IDENT);
 	}
-	for (i = 'A'; i <= 'Z'; ++i) {
+	for (int i = 'A'; i <= 'Z'; ++i) {
 		set_classes(i, CHR_LETTER | CHR_IDENT);
 	}
-	for (i = '0'; i <= '9'; ++i) {
+	for (int i = '0'; i <= '9'; ++i) {
 		set_classes(i, CHR_DIGIT | CHR_IDENT);
 	}
 

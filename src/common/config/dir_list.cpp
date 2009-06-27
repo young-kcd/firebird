@@ -77,16 +77,16 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 		return false;
 	}
 
-	size_t i;
-	for (i = 0; i < nFullElem; i++)
+	for (size_t i = 0; i < nFullElem; i++)
 	{
 		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
-	for (i = nFullElem + 1; i <= pPath.getCount(); i++)
+
+	for (size_t i = nFullElem + 1; i <= pPath.getCount(); i++)
 	{
-		PathName x = pPath.subPath(i);
+		const PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
 			return false;
 		}
@@ -146,7 +146,8 @@ void DirectoryList::initialize(bool simple_mode)
 		if (keyword(None, val, "None", "") || keyword(Full, val, "Full", "")) {
 			return;
 		}
-		if (! keyword(Restrict, val, "Restrict", " \t")) {
+		if (! keyword(Restrict, val, "Restrict", " \t"))
+		{
 			gds__log("DirectoryList: unknown parameter '%s', defaulting to None", val.c_str());
 			mode = None;
 			return;
@@ -161,11 +162,13 @@ void DirectoryList::initialize(bool simple_mode)
 		if (val[i] == ';')
 		{
 			PathName dir = "";
-			if (i > last) {
+			if (i > last)
+			{
 				dir = val.substr(last, i - last);
 				dir.trim();
 			}
-			if (PathUtils::isRelative(dir)) {
+			if (PathUtils::isRelative(dir))
+			{
 				PathName newdir;
 				PathUtils::concatPath(newdir, root, dir);
 				dir = newdir;
@@ -175,11 +178,13 @@ void DirectoryList::initialize(bool simple_mode)
 		}
 	}
 	PathName dir = "";
-	if (i > last) {
+	if (i > last)
+	{
 		dir = val.substr(last, i - last);
 		dir.trim();
 	}
-	if (PathUtils::isRelative(dir)) {
+	if (PathUtils::isRelative(dir))
+	{
 		PathName newdir;
 		PathUtils::concatPath(newdir, root, dir);
 		dir = newdir;
@@ -221,7 +226,8 @@ bool DirectoryList::isPathInList(const PathName& path) const
 	bool rc = false;
 	for (size_t i = 0; i < getCount(); i++)
 	{
-		if ((*this)[i].contains(pPath)) {
+		if ((*this)[i].contains(pPath))
+		{
 			rc = true;
 			break;
 		}
@@ -258,7 +264,8 @@ bool DirectoryList::defaultName(PathName& path, const PathName& name) const
 const PathName TempDirectoryList::getConfigString() const
 {
 	const char* value = Config::getTempDirectories();
-	if (!value) {
+	if (!value)
+	{
 		// Temporary directory configuration has not been defined.
 		// Let's make default configuration.
 		return TempFile::getTempPath();

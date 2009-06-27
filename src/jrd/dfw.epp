@@ -1349,9 +1349,8 @@ static void check_dependencies(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	int i;
 	SLONG dep_counts[obj_type_MAX];
-	for (i = 0; i < obj_type_MAX; i++)
+	for (int i = 0; i < obj_type_MAX; i++)
 		dep_counts[i] = 0;
 
 	if (field_name)
@@ -1406,7 +1405,7 @@ static void check_dependencies(thread_db* tdbb,
 	}
 
 	SLONG total = 0;
-	for (i = 0; i < obj_type_MAX; i++)
+	for (int i = 0; i < obj_type_MAX; i++)
 		total += dep_counts[i];
 
 	if (!total)
@@ -4965,9 +4964,8 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						MET_scan_relation(tdbb, relation);
 
 						trig_vec* triggers[TRIGGER_MAX];
-						int i;
 
-						for (i = 0; i < TRIGGER_MAX; ++i)
+						for (int i = 0; i < TRIGGER_MAX; ++i)
 							triggers[i] = NULL;
 
 						MemoryPool* new_pool = dbb->createPool();
@@ -4977,7 +4975,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 							MET_load_trigger(tdbb, relation, work->dfw_name, triggers);
 
-							for (i = 0; i < TRIGGER_MAX; ++i)
+							for (int i = 0; i < TRIGGER_MAX; ++i)
 							{
 								if (triggers[i])
 								{

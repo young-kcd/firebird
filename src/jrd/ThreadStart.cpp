@@ -193,7 +193,8 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_getstacksize");
 
-	if (stack_size < 0x40000L) {
+	if (stack_size < 0x40000L)
+	{
 		state = pthread_attr_setstacksize(&pattr, 0x40000L);
 		if (state)
 			Firebird::system_call_failed::raise("pthread_attr_setstacksize", state);

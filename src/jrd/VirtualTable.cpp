@@ -114,8 +114,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 	jrd_req* request = tdbb->getRequest();
 
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb_virtual* const impure =
-		(irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
 
 	if (!impure->irsb_record_buffer)
 		return false;
@@ -144,7 +143,8 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 
 	const Record* const record = rpb->rpb_record;
 	const Format* format = NULL;
-	if (!record || !record->rec_format) {
+	if (!record || !record->rec_format)
+	{
 		format = MET_current(tdbb, relation);
 		VIO_record(tdbb, rpb, format, request->req_pool);
 	}

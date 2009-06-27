@@ -1174,9 +1174,8 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 	add_byte(blr, isc_sdl_fid);
 	add_word(blr, field->fld_id);
 
-	USHORT count;
-	const SLONG* range; // used in multiple loops.
-	for (range = field->fld_ranges, count = 0; range < end_ranges; range += 2, count++)
+	USHORT count = 0;
+	for (const SLONG* range = field->fld_ranges; range < end_ranges; range += 2, count++)
 	{
 		add_byte(blr, isc_sdl_do2);
 		add_byte(blr, count);
@@ -1210,7 +1209,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 	// compute the range size for each dimension = high_range - low_range
 
 	ULONG slice_length = field_length;
-	for (range = field->fld_ranges; range < end_ranges; range += 2)
+	for (const SLONG* range = field->fld_ranges; range < end_ranges; range += 2)
 	{
 		slice_length *= (range[1] - range[0] + 1);
 		if (tdgbl->gbl_sw_transportable)
@@ -1249,14 +1248,14 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 
 	if (return_length != slice_length)
 	{
-		int i1, i3;
 		// Ugh.  The full array wasn't returned.  We must recompute the top
 		// element to backup.
 
 		SLONG returned_elements = (return_length / field_length) - 1;
 
 		SLONG* returned_range = range_buffer;
-		for (i1 = 0, i3 = 0, range = end_ranges - 2;
+		const SLONG* range = end_ranges - 2;
+		for (int i1 = 0, i3 = 0;
 			 range >= field->fld_ranges; range -= 2, returned_range++, i1++)
 		{
 			int divisor = 1;
@@ -1275,7 +1274,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 	put_numeric(att_array_dimensions, field->fld_dimensions);
 
 	SLONG* returned_range = range_buffer;
-	for (range = field->fld_ranges; range < end_ranges; range += 2, returned_range++)
+	for (const SLONG* range = field->fld_ranges; range < end_ranges; range += 2, returned_range++)
 	{
 		put_numeric(att_array_range_low, (int) range[0]);
 		if (return_length == slice_length)

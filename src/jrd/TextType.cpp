@@ -142,9 +142,7 @@ TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 			{'S', CHAR_UPPER_S}
 		};
 
-	int i;
-
-	for (i = 0; i < FB_NELEM(conversions); i++)
+	for (int i = 0; i < FB_NELEM(conversions); i++)
 	{
 		UCHAR temp[sizeof(ULONG)];
 
@@ -168,7 +166,7 @@ TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 		{" \t\v\r\n\f", reinterpret_cast<UCHAR*>(canonicalWhiteSpaces)}
 	};
 
-	for (i = 0; i < FB_NELEM(conversions2); i++)
+	for (int i = 0; i < FB_NELEM(conversions2); i++)
 	{
 		UCHAR temp[sizeof(ULONG)];
 

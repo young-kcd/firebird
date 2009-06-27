@@ -676,10 +676,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// Put conjunctions in opt structure.
 	// Note that it's a stack and we get the nodes in reversed order from the stack.
 	opt->opt_conjuncts.grow(conjunct_count);
-	SSHORT i;
 	SSHORT j = 0;
 	SSHORT nodeBase = 0;
-	for (i = conjunct_count; i > 0; i--)
+	for (SLONG i = conjunct_count; i > 0; i--)
 	{
 		jrd_nod* node = conjunct_stack.pop();
 
@@ -736,7 +735,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	// AB: Mark the previous used streams (sub-RecordSelExpr's) as active
-	for (i = 1; i <= sub_streams[0]; i++) {
+	for (USHORT i = 1; i <= sub_streams[0]; i++) {
 		csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;
 	}
 
@@ -764,7 +763,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
 			// as active, because a SORT/MERGE could reset the flags
-			for (i = 1; i <= sub_streams[0]; i++) {
+			for (USHORT i = 1; i <= sub_streams[0]; i++) {
 				csb->csb_rpt[sub_streams[i]].csb_flags |= csb_active;
 			}
 		}
@@ -793,7 +792,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			if (dependent_streams[0])
 			{
 				// copy free streams
-				for (i = 0; i <= free_streams[0]; i++) {
+				for (USHORT i = 0; i <= free_streams[0]; i++) {
 					streams[i] = free_streams[i];
 				}
 
@@ -882,7 +881,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 // check index usage in all the base streams to ensure
 // that any user-specified access plan is followed
 
-	for (i = 1; i <= streams[0]; i++) {
+	for (USHORT i = 1; i <= streams[0]; i++) {
 		check_indices(&csb->csb_rpt[streams[i]]);
 	}
 
@@ -930,7 +929,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	// release memory allocated for index descriptions
-	for (i = 1; i <= streams[0]; ++i)
+	for (USHORT i = 1; i <= streams[0]; ++i)
 	{
 		stream = streams[i];
 		delete csb->csb_rpt[stream].csb_idx;
@@ -959,9 +958,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}	// try
 	catch (const Firebird::Exception&)
 	{
-		for (SSHORT i = 1; i <= streams[0]; ++i)
+		for (USHORT i = 1; i <= streams[0]; ++i)
 		{
-			const SSHORT stream = streams[i];
+			const USHORT stream = streams[i];
 			delete csb->csb_rpt[stream].csb_idx;
 			csb->csb_rpt[stream].csb_idx = 0;
 			csb->csb_rpt[stream].csb_indices = 0; // Probably needed to be safe
@@ -1760,12 +1759,11 @@ static void class_mask(USHORT count, jrd_nod** eq_class, ULONG* mask)
 		/* Msg442: size of optimizer block exceeded */
 	}
 
-	SLONG i;
-	for (i = 0; i < OPT_STREAM_BITS; i++) {
+	for (SLONG i = 0; i < OPT_STREAM_BITS; i++) {
 		mask[i] = 0;
 	}
 
-	for (i = 0; i < count; i++, eq_class++)
+	for (SLONG i = 0; i < count; i++, eq_class++)
 	{
 		if (*eq_class)
 		{

@@ -196,8 +196,7 @@ bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_
 	// make sure partner index have the same segment count as our
 	fb_assert(idx.idx_count == partner_idx.idx_count);
 
-	int i;
-	for (i = 0; i < idx.idx_count; i++)
+	for (int i = 0; i < idx.idx_count; i++)
 	{
 		if (idx.idx_rpt[i].idx_itype != partner_idx.idx_rpt[i].idx_itype)
 		{

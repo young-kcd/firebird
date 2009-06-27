@@ -667,14 +667,13 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	ISC_STATUS status;
 	ULONG err_position;
 	SSHORT source_cs, dest_cs;
-	SSHORT i;
 	USHORT result_length;
 
 	switch (action)
 	{
 	case isc_blob_filter_open:
 	case isc_blob_filter_create:
-		for (i = 0; i < FB_NELEM(control->ctl_data); i++)
+		for (SSHORT i = 0; i < FB_NELEM(control->ctl_data); i++)
 			control->ctl_data[i] = 0;
 		aux = NULL;
 

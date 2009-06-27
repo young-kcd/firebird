@@ -452,12 +452,11 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	fb_assert(bufSize >= RESULT_SIZE);
 	Firebird::MutexLockGuard guard(cryptMutex);
 
-	SLONG i;
 	int t;
 	int num_iter, salt_size;
 	C_block keyblock;
 
-	for (i = 0; i < 8; i++)
+	for (SLONG i = 0; i < 8; i++)
 	{
 		if ((t = 2 * (unsigned char) (*key)) != 0)
 			key++;
@@ -482,7 +481,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 				buf[0] = 0;
 				return;
 			}
-			for (i = 0; i < 8; i++) {
+			for (SLONG i = 0; i < 8; i++) {
 				if ((t = 2 * (unsigned char) (*key)) != 0)
 					key++;
 				keyblock.b[i] ^= t;
@@ -498,7 +497,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 
 		/* get iteration count */
 		num_iter = 0;
-		for (i = 4; --i >= 0;) {
+		for (SLONG i = 4; --i >= 0;) {
 			if ((t = (unsigned char) setting[i]) == '\0')
 				t = '.';
 			encp[i] = t;
@@ -514,7 +513,7 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	}
 
 	SLONG salt = 0;
-	for (i = salt_size; --i >= 0;) {
+	for (SLONG i = salt_size; --i >= 0;) {
 		if ((t = (unsigned char) setting[i]) == '\0')
 			t = '.';
 		encp[i] = t;
@@ -532,6 +531,8 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	 * Encode the 64 cipher bits as 11 ascii characters.
 	 */
 	/* i = ((SLONG)((rsltblock.b[0]<<8) | rsltblock.b[1])<<8) | rsltblock.b[2]; */
+	SLONG i;
+
 	ULONG a = rsltblock.b[0];
 	a = a << 8;
 	ULONG b = rsltblock.b[1];

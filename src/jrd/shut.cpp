@@ -90,7 +90,8 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 /* Database shutdown has been cancelled. */
 
 	// Delay of -1 means we're going online
-	if (delay == -1) {
+	if (delay == -1)
+	{
 		dbb->dbb_ast_flags &=
 			~(DBB_shut_attach | DBB_shut_tran | DBB_shut_force |
 			  DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
@@ -260,7 +261,8 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 /* Once there are no more transactions active, force all remaining
    attachments to shutdown. */
 
-	if (flag & isc_dpb_shut_transaction) {
+	if (flag & isc_dpb_shut_transaction)
+	{
 		exclusive = false;
 		flag = isc_dpb_shut_force | shut_mode;
 	}
@@ -282,7 +284,8 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 		fb_assert(false);
 	}
 
-	if (!exclusive && (flag & isc_dpb_shut_force)) {
+	if (!exclusive && (flag & isc_dpb_shut_force))
+	{
 		// TMN: Ugly counting!
 		while (!notify_shutdown(tdbb, flag, 0))
 			;
@@ -564,7 +567,8 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 			attachment->att_flags |= ATT_shutdown;
 	}
 
-	if (dbb->dbb_use_count) {
+	if (dbb->dbb_use_count)
+	{
 #ifdef SUPERSERVER
 		// Let active database threads rundown
 		Database::Checkout dcoHolder(dbb);
@@ -580,7 +584,8 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 
 	for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		if (attachment->att_flags & ATT_shutdown_manager) {
+		if (attachment->att_flags & ATT_shutdown_manager)
+		{
 			shut_attachment = attachment;
 			continue;
 		}
@@ -602,7 +607,8 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
    to run as a normal attachment. Otherwise, get rid of the rest
    of the database locks.*/
 
-	if (!shut_attachment) {
+	if (!shut_attachment)
+	{
 		CCH_shutdown_database(dbb);
 		if (dbb->dbb_monitor_lock)
 			LCK_release(tdbb, dbb->dbb_monitor_lock);

@@ -168,7 +168,8 @@ static void getVersions(const string& configInfo, ObjectsArray<string>& versions
 	size_t start = 0;
 	size_t n;
 
-	for (size_t i = versionsStr.find(' '); i != versionsStr.npos; start = i + 1, i = versionsStr.find(' ', start))
+	for (size_t i = versionsStr.find(' '); i != versionsStr.npos;
+		start = i + 1, i = versionsStr.find(' ', start))
 	{
 		if ((n = versionsStr.find_first_not_of(' ', start)) != versionsStr.npos)
 			start = n;
@@ -689,7 +690,7 @@ INTL_BOOL UnicodeUtil::utf16WellFormed(ULONG len, const USHORT* str, ULONG* offe
 	fb_assert(str != NULL);
 	fb_assert(len % sizeof(*str) == 0);
 
-	len = len / sizeof(*str);
+	len /= sizeof(*str);
 
 	for (ULONG i = 0; i < len;)
 	{

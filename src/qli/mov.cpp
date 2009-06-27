@@ -1348,9 +1348,8 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	tm* today = localtime(&clock);
 
-	int i;
 	USHORT components[7];
-	for (i = 0; i < 7; i++)
+	for (int i = 0; i < 7; i++)
 		components[i] = 0;
 
 	// Parse components
@@ -1359,7 +1358,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	USHORT n, precision;
 	bool year = false;
 
-	for (i = 0; i < 7; i++)
+	for (int i = 0; i < 7; i++)
 	{
 
 		// Skip leading blanks.  If we run out of characters, we're done with parse.

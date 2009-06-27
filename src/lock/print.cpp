@@ -1120,16 +1120,14 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
  *	the -c consistency mode.
  *
  **************************************/
-	USHORT i;
-
-	for (i = indent; i; i--)
+	for (USHORT i = indent; i; i--)
 		FPRINTF(outfile, " ");
 
 /* Check to see if we're in a cycle of owners - this might be
    a deadlock, or might not, if the owners haven't processed
    their blocking queues */
 
-	for (i = 0; i < waiters->waitque_depth; i++)
+	for (USHORT i = 0; i < waiters->waitque_depth; i++)
 		if (SRQ_REL_PTR(owner) == waiters->waitque_entry[i]) {
 			FPRINTF(outfile, "%s (potential deadlock).\n",
 					(const TEXT*) HtmlLink(preOwn, SRQ_REL_PTR(owner)));
@@ -1162,7 +1160,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 		{
 
 			if (counter++ > 50) {
-				for (i = indent + 6; i; i--)
+				for (USHORT i = indent + 6; i; i--)
 					FPRINTF(outfile, " ");
 				FPRINTF(outfile, "printout stopped after %d owners\n", counter - 1);
 				break;

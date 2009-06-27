@@ -392,8 +392,6 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 		return 0;
 	}
 
-	USHORT i;
-
 	if (msg_length)
 	{
 		// This is a call from execute or open, or the first call from fetch.
@@ -416,7 +414,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 		else
 			qvar = sqlda->sqlvar - 1;
 
-		for (i = 0; i < n; i++)
+		for (USHORT i = 0; i < n; i++)
 		{
 			if (xsqlda)
 				++xvar;
@@ -506,7 +504,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			xvar = xsqlda->sqlvar - 1;
 		else
 			qvar = sqlda->sqlvar - 1;
-		for (i = 0; i < n; i++)
+		for (USHORT i = 0; i < n; i++)
 		{
 			if (xsqlda)
 				++xvar;
@@ -643,7 +641,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 		xvar = xsqlda->sqlvar - 1;
 	else
 		qvar = sqlda->sqlvar - 1;
-	for (i = 0; i < n; i++)
+	for (USHORT i = 0; i < n; i++)
 	{
 		if (xsqlda)
 			++xvar;

@@ -263,8 +263,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
  *	Encode, decode, or free a protocol packet.
  *
  **************************************/
-	USHORT i;
-	p_cnct::p_cnct_repeat * tail;
+	p_cnct::p_cnct_repeat* tail;
 	const rem_port* port;
 	P_ACPT *accept;
 	P_ATCH *attach;
@@ -316,6 +315,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 			MAP(xdr_cstring_const, connect->p_cnct_user_id);
 
+			USHORT i;
 			const size_t CNCT_VERSIONS = FB_NELEM(connect->p_cnct_versions);
 			for (i = 0, tail = connect->p_cnct_versions; i < connect->p_cnct_count; i++, tail++)
 			{
@@ -1107,8 +1107,6 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
  *	entering/removing from a port's packet tracking vector.
  *
  **************************************/
-	ULONG i;
-
 	rem_port* port = (rem_port*) xdrs->x_public;
 	fb_assert(port != 0);
 	fb_assert(port->port_header.blk_type == type_port);
@@ -1120,7 +1118,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		rem_vec* vector = port->port_packet_vector;
 		if (vector)
 		{
-			for (i = 0; i < vector->vec_count; i++)
+			for (ULONG i = 0; i < vector->vec_count; i++)
 			{
 				if (vector->vec_object[i] == (BLK) packet) {
 					vector->vec_object[i] = 0;
@@ -1137,6 +1135,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 
 		fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 		rem_vec* vector = A L L R _vector(&port->port_packet_vector, 0);
+		ULONG i;
 
 		for (i = 0; i < vector->vec_count; i++)
 		{

@@ -580,8 +580,7 @@ static qli_nod* expand_boolean( qli_syntax* input, qli_lls* stack)
 	qli_nod* value = expand_expression(input->syn_arg[0], stack);
 	*ptr++ = value;
 
-	int i;
-	for (i = 1; i < input->syn_count; i++, ptr++)
+	for (int i = 1; i < input->syn_count; i++, ptr++)
 	{
 		if (!(*ptr = possible_literal(input->syn_arg[i], stack, true)))
 			*ptr = expand_expression(input->syn_arg[i], stack);
@@ -595,7 +594,7 @@ static qli_nod* expand_boolean( qli_syntax* input, qli_lls* stack)
 	qli_fld* field = (qli_fld*) value->nod_arg[e_fld_field];
 	ptr = &node->nod_arg[1];
 
-	for (i = 1; i < node->nod_count; i++, ptr++)
+	for (int i = 1; i < node->nod_count; i++, ptr++)
 	{
 		if ((*ptr)->nod_type == nod_prompt)
 			(*ptr)->nod_arg[e_prm_field] = (qli_nod*) field;

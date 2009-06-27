@@ -163,12 +163,10 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 	bool flag_trusted = false;
 #endif
 
-	int itr;
-
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
 
-	for (itr = 1; itr < argc; ++itr)
+	for (int itr = 1; itr < argc; ++itr)
 	{
 		const in_sw_tab_t* inSw = findSwitch(in_sw_tab, argv[itr], false);
 		if (! inSw)
@@ -275,7 +273,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 
 		// Fill command line options
 		Firebird::string options;
-		for (itr = 1; itr < argc; ++itr)
+		for (int itr = 1; itr < argc; ++itr)
 		{
 			if (!argv[itr])
 			{

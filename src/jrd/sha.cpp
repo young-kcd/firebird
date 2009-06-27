@@ -149,7 +149,8 @@ nether regions of the anatomy...
 
 #if (SHA_BYTE_ORDER == 1234)
 #define SWAP_DONE
-    for (i = 0; i < 16; ++i) {
+    for (i = 0; i < 16; ++i)
+    {
 		const LONG T = *((LONG *) dp);
 		dp += 4;
 		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
@@ -159,7 +160,8 @@ nether regions of the anatomy...
 
 #if (SHA_BYTE_ORDER == 4321)
 #define SWAP_DONE
-	for (i = 0; i < 16; ++i) {
+	for (i = 0; i < 16; ++i)
+	{
 		const LONG T = *((LONG *) dp);
 		dp += 4;
 		W[i] = T32(T);
@@ -168,7 +170,8 @@ nether regions of the anatomy...
 
 #if (SHA_BYTE_ORDER == 12345678)
 #define SWAP_DONE
-	for (i = 0; i < 16; i += 2) {
+	for (i = 0; i < 16; i += 2)
+	{
 		LONG T = *((LONG *) dp);
 		dp += 8;
 		W[i] =  ((T << 24) & 0xff000000) | ((T <<  8) & 0x00ff0000) |
@@ -181,7 +184,8 @@ nether regions of the anatomy...
 
 #if (SHA_BYTE_ORDER == 87654321)
 #define SWAP_DONE
-	for (i = 0; i < 16; i += 2) {
+	for (i = 0; i < 16; i += 2)
+	{
 		const LONG T = *((LONG *) dp);
 		dp += 8;
 		W[i] = T32(T >> 32);
@@ -193,7 +197,8 @@ nether regions of the anatomy...
 #error Unknown byte order -- you need to add code here
 #endif /* SWAP_DONE */
 
-	for (i = 16; i < 80; ++i) {
+	for (i = 16; i < 80; ++i)
+	{
 		W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16];
 #if (SHA_VERSION == 1)
 		W[i] = R32(W[i], 1);
@@ -268,7 +273,8 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 	}
 	sha_info->count_lo = clo;
 	sha_info->count_hi += (LONG) count >> 29;
-	if (sha_info->local) {
+	if (sha_info->local)
+	{
 		int i = SHA_BLOCKSIZE - sha_info->local;
 		if (i > count) {
 			i = count;
@@ -284,7 +290,8 @@ void sha_update(SHA_INFO *sha_info, const BYTE *buffer, int count)
 			return;
 		}
 	}
-	while (count >= SHA_BLOCKSIZE) {
+	while (count >= SHA_BLOCKSIZE)
+	{
 		memcpy(sha_info->data, buffer, SHA_BLOCKSIZE);
 		buffer += SHA_BLOCKSIZE;
 		count -= SHA_BLOCKSIZE;
@@ -302,7 +309,8 @@ void sha_final(unsigned char digest[SHA_DIGESTSIZE], SHA_INFO *sha_info)
     const LONG hi_bit_count = sha_info->count_hi;
     int count = (int) ((lo_bit_count >> 3) & 0x3f);
     sha_info->data[count++] = 0x80;
-    if (count > SHA_BLOCKSIZE - 8) {
+    if (count > SHA_BLOCKSIZE - 8)
+    {
 		memset(sha_info->data + count, 0, SHA_BLOCKSIZE - count);
 		sha_transform(sha_info);
 		memset(sha_info->data, 0, SHA_BLOCKSIZE - 8);

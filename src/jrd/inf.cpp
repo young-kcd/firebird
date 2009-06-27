@@ -225,7 +225,6 @@ void INF_database_info(const UCHAR* items,
 	CountsBuffer counts_buffer;
 	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
 	SSHORT length;
-	SLONG id;
 	SLONG err_val;
 	bool header_refreshed = false;
 
@@ -481,7 +480,7 @@ void INF_database_info(const UCHAR* items,
 		case isc_info_limbo:
 			if (!transaction)
 				transaction = TRA_start(tdbb, 0, NULL);
-			for (id = transaction->tra_oldest; id < transaction->tra_number; id++)
+			for (SLONG id = transaction->tra_oldest; id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_limbo &&
 					TRA_wait(tdbb, transaction, id, jrd_tra::tra_wait) == tra_limbo)
@@ -500,7 +499,7 @@ void INF_database_info(const UCHAR* items,
 		case isc_info_active_transactions:
 			if (!transaction)
 				transaction = TRA_start(tdbb, 0, NULL);
-			for (id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
+			for (SLONG id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 			{
 				if (TRA_snapshot_state(tdbb, transaction, id) == tra_active)
 				{
@@ -520,7 +519,7 @@ void INF_database_info(const UCHAR* items,
 				transaction = TRA_start(tdbb, 0, NULL);
 			{ // scope
 				SLONG cnt = 0;
-				for (id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
+				for (SLONG id = transaction->tra_oldest_active; id < transaction->tra_number; id++)
 				{
 					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
 						cnt++;

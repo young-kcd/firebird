@@ -2765,9 +2765,8 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	jrd_req* request = tdbb->getRequest();
 	dsc* values[3];	// 0 = searched, 1 = find, 2 = replacement
 	const dsc* firstBlob = NULL;
-	int i;
 
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		values[i] = EVL_expr(tdbb, args->nod_arg[i]);
 		if (request->req_flags & req_null)	// return NULL if values[i] is NULL
@@ -2786,7 +2785,7 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 	UCHAR* addresses[3];
 	ULONG lengths[3];
 
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		if (values[i]->isBlob())
 		{
@@ -2805,7 +2804,7 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 		return values[0];
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicals[2];	// searched, find
-	for (i = 0; i < 2; ++i)
+	for (int i = 0; i < 2; ++i)
 	{
 		canonicals[i].getBuffer(lengths[i] / cs->minBytesPerChar() * canonicalWidth);
 		canonicals[i].resize(tt->canonical(lengths[i], addresses[i],

@@ -207,9 +207,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 
 	iInLen = (inbuff - pInChar + 1);
 
-	USHORT i;
-
-	for (i = 0; i < iInLen; i++, pInChar++)
+	for (USHORT i = 0; i < iInLen; i++, pInChar++)
 	{
 		fb_assert(lprimary < iOutLen);
 		fb_assert(lsecondary < sizeof(secondary));
@@ -332,14 +330,14 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 		// put secondary keys into output key
 		if (impl->texttype_flags & TEXTTYPE_reverse_secondary)
 		{
-			for (i = 0; i < lsecondary && iOutLen; i++) {
+			for (USHORT i = 0; i < lsecondary && iOutLen; i++) {
 				*outbuff++ = secondary[lsecondary - i - 1];
 				iOutLen--;
 			}
 		}
 		else
 		{
-			for (i = 0; i < lsecondary && iOutLen; i++) {
+			for (USHORT i = 0; i < lsecondary && iOutLen; i++) {
 				*outbuff++ = secondary[i];
 				iOutLen--;
 			}
@@ -357,7 +355,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 	if (useLevel)
 	{
 		// put tertiary keys into output key
-		for (i = 0; i < ltertiary && iOutLen; i++) {
+		for (USHORT i = 0; i < ltertiary && iOutLen; i++) {
 			*outbuff++ = tertiary[i];
 			iOutLen--;
 		}
@@ -369,7 +367,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 		// Insert the marker-byte
 		*outbuff++ = 0;
 		iOutLen--;
-		for (i = 0; i < lspecial && iOutLen; i++) {
+		for (USHORT i = 0; i < lspecial && iOutLen; i++) {
 			*outbuff++ = special[i];
 			iOutLen--;
 		}

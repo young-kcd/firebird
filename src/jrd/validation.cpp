@@ -692,48 +692,50 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	try {
 
-	val_pool = dbb->createPool();
-	Jrd::ContextPoolHolder context(tdbb, val_pool);
+		val_pool = dbb->createPool();
+		Jrd::ContextPoolHolder context(tdbb, val_pool);
 
-	vdr control;
-	control.vdr_page_bitmap = NULL;
-	control.vdr_flags = 0;
-	control.vdr_errors = 0;
+		vdr control;
+		control.vdr_page_bitmap = NULL;
+		control.vdr_flags = 0;
+		control.vdr_errors = 0;
 
-	if (switches & isc_dpb_records)
-		control.vdr_flags |= vdr_records;
+		if (switches & isc_dpb_records)
+			control.vdr_flags |= vdr_records;
 
-	if (switches & isc_dpb_repair)
-		control.vdr_flags |= vdr_repair;
+		if (switches & isc_dpb_repair)
+			control.vdr_flags |= vdr_repair;
 
-	if (!(switches & isc_dpb_no_update))
-		control.vdr_flags |= vdr_update;
+		if (!(switches & isc_dpb_no_update))
+			control.vdr_flags |= vdr_update;
 
-	control.vdr_max_page = 0;
-	control.vdr_rel_records = NULL;
-	control.vdr_idx_records = NULL;
+		control.vdr_max_page = 0;
+		control.vdr_rel_records = NULL;
+		control.vdr_idx_records = NULL;
 
-/* initialize validate errors */
+		/* initialize validate errors */
 
-	if (!att->att_val_errors) {
-		att->att_val_errors = vcl::newVector(*att->att_pool, VAL_MAX_ERROR);
-	}
-	else {
-		for (USHORT i = 0; i < VAL_MAX_ERROR; i++)
-			(*att->att_val_errors)[i] = 0;
-	}
+		if (!att->att_val_errors) {
+			att->att_val_errors = vcl::newVector(*att->att_pool, VAL_MAX_ERROR);
+		}
+		else
+		{
+			for (USHORT i = 0; i < VAL_MAX_ERROR; i++)
+				(*att->att_val_errors)[i] = 0;
+		}
 
-	tdbb->tdbb_flags |= TDBB_sweeper;
-	walk_database(tdbb, &control);
-	if (control.vdr_errors)
-		control.vdr_flags &= ~vdr_update;
+		tdbb->tdbb_flags |= TDBB_sweeper;
+		walk_database(tdbb, &control);
+		if (control.vdr_errors)
+			control.vdr_flags &= ~vdr_update;
 
-	garbage_collect(tdbb, &control);
-	CCH_flush(tdbb, FLUSH_FINI, 0);
+		garbage_collect(tdbb, &control);
+		CCH_flush(tdbb, FLUSH_FINI, 0);
 
-	tdbb->tdbb_flags &= ~TDBB_sweeper;
+		tdbb->tdbb_flags &= ~TDBB_sweeper;
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		dbb->deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -827,7 +829,8 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	window->win_flags = 0;
 	*(PAG*) page_pointer = CCH_FETCH_NO_SHADOW(tdbb, window, LCK_write, 0);
 
-	if ((*(PAG*) page_pointer)->pag_type != type) {
+	if ((*(PAG*) page_pointer)->pag_type != type)
+	{
 		corrupt(tdbb, control, VAL_PAG_WRONG_TYPE, 0, page_number, type,
 				(*(PAG*) page_pointer)->pag_type);
 		return fetch_type;
@@ -838,7 +841,8 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 
 /* If "damaged" flag was set, checksum may be incorrect.  Check. */
 
-	if ((dbb->dbb_flags & DBB_damaged) && !CCH_validate(window)) {
+	if ((dbb->dbb_flags & DBB_damaged) && !CCH_validate(window))
+	{
 		corrupt(tdbb, control, VAL_PAG_CHECKSUM_ERR, 0, page_number);
 		if (control->vdr_flags & vdr_repair)
 			CCH_MARK(tdbb, window);
@@ -852,7 +856,8 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
    double allocated (to more than one relation) we'll find it
    when the on-page relation id doesn't match */
 
-	if ((type != pag_data) && PageBitmap::test(control->vdr_page_bitmap, page_number)) {
+	if ((type != pag_data) && PageBitmap::test(control->vdr_page_bitmap, page_number))
+	{
 		corrupt(tdbb, control, VAL_PAG_DOUBLE_ALLOC, 0, page_number);
 		return fetch_duplicate;
 	}
@@ -900,23 +905,25 @@ static void garbage_collect(thread_db* tdbb, vdr* control)
 			{
 				if (PageBitmap::test(control->vdr_page_bitmap, number))
 				{
-					if (byte & 1) {
+					if (byte & 1)
+					{
 						corrupt(tdbb, control, VAL_PAG_IN_USE, 0, number);
-						if (control->vdr_flags & vdr_update) {
+						if (control->vdr_flags & vdr_update)
+						{
 							CCH_MARK(tdbb, &window);
 							p[-1] &= ~(1 << (number & 7));
 						}
 						DEBUG;
 					}
 				}
-
-			/* Page is potentially an orphan - but don't declare it as such
-			   unless we think we walked all pages */
-
 				else if (!(byte & 1) && (control->vdr_flags & vdr_records))
 				{
+					/* Page is potentially an orphan - but don't declare it as such
+					unless we think we walked all pages */
+
 					corrupt(tdbb, control, VAL_PAG_ORPHAN, 0, number);
-					if (control->vdr_flags & vdr_update) {
+					if (control->vdr_flags & vdr_update)
+					{
 						CCH_MARK(tdbb, &window);
 						p[-1] |= 1 << (number & 7);
 					}
@@ -958,12 +965,14 @@ static void print_rhd(USHORT length, const rhd* header)
  *	Record Header Data.
  *
  **************************************/
-	if (VAL_debug_level) {
+	if (VAL_debug_level)
+	{
 		fprintf(stdout, "rhd: len %d TX %d format %d ",
 				   length, header->rhd_transaction, (int) header->rhd_format);
 		fprintf(stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
-		if (header->rhd_flags & rhd_incomplete) {
+		if (header->rhd_flags & rhd_incomplete)
+		{
 			const rhdf* fragment = (rhdf*) header;
 			fprintf(stdout, "FP %d/%d ", fragment->rhdf_f_page, fragment->rhdf_f_line);
 		}
@@ -997,7 +1006,8 @@ static RTN walk_blob(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 #ifdef DEBUG_VAL_VERBOSE
-	if (VAL_debug_level) {
+	if (VAL_debug_level)
+	{
 		fprintf(stdout,
 				   "walk_blob: level %d lead page %d max pages %d max segment %d\n",
 				   header->blh_level, header->blh_lead_page,
@@ -1026,17 +1036,20 @@ static RTN walk_blob(thread_db* tdbb,
 		fetch_page(tdbb, control, *pages1, pag_blob, &window1, &page1);
 		if (page1->blp_lead_page != header->blh_lead_page)
 			corrupt(tdbb, control, VAL_BLOB_INCONSISTENT, relation, number);
-		if ((header->blh_level == 1 && page1->blp_sequence != sequence)) {
+		if ((header->blh_level == 1 && page1->blp_sequence != sequence))
+		{
 			corrupt(tdbb, control, VAL_BLOB_CORRUPT, relation, number);
 			CCH_RELEASE(tdbb, &window1);
 			return rtn_corrupt;
 		}
 		if (header->blh_level == 1)
 			sequence++;
-		else {
+		else
+		{
 			const SLONG* pages2 = page1->blp_page;
 			const SLONG* const end2 = pages2 + (page1->blp_length >> SHIFTLONG);
-			for (; pages2 < end2; pages2++, sequence++) {
+			for (; pages2 < end2; pages2++, sequence++)
+			{
 				blob_page* page2 = 0;
 				fetch_page(tdbb, control, *pages2, pag_blob, &window2, &page2);
 				if (page2->blp_lead_page != header->blh_lead_page || page2->blp_sequence != sequence)
@@ -1125,7 +1138,8 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	Database* dbb = tdbb->getDatabase();
 
 #ifdef DEBUG_VAL_VERBOSE
-	if (VAL_debug_level) {
+	if (VAL_debug_level)
+	{
 		fprintf(stdout,
 				   "walk_database: %s\nODS: %d.%d  (creation ods %d)\nPage size %d\n",
 				   dbb->dbb_filename.c_str(), dbb->dbb_ods_version,
@@ -1183,7 +1197,8 @@ static RTN walk_data_page(thread_db* tdbb,
 	fetch_page(tdbb, control, page_number, pag_data, &window, &page);
 
 #ifdef DEBUG_VAL_VERBOSE
-	if (VAL_debug_level) {
+	if (VAL_debug_level)
+	{
 		fprintf(stdout,
 				   "walk_data_page: page %d rel %d seq %d count %d\n",
 				   page_number, page->dpg_relation, page->dpg_sequence,
@@ -1207,7 +1222,8 @@ static RTN walk_data_page(thread_db* tdbb,
 	for (const data_page::dpg_repeat* line = page->dpg_rpt; line < end; line++, number++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
-		if (VAL_debug_level) {
+		if (VAL_debug_level)
+		{
 			fprintf(stdout, "Slot %02d (%d,%d): ",
 					   line - page->dpg_rpt, line->dpg_offset, line->dpg_length);
 		}
@@ -1236,7 +1252,8 @@ static RTN walk_data_page(thread_db* tdbb,
 
 				if (header->rhd_b_page)
 					RBM_SET(tdbb->getDefaultPool(), &control->vdr_rel_records, number);
-				else {
+				else
+				{
 					int state;
 					if (header->rhd_transaction < dbb->dbb_oldest_transaction)
 						state = tra_committed;
@@ -1248,7 +1265,8 @@ static RTN walk_data_page(thread_db* tdbb,
 			}
 
 #ifdef DEBUG_VAL_VERBOSE
-			if (VAL_debug_level) {
+			if (VAL_debug_level)
+			{
 				if (header->rhd_flags & rhd_chain)
 					fprintf(stdout, "(backvers)");
 				if (header->rhd_flags & rhd_fragment)
@@ -1304,11 +1322,13 @@ static void walk_generators(thread_db* tdbb, vdr* control)
 	WIN window(DB_PAGE_SPACE, -1);
 
 	vcl* vector = dbb->dbb_gen_id_pages;
-	if (vector) {
+	if (vector)
+	{
         vcl::iterator ptr, end;
 		for (ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
 		{
-			if (*ptr) {
+			if (*ptr)
+			{
 #ifdef DEBUG_VAL_VERBOSE
 				if (VAL_debug_level)
 					fprintf(stdout, "walk_generator: page %d\n", *ptr);
@@ -1335,7 +1355,8 @@ static void walk_header(thread_db* tdbb, vdr* control, SLONG page_num)
  **************************************/
 	SET_TDBB(tdbb);
 
-	while (page_num) {
+	while (page_num)
+	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 			fprintf(stdout, "walk_header: page %d\n", page_num);
@@ -1367,9 +1388,6 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
  *	So errors are reported against index id+1
  *
  **************************************/
-	const UCHAR* p;
-	const UCHAR* q;
-	USHORT l; // temporary variable for length
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -1476,7 +1494,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
-				else {
+				else
+				{
 					// Check if jump node has same length as data node prefix.
 					BTreeNode::readNode(&checknode, (UCHAR*)page + jumpNode.offset, flags, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
@@ -1503,6 +1522,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				break;
 			}
 
+			const UCHAR* p;
+			const UCHAR* q;
+			USHORT l; // temporary variable for length
+
 			// make sure the current key is not less than the previous key
 			bool duplicateNode = !firstNode && !node.isEndLevel &&
 				(key.key_length == (node.length + node.prefix));
@@ -1511,18 +1534,21 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			l = MIN(node.length, (USHORT) (key.key_length - node.prefix));
 			for (; l; l--, p++, q++)
 			{
-				if (*p > *q) {
+				if (*p > *q)
+				{
 					duplicateNode = false;
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
-				else if (*p < *q) {
+				else if (*p < *q)
+				{
 					duplicateNode = false;
 					break;
 				}
 			}
 
-			if (!duplicateNode && nullKeyNode) {
+			if (!duplicateNode && nullKeyNode)
+			{
 				nullKeyHandled = true;
 				nullKeyNode = false;
 			}
@@ -1532,7 +1558,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			{
 				// If this node is equal to the previous one and it's
 				// not a MARKER, record number should be same or higher.
-				if (duplicateNode) {
+				if (duplicateNode)
+				{
 					if ((!unique || (unique && nullKeyNode)) &&
 						(node.recordNumber < lastNode.recordNumber))
 					{
@@ -1592,8 +1619,10 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				p = downNode.data;
 				q = key.key_data;
 				l = MIN(key.key_length, downNode.length);
-				for (; l; l--, p++, q++) {
-					if (*p < *q) {
+				for (; l; l--, p++, q++)
+				{
+					if (*p < *q)
+					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 								id + 1, next, page->btr_level, __FILE__, __LINE__);
 					}
@@ -1621,7 +1650,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				}
 
 				// check the left and right sibling pointers against the parent pointers
-				if (previous_number != down_page->btr_left_sibling) {
+				if (previous_number != down_page->btr_left_sibling)
+				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, __FILE__, __LINE__);
 				}
@@ -1645,13 +1675,16 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			}
 		}
 
-		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size) {
+		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size)
+		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next, page->btr_level, __FILE__, __LINE__);
 		}
 
-		if (next == down) {
-			if (page->btr_level) {
+		if (next == down)
+		{
+			if (page->btr_level)
+			{
 				IndexNode newPageNode;
 				BTreeNode::readNode(&newPageNode, BTreeNode::getPointerFirstNode(page), flags, false);
 				down = newPageNode.pageNumber;
@@ -1661,7 +1694,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			}
 		}
 
-		if (!(next = page->btr_sibling)) {
+		if (!(next = page->btr_sibling))
+		{
 			next = down;
 			key.key_length = 0;
 			previous_number = 0;
@@ -1681,7 +1715,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 
 	// If the index & relation contain different sets of records we
 	// have a corrupt index
-	if (control && (control->vdr_flags & vdr_records)) {
+	if (control && (control->vdr_flags & vdr_records))
+	{
 		Database::Checkout dcoHolder(dbb);
 		RecordBitmap::Accessor accessor(control->vdr_rel_records);
 		if (accessor.getFirst())
@@ -1713,7 +1748,8 @@ static void walk_log(thread_db* tdbb, vdr* control)
 
 	SET_TDBB(tdbb);
 
-	while (page_num) {
+	while (page_num)
+	{
 		WIN window(DB_PAGE_SPACE, -1);
 		fetch_page(tdbb, control, page_num, pag_log, &window, &page);
 		page_num = page->log_next_page;
@@ -1813,9 +1849,11 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 	USHORT slot = 0;
 	for (SLONG* pages = page->ppg_page; slot < page->ppg_count; slot++, pages++, seq++)
 	{
-		if (*pages) {
+		if (*pages)
+		{
 			const RTN result = walk_data_page(tdbb, control, relation, *pages, seq);
-			if (result != rtn_ok && (control->vdr_flags & vdr_repair)) {
+			if (result != rtn_ok && (control->vdr_flags & vdr_repair))
+			{
 				CCH_MARK(tdbb, &window);
 				*pages = 0;
 			}
@@ -1824,7 +1862,8 @@ static RTN walk_pointer_page(thread_db*	tdbb,
 
 /* If this is the last pointer page in the relation, we're done */
 
-	if (page->ppg_header.pag_flags & ppg_eof) {
+	if (page->ppg_header.pag_flags & ppg_eof)
+	{
 		CCH_RELEASE(tdbb, &window);
 		return rtn_eof;
 	}
@@ -1862,7 +1901,8 @@ static RTN walk_record(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 #ifdef DEBUG_VAL_VERBOSE
-	if (VAL_debug_level) {
+	if (VAL_debug_level)
+	{
 		fprintf(stdout, "record: number %ld (%d/%d) ",
 				   number,
 				   (USHORT) number / tdbb->getDatabase()->dbb_max_records,
@@ -1871,7 +1911,8 @@ static RTN walk_record(thread_db* tdbb,
 	}
 #endif
 
-	if (header->rhd_flags & rhd_damaged) {
+	if (header->rhd_flags & rhd_damaged)
+	{
 		corrupt(tdbb, control, VAL_REC_DAMAGED, relation, number);
 		return rtn_ok;
 	}
@@ -1883,7 +1924,8 @@ static RTN walk_record(thread_db* tdbb,
 
 /* If there's a back pointer, verify that it's good */
 
-	if (header->rhd_b_page && !(header->rhd_flags & rhd_chain)) {
+	if (header->rhd_b_page && !(header->rhd_flags & rhd_chain))
+	{
 		const RTN result = walk_chain(tdbb, control, relation, header, number);
 		if (result != rtn_ok)
 			return result;
@@ -1904,24 +1946,29 @@ static RTN walk_record(thread_db* tdbb,
 
 	const char* p;
 	const char* end;
-	if (header->rhd_flags & rhd_incomplete) {
+	if (header->rhd_flags & rhd_incomplete)
+	{
 		p = (SCHAR*) fragment->rhdf_data;
 		end = p + length - OFFSETA(rhdf*, rhdf_data);
 	}
-	else {
+	else
+	{
 		p = (SCHAR*) header->rhd_data;
 		end = p + length - OFFSETA(rhd*, rhd_data);
 	}
 
 	USHORT record_length = 0;
 
-	while (p < end) {
+	while (p < end)
+	{
 		const signed char c = *p++;
-		if (c >= 0) {
+		if (c >= 0)
+		{
 			record_length += c;
 			p += c;
 		}
-		else {
+		else
+		{
 			record_length -= c;
 			p++;
 		}
@@ -1948,26 +1995,32 @@ static RTN walk_record(thread_db* tdbb,
 		}
 		fragment = (rhdf*) ((UCHAR *) page + line->dpg_offset);
 #ifdef DEBUG_VAL_VERBOSE
-		if (VAL_debug_level) {
+		if (VAL_debug_level)
+		{
 			fprintf(stdout, "fragment: pg %d/%d ", page_number, line_number);
 			print_rhd(line->dpg_length, (rhd*) fragment);
 		}
 #endif
-		if (fragment->rhdf_flags & rhd_incomplete) {
+		if (fragment->rhdf_flags & rhd_incomplete)
+		{
 			p = (SCHAR *) fragment->rhdf_data;
 			end = p + line->dpg_length - OFFSETA(rhdf*, rhdf_data);
 		}
-		else {
+		else
+		{
 			p = (SCHAR *) ((rhd*) fragment)->rhd_data;
 			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
 		}
-		while (p < end) {
+		while (p < end)
+		{
 			const signed char c = *p++;
-			if (c >= 0) {
+			if (c >= 0)
+			{
 				record_length += c;
 				p += c;
 			}
-			else {
+			else
+			{
 				record_length -= c;
 				p++;
 			}
@@ -2034,12 +2087,14 @@ static RTN walk_relation(thread_db* tdbb, vdr* control, jrd_rel* relation)
 
 /* Walk pointer and selected data pages associated with relation */
 
-	if (control) {
+	if (control)
+	{
 		control->vdr_rel_backversion_counter = 0;
 		control->vdr_rel_chain_counter = 0;
 		RecordBitmap::reset(control->vdr_rel_records);
 	}
-	for (SLONG sequence = 0; true; sequence++) {
+	for (SLONG sequence = 0; true; sequence++)
+	{
 		const RTN result = walk_pointer_page(tdbb, control, relation, sequence);
 		if (result == rtn_eof) {
 			break;
@@ -2144,7 +2199,8 @@ static RTN walk_tip(thread_db* tdbb, vdr* control, SLONG transaction)
 
 	for (ULONG sequence = 0; sequence <= pages; sequence++)
 	{
-		if (!(*vector)[sequence] || sequence >= vector->count()) {
+		if (!(*vector)[sequence] || sequence >= vector->count())
+		{
 			corrupt(tdbb, control, VAL_TIP_LOST_SEQUENCE, 0, sequence);
 			if (!(control->vdr_flags & vdr_repair))
 				continue;

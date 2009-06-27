@@ -1955,14 +1955,13 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	// for for an existing block
 
-	IndexLock* index;
-	for (index = relation->rel_index_locks; index; index = index->idl_next) {
+	for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next) {
 		if (index->idl_id == id) {
 			return index;
 		}
 	}
 
-	index = FB_NEW(*dbb->dbb_permanent) IndexLock();
+	IndexLock* index = FB_NEW(*dbb->dbb_permanent) IndexLock();
 	index->idl_next = relation->rel_index_locks;
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;

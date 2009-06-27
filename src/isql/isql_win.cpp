@@ -220,7 +220,6 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 	SCHAR buf[1024];			// temp buffer
 	SCHAR pwbuf[50];
 	SCHAR unbuf[50];
-	SSHORT i;
 	int ret;
 
 	switch (message)
@@ -736,7 +735,7 @@ LRESULT CALLBACK _export ISQLWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 		// Translate various keydown messages to appropriate horizontal
 		// and vertical scroll actions.
 
-		for (i = 0; i < FB_NELEM(key2scroll); i++)
+		for (SSHORT i = 0; i < FB_NELEM(key2scroll); i++)
 		{
 			if (wParam == key2scroll[i].wVirtkey) {
 				SendMessage(hWnd, key2scroll[i].iMessage, key2scroll[i].wRequest, 0L);
@@ -1263,7 +1262,6 @@ static void paint_isql( HWND hWnd)
 	HDC hDC;
 	SSHORT e;
 	SCHAR buf[1024];
-	SSHORT i;
 	FILE *hfile;
 
 	BeginPaint(hWnd, (LPPAINTSTRUCT) & ps);
@@ -1283,12 +1281,12 @@ static void paint_isql( HWND hWnd)
 		{
 			// Skip lines outside window limits
 
-			for (i = 0; i < nVscrollPos; i++)
+			for (SSHORT i = 0; i < nVscrollPos; i++)
 				fgets(buf, sizeof(buf), hfile);
 
 			// Read visible lines
 
-			for (i = 0; i < nPageMaxLines; i++) {
+			for (SSHORT i = 0; i < nPageMaxLines; i++) {
 				if (!fgets(buf, sizeof(buf), hfile))
 					break;
 

@@ -4702,9 +4702,8 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 	SET_TDBB(tdbb);
 
 	*vector_ptr = NULL;
-	size_t i;
 
-	for (i = 0; i < vector->getCount(); i++)
+	for (size_t i = 0; i < vector->getCount(); i++)
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r && CMP_clone_is_active(r))
@@ -4713,7 +4712,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 		}
 	}
 
-	for (i = 0; i < vector->getCount(); i++)
+	for (size_t i = 0; i < vector->getCount(); i++)
 	{
 		jrd_req* r = (*vector)[i].request;
 		if (r)

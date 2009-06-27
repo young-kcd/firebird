@@ -437,7 +437,6 @@ void ADA_action( const act* action, int column)
 void ADA_print_buffer( TEXT* output_bufferL, const int column)
 {
 	TEXT s[121];
-	int i;
 	bool multiline = false;
 
 	TEXT* p = s;
@@ -452,10 +451,10 @@ void ADA_print_buffer( TEXT* output_bufferL, const int column)
 			*++p = 0;
 
 			if (multiline) {
-				for (i = column / 8; i; --i)
+				for (int i = column / 8; i; --i)
 					putc('\t', gpreGlob.out_file);
 
-				for (i = column % 8; i; --i)
+				for (int i = column % 8; i; --i)
 					putc(' ', gpreGlob.out_file);
 			}
 			fprintf(gpreGlob.out_file, "%s\n", s);
@@ -466,9 +465,9 @@ void ADA_print_buffer( TEXT* output_bufferL, const int column)
 	}
 	*p = 0;
 	if (multiline) {
-		for (i = column / 8; i; --i)
+		for (int i = column / 8; i; --i)
 			putc('\t', gpreGlob.out_file);
-		for (i = column % 8; i; --i)
+		for (int i = column % 8; i; --i)
 			putc(' ', gpreGlob.out_file);
 	}
 	fprintf(gpreGlob.out_file, "%s", s);
@@ -488,11 +487,10 @@ static void align( int column)
 
 	putc('\n', gpreGlob.out_file);
 
-	int i;
-	for (i = column / 8; i; --i)
+	for (int i = column / 8; i; --i)
 		putc('\t', gpreGlob.out_file);
 
-	for (i = column % 8; i; --i)
+	for (int i = column % 8; i; --i)
 		putc(' ', gpreGlob.out_file);
 }
 

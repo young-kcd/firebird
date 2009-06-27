@@ -176,12 +176,10 @@ static void align(const int column)
 
 	putc('\n', gpreGlob.out_file);
 
-	int i;
-
-	for (i = column / 8; i; --i)
+	for (int i = column / 8; i; --i)
 		putc('\t', gpreGlob.out_file);
 
-	for (i = column % 8; i; --i)
+	for (int i = column % 8; i; --i)
 		putc(' ', gpreGlob.out_file);
 }
 

@@ -1204,8 +1204,6 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 
 void CME_rse(gpre_rse* selection, gpre_req* request)
 {
-	SSHORT i;
-
 	if (selection->rse_join_type == nod_nothing)
 	{
 		if (selection->rse_flags & RSE_singleton)
@@ -1259,7 +1257,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 	else
 	{
 		request->add_byte(selection->rse_count);
-		for (i = 0; i < selection->rse_count; i++)
+		for (USHORT i = 0; i < selection->rse_count; i++)
 			CME_relation(selection->rse_context[i], request);
 		if (selection->rse_flags & RSE_with_lock)
 			request->add_byte(blr_writelock);
@@ -1297,7 +1295,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		request->add_byte(blr_sort);
 		request->add_byte(temp->nod_count);
 		gpre_nod** ptr = temp->nod_arg;
-		for (i = 0; i < temp->nod_count; i++)
+		for (USHORT i = 0; i < temp->nod_count; i++)
 		{
 			request->add_byte((*ptr++) ? blr_descending : blr_ascending);
 			CME_expr(*ptr++, request);
@@ -1309,7 +1307,7 @@ void CME_rse(gpre_rse* selection, gpre_req* request)
 		request->add_byte(blr_project);
 		request->add_byte(temp->nod_count);
 		gpre_nod** ptr = temp->nod_arg;
-		for (i = 0; i < temp->nod_count; i++)
+		for (USHORT i = 0; i < temp->nod_count; i++)
 			CME_expr(*ptr++, request);
 	}
 
@@ -2130,7 +2128,6 @@ static void stuff_sdl_number(const SLONG number, ref* reference)
 static void get_dtype_of_case(const gpre_nod* node, gpre_fld* f)
 {
 	gpre_nod* args;
-	int i;
 	int j;
 	int arg_count;
 
@@ -2148,7 +2145,8 @@ static void get_dtype_of_case(const gpre_nod* node, gpre_fld* f)
 		arg_count = (node->nod_count / 2) + (node->nod_count % 2);
 		args = MSC_node(nod_list, arg_count);
 		// Get the THEN values
-		for (i = 1, j = 0; i < node->nod_count; i += 2, j++)
+		j = 0;
+		for (int i = 1; i < node->nod_count; i += 2, j++)
 		{
 			args->nod_arg[j] = node->nod_arg[i];
 		}
@@ -2167,7 +2165,8 @@ static void get_dtype_of_case(const gpre_nod* node, gpre_fld* f)
 		arg_count = (node->nod_count / 2);
 		args = MSC_node(nod_list, arg_count);
 		// Get the then values
-		for (i = 2, j = 0; i < node->nod_count; i += 2, j++)
+		j = 0;
+		for (int i = 2; i < node->nod_count; i += 2, j++)
 		{
 			args->nod_arg[j] = node->nod_arg[i];
 		}

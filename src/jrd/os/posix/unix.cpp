@@ -1162,9 +1162,9 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 static int raw_devices_unlink_database(const PathName& file_name)
 {
 	char header[MIN_PAGE_SIZE];
-	int desc = -1, i;
+	int desc = -1;
 
-	for (i = 0; i < IO_RETRY; i++)
+	for (int i = 0; i < IO_RETRY; i++)
 	{
 		if ((desc = open (file_name.c_str(), O_RDWR | O_BINARY)) != -1)
 			break;
@@ -1178,7 +1178,7 @@ static int raw_devices_unlink_database(const PathName& file_name)
 
 	memset(header, 0xa5, sizeof(header));
 
-	for (i = 0; i < IO_RETRY; i++)
+	for (int i = 0; i < IO_RETRY; i++)
 	{
 		const ssize_t bytes = write (desc, header, sizeof(header));
 		if (bytes == sizeof(header))

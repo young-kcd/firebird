@@ -52,28 +52,35 @@ void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG 
 	bool found = false;
 	TranGarbage const *item = array.begin(), *const last = array.end();
 
-	for (; item < last; item++) {
-		if (item->tran <= tranid) {
-			if (PageBitmap::test(item->bm, pageno)) {
+	for (; item < last; item++)
+	{
+		if (item->tran <= tranid)
+		{
+			if (PageBitmap::test(item->bm, pageno))
+			{
 				found = true;
 				break;
 			}
 		}
-		else {
+		else
+		{
 			if (item->bm->clear(pageno))
 				break;
 		}
 	}
 
-	if (!found) {
+	if (!found)
+	{
 		PageBitmap *bm = NULL;
 		size_t pos = 0;
 
-		if (array.find(tranid, pos) ) {
+		if (array.find(tranid, pos) )
+		{
 			bm = array[pos].bm;
 			PBM_SET(pool, &bm, pageno);
 		}
-		else {
+		else
+		{
 			bm = NULL;
 			PBM_SET(pool, &bm, pageno);
 			array.add(TranGarbage(bm, tranid));
@@ -92,7 +99,8 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 
 		PageBitmap* bm_tran = garbage.bm;
 		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran);
-		if (*bm_or == garbage.bm) {
+		if (*bm_or == garbage.bm)
+		{
 			bm_tran = *sbm;
 			*sbm = garbage.bm;
 			garbage.bm = bm_tran;

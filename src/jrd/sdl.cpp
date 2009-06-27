@@ -123,7 +123,8 @@ const int op_scalar		= 12;
 UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size, UCHAR* target, size_t target_size)
 {
 	UCHAR* temp_sdl = target;
-	if (origin_size > target_size) {
+	if (origin_size > target_size)
+	{
 		temp_sdl = (UCHAR*)gds__alloc((SLONG) origin_size);
 		// FREE: apparently never freed, the caller is responsible.
 		if (!temp_sdl)
@@ -153,7 +154,8 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
  *	reference.
  *
  **************************************/
-	if (dimensions != desc->iad_dimensions) {
+	if (dimensions != desc->iad_dimensions)
+	{
 		error(status_vector, Arg::Gds(isc_invalid_dimension) << Arg::Num(desc->iad_dimensions) <<
 																Arg::Num(dimensions));
 		return -1;
@@ -166,7 +168,8 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 		 range < end; ++range)
 	{
 		const SLONG n = *subscripts++;
-		if (n < range->iad_lower || n > range->iad_upper) {
+		if (n < range->iad_lower || n > range->iad_upper)
+		{
 			error(status_vector, Arg::Gds(isc_out_of_bounds));
 			return -1;
 		}
@@ -236,7 +239,8 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 
 		default:
 			info->sdl_info_dimensions = 0;
-			if (vector) {
+			if (vector)
+			{
 				memcpy(range.rng_minima, vector, sizeof(range.rng_minima));
 				memcpy(range.rng_maxima, vector, sizeof(range.rng_maxima));
 				range.rng_info = info;
@@ -436,7 +440,8 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		variable = *p++;
 		if (op == isc_sdl_do1)
 			ptr1 = NULL;
-		else {
+		else
+		{
 			ptr1 = p;
 			COMPILE(p, 0);		/* skip over lower bound */
 		}
@@ -444,14 +449,16 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		if (op == isc_sdl_do3) {
 			COMPILE(p, arg);	/* increment */
 		}
-		else {
+		else
+		{
 			STUFF(op_literal, arg);
 			STUFF(1, arg);
 		}
 		if (ptr1) {
 			COMPILE(ptr1, arg);	/* initial value */
 		}
-		else {
+		else
+		{
 			STUFF(op_literal, arg);	/* default initial value */
 			STUFF(1, arg);
 		}
@@ -510,14 +517,16 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 	case isc_sdl_scalar:
 		op = *p++;
 		count = *p++;
-		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
+		if (arg && count != arg->sdl_arg_desc->iad_dimensions)
+		{
 			error(arg->sdl_arg_status_vector,
 				  Arg::Gds(isc_invalid_dimension) << Arg::Num(arg->sdl_arg_desc->iad_dimensions) <<
 													 Arg::Num(count));
 			return NULL;
 		}
 		expr = expressions;
-		for (n = count; n; --n) {
+		for (n = count; n; --n)
+		{
 			*expr++ = p;
 			COMPILE(p, 0);
 		}
@@ -533,13 +542,15 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 
 	case isc_sdl_element:
 		count = *p++;
-		if (arg && count != 1) {
+		if (arg && count != 1)
+		{
 			error(arg->sdl_arg_status_vector, Arg::Gds(isc_datnotsup));
 			/* Msg107: "data operation not supported" (arrays of structures) */
 			return NULL;
 		}
 		expr = expressions;
-		for (n = count; n; --n) {
+		for (n = count; n; --n)
+		{
 			*expr++ = p;
 			COMPILE(p, 0);
 		}
@@ -644,7 +655,8 @@ static bool execute(sdl_arg* arg)
 		case op_loop:
 			variable = variables + next[1];
 			*variable = *stack_ptr++;
-			if (*variable > stack_ptr[1]) {
+			if (*variable > stack_ptr[1])
+			{
 				next = (IPTR*) next[2];
 				stack_ptr += 2;
 			}
@@ -655,7 +667,8 @@ static bool execute(sdl_arg* arg)
 		case op_iterate:
 			variable = variables + next[0];
 			*variable += *stack_ptr;
-			if (*variable > stack_ptr[1]) {
+			if (*variable > stack_ptr[1])
+			{
 				next = (IPTR *) next[1];
 				stack_ptr += 2;
 			}
@@ -672,7 +685,8 @@ static bool execute(sdl_arg* arg)
 					 range < range_end; ++range)
 				{
 					const SLONG n = *stack_ptr++;
-					if (n < range->iad_lower || n > range->iad_upper) {
+					if (n < range->iad_lower || n > range->iad_upper)
+					{
 						error(arg->sdl_arg_status_vector, Arg::Gds(isc_out_of_bounds));
 						return false;
 					}
@@ -691,19 +705,22 @@ static bool execute(sdl_arg* arg)
 
 		case op_element:
 			count = *next++;
-			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array) {
+			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array)
+			{
 				/* Storing INTO array */
 
 				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
 			}
-			else {
+			else
+			{
 				/* Fetching FROM array */
 
 				if (element_desc.dsc_address < arg->sdl_arg_argument->slice_high_water)
 				{
 					(*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
 				}
-				else {
+				else
+				{
 					dsc* slice_desc = &arg->sdl_arg_argument->slice_desc;
 					slice_desc->dsc_address += arg->sdl_arg_argument->slice_element_length;
 				}
@@ -749,13 +766,15 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 		variable = *p++;
 		if (op == isc_sdl_do1)
 			arg->rng_minima[variable] = 1;
-		else {
+		else
+		{
 			if (!(p = get_range(p, arg, &arg->rng_minima[variable], &junk1)))
 				return NULL;
 		}
 		if (!(p = get_range(p, arg, &junk1, &arg->rng_maxima[variable])))
 			return NULL;
-		if (op == isc_sdl_do3) {
+		if (op == isc_sdl_do3)
+		{
 			if (!(p = get_range(p, arg, &junk1, &junk2)))
 				return NULL;
 		}

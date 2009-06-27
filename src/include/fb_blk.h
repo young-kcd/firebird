@@ -186,7 +186,7 @@ class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
         void* operator new(size_t s, MemoryPool& p, int rpt)
             { return p.calloc(s + sizeof(RPT) * rpt); }
 #endif
-        void operator delete(void* mem, MemoryPool& p, int rpt)
+        void operator delete(void* mem, MemoryPool& p, int /*rpt*/)
             { if (mem) p.deallocate(mem); }
         void operator delete(void* mem) { if (mem) MemoryPool::globalFree(mem); }
 

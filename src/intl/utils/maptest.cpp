@@ -63,8 +63,6 @@ No errors
 
 int main()
 {
-	int i;
-
 	if (sizeof(to_unicode_map) != 256 * sizeof(to_unicode_map[0]))
 		printf("The to_unicode_map is too small! %d entries!\n",
 				  sizeof(to_unicode_map) / sizeof(to_unicode_map[0]));
@@ -73,7 +71,7 @@ int main()
 		printf("The from_unicode_map is too small! %d entries!\n",
 				  sizeof(from_unicode_map) / sizeof(from_unicode_map[0]));
 
-	for (i = 0; i <= 255; i++)
+	for (int i = 0; i <= 255; i++)
 	{
 		const unsigned short uch = to_unicode_map[i];
 		if (uch == CANT_MAP_CHARACTER)
@@ -108,7 +106,7 @@ int main()
 		}
 	}
 
-	for (i = 0; i <= 255; i++)
+	for (int i = 0; i <= 255; i++)
 	{
 		if (from_unicode_map[i] + 0xFF >= sizeof(from_unicode_mapping_array))
 		{
