@@ -108,7 +108,8 @@ public:
 	FixedWidthCharSet(USHORT _id, charset* _cs) : CharSet(_id, _cs) {}
 
 	virtual ULONG length(ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const;
-	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG len) const;
+	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+							ULONG startPos, ULONG len) const;
 };
 
 class MultiByteCharSet : public CharSet
@@ -117,7 +118,8 @@ public:
 	MultiByteCharSet(USHORT _id, charset* _cs) : CharSet(_id, _cs) {}
 
 	virtual ULONG length(ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const;
-	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG len) const;
+	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+							ULONG startPos, ULONG len) const;
 };
 
 }	// namespace
@@ -138,7 +140,8 @@ ULONG FixedWidthCharSet::length(ULONG srcLen, const UCHAR* src, bool countTraili
 }
 
 
-ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG len) const
+ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+	ULONG startPos, ULONG len) const
 {
 	ULONG result;
 
@@ -188,7 +191,8 @@ ULONG MultiByteCharSet::length(ULONG srcLen, const UCHAR* src, bool countTrailin
 }
 
 
-ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG len) const
+ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
+	ULONG startPos, ULONG len) const
 {
 	ULONG result;
 

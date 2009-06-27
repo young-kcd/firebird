@@ -1024,16 +1024,13 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 		switch (node->op)
 		{
 			case opRepeat:
-			{
-				int j;
-
-				for (j = 0; j < node->len; ++j)
+				for (int j = 0; j < node->len; ++j)
 				{
 					if (!match(i + 1 + node->ref, i + 1))
 						return false;
 				}
 
-				for (j = node->len; j < node->len2; ++j)
+				for (int j = node->len; j < node->len2; ++j)
 				{
 					const CharType* save = bufferPos;
 
@@ -1048,11 +1045,10 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 
 				++i;
 				break;
-			}
 
 			case opBranch:
 			{
-				const CharType* save = bufferPos;
+				const CharType* const save = bufferPos;
 
 				while (true)
 				{
