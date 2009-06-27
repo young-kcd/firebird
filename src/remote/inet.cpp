@@ -568,7 +568,8 @@ rem_port* INET_connect(const TEXT* name,
  **************************************/
 #ifdef DEBUG
 	{
-		if (INET_trace & TRACE_operations) {
+		if (INET_trace & TRACE_operations)
+		{
 			fprintf(stdout, "INET_connect\n");
 			fflush(stdout);
 		}
@@ -595,13 +596,15 @@ rem_port* INET_connect(const TEXT* name,
 	{
 		host = name;
 		const size_t pos = host.find("/");
-		if (pos != Firebird::string::npos) {
+		if (pos != Firebird::string::npos)
+		{
 			protocol = host.substr(pos + 1);
 			host = host.substr(0, pos);
 		}
 	}
 
-	if (host.hasData()) {
+	if (host.hasData())
+	{
 		delete port->port_connection;
 		port->port_connection = REMOTE_make_string(host.c_str());
 	}
@@ -656,7 +659,8 @@ rem_port* INET_connect(const TEXT* name,
 		}
 		host_addr = host_addr_arr[0];
 	}
-	else {
+	else
+	{
 		// server connection
 		host_addr = get_bind_address();
 	}
@@ -688,12 +692,14 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (!service)
 	{
-		if (protocol == FB_SERVICE_NAME) {
+		if (protocol == FB_SERVICE_NAME)
+		{
 			// apply hardwired translation
 			address.sin_port = htons(FB_SERVICE_PORT);
 		}
 		// modification by FSG 23.MAR.2001
-		else {
+		else
+		{
 			// modification by FSG 23.MAR.2001
 			// The user has supplied something as protocol
 			// let's see whether this is a port number
@@ -711,7 +717,8 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}						// else / not hardwired gds_db translation
 	}
-	else {
+	else
+	{
 		// if we have got a service-struct, get port number from there
 		// (in case of hardwired gds_db to 3050 translation, address.sin_port was
 		// already set above
@@ -737,7 +744,8 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (packet)
 	{
-		if (! setNoNagleOption(port)) {
+		if (! setNoNagleOption(port))
+		{
 			inet_error(port, "setsockopt TCP_NODELAY", isc_net_connect_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
@@ -782,7 +790,8 @@ rem_port* INET_connect(const TEXT* name,
 		int optval = TRUE;
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_REUSEADDR,
 					   (SCHAR*) &optval, sizeof(optval));
-		if (n == -1) {
+		if (n == -1)
+		{
 			inet_error(port, "setsockopt REUSE", isc_net_connect_listen_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
@@ -801,13 +810,15 @@ rem_port* INET_connect(const TEXT* name,
 
 		n = setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR *) & lingerInfo, sizeof(lingerInfo));
-		if (n == -1) {
+		if (n == -1)
+		{
 			inet_error(port, "setsockopt LINGER", isc_net_connect_listen_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
 		}
 
-		if (! setNoNagleOption(port)) {
+		if (! setNoNagleOption(port))
+		{
 			inet_error(port, "setsockopt TCP_NODELAY", isc_net_connect_listen_err, INET_ERRNO);
 			disconnect(port);
 			return NULL;
@@ -830,7 +841,8 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 
-	if (n == -1) {
+	if (n == -1)
+	{
 		inet_error(port, "bind", isc_net_connect_listen_err, INET_ERRNO);
 		disconnect(port);
 		return NULL;
@@ -838,7 +850,8 @@ rem_port* INET_connect(const TEXT* name,
 
 	n = listen((SOCKET) port->port_handle, 5);
 
-	if (n == -1) {
+	if (n == -1)
+	{
 		inet_error(port, "listen", isc_net_connect_listen_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1045,7 +1058,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 		case CNCT_group:
 			{
 				const int length = id.getClumpLength();
-				if (length != 0) {
+				if (length != 0)
+				{
 					eff_gid = 0;
 					memcpy(&eff_gid, id.getBytes(), length);
 					eff_gid = ntohl(eff_gid);
@@ -1282,7 +1296,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		const SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
 		inetErrNo = INET_ERRNO;
 
-		if (n == INVALID_SOCKET) {
+		if (n == INVALID_SOCKET)
+		{
 			inet_error(port, "accept", isc_net_event_connect_err, inetErrNo);
 			SOCLOSE(port->port_channel);
 			return NULL;
@@ -1305,7 +1320,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	// Set up new socket
 
 	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
-	if (n == INVALID_SOCKET) {
+	if (n == INVALID_SOCKET)
+	{
 		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1321,7 +1337,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 	memset(&address, 0, sizeof(address));
 	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
-	if (status != 0) {
+	if (status != 0)
+	{
 		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
 		SOCLOSE(n);
 		return NULL;
@@ -1336,7 +1353,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
 
-	if (status < 0) {
+	if (status < 0)
+	{
 		inet_error(port, "connect", isc_net_event_connect_err, inetErrNo);
 		SOCLOSE(n);
 		return NULL;
@@ -1370,7 +1388,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	address.sin_port = htons(Config::getRemoteAuxPort());
 
 	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
-	if (n == INVALID_SOCKET) {
+	if (n == INVALID_SOCKET)
+	{
 		inet_error(port, "socket", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1382,25 +1401,29 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	//			e.g. while it's listening. This is surely not what we want.
 
 	int optval = TRUE;
-	if (setsockopt(n, SOL_SOCKET, SO_REUSEADDR, (SCHAR*) &optval, sizeof(optval)) < 0) {
+	if (setsockopt(n, SOL_SOCKET, SO_REUSEADDR, (SCHAR*) &optval, sizeof(optval)) < 0)
+	{
 		inet_error(port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
 #endif
 
-	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0) {
+	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0)
+	{
 		inet_error(port, "bind", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
 
 	socklen_t length = sizeof(address);
 
-	if (getsockname(n, (struct sockaddr *) &address, &length) < 0) {
+	if (getsockname(n, (struct sockaddr *) &address, &length) < 0)
+	{
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
 
-	if (listen(n, 1) < 0) {
+	if (listen(n, 1) < 0)
+	{
 		inet_error(port, "listen", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1417,7 +1440,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	P_RESP* response = &packet->p_resp;
 
 	struct sockaddr_in port_address;
-	if (getsockname((SOCKET) port->port_handle, (struct sockaddr *) &port_address, &length) < 0) {
+	if (getsockname((SOCKET) port->port_handle, (struct sockaddr *) &port_address, &length) < 0)
+	{
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1503,7 +1527,8 @@ static void disconnect(rem_port* const port)
 	// is an attempt to return the socket to a state where a graceful shutdown can
 	// occur.
 
-	if (port->port_linger.l_onoff) {
+	if (port->port_linger.l_onoff)
+	{
 		setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
 					   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
 	}
@@ -1525,7 +1550,8 @@ static void disconnect(rem_port* const port)
 	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
 
-	if (port->port_async) {
+	if (port->port_async)
+	{
 		disconnect(port->port_async);
 		port->port_async = NULL;
 	}
@@ -1918,7 +1944,8 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 		{
 			static ULONG op_rec_count = 0;
 			op_rec_count++;
-			if (INET_trace & TRACE_operations) {
+			if (INET_trace & TRACE_operations)
+			{
 				fprintf(stdout, "%04lu: OP Recd %5lu opcode %d\n",
 						   inet_debug_timer(),
 						   op_rec_count, packet->p_operation);
@@ -2024,7 +2051,8 @@ static rem_port* select_accept( rem_port* main_port)
 
 	port->port_handle =
 		(HANDLE) accept((SOCKET) main_port->port_handle, (struct sockaddr*) &address, &l);
-	if ((SOCKET) port->port_handle == INVALID_SOCKET) {
+	if ((SOCKET) port->port_handle == INVALID_SOCKET)
+	{
 		inet_error(port, "accept", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
 		return 0;
@@ -2036,7 +2064,8 @@ static rem_port* select_accept( rem_port* main_port)
 
 	port->port_flags |= PORT_server;
 
-	if (main_port->port_server_flags & SRVR_thread_per_port) {
+	if (main_port->port_server_flags & SRVR_thread_per_port)
+	{
 		port->port_server_flags = (SRVR_server | SRVR_inet | SRVR_thread_per_port);
 		return port;
 	}
@@ -2286,7 +2315,8 @@ static int send_full( rem_port* port, PACKET * packet)
 	{ // scope
 		static ULONG op_sent_count = 0;
 		op_sent_count++;
-		if (INET_trace & TRACE_operations) {
+		if (INET_trace & TRACE_operations)
+		{
 			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d\n",
 					   inet_debug_timer(),
 					   op_sent_count, packet->p_operation);
@@ -2315,7 +2345,8 @@ static int send_partial( rem_port* port, PACKET * packet)
 	{ // scope
 		static ULONG op_sentp_count = 0;
 		op_sentp_count++;
-		if (INET_trace & TRACE_operations) {
+		if (INET_trace & TRACE_operations)
+		{
 			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n",
 					   inet_debug_timer(),
 					   op_sentp_count, packet->p_operation);
@@ -2412,7 +2443,8 @@ static void inet_gen_error(rem_port* port, const Arg::StatusVector& v)
 	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;
 	}
-	if (status_vector != NULL) {
+	if (status_vector != NULL)
+	{
 		error.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
@@ -2683,7 +2715,8 @@ static bool_t inet_read( XDR* xdrs)
 
 	// If buffer is not completely empty, slide down what's left
 
-	if (xdrs->x_handy > 0) {
+	if (xdrs->x_handy > 0)
+	{
 		memmove(p, xdrs->x_private, xdrs->x_handy);
 		p += xdrs->x_handy;
 	}
@@ -2695,7 +2728,8 @@ static bool_t inet_read( XDR* xdrs)
 		{
 			return FALSE;
 		}
-		if (length >= 0) {
+		if (length >= 0)
+		{
 			p += length;
 			break;
 		}
@@ -2764,7 +2798,8 @@ static rem_port* inet_try_connect(PACKET* packet,
 	// an error.  status_vector will have the network error info.
 
 	rem_port* port = INET_connect(node_name, packet, status_vector, FALSE, &dpb);
-	if (!port) {
+	if (!port)
+	{
 		delete rdb;
 		return NULL;
 	}
@@ -2845,7 +2880,8 @@ static bool_t inet_write( XDR* xdrs /*, bool_t end_flag*/)
 			return FALSE;
 		p2 -= l2;
 		length = aux_buffer + sizeof(aux_buffer) - p2;
-		if (!packet_receive(port, p2, length, &l2)) {
+		if (!packet_receive(port, p2, length, &l2))
+		{
 			p2 += l2;
 			continue;
 		}
@@ -3033,12 +3069,14 @@ static bool packet_receive(rem_port* port,
 		return false;
 	}
 
-	if (n == -1) {
+	if (n == -1)
+	{
 		inet_error(port, "read", isc_net_read_err, inetErrNo);
 		return false;
 	}
 
-	if (!n) {
+	if (!n)
+	{
 		inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
 		return false;
 	}
@@ -3050,7 +3088,8 @@ static bool packet_receive(rem_port* port,
 		if (INET_trace & TRACE_packets)
 			packet_print("receive", buffer, n, INET_count_recv);
 		INET_force_error--;
-		if (INET_force_error == 0) {
+		if (INET_force_error == 0)
+		{
 			INET_force_error = 1;
 			inet_error(port, "simulated error - read", isc_net_read_err, 0);
 			return false;
@@ -3083,7 +3122,8 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 	while (length)
 	{
 #ifdef DEBUG
-		if (INET_trace & TRACE_operations) {
+		if (INET_trace & TRACE_operations)
+		{
 			fprintf(stdout, "Before Send\n");
 			fflush(stdout);
 		}
@@ -3091,7 +3131,8 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		SSHORT n = -1;
 		n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
 #ifdef DEBUG
-		if (INET_trace & TRACE_operations) {
+		if (INET_trace & TRACE_operations)
+		{
 			fprintf(stdout, "After Send n is %d\n", n);
 			fflush(stdout);
 		}
@@ -3175,7 +3216,8 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		}
 #endif // HAVE_SETITIMER
 
-		if (n == -1) {
+		if (n == -1)
+		{
 			inet_error(port, "send/oob", isc_net_write_err, inetErrNo);
 			return false;
 		}
@@ -3188,7 +3230,8 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 		if (INET_trace & TRACE_packets)
 			packet_print("send", (const UCHAR*) buffer, buffer_length, INET_count_send);
 		INET_force_error--;
-		if (INET_force_error == 0) {
+		if (INET_force_error == 0)
+		{
 			INET_force_error = 1;
 			inet_error(port, "simulated error - send", isc_net_write_err, 0);
 			return false;
