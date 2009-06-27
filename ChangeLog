@@ -1,3 +1,82 @@
+2009-06-27 14:07  robocop
+
+	* firebird2/src/remote/inet.cpp (1.291):
+
+	Style.
+
+2009-06-27 13:43  robocop
+
+	* firebird2/src/jrd/: SimilarToMatcher.h (1.24), CharSet.cpp
+	(1.10), CharSet.h (1.8):
+
+	Style.
+
+2009-06-27 13:12  robocop
+
+	* firebird2/src/jrd/: btr.cpp (1.252), ods.h (1.50):
+
+	Typo repeated.
+
+2009-06-27 10:28  robocop
+
+	* firebird2/src/remote/protocol.cpp (1.84):
+
+	Cleanup.
+
+2009-06-27 09:59  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.290), os/win32/wnet.cpp
+	(1.82):
+
+	Fixed CORE-2462: 2.5 beta 1 has huge, fast-growing log files.  Also
+	bring some uniformity to the code among different protocols.
+
+2009-06-27 09:00  robocop
+
+	* firebird2/src/lock/print.cpp (1.86):
+
+	Style.
+
+2009-06-27 08:57  robocop
+
+	* firebird2/src/utilities/fbtracemgr/traceMgrMain.cpp (1.6):
+
+	Avoid variableshadowing.
+
+2009-06-27 08:23  robocop
+
+	* firebird2/src/: gpre/ada.cpp (1.65), gpre/c_cxx.cpp (1.88),
+	gpre/cme.cpp (1.58), gpre/cob.cpp (1.80), gpre/ftn.cpp (1.77),
+	gpre/gpre.cpp (1.111), gpre/int_cxx.cpp (1.50), gpre/pas.cpp
+	(1.68), gpre/rmc.cpp (1.24), burp/backup.epp (1.123), burp/burp.cpp
+	(1.169), jrd/btr.cpp (1.251), jrd/cmp.cpp (1.343), jrd/dfw.epp
+	(1.276), jrd/enc.cpp (1.35), jrd/filters.cpp (1.74), jrd/idx.cpp
+	(1.158), jrd/inf.cpp (1.103), jrd/met.epp (1.284), jrd/opt.cpp
+	(1.350), jrd/Relation.cpp (1.22), jrd/SysFunction.cpp (1.79),
+	jrd/TextType.cpp (1.14), jrd/ThreadStart.cpp (1.18),
+	jrd/VirtualTable.cpp (1.15), jrd/rpb_chain.cpp (1.14), jrd/sdl.cpp
+	(1.58), jrd/sha.cpp (1.13), jrd/shut.cpp (1.69), jrd/sort.cpp
+	(1.130), jrd/unicode_util.cpp (1.51), jrd/validation.cpp (1.50),
+	common/config/dir_list.cpp (1.42), qli/expand.cpp (1.51),
+	qli/mov.cpp (1.55), include/fb_blk.h (1.19), isql/isql_win.cpp
+	(1.24), intl/lc_narrow.cpp (1.39), intl/utils/maptest.cpp (1.8),
+	dsql/pass1.cpp (1.453), dsql/utld.cpp (1.65), lock/print.cpp
+	(1.85), remote/protocol.cpp (1.83), jrd/os/posix/unix.cpp (1.120):
+
+	Style.
+
+2009-06-27 05:03  asfernandes
+
+	* firebird2/src/: gpre/par.cpp (1.84), gpre/sql.cpp (1.90),
+	jrd/dpm.epp (1.99), jrd/exe.cpp (1.303), jrd/fun.epp (1.121),
+	jrd/gds.cpp (1.302), jrd/isc_file.cpp (1.139), jrd/lck.cpp (1.101),
+	qli/report.cpp (1.28), utilities/fbsvcmgr.cpp (1.30),
+	utilities/fbtracemgr/traceMgrMain.cpp (1.5),
+	utilities/gsec/gsec.cpp (1.116), utilities/gsec/gsec_proto.h
+	(1.19):
+
+	Misc
+
 2009-06-26 13:19  robocop
 
 	* firebird2/src/jrd/dyn_mod.epp (1.117):
