@@ -1058,25 +1058,19 @@ static bool wnet_error(rem_port* port,
  *	is used to indicate and error.
  *
  **************************************/
-	TEXT node_name[MAXPATHLEN];
-
-	fb_utils::copy_terminate(node_name, port->port_connection->str_data + 2, sizeof(node_name));
-	TEXT* p = strchr(node_name, '\\');
-	if (p != NULL)
-		*p = '\0';
-
-	Arg::Gds temp(isc_network_error);
-	temp << Arg::Str(node_name) << Arg::Gds(operation);
 	if (status)
 	{
-		temp << SYS_ERR(status);
-
 		if (port->port_state != rem_port::BROKEN) {
 			gds__log("WNET/wnet_error: %s errno = %d", function, status);
 		}
+
+		wnet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
+	}
+	else
+	{
+		wnet_gen_error(port, Arg::Gds(operation));
 	}
 
-	wnet_gen_error(port, temp);
 	return false;
 }
 
@@ -1097,13 +1091,31 @@ static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
  **************************************/
 	port->port_state = rem_port::BROKEN;
 
+	TEXT node_name[MAXPATHLEN];
+	if (port->port_connection)
+	{
+		fb_utils::copy_terminate(node_name, port->port_connection->str_data + 2, sizeof(node_name));
+		TEXT* const p = strchr(node_name, '\\');
+		if (p != NULL)
+			*p = '\0';
+	}
+	else
+	{
+		strcpy(node_name, "(unknown)");
+	}
+
+	Arg::Gds error(isc_network_error);
+	error << Arg::Str(node_name) << v;
+
 	ISC_STATUS* status_vector = NULL;
-	if (port->port_context != NULL)
+	if (port->port_context != NULL) {
 		status_vector = port->port_context->rdb_status_vector;
-	if (status_vector == NULL)
+	}
+	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;
+	}
 	if (status_vector != NULL) {
-		v.copyTo(status_vector);
+		error.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
 }

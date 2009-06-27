@@ -649,10 +649,7 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
 					 host.c_str(), H_ERRNO);
-			inet_gen_error(port,
-						   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
-						   Arg::Gds(isc_net_lookup_err) <<
-						   Arg::Gds(isc_host_unknown));
+			inet_gen_error(port, Arg::Gds(isc_net_lookup_err) << Arg::Gds(isc_host_unknown));
 
 			disconnect(port);
 			return NULL;
@@ -709,11 +706,8 @@ rem_port* INET_connect(const TEXT* name,
 			// end of modification by FSG
 			// this is the original code
 			gds__log("INET/INET_connect: getservbyname failed, error code = %d", H_ERRNO);
-			inet_gen_error(port,
-                           Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
-						   Arg::Gds(isc_net_lookup_err) <<
-						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) <<
-															Arg::Str("tcp"));
+			inet_gen_error(port, Arg::Gds(isc_net_lookup_err) <<
+						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) << Arg::Str("tcp"));
 			return NULL;
 		}						// else / not hardwired gds_db translation
 	}
@@ -2390,7 +2384,7 @@ static XDR_INT inet_destroy( XDR*)
 	return (XDR_INT) 0;
 }
 
-static void inet_gen_error (rem_port* port, const Arg::StatusVector& v)
+static void inet_gen_error(rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -2406,6 +2400,11 @@ static void inet_gen_error (rem_port* port, const Arg::StatusVector& v)
  **************************************/
 	port->port_state = rem_port::BROKEN;
 
+	const char* node_name = port->port_connection ? port->port_connection->str_data : "(unknown)";
+
+	Arg::Gds error(isc_network_error);
+	error << Arg::Str(node_name) << v;
+
 	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL) {
 		status_vector = port->port_context->rdb_status_vector;
@@ -2414,7 +2413,7 @@ static void inet_gen_error (rem_port* port, const Arg::StatusVector& v)
 		status_vector = port->port_status_vector;
 	}
 	if (status_vector != NULL) {
-		v.copyTo(status_vector);
+		error.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
 }
@@ -2568,18 +2567,16 @@ static void inet_error(rem_port* port, const TEXT* function, ISC_STATUS operatio
  **************************************/
 	if (status)
 	{
-		inet_gen_error(port,
-					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
-					   Arg::Gds(operation) << SYS_ERR(status));
+		if (port->port_state != rem_port::BROKEN) {
+			gds__log("INET/inet_error: %s errno = %d", function, status);
+		}
 
-		gds__log("INET/inet_error: %s errno = %d", function, status);
+		inet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
 	}
 	else
 	{
 		// No status value, just format the basic arguments.
-		inet_gen_error(port,
-					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
-					   Arg::Gds(operation));
+		inet_gen_error(port, Arg::Gds(operation));
 	}
 }
 
@@ -3042,8 +3039,7 @@ static bool packet_receive(rem_port* port,
 	}
 
 	if (!n) {
-		if (inetErrNo)
-			inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
+		inet_error(port, "read end_of_file", isc_net_read_err, inetErrNo);
 		return false;
 	}
 
