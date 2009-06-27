@@ -2434,7 +2434,7 @@ static SLONG add_node(thread_db* tdbb,
 		}
 	}
 
-	// the split page on the lower level has been propogated, so we can go back to
+	// the split page on the lower level has been propagated, so we can go back to
 	// the page it was split from, and mark it as garbage-collectable now
 	lockLower.enablePageGC(tdbb);
 	insertion->iib_dont_gc_lock = propagate.iib_dont_gc_lock;
@@ -3590,7 +3590,7 @@ static SLONG fast_load(thread_db* tdbb,
 				windows[0] = split_window;
 				buckets[0] = bucket = split;
 
-				// save the first key on page as the page to be propogated
+				// save the first key on page as the page to be propagated
 				copy_key(key, &split_key);
 
 				if (useJumpInfo)

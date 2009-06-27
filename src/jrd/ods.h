@@ -57,7 +57,7 @@
 const USHORT ODS_VERSION6	= 6;		/* on-disk structure as of v3.0 */
 const USHORT ODS_VERSION7	= 7;		/* new on disk structure for fixing index bug */
 const USHORT ODS_VERSION8	= 8;		/* new btree structure to support pc semantics */
-const USHORT ODS_VERSION9	= 9;		/* btree leaf pages are always propogated up */
+const USHORT ODS_VERSION9	= 9;		/* btree leaf pages are always propagated up */
 const USHORT ODS_VERSION10	= 10;		/* V6.0 features. SQL delimited idetifier,
 									SQLDATE, and 64-bit exact numeric type */
 const USHORT ODS_VERSION11	= 11;		/* Firebird 2.x features */
@@ -276,12 +276,12 @@ struct IndexJumpInfo
 };
 
 // pag_flags
-const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
-const UCHAR btr_not_propogated	= 2;	// page is not propogated upward
-const UCHAR btr_descending		= 8;	// Page/bucket is part of a descending index
+const UCHAR btr_dont_gc				= 1;	// Don't garbage-collect this page
+//const UCHAR btr_not_propagated	= 2;	// page is not propagated upward
+const UCHAR btr_descending			= 8;	// Page/bucket is part of a descending index
 const UCHAR btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
-const UCHAR btr_large_keys		= 32;	// AB: 2003-index-structure enhancement
-const UCHAR btr_jump_info		= 64;	// AB: 2003-index-structure enhancement
+const UCHAR btr_large_keys			= 32;	// AB: 2003-index-structure enhancement
+const UCHAR btr_jump_info			= 64;	// AB: 2003-index-structure enhancement
 
 const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
 
