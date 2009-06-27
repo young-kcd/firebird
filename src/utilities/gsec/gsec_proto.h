@@ -17,4 +17,3 @@ int		gsec(Firebird::UtilSvc*);
 THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM);
 
 #endif // GSEC_PROTO_H
-

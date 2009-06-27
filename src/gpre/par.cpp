@@ -3258,6 +3258,7 @@ static act* scan_routine_header()
 		MSC_match(KW_SEMI_COLON);
 	}
 	else
+	{
 		for (;;)
 		{
 			if (MSC_match(KW_EXTERN) || MSC_match(KW_FORWARD))
@@ -3273,6 +3274,7 @@ static act* scan_routine_header()
 			else
 				break;
 		}
+	}
 
 	return action;
 }

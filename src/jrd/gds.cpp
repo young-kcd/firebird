@@ -106,7 +106,6 @@ static const TEXT gdslogid[] = "";
 #endif
 #endif
 
-
 #include "gen/sql_code.h"
 #include "gen/sql_state.h"
 #include "gen/iberror.h"

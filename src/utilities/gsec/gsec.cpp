@@ -148,7 +148,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 	if (!uSvc->isService() && ret == -2) // user asked for help
 		GSEC_exit();
 
-
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
@@ -531,7 +530,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 	for (size_t argc = 1; argc < argv.getCount(); ++argc)
 	{
 		const char* string = argv[argc];
-		if (*string == '?' || string[0] == '-' && string[1] == '?')
+		if (*string == '?' || (string[0] == '-' && string[1] == '?'))
 			user_data->operation = HELP_OPER;
 		else if (*string != '-')
 		{
@@ -1310,7 +1309,7 @@ void GSEC_error(USHORT errcode)
 	tdsec->utilSvc->started();
 
 	GSEC_print(errcode);
-	// CVC: copy the errcode to exit with a value !=0
+	// CVC: copy the errcode to exit with a value different than 0
 	tdsec->tsec_exit_code = errcode;
 	if (tdsec->tsec_throw)
 		Firebird::LongJump::raise();

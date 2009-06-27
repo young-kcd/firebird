@@ -852,7 +852,7 @@ int main(int ac, char** av)
 		{
 			// use one second timeout to poll service
 			char send[16];
-			char *p = send;
+			char* p = send;
 			*p++ = isc_info_svc_timeout;
 			ADD_SPB_LENGTH(p, 4);
 			ADD_SPB_NUMERIC(p, 1);
@@ -862,7 +862,7 @@ int main(int ac, char** av)
 			UserPrint up;
 			do
 			{
-				if (isc_service_query(status, &svc_handle, 0,  p - send, send,
+				if (isc_service_query(status, &svc_handle, 0, p - send, send,
 						static_cast<USHORT>(spbItems.getBufferLength()),
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))

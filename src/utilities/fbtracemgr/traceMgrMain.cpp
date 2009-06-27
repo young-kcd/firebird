@@ -227,7 +227,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 	// use one second timeout to poll service
 	char send[16];
-	char *p = send;
+	char* p = send;
 	*p++ = isc_info_svc_timeout;
 	ADD_SPB_LENGTH(p, 4);
 	ADD_SPB_NUMERIC(p, 1);

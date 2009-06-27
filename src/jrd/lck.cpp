@@ -208,7 +208,7 @@ inline bool checkLock(const Lock* l)
 #endif
 
 #ifndef LCK_CHECK_LOCK
-#define LCK_CHECK_LOCK(x)		(true)	/* nothing */
+#define LCK_CHECK_LOCK(x)	true	// nothing
 #endif
 
 

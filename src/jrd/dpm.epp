@@ -784,8 +784,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, SLONG prior_page)
 	{
 		relPages = rpb->rpb_relation->getPages(tdbb, rpb->rpb_transaction_nr);
 		pwindow = WIN(relPages->rel_pg_space_id, -1);
-		if (!(ppage =
-			get_pointer_page(tdbb, rpb->rpb_relation, relPages, &pwindow, pp_sequence, LCK_write)))
+
+		if (!(ppage = get_pointer_page(tdbb, rpb->rpb_relation, relPages, &pwindow,
+				pp_sequence, LCK_write)))
 		{
 			BUGCHECK(245);	/* msg 245 pointer page disappeared in DPM_delete */
 		}
@@ -2664,16 +2665,16 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 	   This might cause a deadlock.  Fortunately, pointer pages don't need to be
 	   allocated often. */
 
-	pointer_page* ppage = 0;
+	pointer_page* ppage = NULL;
 	USHORT pp_sequence, slot = 0;
-	data_page* dpage = 0;
+	data_page* dpage = NULL;
 
 	for (;;)
 	{
 		for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
 		{
 			if (!(ppage = get_pointer_page(tdbb, relation, relPages, &pp_window,
-											pp_sequence, LCK_write)))
+										   pp_sequence, LCK_write)))
 			{
 				BUGCHECK(253);	/* msg 253 pointer page vanished from extend_relation */
 			}
@@ -2747,7 +2748,6 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN * window)
 		else
 			break;
 	}
-
 
 	CCH_MARK(tdbb, window);
 	dpage->dpg_sequence = (SLONG) pp_sequence * dbb->dbb_dp_per_pp + slot;

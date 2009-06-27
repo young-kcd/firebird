@@ -5291,7 +5291,7 @@ static gpre_index* make_index( gpre_req* request, const TEXT* string)
 	}
 
 	PAR_error("Can only reference INDEX in context of single database");
-	return 0; // silence compiler warning
+	return NULL; // silence compiler warning
 }
 
 
@@ -5318,7 +5318,7 @@ static gpre_rel* make_relation( gpre_req* request, const TEXT* relation_name)
 	}
 
 	PAR_error("Can only reference TABLE in context of single database");
-	return 0; // silence compiler warning
+	return NULL; // silence compiler warning
 }
 
 

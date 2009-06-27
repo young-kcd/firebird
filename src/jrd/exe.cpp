@@ -239,13 +239,11 @@ const int POST_TRIG	= 2;
 
 const size_t MAX_STACK_TRACE = 2048;
 
-
 #ifdef SCROLLABLE_CURSORS
 static const rse_get_mode g_RSE_get_mode = RSE_get_next;
 #else
 static const rse_get_mode g_RSE_get_mode = RSE_get_forward;
 #endif
-
 
 
 void EXE_assignment(thread_db* tdbb, jrd_nod* node)

@@ -357,5 +357,3 @@ static void top_of_page(qli_prt* print, bool first_flag)
 	if (report->rpt_bottom_page)
 		initialize_break(report->rpt_bottom_page);
 }
-
-
