@@ -110,31 +110,8 @@ static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR*, USHORT);
 
-#ifdef NOT_USED_OR_REPLACED
-// TMN: Patched away this for now, it should probably be removed.
-// Now why the ... would anyone want to define functions differently
-// in an implementation file than they  are defined in their header?!
+#include "../remote/xdr_proto.h"
 
-bool_t xdr_enum();
-bool_t xdr_short();
-bool_t xdr_u_short();
-bool_t xdr_long();
-#  ifdef SOLARIS
-bool_t xdr_hyper();
-#  endif
-bool_t xdr_opaque();
-bool_t xdr_string();
-bool_t xdr_float();
-bool_t xdr_double();
-bool_t xdr_wrapstring();
-
-bool_t xdr_free();
-
-#else // NOT_USED_OR_REPLACED
-
-#  include "../remote/xdr_proto.h"
-
-#endif // NOT_USED_OR_REPLACED
 
 
 #ifdef DEBUG
