@@ -595,6 +595,9 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	USHORT leftPages = initPages;
 	const ULONG initBy = MIN(file->fil_max_page - startPage, leftPages);
+	if (initBy < leftPages)
+		leftPages = initBy;
+
 	for (ULONG i = startPage; i < startPage + initBy; )
 	{
 		bdb.bdb_page = PageNumber(0, i);
