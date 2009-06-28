@@ -2619,13 +2619,14 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			invCandidate->dependencies = invCandidate1->dependencies + invCandidate2->dependencies;
 
 			// Add matches conjunctions that exists in both left and right inversion
-			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount())) {
+			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount()))
+			{
 				Firebird::SortedArray<jrd_nod*> matches;
-				size_t j;
-				for (j = 0; j < invCandidate1->matches.getCount(); j++) {
+				for (size_t j = 0; j < invCandidate1->matches.getCount(); j++) {
 					matches.add(invCandidate1->matches[j]);
 				}
-				for (j = 0; j < invCandidate2->matches.getCount(); j++) {
+				for (size_t j = 0; j < invCandidate2->matches.getCount(); j++)
+				{
 					if (matches.exist(invCandidate2->matches[j])) {
 						invCandidate->matches.add(invCandidate2->matches[j]);
 					}
@@ -3252,8 +3253,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 	// state after each test.
 	Firebird::HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
 	streamFlags.grow(innerStreams.getCount());
-	size_t i;
-	for (i = 0; i < streamFlags.getCount(); i++) {
+	for (size_t i = 0; i < streamFlags.getCount(); i++) {
 		streamFlags[i] = innerStreams[i]->used;
 	}
 
@@ -3303,8 +3303,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 	if (!done && !plan)
 	{
 		// Add these relations to the processing list
-		size_t j = 0;
-		for (j = 0; j < stream->indexedRelationships.getCount(); j++)
+		for (size_t j = 0; j < stream->indexedRelationships.getCount(); j++)
 		{
 			IndexRelationship* relationship = stream->indexedRelationships[j];
 			InnerJoinStreamInfo* relationStreamInfo = getStreamInfo(relationship->stream);
@@ -3340,7 +3339,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 		}
 
 		IndexRelationship** nextRelationship = processList->begin();
-		for (j = 0; j < processList->getCount(); j++) {
+		for (size_t j = 0; j < processList->getCount(); j++) {
 			InnerJoinStreamInfo* relationStreamInfo = getStreamInfo(nextRelationship[j]->stream);
 			if (!relationStreamInfo->used) {
 				findBestOrder(position, relationStreamInfo, processList, new_cost, new_cardinality);
@@ -3364,7 +3363,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 
 	// Clean up from any changes made for compute the cost for this stream
 	csb->csb_rpt[stream->stream].csb_flags &= ~csb_active;
-	for (i = 0; i < streamFlags.getCount(); i++) {
+	for (size_t i = 0; i < streamFlags.getCount(); i++) {
 		innerStreams[i]->used = streamFlags[i];
 	}
 }

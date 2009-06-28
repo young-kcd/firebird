@@ -7901,7 +7901,6 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 	}
 
 	index_desc* selected_idx = NULL;
-	USHORT i, j;
 	Firebird::Array<index_desc> idx_sort(*JRD_get_thread_data()->getDefaultPool(), csb_tail->csb_indices);
 	bool same_selectivity = false;
 
@@ -7911,11 +7910,11 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 
 	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1))
 	{
-		for (j = 0; j < csb_tail->csb_indices; j++)
+		for (USHORT j = 0; j < csb_tail->csb_indices; j++)
 		{
 			float selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
 			index_desc* idx = csb_tail->csb_idx->items;
-			for (i = 0; i < csb_tail->csb_indices; i++)
+			for (USHORT i = 0; i < csb_tail->csb_indices; i++)
 			{
 				// Prefer ASC indices in the case of almost the same selectivities
 				if (selectivity > idx->idx_selectivity) {
@@ -7937,7 +7936,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 			if ((!selected_idx) || (selected_idx->idx_runtime_flags & idx_marker))
 			{
 				idx = csb_tail->csb_idx->items;
-				for (i = 0; i < csb_tail->csb_indices; i++)
+				for (USHORT i = 0; i < csb_tail->csb_indices; i++)
 				{
 					if (!(idx->idx_runtime_flags & idx_marker))
 					{
@@ -7953,7 +7952,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 
 		// Finally store the right order in cbs_tail->csb_idx
 		index_desc* idx = csb_tail->csb_idx->items;
-		for (j = 0; j < csb_tail->csb_indices; j++)
+		for (USHORT j = 0; j < csb_tail->csb_indices; j++)
 		{
 			idx->idx_runtime_flags &= ~idx_marker;
 			memcpy(idx, &idx_sort[j], sizeof(index_desc));
