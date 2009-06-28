@@ -1,3 +1,36 @@
+2009-06-28 13:59  robocop
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.39),
+	common/classes/ClumpletWriter.cpp (1.30), gpre/ada.cpp (1.67),
+	gpre/cmd.cpp (1.58), gpre/cob.cpp (1.82), gpre/ftn.cpp (1.79),
+	gpre/rmc.cpp (1.25), intl/cv_unicode_fss.cpp (1.15), qli/expand.cpp
+	(1.52), qli/parse.cpp (1.55), remote/os/win32/chop.cpp (1.12),
+	remote/os/win32/cntl.cpp (1.47), remote/os/win32/ibconfig.cpp
+	(1.35), remote/os/win32/property.cpp (1.30),
+	remote/os/win32/srvr_w32.cpp (1.75), remote/os/win32/window.cpp
+	(1.41), remote/os/win32/wnet.cpp (1.83),
+	utilities/ntrace/TraceConfiguration.cpp (1.11):
+
+	Style.
+
+2009-06-28 12:29  uid32383
+
+	* firebird2/src/jrd/: opt.cpp (1.351), Optimizer.cpp (1.114):
+
+	Style.
+
+2009-06-28 12:26  robocop
+
+	* firebird2/src/: gpre/ada.cpp (1.66), gpre/c_cxx.cpp (1.89),
+	gpre/cob.cpp (1.81), gpre/ftn.cpp (1.78), gpre/int_cxx.cpp (1.51),
+	gpre/pas.cpp (1.69), jrd/enc.cpp (1.36), jrd/intl_builtin.cpp
+	(1.54), remote/inet_server.cpp (1.99), remote/interface.cpp
+	(1.218), remote/merge.cpp (1.28), remote/protocol.cpp (1.85),
+	remote/remote.cpp (1.90), remote/server.cpp (1.260),
+	remote/xnet.cpp (1.136):
+
+	Style.
+
 2009-06-27 14:07  robocop
 
 	* firebird2/src/remote/inet.cpp (1.291):
