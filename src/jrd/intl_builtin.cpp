@@ -342,7 +342,7 @@ static ULONG internal_fss_substring(charset* /*obj*/, ULONG srcLen, const UCHAR*
 	if (length == 0)
 		return 0;
 
-	const UCHAR* dstStart = dst;
+	const UCHAR* const dstStart = dst;
 	const UCHAR* const srcEnd = src + srcLen;
 	const UCHAR* const dstEnd = dst + dstLen;
 	ULONG pos = 0;

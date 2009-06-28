@@ -398,7 +398,8 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS* user_status, Rbl** blob_handle)
 	Rbl* blob = *blob_handle;
 	if (!blob)
 	{
-		if (user_status) {
+		if (user_status)
+		{
 			*user_status++ = isc_arg_gds;
 			*user_status++ = FB_SUCCESS;
 			*user_status = isc_arg_end;
@@ -1274,7 +1275,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		// This should cure SF#919246
 		delete statement->rsr_bind_format;
 		statement->rsr_bind_format = NULL;
-		if (port->port_statement) {
+		if (port->port_statement)
+		{
 			delete port->port_statement->rsr_select_format;
 			port->port_statement->rsr_select_format = NULL;
 		}
@@ -1284,7 +1286,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		if (in_blr_length)
 		{
 			RMessage* message = PARSE_messages(in_blr, in_blr_length);
-			if (message != (RMessage*) - 1) {
+			if (message != (RMessage*) - 1)
+			{
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 				delete message;
 			}
@@ -1299,7 +1302,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 				port->port_statement = new Rsr;
 
 			RMessage* message = PARSE_messages(out_blr, out_blr_length);
-			if (message != (RMessage*) - 1) {
+			if (message != (RMessage*) - 1)
+			{
 				port->port_statement->rsr_select_format = (rem_fmt*) message->msg_address;
 				delete message;
 			}
@@ -1388,7 +1392,8 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 
 		if (packet->p_operation != op_sql_response)
 			check_response(rdb, packet);
-		else {
+		else
+		{
 			port->port_statement->rsr_message->msg_address = NULL;
 			receive_response(rdb, packet);
 		}
@@ -1536,7 +1541,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			if (in_blr_length)
 			{
 				RMessage* message = PARSE_messages(in_blr, in_blr_length);
-				if (message != (RMessage*) - 1) {
+				if (message != (RMessage*) - 1)
+				{
 					statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 					delete message;
 				}
@@ -1544,7 +1550,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			if (out_blr_length)
 			{
 				RMessage* message = PARSE_messages(out_blr, out_blr_length);
-				if (message != (RMessage*) - 1) {
+				if (message != (RMessage*) - 1)
+				{
 					statement->rsr_select_format = (rem_fmt*) message->msg_address;
 					delete message;
 				}
@@ -1714,7 +1721,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				delete statement->rsr_user_select_format;
 			}
 			RMessage* message = PARSE_messages(blr, blr_length);
-			if (message != (RMessage*) - 1) {
+			if (message != (RMessage*) - 1)
+			{
 				statement->rsr_user_select_format = (rem_fmt*) message->msg_address;
 				delete message;
 			}
@@ -1722,7 +1730,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				statement->rsr_user_select_format = NULL;
 			if (statement->rsr_flags.test(Rsr::FETCHED))
 				blr_length = 0;
-			else {
+			else
+			{
 				delete statement->rsr_select_format;
 				statement->rsr_select_format = statement->rsr_user_select_format;
 			}
@@ -1870,7 +1879,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				// hvlad: prevent subsequent fetches
 				statement->rsr_flags.set(Rsr::EOF_SET | Rsr::PAST_EOF);
 
-				if (statement->rsr_status) {
+				if (statement->rsr_status)
+				{
 					memcpy(user_status, statement->rsr_status->value(), sizeof(ISC_STATUS_ARRAY));
 					// don't clear rsr_status as it hold strings
 				}
@@ -1883,14 +1893,16 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		message = statement->rsr_message;
 		statement->rsr_message = message->msg_next;
 
-		if (statement->rsr_user_select_format->fmt_length != msg_length) {
+		if (statement->rsr_user_select_format->fmt_length != msg_length)
+		{
 			status_exception::raise(Arg::Gds(isc_port_len) <<
 				Arg::Num(msg_length) << Arg::Num(statement->rsr_user_select_format->fmt_length));
 		}
 		if (statement->rsr_user_select_format == statement->rsr_select_format) {
 			memcpy(msg, message->msg_address, msg_length);
 		}
-		else {
+		else
+		{
 			if (!mov_dsql_message(user_status, message->msg_address,
 								  statement->rsr_select_format, msg,
 								  statement->rsr_user_select_format))
@@ -1943,7 +1955,8 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 
 		if (statement->rsr_flags.test(Rsr::LAZY))
 		{
-			if (option == DSQL_drop) {
+			if (option == DSQL_drop)
+			{
 				release_sql_request(statement);
 				*stmt_handle = NULL;
 			}
@@ -1977,14 +1990,16 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 
 			packet->p_resp.p_resp_object = statement->rsr_id;
 		}
-		else {
+		else
+		{
 			if (send_and_receive(rdb, packet, user_status)) {
 				return user_status[1];
 			}
 		}
 
 		statement->rsr_handle = (FB_API_HANDLE) (IPTR) packet->p_resp.p_resp_object;
-		if (packet->p_resp.p_resp_object == INVALID_OBJECT) {
+		if (packet->p_resp.p_resp_object == INVALID_OBJECT)
+		{
 			release_sql_request(statement);
 			*stmt_handle = NULL;
 		}
@@ -2055,7 +2070,8 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 		if (blr_length)
 		{
 			RMessage* message = PARSE_messages(blr, blr_length);
-			if (message != (RMessage*) - 1) {
+			if (message != (RMessage*) - 1)
+			{
 				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
 				delete message;
 			}
@@ -2483,7 +2499,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 			response->p_resp_data.cstr_allocated = buffer_length;
 			response->p_resp_data.cstr_address = buffer;
 
-			if (!receive_response(rdb, packet)) {
+			if (!receive_response(rdb, packet))
+			{
 				response->p_resp_data = temp;
 				return user_status[1];
 			}
@@ -2509,7 +2526,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 
 		// if we're already done, stop now
 
-		if (blob->rbl_flags & Rbl::EOF_SET) {
+		if (blob->rbl_flags & Rbl::EOF_SET)
+		{
 			*v++ = isc_segstr_eof;
 			return user_status[1];
 		}
@@ -2531,10 +2549,10 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 				USHORT l = blob->rbl_fragment_length;
 				if (l) {
 					blob->rbl_fragment_length = 0;
-
-				// otherwise pick up the count word as the length, & decrement the local length
 				}
-				else {
+				else
+				{
+					// otherwise pick up the count word as the length, & decrement the local length
 					l = *p++;
 					l += *p++ << 8;
 					blob->rbl_length -= 2;
@@ -2543,7 +2561,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 				// Now check that what we've got fits.
 				// If not, set up the fragment pointer and set the status vector
 
-				if (l > buffer_length) {
+				if (l > buffer_length)
+				{
 					blob->rbl_fragment_length = l - buffer_length;
 					l = buffer_length;
 					*v = isc_segment;
@@ -2624,7 +2643,8 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 			response->p_resp_data.cstr_allocated = blob->rbl_buffer_length;
 			response->p_resp_data.cstr_address = blob->rbl_buffer;
 
-			if (!receive_response(rdb, packet)) {
+			if (!receive_response(rdb, packet))
+			{
 				response->p_resp_data = temp;
 				return user_status[1];
 			}
@@ -2725,7 +2745,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		bool err_flag = false;
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 			err_flag = true;
-		else {
+		else
+		{
 			packet->p_resp.p_resp_status_vector = rdb->rdb_status_vector;
 			if (!receive_packet(rdb->rdb_port, packet, user_status))
 				err_flag = true;
@@ -2739,7 +2760,8 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		if (err_flag)
 			return user_status[1];
 
-		if (packet->p_operation != op_slice) {
+		if (packet->p_operation != op_slice)
+		{
 			check_response(rdb, packet);
 			return user_status[1];
 		}
@@ -2945,12 +2967,14 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 
 		if ((ULONG) segment_length + 2 > l)
 		{
-			if (blob->rbl_ptr > blob->rbl_buffer) {
+			if (blob->rbl_ptr > blob->rbl_buffer)
+			{
 				if (send_blob(user_status, blob, 0, NULL)) {
 					return user_status[1];
 				}
 			}
-			if ((ULONG) segment_length + 2 > blob->rbl_buffer_length) {
+			if ((ULONG) segment_length + 2 > blob->rbl_buffer_length)
+			{
 				send_blob(user_status, blob, segment_length, segment);
 				return user_status[1];
 			}
@@ -3394,7 +3418,8 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 
 		// Copy data from the message buffer to the client buffer
 
-		if (tail->rrq_format->fmt_length != msg_length) {
+		if (tail->rrq_format->fmt_length != msg_length)
+		{
 			status_exception::raise(Arg::Gds(isc_port_len) <<
 				Arg::Num(msg_length) << Arg::Num(tail->rrq_format->fmt_length));
 		}
@@ -3737,7 +3762,8 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 		seek->p_seek_mode = mode;
 		seek->p_seek_offset = offset;
 
-		if (mode == 1) {
+		if (mode == 1)
+		{
 			seek->p_seek_mode = 0;
 			seek->p_seek_offset = blob->rbl_offset + offset;
 		}
@@ -3871,7 +3897,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		rdb->rdb_status_vector = user_status;
 
 		// make sure the protocol supports it
-		if (port->port_protocol < PROTOCOL_VERSION8) {
+		if (port->port_protocol < PROTOCOL_VERSION8)
+		{
 			disconnect(port);
 			return unsupported(user_status);
 		}
@@ -4393,7 +4420,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
-		if (packet->p_operation != op_transact_response) {
+		if (packet->p_operation != op_transact_response)
+		{
 			if (!check_response(rdb, packet)) {
 				return user_status[1];
 			}
@@ -4503,12 +4531,14 @@ static Rvnt* add_event( rem_port* port)
 	// Find unused event block or, if necessary, a new one
 
 	Rvnt* event;
-	for (event = rdb->rdb_events; event; event = event->rvnt_next) {
+	for (event = rdb->rdb_events; event; event = event->rvnt_next)
+	{
 		if (!event->rvnt_id)
 			break;
 	}
 
-	if (!event) {
+	if (!event)
+	{
 		event = new Rvnt;
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
@@ -4741,8 +4771,10 @@ static rem_port* analyze_service(PathName& service_name,
 		return WNET_analyze(service_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
-	if (!port) {
-		if (ISC_analyze_tcp(service_name, node_name)) {
+	if (!port)
+	{
+		if (ISC_analyze_tcp(service_name, node_name))
+		{
 			port = INET_analyze(service_name, status_vector,
 								node_name.c_str(), user_string, uv_flag, spb);
 		}
@@ -5175,7 +5207,8 @@ static bool check_response(Rdb* rdb, PACKET * packet)
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
-			if (port->port_protocol < PROTOCOL_VERSION10) {
+			if (port->port_protocol < PROTOCOL_VERSION10)
+			{
 				fb_assert(vec == isc_arg_gds);
 				*vector = gds__encode(*vector, 0);
 			}
@@ -5271,7 +5304,8 @@ static void disconnect( rem_port* port)
 		// R.  Kumar
 		// M.  Romanini
 
-		if (port->port_type != rem_port::PIPE) {
+		if (port->port_type != rem_port::PIPE)
+		{
 			packet->p_operation = op_disconnect;
 			port->send(packet);
 		}
@@ -5458,7 +5492,8 @@ static ISC_STATUS fetch_blob(ISC_STATUS* user_status,
 
 	RMessage* message = statement->rsr_buffer;
 	message->msg_address = msg;
-	if (!receive_packet(port, packet, user_status)) {
+	if (!receive_packet(port, packet, user_status))
+	{
 		message->msg_address = NULL;
 		return user_status[1];
 	}
@@ -5466,7 +5501,8 @@ static ISC_STATUS fetch_blob(ISC_STATUS* user_status,
 
 	if (packet->p_operation == op_fetch_response)
 		receive_response(rdb, packet);
-	else {
+	else
+	{
 		check_response(rdb, packet);
 		return user_status[1];
 	}
@@ -5630,7 +5666,8 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 	information->p_info_incarnation = incarnation;
 	information->p_info_items.cstr_length = item_length;
 	information->p_info_items.cstr_address = items;
-	if (operation == op_service_info) {
+	if (operation == op_service_info)
+	{
 		information->p_info_recv_items.cstr_length = recv_item_length;
 		information->p_info_recv_items.cstr_address = recv_items;
 	}
@@ -5653,7 +5690,8 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 	response->p_resp_data.cstr_allocated = buffer_length;
 	response->p_resp_data.cstr_address = buffer;
 
-	if (!receive_response(rdb, packet)) {
+	if (!receive_response(rdb, packet))
+	{
 		response->p_resp_data = temp;
 		return user_status[1];
 	}
@@ -5860,7 +5898,8 @@ static bool mov_dsql_message(ISC_STATUS* status,
 		}
 
 	}	// try
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(status, ex);
 		return false;
 	}
@@ -5958,13 +5997,15 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 		}
 
 		// Note: not receive_packet
-		if (!receive_packet_noqueue(rdb->rdb_port, packet, tmp_status)) {
+		if (!receive_packet_noqueue(rdb->rdb_port, packet, tmp_status))
+		{
 			memcpy(request->rrq_status_vector, tmp_status, sizeof(request->rrq_status_vector));
 			return;
 		}
 
 		// Did an error response come back ?
-		if (packet->p_operation != op_send) {
+		if (packet->p_operation != op_send)
+		{
 			check_response(rdb, packet);
 			memcpy(request->rrq_status_vector, tmp_status, sizeof(request->rrq_status_vector));
 			return;
@@ -6257,7 +6298,8 @@ static void release_blob( Rbl* blob)
 
 	for (Rbl** p = &transaction->rtr_blobs; *p; p = &(*p)->rbl_next)
 	{
-		if (*p == blob) {
+		if (*p == blob)
+		{
 			*p = blob->rbl_next;
 			break;
 		}
@@ -6283,7 +6325,8 @@ static void release_event( Rvnt* event)
 
 	for (Rvnt** p = &rdb->rdb_events; *p; p = &(*p)->rvnt_next)
 	{
-		if (*p == event) {
+		if (*p == event)
+		{
 			*p = event->rvnt_next;
 			break;
 		}
@@ -6395,7 +6438,8 @@ static void release_sql_request( Rsr* statement)
 
 	for (Rsr** p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
 	{
-		if (*p == statement) {
+		if (*p == statement)
+		{
 			*p = statement->rsr_next;
 			break;
 		}
@@ -6425,7 +6469,8 @@ static void release_transaction( Rtr* transaction)
 
 	for (Rtr** p = &rdb->rdb_transactions; *p; p = &(*p)->rtr_next)
 	{
-		if (*p == transaction) {
+		if (*p == transaction)
+		{
 			*p = transaction->rtr_next;
 			break;
 		}
@@ -6816,7 +6861,8 @@ static bool send_packet(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
 	for (rem_que_packet* p = port->port_deferred_packets->begin();
 		p < port->port_deferred_packets->end(); p++)
 	{
-		if (!p->sent) {
+		if (!p->sent)
+		{
 			if (!port->send_partial(&p->packet))
 				return false;
 			p->sent = true;
@@ -6860,7 +6906,8 @@ static bool send_partial_packet(rem_port* port, PACKET* packet, ISC_STATUS* user
 	for (rem_que_packet* p = port->port_deferred_packets->begin();
 		p < port->port_deferred_packets->end(); p++)
 	{
-		if (!p->sent) {
+		if (!p->sent)
+		{
 			if (!port->send_partial(&p->packet))
 				return false;
 			p->sent = true;
@@ -6944,7 +6991,8 @@ static ISC_STATUS svcstart(ISC_STATUS*	user_status,
 	P_RESP* response = &packet->p_resp;
 	CSTRING temp = response->p_resp_data;
 
-	if (!receive_response(rdb, packet)) {
+	if (!receive_response(rdb, packet))
+	{
 		response->p_resp_data = temp;
 		return user_status[1];
 	}

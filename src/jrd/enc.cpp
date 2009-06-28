@@ -475,13 +475,15 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 		/*
 		 * Involve the rest of the password 8 characters at a time.
 		 */
-		while (*key) {
+		while (*key)
+		{
 			if (des_cipher((const char*) &keyblock, (char*) &keyblock, 0L, 1))
 			{
 				buf[0] = 0;
 				return;
 			}
-			for (SLONG i = 0; i < 8; i++) {
+			for (SLONG i = 0; i < 8; i++)
+			{
 				if ((t = 2 * (unsigned char) (*key)) != 0)
 					key++;
 				keyblock.b[i] ^= t;
@@ -497,7 +499,8 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 
 		/* get iteration count */
 		num_iter = 0;
-		for (SLONG i = 4; --i >= 0;) {
+		for (SLONG i = 4; --i >= 0;)
+		{
 			if ((t = (unsigned char) setting[i]) == '\0')
 				t = '.';
 			encp[i] = t;
@@ -513,7 +516,8 @@ void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
 	}
 
 	SLONG salt = 0;
-	for (SLONG i = salt_size; --i >= 0;) {
+	for (SLONG i = salt_size; --i >= 0;)
+	{
 		if ((t = (unsigned char) setting[i]) == '\0')
 			t = '.';
 		encp[i] = t;
@@ -601,7 +605,8 @@ int des_setkey(const char *key)
 	DCL_BLOCK(K, K0, K1);
 	static bool des_ready = false;
 
-	if (!des_ready) {
+	if (!des_ready)
+	{
 		init_des();
 		des_ready = true;
 	}
@@ -609,7 +614,8 @@ int des_setkey(const char *key)
 	PERM6464(K, K0, K1, (unsigned char *) key, (C_block *) PC1ROT);
 	key = (char *) &KS[0];
 	STORE(K & ~0x03030303L, K0 & ~0x03030303L, K1, *(C_block *) key);
-	for (int i = 1; i < 16; i++) {
+	for (int i = 1; i < 16; i++)
+	{
 		key += sizeof(C_block);
 		STORE(K, K0, K1, *(C_block *) key);
 		C_block* ptabp = (C_block *) PC2ROT[Rotates[i] - 1];
@@ -666,18 +672,21 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 	C_block *kp;
 	int ks_inc;
 
-	if (num_iter >= 0) {		/* encryption */
+	if (num_iter >= 0)
+	{		/* encryption */
 		kp = &KS[0];
 		ks_inc = sizeof(*kp);
 	}
-	else {						/* decryption */
+	else
+	{						/* decryption */
 		num_iter = -num_iter;
 		kp = &KS[KS_SIZE - 1];
 		ks_inc = -(int) sizeof(*kp);
 	}
 
 	SLONG k;
-	while (--num_iter >= 0) {
+	while (--num_iter >= 0)
+	{
 		int loop_count = 8;
 		do {
 
@@ -743,29 +752,31 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
  */
 STATIC void init_des()
 {
-	int i, j;
 	SLONG k;
 	static unsigned char perm[64];	/* "static" for speed */
 
 	/*
 	 * table that converts chars "./0-9A-Za-z"to integers 0-63.
 	 */
-	for (i = 0; i < 64; i++)
+	for (int i = 0; i < 64; i++)
 		a64toi[itoa64[i]] = i;
 
 	/*
 	 * PC1ROT - bit reverse, then PC1, then Rotate, then PC2.
 	 */
-	for (i = 0; i < 64; i++)
+	for (int i = 0; i < 64; i++)
 		perm[i] = 0;
-	for (i = 0; i < 64; i++) {
+
+	for (int i = 0; i < 64; i++)
+	{
 		if ((k = PC2[i]) == 0)
 			continue;
 		k += Rotates[0] - 1;
 		if ((k % 28) < Rotates[0])
 			k -= 28;
 		k = PC1[k];
-		if (k > 0) {
+		if (k > 0)
+		{
 			k--;
 			k = (k | 07) - (k & 07);
 			k++;
@@ -777,16 +788,21 @@ STATIC void init_des()
 	/*
 	 * PC2ROT - PC2 inverse, then Rotate (once or twice), then PC2.
 	 */
-	for (j = 0; j < 2; j++) {
+	for (int j = 0; j < 2; j++)
+	{
 		unsigned char pc2inv[64];
-		for (i = 0; i < 64; i++)
+		for (int i = 0; i < 64; i++)
 			perm[i] = pc2inv[i] = 0;
-		for (i = 0; i < 64; i++) {
+
+		for (int i = 0; i < 64; i++)
+		{
 			if ((k = PC2[i]) == 0)
 				continue;
 			pc2inv[k - 1] = i + 1;
 		}
-		for (i = 0; i < 64; i++) {
+
+		for (int i = 0; i < 64; i++)
+		{
 			if ((k = PC2[i]) == 0)
 				continue;
 			k += j;
@@ -800,14 +816,17 @@ STATIC void init_des()
 	/*
 	 * Bit reverse, then initial permutation, then expansion.
 	 */
-	for (i = 0; i < 8; i++) {
-		for (j = 0; j < 8; j++) {
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < 8; j++)
+		{
 			k = (j < 2) ? 0 : IP[ExpandTr[i * 6 + j - 2] - 1];
 			if (k > 32)
 				k -= 32;
 			else if (k > 0)
 				k--;
-			if (k > 0) {
+			if (k > 0)
+			{
 				k--;
 				k = (k | 07) - (k & 07);
 				k++;
@@ -820,9 +839,11 @@ STATIC void init_des()
 	/*
 	 * Compression, then final permutation, then bit reverse.
 	 */
-	for (i = 0; i < 64; i++) {
+	for (int i = 0; i < 64; i++)
+	{
 		k = IP[CIFP[i] - 1];
-		if (k > 0) {
+		if (k > 0)
+		{
 			k--;
 			k = (k | 07) - (k & 07);
 			k++;
@@ -836,10 +857,12 @@ STATIC void init_des()
 	 */
 	static unsigned char tmp32[32];	/* "static" for speed */
 
-	for (i = 0; i < 48; i++)
+	for (int i = 0; i < 48; i++)
 		perm[i] = P32Tr[ExpandTr[i] - 1];
-	for (int tableno = 0; tableno < 8; tableno++) {
-		for (j = 0; j < 64; j++) {
+	for (int tableno = 0; tableno < 8; tableno++)
+	{
+		for (int j = 0; j < 64; j++)
+		{
 			k = (((j >> 0) & 01) << 5) |
 				(((j >> 1) & 01) << 3) |
 				(((j >> 2) & 01) << 2) |
@@ -849,16 +872,16 @@ STATIC void init_des()
 			k = (((k >> 3) & 01) << 0) |
 				(((k >> 2) & 01) << 1) |
 				(((k >> 1) & 01) << 2) | (((k >> 0) & 01) << 3);
-			for (i = 0; i < 32; i++)
+			for (int i = 0; i < 32; i++)
 				tmp32[i] = 0;
-			for (i = 0; i < 4; i++)
+			for (int i = 0; i < 4; i++)
 				tmp32[4 * tableno + i] = (k >> i) & 01;
 			k = 0;
-			for (i = 24; --i >= 0;)
+			for (int i = 24; --i >= 0;)
 				k = (k << 1) | tmp32[perm[i] - 1];
 			TO_SIX_BIT(SPE[0][tableno][j], k);
 			k = 0;
-			for (i = 24; --i >= 0;)
+			for (int i = 24; --i >= 0;)
 				k = (k << 1) | tmp32[perm[i + 24] - 1];
 			TO_SIX_BIT(SPE[1][tableno][j], k);
 		}
@@ -877,13 +900,15 @@ STATIC void
 init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		  unsigned char p[64], int chars_out)
 {
-	for (int k = 0; k < chars_out * 8; k++) {	/* each output bit position */
+	for (int k = 0; k < chars_out * 8; k++)
+	{	/* each output bit position */
 		int l = p[k] - 1;			/* where this bit comes from */
 		if (l < 0)
 			continue;			/* output bit is always 0 */
 		const int i = l >> LGCHUNKBITS;	/* which chunk this bit comes from */
 		l = 1 << (l & (CHUNKBITS - 1));	/* mask for this bit */
-		for (int j = 0; j < (1 << CHUNKBITS); j++) {	/* each chunk value */
+		for (int j = 0; j < (1 << CHUNKBITS); j++)
+		{	/* each chunk value */
 			if ((j & l) != 0)
 				perm[i][j].b[k >> 3] |= 1 << (k & 07);
 		}

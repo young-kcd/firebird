@@ -113,7 +113,8 @@ USHORT MERGE_database_info(const UCHAR* in,
 			{
 				USHORT length = (USHORT) gds__vax_integer(in, 2);
 				in += 2;
-				if (out + length + 2 >= end) {
+				if (out + length + 2 >= end)
+				{
 					out[-1] = isc_info_truncated;
 					return 0;
 				}
@@ -181,7 +182,8 @@ static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const 
 	USHORT length = (USHORT) gds__vax_integer(*in, 2);
 	const USHORT new_length = length + delta_length;
 
-	if (*out + new_length + 2 >= end) {
+	if (*out + new_length + 2 >= end)
+	{
 		(*out)[-1] = isc_info_truncated;
 		return FB_FAILURE;
 	}

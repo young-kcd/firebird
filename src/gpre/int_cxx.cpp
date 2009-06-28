@@ -456,7 +456,8 @@ static void gen_raw( const gpre_req* request)
 			sprintf(p, "%d,", c);
 		while (*p)
 			p++;
-		if (p - buffer > 60) {
+		if (p - buffer > 60)
+		{
 			fprintf(gpreGlob.out_file, "%s\n", buffer);
 			p = buffer;
 			*p = 0;
@@ -577,7 +578,8 @@ static void gen_s_start( const act* action, int column)
 
 static void gen_send( const gpre_req* request, const gpre_port* port, int column, bool special)
 {
-	if (special) {
+	if (special)
+	{
 		align(column);
 		fprintf(gpreGlob.out_file, "if (ignore_perm)");
 		align(column);

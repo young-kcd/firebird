@@ -204,7 +204,8 @@ void xdr_debug_memory(XDR* xdrs,
 							return;
 						}
 					}
-					else {		// XDR_ENCODE or XDR_DECODE
+					else
+					{		// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
@@ -558,7 +559,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_cstring, slice->p_slc_sdl);
 		MAP(xdr_longs, slice->p_slc_parameters);
 		slice_response = &p->p_slr;
-		if (slice_response->p_slr_sdl) {
+		if (slice_response->p_slr_sdl)
+		{
 			if (!xdr_slice(xdrs, &slice->p_slc_slice, //slice_response->p_slr_sdl_length,
 						   slice_response->p_slr_sdl))
 			{
@@ -607,11 +609,13 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 					&sqldata->p_sqldata_blr, false, TYPE_PREPARED);
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
-		if (sqldata->p_sqldata_messages) {
+		if (sqldata->p_sqldata_messages)
+		{
 			if (!xdr_sql_message(xdrs, (SLONG) sqldata->p_sqldata_statement))
 				return P_FALSE(xdrs, p);
 		}
-		if (p->p_operation == op_execute2) {
+		if (p->p_operation == op_execute2)
+		{
 			xdr_sql_blr(xdrs, (SLONG) - 1, &sqldata->p_sqldata_out_blr, true, TYPE_PREPARED);
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_out_message_number));
 		}
@@ -623,7 +627,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_blr, false, TYPE_IMMEDIATE);
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_messages));
-		if (prep_stmt->p_sqlst_messages) {
+		if (prep_stmt->p_sqlst_messages)
+		{
 			if (!xdr_sql_message(xdrs, (SLONG) - 1))
 				return P_FALSE(xdrs, p);
 		}
@@ -865,7 +870,8 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
  *
  **************************************/
 
-	if (cstring->cstr_allocated) {
+	if (cstring->cstr_allocated)
+	{
 		delete[] cstring->cstr_address;
 		DEBUG_XDR_FREE(xdrs, cstring, cstring->cstr_address, cstring->cstr_allocated);
 	}
@@ -1393,7 +1399,8 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 	}
 	else
 	{
-		for (n = 0; n < slice->lstr_length / desc->dsc_length; n++) {
+		for (n = 0; n < slice->lstr_length / desc->dsc_length; n++)
+		{
 			if (!xdr_datum(xdrs, desc, p))
 				return FALSE;
 			p = p + (ULONG) desc->dsc_length;
@@ -1437,12 +1444,14 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		if (!(statement = port->port_objects[statement_id]))
 			return FALSE;
 	}
-	else {
+	else
+	{
 		if (!(statement = port->port_statement))
 			statement = port->port_statement = new Rsr;
 	}
 
-	if ((xdrs->x_op == XDR_ENCODE) && !direction) {
+	if ((xdrs->x_op == XDR_ENCODE) && !direction)
+	{
 		if (statement->rsr_bind_format)
 			statement->rsr_format = statement->rsr_bind_format;
 		return TRUE;
@@ -1468,9 +1477,11 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		// If we have BLR describing a new input/output message, get ready by
 		// setting up a format
 
-		if (blr->cstr_length) {
+		if (blr->cstr_length)
+		{
 			RMessage* temp_msg = (RMessage*) PARSE_messages(blr->cstr_address, blr->cstr_length);
-			if (temp_msg != (RMessage*) -1) {
+			if (temp_msg != (RMessage*) -1)
+			{
 				*fmt_ptr = (rem_fmt*) temp_msg->msg_address;
 				delete temp_msg;
 			}
@@ -1518,7 +1529,8 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
-	if (statement_id >= 0) {
+	if (statement_id >= 0)
+	{
 		if (static_cast<ULONG>(statement_id) >= port->port_objects.getCount())
 			return FALSE;
 		statement = port->port_objects[statement_id];
@@ -1530,7 +1542,8 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		return FALSE;
 
 	RMessage* message = statement->rsr_buffer;
-	if (message) {
+	if (message)
+	{
 		statement->rsr_buffer = message->msg_next;
 		if (!message->msg_address)
 			message->msg_address = message->msg_buffer;
@@ -1587,7 +1600,8 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector, TEXT* strings[])
 		case isc_arg_interpreted:
 		case isc_arg_string:
 		case isc_arg_sql_state:
-			if (xdrs->x_op == XDR_ENCODE) {
+			if (xdrs->x_op == XDR_ENCODE)
+			{
 				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
 					return FALSE;
 			}

@@ -275,7 +275,8 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
 	rem_port* port = XNET_connect(/*node_name,*/ packet, status_vector, 0);
-	if (!port) {
+	if (!port)
+	{
 		delete rdb;
 		return NULL;
 	}
@@ -312,7 +313,8 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0))) {
+		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0)))
+		{
 			delete rdb;
 			return NULL;
 		}
@@ -349,7 +351,8 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0))) {
+		if (!(port = XNET_connect(/*node_name,*/ packet, status_vector, 0)))
+		{
 			delete rdb;
 			return NULL;
 		}
@@ -361,7 +364,8 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 		port->receive(packet);
 	}
 
-	if (packet->p_operation != op_accept) {
+	if (packet->p_operation != op_accept)
+	{
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_connect_reject;
 		*status_vector++ = isc_arg_end;
@@ -445,7 +449,8 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 	XPM xpm = NULL;
 
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
-	if (strcmp(xnet_endpoint, "") == 0) {
+	if (strcmp(xnet_endpoint, "") == 0)
+	{
 		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
@@ -470,11 +475,13 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 
 		port = get_server_port(client_pid, xpm, current_process_id, 0, 0, status_vector);
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const Firebird::Exception& ex)
+	{
 		stuff_exception(status_vector, ex);
 		xnet_log_error("Unable to initialize child process", status_vector);
 
-		if (port) {
+		if (port)
+		{
 			cleanup_port(port);
 			port = NULL;
 		}
@@ -634,7 +641,8 @@ static bool accept_connection(rem_port* port, const P_CNCT*)
 	if (xcc)
 	{
 		XPS xps = (XPS) xcc->xcc_mapped_addr;
-		if (xps) {
+		if (xps)
+		{
 			TEXT address[MAX_COMPUTERNAME_LENGTH + 1];
 			ISC_get_host(address, sizeof(address));
 			port->port_address_str = REMOTE_make_string(address);
@@ -714,7 +722,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
  *
  **************************************/
 
-	if (port->port_server_flags) {
+	if (port->port_server_flags)
+	{
 		port->port_flags |= PORT_async;
 		return port;
 	}
@@ -803,7 +812,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 
 		xnet_log_error("aux_connect() failed");
 
-		if (xcc) {
+		if (xcc)
+		{
 			if (xcc->xcc_event_send_channel_filled) {
 				CloseHandle(xcc->xcc_event_send_channel_filled);
 			}
@@ -935,7 +945,8 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		xnet_log_error("aux_request() failed");
 
-		if (xcc) {
+		if (xcc)
+		{
 
 			if (xcc->xcc_event_send_channel_filled) {
 				CloseHandle(xcc->xcc_event_send_channel_filled);
@@ -1041,7 +1052,8 @@ static void cleanup_port(rem_port* port)
  *
  **************************************/
 
-	if (port->port_xcc) {
+	if (port->port_xcc)
+	{
 		cleanup_comm(port->port_xcc);
 		port->port_xcc = NULL;
 	}
@@ -1162,7 +1174,8 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		connect_fini();
 	} // xnet_mutex scope
 
-	if (response.map_num == XNET_INVALID_MAP_NUM) {
+	if (response.map_num == XNET_INVALID_MAP_NUM)
+	{
 		xnet_log_error("Server failed to respond on connect request");
 
 		Arg::StatusVector temp;
@@ -1368,7 +1381,8 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 		const DWORD wait_res = WaitForSingleObject(xnet_connect_event, INFINITE);
 
-		if (wait_res != WAIT_OBJECT_0) {
+		if (wait_res != WAIT_OBJECT_0)
+		{
 			xnet_log_error("WaitForSingleObject() failed");
 			break;
 		}
@@ -1387,13 +1401,15 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
-			// searhing for free slot
-			ULONG map_num, slot_num;
-			ULONG timestamp = (ULONG) time(NULL);
-
 			XPM xpm = NULL;
 			try
 			{
+				// MSDN says: In Visual C++ 2005, time is a wrapper for _time64 and time_t is,
+				// by default, equivalent to __time64_t.
+				// This means that sizeof(time_t) > sizeof(ULONG).
+				ULONG timestamp = (ULONG) time(NULL);
+				ULONG map_num, slot_num;
+				// searching for free slot
 				xpm = get_free_slot(&map_num, &slot_num, &timestamp);
 
 				// pack combined mapped area and number
@@ -1427,7 +1443,8 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 		presponse->slot_num = 0;
 
 		// child process ID (presponse->map_num) used as map number
-		if (!fork(client_pid, flag, &presponse->map_num)) {
+		if (!fork(client_pid, flag, &presponse->map_num))
+		{
 			// if fork successfully creates child process, then
 			// child process will call SetEvent(xnet_response_event)by itself
 			SetEvent(xnet_response_event);
@@ -1458,7 +1475,8 @@ static void disconnect(rem_port* port)
  *
  **************************************/
 
-	if (port->port_async) {
+	if (port->port_async)
+	{
 		disconnect(port->port_async);
 		port->port_async = NULL;
 	}
@@ -1497,19 +1515,23 @@ static void force_close(rem_port* port)
 	if (!xcc)
 		return;
 
-	if (xcc->xcc_event_send_channel_filled) {
+	if (xcc->xcc_event_send_channel_filled)
+	{
 		CloseHandle(xcc->xcc_event_send_channel_filled);
 		xcc->xcc_event_send_channel_filled = 0;
 	}
-	if (xcc->xcc_event_send_channel_empted) {
+	if (xcc->xcc_event_send_channel_empted)
+	{
 		CloseHandle(xcc->xcc_event_send_channel_empted);
 		xcc->xcc_event_send_channel_empted = 0;
 	}
-	if (xcc->xcc_event_recv_channel_filled) {
+	if (xcc->xcc_event_recv_channel_filled)
+	{
 		CloseHandle(xcc->xcc_event_recv_channel_filled);
 		xcc->xcc_event_recv_channel_filled = 0;
 	}
-	if (xcc->xcc_event_recv_channel_empted) {
+	if (xcc->xcc_event_recv_channel_empted)
+	{
 		CloseHandle(xcc->xcc_event_recv_channel_empted);
 		xcc->xcc_event_recv_channel_empted = 0;
 	}
@@ -1727,7 +1749,8 @@ static void xnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;
 	}
-	if (status_vector != NULL) {
+	if (status_vector != NULL)
+	{
 		v.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
@@ -1782,7 +1805,8 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
 		{
-			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+			{
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_lost_db_connection, 0);
 			}
@@ -1805,12 +1829,14 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 			xdrs->x_handy -= to_copy;
 			xdrs->x_private += to_copy;
 		}
-		else {
+		else
+		{
 			if (!xnet_read(xdrs))
 				return FALSE;
 		}
 
-		if (to_copy) {
+		if (to_copy)
+		{
 			bytecount -= to_copy;
 			buff += to_copy;
 		}
@@ -1899,8 +1925,10 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	while (bytecount && !xnet_shutdown)
 	{
 #ifdef SUPERCLIENT
-		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
-			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+		{
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+			{
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_lost_db_connection, 0);
 			}
@@ -1923,8 +1951,10 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 				while (!xnet_shutdown)
 				{
 #ifdef SUPERCLIENT
-					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
-						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+					{
+						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+						{
 							xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 							xnet_error(port, isc_lost_db_connection, 0);
 						}
@@ -1941,7 +1971,8 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 					if (wait_result == WAIT_TIMEOUT)
 					{
 						// Check whether another side is alive
-						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
+						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT)
+						{
 							// Check whether the channel has been disconnected
 							if (!(xps->xps_flags & XPS_DISCONNECTED))
 								continue; // another side is alive
@@ -1970,14 +2001,17 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 			xdrs->x_handy -= to_copy;
 			xdrs->x_private += to_copy;
 		}
-		else {
-			if (!xnet_write(xdrs)) {
+		else
+		{
+			if (!xnet_write(xdrs))
+			{
 				xnet_error(port, isc_net_write_err, ERRNO);
 				return FALSE;
 			}
 		}
 
-		if (to_copy) {
+		if (to_copy)
+		{
 			bytecount -= to_copy;
 			buff += to_copy;
 		}
@@ -2027,7 +2061,8 @@ static bool_t xnet_read(XDR * xdrs)
 	if (xnet_shutdown)
 		return FALSE;
 
-	if (!SetEvent(xcc->xcc_event_recv_channel_empted)) {
+	if (!SetEvent(xcc->xcc_event_recv_channel_empted))
+	{
 		xnet_error(port, isc_net_read_err, ERRNO);
 		return FALSE;
 	}
@@ -2035,8 +2070,10 @@ static bool_t xnet_read(XDR * xdrs)
 	while (!xnet_shutdown)
 	{
 #ifdef SUPERCLIENT
-		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
-			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
+		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN)
+		{
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
+			{
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_lost_db_connection, 0);
 			}
@@ -2056,7 +2093,8 @@ static bool_t xnet_read(XDR * xdrs)
 		if (wait_result == WAIT_TIMEOUT)
 		{
 			// Check if another side is alive
-			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
+			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT)
+			{
 				// Check whether the channel has been disconnected
 				if (!(xps->xps_flags & XPS_DISCONNECTED))
 					continue; // another side is alive
@@ -2098,7 +2136,8 @@ static bool_t xnet_write(XDR * xdrs)
 	XCH xch = xcc->xcc_send_channel;
 
 	xch->xch_length = xdrs->x_private - xdrs->x_base;
-	if (SetEvent(xcc->xcc_event_send_channel_filled)) {
+	if (SetEvent(xcc->xcc_event_send_channel_filled))
+	{
 		xdrs->x_private = xdrs->x_base;
 		xdrs->x_handy = xch->xch_size;
 		return TRUE;
@@ -2153,7 +2192,8 @@ void release_all()
 	// release all map stuf left not released by broken ports
 
 	XPM xpm, nextxpm;
-	for (xpm = nextxpm = global_client_maps; nextxpm; xpm = nextxpm) {
+	for (xpm = nextxpm = global_client_maps; nextxpm; xpm = nextxpm)
+	{
 		nextxpm = nextxpm->xpm_next;
 		UnmapViewOfFile(xpm->xpm_address);
 		CloseHandle(xpm->xpm_handle);
@@ -2277,7 +2317,8 @@ static bool server_init(ISC_STATUS* status, USHORT flag)
 	TEXT name_buffer[BUFFER_TINY];
 
 	// Initialize server-side IPC endpoint to a value we know we have permissions to listen at
-	if (strcmp(xnet_endpoint, "") == 0) {
+	if (strcmp(xnet_endpoint, "") == 0)
+	{
 		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(name_buffer));
 		fb_utils::prefix_kernel_object_name(xnet_endpoint, sizeof(xnet_endpoint));
 	}
@@ -2460,7 +2501,8 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 
 	// Child process ID (forked_pid) used as map number
 
-	if (cp_result) {
+	if (cp_result)
+	{
 		*forked_pid = pi.dwProcessId;
 		ResumeThread(pi.hThread);
 		CloseHandle(pi.hThread);

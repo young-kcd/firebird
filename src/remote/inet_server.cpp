@@ -290,7 +290,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 
 		// we need some writable directory for core file
 		// on any unix /tmp seems to be the best place
-		if (CHANGE_DIR(TEMP_DIR)) {
+		if (CHANGE_DIR(TEMP_DIR))
+		{
 			// error on changing the directory
 			gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 		}
@@ -341,7 +342,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 			if (!(child = fork()))
 				break;
 			while (wait(0) != child)
-				if (INET_SERVER_start) {
+				if (INET_SERVER_start)
+				{
 					n = 0;		// reset error counter on "real" signal
 					break;
 				}
@@ -385,7 +387,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 			INET_set_clients(clients);
 		}
 
-		if (!debug) {
+		if (!debug)
+		{
 			int mask = 0; // FD_ZERO(&mask);
 			mask |= 1 << 2; // FD_SET(2, &mask);
 			divorce_terminal(mask);
@@ -393,7 +396,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 		{ // scope block
 			ISC_STATUS_ARRAY status_vector;
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag, 0);
-			if (!port) {
+			if (!port)
+			{
 				gds__print_status(status_vector);
 				exit(STARTUP_ERROR);
 			}
@@ -402,7 +406,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	else
 	{
 		port = INET_server(channel);
-		if (!port) {
+		if (!port)
+		{
 			fprintf(stderr, "fbserver: Unable to start INET_server\n");
 			exit(STARTUP_ERROR);
 		}
@@ -410,7 +415,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 
 #ifdef SUPERSERVER
 	// before starting the superserver stuff change directory to tmp
-	if (CHANGE_DIR(TEMP_DIR)) {
+	if (CHANGE_DIR(TEMP_DIR))
+	{
 		// error on changing the directory
 		gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 	}
@@ -428,13 +434,15 @@ int FB_EXPORTED server_main( int argc, char** argv)
 		Jrd::SecurityDatabase::getPath(path);
 		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1};
 		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
-		if (status[0] == 1 && status[1] > 0) {
+		if (status[0] == 1 && status[1] > 0)
+		{
 			gds__log_status(path, status);
 			isc_print_status(status);
 			exit(STARTUP_ERROR);
 		}
 		isc_detach_database(status, &db_handle);
-		if (status[0] == 1 && status[1] > 0) {
+		if (status[0] == 1 && status[1] > 0)
+		{
 			gds__log_status(path, status);
 			isc_print_status(status);
 			exit(STARTUP_ERROR);
@@ -453,7 +461,8 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");
 	FILE* file = fopen(name, "w+t");
-	if (file) {
+	if (file)
+	{
 	  fprintf(file, "Global memory pool allocated objects\n");
 	  getDefaultMemoryPool()->print_contents(file);
 	  fclose(file);

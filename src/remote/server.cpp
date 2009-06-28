@@ -515,7 +515,8 @@ static bool link_request(rem_port* port, server_req_t* request)
 				if (queue->req_port == port)
 				{
 					// Don't queue a dummy keepalive packet if there is a request on this port
-					if (operation == op_dummy) {
+					if (operation == op_dummy)
+					{
 						free_request(request);
 						return true;
 					}
@@ -746,7 +747,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						port->send_response(&request->req_send, 0, 0, status_vector, false);
 						port->disconnect(&request->req_send, &request->req_receive);
 					}
-					else {
+					else
+					{
 						// Can't tell the client much, just make 'em go away.  Their side should detect
 						// a network error
 
@@ -755,7 +757,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					port = NULL;
 
 				}	// try
-				catch (const Firebird::Exception&) {
+				catch (const Firebird::Exception&)
+				{
 					port->disconnect(NULL, NULL);
 					port = NULL;
 				}
@@ -776,7 +779,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			REMOTE_free_packet(main_port->port_async_receive, &asyncPacket);
 		}
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		// Some kind of unhandled error occurred during server setup.  In lieu
 		// of anything we CAN do, log something (and we might be so hosed
 		// we can't log anything) and give up.
@@ -804,7 +808,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	send->p_operation = op_reject;
 	P_ACPT* accept = &send->p_acpt;
 
-	if (!port->accept(connect)) {
+	if (!port->accept(connect))
+	{
 		port->send(send);
 		return false;
 	}
@@ -849,7 +854,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	}
 
 	// Send off out gracious acceptance or flag rejection
-	if (!accepted) {
+	if (!accepted)
+	{
 		port->send(send);
 		return false;
 	}
@@ -923,7 +929,8 @@ static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACK
 			statement->rsr_next = rdb->rdb_sql_requests;
 			rdb->rdb_sql_requests = statement;
 		}
-		else {
+		else
+		{
 			object = 0;
 			GDS_DSQL_FREE(status_vector, &statement->rsr_handle, DSQL_drop);
 			delete statement;
@@ -998,7 +1005,8 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
  *
  **************************************/
 	Firebird::ClumpletWriter address_stack_buffer(Firebird::ClumpletReader::UnTagged, MAX_UCHAR - 2);
-	if (dpb_buffer.find(par.address_path)) {
+	if (dpb_buffer.find(par.address_path))
+	{
 		address_stack_buffer.reset(dpb_buffer.getBytes(), dpb_buffer.getClumpLength());
 		dpb_buffer.deleteClumplet();
 	}
@@ -1033,7 +1041,8 @@ static void addClumplets(Firebird::ClumpletWriter& dpb_buffer,
 	// want with the engine including faking the source address, not much we
 	// can do about it.
 
-	while (!dpb_buffer.isEof()) {
+	while (!dpb_buffer.isEof())
+	{
 		if (dpb_buffer.getClumpTag() == par.address_path)
 			dpb_buffer.deleteClumplet();
 		else
@@ -1161,7 +1170,8 @@ static void attach_database2(rem_port* port,
 
 	// If we have user identification, append it to database parameter block
 	rem_str* string = port->port_user_name;
-	if (string) {
+	if (string)
+	{
 		dpb_buffer.setCurOffset(dpb_buffer.getBufferLength());
 		dpb_buffer.insertString(isc_dpb_sys_user_name, string->str_data, string->str_length);
 	}
@@ -1287,14 +1297,16 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 	port->send_response(send, rdb->rdb_id, send->p_resp.p_resp_data.cstr_length, status_vector, false);
 
-	if (status_vector[1]) {
+	if (status_vector[1])
+	{
 		// restore the port status vector
 
 		port->port_status_vector = save_status;
 		return;
 	}
 
-	if (aux_port) {
+	if (aux_port)
+	{
 		aux_port->connect(send);
 		aux_port->port_context = rdb;
 	}
@@ -1551,7 +1563,8 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 		requestL->rrq_next = rdb->rdb_requests;
 		rdb->rdb_requests = requestL;
 	}
-	else {
+	else
+	{
 		isc_release_request(status_vector, &requestL->rrq_handle);
 		delete requestL;
 		status_vector[0] = isc_arg_gds;
@@ -1641,7 +1654,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 	this->port_flags |= PORT_disconnect;
 
-	if (!rdb) {
+	if (!rdb)
+	{
 		REMOTE_free_packet(this, sendL);
 		REMOTE_free_packet(this, receiveL);
 		this->disconnect();
@@ -1828,7 +1842,8 @@ static RMessage* dump_cache( Rrq::rrq_repeat* tail)
  *
  **************************************/
 	RMessage* message = tail->rrq_xdr;
-	while (true) {
+	while (true)
+	{
 		message->msg_address = NULL;
 		message = message->msg_next;
 		if (message == tail->rrq_xdr)
@@ -1966,11 +1981,13 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector, true);
 
-	if (!statement->rsr_handle) {
+	if (!statement->rsr_handle)
+	{
 		release_sql_request(statement);
 		statement = NULL;
 	}
-	else {
+	else
+	{
 		statement->rsr_flags.clear(Rsr::FETCHED);
 		statement->rsr_rtr = NULL;
 		REMOTE_reset_statement(statement);
@@ -2025,7 +2042,8 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 	}
 
 	if (!status_vector[1])
-		if (operation == op_commit || operation == op_rollback) {
+		if (operation == op_commit || operation == op_rollback)
+		{
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 		}
@@ -2151,13 +2169,16 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 
 	if (!status_vector[1])
 	{
-		if (transaction && !handle) {
+		if (transaction && !handle)
+		{
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			transaction = NULL;
 		}
-		else if (!transaction && handle) {
-			if (!(transaction = make_transaction(rdb, handle))) {
+		else if (!transaction && handle)
+		{
+			if (!(transaction = make_transaction(rdb, handle)))
+			{
 				status_vector[0] = isc_arg_gds;
 				status_vector[1] = isc_too_many_handles;
 				status_vector[2] = isc_arg_end;
@@ -2254,13 +2275,16 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (!status_vector[1])
 	{
-		if (transaction && !handle) {
+		if (transaction && !handle)
+		{
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			transaction = NULL;
 		}
-		else if (!transaction && handle) {
-			if (!(transaction = make_transaction(statement->rsr_rdb, handle))) {
+		else if (!transaction && handle)
+		{
+			if (!(transaction = make_transaction(statement->rsr_rdb, handle)))
+			{
 				status_vector[0] = isc_arg_gds;
 				status_vector[1] = isc_too_many_handles;
 				status_vector[2] = isc_arg_end;
@@ -2318,7 +2342,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		if (message != NULL)
 		{
 			statement->rsr_buffer = message;
-			while (true) {
+			while (true)
+			{
 				message->msg_address = NULL;
 				message = message->msg_next;
 				if (message == statement->rsr_message)
@@ -2345,7 +2370,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	{
 
 		// Have we exhausted the cache & reached cursor EOF?
-		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting) {
+		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting)
+		{
 			statement->rsr_flags.clear(Rsr::EOF_SET);
 			s = 100;
 			count2 = 0;
@@ -2381,7 +2407,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 							   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
 			statement->rsr_flags.set(Rsr::FETCHED);
-			if (s) {
+			if (s)
+			{
 				if (s == 100 || s == 101)
 				{
 					count2 = 0;
@@ -2392,7 +2419,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			}
 			message->msg_address = message->msg_buffer;
 		}
-		else {
+		else
+		{
 			// Take a message from the outqoing queue
 			fb_assert(statement->rsr_msgs_waiting >= 1);
 			statement->rsr_msgs_waiting--;
@@ -2471,9 +2499,11 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		if (s)
 		{
-			if (status_vector[1]) {
+			if (status_vector[1])
+			{
 				// If already have an error queued, don't overwrite it
-				if (!statement->rsr_flags.test(Rsr::STREAM_ERR)) {
+				if (!statement->rsr_flags.test(Rsr::STREAM_ERR))
+				{
 					statement->rsr_flags.set(Rsr::STREAM_ERR);
 					statement->saveException(status_vector, true);
 				}
@@ -2623,7 +2653,8 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 		buffer = temp_buffer;
 	else
 	{
-		if (buffer_length > blob->rbl_buffer_length) {
+		if (buffer_length > blob->rbl_buffer_length)
+		{
 			blob->rbl_buffer = blob->rbl_data.getBuffer(buffer_length);
 			blob->rbl_buffer_length = buffer_length;
 		}
@@ -2682,7 +2713,8 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 		p[-1] = (UCHAR) (length >> 8);
 		p += length;
 		buffer_length -= length;
-		if (status_vector[1] == isc_segment) {
+		if (status_vector[1] == isc_segment)
+		{
 			state = 1;
 			success(status_vector);
 			break;
@@ -2748,7 +2780,8 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 	ISC_STATUS status;
 	if (status_vector[1])
 		status = this->send_response(sendL, 0, 0, status_vector, false);
-	else {
+	else
+	{
 		sendL->p_operation = op_slice;
 		response->p_slr_slice.lstr_address = slice;
 		response->p_slr_slice.lstr_length = response->p_slr_length;
@@ -2834,7 +2867,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 						  reinterpret_cast<const char*>(stuff->p_info_items.cstr_address),
 						  stuff->p_info_buffer_length, //sizeof(temp)
 						  reinterpret_cast<char*>(temp_buffer)); //temp
-		if (!status_vector[1]) {
+		if (!status_vector[1])
+		{
 			Firebird::string version;
 			version.printf("%s/%s", GDS_VERSION, this->port_version->str_data);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
@@ -2847,14 +2881,14 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 
 	case op_info_request:
 		{
-		Rrq* requestL;
-		getHandle(requestL, stuff->p_info_object);
-		isc_request_info(status_vector, &requestL->rrq_handle,
-						 stuff->p_info_incarnation,
-						 info_len, info_buffer,
-						 stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
-		break;
+			Rrq* requestL;
+			getHandle(requestL, stuff->p_info_object);
+			isc_request_info(status_vector, &requestL->rrq_handle,
+							 stuff->p_info_incarnation,
+							 info_len, info_buffer,
+							 stuff->p_info_buffer_length, reinterpret_cast<char*>(buffer));
 		}
+		break;
 
 	case op_info_transaction:
 		getHandle(transaction, stuff->p_info_object);
@@ -2970,7 +3004,8 @@ static Rtr* make_transaction (Rdb* rdb, FB_API_HANDLE handle)
 		transaction->rtr_next = rdb->rdb_transactions;
 		rdb->rdb_transactions = transaction;
 	}
-	else {
+	else
+	{
 		delete transaction;
 		transaction = NULL;
 	}
@@ -3006,7 +3041,8 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 	USHORT bpb_length = 0;
 	const UCHAR* bpb = NULL;
 
-	if (op == op_open_blob2 || op == op_create_blob2) {
+	if (op == op_open_blob2 || op == op_create_blob2)
+	{
 		bpb_length = stuff->p_blob_bpb.cstr_length;
 		bpb = stuff->p_blob_bpb.cstr_address;
 	}
@@ -3233,14 +3269,16 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			if (!accept_connection(port, &receive->p_cnct, sendL))
 			{
 				rem_str* string = port->port_user_name;
-				if (string) {
+				if (string)
+				{
 					gds__log("SERVER/process_packet: connection rejected for %*.*s",
 							string->str_length, string->str_length, string->str_data);
 				}
 				if (port->port_server->srvr_flags & SRVR_multi_client) {
 					port->port_state = rem_port::BROKEN;
 				}
-				else {
+				else
+				{
 					gds__log("SERVER/process_packet: connect reject, server exiting");
 					port->disconnect(sendL, receive);
 					return false;
@@ -3471,7 +3509,8 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 
 		if (port && port->port_state == rem_port::BROKEN)
 		{
-			if (!port->port_parent) {
+			if (!port->port_parent)
+			{
 				if (!Worker::isShuttingDown())
 					gds__log("SERVER/process_packet: broken port, server exiting");
 				port->disconnect(sendL, receive);
@@ -3615,7 +3654,8 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 
 	ISC_STATUS_ARRAY status_vector;
 
-	if (op == op_put_segment) {
+	if (op == op_put_segment)
+	{
 		isc_put_segment(status_vector, &blob->rbl_handle, length, reinterpret_cast<const char*>(p));
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
@@ -3698,7 +3738,8 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	// Find unused event block or, if necessary, a new one
 
 	Rvnt* event;
-	for (event = rdb->rdb_events; event; event = event->rvnt_next) {
+	for (event = rdb->rdb_events; event; event = event->rvnt_next)
+	{
 		if (!event->rvnt_id) {
 			break;
 		}
@@ -3884,7 +3925,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		{
 			// If we have an error queued for delivery, send it now
 
-			if (requestL->rrq_status_vector[1]) {
+			if (requestL->rrq_status_vector[1])
+			{
 				const ISC_STATUS res =
 					this->send_response(sendL, 0, 0, requestL->rrq_status_vector, false);
 				memset(requestL->rrq_status_vector, 0, sizeof(requestL->rrq_status_vector));
@@ -4025,7 +4067,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 		// Did we have an error?  If so, save it for later delivery
 
-		if (status_vector[1]) {
+		if (status_vector[1])
+		{
 			// If already have an error queued, don't overwrite it
 
 			if (!requestL->rrq_status_vector[1]) {
@@ -4077,8 +4120,10 @@ static void release_blob(Rbl* blob)
 
 	rdb->rdb_port->releaseObject(blob->rbl_id);
 
-	for (Rbl** p = &transaction->rtr_blobs; *p; p = &(*p)->rbl_next) {
-		if (*p == blob) {
+	for (Rbl** p = &transaction->rtr_blobs; *p; p = &(*p)->rbl_next)
+	{
+		if (*p == blob)
+		{
 			*p = blob->rbl_next;
 			break;
 		}
@@ -4107,7 +4152,8 @@ static void release_event( Rvnt* event)
 
 	for (Rvnt** p = &rdb->rdb_events; *p; p = &(*p)->rvnt_next)
 	{
-		if (*p == event) {
+		if (*p == event)
+		{
 			*p = event->rvnt_next;
 			break;
 		}
@@ -4175,7 +4221,8 @@ static void release_sql_request( Rsr* statement)
 
 	for (Rsr** p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
 	{
-		if (*p == statement) {
+		if (*p == statement)
+		{
 			*p = statement->rsr_next;
 			break;
 		}
@@ -4205,7 +4252,8 @@ static void release_transaction( Rtr* transaction)
 
 	for (Rtr** p = &rdb->rdb_transactions; *p; p = &(*p)->rtr_next)
 	{
-		if (*p == transaction) {
+		if (*p == transaction)
+		{
 			*p = transaction->rtr_next;
 			break;
 		}
@@ -4252,7 +4300,8 @@ static RMessage* scroll_cache(Rrq::rrq_repeat* tail, USHORT* direction, ULONG* o
 	// the last direction scrolled; then depending on the direction asked
 	// for, save the last direction asked for by the next layer above
 
-	if (*direction == blr_continue) {
+	if (*direction == blr_continue)
+	{
 		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
 			*direction = blr_backward;
 		else
@@ -4454,7 +4503,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 			// clients, do not decode the status code, just send it to the
 			// client.  The same check is made in interface.cpp::check_response
 
-			if (this->port_protocol < PROTOCOL_VERSION10) {
+			if (this->port_protocol < PROTOCOL_VERSION10)
+			{
 				USHORT fac = 0, code_class = 0;
 				*v++ = gds__decode(*status_vector++, &fac, &code_class);
 			}
@@ -4727,7 +4777,8 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 
 	// If we have user identification, append it to database parameter block
 	const rem_str* string = port_user_name;
-	if (string) {
+	if (string)
+	{
 		spb.setCurOffset(spb.getBufferLength());
 		spb.insertString(isc_spb_sys_user_name, string->str_data, string->str_length);
 	}
@@ -4872,7 +4923,8 @@ void set_server( rem_port* port, USHORT flags)
 	Firebird::MutexLockGuard srvrGuard(servers_mutex);
 	srvr* server;
 
-	for (server = servers; server; server = server->srvr_next) {
+	for (server = servers; server; server = server->srvr_next)
+	{
 		if (port->port_type == server->srvr_port_type) {
 			break;
 		}
@@ -4914,7 +4966,8 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 	isc_start_request(status_vector, &requestL->rrq_handle,
 					  &transaction->rtr_handle, data->p_data_incarnation);
 
-	if (!status_vector[1]) {
+	if (!status_vector[1])
+	{
 		requestL->rrq_rtr = transaction;
 		if (operation == op_start_and_receive)
 			return this->receive_after_start(data, sendL, status_vector);
@@ -4961,7 +5014,8 @@ ISC_STATUS rem_port::start_and_send(P_OP operation, P_DATA* data, PACKET* sendL)
 					   format->fmt_length, message->msg_address,
 					   data->p_data_incarnation);
 
-	if (!status_vector[1]) {
+	if (!status_vector[1])
+	{
 		requestL->rrq_rtr = transaction;
 		if (operation == op_start_send_and_receive) {
 			return this->receive_after_start(data, sendL, status_vector);
@@ -5183,7 +5237,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 					for (server_req_t** req_ptr = &active_requests; *req_ptr;
 						req_ptr = &(*req_ptr)->req_next)
 					{
-						if (*req_ptr == request) {
+						if (*req_ptr == request)
+						{
 							*req_ptr = request->req_next;
 							break;
 						}
@@ -5195,7 +5250,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 					if (!port)
 					{
 						server_req_t* next;
-						while (next = request->req_chain) {
+						while (next = request->req_chain)
+						{
 							request->req_chain = next->req_chain;
 							free_request(next);
 						}
@@ -5388,7 +5444,8 @@ static void zap_packet(PACKET* packet, bool new_packet)
 
 	if (new_packet)
 		memset(packet, 0, sizeof(PACKET));
-	else {
+	else
+	{
 #ifdef DEBUG_XDR_MEMORY
 		// Don't trash debug xdr memory allocation table of recycled packets.
 

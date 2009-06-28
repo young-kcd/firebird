@@ -69,12 +69,14 @@ void REMOTE_cleanup_transaction( Rtr* transaction)
  **************************************/
 	for (Rrq* request = transaction->rtr_rdb->rdb_requests; request; request = request->rrq_next)
 	{
-		if (request->rrq_rtr == transaction) {
+		if (request->rrq_rtr == transaction)
+		{
 			REMOTE_reset_request(request, 0);
 			request->rrq_rtr = NULL;
 		}
 		for (Rrq* level = request->rrq_levels; level; level = level->rrq_next)
-			if (level->rrq_rtr == transaction) {
+			if (level->rrq_rtr == transaction)
+			{
 				REMOTE_reset_request(level, 0);
 				level->rrq_rtr = NULL;
 			}
@@ -83,7 +85,8 @@ void REMOTE_cleanup_transaction( Rtr* transaction)
 	for (Rsr* statement = transaction->rtr_rdb->rdb_sql_requests; statement;
 		 statement = statement->rsr_next)
 	{
-		if (statement->rsr_rtr == transaction) {
+		if (statement->rsr_rtr == transaction)
+		{
 			REMOTE_reset_statement(statement);
 			statement->rsr_flags.clear(Rsr::FETCHED);
 			statement->rsr_rtr = NULL;
@@ -173,11 +176,13 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
 #endif
 
 	ULONG row_size;
-	if (port->port_flags & PORT_symmetric) {
+	if (port->port_flags & PORT_symmetric)
+	{
 		// Same architecture connection
 		row_size = (ROUNDUP(format->fmt_length, 4) + op_overhead);
 	}
-	else {
+	else
+	{
 		// Using XDR for data transfer
 		row_size = (ROUNDUP(format->fmt_net_length, 4) + op_overhead);
 	}
@@ -235,7 +240,8 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 
 	// See if we already know about the request level
 
-	for (;;) {
+	for (;;)
+	{
 		if (request->rrq_level == level)
 			return request;
 		if (!request->rrq_levels)
@@ -303,8 +309,10 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 		if (partial) {
 			xdr_protocol(&xdr, packet);
 		}
-		else {
-			for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
+		else
+		{
+			for (n = (USHORT) op_connect; n < (USHORT) op_max; n++)
+			{
 				packet->p_operation = (P_OP) n;
 				xdr_protocol(&xdr, packet);
 			}
@@ -430,7 +438,8 @@ void REMOTE_release_request( Rrq* request)
 
 	for (Rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 	{
-		if (*p == request) {
+		if (*p == request)
+		{
 			*p = request->rrq_next;
 			break;
 		}
@@ -745,7 +754,8 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 		}
 		rem_port* port = (rem_port*) xdrs->x_public;
 		Firebird::RefMutexGuard queGuard(*port->port_que_sync);
-		if (port->port_qoffset >= port->port_queue.getCount()) {
+		if (port->port_qoffset >= port->port_queue.getCount())
+		{
 			port->port_flags |= PORT_partial_data;
 			return FALSE;
 		}
