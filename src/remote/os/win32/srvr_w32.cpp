@@ -295,9 +295,11 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		// BRS There is a error in MinGW (3.1.0) headers
 		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
 #if defined(MINGW)
-		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
+		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table)))
+		{
 #else
-		if (!StartServiceCtrlDispatcher(service_table)) {
+		if (!StartServiceCtrlDispatcher(service_table))
+		{
 #endif
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED) {
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
@@ -319,7 +321,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");
 	FILE* file = fopen(name, "w+t");
-	if (file) {
+	if (file)
+	{
 	  fprintf(file, "Global memory pool allocated objects\n");
 	  getDefaultMemoryPool()->print_contents(file);
 	  fclose(file);
@@ -367,17 +370,19 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		fb_utils::init_status(status_vector);
 		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
 
-		if (!port) {
+		if (!port)
+		{
 			if (status_vector[1]) {
 				gds__log_status(0, status_vector);
 			}
 			break;
 		}
-		if (server_flag & SRVR_multi_client) {
+		if (server_flag & SRVR_multi_client)
+		{
 			SRVR_multi_thread(port, server_flag);
 			break;
 		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+		if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
 		{
 			gds__log("INET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -650,7 +655,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					delimited = false;
 					while (*p && *p == ' ')
 						p++;
-					if (*p && *p == '"') {
+					if (*p && *p == '"')
+					{
 						p++;
 						delimited = true;
 					}
@@ -667,7 +673,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					}
 					else
 					{
-						if (*p && *p != '-') {
+						if (*p && *p != '-')
+						{
 							char* pi = instance;
 							const char* pend = instance + sizeof(instance) - 1;
 							while (*p && *p != ' ' && pi < pend) {
@@ -703,7 +710,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 		}
 	}
 
-	if ((*pserver_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
+	if ((*pserver_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0)
+	{
 		*pserver_flag |= SRVR_wnet;
 		*pserver_flag |= SRVR_inet;
 		*pserver_flag |= SRVR_xnet;

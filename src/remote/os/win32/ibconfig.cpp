@@ -223,7 +223,8 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			}
 			else				// User clicked on MODIFY
 			{
-				if (szSysDbaPasswd[0] || ValidateUser(hDlg)) {
+				if (szSysDbaPasswd[0] || ValidateUser(hDlg))
+				{
 					RefreshIBControls(hDlg, TRUE);
 					bModifyMode = true;
 					bDirty = false;
@@ -233,13 +234,15 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		case IDC_MAPSIZE:
-			if (bModifyMode && HIWORD(wParam) == CBN_SELCHANGE) {
+			if (bModifyMode && HIWORD(wParam) == CBN_SELCHANGE)
+			{
 				PropSheet_Changed(GetParent(hDlg), hDlg);
 				bDirty = true;
 			}
 			break;
 		case IDC_DBPAGES:
-			if (bModifyMode && HIWORD(wParam) == EN_UPDATE) {
+			if (bModifyMode && HIWORD(wParam) == EN_UPDATE)
+			{
 				PropSheet_Changed(GetParent(hDlg), hDlg);
 				bDirty = true;
 			}
@@ -344,7 +347,8 @@ BOOL ReadFBSettings(HWND hDlg)
 					  sizeof(pchResBuf), pchResBuf);
 	if (pdwStatus[1])
 		PrintCfgStatus(pdwStatus, IDS_CFGREAD_FAILED, hDlg);
-	else {
+	else
+	{
 		lMapSize = 8192; // no longer configurable, taken from /remote/xnet.h
 		lCachePages = Config::getDefaultDbCachePages();
 		bSuccess = TRUE;
@@ -357,7 +361,8 @@ BOOL ReadFBSettings(HWND hDlg)
 	{
 		char szTmp[8];
 		int temp = 1024;
-		while (temp <= MAX_PAGE_SIZE) {
+		while (temp <= MAX_PAGE_SIZE)
+		{
 			wsprintf(szTmp, "%d", temp);
 			SendDlgItemMessage(hDlg, IDC_MAPSIZE, CB_ADDSTRING, 0, (LPARAM) szTmp);
 			temp <<= 1;
@@ -380,7 +385,8 @@ BOOL ReadFBSettings(HWND hDlg)
 	SetCursor(hOldCursor);
 	isc_service_detach(pdwStatus, &hService);
 
-	if (!bSuccess) {
+	if (!bSuccess)
+	{
 		// To eliminate the flicker while closing the Property Sheet
 		SetWindowPos(GetParent(hDlg), HWND_DESKTOP, 0, 0, 0, 0, SWP_HIDEWINDOW);
 		// Close the Property Sheet
@@ -444,12 +450,14 @@ BOOL WriteFBSettings(HWND hDlg)
 	HCURSOR hOldCursor = NULL;
 
 	lCachePages = GetDlgItemInt(hDlg, IDC_DBPAGES, &bRetFlag, FALSE);
-	if (!bRetFlag || lCachePages < 50) {
+	if (!bRetFlag || lCachePages < 50)
+	{
 		PrintCfgStatus(NULL, IDS_CFGSETIBERR, hDlg);
 		return FALSE;
 	}
 	lMapSize = GetDlgItemInt(hDlg, IDC_MAPSIZE, &bRetFlag, TRUE);
-	if (!bRetFlag || lMapSize < 1024) {
+	if (!bRetFlag || lMapSize < 1024)
+	{
 		SetFocus(GetDlgItem(hDlg, IDC_MAPSIZE));
 		PrintCfgStatus(NULL, IDS_CFGSETIBERR, hDlg);
 		return FALSE;
@@ -552,7 +560,8 @@ BOOL ValidateUser(HWND hParentWnd)
 	BOOL CALLBACK PasswordDlgProc(HWND, UINT, WPARAM, LPARAM);
 
 
-	if (!bServerApp) {
+	if (!bServerApp)
+	{
 		PrintCfgStatus(NULL, IDS_CFGNOT_SYSDBA, hParentWnd);
 		return FALSE;
 	}
@@ -619,11 +628,13 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM)
 			isc_service_attach(pdwStatus, 0, "query_server", &hService, (USHORT) strlen(szSpb), szSpb);
 			SetCursor(hOldCursor);
 
-			if (pdwStatus[1]) {
+			if (pdwStatus[1])
+			{
 				szSysDbaPasswd[0] = '\0';
 				PrintCfgStatus(NULL, IDS_CFGBAD_PASSWD, hDlg);
 			}
-			else {
+			else
+			{
 				isc_service_detach(pdwStatus, &hService);
 				strcpy(szSysDbaPasswd, szPassword);
 				EndDialog(hDlg, 1);
@@ -633,7 +644,8 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM)
 			SetFocus(GetDlgItem(hDlg, IDC_DBAPASSWORD));
 			return TRUE;
 		}
-		if (wParam == IDCANCEL) {
+		if (wParam == IDCANCEL)
+		{
 			EndDialog(hDlg, 0);
 			return TRUE;
 		}
@@ -691,7 +703,8 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 					*ptr++ = '\n';
 					*ptr++ = '-';
 				}
-				else {
+				else
+				{
 					ptr += 2;
 					break;
 				}
@@ -700,13 +713,15 @@ void PrintCfgStatus(const ISC_STATUS* status_vector, int nErrCode, HWND hDlg)
 		}
 	}
 
-	if (szErrStr[0]) {
+	if (szErrStr[0])
+	{
 		strcpy(szHdrStr, "FB Configuration - ");
 		LoadString(hAppInstance, nErrCode, szHdrStr + strlen(szHdrStr),
 				   sizeof(szHdrStr) - strlen(szHdrStr));
 		MessageBox(hDlg, szErrStr, szHdrStr, MB_ICONSTOP | MB_OK);
 	}
-	else {
+	else
+	{
 		LoadString(hAppInstance, nErrCode, szErrStr, sizeof(szErrStr));
 		MessageBox(hDlg, szErrStr, "FB Configuration", MB_ICONSTOP | MB_OK);
 	}

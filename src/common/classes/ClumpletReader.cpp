@@ -48,10 +48,12 @@ public:
 	static string hexString(const UCHAR* b, size_t len)
 	{
 		string t1, t2;
-		for (; len > 0; --len, ++b) {
+		for (; len > 0; --len, ++b)
+		{
 			if (isprint(*b))
 				t2 += *b;
-			else {
+			else
+			{
 				t1.printf("<%02x>", *b);
 				t2 += t1;
 			}
@@ -73,7 +75,8 @@ void ClumpletReader::dump() const
 {
 	static int dmp = 0;
 	gds__log("*** DUMP ***");
-	if (dmp) {
+	if (dmp)
+	{
 		// Avoid infinite recursion during dump
 		gds__log("recursion");
 		return;
@@ -90,7 +93,8 @@ void ClumpletReader::dump() const
 				ClumpletDump::hexString(d.getBytes(), d.getClumpLength()).c_str());
 		}
 	}
-	catch (const fatal_exception& x) {
+	catch (const fatal_exception& x)
+	{
 		gds__log("Fatal exception during clumplet dump: %s", x.what());
 		size_t l = getBufferLength() - getCurOffset();
 		const UCHAR *p = getBuffer() + getCurOffset();
@@ -363,7 +367,8 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	const UCHAR* const buffer_end = getBufferEnd();
 
 	// Check for EOF
-	if (clumplet >= buffer_end) {
+	if (clumplet >= buffer_end)
+	{
 		usage_mistake("read past EOF");
 		return 0;
 	}
@@ -378,7 +383,8 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	// This form allows clumplets of virtually any size
 	case Wide:
 		// Check did we receive length component for clumplet
-		if (buffer_end - clumplet < 5) {
+		if (buffer_end - clumplet < 5)
+		{
 			invalid_structure("buffer end before end of clumplet - no length component");
 			return rc;
 		}
@@ -395,7 +401,8 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	// This is the most widely used form
 	case TraditionalDpb:
 		// Check did we receive length component for clumplet
-		if (buffer_end - clumplet < 2) {
+		if (buffer_end - clumplet < 2)
+		{
 			invalid_structure("buffer end before end of clumplet - no length component");
 			return rc;
 		}
@@ -410,7 +417,8 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	// Used in SPB for long strings
 	case StringSpb:
 		// Check did we receive length component for clumplet
-		if (buffer_end - clumplet < 3) {
+		if (buffer_end - clumplet < 3)
+		{
 			invalid_structure("buffer end before end of clumplet - no length component");
 			return rc;
 		}
@@ -432,7 +440,8 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	}
 
 	const size_t total = 1 + lengthSize + dataSize;
-	if (clumplet + total > buffer_end) {
+	if (clumplet + total > buffer_end)
+	{
 		invalid_structure("buffer end before end of clumplet - clumplet too long");
 		size_t delta = total - (buffer_end - clumplet);
 		if (delta > dataSize)
@@ -461,7 +470,8 @@ void ClumpletReader::moveNext()
 
 void ClumpletReader::rewind()
 {
-	if (! getBuffer()) {
+	if (! getBuffer())
+	{
 		cur_offset = 0;
 		spbState = 0;
 		return;
@@ -504,7 +514,8 @@ UCHAR ClumpletReader::getClumpTag() const
 	const UCHAR* const buffer_end = getBufferEnd();
 
 	// Check for EOF
-	if (clumplet >= buffer_end) {
+	if (clumplet >= buffer_end)
+	{
 		usage_mistake("read past EOF");
 		return 0;
 	}
@@ -527,7 +538,8 @@ SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
 	// This code is taken from gds__vax_integer
 	SINT64 value = 0;
 	int shift = 0;
-	while (length > 0) {
+	while (length > 0)
+	{
 		--length;
 		value += ((SINT64) *ptr++) << shift;
 		shift += 8;
@@ -540,7 +552,8 @@ SLONG ClumpletReader::getInt() const
 {
 	const size_t length = getClumpLength();
 
-	if (length > 4) {
+	if (length > 4)
+	{
 		invalid_structure("length of integer exceeds 4 bytes");
 		return 0;
 	}
@@ -551,7 +564,8 @@ SLONG ClumpletReader::getInt() const
 double ClumpletReader::getDouble() const
 {
 
-	if (getClumpLength() != sizeof(double)) {
+	if (getClumpLength() != sizeof(double))
+	{
 		invalid_structure("length of double must be equal 8 bytes");
 		return 0;
 	}
@@ -575,7 +589,8 @@ ISC_TIMESTAMP ClumpletReader::getTimeStamp() const
 {
 	ISC_TIMESTAMP value;
 
-	if (getClumpLength() != sizeof(ISC_TIMESTAMP)) {
+	if (getClumpLength() != sizeof(ISC_TIMESTAMP))
+	{
 		invalid_structure("length of ISC_TIMESTAMP must be equal 8 bytes");
 		value.timestamp_date = 0;
 		value.timestamp_time = 0;
@@ -592,7 +607,8 @@ SINT64 ClumpletReader::getBigInt() const
 {
 	const size_t length = getClumpLength();
 
-	if (length > 8) {
+	if (length > 8)
+	{
 		invalid_structure("length of BigInt exceeds 8 bytes");
 		return 0;
 	}
@@ -630,7 +646,8 @@ bool ClumpletReader::getBoolean() const
 {
 	const UCHAR* ptr = getBytes();
 	const size_t length = getClumpLength();
-	if (length > 1) {
+	if (length > 1)
+	{
 		invalid_structure("length of boolean exceeds 1 byte");
 		return false;
 	}

@@ -145,7 +145,7 @@ static qli_syntax* parse_udf_or_field();
 static qli_syntax* parse_update();
 static qli_syntax* parse_value(USHORT*, bool*);
 static bool potential_rse();
-static qli_rel* resolve_relation(qli_symbol*, qli_symbol*);
+static qli_rel* resolve_relation(const qli_symbol*, qli_symbol*);
 static qli_syntax* syntax_node(nod_t, USHORT);
 static bool test_end();
 
@@ -5624,7 +5624,7 @@ static bool potential_rse()
 }
 
 
-static qli_rel* resolve_relation( qli_symbol* db_symbol, qli_symbol* relation_symbol)
+static qli_rel* resolve_relation( const qli_symbol* db_symbol, qli_symbol* relation_symbol)
 {
 /**************************************
  *

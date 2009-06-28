@@ -142,7 +142,8 @@ int WINDOW_main( HINSTANCE hThisInst, int /*nWndMode*/, USHORT usServerFlagMask)
 			const BOOL bPSMsg = PropSheet_IsDialogMessage(hPSDlg, &msg);
 
 			// Check if the property sheet dialog is still valid, if not destroy it
-			if (!PropSheet_GetCurrentPageHwnd(hPSDlg)) {
+			if (!PropSheet_GetCurrentPageHwnd(hPSDlg))
+			{
 				DestroyWindow(hPSDlg);
 				hPSDlg = NULL;
 			}
@@ -213,7 +214,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		 */
 		if (usServerFlags & SRVR_non_service)
 		{
-			if (CanEndServer(hWnd /*, false*/)) {
+			if (CanEndServer(hWnd /*, false*/))
+			{
 				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
@@ -288,7 +290,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 
 	case ON_NOTIFYICON:
-		if (bStartup) {
+		if (bStartup)
+		{
 			SendMessage(hWnd, WM_COMMAND, 0, 0);
 			return TRUE;
 		}

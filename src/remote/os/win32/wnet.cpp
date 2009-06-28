@@ -195,7 +195,8 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
 	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
-	if (!port) {
+	if (!port)
+	{
 		delete rdb;
 		return NULL;
 	}
@@ -233,7 +234,8 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		}
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
-		if (!port) {
+		if (!port)
+		{
 			delete rdb;
 			return NULL;
 		}
@@ -271,7 +273,8 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		}
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
-		if (!port) {
+		if (!port)
+		{
 			delete rdb;
 			return NULL;
 		}
@@ -283,7 +286,8 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		port->receive(packet);
 	}
 
-	if (packet->p_operation != op_accept) {
+	if (packet->p_operation != op_accept)
+	{
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_connect_reject;
 		*status_vector++ = 0;
@@ -631,7 +635,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
  **************************************/
 	// If this is a server, we're got an auxiliary connection.  Accept it
 
-	if (port->port_server_flags) {
+	if (port->port_server_flags)
+	{
 		if (!connect_client(port))
 			return NULL;
 
@@ -646,7 +651,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 
 	TEXT str_pid[32];
 	const TEXT* p = 0;
-	if (response->p_resp_data.cstr_length) {
+	if (response->p_resp_data.cstr_length)
+	{
 		// Avoid B.O.
 		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
 		memcpy(str_pid, response->p_resp_data.cstr_address, len);
@@ -668,7 +674,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 		if (new_port->port_handle != INVALID_HANDLE_VALUE)
 			break;
 		const ISC_STATUS status = GetLastError();
-		if (status != ERROR_PIPE_BUSY) {
+		if (status != ERROR_PIPE_BUSY)
+		{
 			wnet_error(new_port, "CreateFile", isc_net_event_connect_err, status);
 			return NULL;
 		}
@@ -718,7 +725,8 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 						0,
 						ISC_get_security_desc());
 
-	if (new_port->port_handle == INVALID_HANDLE_VALUE) {
+	if (new_port->port_handle == INVALID_HANDLE_VALUE)
+	{
 		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err, ERRNO);
 		disconnect(new_port);
 		return NULL;
@@ -916,7 +924,8 @@ static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name
 	buffer += '\\';
 	buffer += protocol;
 
-	if (str_pid) {
+	if (str_pid)
+	{
 		buffer += '\\';
 		buffer += str_pid;
 	}
@@ -1114,7 +1123,8 @@ static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 	if (status_vector == NULL) {
 		status_vector = port->port_status_vector;
 	}
-	if (status_vector != NULL) {
+	if (status_vector != NULL)
+	{
 		error.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
@@ -1139,13 +1149,15 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 
 	while (bytecount > (SLONG) sizeof(ISC_QUAD))
 	{
-		if (xdrs->x_handy >= bytecount) {
+		if (xdrs->x_handy >= bytecount)
+		{
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		if (xdrs->x_handy > 0) {
+		if (xdrs->x_handy > 0)
+		{
 			memcpy(buff, xdrs->x_private, xdrs->x_handy);
 			xdrs->x_private += xdrs->x_handy;
 			buff += xdrs->x_handy;
@@ -1162,7 +1174,8 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 	if (!bytecount)
 		return TRUE;
 
-	if (xdrs->x_handy >= bytecount) {
+	if (xdrs->x_handy >= bytecount)
+	{
 		xdrs->x_handy -= bytecount;
 		do {
 			*buff++ = *xdrs->x_private++;
@@ -1170,7 +1183,8 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0) {
+	while (--bytecount >= 0)
+	{
 		if (!xdrs->x_handy && !wnet_read(xdrs))
 			return FALSE;
 		*buff++ = *xdrs->x_private++;
@@ -1259,13 +1273,15 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 
 	while (bytecount > (SLONG) sizeof(ISC_QUAD))
 	{
-		if (xdrs->x_handy >= bytecount) {
+		if (xdrs->x_handy >= bytecount)
+		{
 			memcpy(xdrs->x_private, buff, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		if (xdrs->x_handy > 0) {
+		if (xdrs->x_handy > 0)
+		{
 			memcpy(xdrs->x_private, buff, xdrs->x_handy);
 			xdrs->x_private += xdrs->x_handy;
 			buff += xdrs->x_handy;
@@ -1282,7 +1298,8 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	if (!bytecount)
 		return TRUE;
 
-	if (xdrs->x_handy >= bytecount) {
+	if (xdrs->x_handy >= bytecount)
+	{
 		xdrs->x_handy -= bytecount;
 		do {
 			*xdrs->x_private++ = *buff++;
@@ -1290,7 +1307,8 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0) {
+	while (--bytecount >= 0)
+	{
 		if (xdrs->x_handy <= 0 && !wnet_write(xdrs /*, 0*/))
 			return FALSE;
 		--xdrs->x_handy;
@@ -1339,7 +1357,8 @@ static bool_t wnet_read( XDR* xdrs)
 
 	// If buffer is not completely empty, slide down what what's left
 
-	if (xdrs->x_handy > 0) {
+	if (xdrs->x_handy > 0)
+	{
 		memmove(p, xdrs->x_private, xdrs->x_handy);
 		p += xdrs->x_handy;
 	}
@@ -1351,7 +1370,8 @@ static bool_t wnet_read( XDR* xdrs)
 		{
 			return FALSE;
 		}
-		if (length >= 0) {
+		if (length >= 0)
+		{
 			p += length;
 			break;
 		}
@@ -1413,7 +1433,8 @@ static bool_t wnet_write( XDR* xdrs /*, bool_t end_flag*/)
 	// Send data in manageable hunks.  If a packet is partial, indicate
 	// that with a negative length.  A positive length marks the end.
 
-	while (length) {
+	while (length)
+	{
 		const SSHORT l = MIN(length, MAX_DATA);
 		length -= l;
 		if (!packet_send(vport, p, (SSHORT) (length ? -l : l)))
@@ -1444,7 +1465,8 @@ static void packet_print(const TEXT* string, const UCHAR* packet, const int leng
 	int sum = 0;
 	int l = length;
 
-	if (l) {
+	if (l)
+	{
 		do {
 			sum += *packet++;
 		} while (--l);
@@ -1561,7 +1583,8 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 	sprintf(temp, "%lu", number);
 
 	USHORT length = strlen(temp);
-	if (length < 8) {
+	if (length < 8)
+	{
 		strcpy(name, temp);
 		return;
 	}

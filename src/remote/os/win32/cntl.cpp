@@ -178,7 +178,8 @@ static void WINAPI control_thread( DWORD action)
 
 	case SERVICE_CREATE_GUARDIAN_MUTEX:
 		hMutex = OpenMutex(SYNCHRONIZE, FALSE, mutex_name->c_str());
-		if (hMutex) {
+		if (hMutex)
+		{
 			UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
 				SEM_NOOPENFILEERRORBOX | SEM_NOALIGNMENTFAULTEXCEPT;
 			SetErrorMode(error_mode);

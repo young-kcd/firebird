@@ -1000,12 +1000,8 @@ static void gen_compile( const act* action, int column)
 	column -= INDENT;
 	endif(column);
 
-	const blb* blob = request->req_blobs;
-	if (blob)
-	{
-		for (; blob; blob = blob->blb_next)
-			printa(column - INDENT, "isc_%d := 0;", blob->blb_ident);
-	}
+	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
+		printa(column - INDENT, "isc_%d := 0;", blob->blb_ident);
 }
 
 

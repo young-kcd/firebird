@@ -109,7 +109,8 @@ void ClumpletWriter::reset(const UCHAR* buffer, const size_t buffLen)
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
 	}
-	else {
+	else
+	{
 		UCHAR tag = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? getBufferTag() : 0;
 		initNewBuffer(tag);
 	}
@@ -124,7 +125,8 @@ void ClumpletWriter::size_overflow()
 void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value)
 {
 	int shift = 0;
-	while (length--) {
+	while (length--)
+	{
 		*ptr++ = (UCHAR) (value >> shift);
 		shift += 8;
 	}
@@ -199,7 +201,8 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.getCount()) {
+	if (cur_offset > dynamic_buffer.getCount())
+	{
 		usage_mistake("write past EOF");
 		return;
 	}
@@ -313,7 +316,8 @@ void ClumpletWriter::insertEndMarker(UCHAR tag)
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.getCount()) {
+	if (cur_offset > dynamic_buffer.getCount())
+	{
 		usage_mistake("write past EOF");
 		return;
 	}
@@ -335,12 +339,14 @@ void ClumpletWriter::deleteClumplet()
 	const UCHAR* buffer_end = getBufferEnd();
 
 	// Check for EOF
-	if (clumplet >= buffer_end) {
+	if (clumplet >= buffer_end)
+	{
 		usage_mistake("write past EOF");
 		return;
 	}
 
-	if (buffer_end - clumplet < 2) {
+	if (buffer_end - clumplet < 2)
+	{
 		// It appears we're erasing EOF marker
 		dynamic_buffer.shrink(cur_offset);
 	}

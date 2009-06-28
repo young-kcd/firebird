@@ -284,7 +284,8 @@ static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
 		if (p < end)
 			*p++ = '\n';
 	}
-	if (usServerFlagMask & SRVR_wnet) {
+	if (usServerFlagMask & SRVR_wnet)
+	{
 		p += LoadString(hInstance, IDS_NP, p, end - p);
 		if (p < end)
 			*p++ = '\r';

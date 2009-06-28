@@ -316,8 +316,7 @@ ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj,
 			break;
 		}
 		// copy the converted bytes into the destination
-		const UCHAR* p = tmp_buffer;
-		for (; res; res--, fss_len--)
+		for (const UCHAR* p = tmp_buffer; res; res--, fss_len--)
 			*fss_str++ = *p++;
 		unicode_len -= sizeof(*unicode_str);
 		unicode_str++;

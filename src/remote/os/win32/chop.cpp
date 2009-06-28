@@ -84,7 +84,8 @@ char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
 		{
 			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft) && pchLeft < pchRight)
 				;
-			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
+			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen)
+			{
 				bLeftFull = true;
 				pchLeft = pchLastLeft;
 			}
@@ -95,7 +96,8 @@ char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
 		{
 			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight) && pchLeft < pchRight)
 				;
-			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
+			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen)
+			{
 				bRightFull = true;
 				pchRight = pchLastRight;
 			}

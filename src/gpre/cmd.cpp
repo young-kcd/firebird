@@ -1258,8 +1258,7 @@ static void get_referred_fields(const act* action, cnstrt* constraint)
 //		Generate dyn for creating a constraint.
 //
 
-static void create_constraint( gpre_req* request, const act* action,
-							  cnstrt* constraint)
+static void create_constraint( gpre_req* request, const act* action, cnstrt* constraint)
 {
 	for (; constraint; constraint = constraint->cnstrt_next)
 	{

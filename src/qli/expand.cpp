@@ -1037,8 +1037,8 @@ static qli_nod* expand_field( qli_syntax* input, qli_lls* stack, qli_syntax* sub
 		node->nod_arg[e_fld_subs] = expand_expression(subs, stack);
 
 	qli_ctx* parent = NULL;
-	qli_lls* save_stack;
-	for (save_stack = stack; stack; stack = stack->lls_next)
+	qli_lls* save_stack = stack;
+	for (; stack; stack = stack->lls_next)
 	{
 		parent = (qli_ctx*) stack->lls_object;
 		if (parent->ctx_type == CTX_AGGREGATE)
@@ -2246,18 +2246,16 @@ static qli_ctx* find_context( const qli_name* name, qli_lls* contexts)
  *	the context block implicated.
  *
  **************************************/
-	qli_ctx* context;
-
 	for (; contexts; contexts = contexts->lls_next)
 	{
-		context = (qli_ctx*) contexts->lls_object;
+		qli_ctx* context = (qli_ctx*) contexts->lls_object;
 		const qli_rel* relation = context->ctx_relation;
 		if (compare_names(name, relation->rel_symbol))
-			break;
+			return context;
 		if (compare_names(name, context->ctx_symbol))
-			break;
+			return context;
 	}
-	return contexts ? context : NULL;
+	return NULL;
 }
 
 
@@ -2864,7 +2862,6 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
  *
  **************************************/
 	qli_rel* relation;
-	qli_fld* field;
 
 	// Look thru context stack looking for a context that will resolve
 	// all name segments.  If the context is a secondary context, require
@@ -2884,7 +2881,7 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 		{
 		case CTX_VARIABLE:
 			if (ptr == base)
-				for (field = context->ctx_variable; field; field = field->fld_next)
+				for (qli_fld* field = context->ctx_variable; field; field = field->fld_next)
 				{
 					if (compare_names(name, field->fld_name) ||
 						compare_names(name, field->fld_query_name))
@@ -2903,7 +2900,7 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 			}
 			relation = context->ctx_relation;
 
-			for (field = relation->rel_fields; field; field = field->fld_next)
+			for (qli_fld* field = relation->rel_fields; field; field = field->fld_next)
 				if (compare_names(name, field->fld_name) || compare_names(name, field->fld_query_name))
 				{
 					if (ptr == base)

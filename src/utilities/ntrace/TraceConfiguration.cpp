@@ -212,8 +212,7 @@ void TraceCfgReader::readConfig()
 		if (!match)
 			continue;
 
-		const Element* el = section->children;
-		for (; el; el = el->sibling)
+		for (const Element* el = section->children; el; el = el->sibling)
 		{
 			if (!el->getAttributes())
 			{

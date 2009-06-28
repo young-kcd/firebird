@@ -1430,15 +1430,13 @@ static void gen_compile( const act* action)
 	// If blobs are present, zero out all of the blob handles.  After this
 	// point, the handles are the user's responsibility
 
-	const blb* blob = request->req_blobs;
-	if (blob)
-		for (; blob; blob = blob->blb_next)
-		{
-			sprintf(output_buffer, "%sMOVE 0 TO %s%d\n",
-					names[COLUMN], names[isc_a_pos], blob->blb_ident);
+	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
+	{
+		sprintf(output_buffer, "%sMOVE 0 TO %s%d\n",
+				names[COLUMN], names[isc_a_pos], blob->blb_ident);
 
-			RMC_print_buffer(output_buffer, false);
-		}
+		RMC_print_buffer(output_buffer, false);
+	}
 }
 
 

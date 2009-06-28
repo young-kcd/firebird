@@ -1118,14 +1118,10 @@ static void gen_compile(const act* action)
 	// If blobs are present, zero out all of the blob handles.  After this
 	// point, the handles are the user's responsibility
 
-	blb* blob = request->req_blobs;
-	if (blob)
+	for (const blb* blob = request->req_blobs; blob; blob = blob->blb_next)
 	{
-		for (; blob; blob = blob->blb_next)
-		{
-			sprintf(output_buffer, "%sisc_%d = 0\n", COLUMN, blob->blb_ident);
-			FTN_print_buffer(output_buffer);
-		}
+		sprintf(output_buffer, "%sisc_%d = 0\n", COLUMN, blob->blb_ident);
+		FTN_print_buffer(output_buffer);
 	}
 }
 
