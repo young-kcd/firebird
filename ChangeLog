@@ -1,3 +1,10 @@
+2009-06-28 09:25  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.22):
+
+	Backported CORE-2449: Unexpected "lock conflict" error can be
+	thrown instead of other (expected) exception.
+
 2009-06-20 22:40  hvlad
 
 	* firebird2/src/jrd/isc_sync.cpp (1.103.2.6):
