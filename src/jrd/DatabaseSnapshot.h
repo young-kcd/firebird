@@ -322,7 +322,7 @@ protected:
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	void clearRecord(Record*);
-	void putField(thread_db*, Record*, const DumpField&);
+	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
 
 	static void dumpData(thread_db*, bool);
 

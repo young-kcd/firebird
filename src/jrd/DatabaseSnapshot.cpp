@@ -497,6 +497,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	bool dbb_processed = false, fields_processed = false;
 	bool dbb_allowed = false, att_allowed = false;
+	int attachment_charset = ttype_none;
 
 	DumpRecord dumpRecord;
 	while (reader.getRecord(dumpRecord))
@@ -540,6 +541,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			const size_t length = dumpField.length;
 			const char* source = (const char*) dumpField.data;
 
+			bool set_charset = false;
+
 			if (rid == rel_mon_database) // special case for MON$DATABASE
 			{
 				if (fid == f_mon_db_name)
@@ -549,7 +552,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 				if (dbb_allowed && !dbb_processed)
 				{
-					putField(tdbb, record, dumpField);
+					putField(tdbb, record, dumpField, attachment_charset);
 					fields_processed = true;
 				}
 
@@ -561,17 +564,21 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 				{
 					att_allowed = !userName.compare(source, length) || locksmith;
 				}
+				else if (fid == f_mon_att_charset_id)
+				{
+					set_charset = true;
+				}
 
 				if (dbb_allowed && att_allowed)
 				{
-					putField(tdbb, record, dumpField);
+					putField(tdbb, record, dumpField, attachment_charset, set_charset);
 					fields_processed = true;
 					dbb_processed = true;
 				}
 			}
 			else if (dbb_allowed && att_allowed) // generic logic that covers all other relations
 			{
-				putField(tdbb, record, dumpField);
+				putField(tdbb, record, dumpField, attachment_charset);
 				fields_processed = true;
 				dbb_processed = true;
 			}
@@ -637,7 +644,8 @@ void DatabaseSnapshot::clearRecord(Record* record)
 }
 
 
-void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField& field)
+void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField& field,
+								int& charset, bool set_charset)
 {
 	fb_assert(record);
 
@@ -671,6 +679,11 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		dsc from_desc;
 		from_desc.makeInt64(0, &value);
 		MOV_move(tdbb, &from_desc, &to_desc);
+
+		if (set_charset)
+		{
+			charset = (int) value;
+		}
 	}
 	else if (field.type == VALUE_TIMESTAMP)
 	{
@@ -684,7 +697,7 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 	else if (field.type == VALUE_STRING)
 	{
 		dsc from_desc;
-		from_desc.makeText(field.length, ttype_dynamic, (UCHAR*) field.data);
+		from_desc.makeText(field.length, charset, (UCHAR*) field.data);
 		MOV_move(tdbb, &from_desc, &to_desc);
 	}
 	else
