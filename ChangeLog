@@ -1,3 +1,21 @@
+2009-06-29 04:05  asfernandes
+
+	* firebird2/src/: jrd/cmp.cpp (1.344), jrd/enc.cpp (1.37),
+	jrd/opt.cpp (1.352), jrd/sha.cpp (1.14), lock/print.cpp (1.87),
+	remote/merge.cpp (1.29), remote/protocol.cpp (1.86),
+	remote/remote.cpp (1.91), remote/xnet.cpp (1.137),
+	remote/os/win32/srvr_w32.cpp (1.76):
+
+	Misc
+
+2009-06-28 22:43  hvlad
+
+	* firebird2/src/jrd/os/: posix/unix.cpp (1.121), win32/winnt.cpp
+	(1.84):
+
+	Fixed bug CORE-2532 : Incorrect size of volumes in multi volume
+	database
+
 2009-06-28 13:59  robocop
 
 	* firebird2/src/: common/classes/ClumpletReader.cpp (1.39),
