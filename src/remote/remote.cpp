@@ -75,11 +75,13 @@ void REMOTE_cleanup_transaction( Rtr* transaction)
 			request->rrq_rtr = NULL;
 		}
 		for (Rrq* level = request->rrq_levels; level; level = level->rrq_next)
+		{
 			if (level->rrq_rtr == transaction)
 			{
 				REMOTE_reset_request(level, 0);
 				level->rrq_rtr = NULL;
 			}
+		}
 	}
 
 	for (Rsr* statement = transaction->rtr_rdb->rdb_sql_requests; statement;

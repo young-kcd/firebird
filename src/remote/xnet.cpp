@@ -947,7 +947,6 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		if (xcc)
 		{
-
 			if (xcc->xcc_event_send_channel_filled) {
 				CloseHandle(xcc->xcc_event_send_channel_filled);
 			}

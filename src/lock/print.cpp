@@ -1214,7 +1214,6 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 
 			if (LOCK_header->lhb_flags & LHB_lock_ordering && !owner_conversion)
 			{
-
 				/* Requests AFTER our request can't block us */
 				if (owner_request == lock_request)
 					break;
@@ -1227,7 +1226,6 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 			}
 			else
 			{
-
 				/* Requests AFTER our request CAN block us */
 				if (lock_request == owner_request)
 					continue;

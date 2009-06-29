@@ -859,6 +859,7 @@ STATIC void init_des()
 
 	for (int i = 0; i < 48; i++)
 		perm[i] = P32Tr[ExpandTr[i] - 1];
+
 	for (int tableno = 0; tableno < 8; tableno++)
 	{
 		for (int j = 0; j < 64; j++)

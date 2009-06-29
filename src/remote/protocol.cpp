@@ -113,7 +113,6 @@ static bool_t xdr_trrq_message(XDR*, USHORT);
 #include "../remote/xdr_proto.h"
 
 
-
 #ifdef DEBUG
 static ULONG xdr_save_size = 0;
 inline void DEBUG_PRINTSIZE(XDR* xdrs, P_OP p)

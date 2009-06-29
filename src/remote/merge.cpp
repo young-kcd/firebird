@@ -204,4 +204,3 @@ static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const 
 
 	return FB_SUCCESS;
 }
-

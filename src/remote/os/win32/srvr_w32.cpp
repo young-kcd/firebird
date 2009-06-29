@@ -323,9 +323,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	FILE* file = fopen(name, "w+t");
 	if (file)
 	{
-	  fprintf(file, "Global memory pool allocated objects\n");
-	  getDefaultMemoryPool()->print_contents(file);
-	  fclose(file);
+		fprintf(file, "Global memory pool allocated objects\n");
+		getDefaultMemoryPool()->print_contents(file);
+		fclose(file);
 	}
 #endif
 

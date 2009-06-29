@@ -7932,6 +7932,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 				}
 				++idx;
 			}
+
 			// If no index was found than pick the first one available out of the list
 			if ((!selected_idx) || (selected_idx->idx_runtime_flags & idx_marker))
 			{
@@ -7946,6 +7947,7 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
 					++idx;
 				}
 			}
+
 			selected_idx->idx_runtime_flags |= idx_marker;
 			idx_sort.add(*selected_idx);
 		}
