@@ -1,3 +1,10 @@
+2009-06-30 14:29  dimitr
+
+	* firebird2/builds/win32/msvc9/: Firebird2.sln (1.4),
+	fbtracemgr.vcproj (1.1):
+
+	Updated the MSVC9 build.
+
 2009-06-29 04:05  asfernandes
 
 	* firebird2/src/: jrd/cmp.cpp (1.344), jrd/enc.cpp (1.37),
