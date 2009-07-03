@@ -119,9 +119,11 @@ static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 		return -1;
 	const int c0 = *s & 0xff;
 	SLONG l = c0;
-	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
+	for (const Byte_Mask_Table* t = tab; t->cmask; t++)
+	{
 		nc++;
-		if ((c0 & t->cmask) == t->cval) {
+		if ((c0 & t->cmask) == t->cval)
+		{
 			l &= t->lmask;
 			if (l < t->lval)
 				return -1;
@@ -146,12 +148,15 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 
 	SLONG l = wc;
 	int nc = 0;
-	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
+	for (const Byte_Mask_Table* t = tab; t->cmask; t++)
+	{
 		nc++;
-		if (l <= t->lmask) {
+		if (l <= t->lmask)
+		{
 			int c = t->shift;
 			*s = t->cval | (l >> c);
-			while (c > 0) {
+			while (c > 0)
+			{
 				c -= 6;
 				s++;
 				*s = 0x80 | ((l >> c) & 0x3F);
@@ -216,9 +221,11 @@ static ULONG internal_fss_to_unicode(csconvert* obj,
 
 	const UNICODE* const start = dest_ptr;
 	const ULONG src_start = src_len;
-	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
+	while ((src_len) && (dest_len >= sizeof(*dest_ptr)))
+	{
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
-		if (res == -1) {
+		if (res == -1)
+		{
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
@@ -262,15 +269,18 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	const UNICODE* unicode_str = s;
 
 	const UCHAR* const start = fss_str;
-	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
+	while ((fss_len) && (unicode_len >= sizeof(*unicode_str)))
+	{
 		/* Convert the wide character into temp buffer */
 		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
-		if (res == -1) {
+		if (res == -1)
+		{
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
 		/* will the mb sequence fit into space left? */
-		if (ULONG(res) > fss_len) {
+		if (ULONG(res) > fss_len)
+		{
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
@@ -569,7 +579,8 @@ static ULONG internal_str_to_upper(texttype* /*obj*/,
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--) {
+	while (inLen-- && outLen--)
+	{
 		*dest++ = UPPER7(*src);
 		src++;
 	}
@@ -593,7 +604,8 @@ static ULONG internal_str_to_lower(texttype* /*obj*/,
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--) {
+	while (inLen-- && outLen--)
+	{
 		*dest++ = LOWWER7(*src);
 		src++;
 	}
@@ -830,8 +842,10 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
 
-	while (nDest && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc >= 256) {
+	while (nDest && nSrc >= sizeof(*pSrc))
+	{
+		if (*pSrc >= 256)
+		{
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		}
@@ -877,7 +891,8 @@ static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
+	while (nDest > 1 && nSrc > 1)
+	{
 		*pDest++ = *pSrc * 256 + *(pSrc + 1);
 		pSrc += 2;
 		nDest -= 2;
@@ -921,7 +936,8 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1) {
+	while (nDest > 1 && nSrc > 1)
+	{
 		*pDest++ = *pSrc / 256;
 		*pDest++ = *pSrc++ % 256;
 		nDest -= 2;
@@ -1247,8 +1263,10 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
+	{
+		if (*pSrc > 127)
+		{
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		}
@@ -1293,7 +1311,8 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* ppS
 
 	const USHORT* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
+	{
 		*pDest++ = *pSrc++;
 		nDest -= sizeof(*pDest);
 		nSrc -= sizeof(*pSrc);
@@ -1339,8 +1358,10 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const UCHAR* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
+	{
+		if (*pSrc > 127)
+		{
 			/* In the cvt_ascii_to_utffss case this should be CS_BAD_INPUT */
 			/* but not in cvt_none_to_utffss or cvt_utffss_to_ascii */
 			*err_code = CS_CONVERT_ERROR;

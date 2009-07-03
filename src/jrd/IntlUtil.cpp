@@ -290,8 +290,10 @@ ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
+	{
+		if (*pSrc > 127)
+		{
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
@@ -336,8 +338,10 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
-		if (*pSrc > 127) {
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
+	{
+		if (*pSrc > 127)
+		{
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		}

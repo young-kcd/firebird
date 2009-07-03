@@ -208,7 +208,8 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 		cs = dbb->dbb_charsets[id];
 
 	// allocate a new character set object if we couldn't find one.
-	if (!cs) {
+	if (!cs)
+	{
 		SubtypeInfo info;
 
 		if (id == CS_UTF16)
@@ -536,11 +537,14 @@ int INTL_compare(thread_db* tdbb,
 	USHORT compare_type = MAX(t1, t2);	/* YYY */
 	UCHAR buffer[MAX_KEY];
 
-	if (t1 != t2) {
+	if (t1 != t2)
+	{
 		CHARSET_ID cs1 = INTL_charset(tdbb, t1);
 		CHARSET_ID cs2 = INTL_charset(tdbb, t2);
-		if (cs1 != cs2) {
-			if (compare_type != t2) {
+		if (cs1 != cs2)
+		{
+			if (compare_type != t2)
+			{
 				/* convert pText2 to pText1's type, if possible */
 				/* YYY - should failure to convert really return
 				   an error here?
@@ -554,7 +558,8 @@ int INTL_compare(thread_db* tdbb,
 				length2 = INTL_convert_bytes(tdbb, cs1, buffer, sizeof(buffer), cs2, p2, length2, err);
 				p2 = buffer;
 			}
-			else {
+			else
+			{
 				/* convert pText1 to pText2's type, if possible */
 
 				length1 = INTL_convert_bytes(tdbb, cs2, buffer, sizeof(buffer), cs1, p1, length1, err);
@@ -744,7 +749,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			from_fill = 0;		/* Convert_bytes handles source truncation */
 			p += to_len;
 		}
-		else {
+		else
+		{
 			/* binary string can always be converted TO by byte-copy */
 
 			ULONG to_len = MIN(from_len, to_size);
@@ -775,7 +781,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			to->dsc_address[to_len] = 0;
 			from_fill = 0;		/* Convert_bytes handles source truncation */
 		}
-		else {
+		else
+		{
 			/* binary string can always be converted TO by byte-copy */
 
 			ULONG to_len = MIN(from_len, to_size);
@@ -805,7 +812,8 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 			((vary*) to->dsc_address)->vary_length = to_len;
 			from_fill = 0;		/* Convert_bytes handles source truncation */
 		}
-		else {
+		else
+		{
 			/* binary string can always be converted TO by byte-copy */
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
@@ -945,7 +953,8 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 	USHORT key_length;
 	if (ttype <= ttype_last_internal)
 		key_length = iLength;
-	else {
+	else
+	{
 		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
 		key_length = obj->key_length(iLength);
 	}
@@ -1216,22 +1225,27 @@ static bool all_spaces(thread_db* tdbb,
 
 // Single-octet character sets are optimized here
 
-	if (obj->getSpaceLength() == 1) {
+	if (obj->getSpaceLength() == 1)
+	{
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
-		while (p < end) {
+		while (p < end)
+		{
 			if (*p++ != *obj->getSpace())
 				return false;
 		}
 	}
-	else {
+	else
+	{
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
 		const unsigned char* space = obj->getSpace();
 		const unsigned char* const end_space = &space[obj->getSpaceLength()];
-		while (p < end) {
+		while (p < end)
+		{
 			space = obj->getSpace();
-			while (p < end && space < end_space) {
+			while (p < end && space < end_space)
+			{
 				if (*p++ != *space++)
 					return false;
 			}
@@ -1303,16 +1317,19 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
 /* Single-octet character sets are optimized here */
-	if (obj->getSpaceLength() == 1) {
+	if (obj->getSpaceLength() == 1)
+	{
 		const BYTE* const end = &ptr[len];
 		while (ptr < end)
 			*ptr++ = *obj->getSpace();
 	}
-	else {
+	else
+	{
 		const BYTE* const end = &ptr[len];
 		const UCHAR* space = obj->getSpace();
 		const UCHAR* const end_space = &space[obj->getSpaceLength()];
-		while (ptr < end) {
+		while (ptr < end)
+		{
 			space = obj->getSpace();
 			while (ptr < end && space < end_space) {
 				*ptr++ = *space++;

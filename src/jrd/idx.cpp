@@ -116,6 +116,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 	WIN referenced_window(relPages->rel_pg_space_id, -1);
 
 	while (BTR_next_index(tdbb, relation, 0, &idx, &window))
+	{
 		if (idx.idx_flags & idx_foreign)
 		{
 			/* find the corresponding primary key index */
@@ -160,6 +161,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 
 			CCH_RELEASE(tdbb, &referenced_window);
 		}
+	}
 }
 
 
@@ -514,7 +516,8 @@ void IDX_create_index(thread_db* tdbb,
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
 
-	if (ifl_data.ifl_duplicates > 0) {
+	if (ifl_data.ifl_duplicates > 0)
+	{
 		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
@@ -1118,14 +1121,16 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 					if (is_fk)
 					{
-						if (equal_cur && equal_old) {
+						if (equal_cur && equal_old)
+						{
 							result = idx_e_duplicate;
 							break;
 						}
 					}
 					else
 					{
-						if (equal_cur || equal_old) {
+						if (equal_cur || equal_old)
+						{
 							result = idx_e_duplicate;
 							break;
 						}
@@ -1729,7 +1734,8 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 /* if one didn't exist, create it */
 
-	if (!index_block) {
+	if (!index_block)
+	{
 		index_block = IDX_create_index_block(tdbb, relation, id);
 		lock = index_block->idb_lock;
 	}

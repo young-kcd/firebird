@@ -147,7 +147,8 @@ int main( int argc, char *argv[])
 				break;
 
 			case 'd':
-				if ((argv < end) && (!strcmp(*argv, "tips"))) {
+				if ((argv < end) && (!strcmp(*argv, "tips")))
+				{
 					argv++;
 					sw_dump_tips = true;
 				}
@@ -538,7 +539,8 @@ static void dump(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper, UCHAR pg_type
 			{
 				if (tip[sequence] == lower)
 					break;
-				else if (!tip[sequence]) {
+				else if (!tip[sequence])
+				{
 					sequence = 0;
 					break;
 				}
@@ -786,7 +788,8 @@ static void get_range(TEXT*** argv, const TEXT* const* const end, ULONG* lower, 
 		TEXT c = 0;
 		const TEXT* p;
 		for (p = token->swc_string; *p; p++)
-			if (*p < '0' || *p > '9') {
+			if (*p < '0' || *p > '9')
+			{
 				c = *p;
 				*p++ = 0;
 				break;
@@ -847,7 +850,8 @@ static void get_switch( TEXT** argv, swc* token)
  **************************************/
 	token->swc_string = *argv;
 
-	if (*token->swc_string == '-') {
+	if (*token->swc_string == '-')
+	{
 		token->swc_switch = true;
 		token->swc_string++;
 	}
@@ -856,7 +860,8 @@ static void get_switch( TEXT** argv, swc* token)
 
 	const int temp = strlen(token->swc_string) - 1;
 
-	if (token->swc_string[temp] == ',') {
+	if (token->swc_string[temp] == ',')
+	{
 		token->swc_string[temp] = '\0';
 		//token->swc_comma = true;
 	}
@@ -889,7 +894,8 @@ static header_page* open_database( rbdb* rbdb, ULONG pg_size)
 
 	header_page* header = (header_page*) RBDB_read(rbdb, (SLONG) 0);
 
-	if (header->pag_type != pag_header) {
+	if (header->pag_type != pag_header)
+	{
 		printf("header page has wrong type, expected %d found %d!\n", pag_header, header->pag_type);
 		rbdb->rbdb_valid = false;
 	}
@@ -904,12 +910,14 @@ static header_page* open_database( rbdb* rbdb, ULONG pg_size)
 		rbdb->rbdb_valid = false;
 	}
 
-	if (pg_size && (pg_size != header->hdr_page_size)) {
+	if (pg_size && (pg_size != header->hdr_page_size))
+	{
 		printf("Using page size %d\n", pg_size);
 		header->hdr_page_size = pg_size;
 		rbdb->rbdb_valid = false;
 	}
-	else if (!header->hdr_page_size) {
+	else if (!header->hdr_page_size)
+	{
 		printf("Using page size 1024\n");
 		header->hdr_page_size = 1024;
 		rbdb->rbdb_valid = false;

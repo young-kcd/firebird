@@ -39,9 +39,7 @@ static void cleanup_key(HKEY, const char*);
 static USHORT remove_subkeys(HKEY, bool, pfnRegError);
 #endif
 
-USHORT REGISTRY_install(HKEY hkey_rootnode,
-						const TEXT* directory,
-						pfnRegError err_handler)
+USHORT REGISTRY_install(HKEY hkey_rootnode, const TEXT* directory, pfnRegError err_handler)
 {
 /**************************************
  *
@@ -69,7 +67,8 @@ USHORT REGISTRY_install(HKEY hkey_rootnode,
 	TEXT path_name[MAXPATHLEN];
 	TEXT* p;
 	USHORT len = GetFullPathName(directory, sizeof(path_name), path_name, &p);
-	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\') {
+	if (len && path_name[len - 1] != '/' && path_name[len - 1] != '\\')
+	{
 		path_name[len++] = '\\';
 		path_name[len] = 0;
 	}
@@ -196,7 +195,8 @@ static USHORT remove_subkeys(HKEY hkey,
 							 &n_sub_keys,
 							 &max_sub_key,
 							 &i, &i, &i, &i, &i, &last_write_time);
-	if (status != ERROR_SUCCESS && status != ERROR_MORE_DATA) {
+	if (status != ERROR_SUCCESS && status != ERROR_MORE_DATA)
+	{
 		if (silent_flag)
 			return FB_FAILURE;
 		return (*err_handler) (status, "RegQueryInfoKey", NULL);
@@ -206,7 +206,8 @@ static USHORT remove_subkeys(HKEY hkey,
 		(TEXT*) malloc((SLONG) max_sub_key) : buffer;
 
 	const TEXT* p = NULL;
-	for (DWORD i = 0; i < n_sub_keys; i++) {
+	for (DWORD i = 0; i < n_sub_keys; i++)
+	{
 		DWORD sub_key_len = max_sub_key;
 		if ((status = RegEnumKeyEx(hkey, i, sub_key, &sub_key_len,
 								   NULL, NULL, NULL,
@@ -229,7 +230,8 @@ static USHORT remove_subkeys(HKEY hkey,
 		RegCloseKey(hkey_sub);
 		if (ret == FB_FAILURE)
 			return FB_FAILURE;
-		if ((status = RegDeleteKey(hkey, sub_key)) != ERROR_SUCCESS) {
+		if ((status = RegDeleteKey(hkey, sub_key)) != ERROR_SUCCESS)
+		{
 			p = "RegDeleteKey";
 			break;
 		}
@@ -238,7 +240,8 @@ static USHORT remove_subkeys(HKEY hkey,
 	if (buffer != sub_key)
 		free(sub_key);
 
-	if (p) {
+	if (p)
+	{
 		if (silent_flag)
 			return FB_FAILURE;
 		return (*err_handler) (status, p, NULL);

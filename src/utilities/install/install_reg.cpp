@@ -66,7 +66,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	// Let's get the root directory from the instance path of this program.
 	// argv[0] is only _mostly_ guaranteed to give this info,
 	// so we GetModuleFileName()
-	USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
+	const USHORT len = GetModuleFileName(NULL, directory, sizeof(directory));
 	if (len == 0)
 		return reg_error(GetLastError(), "GetModuleFileName", NULL);
 
