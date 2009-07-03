@@ -134,14 +134,16 @@ void TraceSvcUtil::startSession(TraceSession& session, bool /*interactive*/)
 	{
 		const char* fileName = session.ses_config.c_str();
 		file = fopen(fileName, "rb");
-		if (!file) {
+		if (!file)
+		{
 			(Arg::Gds(isc_io_error) << Arg::Str("fopen") << Arg::Str(fileName) <<
 				Arg::Gds(isc_io_open_err) << Arg::OsError()).raise();
 		}
 
 		fseek(file, 0, SEEK_END);
 		len = ftell(file);
-		if (len == 0) {
+		if (len == 0)
+		{
 			(Arg::Gds(isc_io_error) << Arg::Str("fread") << Arg::Str(fileName) <<
 				Arg::Gds(isc_io_read_err) << Arg::OsError()).raise();
 		}
@@ -149,7 +151,8 @@ void TraceSvcUtil::startSession(TraceSession& session, bool /*interactive*/)
 		fseek(file, 0, SEEK_SET);
 		p = buff.getBuffer(len);
 
-		if (fread(p, 1, len, file) != len) {
+		if (fread(p, 1, len, file) != size_t(len))
+		{
 			(Arg::Gds(isc_io_error) << Arg::Str("fread") << Arg::Str(fileName) <<
 				Arg::Gds(isc_io_read_err) << Arg::OsError()).raise();
 		}
@@ -259,7 +262,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 			case isc_info_svc_line:
 				{
-					unsigned short l = isc_vax_integer(p, sizeof(l));
+					const unsigned short l = isc_vax_integer(p, sizeof(l));
 					p += sizeof(l);
 					if (l)
 					{
