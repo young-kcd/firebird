@@ -133,7 +133,8 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 
 	fseek(file, 0, SEEK_END);
 	const long len = ftell(file);
-	if (len == 0) {
+	if (len == 0)
+	{
 		fclose(file);
 		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
 	}
@@ -142,7 +143,8 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	UCHAR* p = buff.getBuffer(len);
 
 	fseek(file, 0, SEEK_SET);
-	if (fread(p, 1, len, file) != len)	{
+	if (fread(p, 1, len, file) != len)
+	{
 		fclose(file);
 		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
 	}

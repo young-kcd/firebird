@@ -216,7 +216,8 @@ static void remove_resource(const TEXT* filename, SLONG shm_length, const TEXT* 
 	}
 
 	const SLONG key = get_key(expanded_filename);
-	if (key == -1) {
+	if (key == -1)
+	{
 		printf("\n***Unable to get the key value of the %s file.\n", label);
 		return;
 	}

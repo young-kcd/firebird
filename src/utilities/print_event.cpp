@@ -58,7 +58,8 @@ int main(int argc, char *argv[])
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (!(EVENT_header = EVENT_init(status_vector))) {
+	if (!(EVENT_header = EVENT_init(status_vector)))
+	{
 		fprintf(stderr, "Can't access global event region\n");
 		isc_print_status(status_vector);
 		return 1;
@@ -119,7 +120,8 @@ static void event_list()
 				const req_int* interest = (req_int*) ((UCHAR*) interest_que - OFFSET(req_int*, rint_interests));
 				if (!interest->rint_request)
 					printf("(0)");
-				else {
+				else
+				{
 					const evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
 					const prb* process = (prb*) SRQ_ABS_PTR(request->req_process);
 					printf("%6d ", process->prb_process_id);
@@ -148,7 +150,8 @@ static void event_list()
 					const req_int* interest = (req_int*) ((UCHAR*) interest_que - OFFSET(req_int*, rint_interests));
 					if (!interest->rint_request)
 						printf("(0)");
-					else {
+					else
+					{
 						const evt_req* request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
 						const prb* process = (prb*) SRQ_ABS_PTR(request->req_process);
 						printf("%6d ", process->prb_process_id);
@@ -249,7 +252,8 @@ static void event_table_dump()
 				if (interest->rint_event)
 				{
 					const evnt* event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
-					if (event->evnt_parent) {
+					if (event->evnt_parent)
+					{
 						const evnt* parent = (evnt*) SRQ_ABS_PTR(event->evnt_parent);
 						printf("\t\"%s\".\"%s\"\n", parent->evnt_name, event->evnt_name);
 					}

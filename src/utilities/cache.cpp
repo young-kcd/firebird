@@ -141,7 +141,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		status = isc_attach_database(status_vector, 0, sw_database, &db_handle,
 									  sizeof(cache_dpb), cache_dpb);
 
-		if (status && status != isc_cache_restart) {
+		if (status && status != isc_cache_restart)
+		{
 			isc_print_status(status_vector);
 			gds__log_status(sw_database, status_vector);
 		}

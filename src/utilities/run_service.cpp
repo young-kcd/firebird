@@ -44,7 +44,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	Initialize lock manager for process.
  *
  **************************************/
-	if (argc < 2) {
+	if (argc < 2)
+	{
 		printf("usage: run_service service_path [args]\n");
 		exit(FINI_ERROR);
 	}
@@ -59,7 +60,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		*spb++ = isc_spb_version1;
 		*spb++ = isc_spb_command_line;
 		spb++;
-		for (argv += 2, argc -= 2; argc && spb < spb_end; --argc) {
+		for (argv += 2, argc -= 2; argc && spb < spb_end; --argc)
+		{
 			for (const char* p = *argv++; spb < spb_end && (*spb = *p++); spb++)
 				;
 			*spb++ = ' ';
@@ -76,16 +78,19 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	const char* send_items;
 	SSHORT send_item_length;
-	if (strstr(service_path, "start_cache")) {
+	if (strstr(service_path, "start_cache"))
+	{
 		send_items = send_timeout;
 		send_item_length = sizeof(send_timeout);
 	}
-	else {
+	else
+	{
 		send_items = send_buffer;
 		send_item_length = 0;
 	}
 
-	if (send_item_length) {
+	if (send_item_length)
+	{
 		printf
 			("It will take about 30 seconds to confirm that the cache manager\nis running.  Please wait...\n");
 	}

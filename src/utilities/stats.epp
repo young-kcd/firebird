@@ -297,7 +297,8 @@ static int get_counts(ISC_STATUS *status_vector, const SCHAR *info, SSHORT lengt
 		const SSHORT relation_id = gds__vax_integer(p, 2);
 		if (relation_id >= stats->stats_count)
 		{
-			if (!expand_stats(&stats, relation_id)) {
+			if (!expand_stats(&stats, relation_id))
+			{
 				status_vector[0] = isc_arg_gds;
 				status_vector[1] = isc_virmemexh;
 				status_vector[2] = isc_arg_end;
@@ -364,7 +365,8 @@ static int zap_longs(SLONG* ptr, SSHORT count)
  *
  **************************************/
 
-	if (count > 0) {
+	if (count > 0)
+	{
 		do {
 			*ptr++ = 0;
 		} while (--count);

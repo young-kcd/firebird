@@ -42,7 +42,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 *************************************************************************/
 	char fname[512];
 
-	if (argc != 2 && argc != 1) {
+	if (argc != 2 && argc != 1)
+	{
 		printf("Usage %s \n      %s filename\n");
 		exit(1);
 	}
@@ -74,7 +75,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	const char svc_name[] = "localhost:anonymous";
 	isc_svc_handle svc_handle = NULL;
-	if (isc_service_attach(status, 0, svc_name, &svc_handle, 0, NULL)) {
+	if (isc_service_attach(status, 0, svc_name, &svc_handle, 0, NULL))
+	{
 		printf("Failed to attach service\n");
 		return 1;
 	}

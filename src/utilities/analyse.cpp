@@ -190,7 +190,8 @@ void main( int argc, char **argv)
 
 	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES; n++, r++, w++)
 	{
-		if (*r > 1 || *w > 1) {
+		if (*r > 1 || *w > 1)
+		{
 			sprintf(string, "  Read: %d, write: %d", *r, *w);
 			if (page = db_read(n))
 				analyse(n, string, page, 0);
