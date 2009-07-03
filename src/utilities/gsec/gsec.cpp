@@ -149,7 +149,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		GSEC_exit();
 
 	Firebird::PathName databaseName;
-	bool databaseNameEntered = user_data->database_name_entered;
+	const bool databaseNameEntered = user_data->database_name_entered;
 	if (user_data->database_name_entered)
 	{
 		databaseName = user_data->database_name;
