@@ -180,7 +180,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if (ret == FB_SUCCESS)
 		{
 			ret = SRVRMGR_exec_line(&ibmgr_data);
-			if (ret) {
+			if (ret)
+			{
 				SRVRMGR_msg_get(ret, msg);
 				fprintf(OUTFILE, "%s\n", msg);
 			}
@@ -210,7 +211,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (ret == FB_SUCCESS)
 			{
 				ret = SRVRMGR_exec_line(&ibmgr_data);
-				if (ret) {
+				if (ret)
+				{
 					SRVRMGR_msg_get(ret, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 				}
@@ -267,7 +269,8 @@ static bool get_line( int *argc, SCHAR** argv, TEXT* stuff)
 				if (first)
 				{
 					first = false;
-					if (c != '?') {
+					if (c != '?')
+					{
 						*cursor++ = '-';
 						count--;
 					}
@@ -284,7 +287,8 @@ static bool get_line( int *argc, SCHAR** argv, TEXT* stuff)
 			break;
 		if (c == EOF)
 		{
-			if (SYSCALL_INTERRUPTED(errno)) {
+			if (SYSCALL_INTERRUPTED(errno))
+			{
 				errno = 0;
 				continue;
 			}
@@ -337,7 +341,8 @@ static SSHORT get_switches(int argc,
 			switch (last_sw)
 			{
 			case IN_SW_IBMGR_POOL:
-				if (strlen(string) >= MAXPATHLEN) {
+				if (strlen(string) >= MAXPATHLEN)
+				{
 					SRVRMGR_msg_get(MSG_FLNMTOOLONG, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -354,7 +359,8 @@ static SSHORT get_switches(int argc,
 				// against compete host name including domain
 				// and/or network address, but... May be later
 
-				if (strcmp(ibmgr_data->host, string)) {
+				if (strcmp(ibmgr_data->host, string))
+				{
 					strcpy(ibmgr_data->host, string);
 					ibmgr_data->reattach |= REA_HOST;
 				}
@@ -367,7 +373,8 @@ static SSHORT get_switches(int argc,
 				{
 					string = fb_utils::get_passwd(string);
 				}
-				if (strcmp(ibmgr_data->password, string)) {
+				if (strcmp(ibmgr_data->password, string))
+				{
 					strcpy(ibmgr_data->password, string);
 					ibmgr_data->reattach |= REA_PASSWORD;
 				}
@@ -380,7 +387,8 @@ static SSHORT get_switches(int argc,
 				// reattach flag if they are the same
 
 				copy_str_upper(ibmgr_data->user, string);
-				if (strlen(ibmgr_data->user) > 127) {
+				if (strlen(ibmgr_data->user) > 127)
+				{
 					SRVRMGR_msg_get(MSG_INVUSER, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -486,7 +494,8 @@ static SSHORT get_switches(int argc,
 			case IN_SW_IBMGR_PRINT:
 
 				// Only one operation can be specified on command line
-				if (ibmgr_data->operation) {
+				if (ibmgr_data->operation)
+				{
 					SRVRMGR_msg_get(MSG_OPSPEC, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -536,7 +545,8 @@ static SSHORT get_switches(int argc,
 				// We also can not change any the above parameters if
 				// a server shutdown is in progress.
 
-				if (ibmgr_data->shutdown) {
+				if (ibmgr_data->shutdown)
+				{
 					SRVRMGR_msg_get(MSG_SHUTDOWN, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					SRVRMGR_msg_get(MSG_CANTCHANGE, msg);
@@ -553,7 +563,8 @@ static SSHORT get_switches(int argc,
 				switch (in_sw)
 				{
 				case IN_SW_IBMGR_HOST:
-					if (ibmgr_data->par_entered & ENT_HOST) {
+					if (ibmgr_data->par_entered & ENT_HOST)
+					{
 						err_msg_no = MSG_INVSWSW;
 						break;
 					}
@@ -561,7 +572,8 @@ static SSHORT get_switches(int argc,
 					break;
 
 				case IN_SW_IBMGR_PASSWORD:
-					if (ibmgr_data->par_entered & ENT_PASSWORD) {
+					if (ibmgr_data->par_entered & ENT_PASSWORD)
+					{
 						err_msg_no = MSG_INVSWSW;
 						break;
 					}
@@ -569,14 +581,16 @@ static SSHORT get_switches(int argc,
 					break;
 
 				case IN_SW_IBMGR_USER:
-					if (ibmgr_data->par_entered & ENT_USER) {
+					if (ibmgr_data->par_entered & ENT_USER)
+					{
 						err_msg_no = MSG_INVSWSW;
 						break;
 					}
 					ibmgr_data->par_entered |= ENT_USER;
 					break;
 				}
-				if (err_msg_no) {
+				if (err_msg_no)
+				{
 					SRVRMGR_msg_get(err_msg_no, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -599,7 +613,8 @@ static SSHORT get_switches(int argc,
 				// But first let's see if any operation has
 				// been specified
 
-				if (!ibmgr_data->operation) {
+				if (!ibmgr_data->operation)
+				{
 					SRVRMGR_msg_get(MSG_NOOPSPEC, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -607,7 +622,8 @@ static SSHORT get_switches(int argc,
 
 				// if a suboperation has already been specified
 				// get the hell out of here.
-				if (ibmgr_data->suboperation) {
+				if (ibmgr_data->suboperation)
+				{
 					SRVRMGR_msg_get(MSG_INVSWSW, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -618,7 +634,8 @@ static SSHORT get_switches(int argc,
 				case IN_SW_IBMGR_ONCE:
 				case IN_SW_IBMGR_FOREVER:
 				case IN_SW_IBMGR_SIGNORE:
-					if (ibmgr_data->operation != OP_START) {
+					if (ibmgr_data->operation != OP_START)
+					{
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
@@ -641,7 +658,8 @@ static SSHORT get_switches(int argc,
 				case IN_SW_IBMGR_NOAT:
 				case IN_SW_IBMGR_NOTR:
 				case IN_SW_IBMGR_IGNORE:
-					if (ibmgr_data->operation != OP_SHUT) {
+					if (ibmgr_data->operation != OP_SHUT)
+					{
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
@@ -664,14 +682,16 @@ static SSHORT get_switches(int argc,
 					break;
 
 				case IN_SW_IBMGR_POOL:
-					if (ibmgr_data->operation != OP_PRINT) {
+					if (ibmgr_data->operation != OP_PRINT)
+					{
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
 					ibmgr_data->suboperation = SOP_PRINT_POOL;
 					break;
 				}
-				if (err_msg_no) {
+				if (err_msg_no)
+				{
 					SRVRMGR_msg_get(err_msg_no, msg);
 					fprintf(OUTFILE, "%s\n", msg);
 					return ERR_SYNTAX;
@@ -687,7 +707,8 @@ static SSHORT get_switches(int argc,
 
 				if (!ibmgr_data->operation)
 					ibmgr_data->operation = OP_VERSION;
-				if (!sw_version) {
+				if (!sw_version)
+				{
 					SRVRMGR_msg_get(MSG_VERSION, msg);
 					fprintf(OUTFILE, "%s %s\n", msg, GDS_VERSION);
 				}
@@ -852,7 +873,8 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
 	SSHORT ret = get_switches(argc, argv, ibmgr_in_sw_table, &ibmgr_data, &quitflag, zapPasswd);
 	if (ret != FB_SUCCESS)
 	{
-		if (ret == ERR_SYNTAX) {
+		if (ret == ERR_SYNTAX)
+		{
 			SRVRMGR_msg_get(MSG_SYNTAX, msg);
 			fprintf(OUTFILE, "%s\n", msg);
 		}

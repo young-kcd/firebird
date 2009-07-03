@@ -170,11 +170,13 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	server_args[1] = NULL;
 
 	shutting_down = 0;
-	if (UTIL_set_handler(SIGTERM, shutdown_handler, false) < 0) {
+	if (UTIL_set_handler(SIGTERM, shutdown_handler, false) < 0)
+	{
 		fprintf(stderr, "%s: Cannot set signal handler (error %d).\n", prog_name, errno);
 		exit(-5);
 	}
-	if (UTIL_set_handler(SIGINT, shutdown_handler, false) < 0) {
+	if (UTIL_set_handler(SIGINT, shutdown_handler, false) < 0)
+	{
 		fprintf(stderr, "%s: Cannot set signal handler (error %d).\n", prog_name, errno);
 		exit(-5);
 	}
@@ -190,7 +192,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	do {
 		int ret_code;
 
-		if (shutting_down) {
+		if (shutting_down)
+		{
 			// don't start a child
 			break;
 		}
@@ -222,7 +225,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				fprintf(pf, "%d", child_pid);
 				fclose(pf);
 			}
-			else {
+			else
+			{
 				gds__log("%s: guardian could not open %s for writing, error %d\n",
 						 prog_name, pidfilename, errno);
 			}
@@ -230,7 +234,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		// wait for child to die, and evaluate exit status
 		bool shutdown_child = true;
-		if (!shutting_down) {
+		if (!shutting_down)
+		{
 			ret_code = UTIL_wait_for_child(child_pid, shutting_down);
 			shutdown_child = (ret_code == -2);
 		}
@@ -239,7 +244,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			if (shutdown_child)
 			{
 				ret_code = UTIL_shutdown_child(child_pid, 3, 1);
-				if (ret_code < 0) {
+				if (ret_code < 0)
+				{
 					gds__log("%s: error while shutting down %s (%d)\n",
 							 prog_name, process_name, errno);
 					guard_exit_code = -6;
@@ -263,26 +269,30 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			{
 				gds__log("%s: %s terminated due to startup error (%d)\n",
 						 prog_name, process_name, ret_code);
-				if (option == IGNORE) {
+				if (option == IGNORE)
+				{
 					gds__log("%s: %s terminated due to startup error (%d)\n Trying again\n",
 						 prog_name, process_name, ret_code);
 
 					done = false;	// Try it again, Sam (even if it is a startup error) FSG 8.11.2000
 				}
-				else {
+				else
+				{
 					gds__log("%s: %s terminated due to startup error (%d)\n",
 							 prog_name, process_name, ret_code);
 
 					done = true;	// do not restart we have a startup problem
 				}
 			}
-			else {
+			else
+			{
 				gds__log("%s: %s terminated abnormally (%d)\n", prog_name, process_name, ret_code);
 				if (option == FOREVER || option == IGNORE)
 					done = false;
 			}
 		}
-		else {
+		else
+		{
 			// Normal shutdown - don't restart the server
 			gds__log("%s: %s normal shutdown.\n", prog_name, process_name);
 			done = true;

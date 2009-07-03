@@ -28,13 +28,13 @@
 #ifndef UTILITIES_INSTALL_PROTO_H
 #define UTILITIES_INSTALL_PROTO_H
 
-USHORT CLIENT_install(const TEXT* rootdirectory, USHORT client,
-	bool sw_force, USHORT(*err_handler)(ULONG, const TEXT*));
+typedef USHORT(*err_handler_t)(ULONG, const TEXT*);
 
-USHORT CLIENT_remove(const TEXT* rootdirectory, USHORT client,
-	bool sw_force, USHORT(*err_handler)(ULONG, const TEXT*));
+USHORT CLIENT_install(const TEXT* rootdirectory, USHORT client, bool sw_force, err_handler_t);
+
+USHORT CLIENT_remove(const TEXT* rootdirectory, USHORT client, bool sw_force, err_handler_t);
 
 USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
-	ULONG& sharedCount, USHORT(*err_handler)(ULONG, const TEXT *));
+	ULONG& sharedCount, err_handler_t err_handler);
 
 #endif /* UTILITIES_INSTALL_PROTO_H */

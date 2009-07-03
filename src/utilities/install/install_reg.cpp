@@ -83,13 +83,15 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	const TEXT* const* const end = argv + argc;
 	while (++argv < end)
 	{
-		if (**argv != '-') {
+		if (**argv != '-')
+		{
 			const TEXT* cmd;
 			USHORT i;
 			for (i = 0; cmd = commands[i].name; i++)
 			{
 				const TEXT* q = cmd;
-				for (p = *argv; *p && UPPER(*p) == *q; ++p, ++q);
+				for (p = *argv; *p && UPPER(*p) == *q; ++p, ++q)
+					;
 				if (!*p && commands[i].abbrev <= (USHORT) (q - cmd))
 					break;
 			}

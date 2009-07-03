@@ -113,7 +113,8 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 #else
 
 	pid_t pid = vfork();
-	if (!pid) {
+	if (!pid)
+	{
 		execv(string, argv);
 		_exit(FINI_ERROR);
 	}
@@ -256,7 +257,8 @@ int UTIL_ex_lock(const TEXT* file)
 
 	// file fd for the opened and locked file
 	int fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666);
-	if (fd_file == -1) {
+	if (fd_file == -1)
+	{
 		fprintf(stderr, "Could not open %s for write\n", expanded_filename);
 		return (-1);
 	}

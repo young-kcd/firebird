@@ -35,7 +35,7 @@
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/install_proto.h"
 
-static USHORT inst_error(ULONG, const TEXT *);
+static USHORT inst_error(ULONG, const TEXT*);
 static void usage_exit();
 
 static const struct
@@ -269,7 +269,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 }
 
-static USHORT inst_error(ULONG status, const TEXT * string)
+static USHORT inst_error(ULONG status, const TEXT* string)
 {
 /**************************************
  *

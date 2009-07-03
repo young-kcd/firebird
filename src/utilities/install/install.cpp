@@ -40,17 +40,13 @@ const char* SHARED_KEY	= "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SharedDL
 
 namespace {
 
-	USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS,
-			USHORT(*err_handler)(ULONG, const TEXT *));
+	USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS, err_handler_t);
 
-	USHORT PatchVersion(const TEXT* gds32, DWORD verMS,
-		USHORT(*err_handler)(ULONG, const TEXT *));
+	USHORT PatchVersion(const TEXT* gds32, DWORD verMS, err_handler_t);
 
-	USHORT IncrementSharedCount(const TEXT* gds32,
-		USHORT(*err_handler)(ULONG, const TEXT *));
+	USHORT IncrementSharedCount(const TEXT* gds32, err_handler_t);
 
-	USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force,
-		USHORT(*err_handler)(ULONG, const TEXT *));
+	USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force, err_handler_t);
 
 } // namespace
 
@@ -58,8 +54,7 @@ namespace {
 //	--- Public Functions ---
 //
 
-USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
-	USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force, err_handler_t err_handler)
 {
 /**************************************
  *
@@ -282,8 +277,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	return FB_SUCCESS;
 }
 
-USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
-	USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT CLIENT_remove(const TEXT* rootdir, USHORT client, bool sw_force, err_handler_t err_handler)
 {
 /**************************************
  *
@@ -363,8 +357,8 @@ USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
 	return FB_SUCCESS;
 }
 
-USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
-	ULONG& sharedCount, USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS, ULONG& sharedCount,
+	err_handler_t err_handler)
 {
 /**************************************
  *
@@ -403,8 +397,7 @@ USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 
 	DWORD type, size = sizeof(sharedCount);
 	sharedCount = 0;
-	RegQueryValueEx(hkey, target, NULL, &type,
-		reinterpret_cast<BYTE*>(&sharedCount), &size);
+	RegQueryValueEx(hkey, target, NULL, &type, reinterpret_cast<BYTE*>(&sharedCount), &size);
 	RegCloseKey(hkey);
 
 	return FB_SUCCESS;
@@ -416,8 +409,7 @@ USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 
 namespace {
 
-USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS,
-		USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS, err_handler_t err_handler)
 {
 /**************************************
  *
@@ -475,8 +467,7 @@ USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS,
 	return FB_SUCCESS;
 }
 
-USHORT PatchVersion(const TEXT* filename, DWORD verMS,
-	USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT PatchVersion(const TEXT* filename, DWORD verMS, err_handler_t err_handler)
 {
 /**************************************
  *
@@ -532,9 +523,12 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 
 	// This is a "magic value" that will allow locating the version info.
 	// Windows itself does something equivalent internally.
-	const BYTE lookup[] = {'V', 0, 'S', 0, '_', 0,
+	const BYTE lookup[] =
+	{
+		'V', 0, 'S', 0, '_', 0,
 		'V', 0, 'E', 0, 'R', 0, 'S', 0, 'I', 0, 'O', 0, 'N', 0, '_', 0,
-		'I', 0, 'N', 0, 'F', 0, 'O', 0, 0, 0, 0, 0, 0xbd, 0x04, 0xef, 0xfe};
+		'I', 0, 'N', 0, 'F', 0, 'O', 0, 0, 0, 0, 0, 0xbd, 0x04, 0xef, 0xfe
+	};
 	BYTE* p = mem;				// First byte of mapped file
 	BYTE* end = mem + fsize;	// Last byte + 1 of mapped file
 
@@ -585,8 +579,11 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	// This patch assumes the original version string has a major version and
 	// a minor version made of a single digit, like 1.5.x.y. It would need
 	// to be updated if we want to use versions like 1.51.x.y.
-	const BYTE flookup[] = {'F', 0, 'i', 0, 'l', 0, 'e', 0,
-		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0};
+	const BYTE flookup[] =
+	{
+		'F', 0, 'i', 0, 'l', 0, 'e', 0,
+		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0
+	};
 	p = vi;
 	end = vi + viLength;
 	i = 0;
@@ -617,8 +614,11 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	// This patch assumes the original version string has a major version and
 	// a minor version made of a single digit, like 1.5.x.y. It would need
 	// to be updated if we want to use versions like 1.51.x.y.
-	const BYTE plookup[] = {'P', 0, 'r', 0, 'o', 0, 'd', 0, 'u', 0, 'c', 0, 't', 0,
-		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0};
+	const BYTE plookup[] =
+	{
+		'P', 0, 'r', 0, 'o', 0, 'd', 0, 'u', 0, 'c', 0, 't', 0,
+		'V', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, 0, 0
+	};
 	p = vi;
 	end = vi + viLength;
 	i = 0;
@@ -651,8 +651,7 @@ USHORT PatchVersion(const TEXT* filename, DWORD verMS,
 	return FB_SUCCESS;
 }
 
-USHORT IncrementSharedCount(const TEXT* filename,
-	USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT IncrementSharedCount(const TEXT* filename, err_handler_t err_handler)
 {
 /**************************************
  *
@@ -694,8 +693,7 @@ USHORT IncrementSharedCount(const TEXT* filename,
 	return FB_SUCCESS;
 }
 
-USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
-	USHORT(*err_handler)(ULONG, const TEXT *))
+USHORT DecrementSharedCount(const TEXT* filename, bool sw_force, err_handler_t err_handler)
 {
 /**************************************
  *

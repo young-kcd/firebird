@@ -132,7 +132,8 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
-			if (!start_shutdown(data)) {
+			if (!start_shutdown(data))
+			{
 				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
@@ -346,7 +347,8 @@ static bool attach_service( ibmgr_data_t* data)
 
 		isc_service_attach(status, 0, svc_name, &data->attached, strlen(spb), spb);
 	}
-	else {
+	else
+	{
 		strcat(svc_name, ":anonymous");
 		isc_service_attach(status, 0, svc_name, &data->attached, 0, "");
 	}
@@ -426,7 +428,8 @@ static bool start_shutdown( ibmgr_data_t* data)
 	const char sendbuf[] = { isc_info_svc_svr_offline };
 	isc_service_query(status, &data->attached, 0, 0, NULL, 1, sendbuf, sizeof(respbuf), respbuf);
 
-	if (status[0] == 1 && status[1] > 0) {
+	if (status[0] == 1 && status[1] > 0)
+	{
 		isc_print_status(status);
 		return false;
 	}
@@ -451,13 +454,15 @@ static bool start_server( ibmgr_data_t* data)
 	// If we are currently attached and host has not been changed,
 	// server on this host is up and running.
 
-	if (data->attached && !(data->reattach & REA_HOST)) {
+	if (data->attached && !(data->reattach & REA_HOST))
+	{
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
 	}
 
-	if (data->attached) {
+	if (data->attached)
+	{
 		detach_service(data);
 		data->reattach |= (REA_HOST | REA_USER | REA_PASSWORD);
 	}
@@ -466,7 +471,8 @@ static bool start_server( ibmgr_data_t* data)
 
 	// Let's see if server is already running, try to attach to it
 
-	if (server_is_up(data)) {
+	if (server_is_up(data))
+	{
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
@@ -501,7 +507,8 @@ static bool start_server( ibmgr_data_t* data)
 	}
 	argv[2] = NULL;
 	argv[3] = NULL;
-	if (data->pidfile[0]) {
+	if (data->pidfile[0])
+	{
 		argv[2] = option_p;
 		argv[3] = data->pidfile;
 	}
@@ -526,7 +533,8 @@ static bool start_server( ibmgr_data_t* data)
 
 #else
 
-	if (!(pid = vfork())) {
+	if (!(pid = vfork()))
+	{
 		execv(path, argv);
 		_exit(FINI_ERROR);
 	}
@@ -681,7 +689,8 @@ static bool print_pool( ibmgr_data_t* data)
 	char respbuf[2];
 	isc_service_query(status, &data->attached, 0, 0, NULL,
 					  sptr - sendbuf, sendbuf, sizeof(respbuf), respbuf);
-	if (status[0] == 1 && status[1] > 0) {
+	if (status[0] == 1 && status[1] > 0)
+	{
 		isc_print_status(status);
 		return false;
 	}
