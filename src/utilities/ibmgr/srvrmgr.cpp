@@ -696,4 +696,3 @@ static bool print_pool( ibmgr_data_t* data)
 	}
 	return true;
 }
-

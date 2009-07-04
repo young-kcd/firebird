@@ -31,10 +31,8 @@
 typedef USHORT(*err_handler_t)(ULONG, const TEXT*);
 
 USHORT CLIENT_install(const TEXT* rootdirectory, USHORT client, bool sw_force, err_handler_t);
-
 USHORT CLIENT_remove(const TEXT* rootdirectory, USHORT client, bool sw_force, err_handler_t);
-
 USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 	ULONG& sharedCount, err_handler_t err_handler);
 
-#endif /* UTILITIES_INSTALL_PROTO_H */
+#endif // UTILITIES_INSTALL_PROTO_H

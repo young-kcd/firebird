@@ -130,4 +130,3 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	exit(FINI_OK);
 }
-

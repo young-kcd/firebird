@@ -154,4 +154,3 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	exit(status ? FINI_ERROR : FINI_OK);
 }
-

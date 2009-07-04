@@ -221,7 +221,7 @@ static ULONG internal_fss_to_unicode(csconvert* obj,
 
 	const UNICODE* const start = dest_ptr;
 	const ULONG src_start = src_len;
-	while ((src_len) && (dest_len >= sizeof(*dest_ptr)))
+	while (src_len && dest_len >= sizeof(*dest_ptr))
 	{
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
 		if (res == -1)
@@ -269,7 +269,7 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	const UNICODE* unicode_str = s;
 
 	const UCHAR* const start = fss_str;
-	while ((fss_len) && (unicode_len >= sizeof(*unicode_str)))
+	while (fss_len && unicode_len >= sizeof(*unicode_str))
 	{
 		/* Convert the wide character into temp buffer */
 		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);

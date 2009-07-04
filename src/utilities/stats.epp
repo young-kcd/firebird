@@ -374,4 +374,3 @@ static int zap_longs(SLONG* ptr, SSHORT count)
 
 	return 0;
 }
-

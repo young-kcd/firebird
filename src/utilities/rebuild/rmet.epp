@@ -91,4 +91,3 @@ ULONG* RMET_tips(TEXT* db_in)
 
 	return tips;
 }
-

@@ -38,16 +38,12 @@ const DWORD GDSVER_MINOR	= 3;
 
 const char* SHARED_KEY	= "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SharedDLLs";
 
-namespace {
-
+namespace
+{
 	USHORT GetVersion(const TEXT* gds32, DWORD& verMS, DWORD& verLS, err_handler_t);
-
 	USHORT PatchVersion(const TEXT* gds32, DWORD verMS, err_handler_t);
-
 	USHORT IncrementSharedCount(const TEXT* gds32, err_handler_t);
-
 	USHORT DecrementSharedCount(const TEXT* gds32, bool sw_force, err_handler_t);
-
 } // namespace
 
 //
