@@ -1181,7 +1181,9 @@ static int raw_devices_unlink_database(const PathName& file_name)
 
 	memset(header, 0xa5, sizeof(header));
 
-	for (int i = 0; i < IO_RETRY; i++)
+	int i;
+
+	for (i = 0; i < IO_RETRY; i++)
 	{
 		const ssize_t bytes = write (desc, header, sizeof(header));
 		if (bytes == sizeof(header))
