@@ -1476,7 +1476,8 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(name->str_data));
 			}
 
-			node->nod_arg[e_exe_inputs] = PASS1_node(statement, input->nod_arg[e_exe_inputs]);
+			node->nod_arg[e_exe_inputs] = pass1_node_psql(
+				statement, input->nod_arg[e_exe_inputs], false);
 
 			if (count)
 			{
