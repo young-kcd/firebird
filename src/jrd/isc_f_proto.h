@@ -61,4 +61,3 @@ int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
 
 #endif // JRD_ISC_FILE_PROTO_H
-

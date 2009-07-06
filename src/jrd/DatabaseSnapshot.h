@@ -166,7 +166,7 @@ class DatabaseSnapshot
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
 			const USHORT adjusted_length = (USHORT) length;
-			memcpy(ptr, &adjusted_length, sizeof(USHORT));
+			memcpy(ptr, &adjusted_length, sizeof(adjusted_length));
 			ptr += sizeof(USHORT);
 			memcpy(ptr, value, length);
 			offset += delta;

@@ -922,6 +922,3 @@ init_perm(C_block perm[64 / CHUNKBITS][1 << CHUNKBITS],
 		}
 	}
 }
-
-
-
