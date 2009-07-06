@@ -121,7 +121,6 @@ static const in_sw_tab_t* findSwitch(const in_sw_tab_t* table, string sw)
  * Functional description
  *	Returns pointer to in_sw_tab entry for current switch
  *	If not a switch, returns 0.
- *	If no match, throws if throwErrors or returns 0.
  *
  **************************************/
 	if (sw.isEmpty())
