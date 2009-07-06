@@ -42,8 +42,8 @@ iscProtocol	ISC_extract_host(Firebird::PathName&, Firebird::PathName&, bool);
 bool		ISC_expand_filename(Firebird::PathName&, bool);
 void		ISC_systemToUtf8(Firebird::AbstractString& str);
 void		ISC_utf8ToSystem(Firebird::AbstractString& str);
-void		ISC_escape(Firebird::PathName& pathName);
-void		ISC_unescape(Firebird::PathName& pathName);
+void		ISC_escape(Firebird::AbstractString& str);
+void		ISC_unescape(Firebird::AbstractString& str);
 
 // This form of ISC_expand_filename makes epp files happy
 inline bool	ISC_expand_filename(const TEXT* unexpanded, USHORT len_unexpanded,

@@ -1651,6 +1651,9 @@ static void share_name_from_unc(tstring& file_name, LPREMOTE_NAME_INFO unc_remot
 // Converts a string from the system charset to UTF-8.
 void ISC_systemToUtf8(Firebird::AbstractString& str)
 {
+	if (str.isEmpty())
+		return;
+
 #ifdef WIN_NT
 	WCHAR utf16Buffer[MAX_PATH];
 	int len = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(),
@@ -1674,6 +1677,9 @@ void ISC_systemToUtf8(Firebird::AbstractString& str)
 // Converts a string from UTF-8 to the system charset.
 void ISC_utf8ToSystem(Firebird::AbstractString& str)
 {
+	if (str.isEmpty())
+		return;
+
 #ifdef WIN_NT
 	WCHAR utf16Buffer[MAX_PATH];
 	int len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(),
@@ -1695,13 +1701,13 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 }
 
 
-// Escape Unicode characters from a PathName
-void ISC_escape(PathName& pathName)
+// Escape Unicode characters from a string
+void ISC_escape(AbstractString& str)
 {
 	size_t pos = 0;
-	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
+	while ((pos = str.find_first_of("#", pos)) != npos)
 	{
-		pathName.insert(pos, "#");
+		str.insert(pos, "#");
 		pos += 2;
 	}
 }
@@ -1735,16 +1741,15 @@ static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
 }
 
 
-// Unescape Unicode characters from a PathName
-void ISC_unescape(PathName& pathName)
+// Unescape Unicode characters from a string
+void ISC_unescape(AbstractString& str)
 {
-
 	size_t pos = 0;
-	while ((pos = pathName.find_first_of("#", pos)) != PathName::npos)
+	while ((pos = str.find_first_of("#", pos)) != npos)
 	{
-		const char* p = pathName.c_str() + pos;
+		const char* p = str.c_str() + pos;
 
-		if (pos + 5 <= pathName.length() &&
+		if (pos + 5 <= str.length() &&
 			((p[1] >= '0' && p[1] <= '9') || (toupper(p[1]) >= 'A' && toupper(p[1]) <= 'F')) &&
 			((p[2] >= '0' && p[2] <= '9') || (toupper(p[2]) >= 'A' && toupper(p[2]) <= 'F')) &&
 			((p[3] >= '0' && p[3] <= '9') || (toupper(p[3]) >= 'A' && toupper(p[3]) <= 'F')) &&
@@ -1759,14 +1764,12 @@ void ISC_unescape(PathName& pathName)
 			int len = 0;
 			FB_U8_APPEND_UNSAFE(unicode, len, code);
 
-			pathName.replace(pos, 5, PathName(unicode, len));
+			str.replace(pos, 5, string(unicode, len));
 			pos += len;
 		}
-		else if (pos + 2 <= pathName.length() && p[1] == '#')
-			pathName.erase(pos++, 1);
+		else if (pos + 2 <= str.length() && p[1] == '#')
+			str.erase(pos++, 1);
 		else
 			status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_escape_invalid));
 	}
-
-#undef U8_APPEND_UNSAFE
 }

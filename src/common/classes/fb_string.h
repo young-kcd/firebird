@@ -426,6 +426,146 @@ namespace Firebird
 
 		bool equalsNoCase(const_pointer string) const;
 
+		inline AbstractString& append(const AbstractString& str)
+		{
+			fb_assert(&str != this);
+			return append(str.c_str(), str.length());
+		}
+		inline AbstractString& append(const AbstractString& str, size_type pos, size_type n)
+		{
+			fb_assert(&str != this);
+			adjustRange(str.length(), pos, n);
+			return append(str.c_str() + pos, n);
+		}
+		inline AbstractString& append(const_pointer s, const size_type n)
+		{
+			memcpy(baseAppend(n), s, n);
+			return *this;
+		}
+		inline AbstractString& append(const_pointer s)
+		{
+			return append(s, strlen(s));
+		}
+		inline AbstractString& append(size_type n, char_type c)
+		{
+			memset(baseAppend(n), c, n);
+			return *this;
+		}
+		inline AbstractString& append(const_iterator first, const_iterator last)
+		{
+			return append(first, last - first);
+		}
+
+		inline AbstractString& insert(size_type p0, const AbstractString& str)
+		{
+			fb_assert(&str != this);
+			return insert(p0, str.c_str(), str.length());
+		}
+		inline AbstractString& insert(size_type p0, const AbstractString& str, size_type pos,
+			size_type n)
+		{
+			fb_assert(&str != this);
+			adjustRange(str.length(), pos, n);
+			return insert(p0, &str.c_str()[pos], n);
+		}
+		inline AbstractString& insert(size_type p0, const_pointer s, const size_type n)
+		{
+			if (p0 >= length()) {
+				return append(s, n);
+			}
+			memcpy(baseInsert(p0, n), s, n);
+			return *this;
+		}
+		inline AbstractString& insert(size_type p0, const_pointer s)
+		{
+			return insert(p0, s, strlen(s));
+		}
+		inline AbstractString& insert(size_type p0, const size_type n, const char_type c)
+		{
+			if (p0 >= length()) {
+				return append(n, c);
+			}
+			memset(baseInsert(p0, n), c, n);
+			return *this;
+		}
+		// iterator insert(iterator it, char_type c);	// what to return here?
+		inline void insert(iterator it, size_type n, char_type c)
+		{
+			insert(it - c_str(), n, c);
+		}
+		inline void insert(iterator it, const_iterator first, const_iterator last)
+		{
+			insert(it - c_str(), first, last - first);
+		}
+
+		inline AbstractString& erase(size_type p0 = 0, size_type n = npos)
+		{
+			baseErase(p0, n);
+			return *this;
+		}
+		inline iterator erase(iterator it)
+		{
+			erase(it - c_str(), 1);
+			return it;
+		}
+		inline iterator erase(iterator first, iterator last)
+		{
+			erase(first - c_str(), last - first);
+			return first;
+		}
+
+		inline AbstractString& replace(size_type p0, size_type n0, const AbstractString& str)
+		{
+			fb_assert(&str != this);
+			return replace(p0, n0, str.c_str(), str.length());
+		}
+		inline AbstractString& replace(const size_type p0, const size_type n0,
+			const AbstractString& str, size_type pos, size_type n)
+		{
+			fb_assert(&str != this);
+			adjustRange(str.length(), pos, n);
+			return replace(p0, n0, &str.c_str()[pos], n);
+		}
+		inline AbstractString& replace(const size_type p0, const size_type n0, const_pointer s,
+			size_type n)
+		{
+			erase(p0, n0);
+			return insert(p0, s, n);
+		}
+		inline AbstractString& replace(size_type p0, size_type n0, const_pointer s)
+		{
+			return replace(p0, n0, s, strlen(s));
+		}
+		inline AbstractString& replace(const size_type p0, const size_type n0, size_type n,
+			char_type c)
+		{
+			erase(p0, n0);
+			return insert(p0, n, c);
+		}
+		inline AbstractString& replace(iterator first0, iterator last0, const AbstractString& str)
+		{
+			fb_assert(&str != this);
+			return replace(first0 - c_str(), last0 - first0, str);
+		}
+		inline AbstractString& replace(iterator first0, iterator last0, const_pointer s,
+			size_type n)
+		{
+			return replace(first0 - c_str(), last0 - first0, s, n);
+		}
+		inline AbstractString& replace(iterator first0, iterator last0, const_pointer s)
+		{
+			return replace(first0 - c_str(), last0 - first0, s);
+		}
+		inline AbstractString& replace(iterator first0, iterator last0, size_type n, char_type c)
+		{
+			return replace(first0 - c_str(), last0 - first0, n, c);
+		}
+		inline AbstractString& replace(iterator first0, iterator last0, const_iterator first,
+			const_iterator last)
+		{
+			return replace(first0 - c_str(), last0 - first0, first, last - first);
+		}
+
 		inline ~AbstractString()
 		{
 			if (stringBuffer != inlineBuffer)
@@ -477,36 +617,6 @@ namespace Firebird
 		inline StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
 		inline StringBase<Comparator>(MemoryPool& p, const char_type* s, size_type l) : AbstractString(p, s, l) {}
 
-		inline StringType& append(const StringType& str)
-		{
-			fb_assert(&str != this);
-			return append(str.c_str(), str.length());
-		}
-		inline StringType& append(const StringType& str, size_type pos, size_type n)
-		{
-			fb_assert(&str != this);
-			adjustRange(str.length(), pos, n);
-			return append(str.c_str() + pos, n);
-		}
-		inline StringType& append(const_pointer s, const size_type n)
-		{
-			memcpy(baseAppend(n), s, n);
-			return *this;
-		}
-		inline StringType& append(const_pointer s)
-		{
-			return append(s, strlen(s));
-		}
-		inline StringType& append(size_type n, char_type c)
-		{
-			memset(baseAppend(n), c, n);
-			return *this;
-		}
-		inline StringType& append(const_iterator first, const_iterator last)
-		{
-			return append(first, last - first);
-		}
-
 		inline StringType& assign(const StringType& str)
 		{
 			fb_assert(&str != this);
@@ -553,15 +663,18 @@ namespace Firebird
 		inline StringType& operator+=(const StringType& v)
 		{
 			fb_assert(&v != this);
-			return append(v);
+			append(v);
+			return *this;
 		}
 		inline StringType& operator+=(const_pointer s)
 		{
-			return append(s);
+			append(s);
+			return *this;
 		}
 		inline StringType& operator+=(char_type c)
 		{
-			return append(1, c);
+			append(1, c);
+			return *this;
 		}
 		inline StringType operator+(const StringType& v) const
 		{
@@ -584,111 +697,6 @@ namespace Firebird
 		inline StringBase<PathNameComparator> ToPathName() const
 		{
 			return StringBase<PathNameComparator>(c_str());
-		}
-
-		inline StringType& insert(size_type p0, const StringType& str)
-		{
-			fb_assert(&str != this);
-			return insert(p0, str.c_str(), str.length());
-		}
-		inline StringType& insert(size_type p0, const StringType& str, size_type pos, size_type n)
-		{
-			fb_assert(&str != this);
-			adjustRange(str.length(), pos, n);
-			return insert(p0, &str.c_str()[pos], n);
-		}
-		inline StringType& insert(size_type p0, const_pointer s, const size_type n)
-		{
-			if (p0 >= length()) {
-				return append(s, n);
-			}
-			memcpy(baseInsert(p0, n), s, n);
-			return *this;
-		}
-		inline StringType& insert(size_type p0, const_pointer s)
-		{
-			return insert(p0, s, strlen(s));
-		}
-		inline StringType& insert(size_type p0, const size_type n, const char_type c)
-		{
-			if (p0 >= length()) {
-				return append(n, c);
-			}
-			memset(baseInsert(p0, n), c, n);
-			return *this;
-		}
-		// iterator insert(iterator it, char_type c);	// what to return here?
-		inline void insert(iterator it, size_type n, char_type c)
-		{
-			insert(it - c_str(), n, c);
-		}
-		inline void insert(iterator it, const_iterator first, const_iterator last)
-		{
-			insert(it - c_str(), first, last - first);
-		}
-
-		inline StringType& erase(size_type p0 = 0, size_type n = npos)
-		{
-			baseErase(p0, n);
-			return *this;
-		}
-		inline iterator erase(iterator it)
-		{
-			erase(it - c_str(), 1);
-			return it;
-		}
-		inline iterator erase(iterator first, iterator last)
-		{
-			erase(first - c_str(), last - first);
-			return first;
-		}
-
-		inline StringType& replace(size_type p0, size_type n0, const StringType& str)
-		{
-			fb_assert(&str != this);
-			return replace(p0, n0, str.c_str(), str.length());
-		}
-		inline StringType& replace(const size_type p0, const size_type n0, const StringType& str,
-			size_type pos, size_type n)
-		{
-			fb_assert(&str != this);
-			adjustRange(str.length(), pos, n);
-			return replace(p0, n0, &str.c_str()[pos], n);
-		}
-		inline StringType& replace(const size_type p0, const size_type n0, const_pointer s, size_type n)
-		{
-			erase(p0, n0);
-			return insert(p0, s, n);
-		}
-		inline StringType& replace(size_type p0, size_type n0, const_pointer s)
-		{
-			return replace(p0, n0, s, strlen(s));
-		}
-		inline StringType& replace(const size_type p0, const size_type n0, size_type n, char_type c)
-		{
-			erase(p0, n0);
-			return insert(p0, n, c);
-		}
-		inline StringType& replace(iterator first0, iterator last0, const StringType& str)
-		{
-			fb_assert(&str != this);
-			return replace(first0 - c_str(), last0 - first0, str);
-		}
-		inline StringType& replace(iterator first0, iterator last0, const_pointer s, size_type n)
-		{
-			return replace(first0 - c_str(), last0 - first0, s, n);
-		}
-		inline StringType& replace(iterator first0, iterator last0, const_pointer s)
-		{
-			return replace(first0 - c_str(), last0 - first0, s);
-		}
-		inline StringType& replace(iterator first0, iterator last0, size_type n, char_type c)
-		{
-			return replace(first0 - c_str(), last0 - first0, n, c);
-		}
-		inline StringType& replace(iterator first0, iterator last0, const_iterator first, const_iterator last)
-		{
-			return replace(first0 - c_str(), last0 - first0, first, last - first);
 		}
 
 		inline StringType substr(size_type pos = 0, size_type n = npos) const
