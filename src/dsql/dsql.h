@@ -134,7 +134,9 @@ public:
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
 	dsql_str*		dbb_dfl_charset;
+#ifdef SCROLLABLE_CURSORS
 	USHORT			dbb_base_level;		// indicates the version of the engine code itself
+#endif
 	bool			dbb_no_charset;
 	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;

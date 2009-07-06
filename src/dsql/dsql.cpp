@@ -127,7 +127,9 @@ namespace
 		isc_info_db_sql_dialect,
 		isc_info_ods_version,
 		isc_info_ods_minor_version,
+#ifdef SCROLLABLE_CURSORS
 		isc_info_base_level,
+#endif
 		isc_info_db_read_only,
 		isc_info_end
 	};
@@ -2099,6 +2101,7 @@ static dsql_dbb* init(Attachment* attachment)
 			switch (p)
 			{
 			case isc_info_db_sql_dialect:
+				fb_assert(l == 1);
 				database->dbb_db_SQL_dialect = (USHORT) data[0];
 				break;
 
@@ -2126,15 +2129,20 @@ static dsql_dbb* init(Attachment* attachment)
 			// 2 == v2.x
 			// 3 == v3.x
 			// 4 == v4.0 only
-			// 5 == v4.1
+			// 5 == v4.1. (v5, too?)
+			// 6 == v6, FB1
 			// Note: this info item is so old it apparently uses an
 			// archaic format, not a standard vax integer format.
 
+#ifdef SCROLLABLE_CURSORS
 			case isc_info_base_level:
+				fb_assert(l == 2 && data[0] == UCHAR(1));
 				database->dbb_base_level = (USHORT) data[1];
 				break;
+#endif
 
 			case isc_info_db_read_only:
+				fb_assert(l == 1);
 				database->dbb_read_only = (USHORT) data[0] ? true : false;
 				break;
 
