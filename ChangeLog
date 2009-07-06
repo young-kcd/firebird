@@ -1,3 +1,10 @@
+2009-07-06 09:40  dimitr
+
+	* firebird2/: doc/WhatsNew (1.95.2.44), src/jrd/isc_version.h
+	(1.8.4.21):
+
+	Just an early update.
+
 2009-06-28 09:25  dimitr
 
 	* firebird2/src/jrd/btr.cpp (1.162.2.22):
