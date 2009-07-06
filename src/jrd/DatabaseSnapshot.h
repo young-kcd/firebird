@@ -25,8 +25,6 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
-#include "../common/classes/ClumpletReader.h"
-#include "../common/classes/ClumpletWriter.h"
 
 namespace Jrd {
 
@@ -37,23 +35,158 @@ class RuntimeStatistics;
 
 class DatabaseSnapshot
 {
+	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING};
+
+	struct DumpField
+	{
+		USHORT id;
+		ValueType type;
+		USHORT length;
+		void* data;
+	};
+
+	class DumpRecord
+	{
+	public:
+		DumpRecord() : offset(0), sizeLimit(0)
+		{}
+
+		explicit DumpRecord(int rel_id)
+		{
+			reset(rel_id);
+		}
+
+		void reset(int rel_id)
+		{
+			offset = 0;
+			sizeLimit = sizeof(buffer);
+			fb_assert(rel_id > 0 && rel_id <= ULONG(MAX_UCHAR));
+			buffer[offset++] = (UCHAR) rel_id;
+		}
+
+		void assign(USHORT length, const UCHAR* ptr)
+		{
+			// CVC: While length is USHORT, this assertion is redundant.
+			fb_assert(length <= MAX_FORMAT_SIZE);
+			offset = 0;
+			sizeLimit = length;
+			memcpy(buffer, ptr, length);
+		}
+
+		ULONG getLength() const
+		{
+			return offset;
+		}
+
+		const UCHAR* getData() const
+		{
+			return buffer;
+		}
+
+		void storeGlobalId(int field_id, SINT64 value)
+		{
+			storeField(field_id, VALUE_GLOBAL_ID, sizeof(SINT64), &value);
+		}
+
+		void storeInteger(int field_id, SINT64 value)
+		{
+			storeField(field_id, VALUE_INTEGER, sizeof(SINT64), &value);
+		}
+
+		void storeTimestamp(int field_id, const Firebird::TimeStamp& value)
+		{
+			if (!value.isEmpty())
+			{
+				storeField(field_id, VALUE_TIMESTAMP, sizeof(ISC_TIMESTAMP), &value.value());
+			}
+		}
+
+		void storeString(int field_id, const Firebird::string& value)
+		{
+			if (value.length())
+			{
+				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
+			}
+		}
+
+		void storeString(int field_id, const Firebird::PathName& value)
+		{
+			if (value.length())
+			{
+				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
+			}
+		}
+
+		void storeString(int field_id, const Firebird::MetaName& value)
+		{
+			if (value.length())
+			{
+				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
+			}
+		}
+
+		int getRelationId()
+		{
+			fb_assert(!offset);
+			return (ULONG) buffer[offset++];
+		}
+
+		bool getField(DumpField& field)
+		{
+			fb_assert(offset);
+
+			if (offset < sizeLimit)
+			{
+				field.id = (USHORT) buffer[offset++];
+				field.type = (ValueType) buffer[offset++];
+				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_STRING);
+				memcpy(&field.length, buffer + offset, sizeof(USHORT));
+				offset += sizeof(USHORT);
+				field.data = buffer + offset;
+				offset += field.length;
+				return true;
+			}
+
+			return false;
+		}
+
+	private:
+		void storeField(int field_id, ValueType type, size_t length, const void* value)
+		{
+			const size_t delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
+
+			if (offset + delta > sizeLimit)
+			{
+				fb_assert(false);
+				return;
+			}
+
+			UCHAR* ptr = buffer + offset;
+			fb_assert(field_id <= ULONG(MAX_UCHAR));
+			*ptr++ = (UCHAR) field_id;
+			*ptr++ = (UCHAR) type;
+			const USHORT adjusted_length = (USHORT) length;
+			memcpy(ptr, &adjusted_length, sizeof(USHORT));
+			ptr += sizeof(USHORT);
+			memcpy(ptr, value, length);
+			offset += delta;
+		}
+
+		UCHAR buffer[MAX_FORMAT_SIZE];
+		ULONG offset;
+		ULONG sizeLimit;
+	};
+
 	struct RelationData
 	{
 		int rel_id;
 		RecordBuffer* data;
 	};
 
-	struct Element
-	{
-		SLONG processId;
-		SLONG localId;
-		ULONG length;
-	};
-
 public:
 	class SharedData
 	{
-		static const ULONG MONITOR_VERSION = 2;
+		static const ULONG MONITOR_VERSION = 3;
 		static const ULONG DEFAULT_SIZE = 1048576;
 
 		struct Header
@@ -66,25 +199,11 @@ public:
 #endif
 		};
 
-		class DumpGuard
+		struct Element
 		{
-		public:
-			explicit DumpGuard(SharedData* ptr)
-				: data(ptr)
-			{
-				data->acquire();
-			}
-
-			~DumpGuard()
-			{
-				data->release();
-			}
-
-		private:
-			DumpGuard(const DumpGuard&);
-			DumpGuard& operator=(const DumpGuard&);
-
-			SharedData* const data;
+			SLONG processId;
+			SLONG localId;
+			ULONG length;
 		};
 
 	public:
@@ -95,15 +214,17 @@ public:
 		void release();
 
 		UCHAR* read(MemoryPool&, ULONG&);
-		void write(ULONG, const UCHAR*);
+		ULONG setup();
+		void write(ULONG, ULONG, const void*);
+
+		void cleanup();
 
 	private:
 		// copying is prohibited
 		SharedData(const SharedData&);
 		SharedData& operator =(const SharedData&);
 
-		void cleanup();
-		void extend();
+		void ensureSpace(ULONG);
 
 		static void checkMutex(const TEXT*, int);
 		static void init(void*, sh_mem*, bool);
@@ -118,6 +239,80 @@ public:
 		const SLONG local_id;
 	};
 
+private:
+	class DumpGuard
+	{
+	public:
+		explicit DumpGuard(SharedData* ptr)
+			: data(ptr)
+		{
+			data->acquire();
+		}
+
+		~DumpGuard()
+		{
+			data->release();
+		}
+
+	private:
+		DumpGuard(const DumpGuard&);
+		DumpGuard& operator=(const DumpGuard&);
+
+		SharedData* const data;
+	};
+
+class Writer
+	{
+	public:
+		explicit Writer(SharedData* data)
+			: dump(data)
+		{
+			fb_assert(dump);
+			offset = dump->setup();
+			fb_assert(offset);
+		}
+
+		void putRecord(const DumpRecord& record)
+		{
+			const USHORT length = (USHORT) record.getLength();
+			dump->write(offset, sizeof(USHORT), &length);
+			dump->write(offset, length, record.getData());
+		}
+
+	private:
+		SharedData* dump;
+		ULONG offset;
+	};
+
+	class Reader
+	{
+	public:
+		Reader(ULONG length, UCHAR* ptr)
+			: sizeLimit(length), buffer(ptr), offset(0)
+		{}
+
+		bool getRecord(DumpRecord& record)
+		{
+			if (offset < sizeLimit)
+			{
+				USHORT length;
+				memcpy(&length, buffer + offset, sizeof(USHORT));
+				offset += sizeof(USHORT);
+				record.assign(length, buffer + offset);
+				offset += length;
+				return true;
+			}
+
+			return false;
+		}
+
+	private:
+		ULONG sizeLimit;
+		const UCHAR* buffer;
+		ULONG offset;
+	};
+
+public:
 	~DatabaseSnapshot();
 
 	RecordBuffer* getData(const jrd_rel*) const;
@@ -131,21 +326,20 @@ protected:
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	void clearRecord(Record*);
-	void putField(Record*, int, const Firebird::ClumpletReader&, bool);
+	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
 
 	static void dumpData(thread_db*);
-	static const char* checkNull(int, int, const char*, size_t);
 
 	static SINT64 getGlobalId(int);
 
-	static void putDatabase(const Database*, Firebird::ClumpletWriter&, int);
-	static bool putAttachment(const Attachment*, Firebird::ClumpletWriter&, int);
-	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&, int);
-	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&, int);
-	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
-	static void putStatistics(const RuntimeStatistics&, Firebird::ClumpletWriter&, int, int);
-	static void putContextVars(const Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
-	static void putMemoryUsage(const Firebird::MemoryStats&, Firebird::ClumpletWriter&, int, int);
+	static void putDatabase(const Database*, Writer&, int);
+	static bool putAttachment(const Attachment*, Writer&, int);
+	static void putTransaction(const jrd_tra*, Writer&, int);
+	static void putRequest(const jrd_req*, Writer&, int);
+	static void putCall(const jrd_req*, Writer&, int);
+	static void putStatistics(const RuntimeStatistics&, Writer&, int, int);
+	static void putContextVars(const Firebird::StringMap&, Writer&, int, bool);
+	static void putMemoryUsage(const Firebird::MemoryStats&, Writer&, int, int);
 
 	Firebird::Array<RelationData> snapshot;
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
