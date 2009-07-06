@@ -1,3 +1,28 @@
+2009-07-06 12:43  robocop
+
+	* firebird2/src/dsql/: dsql.cpp (1.283), dsql.h (1.155):
+
+	Isolate more scrollable cursors code.
+
+2009-07-06 11:19  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.104),
+	DatabaseSnapshot.h (1.32), constants.h (1.64):
+
+	Front-ported my recent rework of the monitoring stuff.
+
+2009-07-06 09:32  robocop
+
+	* firebird2/src/jrd/trace/TraceCmdLine.cpp (1.11):
+
+	Delete debris of copy-paste from gbak. :-)
+
+2009-07-06 09:29  robocop
+
+	* firebird2/src/jrd/trace/TraceService.cpp (1.14):
+
+	Misc.
+
 2009-07-05 12:12  robocop
 
 	* firebird2/src/remote/: protocol.cpp (1.87), xdr.cpp (1.49):
