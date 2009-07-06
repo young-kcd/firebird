@@ -799,10 +799,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 
 	DumpRecord record(rel_mon_database);
 
-	// Reload header
-	const PageSpace* const pageSpace =
-		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-
 	int temp;
 
 	// database name or alias (MUST BE ALWAYS THE FIRST ITEM PASSED!)
@@ -1009,9 +1005,9 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 	// state, transaction ID, timestamp
 	if (request->req_flags & req_active) {
 		record.storeInteger(f_mon_stmt_state, mon_state_active);
-		const int tra_id = request->req_transaction ?
-			request->req_transaction->tra_number : 0;
-		record.storeInteger(f_mon_stmt_tra_id, tra_id);
+		if (request->req_transaction) {
+			record.storeInteger(f_mon_stmt_tra_id, request->req_transaction->tra_number);
+		}
 		record.storeTimestamp(f_mon_stmt_timestamp, request->req_timestamp);
 	}
 	else {
