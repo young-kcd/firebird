@@ -47,6 +47,8 @@
 #include "../common/classes/array.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../utilities/nbackup/nbk_proto.h"
+#include "../jrd/license.h"
+#include "../common/classes/MsgPrint.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -74,41 +76,71 @@ using namespace Firebird;
 
 namespace
 {
+	using MsgFormat::SafeArg;
+	const USHORT nbackup_msg_fac = 24;
+
+	void printMsg(USHORT number, const SafeArg& arg)
+	{
+		char buffer[256];
+		fb_msg_format(NULL, nbackup_msg_fac, number, sizeof(buffer), buffer, arg);
+		printf("%s\n", buffer);
+	}
+
+	void printMsg(USHORT number)
+	{
+		static const SafeArg dummy;
+		printMsg(number, dummy);
+	}
+
+	bool getMsg(USHORT number, char* buffer, size_t bufsize, const SafeArg& arg)
+	{
+		if (!number || !buffer || bufsize < 10)
+			return false;
+		return fb_msg_format(NULL, nbackup_msg_fac, number, bufsize, buffer, arg) > 0;
+	}
 
 	void usage(UtilSvc* uSvc, const char* message, ...)
 	{
 		string msg;
 		va_list params;
-		va_start(params, message);
-		msg.vprintf(message, params);
-		va_end(params);
+		if (message)
+		{
+			va_start(params, message);
+			msg.vprintf(message, params);
+			va_end(params);
+		}
 
 		if (uSvc->isService())
+		{
+			fb_assert(message != NULL);
 			(Arg::Gds(isc_random) << msg).raise();
+		}
 
-		fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
-		fprintf(stderr,
-			"Physical Backup Manager    Copyright (C) 2004 Firebird development team\n"
-			"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
-			"  Designed and implemented by Nickolay Samofatov <skidder@bssys.com>\n"
-			"  This work was funded through a grant from BroadView Software, Inc.\n\n"
-			"Usage: nbackup <options>\n"
-			"valid options are: \n"
-			"  -L <database>                         Lock database for filesystem copy\n"
-			"  -N <database>                         Unlock previously locked database\n"
-			"  -F <database>                         Fixup database after filesystem copy\n"
-			"  -B <level> <database> [<filename>]    Create incremental backup\n"
-			"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
-			"  -U <user>                             User name\n"
-			"  -P <password>                         Password\n"
-			"  -FE <file>                            Fetch password from file\n"
-			"  -T                                    Do not run database triggers\n"
-			"  -S                                    Print database size in pages after lock\n"
-			"Notes:\n"
-			"  <database> may specify database alias\n"
-			"  incremental backups of multi-file databases are not supported yet\n"
-			"  \"stdout\" may be used as a value of <filename> for -B option\n"
-		);
+		if (message)
+			printMsg(1, SafeArg() << msg.c_str()); // ERROR: @1.\n
+
+		printMsg(2);
+		printMsg(3);
+		printMsg(4);
+		printMsg(5);
+		printMsg(6);
+		printMsg(7);
+		printMsg(8);
+		printMsg(9);
+		printMsg(10);
+		printMsg(11);
+		printMsg(12);
+		printMsg(13);
+		printMsg(14);
+		printMsg(15);
+		printMsg(16);
+		printMsg(17);
+		printMsg(18);
+		printMsg(19);
+		printMsg(20);
+		printMsg(21);
+		printMsg(22);
+
 		exit(FINI_ERROR);
 	}
 
@@ -122,7 +154,7 @@ namespace
 		usage(uSvc, "Only one of -L, -N, -F, -B or -R should be specified");
 	}
 
-    const int MSG_LEN = 1024;
+	const int MSG_LEN = 1024;
 	const size_t NBACKUP_FAILURE_SPACE = MSG_LEN * 4;
 	typedef Firebird::CircularStringsBuffer<NBACKUP_FAILURE_SPACE> NbkStringsBuffer;
 	GlobalPtr<NbkStringsBuffer> nbkStringsBuffer;
@@ -159,7 +191,8 @@ namespace
 	}
 #endif // HAVE_POSIX_FADVISE
 
-}
+} // namespace
+
 
 class b_error : public LongJump
 {
@@ -527,19 +560,19 @@ void NBackup::fixup_database()
  *    Print the status, the SQLCODE, and exit.
  *    Also, indicate which operation the error occurred on.
  */
-void NBackup::pr_error (const ISC_STATUS* status, const char* operation) const
+void NBackup::pr_error(const ISC_STATUS* status, const char* operation) const
 {
 	if (uSvc->isService())
-    	status_exception::raise(status);
+		status_exception::raise(status);
 
-    printf("[\n");
-    printf("PROBLEM ON \"%s\".\n", operation);
+	printf("[\n");
+	printMsg(23, SafeArg() << operation); // PROBLEM ON "%s".
 
-    isc_print_status(status);
+	isc_print_status(status);
 
-    printf("SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
+	printf("SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
 
-    printf("]\n");
+	printf("]\n");
 
 	b_error::raise(uSvc, "Database error");
 }
@@ -575,7 +608,7 @@ void NBackup::attach_database()
 	if (isc_attach_database(status, 0, database.c_str(), &newdb,
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
-        pr_error(status, "attach database");
+		pr_error(status, "attach database");
 	}
 }
 
@@ -591,7 +624,7 @@ void NBackup::detach_database()
 
 void NBackup::internal_lock_database()
 {
-    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
+	if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 		pr_error(status, "start transaction");
 	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, "ALTER DATABASE BEGIN BACKUP", 1, NULL))
 		pr_error(status, "begin backup");
@@ -617,7 +650,7 @@ void NBackup::get_database_size()
 
 void NBackup::internal_unlock_database()
 {
-    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
+	if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 		pr_error(status, "start transaction");
 	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, "ALTER DATABASE END BACKUP", 1, NULL))
 		pr_error(status, "end backup");
@@ -671,7 +704,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		// Look for SCN and GUID of previous-level backup in history table
 		if (level)
 		{
-		    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
+			if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 				pr_error(status, "start transaction");
 			char out_sqlda_data[XSQLDA_LENGTH(2)];
 			XSQLDA *out_sqlda = (XSQLDA*)out_sqlda_data;
@@ -889,7 +922,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		attach_database();
 		// Write about successful backup to backup history table
-	    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
+		if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 			pr_error(status, "start transaction");
 		char in_sqlda_data[XSQLDA_LENGTH(4)];
 		XSQLDA *in_sqlda = (XSQLDA *)in_sqlda_data;
@@ -1166,7 +1199,7 @@ void nbackup(UtilSvc* uSvc)
 	bool run_db_triggers = true;
 	NBackup::BackupFiles backup_files;
 	int level;
-	bool print_size = false;
+	bool print_size = false, version = false;
 	string trustedUser;
 	bool trustedRole = false;
 
@@ -1308,10 +1341,31 @@ void nbackup(UtilSvc* uSvc)
 			print_size = true;
 			break;
 
+		case '?':
+			if (uSvc->isService())
+				usage(uSvc, "Unknown switch %s", argv[itr]);
+			else
+				usage(uSvc, NULL);
+			break;
+
+		case 'Z':
+			if (uSvc->isService())
+				usage(uSvc, "Unknown switch %s", argv[itr]);
+			else
+				version = true;
+			break;
+
 		default:
 			usage(uSvc, "Unknown switch %s", argv[itr]);
 			break;
 		}
+	}
+
+	if (version)
+	{
+		printf("Physical Backup Manager version %s\n", FB_VERSION);
+		if (op == nbNone)
+			exit(FINI_OK);
 	}
 
 	if (print_size && (op != nbLock))

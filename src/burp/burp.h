@@ -872,7 +872,7 @@ public:
 	// but it can read backups created by previous versions.
 	USHORT		RESTORE_format;
 	// ODS of the target server (not necessarily the same version as gbak)
-	int         RESTORE_ods;
+	int			RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
 	FB_UINT64	mvol_cumul_count;
@@ -896,11 +896,9 @@ public:
 	UCHAR*		head_of_mem_list;
 	FILE*		output_file;
 
-	/*
-	 * Link list of global fields that were converted from V3 sub_type
-	 * to V4 char_set_id/collate_id. Needed for local fields conversion.
-	 */
-//	burp_fld*		v3_cvt_fld_list;
+	// Link list of global fields that were converted from V3 sub_type
+	// to V4 char_set_id/collate_id. Needed for local fields conversion.
+	// burp_fld*	v3_cvt_fld_list;
 
 	// The handles_get... are for restore.
 	isc_req_handle	handles_get_character_sets_req_handle1;

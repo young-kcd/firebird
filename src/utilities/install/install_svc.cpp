@@ -204,6 +204,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 						instance = *argv;
 					break;
 
+				case '?':
+					usage_exit();
+
 				default:
 					printf("Unknown switch \"%s\"\n", p);
 					usage_exit();
@@ -212,7 +215,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (sw_version)
-		printf("instsvc version %s\n", GDS_VERSION);
+		printf("instsvc version %s\n", FB_VERSION);
 
 	if (sw_command == COMMAND_NONE || (username && sw_command != COMMAND_INSTALL))
 	{

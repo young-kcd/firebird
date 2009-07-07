@@ -156,6 +156,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					sw_version = true;
 					break;
 
+				case '?':
+					usage_exit();
+
 				default:
 					printf("Unknown switch \"%s\"\n", p);
 					usage_exit();
@@ -164,7 +167,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (sw_version)
-		printf("instclient version %s\n", GDS_VERSION);
+		printf("instclient version %s\n", FB_VERSION);
 
 	if (sw_command == COMMAND_NONE || sw_client == CLIENT_NONE)
 	{

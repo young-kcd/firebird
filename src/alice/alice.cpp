@@ -140,7 +140,7 @@ int alice(Firebird::UtilSvc* uSvc)
 
 //  Start by parsing switches
 
-	bool error = false;
+	bool error = false, help = false;
 	ULONG switches = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
 	const TEXT* database = NULL;
@@ -166,10 +166,17 @@ int alice(Firebird::UtilSvc* uSvc)
 
 			continue;
 		}
+
 		ALICE_down_case(*argv++, string, sizeof(string));
 		if (!string[1]) {
 			continue;
 		}
+		if (strcmp(string, "-?") == 0)
+		{
+			error = help = true;
+			break;
+		}
+
 		for (table = alice_in_sw_table; true; ++table)
 		{
 			const TEXT* p = (TEXT*) table->in_sw_name;
@@ -470,7 +477,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	if (!switches || !(switches & ~(sw_user | sw_password | sw_fetch_password |
 									sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
 	{
-		if (!uSvc->isService())
+		if (!help && !uSvc->isService())
 		{
 			ALICE_print(20);	// msg 20: please retry, specifying an option
 		}
@@ -486,7 +493,9 @@ int alice(Firebird::UtilSvc* uSvc)
 		}
 		else
 		{
-			ALICE_print(21);	// msg 21: plausible options are:\n
+			if (help)
+				ALICE_print(120); // usage: gfix [options] <database>
+			ALICE_print(21);	// msg 21: plausible options are:
 			for (table = alice_in_sw_table; table->in_sw_name; table++)
 			{
 				if (table->in_sw_msg)

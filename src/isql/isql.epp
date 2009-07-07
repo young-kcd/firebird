@@ -6817,7 +6817,13 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 			switch_id swid = SWITCH_UNKNOWN;
 			int swarg_int = 0;
 			char* swarg_str = NULL;
-			size_t swlen = strlen(s + 1);
+			const size_t swlen = strlen(s + 1);
+
+			if (swlen == 1 && s[1] == '?')
+			{
+				ret = ps_ERR;
+				break;
+			}
 
 			for (int j = 0; j < FB_NELEM(switches); j++)
 			{

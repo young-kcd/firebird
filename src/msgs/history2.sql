@@ -1205,6 +1205,10 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1200, 'cvc', '2009-06-22 05:53:30', 21, 27, '    -s      analyze system relations', NULL, NULL, 'c_pg')
 (1201, 'cvc', '2009-06-22 05:54:50', 21, 24, '    -h      analyze header page', NULL, NULL, 'c_pg')
 (1202, 'cvc', '2009-06-22 05:56:20', 21, 35, '    -t      tablename', NULL, NULL, 'c_pg')
+(1203, 'cvc', '2009-07-05 09:04:08', 12, 73, '	@1C(REATE_DATABASE)    create database from backup file', NULL, NULL, 'c_pg')
+(1204, 'cvc', '2009-07-05 09:05:10', 12, 112, '	@1REP(LACE_DATABASE)   replace database from backup file', NULL, NULL, 'c_pg')
+(1205, 'cvc', '2009-07-05 09:06:09', 12, 284, '	@1R(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used)
+				database from backup file', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

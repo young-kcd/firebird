@@ -38,6 +38,7 @@
 #include "../common/classes/timestamp.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
+#include "../jrd/license.h"
 
 using namespace Firebird;
 
@@ -60,8 +61,9 @@ string getMessage(int n)
 {
 	char buffer[256];
 	const int FACILITY = 22;
+	static const MsgFormat::SafeArg dummy;
 
-	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, MsgFormat::SafeArg());
+	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, dummy);
 
 	return string(buffer);
 }
@@ -143,7 +145,7 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	UCHAR* p = buff.getBuffer(len);
 
 	fseek(file, 0, SEEK_SET);
-	if (fread(p, 1, len, file) != len)
+	if (fread(p, 1, len, file) != size_t(len))
 	{
 		fclose(file);
 		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
@@ -788,10 +790,16 @@ static void ctrl_c_handler(int signal)
 
 int main(int ac, char** av)
 {
-	if (ac < 2)
+	if (ac < 2 || ac == 2 && strcmp(av[1], "-?") == 0)
 	{
 		usage();
 		return 1;
+	}
+
+	if (ac == 2 && (strcmp(av[1], "-z") == 0 || strcmp(av[1], "-Z") == 0))
+	{
+		printf("Firebird services manager version %s\n", FB_VERSION);
+		return 0;
 	}
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
@@ -824,6 +832,15 @@ int main(int ac, char** av)
 		}
 
 		//Here we are over with av parse, look - may be unknown switch left
+		if (*av)
+		{
+			if (strcmp(av[0], "-z") == 0 || strcmp(av[0], "-Z") == 0)
+			{
+				printf("Firebird services manager version %s\n", FB_VERSION);
+				++av;
+			}
+		}
+
 		if (*av)
 		{
 			status_exception::raise(Arg::Gds(isc_fbsvcmgr_switch_unknown) << Arg::Str(*av));

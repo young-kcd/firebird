@@ -106,7 +106,7 @@ static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 							  const Firebird::ClumpletWriter&);
 static int api_gbak(Firebird::UtilSvc*, in_sw_tab_t* const in_sw_tab);
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
-static void burp_usage(const in_sw_tab_t* in_sw_tab);
+static void burp_usage(const in_sw_tab_t* const in_sw_tab);
 static in_sw_tab_t* findSwitch(in_sw_tab_t* const in_sw_tab, Firebird::string, bool);
 
 // fil.fil_length is ULONG
@@ -119,7 +119,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
  *
- *	m a i n _ g b a k
+ *	B U R P _ m a i n
  *
  **************************************
  *
@@ -442,7 +442,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 {
 /**************************************
  *
- *	B U R P _ g b a k
+ *	g b a k
  *
  **************************************
  *
@@ -493,6 +493,12 @@ int gbak(Firebird::UtilSvc* uSvc)
 	if (argc <= 1) {
 		burp_usage(burp_in_sw_table);
 		BURP_exit_local(FINI_ERROR, tdgbl);
+	}
+
+	if (argc == 2 && strcmp(argv[1], "-?") == 0)
+	{
+		burp_usage(burp_in_sw_table);
+		BURP_exit_local(FINI_OK, tdgbl);
 	}
 
 	USHORT sw_replace = FALSE;
@@ -756,9 +762,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 			// skip a service specification
 			in_sw_tab->in_sw_state = false;
 		}
-		// want to do output redirect handling now instead of waiting
 		else if (in_sw_tab->in_sw == IN_SW_BURP_Y)
 		{
+			// want to do output redirect handling now instead of waiting
 			const TEXT* redirect = NULL;
 			if (++itr < argc)
 			{
@@ -802,7 +808,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 	tdgbl->gbl_sw_files = NULL;
 
-    burp_fil* next_file = NULL;
+	burp_fil* next_file = NULL;
 	for (file = file_list; file; file = next_file) {
 		next_file = file->fil_next;
 		file->fil_next = tdgbl->gbl_sw_files;
@@ -933,10 +939,12 @@ int gbak(Firebird::UtilSvc* uSvc)
 			tdgbl->gbl_sw_transportable = true;
 			break;
 
+		/*
 		case IN_SW_BURP_U:
 			BURP_error(7, true);
 			// msg 7 protection isn't there yet
 			break;
+		*/
 
 		case IN_SW_BURP_US:
 			tdgbl->gbl_sw_no_reserve = true;
@@ -1995,7 +2003,7 @@ static void burp_output( const SCHAR* format, ...)
 }
 
 
-static void burp_usage(const in_sw_tab_t* in_sw_tab)
+static void burp_usage(const in_sw_tab_t* const in_sw_tab)
 {
 /**********************************************
  *
@@ -2007,20 +2015,42 @@ static void burp_usage(const in_sw_tab_t* in_sw_tab)
  *	print usage information
  *
  **********************************************/
-	BURP_print(95);
-	// msg 95  legal switches are
+	const SafeArg sa(SafeArg() << switch_char);
+	const SafeArg dummy;
 
-	SafeArg sa;
-	sa << switch_char;
+	BURP_print(317); // usage
+	for (int i = 318; i < 323; ++i)
+		BURP_msg_put(i, dummy); // usage
 
-	for (; in_sw_tab->in_sw; in_sw_tab++)
+	BURP_print(95); // msg 95  legal switches are
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
 	{
-		if (in_sw_tab->in_sw_msg)
-			BURP_msg_put(in_sw_tab->in_sw_msg, sa);
+		if (p->in_sw_msg && p->in_sw_optype == boMain)
+			BURP_msg_put(p->in_sw_msg, sa);
 	}
 
-	BURP_print(132);
-	// msg 132 switches can be abbreviated to one character
+	BURP_print(323); // backup options are
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
+	{
+		if (p->in_sw_msg && p->in_sw_optype == boBackup)
+			BURP_msg_put(p->in_sw_msg, sa);
+	}
+
+	BURP_print(324); // restore options are
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
+	{
+		if (p->in_sw_msg && p->in_sw_optype == boRestore)
+			BURP_msg_put(p->in_sw_msg, sa);
+	}
+
+	BURP_print(325); // general options are
+	for (const in_sw_tab_t* p = in_sw_tab; p->in_sw; ++p)
+	{
+		if (p->in_sw_msg && p->in_sw_optype == boGeneral)
+			BURP_msg_put(p->in_sw_msg, sa);
+	}
+
+	BURP_print(132); // msg 132 switches can be abbreviated to the unparenthesized characters
 }
 
 

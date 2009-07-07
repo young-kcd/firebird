@@ -33,6 +33,7 @@
 #include "../../common/utils_proto.h"
 #include "../../common/UtilSvc.h"
 #include "../../jrd/trace/TraceService.h"
+#include "../jrd/license.h"
 
 
 namespace Firebird {
@@ -41,14 +42,21 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 {
 	string msg;
 	va_list params;
-	va_start(params, message);
-	msg.vprintf(message, params);
-	va_end(params);
+	if (message)
+	{
+		va_start(params, message);
+		msg.vprintf(message, params);
+		va_end(params);
+	}
 
 	if (uSvc->isService())
+	{
+		fb_assert(message != NULL);
 		(Arg::Gds(isc_random) << msg).raise();
+	}
 
-	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
+	if (message)
+		fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
 
 	fprintf(stderr,
 		"Firebird Trace utility.\n"
@@ -163,11 +171,28 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 {
 	const char* const* end = uSvc->argv.end();
 
+	bool version = false, help = false;
 	// search for "action" switch, set NULL into recognized argv
 	const in_sw_tab_t* action_sw = NULL;
 	const char** argv = uSvc->argv.begin();
 	for (++argv; argv < end; argv++)
 	{
+		if (!uSvc->isService())
+		{
+			if (strcmp(argv[0], "-z") == 0 || strcmp(argv[0], "-Z") == 0)
+			{
+				version = true;
+				*argv = NULL;
+				continue;
+			}
+			if (strcmp(argv[0], "-?") == 0)
+			{
+				help = true;
+				*argv = NULL;
+				continue;
+			}
+		}
+
 		const in_sw_tab_t* sw = findSwitch(&trace_action_in_sw_table[0], *argv);
 		if (sw)
 		{
@@ -180,8 +205,19 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		}
 	}
 
-	if (!action_sw) {
-		usage(uSvc, TRACE_ERR_ACT_NOTFOUND);
+	if (version)
+	{
+		printf("Firebird Trace utility version %s\n", FB_VERSION);
+		if (!action_sw)
+			exit(FINI_OK);
+	}
+
+	if (!action_sw)
+	{
+		if (help)
+			usage(uSvc, NULL);
+		else
+			usage(uSvc, TRACE_ERR_ACT_NOTFOUND);
 	}
 
 	// search for action's parameters, set NULL into recognized argv
