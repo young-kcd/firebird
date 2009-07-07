@@ -683,14 +683,13 @@ bool_t xdr_u_short(XDR* xdrs, u_short* ip)
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
-		temp = static_cast<ULONG>(*ip);
+		temp = *ip;
 		return PUTLONG(xdrs, &temp);
 
 	case XDR_DECODE:
 		if (!GETLONG(xdrs, &temp))
 			return FALSE;
-		fb_assert(temp >= 0);
-		*ip = (u_short)(u_int) temp;
+		*ip = (u_int) temp;
 		return TRUE;
 
 	case XDR_FREE:
