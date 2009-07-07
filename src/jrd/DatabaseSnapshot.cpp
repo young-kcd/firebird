@@ -224,12 +224,12 @@ ULONG DatabaseSnapshot::SharedData::setup()
 }
 
 
-void DatabaseSnapshot::SharedData::write(ULONG length, ULONG offset, const void* buffer)
+void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void* buffer)
 {
 	ensureSpace(length);
 
 	// Put an up-to-date element at the tail
-	UCHAR* const ptr = (UCHAR*) base + base->used;
+	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
 	element->length += length;
@@ -577,6 +577,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		if (fields_processed)
 		{
 			buffer->store(record);
+			fields_processed = false;
 		}
 	}
 }
