@@ -140,6 +140,7 @@ void DYN_ddl(/*Attachment* attachment,*/ jrd_tra* transaction, USHORT length, co
 		DYN_execute(&gbl, &ptr, NULL, NULL, NULL, NULL, NULL);
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
+		fb_assert(ptr <= ddl + length); // disaster check after it happened
 	}
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
