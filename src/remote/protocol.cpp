@@ -300,7 +300,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 					tail = &dummy;
 				}
 
-				MAP(xdr_u_short, tail->p_cnct_version);
+				MAP(xdr_short, reinterpret_cast<SSHORT&>(tail->p_cnct_version));
 				MAP(xdr_enum, reinterpret_cast<xdr_op&>(tail->p_cnct_architecture));
 				MAP(xdr_u_short, tail->p_cnct_min_type);
 				MAP(xdr_u_short, tail->p_cnct_max_type);
@@ -329,7 +329,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_aux_connect:
 		request = &p->p_req;
 		MAP(xdr_u_short, request->p_req_type);
-		MAP(xdr_u_short, request->p_req_object);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(request->p_req_object));
 		MAP(xdr_u_long, request->p_req_partner);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
@@ -358,7 +358,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_u_short, data->p_data_request);
 		MAP(xdr_u_short, data->p_data_incarnation);
 		MAP(xdr_u_short, data->p_data_transaction);
-		MAP(xdr_u_short, data->p_data_message_number);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_u_short, data->p_data_messages);
 #ifdef SCROLLABLE_CURSORS
 		port = (rem_port*) xdrs->x_public;
@@ -379,7 +379,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_u_short, data->p_data_request);
 		MAP(xdr_u_short, data->p_data_incarnation);
 		MAP(xdr_u_short, data->p_data_transaction);
-		MAP(xdr_u_short, data->p_data_message_number);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_u_short, data->p_data_messages);
 
 		// Changes to this op's protocol must mirror in xdr_protocol_overhead
@@ -395,7 +395,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		// in xdr_protocol_overhead
 
 		response = &p->p_resp;
-		MAP(xdr_u_short, response->p_resp_object);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
 		MAP(xdr_quad, response->p_resp_blob_id);
 		MAP(xdr_cstring, response->p_resp_data);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector,
@@ -469,7 +469,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_service_info:
 	case op_info_sql:
 		info = &p->p_info;
-		MAP(xdr_u_short, info->p_info_object);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_object));
 		MAP(xdr_u_short, info->p_info_incarnation);
 		MAP(xdr_cstring_const, info->p_info_items);
 		if (p->p_operation == op_service_info)
@@ -480,7 +480,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 	case op_service_start:
 		info = &p->p_info;
-		MAP(xdr_u_short, info->p_info_object);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_object));
 		MAP(xdr_u_short, info->p_info_incarnation);
 		MAP(xdr_cstring_const, info->p_info_items);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
@@ -500,7 +500,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_rollback_retaining:
 	case op_allocate_statement:
 		release = &p->p_rlse;
-		MAP(xdr_u_short, release->p_rlse_object);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(release->p_rlse_object));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
