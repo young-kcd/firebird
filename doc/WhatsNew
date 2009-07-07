@@ -44,13 +44,13 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed bug CORE-1830
-        Possible index corruption with multiply updates of the same record
-        in the same transaction and using of savepoints 
+        Possible index corruption with multiple updates of the same record
+        in the same transaction and using savepoints 
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
     * Fixed bug CORE-1810
-        Usernames with '.' character
+        Usernames with '.' character in gsec
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
