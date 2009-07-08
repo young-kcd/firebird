@@ -261,7 +261,7 @@ private:
 		SharedData* const data;
 	};
 
-class Writer
+	class Writer
 	{
 	public:
 		explicit Writer(SharedData* data)
