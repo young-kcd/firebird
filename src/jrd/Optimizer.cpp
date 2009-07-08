@@ -1235,20 +1235,18 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 		return NULL;
 	}
 
-	// It's recalculated later.
-	const OptimizerBlk::opt_conjunct* opt_end =
-		optimizer->opt_conjuncts.begin() +
-		(innerFlag ? optimizer->opt_base_missing_conjuncts : optimizer->opt_conjuncts.getCount());
+	OptimizerBlk::opt_conjunct* const opt_begin =
+		optimizer->opt_conjuncts.begin() + (outerFlag ? optimizer->opt_base_parent_conjuncts : 0);
+
+	const OptimizerBlk::opt_conjunct* const opt_end =
+		innerFlag ? optimizer->opt_conjuncts.begin() + optimizer->opt_base_missing_conjuncts :
+					optimizer->opt_conjuncts.end();
 
 	InversionCandidateList inversions;
 	inversions.shrink(0);
 
 	// First, handle "AND" comparisons (all nodes except nod_or)
-	OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-	if (outerFlag) {
-		tail += optimizer->opt_base_parent_conjuncts;
-	}
-	for (; tail < opt_end; tail++)
+	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
 		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
 			continue;
@@ -1267,11 +1265,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 
 	// Second, handle "OR" comparisons
 	InversionCandidate* invCandidate = NULL;
-	tail = optimizer->opt_conjuncts.begin();
-	if (outerFlag) {
-		tail += optimizer->opt_base_parent_conjuncts;
-	}
-	for (; tail < opt_end; tail++)
+	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
 		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
 			continue;
@@ -1321,8 +1315,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 			// very safe at the moment, but in our case Array holds a sorted list.
 			// However SortedArray class should be updated to handle join right!
 			matches.join(invCandidate->matches);
-			tail = optimizer->opt_conjuncts.begin();
-			for (; tail < opt_end; tail++)
+			for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 			{
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used))
 				{
