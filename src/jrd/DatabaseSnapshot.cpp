@@ -68,7 +68,7 @@
 using namespace Firebird;
 using namespace Jrd;
 
-const UCHAR TAG_RECORD = MAX_UCHAR;
+static const UCHAR TAG_RECORD = MAX_UCHAR;
 
 
 // SharedData class
@@ -966,7 +966,7 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction, Writer& writer
 	}
 	else if (transaction->tra_flags & TRA_read_committed)
 	{
-		temp = (transaction->tra_flags &  TRA_rec_version) ?
+		temp = (transaction->tra_flags & TRA_rec_version) ?
 			iso_mode_rc_version : iso_mode_rc_no_version;
 	}
 	else
