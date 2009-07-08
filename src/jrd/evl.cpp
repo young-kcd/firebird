@@ -85,6 +85,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/gdsassert.h"
 #include "../common/classes/timestamp.h"
+#include "../common/classes/Aligner.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cvt_proto.h"
@@ -333,9 +334,12 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 				desc->dsc_length == sizeof(RecordNumber::Packed))
 			{
 				const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
-				RecordNumber::Packed* numbers = reinterpret_cast<RecordNumber::Packed*>(desc->dsc_address);
+				// This is workaround to avoid alignment problems on big-endians, but full
+				// solution requires new descriptor type for DB_KEY and will be done in 2.5.
+				const ULONG s = sizeof(RecordNumber::Packed);
+				Firebird::Aligner<RecordNumber::Packed> number(desc->dsc_address + s * id, s);
 				RecordNumber rel_dbkey;
-				rel_dbkey.bid_decode(&numbers[id]);
+				rel_dbkey.bid_decode(number);
 				// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
 				// hvlad: because from the user point of view db_key's begins from 1 
 				rel_dbkey.decrement();
