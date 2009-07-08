@@ -512,7 +512,8 @@ void NBackup::create_backup()
 	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
-	else {
+	else
+	{
 		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE,
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
@@ -522,7 +523,8 @@ void NBackup::create_backup()
 	if (bakname == "stdout") {
 		backup = 1; // Posix file handle for stdout
 	}
-	else {
+	else
+	{
 		backup = open(bakname.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 		if (backup < 0)
 			b_error::raise(uSvc, "Error (%d) creating backup file: %s", errno, bakname.c_str());
@@ -592,12 +594,14 @@ void NBackup::attach_database()
 		dpb.insertString(isc_dpb_password, password);
 	}
 
-	if (trustedUser.hasData()) {
+	if (trustedUser.hasData())
+	{
 		uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_auth, trustedUser);
 	}
 
-	if (trustedRole) {
+	if (trustedRole)
+	{
 		uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 	}
@@ -614,7 +618,8 @@ void NBackup::attach_database()
 
 void NBackup::detach_database()
 {
-	if (trans) {
+	if (trans)
+	{
 		if (isc_rollback_transaction(status, &trans))
 			pr_error(status, "rollback transaction");
 	}
@@ -671,7 +676,8 @@ void NBackup::lock_database(bool get_size)
 				printf("%d\n", db_size_pages);
 		}
 	}
-	catch (const Exception&) {
+	catch (const Exception&)
+	{
 		detach_database();
 		throw;
 	}
@@ -684,7 +690,8 @@ void NBackup::unlock_database()
 	try {
 		internal_unlock_database();
 	}
-	catch (const Exception&) {
+	catch (const Exception&)
+	{
 		detach_database();
 		throw;
 	}
@@ -876,8 +883,10 @@ void NBackup::backup_database(int level, const PathName& fname)
 				b_error::raise(uSvc, "Internal error. Database page %d had been changed during backup"
 							   " (page SCN=%d, backup SCN=%d)", curPage,
 							   page_buff->pag_scn, backup_scn);
-			if (level) {
-				if (page_buff->pag_scn > prev_scn) {
+			if (level)
+			{
+				if (page_buff->pag_scn > prev_scn)
+				{
 					write_file(backup, &curPage, sizeof(curPage));
 					write_file(backup, page_buff, header->hdr_page_size);
 				}
@@ -970,11 +979,13 @@ void NBackup::backup_database(int level, const PathName& fname)
 	{
 		if (delete_backup)
 			remove(bakname.c_str());
-		if (trans) {
+		if (trans)
+		{
 			if (isc_rollback_transaction(status, &trans))
 				pr_error(status, "rollback transaction");
 		}
-		if (database_locked) {
+		if (database_locked)
+		{
 			if (!newdb)
 				attach_database();
 			internal_unlock_database();
@@ -1022,7 +1033,8 @@ void NBackup::restore_database(const BackupFiles& files)
 					if (bakname == ".")
 					{
 						close_database();
-						if (!curLevel) {
+						if (!curLevel)
+						{
 							remove(dbname.c_str());
 							b_error::raise(uSvc, "Level 0 backup is not restored");
 						}
@@ -1045,7 +1057,8 @@ void NBackup::restore_database(const BackupFiles& files)
 			}
 			else
 			{
-				if (curLevel >= filecount) {
+				if (curLevel >= filecount)
+				{
 					close_database();
 					fixup_database();
 					delete[] page_buffer;
@@ -1100,7 +1113,8 @@ void NBackup::restore_database(const BackupFiles& files)
 			else
 			{
 #ifdef WIN_NT
-				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE)) {
+				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE))
+				{
 					b_error::raise(uSvc, "Error (%d) creating database file: %s via copying from: %s",
 						GetLastError(), dbname.c_str(), bakname.c_str());
 				}
@@ -1159,7 +1173,8 @@ void NBackup::restore_database(const BackupFiles& files)
 			curLevel++;
 		}
 	}
-	catch (const Exception&) {
+	catch (const Exception&)
+	{
 		delete[] page_buffer;
 		if (delete_database)
 			remove(dbname.c_str());
