@@ -396,7 +396,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 {
 /**************************************
  *
- *	i n t e r n a l _ p o s t 2
+ *	i n t e r n a l _ p o s t
  *
  **************************************
  *
