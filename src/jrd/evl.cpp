@@ -1950,6 +1950,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	case dtype_text:
 	case dtype_varying:
 	case dtype_cstring:
+	case dtype_dbkey:
 		break;
 
 	case dtype_blob:
@@ -1973,23 +1974,31 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 	// Allocate a string block of sufficient size.
 	VaryingString* string = value->vlu_string;
-	if (string && string->str_length < length) {
+	if (string && string->str_length < length) 
+	{
 		delete string;
 		string = NULL;
 	}
-
-	if (!string) {
+	if (!string) 
+	{
 		string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
 		string->str_length = length;
 	}
 
-	value->vlu_desc.dsc_dtype = dtype_text;
 	value->vlu_desc.dsc_length = length;
 	UCHAR* target = string->str_data;
 	value->vlu_desc.dsc_address = target;
 	value->vlu_desc.dsc_sub_type = 0;
 	value->vlu_desc.dsc_scale = 0;
-	INTL_ASSIGN_TTYPE(&value->vlu_desc, ttype);
+	if (from.dsc_dtype == dtype_dbkey)
+	{
+		value->vlu_desc.dsc_dtype = dtype_dbkey;
+	}
+	else
+	{
+		value->vlu_desc.dsc_dtype = dtype_text;
+		INTL_ASSIGN_TTYPE(&value->vlu_desc, ttype);
+	}
 
 	if (address && length && target != address)
 		memcpy(target, address, length);
@@ -3090,6 +3099,39 @@ static dsc* concatenate(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	dsc desc;
+
+	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
+	{
+		if ((ULONG) value1->dsc_length + (ULONG) value2->dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
+		{
+			ERR_post(Arg::Gds(isc_concat_overflow));
+			return NULL;
+		}
+
+		desc.dsc_dtype = dtype_dbkey;
+		desc.dsc_length = value1->dsc_length + value2->dsc_length;
+		desc.dsc_address = NULL;
+
+		VaryingString* string = NULL;
+		if (value1->dsc_address == impure->vlu_desc.dsc_address ||
+			value2->dsc_address == impure->vlu_desc.dsc_address)
+		{
+			string = impure->vlu_string;
+			impure->vlu_string = NULL;
+		}
+
+		EVL_make_value(tdbb, &desc, impure);
+		UCHAR* p = impure->vlu_desc.dsc_address;
+
+		memcpy(p, value1->dsc_address, value1->dsc_length);
+		p += value1->dsc_length;
+		memcpy(p, value2->dsc_address, value2->dsc_length);
+
+		delete string;
+
+		return &impure->vlu_desc;
+	}
+
 	DataTypeUtil(tdbb).makeConcatenate(&desc, value1, value2);
 
 	// Both values are present; build the concatenation
@@ -3260,8 +3302,8 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	// Initialize descriptor
 
 	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_dbkey;
-	impure->vlu_desc.dsc_dtype = dtype_text;
-	impure->vlu_desc.dsc_length = 8;
+	impure->vlu_desc.dsc_dtype = dtype_dbkey;
+	impure->vlu_desc.dsc_length = type_lengths[dtype_dbkey];
 	impure->vlu_desc.dsc_ttype() = ttype_binary;
 
 	return &impure->vlu_desc;

@@ -841,6 +841,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		case dtype_timestamp:
 		case dtype_blob:
 		case dtype_array:
+		case dtype_dbkey:
 			// break to error reporting code
 			break;
 		}
@@ -901,6 +902,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		case dtype_timestamp:
 		case dtype_blob:
 		case dtype_array:
+		case dtype_dbkey:
 			// break to error reporting code
 			break;
 		}
@@ -1610,9 +1612,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		return;
 
 	case nod_dbkey:
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = sizeof(ISC_QUAD);
+		desc->dsc_dtype = dtype_dbkey;
+		desc->dsc_length = type_lengths[dtype_dbkey];
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;

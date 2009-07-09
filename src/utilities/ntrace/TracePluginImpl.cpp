@@ -618,6 +618,9 @@ void TracePluginImpl::appendParams(TraceParams* params)
 			case dtype_timestamp:
 				paramtype = "timestamp";
 				break;
+			case dtype_dbkey:
+				paramtype = "db_key";
+				break;
 
 			default:
 				paramtype.printf("<type%d>", parameters->dsc_dtype);
@@ -653,6 +656,7 @@ void TracePluginImpl::appendParams(TraceParams* params)
 				case dtype_quad:
 				case dtype_blob:
 				case dtype_array:
+				case dtype_dbkey:
 				{
 					ISC_QUAD *quad = (ISC_QUAD*) parameters->dsc_address;
 					paramvalue.printf("%08X%08X", quad->gds_quad_high, quad->gds_quad_low);

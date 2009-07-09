@@ -60,7 +60,8 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 	/*  -- in BLR_version4  DD-Mon-YYYY HH:MM:SS.MMMM */
 	9,							/* dtype_blob       FFFF:FFFF */
 	9,							/* dtype_array      FFFF:FFFF */
-	20							/* dtype_int64      -9223372036854775808 */
+	20,							/* dtype_int64      -9223372036854775808 */
+	0							// dtype_dbkey
 };
 
 /* blr to dsc type conversions */
@@ -83,7 +84,8 @@ static const USHORT DSC_blr_type_mapping[] =
 	blr_timestamp,
 	blr_blob,
 	blr_blob,
-	blr_int64
+	blr_int64,
+	blr_null
 };
 
 /* Unimplemented names are in lowercase & <brackets> */
@@ -109,7 +111,8 @@ static const TEXT* const DSC_dtype_names[] =
 	"TIMESTAMP",
 	"BLOB",
 	"ARRAY",
-	"BIGINT"
+	"BIGINT",
+	"DB_KEY"
 };
 
 
@@ -126,7 +129,8 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	4 (unused)	5 (unused)	dtype_packed	dtype_byte
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
-	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
+	dtype_timestamp	dtype_blob	dtype_array	dtype_int64 
+	dtype_dbkey
 */
 
 	/* dtype_unknown */
@@ -134,140 +138,168 @@ const BYTE DSC_add_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
 	 dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
-	 dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown,
+	 DTYPE_CANNOT},
 
 	/* dtype_text */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_cstring */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_varying */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* 4 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* 5 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_packed */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_byte */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_short */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
 
 	/* dtype_long */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
 
 	/* dtype_quad */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_real */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_double */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_d_float -- VMS deprecated */
 	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, dtype_sql_date, dtype_sql_time,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_date */
 	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_date, dtype_sql_date, DTYPE_CANNOT, dtype_sql_date,
 	 dtype_sql_date, dtype_sql_date, DTYPE_CANNOT, dtype_timestamp,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_date},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_date,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_time */
 	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_time, dtype_sql_time, DTYPE_CANNOT, dtype_sql_time,
 	 dtype_sql_time, dtype_sql_time, dtype_timestamp, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_time},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_time,
+     DTYPE_CANNOT},
 
 	/* dtype_timestamp */
 	{dtype_unknown, dtype_timestamp, dtype_timestamp, dtype_timestamp,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, dtype_timestamp,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_timestamp},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_timestamp,
+     DTYPE_CANNOT},
 
 	/* dtype_blob */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_array */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_int64 */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, dtype_sql_date, dtype_sql_time,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64}
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
+
+	/* dtype_dbkey */
+	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT}
 
 };
 
@@ -285,6 +317,7 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
+	dtype_dbkey
 */
 
 	/* dtype_unknown */
@@ -292,140 +325,168 @@ const BYTE DSC_sub_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
 	 dtype_unknown, dtype_unknown, dtype_unknown, dtype_unknown,
-	 dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown,
+     DTYPE_CANNOT},
 
 	/* dtype_text */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_cstring */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_varying */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* 4 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* 5 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_packed */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_byte */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_short */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
 
 	/* dtype_long */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
 
 	/* dtype_quad */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_real */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_double */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_d_float -- VMS deprecated */
 	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_date */
 	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_date, dtype_sql_date, DTYPE_CANNOT, dtype_sql_date,
 	 dtype_sql_date, dtype_sql_date, dtype_long, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_date},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_date,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_time */
 	{dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_sql_time, dtype_sql_time, DTYPE_CANNOT, dtype_sql_time,
 	 dtype_sql_time, dtype_sql_time, DTYPE_CANNOT, dtype_long,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_time},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_sql_time,
+     DTYPE_CANNOT},
 
 	/* dtype_timestamp */
 	{dtype_unknown, dtype_timestamp, dtype_timestamp, dtype_timestamp,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, dtype_timestamp,
 	 dtype_timestamp, dtype_timestamp, DTYPE_CANNOT, DTYPE_CANNOT,
-	 dtype_double, DTYPE_CANNOT, DTYPE_CANNOT, dtype_timestamp},
+	 dtype_double, DTYPE_CANNOT, DTYPE_CANNOT, dtype_timestamp,
+     DTYPE_CANNOT},
 
 	/* dtype_blob */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_array */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_int64 */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64}
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
+
+	/* dtype_dbkey */
+	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT}
 };
 
 
@@ -443,6 +504,7 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
+	dtype_dbkey
 */
 
 	/* dtype_unknown */
@@ -450,140 +512,168 @@ const BYTE DSC_multiply_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
 	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown,
+     DTYPE_CANNOT},
 
 	/* dtype_text */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_cstring */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_varying */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* 4 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* 5 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_packed */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_byte */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_short */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
 
 	/* dtype_long */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
 
 	/* dtype_quad */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_real */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_double */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_d_float -- VMS deprecated */
 	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_date */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_time */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_timestamp */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_blob */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_array */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_int64 */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_int64, dtype_int64, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64}
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_int64,
+     DTYPE_CANNOT},
+
+	/* dtype_dbkey */
+	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT}
 
 };
 
@@ -601,6 +691,7 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	dtype_short	dtype_long	dtype_quad	dtype_real
 	dtype_double	dtype_d_float	dtype_sql_date	dtype_sql_time
 	dtype_timestamp	dtype_blob	dtype_array	dtype_int64
+	dtype_dbkey
 */
 
 	/* dtype_unknown */
@@ -608,140 +699,168 @@ const BYTE DSC_multiply_blr4_result[DTYPE_TYPE_MAX][DTYPE_TYPE_MAX] =
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, dtype_unknown,
 	 dtype_unknown, dtype_unknown, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_unknown,
+     DTYPE_CANNOT},
 
 	/* dtype_text */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_cstring */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_varying */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* 4 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* 5 (unused) */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_packed */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_byte */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_short */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_long */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_long, dtype_long, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_quad */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_real */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_double */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
 
 	/* dtype_d_float -- VMS deprecated */
 	{dtype_unknown, dtype_d_float, dtype_d_float, dtype_d_float,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, dtype_d_float,
 	 dtype_d_float, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_d_float,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_date */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_sql_time */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_timestamp */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_blob */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_array */
 	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT},
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT},
 
 	/* dtype_int64 */
 	{dtype_unknown, dtype_double, dtype_double, dtype_double,
 	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
 	 dtype_double, dtype_double, DTYPE_CANNOT, dtype_double,
 	 dtype_double, dtype_d_float, DTYPE_CANNOT, DTYPE_CANNOT,
-	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double}
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, dtype_double,
+     DTYPE_CANNOT},
+
+	/* dtype_dbkey */
+	{DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+	 DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT, DTYPE_CANNOT,
+     DTYPE_CANNOT}
 
 };
 

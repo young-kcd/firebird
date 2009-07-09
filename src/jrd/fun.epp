@@ -517,6 +517,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 				break;
 
 			case dtype_text:
+			case dtype_dbkey:
 			case dtype_cstring:
 			case dtype_varying:
 				if (tail == return_ptr)

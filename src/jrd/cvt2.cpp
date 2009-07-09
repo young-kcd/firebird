@@ -91,8 +91,9 @@ static const BYTE compare_priority[] =
 	dtype_timestamp + 1,
 	dtype_blob + 1,
 	dtype_array + 1,
-	dtype_long + 1
-};								/* int64 goes right after long       */
+	dtype_long + 1,				/* int64 goes right after long       */
+	dtype_dbkey					/* compares with nothing except itself */
+};								
 
 
 SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
@@ -155,6 +156,18 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			if (*(SINT64 *) p1 > *(SINT64 *) p2)
 				return 1;
 			return -1;
+
+		case dtype_dbkey:
+		{
+			// keep old ttype_binary compare rules
+			USHORT l = MIN(arg1->dsc_length, arg2->dsc_length);
+			SSHORT rc = memcmp(p1, p2, l);
+			if (rc)
+			{
+				return rc;
+			}
+			return (arg1->dsc_length > l) ? -1 : (arg2->dsc_length > l) ? 1 : 0;
+		}
 
 		case dtype_timestamp:
 			if (((SLONG *) p1)[0] > ((SLONG *) p2)[0])
@@ -400,6 +413,24 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 
 	case dtype_array:
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_blobnotsup) << "compare");
+		break;
+
+	case dtype_dbkey:
+		if (arg2->dsc_dtype <= dtype_any_text) 
+		{
+			UCHAR* p = NULL;
+			USHORT t; // unused later
+			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0, ERR_post);
+			
+			USHORT l = MIN(arg1->dsc_length, length);
+			SSHORT rc = memcmp(arg1->dsc_address, p, l);
+			if (rc)
+			{
+				return rc;
+			}
+			return (arg1->dsc_length > l) ? -1 : (length > l) ? 1 : 0;
+		}
+		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "DB_KEY compare");
 		break;
 
 	default:

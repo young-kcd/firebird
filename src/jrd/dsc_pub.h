@@ -35,32 +35,32 @@
  * Note: DSC_null is only reliably set for local variables (blr_variable)
  */
 #define DSC_null		1
-#define DSC_no_subtype		2	/* dsc has no sub type specified */
-#define DSC_nullable  		4	/* not stored. instead, is derived
-								   from metadata primarily to flag
-								   SQLDA (in DSQL)               */
+#define DSC_no_subtype	2	/* dsc has no sub type specified */
+#define DSC_nullable  	4	/* not stored. instead, is derived
+							   from metadata primarily to flag
+							   SQLDA (in DSQL)               */
 
 #define dtype_unknown	0
-#define dtype_text	1
+#define dtype_text		1
 #define dtype_cstring	2
 #define dtype_varying	3
 
 #define dtype_packed	6
-#define dtype_byte	7
-#define dtype_short	8
-#define dtype_long	9
-#define dtype_quad	10
-#define dtype_real	11
+#define dtype_byte		7
+#define dtype_short		8
+#define dtype_long		9
+#define dtype_quad		10
+#define dtype_real		11
 #define dtype_double	12
 #define dtype_d_float	13
 #define dtype_sql_date	14
 #define dtype_sql_time	15
 #define dtype_timestamp	16
-#define dtype_blob	17
-#define dtype_array	18
-#define dtype_int64     19
-#define DTYPE_TYPE_MAX	20
-
+#define dtype_blob		17
+#define dtype_array		18
+#define dtype_int64		19
+#define dtype_dbkey		20
+#define DTYPE_TYPE_MAX	21
 
 #define ISC_TIME_SECONDS_PRECISION		10000
 #define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)

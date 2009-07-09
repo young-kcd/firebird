@@ -248,7 +248,8 @@ static const UCHAR sort_dtypes[] =
 	SKD_timestamp2,				// dtype_timestamp
 	SKD_quad,					// dtype_blob
 	0,							// dtype_array
-	SKD_int64					// dtype_int64
+	SKD_int64,					// dtype_int64
+	SKD_text					// dtype_dbkey - use text sort for backward compatibility
 };
 
 typedef UCHAR stream_array_t[MAX_STREAMS + 1];

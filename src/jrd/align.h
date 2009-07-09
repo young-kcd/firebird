@@ -50,6 +50,7 @@ No need to worry about blr_blob or ?blr_blob_id
 */
 
 #include "../jrd/dsc.h"
+#include "../jrd/RecordNumber.h"
 
 static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	{ 0, 0, 0, 0, 0, 0, 0,
@@ -100,7 +101,8 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	sizeof(GDS_DATE),			/* dtype_timestamp */
 	sizeof(SLONG),				/* dtype_blob */
 	sizeof(SLONG),				/* dtype_array */
-	sizeof(SINT64)				/* dtype_int64 */
+	sizeof(SINT64),				/* dtype_int64 */
+	sizeof(ULONG)				/* dtype_dbkey */
 };
 
 static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
@@ -123,7 +125,8 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	sizeof(GDS_TIMESTAMP),		/* dtype_timestamp */
 	sizeof(ISC_QUAD),			/* dtype_blob */
 	sizeof(ISC_QUAD),			/* dtype_array */
-	sizeof(SINT64)				/* dtype_int64 */
+	sizeof(SINT64),				/* dtype_int64 */
+	sizeof(RecordNumber::Packed) /*dtype_dbkey */
 };
 
 
@@ -148,7 +151,8 @@ static const USHORT type_significant_bits[DTYPE_TYPE_MAX] = {
 	sizeof(GDS_TIMESTAMP) * 8,	/* dtype_timestamp */
 	sizeof(ISC_QUAD) * 8,		/* dtype_blob */
 	sizeof(ISC_QUAD) * 8,		/* dtype_array */
-	sizeof(SINT64) * 8			/* dtype_int64 */
+	sizeof(SINT64) * 8,			/* dtype_int64 */
+	0							// dbkey
 };
 
 #endif /* JRD_ALIGN_H */

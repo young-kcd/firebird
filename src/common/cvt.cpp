@@ -305,7 +305,10 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	// supported by the platform as a native datatype.
 
 	if (from->dsc_dtype == dtype_quad)
+	{
+		fb_assert(false);
 		cb->err(Arg::Gds(isc_badblk));	/* internal error */
+	}
 #endif
 
 	SSHORT pad_count = 0, decimal = 0, neg = 0;
@@ -963,10 +966,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_sql_time:
 	case dtype_timestamp:
 	case dtype_array:
+	case dtype_dbkey:
 		CVT_conversion_error(desc, err);
 		break;
 
 	default:
+		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
@@ -1197,10 +1202,12 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 	case dtype_sql_time:
 	case dtype_blob:
 	case dtype_array:
+	case dtype_dbkey:
 		CVT_conversion_error(desc, err);
 		break;
 
 	default:
+		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
@@ -1290,6 +1297,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
+		case dtype_dbkey:
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
@@ -1321,6 +1329,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
+		case dtype_dbkey:
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
@@ -1352,6 +1361,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
+		case dtype_dbkey:
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
@@ -1365,6 +1375,43 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	case dtype_varying:
 		switch (from->dsc_dtype)
 		{
+		case dtype_dbkey:
+		{
+			USHORT strtype_unused;
+			UCHAR *ptr;
+			USHORT l = CVT_get_string_ptr(to, &strtype_unused, &ptr, NULL, 0, cb->err);
+			
+			if (l < from->dsc_length)
+			{
+				break;
+			}
+			memcpy(ptr, from->dsc_address, from->dsc_length);
+			l -= from->dsc_length;
+			ptr += from->dsc_length;
+
+			switch (to->dsc_dtype)
+			{
+			case dtype_text:
+				if (l > 0)
+				{
+					memset(ptr, 0, l);	// Always PAD with nulls, not spaces
+				}
+				break;
+
+			case dtype_cstring:
+				// Note: Following is only correct for narrow and
+				// multibyte character sets which use a zero
+				// byte to represent end-of-string
+				*ptr = 0;
+				break;
+
+			case dtype_varying:
+				((vary*) (to->dsc_address))->vary_length = from->dsc_length;
+				break;
+			}
+			return;
+		}
+
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
@@ -1558,6 +1605,23 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		}
 		return;
 
+	case dtype_dbkey:
+		if (from->dsc_dtype <= dtype_any_text)
+		{
+			USHORT strtype_unused;
+			UCHAR *ptr;
+			USHORT l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
+
+			if (l == to->dsc_length)
+			{
+				memcpy(to->dsc_address, ptr, l);
+				return;
+			}
+		}
+
+		CVT_conversion_error(from, cb->err);
+		break;
+
 	case DEFAULT_DOUBLE:
 #ifdef HPUX
 		const double d_value = CVT_get_double(from, cb->err);
@@ -1573,6 +1637,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		cb->err(Arg::Gds(isc_wish_list) << Arg::Gds(isc_blobnotsup) << "move");
 	}
 
+	fb_assert(false);
 	cb->err(Arg::Gds(isc_badblk));	// internal error
 }
 
@@ -1887,7 +1952,10 @@ SSHORT CVT_decompose(const char* string,
 	// supported by the platform as a native datatype.
 
 	if (dtype == dtype_quad)
+	{
+		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
+	}
 #endif
 
 	dsc errd;
@@ -2128,6 +2196,15 @@ USHORT CVT_get_string_ptr(const dsc* desc,
 		}
 	}
 
+	// Also trivial case - DB_KEY
+
+	if (desc->dsc_dtype == dtype_dbkey)
+	{
+		*address = desc->dsc_address;
+		*ttype = ttype_binary;
+		return desc->dsc_length;
+	}
+
 	// No luck -- convert value to varying string.
 
 	dsc temp_desc;
@@ -2255,10 +2332,12 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_sql_time:
 	case dtype_timestamp:
 	case dtype_array:
+	case dtype_dbkey:
 		CVT_conversion_error(desc, err);
 		break;
 
 	default:
+		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}
@@ -2269,6 +2348,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		return value;
 
 #ifndef NATIVE_QUAD
+	fb_assert(false);
 	err(Arg::Gds(isc_badblk));	// internal error
 #else
 	if (scale > 0)
@@ -2398,10 +2478,12 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_sql_time:
 	case dtype_timestamp:
 	case dtype_array:
+	case dtype_dbkey:
 		CVT_conversion_error(desc, err);
 		break;
 
 	default:
+		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
 		break;
 	}

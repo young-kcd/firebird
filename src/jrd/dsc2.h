@@ -172,9 +172,9 @@ const dsc::dtype_t	dtype_timestamp	= 16;
 const dsc::dtype_t	dtype_blob		= 17;
 const dsc::dtype_t	dtype_array		= 18;
 const dsc::dtype_t	dtype_int64		= 19;
+const dsc::dtype_t  dtype_dbkey		= 20;
 
-const dsc::dtype_t	DTYPE_TYPE_MAX	= 20;
-
+const dsc::dtype_t	DTYPE_TYPE_MAX	= 21;
 
 // In DSC_*_result tables, DTYPE_CANNOT means that the two operands
 //   cannot participate together in the requested operation.
