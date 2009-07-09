@@ -103,6 +103,11 @@ typedef struct xch
 
 typedef struct xcc
 {
+	xcc()
+	{
+		memset(this, 0, sizeof(*this));
+	}
+
     struct xcc  *xcc_next;					// pointer to next thread
     XPM         xcc_xpm;					// pointer back to xpm
     ULONG       xcc_map_num;				// this thread's mapped file number
