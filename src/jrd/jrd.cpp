@@ -4397,15 +4397,15 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_set_page_buffers = true;
 			break;
 
+#ifndef SUPERSERVER
 		case isc_dpb_num_buffers:
 			dpb_buffers = rdr.getInt();
-#ifndef SUPERSERVER
 			if (dpb_buffers < 10)
-#endif
 			{
 				ERR_post(Arg::Gds(isc_bad_dpb_content));
 			}
 			break;
+#endif
 
 		case isc_dpb_page_size:
 			dpb_page_size = (USHORT) rdr.getInt();
