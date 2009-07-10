@@ -1,3 +1,41 @@
+2009-07-10 14:31  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.547):
+
+	Fixed CORE-2518: Can no longer connect to database when using
+	isc_dpb_num_buffers parameter, Make SS ignore it silently.
+
+2009-07-10 13:43  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.42):
+
+	Cleanup - overflow_handler() is not needed cause now we use class
+	FpeControl for that purpose
+
+2009-07-10 09:52  alexpeshkoff
+
+	* firebird2/src/burp/burp.cpp (1.171):
+
+	Fixed gbak logic when using -TRUSTED switch - thanks to Claudio
+
+2009-07-09 19:30  asfernandes
+
+	* firebird2/src/remote/xnet.h (1.23):
+
+	Initialize xcc struct.	After its creation, things may go wrong and
+	then cleanup_comm access not initialized members.
+
+2009-07-09 16:04  alexpeshkoff
+
+	* firebird2/src/: common/cvt.cpp (1.28), jrd/align.h (1.10),
+	jrd/cmp.cpp (1.345), jrd/cvt2.cpp (1.68), jrd/dsc.cpp (1.38),
+	jrd/dsc2.h (1.17), jrd/dsc_pub.h (1.8), jrd/evl.cpp (1.301),
+	jrd/fun.epp (1.122), jrd/opt.cpp (1.353), remote/protocol.cpp
+	(1.90), utilities/ntrace/TracePluginImpl.cpp (1.26):
+
+	Fixed CORE-2550: Bus error when working with DB_KEY on bigendian
+	machines. Introduced dtype_dbkey inside engine.
+
 2009-07-09 12:51  robocop
 
 	* firebird2/src/jrd/err.cpp (1.92):
