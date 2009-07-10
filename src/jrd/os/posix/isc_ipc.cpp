@@ -124,7 +124,6 @@ static int volatile relay_pipe = 0;
 
 static void signal_cleanup(void* arg);
 static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
-static SLONG overflow_handler(void* arg);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags, bool w_siginfo);
 
 static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *context);
@@ -132,49 +131,6 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 #ifndef SIG_HOLD
 #define SIG_HOLD	SIG_DFL
 #endif
-
-void ISC_enter()
-{
-/**************************************
- *
- *	I S C _ e n t e r
- *
- **************************************
- *
- * Functional description
- *	Enter ISC world from caller.
- *
- **************************************/
-/* Cancel our handler for SIGFPE - in case it was already there */
-	ISC_signal_cancel(SIGFPE, reinterpret_cast<FPTR_VOID_PTR>(overflow_handler), NULL);
-
-/* Setup overflow handler - with chaining to any user handler */
-	isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), NULL, SIG_informs);
-
-#ifdef DEBUG_FPE_HANDLING
-/* Debug code to simulate an FPE occuring during DB Operation */
-	if (overflow_count < 100)
-		kill(getpid(), SIGFPE);
-#endif
-}
-
-void ISC_exit()
-{
-/**************************************
- *
- *	I S C _ e x i t
- *
- **************************************
- *
- * Functional description
- *	Exit ISC world, return to caller.
- *
- **************************************/
-
-/* No longer attempt to handle overflow internally */
-	ISC_signal_cancel(SIGFPE, reinterpret_cast<FPTR_VOID_PTR>(overflow_handler), 0);
-}
-
 
 int ISC_kill(SLONG pid, SLONG signal_number)
 {
@@ -376,8 +332,6 @@ namespace
 
 			overflow_count = 0;
 			gds__register_cleanup(signal_cleanup, 0);
-
-			isc_signal2(SIGFPE, reinterpret_cast<FPTR_VOID>(overflow_handler), 0, SIG_informs);
 		}
 
 		static void cleanup()
@@ -421,33 +375,6 @@ static void signal_cleanup(void*)
 	signalInit.cleanup();
 }
 
-
-static SLONG overflow_handler(void* arg)
-{
-/**************************************
- *
- *	o v e r f l o w _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	Somebody overflowed.  Ho hum.
- *
- **************************************/
-
-#ifdef DEBUG_FPE_HANDLING
-	fprintf(stderr, "overflow_handler (%x)\n", arg);
-#endif
-
-	++overflow_count;
-#ifdef DEBUG_FPE_HANDLING
-	fprintf(stderr, "SIGFPE in isc code ignored %d\n",
-			   overflow_count);
-#endif
-	/* We've "handled" the FPE - let signal_action know not to chain
-	   the signal to other handlers */
-	return SIG_informs_stop;
-}
 
 static SIG que_signal(int signal_number,
 					  FPTR_VOID handler,
