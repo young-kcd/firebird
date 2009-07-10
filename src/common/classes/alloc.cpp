@@ -1841,7 +1841,7 @@ void AutoStorage::ProbeStack() const
 	// for objects on the stack. ProbeStack() uses the
 	// following assumptions to check it:
 	//	1. One and only one stack is used for all kind of variables.
-	//	2. Objects don't grow > 64K.
+	//	2. Objects don't grow > 128K.
 	//
 	char probeVar = '\0';
 	const char* myStack = &probeVar;
@@ -1850,7 +1850,7 @@ void AutoStorage::ProbeStack() const
 	if (distance < 0) {
 		distance = -distance;
 	}
-	fb_assert(distance < 64 * 1024);
+	fb_assert(distance < 128 * 1024);
 }
 #endif
 
