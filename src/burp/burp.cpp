@@ -266,10 +266,10 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 		}
 #ifdef TRUSTED_AUTH
 		if (flag_trusted)
-#endif
 		{
 			spb.insertTag(isc_spb_trusted_auth);
 		}
+#endif
 
 		// Fill command line options
 		Firebird::string options;
@@ -707,9 +707,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// trusted user name parameter missing
 			}
 			tdgbl->gbl_sw_tr_user = argv[itr];
-#ifdef TRUSTED_AUTH
-			burp_in_sw_table[IN_SW_BURP_TRUSTED_USER].in_sw_state = true;
-#endif
 		}
 		else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE)
 		{
