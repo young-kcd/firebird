@@ -64,6 +64,12 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Fixed bug CORE-1011
+        Server crashes when being connected to via InterBase gds32.dll
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <yemanov at yandex.ru>
+
 
   **************
   * v1.5.5
