@@ -222,6 +222,12 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Improvement CORE-2551
+        Interpret DPB items as now the database name parameter is interpreted and change MON$
+        filenames fields from NONE to UNICODE_FSS
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Improvement CORE-2498
         Make a single attachment handle usable by more than one simultaneous threads in embedded
       Contributor(s):
@@ -289,6 +295,9 @@
 
     * New feature CORE-2398
         Make Firebird correctly detecting its installed path in Linux
+      Note:
+        This feature is currently treated as experimental and is disabled by default. To activate
+        it, pass --enable-binreloc to autogen.sh when building from the sources.
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
