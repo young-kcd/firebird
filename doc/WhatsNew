@@ -1,4 +1,299 @@
   *************
+  * v2.5 Beta 2
+  *************
+
+    * Bugfix CORE-2550
+        Bus error when working with DB_KEY on big-endian machines
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2538
+        PSQL doesn't allow to use singleton query result as an input parameter of a stored procedure
+        if the procedure is called using EXECUTE PROCEDURE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2532
+        Incorrect size of volumes in a multi-volume database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2528
+        GSEC does not return error codes to the operating system
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2519
+        GSTAT output is incorrect for tables with more than 2 billion records
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2518
+        Can no longer connect to a database when using isc_dpb_num_buffers parameter
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2516
+        Wrong processing of procedure parameters with arrays
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2505
+        Built-in trigonometric functions can produce NaN and Infinity
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2501
+        Binary shift functions give wrong results with negative shift values
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2499
+        Implementation limit of DISTINCT items is not enforced,
+        causing generation of incorrect BLR
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2482
+        Monitoring tables data collection is unstable when attaching or detaching database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2475
+        External table data is not visible to other sessions in Classic
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2462
+        FB 2.5 Beta 1 has huge, fast-growing firebird.log file
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2461
+        Deadlock error terminates the restore process while restoring privileges
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2455
+        Server fails when doing DROP DATABASE right after error in a statistical function
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2454
+        AV enumerating attachments in SS/SC if more than 8 databases are attached
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2453
+        AV in the engine when client using events disconnects (XNET is affected only)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2449
+        Unexpected "lock conflict" error can be thrown instead of other (expected) exception
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2444
+        The engine could hang when multiple attachments register their interest in events simultaneously
+        and free space in the events table is exhausted
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2441
+        Server crashes on UPDATE OR INSERT statement
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2437
+        Buffer overflow on client when delivering events
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2430
+        Server adds "NOT" at the end of a default value for a TIMESTAMP field
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2427
+        ALTER VIEW doesn't clear dependencies for old views
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2426
+        ALTER TABLE does not respect collations
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2420
+        Parsing error in EXECUTE STATEMENT with named parameters
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2419
+        Assert in the DEBUG build while preparing a query with UNION inside a derived table
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2417
+        Index cannot be used with <field> LIKE <constant> in HAVING clause
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2416
+        AV preparing a query with aggregate over derived table
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2411
+        Optimizer chooses slower PLAN in v2.0.5/v2.1.2 than in v2.0.4/v2.1.1
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2408
+        ISQL metadata extraction: default values of procedure parameters
+        are put before the NOT NULL and COLLATE flags
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2407
+        ISQL metadata extraction: PAGE_SIZE missing in CREATE DATABASE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2402
+        Bad permissions on temp files, /tmp is polluted with a lot of files
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2397
+        Database corruption may happen after dropping two different indexes within the same transaction
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2386
+        ALTER VIEW could remove columns used in stored procedures or triggers
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2370
+        SQL plan greater than 2048 characters is not printed at all in ISQL
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2361
+        String truncation when reading 8859-1 Spanish column
+        using isc_dsql_fetch() with an UTF-8 connection
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2359
+        Logical multibyte maximum string length is not respected when assigning numbers
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2331
+        ALTER DOMAIN causes an invalid RDB$FIELD_SUB_TYPE value to be stored
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2306
+        fbserver terminates abnormally when some worker thread fails to start
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2272
+        Server starts returning garbage when killing events connection attempt
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2268
+        GFIX causes BUGCHECK errors with non valid transaction numbers
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1412
+        Some bugs in GSTAT's parameters processing
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-1346
+        LPAD and RPAD with two columns not working
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2498
+        Make a single attachment handle usable by more than one simultaneous threads in embedded
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2492
+        Work correctly with external tables larger then 2GB
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2452
+        Add role name to input options for EXECUTE STATEMENT
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2434
+        CREATE USER command: invalid error message
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2432
+        Missing SHOW COLLATIONs in HELP command of ISQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2424
+        Make CREATE VIEW inferring column names for views involving a GROUP BY clause or derived table
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2404
+        Match database names using correct INTL and platform rules for trace
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-2263
+        RemoteAuxPort for SuperClassic and regular Classic
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-1411
+        GSTAT needs '-?' or '-help' switch
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Improvement CORE-1402
+        CREATE VIEW without column list when UNION is used
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-1171
+        ISQL exponential format of numbers has zero pad on Windows
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * Improvement CORE-756
+        Add parameter help to GSEC
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
+    * New feature CORE-2524
+        Command line utility to work with the trace service
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * New feature CORE-2398
+        Make Firebird correctly detecting its installed path in Linux
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  *************
   * v2.5 Beta 1
   *************
 
