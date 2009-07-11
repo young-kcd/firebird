@@ -1302,7 +1302,34 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		if (utfFilename)
 			ISC_utf8ToSystem(org_filename);
 		else
+		{
 			newDpb.insertTag(isc_dpb_utf8_filename);
+
+			for (newDpb.rewind(); !newDpb.isEof(); newDpb.moveNext())
+			{
+				UCHAR tag = newDpb.getClumpTag();
+				switch (tag)
+				{
+					case isc_dpb_sys_user_name:
+					case isc_dpb_user_name:
+					case isc_dpb_password:
+					case isc_dpb_sql_role_name:
+					case isc_dpb_trusted_auth:
+					case isc_dpb_trusted_role:
+					case isc_dpb_working_directory:
+					case isc_dpb_set_db_charset:
+					case isc_dpb_process_name:
+					{
+						string s;
+						newDpb.getString(s);
+						ISC_systemToUtf8(s);
+						newDpb.deleteClumplet();
+						newDpb.insertString(tag, s);
+						break;
+					}
+				}
+			}
+		}
 
 		setLogin(newDpb);
 		org_filename.rtrim();

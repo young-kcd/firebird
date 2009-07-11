@@ -44,3 +44,8 @@ than v2.5.
 The OS codepage used for conversions is:
 - Windows: The Windows ANSI code page
 - Others: UTF-8
+
+
+Updated for 2.5 Beta 2: 2008-07-11
+
+These rules are now valid for string DPB items too.

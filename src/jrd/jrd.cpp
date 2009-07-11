@@ -457,6 +457,23 @@ public:
 			reinterpret_cast<char*>(&this->dpb_sys_user_name) - reinterpret_cast<char*>(this));
 	}
 	void get(const UCHAR*, USHORT, bool&);
+
+private:
+	void getPath(ClumpletReader& reader, PathName& s)
+	{
+		reader.getPath(s);
+		if (!dpb_utf8_filename)
+			ISC_systemToUtf8(s);
+		ISC_unescape(s);
+	}
+
+	void getString(ClumpletReader& reader, string& s)
+	{
+		reader.getString(s);
+		if (!dpb_utf8_filename)
+			ISC_systemToUtf8(s);
+		ISC_unescape(s);
+	}
 };
 
 /// trace manager support
@@ -780,16 +797,21 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return ex.stuff_exception(user_status);
 	}
 
-	PathName file_name = options.dpb_org_filename.hasData() ? options.dpb_org_filename : filename;
+	PathName file_name;
 
-	if (options.dpb_utf8_filename)
-		ISC_utf8ToSystem(file_name);
+	if (options.dpb_org_filename.hasData())
+		file_name = options.dpb_org_filename;
 	else
 	{
-		ISC_systemToUtf8(file_name);
+		file_name = filename;
+
+		if (!options.dpb_utf8_filename)
+			ISC_systemToUtf8(file_name);
+
 		ISC_unescape(file_name);
-		ISC_utf8ToSystem(file_name);
 	}
+
+	ISC_utf8ToSystem(file_name);
 
 	PathName expanded_name;
 
@@ -1793,16 +1815,21 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return ex.stuff_exception(user_status);
 	}
 
-	PathName file_name = options.dpb_org_filename.hasData() ? options.dpb_org_filename : filename;
+	PathName file_name;
 
-	if (options.dpb_utf8_filename)
-		ISC_utf8ToSystem(file_name);
+	if (options.dpb_org_filename.hasData())
+		file_name = options.dpb_org_filename;
 	else
 	{
-		ISC_systemToUtf8(file_name);
+		file_name = filename;
+
+		if (!options.dpb_utf8_filename)
+			ISC_systemToUtf8(file_name);
+
 		ISC_unescape(file_name);
-		ISC_utf8ToSystem(file_name);
 	}
+
+	ISC_utf8ToSystem(file_name);
 
 	PathName expanded_name;
 
@@ -4379,12 +4406,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 				 Arg::Gds(isc_wrodpbver));
 	}
 
-	for (; !(rdr.isEof()); rdr.moveNext())
+	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
+
+	for (rdr.rewind(); !(rdr.isEof()); rdr.moveNext())
 	{
 		switch (rdr.getClumpTag())
 		{
 		case isc_dpb_working_directory:
-			rdr.getPath(dpb_working_directory);
+			getPath(rdr, dpb_working_directory);
 			break;
 
 		case isc_dpb_set_page_buffers:
@@ -4479,22 +4508,22 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_sys_user_name:
-			rdr.getString(dpb_sys_user_name);
+			getString(rdr, dpb_sys_user_name);
 			break;
 
 		case isc_dpb_sql_role_name:
 			if (! dpb_trusted_role)
 			{
-			    rdr.getString(dpb_role_name);
+			    getString(rdr, dpb_role_name);
 			}
 			break;
 
 		case isc_dpb_user_name:
-			rdr.getString(dpb_user_name);
+			getString(rdr, dpb_user_name);
 			break;
 
 		case isc_dpb_password:
-			rdr.getString(dpb_password);
+			getString(rdr, dpb_password);
 			break;
 
 		case isc_dpb_password_enc:
@@ -4502,12 +4531,12 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_trusted_auth:
-			rdr.getString(dpb_trusted_login);
+			getString(rdr, dpb_trusted_login);
 			break;
 
 		case isc_dpb_trusted_role:
 			dpb_trusted_role = true;
-			rdr.getString(dpb_role_name);
+			getString(rdr, dpb_role_name);
 			break;
 
 		case isc_dpb_encrypt_key:
@@ -4646,7 +4675,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_set_db_charset:
-			rdr.getString(dpb_set_db_charset);
+			getString(rdr, dpb_set_db_charset);
 			break;
 
 		case isc_dpb_address_path:
@@ -4684,7 +4713,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_process_name:
-			rdr.getPath(dpb_remote_process);
+			getPath(rdr, dpb_remote_process);
 			break;
 
 		case isc_dpb_no_db_triggers:
@@ -4692,11 +4721,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_org_filename:
-			rdr.getPath(dpb_org_filename);
-			break;
-
-		case isc_dpb_utf8_filename:
-			dpb_utf8_filename = true;
+			getPath(rdr, dpb_org_filename);
 			break;
 
 		default:
@@ -4705,9 +4730,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	}
 
 	if (! rdr.isEof())
-	{
 		ERR_post(Arg::Gds(isc_bad_dpb_form));
-	}
 }
 
 
@@ -5972,7 +5995,10 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 			options.dpb_network_protocol.isEmpty() &&	// This 2 checks ensure that we are not remote server
 			options.dpb_remote_address.isEmpty()) 		// process, i.e. can use unix OS auth.
 		{
-			wheel = ISC_get_user(&name, &id, &group, options.dpb_sys_user_name.nullStr());
+			string s(options.dpb_sys_user_name);
+			ISC_utf8ToSystem(s);
+			wheel = ISC_get_user(&name, &id, &group, s.nullStr());
+			ISC_systemToUtf8(name);
 		}
 
 		if (options.dpb_user_name.hasData() || (id == -1))

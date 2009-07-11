@@ -4578,8 +4578,17 @@ static void add_other_params(rem_port* port, ClumpletWriter& dpb, const Paramete
 		dpb.deleteWithTag(par.process_id);
 		dpb.insertInt(par.process_id, getpid());
 
-		if (!dpb.find(par.process_name)) {
-			dpb.insertPath(par.process_name, fb_utils::get_process_name());
+		if (!dpb.find(par.process_name))
+		{
+			PathName path = fb_utils::get_process_name();
+
+			ISC_systemToUtf8(path);
+			ISC_escape(path);
+
+			if (!dpb.find(isc_dpb_utf8_filename))
+				ISC_utf8ToSystem(path);
+
+			dpb.insertPath(par.process_name, path);
 		}
 	}
 }
@@ -4609,7 +4618,14 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 	if (node_name == "localhost")
 	{
 		fb_utils::getCwd(cwd);
+
+		ISC_systemToUtf8(cwd);
+		ISC_escape(cwd);
+
+		if (!dpb.find(isc_dpb_utf8_filename))
+			ISC_utf8ToSystem(cwd);
 	}
+
 	dpb.insertPath(isc_dpb_working_directory, cwd);
 }
 
@@ -5564,6 +5580,11 @@ static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const Paramete
 		string password;
 		dpb.getString(password);
 		dpb.deleteClumplet();
+
+		if (!dpb.find(isc_dpb_utf8_filename))
+			ISC_systemToUtf8(password);
+		ISC_unescape(password);
+
 		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
 		ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
 		password = pwt + 2;
@@ -5748,18 +5769,35 @@ static bool init(ISC_STATUS* user_status,
 
 	if (port->port_protocol < PROTOCOL_VERSION12)
 	{
-		// This is FB < 2.5. Lets remove that not recognized DPB and convert the filename
-		// to the OS codepage.
+		// This is FB < 2.5. Lets remove that not recognized DPB and convert the UTF8
+		// strings to the OS codepage.
 		dpb.deleteWithTag(isc_dpb_utf8_filename);
 		ISC_utf8ToSystem(file_name);
 
-		if (dpb.find(isc_dpb_org_filename))
+		for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
 		{
-			PathName orgFilename;
-			dpb.getPath(orgFilename);
-			ISC_utf8ToSystem(orgFilename);
-			dpb.deleteClumplet();
-			dpb.insertPath(isc_dpb_org_filename, orgFilename);
+			UCHAR tag = dpb.getClumpTag();
+			switch (tag)
+			{
+				case isc_dpb_org_filename:
+				case isc_dpb_sys_user_name:
+				case isc_dpb_user_name:
+				case isc_dpb_password:
+				case isc_dpb_sql_role_name:
+				case isc_dpb_trusted_auth:
+				case isc_dpb_trusted_role:
+				case isc_dpb_working_directory:
+				case isc_dpb_set_db_charset:
+				case isc_dpb_process_name:
+				{
+					string s;
+					dpb.getString(s);
+					ISC_utf8ToSystem(s);
+					dpb.deleteClumplet();
+					dpb.insertString(tag, s);
+					break;
+				}
+			}
 		}
 	}
 

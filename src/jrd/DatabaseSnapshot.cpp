@@ -37,6 +37,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
@@ -460,7 +461,10 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	const Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
-	const PathName& databaseName = dbb->dbb_database_name;
+
+	string databaseName(dbb->dbb_database_name.c_str());
+	ISC_systemToUtf8(databaseName);
+
 	const string& userName = attachment->att_user->usr_user_name;
 	const bool locksmith = attachment->locksmith();
 
@@ -551,6 +555,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			{
 				if (fid == f_mon_att_user)
 				{
+					attachment_charset = ttype_none;
 					att_allowed = locksmith || !userName.compare(source, length);
 				}
 				else if (fid == f_mon_att_charset_id)
@@ -787,8 +792,11 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 
 	DumpRecord record(rel_mon_database);
 
+	PathName databaseName(*getDefaultMemoryPool(), database->dbb_database_name);
+	ISC_systemToUtf8(databaseName);
+
 	// database name or alias (MUST BE ALWAYS THE FIRST ITEM PASSED!)
-	record.storeString(f_mon_db_name, database->dbb_database_name);
+	record.storeString(f_mon_db_name, databaseName);
 	// page size
 	record.storeInteger(f_mon_db_page_size, database->dbb_page_size);
 	// major ODS version
@@ -895,6 +903,9 @@ bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& write
 		}
 	}
 
+	PathName attName(*getDefaultMemoryPool(), attachment->att_filename);
+	ISC_systemToUtf8(attName);
+
 	// user (MUST BE ALWAYS THE FIRST ITEM PASSED!)
 	record.storeString(f_mon_att_user, attachment->att_user->usr_user_name);
 	// attachment id
@@ -904,7 +915,7 @@ bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& write
 	// state
 	record.storeInteger(f_mon_att_state, temp);
 	// attachment name
-	record.storeString(f_mon_att_name, attachment->att_filename);
+	record.storeString(f_mon_att_name, attName);
 	// role
 	record.storeString(f_mon_att_role, attachment->att_user->usr_sql_role_name);
 	// remote protocol

@@ -54,6 +54,7 @@
 	FIELD(fld_class			, nam_class			, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata, 0		, NULL)
 	FIELD(fld_acl			, nam_acl			, dtype_blob	, BLOB_SIZE					, isc_blob_acl			, 0		, NULL)
 	FIELD(fld_file_name		, nam_file_name		, dtype_varying	, 255						, 0						, 0		, NULL)
+	FIELD(fld_file_name2	, nam_file_name2	, dtype_varying	, 255						, dsc_text_type_metadata, 0		, NULL)
 	FIELD(fld_file_seq		, nam_file_seq		, dtype_short	, sizeof(SSHORT)			, 0						, 0		, NULL)
 	FIELD(fld_file_start	, nam_file_start	, dtype_long	, sizeof(SLONG)				, 0						, 0		, NULL)
 	FIELD(fld_file_length	, nam_file_length	, dtype_long	, sizeof(SLONG)				, 0						, 0		, NULL)
