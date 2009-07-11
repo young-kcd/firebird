@@ -423,7 +423,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		// id other than default specified in /etc/passwd.
 
 		eff_gid = htonl(eff_gid);
-		user_id.insertBytes(CNCT_group, reinterpret_cast<UCHAR*>(&eff_gid), sizeof(SLONG));
+		user_id.insertBytes(CNCT_group, reinterpret_cast<UCHAR*>(&eff_gid), sizeof(eff_gid));
 	}
 
 	// Establish connection to server
@@ -1094,7 +1094,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	}
 
 	{ // scope
-		// If the environment varible ISC_INET_SERVER_HOME is set,
+		// If the environment variable ISC_INET_SERVER_HOME is set,
 		// change the home directory to the specified directory.
 		// Note that this will overrule the normal setting of
 		// the current directory to the effective user's home directory.
@@ -1520,7 +1520,7 @@ static void disconnect(rem_port* const port)
 
 	// SO_LINGER was turned off on the initial bind when the server was started.
 	// This will force a reset to be sent to the client when the socket is closed.
-	// We only want this behavior in the case of the server terminiating
+	// We only want this behavior in the case of the server terminating
 	// abnormally and not on an orderly shut down.  Because of this, turn the
 	// SO_LINGER option back on for the socket.  The result of setsockopt isn't
 	// too important at this stage since we are closing the socket anyway.  This
@@ -2186,12 +2186,13 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 #endif
 
 						if (badSocket || getsockopt((SOCKET) port->port_handle,
-							SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
+								SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
 						{
 							if (badSocket || INET_ERRNO == NOTASOCKET)
 							{
 								// not a socket, strange !
-								gds__log("INET/select_wait: found \"not a socket\" socket : %u", (SOCKET) port->port_handle);
+								gds__log("INET/select_wait: found \"not a socket\" socket : %u",
+									(SOCKET) port->port_handle);
 
 								// this will lead to receive() which will break bad connection
 								selct->slct_count = selct->slct_width = 0;
@@ -2239,7 +2240,8 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 			// Before waiting for incoming packet, check for server shutdown
 			if (tryStopMainThread && tryStopMainThread())
 			{
-				main_port->port_server_flags &= ~SRVR_multi_client;		// this is not server port any more
+				// this is not server port any more
+				main_port->port_server_flags &= ~SRVR_multi_client;
 				return false;
 			}
 
@@ -2251,8 +2253,7 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 #ifdef WIN_NT
 			selct->slct_count = select(FD_SETSIZE, &selct->slct_fdset, NULL, NULL, &timeout);
 #else
-			selct->slct_count = select(selct->slct_width, &selct->slct_fdset,
-									   NULL, NULL, &timeout);
+			selct->slct_count = select(selct->slct_width, &selct->slct_fdset, NULL, NULL, &timeout);
 #endif
 			const int inetErrNo = INET_ERRNO;
 
@@ -2317,9 +2318,8 @@ static int send_full( rem_port* port, PACKET * packet)
 		op_sent_count++;
 		if (INET_trace & TRACE_operations)
 		{
-			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d\n",
-					   inet_debug_timer(),
-					   op_sent_count, packet->p_operation);
+			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d\n", inet_debug_timer(),
+				op_sent_count, packet->p_operation);
 			fflush(stdout);
 		}
 	} // end scope
@@ -2347,9 +2347,8 @@ static int send_partial( rem_port* port, PACKET * packet)
 		op_sentp_count++;
 		if (INET_trace & TRACE_operations)
 		{
-			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n",
-					   inet_debug_timer(),
-					   op_sentp_count, packet->p_operation);
+			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n", inet_debug_timer(),
+				op_sentp_count, packet->p_operation);
 			fflush(stdout);
 		}
 	} // end scope
@@ -2359,8 +2358,7 @@ static int send_partial( rem_port* port, PACKET * packet)
 }
 
 
-static int xdrinet_create(XDR* xdrs, rem_port* port,
-						  UCHAR* buffer, USHORT length, enum xdr_op x_op)
+static int xdrinet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT length, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -2934,9 +2932,7 @@ static void packet_print(const TEXT* string, const UCHAR* packet, int length, UL
 }
 #endif
 
-static bool packet_receive(rem_port* port,
-						  UCHAR* buffer,
-						  SSHORT buffer_length, SSHORT* length)
+static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, SSHORT* length)
 {
 /**************************************
  *
@@ -3065,7 +3061,7 @@ static bool packet_receive(rem_port* port,
 			break;
 	}
 
-	if ((n <= 0) && (port->port_flags & PORT_disconnect)) {
+	if (n <= 0 && (port->port_flags & PORT_disconnect)) {
 		return false;
 	}
 
@@ -3128,8 +3124,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			fflush(stdout);
 		}
 #endif
-		SSHORT n = -1;
-		n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
+		SSHORT n = send((SOCKET) port->port_handle, data, length, FB_SEND_FLAGS);
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations)
 		{
