@@ -60,7 +60,7 @@ class DatabaseSnapshot
 		{
 			offset = 0;
 			sizeLimit = sizeof(buffer);
-			fb_assert(rel_id > 0 && rel_id <= ULONG(MAX_UCHAR));
+			fb_assert(rel_id > 0 && rel_id <= int(MAX_UCHAR));
 			buffer[offset++] = (UCHAR) rel_id;
 		}
 
@@ -162,7 +162,7 @@ class DatabaseSnapshot
 			}
 
 			UCHAR* ptr = buffer + offset;
-			fb_assert(field_id <= ULONG(MAX_UCHAR));
+			fb_assert(field_id <= int(MAX_UCHAR));
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
 			const USHORT adjusted_length = (USHORT) length;
