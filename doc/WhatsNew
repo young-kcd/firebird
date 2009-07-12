@@ -54,6 +54,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-2488
+        Long query execution on one table multiple join
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-2482
         Monitoring tables data collection is unstable when attaching or detaching database
       Contributor(s):
@@ -211,6 +216,11 @@
         GFIX causes BUGCHECK errors with non valid transaction numbers
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1971
+        Set the fixed and documented evaluation order for the WHERE clause and other predicates
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-1412
         Some bugs in GSTAT's parameters processing
