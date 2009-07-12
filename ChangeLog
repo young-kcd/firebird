@@ -1,3 +1,55 @@
+2009-07-12 14:39  robocop
+
+	* firebird2/src/jrd/trace/: TraceCmdLine.cpp (1.13), TraceService.h
+	(1.9):
+
+	Change minimal option length from S[SUSPEND] to SU[SPEND] in trace
+	manager with Vlad's agreement.
+
+2009-07-12 14:12  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.108):
+
+	Get rid of variable shadowing.
+
+2009-07-12 12:24  dimitr
+
+	* firebird2/doc/WhatsNew (1.172):
+
+	Update.
+
+2009-07-12 12:16  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.354), rse.h (1.62):
+
+	Fixed CORE-1971: Set the fixed and documented check order for WHERE
+	clause and other conditional sentences.  The order of evaluation is
+	now always from left to right.
+
+2009-07-11 22:05  asfernandes
+
+	* firebird2/doc/WhatsNew (1.171):
+
+	Update for CORE-2551 and note for CORE-2398
+
+2009-07-11 21:58  asfernandes
+
+	* firebird2/: doc/README.connection_string_charset.txt (1.3),
+	src/jrd/DatabaseSnapshot.cpp (1.107), src/jrd/fields.h (1.22),
+	src/jrd/jrd.cpp (1.548), src/jrd/names.h (1.19),
+	src/jrd/relations.h (1.27), src/jrd/why.cpp (1.248),
+	src/remote/interface.cpp (1.219):
+
+	Improvement CORE-2551 - Interpret DPB items as now the database
+	name parameter is interpreted and change MON$ filenames fields from
+	NONE to UNICODE_FSS.
+
+2009-07-11 21:03  asfernandes
+
+	* firebird2/src/jrd/DatabaseSnapshot.h (1.35):
+
+	Fix warnings
+
 2009-07-11 14:24  dimitr
 
 	* firebird2/doc/WhatsNew (1.170):
