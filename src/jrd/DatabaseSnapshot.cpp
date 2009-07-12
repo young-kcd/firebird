@@ -472,7 +472,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* buffer = NULL;
 	Record* record = NULL;
 
-	int rid = 0;
 	bool dbb_processed = false, fields_processed = false;
 	bool dbb_allowed = false, att_allowed = false;
 	int attachment_charset = ttype_none;
