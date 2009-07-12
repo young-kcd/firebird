@@ -65,7 +65,7 @@ static const struct in_sw_tab_t trace_action_in_sw_table [] =
 	{IN_SW_TRACE_RESUME,	isc_action_svc_trace_resume,	"RESUME", 	0, 0, 0, false,	0,	1, NULL},
 	{IN_SW_TRACE_STOP,		isc_action_svc_trace_stop,		"STOP", 	0, 0, 0, false,	0,	3, NULL},
 	{IN_SW_TRACE_START,		isc_action_svc_trace_start,		"START",	0, 0, 0, false,	0,	3, NULL},
-	{IN_SW_TRACE_SUSPEND,	isc_action_svc_trace_suspend,	"SUSPEND",	0, 0, 0, false,	0,	1, NULL},
+	{IN_SW_TRACE_SUSPEND,	isc_action_svc_trace_suspend,	"SUSPEND",	0, 0, 0, false,	0,	2, NULL},
 	{0, 0, NULL, 0, 0, 0, false, 0, 0, NULL}		// End of List
 };
 

@@ -65,7 +65,7 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 		"Actions: \n"
 		"  -STA[RT]                              Start trace session\n"
 		"  -STO[P]                               Stop trace session\n"
-		"  -S[USPEND]                            Suspend trace session\n"
+		"  -SU[SPEND]                            Suspend trace session\n"
 		"  -R[ESUME]                             Resume trace session\n"
 		"  -L[IST]                               List existing trace sessions\n\n"
 		"\n"
