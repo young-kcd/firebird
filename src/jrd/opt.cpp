@@ -618,11 +618,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// around for the rest of the optimization process.
 
 	// Set base-point before the parent/distributed nodes begin.
-	opt->opt_base_conjuncts = (SSHORT) conjunct_count;
+	const USHORT base_count = (USHORT) conjunct_count;
+	opt->opt_base_conjuncts = base_count;
 
 	// AB: Add parent conjunctions to conjunct_stack, keep in mind
 	// the outer-streams! For outer streams put missing (IS NULL)
-	// conjunctions in the missingStack.
+	// conjunctions in the missing_stack.
 	//
 	// opt_rpt[0..opt_base_conjuncts-1] = defined conjunctions to this stream
 	// opt_rpt[0..opt_base_parent_conjuncts-1] = defined conjunctions to this
@@ -633,39 +634,44 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	//
 	// allowed = booleans that can never evaluate to NULL/Unknown or turn
 	//   NULL/Unknown into a True or False.
-	SLONG distributed_count = 0;
-	NodeStack missingStack;
-	if (parent_stack && parent_stack->getCount())
+
+	USHORT parent_count = 0, distributed_count = 0;
+	NodeStack missing_stack;
+	if (parent_stack)
 	{
-		NodeStack::iterator iter(*parent_stack);
-		for (; iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++iter)
+		for (NodeStack::iterator iter(*parent_stack);
+			iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++iter)
 		{
-			jrd_nod* node = iter.object();
+			jrd_nod* const node = iter.object();
+
 			if ((rse->rse_jointype != blr_inner) && expression_possible_unknown(node))
 			{
 				// parent missing conjunctions shouldn't be
 				// distributed to FULL OUTER JOIN streams at all
 				if (rse->rse_jointype != blr_full)
 				{
-					missingStack.push(node);
+					missing_stack.push(node);
 				}
 			}
 			else
 			{
 				conjunct_stack.push(node);
 				conjunct_count++;
+				parent_count++;
 			}
 		}
+
 		// We've now merged parent, try again to make more conjunctions.
 		distributed_count = distribute_equalities(conjunct_stack, csb, conjunct_count);
 		conjunct_count += distributed_count;
 	}
+
 	// The newly created conjunctions belong to the base conjunctions.
 	// After them are starting the parent conjunctions.
-	opt->opt_base_parent_conjuncts = opt->opt_base_conjuncts + (SSHORT) distributed_count;
+	opt->opt_base_parent_conjuncts = opt->opt_base_conjuncts + distributed_count;
 
 	// Set base-point before the parent IS NULL nodes begin
-	opt->opt_base_missing_conjuncts = (SSHORT) conjunct_count;
+	opt->opt_base_missing_conjuncts = (USHORT) conjunct_count;
 
 	// Check if size of optimizer block exceeded.
 	if (conjunct_count > MAX_CONJUNCTS)
@@ -677,41 +683,42 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// Put conjunctions in opt structure.
 	// Note that it's a stack and we get the nodes in reversed order from the stack.
 	opt->opt_conjuncts.grow(conjunct_count);
-	SSHORT j = 0;
-	SSHORT nodeBase = 0;
-	for (SLONG i = conjunct_count; i > 0; i--)
+	SSHORT nodeBase = -1, j = -1;
+	for (SLONG i = conjunct_count; i > 0; i--, j--)
 	{
-		jrd_nod* node = conjunct_stack.pop();
+		jrd_nod* const node = conjunct_stack.pop();
 
-		if (i == opt->opt_base_conjuncts)
+		if (i == base_count)
 		{
 			// The base conjunctions
-			j = 0;
+			j = base_count - 1;
 			nodeBase = 0;
-		}
-		else if (i == conjunct_count)
-		{
-			// The new conjunctions created by "distribution" from the stack
-			j = 0;
-			nodeBase = opt->opt_base_conjuncts;
 		}
 		else if (i == (conjunct_count - distributed_count))
 		{
 			// The parent conjunctions
-			j = 0;
-			nodeBase = opt->opt_base_conjuncts + distributed_count;
+			j = parent_count - 1;
+			nodeBase = opt->opt_base_parent_conjuncts;
+		}
+		else if (i == conjunct_count)
+		{
+			// The new conjunctions created by "distribution" from the stack
+			j = distributed_count - 1;
+			nodeBase = opt->opt_base_conjuncts;
 		}
 
+		fb_assert(nodeBase >= 0 && j >= 0);
 		opt->opt_conjuncts[nodeBase + j].opt_conjunct_node = node;
 		compute_dependencies(node, opt->opt_conjuncts[nodeBase + j].opt_dependencies);
-		j++;
 	}
 
 	// Put the parent missing nodes on the stack
-	while (missingStack.hasData() && conjunct_count < MAX_CONJUNCTS)
+	for (NodeStack::iterator iter(missing_stack);
+		iter.hasData() && conjunct_count < MAX_CONJUNCTS; ++iter)
 	{
+		jrd_nod* const node = iter.object();
+
 		opt->opt_conjuncts.grow(conjunct_count + 1);
-		jrd_nod* node = missingStack.pop();
 		opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
 		compute_dependencies(node, opt->opt_conjuncts[conjunct_count].opt_dependencies);
 		conjunct_count++;
