@@ -5779,12 +5779,12 @@ static bool init(ISC_STATUS* user_status,
 			UCHAR tag = dpb.getClumpTag();
 			switch (tag)
 			{
+				// Do not check isc_dpb_trusted_auth here. It's just bytes.
 				case isc_dpb_org_filename:
 				case isc_dpb_sys_user_name:
 				case isc_dpb_user_name:
 				case isc_dpb_password:
 				case isc_dpb_sql_role_name:
-				case isc_dpb_trusted_auth:
 				case isc_dpb_trusted_role:
 				case isc_dpb_working_directory:
 				case isc_dpb_set_db_charset:
