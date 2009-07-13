@@ -869,19 +869,13 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 }
 
 
-void Collation::destroy()
+void Collation::release()
 {
-	// Temporary commented assert() to avoid aborts in 2.5 beta1. AP.
-	// fb_assert(useCount == 0);
-
-	if (tt->texttype_fn_destroy)
-		tt->texttype_fn_destroy(tt);
-
-	delete tt;
+	fb_assert(useCount >= 0);
 
 	if (existenceLock)
 	{
-		// Establish a thread context.
+		// Establish a thread context
 		ThreadContextHolder tdbb;
 
 		tdbb->setDatabase(existenceLock->lck_dbb);
@@ -890,9 +884,24 @@ void Collation::destroy()
 
 		LCK_release(tdbb, existenceLock);
 
-		delete existenceLock;
-		existenceLock = NULL;
+		useCount = 0;
 	}
+}
+
+
+void Collation::destroy()
+{
+	fb_assert(useCount == 0);
+
+	if (tt->texttype_fn_destroy)
+		tt->texttype_fn_destroy(tt);
+
+	delete tt;
+
+	release();
+
+	delete existenceLock;
+	existenceLock = NULL;
 }
 
 
@@ -907,16 +916,20 @@ void Collation::incUseCount(thread_db* tdbb)
 
 void Collation::decUseCount(thread_db* tdbb)
 {
-	fb_assert(useCount > 0);
+	fb_assert(useCount >= 0);
 
-	if (--useCount == 0)
+	if (useCount > 0)
 	{
-		fb_assert(existenceLock);
-		if (obsolete)
-			LCK_re_post(tdbb, existenceLock);
+		useCount--;
+
+		if (!useCount)
+		{
+			fb_assert(existenceLock);
+			if (obsolete)
+				LCK_re_post(tdbb, existenceLock);
+		}
 	}
 }
 
 
 }	// namespace Jrd
-

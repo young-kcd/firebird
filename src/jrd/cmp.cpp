@@ -716,7 +716,36 @@ void CMP_fini(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	// shutdown shared database locks
+
 	CMP_shutdown_database(tdbb);
+
+	// unwind any active system requests
+
+	while (dbb->dbb_sys_trans->tra_requests)
+	{
+		EXE_unwind(tdbb, dbb->dbb_sys_trans->tra_requests);
+	}
+
+	// and release them
+
+	for (jrd_req** itr = dbb->dbb_internal.begin(); itr < dbb->dbb_internal.end(); itr++)
+	{
+		if (*itr)
+		{
+			CMP_release(tdbb, *itr);
+		}
+	}
+
+	for (jrd_req** itr = dbb->dbb_dyn_req.begin(); itr < dbb->dbb_dyn_req.end(); itr++)
+	{
+		if (*itr)
+		{
+			CMP_release(tdbb, *itr);
+		}
+	}
 }
 
 
@@ -2470,53 +2499,57 @@ void CMP_shutdown_database(thread_db* tdbb)
 
 	DEV_BLKCHK(dbb, type_dbb);
 
-	vec<jrd_rel*>* rvector = dbb->dbb_relations;
-	if (!rvector)
-		return;
-
 	// go through relations and indices and release
 	// all existence locks that might have been taken
 
-	vec<jrd_rel*>::iterator ptr, end;
-	for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr) {
-		jrd_rel* relation = *ptr;
-		if (relation) {
-			if (relation->rel_existence_lock) {
-				LCK_release(tdbb, relation->rel_existence_lock);
-				relation->rel_flags |= REL_check_existence;
-				relation->rel_use_count = 0;
-			}
-			if (relation->rel_partners_lock) {
-				LCK_release(tdbb, relation->rel_partners_lock);
-				relation->rel_flags |= REL_check_partners;
-			}
-			for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
-			{
-				if (index->idl_lock) {
-					index->idl_count = 0;
-					LCK_release(tdbb, index->idl_lock);
+	vec<jrd_rel*>* rvector = dbb->dbb_relations;
+	if (rvector)
+	{
+		vec<jrd_rel*>::iterator ptr, end;
+		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr) {
+			jrd_rel* relation = *ptr;
+			if (relation) {
+				if (relation->rel_existence_lock) {
+					LCK_release(tdbb, relation->rel_existence_lock);
+					relation->rel_flags |= REL_check_existence;
+					relation->rel_use_count = 0;
+				}
+				if (relation->rel_partners_lock) {
+					LCK_release(tdbb, relation->rel_partners_lock);
+					relation->rel_flags |= REL_check_partners;
+				}
+				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
+				{
+					if (index->idl_lock) {
+						index->idl_count = 0;
+						LCK_release(tdbb, index->idl_lock);
+					}
 				}
 			}
 		}
 	}
 
-	vec<jrd_prc*>* pvector = dbb->dbb_procedures;
-	if (!pvector)
-		return;
-
 	// release all procedure existence locks that might have been taken
 
-	vec<jrd_prc*>::iterator pptr, pend;
-	for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr) {
-		jrd_prc* procedure = *pptr;
-		if (procedure) {
-			if (procedure->prc_existence_lock) {
-				LCK_release(tdbb, procedure->prc_existence_lock);
-				procedure->prc_flags |= PRC_check_existence;
-				procedure->prc_use_count = 0;
+	vec<jrd_prc*>* pvector = dbb->dbb_procedures;
+	if (pvector)
+	{
+		vec<jrd_prc*>::iterator pptr, pend;
+		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr) {
+			jrd_prc* procedure = *pptr;
+			if (procedure) {
+				if (procedure->prc_existence_lock) {
+					LCK_release(tdbb, procedure->prc_existence_lock);
+					procedure->prc_flags |= PRC_check_existence;
+					procedure->prc_use_count = 0;
+				}
 			}
 		}
 	}
+
+	// release collation existence locks
+
+	dbb->releaseIntlObjects();
 }
 
 

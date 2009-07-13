@@ -145,6 +145,15 @@ class CharSetContainer
 public:
 	CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info);
 
+	void release()
+	{
+		for (size_t i = 0; i < charset_collations.getCount(); i++)
+		{
+			if (charset_collations[i])
+				charset_collations[i]->release();
+		}
+	}
+
 	void destroy()
 	{
 		cs->destroy();
@@ -449,6 +458,18 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 	return IntlManager::lookupCollation(info->baseCollationName.c_str(), info->charsetName.c_str(),
 		info->attributes, info->specificAttributes.begin(),
 		info->specificAttributes.getCount(), info->ignoreAttributes, tt);
+}
+
+
+void Database::releaseIntlObjects()
+{
+	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
+	{
+		if (dbb_charsets[i])
+		{
+			dbb_charsets[i]->release();
+		}
+	}
 }
 
 

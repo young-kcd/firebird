@@ -482,6 +482,7 @@ private:
 public:
 	// temporary measure to avoid unstable state of lock file -
 	// this is anyway called in ~Database(), and in theory should be private
+	void releaseIntlObjects();			// defined in intl.cpp
 	void destroyIntlObjects();			// defined in intl.cpp
 
 	SLONG genSharedUniqueNumber(thread_db* tdbb);

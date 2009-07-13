@@ -68,6 +68,7 @@ public:
 	virtual bool contains(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl) = 0;
 	virtual PatternMatcher* createContainsMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl) = 0;
 
+	void release();
 	void destroy();
 	void incUseCount(thread_db* tdbb);
 	void decUseCount(thread_db* tdbb);
