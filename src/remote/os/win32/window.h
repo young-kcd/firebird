@@ -35,11 +35,6 @@ static const char* APP_LABEL	= "Firebird Server";
 
 #define ON_NOTIFYICON		WM_USER + 2
 
-const int WIN_TEXTLEN		= 128;
-const int MSG_STRINGLEN		= 64;
-const int DRV_STRINGLEN		= 32;
-const int TMP_STRINGLEN		= 512;
-
 #define CHECK_VOLUME(a)		((a)->dbcv_devicetype == DBT_DEVTYP_VOLUME)
 #define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)
 

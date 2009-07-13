@@ -43,15 +43,10 @@
 #include "../remote/os/win32/window.h"
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
-
 #include "../remote/os/win32/window_proto.h"
-#include "../remote/os/win32/propty_proto.h"
-#include "../remote/os/win32/ibconfig.h"
+#include "../remote/os/win32/chop_proto.h"
 
 #include "../jrd/ibase.h"
-
-#include "../remote/os/win32/ibsvrhlp.h"
-#include "../remote/os/win32/chop_proto.h"
 
 #include "../common/thd.h"		// get jrd_proto.h to declare the function
 #include "../jrd/jrd_proto.h"	// JRD_num_attachments()
@@ -62,30 +57,8 @@ static HWND hPSDlg = NULL;		// Handle to the parent prop. sheet window
 HBRUSH hGrayBrush = NULL;		// Handle to a Gray Brush
 static USHORT usServerFlags;	// Server Flag Mask
 
-// Define an array of dword pairs,
-// where the first of each pair is the control ID,
-// and the second is the context ID for a help topic,
-// which is used in the help file.
-static const DWORD aMenuHelpIDs[] =
-{
-	IDC_IBSVR_ICON, ibs_server_icon,
-	IDC_PROTOCOLS, ibs_capabilities,
-	IDC_CAPABILITIES_TEXT, ibs_capabilities,
-	IDC_PRODNAME, ibs_prodname,
-	IDC_PATH, ibs_image_path,
-	IDC_LOCATION_TEXT, ibs_image_path,
-	IDC_STAT1, ibs_version,
-	IDC_VERSION_TEXT, ibs_version,
-	IDC_STAT2, ibs_num_dbs_attached,
-	IDC_NUM_ATTACH_TEXT, ibs_num_dbs_attached,
-	IDC_STAT3, ibs_num_dbs,
-	IDC_NUM_DB_TEXT, ibs_num_dbs,
-	IDC_REFRESH, ibs_refresh,
-	0, 0
-};
-
 // Window procedures
-LRESULT APIENTRY GeneralPage(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions to be called from this file only.
 static char *MakeVersionString(char *, int, USHORT);
@@ -112,7 +85,7 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 
 	PROPSHEETPAGE PSPages[1];
 	PSPages[0].dwSize = sizeof(PROPSHEETPAGE);
-	PSPages[0].dwFlags = PSP_USETITLE | PSP_HASHELP;
+	PSPages[0].dwFlags = PSP_USETITLE;
 	PSPages[0].hInstance = hInstance;
 	PSPages[0].pszTemplate = MAKEINTRESOURCE(GENERAL_DLG);
 	PSPages[0].pszTitle = "General";
@@ -121,7 +94,7 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 
 	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
-	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS;
+	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBSVR);
@@ -139,9 +112,6 @@ HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask
 
 	if (hPSDlg <= 0)
 		hPSDlg = NULL;
-	else
-		// Add the Configuration pages
-		AddConfigPages(hPSDlg, hInstance);
 
 	return hPSDlg;
 }
@@ -173,22 +143,18 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	{
 	case WM_INITDIALOG:
 		{
-			char szText[MSG_STRINGLEN];
+			char szText[BUFFER_MEDIUM];
 			lstrcpy(szText, GDS_VERSION);
 			SetDlgItemText(hDlg, IDC_STAT1, szText);
 
-			LoadString(hInstance, IDS_UNLIMITED_USERS, szText, MSG_STRINGLEN);
-
-			SetDlgItemText(hDlg, IDC_LICENSE, szText);
-
 			if (usServerFlags & (SRVR_inet | SRVR_wnet))
-				LoadString(hInstance, IDS_SERVERPROD_NAME, szText, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SERVERPROD_NAME, szText, sizeof(szText));
 			else
-				LoadString(hInstance, IDS_LOCALPROD_NAME, szText, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_LOCALPROD_NAME, szText, sizeof(szText));
 
 			SetDlgItemText(hDlg, IDC_PRODNAME, szText);
 
-			char szWindowText[WIN_TEXTLEN];
+			char szWindowText[BUFFER_MEDIUM];
 			MakeVersionString(szWindowText, sizeof(szWindowText), usServerFlags);
 			SetDlgItemText(hDlg, IDC_PROTOCOLS, szWindowText);
 
@@ -220,19 +186,6 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 			}
 		}
 		break;
-	case WM_HELP:
-		{
-			LPHELPINFO lphi = (LPHELPINFO) lParam;
-			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
-			{
-				WinHelp(static_cast<HWND>(lphi->hItemHandle), "IBSERVER.HLP",
-						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
-			}
-		}
-		return TRUE;
-	case WM_CONTEXTMENU:
-		WinHelp((HWND) wParam, "IBSERVER.HLP", HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
-		return TRUE;
 	case WM_COMMAND:
 		switch (wParam)
 		{
@@ -246,9 +199,6 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 		{
 		case PSN_KILLACTIVE:
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
-			break;
-		case PSN_HELP:
-			HelpCmd(hDlg, hInstance, ibsp_Server_Information_Properties);
 			break;
 		}
 		break;
@@ -314,18 +264,18 @@ static void RefreshUserCount(HWND hDlg)
  *  Description: This method calls the JRD_num_attachments() function to get
  *               the number of active attachments to the server.
  *****************************************************************************/
-	ULONG num_att = 0;
-	ULONG num_dbs = 0;
-	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
+	const HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
+	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, &num_svc);
 
-	char szText[MSG_STRINGLEN];
+	char szText[BUFFER_MEDIUM];
 	sprintf(szText, "%d", num_att);
 	SetDlgItemText(hDlg, IDC_STAT2, szText);
 	sprintf(szText, "%d", num_dbs);
 	SetDlgItemText(hDlg, IDC_STAT3, szText);
+	sprintf(szText, "%d", num_svc);
+	SetDlgItemText(hDlg, IDC_STAT4, szText);
 
 	SetCursor(hOldCursor);
 }
-

@@ -56,11 +56,8 @@ static USHORT usServerFlags;
 static HWND hMainWnd = NULL;
 
 // Static functions to be called from this file only.
-static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
-#ifdef NOT_USED_OR_REPLACED
-static char *MakeVersionString(char *, int, USHORT);
-#endif
-static BOOL CanEndServer(HWND); //, bool);
+static void GetDriveLetter(ULONG, char pchBuf[BUFFER_MEDIUM]);
+static BOOL CanEndServer(HWND);
 
 // Window Procedure
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
@@ -109,8 +106,8 @@ int WINDOW_main( HINSTANCE hThisInst, int /*nWndMode*/, USHORT usServerFlagMask)
 
 	if (!RegisterClass(&wcl))
 	{
-		char szMsgString[MSG_STRINGLEN];
-		LoadString(hInstance, IDS_REGERROR, szMsgString, MSG_STRINGLEN);
+		char szMsgString[BUFFER_MEDIUM];
+		LoadString(hInstance, IDS_REGERROR, szMsgString, sizeof(szMsgString));
 		if (usServerFlagMask & SRVR_non_service) {
 		   	MessageBox(NULL, szMsgString, APP_LABEL, MB_OK);
 		}
@@ -186,9 +183,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	ULONG ulInUseMask = 0L;
 	PDEV_BROADCAST_VOLUME pdbcv;
-	char szDrives[DRV_STRINGLEN];
-	ULONG num_att = 0;
-	ULONG num_dbs = 0;
+	char szDrives[BUFFER_MEDIUM];
+	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
 
 	switch (message)
 	{
@@ -199,7 +195,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		// therefore should not be shut down.
 
 		if (usServerFlags & SRVR_non_service) {
-			return CanEndServer(hWnd /*, true*/);
+			return CanEndServer(hWnd);
 		}
 
 		return TRUE;
@@ -214,7 +210,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		 */
 		if (usServerFlags & SRVR_non_service)
 		{
-			if (CanEndServer(hWnd /*, false*/))
+			if (CanEndServer(hWnd))
 			{
 				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
 				{
@@ -240,7 +236,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		case IDM_OPENPOPUP:
 			{
-				char szMsgString[MSG_STRINGLEN];
+				char szMsgString[BUFFER_MEDIUM];
 
 				// The SetForegroundWindow() has to be called because our window
 				// does not become the Foreground one (inspite of clicking on
@@ -249,9 +245,9 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				SetForegroundWindow(hWnd);
 
 				HMENU hPopup = CreatePopupMenu();
-				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, sizeof(szMsgString));
 				AppendMenu(hPopup, MF_STRING, IDM_SHUTDOWN, szMsgString);
-				LoadString(hInstance, IDS_PROPERTIES, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_PROPERTIES, szMsgString, sizeof(szMsgString));
 				AppendMenu(hPopup, MF_STRING, IDM_PROPERTIES, szMsgString);
 				SetMenuDefaultItem(hPopup, IDM_PROPERTIES, FALSE);
 
@@ -336,14 +332,14 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			// This will be true in the Program Manager interface.
 			if (!bInTaskBar)
 			{
-				char szMsgString[MSG_STRINGLEN];
+				char szMsgString[BUFFER_MEDIUM];
 
 				HMENU hSysMenu = GetSystemMenu(hWnd, FALSE);
 				DeleteMenu(hSysMenu, SC_RESTORE, MF_BYCOMMAND);
 				AppendMenu(hSysMenu, MF_SEPARATOR, 0, NULL);
-				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_SHUTDOWN, szMsgString, sizeof(szMsgString));
 				AppendMenu(hSysMenu, MF_STRING, IDM_SHUTDOWN, szMsgString);
-				LoadString(hInstance, IDS_PROPERTIES, szMsgString, MSG_STRINGLEN);
+				LoadString(hInstance, IDS_PROPERTIES, szMsgString, sizeof(szMsgString));
 				AppendMenu(hSysMenu, MF_STRING, IDM_PROPERTIES, szMsgString);
 				DestroyMenu(hSysMenu);
 			}
@@ -394,7 +390,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
 		JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
-							sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs);
+							sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs, &num_svc);
 
 		switch (wParam)
 		{
@@ -405,18 +401,18 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			if (CHECK_VOLUME(pdbcv) && (ulLastMask != pdbcv->dbcv_unitmask))
 				if (CHECK_USAGE(pdbcv))
 				{
-					char tmp[TMP_STRINGLEN];
+					char tmp[BUFFER_MEDIUM];
 					char* p = tmp;
-					int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
+					int len = LoadString(hInstance, IDS_PNP1, p, sizeof(tmp));
 					p += len;
 					*p++ = '\r';
 					*p++ = '\n';
 
-					len = LoadString(hInstance, IDS_PNP2, p, p - tmp + TMP_STRINGLEN);
+					len = LoadString(hInstance, IDS_PNP2, p, p - tmp + sizeof(tmp));
 					p += len;
 					*p++ = '\r';
 					*p++ = '\n';
-					len = LoadString(hInstance, IDS_PNP3, p, p - tmp + TMP_STRINGLEN);
+					len = LoadString(hInstance, IDS_PNP3, p, p - tmp + sizeof(tmp));
 					ulLastMask = pdbcv->dbcv_unitmask;
 					GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 					if (MessageBox(hWnd, tmp, szDrives, MB_OKCANCEL | MB_ICONHAND) == IDCANCEL)
@@ -437,13 +433,13 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		case DBT_DEVICEREMOVEPENDING:
 			if (CHECK_VOLUME(pdbcv) && CHECK_USAGE(pdbcv))
 			{
-				char tmp[TMP_STRINGLEN];
+				char tmp[BUFFER_MEDIUM];
 				char* p = tmp;
-				int len = LoadString(hInstance, IDS_PNP1, p, TMP_STRINGLEN);
+				int len = LoadString(hInstance, IDS_PNP1, p, sizeof(tmp));
 				p += len;
 				*p++ = '\r';
 				*p++ = '\n';
-				len = LoadString(hInstance, IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
+				len = LoadString(hInstance, IDS_PNP2, p, sizeof(tmp) - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
@@ -473,7 +469,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 
 // Hmm, maybe some Pascal programmer doing the declaration?
-static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
+static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[BUFFER_MEDIUM])
 {
 /******************************************************************************
  *
@@ -503,7 +499,7 @@ static void GetDriveLetter(ULONG ulDriveMask, char pchBuf[DRV_STRINGLEN])
 }
 
 
-BOOL CanEndServer(HWND hWnd) //, bool bSysExit)
+BOOL CanEndServer(HWND hWnd)
 {
 /******************************************************************************
  *
@@ -512,7 +508,6 @@ BOOL CanEndServer(HWND hWnd) //, bool bSysExit)
  ******************************************************************************
  *
  *  Input:  hWnd     - Handle to main application window.
-*	    bSysExit - Flag indicating if the system is going down. UNUSED.
  *
  *  Return: FALSE if user does not want to end the server session
  *          TRUE if user confirmed on server session termination
@@ -520,19 +515,25 @@ BOOL CanEndServer(HWND hWnd) //, bool bSysExit)
  *  Description: This function displays a message mox and queries the user if
  *               the server can be shutdown.
  *****************************************************************************/
-	ULONG usNumAtt;
-	ULONG usNumDbs;
-	JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs);
+	ULONG usNumAtt, usNumDbs, usNumSvc;
+	JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs, &usNumSvc);
 
-	char szMsgString[MSG_STRINGLEN];
-	sprintf(szMsgString, "%u ", usNumAtt);
-
-	if (!usNumAtt)				// IF 0 CONNECTIONS, JUST SHUTDOWN
+	if (!usNumAtt && !usNumSvc)				// IF 0 CONNECTIONS, JUST SHUTDOWN
 		return TRUE;
 
-	LoadString(hInstance, IDS_QUIT, szMsgString + strlen(szMsgString),
-			   MSG_STRINGLEN - strlen(szMsgString));
-	return (MessageBox(hWnd, szMsgString, APP_LABEL, MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
+	char szMsgString1[BUFFER_MEDIUM], szMsgString2[BUFFER_MEDIUM];
+	if (usNumAtt)
+	{
+		LoadString(hInstance, IDS_QUIT1, szMsgString1, sizeof(szMsgString1));
+		sprintf(szMsgString2, szMsgString1, usNumAtt);
+	}
+	else
+	{
+		LoadString(hInstance, IDS_QUIT2, szMsgString1, sizeof(szMsgString1));
+		sprintf(szMsgString2, szMsgString1, usNumSvc);
+	}
+
+	return (MessageBox(hWnd, szMsgString2, APP_LABEL, MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 
 
