@@ -3367,13 +3367,13 @@ int GDS_SHUTDOWN(unsigned int timeout)
 	{
 		ThreadContextHolder tdbb;
 
-		ULONG attach_count, database_count;
-		JRD_num_attachments(NULL, 0, JRD_info_none, &attach_count, &database_count);
+		ULONG attach_count, database_count, svc_count;
+		JRD_num_attachments(NULL, 0, JRD_info_none, &attach_count, &database_count, &svc_count);
 
-		if (attach_count > 0)
+		if (attach_count > 0 || svc_count > 0)
 		{
-			gds__log("Shutting down the server with %d active connection(s) to %d database(s)",
-					 attach_count, database_count);
+			gds__log("Shutting down the server with %d active connection(s) to %d database(s), %d active service(s)",
+					 attach_count, database_count, svc_count);
 		}
 
 		if (timeout)
@@ -5531,7 +5531,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 
 
 UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
-						  ULONG* atts, ULONG* dbs)
+						  ULONG* atts, ULONG* dbs, ULONG* svcs)
 {
 /**************************************
  *
@@ -5693,6 +5693,11 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 		    gds__free(lbuf);
 #endif
 		lbuf = NULL;
+	}
+
+	if (svcs)
+	{
+		*svcs = Service::totalCount();
 	}
 
 	return lbuf;

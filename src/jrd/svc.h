@@ -161,6 +161,9 @@ public:		// external interface with service
 	// Shuts all service threads (should be called after databases shutdown)
 	static void shutdownServices();
 
+	// Total number of service attachments
+	static ULONG totalCount();
+
 	const char* getServiceMgr() const;
 	const char* getServiceName() const;
 
