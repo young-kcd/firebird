@@ -1110,7 +1110,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 
 				*info++ = item;
 				UCHAR* const ptr =
-					JRD_num_attachments(dbbuf, sizeof(dbbuf), JRD_info_dbnames, &num_att, &num_dbs, 0);
+					JRD_num_attachments(dbbuf, sizeof(dbbuf), JRD_info_dbnames, &num_att, &num_dbs, NULL);
 				/* Move the number of attachments into the info buffer */
 				if (!ck_space_for_numeric(info, end))
 					return 0;
@@ -1552,7 +1552,7 @@ void Service::query(USHORT			send_item_length,
 			{
 				ULONG num_att = 0;
 				ULONG num_dbs = 0;
-				JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, 0);
+				JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, NULL);
 				length = INF_convert(num_att, buffer);
 				info = INF_put_item(item, length, buffer, info, end);
 				if (!info) {
