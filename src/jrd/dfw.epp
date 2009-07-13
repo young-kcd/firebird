@@ -4537,7 +4537,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					}
 
 					/* Make sure the text type specified is implemented */
-					if (!(validate_text_type(tdbb, tfb)))
+					if (!validate_text_type(tdbb, tfb))
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);

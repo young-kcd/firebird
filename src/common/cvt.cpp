@@ -1376,41 +1376,41 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		switch (from->dsc_dtype)
 		{
 		case dtype_dbkey:
-		{
-			USHORT strtype_unused;
-			UCHAR *ptr;
-			USHORT l = CVT_get_string_ptr(to, &strtype_unused, &ptr, NULL, 0, cb->err);
-			
-			if (l < from->dsc_length)
 			{
-				break;
-			}
-			memcpy(ptr, from->dsc_address, from->dsc_length);
-			l -= from->dsc_length;
-			ptr += from->dsc_length;
+				USHORT strtype_unused;
+				UCHAR *ptr;
+				USHORT l = CVT_get_string_ptr(to, &strtype_unused, &ptr, NULL, 0, cb->err);
 
-			switch (to->dsc_dtype)
-			{
-			case dtype_text:
-				if (l > 0)
+				if (l < from->dsc_length)
 				{
-					memset(ptr, 0, l);	// Always PAD with nulls, not spaces
+					break;
 				}
-				break;
+				memcpy(ptr, from->dsc_address, from->dsc_length);
+				l -= from->dsc_length;
+				ptr += from->dsc_length;
 
-			case dtype_cstring:
-				// Note: Following is only correct for narrow and
-				// multibyte character sets which use a zero
-				// byte to represent end-of-string
-				*ptr = 0;
-				break;
+				switch (to->dsc_dtype)
+				{
+				case dtype_text:
+					if (l > 0)
+					{
+						memset(ptr, 0, l);	// Always PAD with nulls, not spaces
+					}
+					break;
 
-			case dtype_varying:
-				((vary*) (to->dsc_address))->vary_length = from->dsc_length;
-				break;
+				case dtype_cstring:
+					// Note: Following is only correct for narrow and
+					// multibyte character sets which use a zero
+					// byte to represent end-of-string
+					*ptr = 0;
+					break;
+
+				case dtype_varying:
+					((vary*) (to->dsc_address))->vary_length = from->dsc_length;
+					break;
+				}
 			}
 			return;
-		}
 
 		case dtype_varying:
 		case dtype_cstring:

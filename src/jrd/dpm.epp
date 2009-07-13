@@ -2971,7 +2971,7 @@ static pointer_page* get_pointer_page(thread_db* tdbb,
 		{
 			DPM_scan_pages(tdbb);
 			/* If the relation is gone, then we can't do anything anymore. */
-			if ((!relation) || (!(vector = relPages->rel_pages))) {
+			if (!relation || !(vector = relPages->rel_pages)) {
 				return NULL;
 			}
 			if (sequence < vector->count()) {

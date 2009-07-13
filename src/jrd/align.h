@@ -53,7 +53,8 @@ No need to worry about blr_blob or ?blr_blob_id
 #include "../jrd/RecordNumber.h"
 
 static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
-	{ 0, 0, 0, 0, 0, 0, 0,
+{
+	0, 0, 0, 0, 0, 0, 0,
 	dtype_short,				/* blr_short == 7 */
 	dtype_long,					/* blr_long == 8 */
 	dtype_quad,					/* blr_quad == 9 */
@@ -77,7 +78,8 @@ static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	0, 0, 0, 0
 };
 
-static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
+static const USHORT type_alignments[DTYPE_TYPE_MAX] =
+{
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -105,7 +107,8 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	sizeof(ULONG)				/* dtype_dbkey */
 };
 
-static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
+static const USHORT type_lengths[DTYPE_TYPE_MAX] =
+{
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -130,8 +133,10 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 };
 
 
+// This table is only used by gpre's cme.cpp.
 // float, double are numbers from IEEE floating-point standard (IEEE 754)
-static const USHORT type_significant_bits[DTYPE_TYPE_MAX] = {
+static const USHORT type_significant_bits[DTYPE_TYPE_MAX] =
+{
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */

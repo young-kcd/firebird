@@ -348,7 +348,8 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			delete csb;
 			csb = NULL;
 
-			if (request) {
+			if (request)
+			{
 				CMP_release(tdbb, request);
 				request = NULL;
 			}
@@ -897,7 +898,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	// Worry about encryption key
 
-	if (dbb->dbb_decrypt) {
+	if (dbb->dbb_decrypt)
+	{
 		if (dbb->dbb_filename.hasData() &&
 			(dbb->dbb_encrypt_key.hasData() || options.dpb_key.hasData()))
 		{
@@ -999,7 +1001,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		INI_init2(tdbb);
 		PAG_init(tdbb);
 
-		if (options.dpb_set_page_buffers) {
+		if (options.dpb_set_page_buffers)
+		{
 #ifdef SUPERSERVER
 			// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
 			// cause other flags is UserId can be set only when DB is opened.
@@ -1041,7 +1044,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		attachment->att_flags |= ATT_no_cleanup;
 	}
 
-	if (options.dpb_disable_wal) {
+	if (options.dpb_disable_wal)
+	{
 		ERR_post(Arg::Gds(isc_lock_timeout) <<
 				 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 	}
@@ -1068,24 +1072,24 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		switch (options.dpb_sql_dialect)
 		{
 		case 0:
+			// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
+			// It means that client SQL dialect was not set by user
+			// and takes DB SQL dialect as client SQL dialect
+			if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_10_0)
 			{
-				// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
-				// It means that client SQL dialect was not set by user
-				// and takes DB SQL dialect as client SQL dialect
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_10_0)
+				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
 				{
-					if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
-						// DB created in IB V6.0 by client SQL dialect 3
-						options.dpb_sql_dialect = SQL_DIALECT_V6;
-					}
-					else {
-						// old DB was gbaked in IB V6.0
-						options.dpb_sql_dialect = SQL_DIALECT_V5;
-					}
+					// DB created in IB V6.0 by client SQL dialect 3
+					options.dpb_sql_dialect = SQL_DIALECT_V6;
 				}
-				else {
+				else
+				{
+					// old DB was gbaked in IB V6.0
 					options.dpb_sql_dialect = SQL_DIALECT_V5;
 				}
+			}
+			else {
+				options.dpb_sql_dialect = SQL_DIALECT_V5;
 			}
 			break;
 		case 99:
@@ -1166,13 +1170,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
    try to get exclusive attachment to avoid a deadlock condition which happens
    when a client tries to connect to the security database itself. */
 
-	if (!options.dpb_sec_attach) {
+	if (!options.dpb_sec_attach)
+	{
 		bool attachment_succeeded = true;
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
 			attachment_succeeded = CCH_exclusive_attachment(tdbb, LCK_none, -1);
 		else
 			CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
-		if (attachment->att_flags & ATT_shutdown) {
+		if (attachment->att_flags & ATT_shutdown)
+		{
 			if (dbb->dbb_ast_flags & DBB_shutdown) {
 				ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
 			}
@@ -1193,16 +1199,20 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ERR_post(Arg::Gds(isc_shutinprog) << Arg::Str(file_name));
 	}
 
-	if (dbb->dbb_ast_flags & DBB_shutdown) {
+	if (dbb->dbb_ast_flags & DBB_shutdown)
+	{
 		// Allow only SYSDBA/owner to access database that is shut down
 		bool allow_access = attachment->locksmith();
 		// Handle special shutdown modes
-		if (allow_access) {
-			if (dbb->dbb_ast_flags & DBB_shutdown_full) {
+		if (allow_access)
+		{
+			if (dbb->dbb_ast_flags & DBB_shutdown_full)
+			{
 				// Full shutdown. Deny access always
 				allow_access = false;
 			}
-			else if (dbb->dbb_ast_flags & DBB_shutdown_single) {
+			else if (dbb->dbb_ast_flags & DBB_shutdown_single)
+			{
 				// Single user maintenance. Allow access only if we were able to take exclusive lock
 				// Note that logic below this exclusive lock differs for SS and CS builds:
 				//   - CS keeps PW database lock from releasing in AST in single-user maintenance mode
@@ -1212,7 +1222,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				allow_access = CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD);
 			}
 		}
-		if (!allow_access) {
+		if (!allow_access)
+		{
 			// Note we throw exception here when entering full-shutdown mode
 			ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
 		}
@@ -1275,28 +1286,33 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		attachment->att_flags |= ATT_no_db_triggers;
 	}
 
-	if (options.dpb_set_db_sql_dialect) {
+	if (options.dpb_set_db_sql_dialect)
+	{
 		validateAccess(attachment);
 		PAG_set_db_SQL_dialect(tdbb, options.dpb_set_db_sql_dialect);
 	}
 
-	if (options.dpb_sweep_interval != -1) {
+	if (options.dpb_sweep_interval != -1)
+	{
 		validateAccess(attachment);
 		PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
-	if (options.dpb_set_force_write) {
+	if (options.dpb_set_force_write)
+	{
 		validateAccess(attachment);
 		PAG_set_force_write(tdbb, options.dpb_force_write);
 	}
 
-	if (options.dpb_set_no_reserve) {
+	if (options.dpb_set_no_reserve)
+	{
 		validateAccess(attachment);
 		PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 	}
 
-	if (options.dpb_set_page_buffers) {
+	if (options.dpb_set_page_buffers)
+	{
 #ifdef SUPERSERVER
 		validateAccess(attachment);
 #else
@@ -1305,9 +1321,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
 	}
 
-	if (options.dpb_set_db_readonly) {
+	if (options.dpb_set_db_readonly)
+	{
 		validateAccess(attachment);
-		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
+		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+		{
 			ERR_post(Arg::Gds(isc_lock_timeout) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 		}
@@ -1328,7 +1346,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_sweep & isc_dpb_records)
 	{
-		if (!(TRA_sweep(tdbb, 0))) {
+		if (!TRA_sweep(tdbb, 0)) {
 			ERR_punt();
 		}
 	}
@@ -2079,7 +2097,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay);
 	}
 
-	if (options.dpb_sweep_interval != -1) {
+	if (options.dpb_sweep_interval != -1)
+	{
 		PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
@@ -2096,7 +2115,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	VIO_init(tdbb);
 #endif
 
-    if (options.dpb_set_db_readonly) {
+    if (options.dpb_set_db_readonly)
+    {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
         {
             ERR_post(Arg::Gds(isc_lock_timeout) <<
@@ -2349,7 +2369,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		// Check if same process has more attachments
 
-		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next) {
+		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
 		}
@@ -2491,11 +2512,13 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 
 		jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		if (!array_id->gds_quad_low && !array_id->gds_quad_high) {
+		if (!array_id->gds_quad_low && !array_id->gds_quad_high)
+		{
 			MOVE_CLEAR(slice, slice_length);
 			*return_length = 0;
 		}
-		else {
+		else
+		{
 			*return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
 										   sdl, param_length, param, slice_length, slice);
 		}
@@ -3136,11 +3159,13 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 		const UCHAR* recv_items2 = reinterpret_cast<const UCHAR*>(recv_items);
 		UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
 
-		if (service->getVersion() == isc_spb_version1) {
+		if (service->getVersion() == isc_spb_version1)
+		{
 			service->query(send_item_length, send_items2, recv_item_length,
 					recv_items2, buffer_length, buffer2);
 		}
-		else {
+		else
+		{
 			// For SVC_query2, we are going to completly dismantle user_status (since at this point it is
 			// meaningless anyway).  The status vector returned by this function can hold information about
 			// the call to query the service manager and/or a service thread that may have been running.
@@ -3151,7 +3176,8 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 			// If there is a status vector from a service thread, copy it into the thread status
 			int len, warning;
 			PARSE_STATUS(service->getStatus(), len, warning);
-			if (len) {
+			if (len)
+			{
 				memcpy(user_status, service->getStatus(), sizeof(ISC_STATUS) * len);
 				// Empty out the service status vector
 				memset(service->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
@@ -3436,7 +3462,8 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
 		va_list ptr;
 		va_start(ptr, count);
 
-		for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++) {
+		for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++)
+		{
 			teb_iter->teb_database = va_arg(ptr, Attachment**);
 			teb_iter->teb_tpb_length = va_arg(ptr, int);
 			teb_iter->teb_tpb = va_arg(ptr, UCHAR*);
@@ -3536,7 +3563,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		USHORT len;
 		if (in_msg_length)
 		{
-			if (in_message) {
+			if (in_message)
+			{
 				const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 				len = format->fmt_length;
 			}
@@ -3555,7 +3583,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 		EXE_start(tdbb, request, transaction);
 
-		if (out_message) {
+		if (out_message)
+		{
 			const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 			len = format->fmt_length;
 		}
@@ -3563,7 +3592,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			len = 0;
 		}
 
-		if (out_msg_length != len) {
+		if (out_msg_length != len)
+		{
 			ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) <<
 											   Arg::Num(len));
 		}
@@ -3954,7 +3984,8 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 
 	gds__prefix(fname, "proc_info.log");
 	FILE* fptr = fopen(fname, "a+");
-	if (!fptr) {
+	if (!fptr)
+	{
 		gds__log("Failed to open %s\n", fname);
 		return;
 	}
@@ -3964,16 +3995,19 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	fprintf(fptr, "Prc Name      , prc id , flags  ,  Use Count , Alter Count\n");
 
 	vec<jrd_prc*>* procedures = tdbb->getDatabase()->dbb_procedures;
-	if (procedures) {
+	if (procedures)
+	{
 		vec<jrd_prc*>::iterator ptr, end;
 		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ++ptr)
 		{
 			const jrd_prc* procedure = *ptr;
 			if (procedure)
+			{
 				fprintf(fptr, "%s  ,  %d,  %X,  %d, %d\n",
 							procedure->prc_name->hasData() ? procedure->prc_name->c_str() : "NULL",
 							procedure->prc_id, procedure->prc_flags, procedure->prc_use_count,
 							0); // procedure->prc_alter_count
+			}
 		}
 	}
 	else
@@ -4121,7 +4155,8 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
  *
  **************************************/
 
-	while (*string) {
+	while (*string)
+	{
 		*field++ = *string++;
 		if (--length <= 0) {
 			return;
@@ -4339,7 +4374,8 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (options->dpb_lc_ctype.isEmpty()) {
+	if (options->dpb_lc_ctype.isEmpty())
+	{
 		// No declaration of character set, act like 3.x Interbase
 		attachment->att_charset = DEFAULT_ATTACHMENT_CHARSET;
 		return;
@@ -4408,7 +4444,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
 
-	for (rdr.rewind(); !(rdr.isEof()); rdr.moveNext())
+	for (rdr.rewind(); !rdr.isEof(); rdr.moveNext())
 	{
 		switch (rdr.getClumpTag())
 		{
@@ -4682,14 +4718,17 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			{
 				ClumpletReader address_stack(ClumpletReader::UnTagged,
 											 rdr.getBytes(), rdr.getClumpLength());
-				while (!address_stack.isEof()) {
-					if (address_stack.getClumpTag() != isc_dpb_address) {
+				while (!address_stack.isEof())
+				{
+					if (address_stack.getClumpTag() != isc_dpb_address)
+					{
 						address_stack.moveNext();
 						continue;
 					}
 					ClumpletReader address(ClumpletReader::UnTagged,
 										   address_stack.getBytes(), address_stack.getClumpLength());
-					while (!address.isEof()) {
+					while (!address.isEof())
+					{
 						switch (address.getClumpTag())
 						{
 							case isc_dpb_addr_protocol:
@@ -4859,7 +4898,8 @@ static Database* init(thread_db* tdbb,
 	// Lookup some external "hooks"
 
 	PluginManager::Plugin crypt_lib = PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
-	if (crypt_lib) {
+	if (crypt_lib)
+	{
 		string encrypt_entrypoint(ENCRYPT);
 		string decrypt_entrypoint(DECRYPT);
 		dbb->dbb_encrypt = (Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
@@ -4973,7 +5013,8 @@ static void prepare(thread_db* tdbb,
 		run_commit_triggers(tdbb, transaction);
 	}
 
-	for (; transaction; transaction = transaction->tra_sibling) {
+	for (; transaction; transaction = transaction->tra_sibling)
+	{
 		validateHandle(tdbb, transaction->tra_attachment);
 		tdbb->setTransaction(transaction);
 		check_database(tdbb);
@@ -5064,14 +5105,16 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 
 	detachLocksFromAttachment(attachment);
 
-	if (attachment->att_flags & ATT_lck_init_done) {
+	if (attachment->att_flags & ATT_lck_init_done)
+	{
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 		attachment->att_flags &= ~ATT_lck_init_done;
 	}
 
 	delete attachment->att_compatibility_table;
 
-	if (attachment->att_dsql_instance) {
+	if (attachment->att_dsql_instance)
+	{
 		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
 		delete attachment->att_dsql_instance;
 		dbb->deletePool(pool);
@@ -5079,8 +5122,10 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 
 	// remove the attachment block from the dbb linked list
 
-	for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next) {
-		if (*ptr == attachment) {
+	for (Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
+	{
+		if (*ptr == attachment)
+		{
 			*ptr = attachment->att_next;
 			break;
 		}
@@ -5117,7 +5162,8 @@ static void detachLocksFromAttachment(Attachment* attachment)
  *
  **************************************/
 	Lock* long_lock = attachment->att_long_locks;
-	while (long_lock) {
+	while (long_lock)
+	{
 		Lock* next = long_lock->lck_next;
 		long_lock->lck_attachment = NULL;
 		long_lock->lck_next = NULL;
@@ -5375,21 +5421,25 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		LCK_release(tdbb, dbb->dbb_lock);
 
 	Database** d_ptr;	// Intentionally left outside loop (HP/UX compiler)
-	for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next) {
-		if (*d_ptr == dbb) {
+	for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
+	{
+		if (*d_ptr == dbb)
+		{
 			*d_ptr = dbb->dbb_next;
 			break;
 		}
 	}
 
-	if (dbb->dbb_flags & DBB_lck_init_done) {
+	if (dbb->dbb_flags & DBB_lck_init_done)
+	{
 		dbb->dbb_page_manager.releaseLocks();
 
 		LCK_fini(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags &= ~DBB_lck_init_done;
 	}
 
-	if (release_pools) {
+	if (release_pools)
+	{
 		tdbb->setDatabase(NULL);
 		Database::destroy(dbb);
 	}
@@ -5509,8 +5559,10 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 	// Check that the buffer is big enough for the requested
 	// information.  If not, unset the flag
 
-	if (flag == JRD_info_drivemask) {
-		if (buf_len < sizeof(ULONG)) {
+	if (flag == JRD_info_drivemask)
+	{
+		if (buf_len < sizeof(ULONG))
+		{
 		    lbuf = (UCHAR*) gds__alloc((SLONG) (sizeof(ULONG)));
 			if (!lbuf)
 				flag = JRD_info_none;
@@ -5560,9 +5612,11 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 #ifdef WIN_NT
 					// Get drive letters for temp directories
 
-					if (flag == JRD_info_drivemask) {
+					if (flag == JRD_info_drivemask)
+					{
 						const TempDirectoryList dirList;
-						for (size_t i = 0; i < dirList.getCount(); i++) {
+						for (size_t i = 0; i < dirList.getCount(); i++)
+						{
 							const PathName& path = dirList[i];
 							ExtractDriveLetter(path.c_str(), &drive_mask);
 						}
@@ -5612,7 +5666,8 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 				*lbufp++ = (UCHAR) num_dbs;
 				*lbufp++ = (UCHAR) (num_dbs >> 8);
 
-				for (size_t n = 0; n < num_dbs; ++n) {
+				for (size_t n = 0; n < num_dbs; ++n)
+				{
 					const USHORT dblen = dbFiles[n].length();
 					*lbufp++ = (UCHAR) dblen;
 					*lbufp++ = (UCHAR) (dblen >> 8);
@@ -6505,7 +6560,8 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count,
 	va_list ptr;
 	va_start(ptr, count);
 
-	for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++) {
+	for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++)
+	{
 		teb_iter->teb_database = va_arg(ptr, Attachment**);
 		teb_iter->teb_tpb_length = va_arg(ptr, int);
 		teb_iter->teb_tpb = va_arg(ptr, UCHAR*);

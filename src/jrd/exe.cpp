@@ -3465,7 +3465,7 @@ static void seek_rsb(thread_db* tdbb,
 
 		while (offset) {
 			offset--;
-			if (!(RSE_get_record(tdbb, rsb, RSE_get_next)))
+			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
 				break;
 		}
 		break;
@@ -3476,7 +3476,7 @@ static void seek_rsb(thread_db* tdbb,
 
 		while (offset) {
 			offset--;
-			if (!(RSE_get_record(tdbb, rsb, RSE_get_next)))
+			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
 				break;
 		}
 		break;
@@ -3490,7 +3490,7 @@ static void seek_rsb(thread_db* tdbb,
 
 		while (offset) {
 			offset--;
-			if (!(RSE_get_record(tdbb, rsb, RSE_get_next)))
+			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
 				break;
 		}
 		break;
@@ -3512,7 +3512,7 @@ static void seek_rsb(thread_db* tdbb,
 
 		while (offset) {
 			offset--;
-			if (!(RSE_get_record(tdbb, rsb, RSE_get_next)))
+			if (!RSE_get_record(tdbb, rsb, RSE_get_next))
 				break;
 		}
 		break;
