@@ -1662,7 +1662,7 @@ void ISC_systemToUtf8(Firebird::AbstractString& str)
 	if (len == 0)
 		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
-	char utf8Buffer[MAX_PATH];
+	char utf8Buffer[MAX_PATH * 4];
 	len = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len, utf8Buffer, sizeof(utf8Buffer),
 		NULL, NULL);
 
@@ -1688,7 +1688,7 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 	if (len == 0)
 		status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed));
 
-	char ansiBuffer[MAX_PATH];
+	char ansiBuffer[MAX_PATH * 4];
 	BOOL defaultCharUsed;
 	len = WideCharToMultiByte(CP_ACP, 0, utf16Buffer, len, ansiBuffer, sizeof(ansiBuffer),
 		NULL, &defaultCharUsed);
