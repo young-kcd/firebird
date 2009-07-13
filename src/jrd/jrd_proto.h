@@ -128,9 +128,7 @@ enum JRD_info_tag
 	JRD_info_dbnames
 };
 
-// This default value is added not to breaks windows at once.
-// Dmitry - remove it when fixing windows build.
-UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*, ULONG* = 0);
+UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*, ULONG*);
 
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 
