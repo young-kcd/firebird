@@ -72,10 +72,6 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM);
 static void StartGuardian(HWND);
 #endif
 static bool parse_args(LPCSTR);
-#ifdef NOT_USED_OR_REPLACED
-static void HelpCmd(HWND, HINSTANCE, WPARAM);
-#endif
-//char* ChopFileName (char*, char*, long);
 
 THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM);
 THREAD_ENTRY_DECLARE swap_icons(THREAD_ENTRY_PARAM);
@@ -833,7 +829,7 @@ HWND DisplayPropSheet(HWND hParentWnd, HINSTANCE hInst)
 
 	PROPSHEETHEADER PSHdr;
 	PSHdr.dwSize = sizeof(PROPSHEETHEADER);
-	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS;
+	PSHdr.dwFlags = PSH_PROPTITLE | PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_MODELESS | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
 	PSHdr.hwndParent = hParentWnd;
 	PSHdr.hInstance = hInstance;
 	PSHdr.pszIcon = MAKEINTRESOURCE(IDI_IBGUARD);
@@ -967,29 +963,11 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 			}
 		}
 		break;
-	case WM_HELP:
-		{
-			LPHELPINFO lphi = (LPHELPINFO) lParam;
-			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
-				WinHelp((HWND) lphi->hItemHandle, GUARDIAN_HELP_FILE,
-						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
-			return TRUE;
-		}
-
-	case WM_CONTEXTMENU:
-		WinHelp((HWND) wParam, GUARDIAN_HELP_FILE, HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
-		return TRUE;
-		break;
 	case WM_NOTIFY:
 		switch (((LPNMHDR) lParam)->code)
 		{
 		case PSN_KILLACTIVE:
 			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
-			break;
-		case PSN_HELP:
-#ifdef NOT_USED_OR_REPLACED
-			/*          HelpCmd(hDlg, hInstance, ibsp_Server_Information_Properties); */
-#endif
 			break;
 		}
 		break;
@@ -1160,38 +1138,3 @@ void write_log(int log_action, const char* buff)
 	if (*buff)
 		gds__log(buff);
 }
-
-
-#ifdef NOT_USED_OR_REPLACED
-void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
-{
-/****************************************************************
- *
- *  H e l p C m d
- *
- ****************************************************************
- *
- *  Input:     hWnd     - Handle of dialog box from which help was
- *                        invoked.
- *              hInst   - Instance of application.
- *              nId       - The help message Id.
- *
- *  Description:  Invoke the Windows Help facility with context of nId.
- *
- *****************************************************************/
-	char szPathFileName[1024 + 256 + 1];
-
-	GetModuleFileName(hInst, szPathFileName, sizeof(szPathFileName));
-
-/* Show hour glass cursor */
-	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
-
-	strcpy(strrchr(szPathFileName, '\\') + 1, "fbserver.hlp");
-	WinHelp(hWnd, szPathFileName, HELP_CONTEXT, wId);
-
-/* Restore old cursor */
-	SetCursor(hOldCursor);
-
-	return;
-}
-#endif

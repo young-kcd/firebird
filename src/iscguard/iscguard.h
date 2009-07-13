@@ -23,7 +23,6 @@ static const char* GUARDIAN_APP_NAME		= "Firebird Guardian";
 static const char* GUARDIAN_APP_LABEL		= "Firebird Guardian";
 static const char* GUARDIAN_CLASS_NAME		= "FB_Guard";
 static const char* FBSERVER					= "fbserver.exe";
-static const char* GUARDIAN_HELP_FILE		= "fbserver.hlp";
 
 /* Help Constants */
 const DWORD ibs_server_directory	= 8060;
