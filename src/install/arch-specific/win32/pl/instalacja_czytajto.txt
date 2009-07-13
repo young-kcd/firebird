@@ -1,4 +1,4 @@
-Firebird Database Server 1.5.5
+Firebird Database Server 1.5.6
 ==============================
 
 This document is a guide to installing this package of 
@@ -30,7 +30,7 @@ or InterBase before installing this package.
 Installation on systems with Firebird 2.0
 -----------------------------------------
 
-The Firebird 1.5.5 installation process will detect
+The Firebird 1.5.6 installation process will detect
 a Firebird 2 installation. It will offer a warning 
 and allow you to cancel the install process. If you 
 continue the install process it will correctly
