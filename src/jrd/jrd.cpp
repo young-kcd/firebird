@@ -4041,10 +4041,10 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	// Test various flags and unwind/throw if required.
-	// But do that only if we're not in the verb cleanup state,
-	// which should never be interrupted.
+	// But do that only if we're neither in the verb cleanup state
+	// nor currently detaching, as these actions should never be interrupted.
 
-	if (!(tdbb->tdbb_flags & TDBB_verb_cleanup))
+	if (!(tdbb->tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching)))
 	{
 		// If database has been shutdown then get out
 
@@ -5386,8 +5386,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_sh_counter_lock)
 		LCK_release(tdbb, dbb->dbb_sh_counter_lock);
 
-	// temporal measure to avoid unstable state of lock file -
-	// this is anyway called in ~Database()
 	dbb->destroyIntlObjects();
 
 	// Shut down any extern relations
@@ -5812,7 +5810,9 @@ static void purge_attachment(thread_db*		tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = attachment->att_database;
+	Database* const dbb = attachment->att_database;
+
+	tdbb->tdbb_flags |= TDBB_detaching;
 
 	if (!(dbb->dbb_flags & DBB_bugcheck))
 	{

@@ -776,6 +776,7 @@ const USHORT TDBB_dont_post_dfw			= 64;	// dont post DFW tasks as deferred work 
 const USHORT TDBB_sys_error				= 128;	// error shouldn't be handled by the looper
 const USHORT TDBB_verb_cleanup			= 256;	// verb cleanup is in progress
 const USHORT TDBB_use_db_page_space		= 512;	// use database (not temporary) page space in GTT operations
+const USHORT TDBB_detaching				= 1024;	// detach is in progress
 
 
 class ThreadContextHolder
