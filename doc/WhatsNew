@@ -239,8 +239,8 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Improvement CORE-2551
-        Interpret DPB items as now the database name parameter is interpreted and change MON$
-        filenames fields from NONE to UNICODE_FSS
+        Interpret DPB items like the database name parameter is interpreted currently and
+        change MON$ filename fields from NONE to UNICODE_FSS
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -1178,7 +1178,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Improvement CORE-2243
-        Make Firebird distribution on Windows easier 
+        Make Firebird distribution on Windows easier
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
@@ -1264,7 +1264,7 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvement CORE-1477
-        Avoid excessive memory consumption by the undo-log after series of updates 
+        Avoid excessive memory consumption by the undo-log after series of updates
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
@@ -1293,7 +1293,7 @@
     * Feature CORE-2113
         Revoke all privileges of a particular user or role
       Syntax:
-        REVOKE ALL ON ALL FROM { <user list> | <role list> } 
+        REVOKE ALL ON ALL FROM { <user list> | <role list> }
       See also:
         /doc/README.ddl.txt (section #12)
       Contributor(s):
@@ -1809,7 +1809,7 @@
         New GBAK restore switches intended to fix backups with character set bugs
       Syntax:
         -FIX_FSS_D(ATA) <charset> -- fix malformed UNICODE_FSS data
-        -FIX_FSS_M(ETADATA) <charset> -- fix malformed UNICODE_FSS metadata 
+        -FIX_FSS_M(ETADATA) <charset> -- fix malformed UNICODE_FSS metadata
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
