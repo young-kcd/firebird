@@ -2934,7 +2934,7 @@ int ISC_mutex_init(struct mtx* mutex)
 	return state;	// To avoid declaring 'state' out of loop
   } while (false);
 
-  return 0;			// compiler warnig silencer
+  return 0;			// compiler warning silencer
 #else
 
   return state;
