@@ -2879,6 +2879,16 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
+#ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+// glibc in linux does not conform to the posix standard. When there is no RT kernel,
+// ENOTSUP is returned not by pthread_mutexattr_setprotocol(), but by 
+// pthread_mutex_init(). Here is a hack to deal with this broken error reporting.
+  static volatile bool staticBugFlag = false;
+  do 
+  {
+	bool bugFlag = staticBugFlag;
+#endif
+
 	pthread_mutexattr_t mattr;
 
 	PTHREAD_ERRNO(pthread_mutexattr_init(&mattr));
@@ -2889,11 +2899,14 @@ int ISC_mutex_init(struct mtx* mutex)
 #endif
 
 #ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
-	int protocolRc = pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
-	if (protocolRc && (protocolRc != ENOTSUP))
+	if (!bugFlag)
 	{
-		iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
-			"pthread_mutexattr_setprotocol" << Arg::Unix(protocolRc)).value());
+		int protocolRc = pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+		if (protocolRc && (protocolRc != ENOTSUP))
+		{
+			iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
+				"pthread_mutexattr_setprotocol" << Arg::Unix(protocolRc)).value());
+		}
 	}
 #endif
 #ifdef USE_ROBUST_MUTEX
@@ -2901,9 +2914,31 @@ int ISC_mutex_init(struct mtx* mutex)
 	memset(mutex->mtx_mutex, 0, sizeof(pthread_mutex_t));
 #endif
 
-	int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
+	//int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
+	int state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
+	if (state && ((state != ENOTSUP) || bugFlag))
+	{
+		iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
+			"pthread_mutex_init" << Arg::Unix(state)).value());
+	}
+
 	LOG_PTHREAD_ERROR(pthread_mutexattr_destroy(&mattr));
-	return state;
+
+#ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+	if (state == ENOTSUP && !bugFlag)
+	{
+		staticBugFlag = true;
+		continue;
+	}
+
+	return state;	// To avoid declaring 'state' out of loop
+  } while (false);
+
+  return 0;			// compiler warnig silencer
+#else
+
+  return state;
+#endif
 }
 
 
