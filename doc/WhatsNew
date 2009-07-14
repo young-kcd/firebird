@@ -23,6 +23,12 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Bugfix CORE-2526
+        Server can be shut down disregarding services' connections
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-2519
         GSTAT output is incorrect for tables with more than 2 billion records
       Contributor(s):
