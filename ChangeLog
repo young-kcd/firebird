@@ -1,3 +1,136 @@
+2009-07-14 14:23  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.202):
+
+	Totally misc.
+
+2009-07-14 13:34  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.207):
+
+	This hack caused by bug in glibc should help have same binaries for
+	RT-enabled and not linux kernels
+
+2009-07-14 11:08  robocop
+
+	* firebird2/builds/win32/: msvc7/remote.vcproj (1.28),
+	msvc7/remote_classic.vcproj (1.29), msvc8/remote.vcproj (1.9),
+	msvc8/remote_classic.vcproj (1.9):
+
+	Follow Dmitry's cleanup.
+
+2009-07-14 10:58  alexpeshkoff
+
+	* firebird2/src/common/cvt.cpp (1.31):
+
+	Fixed conversion from dbkey to string - thanks to Adriano
+
+2009-07-14 10:24  alexpeshkoff
+
+	* firebird2/src/jrd/cvt2.cpp (1.70):
+
+	Fixed comparison sign - thanks to Claudio
+
+2009-07-14 08:14  dimitr
+
+	* firebird2/doc/WhatsNew (1.173):
+
+	Update.
+
+2009-07-14 07:31  dimitr
+
+	* firebird2/builds/win32/msvc9/: remote.vcproj (1.3),
+	remote_classic.vcproj (1.3):
+
+	Cleanup.
+
+2009-07-14 06:20  robocop
+
+	* firebird2/builds/win32/: msvc7/remote.vcproj (1.27),
+	msvc7/remote_classic.vcproj (1.28), msvc8/remote.vcproj (1.8),
+	msvc8/remote_classic.vcproj (1.8), msvc9/remote.vcproj (1.2),
+	msvc9/remote_classic.vcproj (1.2):
+
+	Fix the MSVC builds after Dmitry's cleanup.
+
+2009-07-14 03:18  asfernandes
+
+	* firebird2/src/: common/cvt.cpp (1.30), common/classes/alloc.cpp
+	(1.124), common/classes/alloc.h (1.92), jrd/evl.cpp (1.302):
+
+	Misc
+
+2009-07-13 21:45  dimitr
+
+	* firebird2/src/jrd/: Collation.cpp (1.21), Collation.h (1.6),
+	Database.h (1.39), cmp.cpp (1.346), intl.cpp (1.129):
+
+	1) Let the collation existence locks respect the database shutdown.
+	In particular, let's distinguish between "releasing" and
+	"destroying" the lock.	2) Explicitly invalidate and release the
+	cached system requests.
+
+2009-07-13 21:21  asfernandes
+
+	* firebird2/src/jrd/isc_file.cpp (1.141):
+
+	Allow conversion of system filenames resulting in more than
+	MAX_PATH bytes. Let the callers and others complaim, as they
+	already do.
+
+2009-07-13 17:40  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.551), jrd.h (1.267):
+
+	Let's not throw any shutdown related errors when rescheduling
+	happens during the detaching (rare but possible case).
+
+2009-07-13 17:26  asfernandes
+
+	* firebird2/src/remote/interface.cpp (1.220):
+
+	Fixed the problem with trusted authentication
+
+2009-07-13 17:19  dimitr
+
+	* firebird2/src/jrd/svc.cpp (1.278):
+
+	Totally misc.
+
+2009-07-13 17:18  dimitr
+
+	* firebird2/src/jrd/jrd_proto.h (1.81):
+
+	1) Complete the Alex's changes for CORE-2526 (Windows part).  2)
+	Cleanup the license, help and settings parts of the server
+	properties window (they're unused for a long time already).  3)
+	Misc changes.
+
+2009-07-13 17:15  dimitr
+
+	* firebird2/src/iscguard/: iscguard.cpp (1.68), iscguard.h (1.11),
+	iscguard.rc (1.5):
+
+	Similar cleanup for the guardian.
+
+2009-07-13 17:13  dimitr
+
+	* firebird2/src/remote/os/win32/: ibconfig.cpp (1.36), ibconfig.h
+	(1.3), ibconfig.rc (1.2), ibsvrhlp.h (1.3):
+
+	Deleted the unnecessary files.
+
+2009-07-13 17:09  dimitr
+
+	* firebird2/src/remote/os/win32/: property.cpp (1.31), property.rc
+	(1.2), property.rh (1.3), window.cpp (1.42), window.h (1.11),
+	window.rc (1.3), window.rh (1.3):
+
+	1) Complete the Alex's changes for CORE-2526 (Windows part).  2)
+	Cleanup the license, help and settings parts of the server
+	properties window (they're unused for a long time already).  3)
+	Misc changes.
+
 2009-07-13 14:09  alexpeshkoff
 
 	* firebird2/src/jrd/: jrd.cpp (1.550), jrd_proto.h (1.80), svc.cpp
