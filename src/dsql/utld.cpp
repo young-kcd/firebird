@@ -694,6 +694,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			break;
 		case SQL_QUAD:
 			dtype = dtype_quad;
+			break;
 		case SQL_NULL:
 			dtype = dtype_text;
 			break;
