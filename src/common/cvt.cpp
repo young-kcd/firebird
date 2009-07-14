@@ -307,7 +307,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	if (from->dsc_dtype == dtype_quad)
 	{
 		fb_assert(false);
-		cb->err(Arg::Gds(isc_badblk));	/* internal error */
+		cb->err(Arg::Gds(isc_badblk));	// internal error
 	}
 #endif
 
@@ -1378,7 +1378,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_dbkey:
 			{
 				USHORT strtype_unused;
-				UCHAR *ptr;
+				UCHAR* ptr;
 				USHORT l = CVT_get_string_ptr(to, &strtype_unused, &ptr, NULL, 0, cb->err);
 
 				if (l < from->dsc_length)
@@ -1609,7 +1609,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		if (from->dsc_dtype <= dtype_any_text)
 		{
 			USHORT strtype_unused;
-			UCHAR *ptr;
+			UCHAR* ptr;
 			USHORT l = CVT_get_string_ptr(from, &strtype_unused, &ptr, NULL, 0, cb->err);
 
 			if (l == to->dsc_length)

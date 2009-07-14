@@ -241,8 +241,8 @@ private:
 	// B+ tree ordered by length
 	FreeBlocksTree freeBlocks;
 
-	MemoryExtent *extents_os;		// Linked list of extents allocated from OS
-	MemoryExtent *extents_parent;	// Linked list of extents allocated from parent pool
+	MemoryExtent* extents_os;		// Linked list of extents allocated from OS
+	MemoryExtent* extents_parent;	// Linked list of extents allocated from parent pool
 
 	Vector<void*, 2> spareLeafs;
 	Vector<void*, MAX_TREE_DEPTH + 1> spareNodes;

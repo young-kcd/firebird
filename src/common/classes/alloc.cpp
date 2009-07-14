@@ -1097,7 +1097,7 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 	{
 		const char* name = (prn_extents == &extents_os) ? "EXTENT BY OS %p:\n" : "EXTENT BY PARENT %p:\n";
 
-		for (MemoryExtent* extent = *prn_extents; extent; extent = extent->mxt_next) 
+		for (MemoryExtent* extent = *prn_extents; extent; extent = extent->mxt_next)
 		{
 			size_t cnt = 0, min = 0, max = 0, sum = 0;
 			if (!used_only)
@@ -1108,7 +1108,7 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 			{
 				if (blk->mbk_flags & MBK_USED)
 				{
-					const size_t s = 
+					const size_t s =
 						blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->mbk_small.mbk_length;
 
 					cnt++;
@@ -1198,7 +1198,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats& stats)
 		size_t ext_size;
 		char* mem = NULL;
 		if (parent)
-		{ 
+		{
 			ext_size = PARENT_EXTENT_SIZE;
 			mem = (char*) parent->allocate_nothrow(ext_size
 #ifdef DEBUG_GDS_ALLOC
@@ -1527,7 +1527,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		// No large enough block found. We need to extend the pool
 		MemoryExtent* extent = NULL;
 
-		size_t ext_size = size + MEM_ALIGN(sizeof(MemoryBlock)) + MEM_ALIGN(sizeof(MemoryExtent)); 
+		size_t ext_size = size + MEM_ALIGN(sizeof(MemoryBlock)) + MEM_ALIGN(sizeof(MemoryExtent));
 		ext_size = FB_ALIGN(ext_size, PARENT_EXTENT_SIZE);
 		if (parent && ext_size < OS_EXTENT_SIZE)
 		{
@@ -1547,7 +1547,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		if (!extent) {
 			return NULL;
 		}
-		
+
 		if (parent)
 		{
 			// Add extent to a doubly linked list

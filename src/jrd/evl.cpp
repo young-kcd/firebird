@@ -1974,12 +1974,12 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 	// Allocate a string block of sufficient size.
 	VaryingString* string = value->vlu_string;
-	if (string && string->str_length < length) 
+	if (string && string->str_length < length)
 	{
 		delete string;
 		string = NULL;
 	}
-	if (!string) 
+	if (!string)
 	{
 		string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
 		string->str_length = length;
