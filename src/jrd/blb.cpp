@@ -2054,7 +2054,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const USHORT pageSpaceID = blob->blb_pg_space_id;
