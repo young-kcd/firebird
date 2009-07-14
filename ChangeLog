@@ -1,3 +1,21 @@
+2009-07-13 18:39  paul_reeves
+
+	* firebird2/src/install/arch-specific/win32/: Readme.txt
+	(1.2.2.12), installation_readme.txt (1.2.2.17),
+	ba/Instalacija_ProcitajMe.txt (1.1.2.4), ba/ProcitajMe.txt
+	(1.1.2.4), de/installation_liesmich.txt (1.1.2.8), de/liesmich.txt
+	(1.1.2.8), es/leame.txt (1.1.2.4), es/leame_instalacion.txt
+	(1.1.2.4), fr/documents-en-francais.txt (1.1.2.4),
+	fr/installation_lisezmoi.txt (1.1.2.10), fr/lisezmoi.txt (1.1.2.8),
+	hu/olvass_el.txt (1.1.2.6), hu/telepitesi_segedlet.txt (1.1.2.5),
+	it/leggimi.txt (1.1.2.4), it/leggimi_installazione.txt (1.1.2.4),
+	pl/czytajto.txt (1.1.2.4), pl/instalacja_czytajto.txt (1.1.2.4),
+	pt/instalacao_leia-me.txt (1.1.2.4), pt/leia-me.txt (1.1.2.7),
+	ru/Readme.txt (1.1.2.4), ru/installation_readme.txt (1.1.2.4),
+	si/instalacija_precitajMe.txt (1.1.2.6):
+
+	Update hard-coded version strings to 1.5.6
+
 2009-07-11 09:43  dimitr
 
 	* firebird2/doc/WhatsNew (1.36.2.72):
