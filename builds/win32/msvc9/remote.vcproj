@@ -364,10 +364,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\spxnet32_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\os\win32\wnet_proto.h"
 				>
 			</File>
