@@ -1192,7 +1192,6 @@ static void execute_request(thread_db* tdbb,
 							bool singleton)
 {
 	request->req_transaction = *tra_handle;
-	ISC_STATUS return_status = FB_SUCCESS;
 
 	switch (request->req_type)
 	{
