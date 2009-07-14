@@ -428,7 +428,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			{
 				return rc;
 			}
-			return (arg1->dsc_length > l) ? -1 : (length > l) ? 1 : 0;
+			return (arg1->dsc_length > l) ? 1 : (length > l) ? -1 : 0;
 		}
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "DB_KEY compare");
 		break;
