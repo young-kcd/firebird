@@ -279,10 +279,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\ibconfig.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\inet.cpp"
 				>
 			</File>
