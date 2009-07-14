@@ -1378,13 +1378,32 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_dbkey:
 			{
 				USHORT strtype_unused;
-				UCHAR* ptr;
-				USHORT l = CVT_get_string_ptr(to, &strtype_unused, &ptr, NULL, 0, cb->err);
+				UCHAR* ptr = NULL;
+				USHORT l = 0;
 
+				switch(to->dsc_dtype)
+				{
+				case dtype_text:
+					ptr = to->dsc_address;
+					l = to->dsc_length;
+					break;
+				case dtype_cstring:
+					ptr = to->dsc_address;
+					l = to->dsc_length - 1;
+					break;
+				case dtype_varying:
+					ptr = to->dsc_address + sizeof(USHORT);
+					l = to->dsc_length - sizeof(USHORT);
+					break;
+				default:
+					fb_assert(false);
+					break;
+				}
 				if (l < from->dsc_length)
 				{
 					break;
 				}
+
 				memcpy(ptr, from->dsc_address, from->dsc_length);
 				l -= from->dsc_length;
 				ptr += from->dsc_length;
