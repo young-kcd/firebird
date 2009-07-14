@@ -2,6 +2,11 @@
   * v2.5 Beta 2
   *************
 
+    * Bugfix CORE-2552
+        isc_dsql_execute2 does not return errors when called with a non-NULL output SQLDA
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2550
         Bus error when working with DB_KEY on big-endian machines
       Contributor(s):

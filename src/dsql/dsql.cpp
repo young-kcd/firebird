@@ -1324,10 +1324,12 @@ static void execute_request(thread_db* tdbb,
 			UCHAR* message_buffer = (UCHAR*) gds__alloc((ULONG) message->msg_length);
 
 			ISC_STATUS status = FB_SUCCESS;
+			ISC_STATUS_ARRAY localStatus;
 
 			for (counter = 0; counter < 2 && !status; counter++)
 			{
-				ThreadStatusGuard local_status(tdbb);
+				AutoSetRestore<ISC_STATUS*> autoStatus(&tdbb->tdbb_status_vector, localStatus);
+				fb_utils::init_status(localStatus);
 
 				try
 				{
@@ -1348,23 +1350,11 @@ static void execute_request(thread_db* tdbb,
 			// a non-req_sync error on any of the passes above is an error
 
 			if (!status)
-			{
-				tdbb->tdbb_status_vector[0] = isc_arg_gds;
-				tdbb->tdbb_status_vector[1] = isc_sing_select_err;
-				tdbb->tdbb_status_vector[2] = isc_arg_end;
-				return_status = isc_sing_select_err;
-			}
+				ERRD_post(Arg::Gds(isc_sing_select_err));
 			else if (status == isc_req_sync && counter == 1)
-			{
-				tdbb->tdbb_status_vector[0] = isc_arg_gds;
-				tdbb->tdbb_status_vector[1] = isc_stream_eof;
-				tdbb->tdbb_status_vector[2] = isc_arg_end;
-				return_status = isc_stream_eof;
-			}
+				ERRD_post(Arg::Gds(isc_stream_eof));
 			else if (status != isc_req_sync)
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
+				status_exception::raise(localStatus);
 		}
 	}
 
