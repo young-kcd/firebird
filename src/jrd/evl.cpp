@@ -1224,7 +1224,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 	DEV_BLKCHK(record, type_rec);
 
 	if (!record) {
-		ERR_warning(Arg::Gds(isc_no_cur_rec));
+		ERR_post_warning(Arg::Warning(isc_no_cur_rec));
 		return false;
 	}
 
