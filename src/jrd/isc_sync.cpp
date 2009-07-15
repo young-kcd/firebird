@@ -2881,10 +2881,10 @@ int ISC_mutex_init(struct mtx* mutex)
  **************************************/
 #ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
 // glibc in linux does not conform to the posix standard. When there is no RT kernel,
-// ENOTSUP is returned not by pthread_mutexattr_setprotocol(), but by 
+// ENOTSUP is returned not by pthread_mutexattr_setprotocol(), but by
 // pthread_mutex_init(). Here is a hack to deal with this broken error reporting.
   static volatile bool staticBugFlag = false;
-  do 
+  do
   {
 	bool bugFlag = staticBugFlag;
 #endif
@@ -2916,7 +2916,7 @@ int ISC_mutex_init(struct mtx* mutex)
 
 	//int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
 	int state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
-	if (state && ((state != ENOTSUP) || bugFlag))
+	if (state && (state != ENOTSUP || bugFlag))
 	{
 		iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
 			"pthread_mutex_init" << Arg::Unix(state)).value());
