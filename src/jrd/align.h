@@ -161,4 +161,3 @@ static const USHORT type_significant_bits[DTYPE_TYPE_MAX] =
 };
 
 #endif /* JRD_ALIGN_H */
-

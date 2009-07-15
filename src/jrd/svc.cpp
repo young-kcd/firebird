@@ -1109,8 +1109,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				ULONG num_att = 0;
 
 				*info++ = item;
-				UCHAR* const ptr =
-					JRD_num_attachments(dbbuf, sizeof(dbbuf), JRD_info_dbnames, &num_att, &num_dbs, NULL);
+				UCHAR* const ptr = JRD_num_attachments(dbbuf, sizeof(dbbuf),
+					JRD_info_dbnames, &num_att, &num_dbs, NULL);
 				/* Move the number of attachments into the info buffer */
 				if (!ck_space_for_numeric(info, end))
 					return 0;

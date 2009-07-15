@@ -3372,8 +3372,9 @@ int GDS_SHUTDOWN(unsigned int timeout)
 
 		if (attach_count > 0 || svc_count > 0)
 		{
-			gds__log("Shutting down the server with %d active connection(s) to %d database(s), %d active service(s)",
-					 attach_count, database_count, svc_count);
+			gds__log("Shutting down the server with %d active connection(s) to %d database(s), "
+					 "%d active service(s)",
+				attach_count, database_count, svc_count);
 		}
 
 		if (timeout)

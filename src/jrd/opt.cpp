@@ -694,7 +694,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			j = base_count - 1;
 			nodeBase = 0;
 		}
-		else if (i == (conjunct_count - distributed_count))
+		else if (i == conjunct_count - distributed_count)
 		{
 			// The parent conjunctions
 			j = parent_count - 1;

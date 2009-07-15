@@ -790,7 +790,7 @@ static void ctrl_c_handler(int signal)
 
 int main(int ac, char** av)
 {
-	if (ac < 2 || ac == 2 && strcmp(av[1], "-?") == 0)
+	if (ac < 2 || (ac == 2 && strcmp(av[1], "-?") == 0))
 	{
 		usage();
 		return 1;
@@ -831,7 +831,7 @@ int main(int ac, char** av)
 				;
 		}
 
-		//Here we are over with av parse, look - may be unknown switch left
+		// Here we are over with av parse, look - may be unknown switch left
 		if (*av)
 		{
 			if (strcmp(av[0], "-z") == 0 || strcmp(av[0], "-Z") == 0)

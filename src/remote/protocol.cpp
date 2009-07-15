@@ -982,7 +982,7 @@ static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
 	switch (desc->dsc_dtype)
 	{
 	case dtype_dbkey:
-		fb_assert(FALSE);	// dbkey should not get outside jrd,
+		fb_assert(false);	// dbkey should not get outside jrd,
 		// but in case it happenned in production server treat it as text
 		// Fall through ...
 

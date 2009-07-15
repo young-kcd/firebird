@@ -480,7 +480,7 @@ void Database::destroyIntlObjects()
 		if (dbb_charsets[i])
 		{
 			dbb_charsets[i]->destroy();
-			dbb_charsets[i] = 0;
+			dbb_charsets[i] = NULL;
 		}
 	}
 }

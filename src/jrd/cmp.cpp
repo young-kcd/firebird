@@ -2506,15 +2506,19 @@ void CMP_shutdown_database(thread_db* tdbb)
 	if (rvector)
 	{
 		vec<jrd_rel*>::iterator ptr, end;
-		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr) {
+		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr)
+		{
 			jrd_rel* relation = *ptr;
-			if (relation) {
-				if (relation->rel_existence_lock) {
+			if (relation)
+			{
+				if (relation->rel_existence_lock)
+				{
 					LCK_release(tdbb, relation->rel_existence_lock);
 					relation->rel_flags |= REL_check_existence;
 					relation->rel_use_count = 0;
 				}
-				if (relation->rel_partners_lock) {
+				if (relation->rel_partners_lock)
+				{
 					LCK_release(tdbb, relation->rel_partners_lock);
 					relation->rel_flags |= REL_check_partners;
 				}
@@ -2535,10 +2539,13 @@ void CMP_shutdown_database(thread_db* tdbb)
 	if (pvector)
 	{
 		vec<jrd_prc*>::iterator pptr, pend;
-		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr) {
+		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr)
+		{
 			jrd_prc* procedure = *pptr;
-			if (procedure) {
-				if (procedure->prc_existence_lock) {
+			if (procedure)
+			{
+				if (procedure->prc_existence_lock)
+				{
 					LCK_release(tdbb, procedure->prc_existence_lock);
 					procedure->prc_flags |= PRC_check_existence;
 					procedure->prc_use_count = 0;

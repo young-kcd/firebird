@@ -1212,4 +1212,3 @@ Fetches = !f', NULL, NULL, 'c_pg');
 stop
 
 COMMIT WORK;
-
