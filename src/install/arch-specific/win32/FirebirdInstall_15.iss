@@ -116,7 +116,7 @@ AppName={cm:MyAppName}
 ;The following is important - all ISS install packages should
 ;duplicate this for v1.5. See the InnoSetup help for details.
 AppID=FBDBServer_{#BaseVer}
-AppVerName=Firebird 1.5.5
+AppVerName=Firebird 1.5.6
 AppPublisher=Firebird Project
 AppPublisherURL={#FirebirdURL}
 AppSupportURL={#FirebirdURL}
@@ -266,12 +266,12 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a;
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: {cm:RunSSWithGuardian}
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 #define App_Name = SetupSetting("AppName")
-Name: {group}\Firebird 1.5.5 Release Notes; Filename: {app}\doc\Firebird_v1.5.5.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name}.4 {cm:ReleaseNotes}
+Name: {group}\Firebird 1.5.6 Release Notes; Filename: {app}\doc\Firebird_v1.5.6.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name}.4 {cm:ReleaseNotes}
 Name: {group}\Firebird 1.5 Quick Start Guide; Filename: {app}\doc\Firebird-1.5-QuickStart.pdf; MinVersion: 4.0,4.0; Components: DevAdminComponent; Comment: {#App_Name} Quick Start Guide (in English)
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version of the readme
-Name: {group}\Firebird 1.5.5 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Components: DevAdminComponent;
+Name: {group}\Firebird 1.5.6 Readme; Filename: {app}\readme.txt; MinVersion: 4.0,4.0; Components: DevAdminComponent;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
 Name: {group}\{cm:IconReadme}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
