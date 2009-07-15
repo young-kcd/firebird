@@ -732,7 +732,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 
 	lock.enter();
 	// If block cannot fit into extent then allocate it from OS directly
-	if (size > OS_EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)))
+	if (size > OS_EXTENT_SIZE - PARENT_EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)))
 	{
 		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size + MEM_ALIGN(sizeof(MemoryRedirectList));
 		MemoryBlock* blk = (MemoryBlock*) external_alloc(ext_size);
@@ -1383,7 +1383,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 	// This method assumes already aligned block sizes
 	fb_assert(size % ALLOC_ALIGNMENT == 0);
 	// Make sure block can fit into extent
-	fb_assert(size <= OS_EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)));
+	fb_assert(size <= OS_EXTENT_SIZE - PARENT_EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)));
 
 	// Lookup a block greater or equal than size in freeBlocks tree
 	MemoryBlock* blk;
@@ -1529,8 +1529,11 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 
 		size_t ext_size = size + MEM_ALIGN(sizeof(MemoryBlock)) + MEM_ALIGN(sizeof(MemoryExtent));
 		ext_size = FB_ALIGN(ext_size, PARENT_EXTENT_SIZE);
-		if (parent && ext_size < OS_EXTENT_SIZE)
+
+		const bool allocByParent = (parent && ext_size < OS_EXTENT_SIZE);
+		if (allocByParent)
 		{
+			fb_assert(ext_size < OS_EXTENT_SIZE);
 			extent = (MemoryExtent*) parent->allocate_nothrow(ext_size
 #ifdef DEBUG_GDS_ALLOC
 				,__FILE__, __LINE__
@@ -1548,10 +1551,11 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			return NULL;
 		}
 
-		if (parent)
+		if (allocByParent)
 		{
 			// Add extent to a doubly linked list
-			extents_parent->mxt_prev = extent;
+			if (extents_parent)
+				extents_parent->mxt_prev = extent;
 			extent->mxt_next = extents_parent;
 			extent->mxt_prev = NULL;
 			extents_parent = extent;
@@ -1561,7 +1565,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			increment_mapping(ext_size);
 
 			// Add extent to a doubly linked list
-			extents_os->mxt_prev = extent;
+			if (extents_os)
+				extents_os->mxt_prev = extent;
 			extent->mxt_next = extents_os;
 			extent->mxt_prev = NULL;
 			extents_os = extent;
