@@ -166,7 +166,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 				{
 					return rc;
 				}
-				return (arg1->dsc_length > l) ? -1 : (arg2->dsc_length > l) ? 1 : 0;
+				return (arg1->dsc_length > l) ? 1 : (arg2->dsc_length > l) ? -1 : 0;
 			}
 
 		case dtype_timestamp:
