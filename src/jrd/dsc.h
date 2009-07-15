@@ -36,40 +36,40 @@
 
 inline bool DTYPE_IS_TEXT(UCHAR d)
 {
-	return ((d >= dtype_text) && (d <= dtype_varying));
+	return d >= dtype_text && d <= dtype_varying;
 }
 
 inline bool DTYPE_IS_DATE(UCHAR t)
 {
-	return ((t >= dtype_sql_date) && (t <= dtype_timestamp));
+	return t >= dtype_sql_date && t <= dtype_timestamp;
 }
 
 /* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
 inline bool DTYPE_IS_BLOB(UCHAR d)
 {
-	return ((d == dtype_blob) || (d == dtype_array));
+	return d == dtype_blob || d == dtype_array;
 }
 
 /* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
 inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d)
 {
-	return ((d == dtype_blob) || (d == dtype_quad) || (d == dtype_array));
+	return d == dtype_blob || d == dtype_quad || d == dtype_array;
 }
 
 /* Exact numeric? */
 inline bool DTYPE_IS_EXACT(UCHAR d)
 {
-	return ((d == dtype_int64) || (d == dtype_long) || (d == dtype_short));
+	return d == dtype_int64 || d == dtype_long || d == dtype_short;
 }
 
 inline bool DTYPE_IS_APPROX(UCHAR d)
 {
-	return ((d == dtype_double) || (d == dtype_real));
+	return d == dtype_double || d == dtype_real;
 }
 
 inline bool DTYPE_IS_NUMERIC(UCHAR d)
 {
-	return (((d >= dtype_byte) && (d <= dtype_d_float)) || (d  == dtype_int64));
+	return (d >= dtype_byte && d <= dtype_d_float) || d  == dtype_int64;
 }
 
 /* Descriptor format */
@@ -127,12 +127,12 @@ typedef struct dsc
 
 	bool isExact() const
 	{
-		return ((dsc_dtype == dtype_int64) || (dsc_dtype == dtype_long) || (dsc_dtype == dtype_short));
+		return dsc_dtype == dtype_int64 || dsc_dtype == dtype_long || dsc_dtype == dtype_short;
 	}
 
 	bool isText() const
 	{
-		return (dsc_dtype >= dtype_text) && (dsc_dtype <= dtype_varying);
+		return dsc_dtype >= dtype_text && dsc_dtype <= dtype_varying;
 	}
 
 	bool isUnknown() const
@@ -372,8 +372,10 @@ const UCHAR dtype_max_comp	= dtype_d_float;
 
 inline USHORT TEXT_LEN(const dsc* desc)
 {
-	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length :
-		(desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1u : desc->dsc_length - sizeof(USHORT));
+	return ((desc->dsc_dtype == dtype_text) ?
+		desc->dsc_length :
+		(desc->dsc_dtype == dtype_cstring) ?
+			desc->dsc_length - 1u : desc->dsc_length - sizeof(USHORT));
 }
 
 
