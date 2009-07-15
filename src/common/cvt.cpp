@@ -1399,10 +1399,12 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 					fb_assert(false);
 					break;
 				}
+
 				if (l < from->dsc_length)
-				{
-					break;
-				}
+					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
+
+				Jrd::CharSet* charSet = cb->getToCharset(to->getCharSet());
+				cb->validateData(charSet, from->dsc_length, from->dsc_address, cb->err);
 
 				memcpy(ptr, from->dsc_address, from->dsc_length);
 				l -= from->dsc_length;
