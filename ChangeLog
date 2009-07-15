@@ -1,3 +1,58 @@
+2009-07-15 11:31  alexpeshkoff
+
+	* firebird2/src/jrd/cvt2.cpp (1.71):
+
+	One more wrong comparison - thanks to Adriano
+
+2009-07-15 05:13  asfernandes
+
+	* firebird2/src/: jrd/align.h (1.12), jrd/cmp.cpp (1.347),
+	jrd/dsc_pub.h (1.9), jrd/intl.cpp (1.130), jrd/jrd.cpp (1.552),
+	jrd/opt.cpp (1.355), jrd/svc.cpp (1.279), msgs/history2.sql (1.17),
+	remote/protocol.cpp (1.91), utilities/fbsvcmgr.cpp (1.33):
+
+	Misc
+
+2009-07-15 02:25  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.303):
+
+	Fix another similar problem of CORE-2552. Now
+	successfull_completion has wrong in the fetch API, when that
+	warning is posted.  Alex: please verify if ERR_warning could be
+	removed. It's not used anymore.
+
+2009-07-14 20:52  asfernandes
+
+	* firebird2/src/dsql/utld.cpp (1.66):
+
+	Fixed problem reported by Dmitry Kovalenko in fb-devel
+
+2009-07-14 17:51  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.285):
+
+	Misc
+
+2009-07-14 17:49  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.175), src/dsql/dsql.cpp (1.284):
+
+	Fixed CORE-2552 - isc_dsql_execute2 does not return errors when
+	called with a non-NULL output SQLDA
+
+2009-07-14 16:29  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.208):
+
+	Totally misc.
+
+2009-07-14 16:24  robocop
+
+	* firebird2/doc/WhatsNew (1.174):
+
+	It seems more readable English to me.
+
 2009-07-14 14:23  dimitr
 
 	* firebird2/src/jrd/blb.cpp (1.202):
