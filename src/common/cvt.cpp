@@ -1377,7 +1377,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		{
 		case dtype_dbkey:
 			{
-				USHORT strtype_unused;
 				UCHAR* ptr = NULL;
 				USHORT l = 0;
 
