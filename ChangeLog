@@ -1,3 +1,29 @@
+2009-07-15 22:18  asfernandes
+
+	* firebird2/src/common/cvt.cpp (1.32):
+
+	1) Fix abort when converting dbkeys to strings with not capable
+	lengths 2) Fix storage of malformed bytes when converting from
+	dbkeys to non-octets strings
+
+2009-07-15 22:03  asfernandes
+
+	* firebird2/src/jrd/dsc.h (1.50):
+
+	Misc
+
+2009-07-15 21:45  asfernandes
+
+	* firebird2/src/jrd/isc_sync.cpp (1.209):
+
+	Misc
+
+2009-07-15 17:28  hvlad
+
+	* firebird2/src/common/classes/alloc.cpp (1.125):
+
+	Fixed bug in my prevoius commit.
+
 2009-07-15 11:31  alexpeshkoff
 
 	* firebird2/src/jrd/cvt2.cpp (1.71):
