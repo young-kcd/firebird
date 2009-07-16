@@ -3039,7 +3039,10 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 		check_autocommit(request, tdbb);
 
 		if (request->req_flags & req_warning)
+		{
 			request->req_flags &= ~req_warning;
+			ERR_punt();
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -6320,7 +6323,10 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
 	check_autocommit(request, tdbb);
 
 	if (request->req_flags & req_warning)
+	{
 		request->req_flags &= ~req_warning;
+		ERR_punt();
+	}
 }
 
 
@@ -6366,7 +6372,10 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, SSH
 	check_autocommit(request, tdbb);
 
 	if (request->req_flags & req_warning)
+	{
 		request->req_flags &= ~req_warning;
+		ERR_punt();
+	}
 }
 
 
@@ -6461,7 +6470,10 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 	check_autocommit(request, tdbb);
 
 	if (request->req_flags & req_warning)
+	{
 		request->req_flags &= ~req_warning;
+		ERR_punt();
+	}
 }
 
 

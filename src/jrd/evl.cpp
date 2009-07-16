@@ -1223,8 +1223,12 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 	DEV_BLKCHK(record, type_rec);
 
-	if (!record) {
-		ERR_post_warning(Arg::Warning(isc_no_cur_rec));
+	if (!record)
+	{
+		// ASF: Usage of ERR_warning with Arg::Gds (instead of Arg::Warning) is correct here.
+		// Maybe not all code paths are prepared for throwing an exception here,
+		// but it will leave the engine as an error (when testing for req_warning).
+		ERR_warning(Arg::Gds(isc_no_cur_rec));
 		return false;
 	}
 
