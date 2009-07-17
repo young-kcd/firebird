@@ -48,7 +48,7 @@
 #include "../common/classes/ClumpletWriter.h"
 
 
-static void buildDpb(Firebird::ClumpletWriter&, const ULONG);
+static void buildDpb(Firebird::ClumpletWriter&, const SINT64);
 static void extract_db_info(const UCHAR*, size_t);
 
 // Keep always in sync with function extract_db_info()
@@ -64,7 +64,7 @@ static const TEXT val_errors[] =
 //
 //
 
-int EXE_action(const TEXT* database, const ULONG switches)
+int EXE_action(const TEXT* database, const SINT64 switches)
 {
 	bool error = false;
 	Firebird::AutoMemoryPool newPool(MemoryPool::createPool());
@@ -136,7 +136,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 //
 //
 
-int EXE_two_phase(const TEXT* database, const ULONG switches)
+int EXE_two_phase(const TEXT* database, const SINT64 switches)
 {
 	bool error = false;
 	Firebird::AutoMemoryPool newPool(MemoryPool::createPool());
@@ -194,7 +194,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 //  based on the various switches
 //
 
-static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
+static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	dpb.reset(isc_dpb_version1);

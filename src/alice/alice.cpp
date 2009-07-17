@@ -141,7 +141,7 @@ int alice(Firebird::UtilSvc* uSvc)
 //  Start by parsing switches
 
 	bool error = false, help = false;
-	ULONG switches = 0;
+	SINT64 flags = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
 	const TEXT* database = NULL;
 	TEXT	string[512];
@@ -226,14 +226,14 @@ int alice(Firebird::UtilSvc* uSvc)
 		if (table->in_sw_value == sw_z) {
 			ALICE_print(3, SafeArg() << GDS_VERSION);	// msg 3: gfix version %s
 		}
-		if ((table->in_sw_incompatibilities & switches) ||
-			(table->in_sw_requires && !(table->in_sw_requires & switches)))
+		if ((table->in_sw_incompatibilities & flags) ||
+			(table->in_sw_requires && !(table->in_sw_requires & flags)))
 		{
 			ALICE_print(4);	// msg 4: incompatible switch combination
 			error = true;
 			break;
 		}
-		switches |= table->in_sw_value;
+		flags |= table->in_sw_value;
 
 		if ((table->in_sw_value & (sw_shut | sw_online)) && (argc > 1))
 		{
@@ -333,7 +333,7 @@ int alice(Firebird::UtilSvc* uSvc)
 					ALICE_error(10);	// msg 10: transaction number or "all" required
 				}
 				else {
-					switches |= sw_list;
+					flags |= sw_list;
 				}
 			}
 		}
@@ -463,18 +463,18 @@ int alice(Firebird::UtilSvc* uSvc)
 
 //  put this here since to put it above overly complicates the parsing
 //  can't use tbl_requires since it only looks backwards on command line
-	if ((switches & sw_shut) && !(switches & ((sw_attach | sw_force | sw_tran | sw_cache))))
+	if ((flags & sw_shut) && !(flags & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
 		ALICE_error(19);	// msg 19: must specify type of shutdown
 	}
 
 //  catch the case where -z is only command line option
-//  switches is unset since sw_z == 0
-	if (!switches && !error && table->in_sw_value == sw_z) {
+//  flags is unset since sw_z == 0
+	if (!flags && !error && table->in_sw_value == sw_z) {
 		ALICE_exit(FINI_OK, tdgbl);
 	}
 
-	if (!switches || !(switches & ~(sw_user | sw_password | sw_fetch_password |
+	if (!flags || !(flags & ~(sw_user | sw_password | sw_fetch_password |
 									sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
 	{
 		if (!help && !uSvc->isService())
@@ -511,17 +511,17 @@ int alice(Firebird::UtilSvc* uSvc)
 	}
 
 	//  generate the database parameter block for the attach,
-	//  based on the various switches
+	//  based on the various flags
 
 	USHORT ret;
 
-	if (switches & (sw_list | sw_commit | sw_rollback | sw_two_phase))
+	if (flags & (sw_list | sw_commit | sw_rollback | sw_two_phase))
 	{
-		ret = EXE_two_phase(database, switches);
+		ret = EXE_two_phase(database, flags);
 	}
 	else
 	{
-		ret = EXE_action(database, switches);
+		ret = EXE_action(database, flags);
 
 		const SLONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
 
@@ -616,8 +616,7 @@ void ALICE_down_case(const TEXT* in, TEXT* out, const size_t buf_size)
 //		Display a formatted error message
 //
 
-void ALICE_print(USHORT	number,
-				 const SafeArg& arg)
+void ALICE_print(USHORT	number, const SafeArg& arg)
 {
 	TEXT buffer[256];
 

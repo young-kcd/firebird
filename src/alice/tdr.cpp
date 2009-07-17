@@ -49,11 +49,11 @@
 using MsgFormat::SafeArg;
 
 
-static ULONG ask();
+static SINT64 ask();
 static void print_description(const tdr*);
 static void reattach_database(tdr*);
 static void reattach_databases(tdr*);
-static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, ULONG);
+static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, SINT64);
 
 
 //const char* const NEWLINE = "\n";
@@ -286,7 +286,7 @@ void TDR_shutdown_databases(tdr* trans)
 //		prompt for commit, rollback, or leave well enough alone.
 //
 
-void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches)
+void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switches)
 {
 	UCHAR buffer[1024];
 	ISC_STATUS_ARRAY status_vector;
@@ -378,7 +378,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 //		gfix user.
 //
 
-bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, ULONG switches)
+bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SINT64 switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
@@ -655,16 +655,16 @@ static void print_description(const tdr* trans)
 //		Ask the user whether to commit or rollback.
 //
 
-static ULONG ask()
+static SINT64 ask()
 {
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	if (tdgbl->uSvc->isService())
 	{
-		return ~0;
+		return ~SINT64(0);
 	}
 
 	char response[32];
-	ULONG switches = 0;
+	SINT64 switches = 0;
 
 	while (true)
 	{
@@ -820,7 +820,7 @@ static void reattach_databases(tdr* trans)
 //		Commit or rollback a named transaction.
 //
 
-static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, ULONG switches)
+static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT64 switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
@@ -840,7 +840,7 @@ static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, ULON
 		ALICE_print(91, SafeArg() << number);
 		// msg 91: Transaction %ld:
 		switches = ask();
-		if (switches == ULONG(~0))
+		if (switches == ~SINT64(0))
 		{
 			ALICE_print(84);
 			// msg 84: unexpected end of input
