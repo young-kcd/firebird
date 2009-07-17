@@ -75,8 +75,8 @@ struct BlobIndex
 	jrd_req* bli_request;
 	union
 	{
-		bid bli_blob_id; // ID of materialized blob
-		blb* bli_blob_object; // Blob object
+		bid bli_blob_id;		// ID of materialized blob
+		blb* bli_blob_object;	// Blob object
 	};
     static const ULONG& generate(const void* /*sender*/, const BlobIndex& item)
 	{
@@ -92,7 +92,7 @@ struct BlobIndex
 
 typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexTree;
 
-/* Transaction block */
+// Transaction block
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
@@ -172,42 +172,42 @@ public:
 		}
 	}
 
-	Attachment* tra_attachment;	/* database attachment */
-	SLONG tra_number;			/* transaction number */
-	SLONG tra_top;				/* highest transaction in snapshot */
-	SLONG tra_oldest;			/* oldest interesting transaction */
-	SLONG tra_oldest_active;	/* record versions older than this can be
-								   gargage-collected by this tx */
-	jrd_tra*	tra_next;		/* next transaction in database */
-	jrd_tra*	tra_sibling;	/* next transaction in group */
-	MemoryPool* const tra_pool;		/* pool for transaction */
+	Attachment* tra_attachment;			// database attachment
+	SLONG tra_number;					// transaction number
+	SLONG tra_top;						// highest transaction in snapshot
+	SLONG tra_oldest;					// oldest interesting transaction
+	SLONG tra_oldest_active;			// record versions older than this can be
+										// gargage-collected by this tx
+	jrd_tra*	tra_next;				// next transaction in database
+	jrd_tra*	tra_sibling;			// next transaction in group
+	MemoryPool* const tra_pool;			// pool for transaction
 	Firebird::MemoryStats	tra_memory_stats;
-	BlobIndexTree tra_blobs_tree;	// list of active blobs
-	BlobIndexTree* tra_blobs;		// pointer to actual list of active blobs
-	ArrayField*	tra_arrays;		/* Linked list of active arrays */
-	Lock*		tra_lock;		/* lock for transaction */
-	Lock*		tra_cancel_lock;	/* lock to cancel the active request */
-	vec<Lock*>*		tra_relation_locks;	/* locks for relations */
-	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
-	Savepoint*	tra_save_point;	/* list of savepoints */
-	Savepoint*	tra_save_free;	/* free savepoints */
-	SLONG tra_save_point_number;	/* next save point number to use */
+	BlobIndexTree tra_blobs_tree;		// list of active blobs
+	BlobIndexTree* tra_blobs;			// pointer to actual list of active blobs
+	ArrayField*	tra_arrays;				// Linked list of active arrays
+	Lock*		tra_lock;				// lock for transaction
+	Lock*		tra_cancel_lock;		// lock to cancel the active request
+	vec<Lock*>*		tra_relation_locks;	// locks for relations
+	UInt32Bitmap*	tra_commit_sub_trans;	// commited sub-transactions
+	Savepoint*	tra_save_point;			// list of savepoints
+	Savepoint*	tra_save_free;			// free savepoints
+	SLONG tra_save_point_number;		// next save point number to use
 	ULONG tra_flags;
-	DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
-	ResourceList tra_resources;		/* resource existence list */
+	DeferredWork*	tra_deferred_work;	// work deferred to commit time
+	ResourceList tra_resources;			// resource existence list
 	Firebird::StringMap tra_context_vars; // Context variables for the transaction
-	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
-	UCHAR tra_use_count;		/* use count for safe AST delivery */
-	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
-	SSHORT tra_lock_timeout;	/* in seconds, -1 means infinite, 0 means NOWAIT */
-	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
+	traRpbList* tra_rpblist;			// active record_param's of given transaction
+	UCHAR tra_use_count;				// use count for safe AST delivery
+	UCHAR tra_callback_count;			// callback count for 'execute statement'
+	SSHORT tra_lock_timeout;			// in seconds, -1 means infinite, 0 means NOWAIT
+	ULONG tra_next_blob_id;     		// ID of the previous blob or array created in this transaction
 	const Firebird::TimeStamp tra_timestamp; // transaction start time
-	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
-	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
+	jrd_req* tra_requests;				// Doubly linked list of requests active in this transaction
+	DatabaseSnapshot* tra_db_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
-	jrd_tra* const tra_outer;	// outer transaction of an autonomous transaction
-	jrd_req* tra_callback_caller;	// caller request for execute statement
+	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
+	jrd_req* tra_callback_caller;		// caller request for execute statement
 	Firebird::Array<UCHAR> tra_transactions;
 
 	EDS::Transaction *tra_ext_common;
@@ -266,30 +266,30 @@ const SLONG TRA_system_transaction = 0;
 
 // Flag definitions for tra_flags.
 
-const ULONG TRA_system			= 1L;		/* system transaction */
-//const ULONG TRA_update			= 2L;		// update is permitted
-const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
-const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
-//const ULONG TRA_reserving		= 16L;		// relations explicityly locked
-const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
-//const ULONG TRA_committing		= 64L;		// commit in progress
-const ULONG TRA_write			= 128L;		/* transaction has written */
-const ULONG TRA_readonly		= 256L;		/* transaction is readonly */
-//const ULONG TRA_nowait			= 512L;		// don't wait on relations, give up
-const ULONG TRA_prepare2		= 1024L;	/* transaction has updated RDB$TRANSACTIONS */
-const ULONG TRA_ignore_limbo	= 2048L;	/* ignore transactions in limbo */
-const ULONG TRA_invalidated 	= 4096L;	/* transaction invalidated by failed write */
-const ULONG TRA_deferred_meta 	= 8192L;	/* deferred meta work posted */
-//const ULONG TRA_add_log		= 16384L;	// write ahead log file was added
-//const ULONG TRA_delete_log	= 32768L;	// write ahead log file was deleted
-const ULONG TRA_read_committed	= 65536L;	/* can see latest committed records */
-const ULONG TRA_autocommit		= 131072L;	/* autocommits all updates */
-const ULONG TRA_perform_autocommit	= 262144L;	/* indicates autocommit is necessary */
-const ULONG TRA_rec_version			= 524288L;	/* don't wait for uncommitted versions */
-const ULONG TRA_restart_requests	= 1048576L;	/* restart all requests in attachment */
-const ULONG TRA_no_auto_undo		= 2097152L;	/* don't start a savepoint in TRA_start */
+const ULONG TRA_system			= 1L;			// system transaction
+//const ULONG TRA_update		= 2L;			// update is permitted
+const ULONG TRA_prepared		= 4L;			// transaction is in limbo
+const ULONG TRA_reconnected		= 8L;			// reconnect in progress
+//const ULONG TRA_reserving		= 16L;			// relations explicityly locked
+const ULONG TRA_degree3			= 32L;			// serializeable transaction
+//const ULONG TRA_committing	= 64L;			// commit in progress
+const ULONG TRA_write			= 128L;			// transaction has written
+const ULONG TRA_readonly		= 256L;			// transaction is readonly
+//const ULONG TRA_nowait		= 512L;			// don't wait on relations, give up
+const ULONG TRA_prepare2		= 1024L;		// transaction has updated RDB$TRANSACTIONS
+const ULONG TRA_ignore_limbo	= 2048L;		// ignore transactions in limbo
+const ULONG TRA_invalidated 	= 4096L;		// transaction invalidated by failed write
+const ULONG TRA_deferred_meta 	= 8192L;		// deferred meta work posted
+//const ULONG TRA_add_log		= 16384L;		// write ahead log file was added
+//const ULONG TRA_delete_log	= 32768L;		// write ahead log file was deleted
+const ULONG TRA_read_committed	= 65536L;		// can see latest committed records
+const ULONG TRA_autocommit		= 131072L;		// autocommits all updates
+const ULONG TRA_perform_autocommit	= 262144L;	// indicates autocommit is necessary
+const ULONG TRA_rec_version			= 524288L;	// don't wait for uncommitted versions
+const ULONG TRA_restart_requests	= 1048576L;	// restart all requests in attachment
+const ULONG TRA_no_auto_undo		= 2097152L;	// don't start a savepoint in TRA_start
 const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
-const ULONG TRA_precommitted		= 8388608L;	/* transaction committed at startup */
+const ULONG TRA_precommitted		= 8388608L;	// transaction committed at startup
 
 const int TRA_MASK				= 3;
 //const int TRA_BITS_PER_TRANS	= 2;
@@ -299,54 +299,54 @@ const int TRA_SHIFT				= 2;
 #define TRANS_SHIFT(number)	(((number) & TRA_MASK) << 1)
 #define TRANS_OFFSET(number)	((number) >> TRA_SHIFT)
 
-/* Transaction cleanup. If a database is never quiescent, look
-   for "dead" active transactions every so often at transaction
-   startup */
+// Transaction cleanup. If a database is never quiescent, look
+// for "dead" active transactions every so often at transaction
+// startup
 
 const int TRA_ACTIVE_CLEANUP	= 100;
 
-/* Transaction states.  The first four are states found
-   in the transaction inventory page; the last two are
-   returned internally */
+// Transaction states.  The first four are states found
+// in the transaction inventory page; the last two are
+// returned internally
 
-const int tra_active		= 0;	/* Transaction is active */
+const int tra_active		= 0;	// Transaction is active
 const int tra_limbo			= 1;
 const int tra_dead			= 2;
 const int tra_committed		= 3;
-const int tra_us			= 4;	/* Transaction is us */
-const int tra_precommitted	= 5;	/* Transaction is precommitted */
+const int tra_us			= 4;	// Transaction is us
+const int tra_precommitted	= 5;	// Transaction is precommitted
 
 // The highest transaction number possible.  This is 0x7fffffff if SLONG is 32 bits.
 //#define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
 
-/* Savepoint block */
+// Savepoint block
 
 class Savepoint : public pool_alloc<type_sav>
 {
 public:
-	VerbAction*		sav_verb_actions;	/* verb action list */
-	VerbAction*		sav_verb_free;		/* free verb actions */
-	USHORT			sav_verb_count;		/* Active verb count */
-	SLONG			sav_number;			/* save point number */
+	VerbAction*		sav_verb_actions;	// verb action list
+	VerbAction*		sav_verb_free;		// free verb actions
+	USHORT			sav_verb_count;		// Active verb count
+	SLONG			sav_number;			// save point number
 	Savepoint*		sav_next;
 	USHORT			sav_flags;
-	TEXT			sav_name[32]; /* Savepoint name */
+	TEXT			sav_name[MAX_SQL_IDENTIFIER_SIZE]; // Savepoint name
 };
 
-/* Savepoint block flags. */
+// Savepoint block flags.
 
-const int SAV_trans_level	= 1;	/* savepoint was started by TRA_start */
-const int SAV_force_dfw		= 2;	/* DFW is present even if savepoint is empty */
-const int SAV_user			= 4;	/* named user savepoint as opposed to system ones */
+const int SAV_trans_level	= 1;	// savepoint was started by TRA_start
+const int SAV_force_dfw		= 2;	// DFW is present even if savepoint is empty
+const int SAV_user			= 4;	// named user savepoint as opposed to system ones
 
-/* Maximum size in bytes of transaction-level savepoint data.
-   When transaction-level savepoint gets past this size we drop it and use GC
-   mechanisms to clean out changes done in transaction */
+// Maximum size in bytes of transaction-level savepoint data.
+// When transaction-level savepoint gets past this size we drop it and use GC
+// mechanisms to clean out changes done in transaction
 const IPTR SAV_LARGE		= 1024 * 32;
 
-/* Deferred work blocks are used by the meta data handler to keep track
-   of work deferred to commit time.  This are usually used to perform
-   meta data updates */
+// Deferred work blocks are used by the meta data handler to keep track
+// of work deferred to commit time.  This are usually used to perform
+// meta data updates
 
 enum dfw_t {
 	dfw_null,
@@ -407,14 +407,14 @@ enum dfw_t {
 class DeferredWork : public pool_alloc<type_dfw>
 {
 public:
-	enum dfw_t 		dfw_type;		/* type of work deferred */
-	DeferredWork*	dfw_next;		/* next block in transaction */
-	Lock*			dfw_lock;		/* relation creation lock */
-	DeferredWork*	dfw_args;		/* arguments */
-	SLONG			dfw_sav_number;	/* save point number */
-	USHORT			dfw_id;			/* object id, if appropriate */
-	USHORT			dfw_count;		/* count of block posts */
-	Firebird::string	dfw_name;	/* name of object */
+	enum dfw_t 		dfw_type;		// type of work deferred
+	DeferredWork*	dfw_next;		// next block in transaction
+	Lock*			dfw_lock;		// relation creation lock
+	DeferredWork*	dfw_args;		// arguments
+	SLONG			dfw_sav_number;	// save point number
+	USHORT			dfw_id;			// object id, if appropriate
+	USHORT			dfw_count;		// count of block posts
+	Firebird::string	dfw_name;	// name of object
 
 public:
 	DeferredWork(MemoryPool& p, enum dfw_t t, USHORT id, SLONG sn, const char* string, USHORT length)
@@ -429,7 +429,7 @@ public:
 	~DeferredWork();
 };
 
-/* Verb actions */
+// Verb actions
 
 class UndoItem
 {
@@ -502,10 +502,10 @@ typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTre
 class VerbAction : public pool_alloc<type_vct>
 {
 public:
-	VerbAction* 	vct_next;		/* Next action within verb */
-	jrd_rel*		vct_relation;	/* Relation involved */
-	RecordBitmap*	vct_records;	/* Record involved */
-	UndoItemTree*	vct_undo;		/* Data for undo records */
+	VerbAction* 	vct_next;		// Next action within verb
+	jrd_rel*		vct_relation;	// Relation involved
+	RecordBitmap*	vct_records;	// Record involved
+	UndoItemTree*	vct_undo;		// Data for undo records
 };
 
 } //namespace Jrd
