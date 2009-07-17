@@ -1,3 +1,66 @@
+2009-07-17 11:29  robocop
+
+	* firebird2/src/alice/: alice.cpp (1.119), exe.cpp (1.62),
+	exe_proto.h (1.8), tdr.cpp (1.64), tdr_proto.h (1.13):
+
+	The flags field is SINT64, not ULONG (upgrade it).  "switches"
+	changed to "flags" in tdr.cpp to allow code that resembles other
+	utilities (need also for impending commit after 2.5).
+
+2009-07-17 11:06  robocop
+
+	* firebird2/src/qli/dtr.cpp (1.73):
+
+	Warnings.
+
+2009-07-17 11:03  robocop
+
+	* firebird2/src/isql/isql.epp (1.285):
+
+	Misc.
+
+2009-07-17 11:02  robocop
+
+	* firebird2/src/jrd/tra.h (1.100):
+
+	Comments and use MAX_SQL_IDENTIFIER_SIZE.
+
+2009-07-17 11:01  robocop
+
+	* firebird2/src/: qli/help.epp (1.33), qli/lex.cpp (1.51),
+	utilities/ibmgr/ibmgr.h (1.19), iscguard/iscguard.h (1.12),
+	isql/isql.h (1.73), dudley/lex.cpp (1.41),
+	utilities/install/registry.h (1.9), jrd/rse.cpp (1.187),
+	jrd/sort.cpp (1.131), remote/os/win32/window.h (1.12):
+
+	Warnings.
+
+2009-07-17 10:57  robocop
+
+	* firebird2/src/: qli/meta.epp (1.84), burp/spit.h (1.12):
+
+	Misc.
+
+2009-07-17 10:56  robocop
+
+	* firebird2/src/iscguard/: cntl_guard.cpp (1.32), iscguard.cpp
+	(1.69):
+
+	Style.
+
+2009-07-16 17:08  asfernandes
+
+	* firebird2/src/common/cvt.cpp (1.33):
+
+	Warning
+
+2009-07-16 15:09  asfernandes
+
+	* firebird2/src/jrd/: evl.cpp (1.304), jrd.cpp (1.553):
+
+	Do not return isc_no_cur as warning, as it's an error - thanks to
+	Dmitry
+
 2009-07-15 22:18  asfernandes
 
 	* firebird2/src/common/cvt.cpp (1.32):
