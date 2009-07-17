@@ -1394,6 +1394,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 		dpb.insertString(isc_dpb_lc_ctype, lc_ctype, length);
 	}
 
+	// It does absolutely nothing inside the engine these days: ignored.
 	if (QLI_trace) {
 		dpb.insertByte(isc_dpb_trace, 1);
 	}
