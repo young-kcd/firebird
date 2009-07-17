@@ -514,8 +514,7 @@ static const ri_actions ri_actions_all[] =
 };
 
 
-int CLIB_ROUTINE main(int argc,
-					  char* argv[])
+int CLIB_ROUTINE main(int argc, char* argv[])
 {
 /**************************************
  *
@@ -539,8 +538,7 @@ int CLIB_ROUTINE main(int argc,
 }
 
 
-int ISQL_main(int argc,
-				 char* argv[])
+int ISQL_main(int argc, char* argv[])
 {
 /**************************************
  *
@@ -2134,7 +2132,7 @@ static processing_state add_row(TEXT* tabname)
 
 					if (!strcmp(cmd, "EDIT")) // If edit, we edit a temp file.
 					{
-						Firebird::PathName ftmp = TempFile::create(SCRATCH);
+						const Firebird::PathName ftmp = TempFile::create(SCRATCH);
 						if (ftmp.empty())
 							res = 0;
 						else
@@ -3618,7 +3616,7 @@ static processing_state copy_table(TEXT* source,
 	// If there is an alternate database, extract the domains
 	const bool domain_flag = otherdb[0];
 
-	Firebird::PathName ftmp = TempFile::create(SCRATCH);
+	const Firebird::PathName ftmp = TempFile::create(SCRATCH);
 	isqlGlob.Out = fopen(ftmp.c_str(), "w+b");
 	if (!isqlGlob.Out) {
 		// If we can't open a temp file then bail
