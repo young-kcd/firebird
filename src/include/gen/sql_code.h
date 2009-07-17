@@ -681,6 +681,7 @@ static const struct {
 	{335544978, -833}, /* 658 sysf_argmustbe_gteq_one */
 	{335544979, -833}, /* 659 sysf_argmustbe_range_exc1_1 */
 	{335544980, -104}, /* 660 internal_rejected_params */
+	{335544981, -833}, /* 661 sysf_fp_overflow */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
@@ -708,7 +709,6 @@ static const struct {
 	{335741018, -901}, /*  90 gfix_recon_fail */
 	{335741036, -901}, /* 108 gfix_trn_unknown */
 	{335741038, -901}, /* 110 gfix_mode_req */
-	{335741039,    0}, /* 111 gfix_opt_SQL_dialect */
 	{335741042, -901}, /* 114 gfix_pzval_req */
 	{336003074, -607}, /*   2 dsql_dbkey_from_non_table */
 	{336003075, -104}, /*   3 dsql_transitional_numeric */

@@ -1372,6 +1372,8 @@ C --
       PARAMETER (GDS__sysf_argmustbe_range_exc1_1      = 335544979)
       INTEGER*4 GDS__internal_rejected_params        
       PARAMETER (GDS__internal_rejected_params         = 335544980)
+      INTEGER*4 GDS__sysf_fp_overflow                
+      PARAMETER (GDS__sysf_fp_overflow                 = 335544981)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1426,8 +1428,6 @@ C --
       PARAMETER (GDS__gfix_trn_unknown                 = 335741036)
       INTEGER*4 GDS__gfix_mode_req                   
       PARAMETER (GDS__gfix_mode_req                    = 335741038)
-      INTEGER*4 GDS__gfix_opt_SQL_dialect            
-      PARAMETER (GDS__gfix_opt_SQL_dialect             = 335741039)
       INTEGER*4 GDS__gfix_pzval_req                  
       PARAMETER (GDS__gfix_pzval_req                   = 335741042)
       INTEGER*4 GDS__dsql_dbkey_from_non_table       

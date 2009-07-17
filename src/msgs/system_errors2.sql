@@ -666,6 +666,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 -- End of extras for isc_expression_eval_err
 -- Not sure about the SQL code and class here
 (-104, 'HY', '000', 0, 660, 'internal_rejected_params', NULL, NULL)
+(-833, '42', '000', 0, 661, 'sysf_fp_overflow', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
@@ -694,7 +695,6 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '00', '000', 3, 90, 'gfix_recon_fail', NULL, NULL)
 (-901, '00', '000', 3, 108, 'gfix_trn_unknown', NULL, NULL)
 (-901, '00', '000', 3, 110, 'gfix_mode_req', NULL, NULL)
-(0, '00', '000', 3, 111, 'gfix_opt_SQL_dialect', NULL, NULL)
 (-901, '00', '000', 3, 114, 'gfix_pzval_req', NULL, NULL)
 -- DSQL
 (-607, 'HY', '000', 7, 2, 'dsql_dbkey_from_non_table', NULL, NULL)

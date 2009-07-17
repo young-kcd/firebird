@@ -1057,7 +1057,10 @@ dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 	}
 
 	if (isinf(rc))
-		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
+	{
+		status_exception::raise(Arg::Gds(isc_arith_except) <<
+								Arg::Gds(isc_sysf_fp_overflow) << Arg::Str(function->name));
+	}
 
 	impure->vlu_misc.vlu_double = rc;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);

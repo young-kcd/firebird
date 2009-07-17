@@ -685,34 +685,34 @@ Data source : @4"},		/* 606, eds_statement */
 	{335544978, "Argument for @1 must be greater or equal than one"},		/* 658, sysf_argmustbe_gteq_one */
 	{335544979, "Argument for @1 must be in the range ]-1, 1["},		/* 659, sysf_argmustbe_range_exc1_1 */
 	{335544980, "Incorrect parameters provided to internal function @1"},		/* 660, internal_rejected_params */
-	{335740929, "data base file name (@1) already given"},		/* 661, gfix_db_name */
-	{335740930, "invalid switch @1"},		/* 662, gfix_invalid_sw */
-	{335740932, "incompatible switch combination"},		/* 663, gfix_incmp_sw */
-	{335740933, "replay log pathname required"},		/* 664, gfix_replay_req */
-	{335740934, "number of page buffers for cache required"},		/* 665, gfix_pgbuf_req */
-	{335740935, "numeric value required"},		/* 666, gfix_val_req */
-	{335740936, "positive numeric value required"},		/* 667, gfix_pval_req */
-	{335740937, "number of transactions per sweep required"},		/* 668, gfix_trn_req */
-	{335740940, "\"full\" or \"reserve\" required"},		/* 669, gfix_full_req */
-	{335740941, "user name required"},		/* 670, gfix_usrname_req */
-	{335740942, "password required"},		/* 671, gfix_pass_req */
-	{335740943, "subsystem name"},		/* 672, gfix_subs_name */
-	{335740944, "\"wal\" required"},		/* 673, gfix_wal_req */
-	{335740945, "number of seconds required"},		/* 674, gfix_sec_req */
-	{335740946, "numeric value between 0 and 32767 inclusive required"},		/* 675, gfix_nval_req */
-	{335740947, "must specify type of shutdown"},		/* 676, gfix_type_shut */
-	{335740948, "please retry, specifying an option"},		/* 677, gfix_retry */
-	{335740951, "please retry, giving a database name"},		/* 678, gfix_retry_db */
-	{335740991, "internal block exceeds maximum size"},		/* 679, gfix_exceed_max */
-	{335740992, "corrupt pool"},		/* 680, gfix_corrupt_pool */
-	{335740993, "virtual memory exhausted"},		/* 681, gfix_mem_exhausted */
-	{335740994, "bad pool id"},		/* 682, gfix_bad_pool */
-	{335740995, "Transaction state @1 not in valid range."},		/* 683, gfix_trn_not_valid */
-	{335741012, "unexpected end of input"},		/* 684, gfix_unexp_eoi */
-	{335741018, "failed to reconnect to a transaction in database @1"},		/* 685, gfix_recon_fail */
-	{335741036, "Transaction description item unknown"},		/* 686, gfix_trn_unknown */
-	{335741038, "\"read_only\" or \"read_write\" required"},		/* 687, gfix_mode_req */
-	{335741039, "	-sql_dialect	set database dialect n"},		/* 688, gfix_opt_SQL_dialect */
+	{335544981, "Floating point overflow in built-in function @1"},		/* 661, sysf_fp_overflow */
+	{335740929, "data base file name (@1) already given"},		/* 662, gfix_db_name */
+	{335740930, "invalid switch @1"},		/* 663, gfix_invalid_sw */
+	{335740932, "incompatible switch combination"},		/* 664, gfix_incmp_sw */
+	{335740933, "replay log pathname required"},		/* 665, gfix_replay_req */
+	{335740934, "number of page buffers for cache required"},		/* 666, gfix_pgbuf_req */
+	{335740935, "numeric value required"},		/* 667, gfix_val_req */
+	{335740936, "positive numeric value required"},		/* 668, gfix_pval_req */
+	{335740937, "number of transactions per sweep required"},		/* 669, gfix_trn_req */
+	{335740940, "\"full\" or \"reserve\" required"},		/* 670, gfix_full_req */
+	{335740941, "user name required"},		/* 671, gfix_usrname_req */
+	{335740942, "password required"},		/* 672, gfix_pass_req */
+	{335740943, "subsystem name"},		/* 673, gfix_subs_name */
+	{335740944, "\"wal\" required"},		/* 674, gfix_wal_req */
+	{335740945, "number of seconds required"},		/* 675, gfix_sec_req */
+	{335740946, "numeric value between 0 and 32767 inclusive required"},		/* 676, gfix_nval_req */
+	{335740947, "must specify type of shutdown"},		/* 677, gfix_type_shut */
+	{335740948, "please retry, specifying an option"},		/* 678, gfix_retry */
+	{335740951, "please retry, giving a database name"},		/* 679, gfix_retry_db */
+	{335740991, "internal block exceeds maximum size"},		/* 680, gfix_exceed_max */
+	{335740992, "corrupt pool"},		/* 681, gfix_corrupt_pool */
+	{335740993, "virtual memory exhausted"},		/* 682, gfix_mem_exhausted */
+	{335740994, "bad pool id"},		/* 683, gfix_bad_pool */
+	{335740995, "Transaction state @1 not in valid range."},		/* 684, gfix_trn_not_valid */
+	{335741012, "unexpected end of input"},		/* 685, gfix_unexp_eoi */
+	{335741018, "failed to reconnect to a transaction in database @1"},		/* 686, gfix_recon_fail */
+	{335741036, "Transaction description item unknown"},		/* 687, gfix_trn_unknown */
+	{335741038, "\"read_only\" or \"read_write\" required"},		/* 688, gfix_mode_req */
 	{335741042, "positive or zero numeric value required"},		/* 689, gfix_pzval_req */
 	{336003074, "Cannot SELECT RDB$DB_KEY from a stored procedure."},		/* 690, dsql_dbkey_from_non_table */
 	{336003075, "Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3"},		/* 691, dsql_transitional_numeric */

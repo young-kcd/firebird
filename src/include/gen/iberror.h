@@ -716,6 +716,7 @@ const ISC_STATUS isc_sysf_argmustbe_range_inc1_1      = 335544977L;
 const ISC_STATUS isc_sysf_argmustbe_gteq_one          = 335544978L;
 const ISC_STATUS isc_sysf_argmustbe_range_exc1_1      = 335544979L;
 const ISC_STATUS isc_internal_rejected_params         = 335544980L;
+const ISC_STATUS isc_sysf_fp_overflow                 = 335544981L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -743,7 +744,6 @@ const ISC_STATUS isc_gfix_unexp_eoi                   = 335741012L;
 const ISC_STATUS isc_gfix_recon_fail                  = 335741018L;
 const ISC_STATUS isc_gfix_trn_unknown                 = 335741036L;
 const ISC_STATUS isc_gfix_mode_req                    = 335741038L;
-const ISC_STATUS isc_gfix_opt_SQL_dialect             = 335741039L;
 const ISC_STATUS isc_gfix_pzval_req                   = 335741042L;
 const ISC_STATUS isc_dsql_dbkey_from_non_table        = 336003074L;
 const ISC_STATUS isc_dsql_transitional_numeric        = 336003075L;
@@ -1696,6 +1696,7 @@ const ISC_STATUS isc_err_max                          = 954;
 #define isc_sysf_argmustbe_gteq_one          335544978L
 #define isc_sysf_argmustbe_range_exc1_1      335544979L
 #define isc_internal_rejected_params         335544980L
+#define isc_sysf_fp_overflow                 335544981L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1723,7 +1724,6 @@ const ISC_STATUS isc_err_max                          = 954;
 #define isc_gfix_recon_fail                  335741018L
 #define isc_gfix_trn_unknown                 335741036L
 #define isc_gfix_mode_req                    335741038L
-#define isc_gfix_opt_SQL_dialect             335741039L
 #define isc_gfix_pzval_req                   335741042L
 #define isc_dsql_dbkey_from_non_table        336003074L
 #define isc_dsql_transitional_numeric        336003075L

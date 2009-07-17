@@ -768,6 +768,7 @@ Data source : @4', NULL, NULL)
 ('sysf_argmustbe_range_exc1_1', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 659, NULL, 'Argument for @1 must be in the range ]-1, 1[', NULL, NULL);
 -- End of extras for isc_expression_eval_err
 ('internal_rejected_params', NULL, 'inf.cpp', NULL, 0, 660, NULL, 'Incorrect parameters provided to internal function @1', NULL, NULL);
+('sysf_fp_overflow', 'evlStdMath', 'SysFunction.cpp', NULL, 0, 661, NULL, 'Floating point overflow in built-in function @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
