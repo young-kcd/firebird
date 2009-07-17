@@ -145,7 +145,8 @@ void CNTL_shutdown_service(const TEXT* message)
 	sprintf(buffer, "%s error: %lu", service_name->c_str(), GetLastError());
 
 	HANDLE event_source = RegisterEventSource(NULL, service_name->c_str());
-	if (event_source) {
+	if (event_source)
+	{
 		strings[0] = buffer;
 		strings[1] = message;
 		ReportEvent(event_source,
@@ -176,7 +177,8 @@ void CNTL_stop_service() //const TEXT* service) // unused param
  **************************************/
 
 	SC_HANDLE servicemgr_handle = OpenSCManager(NULL, NULL, GENERIC_READ);
-	if (servicemgr_handle == NULL) {
+	if (servicemgr_handle == NULL)
+	{
 		// return error
 		int error = GetLastError();
 		gds__log("SC manager error %d", error);
@@ -184,16 +186,17 @@ void CNTL_stop_service() //const TEXT* service) // unused param
 	}
 
 	SC_HANDLE service_handleL =
-		OpenService(servicemgr_handle, service_name->c_str(),
-			GENERIC_READ | GENERIC_EXECUTE);
+		OpenService(servicemgr_handle, service_name->c_str(), GENERIC_READ | GENERIC_EXECUTE);
 
-	if (service_handleL == NULL) {
+	if (service_handleL == NULL)
+	{
 		// return error
 		int error = GetLastError();
 		gds__log("open services error %d", error);
 		return;
 	}
-	else {
+	else
+	{
 		SERVICE_STATUS status_info;
 		if (!ControlService
 			(service_handleL, SERVICE_CONTROL_STOP, &status_info))
