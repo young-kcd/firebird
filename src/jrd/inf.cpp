@@ -992,9 +992,9 @@ void INF_request_info(const jrd_req* request,
 				buffer_ptr[0] = item;
 				item = isc_info_error;
 				length = 1 + INF_convert(isc_infinap, buffer_ptr + 1);
-				break;
 			}
-			{ // scope
+			else
+			{
 				const jrd_nod* node = request->req_message;
 				if (item == isc_info_message_number)
 					length = INF_convert((IPTR) node->nod_arg[e_msg_number], buffer_ptr);
@@ -1003,7 +1003,7 @@ void INF_request_info(const jrd_req* request,
 					const Format* format = (Format*) node->nod_arg[e_msg_format];
 					length = INF_convert(format->fmt_length, buffer_ptr);
 				}
-			} // end scope
+			}
 			break;
 
 		case isc_info_request_cost:
