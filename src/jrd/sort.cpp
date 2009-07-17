@@ -151,7 +151,7 @@ static void check_file(const sort_context*, const run_control*);
 #define CHECK_FILE2(a, b)
 #endif
 
-static const char* SCRATCH = "fb_sort_";
+static const char* const SCRATCH = "fb_sort_";
 
 #ifdef SCROLLABLE_CURSORS
 #ifdef WORDS_BIGENDIAN

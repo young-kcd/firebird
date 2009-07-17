@@ -368,7 +368,7 @@ public:
 
 extern IsqlGlobals isqlGlob;
 
-static const char* SCRATCH = "fb_query_";
+static const char* const SCRATCH = "fb_query_";
 
 inline void STDERROUT(const char* st, bool cr = true)
 {
@@ -385,8 +385,8 @@ inline void STDERROUT(const char* st, bool cr = true)
 #endif
 #define ISQL_FREE(x)     {gds__free(x); x = NULL;}
 
-static const char* NEWLINE			= "\n";
-static const char* TAB_AS_SPACES	= "        ";
+static const char* const NEWLINE		= "\n";
+static const char* const TAB_AS_SPACES	= "        ";
 
 const char BLANK		= '\040';
 const char DBL_QUOTE	= '\042';

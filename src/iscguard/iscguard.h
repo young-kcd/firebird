@@ -19,10 +19,10 @@
 #ifndef ISCGUARD_H
 #define ISCGUARD_H
 
-static const char* GUARDIAN_APP_NAME		= "Firebird Guardian";
-static const char* GUARDIAN_APP_LABEL		= "Firebird Guardian";
-static const char* GUARDIAN_CLASS_NAME		= "FB_Guard";
-static const char* FBSERVER					= "fbserver.exe";
+static const char* const GUARDIAN_APP_NAME		= "Firebird Guardian";
+static const char* const GUARDIAN_APP_LABEL		= "Firebird Guardian";
+static const char* const GUARDIAN_CLASS_NAME	= "FB_Guard";
+static const char* const FBSERVER				= "fbserver.exe";
 
 /* Help Constants */
 const DWORD ibs_server_directory	= 8060;
@@ -39,7 +39,8 @@ const DWORD CRASHED			= (DWORD) -1;
 
 typedef void (*FPTR_VOID) ();
 
-struct log_info {
+struct log_info
+{
 	char log_action[25];
 	char log_date[25];
 	char log_time[25];

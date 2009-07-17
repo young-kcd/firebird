@@ -44,11 +44,11 @@ const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
 
 #ifdef UNIX
-const char* TARGET	= "help/help.fdb";
+const char* const TARGET	= "help/help.fdb";
 #endif
 
 #if (defined WIN_NT)
-const char* TARGET	= "help/help.fdb";
+const char* const TARGET	= "help\\help.fdb";
 #endif
 
 DATABASE HELP_DB = STATIC "help.fdb" RUNTIME target;

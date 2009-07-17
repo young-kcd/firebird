@@ -59,7 +59,7 @@
 using MsgFormat::SafeArg;
 
 
-const char* STARTUP_FILE	= "HOME";	// Assume its Unix
+const char* const STARTUP_FILE = "HOME";	// Assume it's Unix
 
 
 extern TEXT* QLI_prompt;

@@ -42,7 +42,7 @@
 #include <unistd.h>
 #endif
 
-const char* SCRATCH = "fb_query_";
+const char* const SCRATCH = "fb_query_";
 
 static int nextchar();
 static void retchar(SSHORT);

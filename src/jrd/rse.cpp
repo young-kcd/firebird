@@ -125,7 +125,7 @@ static void restore_record(record_param*);
 static void save_record(thread_db*, record_param*);
 static void write_merge_block(thread_db*, merge_file*, ULONG);
 
-static const char* SCRATCH = "fb_merge_";
+static const char* const SCRATCH = "fb_merge_";
 
 
 void RSE_close(thread_db* tdbb, RecordSource* rsb)

@@ -58,9 +58,9 @@ using MsgFormat::SafeArg;
 #include <io.h> // isatty
 #endif
 
-static const char* SCRATCH		= "fb_query_";
+static const char* const SCRATCH = "fb_query_";
 
-const char* FOPEN_INPUT_TYPE	= "r";
+const char* FOPEN_INPUT_TYPE = "r";
 
 static bool get_line(FILE*, TEXT*, USHORT);
 static int nextchar(const bool);
