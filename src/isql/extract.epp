@@ -2570,11 +2570,13 @@ static void list_functions()
 
 			bool printarg = true;
 
-			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION) {
+			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
+			{
 				if (FUN.RDB$RETURN_ARGUMENT) {
 					sprintf (return_buffer, "RETURNS PARAMETER %d", FUN.RDB$RETURN_ARGUMENT);
 				}
-				else {
+				else
+				{
 					sprintf (return_buffer, "RETURNS %s%s %s", type_buffer,
 							 UDF_param_types[ptype],
 							 (FNA.RDB$MECHANISM < 0 ? "FREE_IT" : ""));
@@ -2583,7 +2585,8 @@ static void list_functions()
 
 			}
 
-			if (printarg) {
+			if (printarg)
+			{
 				// First arg needs no comma
 				isqlGlob.printf("%s%s%s", (firstarg ? "" : ", "), type_buffer, UDF_param_types[ptype]);
 				firstarg = false;
