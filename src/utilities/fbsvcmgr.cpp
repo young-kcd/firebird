@@ -46,11 +46,11 @@ using namespace Firebird;
 
 typedef bool PopulateFunction(char**&, ClumpletWriter&, unsigned int);
 
-struct Switches
+struct SvcSwitches
 {
 	const char* name;
 	PopulateFunction* populate;
-	const Switches* options;
+	const SvcSwitches* options;
 	unsigned int tag;
 	UCHAR tagInf;
 };
@@ -161,7 +161,7 @@ bool putFileFromArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 // add some special format tags to spb
 
 bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
-				const Switches* sw, ISC_STATUS errorCode)
+				const SvcSwitches* sw, ISC_STATUS errorCode)
 {
 	if (! *av)
 		return false;
@@ -180,7 +180,7 @@ bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
 	return false;	// compiler warning silencer
 }
 
-const Switches amSwitch[] =
+const SvcSwitches amSwitch[] =
 {
 	{"prp_am_readonly", 0, 0, isc_spb_prp_am_readonly, 0},
 	{"prp_am_readwrite", 0, 0, isc_spb_prp_am_readwrite, 0},
@@ -192,7 +192,7 @@ bool putAccessMode(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, amSwitch, isc_fbsvcmgr_bad_am);
 }
 
-const Switches wmSwitch[] =
+const SvcSwitches wmSwitch[] =
 {
 	{"prp_wm_async", 0, 0, isc_spb_prp_wm_async, 0},
 	{"prp_wm_sync", 0, 0, isc_spb_prp_wm_sync, 0},
@@ -204,7 +204,7 @@ bool putWriteMode(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, wmSwitch, isc_fbsvcmgr_bad_wm);
 }
 
-const Switches rsSwitch[] =
+const SvcSwitches rsSwitch[] =
 {
 	{"prp_res_use_full", 0, 0, isc_spb_prp_res_use_full, 0},
 	{"prp_res", 0, 0, isc_spb_prp_res, 0},
@@ -216,7 +216,7 @@ bool putReserveSpace(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, rsSwitch, isc_fbsvcmgr_bad_rs);
 }
 
-const Switches shutSwitch[] =
+const SvcSwitches shutSwitch[] =
 {
 	{"prp_sm_normal", 0, 0, isc_spb_prp_sm_normal, 0},
 	{"prp_sm_multi", 0, 0, isc_spb_prp_sm_multi, 0},
@@ -262,10 +262,10 @@ bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
 }
 
 // populate spb with tags according to user-defined command line switches
-// and programmer-defined set of Switches array
+// and programmer-defined set of SvcSwitches array
 
 bool populateSpbFromSwitches(char**& av, ClumpletWriter& spb,
-							 const Switches* sw, ClumpletWriter* infoSpb)
+							 const SvcSwitches* sw, ClumpletWriter* infoSpb)
 {
 	if (! *av)
 		return false;
@@ -298,7 +298,7 @@ bool populateSpbFromSwitches(char**& av, ClumpletWriter& spb,
 	return false;
 }
 
-const Switches attSwitch[] =
+const SvcSwitches attSwitch[] =
 {
 	{"user", putStringArgument, 0, isc_spb_user_name, 0},
 	{"user_name", putStringArgument, 0, isc_spb_user_name, 0},
@@ -308,7 +308,7 @@ const Switches attSwitch[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches infSwitch[] =
+const SvcSwitches infSwitch[] =
 {
 	{"info_server_version", putSingleTag, 0, isc_info_svc_server_version, 0},
 	{"info_implementation", putSingleTag, 0, isc_info_svc_implementation, 0},
@@ -321,7 +321,7 @@ const Switches infSwitch[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches backupOptions[] =
+const SvcSwitches backupOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"verbose", putSingleTag, 0, isc_spb_verbose, 0},
@@ -339,7 +339,7 @@ const Switches backupOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches restoreOptions[] =
+const SvcSwitches restoreOptions[] =
 {
 	{"bkp_file", putStringArgument, 0, isc_spb_bkp_file, 0},
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
@@ -358,7 +358,7 @@ const Switches restoreOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches propertiesOptions[] =
+const SvcSwitches propertiesOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"prp_page_buffers", putNumericArgument, 0, isc_spb_prp_page_buffers, 0},
@@ -380,7 +380,7 @@ const Switches propertiesOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches repairOptions[] =
+const SvcSwitches repairOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"rpr_commit_trans", putNumericArgument, 0, isc_spb_rpr_commit_trans, 0},
@@ -397,7 +397,7 @@ const Switches repairOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches statisticsOptions[] =
+const SvcSwitches statisticsOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sts_data_pages", putOption, 0, isc_spb_sts_data_pages, 0},
@@ -407,7 +407,7 @@ const Switches statisticsOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches dispdelOptions[] =
+const SvcSwitches dispdelOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
@@ -415,14 +415,14 @@ const Switches dispdelOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches mappingOptions[] =
+const SvcSwitches mappingOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches addmodOptions[] =
+const SvcSwitches addmodOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"sec_username", putStringArgument, 0, isc_spb_sec_username, 0},
@@ -437,7 +437,7 @@ const Switches addmodOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches nbackOptions[] =
+const SvcSwitches nbackOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
@@ -446,28 +446,28 @@ const Switches nbackOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
-const Switches nrestOptions[] =
+const SvcSwitches nrestOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches traceStartOptions[] =
+const SvcSwitches traceStartOptions[] =
 {
 	{"trc_cfg", putFileFromArgument, 0, isc_spb_trc_cfg, 0},
 	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches traceChgStateOptions[] =
+const SvcSwitches traceChgStateOptions[] =
 {
 	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
 	{"trc_id", putNumericArgument, 0, isc_spb_trc_id, 0},
 	{0, 0, 0, 0, 0}
 };
 
-const Switches actionSwitch[] =
+const SvcSwitches actionSwitch[] =
 {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
