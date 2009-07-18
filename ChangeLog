@@ -1,3 +1,39 @@
+2009-07-18 14:39  robocop
+
+	* firebird2/src/isql/: extract.epp (1.102), isql.epp (1.286),
+	show.epp (1.149):
+
+	Style.
+
+2009-07-18 14:13  robocop
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.34):
+
+	Switches changed to SvcSwitches to allow code that resembles other
+	utilities (needed also for impending commit after 2.5).
+
+2009-07-17 19:13  robocop
+
+	* firebird2/: src/include/gen/codetext.h (1.108),
+	src/include/gen/iberror.h (1.112), src/include/gen/msgs.h (1.138),
+	src/include/gen/sql_code.h (1.114), src/include/gen/sql_state.h
+	(1.44), src/msgs/facilities2.sql (1.72), src/msgs/messages2.sql
+	(1.97), src/msgs/system_errors2.sql (1.60),
+	lang_helpers/gds_codes.ftn (1.99), lang_helpers/gds_codes.pas
+	(1.98), src/jrd/SysFunction.cpp (1.80):
+
+	The original message about FP overflow was not very useful for
+	built-in functions (unlike other msgs, it didn't identify the
+	cause). Made a special message for it. Also, one alice (gfix) help
+	item was put erroneously by IB engineers in system_errors.sql;
+	delete it.
+
+2009-07-17 19:03  robocop
+
+	* firebird2/src/jrd/inf.cpp (1.104):
+
+	Seems more readable to me.
+
 2009-07-17 11:29  robocop
 
 	* firebird2/src/alice/: alice.cpp (1.119), exe.cpp (1.62),
