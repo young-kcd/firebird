@@ -41,6 +41,7 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../common/StatusArg.h"
+#include "../jrd/constants.h"
 
 using namespace Firebird;
 
@@ -160,7 +161,7 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
  * Functional description
  *
  **************************************/
-	SCHAR global[32];
+	SCHAR global[MAX_SQL_IDENTIFIER_SIZE];
 
 	if (lookup_desc(status, db_handle, trans_handle, field_name, relation_name, desc, global))
 	{

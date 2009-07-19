@@ -727,15 +727,15 @@ inline Transaction* findTransaction(FB_API_HANDLE* public_handle, Attachment *a)
 static int get_database_info(Transaction*, TEXT**);
 static const PTR get_entrypoint(int, int);
 static USHORT sqlda_buffer_size(USHORT, const XSQLDA*, USHORT);
-static ISC_STATUS get_transaction_info(ISC_STATUS *, Transaction*, TEXT **);
+static ISC_STATUS get_transaction_info(ISC_STATUS*, Transaction*, TEXT**);
 
-static void iterative_sql_info(ISC_STATUS *, FB_API_HANDLE*, SSHORT, const SCHAR *, SSHORT,
-							   SCHAR *, USHORT, XSQLDA *);
+static void iterative_sql_info(ISC_STATUS*, FB_API_HANDLE*, USHORT, const SCHAR*, SSHORT,
+							   SCHAR*, USHORT, XSQLDA*);
 static ISC_STATUS open_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, FB_API_HANDLE*, SLONG*,
 						USHORT, const UCHAR*, SSHORT, SSHORT);
 static ISC_STATUS prepare(ISC_STATUS *, Transaction*);
 static void release_dsql_support(sqlda_sup&);
-static void save_error_string(ISC_STATUS *);
+static void save_error_string(ISC_STATUS*);
 static bool set_path(const PathName&, PathName&);
 
 GlobalPtr<Semaphore> why_sem;
@@ -5416,14 +5416,14 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 }
 
 
-static void iterative_sql_info(ISC_STATUS * user_status,
+static void iterative_sql_info(ISC_STATUS* user_status,
 							   FB_API_HANDLE* stmt_handle,
-							   SSHORT item_length,
-							   const SCHAR * items,
+							   USHORT item_length,
+							   const SCHAR* items,
 							   SSHORT buffer_length,
 							   SCHAR* buffer,
 							   USHORT dialect,
-							   XSQLDA * sqlda)
+							   XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -5447,7 +5447,8 @@ static void iterative_sql_info(ISC_STATUS * user_status,
 		*p++ = 2;
 		*p++ = last_index;
 		*p++ = last_index >> 8;
-		memcpy(p, items, (int) item_length);
+		fb_assert(p + item_length <= new_items + sizeof(new_items));
+		memcpy(p, items, item_length);
 		p += item_length;
 		if (GDS_DSQL_SQL_INFO(user_status, stmt_handle, (SSHORT) (p - new_items), new_items,
 								buffer_length, buffer))

@@ -1270,7 +1270,7 @@ bool MET_get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, U
 
 /* Force key to uppercase, following C locale rules for uppercasing */
 /* At the same time, search for the first period in the string (if any) */
-	UCHAR buffer[32];			/* BASED ON RDB$COLLATION_NAME */
+	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];			/* BASED ON RDB$COLLATION_NAME */
 	UCHAR* p = buffer;
 	UCHAR* period = NULL;
 	for (; name < end_name && p < buffer + sizeof(buffer) - 1; p++, name++) {
@@ -4366,7 +4366,7 @@ static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT*
  *      Return (1) if found, (0) otherwise.
  *
  **************************************/
-	UCHAR buffer[32];			/* BASED ON RDB$TYPE_NAME */
+	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];			/* BASED ON RDB$TYPE_NAME */
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();

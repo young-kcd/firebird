@@ -351,7 +351,7 @@ FB_API_HANDLE PRO_fetch_procedure( qli_dbb* database, const TEXT* proc)
  *	If the name doesn't exit, return NULL.
  *
  **************************************/
-	TEXT name[32];
+	TEXT name[MAX_SQL_IDENTIFIER_SIZE];
 
 	upcase_name(proc, name);
 	PRO_setup(database);
