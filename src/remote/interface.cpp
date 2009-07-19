@@ -5772,6 +5772,7 @@ static bool init(ISC_STATUS* user_status,
 		// This is FB < 2.5. Lets remove that not recognized DPB and convert the UTF8
 		// strings to the OS codepage.
 		dpb.deleteWithTag(isc_dpb_utf8_filename);
+		ISC_unescape(file_name);
 		ISC_utf8ToSystem(file_name);
 
 		for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
@@ -5792,6 +5793,7 @@ static bool init(ISC_STATUS* user_status,
 				{
 					string s;
 					dpb.getString(s);
+					ISC_unescape(s);
 					ISC_utf8ToSystem(s);
 					dpb.deleteClumplet();
 					dpb.insertString(tag, s);
