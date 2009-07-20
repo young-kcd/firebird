@@ -167,6 +167,20 @@ static int THREAD_ROUTINE thread(void *);
 static void		zap_packet(PACKET*, BOOLEAN);
 
 
+static bool bad_port_context(ISC_STATUS*, RDB, const ISC_LONG);
+
+
+inline bool bad_db(ISC_STATUS* status_vector, RDB rdb)
+{
+	return bad_port_context(status_vector, rdb, isc_bad_db_handle);
+}
+
+inline bool bad_service(ISC_STATUS* status_vector, RDB rdb)
+{
+	return bad_port_context(status_vector, rdb, isc_bad_svc_handle);
+}
+
+
 // static data - NOT THREAD SAFE!
 
 static SLONG		threads_waiting		= 0;
@@ -644,6 +658,11 @@ static ISC_STATUS allocate_statement( PORT port, P_RLSE * allocate, PACKET* send
 	ISC_STATUS_ARRAY status_vector;
 
 	rdb = port->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return port->send_response(send, 0, 0, status_vector);
+	}
+
 	handle = NULL;
 
 	THREAD_EXIT;
@@ -876,6 +895,13 @@ static void aux_request( PORT port, P_REQ * request, PACKET* send)
 	port->port_status_vector = status_vector;
 	success(status_vector);
 
+	rdb = port->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		port->send_response(send, 0, 0, status_vector);
+		return;
+	}
+
 /* We do this silliness with buffer because the SPX protocol
    requires a 12 byte buffer to be sent back.  Other protocols
    can do what they want to with cstr_address. */
@@ -883,7 +909,7 @@ static void aux_request( PORT port, P_REQ * request, PACKET* send)
 	save_cstring = send->p_resp.p_resp_data;
 	send->p_resp.p_resp_data.cstr_address = buffer;
 	aux_port = port->request(send);
-	rdb = port->port_context;
+
 	port->send_response(send, rdb->rdb_id,
 				  send->p_resp.p_resp_data.cstr_length, status_vector);
 
@@ -927,6 +953,10 @@ static ISC_STATUS cancel_events( PORT port, P_EVENT * stuff, PACKET* send)
 /* Which database ? */
 
 	rdb = port->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return port->send_response(send, 0, 0, status_vector);
+	}
 
 /* Find the event */
 
@@ -1109,6 +1139,11 @@ ISC_STATUS port::compile(P_CMPL* compile, PACKET* send)
 	OBJCT object;
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
+
 	handle = NULL;
 	blr = compile->p_cmpl_blr.cstr_address;
 	blr_length = compile->p_cmpl_blr.cstr_length;
@@ -1204,6 +1239,11 @@ ISC_STATUS port::ddl(P_DDL* ddl, PACKET* send)
 						isc_bad_trans_handle);
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
+
 	blr = ddl->p_ddl_blr.cstr_address;
 	blr_length = ddl->p_ddl_blr.cstr_length;
 
@@ -1408,6 +1448,11 @@ void port::drop_database(P_RLSE* release, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		this->send_response(send, 0, 0, status_vector);
+		return;
+	}
 
 	THREAD_EXIT;
 	isc_drop_database(status_vector,
@@ -1525,6 +1570,10 @@ ISC_STATUS port::end_database(P_RLSE * release, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 	THREAD_EXIT;
 	isc_detach_database(status_vector,
@@ -1717,6 +1766,10 @@ ISC_STATUS port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (this->port_objects && exnow->p_sqlst_transaction) {
@@ -2482,6 +2535,11 @@ ISC_STATUS port::get_slice(P_SLC * stuff, PACKET* send)
 	UCHAR temp_buffer[4096];
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
+
 	CHECK_HANDLE_MEMBER(transaction,
 						RTR,
 						type_rtr,
@@ -2568,6 +2626,10 @@ ISC_STATUS port::info(P_OP op, P_INFO * stuff, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 /* Make sure there is a suitable temporary blob buffer */
 
@@ -2822,6 +2884,11 @@ ISC_STATUS port::open_blob(P_OP op, P_BLOB * stuff, PACKET* send)
 						isc_bad_trans_handle);
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
+
 	handle = NULL;
 	bpb_length = 0;
 	bpb = NULL;
@@ -3407,6 +3474,10 @@ ISC_STATUS port::put_slice(P_SLC * stuff, PACKET* send)
 						isc_bad_trans_handle);
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 	THREAD_EXIT;
 	send->p_resp.p_resp_blob_id = stuff->p_slc_id;
@@ -3443,6 +3514,10 @@ ISC_STATUS port::que_events(P_EVENT * stuff, PACKET* send)
 	SLONG id;
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 /* Find unused event block or, if necessary, a new one */
 
@@ -4471,6 +4546,10 @@ ISC_STATUS port::service_end(P_RLSE * release, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_service(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 	THREAD_EXIT;
 	isc_service_detach(status_vector,
@@ -4498,6 +4577,10 @@ ISC_STATUS port::service_start(P_INFO * stuff, PACKET* send)
 	ULONG *reserved = 0;		/* reserved for future use */
 
 	rdb = this->port_context;
+	if (bad_service(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
 
 	THREAD_EXIT;
 	isc_service_start(status_vector,
@@ -4702,6 +4785,11 @@ ISC_STATUS port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* send)
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
+
 	FRBRD *handle = NULL;
 
 	THREAD_EXIT;
@@ -4975,6 +5063,11 @@ ISC_STATUS port::transact_request(P_TRRQ * trrq, PACKET* send)
 						isc_bad_trans_handle);
 
 	rdb = this->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		return this->send_response(send, 0, 0, status_vector);
+	}
+
 	blr = trrq->p_trrq_blr.cstr_address;
 	blr_length = trrq->p_trrq_blr.cstr_length;
 	procedure = this->port_rpr;
@@ -5036,4 +5129,29 @@ static void zap_packet( PACKET* packet, BOOLEAN new_)
 #else
 		memset(packet, 0, sizeof(PACKET));
 #endif
+}
+
+
+static bool bad_port_context(ISC_STATUS* status_vector, 
+							 RDB rdb, 
+							 const ISC_LONG error)
+{
+/**************************************
+ *
+ *	b a d _ p o r t _ c o n t e x t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check rdb pointer, in case of error create status vector
+ *
+ **************************************/
+	if (rdb)
+	{
+		return false;
+	}
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = error;
+	status_vector[2] = isc_arg_end;
+	return true;
 }
