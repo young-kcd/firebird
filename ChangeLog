@@ -1,3 +1,37 @@
+2009-07-20 14:44  robocop
+
+	* firebird2/src/msgs/: change_msgs.epp (1.23), enter_msgs.epp
+	(1.21):
+
+	Misc (obsolete utilities)
+
+2009-07-19 19:33  asfernandes
+
+	* firebird2/src/remote/: interface.cpp (1.221), xnet.cpp (1.138),
+	os/win32/wnet.cpp (1.84):
+
+	Fixed CORE-2561 - Incorrect database name transliteration when
+	connecting using WNET or XNET
+
+2009-07-19 18:00  robocop
+
+	* firebird2/src/jrd/trace/TraceCmdLine.cpp (1.15):
+
+	Typo   :-)
+
+2009-07-19 15:55  hvlad
+
+	* firebird2/src/jrd/trace/TraceCmdLine.cpp (1.14):
+
+	Update usage text to include required connection parameters
+
+2009-07-19 15:31  robocop
+
+	* firebird2/src/: dsql/array.epp (1.46), jrd/met.epp (1.285),
+	jrd/why.cpp (1.249), qli/proc.epp (1.38):
+
+	Misc and constants.
+
 2009-07-18 14:39  robocop
 
 	* firebird2/src/isql/: extract.epp (1.102), isql.epp (1.286),
