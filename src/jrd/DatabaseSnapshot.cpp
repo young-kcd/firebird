@@ -154,11 +154,11 @@ UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 	// and copy the data there, starting with our own dbb.
 
 	// First pass
-	for (ULONG offset = sizeof(Header); offset < base->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
-		const ULONG length = sizeof(Element) + element->length;
+		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->processId == process_id && element->localId == local_id)
 		{
@@ -189,11 +189,11 @@ UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 	memcpy(bufferPtr, ptr + sizeof(Element), element->length);
 	bufferPtr += element->length;
 
-	for (ULONG offset = sizeof(Header); offset < base->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
-		const ULONG length = sizeof(Element) + element->length;
+		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (offset != self_dbb_offset)
 		{
@@ -220,7 +220,7 @@ ULONG DatabaseSnapshot::SharedData::setup()
 	element->processId = process_id;
 	element->localId = local_id;
 	element->length = 0;
-	base->used += sizeof(Element);
+	base->used += alignOffset(sizeof(Element));
 	return offset;
 }
 
@@ -233,19 +233,21 @@ void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void*
 	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
+	ULONG previous = alignOffset(sizeof(Element) + element->length);
 	element->length += length;
-	base->used += length;
+	ULONG current = alignOffset(sizeof(Element) + element->length);
+	base->used += (current - previous);
 }
 
 
 void DatabaseSnapshot::SharedData::cleanup()
 {
 	// Remove information about our dbb
-	for (ULONG offset = sizeof(Header); offset < base->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
 		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
-		const ULONG length = sizeof(Element) + element->length;
+		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->processId == process_id && element->localId == local_id)
 		{
@@ -293,7 +295,7 @@ void DatabaseSnapshot::SharedData::checkMutex(const TEXT* string, int state)
 		sprintf(msg, "MONITOR: mutex %s error, status = %d", string, state);
 		gds__log(msg);
 
-		fprintf(stderr, "%s\n", msg);
+		//fprintf(stderr, "%s\n", msg);
 		exit(FINI_ERROR);
 	}
 }
@@ -314,7 +316,7 @@ void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initi
 	// Initialize the shared data header
 	Header* const header = (Header*) shmemData->sh_mem_address;
 	header->version = MONITOR_VERSION;
-	header->used = sizeof(Header);
+	header->used = alignOffset(sizeof(Header));
 	header->allocated = shmemData->sh_mem_length_mapped;
 
 #ifndef WIN_NT
@@ -322,6 +324,11 @@ void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initi
 #endif
 }
 
+
+ULONG DatabaseSnapshot::SharedData::alignOffset(ULONG unaligned)
+{
+	return Firebird::MEM_ALIGN(unaligned);
+}
 
 // DatabaseSnapshot class
 

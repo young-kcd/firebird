@@ -67,7 +67,7 @@ class DatabaseSnapshot
 		void assign(USHORT length, const UCHAR* ptr)
 		{
 			// CVC: While length is USHORT, this assertion is redundant.
-			fb_assert(length <= MAX_FORMAT_SIZE);
+			// fb_assert(length <= MAX_FORMAT_SIZE); // commented - AP - avoid gcc warning
 			offset = 0;
 			sizeLimit = length;
 			memcpy(buffer, ptr, length);
@@ -205,6 +205,8 @@ public:
 			SLONG localId;
 			ULONG length;
 		};
+
+		static ULONG alignOffset(ULONG absoluteOffset);
 
 	public:
 		explicit SharedData(const Database*);
