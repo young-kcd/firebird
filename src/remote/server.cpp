@@ -1129,19 +1129,20 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 	port->port_status_vector = status_vector;
 	success(status_vector);
 
+	RDB rdb = port->port_context;
+	if (bad_db(status_vector, rdb))
+	{
+		port->send_response(send, 0, 0, status_vector, false);
+		return;
+	}
+
 	// This buffer is used by INET and WNET transports
 	// to return the server identification string
 	UCHAR buffer[BUFFER_TINY];
 	send->p_resp.p_resp_data.cstr_address = buffer;
 
 	rem_port* aux_port = port->request(send);
-	RDB rdb = port->port_context;
-	if (bad_db(status_vector, rdb))
-	{
-		// who has any idea what else to do with such attempt
-		return;
-	}
-	
+
 	port->send_response(send, rdb->rdb_id,
 				  send->p_resp.p_resp_data.cstr_length, 
 				  status_vector, false);
