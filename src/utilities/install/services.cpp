@@ -99,7 +99,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	SC_HANDLE service = CreateService(manager,
 							service_name,
 							display_name,
-							SERVICE_CHANGE_CONFIG,
+							SERVICE_CHANGE_CONFIG | SERVICE_START,
 							dwServiceType,
 							(sw_startup == STARTUP_DEMAND) ?
 								SERVICE_DEMAND_START : SERVICE_AUTO_START,
