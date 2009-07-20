@@ -258,6 +258,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-915
+        ISQL extract procedures body with double line break
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Improvement CORE-2551
         Interpret DPB items like the database name parameter is interpreted currently and
         change MON$ filename fields from NONE to UNICODE_FSS

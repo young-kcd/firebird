@@ -1071,15 +1071,34 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	}
 
 	SCHAR buffer[BUFFER_LENGTH512];
+	bool endedWithCr = false;
 
 	size_t length = 0;
 	while (blob.getSegment(sizeof(buffer) - 1, buffer, length))
 	{
-		// Need to step through the buffer until we hit a '\n' and then print the
-		// line.  This is because '\n' are included in blob text.
-		// CVC: The above comment and the code do not match.
+		// ASF: In Windows, \n characters are printed as \r\n in text mode.
+		// If the original string is \r\n, it's printed as \r\r\n, resulting
+		// in mixed/wrong line endings. So here, we're filtering any \r just
+		// before \n.
+		bool prevEndedWithCr = endedWithCr;
+
+		if ((endedWithCr = length != 0 && buffer[length - 1] == '\r'))
+			--length;
 
 		buffer[length] = 0;
+
+		for (SCHAR* p = buffer; p < buffer + length - 1; ++p)
+		{
+			if (p[0] == '\r' && p[1] == '\n')
+			{
+				memmove(p, p + 1, length - (p - buffer));
+				--length;
+			}
+		}
+
+		if (prevEndedWithCr && buffer[0] != '\n')
+		    fputc('\r', fp);
+
 		if (escape_squote)
 		{
 			for (const UCHAR* p = (UCHAR*) buffer; *p; ++p)
@@ -1093,6 +1112,9 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 		else
 			ISQL_printf(fp, buffer);
 	}
+
+	if (endedWithCr)
+	    fputc('\r', fp);
 
 	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
 		ISQL_errmsg(isc_status);
