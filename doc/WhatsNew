@@ -1,3 +1,13 @@
+  **************************
+  * v2.5 Release Candidate 1
+  **************************
+
+    * Bugfix CORE-915
+        ISQL extracts procedures body with double line break
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
   *************
   * v2.5 Beta 2
   *************
@@ -255,11 +265,6 @@
 
     * Bugfix CORE-1346
         LPAD and RPAD with two columns not working
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-
-    * Bugfix CORE-915
-        ISQL extract procedures body with double line break
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
