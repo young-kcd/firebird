@@ -67,7 +67,7 @@ static void usage(UtilSvc* uSvc, const char* message, ...)
 		"  -STO[P]                               Stop trace session\n"
 		"  -SU[SPEND]                            Suspend trace session\n"
 		"  -R[ESUME]                             Resume trace session\n"
-		"  -L[IST]                               List existing trace sessions\n\n"
+		"  -L[IST]                               List existing trace sessions\n"
 		"\n"
 		"Action parameters: \n"
 		"  -N[AME]    <string>                   Session name\n"
@@ -243,7 +243,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 				case IN_SW_TRACE_SUSPEND:
 				case IN_SW_TRACE_RESUME:
 				case IN_SW_TRACE_LIST:
-					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw, action_sw->in_sw_name);
+					usage(uSvc, TRACE_ERR_PARAM_ACT_NOTCOMPAT, sw->in_sw_name, action_sw->in_sw_name);
 					break;
 			}
 
