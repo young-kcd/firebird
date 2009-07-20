@@ -2,6 +2,21 @@
   * v2.5 Beta 2
   *************
 
+    * Bugfix CORE-2564
+        Bus error when working with the monitoring tables on RISC machines
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2563
+        Possible DoS attack using the malformed packet sent into the connection port
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2561
+        Incorrect database name transliteration when connecting using WNET or XNET
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2552
         isc_dsql_execute2 does not return errors when called with a non-NULL output SQLDA
       Contributor(s):
