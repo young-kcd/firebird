@@ -308,3 +308,65 @@ Modifications of the monitoring tables
 
     2) Disconnect everybody but ourselves:
         DELETE FROM MON$ATTACHMENTS WHERE MON$ATTACHMENT_ID <> CURRENT_CONNECTION
+
+
+--------------
+Under the hood
+--------------
+
+    The monitoring implementation is built around two corner stones: shared memory and
+    notifications.
+
+    All server processes share some region of memory where the current activity information
+    is stored. This information consists of multiple variable-length items describing the
+    various activity details. All items that belong to the same process are grouped into a
+    single cluster, so that they can be processed as a whole.
+
+    The monitoring information is not populated/collected in real time. Instead, server
+    processes write their data into the shared memory only when explicitly asked to. When doing
+    so, the old clusters are being replaced with newer ones. When the shared memory region is
+    being read, the reading process scans all the clusters and performs the garbage collection:
+    clusters that belong to dead processes are removed and the shared memory space is compacted.
+
+    Every server process has a flag that indicates its ability to react to someone's monitoring
+    request as soon as it arrives. When some user connection runs a query against some
+    monitoring table, the worker process of that connection sends a broadcast notification to
+    other processes requesting an up-to-date information. Those processes react to this request
+    by updating their clusters inside the shared memory region and clearing their "ready" flags.
+    Once the every notified process has finished, the requesting one reads the shared memory
+    region, filters the necessary tags based on its user permissions, transforms the internal
+    representation into records and fields and populates the in-memory monitoring tables cache.
+
+    Processes that were idle since the last monitoring exchange have their "ready" flag clear,
+    thus indicating that they have nothing to update in the shared memory. This way they're
+    excluded from the next roundtrip. As soon as something significant changed inside the
+    process, the flag is set and this process starts responding to the monitoring requests
+    again.
+
+    The requester holds an exclusive lock while coordinating the write/read operations. This lock
+    affects the currently active user connections as well as the connections being established.
+    Multiple simultaneous monitoring requests are serialized.
+
+
+----------------------------
+Limitations and known issues
+----------------------------
+
+    1) In a heavily loaded system running Classic, monitoring requests may take noticable time
+       to execute. In the meantime, other activity (both running statements and new connection
+       attempts) may be blocked until the monitoring request completes.
+
+       Improved since FB v2.1.2.
+
+    2) Monitoring requests may sometimes fail due to the out-of-memory condition, or cause other
+       worker processes to swap. This is caused by the fact that the every record in MON$STATEMENTS
+       has a blob MON$SQL_TEXT which is created for the duration of the monitoring transaction.
+       Prior to FB v2.5, every blob occupied <page size> bytes of memory even if its contents is
+       in fact smaller. So, with a huge number of prepared statements in the system, it becomes
+       possible to get this failure.
+       
+       Another possible reason could be the temporary (very short in practice) growth of the
+       transaction pool which caches the monitoring data while merging the clusters into a single
+       fragment.
+
+       Improved since FB v2.5.0.
