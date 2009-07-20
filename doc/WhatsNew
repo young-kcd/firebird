@@ -2,6 +2,12 @@
   * v1.5.6
   **************
 
+    * Fixed bug CORE-2563
+        Possible DoS attack using the malformed packet sent into the connection port
+      Contributor(s):
+        Dmitry Yemanov <yemanov at yandex.ru>
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Fixed bug CORE-2368
         Access violation after the isc_cancel_events() API call
         if the event was not found or was already delivered
