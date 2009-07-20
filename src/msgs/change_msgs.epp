@@ -67,11 +67,14 @@ int main( int argc, char **argv)
  *	Top level routine.
  *
  **************************************/
-	char facility[20], text[256], module[32], routine[32];
-	char sql_class[32], sql_sub_class[32];
+	char facility[20], text[256];
+	BASED_ON MESSAGES.ROUTINE routine;
+	BASED_ON MESSAGES.MODULE module;
+	BASED_ON SYSTEM_ERRORS.SQL_CLASS sql_class;
+	BASED_ON SYSTEM_ERRORS.SQL_SUBCLASS sql_sub_class;
+	BASED_ON SYSTEM_ERRORS.GDS_SYMBOL symbol;
 	SCHAR input[200];
 	char yesno[100];
-	char symbol[30];
 	char nstring[32];
 	SSHORT count;
 	SSHORT sql_number;
