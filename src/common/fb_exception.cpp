@@ -386,11 +386,11 @@ fatal_exception::fatal_exception(const char* message) :
 // want to avoid problems with picky compilers that can't find what().
 // We can't link this file into normal gpre.
 // Keep in sync with the constructor above, please; "message" becomes 4th element
-// after initialization of status vector.
-//const char* fatal_exception::what() const throw()
-//{
-//	return reinterpret_cast<const char*>(value()[3]);
-//}
+// after initialization of status vector in constructor.
+const char* fatal_exception::what() const throw()
+{
+	return reinterpret_cast<const char*>(value()[3]);
+}
 
 void fatal_exception::raise(const char* message)
 {
