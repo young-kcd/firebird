@@ -466,6 +466,9 @@ public:
 		att_context_vars(*dbb->dbb_permanent),
 		att_network_protocol(*dbb->dbb_permanent),
 		att_remote_address(*dbb->dbb_permanent) { }
+
+	~Attachment();
+
 /*	Attachment()
 	:	att_database(0),
 		att_next(0),

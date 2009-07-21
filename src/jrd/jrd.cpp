@@ -452,6 +452,7 @@ static BOOLEAN	handler_NT(SSHORT);
 static Database*	init(thread_db*, ISC_STATUS*, const Firebird::PathName&, bool);
 static ISC_STATUS	prepare(thread_db*, jrd_tra*, ISC_STATUS*, USHORT, const UCHAR*);
 static void		release_attachment(Attachment*);
+static void		detachLocksFromAttachment(Attachment*);
 static ISC_STATUS	return_success(thread_db*);
 static bool		rollback(thread_db*, jrd_tra*, ISC_STATUS*, const bool);
 
@@ -5787,23 +5788,7 @@ static void release_attachment(Attachment* attachment)
 		attachment->att_val_errors = NULL;
 	}
 
-/* bug #7781, need to null out the attachment pointer of all locks which
-   were hung off this attachment block, to ensure that the attachment
-   block doesn't get dereferenced after it is released */
-
-	{
-		// Disable delivery of ASTs for the moment while queue of locks is in flux
-		AstInhibit aiHolder;
-
-		Lock* long_lock = attachment->att_long_locks;
-		while (long_lock) {
-			Lock* next = long_lock->lck_next;
-			long_lock->lck_attachment = NULL;
-			long_lock->lck_next = NULL;
-			long_lock->lck_prior = NULL;
-			long_lock = next;
-		}
-	}
+	detachLocksFromAttachment(attachment);
 
 	if (attachment->att_flags & ATT_lck_init_done) {
 		LCK_fini(tdbb, LCK_OWNER_attachment);	/* For the attachment */
@@ -5829,6 +5814,47 @@ static void release_attachment(Attachment* attachment)
 			break;
 		}
 	}
+}
+
+
+static void detachLocksFromAttachment(Attachment* attachment)
+{
+/**************************************
+ *
+ *	d e t a c h L o c k s F r o m A t t a c h m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ * Bug #7781, need to null out the attachment pointer of all locks which
+ * were hung off this attachment block, to ensure that the attachment
+ * block doesn't get dereferenced after it is released
+ *
+ **************************************/
+	// Disable delivery of ASTs for the moment while queue of locks is in flux
+	AstInhibit aiHolder;
+
+	Lock* long_lock = attachment->att_long_locks;
+	while (long_lock) {
+		Lock* next = long_lock->lck_next;
+		long_lock->lck_attachment = NULL;
+		long_lock->lck_next = NULL;
+		long_lock->lck_prior = NULL;
+		long_lock = next;
+	}
+	attachment->att_long_locks = NULL;
+}
+
+
+Jrd::Attachment::~Attachment()
+{
+// For normal attachments that happens release_attachment(),
+// but for special ones like GC should be done also in dtor - 
+// they do not (and should not) call release_attachment().
+// It's no danger calling detachLocksFromAttachment() 
+// once more here because it nulls att_long_locks.
+//		AP 2007
+	detachLocksFromAttachment(this);
 }
 
 
