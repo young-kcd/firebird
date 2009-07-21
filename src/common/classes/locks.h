@@ -204,7 +204,7 @@ public:
 	static void initMutexes();
 };
 
-#if !(defined(DARWIN) || defined(HPUX))
+#ifdef NEVERDEF
 class Spinlock
 {
 private:
@@ -240,9 +240,9 @@ public:
 			system_call_failed::raise("pthread_spin_unlock");
 	}
 };
-#else // have spinlocks
+#else
 typedef Mutex Spinlock;
-#endif // have spinlocks
+#endif
 
 #endif //WIN_NT
 

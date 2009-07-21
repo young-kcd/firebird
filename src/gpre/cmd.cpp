@@ -1772,7 +1772,7 @@ static bool create_view(gpre_req* request,
 	// write out blr
 
 	put_blr(request, isc_dyn_view_blr, (gpre_nod*) relation->rel_view_rse,
-			reinterpret_cast<pfn_local_trigger_cb>(CME_rse));
+			reinterpret_cast<pfn_local_trigger_cb>(*CME_rse));
 
 	// write out view source
 

@@ -79,10 +79,10 @@ dnl CPU_TYPE=ppc64
     ;;
 
   powerpc-*-aix*)
-dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
+    dnl ibm xlC has many invocations, like xlC, xlc++, or xlc_r7
     comp=`echo "$CXX" | cut -c1-3 | dd conv=lcase 2>/dev/null`
     if test "$comp" = "xlc"; then
-		AR_OPT_CHECK=true
+        AR_OPT_CHECK=true
         TLS_OPTIONS="-qtls=default"
         MAKEFILE_PREFIX=aix_powerpc_xlc
         ICU_PLATFORM=AIX4.3VA
@@ -266,7 +266,7 @@ dnl    libdir=/usr/lib/pa20_64
     ;;
 
   i386-pc-solaris*)
-dnl detect native compiler, Sun Studio Pro
+    dnl detect native compiler, Sun Studio Pro
     comp=`echo "$CXX" | cut -c1-2`
     case $comp in
        CC) MAKEFILE_PREFIX=solaris ;
@@ -275,7 +275,7 @@ dnl detect native compiler, Sun Studio Pro
            ICU_PLATFORM=SOLARISX86GCC ;
            PTHREAD_CFLAGS=-pthreads ;;
     esac
-dnl if this is amd64 system, we should install our libraries in /usr/lib/amd64
+    dnl if this is amd64 system, we should install our libraries in /usr/lib/amd64
     isa=`isainfo -k`
     if test "$isa" = "amd64"; then
         libdir=/usr/lib/amd64
@@ -289,11 +289,16 @@ dnl if this is amd64 system, we should install our libraries in /usr/lib/amd64
     ;;
 
   sparc-sun-solaris*)
-dnl detect native compiler, Sun Studio Pro
+    dnl detect native compiler, Sun Studio Pro
     comp=`echo "$CXX" | cut -c1-3`
     case $comp in
        CC) MAKEFILE_PREFIX=solaris ;
-           ICU_PLATFORM=SOLARISCC ;;
+           ICU_PLATFORM=SOLARISCC 
+           dnl inline assembly for atomic operations on Solaris 9 w SSPRO
+           if test "${target#*solaris}" = "2.9"; then
+             ATOMIC_OPTIONS="../src/common/classes/fb_atomic.il";
+           fi
+           ;;
        *)  MAKEFILE_PREFIX=solaris-64gcc ;
            ICU_PLATFORM=SOLARISGCC ;;
     esac
@@ -531,25 +536,6 @@ if test "$EDITLINE_FLG" = "Y"; then
   AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if editline is in use])
 fi
 AC_CHECK_HEADERS(unistd.h)
-if test "$ac_cv_header_unistd_h" = "yes"; then
-  dnl For details see
-  dnl http://www.opengroup.org/onlinepubs/007904975/basedefs/unistd.h.html
-  dnl http://people.redhat.com/drepper/posix-option-groups.html
-  AC_MSG_CHECKING(if POSIX threads are available)
-  AC_TRY_RUN([#define _XOPEN_SOURCE 600
-#include <unistd.h>
-    main () {
-#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 200112L
-    exit(0);
-#else
-    exit(1);
-#endif
-  }],
-  [AC_DEFINE(HAVE_POSIX_THREADS, 1,
-     [Define this if POSIX threads are available])
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)])
-fi
 AC_CHECK_HEADERS(varargs.h)
 AC_CHECK_HEADERS(crypt.h)
 AC_CHECK_HEADERS(netinet/in.h rpc/rpc.h netconfig.h)
@@ -562,7 +548,7 @@ AC_CHECK_HEADERS(sys/resource.h)
 AC_CHECK_HEADERS(sys/sem.h)
 AC_CHECK_HEADERS(semaphore.h)
 AC_CHECK_HEADERS(float.h)
-
+AC_CHECK_HEADERS(atomic.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
@@ -674,6 +660,8 @@ AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
 AC_CHECK_FUNCS(fchmod)
 AC_CHECK_FUNCS(semtimedop)
+AC_CHECK_FUNCS(fegetenv)
+AC_CHECK_FUNCS(strerror_r)
 
 # Checks for pthread functions
 savedFlags="$CFLAGS"
@@ -799,13 +787,6 @@ case "$PLATFORM" in
     dnl      this is used to determine path to executable file.
     AC_CHECK_FILES(/proc/self/exe)
 
-	dnl EKU: some Linux distributions do not provide POSIX threads
-	dnl      compatibility. Define HAVE_POSIX_THREADS anyway to get
-	dnl      thread support compiled into FIREBIRD.
-	AC_DEFINE(HAVE_POSIX_THREADS)
-    ;;
-  HPUX)
-	AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
   FREEBSD|GENTOOFREEBSD)
     dnl the AC_CHECK_TYPES for socklen_t doesn't include sys/socket.h
@@ -816,8 +797,6 @@ case "$PLATFORM" in
     [socklen_t s;],
     [AC_DEFINE(HAVE_SOCKLEN_T) AC_MSG_RESULT(yes)],
     [AC_MSG_RESULT(no)])
-    dnl define HAVE_POSIX_THREADS for FreeBSD 4.x support
-    AC_DEFINE(HAVE_POSIX_THREADS)
     ;;
 
   SOLARIS|solx86)
@@ -876,6 +855,7 @@ AC_COMPILE_IFELSE(
   AC_DEFINE(HAVE___THREAD, 1, [Define it if compiler supports ISO syntax for thread-local storage]),)
 CXXFLAGS=$pre_tls_cxxflags
 AC_SUBST(TLS_OPTIONS)
+AC_SUBST(ATOMIC_OPTIONS)
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 

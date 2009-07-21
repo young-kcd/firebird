@@ -79,11 +79,6 @@ using namespace NAMESPACE;
 #include "fb_exception.h"
 #endif
 
-// from thd.h
-#if defined(HAVE_POSIX_THREADS)
-#define USE_POSIX_THREADS
-#endif
-
 #ifndef NULL
 #define NULL            0L
 #endif

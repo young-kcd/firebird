@@ -339,7 +339,7 @@ blb* BLB_create2(thread_db* tdbb,
 						// We have to research if seek really gets params
 						// from the control struct instead. Maybe y-valve has a special case.
 						// Otherwise, blob_filter's sig would be like any filter.
-						reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
+						reinterpret_cast<FPTR_BFILTER_CALLBACK>(*blob_filter),
 						filter);
 		blob->blb_flags |= BLB_temporary;
 		return blob;
@@ -1421,7 +1421,7 @@ blb* BLB_open2(thread_db* tdbb,
 	{
 		BlobControl* control = 0;
 		BLF_open_blob(tdbb, transaction, &control, blob_id, bpb_length, bpb,
-					  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter), filter);
+					  reinterpret_cast<FPTR_BFILTER_CALLBACK>(*blob_filter), filter);
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;

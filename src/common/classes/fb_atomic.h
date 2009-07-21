@@ -264,7 +264,7 @@ private:
 
 } // namespace Firebird
 
-#elif defined(SOLARIS)
+#elif defined(SOLARIS) && defined(HAVE_ATOMIC_H)
 
 #include <atomic.h>
 
@@ -307,9 +307,9 @@ public:
 
 	counter_type value() const { return counter; }
 
-	counter_type setValue(delta_type val)
+	counter_type setValue(delta_type value)
 	{
-		return atomic_swap_uint(&counter, val);
+		return atomic_swap_uint(&counter, value);
 	}
 
 private:
@@ -318,6 +318,73 @@ private:
 
 } // namespace Firebird
 
+
+#elif defined(__SUNPRO_CC) && !defined(HAVE_ATOMIC_H) && defined(__sparc)
+// Solaris 9 does not have nice <atomic.h> header file, so we provide
+// an assembly language, Sun Studio Pro only, implementation.
+
+// assembly versions of fetch_and_add_il, compare_and_swap_il,
+// are in fb_atomic_*.il
+
+// No GNU CC implementation on Solaris 9 is planned!
+extern "C"
+{
+extern int fetch_and_add_il(volatile unsigned int *word_addr, int value);
+extern boolean_t compare_and_swap_il(volatile unsigned int *word_addr, unsigned int *old_val_addr, unsigned int new_val);
+}
+namespace Firebird {
+
+class AtomicCounter
+{
+public:
+	typedef uint_t counter_type;
+	typedef int delta_type;
+
+	explicit AtomicCounter(counter_type value = 0) : counter(value) {}
+	~AtomicCounter() {}
+
+	counter_type exchangeAdd(delta_type value)
+	{
+		return fetch_and_add_il(&counter, value);
+	}
+
+	counter_type operator +=(delta_type value)
+	{
+		return exchangeAdd(value) + value;
+	}
+
+	counter_type operator -=(delta_type value)
+	{
+		return exchangeAdd(-value) - value;
+	}
+
+	counter_type operator ++()
+	{
+		return exchangeAdd(1) + 1;
+	}
+
+	counter_type operator --()
+	{
+		return exchangeAdd(-1) - 1;
+	}
+
+	counter_type value() const { return counter; }
+
+	counter_type setValue(delta_type value)
+	{
+		counter_type old;
+		do
+		{
+			old = counter;
+		} while (!compare_and_swap_il(&counter, &old, value));
+		return old;
+	}
+
+private:
+	counter_type counter;
+};
+
+} // namespace Firebird
 
 #else
 

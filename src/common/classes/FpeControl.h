@@ -37,6 +37,11 @@
 #include <string.h>
 #endif
 
+#if defined(SOLARIS) && !defined(HAVE_FEGETENV)
+// ok to remove this when Solaris 9 is no longer supported
+#include <ieeefp.h>
+#endif
+
 namespace Firebird
 {
 
@@ -100,7 +105,7 @@ private:
 		_controlfp(savedMask, _MCW_EM); // restore saved
 	}
 
-#else
+#elif defined(HAVE_FEGETENV)
 	static void maskAll() throw()
 	{
 		fesetenv(FE_DFL_ENV);
@@ -140,6 +145,54 @@ private:
 	{
 		fesetenv(&savedMask);
 	}
+#elif defined(SOLARIS) && !defined(HAVE_FEGETENV)
+// ok to remove this when Solaris 9 is no longer supported
+// Solaris without fegetenv() implies Solaris 9 or older. In this case we
+// have to use the Solaris FPE routines.
+	static void maskAll() throw()
+	{
+		fpsetmask( ~(FP_X_OFL | FP_X_INV | FP_X_UFL | FP_X_DZ | FP_X_IMP));
+	}
+
+private:
+	// default environment is all traps disabled, but there is no
+	// constand for this setting
+	class DefaultEnvironment
+	{
+	public:
+		DefaultEnvironment()
+		{
+			fp_except saved;
+			saved = fpgetmask();
+			fpsetmask( ~(FP_X_OFL | FP_X_INV | FP_X_UFL | FP_X_DZ | FP_X_IMP));
+			clean = fpgetmask();
+			fpsetmask(saved);
+		}
+
+		fp_except clean;
+	};
+
+	fp_except savedMask;
+
+	static bool areExceptionsMasked(const fp_except& m) throw()
+	{
+		const static DefaultEnvironment defaultEnvironment;
+		return memcmp(&defaultEnvironment.clean, &m, sizeof(fp_except)) == 0;
+	}
+
+	static void getCurrentMask(fp_except& m) throw()
+	{
+		m = fpgetmask();
+	}
+
+	void restoreMask() throw()
+	{
+		fpsetsticky (0); // clear exception sticky flags
+		fpsetmask (savedMask);
+	}
+
+#else
+#error do not know how to mask floating point exceptions on this platform!
 #endif
 
 };

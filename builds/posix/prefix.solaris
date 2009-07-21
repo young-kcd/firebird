@@ -7,16 +7,24 @@
 # CFLAGS and CXXFLAGS to be picked up by the configure process and
 # subsequent build. Make sure CC is in the path!
 #
-# for typical 64-bit build
+# for 64-bit Solaris Sparc build
 #    export CC=cc
 #    export CXX=CC
-#    export CFLAGS="-m64"
+#    export CFLAGS="-m64 -xarch=sparcvis"
+#    export CXXFLAGS=$CFLAGS
+#
+# for 64-bit Solaris on AMD64 build
+#    export CC=cc
+#    export CXX=CC
+#    export CFLAGS="-m64 -xarch=sse2"
 #    export CXXFLAGS=$CFLAGS
 
 # History
 # 30-Dec-2002  nmcc FB2 initial working build on Solaris8 with gcc 3.2.1
 # 07-Apr-2005  kkuznetsov starting moving to sparc 64
-# 20-Mar-2009  wbo refresh for Sun Studio C++ 5.9, Solaris 9+
+# 20-Mar-2009  refresh for Sun Studio 12 Update 1, Solaris 10
+# 22-Jun-2009  tested ok with Sun Studio 12, Solaris 9
+#              tested Sun Studio 10, too old!!!
 
 # Useful predefined macros from Sun Studio
 # __SUNPRO_CC, indicates the release number of the compiler, e.g. 0x590
@@ -29,23 +37,11 @@
 # __sun
 # __unix
 
-# set Instruction Set Architecture, and add any processor specific flags
-ISA=$(shell isainfo -k)
-ifeq ($(ISA),sparcv9)
-# -xcheck=%all, SPARC only, add run time check for stack overflow
-	ISA_DEV_FLAGS=-xcheck=%all
-	ISA_COMMON_FLAGS=-xarch=sparcvis2
-endif
-
-ifeq ($(ISA),amd64)
-	ISA_COMMON_FLAGS=-xarch=sse2
-endif
-
 # Flags shared by production and debug build
 # -m32 | -m64, specify memory model. -m64 means LP64, -m32 means ILP32
 #   -m64 is default on Intel/AMD architecture, -m32 default on sparc
 #   -m64 is sufficient to create 64-bit targets on most(?) platforms
-# -KPIC, use to compile source files when building a shared library
+# -KPIC, use to compile source files when building a shared library.
 # -bBinding, specify library binding for linking. Can be symbolic, dynamic, or static
 # -features=extensions, allow non-standard C++ commonly accepted by other compilers
 # -D_POSIX_C_SOURCE, we are conformant to this posix version
@@ -54,9 +50,12 @@ endif
 # -erroff=nothrowneww, suppress warning for redefined new with different
 #   exception specification
 # -D_REENTRANT is added by -mt switch, explicit definition not needed
+# -mt, to use POSIX threads, link with -mt -lpthread. -mt is necessary b/c
+#   libC and libCrun need libthread for a multithreaded application
 COMMON_FLAGS= -DSOLARIS -DBSD_COMP -D__EXTENSIONS__ \
-	-D_POSIX_THREAD_SEMANTICS -D_POSIX_THREAD_PRIO_INHERIT -D_POSIX_C_SOURCE=199506L -mt -KPIC \
-	-erroff=nothrowneww,wvarhidemem $(ISA_COMMON_FLAGS)
+	-D_POSIX_THREAD_SEMANTICS -D_POSIX_THREAD_PRIO_INHERIT -D_POSIX_C_SOURCE=199506L \
+	-mt -KPIC \
+	-erroff=wvarhidemem $(ATOMIC_OPTIONS)
 
 # if we keep sfio this needs to be set by configure (or move in to extern directory)
 # must use full sfio not stdio emulation to get file handle number fix
@@ -75,34 +74,36 @@ SFIO_LDFLAGS=@SFIO_LDFLAGS@
 # -fast must come first, and must be present in compile and link!
 # -libmil, use the intrinsic library functions like strlen
 # -O, optimize, implies -O3 in Sun Studio 12
-PROD_FLAGS= -fast -O -DNDEBUG \
+# -xO2, optimize level 2, safer than -xO3
+PROD_FLAGS= -fast -xO2 -DNDEBUG \
 	$(COMMON_FLAGS) $(SFIO_FLAGS)
 
 # Debug flags
-# -xport64, warn about 32-bit to 64-bit funny stuff, like sign extension
-# -w, warn about code that may have "unintended consequences." How nice!
+# -xport64=implicit, warn about 32-bit to 64-bit funny stuff, sign extension
+# +w, warn about code that may have "unintended consequences." How nice!
+# +w2, all of +w plus warnings about technical violations and portability
+# -xs, copy all debug information into the executable
 DEV_FLAGS= -g -xs \
-	$(COMMON_FLAGS) $(SFIO_FLAGS) $(ISA_DEV_FLAGS)
+	$(COMMON_FLAGS) $(SFIO_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
 Server_main_dummy= os/sun/server_main_dummy.cpp
-
-LIB_LINK_OPTIONS= -G
 
 LIB_PLATFORM_RPATH= -R $(1)
 LIB_LINK_SONAME= -h $(1)
 LIB_LINK_MAPFILE= -M
 
 # link options for Solaris linker, /usr/ccs/bin/ld
-#LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
-#LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared
+LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) -mt -library=no%Cstd,Crun
+LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -mt -G -library=no%Cstd,Crun 
+
+# static link of client library uses c++ compiler and -staticlib=Crun
+CLIENTLIB_LINK= $(CXX) $(GLOB_OPTIONS)
+STATIC_CXXSUPPORT_LIB=-staticlib=Crun
 
 EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print
 CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
-
-#LD=CC
-LDFLAGS=-library=no%Cstd -mt
 
 UNDEF_PLATFORM=

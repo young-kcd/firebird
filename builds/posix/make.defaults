@@ -115,6 +115,9 @@ THR_LIBS=@PTHREAD_LIBS@
 # thread local storage options - set by configure
 TLS_OPTIONS=@TLS_OPTIONS@
 
+# atomic options - set by configure
+ATOMIC_OPTIONS=@ATOMIC_OPTIONS@
+
 # Default programs and tools to be used in the build process
 
 SH=			sh -c

@@ -26,9 +26,20 @@
 */
 
 #include "PluginLogWriter.h"
+#include "../common/classes/init.h"
 
 using namespace Firebird;
 
+// seems to only be Solaris 9 that doesn't have strerror_r,
+// maybe we can remove this in the future
+#ifndef HAVE_STRERROR_R
+void strerror_r(int err, char* buf, size_t bufSize)
+{
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+	Firebird::MutexLockGuard guard(mutex);
+	strncpy(buf, strerror(err), bufSize);
+}
+#endif
 
 PluginLogWriter::PluginLogWriter(const char* fileName, size_t maxSize) :
 	m_fileName(*getDefaultMemoryPool()),
@@ -170,7 +181,7 @@ void PluginLogWriter::checkErrno(const char* operation)
 		return;
 
 	const char* strErr;
-#ifdef WIN_NT
+#if defined(WIN_NT)
 	strErr = strerror(errno);
 #else
 	char buff[256];
