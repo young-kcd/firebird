@@ -126,7 +126,6 @@ copyFiles() {
 
     cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
     cp $BuiltFBDir/bin/gdef $DestDir/bin/gdef 
-    cp $BuiltFBDir/bin/gds_drop $DestDir/bin/gds_drop 
     copyIfExists $BuiltFBDir/bin/fb_lock_print $DestDir/bin/fb_lock_print 
     cp $BuiltFBDir/bin/gfix $DestDir/bin/gfix 
     cp $BuiltFBDir/bin/gpre $DestDir/bin/gpre 
@@ -135,6 +134,7 @@ copyFiles() {
     copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
     copyIfExists $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr
+    copyIfExists $BuiltFBDir/bin/fbtracemgr $DestDir/bin/fbtracemgr
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
 

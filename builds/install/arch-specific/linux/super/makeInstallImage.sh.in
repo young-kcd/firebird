@@ -134,6 +134,7 @@ copyFiles() {
     copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
     copyIfExists $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr
+    copyIfExists $BuiltFBDir/bin/fbtracemgr $DestDir/bin/fbtracemgr
     copyIfExists $BuiltFBDir/bin/security.gbak $DestDir/bin/security.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup
