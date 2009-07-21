@@ -352,7 +352,7 @@ Under the hood
 Limitations and known issues
 ----------------------------
 
-    1) In a heavily loaded system running Classic, monitoring requests may take noticable time
+    1) In a heavily loaded system running Classic, monitoring requests may take noticeable time
        to execute. In the meantime, other activity (both running statements and new connection
        attempts) may be blocked until the monitoring request completes.
 
