@@ -27,6 +27,7 @@ LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.dar
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
 LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.darwin.vers
+LINK_TRACE_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.darwin.vers
 
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
@@ -46,10 +47,10 @@ LINK_UDF = $(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -L$(LIB)
 LINK_UDF_LIBS = -lm -lib_util $(THR_FLAGS) $(THR_LIBS)
 
 LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS)\
- $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME)
+ $(LIB_LINK_SONAME)
 
 LINK_INTL = $(LIB_LINK) $(LIB_BUNDLE_OPTIONS)
-
+LINK_TRACE = $(LIB_LINK) $(LIB_BUNDLE_OPTIONS)
 LINK_CLIENT = $(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB)\
  $(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME)
 
