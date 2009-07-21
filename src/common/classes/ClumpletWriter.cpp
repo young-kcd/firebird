@@ -50,6 +50,16 @@ ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit, UCH
 	rewind();
 }
 
+const UCHAR* ClumpletWriter::getBuffer() const 
+{ 
+	return dynamic_buffer.begin(); 
+}
+
+const UCHAR* ClumpletWriter::getBufferEnd() const 
+{ 
+	return dynamic_buffer.end(); 
+}
+
 void ClumpletWriter::initNewBuffer(UCHAR tag)
 {
 	switch (kind)

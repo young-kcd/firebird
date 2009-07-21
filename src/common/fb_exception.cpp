@@ -126,6 +126,10 @@ void StringsBuffer::makeEnginePermanentVector(ISC_STATUS* v)
 	engine_failures->makePermanentVector(v, v);
 }
 
+// ********************************* Exception *******************************
+
+Exception::~Exception() throw() { }
+
 // ********************************* status_exception *******************************
 
 status_exception::status_exception() throw() :
@@ -201,18 +205,11 @@ status_exception::~status_exception() throw()
 	release_vector();
 }
 
-// ********************************* fatal_exception ******************************
-
-void fatal_exception::raiseFmt(const char* format, ...)
+const char* status_exception::what() const throw()
 {
-	va_list args;
-	va_start(args, format);
-	char buffer[1024];
-	VSNPRINTF(buffer, sizeof(buffer), format, args);
-	buffer[sizeof(buffer) - 1] = 0;
-	va_end(args);
-	throw fatal_exception(buffer);
+	return "Firebird::status_exception";
 }
+
 
 void status_exception::raise(const ISC_STATUS *status_vector)
 {
@@ -274,6 +271,11 @@ ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	return status_vector[1];
 }
 
+const char* BadAlloc::what() const throw()
+{
+	return "Firebird::BadAlloc";
+}
+
 // ********************************* LongJump ***************************
 
 void LongJump::raise()
@@ -305,6 +307,11 @@ ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	*/
 
 	return status_vector[1];
+}
+
+const char* LongJump::what() const throw() 
+{
+	return "Firebird::LongJump";
 }
 
 
@@ -388,6 +395,17 @@ fatal_exception::fatal_exception(const char* message) :
 void fatal_exception::raise(const char* message)
 {
 	throw fatal_exception(message);
+}
+
+void fatal_exception::raiseFmt(const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	char buffer[1024];
+	VSNPRINTF(buffer, sizeof(buffer), format, args);
+	buffer[sizeof(buffer) - 1] = 0;
+	va_end(args);
+	throw fatal_exception(buffer);
 }
 
 // ************************** exception handling routines **************************

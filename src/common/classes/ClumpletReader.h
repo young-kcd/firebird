@@ -112,8 +112,8 @@ protected:
 	UCHAR spbState;		// Reflects state of spb parser/writer
 
 	// Methods are virtual so writer can override 'em
-	virtual const UCHAR* getBuffer() const { return static_buffer; }
-	virtual const UCHAR* getBufferEnd() const { return static_buffer_end; }
+	virtual const UCHAR* getBuffer() const;
+	virtual const UCHAR* getBufferEnd() const;
 
 	// These functions are called when error condition is detected by this class.
 	// They may throw exceptions. If they don't reader tries to do something

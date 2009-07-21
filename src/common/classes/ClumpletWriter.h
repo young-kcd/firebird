@@ -76,9 +76,9 @@ public:
 	// Returns true if any found
 	bool deleteWithTag(UCHAR tag);
 
-	virtual const UCHAR* getBuffer() const { return dynamic_buffer.begin(); }
+	virtual const UCHAR* getBuffer() const;
 protected:
-	virtual const UCHAR* getBufferEnd() const { return dynamic_buffer.end(); }
+	virtual const UCHAR* getBufferEnd() const;
 	virtual void size_overflow();
 	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length);
 private:

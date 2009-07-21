@@ -97,7 +97,7 @@ class Exception
 protected:
 	Exception() throw() { }
 public:
-	virtual ~Exception() throw() { }
+	virtual ~Exception() throw();
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw() = 0;
 	virtual const char* what() const throw() = 0;
 };
@@ -107,7 +107,7 @@ class LongJump : public Exception
 {
 public:
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
-	virtual const char* what() const throw() { return "Firebird::LongJump"; }
+	virtual const char* what() const throw();
 	static void raise();
 	LongJump() throw() : Exception() { }
 };
@@ -117,7 +117,7 @@ class BadAlloc : public std::bad_alloc, public Exception
 {
 public:
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
-	virtual const char* what() const throw() { return "Firebird::BadAlloc"; }
+	virtual const char* what() const throw();
 	static void raise();
 	BadAlloc() throw() : std::bad_alloc(), Exception() { }
 };
@@ -132,7 +132,7 @@ public:
 	virtual ~status_exception() throw();
 
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();
-	virtual const char* what() const throw() { return "Firebird::status_exception"; }
+	virtual const char* what() const throw();
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 
@@ -196,12 +196,7 @@ class fatal_exception : public status_exception
 public:
 	explicit fatal_exception(const char* message);
 	static void raiseFmt(const char* format, ...);
-	// Keep in sync with the constructor above, please; "message" becomes 4th element
-	// after initialization of status vector in constructor.
-	const char* what() const throw()
-	{
-		return reinterpret_cast<const char*>(value()[3]);
-	}
+	const char* what() const throw();
 	static void raise(const char* message);
 };
 
