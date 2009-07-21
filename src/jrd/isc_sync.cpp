@@ -2879,7 +2879,7 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
-#ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+#if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
 // glibc in linux does not conform to the posix standard. When there is no RT kernel,
 // ENOTSUP is returned not by pthread_mutexattr_setprotocol(), but by
 // pthread_mutex_init(). Here is a hack to deal with this broken error reporting.
@@ -2909,13 +2909,18 @@ int ISC_mutex_init(struct mtx* mutex)
 		}
 	}
 #endif
+
 #ifdef USE_ROBUST_MUTEX
-	LOG_PTHREAD_ERROR(pthread_mutexattr_setrobust_np(&mattr, PTHREAD_MUTEX_ROBUST_NP));
-	memset(mutex->mtx_mutex, 0, sizeof(pthread_mutex_t));
+	if (!bugFlag)
+	{
+		LOG_PTHREAD_ERROR(pthread_mutexattr_setrobust_np(&mattr, PTHREAD_MUTEX_ROBUST_NP));
+	}
 #endif
 
+	memset(mutex->mtx_mutex, 0, sizeof(pthread_mutex_t));
 	//int state = LOG_PTHREAD_ERROR(pthread_mutex_init(mutex->mtx_mutex, &mattr));
 	int state = pthread_mutex_init(mutex->mtx_mutex, &mattr);
+
 	if (state && (state != ENOTSUP || bugFlag))
 	{
 		iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) <<
@@ -2924,7 +2929,7 @@ int ISC_mutex_init(struct mtx* mutex)
 
 	LOG_PTHREAD_ERROR(pthread_mutexattr_destroy(&mattr));
 
-#ifdef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+#if defined(HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL) || defined(USE_ROBUST_MUTEX)
 	if (state == ENOTSUP && !bugFlag)
 	{
 		staticBugFlag = true;
