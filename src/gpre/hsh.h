@@ -16,12 +16,13 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * Stephen W. Boyd						- Added support for new features.
+ * 2007.05.23 Stephen W. Boyd			- Added SKIP keyword
+ * 2007.06.15 Stephen W. Boyd			- Added CURRENT_CONNECTION, CURRENT_ROLE,
+ *										  CURRENT_TRANSACTION and CURRENT_USER keywords
  */
-
 /* Sort this file with "sort -b +1 +0" */
 
-	{"ABNORMAL", KW_ABNORMAL},
+{"ABNORMAL", KW_ABNORMAL},
 #ifdef SCROLLABLE_CURSORS
 	{"ABSOLUTE", KW_ABSOLUTE},
 #endif
@@ -143,7 +144,6 @@
 	{"ENTRY_POINT", KW_ENTRY_POINT},
 	{"==", KW_EQ},
 	{"EQ", KW_EQ},
-	{"EQUIV", KW_EQUIV},
 	{"=", KW_EQUALS},
 	{"ERASE", KW_ERASE},
 	{"ERROR", KW_ERROR},
@@ -194,8 +194,8 @@
 	{"GT", KW_GT},
 	{"HANDLES", KW_HANDLES},
 	{"HAVING", KW_HAVING},
-	//{"HEIGHT", KW_HEIGHT},
-	//{"HORIZONTAL", KW_HORIZONTAL},
+	{"HEIGHT", KW_HEIGHT},
+	{"HORIZONTAL", KW_HORIZONTAL},
 	{"HOUR", KW_HOUR},
 	{"IMMEDIATE", KW_IMMEDIATE},
 	{"IN", KW_IN},
@@ -216,7 +216,7 @@
 	{"INTO", KW_INTO},
 	{"IS", KW_IS},
 	{"ISO", KW_ISOLATION},
-	{"ISOLATION", KW_ISOLATION},
+	{"ISOLATION", KW_ISOLATION}, 
 	{"JOIN", KW_JOIN},
 	{"KEY", KW_KEY},
 #ifdef SCROLLABLE_CURSORS
@@ -274,7 +274,6 @@
 	{"NO_WAIT", KW_NO_WAIT},
 	{"NO_WAIT", KW_NO_WAIT},
 	{"NULL", KW_NULL},
-	{"NULLIF", KW_NULLIF},
 	{"NUMERIC", KW_NUMERIC},
 	{"NUM_LOG_BUFFERS", KW_NUM_LOG_BUFS},
 	{"OF", KW_OF},
@@ -436,27 +435,22 @@
 	{"VARCHAR", KW_VARCHAR},
 	{"VARIABLE", KW_VARIABLE},
 	{"VARYING", KW_VARYING},
-	//{"VERTICAL", KW_VERTICAL},
+	{"VERTICAL", KW_VERTICAL},
 	{"VIEW", KW_VIEW},
 	{"WAIT", KW_WAIT},
 	{"WAKING", KW_WAKING},
 	{"WARNING", KW_WARNING},
 	{"WEEKDAY", KW_WEEKDAY},
 	{"WHENEVER", KW_WHENEVER},
-	//{"WIDTH", KW_WIDTH},
+	{"WIDTH", KW_WIDTH},
 	{"WHERE", KW_WITH},
 	{"WITH", KW_WITH},
 	{"WORK", KW_WORK},
-	{"WRITE", KW_WRITE},
+	{"WRITE", KW_WRITE}, 
 	{"YEAR", KW_YEAR},
     {"YEARDAY", KW_YEARDAY},
 	{"SKIP", KW_SKIP},
 	{"CURRENT_CONNECTION", KW_CURRENT_CONNECTION},
 	{"CURRENT_ROLE", KW_CURRENT_ROLE},
 	{"CURRENT_TRANSACTION", KW_CURRENT_TRANSACTION},
-	{"CURRENT_USER", KW_CURRENT_USER},
-	{"COALESCE", KW_COALESCE},
-	{"WHEN", KW_WHEN},
-	{"THEN", KW_THEN},
-	{"SUBSTRING", KW_SUBSTRING}
-
+	{"CURRENT_USER", KW_CURRENT_USER}

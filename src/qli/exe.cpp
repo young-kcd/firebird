@@ -26,8 +26,6 @@
 #include <setjmp.h>
 
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
-#include "../jrd/why_proto.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -41,7 +39,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../common/classes/UserBlob.h"
-#include "../common/classes/VaryStr.h"
 
 using MsgFormat::SafeArg;
 
@@ -75,14 +72,13 @@ static void execute_store(qli_nod*);
 static void map_data(qli_msg*);
 static void print_counts(qli_req*);
 static void set_null(qli_msg*);
-static void transaction_state(qli_nod*, qli_dbb*);
+static void transaction_state(qli_nod*, DBB);
 
 // definitions for SET COUNT
 
 const int COUNT_ITEMS	= 4;
 
-static const SCHAR count_info[] =
-{
+static const SCHAR count_info[] = {
 	isc_info_req_select_count,
 	isc_info_req_insert_count,
 	isc_info_req_update_count,
@@ -90,7 +86,7 @@ static const SCHAR count_info[] =
 };
 
 
-void EXEC_abort()
+void EXEC_abort(void)
 {
 /**************************************
  *
@@ -105,17 +101,11 @@ void EXEC_abort()
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
-	{
-		if (database->dbb_handle)
-		{
-			if (fb_cancel_operation(status_vector, &database->dbb_handle, fb_cancel_raise) == 0)
-			{
-				QLI_abort = true;
-			}
-		}
-	}
+	for (qli_req* request = QLI_requests; request; request = request->req_next)
+		if (request->req_handle)
+			isc_unwind_request(status_vector, &request->req_handle, 0);
 
+	QLI_abort = true;
 }
 
 
@@ -134,10 +124,8 @@ void EXEC_execute( qli_nod* node)
 	if (QLI_abort)
 		EXEC_poll_abort();
 
-	if (node)
-	{
-		switch (node->nod_type)
-		{
+	if (node) {
+		switch (node->nod_type) {
 		case nod_abort:
 			execute_abort(node);
 
@@ -154,20 +142,19 @@ void EXEC_execute( qli_nod* node)
 				qli_msg* message = (qli_msg*) node->nod_arg[e_era_message];
 				if (message)
 					EXEC_send(message);
+				return;
 			}
-			return;
 
 		case nod_for:
 			execute_for(node);
 			return;
-
 		case nod_list:
 			{
 				qli_nod** ptr = node->nod_arg;
 				for (USHORT i = 0; i < node->nod_count; i++)
 					EXEC_execute(*ptr++);
+				return;
 			}
-			return;
 
 		case nod_modify:
 			execute_modify(node);
@@ -190,13 +177,11 @@ void EXEC_execute( qli_nod* node)
 			return;
 
 		case nod_if:
-			if (EVAL_boolean(node->nod_arg[e_if_boolean]))
-			{
+			if (EVAL_boolean(node->nod_arg[e_if_boolean])) {
 				EXEC_execute(node->nod_arg[e_if_true]);
 				return;
 			}
-			if (node->nod_arg[e_if_false])
-			{
+			if (node->nod_arg[e_if_false]) {
 				EXEC_execute(node->nod_arg[e_if_false]);
 				return;
 			}
@@ -229,7 +214,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 	if (!desc)
 		return 0;
 
-	// Starting from the print item, work our way back to the database block
+// Starting from the print item, work our way back to the database block
 
 	if (node->nod_type == nod_reference)
 		node = node->nod_arg[0];
@@ -239,10 +224,10 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 
 	qli_ctx* context = (qli_ctx*) node->nod_arg[e_fld_context];
 	qli_req* request = context->ctx_request;
-	qli_dbb* dbb = request->req_database;
+	DBB dbb = request->req_database;
 	FB_API_HANDLE blob = 0;
 
-	// Format blob parameter block
+// Format blob parameter block
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
@@ -258,7 +243,8 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
-						&blob, (ISC_QUAD*) desc->dsc_address, bpb_length, bpb))
+						&blob, (ISC_QUAD*) desc->dsc_address, bpb_length,
+						bpb))
 	{
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -267,7 +253,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 }
 
 
-FILE* EXEC_open_output(qli_nod* node)
+file* EXEC_open_output(qli_nod* node)
 {
 /**************************************
  *
@@ -279,46 +265,48 @@ FILE* EXEC_open_output(qli_nod* node)
  *	Open output stream to re-direct output.
  *
  **************************************/
-	// Evaluate filename and copy to a null terminated string
+// Evaluate filename and copy to a null terminated string
 
 	dsc* desc = EVAL_value(node->nod_arg[e_out_file]);
 	const TEXT* p = NULL;
-	Firebird::VaryStr<64> temp;
-	SSHORT l = MOVQ_get_string(desc, &p, &temp, sizeof(temp));
-	if (l >= MAXPATHLEN)
-		l = MAXPATHLEN - 1;
+	TEXT temp[64];
+	SSHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
 
-	TEXT filename[MAXPATHLEN];
+	TEXT filename[256];
+	TEXT* q = filename;
 	if (l)
-		memcpy(filename, p, l);
+		do {
+			*q++ = *p++;
+		} while (--l);
+	*q = 0;
 
-	filename[l] = 0;
+// If output is to a file, just do it
 
-	// If output is to a file, just do it
-
-	if (!node->nod_arg[e_out_pipe])
-	{
+	if (!node->nod_arg[e_out_pipe]) {
 	    FILE* out_file = fopen(filename, FOPEN_WRITE_TYPE);
 		if (out_file)
-			return out_file;
+			return (file*) out_file;
 
 		ERRQ_print_error(42, filename);
 		// Msg42 Can't open output file %s
 	}
 
-	// Output is to a file.  Setup file and fork process
+// Output is to a file.  Setup file and fork process
+
+#ifdef VMS
+	IBERROR(35);				// Msg35 output pipe is not supported on VMS
+#else
 
 #ifdef WIN_NT
 	FILE* out_file = _popen(filename, "w");
 	if (out_file)
-		return out_file;
+		return (file*) out_file;
 #else
 	TEXT* argv[20];
 	TEXT** arg = argv;
 	TEXT** const end = argv + FB_NELEM(argv) - 1; // The last element should be NULL
 	TEXT* pp = filename;
-	while (*pp && arg < end)
-	{
+	while (*pp && arg < end) {
 		*arg++ = pp;
 		while (*pp && *pp != ' ')
 			pp++;
@@ -334,8 +322,7 @@ FILE* EXEC_open_output(qli_nod* node)
 	if (pipe(pair) < 0)
 		IBERROR(36);			// Msg36 couldn't create pipe
 
-	if (!vfork())
-	{
+	if (!vfork()) {
 		close(pair[1]);
 		close(0);
 		dup(pair[0]);
@@ -349,15 +336,16 @@ FILE* EXEC_open_output(qli_nod* node)
 
 	FILE* out_file = fdopen(pair[1], "w");
 	if (out_file)
-		return out_file;
+		return (file*) out_file;
 #endif
 
 	IBERROR(37);				// Msg37 fdopen failed
+#endif
 	return NULL;
 }
 
 
-void EXEC_poll_abort()
+void EXEC_poll_abort(void)
 {
 /**************************************
  *
@@ -396,9 +384,7 @@ DSC *EXEC_receive(qli_msg* message, qli_par* parameter)
 
 	if (isc_receive(status_vector, &request->req_handle, message->msg_number,
 					 message->msg_length, message->msg_buffer, 0))
-	{
 		db_error(request, status_vector);
-	}
 
 	if (!parameter)
 		return NULL;
@@ -448,18 +434,17 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (message)
-	{
+	if (message) {
 		map_data(message);
 		if (!isc_start_and_send(status_vector, &request->req_handle,
 								 &request->req_database-> dbb_transaction,
-								 message->msg_number, message->msg_length, message->msg_buffer, 0))
+								 message->msg_number, message->msg_length,
+								 message->msg_buffer, 0))
 		{
 			return;
 		}
 	}
-	else
-	{
+	else {
 		if (!isc_start_request(status_vector, &request->req_handle,
 								&request->req_database-> dbb_transaction, 0))
 		{
@@ -489,7 +474,7 @@ void EXEC_top( qli_nod* node)
 
 
 static DSC *assignment(	qli_nod*		from_node,
-						DSC*			to_desc,
+						DSC*	to_desc,
 						qli_nod*		validation,
 						qli_nod*		initial,
 						qli_par*		parameter)
@@ -505,32 +490,40 @@ static DSC *assignment(	qli_nod*		from_node,
  *	goes wrong and there was a prompt, try again.
  *
  **************************************/
-	QLI_reprompt = false;
+	jmp_buf old_env;
+
+	memcpy(old_env, QLI_env, sizeof(QLI_env));
+	QLI_reprompt = FALSE;
 	QLI_prompt_count = 0;
 
 	USHORT trash;
 	USHORT* missing_flag = &trash;
 	qli_msg* message = NULL;
-	if (parameter)
-	{
+	if (parameter) {
 		message = parameter->par_message;
-		missing_flag = (USHORT *) (message->msg_buffer + parameter->par_offset);
+		missing_flag =
+			(USHORT *) (message->msg_buffer + parameter->par_offset);
 	}
 
 	try {
 
+		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		dsc* from_desc = EVAL_value(from_node);
 
 		if (from_desc->dsc_missing & DSC_initial) {
 			from_desc = EVAL_value(initial);
 		}
 
-		// If there is a value present, do any assignment; otherwise null fill
+/* If there is a value present, do any assignment; otherwise null fill */
 
-		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing)
-		{
-			if (from_desc->dsc_length)
-				memset(from_desc->dsc_address, 0, from_desc->dsc_length);
+		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
+			UCHAR* p = from_desc->dsc_address;
+			USHORT l = from_desc->dsc_length;
+			if (l) {
+				do {
+					*p++ = 0;
+				} while (--l);
+			}
 		}
 		else {
 			MOVQ_move(from_desc, to_desc);
@@ -540,17 +533,19 @@ static DSC *assignment(	qli_nod*		from_node,
 			IBERROR(39);			// Msg39 field validation error
 		}
 
-		QLI_reprompt = false;
+		QLI_reprompt = FALSE;
+		memcpy(QLI_env, old_env, sizeof(QLI_env));
+
 		return from_desc;
 
 	}
-	catch (const Firebird::Exception&)
-	{
+	catch (const Firebird::Exception&) {
 		if (QLI_abort || !QLI_prompt_count) {
+			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
 		}
 
-		QLI_reprompt = true;
+		QLI_reprompt = TRUE;
 		QLI_prompt_count = 0;
 		return NULL;
 	}
@@ -572,33 +567,34 @@ static void commit_retaining( qli_nod* node)
  *
  **************************************/
 
-	// If there aren't any open databases then obviously
-	// there isn't anything to commit.
+/* If there aren't any open databases then obviously
+   there isn't anything to commit. */
 
 	if (node->nod_count == 0 && !QLI_databases)
 		return;
 
 	if (node->nod_type == nod_commit_retaining &&
-		((node->nod_count > 1) || (node->nod_count == 0 && QLI_databases->dbb_next)))
+		((node->nod_count > 1) ||
+		 (node->nod_count == 0 && QLI_databases->dbb_next)))
 	{
 		node->nod_type = nod_prepare;
 		commit_retaining(node);
 		node->nod_type = nod_commit_retaining;
 	}
-	else if (node->nod_count == 1)
-	{
-		qli_dbb* database = (qli_dbb*) node->nod_arg[0];
+	else if (node->nod_count == 1) {
+		DBB database = (DBB) node->nod_arg[0];
 		database->dbb_flags |= DBB_prepared;
 	}
 	else
 		QLI_databases->dbb_flags |= DBB_prepared;
 
 
-	if (node->nod_count == 0)
-	{
-		for (qli_dbb* database = QLI_databases; database; database = database->dbb_next)
+	if (node->nod_count == 0) {
+		for (DBB database = QLI_databases; database;
+			 database = database->dbb_next)
 		{
-			if ((node->nod_type == nod_commit_retaining) && !(database->dbb_flags & DBB_prepared))
+			if ((node->nod_type == nod_commit_retaining)
+				&& !(database->dbb_flags & DBB_prepared))
 			{
 				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 			}
@@ -613,8 +609,9 @@ static void commit_retaining( qli_nod* node)
     qli_nod** ptr = node->nod_arg;
 	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 	{
-		qli_dbb* database = (qli_dbb*) *ptr;
-		if ((node->nod_type == nod_commit_retaining) && !(database->dbb_flags & DBB_prepared))
+		DBB database = (DBB) *ptr;
+		if ((node->nod_type == nod_commit_retaining) &&
+			!(database->dbb_flags & DBB_prepared))
 		{
 			ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 		}
@@ -642,35 +639,35 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
  *
  **************************************/
 
-	// If assignment isn't from a field, there isn't a blob copy, so
-	// do a dumb assignment.
+/* If assignment isn't from a field, there isn't a blob copy, so
+   do a dumb assignment. */
 
 	if (value->nod_type != nod_field)
 		return false;
 
-	// Find the sending and receiving requests.  If they are the same
-	// and no filtering is necessary, a simple assignment will suffice.
+/* Find the sending and receiving requests.  If they are the same
+   and no filtering is necessary, a simple assignment will suffice. */
 
 	qli_ctx* context = (qli_ctx*) value->nod_arg[e_fld_context];
 	qli_req* from_request = context->ctx_request;
-	qli_dbb* from_dbb = from_request->req_database;
+	DBB from_dbb = from_request->req_database;
 	qli_msg* message = parameter->par_message;
 	qli_req* to_request = message->msg_request;
-	qli_dbb* to_dbb = to_request->req_database;
+	DBB to_dbb = to_request->req_database;
 
 	dsc* from_desc = EVAL_value(value);
 	dsc* to_desc = EVAL_parameter(parameter);
 
 	if (to_dbb == from_dbb &&
-		(!to_desc->dsc_sub_type || from_desc->dsc_sub_type == to_desc->dsc_sub_type))
+		(!to_desc->dsc_sub_type ||
+		 from_desc->dsc_sub_type == to_desc->dsc_sub_type))
 	{
 		return false;
 	}
 
 	// We've got a blob copy on our hands.
 
-	if (!from_desc)
-	{
+	if (!from_desc) {
 		*to_desc->dsc_address = 0;
 		return true;
 	}
@@ -694,7 +691,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	ISC_STATUS_ARRAY status_vector;
 	UserBlob to_blob(status_vector);
 	UserBlob from_blob(status_vector);
-
+	
 	if (!to_blob.create(to_dbb->dbb_handle, to_dbb->dbb_transaction,
 						 *(ISC_QUAD*) to_desc->dsc_address))
 	{
@@ -702,7 +699,8 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	}
 
 	if (!from_blob.open(from_dbb->dbb_handle, from_dbb->dbb_transaction,
-						*(ISC_QUAD*) from_desc->dsc_address, bpb_length, bpb))
+						*(ISC_QUAD*) from_desc->dsc_address, bpb_length,
+						bpb))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}
@@ -714,8 +712,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
     UCHAR fixed_buffer[4096];
 	UCHAR* buffer;
 	USHORT buffer_length;
-	if (max_segment < (SLONG) sizeof(fixed_buffer))
-	{
+	if (max_segment < (SLONG) sizeof(fixed_buffer)) {
 		buffer_length = sizeof(fixed_buffer);
 		buffer = fixed_buffer;
 	}
@@ -782,12 +779,12 @@ static void execute_abort( qli_nod* node)
  *	Abort a statement.
  *
  **************************************/
-	if (node->nod_count)
-	{
+	if (node->nod_count) {
 	    const TEXT* ptr = NULL;
-		Firebird::VaryStr<80> temp;
+		UCHAR temp[80];
 		const USHORT l =
-			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr, &temp, sizeof(temp));
+			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr,
+				(vary*) temp, sizeof(temp));
 
 		UCHAR msg[128];
 		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));
@@ -818,11 +815,11 @@ static void execute_assignment( qli_nod* node)
 	qli_nod* initial = node->nod_arg[e_asn_initial];
 
 	qli_par* parameter;
-	if (to->nod_type == nod_field)
-	{
+	if (to->nod_type == nod_field) {
 		qli_nod* reference = to->nod_arg[e_fld_reference];
 		parameter = reference->nod_import;
-		if (to->nod_desc.dsc_dtype == dtype_blob && from->nod_desc.dsc_dtype == dtype_blob &&
+		if (to->nod_desc.dsc_dtype == dtype_blob &&
+			from->nod_desc.dsc_dtype == dtype_blob &&
 			copy_blob(from, parameter))
 		{
 			return;
@@ -834,12 +831,12 @@ static void execute_assignment( qli_nod* node)
 	if (parameter)
 		parameter = parameter->par_missing;
 
-	assignment(from, EVAL_value(to), node->nod_arg[e_asn_valid], initial, parameter);
+	assignment(from, EVAL_value(to),
+			   node->nod_arg[e_asn_valid], initial, parameter);
 
-	// propagate the missing flag in variable assignments
+// propagate the missing flag in variable assignments
 
-	if (to->nod_type == nod_variable)
-	{
+	if (to->nod_type == nod_variable) {
 		qli_fld* field = (qli_fld*) to->nod_arg[e_fld_field];
 		if (to->nod_desc.dsc_missing & DSC_missing)
 			field->fld_flags |= FLD_missing;
@@ -865,30 +862,29 @@ static void execute_for( qli_nod* node)
  *
  **************************************/
 
-	// If there is a request associated  with the node, start it and possibly
-	// send a message along with it.
+/* If there is a request associated  with the node, start it and possibly
+   send a message along with it. */
 
 	qli_req* request = (qli_req*) node->nod_arg[e_for_request];
 	if (request)
 		EXEC_start_request(request, (qli_msg*) node->nod_arg[e_for_send]);
-	else
-	{
+	else {
 	    qli_msg* amessage = (qli_msg*) node->nod_arg[e_for_send];
 		if (amessage)
 			EXEC_send(amessage);
 	}
 
-	// If there isn't a receive message, the body of the loop has been
-	// optimized out of existence.  So skip it.
+/* If there isn't a receive message, the body of the loop has been
+   optimized out of existence.  So skip it. */
 
 	qli_msg* message = (qli_msg*) node->nod_arg[e_for_receive];
 	if (!message)
 		goto count;
 
-	// Receive messages in a loop until the end of file field comes up true.
+/* Receive messages in a loop until the end of file field comes up
+   true. */
 
-	while (true)
-	{
+	while (true) {
 		dsc* desc = EXEC_receive(message, (qli_par*) node->nod_arg[e_for_eof]);
 		if (*(USHORT *) desc->dsc_address)
 			break;
@@ -947,17 +943,25 @@ static void execute_output( qli_nod* node)
 
 	// Set up error handling
 
+	jmp_buf old_env;
+	jmp_buf env;
+	memcpy(old_env, QLI_env, sizeof(QLI_env));
+	memcpy(QLI_env, env, sizeof(QLI_env));
+
 	try {
+
 		// Finally, execute the query
+
 		EXEC_execute(node->nod_arg[e_out_statement]);
-		fclose(print->prt_file);
+		memcpy(QLI_env, old_env, sizeof(QLI_env));
+		fclose((FILE *) print->prt_file);
 
 	}
-	catch (const Firebird::Exception&)
-	{
+	catch (const Firebird::Exception&) {
 		if (print->prt_file) {
-			fclose(print->prt_file);
+			fclose((FILE *) print->prt_file);
 		}
+		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		throw;
 	}
 }
@@ -977,8 +981,7 @@ static void execute_print( qli_nod* node)
  *
  **************************************/
 
-	if (node->nod_arg[e_prt_header])
-	{
+	if (node->nod_arg[e_prt_header]) {
 		FMT_put((TEXT*) node->nod_arg[e_prt_header], (qli_prt*) node->nod_arg[e_prt_output]);
 		node->nod_arg[e_prt_header] = NULL;
 	}
@@ -1029,8 +1032,8 @@ static void execute_store( qli_nod* node)
 	if (!(node->nod_flags & NOD_remote))
 		EXEC_execute(node->nod_arg[e_sto_statement]);
 
-	// If there is a request associated  with the node, start it and possibly
-	// send a message along with it.
+/* If there is a request associated  with the node, start it and possibly
+   send a message along with it. */
 
 	qli_req* request = (qli_req*) node->nod_arg[e_sto_request];
 	if (request)
@@ -1055,15 +1058,16 @@ static void map_data( qli_msg* message)
  *	Map data to a message in preparation for sending.
  *
  **************************************/
-	for (qli_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+	for (qli_par* parameter = message->msg_parameters; parameter;
+		 parameter = parameter->par_next)
 	{
 		dsc* desc = &parameter->par_desc;
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
 		QLI_validate_desc(desc);
 		qli_par* missing_parameter = parameter->par_missing;
-		if (missing_parameter)
-		{
-			USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);
+		if (missing_parameter) {
+			USHORT* missing_flag = (USHORT*) (message->msg_buffer +
+							missing_parameter->par_offset);
 			*missing_flag = (desc->dsc_missing & DSC_missing) ? DSC_missing : 0;
 		}
 
@@ -1098,19 +1102,17 @@ static void print_counts( qli_req* request)
 		return;
 	}
 
-	// print out the counts of any records affected
+// print out the counts of any records affected
 
 	int length = 0;
-	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length)
-	{
-		const UCHAR item = *c++;
+	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length) {
+		UCHAR item = *c++;
 		length = gds__vax_integer(c, 2);
 		c += 2;
 		const ULONG number = gds__vax_integer(c, length);
 
 		if (number)
-			switch (item)
-			{
+			switch (item) {
 			case isc_info_req_select_count:
 				printf("\nrecords selected: %"ULONGFORMAT"\n", number);
 				break;
@@ -1149,11 +1151,11 @@ static void set_null( qli_msg* message)
  *	statements.
  *
  **************************************/
-	for (qli_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
+	for (qli_par* parameter = message->msg_parameters; parameter;
+		 parameter = parameter->par_next)
 	{
 		qli_nod* from = parameter->par_value;
-		if (from->nod_type == nod_field)
-		{
+		if (from->nod_type == nod_field) {
 			dsc* desc = EVAL_value(from);
 			desc->dsc_missing |= DSC_missing;
 		}
@@ -1164,7 +1166,7 @@ static void set_null( qli_msg* message)
 
 
 
-static void transaction_state( qli_nod* node, qli_dbb* database)
+static void transaction_state( qli_nod* node, DBB database)
 {
 /**************************************
  *
@@ -1181,17 +1183,14 @@ static void transaction_state( qli_nod* node, qli_dbb* database)
  **************************************/
 	ISC_STATUS_ARRAY status;
 
-	if (database->dbb_transaction)
-	{
-		if (node->nod_type == nod_commit_retaining)
-		{
+	if (database->dbb_transaction) {
+		if (node->nod_type == nod_commit_retaining) {
 			if (isc_commit_retaining(status, &database->dbb_transaction))
-				ERRQ_database_error(database, status);
+					ERRQ_database_error(database, status);
 		}
-		else if (node->nod_type == nod_prepare)
-		{
+		else if (node->nod_type == nod_prepare) {
 			if (isc_prepare_transaction(status, &database->dbb_transaction))
-				ERRQ_database_error(database, status);
+					ERRQ_database_error(database, status);
 		}
 	}
 }

@@ -105,9 +105,6 @@
 #define isc_dpb_no_db_triggers            72
 #define isc_dpb_trusted_auth			  73
 #define isc_dpb_process_name              74
-#define isc_dpb_trusted_role			  75
-#define isc_dpb_org_filename			  76
-#define isc_dpb_utf8_filename			  77
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -258,7 +255,6 @@
 #define isc_spb_process_id                110
 #define isc_spb_trusted_auth			  111
 #define isc_spb_process_name              112
-#define isc_spb_trusted_role              113
 
 
 #define isc_spb_connect_timeout           isc_dpb_connect_timeout
@@ -282,16 +278,6 @@
 #define isc_action_svc_db_stats	      11	/* Retrieves database statistics */
 #define isc_action_svc_get_ib_log     12	/* Retrieves the InterBase log file from the server */
 #define isc_action_svc_get_fb_log     12	/* Retrieves the Firebird log file from the server */
-#define isc_action_svc_nbak           20	/* Incremental nbackup */
-#define isc_action_svc_nrest          21	/* Incremental database restore */
-#define isc_action_svc_trace_start    22	// Start trace session
-#define isc_action_svc_trace_stop     23	// Stop trace session
-#define isc_action_svc_trace_suspend  24	// Suspend trace session
-#define isc_action_svc_trace_resume   25	// Resume trace session
-#define isc_action_svc_trace_list     26	// List existing sessions
-#define isc_action_svc_set_mapping    27	// Set auto admins mapping in security database
-#define isc_action_svc_drop_mapping   28	// Drop auto admins mapping in security database
-#define isc_action_svc_last			  29	// keep it last !
 
 /*****************************
  * Service information items *
@@ -354,8 +340,7 @@
 #define isc_spb_bkp_old_descriptions     0x10
 #define isc_spb_bkp_non_transportable    0x20
 #define isc_spb_bkp_convert              0x40
-#define isc_spb_bkp_expand				 0x80
-#define isc_spb_bkp_no_triggers			 0x8000
+#define isc_spb_bkp_expand		 0x80
 
 /********************************************
  * Parameters for isc_action_svc_properties *
@@ -372,27 +357,13 @@
 #define isc_spb_prp_set_sql_dialect		14
 #define isc_spb_prp_activate			0x0100
 #define isc_spb_prp_db_online			0x0200
-#define isc_spb_prp_force_shutdown			41
-#define isc_spb_prp_attachments_shutdown	42
-#define isc_spb_prp_transactions_shutdown	43
-#define isc_spb_prp_shutdown_mode		44
-#define isc_spb_prp_online_mode			45
-
-/********************************************
- * Parameters for isc_spb_prp_shutdown_mode *
- *            and isc_spb_prp_online_mode   *
- ********************************************/
-#define isc_spb_prp_sm_normal		0
-#define isc_spb_prp_sm_multi		1
-#define isc_spb_prp_sm_single		2
-#define isc_spb_prp_sm_full			3
 
 /********************************************
  * Parameters for isc_spb_prp_reserve_space *
  ********************************************/
 
 #define isc_spb_prp_res_use_full	35
-#define isc_spb_prp_res				36
+#define isc_spb_prp_res			36
 
 /******************************************
  * Parameters for isc_spb_prp_write_mode  *
@@ -489,21 +460,6 @@
 
 /* Not available in Firebird 1.5 */
 
-/***************************************
- * Parameters for isc_action_svc_nbak  *
- ***************************************/
-
-#define isc_spb_nbk_level			5
-#define isc_spb_nbk_file			6
-#define isc_spb_nbk_no_triggers		0x01
-
-/***************************************
- * Parameters for isc_action_svc_trace *
- ***************************************/
-
-#define isc_spb_trc_id				1
-#define isc_spb_trc_name			2
-#define isc_spb_trc_cfg				3
 
 /**********************************************/
 /* Dynamic Data Definition Language operators */
@@ -564,7 +520,6 @@
 #define isc_dyn_delete_shadow             35
 #define isc_dyn_grant                     30
 #define isc_dyn_revoke                    31
-#define isc_dyn_revoke_all                246
 #define isc_dyn_def_primary_key           37
 #define isc_dyn_def_foreign_key           38
 #define isc_dyn_def_unique                40
@@ -607,7 +562,7 @@
 
 #define isc_dyn_rel_name                  50
 #define isc_dyn_fld_name                  51
-#define isc_dyn_new_fld_name              215
+#define isc_dyn_new_fld_name		  215
 #define isc_dyn_idx_name                  52
 #define isc_dyn_description               53
 #define isc_dyn_security_class            54
@@ -666,7 +621,6 @@
 #define isc_dyn_del_validation            198
 #define isc_dyn_single_validation         199
 #define isc_dyn_fld_character_set         203
-#define isc_dyn_del_computed              242
 
 /***********************************/
 /* Local field specific attributes */
@@ -714,7 +668,6 @@
 #define isc_dyn_grant_options             132
 #define isc_dyn_grant_user_group          205
 #define isc_dyn_grant_role                218
-#define isc_dyn_grant_grantor			  245
 
 
 /**********************************/
@@ -851,7 +804,7 @@
 #define isc_dyn_mod_prc_parameter         230
 
 /***********************/
-/* collation values    */
+/* collation values     */
 /***********************/
 #define isc_dyn_def_collation						231
 #define isc_dyn_coll_for_charset					232
@@ -862,34 +815,11 @@
 #define isc_dyn_coll_specific_attributes			236
 #define isc_dyn_del_collation						237
 
-/******************************************/
-/* Mapping OS security objects to DB ones */
-/******************************************/
-#define isc_dyn_mapping								243
-#define isc_dyn_map_role							1
-#define isc_dyn_unmap_role							2
-#define isc_dyn_map_user							3
-#define isc_dyn_unmap_user							4
-#define isc_dyn_automap_role						5
-#define isc_dyn_autounmap_role						6
-
-/********************/
-/* Users control    */
-/********************/
-#define isc_dyn_user								244
-#define isc_dyn_user_add							1
-#define isc_dyn_user_mod							2
-#define isc_dyn_user_del							3
-#define isc_dyn_user_passwd							4
-#define isc_dyn_user_first							5
-#define isc_dyn_user_middle							6
-#define isc_dyn_user_last							7
-#define isc_user_end								0
-
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
-#define isc_dyn_last_dyn_value            247
+
+#define isc_dyn_last_dyn_value            242
 
 /******************************************/
 /* Array slice description language (SDL) */
@@ -975,37 +905,6 @@
 #define isc_info_db_SQL_dialect           62
 #define isc_dpb_SQL_dialect               63
 #define isc_dpb_set_db_SQL_dialect        65
-
-/***********************************/
-/* Masks for fb_shutdown_callback  */
-/***********************************/
-
-#define fb_shut_confirmation			  1
-#define fb_shut_preproviders			  2
-#define fb_shut_postproviders			  4
-#define fb_shut_finish					  8
-
-/****************************************/
-/* Shutdown reasons, used by engine     */
-/* Users should provide positive values */
-/****************************************/
-
-#define fb_shutrsn_svc_stopped			  -1
-#define fb_shutrsn_no_connection		  -2
-#define fb_shutrsn_app_stopped			  -3
-#define fb_shutrsn_device_removed		  -4
-#define fb_shutrsn_signal				  -5
-#define fb_shutrsn_services				  -6
-#define fb_shutrsn_exit_called			  -7
-
-/****************************************/
-/* Cancel types for fb_cancel_operation */
-/****************************************/
-
-#define fb_cancel_disable				  1
-#define fb_cancel_enable				  2
-#define fb_cancel_raise					  3
-#define fb_cancel_abort					  4
 
 /********************************************/
 /* Debug information items					*/

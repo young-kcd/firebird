@@ -27,7 +27,11 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 
+#ifdef VMS
+const int BLOCK_SIZE = 512;
+#else
 const int BLOCK_SIZE = 1024;
+#endif
 
 const int MAXSYMLEN = 257;		// max length of symbol + terminator
 const int MAX_PAGE_LEN = 16384;	// max allowable length for a database page
@@ -100,7 +104,7 @@ typedef struct dudley_ctx {
 	struct sym* ctx_name;
 	struct dudley_rel* ctx_relation;
 	struct dudley_fld* ctx_field;
-	bool   ctx_view_rse;
+	USHORT ctx_view_rse;
 	USHORT ctx_context_id;
 } *DUDLEY_CTX;
 
@@ -157,7 +161,7 @@ typedef struct dudley_fld {
 	SSHORT fld_position;		/* field position */
 	SSHORT fld_segment_length;
 	SSHORT fld_sub_type;
-	bool   fld_has_sub_type;
+	SSHORT fld_has_sub_type;
 	SSHORT fld_dimension;		/* size of multi-dim. array */
 	SSHORT fld_system;			/* 0 if field is user defined */
 	USHORT fld_flags;			/* misc trash */
@@ -236,7 +240,7 @@ typedef struct funcarg {
 	SSHORT funcarg_length;		/* argument length in bytes */
 	SSHORT funcarg_return_arg;	/* argument is the designated return arg */
 	SSHORT funcarg_sub_type;	/* sub_type of text */
-	bool   funcarg_has_sub_type;	/* null field for sub_type field */
+	SSHORT funcarg_has_sub_type;	/* null field for sub_type field */
 	funcarg* funcarg_next;		/* next field in function */
 } *FUNCARG;
 
@@ -607,9 +611,7 @@ struct DudleyGlobals {
 	bool DDL_extract;
 	bool DDL_trace;
 	bool DDL_version;
-#ifdef TRUSTED_AUTH
 	bool DDL_trusted;
-#endif
 	const TEXT* DDL_prompt;
 	const TEXT* DDL_file_name;
 	TEXT DYN_file_name[256];

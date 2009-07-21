@@ -30,13 +30,13 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"
 
 typedef int PTR;
 const SLONG EVENT_FLAG	= 15;
 
-static SCHAR lock_types[] =
-{
+static SCHAR lock_types[] = {
 	0,
 	LCK$K_NLMODE,
 	LCK$K_CRMODE,
@@ -47,8 +47,7 @@ static SCHAR lock_types[] =
 };
 
 // Conflict with isc.h or redefinition???
-struct lock_status
-{
+struct lock_status {
 	SSHORT lksb_status;
 	SSHORT lksb_reserved;
 	SLONG lksb_lock_id;
@@ -59,10 +58,11 @@ static bool lock_error(ISC_STATUS *, UCHAR *, int);
 static SLONG write_data(SLONG, SLONG);
 
 
-bool LOCK_convert(PTR lock_id,
-				  UCHAR type,
-				  SSHORT wait,
-				  lock_ast_t ast_routine,
+bool LOCK_convert(
+				 PTR lock_id,
+				 UCHAR type,
+				 SSHORT wait,
+				 lock_ast_t ast_routine,
 	void* ast_argument, ISC_STATUS* status_vector)
 {
 /**************************************
@@ -74,9 +74,9 @@ bool LOCK_convert(PTR lock_id,
  * Functional description
  *	Perform a lock conversion, if possible.  If the lock cannot be
  *	granted immediately, either return immediately or wait depending
- *	on a wait flag.  If the lock is granted return true, otherwise
- *	return false.  Note: if the conversion would cause a deadlock,
- *	false is returned even if wait was requested.
+ *	on a wait flag.  If the lock is granted return TRUE, otherwise
+ *	return FALSE.  Note: if the conversion would cause a deadlock,
+ *	FALSE is returned even if wait was requested.
  *
  **************************************/
 	lock_status lksb;
@@ -87,7 +87,7 @@ bool LOCK_convert(PTR lock_id,
 	int status = sys$enq(EVENT_FLAG,
 					 lock_types[type],
 					 &lksb,
-					 wait ? LCK$M_CONVERT : LCK$M_CONVERT | LCK$M_NOQUEUE,
+					 (wait) ? LCK$M_CONVERT : LCK$M_CONVERT | LCK$M_NOQUEUE,
 					 &desc, NULL,	/* Lock parent (not used) */
 					 gds__completion_ast,	/* AST routine when granted */
 					 (int*) ast_argument, ast_routine, NULL, NULL);
@@ -109,7 +109,7 @@ int LOCK_deq(PTR lock_id)
 {
 /**************************************
  *
- *	L O C K _ d e q
+ *	L O C K _ d e q 
  *
  **************************************
  *
@@ -163,10 +163,11 @@ SLONG LOCK_enq(PTR prior_request,
 	desc.dsc$b_dtype = DSC$K_DTYPE_T;
 	desc.dsc$w_length = p - buffer;
 	desc.dsc$a_pointer = buffer;
-	flags = wait ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM | LCK$M_NOQUEUE;
-	lock_type = lock_types[type];
+	flags =
+		(wait) ? LCK$M_SYSTEM | LCK$M_VALBLK : LCK$M_SYSTEM |
+		LCK$M_NOQUEUE; lock_type = lock_types[type];
 	int status =
-		sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
+	sys$enq(EVENT_FLAG, lock_type, &lksb, flags, &desc, parent_request, gds__completion_ast,	/* AST routine when granted */
 		   ast_argument, ast_routine, PSL$C_USER, NULL);
 	if (status & 1)
 		ISC_wait(&lksb, EVENT_FLAG);
@@ -327,12 +328,11 @@ static bool lock_error(ISC_STATUS * status_vector,
 	*status_vector++ = isc_arg_vms;
 	*status_vector++ = code;
 	*status_vector++ = 0;
-	return false;
+	return 0;
 }
 
 
-static SLONG write_data(SLONG lock_id, SLONG data)
-{
+static SLONG write_data(SLONG lock_id, SLONG data) {
 /**************************************
  *
  *	w r i t e _ d a t a
@@ -361,4 +361,4 @@ static SLONG write_data(SLONG lock_id, SLONG data)
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
 	return 0;
 }
-
+			   

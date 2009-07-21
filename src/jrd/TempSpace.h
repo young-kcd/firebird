@@ -28,16 +28,14 @@
 #include "../common/classes/array.h"
 #include "../common/classes/TempFile.h"
 #include "../common/config/dir_list.h"
-#include "../common/classes/init.h"
 
-class TempSpace : public Firebird::File
-{
+class TempSpace : public Firebird::File {
 public:
 	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix);
 	virtual ~TempSpace();
 
 	size_t read(offset_t offset, void* buffer, size_t length);
-	size_t write(offset_t offset, const void* buffer, size_t length);
+	size_t write(offset_t offset, void* buffer, size_t length);
 
 	void unlink() {}
 
@@ -53,8 +51,7 @@ public:
 
 	char* inMemory(offset_t offset, size_t size) const;
 
-	struct SegmentInMemory
-	{
+	struct SegmentInMemory {
 		char* memory;
 		offset_t position;
 		size_t size;
@@ -62,47 +59,46 @@ public:
 
 	typedef Firebird::Array<SegmentInMemory> Segments;
 
-	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize, Segments& segments);
+	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize, 
+		Segments& segments);
 
 	bool validate(offset_t& freeSize) const;
 private:
 
 	// Generic space block
-	class Block
-	{
+	class Block {
 	public:
 		Block(Block* tail, size_t length);
 		virtual ~Block() {}
 
 		virtual size_t read(offset_t offset, void* buffer, size_t length) = 0;
-		virtual size_t write(offset_t offset, const void* buffer, size_t length) = 0;
+		virtual size_t write(offset_t offset, void* buffer, size_t length) = 0;
 
 		virtual char* inMemory(offset_t offset, size_t size) const = 0;
-		virtual bool sameFile(const Firebird::TempFile* file) const = 0;
+		virtual bool sameFile(const TempFile* file) const = 0; 
 
 		Block *prev;
 		Block *next;
 		offset_t size;
 	};
 
-	class MemoryBlock : public Block
-	{
+	class MemoryBlock : public Block {
 	public:
 		MemoryBlock(MemoryPool& pool, Block* tail, size_t length);
 		~MemoryBlock();
 
 		size_t read(offset_t offset, void* buffer, size_t length);
-		size_t write(offset_t offset, const void* buffer, size_t length);
+		size_t write(offset_t offset, void* buffer, size_t length);
 
 		char* inMemory(offset_t offset, size_t _size) const
 		{
 			if ((offset < this->size) && (offset + _size <= this->size))
 				return ptr + offset;
-
-			return NULL;
+			else
+				return NULL;
 		}
-
-		bool sameFile(const Firebird::TempFile*) const
+		
+		bool sameFile(const TempFile* file) const
 		{
 			return false;
 		}
@@ -111,32 +107,31 @@ private:
 		char* ptr;
 	};
 
-	class FileBlock : public Block
-	{
+	class FileBlock : public Block {
 	public:
-		FileBlock(Firebird::TempFile* file, Block* tail, size_t length);
+		FileBlock(TempFile* file, Block* tail, size_t length);
 		~FileBlock();
 
 		size_t read(offset_t offset, void* buffer, size_t length);
-		size_t write(offset_t offset, const void* buffer, size_t length);
+		size_t write(offset_t offset, void* buffer, size_t length);
 
-		char* inMemory(offset_t /*offset*/, size_t /*a_size*/) const
+		char* inMemory(offset_t offset, size_t a_size) const
 		{
 			return NULL;
 		}
 
-		bool sameFile(const Firebird::TempFile* aFile) const
+		bool sameFile(const TempFile* aFile) const
 		{
 			return (aFile == this->file);
 		}
 
 	private:
-		Firebird::TempFile* file;
+		TempFile* file;
 		offset_t seek;
 	};
 
 	Block* findBlock(offset_t& offset) const;
-	Firebird::TempFile* setupFile(size_t size);
+	TempFile* setupFile(size_t size);
 
 	virtual bool adjustCacheSize(long) const
 	{
@@ -146,12 +141,11 @@ private:
 	char* findMemory(offset_t& begin, offset_t end, size_t size) const;
 
 	//  free/used segments management
-	class Segment
-	{
+	class Segment {
 	public:
 		Segment(Segment* _next, offset_t _position, offset_t _size) :
-			next(_next), position(_position), size(_size)
-		{}
+			next(_next), position(_position), size(_size) 
+		{};
 
 		Segment* next;
 		offset_t position;
@@ -168,12 +162,12 @@ private:
 	offset_t localCacheUsage;
 	Block* head;
 	Block* tail;
-	Firebird::Array<Firebird::TempFile*> tempFiles;
+	Firebird::Array<TempFile*> tempFiles;
 
 	Segment* freeSegments;
 	Segment* notUsedSegments;
 
-	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
+	static Firebird::Mutex initMutex;
 	static Firebird::TempDirectoryList* tempDirs;
 	static size_t minBlockSize;
 	static offset_t globalCacheUsage;

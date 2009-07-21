@@ -42,7 +42,9 @@
 
 #include "../remote/protocol.h"
 
-#if defined(__sun)
+#ifdef VMS
+const P_ARCH ARCHITECTURE	= arch_vms;
+#elif defined(sun)
 #	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
 #elif (defined i386 || defined AMD64)
@@ -54,6 +56,8 @@ const P_ARCH ARCHITECTURE	= arch_sun;
 const P_ARCH ARCHITECTURE	= arch_hpux;
 #elif (defined AIX || defined AIX_PPC)
 const P_ARCH ARCHITECTURE	= arch_rt;
+#elif defined(SCO_EV)
+const P_ARCH ARCHITECTURE	= arch_sco_ev;
 #elif defined(LINUX)
 const P_ARCH ARCHITECTURE	= arch_linux;
 #elif defined(FREEBSD)

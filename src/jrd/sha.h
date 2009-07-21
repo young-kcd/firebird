@@ -26,7 +26,7 @@
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
 
-namespace Jrd
+namespace Jrd 
 {
 	class CryptSupport
 	{

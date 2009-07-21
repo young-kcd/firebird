@@ -38,7 +38,6 @@ s none /usr/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.2
 d none @prefix@/include 0751 firebird firebird
 f none @prefix@/include/ib_util.h=$SRCDIR/include/ib_util.h 0444 firebird firebird
 f none @prefix@/include/perf.h=$SRCDIR/include/perf.h 0444 firebird firebird
-f none @prefix@/include/blr.h=$SRCDIR/include/blr.h 0444 firebird firebird
 f none @prefix@/include/iberror.h=$SRCDIR/include/iberror.h 0444 firebird firebird
 f none @prefix@/include/ibase.h=$SRCDIR/include/ibase.h 0444 firebird firebird
 
@@ -70,21 +69,31 @@ f none @prefix@/bin/gpre=$SRCDIR/bin/gpre 0451 firebird firebird
 f none @prefix@/bin/gds_drop=$SRCDIR/bin/gds_drop 0451 firebird firebird
 f none @prefix@/bin/gstat=$SRCDIR/bin/gstat 0451 firebird firebird
 #f none @prefix@/bin/fbguard=$SRCDIR/bin/fbguard 0451 firebird firebird
+#f none @prefix@/bin/fbserver=$SRCDIR/bin/fbserver 0755 firebird firebird
 #f none @prefix@/bin/fbmgr.bin=$SRCDIR/bin/fbmgr.bin 0451 firebird firebird
 f none @prefix@/bin/fb_lock_print=$SRCDIR/bin/fb_lock_print 0451 firebird firebird
 f none @prefix@/bin/gdef=$SRCDIR/bin/gdef 0451 firebird firebird
 f none @prefix@/bin/qli=$SRCDIR/bin/qli 0555 firebird firebird
 # from 2.0
 f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 0451 firebird firebird
+# from 2.1
+f none @prefix@/bin/fbsvcmgr=$SRCDIR/bin/fbsvcmgr 0451 firebird firebird
 
 # upgrade
 
-d none @prefix@/upgrade 0751 firebird firebird
-f none @prefix@/upgrade/ib_udf2_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf2_params.txt 0644 firebird firebird
-f none @prefix@/upgrade/ib_udf_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_params.txt 0644 firebird firebird
-f none @prefix@/upgrade/ib_udf_upgrade.sql=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_upgrade.sql 0644 firebird firebird
-f none @prefix@/upgrade/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 firebird firebird
-f none @prefix@/upgrade/security_database.txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 firebird firebird
+d none @prefix@/misc 0751 firebird firebird
+f none @prefix@/misc/intl.sql=$SRCDIR/../../src/misc/intl.sql 0644 firebird firebird
+d none @prefix@/misc/upgrade 0751 firebird firebird
+d none @prefix@/misc/upgrade/ibudf 0751 firebird firebird
+f none @prefix@/misc/upgrade/ibudf/ib_udf2_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf2_params.txt 0644 firebird firebird
+f none @prefix@/misc/upgrade/ibudf/ib_udf_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_params.txt 0644 firebird firebird
+f none @prefix@/misc/upgrade/ibudf/ib_udf_upgrade.sql=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_upgrade.sql 0644 firebird firebird
+d none @prefix@/misc/upgrade/metadata 0751 firebird firebird
+f none @prefix@/misc/upgrade/metadata/metadata_charset_create.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset_create.sql 0644 firebird firebird
+f none @prefix@/misc/upgrade/metadata/metadata_charset_drop.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset_drop.sql 0644 firebird firebird
+d none @prefix@/misc/upgrade/security 0751 firebird firebird
+f none @prefix@/misc/upgrade/security/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 firebird firebird
+f none @prefix@/misc/upgrade/security/security_database,txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 firebird firebird
 
 # examples
 
@@ -161,12 +170,12 @@ f none @prefix@/examples/functions.c=$SRCDIR/examples/functions.c 0444 firebird 
 
 d none @prefix@/lib 0751 firebird firebird
 f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0555 firebird firebird
-s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
-s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.2
+s none @prefix@/lib/libfbclient.so.2.1=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
+s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.2.1
 
 f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0555 firebird firebird
-s none @prefix@/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
-s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
+s none @prefix@/lib/libfbembed.so.2.1=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
+s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2.1
 
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0555 firebird firebird
 
@@ -200,7 +209,6 @@ f none @prefix@/de_DE.msg=$SRCDIR/de_DE.msg 0444 firebird firebird
 d none @prefix@/doc 0751 firebird firebird
 d none @prefix@/doc/sql.extensions 0755 firebird firebird
 f none @prefix@/doc/sql.extensions/README.aggregate_tracking=$SRCDIR/../../doc/sql.extensions/README.aggregate_tracking 0644 firebird firebird
-f none @prefix@/doc/sql.extensions/README.builtin_functions=$SRCDIR/../../doc/sql.extensions/README.builtin_functions.txt 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.case=$SRCDIR/../../doc/sql.extensions/README.case 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.coalesce=$SRCDIR/../../doc/sql.extensions/README.coalesce 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.common_table_expressions=$SRCDIR/../../doc/sql.extensions/README.common_table_expressions 0644 firebird firebird

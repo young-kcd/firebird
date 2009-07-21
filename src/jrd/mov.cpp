@@ -34,13 +34,11 @@
 #include "../jrd/intl.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../common/cvt.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 
-using namespace Firebird;
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
 {
@@ -55,7 +53,7 @@ int MOV_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-	return CVT2_compare(arg1, arg2);
+	return CVT2_compare(arg1, arg2, ERR_post);
 }
 
 
@@ -69,11 +67,11 @@ double MOV_date_to_double(const dsc* desc)
  *
  * Functional description
  *    Convert a date to double precision for
- *    date arithmetic routines.
+ *    date arithmetic routines.  
  *
  **************************************/
 
-	return CVT_date_to_double(desc);
+	return CVT_date_to_double(desc, ERR_post);
 }
 
 
@@ -94,8 +92,7 @@ void MOV_double_to_date2(double real, dsc* desc)
 	SLONG fixed[2];
 
 	MOV_double_to_date(real, fixed);
-	switch (desc->dsc_dtype)
-	{
+	switch (desc->dsc_dtype) {
 	case dtype_timestamp:
 		((SLONG *) desc->dsc_address)[0] = fixed[0];
 		((SLONG *) desc->dsc_address)[1] = fixed[1];
@@ -129,7 +126,160 @@ void MOV_double_to_date(double real, SLONG fixed[2])
  *
  **************************************/
 
-	CVT_double_to_date(real, fixed);
+	CVT_double_to_date(real, fixed, ERR_post);
+}
+
+
+#ifndef VMS
+void MOV_fast(
+			  const SCHAR* from,
+			  SCHAR* to, ULONG length)
+{
+/**************************************
+ *
+ *	M O V _ f a s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move a byte string as fast as possible.
+ *
+ **************************************/
+	ULONG l = length >> 4;
+	if (l)
+		do {
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+		} while (--l);
+
+	if (length &= 15)
+		do {
+			*to++ = *from++;
+		} while (--length);
+}
+
+
+void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
+{
+/**************************************
+ *
+ *	M O V _ f a s t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Do a long move, already aligned, as quickly as possible.
+ *
+ **************************************/
+	ULONG l;
+
+	fb_assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+	fb_assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+
+/* copy by chunks of 8 longwords == 32 bytes == 2**5 bytes */
+	if (l = (length >> 5)) {
+		do {
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+		} while (--l);
+		length &= (8 * sizeof(ULONG) - 1);
+	}
+
+/* Copy by longwords */
+	if (l = (length >> 2))
+		do
+			*to++ = *from++;
+		while (--l);
+
+/* Finally, copy any trailing bytes */
+	if (l = (length & 3)) {
+		UCHAR* p = (UCHAR *) to;
+		const UCHAR* q = (UCHAR *) from;
+		do
+			*p++ = *q++;
+		while (--l);
+	}
+}
+#endif
+
+
+void MOV_fill(SLONG* to, ULONG length)
+{
+/**************************************
+ *
+ *	M O V _ f i l l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Clear out a block.
+ *
+ **************************************/
+	ULONG l;
+
+/* If not longword aligned, fill bytewise until it is */
+
+	if (l = (((U_IPTR) to) & (sizeof(ULONG) - 1))) {
+		l = sizeof(ULONG) - l;
+		if (length < l)
+			l = length;
+		length -= l;
+		UCHAR* p = (UCHAR *) to;
+		while (l--)
+			*p++ = 0;
+		to = (SLONG *) p;
+		fb_assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
+			   || !length);		/* Or already completed */
+	}
+
+/* Fill in chunks of 8 longwords == 32 bytes == 2**5 bytes */
+	if (l = (length >> 5)) {
+		do {
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+		} while (--l);
+		length &= (8 * sizeof(ULONG) - 1);
+	}
+
+/* Fill by longwords */
+	if (l = (length >> 2))
+		do
+			*to++ = 0;
+		while (--l);
+
+/* Finally, fill any trailing bytes */
+	if (l = (length & 3)) {
+		UCHAR* p = (UCHAR *) to;
+		do
+			*p++ = 0;
+		while (--l);
+	}
 }
 
 
@@ -190,7 +340,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 {
 /**************************************
  *
- *	M O V _ g e t _ m e t a d a t a _ s t r
+ *	M O V _ g e t _ m e t a d a t a _ s t r 
  *
  **************************************
  *
@@ -205,7 +355,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 
 	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
 									   NULL, 0, ERR_post);
-
+	
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
 		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
@@ -233,7 +383,7 @@ void MOV_get_name(const dsc* desc, TEXT* string)
  *
  **************************************/
 
-	CVT2_get_name(desc, string);
+	CVT2_get_name(desc, string, ERR_post);
 }
 
 
@@ -246,7 +396,7 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
  **************************************
  *
  * Functional description
- *	Convert something arbitrary to a quad
+ *	Convert something arbitrary to a quad 
  *	Note: a quad is NOT the same as a 64 bit integer
  *
  **************************************/
@@ -255,7 +405,8 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
 }
 
 
-int MOV_get_string_ptr(const dsc* desc,
+int MOV_get_string_ptr(
+					   const dsc* desc,
 					   USHORT* ttype,
 					   UCHAR** address, vary* temp, USHORT length)
 {
@@ -310,7 +461,7 @@ GDS_DATE MOV_get_sql_date(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_date(desc);
+	return CVT_get_sql_date(desc, ERR_post);
 }
 
 
@@ -327,7 +478,7 @@ GDS_TIME MOV_get_sql_time(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_time(desc);
+	return CVT_get_sql_time(desc, ERR_post);
 }
 
 
@@ -344,7 +495,7 @@ GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_timestamp(desc);
+	return CVT_get_timestamp(desc, ERR_post);
 }
 
 
@@ -364,7 +515,7 @@ int MOV_make_string(const dsc*	     desc,
  *	Make a string, in a specified text type, out of a descriptor.
  *	The caller must provide a sufficiently
  *	large temporary.  The address of the resultant string is returned
- *	by reference.
+ *	by reference.  
  *	MOV_make_string returns the length of the string in bytes.
  *
  *	Note: If the descriptor is known to be a string type in the
@@ -380,7 +531,7 @@ int MOV_make_string(const dsc*	     desc,
 int MOV_make_string2(Jrd::thread_db* tdbb,
 					 const dsc* desc,
 					 USHORT ttype,
-					 UCHAR** address,
+					 UCHAR** address, 
 					 Jrd::MoveBuffer& buffer,
 					 bool limit)
 {
@@ -392,7 +543,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
  *
  * Functional description
  *	Make a string, in a specified text type, out of a descriptor.
- *	The address of the resultant string is returned by reference.
+ *	The address of the resultant string is returned.
  *	MOV_make_string2 returns the length of the string in bytes.
  *
  **************************************/
@@ -413,9 +564,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		ULONG size;
 
 		if (temp.getCharSet() == desc->getCharSet())
-		{
 			size = blob->blb_length;
-		}
 		else
 		{
 			size = (blob->blb_length / INTL_charset_lookup(tdbb, desc->getCharSet())->minBytesPerChar()) *
@@ -427,13 +576,12 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(Arg::Gds(isc_arith_except) <<
-					 Arg::Gds(isc_blob_truncation));
+			ERR_post(isc_arith_except, isc_arg_end);
 
 		return size;
 	}
-
-	return CVT2_make_string2(desc, ttype, address, buffer);
+	else
+		return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
 }
 
 
@@ -456,5 +604,5 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 		BLB_move(tdbb, from, to, NULL);
 	}
 	else
-		CVT_move(from, to);
+		CVT_move(from, to, ERR_post);
 }

@@ -24,6 +24,8 @@
 #ifndef JRD_MET_PROTO_H
 #define JRD_MET_PROTO_H
 
+#include "../jrd/exe.h"
+#include "../jrd/blob_filter.h"
 #include "../common/classes/MetaName.h"
 
 struct dsc;
@@ -42,7 +44,6 @@ namespace Jrd {
 	class jrd_fld;
 	class Shadow;
 	class DeferredWork;
-	struct FieldInfo;
 }
 
 struct SubtypeInfo
@@ -65,10 +66,8 @@ void		MET_activate_shadow(Jrd::thread_db*);
 ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
 Jrd::DeferredWork*	MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
 Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, int, Jrd::jrd_tra*);
+void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, int);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
-bool		MET_dsql_cache_use(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name);
-void		MET_dsql_cache_release(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name);
 void		MET_error(const TEXT*, ...);
 Jrd::Format*	MET_format(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 bool		MET_get_char_coll_subtype(Jrd::thread_db*, USHORT*, const UCHAR*, USHORT);
@@ -76,7 +75,7 @@ bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info)
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT,
-								Jrd::jrd_tra*, Firebird::MetaName = Firebird::MetaName());
+								Firebird::MetaName = Firebird::MetaName());
 Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_db_triggers(Jrd::thread_db*, int);
@@ -99,12 +98,12 @@ Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
 Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
 								  Jrd::jrd_req**, bool);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
+bool		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);
 bool		MET_relation_default_class (Jrd::thread_db*, const Firebird::MetaName&, const Firebird::MetaName&);
-void		MET_release_existence(Jrd::thread_db*, Jrd::jrd_rel*);
+void		MET_release_existence(Jrd::jrd_rel*);
 void		MET_release_trigger(Jrd::thread_db*, Jrd::trig_vec**, const Firebird::MetaName&);
 void		MET_release_triggers(Jrd::thread_db*, Jrd::trig_vec**);
 #ifdef DEV_BUILD
@@ -115,12 +114,10 @@ bool		MET_procedure_in_use(Jrd::thread_db*, Jrd::jrd_prc*);
 void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
 void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const TEXT*, const TEXT*, const TEXT*);
 void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_trigger_msg(Jrd::thread_db*, Firebird::string&, const Firebird::MetaName&, USHORT);
+const TEXT* MET_trigger_msg(Jrd::thread_db*, const Firebird::MetaName&, USHORT);
 void		MET_update_shadow(Jrd::thread_db*, Jrd::Shadow*, USHORT);
 void		MET_update_transaction(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
 void		MET_get_domain(Jrd::thread_db*, const Firebird::MetaName&, dsc*, Jrd::FieldInfo*);
-Firebird::MetaName MET_get_relation_field(Jrd::thread_db*, const Firebird::MetaName&,
-								   const Firebird::MetaName&, dsc*, Jrd::FieldInfo*);
 void		MET_update_partners(Jrd::thread_db*);
 
 #endif // JRD_MET_PROTO_H

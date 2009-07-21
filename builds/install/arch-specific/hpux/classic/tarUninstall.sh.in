@@ -31,6 +31,8 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: tarUninstall.sh.in,v 1.2.2.3 2008-12-26 13:47:37 alexpeshkoff Exp $
+# 
 
 cd $FBRootDir
 cd ..

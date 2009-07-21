@@ -44,7 +44,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef HAVE_IO_H
+#if defined(WIN_NT)
 #include <io.h> // isatty
 #endif
 
@@ -80,42 +80,40 @@ enum in_sw_values
 	IN_SW_GDEF_ADA = 14,	// source is ada
 	IN_SW_GDEF_CXX,			// source is C++
 	IN_SW_GDEF_USER = 17,	// user name for PC security
-	IN_SW_GDEF_PASSWORD,	// password for PC security
+	IN_SW_GDEF_PASSWORD		// password for PC security
 #ifdef TRUSTED_AUTH
-	IN_SW_GDEF_TRUSTED,		// trusted auth
+	,
+	IN_SW_GDEF_TRUSTED		// trusted auth
 #endif
-	IN_SW_GDEF_FETCH_PASS	// fetch password from file
 };
 
 static const in_sw_tab_t gdef_in_sw_table[] =
 {
-	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_G, 0, "EXTRACT", 0, 0, 0, FALSE, 0, 0,
 		"\t\textract definition from database"}, 	/* extract DDL from database */
-	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_R, 0, "REPLACE", 0, 0, 0, FALSE, 0, 0,
 		"\t\treplace existing database"},	/* replace database */
-	{ IN_SW_GDEF_D, 0, "DYNAMIC", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_D, 0, "DYNAMIC", 0, 0, 0, FALSE, 0, 0,
 		"\t\tgenerate dynamic DDL"},
-	{ IN_SW_GDEF_T, 0, "T", 0, 0, 0, false, 0, 0, NULL },
-	{ IN_SW_GDEF_C, 0, "C", 0, 0, 0, false, 0, 0, "\t\tDYN for C" },
-	{ IN_SW_GDEF_F, 0, "FORTRAN", 0, 0, 0, false, 0, 0, "\t\tDYN for FORTRAN" },
-	{ IN_SW_GDEF_P, 0, "PASCAL", 0, 0, 0, false, 0, 0, "\t\tDYN for PASCAL" },
-	{ IN_SW_GDEF_COB, 0, "COB", 0, 0, 0, false, 0, 0, "\t\tDYN for COBOL" },
-	{ IN_SW_GDEF_ANSI, 0, "ANSI", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_T, 0, "T", 0, 0, 0, FALSE, 0, 0, NULL },
+	{ IN_SW_GDEF_C, 0, "C", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C" },
+	{ IN_SW_GDEF_F, 0, "FORTRAN", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for FORTRAN" },
+	{ IN_SW_GDEF_P, 0, "PASCAL", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for PASCAL" },
+	{ IN_SW_GDEF_COB, 0, "COB", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for COBOL" },
+	{ IN_SW_GDEF_ANSI, 0, "ANSI", 0, 0, 0, FALSE, 0, 0,
 		"\t\tDYN for ANSI COBOL" },
-	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, false, 0, 0, "\t\tDYN for ADA" },
-	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, false, 0, 0, "\t\tDYN for C++" },
-	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_ADA, 0, "ADA", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for ADA" },
+	{ IN_SW_GDEF_CXX, 0, "CXX", 0, 0, 0, FALSE, 0, 0, "\t\tDYN for C++" },
+	{ IN_SW_GDEF_USER, 0, "USER", 0, 0, 0, FALSE, 0, 0,
 		"\t\tuser name to use in attaching database" },
-	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, FALSE, 0, 0,
 		"\t\tpassword to use with user name" },
-	{ IN_SW_GDEF_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, false, 0, 0,
-		"\t\tfetch password from file" },
 #ifdef TRUSTED_AUTH
-	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, false, 0, 0,
+	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, FALSE, 0, 0,
 		"\t\tuse trusted authentication" },
 #endif
-	{ IN_SW_GDEF_Z, 0, "Z", 0, 0, 0, false, 0, 0, "\t\tprint version number" },
-	{ IN_SW_GDEF_0, 0, NULL, 0, 0, 0, false, 0, 0, NULL }
+	{ IN_SW_GDEF_Z, 0, "Z", 0, 0, 0, FALSE, 0, 0, "\t\tprint version number" },
+	{ IN_SW_GDEF_0, 0, NULL, 0, 0, 0, FALSE, 0, 0, NULL }
 };
 
 #ifndef SUPERSERVER
@@ -133,6 +131,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	command line.
  *
  **************************************/
+	//TEXT buffer[256];
+
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
 // CVC: Notice that gdef is NEVER run as a service! It doesn't make sense.
 /* Perform some special handling when run as a Firebird service.  The
@@ -177,9 +180,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	dudleyGlob.DDL_dynamic = false;
 	dudleyGlob.DDL_trace = false;
 	dudleyGlob.DDL_version = false;
-#ifdef TRUSTED_AUTH
 	dudleyGlob.DDL_trusted = false;
-#endif
 	dudleyGlob.DDL_default_user = NULL;
 	dudleyGlob.DDL_default_password = NULL;
 
@@ -290,16 +291,6 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 				dudleyGlob.DDL_default_password = fb_utils::get_passwd(*++argv);
 				argc--;
 			}
-
-		case IN_SW_GDEF_FETCH_PASS:
-			if (argc > 1) {
-				if (fb_utils::fetchPassword(*++argv, dudleyGlob.DDL_default_password) != fb_utils::FETCH_PASS_OK)
-				{
-					DDL_msg_put(345);	// msg 4: gdef: Error fetching password from file
-					DDL_exit(FINI_ERROR);
-				}
-				argc--;
-			}
 			break;
 
 		case IN_SW_GDEF_USER:
@@ -332,7 +323,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	}
 
 	FILE* input_file;
-
+	
 	if (dudleyGlob.DDL_extract) {
 		strcpy(dudleyGlob.DB_file_string, file_name_1);
 		strcpy(dudleyGlob.DDL_file_string, file_name_2);
@@ -355,8 +346,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		dudleyGlob.DDL_interactive = dudleyGlob.DDL_service || isatty(0);
 	}
 	else {
-		/*
-		   * try to open the input DDL file.
+		/* 
+		   * try to open the input DDL file.  
 		   * If it already has a .GDL extension, just try to open it.
 		   * Otherwise, add the extension, try, remove the extension,
 		   * and try again.
@@ -414,6 +405,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (dudleyGlob.DDL_actions && ((dudleyGlob.DDL_errors && dudleyGlob.DDL_interactive) || dudleyGlob.DDL_quit)) {
 		rewind(stdin);
+		//*buffer = 0;
 		if (dudleyGlob.DDL_errors > 1)
 			DDL_msg_partial(7, SafeArg() << dudleyGlob.DDL_errors);	/* msg 7: \n%d errors during input. */
 		else if (dudleyGlob.DDL_errors)
@@ -696,7 +688,7 @@ bool DDL_yes_no( USHORT number)
  *
  **************************************/
 	TEXT prompt[128], reprompt[128], yes_ans[128], no_ans[128];
-
+	
 	static const SafeArg dummy;
 
 	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, dummy);
@@ -737,8 +729,9 @@ bool DDL_yes_no( USHORT number)
 			return true;
 		if (UPPER(c) == UPPER(no_ans[0]))
 			return false;
-		if (!reprompt &&
-			fb_msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt), reprompt, dummy) <= 0)
+		if (!reprompt
+			&& fb_msg_format(0, DDL_MSG_FAC, re_num, sizeof(reprompt),
+							   reprompt, dummy) <= 0)
 		{
 			sprintf(reprompt, "Please respond with YES or NO.");	/* default if msg_format fails */
 		}

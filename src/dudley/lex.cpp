@@ -42,11 +42,11 @@
 #include <unistd.h>
 #endif
 
-const char* const SCRATCH = "fb_query_";
+const char* SCRATCH = "fb_query_";
 
-static int nextchar();
+static int nextchar(void);
 static void retchar(SSHORT);
-static int skip_white();
+static int skip_white(void);
 
 /* Input line control */
 
@@ -107,7 +107,7 @@ inline SCHAR classes(UCHAR idx)
 
 
 
-TOK LEX_filename()
+TOK LEX_filename(void)
 {
 /**************************************
  *
@@ -145,7 +145,7 @@ TOK LEX_filename()
 }
 
 
-void LEX_fini()
+void LEX_fini(void)
 {
 /**************************************
  *
@@ -165,7 +165,7 @@ void LEX_fini()
 }
 
 
-void LEX_flush()
+void LEX_flush(void)
 {
 /**************************************
  *
@@ -234,7 +234,7 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	const Firebird::PathName filename = Firebird::TempFile::create(SCRATCH);
+	const Firebird::PathName filename = TempFile::create(SCRATCH);
 	strcpy(trace_file_name, filename.c_str());
 	trace_file = fopen(trace_file_name, "w+b");
 	if (!trace_file)
@@ -296,7 +296,7 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 }
 
 
-void LEX_real()
+void LEX_real(void)
 {
 /**************************************
  *
@@ -316,7 +316,7 @@ void LEX_real()
 }
 
 
-TOK LEX_token()
+TOK LEX_token(void)
 {
 /**************************************
  *
@@ -380,7 +380,8 @@ TOK LEX_token()
 				break;
 			}
 			*p++ = next;
-		} while (next != c);
+		}
+		while (next != c);
 	}
 	else if (c == '\n')
 		token->tok_type = tok_eol;
@@ -393,7 +394,8 @@ TOK LEX_token()
 
 	token->tok_length = p - token->tok_string;
 	*p = '\0';
-	token->tok_symbol = symbol = HSH_lookup(token->tok_string, token->tok_length);
+	token->tok_symbol = symbol =
+		HSH_lookup(token->tok_string, token->tok_length);
 	if (symbol && symbol->sym_type == SYM_keyword)
 		token->tok_keyword = (enum kwwords) symbol->sym_keyword;
 	else
@@ -406,7 +408,7 @@ TOK LEX_token()
 }
 
 
-static int nextchar()
+static int nextchar(void)
 {
 /**************************************
  *
@@ -503,7 +505,7 @@ static void retchar( SSHORT c)
 }
 
 
-static int skip_white()
+static int skip_white(void)
 {
 /**************************************
  *

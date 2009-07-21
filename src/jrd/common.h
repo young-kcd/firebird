@@ -60,17 +60,6 @@
 #include <sys/param.h>
 #endif
 
-#ifdef HAVE_UNISTD_H
-// for _POSIX_THREADS test below
-#include <unistd.h>
-#endif
-
-#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 200112L
-// above check is generally true. However, we use pthreads on some platforms
-// where _POSIX_THREADS is defined to "1" or not even defined at all!
-#define USE_POSIX_THREADS
-#endif
-
 #include "../include/fb_macros.h"
 #include "../include/fb_types.h"
 
@@ -78,13 +67,25 @@
   do not use links in source code to maintain platform neutrality
 */
 
-#ifdef SUPERSERVER
-#define SWEEP_THREAD
-#define GARBAGE_THREAD
+#ifdef PROD_BUILD
+#ifdef DEV_BUILD
+#undef DEV_BUILD
+#endif
+#endif
+
+#ifdef MULTI_THREAD
+# ifdef SUPERSERVER
+#  define SWEEP_THREAD
+#  define GARBAGE_THREAD
+# else
+#  define AST_THREAD
+# endif
 #endif
 
 
 #ifdef SUPERSERVER
+#define GOVERNOR
+#define CANCEL_OPERATION
 #define FB_ARCHITECTURE isc_info_db_class_server_access
 #else
 #define FB_ARCHITECTURE isc_info_db_class_classic_access
@@ -92,7 +93,7 @@
 
 
 /*****************************************************
-* Linux platforms
+* Linux platforms 
 *****************************************************/
 #ifdef LINUX
 #define QUADFORMAT "ll"
@@ -117,12 +118,6 @@
 
 #ifdef AMD64
 #define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
-
-// on buggy kernels ERESTARTNOHAND (==514) may be returned instead of EINTR
-// use value '514' instead of ERESTARTNOHAND cause it's not present in std includes
-// in theory such error codes should never be seen outside kernel
-#define SYSCALL_INTERRUPTED(err) (((err) == EINTR) || ((err) == 514))   /* pjpg 20001102 */
-
 #endif
 
 #ifdef PPC
@@ -135,7 +130,7 @@
 #endif /* i386 */
 
 #ifdef ARM
-#define IMPLEMENTATION  isc_info_db_impl_linux_arm	// 75
+#define IMPLEMENTATION  isc_info_db_impl_linux_arm
 #endif /* ARM */
 
 #ifdef sparc
@@ -156,17 +151,16 @@
 #define RISC_ALIGNMENT
 #endif // IA64
 
-#ifndef USE_POSIX_THREADS
-// force pthread detection on Linux for distros that do not provide
-// POSIX thread compatability
-#define USE_POSIX_THREADS
-#endif
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #endif /* LINUX */
 
 
 /*****************************************************
-* Darwin Platforms
+* Darwin Platforms 
 *****************************************************/
 #ifdef DARWIN
 // EKU: obsolete, replaced by _FILE_OFFSET_BITS
@@ -182,11 +176,11 @@
 //#define XLONGFORMAT "lX"
 //#define xLONGFORMAT "lx"
 
-//#define FB_ALIGNMENT       4
-//#define FB_DOUBLE_ALIGN    4
+//#define ALIGNMENT       4
+//#define DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef __ppc__
+#ifdef  __ppc__
 #define powerpc
 #define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
@@ -207,15 +201,21 @@
 #define QUADFORMAT "q"
 #define MAP_ANON
 
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t)length)
+#define MOVE_FAST(from, to, length)	memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)	memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)		memset (to, 0, (int) (length))
+
 #define API_ROUTINE __attribute__((visibility("default")))
 #define API_ROUTINE_VARARG API_ROUTINE
 #define INTERNAL_API_ROUTINE API_ROUTINE
 #define FB_EXPORTED __attribute__((visibility("default")))
+
 #endif /* Darwin Platforms */
 
 
 /*****************************************************
-* FreeBSD for Intel platforms
+* FreeBSD for Intel platforms 
 *****************************************************/
 #ifdef FREEBSD
 
@@ -225,8 +225,8 @@
 //#endif
 //
 
-//#define FB_ALIGNMENT     4
-//#define FB_DOUBLE_ALIGN  4
+//#define ALIGNMENT     4
+//#define DOUBLE_ALIGN  4
 
 #define UNIX
 #define IEEE
@@ -243,21 +243,21 @@
 //#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
-#ifndef USE_POSIX_THREADS
-// force pthread detection on FREEBSD
-#define USE_POSIX_THREADS
-#endif
+#define MEMMOVE(from, to, length)     memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #endif /* FREEBSD */
 
 /*****************************************************
-* NetBSD
+* NetBSD 
 *****************************************************/
 #ifdef NETBSD
 
 #if defined(__i386__)
-//#define FB_ALIGNMENT     4
-//#define FB_DOUBLE_ALIGN  4
+//#define ALIGNMENT     4
+//#define DOUBLE_ALIGN  4
 
 #define IEEE
 #define I386
@@ -274,15 +274,20 @@
 //#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
+#define MEMMOVE(from, to, length)     memmove ((void *)(to), (void *)(from), (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy ((to), (from), (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy ((to), (from), (int) (length))
+#define MOVE_CLEAR(to, length)           memset ((to), 0, (int) (length))
+
 #endif /* NETBSD */
 
 
 
 /*****************************************************
- * SUN platforms--the 386i is obsolete
+ * SUN platforms--the 386i is obsolete 
 *****************************************************/
 
-#ifdef __sun
+#ifdef sun
 /* Defined KILLER_SIGNALS for Sun - as we were getting lots of lockups
  * using pipe server.
  * 1995-February-24 David Schnepper
@@ -291,26 +296,56 @@
 
 #ifdef SOLARIS
 
+/* This is NOT defined when building the special shared-pipe library
+ * which customers can use to avoid the problems with signals & threads
+ * in Solaris
+ */
+#define SOLARIS_MT
+#define MULTI_THREAD
+
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.
  *  Hey, we're not running on PDP-11's any more: would it kill you
  *  to use a short instead of a char to hold the fileno?  :-(
  */
-
+ 
 /* Why we (solarises) need to rewrite old BSD stdio
-   so many times I suggest stdIO from
-   http://www.research.att.com/sw/tools/sfio/
-*/
+   so many times I suggest stdIO from 
+   http://www.research.att.com/sw/tools/sfio/ 
+*/       
 /* 	Need to use full sfio not just stdio emulation to fix
 	file descriptor number limit. nmcc Dec2002
 */
-#ifndef SFIO
+#if (!defined(SFIO) && defined(SUPERSERVER))
 #error "need to use SFIO"
 #endif
 
-// this function is normally defined in stdio.h, but is missing in SFIO's h-file
-extern "C" int remove(const char* path);
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+/*********   Reason for introducing MEMMOVE macro.
+
+  void *memcpy( void *s1, const void *s2, size_t n);
+  void *memmove( void *s1, const void *s2, size_t n);
+
+  The memcpy() function copies n characters from the string pointed to by the
+  s2 parameter into the location pointed to by the s1 parameter.  When copy-
+  ing overlapping strings, the behavior of this function is unreliable.
+
+  The memmove() function copies n characters from the string at the location
+  pointed to by the s2 parameter to the string at the location pointed to by
+  the s1 parameter.  Copying takes place as though the n number of characters
+  from string s2 are first copied into a temporary location having n bytes
+  that do not overlap either of the strings pointed to by s1 and s2. Then, n
+  number of characters from the temporary location are copied to the string
+  pointed to by s1. Consequently, this operation is nondestructive and
+  proceeds from left to right.
+  The above text is taken from the Digital UNIX man pages.
+
+     For maximum portability, memmove should be used when the memory areas
+     indicated by s1 and s2 may overlap, and memcpy used for faster copying
+     between non-overlapping areas.
+
+**********/
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
@@ -320,41 +355,41 @@ extern "C" int remove(const char* path);
    which is too large to fit in a long int. */
 #define QUADCONST(n) (n##LL)
 
-#ifndef USE_POSIX_THREADS
-#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 1L
-// Solaris 9 has _POSIX_THREADS = 1L
-// Solaris 10 has _POSIX_THREADS >= 200112L
-#define USE_POSIX_THREADS
-#endif
-#endif
+//#else /* SOLARIS */
 
-#endif // SOLARIS
+//#define BSD_UNIX
+
+#endif /* SOLARIS */
 
 #define UNIX
 #define IEEE
 
-#ifdef __sparc
-//#define FB_ALIGNMENT       4
-//#define FB_DOUBLE_ALIGN    8
+#ifdef sparc
+//#define ALIGNMENT       4
+//#define DOUBLE_ALIGN    8
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #define RISC_ALIGNMENT
+#endif /* sparc */
 
-#elif defined (__i386)
+#ifdef i386
+#define I386
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
-
-#elif defined (__amd64)
-#define IMPLEMENTATION  isc_info_db_impl_sun_amd64 /* 74 */
-
-#else
-#error What is IMPLEMENTATION for this Solaris platform????
 #endif
 
-#endif // __sun
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_sun_amd64 /* 74 */
+#endif /* AMD64 */
+
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)            memset (to, 0, (int) (length))
+
+#endif /* sun */
 
 
 /*****************************************************
-* HP/UX platforms
+* HP/UX platforms 
 *****************************************************/
 
 #ifdef HPUX
@@ -363,8 +398,8 @@ extern "C" int remove(const char* path);
 #define UNIX
 //#define CURSES_KEYPAD
 
-//#define FB_ALIGNMENT       8
-//#define FB_DOUBLE_ALIGN    8
+//#define ALIGNMENT       8
+//#define DOUBLE_ALIGN    8
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #define IEEE
@@ -381,11 +416,10 @@ extern "C" int remove(const char* path);
    which is too large to fit in a long int. */
 #define QUADCONST(n) (n##LL)
 
-#ifndef USE_POSIX_THREADS
-// HPUX v B.11.23 does not have _POSIX_THREADS defined, their implementation
-// is incomplete, but good enough for us
-#define USE_POSIX_THREADS
-#endif
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #define RISC_ALIGNMENT
 
@@ -393,7 +427,36 @@ extern "C" int remove(const char* path);
 
 
 /*****************************************************
-* IBM AIX RS/6000 and IBM AIX PowerPC
+* DEC VAX/VMS and AlphaVMS 
+*****************************************************/
+#ifdef VMS
+#define VAX_FLOAT
+//#define ALIGNMENT       4
+#define NO_NFS
+#define NO_CHECKSUM
+#define SYS_ARG		isc_arg_vms
+#define SYS_ERR		isc_arg_vms
+
+#if __ALPHA
+#define IMPLEMENTATION  isc_info_db_impl_alpha_vms /* 53 */
+#include <ints.h>
+#define ATOM_DEFINED
+typedef int64 SATOM;			/* 64 bit */
+typedef unsigned int64 UATOM;
+#else
+#define IMPLEMENTATION  isc_info_db_impl_isc_vms /* 27 */
+#endif /* __ALPHA */
+
+#define FINI_OK         1
+#define FINI_ERROR      44
+#define STARTUP_ERROR   46		/* this is also used in iscguard.h, make sure these match */
+
+#endif /* VMS */
+
+
+
+/*****************************************************
+* IBM AIX RS/6000 and IBM AIX PowerPC 
 *****************************************************/
 
 #ifdef _AIX						/* IBM AIX */
@@ -402,18 +465,26 @@ extern "C" int remove(const char* path);
 //#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
-//*#define FB_ALIGNMENT       4
+//*#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #else /* AIX PowerPC */
 #define AIX_PPC
 //#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
-//#define FB_ALIGNMENT       4
+//#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 
 #define QUADFORMAT "ll"			/* TMC 081700 */
@@ -421,35 +492,36 @@ extern "C" int remove(const char* path);
 
 #endif /* IBM PowerPC */
 
-// AIX does not pass autoconf's test for mmap() correctness,
-// but we do not use flag (MAP_FIXED) that fails.
-#define HAVE_MMAP
-
-// autoconf test AC_SYS_LARGEFILE defines _LARGE_FILES for AIX builds.
-// But, in <standards.h>, _LARGE_FILE_API is defined, leading to conflict
-// in 32-bit builds. Only one of these macros should be defined.
-#undef _LARGE_FILE_API
-
 #endif /* IBM AIX */
 
 
 
 /*****************************************************
-* Windows NT
+* Windows NT 
 *****************************************************/
 
 #ifdef WIN_NT
 
 #define NO_NFS
 
-#define SYS_ERR		Arg::Windows
-//#define SLONGFORMAT "ld"
-//#define ULONGFORMAT "lu"
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)         memmove ((void *)to, (void *)from, (size_t) length)
+
+#define SYS_ARG		isc_arg_win32
+#define SYS_ERR		isc_arg_win32
+//#define SLONGFORMAT	"ld"
+//#define ULONGFORMAT	"lu"
 //#define XLONGFORMAT "lX"
 //#define xLONGFORMAT "lx"
 
 //format for __LINE__
 #define LINEFORMAT "d"
+
+typedef __int64 SINT64;
+typedef unsigned __int64 FB_UINT64;
+#define INT64_DEFINED
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
@@ -479,6 +551,9 @@ extern "C" int remove(const char* path);
 #define API_ROUTINE     __stdcall
 #define API_ROUTINE_VARARG      __cdecl
 #define CLIB_ROUTINE    __cdecl
+#define INTERNAL_API_ROUTINE	API_ROUTINE
+
+#define SYNC_WRITE_DEFAULT
 
 #ifndef MAXPATHLEN
 #ifdef MAX_PATH
@@ -494,17 +569,53 @@ extern "C" int remove(const char* path);
 
 #endif /* WIN_NT */
 
+// 23 Sep 2002, skidder, ALLOC_LIB_MEMORY moved here,
+// DEBUG_GDS_ALLOC definition removed because allocators 
+// do not (and can not) include this file,
+// but use DEBUG_GDS_ALLOC. Hence DEBUG_GDS_ALLOC should be defined
+// globally by now and moved to autoconf-generated header later
+#ifdef DEBUG_GDS_ALLOC
+#define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size), (TEXT *)__FILE__, (ULONG)__LINE__)
+#endif
+
+/*****************************************************
+* SCO 
+*****************************************************/
+#ifdef SCO_EV
+
+#define QUADFORMAT "ll"
+#define QUADCONST(n) (n##LL)
+#define I386
+#define UNIX
+#define SCO_UNIX
+#define IEEE
+//
+//#define KILLER_SIGNALS
+//
+#define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)    memcpy (to, from, (unsigned int) (length))
+#define MOVE_FASTER(from, to, length)  memcpy (to, from, (unsigned int) (length))
+#define MOVE_CLEAR(to, length)        memset (to, 0, (unsigned int) (length))
+
+//  These functions are supported so we don't need the defines
+//#define setreuid(ruid, euid)     setuid(euid)
+//#define setregid(rgid, egid)     setgid(egid)
+//
+
+#endif /* SCO_EV */
 
 /*****************************************************
  * UNIX
 *****************************************************/
 #ifdef UNIX
 #define NO_CHECKSUM
-#define SYS_ERR		Arg::Unix
+#define SYS_ARG		isc_arg_unix
+#define SYS_ERR		isc_arg_unix
 #endif /* UNIX */
 
 #ifndef SYS_ERR
-#define SYS_ERR		Arg::Unix
+#define SYS_ERR		isc_arg_unix
 #endif
 
 #ifndef ERRNO
@@ -519,11 +630,13 @@ extern "C" int remove(const char* path);
 #define H_ERRNO		h_errno
 #endif
 
+
 /* various declaration modifiers */
 
 #ifndef API_ROUTINE
 #define API_ROUTINE
 #define API_ROUTINE_VARARG
+#define INTERNAL_API_ROUTINE
 #endif
 
 #ifndef CLIB_ROUTINE
@@ -541,25 +654,26 @@ extern "C" int remove(const char* path);
 #ifdef I386
 /* Using internal alignment optimal for 386 processor and above
  */
-//#define FB_ALIGNMENT       4
-//#define FB_DOUBLE_ALIGN    8
+//#define ALIGNMENT       4
+//#define DOUBLE_ALIGN    8
 #endif
 #endif
 
-#ifndef FB_ALIGNMENT
-//#define FB_ALIGNMENT       2
-#error must define FB_ALIGNMENT for your system
+#ifndef ALIGNMENT
+//#define ALIGNMENT       2
+#error must define ALIGNMENT for your system
 #endif
 
 #ifndef SHIFTLONG
 /* Number of shifts needed to convert between char and LONG */
 #define SHIFTLONG       2
 #define BITS_PER_LONG   32
+#define LOG2_BITS_PER_LONG      5
 #endif
 
-#ifndef FB_DOUBLE_ALIGN
-//#define FB_DOUBLE_ALIGN    4
-#error must define FB_DOUBLE_ALIGN for your system
+#ifndef DOUBLE_ALIGN
+//#define DOUBLE_ALIGN    4
+#error must define DOUBLE_ALIGN for your system
 #endif
 
 
@@ -583,10 +697,23 @@ extern "C" int remove(const char* path);
 
 /* sys/paramh.h : compatibility purposes */
 #ifndef NOFILE
+#ifdef VMS
+#define NOFILE      32
+#else
 #define NOFILE      20
+#endif
 #endif
 
 /* data type definitions */
+
+
+#ifndef INT64_DEFINED			/* 64 bit */
+typedef long long int SINT64;
+typedef unsigned long long int FB_UINT64;
+#else
+#undef INT64_DEFINED
+#endif
+
 
 #ifndef ATOM_DEFINED			/* 32 or 64 bit */
 typedef long SATOM;
@@ -630,21 +757,9 @@ struct ISC_TIMESTAMP
 #endif
 #endif
 
-#ifndef SIZEFORMAT
-#if (SIZEOF_LONG == 8) && defined(__GNUC__)
-#define SIZEFORMAT "ld"
-#else
-#define SIZEFORMAT "d"
-#endif
-#endif // SIZEFORMAT
-
 //format for __LINE__
 #ifndef LINEFORMAT
-#ifdef __GNUC__
-#define LINEFORMAT "d"
-#else
 #define LINEFORMAT "ld"
-#endif // __GNUC__
 #endif
 
 /* conditional compilation macros */
@@ -723,9 +838,41 @@ struct ISC_TIMESTAMP
 #endif
 
 
+
+/* data conversion macros */
+
+#ifndef AOF32L
+#define AOF32L(l)               &l
+#endif
+
+
+
 /* data movement and allocation macros */
 
-#define MOVE_CLEAR(to, length)			memset(to, 0, (size_t) (length))
+#ifndef MOVE_FAST
+#define MOVE_FAST(from, to, length)       MOV_fast (from, to, (ULONG) (length))
+#endif
+
+#ifndef MOVE_FASTER
+#define MOVE_FASTER(from, to, length)     MOV_faster (from, to, (ULONG) (length))
+#endif
+
+#ifndef MEMMOVE
+/* Use character by character copy function */
+#define MEMMOVE(from, to, length)       MOV_fast (from, to, (ULONG) (length))
+#endif
+
+#ifndef MOVE_CLEAR
+#define MOVE_CLEAR(to, length)           MOV_fill (to, (ULONG) (length))
+#endif
+
+#ifndef ALLOC_LIB_MEMORY
+#define ALLOC_LIB_MEMORY(size)          gds__alloc (size)
+#endif
+
+#ifndef FREE_LIB_MEMORY
+#define FREE_LIB_MEMORY(block)          gds__free (block)
+#endif
 
 // This macros are used to workaround shortage of standard conformance
 // in Microsoft compilers. They could be replaced with normal procedure
@@ -745,8 +892,7 @@ struct ISC_TIMESTAMP
 #endif
 
 #define IMPLEMENT_TRACE_ROUTINE(routine, subsystem) \
-void routine(const char* message, ...) \
-{ \
+void routine(const char* message, ...) { \
 	static const char name_facility[] = subsystem ","; \
 	char buffer[1000]; \
 	strcpy(buffer, name_facility); \
@@ -830,60 +976,21 @@ void GDS_breakpoint(int);
 #define CONST64(a) (a##LL)
 #endif
 
-// 30 Dec 2002. Nickolay Samofatov
-// This needs to be checked for all supported platforms
-// The simpliest way to check it is to issue from correct client:
-// declare external function abs2 double precision
-//   returns double precision by value
-//   entry_point 'IB_UDF_abs' module_name 'ib_udf';
-// select abs2(2.0 / 3.0) from rdb$database;
-// It will return big strange value in case of invalid define
 
-// ASF: Currently, all little-endian are FB_SWAP_DOUBLE and big-endian aren't.
-// AP: Define it for your hardware correctly in case your CPU do not follow mentioned rule.
-//     The follwoing lines are kept for reference only.
-//#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
-//#define		FB_SWAP_DOUBLE 1
-//#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS) || defined(__ppc64__)
-//#define		FB_SWAP_DOUBLE 0
-//#else
-//#error "Define FB_SWAP_DOUBLE for your platform correctly !"
-//#endif
-
-#ifndef FB_SWAP_DOUBLE
-#ifdef WORDS_BIGENDIAN
-#define FB_SWAP_DOUBLE 0
-#else
-#define FB_SWAP_DOUBLE 1
-#endif
-#endif
-
-// Commonly used indices to access parts of double in correct order.
-#if FB_SWAP_DOUBLE
-#define FB_LONG_DOUBLE_FIRST 1
-#define FB_LONG_DOUBLE_SECOND 0
-#else
-#define FB_LONG_DOUBLE_FIRST 0
-#define FB_LONG_DOUBLE_SECOND 1
-#endif
-
-
-// switch name and state table.  This structure should be used in all
-// command line tools to facilitate parsing options.
-struct in_sw_tab_t
-{
+/* switch name and state table.  This structure should be used in all
+ * command line tools to facilitate parsing options.*/
+struct in_sw_tab_t {
 	int in_sw;
 	int in_spb_sw;
 	const TEXT* in_sw_name;
-	SINT64 in_sw_value;					// alice specific field
-	SINT64 in_sw_requires;				// alice specific field
-	SINT64 in_sw_incompatibilities;		// alice specific field
-	bool in_sw_state;
+	ULONG in_sw_value;			/* alice specific field */
+	ULONG in_sw_requires;		/* alice specific field */
+	ULONG in_sw_incompatibilities;	/* alice specific field */
+	USHORT in_sw_state;
 	USHORT in_sw_msg;
 	USHORT in_sw_min_length;
 	const TEXT* in_sw_text;
-	int in_sw_optype;					// burp specific field for now.
-	// Some compilers may produce warnings because I only initialized this field in gbak
+
 };
 
 #ifndef HAVE_WORKING_VFORK
@@ -900,7 +1007,7 @@ static const TEXT FB_SHORT_MONTHS[][4] =
 	"\0"
 };
 
-static const TEXT* const FB_LONG_MONTHS_UPPER[] =
+static const TEXT* FB_LONG_MONTHS_UPPER[] =
 {
 	"JANUARY",
 	"FEBRUARY",

@@ -37,7 +37,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
 #include "unicode/ustring.h"
-#include "unicode/utrans.h"
+///#include "unicode/utrans.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/ucol.h"
@@ -49,10 +49,6 @@ using namespace Firebird;
 namespace Jrd {
 
 
-const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
-	STRINGIZE(U_ICU_VERSION_MAJOR_NUM)"."STRINGIZE(U_ICU_VERSION_MINOR_NUM);
-
-
 // encapsulate ICU collations libraries
 struct UnicodeUtil::ICU
 {
@@ -62,7 +58,8 @@ private:
 
 public:
 	ICU()
-		: inModule(NULL), ucModule(NULL)
+		: inModule(NULL),
+		  ucModule(NULL)
 	{
 	}
 
@@ -97,50 +94,22 @@ public:
 	UCollationResult (U_EXPORT2 *ucolStrColl)(const UCollator* coll, const UChar* source,
 		int32_t sourceLength, const UChar* target, int32_t targetLength);
 	void (U_EXPORT2 *ucolGetVersion)(const UCollator* coll, UVersionInfo info);
-
-	void (U_EXPORT2 *utransClose)(UTransliterator* trans);
-	UTransliterator* (U_EXPORT2 *utransOpen)(
-		const char* id,
-		UTransDirection dir,
-		const UChar* rules,         /* may be Null */
-		int32_t rulesLength,        /* -1 if null-terminated */
-		UParseError* parseError,    /* may be Null */
-		UErrorCode* status);
-	void (U_EXPORT2 *utransTransUChars)(
-		const UTransliterator* trans,
-		UChar* text,
-		int32_t* textLength,
-		int32_t textCapacity,
-		int32_t start,
-		int32_t* limit,
-		UErrorCode* status);
 };
 
 
 // cache ICU module instances to not load and unload many times
 class UnicodeUtil::ICUModules
 {
-	typedef GenericMap<Pair<Left<string, ICU*> > > ModulesMap;
-
 public:
-	explicit ICUModules(MemoryPool&)
-	{
-	}
-
 	~ICUModules()
 	{
-		ModulesMap::Accessor modulesAccessor(&modules());
-		for (bool found = modulesAccessor.getFirst(); found; found = modulesAccessor.getNext())
-			delete modulesAccessor.current()->second;
+		for (bool found = modules().getFirst(); found; found = modules().getNext())
+			delete modules().current()->second;
 	}
 
-	InitInstance<ModulesMap> modules;
+	InitInstance<GenericMap<Pair<Left<string, ICU*> > > > modules;
 	RWLock lock;
-};
-
-namespace {
-	GlobalPtr<UnicodeUtil::ICUModules> icuModules;
-}
+} icuModules;
 
 
 static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator version
@@ -168,8 +137,7 @@ static void getVersions(const string& configInfo, ObjectsArray<string>& versions
 	size_t start = 0;
 	size_t n;
 
-	for (size_t i = versionsStr.find(' '); i != versionsStr.npos;
-		start = i + 1, i = versionsStr.find(' ', start))
+	for (size_t i = versionsStr.find(' '); i != versionsStr.npos; start = i + 1, i = versionsStr.find(' ', start))
 	{
 		if ((n = versionsStr.find_first_not_of(' ', start)) != versionsStr.npos)
 			start = n;
@@ -190,7 +158,8 @@ USHORT UnicodeUtil::utf16KeyLength(USHORT len)
 
 
 // BOCU-1
-USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst)
+USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, UCHAR* dst,
+							   USHORT key_type)
 {
 	fb_assert(srcLen % sizeof(*src) == 0);
 	fb_assert(src != NULL && dst != NULL);
@@ -202,7 +171,7 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 	UConverter* conv = ucnv_open("BOCU-1", &status);
 	fb_assert(U_SUCCESS(status));
 
-	const int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
+	int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen, 
 		// safe cast - alignment not changed
 		reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), &status);
 	fb_assert(U_SUCCESS(status));
@@ -360,6 +329,7 @@ ULONG UnicodeUtil::utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UC
 
 	srcLen /= sizeof(*src);
 
+	const USHORT* const srcEnd = src + srcLen;
 	const UCHAR* const dstStart = dst;
 	const UCHAR* const dstEnd = dst + dstLen;
 
@@ -426,6 +396,7 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 	if (dst == NULL)
 		return srcLen * sizeof(*dst);
 
+	const UCHAR* const srcEnd = src + srcLen;
 	const USHORT* const dstStart = dst;
 	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
 
@@ -446,7 +417,8 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 		{
 			*err_position = i - 1;
 
-			c = utf8_nextCharSafeBody(src, reinterpret_cast<int32_t*>(&i), srcLen, c, -1);
+			c = utf8_nextCharSafeBody(src, reinterpret_cast<int32_t*>(&i),
+					srcLen, c, -1);
 
 			if (c < 0)
 			{
@@ -497,10 +469,10 @@ ULONG UnicodeUtil::utf16ToUtf32(ULONG srcLen, const USHORT* src, ULONG dstLen, U
 	while (src < srcEnd && dst < dstEnd)
 	{
 		ULONG ch = *src++;
+		ULONG ch2;
 
 		if (UTF_IS_LEAD(ch))
 		{
-			ULONG ch2;
 			if (src < srcEnd && UTF_IS_TRAIL(ch2 = *src))
 			{
 				ch = UTF16_GET_PAIR_VALUE(ch, ch2);
@@ -547,7 +519,7 @@ ULONG UnicodeUtil::utf32ToUtf16(ULONG srcLen, const ULONG* src, ULONG dstLen, US
 
 	while (src < srcEnd && dst < dstEnd)
 	{
-		const ULONG ch = *src++;
+		ULONG ch = *src++;
 
 		if (ch <= 0xFFFF)
 			*(dst++) = ch;
@@ -593,9 +565,9 @@ SSHORT UnicodeUtil::utf16Compare(ULONG len1, const USHORT* str1, ULONG len2, con
 	*error_flag = false;
 
 	// safe casts - alignment not changed
-	int32_t cmp = u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1),
+	int32_t cmp = u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1), 
 		reinterpret_cast<const UChar*>(str2), len2 / sizeof(*str2), true);
-
+	
 	return (cmp < 0 ? -1 : (cmp > 0 ? 1 : 0));
 }
 
@@ -608,7 +580,7 @@ ULONG UnicodeUtil::utf16Length(ULONG len, const USHORT* str)
 }
 
 
-ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
+ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
 								  ULONG startPos, ULONG length)
 {
 	fb_assert(srcLen % sizeof(*src) == 0);
@@ -617,6 +589,7 @@ ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen,
 	if (length == 0)
 		return 0;
 
+	const USHORT* const srcStart = src;
 	const USHORT* const dstStart = dst;
 	const USHORT* const srcEnd = src + srcLen / sizeof(*src);
 	const USHORT* const dstEnd = dst + dstLen / sizeof(*dst);
@@ -624,7 +597,7 @@ ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen,
 
 	while (src < srcEnd && dst < dstEnd && pos < startPos)
 	{
-		const ULONG ch = *src++;
+		ULONG ch = *src++;
 
 		if (UTF_IS_LEAD(ch))
 		{
@@ -637,13 +610,13 @@ ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen,
 
 	while (src < srcEnd && dst < dstEnd && pos < startPos + length)
 	{
-		const ULONG ch = *src++;
+		ULONG ch = *src++;
+		ULONG ch2;
 
 		*(dst++) = ch;
 
 		if (UTF_IS_LEAD(ch))
 		{
-			ULONG ch2;
 			if (src < srcEnd && UTF_IS_TRAIL(ch2 = *src))
 			{
 				*(dst++) = ch2;
@@ -668,7 +641,7 @@ INTL_BOOL UnicodeUtil::utf8WellFormed(ULONG len, const UCHAR* str, ULONG* offend
 
 		if (c > 0x7F)
 		{
-			const ULONG save_i = i - 1;
+			ULONG save_i = i - 1;
 
 			c = utf8_nextCharSafeBody(str, reinterpret_cast<int32_t*>(&i), len, c, -1);
 
@@ -690,11 +663,11 @@ INTL_BOOL UnicodeUtil::utf16WellFormed(ULONG len, const USHORT* str, ULONG* offe
 	fb_assert(str != NULL);
 	fb_assert(len % sizeof(*str) == 0);
 
-	len /= sizeof(*str);
+	len = len / sizeof(*str);
 
 	for (ULONG i = 0; i < len;)
 	{
-		const ULONG save_i = i;
+		ULONG save_i = i;
 
 		uint32_t c;
 		U16_NEXT(str, i, len, c);
@@ -726,9 +699,11 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 				*offending_position = (str - strStart) * sizeof(*str);
 			return false;	// malformed
 		}
-
-		++str;
-		len -= sizeof(*str);
+		else
+		{
+			++str;
+			len -= sizeof(*str);
+		}
 	}
 
 	return true;	// well-formed
@@ -755,11 +730,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
 
-	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
+	string version = (icuVersion.isEmpty() ? versions[0] : icuVersion);
 	if (version == "default")
-	{
 		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
-	}
 
 	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
@@ -773,7 +746,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		}
 		else
 		{
-			const size_t pos = i->find('.');
+			size_t pos = i->find('.');
 			if (pos == i->npos)
 				continue;
 
@@ -782,17 +755,13 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		}
 
 		if (version != majorVersion + "." + minorVersion)
-		{
 			continue;
-		}
 
-		ReadLockGuard readGuard(icuModules->lock);
+		ReadLockGuard readGuard(icuModules.lock);
 
 		ICU* icu;
-		if (icuModules->modules().get(version, icu))
-		{
+		if (icuModules.modules().get(version, icu))
 			return icu;
-		}
 
 		PathName filename;
 		filename.printf(ucTemplate, majorVersion.c_str(), minorVersion.c_str());
@@ -871,15 +840,6 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		symbol.printf("ucol_getVersion_%s_%s", majorVersion.c_str(), minorVersion.c_str());
 		icu->inModule->findSymbol(symbol, icu->ucolGetVersion);
 
-		symbol.printf("utrans_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->utransOpen);
-
-		symbol.printf("utrans_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->utransClose);
-
-		symbol.printf("utrans_transUChars_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->utransTransUChars);
-
 		if (!icu->uVersionToString || !icu->ulocCountAvailable || !icu->ulocGetAvailable ||
 			!icu->usetClose || !icu->usetGetItem || !icu->usetGetItemCount || !icu->usetOpen ||
 			!icu->ucolClose || !icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
@@ -904,19 +864,21 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		// RWLock don't allow lock upgrade (read->write) so we
 		// release read and acquire a write lock.
 		readGuard.release();
-		WriteLockGuard writeGuard(icuModules->lock);
+		WriteLockGuard writeGuard(icuModules.lock);
 
 		// In this small amount of time, one may already loaded the
-		// same version, so within the write lock we verify again.
+		// same version, so withing the write lock we verify again.
 		ICU* icu2;
-		if (icuModules->modules().get(version, icu2))
+		if (icuModules.modules().get(version, icu2))
 		{
 			delete icu;
 			return icu2;
 		}
-
-		icuModules->modules().put(version, icu);
-		return icu;
+		else
+		{
+			icuModules.modules().put(version, icu);
+			return icu;
+		}
 	}
 
 	return NULL;
@@ -946,14 +908,13 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	texttype* tt, USHORT attributes,
 	Firebird::IntlUtil::SpecificAttributesMap& specificAttributes, const Firebird::string& configInfo)
 {
+	string locale;
+	string collVersion;
 	int attributeCount = 0;
 	bool error;
 
-	string locale;
 	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("LOCALE"), locale))
 		++attributeCount;
-
-	string collVersion;
 	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("COLL-VERSION"), collVersion))
 	{
 		++attributeCount;
@@ -963,24 +924,11 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			return NULL;
 	}
 
-	string numericSort;
-	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("NUMERIC-SORT"), numericSort))
-	{
-		++attributeCount;
-
-		numericSort = IntlUtil::convertUtf16ToAscii(numericSort, &error);
-		if (error || !(numericSort == "0" || numericSort == "1"))
-			return NULL;
-	}
-
 	locale = IntlUtil::convertUtf16ToAscii(locale, &error);
 	if (error)
 		return NULL;
 
-	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE |
-			TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ||
-		((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-			TEXTTYPE_ATTR_ACCENT_INSENSITIVE) ||
+	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE)) ||
 		(specificAttributes.count() - attributeCount) != 0)
 	{
 		return NULL;
@@ -1018,14 +966,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	icu->ucolSetAttribute(partialCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 
-	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-		(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
-	{
-		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
-		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
-		tt->texttype_canonical_width = 4;	// UTF-32
-	}
-	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
@@ -1034,16 +975,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	else
 		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
 
-	const bool isNumericSort = numericSort == "1";
-	if (isNumericSort)
-	{
-		icu->ucolSetAttribute(compareCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
-		icu->ucolSetAttribute(partialCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
-		icu->ucolSetAttribute(sortCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
-	}
-
 	USet* contractions = icu->usetOpen(0, 0);
-	// status not verified here.
 	icu->ucolGetContractions(partialCollator, contractions, &status);
 
 	Utf16Collation* obj = new Utf16Collation();
@@ -1055,7 +987,6 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	obj->sortCollator = sortCollator;
 	obj->contractions = contractions;
 	obj->contractionsCount = icu->usetGetItemCount(contractions);
-	obj->numericSort = isNumericSort;
 
 	return obj;
 }
@@ -1063,11 +994,11 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 UnicodeUtil::Utf16Collation::~Utf16Collation()
 {
-	icu->usetClose(contractions);
+	icu->usetClose(static_cast<USet*>(contractions));
 
-	icu->ucolClose(compareCollator);
-	icu->ucolClose(partialCollator);
-	icu->ucolClose(sortCollator);
+	icu->ucolClose((UCollator*)compareCollator);
+	icu->ucolClose((UCollator*)partialCollator);
+	icu->ucolClose((UCollator*)sortCollator);
 
 	// ASF: we should not "delete icu"
 }
@@ -1107,7 +1038,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		srcLen = pad - src + 1;
 	}
 
-	const UCollator* coll = NULL;
+	void* coll;
 
 	switch (key_type)
 	{
@@ -1121,7 +1052,8 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			{
 				UChar str[10];
 				UErrorCode status = U_ZERO_ERROR;
-				int len = icu->usetGetItem(contractions, i, NULL, NULL, str, sizeof(str), &status);
+				int len = icu->usetGetItem(static_cast<USet*>(contractions),
+					i, NULL, NULL, str, sizeof(str), &status);
 
 				if (len > srcLen)
 					len = srcLen;
@@ -1134,21 +1066,6 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 					srcLen -= len;
 					break;
 				}
-			}
-
-			if (numericSort)
-			{
-				// ASF: Wee need to remove trailing numbers to return sub key that
-				// matches full key. Example: "abc1" becomes "abc" to match "abc10".
-				const USHORT* p = src + srcLen - 1;
-
-				for (; p >= src; --p)
-				{
-					if (!(*p >= '0' && *p <= '9'))
-						break;
-				}
-
-				srcLen = p - src + 1;
 			}
 
 			break;
@@ -1167,11 +1084,14 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			return INTL_BAD_KEY_LENGTH;
 	}
 
-	if (srcLen == 0)
+	if (srcLen != 0)
+	{
+		return icu->ucolGetSortKey(static_cast<const UCollator*>(coll),
+			// safe cast - alignment not changed
+			reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
+	}
+	else
 		return 0;
-
-	return icu->ucolGetSortKey(coll,
-		reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
 }
 
 
@@ -1209,9 +1129,9 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 		len2 = pad - str2 + 1;
 	}
 
-	return (SSHORT)icu->ucolStrColl(compareCollator,
+	return (SSHORT)icu->ucolStrColl(static_cast<const UCollator*>(compareCollator),
 		// safe casts - alignment not changed
-		reinterpret_cast<const UChar*>(str1), len1,
+		reinterpret_cast<const UChar*>(str1), len1, 
 		reinterpret_cast<const UChar*>(str2), len2);
 }
 
@@ -1219,40 +1139,12 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst,
 	const ULONG* exceptions)
 {
+	USHORT errCode;
+	ULONG errPosition;
+
 	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
 
-	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-		(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
-	{
-		fb_assert(srcLen % sizeof(*src) == 0);
-
-		memcpy(upperStr.getBuffer(srcLen / sizeof(USHORT)), src, srcLen);
-
-		UErrorCode errorCode = U_ZERO_ERROR;
-		UTransliterator* trans = icu->utransOpen("Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC",
-			UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
-
-		if (errorCode <= 0)
-		{
-			const int32_t capacity = dstLen;
-			int32_t len = srcLen / sizeof(USHORT);
-			int32_t limit = len;
-
-			icu->utransTransUChars(trans, reinterpret_cast<UChar*>(upperStr.begin()),
-				&len, capacity, 0, &limit, &errorCode);
-			icu->utransClose(trans);
-
-			len *= sizeof(USHORT);
-			if (ULONG(len) > dstLen)
-				len = INTL_BAD_STR_LENGTH;
-
-			srcLen = len;
-			src = upperStr.begin();
-		}
-		else
-			return INTL_BAD_STR_LENGTH;
-	}
-	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
 		srcLen = utf16UpperCase(srcLen, src,
 			srcLen, upperStr.getBuffer(srcLen / sizeof(USHORT)), exceptions);
@@ -1260,8 +1152,6 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 	}
 
 	// convert UTF-16 to UTF-32
-	USHORT errCode;
-	ULONG errPosition;
 	return utf16ToUtf32(srcLen, src, dstLen, dst, &errCode, &errPosition) / sizeof(ULONG);
 }
 
@@ -1278,6 +1168,8 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 		ICU* icu = UnicodeUtil::loadICU(*i, configInfo);
 		if (!icu)
 			continue;
+
+		UErrorCode status = U_ZERO_ERROR;
 
 		if (locale.hasData())
 		{

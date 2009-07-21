@@ -30,7 +30,7 @@ static const struct
 	{"begin", begin},
 	{"declare", declare},
 	{"message", message},
-	{"erase", byte_line},
+	{"erase", byte},
 	{"fetch", two},
 	{"for", two},
 	{"if", three},
@@ -43,11 +43,11 @@ static const struct
 	{"store", two},
 	{NULL, NULL},
 	{"label", byte_verb},
-	{"leave", byte_line},
+	{"leave", byte},
 	{"store2", three},
 	{"post", one},	// 20
 	{"literal", literal},
-	{"dbkey", byte_line},
+	{"dbkey", byte},
 	{"field", field},
 	{"fid", parm},
 	{"parameter", parm},
@@ -179,7 +179,7 @@ static const struct
 	{"ansi_any", one},
 	{"exists", one},
 	{NULL, NULL},
-	{"record_version", byte_line},
+	{"record_version", byte},
 	{"stall", zero},
 	{NULL, NULL},
 	{NULL, NULL},
@@ -194,13 +194,13 @@ static const struct
 	{"user_savepoint", user_savepoint},
 	{"dcl_cursor", dcl_cursor},
 	{"cursor_stmt", cursor_stmt},
-	{"current_timestamp2", byte_line},
-	{"current_time2", byte_line},
+	{"current_timestamp2", byte},
+	{"current_time2", byte},
 	{"agg_list", two}, // 170
 	{"agg_list_distinct", two},
 	/***
 	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
-	{"gen_id2", gen_id},
+	{"gen_id2", gen_id}, 
 	{"set_generator2", gen_id},
 	***/
 	{"modify2", modify2},
@@ -217,16 +217,9 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
-	// New BLR in FB2.1
 	{"init_variable", variable},
 	{"recurse", union_ops},
 	{"sys_function", function},
-	// New BLR in FB2.5
-	{"auto_trans", byte_verb},
-	{"similar", similar},
-	{"exec_stmt", exec_stmt},
-	{"stmt_expr", two},
-	{"derived_expr", derived_expr},
 	{0, 0}
 };
 

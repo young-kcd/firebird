@@ -64,7 +64,7 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 #if defined (_WIN32)
 /*
 BOOL APIENTRY DllMain( HANDLE ,//hModule,
-					  DWORD  ul_reason_for_call,
+					  DWORD  ul_reason_for_call, 
 					  LPVOID //lpReserved
 					  )
 {
@@ -84,6 +84,13 @@ BOOL APIENTRY DllMain( HANDLE ,//hModule,
 
 // To do: go from C++ native types to abstract FB types.
 
+typedef ISC_USHORT fb_len;
+
+const long seconds_in_day = 86400;
+const long tenthmsec_in_day = seconds_in_day * ISC_TIME_SECONDS_PRECISION;
+const int varchar_indicator_size = sizeof(ISC_USHORT);
+const int max_varchar_size = 65535 - varchar_indicator_size; // in theory
+
 
 #ifdef DEV_BUILD
 // This function shouldn't be defined in production.
@@ -98,14 +105,6 @@ FBUDF_API paramdsc* testreflect(paramdsc* rc)
 
 namespace internal
 {
-	typedef ISC_USHORT fb_len;
-
-	const long seconds_in_day = 86400;
-	const long tenthmsec_in_day = seconds_in_day * ISC_TIME_SECONDS_PRECISION;
-	const int varchar_indicator_size = sizeof(ISC_USHORT);
-	const int max_varchar_size = 65535 - varchar_indicator_size; // in theory
-
-
 	// This definition comes from jrd\val.h and is used in helper
 	// functions {get/set}_varchar_len defined below.
 	struct vvary
@@ -115,7 +114,7 @@ namespace internal
 	};
 
 	/*
-	inline fb_len get_varchar_len(const char* vchar)
+	inline fb_len get_varchar_len(const char* vchar) 
 	{
 		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
@@ -130,7 +129,7 @@ namespace internal
 	{
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
-
+	
 	inline void set_varchar_len(ISC_UCHAR* vchar, const fb_len len)
 	{
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
@@ -398,13 +397,16 @@ namespace internal
 {
 	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg)
 	{
-		Firebird::TimeStamp::decode_timestamp(*date, times_arg);
+		Firebird::TimeStamp(*date).decode(times_arg);
 	}
 
 	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
 	{
-		*date = Firebird::TimeStamp::encode_timestamp(times_arg);
+		Firebird::TimeStamp temp(true);
+		temp.encode(times_arg);
+		*date = temp.value();
 	}
+
 
 	enum day_format {day_short, day_long};
 	const fb_len day_len[] = {4, 14};
@@ -477,7 +479,8 @@ FBUDF_API ISC_TIMESTAMP* addDay(ISC_TIMESTAMP* v, const ISC_LONG& ndays)
 	return v;
 }
 
-FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const ISC_LONG& ndays, ISC_TIMESTAMP* v)
+FBUDF_API void addDay2(const ISC_TIMESTAMP* v0, const ISC_LONG& ndays,
+	ISC_TIMESTAMP* v)
 {
 	*v = *v0;
 	v->timestamp_date += ndays;

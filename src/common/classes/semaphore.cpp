@@ -25,297 +25,60 @@
  */
 
 #include "firebird.h"
-#include "../common/classes/semaphore.h"
-#include "../common/classes/alloc.h"
-#include "gen/iberror.h"
+#include "../../common/classes/semaphore.h"
+#include "../../common/classes/alloc.h"
+
+#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
+
+/*
+There is a problem with values returned by sem_open() in MacOS 10.5 and earlier.
+They are not pointers. They are handles, in format of file handle (0,1,2,3,...),
+and worse - they share same space with actual file handles. And when we close 
+unneeded file handles in divorce_terminal(), we kill all global semaphores.
+MIXED_SEMAPHORE_AND_FILE_HANDLE exists to avoid it.
+*/
+
+#include <sys/param.h>
 
 namespace Firebird {
 
-#ifdef COMMON_CLASSES_SEMAPHORE_MACH
+SignalSafeSemaphore* SignalSafeSemaphore::initialList = 0;
+bool SignalSafeSemaphore::divorceDone = false;
 
-	void SignalSafeSemaphore::machErrorCheck(kern_return_t rc, const char* fun)
+void SignalSafeSemaphore::linkToInitialList()
+{
+	if (divorceDone)
 	{
-		if (rc != KERN_SUCCESS)
-		{
-			(Arg::Gds(isc_sys_request) << fun << Arg::Mach(static_cast<ISC_STATUS>(rc))).raise();
-		}
+		return;
 	}
 
-	void SignalSafeSemaphore::init()
+	unsigned int n = (U_IPTR) sem;
+	if (n < NOFILE)
 	{
-		machErrorCheck(semaphore_create(mach_task_self(), &sem, SYNC_POLICY_FIFO, 0),
-					  "semaphore_create");
+		next = initialList;
+		initialList = this;
 	}
-
-	SignalSafeSemaphore::~SignalSafeSemaphore()
+	else
 	{
-		machErrorCheck(semaphore_destroy(mach_task_self(), sem), "semaphore_destroy");
+		next = 0;
 	}
-
-#endif  // COMMON_CLASSES_SEMAPHORE_MACH
-
-
-
-#ifdef COMMON_CLASSES_SEMAPHORE_POSIX_RT
-
-#ifndef WORKING_SEM_INIT
-static const char* semName = "/firebird_temp_sem";
-#endif
-
-#ifndef SEM_FAILED
-#define SEM_FAILED ((sem_t*) (-1))
-#endif
-
-	void SignalSafeSemaphore::init()
-	{
-#ifdef WORKING_SEM_INIT
-		if (sem_init(sem, 0, 0) == -1) {
-			system_call_failed::raise("sem_init");
-		}
-#else
-		sem = sem_open(semName, O_CREAT | O_EXCL, 0700, 0);
-		if (sem == (sem_t*) SEM_FAILED) {
-			system_call_failed::raise("sem_open");
-		}
-		sem_unlink(semName);
-#endif
-	}
-
-	SignalSafeSemaphore::~SignalSafeSemaphore()
-	{
-#ifdef WORKING_SEM_INIT
-		if (sem_destroy(sem) == -1) {
-			system_call_failed::raise("sem_destroy");
-		}
-#else
-		if (sem_close(sem) == -1) {
-			system_call_failed::raise("sem_close");
-		}
-#endif
-	}
-
-	void SignalSafeSemaphore::enter()
-	{
-		do {
-			if (sem_wait(sem) != -1)
-				return;
-		} while (errno == EINTR);
-		system_call_failed::raise("semaphore.h: enter: sem_wait()");
-	}
-
-#ifdef HAVE_SEM_TIMEDWAIT
-	bool SignalSafeSemaphore::tryEnter(const int seconds, int milliseconds)
-	{
-		milliseconds += seconds * 1000;
-		// Return true in case of success
-		if (milliseconds == 0)
-		{
-			// Instant try
-			do {
-				if (sem_trywait(sem) != -1)
-					return true;
-			} while (errno == EINTR);
-			if (errno == EAGAIN)
-				return false;
-			system_call_failed::raise("sem_trywait");
-		}
-		if (milliseconds < 0)
-		{
-			// Unlimited wait, like enter()
-			do {
-				if (sem_wait(sem) != -1)
-					return true;
-			} while (errno == EINTR);
-			system_call_failed::raise("sem_wait");
-		}
-		// Wait with timeout
-		struct timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
-		int errcode = 0;
-		do {
-			int rc = sem_timedwait(sem, &timeout);
-			if (rc == 0)
-				return true;
-			// fix for CORE-988, also please see
-			// http://carcino.gen.nz/tech/linux/glibc_sem_timedwait_errors.php
-			errcode = rc > 0 ? rc : errno;
-		} while (errcode == EINTR);
-		if (errcode == ETIMEDOUT) {
-			return false;
-		}
-		system_call_failed::raise("sem_timedwait", errcode);
-		return false;	// avoid warnings
-	}
-#endif // HAVE_SEM_TIMEDWAIT
-
-#endif // COMMON_CLASSES_SEMAPHORE_POSIX_RT
-
-
-
-#ifdef COMMON_CLASSES_SEMAPHORE_COND_VAR
-
-	void Semaphore::init()
-	{
-		value = 0;
-		int err = pthread_mutex_init(&mu, NULL);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("pthread_mutex_init", err);
-		}
-		err = pthread_cond_init(&cv, NULL);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: constructor");
-			system_call_failed::raise("pthread_cond_init", err);
-		}
-	}
-
-	void Semaphore::mtxLock()
-	{
-		int err = pthread_mutex_lock(&mu);
-		if (err != 0)
-		{
-			system_call_failed::raise("pthread_mutex_lock", err);
-		}
-	}
-
-	void Semaphore::mtxUnlock()
-	{
-		int err = pthread_mutex_unlock(&mu);
-		if (err != 0)
-		{
-			system_call_failed::raise("pthread_mutex_unlock", err);
-		}
-	}
-
-	Semaphore::~Semaphore()
-	{
-		fb_assert(value == 0);
-		int err = pthread_mutex_destroy(&mu);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: destructor");
-			//system_call_failed::raise("pthread_mutex_destroy", err);
-		}
-		err = pthread_cond_destroy(&cv);
-		if (err != 0) {
-			//gds__log("Error on semaphore.h: destructor");
-			//system_call_failed::raise("pthread_cond_destroy", err);
-		}
-	}
-
-	bool Semaphore::tryEnter(const int seconds, int milliseconds)
-	{
-		bool rt = false;	// Return true in case of success
-		int err = 0;
-		milliseconds += seconds * 1000;
-
-		if (milliseconds == 0)
-		{
-			// Instant try
-			err = pthread_mutex_trylock(&mu);
-			if (err != 0)
-			{
-				if (err == EBUSY)
-				{
-					return false;
-				}
-				system_call_failed::raise("pthread_mutex_trylock", err);
-			}
-
-			if (value > 0)
-			{
-				--value;
-				rt = true;
-			}
-
-			mtxUnlock();
-			return rt;
-		}
-
-		if (milliseconds < 0)
-		{
-			// Unlimited wait
-			enter();
-			return true;
-		}
-
-		// Wait with timeout
-		mtxLock();
-
-		if (--value >= 0)
-		{
-			mtxUnlock();
-			return true;
-		}
-
-		timespec timeout;
-		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
-		err = pthread_cond_timedwait(&cv, &mu, &timeout);
-
-		mtxUnlock();
-
-		if (err == ETIMEDOUT)
-		{
-			++value;
-		}
-		else if (err != 0)
-		{
-			system_call_failed::raise("pthread_cond_timedwait", err);
-		}
-		else
-		{
-			rt = true;
-		}
-
-		return rt;
-	}
-
-	void Semaphore::enter()
-	{
-		mtxLock();
-
-		if (--value >= 0)
-		{
-			mtxUnlock();
-			return;
-		}
-
-		int err = pthread_cond_wait(&cv, &mu);
-
-		mtxUnlock();
-
-		if (err != 0)
-		{
-			system_call_failed::raise("pthread_cond_timedwait", err);
-		}
-	}
-
-	void Semaphore::release(SLONG count)
-	{
-		int err = 0;
-		for (int i = 0; i < count; i++)
-		{
-			mtxLock();
-
-			if (++value > 0)
-			{
-				mtxUnlock();
-				continue;
-			}
-
-			err = pthread_cond_signal(&cv);
-
-			mtxUnlock();
-
-			if (err != 0)
-			{
-				system_call_failed::raise("pthread_cond_broadcast", err);
-			}
-		}
-	}
-
-#endif // COMMON_CLASSES_SEMAPHORE_COND_VAR
-
 }
 
+bool SignalSafeSemaphore::checkHandle(int n)
+{
+	divorceDone = true;
+
+	for (SignalSafeSemaphore* cur = initialList; cur; cur = cur->next)
+	{
+		if (((IPTR) (cur->sem)) == n)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+}		// namespace Firebird
+
+#endif  // MIXED_SEMAPHORE_AND_FILE_HANDLE

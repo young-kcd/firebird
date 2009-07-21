@@ -30,8 +30,9 @@ namespace Jrd {
 
 void	INI_format(const TEXT*, const TEXT*);
 USHORT	INI_get_trig_flags(const TEXT*);
-void	INI_init(Jrd::thread_db*);
-void	INI_init2(Jrd::thread_db*);
+void	INI_init();
+void	INI_init2();
+void	INI_update_database();
 
 #endif // JRD_INI_PROTO_H
 

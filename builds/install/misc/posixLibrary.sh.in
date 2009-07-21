@@ -1,26 +1,4 @@
 #!/bin/sh
-#
-#  The contents of this file are subject to the Initial
-#  Developer's Public License Version 1.0 (the "License");
-#  you may not use this file except in compliance with the
-#  License. You may obtain a copy of the License at
-#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
-#
-#  Software distributed under the License is distributed AS IS,
-#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
-#  See the License for the specific language governing rights
-#  and limitations under the License.
-#
-#  The Original Code was created by Mark O'Donohue
-#  for the Firebird Open Source RDBMS project.
-#
-#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#  and all contributors signed below.
-#
-#  All Rights Reserved.
-#  Contributor(s): ______________________________________.
-#		Alex Peshkoff
-#
 
 
 #------------------------------------------------------------------------
@@ -136,7 +114,7 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -eaf$psOptions | grep inetd | grep -v grep | awk '{print $2}'`
+	pid=`ps -ef$psOptions | grep inetd | grep -v grep | awk '{print $2}'`
     if [ "$pid" ]
     then
         kill -HUP $pid
@@ -190,30 +168,12 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
-	checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
-    if [ ! -z "$checkString" ]
-	then
-		serverMode=super
-	fi
-
-# have to be root to stop the server
-	if [ "$1" != "install-embedded" ]
-    then
-    	stopSuperServerIfRunning
-    fi
-
+    stopSuperServerIfRunning
 
 # Check is server is being actively used.
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_smp_server)\b" |grep -v grep`
-    if [ ! -z "$checkString" ]
-    then
-        echo "An instance of the Firebird SuperClassic server seems to be running."
-        echo "Please quit all Firebird applications and then proceed."
-        exit 1
-    fi
-
     checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -222,6 +182,7 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -233,6 +194,7 @@ checkIfServerRunning() {
 # The following check for running interbase or firebird 1.0 servers.
 
     checkString=`ps -ef$psOptions | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
@@ -242,6 +204,7 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -ef$psOptions | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Classic server seems to be running." 
@@ -250,11 +213,15 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-# have to be root to modify (x)inetd
-	if [ "$1" != "install-embedded" ]
-	then
-		removeInetdServiceEntry
-	fi
+	removeInetdServiceEntry
+	
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -ef$psOptions | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+	do
+        kill $i
+	done
+
 }
 
 
@@ -388,7 +355,7 @@ EOT
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
-# @prefix@/bin/gsec utility.
+# @prefix@/bin/changeDBAPassword.sh script
 EOT
 
     chmod u=r,go= $DBAPasswordFile
@@ -402,6 +369,41 @@ EOT
         runSilent "$FBBin/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
     fi
 }
+
+
+#------------------------------------------------------------------------
+#  Generate new sysdba password - this routine is used only in the 
+#  rpm file not in the install script.
+
+generateNewDBAPassword() {
+    # openssl generates random data.
+	openssl </dev/null >/dev/null 2&>/dev/null
+    if [ $? -eq 0 ]
+    then
+        # We generate 20 random chars, strip any '/''s and get the first 8
+        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
+    fi
+
+    # mkpasswd is a bit of a hassle, but check to see if it's there
+    if [ -z "$NewPasswd" ]
+    then
+        if [ -f /usr/bin/mkpasswd ]
+        then
+            NewPasswd=`/usr/bin/mkpasswd -l 8`
+        fi
+    fi
+
+	# On some systems the mkpasswd program doesn't appear and on others
+	# there is another mkpasswd which does a different operation.  So if
+	# the specific one isn't available then keep the original password.
+    if [ -z "$NewPasswd" ]
+    then
+        NewPasswd="masterkey"
+    fi
+
+    writeNewPassword $NewPasswd
+}
+
 
 #------------------------------------------------------------------------
 #  Change sysdba password.
@@ -429,14 +431,12 @@ buildUninstallFile() {
         return
     fi
 
-	cp manifest.txt $FBRootDir/misc
+    cp manifest.txt $FBRootDir/misc
 
-	cp -r scripts $FBRootDir/misc/
+    cp -r scripts $FBRootDir/misc/
 	[ -f scripts/tarMainUninstall.sh ] && cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
 	[ -f scripts/tarmainUninstall.sh ] && cp scripts/tarmainUninstall.sh $FBRootDir/bin/uninstall.sh
 	[ -f $FBRootDir/bin/uninstall.sh ] && chmod u=rx,go= $FBRootDir/bin/uninstall.sh
-
-	cd $FBRootDir
 }
 
 
@@ -480,7 +480,6 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
-	cd $FBRootDir
 	if [ "$1" ]
 	then
 		# Use library name from parameter
@@ -505,9 +504,22 @@ removeLinksForBackCompatibility() {
     removeIfOnlyAlink @libdir@/libgds.so.0
 }
 
+#------------------------------------------------------------------------
+#  For security reasons most files in firebird installation are
+#  root-owned and world-readable(executable) only (including firebird).
+
+#  For some files RunUser (firebird) must have write access - 
+#  lock and log for examples.
+
+MakeFileFirebirdWritable() {
+    FileName=$1
+    chown $RunUser:$RunUser $FileName
+    chmod 0644 $FileName
+}
+
 
 #------------------------------------------------------------------------
-#  Set correct permissions for $FbRoot/doc tree 
+#  Set correct permissions for $FbRoot/doc tree
 
 fixDocPermissions() {
 	cd $FBRootDir
@@ -641,7 +653,7 @@ archivePriorInstallSystemFiles() {
     if [ ! -z "$archiveFileList" ]
     then
         displayMessage "Archiving..."
-        runAndCheckExit "tar -cv${tarOptions}f $tarArc $archiveFileList"
+        runAndCheckExit "tar -c${tarOptions}f $tarArc $archiveFileList"
         displayMessage "Done."
 
         displayMessage "Deleting..."
@@ -728,84 +740,3 @@ removeEmptyDirs() {
 
       done
 }
-
-
-#------------------------------------------------------------------------
-#  fixFilePermissions
-#  Change the permissions to restrict access to server programs to 
-#  firebird group only.  This is MUCH better from a safety point of 
-#  view than installing as root user, even if it requires a little 
-#  more work.
-
-fixFilePermissions() {
-    cd $FBRootDir
-
-    # For security reasons initially force all root:root non-writable
-    chown -R root:root $FBRootDir
-    chmod -R uga-w $FBRootDir
-
-	# Set up configuration files - make them root-writable
-    cd $FBRootDir
-	chmod u+w *.conf
-
-    # Prepare bin
-    cd $FBBin
-
-    # Everyone may execute clients
-    chmod a=rx *
-
-    # Shell scripts changing security attributes are for root only
-    chmod u=rx,go= *.sh
-    
-    # Lock files
-    cd $FBRootDir
-    for i in fb_guard
-    do
-        FileName=$i
-        touch $FileName
-        MakeFileFirebirdWritable $FileName
-    done
-
-	# Log file
-    touch firebird.log
-    MakeFileFirebirdWritable firebird.log
-    
-    # Security database
-    MakeFileFirebirdWritable $SecurityDatabase
-
-	# set up libraries & plugins - everyone may use them
-	cd $FBRootDir
-	chmod a=rx lib/lib* plugins/lib*
-
-	# set up include files - everyone may use them
-	cd $FBRootDir/include
-	chmod a=r *
-
-	# fix up examples' permissions
-    cd $FBRootDir/examples
-    # set a default of read all files in examples
-    for i in `find . -name '*' -type f -print`
-    do
-         chmod a=r $i
-    done
-    # set a default of read&search all dirs in examples
-    for i in `find . -name '*' -type d -print`
-    do
-         chmod a=rx $i
-    done
-    # make examples DB(s) writable
-    for i in `find . -name '*.fdb' -print`
-    do
-		MakeFileFirebirdWritable $i
-    done
-
-	# fix up doc permissions
-	cd $FBRootDir
-	fixDocPermissions
-
-	# Architecture (CS/SS) specific permissions
-	cd $FBRootDir
-	fixArcSpecificPermissions
-	cd $FBRootDir
-}
-

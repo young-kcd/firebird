@@ -27,9 +27,9 @@
 #include "../jrd/common.h"
 
 
-#define PATHSEP(c) ((c) == '\\' || (c) == '/')
 
-char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
+#define PATHSEP(c) ((c) == '\\' || (c) == '/')
+char *ChopFileName( char *szName, char *szShortName, ULONG dwLen)
 {
 /**************************************
  *
@@ -43,7 +43,7 @@ char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
  *
  *	Both szName and szShort name can be the same pointer.
  *
- *  Inputs:
+ *  Inputs: 
  *           szName - Null terminated input path/filename.
  *           szShortName - Output buffer for truncated path/filename.
  *           dwLen - Length to truncate to.
@@ -52,52 +52,48 @@ char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
  *				 pointer to a buffer (szShortname).
  *
  **************************************/
+	char *pchTmp;
 
-	// Set pointers to the beginning and the end
-	const char *pchLeft, *pchEnd;
+/* Set pointers to the beginning and the end */
+	char *pchLeft, *pchEnd;
 	pchLeft = pchEnd = szName;
 	while (*pchEnd)
 		pchEnd++;
 
-	// Check that the path is already short enough
-	if (((ULONG) (pchEnd - pchLeft)) <= dwLen)
-	{
-		memcpy(szShortName, szName, pchEnd - pchLeft + 1);
+/* Check that the path is already short enough */
+	if (((ULONG) (pchEnd - pchLeft)) <= dwLen) {
+		pchTmp = szShortName;
+		while (*pchTmp++ = *szName++);
 		return szShortName;
 	}
 
-	// Subtract the room needed for the three dots
+/* Subtract the room needed for the three dots */
 	dwLen -= 3;
 
-	const char* pchRight = pchEnd;
+	char* pchRight = pchEnd;
 
-	const char* pchLastLeft = pchLeft;
-	const char* pchLastRight = pchRight;
+	char* pchLastLeft = pchLeft;
+	char* pchLastRight = pchRight;
 
 	bool bLeft = true;
 	bool bLeftFull = false;
 	bool bRightFull = false;
 
-	while (!bLeftFull || !bRightFull)
-	{
-		if (bLeft)
-		{
-			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft) && pchLeft < pchRight)
-				;
-			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen)
-			{
+	while (!bLeftFull || !bRightFull) {
+		if (bLeft) {
+			while (!bLeftFull && pchLeft++ && !PATHSEP(*pchLeft)
+				   && pchLeft < pchRight);
+			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
 				bLeftFull = true;
 				pchLeft = pchLastLeft;
 			}
 			else
 				pchLastLeft = pchLeft;
 		}
-		else
-		{
-			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight) && pchLeft < pchRight)
-				;
-			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen)
-			{
+		else {
+			while (!bRightFull && pchRight-- && !PATHSEP(*pchRight)
+				   && pchLeft < pchRight);
+			if ((pchLeft - szName) + ((ULONG) (pchEnd - pchRight)) > dwLen) {
 				bRightFull = true;
 				pchRight = pchLastRight;
 			}
@@ -107,17 +103,12 @@ char* ChopFileName(const char* szName, char* szShortName, ULONG dwLen)
 		bLeft = !bLeft;
 	}
 
-	char* pchTmp = szShortName;
-	pchLeft = szName;
-	while (pchLeft <= pchLastLeft)
-		*pchTmp++ = *pchLeft++;
-
+	for (pchTmp = szShortName, pchLeft = szName;
+		 pchLeft <= pchLastLeft; *pchTmp++ = *pchLeft++);
 	*pchTmp++ = '.';
 	*pchTmp++ = '.';
 	*pchTmp++ = '.';
-	while (pchLastRight < pchEnd)
-		*pchTmp++ = *pchLastRight++;
-
+	for (; pchLastRight < pchEnd; *pchTmp++ = *pchLastRight++);
 	*pchTmp++ = '\0';
 
 	return szShortName;

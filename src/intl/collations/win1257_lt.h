@@ -1,25 +1,3 @@
-/*
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
- *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
- *
- *  The Original Code was created by Aleksey Karyakin
- *  for the Yaffil project.
- *
- *  Copyright (c) 2005 Aleksey Karyakin <aleksey.karyakin@mail.ru>
- *  and all contributors signed below.
- *
- * All Rights Reserved.
- * Contributor(s): ______________________________________.
- */
-
 const int NUM_EXPAND_CHARS		= 3;
 const int NUM_COMPRESS_CHARS	= 0;
 const int LOWERCASE_LEN			= 256;
@@ -27,16 +5,16 @@ const int UPPERCASE_LEN			= 256;
 const int NOCASESORT_LEN		= 256;
 const int LDRV_TIEBREAK			= 0; // TODO
 
-//const int MAX_NCO_PRIMARY		= 164;
+const int MAX_NCO_PRIMARY		= 164;
 const int MAX_NCO_SECONDARY		= 5;
 const int MAX_NCO_TERTIARY		= 1;
-//const int MAX_NCO_IGNORE		= 0;
+const int MAX_NCO_IGNORE		= 0;
 const int NULL_SECONDARY		= 0;
 const int NULL_TERTIARY			= 0;
-//const int FIRST_IGNORE			= 1;
+const int FIRST_IGNORE			= 1;
 const int FIRST_TERTIARY		= 1;
-const int FIRST_SECONDARY		= (FIRST_TERTIARY + MAX_NCO_TERTIARY + 1);
-const int FIRST_PRIMARY			= (FIRST_SECONDARY + MAX_NCO_SECONDARY + 1);
+const int FIRST_SECONDARY		= (FIRST_TERTIARY+MAX_NCO_TERTIARY+1);
+const int FIRST_PRIMARY			= (FIRST_SECONDARY+MAX_NCO_SECONDARY+1);
 
 static const BYTE ToUpperConversionTbl [ UPPERCASE_LEN ] = {
 	  0, /*     0 ->     0 */

@@ -31,7 +31,7 @@ static inline bool FAMILY_UNICODE_WIDE_BIN(texttype* cache,
 										   SSHORT country,
 										   const ASCII* POSIX,
 										   USHORT attributes,
-										   const UCHAR*, // specific_attributes,
+										   const UCHAR* specific_attributes,
 										   ULONG specific_attributes_length)
 //#define FAMILY_UNICODE_WIDE_BIN(id_number, name, charset, country)
 {
@@ -55,7 +55,7 @@ static inline bool FAMILY_UNICODE_MB_BIN(texttype* cache,
 										 SSHORT country,
 										 const ASCII* POSIX,
 										 USHORT attributes,
-										 const UCHAR*, //specific_attributes,
+										 const UCHAR* specific_attributes,
 										 ULONG specific_attributes_length)
 //#define FAMILY_UNICODE_MB_BIN(id_number, name, charset, country)
 {
@@ -76,7 +76,7 @@ static inline bool FAMILY_UNICODE_MB_BIN(texttype* cache,
 }
 
 
-TEXTTYPE_ENTRY3(UNI200_init)
+TEXTTYPE_ENTRY(UNI200_init)
 {
 	static ASCII POSIX[] = "C.UNICODE";
 
@@ -84,7 +84,7 @@ TEXTTYPE_ENTRY3(UNI200_init)
 }
 
 
-TEXTTYPE_ENTRY3(UNI201_init)
+TEXTTYPE_ENTRY(UNI201_init)
 {
 	static ASCII POSIX[] = "C.UNICODE_FSS";
 

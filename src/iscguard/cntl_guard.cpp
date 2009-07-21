@@ -27,10 +27,11 @@
 #include "../iscguard/cntlg_proto.h"
 #include "../remote/remote.h"
 #include "../utilities/install/install_nt.h"
+#include "../jrd/thd.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../common/classes/fb_string.h"
-#include "../common/classes/init.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -48,8 +49,8 @@ static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 static DWORD current_state;
 static ThreadEntryPoint* main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
-static Firebird::GlobalPtr<Firebird::string> service_name;
-static Firebird::GlobalPtr<Firebird::string> remote_name;
+static Firebird::string* service_name = NULL;
+static Firebird::string* remote_name = NULL;
 static HANDLE stop_event_handle;
 
 
@@ -66,13 +67,15 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	//MemoryPool& pool = *getDefaultMemoryPool();
+	MemoryPool& pool = *getDefaultMemoryPool();
+	service_name = FB_NEW(pool) Firebird::string(pool);
 	service_name->printf(ISCGUARD_SERVICE, name);
+	remote_name = FB_NEW(pool) Firebird::string(pool);
 	remote_name->printf(REMOTE_SERVICE, name);
 }
 
 
-void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
+void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 {
 /**************************************
  *
@@ -97,8 +100,8 @@ void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(main_handler, NULL, 0, 0, 0) &&
-		report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
+		!gds__thread_start(main_handler, NULL, 0, 0, 0)
+		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		failure = false;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
@@ -145,8 +148,7 @@ void CNTL_shutdown_service(const TEXT* message)
 	sprintf(buffer, "%s error: %lu", service_name->c_str(), GetLastError());
 
 	HANDLE event_source = RegisterEventSource(NULL, service_name->c_str());
-	if (event_source)
-	{
+	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
 		ReportEvent(event_source,
@@ -162,7 +164,7 @@ void CNTL_shutdown_service(const TEXT* message)
 }
 
 
-void CNTL_stop_service() //const TEXT* service) // unused param
+void CNTL_stop_service(const TEXT* service) // unused param
 {
 /**************************************
  *
@@ -177,8 +179,7 @@ void CNTL_stop_service() //const TEXT* service) // unused param
  **************************************/
 
 	SC_HANDLE servicemgr_handle = OpenSCManager(NULL, NULL, GENERIC_READ);
-	if (servicemgr_handle == NULL)
-	{
+	if (servicemgr_handle == NULL) {
 		// return error
 		int error = GetLastError();
 		gds__log("SC manager error %d", error);
@@ -186,17 +187,16 @@ void CNTL_stop_service() //const TEXT* service) // unused param
 	}
 
 	SC_HANDLE service_handleL =
-		OpenService(servicemgr_handle, service_name->c_str(), GENERIC_READ | GENERIC_EXECUTE);
+		OpenService(servicemgr_handle, service_name->c_str(),
+			GENERIC_READ | GENERIC_EXECUTE);
 
-	if (service_handleL == NULL)
-	{
+	if (service_handleL == NULL) {
 		// return error
 		int error = GetLastError();
 		gds__log("open services error %d", error);
 		return;
 	}
-	else
-	{
+	else {
 		SERVICE_STATUS status_info;
 		if (!ControlService
 			(service_handleL, SERVICE_CONTROL_STOP, &status_info))
@@ -225,10 +225,8 @@ static void WINAPI control_thread( DWORD action)
  **************************************/
 	const DWORD state = SERVICE_RUNNING;
 
-	switch (action)
-	{
+	switch (action) {
 	case SERVICE_CONTROL_STOP:
-	case SERVICE_CONTROL_SHUTDOWN:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
 		SetEvent(stop_event_handle);
 		return;
@@ -244,7 +242,9 @@ static void WINAPI control_thread( DWORD action)
 }
 
 
-static USHORT report_status(DWORD state, DWORD exit_code, DWORD checkpoint, DWORD hint)
+static USHORT report_status(
+							DWORD state,
+							DWORD exit_code, DWORD checkpoint, DWORD hint)
 {
 /**************************************
  *

@@ -105,78 +105,40 @@ namespace Jrd {
 TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 	: tt(_tt), cs(_cs), type(_type)
 {
-	canonical(cs->getSqlMatchAnyLength(), cs->getSqlMatchAny(),
-		sizeof(ULONG), reinterpret_cast<UCHAR*>(&canonicalChars[CHAR_SQL_MATCH_ANY]));
-	canonical(cs->getSqlMatchOneLength(), cs->getSqlMatchOne(),
-		sizeof(ULONG), reinterpret_cast<UCHAR*>(&canonicalChars[CHAR_SQL_MATCH_ONE]));
+	canonical(cs->getSqlMatchAnyLength(), cs->getSqlMatchAny(), sizeof(sqlMatchAnyCanonic), sqlMatchAnyCanonic);
+	canonical(cs->getSqlMatchOneLength(), cs->getSqlMatchOne(), sizeof(sqlMatchOneCanonic), sqlMatchOneCanonic);
 
 	struct Conversion
 	{
-		USHORT code;
-		int ch;
+		USHORT ch;
+		UCHAR* ptr;
 	};
 
-	const Conversion conversions[] =
+	Conversion conversions[] =
 		{
-			{'*', CHAR_ASTERISK},
-			{'@', CHAR_AT},
-			{'^', CHAR_CIRCUMFLEX},
-			{':', CHAR_COLON},
-			{',', CHAR_COMMA},
-			{'=', CHAR_EQUAL},
-			{'-', CHAR_MINUS},
-			{'%', CHAR_PERCENT},
-			{'+', CHAR_PLUS},
-			{'?', CHAR_QUESTION_MARK},
-			{' ', CHAR_SPACE},
-			{'~', CHAR_TILDE},
-			{'_', CHAR_UNDERLINE},
-			{'|', CHAR_VERTICAL_BAR},
-			{'{', CHAR_OPEN_BRACE},
-			{'}', CHAR_CLOSE_BRACE},
-			{'[', CHAR_OPEN_BRACKET},
-			{']', CHAR_CLOSE_BRACKET},
-			{'(', CHAR_OPEN_PAREN},
-			{')', CHAR_CLOSE_PAREN},
-			{'s', CHAR_LOWER_S},
-			{'S', CHAR_UPPER_S}
+			{GDML_MATCH_ONE, gdmlMatchOneCanonic},
+			{GDML_MATCH_ANY, gdmlMatchAnyCanonic},
+			{GDML_QUOTE, gdmlQuoteCanonic},
+			{GDML_NOT, gdmlNotCanonic},
+			{GDML_RANGE, gdmlRangeCanonic},
+			{GDML_CLASS_START, gdmlClassStartCanonic},
+			{GDML_CLASS_END, gdmlClassEndCanonic},
+			{GDML_SUBSTITUTE, gdmlSubstituteCanonic},
+			{GDML_FLAG_SET, gdmlFlagSetCanonic},
+			{GDML_FLAG_CLEAR, gdmlFlagClearCanonic},
+			{GDML_COMMA, gdmlCommaCanonic},
+			{GDML_LPAREN, gdmlLParenCanonic},
+			{GDML_RPAREN, gdmlRParenCanonic},
+			{'S', gdmlUpperSCanonic},
+			{'s', gdmlLowerSCanonic}
 		};
 
 	for (int i = 0; i < FB_NELEM(conversions); i++)
 	{
 		UCHAR temp[sizeof(ULONG)];
 
-		ULONG length = getCharSet()->getConvFromUnicode().convert(
-			sizeof(USHORT), &conversions[i].code, sizeof(temp), temp);
-		canonical(length, temp, sizeof(ULONG),
-			reinterpret_cast<UCHAR*>(&canonicalChars[conversions[i].ch]));
-	}
-
-	struct Conversion2
-	{
-		const char* str;
-		UCHAR* buffer;
-	};
-
-	const Conversion2 conversions2[] =
-	{
-		{"0123456789", reinterpret_cast<UCHAR*>(canonicalNumbers)},
-		{"abcdefghijklmnopqrstuvwxyz", reinterpret_cast<UCHAR*>(canonicalLowerLetters)},
-		{"ABCDEFGHIJKLMNOPQRSTUVWXYZ", reinterpret_cast<UCHAR*>(canonicalUpperLetters)},
-		{" \t\v\r\n\f", reinterpret_cast<UCHAR*>(canonicalWhiteSpaces)}
-	};
-
-	for (int i = 0; i < FB_NELEM(conversions2); i++)
-	{
-		UCHAR temp[sizeof(ULONG)];
-
-		for (const char* p = conversions2[i].str; *p; ++p)
-		{
-			USHORT code = static_cast<USHORT>(*p);
-			ULONG length = getCharSet()->getConvFromUnicode().convert(sizeof(code), &code, sizeof(temp), temp);
-			const size_t pos = (p - conversions2[i].str) * getCanonicalWidth();
-			canonical(length, temp, sizeof(ULONG), &conversions2[i].buffer[pos]);
-		}
+		ULONG length = getCharSet()->getConvFromUnicode().convert(sizeof(USHORT), &conversions[i].ch, sizeof(temp), temp);
+		canonical(length, temp, sizeof(ULONG), conversions[i].ptr);
 	}
 }
 
@@ -185,171 +147,193 @@ USHORT TextType::key_length(USHORT len)
 {
 	if (tt->texttype_fn_key_length)
 		return (*tt->texttype_fn_key_length)(tt, len);
-
-	if (getCharSet()->isMultiByte())
-		return UnicodeUtil::utf16KeyLength(len);
-
-	return len;
+	else
+	{
+		if (getCharSet()->isMultiByte())
+			return UnicodeUtil::utf16KeyLength(len);
+		else
+			return len;
+	}
 }
 
 
-USHORT TextType::string_to_key(USHORT srcLen, const UCHAR* src,
-							   USHORT dstLen, UCHAR* dst,
-							   USHORT key_type)
+USHORT TextType::string_to_key(USHORT srcLen,
+					 const UCHAR* src,
+					 USHORT dstLen,
+					 UCHAR* dst,
+					 USHORT key_type)
 {
 	if (tt->texttype_fn_string_to_key)
 		return (*tt->texttype_fn_string_to_key)(tt, srcLen, src, dstLen, dst, key_type);
-
-	const UCHAR* space = getCharSet()->getSpace();
-	BYTE spaceLength = getCharSet()->getSpaceLength();
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
-	UCHAR utf16Space[sizeof(ULONG)];
-
-	if (getCharSet()->isMultiByte())
-	{
-		// convert src to UTF-16
-		const ULONG utf16Length = getCharSet()->getConvToUnicode().convertLength(srcLen);
-
-		srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
-					utf16Length, utf16Str.getBuffer(utf16Length));
-		src = utf16Str.begin();
-
-		// convert charset space to UTF-16
-		spaceLength =
-			getCharSet()->getConvToUnicode().convert(spaceLength, space, sizeof(utf16Space), utf16Space);
-		fb_assert(spaceLength == 2);	// space character can't be surrogate for default string_to_key
-		space = utf16Space;
-	}
-
-	if (tt->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = src + srcLen - spaceLength; pad >= src; pad -= spaceLength)
-		{
-			if (memcmp(pad, space, spaceLength) != 0)
-				break;
-		}
-
-		srcLen = pad - src + spaceLength;
-	}
-
-	if (getCharSet()->isMultiByte())
-	{
-		dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), dstLen, dst);
-	}
 	else
 	{
-		if (dstLen >= srcLen)
+		const UCHAR* space = getCharSet()->getSpace();
+		BYTE spaceLength = getCharSet()->getSpaceLength();
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
+		UCHAR utf16Space[sizeof(ULONG)];
+
+		if (getCharSet()->isMultiByte())
 		{
-			memcpy(dst, src, srcLen);
-			dstLen = srcLen;
+			// convert src to UTF-16
+			ULONG utf16Length = getCharSet()->getConvToUnicode().convertLength(srcLen);
+
+			srcLen = getCharSet()->getConvToUnicode().convert(srcLen, src,
+						utf16Length, utf16Str.getBuffer(utf16Length));
+			src = utf16Str.begin();
+
+			// convert charset space to UTF-16
+			spaceLength = getCharSet()->getConvToUnicode().convert(spaceLength, space,
+						sizeof(utf16Space), utf16Space);
+			fb_assert(spaceLength == 2);	// space character can't be surrogate for default string_to_key
+			space = utf16Space;
+		}
+
+		if (tt->texttype_pad_option)
+		{
+			const UCHAR* pad;
+
+			for (pad = src + srcLen - spaceLength; pad >= src; pad -= spaceLength)
+			{
+				if (memcmp(pad, space, spaceLength) != 0)
+					break;
+			}
+
+			srcLen = pad - src + spaceLength;
+		}
+
+		if (getCharSet()->isMultiByte())
+		{
+			dstLen = UnicodeUtil::utf16ToKey(srcLen, Firebird::Aligner<USHORT>(src, srcLen), 
+				dstLen, dst, key_type);
 		}
 		else
-			dstLen = INTL_BAD_KEY_LENGTH;
-	}
+		{
+			if (dstLen >= srcLen)
+			{
+				memcpy(dst, src, srcLen);
+				dstLen = srcLen;
+			}
+			else
+				dstLen = INTL_BAD_KEY_LENGTH;
+		}
 
-	return dstLen;
+		return dstLen;
+	}
 }
 
 
-SSHORT TextType::compare(ULONG len1, const UCHAR* str1, ULONG len2, const UCHAR* str2)
+SSHORT TextType::compare(ULONG len1,
+			   const UCHAR* str1,
+			   ULONG len2,
+			   const UCHAR* str2)
 {
 	INTL_BOOL error = false;
 
 	if (tt->texttype_fn_compare)
 		return (*tt->texttype_fn_compare)(tt, len1, str1, len2, str2, &error);
-
-	const UCHAR* space = getCharSet()->getSpace();
-	BYTE spaceLength = getCharSet()->getSpaceLength();
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
-	UCHAR utf16Space[sizeof(ULONG)];
-
-	if (getCharSet()->isMultiByte())
+	else
 	{
-		// convert str1 to UTF-16
-		ULONG utf16Length = getCharSet()->getConvToUnicode().convertLength(len1);
+		const UCHAR* space = getCharSet()->getSpace();
+		BYTE spaceLength = getCharSet()->getSpaceLength();
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
+		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
+		UCHAR utf16Space[sizeof(ULONG)];
 
-		len1 = getCharSet()->getConvToUnicode().convert(len1, str1,
-					utf16Length, utf16Str1.getBuffer(utf16Length));
-		str1 = utf16Str1.begin();
-
-		// convert str2 to UTF-16
-		utf16Length = getCharSet()->getConvToUnicode().convertLength(len2);
-
-		len2 = getCharSet()->getConvToUnicode().convert(len2, str2,
-					utf16Length, utf16Str2.getBuffer(utf16Length));
-		str2 = utf16Str2.begin();
-
-		// convert charset space to UTF-16
-		spaceLength =
-			getCharSet()->getConvToUnicode().convert(spaceLength, space, sizeof(utf16Space), utf16Space);
-		fb_assert(spaceLength == 2);	// space character can't be surrogate for default compare
-		space = utf16Space;
-	}
-
-	if (tt->texttype_pad_option)
-	{
-		const UCHAR* pad;
-
-		for (pad = str1 + len1 - spaceLength; pad >= str1; pad -= spaceLength)
+		if (getCharSet()->isMultiByte())
 		{
-			if (memcmp(pad, space, spaceLength) != 0)
-				break;
+			// convert str1 to UTF-16
+			ULONG utf16Length = getCharSet()->getConvToUnicode().convertLength(len1);
+
+			len1 = getCharSet()->getConvToUnicode().convert(len1, str1,
+						utf16Length, utf16Str1.getBuffer(utf16Length));
+			str1 = utf16Str1.begin();
+
+			// convert str2 to UTF-16
+			utf16Length = getCharSet()->getConvToUnicode().convertLength(len2);
+
+			len2 = getCharSet()->getConvToUnicode().convert(len2, str2,
+						utf16Length, utf16Str2.getBuffer(utf16Length));
+			str2 = utf16Str2.begin();
+
+			// convert charset space to UTF-16
+			spaceLength = getCharSet()->getConvToUnicode().convert(spaceLength, space,
+						sizeof(utf16Space), utf16Space);
+			fb_assert(spaceLength == 2);	// space character can't be surrogate for default compare
+			space = utf16Space;
 		}
 
-		len1 = pad - str1 + spaceLength;
-
-		for (pad = str2 + len2 - spaceLength; pad >= str2; pad -= spaceLength)
+		if (tt->texttype_pad_option)
 		{
-			if (memcmp(pad, space, spaceLength) != 0)
-				break;
+			const UCHAR* pad;
+
+			for (pad = str1 + len1 - spaceLength; pad >= str1; pad -= spaceLength)
+			{
+				if (memcmp(pad, space, spaceLength) != 0)
+					break;
+			}
+
+			len1 = pad - str1 + spaceLength;
+
+			for (pad = str2 + len2 - spaceLength; pad >= str2; pad -= spaceLength)
+			{
+				if (memcmp(pad, space, spaceLength) != 0)
+					break;
+			}
+
+			len2 = pad - str2 + spaceLength;
 		}
 
-		len2 = pad - str2 + spaceLength;
+		if (getCharSet()->isMultiByte())
+		{
+			INTL_BOOL error_flag;
+			return UnicodeUtil::utf16Compare(len1, Firebird::Aligner<USHORT>(str1, len1), 
+				len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
+		}
+		else
+		{
+			SSHORT cmp = memcmp(str1, str2, MIN(len1, len2));
+
+			if (cmp == 0)
+				cmp = (len1 < len2 ? -1 : (len1 > len2 ? 1 : 0));
+
+			return cmp;
+		}
 	}
-
-	if (getCharSet()->isMultiByte())
-	{
-		INTL_BOOL error_flag;
-		return UnicodeUtil::utf16Compare(len1, Firebird::Aligner<USHORT>(str1, len1),
-										 len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
-	}
-
-	SSHORT cmp = memcmp(str1, str2, MIN(len1, len2));
-
-	if (cmp == 0)
-		cmp = (len1 < len2 ? -1 : (len1 > len2 ? 1 : 0));
-
-	return cmp;
 }
 
 
-ULONG TextType::str_to_upper(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+ULONG TextType::str_to_upper(ULONG srcLen,
+				   const UCHAR* src,
+				   ULONG dstLen,
+				   UCHAR* dst)
 {
 	if (tt->texttype_fn_str_to_upper)
 		return (*tt->texttype_fn_str_to_upper)(tt, srcLen, src, dstLen, dst);
-
-	return Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
+	else
+		return Firebird::IntlUtil::toUpper(getCharSet(), srcLen, src, dstLen, dst, NULL);
 }
 
 
-ULONG TextType::str_to_lower(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+ULONG TextType::str_to_lower(ULONG srcLen,
+				   const UCHAR* src,
+				   ULONG dstLen,
+				   UCHAR* dst)
 {
 	if (tt->texttype_fn_str_to_lower)
 		return (*tt->texttype_fn_str_to_lower)(tt, srcLen, src, dstLen, dst);
-
-	return Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
+	else
+		return Firebird::IntlUtil::toLower(getCharSet(), srcLen, src, dstLen, dst, NULL);
 }
 
 
-ULONG TextType::canonical(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
+ULONG TextType::canonical(ULONG srcLen,
+				const UCHAR* src,
+				ULONG dstLen,
+				UCHAR* dst)
 {
 	if (tt->texttype_fn_canonical)
 		return (*tt->texttype_fn_canonical)(tt, srcLen, src, dstLen, dst);
-
-	if (getCharSet()->isMultiByte())
+	else if (getCharSet()->isMultiByte())
 	{
 		fb_assert(tt->texttype_canonical_width == sizeof(ULONG));
 
@@ -368,15 +352,17 @@ ULONG TextType::canonical(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* d
 		return UnicodeUtil::utf16ToUtf32(utf16_len, Firebird::Aligner<USHORT>(utf16_str.begin(), utf16_len),
 			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), &errCode, &errPos) / sizeof(ULONG);
 	}
+	else
+	{
+		fb_assert(
+			(tt->texttype_canonical_width == 0 && !tt->texttype_fn_canonical) || 
+			tt->texttype_canonical_width == getCharSet()->minBytesPerChar());
+		fb_assert(dstLen >= srcLen);
 
-	fb_assert(
-		(tt->texttype_canonical_width == 0 && !tt->texttype_fn_canonical) ||
-		tt->texttype_canonical_width == getCharSet()->minBytesPerChar());
-	fb_assert(dstLen >= srcLen);
+		memcpy(dst, src, srcLen);
 
-	memcpy(dst, src, srcLen);
-
-	return srcLen / getCharSet()->minBytesPerChar();
+		return srcLen / getCharSet()->minBytesPerChar();
+	}
 }
 
 

@@ -87,7 +87,7 @@
 #include "../remote/remote.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
-#include "../jrd/ThreadStart.h"
+#include "../jrd/thd.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/os/win32/cntl_proto.h"
 #include "../remote/inet_proto.h"
@@ -97,26 +97,24 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/xnet_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
+#include "../jrd/svc_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
-#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../../../common/classes/semaphore.h"
-#include "../../../common/classes/FpeControl.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
+static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM);
-static THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM);
 static HANDLE parse_args(LPCSTR, USHORT*);
 static void service_connection(rem_port*);
-static int wait_threads(const int reason, const int mask, void* arg);
 
 static HINSTANCE hInst;
 
@@ -124,43 +122,17 @@ static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
 static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
-static bool server_shutdown = false;
 
-class ThreadCounter
-{
-public:
-	ThreadCounter()
-	{
-		++m_count;
-	}
+static const int SIGSHUT = 666;
+static int shutdown_pid = 0;
 
-	~ThreadCounter()
-	{
-		--m_count;
-		m_semaphore.release();
-	}
-
-	static bool wait()
-	{
-		while (m_count.value() > 0)
-		{
-			if (!m_semaphore.tryEnter(10))
-				break;
-		}
-
-		return (m_count.value() == 0);
-	}
-
-private:
-	static Firebird::AtomicCounter m_count;
-	static Firebird::Semaphore m_semaphore;
-};
-
-Firebird::AtomicCounter ThreadCounter::m_count;
-Firebird::Semaphore ThreadCounter::m_semaphore;
+//const char* const FBCLIENTDLL = "fbclient.dll";
 
 
-int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs, int nWndMode)
+int WINAPI WinMain(HINSTANCE	hThisInst,
+				   HINSTANCE	hPrevInst,
+				   LPSTR		lpszArgs,
+				   int			nWndMode)
 {
 /**************************************
  *
@@ -201,6 +173,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
 
+
 #ifdef SUPERSERVER
 	server_flag = SRVR_multi_client;
 #else
@@ -208,8 +181,28 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 #endif
 
 #ifdef SUPERSERVER
-	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
+	if (ISC_is_WinNT()) {	/* True - NT, False - Win95 */
+
+		/* CVC: This operating system call doesn't exist for W9x. */
+		typedef BOOL (__stdcall *PSetProcessAffinityMask)(HANDLE, DWORD);
+		PSetProcessAffinityMask SetProcessAffinityMask;
+
+		SetProcessAffinityMask = (PSetProcessAffinityMask)
+			GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "SetProcessAffinityMask");
+		if (SetProcessAffinityMask) {
+			/* Mike Nordell - 11 Jun 2001: CPU affinity. */
+			(*SetProcessAffinityMask)(GetCurrentProcess(),
+				static_cast<DWORD>(Config::getCpuAffinityMask()));
+		}
+	}
+	else {
+		server_flag |= SRVR_non_service;
+	}
 #endif
+
+	if (server_flag & SRVR_multi_client) {
+		gds__thread_enable(-1);
+	}
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
@@ -217,6 +210,28 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	strcpy(instance, FB_DEFAULT_INSTANCE);
 
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
+
+	if (shutdown_pid) {
+		int rc = ISC_kill(shutdown_pid, SIGSHUT, 0);
+		if (rc < 0)
+		{
+			char buffer[100];
+			sprintf(buffer, "Cannot terminate process with pid = %d", shutdown_pid);
+			MessageBox(NULL, buffer,
+				"Firebird server failure",
+				MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
+			return STARTUP_ERROR; // see /jrd/common.h
+		}
+		return 0;
+	}
+
+	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
+
+		if (ISC_is_WinNT())		/* True - NT, False - Win95 */
+			server_flag |= SRVR_wnet;
+		server_flag |= SRVR_inet;
+		server_flag |= SRVR_xnet;
+	}
 
 #ifdef SUPERSERVER
 	// get priority class from the config file
@@ -237,47 +252,36 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 #endif
 
 	TEXT mutex_name[MAXPATHLEN];
-	fb_utils::snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
+	fb_utils::_snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
 	fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
 	CreateMutex(ISC_get_security_desc(), FALSE, mutex_name);
 
-	// Initialize the service
-
+/* Initialize the service and
+   Setup sig_mutex for the process
+*/
 	ISC_signal_init();
-	Firebird::FpeControl::maskAll();
+
+#ifdef SUPERSERVER
+	ISC_enter();
+#endif
 
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
-	fb_utils::init_status(status_vector);
-
-	fb_shutdown_callback(0, wait_threads, fb_shut_finish, NULL);
 
 	if (connection_handle != INVALID_HANDLE_VALUE)
 	{
 		rem_port* port = 0;
-
+		THREAD_ENTER();
 		if (server_flag & SRVR_inet)
-		{
 			port = INET_reconnect(connection_handle, status_vector);
-
-			if (port)
-			{
-				SRVR_multi_thread(port, server_flag);
-				port = NULL;
-			}
-		}
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_xnet)
 			port = XNET_reconnect((ULONG) connection_handle, status_vector);
-
+		THREAD_EXIT();
 		if (port) {
 			service_connection(port);
 		}
-		else if (status_vector[1])
-			gds__log_status(0, status_vector);
-
-		fb_shutdown(0, fb_shutrsn_no_connection);
 	}
 	else if (!(server_flag & SRVR_non_service))
 	{
@@ -295,11 +299,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		// BRS There is a error in MinGW (3.1.0) headers
 		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
 #if defined(MINGW)
-		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table)))
-		{
+		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table))) {
 #else
-		if (!StartServiceCtrlDispatcher(service_table))
-		{
+		if (!StartServiceCtrlDispatcher(service_table)) {
 #endif
 			if (GetLastError() != ERROR_CALL_NOT_IMPLEMENTED) {
 				CNTL_shutdown_service("StartServiceCtrlDispatcher failed");
@@ -309,23 +311,42 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	}
 	else
 	{
-		start_connections_thread(0);
-		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
+		if (server_flag & SRVR_inet) {
+			gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0,
+							  0);
+		}
+		if (server_flag & SRVR_wnet) {
+			gds__thread_start(wnet_connect_wait_thread, 0, THREAD_medium, 0,
+							  0);
+		}
+		if (server_flag & SRVR_xnet) {
+			gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0,
+							  0);
+		}
+		// No need to waste a thread if we are running as a window
+		if (Config::getCreateInternalWindow()) {
+			nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
+		}
+		else {
+			HANDLE hEvent =
+				ISC_make_signal(TRUE, TRUE, GetCurrentProcessId(), SIGSHUT);
+			WaitForSingleObject(hEvent, INFINITE);
+			JRD_shutdown_all(false);
+		}
 	}
 
 #ifdef DEBUG_GDS_ALLOC
-	// In Debug mode - this will report all server-side memory leaks
-	// due to remote access
-
+/* In Debug mode - this will report all server-side memory leaks
+ * due to remote access
+ */
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	char name[MAXPATHLEN];
 	gds__prefix(name, "memdebug.log");
 	FILE* file = fopen(name, "w+t");
-	if (file)
-	{
-		fprintf(file, "Global memory pool allocated objects\n");
-		getDefaultMemoryPool()->print_contents(file);
-		fclose(file);
+	if (file) {
+	  fprintf(file, "Global memory pool allocated objects\n");
+	  getDefaultMemoryPool()->print_contents(file);
+	  fclose(file);
 	}
 #endif
 
@@ -344,9 +365,15 @@ THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
  * Functional description
  *
  **************************************/
-	ThreadCounter counter;
+	void *thread = NULL; // silence non initialized warning
 
-	service_connection((rem_port*) arg);
+	if (!(server_flag & SRVR_non_service)) {
+		thread = CNTL_insert_thread();
+	}
+	service_connection((rem_port*)arg);
+	if (!(server_flag & SRVR_non_service)) {
+		CNTL_remove_thread(thread);
+	}
 	return 0;
 }
 
@@ -362,32 +389,33 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	ThreadCounter counter;
+	void *thread = NULL; // silence non initialized warning
+	if (!(server_flag & SRVR_non_service))
+		thread = CNTL_insert_thread();
 
 	ISC_STATUS_ARRAY status_vector;
-	while (!server_shutdown)
+	while (true)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
-
-		if (!port)
-		{
-			if (status_vector[1]) {
-				gds__log_status(0, status_vector);
-			}
+		THREAD_ENTER();
+		rem_port* port =
+			INET_connect(protocol_inet, NULL, status_vector, server_flag, 0, 0);
+		THREAD_EXIT();
+		if (!port) {
+			gds__log_status(0, status_vector);
 			break;
 		}
-		if (server_flag & SRVR_multi_client)
-		{
+		if (server_flag & SRVR_multi_client) {
 			SRVR_multi_thread(port, server_flag);
 			break;
 		}
-		if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
-		{
-			gds__log("INET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
+		else {
+			gds__thread_start(process_connection_thread, port,
+							  THREAD_medium, 0, 0);
 		}
 	}
+
+	if (!(server_flag & SRVR_non_service))
+		CNTL_remove_thread(thread);
 	return 0;
 }
 
@@ -403,31 +431,35 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	ThreadCounter counter;
+	void *thread = NULL; // silence non initialized warning
 
-	ISC_STATUS_ARRAY status_vector;
-	while (!server_shutdown)
-	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
-
-		if (!port)
-		{
-			const ISC_STATUS err = status_vector[1];
-			if (err)
-			{
-				if (err == isc_net_server_shutdown)
-					break;
-				gds__log_status(0, status_vector);
-			}
-		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
-		{
-			gds__log("WNET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
-		}
+	if (!(server_flag & SRVR_non_service)) {
+		thread = CNTL_insert_thread();
 	}
 
+	ISC_STATUS_ARRAY status_vector;
+	while (true)
+	{
+		THREAD_ENTER();
+		rem_port* port =
+			WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
+		THREAD_EXIT();
+		if (!port) {
+			if (status_vector[1] != isc_io_error ||
+				status_vector[6] != isc_arg_win32 ||
+				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED)
+			{
+				gds__log_status(0, status_vector);
+			}
+			break;
+		}
+		gds__thread_start(process_connection_thread, port,
+						  THREAD_medium, 0, 0);
+	}
+
+	if (!(server_flag & SRVR_non_service)) {
+		CNTL_remove_thread(thread);
+	}
 	return 0;
 }
 
@@ -444,36 +476,33 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *   Starts xnet server side interprocess thread
  *
  **************************************/
-	ThreadCounter counter;
+	void *thread = NULL; // silence non initialized warning
+
+	if (!(server_flag & SRVR_non_service))
+		thread = CNTL_insert_thread();
 
 	ISC_STATUS_ARRAY status_vector;
-	while (!server_shutdown)
+	while (true)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = XNET_connect(/*NULL,*/ NULL, status_vector, server_flag);
-
-		if (!port)
-		{
-			const ISC_STATUS err = status_vector[1];
-			if (err)
-			{
-				if (err == isc_net_server_shutdown)
-					break;
-				gds__log_status(0, status_vector);
-			}
+		THREAD_ENTER();
+		rem_port* port =
+			XNET_connect(NULL, NULL, status_vector, server_flag);
+		THREAD_EXIT();
+		if (!port) {
+			gds__log_status(0, status_vector);
+			break;
 		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
-		{
-			gds__log("XNET: can't start worker thread, connection terminated");
-			port->disconnect(NULL, NULL);
-		}
+		gds__thread_start(process_connection_thread, port,
+						  THREAD_medium, 0, 0);
 	}
 
+	if (!(server_flag & SRVR_non_service))
+		CNTL_remove_thread(thread);
 	return 0;
 }
 
 
-static void service_connection(rem_port* port)
+static void service_connection( rem_port* port)
 {
 /**************************************
  *
@@ -485,7 +514,7 @@ static void service_connection(rem_port* port)
  *
  **************************************/
 
-	SRVR_main(port, server_flag & ~SRVR_multi_client);
+	SRVR_main(port, (USHORT) (server_flag & ~SRVR_multi_client));
 }
 
 
@@ -500,7 +529,6 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	ThreadCounter counter;
 
 	if (server_flag & SRVR_inet) {
 		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
@@ -515,7 +543,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 }
 
 
-static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
+static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 {
 /**************************************
  *
@@ -532,20 +560,17 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
  *      INVALID_HANDLE_VALUE otherwise.
  *
  **************************************/
+	TEXT buffer[32];
 	bool delimited = false;
 
 	HANDLE connection_handle = INVALID_HANDLE_VALUE;
 
 	const TEXT* p = lpszArgs;
-	while (*p)
-	{
+	while (*p) {
 		TEXT c;
 		if (*p++ == '-')
-		{
 			while ((*p) && (c = *p++) && (c != ' '))
-			{
-				switch (UPPER(c))
-				{
+				switch (UPPER(c)) {
 				case 'A':
 					*pserver_flag |= SRVR_non_service;
 					break;
@@ -562,46 +587,13 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 				case 'H':
 					while (*p && *p == ' ')
 						p++;
-					if (*p)
-					{
-						TEXT buffer[32];
-						char* pp = buffer;
-						while (*p && *p != ' ' && (pp - buffer < sizeof(buffer) - 1))
-						{
-							if (*p == '@')
-							{
-								p++;
-								*pp++ = '\0';
-								connection_handle = (HANDLE) atol(buffer);
-								pp = buffer;
-							}
-							else
-								*pp++ = *p++;
+					if (*p) {
+						char *pp = buffer;
+						while (*p && *p != ' ') {
+							*pp++ = *p++;
 						}
 						*pp++ = '\0';
-
-						if (connection_handle == INVALID_HANDLE_VALUE) {
-							connection_handle = (HANDLE) atol(buffer);
-						}
-						else
-						{
-							const DWORD parent_id = atol(buffer);
-							HANDLE parent_handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, parent_id);
-							if (!parent_handle)
-							{
-								gds__log("SERVER: OpenProcess failed. Errno = %d, parent PID = %d", GetLastError(), parent_id);
-								exit(FINI_ERROR);
-							}
-
-							if (!DuplicateHandle(parent_handle, connection_handle, GetCurrentProcess(), &connection_handle,
-									0, FALSE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE))
-							{
-								gds__log("SERVER: DuplicateHandle failed. Errno = %d, parent PID = %d", GetLastError(), parent_id);
-								exit(FINI_ERROR);
-							}
-
-							CloseHandle(parent_handle);
-						}
+						connection_handle = (HANDLE) atol(buffer);
 					}
 					break;
 #endif
@@ -610,8 +602,17 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					*pserver_flag |= SRVR_inet;
 					break;
 
-				case 'M':
-					*pserver_flag |= SRVR_multi_client;
+				case 'K':
+					while (*p && *p == ' ')
+						p++;
+					if (*p) {
+						char *pp = buffer;
+						while (*p && *p != ' ') {
+							*pp++ = *p++;
+						}
+						*pp++ = '\0';
+						shutdown_pid = atoi(buffer);
+					}
 					break;
 
 				case 'N':
@@ -621,8 +622,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 				case 'P':	// Specify a port or named pipe other than the default
 					while (*p && *p == ' ')
 						p++;
-					if (*p)
-					{
+					if (*p) {
 						// Assumed the buffer size for both protocols may differ
 						// in the future, hence I did generic code.
 						char* pi = protocol_inet;
@@ -655,13 +655,11 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					delimited = false;
 					while (*p && *p == ' ')
 						p++;
-					if (*p && *p == '"')
-					{
+					if (*p && *p == '"') {
 						p++;
 						delimited = true;
 					}
-					if (delimited)
-					{
+					if (delimited) {
 						char* pi = instance;
 						const char* pend = instance + sizeof(instance) - 1;
 						while (*p && *p != '"' && pi < pend) {
@@ -671,10 +669,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						if (*p && *p == '"')
 							p++;
 					}
-					else
-					{
-						if (*p && *p != '-')
-						{
+					else {
+						if (*p && *p != '-') {
 							char* pi = instance;
 							const char* pend = instance + sizeof(instance) - 1;
 							while (*p && *p != ' ' && pi < pend) {
@@ -701,32 +697,12 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					exit(FINI_OK);
 
 				default:
-					// In case of something unrecognized, just
-					// continue, since we have already taken it off
-					// of p.
+					/* In case of something unrecognized, just
+					 * continue, since we have already taken it off
+					 * of p. */
 					break;
 				}
-			}
-		}
 	}
-
-	if ((*pserver_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0)
-	{
-		*pserver_flag |= SRVR_wnet;
-		*pserver_flag |= SRVR_inet;
-		*pserver_flag |= SRVR_xnet;
-	}
-
 	return connection_handle;
 }
 
-static int wait_threads(const int, const int, void*)
-{
-	server_shutdown = true;
-
-	if (!ThreadCounter::wait()) {
-		gds__log("Timeout expired during remote server shutdown");
-	}
-
-	return FB_SUCCESS;
-}

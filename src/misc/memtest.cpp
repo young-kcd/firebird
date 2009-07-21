@@ -1,6 +1,6 @@
 /*
  * MTEST.C -- A test program to compare performance of memcpy()/memset()
- * 	   -- vs. MOV_fast*()/MOV_fill() functions.
+ * 	   -- vs. MOV_fast*()/MOV_fill() functions. 
  *
  *  This program does speed tests on various implementions of "copy buffer"
  *  and "initialize buffer" operations.  It's purpose is as a development
@@ -13,13 +13,13 @@
  *	Compiler optimization.
  *	Automatic compiler in-lining optimization.
  *
- * Because of the short nature of the operation being timed (eg: copy 20
+ * Because of the short nature of the operation being timed (eg: copy 20 
  * bytes) - the operation is repeated several times for each 'timing'.
  *
  * Each timing run is then also repeated several times to take an average.
  *
- * Program originally by Zouhair Janbay - modified
- * 1996-Feb-09 David Schnepper
+ * Program originally by Zouhair Janbay - modified 
+ * 1996-Feb-09 David Schnepper 
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
@@ -41,11 +41,11 @@
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/mov.c"
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -361,8 +361,8 @@ do_test_memcpy(src, dest, size)
 			if (size < SIZE_OPTIMAL_MEMCPY_INLINE)
 				for (p = dest, q = src, p_end = p + size; p < p_end;)
 					*p++ = *q++;
-			else if ((size >= SIZE_OPTIMAL_MEMCPY_MEMCPY) &&
-					 (((((U_IPTR) dest) % sizeof(ULONG)) == 0) &&
+			else if ((size >= SIZE_OPTIMAL_MEMCPY_MEMCPY)
+					 && (((((U_IPTR) dest) % sizeof(ULONG)) == 0) &&
 						 ((((U_IPTR) src) % sizeof(ULONG)) == 0)))
 				MOV_faster((SLONG *) src, (SLONG *) dest, (ULONG) size);
 			else

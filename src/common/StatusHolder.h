@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird exceptions classes
  *	MODULE:			StatusHolder.h
- *	DESCRIPTION:	Firebird's exception classes
+ *	DESCRIPTION:	Firebird's exception classes 
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -35,7 +35,7 @@ namespace Firebird {
 class StatusHolder
 {
 public:
-	explicit StatusHolder(const ISC_STATUS* status = NULL)
+	StatusHolder(const ISC_STATUS* status = NULL)
 	{
 		memset(m_status_vector, 0, sizeof(m_status_vector));
 		m_raised = false;
@@ -51,20 +51,20 @@ public:
 	void clear();
 	void raise();
 
-	ISC_STATUS getError()
-	{
+	ISC_STATUS getError() 
+	{ 
 		if (m_raised) {
 			clear();
 		}
-		return m_status_vector[1];
+		return m_status_vector[1]; 
 	}
-
-	const ISC_STATUS* value()
-	{
+	
+	const ISC_STATUS* value()  
+	{ 
 		if (m_raised) {
 			clear();
 		}
-		return m_status_vector;
+		return m_status_vector; 
 	}
 
 private:

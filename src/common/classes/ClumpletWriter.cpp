@@ -36,20 +36,20 @@
 
 namespace Firebird {
 
-ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) :
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) : 
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	initNewBuffer(tag);
 	rewind();
 }
-
-ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit, UCHAR tag) :
-	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+ 
+ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit, UCHAR tag) : 
+	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	initNewBuffer(tag);
 	rewind();
 }
-
+ 
 void ClumpletWriter::initNewBuffer(UCHAR tag)
 {
 	switch (kind)
@@ -72,7 +72,7 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 }
 
 ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
@@ -85,7 +85,7 @@ ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t
 
 ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 							   const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
+	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
@@ -103,14 +103,13 @@ void ClumpletWriter::reset(UCHAR tag)
 	rewind();
 }
 
-void ClumpletWriter::reset(const UCHAR* buffer, const size_t buffLen)
+void ClumpletWriter::reset(const UCHAR* buffer, size_t buffLen)
 {
 	dynamic_buffer.clear();
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
 	}
-	else
-	{
+	else {
 		UCHAR tag = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? getBufferTag() : 0;
 		initNewBuffer(tag);
 	}
@@ -122,54 +121,38 @@ void ClumpletWriter::size_overflow()
 	fatal_exception::raise("Clumplet buffer size limit reached");
 }
 
-void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value)
+void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
 {
-	int shift = 0;
-	while (length--)
-	{
-		*ptr++ = (UCHAR) (value >> shift);
-		shift += 8;
-	}
+#if defined(WORDS_BIGENDIAN)
+	UCHAR bytes[4];
+	const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+	bytes[0] = ptr[3];
+	bytes[1] = ptr[2];
+	bytes[2] = ptr[1];
+	bytes[3] = ptr[0];
+	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
+#else
+	insertBytesLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+#endif 
 }
 
-void ClumpletWriter::insertInt(UCHAR tag, const SLONG value)
+void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value)
 {
-	UCHAR bytes[sizeof(SLONG)];
-
-	toVaxInteger(bytes, sizeof(bytes), value);
+#if defined(WORDS_BIGENDIAN)
+	UCHAR bytes[8];
+	const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+	bytes[0] = ptr[7];
+	bytes[1] = ptr[6];
+	bytes[2] = ptr[5];
+	bytes[3] = ptr[4];
+	bytes[4] = ptr[3];
+	bytes[5] = ptr[2];
+	bytes[6] = ptr[1];
+	bytes[7] = ptr[0];
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
-}
-
-void ClumpletWriter::insertBigInt(UCHAR tag, const SINT64 value)
-{
-	UCHAR bytes[sizeof(SINT64)];
-
-	toVaxInteger(bytes, sizeof(bytes), value);
-	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
-}
-
-void ClumpletWriter::insertDouble(UCHAR tag, const double value)
-{
-	union {
-		double temp_double;
-		SLONG temp_long[2];
-	} temp;
-
-	fb_assert(sizeof(double) == sizeof(temp));
-
-	temp.temp_double = value;
-	UCHAR bytes[sizeof(double)];
-	toVaxInteger(bytes, sizeof(SLONG), temp.temp_long[FB_LONG_DOUBLE_FIRST]);
-	toVaxInteger(bytes + sizeof(SLONG), sizeof(SLONG), temp.temp_long[FB_LONG_DOUBLE_SECOND]);
-	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
-}
-
-void ClumpletWriter::insertTimeStamp(UCHAR tag, const ISC_TIMESTAMP value)
-{
-	UCHAR bytes[sizeof(ISC_TIMESTAMP)];
-	toVaxInteger(bytes, sizeof(SLONG), value.timestamp_date);
-	toVaxInteger(bytes + sizeof(SLONG), sizeof(SLONG), value.timestamp_time);
-	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
+#else
+	insertBytesLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+#endif 
 }
 
 void ClumpletWriter::insertString(UCHAR tag, const string& str)
@@ -197,18 +180,17 @@ void ClumpletWriter::insertByte(UCHAR tag, const UCHAR byte)
 	insertBytesLengthCheck(tag, &byte, 1);
 }
 
-void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length)
+void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_t length)
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.getCount())
-	{
+	if (cur_offset > dynamic_buffer.getCount()) {
 		usage_mistake("write past EOF");
 		return;
 	}
-
+	
 	// Check length according to clumplet type
-	const ClumpletType t = getClumpletType(tag);
+	ClumpletType t = getClumpletType(tag);
 	UCHAR lenSize = 0;
 	switch (t)
 	{
@@ -275,7 +257,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 	}
 
 	// Insert the data
-	const size_t saved_offset = cur_offset;
+	size_t saved_offset = cur_offset;
 	dynamic_buffer.insert(cur_offset++, tag);
 	switch (lenSize)
 	{
@@ -284,23 +266,42 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 		break;
 	case 2:
 		{
+			USHORT value = static_cast<USHORT>(length);
+			fb_assert(sizeof(USHORT) == 2);
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+#if defined(WORDS_BIGENDIAN)
 			UCHAR b[2];
-			toVaxInteger(b, sizeof(b), length);
+			b[0] = ptr[1];
+			b[1] = ptr[0];
 			dynamic_buffer.insert(cur_offset, b, sizeof(b));
+#else
+			dynamic_buffer.insert(cur_offset, ptr, sizeof(value));
+#endif
 			cur_offset += 2;
 		}
 		break;
 	case 4:
 		{
+			ULONG value = static_cast<ULONG>(length);
+			fb_assert(sizeof(ULONG) == 4);
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+#if defined(WORDS_BIGENDIAN)
 			UCHAR b[4];
-			toVaxInteger(b, sizeof(b), length);
+			b[0] = ptr[3];
+			b[1] = ptr[2];
+			b[2] = ptr[1];
+			b[3] = ptr[0];
 			dynamic_buffer.insert(cur_offset, b, sizeof(b));
+#else
+			dynamic_buffer.insert(cur_offset, ptr, sizeof(value));
+#endif
 			cur_offset += 4;
 		}
 		break;
 	}
 	dynamic_buffer.insert(cur_offset, bytes, length);
-	const size_t new_offset = cur_offset + length;
+	cur_offset += length;
+	size_t new_offset = cur_offset;
 	cur_offset = saved_offset;
     adjustSpbState();
 	cur_offset = new_offset;
@@ -316,8 +317,7 @@ void ClumpletWriter::insertEndMarker(UCHAR tag)
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
-	if (cur_offset > dynamic_buffer.getCount())
-	{
+	if (cur_offset > dynamic_buffer.getCount()) {
 		usage_mistake("write past EOF");
 		return;
 	}
@@ -339,17 +339,15 @@ void ClumpletWriter::deleteClumplet()
 	const UCHAR* buffer_end = getBufferEnd();
 
 	// Check for EOF
-	if (clumplet >= buffer_end)
-	{
+	if (clumplet >= buffer_end) {
 		usage_mistake("write past EOF");
 		return;
 	}
 
-	if (buffer_end - clumplet < 2)
-	{
+	if (buffer_end - clumplet < 2) {
 		// It appears we're erasing EOF marker
 		dynamic_buffer.shrink(cur_offset);
-	}
+	} 
 	else {
 		dynamic_buffer.removeCount(cur_offset, getClumpletSize(true, true, true));
 	}
@@ -368,3 +366,4 @@ bool ClumpletWriter::deleteWithTag(UCHAR tag)
 }
 
 } // namespace
+

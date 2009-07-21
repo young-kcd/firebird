@@ -1,10 +1,6 @@
-Firebird Database Server 2.5.0 pre alpha
+Firebird Database Server 2.1
 ==================================================
 
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 Este documento es una guía para instalar este paquete
 de Firebird 2.1 en la plataforma Windows. Estas notas
@@ -73,7 +69,7 @@ o Desafortunadamente, el instalador no puede detectar
   con certeza si una versión de Firebird Classic server
   se encuentra en ejecución.
 
-o Existen areas conocidas de superposición entre las
+o Existen áreas conocidas de superposición entre las
   instalaciones de de 32 y de 64 bits:
 
   - El instalador de servicios (instsvc) utiliza la

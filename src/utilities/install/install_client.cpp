@@ -3,25 +3,25 @@
  *	MODULE:			install_client.cpp
  *	DESCRIPTION:	Program which install the FBCLIENT.DLL or GDS32.DLL
  *
- *  The contents of this file are subject to the Initial Developer's
- *  Public License Version 1.0 (the "License"); you may not use this
- *  file except in compliance with the License. You may obtain a copy
+ *  The contents of this file are subject to the Initial Developer's 
+ *  Public License Version 1.0 (the "License"); you may not use this 
+ *  file except in compliance with the License. You may obtain a copy 
  *  of the License here:
  *
  *    http://www.ibphoenix.com?a=ibphoenix&page=ibp_idpl.
  *
- *  Software distributed under the License is distributed on an "AS
- *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ *  Software distributed under the License is distributed on an "AS 
+ *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or 
  *  implied. See the License for the specific language governing rights
  *  and limitations under the License.
  *
  *  The Original Code is (C) 2003 Olivier Mascia.
- *
+ *  
  *  The Initial Developer of the Original Code is Olivier Mascia.
  *
  *  All Rights Reserved.
- *
- *  Contributor(s): ______________________________________.
+ *  
+ *  Contributor(s): ______________________________________. 
  *
  */
 
@@ -35,8 +35,8 @@
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/install_proto.h"
 
-static USHORT inst_error(ULONG, const TEXT*);
-static void usage_exit();
+static USHORT inst_error(ULONG, const TEXT *);
+static void usage_exit(void);
 
 static const struct
 {
@@ -156,9 +156,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					sw_version = true;
 					break;
 
-				case '?':
-					usage_exit();
-
 				default:
 					printf("Unknown switch \"%s\"\n", p);
 					usage_exit();
@@ -167,7 +164,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	if (sw_version)
-		printf("instclient version %s\n", FB_VERSION);
+		printf("instclient version %s\n", GDS_VERSION);
 
 	if (sw_command == COMMAND_NONE || sw_client == CLIENT_NONE)
 	{
@@ -179,7 +176,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT status;
 	switch (sw_command)
 	{
-
+		
 		case COMMAND_INSTALL:
 			status = CLIENT_install(directory, sw_client, sw_force, inst_error);
 			switch (status)
@@ -272,7 +269,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 }
 
-static USHORT inst_error(ULONG status, const TEXT* string)
+static USHORT inst_error(ULONG status, const TEXT * string)
 {
 /**************************************
  *
@@ -314,7 +311,7 @@ static USHORT inst_error(ULONG status, const TEXT* string)
 	return FB_FAILURE;
 }
 
-static void usage_exit()
+static void usage_exit(void)
 {
 /**************************************
  *

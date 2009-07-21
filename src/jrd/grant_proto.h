@@ -26,10 +26,7 @@
 
 #include "../common/classes/array.h"
 
-namespace Jrd
-{
-	class DeferredWork;
-}
+class Jrd::DeferredWork;
 
 bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
 

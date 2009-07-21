@@ -55,10 +55,8 @@ protected:
 		: id(_id),
 		  cs(_cs)
 	{
-		sqlMatchAnyLength = getConvFromUnicode().convert(
-			sizeof(SQL_MATCH_ANY_CHARS), &SQL_MATCH_ANY_CHARS, sizeof(sqlMatchAny), sqlMatchAny);
-		sqlMatchOneLength = getConvFromUnicode().convert(
-			sizeof(SQL_MATCH_1_CHAR), &SQL_MATCH_1_CHAR, sizeof(sqlMatchOne), sqlMatchOne);
+		sqlMatchAnyLength = getConvFromUnicode().convert(sizeof(SQL_MATCH_ANY_CHARS), &SQL_MATCH_ANY_CHARS, sizeof(sqlMatchAny), sqlMatchAny);
+		sqlMatchOneLength = getConvFromUnicode().convert(sizeof(SQL_MATCH_1_CHAR), &SQL_MATCH_1_CHAR, sizeof(sqlMatchOne), sqlMatchOne);
 	}
 
 private:
@@ -90,8 +88,8 @@ public:
 
 		if (cs->charset_fn_well_formed)
 			return cs->charset_fn_well_formed(cs, len, str, offendingPos);
-
-		return true;
+		else
+			return true;
 	}
 
 	CsConvert getConvToUnicode() const { return CsConvert(cs, NULL); }
@@ -123,8 +121,7 @@ public:
 	}
 
 	virtual ULONG length(ULONG srcLen, const UCHAR* src, bool countTrailingSpaces) const = 0;
-	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
-							ULONG startPos, ULONG length) const = 0;
+	virtual ULONG substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length) const = 0;
 
 private:
 	USHORT id;

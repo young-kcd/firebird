@@ -91,76 +91,76 @@ static bool check_filename(SYM, bool);
 static SYM copy_symbol(SYM);
 static DUDLEY_FLD create_global_field(DUDLEY_FLD);
 #ifdef FLINT_CACHE
-static FIL define_cache();
+static FIL define_cache(void);
 #endif
 static void define_database(enum act_t);
-static void define_field();
-static FIL define_file();
-static void define_filter();
-static void define_function();
-static void define_generator();
-static void define_index();
+static void define_field(void);
+static FIL define_file(void);
+static void define_filter(void);
+static void define_function(void);
+static void define_generator(void);
+static void define_index(void);
 //static FIL define_log_file(USHORT);
-static void define_old_trigger();
-static void define_relation();
-static void define_security_class();
-static void define_shadow();
-static void define_trigger();
-static void define_type();
-static void define_view();
-static void drop_filter();
-static void drop_function();
-static void drop_gfield();
-static void drop_index();
-static void drop_relation();
-static void drop_security_class();
-static void drop_shadow();
-static void drop_trigger();
-static void drop_type();
+static void define_old_trigger(void);
+static void define_relation(void);
+static void define_security_class(void);
+static void define_shadow(void);
+static void define_trigger(void);
+static void define_type(void);
+static void define_view(void);
+static void drop_filter(void);
+static void drop_function(void);
+static void drop_gfield(void);
+static void drop_index(void);
+static void drop_relation(void);
+static void drop_security_class(void);
+static void drop_shadow(void);
+static void drop_trigger(void);
+static void drop_type(void);
 static void end_text(TXT);
 static SYM gen_trigger_name(TRG_T, DUDLEY_REL);
-static int get_system_flag();
+static int get_system_flag(void);
 static void get_trigger_attributes(int *, int *, int *);
-static void grant_user_privilege();
+static void grant_user_privilege(void);
 static DUDLEY_CTX lookup_context(SYM, dudley_lls*);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static ACT make_action(enum act_t, DBB);
 static ACT make_computed_field(DUDLEY_FLD);
 static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL);
 static ACT make_global_field(DUDLEY_FLD);
-static void mod_old_trigger();
-static void modify_field();
-static void modify_index();
-static void modify_relation();
-static void modify_security_class();
-static void modify_trigger();
+static void mod_old_trigger(void);
+static void modify_field(void);
+static void modify_index(void);
+static void modify_relation(void);
+static void modify_security_class(void);
+static void modify_trigger(void);
 static void modify_trigger_action(DUDLEY_TRG, DUDLEY_REL);
-static void modify_type();
-static void modify_view();
-static bool parse_action();
+static void modify_type(void);
+static void modify_view(void);
+static bool parse_action(void);
 static void parse_array(DUDLEY_FLD);
-static TXT parse_description();
-static void parse_end();
+static TXT parse_description(void);
+static void parse_end(void);
 static DUDLEY_FLD parse_field(DUDLEY_FLD);
 static void parse_field_clauses(DUDLEY_FLD);
 static void parse_field_dtype(DUDLEY_FLD);
 static void parse_field_subtype(DUDLEY_FLD);
 static FUNCARG parse_function_arg(FUNC, USHORT *);
-static SCE parse_identifier();
-static OBJ_T parse_object();
-static int parse_page_size();
-static SLONG parse_privileges();
-static void revoke_user_privilege();
+static SCE parse_identifier(void);
+static OBJ_T parse_object(void);
+static int parse_page_size(void);
+static SLONG parse_privileges(void);
+static void revoke_user_privilege(void);
 static SLONG score_entry(SCE);
-static DUDLEY_NOD set_generator();
+static DUDLEY_NOD set_generator(void);
 static void sort_out_attributes(DUDLEY_TRG, SLONG, SLONG, SLONG);
-static TXT start_text();
+static TXT start_text(void);
 static void validate_field(DUDLEY_FLD);
 
 static dudley_lls* local_context;
 
 
-void PARSE_actions()
+void PARSE_actions(void)
 {
 /**************************************
  *
@@ -242,7 +242,7 @@ FUNC PARSE_function(int existingFunction)
  *
  * Functional description
  *	Get the function block associated with the current token.  Also
- *	advance the token.  Create a new function requested.
+ *	advance the token.  Create a new function requested.  
  *
  **************************************/
 	if (dudleyGlob.DDL_token.tok_type != tok_ident)
@@ -253,7 +253,7 @@ FUNC PARSE_function(int existingFunction)
 
 	FUNC function;
 	if (symbol && (function = (FUNC) symbol->sym_object) &&
-		function->func_database == dudleyGlob.database)
+		function->func_database == dudleyGlob.database) 
 	{
 		LEX_token();
 		return function;
@@ -277,7 +277,7 @@ FUNC PARSE_function(int existingFunction)
 }
 
 
-enum kwwords PARSE_keyword()
+enum kwwords PARSE_keyword(void)
 {
 /**************************************
  *
@@ -324,7 +324,7 @@ DUDLEY_NOD PARSE_make_list(dudley_lls* stack)
 
 	while (stack)
 		node->nod_arg[--count] = LLS_POP(&stack);
-
+	
 	return node;
 }
 
@@ -369,7 +369,7 @@ bool PARSE_match( enum kwwords keyword)
 
 	for (SYM symbol = dudleyGlob.DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
-			symbol->sym_keyword == (int) keyword)
+			symbol->sym_keyword == (int) keyword) 
 		{
 			LEX_token();
 			return true;
@@ -379,7 +379,7 @@ bool PARSE_match( enum kwwords keyword)
 }
 
 
-int PARSE_number()
+int PARSE_number(void)
 {
 /**************************************
  *
@@ -406,7 +406,7 @@ int PARSE_number()
 }
 
 
-DUDLEY_REL PARSE_relation()
+DUDLEY_REL PARSE_relation(void)
 {
 /**************************************
  *
@@ -560,7 +560,7 @@ static SYM copy_symbol( SYM old_name)
  *    does the implicit invocation of same-named
  *    global fields.
  *
- *    We'll just leave the type blank for now.
+ *    We'll just leave the type blank for now. 
  *
  **************************************/
 	SYM new_name = (SYM) DDL_alloc(SYM_LEN + old_name->sym_length);
@@ -631,7 +631,7 @@ static DUDLEY_FLD create_global_field( DUDLEY_FLD local_field)
 }
 
 #ifdef FLINT_CACHE
-static FIL define_cache()
+static FIL define_cache(void)
 {
 /**************************************
  *
@@ -674,7 +674,7 @@ static void define_database( enum act_t action_type)
  **************************************/
 	if (dudleyGlob.database)
 		DDL_error_abort(0, 120);
-		// msg 120: GDEF processes only one database at a time
+		// msg 120: GDEF processes only one database at a time 
 
 	dudleyGlob.database = (DBB) DDL_alloc(sizeof(dbb));
 	dudleyGlob.database->dbb_name = PARSE_symbol(tok_quoted);
@@ -723,8 +723,8 @@ static void define_database( enum act_t action_type)
 				dudleyGlob.database->dbb_flags |= DBB_null_security_class;
 /*
 			else if (PARSE_match(KW_LOG_FILE)) {
-				if ((dudleyGlob.database->dbb_flags & DBB_log_default) ||
-					(dudleyGlob.database->dbb_logfiles))
+				if ((dudleyGlob.database->dbb_flags & DBB_log_default)
+					|| (dudleyGlob.database->dbb_logfiles))
 				{
 					PARSE_error(337, 0, 0);
 				}
@@ -740,7 +740,7 @@ static void define_database( enum act_t action_type)
 */
 			else
 				PARSE_error(121, 0, 0);
-			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
+			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped 
 		}
 		else if (PARSE_match(KW_FILE)) {
 			FIL file = define_file();
@@ -770,8 +770,8 @@ static void define_database( enum act_t action_type)
 			dudleyGlob.database->dbb_grp_cmt_wait = PARSE_number();
 		}
 		else if (PARSE_match(KW_LOG_FILE)) {
-			if ((dudleyGlob.database->dbb_flags & DBB_log_default) ||
-				(dudleyGlob.database->dbb_logfiles))
+			if ((dudleyGlob.database->dbb_flags & DBB_log_default)
+				|| (dudleyGlob.database->dbb_logfiles))
 			{
 					PARSE_error(338, 0, 0);
 			}
@@ -830,7 +830,7 @@ static void define_database( enum act_t action_type)
 }
 
 
-static void define_field()
+static void define_field(void)
 {
 /**************************************
  *
@@ -858,7 +858,7 @@ static void define_field()
 }
 
 
-static FIL define_file()
+static FIL define_file(void)
 {
 /**************************************
  *
@@ -893,7 +893,7 @@ static FIL define_file()
 }
 
 
-static void define_filter()
+static void define_filter(void)
 {
 /**************************************
  *
@@ -939,7 +939,7 @@ static void define_filter()
 }
 
 
-static void define_function()
+static void define_function(void)
 {
 /**************************************
  *
@@ -995,7 +995,7 @@ static void define_function()
 }
 
 
-static void define_generator()
+static void define_generator(void)
 {
 /**************************************
  *
@@ -1016,7 +1016,7 @@ static void define_generator()
 }
 
 
-static void define_index()
+static void define_index(void)
 {
 /**************************************
  *
@@ -1113,7 +1113,7 @@ static FIL define_log_file( USHORT log_type)
 		else if (PARSE_match(KW_RAW_PARTITIONS)) {
 			if (log_type != DBB_log_preallocated)
 				PARSE_error(332, 0, 0);
-			// msg 332: Partitions not supported in series of log file specification
+			// msg 332: Partitions not supported in series of log file specification 
 			PARSE_match(KW_EQUALS);
 			file->fil_partitions = PARSE_number();
 			file->fil_raw = LOG_raw;
@@ -1135,7 +1135,7 @@ static FIL define_log_file( USHORT log_type)
 */
 
 
-static void define_old_trigger()
+static void define_old_trigger(void)
 {
 /**************************************
  *
@@ -1186,7 +1186,7 @@ static void define_old_trigger()
 }
 
 
-static void define_relation()
+static void define_relation(void)
 {
 /**************************************
  *
@@ -1200,10 +1200,11 @@ static void define_relation()
  **************************************/
 	DUDLEY_REL relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
-		((relation->rel_flags & rel_marked_for_creation) || EXE_relation(relation)))
+		((relation->rel_flags & rel_marked_for_creation)
+		 || EXE_relation(relation)))
 	{
 		PARSE_error(137, relation->rel_name->sym_string, 0);
-		// msg 137: relation %s already exists
+		// msg 137: relation %s already exists 
 	}
 
 	if (PARSE_match(KW_EXTERNAL_FILE)) {
@@ -1286,7 +1287,7 @@ static void define_relation()
 }
 
 
-static void define_security_class()
+static void define_security_class(void)
 {
 /**************************************
  *
@@ -1323,7 +1324,7 @@ static void define_security_class()
 }
 
 
-static void define_shadow()
+static void define_shadow(void)
 {
 /**************************************
  *
@@ -1333,7 +1334,7 @@ static void define_shadow()
  *
  * Functional description
  *	Define a shadow file to the database.
- *	Parse it as a set of normal file additions,
+ *	Parse it as a set of normal file additions, 
  *	setting the shadow number on all files.
  *
  **************************************/
@@ -1350,7 +1351,7 @@ static void define_shadow()
 			PARSE_error(139, 0, 0);	/* msg 139: shadow number must be a positive integer */
 	}
 
-/* match the keywords MANUAL or AUTO to imply whether the shadow
+/* match the keywords MANUAL or AUTO to imply whether the shadow 
    should be automatically deleted when something goes awry */
 
 	if (PARSE_match(KW_MANUAL))
@@ -1364,7 +1365,7 @@ static void define_shadow()
 	shadow->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(shadow->fil_name, false))
 		PARSE_error(297, 0, 0);
-	// msg 297: A node name is not permitted in a shadow or secondary file name
+	// msg 297: A node name is not permitted in a shadow or secondary file name 
 
 	if (PARSE_match(KW_LENGTH)) {
 		shadow->fil_length = PARSE_number();
@@ -1390,7 +1391,7 @@ static void define_shadow()
 }
 
 
-static void define_trigger()
+static void define_trigger(void)
 {
 /**************************************
  *
@@ -1423,7 +1424,7 @@ static void define_trigger()
 	trigger->trg_sequence = trg_sequence;
 
 	if (!(int) trigger->trg_type)	/* still none */
-		PARSE_error(141, dudleyGlob.DDL_token.tok_string, 0);
+		PARSE_error(141, dudleyGlob.DDL_token.tok_string, 0);	
 		/* msg 141: expected STORE, MODIFY, ERASE, encountered \"%s\" */
 
 	bool action = false;
@@ -1476,7 +1477,7 @@ static void define_trigger()
 }
 
 
-static void define_type()
+static void define_type(void)
 {
 /**************************************
  *
@@ -1508,7 +1509,7 @@ static void define_type()
 }
 
 
-static void define_view()
+static void define_view(void)
 {
 /**************************************
  *
@@ -1525,10 +1526,11 @@ static void define_view()
 
 	DUDLEY_REL relation = PARSE_relation();
 	if (!(relation->rel_flags & rel_marked_for_delete) &&
-		((relation->rel_flags & rel_marked_for_creation) || EXE_relation(relation)))
+		((relation->rel_flags & rel_marked_for_creation)
+		 || EXE_relation(relation)))
 	{
 		PARSE_error(300, relation->rel_name->sym_string, 0);
-		// msg 300: relation %s already exists
+		// msg 300: relation %s already exists 
 	}
 
 	PARSE_match(KW_OF);
@@ -1605,12 +1607,12 @@ static void define_view()
 
 				if (PARSE_match(KW_COMPUTED)) {
 					PARSE_match(KW_BY);
-					if (!PARSE_match(KW_LEFT_PAREN))
+					if (!(PARSE_match(KW_LEFT_PAREN)))
 						PARSE_error(148, 0, 0);	/* msg 148: computed by expression must be parenthesized  */
 					field->fld_compute_src = start_text();
 					field->fld_computed = EXPR_value(0, NULL);
 					end_text(field->fld_compute_src);
-					if (!PARSE_match(KW_RIGHT_PAREN))
+					if (!(PARSE_match(KW_RIGHT_PAREN)))
 						PARSE_error(149, 0, 0);	/* msg 149: unmatched parenthesis */
 					context = my_context;
 				}
@@ -1654,7 +1656,7 @@ static void define_view()
 }
 
 
-static void drop_filter()
+static void drop_filter(void)
 {
 /**************************************
  *
@@ -1674,7 +1676,7 @@ static void drop_filter()
 }
 
 
-static void drop_function()
+static void drop_function(void)
 {
 /**************************************
  *
@@ -1694,7 +1696,7 @@ static void drop_function()
 }
 
 
-static void drop_gfield()
+static void drop_gfield(void)
 {
 /**************************************
  *
@@ -1714,7 +1716,7 @@ static void drop_gfield()
 }
 
 
-static void drop_index()
+static void drop_index(void)
 {
 /**************************************
  *
@@ -1734,7 +1736,7 @@ static void drop_index()
 }
 
 
-static void drop_relation()
+static void drop_relation(void)
 {
 /**************************************
  *
@@ -1758,7 +1760,7 @@ static void drop_relation()
 }
 
 
-static void drop_security_class()
+static void drop_security_class(void)
 {
 /**************************************
  *
@@ -1778,7 +1780,7 @@ static void drop_security_class()
 }
 
 
-static void drop_shadow()
+static void drop_shadow(void)
 {
 /**************************************
  *
@@ -1797,7 +1799,7 @@ static void drop_shadow()
 }
 
 
-static void drop_trigger()
+static void drop_trigger(void)
 {
 /**************************************
  *
@@ -1839,7 +1841,7 @@ static void drop_trigger()
 }
 
 
-static void drop_type()
+static void drop_type(void)
 {
 /**************************************
  *
@@ -1893,7 +1895,7 @@ static void end_text( TXT text)
 		dudleyGlob.DDL_token.tok_position - dudleyGlob.DDL_token.tok_length - text->txt_position;
 
 #if (defined WIN_NT)
-/* the length of the text field should subtract out the
+/* the length of the text field should subtract out the 
    line feeds, since they are automatically filtered out
    when reading from a file */
 
@@ -1911,7 +1913,7 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
  **************************************
  *
  * Functional description
- *	Generate a trigger name for an old style trigger.
+ *	Generate a trigger name for an old style trigger.  
  *
  **************************************/
 	SYM symbol = (SYM) DDL_alloc(SYM_LEN + GDS_NAME_LEN);
@@ -1953,7 +1955,7 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
 }
 
 
-static int get_system_flag()
+static int get_system_flag(void)
 {
 /**************************************
  *
@@ -1990,7 +1992,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
  *	PRE and POST are optional in new style definitions.
  *	For STORE & MODIFY PRE is the default.
  *	For ERASE, POST is the default.
- *
+ *	
  **************************************/
 
 	if (PARSE_match(KW_INACTIVE)) {
@@ -2007,7 +2009,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 		*type |= trig_mod;
 	else if (PARSE_match(KW_PRE_ERASE))
 		*type |= trig_era;
-	else if (!PARSE_match(KW_PRE)) {
+	else if (!(PARSE_match(KW_PRE))) {
 		*type |= trig_post;
 		if (PARSE_match(KW_POST_STORE))
 			*type |= trig_sto;
@@ -2015,7 +2017,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 			*type |= trig_mod;
 		else if (PARSE_match(KW_POST_ERASE))
 			*type |= trig_era;
-		else if (!PARSE_match(KW_POST)) {
+		else if (!(PARSE_match(KW_POST))) {
 			*type &= ~trig_post;
 			*flags &= ~trg_mflag_order;
 		}
@@ -2034,7 +2036,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 	}
 
 
-	if (!PARSE_match(KW_COLON) && ((*flags & trg_mflag_order) ||
+	if ((!PARSE_match(KW_COLON)) && ((*flags & trg_mflag_order) ||
 							   (*type & (trig_sto | trig_mod | trig_era))))
 	{
 		*sequence = PARSE_number();
@@ -2047,7 +2049,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 }
 
 
-static void grant_user_privilege()
+static void grant_user_privilege(void)
 {
 /**************************************
  *
@@ -2096,10 +2098,10 @@ static void grant_user_privilege()
 				PARSE_error(313, dudleyGlob.DDL_token.tok_string, 0);	/* msg 313: expected ON or '(', encountered "%s" */
 
 			do {
-				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT ||
-					dudleyGlob.DDL_token.tok_keyword == KW_INSERT ||
-					dudleyGlob.DDL_token.tok_keyword == KW_DELETE ||
-					dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT 
+					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT 
+					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE 
+					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
 				}
@@ -2186,7 +2188,7 @@ static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 	for (; contexts; contexts = contexts->lls_next) {
 		DUDLEY_CTX context = (DUDLEY_CTX) contexts->lls_object;
 		SYM name = context->ctx_name;
-		if (name && !strcmp(name->sym_string, symbol->sym_string))
+		if (name && !strcmp(name->sym_string, symbol->sym_string)) 
 			return context;
 	}
 
@@ -2342,7 +2344,7 @@ static ACT make_global_field( DUDLEY_FLD field)
 }
 
 
-static void mod_old_trigger()
+static void mod_old_trigger(void)
 {
 /**************************************
  *
@@ -2380,7 +2382,7 @@ static void mod_old_trigger()
 }
 
 
-static void modify_field()
+static void modify_field(void)
 {
 /**************************************
  *
@@ -2425,7 +2427,7 @@ static void modify_field()
 }
 
 
-static void modify_index()
+static void modify_index(void)
 {
 /**************************************
  *
@@ -2486,7 +2488,7 @@ static void modify_index()
 }
 
 
-static void modify_relation()
+static void modify_relation(void)
 {
 /**************************************
  *
@@ -2548,7 +2550,8 @@ static void modify_relation()
 						field->fld_dtype = global->fld_dtype;
 						field->fld_length = global->fld_length;
 						field->fld_scale = global->fld_scale;
-						field->fld_segment_length = global->fld_segment_length;
+						field->fld_segment_length =
+							global->fld_segment_length;
 						field->fld_sub_type = global->fld_sub_type;
 						field->fld_has_sub_type = global->fld_has_sub_type;
 					}
@@ -2612,7 +2615,7 @@ static void modify_relation()
 }
 
 
-static void modify_security_class()
+static void modify_security_class(void)
 {
 /**************************************
  *
@@ -2655,7 +2658,7 @@ static void modify_security_class()
 }
 
 
-static void modify_trigger()
+static void modify_trigger(void)
 {
 /**************************************
  *
@@ -2710,7 +2713,7 @@ static void modify_trigger()
 
 	while (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI)) {
 		if ((PARSE_match(KW_MESSAGE)) || (PARSE_match(KW_MSGADD)) ||
-			(PARSE_match(KW_MSGMODIFY)))
+			(PARSE_match(KW_MSGMODIFY))) 
 		{
 			msg_type = trgmsg_modify;
 		}
@@ -2774,7 +2777,7 @@ static void modify_trigger_action( DUDLEY_TRG trigger, DUDLEY_REL relation)
 }
 
 
-static void modify_type()
+static void modify_type(void)
 {
 /**************************************
  *
@@ -2804,7 +2807,7 @@ static void modify_type()
 }
 
 
-static void modify_view()
+static void modify_view(void)
 {
 /**************************************
  *
@@ -2896,7 +2899,7 @@ static void modify_view()
 }
 
 
-static bool parse_action()
+static bool parse_action(void)
 {
 /**************************************
  *
@@ -3086,9 +3089,9 @@ static bool parse_action()
 
 static void parse_array( DUDLEY_FLD field)
 {
-/**************************************
+/************************************** 
  *
- *	p a r s e _ a r r a y
+ *	p a r s e _ a r r a y 
  *
  **************************************
  *
@@ -3137,7 +3140,7 @@ static void parse_array( DUDLEY_FLD field)
 }
 
 
-static TXT parse_description()
+static TXT parse_description(void)
 {
 /**************************************
  *
@@ -3146,7 +3149,7 @@ static TXT parse_description()
  **************************************
  *
  * Functional description
- *	Create a text block to hold the pointer and length
+ *	Create a text block to hold the pointer and length 
  *	of the description of a metadata item.
  *
  **************************************/
@@ -3168,7 +3171,7 @@ static TXT parse_description()
 }
 
 
-static void parse_end()
+static void parse_end(void)
 {
 /**************************************
  *
@@ -3307,12 +3310,12 @@ static void parse_field_clauses( DUDLEY_FLD field)
 		case KW_COMPUTED:
 			LEX_token();
 			PARSE_match(KW_BY);
-			if (!PARSE_match(KW_LEFT_PAREN))
+			if (!(PARSE_match(KW_LEFT_PAREN)))
 				PARSE_error(194, 0, 0);	/* msg 194: computed by expression must be parenthesized */
 			field->fld_compute_src = start_text();
 			field->fld_computed = EXPR_value(0, NULL);
 			end_text(field->fld_compute_src);
-			if (!PARSE_match(KW_RIGHT_PAREN))
+			if (!(PARSE_match(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
 			break;
 
@@ -3326,12 +3329,12 @@ static void parse_field_clauses( DUDLEY_FLD field)
 		case KW_VALID_IF:
 			LEX_token();
 			PARSE_match(KW_IF);
-			if (!PARSE_match(KW_LEFT_PAREN))
+			if (!(PARSE_match(KW_LEFT_PAREN)))
 				PARSE_error(196, 0, 0);	/* msg 196: validation expression must be parenthesized */
 			field->fld_valid_src = start_text();
 			field->fld_validation = EXPR_boolean(0);
 			end_text(field->fld_valid_src);
-			if (!PARSE_match(KW_RIGHT_PAREN))
+			if (!(PARSE_match(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
 			break;
 
@@ -3441,7 +3444,7 @@ static void parse_field_dtype( DUDLEY_FLD field)
 	LEX_token();
 
 	if (field->fld_dtype == blr_text ||
-		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring)
+		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring) 
 	{
 		if (!PARSE_match(KW_L_BRCKET) && !PARSE_match(KW_LT))
 			PARSE_error(200, dudleyGlob.DDL_token.tok_string, 0);	/* msg 200: expected \"[\", encountered \"%s\" */
@@ -3499,7 +3502,7 @@ static void parse_field_subtype( DUDLEY_FLD field)
 	else
 		field->fld_sub_type = PARSE_number();
 
-	field->fld_has_sub_type = true;
+	field->fld_has_sub_type = TRUE;
 }
 
 
@@ -3558,7 +3561,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 		PARSE_error(204, 0, 0);	/* msg 204: argument mode is by value, or by reference */
 	}
 
-/* (kw_comma or kw_semi) here means this argument is not a
+/* (kw_comma or kw_semi) here means this argument is not a 
    return_value or a return_argument in which case it had
    better not be passed by value */
 
@@ -3598,7 +3601,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 }
 
 
-static SCE parse_identifier()
+static SCE parse_identifier(void)
 {
 /**************************************
  *
@@ -3623,7 +3626,7 @@ static SCE parse_identifier()
 /* Get explicit identifiers, if any */
 
 	switch (dudleyGlob.DDL_token.tok_keyword) {
-	case KW_VIEW:
+	case (KW_VIEW):
 		LEX_token();
 		if (dudleyGlob.DDL_token.tok_type != tok_ident)
 			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
@@ -3633,7 +3636,7 @@ static SCE parse_identifier()
 		LEX_token();
 		break;
 
-	case KW_USER:
+	case (KW_USER):
 		LEX_token();
 		if (dudleyGlob.DDL_token.tok_type != tok_ident)
 			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
@@ -3651,7 +3654,7 @@ static SCE parse_identifier()
 		}
 		break;
 
-	case KW_GROUP:
+	case (KW_GROUP):
 		LEX_token();
 		if (dudleyGlob.DDL_token.tok_type != tok_ident)
 			PARSE_error(117, dudleyGlob.DDL_token.tok_string, 0);	/* msg 117: expected identifier, encountered \"%s\" */
@@ -3669,8 +3672,8 @@ static SCE parse_identifier()
 		}
 		break;
 
-	case KW_L_BRCKET:
-	case KW_LT:
+	case (KW_L_BRCKET):
+	case (KW_LT):
 		LEX_token();
 		if (!PARSE_match(KW_ASTERISK)) {
 			if (dudleyGlob.DDL_token.tok_type != tok_number)
@@ -3714,7 +3717,7 @@ static SCE parse_identifier()
 }
 
 
-static OBJ_T parse_object()
+static OBJ_T parse_object(void)
 {
 /**************************************
  *
@@ -3772,7 +3775,7 @@ static OBJ_T parse_object()
 }
 
 
-static int parse_page_size()
+static int parse_page_size(void)
 {
 /**************************************
  *
@@ -3783,7 +3786,7 @@ static int parse_page_size()
  * Functional description
  *	parse the page_size clause of a
  *	define database statement
- *
+ *	
  *
  **************************************/
 	PARSE_match(KW_EQUALS);
@@ -3809,7 +3812,7 @@ static int parse_page_size()
 }
 
 
-static SLONG parse_privileges()
+static SLONG parse_privileges(void)
 {
 /**************************************
  *
@@ -3869,7 +3872,7 @@ static SLONG parse_privileges()
 }
 
 
-static void revoke_user_privilege()
+static void revoke_user_privilege(void)
 {
 /**************************************
  *
@@ -3912,10 +3915,10 @@ static void revoke_user_privilege()
 				PARSE_error(315, dudleyGlob.DDL_token.tok_string, 0);	/* msg 315: expected ON or '(', encountered "%s" */
 
 			do {
-				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT ||
-					dudleyGlob.DDL_token.tok_keyword == KW_INSERT ||
-					dudleyGlob.DDL_token.tok_keyword == KW_DELETE ||
-					dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT
+					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT
+					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE
+					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
 				}
@@ -3968,8 +3971,8 @@ static SLONG score_entry( SCE element)
  **************************************
  *
  * Functional description
- *	Compute a value to determine placement of an
- *	access control element in an Apollo access
+ *	Compute a value to determine placement of an 
+ *	access control element in an Apollo access 
  *	control list.
  *
  **************************************/
@@ -3979,7 +3982,7 @@ static SLONG score_entry( SCE element)
 
 	const TEXT* const* ptr = (TEXT**) element->sce_idents;
 	for (const TEXT* const* const end = ptr + id_max; ptr < end;
-		 ptr++)
+		 ptr++) 
 	{
 		score <<= 1;
 		if (*ptr)
@@ -3990,7 +3993,7 @@ static SLONG score_entry( SCE element)
 }
 
 
-static DUDLEY_NOD set_generator()
+static DUDLEY_NOD set_generator(void)
 {
 /**************************************
  *
@@ -4016,7 +4019,8 @@ static DUDLEY_NOD set_generator()
 }
 
 
-static void sort_out_attributes(DUDLEY_TRG trigger,
+static void sort_out_attributes(
+								DUDLEY_TRG trigger,
 								SLONG flags, SLONG type, SLONG sequence)
 {
 /**************************************
@@ -4062,7 +4066,7 @@ static void sort_out_attributes(DUDLEY_TRG trigger,
 				PARSE_error(220, 0, 0);	/* msg 220: Attempt to change trigger type from ERASE to STORE */
 		}
 
-	if (!(flags & trg_mflag_order) && (flags & trg_mflag_type))
+	if ((!(flags & trg_mflag_order)) && (flags & trg_mflag_type))
 		switch (trigger->trg_type) {
 		case trg_erase:
 		case trg_post_modify:
@@ -4086,7 +4090,7 @@ static void sort_out_attributes(DUDLEY_TRG trigger,
 }
 
 
-static TXT start_text()
+static TXT start_text(void)
 {
 /**************************************
  *
@@ -4132,7 +4136,7 @@ static void validate_field( DUDLEY_FLD field)
 		if ((field->fld_dtype) && !(field->fld_computed))
 			fb_msg_format(0, DDL_MSG_FAC, 223, sizeof(option), option, dummy);
 		/* msg 223: data type */
-		if (field->fld_has_sub_type && !(field->fld_computed))
+		if ((field->fld_has_sub_type) && !(field->fld_computed))
 			fb_msg_format(0, DDL_MSG_FAC, 224, sizeof(option), option, dummy);
 		/* msg 224: sub type */
 		if ((field->fld_segment_length) && !(field->fld_computed))
@@ -4149,7 +4153,8 @@ static void validate_field( DUDLEY_FLD field)
 	if (field->fld_flags & fld_modify)
 		return;
 
-	if (field->fld_has_sub_type && (field->fld_dtype != blr_blob) &&
+	if ((field->fld_has_sub_type) &&
+		(field->fld_dtype != blr_blob) &&
 		(field->fld_dtype != blr_text) && (field->fld_dtype != blr_varying))
 	{
 		PARSE_error(228, 0, 0);	/* msg 228: subtypes are valid only for blobs and text */

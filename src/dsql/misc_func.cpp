@@ -24,10 +24,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/misc_func.h"
 
-using namespace Jrd;
-
-const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] =
-{
+const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},
 	{"CURRENT_TRANSACTION", 0},
@@ -37,7 +34,7 @@ const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] =
 	{"INSERTING/UPDATING/DELETING", REQ_trigger}
 };
 
-const char* InternalInfo::getAlias(internal_info_id info_id)
+char* InternalInfo::getAlias(internal_info_id info_id)
 {
 	return attr_array[info_id].alias_name;
 }

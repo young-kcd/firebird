@@ -29,17 +29,12 @@
 #include "../jrd/license.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/fun_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/trace/TraceManager.h"
-#include "../jrd/trace/TraceObjects.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
-struct FN
-{
+struct FN {
 	const char* fn_module;
 	const char* fn_entrypoint;
 	FPTR_INT fn_function;
@@ -87,8 +82,7 @@ static const char
 #define END_FUNCTION
 #define FUNCTION_ARGUMENT(MECHANISM, TYPE, SCALE, LENGTH, SUB_TYPE, CHARSET, PRECISION, CHAR_LENGTH)
 
-static const FN isc_functions[] =
-{
+static const FN isc_functions[] = {
 #ifndef DECLARE_EXAMPLE_IUDF_AUTOMATICALLY
 	{"test_module", "test_function", (FPTR_INT) test}, // see functions.h
 #endif
@@ -135,7 +129,8 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 	*p = 0;
 
 	for (const FN* function = isc_functions; function->fn_module; ++function) {
-		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
+		if (!strcmp(temp, function->fn_module)
+			&& !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
 		}
@@ -144,51 +139,47 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 	return 0;
 }
 
-static vary* make_result_str(const char* str, size_t str_len)
-{
-	vary *result_vary = (vary*) IbUtil::alloc(str_len + 2);
+static vary* make_result_str(const char* str, size_t str_len) {
+	vary *result_vary = (vary*) malloc(str_len + 2);
 	result_vary->vary_length = str_len;
 	memcpy(result_vary->vary_string, str, result_vary->vary_length);
 	return result_vary;
 }
 
-static vary* make_result_str(const Firebird::string& str)
-{
+static vary* make_result_str(const Firebird::string& str) {
 	return make_result_str(str.c_str(), str.length());
 }
 
 vary* get_context(const vary* ns_vary, const vary* name_vary)
 {
+	// Complain if namespace or variable name is null
+	if (!ns_vary || !name_vary) {
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, isc_arg_end);
+	}
+
 	thread_db* tdbb = JRD_get_thread_data();
 
 	Database* dbb;
-	Attachment* att;
+	Attachment *att;
 	jrd_tra* transaction;
 
 	// See if JRD thread data structure looks sane for occasion
-	if (!tdbb ||
-		!(dbb = tdbb->getDatabase()) ||
-		!(transaction = tdbb->getTransaction()) ||
-		!(att = tdbb->getAttachment()))
+	if (!tdbb || 
+		!(dbb = tdbb->getDatabase()) || 
+		!(transaction = tdbb->getTransaction()) || 
+		!(att = tdbb->getAttachment())) 
 	{
 		fb_assert(false);
 		return NULL;
-	}
-
-	Database::SyncGuard dsGuard(dbb);
-
-	// Complain if namespace or variable name is null
-	if (!ns_vary || !name_vary) {
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
 	}
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
 
 	// Handle system variables
-	if (ns_str == SYSTEM_NAMESPACE)
+	if (ns_str == SYSTEM_NAMESPACE) 
 	{
-		if (name_str == ENGINE_VERSION)
+		if (name_str == ENGINE_VERSION) 
 		{
 			Firebird::string version;
 			version.printf("%s.%s.%s", FB_MAJOR_VER, FB_MINOR_VER, FB_REV_NO);
@@ -196,7 +187,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(version);
 		}
 
-		if (name_str == NETWORK_PROTOCOL_NAME)
+		if (name_str == NETWORK_PROTOCOL_NAME) 
 		{
 			if (att->att_network_protocol.isEmpty())
 				return NULL;
@@ -204,7 +195,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_network_protocol);
 		}
 
-		if (name_str == CLIENT_ADDRESS_NAME)
+		if (name_str == CLIENT_ADDRESS_NAME) 
 		{
 			if (att->att_remote_address.isEmpty())
 				return NULL;
@@ -212,12 +203,12 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_remote_address);
 		}
 
-		if (name_str == DATABASE_NAME)
+		if (name_str == DATABASE_NAME) 
 		{
 			return make_result_str(dbb->dbb_database_name.ToString());
 		}
 
-		if (name_str == CURRENT_USER_NAME)
+		if (name_str == CURRENT_USER_NAME) 
 		{
 			if (!att->att_user || att->att_user->usr_user_name.isEmpty())
 				return NULL;
@@ -225,7 +216,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_user->usr_user_name);
 		}
 
-		if (name_str == CURRENT_ROLE_NAME)
+		if (name_str == CURRENT_ROLE_NAME) 
 		{
 			if (!att->att_user || att->att_user->usr_sql_role_name.isEmpty())
 				return NULL;
@@ -233,10 +224,16 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_user->usr_sql_role_name);
 		}
 
-		if (name_str == SESSION_ID_NAME)
+		if (name_str == SESSION_ID_NAME) 
 		{
 			Firebird::string session_id;
-			const SLONG att_id = PAG_attachment_id(tdbb);
+
+			// This synchronization is necessary to keep SuperServer happy.
+			// PAG_attachment_id() may modify database header, call lock manager, etc
+			THREAD_ENTER();
+			SLONG att_id = PAG_attachment_id(tdbb);
+			THREAD_EXIT();
+
 			session_id.printf("%d", att_id);
 			return make_result_str(session_id);
 		}
@@ -248,7 +245,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(transaction_id);
 		}
 
-		if (name_str == ISOLATION_LEVEL_NAME)
+		if (name_str == ISOLATION_LEVEL_NAME) 
 		{
 			const char* isolation;
 
@@ -263,12 +260,13 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		}
 
 		// "Context variable %s is not found in namespace %s"
-		ERR_post(Arg::Gds(isc_ctx_var_not_found) << Arg::Str(name_str) <<
-													Arg::Str(ns_str));
+		ERR_post(isc_ctx_var_not_found,
+			isc_arg_string, ERR_cstring(name_str.c_str()),
+			isc_arg_string, ERR_cstring(ns_str.c_str()), isc_arg_end);
 	}
 
 	// Handle user-defined variables
-	if (ns_str == USER_SESSION_NAMESPACE)
+	if (ns_str == USER_SESSION_NAMESPACE) 
 	{
 		Firebird::string result_str;
 
@@ -276,20 +274,21 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return NULL;
 
 		return make_result_str(result_str);
-	}
-
-	if (ns_str == USER_TRANSACTION_NAMESPACE)
-	{
+	} 
+	
+	if (ns_str == USER_TRANSACTION_NAMESPACE) {
 		Firebird::string result_str;
 
 		if (!transaction->tra_context_vars.get(name_str, result_str))
 			return NULL;
 
 		return make_result_str(result_str);
-	}
+	} 
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << Arg::Str(RDB_GET_CONTEXT));
+	ERR_post(isc_ctx_namespace_invalid,
+		isc_arg_string, ERR_cstring(ns_str.c_str()),
+		isc_arg_string, RDB_GET_CONTEXT, isc_arg_end);
 	return NULL;
 }
 
@@ -298,7 +297,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary)
 	{
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -311,73 +310,53 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
-	//Database* dbb = tdbb->getDatabase();
-	Attachment* att = tdbb->getAttachment();
-	jrd_tra* tra = tdbb->getTransaction();
 
-	Firebird::StringMap* context_vars = NULL;
-
-	bool result = false;
-
-	if (ns_str == USER_SESSION_NAMESPACE)
+	if (ns_str == USER_SESSION_NAMESPACE) 
 	{
+		Attachment* att = tdbb->getAttachment();
+
 		if (!att) {
 			fb_assert(false);
 			return 0;
 		}
 
-		context_vars = &att->att_context_vars;
-	}
-	else if (ns_str == USER_TRANSACTION_NAMESPACE)
-	{
+		if (!value_vary)
+			return att->att_context_vars.remove(name_str);
+
+		if (att->att_context_vars.count() >= MAX_CONTEXT_VARS) {
+			// "Too many context variables"
+			ERR_post(isc_ctx_too_big, isc_arg_end);
+		}
+
+		return att->att_context_vars.put(name_str,
+			Firebird::string(value_vary->vary_string, value_vary->vary_length));
+	} 
+	else if (ns_str == USER_TRANSACTION_NAMESPACE) {
+		jrd_tra* tra = tdbb->getTransaction();
+
 		if (!tra) {
 			fb_assert(false);
 			return 0;
 		}
 
-		context_vars = &tra->tra_context_vars;
-	}
-	else
-	{
-		// "Invalid namespace name %s passed to %s"
-		ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << Arg::Str(RDB_SET_CONTEXT));
-	}
+		if (!value_vary)
+			return tra->tra_context_vars.remove(name_str);
 
-	if (!value_vary) {
-		result = context_vars->remove(name_str);
-	}
-	else if (context_vars->count() == MAX_CONTEXT_VARS)
-	{
-		string* rc = context_vars->get(name_str);
-		if (rc)
-		{
-			rc->assign(value_vary->vary_string, value_vary->vary_length);
-			result = true;
+		if (tra->tra_context_vars.count() >= MAX_CONTEXT_VARS) {
+			// "Too many context variables"
+			ERR_post(isc_ctx_too_big, isc_arg_end);
 		}
-		else
-			ERR_post(Arg::Gds(isc_ctx_too_big)); // "Too many context variables"
+
+		return tra->tra_context_vars.put(name_str,
+			Firebird::string(value_vary->vary_string, value_vary->vary_length));
+	} 
+	else {
+		// "Invalid namespace name %s passed to %s"
+		ERR_post(isc_ctx_namespace_invalid,
+			isc_arg_string, ERR_cstring(ns_str.c_str()),
+			isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
+		return 0;
 	}
-	else
-	{
-		result = context_vars->put(name_str, Firebird::string(value_vary->vary_string, value_vary->vary_length));
-	}
-
-	if (att->att_trace_manager->needs().event_set_context)
-	{
-		TraceConnectionImpl conn(att);
-		TraceTransactionImpl tran(tra);
-
-		const Firebird::string* value_str = NULL;
-		if (value_vary)
-			value_str = context_vars->get(name_str);
-
-		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(),
-			value_str ? value_str->c_str() : NULL);
-
-		att->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);
-	}
-
-	return (SLONG) result;
 }
 
 static int test(const long* n, char *result)
@@ -421,7 +400,10 @@ static int test(const long* n, char *result)
 
 static dsc* ni(dsc* v, dsc* v2)
 {
-	return v ? v : v2;
+	if (v)
+		return v;
+	else
+		return v2;
 }
 
 
@@ -437,33 +419,33 @@ static SLONG* byteLen(const dsc* v)
 {
 	if (!v || !v->dsc_address || (v->dsc_flags & DSC_null))
 		return 0;
-
-	SLONG& rc = *(SLONG*) IbUtil::alloc(sizeof(SLONG));
-	switch (v->dsc_dtype)
+	else
 	{
-	case dtype_text:
+		SLONG& rc = *(SLONG*) malloc(sizeof(SLONG));
+		switch (v->dsc_dtype)
 		{
-			const UCHAR* const ini = v->dsc_address;
-			const UCHAR* end = ini + v->dsc_length;
-			while (ini < end && *--end == ' ')
-				; // empty loop body
-			rc = end - ini + 1;
+		case dtype_text:
+			{
+				const UCHAR* const ini = v->dsc_address;
+				const UCHAR* end = ini + v->dsc_length;
+				while (ini < end && *--end == ' '); // empty loop body
+				rc = end - ini + 1;
+				break;
+			}
+		case dtype_cstring:
+			{
+				rc = 0;
+				for (const UCHAR* p = v->dsc_address; *p; ++p, ++rc); // empty loop body
+				break;
+			}
+		case dtype_varying:
+			rc = reinterpret_cast<const vary*>(v->dsc_address)->vary_length;
+			break;
+		default:
+			rc = DSC_string_length(v);
 			break;
 		}
-	case dtype_cstring:
-		{
-			rc = 0;
-			for (const UCHAR* p = v->dsc_address; *p; ++p, ++rc)
-				; // empty loop body
-			break;
-		}
-	case dtype_varying:
-		rc = reinterpret_cast<const vary*>(v->dsc_address)->vary_length;
-		break;
-	default:
-		rc = DSC_string_length(v);
-		break;
+		
+		return &rc;
 	}
-
-	return &rc;
 }

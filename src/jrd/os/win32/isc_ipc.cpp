@@ -38,7 +38,6 @@
 
 
 #include "firebird.h"
-#include "../../../common/classes/init.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../jrd/isc.h"
@@ -46,6 +45,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/thd.h"
 
 #include <windows.h>
 #include <process.h>
@@ -64,24 +64,82 @@
 #define SIG_ACK (void (__cdecl *)(int))4           /* acknowledge */
 #endif
 
+#ifndef REQUESTER
+static USHORT initialized_signals = FALSE;
+static SLONG volatile overflow_count = 0;
+
+static Firebird::Mutex	sig_mutex;
+
 static int process_id = 0;
+
+#endif /* of ifndef REQUESTER */
+
 
 const USHORT MAX_OPN_EVENTS	= 40;
 
-struct opn_event_t
-{
+struct opn_event {
 	SLONG opn_event_pid;
 	SLONG opn_event_signal;		/* pseudo-signal number */
 	HANDLE opn_event_lhandle;	/* local handle to foreign event */
 	ULONG opn_event_age;
 };
 
+typedef opn_event *OPN_EVENT;
 
-static struct opn_event_t opn_events[MAX_OPN_EVENTS];
+static struct opn_event opn_events[MAX_OPN_EVENTS];
 static USHORT opn_event_count;
 static ULONG opn_event_clock;
 
-static void signal_cleanup(void*);
+static void (*system_overflow_handler)(int);
+static void cleanup(void *);
+static void overflow_handler(int, int);
+
+// Not thread-safe 
+
+ULONG isc_enter_count = 0;
+
+void ISC_enter(void)
+{
+/**************************************
+ *
+ *	I S C _ e n t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Enter ISC world from caller.
+ *
+ **************************************/  
+/* Setup overflow handler - with chaining to any user handler */
+	void (*temp)(int) = signal(SIGFPE,
+		reinterpret_cast<void(*)(int)>(overflow_handler));
+	if (temp != reinterpret_cast<void(*)(int)>(overflow_handler))
+		system_overflow_handler = temp;
+
+#ifdef DEBUG_FPE_HANDLING
+/* Debug code to simulate an FPE occuring during DB Operation */
+	if (overflow_count < 100)
+		(void) kill(getpid(), SIGFPE);
+#endif
+}
+
+
+void ISC_exit(void)
+{
+/**************************************
+ *
+ *	I S C _ e x i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Exit ISC world, return to caller.
+ *
+ **************************************/
+/* No longer attempt to handle overflow internally */
+	signal(SIGFPE, system_overflow_handler);
+}
+
 
 int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 {
@@ -97,18 +155,19 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
  **************************************/
 
 /* If we're simply trying to poke ourselves, do so directly. */
-	ISC_signal_init();
+	if (!process_id)
+		process_id = GetCurrentProcessId();
 
 	if (pid == process_id) {
 		SetEvent(object_hndl);
 		return 0;
 	}
 
-	opn_event_t* oldest_opn_event = NULL;
+	OPN_EVENT oldest_opn_event;
 	ULONG oldest_age = ~0;
 
-	opn_event_t* opn_event = opn_events;
-	const opn_event_t* const end_opn_event = opn_event + opn_event_count;
+	OPN_EVENT opn_event = opn_events;
+	OPN_EVENT end_opn_event = opn_event + opn_event_count;
 	for (; opn_event < end_opn_event; opn_event++) {
 		if (opn_event->opn_event_pid == pid &&
 			opn_event->opn_event_signal == signal_number)
@@ -140,70 +199,10 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 
 	opn_event->opn_event_age = ++opn_event_clock;
 
-	return SetEvent(opn_event->opn_event_lhandle) ? 0 : -1;
+	return (SetEvent(opn_event->opn_event_lhandle)) ? 0 : -1;
 }
 
-void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
-{
-/**************************************
- *
- *	I S C _ m a k e _ s i g n a l		( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	Create or open a Windows/NT event.
- *	Use the signal number and process id
- *	in naming the object.
- *
- **************************************/
-	ISC_signal_init();
-
-	const BOOLEAN man_rst = manual_reset ? TRUE : FALSE;
-
-	if (!signal_number)
-		return CreateEvent(NULL, man_rst, FALSE, NULL);
-
-	TEXT event_name[BUFFER_TINY];
-	sprintf(event_name, "_firebird_process%u_signal%d", process_idL, signal_number);
-
-	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
-
-	if (create_flag) {
-		fb_assert(!hEvent);
-		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
-	}
-
-	return hEvent;
-}
-
-namespace
-{
-	class SignalInit
-	{
-	public:
-		static void init()
-		{
-			gds__register_cleanup(signal_cleanup, 0);
-			process_id = getpid();
-			ISC_get_security_desc();
-		}
-
-		static void cleanup()
-		{
-			process_id = 0;
-
-			opn_event_t* opn_event = opn_events + opn_event_count;
-			opn_event_count = 0;
-			while (opn_event-- > opn_events)
-				CloseHandle(opn_event->opn_event_lhandle);
-		}
-	};
-
-	Firebird::InitMutex<SignalInit> signalInit;
-} // anonymous namespace
-
-void ISC_signal_init()
+void ISC_signal_init(void)
 {
 /**************************************
  *
@@ -216,15 +215,32 @@ void ISC_signal_init()
  *
  **************************************/
 
-	signalInit.init();
+#ifndef REQUESTER
+	if (initialized_signals)
+		return;
+
+	initialized_signals = TRUE;
+
+	overflow_count = 0;
+	gds__register_cleanup(cleanup, 0);
+
+	process_id = getpid();
+
+	system_overflow_handler =
+		signal(SIGFPE, reinterpret_cast<void(*)(int)>(overflow_handler));
+
+#endif /* REQUESTER */
+
+	ISC_get_security_desc();
 }
 
 
-static void signal_cleanup(void*)
+#ifndef REQUESTER
+static void cleanup(void *arg)
 {
 /**************************************
  *
- *	s i g n a l _ c l e a n u p
+ *	c l e a n u p
  *
  **************************************
  *
@@ -232,5 +248,59 @@ static void signal_cleanup(void*)
  *	Module level cleanup handler.
  *
  **************************************/
-	signalInit.cleanup();
+	process_id = 0;
+
+	OPN_EVENT opn_event = opn_events + opn_event_count;
+	opn_event_count = 0;
+	while (opn_event-- > opn_events)
+		CloseHandle(opn_event->opn_event_lhandle);
+
+	initialized_signals = FALSE;
 }
+#endif
+
+#ifndef REQUESTER
+static void overflow_handler(int signal, int code)
+{
+/**************************************
+ *
+ *	o v e r f l o w _ h a n d l e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Somebody overflowed.  Ho hum.
+ *
+ **************************************/
+
+#ifdef DEBUG_FPE_HANDLING
+	fprintf(stderr, "overflow_handler (%x)\n", arg);
+#endif
+
+/* If we're within ISC world (inside why-value) when the FPE occurs
+ * we handle it (basically by ignoring it).  If it occurs outside of
+ * ISC world, return back a code that tells signal_handler to call any
+ * customer provided handler.
+ */
+	if (isc_enter_count) {
+		++overflow_count;
+#ifdef DEBUG_FPE_HANDLING
+		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
+				   overflow_count);
+#endif
+		/* We've "handled" the FPE */
+	}
+	else {
+		/* We've NOT "handled" the FPE - let's chain
+		   the signal to other handlers */
+		if (system_overflow_handler != SIG_DFL &&
+			system_overflow_handler != SIG_IGN &&
+			system_overflow_handler != SIG_SGE &&
+			system_overflow_handler != SIG_ACK)
+		{
+			reinterpret_cast<void (*)(int, int)>(system_overflow_handler)(signal, code);
+		}
+	}
+}
+#endif
+

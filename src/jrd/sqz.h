@@ -24,12 +24,19 @@
 #ifndef JRD_SQZ_H
 #define JRD_SQZ_H
 
+#include "../jrd/all.h"
 #include "../include/fb_blk.h"
-#include "../../common/classes/array.h"
 
 namespace Jrd {
 
-typedef Firebird::HalfStaticArray<SCHAR, 2048> DataComprControl;
+class DataComprControl : public pool_alloc<type_dcc>
+{
+    public:
+	JrdMemoryPool* dcc_pool;
+	DataComprControl* dcc_next;	// Next block if overflow
+	const SCHAR* dcc_end;		// End of control string
+	SCHAR dcc_string[128];
+};
 
 } //namespace Jrd
 

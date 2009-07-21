@@ -3,7 +3,7 @@
 #ifdef TRUSTED_AUTH
 #include <../common/classes/ClumpletReader.h>
 
-namespace
+namespace 
 {
 	void makeDesc(SecBufferDesc& d, SecBuffer& b, size_t len, void* p)
 	{
@@ -65,11 +65,11 @@ bool AuthSspi::initEntries()
 }
 
 AuthSspi::AuthSspi()
-	: hasContext(false), ctName(*getDefaultMemoryPool()), wheel(false)
+	: hasContext(false), ctName(*getDefaultMemoryPool())
 {
 	TimeStamp timeOut;
-	hasCredentials = initEntries() && (fAcquireCredentialsHandle(0, "NTLM",
-					SECPKG_CRED_BOTH, 0, 0, 0, 0,
+	hasCredentials = initEntries() && (fAcquireCredentialsHandle(0, "NTLM", 
+					SECPKG_CRED_BOTH, 0, 0, 0, 0, 
 					&secHndl, &timeOut) == SEC_E_OK);
 }
 
@@ -159,7 +159,7 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 
 bool AuthSspi::request(AuthSspi::DataHolder& data)
 {
-	if (! hasCredentials)
+	if (! hasCredentials) 
 	{
 		data.clear();
 		return false;
@@ -176,7 +176,7 @@ bool AuthSspi::request(AuthSspi::DataHolder& data)
 	ULONG fContextAttr = 0;
 
 	SECURITY_STATUS x = fInitializeSecurityContext(
-		&secHndl, hasContext ? &ctxtHndl : 0, 0, 0, 0, SECURITY_NATIVE_DREP,
+		&secHndl, hasContext ? &ctxtHndl : 0, 0, 0, 0, SECURITY_NATIVE_DREP, 
 		hasContext ? &inputDesc : 0, 0, &ctxtHndl, &outputDesc, &fContextAttr, &timeOut);
 	switch (x)
 	{
@@ -199,7 +199,7 @@ bool AuthSspi::request(AuthSspi::DataHolder& data)
 
 	if (outputBuffer.cbBuffer)
 	{
-		memcpy(data.getBuffer(outputBuffer.cbBuffer),
+		memcpy(data.getBuffer(outputBuffer.cbBuffer), 
 			   outputBuffer.pvBuffer, outputBuffer.cbBuffer);
 	}
 	else
@@ -212,7 +212,7 @@ bool AuthSspi::request(AuthSspi::DataHolder& data)
 
 bool AuthSspi::accept(AuthSspi::DataHolder& data)
 {
-	if (! hasCredentials)
+	if (! hasCredentials) 
 	{
 		data.clear();
 		return false;
@@ -229,18 +229,21 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	ULONG fContextAttr = 0;
 	SecPkgContext_Names name;
 	SECURITY_STATUS x = fAcceptSecurityContext(
-		&secHndl, hasContext ? &ctxtHndl : 0, &inputDesc, 0,
-		SECURITY_NATIVE_DREP, &ctxtHndl, &outputDesc,
+		&secHndl, hasContext ? &ctxtHndl : 0, &inputDesc, 0, 
+		SECURITY_NATIVE_DREP, &ctxtHndl, &outputDesc, 
 		&fContextAttr, &timeOut);
-	switch (x)
+	switch(x) 
 	{
 	case SEC_E_OK:
-		if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_NAMES, &name) == SEC_E_OK)
+		if (checkAdminPrivilege(&ctxtHndl))
+		{
+			ctName = "SYSDBA";
+		}
+		else if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_NAMES, &name) == SEC_E_OK)
 		{
 			ctName = name.sUserName;
 			ctName.upper();
 			fFreeContextBuffer(name.sUserName);
-			wheel = checkAdminPrivilege(&ctxtHndl);
 		}
 		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
@@ -260,7 +263,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 
 	if (outputBuffer.cbBuffer)
 	{
-		memcpy(data.getBuffer(outputBuffer.cbBuffer),
+		memcpy(data.getBuffer(outputBuffer.cbBuffer), 
 			   outputBuffer.pvBuffer, outputBuffer.cbBuffer);
 	}
 	else
@@ -271,15 +274,12 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	return true;
 }
 
-bool AuthSspi::getLogin(Firebird::string& login, bool& wh)
+bool AuthSspi::getLogin(Firebird::string& login)
 {
-	wh = false;
 	if (ctName.hasData())
 	{
 		login = ctName;
 		ctName.erase();
-		wh = wheel;
-		wheel = false;
 		return true;
 	}
 	return false;

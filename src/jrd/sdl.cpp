@@ -24,22 +24,23 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/common.h"
+#include <stdarg.h>
+#ifndef REQUESTER
 #include "../jrd/jrd.h"
+#endif
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/err_proto.h"
 
 const int COMPILE_SIZE	= 256;
 
 using namespace Jrd;
-using namespace Firebird;
 
-struct sdl_arg
-{
+struct sdl_arg {
+	//USHORT sdl_arg_mode; // unused
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
@@ -57,15 +58,14 @@ struct sdl_arg
 // Let's stop this insanity! The header rng.h defined rng for the purposes
 // of refresh range and emulation of file-based data formats like Pdx.
 // Therefore, I renamed this struct array_range.
-struct array_range
-{
+struct array_range {
 	SLONG rng_minima[64];
 	SLONG rng_maxima[64];
 	sdl_info* rng_info;
 };
 
 static const UCHAR* compile(const UCHAR*, sdl_arg*);
-static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v);
+static ISC_STATUS error(ISC_STATUS*, ...);
 static bool execute(sdl_arg*);
 static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
 
@@ -108,9 +108,9 @@ const int op_scalar		= 12;
 /*
    The structure for a loop is:
 
-	<upper_bound> <increment> <initial_value>
-	<loop> <iterate> <variable> <exit_address>
-	[body]
+	<upper_bound> <increment> <initial_value> 
+	<loop> <iterate> <variable> <exit_address> 
+	[body] 
 	<goto> <iterate_address>
 	[exit]
 */
@@ -120,11 +120,11 @@ const int op_scalar		= 12;
 // to new place and if the new place's size it's not enough, allocates a buffer.
 // Typically, "target" is a static buffer with limited size for the small cases.
 // Was made for "remote/interface.cpp" to ensure input buffers aren't overwritten.
-UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size, UCHAR* target, size_t target_size)
+UCHAR* SDL_clone_sdl(const UCHAR* origin, size_t origin_size,
+	UCHAR* target, size_t target_size)
 {
 	UCHAR* temp_sdl = target;
-	if (origin_size > target_size)
-	{
+	if (origin_size > target_size) {
 		temp_sdl = (UCHAR*)gds__alloc((SLONG) origin_size);
 		// FREE: apparently never freed, the caller is responsible.
 		if (!temp_sdl)
@@ -151,13 +151,13 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
  *
  * Functional description
  *	Collapse a multi-dimension array reference into a vector
- *	reference.
+ *	reference. 
  *
  **************************************/
-	if (dimensions != desc->iad_dimensions)
-	{
-		error(status_vector, Arg::Gds(isc_invalid_dimension) << Arg::Num(desc->iad_dimensions) <<
-																Arg::Num(dimensions));
+	if (dimensions != desc->iad_dimensions) {
+		error(status_vector, isc_invalid_dimension,
+			  isc_arg_number, (SLONG) desc->iad_dimensions,
+			  isc_arg_number, (SLONG) dimensions, isc_arg_end);
 		return -1;
 	}
 
@@ -168,9 +168,8 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 		 range < end; ++range)
 	{
 		const SLONG n = *subscripts++;
-		if (n < range->iad_lower || n > range->iad_upper)
-		{
-			error(status_vector, Arg::Gds(isc_out_of_bounds));
+		if (n < range->iad_lower || n > range->iad_upper) {
+			error(status_vector, isc_out_of_bounds, isc_arg_end);
 			return -1;
 		}
 		subscript += (n - range->iad_lower) * range->iad_length;
@@ -181,7 +180,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 
 
 ISC_STATUS SDL_info(ISC_STATUS* status_vector,
-					const UCHAR* sdl, sdl_info* info, SLONG* vector)
+							const UCHAR* sdl, sdl_info* info, SLONG* vector)
 {
 /**************************************
  *
@@ -202,18 +201,20 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 	info->sdl_info_relation = info->sdl_info_field = "";
 
 	if (*p++ != isc_sdl_version1)
-		return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(0));
+		return error(status_vector, isc_invalid_sdl,
+					 isc_arg_number, (SLONG) 0, isc_arg_end);
 
 	for (;;)
-		switch (*p++)
-		{
+		switch (*p++) {
 		case isc_sdl_struct:
 			n = *p++;
 			if (n != 1)
-				return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(p - sdl - 1));
+				return error(status_vector, isc_invalid_sdl,
+							 isc_arg_number, (SLONG) (p - sdl - 1), isc_arg_end);
 			offset = p - sdl;
 			if (!(p = sdl_desc(p, &info->sdl_info_element)))
-				return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(offset));
+				return error(status_vector, isc_invalid_sdl,
+							 isc_arg_number, (SLONG) offset, isc_arg_end);
 			info->sdl_info_element.dsc_address = 0;
 			break;
 
@@ -227,25 +228,25 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 
 		case isc_sdl_field:
 			n = *p++;
-			info->sdl_info_field.assign(reinterpret_cast<const char*>(p), n);
+			info->sdl_info_field.assign(reinterpret_cast<const char *>(p), n);
 			p += n;
 			break;
 
 		case isc_sdl_relation:
 			n = *p++;
-			info->sdl_info_relation.assign(reinterpret_cast<const char*>(p), n);
+			info->sdl_info_relation.assign(reinterpret_cast<const char *>(p), n);
 			p += n;
 			break;
 
 		default:
 			info->sdl_info_dimensions = 0;
-			if (vector)
-			{
+			if (vector) {
 				memcpy(range.rng_minima, vector, sizeof(range.rng_minima));
 				memcpy(range.rng_maxima, vector, sizeof(range.rng_maxima));
 				range.rng_info = info;
 				SLONG min = -1, max = -1;
-				if (!(p = get_range(p - 1, &range, &min, &max)) || (*p != isc_sdl_eoc))
+				if (!(p = get_range(p - 1, &range, &min, &max))
+					|| (*p != isc_sdl_eoc))
 				{
 					info->sdl_info_dimensions = 0;
 				}
@@ -333,12 +334,13 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 
 int	SDL_walk(ISC_STATUS* status_vector,
-			 const UCHAR* sdl,
-			 UCHAR* array,
-			 Ods::InternalArrayDesc* array_desc,
-			 SLONG* variables,
-			 SDL_walk_callback callback,
-			 array_slice* argument)
+		const UCHAR* sdl,
+		//bool mode, // Unused, always got true, passed to sdl_arg_mode that's unused
+		UCHAR* array,
+		Ods::InternalArrayDesc* array_desc,
+		SLONG* variables,
+		SDL_walk_callback callback,
+		array_slice* argument)
 {
 /**************************************
  *
@@ -347,13 +349,14 @@ int	SDL_walk(ISC_STATUS* status_vector,
  **************************************
  *
  * Functional description
- *	Walk a slice.
+ *	Walk a slice.  
  *
  **************************************/
 	DSC junk;
 	USHORT n, offset;
 	sdl_arg arg;
 
+	//arg.sdl_arg_mode = mode ? TRUE: FALSE; // Unused
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;
@@ -363,16 +366,14 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	arg.sdl_arg_status_vector = status_vector;
 	const UCHAR* p = sdl + 1;
 
-	while (*p != isc_sdl_eoc)
-	{
-		switch (*p++)
-		{
+	while (*p != isc_sdl_eoc) {
+		switch (*p++) {
 		case isc_sdl_struct:
-			for (n = *p++; n; --n)
-			{
+			for (n = *p++; n; --n) {
 				offset = p - sdl - 1;
-				if (!(p = sdl_desc(p, &junk)))
-					return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(offset));
+				if (!(p = sdl_desc(p, &junk))) 
+					return error(status_vector, isc_invalid_sdl,
+								 isc_arg_number, (SLONG) offset, isc_arg_end);
 			}
 			break;
 
@@ -389,7 +390,8 @@ int	SDL_walk(ISC_STATUS* status_vector,
 
 		default:
 			/* Check that element is in range of valid SDL */
-			fb_assert_continue(*(p - 1) >= isc_sdl_version1 && *(p - 1) <= isc_sdl_element);
+			fb_assert_continue(*(p - 1) >= isc_sdl_version1
+								&& *(p - 1) <= isc_sdl_element);
 
 			arg.sdl_arg_next = arg.sdl_arg_compiled;
 			arg.sdl_arg_end = arg.sdl_arg_compiled + COMPILE_SIZE;
@@ -432,16 +434,14 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 	const UCHAR* p = sdl;
 
 	UCHAR op = *p++;
-	switch (op)
-	{
+	switch (op) {
 	case isc_sdl_do1:
 	case isc_sdl_do2:
 	case isc_sdl_do3:
 		variable = *p++;
 		if (op == isc_sdl_do1)
 			ptr1 = NULL;
-		else
-		{
+		else {
 			ptr1 = p;
 			COMPILE(p, 0);		/* skip over lower bound */
 		}
@@ -449,16 +449,14 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		if (op == isc_sdl_do3) {
 			COMPILE(p, arg);	/* increment */
 		}
-		else
-		{
+		else {
 			STUFF(op_literal, arg);
 			STUFF(1, arg);
 		}
 		if (ptr1) {
 			COMPILE(ptr1, arg);	/* initial value */
 		}
-		else
-		{
+		else {
 			STUFF(op_literal, arg);	/* default initial value */
 			STUFF(1, arg);
 		}
@@ -493,7 +491,8 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		return p + 2;
 
 	case isc_sdl_long_integer:
-		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) | ((SLONG) p[3] << 24));
+		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
+		        ((SLONG) p[3] << 24));
 		STUFF(op_literal, arg);
 		STUFF(value, arg);
 		return p + 4;
@@ -517,24 +516,20 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 	case isc_sdl_scalar:
 		op = *p++;
 		count = *p++;
-		if (arg && count != arg->sdl_arg_desc->iad_dimensions)
-		{
-			error(arg->sdl_arg_status_vector,
-				  Arg::Gds(isc_invalid_dimension) << Arg::Num(arg->sdl_arg_desc->iad_dimensions) <<
-													 Arg::Num(count));
+		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
+			error(arg->sdl_arg_status_vector, isc_invalid_dimension,
+				  isc_arg_number, (SLONG) arg->sdl_arg_desc->iad_dimensions,
+				  isc_arg_number, (SLONG) count, isc_arg_end);
 			return NULL;
 		}
 		expr = expressions;
-		for (n = count; n; --n)
-		{
+		for (n = count; n; --n) {
 			*expr++ = p;
 			COMPILE(p, 0);
 		}
 		while (expr > expressions)
-		{
 			if (!compile(*--expr, arg))
 				return NULL;
-		}
 		STUFF(op_scalar, arg);
 		STUFF(op, arg);
 		STUFF(count, arg);
@@ -542,35 +537,32 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 
 	case isc_sdl_element:
 		count = *p++;
-		if (arg && count != 1)
-		{
-			error(arg->sdl_arg_status_vector, Arg::Gds(isc_datnotsup));
+		if (arg && count != 1) {
+			error(arg->sdl_arg_status_vector, isc_datnotsup, isc_arg_end);
 			/* Msg107: "data operation not supported" (arrays of structures) */
 			return NULL;
 		}
 		expr = expressions;
-		for (n = count; n; --n)
-		{
+		for (n = count; n; --n) {
 			*expr++ = p;
 			COMPILE(p, 0);
 		}
 		while (expr > expressions)
-		{
 			if (!compile(*--expr, arg))
 				return NULL;
-		}
 		STUFF(op_element, arg);
 		STUFF(count, arg);
 		return p;
 
 	default:
-		error(arg->sdl_arg_status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(p - arg->sdl_arg_sdl - 1));
+		error(arg->sdl_arg_status_vector, isc_invalid_sdl,
+			  isc_arg_number, (SLONG) (p - arg->sdl_arg_sdl - 1), isc_arg_end);
 		return NULL;
 	}
 }
 
 
-static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 {
 /**************************************
  *
@@ -584,9 +576,54 @@ static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
  *	trick to get the address of the argument vector.
  *
  **************************************/
-	v.copyTo(status_vector);
-	StringsBuffer::makeEnginePermanentVector(status_vector);
+	va_list args;
+	ISC_STATUS *p;
+	int type;
 
+/* Get the addresses of the argument vector and the status vector, and do
+   word-wise copy. */
+
+	va_start(args, status_vector);
+	p = status_vector;
+
+/* Copy first argument */
+
+	*p++ = isc_arg_gds;
+	*p++ = va_arg(args, ISC_STATUS);
+
+/* Pick up remaining args */
+
+	while (*p++ = type = va_arg(args, int))
+		switch (type) {
+		case isc_arg_gds:
+			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
+			break;
+
+		case isc_arg_string:
+		case isc_arg_interpreted:
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
+			break;
+
+/****
+	case isc_arg_cstring:
+	    *p++ = (ISC_STATUS) va_arg (args, int);
+	    *p++ = (ISC_STATUS) va_arg (args, TEXT*);
+	    break;
+****/
+
+		case isc_arg_number:
+			*p++ = va_arg(args, SLONG);
+			break;
+
+		default:
+			fb_assert_continue(FALSE);
+		case isc_arg_vms:
+		case isc_arg_unix:
+			*p++ = va_arg(args, int);
+			break;
+		}
+		
+	va_end(args);
 	return status_vector[1];
 }
 
@@ -609,17 +646,15 @@ static bool execute(sdl_arg* arg)
 	dsc element_desc;
 
 	Ods::InternalArrayDesc* array_desc = arg->sdl_arg_desc;
-	const Ods::InternalArrayDesc::iad_repeat* const range_end =
+	const Ods::InternalArrayDesc::iad_repeat* const range_end = 
 		array_desc->iad_rpt + array_desc->iad_dimensions;
 	SLONG* variables = arg->sdl_arg_variables;
 	const IPTR* next = arg->sdl_arg_compiled;
 	SLONG* stack_ptr = stack + FB_NELEM(stack);
 
-	for (;;)
-	{
+	for (;;) {
 		const SLONG x = *next++;
-		switch (x)
-		{
+		switch (x) {
 		case op_literal:
 			*--stack_ptr = *next++;
 			break;
@@ -655,8 +690,7 @@ static bool execute(sdl_arg* arg)
 		case op_loop:
 			variable = variables + next[1];
 			*variable = *stack_ptr++;
-			if (*variable > stack_ptr[1])
-			{
+			if (*variable > stack_ptr[1]) {
 				next = (IPTR*) next[2];
 				stack_ptr += 2;
 			}
@@ -667,8 +701,7 @@ static bool execute(sdl_arg* arg)
 		case op_iterate:
 			variable = variables + next[0];
 			*variable += *stack_ptr;
-			if (*variable > stack_ptr[1])
-			{
+			if (*variable > stack_ptr[1]) {
 				next = (IPTR *) next[1];
 				stack_ptr += 2;
 			}
@@ -685,44 +718,51 @@ static bool execute(sdl_arg* arg)
 					 range < range_end; ++range)
 				{
 					const SLONG n = *stack_ptr++;
-					if (n < range->iad_lower || n > range->iad_upper)
-					{
-						error(arg->sdl_arg_status_vector, Arg::Gds(isc_out_of_bounds));
+					if (n < range->iad_lower || n > range->iad_upper) {
+						error(arg->sdl_arg_status_vector, isc_out_of_bounds, isc_arg_end);
 						return false;
 					}
 					subscript += (n - range->iad_lower) * range->iad_length;
 				}
 				element_desc = array_desc->iad_rpt[value].iad_desc;
-				element_desc.dsc_address = arg->sdl_arg_array + (IPTR) element_desc.dsc_address +
+				element_desc.dsc_address = arg->sdl_arg_array +
+					(IPTR) element_desc.dsc_address +
 					(array_desc->iad_element_length * subscript);
 
 				/* Is this element within the array bounds? */
-				fb_assert_continue(element_desc.dsc_address >= arg->sdl_arg_array);
-				fb_assert_continue(element_desc.dsc_address + element_desc.dsc_length <=
-									arg->sdl_arg_array + array_desc->iad_total_length);
+				fb_assert_continue(element_desc.dsc_address >=
+									arg->sdl_arg_array);
+				fb_assert_continue(element_desc.dsc_address +
+									element_desc.dsc_length <=
+									arg->sdl_arg_array +
+									array_desc->iad_total_length);
 				}
 			break;
 
 		case op_element:
 			count = *next++;
-			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array)
-			{
+			if (arg->sdl_arg_argument->slice_direction == array_slice::slc_writing_array) {
 				/* Storing INTO array */
 
-				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
+				 (*arg->sdl_arg_callback) (arg->sdl_arg_argument,
+										count,
+										&element_desc);
 			}
-			else
-			{
+			else {
 				/* Fetching FROM array */
 
-				if (element_desc.dsc_address < arg->sdl_arg_argument->slice_high_water)
+				if (element_desc.dsc_address <
+					arg->sdl_arg_argument->slice_high_water)
 				{
-					(*arg->sdl_arg_callback) (arg->sdl_arg_argument, count, &element_desc);
+
+					(*arg->sdl_arg_callback) (arg->sdl_arg_argument,
+										count,
+										&element_desc);
 				}
-				else
-				{
+				else {
 					dsc* slice_desc = &arg->sdl_arg_argument->slice_desc;
-					slice_desc->dsc_address += arg->sdl_arg_argument->slice_element_length;
+					slice_desc->dsc_address +=
+						arg->sdl_arg_argument->slice_element_length;
 				}
 			}
 			break;
@@ -738,7 +778,7 @@ static bool execute(sdl_arg* arg)
 }
 
 
-static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
+static const UCHAR* get_range(const UCHAR* sdl, array_range* arg, 
 							  SLONG* min, SLONG* max)
 {
 /**************************************
@@ -758,23 +798,20 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 	const UCHAR* p = sdl;
 
 	const UCHAR op = *p++;
-	switch (op)
-	{
+	switch (op) {
 	case isc_sdl_do1:
 	case isc_sdl_do2:
 	case isc_sdl_do3:
 		variable = *p++;
 		if (op == isc_sdl_do1)
 			arg->rng_minima[variable] = 1;
-		else
-		{
+		else {
 			if (!(p = get_range(p, arg, &arg->rng_minima[variable], &junk1)))
 				return NULL;
 		}
 		if (!(p = get_range(p, arg, &junk1, &arg->rng_maxima[variable])))
 			return NULL;
-		if (op == isc_sdl_do3)
-		{
+		if (op == isc_sdl_do3) {
 			if (!(p = get_range(p, arg, &junk1, &junk2)))
 				return NULL;
 		}
@@ -797,7 +834,8 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 		return p + 2;
 
 	case isc_sdl_long_integer:
-		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) | ((SLONG) p[3] << 24));
+		value = (SLONG) (p[0] | (p[1] << 8) | ((SLONG) p[2] << 16) |
+		        ((SLONG) p[3] << 24));
 		*min = *max = value;
 		return p + 4;
 
@@ -809,8 +847,7 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 			return NULL;
 		if (!(p = get_range(p, arg, &min2, &max2)))
 			return NULL;
-		switch (op)
-		{
+		switch (op) {
 		case isc_sdl_add:
 			*min = min1 + min2;
 			*max = max1 + max2;
@@ -837,19 +874,20 @@ static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 		info->sdl_info_dimensions = *p++;
 		for (n = 0; n < info->sdl_info_dimensions; n++)
 		{
-			if (!(p = get_range(p, arg, &info->sdl_info_lower[n], &info->sdl_info_upper[n])))
+			if (!
+				(p =
+				 get_range(p, arg, &info->sdl_info_lower[n],
+						   &info->sdl_info_upper[n])))
 			{
-				return NULL;
+					return NULL;
 			}
 		}
 		return p;
 
 	case isc_sdl_element:
 		for (n = *p++; n; --n)
-		{
 			if (!(p = get_range(p, arg, min, max)))
 				return NULL;
-		}
 		return p;
 
 	default:
@@ -879,8 +917,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	desc->dsc_sub_type = 0;
 	desc->dsc_flags = 0;
 
-	switch (*sdl++)
-	{
+	switch (*sdl++) {
 	case blr_text2:
 		desc->dsc_dtype = dtype_text;
 		INTL_ASSIGN_TTYPE(desc, get_word(sdl));
@@ -942,10 +979,19 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_dtype = dtype_d_float;
+		desc->dsc_length = sizeof(double);
+		break;
+#endif
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
@@ -967,8 +1013,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		return NULL;
 	}
 
-	switch (desc->dsc_dtype)
-	{
+	switch (desc->dsc_dtype) {
 	case dtype_short:
 	case dtype_long:
 	case dtype_quad:
@@ -1007,7 +1052,7 @@ static IPTR* stuff(IPTR value, sdl_arg* arg)
 		return (IPTR*) TRUE;
 
 	if (arg->sdl_arg_next >= arg->sdl_arg_end)
-		error(arg->sdl_arg_status_vector, Arg::Gds(isc_virmemexh));
+		error(arg->sdl_arg_status_vector, isc_virmemexh, isc_arg_end);
 	/* unable to allocate memory from operating system */
 
 	*(arg->sdl_arg_next)++ = value;

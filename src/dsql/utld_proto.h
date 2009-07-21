@@ -27,7 +27,7 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 #include "../jrd/DataTypeUtil.h"
 #endif
 
@@ -37,34 +37,30 @@ USHORT		UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPer
 ISC_STATUS	UTLD_copy_status(const ISC_STATUS*, ISC_STATUS*);
 ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, const SCHAR*, XSQLDA*, USHORT*);
 ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
-	USHORT*, USHORT, const XSQLDA*, const USHORT);
+	USHORT*, USHORT, XSQLDA*, const USHORT);
 void		UTLD_save_status_strings(ISC_STATUS*);
 SCHAR*		UTLD_skip_sql_info(SCHAR*);
 
 
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 
-namespace Jrd {
+class dsql_req;
 
-	class CompiledStatement;
-
-	class DSqlDataTypeUtil : public DataTypeUtilBase
+class DSqlDataTypeUtil : public DataTypeUtilBase
+{
+public:
+	DSqlDataTypeUtil(dsql_req* req)
+		: request(req)
 	{
-	public:
-		explicit DSqlDataTypeUtil(CompiledStatement* aStatement)
-			: statement(aStatement)
-		{
-		}
+	}
 
-	public:
-		virtual UCHAR maxBytesPerChar(UCHAR charSet);
-		virtual USHORT getDialect() const;
+public:
+	virtual UCHAR maxBytesPerChar(UCHAR charSet);
+	virtual USHORT getDialect() const;
 
-	private:
-		CompiledStatement* statement;
-	};
-
-} // namespace
+private:
+	dsql_req* request;
+};
 
 #endif
 

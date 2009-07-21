@@ -38,6 +38,11 @@
 class ConfigImpl : public ConfigRoot
 {
 	friend class Config;
+#ifdef SUNCC
+public:
+// All of following typedef's is not visible from struct ConfigEntry
+// for Sun C++ compiler
+#endif    
 	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
 
@@ -49,7 +54,7 @@ class ConfigImpl : public ConfigRoot
 		TYPE_STRING_VECTOR
 	};
 
-	typedef const char* ConfigKey;
+	typedef char* ConfigKey;
 	typedef IPTR ConfigValue;
 
 	struct ConfigEntry
@@ -60,7 +65,6 @@ class ConfigImpl : public ConfigRoot
 	};
 
 public:
-	explicit ConfigImpl(MemoryPool& p);
     ~ConfigImpl();
 
 	static string getValue(ConfigFile&, const ConfigKey);
@@ -69,7 +73,11 @@ public:
 	static bool asBoolean(const string&);
 	static const char* asString(const string&);
 
+	inline static const ConfigImpl& instance();
+
 private:
+	explicit ConfigImpl(MemoryPool& p);
+
 	static const ConfigEntry entries[];
 	const char *root_dir;
 	ConfigValue *values;

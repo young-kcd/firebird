@@ -25,34 +25,33 @@
 //#pragma warning(disable:4099)	// class/struct mixups
 #pragma warning(disable:4251)	// needs to have dll-interface
 #pragma warning(disable:4291)	// no matching op. delete (there are)
-//#pragma warning(disable:4355)	// 'this' used in base member initializer list
+#pragma warning(disable:4355)	// 'this' used in base member initializer list
 #pragma warning(disable:4786)	// debug identifiers are truncated
 #pragma warning(disable:4800)	// forcing value to bool 'true' or 'false' (performance warning)
 
 // New warnings at level W4
 
-//#pragma warning(disable:4018)  // signed/unsigned mismatch
-//#pragma warning(disable:4100)  // unreferenced formal parameter
+#pragma warning(disable:4018)  // signed/unsigned mismatch
+#pragma warning(disable:4100)  // unreferenced formal parameter
 #pragma warning(disable:4127)  // conditional expression is constant
 //#pragma warning(disable:4131)  // uses old-style declarator
-//#pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
-//#pragma warning(disable:4189)  // local variable is initialized but not referenced
+#pragma warning(disable:4146)  // unary minus operator applied to unsigned type, result still unsigned
+#pragma warning(disable:4189)  // local variable is initialized but not referenced
 #pragma warning(disable:4211)  // nonstandard extension used : redefined extern to static
 #pragma warning(disable:4214)  // nonstandard extension used : bit field types other than int
 #pragma warning(disable:4244)  // conversion from '.......' to '......', possible loss of data
 #pragma warning(disable:4245)  // conversion from '.......' to '......', signed/unsigned mismatch
-#pragma warning(disable:4290)  // C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
 #pragma warning(disable:4291)  // no matching operator delete found; memory will not be freed if initialization throws an exception
 #pragma warning(disable:4309)  // truncation of constant value
 #pragma warning(disable:4310)  // cast truncates constant value
 #pragma warning(disable:4355)  // '....' used in base member initializer list
-//#pragma warning(disable:4505)  // unreferenced local function has been removed
+#pragma warning(disable:4505)  // unreferenced local function has been removed
 #pragma warning(disable:4511)  // copy constructor could not be generated
 #pragma warning(disable:4512)  // assignment operator could not be generated
 #pragma warning(disable:4514)  // unreferenced inline function has been removed
 #pragma warning(disable:4663)  // to explicitly specialize class template '.....' use the following syntax
 #pragma warning(disable:4701)  // local variable '......' may be used without having been initialized
-//#pragma warning(disable:4702)  // unreachable code
+#pragma warning(disable:4702)  // unreachable code
 #pragma warning(disable:4706)  // assignment within conditional expression
 #pragma warning(disable:4709)  // comma operator within array index expression
 #pragma warning(disable:4710)  // function '.....' not inlined
@@ -60,7 +59,7 @@
 
 // Warning from Microsoft Visual Studio\VC98\include\fstream
 
-//#pragma warning(disable:4097)  // typedef-name '......' used as synonym for class-name '.....'
+#pragma warning(disable:4097)  // typedef-name '......' used as synonym for class-name '.....'
 
 // New MSVC8 warnings
 
@@ -68,34 +67,6 @@
 
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-
-#ifdef _MSC_VER // don't know if this is useful for MinGW
-#define NOATOM
-//#define NOGDI
-//#define NOGDICAPMASKS
-#define NOMETAFILE
-#define NOMINMAX
-//#define NOMSG
-#define NOOPENFILE
-#define NORASTEROPS
-#define NOSCROLL
-#define NOSOUND
-#define NOSYSMETRICS
-#define NOTEXTMETRIC
-#define NOWH
-#define NOCOMM
-#define NOKANJI
-#define NOCRYPT
-#define NOMCX
-//#define NOWINMESSAGES
-//#define NOWINSTYLES
-//#define NOMENUS
-#define NOICONS
-#define NOCLIPBOARD
-//#define NOCOLOR
-//#define NOSERVICE
-//#define NOHELP
-#endif
 
 /* Headers */
 #define HAVE_ASSERT_H
@@ -124,20 +95,19 @@
 #define HAVE_STDLIB_H
 #define HAVE_STRING_H
 #define HAVE_SIGNAL_H
-#define HAVE_IO_H
 #undef HAVE_SYS_SIGNAL_H
 #undef HAVE_SYS_SIGINFO_H
 #undef HAVE_EDITLINE_H
 #undef HAVE_TERMIO_H
 #undef HAVE_TERMIOS_H
-#undef HAVE_DIRENT_H
-#undef HAVE_SYS_NDIR_H
-#undef HAVE_SYS_DIR_H
-#undef HAVE_NDIR_H
+#undef HAVE_DIRENT_H 
+#undef HAVE_SYS_NDIR_H 
+#undef HAVE_SYS_DIR_H 
+#undef HAVE_NDIR_H 
 #undef HAVE_UNISTD_H
 #undef HAVE_VARARGS_H
 #undef HAVE_VFORK_H
-#undef HAVE_CRYPT_H
+#undef HAVE_CRYPT_H 
 #undef HAVE_NETCONFIG_H
 #undef HAVE_NETINET_IN_H
 #undef HAVE_RPC_RPC_H
@@ -153,7 +123,6 @@
 #undef HAVE_SYS_SOCKET_H
 #undef HAVE_SYS_SOCKIO_H
 #undef HAVE_WINSOCK2_H
-#define HAVE_FLOAT_H
 
 
 /* Functions */
@@ -168,12 +137,13 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
+#define vsnprintf _vsnprintf
 #define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB
 #undef HAVE_MMAP
 #undef HAVE_WORKING_VFORK
-#undef HAVE_SETPGRP
+#undef HAVE_SETPGRP 
 #undef HAVE_SETPGID
 #undef HAVE_GETPGRP
 #undef SETPGRP_VOID
@@ -195,15 +165,6 @@
 #undef HAVE_LLRINT
 #undef HAVE_LOCALTIME_R
 #undef HAVE_GMTIME_R
-#undef HAVE_SYS_SELECT_H
-
-
-#if defined _MSC_VER
-#if _MSC_VER < 1500
-#define vsnprintf _vsnprintf
-#endif
-#define isnan _isnan
-#endif
 
 
 /* Types */
@@ -222,13 +183,13 @@
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 4
 /* alignment of long */
-#define FB_ALIGNMENT 4
+#define ALIGNMENT 4
 #elif defined(_M_AMD64)
 #define AMD64
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 8
 /* alignment of long */
-#define FB_ALIGNMENT 8
+#define ALIGNMENT 8
 #else
 #error unknown target platform
 #endif
@@ -237,7 +198,7 @@
 #define SIZEOF_LONG 4
 
 /* alignment of double */
-#define FB_DOUBLE_ALIGN 8
+#define DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
@@ -285,10 +246,9 @@
 /* CPU types */
 #undef PowerPC
 #undef sparc
-#undef __sparc
 #define i386
-#undef MIPS
-#undef MIPSEL
+#undef mips
+#undef alpha
 
 /* various OS efforts */
 #undef DARWIN
@@ -296,7 +256,6 @@
 #undef FREEBSD
 #undef NETBSD
 #undef sun
-#undef __sun
 #undef SOLARIS
 #undef HPUX
 #undef VMS

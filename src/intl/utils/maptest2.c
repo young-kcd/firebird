@@ -8,7 +8,7 @@
  * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
  * or implied. See the License for the specific language governing
  * rights and limitations under the License.
- *
+ * 
  * The Original Code was created by Inprise Corporation
  * and its predecessors. Portions created by Inprise Corporation are
  * Copyright (C) Inprise Corporation.
@@ -23,10 +23,9 @@
 
 #define CANT_MAP_CHARACTER	0
 
-class codepage_map
-{
+class codepage_map {
 
-public:
+  public:
 	unsigned short *to_unicode_map;
 	unsigned char *from_unicode_mapping_array;
 	unsigned short *from_unicode_map;
@@ -35,8 +34,7 @@ public:
 	unsigned short sizeof_from_unicode_map;
 	const char* name;
 
-	codepage_map()
-	{
+	  codepage_map(void) {
 		to_unicode_map = NULL;
 		from_unicode_map = NULL;
 		from_unicode_mapping_array = NULL;
@@ -63,18 +61,16 @@ public:
 		test_codepage();
 	}
 
-	unsigned short to_unicode(unsigned char c)
-	{
+	unsigned short to_unicode(unsigned char c) {
 		return to_unicode_map[c];
 	}
 
-	unsigned short from_unicode(unsigned short c)
-	{
-		return from_unicode_mapping_array[from_unicode_map[c / 256] + (c % 256)];
+	unsigned short from_unicode(unsigned short c) {
+		return from_unicode_mapping_array[from_unicode_map[c / 256] +
+										  (c % 256)];
 	}
 
-	void test_codepage()
-	{
+	void test_codepage(void) {
 		if (sizeof_to_unicode_map != 256 * sizeof(to_unicode_map[0]))
 			printf("The to_unicode_map is too small! %d entries!\n",
 				   sizeof_to_unicode_map / sizeof(to_unicode_map[0]));
@@ -83,72 +79,72 @@ public:
 			printf("The from_unicode_map is too small! %d entries!\n",
 				   sizeof_from_unicode_map / sizeof(from_unicode_map[0]));
 
-		for (int i = 0; i <= 255; i++)
-		{
-			unsigned short uch = to_unicode((unsigned char) i);
-
+		for (int i = 0; i <= 255; i++) {
+			unsigned short uch;
+			unsigned char ch2;
+			  uch = to_unicode((unsigned char) i);
 			if (uch == CANT_MAP_CHARACTER)
-				continue;
-
-			unsigned char ch2 = from_unicode(uch);
-			if (ch2 != i)
-			{
-				printf("Mapping error: Character %02x -> Unicode %04x -> Char %02x\n", i, uch, ch2);
+				  continue;
+			  ch2 = from_unicode(uch);
+			if (ch2 != i) {
+				printf
+					("Mapping error: Character %02x -> Unicode %04x -> Char %02x\n",
+					 i, uch, ch2);
 
 				/* Find the Character in the from_unicode_mapping_array */
-				int j;
-				for (j = 0; j < sizeof_from_unicode_mapping_array; j++)
-				{
-					if (from_unicode_mapping_array[j] == i)
-					{
+				for (int j = 0; j < sizeof_from_unicode_mapping_array; j++)
+					if (from_unicode_mapping_array[j] == i) {
 						/* Mapping table is wrong - recommend a fix for it */
 						printf
 							("Recommend from_unicode_map[0x%02x] be set to %d\n",
 							 uch / 256, j - (uch % 256));
 						break;
-					}
-				}
-				if (j == sizeof_from_unicode_mapping_array)
-				{
+				} if (j == sizeof_from_unicode_mapping_array) {
 					/* Oops - found a character that does exists in the character set
-					but not in unicode - an obvious error! */
-				printf("Error: Character %d does not exist in the from_unicode_mapping_array\n", i);
+					   but not in unicode - an obvious error! */
+
+					printf
+						("Error: Character %d does not exist in the from_unicode_mapping_array\n",
+						 i);
+
 				}
 			}
 		}
 
-		for (i = 0; i <= 255; i++)
-		{
-			if (from_unicode_map[i] + 0xFF >= sizeof_from_unicode_mapping_array)
+		for (i = 0; i <= 255; i++) {
+			if (from_unicode_map[i] + 0xFF >=
+				sizeof_from_unicode_mapping_array)
 			{
-				printf("From_unicode array bounds error at position %02x00\n", i);
+				printf("From_unicode array bounds error at position %02x00\n",
+					   i);
 				continue;
 			}
 
-			for (int j = 0; j <= 255; j++)
-			{
-				unsigned short uch = i * 256 + j;
-				unsigned char ch2 = from_unicode(uch);
+			for (int j = 0; j <= 255; j++) {
+				unsigned short uch, uch2;
+				unsigned char ch2;
+
+				uch = i * 256 + j;
+				ch2 = from_unicode(uch);
 				if (ch2 == CANT_MAP_CHARACTER)
 					continue;
+				uch2 = to_unicode(ch2);
+				if (uch != uch2) {
+					printf
+						("Mapping error: Unicode %04x -> ch %02x -> Unicode %04x\n",
+						 uch, ch2, uch2);
 
-				unsigned short uch2 = to_unicode(ch2);
-				if (uch != uch2)
-				{
-					printf("Mapping error: Unicode %04x -> ch %02x -> Unicode %04x\n", uch, ch2, uch2);
-
-					int k;
-					for (k = 0; k <= 255; k++)
-					{
+					for (int k = 0; k <= 255; k++)
 						if (to_unicode_map[k] == uch) {
 							/* Can map this character from charset to unicode */
 							/* Assume fix was printed out above */
 						}
-					}
 					if (k > 255) {
 						/* This unicode doesn't exist in charset */
 						/* Mapping table is wrong - recommend a fix for it */
-						printf("Recommend from_unicode_map[0x%02x] be set to %d\n", uch / 256, 0);
+						printf
+							("Recommend from_unicode_map[0x%02x] be set to %d\n",
+							 uch / 256, 0);
 					}
 				}
 			}
@@ -171,7 +167,7 @@ typedef unsigned char	UCHAR;
 #define USHORT	unsigned short
 #define JRD_COMMON_H
 
-codepage_map *get_w1250()
+codepage_map *get_w1250(void)
 {
 #include "cs_w1250.h"
 	return new codepage_map(to_unicode_map,
@@ -217,7 +213,7 @@ No errors
 #include "../intl/cs_iso8859_1.h"
 */
 
-/*
+/* 
 -- Multibyte character sets --
 #include "../intl/cs_big5.h"
 #include "../intl/cs_gb2312.h"

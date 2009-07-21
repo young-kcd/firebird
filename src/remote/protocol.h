@@ -84,20 +84,14 @@ const USHORT PROTOCOL_VERSION10	= 10;
 // For unsigned protocol version this does not break version's compare.
 
 const USHORT FB_PROTOCOL_FLAG = 0x8000;
-const USHORT FB_PROTOCOL_MASK = static_cast<USHORT>(~FB_PROTOCOL_FLAG);
+const USHORT FB_PROTOCOL_MASK = ~FB_PROTOCOL_FLAG;
 
-// Protocol 11 has support for user authentication related
-// operations (op_update_account_info, op_authenticate_user and
+// Protocol 11 has support for user authentication related 
+// operations (op_update_account_info, op_authenticate_user and 
 // op_trusted_auth). When specific operation is not supported,
 // we say "sorry".
 
 const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
-
-// Protocol 12 has support for asynchronous call op_cancel.
-// Currently implemented asynchronously only for TCP/IP
-// on superserver and superclassic.
-
-const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
 
 #ifdef SCROLLABLE_CURSORS
 This Protocol includes support for scrollable cursors
@@ -111,7 +105,7 @@ they will be turned off once SCROLLABLE_CURSORS is turned on.
 
 /* Architecture types */
 
-enum P_ARCH
+typedef enum
 {
 	arch_generic	= 1,	/* Generic -- always use canonical forms */
 	arch_apollo		= 2,
@@ -151,59 +145,59 @@ enum P_ARCH
 	arch_linux		= 36,
 	arch_freebsd	= 37,
 	arch_netbsd		= 38,
-	arch_darwin_ppc	= 39,
+	arch_darwin_ppc		= 39,
 	arch_winnt_64	= 40,
 	arch_darwin_x64		= 41,
 	arch_darwin_ppc64	= 42,
-	arch_max		= 43	// Keep this at the end
-};
+	arch_max		= 43	/* Keep this at the end */
+} P_ARCH;
 
-// Protocol Types
+/* Protocol Types */
 // p_acpt_type
-//const USHORT ptype_page		= 1;	// Page server protocol
-const USHORT ptype_rpc			= 2;	// Simple remote procedure call
-const USHORT ptype_batch_send	= 3;	// Batch sends, no asynchrony
-const USHORT ptype_out_of_band	= 4;	// Batch sends w/ out of band notification
-const USHORT ptype_lazy_send	= 5;	// Deferred packets delivery
+const USHORT ptype_page			= 1;	/* Page server protocol */
+const USHORT ptype_rpc			= 2;	/* Simple remote procedure call */
+const USHORT ptype_batch_send	= 3;	/* Batch sends, no asynchrony */
+const USHORT ptype_out_of_band	= 4;	/* Batch sends w/ out of band notification */
+const USHORT ptype_lazy_send	= 5;	/* Deferred packets delivery */
 
-// Generic object id
+/* Generic object id */
 
 typedef USHORT OBJCT;
 const int MAX_OBJCT_HANDLES	= 65000;
 const int INVALID_OBJECT = MAX_USHORT;
 
-// Statement flags
+/* Statement flags */
 
 const USHORT STMT_BLOB			= 1;
 const USHORT STMT_NO_BATCH		= 2;
 const USHORT STMT_DEFER_EXECUTE	= 4;
 
-// Operation (packet) types
+/* Operation (packet) types */
 
-enum P_OP
+typedef enum
 {
 	op_void				= 0,	/* Packet has been voided */
 	op_connect			= 1,	/* Connect to remote server */
 	op_exit				= 2,	/* Remote end has exitted */
 	op_accept			= 3,	/* Server accepts connection */
 	op_reject			= 4,	/* Server rejects connection */
-	//op_protocol			= 5,	/* Protocol selection */
+	op_protocol			= 5,	/* Protocol selection */
 	op_disconnect		= 6,	/* Connect is going away */
-	//op_credit			= 7,	/* Grant (buffer) credits */
-	//op_continuation		= 8,	/* Continuation packet */
+	op_credit			= 7,	/* Grant (buffer) credits */
+	op_continuation		= 8,	/* Continuation packet */
 	op_response			= 9,	/* Generic response block */
 
 	/* Page server operations */
 
-	//op_open_file		= 10,	/* Open file for page service */
-	//op_create_file		= 11,	/* Create file for page service */
-	//op_close_file		= 12,	/* Close file for page service */
-	//op_read_page		= 13,	/* optionally lock and read page */
-	//op_write_page		= 14,	/* write page and optionally release lock */
-	//op_lock				= 15,	/* seize lock */
-	//op_convert_lock		= 16,	/* convert existing lock */
-	//op_release_lock		= 17,	/* release existing lock */
-	//op_blocking			= 18,	/* blocking lock message */
+	op_open_file		= 10,	/* Open file for page service */
+	op_create_file		= 11,	/* Create file for page service */
+	op_close_file		= 12,	/* Close file for page service */
+	op_read_page		= 13,	/* optionally lock and read page */
+	op_write_page		= 14,	/* write page and optionally release lock */
+	op_lock				= 15,	/* sieze lock */
+	op_convert_lock		= 16,	/* convert existing lock */
+	op_release_lock		= 17,	/* release existing lock */
+	op_blocking			= 18,	/* blocking lock message */
 
 	/* Full context server operations */
 
@@ -215,7 +209,7 @@ enum P_OP
 	op_start_and_send	= 24,
 	op_send				= 25,
 	op_receive			= 26,
-	op_unwind			= 27, // apparently unused, see protocol.cpp's case op_unwind
+	op_unwind			= 27,
 	op_release			= 28,
 
 	op_transaction		= 29,	/* Transaction operations */
@@ -238,9 +232,9 @@ enum P_OP
 
 	op_batch_segments	= 44,	/* Put a bunch of blob segments */
 
-	//op_mgr_set_affinity		= 45,	/* Establish server affinity */
-	//op_mgr_clear_affinity	= 46,	/* Break server affinity */
-	//op_mgr_report			= 47,	/* Report on server */
+	op_mgr_set_affinity		= 45,	/* Establish server affinity */
+	op_mgr_clear_affinity	= 46,	/* Break server affinity */
+	op_mgr_report			= 47,	/* Report on server */
 
 	op_que_events		= 48,	/* Que event notification request */
 	op_cancel_events	= 49,	/* Cancel event notification request */
@@ -292,7 +286,7 @@ enum P_OP
 	op_rollback_retaining	= 86,
 
 	// Two following opcode are used in vulcan.
-	// No plans to implement them completely for a while, but to
+	// No plans to implement them completely for a while, but to 
 	// support protocol 11, where they are used, have them here.
 	op_update_account_info	= 87,
 	op_authenticate_user	= 88,
@@ -300,10 +294,8 @@ enum P_OP
 	op_partial				= 89,	// packet is not complete - delay processing
 	op_trusted_auth			= 90,
 
-	op_cancel				= 91,
-
 	op_max
-};
+} P_OP;
 
 
 /* Count String Structure */
@@ -353,9 +345,9 @@ typedef struct p_cnct
 	P_OP	p_cnct_operation;	/* OP_CREATE or OP_OPEN */
 	USHORT	p_cnct_cversion;	/* Version of connect protocol */
 	P_ARCH	p_cnct_client;		/* Architecture of client */
-	CSTRING_CONST	p_cnct_file;		/* File name */
+	CSTRING	p_cnct_file;		/* File name */
 	USHORT	p_cnct_count;		/* Protocol versions understood */
-	CSTRING_CONST	p_cnct_user_id;		/* User identification stuff */
+	CSTRING	p_cnct_user_id;		/* User identification stuff */
 	struct	p_cnct_repeat
 	{
 		USHORT	p_cnct_version;		/* Protocol version number */
@@ -430,8 +422,8 @@ typedef struct p_resp
 typedef struct p_atch
 {
 	OBJCT	p_atch_database;	/* Database object id */
-	CSTRING_CONST	p_atch_file;		/* File name */
-	CSTRING_CONST	p_atch_dpb;		/* Database parameter block */
+	CSTRING	p_atch_file;		/* File name */
+	CSTRING	p_atch_dpb;		/* Database parameter block */
 } P_ATCH;
 
 /* Compile request */
@@ -439,7 +431,7 @@ typedef struct p_atch
 typedef struct p_cmpl
 {
 	OBJCT	p_cmpl_database;	/* Database object id */
-	CSTRING_CONST	p_cmpl_blr;		/* Request blr */
+	CSTRING	p_cmpl_blr;		/* Request blr */
 } P_CMPL;
 
 /* Start Transaction */
@@ -447,7 +439,7 @@ typedef struct p_cmpl
 typedef struct p_sttr
 {
 	OBJCT	p_sttr_database;	/* Database object id */
-	CSTRING_CONST	p_sttr_tpb;		/* Transaction parameter block */
+	CSTRING	p_sttr_tpb;		/* Transaction parameter block */
 } P_STTR;
 
 /* Generic release block */
@@ -459,8 +451,7 @@ typedef struct p_rlse
 
 /* Data block (start, start and send, send, receive) */
 
-typedef struct p_data
-{
+typedef struct p_data {
     OBJCT	p_data_request;		/* Request object id */
     USHORT	p_data_incarnation;	/* Incarnation of request */
     OBJCT	p_data_transaction;	/* Transaction object id */
@@ -474,8 +465,7 @@ typedef struct p_data
 
 /* Execute stored procedure block */
 
-typedef struct p_trrq
-{
+typedef struct p_trrq {
     OBJCT	p_trrq_database;	/* Database object id */
     OBJCT	p_trrq_transaction;	/* Transaction object id */
     CSTRING	p_trrq_blr;		/* Message blr */
@@ -486,22 +476,19 @@ typedef struct p_trrq
 
 /* Blob (create/open) and segment blocks */
 
-typedef struct p_blob
-{
+typedef struct p_blob {
     OBJCT	p_blob_transaction;	/* Transaction */
     struct bid	p_blob_id;		/* Blob id for open */
     CSTRING_CONST	p_blob_bpb;		/* Blob parameter block */
 } P_BLOB;
 
-typedef struct p_sgmt
-{
+typedef struct p_sgmt {
     OBJCT	p_sgmt_blob;		/* Blob handle id */
     USHORT	p_sgmt_length;		/* Length of segment */
     CSTRING_CONST	p_sgmt_segment;		/* Data segment */
 } P_SGMT;
 
-typedef struct p_seek
-{
+typedef struct p_seek {
     OBJCT	p_seek_blob;		/* Blob handle id */
     SSHORT	p_seek_mode;		/* mode of seek */
     SLONG	p_seek_offset;		/* Offset of seek */
@@ -509,21 +496,19 @@ typedef struct p_seek
 
 /* Information request blocks */
 
-typedef struct p_info
-{
+typedef struct p_info {
     OBJCT	p_info_object;		/* Object of information */
     USHORT	p_info_incarnation;	/* Incarnation of object */
-    CSTRING_CONST	p_info_items;		/* Information */
-    CSTRING_CONST	p_info_recv_items;	/* Receive information */
+    CSTRING	p_info_items;		/* Information */
+    CSTRING	p_info_recv_items;	/* Receive information */
     USHORT	p_info_buffer_length;	/* Target buffer length */
 } P_INFO;
 
 /* Event request block */
 
-typedef struct p_event
-{
+typedef struct p_event {
     OBJCT	p_event_database;	/* Database object id */
-    CSTRING_CONST	p_event_items;		/* Event description block */
+    CSTRING	p_event_items;		/* Event description block */
     FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
     SLONG	p_event_arg;		/* Argument to ast routine */
     SLONG	p_event_rid;		/* Client side id of remote event */
@@ -531,16 +516,14 @@ typedef struct p_event
 
 /* Prepare block */
 
-typedef struct p_prep
-{
+typedef struct p_prep {
     OBJCT	p_prep_transaction;
-    CSTRING_CONST	p_prep_data;
+    CSTRING	p_prep_data;
 } P_PREP;
 
 /* Connect request block */
 
-typedef struct p_req
-{
+typedef struct p_req {
     USHORT	p_req_type;		/* Connection type */
     OBJCT	p_req_object;		/* Related object */
     ULONG	p_req_partner;		/* Partner identification */
@@ -551,8 +534,7 @@ const USHORT P_REQ_async	= 1;	/* Auxiliary asynchronous port */
 
 /* DDL request */
 
-typedef struct p_ddl
-{
+typedef struct p_ddl {
      OBJCT	p_ddl_database;		/* Database object id */
      OBJCT	p_ddl_transaction;	/* Transaction */
      CSTRING_CONST	p_ddl_blr;		/* Request blr */
@@ -560,8 +542,7 @@ typedef struct p_ddl
 
 /* Slice Operation */
 
-typedef struct p_slc
-{
+typedef struct p_slc {
     OBJCT	p_slc_transaction;	/* Transaction */
     struct bid	p_slc_id;		/* Slice id */
     CSTRING	p_slc_sdl;		/* Slice description language */
@@ -572,25 +553,22 @@ typedef struct p_slc
 
 /* Response to get_slice */
 
-typedef struct p_slr
-{
+typedef struct p_slr {
     lstring	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
-    UCHAR* p_slr_sdl;			/* *** not transfered *** */
+    UCHAR	*p_slr_sdl;			/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
 } P_SLR;
-
+ 
 /* DSQL structure definitions */
 
-typedef struct p_sqlst
-{
+typedef struct p_sqlst {
     OBJCT	p_sqlst_transaction;	/* transaction object */
     OBJCT	p_sqlst_statement;	/* statement object */
     USHORT	p_sqlst_SQL_dialect;	/* the SQL dialect */
-    CSTRING_CONST	p_sqlst_SQL_str;	/* statement to be prepared */
+    CSTRING	p_sqlst_SQL_str;	/* statement to be prepared */
     USHORT	p_sqlst_buffer_length;	/* Target buffer length */
-    CSTRING_CONST	p_sqlst_items;		/* Information */
-    // This should be CSTRING_CONST
+    CSTRING	p_sqlst_items;		/* Information */
     CSTRING	p_sqlst_blr;		/* blr describing message */
     USHORT	p_sqlst_message_number;
     USHORT	p_sqlst_messages;	/* Number of messages */
@@ -598,11 +576,9 @@ typedef struct p_sqlst
     USHORT	p_sqlst_out_message_number;
 } P_SQLST;
 
-typedef struct p_sqldata
-{
+typedef struct p_sqldata {
     OBJCT	p_sqldata_statement;	/* statement object */
     OBJCT	p_sqldata_transaction;	/* transaction object */
-    // This should be CSTRING_CONST, but fetch() has strange behavior.
     CSTRING	p_sqldata_blr;		/* blr describing message */
     USHORT	p_sqldata_message_number;
     USHORT	p_sqldata_messages;	/* Number of messages */
@@ -611,16 +587,14 @@ typedef struct p_sqldata
     ULONG	p_sqldata_status;	/* final eof status */
 } P_SQLDATA;
 
-typedef struct p_sqlfree
-{
+typedef struct p_sqlfree {
     OBJCT	p_sqlfree_statement;	/* statement object */
     USHORT	p_sqlfree_option;	/* option */
 } P_SQLFREE;
 
-typedef struct p_sqlcur
-{
+typedef struct p_sqlcur {
     OBJCT	p_sqlcur_statement;	/* statement object */
-    CSTRING_CONST	p_sqlcur_cursor_name;	/* cursor name */
+    CSTRING	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
 } P_SQLCUR;
 
@@ -629,14 +603,12 @@ typedef struct p_trau
 	CSTRING	p_trau_data;					// Context
 } P_TRAU;
 
-struct p_update_account
-{
+struct p_update_account {
     OBJCT			p_account_database;		// Database object id
     CSTRING_CONST	p_account_apb;			// Account parameter block (apb)
 };
 
-struct p_authenticate
-{
+struct p_authenticate {
     OBJCT			p_auth_database;		// Database object id
     CSTRING_CONST	p_auth_dpb;				// Database parameter block w/ user credentials
 	CSTRING			p_auth_items;			// Information
@@ -644,17 +616,11 @@ struct p_authenticate
 	USHORT			p_auth_buffer_length;	// Target buffer length
 };
 
-typedef struct p_cancel_op
-{
-    USHORT	p_co_kind;			// Kind of cancelation
-} P_CANCEL_OP;
-
 
 
 /* Generalize packet (sic!) */
 
-typedef struct packet
-{
+typedef struct packet {
 #ifdef DEBUG_XDR_MEMORY
     /* When XDR memory debugging is enabled, p_malloc must be
        the first subpacket and be followed by p_operation (see
@@ -689,13 +655,6 @@ typedef struct packet
 	P_TRAU	p_trau;		/* Trusted authentication */
 	p_update_account p_account_update;
 	p_authenticate p_authenticate_user;
-	P_CANCEL_OP p_cancel_op;	/* cancel operation */
-
-public:
-	packet()
-	{
-		memset(this, 0, sizeof(*this));
-	}
 } PACKET;
 
 #endif // REMOTE_PROTOCOL_H

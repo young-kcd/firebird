@@ -26,16 +26,10 @@
 
 #include "../include/fb_blk.h"
 #include "../jrd/os/pio.h"
-#include "../common/classes/semaphore.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
 #include "../jrd/pag.h"
 #endif
-
-#include "../jrd/que.h"
-#include "../jrd/lls.h"
-#include "../jrd/pag.h"
-#include "../jrd/isc.h"
 
 //#define CCH_DEBUG
 
@@ -61,6 +55,7 @@ class Precedence;
 class thread_db;
 struct que;
 class BufferDesc;
+//class BlockingThread;
 class Database;
 
 /* Page buffer cache size constraints. */
@@ -74,8 +69,7 @@ const ULONG MAX_PAGE_BUFFERS = 131072;
 #ifdef DIRTY_TREE
 /* AVL-balanced tree node */
 
-struct BalancedTreeNode
-{
+struct BalancedTreeNode {
 	BufferDesc* bdb_node;
 	SSHORT comp;
 };
@@ -92,25 +86,24 @@ struct bcb_repeat
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
 public:
-	explicit BufferControl(MemoryPool& p) : bcb_memory(p) { }
+	BufferControl(MemoryPool& p) : bcb_memory(p) { }
 	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
 #ifdef DIRTY_TREE
 	BufferDesc*	bcb_btree;			/* root of dirty page btree */
-#endif
+#endif 
 #ifdef DIRTY_LIST
 	que			bcb_dirty;			// que of dirty buffers
-	SLONG		bcb_dirty_count;	// count of pages in dirty page btree
-#endif
+	SLONG		bcb_dirty_count;	// count of pages in dirty page btree 
+#endif 
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
-	que			bcb_free_slt;		// Free shared latch blocks
 	SSHORT		bcb_flags;			/* see below */
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk
+	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk 
 #ifdef SUPERSERVER_V2
 	PageBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
 #endif
@@ -136,7 +129,7 @@ const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per Buff
 class BufferDesc : public pool_alloc<type_bdb>
 {
 public:
-	BufferDesc() : bdb_page(0, 0) {}
+	BufferDesc() : bdb_page(0, 0) {};
 
 	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
@@ -144,9 +137,10 @@ public:
 	que			bdb_in_use;				/* queue of buffers in use */
 #ifdef DIRTY_LIST
 	que			bdb_dirty;				// dirty pages LRU queue
-#endif
+#endif 
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
+	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
 	PageNumber	bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
@@ -167,23 +161,21 @@ public:
 	SSHORT		bdb_use_count;			/* Number of active users */
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
-	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk
-	que			bdb_shared;				// shared latches queue
+	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
+	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk 
+	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
 
 /* bdb_flags */
 
-// to set/clear BDB_dirty use set_dirty_flag()/clear_dirty_flag()
+// to clear BDB_dirty use clear_page_dirty_flag()
 const int BDB_dirty				= 1;		/* page has been updated but not written yet */
 const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
 const int BDB_writer			= 4;		/* someone is updating the page */
 const int BDB_marked			= 8;		/* page has been updated */
 const int BDB_must_write		= 16;		/* forces a write as soon as the page is released */
 const int BDB_faked				= 32;		/* page was just allocated */
-/*	BDB_merge: Page marked for backup merge purposes to prevent redundant writing
-	just read from delta page back into the delta while delta is merging.
-	See cch.cpp: write_page */
-const int BDB_merge				= 64;
+//const int BDB_journal			= 64;		// Journal buffer
 const int BDB_system_dirty 		= 128;		/* system transaction has marked dirty */
 const int BDB_io_error	 		= 256;		/* page i/o error */
 const int BDB_read_pending 		= 512;		/* read is pending */
@@ -193,7 +185,6 @@ const int BDB_db_dirty 			= 4096;		/* page must be written to database */
 const int BDB_checkpoint		= 8192;		/* page must be written by next checkpoint */
 const int BDB_prefetch			= 16384;	/* page has been prefetched but not yet referenced */
 const int BDB_no_blocking_ast	= 32768;	/* No blocking AST registered with page lock */
-// CVC: There's no more room for flags unless you change bdb_flags from USHORT to ULONG.
 
 /* bdb_ast_flags */
 
@@ -204,7 +195,7 @@ const int BDB_blocking 			= 1;	/* a blocking ast was sent while page locked */
 
 class Precedence : public pool_alloc<type_pre>
 {
-public:
+    public:
 	BufferDesc*	pre_hi;
 	BufferDesc*	pre_low;
 	que				pre_lower;
@@ -219,17 +210,17 @@ const int PRE_cleared	= 1;
    An exclusive latch is needed to modify a page.  Before
    marking a page an 'io-prevention' latch is needed: a mark latch.
    To look at a buffer, a shared latch is needed.  To write a page,
-   an io latch is needed.
+   an io latch is needed.  
 
-   Exclusive and shared latches interact.  Io and mark latches
+   Exclusive and shared latches interact.  Io and mark latches 
    interact.
 
    An mark latch is implemented as an io latch.
-
+   
    Latches are granted in the order in which they are
    queued with one notable exception -- if buffer write
    is in-progress then shared latches are granted ahead
-   of any pending exclusive latches.
+   of any pending exclusive latches. 
 
 	      shared	 io	exclusive   mark
 -------------------------------------------------
@@ -253,41 +244,29 @@ enum LATCH
 
 class LatchWait : public pool_alloc<type_lwt>
 {
-public:
-	thread_db*			lwt_tdbb;
-	LATCH				lwt_latch;	/* latch type requested */
-	que					lwt_waiters;/* latch queue */
-	Firebird::Semaphore	lwt_sem;	/* grant event to wait on */
-	USHORT				lwt_flags;
+    public:
+	thread_db*		lwt_tdbb;
+	LATCH			lwt_latch;		/* latch type requested */
+	que				lwt_waiters;	/* latch queue */
+	struct event_t	lwt_event;		/* grant event to wait on */
+	USHORT			lwt_flags;
 };
 
 const int LWT_pending	= 1;			/* latch request is pending */
 
-// Shared Latch
-class SharedLatch
-{
-public:
-	thread_db*	slt_tdbb;		// thread holding latch
-	BufferDesc*	slt_bdb;		// buffer for which is this latch
-	que			slt_tdbb_que;	// thread's latches queue
-	que			slt_bdb_que;	// buffer's latches queue
-};
-
-
-#ifdef SUPERSERVER_V2
 #include "../jrd/os/pio.h"
 
-// Constants used by prefetch mechanism
+/* Constants used by prefetch mechanism */
 
-const int PREFETCH_MAX_TRANSFER	= 16384;	// maximum block I/O transfer (bytes)
-// maximum pages allowed per prefetch request
-const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);
+const int PREFETCH_MAX_TRANSFER	= 16384;	/* maximum block I/O transfer (bytes) */
+const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);	/* maximum pages allowed per prefetch request */
 
-// Prefetch block
+/* Prefetch block */
 
+#ifdef SUPERSERVER_V2
 class Prefetch : public pool_alloc<type_prf>
 {
-public:
+    public:
 	thread_db*	prf_tdbb;			/* thread database context */
 	SLONG		prf_start_page;		/* starting page of multipage prefetch */
 	USHORT		prf_max_prefetch;	/* maximum no. of pages to prefetch */
@@ -301,7 +280,7 @@ public:
 };
 
 const int PRF_active	= 1;			/* prefetch block currently in use */
-#endif // SUPERSERVER_V2
+#endif
 
 } //namespace Jrd
 

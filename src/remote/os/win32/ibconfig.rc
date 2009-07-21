@@ -1,0 +1,78 @@
+/*
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ */
+#include "property.rh"
+
+CONFIG_DLG DIALOG 6, 15, 204, 183
+STYLE DS_MODALFRAME | 0x4L | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
+CAPTION "FB Server Config"
+FONT 8, "MS Sans Serif"
+{
+ LTEXT "&Database Cache (pages):", IDC_CACHETEXT, 22, 84, 90, 12
+ EDITTEXT IDC_DBPAGES, 137, 84, 47, 12, ES_RIGHT | WS_BORDER | WS_TABSTOP
+ LTEXT "&Client map size (bytes):", IDC_MAPTEXT, 22, 107, 77, 12
+ COMBOBOX IDC_MAPSIZE, 126, 106, 58, 40, CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
+ //PUSHBUTTON "&Modify...", IDC_MODRES, 133, 132, 51, 13
+ ICON IDI_CAUTION, IDC_CAUTION_ICON, 9, 17, 18, 20
+ //LTEXT "The following represent the Firebird Server settings. Changes to these settings can adversely affect server performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
+ LTEXT "The following represent the Firebird Server settings. You can change them by manual modification of the Firebird configuration file (firebird.conf).", IDC_DEFAULT_TEXT, 35, 14, 164, 32
+ GROUPBOX "Firebird Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
+}
+
+ADVANCED_DLG DIALOG 6, 15, 204, 196
+STYLE DS_MODALFRAME | 0x4L | WS_CHILD | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Testing"
+FONT 8, "MS Sans Serif"
+{
+ LTEXT "Mi&n. Process Working Set (kb):", IDC_MINSIZETEXT, 20, 83, 104, 12
+ EDITTEXT IDC_MINSIZE, 136, 83, 47, 12, ES_RIGHT | WS_BORDER | WS_TABSTOP
+ LTEXT "Ma&x. Process Working Set (kb):", IDC_MAXSIZETEXT, 20, 104, 100, 12
+ EDITTEXT IDC_MAXSIZE, 136, 104, 47, 12, ES_RIGHT | WS_BORDER | WS_TABSTOP
+ GROUPBOX "Process Priority Class", IDC_GROUPBOX2, 21, 118, 96, 32, BS_GROUPBOX
+ CONTROL "N&ormal", IDC_PRIORITYNORM, "BUTTON", BS_AUTORADIOBUTTON | WS_TABSTOP, 28, 132, 37, 11
+ CONTROL "&High", IDC_PRIORITYHIGH, "BUTTON", BS_AUTORADIOBUTTON | WS_TABSTOP, 75, 133, 37, 11
+ //PUSHBUTTON "&Modify...", IDC_MODRES, 136, 137, 51, 13
+ ICON IDI_CAUTION, IDC_CAUTION_ICON, 9, 17, 18, 20
+ GROUPBOX "Advanced Firebird Settings", IDC_GROUPBOX1, 9, 63, 195, 100, BS_GROUPBOX
+ LTEXT "The following represent the Advanced Server settings. Changes to these settings can adversely affect system performance and can be adjusted by System Database Administrators only.", IDC_DEFAULT_TEXT, 35, 14, 164, 32
+}
+
+IDI_CAUTION ICON "caution.ico"
+
+PASSWORD_DLG DIALOG 113, 73, 133, 59
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | DS_3DLOOK
+CAPTION "Enter DBA Password"
+FONT 8, "MS Sans Serif"
+{
+ EDITTEXT IDC_DBAPASSWORD, 15, 12, 104, 12, ES_PASSWORD | WS_BORDER | WS_TABSTOP
+ DEFPUSHBUTTON "OK", IDOK, 12, 38, 50, 14
+ PUSHBUTTON "Cancel", IDCANCEL, 72, 38, 50, 14
+}
+
+STRINGTABLE LOADONCALL MOVEABLE DISCARDABLE
+{
+ IDS_CFGATTACH_FAILED, "An attempt to attach to the Firebird Configuration Service failed.\r\nPlease verify that InterBase is installed correctly."
+ IDS_CFGREAD_FAILED, "Internal Firebird Service error: Get Config Service failed"
+ IDS_CFGWRITE_FAILED, "Internal Firebird Service error: Set Config Service failed"
+ IDS_CFGNOT_SYSDBA, "You must be the System Database Administrator to modify the\r\nserver configuration parameters"
+ IDS_CFGBAD_PASSWD, "Invalid administrator password"
+ IDS_CFGSETOSERR, "The working set must be a positive number with\r\nthe maximum not less than the minimum, or zero\r\nto use the operating system defaults."
+ IDS_CFGSETIBERR, "The database cache must be at least 50 pages,\r\nand the client map must be at least 1024 bytes."
+ IDS_MODIFYBTN, "&Modify..."
+ IDS_RESETBTN, "&Reset"
+}

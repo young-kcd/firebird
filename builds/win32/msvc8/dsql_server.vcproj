@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -165,7 +165,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;_LIB;_WINDOWS;SUPERSERVER;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="DEBUG;_DEBUG;_LIB;_WINDOWS;SUPERSERVER;WIN32;DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -266,6 +266,10 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
+				RelativePath="..\..\..\src\dsql\alld.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\ddl.cpp"
 				>
 			</File>
@@ -306,19 +310,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Parser.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\pass1.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\preparse.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.cpp"
 				>
 			</File>
 			<File
@@ -342,10 +338,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\dsql\DdlNodes.epp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\dsql\metd.epp"
 					>
 				</File>
@@ -359,10 +351,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\dsql\blob.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\DdlNodes.cpp"
 					>
 				</File>
 				<File
@@ -385,7 +373,19 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath="..\..\..\src\dsql\all.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\alld_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\array_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\blk.h"
 				>
 			</File>
 			<File
@@ -398,10 +398,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\ddl_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DdlNodes.h"
 				>
 			</File>
 			<File
@@ -449,15 +445,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Nodes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\parse_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Parser.h"
 				>
 			</File>
 			<File
@@ -466,10 +454,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\prepa_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.h"
 				>
 			</File>
 			<File
@@ -494,6 +478,4 @@
 			>
 		</File>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

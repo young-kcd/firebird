@@ -44,7 +44,7 @@ de.InstalledProducts=Die Neuinstallations-Analyse ergibt, dass %s existierende F
 de.InstalledProdCountSingular=Version gefunden wurde.
 de.InstalledProdCountPlural=Versionen gefunden wurden.
 
-de.FbRunning1=Ein existierender Firebird %s Server läuft.
+de.FbRunning1=Ein existierender %s Server läuft.
 de.FbRunning2= Sie müssen die Anwendung schließen oder den Dienst
 de.FbRunning3=         beenden, bevor Sie fortfahren können.
 
@@ -55,7 +55,7 @@ de.IconReadme=Firebird %1 Liesmich
 de.IconUninstall=Firebird %1 Deinstallation
 de.ReleaseNotes= Release Hinweise. (Benötigt Acrobat Reader.)
 de.InstallationGuide= Installationsanleitung. (Benötigt Acrobat Reader.)
-de.BugFixes= bug fixes. (Benötigt Acrobat Reader.)
+de.BugFixes= Bugfixes. (Benötigt Acrobat Reader.)
 de.Uninstall=Firebird %1 deinstallieren
 de.Winsock2Web1=Winsock 2 ist nicht installiert.
 de.Winsock2Web2=Möchten Sie die Winsock 2 Update Home Page besuchen?

@@ -1,3 +1,4 @@
+
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_proto.h
@@ -24,12 +25,12 @@
 #ifndef ALICE_ALICE_PROTO_H
 #define ALICE_ALICE_PROTO_H
 
-#include "../jrd/ThreadData.h"
+#include "../jrd/thd.h"
 #include "../common/classes/MsgPrint.h"
-#include "../common/UtilSvc.h"
 
+#ifdef SERVICE_THREAD
 THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
-int		alice(Firebird::UtilSvc*);
+#endif
 
 class AliceGlobals;
 

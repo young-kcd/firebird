@@ -57,7 +57,6 @@ const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.1;
 const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.5;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
-const double MINIMUM_CARDINALITY = 1.0;
 
 // Default (Minimum) cost (nr. of pages) for an index.
 const int DEFAULT_INDEX_COST = 1;
@@ -68,12 +67,14 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 
-bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
-bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
-bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
+bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
+bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
+							 jrd_nod*, USHORT);
+bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
+							  jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
-jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
+jrd_nod* OPT_make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
 
 inline int STREAM_INDEX(const jrd_nod* node)
@@ -86,11 +87,8 @@ inline int STREAM_INDEX(const jrd_nod* node)
 			return e_prc_stream;
 		case nod_union:
 			return e_uni_stream;
-		case nod_aggregate:
-			return e_agg_stream;
 		default:
-			fb_assert(false);
-			return 0; // silence compiler warning.
+			return e_agg_stream;
 	}
 }
 
@@ -105,16 +103,16 @@ enum segmentScanType {
 	segmentScanStarting
 };
 
-class IndexScratchSegment
+class IndexScratchSegment 
 {
 public:
-	explicit IndexScratchSegment(MemoryPool& p);
+	IndexScratchSegment(MemoryPool& p);
 	IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment);
 
 
 	jrd_nod* lowerValue;		// lower bound on index value
 	jrd_nod* upperValue;		// upper bound on index value
-	bool excludeLower;			// exclude lower bound value from scan
+	bool excludeLower;			// exclude lower bound value from scan 
 	bool excludeUpper;			// exclude upper bound value from scan
 	int scope;					// highest scope level
 	segmentScanType scanType;	// scan type
@@ -122,7 +120,7 @@ public:
 	Firebird::Array<jrd_nod*> matches;
 };
 
-class IndexScratch
+class IndexScratch 
 {
 public:
 	IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* idx, CompilerScratch::csb_repeat* csb_tail);
@@ -146,7 +144,7 @@ typedef Firebird::SortedArray<int> SortedStreamList;
 class InversionCandidate
 {
 public:
-	explicit InversionCandidate(MemoryPool& p);
+	InversionCandidate(MemoryPool& p);
 
 	double			selectivity;
 	double			cost;
@@ -170,7 +168,7 @@ typedef Firebird::ObjectsArray<IndexScratch> IndexScratchList;
 class OptimizerRetrieval
 {
 public:
-	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, SSHORT streamNumber,
+	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, SSHORT streamNumber, 
 		bool outer, bool inner, jrd_nod** sortNode);
 	~OptimizerRetrieval();
 
@@ -178,16 +176,16 @@ public:
 	InversionCandidate* getInversion(RecordSource** rsb);
 
 protected:
-	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
-	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
+	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, NOD_T node_type) const;
+	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
 	VaryingString* getAlias();
 	InversionCandidate* generateInversion(RecordSource** rsb);
 	RecordSource* generateNavigation();
-	void getInversionCandidates(InversionCandidateList* inversions,
+	bool getInversionCandidates(InversionCandidateList* inversions, 
 		IndexScratchList* indexScratches, USHORT scope) const;
 	jrd_nod* makeIndexNode(const index_desc* idx) const;
 	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
-	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
+	InversionCandidate* makeInversion(InversionCandidateList* inversions, bool top = false) const;
 	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		jrd_nod* boolean, USHORT scope) const;
@@ -212,7 +210,7 @@ private:
 	IndexScratchList indexScratches;
 	InversionCandidateList inversionCandidates;
 	bool innerFlag;
-	bool outerFlag;
+	bool outerFlag; 
 	bool createIndexScanNodes;
 	bool setConjunctionsMatched;
 };
@@ -233,7 +231,7 @@ typedef Firebird::Array<IndexRelationship*> IndexedRelationships;
 class InnerJoinStreamInfo
 {
 public:
-	explicit InnerJoinStreamInfo(MemoryPool& p);
+	InnerJoinStreamInfo(MemoryPool& p);
 	bool independent() const;
 
 	int		stream;
@@ -252,8 +250,9 @@ typedef Firebird::HalfStaticArray<InnerJoinStreamInfo*, 8> StreamInfoList;
 class OptimizerInnerJoin
 {
 public:
-	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-		/*RiverStack& river_stack,*/ jrd_nod** sort_clause, jrd_nod** project_clause, jrd_nod* plan_clause);
+	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	streams,
+		RiverStack& river_stack, jrd_nod** sort_clause, 
+		jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -263,14 +262,16 @@ protected:
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
 		IndexRelationship* withRelationship) const;
-	void estimateCost(USHORT stream, double* cost, double* resulting_cardinality) const;
-	void findBestOrder(int position, InnerJoinStreamInfo* stream,
+	bool estimateCost(USHORT stream, double *cost, 
+		double *resulting_cardinality) const;
+	void findBestOrder(int position, InnerJoinStreamInfo* stream, 
 		IndexedRelationships* processList, double cost, double cardinality);
-	void getIndexedRelationship(InnerJoinStreamInfo* baseStream, InnerJoinStreamInfo* testStream);
+	void getIndexedRelationship(InnerJoinStreamInfo* baseStream, 
+		InnerJoinStreamInfo* testStream);
 	InnerJoinStreamInfo* getStreamInfo(int stream);
 #ifdef OPT_DEBUG
 	void printBestOrder() const;
-	void printFoundOrder(int position, double positionCost,
+	void printFoundOrder(int position, double positionCost, 
 		double positionCardinality, double cost, double cardinality) const;
 	void printProcessList(const IndexedRelationships* processList, int stream) const;
 	void printStartOrder() const;

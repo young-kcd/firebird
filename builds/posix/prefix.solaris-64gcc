@@ -13,7 +13,7 @@
 #
 
 # Firebird defines specific to Solaris (and x86) build
-CFLAGS_COMMON= -DSOLARIS -DBSD_COMP -Dsparc
+CFLAGS_COMMON= -DSOLARIS -DSOLARIS_MT -DBSD_COMP -Dsparc
 
 # compile flags for GCC compiler
 COMMON_GCC_FLAGS=  -MMD -fPIC -m64   -D__sparcv9   -mptr64 -mstack-bias -mno-v8plus -mcpu=v9 
@@ -55,20 +55,28 @@ PROD_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(PROD_GCC_FLAGS)
 DEV_FLAGS= $(CFLAGS_COMMON) $(SFIO_FLAGS) $(COMMON_GCC_FLAGS) $(DEBUG_GCC_FLAGS) \
       $(LOCAL_CFLAGS)
 
+# extra modules needed on this platform during bootstrap phase
+JRDBOOT_Extra_Files=isc_sync.cpp 
+
+GPRECOMMON_Files= ../jrd/thd.cpp ../jrd/isc_sync.cpp
+GPRECommon_Sources= $(GPRECOMMON_Files)
+
 
 OS_ServerFiles=inet_server.cpp
+GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp 
+DROP_Other_Sources= jrd/ThreadData.cpp
 LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
 
 Server_main_dummy = os/sun/server_main_dummy.cpp
 
-LIB_LINK_OPTIONS= -G
+LIB_LINK_OPTIONS:= -G
 
-LIB_PLATFORM_RPATH=-R $(1)
-LIB_LINK_SONAME=-h $(1)
+LIB_LINK_RPATH:=-R
+LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
 

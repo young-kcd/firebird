@@ -34,7 +34,7 @@
 	This class is a public interface for our generic configuration manager
 	and allows to access all configuration values by its getXXX() member
 	functions. Each of these functions corresponds to one and only one key
-	and has one input argument - default value, which is used when the
+	and has one input argument - default value, which is used when the 
 	requested key is missing or the configuration file is not found. Supported
 	value datatypes are "const char*", "int" and "bool". Usual default values for
 	these datatypes are empty string, zero and false respectively. There are
@@ -78,180 +78,302 @@ class Config
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
-		KEY_TCP_REMOTE_BUFFER_SIZE,					// 6
-		KEY_TCP_NO_NAGLE,							// 7
-		KEY_DEFAULT_DB_CACHE_PAGES,					// 8
-		KEY_CONNECTION_TIMEOUT,						// 9
-		KEY_DUMMY_PACKET_INTERVAL,					// 10
-		KEY_LOCK_MEM_SIZE,							// 11
-		KEY_LOCK_GRANT_ORDER,						// 12
-		KEY_LOCK_HASH_SLOTS,						// 13
-		KEY_LOCK_ACQUIRE_SPINS,						// 14
-		KEY_EVENT_MEM_SIZE,							// 15
-		KEY_DEADLOCK_TIMEOUT,						// 16
-		KEY_PRIORITY_SWITCH_DELAY,					// 17
-		KEY_USE_PRIORITY_SCHEDULER,					// 18
-		KEY_PRIORITY_BOOST,							// 19
-		KEY_REMOTE_SERVICE_NAME,					// 20
-		KEY_REMOTE_SERVICE_PORT,					// 21
-		KEY_REMOTE_PIPE_NAME,						// 22
-		KEY_IPC_NAME,								// 23
-		KEY_MAX_UNFLUSHED_WRITES,					// 24
-		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 25
-		KEY_PROCESS_PRIORITY_LEVEL,					// 26
-		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 27
-		KEY_REMOTE_AUX_PORT,						// 28
-		KEY_REMOTE_BIND_ADDRESS,					// 29
-		KEY_EXTERNAL_FILE_ACCESS,					// 30
-		KEY_DATABASE_ACCESS,						// 31
-		KEY_UDF_ACCESS,								// 32
-		KEY_TEMP_DIRECTORIES,						// 33
- 		KEY_BUGCHECK_ABORT,							// 34
-		KEY_LEGACY_HASH,							// 35
-		KEY_GC_POLICY,								// 36
-		KEY_REDIRECTION,							// 37
-		KEY_OLD_COLUMN_NAMING,						// 38
-		KEY_AUTH_METHOD,							// 39
-		KEY_DATABASE_GROWTH_INCREMENT,				// 40
-		KEY_MAX_FILESYSTEM_CACHE,					// 41
-		KEY_RELAXED_ALIAS_CHECKING,					// 42
-		KEY_OLD_SET_CLAUSE_SEMANTICS,				// 43
-		KEY_TRACE_CONFIG,							// 44
-		KEY_MAX_TRACELOG_SIZE						// 45
+		KEY_OLD_PARAMETER_ORDERING,					// 6
+		KEY_TCP_REMOTE_BUFFER_SIZE,					// 7
+		KEY_TCP_NO_NAGLE,							// 8
+		KEY_DEFAULT_DB_CACHE_PAGES,					// 9
+		KEY_CONNECTION_TIMEOUT,						// 10
+		KEY_DUMMY_PACKET_INTERVAL,					// 11
+		KEY_LOCK_MEM_SIZE,							// 12
+		KEY_LOCK_SEM_COUNT,							// 13
+		KEY_LOCK_SIGNAL,							// 14
+		KEY_LOCK_GRANT_ORDER,						// 15
+		KEY_LOCK_HASH_SLOTS,						// 16
+		KEY_LOCK_ACQUIRE_SPINS,						// 17
+		KEY_EVENT_MEM_SIZE,							// 18
+		KEY_DEADLOCK_TIMEOUT,						// 19
+		KEY_SOLARIS_STALL_VALUE,					// 20
+		KEY_TRACE_MEMORY_POOLS,						// 21	
+		KEY_PRIORITY_SWITCH_DELAY,					// 22
+		KEY_USE_PRIORITY_SCHEDULER,					// 23
+		KEY_PRIORITY_BOOST,							// 24
+		KEY_REMOTE_SERVICE_NAME,					// 25
+		KEY_REMOTE_SERVICE_PORT,					// 26
+		KEY_REMOTE_PIPE_NAME,						// 27
+		KEY_IPC_NAME,								// 28
+		KEY_MAX_UNFLUSHED_WRITES,					// 29
+		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 30
+		KEY_PROCESS_PRIORITY_LEVEL,					// 31
+		KEY_CREATE_INTERNAL_WINDOW,					// 32
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 33
+		KEY_REMOTE_AUX_PORT,						// 34
+		KEY_REMOTE_BIND_ADDRESS,					// 35
+		KEY_EXTERNAL_FILE_ACCESS,					// 36
+		KEY_DATABASE_ACCESS,						// 37
+		KEY_UDF_ACCESS,								// 38
+		KEY_TEMP_DIRECTORIES,						// 39
+ 		KEY_BUGCHECK_ABORT,							// 40
+		KEY_TRACE_DSQL,								// 41
+		KEY_LEGACY_HASH,							// 42
+		KEY_GC_POLICY,								// 43
+		KEY_REDIRECTION,							// 44
+		KEY_OLD_COLUMN_NAMING,						// 45
+		KEY_AUTH_METHOD,							// 46
+		KEY_DATABASE_GROWTH_INCREMENT,				// 47
+		KEY_MAX_FILESYSTEM_CACHE,					// 48
+		KEY_RELAXED_ALIAS_CHECKING					// 49
 	};
 
 public:
 
-	// Interface to support command line root specification.
-
-	// This ugly solution was required to make it possible to specify root
-	// in command line to load firebird.conf from that root, though in other
-	// cases firebird.conf may be also used to specify root.
-
+	/*
+	 Interface to support command line root specification.
+	*
+	 This ugly solution was required to make it possible to specify root
+	 in command line to load firebird.conf from that root, though in other 
+	 cases firebird.conf may be also used to specify root.
+	*/
 	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
 	static const Firebird::PathName* getCommandLineRootDirectory();
 
-	// Installation directory
+	/*
+		Installation directory
+	*/
 	static const char* getInstallDirectory();
 
-	// Root directory of current installation
+	/*
+		Root directory of current installation
+	*/
 	static const char* getRootDirectory();
 
-	// Allocation chunk for the temporary spaces
+	/*
+		Allocation chunk for the temporary spaces
+	*/
 	static int getTempBlockSize();
 
-	// Caching limit for the temporary data
+	/*
+		Caching limit for the temporary data
+	*/
 	static int getTempCacheLimit();
 
-	// Whether remote (NFS) files can be opened
+	/*
+		Whether remote (NFS) files can be opened
+	*/
 	static bool getRemoteFileOpenAbility();
 
-	// Startup option for the guardian
+	/*
+		Startup option for the guardian
+	*/
 	static int getGuardianOption();
 
-	// CPU affinity mask
+	/*
+		CPU affinity mask
+	*/
 	static int getCpuAffinityMask();
 
-	// XDR buffer size
+	/*
+		Old parameter ordering for backward compatibility with FB1/IB6.X
+	*/
+	static bool getOldParameterOrdering();
+
+	/*
+		XDR buffer size
+	*/
 	static int getTcpRemoteBufferSize();
 
-	// Disable Nagle algorithm
+	/*
+		Disable Nagle algorithm
+	*/
 	static bool getTcpNoNagle();
 
-	// Default database cache size
+	/*
+		Default database cache size
+	*/
 	static int getDefaultDbCachePages();
 
-	// Connection timeout
+	/*
+		Connection timeout
+	*/
 	static int getConnectionTimeout();
 
-	// Dummy packet interval
+	/*
+		Dummy packet interval
+	*/
 	static int getDummyPacketInterval();
 
-	// Lock manager memory size
+	/*
+		Lock manager memory size
+	*/
 	static int getLockMemSize();
 
-	// Lock manager grant order
+	/*
+		Lock manager semaphore count
+	*/
+	static int getLockSemCount();
+
+	/*
+		Lock manager signal number
+	*/
+	static int getLockSignal();
+
+	/*
+		Lock manager grant order
+	*/
 	static bool getLockGrantOrder();
 
-	// Lock manager hash slots
+	/*
+		Lock manager hash slots
+	*/
 	static int getLockHashSlots();
 
-	// Lock manager acquire spins
+	/*
+		Lock manager acquire spins
+	*/
 	static int getLockAcquireSpins();
 
-	// Event manager memory size
+	/*
+		Event manager memory size
+	*/
 	static int getEventMemSize();
 
-	// Deadlock timeout
+	/*
+		Deadlock timeout
+	*/
 	static int getDeadlockTimeout();
 
-	// Priority switch delay
+	/*
+		Solaris stall value
+	*/
+	static int getSolarisStallValue();
+
+	/*
+		Trace memory pools
+	*/
+	static bool getTraceMemoryPools();
+
+	/*
+		Priority switch delay
+	*/
 	static int getPrioritySwitchDelay();
 
-	// Use priority scheduler
+	/*
+		Use priority scheduler
+	*/
 	static bool getUsePriorityScheduler();
 
-	// Priority boost
+	/*
+		Priority boost
+	*/
 	static int getPriorityBoost();
 
-	// Service name for remote protocols
+	/*
+		Service name for remote protocols
+	*/
 	static const char *getRemoteServiceName();
 
-	// Service port for INET
+	/*
+		Service port for INET
+	*/
 	static unsigned short getRemoteServicePort();
 
-	// Pipe name for WNET
+	/*
+		Pipe name for WNET
+	*/
 	static const char *getRemotePipeName();
 
-	// Name for IPC-related objects
+	/*
+		Name for IPC-related objects
+	*/
 	static const char *getIpcName();
 
-	// Unflushed writes number
+	/*
+		Unflushed writes number
+	*/
 	static int getMaxUnflushedWrites();
 
-	// Unflushed write time
+	/*
+		Unflushed write time
+	*/
 	static int getMaxUnflushedWriteTime();
 
-	// Process priority level
+	/*
+		Process priority level
+	*/
 	static int getProcessPriorityLevel();
 
-	// Complete boolean evaluation
+	/*
+		Create window for IPC stuff
+	*/
+	static bool getCreateInternalWindow();
+
+	/*
+		Complete boolean evaluation
+	*/
 	static bool getCompleteBooleanEvaluation();
 
-	// Port for event processing
+	/*
+		Port for event processing
+	*/
 	static int getRemoteAuxPort();
 
-	// Server binding NIC address
+	/*
+		Server binding NIC address
+	*/
 	static const char *getRemoteBindAddress();
 
-	// Directory list for external tables
+	/*
+		Directory list for external tables
+	*/
 	static const char *getExternalFileAccess();
 
-	// Directory list for databases
+	/*
+		Directory list for databases
+	*/
 	static const char *getDatabaseAccess();
 
-	// Directory list for UDF libraries
+	/*
+		Directory list for UDF libraries
+	*/
 	static const char *getUdfAccess();
 
-	// Temporary directories list
+	/*
+		Temporary directories list
+	*/
 	static const char *getTempDirectories();
 
-	// Abort on BUGCHECK and structured exceptions
+	/*
+		DSQL trace bitmask
+	*/
+	static int getTraceDSQL();
+
+ 	/*
+ 		Abort on BUGCHECK and structured exceptions
+ 	*/
  	static bool getBugcheckAbort();
 
-	// Let use of des hash to verify passwords
+	/*
+		Let use of des hash to verify passwords
+	*/
 	static bool getLegacyHash();
 
-	// GC policy
+	/*
+		GC policy
+	*/
 	static const char *getGCPolicy();
 
-	// Redirection
+	/*
+		Redirection
+	*/
 	static bool getRedirection();
 
-	// Use old column naming rules (does not conform to SQL standard)
+	/*
+		Use old column naming rules (does not conform to SQL standard)
+	*/
 	static bool getOldColumnNaming();
 
-	// Use native, trusted or mixed authentication
+	/*
+		Use native, trusted or mixed authentication 
+	*/
 	static const char *getAuthMethod();
 
 	static int getDatabaseGrowthIncrement();
@@ -259,12 +381,6 @@ public:
 	static int getMaxFileSystemCache();
 
 	static bool getRelaxedAliasChecking();
-
-	static bool getOldSetClauseSemantics();
-
-	static const char *getAuditTraceConfigFile();
-
-	static int getMaxUserTraceLogSize();
 };
 
 namespace Firebird {

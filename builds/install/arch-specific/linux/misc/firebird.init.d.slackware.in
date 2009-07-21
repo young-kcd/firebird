@@ -22,11 +22,14 @@ LD_LIBRARY_PATH=$FIREBIRD/lib
 
 export FIREBIRD LD_LIBRARY_PATH
 
-GUARDIAN=$FIREBIRD/bin/fbguard
+MANAGER=$FIREBIRD/bin/fbmgr.bin
+
+# Check the file is there and is executable.
+[ -x $MANAGER ] || exit 0
 
 case "$1" in
 	'start')	echo -n "Starting $FULLNAME: "
-			echo $GUARDIAN -pidfile $pidfile -daemon -forever | su $FBRunUser ;;
+			echo $MANAGER -pidfile $pidfile -start -forever | su $FBRunUser ;;
 	'stop')		echo -n "Stopping $FULLNAME: "
 			if [ -f $pidfile ]; then kill `cat $pidfile`; echo "done."; else echo "error: no PID file."; fi ;;
 	'restart')	$0 stop ; sleep 1; $0 start ;;

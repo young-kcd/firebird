@@ -30,10 +30,15 @@ const int APP_VSIZE			= 150;
 /* This is the title used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
 
-static const char* const APP_NAME		= "Firebird Server";
-static const char* const APP_LABEL		= "Firebird Server";
+static const char* APP_NAME		= "Firebird Server";
+static const char* APP_LABEL	= "Firebird Server";
 
 #define ON_NOTIFYICON		WM_USER + 2
+
+const int WIN_TEXTLEN		= 128;
+const int MSG_STRINGLEN		= 64;
+const int DRV_STRINGLEN		= 32;
+const int TMP_STRINGLEN		= 512;
 
 #define CHECK_VOLUME(a)		((a)->dbcv_devicetype == DBT_DEVTYP_VOLUME)
 #define CHECK_USAGE(a)		((a)->dbcv_unitmask & ulInUseMask)
@@ -41,8 +46,8 @@ static const char* const APP_LABEL		= "Firebird Server";
 /* This is the class name used by the hidden msgs window in the engine.
    Both fbclient.dll and fbserver.exe should use the same. */
 
-static const char* const szClassName	= "FB_Server";
-static const char* const szWindowName	= "Firebird Server"; // Used in iscguard.cpp
+static const char* szClassName = "FB_Server";
+static const char* szWindowName = "Firebird Server"; // Used in iscguard.cpp
 
 /* Defines to make 32-bit only compilers happy */
 

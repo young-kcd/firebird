@@ -36,7 +36,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 									SSHORT country,
 									const ASCII* POSIX,
 									USHORT attributes,
-									const UCHAR* /*specific_attributes*/,
+									const UCHAR* specific_attributes,
 									ULONG specific_attributes_length)
 //#define FAMILY_MULTIBYTE(id_number, name, charset, country)
 {
@@ -55,7 +55,7 @@ static inline bool FAMILY_MULTIBYTE(texttype* cache,
 }
 
 
-TEXTTYPE_ENTRY3(JIS220_init)
+TEXTTYPE_ENTRY(JIS220_init)
 {
 	static const ASCII POSIX[] = "C.SJIS";
 
@@ -65,12 +65,12 @@ TEXTTYPE_ENTRY3(JIS220_init)
 		//cache->texttype_fn_str_to_lower = sjis_str_to_lower;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
-TEXTTYPE_ENTRY3(JIS230_init)
+TEXTTYPE_ENTRY(JIS230_init)
 {
 	static const ASCII POSIX[] = "C.EUC_J";
 
@@ -80,14 +80,16 @@ TEXTTYPE_ENTRY3(JIS230_init)
 		//cache->texttype_fn_str_to_lower = famasc_str_to_lower;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
 #ifdef NOT_USED_OR_REPLACED
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
+ */
+/*
  *	Note: This function expects Multibyte input
  */
 static ULONG sjis_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
@@ -98,15 +100,12 @@ static ULONG sjis_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen)
-	{
+	while (iLen && iOutLen) {
 		BYTE c = *pStr++;
-		if (waiting_for_sjis2 || SJIS1(c))
-		{
+		if (waiting_for_sjis2 || SJIS1(c)) {
 			waiting_for_sjis2 = !waiting_for_sjis2;
 		}
-		else
-		{
+		else {
 			if (c >= ASCII_LOWER_A && c <= ASCII_LOWER_Z)
 				c = (c - ASCII_LOWER_A + ASCII_UPPER_A);
 		}
@@ -115,13 +114,15 @@ static ULONG sjis_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (INTL_BAD_STR_LENGTH);			// Must have ran out of output space
+		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
 	return (pOutStr - p);
 }
 
 
 /*
  *	Returns INTL_BAD_STR_LENGTH if output buffer was too small
+ */
+/*
  *	Note: This function expects Multibyte input
  */
 static ULONG sjis_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr)
@@ -132,15 +133,12 @@ static ULONG sjis_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 	fb_assert(pOutStr != NULL);
 	fb_assert(iOutLen >= iLen);
 	const BYTE* const p = pOutStr;
-	while (iLen && iOutLen)
-	{
+	while (iLen && iOutLen) {
 		BYTE c = *pStr++;
-		if (waiting_for_sjis2 || SJIS1(c))
-		{
+		if (waiting_for_sjis2 || SJIS1(c)) {
 			waiting_for_sjis2 = !waiting_for_sjis2;
 		}
-		else
-		{
+		else {
 			if (c >= ASCII_UPPER_A && c <= ASCII_UPPER_Z)
 				c = (c - ASCII_UPPER_A + ASCII_LOWER_A);
 		}
@@ -149,7 +147,7 @@ static ULONG sjis_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, ULON
 		iOutLen--;
 	}
 	if (iLen != 0)
-		return (INTL_BAD_STR_LENGTH);			// Must have ran out of output space
+		return (INTL_BAD_STR_LENGTH);			/* Must have ran out of output space */
 	return (pOutStr - p);
 }
 #endif

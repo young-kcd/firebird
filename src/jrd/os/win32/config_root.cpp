@@ -18,7 +18,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -26,15 +25,13 @@
 #include <windows.h>
 
 #include "fb_types.h"
-#include "../../../common/classes/fb_string.h"
-#include "../../../common/dllinst.h"
+#include "../common/classes/fb_string.h"
 
 #include "../jrd/os/config_root.h"
 #include "../utilities/install/registry.h"
 #include "../utilities/install/install_nt.h"
 
-using Firebird::PathName;
-
+typedef Firebird::PathName string;
 
 /******************************************************************************
  *
@@ -42,12 +39,12 @@ using Firebird::PathName;
  */
 namespace {
 
-bool getRootFromRegistry(PathName& root)
+bool getRootFromRegistry(string& root)
 {
 	HKEY hkey;
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
-			0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
+		0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
 	{
 		return false;
 	}
@@ -65,29 +62,12 @@ bool getRootFromRegistry(PathName& root)
 	return false;
 }
 
-
-bool getBinFromHInstance(PathName& root)
-{
-	const HINSTANCE hDllInst = Firebird::hDllInst;
-	if (!hDllInst)
-	{
-		return false;
-	}
-
-	char* filename = root.getBuffer(MAX_PATH);
-	GetModuleFileName(hDllInst, filename, MAX_PATH);
-
-	root.recalculate_length();
-
-	return root.hasData();
-}
-
 } // namespace
-
 
 void ConfigRoot::osConfigRoot()
 {
 	// check the registry first
+//#if !defined(EMBEDDED)
 #if defined(SUPERCLIENT)
 	if (getRootFromRegistry(root_dir))
 	{
@@ -96,31 +76,24 @@ void ConfigRoot::osConfigRoot()
 	}
 #endif
 
-	// get the pathname of the running dll / executable
-	PathName bin_dir;
-	if (!getBinFromHInstance(bin_dir))
-	{
-		bin_dir = fb_utils::get_process_name();
-	}
-
-	if (bin_dir.hasData())
+	// get the pathname of the running executable
+	string bin_dir = fb_utils::get_process_name();
+	if (bin_dir.length() != 0)
 	{
 		// get rid of the filename
-		size_t index = bin_dir.rfind(PathUtils::dir_sep);
-		root_dir = bin_dir.substr(0, index);
+		int index = bin_dir.rfind(PathUtils::dir_sep);
+		bin_dir = bin_dir.substr(0, index);
 
 		// how should we decide to use bin_dir instead of root_dir? any ideas?
 		// ???
-#ifndef EMBEDDED
-		// go to the parent directory
-		index = root_dir.rfind(PathUtils::dir_sep, root_dir.length());
-		if (index)
-		{
-			root_dir = root_dir.substr(0, index);
-		}
+#if defined(EMBEDDED)
+		root_dir = bin_dir + PathUtils::dir_sep;
+		return;
 #endif
-		root_dir += PathUtils::dir_sep;
 
+		// go to the parent directory
+		index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
+		root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
 		return;
 	}
 
@@ -128,36 +101,3 @@ void ConfigRoot::osConfigRoot()
 	root_dir = FB_PREFIX;
 }
 
-void ConfigRoot::osConfigInstallDir()
-{
-
-	// get the pathname of the running dll / executable
-	PathName bin_dir;
-	if (!getBinFromHInstance(bin_dir))
-	{
-		bin_dir = fb_utils::get_process_name();
-	}
-
-	if (bin_dir.hasData())
-	{
-		// get rid of the filename
-		size_t index = bin_dir.rfind(PathUtils::dir_sep);
-		install_dir = bin_dir.substr(0, index);
-
-		// how should we decide to use bin_dir instead of root_dir? any ideas?
-		// ???
-#ifndef EMBEDDED
-		// go to the parent directory
-		index = install_dir.rfind(PathUtils::dir_sep, install_dir.length());
-		if (index)
-		{
-			install_dir = install_dir.substr(0, index);
-		}
-#endif
-
-		return;
-	}
-
-	// As a last resort get it from the default install directory
-	install_dir = FB_PREFIX;
-}

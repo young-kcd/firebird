@@ -28,7 +28,7 @@
 #ifndef JRD_ALIGN_H
 #define JRD_ALIGN_H
 
-/*
+/* 
 Maximum alignments for corresponding data types are defined in dsc.h
 */
 
@@ -50,11 +50,9 @@ No need to worry about blr_blob or ?blr_blob_id
 */
 
 #include "../jrd/dsc.h"
-#include "../jrd/RecordNumber.h"
 
 static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
-{
-	0, 0, 0, 0, 0, 0, 0,
+	{ 0, 0, 0, 0, 0, 0, 0,
 	dtype_short,				/* blr_short == 7 */
 	dtype_long,					/* blr_long == 8 */
 	dtype_quad,					/* blr_quad == 9 */
@@ -78,8 +76,7 @@ static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	0, 0, 0, 0
 };
 
-static const USHORT type_alignments[DTYPE_TYPE_MAX] =
-{
+static const USHORT type_alignments[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -96,19 +93,17 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] =
 	sizeof(SQUAD),				/* dtype_quad */
 #endif
 	sizeof(float),				/* dtype_real */
-	FB_DOUBLE_ALIGN,			/* dtype_double */
-	FB_DOUBLE_ALIGN,			/* dtype_d_float */
+	DOUBLE_ALIGN,				/* dtype_double */
+	DOUBLE_ALIGN,				/* dtype_d_float */
 	sizeof(GDS_DATE),			/* dtype_sql_date */
 	sizeof(GDS_TIME),			/* dtype_sql_time */
 	sizeof(GDS_DATE),			/* dtype_timestamp */
 	sizeof(SLONG),				/* dtype_blob */
 	sizeof(SLONG),				/* dtype_array */
-	sizeof(SINT64),				/* dtype_int64 */
-	sizeof(ULONG)				/* dtype_dbkey */
+	sizeof(SINT64)				/* dtype_int64 */
 };
 
-static const USHORT type_lengths[DTYPE_TYPE_MAX] =
-{
+static const USHORT type_lengths[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -128,15 +123,12 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] =
 	sizeof(GDS_TIMESTAMP),		/* dtype_timestamp */
 	sizeof(ISC_QUAD),			/* dtype_blob */
 	sizeof(ISC_QUAD),			/* dtype_array */
-	sizeof(SINT64),				/* dtype_int64 */
-	sizeof(RecordNumber::Packed) /*dtype_dbkey */
+	sizeof(SINT64)				/* dtype_int64 */
 };
 
 
-// This table is only used by gpre's cme.cpp.
 // float, double are numbers from IEEE floating-point standard (IEEE 754)
-static const USHORT type_significant_bits[DTYPE_TYPE_MAX] =
-{
+static const USHORT type_significant_bits[DTYPE_TYPE_MAX] = {
 	0,
 	0,							/* dtype_text */
 	0,							/* dtype_cstring */
@@ -156,8 +148,8 @@ static const USHORT type_significant_bits[DTYPE_TYPE_MAX] =
 	sizeof(GDS_TIMESTAMP) * 8,	/* dtype_timestamp */
 	sizeof(ISC_QUAD) * 8,		/* dtype_blob */
 	sizeof(ISC_QUAD) * 8,		/* dtype_array */
-	sizeof(SINT64) * 8,			/* dtype_int64 */
-	0							// dbkey
+	sizeof(SINT64) * 8			/* dtype_int64 */
 };
 
 #endif /* JRD_ALIGN_H */
+

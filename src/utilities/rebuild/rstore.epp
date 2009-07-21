@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
-#include "../jrd/ods.h"
 #include "../utilities/rebuild/rebuild.h"
 #include "../utilities/rebuild/rebui_proto.h"
 #include "../utilities/rebuild/rstor_proto.h"
@@ -32,8 +31,6 @@
 DATABASE DB = STATIC FILENAME "rebuild.fdb";
 
 static void store_headers(RBDB);
-
-using namespace Ods;
 
 
 void RSTORE( RBDB rbdb)
@@ -82,20 +79,19 @@ static void store_headers( RBDB rbdb)
  *	into a database.
  *
  **************************************/
-	const pag* page;
-	const header_page* header;
-	const blob_page* blob;
-	const btree_page* bucket;
-	const data_page* data;
-	const index_root_page* index_root;
-	const page_inv_page* pip;
-	const pointer_page* pointer;
+	PAG page;
+	header_page* header;
+	BLP blob;
+	BTR bucket;
+	DPG data;
+	IRT index_root;
+	page_inv_page* pip;
+	PPG pointer;
 	ISC_QUAD temp;
 
 	ULONG page_number = 0;
 
-	while (page = RBDB_read(rbdb, page_number))
-	{
+	while (page = RBDB_read(rbdb, page_number)) {
 		STORE P IN FULL_PAGES USING
 			{
 				P.NUMBER = page_number;
@@ -132,8 +128,7 @@ static void store_headers( RBDB rbdb)
 				P.TIP_NEXT.NULL = TRUE;
 
 
-				switch (page->pag_type)
-				{
+				switch (page->pag_type) {
 				case pag_header:
 					header = (header_page*) page;
 					P.HDR_PAGE_SIZE.NULL = FALSE;
@@ -176,7 +171,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_pointer:
-					pointer = (pointer_page*) page;
+					pointer = (PPG) page;
 					P.PPG_NEXT.NULL = FALSE;
 					P.PPG_COUNT.NULL = FALSE;
 					P.PPG_MIN_SPACE.NULL = FALSE;
@@ -192,7 +187,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_data:
-					data = (data_page*) page;
+					data = (DPG) page;
 					P.DPG_COUNT.NULL = FALSE;
 					P.RELATION.NULL = FALSE;
 					P.SEQUENCE.NULL = FALSE;
@@ -202,7 +197,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_root:
-					index_root = (index_root_page*) page;
+					index_root = (IRT) page;
 					P.IRT_COUNT.NULL = FALSE;
 					P.RELATION.NULL = FALSE;
 					P.IRT_COUNT = index_root->irt_count;
@@ -210,7 +205,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_index:
-					bucket = (btree_page*) page;
+					bucket = (BTR) page;
 					P.BTR_SIBLING.NULL = FALSE;
 					P.BTR_LENGTH.NULL = FALSE;
 					P.BTR_ID.NULL = FALSE;
@@ -224,7 +219,7 @@ static void store_headers( RBDB rbdb)
 					break;
 
 				case pag_blob:
-					blob = (blob_page*) page;
+					blob = (BLP) page;
 					P.BLP_LEAD_PAGE.NULL = FALSE;
 					P.BLP_LENGTH.NULL = FALSE;
 					P.SEQUENCE.NULL = FALSE;

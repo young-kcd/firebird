@@ -26,8 +26,7 @@
 
 #include "../common/classes/MetaName.h"
 
-struct sdl_info
-{
+struct sdl_info {
 	USHORT			sdl_info_fid;
 	USHORT			sdl_info_rid;
 	Firebird::MetaName	sdl_info_field;
@@ -39,8 +38,7 @@ struct sdl_info
 };
 
 
-struct array_slice
-{
+struct array_slice {
 	enum slice_dir_t { slc_reading_array, slc_writing_array };
 	DSC slice_desc;
 	const BLOB_PTR* slice_end;

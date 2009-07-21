@@ -59,7 +59,7 @@ void ERRQ_bugcheck( USHORT number)
 }
 
 
-void ERRQ_database_error( qli_dbb* dbb, ISC_STATUS* status_vector)
+void ERRQ_database_error( DBB dbb, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -72,31 +72,32 @@ void ERRQ_database_error( qli_dbb* dbb, ISC_STATUS* status_vector)
  *
  **************************************/
 
-	if (dbb)
-	{
-		ERRQ_msg_put(10, dbb->dbb_filename);	// Msg10 ** QLI error from database %s **
+	if (dbb) {
+		ERRQ_msg_put(10, dbb->dbb_filename);	/* Msg10 ** QLI error from database %s ** */
 		gds__print_status(status_vector);
 	}
-	else
-	{
-		ERRQ_msg_put(11);	// Msg11 ** QLI error from database **
+	else {
+		ERRQ_msg_put(11);	/* Msg11 ** QLI error from database ** */
 		gds__print_status(status_vector);
 	}
 
 	QLI_skip_line = true;
 
-	// if we've really got the database open and get an I/O error,
-	// close up neatly.  If we get an I/O error trying to open the
-	// database, somebody else will clean up
+/* if we've really got the database open and get an I/O error,
+   close up neatly.  If we get an I/O error trying to open the
+   database, somebody else will clean up */
 
 	if (dbb && dbb->dbb_handle && status_vector[1] == isc_io_error)
-		ERRQ_msg_put(458, dbb->dbb_filename);	// Msg458 ** connection to database %s lost **
+		ERRQ_msg_put(458, dbb->dbb_filename);	/* Msg458 ** connection to database %s lost ** */
 
-	Firebird::LongJump::raise();
+	if (QLI_env) {
+		Firebird::LongJump::raise();
+	}
 }
 
 
-void ERRQ_error(USHORT number, const SafeArg& arg)
+void ERRQ_error(USHORT number,
+				const SafeArg& arg)
 {
 /**************************************
  *
@@ -114,17 +115,16 @@ void ERRQ_error(USHORT number, const SafeArg& arg)
 	ERRQ_pending();
 	ERRQ_error_format(number, arg);
 
-	Firebird::LongJump::raise();
-	/*
-	else
-	{
+	if (QLI_env)
+		Firebird::LongJump::raise();
+	else {
 		ERRQ_pending();
 		ERRQ_exit(FINI_ERROR);
 	}
-	*/
 }
 
-void ERRQ_error(USHORT number, const char* str)
+void ERRQ_error(USHORT number,
+				const char* str)
 {
 /**************************************
  *
@@ -143,7 +143,8 @@ void ERRQ_error(USHORT number, const char* str)
 }
 
 
-void ERRQ_error_format(USHORT number, const SafeArg& arg)
+void ERRQ_error_format(USHORT number,
+					   const SafeArg& arg)
 {
 /**************************************
  *
@@ -160,8 +161,8 @@ void ERRQ_error_format(USHORT number, const SafeArg& arg)
 
 	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(s), s, arg);
 	fb_msg_format(0, QLI_MSG_FAC, 12, sizeof(ERRQ_message), ERRQ_message, SafeArg() << s);
-	// Msg12 ** QLI error: %s **
-	QLI_error = ERRQ_message;
+	/* Msg12 ** QLI error: %s ** */
+	QLI_error = (TEXT*) ERRQ_message;
 	QLI_skip_line = true;
 }
 
@@ -185,7 +186,10 @@ void ERRQ_exit( int status)
 }
 
 
-void ERRQ_msg_format(USHORT number, USHORT length, TEXT* output_string, const SafeArg& arg)
+void ERRQ_msg_format(USHORT number,
+					 USHORT length,
+					 TEXT* output_string,
+					 const SafeArg& arg)
 {
 /**************************************
  *
@@ -202,7 +206,9 @@ void ERRQ_msg_format(USHORT number, USHORT length, TEXT* output_string, const Sa
 }
 
 
-void ERRQ_msg_partial(USHORT number, const SafeArg& arg)
+void ERRQ_msg_partial(
+					  USHORT number,
+					  const SafeArg& arg)
 {
 /**************************************
  *
@@ -215,12 +221,14 @@ void ERRQ_msg_partial(USHORT number, const SafeArg& arg)
  *
  **************************************/
 
-	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message), ERRQ_message, arg);
+	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
+					ERRQ_message, arg);
 	printf("%s", ERRQ_message);
 }
 
 
-void ERRQ_msg_put(USHORT number, const SafeArg& arg)
+void ERRQ_msg_put(USHORT number,
+				  const SafeArg& arg)
 {
 /**************************************
  *
@@ -234,12 +242,14 @@ void ERRQ_msg_put(USHORT number, const SafeArg& arg)
  *
  **************************************/
 
-	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message), ERRQ_message, arg);
+	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
+					ERRQ_message, arg);
 	printf("%s\n", ERRQ_message);
 }
 
 
-void ERRQ_msg_put(USHORT number, const char* str)
+void ERRQ_msg_put(USHORT number,
+				  const char* str)
 {
 /**************************************
  *
@@ -253,7 +263,8 @@ void ERRQ_msg_put(USHORT number, const char* str)
  *
  **************************************/
 
-	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message), ERRQ_message, SafeArg() << str);
+	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
+					ERRQ_message, SafeArg() << str);
 	printf("%s\n", ERRQ_message);
 }
 
@@ -277,7 +288,7 @@ int ERRQ_msg_get( USHORT number, TEXT* output_msg, size_t s_size)
 }
 
 
-void ERRQ_pending()
+void ERRQ_pending(void)
 {
 /**************************************
  *
@@ -290,15 +301,15 @@ void ERRQ_pending()
  *
  **************************************/
 
-	if (QLI_error)
-	{
-		printf("%s\n", QLI_error);
+	if (QLI_error) {
+		printf("%s\n", (const char*)QLI_error);
 		QLI_error = NULL;
 	}
 }
 
 
-void ERRQ_print_error(USHORT number, const SafeArg& arg)
+void ERRQ_print_error(USHORT number,
+					  const SafeArg& arg)
 {
 /**************************************
  *
@@ -316,7 +327,8 @@ void ERRQ_print_error(USHORT number, const SafeArg& arg)
 }
 
 
-void ERRQ_print_error(USHORT number, const char* str)
+void ERRQ_print_error(USHORT number,
+					  const char* str)
 {
 /**************************************
  *

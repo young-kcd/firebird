@@ -46,9 +46,10 @@ public:
 	typedef GenericMap<SpecificAttribute> SpecificAttributesMap;
 
 public:
-	static string generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributesMap& map);
-	static bool parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR* s,
-										SpecificAttributesMap* map);
+	static string generateSpecificAttributes(
+		Jrd::CharSet* cs, SpecificAttributesMap& map);
+	static bool parseSpecificAttributes(
+		Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map);
 
 	static string convertAsciiToUtf16(const string& ascii);
 	static string convertUtf16ToAscii(const string& utf16, bool* error);
@@ -58,16 +59,7 @@ public:
 	static ULONG cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 		ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position);
 
-	static ULONG cvtUtf8ToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-		ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position);
-	static ULONG cvtUtf16ToUtf8(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-		ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position);
-
-	static INTL_BOOL utf8WellFormed(charset* cs, ULONG len, const UCHAR* str,
-		ULONG* offendingPos);
-
 	static void initAsciiCharset(charset* cs);
-	static void initUtf8Charset(charset* cs);
 	static void initConvert(csconvert* cvt, pfn_INTL_convert func);
 	static void initNarrowCharset(charset* cs, const ASCII* name);
 	static bool initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
@@ -89,8 +81,7 @@ private:
 
 	static bool isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size);
 
-	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size,
-		bool returnEscape);
+	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size, bool returnEscape);
 };
 
 }	// namespace Firebird

@@ -31,12 +31,14 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: postInstall.sh.in,v 1.3.2.5 2008-12-26 13:47:37 alexpeshkoff Exp $
+# 
 
 # The post install script for Firebird Classic
 
     # Make sure the links are in place 
     if  [ -z "$FirebirdInstallPrefix" ]
-       then
+      then
         FirebirdInstallPrefix=@prefix@
     fi
 
@@ -55,7 +57,7 @@
         addFirebirdUser
     fi
 
-	fixFilePermissions
+	setFilePermissions
     createLinksForBackCompatibility
     buildUninstallFile
     updateInetdServiceEntry

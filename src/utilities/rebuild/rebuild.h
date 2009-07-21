@@ -16,7 +16,6 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
 #ifndef UTILITIES_REBUILD_H
 #define UTILITIES_REBUILD_H
 
@@ -25,35 +24,32 @@
 
 const ULONG BIG_NUMBER = (ULONG) -1;
 
-struct fil
-{
+typedef struct fil {
     int		fil_file;
     SSHORT	fil_length;
     SCHAR	fil_name[1];
-};
+} *FIL;
 
-struct rbdb
-{
-	ULONG	rbdb_map_length;
-	int		rbdb_map_base;
-	int		rbdb_map_count;
-	SCHAR*	rbdb_map_region;
-	SSHORT	rbdb_page_size;
-	bool	rbdb_valid;
-	SLONG	rbdb_window_offset;
-	SLONG	rbdb_last_page;
-	PAG		rbdb_buffer1;
-	PAG		rbdb_buffer2; // allocated for not used?
-	rbdb*	rbdb_next;
-	fil		rbdb_file;
-};
+typedef struct rbdb {
+    ULONG	rbdb_map_length; 
+    int		rbdb_map_base;
+    int		rbdb_map_count;
+    SCHAR	*rbdb_map_region;
+    SSHORT	rbdb_page_size;
+    SCHAR	rbdb_valid;
+    SLONG	rbdb_window_offset;
+    SLONG	rbdb_last_page;
+    PAG		rbdb_buffer1;
+    PAG		rbdb_buffer2;
+    struct rbdb	*rbdb_next;
+    struct fil	rbdb_file;
+} *RBDB;
 
-struct swc
-{
-    bool    swc_switch;
-    //bool  swc_comma;
-    TEXT*	swc_string;
-};
+typedef struct swc { 
+    SCHAR    swc_switch;
+    SCHAR    swc_comma;
+    TEXT    *swc_string;
+} *SWC;
 
-#endif // UTILITIES_REBUILD_H
+#endif /* UTILITIES_REBUILD_H */
 

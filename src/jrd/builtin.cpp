@@ -2,7 +2,7 @@
  *	PROGRAM:	InterBase Access Method
  *	MODULE:		builtin.cpp
  *	DESCRIPTION:	Entry points for builtin UDF library
- *
+ *			
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -30,18 +30,16 @@
 #include "../jrd/flu_proto.h"
 #include "../jrd/gds_proto.h"
 
-struct FN
-{
+struct FN {
 	const TEXT* fn_module;
 	const TEXT* fn_entrypoint;
 	FPTR_INT fn_function;
 };
 
-static const FN isc_builtin_functions[] =
-{
+static const FN isc_builtin_functions[] = {
 /*    Internal functions available for QA testing only */
-/*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,
-
+/*    "DEBUG_CRASH_TESTS", "TEST1", QATEST_entrypoint,  
+ 
 and so shall it be, *NEVER* include this in a production build
 removed this ugly security hole
 FSG 18.Dez.2000
@@ -109,7 +107,8 @@ FPTR_INT BUILTIN_entrypoint(const TEXT* module, const TEXT* entrypoint)
 /* Scan the list for a matching (module, entrypoint) name */
 
 	for (const FN* function = isc_builtin_functions; function->fn_module; ++function) {
-		if (!strcmp(temp, function->fn_module) && !strcmp(ep, function->fn_entrypoint))
+		if (!strcmp(temp, function->fn_module)
+			&& !strcmp(ep, function->fn_entrypoint))
 		{
 			return function->fn_function;
 		}

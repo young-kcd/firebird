@@ -24,7 +24,7 @@
 #ifndef GPRE_JRDME_PROTO_H
 #define GPRE_JRDME_PROTO_H
 
-void	JRDMET_init(gpre_dbb*);
+void	JRDMET_init(DBB);
 
 #endif // GPRE_JRDME_PROTO_H
 

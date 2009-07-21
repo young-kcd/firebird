@@ -85,7 +85,8 @@ static FILE* output_file;
 
 static inline void check_dyn(str* dyn, const int l)
 {
-	if (dyn->str_current - dyn->str_start + l > dyn->str_length && !TRN_get_buffer(dyn, l))
+	if (!(dyn->str_current - dyn->str_start + l <=  dyn->str_length)
+		&& !TRN_get_buffer (dyn, l) )
 	{
 		DDL_error_abort( NULL, 320);
 	}
@@ -107,7 +108,7 @@ static inline void put_number( STR dyn, int attribute, SSHORT number)
 static const char* const FOPEN_WRITE_TYPE	= "w";
 
 
-void TRN_translate()
+void TRN_translate(void)
 {
 /**************************************
  *
@@ -123,7 +124,8 @@ void TRN_translate()
 /* Start by reversing the set of actions */
 	str d;
 	str* dyn = &d;
-	dyn->str_current = dyn->str_start = static_cast<UCHAR*>(gds__alloc(8192));
+	dyn->str_current = dyn->str_start =
+		reinterpret_cast<UCHAR*>(gds__alloc(8192));
 	if (!dyn->str_current)
 		DDL_error_abort(NULL, 14);	/* msg 14: memory exhausted */
 	dyn->str_length = 8192;
@@ -353,7 +355,7 @@ static void add_dimensions( STR dyn, DUDLEY_FLD field)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create dimensions.
+ *	Generate dynamic DDL to create dimensions. 
  *	First get rid of any old ones.
  *
  **************************************/
@@ -384,7 +386,7 @@ static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a
+ *	Generate dynamic DDL to create a 
  *	local field.
  *
  **************************************/
@@ -498,7 +500,7 @@ static void add_filter( STR dyn, FILTER filter)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a
+ *	Generate dynamic DDL to create a 
  *	blob filter.
  *
  **************************************/
@@ -525,7 +527,7 @@ static void add_function( STR dyn, FUNC function)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a
+ *	Generate dynamic DDL to create a 
  *	user define function.
  *
  **************************************/
@@ -550,7 +552,7 @@ static void add_function_arg( STR dyn, FUNCARG func_arg)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a
+ *	Generate dynamic DDL to create a 
  *	user defined function.
  *
  **************************************/
@@ -577,7 +579,7 @@ static void add_generator( STR dyn, SYM symbol)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a
+ *	Generate dynamic DDL to create a 
  *	generator.
  *
  **************************************/
@@ -838,7 +840,7 @@ bool TRN_get_buffer(STR dyn, USHORT length)
 	const UCHAR* q;
 	UCHAR *p, *old;
 	q = old = dyn->str_start;
-	dyn->str_start = p = static_cast<UCHAR*>(gds__alloc(n));
+	dyn->str_start = p = reinterpret_cast<UCHAR*>(gds__alloc(n));
 
 	if (!p)
 		return false;
@@ -866,7 +868,7 @@ static void drop_field( STR dyn, DUDLEY_FLD field)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to eliminate
+ *	Generate dynamic DDL to eliminate 
  *	a local field.
  *
  **************************************/
@@ -892,7 +894,7 @@ static void drop_filter( STR dyn, FILTER filter)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to delete a
+ *	Generate dynamic DDL to delete a 
  *	blob filter.
  *
  **************************************/
@@ -912,7 +914,7 @@ static void drop_function( STR dyn, FUNC function)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to delete a
+ *	Generate dynamic DDL to delete a 
  *	user defined function.
  *
  **************************************/
@@ -932,7 +934,7 @@ static void drop_global_field( STR dyn, DUDLEY_FLD field)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to eliminate
+ *	Generate dynamic DDL to eliminate 
  *	a global field.
  *
  **************************************/
@@ -968,7 +970,7 @@ static void drop_relation( STR dyn, DUDLEY_REL relation)
 {
 /**************************************
  *
- *	d r o p  _ r e l a t i o n
+ *	d r o p  _ r e l a t i o n 
  *
  **************************************
  *
@@ -1101,7 +1103,8 @@ static void gen_dyn_cxx(void *user_arg, SSHORT offset, const char* string)
 	for (; *q; *q++) {
 		if ((*q == '$') || (*q == '_')) {
 			const char* r = q;
-			if ((*--r == '_') && (*--r == 's') && (*--r == 'd') && (*--r == 'g'))
+			if ((*--r == '_') && (*--r == 's') && (*--r == 'd')
+				&& (*--r == 'g'))
 			{
 				*q = 0;
 				fprintf(output_file, "%s", p);
@@ -1186,7 +1189,7 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to modify a
+ *	Generate dynamic DDL to modify a 
  *	local field.
  *
  **************************************/
@@ -1291,7 +1294,7 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_query_name, field->fld_query_name);
-
+		
 	if (field->fld_flags & fld_null_query_header) {
 		check_dyn(dyn, 3);
 		dyn->add_byte(isc_dyn_fld_query_header);
@@ -1716,7 +1719,7 @@ static void raw_cobol( STR dyn)
 			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++)
 		{
 			*c = *blr++;
-			if (!--blr_length)
+			if (!(--blr_length))
 				break;
 		}
 		if (dudleyGlob.language == lan_ansi_cobol)
@@ -1762,7 +1765,7 @@ static void raw_ftn( STR dyn)
 			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++)
 		{
 			*c = *blr++;
-			if (!--blr_length)
+			if (!(--blr_length))
 				break;
 		}
 		if (blr_length)

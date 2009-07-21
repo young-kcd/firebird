@@ -44,14 +44,14 @@
 #include "../jrd/VirtualTable.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 
 void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
 {
 	SET_TDBB(tdbb);
 
-	irsb_virtual* impure = (irsb_virtual*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
+	irsb_virtual* impure =
+		(irsb_virtual*) ((UCHAR *) tdbb->getRequest() + rsb->rsb_impure);
 
 	impure->irsb_record_buffer = NULL;
 }
@@ -67,42 +67,27 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	jrd_rel* relation = rpb->rpb_relation;
 	fb_assert(relation);
 
-	dsc desc;
-	lck_t lock_type;
+	if (relation->rel_id != rel_mon_statements)
+		ERR_post(isc_read_only, isc_arg_end);
 
-	if (relation->rel_id == rel_mon_attachments)
-	{
-		// Get attachment id
-		if (!EVL_field(relation, rpb->rpb_record, f_mon_att_id, &desc))
-			return;
-		lock_type = LCK_attachment;
-	}
-	else if (relation->rel_id == rel_mon_statements)
-	{
-		// Get transaction id
-		if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_tra_id, &desc))
-			return;
-		lock_type = LCK_cancel;
-	}
-	else
-	{
-		ERR_post(Arg::Gds(isc_read_only));
-	}
+	// Get transaction id
+	dsc desc;
+	if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_tra_id, &desc))
+		return;
 
 	const SLONG id = MOV_get_long(&desc, 0);
 
 	// Post a blocking request
 	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_type = lock_type;
+	temp_lock.lck_type = LCK_cancel;
 	temp_lock.lck_parent = dbb->dbb_lock;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_owner_handle =
+		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_length = sizeof(SLONG);
 	temp_lock.lck_key.lck_long = id;
 
-	ThreadStatusGuard temp_status(tdbb);
-
-	if (LCK_lock(tdbb, &temp_lock, LCK_EX, -1))
+	if (LCK_lock_non_blocking(tdbb, &temp_lock, LCK_EX, -1))
 		LCK_release(tdbb, &temp_lock);
 }
 
@@ -114,20 +99,22 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 	jrd_req* request = tdbb->getRequest();
 
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_virtual* const impure =
+		(irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
 
 	if (!impure->irsb_record_buffer)
 		return false;
 
 	rpb->rpb_number.increment();
 
-	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(), rpb->rpb_record);
+	return impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(),
+											 rpb->rpb_record);
 }
 
 
-void VirtualTable::modify(thread_db*, record_param* /*org_rpb*/, record_param* /*new_rpb*/)
+void VirtualTable::modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 {
-	ERR_post(Arg::Gds(isc_read_only));
+	ERR_post(isc_read_only, isc_arg_end);
 }
 
 
@@ -139,12 +126,12 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 
 	jrd_rel* const relation = rsb->rsb_relation;
 	record_param* const rpb = &request->req_rpb[rsb->rsb_stream];
-	irsb_virtual* const impure = (irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
+	irsb_virtual* const impure =
+		(irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
 
 	const Record* const record = rpb->rpb_record;
 	const Format* format = NULL;
-	if (!record || !record->rec_format)
-	{
+	if (!record || !record->rec_format) {
 		format = MET_current(tdbb, relation);
 		VIO_record(tdbb, rpb, format, request->req_pool);
 	}
@@ -176,7 +163,7 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 }
 
 
-void VirtualTable::store(thread_db*, record_param*)
+void VirtualTable::store(thread_db* tdbb, record_param* rpb)
 {
-	ERR_post(Arg::Gds(isc_read_only));
+	ERR_post(isc_read_only, isc_arg_end);
 }

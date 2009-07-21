@@ -30,6 +30,8 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: makeinstallImage.sh.in,v 1.2.2.5 2008-12-25 12:26:49 alexpeshkoff Exp $
+# 
 
 # Script to copy install files from the build/transport area
 

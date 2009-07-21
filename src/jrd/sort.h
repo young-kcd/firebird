@@ -27,6 +27,7 @@
 #include "../jrd/common.h"
 #include "../jrd/fil.h"
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../jrd/TempSpace.h"
 
@@ -39,7 +40,7 @@ struct irsb_sort;
 struct merge_control;
 
 /* SORTP is used throughout sort.c as a pointer into arrays of
-   longwords(32 bits).   For 16 bit Windows, this must be a huge pointer.
+   longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
 
    Use this definition whenever doing pointer arithmetic, as
    Firebird variables (eg. scb->scb_longs) are in 32 - bit longwords. */
@@ -85,7 +86,7 @@ struct sort_record
 
 /*  sort_record_data  is here to explain the sort record.
     To get to the data part of a record add scb->scb_key_length to a pointer
-    pointing to the start of the sort_record_key.
+    pointing to the start of the sort_record_key. 
 
     ULONG       sort_record_data [1];
                                    Data values, not part of key,
@@ -117,8 +118,7 @@ typedef struct sr
 
 /* The sort memory pool is laid out as follows during sorting:
 
-struct sort_memory
-{
+struct sort_memory {
         struct sr       *records [X1];
         ULONG           empty [X2];
         struct sr       data [X1];
@@ -244,7 +244,7 @@ struct sort_context
 	sort_record**	scb_first_pointer;	/* Memory for sort */
 	sort_record**	scb_next_pointer;	/* Address for next pointer */
 #ifdef SCROLLABLE_CURSORS
-	sort_record**	scb_last_pointer;	/* Address for last pointer in block */
+	SORTP **scb_last_pointer;	/* Address for last pointer in block */
 #endif
 	//USHORT scb_length;			// Record length. Unused.
 	USHORT scb_longs;			/* Length of record in longwords */

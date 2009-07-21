@@ -64,12 +64,10 @@ void main( int argc, char **argv)
 	const char* language = "C";
 
 	char** end;
-	for (end = argv + argc, ++argv; argv < end;)
-	{
+	for (end = argv + argc, ++argv; argv < end;) {
 		const char* p = *argv++;
 		if (*p == '-')
-			switch (UPPER(p[1]))
-			{
+			switch (UPPER(p[1])) {
 			case 'F':
 				file = *argv++;
 				continue;
@@ -110,8 +108,9 @@ void main( int argc, char **argv)
 }
 
 
-static bool check_option(const SCHAR* string,
-						SSHORT* option_ptr, SCHAR ** format_ptr)
+static bool check_option(
+						const SCHAR* string,
+						SSHORT * option_ptr, SCHAR ** format_ptr)
 {
 /**************************************
  *
@@ -311,8 +310,9 @@ static void process_line( FILE * file, const SCHAR* line_ptr)
 }
 
 
-static void put_error(FILE* file,
-					 SCHAR** words, const SCHAR* format, SSHORT options)
+static void put_error(
+					 FILE * file,
+					 SCHAR ** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *
@@ -339,7 +339,8 @@ static void put_error(FILE* file,
 }
 
 
-static void put_symbol(FILE* file,
+static void put_symbol(
+					  FILE * file,
 					  const SCHAR* format,
 					  const SCHAR* symbol, SLONG value, SSHORT options)
 {
@@ -382,8 +383,9 @@ static void put_symbol(FILE* file,
 }
 
 
-static void put_symbols(FILE* file,
-					   SCHAR** words, const SCHAR* format, SSHORT options)
+static void put_symbols(
+					   FILE * file,
+					   SCHAR ** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *

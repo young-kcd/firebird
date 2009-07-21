@@ -75,7 +75,7 @@ typedef Firebird::HalfStaticArray<Ods::IndexJumpNode, 32> jumpNodeList;
 
 namespace BTreeNode {
 
-	USHORT computePrefix(const UCHAR* prevString, USHORT prevLength,
+	USHORT computePrefix(const UCHAR* prevString, USHORT prevLength, 
 				const UCHAR* string, USHORT length);
 
 	SLONG findPageInDuplicates(const Ods::btree_page* page, UCHAR* pointer,
@@ -88,15 +88,13 @@ namespace BTreeNode {
 	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS
-	UCHAR* lastNode(Ods::btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node);
+	UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node);
 #endif
 
-	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer,
-				UCHAR flags, btree_exp** expanded_node);
-#ifdef SCROLLABLE_CURSORS
-	UCHAR* previousNode(/*Ods::IndexNode* node,*/ UCHAR* pointer,
-				/*UCHAR flags,*/ btree_exp** expanded_node);
-#endif
+	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, 
+				UCHAR flags,  btree_exp** expanded_node);
+	UCHAR* previousNode(Ods::IndexNode* node, UCHAR* pointer,
+				UCHAR flags,  btree_exp** expanded_node);
 
 	//void quad_put(SLONG value, UCHAR *data);
 
@@ -110,9 +108,9 @@ namespace BTreeNode {
 	UCHAR* writeNode(Ods::IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
 		bool leafNode, bool withData = true);
 
-	void setEndBucket(Ods::IndexNode* indexNode); //, bool leafNode = true);
-	void setEndLevel(Ods::IndexNode* indexNode); //, bool leafNode = true);
-	void setNode(Ods::IndexNode* indexNode, USHORT prefix = 0, USHORT length = 0,
+	void setEndBucket(Ods::IndexNode* indexNode, bool leafNode = true);
+	void setEndLevel(Ods::IndexNode* indexNode, bool leafNode = true);
+	void setNode(Ods::IndexNode* indexNode, USHORT prefix = 0, USHORT length = 0, 
 		RecordNumber recordNumber = RecordNumber(0), SLONG pageNumber = 0,
 		bool isEndBucket = false, bool isEndLevel = false);
 
@@ -281,7 +279,7 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 			indexNode->recordNumber.setValue(get_long(pagePointer));
 			indexNode->isEndLevel = (indexNode->recordNumber.getValue() == Ods::END_LEVEL);
 			indexNode->isEndBucket = (indexNode->recordNumber.getValue() == Ods::END_BUCKET);
-		}
+		} 
 		else {
 			indexNode->pageNumber = get_long(pagePointer);
 			indexNode->isEndLevel = (indexNode->pageNumber == Ods::END_LEVEL);
@@ -296,7 +294,7 @@ inline UCHAR* BTreeNode::readNode(Ods::IndexNode* indexNode, UCHAR* pagePointer,
 		// last node is END_BUCKET and duplicate (or NULL).
 		if ((flags & Ods::btr_all_record_number) &&
 			((!leafNode) ||
-			 (leafNode && indexNode->isEndBucket && (indexNode->length == 0))))
+			 (leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
 		{
 			indexNode->recordNumber.setValue(get_long(pagePointer));
 			pagePointer += sizeof(SLONG);

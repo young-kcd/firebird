@@ -5,8 +5,7 @@ SQL keywords introduced in different server versions
 An asterisk (*) mark shows that a keyword doesn't exist in the SQL specification
 and hence should be considered a non-standard language extention.
 
-Firebird 1.0
-------------
+Firebird 1.0:
 
   Added as reserved words:
 
@@ -19,8 +18,7 @@ Firebird 1.0
     SKIP *
     SUBSTRING
 
-Firebird 1.5
-------------
+Firebird 1.5:
 
   Added as reserved words:
 
@@ -54,8 +52,7 @@ Firebird 1.5
     SKIP *
     SUBSTRING
 
-Firebird 2.0
-------------
+Firebird 2.0:
 
   Added as reserved words:
 
@@ -114,8 +111,7 @@ Firebird 2.0
     NUM_LOG_BUFS *
     RAW_PARTITIONS *
 
-Firebird 2.1
-------------
+Firebird 2.1:
 
   Added as reserved words:
 
@@ -144,7 +140,6 @@ Firebird 2.1
     BIN_SHR *
     BIN_XOR *
     CEIL
-    CEILING
     COS *
     COSH *
     COT *
@@ -188,28 +183,3 @@ Firebird 2.1
     TEMPORARY
     TRUNC *
     WEEK *
-
-Firebird 2.5
-------------
-
-  Added as reserved words:
-
-    SIMILAR
-
-  Added as non-reserved words:
-
-    AUTONOMOUS *
-    BIN_NOT *
-    CALLER *
-    CHAR_TO_UUID *
-    COMMON *
-    DATA
-    FIRSTNAME *
-    GRANTED
-    LASTNAME *
-    MIDDLENAME *
-    MAPPING *
-    OS_NAME *
-    SOURCE *
-    TWO_PHASE *
-    UUID_TO_CHAR *

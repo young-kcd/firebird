@@ -249,7 +249,6 @@ global:
 	isc_print_status;
 	isc_sqlcode;
 	isc_sql_interprete;
-	fb_sqlstate;
 
 # Event functions
 
@@ -271,6 +270,11 @@ global:
 	isc_service_detach;
 	isc_service_query;
 	isc_service_start;
+	#functions called by utils
+	#SVC_putc;
+	#SVC_finish;
+        #SVC_output;
+	#CMD_UTIL_put_svc_status;
 
 # Transaction control functions
 
@@ -283,7 +287,6 @@ global:
 	isc_start_multiple;
 	isc_start_transaction;
 	isc_transaction_info;
-	fb_disconnect_transaction;
 
 # Other functions
 
@@ -301,7 +304,6 @@ global:
 	isc_start_request;
 	isc_transact_request;
 	isc_unwind_request;
-	fb_cancel_operation;
 
 # Other SQL functions
 
@@ -329,11 +331,6 @@ global:
 	BLOB_text_load;
 	Bopen;
 
-# Server shutdown support
-
-	fb_shutdown;
-	fb_shutdown_callback;
-
 # Other misc functions
 
 	isc_ftof;
@@ -354,6 +351,18 @@ global:
 
 	KEYWORD_stringIsAToken;
 	KEYWORD_getTokens;
+
+#--------------------------------------
+#functions needed by Solaris utilities
+	SCH_ast;
+
+#commented it out with new style of thd //Konstantin
+#
+#	THD_mutex_lock;
+#	THD_mutex_unlock;
+#	THD_mutex_destroy;
+#	THD_mutex_init;
+#--------------------------------------
 
 local:
 	*;

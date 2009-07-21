@@ -19,28 +19,23 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
-#include "../../../common/dllinst.h"
-
 #include <windows.h>
-
-using namespace Firebird;
 
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 {
-	switch (reason)
+	if (reason == DLL_PROCESS_ATTACH)
 	{
-		case DLL_PROCESS_ATTACH:
-			hDllInst = h;
-#if defined(EMBEDDED)
-			bEmbedded = true;
-#endif
-			break;
-	}
+#ifdef EMBEDDED
+		extern HINSTANCE hDllInst;
+		extern BOOL bEmbedded;
 
+		hDllInst = h;
+		bEmbedded = true;
+#endif
+	}
 	return TRUE;
 }

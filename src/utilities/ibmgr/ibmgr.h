@@ -27,17 +27,16 @@
 
 #define OUTFILE			stderr
 
-#include "../jrd/constants.h"
-
-static const char* const FIREBIRD_USER_NAME		= "firebird";
-static const char* const INTERBASE_USER_NAME	= "interbase";
-static const char* const INTERBASE_USER_SHORT	= "interbas";
-static const char* const SERVER_GUARDIAN		= "bin/fbguard";
+static const char* SYSDBA_USER_NAME	= "SYSDBA";
+static const char* FIREBIRD_USER_NAME	= "firebird";
+static const char* INTERBASE_USER_NAME	= "interbase";
+static const char* INTERBASE_USER_SHORT= "interbas";
+static const char* SERVER_GUARDIAN	= "bin/fbguard";
 
 const USHORT MSG_FAC	= 18;
 const int MSG_LEN		= 128;
 
-
+ 
 /* Basic operation definitions
 */
 const USHORT OP_NONE		= 0;
@@ -80,8 +79,7 @@ const USHORT REA_USER		= ENT_USER;
 
 /* structure to hold all information
 */
-struct ibmgr_data_t
-{
+struct ibmgr_data_t {
 
     USHORT		operation;	/* what's to be done */
     USHORT		suboperation;	/* suboperation */
@@ -99,7 +97,7 @@ struct ibmgr_data_t
 
 };
 
-
+	
 // Messages tag definitions
 
 const USHORT MSG_PROMPT		= 1;	// "FBMGR> "  (the prompt)
@@ -108,7 +106,7 @@ const USHORT MSG_VERSION	= 2;	// fbmgr version
 const USHORT MSG_OPSPEC		= 5;	// operation already specified
 const USHORT MSG_NOOPSPEC	= 6;	// no operation specified
 const USHORT MSG_INVSW		= 7;	// invalid switch
-//const USHORT MSG_INVOP	= 8;	// invalid operation
+const USHORT MSG_INVOP		= 8;	// invalid operation
 const USHORT MSG_INVSWSW	= 9;	// invalid switch combination
 const USHORT MSG_INVSWOP	= 10;	// invalid operation/switch combination
 const USHORT MSG_AMBSW		= 11;	// ambiguous switch
@@ -135,7 +133,7 @@ const USHORT MSG_NOPERM		= 33;	// no permissions to perform operation
 const USHORT MSG_PRPOOLFAIL	= 34;	// Failed to print pool info
 const USHORT MSG_PRPOOLOK	= 35;	// Print pool successfull
 const USHORT MSG_FLNMTOOLONG	= 36;	// File name too long
-
+ 
 
 #endif // UTILITIES_IBMGR_H
 

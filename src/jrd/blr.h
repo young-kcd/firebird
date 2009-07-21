@@ -52,7 +52,7 @@
 #define blr_varying		(unsigned char)37
 #define blr_varying2		(unsigned char)38	/* added in 3.2 JPN */
 #define blr_blob		(unsigned short)261
-#define blr_cstring		(unsigned char)40
+#define blr_cstring		(unsigned char)40     	
 #define blr_cstring2    	(unsigned char)41	/* added in 3.2 JPN */
 #define blr_blob_id     	(unsigned char)45	/* added from gds.h */
 #define blr_sql_date		(unsigned char)12
@@ -62,8 +62,6 @@
 #define blr_domain_name		(unsigned char)18
 #define blr_domain_name2	(unsigned char)19
 #define blr_not_nullable	(unsigned char)20
-#define blr_column_name		(unsigned char)21
-#define blr_column_name2	(unsigned char)22
 
 // first sub parameter for blr_domain_name[2]
 #define blr_domain_type_of	(unsigned char)0
@@ -88,7 +86,7 @@
 #define blr_version4		(unsigned char)4
 #define blr_version5		(unsigned char)5
 #define blr_eoc			(unsigned char)76
-#define blr_end			(unsigned char)255
+#define blr_end			(unsigned char)255	/* note: defined as -1 in gds.h */
 
 #define blr_assignment		(unsigned char)1
 #define blr_begin		(unsigned char)2
@@ -262,7 +260,7 @@
 #define blr_record_version	(unsigned char)154	/* get tid of record */
 #define blr_stall		(unsigned char)155	/* fake server stall */
 
-//#define blr_seek_no_warn	(unsigned char)156
+//#define blr_seek_no_warn	(unsigned char)156	
 //#define blr_find_dbkey_version	(unsigned char)157   /* find dbkey with record version */
 #define blr_ansi_all		(unsigned char)158   /* required for NULL handling */
 
@@ -350,30 +348,5 @@
 #define blr_init_variable	(unsigned char)184
 #define blr_recurse			(unsigned char)185
 #define blr_sys_function	(unsigned char)186
-
-// FB 2.5 specific BLR
-
-#define blr_auto_trans		(unsigned char)187
-#define blr_similar			(unsigned char)188
-#define blr_exec_stmt		(unsigned char)189
-
-// subcodes of blr_exec_stmt
-#define blr_exec_stmt_inputs		(unsigned char) 1	// input parameters count
-#define blr_exec_stmt_outputs		(unsigned char) 2	// output parameters count
-#define blr_exec_stmt_sql			(unsigned char) 3
-#define blr_exec_stmt_proc_block	(unsigned char) 4
-#define blr_exec_stmt_data_src		(unsigned char) 5
-#define blr_exec_stmt_user			(unsigned char) 6
-#define blr_exec_stmt_pwd			(unsigned char) 7
-#define blr_exec_stmt_tran    		(unsigned char) 8	// not implemented yet
-#define blr_exec_stmt_tran_clone	(unsigned char) 9	// make transaction parameters equal to current transaction
-#define blr_exec_stmt_privs			(unsigned char) 10
-#define blr_exec_stmt_in_params		(unsigned char) 11	// not named input parameters
-#define blr_exec_stmt_in_params2	(unsigned char) 12	// named input parameters
-#define blr_exec_stmt_out_params	(unsigned char) 13	// output parameters
-#define blr_exec_stmt_role			(unsigned char) 14
-
-#define blr_stmt_expr				(unsigned char) 190
-#define blr_derived_expr			(unsigned char) 191
 
 #endif // JRD_BLR_H

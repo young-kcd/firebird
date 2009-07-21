@@ -30,7 +30,7 @@
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT
+CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -55,12 +55,15 @@ unexport ISC_PASSWORD
 SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
 SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
 
+JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles))
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
 
 DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))
 DSQL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_ClientSources))))
 
 
+#REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
+#REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
 REMOTE_ClientObjects = $(INTERFACE_Objects)
 
 
@@ -96,18 +99,26 @@ FBCLIENT_Objects =  $(JRD_ClientObjects) \
 
 libfbclient : $(LIBFBCLIENT_SONAME)
 
-ifneq ($(ClientLibraryNameFull),$(ClientLibrarySoName))
+ifneq ($(ClientLibraryNameFull),$(ClientLibraryNameMajor))
 $(LIBFBCLIENT_SOBASENAME):	$(LIBFBCLIENT_SO)
-	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibrarySoName) )
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameFull) $(ClientLibraryNameMajor) )
 endif
 
-ifneq ($(ClientLibrarySoName),$(ClientLibraryName))
+ifneq ($(ClientLibraryName),$(ClientLibraryNameMajor))
 $(LIBFBCLIENT_SONAME):	$(LIBFBCLIENT_SOBASENAME)
-	(cd $(LIB) && $(LN) -f $(ClientLibrarySoName) $(ClientLibraryName) )
+	(cd $(LIB) && $(LN) -f $(ClientLibraryNameMajor) $(ClientLibraryName) )
 endif
 
 $(LIBFBCLIENT_SO):	$(FBCLIENT_Objects)
-	$(LINK_CLIENT) -o $@ $^ $(LINK_CLIENT_LIBS)
+ifeq ($(PLATFORM),DARWIN)
+	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
+$(LIB_CLIENT_LINK_OPTIONS) $(LIB_LINK_SONAME) \
+-o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+else
+	$(CLIENTLIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_IMPLIB) \
+$(LIB_LINK_SONAME)$(ClientLibraryNameMajor) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib \
+-o $@ $^ $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+endif
 
 AllObjects = $(FBCLIENT_Objects)
 Dependencies = $(AllObjects:.o=.d)

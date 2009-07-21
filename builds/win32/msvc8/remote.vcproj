@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="remote"
 	ProjectGUID="{4BCC693D-1745-45ED-8302-E5E2F979549A}"
 	>
@@ -266,6 +266,10 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
+				RelativePath="..\..\..\src\remote\allr.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
 				>
 			</File>
@@ -275,6 +279,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\ibconfig.cpp"
 				>
 			</File>
 			<File
@@ -335,6 +343,10 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath="..\..\..\src\remote\allr_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h"
 				>
 			</File>
@@ -360,6 +372,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\remote\serve_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\spxnet32_proto.h"
 				>
 			</File>
 			<File

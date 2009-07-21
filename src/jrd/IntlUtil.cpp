@@ -74,11 +74,10 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src,
 	ULONG dstLen, UCHAR* dst);
 
 
-string IntlUtil::generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributesMap& map)
+string IntlUtil::generateSpecificAttributes(
+	Jrd::CharSet* cs, SpecificAttributesMap& map)
 {
-	SpecificAttributesMap::Accessor accessor(&map);
-
-	bool found = accessor.getFirst();
+	bool found = map.getFirst();
 	string s;
 
 	while (found)
@@ -86,28 +85,29 @@ string IntlUtil::generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributes
 		UCHAR c[sizeof(ULONG)];
 		ULONG size;
 
-		SpecificAttribute* attribute = accessor.current();
+		SpecificAttribute* attribute = map.current();
 
 		s += escapeAttribute(cs, attribute->first);
 
 		const USHORT equalChar = '=';
 
 		size = cs->getConvFromUnicode().convert(
-			sizeof(equalChar), (const UCHAR*) &equalChar, sizeof(c), c);
+			sizeof(equalChar), (const UCHAR*)&equalChar,
+			sizeof(c), c);
 
-		s += string((const char*) &c, size);
+		s += string((const char*)&c, size);
 
 		s += escapeAttribute(cs, attribute->second);
 
-		found = accessor.getNext();
+		found = map.getNext();
 
 		if (found)
 		{
 			const USHORT semiColonChar = ';';
 			size = cs->getConvFromUnicode().convert(
-				sizeof(semiColonChar), (const UCHAR*) &semiColonChar, sizeof(c), c);
+				sizeof(semiColonChar), (const UCHAR*)&semiColonChar, sizeof(c), c);
 
-			s += string((const char*) &c, size);
+			s += string((const char*)&c, size);
 		}
 	}
 
@@ -115,8 +115,8 @@ string IntlUtil::generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributes
 }
 
 
-bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR* s,
-									   SpecificAttributesMap* map)
+bool IntlUtil::parseSpecificAttributes(
+	Jrd::CharSet* cs, ULONG len, const UCHAR* s, SpecificAttributesMap* map)
 {
 	// Note that the map isn't cleared.
 	// Old attributes will be combined with the new ones.
@@ -130,7 +130,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 	while (p < end)
 	{
 		while (p < end && size == cs->getSpaceLength() &&
-			memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+			   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 		{
 			if (!readAttributeChar(cs, &p, end, &size, true))
 				return true;
@@ -144,11 +144,11 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 		while (p < end)
 		{
 			uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
-
+				
 			if (uSize == 2 &&
-				((*(USHORT*) uc >= 'A' && *(USHORT*) uc <= 'Z') ||
-					(*(USHORT*) uc >= 'a' && *(USHORT*) uc <= 'z') ||
-					*(USHORT*) uc == '-' || *(USHORT*) uc == '_'))
+					 ((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
+					  (*(USHORT*)uc >= 'a' && *(USHORT*)uc <= 'z') ||
+					  *(USHORT*)uc == '-' || *(USHORT*)uc == '_'))
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -164,7 +164,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 		name = unescapeAttribute(cs, name);
 
 		while (p < end && size == cs->getSpaceLength() &&
-			memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+			   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 		{
 			if (!readAttributeChar(cs, &p, end, &size, true))
 				return false;
@@ -180,7 +180,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 		if (readAttributeChar(cs, &p, end, &size, true))
 		{
 			while (p < end && size == cs->getSpaceLength() &&
-				memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
+				   memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0)
 			{
 				if (!readAttributeChar(cs, &p, end, &size, true))
 					return false;
@@ -195,7 +195,7 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 				if (uSize != 2 || *(USHORT*)uc != ';')
 				{
 					if (!(size == cs->getSpaceLength() &&
-							memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
+						  memcmp(p, cs->getSpace(), cs->getSpaceLength()) == 0))
 					{
 						endNoSpace = p + size;
 					}
@@ -207,7 +207,8 @@ bool IntlUtil::parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR*
 					break;
 			}
 
-			value = unescapeAttribute(cs, string((const char*)start, endNoSpace - start));
+			value = unescapeAttribute(cs,
+				string((const char*)start, endNoSpace - start));
 
 			if (p < end)
 				readAttributeChar(cs, &p, end, &size, true);	// skip the semicolon
@@ -248,7 +249,7 @@ string IntlUtil::convertUtf16ToAscii(const string& utf16, bool* error)
 	for (const USHORT* p = (const USHORT*) utf16.c_str(); p < end; ++p)
 	{
 		if (*p <= 0xFF)
-			s.append(1, (UCHAR) *p);
+			s.append((UCHAR) *p);
 		else
 		{
 			*error = true;
@@ -290,10 +291,8 @@ ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
-	{
-		if (*pSrc > 127)
-		{
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
@@ -338,10 +337,8 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
-	{
-		if (*pSrc > 127)
-		{
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		}
@@ -358,34 +355,6 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 }
 
 
-ULONG IntlUtil::cvtUtf8ToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
-	ULONG nDest, UCHAR* ppDest, USHORT* err_code, ULONG* err_position)
-{
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == cvtUtf8ToUtf16);
-	return UnicodeUtil::utf8ToUtf16(nSrc, pSrc,
-		nDest, Firebird::OutAligner<USHORT>(ppDest, nDest), err_code, err_position);
-}
-
-
-ULONG IntlUtil::cvtUtf16ToUtf8(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
-	ULONG nDest, UCHAR* pDest, USHORT* err_code, ULONG* err_position)
-{
-	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == cvtUtf16ToUtf8);
-	return UnicodeUtil::utf16ToUtf8(nSrc, Firebird::Aligner<USHORT>(ppSrc, nSrc),
-		nDest, pDest, err_code, err_position);
-}
-
-
-INTL_BOOL IntlUtil::utf8WellFormed(charset* cs, ULONG len, const UCHAR* str,
-	ULONG* offendingPos)
-{
-	fb_assert(cs != NULL);
-	return UnicodeUtil::utf8WellFormed(len, str, offendingPos);
-}
-
-
 void IntlUtil::initAsciiCharset(charset* cs)
 {
 	initNarrowCharset(cs, "ASCII");
@@ -394,22 +363,11 @@ void IntlUtil::initAsciiCharset(charset* cs)
 }
 
 
-void IntlUtil::initUtf8Charset(charset* cs)
-{
-	initNarrowCharset(cs, "UTF8");
-	cs->charset_max_bytes_per_char = 4;
-	cs->charset_fn_well_formed = utf8WellFormed;
-
-	initConvert(&cs->charset_to_unicode, cvtUtf8ToUtf16);
-	initConvert(&cs->charset_from_unicode, cvtUtf16ToUtf8);
-}
-
-
 void IntlUtil::initConvert(csconvert* cvt, pfn_INTL_convert func)
 {
 	memset(cvt, 0, sizeof(*cvt));
 	cvt->csconvert_version = CSCONVERT_VERSION_1;
-	cvt->csconvert_name = "DIRECT";
+	cvt->csconvert_name = (const ASCII*) "DIRECT";
 	cvt->csconvert_fn_convert = func;
 }
 
@@ -431,8 +389,6 @@ void IntlUtil::initNarrowCharset(charset* cs, const ASCII* name)
 bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name,
 	USHORT attributes, const UCharBuffer& specificAttributes, const string& configInfo)
 {
-	memset(tt, 0, sizeof(*tt));
-
 	// name comes from stack. Copy it.
 	ASCII* nameCopy = new ASCII[strlen(name) + 1];
 	strcpy(nameCopy, name);
@@ -440,12 +396,10 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 
 	tt->texttype_version = TEXTTYPE_VERSION_1;
 	tt->texttype_country = CC_INTL;
-	tt->texttype_canonical_width = 4;	// UTF-32
 	tt->texttype_fn_destroy = unicodeDestroy;
 	tt->texttype_fn_compare = unicodeCompare;
 	tt->texttype_fn_key_length = unicodeKeyLength;
 	tt->texttype_fn_string_to_key = unicodeStrToKey;
-	tt->texttype_fn_canonical = unicodeCanonical;
 
 	IntlUtil::SpecificAttributesMap map;
 
@@ -466,9 +420,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 
 	IntlUtil::SpecificAttributesMap map16;
 
-	SpecificAttributesMap::Accessor accessor(&map);
-
-	bool found = accessor.getFirst();
+	bool found = map.getFirst();
 
 	while (found)
 	{
@@ -477,20 +429,20 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 		ULONG errPosition;
 
 		s1.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, accessor.current()->first.length(), NULL, 0, NULL, &errCode, &errPosition));
+			&cs->charset_to_unicode, map.current()->first.length(), NULL, 0, NULL, &errCode, &errPosition));
 		s1.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, accessor.current()->first.length(), (UCHAR*) accessor.current()->first.c_str(),
+			&cs->charset_to_unicode, map.current()->first.length(), (UCHAR*) map.current()->first.c_str(),
 			s1.getCapacity(), s1.begin(), &errCode, &errPosition));
 
 		s2.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, accessor.current()->second.length(), NULL, 0, NULL, &errCode, &errPosition));
+			&cs->charset_to_unicode, map.current()->second.length(), NULL, 0, NULL, &errCode, &errPosition));
 		s2.resize(cs->charset_to_unicode.csconvert_fn_convert(
-			&cs->charset_to_unicode, accessor.current()->second.length(), (UCHAR*) accessor.current()->second.c_str(),
+			&cs->charset_to_unicode, map.current()->second.length(), (UCHAR*) map.current()->second.c_str(),
 			s2.getCapacity(), s2.begin(), &errCode, &errPosition));
 
 		map16.put(string((char*) s1.begin(), s1.getCount()), string((char*) s2.begin(), s2.getCount()));
 
-		found = accessor.getNext();
+		found = map.getNext();
 	}
 
 	UnicodeUtil::Utf16Collation* collation =
@@ -500,6 +452,9 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 		return false;
 
 	tt->texttype_impl = new TextTypeImpl(cs, collation);
+
+	if (tt->texttype_canonical_width != 0)
+		tt->texttype_fn_canonical = unicodeCanonical;
 
 	return true;
 }
@@ -523,7 +478,7 @@ ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	// convert to lowercase
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> lower_str;
 	srcLen = UnicodeUtil::utf16LowerCase(srcLen, Firebird::Aligner<USHORT>(utf16_ptr, srcLen),
-		utf16_length, Firebird::OutAligner<USHORT>(lower_str.getBuffer(utf16_length), utf16_length),
+		utf16_length, Firebird::OutAligner<USHORT>(lower_str.getBuffer(utf16_length), utf16_length), 
 		exceptions);
 
 	// convert to original character set
@@ -549,7 +504,7 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	// convert to uppercase
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upper_str;
 	srcLen = UnicodeUtil::utf16UpperCase(srcLen, Firebird::Aligner<USHORT>(utf16_ptr, srcLen),
-		utf16_length, Firebird::OutAligner<USHORT>(upper_str.getBuffer(utf16_length), utf16_length),
+		utf16_length, Firebird::OutAligner<USHORT>(upper_str.getBuffer(utf16_length), utf16_length), 
 		exceptions);
 
 	// convert to original character set
@@ -615,18 +570,17 @@ string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 
 	while (readOneChar(cs, &p, end, &size))
 	{
-		ULONG l;
-		UCHAR* uc = (UCHAR*)(&l);
+		UCHAR uc[sizeof(ULONG)];
 
-		const ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
+		ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
 
 		if (uSize == 2)
 		{
-			if (*(USHORT*) uc == '\\' || *(USHORT*) uc == '=' || *(USHORT*) uc == ';')
+			if (*(USHORT*)uc == '\\' || *(USHORT*)uc == '=' || *(USHORT*)uc == ';')
 			{
-				*(USHORT*) uc = '\\';
+				*(USHORT*)uc = '\\';
 				UCHAR bytes[sizeof(ULONG)];
-
+				
 				ULONG bytesSize = cs->getConvFromUnicode().convert(
 					sizeof(USHORT), uc, sizeof(bytes), bytes);
 
@@ -658,9 +612,12 @@ string IntlUtil::unescapeAttribute(Jrd::CharSet* cs, const string& s)
 bool IntlUtil::isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size)
 {
 	UCHAR uc[sizeof(ULONG)];
-	const ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
+	ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
 
-	return (uSize == 2 && *(USHORT*) uc == '\\');
+	if (uSize == 2 && *(USHORT*)uc == '\\')
+		return true;
+
+	return false;
 }
 
 
@@ -694,26 +651,24 @@ bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR*
 
 static void unicodeDestroy(texttype* tt)
 {
-	delete[] const_cast<ASCII*>(tt->texttype_name);
-	delete static_cast<TextTypeImpl*>(tt->texttype_impl);
+	delete [] const_cast<ASCII*>(tt->texttype_name);
+	delete tt->texttype_impl;
 }
 
 
 static USHORT unicodeKeyLength(texttype* tt, USHORT len)
 {
-	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
-	return impl->collation->keyLength(len / impl->cs->charset_max_bytes_per_char * 4);
+	return tt->texttype_impl->collation->keyLength(
+		len / tt->texttype_impl->cs->charset_max_bytes_per_char * 4);
 }
 
 
 static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 	USHORT dstLen, UCHAR* dst, USHORT keyType)
 {
-	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
-
 	try
 	{
-		charset* cs = impl->cs;
+		charset* cs = tt->texttype_impl->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
 		USHORT errorCode;
@@ -738,7 +693,8 @@ static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 			&errorCode,
 			&offendingPos);
 
-		return impl->collation->stringToKey(utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, keyType);
+		return tt->texttype_impl->collation->stringToKey(
+			utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, keyType);
 	}
 	catch (BadAlloc)
 	{
@@ -751,13 +707,11 @@ static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 	ULONG len2, const UCHAR* str2, INTL_BOOL* errorFlag)
 {
-	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
-
 	try
 	{
 		*errorFlag = false;
 
-		charset* cs = impl->cs;
+		charset* cs = tt->texttype_impl->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
@@ -774,7 +728,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 				&errorCode,
 				&offendingPos));
 
-		const ULONG utf16Len1 = cs->charset_to_unicode.csconvert_fn_convert(
+		ULONG utf16Len1 = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			len1,
 			str1,
@@ -793,7 +747,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 				&errorCode,
 				&offendingPos));
 
-		const ULONG utf16Len2 = cs->charset_to_unicode.csconvert_fn_convert(
+		ULONG utf16Len2 = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			len2,
 			str2,
@@ -802,7 +756,8 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 			&errorCode,
 			&offendingPos);
 
-		return impl->collation->compare(utf16Len1, (USHORT*)utf16Str1.begin(),
+		return tt->texttype_impl->collation->compare(
+			utf16Len1, (USHORT*)utf16Str1.begin(),
 			utf16Len2, (USHORT*)utf16Str2.begin(), errorFlag);
 	}
 	catch (BadAlloc)
@@ -815,11 +770,9 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 
 static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
-	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
-
 	try
 	{
-		charset* cs = impl->cs;
+		charset* cs = tt->texttype_impl->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
 		USHORT errorCode;
@@ -835,7 +788,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 				&errorCode,
 				&offendingPos));
 
-		const ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
+		ULONG utf16Len = cs->charset_to_unicode.csconvert_fn_convert(
 			&cs->charset_to_unicode,
 			srcLen,
 			src,
@@ -844,7 +797,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 			&errorCode,
 			&offendingPos);
 
-		return impl->collation->canonical(
+		return tt->texttype_impl->collation->canonical(
 			utf16Len, Firebird::Aligner<USHORT>(utf16Str.begin(), utf16Len),
 			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), NULL);
 	}

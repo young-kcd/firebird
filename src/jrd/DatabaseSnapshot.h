@@ -28,11 +28,6 @@
 
 namespace Jrd {
 
-// forward declarations
-class jrd_rel;
-class RecordBuffer;
-class RuntimeStatistics;
-
 class DatabaseSnapshot
 {
 	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING};
@@ -60,7 +55,7 @@ class DatabaseSnapshot
 		{
 			offset = 0;
 			sizeLimit = sizeof(buffer);
-			fb_assert(rel_id > 0 && rel_id <= int(MAX_UCHAR));
+			fb_assert(rel_id > 0 && rel_id <= ULONG(MAX_UCHAR));
 			buffer[offset++] = (UCHAR) rel_id;
 		}
 
@@ -162,11 +157,11 @@ class DatabaseSnapshot
 			}
 
 			UCHAR* ptr = buffer + offset;
-			fb_assert(field_id <= int(MAX_UCHAR));
+			fb_assert(field_id <= ULONG(MAX_UCHAR));
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
 			const USHORT adjusted_length = (USHORT) length;
-			memcpy(ptr, &adjusted_length, sizeof(adjusted_length));
+			memcpy(ptr, &adjusted_length, sizeof(USHORT));
 			ptr += sizeof(USHORT);
 			memcpy(ptr, value, length);
 			offset += delta;
@@ -183,106 +178,101 @@ class DatabaseSnapshot
 		RecordBuffer* data;
 	};
 
-public:
-	class SharedData
+	class SharedMemory
 	{
-		static const ULONG MONITOR_VERSION = 3;
-		static const ULONG DEFAULT_SIZE = 1048576;
+		static const ULONG VERSION;
+		static const ULONG DEFAULT_SIZE;
 
 		struct Header
 		{
 			ULONG version;
 			ULONG used;
 			ULONG allocated;
-#ifndef WIN_NT
-			struct mtx mutex;
-#endif
+	#ifndef WIN_NT
+			MTX_T mutex;
+	#endif
 		};
 
 		struct Element
 		{
-			SLONG processId;
-			SLONG localId;
+			ULONG processId;
+			ULONG localId;
 			ULONG length;
 		};
 
 		static ULONG alignOffset(ULONG absoluteOffset);
 
 	public:
-		explicit SharedData(const Database*);
-		~SharedData();
+		class DumpGuard
+		{
+		public:
+			explicit DumpGuard(SharedMemory* ptr)
+				: dump(ptr)
+			{
+				dump->acquire();
+			}
+
+			~DumpGuard()
+			{
+				dump->release();
+			}
+
+		private:
+			DumpGuard(const DumpGuard&);
+			DumpGuard& operator=(const DumpGuard&);
+
+			SharedMemory* dump;
+		};
+
+		SharedMemory();
+		~SharedMemory();
 
 		void acquire();
 		void release();
 
-		UCHAR* read(MemoryPool&, ULONG&);
-		ULONG setup();
-		void write(ULONG, ULONG, const void*);
+		UCHAR* readData(Database*, MemoryPool&, ULONG&);
+		ULONG setupData(Database*);
+		void writeData(ULONG, ULONG, const void*);
 
-		void cleanup();
+		void cleanup(Database*);
 
 	private:
 		// copying is prohibited
-		SharedData(const SharedData&);
-		SharedData& operator =(const SharedData&);
+		SharedMemory(const SharedMemory&);
+		SharedMemory& operator =(const SharedMemory&);
 
 		void ensureSpace(ULONG);
 
 		static void checkMutex(const TEXT*, int);
-		static void init(void*, sh_mem*, bool);
+		static void init(void*, SH_MEM_T*, bool);
 
-		sh_mem handle;
-#ifdef WIN_NT
-		struct mtx mutex;
-#endif
+		SH_MEM_T handle;
+	#ifdef WIN_NT
+		MTX_T mutex;
+	#endif
 		Header* base;
-
-		const SLONG process_id;
-		const SLONG local_id;
-	};
-
-private:
-	class DumpGuard
-	{
-	public:
-		explicit DumpGuard(SharedData* ptr)
-			: data(ptr)
-		{
-			data->acquire();
-		}
-
-		~DumpGuard()
-		{
-			data->release();
-		}
-
-	private:
-		DumpGuard(const DumpGuard&);
-		DumpGuard& operator=(const DumpGuard&);
-
-		SharedData* const data;
 	};
 
 	class Writer
 	{
 	public:
-		explicit Writer(SharedData* data)
-			: dump(data)
+		Writer(Database* dbb, SharedMemory* _dump)
+			: dump(_dump)
 		{
 			fb_assert(dump);
-			offset = dump->setup();
+			offset = dump->setupData(dbb);
 			fb_assert(offset);
 		}
 
 		void putRecord(const DumpRecord& record)
 		{
 			const USHORT length = (USHORT) record.getLength();
-			dump->write(offset, sizeof(USHORT), &length);
-			dump->write(offset, length, record.getData());
+			dump->writeData(offset, sizeof(USHORT), &length);
+			dump->writeData(offset, length, record.getData());
 		}
 
 	private:
-		SharedData* dump;
+		SharedMemory* dump;
 		ULONG offset;
 	};
 
@@ -320,7 +310,13 @@ public:
 	RecordBuffer* getData(const jrd_rel*) const;
 
 	static DatabaseSnapshot* create(thread_db*);
+	static void cleanup(Database*);
 	static int blockingAst(void*);
+
+	static void init() // for InitMutex
+	{
+		dump = FB_NEW(*getDefaultMemoryPool()) SharedMemory;
+	}
 
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);
@@ -330,7 +326,7 @@ private:
 	void clearRecord(Record*);
 	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
 
-	static void dumpData(thread_db*);
+	static void dumpData(thread_db*, bool);
 
 	static SINT64 getGlobalId(int);
 
@@ -339,9 +335,10 @@ private:
 	static void putTransaction(const jrd_tra*, Writer&, int);
 	static void putRequest(const jrd_req*, Writer&, int);
 	static void putCall(const jrd_req*, Writer&, int);
-	static void putStatistics(const RuntimeStatistics&, Writer&, int, int);
-	static void putContextVars(const Firebird::StringMap&, Writer&, int, bool);
-	static void putMemoryUsage(const Firebird::MemoryStats&, Writer&, int, int);
+	static void putStatistics(const RuntimeStatistics*, Writer&, int, int);
+
+	static SharedMemory* dump;
+	static Firebird::InitMutex<DatabaseSnapshot> startup;
 
 	Firebird::Array<RelationData> snapshot;
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;

@@ -18,10 +18,6 @@ echo "AUTORECONF="$AUTORECONF
 AUTOMAKE=true
 export AUTOMAKE
 
-# This helps some old aclocal versions find binreloc.m4 in current directory
-ACLOCAL='aclocal -I .'
-export ACLOCAL
-
 VER=`$AUTORECONF --version|grep '^[Aa]utoreconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
@@ -35,6 +31,7 @@ case "$VER" in
 esac
 
 # Put other tests for programs here!
+
 
 # If anything failed, exit now.
 if test "$DIE" -eq 1; then
@@ -57,7 +54,7 @@ fi
 
 # Ensure correct utilities are called by AUTORECONF
 autopath=`dirname $AUTORECONF`
-if [ "x$autopath" != "x" ]; then
+if [ "$autopath" != x. ]; then
 	PATH=$autopath:$PATH
 	export PATH
 fi

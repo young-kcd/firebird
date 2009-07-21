@@ -17,7 +17,7 @@
 
 using Firebird::IntlUtil;
 using Jrd::UnicodeUtil;
-
+ 
 
 static USHORT internal_keylength(texttype*, USHORT);
 static USHORT internal_string_to_key(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
@@ -41,7 +41,7 @@ static inline bool FAMILY_INTERNAL(texttype* tt,
 								   SSHORT country,
 								   const ASCII* POSIX,
 								   USHORT attributes,
-								   const UCHAR*, // specific_attributes,
+								   const UCHAR* specific_attributes,
 								   ULONG specific_attributes_length)
 //#define FAMILY_INTERNAL(name, country)
 {
@@ -59,7 +59,7 @@ static inline bool FAMILY_INTERNAL(texttype* tt,
 	tt->texttype_fn_str_to_lower	= internal_str_to_lower;
 	tt->texttype_fn_destroy			= internal_destroy;
 	tt->texttype_impl				= new TextTypeImpl;
-	static_cast<TextTypeImpl*>(tt->texttype_impl)->texttype_pad_char = ' ';
+	tt->texttype_impl->texttype_pad_char = ' ';
 
 	return true;
 }
@@ -68,7 +68,7 @@ static inline bool FAMILY_INTERNAL(texttype* tt,
 static inline bool FAMILY_INTERNAL_UTF(texttype* tt,
 									   const ASCII* POSIX,
 									   USHORT attributes,
-									   const UCHAR*, // specific_attributes,
+									   const UCHAR* specific_attributes,
 									   ULONG specific_attributes_length)
 {
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
@@ -84,6 +84,7 @@ static inline bool FAMILY_INTERNAL_UTF(texttype* tt,
 }
 
 
+typedef unsigned char FILECHAR;
 typedef USHORT UNICODE;
 
 typedef USHORT fss_wchar_t;
@@ -98,8 +99,7 @@ struct Byte_Mask_Table
 	SLONG lval;
 };
 
-static const Byte_Mask_Table tab[] =
-{
+static const Byte_Mask_Table tab[] = {
 	{ 0x80, 0x00, 0 * 6, 0x7F, 0 },	/* 1 byte sequence */
 	{ 0xE0, 0xC0, 1 * 6, 0x7FF, 0x80 },	/* 2 byte sequence */
 	{ 0xF0, 0xE0, 2 * 6, 0xFFFF, 0x800 },	/* 3 byte sequence */
@@ -119,11 +119,9 @@ static fss_size_t fss_mbtowc(fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 		return -1;
 	const int c0 = *s & 0xff;
 	SLONG l = c0;
-	for (const Byte_Mask_Table* t = tab; t->cmask; t++)
-	{
+	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
 		nc++;
-		if ((c0 & t->cmask) == t->cval)
-		{
+		if ((c0 & t->cmask) == t->cval) {
 			l &= t->lmask;
 			if (l < t->lval)
 				return -1;
@@ -148,15 +146,12 @@ static fss_size_t fss_wctomb(UCHAR * s, fss_wchar_t wc)
 
 	SLONG l = wc;
 	int nc = 0;
-	for (const Byte_Mask_Table* t = tab; t->cmask; t++)
-	{
+	for (const Byte_Mask_Table* t = tab; t->cmask; t++) {
 		nc++;
-		if (l <= t->lmask)
-		{
+		if (l <= t->lmask) {
 			int c = t->shift;
 			*s = t->cval | (l >> c);
-			while (c > 0)
-			{
+			while (c > 0) {
 				c -= 6;
 				s++;
 				*s = 0x80 | ((l >> c) & 0x3F);
@@ -221,11 +216,9 @@ static ULONG internal_fss_to_unicode(csconvert* obj,
 
 	const UNICODE* const start = dest_ptr;
 	const ULONG src_start = src_len;
-	while (src_len && dest_len >= sizeof(*dest_ptr))
-	{
+	while ((src_len) && (dest_len >= sizeof(*dest_ptr))) {
 		const fss_size_t res = fss_mbtowc(dest_ptr, src_ptr, src_len);
-		if (res == -1)
-		{
+		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
@@ -269,18 +262,15 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	const UNICODE* unicode_str = s;
 
 	const UCHAR* const start = fss_str;
-	while (fss_len && unicode_len >= sizeof(*unicode_str))
-	{
+	while ((fss_len) && (unicode_len >= sizeof(*unicode_str))) {
 		/* Convert the wide character into temp buffer */
 		fss_size_t res = fss_wctomb(tmp_buffer, *unicode_str);
-		if (res == -1)
-		{
+		if (res == -1) {
 			*err_code = CS_BAD_INPUT;
 			break;
 		}
 		/* will the mb sequence fit into space left? */
-		if (ULONG(res) > fss_len)
-		{
+		if (ULONG(res) > fss_len) {
 			*err_code = CS_TRUNCATION_ERROR;
 			break;
 		}
@@ -298,7 +288,7 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 	return ((fss_str - start) * sizeof(*fss_str));
 }
 
-static ULONG internal_fss_length(charset* /*obj*/, ULONG srcLen, const UCHAR* src)
+static ULONG internal_fss_length(charset* obj, ULONG srcLen, const UCHAR* src)
 {
 /**************************************
  *
@@ -332,7 +322,7 @@ static ULONG internal_fss_length(charset* /*obj*/, ULONG srcLen, const UCHAR* sr
 	return charLength + srcLen;
 }
 
-static ULONG internal_fss_substring(charset* /*obj*/, ULONG srcLen, const UCHAR* src,
+static ULONG internal_fss_substring(charset* obj, ULONG srcLen, const UCHAR* src,
 									ULONG dstLen, UCHAR* dst, ULONG startPos, ULONG length)
 {
 /**************************************
@@ -352,7 +342,8 @@ static ULONG internal_fss_substring(charset* /*obj*/, ULONG srcLen, const UCHAR*
 	if (length == 0)
 		return 0;
 
-	const UCHAR* const dstStart = dst;
+	const UCHAR* srcStart = src;
+	const UCHAR* dstStart = dst;
 	const UCHAR* const srcEnd = src + srcLen;
 	const UCHAR* const dstEnd = dst + dstLen;
 	ULONG pos = 0;
@@ -424,9 +415,10 @@ static ULONG internal_fss_substring(charset* /*obj*/, ULONG srcLen, const UCHAR*
 	return dst - dstStart;
 }
 
-static ULONG internal_str_copy(texttype* /*obj*/,
-							   ULONG inLen,
-							   const UCHAR* src, ULONG outLen, UCHAR* dest)
+static ULONG internal_str_copy(
+								texttype* obj,
+								ULONG inLen,
+								const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -446,7 +438,7 @@ static ULONG internal_str_copy(texttype* /*obj*/,
 	return (dest - pStart);
 }
 
-static USHORT internal_keylength(texttype* /*obj*/, USHORT iLength)
+static USHORT internal_keylength(texttype* obj, USHORT iLength)
 {
 /**************************************
  *
@@ -458,15 +450,16 @@ static USHORT internal_keylength(texttype* /*obj*/, USHORT iLength)
  *
  **************************************/
 
-	return iLength;
+	return (iLength);
 }
 
-static USHORT internal_string_to_key(texttype* obj,
+static USHORT internal_string_to_key(
+									 texttype* obj,
 									 USHORT inLen,
 									 const UCHAR* src,
 									 USHORT outLen,
-									 UCHAR* dest,
-									 USHORT /*key_type*/)
+									UCHAR* dest,
+									USHORT key_type) // unused
 {
 /**************************************
  *
@@ -478,7 +471,7 @@ static USHORT internal_string_to_key(texttype* obj,
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	const UCHAR pad_char = static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_pad_char;
+	const UCHAR pad_char = obj->texttype_impl->texttype_pad_char;
 	while (inLen-- && outLen--)
 		*dest++ = *src++;
 
@@ -486,20 +479,19 @@ static USHORT internal_string_to_key(texttype* obj,
 	{
 		/* strip off ending pad characters */
 		while (dest > pStart)
-		{
 			if (*(dest - 1) == pad_char)
 				dest--;
 			else
 				break;
-		}
 	}
 
 	return (dest - pStart);
 }
 
-static SSHORT internal_compare(texttype* obj,
+static SSHORT internal_compare(
+							   texttype* obj,
 							   ULONG length1,
-							   const UCHAR* p1, ULONG length2, const UCHAR* p2, INTL_BOOL* /*error_flag*/)
+							   const UCHAR* p1, ULONG length2, const UCHAR* p2, INTL_BOOL* error_flag)
 {
 /**************************************
  *
@@ -510,63 +502,53 @@ static SSHORT internal_compare(texttype* obj,
  * Functional description
  *
  **************************************/
-	const UCHAR pad = static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_pad_char;
+	const UCHAR pad = obj->texttype_impl->texttype_pad_char;
 	SLONG fill = length1 - length2;
-	if (length1 >= length2)
-	{
+	if (length1 >= length2) {
 		if (length2)
-		{
 			do {
 				if (*p1++ != *p2++)
-				{
 					if (p1[-1] > p2[-1])
 						return 1;
-					return -1;
-				}
+					else
+						return -1;
 			} while (--length2);
-		}
 		if (fill > 0)
-		{
 			do {
 				if (!obj->texttype_pad_option || *p1++ != pad)
-				{
 					if (p1[-1] > pad)
 						return 1;
-					return -1;
-				}
+					else
+						return -1;
 			} while (--fill);
-		}
 		return 0;
 	}
 
 	if (length1)
-	{
 		do {
 			if (*p1++ != *p2++)
-			{
 				if (p1[-1] > p2[-1])
 					return 1;
-				return -1;
-			}
+				else
+					return -1;
 		} while (--length1);
-	}
 
 	do {
 		if (!obj->texttype_pad_option || *p2++ != pad)
-		{
 			if (pad > p2[-1])
 				return 1;
-			return -1;
-		}
+			else
+				return -1;
 	} while (++fill);
 
 	return 0;
 }
 
 
-static ULONG internal_str_to_upper(texttype* /*obj*/,
-								   ULONG inLen,
-								   const UCHAR* src, ULONG outLen, UCHAR* dest)
+static ULONG internal_str_to_upper(
+									texttype* obj,
+									ULONG inLen,
+									const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -579,8 +561,7 @@ static ULONG internal_str_to_upper(texttype* /*obj*/,
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--)
-	{
+	while (inLen-- && outLen--) {
 		*dest++ = UPPER7(*src);
 		src++;
 	}
@@ -589,9 +570,10 @@ static ULONG internal_str_to_upper(texttype* /*obj*/,
 }
 
 
-static ULONG internal_str_to_lower(texttype* /*obj*/,
-								   ULONG inLen,
-								   const UCHAR* src, ULONG outLen, UCHAR* dest)
+static ULONG internal_str_to_lower(
+									texttype* obj,
+									ULONG inLen,
+									const UCHAR* src, ULONG outLen, UCHAR* dest)
 {
 /**************************************
  *
@@ -604,8 +586,7 @@ static ULONG internal_str_to_lower(texttype* /*obj*/,
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	while (inLen-- && outLen--)
-	{
+	while (inLen-- && outLen--) {
 		*dest++ = LOWWER7(*src);
 		src++;
 	}
@@ -625,11 +606,11 @@ static void internal_destroy(texttype* obj)
  * Functional description
  *
  **************************************/
-	delete static_cast<TextTypeImpl*>(obj->texttype_impl);
+	delete obj->texttype_impl;
 }
 
 
-static USHORT utf16_keylength(texttype* /*obj*/, USHORT len)
+static USHORT utf16_keylength(texttype* obj, USHORT len)
 {
 /**************************************
  *
@@ -656,12 +637,13 @@ void padUtf16(const USHORT* text, U& len)
 }
 } //namespace
 
-static USHORT utf16_string_to_key(texttype* obj,
+static USHORT utf16_string_to_key(
+								  texttype* obj,
 								  USHORT srcLen,
 								  const UCHAR* src,
 								  USHORT dstLen,
 								  UCHAR* dst,
-								  USHORT /*key_type*/)
+								  USHORT key_type)
 {
 /**************************************
  *
@@ -682,13 +664,14 @@ static USHORT utf16_string_to_key(texttype* obj,
 		padUtf16(alSrc, srcLen);
 	}
 
-	return UnicodeUtil::utf16ToKey(srcLen, alSrc, dstLen, dst);
+	return UnicodeUtil::utf16ToKey(srcLen, alSrc, dstLen, dst, key_type);
 }
 
-static SSHORT utf16_compare(texttype* obj,
-							ULONG len1,
-							const UCHAR* str1,
-							ULONG len2,
+static SSHORT utf16_compare(
+							texttype* obj,
+							ULONG len1, 
+							const UCHAR* str1, 
+							ULONG len2, 
 							const UCHAR* str2,
 							INTL_BOOL* error_flag)
 {
@@ -717,10 +700,11 @@ static SSHORT utf16_compare(texttype* obj,
 	return UnicodeUtil::utf16Compare(len1, al1, len2, al2, error_flag);
 }
 
-static ULONG utf16_upper(texttype* obj,
-						 ULONG srcLen,
-						 const UCHAR* src,
-						 ULONG dstLen,
+static ULONG utf16_upper(
+						 texttype* obj,
+						 ULONG srcLen, 
+						 const UCHAR* src, 
+						 ULONG dstLen, 
 						 UCHAR* dst)
 {
 /**************************************
@@ -740,10 +724,11 @@ static ULONG utf16_upper(texttype* obj,
 		dstLen, Firebird::OutAligner<USHORT>(dst, dstLen), NULL);
 }
 
-static ULONG utf16_lower(texttype* obj,
-						 ULONG srcLen,
-						 const UCHAR* src,
-						 ULONG dstLen,
+static ULONG utf16_lower(
+						 texttype* obj,
+						 ULONG srcLen, 
+						 const UCHAR* src, 
+						 ULONG dstLen, 
 						 UCHAR* dst)
 {
 /**************************************
@@ -764,7 +749,7 @@ static ULONG utf16_lower(texttype* obj,
 }
 
 
-static USHORT utf32_keylength(texttype* /*obj*/, USHORT len)
+static USHORT utf32_keylength(texttype* obj, USHORT len)
 {
 /**************************************
  *
@@ -778,12 +763,13 @@ static USHORT utf32_keylength(texttype* /*obj*/, USHORT len)
 	return len;
 }
 
-static USHORT utf32_string_to_key(texttype* obj,
+static USHORT utf32_string_to_key(
+								  texttype* obj,
 								  USHORT srcLen,
 								  const UCHAR* src,
 								  USHORT dstLen,
 								  UCHAR* dst,
-								  USHORT /*key_type*/)
+								  USHORT key_type)
 {
 /**************************************
  *
@@ -810,7 +796,7 @@ static USHORT utf32_string_to_key(texttype* obj,
 		padUtf16(s, sLen);
 	}
 
-	return UnicodeUtil::utf16ToKey(sLen, s, dstLen, dst);
+	return UnicodeUtil::utf16ToKey(sLen, s, dstLen, dst, key_type);
 }
 
 
@@ -842,10 +828,8 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
 
-	while (nDest && nSrc >= sizeof(*pSrc))
-	{
-		if (*pSrc >= 256)
-		{
+	while (nDest && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc >= 256) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		}
@@ -891,8 +875,7 @@ static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1)
-	{
+	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc * 256 + *(pSrc + 1);
 		pSrc += 2;
 		nDest -= 2;
@@ -913,7 +896,7 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 {
 /**************************************
  *
- *      w c _ t o _ m b
+ *      w c _ t o _ m b 
  *
  **************************************
  *
@@ -936,8 +919,7 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 
 	const UCHAR* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
-	while (nDest > 1 && nSrc > 1)
-	{
+	while (nDest > 1 && nSrc > 1) {
 		*pDest++ = *pSrc / 256;
 		*pDest++ = *pSrc++ % 256;
 		nDest -= 2;
@@ -951,9 +933,9 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	return ((pDest - pStart) * sizeof(*pDest));
 }
 
-static INTL_BOOL ttype_ascii_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_ascii_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -970,9 +952,9 @@ static INTL_BOOL ttype_ascii_init(texttype* tt, const ASCII* /*texttype_name*/, 
 }
 
 
-static INTL_BOOL ttype_none_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_none_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -989,9 +971,9 @@ static INTL_BOOL ttype_none_init(texttype* tt, const ASCII* /*texttype_name*/, c
 }
 
 
-static INTL_BOOL ttype_unicode_fss_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_unicode_fss_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1016,9 +998,9 @@ static INTL_BOOL ttype_unicode_fss_init(texttype* tt, const ASCII* /*texttype_na
 }
 
 
-static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1035,7 +1017,7 @@ static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* /*texttype_name*/,
 	{
 		tt->texttype_fn_str_to_upper = internal_str_copy;
 		tt->texttype_fn_str_to_lower = internal_str_copy;
-		static_cast<TextTypeImpl*>(tt->texttype_impl)->texttype_pad_char = '\0';
+		tt->texttype_impl->texttype_pad_char = '\0';
 		return true;
 	}
 
@@ -1043,9 +1025,9 @@ static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* /*texttype_name*/,
 }
 
 
-static INTL_BOOL ttype_utf8_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_utf8_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1062,9 +1044,9 @@ static INTL_BOOL ttype_utf8_init(texttype* tt, const ASCII* /*texttype_name*/, c
 }
 
 
-static INTL_BOOL ttype_unicode8_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_unicode8_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* config_info)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1089,9 +1071,9 @@ static INTL_BOOL ttype_unicode8_init(texttype* tt, const ASCII* /*texttype_name*
 }
 
 
-static INTL_BOOL ttype_utf16_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_utf16_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1118,9 +1100,9 @@ static INTL_BOOL ttype_utf16_init(texttype* tt, const ASCII* /*texttype_name*/, 
 }
 
 
-static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* /*texttype_name*/, const ASCII* /*charset_name*/,
+static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* texttype_name, const ASCII* charset_name,
 	USHORT attributes, const UCHAR* specific_attributes, ULONG specific_attributes_length,
-	INTL_BOOL /*ignore_attributes*/, const ASCII* /*config_info*/)
+	INTL_BOOL ignore_attributes, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1145,10 +1127,31 @@ static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* /*texttype_name*/, 
 
 
 /*
- *      Start of Character set definitions
+ *      Start of Character set definitions 
  */
 
-static INTL_BOOL cs_utf16_well_formed(charset* cs,
+static INTL_BOOL cs_utf8_well_formed(charset* cs, 
+									 ULONG len,
+									 const UCHAR* str,
+									 ULONG* offending_position)
+{
+/**************************************
+ *
+ *      c s _ u t f 8 _ w e l l _ f o r m e d
+ *
+ **************************************
+ *
+ * Functional description
+ *      Check if UTF-8 string is weel-formed
+ *
+ *************************************/
+	fb_assert(cs != NULL);
+
+	return UnicodeUtil::utf8WellFormed(len, str, offending_position);
+}
+
+
+static INTL_BOOL cs_utf16_well_formed(charset* cs, 
 									  ULONG len,
 									  const UCHAR* str,
 									  ULONG* offending_position)
@@ -1169,7 +1172,7 @@ static INTL_BOOL cs_utf16_well_formed(charset* cs,
 }
 
 
-static ULONG cs_utf16_length(charset* cs,
+static ULONG cs_utf16_length(charset* cs, 
 							 ULONG srcLen,
 							 const UCHAR* src)
 {
@@ -1188,7 +1191,7 @@ static ULONG cs_utf16_length(charset* cs,
 }
 
 
-static ULONG cs_utf16_substring(charset* cs,
+static ULONG cs_utf16_substring(charset* cs, 
 								ULONG srcLen,
 								const UCHAR* src,
 								ULONG dstLen,
@@ -1213,7 +1216,7 @@ static ULONG cs_utf16_substring(charset* cs,
 }
 
 
-static INTL_BOOL cs_utf32_well_formed(charset* cs,
+static INTL_BOOL cs_utf32_well_formed(charset* cs, 
 									  ULONG len,
 									  const UCHAR* str,
 									  ULONG* offending_position)
@@ -1263,10 +1266,8 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const USHORT* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
-	{
-		if (*pSrc > 127)
-		{
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
 		}
@@ -1311,8 +1312,7 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* ppS
 
 	const USHORT* const pStart = pDest;
 	const USHORT* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
-	{
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
 		*pDest++ = *pSrc++;
 		nDest -= sizeof(*pDest);
 		nSrc -= sizeof(*pSrc);
@@ -1333,11 +1333,11 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 {
 /**************************************
  *
- *      c v t _ u t f f s s _ t o _ a s c i i
+ *      c v t _ u t f f s s _ t o _ a s c i i 
  * also
- *      c v t _ a s c i i _ t o _ u t f f s s
+ *      c v t _ a s c i i _ t o _ u t f f s s 
  * also
- *      c v t _ n o n e _ t o _ u t f f s s
+ *      c v t _ n o n e _ t o _ u t f f s s 
  *
  **************************************
  *
@@ -1358,10 +1358,8 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 
 	const UCHAR* const pStart = pDest;
 	const UCHAR* const pStart_src = pSrc;
-	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc))
-	{
-		if (*pSrc > 127)
-		{
+	while (nDest >= sizeof(*pDest) && nSrc >= sizeof(*pSrc)) {
+		if (*pSrc > 127) {
 			/* In the cvt_ascii_to_utffss case this should be CS_BAD_INPUT */
 			/* but not in cvt_none_to_utffss or cvt_utffss_to_ascii */
 			*err_code = CS_CONVERT_ERROR;
@@ -1381,6 +1379,36 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 #endif
 
 
+static ULONG cvt_unicode_to_utf8(csconvert* obj,
+								 ULONG unicode_len,
+								 const UCHAR* unicode_str,
+								 ULONG utf8_len,
+								 UCHAR* utf8_str,
+								 USHORT* err_code,
+								 ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf8);
+	return UnicodeUtil::utf16ToUtf8(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len), 
+		utf8_len, utf8_str, err_code, err_position);
+}
+
+
+static ULONG cvt_utf8_to_unicode(csconvert* obj,
+								 ULONG utf8_len,
+								 const UCHAR* utf8_str,
+								 ULONG unicode_len,
+								 UCHAR* unicode_str,
+								 USHORT* err_code,
+								 ULONG* err_position)
+{
+	fb_assert(obj != NULL);
+	fb_assert(obj->csconvert_fn_convert == cvt_utf8_to_unicode);
+	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, 
+		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
+}
+
+
 static ULONG cvt_unicode_to_utf32(csconvert* obj,
 								  ULONG unicode_len,
 								  const UCHAR* unicode_str,
@@ -1391,7 +1419,7 @@ static ULONG cvt_unicode_to_utf32(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf32);
-	return UnicodeUtil::utf16ToUtf32(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len),
+	return UnicodeUtil::utf16ToUtf32(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len), 
 		utf32_len, Firebird::OutAligner<ULONG>(utf32_str, utf32_len), err_code, err_position);
 }
 
@@ -1407,12 +1435,12 @@ static ULONG cvt_utf32_to_unicode(csconvert* obj,
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == cvt_utf32_to_unicode);
 
-	return UnicodeUtil::utf32ToUtf16(utf32_len, Firebird::Aligner<ULONG>(utf32_str, utf32_len),
+	return UnicodeUtil::utf32ToUtf16(utf32_len, Firebird::Aligner<ULONG>(utf32_str, utf32_len), 
 		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
 }
 
 
-static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1429,7 +1457,7 @@ static INTL_BOOL cs_ascii_init(charset* csptr, const ASCII* /*charset_name*/, co
 }
 
 
-static INTL_BOOL cs_none_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_none_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1441,7 +1469,7 @@ static INTL_BOOL cs_none_init(charset* csptr, const ASCII* /*charset_name*/, con
  *
  *************************************/
 
-	IntlUtil::initNarrowCharset(csptr, "NONE");
+	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "NONE");
 
 	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_none_to_unicode);
 	IntlUtil::initConvert(&csptr->charset_from_unicode, wc_to_nc);
@@ -1449,7 +1477,7 @@ static INTL_BOOL cs_none_init(charset* csptr, const ASCII* /*charset_name*/, con
 }
 
 
-static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1461,7 +1489,7 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* /*charset_name
  *
  *************************************/
 
-	IntlUtil::initNarrowCharset(csptr, "UNICODE_FSS");
+	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "UNICODE_FSS");
 	csptr->charset_max_bytes_per_char = 3;
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS;
 
@@ -1469,13 +1497,12 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* /*charset_name
 	IntlUtil::initConvert(&csptr->charset_from_unicode, internal_unicode_to_fss);
 	csptr->charset_fn_length = internal_fss_length;
 	csptr->charset_fn_substring = internal_fss_substring;
-	csptr->charset_fn_well_formed = IntlUtil::utf8WellFormed;
 
 	return true;
 }
 
 
-static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1494,7 +1521,7 @@ static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* /*charset_nam
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (const BYTE*) &space;	/* 0x0020 */
+	csptr->charset_space_character = (const BYTE*) & space;	/* 0x0020 */
 	csptr->charset_fn_well_formed = NULL;
 
 	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_unicode_to_unicode);
@@ -1504,7 +1531,7 @@ static INTL_BOOL cs_unicode_ucs2_init(charset* csptr, const ASCII* /*charset_nam
 }
 
 
-static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1516,7 +1543,7 @@ static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* /*charset_name*/, c
  *
  *************************************/
 
-	IntlUtil::initNarrowCharset(csptr, "BINARY");
+	IntlUtil::initNarrowCharset(csptr, (const ASCII*) "BINARY");
 	csptr->charset_space_character = (const BYTE*) "\0";
 	IntlUtil::initConvert(&csptr->charset_to_unicode, mb_to_wc);
 	IntlUtil::initConvert(&csptr->charset_from_unicode, wc_to_mb);
@@ -1524,7 +1551,7 @@ static INTL_BOOL cs_binary_init(charset* csptr, const ASCII* /*charset_name*/, c
 }
 
 
-static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1536,12 +1563,24 @@ static INTL_BOOL cs_utf8_init(charset* csptr, const ASCII* /*charset_name*/, con
  *
  *************************************/
 
-	IntlUtil::initUtf8Charset(csptr);
+	static UCHAR space = 32;
+
+	csptr->charset_version = CHARSET_VERSION_1;
+	csptr->charset_name = "UTF8";
+	csptr->charset_flags |= CHARSET_ASCII_BASED;
+	csptr->charset_min_bytes_per_char = 1;
+	csptr->charset_max_bytes_per_char = 4;
+	csptr->charset_space_length = 1;
+	csptr->charset_space_character = (const BYTE*)&space;
+	csptr->charset_fn_well_formed = cs_utf8_well_formed;
+
+	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_utf8_to_unicode);
+	IntlUtil::initConvert(&csptr->charset_from_unicode, cvt_unicode_to_utf8);
 	return true;
 }
 
 
-static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1561,7 +1600,7 @@ static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* /*charset_name*/, co
 	csptr->charset_min_bytes_per_char = 2;
 	csptr->charset_max_bytes_per_char = 4;
 	csptr->charset_space_length = 2;
-	csptr->charset_space_character = (const BYTE*) &space;
+	csptr->charset_space_character = (const BYTE*)&space;
 	csptr->charset_fn_well_formed = cs_utf16_well_formed;
 	csptr->charset_fn_length = cs_utf16_length;
 	csptr->charset_fn_substring = cs_utf16_substring;
@@ -1572,7 +1611,7 @@ static INTL_BOOL cs_utf16_init(charset* csptr, const ASCII* /*charset_name*/, co
 }
 
 
-static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* /*charset_name*/, const ASCII* /*config_info*/)
+static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* charset_name, const ASCII* config_info)
 {
 /**************************************
  *
@@ -1592,7 +1631,7 @@ static INTL_BOOL cs_utf32_init(charset* csptr, const ASCII* /*charset_name*/, co
 	csptr->charset_min_bytes_per_char = 4;
 	csptr->charset_max_bytes_per_char = 4;
 	csptr->charset_space_length = 4;
-	csptr->charset_space_character = (const BYTE*) &space;
+	csptr->charset_space_character = (const BYTE*)&space;
 	csptr->charset_fn_well_formed = cs_utf32_well_formed;
 
 	IntlUtil::initConvert(&csptr->charset_to_unicode, cvt_utf32_to_unicode);
@@ -1631,12 +1670,12 @@ INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, co
 	if (strcmp(charset_name, "NONE") == 0)
 		func = cs_none_init;
 	else if (strcmp(charset_name, "ASCII") == 0 || strcmp(charset_name, "USASCII") == 0 ||
-		strcmp(charset_name, "ASCII7") == 0)
+			 strcmp(charset_name, "ASCII7") == 0)
 	{
 		func = cs_ascii_init;
 	}
 	else if (strcmp(charset_name, "UNICODE_FSS") == 0 || strcmp(charset_name, "UTF_FSS") == 0 ||
-		strcmp(charset_name, "SQL_TEXT") == 0)
+			 strcmp(charset_name, "SQL_TEXT") == 0)
 	{
 		func = cs_unicode_fss_init;
 	}
@@ -1653,8 +1692,8 @@ INTL_BOOL INTL_builtin_lookup_charset(charset* cs, const ASCII* charset_name, co
 
 	if (func)
 		return func(cs, charset_name, config_info);
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -1681,19 +1720,19 @@ INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name,
 	else if (strcmp(texttype_name, "OCTETS") == 0)
 		func = ttype_binary_init;
 	else if (strcmp(texttype_name, "UTF8") == 0 ||
-		(strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+			 (strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
 		func = ttype_utf8_init;
 	}
 	else if ((strcmp(charset_name, "UTF8") == 0 && strcmp(texttype_name, "UNICODE") == 0))
 		func = ttype_unicode8_init;
 	else if (strcmp(texttype_name, "UTF16") == 0 ||
-		(strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+			 (strcmp(charset_name, "UTF16") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
 		func = ttype_utf16_init;
 	}
 	else if (strcmp(texttype_name, "UTF32") == 0 ||
-		(strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
+			 (strcmp(charset_name, "UTF32") == 0 && strcmp(texttype_name, "UCS_BASIC") == 0))
 	{
 		func = ttype_utf32_init;
 	}
@@ -1703,8 +1742,8 @@ INTL_BOOL INTL_builtin_lookup_texttype(texttype* tt, const ASCII* texttype_name,
 		return func(tt, texttype_name, charset_name, attributes,
 			specific_attributes, specific_attributes_length, ignore_attributes, config_info);
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -1731,14 +1770,13 @@ ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* char
 		{
 			if (dstLen == 0)
 				return newSpecificAttributes.length();
-
-			if (newSpecificAttributes.length() <= dstLen)
+			else if (newSpecificAttributes.length() <= dstLen)
 			{
 				memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
 				return newSpecificAttributes.length();
 			}
-
-			return INTL_BAD_STR_LENGTH;
+			else
+				return INTL_BAD_STR_LENGTH;
 		}
 	}
 

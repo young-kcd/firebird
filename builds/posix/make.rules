@@ -32,20 +32,18 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-WCFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan \
-	-DNAMESPACE=Vulcan $(THR_FLAGS)
-
+CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan -DNAMESPACE=Vulcan
 ifeq ($(STD_ICU),false)
-  WCFLAGS:= $(WCFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
+  CFLAGS:= $(CFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
 endif
 
 ifeq ($(IsProdTypeBuild),Y)
-  WCFLAGS:= $(WCFLAGS) $(PROD_FLAGS)
+  CFLAGS:= $(CFLAGS) $(PROD_FLAGS) -DPROD_BUILD
 else
-  WCFLAGS:= $(WCFLAGS) $(DEV_FLAGS) -DDEV_BUILD
+  CFLAGS:= $(CFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif
 
-WCXXFLAGS:= $(CXXFLAGS) $(WCFLAGS)
+CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
 # Here we have definitions for using the preprocessor.
 
@@ -87,28 +85,27 @@ $(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
 
 .SUFFIXES: .lo .o .cpp .c
 
-$(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
-	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+.c.o:
+	$(CC) -c $(CFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
 
-$(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_PATH)/%.cpp
-	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+.cpp.o:
+	$(CXX) -c $(CXXFLAGS) $(CXX_INCLUDE_DIRS) $(VERSION_FLAG) $<
+
+$(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 
 ifneq ($(strip $(PLATFORM_FALLBACK)),)
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
-	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-
-$(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_FALLBACK)/%.cpp
-	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 endif
-
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
-	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
+	$(CC) $(CFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(OBJ)/%.cpp 
-	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
-	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 
 .SUFFIXES: .epp .e
 
@@ -116,3 +113,5 @@ $(OBJ)/%.o: $(SRC_ROOT)/%.cpp
 
 $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
 	windres --output-format=coff --include-dir=$(<D) $< $@
+
+

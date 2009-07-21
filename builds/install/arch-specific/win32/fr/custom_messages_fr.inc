@@ -45,7 +45,7 @@ fr.InstalledProducts=Selon l'analyse de pré-installation il existe %s installati
 fr.InstalledProdCountSingular=
 fr.InstalledProdCountPlural=
 
-fr.FbRunning1=Une version de Firebird %s Serveur est active.
+fr.FbRunning1=Une version de %s Serveur est active.
 fr.FbRunning2=   Vous devez fermer l'application ou arréter
 fr.FbRunning3=           le service pour continuer.
 

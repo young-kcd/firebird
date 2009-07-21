@@ -24,33 +24,48 @@
 #ifndef JRD_IBSETJMP_H
 #define JRD_IBSETJMP_H
 
-#ifdef UNIX
 
+#if defined(UNIX) && defined(SUPERSERVER)
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
 #endif
+
+//#define SETJMP	setjmp
+//#define LONGJMP	longjmp
+//#define	JMP_BUF	jmp_buf
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
 
+#define SIGSETJMP 	sigsetjmp
+//#define SIGLONGJMP 	siglongjmp
+#define	SIGJMP_BUF	sigjmp_buf
+#endif // UNIX and SUPERSERVER
+
+#ifdef UNIX
+#ifdef SUPERSERVER
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
-					sigjmp_buf sigenv; \
-					int sig; \
+					SIGJMP_BUF	sigenv; \
+					int		sig; \
 					if (!Config::getBugcheckAbort()) { \
-						if (sig = sigsetjmp(sigenv, 1)) \
+						memcpy(&tdbb->tdbb_sigsetjmp, &sigenv, sizeof sigenv); \
+						if (sig = SIGSETJMP (sigenv, 1)) \
 					    	ISC_exception_post(sig, err); \
-						ISC_sync_signals_set(&sigenv); \
+						ISC_sync_signals_set(); \
 					}
 #define END_CHECK_FOR_EXCEPTIONS(err)   if (!Config::getBugcheckAbort()) ISC_sync_signals_reset(); }
+#endif /* SUPER_SERVER */
 
-#endif // UNIX
+#endif /* UNIX */
 
 #if defined(WIN_NT) && !defined(MINGW)
+#ifdef SUPERSERVER
 #include <excpt.h>
 #define START_CHECK_FOR_EXCEPTIONS(err)	__try {
 #define  END_CHECK_FOR_EXCEPTIONS(err) 	} __except ( ISC_exception_post(GetExceptionCode(), err)) { }
-#endif // WIN_NT
+#endif /* SUPER_SERVER */
+#endif /* WIN_NT */
 
 /* generic macros */
 #ifndef START_CHECK_FOR_EXCEPTIONS

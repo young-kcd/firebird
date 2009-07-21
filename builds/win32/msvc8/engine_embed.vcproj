@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="engine_embed"
 	ProjectGUID="{F55ACA54-70DF-4343-8E16-FA97C757CCF6}"
 	>
@@ -46,7 +46,71 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1049"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -106,7 +170,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -114,70 +178,6 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="1049"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TargetEnvironment="3"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,EMBEDDED,NAMESPACE=Vulcan"
-				UsePrecompiledHeader="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
 				Culture="1049"
 			/>
 			<Tool
@@ -230,7 +230,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -270,6 +270,10 @@
 		<Filter
 			Name="JRD files"
 			>
+			<File
+				RelativePath="..\..\..\src\jrd\all.cpp"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\alt.cpp"
 				>
@@ -316,10 +320,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt2.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Database.cpp"
 				>
 			</File>
 			<File
@@ -399,10 +399,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\ExtDS.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\filters.cpp"
 				>
 			</File>
@@ -435,6 +431,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\iberr.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\idx.cpp"
 				>
 			</File>
@@ -444,10 +444,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\jrd\ini.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\extds\InternalDS.cpp"
 				>
 			</File>
 			<File
@@ -467,6 +463,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\inuse.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp"
 				>
 			</File>
@@ -483,15 +483,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\IscDS.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\jrd.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log.cpp"
 				>
 			</File>
 			<File
@@ -527,10 +527,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\pag.cpp"
 				>
 			</File>
@@ -543,27 +539,23 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PreparedStatement.cpp"
+				RelativePath="..\..\..\src\jrd\plugin_manager.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\RandomGenerator.cpp"
-				>
-			</File>
+            <File
+                RelativePath="..\..\..\src\jrd\RandomGenerator.cpp"
+                >
+            </File>
 			<File
 				RelativePath="..\..\..\src\jrd\RecordBuffer.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\Relation.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ResultSet.cpp"
 				>
 			</File>
 			<File
@@ -580,6 +572,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\RuntimeStatistics.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sch.cpp"
 				>
 			</File>
 			<File
@@ -619,6 +615,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sym.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\SysFunction.cpp"
 				>
 			</File>
@@ -631,15 +631,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\thd.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ThreadData.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadStart.cpp"
 				>
 			</File>
 			<File
@@ -651,27 +651,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceLog.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceManager.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceObjects.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\unicode_util.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\UserManagement.cpp"
 				>
 			</File>
 			<File
@@ -711,6 +691,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\all.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\blb.h"
 				>
 			</File>
@@ -720,6 +704,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blf_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\blk.h"
 				>
 			</File>
 			<File
@@ -796,10 +784,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Database.h"
 				>
 			</File>
 			<File
@@ -927,14 +911,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\ExtDS.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\include\fb_api_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\include\fb_blk.h"
 				>
 			</File>
@@ -995,6 +971,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\iberr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\iberr_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\include\gen\iberror.h"
 				>
 			</File>
@@ -1031,10 +1015,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\InternalDS.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\intl.h"
 				>
 			</File>
@@ -1056,6 +1036,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\IntlUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\inuse_proto.h"
 				>
 			</File>
 			<File
@@ -1084,10 +1068,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_signal.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\extds\IscDS.h"
 				>
 			</File>
 			<File
@@ -1124,6 +1104,18 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lls.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log2.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log_proto.h"
 				>
 			</File>
 			<File
@@ -1227,10 +1219,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PreparedStatement.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\quad.h"
 				>
 			</File>
@@ -1247,6 +1235,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\include\gen\rdb_codes.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\RecordBuffer.h"
 				>
 			</File>
@@ -1260,10 +1252,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\req.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ResultSet.h"
 				>
 			</File>
 			<File
@@ -1288,6 +1276,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sbm.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sch_proto.h"
 				>
 			</File>
 			<File
@@ -1351,6 +1343,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\svc_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\svc_undoc.h"
 				>
 			</File>
@@ -1367,6 +1363,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\thd.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\tpc.h"
 				>
 			</File>
@@ -1380,34 +1380,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tra_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceDSQLHelpers.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceJrdHelpers.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceLog.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceManager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceObjects.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceSession.h"
 				>
 			</File>
 			<File
@@ -1451,15 +1423,5 @@
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="GPRE files"
-			>
-			<File
-				RelativePath="..\..\..\src\gpre\pretty.cpp"
-				>
-			</File>
-		</Filter>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

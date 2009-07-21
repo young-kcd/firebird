@@ -23,13 +23,13 @@
 #define FIREBIRD_SYSLOG_H
 
 #include "fb_types.h"
+#include "../common/classes/fb_string.h"
 
 namespace Firebird {
-class Syslog
-{
+class Syslog {
 public:
 	enum Severity {Warning, Error};
-	static void Record(Severity, const char*);
+	static void Record(Severity, const string&);
 };
 } // namespace Firebird
 

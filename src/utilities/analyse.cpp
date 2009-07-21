@@ -24,24 +24,30 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 
+#ifdef VMS
+#include <types.h>
+#include "times.h"
+#else
 #ifdef HAVE_TIMES
 #include <sys/types.h>
 #include <sys/times.h>
 #endif
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
 # endif
 #endif
+#endif
 
-#ifdef HAVE_IO_H
+#ifdef WIN_NT
 #include <io.h> // open, close
 #endif
+
 
 #include <stdio.h>
 #include <errno.h>
@@ -57,17 +63,19 @@ static time_t times(struct tms*);
 using namespace Ods;
 
 static void analyse(int, const SCHAR*, const pag*, int);
-static SLONG get_long();
+static SLONG get_long(void);
+//#ifdef VMS
 static void db_error(int);
 static void db_open(const char*, USHORT);
 static PAG db_read(SLONG);
+//#endif
 
 static FILE *trace;
 static int file;
 
-// Physical IO trace events
+/* Physical IO trace events */
 
-//const SSHORT trace_create	= 1;
+const SSHORT trace_create	= 1;
 const SSHORT trace_open		= 2;
 const SSHORT trace_page_size	= 3;
 const SSHORT trace_read		= 4;
@@ -75,7 +83,9 @@ const SSHORT trace_write	= 5;
 const SSHORT trace_close	= 6;
 
 static USHORT page_size;
+//static int map_length, map_base, map_count;
 static pag* global_buffer;
+//static UCHAR *map_region;
 
 const int MAX_PAGES	= 50000;
 
@@ -94,18 +104,21 @@ void main( int argc, char **argv)
  *	Replay all I/O to compute overhead of I/O system.
  *
  **************************************/
+	SLONG n;
+	SCHAR string[128] = "";
 
 	bool detail = true;
 
 	char** end;
-	for (end = argv + argc, ++argv; argv < end; argv++)
+	for (end = argv + argc, ++argv; argv < end; argv++) 
 	{
 		const char* s = *argv;
 		if (*s++ == '-')
-		{
-			if (UPPER(*s) == 'S')
+			switch (UPPER(*s)) {
+			case 'S':
 				detail = false;
-		}
+				break;
+			}
 	}
 
 	SLONG reads = 0, writes = 0;
@@ -116,18 +129,15 @@ void main( int argc, char **argv)
 	struct tms before;
 	time_t elapsed = times(&before);
 
-	SCHAR string[128] = "";
-
 	const pag* page;
 	SSHORT event;
 	while ((event = getc(trace)) != trace_close && event != EOF)
-	{
 		switch (event)
 		{
 		case trace_open:
 			{
 				const SLONG length = getc(trace);
-				SLONG n = length;
+				n = length;
 				SCHAR* p = string;
 				while (--n >= 0)
 					*p++ = getc(trace);
@@ -143,34 +153,29 @@ void main( int argc, char **argv)
 			break;
 
 		case trace_read:
-			{
-				const SLONG n = get_long();
-				if (n < MAX_PAGES)
-					++read_counts[n];
-
-				if (detail && (page = db_read(n)))
-					analyse(n, "Read", page, ++sequence);
-				reads++;
-			}
+			n = get_long();
+			if (n < MAX_PAGES)
+				++read_counts[n];
+				
+			if (detail && (page = db_read(n)))
+				analyse(n, "Read", page, ++sequence);
+			reads++;
 			break;
 
 		case trace_write:
-			{
-				const SLONG n = get_long();
-				if (n < MAX_PAGES)
-					++write_counts[n];
-
-				if (detail && (page = db_read(n)))
-					analyse(n, "Write", page, ++sequence);
-				writes++;
-			}
+			n = get_long();
+			if (n < MAX_PAGES)
+				++write_counts[n];
+			
+			if (detail && (page = db_read(n)))
+				analyse(n, "Write", page, ++sequence);
+			writes++;
 			break;
 
 		default:
 			printf("don't understand event %d\n", event);
 			abort();
 		}
-	}
 
 	struct tms after;
 	elapsed = times(&after) - elapsed;
@@ -186,12 +191,10 @@ void main( int argc, char **argv)
 	printf("High activity pages:\n");
 
 	const USHORT *r, *w;
-	SLONG n;
-
-	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES; n++, r++, w++)
+	for (r = read_counts, w = write_counts, n = 0; n < MAX_PAGES;
+		 n++, r++, w++)
 	{
-		if (*r > 1 || *w > 1)
-		{
+		if (*r > 1 || *w > 1) {
 			sprintf(string, "  Read: %d, write: %d", *r, *w);
 			if (page = db_read(n))
 				analyse(n, string, page, 0);
@@ -218,8 +221,7 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 	else
 		printf("%s\t%d\t\t", string, number);
 
-	switch (page->pag_type)
-	{
+	switch (page->pag_type) {
 	case pag_header:
 		printf("Header page\n");
 		break;
@@ -254,9 +256,11 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 		break;
 
 	case pag_blob:
-		printf("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
-			page->pag_flags, ((blob_page*) page)->blp_lead_page,
-			((blob_page*) page)->blp_sequence, ((blob_page*) page)->blp_length);
+		printf
+			("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
+			 page->pag_flags, ((blob_page*) page)->blp_lead_page,
+			 ((blob_page*) page)->blp_sequence, ((blob_page*) page)->blp_length);
+
 		break;
 
 	default:
@@ -266,7 +270,7 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 }
 
 
-static SLONG get_long()
+static SLONG get_long(void)
 {
 /**************************************
  *
@@ -300,6 +304,7 @@ static SLONG get_long()
 }
 
 
+//#ifdef VMS
 static void db_error( int status)
 {
 /**************************************
@@ -348,7 +353,7 @@ static PAG db_read( SLONG page_number)
  *
  **************************************/
 
-	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
+	FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
 
 	if (!global_buffer)
 		global_buffer = (pag*) malloc(page_size);
@@ -361,6 +366,7 @@ static PAG db_read( SLONG page_number)
 
 	return global_buffer;
 }
+//#endif
 
 
 #ifndef HAVE_TIMES
@@ -381,3 +387,4 @@ static time_t times(struct tms* buffer)
 	return buffer->tms_utime;
 }
 #endif
+

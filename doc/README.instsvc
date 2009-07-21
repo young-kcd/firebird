@@ -69,18 +69,16 @@ system) instead of the default "LocalSystem".
 
 Usage
 ------
-  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] | -m[ultithreaded] ]
+  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]
                     [ -a[uto]* | -d[emand] ]
                     [ -g[uardian] ]
                     [ -l[ogin] username [password] ]
-                    [ -n[ame] instance ]
                     [ -i[nteractive] ]
 
           sta[rt]   [ -b[oostpriority] ]
-                    [ -n[ame] instance ]
-          sto[p]    [ -n[ame] instance ]
+          sto[p]
           q[uery]
-          r[emove]  [ -n[ame] instance ]
+          r[emove]
 
   This utility should be located and run from the 'bin' directory
   of your Firebird installation.

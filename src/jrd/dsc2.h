@@ -44,21 +44,21 @@ struct dsc
 	typedef SSHORT sub_type_t;
 	typedef USHORT flags_t;
 	typedef UCHAR* address_t;
-
+	
 	dsc()
-		: dsc_dtype(0),
-		  dsc_scale(0),
-		  dsc_length(0),
-		  dsc_sub_type(0),
-		  dsc_flags(0),
-		  dsc_address(0)
+	:	dsc_dtype(0),
+		dsc_scale(0),
+		dsc_length(0),
+		dsc_sub_type(0),
+		dsc_flags(0),
+		dsc_address(0)
 	{}
-
+	
 	explicit dsc(const dtype_t dtype) :
 		dsc_dtype(dtype), dsc_scale(0),  dsc_length(0), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(0)
 	{}
-
+	
 	dsc(const dtype_t dtype, const scale_t scale, const length_t length = 0,
 	    const address_t address = 0) :
 		dsc_dtype(dtype), dsc_scale(scale), dsc_length(length), dsc_sub_type(0),
@@ -130,6 +130,9 @@ struct dsc
 	GDS_QUAD	asQuad() const;
 	float		asReal() const;
 	double		asDouble() const;
+#ifdef VMS
+	double		asDFloat() const;
+#endif
 	GDS_DATE	asSqlDate() const;
 	GDS_TIME	asSqlTime() const;
 	GDS_TIMESTAMP asSqlTimestamp() const;
@@ -172,9 +175,9 @@ const dsc::dtype_t	dtype_timestamp	= 16;
 const dsc::dtype_t	dtype_blob		= 17;
 const dsc::dtype_t	dtype_array		= 18;
 const dsc::dtype_t	dtype_int64		= 19;
-const dsc::dtype_t  dtype_dbkey		= 20;
 
-const dsc::dtype_t	DTYPE_TYPE_MAX	= 21;
+const dsc::dtype_t	DTYPE_TYPE_MAX	= 20;
+
 
 // In DSC_*_result tables, DTYPE_CANNOT means that the two operands
 //   cannot participate together in the requested operation.
@@ -219,7 +222,7 @@ inline bool dsc::isEmpty() const
 
 
 // Overload text typing information into the dsc_sub_type field.
-//   See intl.h for definitions of text types
+//   See intl.h for definitions of text types 
 
 inline dsc::sub_type_t dsc::getTextType() const
 {
@@ -264,7 +267,7 @@ struct alt_dsc
 };
 
 
-//#define DSC_EQUIV(d1,d2) ((((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type) &&
+//#define DSC_EQUIV(d1,d2) ((((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type) && 
 //			  ((DSC_GET_CHARSET (d1) == DSC_GET_CHARSET (d2)) || d1->dsc_dtype > dtype_any_text))
 
 inline bool dsc::isDscEquiv(const dsc* d2) const
@@ -288,11 +291,9 @@ inline bool dsc::isDscEquiv(const dsc* d2) const
 dsc::length_t dsc::getTextLen(bool validate) const
 {
 	fb_assert(dsc_dtype <= dtype_any_text);
-	if (validate)
-	{
+	if (validate) {
 		length_t len, len2;
-		switch (dsc_dtype)
-		{
+		switch (dsc_dtype) {
 		case dtype_text:
 			len = len2 = dsc_length;
 			break;
@@ -314,9 +315,8 @@ dsc::length_t dsc::getTextLen(bool validate) const
 			return len2;
 		return len;
 	}
-
-	switch (dsc_dtype)
-	{
+	
+	switch (dsc_dtype) {
 	case dtype_text: return dsc_length;
 	case dtype_cstring: return dsc_length - 1;
 	case dtype_varying: return dsc_length - sizeof(USHORT);
@@ -380,8 +380,9 @@ inline bool dsc::isTextBlob() const
 
 inline bool dsc::isMetadataBlob() const
 {
-	return isBlob() && dsc_sub_type >= isc_blob_blr &&
-		dsc_sub_type < isc_blob_max_predefined_subtype;
+	return isBlob()
+		&& dsc_sub_type >= isc_blob_blr
+		&& dsc_sub_type < isc_blob_max_predefined_subtype;
 }
 
 inline bool dsc::isReservedBlob() const
@@ -397,14 +398,13 @@ inline bool dsc::isUserDefinedBlob() const
 
 // Exact numeric?
 
-//#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) ||
-//				 ((d) == dtype_long)  ||
+//#define DTYPE_IS_EXACT(d)       (((d) == dtype_int64) || 
+//				 ((d) == dtype_long)  || 
 //				 ((d) == dtype_short))
 
 inline bool dsc::isExact() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_int64:
 	case dtype_long:
 	case dtype_short:
@@ -427,15 +427,23 @@ inline bool dsc::isSqlDecimal() const
 
 // Floating point types?
 
-//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) ||
+#ifdef VMS
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				 ((d) == dtype_real)  || 
+//				 ((d) == dtype_d_float))
+#else
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
 //				  ((d) == dtype_real))
+#endif
 
 inline bool dsc::isApprox() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_real:
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		return true;
 	default:
 		return false;
@@ -446,14 +454,20 @@ inline bool dsc::isApprox() const
 // Beware, this is not SQL numeric(p, s), but a test for number data types
 // Strangely, the original macro doesn't test for VMS even though
 // the dtype_d_float follows dtype_double.
-//#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) &&
-//				  ((d) <= dtype_d_float)) ||
+//#define DTYPE_IS_NUMERIC(d)	((((d) >= dtype_byte) && 
+//				  ((d) <= dtype_d_float)) || 
 //				 ((d)  == dtype_int64))
 
 // To avoid confusion, the new function was renamed.
 inline bool dsc::isANumber() const
 {
-	return dsc_dtype >= dtype_byte && dsc_dtype <= dtype_double || dsc_dtype == dtype_int64;
+	return dsc_dtype >= dtype_byte
+#ifdef VMS
+		&& dsc_dtype <= dtype_d_float
+#else
+		&& dsc_dtype <= dtype_double
+#endif
+		|| dsc_dtype == dtype_int64;
 }
 
 
@@ -526,8 +540,7 @@ bool dsc::mayExactMulDivFit(const dsc& d2) const
 
 inline dsc::address_t dsc::asUText()
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_text:
 	case dtype_cstring:
 		return dsc_address;
@@ -561,8 +574,7 @@ inline BYTE dsc::asByte() const
 
 inline SSHORT dsc::asSShort() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -574,8 +586,7 @@ inline SSHORT dsc::asSShort() const
 
 inline USHORT dsc::asUShort() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -587,8 +598,7 @@ inline USHORT dsc::asUShort() const
 
 inline SLONG dsc::asSLong() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -602,8 +612,7 @@ inline SLONG dsc::asSLong() const
 
 inline ULONG dsc::asULong() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -638,6 +647,15 @@ inline double dsc::asDouble() const
 		return *reinterpret_cast<double*>(dsc_address);
 	return 0;
 }
+
+#ifdef VMS
+inline double dsc::asDFloat() const
+{
+	if (dsc_dtype == dtype_d_float)
+		return *reinterpret_cast<double*>(dsc_address);
+	return 0;
+}
+#endif
 
 inline GDS_DATE dsc::asSqlDate() const
 {
@@ -685,8 +703,7 @@ inline GDS_TIMESTAMP dsc::asSqlTimestamp() const
 
 inline SINT64 dsc::asSBigInt() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
@@ -702,8 +719,7 @@ inline SINT64 dsc::asSBigInt() const
 
 inline FB_UINT64 dsc::asUBigInt() const
 {
-	switch (dsc_dtype)
-	{
+	switch (dsc_dtype) {
 	case dtype_byte:
 		return asByte();
 	case dtype_short:
