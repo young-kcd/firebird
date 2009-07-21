@@ -5242,7 +5242,7 @@ Attachment::~Attachment()
 {
 	delete att_trace_manager;
 
-	// For normal attachments that happens release_attachment(),
+	// For normal attachments that happens in release_attachment(),
 	// but for special ones like GC should be done also in dtor -
 	// they do not (and should not) call release_attachment().
 	// It's no danger calling detachLocksFromAttachment()

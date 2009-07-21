@@ -181,7 +181,7 @@ void PluginLogWriter::checkErrno(const char* operation)
 		return;
 
 	const char* strErr;
-#if defined(WIN_NT)
+#ifdef WIN_NT
 	strErr = strerror(errno);
 #else
 	char buff[256];
