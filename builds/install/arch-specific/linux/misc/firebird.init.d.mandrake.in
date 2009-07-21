@@ -5,10 +5,10 @@
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird/interbase database server daemon 
+# Firebird database server daemon 
 
 # Source function library - RedHat or Mandriva specific
-# functions actually used: checkpid success failure
+# functions actually used: checkpid killproc daemon
 . /etc/rc.d/init.d/functions
 
 # To run more instances of firebird:
@@ -21,6 +21,7 @@ INSTANCE=default
 FIREBIRD=@prefix@
 
 # No changes needed below for multiple instances
+name=firebird_$INSTANCE
 FBRunUser=firebird
 pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="Firebird server [$INSTANCE]"
@@ -28,6 +29,7 @@ LD_LIBRARY_PATH=$FIREBIRD/lib
 MANAGER=$FIREBIRD/bin/fbmgr.bin
 
 export FIREBIRD LD_LIBRARY_PATH
+RETVAL=0
 
 # Check the file is there and is executable.
 [ -x $MANAGER ] || exit 1
@@ -36,21 +38,23 @@ export FIREBIRD LD_LIBRARY_PATH
 case "$1" in
   start)
 	echo -n "Starting $FULLNAME "
-	echo $MANAGER -pidfile $pidfile -start -forever | su $FBRunUser
+	daemon --user=$FBRunUser "export FIREBIRD LD_LIBRARY_PATH; $MANAGER -pidfile $pidfile -start -forever"
 	RETVAL=$?
-	[ $RETVAL -eq 0 ] && success || failure
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$name
 	echo
 	;;
   stop)
-	echo -n "Stopping $FULLNAME "
-
 	if [ -f $pidfile ]
 	then
-	    kill `cat $pidfile`
+		echo -n "Stopping $FULLNAME: "
+		killproc -p $pidfile $name
+		RETVAL=$?
+		echo
+	else
+		echo -n "$FULLNAME is stopped"
+		echo
 	fi
-	RETVAL=$?
-	[ $RETVAL -eq 0 ] && success || failure
-	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$name      
 	;;
   status)
 	if [ -f $pidfile ]
@@ -70,7 +74,7 @@ case "$1" in
 	RETVAL=$?
 	;;
   *)
-	echo "Usage: firebird {start|stop|status|restart|reload}"
+	echo "Usage: $0 {start|stop|status|restart|reload}"
 	exit 1
 esac
 
