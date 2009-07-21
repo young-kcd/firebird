@@ -1,3 +1,39 @@
+2009-07-21 11:11  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.76.2.17):
+
+	Misc.
+
+2009-07-21 10:05  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.74):
+
+	Update.
+
+2009-07-21 10:00  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.45.2.9), jrd.cpp (1.76.2.16),
+	jrd.h (1.42.2.9), lck.cpp (1.18.2.3), lck_proto.h (1.1.1.1.4.1),
+	rlck.cpp (1.10.2.1), sdw.cpp (1.14.2.3):
+
+	Backport two bugfixes (by Nickolay and Alex) that together fix
+	CORE-538 (Firebird 1.5.3 SS crashes under load).
+
+2009-07-20 16:11  dimitr
+
+	* firebird2/doc/WhatsNew (1.36.2.73):
+
+	Update.
+
+2009-07-20 16:09  dimitr
+
+	* firebird2/src/remote/server.cpp (1.34.2.8):
+
+	Fixed CORE-2563: Possible DoS attack using the malformed packet
+	sent into the connection port.	Backported the port context
+	validation that prevents non-authorized packets from crashing the
+	server.
+
 2009-07-15 10:38  paul_reeves
 
 	* firebird2/src/install/arch-specific/win32/:
