@@ -8,7 +8,7 @@
 # Firebird database server daemon 
 
 # Source function library - RedHat or Mandriva specific
-# functions actually used: checkpid success failure
+# functions actually used: checkpid killproc daemon
 . /etc/rc.d/init.d/functions
 
 # To run more instances of firebird:
@@ -21,6 +21,7 @@ INSTANCE=default
 FIREBIRD=@prefix@
 
 # No changes needed below for multiple instances
+name=firebird_$INSTANCE
 FBRunUser=firebird
 pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="Firebird server [$INSTANCE]"
@@ -29,28 +30,30 @@ LD_LIBRARY_PATH=$FIREBIRD/lib
 export FIREBIRD LD_LIBRARY_PATH
 
 GUARDIAN=$FIREBIRD/bin/fbguard
+# initialize as "success"
+RETVAL=0
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting $FULLNAME "
-
-#	runuser -s /bin/bash $FBRunUser -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
-	su -l $FBRunUser -s /bin/sh -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
+	daemon --user=$FBRunUser "export FIREBIRD LD_LIBRARY_PATH; $GUARDIAN -pidfile $pidfile -daemon -forever"
 	RETVAL=$?
-	[ $RETVAL -eq 0 ] && success || failure
+ 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$name
 	echo
 	;;
   stop)
-	echo -n "Stopping $FULLNAME "
-
 	if [ -f $pidfile ]
 	then
-	    kill `cat $pidfile`
+		echo -n "Stopping $FULLNAME: "
+		killproc -p $pidfile $name
+		RETVAL=$?
+		echo
+	else
+		echo -n "$FULLNAME server is stopped"
+		echo
 	fi
-	RETVAL=$?
-	[ $RETVAL -eq 0 ] && success || failure
-	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$name      
 	;;
   status)
 	if [ -f $pidfile ]
@@ -70,9 +73,8 @@ case "$1" in
 	RETVAL=$?
 	;;
   *)
-	echo "Usage: firebird {start|stop|status|restart|reload}"
+	echo "Usage: $0 {start|stop|status|restart|reload}"
 	exit 1
 esac
 
 exit $RETVAL
-
