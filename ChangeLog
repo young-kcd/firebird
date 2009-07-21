@@ -1,3 +1,118 @@
+2009-07-21 13:51  alexpeshkoff
+
+	* firebird2/src/common/classes/locks.h (1.59):
+
+	Use more standard macro
+
+2009-07-21 13:02  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+	(1.13):
+
+	Updated startup script from Philippe Makowski
+
+2009-07-21 12:01  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.210):
+
+	Deeper handler for ENOTSUP in mutex_init - avoid any attributes,
+	potentially known to cause it
+
+2009-07-21 11:45  robocop
+
+	* firebird2/src/: common/classes/FpeControl.h (1.6), jrd/jrd.cpp
+	(1.554), utilities/ntrace/PluginLogWriter.cpp (1.5):
+
+	Misc.
+
+2009-07-21 10:59  robocop
+
+	* firebird2/doc/README.monitoring_tables (1.13):
+
+	Typo.
+
+2009-07-21 10:58  alexpeshkoff
+
+	* firebird2/: configure.in (1.346), builds/posix/make.defaults
+	(1.86), builds/posix/prefix.solaris (1.30),
+	src/common/classes/FpeControl.h (1.5),
+	src/common/classes/fb_atomic.h (1.24),
+	src/common/classes/fb_atomic.il (1.1), src/common/classes/locks.h
+	(1.58), src/gpre/cmd.cpp (1.59), src/include/firebird.h (1.52),
+	src/jrd/blb.cpp (1.203), src/jrd/common.h (1.199),
+	src/utilities/ntrace/PluginLogWriter.cpp (1.4):
+
+	Solaris 9 patch from SAS
+
+2009-07-21 09:48  alexpeshkoff
+
+	* firebird2/src/jrd/unicode_util.cpp (1.52):
+
+	Style
+
+2009-07-21 09:45  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/:
+	classic/makeInstallImage.sh.in (1.26), super/makeInstallImage.sh.in
+	(1.25):
+
+	We have no more gds_drop, but we do have fbtracemgr
+
+2009-07-20 22:47  dimitr
+
+	* firebird2/doc/README.monitoring_tables (1.12):
+
+	More docs.
+
+2009-07-20 21:20  dimitr
+
+	* firebird2/src/utilities/install/services.cpp (1.32):
+
+	Fixed the service restart option issue reported by Gabor Boros in
+	fb-devel.
+
+2009-07-20 17:52  dimitr
+
+	* firebird2/doc/WhatsNew (1.178):
+
+	Re-scheduled this ticket for RC1.
+
+2009-07-20 17:46  asfernandes
+
+	* firebird2/: doc/WhatsNew (1.177), src/isql/show.epp (1.150):
+
+	Fixed CORE-915 - ISQL extract procedures body with double line
+	break
+
+2009-07-20 16:34  dimitr
+
+	* firebird2/: src/jrd/isc_version.h (1.10), doc/WhatsNew (1.176):
+
+	Update.
+
+2009-07-20 16:05  dimitr
+
+	* firebird2/src/remote/server.cpp (1.261):
+
+	Fixed two issues for the case of non-authorized op_connect_request:
+	1) Missing error reporting which makes the client to stall forever
+	2) CORE-2563: Possible DoS attack using the malformed packet sent
+	into the connection port
+
+2009-07-20 15:43  alexpeshkoff
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.109),
+	DatabaseSnapshot.h (1.36):
+
+	Fixed CORE-2564: alignment error on risc machines
+
+2009-07-20 14:59  hvlad
+
+	* firebird2/src/jrd/trace/TraceCmdLine.cpp (1.16):
+
+	Correct a typo, noted by Claudio.
+
 2009-07-20 14:44  robocop
 
 	* firebird2/src/msgs/: change_msgs.epp (1.23), enter_msgs.epp
