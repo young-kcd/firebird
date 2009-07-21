@@ -106,6 +106,7 @@ SFIO_EXAMPLES=@SFIO_EXAMPLES@
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
 STD_EDITLINE=@STD_EDITLINE@
+READLINE=@READLINE@
 STD_ICU=@STD_ICU@
 
 # threading options - set by configure
@@ -223,9 +224,9 @@ LIBFBSTATIC_A = $(LIB)/libfbstatic.a
 
 ifeq ($(EDITLINE_FLG),Y)
   ifeq ($(STD_EDITLINE), true)
-	LIBEDITLINE := -leditline
+	LIBEDITLINE := -l$(READLINE)
   else
-	LIBEDITLINE := $(LIB)/libeditline.a
+	LIBEDITLINE := $(LIB)/libedit.a
   endif
 endif
 
