@@ -159,9 +159,10 @@ static const int CLASS_SOLARIS_AMD64 = 32;	// Solaris/amd64
 static const int CLASS_LINUX_ARM = 33;		// LINUX/ARM
 static const int CLASS_LINUX_IA64 = 34;		// LINUX/IA64
 static const int CLASS_DARWIN_PPC64 = 35; 	// Darwin/PowerPC64
+static const int CLASS_LINUX_S390X = 36; 	// LINUX/s390x
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_DARWIN_PPC64;
+static const int CLASS_MAX = CLASS_LINUX_S390X;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -254,7 +255,8 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archLittleEndian, // CLASS_SOLARIS_AMD64
 	archLittleEndian, // CLASS_LINUX_ARM
 	archLittleEndian, // CLASS_LINUX_IA64
-	archBigEndian	  // CLASS_DARWIN_PPC64
+	archBigEndian,	  // CLASS_DARWIN_PPC64
+	archBigEndian	  // CLASS_LINUX_S390X
 };
 
 #ifdef __sun
@@ -304,6 +306,8 @@ const SSHORT CLASS		= CLASS_LINUX_MIPSEL;
 const SSHORT CLASS		= CLASS_LINUX_MIPS;
 #elif defined(IA64)
 const SSHORT CLASS		= CLASS_LINUX_IA64;
+#elif defined(S390X)
+const SSHORT CLASS		= CLASS_LINUX_S390X;
 #else
 #error no support on other hardware for Linux
 #endif

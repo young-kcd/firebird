@@ -162,6 +162,10 @@
 #define USE_POSIX_THREADS
 #endif
 
+#ifdef S390X
+#define IMPLEMENTATION  isc_info_db_impl_linux_s390x	// 78
+#endif // S390X
+
 #endif /* LINUX */
 
 

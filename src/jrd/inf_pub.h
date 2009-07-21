@@ -208,6 +208,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_ia64 = 76,
 
 	isc_info_db_impl_darwin_ppc64 = 77,
+	isc_info_db_impl_linux_s390x = 78,
 
 	isc_info_db_impl_last_value   // Leave this LAST!
 };
