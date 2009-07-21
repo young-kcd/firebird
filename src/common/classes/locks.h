@@ -204,7 +204,7 @@ public:
 	static void initMutexes();
 };
 
-#ifdef NEVERDEF
+#ifdef NOT_USED_OR_REPLACED		// we do not use spinlocks currently
 class Spinlock
 {
 private:
