@@ -757,7 +757,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
+	{
 		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
+	}
 
 	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
@@ -780,13 +782,17 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		}
 
 		if (version != majorVersion + "." + minorVersion)
+		{
 			continue;
+		}
 
 		ReadLockGuard readGuard(icuModules->lock);
 
 		ICU* icu;
 		if (icuModules->modules().get(version, icu))
+		{
 			return icu;
+		}
 
 		PathName filename;
 		filename.printf(ucTemplate, majorVersion.c_str(), minorVersion.c_str());
